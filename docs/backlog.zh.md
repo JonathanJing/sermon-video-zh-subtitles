@@ -20,6 +20,31 @@ English index: [backlog.md](./backlog.md)
 
 状态枚举：`verified_baseline`、`in_progress`、`pending`、`waiting_evidence`、`blocked`、`complete`。`verified_baseline` 只说明列出的基线已验证，不代表该项所有未来周次完成；只有满足本页第 2 条维护规则和该项验收定义后才能标记 `complete`。
 
+## 2026-09-30：生成、独立审核、门禁与返工闭环
+
+本次核查 `dev@fc3e2fbc60b0fd2c5b59c64fcd515c465efc6b0b`；[PR #163](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/163) 已将 #121—#162 的冻结实现整合到 Dev。下方早期“draft/尚未合并”的段落是对应批次的历史快照，不应再当作当前合并状态。合并及历史组件测试不等于完整生产、内容、设备或现场 sign-off。
+
+新增方案见 [生成—独立审核—门禁—有界返工完整设计](generation-review-gate-design.zh.md)，开发步骤见 [RQC 开发 Backlog](generation-review-gate-backlog.zh.md)。它细化 `DEV-SPD-006` 的业务角色，关联 `DEV-L2-001` 的生产策略和 `DEV-TRACK-001` 的计量，不新增顶层 Epic；不取代四层包、人工批准、发布授权或 [LOGC-01—07 日志合同](workflow-accounting-log-contract.zh.md)。
+
+核心闭环：**Generator 生成冻结候选 → 固定预检 → Reviewer 只读审核 → 固定 Gate → 必需人工门禁 → 下一层**。内容失败时创建绑定失败审核和候选的 Repair Plan，在新 revision 中仅修复受影响范围并重审；审核执行失败优先恢复审核，不默认重生成。已知失败路径用固定程序；仅合法修复路径不唯一时调用 bounded Decision Agent；未知程序缺陷另开 Codex engineering run。
+
+当前 Astra→Sol 已有独立请求、逐组审校及 partial repair，不从零重建。现有 Sol 可修改最终译文，属于 reviewer-editor；新 strict-verifier 是独立 policy/prompt 行为，必须新版本、新目录、A/B 后才启用，不能悄悄改变默认模型策略或把旧收据重标成严格只读审核。正常路径不增加常规第三遍 Astra/Gemini；审核 token 是生产质量成本，不是 Codex orchestration。
+
+| 子项 | 新增实现状态 | 交付与关键验收 | 对应顶层项 |
+|---|---|---|---|
+| `RQC-01` | `pending` | Generator/Reviewer 权限和输入输出隔离、strict 模式、legacy adapter；审核不改候选，旧 policy/cache/批准不退化 | `DEV-L2-001`、`DEV-SPD-006` |
+| `RQC-02` | `pending` | Candidate Revision、Review Receipt、Gate Decision、Repair Plan 的闭合 schema/validator；精确 hash、覆盖、rubric、stale/冲突收据与人工门禁 | `DEV-SPD-006`、`DEV-L2-001` |
+| `RQC-03` | `pending` | 固定错误路由、修复依赖闭包、有界决策/预算、partial repair 与 crash reconciliation；无关单元不重付，未知结果不盲重发 | `DEV-SPD-004`、`DEV-SPD-006` |
+| `RQC-04` | `pending` | 沿 LOGC-01—07 增加 executionStatus/reviewVerdict/admissionStatus 三状态和生成/审核/返工/重审因果链；每单元真实 model/token/time 可重建 | `DEV-TRACK-001`、`DEV-SPD-006` |
+| `RQC-05` | `pending` | 人工标注保留集与 rubric、editor/strict 对照、漏检/误拒/新错误、最终质量及每合格单元累计成本 | `DEV-SPD-005`、`DEV-SPD-006` |
+| `RQC-06` | `pending` | Stage 0→约3分钟真实片段→10分钟→完整往期视频逐级 sign-off、Dev交付/旧客户端兼容、guarded rollout和回滚 | `DEV-SPD-003`、`DEV-SPD-006`、`DEV-TRK-002` |
+
+开发顺序：**D1 合同/legacy fixtures → D2 日志 payload 与重放 → D3 生成/只读审核适配器 → D4 固定 Gate → D5 有界返工/预算/恢复 → D6 Stage 0 与人工校准准备 → D7 短片段/10分钟/完整视频 → D8 新周 rollout**。各批次的文件触点、依赖、Owner 角色和完成证据在 RQC backlog 中定义；这些是计划批次，不是已创建的代码 PR。
+
+D1 合同实现可以开工；真实 A/B 前仍须冻结实际样本、工具/模型可用性、具名人审、rubric、预算与量化阈值。新 RQC 实现均未完成，`DEV-SPD-006` 仍为 `in_progress`，不因文档齐备而关闭。3 分钟素材剪辑或历史缓存回放不等于 fresh inference/sign-off。
+
+本轮目标保持后端私有 sidecar、controller 和日志改动，不改变 public catalog/Release/URL 或 iOS binary。每个实现 PR 独立检查兼容性；若需要客户端修改，转入 `DEV-IOS-*` / `DEV-CICD-004`，不能将本方案的 backend-only 范围套用到 #163 里其他客户端变更。
+
 ## 当前已验证基线
 
 - 2026-09-20 的 2:58 中文、韩语、西语样片已有正式 Layer 1–4 包、三语文字和音频人审、Firebase Dev HTTP／Range 及浏览器短时播放证据；iOS 真机和现场仍是 `not_run`。
@@ -47,7 +72,7 @@ English index: [backlog.md](./backlog.md)
 | v3 候选组装器、跨包绑定审计及负例测试已合入 | `DEV-L4-003`／`DEV-L4-004` | 真实新周候选、发布／回滚和双 App 刷新验证 |
 | Dev `preview_only` 页面、模拟链接到四层页面、共用控制循环和 CI 失败注入 | `DEV-L4-005`／`DEV-E2E-001` | 通用新周追加、真实批准包回放和故障后完整恢复 |
 | Producer 逐组／单元记账接线、Tracker 子阶段及时间线投影 | `DEV-TRACK-001` | 同一周账本的完整耗时、等待、重试和 token 覆盖 |
-| 三维语言统计实现、Web／API 真实读回与历史 build 42 上传 | `DEV-USAGE-001`／`DEV-CICD-004` | 实体 iPhone 统计验收、目标源码与分发产物绑定及安装／审核状态 |
+| 三维语言统计实现、Web／API 真实读回与历史 build 42 上传 | `DEV-USAGE-001`／`DEV-CICD-004` | 实体 iPhone 统计验收、目标源码與分发产物绑定及安装／审核状态 |
 
 上表只承认限定范围，不关闭尚有剩余验收的整个工程项；原 PR 的测试结果不算本次重新运行。远场对齐、人工审核后台、第二周恢复复现及效率计划不因代码回迁而完成。
 
@@ -58,7 +83,7 @@ English index: [backlog.md](./backlog.md)
 - 正式站已对指定的 31:31.677 视频提供三语页面与音轨；111/111 文件 HTTP／SHA、三条 MP3 Range 206 和 App 内浏览器短时播放有收据。它们不代替 iOS 新版安装、现场麦克风定位和会场验收。
 - 当前公开 `/packages/layer3/<page>/<locale>.json` 是旧文字版 `audio_unavailable` 包，与旧 `/releases/` v1 候选哈希一致；`/releases-v2/` 绑定的是私有、已听审的正式音频包规范化 JSON 哈希。两条版本链各自成立，不能覆盖旧路径，也不能把含本机绝对路径的正式包直接放进 Hosting。缺的是正式 v2 发布前可复查的跨包证明与版本说明。
 - 本周 Tracker 虽显示 46/46，公开快照仍有 43 个已完成步骤缺实测执行 span。Layer 2 模型 runner 和 Layer 3 renderer 已有逐组／逐单元计时能力，但本次正式运行没有统一归入周账本；历史时长保持未知。
-- 本周先产出独立 `/pages/` 页面，后经 App 截图纠正为 App 内本周入口。下次在制作前冻结入口、语言、音频、英文对照、二维码及 Web／iOS 验收定义；页面 HTTP、浏览器、真机与现场状态分别报告。
+- 本周先产出独立 `/pages/` 页面，后经 App 截图纠正为 App 内本周入口。下次在制作前冻结入口、语言、音频、英文对照、二维码落点及 Web／iOS 验收定义；页面 HTTP、浏览器、真机与现场状态分别报告。
 
 ## P0：下一次完整 Dev 周产与已观察问题
 
@@ -277,6 +302,7 @@ Definition of Ready 已在完整设计中逐项勾选；剩余的 implementation
 | [iOS backlog](../apps/tongxing-ios/BACKLOG.zh.md) | 原生客户端详细需求与平台验收 | 上游内容／音频完成声明 |
 | [分支与 Firebase 环境](development-branch-and-firebase-environments.zh.md) | Dev／Production 隔离和晋升规则 | 某次发布已完成的证明 |
 | [CI/CD backlog](ci-cd-backlog.zh.md) | 上述 `DEV-CICD-*` 的执行步骤、依赖和验收样例 | 顶层优先级及具体周次／设备的运行状态 |
+| [RQC 完整设计](generation-review-gate-design.zh.md)与[开发 Backlog](generation-review-gate-backlog.zh.md) | 生成/只读审核/固定门禁/返工的私有合同、D1—D8步骤及分级验收 | 新顶层排期、生产策略切换授权或任何已完成声明 |
 
 ## 历史附录：2026-06-22 11:30 会众中文字幕 Backlog
 
