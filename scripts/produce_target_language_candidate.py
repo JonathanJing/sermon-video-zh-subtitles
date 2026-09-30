@@ -109,12 +109,16 @@ def validate_source_for_translation(source: dict[str, Any], anchor: dict[str, An
 
 
 def prepare_request(source: dict[str, Any], anchor: dict[str, Any],
-                    policy: dict[str, Any]) -> dict[str, Any]:
+                    policy: dict[str, Any], *, strict_rubric=None) -> dict[str, Any]:
     """Freeze exactly one source and locale; leave all generated fields blank."""
     anchor_hash = validate_source_for_translation(source, anchor)
     units = anchor["sourceUnits"]
-    identity = policy_tools.validate_policy(policy)
-    policy_tools.validate_source_scope(policy, source, anchor)
+    if strict_rubric is None:
+        identity = policy_tools.validate_policy(policy)
+        policy_tools.validate_source_scope(policy, source, anchor)
+    else:
+        identity = policy_tools.validate_strict_policy(policy, strict_rubric)
+        policy_tools.validate_strict_source_scope(policy, strict_rubric, source, anchor)
     _require(identity["productionPolicyReady"],
              "Production policy has unresolved scripture, terminology, or language-review gates")
     return {
@@ -216,7 +220,7 @@ def admit_evidence(source: dict[str, Any], anchor: dict[str, Any],
 def run_language_plugin(source: dict[str, Any], anchor: dict[str, Any],
                         policy: dict[str, Any], request: dict[str, Any],
                         evidence: dict[str, Any], plugin_path: Path,
-                        expected_plugin_sha256: str) -> dict[str, Any]:
+                        expected_plugin_sha256: str, *, strict_rubric=None) -> dict[str, Any]:
     """Run a pinned locale plugin and return a source/text-bound receipt.
 
     The plugin is a reviewed Python module exposing PLUGIN_ID, PLUGIN_VERSION,
@@ -224,7 +228,7 @@ def run_language_plugin(source: dict[str, Any], anchor: dict[str, Any],
     are recalculated at admission; a pass string in translation evidence is
     never accepted as language-review evidence.
     """
-    expected = prepare_request(source, anchor, policy)
+    expected = prepare_request(source, anchor, policy, strict_rubric=strict_rubric)
     _require(request == expected, "Layer 2 request was changed or belongs to another source/policy")
     for key in ("schemaVersion", "sourceLocale", "targetLocale",
                 "englishSourcePackageJsonSha256", "anchorManifestSha256",
@@ -232,7 +236,7 @@ def run_language_plugin(source: dict[str, Any], anchor: dict[str, Any],
         _require(evidence.get(key) == expected[key], f"Layer 2 evidence identity changed: {key}")
     _require(plugin_path.is_file(), "Language plugin implementation is missing")
     implementation_sha = plugin_implementation_sha256(plugin_path)
-    _require(policy["schemaVersion"] == policy_tools.POLICY_V2
+    _require(policy["schemaVersion"] == (policy_tools.POLICY_V3 if strict_rubric is not None else policy_tools.POLICY_V2)
              and policy["languageReview"]["pluginImplementationSha256"] == expected_plugin_sha256
              and expected_plugin_sha256 == implementation_sha,
              "Language plugin implementation hash differs from frozen policy or file")
@@ -290,7 +294,8 @@ def run_language_plugin(source: dict[str, Any], anchor: dict[str, Any],
     _require([row["translationGroupId"] for row in group_reviews]
              == [group["translationGroupId"] for group in groups],
              "Language plugin receipt group order changed")
-    identity = policy_tools.validate_policy(policy)
+    identity = (policy_tools.validate_policy(policy) if strict_rubric is None else
+                policy_tools.validate_strict_policy(policy, strict_rubric))
     return {
         "schemaVersion": LANGUAGE_RECEIPT_SCHEMA,
         "englishSourcePackageJsonSha256": expected["englishSourcePackageJsonSha256"],
