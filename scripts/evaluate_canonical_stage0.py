@@ -28,6 +28,7 @@ SUITES = {
     'legacy_controller_reliability': ('tests.test_sermon_deterministic_controller', 'tests.test_controller_crash_windows'),
     'accounting': ('tests.test_sermon_accounting', 'tests.test_accounting_retry_safety',
                    'tests.test_accounting_observability', 'tests.test_weekly_pipeline_report'),
+    'producer_accounting': ('tests.test_run_target_language_models', 'tests.test_render_formal_target_language_speech'),
 }
 UNIMPLEMENTED = (
     'canonical_durable_dispatch_and_cross_process_dag',

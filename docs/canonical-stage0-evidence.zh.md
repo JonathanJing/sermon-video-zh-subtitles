@@ -10,7 +10,7 @@ python scripts/evaluate_canonical_stage0.py \
 
 工具仅运行固定的本地/synthetic unittest 集合：canonical package inspection、
 三语 planner、bounded decision、legacy deterministic controller/crash windows、
-accounting 与 weekly report，再执行既有 backend dry-run failure matrix。
+accounting、weekly report 与真实 producer 的合成计时/cache 回归，再执行既有 backend dry-run failure matrix。
 它不接收任意 shell/module，不启动真实生产模型，也不部署或改写现有证据。
 已有输出目录或 log 会报错；失败、timeout、零测试和 skipped tests 均不能变成 pass。
 
