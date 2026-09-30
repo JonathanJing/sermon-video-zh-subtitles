@@ -1,3 +1,4 @@
+const listen=async controller=>{await controller.start();if(controller.getState().phase==='ready_to_record')return controller.start();};
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -43,13 +44,13 @@ test('silent real DSP exposes only aggregate quality and no landmarks', () => {
 
 test('retries accumulate observed microphone time; operation elapsed is not summed phases', async () => {
   let clock = 0, seeks = 0;
-  const controller = createFingerprintController({context,now:()=>clock,supported:()=>true,pause(){},seek(){seeks++;},play(){},timers:{setTimeout(){},clearTimeout(){}},
+  const controller = createFingerprintController({prepare:async()=>({close(){}}),context,now:()=>clock,supported:()=>true,pause(){},seek(){seeks++;},play(){},timers:{setTimeout(){},clearTimeout(){}},
     capture:async({onTiming})=>{
       onTiming({permissionMs:200,startupMs:100,captureMs:300,microphoneObservedMs:400});
       onTiming({permissionMs:100,startupMs:200,captureMs:10000,microphoneObservedMs:10200});
       clock=12000; return {samples:new Float32Array(80000),sampleRate:8000,durationSeconds:10,endedAt:clock};
     },match:async()=>{clock=12500;return {result:{matched:false,diagnostics:{reason:'ambiguous'}},summary:{reason:'ambiguous',landmarks:500},timings:{indexMs:300,featureMs:100,matchMs:100}};}});
-  await controller.start(); const d = controller.getDiagnostics();
+  await listen(controller); const d = controller.getDiagnostics();
   assert.equal(d.attempts,2); assert.equal(d.timings.microphoneObservedMs,10600);
   assert.equal(d.timings.captureMs,10300); assert.equal(d.timings.totalMs,12500);
   assert.equal(d.timings.workerMs,500); assert.equal(d.match.reason,'ambiguous'); assert.equal(seeks,0);
@@ -58,18 +59,18 @@ test('retries accumulate observed microphone time; operation elapsed is not summ
 
 test('unknown matcher reasons never enter controller state or alter no-seek behavior', async () => {
   const events=[];
-  const controller=createFingerprintController({context,now:()=>10000,supported:()=>true,pause(){},seek(){assert.fail('seek');},play(){assert.fail('play');},onState:e=>events.push(e),timers:{setTimeout(){},clearTimeout(){}},capture:async()=>({durationSeconds:10,endedAt:10000}),match:async()=>({result:{matched:false,diagnostics:{reason:'private-device-label'}}})});
-  await controller.start(); assert.equal(controller.getState().reason,'unknown');
+  const controller=createFingerprintController({prepare:async()=>({close(){}}),context,now:()=>10000,supported:()=>true,pause(){},seek(){assert.fail('seek');},play(){assert.fail('play');},onState:e=>events.push(e),timers:{setTimeout(){},clearTimeout(){}},capture:async()=>({durationSeconds:10,endedAt:10000}),match:async()=>({result:{matched:false,diagnostics:{reason:'private-device-label'}}})});
+  await listen(controller); assert.equal(controller.getState().reason,'unknown');
   assert.ok(!JSON.stringify(events).includes('private-device-label'));
 });
 
 test('late timing callback from cancelled attempt cannot contaminate new session', async () => {
   let firstTiming, finish, attempts=0;
-  const controller=createFingerprintController({context,now:()=>10000,supported:()=>true,pause(){},seek(){},play(){},timers:{setTimeout(){},clearTimeout(){}},capture:async({onTiming})=>{
+  const controller=createFingerprintController({prepare:async()=>({close(){}}),context,now:()=>10000,supported:()=>true,pause(){},seek(){},play(){},timers:{setTimeout(){},clearTimeout(){}},capture:async({onTiming})=>{
     if (++attempts===1) {firstTiming=onTiming;return new Promise(r=>finish=r);}
     onTiming({microphoneObservedMs:10000}); return {durationSeconds:10,endedAt:10000};
   },match:async()=>({result:{matched:false}})});
-  const old=controller.start();await controller.start();firstTiming({microphoneObservedMs:5000});finish({durationSeconds:10,endedAt:10000});await old;
+  const old=listen(controller);await new Promise(r=>setImmediate(r));await listen(controller);firstTiming({microphoneObservedMs:5000});finish({durationSeconds:10,endedAt:10000});await old;
   assert.equal(controller.getDiagnostics().attempts,1);assert.equal(controller.getDiagnostics().timings.microphoneObservedMs,10000);
 });
 

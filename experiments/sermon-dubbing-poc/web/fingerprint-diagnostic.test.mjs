@@ -1,3 +1,4 @@
+const listen=async controller=>{await controller.start();if(controller.getState().phase==='ready_to_record')return controller.start();};
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {captureDiagnostic,diagnosticMessage,createFingerprintController} from './fingerprint-ui.mjs';
@@ -7,8 +8,8 @@ test('all diagnostic branches including inherited object names remain bounded st
 test('controller error state keeps sanitized diagnostic only and performs no seek/play',async()=>{
  const sha='a'.repeat(64),raw='private_device_id_12345';const events=[];let seeks=0,plays=0;
  const metadata={schemaVersion:'sermon-audio-fingerprint-binding-v1',algorithmVersion:'spectral-landmarks-v1',pageId:'week',sourceSha256:sha,trackSha256:sha,indexSha256:sha,indexUrl:'/fingerprints/one.json',captureSeconds:10,sourceStartSeconds:1793,sourceEndSeconds:4033};
- const controller=createFingerprintController({context:()=>({week:{id:'week',sourceStartSeconds:1793,audioFingerprint:metadata},track:{id:'track',sha256:sha,durationSeconds:2240},generation:1,ready:true}),pause(){},seek(){seeks++;},play(){plays++;},supported:()=>true,onState:e=>events.push(e),capture:async({onPreparing})=>{onPreparing();const e=new Error(raw);e.name='NotReadableError';e.captureStage='startup';throw e;},timers:{setTimeout(){return 1;},clearTimeout(){}}});
- await controller.start();assert.ok(events.some(e=>e.phase==='starting'));assert.ok(!events.some(e=>e.phase==='recording'));assert.equal(controller.getState().diagnostic.code,'MIC_BUSY');assert.ok(!JSON.stringify(events).includes(raw));assert.equal(seeks,0);assert.equal(plays,0);
+ const controller=createFingerprintController({prepare:async()=>({close(){}}),context:()=>({week:{id:'week',sourceStartSeconds:1793,audioFingerprint:metadata},track:{id:'track',sha256:sha,durationSeconds:2240},generation:1,ready:true}),pause(){},seek(){seeks++;},play(){plays++;},supported:()=>true,onState:e=>events.push(e),capture:async({onPreparing})=>{onPreparing();const e=new Error(raw);e.name='NotReadableError';e.captureStage='startup';throw e;},timers:{setTimeout(){return 1;},clearTimeout(){}}});
+ await listen(controller);assert.ok(events.some(e=>e.phase==='starting'));assert.ok(!events.some(e=>e.phase==='recording'));assert.equal(controller.getState().diagnostic.code,'MIC_BUSY');assert.ok(!JSON.stringify(events).includes(raw));assert.equal(seeks,0);assert.equal(plays,0);
 });
 
 test('detail diagnostics are whitelisted and distinguish the interrupted source',()=>{
