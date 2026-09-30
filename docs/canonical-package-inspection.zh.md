@@ -3,7 +3,7 @@
 `python scripts/inspect_canonical_packages.py --config inspection.json` 输出
 Source → 各语言 Text → Audio → Page 的 shadow proposal。它不 dispatch、写入
 批准记录、启动模型、发布页面或修改作业状态。Page 的 `ready` 只表示其前置
-package 和所需 receipt 已验证；Layer 4 产物检查仍未接入。
+package 和所需 receipt 已验证；v3 可继续验证现有 formal-dev Layer 4 candidate。
 
 `sermon-canonical-package-inspection-config-v1` 保留 Source/Text 行为。
 新增 v2 允许各 locale 配置 `audio`；v1 不接受该字段。两版均不从 progress
@@ -61,3 +61,31 @@ job 与声线授权。重建结果不会写回；必须另有已保存且一致�
 
 本地证据来自 synthetic WAV、真实 package builders 和 validators；测试夹具中的
 批准仅限 synthetic 数据。它不代表真实内容试听、真机、现场、Stage 1–3 或发布验收。
+
+## v3：已有 formal-dev Release candidate
+
+v3 保留 v1/v2 原有行为，在顶层增加必填 `pageId`，各 locale 可增加：
+
+```json
+{
+  "release": {
+    "package": "ko/release.json",
+    "assetRoot": "prepared/assets",
+    "contentReview": "ko/content-review.json"
+  }
+}
+```
+
+此时 `schemaVersion` 使用 `sermon-canonical-package-inspection-config-v3`。
+只有 Source/Text/Audio 和独立试听 receipt 已通过，才检查 Release。调用的
+`stage_formal_multilingual_dev.validate_release_assets` 是现有 preflight 共用
+的只读函数：检查本地 candidate 身份、content/audio/captions 三种 asset 的
+固定路径与 hash、已测量时间表、逐句文本，以及独立 metadata review 的绑定。
+适配范围是现有 formal-dev content schema；完整阅读稿/短口播双候选 release
+和其他 legacy 输出不被隐式视为兼容。
+
+所有指定 locale 的 Page candidate 验证后可输出 `terminal_evidence_observed`，
+代表本地 candidate 证据齐备；`productionAcceptance=not_evaluated`、
+`deviceAcceptance=not_run`、`dispatchEnabled=false` 不变。该接口不验证线上
+HTTP，也不采信 candidate 中自填的发布、设备或现场 pass。Release 本体、
+metadata receipt 和资产身份均进入 revision，合法重建也产生新的 revision。

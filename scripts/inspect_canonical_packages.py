@@ -1,6 +1,6 @@
-"""Read-only canonical Source/Text/Audio adapter using existing producer validators.
+"""Read-only canonical package adapter using existing producer validators.
 
-Layer 4 release inspection remains explicitly unsupported.
+Layer 4 supports existing formal-dev candidates, not publication/HTTP acceptance.
 No progress-ledger status, model, human approval creation or dispatch is involved.
 """
 from __future__ import annotations
@@ -17,11 +17,13 @@ from scripts import build_english_source_package as english
 from scripts import prepare_target_language_speech_job as handoff
 from scripts import produce_target_language_candidate as producer
 from scripts import inspect_canonical_audio as audio_inspector
+from scripts import inspect_canonical_release as release_inspector
 from scripts.sermon_release_workflow import _safe_path
 from scripts.sermon_workflow_jobs import _digest, _read
 
 SCHEMA = 'sermon-canonical-package-inspection-config-v1'
 SCHEMA_V2 = 'sermon-canonical-package-inspection-config-v2'
+SCHEMA_V3 = 'sermon-canonical-package-inspection-config-v3'
 MAX_JSON_BYTES = 16 * 1024 * 1024
 
 
@@ -42,16 +44,25 @@ def _read_package(root, reference, hashes, key):
 def inspect(config_path):
     path = _safe_path(Path(config_path).absolute())
     config = _read_package(path.parent, str(path), {}, 'configuration')
-    if (set(config) != {'schemaVersion', 'source', 'anchor', 'locales'} or config['schemaVersion'] not in {SCHEMA, SCHEMA_V2}
+    version = config.get('schemaVersion')
+    fields = {'schemaVersion', 'source', 'anchor', 'locales'} | ({'pageId'} if version == SCHEMA_V3 else set())
+    if (set(config) != fields or version not in {SCHEMA, SCHEMA_V2, SCHEMA_V3}
             or not isinstance(config['locales'], dict) or not config['locales']
             or not set(config['locales']) <= set(pipeline.LOCALES)):
         raise ValueError('invalid_inspection_configuration')
+    if version == SCHEMA_V3 and (not isinstance(config['pageId'], str)
+                                or not release_inspector.stage.PAGE_ID.fullmatch(config['pageId'])):
+        raise ValueError('invalid_page_identity')
     for lane in config['locales'].values():
-        allowed = {'policy', 'candidate', 'humanReview'} | ({'audio'} if config['schemaVersion'] == SCHEMA_V2 else set())
+        allowed = {'policy', 'candidate', 'humanReview'} | ({'audio'} if version != SCHEMA else set())
+        if version == SCHEMA_V3:
+            allowed.add('release')
         if not isinstance(lane, dict) or set(lane) - allowed or 'policy' not in lane:
             raise ValueError('invalid_locale_configuration')
         if 'audio' in lane:
             audio_inspector.validate_configuration(lane['audio'])
+        if 'release' in lane:
+            release_inspector.validate_configuration(lane['release'])
     spec = pipeline.definition(tuple(config['locales']))
     observations, approvals, hashes, diagnostics = {}, {}, {'configuration': _digest(config)}, {}
     def project():
@@ -62,8 +73,8 @@ def inspect(config_path):
         result['packageIdentities'] = dict(hashes)
         result['inspectionDiagnostics'] = dict(diagnostics)
         result['inspectionCoverage'] = {'source': 'production_source_gate', 'text': 'production_candidate_and_review_gates',
-                                        'audio': ('production_artifact_and_review_gates' if config['schemaVersion'] == SCHEMA_V2
-                                                  else 'not_integrated'), 'release': 'not_integrated'}
+                                        'audio': ('production_artifact_and_review_gates' if version != SCHEMA else 'not_integrated'),
+                                        'release': ('formal_dev_candidate_assets_gate' if version == SCHEMA_V3 else 'not_integrated')}
         # Never label an unvalidated/missing policy as ready to invoke a model.
         for node, code in diagnostics.items():
             if node in result['nodes']:
@@ -176,6 +187,17 @@ def inspect(config_path):
                     'identity': page_id, 'receiptSha256': checked['listeningReviewSha256']}}
         except (ValueError, TypeError, KeyError, OSError):
             diagnostics[audio] = 'audio_package_or_review_not_validated'
+            continue
+        if 'release' not in lane or checked['listeningReviewSha256'] is None:
+            continue
+        try:
+            release_sha = release_inspector.inspect(
+                path.parent, lane['release'], page_id=config['pageId'], locale=locale,
+                source=source, candidate=candidate, audio_path=path.parent / lane['audio']['package'],
+                audio_sha256=checked['outputSha256'], read_package=_read_package, hashes=hashes)
+            observations[page] = {'identity': page_id, 'status': 'validated', 'outputSha256': release_sha}
+        except (ValueError, TypeError, KeyError, OSError):
+            diagnostics['page.' + locale] = 'release_candidate_not_validated'
     return project()
 
 

@@ -170,6 +170,133 @@ def asset_source(root: Path, path: str) -> Path:
     return source
 
 
+def validate_release_assets(*, page_id: str, locale: str, asset_root: Path,
+                            source: dict, candidate: dict, audio: dict, audio_path: Path,
+                            release: dict, content_review_path: Path) -> tuple[dict, float]:
+    """Read-only candidate assets gate, shared with canonical shadow inspection.
+
+    Source/Text/Audio package and independent approval validators must run first.
+    This gate checks the existing Layer 4 candidate; it creates no release/receipt.
+    """
+    if not PAGE_ID.fullmatch(page_id) or locale not in LOCALES:
+        raise StageError("invalid page or locale identity")
+    source_hash, candidate_hash, audio_hash = map(canonical_sha, (source, candidate, audio))
+    group_ids = [group["translationGroupId"] for group in candidate["groups"]]
+    files = {}
+    if (release["pageId"] != page_id or release["targetLocale"] != locale
+            or release["sourceLocale"] != "en"
+            or release["targetLanguageCandidateJsonSha256"] != candidate_hash
+            or release["targetLanguageAudioPackageJsonSha256"] != audio_hash
+            or release["status"] != "candidate" or release["contentStatus"] != "human_reviewed"
+            or release["audioStatus"] != "human_reviewed"
+            or release["interfaceLocale"] != locale or release["contentLocale"] != locale
+            or release["audioLocale"] != locale or release["issues"]
+            or any(release[gate] != {"status": "not_run", "evidenceSha256": None}
+                   for gate in ("httpVerification", "deviceAcceptance", "venueAcceptance"))):
+        raise StageError(f"{locale}: Layer 4 candidate identity or gate is invalid")
+    track = local_artifact(audio_path, audio["track"], f"{locale} track") if audio["track"] else None
+    if track is None or audio["captions"] is None or audio["schedule"] is None or not audio["units"]:
+        raise StageError(f"{locale}: measured track, captions, schedule, and units are required")
+    if track.suffix not in {".wav", ".mp3"}:
+        raise StageError(f"{locale}: reviewed track must be WAV or MP3")
+    track_duration = decode_audio(track, f"{locale} track")
+    captions_path = local_artifact(audio_path, audio["captions"], f"{locale} captions")
+    captions = json.loads(captions_path.read_text(encoding="utf-8"))
+    schedule_path = local_artifact(audio_path, audio["schedule"], f"{locale} schedule")
+    schedule = json.loads(schedule_path.read_text(encoding="utf-8"))
+    if (schedule.get("targetLocale") != locale or schedule.get("timingKind") != "measured_target_audio"
+            or schedule.get("status") != "pass" or schedule.get("issues")
+            or not isinstance(schedule.get("trackDurationSeconds"), (int, float))
+            or not math.isfinite(schedule["trackDurationSeconds"])
+            or not isinstance(schedule.get("entries"), list)
+            or not isinstance(captions.get("cues"), list)):
+        raise StageError(f"{locale}: Layer 3 schedule lacks measured same-locale cues")
+    if abs(schedule["trackDurationSeconds"] - track_duration) > 0.2:
+        raise StageError(f"{locale}: measured schedule duration differs from decoded Layer 3 track")
+    for index, unit in enumerate(audio["units"]):
+        unit_file = local_artifact(audio_path, unit["audio"], f"{locale} unit {index}")
+        unit_duration = decode_audio(unit_file, f"{locale} unit {index}")
+        if abs(unit_duration - unit["durationSeconds"]) > 0.2:
+            raise StageError(f"{locale} unit {index}: measured duration differs from decoded audio")
+    seen_roles = set()
+    seen_paths = set()
+    for asset in release["assets"]:
+        role, path = asset["role"], asset["path"]
+        expected_paths = {
+            "content": f"/content/{page_id}/{locale}.json",
+            "audio": f"/media/{page_id}/{locale}{track.suffix}",
+            "captions": f"/captions/{page_id}/{locale}.json",
+        }
+        if role not in expected_paths or path != expected_paths[role]:
+            raise StageError(f"{locale}: unexpected {role} asset path: {path}")
+        if path in seen_paths or role in seen_roles:
+            raise StageError(f"{locale}: duplicate asset path or role: {path}")
+        seen_paths.add(path)
+        seen_roles.add(role)
+        if path.startswith(("/releases/", "/multilingual", "/index.html")):
+            raise StageError(f"{locale}: release may not overwrite application/catalog files")
+        source_asset = checked_file(asset_source(asset_root, path), asset["sha256"], f"{locale} {role}")
+        if path in files and files[path] != (source_asset, asset["sha256"]):
+            raise StageError(f"asset path shared with a different source: {path}")
+        files[path] = (source_asset, asset["sha256"])
+        if role == "audio":
+            if asset["sha256"] != audio["track"]["sha256"]:
+                raise StageError(f"{locale}: release audio differs from Layer 3 track")
+            if abs(decode_audio(source_asset, f"{locale} release audio") - track_duration) > 0.2:
+                raise StageError(f"{locale}: release audio duration differs from Layer 3")
+        if role == "captions" and asset["sha256"] != audio["captions"]["sha256"]:
+            raise StageError(f"{locale}: release captions differ from Layer 3")
+        if role == "content":
+            content = read_package(source_asset, "sermon-formal-dev-content-v1.schema.json")
+            content_receipt = read_package(
+                content_review_path, "sermon-formal-dev-content-review-receipt-v1.schema.json")
+            if (content["pageId"] != page_id or content["locale"] != locale
+                    or content["englishSourcePackageJsonSha256"] != source_hash
+                    or content["targetLanguageCandidateJsonSha256"] != candidate_hash
+                    or content["targetLanguageAudioPackageJsonSha256"] != audio_hash):
+                raise StageError(f"{locale}: formal content identity or upstream hash differs")
+            if (content_receipt["pageId"] != page_id or content_receipt["targetLocale"] != locale
+                    or content_receipt["englishSourcePackageJsonSha256"] != source_hash
+                    or content_receipt["targetLanguageCandidateJsonSha256"] != candidate_hash
+                    or content_receipt["targetLanguageAudioPackageJsonSha256"] != audio_hash
+                    or content_receipt["contentJsonSha256"] != canonical_sha(content)
+                    or set(content_receipt["reviewedFields"]) != {
+                        "series", "title", "speaker", "scripture", "date", "summary", "outline"}):
+                raise StageError(f"{locale}: independent content metadata review is invalid")
+            if abs(content["durationSeconds"] - track_duration) > 0.2:
+                raise StageError(f"{locale}: content duration differs from decoded Layer 3 track")
+            expected_cues = schedule["entries"]
+            caption_cues = captions["cues"]
+            actual_cues = content["cues"]
+            if len(actual_cues) != len(expected_cues) or len(actual_cues) != len(caption_cues):
+                raise StageError(f"{locale}: content cue count differs from measured schedule")
+            previous_end = 0.0
+            groups = {group["translationGroupId"]: group for group in candidate["groups"]}
+            for content_cue, scheduled_cue, caption_cue in zip(actual_cues, expected_cues, caption_cues):
+                group = groups.get(content_cue["textGroupId"])
+                if (group is None or content_cue["textGroupId"] != scheduled_cue.get("textGroupId")
+                        or content_cue["textGroupId"] != caption_cue.get("textGroupId")
+                        or content_cue["sourceUnitIds"] != group["sourceUnitIds"]
+                        or content_cue["sourceUnitIds"] != scheduled_cue.get("sourceUnitIds")
+                        or content_cue["text"] != group["targetText"]
+                        or content_cue["text"] != caption_cue.get("text")
+                        or content_cue["start"] != scheduled_cue.get("plannedStart")
+                        or content_cue["end"] != scheduled_cue.get("plannedEnd")
+                        or content_cue["start"] != caption_cue.get("start")
+                        or content_cue["end"] != caption_cue.get("end")
+                        or not math.isfinite(content_cue["start"]) or not math.isfinite(content_cue["end"])
+                        or content_cue["start"] < previous_end - 0.02
+                        or content_cue["end"] <= content_cue["start"]
+                        or content_cue["end"] > content["durationSeconds"] + 0.1):
+                    raise StageError(f"{locale}: content cues differ from measured schedule")
+                previous_end = content_cue["end"]
+            if [cue["textGroupId"] for cue in actual_cues] != group_ids:
+                raise StageError(f"{locale}: content does not cover reviewed text groups in order")
+    if not {"content", "audio", "captions"}.issubset(seen_roles):
+        raise StageError(f"{locale}: content, audio, and captions assets are required")
+    return files, track_duration
+
+
 def preflight(args: argparse.Namespace) -> tuple[dict, dict[str, tuple[Path, str]], dict[str, dict]]:
     if not PAGE_ID.fullmatch(args.page_id):
         raise StageError("unsafe page ID")
@@ -265,117 +392,14 @@ def preflight(args: argparse.Namespace) -> tuple[dict, dict[str, tuple[Path, str
         if (len(observed_units) != len(audio["units"]) or observed_units != expected_units
                 or [unit["textGroupId"] for unit in audio["units"]] != group_ids):
             raise StageError(f"{locale}: Layer 3 units differ from reviewed Layer 2 text groups")
-        if (release["pageId"] != args.page_id or release["targetLocale"] != locale
-                or release["sourceLocale"] != "en"
-                or release["targetLanguageCandidateJsonSha256"] != candidate_hash
-                or release["targetLanguageAudioPackageJsonSha256"] != audio_hash
-                or release["status"] != "candidate" or release["contentStatus"] != "human_reviewed"
-                or release["audioStatus"] != "human_reviewed"
-                or release["interfaceLocale"] != locale or release["contentLocale"] != locale
-                or release["audioLocale"] != locale or release["issues"]
-                or any(release[gate] != {"status": "not_run", "evidenceSha256": None}
-                       for gate in ("httpVerification", "deviceAcceptance", "venueAcceptance"))):
-            raise StageError(f"{locale}: Layer 4 candidate identity or gate is invalid")
-        track = local_artifact(audio_paths[locale], audio["track"], f"{locale} track") if audio["track"] else None
-        if track is None or audio["captions"] is None or audio["schedule"] is None or not audio["units"]:
-            raise StageError(f"{locale}: measured track, captions, schedule, and units are required")
-        if track.suffix not in {".wav", ".mp3"}:
-            raise StageError(f"{locale}: reviewed track must be WAV or MP3")
-        track_duration = decode_audio(track, f"{locale} track")
-        captions_path = local_artifact(audio_paths[locale], audio["captions"], f"{locale} captions")
-        captions = json.loads(captions_path.read_text(encoding="utf-8"))
-        schedule_path = local_artifact(audio_paths[locale], audio["schedule"], f"{locale} schedule")
-        schedule = json.loads(schedule_path.read_text(encoding="utf-8"))
-        if (schedule.get("targetLocale") != locale or schedule.get("timingKind") != "measured_target_audio"
-                or schedule.get("status") != "pass" or schedule.get("issues")
-                or not isinstance(schedule.get("trackDurationSeconds"), (int, float))
-                or not math.isfinite(schedule["trackDurationSeconds"])
-                or not isinstance(schedule.get("entries"), list)
-                or not isinstance(captions.get("cues"), list)):
-            raise StageError(f"{locale}: Layer 3 schedule lacks measured same-locale cues")
-        if abs(schedule["trackDurationSeconds"] - track_duration) > 0.2:
-            raise StageError(f"{locale}: measured schedule duration differs from decoded Layer 3 track")
-        for index, unit in enumerate(audio["units"]):
-            unit_file = local_artifact(audio_paths[locale], unit["audio"], f"{locale} unit {index}")
-            unit_duration = decode_audio(unit_file, f"{locale} unit {index}")
-            if abs(unit_duration - unit["durationSeconds"]) > 0.2:
-                raise StageError(f"{locale} unit {index}: measured duration differs from decoded audio")
-        seen_roles = set()
-        seen_paths = set()
-        for asset in release["assets"]:
-            role, path = asset["role"], asset["path"]
-            expected_paths = {
-                "content": f"/content/{args.page_id}/{locale}.json",
-                "audio": f"/media/{args.page_id}/{locale}{track.suffix}",
-                "captions": f"/captions/{args.page_id}/{locale}.json",
-            }
-            if role not in expected_paths or path != expected_paths[role]:
-                raise StageError(f"{locale}: unexpected {role} asset path: {path}")
-            if path in seen_paths or role in seen_roles:
-                raise StageError(f"{locale}: duplicate asset path or role: {path}")
-            seen_paths.add(path)
-            seen_roles.add(role)
-            if path.startswith(("/releases/", "/multilingual", "/index.html")):
-                raise StageError(f"{locale}: release may not overwrite application/catalog files")
-            source_asset = checked_file(asset_source(args.asset_root, path), asset["sha256"], f"{locale} {role}")
-            if path in files and files[path] != (source_asset, asset["sha256"]):
-                raise StageError(f"asset path shared with a different source: {path}")
-            files[path] = (source_asset, asset["sha256"])
-            if role == "audio":
-                if asset["sha256"] != audio["track"]["sha256"]:
-                    raise StageError(f"{locale}: release audio differs from Layer 3 track")
-                if abs(decode_audio(source_asset, f"{locale} release audio") - track_duration) > 0.2:
-                    raise StageError(f"{locale}: release audio duration differs from Layer 3")
-            if role == "captions" and asset["sha256"] != audio["captions"]["sha256"]:
-                raise StageError(f"{locale}: release captions differ from Layer 3")
-            if role == "content":
-                content = read_package(source_asset, "sermon-formal-dev-content-v1.schema.json")
-                content_receipt = read_package(
-                    content_review_paths[locale], "sermon-formal-dev-content-review-receipt-v1.schema.json")
-                if (content["pageId"] != args.page_id or content["locale"] != locale
-                        or content["englishSourcePackageJsonSha256"] != source_hash
-                        or content["targetLanguageCandidateJsonSha256"] != candidate_hash
-                        or content["targetLanguageAudioPackageJsonSha256"] != audio_hash):
-                    raise StageError(f"{locale}: formal content identity or upstream hash differs")
-                if (content_receipt["pageId"] != args.page_id or content_receipt["targetLocale"] != locale
-                        or content_receipt["englishSourcePackageJsonSha256"] != source_hash
-                        or content_receipt["targetLanguageCandidateJsonSha256"] != candidate_hash
-                        or content_receipt["targetLanguageAudioPackageJsonSha256"] != audio_hash
-                        or content_receipt["contentJsonSha256"] != canonical_sha(content)
-                        or set(content_receipt["reviewedFields"]) != {
-                            "series", "title", "speaker", "scripture", "date", "summary", "outline"}):
-                    raise StageError(f"{locale}: independent content metadata review is invalid")
-                if abs(content["durationSeconds"] - track_duration) > 0.2:
-                    raise StageError(f"{locale}: content duration differs from decoded Layer 3 track")
-                expected_cues = schedule["entries"]
-                caption_cues = captions["cues"]
-                actual_cues = content["cues"]
-                if len(actual_cues) != len(expected_cues) or len(actual_cues) != len(caption_cues):
-                    raise StageError(f"{locale}: content cue count differs from measured schedule")
-                previous_end = 0.0
-                groups = {group["translationGroupId"]: group for group in candidate["groups"]}
-                for content_cue, scheduled_cue, caption_cue in zip(actual_cues, expected_cues, caption_cues):
-                    group = groups.get(content_cue["textGroupId"])
-                    if (group is None or content_cue["textGroupId"] != scheduled_cue.get("textGroupId")
-                            or content_cue["textGroupId"] != caption_cue.get("textGroupId")
-                            or content_cue["sourceUnitIds"] != group["sourceUnitIds"]
-                            or content_cue["sourceUnitIds"] != scheduled_cue.get("sourceUnitIds")
-                            or content_cue["text"] != group["targetText"]
-                            or content_cue["text"] != caption_cue.get("text")
-                            or content_cue["start"] != scheduled_cue.get("plannedStart")
-                            or content_cue["end"] != scheduled_cue.get("plannedEnd")
-                            or content_cue["start"] != caption_cue.get("start")
-                            or content_cue["end"] != caption_cue.get("end")
-                            or not math.isfinite(content_cue["start"]) or not math.isfinite(content_cue["end"])
-                            or content_cue["start"] < previous_end - 0.02
-                            or content_cue["end"] <= content_cue["start"]
-                            or content_cue["end"] > content["durationSeconds"] + 0.1):
-                        raise StageError(f"{locale}: content cues differ from measured schedule")
-                    previous_end = content_cue["end"]
-                if [cue["textGroupId"] for cue in actual_cues] != group_ids:
-                    raise StageError(f"{locale}: content does not cover reviewed text groups in order")
-        if not {"content", "audio", "captions"}.issubset(seen_roles):
-            raise StageError(f"{locale}: content, audio, and captions assets are required")
+        lane_files, track_duration = validate_release_assets(
+            page_id=args.page_id, locale=locale, asset_root=args.asset_root,
+            source=source, candidate=candidate, audio=audio, audio_path=audio_paths[locale],
+            release=release, content_review_path=content_review_paths[locale])
+        for asset_path, binding in lane_files.items():
+            if asset_path in files and files[asset_path] != binding:
+                raise StageError(f"asset path shared with a different source: {asset_path}")
+            files[asset_path] = binding
         release_url = f"/releases/{args.page_id}/{locale}.json"
         files[release_url] = (release_paths[locale], file_sha(release_paths[locale]))
         targets[locale] = {

@@ -492,6 +492,8 @@ Debug owner：Fix/Debug agent
 
 E2 后续批次：版本化 action registry 与 opt-in deterministic controller 已开始接入既有 `legacy page_release` adapter；默认 shadow、page_ready hard stop，复用 durable jobs/admission locks/outcome reconciliation。canonical 四层 DAG/三语汇合、E3 Decision Agent、迁移收据与阶段人工验收仍待实现，不能按 legacy fixture 关闭 DEV-SPD-006。
 
+2026-09-30 后续实现证据：canonical 四层/三语定义已有纯 planner；Source/Text/Audio 与现有 formal-dev Release candidate 的真实 validator 已接入[只读 package inspection](canonical-package-inspection.zh.md)，验证独立批准、媒体/时间表/逐句文本与 revision，并保留 lane isolation。E3 已有 bounded packet/allowlist/stale decision 验证及单次注入 responder 的 proposal 接口；E4 已加入真实子进程 crash-window 与 intent/receipt 恢复测试。上述证据是本地 synthetic 测试及 shadow inspection，尚无 canonical durable dispatch、完整跨进程 DAG/accounting、生产 Decision Agent runner、迁移/并发资源策略或 Stage 0 人工 sign-off。E1–E6 子项仍按各自完整完成条件保留未完成状态；真实小片段、10 分钟、历史完整视频、真机与现场验收不能据此关闭。
+
 E1 producer 后续批次：已接入真实 L2 同组翻译→审校 span、L3 模型加载→推理→校验 span，并以缓存恢复与模拟音频测试验证；跨 layer/source/queue 尚不完整，SPD6-LOG-01/03 保持实现中。#122/#123 审查回归覆盖冲突 usage、非法 dependency-ready、shadow 无文件变更以及 bridge/candidate 身份变化，不能替代新 head 独立审查或真实媒体分阶段 sign-off。
 
 E2/E3 契约后续批次：canonical definition 已编码共享 source、zh-Hans/ko/es 独立 Text→Audio→Page、显式 text-only Layer 3 与 delivery terminal 汇合；纯 shadow planner 测试按 source/单语身份失效，不读取 tracker 作为批准。它只消费本地 validator adapter 的观察，尚未接入真实 package inspection/durable dispatch，dispatchEnabled 固定 false。Bounded Decision 契约限制 32 KiB/16 refs/一个 structured turn、两次以内预留预算，固定 failure/action/reason allowlist、hash-only evidence、二次 revision/approval identity 检查，fake responder 与真实锁/预留文件验证 crash 后不重放。未接 SDK、没有付费模型或 mutation tools，返回 proposal 仍须原有锁内业务 admission；不是生产 E2/E3/E4 全验收。
