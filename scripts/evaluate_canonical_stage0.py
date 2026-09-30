@@ -33,7 +33,8 @@ SUITES = {
     'release_asset_assembly': ('tests.test_release_asset_io', 'tests.test_backend_four_layer_dry_run',
                                'tests.test_firebase_dev_weekly_dry_run', 'tests.test_build_full_video_app_release',
                                'tests.test_stage_formal_multilingual_dev'),
-    'producer_accounting': ('tests.test_run_target_language_models', 'tests.test_render_formal_target_language_speech'),
+    'producer_accounting': ('tests.test_run_target_language_models', 'tests.test_render_formal_target_language_speech',
+                            'tests.test_paid_model_cache_durability'),
 }
 UNIMPLEMENTED = (
     'canonical_durable_dispatch_and_cross_process_dag',

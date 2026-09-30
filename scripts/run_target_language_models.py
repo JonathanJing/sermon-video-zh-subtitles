@@ -24,12 +24,14 @@ try:
     from scripts import sermon_accounting as accounting
     from scripts import sermon_pipeline
     from scripts import target_language_policy as policy_tools
+    from scripts import sermon_workflow_jobs as jobs
 except ImportError:
     import four_layer_measure as measure
     import produce_target_language_candidate as producer
     import sermon_accounting as accounting
     import sermon_pipeline
     import target_language_policy as policy_tools
+    import sermon_workflow_jobs as jobs
 
 
 # Timing-only edits do not change the model request or group admission rules.
@@ -93,10 +95,16 @@ def require(condition: bool, message: str) -> None:
 
 
 def save_new(path: Path, value: object) -> None:
+    # Exclusive creation arbitrates concurrent callers. Sync the file and every
+    # containing entry before returning: the started marker must survive a host
+    # crash before a paid request, even when its parent directories are new.
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("x", encoding="utf-8") as stream:
         json.dump(value, stream, ensure_ascii=False, indent=2)
         stream.write("\n")
+        stream.flush()
+        os.fsync(stream.fileno())
+    jobs._sync_directory_ancestry(path.parent)
 
 
 def group_plan(request: dict[str, Any], anchor: dict[str, Any],
@@ -189,6 +197,8 @@ def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
     saved = {"payloadSha256": fingerprint, "requestId": response["id"],
              "model": model, "result": parsed}
     save_new(output, saved)
+    # Both the raw response and validated cache are durable before retiring the
+    # uncertainty marker. A failed sync propagates and leaves it for recovery.
     marker.unlink(missing_ok=True)
     return saved
 
