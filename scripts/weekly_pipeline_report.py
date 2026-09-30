@@ -403,6 +403,20 @@ def project(directory):
     if damaged:
         diagnostics.append('damaged_events')
     integrity = receipt_integrity([event for rows in receipt_events.values() for event in rows])
+    direct = [e for e in events if e['event'] == 'api_attempt' and id(e) in integrity['_selected']]
+    started = {(e['runId'], e['attemptId']) for rows in runs.values() for e in rows
+               if e['event'] == 'api_attempt_started'}
+    ended = {(e['runId'], e.get('attemptId')) for rows in runs.values() for e in rows
+             if e['event'] == 'api_attempt'}
+    trusted = not damaged and replay['status'] == 'consistent' and integrity['status'] == 'consistent' and not diagnostics
+    provider_calls = {
+        'directReceiptCount': len(direct) if trusted and direct else None,
+        'unresolvedStartedAttemptCount': len(started - ended) if trusted else None,
+        'status': 'incomplete_or_conflicting' if not trusted or started - ended else
+                  'observed_receipts' if direct else 'not_observed',
+        'totalNetworkCalls': None,
+        'scope': 'globally_deduplicated_direct_receipts_sdk_aggregates_excluded',
+        'countMeaning': 'observed_receipts_not_proof_of_total_dispatches_or_absent_uninstrumented_calls'}
     result = [project_run(k, v, integrity, receipt_events[k]) for k, v in sorted(runs.items())]
     if diagnostics:
         # A damaged record can hide a dependency: never claim a complete DAG.
@@ -412,12 +426,15 @@ def project(directory):
             'status': 'partial' if diagnostics or not result or any(r['status'] == 'partial' for r in result) else 'projected',
             'diagnostics': diagnostics, 'duplicateEventsIgnored': duplicates,
             'receiptIntegrity': {k: v for k, v in integrity.items() if not k.startswith('_')},
-            **({'eventIntegrity': {k: v for k, v in replay.items() if not k.startswith('_')}} if replay['profileEventCount'] else {}), 'networkCalls': 0, 'acceptance': 'not_evaluated'}
+            **({'eventIntegrity': {k: v for k, v in replay.items() if not k.startswith('_')}} if replay['profileEventCount'] else {}),
+            'reportGenerationNetworkCalls': 0, 'observedProviderCalls': provider_calls, 'acceptance': 'not_evaluated'}
 
 
 def markdown(report):
     lines = ['# Weekly Pipeline Report', '', 'Status: ' + report['status'], '',
              'Projected means a computable recorded DAG, not complete telemetry. Content/device/venue/release acceptance: not evaluated.', '']
+    lines += ['Report generation network calls: ' + str(report['reportGenerationNetworkCalls']),
+              'Observed provider calls: ' + json.dumps(report['observedProviderCalls'], sort_keys=True), '']
     for run in report['runs']:
         lines += ['## Run ' + run['runSha256'][:12], '',
                   'End-to-end wall seconds: ' + str(run['endToEndWallSeconds']),

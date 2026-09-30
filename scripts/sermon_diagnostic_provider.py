@@ -350,7 +350,10 @@ class DiagnosticProvider:
             left = state['deadline']-self.monotonic()
             c.require(left>0, 'provider_attempt_deadline_reached')
             return self.executor(request,left,deadline=state['deadline'])
-        span = (nullcontext() if accounting._span.get() else
+        # A session root is a deterministic wrapper, not a model span. Strict
+        # adapters supply their own model span together with the observer;
+        # standalone source review must always create its own measured child.
+        span = (nullcontext() if response_observer is not None else
                 accounting.stage('diagnostic.source_model', billing='api', executor_type='production_model'))
         context = profile.current()
         c.require(context is not None, 'diagnostic_requires_accounting_profile')

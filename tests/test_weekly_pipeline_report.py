@@ -116,6 +116,44 @@ class WeeklyPipelineReportTests(unittest.TestCase):
         self.assertIsNone(usage['combinedTokenTotal'])
         self.assertEqual(usage['unresolvedAttempts'], 1)
 
+    def test_provider_call_coverage_deduplicates_receipts_not_sdk_totals(self):
+        usage = dict(inputTokens=100, cachedInputTokens=None, outputTokens=10,
+                     reasoningTokens=None, cacheWriteTokens=None)
+        for attempt in ('a', 'b'):
+            self.event('api_attempt', 7, spanId='ko', stage='ko', attemptId=attempt,
+                       responseId='same', status='completed', usage=usage, cost={})
+        self.rows.append(copy.deepcopy(self.rows[-1]))
+        self.event('sdk_call_finished', 7, invocationId='sdk', model='test', status='completed',
+                   usage={'requests': 9, 'input_tokens': 500})
+        report = self.result()
+        calls = report['observedProviderCalls']
+        self.assertNotIn('networkCalls', report)
+        self.assertEqual(report['reportGenerationNetworkCalls'], 0)
+        self.assertEqual(calls['directReceiptCount'], 1)
+        self.assertEqual(calls['status'], 'observed_receipts')
+        self.assertIsNone(calls['totalNetworkCalls'])
+        self.rows.reverse()
+        self.assertEqual(self.result()['observedProviderCalls'], calls)
+        self.event('api_attempt_started', 7, attemptId='unfinished', stage='ko')
+        calls = self.result()['observedProviderCalls']
+        self.assertEqual(calls['directReceiptCount'], 1)
+        self.assertEqual(calls['unresolvedStartedAttemptCount'], 1)
+        self.assertEqual(calls['status'], 'incomplete_or_conflicting')
+
+    def test_absent_and_conflicting_provider_calls_are_not_zero_or_first_wins(self):
+        self.assertIsNone(self.result()['observedProviderCalls']['directReceiptCount'])
+        self.assertEqual(self.result()['observedProviderCalls']['status'], 'not_observed')
+        first = self.event('api_attempt', 7, spanId='ko', stage='ko', attemptId='a',
+                          responseId='one', status='completed', usage={}, cost={})
+        other = copy.deepcopy(first)
+        other['responseId'] = 'two'
+        self.rows.append(other)
+        calls = self.result()['observedProviderCalls']
+        self.assertIsNone(calls['directReceiptCount'])
+        self.assertEqual(calls['status'], 'incomplete_or_conflicting')
+        self.rows.reverse()
+        self.assertEqual(self.result()['observedProviderCalls'], calls)
+
     def test_conflicting_receipts_are_order_independent_and_never_totalled(self):
         baseline = copy.deepcopy(self.rows)
         for kind in ('api_attempt', 'sdk_call_finished'):
