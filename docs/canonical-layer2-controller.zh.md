@@ -61,3 +61,7 @@ job evidence。正式 CLI 只在实际生产 gate 后读取既有 `OPENAI_API_KE
 生产 bounded responder、完整 Stage 0 及按顺序的真实片段/10分钟/整篇/第二周和人工签字。
 一般 canonical planner 仍 `dispatchEnabled=false`；只有该显式 opt-in 固定 L2 adapter 获得
 上述有限执行路径。三层架构与所有质量/批准 gate 不变。
+
+## 已有候选的显式恢复
+
+若 owner 已退出但当前候选完整且通过原 validator，可用 [固定 L2 产物对账](canonical-layer2-reconciliation.zh.md) 显式绑定当前 stateRevision。它保留命令原始失败/未知状态并新增独立不可变收据，不自动重试，不消除缺失产物或未知付费调用的门槛。没有有效候选的失败仍阻塞；跨版本与 group repair 继续未完成。

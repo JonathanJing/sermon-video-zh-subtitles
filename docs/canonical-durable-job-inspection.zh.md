@@ -32,3 +32,7 @@ python scripts/canonical_durable_jobs.py \
 没有伪造生产审批；测试 fixture 的模拟 reviewer 不构成内容 sign-off。
 Canonical producer dispatch、未知结果的显式 reconciliation/migration 流程、bounded decision
 锁内执行、资源预算/heartbeat 以及完整 Stage 0 仍未完成。
+
+### 固定 L2 产物对账收据
+
+后续 [显式对账入口](canonical-layer2-reconciliation.zh.md) 可为现有 job 增加独立收据。projector 每次重新验证原 request/state hash、原 identity 和当前有效候选，再显示 `artifact_reconciled`，同时返回原观察状态。receipt 不会重写 job outcome、不赋予人工审核，也不能使丢失/失效候选或旧身份解锁。stateRevision 现在同时绑定原 request/state JSON hash，避免同 status 的证据修改不可见。默认 shadow 仍不创建锁文件或写收据。

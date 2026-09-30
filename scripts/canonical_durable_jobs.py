@@ -24,6 +24,8 @@ from scripts.sermon_release_workflow import _safe_path
 
 IDENTITY_SCHEMA = 'sermon-canonical-workflow-job-identity-v1'
 VIEW_SCHEMA = 'sermon-canonical-durable-job-inspection-v1'
+RECONCILIATION_SCHEMA = 'sermon-canonical-artifact-reconciliation-v1'
+RECONCILIATION_FILE = 'canonical-reconciliation.json'
 MAX_JOBS = 4096
 MAX_REQUEST_BYTES = 1024 * 1024
 IDENTITY_FIELDS = {'schemaVersion', 'productionRunId', 'workflowDefinitionVersion',
@@ -106,12 +108,36 @@ def _receipts(root, production_run_id, known):
             ident = request.get('identity') if isinstance(request, dict) else None
             if not jobs._request_valid(request, job_id) or not _valid_identity(ident, production_run_id, known):
                 raise ValueError('unbound_canonical_job_request')
+            before_state = jobs._state(folder, job_id)
             status = jobs.peek_job(root, job_id)['status']
             # Detect a request replacement during inspection, rather than join
             # one request's identity to another request's state.
-            if jobs._read(request_path) != request:
+            if jobs._read(request_path) != request or jobs._state(folder, job_id) != before_state:
                 raise ValueError('canonical_job_request_changed')
-            receipts.append({'jobId': job_id, 'status': status, 'identity': ident})
+            row = {'jobId': job_id, 'status': status, 'identity': ident,
+                   'requestSha256': jobs._digest(request), 'stateSha256': jobs._digest(before_state)}
+            reconciliation_path = _safe_path(folder / RECONCILIATION_FILE)
+            if reconciliation_path.exists():
+                if reconciliation_path.stat().st_size > MAX_REQUEST_BYTES:
+                    raise ValueError('oversized_reconciliation')
+                receipt = jobs._read(reconciliation_path)
+                state = before_state
+                required = {'schemaVersion', 'jobId', 'requestSha256', 'stateSha256', 'identity',
+                            'validatedOutputSha256', 'configurationSha256', 'codeIdentitySha256', 'resolution'}
+                if (not isinstance(receipt, dict) or set(receipt) != required
+                        or receipt['schemaVersion'] != RECONCILIATION_SCHEMA
+                        or receipt['jobId'] != job_id or receipt['identity'] != ident
+                        or not ident['workUnitId'].startswith('text.')
+                        or receipt['requestSha256'] != jobs._digest(request)
+                        or state is None or receipt['stateSha256'] != jobs._digest(state)
+                        or state.get('requestSha256') != jobs._digest(request)
+                        or status not in {'failed', 'uncertain'}
+                        or receipt['resolution'] != 'validated_artifact_command_outcome_unchanged'
+                        or any(not pipeline._sha(receipt[k]) for k in
+                               ('validatedOutputSha256', 'configurationSha256', 'codeIdentitySha256'))):
+                    raise ValueError('invalid_artifact_reconciliation')
+                row['reconciliation'] = receipt
+            receipts.append(row)
         except (OSError, ValueError, KeyError, TypeError):
             errors.append('unreadable_or_unbound_canonical_job')
     return receipts, sorted(set(errors))
@@ -133,7 +159,17 @@ def project(observed, job_root, production_run_id):
     receipts, errors = _receipts(root, production_run_id, known)
     by_unit = {unit: [] for unit in known}
     for row in receipts:
-        by_unit[row['identity']['workUnitId']].append(row)
+        unit = row['identity']['workUnitId']
+        if 'reconciliation' in row:
+            state = observed['nodes'][unit]
+            expected = identity(observed, production_run_id, unit) if state.get('identity') else None
+            receipt = row['reconciliation']
+            if (row['identity'] == expected and state['status'] == 'validated'
+                    and observed['packageIdentities'].get('candidate.' + unit[5:]) == receipt['validatedOutputSha256']):
+                row['observedStatus'] = row['status']
+                row['status'] = 'artifact_reconciled'
+            # Stale/missing output does not erase uncertainty or permit retry.
+        by_unit[unit].append(row)
     blocked = set()
     for unit, state in result['nodes'].items():
         rows = by_unit[unit]
@@ -172,7 +208,11 @@ def project(observed, job_root, production_run_id):
         'schemaVersion': VIEW_SCHEMA, 'productionRunId': production_run_id,
         'jobs': [{'jobId': row['jobId'], 'status': row['status'],
                   'workUnitId': row['identity']['workUnitId'],
-                  'identitySha256': jobs._digest(row['identity'])} for row in receipts],
+                  'identitySha256': jobs._digest(row['identity']),
+                  'requestSha256': row['requestSha256'], 'stateSha256': row['stateSha256'],
+                  **({'originalJobStatus': row['observedStatus'],
+                      'reconciliationSha256': jobs._digest(row['reconciliation'])}
+                     if 'observedStatus' in row else {})} for row in receipts],
         'diagnostics': errors, 'readOnly': True,
     }
     result['stateRevision'] = jobs._digest({'packageRevision': observed['stateRevision'],
