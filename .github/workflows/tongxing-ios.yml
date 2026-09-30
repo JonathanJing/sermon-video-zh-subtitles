@@ -34,6 +34,7 @@ jobs:
           python3 - <<'PY'
           import os
           import subprocess
+          from pathlib import PurePosixPath
 
           if os.environ["GITHUB_EVENT_NAME"] == "workflow_dispatch":
               scope = "native"
@@ -65,10 +66,37 @@ jobs:
                   "experiments/sermon-dubbing-poc/web/published-weeks.mjs",
                   "firebase/dev/public/formal-dev-adapter.mjs",
               }
-              if any(p.startswith("apps/tongxing-ios/") or
-                     p == ".github/workflows/tongxing-ios.yml" for p in paths):
+              # Only named non-native surfaces can skip native checks. Unknown
+              # roots, file types and workflow inputs conservatively run the
+              # broad route (contract on dev, simulator on main; drafts unchanged).
+              documentation_files = {
+                  "README.md", "README.zh.md", "AGENTS.md", "CONTRIBUTING.md",
+                  "CONTRIBUTING.zh.md", "SECURITY.md", "SECURITY.zh.md", "LICENSE",
+              }
+              non_native_roots = {
+                  "backend": {".py", ".md"},
+                  "scripts": {".py", ".sh", ".mjs", ".md"},
+                  "tests": {".py", ".json", ".md"},
+                  "web": {".html", ".css", ".js", ".mjs", ".md"},
+              }
+              experiment_suffixes = {".py", ".sh", ".mjs", ".js", ".json", ".html", ".css", ".md"}
+              def shared(path):
+                  return path in shared_contracts or path.startswith(shared_schema_prefixes)
+              def known_non_native(path):
+                  if path in documentation_files:
+                      return True
+                  item = PurePosixPath(path)
+                  if path.startswith("docs/"):
+                      return item.suffix.lower() in {".md", ".svg", ".png", ".jpg", ".jpeg", ".webp"} or path == "docs/diagrams/diagram-specs.json"
+                  if item.parts[0] in non_native_roots:
+                      return item.suffix in non_native_roots[item.parts[0]]
+                  if path.startswith(("experiments/sermon-dubbing-poc/", "experiments/local-live-poc/")):
+                      return item.suffix in experiment_suffixes
+                  return False
+              if not paths or any(p.startswith(("apps/", ".github/")) or
+                                  (not shared(p) and not known_non_native(p)) for p in paths):
                   scope = "native"
-              elif any(p in shared_contracts or p.startswith(shared_schema_prefixes) for p in paths):
+              elif any(shared(p) for p in paths):
                   scope = "contract"
               else:
                   scope = "none"
