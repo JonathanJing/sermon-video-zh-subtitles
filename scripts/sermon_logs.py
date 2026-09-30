@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from scripts.sermon_accounting import diagnostic_event, format_diagnostic, read_events, receipt_integrity
+from scripts.sermon_accounting import diagnostic_event, format_diagnostic, read_events, receipt_integrity, profile_integrity
 
 LEVELS = {"DEBUG": 10, "INFO": 20, "WARNING": 30, "ERROR": 40, "CRITICAL": 50}
 
@@ -27,7 +27,8 @@ def inspect_logs(directory, *, run_id="latest", level="INFO", tail=50):
     selected_events = [e for e in events if selected == "all" or e["runId"] == selected]
     # Compare the whole ledger before filtering: a conflicting duplicate in
     # another run also invalidates this run's attributed receipt.
-    integrity = receipt_integrity(events)
+    replay = profile_integrity(events)
+    integrity = receipt_integrity(events, event_integrity=replay)
     affected = {key for (rid, _), keys in integrity['_affected'].items()
                 if selected == 'all' or rid == selected for key in keys}
     conflicts = [c for c in integrity['conflicts'] if c['identitySha256'] in affected]
@@ -47,9 +48,10 @@ def inspect_logs(directory, *, run_id="latest", level="INFO", tail=50):
                                    "status": "interrupted_or_running"})
     filtered = [d for d in diagnostics if LEVELS[d["level"]] >= LEVELS[level]]
     return {"schemaVersion": "sermon-log-inspection-v1", "runId": selected,
-            "status": "needs_attention" if damaged or failed or unfinished or conflicts else "no_detected_error",
+            "status": "needs_attention" if damaged or failed or unfinished or conflicts or replay['status'] != 'consistent' else "no_detected_error",
             "ledgerIntegrity": "incomplete_corrupt_events" if damaged else "conflicting_receipts" if conflicts else "readable",
             "receiptConflicts": conflicts,
+            **({"eventIntegrity": {k:v for k,v in replay.items() if not k.startswith("_")}} if replay["profileEventCount"] else {}),
             "damagedEvents": damaged, "errorEvents": len(failed), "warningEvents": len(warnings),
             "unfinished": unfinished, "matchingEvents": len(filtered), "events": filtered[-tail:],
             "scope": "Local recorded execution only; no production acceptance or current process health inferred."}

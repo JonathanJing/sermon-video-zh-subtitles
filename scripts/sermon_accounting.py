@@ -22,14 +22,19 @@ import threading
 import time
 import traceback
 import uuid
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from datetime import datetime, timezone
 from pathlib import Path
 
+if __package__ in {None, ""}:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 try:
     from scripts.sermon_clock_evidence import clock_domain
+    from scripts import sermon_log_profile as log_profile
 except ImportError:  # Preserve direct script invocation.
     from sermon_clock_evidence import clock_domain
+    import sermon_log_profile as log_profile
 
 SCHEMA = "sermon-workflow-accounting-v3"
 READABLE_SCHEMAS = frozenset({"sermon-workflow-accounting-v1", "sermon-workflow-accounting-v2", SCHEMA})
@@ -308,13 +313,17 @@ def _write_event(event):
     if not directory or not run_id:
         return
     path = Path(directory) / "events.jsonl"
-    path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+    if log_profile.current() is None:
+        path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+        log_profile.reject_downgrade(directory, run_id)
     payload = {"schemaVersion": SCHEMA, "eventId": uuid.uuid4().hex,
                "runId": run_id, "recordedAt": now(), "pid": os.getpid(),
                "threadId": threading.get_ident(),
                "workflowId": _workflow.get() or os.environ.get(WORKFLOW_ENV),
                "stage": _stage.get() or os.environ.get(ENV_KEYS[2]),
                "spanId": _span.get() or os.environ.get(ENV_KEYS[3]), **event}
+    if log_profile.current() is not None:
+        return log_profile.write(directory, event, payload)
     with open(path, "a+b", opener=_private_open) as stream:
         fcntl.flock(stream.fileno(), fcntl.LOCK_EX)
         # Preserve a killed writer's partial bytes, but never concatenate the
@@ -344,7 +353,7 @@ def subprocess_environment():
                        (WORKFLOW_ENV, _workflow.get())):
         if value is not None:
             env[key] = str(value)
-    return env
+    return log_profile.child_environment(env)
 
 
 @contextmanager
@@ -385,6 +394,10 @@ def stage(name, *, cache_hit=False, billing="local", executor_type=None,
     started_ns = time.monotonic_ns()
     base.update(clockDomainId=clock_domain(), monotonicStartNs=str(started_ns))
     _emit({**base, "event": "stage_started", "startedAt": now()})
+    profile_context = log_profile.context(executorType=executor_type,
+        workUnitId=identities['workUnitId'] or (log_profile.current() or {}).get('workUnitId'),
+        attemptId=identities['attemptId'], parentSpanId=parent) if log_profile.current() is not None else nullcontext()
+    profile_context.__enter__()
     tokens = (_stage.set(name), _span.set(span_id))
     old = {k: os.environ.get(k) for k in ENV_KEYS[2:]}
     main_thread = threading.current_thread() is threading.main_thread()
@@ -408,6 +421,7 @@ def stage(name, *, cache_hit=False, billing="local", executor_type=None,
                 "error": error_location(error) if error else None}), error)
         finally:
             _stage.reset(tokens[0]); _span.reset(tokens[1])
+            profile_context.__exit__(None, None, None)
             if main_thread:
                 for k, val in old.items():
                     if val is None: os.environ.pop(k, None)
@@ -517,7 +531,7 @@ def record_api_started(model, settings=None):
 def record_api_attempt(model, response, elapsed_seconds, status="completed", error_type=None, *, audio_seconds=None, attempt_id=None, http_status=None):
     response = response if isinstance(response, dict) else {}
     usage = response.get("usage")
-    actual_model = _label(response.get("model") or model)
+    actual_model = _label(response.get("model"), None) if log_profile.current() is not None else _label(response.get("model") or model)
     tier = _safe_settings({"service_tier": response.get("service_tier") or "default"}).get("service_tier", "unknown")
     cost = estimate_cost(actual_model, usage, tier, audio_seconds) if status == "completed" else {
         "status": "unknown", "estimatedUsd": None, "currency": "USD", "reason": "failed_attempt_billing_unknown"}
@@ -577,6 +591,12 @@ def _percentile(values, fraction):
 
 
 def _valid_event(value):
+    if isinstance(value, dict) and 'contractVersion' in value:
+        try:
+            from scripts.sermon_log_contract import valid_event
+        except ImportError:
+            from sermon_log_contract import valid_event
+        return valid_event(value)
     if not isinstance(value, dict) or any(not isinstance(value.get(k), str) or not value[k] for k in ("event", "eventId", "runId", "recordedAt")):
         return False
     if datetime.fromisoformat(value["recordedAt"]).tzinfo is None:
@@ -673,7 +693,7 @@ def diagnostic_event(event):
     result.update(recordedAt=event["recordedAt"], event=_label(event["event"]),
                   code=_label(event.get("code") or event["event"]),
                   level=event.get("level") if event.get("level") in {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"} else
-                  ("ERROR" if event.get("status") == "failed" else "INFO"))
+                  ("ERROR" if event.get("status") in {"failed","cancelled","outcome_unknown"} else "INFO"))
     for key in ("elapsedSeconds", "httpStatus"):
         if _number(event.get(key)) is not None: result[key] = event[key]
     if event.get("cacheHit") is True: result["cacheHit"] = True
@@ -709,7 +729,19 @@ def format_diagnostic(event):
     return " ".join(parts)
 
 
-def receipt_integrity(events):
+def profile_integrity(events):
+    if not any('contractVersion' in e for e in events):
+        return {'status': 'consistent', 'diagnostics': [], 'profileEventCount': 0,
+                'equivalentDuplicatesIgnored': 0, 'executionAuthority': 'none',
+                '_excluded': set(), '_selected': set()}
+    try:
+        from scripts.sermon_log_contract import replay_integrity
+    except ImportError:
+        from sermon_log_contract import replay_integrity
+    return replay_integrity(events)
+
+
+def receipt_integrity(events, *, event_integrity=None):
     """Compare all imported facts before choosing a stable representative.
 
     Returned event object IDs are internal selection keys, never serialized.
@@ -721,6 +753,12 @@ def receipt_integrity(events):
         return json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=True)
     def digest(value):
         return hashlib.sha256(encoded(value).encode()).hexdigest()
+    replay = event_integrity if event_integrity is not None else profile_integrity(events)
+    event_facts = {}
+    for event in events:
+        identity = (event['runId'], event['eventId'])
+        event_facts.setdefault(identity, set()).add(digest(event))
+    ambiguous_events = {key for key, facts in event_facts.items() if len(facts) > 1}
     executors = {}
     for event in events:
         if event['event'] in {'stage_started', 'stage_finished'}:
@@ -732,8 +770,14 @@ def receipt_integrity(events):
         if kind not in {'api_attempt', 'sdk_call_finished'}:
             continue
         if kind == 'api_attempt':
-            identity = ['provider', event.get('provider'),
-                        event.get('responseId') or event.get('attemptId') or event['eventId']]
+            if event.get('contractVersion'):
+                # An unknown provider account must not collapse independent calls.
+                scope = event.get('providerScopeKey') or ['unknown_scope', event['runId'], event['modelCallId']]
+                identity = ['provider', event.get('provider'), scope,
+                            event.get('providerResponseId') or event['modelCallId']]
+            else:
+                identity = ['provider', event.get('provider'),
+                            event.get('responseId') or event.get('attemptId') or event['eventId']]
             fact = {key: event.get(key) for key in
                     ('status', 'usage', 'cost', 'model', 'requestedModel', 'elapsedSeconds')}
         else:
@@ -750,7 +794,8 @@ def receipt_integrity(events):
     duplicates = 0
     for key, group in sorted(groups.items()):
         rows = group['events']
-        if len(group['variants']) != 1:
+        if (len(group['variants']) != 1 or any(id(e) in replay['_excluded'] for e in rows)
+                or any((e['runId'], e['eventId']) in ambiguous_events for e in rows)):
             conflicts.append({'kind': group['kind'], 'identitySha256': key,
                               'variantSha256': sorted(group['variants']),
                               'runIds': sorted({_label(e['runId']) for e in rows})})
@@ -770,15 +815,18 @@ def receipt_integrity(events):
 
 
 def _summarize_locked(directory):
-    events, damaged = read_events(directory)
+    events, damaged, ledger_hash = read_event_snapshot(directory)
+    replay = profile_integrity(events)
     completed_attempts = {e.get("attemptId") for e in events if e["event"] == "api_attempt"}
     unfinished_api = [e for e in events if e["event"] == "api_attempt_started" and e["attemptId"] not in completed_attempts]
     # A process can disappear after sending a billable request. Preserve uncertainty.
-    events.extend({**e, "event": "api_attempt", "status": "interrupted_or_running",
+    events.extend({**e, "event": "api_attempt", "eventId": hashlib.sha256((e["eventId"] + ":unresolved_projection").encode()).hexdigest()[:32],
+                   "status": "interrupted_or_running",
                    "elapsedSeconds": None, "usage": normalize_usage(None),
                    "cost": {"estimatedUsd": None, "status": "unknown"}}
                   for e in unfinished_api)
-    integrity = receipt_integrity(events)
+    integrity = receipt_integrity(events, event_integrity=replay)
+    events = [e for e in events if id(e) not in replay["_excluded"]]
     selected_receipts = integrity.pop("_selected")
     affected_receipts = integrity.pop("_affected")
     sdk_conflicts = integrity.pop("_sdkConflicts")
@@ -931,11 +979,14 @@ def _summarize_locked(directory):
         row['knownNonconflictingApiAttempts'] = row['apiAttempts']
         if row['receiptConflictSha256']:
             row.update(apiAttempts=None, completedApiAttempts=None, failedApiAttempts=None)
-    result = {"schemaVersion": SCHEMA, "generatedAt": now(), "runs": list(runs.values()), "stages": list(groups.values()),
+    from scripts.sermon_review_observation import observations as review_observations
+    result = {"schemaVersion": SCHEMA, **({"sourceLedgerSha256": ledger_hash} if replay["profileEventCount"] else {}), "generatedAt": now(), "runs": list(runs.values()), "stages": list(groups.values()),
               "ledgerIntegrity": {"status": "incomplete_corrupt_events" if damaged else "conflicting_receipts" if integrity["conflicts"] else "readable",
                                   "damagedEvents": damaged, "unattributedCostUnknown": bool(damaged or integrity["conflicts"]),
                                   "originalBytesPreserved": True},
               "receiptIntegrity": integrity,
+              **({"reviewObservations": review_observations(events)} if any(e["event"] == "rqc_observation" for e in events) else {}),
+              **({"eventIntegrity": {k: v for k, v in replay.items() if not k.startswith("_")}} if replay["profileEventCount"] else {}),
               "unfinishedApiAttempts": [{"runId": e["runId"], "stage": e["stage"], "attemptId": e["attemptId"],
                                          "startedAt": e["recordedAt"], "costStatus": "unknown"} for e in unfinished_api],
               "unfinishedStages": [{"runId": e["runId"], "stage": e["stage"], "spanId": sid,
