@@ -24,7 +24,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SUITES = {
     'canonical_packages': ('tests.test_inspect_canonical_packages', 'tests.test_inspect_canonical_audio',
                            'tests.test_inspect_canonical_release', 'tests.test_canonical_pipeline_definition'),
-    'bounded_decision': ('tests.test_sermon_bounded_decision',),
+    'bounded_decision': ('tests.test_sermon_bounded_decision', 'tests.test_sermon_decision_budget'),
     'legacy_controller_reliability': ('tests.test_sermon_deterministic_controller', 'tests.test_controller_crash_windows'),
     'accounting': ('tests.test_sermon_accounting', 'tests.test_accounting_retry_safety',
                    'tests.test_accounting_observability', 'tests.test_weekly_pipeline_report'),
