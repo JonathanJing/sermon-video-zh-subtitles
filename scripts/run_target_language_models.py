@@ -770,8 +770,11 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                               billing="orchestrator"):
             return _process_group(item)
     results = ordered_group_results(list(enumerate(plan, 1)), process_group, workers)
+    dependencies = accounting.bounded_dependencies(
+        f"layer2.evidence_join.{request['targetLocale']}", [span for _, span in results],
+        work_unit_id=f"l2.{request['targetLocale']}.evidence_join")
     with accounting.stage(f"layer2.evidence_assembly.{request['targetLocale']}",
-                          depends_on=[span for _, span in results], executor_type="deterministic_program",
+                          depends_on=dependencies, executor_type="deterministic_program",
                           work_unit_id=f"l2.{request['targetLocale']}.evidence_assembly") as assembly_span:
         reviewed = [row for row, _ in results]
         translator_ids = list(dict.fromkeys(row["translatorRequestId"] for row in reviewed))

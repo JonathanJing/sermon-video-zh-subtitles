@@ -386,6 +386,33 @@ def stage(name, *, cache_hit=False, billing="local", executor_type=None,
                     else: os.environ[k] = val
 
 
+def bounded_dependencies(name, dependencies, *, work_unit_id):
+    """Join completed leaves without widening the 64-edge event contract.
+
+    Each emitted deterministic barrier depends on at most 64 predecessors.
+    Larger fan-ins form a tree, retaining reachability of every original leaf.
+    Consumers must call this only after all supplied predecessors have finished.
+    """
+    if not isinstance(dependencies, (list, tuple)):
+        raise ValueError('invalid_dependency_labels')
+    pending = list(dependencies)
+    if any(_label(value, None) is None for value in pending) or len(set(pending)) != len(pending):
+        raise ValueError('invalid_dependency_labels')
+    level = 0
+    while len(pending) > 64:
+        joined = []
+        for index in range(0, len(pending), 64):
+            suffix = f'.{level}.{index // 64}'
+            with stage(name + suffix, depends_on=pending[index:index + 64],
+                       executor_type='deterministic_program', work_unit_id=work_unit_id + suffix) as span:
+                # This is the actual completed-group fan-in barrier. It neither
+                # reruns work nor assigns model/token usage to the join.
+                joined.append(span)
+        pending = joined
+        level += 1
+    return pending
+
+
 @contextmanager
 def accounting_session(directory, workflow, metadata=None, *, evidence_directory=None):
     evidence_directory = Path(evidence_directory).absolute() if evidence_directory is not None else Path(directory).absolute().parent
