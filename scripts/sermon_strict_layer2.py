@@ -295,6 +295,33 @@ def _failed_review(prepared,manifest,inputs,output,attempt_number,error):
             [('reviewerModelActual',model),('providerResponseId',provider_id)] if v is None}}
 
 
+def _validate_cached_review_evidence(receipt,manifest,output):
+    """Reopen the immutable reviewer evidence before trusting a cached receipt."""
+    call,_=c.read_snapshot(output.with_suffix('.call.json'))
+    c.require(call.get('modelCallId')==receipt['modelCallId'],'strict_review_call_identity_changed')
+    if receipt['executionStatus']=='succeeded':
+        result,_=c.read_snapshot(output)
+        raw=require_call_binding(output,result)
+        model_call=raw.get('accounting',{}).get('modelCallId')
+        evidence=reference('review-result',output.read_bytes())
+        c.require(receipt['evidenceRefs']==[evidence] and
+            receipt['modelCallId']==model_call and
+            receipt['providerResponseId']==result.get('requestId') and
+            receipt['reviewerModelActual']==result.get('model'),
+            'strict_review_evidence_binding_changed')
+        expected=review_result(result['result'],manifest,evidence)
+        for key,value in expected.items():
+            c.require(receipt[key]==value,'strict_review_result_binding_changed')
+    else:
+        failure_path=output.with_suffix('.failure.json')
+        failure_bytes=failure_path.read_bytes()
+        expected=[reference('review-execution-failure',failure_bytes)]
+        rejection_path=output.with_suffix('.rejection.json')
+        if rejection_path.exists():
+            expected.append(reference('review-transport-rejection',rejection_path.read_bytes()))
+        c.require(receipt['evidenceRefs']==expected,'strict_review_failure_evidence_changed')
+
+
 def review(prepared,root,candidate_id,revision_id,api_key,caller,*,cache_only=False,attempt_number=1,depends_on=None,completion_spans=None):
     """Read-only review. A second execution requires D5 reservation by the caller.
 
@@ -318,6 +345,7 @@ def review(prepared,root,candidate_id,revision_id,api_key,caller,*,cache_only=Fa
             if receipt_path.exists():
                 with accounting.stage('rqc.review_receipt_cache',depends_on=depends_on,cache_hit=True,executor_type='deterministic_program') as cached_span:
                     receipt,_=c.read_snapshot(receipt_path);c.validate_review_binding(receipt,manifest,prepared['rubric'],inputs)
+                    _validate_cached_review_evidence(receipt,manifest,root/('reviewer'+suffix+'.json'))
                     observation.record(receipt)
                 if completion_spans is not None:completion_spans.append(cached_span)
                 return receipt

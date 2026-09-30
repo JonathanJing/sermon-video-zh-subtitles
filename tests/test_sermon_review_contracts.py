@@ -122,6 +122,34 @@ class ReviewContractTests(unittest.TestCase):
         child['policySha256']='0'*64
         with self.assertRaises(c.ContractError):c.validate_revision_lineage(child,parent,load('repair-plan'))
 
+    def test_every_nontranslation_repair_action_requires_its_triggering_evidence(self):
+        plan_reasons={
+            'retry_review':['review_execution_failed'],
+            'repair_timing':['language_rule_failed'],
+            'resynthesize_units':['language_rule_failed'],
+            'request_source_review':['source_ambiguity'],
+            'request_human_review':['evidence_insufficient'],
+            'escalate_engineering':['review_execution_failed'],
+        }
+        for action,reasons in plan_reasons.items():
+            plan=load('repair-plan')
+            plan.update(repairAction=action,toRevisionId='r1',reasonCodes=reasons)
+            c.validate_contract(plan)
+            with self.subTest(action=action),self.assertRaises(c.ContractError):
+                c.validate_repair_binding(plan,load('review-pass'),load('candidate-revision'))
+
+        failed=load('review-pass')
+        failed.update(reviewId='synthetic-failed-review',executionStatus='failed',reviewVerdict='not_assessed',checks=[],
+            reviewerModelActual=None,providerResponseId=None,
+            missingReasons={'reviewerModelActual':'not_observed','providerResponseId':'not_observed'})
+        failed['coverage'].update(assessedUnitIds=[],unassessedUnitIds=['source.001'])
+        seal(failed)
+        for action in ('retry_review','escalate_engineering'):
+            plan=load('repair-plan')
+            plan.update(repairAction=action,toRevisionId='r1',reasonCodes=['review_execution_failed'],
+                triggerReceiptSha256=failed['receiptSha256'])
+            c.validate_repair_binding(plan,failed,load('candidate-revision'))
+
 
     def test_lineage_rejects_plan_for_other_identity_or_scope(self):
         parent=load('candidate-revision');child=copy.deepcopy(parent)

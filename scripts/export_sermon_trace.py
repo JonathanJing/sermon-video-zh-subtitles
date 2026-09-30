@@ -79,6 +79,9 @@ def export(directory):
     supported = [e for e in events if e.get("schemaVersion") in READABLE_SCHEMAS]
     replay = profile_integrity(supported)
     integrity = receipt_integrity(supported)
+    # Replays of a durable profile event are the same fact, not conflicting
+    # legacy rows. Export only the replay-selected representative.
+    projected = [e for e in events if 'contractVersion' not in e or id(e) in replay['_selected']]
     if replay['status'] != 'consistent': diagnostics.append({'code': 'incomplete_or_conflicting_profile_events'})
 
     def diagnostic(code, key=None):
@@ -87,8 +90,7 @@ def export(directory):
             row.update(traceId=trace_id(key[0]), spanId=span_id(key))
         diagnostics.append(row)
 
-    for event in events:
-        if id(event) in replay["_excluded"]: continue
+    for event in projected:
         if event.get("schemaVersion") not in READABLE_SCHEMAS:
             diagnostic("unsupported_event_schema")
             continue
@@ -236,11 +238,13 @@ def export(directory):
     # never arrived. Preserve that uncertainty alongside completed receipts.
     # Scope the join to the actual run and span so another attempt cannot close
     # this request merely by reusing an imported attempt label.
+    replay_events = [event for event in supported
+                     if "contractVersion" not in event or id(event) in replay["_selected"]]
     finished_attempts = {(event["runId"], event.get("spanId"), event.get("attemptId"))
-                         for event in supported if event["event"] == "api_attempt"
+                         for event in replay_events if event["event"] == "api_attempt"
                          and event.get("attemptId") is not None}
     unfinished = defaultdict(set)
-    for event in supported:
+    for event in replay_events:
         if event["event"] != "api_attempt_started":
             continue
         identity = (event["runId"], event.get("spanId"), event["attemptId"])

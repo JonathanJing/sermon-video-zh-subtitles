@@ -190,6 +190,26 @@ class ReceiptExportTests(unittest.TestCase):
     write = SermonTraceExportTests.write
     result = SermonTraceExportTests.result
 
+    def test_outbox_postappend_preack_replay_is_exported_once(self):
+        from scripts import sermon_accounting as accounting
+        from scripts import sermon_log_profile as profile
+        import copy
+        logdir=self.work/'profile-log'
+        with profile.session(logdir,'export-replay-test',work_kind='production',evidence_mode='synthetic'):
+            with accounting.accounting_session(logdir,'weekly_dubbing'):
+                with accounting.stage('render'):
+                    pass
+        self.events,_=accounting.read_events(logdir)
+        end=next(row for row in self.events if row['event']=='stage_finished' and row['stage']=='render')
+        self.events.append(copy.deepcopy(end))
+        _,diag,_=self.result()
+        self.assertEqual(diag['status'],'exported')
+        self.assertNotIn('duplicate_event_id',[row['code'] for row in diag['diagnostics']])
+        self.events.append(dict(copy.deepcopy(end),status='failed'))
+        _,diag,_=self.result()
+        self.assertEqual(diag['status'],'partial')
+        self.assertIn('incomplete_or_conflicting_profile_events',[row['code'] for row in diag['diagnostics']])
+
     def test_unfinished_attempts_keep_usage_partial_with_or_without_completed_receipts(self):
         import copy
         from scripts.export_sermon_trace import TOKEN_KEYS
@@ -228,6 +248,42 @@ class ReceiptExportTests(unittest.TestCase):
                         self.assertEqual(attrs['sermon.knownSubtotal.inputTokens'], {'intValue': '100'})
                     else:
                         self.assertFalse(any(key.startswith('sermon.knownSubtotal.') for key in attrs))
+
+    def test_replay_excluded_terminal_does_not_close_started_attempt(self):
+        from unittest.mock import patch
+
+        self.events = []
+        self.fixture()
+        self.event('api_attempt_started', stage='render', spanId='render', attemptId='call-1',
+                   contractVersion='sermon-accounting-log-contract-v1', modelCallId='call-1',
+                   producerId='profile-producer', sequence=1)
+        terminal = self.event('api_attempt', stage='render', spanId='render', attemptId='call-1',
+                              status='completed', usage=dict(inputTokens=100, outputTokens=20,
+                              cachedInputTokens=0, cacheWriteTokens=0, reasoningTokens=0),
+                              cost={}, elapsedSeconds=1, responseId='response-1',
+                              contractVersion='sermon-accounting-log-contract-v1', modelCallId='call-1',
+                              producerId='profile-producer', sequence=2, provider='openai',
+                              providerScopeKey=None, providerResponseId='response-1')
+
+        def replay_with_quarantined_terminal(events):
+            excluded = {id(event) for event in events if event.get('eventId') == terminal['eventId']}
+            selected = {id(event) for event in events
+                        if 'contractVersion' in event and id(event) not in excluded}
+            return {'status': 'partial', 'diagnostics': [], 'profileEventCount': 2,
+                    '_excluded': excluded, '_selected': selected}
+
+        with patch('scripts.export_sermon_trace.read_events', return_value=(self.events, [])), \
+             patch('scripts.export_sermon_trace.profile_integrity', side_effect=replay_with_quarantined_terminal), \
+             patch('scripts.sermon_accounting.profile_integrity', side_effect=replay_with_quarantined_terminal):
+            payload, diagnostics = export(self.work)
+        spans = {s['spanId']: s for s in payload['resourceSpans'][0]['scopeSpans'][0]['spans']}
+
+        attrs = {a['key']: a['value'] for a in spans[span_id(('run-one', 'stage', 'render'))]['attributes']}
+        self.assertIn('unfinished_api_attempts', [row['code'] for row in diagnostics['diagnostics']])
+        self.assertEqual(attrs['sermon.unresolvedApiAttempts'], {'intValue': '1'})
+        self.assertEqual(attrs['sermon.apiAttempts'], {'intValue': '1'})
+        self.assertNotIn('sermon.inputTokens', attrs)
+        self.assertEqual(attrs['sermon.unknownCalls.inputTokens'], {'intValue': '1'})
 
     def test_receipt_in_other_run_or_span_cannot_complete_started_attempt(self):
         for receipt_run, receipt_span in (('run-two', 'render'), ('run-one', 'assemble')):
