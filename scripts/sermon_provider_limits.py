@@ -25,7 +25,7 @@ MAX_REQUEST_LIMITS = {**DEFAULT_REQUEST_LIMITS, 'maxInputTokens': 16384, 'maxCom
 RUN_TARGET_MICROUSD = 25_000_000
 RUN_HARD_CAP_MICROUSD = 40_000_000
 SUPPORTED_MODELS = ('gpt-6-astra', 'gpt-6-sol')
-SUPPORTED_REASONING_EFFORTS = ('low', 'medium', 'high', 'xhigh', 'max', 'ultra')
+SUPPORTED_REASONING_EFFORTS = ('low', 'medium', 'high', 'xhigh', 'max')
 MODEL_REASONING_EFFORTS = {
     'gpt-6-astra': SUPPORTED_REASONING_EFFORTS,
     'gpt-6-sol': ('low', 'medium', 'high', 'xhigh', 'max'),

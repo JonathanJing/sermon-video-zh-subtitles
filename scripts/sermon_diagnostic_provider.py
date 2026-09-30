@@ -95,6 +95,7 @@ class DiagnosticProvider:
                   'provider_authority_exceeds_shared_budget')
         self.limits = limits.validate_request_limits(request_limits or limits.DEFAULT_REQUEST_LIMITS)
         self.executor, self.monotonic, self.domain = executor, monotonic, domain
+        self._scoped_payloads = set()
 
     @contextmanager
     def _locked(self):
@@ -193,7 +194,7 @@ class DiagnosticProvider:
             c.require(len(rows)==1, 'provider_operation_identity_conflict')
             call_id,row=rows[0]
             c.require(row['requestSha256']==c.canonical_sha256(payload), 'provider_operation_input_changed')
-            c.require(row['state'] in ('returned','outcome_unknown') and row['receiptSha256'] is not None,
+            c.require(row['state'] == 'returned' and row['receiptSha256'] is not None,
                       'provider_outcome_reconciliation_required')
             value,raw=c.read_snapshot(root/(call_id+'.json'))
             c.require(c.bytes_sha256(raw)==row['receiptSha256'] and value['modelCallId']==call_id and
@@ -213,7 +214,8 @@ class DiagnosticProvider:
             raw = strict.save_once(root / (call_id+'.json'), value)
             if status == 'returned' and row['model'] == 'gpt-transcribe':
                 cost = value['costEvidence']
-                if ((cost.get('costMicrousd') is not None and cost['costMicrousd']>row['bounds']['costMicrousd']) or
+                if (cost.get('providerDurationStatus') not in ('reported','not_reported') or
+                        (cost.get('costMicrousd') is not None and cost['costMicrousd']>row['bounds']['costMicrousd']) or
                         value['response'].get('model','gpt-transcribe')!='gpt-transcribe'):
                     status='outcome_unknown'
             elif status == 'returned':
@@ -224,6 +226,39 @@ class DiagnosticProvider:
                     status = 'outcome_unknown'
             row.update(state=status, receiptSha256=c.bytes_sha256(raw))
             self._save(root, state)
+            if status == 'outcome_unknown':
+                accounting.record_workload('diagnostic.provider_reconciliation', {
+                    'modelCallIdSha256':c.canonical_sha256(call_id),
+                    'providerReceiptSha256':c.bytes_sha256(raw),
+                    'outcomeStatus':'outcome_unknown', 'reservationRetained':True})
+                raise c.ContractError('provider_outcome_reconciliation_required')
+
+    def _check_source(self, prepared):
+        source = prepared['source']['source']
+        window = source['approvedWindow']
+        c.require(source['media']['sha256'] == self.config['sourceMediaSha256'] and
+                  [window['startSeconds'], window['endSeconds']] == self.config['sourceWindowSeconds'],
+                  'provider_approved_source_scope_changed')
+
+    def source_check_payload(self):
+        # Source checks can inspect ONLY the known successful ASR response from
+        # this run's hash-bound audio. No arbitrary caller-authored prompt/input.
+        with self._locked() as (root, state):
+            rows = [(key,row) for key,row in state['requests'].items()
+                    if row['model'] == 'gpt-transcribe' and row['state'] == 'returned']
+            c.require(len(rows) == 1, 'provider_verified_transcription_required')
+            key,row = rows[0]
+            receipt,raw = c.read_snapshot(root / (key+'.json'))
+            c.require(c.bytes_sha256(raw) == row['receiptSha256'] and receipt['modelCallId'] == key,
+                      'provider_saved_response_changed')
+            text = receipt['response'].get('text')
+            c.require(type(text) is str and text.strip(), 'provider_transcription_text_required')
+        return limits.bounded_payload({'model':'gpt-6-astra','reasoning_effort':'high',
+            'messages':[{'role':'system','content':'Check the supplied English ASR for internal uncertainty. Return JSON with issues and uncertainty. Do not translate, invent unheard words, or grant human approval.'},
+                {'role':'user','content':json.dumps({'sourceMediaSha256':self.config['sourceMediaSha256'],
+                    'sourceAudioSha256':self.config['sourceAudioSha256'],
+                    'sourceWindowSeconds':self.config['sourceWindowSeconds'],'transcript':text},sort_keys=True)}],
+            'response_format':{'type':'json_object'}}, limits.MAX_REQUEST_LIMITS)
 
     def preflight_locale(self, prepared_groups):
         c.require(type(prepared_groups) is list and 1<=len(prepared_groups)<=18,
@@ -232,11 +267,13 @@ class DiagnosticProvider:
         # Review inputs include future generated content and are checked again
         # at their own pre-dispatch boundary without truncation.
         for prepared in prepared_groups:
+            self._check_source(prepared)
             c.require(prepared.get('requestLimits')==self.limits,'provider_request_limits_not_bound')
             limits.request_bounds(strict._payload(prepared,'translator',strict.prompt(prepared,'translator')),
                                   self.limits)
 
     def preflight(self, prepared, kind, root, repair=None):
+        self._check_source(prepared)
         c.require(prepared.get('requestLimits') == self.limits, 'provider_request_limits_not_bound')
         if kind == 'review':
             manifest, _ = c.read_snapshot(root / 'revision.json')
@@ -248,7 +285,9 @@ class DiagnosticProvider:
             request = strict.generation_prompt(prepared, repair)
             role = 'translator'
         payload = strict._payload(prepared, role, request)
-        return limits.request_bounds(payload, self.limits)
+        bound = limits.request_bounds(payload, self.limits)
+        self._scoped_payloads.add(c.canonical_sha256(payload))
+        return bound
 
     def __call__(self, api_key, payload, *, response_observer):
         return self.chat(api_key, payload, response_observer=response_observer)
@@ -264,10 +303,12 @@ class DiagnosticProvider:
         c.require(type(api_key) is str and 1 <= len(api_key) <= 1024 and '\n' not in api_key and '\r' not in api_key,
                   'provider_credential_required')
         if response_observer is None:
+            c.require(payload == self.source_check_payload(), 'provider_source_check_payload_changed')
             operation_id = strict.label(operation_id or 'source.'+c.canonical_sha256(payload))
             recovered = self._cached_source(operation_id, payload)
             if recovered is not None:return recovered
         else:
+            c.require(c.canonical_sha256(payload) in self._scoped_payloads, 'provider_unscoped_strict_payload')
             c.require(operation_id is None, 'strict_provider_operation_is_budget_bound')
         headers = {'Authorization': 'Bearer '+api_key, 'Content-Type': 'application/json'}
         for name, key in (('OpenAI-Project','projectId'),('OpenAI-Organization','organizationId')):
@@ -308,7 +349,7 @@ class DiagnosticProvider:
         def execute(request):
             left = state['deadline']-self.monotonic()
             c.require(left>0, 'provider_attempt_deadline_reached')
-            return self.executor(request,left)
+            return self.executor(request,left,deadline=state['deadline'])
         span = (nullcontext() if accounting._span.get() else
                 accounting.stage('diagnostic.source_model', billing='api', executor_type='production_model'))
         context = profile.current()
@@ -362,7 +403,7 @@ class DiagnosticProvider:
         def execute(req):
             remaining=state['deadline']-self.monotonic()
             c.require(remaining>0,'provider_attempt_deadline_reached')
-            return self.executor(req,remaining)
+            return self.executor(req,remaining,deadline=state['deadline'])
         c.require(profile.current() is not None,'diagnostic_requires_accounting_profile')
         with profile.context(logicalCallId=operation_id,
                 providerScopeKey=c.canonical_sha256({k:self.config[k] for k in

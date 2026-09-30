@@ -20,7 +20,7 @@ from tests import test_sermon_strict_layer2 as fixtures
 
 def config(**kw):
     result = dict(schemaVersion=p.SCHEMA, runId='1'*64, approvalSha256='2'*64, codeSha256='3'*64,
-        sourceMediaSha256='4'*64, sourceClipSha256='5'*64,sourceAudioSha256='9'*64, sourceWindowSeconds=[60,240],
+        sourceMediaSha256='1'*64, sourceClipSha256='5'*64,sourceAudioSha256='9'*64, sourceWindowSeconds=[60,240],
         targetMicrousd=25_000_000, hardLimitMicrousd=40_000_000,totalWallSeconds=5400,maxRequests=124,
         credentialReferenceSha256='6'*64,projectId=None,organizationId=None,transcriptionModel='gpt-transcribe')
     return {**result,**kw}
@@ -33,7 +33,16 @@ def authority():
 
 class ProviderTests(unittest.TestCase):
     def setUp(self):
-        self.f=fixtures.StrictAdapterTests();self.f.setUp();self.addCleanup(self.f.doCleanups)
+        from tests.test_build_english_source_package import EnglishSourcePackageTests
+        original = EnglishSourcePackageTests.build
+        def scoped_build(fixture, **kwargs):
+            summary=json.loads(fixture.summary_path.read_text())
+            summary.update(sermonStartSeconds=60.,sermonEndSeconds=240.)
+            fixture.summary_path.write_text(json.dumps(summary))
+            return original(fixture, **kwargs)
+        self.f=fixtures.StrictAdapterTests()
+        with patch.object(EnglishSourcePackageTests,'build',scoped_build):self.f.setUp()
+        self.addCleanup(self.f.doCleanups)
         self.root=self.f.root/'revision';self.store=budget.BudgetStore(self.f.root/'budget',authority())
         self.clock=100.;self.calls=[];self.selected=deepcopy(limits.DEFAULT_REQUEST_LIMITS)
         self.prepared=strict.prepare(*self.f.args,self.f.group,request_limits=self.selected)
@@ -42,14 +51,18 @@ class ProviderTests(unittest.TestCase):
         self.subject=adapter.StrictBudgetAdapter(self.store)
 
     def provider_for(self,**kw):
-        return p.DiagnosticProvider(self.store,config(**kw),self.selected,executor=self.http,
+        subject = p.DiagnosticProvider(self.store,config(**kw),self.selected,executor=self.http,
             monotonic=lambda:self.clock,domain=lambda:'7'*64)
+        # Isolate chat/budget unit checks; the complete ASR-to-source binding is
+        # exercised without this stub in the bounded-run integration tests.
+        subject.source_check_payload=Mock(side_effect=self.payload)
+        return subject
 
     def payload(self):
         return limits.bounded_payload(dict(model='gpt-6-astra',reasoning_effort='high',
             messages=[dict(role='user',content='Return JSON test.')],response_format={'type':'json_object'}),self.selected)
 
-    def http(self,req,timeout):
+    def http(self,req,timeout,*,deadline=None):
         self.calls.append((req,timeout));payload=json.loads(req.data)
         inp=json.loads(payload['messages'][1]['content']) if len(payload['messages'])>1 else None
         if inp is None: value={'ok':True}
@@ -128,11 +141,11 @@ class ProviderTests(unittest.TestCase):
 
     def test_missing_tokens_keeps_unknown_cache_and_blocks_more_calls(self):
         original=self.http
-        def missing(req,timeout):
+        def missing(req,timeout,*,deadline=None):
             response=original(req,timeout);response.pop('usage');return response
         self.provider.executor=missing
         with self.f.session():
-            result=self.generate();self.assertEqual(result['budgetStatus'],'reconciliation_required')
+            with self.assertRaisesRegex(ValueError,'reconciliation_required'):self.generate()
             with self.assertRaisesRegex(ValueError,'reconciliation_required'):self.provider.chat('synthetic',self.payload())
         self.assertEqual(len(self.calls),1)
 
@@ -140,10 +153,10 @@ class ProviderTests(unittest.TestCase):
         with self.f.session():
             self.provider.chat('synthetic',self.payload());self.clock+=5400
             self.provider=self.provider_for()
-            new=self.payload();new['messages'][0]['content']='Distinct request.'
-            with self.assertRaisesRegex(ValueError,'deadline_reached'):self.provider.chat('synthetic',new)
+            new=self.payload()
+            with self.assertRaisesRegex(ValueError,'deadline_reached'):self.provider.chat('synthetic',new,operation_id='source.second')
             self.clock-=5400;self.provider.domain=lambda:'8'*64
-            with self.assertRaisesRegex(ValueError,'clock_domain_changed'):self.provider.chat('synthetic',new)
+            with self.assertRaisesRegex(ValueError,'clock_domain_changed'):self.provider.chat('synthetic',new,operation_id='source.second')
         self.assertEqual(len(self.calls),1)
 
     def test_remaining_total_time_limits_single_attempt(self):
@@ -161,6 +174,36 @@ class ProviderTests(unittest.TestCase):
                 self.provider.chat('synthetic',self.payload())
         self.assertEqual(self.calls,[])
         self.assertEqual(len(self.provider.snapshot()['unknownModelCallIds']),1)
+
+    def test_foreign_source_or_window_rejects_before_both_ledgers(self):
+        for field in ('media', 'window'):
+            prepared=deepcopy(self.prepared)
+            if field=='media':prepared['source']['source']['media']['sha256']='f'*64
+            else:prepared['source']['source']['approvedWindow']['startSeconds']=61
+            with self.assertRaisesRegex(ValueError,'approved_source_scope_changed'):
+                self.provider.preflight_locale([prepared])
+            with self.assertRaisesRegex(ValueError,'approved_source_scope_changed'):
+                self.provider.preflight(prepared,'initial_generation',self.root)
+        self.assertEqual(self.calls,[]);self.assertFalse(self.store.root.exists())
+
+    def test_unknown_response_neither_fresh_nor_cached_is_success(self):
+        base=self.http
+        for change in ({'model':'other-model'}, {'usage':None},
+                       {'usage':{'prompt_tokens':-1,'completion_tokens':20}}):
+            with self.subTest(change=change):
+                store=budget.BudgetStore(self.f.root/c.canonical_sha256(change),authority())
+                def execute(req,timeout,*,deadline=None):
+                    return {**base(req,timeout),**change}
+                subject=p.DiagnosticProvider(store,config(),executor=execute,
+                    monotonic=lambda:self.clock,domain=lambda:'7'*64)
+                subject.source_check_payload=Mock(side_effect=self.payload)
+                before=len(self.calls)
+                with self.f.session():
+                    for _ in range(2):
+                        with self.assertRaisesRegex(ValueError,'reconciliation_required'):
+                            subject.chat('synthetic',self.payload())
+                self.assertEqual(len(self.calls),before+1)
+                self.assertEqual(len(subject.snapshot()['unknownModelCallIds']),1)
 
     def test_transcription_model_is_not_an_automatic_fallback(self):
         self.assertEqual(p.validate_config(config())['transcriptionModel'],'gpt-transcribe')
@@ -186,7 +229,7 @@ class ProviderTests(unittest.TestCase):
             result=self.provider.chat('synthetic',self.payload(),operation_id='source-check.1')
             self.assertEqual(result['id'],'resp-1')
             changed=self.payload();changed['messages'][0]['content']='changed'
-            with self.assertRaisesRegex(ValueError,'operation_input_changed'):
+            with self.assertRaisesRegex(ValueError,'source_check_payload_changed'):
                 self.provider.chat('synthetic',changed,operation_id='source-check.1')
         self.assertEqual(len(self.calls),1)
 
@@ -251,11 +294,13 @@ class TranscriptionIntegrationTests(unittest.TestCase):
         return out.getvalue()
 
     def audio_provider(self,raw,**overrides):
-        def execute(req,timeout):
+        def execute(req,timeout,*,deadline=None):
             self.calls.append((req,timeout))
             return {'text':'Synthetic ASR evidence.','usage':{'type':'duration','seconds':180}}
-        return p.DiagnosticProvider(self.store,config(sourceAudioSha256=c.bytes_sha256(raw),**overrides),
+        subject=p.DiagnosticProvider(self.store,config(sourceAudioSha256=c.bytes_sha256(raw),**overrides),
             executor=execute,monotonic=lambda:self.clock,domain=lambda:'7'*64)
+        subject.source_check_payload=Mock(side_effect=self.payload)
+        return subject
 
     def test_audio_decode_price_and_restart_no_second_transcription(self):
         raw=self.wav(180);subject=self.audio_provider(raw)

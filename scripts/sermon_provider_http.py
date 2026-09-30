@@ -82,7 +82,7 @@ def _metadata(url, headers, body_length, timeout_seconds):
             'timeoutSeconds': _timeout(timeout_seconds)}
 
 
-def _encode_request(req, timeout_seconds):
+def _encode_request(req, timeout_seconds, *, deadline=None):
     _require(isinstance(req, urllib.request.Request) and req.get_method() == 'POST',
              'provider_requires_post_request')
     _require(type(req.data) is bytes, 'provider_requires_bytes_body')
@@ -92,6 +92,7 @@ def _encode_request(req, timeout_seconds):
         _require(name not in headers, 'duplicate_provider_header')
         headers[name] = value
     metadata = _metadata(req.full_url, headers, len(req.data), timeout_seconds)
+    metadata['deadlineMonotonic'] = _deadline(deadline if deadline is not None else time.monotonic() + timeout_seconds)
     encoded = json.dumps(metadata, ensure_ascii=True, separators=(',', ':'), allow_nan=False).encode('ascii')
     _require(len(encoded) <= MAX_HEADER_BYTES, 'provider_header_size_limit')
     return struct.pack('!I', len(encoded)) + encoded + req.data
@@ -111,7 +112,20 @@ def _strict_json(raw):
     return value
 
 
-def execute(req, timeout_seconds):
+def _deadline(value):
+    _require(type(value) in (int, float) and math.isfinite(value) and value > 0,
+             'invalid_provider_deadline')
+    return float(value)
+
+
+def _remaining(deadline):
+    remaining = deadline - time.monotonic()
+    if remaining <= 0:
+        raise ProviderTimeout('provider_wall_timeout_outcome_unknown')
+    return remaining
+
+
+def execute(req, timeout_seconds, *, deadline=None):
     """Perform at most one request, returning its parsed JSON object.
 
     All validation happens before spawning. HTTPError carries an empty body and
@@ -119,17 +133,19 @@ def execute(req, timeout_seconds):
     evidence of a safe retry. This function itself performs no retry.
     """
     timeout_seconds = _timeout(timeout_seconds)
-    packet = _encode_request(req, timeout_seconds)
-    deadline = time.monotonic() + timeout_seconds
+    deadline = min(time.monotonic() + timeout_seconds, _deadline(deadline)) if deadline is not None else time.monotonic() + timeout_seconds
+    _remaining(deadline)
+    packet = _encode_request(req, timeout_seconds, deadline=deadline)
     command = [sys.executable, '-I', str(Path(__file__).resolve()), '--worker']
+    _remaining(deadline)
     try:
         process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL, env={}, close_fds=True)
     except Exception:
         raise ProviderOutcomeUnknown('provider_worker_start_failed') from None
     try:
-        output, _ = process.communicate(packet, timeout=max(0.001, deadline - time.monotonic()))
-    except subprocess.TimeoutExpired:
+        output, _ = process.communicate(packet, timeout=_remaining(deadline))
+    except (subprocess.TimeoutExpired, ProviderTimeout):
         _kill_and_reap(process)
         raise ProviderTimeout('provider_wall_timeout_outcome_unknown') from None
     except BaseException:
@@ -185,8 +201,10 @@ def _read_packet(stream):
     size = struct.unpack('!I', _read_exact(stream, 4))[0]
     _require(0 < size <= MAX_HEADER_BYTES, 'provider_header_size_limit')
     metadata = _strict_json(_read_exact(stream, size))
-    _require(set(metadata) == {'url', 'headers', 'bodyLength', 'timeoutSeconds'}, 'invalid_provider_packet')
+    _require(set(metadata) == {'url', 'headers', 'bodyLength', 'timeoutSeconds', 'deadlineMonotonic'}, 'invalid_provider_packet')
+    deadline = _deadline(metadata['deadlineMonotonic'])
     metadata = _metadata(metadata['url'], metadata['headers'], metadata['bodyLength'], metadata['timeoutSeconds'])
+    metadata['deadlineMonotonic'] = deadline
     body = _read_exact(stream, metadata['bodyLength'])
     _require(stream.read(1) == b'', 'provider_packet_trailing_data')
     return metadata, body
@@ -195,7 +213,7 @@ def _read_packet(stream):
 def _perform(metadata, body, opener):
     request = urllib.request.Request(metadata['url'], data=body, headers=metadata['headers'], method='POST')
     try:
-        with opener.open(request, timeout=metadata['timeoutSeconds']) as response:
+        with opener.open(request, timeout=min(metadata['timeoutSeconds'], _remaining(metadata['deadlineMonotonic']))) as response:
             _require(response.geturl() == metadata['url'], 'provider_redirect_rejected')
             _require(type(response.status) is int and 200 <= response.status < 300,
                      'invalid_provider_success_status')

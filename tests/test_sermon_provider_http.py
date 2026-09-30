@@ -82,6 +82,45 @@ class ProviderHTTPTests(unittest.TestCase):
         self.assertIn(TOKEN.encode(), process.communicate.call_args.args[0])
         process.communicate.assert_called_once()
 
+    def test_encoding_delay_does_not_renew_absolute_deadline(self):
+        clock = [100.]
+        original = http._encode_request
+        def delayed(*args, **kwargs):
+            packet = original(*args, **kwargs)
+            clock[0] = 106.
+            return packet
+        with patch.object(http.time, 'monotonic', side_effect=lambda: clock[0]), \
+                patch.object(http, '_encode_request', side_effect=delayed), \
+                patch.object(http.subprocess, 'Popen') as spawn:
+            with self.assertRaises(http.ProviderTimeout):
+                http.execute(request(), 5, deadline=105.)
+            spawn.assert_not_called()
+
+    def test_handoff_preemption_and_worker_packet_delay_never_dispatch(self):
+        with patch.object(http.time, 'monotonic', return_value=106.), \
+                patch.object(http.subprocess, 'Popen') as spawn:
+            with self.assertRaises(http.ProviderTimeout):
+                http.execute(request(), 5, deadline=105.)
+            spawn.assert_not_called()
+        packet = http._encode_request(request(), 5, deadline=105.)
+        opener, output = Mock(), io.BytesIO()
+        with patch.object(http.time, 'monotonic', return_value=106.):
+            http._worker(io.BytesIO(packet), output, opener=opener)
+        opener.open.assert_not_called()
+        self.assertEqual(json.loads(output.getvalue()), {'status': 'outcome_unknown'})
+
+    def test_spawn_delay_kills_worker_before_sending_request(self):
+        clock, process = [100.], Mock()
+        def spawn(*args, **kwargs):
+            clock[0] = 106.
+            return process
+        with patch.object(http.time, 'monotonic', side_effect=lambda: clock[0]), \
+                patch.object(http.subprocess, 'Popen', side_effect=spawn):
+            with self.assertRaises(http.ProviderTimeout):
+                http.execute(request(), 5, deadline=105.)
+        process.kill.assert_called_once()
+        process.communicate.assert_called_once_with()
+
     def test_actual_stalled_child_is_killed_reaped_with_hard_deadline(self):
         real_popen, children = subprocess.Popen, []
         def offline_child(command, **kwargs):

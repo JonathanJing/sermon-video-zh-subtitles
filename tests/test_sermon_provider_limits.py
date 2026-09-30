@@ -58,6 +58,13 @@ class ProviderLimitsTests(unittest.TestCase):
         bounded['messages'][0]['content'] = 'changed'
         self.assertEqual(request, before)
 
+    def test_api_effort_vocabulary_rejects_agent_only_ultra(self):
+        for model in limits.SUPPORTED_MODELS:
+            for effort in ('low', 'medium', 'high', 'xhigh', 'max'):
+                limits.bounded_payload(dict(payload(model), reasoning_effort=effort), self.limits)
+            with self.assertRaisesRegex(ValueError, 'unsupported_bounded_reasoning_effort'):
+                limits.bounded_payload(dict(payload(model), reasoning_effort='ultra'), self.limits)
+
     def test_models_and_policy_efforts_are_allowlisted_never_rewritten(self):
         for model in limits.SUPPORTED_MODELS:
             for effort in limits.MODEL_REASONING_EFFORTS[model]:

@@ -121,6 +121,7 @@ def build_request(wav_bytes, expected_audio_sha256):
     parts.append(delimiter + b'\r\nContent-Disposition: form-data; name="file"; filename="clip.wav"\r\n'
                  b'Content-Type: audio/wav\r\n\r\n' + wav_bytes + b'\r\n')
     body = b''.join(parts) + delimiter + b'--\r\n'
+    _require(len(body) <= MAX_AUDIO_BYTES, 'transcription_multipart_size_limit')
     reserved_minutes = _ceil(duration / 60)
     identity = {'schemaVersion': SCHEMA, 'model': MODEL,
         'inputDurationSeconds': audio['decodedDurationSeconds'],

@@ -81,7 +81,7 @@ class TranscriptionRequestTests(unittest.TestCase):
         base = wav(); padding = subject.MAX_AUDIO_BYTES-len(base)-8
         at_limit = riff_size(base+b'JUNK'+struct.pack('<I',padding)+bytes(padding))
         self.assertEqual(len(at_limit),subject.MAX_AUDIO_BYTES)
-        self.assertEqual(build(at_limit)['identity']['audio']['byteCount'],subject.MAX_AUDIO_BYTES)
+        with self.assertRaisesRegex(ValueError,'multipart_size_limit'):build(at_limit)
         with self.assertRaisesRegex(ValueError,'size_invalid'):
             build(riff_size(at_limit+b'xx'))
 
