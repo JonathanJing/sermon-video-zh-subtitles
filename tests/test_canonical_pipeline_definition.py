@@ -61,6 +61,14 @@ class CanonicalPlanningTests(unittest.TestCase):
         self.assertEqual(self.plan()['nodes']['text.ko']['status'], 'reconciliation_required')
         self.assertEqual(self.plan()['nodes']['text.es']['status'], 'ready')
 
+    def test_changed_inputs_do_not_abandon_prior_running_job(self):
+        self.complete('source')
+        identity = self.plan()['nodes']['text.ko']['identity']
+        self.observations['text.ko'] = {'identity': identity, 'status': 'running'}
+        self.observations['source']['outputSha256'] = 'e' * 64
+        self.assertEqual(self.plan()['nodes']['text.ko']['status'], 'reconciliation_required')
+        self.assertEqual(self.plan()['nodes']['text.es']['status'], 'ready')
+
     def test_delivery_scope_and_definition_change_require_new_bindings(self):
         self.complete('source')
         self.spec = p.definition(terminal_scope='delivery_complete')
