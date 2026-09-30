@@ -29,3 +29,5 @@ python scripts/canonical_layer2_reconciliation.py \
 回归使用实际 L2 runner/plugin/候选 validator 与固定合成模型响应；覆盖完成产物后的崩溃状态、原命令失败保留、缺/坏候选、过期 revision、锁冲突、状态变化、损坏收据、原子写与 fsync 失败、幂等恢复、双 CLI 竞争（空 API key）和只读文件不变。
 
 这不对账一个已经发出但没有返回收据的模型调用，不重构缺失 candidate，不修复失败 group，不证明翻译质量或人工批准；更不是通用 Layer 3/4、部署、未知付费调用或跨版本迁移。完整 Stage0 与真实媒体验证仍未完成。
+
+缺失候选而完整响应均已返回的独立窗口，见[cache-only 本地恢复](canonical-layer2-cache-recovery.zh.md)。该操作重建候选后仍须本入口对账；本入口自身不执行 producer 或语言插件。

@@ -136,7 +136,7 @@ def group_plan(request: dict[str, Any], anchor: dict[str, Any],
 def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
                 output: Path, api_key: str,
                 caller: Callable[[str, dict[str, Any]], dict[str, Any]],
-                reuse_from: Path | None = None) -> dict[str, Any]:
+                reuse_from: Path | None = None, *, cache_only: bool = False) -> dict[str, Any]:
     model = policy[role]["model"]
     payload = {"model": model, "reasoning_effort": policy[role]["reasoningEffort"],
                "messages": [{"role": "system", "content": prompt["instruction"]},
@@ -177,6 +177,7 @@ def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
                 f"Saved raw {role} response belongs to different inputs: {raw_path}")
         response = raw["response"]
     else:
+        require(not cache_only, f"Cache-only recovery has no returned {role} response: {output}")
         require(not marker.exists(), f"Uncertain paid {role} call; inspect before retry: {marker}")
         save_new(marker, {"role": role, "payloadSha256": fingerprint,
                           "status": "started_response_unconfirmed"})
@@ -472,7 +473,7 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                          reuse_from: Path | None = None,
                          partial_repair_brief: dict[str, Any] | None = None,
                          resume_cache_from: Path | None = None,
-                         *, simulation_only: bool = False,
+                         *, simulation_only: bool = False, cache_only: bool = False,
                          source_admission_span: str | None = None) -> dict[str, Any]:
     """Shared group loop; the formal entry above still enforces Layer 1 approval.
 
@@ -651,18 +652,18 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             translator_cached = (astra_path.exists() or astra_path.with_suffix(".raw.json").exists()
                                  or (prior_cache_root is not None and (prior_cache_root / f"{stem}-astra.json").is_file()))
         with measure.producer_substage("initial_translation",
-                                       billing="local" if simulation_only else "api"):
+                                       billing="local" if simulation_only or cache_only else "api"):
             with accounting.stage(f"layer2.translator.{request['targetLocale']}.{stem}",
-                                  cache_hit=translator_cached, billing="local" if simulation_only or translator_cached else "api",
+                                  cache_hit=translator_cached, billing="local" if simulation_only or cache_only or translator_cached else "api",
                                   work_unit_id=f"l2.{request['targetLocale']}.{stem}.translator",
                                   depends_on=[prepare_span],
-                                  executor_type="deterministic_program" if simulation_only or translator_cached else "production_model") as translator_span:
+                                  executor_type="deterministic_program" if simulation_only or cache_only or translator_cached else "production_model") as translator_span:
                 translated = _model_call("translator", translate_prompt, policy,
                                          astra_path, api_key, caller,
                                          reusable_cache(resume_cache_from, stem, "astra")
                                          if resume_cache_from is not None else
                                          reusable_cache(reuse_from, stem, "astra")
-                                         if brief is None and repair is None else None)
+                                         if brief is None and repair is None else None, cache_only=cache_only)
         with accounting.stage(f"layer2.draft_validation.{request['targetLocale']}.{stem}",
                               depends_on=[translator_span], executor_type="deterministic_program",
                               work_unit_id=f"l2.{request['targetLocale']}.{stem}.draft_validation") as draft_span:
@@ -712,18 +713,18 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             reviewer_cached = (sol_path.exists() or sol_path.with_suffix(".raw.json").exists()
                                or (prior_cache_root is not None and (prior_cache_root / f"{stem}-sol.json").is_file()))
         with measure.producer_substage("independent_review",
-                                       billing="local" if simulation_only else "api"):
+                                       billing="local" if simulation_only or cache_only else "api"):
             with accounting.stage(f"layer2.reviewer.{request['targetLocale']}.{stem}",
-                                  cache_hit=reviewer_cached, billing="local" if simulation_only or reviewer_cached else "api",
+                                  cache_hit=reviewer_cached, billing="local" if simulation_only or cache_only or reviewer_cached else "api",
                                   work_unit_id=f"l2.{request['targetLocale']}.{stem}.reviewer",
                                   depends_on=[draft_span],
-                                  executor_type="deterministic_program" if simulation_only or reviewer_cached else "production_model") as reviewer_span:
+                                  executor_type="deterministic_program" if simulation_only or cache_only or reviewer_cached else "production_model") as reviewer_span:
                 reviewed_response = _model_call("reviewer", review_prompt, policy,
                                                 sol_path, api_key, caller,
                                                 reusable_cache(resume_cache_from, stem, "sol")
                                                 if resume_cache_from is not None else
                                                 reusable_cache(reuse_from, stem, "sol")
-                                                if brief is None and repair is None else None)
+                                                if brief is None and repair is None else None, cache_only=cache_only)
         with accounting.stage(f"layer2.review_validation.{request['targetLocale']}.{stem}",
                               depends_on=[reviewer_span], executor_type="deterministic_program",
                               work_unit_id=f"l2.{request['targetLocale']}.{stem}.review_validation") as validation_span:
@@ -792,7 +793,8 @@ def run_accounted(source: dict, anchor: dict, policy: dict, out_dir: Path,
                   revision_brief: dict | None, reuse_from: Path | None,
                   *, partial_repair_brief: dict | None = None,
                   resume_cache_from: Path | None = None,
-                  progress_ledger: Path | None = None) -> dict:
+                  progress_ledger: Path | None = None,
+                  cache_only: bool = False) -> dict:
     locale = policy["targetLocale"]
     with measure.producer_step(progress_ledger, f"L2-02@{locale}", locale=locale) as metrics:
         with accounting.accounting_session(out_dir / "accounting", "layer2_models",
@@ -807,7 +809,7 @@ def run_accounted(source: dict, anchor: dict, policy: dict, out_dir: Path,
             evidence = _run_prepared_groups(
                 request, anchor, policy, out_dir, api_key, call, plan, plugin,
                 revision_brief, reuse_from, partial_repair_brief, resume_cache_from,
-                source_admission_span=source_span)
+                source_admission_span=source_span, cache_only=cache_only)
         metrics["doneUnits"] = len(evidence["groups"])
     return evidence
 
