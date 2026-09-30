@@ -35,7 +35,8 @@ SUITES = {
                    'tests.test_accounting_receipt_conflicts'),
     'release_asset_assembly': ('tests.test_release_asset_io', 'tests.test_backend_four_layer_dry_run',
                                'tests.test_firebase_dev_weekly_dry_run', 'tests.test_build_full_video_app_release',
-                               'tests.test_stage_formal_multilingual_dev', 'tests.test_assemble_multilingual_v3_update'),
+                               'tests.test_stage_formal_multilingual_dev', 'tests.test_assemble_multilingual_v3_update',
+                               'tests.test_inspect_multilingual_v3_release'),
     'producer_accounting': ('tests.test_run_target_language_models', 'tests.test_render_formal_target_language_speech',
                             'tests.test_paid_model_cache_durability', 'tests.test_layer2_leaf_accounting', 'tests.test_layer2_large_fan_in'),
 }
