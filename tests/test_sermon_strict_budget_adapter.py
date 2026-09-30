@@ -305,6 +305,15 @@ class StrictBudgetTests(unittest.TestCase):
         self.assertEqual(calls, [1])
 
     def repair_context(self, parent, review, root, *, prior_revisions=(), prior_repairs=(), fingerprints=()):
+        from scripts.sermon_strict_repair_planner import RepairPlanner
+        result = RepairPlanner(self.store, self.f.root / 'jobs', '7'*64).plan_group(
+            self.f.prepared, root,
+            [dict(workUnitId=self.f.prepared['workUnitId'],layer=2,targetLocale='zh-Hans',dependsOn=[])],
+            created_at='2026-09-30T00:00:00Z')
+        self.assertIsNotNone(result['repair'])
+        return result['repair'], result['planning']['failureFingerprint']
+
+    def pure_repair_context(self, parent, review, root, *, prior_revisions=(), prior_repairs=(), fingerprints=()):
         snapshot = self.snapshot(); state = snapshot['stateRevision']
         unit = self.f.prepared['workUnitId']; number = parent['revisionNumber']
         plan_budget = planning.BudgetSnapshot('7'*64, state, 'candidate', unit,
@@ -388,6 +397,76 @@ class StrictBudgetTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'idempotency_conflict'):
                 self.generate_repair(self.f.root / 'moved-third', changed_issue)
         self.assertEqual(len(self.f.calls), 5)
+
+    def test_pure_unrecorded_plan_cannot_reserve_or_call(self):
+        with self.f.session():
+            parent = self.generate()['artifact']; self.f.mode = 'fail'; failed = self.review()['artifact']
+            repair, _ = self.pure_repair_context(parent, failed, self.root)
+            before = self.snapshot()
+            with self.assertRaises((ValueError, OSError)):
+                self.generate_repair(self.f.root / 'unrecorded', repair)
+            self.assertEqual(self.snapshot(), before)
+        self.assertEqual(len(self.f.calls), 2)
+
+    def test_replaced_saved_plan_or_fingerprint_blocks_before_transport(self):
+        with self.f.session():
+            parent = self.generate()['artifact']; self.f.mode = 'fail'; failed = self.review()['artifact']
+            repair, _ = self.repair_context(parent, failed, self.root)
+            path = self.store.root / budget.STORE_ID / 'repair-planning.json'
+            original = path.read_bytes()
+            for field in ('plan', 'fingerprint', 'sidecars'):
+                value = json.loads(original)
+                entry = next(iter(next(iter(value['chains'].values())).values()))
+                if field == 'plan': entry[field]['repairPlanId'] += '-changed'
+                elif field == 'fingerprint': entry[field] = '0'*64
+                else: entry[field] = {}
+                path.write_bytes(contracts.canonical_bytes(value))
+                before = self.snapshot()
+                with self.assertRaises(ValueError): self.generate_repair(self.f.root / field, repair)
+                self.assertEqual(self.snapshot(), before)
+            path.write_bytes(original)
+            self.generate_repair(self.f.root / 'valid', repair)
+        self.assertEqual(len(self.f.calls), 3)
+
+    def test_consumed_failure_cannot_bypass_planner_with_new_pure_proposal(self):
+        with self.f.session():
+            parent = self.generate()['artifact']; self.f.mode = 'fail'; failed = self.review()['artifact']
+            repair2, _ = self.repair_context(parent, failed, self.root)
+            root2 = self.f.root / 'revision-2'; child = self.generate_repair(root2, repair2)['artifact']
+            review = self.subject.review(self.f.prepared, root2, 'candidate', child['revisionId'],
+                'synthetic', self.f.transport, bounds=bounds(), usage_resolver=measured)['artifact']
+            forged, fingerprint = self.pure_repair_context(child, review, root2,
+                prior_revisions=[parent], prior_repairs=[repair2['plan']])
+            # Even a stale/imported proposal in durable history must not override
+            # the current consumed-failure ledger at the reservation boundary.
+            path = self.store.root / budget.STORE_ID / 'repair-planning.json'
+            history = contracts.read_snapshot(path)[0]
+            entries = next(iter(history['chains'].values()))
+            entries[forged['plan']['repairPlanId']] = dict(plan=forged['plan'], fingerprint=fingerprint,
+                sidecars={k:contracts.decode_json(v) for k,v in forged['sidecars'].items()})
+            path.write_bytes(contracts.canonical_bytes(history))
+            before = self.snapshot()
+            with self.assertRaisesRegex(ValueError, 'repeated_failure_without_new_evidence'):
+                self.generate_repair(self.f.root / 'forbidden-third', forged)
+            self.assertEqual(self.snapshot(), before)
+            self.restart()
+            self.assertEqual(self.generate_repair(root2, repair2)['artifact'], child)
+        self.assertEqual(len(self.f.calls), 4)
+
+    def test_plan_guard_rechecks_with_budget_lock_after_preflight_snapshot(self):
+        with self.f.session():
+            parent = self.generate()['artifact']; self.f.mode = 'fail'; failed = self.review()['artifact']
+            repair, _ = self.repair_context(parent, failed, self.root)
+            original = self.store.reserve
+            def replace_before_reserve(*args, **kwargs):
+                path = self.store.root / budget.STORE_ID / 'repair-planning.json'
+                history = contracts.read_snapshot(path)[0]; history['chains'] = {}
+                path.write_bytes(contracts.canonical_bytes(history))
+                return original(*args, **kwargs)
+            with patch.object(self.store, 'reserve', side_effect=replace_before_reserve):
+                with self.assertRaisesRegex(ValueError, 'not_durably_planned'):
+                    self.generate_repair(self.f.root / 'changed-before-lock', repair)
+        self.assertEqual(len(self.f.calls), 2)
 
     def test_gate_operation_binding_is_read_only_and_matches_ledger_request(self):
         with self.f.session():

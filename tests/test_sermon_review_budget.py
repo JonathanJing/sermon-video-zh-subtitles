@@ -59,6 +59,27 @@ class BudgetTests(unittest.TestCase):
         return self.store.execute_local(identity(), callback=lambda _: outcome or result(),
                                         **request(op, kind, revision))
 
+    def test_reservation_guard_is_locked_detached_and_runs_on_replay(self):
+        calls = []
+        def check(folder, ledger):
+            self.assertEqual(folder, self.store.root / budget.STORE_ID)
+            with jobs._lock(self.root, budget.STORE_ID) as (_, _, held):
+                self.assertFalse(held)
+            calls.append(len(ledger['reservations']))
+            ledger['reservations'].clear()  # Cannot mutate the authoritative ledger.
+        first = self.store.reserve(identity(), **request(), locked_check=check)
+        replay = self.store.reserve(identity(), **request(), locked_check=check)
+        self.assertEqual(calls, [0, 1])
+        self.assertTrue(first['created']); self.assertFalse(replay['created'])
+        path = self.root / budget.STORE_ID / 'state.json'; before = path.read_bytes()
+        def reject(folder, ledger): raise ValueError('guard_rejected')
+        with self.assertRaisesRegex(ValueError, 'guard_rejected'):
+            self.store.reserve(identity('other'), **request('other'), locked_check=reject)
+        self.assertEqual(path.read_bytes(), before)
+        with self.assertRaisesRegex(ValueError, 'guard_rejected'):
+            self.store.reserve(identity(), **request(), locked_check=reject)
+        self.assertEqual(path.read_bytes(), before)
+
     def test_near_size_limit_rejects_before_callback_when_result_cannot_fit(self):
         from scripts import sermon_review_contracts as contracts
         self.store.snapshot(identity())

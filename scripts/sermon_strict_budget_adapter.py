@@ -133,7 +133,9 @@ class StrictBudgetAdapter:
                 output.with_suffix('.raw.json'), output.with_suffix('.call.json'),
                 output.with_suffix('.rejection.json'))), 'strict_budget_unbound_existing_call')
         reservation = self.store.reserve(identity, operation_id=operation_id, kind=kind,
-            revision_id=revision_id, revision_number=revision_number, input_sha256=input_sha256, bounds=bounds)
+            revision_id=revision_id, revision_number=revision_number, input_sha256=input_sha256, bounds=bounds,
+            locked_check=(lambda folder, ledger: self._repair_guard(folder, ledger, operation, repair))
+                if repair is not None else None)
         rid = reservation['reservationId']
         binding = {'schemaVersion': 'sermon-strict-budget-binding-v1', 'reservationId': rid,
             'chainId': c.canonical_sha256(identity), 'operationId': operation_id,
@@ -199,6 +201,60 @@ class StrictBudgetAdapter:
         if result['usage'] is not None and any(result['usage'][key] > bounds[key] for key in budget.METRICS):
             budget_status = 'bound_exceeded'
         return self._public(artifact, result, rid, budget_status)
+
+    @staticmethod
+    def _repair_guard(folder, ledger, operation, repair):
+        """Bind the durable planner proposal at the atomic reservation boundary.
+
+        Pure/schema-valid plans carry no execution authority. Current sidecars
+        and the complete prior repair chain must exist in this same store; a
+        previously consumed failure cannot purchase another content revision.
+        """
+        history, _ = c.read_snapshot(folder / 'repair-planning.json')
+        c.require(type(history) is dict and set(history) ==
+                  {'schemaVersion', 'productionRunId', 'chains'} and
+                  history['schemaVersion'] == 'sermon-strict-repair-history-v1',
+                  'strict_repair_history_changed')
+        budget._hash(history['productionRunId'])
+        c.require(type(history['chains']) is dict, 'strict_repair_history_changed')
+        entries = history['chains'].get(c.canonical_sha256(operation['identity']))
+        c.require(type(entries) is dict, 'strict_repair_not_durably_planned')
+        plan = repair['plan']
+        entry = entries.get(plan['repairPlanId'])
+        c.require(type(entry) is dict and set(entry) == {'plan', 'fingerprint', 'sidecars'} and
+                  entry['plan'] == plan and entry['sidecars'] ==
+                  {key: c.decode_json(raw) for key, raw in repair['sidecars'].items()},
+                  'strict_repair_not_durably_planned')
+        parent, review, inputs = repair['parentRevision'], repair['triggerReview'], repair['inputManifest']
+        context = inputs['materialRefs']['context']
+        fingerprint = c.canonical_sha256({
+            **{key: parent[key] for key in ('candidateId', 'artifactSha256', 'sourceIdentitySha256',
+                'sourcePackageSha256', 'anchorSha256', 'policySha256')},
+            'rubricSha256': review['rubricSha256'],
+            'contextSha256': context['canonicalJsonSha256'] or context['fileBytesSha256'],
+            'contextSourceUnitIds': inputs['contextSourceUnitIds'],
+            'reasonCodes': sorted({issue['reasonCode'] for issue in review['issues']})})
+        c.require(entry['fingerprint'] == fingerprint, 'strict_repair_fingerprint_changed')
+        snapshot = entry['sidecars'][plan['budgetRef']['artifactId']]
+        c.require(snapshot['production_run_id'] == history['productionRunId'],
+                  'strict_repair_history_changed')
+        for prior in repair['priorRepairs']:
+            saved = entries.get(prior['repairPlanId'])
+            c.require(type(saved) is dict and saved.get('plan') == prior,
+                      'strict_repair_history_incomplete')
+        rows = [row for row in ledger['reservations'].values()
+                if row['request']['identity'] == operation['identity']]
+        # reserve already checked exact request equality for existing operations.
+        if any(row['request']['operationId'] == operation['operationId'] for row in rows):
+            return
+        consumed = {row['request']['revisionId'] for row in rows
+                    if row['request']['kind'] == 'content_revision'}
+        for saved in entries.values():
+            c.require(type(saved) is dict and set(saved) == {'plan', 'fingerprint', 'sidecars'},
+                      'strict_repair_history_changed')
+            c.require(not (saved['plan']['toRevisionId'] in consumed and
+                           saved['fingerprint'] == fingerprint),
+                      'repeated_failure_without_new_evidence')
 
     def _transport(self, output, binding, reservation, caller):
         invoked = False
