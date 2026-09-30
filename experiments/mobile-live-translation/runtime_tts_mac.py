@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 import hashlib
 import importlib.metadata
 import json
+import math
 import os
 from pathlib import Path
 import platform
@@ -66,6 +67,83 @@ def fixtures(plan: dict) -> list[dict]:
     return result
 
 
+def transport_integrity_passed(record: dict) -> bool:
+    """Check returned PCM transport evidence, not codec EOS or semantic coverage."""
+    chunks = record['chunks']
+    stream = record['streamRequested']
+    return (
+        record['error'] is None and record['generatorExhausted'] and record['finitePcm']
+        and bool(chunks) and record['sampleRate'] > 0 and record['returnedSampleCount'] > 0
+        and all(c['sampleRate'] == record['sampleRate'] and c['sampleCount'] >= 0 for c in chunks)
+        and sum(c['sampleCount'] for c in chunks) == record['returnedSampleCount']
+        and not record['nonStreamingFallbackAfterStreaming']
+        and record['observedCodecTokens'] < record['effectiveMaxCodecTokens']
+        and (all(c['is_streaming'] for c in chunks)
+             and sum(c['is_final'] for c in chunks) == 1 and chunks[-1]['is_final']
+             if stream else not any(c['is_streaming'] for c in chunks))
+    )
+
+
+def score_call(record: dict, batch_record: dict | None = None) -> dict:
+    """Score one retained call offline; a matched sample count is only a proxy.
+
+    Batch must be the same fixture's formal call from this diagnostic run. A
+    per-call RTF <= 1 is necessary throughput evidence, not long-run acceptance.
+    """
+    transport = transport_integrity_passed(record)
+    stream = record['streamRequested']
+    coverage = 'unknown' if stream else 'not_applicable'
+    batch_key = None
+    sample_delta = None
+    if (stream and batch_record is not None and not batch_record['streamRequested']
+            and not batch_record['warmup'] and batch_record['fixture'] == record['fixture']
+            and batch_record['sampleRate'] == record['sampleRate']
+            and transport_integrity_passed(batch_record)):
+        batch_key = batch_record['callKey']
+        sample_delta = record['returnedSampleCount'] - batch_record['returnedSampleCount']
+        coverage = 'matched' if sample_delta == 0 else 'mismatch'
+    elapsed_ms = record.get('fullCompletionMs')
+    duration = (record['returnedSampleCount'] / record['sampleRate']
+                if record['sampleRate'] > 0 else 0)
+    raw_rtf = (elapsed_ms / 1000 / duration
+               if isinstance(elapsed_ms, (int, float)) and not isinstance(elapsed_ms, bool)
+               and math.isfinite(elapsed_ms) and elapsed_ms > 0 and duration > 0 else None)
+    qualified_rtf = raw_rtf if transport and coverage in {'matched', 'not_applicable'} else None
+    if not stream:
+        realtime = 'not_applicable'
+    elif not transport or coverage == 'mismatch':
+        realtime = 'ineligible'
+    elif coverage == 'unknown' or qualified_rtf is None:
+        realtime = 'unknown'
+    else:
+        realtime = 'eligible' if qualified_rtf <= 1 else 'ineligible'
+    return {
+        'scoringVersion': 'mobile-tts-scoring-v2',
+        'transportIntegrityPassed': transport,
+        'sampleCoverageStatus': coverage, 'sampleCoverageBatchCallKey': batch_key,
+        'sampleCountDeltaFromBatch': sample_delta,
+        'rtfRawReturnedConcatenation': raw_rtf, 'qualifiedRtf': qualified_rtf,
+        'sustainedRealtimeStatus': realtime,
+        'qualifiedIncrementalAudio': realtime == 'eligible',
+        'codecEosStatus': 'unknown', 'semanticCompletenessStatus': 'unknown',
+        'listeningQualityStatus': 'unknown', 'longRunRealtimeStatus': 'unknown',
+    }
+
+
+def summarize_scores(records: list[dict]) -> dict:
+    """Exclude warmups from every qualification counter and preserve failures."""
+    formal = [r for r in records if not r['warmup']]
+    return {
+        'scoringVersion': 'mobile-tts-scoring-v2',
+        'qualifiedFormalCalls': sum(r['qualifiedIncrementalAudio'] for r in formal),
+        'transportIntegrityPassedFormalCalls': sum(r['transportIntegrityPassed'] for r in formal),
+        'sampleCoverageMatchedFormalCalls': sum(r['sampleCoverageStatus'] == 'matched' for r in formal),
+        'sampleCoverageMismatchCalls': [r['callKey'] for r in formal if r['sampleCoverageStatus'] == 'mismatch'],
+        'sampleCoverageUnknownCalls': [r['callKey'] for r in formal if r['sampleCoverageStatus'] == 'unknown'],
+        'sustainedRealtimeUnknownCalls': [r['callKey'] for r in formal if r['sustainedRealtimeStatus'] == 'unknown'],
+    }
+
+
 def worker(output: Path) -> int:
     if sha(EXPERIMENT) != EXPERIMENT_SHA:
         raise ValueError('frozen fluency experiment changed')
@@ -100,7 +178,7 @@ def worker(output: Path) -> int:
         raise ValueError('loaded model is not CustomVoice')
     event('model_ready', modelLoadMs=load_ms)
     identity = {
-        'schemaVersion': 'mobile-tts-runtime-diagnostic-v1', 'createdAt': datetime.now(timezone.utc).isoformat(),
+        'schemaVersion': 'mobile-tts-runtime-diagnostic-v2', 'createdAt': datetime.now(timezone.utc).isoformat(),
         'platform': platform.platform(), 'python': sys.version, 'packages': package_versions,
         'scriptSha256': sha(Path(__file__)), 'modelId': MODEL_ID, 'revision': REVISION,
         'modelSnapshot': str(SNAPSHOT), 'modelFiles': model_files, 'modelManifestSha256': manifest_sha,
@@ -200,8 +278,6 @@ def worker(output: Path) -> int:
         text_tokens = len(model.tokenizer.encode(fixture['text']))
         effective_limit = min(4096, max(75, text_tokens * 6))
         final_markers = sum(c['is_final'] for c in chunks)
-        qualified = (error is None and exhausted and finite and duration > 0 and not fallback_indices
-                     and code_tokens < effective_limit and (not stream or final_markers == 1))
         record = {
             'callKey': key, 'fixture': fixture, 'warmup': warmup, 'mode': mode_name,
             'streamRequested': stream, 'streamingIntervalSeconds': interval if stream else None,
@@ -214,9 +290,6 @@ def worker(output: Path) -> int:
             'firstCpuPcmMs': first_pcm_ms, 'fullCompletionMs': elapsed_ms,
             'sampleRate': rate, 'returnedSampleCount': int(concatenated.size),
             'returnedConcatenationDurationSeconds': duration,
-            'rtfRawReturnedConcatenation': elapsed_ms / 1000 / duration if duration else None,
-            'qualifiedRtf': elapsed_ms / 1000 / duration if qualified else None,
-            'qualifiedIncrementalAudio': qualified,
             'streamingChunkCount': sum(c['is_streaming'] for c in chunks), 'finalMarkerCount': final_markers,
             'nonStreamingFallbackAfterStreaming': bool(fallback_indices), 'fallbackChunkIndices': fallback_indices,
             'chunks': chunks, 'rawPcmSha256': hashlib.sha256(raw_pcm).hexdigest(),
@@ -226,6 +299,9 @@ def worker(output: Path) -> int:
             'audioWasDeduplicated': False, 'audioWasNormalized': False, 'playbackPerformed': False,
             'consumerScope': 'Only PCM materialization/copy and in-memory metadata during generation; disk/hash/WAV serialization after timed completion',
         }
+        batch_record = next((r for r in records if r['callKey'] == 'batch-' + fixture['id']), None)
+        record.update(score_call(record, batch_record))
+        qualified = record['qualifiedIncrementalAudio']
         save_json(call_dir / 'result.json', record)
         with (output / ('warmups.jsonl' if warmup else 'results.jsonl')).open('a') as handle:
             handle.write(json.dumps(record, ensure_ascii=False) + '\n')
@@ -259,18 +335,22 @@ def worker(output: Path) -> int:
         })
     formal = [r for r in records if not r['warmup']]
     summary = {
-        'schemaVersion': 'mobile-tts-runtime-summary-v1', 'callsCompleted': len(formal), 'warmupsCompleted': 1,
+        'schemaVersion': 'mobile-tts-runtime-summary-v2', 'callsCompleted': len(formal), 'warmupsCompleted': 1,
         'allFormalGeneratorsExhausted': all(r['generatorExhausted'] and r['error'] is None for r in formal),
         'allFormalPcmFinite': all(r['finitePcm'] for r in formal),
-        'qualifiedFormalCalls': sum(r['qualifiedIncrementalAudio'] for r in formal),
+        **summarize_scores(records),
         'fallbackAffectedCalls': [r['callKey'] for r in formal if r['nonStreamingFallbackAfterStreaming']],
         'perCall': [{k: r[k] for k in ['callKey', 'mode', 'firstCpuPcmMs', 'fullCompletionMs',
                    'returnedConcatenationDurationSeconds', 'qualifiedRtf', 'qualifiedIncrementalAudio',
-                   'streamingChunkCount', 'finalMarkerCount', 'nonStreamingFallbackAfterStreaming']} for r in formal],
+                   'streamingChunkCount', 'finalMarkerCount', 'nonStreamingFallbackAfterStreaming',
+                   'transportIntegrityPassed', 'sampleCoverageStatus', 'sampleCoverageBatchCallKey',
+                   'sampleCountDeltaFromBatch', 'sustainedRealtimeStatus', 'codecEosStatus',
+                   'semanticCompletenessStatus', 'listeningQualityStatus', 'longRunRealtimeStatus']} for r in formal],
         'batchComparisons': comparisons,
         'staticRisk': 'Installed _generate_with_instruct returns after streaming only when remaining tokens exist. Exact chunk exhaustion falls through to non-streaming full decode/yield.',
         'sampleLimit': 'Three existing machine-translated sentences; one call per text/mode; warmup excluded; no p95/SLA or listening-quality conclusion.',
-        'rtfLimit': 'RTF is null for unqualified incremental output; the raw ratio can be misleading when duplicate full audio is concatenated.',
+        'rtfLimit': 'Qualified RTF requires transport integrity and, for streams, matched batch sample counts; RTF > 1 remains visible but is ineligible for sustained real time. Raw ratios can mislead on duplicated or missing audio.',
+        'qualificationLimit': 'qualifiedFormalCalls counts only streams with transport integrity, matched sample counts and RTF <= 1. Batch is not incremental; matched counts do not establish identical codec IDs, semantic/listening completeness or long-run acceptance.',
         'modelComparisonLimit': 'Mac CustomVoice preset and DGX Base batch are different model/voice paths; no pure-hardware or equivalent-streaming claim.',
         'releaseEligible': False, 'playbackPerformed': False,
         'identitySha256': sha(output / 'identity.json'), 'resultsSha256': sha(output / 'results.jsonl'),
