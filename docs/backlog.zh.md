@@ -123,7 +123,7 @@ Firebase Hosting 只发布静态运行时和指纹索引；采集、特征和匹
 | `DEV-SPD-003` | 三类 dry run 与恢复演练 | `pending` | 在 `DEV-E2E-001` 现有模拟器上扩展快速回放、真实代表片段、故障后恢复；区分模拟与真实调用，验证恢复后的完整交付，保留失败和中断证据 | [本页效率计划](#每周流程效率计划)、[后端 dry run](backend-four-layer-dry-run.zh.md) |
 | `DEV-SPD-004` | 局部重试与修订依赖范围 | `pending` | 验证并接通已有翻译 partial repair、响应恢复和音频单元复用；受控故障恢复时，不受影响的成功组新增付费调用为 0、已验证音频重新合成为 0，旧收据与失效范围可追溯 | [本页效率计划](#每周流程效率计划)、[Layer 2/3 backlog](multilingual-layer-2-3-backlog.zh.md) |
 | `DEV-SPD-005` | 整周总 token 与调度开销优化 | `pending` | 汇总调度、内容生成、机器复核、失败与修订的去重用量；减少重复上下文和无效模型调用，按相同工作量比较恢复后总 token 与完成时间，保留费用及缺测边界 | [本页效率计划](#每周流程效率计划)、[模型实验结果](reports/20260928-model-production-ab-results.zh.md) |
-| `DEV-SPD-006` | Codex 编排三层重构与 bounded context | `pending` | 将正常周产拆为确定性 Workflow Engine、只处理窄歧义的 bounded Decision Agent、仅负责系统开发/未知故障的 Codex Engineer；按 TEST-A—G 验证 happy path 0 个 runtime Codex 编排 turn、State Packet 白名单/预算、子 Agent 不继承父全文、stale decision fail closed、页面 hard stop 与 token 分口径 A/B；不通过削弱质量门禁制造下降 | [Codex token 分析与测试计划](reports/20260929-codex-orchestration-token-analysis.zh.md) |
+| `DEV-SPD-006` | Codex 编排三层重构与 bounded context | `ready_to_start_dev` | 将正常周产拆为确定性 Workflow Engine、只处理窄歧义的 bounded Decision Agent、仅负责系统开发/未知故障的 Codex Engineer；按 TEST-A—G 验证 happy path 0 个 runtime Codex 编排 turn、State Packet 白名单/预算、子 Agent 不继承父全文、stale decision fail closed、页面 hard stop 与 token 分口径 A/B；不通过削弱质量门禁制造下降 | [Codex token 分析与测试计划](reports/20260929-codex-orchestration-token-analysis.zh.md) |
 | `DEV-LOCALE-001` | 界面本地化母语复核 | `in_progress` | 中文、英文、韩语、西语、越南语界面候选分别完成核心流程、错误、权限、VoiceOver 和长文本复核；界面语言不改变内容／音频选择 | [Layer 4 语言设计](multilingual-layer-4-delivery-app-backlog.zh.md#24-app-界面语言) |
 | `DEV-USAGE-001` | 按三种语言维度统计收听 | `waiting_evidence` | 三维语言／pageId 统计、私有报表、Web／API 发布与真实读回、原生 URLSession／模拟器 UI 已有 9 月 27 日记录；下一步完成实体 iPhone 实际播放／关闭／撤回、跨端口径及原始收据核对。界面语言、正文语言和实际音轨语言仍分别记录，不从界面选择推断收听 | [使用统计](sermon-app-usage.zh.md)、[三维统计与发布证据](sermon-language-listening-statistics.zh.md) |
 
@@ -187,6 +187,34 @@ A/B 顺序固定为：**A 当前 Agent-heavy 基线 → B1 只引入 bounded Sta
 | `SPD6-VAL-03` | `pending` | 一篇完整往期视频 replay + guarded Dev delivery | 完整三语、人工 gate、Layer 4、Dev HTTP/Range/SHA、Web smoke、受控故障恢复、cold/warm rerun、旧资产保护；Stage 3 sign-off |
 | `SPD6-ROLLOUT-01` | `pending` | 新周 shadow/guarded rollout + feature flag | 可切回 legacy_agent；首两周 enhanced logging；Production 仍按既有授权，不由新 controller 自动放宽 |
 | `SPD6-IOS-01` | `pending` | backend-only / iOS contract gate | 每个 sign-off 比对 iOS 源码、App bundle、catalog/release client contract、权限/隐私；均未变时记录 ios_review_required=false；任一客户端变化立即转入 DEV-CICD-004/DEV-IOS backlog |
+
+**开工前工业化缺口审查（已补齐设计）**
+
+对照 durable workflow 的常见实现后，开发前补齐以下合同；详细设计、Epic、依赖和文件目标见 [完整设计 §19–22](codex-orchestration-pipeline-design.zh.md#19-工业界模式对照与本项目取舍)。
+
+| 子项 | 状态 | 开发合同 |
+|---|---|---|
+| `SPD6-READY-01` | `ready` | workflowDefinitionVersion/stateSchemaVersion；in-flight run 固定版本，不兼容升级显式 migrate/finish-old/restart |
+| `SPD6-READY-02` | `ready` | side-effect idempotency key + intent-before-side-effect + outcome-unknown reconciliation；覆盖 paid model/TTS/deploy/registry |
+| `SPD6-READY-03` | `ready` | 每 stage timeout/heartbeat/no-progress/retryable/non-retryable/max-attempt matrix；不再只依赖统一长 timeout |
+| `SPD6-READY-04` | `ready` | compensation/rollback matrix：reversible/compensatable/append-only/manual reconciliation |
+| `SPD6-READY-05` | `ready` | bounded concurrency/backpressure：paid API、TTS、本地 CPU/RAM/GPU、queue fairness、同 identity 单 worker |
+| `SPD6-READY-06` | `ready` | human approval correlation：run/stage/candidate hash/revision/reviewer/schema；新 revision 自动失效旧批准 |
+| `SPD6-READY-07` | `ready` | Decision Agent security：packet allowlist、evidence-as-data、no shell/path/deploy control、action 二次校验、prompt-injection fixture |
+| `SPD6-READY-08` | `ready` | trace identity 可映射标准 tracing：trace/span/parent/workflow/stage/workUnit/attempt/executor；critical-path projector |
+| `SPD6-READY-09` | `ready` | Stage 2 前冻结 SLO/promotion gate；duplicate side effect/stale decision/missed mandatory gate 必须为 0 |
+| `SPD6-READY-10` | `ready` | sign-off ownership 分 Engineering/Content/Release/Compatibility/Performance，自动化不得自签人工/内容门禁 |
+
+**实施 Epic 与依赖**
+
+1. **E1 Accounting/Trace foundation**：schema extension → critical-path projector → weekly JSON/Markdown report。无前置依赖。
+2. **E2 Deterministic Controller**：versioned DAG → controller loop → durable dispatch/reconciliation → migration → feature flag。依赖 E1 schema。
+3. **E3 Bounded Decision Agent**：State Packet → runner → validator → failure taxonomy。依赖 E1 + E2 workflow definition。
+4. **E4 Reliability/Safety**：side-effect、timeout/heartbeat、backpressure、human correlation、crash-window tests。依赖 E2。
+5. **E5 Validation harness**：Stage 0 → 2–3 min → 10 min A/B → full historical → rollout。按 E1–E4 能力逐级启用。
+6. **E6 Compatibility gate**：freeze Web/iOS contract → automated compatibility diff → iOS review decision receipt。可与 E1–E4 并行，但 Stage 1–3 sign-off 必须执行。
+
+Definition of Ready 已在完整设计中逐项勾选；剩余的 implementation branch/issue/owner 是“开始开发”的执行动作，不再是架构缺口。因此 `DEV-SPD-006` 状态从 `pending` 更新为 `ready_to_start_dev`，但所有实现/验证子项仍未完成。
 
 **分阶段 Sign-off 规则**
 
