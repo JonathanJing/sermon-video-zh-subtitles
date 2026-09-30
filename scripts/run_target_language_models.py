@@ -623,12 +623,15 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             "input": common}
         stem = f"group-{index:04d}"
         astra_path = out / f"{stem}-astra.json"
+        prior_cache_root = resume_cache_from if resume_cache_from is not None else reuse_from if brief is None and repair is None else None
+        translator_cached = (astra_path.exists() or astra_path.with_suffix(".raw.json").exists()
+                             or (prior_cache_root is not None and (prior_cache_root / f"{stem}-astra.json").is_file()))
         with measure.producer_substage("initial_translation",
                                        billing="local" if simulation_only else "api"):
             with accounting.stage(f"layer2.translator.{request['targetLocale']}.{stem}",
-                                  cache_hit=astra_path.exists() or astra_path.with_suffix(".raw.json").exists() or
-                                  (resume_cache_from is not None) or
-                                  (reuse_from is not None and brief is None and repair is None), billing="api"):
+                                  cache_hit=translator_cached, billing="local" if simulation_only or translator_cached else "api",
+                                  work_unit_id=f"l2.{request['targetLocale']}.{stem}.translator",
+                                  executor_type="deterministic_program" if simulation_only or translator_cached else "production_model") as translator_span:
                 translated = _model_call("translator", translate_prompt, policy,
                                          astra_path, api_key, caller,
                                          reusable_cache(resume_cache_from, stem, "astra")
@@ -678,12 +681,15 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                             "Do not claim human approval. Prompt version: " + policy["reviewer"]["promptVersion"]),
             "input": {**common, "astraDraft": draft}}
         sol_path = out / f"{stem}-sol.json"
+        reviewer_cached = (sol_path.exists() or sol_path.with_suffix(".raw.json").exists()
+                           or (prior_cache_root is not None and (prior_cache_root / f"{stem}-sol.json").is_file()))
         with measure.producer_substage("independent_review",
                                        billing="local" if simulation_only else "api"):
             with accounting.stage(f"layer2.reviewer.{request['targetLocale']}.{stem}",
-                                  cache_hit=sol_path.exists() or sol_path.with_suffix(".raw.json").exists() or
-                                  (resume_cache_from is not None) or
-                                  (reuse_from is not None and brief is None and repair is None), billing="api"):
+                                  cache_hit=reviewer_cached, billing="local" if simulation_only or reviewer_cached else "api",
+                                  work_unit_id=f"l2.{request['targetLocale']}.{stem}.reviewer",
+                                  depends_on=[translator_span] if translator_span else None,
+                                  executor_type="deterministic_program" if simulation_only or reviewer_cached else "production_model"):
                 reviewed_response = _model_call("reviewer", review_prompt, policy,
                                                 sol_path, api_key, caller,
                                                 reusable_cache(resume_cache_from, stem, "sol")

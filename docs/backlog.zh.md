@@ -178,7 +178,7 @@ A/B 顺序固定为：**A 当前 Agent-heavy 基线 → B1 只引入 bounded Sta
 | `SPD6-ARCH-04` | `pending` | Layer C engineering run 与 production run 解耦 | engineeringRunId 独立；生产报表不混入 Codex 工程 token/time |
 | `SPD6-LOG-01` | `in_progress` | accounting v3 已开始写入 executorType、dependsOn、blockedBy、ready/queue、workUnit/attempt/decision identity；DAG/critical-path 初始投影已实现，下一步接入 producer 完整依赖与等待证据 | 可重建 DAG 和 critical path；旧 v1/v2 历史仍可读 |
 | `SPD6-LOG-02` | `pending` | 固定程序记录 script/hash/input/output receipt/runtime/CPU/RSS/cache | 固定程序耗时不记为 Codex orchestration |
-| `SPD6-LOG-03` | `pending` | 模型调用记录 requested/actual model、role、input/cached/non-cached/output/reasoning、latency/attempt | 关键 model call usage 覆盖 100% 或显式 unknown；不重复计量 SDK 聚合与底层 receipt |
+| `SPD6-LOG-03` | `in_progress` | 模型调用记录 requested/actual model、role、input/cached/non-cached/output/reasoning、latency/attempt | 关键 model call usage 覆盖 100% 或显式 unknown；不重复计量 SDK 聚合与底层 receipt |
 | `SPD6-LOG-04` | `pending` | Decision Agent 记录 State Packet bytes/hash、evidence refs、model latency、validation/commit time | 能单独得到 orchestration time/token；parentContextInherited 目标为 false |
 | `SPD6-LOG-05` | `in_progress` | 生成 Weekly Pipeline Report JSON + Markdown | 同时给 end-to-end、critical path、active compute、human/external wait、production model、Decision Agent、engineering Codex、热点 work unit |
 | `SPD6-VAL-00` | `pending` | 现有 synthetic/短 fixture dry run | happy path 0 runtime Codex turn；failure injection、stale decision、convergence、hard stop、账本重建全通过并生成 Stage 0 sign-off |
@@ -491,3 +491,5 @@ Debug owner：Fix/Debug agent
 2026-09-30 实施证据：[PR #122](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/122) 在 #121 基础上修复 v3 分类/字段/导入校验，新增 E1.2 DAG/slack 与 E1.3 JSON→Markdown 初始投影、E6 commit-bound 保守快照。状态为实现中：模拟单测不是 producer 全覆盖，不是 Stage 0–3 人工 sign-off。真实 source/locales/page-ready 计量、controller/Decision Agent、真实媒体阶段与合同变化后的 decoder 验证仍待后续证据。
 
 E2 后续批次：版本化 action registry 与 opt-in deterministic controller 已开始接入既有 `legacy page_release` adapter；默认 shadow、page_ready hard stop，复用 durable jobs/admission locks/outcome reconciliation。canonical 四层 DAG/三语汇合、E3 Decision Agent、迁移收据与阶段人工验收仍待实现，不能按 legacy fixture 关闭 DEV-SPD-006。
+
+E1 producer 后续批次：已接入真实 L2 同组翻译→审校 span、L3 模型加载→推理→校验 span，并以缓存恢复与模拟音频测试验证；跨 layer/source/queue 尚不完整，SPD6-LOG-01/03 保持实现中。#122/#123 审查回归覆盖冲突 usage、非法 dependency-ready、shadow 无文件变更以及 bridge/candidate 身份变化，不能替代新 head 独立审查或真实媒体分阶段 sign-off。

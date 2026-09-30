@@ -13,6 +13,7 @@ from scripts import render_formal_target_language_speech as subject
 from scripts import four_layer_measure as measure
 from scripts import four_layer_progress as progress
 from scripts import sermon_accounting as accounting
+from scripts import weekly_pipeline_report as weekly
 from tests import test_build_target_language_audio_package as fixture_module
 
 
@@ -168,6 +169,21 @@ class FormalRenderTests(unittest.TestCase):
             self.render_units()
         events, damaged = accounting.read_events(directory)
         self.assertFalse(damaged)
+        starts = {e['spanId']: e for e in events if e['event'] == 'stage_started'}
+        synthesis = [e for e in starts.values() if e['stage'].startswith('layer3.synthesis.')]
+        self.assertEqual(len(synthesis), 2)
+        for synth in synthesis:
+            self.assertEqual(synth['executorType'], 'production_model')
+            self.assertEqual(len(synth['dependsOn']), 2)
+            self.assertEqual({starts[dependency]['stage'].split('.')[1] for dependency in synth['dependsOn']},
+                             {'model_load', 'cache_admission'})
+        validations = [e for e in starts.values() if e['stage'].startswith('layer3.validation.')]
+        self.assertEqual(len(validations), 2)
+        for validation in validations:
+            self.assertEqual(validation['executorType'], 'deterministic_program')
+            self.assertIn(validation['dependsOn'][0], {e['spanId'] for e in synthesis})
+        parents = {e['parentSpanId'] for e in starts.values()}
+        self.assertTrue(all(e['spanId'] not in parents for e in synthesis))
         attempts = [row for row in accounting.summarize(directory)["stageAttempts"]
                     if row["stage"].startswith("layer3.unit.")]
         self.assertEqual(len(attempts), 4)
@@ -179,6 +195,43 @@ class FormalRenderTests(unittest.TestCase):
         self.assertEqual(sum(item["reusedCurrent"] for item in workloads), 2)
         self.assertEqual(sum(event["event"] == "stage_finished" and
                              event["stage"].startswith("layer3.model_load.") for event in events), 1)
+
+    def test_prior_cache_and_receipt_decodes_are_all_deterministic_accounting_leaves(self):
+        self.render_units()
+        next_root = self.root.parent / 'accounted-reuse'
+        next_root.mkdir()
+        next_paths = dict(self.paths)
+        next_paths['job'] = next_root / 'job.json'
+        next_paths['job'].write_bytes(self.paths['job'].read_bytes())
+        directory = next_root / 'accounting'
+        decoded_in = []
+        original = subject.integrity.probe_full_decode
+        def decode(*args, **kwargs):
+            decoded_in.append(accounting._span.get())
+            return original(*args, **kwargs)
+        with accounting.accounting_session(directory, 'layer3_formal_render'), \
+             patch.object(subject.integrity, 'probe_full_decode', side_effect=decode):
+            subject.render_units(self.context, next_paths, next_root, self.root / 'checkpoint-map.json',
+                                 reuse_from=self.root, synth_factory=FakeSynth)
+            # Current-root reuse must still account for receipt validation.
+            subject.render_units(self.context, next_paths, next_root, self.root / 'checkpoint-map.json',
+                                 synth_factory=FakeSynth)
+        self.assertEqual(len(FakeSynth.calls), 2)  # Only the initial fixture rendering.
+        events, damaged = accounting.read_events(directory)
+        self.assertFalse(damaged)
+        starts = {event['spanId']: event for event in events if event['event'] == 'stage_started'}
+        parents = {event['parentSpanId'] for event in starts.values()}
+        self.assertEqual(len(decoded_in), 8)  # 3 prior-cache decodes + 1 current receipt per unit.
+        self.assertEqual([starts[span]['stage'].split('.')[1] for span in decoded_in],
+                         ['cache_admission', 'validation', 'receipt'] * 2 + ['receipt'] * 2)
+        for span in decoded_in:
+            self.assertNotIn(span, parents)
+            self.assertEqual(starts[span]['executorType'], 'deterministic_program')
+            self.assertTrue(any(e['event'] == 'stage_finished' and e['spanId'] == span
+                                and e['elapsedSeconds'] > 0 for e in events))
+        projected = weekly.project(directory)['runs'][0]
+        projected_spans = {row['spanSha256'] for row in projected['workUnits']}
+        self.assertTrue(all(weekly.digest(span) in projected_spans for span in decoded_in))
 
     def test_formal_render_binds_unit_spans_to_layer3_ledger(self):
         ledger_path = self.root.parent / "four-layer-progress.json"
