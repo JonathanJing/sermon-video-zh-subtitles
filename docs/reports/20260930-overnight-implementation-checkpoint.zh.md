@@ -122,3 +122,24 @@
 可独立继续：canonical 四层 durable adapter/dispatch、production bounded responder 的锁内 admission、stage-specific timeout/heartbeat、资源 backpressure、版本迁移 receipt，以及 shared catalog/page 与 text-only Release 的更多真实消费端契约覆盖。当前 shadow inspection 和注入式 responder 测试尚未完成这些能力。
 
 外部门槛保持：受预算与批准约束的 2–3 分钟/10 分钟/完整历史视频运行、内容/完整听审 sign-off、第二个真实周、物理设备和现场盲测。没有关闭这些项或把现有 Apple 1.1.0 分发状态算作新代码验收。
+
+## 10:57 UTC 消费端覆盖与交付边界补充
+
+新增实际行为：#146 `dc4da99d646c9c494480166e16c1bdd17dbcf67c` 在 Web 请求 Release 前校验 catalog 头与页面结构，33 个共用 header/page 边界夹具同时经过实际 Swift decoder 和 Python schema。#147 `2eb7d1ba1c2ac757bb42da2c740dbd425648655b` 让新 fingerprint Worker 重新验证并复用最后一个公共索引的 CacheStorage 字节，限制单一条目与 32 MiB 大小；没有存储 PCM/查询特征。两者 exact-head Python 两分片与 aggregate 均通过，draft iOS/contract jobs 仍 skipped。
+
+在本地 QA 快照 `ccdcf38f7afc3144d09ada4532b57111d7e0f0b7` 将这两批接到前述 `649dc908` 组合上后，无文本冲突；本次重跑相关 Web 327 项、Python 15 项以及 Swift 新增的 1 项参数化测试（33 个 case）通过。之前整套 Root Python/模拟器数目只属于 `649dc908`，不冒充在新快照上重新全跑。
+
+#147 的实际 Chrome 154 临时 profile/loopback 验证通过：冷加载验证后持久化 → 索引路由返回 503 时，新 Worker 从实际 CacheStorage 读取并验证 → 故意损坏缓存后拒绝并移除。页面/模块路由保持可用，没有请求麦克风；不等于全浏览器断网、重启恢复、Safari 或物理设备验收。
+
+### 哪些改动需要怎样交付
+
+| 范围 | 实际改动 | 到达用户的必要步骤 |
+|---|---|---|
+| 后端/本地产线 | Python DAG/Weekly accounting、controller/shadow inspection、预算/作业/付费 cache 持久性、Source 准入、Layer 4 资产与快照保护 | 代码审查并按授权合入、在对应运行环境启用；这些后端改动本身不要求重编 iOS，但仍受合同兼容与阶段验证约束。 |
+| Web 客户端 | catalog/Release 校验，现场诊断、索引预检、新录音点击、公共索引 cache | 审查并部署新的 Web 资产后才改变网站用户行为。本轮没有部署；Web 资产也不会替换已安装 App 内编译的 Swift Core。 |
+| 原生 Swift 客户端 | #137 的 `Core/Sources/TongxingCore/MultilingualCatalog.swift`：允许 producer 的合法长 opaque packageId；校验 HTTP/device/venue acceptance 状态与证据；Dev candidate 不得声称设备/现场验收。#142/#146 继承此代码，并增加测试夹具。 | **需要新 iOS binary，并经过适用的构建、设备验收、审核及发布流程，才能到达已安装用户。不能把整批称为“纯后端优化，不需新 App Store 审核”。** 本轮未执行上传、审核提交或 App Store 发布。 |
+| 测试/生成工具 | Swift 共用合同 fixtures/tests、fingerprint golden 生成器、CI 路由和模拟验证 | 单独测试或生成脚本不直接改变已安装 binary；测试通过也不等于用户已收到改动。 |
+
+以该组合对 `dev f95346ab` 的文件差异核实，新增原生 production Swift 改动仅上述 Core decoder；App 播放控制器/Infrastructure 的 production Swift 文件未改。模拟器运行覆盖既有播放与对齐回归，而不是新的物理设备证据。Apple 1.1.0 Ready for Distribution 属于既有构建状态，不能证明这些新提交已包含、已安装或已验收。
+
+麦克风/指纹/字幕对齐的真实现场阈值、15 秒协议、AGC/时钟、噪声/距离和人工盲测门槛均未降低。FIELD-02 仍缺完整离线包 readiness、浏览器重启/驱逐、Safari/iPhone 与现场证据；内容/听审及设备 sign-off 仍待真实执行。
