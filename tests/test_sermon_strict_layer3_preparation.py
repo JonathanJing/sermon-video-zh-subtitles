@@ -52,6 +52,23 @@ class PreparationTests(unittest.TestCase):
         with self.assertRaises(ValueError):self.prepare()
         self.assertFalse(self.out.exists())
 
+    def test_reissued_valid_receipt_prepares_with_new_intent_only(self):
+        candidate = (self.f.root / 'public.json').read_bytes()
+        calls = len(self.f.f.f.calls)
+        self.f.approve(evidence='Synthetic reissued receipt for unchanged candidate')
+        self.assertEqual((self.f.root / 'public.json').read_bytes(), candidate)
+        with self.assertRaisesRegex(ValueError, 'layer3_admission_evidence_changed'):
+            self.prepare()
+        self.assertFalse(self.out.exists())
+        result = self.f.admit()
+        self.assertEqual(result['status'], 'committed', result)
+        self.assertNotEqual(result['intent']['intentId'], self.intent)
+        self.intent = result['intent']['intentId']
+        prepared = self.prepare()
+        self.assertEqual(prepared['status'], 'prepared')
+        self.assertEqual(self.prepare(), prepared)
+        self.assertEqual(len(self.f.f.f.calls), calls)
+
     def test_completed_job_deletion_is_not_silently_recreated(self):
         self.prepare();(self.out/'job.json').unlink()
         with self.assertRaisesRegex(ValueError,'completed_output_missing'):self.prepare()

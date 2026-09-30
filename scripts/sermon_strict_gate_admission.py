@@ -385,9 +385,21 @@ class AdmissionBoundary:
                     'sourceIdentitySha256': snapshot.groups[0].current.source_identity_sha256,
                     'policySha256': snapshot.groups[0].current.policy_sha256,
                     'publicCandidateSha256': validated['publicCandidateSha256']}
+                # A reissued valid human receipt may retain identical approved
+                # Candidate bytes. Bind the permission to that receipt as the
+                # downstream preparation adapter does. Preserve old-format
+                # permissions only when their exact receipt still matches.
+                legacy_key = c.canonical_sha256(identity)
+                identity['humanReceiptSha256'] = validated['humanReceiptSha256']
                 key = c.canonical_sha256(identity)
                 if key in record['intents']:
-                    return self._result('existing', intent=record['intents'][key])
+                    existing = record['intents'][key]
+                    c.require(existing['humanReceiptSha256'] == validated['humanReceiptSha256'],
+                              'admission_intent_receipt_changed')
+                    return self._result('existing', intent=existing)
+                legacy = record['intents'].get(legacy_key)
+                if legacy is not None and legacy['humanReceiptSha256'] == validated['humanReceiptSha256']:
+                    return self._result('existing', intent=legacy)
                 intent = {'intentId': key, 'identity': identity, 'action': 'prepare_layer3',
                     'executionAuthority': 'existing_layer3_adapter_only',
                     'stateRevision': snapshot.state_revision, 'snapshotSha256': snapshot.snapshot_sha256,
