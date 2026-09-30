@@ -165,6 +165,41 @@ A/B 顺序固定为：**A 当前 Agent-heavy 基线 → B1 只引入 bounded Sta
 
 候选验收原则：正常 happy path 可由 Layer A 表达时 runtime Codex orchestration turn 为 0；Layer B 不携带完整会话；生产 API token 不能因“省 Codex”而无界增加；不得通过减少语言、取消人工审核、跳过 QA/设备/发布门禁制造 token 降幅。具体百分比在真实基线形成后、A/B 前冻结，不预先承诺。
 
+
+完整实施设计见 [三层编排重构：Pipeline、日志、验证与分阶段 Sign-off](codex-orchestration-pipeline-design.zh.md)。现有 codebase 审核结论是：这不是“两条独立并行流水线”，而是 **dependency-aware 业务 DAG + control plane**。Control plane 只在 dependency 满足时 dispatch durable job；job 运行期间应等待/退出，完成后重新读取 evidence。业务 DAG 内仅在依赖允许处并行，例如同一 frozen Layer 1 后的 zh/ko/es Layer 2、各语言已批准后的 Layer 3；Layer 4 前重新汇合。
+
+**DEV-SPD-006 完整实施 Backlog**
+
+| 子项 | 状态 | 工作 | 完成条件 |
+|---|---|---|---|
+| `SPD6-ARCH-01` | `pending` | 将现有 snapshot/recommendedAction 明确建模为 dependency DAG + deterministic controller | 依赖、convergence、human gate、waiting、terminal scope 均有机器可读状态；不改变现有业务 gate |
+| `SPD6-ARCH-02` | `pending` | Layer A dispatch durable job、wait、reconcile、idempotency、retry budget、hard stop | outstanding job 不重复启动；exit 0 不代替 evidence；未知 outcome fail closed |
+| `SPD6-ARCH-03` | `pending` | Layer B State Packet / Decision schema、allowed actions、state revision、budget | 只处理窄歧义；旧 state decision 作废；未知 action 拒绝 |
+| `SPD6-ARCH-04` | `pending` | Layer C engineering run 与 production run 解耦 | engineeringRunId 独立；生产报表不混入 Codex 工程 token/time |
+| `SPD6-LOG-01` | `pending` | accounting 扩展 executorType、dependsOn、blockedBy、ready/queue/start/end | 可重建 DAG 和 critical path；旧 v2 历史仍可读 |
+| `SPD6-LOG-02` | `pending` | 固定程序记录 script/hash/input/output receipt/runtime/CPU/RSS/cache | 固定程序耗时不记为 Codex orchestration |
+| `SPD6-LOG-03` | `pending` | 模型调用记录 requested/actual model、role、input/cached/non-cached/output/reasoning、latency/attempt | 关键 model call usage 覆盖 100% 或显式 unknown；不重复计量 SDK 聚合与底层 receipt |
+| `SPD6-LOG-04` | `pending` | Decision Agent 记录 State Packet bytes/hash、evidence refs、model latency、validation/commit time | 能单独得到 orchestration time/token；parentContextInherited 目标为 false |
+| `SPD6-LOG-05` | `pending` | 生成 Weekly Pipeline Report JSON + Markdown | 同时给 end-to-end、critical path、active compute、human/external wait、production model、Decision Agent、engineering Codex、热点 work unit |
+| `SPD6-VAL-00` | `pending` | 现有 synthetic/短 fixture dry run | happy path 0 runtime Codex turn；failure injection、stale decision、convergence、hard stop、账本重建全通过并生成 Stage 0 sign-off |
+| `SPD6-VAL-01` | `pending` | 经授权往期视频约 2–3 分钟真实小片段 dry run | 三语真实 ASR/翻译/review/TTS/组装/Dev candidate；happy path 0 Codex turn；bounded decision 注入通过；相同输入 rerun 未影响单元不新增付费调用；Stage 1 sign-off |
+| `SPD6-VAL-02` | `pending` | 连续 10 分钟真实片段 A/B | A 当前路径 → B1 bounded packet → B2 Layer A+B → B3 hard stop；同输入/模型/prompt/gate/cache 条件比较时间、token、质量、恢复；Stage 2 sign-off |
+| `SPD6-VAL-03` | `pending` | 一篇完整往期视频 replay + guarded Dev delivery | 完整三语、人工 gate、Layer 4、Dev HTTP/Range/SHA、Web smoke、受控故障恢复、cold/warm rerun、旧资产保护；Stage 3 sign-off |
+| `SPD6-ROLLOUT-01` | `pending` | 新周 shadow/guarded rollout + feature flag | 可切回 legacy_agent；首两周 enhanced logging；Production 仍按既有授权，不由新 controller 自动放宽 |
+| `SPD6-IOS-01` | `pending` | backend-only / iOS contract gate | 每个 sign-off 比对 iOS 源码、App bundle、catalog/release client contract、权限/隐私；均未变时记录 ios_review_required=false；任一客户端变化立即转入 DEV-CICD-004/DEV-IOS backlog |
+
+**分阶段 Sign-off 规则**
+
+1. **Stage 0 — synthetic/现有短 fixture：** 不测真实内容质量，先证明 controller、dependency、logging、failure/recovery、安全停止。所有 deterministic happy path 不调用 Codex runtime。
+2. **Stage 1 — 2–3 分钟真实小片段：** 片段必须含普通叙述、专名、经文/术语、长句、自然停顿和多个翻译/TTS 单元；走真实生产模型和 Dev candidate，但不 Production deploy。
+3. **Stage 2 — 10 分钟连续真实片段：** 冻结同一输入、模型/prompt、质量门禁和初始 cache；逐步 A/B，不能一次改多个变量；形成 full-video 前的性能/质量阈值。
+4. **Stage 3 — 完整往期视频：** 使用已有 frozen source/审核/发布参考的历史视频，在隔离目录 replay，再做 guarded Dev delivery；要求完整人工/HTTP/Range/SHA 和兼容 smoke。只有 Stage 3 签字后才进入新周 rollout。
+5. **每级失败不得由后一级结果覆盖。** 修复后重新跑当前级并生成新的 sign-off receipt；sign-off 必须绑定 code SHA、config、source/slice、模型/prompt、初始 cache、结果 hash 和 reviewer。
+
+**iOS / App Store 边界**
+
+本优化目标是后端编排和 accounting。只要最终 diff 不修改 iOS 源码/App bundle，不改变旧 App 无法解析或语义不兼容的 catalog/Release/URL 合同，不新增客户端权限、SDK、隐私采集、背景行为或远程可执行代码，就不需要为了这次后台优化制作新 iOS build。每个 Stage sign-off 都必须重新跑 `SPD6-IOS-01`，而不是一次性永久豁免。若任何客户端代码/合同必须改变，立即撤销 backend-only 结论并进入 `DEV-CICD-004` 的 build/TestFlight/App Review 链。
+
 **实施顺序与交付物**
 
 1. **`DEV-SPD-002` + `DEV-TRACK-001`：流程图和可核对基线。** 列出接链、下载、范围审批、ASR／对齐、英文审核、三语翻译／机器复核／人审、TTS／筛查／排程／听审、构建／上传／HTTP／App 检查的实际入口及先后依赖。逐项标记实现／模拟／人工／未接通、输入输出 hash、最小工作单元、并发限制、缓存条件、重试范围与审核等待。冻结运行身份、样本、模型／prompt／策略、代码和初始缓存；区分执行、资源排队、审核等待、外部阻塞和返工，计算三语最长路径，不能把父子 span 或并行时间相加。分别报告首次执行、恢复后成功尝试及包含全部失败／修订的整周累计，完整用量不可得时只报已知小计及缺口。
