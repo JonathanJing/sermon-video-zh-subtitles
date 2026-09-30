@@ -44,6 +44,14 @@ def _read_package(root, reference, hashes, key):
 def inspect(config_path):
     path = _safe_path(Path(config_path).absolute())
     config = _read_package(path.parent, str(path), {}, 'configuration')
+    return inspect_configuration(path.parent, config)
+
+
+def inspect_configuration(root, config):
+    """Inspect a trusted backend's effective config through the same gates."""
+    root = _safe_path(Path(root).absolute())
+    if not isinstance(config, dict) or not root.is_dir():
+        raise ValueError('invalid_inspection_configuration')
     version = config.get('schemaVersion')
     fields = {'schemaVersion', 'source', 'anchor', 'locales'} | ({'pageId'} if version == SCHEMA_V3 else set())
     if (set(config) != fields or version not in {SCHEMA, SCHEMA_V2, SCHEMA_V3}
@@ -82,16 +90,16 @@ def inspect(config_path):
                 result['nodes'][node]['reasonCode'] = code
         return result
     try:
-        source = _read_package(path.parent, config['source'], hashes, 'source')
-        anchor = _read_package(path.parent, config['anchor'], hashes, 'anchor')
+        source = _read_package(root, config['source'], hashes, 'source')
+        anchor = _read_package(root, config['anchor'], hashes, 'anchor')
         handoff._validate_schema(source, 'sermon-english-source-package-v1.schema.json', 'source package')
         english.validate_ready_package(source)
         producer.validate_source_for_translation(source, anchor)
         summary_evidence = source['evidence']['pipelineSummary']
         if summary_evidence is None:
             raise ValueError('source_media_summary_missing')
-        summary = _read_package(path.parent, summary_evidence['path'], hashes, 'sourceSummary')
-        if (english.file_sha256(_safe_path(path.parent / summary_evidence['path'])) != summary_evidence['sha256']
+        summary = _read_package(root, summary_evidence['path'], hashes, 'sourceSummary')
+        if (english.file_sha256(_safe_path(root / summary_evidence['path'])) != summary_evidence['sha256']
                 or hashes['sourceSummary'] != summary_evidence['jsonSha256']
                 or english._source_media(summary) != source['source']['media']):
             raise ValueError('source_media_summary_changed')
@@ -104,21 +112,21 @@ def inspect(config_path):
         if window['startSeconds'] != start or window['endSeconds'] != end:
             raise ValueError('source_window_summary_changed')
         window_evidence = window['evidence']
-        window_receipt = _read_package(path.parent, window_evidence['path'], hashes, 'sourceWindowReview')
+        window_receipt = _read_package(root, window_evidence['path'], hashes, 'sourceWindowReview')
         if (source['issues'] or window['status'] != 'approved'
                 or window_receipt.get('status') != 'approved' or window_receipt.get('humanApproval') is not True
-                or english.file_sha256(_safe_path(path.parent / window_evidence['path'])) != window_evidence['sha256']
+                or english.file_sha256(_safe_path(root / window_evidence['path'])) != window_evidence['sha256']
                 or hashes['sourceWindowReview'] != window_evidence['jsonSha256']
                 or window_receipt.get('sourceUrlHash') not in (None, source['source']['sourceUrlHash'])):
             raise ValueError('source_window_approval_changed')
         # The source's independent human receipt and aligned transcript remain
         # immutable evidence; do not accept a copied approval flag alone.
         aligned = source['transcript']['artifact']
-        aligned_path = _safe_path(path.parent / aligned['path'])
+        aligned_path = _safe_path(root / aligned['path'])
         if english.file_sha256(aligned_path) != aligned['sha256']:
             raise ValueError('aligned_transcript_identity_changed')
         reviewed, _ = english._review_payload(
-            _safe_path(path.parent / source['review']['evidence']['path']),
+            _safe_path(root / source['review']['evidence']['path']),
             aligned_sha256=aligned['sha256'], anchor_json_sha256=hashes['anchor'],
             source_unit_ids=[unit['sourceUnitId'] for unit in anchor['sourceUnits']])
         if reviewed != source['review']:
@@ -132,7 +140,7 @@ def inspect(config_path):
     for locale, lane in sorted(config['locales'].items()):
         text, audio = 'text.' + locale, 'audio.' + locale
         try:
-            policy = _read_package(path.parent, lane['policy'], hashes, 'policy.' + locale)
+            policy = _read_package(root, lane['policy'], hashes, 'policy.' + locale)
             request = producer.prepare_request(source, anchor, policy)
             if request['targetLocale'] != locale:
                 raise ValueError('policy_locale_mismatch')
@@ -142,7 +150,7 @@ def inspect(config_path):
         if 'candidate' not in lane:
             continue
         try:
-            candidate = _read_package(path.parent, lane['candidate'], hashes, 'candidate.' + locale)
+            candidate = _read_package(root, lane['candidate'], hashes, 'candidate.' + locale)
             handoff._validate_schema(candidate, 'sermon-target-language-candidate-v2.schema.json', 'candidate')
             handoff.validate_target_candidate(source, anchor, candidate, require_human_approval=False)
             handoff.validate_policy_binding(candidate, policy)
@@ -157,7 +165,7 @@ def inspect(config_path):
         if 'humanReview' not in lane:
             continue
         try:
-            receipt = _read_package(path.parent, lane['humanReview'], hashes, 'review.' + locale)
+            receipt = _read_package(root, lane['humanReview'], hashes, 'review.' + locale)
             handoff.validate_target_candidate(source, anchor, candidate)
             handoff.validate_human_review_receipt(source, anchor, candidate, receipt)
             audio_id = project()['nodes'][audio]['identity']
@@ -168,10 +176,10 @@ def inspect(config_path):
         if 'audio' not in lane:
             continue
         try:
-            upstream = {'source': path.parent / config['source'], 'anchor': path.parent / config['anchor'],
-                        'candidate': path.parent / lane['candidate'], 'policy': path.parent / lane['policy'],
-                        'human_receipt': path.parent / lane['humanReview']}
-            checked = audio_inspector.inspect(path.parent, lane['audio'], upstream, _read_package, hashes, locale)
+            upstream = {'source': root / config['source'], 'anchor': root / config['anchor'],
+                        'candidate': root / lane['candidate'], 'policy': root / lane['policy'],
+                        'human_receipt': root / lane['humanReview']}
+            checked = audio_inspector.inspect(root, lane['audio'], upstream, _read_package, hashes, locale)
             expected = {'source': hashes['source'], 'anchor': hashes['anchor'],
                         'candidate': hashes['candidate.' + locale], 'policy': hashes['policy.' + locale],
                         'human_receipt': hashes['review.' + locale]}
@@ -192,8 +200,8 @@ def inspect(config_path):
             continue
         try:
             release_sha = release_inspector.inspect(
-                path.parent, lane['release'], page_id=config['pageId'], locale=locale,
-                source=source, candidate=candidate, audio_path=path.parent / lane['audio']['package'],
+                root, lane['release'], page_id=config['pageId'], locale=locale,
+                source=source, candidate=candidate, audio_path=root / lane['audio']['package'],
                 audio_sha256=checked['outputSha256'], read_package=_read_package, hashes=hashes)
             observations[page] = {'identity': page_id, 'status': 'validated', 'outputSha256': release_sha}
         except (ValueError, TypeError, KeyError, OSError):

@@ -1,7 +1,7 @@
 """Collect repeatable Stage 0 component evidence, never human sign-off.
 
-Only the fixed local/synthetic suites below run. Canonical durable execution is
-not implemented yet, so even all-green components cannot promote Stage 1.
+Only the fixed local/synthetic suites below run. Fixed Layer 2 admission exists,
+but the full canonical workflow remains incomplete: green cannot promote Stage 1.
 """
 from __future__ import annotations
 import argparse
@@ -24,7 +24,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SUITES = {
     'canonical_packages': ('tests.test_inspect_canonical_packages', 'tests.test_inspect_canonical_audio',
                            'tests.test_inspect_canonical_release', 'tests.test_canonical_pipeline_definition',
-                           'tests.test_canonical_durable_jobs'),
+                           'tests.test_canonical_durable_jobs', 'tests.test_canonical_layer2_controller'),
     'bounded_decision': ('tests.test_sermon_bounded_decision', 'tests.test_sermon_decision_budget',
                          'tests.test_sermon_decision_accounting'),
     'legacy_controller_reliability': ('tests.test_sermon_deterministic_controller', 'tests.test_controller_crash_windows',

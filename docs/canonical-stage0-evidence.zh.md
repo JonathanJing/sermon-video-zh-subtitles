@@ -21,7 +21,7 @@ dirty checkout 或运行中 git 状态变化使检查失败。组件全通过时
 
 `stage0-signoff.json` 是绑定该 report 字节 hash 的待签字文件，所有人工角色
 保持 pending/not_evaluated，`automaticApproval=false`，`stage1PromotionAllowed=false`。
-当前 canonical durable dispatch、生产 Decision runner、group/unit 选择性恢复、
+当前固定 Layer 2 adapter 已有 producer dispatch；完整 canonical durable dispatch、生产 Decision runner、group/unit 选择性恢复、
 deploy/HTTP 故障不重跑上游的集成证据、stage-specific retry/heartbeat/backpressure
 仍是明确 blocker。legacy controller 与 synthetic fixture 的通过不能替代这些条件。
 新 runtime 未经兼容性分类时，即使受保护 client tree 不变，仍保留 compatibility review。
