@@ -127,6 +127,22 @@ class GateEvaluationTests(unittest.TestCase):
         result = g.evaluate_gate(self.snapshot, gate_decision_id='gate-1', created_at=NOW)
         self.assertEqual(result.decision['admissionStatus'], 'blocked')
 
+    def test_known_content_failure_can_repair_before_public_assembly_and_human_review(self):
+        def fail(row):
+            row['reviewVerdict']='needs_rework';row['checks'][0]['result']='fail'
+            issue=copy.deepcopy(load('review-fail')['issues'][0]);issue['evidenceRefs']=row['evidenceRefs']
+            row['issues']=[issue]
+        snap=change_review(self.snapshot,fail)
+        boundary=checks(snap,public_candidate_ready=False,language_plugin_passed=False,
+                        approval_status='missing',approval_artifact_ids=())
+        result=evaluate(snap,boundary)
+        self.assertEqual(result.decision['admissionStatus'],'blocked')
+        self.assertIn('repair_translation',result.decision['allowedNextActions'])
+        self.assertNotIn('stale_identity',result.decision['reasonCodes'])
+        self.assertNotIn('prepare_layer3',result.decision['allowedNextActions'])
+        stale=evaluate(snap,replace(boundary,policy_ready=False))
+        self.assertEqual(stale.decision['allowedNextActions'],['reconcile'])
+
     def test_current_locale_source_candidate_policy_and_rubric_must_match(self):
         for key in ('candidate_revision_sha256', 'source_identity_sha256', 'source_package_sha256',
                     'anchor_sha256', 'policy_sha256', 'rubric_sha256', 'target_locale'):

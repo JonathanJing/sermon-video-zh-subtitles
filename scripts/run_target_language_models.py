@@ -150,6 +150,21 @@ def require_plugin_identity(plugin_path, expected):
         raise
 
 
+def completed_response_content(response, model, role):
+    """Validate the same terminal envelope for fresh and strict cached calls."""
+    require(isinstance(response, dict) and isinstance(response.get("id"), str)
+            and response["id"] and response.get("model") == model,
+            f"{role} response lacks exact model and request identity")
+    choices = response.get("choices")
+    require(isinstance(choices, list) and len(choices) == 1
+            and isinstance(choices[0], dict) and choices[0].get("finish_reason") == "stop",
+            f"{role} response is incomplete")
+    message = choices[0].get("message")
+    require(isinstance(message, dict) and isinstance(message.get("content"), str),
+            f"{role} response has no JSON content")
+    return message["content"]
+
+
 def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
                 output: Path, api_key: str,
                 caller: Callable[[str, dict[str, Any]], dict[str, Any]],
@@ -215,14 +230,7 @@ def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
                     "Strict persisted response differs from transport return")
         else:
             save_new(raw_path, {"payloadSha256": fingerprint, "response": response})
-    require(isinstance(response, dict) and isinstance(response.get("id"), str)
-            and response["id"] and response.get("model") == model,
-            f"{role} response lacks exact model and request identity")
-    choices = response.get("choices")
-    require(isinstance(choices, list) and len(choices) == 1
-            and choices[0].get("finish_reason") == "stop", f"{role} response is incomplete")
-    content = choices[0].get("message", {}).get("content")
-    require(isinstance(content, str), f"{role} response has no JSON content")
+    content = completed_response_content(response, model, role)
     if response_observer is not None:
         from scripts.sermon_review_contracts import decode_json
         parsed = decode_json(content.encode("utf-8"))
