@@ -42,3 +42,11 @@ Release v1/v2 schema 对 `packageId` 规定非空字符串，没有 160 字符�
 目录准入与播放能力分别验证：text-only 及只有 text+audio、没有 captions 的目标仍是合法目录项；当前 Web audio bridge 不请求这些目标的 release、不捏造音轨，选择实际可播放的语言。原生可展示 text-only 页面。共用 fixture 的 `webPlayback` 记录这种产品能力差异，不宣称 Web 已实现 text-only 阅读体验。
 
 这批不是整个 catalog/header/page 或完整 Release text-only 状态空间的等价证明。原生 fingerprint 额外执行现有 7 秒至 4 小时资源限制；Web 不将该限制新加到目录准入，既有 sidecar 与实际索引/音轨验证仍负责对齐能力。长窗口及其他未覆盖边界继续需要兼容性评估，不能凭这 31 个样本关闭 E6。所有 fixture 人审字段仍仅为合成测试，没有改变真实批准或发布状态。
+
+## Catalog header／page 准入补充
+
+[shared-catalog-pages.json](../apps/tongxing-ios/Core/Tests/TongxingCoreTests/Fixtures/shared-catalog-pages.json) 新增 33 个共用场景，由 Web 真实 loader 的 header/page 准入、Swift `MultilingualCatalog.decode` 和 producer schema 验证读取。覆盖 104 页上限／重复 ID／默认页、真实日历日期、标题边界、source/media hash、默认 locale 与 16 个 target 上限；保留 schema 合法的 `_`／`-` 开头和 160 字符 pageId。所有接受样本也经过启用 format checker 的 catalog v3 schema 验证。
+
+Web 现在在任何 Release／sidecar 请求前检查 header 与页面元数据。坏 header（例如重复 ID）拒绝该可选目录；坏页面只排除该页，其他页面保留。既有坏 locale 隔离保持。六个集成反例在旧 loader 上失败；另有有效历史页保留回归。测试夹具补齐真实 schema 本来要求的 title/generatedAt，不以缺字段的旧测试数据定义生产合同。
+
+仍不宣称完整状态空间等价：generatedAt 的语法仅由 producer schema 检查；native/Web 对额外 JSON 字段、Unicode title 计数、坏页整体/局部恢复及非音频 locale 的产品展示策略尚有差异，videoDelivery 和完整 text-only Release 仍不在该矩阵。这里验证字段准入，不赋予真实 HTTP、人审、设备或现场验收。

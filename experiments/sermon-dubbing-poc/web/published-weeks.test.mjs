@@ -8,7 +8,7 @@ const pageId = '2026-09-27-weekend-sermon-drive-530';
 function fixture(mutate = () => {}) {
   const files = new Map(), requests = [];
   const page = {
-    id: pageId, date: '2026-09-27', sourceLocale: 'en', defaultTargetLocale: 'zh-Hans',
+    id: pageId, title: 'Synthetic published page', date: '2026-09-27', sourceLocale: 'en', defaultTargetLocale: 'zh-Hans',
     sourceIdentitySha256: 'a'.repeat(64), targets: {},
   };
   for (const locale of ['zh-Hans', 'ko', 'es']) {
@@ -51,7 +51,7 @@ function fixture(mutate = () => {}) {
       contentStatus: 'human_reviewed', audioStatus: 'human_reviewed', capabilities: ['text', 'captions', 'audio'],
     };
   }
-  files.set('/multilingual-v3.json', JSON.stringify({ schemaVersion: 'sermon-multilingual-catalog-v3', defaultPageId: pageId, pages: [page] }));
+  files.set('/multilingual-v3.json', JSON.stringify({ schemaVersion: 'sermon-multilingual-catalog-v3', generatedAt: '2026-09-30T00:00:00Z', defaultPageId: pageId, pages: [page] }));
   const fetchImpl = async path => {
     requests.push(path);
     return files.has(path) ? new Response(files.get(path)) : new Response('', { status: 404 });
@@ -416,4 +416,37 @@ test('valid text-only catalog target never requests a release or becomes an audi
   assert.equal(result.weeks[0].defaultTargetLocale, 'ko');
   assert.ok(!f.requests.includes(`/releases-v2/${pageId}/zh-Hans.json`));
   assert.match(result.errors[0], /not ready for playback/);
+});
+
+for (const [name, mutate] of [
+  ['missing default page', c => { c.defaultPageId = 'missing'; }],
+  ['duplicate page identity', c => { c.pages.push(structuredClone(c.pages[0])); }],
+  ['impossible calendar date', c => { c.pages[0].date = '2026-02-30'; }],
+  ['missing title', c => { delete c.pages[0].title; }],
+  ['missing default locale', c => { c.pages[0].defaultTargetLocale = 'vi'; }],
+  ['bad source media hash', c => { c.pages[0].sourceMediaSha256 = 'bad'; }],
+]) {
+  test(`catalog metadata admission rejects ${name} before asset requests`, async () => {
+    const f = fixture();
+    const catalog = JSON.parse(f.files.get('/multilingual-v3.json'));
+    mutate(catalog);
+    f.files.set('/multilingual-v3.json', JSON.stringify(catalog));
+    const result = await loadPublishedWeeks(f.fetchImpl);
+    assert.deepEqual(result.weeks, []);
+    assert.ok(result.errors.length);
+    assert.deepEqual(f.requests, ['/multilingual-v3.json']);
+  });
+}
+
+test('bad page metadata does not hide a different valid page or request bad-page assets', async () => {
+  const f = fixture();
+  addHistory(f, 2);
+  const catalog = JSON.parse(f.files.get('/multilingual-v3.json'));
+  catalog.pages[0].title = '';
+  f.files.set('/multilingual-v3.json', JSON.stringify(catalog));
+  const result = await loadPublishedWeeks(f.fetchImpl);
+  assert.deepEqual(result.weeks.map(week => week.id), ['history-1']);
+  assert.equal(result.defaultWeekId, 'history-1');
+  assert.deepEqual(result.errors, ['Invalid published page']);
+  assert.ok(!f.requests.some(path => path.includes(pageId)));
 });

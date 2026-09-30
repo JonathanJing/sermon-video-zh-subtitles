@@ -22,7 +22,8 @@ const LABELS = {
   },
 };
 const HASH = /^[a-f0-9]{64}$/;
-const ID = /^[A-Za-z0-9][A-Za-z0-9_-]*$/;
+const ID = /^[A-Za-z0-9_-]{1,160}$/;
+const LOCALE = /^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/;
 const required = (condition, message) => { if (!condition) throw new Error(message); };
 const text = value => typeof value === 'string' && value.trim().length > 0;
 
@@ -145,6 +146,33 @@ export function validatePublishedTarget(target, page, locale) {
     'Invalid published catalog alignment binding');
   }
   return target;
+}
+
+// Header and page metadata are admitted before requesting any release asset.
+// Locale asset failures remain isolated by loadVariant, as before.
+export function validatePublishedCatalogHeader(catalog) {
+  required(catalog && catalog.schemaVersion === 'sermon-multilingual-catalog-v3'
+    && typeof catalog.generatedAt === 'string' && typeof catalog.defaultPageId === 'string'
+    && Array.isArray(catalog.pages) && catalog.pages.length > 0 && catalog.pages.length <= 104
+    && new Set(catalog.pages.map(page => page?.id)).size === catalog.pages.length
+    && catalog.pages.some(page => page?.id === catalog.defaultPageId), 'Invalid published catalog');
+  return catalog;
+}
+
+export function validatePublishedPage(page) {
+  const date = typeof page?.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(page.date)
+    ? new Date(`${page.date}T00:00:00.000Z`) : null;
+  required(page && typeof page.id === 'string' && ID.test(page.id)
+    && date && Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === page.date
+    && text(page.title) && Array.from(page.title).length <= 180
+    && page.sourceLocale === 'en' && typeof page.sourceIdentitySha256 === 'string' && HASH.test(page.sourceIdentitySha256)
+    && (page.sourceMediaSha256 == null || (typeof page.sourceMediaSha256 === 'string' && HASH.test(page.sourceMediaSha256)))
+    && typeof page.defaultTargetLocale === 'string' && LOCALE.test(page.defaultTargetLocale)
+    && page.targets && typeof page.targets === 'object' && !Array.isArray(page.targets)
+    && Object.keys(page.targets).length > 0 && Object.keys(page.targets).length <= 16
+    && Object.keys(page.targets).every(locale => LOCALE.test(locale))
+    && Object.hasOwn(page.targets, page.defaultTargetLocale), 'Invalid published page');
+  return page;
 }
 
 async function loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal) {
@@ -278,19 +306,13 @@ export async function loadPublishedWeeks(fetchImpl = globalThis.fetch, { request
   try {
     catalog = await readJson(fetchImpl, '/multilingual-v3.json', undefined, timeoutMs, true);
     if (catalog === null) return empty;
-    required(catalog.schemaVersion === 'sermon-multilingual-catalog-v3' && Array.isArray(catalog.pages), 'Invalid published catalog');
+    validatePublishedCatalogHeader(catalog);
   } catch (error) { return { ...empty, errors: [error.message] }; }
   const errors = [];
-  const seen = new Set();
   const pages = [];
   for (const page of catalog.pages) {
-    if (!page || typeof page !== 'object' || !ID.test(page.id) || !/^\d{4}-\d{2}-\d{2}$/.test(page.date) || seen.has(page.id)
-      || page.sourceLocale !== 'en' || !HASH.test(page.sourceIdentitySha256) || !page.targets) {
-      errors.push('Invalid published page');
-      continue;
-    }
-    seen.add(page.id);
-    pages.push(page);
+    try { pages.push(validatePublishedPage(page)); }
+    catch (error) { errors.push(error.message); }
   }
   pages.sort((a, b) => (b.id === catalog.defaultPageId) - (a.id === catalog.defaultPageId) || b.date.localeCompare(a.date));
   const pageController = new AbortController();
