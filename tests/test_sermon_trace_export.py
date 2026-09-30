@@ -118,6 +118,14 @@ class SermonTraceExportTests(unittest.TestCase):
         _, diag, _ = self.result()
         self.assertTrue({"invalid_span_time", "duplicate_event_id", "unsupported_event_schema"} <= {d["code"] for d in diag["diagnostics"]})
 
+    def test_v1_and_v2_events_remain_exportable(self):
+        self.fixture()
+        for index, event in enumerate(self.events):
+            event["schemaVersion"] = "sermon-workflow-accounting-v1" if index % 2 else "sermon-workflow-accounting-v2"
+        _, diag, spans = self.result()
+        self.assertEqual(diag["status"], "exported")
+        self.assertEqual(len(spans), 4)
+
     def test_cli_separate_diagnostics_and_no_source_overwrite(self):
         self.fixture()
         source = self.write()

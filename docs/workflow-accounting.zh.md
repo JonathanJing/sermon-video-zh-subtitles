@@ -74,7 +74,7 @@ Supervisor 的 `Runner.run` 另记录 `sdk_call_started/finished`，保存 SDK �
 
 ## 已接入的指标与保留边界
 
-本地入口现写入 `sermon-workflow-accounting-v2`：每个子流程都有独立 `workflowId`、状态、起止时间、执行代码身份、开始／结束资源快照，以及运行前后的业务证据摘要。汇总器仍可读取原有 v1 事件；旧事件不改写，也不会凭新字段补造历史值。
+本地入口现写入 `sermon-workflow-accounting-v3`：每个子流程都有独立 `workflowId`、状态、起止时间、执行代码身份、开始／结束资源快照，以及运行前后的业务证据摘要。阶段事件另可记录 `executorType`、`dependsOn`、`blockedBy`、`readyAt`、`queuedAt`、`workUnitId`、`attemptId` 与 `decisionId`；未知执行器和值不安全的依赖标签会在写入前拒绝。汇总器与 trace exporter 仍可读取原有 v1/v2 事件；旧事件不改写，也不会凭新字段补造历史值。
 
 证据采集仅查看已知相对路径，记录 JSON 文件 hash 和白名单字段；不遍历任意目录、不读取报告指向的任意外部文件、不抄录机器中文。`currentRunExecutionProven=false` 表明这些是现存文件快照；本次是否执行、复用或失败，以对应阶段事件为准。
 
