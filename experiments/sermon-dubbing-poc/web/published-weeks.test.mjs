@@ -172,7 +172,19 @@ function addHistory(f, count) {
   f.files.set('/multilingual-v3.json', JSON.stringify(catalog));
 }
 
-test('current page loads first and slow archive pages cannot hold the player indefinitely', async () => {
+function checkpoint() {
+  let resolve;
+  const promise = new Promise(done => { resolve = done; });
+  return { promise, resolve };
+}
+
+// Advance the deadline only after healthy async hashing/reads settle. Real
+// wall-clock deadlines race CI load and can incorrectly reject healthy pages.
+const settleReads = () => new Promise(resolve => setImmediate(resolve));
+
+test('current page loads first and slow archive pages cannot hold the player indefinitely', { timeout: 10000 }, async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const currentRead = checkpoint(), archiveStalled = checkpoint();
   const f = fixture();
   addHistory(f, 104);
   let active = 0, peak = 0;
@@ -182,14 +194,19 @@ test('current page loads first and slow archive pages cannot hold the player ind
       active++;
       peak = Math.max(peak, active);
       pendingSignals.push(options.signal);
+      if (pendingSignals.length === 12) archiveStalled.resolve();
       options.signal.addEventListener('abort', () => { active--; }, { once: true });
       return new Promise(() => {});
     }
+    if (path === `/english-reference/${pageId}.json`) currentRead.resolve();
     return f.fetchImpl(path, options);
   };
-  const started = Date.now();
-  const result = await loadPublishedWeeks(fetchImpl, { requestTimeoutMs: 1000, pageLoadTimeoutMs: 50 });
-  assert.ok(Date.now() - started < 500);
+  const loading = loadPublishedWeeks(fetchImpl, { requestTimeoutMs: 1000, pageLoadTimeoutMs: 50 });
+  await Promise.all([currentRead.promise, archiveStalled.promise]);
+  await settleReads();
+  assert.ok(pendingSignals.every(signal => !signal.aborted));
+  t.mock.timers.tick(50);
+  const result = await loading;
   assert.equal(result.defaultWeekId, pageId);
   assert.ok(result.weeks.some(week => week.id === pageId));
   assert.ok(f.requests.indexOf(`/releases-v2/${pageId}/zh-Hans.json`) < f.requests.findIndex(path => path.startsWith('/releases-v2/history-')));
@@ -198,7 +215,10 @@ test('current page loads first and slow archive pages cannot hold the player ind
   assert.ok(result.errors.some(error => /loading timed out/.test(error)));
 });
 
-test('healthy archive pages load while the current-page sidecar is stalled', async () => {
+test('healthy archive pages load while the current-page sidecar is stalled', { timeout: 10000 }, async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const currentStalled = checkpoint(), archiveRead = checkpoint();
+  let archiveReferences = 0;
   const f = fixture();
   addHistory(f, 3);
   let stalledSignal;
@@ -207,33 +227,50 @@ test('healthy archive pages load while the current-page sidecar is stalled', asy
   const fetchImpl = (path, options) => {
     if (path === `/alignment/${pageId}.json`) {
       stalledSignal = options.signal;
+      currentStalled.resolve();
       stalledSignal.addEventListener('abort', () => { defaultAborted = true; }, { once: true });
       return new Promise(() => {});
     }
     if (path.startsWith('/releases-v2/history-')) {
       historyRequestedBeforeAbort ||= !defaultAborted;
     }
+    if (path.startsWith('/english-reference/history-') && ++archiveReferences === 2) archiveRead.resolve();
     return f.fetchImpl(path, options);
   };
-  const result = await loadPublishedWeeks(fetchImpl, { requestTimeoutMs: 1000, pageLoadTimeoutMs: 50 });
+  const loading = loadPublishedWeeks(fetchImpl, { requestTimeoutMs: 1000, pageLoadTimeoutMs: 50 });
+  await Promise.all([currentStalled.promise, archiveRead.promise]);
+  await settleReads();
+  assert.equal(stalledSignal.aborted, false);
+  t.mock.timers.tick(50);
+  const result = await loading;
   assert.equal(result.weeks.length, 3);
   assert.equal(result.defaultWeekId, pageId);
   assert.equal(historyRequestedBeforeAbort, true);
   assert.equal(stalledSignal.aborted, true);
 });
 
-test('healthy archive remains selectable when current-page release assets stall', async () => {
+test('healthy archive remains selectable when current-page release assets stall', { timeout: 10000 }, async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const currentStalled = checkpoint(), archiveRead = checkpoint();
+  let archiveReferences = 0;
   const f = fixture();
   addHistory(f, 3);
   const stalledSignals = [];
   const fetchImpl = (path, options) => {
     if (path.startsWith(`/releases-v2/${pageId}/`)) {
       stalledSignals.push(options.signal);
+      if (stalledSignals.length === 3) currentStalled.resolve();
       return new Promise(() => {});
     }
+    if (path.startsWith('/english-reference/history-') && ++archiveReferences === 2) archiveRead.resolve();
     return f.fetchImpl(path, options);
   };
-  const result = await loadPublishedWeeks(fetchImpl, { requestTimeoutMs: 1000, pageLoadTimeoutMs: 50 });
+  const loading = loadPublishedWeeks(fetchImpl, { requestTimeoutMs: 1000, pageLoadTimeoutMs: 50 });
+  await Promise.all([currentStalled.promise, archiveRead.promise]);
+  await settleReads();
+  assert.ok(stalledSignals.every(signal => !signal.aborted));
+  t.mock.timers.tick(50);
+  const result = await loading;
   assert.equal(result.weeks.length, 2);
   assert.ok(result.weeks.every(week => week.id.startsWith('history-')));
   assert.ok(result.defaultWeekId.startsWith('history-'));
