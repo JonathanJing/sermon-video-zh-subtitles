@@ -69,6 +69,17 @@ class CanonicalPlanningTests(unittest.TestCase):
         self.assertEqual(self.plan()['nodes']['text.ko']['status'], 'reconciliation_required')
         self.assertEqual(self.plan()['nodes']['text.es']['status'], 'ready')
 
+    def test_queued_job_waits_and_changed_identity_requires_reconciliation(self):
+        self.complete('source')
+        identity = self.plan()['nodes']['text.ko']['identity']
+        self.observations['text.ko'] = {'identity': identity, 'status': 'queued'}
+        self.assertEqual(self.plan()['nodes']['text.ko']['status'], 'waiting_job')
+        self.assertEqual(self.plan()['nodes']['audio.ko']['status'], 'waiting_dependency')
+        self.assertEqual(self.plan()['nodes']['text.es']['status'], 'ready')
+        self.observations['source']['outputSha256'] = 'e' * 64
+        self.assertEqual(self.plan()['nodes']['text.ko']['status'], 'reconciliation_required')
+        self.assertEqual(self.plan()['nodes']['audio.ko']['status'], 'waiting_dependency')
+
     def test_delivery_scope_and_definition_change_require_new_bindings(self):
         self.complete('source')
         self.spec = p.definition(terminal_scope='delivery_complete')
