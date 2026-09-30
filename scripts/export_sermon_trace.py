@@ -236,11 +236,13 @@ def export(directory):
     # never arrived. Preserve that uncertainty alongside completed receipts.
     # Scope the join to the actual run and span so another attempt cannot close
     # this request merely by reusing an imported attempt label.
+    replay_events = [event for event in supported
+                     if "contractVersion" not in event or id(event) in replay["_selected"]]
     finished_attempts = {(event["runId"], event.get("spanId"), event.get("attemptId"))
-                         for event in supported if event["event"] == "api_attempt"
+                         for event in replay_events if event["event"] == "api_attempt"
                          and event.get("attemptId") is not None}
     unfinished = defaultdict(set)
-    for event in supported:
+    for event in replay_events:
         if event["event"] != "api_attempt_started":
             continue
         identity = (event["runId"], event.get("spanId"), event["attemptId"])
