@@ -33,7 +33,7 @@ def _require(condition: bool, message: str) -> None:
         raise ValueError(message)
 
 
-def _load_job(path: Path) -> dict[str, Any]:
+def _load_job(path: Path, *, strict_rubric: dict[str, Any] | None = None) -> dict[str, Any]:
     _require(path.is_file(), f"Missing speech job: {path}")
     job = json.loads(path.read_text(encoding="utf-8"))
     speech._validate_schema(job, "sermon-target-language-speech-job-v2.schema.json", "speech job")
@@ -55,7 +55,7 @@ def _load_job(path: Path) -> dict[str, Any]:
     policy = inputs["targetLanguagePolicy"]
     speech._validate_schema(candidate, "sermon-target-language-candidate-v2.schema.json", "target candidate")
     speech.validate_target_candidate(source, anchor, candidate)
-    speech.validate_policy_binding(candidate, policy)
+    speech.validate_policy_binding(candidate, policy, strict_rubric=strict_rubric)
     speech.validate_human_review_receipt(source, anchor, candidate, inputs["humanReviewReceipt"])
     adapter = {"schemaVersion": speech.ADAPTER_SCHEMA, "targetLocale": job["targetLocale"]} | {
         key: value for key, value in job["adapter"].items() if key != "configSha256"
@@ -148,8 +148,9 @@ def probe_pcm_wav(path: Path) -> dict[str, Any]:
 def build_receipt(job_path: Path, unit_index: int, audio_path: Path, *,
                   runner: Callable[..., Any] = subprocess.run,
                   validated_job: dict[str, Any] | None = None,
-                  validated_job_file_sha256: str | None = None) -> dict[str, Any]:
-    job = _load_job(job_path) if validated_job is None else validated_job
+                  validated_job_file_sha256: str | None = None,
+                  strict_rubric: dict[str, Any] | None = None) -> dict[str, Any]:
+    job = _load_job(job_path, strict_rubric=strict_rubric) if validated_job is None else validated_job
     _require(validated_job is None or validated_job_file_sha256 is not None,
              "Prevalidated job requires its file hash")
     job_file_sha256 = (identity.sha256(job_path) if validated_job is None
@@ -181,11 +182,12 @@ def validate_receipt(job_path: Path, unit_index: int, audio_path: Path,
                      receipt: dict[str, Any], *,
                      runner: Callable[..., Any] = subprocess.run,
                      validated_job: dict[str, Any] | None = None,
-                     validated_job_file_sha256: str | None = None) -> None:
+                     validated_job_file_sha256: str | None = None,
+                     strict_rubric: dict[str, Any] | None = None) -> None:
     """Reject a receipt copied from changed text, job, locale, path, or audio bytes."""
     speech._validate_schema(receipt, "sermon-target-language-audio-unit-receipt-v1.schema.json",
                             "audio unit receipt")
-    job = _load_job(job_path) if validated_job is None else validated_job
+    job = _load_job(job_path, strict_rubric=strict_rubric) if validated_job is None else validated_job
     _require(validated_job is None or validated_job_file_sha256 is not None,
              "Prevalidated job requires its file hash")
     job_file_sha256 = (identity.sha256(job_path) if validated_job is None
@@ -212,12 +214,14 @@ def validate_receipt(job_path: Path, unit_index: int, audio_path: Path,
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--job", type=Path, required=True)
+    parser.add_argument("--strict-rubric", type=Path, help="Explicit frozen rubric for strict-v3 policy validation")
     parser.add_argument("--unit-index", type=int, required=True)
     parser.add_argument("--audio", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
     _require(not args.out.exists(), "Use a new receipt path; audio receipts are immutable")
-    receipt = build_receipt(args.job, args.unit_index, args.audio)
+    receipt = build_receipt(args.job, args.unit_index, args.audio,
+                            strict_rubric=speech._load(args.strict_rubric) if args.strict_rubric else None)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     identity.write_json(args.out, receipt)
     print(json.dumps({"status": "full_decode_pass", "receipt": str(args.out.resolve()),
