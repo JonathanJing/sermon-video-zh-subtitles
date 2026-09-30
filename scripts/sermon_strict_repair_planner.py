@@ -6,6 +6,7 @@ still require StrictBudgetAdapter reservation. Plan history is pinned to that
 same budget root; output folders and renamed issues cannot reset fingerprints.
 """
 from pathlib import Path
+import json
 import re
 
 from scripts import sermon_review_contracts as c
@@ -93,7 +94,8 @@ class RepairPlanner:
                     entries[plan['repairPlanId']]=entry;history['chains'][chain]=entries
                     # Persist evidence before returning any executable proposal.
                     # A write error propagates; no transport is reachable here.
-                    c.require(len(c.canonical_bytes(history))<=c.MAX_BYTES,'repair_history_size_limit')
+                    encoded=(json.dumps(history,ensure_ascii=False,indent=2,allow_nan=False)+'\n').encode('utf-8')
+                    c.require(len(encoded)<=c.MAX_BYTES,'repair_history_size_limit')
                     jobs._persist(path,history)
                     if plan['repairAction']=='repair_translation':
                         repair=dict(parentRevision=candidate,parentCandidateBytes=values['candidate_bytes'],
@@ -159,6 +161,10 @@ class RepairPlanner:
             c.require(len(matches)==1 and matches[0]['request']['inputSha256']==operation['inputSha256'] and
                 matches[0]['phase']=='result' and matches[0]['result']['receiptSha256']==c.canonical_sha256(review),
                 'repair_review_not_in_durable_budget')
+            content={'pass':'pass','needs_rework':'fail','inconclusive':'uncertain','not_assessed':'not_assessed'}
+            c.require(matches[0]['result']['executionStatus']==review['executionStatus'] and
+                matches[0]['result']['contentStatus']==content[review['reviewVerdict']],
+                'repair_review_budget_status_mismatch')
             stem='reviewer'+suffix
             for ref in review['evidenceRefs']:
                 filename={'review-result':stem+'.json','review-execution-failure':stem+'.failure.json',

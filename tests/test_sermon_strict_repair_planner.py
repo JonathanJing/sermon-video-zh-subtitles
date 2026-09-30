@@ -1,4 +1,5 @@
 import copy
+import json
 import unittest
 from unittest.mock import patch
 from scripts import sermon_strict_repair_planner as adapter
@@ -68,6 +69,20 @@ class DurablePlanningTests(unittest.TestCase):
         values['review']['receiptSha256']=c.receipt_sha256(values['review'])
         with self.assertRaisesRegex(ValueError,'repair_review_not_in_durable_budget'):self.planner.plan(lambda ledger:values)
 
+    def test_history_capacity_uses_persisted_bytes_before_write(self):
+        self.record_review()
+        captured=[]
+        with patch.object(adapter.jobs,'_persist',side_effect=lambda path,value:captured.append(copy.deepcopy(value))):
+            self.planner.plan(lambda ledger:self.values)
+        history=captured[-1]
+        compact=len(c.canonical_bytes(history))
+        actual=len((json.dumps(history,ensure_ascii=False,indent=2,allow_nan=False)+'\n').encode())
+        self.assertGreater(actual,compact)
+        with patch.object(c,'MAX_BYTES',(compact+actual)//2), patch.object(adapter.jobs,'_persist') as persist:
+            with self.assertRaisesRegex(ValueError,'repair_history_size_limit'):
+                self.planner.plan(lambda ledger:self.values)
+            persist.assert_not_called()
+
 
 if __name__=='__main__':unittest.main()
 
@@ -107,4 +122,12 @@ class RealAdapterPlanningTests(unittest.TestCase):
             self.planner.plan_group(prepared,self.runtime.root,self.graph,created_at='2026-09-30T00:00:00Z')
         path=self.runtime.root/'review-receipt.json';path.rename(self.runtime.root/'hidden.json')
         with self.assertRaises(ValueError):self.plan()
+        self.assertEqual(len(self.f.calls),2)
+
+    def test_ledger_review_status_must_agree_with_exact_receipt(self):
+        with self.runtime.store._locked() as (folder,ledger):
+            row=next(r for r in ledger['reservations'].values() if r['request']['kind']=='review')
+            row['result']['contentStatus']='pass'
+            self.runtime.store._save(folder,ledger)
+        with self.assertRaisesRegex(ValueError,'repair_review_budget_status_mismatch'):self.plan()
         self.assertEqual(len(self.f.calls),2)
