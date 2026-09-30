@@ -77,6 +77,25 @@ class StrictAdapterTests(unittest.TestCase):
             self.assertEqual(self.review(),receipt);self.assertEqual(len(self.calls),2)
             self.assertEqual((self.root/'revision/candidate.json').read_bytes(),before)
 
+    def test_cached_review_receipt_revalidates_reviewer_result_raw_and_call_evidence(self):
+        base=self.root
+        for evidence_file in ('reviewer.json','reviewer.raw.json','reviewer.call.json'):
+            with self.subTest(evidence_file=evidence_file), self.session():
+                self.root=base/evidence_file.replace('.','-')
+                prior_calls=len(self.calls)
+                self.generate();self.review()
+                path=self.root/'revision'/evidence_file
+                value=json.loads(path.read_text())
+                if evidence_file=='reviewer.json':
+                    value['result']['reviewVerdict']='needs_rework'
+                elif evidence_file=='reviewer.raw.json':
+                    value['response']['choices'][0]['message']['content']=json.dumps({'tampered':True})
+                else:
+                    value['modelCallId']='tampered-call'
+                path.write_text(json.dumps(value))
+                with self.assertRaises(c.ContractError):self.review()
+                self.assertEqual(len(self.calls),prior_calls+2)
+
     def test_reviewer_cannot_return_candidate_changes(self):
         with self.session():
             self.generate();before=(self.root/'revision/candidate.json').read_bytes();self.mode='rewrite'
