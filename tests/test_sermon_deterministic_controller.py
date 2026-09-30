@@ -49,6 +49,107 @@ class ControllerTests(unittest.TestCase):
         self.assertFalse(controller.root.exists())
         dispatch.assert_not_called()
 
+    def test_shadow_real_snapshot_preserves_abandoned_job_evidence(self):
+        from scripts import sermon_workflow_jobs as jobs
+        from scripts import sermon_release_workflow as release
+        # Exercise the real composed snapshot and filesystem job inspection;
+        # only upstream content inspection is inert (no media/models required).
+        row = {key: str(self.root / key) for key in release.PATHS}
+        row.update(project='sermon-project', site='sermon-listening', origin='https://sermon-listening.web.app')
+        self.config_path.write_text(json.dumps({'schemaVersion': release.SCHEMA,
+                                               'weeks': {self.config.sunday: row}}))
+        controller = self.controller()
+        def files():
+            return {str(p.relative_to(self.root)): (p.read_bytes() if p.is_file() else None,
+                        p.stat().st_mode, p.stat().st_mtime_ns) for p in self.root.rglob('*')}
+        for status in ('queued', 'running'):
+            for lock_present in (False, True):
+                with self.subTest(status=status, lock_present=lock_present):
+                    identity = {'status': status, 'lock': lock_present}
+                    ident = jobs._digest(identity)
+                    folder = controller.root / ident
+                    folder.mkdir(parents=True)
+                    command = ['inert-fixture']
+                    request = {'schemaVersion': jobs.SCHEMA, 'jobId': ident, 'identity': identity,
+                               'command': command, 'commandSha256': jobs._digest(command)}
+                    jobs._persist(folder / 'request.json', request)
+                    jobs._persist(folder / 'state.json', {'schemaVersion': jobs.SCHEMA, 'jobId': ident,
+                        'status': status, 'requestSha256': jobs._digest(request)})
+                    if lock_present:
+                        with jobs._lock(controller.root, ident):
+                            pass
+                    before = files()
+                    with patch.object(ctrl.workflow.production, 'production_snapshot',
+                                      return_value=snapshot('request_window_approval', True)), \
+                         patch.object(ctrl.workflow, 'start_action') as dispatch:
+                        result = controller.tick()
+                    self.assertEqual(result['status'], 'blocked')
+                    dispatch.assert_not_called()
+                    self.assertEqual(files(), before)
+                    self.assertEqual(jobs._read(folder / 'state.json')['status'], status)
+                    # Normal execution inspection must still persist reconciliation.
+                    self.assertEqual(jobs.inspect_job(controller.root, ident)['status'], 'uncertain')
+                    self.assertEqual(jobs._read(folder / 'state.json')['status'], 'uncertain')
+                    import shutil
+                    shutil.rmtree(folder)
+
+    def test_peek_missing_and_live_job_does_not_create_or_reconcile(self):
+        from scripts import sermon_workflow_jobs as jobs
+        ident = 'a' * 64
+        root = self.root / 'absent'
+        with self.assertRaises(FileNotFoundError):
+            jobs.peek_job(root, ident)
+        self.assertFalse(root.exists())
+        with jobs._lock(root, ident) as (folder, _, held):
+            self.assertTrue(held)
+            folder.mkdir()
+            before = sorted(str(p) for p in root.rglob('*'))
+            self.assertEqual(jobs.peek_job(root, ident)['status'], 'queued')
+            self.assertEqual(sorted(str(p) for p in root.rglob('*')), before)
+            self.assertFalse((folder / 'state.json').exists())
+
+    def test_real_bridge_change_blocks_stale_dispatch_revision(self):
+        from scripts import sermon_release_workflow as release
+        from scripts import sermon_workflow_jobs as jobs
+        fixture = release._module('test_saturday_bridge').SaturdayBridgeTests()
+        fixture.week = self.config.sunday
+        bridge_path, supervisor, bridge_config, run = fixture.fixture(self.root)
+        bridge = release._module('continue_saturday_dubbing')
+        inspect = bridge.inspect_bridge
+        def local_inspect(path, week):
+            return inspect(path, week, supervisor, root=self.root,
+                           media_probe=lambda _: {'durationSeconds': 10, 'streams': [{'codec_type': 'audio'}]})
+        _, plan = local_inspect(bridge_path, self.config.sunday)
+        self.assertIsNotNone(plan)
+        row = {key: str(self.root / key) for key in release.PATHS}
+        row.update(bridgeConfig=str(bridge_path), work=str(plan['work']), project='sermon-project',
+                   site='sermon-listening', origin='https://sermon-listening.web.app')
+        self.config_path.write_text(json.dumps({'schemaVersion': release.SCHEMA,
+                                               'weeks': {self.config.sunday: row}}))
+        upstream = snapshot('complete', locations={'runRoot': str(run)})
+        with patch.object(ctrl.workflow.production, 'production_snapshot', return_value=upstream), \
+             patch.object(bridge, 'inspect_bridge', side_effect=local_inspect), \
+             patch.object(jobs, 'start_job') as dispatch:
+            original = ctrl.workflow.snapshot(self.config, read_only=True)
+            self.assertEqual(original['recommendedAction']['action'], 'generate_audio_candidate')
+            bridge_config['pythonExecutable'] = '/usr/bin/python3'
+            bridge_path.write_text(json.dumps(bridge_config))
+            changed = ctrl.workflow.snapshot(self.config, read_only=True)
+            self.assertEqual(changed['recommendedAction'], original['recommendedAction'])
+            self.assertEqual(changed['releaseWorkflow']['evidence']['work'], original['releaseWorkflow']['evidence']['work'])
+            self.assertNotEqual(ctrl.revision(original), ctrl.revision(changed))
+            result = ctrl.workflow.start_action(self.config, 'generate_audio_candidate',
+                                               expected_state_revision=ctrl.revision(original))
+            self.assertEqual(result['status'], 'blocked')
+            dispatch.assert_not_called()
+            # Recheck the same admitted identity inside the eventual worker's
+            # existing locks, closing the dispatch-to-execution drift window.
+            with patch.object(release, 'bounded_process') as runner:
+                outcome = release.execute(self.config_path, self.config.sunday, 'generate_audio_candidate',
+                    expected_release_revision=jobs._digest(original['releaseWorkflow']))
+                self.assertFalse(outcome['executed'])
+                runner.assert_not_called()
+
     def test_checked_at_does_not_change_revision_but_approval_does(self):
         old = snapshot('build_page', checkedAt='first')
         fresh = {**old, 'checkedAt': 'second'}

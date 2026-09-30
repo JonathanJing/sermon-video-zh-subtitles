@@ -198,14 +198,15 @@ def _write_state(folder, job_id, status, **fields):
     return state
 
 
-def _inspect_locked(folder, job_id, held):
+def _inspect_locked(folder, job_id, held, *, reconcile=True):
     state = _state(folder, job_id)
     if not folder.exists():
         raise FileNotFoundError("Unknown workflow job")
     if state is None:
         if not held:
             return _public(job_id, "queued")
-        _write_state(folder, job_id, "uncertain", reason="missing_or_invalid_state")
+        if reconcile:
+            _write_state(folder, job_id, "uncertain", reason="missing_or_invalid_state")
         return _public(job_id, "uncertain")
     try:
         request = _read(folder / "request.json")
@@ -213,11 +214,12 @@ def _inspect_locked(folder, job_id, held):
     except (OSError, ValueError, TypeError):
         bound = False
     if not bound:
-        if held:
+        if held and reconcile:
             _write_state(folder, job_id, "uncertain", reason="invalid_request_binding")
         return _public(job_id, "uncertain")
     if held and state["status"] in ACTIVE:
-        _write_state(folder, job_id, "uncertain", reason="owner_disappeared", previousStatus=state["status"])
+        if reconcile:
+            _write_state(folder, job_id, "uncertain", reason="owner_disappeared", previousStatus=state["status"])
         return _public(job_id, "uncertain")
     return _public(job_id, state["status"])
 
@@ -226,6 +228,38 @@ def inspect_job(root: Path, job_id: str) -> dict:
     """Return compact status; missing owner is uncertainty, not permission to retry."""
     with _lock(root, job_id) as (folder, _fd, held):
         return _inspect_locked(folder, job_id, held)
+
+
+def peek_job(root: Path, job_id: str) -> dict:
+    """Inspect existing evidence without creating locks or reconciling state.
+
+    An abandoned owner is still reported as uncertain; only execution inspection
+    persists that reconciliation. A read-only lock probe never launches work.
+    """
+    _, folder, path = _paths(root, job_id)
+    try:
+        directory_fd = _directory_fd(path.parent)
+    except FileNotFoundError:
+        return _inspect_locked(folder, job_id, True, reconcile=False)
+    try:
+        try:
+            fd = os.open(path.name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=directory_fd)
+        except FileNotFoundError:
+            return _inspect_locked(folder, job_id, True, reconcile=False)
+    finally:
+        os.close(directory_fd)
+    try:
+        if not stat.S_ISREG(os.fstat(fd).st_mode):
+            raise ValueError("Workflow lock must be a regular file")
+        held = False
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            held = True
+        except BlockingIOError:
+            pass
+        return _inspect_locked(folder, job_id, held, reconcile=False)
+    finally:
+        os.close(fd)
 
 
 def start_job(root: Path, identity: dict, command: list[str], timeout_seconds: float) -> dict:

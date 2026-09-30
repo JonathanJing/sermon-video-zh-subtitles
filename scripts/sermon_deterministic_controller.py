@@ -108,7 +108,7 @@ class Controller:
             return self._result({'status': 'legacy_handoff', 'reasonCode': 'existing_entry_unchanged', 'action': None})
         if workflow.config_hash(self.config_path) != self.config_sha:
             return self._result({'status': 'blocked', 'reasonCode': 'configuration_changed', 'action': None})
-        observed = workflow.snapshot(self.config)
+        observed = workflow.snapshot(self.config, read_only=True) if self.mode == 'deterministic_shadow' else workflow.snapshot(self.config)
         decision = recommend(observed, self.terminal_scope)
         state_revision = revision(observed)
         if self.mode == 'deterministic_shadow':
