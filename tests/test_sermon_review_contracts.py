@@ -123,6 +123,28 @@ class ReviewContractTests(unittest.TestCase):
         with self.assertRaises(c.ContractError):c.validate_revision_lineage(child,parent,load('repair-plan'))
 
 
+    def test_lineage_rejects_plan_for_other_identity_or_scope(self):
+        parent=load('candidate-revision');child=copy.deepcopy(parent)
+        child.update(revisionId='r2',parentRevisionId='r1',revisionNumber=2,repairPlanId='synthetic-repair')
+        mutations={'candidateId':'other-candidate','targetLocale':'ko','sourceIdentitySha256':'a'*64,
+            'sourcePackageSha256':'a'*64,'anchorSha256':'a'*64,'policySha256':'a'*64,
+            'affectedWorkUnitIds':['l2.zh-Hans.other']}
+        for key,value in mutations.items():
+            plan=load('repair-plan');plan[key]=value;c.validate_contract(plan)
+            with self.subTest(field=key),self.assertRaises(c.ContractError):c.validate_revision_lineage(child,parent,plan)
+        plan=load('repair-plan');plan['affectedWorkUnitIds'].append('l2.zh-Hans.other')
+        with self.assertRaises(c.ContractError):c.validate_revision_lineage(child,parent,plan)
+
+    def test_candidate_group_id_is_never_string_coerced(self):
+        for value in (123, True, None):
+            artifact=load('candidate-artifact');artifact['translationGroupId']=value
+            data=c.canonical_bytes(artifact);manifest=load('candidate-revision')
+            unit='l2.zh-Hans.'+str(value)
+            manifest.update(workUnitIds=[unit],targetUnitIds=[unit+'.utterance.0001'],
+                artifactSha256=c.canonical_sha256(artifact),artifactCanonicalJsonSha256=c.canonical_sha256(artifact),artifactBytesSha256=c.bytes_sha256(data))
+            c.validate_contract(manifest)
+            with self.subTest(value=value),self.assertRaises(c.ContractError):c.validate_candidate_artifact(manifest,data)
+
 class StrictPolicyTests(unittest.TestCase):
     def strict(self):
         draft=load('legacy-policy-v2');draft.pop('componentSha256');draft['schemaVersion']=policy.POLICY_V3
