@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "sermon-review-gate-decision-v1",
+  "candidateId": "synthetic-candidate",
+  "revisionId": "r1",
+  "targetLocale": "zh-Hans",
+  "workUnitIds": [
+    "l2.zh-Hans.group.001"
+  ],
+  "gateDecisionId": "synthetic-gate",
+  "gateVersion": "rqc-layer2-gate-v1",
+  "stateRevision": "8888888888888888888888888888888888888888888888888888888888888888",
+  "artifactSha256": "cf10cf7f8396b01c9c00758e03b1d87bd63420c51b5d845c0e6c536878e80db0",
+  "reviewReceiptRefs": [
+    {
+      "artifactId": "review-receipt",
+      "canonicalJsonSha256": "000000000000000000000000000000000000000000000000000000000000001f",
+      "fileBytesSha256": "0000000000000000000000000000000000000000000000000000000000000083",
+      "mediaType": "application/json"
+    }
+  ],
+  "policySha256": "4444444444444444444444444444444444444444444444444444444444444444",
+  "rubricSha256": "bab7ce24b27e69770b641152e28ea37f09126b1ea2bbc8ed182b6e05224c1533",
+  "approvalReceiptRefs": [],
+  "admissionStatus": "waiting_human",
+  "reasonCodes": [
+    "human_approval_missing"
+  ],
+  "allowedNextActions": [
+    "request_human_review"
+  ],
+  "createdAt": "2026-09-30T00:00:00Z"
+}

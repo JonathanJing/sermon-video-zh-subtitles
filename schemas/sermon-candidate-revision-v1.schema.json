@@ -1,0 +1,192 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-candidate-revision-v1.schema.json",
+  "title": "sermon-candidate-revision-v1",
+  "$defs": {
+    "label": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.:-]{1,100}(?![\\s\\S])"
+    },
+    "hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}(?![\\s\\S])"
+    },
+    "utc": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d(?:\\.\\d{1,6})?Z(?![\\s\\S])"
+    },
+    "evidenceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "artifactId": {
+          "$ref": "#/$defs/label"
+        },
+        "canonicalJsonSha256": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/hash"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "fileBytesSha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "mediaType": {
+          "enum": [
+            "application/json",
+            "text/plain",
+            "audio/wav",
+            "audio/mpeg"
+          ]
+        }
+      },
+      "required": [
+        "artifactId",
+        "canonicalJsonSha256",
+        "fileBytesSha256",
+        "mediaType"
+      ]
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": "sermon-candidate-revision-v1"
+    },
+    "candidateId": {
+      "$ref": "#/$defs/label"
+    },
+    "revisionId": {
+      "$ref": "#/$defs/label"
+    },
+    "targetLocale": {
+      "enum": [
+        "zh-Hans",
+        "ko",
+        "es"
+      ]
+    },
+    "workUnitIds": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/label"
+      },
+      "uniqueItems": true,
+      "maxItems": 64,
+      "minItems": 1
+    },
+    "sourceIdentitySha256": {
+      "$ref": "#/$defs/hash"
+    },
+    "sourcePackageSha256": {
+      "$ref": "#/$defs/hash"
+    },
+    "anchorSha256": {
+      "$ref": "#/$defs/hash"
+    },
+    "policySha256": {
+      "$ref": "#/$defs/hash"
+    },
+    "sourcePackageBytesSha256": {
+      "$ref": "#/$defs/hash"
+    },
+    "anchorBytesSha256": {
+      "$ref": "#/$defs/hash"
+    },
+    "policyBytesSha256": {
+      "$ref": "#/$defs/hash"
+    },
+    "artifactSha256": {
+      "$ref": "#/$defs/hash"
+    },
+    "artifactCanonicalJsonSha256": {
+      "$ref": "#/$defs/hash"
+    },
+    "artifactBytesSha256": {
+      "$ref": "#/$defs/hash"
+    },
+    "generationReceiptRef": {
+      "$ref": "#/$defs/evidenceRef"
+    },
+    "parentRevisionId": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/label"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "repairPlanId": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/label"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "revisionNumber": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 3
+    },
+    "revisionGranularity": {
+      "const": "translation_group"
+    },
+    "sourceUnitIds": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/label"
+      },
+      "uniqueItems": true,
+      "maxItems": 64,
+      "minItems": 1
+    },
+    "targetUnitIds": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/label"
+      },
+      "uniqueItems": true,
+      "maxItems": 64,
+      "minItems": 1
+    },
+    "createdAt": {
+      "$ref": "#/$defs/utc"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "candidateId",
+    "revisionId",
+    "targetLocale",
+    "workUnitIds",
+    "sourceIdentitySha256",
+    "sourcePackageSha256",
+    "anchorSha256",
+    "policySha256",
+    "sourcePackageBytesSha256",
+    "anchorBytesSha256",
+    "policyBytesSha256",
+    "artifactSha256",
+    "artifactCanonicalJsonSha256",
+    "artifactBytesSha256",
+    "generationReceiptRef",
+    "parentRevisionId",
+    "repairPlanId",
+    "revisionNumber",
+    "revisionGranularity",
+    "sourceUnitIds",
+    "targetUnitIds",
+    "createdAt"
+  ]
+}
