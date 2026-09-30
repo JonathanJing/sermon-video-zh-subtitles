@@ -343,12 +343,19 @@ def evaluate_gate(snapshot: GateSnapshot, *, gate_decision_id: str, created_at: 
             block('stale_identity')
         else:
             if not checks.source_ready: block('source_not_ready', 'request_source_review')
-            if not checks.policy_ready or not checks.public_candidate_ready: block('stale_identity')
-            if not checks.language_plugin_passed: block('language_plugin_failed', 'escalate_engineering')
-            approval = checks.approval_status
+            if not checks.policy_ready: block('stale_identity')
+            # A failed private review precedes public candidate assembly. Those
+            # downstream checks are mandatory for admission, but their absence
+            # cannot turn a validated content failure into stale identity and
+            # make the prescribed repair unreachable. Source/policy stay required.
+            downstream_required = verdicts == {'pass'} and not reasons
+            if downstream_required and not checks.public_candidate_ready: block('stale_identity')
+            if downstream_required and not checks.language_plugin_passed: block('language_plugin_failed', 'escalate_engineering')
+            approval = checks.approval_status if downstream_required else 'missing'
+            approval_ids = checks.approval_artifact_ids if downstream_required else ()
             try:
-                c.require((approval == 'valid') == bool(checks.approval_artifact_ids), 'invalid_gate_approval_refs')
-                for key in checks.approval_artifact_ids:
+                c.require((approval == 'valid') == bool(approval_ids), 'invalid_gate_approval_refs')
+                for key in approval_ids:
                     # Must be actual materials verified by the trusted adapter,
                     # not a reference to the machine review itself.
                     artifact = next((a for a in snapshot.materials if a.artifact_id == key), None)
