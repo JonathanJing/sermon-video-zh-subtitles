@@ -1,0 +1,5 @@
+{
+  "fixtureOnly": true,
+  "description": "Synthetic identity regression; no media measured or human approval granted. All hashes in the request are artificial.",
+  "intentSha256": "366830bd70b8ec7c4ae1dfe6b45ed40b03f8e669df1073cba7e2d92deef41e57"
+}
