@@ -116,3 +116,9 @@ Supervisor 的 `Runner.run` 另记录 `sdk_call_started/finished`，保存 SDK �
 `artifacts/saturday-validation/2026-09-05-aug30-astra/accounting-history-audit.json` 保存本次 8 月 30 日视频验证的逐项证据与缺口；同目录 `accounting-report.json`、`accounting-report.md`、`accounting-stages.csv` 给出可读汇总和价格快照。
 
 114 条新翻译／阅读缓存只保留了解析后文本，无法恢复旧 Token、请求重试数和独立延迟；没有重新调用模型来“补齐”账目。已保存的证道解读原始响应单独计入已知小计。旧 ASR、旧模型缓存和同一失败报告的副本均不重复计费。原报告里相同的 core 耗时被填入三个阶段、PDF QA 耗时又包含两份 PDF 的时间，本次补录均显式去重，原始证据保留不改。
+
+### v3 契约兼容说明
+
+`stage` 使用冻结的 `deterministic_program/production_model/decision_agent/human/external_service/engineering_codex` executor。旧调用未显式指定时，`api` 与用于内容生成的 `codex` billing 映射 production_model，`cloud` 映射 external_service，其余本地及程序编排映射 deterministic_program；本地模型和真正工程 Codex 调用须显式声明。dependency-ready 时间字段为 `dependencyReadyAt`（Python 参数 `dependency_ready_at`）。
+
+v1/v2 无扩展字段仍可读取，不补造依赖或时间；所有导入事件若携带扩展字段，都执行与写入相同的有界 label 校验。PR #121 的未发布 v3 草案中的 fixed_program/external_system 与 readyAt 不属于冻结契约；不重写历史账本。

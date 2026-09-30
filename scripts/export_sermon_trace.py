@@ -144,7 +144,7 @@ def export(directory):
                 values = start.get(field)
                 if isinstance(values, list):
                     attrs.append(attribute("sermon." + field, json.dumps(values, separators=(",", ":"))))
-            for field in ("readyAt", "queuedAt"):
+            for field in ("dependencyReadyAt", "queuedAt"):
                 if isinstance(start.get(field), str):
                     attrs.append(attribute("sermon." + field, start[field]))
         metadata = start.get("metadata", {})

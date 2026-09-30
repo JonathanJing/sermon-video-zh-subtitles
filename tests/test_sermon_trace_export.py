@@ -126,6 +126,36 @@ class SermonTraceExportTests(unittest.TestCase):
         self.assertEqual(diag["status"], "exported")
         self.assertEqual(len(spans), 4)
 
+    def test_dependency_extensions_reject_unsafe_imports_on_all_schemas(self):
+        for schema in ('sermon-workflow-accounting-v1', 'sermon-workflow-accounting-v2', SCHEMA):
+            for field, value in [('dependsOn', ['PRIVATE text']), ('blockedBy', ['x'] * 65),
+                    ('dependsOn', ['same', 'same']), ('workUnitId', 'x' * 101),
+                    ('decisionId', {'secret': 'PRIVATE'}), ('attemptId', 'PRIVATE\ntext'),
+                    ('queuedAt', 'PRIVATE'), ('dependencyReadyAt', '2026-01-01'),
+                    ('executorType', 'fixed_program')]:
+                with self.subTest(schema=schema, field=field):
+                    self.events = []
+                    self.fixture()
+                    for event in self.events:
+                        event['schemaVersion'] = schema
+                        if event['event'].startswith('stage_'):
+                            event[field] = value
+                    payload, diag, _ = self.result()
+                    self.assertEqual(diag['status'], 'partial')
+                    self.assertNotIn('PRIVATE', json.dumps((payload, diag)))
+
+    def test_canonical_executor_and_dependency_timestamps_export(self):
+        self.fixture()
+        for event in self.events:
+            if event['event'].startswith('stage_'):
+                event.update(executorType='engineering_codex', dependsOn=['source'],
+                             dependencyReadyAt='2026-09-06T07:59:59+00:00')
+        _, diag, spans = self.result()
+        self.assertEqual(diag['status'], 'exported')
+        attrs = {a['key']: a['value'] for a in spans[span_id(('run-one', 'stage', 'render'))]['attributes']}
+        self.assertEqual(attrs['sermon.executorType'], {'stringValue': 'engineering_codex'})
+        self.assertIn('sermon.dependencyReadyAt', attrs)
+
     def test_cli_separate_diagnostics_and_no_source_overwrite(self):
         self.fixture()
         source = self.write()

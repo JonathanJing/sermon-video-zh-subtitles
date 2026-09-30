@@ -28,6 +28,8 @@ from pathlib import Path
 
 SCHEMA = "sermon-workflow-accounting-v3"
 READABLE_SCHEMAS = frozenset({"sermon-workflow-accounting-v1", "sermon-workflow-accounting-v2", SCHEMA})
+EXECUTOR_TYPES = frozenset({"deterministic_program", "production_model", "decision_agent",
+                            "human", "external_service", "engineering_codex"})
 PRICE_SOURCE = "https://developers.openai.com/api/docs/pricing"
 PRICE_DATE = "2026-09-05"
 _stage = contextvars.ContextVar("sermon_accounting_stage", default=None)
@@ -321,9 +323,9 @@ def subprocess_environment():
 
 
 @contextmanager
-def stage(name, *, cache_hit=False, billing="local", executor_type="fixed_program",
+def stage(name, *, cache_hit=False, billing="local", executor_type=None,
           depends_on=None, blocked_by=None, work_unit_id=None, attempt_id=None,
-          ready_at=None, queued_at=None, decision_id=None):
+          dependency_ready_at=None, queued_at=None, decision_id=None):
     """Record one stage attempt with dependency-aware v3 trace identity.
 
     Callers provide stable stage/work-unit identities; ``spanId`` remains unique
@@ -333,8 +335,10 @@ def stage(name, *, cache_hit=False, billing="local", executor_type="fixed_progra
     name = _label(name)
     span_id = uuid.uuid4().hex
     parent = _span.get() or os.environ.get("SERMON_ACCOUNTING_SPAN")
-    executor_type = _label(executor_type, None)
-    if executor_type not in {"fixed_program", "production_model", "decision_agent", "human", "external_system"}:
+    if executor_type is None:
+        executor_type = {"api": "production_model", "cloud": "external_service",
+                         "codex": "production_model"}.get(billing, "deterministic_program")
+    if not isinstance(executor_type, str) or executor_type not in EXECUTOR_TYPES:
         raise ValueError("invalid_executor_type")
     identities = {
         "workUnitId": _label(work_unit_id, None) if work_unit_id is not None else None,
@@ -345,13 +349,13 @@ def stage(name, *, cache_hit=False, billing="local", executor_type="fixed_progra
             (attempt_id is not None and identities["attemptId"] is None) or
             (decision_id is not None and identities["decisionId"] is None)):
         raise ValueError("invalid_stage_identity")
-    for value in (ready_at, queued_at):
-        if value is not None and (not isinstance(value, str) or datetime.fromisoformat(value).tzinfo is None):
+    for value in (dependency_ready_at, queued_at):
+        if value is not None and (not isinstance(value, str) or len(value) > 40 or datetime.fromisoformat(value).tzinfo is None):
             raise ValueError("invalid_queue_timestamp")
     base = {"stage": name, "spanId": span_id, "parentSpanId": parent,
             "cacheHit": bool(cache_hit), "billing": billing,
             "executorType": executor_type, "dependsOn": _labels(depends_on),
-            "blockedBy": _labels(blocked_by), "readyAt": ready_at,
+            "blockedBy": _labels(blocked_by), "dependencyReadyAt": dependency_ready_at,
             "queuedAt": queued_at, **identities}
     started = time.monotonic()
     _emit({**base, "event": "stage_started", "startedAt": now()})
@@ -543,15 +547,28 @@ def _valid_event(value):
             return False
     if value["event"] == "stage_finished" and _number(value.get("elapsedSeconds")) is None:
         return False
-    if value.get("schemaVersion") == SCHEMA and value["event"] in {"stage_started", "stage_finished"}:
-        if value.get("executorType") is not None and value["executorType"] not in {"fixed_program", "production_model", "decision_agent", "human", "external_system"}:
+    # Validate extension fields on every schema: legacy rows must not smuggle
+    # unchecked labels into exporters either. Missing legacy fields stay unknown.
+    if value["event"] in {"stage_started", "stage_finished"}:
+        if value.get("executorType") is not None and (not isinstance(value["executorType"], str) or value["executorType"] not in EXECUTOR_TYPES):
             return False
-        if value.get("attemptId") is not None and (not isinstance(value["attemptId"], str) or not value["attemptId"]):
-            return False
-        if any(value.get(key) is not None and
-               (not isinstance(value[key], list) or any(not isinstance(item, str) for item in value[key]))
-               for key in ("dependsOn", "blockedBy")):
-            return False
+        for key in ("workUnitId", "attemptId", "decisionId"):
+            if value.get(key) is not None and _label(value[key], None) is None:
+                return False
+        for key in ("dependsOn", "blockedBy"):
+            if value.get(key) is not None:
+                if not isinstance(value[key], list):
+                    return False
+                try:
+                    _labels(value[key])
+                except ValueError:
+                    return False
+        for key in ("dependencyReadyAt", "queuedAt"):
+            timestamp = value.get(key)
+            if timestamp is not None:
+                if (not isinstance(timestamp, str) or len(timestamp) > 40 or
+                        datetime.fromisoformat(timestamp).tzinfo is None):
+                    return False
     if value["event"] == "api_attempt":
         usage = value["usage"]
         for key in ("inputTokens", "outputTokens", "cachedInputTokens", "cacheWriteTokens", "reasoningTokens"):
