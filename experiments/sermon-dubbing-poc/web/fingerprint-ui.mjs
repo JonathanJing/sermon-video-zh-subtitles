@@ -63,7 +63,7 @@ export async function prepareInWorker(metadata, signal, WorkerClass = globalThis
 
 // Show bounded diagnostic codes only; never expose native messages or device IDs.
 export function captureDiagnostic(error = {}) {
-  const known = {capture_start_timeout:'MIC_START_TIMEOUT',capture_interrupted:'INPUT_INTERRUPTED',audio_context_interrupted:'AUDIO_INTERRUPTED',microphone_ended:'MIC_ENDED',worklet_processor:'PROCESSOR_ERROR',capture_failed:'INVALID_CAPTURE',index_binding:'INDEX_MISMATCH',index_unavailable:'INDEX_UNAVAILABLE',match_failed:'MATCH_ERROR'};
+  const known = {capture_budget_exhausted:'MIC_BUDGET',capture_start_timeout:'MIC_START_TIMEOUT',capture_interrupted:'INPUT_INTERRUPTED',audio_context_interrupted:'AUDIO_INTERRUPTED',microphone_ended:'MIC_ENDED',worklet_processor:'PROCESSOR_ERROR',capture_failed:'INVALID_CAPTURE',index_binding:'INDEX_MISMATCH',index_unavailable:'INDEX_UNAVAILABLE',match_failed:'MATCH_ERROR'};
   const native = {NotAllowedError:'MIC_PERMISSION',SecurityError:'MIC_PERMISSION',NotFoundError:'MIC_MISSING',NotReadableError:'MIC_BUSY',OverconstrainedError:'MIC_SETTINGS',NotSupportedError:'AUDIO_UNSUPPORTED'};
   const stages = new Set(['context','permission','startup','worklet_load','input','recording']);
   const stage = stages.has(error.captureStage) ? error.captureStage : 'matching';
@@ -73,7 +73,7 @@ export function captureDiagnostic(error = {}) {
   return {code,stage,...(detail ? {detail} : {}),version:'C3'};
 }
 export function diagnosticMessage(diagnostic) {
-  const known = new Set('MIC_START_TIMEOUT INPUT_INTERRUPTED AUDIO_INTERRUPTED MIC_BUSY MIC_MISSING MIC_ENDED WORKLET_LOAD PROCESSOR_ERROR AUDIO_START INDEX_UNAVAILABLE'.split(' '));
+  const known = new Set('MIC_BUDGET MIC_START_TIMEOUT INPUT_INTERRUPTED AUDIO_INTERRUPTED MIC_BUSY MIC_MISSING MIC_ENDED WORKLET_LOAD PROCESSOR_ERROR AUDIO_START INDEX_UNAVAILABLE'.split(' '));
   return t('fingerprint.diagnostic.detail', { message: t(`fingerprint.diagnostic.${known.has(diagnostic.code) ? diagnostic.code : 'UNKNOWN'}`), code: `${diagnostic.code}${diagnostic.detail ? ':' + diagnostic.detail : ''}`, stage: diagnostic.stage, version: diagnostic.version });
 }
 // The native play promise resolves only when playback can actually start.

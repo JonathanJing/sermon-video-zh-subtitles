@@ -1,6 +1,6 @@
 // Session-only, coarse diagnostics. No storage, transport, PCM or landmark output.
 const REASONS = new Set(['matched', 'silence', 'insufficient_audio', 'no_consensus', 'ambiguous', 'low_confidence', 'incompatible_index', 'incompatible_query']);
-const CODES = new Set('MIC_START_TIMEOUT INPUT_INTERRUPTED AUDIO_INTERRUPTED MIC_ENDED PROCESSOR_ERROR INVALID_CAPTURE INDEX_MISMATCH INDEX_UNAVAILABLE MATCH_ERROR MIC_PERMISSION MIC_MISSING MIC_BUSY MIC_SETTINGS AUDIO_UNSUPPORTED WORKLET_LOAD AUDIO_START UNKNOWN'.split(' '));
+const CODES = new Set('MIC_BUDGET MIC_START_TIMEOUT INPUT_INTERRUPTED AUDIO_INTERRUPTED MIC_ENDED PROCESSOR_ERROR INVALID_CAPTURE INDEX_MISMATCH INDEX_UNAVAILABLE MATCH_ERROR MIC_PERMISSION MIC_MISSING MIC_BUSY MIC_SETTINGS AUDIO_UNSUPPORTED WORKLET_LOAD AUDIO_START UNKNOWN'.split(' '));
 const LEVELS = new Set(['silent', 'very_low', 'low', 'moderate', 'high', 'unknown']);
 const CLIPPING = new Set(['none', 'under_1_percent', '1_to_5_percent', 'over_5_percent', 'unknown']);
 const finite = value => typeof value === 'number' && Number.isFinite(value) && value >= 0;

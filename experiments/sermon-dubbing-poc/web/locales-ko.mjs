@@ -78,6 +78,7 @@ export const messages = Object.freeze({
   'player.jumpTime': '시간으로 이동',
   'player.jump': '이동',
   'precision.title': '위치 맞춤 / 미세 조정',
+  'fingerprint.diagnostic.MIC_BUDGET': "이번 시도의 남은 녹음 시간이 부족해 녹음을 중지했습니다. 다시 누르거나 수동으로 위치를 맞추세요.",
   'fingerprint.open': '현장 소리로 위치 찾기',
   'feedback.close': '피드백 닫기',
   'feedback.categories': '무엇이 문제였나요? (복수 선택 가능)',
