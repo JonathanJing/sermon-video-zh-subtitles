@@ -123,6 +123,7 @@ Firebase Hosting 只发布静态运行时和指纹索引；采集、特征和匹
 | `DEV-SPD-003` | 三类 dry run 与恢复演练 | `pending` | 在 `DEV-E2E-001` 现有模拟器上扩展快速回放、真实代表片段、故障后恢复；区分模拟与真实调用，验证恢复后的完整交付，保留失败和中断证据 | [本页效率计划](#每周流程效率计划)、[后端 dry run](backend-four-layer-dry-run.zh.md) |
 | `DEV-SPD-004` | 局部重试与修订依赖范围 | `pending` | 验证并接通已有翻译 partial repair、响应恢复和音频单元复用；受控故障恢复时，不受影响的成功组新增付费调用为 0、已验证音频重新合成为 0，旧收据与失效范围可追溯 | [本页效率计划](#每周流程效率计划)、[Layer 2/3 backlog](multilingual-layer-2-3-backlog.zh.md) |
 | `DEV-SPD-005` | 整周总 token 与调度开销优化 | `pending` | 汇总调度、内容生成、机器复核、失败与修订的去重用量；减少重复上下文和无效模型调用，按相同工作量比较恢复后总 token 与完成时间，保留费用及缺测边界 | [本页效率计划](#每周流程效率计划)、[模型实验结果](reports/20260928-model-production-ab-results.zh.md) |
+| DEV-SPD-006 | Codex 编排三层重构与 bounded context | pending | 将正常周产拆为确定性 Workflow Engine、只处理窄歧义的 bounded Decision Agent、仅负责系统开发/未知故障的 Codex Engineer；按 TEST-A—G 验证 happy path 0 个 runtime Codex 编排 turn、State Packet 白名单/预算、子 Agent 不继承父全文、stale decision fail closed、页面 hard stop 与 token 分口径 A/B；不通过削弱质量门禁制造下降 | [Codex token 分析与测试计划](reports/20260929-codex-orchestration-token-analysis.zh.md) |
 | `DEV-LOCALE-001` | 界面本地化母语复核 | `in_progress` | 中文、英文、韩语、西语、越南语界面候选分别完成核心流程、错误、权限、VoiceOver 和长文本复核；界面语言不改变内容／音频选择 | [Layer 4 语言设计](multilingual-layer-4-delivery-app-backlog.zh.md#24-app-界面语言) |
 | `DEV-USAGE-001` | 按三种语言维度统计收听 | `waiting_evidence` | 三维语言／pageId 统计、私有报表、Web／API 发布与真实读回、原生 URLSession／模拟器 UI 已有 9 月 27 日记录；下一步完成实体 iPhone 实际播放／关闭／撤回、跨端口径及原始收据核对。界面语言、正文语言和实际音轨语言仍分别记录，不从界面选择推断收听 | [使用统计](sermon-app-usage.zh.md)、[三维统计与发布证据](sermon-language-listening-statistics.zh.md) |
 
@@ -137,6 +138,32 @@ Firebase Hosting 只发布静态运行时和指纹索引；采集、特征和匹
 - [后端快速 dry run](backend-four-layer-dry-run.zh.md)已共用部分生产控制循环、保存逐步计时及失败报告，并有 CI 故障注入；固定响应和测试音不测真实 ASR／翻译／TTS 性能。较早的 [30 秒 bucket 演练](firebase-dev-four-layer-bucket-dry-run.zh.md)是另一条复用素材的交付检查，不能替代真实生成基线，也不应据其旧失败处理推断新版模拟器行为。
 - [Layer 2 runner](../scripts/run_target_language_models.py)已有 `--partial-repair-brief`、`--reuse-from`、`--resume-cache-from`；[Layer 3 renderer](../scripts/render_formal_target_language_speech.py)已有逐单元恢复和跨修订复用。先验证这些能力在同一周编排中的实际恢复边界，补缺口，不重建平行缓存系统。保留付费响应、旧失败及身份校验；未知请求结果不得盲目重付。
 - [9 月 28 日模型实验](reports/20260928-model-production-ab-results.zh.md)已有三语 135 组／臂对照：Luna→Sol 有 10 组结构失败，尚无人审分数或修订分钟数；调度样本也未证明稳定速度优势。延续现有样本、失败证据和盲评材料，不能把较低 token 费用当作较少 token、较短总时间或正式质量通过。
+
+**Codex 编排三层重构（DEV-SPD-006）**
+
+历史 2026-09-20 收据显示：生产 Astra 文本 API 为 1,716,038 token，而 Codex 主任务与三个明确子任务的可观察小计为 169,298,693 token，其中 166,824,192 为已包含在输入中的缓存读取，非缓存输入为 2,148,134，输入缓存占比 98.73%。这说明优先问题是长生命周期 Agent context 与父子任务重复承载状态，不能把 1.69 亿解释成页面正文或同额非缓存成本。完整分析见 [Codex 编排 Token 消耗分析与三层重构方案](reports/20260929-codex-orchestration-token-analysis.zh.md)。
+
+目标架构：
+
+1. **Layer A — Deterministic Workflow Engine。** 已知的 hash/gate/cache/retry/deploy/verify 状态转换由持久化 state + receipt 驱动，stage 必须 idempotent；可唯一决定下一步时不调用 Codex。
+2. **Layer B — Bounded Decision Agent。** 只处理未分类失败、多个合法恢复路径或质量问题归类等窄歧义；输入为版本化 State Packet 与 evidence refs，不携带完整 production conversation/tool history；输出必须属于 controller 给定的 allowlisted actions，state revision 变化后旧 decision 作废。
+3. **Layer C — Codex Engineer。** 负责新功能、schema、未知 bug、pipeline 优化、实验、PR 与 review；正常周产不让工程上下文长期驻留。修复后把稳定规则下沉 Layer A/B。
+
+需要实施并测试的改动：
+
+| 测试 | 待改动 | 最小验收 |
+|---|---|---|
+| SPD6-TEST-A | 已知 stage transition 下沉确定性 controller；stage 提供 inspect/execute/verify 与 identity-aware reuse | 固定 happy-path fixture 从 source-ready 到 page-ready，runtime Codex orchestration turn = **0**；审批/hash/发布/HTTP gate 不减少；重复运行不重复发布或新增生产调用 |
+| SPD6-TEST-B | 新增版本化 State Packet，仅含 stage、身份 hash、blocker code、允许 action、短计数与 evidence refs | 初始实验预算：serialized packet ≤ **32 KiB**、evidence refs ≤ **16**；大转写/长日志/完整 tool output/secret 不进入 packet；关键 gate 不因截断丢失 |
+| SPD6-TEST-C | Decision Agent 使用结构化输入/输出、allowed actions 与 state revision | retry/open_revision/request_review fixture 通过；未知 action fail closed；模型返回前 state 改变则 decision 作废；歧义超预算后停止而非无限扩 context |
+| SPD6-TEST-D | page_route、delivery_builder、local_tts_route 等改为显式输入合同，默认不继承父 conversation/tool history | 将父 context 人工放大 10×，子任务输入大小不随之同倍率增长；缺证据安全停止；父子 usage 分列且不与 SDK 聚合重复计数 |
+| SPD6-TEST-E | 定义 page_ready/delivery_complete hard stop；海报、代码、文档/PR 默认成为后续 bounded task | page_ready 后 production controller 不再启动新生产 stage；后续工程任务只接 release receipt/必要引用；生产 token 报告在 hard stop 冻结 |
+| SPD6-TEST-F | failure code + affected unit + receipt 持久化；已知 transient/partial repair/reuse 由 controller 处理 | 翻译组失败时未影响组新增调用 0；音频单元失败时未影响单元重新合成 0；upload/HTTP 失败时 ASR/翻译/TTS 新调用 0；重复同类失败不线性增加 Decision Agent turn |
+| SPD6-TEST-G | 统一记录 Agent context 与生产调用口径 | 每次运行分别报告 total input、cached input、non-cached input、output/reasoning、decision turns、State Packet bytes、子 Agent usage、production API token、失败/重试 token、wall time 与质量 gate；不得只报 total token |
+
+A/B 顺序固定为：**A 当前 Agent-heavy 基线 → B1 只引入 bounded State Packet → B2 Layer A + bounded Layer B → B3 加 page hard stop/工程任务拆分**。每轮只改变一个主要变量，并保持同一输入、同一语言、同一人工/质量/发布门禁。历史 9 月 20 日只能作为参考；若当前版本无法等价复现，不把旧数字冒充新的 A 基线。
+
+候选验收原则：正常 happy path 可由 Layer A 表达时 runtime Codex orchestration turn 为 0；Layer B 不携带完整会话；生产 API token 不能因“省 Codex”而无界增加；不得通过减少语言、取消人工审核、跳过 QA/设备/发布门禁制造 token 降幅。具体百分比在真实基线形成后、A/B 前冻结，不预先承诺。
 
 **实施顺序与交付物**
 
