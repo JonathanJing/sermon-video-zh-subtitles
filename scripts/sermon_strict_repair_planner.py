@@ -17,6 +17,9 @@ from scripts.canonical_layer2_controller import ADMISSION_LOCK
 from scripts import sermon_strict_layer2 as strict
 from scripts import sermon_strict_budget_adapter as execution
 from scripts import sermon_review_gate as gate
+from scripts import sermon_accounting as accounting
+from scripts import sermon_log_profile as profile
+from scripts import sermon_review_observation as observation
 from scripts.sermon_release_workflow import _safe_path
 
 SCHEMA='sermon-strict-repair-history-v1'
@@ -29,7 +32,18 @@ class RepairPlanner:
                   'invalid_production_run_id')
         self.store=store;self.job_root=Path(job_root);self.run_id=production_run_id
 
-    def plan(self, load_current):
+    def plan(self, load_current, *, depends_on=None, completion_spans=None):
+        if profile.current() is None:
+            return self._plan(load_current)
+        with accounting.stage('rqc.repair_planning',depends_on=depends_on,
+                executor_type='deterministic_program') as span:
+            result=self._plan(load_current)
+            plan=result['planning']['repairPlan']
+            if plan is not None:observation.record(plan)
+        if completion_spans is not None:completion_spans.append(span)
+        return result
+
+    def _plan(self, load_current):
         """Load current D1/D4 evidence and atomically retain proposed sidecars.
 
         Loader returns the keyword arguments of plan_repair except budget;
@@ -105,7 +119,7 @@ class RepairPlanner:
                 return {'planning':result,'repair':repair,'executionAuthority':'none',
                     'durableHistorySha256':c.canonical_sha256(history),'budgetStateRevision':c.canonical_sha256(ledger)}
 
-    def plan_group(self, prepared, revision_root, graph, *, created_at):
+    def plan_group(self, prepared, revision_root, graph, *, created_at, depends_on=None, completion_spans=None):
         """Production file loader for a failed current group before public assembly.
 
         This path verifies actual D3 outputs against every durable reservation;
@@ -113,7 +127,8 @@ class RepairPlanner:
         Public candidate/plugin/human evidence is still required by the separate
         whole-locale admission adapter once all machine reviews pass.
         """
-        return self.plan(lambda ledger:self._load_group(prepared,revision_root,graph,created_at,ledger))
+        return self.plan(lambda ledger:self._load_group(prepared,revision_root,graph,created_at,ledger),
+                         depends_on=depends_on,completion_spans=completion_spans)
 
     def _load_group(self, prepared, revision_root, graph, created_at, ledger):
         root=_safe_path(revision_root);captured={}

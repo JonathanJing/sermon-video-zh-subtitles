@@ -131,3 +131,22 @@ class RealAdapterPlanningTests(unittest.TestCase):
             self.runtime.store._save(folder,ledger)
         with self.assertRaisesRegex(ValueError,'repair_review_budget_status_mismatch'):self.plan()
         self.assertEqual(len(self.f.calls),2)
+
+    def test_actual_plan_receipt_logs_with_dependency_and_log_failure_replays_without_calls(self):
+        with self.f.session():
+            with adapter.accounting.stage('finished_review') as review_span:pass
+            completed=[]
+            result=self.planner.plan_group(self.f.prepared,self.runtime.root,self.graph,
+                created_at='2026-09-30T00:00:00Z',depends_on=[review_span],completion_spans=completed)
+            with patch.object(adapter.observation,'record',side_effect=adapter.accounting.AccountingWriteError('synthetic')):
+                with self.assertRaises(adapter.accounting.AccountingWriteError):self.plan()
+            self.assertEqual(self.plan(),result)
+        self.assertEqual(len(completed),1)
+        events,_=adapter.accounting.read_events(self.f.root/'logs')
+        start=next(e for e in events if e['event']=='stage_started' and e.get('spanId')==completed[0])
+        self.assertEqual(start['dependsOn'],[review_span])
+        observed=next(e for e in events if e['event']=='rqc_observation' and e.get('spanId')==completed[0])
+        self.assertEqual(observed['rqcEvidence']['receiptCanonicalJsonSha256'],
+                         c.canonical_sha256(result['planning']['repairPlan']))
+        self.assertEqual(observed['role'],'repair')
+        self.assertEqual(len(self.f.calls),2)
