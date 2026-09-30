@@ -134,7 +134,9 @@ def snapshot(config):
     return result
 
 
-def start_action(config, action):
+def start_action(config, action, *, timeout_seconds=21600):
+    if type(timeout_seconds) is not int or not 1 <= timeout_seconds <= 21600:
+        raise ValueError("Invalid release action timeout")
     path = configuration(config)
     if path is None:
         return {'status': 'blocked'}
@@ -144,10 +146,10 @@ def start_action(config, action):
     with _lock(week_root, _digest({'purpose': 'release-admission'})) as (_, _, held):
         if not held:
             return {'status': 'blocked'}
-        return _start_action_locked(config, action)
+        return _start_action_locked(config, action, timeout_seconds=timeout_seconds)
 
 
-def _start_action_locked(config, action):
+def _start_action_locked(config, action, *, timeout_seconds=21600):
     if action not in ACTIONS:
         raise ValueError('Unknown release operation')
     current = snapshot(config)
@@ -172,4 +174,4 @@ def _start_action_locked(config, action):
     from scripts.sermon_workflow_jobs import start_job, _digest, _persist
     root.mkdir(parents=True, exist_ok=True, mode=0o700)
     _persist(root / 'active.json', {'jobId': _digest(identity), 'action': action})
-    return start_job(root, identity, command, timeout_seconds=21600)
+    return start_job(root, identity, command, timeout_seconds=timeout_seconds)

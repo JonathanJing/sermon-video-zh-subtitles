@@ -87,6 +87,15 @@ class EndToEndTests(unittest.TestCase):
         self.assertEqual(observed['status'],'queued')
         self.assertNotIn('command',observed)
 
+    def test_controller_timeout_reaches_existing_worker_and_invalid_values_stop(self):
+        with patch.object(flow, 'snapshot', return_value=state('build_page', locations={'runRoot': str(self.root/'source')})), \
+             patch('scripts.sermon_workflow_jobs.start_job', return_value={'jobId': 'abc', 'status': 'queued'}) as start:
+            flow.start_action(self.config, 'build_page', timeout_seconds=600)
+            self.assertEqual(start.call_args.kwargs['timeout_seconds'], 600)
+        for timeout in (0, -1, 21601, True, float('nan')):
+            with self.assertRaises(ValueError):
+                flow.start_action(self.config, 'build_page', timeout_seconds=timeout)
+
     def test_agent_cannot_deploy_in_shadow_or_when_not_recommended(self):
         for execute, expected in [(False,'shadow_mode'),(True,'current_state_does_not_allow_stage')]:
             folder=self.root/str(execute);folder.mkdir()

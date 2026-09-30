@@ -172,8 +172,8 @@ A/B 顺序固定为：**A 当前 Agent-heavy 基线 → B1 只引入 bounded Sta
 
 | 子项 | 状态 | 工作 | 完成条件 |
 |---|---|---|---|
-| `SPD6-ARCH-01` | `pending` | 将现有 snapshot/recommendedAction 明确建模为 dependency DAG + deterministic controller | 依赖、convergence、human gate、waiting、terminal scope 均有机器可读状态；不改变现有业务 gate |
-| `SPD6-ARCH-02` | `pending` | Layer A dispatch durable job、wait、reconcile、idempotency、retry budget、hard stop | outstanding job 不重复启动；exit 0 不代替 evidence；未知 outcome fail closed |
+| `SPD6-ARCH-01` | `in_progress` | 将现有 snapshot/recommendedAction 明确建模为 dependency DAG + deterministic controller | 依赖、convergence、human gate、waiting、terminal scope 均有机器可读状态；不改变现有业务 gate |
+| `SPD6-ARCH-02` | `in_progress` | Layer A dispatch durable job、wait、reconcile、idempotency、retry budget、hard stop | outstanding job 不重复启动；exit 0 不代替 evidence；未知 outcome fail closed |
 | `SPD6-ARCH-03` | `pending` | Layer B State Packet / Decision schema、allowed actions、state revision、budget | 只处理窄歧义；旧 state decision 作废；未知 action 拒绝 |
 | `SPD6-ARCH-04` | `pending` | Layer C engineering run 与 production run 解耦 | engineeringRunId 独立；生产报表不混入 Codex 工程 token/time |
 | `SPD6-LOG-01` | `in_progress` | accounting v3 已开始写入 executorType、dependsOn、blockedBy、ready/queue、workUnit/attempt/decision identity；DAG/critical-path 初始投影已实现，下一步接入 producer 完整依赖与等待证据 | 可重建 DAG 和 critical path；旧 v1/v2 历史仍可读 |
@@ -489,3 +489,5 @@ Debug owner：Fix/Debug agent
 - UI/Dev agent 先做 view mode 分离，不要等待完整后端。
 
 2026-09-30 实施证据：[PR #122](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/122) 在 #121 基础上修复 v3 分类/字段/导入校验，新增 E1.2 DAG/slack 与 E1.3 JSON→Markdown 初始投影、E6 commit-bound 保守快照。状态为实现中：模拟单测不是 producer 全覆盖，不是 Stage 0–3 人工 sign-off。真实 source/locales/page-ready 计量、controller/Decision Agent、真实媒体阶段与合同变化后的 decoder 验证仍待后续证据。
+
+E2 后续批次：版本化 action registry 与 opt-in deterministic controller 已开始接入既有 `legacy page_release` adapter；默认 shadow、page_ready hard stop，复用 durable jobs/admission locks/outcome reconciliation。canonical 四层 DAG/三语汇合、E3 Decision Agent、迁移收据与阶段人工验收仍待实现，不能按 legacy fixture 关闭 DEV-SPD-006。

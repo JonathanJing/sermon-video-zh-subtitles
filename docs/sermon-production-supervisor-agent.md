@@ -207,3 +207,15 @@ URLs, internal paths, configuration, hashes, sermon text, logs, identities, and 
 - Raw secret material is excluded from reports, Agents API session inputs, and local persistence. The SDK rollback path disables sensitive trace data.
 - Existing quality gates, caching, and resumability remain authoritative.
 - Durable API sessions and stage-attempt records supplement recovery evidence; they do not replace GCS leases, human approval, or a fresh production snapshot.
+
+## Opt-in deterministic page-release adapter (E2 initial implementation)
+
+`scripts/sermon_deterministic_controller.py` adds a versioned action registry and deterministic inspect/admit/dispatch/wait/stop entry for the existing **legacy page_release** adapter. It does not implement canonical four-layer multilingual production, source acquisition, or PDF generation. The existing agent entry and production models remain unchanged.
+
+Use `--sunday`, `--state-file`, `--work-root`, and `--release-config` with the existing operator-owned source/release configuration. `--mode deterministic_shadow` is the default: it reads existing snapshots, outputs a bounded decision with a state hash, and creates no controller/job state. `--mode legacy_agent` returns a handoff indication without starting a new agent. `--mode deterministic_execute` is explicitly opt-in and may invoke the existing costly/external activities only when the normal authorizations and gates admit them. No real execution is part of this implementation's fixture evidence.
+
+The default `--terminal-scope page_ready` stops when the existing snapshot has validated the built candidate and recommends preparing/releasing it. `delivery_complete` continues only under the existing exact release authorization and HTTP/registry gates; neither option grants publication permission. Persisted terminal evidence prevents automatic re-entry; changed evidence requires a new bound run/reconciliation. Device and venue acceptance stay separate.
+
+The controller reuses `sermon_end_to_end.start_action` and `sermon_workflow_jobs` for durable workers, locking and outcome reconciliation. Its private `controller-state.json` pins workflow definition/hash, state schema, config identity, Sunday and terminal scope. A mismatched definition/scope blocks for explicit migration or finish-on-old/restart; no automatic migration is implemented. It writes dispatch intent before calling the existing worker. A crash/unknown result never triggers a blind second request for the same action. Each tick returns at dispatch or wait, with no long polling or LLM call.
+
+Stage timeout ceilings: audio candidate 21600s, sync 1800s, page build 600s, release preparation 300s, deployment 600s, HTTP verification 300s, registry recording 120s. Existing callers retain their previous 21600s default. One attempt per identity remains the durable-job policy; automatic retries, full four-layer DAG/convergence, bounded Decision Agent, migration receipts and Stage 0–3 acceptance are still pending. The controller's fixture `runtimeCodexTurns=0` is not a measured weekly token reduction.
