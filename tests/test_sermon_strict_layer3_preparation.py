@@ -1,7 +1,11 @@
 import unittest
+import json
 from unittest.mock import patch
 from scripts import sermon_strict_layer3_preparation as prep
 from scripts import sermon_review_contracts as c
+from scripts import sermon_public_snapshot as public
+from scripts import sermon_review_budget as budget
+from scripts import sermon_strict_gate_admission as admission
 from tests import test_sermon_strict_gate_admission as gates
 from tests import test_prepare_target_language_speech_job as voices
 
@@ -55,6 +59,108 @@ class PreparationTests(unittest.TestCase):
     def test_completed_job_deletion_is_not_silently_recreated(self):
         self.prepare();(self.out/'job.json').unlink()
         with self.assertRaisesRegex(ValueError,'completed_output_missing'):self.prepare()
+
+
+class LargePreparationTests(unittest.TestCase):
+    prepare=PreparationTests.prepare
+
+    def setUp(self):
+        PreparationTests.setUp(self)
+        for group in self.f.f.groups:
+            original=''.join(group['targetUtterances'])
+            group['targetUtterances']=[original+'爱'*15500,'爱'*15500,'爱'*15500]
+        fixture=self.f.f.f;original_transport=fixture.transport
+        def utf8_transport(key,payload,*,response_observer):
+            def observed(response,call_id,elapsed):
+                content=response['choices'][0]['message']['content']
+                response['choices'][0]['message']['content']=json.dumps(json.loads(content),ensure_ascii=False)
+                return response_observer(response,call_id,elapsed)
+            observed.request_started=response_observer.request_started
+            if hasattr(response_observer,'request_rejected'):
+                observed.request_rejected=response_observer.request_rejected
+            return original_transport(key,payload,response_observer=observed)
+        fixture.transport=utf8_transport
+        self.f.store=budget.BudgetStore(self.f.root/'large-budget',self.f.store.authority)
+        self.f.generate_groups();self.f.approve()
+        self.f.boundary=admission.AdmissionBoundary(self.f.config,self.f.store)
+        self.intent=self.f.admit()['intent']['intentId']
+        for root,_ in self.f.f.revisions:
+            for path in root.glob('*.json'):
+                self.assertLessEqual(path.stat().st_size,c.MAX_BYTES)
+        self.calls=len(fixture.calls)
+
+    def marker(self):
+        rows=list((self.f.store.root/budget.STORE_ID).glob('gate-*/prepare-'+self.intent+'.json'))
+        self.assertEqual(len(rows),1)
+        return rows[0]
+
+    def assert_large_job(self):
+        path=self.out/'job.json';raw=path.read_bytes()
+        self.assertGreater(len(raw),c.MAX_BYTES)
+        self.assertLessEqual(len(raw),public.MAX_BYTES)
+        with self.assertRaises(ValueError):c.read_snapshot(path)
+        job=public.read_snapshot(path)[0]
+        self.assertEqual(len(job['units']),2)
+        self.assertFalse(job['releaseEligible'])
+        return raw
+
+    def test_large_prepared_job_replays_without_new_calls_or_byte_changes(self):
+        first=self.prepare();self.assertEqual(first['status'],'prepared')
+        raw=self.assert_large_job()
+        self.assertEqual(c.read_snapshot(self.marker())[0]['status'],'prepared')
+        self.assertEqual(self.prepare(),first)
+        self.assertEqual((self.out/'job.json').read_bytes(),raw)
+        self.assertEqual(len(self.f.f.f.calls),self.calls)
+
+    def test_large_reserved_job_recovers_after_lost_write_acknowledgement(self):
+        original=prep.jobs._persist
+        def lost(path,value):
+            original(path,value)
+            if path.name=='job.json':raise OSError('synthetic lost acknowledgement')
+        with patch.object(prep.jobs,'_persist',side_effect=lost):
+            with self.assertRaises(OSError):self.prepare()
+        raw=self.assert_large_job()
+        self.assertEqual(c.read_snapshot(self.marker())[0]['status'],'reserved')
+        resumed=self.prepare();self.assertEqual(resumed['status'],'prepared')
+        self.assertEqual((self.out/'job.json').read_bytes(),raw)
+        self.assertEqual(c.read_snapshot(self.marker())[0]['status'],'prepared')
+        self.assertEqual(self.prepare(),resumed)
+        self.assertEqual(len(self.f.f.f.calls),self.calls)
+
+    def test_large_reserved_job_with_no_output_recovers_once(self):
+        original=prep.jobs._persist
+        def failed(path,value):
+            if path.name=='job.json':raise OSError('synthetic write interrupted')
+            return original(path,value)
+        with patch.object(prep.jobs,'_persist',side_effect=failed):
+            with self.assertRaises(OSError):self.prepare()
+        self.assertFalse((self.out/'job.json').exists())
+        self.assertEqual(c.read_snapshot(self.marker())[0]['status'],'reserved')
+        result=self.prepare();self.assertEqual(result['status'],'prepared')
+        self.assert_large_job();self.assertEqual(self.prepare(),result)
+        self.assertEqual(len(self.f.f.f.calls),self.calls)
+
+
+class PreparationSizeLimitTests(unittest.TestCase):
+    prepare=PreparationTests.prepare
+
+    def setUp(self):PreparationTests.setUp(self)
+
+    def test_formatted_public_job_limit_rejects_before_marker_or_output(self):
+        config=self.f.boundary.config
+        expected=prep.speech.prepare_job(config.source,config.anchor,config.public_candidate,config.policy,
+            config.human_receipt,self.adapter_path,self.registry_path,self.out,
+            strict_rubric=c.read_snapshot(config.rubric)[0],build_only=True)
+        formatted=(json.dumps(expected,ensure_ascii=False,indent=2,allow_nan=False)+'\n').encode()
+        cap=len(formatted)-1
+        self.assertLess((self.f.root/'public.json').stat().st_size,cap)
+        self.assertLess(len(c.canonical_bytes(expected)),cap)
+        before=len(self.f.f.f.calls)
+        with patch.object(public,'MAX_BYTES',cap):
+            with self.assertRaises(ValueError):self.prepare()
+        self.assertFalse(self.out.exists())
+        self.assertEqual(list((self.f.store.root/budget.STORE_ID).glob('gate-*/prepare-*.json')),[])
+        self.assertEqual(len(self.f.f.f.calls),before)
 
 
 if __name__=='__main__':unittest.main()
