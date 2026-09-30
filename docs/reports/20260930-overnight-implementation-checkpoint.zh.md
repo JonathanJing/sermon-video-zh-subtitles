@@ -221,3 +221,11 @@ E6 兼容性审查与完整canonical Stage0继续未完成，stage1PromotionAllo
 **正式 Stage1仍未完成**：Stage0独立sign-off与完整canonical端到端适配器尚缺；本次是新ASR诊断加旧生产缓存/音频重验，不是新跑三语模型、TTS及Dev候选。若之后需要新付费推理，最小待决问题是：在Stage0独立签字及绑定样本/policy就绪后，批准这份138秒三语新运行的预算上限是多少？新内容/声音或candidate身份若改变，仍需其绑定的人审；当前不提前跨入10分钟/整篇验证。
 
 同时修复 #158 的长片段障碍：当前head `b6e793b48d9ecee2f3fe1c6d70ea602e42f5a068` 使用bounded fan-in joins保留全部组依赖，事件上限仍64。65/129组旧代码在所有合成模型返回后失败已复现；新代码实际producer、65组cache-only recovery及4097依赖树通过，51相关测试与最终3项回归通过，干净head341组件+后端模拟通过。精确head远端CI与新集成全量仍在运行，不借用旧head结果。
+
+## 2026-09-30 13:46 UTC：真实缓存链路的本地 Layer 4 与最终 fan-in 集成证据
+
+138 秒旧批准素材已用当前 `b6e793b` 执行新的本地 Layer 4 组装和 staging，耗时 3.798s。三语 Release、content JSON 和绑定内容审核收据共9份均与历史字节完全一致，沿用未变更身份的原人审；不是给新 cache-only 候选补签批准。共12项资产进入新的隔离 staging，deploymentStatus=not_deployed，HTTP/device 均 not_run，未包含可选 fingerprint。原媒体与审查文件不变，新增模型/TTS/人工批准均0。第一份诊断脚本把 accounting 返回的字符串当对象读取，已保留失败报告；修正诊断脚本后成功，未修改 production builder。证据：`evidence/real-clip-138s-cache-replay/layer4-rebuild-report-r2.json`。这增加了真实旧批准产物的确定性重建证据，仍不等于正式新推理 Stage1 或发布。
+
+#158 `b6e793b48d9ecee2f3fe1c6d70ea602e42f5a068` 的两条 Python CI 分片与 unittest aggregate 已核验 SUCCESS；draft iOS/contract validation SKIPPED。最新本地 QA 组合 **`da2b28d4efa34a034000bb25e2ba636b73d4729a`** 包含该修复，干净快照重新跑全量 Root Python：980+1064=2044 reported，**2038实际通过、6条件 smoke skipped**。汇总 `evidence/stack-with158-fanin-validation-summary.json` 记录精确SHA及报告hash。Web/native树与完整验证的8f608a97无差异，没有把旧模拟器结果改记为新快照重跑。
+
+当前可免费继续的是 v3 本地候选/基线一致性检查与回归；当前阻塞正式新推理验收的仍是 Stage0 独立签字、完整 canonical 适配器/端到端证据，以及新付费运行的明确预算。现有本地 MLX Whisper 已实际验证可运行；其他本地模型仅库存存在，不声明服务或生产策略准入。
