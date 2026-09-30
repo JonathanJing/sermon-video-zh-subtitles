@@ -59,6 +59,96 @@ class BudgetTests(unittest.TestCase):
         return self.store.execute_local(identity(), callback=lambda _: outcome or result(),
                                         **request(op, kind, revision))
 
+    def test_near_size_limit_rejects_before_callback_when_result_cannot_fit(self):
+        from scripts import sermon_review_contracts as contracts
+        self.store.snapshot(identity())
+        path = self.root / budget.STORE_ID / 'state.json'
+        ledger = json.loads(path.read_text())
+        row_request = budget._request(identity(), 'op-1', 'review', 'r1', 1, '1'*64, amounts())
+        rid = self.store._reservation_id(row_request)
+        ledger['reservations'][rid] = {'request': row_request, 'phase': 'request'}
+        cap = len((json.dumps(ledger, ensure_ascii=False, indent=2) + '\n').encode())
+        before = path.read_bytes()
+        callback = unittest.mock.Mock(return_value=result())
+        with patch.object(contracts, 'MAX_BYTES', cap), self.assertRaisesRegex(ValueError, 'size_limit'):
+            self.store.execute_local(identity(), callback=callback, **request())
+        callback.assert_not_called()
+        self.assertEqual(path.read_bytes(), before)
+
+    def test_pending_and_unknown_settlement_capacity_survives_near_cap_and_restart(self):
+        from scripts import sermon_review_contracts as contracts
+        maximal = dict(result(), contentStatus='not_assessed',
+                       usage={key: 1 if key == 'requests' else 10**15 for key in budget.METRICS})
+        first = self.store.reserve(identity(), **request())
+        path = self.root / budget.STORE_ID / 'state.json'
+        ledger = json.loads(path.read_text())
+        second_request = budget._request(identity('other'), 'op-2', 'review', 'r1', 1, '1'*64, amounts())
+        ledger['reservations'][self.store._reservation_id(second_request)] = {
+            'request': second_request, 'phase': 'intent'}
+        for row in ledger['reservations'].values():
+            row.update(phase='result', result=maximal)
+        cap = len((json.dumps(ledger, ensure_ascii=False, indent=2) + '\n').encode()) - 1
+        callback = unittest.mock.Mock(return_value=result())
+        with patch.object(contracts, 'MAX_BYTES', cap):
+            with self.assertRaisesRegex(ValueError, 'size_limit'):
+                self.store.execute_local(identity('other'), callback=callback, **request('op-2'))
+            callback.assert_not_called()
+            self.store.mark_request(first['reservationId'])
+            self.store.record_result(first['reservationId'], result('outcome_unknown'))
+            # Unknown results retain future settlement space, including across chains.
+            with self.assertRaisesRegex(ValueError, 'size_limit'):
+                self.store.execute_local(identity('other'), callback=callback, **request('op-2'))
+            callback.assert_not_called()
+            def interrupted(folder, value):
+                raise OSError('after saved result marker')
+            with patch.object(self.store, '_save', side_effect=interrupted), self.assertRaises(OSError):
+                self.store.reconcile(first['reservationId'], result=maximal, evidence_sha256='2'*64)
+            recovered = budget.BudgetStore(self.root, authority())
+            self.assertEqual(recovered.reconcile(first['reservationId'])['status'], 'succeeded')
+            self.assertLessEqual(path.stat().st_size, cap)
+            self.assertFalse(recovered.snapshot(identity())['unknownReservations'])
+
+    def test_content_revision_availability_does_not_depend_on_probe_label(self):
+        for revision_id in ('next-2', 'next-3', 'snapshot-next-0'):
+            with self.subTest(revision_id=revision_id):
+                store = budget.BudgetStore(Path(self.temp.name) / revision_id, authority())
+                first = dict(request(), revision_id=revision_id)
+                store.execute_local(identity(), callback=lambda _: result(content='fail'), **first)
+                self.assertTrue(store.snapshot(identity())['availability']['content_revision'])
+                store.execute_local(identity(), callback=lambda _: result(),
+                                    **dict(request('repair', 'content_revision', 2), revision_id='fresh-2'))
+                store.execute_local(identity(), callback=lambda _: result(content='fail'),
+                                    **dict(request('review-2', revision=2), revision_id='fresh-2'))
+                self.assertTrue(store.snapshot(identity())['availability']['content_revision'])
+                store.execute_local(identity(), callback=lambda _: result(),
+                                    **dict(request('repair-3', 'content_revision', 3), revision_id='fresh-3'))
+
+    def test_request_lock_contention_preserves_fresh_permit_and_quota(self):
+        first = self.store.reserve(identity(), **request())
+        rid = first['reservationId']
+        with jobs._lock(self.root, budget.STORE_ID) as (_, _, held):
+            self.assertTrue(held)
+            with self.assertRaisesRegex(ValueError, 'budget_store_busy'):
+                self.store.mark_request(rid)
+        self.assertEqual(self.store.snapshot(identity())['remaining']['unit'], amounts(19))
+        self.store.mark_request(rid)
+        self.store.record_result(rid, result())
+        self.assertEqual(len(self.store.snapshot(identity())['reservations']), 1)
+        with self.assertRaisesRegex(ValueError, 'fresh_reservation'):
+            self.store.mark_request(rid)
+
+    def test_request_uncertain_write_consumes_permit_and_never_dispatches(self):
+        first = self.store.reserve(identity(), **request())
+        rid = first['reservationId']
+        with patch.object(self.store, '_save', side_effect=OSError('uncertain write')), self.assertRaises(OSError):
+            self.store.mark_request(rid)
+        with self.assertRaisesRegex(ValueError, 'fresh_reservation'):
+            self.store.mark_request(rid)
+        callback = unittest.mock.Mock(return_value=result())
+        self.store.execute_local(identity(), callback=callback, **request())
+        callback.assert_not_called()
+        self.assertEqual(self.store.snapshot(identity())['unknownReservations'], [rid])
+
     def test_snapshot_closed_identity_and_safe_output(self):
         view = self.store.snapshot(identity())
         self.assertEqual(view['availability'], {'initial_generation': True, 'review': True, 'content_revision': False, 'decision_proposal': True})
