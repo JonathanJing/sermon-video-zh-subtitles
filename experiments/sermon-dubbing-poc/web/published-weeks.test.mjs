@@ -381,3 +381,39 @@ test('changed English source, release hashes or unit associations cannot show wr
     assert.ok(result.errors.length);
   }
 });
+
+test('invalid catalog target is rejected before release fetch while valid locales remain', async () => {
+  const mutations = [
+    target => { target.releasePackageUrl = '/releases-v2/wrong-page/ko.json'; },
+    target => { target.capabilities.push('audio'); },
+    target => { target.capabilities.push('unknown'); },
+    target => { target.capabilities.push('alignment'); },
+  ];
+  for (const mutate of mutations) {
+    const f = fixture();
+    const catalog = JSON.parse(f.files.get('/multilingual-v3.json'));
+    const target = catalog.pages[0].targets.ko;
+    const original = target.releasePackageUrl;
+    mutate(target);
+    // The wrong path still serves matching release bytes and a correct hash;
+    // rejection must be from catalog admission, not a later transport failure.
+    f.files.set(target.releasePackageUrl, f.files.get(original));
+    f.files.set('/multilingual-v3.json', JSON.stringify(catalog));
+    const result = await loadPublishedWeeks(f.fetchImpl);
+    assert.deepEqual(Object.keys(result.weeks[0].contentVariants), ['zh-Hans', 'es']);
+    assert.ok(!f.requests.includes(target.releasePackageUrl));
+    assert.equal(result.errors.length, 1);
+  }
+});
+
+test('valid text-only catalog target never requests a release or becomes an audio fallback', async () => {
+  const f = fixture();
+  const catalog = JSON.parse(f.files.get('/multilingual-v3.json'));
+  Object.assign(catalog.pages[0].targets['zh-Hans'], { audioStatus: 'unavailable', capabilities: ['text'] });
+  f.files.set('/multilingual-v3.json', JSON.stringify(catalog));
+  const result = await loadPublishedWeeks(f.fetchImpl);
+  assert.deepEqual(Object.keys(result.weeks[0].contentVariants), ['ko', 'es']);
+  assert.equal(result.weeks[0].defaultTargetLocale, 'ko');
+  assert.ok(!f.requests.includes(`/releases-v2/${pageId}/zh-Hans.json`));
+  assert.match(result.errors[0], /not ready for playback/);
+});

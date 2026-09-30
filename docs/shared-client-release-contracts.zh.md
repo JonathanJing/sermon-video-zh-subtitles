@@ -13,7 +13,7 @@ Web 集成负例会重新计算 Release 的有效传输 hash，再移除其合�
 ## 验证边界
 
 - 共用夹具只覆盖 production Release v2 的已审核音频路径；不是全部 catalog／Release 状态空间等价证明。
-- 原有 catalog v2／Release v1、Dev candidate 和 text-only 回退分别由既有 Web／Swift 回归保留；未来还需共用 catalog 与 text-only fixture。
+- 原有 catalog v2／Release v1、Dev candidate 和 text-only 回退分别由既有 Web／Swift 回归保留；下方后续批次补 catalog target/text-only 准入 fixture；完整 catalog 和 text-only Release 仍待覆盖。
 - `synthetic_decoder_tests_not_production_approval` 明确说明 fixture 中的人审／HTTP 状态只用于合成负例。没有真实内容批准、下载、HTTP 发布或现场证据。
 - 本地 Swift Core 与 Infrastructure 在 macOS 上运行。环境条件启用的真实站点／录音 smoke 保持 skipped；这不是 iPhone、模拟器 UI 或 App Store 验收。
 - 客户端代码发生变化，E6 必须保持 compatibility review required，不能签发 backend-only unchanged。此 draft 的 `native-client` 仍只是路由汇总；被跳过的 iOS／contract-validation 不计入执行通过。
@@ -34,3 +34,11 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test --package-pa
 Release v1/v2 schema 对 `packageId` 规定非空字符串，没有 160 字符上限；它不参与资产路径或缓存文件名。正式 producer 允许最长 160 字符的 pageId，再追加 `-<locale>-dual-script`，中文最长 packageId 为 180 字符。Web 和 Swift 因此只对 packageId 使用 schema 的非空字符串要求，不复用 pageId 的限制，也不收紧 schema 拒绝既有有效包。pageId、同语言资产路径、hash 和状态验证保持原有合同。
 
 新增 fixture 在旧 Web head 有 6 项失败，修复后完整 Web 224 项、legacy adapter 9 项、相关 Python 11 项通过。Swift Core 64 项报告中 6 项条件 smoke 跳过，实际执行 58 项通过；共用 30-case 夹具包含在其中。这是 decoder/本地行为证据，不是长 ID 的真实设备播放或任何内容批准。
+
+## Catalog target 与 text-only 共用夹具
+
+后续批次增加唯一 [shared-catalog-targets.json](../apps/tongxing-ios/Core/Tests/TongxingCoreTests/Fixtures/shared-catalog-targets.json)，Web 真实 loader 的 `validatePublishedTarget`、Swift `PageTarget.validate` 与 producer catalog v3 schema 测试读取同一份 31-case 数据。覆盖三语、140/141/160 字符 pageId、准确的 release path/hash、审核状态、唯一且已知的 capability、audio 可用性一致性、text-only 及基础 alignment binding。Web 在 release fetch 前拒绝错页／错语言／legacy／带 query 的路径和自相矛盾的声明，只排除受影响 locale。集成反例即使错误路径提供正确 release bytes/hash，也必须拒绝。
+
+目录准入与播放能力分别验证：text-only 及只有 text+audio、没有 captions 的目标仍是合法目录项；当前 Web audio bridge 不请求这些目标的 release、不捏造音轨，选择实际可播放的语言。原生可展示 text-only 页面。共用 fixture 的 `webPlayback` 记录这种产品能力差异，不宣称 Web 已实现 text-only 阅读体验。
+
+这批不是整个 catalog/header/page 或完整 Release text-only 状态空间的等价证明。原生 fingerprint 额外执行现有 7 秒至 4 小时资源限制；Web 不将该限制新加到目录准入，既有 sidecar 与实际索引/音轨验证仍负责对齐能力。长窗口及其他未覆盖边界继续需要兼容性评估，不能凭这 31 个样本关闭 E6。所有 fixture 人审字段仍仅为合成测试，没有改变真实批准或发布状态。
