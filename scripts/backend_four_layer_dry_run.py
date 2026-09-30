@@ -29,12 +29,14 @@ try:
     from scripts import render_formal_target_language_speech as layer3
     from scripts import run_target_language_models as layer2_runner
     from scripts import produce_target_language_candidate as layer2_producer
+    from scripts.release_asset_io import copy_bound_asset
 except ImportError:
     import prepare_sentence_interpretation_shadow as layer1
     import prepare_multilingual_weekly_plan as planner
     import render_formal_target_language_speech as layer3
     import run_target_language_models as layer2_runner
     import produce_target_language_candidate as layer2_producer
+    from release_asset_io import copy_bound_asset
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -359,7 +361,7 @@ def run(fixture_path: Path, out: Path, *, fail_at: str | None = None) -> dict:
                         tone = pcm(0.55, 330 + index * 110)
                         signals.append(tone)
                     step(f"layer3:{locale}:unit-{unit_index}", make_tone)
-                path = temporary / "public/flow/media" / f"{locale}.wav"
+                path = temporary / "layer3/media" / f"{locale}.wav"
                 signal = layer3.assemble_pcm16_track(
                     schedule, signals, RATE, 1, float(fixture["durationSeconds"]))
                 wav(path, signal)
@@ -386,7 +388,9 @@ def run(fixture_path: Path, out: Path, *, fail_at: str | None = None) -> dict:
             public = temporary / "public/flow"
             report["layers"]["layer4"] = {"status": "preview_only",
                 "formalCatalogModified": False, "releasePackageCreated": False,
-                "devHttpVerification": "not_run"}
+                "devHttpVerification": "not_run", "assetAssembly": "copy_bound_asset_v1",
+                "assets": [copy_bound_asset(audio[locale], public, f"/media/{locale}.wav",
+                    report["layers"]["layer3"][locale]["audioSha256"]) for locale in LOCALES]}
             (public / "index.html").write_text(
                 render_preview(report, fixture, translated, audio), encoding="utf-8")
             if any((temporary / name).exists() for name in

@@ -11,15 +11,16 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import shutil
 import tempfile
 from datetime import datetime
 from pathlib import Path
 
 try:
     from scripts import stage_formal_multilingual_dev as stage
+    from scripts.release_asset_io import copy_bound_asset
 except ImportError:
     import stage_formal_multilingual_dev as stage
+    from release_asset_io import copy_bound_asset
 
 
 FIELDS = ("series", "title", "speaker", "scripture", "summary", "outline")
@@ -153,13 +154,10 @@ def build(args: argparse.Namespace) -> dict:
         write_json(output_root / "review/content" / f"{locale}.json", content_receipt)
         media_path = output_root / "assets/media" / args.page_id / f"{locale}{track.suffix}"
         caption_path = output_root / "assets/captions" / args.page_id / f"{locale}.json"
-        media_path.parent.mkdir(parents=True, exist_ok=True)
-        caption_path.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(track, media_path)
-        shutil.copyfile(captions_path, caption_path)
-        require(stage.file_sha(media_path) == audio["track"]["sha256"]
-                and stage.file_sha(caption_path) == audio["captions"]["sha256"],
-                f"{locale}: copied release media differs")
+        copy_bound_asset(track, output_root / "assets",
+                         f"/media/{args.page_id}/{locale}{track.suffix}", audio["track"]["sha256"])
+        copy_bound_asset(captions_path, output_root / "assets",
+                         f"/captions/{args.page_id}/{locale}.json", audio["captions"]["sha256"])
         release = {
             "schemaVersion": "sermon-target-language-release-package-v1",
             "packageId": f"{args.page_id}-{locale}", "pageId": args.page_id,
