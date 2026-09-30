@@ -119,6 +119,76 @@ def prompt(prepared,role,*,candidate=None,input_manifest=None):
     return {'instruction':instruction+' Prompt version: '+policy[role]['promptVersion'],'input':common}
 
 
+def validate_repair(prepared,candidate_id,revision_id,repair):
+    """Validate a fixed one-group content revision before any transport.
+
+    This proves evidence/lineage, never budget or execution authority. D5 must
+    reserve against the pinned shared ledger before invoking this adapter.
+    """
+    from scripts.sermon_repair_planning import CONTENT_FAILURES
+    c.require(type(repair) is dict and set(repair)=={'parentRevision','parentCandidateBytes','plan',
+        'triggerReview','inputManifest','sidecars','priorRevisions','priorRepairs'},'invalid_strict_repair_inputs')
+    parent,plan,review,inputs=[repair[k] for k in ('parentRevision','plan','triggerReview','inputManifest')]
+    c.validate_candidate_artifact(parent,repair['parentCandidateBytes'])
+    c.validate_review_binding(review,parent,prepared['rubric'],inputs)
+    c.validate_repair_binding(plan,review,parent)
+    c.require(set(plan['affectedWorkUnitIds'])==set(parent['workUnitIds']),'strict_repair_scope_changed')
+    for name,key in [('englishSource','sourcePackageBytesSha256'),('anchor','anchorBytesSha256'),('policy','policyBytesSha256')]:
+        c.require(c.bytes_sha256(prepared['bytes'][name])==parent[key],'strict_repair_source_bytes_changed')
+    c.require(plan['repairAction']=='repair_translation' and plan['toRevisionId']==revision_id and
+        parent['candidateId']==candidate_id and parent['revisionNumber']<3,'strict_repair_revision_limit_or_identity')
+    c.require({i['reasonCode'] for i in review['issues']}<=CONTENT_FAILURES,'strict_repair_requires_content_findings')
+    c.require(inputs==input_manifest(prepared,parent,repair['parentCandidateBytes']),'strict_repair_input_changed')
+    for key,value in common_identity(prepared,candidate_id,parent['revisionId']).items():
+        c.require(parent[key]==value,'strict_repair_current_identity_changed')
+    history,plans=repair['priorRevisions'],repair['priorRepairs']
+    c.require(type(history) is list and type(plans) is list and len(history)==len(plans)==parent['revisionNumber']-1,
+        'strict_repair_history_missing')
+    chain=history+[parent]
+    for i,revision in enumerate(chain):
+        c.validate_revision_lineage(revision,chain[i-1] if i else None,plans[i-1] if i else None)
+    refs=[plan[k] for k in ('constraintsRef','budgetRef','dependencyClosureRef')]
+    c.require(type(repair['sidecars']) is dict and set(repair['sidecars'])=={r['artifactId'] for r in refs},'strict_repair_sidecars_missing')
+    for ref in refs:
+        data=repair['sidecars'][ref['artifactId']]
+        c.require(reference(ref['artifactId'],data)==ref and c.canonical_bytes(c.decode_json(data))==data,
+            'strict_repair_sidecar_changed')
+    return repair
+
+
+def generation_prompt(prepared,repair=None):
+    request=prompt(prepared,'translator')
+    if repair is not None:
+        request['instruction']+=' Repair only this group using the bound failure findings. Preserve the frozen source and policy; never approve your output.'
+        request['input'].update(parentCandidate=c.decode_json(repair['parentCandidateBytes']),
+            repairPlanId=repair['plan']['repairPlanId'],reasonCodes=repair['plan']['reasonCodes'],
+            failedChecks=repair['triggerReview']['checks'],issues=repair['triggerReview']['issues'])
+    return request
+
+
+def save_repair(root,repair):
+    from scripts import sermon_trace_artifacts as artifacts
+    for key,name in [('parentRevision','parent-revision'),('plan','repair-plan'),
+                     ('triggerReview','trigger-review'),('inputManifest','repair-input')]:
+        save_once(root/(name+'.json'),repair[key])
+    save_once(root/'repair-sidecars.json',{key:c.decode_json(data) for key,data in repair['sidecars'].items()})
+    save_once(root/'repair-history.json',{key:repair[key] for key in ('priorRevisions','priorRepairs')})
+    path=root/'parent-candidate.json';data=repair['parentCandidateBytes']
+    if path.exists():c.require(c.read_snapshot(path)[1]==data,'strict_repair_parent_bytes_changed')
+    else:artifacts.write(path,data.decode('utf-8'))
+
+
+def load_repair(root):
+    root=Path(root)
+    if not (root/'repair-plan.json').exists():return None
+    result={key:c.read_snapshot(root/(name+'.json'))[0] for key,name in
+        [('parentRevision','parent-revision'),('plan','repair-plan'),('triggerReview','trigger-review'),('inputManifest','repair-input')]}
+    result['parentCandidateBytes']=c.read_snapshot(root/'parent-candidate.json')[1]
+    result['sidecars']={key:c.canonical_bytes(value) for key,value in c.read_snapshot(root/'repair-sidecars.json')[0].items()}
+    result.update(c.read_snapshot(root/'repair-history.json')[0])
+    return result
+
+
 def _payload(prepared,role,request):
     return {'model':prepared['policy'][role]['model'],'reasoning_effort':prepared['policy'][role]['reasoningEffort'],
         'messages':[{'role':'system','content':request['instruction']},{'role':'user','content':json.dumps(request['input'],ensure_ascii=False)}],
@@ -190,14 +260,17 @@ def require_call_binding(output,saved):
     return raw
 
 
-def generate(prepared,root,candidate_id,revision_id,api_key,caller,*,cache_only=False,depends_on=None,completion_spans=None):
-    """Generate the initial immutable revision. D5 authorizes later revisions."""
+def generate(prepared,root,candidate_id,revision_id,api_key,caller,*,cache_only=False,depends_on=None,completion_spans=None,repair=None):
+    """Freeze one immutable revision; D5 separately reserves every new call."""
     with unit_lock(root,prepared,candidate_id,revision_id) as root:
+        if repair is not None:
+            validate_repair(prepared,candidate_id,revision_id,repair);save_repair(root,repair)
+        else:c.require(load_repair(root) is None,'strict_repair_context_required')
         with profile.context(workUnitId=prepared['workUnitId'],revisionId=revision_id,role='generation'):
             out=root/'generator.json';cached=out.exists() or out.with_suffix('.raw.json').exists() or out.with_suffix('.rejection.json').exists()
             with accounting.stage('rqc.generation',depends_on=depends_on,cache_hit=cached,
                                   executor_type='deterministic_program' if cached else 'production_model') as model_span:
-                result=call_model(prepared,'translator',prompt(prepared,'translator'),out,api_key,caller,cache_only=cache_only)
+                result=call_model(prepared,'translator',generation_prompt(prepared,repair),out,api_key,caller,cache_only=cache_only)
             with accounting.stage('rqc.freeze_candidate',depends_on=[model_span],executor_type='deterministic_program') as frozen_span:
                 require_call_binding(out,result)
                 artifact=result['result']
@@ -212,6 +285,10 @@ def generate(prepared,root,candidate_id,revision_id,api_key,caller,*,cache_only=
                     'sourceUnitIds':prepared['group']['sourceUnitIds'],
                     'targetUnitIds':[prepared['workUnitId']+'.utterance.'+str(i+1).zfill(4) for i in range(len(artifact.get('targetUtterances',[])))],
                     'createdAt':utc()}
+                if repair is not None:
+                    manifest.update(parentRevisionId=repair['parentRevision']['revisionId'],repairPlanId=repair['plan']['repairPlanId'],
+                        revisionNumber=repair['parentRevision']['revisionNumber']+1)
+                    c.validate_revision_lineage(manifest,repair['parentRevision'],repair['plan'])
                 c.validate_candidate_artifact(manifest,data)
                 # Persist exact candidate bytes (not reserialized by the manifest writer).
                 path=root/'candidate.json'
@@ -263,6 +340,13 @@ def _review_receipt_base(prepared,manifest,inputs,attempt_number):
         'reviewerPromptVersion':prepared['policy']['reviewer']['promptVersion'],'createdAt':utc()}
 
 
+def review_failure_evidence_id(kind, attempt_number):
+    """Keep both bounded executions' different immutable evidence addressable."""
+    c.require(kind in {'review-execution-failure', 'review-transport-rejection'} and
+        type(attempt_number) is int and 1 <= attempt_number <= 2, 'invalid_review_evidence_identity')
+    return kind + ('' if attempt_number == 1 else '-2')
+
+
 def _failed_review(prepared,manifest,inputs,output,attempt_number,error):
     # No observed transport identity means no model receipt can be manufactured.
     call,_=c.read_snapshot(output.with_suffix('.call.json'))
@@ -289,14 +373,16 @@ def _failed_review(prepared,manifest,inputs,output,attempt_number,error):
         'executionStatus':'failed' if known else 'outcome_unknown','reviewVerdict':'not_assessed',
         'checks':[],'issues':[],
         'coverage':dict(expectedUnitIds=manifest['sourceUnitIds'],assessedUnitIds=[],unassessedUnitIds=manifest['sourceUnitIds']),
-        'evidenceRefs':[reference('review-execution-failure',evidence_path.read_bytes())]+
-            ([reference('review-transport-rejection',output.with_suffix('.rejection.json').read_bytes())] if rejection else []),
+        'evidenceRefs':[reference(review_failure_evidence_id('review-execution-failure',attempt_number),evidence_path.read_bytes())]+
+            ([reference(review_failure_evidence_id('review-transport-rejection',attempt_number),output.with_suffix('.rejection.json').read_bytes())] if rejection else []),
         'missingReasons':{k:'not_observed' if known else 'outcome_unknown' for k,v in
             [('reviewerModelActual',model),('providerResponseId',provider_id)] if v is None}}
 
 
 def _validate_cached_review_evidence(receipt,manifest,output):
     """Reopen the immutable reviewer evidence before trusting a cached receipt."""
+    c.require(output.stem in {'reviewer','reviewer-2'},'invalid_review_evidence_identity')
+    attempt_number=1 if output.stem=='reviewer' else 2
     call,_=c.read_snapshot(output.with_suffix('.call.json'))
     c.require(call.get('modelCallId')==receipt['modelCallId'],'strict_review_call_identity_changed')
     if receipt['executionStatus']=='succeeded':
@@ -315,10 +401,10 @@ def _validate_cached_review_evidence(receipt,manifest,output):
     else:
         failure_path=output.with_suffix('.failure.json')
         failure_bytes=failure_path.read_bytes()
-        expected=[reference('review-execution-failure',failure_bytes)]
+        expected=[reference(review_failure_evidence_id('review-execution-failure',attempt_number),failure_bytes)]
         rejection_path=output.with_suffix('.rejection.json')
         if rejection_path.exists():
-            expected.append(reference('review-transport-rejection',rejection_path.read_bytes()))
+            expected.append(reference(review_failure_evidence_id('review-transport-rejection',attempt_number),rejection_path.read_bytes()))
         c.require(receipt['evidenceRefs']==expected,'strict_review_failure_evidence_changed')
 
 
@@ -331,10 +417,15 @@ def review(prepared,root,candidate_id,revision_id,api_key,caller,*,cache_only=Fa
     with unit_lock(root,prepared,candidate_id,revision_id) as root:
         manifest,manifest_bytes=c.read_snapshot(root/'revision.json');artifact,data=c.read_snapshot(root/'candidate.json')
         c.validate_candidate_artifact(manifest,data)
+        repair=load_repair(root)
+        if repair is not None:validate_repair(prepared,candidate_id,revision_id,repair)
+        c.validate_revision_lineage(manifest,repair['parentRevision'] if repair else None,repair['plan'] if repair else None)
         generation,generation_bytes=c.read_snapshot(root/'generator.json')
         c.require(reference('generation',generation_bytes)==manifest['generationReceiptRef'] and
             generation.get('result')==artifact and generation.get('model')==prepared['policy']['translator']['model'],
             'review_generation_binding_changed')
+        c.require(generation['payloadSha256']==c.canonical_sha256(_payload(prepared,'translator',generation_prompt(prepared,repair))),
+            'review_generation_payload_changed')
         for key,value in common_identity(prepared,candidate_id,revision_id).items():c.require(manifest[key]==value,'review_current_identity_changed')
         for kind,key in [('englishSource','sourcePackageBytesSha256'),('anchor','anchorBytesSha256'),('policy','policyBytesSha256')]:
             c.require(c.bytes_sha256(prepared['bytes'][kind])==manifest[key],'review_source_bytes_changed')

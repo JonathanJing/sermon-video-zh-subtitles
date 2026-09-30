@@ -195,14 +195,23 @@ class BudgetStore:
         jobs._persist(folder / 'state.json', ledger)
 
     def reserve(self, identity, *, operation_id, kind, revision_id, revision_number,
-                input_sha256, bounds):
+                input_sha256, bounds, locked_check=None):
+        """Reserve after an optional trusted read-only guard under this same lock.
+
+        The guard receives the store folder and a detached ledger snapshot. It
+        also runs for an exact replay; it must never call a responder or re-lock
+        this store. An exception denies the reservation without ledger changes.
+        """
+        require(locked_check is None or callable(locked_check), 'invalid_reservation_guard')
         request = _request(identity, operation_id, kind, revision_id, revision_number, input_sha256, bounds)
         rid = self._reservation_id(request)
         with self._locked() as (folder, ledger):
             rows = ledger['reservations']
             if rid in rows:
                 require(rows[rid]['request'] == request, 'reservation_idempotency_conflict')
+                if locked_check is not None: locked_check(folder, deepcopy(ledger))
                 return self._public(rid, rows[rid], False)
+            if locked_check is not None: locked_check(folder, deepcopy(ledger))
             same = [row for row in rows.values() if row['request']['identity'] == identity]
             require(not any(row['phase'] != 'result' or row['result']['executionStatus'] == 'outcome_unknown'
                             for row in same), 'budget_reconciliation_required')
