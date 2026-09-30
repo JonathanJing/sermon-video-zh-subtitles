@@ -1,4 +1,4 @@
-"""Export completed accounting v2 spans to local OTLP/JSON; never send telemetry."""
+"""Export completed accounting v1-v3 spans to local OTLP/JSON; never send telemetry."""
 from __future__ import annotations
 
 import argparse
@@ -12,7 +12,7 @@ import sys
 
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from scripts.sermon_accounting import SCHEMA, read_events
+from scripts.sermon_accounting import READABLE_SCHEMAS, SCHEMA, read_events
 
 # Export only known application labels. Unknown labels retain a hash, never text.
 LABELS = frozenset("""
@@ -83,7 +83,7 @@ def export(directory):
         diagnostics.append(row)
 
     for event in events:
-        if event.get("schemaVersion") != SCHEMA:
+        if event.get("schemaVersion") not in READABLE_SCHEMAS:
             diagnostic("unsupported_event_schema")
             continue
         identity = (event["runId"], event["eventId"])
@@ -136,6 +136,17 @@ def export(directory):
             attrs.append(attribute("sermon.accounting.workflow.sha256", hashed(start["workflowId"])))
         if type(end.get("cacheHit")) is bool:
             attrs.append(attribute("sermon.cache_hit", end["cacheHit"]))
+        if kind == "stage":
+            for field in ("executorType", "workUnitId", "attemptId", "decisionId"):
+                if isinstance(start.get(field), str):
+                    attrs.append(attribute("sermon." + field, start[field]))
+            for field in ("dependsOn", "blockedBy"):
+                values = start.get(field)
+                if isinstance(values, list):
+                    attrs.append(attribute("sermon." + field, json.dumps(values, separators=(",", ":"))))
+            for field in ("readyAt", "queuedAt"):
+                if isinstance(start.get(field), str):
+                    attrs.append(attribute("sermon." + field, start[field]))
         metadata = start.get("metadata", {})
         if isinstance(metadata, dict):
             for field in HASH_KEYS:
@@ -197,7 +208,8 @@ def export(directory):
                 "scopeSpans": [{"scope": {"name": "sermon.accounting.otlp_export", "version": "1"},
                                 "spans": list(spans.values())}]}]}
     report = {"schemaVersion": "sermon-trace-export-diagnostics-v1", "status": "partial" if diagnostics else "exported",
-              "sourceSchema": SCHEMA, "readableEvents": len(events), "exportedSpans": len(spans),
+              "sourceSchema": SCHEMA, "readableSourceSchemas": sorted(READABLE_SCHEMAS),
+              "readableEvents": len(events), "exportedSpans": len(spans),
               "traceCount": len({span["traceId"] for span in spans.values()}), "diagnostics": diagnostics,
               "qaAcceptance": "not_evaluated", "costCompleteness": "not_evaluated", "networkExported": False}
     return payload, report

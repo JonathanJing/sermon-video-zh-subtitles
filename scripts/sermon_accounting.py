@@ -26,7 +26,8 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
-SCHEMA = "sermon-workflow-accounting-v2"
+SCHEMA = "sermon-workflow-accounting-v3"
+READABLE_SCHEMAS = frozenset({"sermon-workflow-accounting-v1", "sermon-workflow-accounting-v2", SCHEMA})
 PRICE_SOURCE = "https://developers.openai.com/api/docs/pricing"
 PRICE_DATE = "2026-09-05"
 _stage = contextvars.ContextVar("sermon_accounting_stage", default=None)
@@ -43,6 +44,18 @@ class AccountingWriteError(OSError):
 
 def _label(value, default="unknown"):
     return value if isinstance(value, str) and re.fullmatch(r"[A-Za-z0-9_.:-]{1,100}", value) else default
+
+
+def _labels(values):
+    """Return bounded, safe identity labels without leaking arbitrary payload text."""
+    if values is None:
+        return []
+    if not isinstance(values, (list, tuple)) or len(values) > 64:
+        raise ValueError("invalid_dependency_labels")
+    result = [_label(value, None) for value in values]
+    if any(value is None for value in result) or len(set(result)) != len(result):
+        raise ValueError("invalid_dependency_labels")
+    return result
 
 
 def _safe_metadata(data):
@@ -308,12 +321,38 @@ def subprocess_environment():
 
 
 @contextmanager
-def stage(name, *, cache_hit=False, billing="local"):
+def stage(name, *, cache_hit=False, billing="local", executor_type="fixed_program",
+          depends_on=None, blocked_by=None, work_unit_id=None, attempt_id=None,
+          ready_at=None, queued_at=None, decision_id=None):
+    """Record one stage attempt with dependency-aware v3 trace identity.
+
+    Callers provide stable stage/work-unit identities; ``spanId`` remains unique
+    to this execution attempt. Timestamps are optional because legacy and
+    inline execution has no distinct queue interval.
+    """
     name = _label(name)
     span_id = uuid.uuid4().hex
     parent = _span.get() or os.environ.get("SERMON_ACCOUNTING_SPAN")
+    executor_type = _label(executor_type, None)
+    if executor_type not in {"fixed_program", "production_model", "decision_agent", "human", "external_system"}:
+        raise ValueError("invalid_executor_type")
+    identities = {
+        "workUnitId": _label(work_unit_id, None) if work_unit_id is not None else None,
+        "attemptId": _label(attempt_id, None) if attempt_id is not None else uuid.uuid4().hex,
+        "decisionId": _label(decision_id, None) if decision_id is not None else None,
+    }
+    if ((work_unit_id is not None and identities["workUnitId"] is None) or
+            (attempt_id is not None and identities["attemptId"] is None) or
+            (decision_id is not None and identities["decisionId"] is None)):
+        raise ValueError("invalid_stage_identity")
+    for value in (ready_at, queued_at):
+        if value is not None and (not isinstance(value, str) or datetime.fromisoformat(value).tzinfo is None):
+            raise ValueError("invalid_queue_timestamp")
     base = {"stage": name, "spanId": span_id, "parentSpanId": parent,
-            "cacheHit": bool(cache_hit), "billing": billing}
+            "cacheHit": bool(cache_hit), "billing": billing,
+            "executorType": executor_type, "dependsOn": _labels(depends_on),
+            "blockedBy": _labels(blocked_by), "readyAt": ready_at,
+            "queuedAt": queued_at, **identities}
     started = time.monotonic()
     _emit({**base, "event": "stage_started", "startedAt": now()})
     tokens = (_stage.set(name), _span.set(span_id))
@@ -504,6 +543,15 @@ def _valid_event(value):
             return False
     if value["event"] == "stage_finished" and _number(value.get("elapsedSeconds")) is None:
         return False
+    if value.get("schemaVersion") == SCHEMA and value["event"] in {"stage_started", "stage_finished"}:
+        if value.get("executorType") is not None and value["executorType"] not in {"fixed_program", "production_model", "decision_agent", "human", "external_system"}:
+            return False
+        if value.get("attemptId") is not None and (not isinstance(value["attemptId"], str) or not value["attemptId"]):
+            return False
+        if any(value.get(key) is not None and
+               (not isinstance(value[key], list) or any(not isinstance(item, str) for item in value[key]))
+               for key in ("dependsOn", "blockedBy")):
+            return False
     if value["event"] == "api_attempt":
         usage = value["usage"]
         for key in ("inputTokens", "outputTokens", "cachedInputTokens", "cacheWriteTokens", "reasoningTokens"):
@@ -523,6 +571,8 @@ def read_events(directory):
                 continue
             try:
                 value = json.loads(line)
+                # Keep syntactically valid unknown-schema rows visible so
+                # consumers can diagnose rather than silently erase them.
                 if not _valid_event(value):
                     raise ValueError("invalid_event_identity")
             except (ValueError, UnicodeError):
