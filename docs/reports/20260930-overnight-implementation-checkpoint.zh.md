@@ -166,3 +166,27 @@
 ### 仍需外部证据或明确运行授权
 
 完整 canonical Stage0 尚未完成，stage1PromotionAllowed=false。批准/预算绑定的短片段→10分钟→完整历史视频→第二个真实周、工程/内容/发布/兼容/性能签字仍缺；没有用本地模拟签字。人工翻译审核、整篇1x听审、声音授权、物理 iPhone/Safari/耳机/锁屏/现场盲测与误跳/字幕误差门槛保持原要求。尚未执行付费验证、merge、Web部署、App Store构建上传或发布。
+
+## 12:11 UTC：#148–154 集成覆盖缺口已补齐
+
+在隔离 `sermon-stack-validation` checkout 的前述快照上，加入 #152 `386c27aa`、#153 `1b0f0af4` 与 #154 `77eebd91` 后形成 **`8f608a9733f8928b654084e95046200e6e2ae43b`**。该快照包含前面已组合的 #121–144 相关实现、#146–151 及这三批；组合记录逐文件保存，没有文本冲突、没有合并 dev/main、没有推送此本地 QA commit。工作树在验证前后均 clean。
+
+此处以下结果全部重新在 **8f608a97** 上运行，不借用旧快照结果：
+
+| 检查 | 已执行结果 | 跳过与范围 |
+|---|---|---|
+| 完整 Root Python 两分片 | 968 + 1032 reported，**1994 实际执行通过** | shard0 的6项条件 smoke skipped；没有待修失败或 sandbox retry。 |
+| 完整 Web | **363 passed** | 0 skipped/cancelled，包括最新麦克风预算、共享 Release/目录/纯文字夹具。 |
+| Feedback API | **61 passed** | 0 skipped/cancelled；本地合同，无真实对外发送。 |
+| Dubbing/review Python | **343 passed** | 本地 synthetic/loopback tests。 |
+| Swift Core | **61 实际执行通过** | 67 reported、6 条件 smoke skipped；含30 Release、31 target、33 page、27 text-only共用场景。 |
+| Swift Infrastructure/Storage | **39 实际执行通过** | 44 reported、5 条件真实站点/媒体 smoke skipped。 |
+| iOS 27.0 / iPhone 18 Pro Simulator | **37 passed** | PlaybackController 17 + AudioAlignmentController 20，0 failed/skipped/runtime warnings。 |
+| iOS 17.5 / iPhone 15 Pro Simulator | **37 passed** | 同组37项，0 failed/skipped/runtime warnings；与iOS27顺序执行。 |
+| 后端四层 dry run | **pass** | 固定合成数据、零外部模型/下载/TTS/Firebase调用；不等于完整canonical Stage0。 |
+
+本地可复核汇总为 workspace 的 `evidence/stack-8f608a9-validation-summary.json`，包含 head、clean状态、组合receipt引用、各日志/分片JSON与实际测试计数。两份原生 `.xcresult` 与提取后的 summary JSON 保留在 `evidence/stack-8f608a9-ios27/`、`evidence/stack-8f608a9-ios17/`；没有真实设备安装、签名或账号操作。
+
+#154 的 exact-head Python 两分片和 aggregate 也已核验通过，故 #148–154 各自分支 CI 与上述本地组合证据现均齐备。草稿 PR 的远端 `ios-validation/contract-validation` 仍 skipped，不把它们写成执行通过。原生 production Swift 差异再核对仍仅 `Core/Sources/TongxingCore/MultilingualCatalog.swift`；该编译代码变更仍需新binary及适用审核发布才能到达安装用户。
+
+E6 兼容性审查与完整canonical Stage0继续未完成，stage1PromotionAllowed=false。真实短片段/10分钟/整篇/第二周、真实质量/设备/现场和人工签字门槛均未被这些合成/模拟器结果替代。
