@@ -182,3 +182,34 @@ class SermonTraceExportTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+class ReceiptExportTests(unittest.TestCase):
+    setUp = SermonTraceExportTests.setUp
+    event = SermonTraceExportTests.event
+    fixture = SermonTraceExportTests.fixture
+    write = SermonTraceExportTests.write
+    result = SermonTraceExportTests.result
+    def test_provider_receipts_are_reconciled_before_event_representatives(self):
+        import copy
+        for same_id in (False,True):
+            for conflict in (False,True):
+                for reverse in (False,True):
+                    with self.subTest(same_id=same_id,conflict=conflict,reverse=reverse):
+                        self.events=[];self.fixture()
+                        usage=dict(inputTokens=100,outputTokens=20,cachedInputTokens=0,cacheWriteTokens=0,reasoningTokens=0)
+                        first=self.event('api_attempt',stage='render',spanId='render',status='completed',usage=usage,cost={'estimatedUsd':None},elapsedSeconds=1,model='fixture',requestedModel='fixture',responseId='response-one')
+                        other=copy.deepcopy(first)
+                        if not same_id:other['eventId']='second-receipt'
+                        if conflict:other['usage']['inputTokens']=200
+                        self.events.append(other)
+                        if reverse:self.events.reverse()
+                        _,diag,spans=self.result()
+                        attrs={a['key']:a['value'] for a in spans[span_id(('run-one','stage','render'))]['attributes']}
+                        if conflict:
+                            self.assertEqual(diag['receiptIntegrity']['status'],'conflicted')
+                            self.assertNotIn('sermon.inputTokens',attrs)
+                            self.assertEqual(attrs['sermon.usageCoverage'],{'stringValue':'conflicted'})
+                        else:
+                            self.assertEqual(diag['receiptIntegrity']['status'],'consistent')
+                            self.assertEqual(attrs['sermon.inputTokens'],{'intValue':'100'})
+                            self.assertEqual(attrs['sermon.apiAttempts'],{'intValue':'1'})

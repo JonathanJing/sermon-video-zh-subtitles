@@ -26,6 +26,11 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
+try:
+    from scripts.sermon_clock_evidence import clock_domain
+except ImportError:  # Preserve direct script invocation.
+    from sermon_clock_evidence import clock_domain
+
 SCHEMA = "sermon-workflow-accounting-v3"
 READABLE_SCHEMAS = frozenset({"sermon-workflow-accounting-v1", "sermon-workflow-accounting-v2", SCHEMA})
 EXECUTOR_TYPES = frozenset({"deterministic_program", "production_model", "decision_agent",
@@ -377,7 +382,8 @@ def stage(name, *, cache_hit=False, billing="local", executor_type=None,
             "executorType": executor_type, "dependsOn": None if depends_on is None else _labels(depends_on),
             "blockedBy": _labels(blocked_by), "dependencyReadyAt": dependency_ready_at,
             "queuedAt": queued_at, **identities}
-    started = time.monotonic()
+    started_ns = time.monotonic_ns()
+    base.update(clockDomainId=clock_domain(), monotonicStartNs=str(started_ns))
     _emit({**base, "event": "stage_started", "startedAt": now()})
     tokens = (_stage.set(name), _span.set(span_id))
     old = {k: os.environ.get(k) for k in ENV_KEYS[2:]}
@@ -393,9 +399,11 @@ def stage(name, *, cache_hit=False, billing="local", executor_type=None,
         raise
     finally:
         try:
+            finished_ns = time.monotonic_ns()
             _finalize(lambda: _emit({**base, "event": "stage_finished", "status": outcome,
+                "monotonicEndNs": str(finished_ns),
                 "level": "ERROR" if error else "INFO",
-                "elapsedSeconds": round(time.monotonic()-started, 6),
+                "elapsedSeconds": round((finished_ns-started_ns)/1_000_000_000, 6),
                 "errorType": _label(type(error).__name__) if error else None,
                 "error": error_location(error) if error else None}), error)
         finally:
@@ -616,6 +624,10 @@ def _valid_event(value):
                 if (not isinstance(timestamp, str) or len(timestamp) > 40 or
                         datetime.fromisoformat(timestamp).tzinfo is None):
                     return False
+    for key in ('clockDomainId', 'monotonicStartNs', 'monotonicEndNs'):
+        if key in value:
+            pattern = r'[a-f0-9]{32}' if key == 'clockDomainId' else r'[0-9]{1,20}'
+            if not isinstance(value[key], str) or not re.fullmatch(pattern, value[key]): return False
     if value["event"] == "api_attempt":
         usage = value["usage"]
         for key in ("inputTokens", "outputTokens", "cachedInputTokens", "cacheWriteTokens", "reasoningTokens"):

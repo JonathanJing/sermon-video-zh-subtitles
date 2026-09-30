@@ -13,6 +13,8 @@ if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts.sermon_accounting import EXECUTOR_TYPES, READABLE_SCHEMAS, _label, _number, _safe_metadata, safe_execution_identity, read_events, receipt_integrity
 
+from scripts.sermon_clock_evidence import monotonic_interval
+
 from scripts import sermon_cache_observation as cache_observation
 from scripts import sermon_local_model_observation as local_model
 from scripts.sermon_workflow_evidence import _summary, PATHS
@@ -105,8 +107,15 @@ def project_run(run_id, events, integrity=None, receipt_events=None):
             ready = seconds(start['dependencyReadyAt']) if start.get('dependencyReadyAt') else None
             queued = seconds(start['queuedAt']) if start.get('queuedAt') else None
             ordered = [v for v in (ready, queued, begin, finish) if v is not None]
-            if (ordered != sorted(ordered) or end['elapsedSeconds'] < 0 or
+            timing = monotonic_interval(start, end)
+            utc_trusted = timing is None or abs((finish-begin)-end['elapsedSeconds']) <= TIMESTAMP_TOLERANCE_SECONDS
+            if timing is None and (ordered != sorted(ordered) or end['elapsedSeconds'] < 0 or
                     end['elapsedSeconds'] > finish - begin + 0.01):
+                raise ValueError()
+            if timing and not utc_trusted:
+                issue('utc_clock_discontinuity_local_duration_preserved')
+                ready = queued = None
+            elif ordered != sorted(ordered):
                 raise ValueError()
         except (ValueError, TypeError, OverflowError):
             issue('invalid_interval'); continue
@@ -124,6 +133,8 @@ def project_run(run_id, events, integrity=None, receipt_events=None):
             'elapsedSeconds': end['elapsedSeconds'],
             'queueWaitSeconds': begin - queued if queued is not None else None,
             'dependencyReadyToQueueSeconds': queued - ready if ready is not None and queued is not None else None}
+        if timing:
+            nodes[ident].update(timing, utcTimingTrusted=utc_trusted)
     # Parent/container spans overlap children. Only executable leaves participate
     # in the active DAG; dependencies on containers need explicit leaf receipts.
     for ident, node in nodes.items():
@@ -134,8 +145,17 @@ def project_run(run_id, events, integrity=None, receipt_events=None):
             if cursor not in nodes:
                 issue('missing_parent'); break
             parent = nodes[cursor]
-            if parent['begin'] > node['begin'] or parent['finish'] < node['finish']:
-                issue('parent_interval_mismatch')
+            same_clock = node.get('clockDomainId') and node.get('clockDomainId') == parent.get('clockDomainId')
+            if same_clock:
+                if int(parent['monotonicStartNs']) > int(node['monotonicStartNs']) or int(parent['monotonicEndNs']) < int(node['monotonicEndNs']):
+                    issue('parent_interval_mismatch')
+            elif node.get('clockDomainId') or parent.get('clockDomainId'):
+                issue('cross_clock_parent_timing_unknown')
+            elif node.get('utcTimingTrusted', True) and parent.get('utcTimingTrusted', True):
+                if parent['begin'] > node['begin'] or parent['finish'] < node['finish']:
+                    issue('parent_interval_mismatch')
+            else:
+                issue('cross_clock_parent_timing_unknown')
             visited.add(cursor); cursor = parent['parent']
     parents = {e.get('parentSpanId') for pair in pairs.values() for e in pair['start'] + pair['end'] if e.get('parentSpanId')}
     leaves = {key: n for key, n in nodes.items() if key not in parents}
@@ -148,8 +168,18 @@ def project_run(run_id, events, integrity=None, receipt_events=None):
             if dep not in leaves:
                 issue('missing_or_container_dependency')
             else:
-                if leaves[dep]['finish'] > n['begin'] + TIMESTAMP_TOLERANCE_SECONDS:
-                    issue('dependency_interval_overlap')
+                parent = leaves[dep]
+                same_clock = n.get('clockDomainId') and n.get('clockDomainId') == parent.get('clockDomainId')
+                if same_clock:
+                    if int(parent['monotonicEndNs']) > int(n['monotonicStartNs']):
+                        issue('dependency_interval_overlap')
+                elif n.get('clockDomainId') or parent.get('clockDomainId'):
+                    issue('cross_clock_dependency_timing_unknown')
+                elif n.get('utcTimingTrusted', True) and parent.get('utcTimingTrusted', True):
+                    if parent['finish'] > n['begin'] + TIMESTAMP_TOLERANCE_SECONDS:
+                        issue('dependency_interval_overlap')
+                else:
+                    issue('cross_clock_dependency_timing_unknown')
                 if n['ready'] is not None and leaves[dep]['finish'] > n['ready'] + TIMESTAMP_TOLERANCE_SECONDS:
                     issue('dependency_not_finished_at_ready')
                     n['queueWaitSeconds'] = None
@@ -196,6 +226,9 @@ def project_run(run_id, events, integrity=None, receipt_events=None):
             issue('span_outside_run_interval')
     else:
         issue('run_wall_unknown')
+    if any(not n.get('utcTimingTrusted', True) for n in nodes.values()):
+        wall = None
+        issue('run_utc_wall_untrusted')
     decision_observations, decision_facts = [], defaultdict(dict)
     for event in events:
         if event.get('event') == 'log' and event.get('code') == DECISION_CODE:
