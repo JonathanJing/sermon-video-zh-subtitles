@@ -143,6 +143,10 @@ v1/v2 无扩展字段仍可读取，不补造依赖或时间；所有导入事�
 
 L2 实际 group runner 将每个 reviewer span 依赖到同组、本次 translator span；生产请求按 production_model、完整缓存/模拟响应按 deterministic_program 计量。是否传入 resume 目录不等于缓存存在。现有 HTTP receipt 仍是 usage 来源，没有再包一层重复 API 计数。
 
+L2 后续补齐本次 producer 内的确定性叶节点：既有 Source 包准入 → run/cache/policy 准入 → 每组 prompt 准备 → translator → draft/coverage 校验 → reviewer → semantic/coverage 校验 → 汇合全部组的 evidence 构造及持久化。完整组复用的复制和校验留在 prepare 叶节点，依然进入 evidence 汇合，不因 group 变成 container 而从总量消失。正式 accounted 入口在会话内执行同一 Source 准入一次，保留所有生产门禁。失败的校验留下 failed span，不能生成成功 evidence。
+
+这里的根只表示读取、验证已存在的 Source 包，**不是** Layer 1 下载/转写/审核工作；本次 L2 producer 可以投影自己的局部 DAG，但没有补造跨进程依赖或完整四层 critical path。回归仅用固定假模型响应与本地文件操作，不能据此报告真实模型性能节省。
+
 L3 实际 render_units 将模型加载、每单元本地模型推理、音频复用及 full-decode 校验分开。推理显式 production_model，校验依赖本次推理/复制 span，首个推理不会因嵌套加载被 leaf projection 丢失。请求、声音 identity 和缓存契约未变。源包与跨进程边界尚未完整接线，因此未证明的根依赖仍为 null；不能据这些局部边宣布完整 critical path 或正式周验收。
 
 审查修复：provider/response 和 SDK invocation 仅合并等价事实；usage/status/executor 冲突使报告 partial 并撤销可信总量。dependencyReadyAt 保留原值，任何前驱晚于 ready 超过 10ms 时撤销对应 queue 指标及 critical path。
