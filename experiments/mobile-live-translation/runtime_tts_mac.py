@@ -24,7 +24,7 @@ import time
 import urllib.request
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_OUTPUT = ROOT / 'experiments/mobile-live-translation/artifacts/tts-20260906/mac'
+DEFAULT_OUTPUT = ROOT / 'experiments/mobile-live-translation/artifacts/tts-20260906/mac-v2'
 EXPERIMENT = ROOT / 'artifacts/sermon-dubbing/2026-09-05-fluency-poc-v2/experiment.json'
 EXPERIMENT_SHA = '2087816e0ba31564d586d8fb82aadc7a6c2ebe124c4bbcbc4d8176b425949268'
 MODEL_ID = 'mlx-community/Qwen3-TTS-12Hz-1.7B-CustomVoice-8bit'
@@ -74,7 +74,10 @@ def transport_integrity_passed(record: dict) -> bool:
     return (
         record['error'] is None and record['generatorExhausted'] and record['finitePcm']
         and bool(chunks) and record['sampleRate'] > 0 and record['returnedSampleCount'] > 0
-        and all(c['sampleRate'] == record['sampleRate'] and c['sampleCount'] >= 0 for c in chunks)
+        and all(c['sampleRate'] == record['sampleRate']
+                and type(c.get('sampleCount')) is int and c['sampleCount'] >= 0
+                and type(c.get('reportedSampleCount')) is int
+                and c['reportedSampleCount'] == c['sampleCount'] for c in chunks)
         and sum(c['sampleCount'] for c in chunks) == record['returnedSampleCount']
         and not record['nonStreamingFallbackAfterStreaming']
         and record['observedCodecTokens'] < record['effectiveMaxCodecTokens']
