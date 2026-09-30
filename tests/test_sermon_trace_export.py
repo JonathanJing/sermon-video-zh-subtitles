@@ -189,6 +189,63 @@ class ReceiptExportTests(unittest.TestCase):
     fixture = SermonTraceExportTests.fixture
     write = SermonTraceExportTests.write
     result = SermonTraceExportTests.result
+
+    def test_unfinished_attempts_keep_usage_partial_with_or_without_completed_receipts(self):
+        import copy
+        from scripts.export_sermon_trace import TOKEN_KEYS
+        for with_completed in (False, True):
+            with self.subTest(with_completed=with_completed):
+                self.events = []
+                self.fixture()
+                # An interrupted request can outlive its failed containing stage.
+                for event in self.events:
+                    if event['event'] == 'stage_finished' and event['spanId'] == 'render':
+                        event['status'] = 'failed'
+                if with_completed:
+                    self.event('api_attempt_started', stage='render', spanId='render', attemptId='completed')
+                    self.event('api_attempt', stage='render', spanId='render', attemptId='completed',
+                               status='completed', usage=dict(inputTokens=100, outputTokens=20,
+                               cachedInputTokens=0, cacheWriteTokens=0, reasoningTokens=0),
+                               cost={}, elapsedSeconds=1, responseId='completed-response')
+                started = self.event('api_attempt_started', stage='render', spanId='render', attemptId='unknown')
+                duplicate = copy.deepcopy(started)
+                duplicate['eventId'] = 'reimported-start'
+                self.events.append(duplicate)
+                for reverse in (False, True):
+                    if reverse:
+                        self.events.reverse()
+                    _, diag, spans = self.result()
+                    attrs = {a['key']: a['value'] for a in spans[span_id(('run-one', 'stage', 'render'))]['attributes']}
+                    self.assertEqual(diag['status'], 'partial')
+                    self.assertIn('unfinished_api_attempts', [row['code'] for row in diag['diagnostics']])
+                    self.assertEqual(attrs['sermon.usageCoverage'], {'stringValue': 'partial'})
+                    self.assertEqual(attrs['sermon.apiAttempts'], {'intValue': '2' if with_completed else '1'})
+                    self.assertEqual(attrs['sermon.unresolvedApiAttempts'], {'intValue': '1'})
+                    for field in TOKEN_KEYS:
+                        self.assertNotIn('sermon.' + field, attrs)
+                        self.assertEqual(attrs['sermon.unknownCalls.' + field], {'intValue': '1'})
+                    if with_completed:
+                        self.assertEqual(attrs['sermon.knownSubtotal.inputTokens'], {'intValue': '100'})
+                    else:
+                        self.assertFalse(any(key.startswith('sermon.knownSubtotal.') for key in attrs))
+
+    def test_receipt_in_other_run_or_span_cannot_complete_started_attempt(self):
+        for receipt_run, receipt_span in (('run-two', 'render'), ('run-one', 'assemble')):
+            with self.subTest(receipt_run=receipt_run, receipt_span=receipt_span):
+                self.events = []
+                self.fixture()
+                if receipt_run != 'run-one':
+                    self.fixture(receipt_run)
+                self.event('api_attempt_started', stage='render', spanId='render', attemptId='shared-label')
+                self.event('api_attempt', run=receipt_run, stage=receipt_span, spanId=receipt_span,
+                           attemptId='shared-label', status='completed', usage=dict(inputTokens=100,
+                           outputTokens=20, cachedInputTokens=0, cacheWriteTokens=0, reasoningTokens=0),
+                           cost={}, elapsedSeconds=1, responseId='other-response')
+                _, _, spans = self.result()
+                attrs = {a['key']: a['value'] for a in spans[span_id(('run-one', 'stage', 'render'))]['attributes']}
+                self.assertEqual(attrs['sermon.usageCoverage'], {'stringValue': 'partial'})
+                self.assertEqual(attrs['sermon.unresolvedApiAttempts'], {'intValue': '1'})
+
     def test_provider_receipts_are_reconciled_before_event_representatives(self):
         import copy
         for same_id in (False,True):

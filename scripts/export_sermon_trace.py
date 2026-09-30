@@ -226,6 +226,31 @@ def export(directory):
                 counters[key][field] += value
             else:
                 missing[key][field] += 1
+    # A request may have reached the provider even when its terminal receipt
+    # never arrived. Preserve that uncertainty alongside completed receipts.
+    # Scope the join to the actual run and span so another attempt cannot close
+    # this request merely by reusing an imported attempt label.
+    finished_attempts = {(event["runId"], event.get("spanId"), event.get("attemptId"))
+                         for event in supported if event["event"] == "api_attempt"
+                         and event.get("attemptId") is not None}
+    unfinished = defaultdict(set)
+    for event in supported:
+        if event["event"] != "api_attempt_started":
+            continue
+        identity = (event["runId"], event.get("spanId"), event["attemptId"])
+        if identity in finished_attempts:
+            continue
+        key = (event["runId"], "stage", event.get("spanId"))
+        if key not in spans:
+            diagnostic("api_without_exported_stage")
+            continue
+        unfinished[key].add(event["attemptId"])
+    for key, attempts in unfinished.items():
+        counters[key]["apiAttempts"] += len(attempts)
+        counters[key]["unresolvedApiAttempts"] = len(attempts)
+        for field in TOKEN_KEYS:
+            missing[key][field] += len(attempts)
+        diagnostic("unfinished_api_attempts", key)
     for key in set(counters) | conflicted_spans:
         coverage = "conflicted" if key in conflicted_spans else "partial" if missing[key] else "reported"
         spans[key]["attributes"].append(attribute("sermon.usageCoverage", coverage))
