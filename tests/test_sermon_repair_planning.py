@@ -181,6 +181,24 @@ class RoutingTests(unittest.TestCase):
         self.assertEqual(result['executionAuthority'], 'none')
         self.assertIsNone(result['repairPlan'])
 
+    def test_pass_review_with_gate_only_plugin_failure_uses_allowed_escalation(self):
+        args = inputs(load('review-pass'))
+        args['gate'].update(admissionStatus='blocked', reasonCodes=['language_plugin_failed'],
+                            allowedNextActions=['escalate_engineering'])
+        original = copy.deepcopy(args)
+        result = p.plan_repair(**args)
+        self.assertEqual(result['status'], 'proposal')
+        self.assertEqual(result['action'], 'escalate_engineering')
+        self.assertEqual(result['reasonCode'], 'language_plugin_failed')
+        self.assertEqual(result['fromRevisionId'], result['toRevisionId'])
+        self.assertFalse(result['requiresFreshProviderRequest'])
+        self.assertIsNone(result['repairPlan'])
+        self.assertEqual(args, original)
+        args['gate']['allowedNextActions'] = []
+        result = p.plan_repair(**args)
+        self.assertEqual(result['status'], 'blocked')
+        self.assertEqual(result['reasonCode'], 'gate_action_not_allowed')
+
     def test_admitted_machine_pass_has_no_repair_and_no_new_admission_authority(self):
         args = inputs(load('review-pass'))
         args['gate'].update(admissionStatus='admitted', reasonCodes=['all_required_evidence_passed'],
