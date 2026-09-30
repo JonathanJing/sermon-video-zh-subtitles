@@ -11,6 +11,8 @@ from unittest.mock import patch
 
 from scripts import canonical_layer2_controller as subject
 from scripts import canonical_durable_jobs as durable
+from scripts import sermon_accounting as accounting
+from scripts import weekly_pipeline_report as weekly
 from scripts import sermon_workflow_jobs as jobs
 from scripts import sermon_execution_harness as harness
 from scripts import target_language_policy as policies
@@ -141,6 +143,56 @@ class CanonicalLayer2ControllerTests(unittest.TestCase):
         self.assertFalse(result['dispatched'])
         self.assertFalse(any(p.suffix in ('.wav','.mp3','.html') for p in self.output.rglob('*')))
 
+    def test_real_worker_links_models_candidate_and_final_validation_in_one_run(self):
+        original_plugin = subject.producer.run_language_plugin
+        def measured_plugin(*args, **kwargs):
+            time.sleep(.02)
+            return original_plugin(*args, **kwargs)
+        with self.active() as (config, code, key, _), patch.object(
+                subject.producer, 'run_language_plugin', side_effect=measured_plugin):
+            self.execute(config, code, key)
+        events, damaged = accounting.read_events(self.output / 'accounting')
+        self.assertFalse(damaged)
+        self.assertEqual(len({e['runId'] for e in events}), 1)
+        report = weekly.project(self.output / 'accounting')['runs'][0]
+        self.assertEqual(report['status'], 'projected', report['diagnostics'])
+        starts = {e['stage']: e for e in events if e['event'] == 'stage_started'}
+        chain = ['worker_admission', 'source_admission', 'run_admission']
+        for parent, child in zip(chain, chain[1:]):
+            self.assertEqual(starts['layer2.' + child + '.zh-Hans']['dependsOn'],
+                             [starts['layer2.' + parent + '.zh-Hans']['spanId']])
+        chain = ['evidence_assembly', 'post_model_binding', 'language_and_candidate', 'final_package_validation']
+        for parent, child in zip(chain, chain[1:]):
+            self.assertEqual(starts['layer2.' + child + '.zh-Hans']['dependsOn'],
+                             [starts['layer2.' + parent + '.zh-Hans']['spanId']])
+        leaves = {x['stage']: x for x in report['workUnits']}
+        self.assertGreaterEqual(leaves['layer2.language_and_candidate.zh-Hans']['elapsedSeconds'], .02)
+        self.assertIn('layer2.final_package_validation.zh-Hans', leaves)
+        self.assertNotIn('canonical_layer2_worker', leaves)
+        self.assertNotIn('layer2_models', leaves)
+        self.assertIsNotNone(report['criticalPath'])
+        self.assertEqual(len(self.calls), 4)
+        candidate = json.loads((self.output / 'candidate.json').read_text())
+        self.assertNotIn('spanId', json.dumps(candidate))
+        self.assertFalse(candidate['releaseEligible'])
+
+    def test_plugin_failure_keeps_model_evidence_and_records_failed_dependency_leaf(self):
+        with self.active() as (config, code, key, _), patch.object(
+                subject.producer, 'run_language_plugin', side_effect=ValueError('fixture_plugin_failure')):
+            with self.assertRaisesRegex(ValueError, 'fixture_plugin_failure'):
+                self.execute(config, code, key)
+        events, damaged = accounting.read_events(self.output / 'accounting')
+        self.assertFalse(damaged)
+        self.assertEqual(len({e['runId'] for e in events}), 1)
+        candidate = next(e for e in events if e['event'] == 'stage_finished'
+                         and e['stage'] == 'layer2.language_and_candidate.zh-Hans')
+        self.assertEqual(candidate['status'], 'failed')
+        self.assertTrue(candidate['dependsOn'])
+        self.assertFalse(any(e.get('stage') == 'layer2.final_package_validation.zh-Hans' for e in events))
+        self.assertTrue((self.output / 'evidence.json').exists())
+        self.assertFalse((self.output / 'candidate.json').exists())
+        self.assertEqual(len(self.calls), 4)
+
     def test_abandoned_queued_job_cannot_be_restarted_even_with_ready_source(self):
         with self.active(status='queued'):
             pass
@@ -246,7 +298,11 @@ class CanonicalLayer2ControllerTests(unittest.TestCase):
                 cwd=subject.ROOT, env={'OPENAI_API_KEY': ''}, capture_output=True, text=True, timeout=10)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn('OPENAI_API_KEY_is_not_configured', result.stderr)
-        self.assertFalse(self.output.exists())
+        self.assertEqual({p.name for p in self.output.iterdir()}, {'accounting'})
+        events, damaged = accounting.read_events(self.output / 'accounting')
+        self.assertFalse(damaged)
+        self.assertFalse(any(e['event'] == 'api_attempt' for e in events))
+        self.assertTrue(any(e['event'] == 'run_finished' and e['status'] == 'failed' for e in events))
 
     def test_two_real_controllers_launch_one_durable_attempt_and_preserve_failure(self):
         command = [sys.executable, str(Path(subject.__file__).resolve()), 'tick', '--config', str(self.path),
@@ -276,7 +332,11 @@ class CanonicalLayer2ControllerTests(unittest.TestCase):
             retry = subject.Controller(self.path, mode='deterministic_execute').tick()
         start.assert_not_called()
         self.assertFalse(retry['dispatched'])
-        self.assertFalse(self.output.exists())
+        self.assertEqual({p.name for p in self.output.iterdir()}, {'accounting'})
+        events, damaged = accounting.read_events(self.output / 'accounting')
+        self.assertFalse(damaged)
+        self.assertFalse(any(e['event'] == 'api_attempt' for e in events))
+        self.assertTrue(any(e['event'] == 'run_finished' and e['status'] == 'failed' for e in events))
 
     def test_controller_crash_after_durable_intent_does_not_repeat_dispatch(self):
         controller = subject.Controller(self.path, mode='deterministic_execute')
