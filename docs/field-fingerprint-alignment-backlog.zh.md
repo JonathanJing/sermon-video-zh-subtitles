@@ -98,6 +98,8 @@
 
 ### FIELD-09：真实声学基准、跨端 parity 与发布门禁
 
+2026-09-30 首批代码状态 **in_progress**：现有 JS→Swift golden 生成器新增不重写 fixture 的检查与 hash 绑定报告，12 个合成场景和独立本地 Swift matcher 对照通过。见 [冻结数值合同检查](field-fingerprint-contract-baseline.zh.md)。仅覆盖 published 数值合同，以下声学、legacy packed、设备和现场验收继续待证据。
+
 - [ ] 复用 [JS→Swift golden 生成器](../apps/tongxing-ios/scripts/generate-published-fingerprint-golden.mjs) 做确定性数值和拒绝原因对照；记录算法/索引版本，覆盖旧 packed 与 published 的隔离。合成音只证明合同，不代替语音/现场。
 - [ ] 使用经授权的录音/受控房间回放，分开生成开发集与保留集，按完整源录音/录制会话分割，避免把同段重叠窗口随机分入两组。包含不同证道、不同起点、转码、音量、EQ、混响、邻近人声、手机遮挡与网络状态；改剪辑/变速仍为不支持或负例。
 - [ ] Web Safari 与原生 iOS 分开，最低支持设备/系统与当前设备/系统、内置/已支持耳机路线分层；正例失败、拒绝和超时全部保留。报告成功率、误跳率、首次/二次命中、P50/P95 总耗时、源定位/可听输出/字幕误差、峰值内存及占麦时间。
