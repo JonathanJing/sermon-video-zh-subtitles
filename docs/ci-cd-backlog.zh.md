@@ -37,7 +37,7 @@
 - [ ] PR CI 使用短小、确定性的 fixture；付费模型、整篇 TTS、真实媒体下载、生产凭据和部署不在每次 PR 上重复运行。producer 改动至少运行模拟链接到 Layer 1–4 的快速 `DEV-E2E-001`，明确它只证明模拟路径。
 - [ ] 用 iOS-only、Web-only、API-only、共享合同、producer-only、docs-only 和未知路径的测试 PR／等价事件矩阵证明路由；检查失败报告保留提交 SHA、执行／跳过项和具体失败，不以通知邮件代替日志诊断。
 
-2026-09-30 路由回归补充（`DEV-CICD-002` 仍为 `in_progress`）：iOS workflow 的共享路径扩展到 catalog v3／Release v2 及其后续版本、legacy weekly catalog family、实际 v3／v2 producer 和 Web 合同 adapter。Git diff 禁用 rename 合并，删除或移动旧合同仍触发检查。真实 Git fixture 和工作流内原脚本覆盖已知路径、混合改动、删除／重命名、手动运行及 draft／失败／取消／跳过汇总；未知 scope 拒绝通过。
+2026-09-30 路由回归补充（`DEV-CICD-002` 仍为 `in_progress`）：iOS workflow 的共享路径扩展到 catalog v3／Release v2 及其后续版本、legacy weekly catalog family、实际 v3／v2 producer 和 Web 合同 adapter。Git diff 禁用 rename 合并，删除或移动旧合同仍触发检查。真实 Git fixture 和工作流内原脚本覆盖已知路径、混合改动、删除／重命名、手动运行及 draft／失败／取消／跳过汇总；未知 scope 拒绝通过。 后续补充保守 fallback：未知顶层路径、未列入矩阵的文件类型、所有 `.github/` 输入和空 diff 选择 `native`，混合改动取更广范围；使用 `--no-renames` 保留移走文件的原路径。已明确的 backend／producer／Web／API 源码及纯文档路径可保留 `none`，既有共享合同优先走 `contract`。`native` 在非 draft 的 dev PR 上运行 Core／storage 合同检查，在 main PR 上运行模拟器检查；draft 仍跳过，不声称自动验收。Python 的非文档改动已运行完整两 shard／Web／API／producer 模拟套件，本批不改变其范围。19 项路由／文档 gate／分片测试通过；未来新增表面须补矩阵，不把该路径分类当语义兼容证明。
 
 本批只修正测试选择，不修改 draft 的 macOS 跳过策略、required check 名称、客户端协议或发布行为。`native-client` 成功且 `contract-validation`／`ios-validation` skipped 仍不是 Swift／模拟器通过。未知路径走全检查的策略和真实设备验收仍待后续，不能据本批关闭矩阵全部验收。随后补充的 [共用 Release v2 夹具](shared-client-release-contracts.zh.md) 以同一 18 个场景验证 Web／原生并修正入站证据检查；catalog／text-only 等其他共用 fixture 尚未齐备，E6 仍需客户端兼容性审核。
 

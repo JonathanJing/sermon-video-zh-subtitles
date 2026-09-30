@@ -76,6 +76,17 @@ class IOSRouteTest(unittest.TestCase):
             ("firebase/dev/public/formal-dev-adapter.mjs", "contract"),
             ("experiments/sermon-dubbing-poc/web/published-weeks.mjs", "contract"),
             (".github/workflows/tongxing-ios.yml", "native"),
+            (".github/workflows/python-tests.yml", "native"),
+            (".github/actions/setup/action.yml", "native"),
+            (".github/unittest-module-timings.json", "native"),
+            ("new-runtime/adapter.py", "native"),
+            ("schemas/unknown-contract-v1.schema.json", "native"),
+            ("config/unknown-policy.json", "native"),
+            ("docs/executable.js", "native"),
+            ("scripts/NewClient.swift", "native"),
+            ("apps/other-client/main.js", "native"),
+            ("experiments/new-client/app.mjs", "native"),
+            ("requirements.txt", "native"),
             ("apps/tongxing-ios/App/AppModel.swift", "native"),
         ):
             with self.subTest(path=path):
@@ -93,7 +104,7 @@ class IOSRouteTest(unittest.TestCase):
         original.write_text('frozen contract\n')
         self.commit()
         self.base = self.sha()
-        for destination in (None, "docs/old-contract.txt"):
+        for destination in (None, "docs/old-contract.md"):
             with self.subTest(destination=destination):
                 subprocess.run(["git", "reset", "--hard", self.base], cwd=self.repo,
                                check=True, capture_output=True)
@@ -111,6 +122,25 @@ class IOSRouteTest(unittest.TestCase):
             path = self.repo / name
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(name)
+        self.commit()
+        self.assertEqual(self.scope(), "scope=native")
+
+    def test_unknown_with_contract_forces_broad_route_and_empty_diff_is_conservative(self):
+        self.assertEqual(self.scope(), "scope=native")
+        for name in ("schemas/sermon-multilingual-catalog-v3.schema.json", "unknown/file.bin"):
+            path = self.repo / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(name)
+        self.commit()
+        self.assertEqual(self.scope(), "scope=native")
+
+    def test_unknown_deleted_or_renamed_path_cannot_disappear_from_route(self):
+        original = self.repo / "unknown/file.py"
+        original.parent.mkdir()
+        original.write_text("unknown implementation")
+        self.commit()
+        self.base = self.sha()
+        original.rename(self.repo / "README.md")
         self.commit()
         self.assertEqual(self.scope(), "scope=native")
 
