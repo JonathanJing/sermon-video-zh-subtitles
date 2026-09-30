@@ -210,3 +210,18 @@ class ObservabilitySufficiencyTests(unittest.TestCase):
             self.assertTrue(all(o['providerTokens'] is None for o in report['localModelObservations']))
             self.assertEqual(next(n for n in report['workUnits'] if n['stage'] == 'local_asr')['models'], ['mlx-community/whisper-model'])
             with self.assertRaises(ValueError): local.record('/private/path', 'a'*64, 'b'*64, status='started')
+
+    def test_plugin_rejection_has_safe_reason_and_keeps_original_error(self):
+        from scripts import run_target_language_models as runner
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with accounting.accounting_session(root, 'binding-test'):
+                with mock.patch.object(runner.producer, 'plugin_implementation_sha256', return_value='b'*64):
+                    with self.assertRaisesRegex(ValueError, 'Language plugin implementation'):
+                        runner.require_plugin_identity(Path('unused'), 'a'*64)
+            events, bad = accounting.read_events(root); self.assertFalse(bad)
+            reason = next(e for e in events if e.get('code') == 'layer2_admission_rejected')
+            self.assertEqual(reason['fields']['reasonCode'], 'plugin_implementation_mismatch')
+            with mock.patch.object(runner.producer, 'plugin_implementation_sha256', return_value='b'*64), mock.patch.object(accounting, 'record_workload', side_effect=accounting.AccountingWriteError('injected')):
+                with self.assertRaisesRegex(ValueError, 'Language plugin implementation'):
+                    runner.require_plugin_identity(Path('unused'), 'a'*64)

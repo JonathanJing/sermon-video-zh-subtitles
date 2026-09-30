@@ -135,6 +135,20 @@ def group_plan(request: dict[str, Any], anchor: dict[str, Any],
     return plan
 
 
+def require_plugin_identity(plugin_path, expected):
+    actual = producer.plugin_implementation_sha256(plugin_path)
+    try:
+        require(actual == expected, "Language plugin implementation differs from frozen policy")
+    except ValueError as exc:
+        def observe():
+            accounting.record_workload("layer2.plugin_binding", {
+                "expectedPluginSha256": expected, "actualPluginSha256": actual})
+            accounting.record_log("layer2_admission_rejected", fields={
+                "status": "blocked", "reasonCode": "plugin_implementation_mismatch"})
+        accounting._finalize(observe, exc)
+        raise
+
+
 def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
                 output: Path, api_key: str,
                 caller: Callable[[str, dict[str, Any]], dict[str, Any]],
@@ -511,9 +525,7 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                 and type(workers) is int and 1 <= workers <= 3,
                 "Per-group production runner requires batchSize=1 and workers=1..3")
         if plugin_path is not None:
-            require(producer.plugin_implementation_sha256(plugin_path)
-                    == policy["languageReview"]["pluginImplementationSha256"],
-                    "Language plugin implementation differs from frozen policy")
+            require_plugin_identity(plugin_path, policy["languageReview"]["pluginImplementationSha256"])
         plan = group_plan(request, anchor, custom_plan)
         require(revision_brief is None or partial_repair_brief is None,
                 "Use one changed-group revision mechanism at a time")
@@ -875,9 +887,7 @@ def main() -> None:
     request = producer.prepare_request(source, anchor, policy)
     plan = group_plan(request, anchor, json.loads(args.group_plan.read_text(encoding="utf-8"))
                       if args.group_plan else None)
-    require(producer.plugin_implementation_sha256(args.plugin)
-            == policy["languageReview"]["pluginImplementationSha256"],
-            "Language plugin implementation differs from frozen policy")
+    require_plugin_identity(args.plugin, policy["languageReview"]["pluginImplementationSha256"])
     api_key = os.environ.get("OPENAI_API_KEY")
     require(bool(api_key), "OPENAI_API_KEY is not configured")
     evidence = run_accounted(
