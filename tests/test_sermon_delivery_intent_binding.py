@@ -376,3 +376,217 @@ class StrictDeliveryBindingTests(DeliveryBindingTests):
             bounds={key: 1 for key in budget.METRICS})
         with self.assertRaisesRegex(ValueError, 'current_chain_blocked'): self.freeze()
         self.assertEqual(len(self.boundary.reconcile()['intents']), 1)
+
+
+class FormalStrictDeliveryTests(unittest.TestCase):
+    """Actual three-locale adapters, local tone decode and existing asset producers.
+
+    All model responses and approval receipts below are synthetic test evidence.
+    No provider, production recording, real reviewer or venue acceptance is used.
+    """
+    def setUp(self):
+        from dataclasses import replace
+        from types import SimpleNamespace
+        import subprocess
+        from scripts import sermon_review_contracts as c
+        from scripts import target_language_policy as policies
+        from scripts import sermon_strict_layer2 as strict
+        from scripts import sermon_strict_candidate_bridge as bridge
+        from scripts import sermon_strict_gate_admission as admission
+        from scripts import review_target_language_candidate as human
+        from scripts import build_formal_dev_release_assets as builder
+        from tests import test_sermon_strict_budget_adapter as budget_fixtures
+        from tests import test_stage_formal_multilingual_dev as formal_fixtures
+        self.base = StrictDeliveryBindingTests()
+        self.base.setUp(); self.addCleanup(self.base.doCleanups)
+        b = self.base
+        self.formal = formal_fixtures.FormalDevStageTests()
+        self.formal.setUp(); self.addCleanup(self.formal.tearDown)
+        f = self.formal
+        f.page_id = b.request['pageId']
+        f.source_path = b.boundary.config.source
+        self.config = {'pageId': f.page_id, 'source': str(f.source_path),
+            'anchor': str(b.boundary.config.anchor), 'locales': {}}
+        self.admissions = dict(b.strict_admissions)
+        candidates = {'zh-Hans': b.candidate}; reviews = {'zh-Hans': b.review}
+        policy_paths = {'zh-Hans': b.boundary.config.policy}
+        engine = b.strict_fixture.f.f
+        source, anchor, _, rubric = [c.decode_json(raw) for raw in engine.args]
+        for locale in ('ko', 'es'):
+            draft = c.decode_json(engine.args[2]); draft.pop('componentSha256')
+            draft['targetLocale'] = locale
+            locale_rubric = dict(rubric, targetLocale=locale)
+            draft['reviewContract']['rubricCanonicalJsonSha256'] = c.canonical_sha256(locale_rubric)
+            policy = policies.freeze_strict_policy(draft, locale_rubric)
+            args = [engine.args[0], engine.args[1], strict.material_bytes(policy), strict.material_bytes(locale_rubric)]
+            rubric_path = b.strict_fixture.root / (locale + '-rubric.json')
+            rubric_path.write_bytes(args[3])
+            policy_path = b.strict_fixture.root / (locale + '-policy.json')
+            policy_path.write_bytes(args[2]); policy_paths[locale] = policy_path
+            roots = []
+            with engine.session():
+                for group in b.strict_fixture.f.groups:
+                    engine.f.evidence['groups'][0] = group
+                    prepared = strict.prepare(*args, {key: group[key] for key in ('translationGroupId', 'sourceUnitIds')})
+                    root = b.strict_fixture.root / locale / group['translationGroupId']
+                    b.strict_fixture.subject.generate(prepared, root, 'candidate', 'r1', 'fixture', engine.transport,
+                        bounds=budget_fixtures.bounds(), usage_resolver=budget_fixtures.measured)
+                    b.strict_fixture.subject.review(prepared, root, 'candidate', 'r1', 'fixture', engine.transport,
+                        bounds=budget_fixtures.bounds(), usage_resolver=budget_fixtures.measured)
+                    roots.append((root, 1))
+            pending = bridge.compile_candidate(*args, roots, plugin_path=b.boundary.config.plugin,
+                expected_plugin_sha256=b.boundary.config.plugin_sha256)['candidate']
+            worksheet = human.build_worksheet(source, anchor, pending, policy, strict_rubric=locale_rubric)
+            worksheet = human.apply_batch_approval(worksheet, reviewer='Synthetic fixture',
+                reviewed_at='2026-09-30T00:00:00Z', evidence='Synthetic test only')
+            candidate, review = human.approve_worksheet(source, anchor, pending, policy, worksheet, strict_rubric=locale_rubric)
+            candidates[locale], reviews[locale] = candidate, review
+            candidate_path = f.write_json(f.root / (locale + '-candidate.json'), candidate)
+            review_path = f.write_json(f.root / (locale + '-receipt.json'), review)
+            boundary = admission.AdmissionBoundary(replace(b.boundary.config, target_locale=locale,
+                revision_roots=tuple(root for root, _ in roots), policy=policy_path, rubric=rubric_path,
+                public_candidate=candidate_path, human_receipt=review_path), b.boundary.store)
+            admitted = boundary.admit(expected_state_revision=boundary.snapshot().state_revision,
+                created_at='2026-09-30T00:00:00Z')
+            self.assertEqual(admitted['status'], 'committed', admitted)
+            self.admissions[locale] = {'boundary': boundary, 'intentId': admitted['intent']['intentId']}
+        track = f.root / 'full-tone.wav'
+        subprocess.run(['ffmpeg', '-nostdin', '-v', 'error', '-f', 'lavfi', '-i',
+            'sine=frequency=440:duration=1', '-ac', '1', '-ar', '16000', '-acodec', 'pcm_s16le',
+            '-y', str(track)], check=True)
+        self.request = copy.deepcopy(b.request); self.request['requestedLocales'] = []
+        for locale in subject.stage.LOCALES:
+            candidate, review = candidates[locale], reviews[locale]
+            boundary = self.admissions[locale]['boundary']
+            candidate_path, review_path = boundary.config.public_candidate, boundary.config.human_receipt
+            f.paths['candidate'][locale], f.paths['receipt'][locale] = candidate_path, review_path
+            groups = candidate['groups']
+            captions = {'cues': [{'textGroupId': group['translationGroupId'], 'text': group['targetText'],
+                'start': index * .5, 'end': (index + 1) * .5} for index, group in enumerate(groups)]}
+            captions_path = f.write_json(f.root / (locale + '-captions.json'), captions)
+            schedule = {'targetLocale': locale, 'timingKind': 'measured_target_audio',
+                'status': 'pass', 'issues': [], 'trackDurationSeconds': 1,
+                'entries': [{'textGroupId': group['translationGroupId'], 'sourceUnitIds': group['sourceUnitIds'],
+                    'plannedStart': index * .5, 'plannedEnd': (index + 1) * .5} for index, group in enumerate(groups)]}
+            schedule_path = f.write_json(f.root / (locale + '-schedule.json'), schedule)
+            audio = json.loads(f.paths['audio'][locale].read_text())
+            audio.update(englishSourcePackageJsonSha256=intent.canonical_hash(source),
+                targetLanguageCandidateJsonSha256=intent.canonical_hash(candidate),
+                track={'path': str(track), 'sha256': subject.stage.file_sha(track)},
+                captions={'path': str(captions_path), 'sha256': subject.stage.file_sha(captions_path)},
+                schedule={'path': str(schedule_path), 'sha256': subject.stage.file_sha(schedule_path),
+                          'jsonSha256': intent.canonical_hash(schedule)},
+                units=[{'textGroupId': group['translationGroupId'],
+                        'targetTextSha256': hashlib.sha256(group['targetText'].encode()).hexdigest(),
+                        'audio': {'path': str(f.audio_file), 'sha256': subject.stage.file_sha(f.audio_file)},
+                        'durationSeconds': .5} for group in groups])
+            f.write_json(f.paths['audio'][locale], audio)
+            audio_review = json.loads(f.paths['audio_receipt'][locale].read_text())
+            audio_review.update(englishSourcePackageJsonSha256=intent.canonical_hash(source),
+                targetLanguageCandidateJsonSha256=intent.canonical_hash(candidate),
+                targetLanguageAudioPackageJsonSha256=intent.canonical_hash(audio),
+                trackSha256=subject.stage.file_sha(track),
+                reviewedUnitIds=[group['translationGroupId'] for group in groups])
+            f.write_json(f.paths['audio_receipt'][locale], audio_review)
+            approved = {'candidateJsonSha256': intent.canonical_hash(candidate),
+                        'humanReviewReceiptJsonSha256': intent.canonical_hash(review)}
+            self.request['requestedLocales'].append({'targetLocale': locale, 'audioRequirement': 'required',
+                'approvedFullText': approved, 'approvedSpokenText': dict(kind='full_text', **approved),
+                'layer3AudioUnavailable': None})
+            self.config['locales'][locale] = {'policy': str(policy_paths[locale]),
+                'candidate': str(candidate_path), 'humanReview': str(review_path),
+                'audioPackage': str(f.paths['audio'][locale]), 'audioHumanReview': str(f.paths['audio_receipt'][locale])}
+        self.manifest = intent.freeze_intent(self.request)
+        proposal = f.root / 'metadata-proposal.md'
+        proposal.write_text('Approved series. Approved title. Speaker. Revelation. Approved summary. First point.')
+        metadata = {'schemaVersion': 'sermon-formal-dev-metadata-approval-v1', 'pageId': f.page_id,
+            'date': '2026-09-20', 'proposalFileSha256': subject.stage.file_sha(proposal),
+            'decision': 'approved_all_three_locales', 'approvalText': '三语全部批准', 'reviewer': 'user',
+            'recordedAt': '2026-09-30T00:00:00Z', 'locales': {locale: {
+                'series': 'Approved series', 'title': 'Approved title', 'speaker': 'Speaker',
+                'scripture': 'Revelation', 'summary': 'Approved summary', 'outline': ['First point']}
+                for locale in subject.stage.LOCALES}}
+        metadata_path = f.write_json(f.root / 'metadata-approved.json', metadata)
+        prepared_root = f.root / 'prepared'
+        builder.build(SimpleNamespace(source=f.source_path, metadata=metadata_path, metadata_proposal=proposal,
+            page_id=f.page_id, date='2026-09-20', service_date=None, out=prepared_root,
+            candidate=[locale + '=' + str(f.paths['candidate'][locale]) for locale in subject.stage.LOCALES],
+            audio_package=[locale + '=' + str(f.paths['audio'][locale]) for locale in subject.stage.LOCALES]))
+        f.assets = prepared_root / 'assets'
+        for locale in subject.stage.LOCALES:
+            f.paths['content_receipt'][locale] = prepared_root / 'review/content' / (locale + '.json')
+            f.paths['release'][locale] = prepared_root / 'releases' / (locale + '.json')
+        self.preparation_receipt_path = prepared_root / 'preparation-receipt.json'
+        self.args = f.args()
+
+    def prepare(self):
+        return subject.prepare_formal_delivery(self.manifest, root=self.formal.root, configuration=self.config,
+            stage_args=self.args, preparation_receipt_path=self.preparation_receipt_path,
+            strict_admissions=self.admissions)
+
+    def test_actual_three_locale_asset_preflight_and_stage_with_strict_admissions(self):
+        calls = len(self.base.strict_fixture.f.f.calls)
+        result = self.prepare()
+        self.assertEqual(result['status'], 'local_prepared_not_deployed')
+        self.assertEqual(result['modelCalls'], 0)
+        self.assertEqual(result['fullDecodeValidation'], 'existing_formal_preflight_pass')
+        self.assertEqual(result['intentDurationStatus'], 'unknown')
+        self.assertFalse(result['publicationAuthorized'])
+        self.assertEqual(set(result['binding']['strictAdmissions']), set(subject.stage.LOCALES))
+        self.assertNotIn('releasePlanJsonSha256', result['binding'])
+        self.assertIn('formalDescriptorJsonSha256', result['binding'])
+        self.assertEqual(len(self.base.strict_fixture.f.f.calls), calls)
+        self.assertEqual(len(result['outputFileBytesSha256']), 14)
+        self.assertNotIn(str(self.formal.root), json.dumps(result))
+        self.assertTrue((self.args.out / 'multilingual-v2.json').is_file())
+        with self.assertRaisesRegex(ValueError, 'requires_new_output'): self.prepare()
+
+    def test_changed_audio_asset_blocks_before_stage(self):
+        audio_path = self.formal.assets / 'media' / self.formal.page_id / 'ko.wav'
+        audio_path.write_bytes(b'not a valid approved recording')
+        with self.assertRaises(ValueError): self.prepare()
+        self.assertFalse(self.args.out.exists())
+
+    def test_mutation_after_stage_preserves_untrusted_output_without_success(self):
+        real = subject.stage.stage
+        def mutate(args):
+            result = real(args)
+            path = self.base.boundary.config.human_receipt
+            value = json.loads(path.read_text()); value['candidateJsonSha256'] = 'f' * 64
+            path.write_text(json.dumps(value))
+            return result
+        with patch.object(subject.stage, 'stage', side_effect=mutate):
+            with self.assertRaisesRegex(ValueError, 'requires_reconciliation'): self.prepare()
+        self.assertTrue(self.args.out.exists())
+
+    def test_stage_cannot_use_another_candidate_path_or_changed_preparation_receipt(self):
+        self.args.candidate[0] = self.args.candidate[0].split('=')[0] + '=' + str(self.formal.root / 'foreign.json')
+        with self.assertRaisesRegex(ValueError, 'lane_path_mismatch'): self.prepare()
+        self.assertFalse(self.args.out.exists())
+
+    def test_changed_asset_preparation_receipt_blocks_before_staging(self):
+        value = json.loads(self.preparation_receipt_path.read_text())
+        value['pageId'] = 'another-page'
+        self.preparation_receipt_path.write_text(json.dumps(value))
+        with self.assertRaisesRegex(ValueError, 'asset_preparation_receipt_invalid'): self.prepare()
+        self.assertFalse(self.args.out.exists())
+
+    def test_formal_text_only_scope_remains_explicitly_unsupported(self):
+        target = self.request['requestedLocales'][0]
+        target.update(audioRequirement='text_only', approvedSpokenText=None,
+            layer3AudioUnavailable={'packageJsonSha256': 'a' * 64,
+                'englishSourcePackageJsonSha256': self.request['source']['englishSourcePackageJsonSha256'],
+                'targetLanguageCandidateJsonSha256': target['approvedFullText']['candidateJsonSha256'],
+                'targetLocale': target['targetLocale'], 'status': 'audio_unavailable'})
+        self.manifest = intent.freeze_intent(self.request)
+        with self.assertRaisesRegex(ValueError, 'requires_three_full_audio_locales'): self.prepare()
+        self.assertFalse(self.args.out.exists())
+
+    def test_unknown_stage_acknowledgement_preserves_completed_local_files(self):
+        real = subject.stage.stage
+        def lost_ack(args):
+            real(args)
+            raise OSError('synthetic acknowledgement loss')
+        with patch.object(subject.stage, 'stage', side_effect=lost_ack):
+            with self.assertRaisesRegex(ValueError, 'requires_reconciliation'): self.prepare()
+        self.assertTrue((self.args.out / 'stage-receipt.json').is_file())

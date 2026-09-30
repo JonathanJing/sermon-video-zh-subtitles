@@ -1,12 +1,14 @@
 """Private receipt-backed delivery-intent binding for an existing release plan.
 
-Opt-in API only: freeze_binding(...) and validate_preflight_binding(...). The
-existing release preflight must call the latter before using this envelope;
-no default release hook, publication, approval creation, media probe, or network
-call is installed here. Existing Source/L2 and audio review validators consume
-actual local packages and independent receipts. Strict v3 additionally requires
-the opt-in trusted AdmissionBoundary and its current durable ledger/intent proof. L3 artifact reconstruction,
-complete decode, duration, HTTP, clients, and venue acceptance stay separate.
+Opt-in APIs: freeze_binding(...) and validate_preflight_binding(...) verify a
+legacy plan's existing package/receipt prerequisites without media probing.
+prepare_formal_delivery(...) separately invokes the existing formal three-locale
+preflight (including full local decode), immutable staging and final revalidation.
+It consumes actual formal asset-preparation output, never a fabricated legacy plan.
+No default hook, model call, approval creation, network or publication is installed.
+Strict v3 additionally requires a trusted AdmissionBoundary and its current durable
+ledger/intent proof. L3 reconstruction/voice authorization, natural-duration intent
+acceptance, HTTP, clients and venue acceptance remain separate gates.
 
 configuration = {pageId, source, anchor, locales: {locale: {
     policy, candidate, humanReview, audioPackage,
@@ -299,7 +301,7 @@ def freeze_binding(manifest, release_plan, *, root, configuration, weekly_plan=N
         return result
 
 
-def _freeze_binding(manifest, release_plan, *, root, configuration, weekly_plan=None, strict_current=None):
+def _freeze_binding(manifest, release_plan, *, root, configuration, weekly_plan=None, strict_current=None, formal_descriptor=None):
     """Verify existing receipts and freeze a private envelope; write nothing."""
     intent.validate_intent(manifest)
     request = manifest['request']
@@ -307,7 +309,7 @@ def _freeze_binding(manifest, release_plan, *, root, configuration, weekly_plan=
     require(configuration['pageId'] == request['pageId'], 'delivery_page_mismatch')
     require(type(configuration['locales']) is dict and set(configuration['locales']) ==
             {target['targetLocale'] for target in request['requestedLocales']}, 'delivery_locale_set_mismatch')
-    plan_sha = _plan(release_plan, request)
+    plan_sha = _plan(release_plan, request) if formal_descriptor is None else intent.canonical_hash(formal_descriptor)
     evidence = _Evidence(root)
     source = evidence.read(configuration['source'], 'source.package')
     anchor = evidence.read(configuration['anchor'], 'source.anchor')
@@ -381,6 +383,9 @@ def _freeze_binding(manifest, release_plan, *, root, configuration, weekly_plan=
         payload['schemaVersion'] = STRICT_SCHEMA
         payload['validationScope'] = 'strict_current_admission_and_existing_package_approval_bindings'
         payload['strictAdmissions'] = {locale: row['proof'] for locale, row in strict_current.items()}
+    if formal_descriptor is not None:
+        payload['schemaVersion'] = 'private-sermon-formal-delivery-binding-v1'
+        payload['formalDescriptorJsonSha256'] = payload.pop('releasePlanJsonSha256')
     return dict(payload, bindingSha256=intent.canonical_hash(payload))
 
 
@@ -397,3 +402,151 @@ def validate_preflight_binding(binding, manifest, release_plan, *, root, configu
             'releasePlanJsonSha256': expected['releasePlanJsonSha256'], 'pageId': expected['pageId'],
             'requiredLocales': expected['requiredLocales'], 'status': 'bindings_verified',
             'durationStatus': expected['offlinePreflight']['offlineStatus'], 'publicationAuthorized': False}
+
+
+FORMAL_DESCRIPTOR = 'private-sermon-formal-delivery-descriptor-v1'
+FORMAL_RESULT = 'private-sermon-formal-delivery-preparation-v1'
+FORMAL_ASSIGNMENTS = {'candidate': 'candidate', 'human_review_receipt': 'humanReview',
+                     'audio_package': 'audioPackage', 'audio_human_review_receipt': 'audioHumanReview',
+                     'audio_screening_receipt': 'screening'}
+
+
+def _formal_capture(manifest, args, preparation_receipt_path, *, root, configuration):
+    """Invoke the existing complete local asset gate and freeze what it read."""
+    intent.validate_intent(manifest)
+    request = manifest['request']
+    require(set(configuration['locales']) == set(stage.LOCALES)
+            and all(row['audioRequirement'] == 'required' and row['approvedSpokenText'] is not None
+                    and row['approvedSpokenText']['kind'] == 'full_text'
+                    for row in request['requestedLocales']), 'formal_delivery_requires_three_full_audio_locales')
+    require(args.page_id == request['pageId'] == configuration['pageId'], 'formal_delivery_page_mismatch')
+    resolve = lambda path: _safe_path(Path(root) / path)
+    require(resolve(args.source) == resolve(configuration['source']), 'formal_delivery_source_path_mismatch')
+    inputs = _Evidence(root)
+    inputs.read(args.source, 'source')
+    arguments = {key: str(getattr(args, key)) for key in
+                 ('source', 'asset_root', 'out', 'page_id', 'page_date', 'default_target', 'generated_at')}
+    for attribute, name in FORMAL_ASSIGNMENTS.items():
+        values = getattr(args, attribute, [])
+        arguments[attribute] = list(values)
+        paths = stage.assignment_map(values, '--' + attribute.replace('_', '-')) if values else {}
+        for locale in stage.LOCALES:
+            expected = configuration['locales'][locale].get(name)
+            require((locale in paths) == (expected is not None)
+                    and (expected is None or resolve(paths[locale]) == resolve(expected)),
+                    'formal_delivery_lane_path_mismatch')
+            if locale in paths: inputs.read(paths[locale], locale + '.' + name)
+    for attribute in ('release', 'content_review_receipt', 'fingerprint_index'):
+        values = getattr(args, attribute, [])
+        arguments[attribute] = list(values)
+        paths = stage.assignment_map(values, '--' + attribute.replace('_', '-')) if values else {}
+        for locale, path in paths.items(): inputs.read(path, locale + '.' + attribute)
+    prepared = inputs.read(preparation_receipt_path, 'assetPreparationReceipt')
+    require(set(prepared) == {'schemaVersion', 'pageId', 'metadataApprovalJsonSha256', 'targetLocales', 'status'}
+            and prepared['schemaVersion'] == 'sermon-formal-dev-release-asset-preparation-v1'
+            and prepared['pageId'] == args.page_id and prepared['targetLocales'] == list(stage.LOCALES)
+            and prepared['status'] == 'candidate_not_deployed'
+            and type(prepared['metadataApprovalJsonSha256']) is str
+            and re.fullmatch(r'[a-f0-9]{64}', prepared['metadataApprovalJsonSha256']),
+            'formal_delivery_asset_preparation_receipt_invalid')
+    # This is the actual existing preflight: independent translation/audio/content
+    # receipts, source/date, complete decode, units, captions, schedules and assets.
+    catalog, files, _ = stage.preflight(args)
+    assets = {}
+    for public_path, (path, expected_hash) in files.items():
+        checked = resolve(path)
+        require(stage.file_sha(checked) == expected_hash, 'formal_delivery_asset_changed')
+        assets[public_path] = expected_hash
+    inputs.recheck()
+    descriptor = {'schemaVersion': FORMAL_DESCRIPTOR, 'pageId': args.page_id,
+        'origin': request['delivery']['appRootUrl'].rstrip('/'),
+        'intentManifestJsonSha256': intent.canonical_hash(manifest),
+        'stageArgumentsSha256': intent.canonical_hash(arguments),
+        'inputEvidence': inputs.identities, 'publicAssetFileBytesSha256': assets,
+        'catalogCanonicalJsonSha256': intent.canonical_hash(catalog),
+        'status': 'local_preflight_pass_not_deployed'}
+    return descriptor
+
+
+def _formal_binding(manifest, descriptor, *, root, configuration, weekly_plan, current):
+    return _freeze_binding(manifest, None, root=root, configuration=configuration,
+        weekly_plan=weekly_plan, strict_current=current, formal_descriptor=descriptor)
+
+
+def _formal_output(args, descriptor, receipt):
+    out = _safe_path(args.out)
+    expected_paths = {path.lstrip('/') for path in descriptor['publicAssetFileBytesSha256']}
+    expected_paths.update(('multilingual-v2.json', 'stage-receipt.json'))
+    paths = {str(p.relative_to(out)) for p in out.rglob('*') if p.is_file()}
+    require(paths == expected_paths, 'formal_delivery_output_inventory_changed')
+    for path, expected in descriptor['publicAssetFileBytesSha256'].items():
+        require(stage.file_sha(_safe_path(out / path.lstrip('/'))) == expected,
+                'formal_delivery_output_asset_changed')
+    catalog = contracts.read_snapshot(_safe_path(out / 'multilingual-v2.json'))[0]
+    saved_receipt = contracts.read_snapshot(_safe_path(out / 'stage-receipt.json'))[0]
+    require(saved_receipt == receipt and receipt['deploymentStatus'] == 'not_deployed'
+            and receipt['httpVerification'] == receipt['deviceAcceptance'] == 'not_run'
+            and stage.file_sha(out / 'multilingual-v2.json') == receipt['catalogSha256']
+            and intent.canonical_hash(catalog) == descriptor['catalogCanonicalJsonSha256'],
+            'formal_delivery_staged_catalog_or_receipt_changed')
+    return {path: stage.file_sha(_safe_path(out / path)) for path in sorted(paths)}
+
+
+def prepare_formal_delivery(manifest, *, root, configuration, stage_args, preparation_receipt_path,
+                            weekly_plan=None, strict_admissions=None):
+    """Prepare immutable local formal assets via actual preflight -> stage -> recheck.
+
+    Consumes outputs from build_formal_dev_release_assets.build, including its
+    preparation-receipt.json. It DOES NOT fabricate a weekly legacy release plan.
+    Current formal producer supports exactly three fully reviewed full-text/audio
+    locales. Metadata/audio human approvals are prerequisites, never created here.
+    Strict callers provide the same trusted admissions as freeze_binding. The
+    shared admission and budget locks remain held during decode and staging.
+
+    This wrapper owns no deployment and emits no public approval. If final
+    validation fails after stage wrote output, preserve it as untrusted local
+    evidence; never delete, overwrite, or retry it as a fresh successful result.
+    The caller retains existing release authorization/HTTP/device/venue gates.
+    """
+    args = deepcopy(stage_args)
+    for name in ('source', 'asset_root', 'out'):
+        setattr(args, name, _safe_path(Path(root) / getattr(args, name)))
+    for name in (*FORMAL_ASSIGNMENTS, 'release', 'content_review_receipt', 'fingerprint_index'):
+        values = getattr(args, name, [])
+        paths = stage.assignment_map(values, '--' + name.replace('_', '-')) if values else {}
+        setattr(args, name, [locale + '=' + str(_safe_path(Path(root) / path)) for locale, path in paths.items()])
+    require(not args.out.exists(), 'formal_delivery_requires_new_output')
+    with _strict_current(strict_admissions) as (current, recheck):
+        for row in current.values():
+            boundary = row['boundary']
+            protected = [boundary.store.root, boundary._path(boundary.config.job_root),
+                         *map(boundary._path, boundary.config.revision_roots)]
+            require(not any(args.out == p or args.out in p.parents or p in args.out.parents for p in protected),
+                    'formal_delivery_output_overlaps_admission')
+        descriptor = _formal_capture(manifest, args, preparation_receipt_path, root=root, configuration=configuration)
+        binding = _formal_binding(manifest, descriptor, root=root, configuration=configuration,
+                                  weekly_plan=weekly_plan, current=current)
+        recheck()
+        try:
+            receipt = stage.stage(args)
+            final = _formal_capture(manifest, args, preparation_receipt_path, root=root, configuration=configuration)
+            require(final == descriptor, 'formal_delivery_input_changed_after_stage')
+            final_binding = _formal_binding(manifest, final, root=root, configuration=configuration,
+                                           weekly_plan=weekly_plan, current=current)
+            require(final_binding == binding, 'formal_delivery_binding_changed_after_stage')
+            recheck()
+            outputs = _formal_output(args, descriptor, receipt)
+        except Exception as exc:
+            if args.out.exists():
+                raise intent.IntentError('formal_delivery_local_output_requires_reconciliation') from exc
+            raise
+        result = {'schemaVersion': FORMAL_RESULT, 'status': 'local_prepared_not_deployed',
+            'descriptor': descriptor, 'binding': binding,
+            'stageReceiptJsonSha256': intent.canonical_hash(receipt), 'outputFileBytesSha256': outputs,
+            'modelCalls': 0, 'fullDecodeValidation': 'existing_formal_preflight_pass',
+            'intentDurationStatus': binding['offlinePreflight']['offlineStatus'],
+            'humanApprovalGranted': False, 'publicationAuthorized': False,
+            'remainingGates': ['existing_layer3_voice_authorization_and_package_reconstruction',
+                               'required_content_quality_and_delivery_acceptance',
+                               'release_authorization_http_device_venue']}
+        return dict(result, resultSha256=intent.canonical_hash(result))
