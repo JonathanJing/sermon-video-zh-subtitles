@@ -260,13 +260,17 @@ def _strict_current(admissions):
                         and validated['humanReceiptSha256'] == permission['humanReceiptSha256'],
                         'delivery_strict_current_chain_blocked')
                 identity = permission['identity']
-                require(identity == {'schemaVersion': admission.SCHEMA,
+                legacy_identity = {'schemaVersion': admission.SCHEMA,
                     'productionRunId': boundary.config.production_run_id,
                     'targetLocale': locale, 'action': 'prepare_layer3',
                     'sourceIdentitySha256': snapshot.groups[0].current.source_identity_sha256,
                     'policySha256': snapshot.groups[0].current.policy_sha256,
-                    'publicCandidateSha256': validated['publicCandidateSha256']},
-                    'delivery_strict_intent_identity_changed')
+                    'publicCandidateSha256': validated['publicCandidateSha256']}
+                receipt_identity = dict(legacy_identity, humanReceiptSha256=validated['humanReceiptSha256'])
+                # Both formats remain safe only after the current-chain receipt
+                # check above. New permissions bind the receipt in their key.
+                require(identity in (legacy_identity, receipt_identity),
+                        'delivery_strict_intent_identity_changed')
                 proof = {'intentId': intent_id, 'intentCanonicalJsonSha256': contracts.canonical_sha256(permission),
                     'stateRevision': snapshot.state_revision, 'snapshotSha256': snapshot.snapshot_sha256,
                     'budgetStoreSha256': boundary.store.store_sha256,

@@ -244,6 +244,35 @@ class StrictDeliveryBindingTests(DeliveryBindingTests):
             candidate=str(self.boundary.config.public_candidate), humanReview=str(self.boundary.config.human_receipt))
         self.manifest = intent.freeze_intent(self.request)
 
+    def rewrite_intent_receipt_identity(self, receipt_hash):
+        from scripts import sermon_review_contracts as contracts
+        from scripts import sermon_workflow_jobs as jobs
+        old_id = self.strict_admissions['zh-Hans']['intentId']
+        with self.boundary._locked() as (path, record, _, _):
+            permission = record['intents'].pop(old_id)
+            if receipt_hash is None:
+                permission['identity'].pop('humanReceiptSha256')
+            else:
+                permission['identity']['humanReceiptSha256'] = receipt_hash
+            new_id = contracts.canonical_sha256(permission['identity'])
+            permission['intentId'] = new_id
+            record['intents'][new_id] = permission
+            jobs._persist(path, record)
+        self.strict_admissions['zh-Hans']['intentId'] = new_id
+
+    def test_legacy_intent_still_requires_current_full_receipt_chain(self):
+        self.rewrite_intent_receipt_identity(None)
+        binding = self.freeze()
+        self.assertEqual(self.validate(binding)['status'], 'bindings_verified')
+        self.strict_fixture.approve(evidence='Synthetic replacement evidence')
+        with self.assertRaisesRegex(ValueError, 'delivery_strict_current_chain_blocked'):
+            self.freeze()
+
+    def test_new_intent_key_cannot_bind_a_different_human_receipt(self):
+        self.rewrite_intent_receipt_identity('f' * 64)
+        with self.assertRaisesRegex(ValueError, 'delivery_strict_intent_identity_changed'):
+            self.freeze()
+
     def test_strict_receipt_chain_is_current_read_only_and_hash_bound(self):
         before = len(self.strict_fixture.f.f.calls)
         before_files = {str(p): p.read_bytes() for p in self.strict_fixture.root.rglob('*') if p.is_file()}
