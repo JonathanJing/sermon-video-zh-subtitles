@@ -39,7 +39,7 @@
 
 2026-09-30 路由回归补充（`DEV-CICD-002` 仍为 `in_progress`）：iOS workflow 的共享路径扩展到 catalog v3／Release v2 及其后续版本、legacy weekly catalog family、实际 v3／v2 producer 和 Web 合同 adapter。Git diff 禁用 rename 合并，删除或移动旧合同仍触发检查。真实 Git fixture 和工作流内原脚本覆盖已知路径、混合改动、删除／重命名、手动运行及 draft／失败／取消／跳过汇总；未知 scope 拒绝通过。
 
-本批只修正测试选择，不修改 draft 的 macOS 跳过策略、required check 名称、客户端协议或发布行为。`native-client` 成功且 `contract-validation`／`ios-validation` skipped 仍不是 Swift／模拟器通过。未知路径走全检查的策略、同一跨端合同 fixture 和真实设备验收仍待后续，不能据本批关闭矩阵全部验收。
+本批只修正测试选择，不修改 draft 的 macOS 跳过策略、required check 名称、客户端协议或发布行为。`native-client` 成功且 `contract-validation`／`ios-validation` skipped 仍不是 Swift／模拟器通过。未知路径走全检查的策略和真实设备验收仍待后续，不能据本批关闭矩阵全部验收。随后补充的 [共用 Release v2 夹具](shared-client-release-contracts.zh.md) 以同一 18 个场景验证 Web／原生并修正入站证据检查；catalog／text-only 等其他共用 fixture 尚未齐备，E6 仍需客户端兼容性审核。
 
 ### `DEV-CICD-003`：页面与后端功能交付
 

@@ -1,0 +1,19 @@
+"""The shared clients' accepted fixtures must also satisfy the producer schema."""
+import json
+from pathlib import Path
+import unittest
+from jsonschema import Draft202012Validator
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+class SharedClientContractFixturesTests(unittest.TestCase):
+    def test_accepted_web_native_fixture_is_valid_production_release_schema(self):
+        matrix = json.loads((ROOT / 'apps/tongxing-ios/Core/Tests/TongxingCoreTests/Fixtures/shared-release-contracts.json').read_text())
+        schema = json.loads((ROOT / 'schemas/sermon-target-language-release-package-v2.schema.json').read_text())
+        validator = Draft202012Validator(schema)
+        accepted = [row for row in matrix['cases'] if row['expected'] == 'accept']
+        self.assertEqual({row['release']['targetLocale'] for row in accepted}, {'zh-Hans', 'ko', 'es'})
+        for row in accepted:
+            with self.subTest(case=row['id']):
+                validator.validate(row['release'])

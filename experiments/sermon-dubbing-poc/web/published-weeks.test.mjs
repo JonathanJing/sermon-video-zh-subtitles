@@ -22,15 +22,20 @@ function fixture(mutate = () => {}) {
     };
     const captions = { cues: [{ textGroupId: 'first', start: .5, end: 7, text: `Short spoken text ${locale}` }] };
     const release = {
-      schemaVersion: 'sermon-target-language-release-package-v2', pageId,
+      schemaVersion: 'sermon-target-language-release-package-v2', pageId, packageId: `${pageId}-${locale}`,
+      interfaceLocale: locale, spokenTargetLanguageCandidateJsonSha256: 'e'.repeat(64),
+      targetLanguageAudioPackageJsonSha256: 'f'.repeat(64), issues: [],
+      deviceAcceptance: { status: 'not_run', evidenceSha256: null },
+      venueAcceptance: { status: 'not_run', evidenceSha256: null },
       targetLocale: locale, audioLocale: locale, contentLocale: locale, sourceLocale: 'en',
-      status: 'published_http_verified', httpVerification: { status: 'pass' },
+      status: 'published_http_verified', httpVerification: { status: 'pass', evidenceSha256: '1'.repeat(64) },
       audioStatus: 'human_reviewed', contentStatus: 'human_reviewed',
       targetLanguageCandidateJsonSha256: content.targetLanguageCandidateJsonSha256,
       assets: [
         { role: 'content', path: `/content/${pageId}/${locale}.json` },
         { role: 'captions', path: `/captions/${pageId}/${locale}.json` },
         { role: 'audio', path: `/media/${pageId}/${locale}.mp3`, sha256: 'c'.repeat(64) },
+        { role: 'page', path: `/pages/${pageId}/${locale}/index.html`, sha256: '2'.repeat(64) },
       ],
     };
     mutate({ content, captions, release, locale });
@@ -113,6 +118,23 @@ test('wrong identity, unreviewed release, unsafe assets and mismatched caption g
     const result = await loadPublishedWeeks(fixture(mutate).fetchImpl);
     assert.deepEqual(result.weeks, []);
     assert.equal(result.errors.length, 3);
+  }
+});
+
+test('missing contract evidence rejects only the affected locale after release hash verification', async () => {
+  const changes = [
+    release => { delete release.spokenTargetLanguageCandidateJsonSha256; },
+    release => { delete release.targetLanguageAudioPackageJsonSha256; },
+    release => { release.assets = release.assets.filter(asset => asset.role !== 'page'); },
+    release => { release.httpVerification.evidenceSha256 = null; },
+    release => { release.deviceAcceptance = { status: 'pass', evidenceSha256: null }; },
+  ];
+  for (const change of changes) {
+    const f = fixture(({ release, locale }) => { if (locale === 'ko') change(release); });
+    const result = await loadPublishedWeeks(f.fetchImpl);
+    assert.deepEqual(Object.keys(result.weeks[0].contentVariants), ['zh-Hans', 'es']);
+    assert.equal(result.errors.length, 1);
+    assert.ok(!f.requests.includes(`/content/${pageId}/ko.json`));
   }
 });
 

@@ -167,6 +167,14 @@ public struct TargetLanguageReleasePackage: Codable, Sendable, Equatable {
         let devCandidate = allowDevCandidate && schemaVersion == Self.supportedSchemaVersion
             && status == "candidate" && httpVerification.status == "not_run"
         guard published || devCandidate else { throw CatalogError.invalid("目标语言发布包尚未通过所需发布状态") }
+        for acceptance in [httpVerification, deviceAcceptance, venueAcceptance] {
+            try acceptance.validate()
+        }
+        if devCandidate {
+            guard deviceAcceptance.status == "not_run", venueAcceptance.status == "not_run" else {
+                throw CatalogError.invalid("Dev 候选不能声明设备或现场验收")
+            }
+        }
         let assetKeys = assets.map { "\($0.role.rawValue):\($0.path)" }
         guard Set(assetKeys).count == assetKeys.count else { throw CatalogError.invalid("发布资产重复") }
         for asset in assets { try asset.validate() }
@@ -218,6 +226,12 @@ public struct ReleaseAsset: Codable, Sendable, Equatable {
 public struct ReleaseAcceptance: Codable, Sendable, Equatable {
     public let status: String
     public let evidenceSha256: String?
+
+    fileprivate func validate() throws {
+        guard ["not_run", "pass", "fail"].contains(status),
+              status == "not_run" ? evidenceSha256 == nil : evidenceSha256.map(Validation.sha256) == true
+        else { throw CatalogError.invalid("发布验收状态缺少匹配证据") }
+    }
 }
 
 private func secureURL(path: String, baseURL: URL) throws -> URL {

@@ -85,25 +85,46 @@ function validatedCues(cues, duration) {
   });
 }
 
-async function loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal) {
-  const target = page.targets[locale];
-  required(target?.contentStatus === 'human_reviewed' && target.audioStatus === 'human_reviewed'
-    && ['text', 'captions', 'audio'].every(capability => target.capabilities?.includes(capability)), 'Target is not ready for playback');
-  const release = await readJson(fetchImpl, target.releasePackageUrl, target.releasePackageJsonSha256, timeoutMs, false, pageSignal);
+// Shared contract fixtures exercise this same admission used by the loader.
+// This validates bound evidence, never creates human/device/venue acceptance.
+export function validatePublishedRelease(release, page, locale) {
   required(release.schemaVersion === 'sermon-target-language-release-package-v2'
     && release.pageId === page.id && release.targetLocale === locale && release.contentLocale === locale
     && release.audioLocale === locale && release.sourceLocale === 'en'
+    && typeof release.packageId === 'string' && release.packageId.length <= 160
+    && /^[A-Za-z0-9_-]+$/.test(release.packageId) && release.interfaceLocale === locale
+    && HASH.test(release.targetLanguageCandidateJsonSha256)
+    && HASH.test(release.spokenTargetLanguageCandidateJsonSha256)
+    && HASH.test(release.targetLanguageAudioPackageJsonSha256)
+    && Array.isArray(release.issues) && release.issues.length === 0
     && release.status === 'published_http_verified' && release.httpVerification?.status === 'pass'
     && release.contentStatus === 'human_reviewed' && release.audioStatus === 'human_reviewed', 'Invalid published release identity or status');
+  for (const name of ['httpVerification', 'deviceAcceptance', 'venueAcceptance']) {
+    const gate = release[name];
+    required(gate && ['not_run', 'pass', 'fail'].includes(gate.status)
+      && (gate.status === 'not_run' ? gate.evidenceSha256 === null : HASH.test(gate.evidenceSha256)),
+    'Invalid published acceptance evidence');
+  }
   const assets = {};
-  for (const role of ['content', 'captions', 'audio']) {
+  for (const role of ['page', 'content', 'captions', 'audio']) {
     const matches = release.assets?.filter(asset => asset.role === role) || [];
     required(matches.length === 1 && HASH.test(matches[0].sha256), `Invalid ${role} asset`);
     assets[role] = { ...matches[0], path: assetPath(matches[0].path) };
     const extension = role === 'audio' ? 'mp3' : 'json';
     const directory = role === 'audio' ? 'media' : role;
-    required(assets[role].path === `/${directory}/${page.id}/${locale}.${extension}`, 'Published asset identity mismatch');
+    const expected = role === 'page' ? `/pages/${page.id}/${locale}/index.html`
+      : `/${directory}/${page.id}/${locale}.${extension}`;
+    required(assets[role].path === expected, 'Published asset identity mismatch');
   }
+  return assets;
+}
+
+async function loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal) {
+  const target = page.targets[locale];
+  required(target?.contentStatus === 'human_reviewed' && target.audioStatus === 'human_reviewed'
+    && ['text', 'captions', 'audio'].every(capability => target.capabilities?.includes(capability)), 'Target is not ready for playback');
+  const release = await readJson(fetchImpl, target.releasePackageUrl, target.releasePackageJsonSha256, timeoutMs, false, pageSignal);
+  const assets = validatePublishedRelease(release, page, locale);
   const [content, captions] = await Promise.all([
     readJson(fetchImpl, assets.content.path, assets.content.sha256, timeoutMs, false, pageSignal),
     readJson(fetchImpl, assets.captions.path, assets.captions.sha256, timeoutMs, false, pageSignal),
