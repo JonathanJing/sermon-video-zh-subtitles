@@ -88,10 +88,11 @@ def plan(spec, *, input_identity, observations, approvals):
                    or not _sha(gate[g].get('receiptSha256'))]
         observed = observations.get(ident, {})
         state = {'identity': binding, 'status': 'human_gate' if missing else 'ready', 'missingGates': missing}
-        if isinstance(observed, dict) and observed.get('status') in {'running', 'uncertain', 'failed'}:
+        if isinstance(observed, dict) and observed.get('status') in {'queued', 'running', 'uncertain', 'failed'}:
             # Changed inputs cannot abandon an older job still needing review.
             state['status'] = ('reconciliation_required' if observed.get('identity') != binding else
-                               {'running': 'waiting_job', 'uncertain': 'reconciliation_required', 'failed': 'blocked'}[observed['status']])
+                               {'queued': 'waiting_job', 'running': 'waiting_job',
+                                'uncertain': 'reconciliation_required', 'failed': 'blocked'}[observed['status']])
         elif not missing and isinstance(observed, dict) and observed.get('identity') == binding:
             if observed.get('status') == 'validated' and _sha(observed.get('outputSha256')):
                 outputs[ident] = observed['outputSha256']
