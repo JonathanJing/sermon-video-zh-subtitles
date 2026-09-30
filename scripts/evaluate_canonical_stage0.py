@@ -25,7 +25,7 @@ SUITES = {
     'canonical_packages': ('tests.test_inspect_canonical_packages', 'tests.test_inspect_canonical_audio',
                            'tests.test_inspect_canonical_release', 'tests.test_canonical_pipeline_definition',
                            'tests.test_canonical_durable_jobs', 'tests.test_canonical_layer2_controller',
-                           'tests.test_canonical_layer2_reconciliation'),
+                           'tests.test_canonical_layer2_reconciliation', 'tests.test_canonical_layer2_cache_recovery'),
     'bounded_decision': ('tests.test_sermon_bounded_decision', 'tests.test_sermon_decision_budget',
                          'tests.test_sermon_decision_accounting'),
     'legacy_controller_reliability': ('tests.test_sermon_deterministic_controller', 'tests.test_controller_crash_windows',
