@@ -179,6 +179,25 @@ for i in range(3):
             invalid['rqcEvidence']['prompt']='private'
             self.assertFalse(contract.valid_event(invalid))
 
+    def test_direct_gate_observations_cannot_manufacture_admission(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            with profile.session(tmp,'synthetic',work_kind='production',evidence_mode='synthetic'):
+                with accounting.stage('rqc',work_unit_id='l2.zh-Hans.group.001',depends_on=[]):
+                    review.record(load('gate-waiting'))
+            rows,_=accounting.read_events(tmp)
+            event=next(r for r in rows if r['event']=='rqc_observation')
+            self.assertTrue(contract.valid_event(event))
+            forged=copy.deepcopy(event)
+            forged['rqcEvidence'].update(admissionStatus='admitted',allowedNextActions=['prepare_layer3'],
+                                         reasonCodes=['arbitrary_reason'])
+            self.assertFalse(contract.valid_event(forged))
+            forged['rqcEvidence']['reasonCodes']=['all_required_evidence_passed']
+            forged['rqcEvidence']['allowedNextActions']=['prepare_layer3','retry_review']
+            self.assertFalse(contract.valid_event(forged))
+            forged['rqcEvidence'].update(admissionStatus='waiting_human',allowedNextActions=['prepare_layer3'],
+                                         reasonCodes=['all_required_evidence_passed'])
+            self.assertFalse(contract.valid_event(forged))
+
     def test_legacy_session_stays_legacy_and_profile_cannot_mix_same_run(self):
         with tempfile.TemporaryDirectory() as tmp:
             with accounting.accounting_session(tmp,'legacy'):
