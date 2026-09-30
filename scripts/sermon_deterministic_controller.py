@@ -162,6 +162,8 @@ class Controller:
                 return self._result({'status': 'blocked', 'reasonCode': 'dispatch_outcome_unknown', 'action': name}, dispatched=None)
             saved['lastJob'] = {k: outcome.get(k) for k in ('jobId', 'status')}
             jobs._persist(state_path, saved)
+            if outcome['status'] in {'failed', 'uncertain'}:
+                return self._result({'status': 'blocked', 'reasonCode': 'durable_job_requires_reconciliation', 'action': name}, dispatched=None)
             # Job success alone never establishes a completed stage. The next
             # snapshot must verify its receipt/artifacts and advance admission.
             return self._result({'status': 'waiting', 'reasonCode': 'verify_durable_job_evidence', 'action': name},

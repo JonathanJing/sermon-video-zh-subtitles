@@ -151,6 +151,18 @@ class ControllerTests(unittest.TestCase):
             self.assertIs(result['dispatched'], False)
             self.assertEqual(result['reasonCode'], 'dispatch_not_admitted')
 
+    def test_failed_or_uncertain_durable_result_is_blocked_not_polled(self):
+        for status in ('failed', 'uncertain'):
+            with self.subTest(status=status), patch.object(ctrl.workflow, 'snapshot', return_value=snapshot('build_page')), \
+                 patch.object(ctrl.workflow, 'start_action', return_value={'status': status}) as start:
+                controller = self.controller(mode='deterministic_execute')
+                state_path = controller.root / 'controller-state.json'
+                if state_path.exists():
+                    state_path.unlink()
+                self.assertEqual(controller.tick()['reasonCode'], 'durable_job_requires_reconciliation')
+                self.assertEqual(controller.tick()['reasonCode'], 'intent_requires_reconciliation')
+                self.assertEqual(start.call_count, 1)
+
     def test_legacy_rollback_does_not_spawn_a_new_agent(self):
         with patch.object(ctrl.workflow, 'snapshot') as inspect, patch.object(ctrl.workflow, 'start_action') as start:
             self.assertEqual(self.controller(mode='legacy_agent').tick()['status'], 'legacy_handoff')
