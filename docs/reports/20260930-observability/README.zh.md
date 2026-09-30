@@ -4,7 +4,7 @@
 
 执行代码：`fd788ac8517d381d24bb1a834689e88bcfa4f6c7`，三个正常实际样本均在干净工作区运行。PR：[#161](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/161)。原始媒体、缓存、已有审批与音频未改；新候选仍是 human review pending。本文属于观测/汇总修复，未改变翻译策略、请求、渲染内容或拒绝条件。
 
-## 15:07 UTC 修复后的再次实际运行
+## 14:59–15:04 UTC 修复后的再次实际运行
 
 最新执行代码为 `ebaea29e857afba3bf6d6313ce9a8e3ccb8d66ec`，三条路径分别运行，均为干净代码。前一轮原始证据保留在下方，不能将新数据追认到旧 trace。
 
@@ -67,4 +67,6 @@ python scripts/weekly_pipeline_report.py \
 
 本轮无需新增费用批准。若要验证新付费 provider 的真实 request/response/usage telemetry，仍需单独获准的小额实际调用；这项窄缺口不阻塞本次离线日志对账。真实媒体分阶段及人工、设备、现场门槛继续保留。
 
-最终完整 Python 集成验证：本地快照 `cd08cdf350f6e0bf20620092e233dd09ba96746c`，2077 项 reported / 6 项 conditional skipped / 2071 项实际通过，见 [机器可读证据](integration-validation.json)。该快照包含至 #161 的全部 runtime 改动，没有合并到 dev/main。远端 draft iOS/contract jobs 的 skip 不算 native 验收。
+前一轮完整 Python 集成验证：本地快照 `cd08cdf350f6e0bf20620092e233dd09ba96746c`，2077 项 reported / 6 项 conditional skipped / 2071 项实际通过，见 [机器可读证据](integration-validation.json)。该快照包含至 #161 的全部 runtime 改动，没有合并到 dev/main。远端 draft iOS/contract jobs 的 skip 不算 native 验收。
+
+本次修复后的完整 Python 集成验证：干净本地快照 `a709561e5a8fa4ca5fe8df78cc2c2f9df7cd21e8`，**2084 reported / 2078 实际通过 / 6 条件 skipped**，见[精确快照与日志哈希](timing-rerun/integration-validation.json)。包含 #161 `3a5d8ce` 的全部改动；本报告之后仅增加证据，不追认发生过新的运行。原生、Web、API 源树与已完整测试的 `8f608a97` Git tree SHA 相同，未把旧测试算成新跑。

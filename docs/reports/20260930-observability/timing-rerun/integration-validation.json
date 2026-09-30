@@ -1,0 +1,58 @@
+{
+  "integrationCommit": "a709561e5a8fa4ca5fe8df78cc2c2f9df7cd21e8",
+  "includedPrHead": "3a5d8ce3ddfdf769b423a7165b9cf46fc9c5f48e",
+  "actualDiagnosticCodeCommit": "ebaea29e857afba3bf6d6313ce9a8e3ccb8d66ec",
+  "workingTreeClean": true,
+  "rootPython": [
+    {
+      "shard": 0,
+      "testsReported": 1013,
+      "actualPassed": 1007,
+      "conditionalSkips": 6,
+      "elapsedSeconds": 132.115,
+      "successful": true,
+      "reportSha256": "520a5c05481a0da20aeb2ebdd05bdc1ce5a2b04da02acba3ba8d409bd86ae68f",
+      "logSha256": "852a7870444da11adf6f45dc4d6e60a3ac1b097009c64bb002d42142ebc71eaa"
+    },
+    {
+      "shard": 1,
+      "testsReported": 1071,
+      "actualPassed": 1071,
+      "conditionalSkips": 0,
+      "elapsedSeconds": 160.005,
+      "successful": true,
+      "reportSha256": "0a75ccba88c71491003626016c286a02ef534d1797f7cd45a97e7789edf1ba0d",
+      "logSha256": "f2b0c17a040cdeb1ca3cd5d0eab9d3b02bace591007648579d87659329043410"
+    }
+  ],
+  "testsReported": 2084,
+  "actualPassed": 2078,
+  "conditionalSkips": 6,
+  "consumerTreeBinding": {
+    "integrationCommit": "a709561e5a8fa4ca5fe8df78cc2c2f9df7cd21e8",
+    "testedConsumerBaseline": "8f608a9733f8928b654084e95046200e6e2ae43b",
+    "trees": [
+      {
+        "path": "apps/tongxing-ios",
+        "baselineTree": "91a37c7c0e1154af1b5a6ec61fd68d4efc1af5c2",
+        "integrationTree": "91a37c7c0e1154af1b5a6ec61fd68d4efc1af5c2",
+        "identical": true
+      },
+      {
+        "path": "experiments/sermon-dubbing-poc/web",
+        "baselineTree": "1ed50ab0a21ebcd8c86a73fb57c35f4e09648d03",
+        "integrationTree": "1ed50ab0a21ebcd8c86a73fb57c35f4e09648d03",
+        "identical": true
+      },
+      {
+        "path": "experiments/sermon-dubbing-poc/feedback-api",
+        "baselineTree": "13cdef54bd1150546649f0d8c776e10a216ed283",
+        "integrationTree": "13cdef54bd1150546649f0d8c776e10a216ed283",
+        "identical": true
+      }
+    ],
+    "meaning": "Identical source trees, not a repeat of native/Web tests on the new integration commit."
+  },
+  "noMergeOrDeploy": true,
+  "stage1PromotionAllowed": false
+}
