@@ -13,26 +13,111 @@
 
 Help Chinese-speaking attendees follow an English sermon. The featured direction is **Chinese dubbing prepared on Saturday for playback against the same video on Sunday**: reviewed source text, authorized speaker-reference speech synthesis, MP3 audio, timed Chinese captions, and a sermon companion. Dual-PDF production and local live captions remain separate workflows.
 
-> **Production site as of 2026-09-25.** The [Firebase listening app](https://ai-for-god-sermon-audio.web.app/) now offers separate Chinese, English, Korean, and Spanish interface choices. Its nine published weeks still contain Chinese content only; English, Korean, and Spanish content choices are disabled as unpublished. The two reviewed September 20 trilingual POC clips remain on Dev and are absent from Production. This was a UI-only release: prior media bytes were preserved, and post-deployment HTTP/SHA and MP3 Range checks passed. Physical-device and venue acceptance have not run. See the [Firebase release record and backlog (中文)](docs/multilingual-firebase-release-backlog-2026-09-24.zh.md). Full weekly media, audio and PDFs stay outside Git.
+> **Historical release snapshot, 2026-09-25.** The [Firebase listening app](https://ai-for-god-sermon-audio.web.app/) now offers separate Chinese, English, Korean, and Spanish interface choices. Its nine published weeks still contain Chinese content only; English, Korean, and Spanish content choices are disabled as unpublished. The two reviewed September 20 trilingual POC clips remain on Dev and are absent from Production. This was a UI-only release: prior media bytes were preserved, and post-deployment HTTP/SHA and MP3 Range checks passed. Physical-device and venue acceptance have not run. See the [Firebase release record and backlog (中文)](docs/multilingual-firebase-release-backlog-2026-09-24.zh.md). Full weekly media, audio and PDFs stay outside Git.
 
 > This is an independent personal open-source project. It is not affiliated with, endorsed by, sponsored by, approved by, or operated by Mariners Church. Use only public or otherwise authorized media, and do not bypass access controls, DRM, or platform restrictions.
 
+## Architecture and design map
+
+The product direction is **native iOS as the primary listening client, with Firebase Web as the secondary access path**. This priority does not imply iOS feature parity, completed distribution, or venue acceptance. The existing UI design and dated implementation records remain authoritative.
+
+| Design area | Start here | What it covers |
+|---|---|---|
+| App design | [Client system design (中文)](docs/app-system-design.zh.md) → [existing iOS UI design](apps/tongxing-ios/DESIGN.zh.md) | Native/Web responsibilities, package readers, playback, offline storage and acceptance limits |
+| Backend workflow | [Bilingual DAG and implementation map](docs/backend-workflow-system-design.zh-en.md) | Four layers, independent locales, review/gate roles and bounded new revisions |
+| Execution environments | [Local/cloud/CI architecture (中文)](docs/execution-environment-design.zh.md) | MacBook, optional Spark, model APIs, storage, Firebase, CI and explicit release boundaries |
+| Experiment directions | [Questions, scope, status, evidence and exit criteria (中文)](docs/experiment-directions.zh.md) | Existing ASR, translation, review, prosody, voice, orchestration and device experiments |
+
+**Repository evidence as of 2026-09-30:** the [September 27 release record](docs/sep27-full-video-app-layer4.zh.md) documents Chinese, Korean and Spanish publication; the [September 28 migration record](docs/reports/20260928-full-video-bucket-migration.zh.md) records full-video delivery through a separate media bucket. The September 25 screenshots below remain dated examples. This documentation update did not recheck live deployment or device acceptance.
+
 ## Four-layer production architecture: shared English source to multilingual playback
 
-The production pipeline has four layers: **Shared English Source & Anchors → Target-Language Text → Target-Language Audio & Synchronization → Multilingual Delivery & Playback**. Each layer has its own deliverable and acceptance gate; passing one layer does not imply that the next layer has passed. Production currently publishes Chinese content only. Korean and Spanish passed review in the Dev clip POC, while future full weekly editions still require separate text, audio, and release acceptance for each locale.
+The production pipeline has four layers: **Shared English Source & Anchors → Target-Language Text → Target-Language Audio & Synchronization → Multilingual Delivery & Playback**. Each layer has its own deliverable and acceptance gate; passing one layer does not imply that the next layer has passed. The September 27 record documents a three-language release; every new edition still needs separate text, audio, and release acceptance for each locale. The DAG below describes the required package dependencies, not a claim that a generic controller already executes the entire pipeline.
 
 | Layer | Responsibility | Model and program roles | Deliverable and acceptance gate |
 |---|---|---|---|
 | 1. Shared English Source & Anchors | Lock the source and sermon window, recover the complete English, align words to source audio, then establish stable sentence, clause, punctuation and pause anchors | `gpt-transcribe` or a trustworthy manuscript supplies text; MFA, Qwen ForcedAligner and other candidates supply acoustic word locations; an LLM may review text, punctuation and sentence boundaries but must not invent timestamps | `English Source Package`: immutable anchors, word times, provenance, hashes and coverage evidence |
-| 2. Target-Language Text | Translate directly from English anchors, preserving every unit and checking negation, causality, Scripture, names, numbers and terminology | The current Chinese path uses GPT/Astra-class translation plus an independent review pass; each future locale selects its own translator, reviewer, prompts and terminology | `Target-Language Candidate`: target text, exact English-anchor coverage, model receipts and independent review state |
+| 2. Target-Language Text | Translate directly from English anchors, preserving every unit and checking negation, causality, Scripture, names, numbers and terminology | The current Layer 2 policy uses Astra translation and a separate Sol reviewer-editor request; language plugins and human approval remain separate, and the planned read-only reviewer is not yet this runner | `Target-Language Candidate`: target text, exact English-anchor coverage, model receipts and independent review state |
 | 3. Target-Language Audio & Synchronization | Generate natural-rate speech from approved text, measure actual duration and schedule it against English clauses and pauses | Qwen3-TTS and similar speech models synthesize audio; Qwen3-ASR-style back-transcription is a machine screen only; a deterministic scheduler owns duration, gaps and timeline placement, followed by complete human listening | `Target-Language Audio Package`: audio, captions, schedule, screening and listening state |
 | 4. Multilingual Delivery & Playback | Bind the correct video, text, audio, captions, page and language selectors, then deploy, download and play them on supported clients | Page builders, FFmpeg, Firebase, Web/iOS clients and validators deliver artifacts; a Supervisor/Agent orchestrates state but does not replace content truth or human acceptance | `Target-Language Release Package`: locale-isolated assets, hashes, HTTP/download checks and player verification |
 
-![Four-layer multilingual production with per-layer process, models, outputs and gates](docs/diagrams/four-layer-production-workflow.svg)
+![Four-layer production DAG](docs/diagrams/architecture-dag-en.svg)
+
+<details>
+<summary>Mermaid source / 可编辑拓扑源</summary>
+
+```text
+flowchart TB
+    SRC["L1 English Source + Anchors<br/>Frozen identity, hashes, provenance and review"]
+    SRC --> ZT["L2 zh-Hans Text<br/>Locale review + human approval"]
+    SRC --> KT["L2 ko Text<br/>Locale review + human approval"]
+    SRC --> ET["L2 es Text<br/>Locale review + human approval"]
+    ZT --> ZA["L3 zh-Hans Audio Package<br/>human_reviewed<br/>or explicit audio_unavailable"]
+    KT --> KA["L3 ko Audio Package<br/>human_reviewed<br/>or explicit audio_unavailable"]
+    ET --> EA["L3 es Audio Package<br/>human_reviewed<br/>or explicit audio_unavailable"]
+    ZA --> ZR["L4 zh-Hans Release Package<br/>Bound hashes + page approval"]
+    KA --> KR["L4 ko Release Package<br/>Bound hashes + page approval"]
+    EA --> ER["L4 es Release Package<br/>Bound hashes + page approval"]
+    ZR --> PLAN["Selected locales only, per release plan<br/>Text-only needs client capability"]
+    KR --> PLAN
+    ER --> PLAN
+    PLAN --> AUTH["Release authorization + target check"]
+    AUTH --> HTTP["Deploy + HTTP and hash verification"]
+    HTTP --> CLIENT["iOS primary, Web secondary<br/>Separate device and venue acceptance"]
+```
+
+</details>
+
+Every locale must pass through **L3 Audio Package**, including explicit `audio_unavailable` when its release plan permits text-only delivery. The selected-locale join does not require all three languages unless the release plan says so. Source changes invalidate all locales; text/audio changes invalidate only that locale’s descendants. Existing text-only readers and catalog validation do not establish support in every producer; see the [implementation map](docs/backend-workflow-system-design.zh-en.md#实际实现地图--implementation-map).
+
+The earlier [four-layer SVG](docs/diagrams/four-layer-production-workflow.svg) is a dated September 25 model/process overview; the DAG above is the maintained dependency view.
 
 The release diagram separates **content review, Git promotion, and Firebase deployment**. Reviewed Dev clips do not automatically appear in Production, and merging code to `main` does not publish a new weekly edition.
 
 ![Dev review, main promotion, and Firebase Production release gates](docs/diagrams/firebase-release-flow.svg)
+
+### Planned generation, review and bounded repair DAG
+
+**Planned:** PR164’s [design snapshot](https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/fb0da4903717be3844e8114a44c7fcb46d5c9f35/docs/generation-review-gate-design.zh.md) separates immutable generation, independent read-only review and a deterministic gate. At the inspected `dev@fc3e2fb` baseline, the [L2 runner](scripts/run_target_language_models.py) still allows Sol to edit text; the [fixed L2 controller](docs/canonical-layer2-controller.zh.md) stops at human review. Strict-verifier receipts and automatic repair integration are pending, and the full four-layer controller is incomplete. The in-flight [PR165 D1 private contracts](https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/f731e98863761366836787bab56a5d61a77c281d/docs/rqc-private-contracts.zh.md) add schemas and explicit policy parsing on a separate unmerged branch; they do not yet execute strict review, gate admission or repairs.
+
+![Planned generation, review and repair](docs/diagrams/review-revision-dag-en.svg)
+
+<details>
+<summary>Mermaid source / 可编辑拓扑源</summary>
+
+```text
+flowchart TB
+    F["PLANNED: strict workflow<br/>Frozen source, policy and rubric"]
+    F --> G1["Generate immutable r1"]
+    G1 --> P1["Deterministic precheck r1"]
+    P1 -->|"valid"| R1["Independent read-only review r1"]
+    R1 --> Q1["Deterministic gate r1"]
+    P1 -->|"invalid"| B1["Bounded repair plan 1"]
+    Q1 -->|"needs_rework"| B1
+    B1 --> G2["Generate immutable r2"]
+    G2 --> P2["Deterministic precheck r2"]
+    P2 -->|"valid"| R2["Independent read-only re-review r2"]
+    R2 --> Q2["Deterministic gate r2"]
+    P2 -->|"invalid"| B2["Bounded repair plan 2"]
+    Q2 -->|"needs_rework"| B2
+    B2 --> G3["Generate immutable r3"]
+    G3 --> P3["Deterministic precheck r3"]
+    P3 -->|"valid"| R3["Independent read-only re-review r3"]
+    R3 --> Q3["Deterministic gate r3"]
+    P3 -->|"invalid"| STOP["Stop and escalate with evidence"]
+    Q3 -->|"needs_rework"| STOP
+    Q1 -->|"machine pass"| H["Whole-locale aggregation + human gate"]
+    Q2 -->|"machine pass"| H
+    Q3 -->|"machine pass"| H
+    H -->|"matching receipt"| L3["Admit this locale to L3"]
+    H -->|"pending"| WAIT["Durable wait"]
+    classDef planned fill:#fff4d6,stroke:#8a5a00,color:#202020;
+    class F,G1,P1,R1,Q1,B1,G2,P2,R2,Q2,B2,G3,P3,R3,Q3,STOP,H,L3,WAIT planned;
+```
+
+</details>
+
+This expands one locale/work unit into new revisions without cycles. Two repairs after r1 are a proposed experimental cap, not an implemented budget. Gates bind the exact candidate, source, policy, rubric, coverage and approval receipts. Execution failure may resume review of the same frozen candidate; unknown outcomes require reconciliation, and inconclusive evidence waits for resolution. Machine pass still requires whole-locale human approval before formal L3. See the [bilingual design](docs/backend-workflow-system-design.zh-en.md) for failure routes, current code and remaining limits.
 
 ### Production app screenshots
 
@@ -71,7 +156,7 @@ operator page in standby, and report the effective model and preflight results.
 
 ## 1. Featured: English sermon video → Chinese dubbing in the speaker’s voice
 
-[Listening app](https://ai-for-god-sermon-audio.web.app) · [System design and model choices (中文)](docs/sermon-dubbing-system-design.zh.md) · [Operator runbook](experiments/sermon-dubbing-poc/SATURDAY_AUDIO_RUNBOOK.zh.md) · [This week’s production record (中文)](docs/production-2026-09-20.zh.md)
+[Listening app](https://ai-for-god-sermon-audio.web.app) · [System design and model choices (中文)](docs/sermon-dubbing-system-design.zh.md) · [Operator runbook](experiments/sermon-dubbing-poc/SATURDAY_AUDIO_RUNBOOK.zh.md) · [September 20 production record (中文)](docs/production-2026-09-20.zh.md)
 
 ![Parallel source routes, speaker training, Chinese audio review and Sunday playback](docs/diagrams/saturday-chinese-voice-workflow.svg)
 
@@ -85,7 +170,7 @@ operator page in standby, and report the effective model and preflight results.
 | Audio checks and timing | Local Qwen3-ASR back-transcription, ForcedAligner acoustic anchors, and measured natural speech budgets |
 | Listening delivery | Dedicated Firebase app with weekly selection, MP3 downloads, captions, outline, seeking and fine adjustment |
 
-**Current edition:** [Jesus promises — September 20](https://ai-for-god-sermon-audio.web.app/?week=2026-09-20-same_video-7c193fd4-bc90-4f3b-aa00-37dfe8423aa0), Eric Geiger, Revelation 2–3. Source-bound Chinese review, exact CUV quotation locks, local speech synthesis and measured timing were followed by pronunciation repairs and user listening acceptance. Firebase and iOS playback were accepted by the user; the [production record](docs/production-2026-09-20.zh.md) keeps stage timing, token accounting and evidence boundaries.
+**Documented September 20 edition:** [Jesus promises — September 20](https://ai-for-god-sermon-audio.web.app/?week=2026-09-20-same_video-7c193fd4-bc90-4f3b-aa00-37dfe8423aa0), Eric Geiger, Revelation 2–3. Source-bound Chinese review, exact CUV quotation locks, local speech synthesis and measured timing were followed by pronunciation repairs and user listening acceptance. Firebase and iOS playback were accepted by the user; the [production record](docs/production-2026-09-20.zh.md) keeps stage timing, token accounting and evidence boundaries.
 
 **Default weekly poster:** after publication and HTTP verification, Codex creates ImageGen artwork and composes catalog text plus a real QR code for the exact weekly-page link. Final PNG and sharing-preview decoding and visual QA are required. This is a delivery step; the scheduled Supervisor does not automatically call ImageGen, upload or send the poster. See the [weekly release procedure](docs/tongxing-weekly-release.zh.md#每周海报交付).
 
@@ -197,6 +282,8 @@ Training and quality acceptance remain separate from the operator workflow:
 Detailed architecture, provider comparisons, cloud experiments, historical realtime prototypes, and deployment notes are indexed in the [documentation index](docs/README.md). The completed experiment boundaries are summarized below.
 
 ## 4. 已做实验与 A/B：不同方向的边界探索
+
+[实验方向索引：问题、范围、状态、证据与退出门槛](docs/experiment-directions.zh.md)补充导航；下表保留原有中文实测摘要。
 
 下表只列已实际运行的比较或 POC。它们使用的音频、文本、设备和评价方式不同，不能合并成一张“最佳模型”排行榜。机器参考、模型裁判、文件回放、浏览器事件和人工听审分别是不同等级的证据。
 

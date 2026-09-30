@@ -1,5 +1,7 @@
 # 证道视频中文字幕 Pipeline System Design
 
+当前架构导航：[App](app-system-design.zh.md) · [Backend DAG / 后端工作流](backend-workflow-system-design.zh-en.md) · [Execution environments / 执行环境](execution-environment-design.zh.md) · [Experiments / 实验方向](experiment-directions.zh.md)。
+
 > **历史 / Discovery 快照。** 这份 Cloud 导向设计保留作研究背景，不是当前 operator 架构。当前状态见[工作流 source of truth](./workflows/README.zh.md)和[本地 live POC](../experiments/local-live-poc/README.md)。
 
 English version: [system-design.md](./system-design.md)

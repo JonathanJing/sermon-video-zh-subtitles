@@ -1,4 +1,5 @@
 import copy
+from datetime import datetime, timedelta
 import json
 import os
 from pathlib import Path
@@ -41,6 +42,22 @@ class ClockDomainTests(unittest.TestCase):
                 self.assertEqual(int(stage['endTimeUnixNano'])-int(stage['startTimeUnixNano']),2_000_000_000)
                 attrs={a['key']:a['value'] for a in stage['attributes']}
                 self.assertEqual(attrs['sermon.exportEndTimeBasis'],{'stringValue':'monotonic_anchored_estimate'})
+
+    def test_clock_jump_between_spans_invalidates_wall_without_losing_local_work(self):
+        for delta in (30, -30):
+            with self.subTest(delta=delta):
+                source=self.fixture()
+                for row in source.rows:
+                    if row.get('spanId') in {'ko','zh','join'} or row['event']=='run_finished':
+                        for key in ('recordedAt','startedAt'):
+                            if key in row: row[key]=(datetime.fromisoformat(row[key])+timedelta(seconds=delta)).isoformat()
+                run=source.result()['runs'][0]
+                self.assertIsNone(run['endToEndWallSeconds'])
+                self.assertIn('utc_clock_discontinuity_between_spans',run['diagnostics'])
+                self.assertEqual(run['leafElapsedByExecutor']['production_model'],8)
+                self.assertEqual(run['leafElapsedByExecutor']['deterministic_program'],3)
+                self.assertEqual(len(run['workUnits']),4)
+                self.assertIsNone(run['criticalPath'])
 
     def test_mismatched_domain_and_forged_duration_are_not_trusted(self):
         for field,value in [('clockDomainId','b'*32),('monotonicEndNs','1'),('elapsedSeconds',50)]:

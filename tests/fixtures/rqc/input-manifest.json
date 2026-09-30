@@ -1,0 +1,60 @@
+{
+  "schemaVersion": "sermon-review-input-manifest-v1",
+  "candidateId": "synthetic-candidate",
+  "revisionId": "r1",
+  "targetLocale": "zh-Hans",
+  "workUnitIds": [
+    "l2.zh-Hans.group.001"
+  ],
+  "sourceIdentitySha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "sourcePackageSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+  "anchorSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+  "policySha256": "4444444444444444444444444444444444444444444444444444444444444444",
+  "reviewedArtifactSha256": "cf10cf7f8396b01c9c00758e03b1d87bd63420c51b5d845c0e6c536878e80db0",
+  "rubricSha256": "bab7ce24b27e69770b641152e28ea37f09126b1ea2bbc8ed182b6e05224c1533",
+  "reviewerPromptVersion": "sol-strict-verifier-v1",
+  "sourceUnitIds": [
+    "source.001"
+  ],
+  "contextSourceUnitIds": [],
+  "materialRefs": {
+    "candidate": {
+      "artifactId": "candidate",
+      "canonicalJsonSha256": "cf10cf7f8396b01c9c00758e03b1d87bd63420c51b5d845c0e6c536878e80db0",
+      "fileBytesSha256": "3b69519bfea309746a49530eee744c09dbc30407a154c384316194d0ac2a584c",
+      "mediaType": "application/json"
+    },
+    "englishSource": {
+      "artifactId": "englishSource",
+      "canonicalJsonSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+      "fileBytesSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+      "mediaType": "application/json"
+    },
+    "anchor": {
+      "artifactId": "anchor",
+      "canonicalJsonSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+      "fileBytesSha256": "6666666666666666666666666666666666666666666666666666666666666666",
+      "mediaType": "application/json"
+    },
+    "policy": {
+      "artifactId": "policy",
+      "canonicalJsonSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+      "fileBytesSha256": "7777777777777777777777777777777777777777777777777777777777777777",
+      "mediaType": "application/json"
+    },
+    "rubric": {
+      "artifactId": "rubric",
+      "canonicalJsonSha256": "bab7ce24b27e69770b641152e28ea37f09126b1ea2bbc8ed182b6e05224c1533",
+      "fileBytesSha256": "0000000000000000000000000000000000000000000000000000000000000072",
+      "mediaType": "application/json"
+    },
+    "context": {
+      "artifactId": "context",
+      "canonicalJsonSha256": "000000000000000000000000000000000000000000000000000000000000000f",
+      "fileBytesSha256": "0000000000000000000000000000000000000000000000000000000000000073",
+      "mediaType": "application/json"
+    }
+  },
+  "generatorSelfAssessmentIncluded": false,
+  "parentConversationIncluded": false
+}

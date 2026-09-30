@@ -1,0 +1,42 @@
+{
+  "schemaVersion": "sermon-review-repair-plan-v1",
+  "repairPlanId": "synthetic-repair",
+  "triggerReviewId": "synthetic-failed-review",
+  "triggerReceiptSha256": "3d2836bc27a09cc57c12b3d3c9739b722f649c32bc73e6b0b93412a1b48ff192",
+  "sourceIdentitySha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "sourcePackageSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+  "anchorSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+  "policySha256": "4444444444444444444444444444444444444444444444444444444444444444",
+  "rubricSha256": "bab7ce24b27e69770b641152e28ea37f09126b1ea2bbc8ed182b6e05224c1533",
+  "candidateId": "synthetic-candidate",
+  "targetLocale": "zh-Hans",
+  "fromRevisionId": "r1",
+  "toRevisionId": "r2",
+  "affectedWorkUnitIds": [
+    "l2.zh-Hans.group.001"
+  ],
+  "dependencyClosureRef": {
+    "artifactId": "closure",
+    "canonicalJsonSha256": "0000000000000000000000000000000000000000000000000000000000000020",
+    "fileBytesSha256": "0000000000000000000000000000000000000000000000000000000000000084",
+    "mediaType": "application/json"
+  },
+  "reasonCodes": [
+    "meaning_omission"
+  ],
+  "repairAction": "repair_translation",
+  "constraintsRef": {
+    "artifactId": "constraints",
+    "canonicalJsonSha256": "0000000000000000000000000000000000000000000000000000000000000021",
+    "fileBytesSha256": "0000000000000000000000000000000000000000000000000000000000000085",
+    "mediaType": "application/json"
+  },
+  "budgetRef": {
+    "artifactId": "budget",
+    "canonicalJsonSha256": "0000000000000000000000000000000000000000000000000000000000000022",
+    "fileBytesSha256": "0000000000000000000000000000000000000000000000000000000000000086",
+    "mediaType": "application/json"
+  },
+  "stateRevision": "8888888888888888888888888888888888888888888888888888888888888888",
+  "createdAt": "2026-09-30T00:00:00Z"
+}

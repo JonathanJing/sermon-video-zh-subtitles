@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-review-rubric-v1.schema.json",
+  "title": "sermon-review-rubric-v1",
+  "$defs": {
+    "label": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.:-]{1,100}(?![\\s\\S])"
+    },
+    "hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}(?![\\s\\S])"
+    },
+    "utc": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d(?:\\.\\d{1,6})?Z(?![\\s\\S])"
+    },
+    "evidenceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "artifactId": {
+          "$ref": "#/$defs/label"
+        },
+        "canonicalJsonSha256": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/hash"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "fileBytesSha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "mediaType": {
+          "enum": [
+            "application/json",
+            "text/plain",
+            "audio/wav",
+            "audio/mpeg"
+          ]
+        }
+      },
+      "required": [
+        "artifactId",
+        "canonicalJsonSha256",
+        "fileBytesSha256",
+        "mediaType"
+      ]
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": "sermon-review-rubric-v1"
+    },
+    "rubricId": {
+      "$ref": "#/$defs/label"
+    },
+    "rubricVersion": {
+      "$ref": "#/$defs/label"
+    },
+    "targetLocale": {
+      "enum": [
+        "zh-Hans",
+        "ko",
+        "es"
+      ]
+    },
+    "requiredChecks": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "completeMeaning",
+          "negationsNumbersNames",
+          "quotationAttribution",
+          "noAddedMeaning"
+        ]
+      },
+      "uniqueItems": true,
+      "maxItems": 4,
+      "minItems": 4
+    },
+    "allUnresolvedConcernsBlock": {
+      "const": true
+    },
+    "requiredLanguagePluginChecks": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/label"
+      },
+      "uniqueItems": true,
+      "maxItems": 64,
+      "minItems": 1
+    },
+    "createdAt": {
+      "$ref": "#/$defs/utc"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "rubricId",
+    "rubricVersion",
+    "targetLocale",
+    "requiredChecks",
+    "allUnresolvedConcernsBlock",
+    "requiredLanguagePluginChecks",
+    "createdAt"
+  ]
+}
