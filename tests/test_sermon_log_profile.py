@@ -58,6 +58,81 @@ class ProfileWriterTests(unittest.TestCase):
             self.assertEqual(contract.replay_integrity(rows)['equivalentDuplicatesIgnored'],1)
             self.assertEqual(weekly.project(tmp)['duplicateEventsIgnored'],1)
 
+    def test_postappend_replay_preserves_summary_stage_and_review_totals(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            with profile.session(tmp,'synthetic',work_kind='production',evidence_mode='synthetic'):
+                with accounting.stage('rqc',work_unit_id='l2.zh-Hans.group.001',depends_on=[]):
+                    review.record(load('review-fail'))
+            baseline=accounting.summarize(tmp)
+            rows,_=accounting.read_events(tmp)
+            replayed=[e for e in rows if e['event'] in {'stage_finished','rqc_observation'}]
+            original=Path.unlink
+            def fail(path,*args,**kwargs):
+                if path.parent.name=='.pending-events':raise OSError('fault')
+                return original(path,*args,**kwargs)
+            for event in replayed:
+                with patch.object(Path,'unlink',fail),self.assertRaises(OSError):outbox.deliver(tmp,event)
+            self.assertEqual(outbox.replay_pending(tmp)['replayedEvents'],len(replayed))
+            result=accounting.summarize(tmp)
+            self.assertEqual(result['stages'],baseline['stages'])
+            self.assertEqual(result['reviewObservations'],baseline['reviewObservations'])
+            self.assertEqual(result['eventIntegrity']['equivalentDuplicatesIgnored'],2*len(replayed))
+            for report in (weekly.project(tmp)['runs'][0],otlp.export(tmp)[1]):
+                self.assertEqual(report['reviewObservations'],baseline['reviewObservations'])
+            safe.export(Path(tmp),Path(tmp)/'safe')
+            self.assertEqual(accounting.summarize(Path(tmp)/'safe')['stages'],baseline['stages'])
+            # Replay of an unfinished API start must produce one unknown attempt.
+            with profile.session(Path(tmp)/'unknown','synthetic',work_kind='production',evidence_mode='synthetic'):
+                with profile.context(logicalCallId='review.unknown',attemptNumber=1,role='quality_review'):
+                    with accounting.stage('call',depends_on=[]):accounting.record_api_started('gpt-6-sol')
+            starts,_=accounting.read_events(Path(tmp)/'unknown')
+            outbox.deliver(Path(tmp)/'unknown',next(e for e in starts if e['event']=='api_attempt_started'))
+            unknown=accounting.summarize(Path(tmp)/'unknown')
+            self.assertEqual(len(unknown['unfinishedApiAttempts']),1)
+            self.assertEqual(unknown['stages'][0]['apiAttempts'],1)
+
+    def test_legacy_append_rechecks_profile_after_competing_writer(self):
+        import threading
+        with tempfile.TemporaryDirectory() as tmp:
+            event=fixture('stage-start');checked=threading.Event();written=threading.Event()
+            original=profile.reject_downgrade;checks=[];errors=[]
+            def blocked(directory,run_id):
+                original(directory,run_id);checks.append(True)
+                if len(checks)==1:
+                    checked.set()
+                    if not written.wait(5):raise RuntimeError('test_writer_timeout')
+            def legacy():
+                token=accounting._identity.set((tmp,event['runId']))
+                try:accounting._write_event({'event':'log','code':'legacy','level':'INFO'})
+                except Exception as exc:errors.append(exc)
+                finally:accounting._identity.reset(token)
+            with patch.object(profile,'reject_downgrade',blocked):
+                thread=threading.Thread(target=legacy);thread.start()
+                try:
+                    self.assertTrue(checked.wait(5));outbox.deliver(tmp,event)
+                finally:written.set();thread.join(5)
+            self.assertFalse(thread.is_alive());self.assertEqual(len(errors),1)
+            self.assertIn('profile_run_requires_propagated_context',str(errors[0]))
+            self.assertEqual(accounting.read_events(tmp)[0],[event])
+
+    def test_all_profile_terminal_states_survive_all_readers(self):
+        for state in ('cancelled','outcome_unknown'):
+            with self.subTest(state=state),tempfile.TemporaryDirectory() as tmp:
+                with profile.session(tmp,'synthetic',work_kind='production',evidence_mode='synthetic'):
+                    with accounting.stage('rqc',work_unit_id='l2.zh-Hans.group.001',depends_on=[]):
+                        review.record(load('review-fail'))
+                rows,_=accounting.read_events(tmp)
+                for event in rows:
+                    if event['event']=='stage_finished' and event['stage']=='rqc':event['status']=state
+                Path(tmp,'events.jsonl').write_text(''.join(json.dumps(e)+'\n' for e in rows))
+                expected=review.observations(rows)
+                trace,report=otlp.export(tmp)
+                spans=[sp for resource in trace['resourceSpans'] for scope in resource['scopeSpans'] for sp in scope['spans']]
+                target=next(e for e in rows if e['event']=='stage_started' and e['stage']=='rqc')
+                self.assertTrue(any(sp['spanId']==otlp.span_id((target['runId'],'stage',target['spanId'])) for sp in spans))
+                for result in (accounting.summarize(tmp),weekly.project(tmp)['runs'][0],report):
+                    self.assertEqual(result['reviewObservations'],expected)
+
     def test_folder_persistence_precedes_intent_and_ledger_ack(self):
         with tempfile.TemporaryDirectory() as tmp:
             timeline=[];sync=outbox.jobs._sync_directory_ancestry;persist=outbox.jobs._persist;append=outbox._append
