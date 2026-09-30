@@ -367,7 +367,7 @@ def stage(name, *, cache_hit=False, billing="local", executor_type=None,
     outcome = "completed"
     error = None
     try:
-        yield
+        yield span_id
     except BaseException as exc:
         outcome, error = "failed", exc
         raise

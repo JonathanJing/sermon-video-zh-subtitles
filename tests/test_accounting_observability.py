@@ -117,6 +117,18 @@ class ObservabilityTests(unittest.TestCase):
             for executor in accounting.EXECUTOR_TYPES:
                 self.assertEqual(actual[executor], executor)
 
+    def test_stage_yields_exact_attempt_span_for_downstream_dependencies(self):
+        with tempfile.TemporaryDirectory() as t:
+            with accounting.accounting_session(t, 'test'):
+                with accounting.stage('source') as source_span:
+                    self.assertIsInstance(source_span, str)
+                with accounting.stage('downstream', depends_on=[source_span]):
+                    pass
+            events, damaged = accounting.read_events(t)
+            row = next(e for e in events if e['event'] == 'stage_started' and e['stage'] == 'downstream')
+            self.assertEqual(row['dependsOn'], [source_span])
+            self.assertFalse(damaged)
+
     def test_stage_rejects_unbounded_or_unsafe_dependency_data(self):
         with self.assertRaises(ValueError):
             with accounting.stage('translate', depends_on=['contains private text']):
