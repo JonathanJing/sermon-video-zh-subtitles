@@ -185,8 +185,10 @@ def validate_candidate_artifact(manifest, artifact_bytes):
     require(manifest['artifactBytesSha256'] == bytes_sha256(artifact_bytes)
             and manifest['artifactSha256'] == canonical_sha256(artifact), 'candidate_artifact_hash_mismatch')
     require(type(artifact) is dict and set(artifact) == {'translationGroupId','sourceUnitIds','targetUtterances','coverage'}, 'invalid_frozen_group_artifact')
+    require(type(artifact['translationGroupId']) is str and
+            re.fullmatch(r'[A-Za-z0-9_.:-]{1,100}', artifact['translationGroupId']) is not None, 'invalid_translation_group_id')
     require(artifact['sourceUnitIds'] == manifest['sourceUnitIds'] and
-            manifest['workUnitIds'] == ['l2.' + manifest['targetLocale'] + '.' + str(artifact['translationGroupId'])], 'candidate_group_scope_mismatch')
+            manifest['workUnitIds'] == ['l2.' + manifest['targetLocale'] + '.' + artifact['translationGroupId']], 'candidate_group_scope_mismatch')
     texts = artifact['targetUtterances']
     require(type(texts) is list and 1 <= len(texts) <= 64 and
             all(type(text) is str and text.strip() and len(text) <= 16384 for text in texts), 'invalid_candidate_utterances')
@@ -249,14 +251,23 @@ def validate_repair_binding(plan, review, candidate):
 
 def validate_revision_lineage(candidate, parent=None, repair=None):
     validate_contract(candidate)
+    require(candidate['schemaVersion'] == 'sermon-candidate-revision-v1', 'expected_candidate_revision')
     if candidate['revisionNumber'] == 1:
         require(parent is None and repair is None, 'initial_revision_has_parent')
         return
     require(parent is not None and repair is not None, 'revision_lineage_receipts_missing')
     validate_contract(parent); validate_contract(repair)
+    require(parent['schemaVersion'] == 'sermon-candidate-revision-v1' and
+            repair['schemaVersion'] == 'sermon-review-repair-plan-v1', 'wrong_revision_lineage_contract_types')
+    for key in ('candidateId','targetLocale','sourceIdentitySha256','sourcePackageSha256','anchorSha256','policySha256'):
+        require(repair[key] == parent[key] == candidate[key], 'revision_repair_object_binding_mismatch')
+    # Initial rollout revisions and plans are scoped to exactly one translation group.
+    require(set(repair['affectedWorkUnitIds']) == set(parent['workUnitIds']) == set(candidate['workUnitIds']),
+            'revision_repair_scope_mismatch')
     require(candidate['parentRevisionId'] == parent['revisionId'] == repair['fromRevisionId'] and
             candidate['revisionId'] == repair['toRevisionId'] and candidate['repairPlanId'] == repair['repairPlanId']
             and candidate['revisionNumber'] == parent['revisionNumber'] + 1
             and repair['repairAction'] == 'repair_translation', 'revision_lineage_binding_mismatch')
-    for key in ('candidateId','targetLocale','workUnitIds','sourceIdentitySha256','sourcePackageSha256','anchorSha256','policySha256','sourceUnitIds'):
+    for key in ('candidateId','targetLocale','workUnitIds','sourceIdentitySha256','sourcePackageSha256','anchorSha256','policySha256','sourceUnitIds',
+                'sourcePackageBytesSha256','anchorBytesSha256','policyBytesSha256'):
         require(candidate[key] == parent[key], 'revision_changes_frozen_source_or_policy')
