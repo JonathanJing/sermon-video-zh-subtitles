@@ -50,3 +50,13 @@ Release v1/v2 schema 对 `packageId` 规定非空字符串，没有 160 字符�
 Web 现在在任何 Release／sidecar 请求前检查 header 与页面元数据。坏 header（例如重复 ID）拒绝该可选目录；坏页面只排除该页，其他页面保留。既有坏 locale 隔离保持。六个集成反例在旧 loader 上失败；另有有效历史页保留回归。测试夹具补齐真实 schema 本来要求的 title/generatedAt，不以缺字段的旧测试数据定义生产合同。
 
 仍不宣称完整状态空间等价：generatedAt 的语法仅由 producer schema 检查；native/Web 对额外 JSON 字段、Unicode title 计数、坏页整体/局部恢复及非音频 locale 的产品展示策略尚有差异，videoDelivery 和完整 text-only Release 仍不在该矩阵。这里验证字段准入，不赋予真实 HTTP、人审、设备或现场验收。
+
+## 纯文字 Release 的三方合同证据
+
+[shared-text-only-releases.json](../apps/tongxing-ios/Core/Tests/TongxingCoreTests/Fixtures/shared-text-only-releases.json) 是 Web、Swift Core 和 Python schema/producer 测试共用的 27-case 矩阵。包含三语 v1/v2 的显式 `audio_unavailable` 包绑定与 legacy null 绑定、三个正常音轨对照，以及音轨泄漏、错误 locale/hash/path、缺页面、未审核/未发布/缺验收证据等负例。
+
+矩阵分别记录 `schemaValid`、`nativeAdmission`、`webPlaybackAdmission`，不把三者合并为一个“兼容通过”：JSON schema 可以表达未审核或带 issues 的包，但消费者仍应拒绝；原生可以打开已审核纯文字页面，当前 Web 音频桥接拒绝将其构造成音轨。原生测试同时核对同源页面 URL、无 audioLocale 和无 audio asset。既有 Web loader 的“不请求纯文字 release、不制造音频 fallback”回归保持。
+
+Python 测试将同一矩阵的三语 v1 release **原样字节**交给既有 catalog producer，使用矩阵内合成 candidate/audio package 验证 hash/locale/source 绑定并产出只有 text capability 的目录。legacy null 只有显式兼容标志才可构建；无该标志拒绝。v2 是 schema/decoder 场景，当前 v1 catalog producer 拒绝 v2 的事实也有测试，不能因此声称 v2 纯文字生产流程已交付。
+
+本批只加 fixture 和测试，无生产 Swift/Web/Python 行为变更。13 项相关 Python、324 项 Web 通过；Swift Core 报告 67 项，其中 6 项条件 smoke skipped，实际执行 61 项通过（新增一个测试读取全部 27 场景）。没有物理设备、真实页面/媒体验收或发布；整个 E6 仍未完成，videoDelivery、未知额外字段与完整状态空间等边界继续保留。
