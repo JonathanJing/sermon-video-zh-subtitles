@@ -74,7 +74,7 @@ Supervisor 的 `Runner.run` 另记录 `sdk_call_started/finished`，保存 SDK �
 
 ## 已接入的指标与保留边界
 
-本地入口现写入 `sermon-workflow-accounting-v3`：每个子流程都有独立 `workflowId`、状态、起止时间、执行代码身份、开始／结束资源快照，以及运行前后的业务证据摘要。阶段事件另可记录 `executorType`、`dependsOn`、`blockedBy`、`readyAt`、`queuedAt`、`workUnitId`、`attemptId` 与 `decisionId`；未知执行器和值不安全的依赖标签会在写入前拒绝。汇总器与 trace exporter 仍可读取原有 v1/v2 事件；旧事件不改写，也不会凭新字段补造历史值。
+本地入口现写入 `sermon-workflow-accounting-v3`：每个子流程都有独立 `workflowId`、状态、起止时间、执行代码身份、开始／结束资源快照，以及运行前后的业务证据摘要。阶段事件另可记录 `executorType`、`dependsOn`、`blockedBy`、`dependencyReadyAt`、`queuedAt`、`workUnitId`、`attemptId` 与 `decisionId`；未知执行器和值不安全的依赖标签会在写入前拒绝。汇总器与 trace exporter 仍可读取原有 v1/v2 事件；旧事件不改写，也不会凭新字段补造历史值。
 
 证据采集仅查看已知相对路径，记录 JSON 文件 hash 和白名单字段；不遍历任意目录、不读取报告指向的任意外部文件、不抄录机器中文。`currentRunExecutionProven=false` 表明这些是现存文件快照；本次是否执行、复用或失败，以对应阶段事件为准。
 
@@ -150,3 +150,12 @@ L2 后续补齐本次 producer 内的确定性叶节点：既有 Source 包准�
 L3 实际 render_units 将模型加载、每单元本地模型推理、音频复用及 full-decode 校验分开。推理显式 production_model，校验依赖本次推理/复制 span，首个推理不会因嵌套加载被 leaf projection 丢失。请求、声音 identity 和缓存契约未变。源包与跨进程边界尚未完整接线，因此未证明的根依赖仍为 null；不能据这些局部边宣布完整 critical path 或正式周验收。
 
 审查修复：provider/response 和 SDK invocation 仅合并等价事实；usage/status/executor 冲突使报告 partial 并撤销可信总量。dependencyReadyAt 保留原值，任何前驱晚于 ready 超过 10ms 时撤销对应 queue 指标及 critical path。
+
+
+## 导入收据的等价性与冲突
+
+`summary.json` / `stages.csv` 与只读 `sermon_logs --check` 先检查收据等价性。provider + response identity（缺失时退回 attempt/event identity）相同的记录，只有 status、usage、实际/请求 model、估计费用、latency 和 stage executor 全部一致才去重。不同 provider 的相同 response ID 不合并。等价跨 run 导入按稳定的 receipt 时间/标识选定归属；不能因 JSONL 行顺序不同改变费用归属。
+
+相同 identity 有冲突事实时，`receiptIntegrity.status=conflicted`，记录 identity/variant hash 与受影响 run，保留所有原始字节。受影响的非限定 token、调用次数、latency 和 `knownEstimatedUsd` 为 null，状态明确为 conflicted；另外的 `knownNonconflicting*` 只是剔除冲突后的可核验子集，不能当作整周总量或实际账单。SDK invocation 在跨 run 导入时也按同一 identity 检查；等价导入标记 `duplicate_import`，不再贡献 SDK token 或 invocation 次数。冲突同样不能 last-writer-wins；聚合 usage 保持未知，仍与直接 HTTP receipts 分开。
+
+只读检查在跨 run 范围先查冲突，再筛选当前 run；`--check` 对相关冲突退出 2，终端显示冲突数量，不改写 summary 或原账本。语法损坏与语义冲突分开记录，缺失历史字段保持未知。运行本身的完成状态、有效执行 span、人工审批和发布状态不会因用量冲突被改写；用量报告也不会自动调模型或重试。

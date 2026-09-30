@@ -643,6 +643,66 @@ def format_diagnostic(event):
     return " ".join(parts)
 
 
+def receipt_integrity(events):
+    """Compare all imported facts before choosing a stable representative.
+
+    Returned event object IDs are internal selection keys, never serialized.
+    Conflicts contain hashes and safe attribution only, not provider payloads.
+    """
+    def encoded(value):
+        # Hash even legacy non-finite extension values; numeric output still
+        # goes through _number, and no raw fact is forwarded in diagnostics.
+        return json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=True)
+    def digest(value):
+        return hashlib.sha256(encoded(value).encode()).hexdigest()
+    executors = {}
+    for event in events:
+        if event['event'] in {'stage_started', 'stage_finished'}:
+            key = (event['runId'], event.get('spanId'))
+            executors.setdefault(key, set()).add(event.get('executorType'))
+    groups = {}
+    for event in events:
+        kind = event['event']
+        if kind not in {'api_attempt', 'sdk_call_finished'}:
+            continue
+        if kind == 'api_attempt':
+            identity = ['provider', event.get('provider'),
+                        event.get('responseId') or event.get('attemptId') or event['eventId']]
+            fact = {key: event.get(key) for key in
+                    ('status', 'usage', 'cost', 'model', 'requestedModel', 'elapsedSeconds')}
+        else:
+            identity = ['sdk', event['invocationId']]
+            fact = {key: event.get(key) for key in ('status', 'usage', 'model', 'elapsedSeconds', 'measurementScope')}
+        key = digest(identity)
+        group = groups.setdefault(key, {'kind': identity[0], 'variants': {}, 'events': []})
+        group['events'].append(event)
+        # Conflicting stage classifications cannot silently choose the last row.
+        for executor in executors.get((event['runId'], event.get('spanId')), {None}):
+            variant = {**fact, 'executorType': executor}
+            group['variants'][digest(variant)] = variant
+    selected, conflicts, affected, sdk_conflicts = set(), [], {}, set()
+    duplicates = 0
+    for key, group in sorted(groups.items()):
+        rows = group['events']
+        if len(group['variants']) != 1:
+            conflicts.append({'kind': group['kind'], 'identitySha256': key,
+                              'variantSha256': sorted(group['variants']),
+                              'runIds': sorted({_label(e['runId']) for e in rows})})
+            for event in rows:
+                affected.setdefault((event['runId'], event.get('stage')), set()).add(key)
+                if group['kind'] == 'sdk':
+                    sdk_conflicts.add((event['runId'], event['invocationId']))
+        else:
+            # Stable across line reordering, including equivalent cross-run imports.
+            chosen = min(rows, key=lambda e: (e['recordedAt'], e['runId'],
+                                              e.get('stage') or '', e['eventId'], digest(e)))
+            selected.add(id(chosen))
+            duplicates += len(rows) - 1
+    return {'status': 'conflicted' if conflicts else 'consistent', 'conflicts': conflicts,
+            'equivalentDuplicatesIgnored': duplicates,
+            '_selected': selected, '_affected': affected, '_sdkConflicts': sdk_conflicts}
+
+
 def _summarize_locked(directory):
     events, damaged = read_events(directory)
     completed_attempts = {e.get("attemptId") for e in events if e["event"] == "api_attempt"}
@@ -652,7 +712,15 @@ def _summarize_locked(directory):
                    "elapsedSeconds": None, "usage": normalize_usage(None),
                    "cost": {"estimatedUsd": None, "status": "unknown"}}
                   for e in unfinished_api)
-    runs, groups, seen = {}, {}, set()
+    integrity = receipt_integrity(events)
+    selected_receipts = integrity.pop("_selected")
+    affected_receipts = integrity.pop("_affected")
+    sdk_conflicts = integrity.pop("_sdkConflicts")
+    sdk_finished = {(e['runId'], e['invocationId']) for e in events if e['event'] == 'sdk_call_finished'}
+    sdk_selected = {(e['runId'], e['invocationId']) for e in events
+                    if e['event'] == 'sdk_call_finished' and id(e) in selected_receipts}
+    sdk_duplicates = sdk_finished - sdk_selected - sdk_conflicts
+    runs, groups = {}, {}
     latencies, workflows = {}, {}
     sdk_calls = {}
     token_fields = ("inputTokens", "outputTokens", "cachedInputTokens", "cacheWriteTokens", "reasoningTokens")
@@ -693,7 +761,7 @@ def _summarize_locked(directory):
                 "usage": {key: None for key in ("requests", "input_tokens", "output_tokens", "total_tokens")},
                 "measurementScope": "sdk_aggregate_including_tools", "estimatedUsd": None,
                 "costStatus": "unknown", "httpAttemptsKnown": False})
-            if event["event"] == "sdk_call_finished":
+            if event["event"] == "sdk_call_finished" and id(event) in selected_receipts:
                 call.update(status=_label(event["status"]), elapsedSeconds=_number(event.get("elapsedSeconds")),
                             usage={key: _number(event["usage"].get(key)) for key in call["usage"]})
         if diagnostic_event(event)["level"] in {"WARNING", "ERROR", "CRITICAL"}:
@@ -714,9 +782,8 @@ def _summarize_locked(directory):
             row["billing"] = event["billing"]
         else:
             # Duplicate imports of the same provider response are not new spend.
-            identity = event.get("responseId") or event.get("attemptId") or event["eventId"]
-            if identity in seen: continue
-            seen.add(identity); row["apiAttempts"] += 1
+            if id(event) not in selected_receipts: continue
+            row["apiAttempts"] += 1
             row["completedApiAttempts"] += int(event["status"] == "completed")
             row["failedApiAttempts"] += int(event["status"] == "failed")
             row["missingLatencyAttempts"] += int(event.get("elapsedSeconds") is None)
@@ -754,9 +821,26 @@ def _summarize_locked(directory):
         row["apiLatencyP50Seconds"] = _percentile(samples, .5)
         row["apiLatencyP95Seconds"] = _percentile(samples, .95)
         row["usageReceiptCoverage"] = row["usageReceipts"] / row["apiAttempts"] if row["apiAttempts"] else None
+    for key, call in sdk_calls.items():
+        if key in sdk_conflicts:
+            call.update(status='usage_conflict', model=None, elapsedSeconds=None,
+                        usage={field: None for field in call['usage']}, costStatus='conflicted')
+        elif key in sdk_duplicates:
+            call.update(status='duplicate_import', elapsedSeconds=None,
+                        usage={field: None for field in call['usage']})
+    for row in groups.values():
+        conflict_ids = sorted(affected_receipts.get((row['runId'], row['stage']), ()))
+        row['receiptConflictSha256'] = conflict_ids
+        row['knownNonconflictingEstimatedUsd'] = row['knownEstimatedUsd']
+        if conflict_ids:
+            row.update(tokenStatus='conflicted', costStatus='conflicted', knownEstimatedUsd=None,
+                       apiLatencySeconds=None, apiLatencyP50Seconds=None, apiLatencyP95Seconds=None,
+                       usageReceiptCoverage=None)
+            for field in token_fields:
+                row[field] = None
     for rid, run in runs.items():
         rows = [r for r in groups.values() if r["runId"] == rid]
-        run["knownEstimatedUsd"] = round(sum(r["knownEstimatedUsd"] for r in rows), 9)
+        run["knownEstimatedUsd"] = round(sum(r["knownNonconflictingEstimatedUsd"] for r in rows), 9)
         run["unknownCostAttempts"] = sum(r["unknownCostAttempts"] for r in rows)
         run["apiAttempts"] = sum(r["apiAttempts"] for r in rows)
         run["usageReceipts"] = sum(r["usageReceipts"] for r in rows)
@@ -765,12 +849,27 @@ def _summarize_locked(directory):
         run["failedApiAttempts"] = sum(r["failedApiAttempts"] for r in rows)
         run["workflows"] = [w for w in workflows.values() if w["runId"] == rid]
         run["sdkCalls"] = [call for (run_id, _), call in sdk_calls.items() if run_id == rid]
-        run["unpricedSdkInvocations"] = len(run["sdkCalls"])
+        run["duplicateSdkInvocations"] = sum(call["status"] == "duplicate_import" for call in run["sdkCalls"])
+        run["unpricedSdkInvocations"] = len(run["sdkCalls"]) - run["duplicateSdkInvocations"]
         run["overallCostStatus"] = "partial" if run["unknownCostAttempts"] or run["sdkCalls"] or damaged else "recorded_api_only"
+        run['receiptConflictSha256'] = sorted({key for (run_id, _), keys in affected_receipts.items()
+                                               if run_id == rid for key in keys})
+        run['knownNonconflictingEstimatedUsd'] = run['knownEstimatedUsd']
+        if run['receiptConflictSha256']:
+            run['knownNonconflictingApiAttempts'] = run['apiAttempts']
+            run.update(knownEstimatedUsd=None, overallCostStatus='conflicted', usageReceiptCoverage=None,
+                       apiAttempts=None, completedApiAttempts=None, failedApiAttempts=None)
+    # Run aggregation above consumes only consistent receipts. Do not expose a
+    # conflict-excluding call count under the old unqualified total field.
+    for row in groups.values():
+        row['knownNonconflictingApiAttempts'] = row['apiAttempts']
+        if row['receiptConflictSha256']:
+            row.update(apiAttempts=None, completedApiAttempts=None, failedApiAttempts=None)
     result = {"schemaVersion": SCHEMA, "generatedAt": now(), "runs": list(runs.values()), "stages": list(groups.values()),
-              "ledgerIntegrity": {"status": "incomplete_corrupt_events" if damaged else "readable",
-                                  "damagedEvents": damaged, "unattributedCostUnknown": bool(damaged),
+              "ledgerIntegrity": {"status": "incomplete_corrupt_events" if damaged else "conflicting_receipts" if integrity["conflicts"] else "readable",
+                                  "damagedEvents": damaged, "unattributedCostUnknown": bool(damaged or integrity["conflicts"]),
                                   "originalBytesPreserved": True},
+              "receiptIntegrity": integrity,
               "unfinishedApiAttempts": [{"runId": e["runId"], "stage": e["stage"], "attemptId": e["attemptId"],
                                          "startedAt": e["recordedAt"], "costStatus": "unknown"} for e in unfinished_api],
               "unfinishedStages": [{"runId": e["runId"], "stage": e["stage"], "spanId": sid,
