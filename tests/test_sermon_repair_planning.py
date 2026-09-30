@@ -284,12 +284,15 @@ class BudgetAndLineageTests(unittest.TestCase):
         cases = [(load('review-fail'), {'content_revisions_reserved': 2}, 'content_revision_limit_reached'),
                  (failed_review(), {'review_attempts_reserved': 2}, 'review_execution_limit_reached'),
                  (load('review-fail'), {'limits': p.Limits(content_revisions=0)}, 'content_revision_limit_reached'),
+                 (load('review-fail'), {'limits': p.Limits(review_attempts_per_revision=0)}, 'review_execution_limit_reached'),
                  (failed_review(), {'limits': p.Limits(review_attempts_per_revision=1)}, 'review_execution_limit_reached')]
         for review, changes, reason in cases:
             args = inputs(review); args['budget'] = budget(**changes)
             result = p.plan_repair(**args)
             self.assertEqual(result['reasonCode'], reason)
+            self.assertEqual(result['status'], 'blocked')
             self.assertIsNone(result['repairPlan'])
+            self.assertFalse(result['requiresFreshProviderRequest'])
 
     def test_bad_or_reset_counters_and_foreign_budget_identity_rejected(self):
         for changes in ({'content_revisions_reserved': True}, {'review_attempts_reserved': 0},
