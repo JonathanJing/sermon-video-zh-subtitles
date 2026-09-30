@@ -10,6 +10,7 @@ import json
 
 from scripts.canonical_pipeline_definition import LOCALES, VERSION, _sha
 from scripts.sermon_workflow_jobs import _digest
+from scripts.sermon_decision_accounting import Observation
 
 PACKET_SCHEMA = 'sermon-decision-state-v1'
 DECISION_SCHEMA = 'sermon-decision-v1'
@@ -113,19 +114,33 @@ def propose(packet, *, reserve_attempt, responder, fresh_packet):
     reservation itself must not mint a new production revision).
     """
     packet = validate_packet(packet)
-    packet_hash = _digest(packet)
+    observation = Observation(packet)
+    with observation.measure("packetValidationMs"):
+        packet = validate_packet(packet)
+        packet_hash = _digest(packet)
     metadata = {'packetSha256': packet_hash, 'packetBytes': len(_encoded(packet)),
                 'evidenceRefCount': len(packet['evidenceRefs']), 'parentContextInherited': False,
-                'dispatchEnabled': False, 'mutationTools': [], 'maxTurns': MAX_TURNS}
-    if reserve_attempt(copy.deepcopy(packet)) is not True:
+                'dispatchEnabled': False, 'mutationTools': [], 'maxTurns': MAX_TURNS,
+                'decisionObservationId': observation.fields['observationId']}
+    with observation.measure('reservationMs'):
+        reserved = reserve_attempt(copy.deepcopy(packet))
+    if reserved is not True:
+        observation.finish('decision_budget_unavailable')
         return {**metadata, 'status': 'blocked', 'reasonCode': 'decision_budget_unavailable'}
     try:
         # Only a packet copy crosses the boundary, no conversation/tool handles.
-        result = responder(copy.deepcopy(packet))
+        with observation.measure("modelLatencyMs", executor="decision_agent"):
+            result = responder(copy.deepcopy(packet))
     except Exception:
+        observation.finish('decision_outcome_unknown')
         return {**metadata, 'status': 'blocked', 'reasonCode': 'decision_outcome_unknown'}
     try:
-        decision = validate_decision(packet, result, fresh_packet())
+        with observation.measure("decisionValidationMs"):
+            decision = validate_decision(packet, result, fresh_packet())
     except Exception:
-        return {**metadata, 'status': 'blocked', 'reasonCode': 'decision_rejected'}
-    return {**metadata, 'status': 'proposal_requires_locked_admission', 'decision': decision}
+        observation.finish('decision_rejected')
+        return {**metadata, 'status': 'blocked', 'reasonCode': 'decision_rejected',
+                'decisionValidationSpanId': observation.last_span}
+    observation.finish('proposal_requires_locked_admission', selected_action=decision['selectedAction'])
+    return {**metadata, 'status': 'proposal_requires_locked_admission', 'decision': decision,
+            'decisionValidationSpanId': observation.last_span}
