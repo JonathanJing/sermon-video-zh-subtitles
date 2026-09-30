@@ -6,6 +6,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
+import threading
 import unittest
 from unittest.mock import Mock, patch
 import urllib.error
@@ -58,6 +59,63 @@ class StrictBudgetTests(unittest.TestCase):
 
     def snapshot(self):
         return self.store.snapshot(adapter.chain_identity(self.f.prepared))
+
+    def test_other_chain_dispatch_lock_contention_retries_only_live_invocation(self):
+        held=threading.Event();release=threading.Event();failures=[]
+        def other_chain():
+            try:
+                with self.store._locked():
+                    held.set()
+                    if not release.wait(3):raise AssertionError('test lock not released')
+            except BaseException as exc:failures.append(exc);held.set()
+        thread=threading.Thread(target=other_chain)
+        original=self.store.mark_request;attempts=[]
+        def contend(rid):
+            attempts.append(rid)
+            if len(attempts)==1:
+                thread.start();self.assertTrue(held.wait(3))
+            return original(rid)
+        def unlock(_):
+            self.assertEqual(len(self.f.calls),0)
+            release.set();thread.join(3);self.assertFalse(thread.is_alive())
+        try:
+            with self.f.session(), patch.object(self.store,'mark_request',side_effect=contend), \
+                    patch.object(adapter.time,'sleep',side_effect=unlock):
+                result=self.generate()
+        finally:
+            release.set()
+            if thread.ident is not None:thread.join(3)
+        self.assertEqual(failures,[])
+        self.assertEqual(len(attempts),2);self.assertEqual(len(set(attempts)),1)
+        self.assertEqual(result['budgetStatus'],'recorded');self.assertEqual(len(self.f.calls),1)
+        self.assertEqual(len(self.snapshot()['reservations']),1)
+
+    def test_dispatch_lock_wait_is_bounded_and_restart_does_not_regain_call_permission(self):
+        with self.f.session(), patch.object(self.store,'mark_request',
+                side_effect=contracts.ContractError('budget_store_busy')) as mark, \
+                patch.object(adapter.time,'sleep') as sleep:
+            with self.assertRaisesRegex(ValueError,'budget_store_busy'):self.generate()
+        self.assertEqual(mark.call_count,adapter.DISPATCH_LOCK_ATTEMPTS)
+        self.assertEqual(sleep.call_count,adapter.DISPATCH_LOCK_ATTEMPTS-1)
+        self.assertEqual(len(self.f.calls),0)
+        self.restart()
+        with self.f.session(), self.assertRaises(ValueError):self.generate()
+        self.assertEqual(len(self.f.calls),0)
+        self.assertEqual(len(self.snapshot()['reservations']),1)
+
+    def test_uncertain_mark_write_is_never_retried_even_if_error_looks_busy(self):
+        original=self.store.mark_request
+        def uncertain(rid):
+            original(rid)
+            raise contracts.ContractError('budget_store_busy')
+        with self.f.session(), patch.object(self.store,'mark_request',side_effect=uncertain) as mark, \
+                patch.object(adapter.time,'sleep') as sleep:
+            with self.assertRaisesRegex(ValueError,'budget_store_busy'):self.generate()
+        self.assertEqual(mark.call_count,1);sleep.assert_not_called()
+        self.assertEqual(len(self.f.calls),0)
+        self.restart()
+        with self.f.session(), self.assertRaises(ValueError):self.generate()
+        self.assertEqual(len(self.f.calls),0)
 
     def test_generation_and_review_bind_and_settle_without_changing_parent(self):
         with self.f.session():

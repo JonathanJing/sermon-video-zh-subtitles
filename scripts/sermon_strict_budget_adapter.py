@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from pathlib import Path
+import time
 
 from scripts import sermon_accounting as accounting
 from scripts import sermon_log_profile as profile
@@ -19,6 +20,9 @@ from scripts import sermon_strict_layer2 as strict
 from scripts import sermon_workflow_jobs as jobs
 from scripts.sermon_pipeline import TransportRejection
 from scripts.sermon_release_workflow import _safe_path
+
+DISPATCH_LOCK_ATTEMPTS = 100
+DISPATCH_LOCK_DELAY_SECONDS = 0.05
 
 
 def chain_identity(prepared):
@@ -264,7 +268,20 @@ class StrictBudgetAdapter:
             c.require(callable(caller), 'strict_budget_transport_required')
             c.require(c.canonical_sha256(payload) == binding['payloadSha256'], 'strict_budget_payload_changed')
             invoked = True
-            self.store.mark_request(reservation['reservationId'])
+            rid = reservation['reservationId']
+            for attempt in range(DISPATCH_LOCK_ATTEMPTS):
+                try:
+                    self.store.mark_request(rid)
+                    break
+                except c.ContractError as exc:
+                    # Only this live invocation still owns the unconsumed permit.
+                    # A busy nonblocking lock did not attempt persistence or a
+                    # provider call. Never retry an uncertain write, an exhausted
+                    # wait, a restarted adapter, or any other validation failure.
+                    if (exc.args != ('budget_store_busy',) or rid not in self.store._execution_permits
+                            or attempt == DISPATCH_LOCK_ATTEMPTS - 1):
+                        raise
+                    time.sleep(DISPATCH_LOCK_DELAY_SECONDS)
             observed_call = None
             def started(model_call_id):
                 nonlocal observed_call
