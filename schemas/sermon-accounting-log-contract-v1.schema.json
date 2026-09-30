@@ -1,0 +1,4643 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sermon.local/schemas/sermon-accounting-log-contract-v1.schema.json",
+  "title": "Opt-in accounting v3 canonical log profile",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "const": "sermon-workflow-accounting-v3"
+    },
+    "contractVersion": {
+      "const": "sermon-accounting-log-contract-v1"
+    },
+    "event": {
+      "enum": [
+        "run_started",
+        "run_finished",
+        "workflow_started",
+        "workflow_finished",
+        "workflow_evidence",
+        "stage_started",
+        "stage_finished",
+        "api_attempt_started",
+        "api_attempt",
+        "sdk_call_started",
+        "sdk_call_finished",
+        "workload",
+        "log",
+        "step_state_changed",
+        "attempt_reconciled",
+        "segment_reviewed",
+        "rqc_observation"
+      ]
+    },
+    "eventId": {
+      "$ref": "#/$defs/eventId"
+    },
+    "producerId": {
+      "$ref": "#/$defs/eventId"
+    },
+    "sequence": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "recordedAt": {
+      "$ref": "#/$defs/timestamp"
+    },
+    "runId": {
+      "$ref": "#/$defs/label"
+    },
+    "workflowId": {
+      "$ref": "#/$defs/label"
+    },
+    "spanId": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/label"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "parentSpanId": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/label"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "parentWorkflowId": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/label"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "workUnitId": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/label"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "attemptId": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/label"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "decisionId": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/label"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "productionRunId": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/label"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "engineeringRunId": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/label"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "stageAttemptId": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/label"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "priorAttemptId": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/label"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "dispatchSpanId": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/label"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "jobId": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/label"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "stepId": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/label"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "logicalCallId": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/label"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "modelCallId": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/label"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "invocationId": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/label"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "sessionId": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/label"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "counterEpoch": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/label"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "workflow": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/label"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "stage": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/label"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "model": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/label"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "requestedModel": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/label"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "provider": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/label"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "responseId": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/label"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "providerResponseId": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/label"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "billingReceiptId": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/label"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "reasonCode": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/label"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "gateId": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/label"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "status": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/label"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "code": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/label"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "agentBackend": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/label"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "measurementScope": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/label"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "costStatus": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/label"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "costReason": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/label"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "executorType": {
+      "anyOf": [
+        {
+          "enum": [
+            "deterministic_program",
+            "production_model",
+            "decision_agent",
+            "human",
+            "external_service",
+            "engineering_codex"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "workKind": {
+      "anyOf": [
+        {
+          "enum": [
+            "production",
+            "control",
+            "engineering"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "evidenceMode": {
+      "enum": [
+        "current_execution",
+        "cache_replay",
+        "synthetic"
+      ]
+    },
+    "stateRevision": {
+      "$ref": "#/$defs/sha256"
+    },
+    "statePacketSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "providerScopeKey": {
+      "$ref": "#/$defs/sha256"
+    },
+    "approvalReceiptSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "artifactSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "evidenceSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "requestPayloadSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "startedAt": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/timestamp"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "completedAt": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/timestamp"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "queuedAt": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/timestamp"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "dependencyReadyAt": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/timestamp"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "clockDomainId": {
+      "$ref": "#/$defs/eventId"
+    },
+    "monotonicStartNs": {
+      "type": "string",
+      "pattern": "^[0-9]{1,20}(?![\\s\\S])"
+    },
+    "monotonicEndNs": {
+      "type": "string",
+      "pattern": "^[0-9]{1,20}(?![\\s\\S])"
+    },
+    "elapsedSeconds": {
+      "anyOf": [
+        {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1e+100
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "estimatedUsd": {
+      "anyOf": [
+        {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1e+100
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "attemptNumber": {
+      "anyOf": [
+        {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "statePacketBytes": {
+      "anyOf": [
+        {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "evidenceRefCount": {
+      "anyOf": [
+        {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "httpStatus": {
+      "anyOf": [
+        {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "cacheHit": {
+      "type": "boolean"
+    },
+    "httpAttemptsKnown": {
+      "type": "boolean"
+    },
+    "dependsOn": {
+      "anyOf": [
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/label"
+          },
+          "maxItems": 64,
+          "uniqueItems": true
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "blockedBy": {
+      "anyOf": [
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/label"
+          },
+          "maxItems": 64,
+          "uniqueItems": true
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "billing": {
+      "$ref": "#/$defs/label"
+    },
+    "level": {
+      "enum": [
+        "DEBUG",
+        "INFO",
+        "WARNING",
+        "ERROR",
+        "CRITICAL"
+      ]
+    },
+    "phase": {
+      "enum": [
+        "before",
+        "after"
+      ]
+    },
+    "errorType": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/label"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "error": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "errorType": {
+              "$ref": "#/$defs/label"
+            },
+            "frames": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "pattern": "^(?:scripts|backend|experiments|tests)/(?!.*\\.\\.)[A-Za-z0-9_./-]+\\.py(?![\\s\\S])",
+                    "maxLength": 256
+                  },
+                  "line": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  },
+                  "function": {
+                    "$ref": "#/$defs/label"
+                  }
+                },
+                "required": [
+                  "file",
+                  "line",
+                  "function"
+                ],
+                "additionalProperties": false
+              },
+              "maxItems": 12,
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "errorType",
+            "frames"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "usage": {
+      "$ref": "#/$defs/usage"
+    },
+    "usageStatus": {
+      "enum": [
+        "reported",
+        "partial",
+        "not_reported",
+        "not_applicable",
+        "conflicted"
+      ]
+    },
+    "usageScope": {
+      "enum": [
+        "direct_response",
+        "sdk_aggregate",
+        "session_cumulative",
+        "historical_cache",
+        "local_model"
+      ]
+    },
+    "usageSemanticsVersion": {
+      "enum": [
+        "openai_usage_v1",
+        "sdk_aggregate_v1",
+        "unknown"
+      ]
+    },
+    "coveredResponseIds": {
+      "anyOf": [
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/label"
+          },
+          "maxItems": 64,
+          "uniqueItems": true
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "coverageStatus": {
+      "enum": [
+        "explicit",
+        "unknown"
+      ]
+    },
+    "missingReasons": {
+      "$ref": "#/$defs/missingReasons"
+    },
+    "cost": {
+      "$ref": "#/$defs/cost"
+    },
+    "settings": {
+      "$ref": "#/$defs/settings"
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "sourceId": {
+          "$ref": "#/$defs/label"
+        },
+        "videoId": {
+          "$ref": "#/$defs/label"
+        },
+        "targetLocale": {
+          "$ref": "#/$defs/label"
+        },
+        "productionRunId": {
+          "$ref": "#/$defs/label"
+        },
+        "jobSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}(?![\\s\\S])"
+        },
+        "sourceSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}(?![\\s\\S])"
+        },
+        "videoSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}(?![\\s\\S])"
+        },
+        "sourceVideoSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}(?![\\s\\S])"
+        },
+        "sourceAudioSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}(?![\\s\\S])"
+        },
+        "ledgerIdentitySha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}(?![\\s\\S])"
+        },
+        "week": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}(?![\\s\\S])"
+        },
+        "sunday": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}(?![\\s\\S])"
+        },
+        "sourceServiceDate": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}(?![\\s\\S])"
+        },
+        "pageId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,159}(?![\\s\\S])"
+        },
+        "mode": {
+          "enum": [
+            "shadow",
+            "execute",
+            "inspect",
+            "dry_run"
+          ]
+        },
+        "target": {
+          "enum": [
+            "dev",
+            "production"
+          ]
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "executionIdentity": {
+      "$ref": "#/$defs/executionIdentity"
+    },
+    "resources": {
+      "type": "object",
+      "properties": {
+        "processPeakRssBytes": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1e+100
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "processUserCpuSeconds": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1e+100
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "processSystemCpuSeconds": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1e+100
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "finishedChildUserCpuSeconds": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1e+100
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "finishedChildSystemCpuSeconds": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1e+100
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "diskFreeBytes": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1e+100
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "gpuPeakBytes": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1e+100
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "scope": {
+          "const": "process_lifetime_counters_not_stage_allocation"
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "metrics": {
+      "type": "object",
+      "maxProperties": 128,
+      "patternProperties": {
+        "^(?!.*Sha256$)[A-Za-z][A-Za-z0-9_]{0,79}$": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1e+100
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "enum": [
+                "after_model_load",
+                "existing_report",
+                "current_execution",
+                "verified_receipts",
+                "unknown",
+                "partial"
+              ]
+            }
+          ]
+        },
+        "^[A-Za-z][A-Za-z0-9_]{0,73}Sha256$": {
+          "$ref": "#/$defs/sha256"
+        }
+      },
+      "additionalProperties": false
+    },
+    "evidence": {
+      "$ref": "#/$defs/evidence"
+    },
+    "fields": {
+      "$ref": "#/$defs/observationFields"
+    },
+    "fromState": {
+      "anyOf": [
+        {
+          "enum": [
+            "pending",
+            "ready",
+            "queued",
+            "running",
+            "waiting_human",
+            "waiting_external",
+            "outcome_unknown",
+            "succeeded",
+            "failed",
+            "cancelled"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "toState": {
+      "enum": [
+        "pending",
+        "ready",
+        "queued",
+        "running",
+        "waiting_human",
+        "waiting_external",
+        "outcome_unknown",
+        "succeeded",
+        "failed",
+        "cancelled"
+      ]
+    },
+    "reconcilesAttemptId": {
+      "$ref": "#/$defs/label"
+    },
+    "result": {
+      "enum": [
+        "succeeded",
+        "failed",
+        "cancelled",
+        "still_unknown"
+      ]
+    },
+    "targetLocale": {
+      "$ref": "#/$defs/label"
+    },
+    "translationGroupId": {
+      "$ref": "#/$defs/label"
+    },
+    "sourceUnitIds": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/label"
+      },
+      "maxItems": 64,
+      "uniqueItems": true
+    },
+    "verdict": {
+      "enum": [
+        "pass",
+        "needs_rework",
+        "blocked",
+        "unknown"
+      ]
+    },
+    "reasonCodes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/label"
+      },
+      "maxItems": 16,
+      "uniqueItems": true
+    },
+    "role": {
+      "enum": [
+        "translator",
+        "reviewer",
+        "source_reviewer",
+        "audio_screening",
+        "generation",
+        "quality_review",
+        "precheck",
+        "gate",
+        "repair"
+      ]
+    },
+    "revisionId": {
+      "$ref": "#/$defs/label"
+    },
+    "rqcEvidence": {
+      "$ref": "#/$defs/rqcEvidence"
+    },
+    "traceId": {
+      "$ref": "#/$defs/eventId"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "contractVersion",
+    "event",
+    "eventId",
+    "producerId",
+    "sequence",
+    "recordedAt",
+    "runId",
+    "workflowId",
+    "spanId",
+    "parentSpanId",
+    "executorType",
+    "workKind",
+    "evidenceMode",
+    "workUnitId",
+    "attemptId",
+    "decisionId",
+    "productionRunId",
+    "engineeringRunId",
+    "missingReasons",
+    "traceId"
+  ],
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "event": {
+            "const": "run_started"
+          }
+        },
+        "required": [
+          "event"
+        ]
+      },
+      "then": {
+        "required": [
+          "workflow"
+        ],
+        "properties": {
+          "workflow": {
+            "$ref": "#/$defs/label"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event": {
+            "const": "run_finished"
+          }
+        },
+        "required": [
+          "event"
+        ]
+      },
+      "then": {
+        "required": [
+          "workflow",
+          "status"
+        ],
+        "properties": {
+          "workflow": {
+            "$ref": "#/$defs/label"
+          },
+          "status": {
+            "enum": [
+              "completed",
+              "failed",
+              "cancelled",
+              "outcome_unknown"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event": {
+            "const": "workflow_started"
+          }
+        },
+        "required": [
+          "event"
+        ]
+      },
+      "then": {
+        "required": [
+          "workflow",
+          "parentWorkflowId"
+        ],
+        "properties": {
+          "workflow": {
+            "$ref": "#/$defs/label"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event": {
+            "const": "workflow_finished"
+          }
+        },
+        "required": [
+          "event"
+        ]
+      },
+      "then": {
+        "required": [
+          "workflow",
+          "status"
+        ],
+        "properties": {
+          "workflow": {
+            "$ref": "#/$defs/label"
+          },
+          "status": {
+            "enum": [
+              "completed",
+              "failed",
+              "cancelled",
+              "outcome_unknown"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event": {
+            "const": "workflow_evidence"
+          }
+        },
+        "required": [
+          "event"
+        ]
+      },
+      "then": {
+        "required": [
+          "workflow",
+          "phase",
+          "evidence"
+        ],
+        "properties": {
+          "workflow": {
+            "$ref": "#/$defs/label"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event": {
+            "const": "stage_started"
+          }
+        },
+        "required": [
+          "event"
+        ]
+      },
+      "then": {
+        "required": [
+          "stage",
+          "spanId",
+          "attemptId",
+          "startedAt",
+          "executorType",
+          "workKind",
+          "dependsOn",
+          "blockedBy",
+          "dependencyReadyAt",
+          "queuedAt",
+          "clockDomainId"
+        ],
+        "properties": {
+          "spanId": {
+            "$ref": "#/$defs/label"
+          },
+          "attemptId": {
+            "$ref": "#/$defs/label"
+          },
+          "executorType": {
+            "enum": [
+              "deterministic_program",
+              "production_model",
+              "decision_agent",
+              "human",
+              "external_service",
+              "engineering_codex"
+            ]
+          },
+          "workKind": {
+            "enum": [
+              "production",
+              "control",
+              "engineering"
+            ]
+          },
+          "stage": {
+            "$ref": "#/$defs/label"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event": {
+            "const": "stage_finished"
+          }
+        },
+        "required": [
+          "event"
+        ]
+      },
+      "then": {
+        "required": [
+          "stage",
+          "spanId",
+          "attemptId",
+          "executorType",
+          "workKind",
+          "dependsOn",
+          "blockedBy",
+          "dependencyReadyAt",
+          "queuedAt",
+          "clockDomainId",
+          "completedAt",
+          "status",
+          "elapsedSeconds",
+          "cacheHit",
+          "billing"
+        ],
+        "properties": {
+          "spanId": {
+            "$ref": "#/$defs/label"
+          },
+          "attemptId": {
+            "$ref": "#/$defs/label"
+          },
+          "executorType": {
+            "enum": [
+              "deterministic_program",
+              "production_model",
+              "decision_agent",
+              "human",
+              "external_service",
+              "engineering_codex"
+            ]
+          },
+          "workKind": {
+            "enum": [
+              "production",
+              "control",
+              "engineering"
+            ]
+          },
+          "status": {
+            "enum": [
+              "completed",
+              "failed",
+              "cancelled",
+              "outcome_unknown"
+            ]
+          },
+          "elapsedSeconds": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1e+100
+          },
+          "completedAt": {
+            "$ref": "#/$defs/timestamp"
+          },
+          "stage": {
+            "$ref": "#/$defs/label"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event": {
+            "const": "api_attempt_started"
+          }
+        },
+        "required": [
+          "event"
+        ]
+      },
+      "then": {
+        "required": [
+          "modelCallId",
+          "logicalCallId",
+          "provider",
+          "providerScopeKey",
+          "requestedModel",
+          "attemptNumber",
+          "stageAttemptId",
+          "settings",
+          "usageScope",
+          "usageSemanticsVersion",
+          "stage",
+          "spanId",
+          "attemptId",
+          "workKind"
+        ],
+        "properties": {
+          "executorType": {
+            "enum": [
+              "deterministic_program",
+              "production_model",
+              "decision_agent",
+              "human",
+              "external_service",
+              "engineering_codex"
+            ]
+          },
+          "modelCallId": {
+            "$ref": "#/$defs/label"
+          },
+          "logicalCallId": {
+            "$ref": "#/$defs/label"
+          },
+          "provider": {
+            "$ref": "#/$defs/label"
+          },
+          "requestedModel": {
+            "$ref": "#/$defs/label"
+          },
+          "attemptNumber": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "usageScope": {
+            "const": "direct_response"
+          },
+          "stage": {
+            "$ref": "#/$defs/label"
+          },
+          "spanId": {
+            "$ref": "#/$defs/label"
+          },
+          "attemptId": {
+            "$ref": "#/$defs/label"
+          },
+          "workKind": {
+            "enum": [
+              "production",
+              "control",
+              "engineering"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event": {
+            "const": "api_attempt"
+          }
+        },
+        "required": [
+          "event"
+        ]
+      },
+      "then": {
+        "required": [
+          "modelCallId",
+          "logicalCallId",
+          "provider",
+          "providerScopeKey",
+          "requestedModel",
+          "attemptNumber",
+          "stageAttemptId",
+          "model",
+          "responseId",
+          "providerResponseId",
+          "billingReceiptId",
+          "usage",
+          "usageStatus",
+          "usageScope",
+          "usageSemanticsVersion",
+          "cost",
+          "elapsedSeconds",
+          "status",
+          "stage",
+          "spanId",
+          "attemptId",
+          "workKind"
+        ],
+        "properties": {
+          "executorType": {
+            "enum": [
+              "deterministic_program",
+              "production_model",
+              "decision_agent",
+              "human",
+              "external_service",
+              "engineering_codex"
+            ]
+          },
+          "modelCallId": {
+            "$ref": "#/$defs/label"
+          },
+          "logicalCallId": {
+            "$ref": "#/$defs/label"
+          },
+          "provider": {
+            "$ref": "#/$defs/label"
+          },
+          "requestedModel": {
+            "$ref": "#/$defs/label"
+          },
+          "attemptNumber": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "usageScope": {
+            "const": "direct_response"
+          },
+          "stage": {
+            "$ref": "#/$defs/label"
+          },
+          "spanId": {
+            "$ref": "#/$defs/label"
+          },
+          "attemptId": {
+            "$ref": "#/$defs/label"
+          },
+          "workKind": {
+            "enum": [
+              "production",
+              "control",
+              "engineering"
+            ]
+          },
+          "usage": {
+            "type": "object",
+            "properties": {
+              "inputTokens": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "outputTokens": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "cachedInputTokens": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "cacheWriteTokens": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "reasoningTokens": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "totalTokens": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "audioSeconds": {
+                "anyOf": [
+                  {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1e+100
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "inputTokens",
+              "outputTokens",
+              "cachedInputTokens",
+              "cacheWriteTokens",
+              "reasoningTokens",
+              "totalTokens",
+              "audioSeconds"
+            ],
+            "additionalProperties": false
+          },
+          "status": {
+            "enum": [
+              "completed",
+              "failed",
+              "cancelled",
+              "outcome_unknown"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event": {
+            "const": "sdk_call_started"
+          }
+        },
+        "required": [
+          "event"
+        ]
+      },
+      "then": {
+        "required": [
+          "invocationId",
+          "model",
+          "usageScope",
+          "coverageStatus",
+          "coveredResponseIds"
+        ],
+        "properties": {
+          "executorType": {
+            "enum": [
+              "deterministic_program",
+              "production_model",
+              "decision_agent",
+              "human",
+              "external_service",
+              "engineering_codex"
+            ]
+          },
+          "usageScope": {
+            "const": "sdk_aggregate"
+          },
+          "invocationId": {
+            "$ref": "#/$defs/label"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event": {
+            "const": "sdk_call_finished"
+          }
+        },
+        "required": [
+          "event"
+        ]
+      },
+      "then": {
+        "required": [
+          "invocationId",
+          "model",
+          "usageScope",
+          "coverageStatus",
+          "coveredResponseIds",
+          "usage",
+          "status",
+          "elapsedSeconds"
+        ],
+        "properties": {
+          "executorType": {
+            "enum": [
+              "deterministic_program",
+              "production_model",
+              "decision_agent",
+              "human",
+              "external_service",
+              "engineering_codex"
+            ]
+          },
+          "usageScope": {
+            "const": "sdk_aggregate"
+          },
+          "invocationId": {
+            "$ref": "#/$defs/label"
+          },
+          "usage": {
+            "type": "object",
+            "properties": {
+              "requests": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "input_tokens": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "output_tokens": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "total_tokens": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "requests",
+              "input_tokens",
+              "output_tokens",
+              "total_tokens"
+            ],
+            "additionalProperties": false
+          },
+          "status": {
+            "enum": [
+              "completed",
+              "failed",
+              "cancelled",
+              "outcome_unknown"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event": {
+            "const": "workload"
+          }
+        },
+        "required": [
+          "event"
+        ]
+      },
+      "then": {
+        "required": [
+          "stage",
+          "metrics"
+        ],
+        "properties": {
+          "stage": {
+            "$ref": "#/$defs/label"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event": {
+            "const": "log"
+          }
+        },
+        "required": [
+          "event"
+        ]
+      },
+      "then": {
+        "required": [
+          "code",
+          "level",
+          "fields"
+        ],
+        "properties": {
+          "code": {
+            "$ref": "#/$defs/label"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event": {
+            "const": "step_state_changed"
+          }
+        },
+        "required": [
+          "event"
+        ]
+      },
+      "then": {
+        "required": [
+          "stepId",
+          "fromState",
+          "toState",
+          "stateRevision",
+          "reasonCode"
+        ],
+        "properties": {
+          "stepId": {
+            "$ref": "#/$defs/label"
+          },
+          "reasonCode": {
+            "$ref": "#/$defs/label"
+          },
+          "stateRevision": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}(?![\\s\\S])"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event": {
+            "const": "attempt_reconciled"
+          }
+        },
+        "required": [
+          "event"
+        ]
+      },
+      "then": {
+        "required": [
+          "reconcilesAttemptId",
+          "result",
+          "evidenceSha256",
+          "reasonCode"
+        ],
+        "properties": {
+          "reconcilesAttemptId": {
+            "$ref": "#/$defs/label"
+          },
+          "reasonCode": {
+            "$ref": "#/$defs/label"
+          },
+          "evidenceSha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}(?![\\s\\S])"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event": {
+            "const": "segment_reviewed"
+          }
+        },
+        "required": [
+          "event"
+        ]
+      },
+      "then": {
+        "required": [
+          "targetLocale",
+          "translationGroupId",
+          "sourceUnitIds",
+          "role",
+          "verdict",
+          "reasonCodes",
+          "evidenceSha256",
+          "modelCallId",
+          "logicalCallId"
+        ],
+        "properties": {
+          "evidenceSha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}(?![\\s\\S])"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "parentSpanId"
+        ],
+        "properties": {
+          "parentSpanId": {
+            "type": "null"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "missingReasons": {
+            "required": [
+              "parentSpanId"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "executorType"
+        ],
+        "properties": {
+          "executorType": {
+            "type": "null"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "missingReasons": {
+            "required": [
+              "executorType"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "workKind"
+        ],
+        "properties": {
+          "workKind": {
+            "type": "null"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "missingReasons": {
+            "required": [
+              "workKind"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "workUnitId"
+        ],
+        "properties": {
+          "workUnitId": {
+            "type": "null"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "missingReasons": {
+            "required": [
+              "workUnitId"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "attemptId"
+        ],
+        "properties": {
+          "attemptId": {
+            "type": "null"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "missingReasons": {
+            "required": [
+              "attemptId"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "decisionId"
+        ],
+        "properties": {
+          "decisionId": {
+            "type": "null"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "missingReasons": {
+            "required": [
+              "decisionId"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "productionRunId"
+        ],
+        "properties": {
+          "productionRunId": {
+            "type": "null"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "missingReasons": {
+            "required": [
+              "productionRunId"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "engineeringRunId"
+        ],
+        "properties": {
+          "engineeringRunId": {
+            "type": "null"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "missingReasons": {
+            "required": [
+              "engineeringRunId"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "dependsOn"
+        ],
+        "properties": {
+          "dependsOn": {
+            "type": "null"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "missingReasons": {
+            "required": [
+              "dependsOn"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "blockedBy"
+        ],
+        "properties": {
+          "blockedBy": {
+            "type": "null"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "missingReasons": {
+            "required": [
+              "blockedBy"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "dependencyReadyAt"
+        ],
+        "properties": {
+          "dependencyReadyAt": {
+            "type": "null"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "missingReasons": {
+            "required": [
+              "dependencyReadyAt"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "queuedAt"
+        ],
+        "properties": {
+          "queuedAt": {
+            "type": "null"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "missingReasons": {
+            "required": [
+              "queuedAt"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "providerScopeKey"
+        ],
+        "properties": {
+          "providerScopeKey": {
+            "type": "null"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "missingReasons": {
+            "required": [
+              "providerScopeKey"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "providerResponseId"
+        ],
+        "properties": {
+          "providerResponseId": {
+            "type": "null"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "missingReasons": {
+            "required": [
+              "providerResponseId"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "billingReceiptId"
+        ],
+        "properties": {
+          "billingReceiptId": {
+            "type": "null"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "missingReasons": {
+            "required": [
+              "billingReceiptId"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "model"
+        ],
+        "properties": {
+          "model": {
+            "type": "null"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "missingReasons": {
+            "required": [
+              "model"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "usage"
+        ],
+        "properties": {
+          "usage": {
+            "type": "null"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "missingReasons": {
+            "required": [
+              "usage"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "elapsedSeconds"
+        ],
+        "properties": {
+          "elapsedSeconds": {
+            "type": "null"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "missingReasons": {
+            "required": [
+              "elapsedSeconds"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "usage"
+        ],
+        "properties": {
+          "usage": {
+            "required": [
+              "inputTokens"
+            ],
+            "properties": {
+              "inputTokens": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "missingReasons": {
+            "required": [
+              "inputTokens"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "usage"
+        ],
+        "properties": {
+          "usage": {
+            "required": [
+              "outputTokens"
+            ],
+            "properties": {
+              "outputTokens": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "missingReasons": {
+            "required": [
+              "outputTokens"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "usage"
+        ],
+        "properties": {
+          "usage": {
+            "required": [
+              "cachedInputTokens"
+            ],
+            "properties": {
+              "cachedInputTokens": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "missingReasons": {
+            "required": [
+              "cachedInputTokens"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "usage"
+        ],
+        "properties": {
+          "usage": {
+            "required": [
+              "cacheWriteTokens"
+            ],
+            "properties": {
+              "cacheWriteTokens": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "missingReasons": {
+            "required": [
+              "cacheWriteTokens"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "usage"
+        ],
+        "properties": {
+          "usage": {
+            "required": [
+              "reasoningTokens"
+            ],
+            "properties": {
+              "reasoningTokens": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "missingReasons": {
+            "required": [
+              "reasoningTokens"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "usage"
+        ],
+        "properties": {
+          "usage": {
+            "required": [
+              "totalTokens"
+            ],
+            "properties": {
+              "totalTokens": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "missingReasons": {
+            "required": [
+              "totalTokens"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "usage"
+        ],
+        "properties": {
+          "usage": {
+            "required": [
+              "audioSeconds"
+            ],
+            "properties": {
+              "audioSeconds": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "missingReasons": {
+            "required": [
+              "audioSeconds"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "cost"
+        ],
+        "properties": {
+          "cost": {
+            "required": [
+              "estimatedUsd"
+            ],
+            "properties": {
+              "estimatedUsd": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "missingReasons": {
+            "required": [
+              "cost"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "code"
+        ],
+        "properties": {
+          "event": {
+            "const": "log"
+          },
+          "code": {
+            "const": "model_cache_observation"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "fields": {
+            "type": "object",
+            "properties": {
+              "cacheSha256": {
+                "$ref": "#/$defs/sha256"
+              },
+              "originCacheSha256": {
+                "$ref": "#/$defs/sha256"
+              },
+              "rawReceiptSha256": {
+                "$ref": "#/$defs/sha256"
+              },
+              "payloadSha256": {
+                "$ref": "#/$defs/sha256"
+              },
+              "responseIdSha256": {
+                "$ref": "#/$defs/sha256"
+              },
+              "schemaVersion": {
+                "const": "sermon-model-cache-observation-v1"
+              },
+              "role": {
+                "enum": [
+                  "translator",
+                  "reviewer"
+                ]
+              },
+              "requestedModel": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/label"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "model": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/label"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "provider": {
+                "const": "openai"
+              },
+              "usage": {
+                "type": "object",
+                "properties": {
+                  "inputTokens": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "outputTokens": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "cachedInputTokens": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "cacheWriteTokens": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "reasoningTokens": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "totalTokens": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "audioSeconds": {
+                    "anyOf": [
+                      {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1e+100
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "inputTokens",
+                  "outputTokens",
+                  "cachedInputTokens",
+                  "cacheWriteTokens",
+                  "reasoningTokens",
+                  "totalTokens",
+                  "audioSeconds"
+                ],
+                "additionalProperties": false
+              },
+              "usageProvenance": {
+                "enum": [
+                  "historical_bound_provider_receipt",
+                  "missing_raw_receipt",
+                  "unbound_raw_receipt"
+                ]
+              },
+              "reuseMode": {
+                "enum": [
+                  "carried_forward_group",
+                  "validated_cache",
+                  "raw_response_recovery"
+                ]
+              },
+              "newProviderCalls": {
+                "const": 0
+              },
+              "historicalCostUsd": {
+                "type": "null"
+              }
+            },
+            "required": [
+              "cacheSha256",
+              "originCacheSha256",
+              "rawReceiptSha256",
+              "payloadSha256",
+              "responseIdSha256",
+              "schemaVersion",
+              "role",
+              "requestedModel",
+              "model",
+              "provider",
+              "usage",
+              "usageProvenance",
+              "reuseMode",
+              "newProviderCalls",
+              "historicalCostUsd"
+            ],
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "code"
+        ],
+        "properties": {
+          "event": {
+            "const": "log"
+          },
+          "code": {
+            "const": "local_model_observation"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "fields": {
+            "type": "object",
+            "properties": {
+              "schemaVersion": {
+                "const": "sermon-local-model-observation-v1"
+              },
+              "model": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)?(?![\\s\\S])",
+                "maxLength": 200
+              },
+              "checkpointSha256": {
+                "$ref": "#/$defs/sha256"
+              },
+              "inputSha256": {
+                "$ref": "#/$defs/sha256"
+              },
+              "outputSha256": {
+                "$ref": "#/$defs/sha256"
+              },
+              "status": {
+                "enum": [
+                  "started",
+                  "completed",
+                  "failed"
+                ]
+              },
+              "elapsedSeconds": {
+                "anyOf": [
+                  {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1e+100
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "usageProvenance": {
+                "const": "local_execution_no_provider_receipt"
+              },
+              "providerTokens": {
+                "type": "null"
+              },
+              "providerCostUsd": {
+                "type": "null"
+              }
+            },
+            "required": [
+              "schemaVersion",
+              "model",
+              "checkpointSha256",
+              "inputSha256",
+              "outputSha256",
+              "status",
+              "elapsedSeconds",
+              "usageProvenance",
+              "providerTokens",
+              "providerCostUsd"
+            ],
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "code"
+        ],
+        "properties": {
+          "event": {
+            "const": "log"
+          },
+          "code": {
+            "const": "decision_observation"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "fields": {
+            "type": "object",
+            "properties": {
+              "schemaVersion": {
+                "const": "sermon-decision-observation-v1"
+              },
+              "observationId": {
+                "$ref": "#/$defs/label"
+              },
+              "phase": {
+                "enum": [
+                  "turn",
+                  "commit"
+                ]
+              },
+              "parentContextInherited": {
+                "const": false
+              },
+              "status": {
+                "enum": [
+                  "commit_failed",
+                  "commit_recorded",
+                  "decision_budget_unavailable",
+                  "decision_outcome_unknown",
+                  "decision_rejected",
+                  "proposal_requires_locked_admission"
+                ]
+              },
+              "selectedAction": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "escalate_engineering",
+                      "open_audio_revision",
+                      "open_text_revision",
+                      "request_human_review"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "timings": {
+                "type": "object",
+                "properties": {
+                  "decisionValidationMs": {
+                    "anyOf": [
+                      {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1e+100
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "decisionWallSeconds": {
+                    "anyOf": [
+                      {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1e+100
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "modelLatencyMs": {
+                    "anyOf": [
+                      {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1e+100
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "packetValidationMs": {
+                    "anyOf": [
+                      {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1e+100
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "reservationMs": {
+                    "anyOf": [
+                      {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1e+100
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "stateCommitMs": {
+                    "anyOf": [
+                      {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1e+100
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "statePacketBuildMs": {
+                    "anyOf": [
+                      {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1e+100
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "decisionValidationMs",
+                  "decisionWallSeconds",
+                  "modelLatencyMs",
+                  "packetValidationMs",
+                  "reservationMs",
+                  "stateCommitMs",
+                  "statePacketBuildMs"
+                ],
+                "additionalProperties": false
+              },
+              "productionRunId": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}(?![\\s\\S])"
+              },
+              "decisionId": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}(?![\\s\\S])"
+              },
+              "stateRevision": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}(?![\\s\\S])"
+              },
+              "statePacketSha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}(?![\\s\\S])"
+              },
+              "statePacketBytes": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 32768
+              },
+              "evidenceRefCount": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 16
+              },
+              "allowedActionCount": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 4
+              }
+            },
+            "required": [
+              "allowedActionCount",
+              "decisionId",
+              "evidenceRefCount",
+              "observationId",
+              "parentContextInherited",
+              "phase",
+              "productionRunId",
+              "schemaVersion",
+              "selectedAction",
+              "statePacketBytes",
+              "statePacketSha256",
+              "stateRevision",
+              "status",
+              "timings"
+            ],
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event": {
+            "const": "rqc_observation"
+          }
+        },
+        "required": [
+          "event"
+        ]
+      },
+      "then": {
+        "required": [
+          "rqcEvidence",
+          "role",
+          "revisionId"
+        ],
+        "properties": {
+          "role": {
+            "enum": [
+              "generation",
+              "quality_review",
+              "gate",
+              "repair"
+            ]
+          }
+        }
+      },
+      "else": {
+        "not": {
+          "required": [
+            "rqcEvidence"
+          ]
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "label": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.:-]{1,100}(?![\\s\\S])"
+    },
+    "sha256": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}(?![\\s\\S])"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,9})?Z(?![\\s\\S])"
+    },
+    "eventId": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{32}(?![\\s\\S])"
+    },
+    "usage": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "inputTokens": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "outputTokens": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "cachedInputTokens": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "cacheWriteTokens": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "reasoningTokens": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "totalTokens": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "audioSeconds": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1e+100
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "inputTokens",
+            "outputTokens",
+            "cachedInputTokens",
+            "cacheWriteTokens",
+            "reasoningTokens",
+            "totalTokens",
+            "audioSeconds"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "requests": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "input_tokens": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "output_tokens": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "total_tokens": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "requests",
+            "input_tokens",
+            "output_tokens",
+            "total_tokens"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "cost": {
+      "type": "object",
+      "properties": {
+        "estimatedUsd": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1e+100
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "audioSeconds": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1e+100
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "usdPerMinute": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1e+100
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "status": {
+          "$ref": "#/$defs/label"
+        },
+        "reason": {
+          "$ref": "#/$defs/label"
+        },
+        "serviceTier": {
+          "$ref": "#/$defs/label"
+        },
+        "contextTier": {
+          "$ref": "#/$defs/label"
+        },
+        "currency": {
+          "const": "USD"
+        },
+        "priceSource": {
+          "const": "https://developers.openai.com/api/docs/pricing"
+        },
+        "priceVerifiedAt": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}(?![\\s\\S])"
+        },
+        "invoiceVerified": {
+          "const": false
+        },
+        "reasoningIncludedInOutput": {
+          "const": true
+        },
+        "ratesPerMillion": {
+          "type": "object",
+          "properties": {
+            "input": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1e+100
+            },
+            "cachedInput": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1e+100
+            },
+            "cacheWrite": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1e+100
+            },
+            "output": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1e+100
+            }
+          },
+          "required": [
+            "input",
+            "cachedInput",
+            "cacheWrite",
+            "output"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "status",
+        "estimatedUsd"
+      ],
+      "additionalProperties": false
+    },
+    "missingReasons": {
+      "type": "object",
+      "properties": {
+        "parentSpanId": {
+          "enum": [
+            "not_observed",
+            "provider_not_reported",
+            "not_applicable",
+            "receipt_conflict",
+            "clock_untrusted"
+          ]
+        },
+        "executorType": {
+          "enum": [
+            "not_observed",
+            "provider_not_reported",
+            "not_applicable",
+            "receipt_conflict",
+            "clock_untrusted"
+          ]
+        },
+        "workKind": {
+          "enum": [
+            "not_observed",
+            "provider_not_reported",
+            "not_applicable",
+            "receipt_conflict",
+            "clock_untrusted"
+          ]
+        },
+        "workUnitId": {
+          "enum": [
+            "not_observed",
+            "provider_not_reported",
+            "not_applicable",
+            "receipt_conflict",
+            "clock_untrusted"
+          ]
+        },
+        "attemptId": {
+          "enum": [
+            "not_observed",
+            "provider_not_reported",
+            "not_applicable",
+            "receipt_conflict",
+            "clock_untrusted"
+          ]
+        },
+        "decisionId": {
+          "enum": [
+            "not_observed",
+            "provider_not_reported",
+            "not_applicable",
+            "receipt_conflict",
+            "clock_untrusted"
+          ]
+        },
+        "productionRunId": {
+          "enum": [
+            "not_observed",
+            "provider_not_reported",
+            "not_applicable",
+            "receipt_conflict",
+            "clock_untrusted"
+          ]
+        },
+        "engineeringRunId": {
+          "enum": [
+            "not_observed",
+            "provider_not_reported",
+            "not_applicable",
+            "receipt_conflict",
+            "clock_untrusted"
+          ]
+        },
+        "dependsOn": {
+          "enum": [
+            "not_observed",
+            "provider_not_reported",
+            "not_applicable",
+            "receipt_conflict",
+            "clock_untrusted"
+          ]
+        },
+        "blockedBy": {
+          "enum": [
+            "not_observed",
+            "provider_not_reported",
+            "not_applicable",
+            "receipt_conflict",
+            "clock_untrusted"
+          ]
+        },
+        "dependencyReadyAt": {
+          "enum": [
+            "not_observed",
+            "provider_not_reported",
+            "not_applicable",
+            "receipt_conflict",
+            "clock_untrusted"
+          ]
+        },
+        "queuedAt": {
+          "enum": [
+            "not_observed",
+            "provider_not_reported",
+            "not_applicable",
+            "receipt_conflict",
+            "clock_untrusted"
+          ]
+        },
+        "providerScopeKey": {
+          "enum": [
+            "not_observed",
+            "provider_not_reported",
+            "not_applicable",
+            "receipt_conflict",
+            "clock_untrusted"
+          ]
+        },
+        "providerResponseId": {
+          "enum": [
+            "not_observed",
+            "provider_not_reported",
+            "not_applicable",
+            "receipt_conflict",
+            "clock_untrusted"
+          ]
+        },
+        "billingReceiptId": {
+          "enum": [
+            "not_observed",
+            "provider_not_reported",
+            "not_applicable",
+            "receipt_conflict",
+            "clock_untrusted"
+          ]
+        },
+        "model": {
+          "enum": [
+            "not_observed",
+            "provider_not_reported",
+            "not_applicable",
+            "receipt_conflict",
+            "clock_untrusted"
+          ]
+        },
+        "usage": {
+          "enum": [
+            "not_observed",
+            "provider_not_reported",
+            "not_applicable",
+            "receipt_conflict",
+            "clock_untrusted"
+          ]
+        },
+        "coverage": {
+          "enum": [
+            "not_observed",
+            "provider_not_reported",
+            "not_applicable",
+            "receipt_conflict",
+            "clock_untrusted"
+          ]
+        },
+        "elapsedSeconds": {
+          "enum": [
+            "not_observed",
+            "provider_not_reported",
+            "not_applicable",
+            "receipt_conflict",
+            "clock_untrusted"
+          ]
+        },
+        "inputTokens": {
+          "enum": [
+            "not_observed",
+            "provider_not_reported",
+            "not_applicable",
+            "receipt_conflict",
+            "clock_untrusted"
+          ]
+        },
+        "outputTokens": {
+          "enum": [
+            "not_observed",
+            "provider_not_reported",
+            "not_applicable",
+            "receipt_conflict",
+            "clock_untrusted"
+          ]
+        },
+        "cachedInputTokens": {
+          "enum": [
+            "not_observed",
+            "provider_not_reported",
+            "not_applicable",
+            "receipt_conflict",
+            "clock_untrusted"
+          ]
+        },
+        "cacheWriteTokens": {
+          "enum": [
+            "not_observed",
+            "provider_not_reported",
+            "not_applicable",
+            "receipt_conflict",
+            "clock_untrusted"
+          ]
+        },
+        "reasoningTokens": {
+          "enum": [
+            "not_observed",
+            "provider_not_reported",
+            "not_applicable",
+            "receipt_conflict",
+            "clock_untrusted"
+          ]
+        },
+        "totalTokens": {
+          "enum": [
+            "not_observed",
+            "provider_not_reported",
+            "not_applicable",
+            "receipt_conflict",
+            "clock_untrusted"
+          ]
+        },
+        "audioSeconds": {
+          "enum": [
+            "not_observed",
+            "provider_not_reported",
+            "not_applicable",
+            "receipt_conflict",
+            "clock_untrusted"
+          ]
+        },
+        "cost": {
+          "enum": [
+            "not_observed",
+            "provider_not_reported",
+            "not_applicable",
+            "receipt_conflict"
+          ]
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "settings": {
+      "type": "object",
+      "properties": {
+        "temperature": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1e+100
+        },
+        "max_tokens": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1e+100
+        },
+        "max_completion_tokens": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1e+100
+        },
+        "max_output_tokens": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1e+100
+        },
+        "reasoning_effort": {
+          "enum": [
+            "none",
+            "minimal",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max",
+            "ultra"
+          ]
+        },
+        "service_tier": {
+          "enum": [
+            "auto",
+            "default",
+            "standard",
+            "priority",
+            "fast",
+            "batch",
+            "flex"
+          ]
+        },
+        "requestPayloadSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}(?![\\s\\S])"
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "executionIdentity": {
+      "type": "object",
+      "properties": {
+        "gitCommit": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-f0-9]{40,64}(?![\\s\\S])"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "trackedWorkingTreeDirty": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "loadedProjectCodeSha256": {
+          "type": "object",
+          "maxProperties": 1024,
+          "patternProperties": {
+            "^(?:scripts|backend|experiments)/(?!.*\\.\\.)[A-Za-z0-9_./-]+\\.py$": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}(?![\\s\\S])"
+            }
+          },
+          "additionalProperties": false
+        },
+        "pythonVersion": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/label"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "scope": {
+          "const": "loaded_project_modules_at_workflow_start_not_all_or_remote_code"
+        }
+      },
+      "required": [
+        "gitCommit",
+        "trackedWorkingTreeDirty",
+        "loadedProjectCodeSha256",
+        "pythonVersion",
+        "scope"
+      ],
+      "additionalProperties": false
+    },
+    "evidence": {
+      "type": "object",
+      "properties": {
+        "schemaVersion": {
+          "const": "sermon-workflow-evidence-v1"
+        },
+        "evidenceScope": {
+          "const": "existing_files_snapshot"
+        },
+        "currentRunExecutionProven": {
+          "const": false
+        },
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "category": {
+                "$ref": "#/$defs/label"
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}(?![\\s\\S])"
+              },
+              "bytes": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "category",
+              "sha256",
+              "bytes"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 64,
+          "uniqueItems": true
+        },
+        "missingCategories": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/label"
+          },
+          "maxItems": 64,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "evidenceScope",
+        "currentRunExecutionProven",
+        "artifacts",
+        "missingCategories"
+      ],
+      "additionalProperties": false
+    },
+    "observationFields": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "exitCode": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1e+100
+            },
+            "count": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1e+100
+            },
+            "attempt": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1e+100
+            },
+            "httpStatus": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1e+100
+            },
+            "elapsedSeconds": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1e+100
+            },
+            "cacheHit": {
+              "type": "boolean"
+            },
+            "status": {
+              "$ref": "#/$defs/label"
+            },
+            "reasonCode": {
+              "$ref": "#/$defs/label"
+            }
+          },
+          "required": [],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "cacheSha256": {
+              "$ref": "#/$defs/sha256"
+            },
+            "originCacheSha256": {
+              "$ref": "#/$defs/sha256"
+            },
+            "rawReceiptSha256": {
+              "$ref": "#/$defs/sha256"
+            },
+            "payloadSha256": {
+              "$ref": "#/$defs/sha256"
+            },
+            "responseIdSha256": {
+              "$ref": "#/$defs/sha256"
+            },
+            "schemaVersion": {
+              "const": "sermon-model-cache-observation-v1"
+            },
+            "role": {
+              "enum": [
+                "translator",
+                "reviewer"
+              ]
+            },
+            "requestedModel": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/label"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "model": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/label"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "provider": {
+              "const": "openai"
+            },
+            "usage": {
+              "type": "object",
+              "properties": {
+                "inputTokens": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "outputTokens": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "cachedInputTokens": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "cacheWriteTokens": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "reasoningTokens": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "totalTokens": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "audioSeconds": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1e+100
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "inputTokens",
+                "outputTokens",
+                "cachedInputTokens",
+                "cacheWriteTokens",
+                "reasoningTokens",
+                "totalTokens",
+                "audioSeconds"
+              ],
+              "additionalProperties": false
+            },
+            "usageProvenance": {
+              "enum": [
+                "historical_bound_provider_receipt",
+                "missing_raw_receipt",
+                "unbound_raw_receipt"
+              ]
+            },
+            "reuseMode": {
+              "enum": [
+                "carried_forward_group",
+                "validated_cache",
+                "raw_response_recovery"
+              ]
+            },
+            "newProviderCalls": {
+              "const": 0
+            },
+            "historicalCostUsd": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "cacheSha256",
+            "originCacheSha256",
+            "rawReceiptSha256",
+            "payloadSha256",
+            "responseIdSha256",
+            "schemaVersion",
+            "role",
+            "requestedModel",
+            "model",
+            "provider",
+            "usage",
+            "usageProvenance",
+            "reuseMode",
+            "newProviderCalls",
+            "historicalCostUsd"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "schemaVersion": {
+              "const": "sermon-local-model-observation-v1"
+            },
+            "model": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)?(?![\\s\\S])",
+              "maxLength": 200
+            },
+            "checkpointSha256": {
+              "$ref": "#/$defs/sha256"
+            },
+            "inputSha256": {
+              "$ref": "#/$defs/sha256"
+            },
+            "outputSha256": {
+              "$ref": "#/$defs/sha256"
+            },
+            "status": {
+              "enum": [
+                "started",
+                "completed",
+                "failed"
+              ]
+            },
+            "elapsedSeconds": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1e+100
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "usageProvenance": {
+              "const": "local_execution_no_provider_receipt"
+            },
+            "providerTokens": {
+              "type": "null"
+            },
+            "providerCostUsd": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "schemaVersion",
+            "model",
+            "checkpointSha256",
+            "inputSha256",
+            "outputSha256",
+            "status",
+            "elapsedSeconds",
+            "usageProvenance",
+            "providerTokens",
+            "providerCostUsd"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "schemaVersion": {
+              "const": "sermon-decision-observation-v1"
+            },
+            "observationId": {
+              "$ref": "#/$defs/label"
+            },
+            "phase": {
+              "enum": [
+                "turn",
+                "commit"
+              ]
+            },
+            "parentContextInherited": {
+              "const": false
+            },
+            "status": {
+              "enum": [
+                "commit_failed",
+                "commit_recorded",
+                "decision_budget_unavailable",
+                "decision_outcome_unknown",
+                "decision_rejected",
+                "proposal_requires_locked_admission"
+              ]
+            },
+            "selectedAction": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "escalate_engineering",
+                    "open_audio_revision",
+                    "open_text_revision",
+                    "request_human_review"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "timings": {
+              "type": "object",
+              "properties": {
+                "decisionValidationMs": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1e+100
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "decisionWallSeconds": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1e+100
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "modelLatencyMs": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1e+100
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "packetValidationMs": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1e+100
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "reservationMs": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1e+100
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "stateCommitMs": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1e+100
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "statePacketBuildMs": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1e+100
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "decisionValidationMs",
+                "decisionWallSeconds",
+                "modelLatencyMs",
+                "packetValidationMs",
+                "reservationMs",
+                "stateCommitMs",
+                "statePacketBuildMs"
+              ],
+              "additionalProperties": false
+            },
+            "productionRunId": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}(?![\\s\\S])"
+            },
+            "decisionId": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}(?![\\s\\S])"
+            },
+            "stateRevision": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}(?![\\s\\S])"
+            },
+            "statePacketSha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}(?![\\s\\S])"
+            },
+            "statePacketBytes": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 32768
+            },
+            "evidenceRefCount": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 16
+            },
+            "allowedActionCount": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 4
+            }
+          },
+          "required": [
+            "allowedActionCount",
+            "decisionId",
+            "evidenceRefCount",
+            "observationId",
+            "parentContextInherited",
+            "phase",
+            "productionRunId",
+            "schemaVersion",
+            "selectedAction",
+            "statePacketBytes",
+            "statePacketSha256",
+            "stateRevision",
+            "status",
+            "timings"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "rqcEvidence": {
+      "type": "object",
+      "properties": {
+        "schemaVersion": {
+          "const": "sermon-review-observation-v1"
+        },
+        "receiptType": {
+          "enum": [
+            "sermon-candidate-revision-v1",
+            "sermon-review-receipt-v1",
+            "sermon-review-gate-decision-v1",
+            "sermon-review-repair-plan-v1"
+          ]
+        },
+        "receiptCanonicalJsonSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}(?![\\s\\S])"
+        },
+        "receiptContentSha256": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}(?![\\s\\S])"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "candidateId": {
+          "$ref": "#/$defs/label"
+        },
+        "revisionId": {
+          "$ref": "#/$defs/label"
+        },
+        "targetLocale": {
+          "enum": [
+            "zh-Hans",
+            "ko",
+            "es"
+          ]
+        },
+        "workUnitIds": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/label"
+          },
+          "maxItems": 64,
+          "uniqueItems": true
+        },
+        "artifactSha256": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}(?![\\s\\S])"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "policySha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}(?![\\s\\S])"
+        },
+        "rubricSha256": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}(?![\\s\\S])"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "executionStatus": {
+          "anyOf": [
+            {
+              "enum": [
+                "succeeded",
+                "failed",
+                "cancelled",
+                "outcome_unknown"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reviewVerdict": {
+          "anyOf": [
+            {
+              "enum": [
+                "pass",
+                "needs_rework",
+                "inconclusive",
+                "not_assessed"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "admissionStatus": {
+          "anyOf": [
+            {
+              "enum": [
+                "admitted",
+                "blocked",
+                "waiting_human",
+                "waiting_external"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reasonCodes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/label"
+          },
+          "maxItems": 64,
+          "uniqueItems": true
+        },
+        "issues": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "issueId": {
+                "$ref": "#/$defs/label"
+              },
+              "reasonCode": {
+                "$ref": "#/$defs/label"
+              },
+              "severity": {
+                "enum": [
+                  "critical",
+                  "major",
+                  "minor",
+                  "uncertain"
+                ]
+              },
+              "sourceUnitIds": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/label"
+                },
+                "maxItems": 64,
+                "uniqueItems": true
+              },
+              "targetUnitIds": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/label"
+                },
+                "maxItems": 64,
+                "uniqueItems": true
+              },
+              "evidenceHashes": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}(?![\\s\\S])"
+                },
+                "maxItems": 64,
+                "uniqueItems": true
+              }
+            },
+            "required": [
+              "issueId",
+              "reasonCode",
+              "severity",
+              "sourceUnitIds",
+              "targetUnitIds",
+              "evidenceHashes"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 64,
+          "uniqueItems": true
+        },
+        "coverage": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "expectedUnitIds": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/label"
+                  },
+                  "maxItems": 64,
+                  "uniqueItems": true
+                },
+                "assessedUnitIds": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/label"
+                  },
+                  "maxItems": 64,
+                  "uniqueItems": true
+                },
+                "unassessedUnitIds": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/label"
+                  },
+                  "maxItems": 64,
+                  "uniqueItems": true
+                }
+              },
+              "required": [
+                "expectedUnitIds",
+                "assessedUnitIds",
+                "unassessedUnitIds"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "modelCallId": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/label"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reviewAttemptId": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/label"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reviewerInputManifestSha256": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}(?![\\s\\S])"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "repairAction": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/label"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "triggerReceiptSha256": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}(?![\\s\\S])"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "fromRevisionId": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/label"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "toRevisionId": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/label"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "allowedNextActions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/label"
+          },
+          "maxItems": 64,
+          "uniqueItems": true
+        },
+        "missingReasons": {
+          "type": "object",
+          "additionalProperties": {
+            "enum": [
+              "not_applicable",
+              "not_observed"
+            ]
+          },
+          "maxProperties": 32
+        },
+        "checks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "checkId": {
+                "enum": [
+                  "completeMeaning",
+                  "negationsNumbersNames",
+                  "quotationAttribution",
+                  "noAddedMeaning"
+                ]
+              },
+              "result": {
+                "enum": [
+                  "pass",
+                  "fail",
+                  "not_assessed"
+                ]
+              },
+              "evidenceHashes": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}(?![\\s\\S])"
+                },
+                "maxItems": 64,
+                "uniqueItems": true
+              }
+            },
+            "required": [
+              "checkId",
+              "result",
+              "evidenceHashes"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 4
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "receiptType",
+        "receiptCanonicalJsonSha256",
+        "receiptContentSha256",
+        "candidateId",
+        "revisionId",
+        "targetLocale",
+        "workUnitIds",
+        "artifactSha256",
+        "policySha256",
+        "rubricSha256",
+        "executionStatus",
+        "reviewVerdict",
+        "admissionStatus",
+        "reasonCodes",
+        "issues",
+        "coverage",
+        "modelCallId",
+        "reviewAttemptId",
+        "reviewerInputManifestSha256",
+        "repairAction",
+        "triggerReceiptSha256",
+        "fromRevisionId",
+        "toRevisionId",
+        "allowedNextActions",
+        "missingReasons",
+        "checks"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

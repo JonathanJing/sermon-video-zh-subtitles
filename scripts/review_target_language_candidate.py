@@ -42,11 +42,11 @@ def _load(path: Path) -> dict[str, Any]:
 
 
 def build_worksheet(source_package: dict[str, Any], anchor: dict[str, Any],
-                    candidate: dict[str, Any], policy: dict[str, Any]) -> dict[str, Any]:
+                    candidate: dict[str, Any], policy: dict[str, Any], *, strict_rubric=None) -> dict[str, Any]:
     """Expose all source, coverage, machine and language evidence per group."""
     handoff._validate_schema(candidate, "sermon-target-language-candidate-v2.schema.json", "target candidate")
     handoff.validate_target_candidate(source_package, anchor, candidate, require_human_approval=False)
-    handoff.validate_policy_binding(candidate, policy)
+    handoff.validate_policy_binding(candidate, policy, strict_rubric=strict_rubric)
     human = candidate["humanReview"]
     _require(candidate["status"] == "machine_review_pass_human_review_pending"
              and human["translation"] == "pending"
@@ -81,8 +81,8 @@ def build_worksheet(source_package: dict[str, Any], anchor: dict[str, Any],
 
 def approve_worksheet(source_package: dict[str, Any], anchor: dict[str, Any],
                       candidate: dict[str, Any], policy: dict[str, Any],
-                      worksheet: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
-    expected = build_worksheet(source_package, anchor, candidate, policy)
+                      worksheet: dict[str, Any], *, strict_rubric=None) -> tuple[dict[str, Any], dict[str, Any]]:
+    expected = build_worksheet(source_package, anchor, candidate, policy, strict_rubric=strict_rubric)
     for key in ("schemaVersion", "targetLocale", "englishSourcePackageJsonSha256",
                 "anchorManifestJsonSha256", "translationPolicySha256", "candidateJsonSha256"):
         _require(worksheet.get(key) == expected[key], f"Human worksheet identity changed: {key}")

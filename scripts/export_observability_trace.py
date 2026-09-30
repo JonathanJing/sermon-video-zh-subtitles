@@ -25,6 +25,18 @@ TIMES = {'recordedAt', 'startedAt', 'dependencyReadyAt', 'queuedAt'}
 
 
 def safe_event(row):
+    if 'contractVersion' in row:
+        from scripts.sermon_log_contract import validate_event
+        validate_event(row)
+        result = json.loads(json.dumps(row))
+        # Schema has already rejected free text/host paths. Preserve every safe
+        # identity and null reason, including aliases and explicit SDK coverage.
+        for key in ('responseId', 'providerResponseId', 'billingReceiptId'):
+            if result.get(key): result[key] = hashlib.sha256(result[key].encode()).hexdigest()
+        if result.get('coveredResponseIds') is not None:
+            result['coveredResponseIds'] = [hashlib.sha256(v.encode()).hexdigest() for v in result['coveredResponseIds']]
+        validate_event(result)
+        return result
     result = {'schemaVersion': row['schemaVersion']}
     for key in LABELS:
         if key in row: result[key] = accounting._label(row[key], None)
@@ -83,12 +95,13 @@ def export(directory, output):
     before, after = accounting.receipt_integrity(events), accounting.receipt_integrity(safe)
     if (before['status'], len(before['conflicts']), before['equivalentDuplicatesIgnored']) != (after['status'], len(after['conflicts']), after['equivalentDuplicatesIgnored']):
         raise ValueError('export_changes_receipt_reconciliation')
-    output.mkdir(parents=True, exist_ok=False)
+    from scripts import sermon_trace_artifacts as artifacts
+    artifacts.new_directory(output)
     serialized = ''.join(json.dumps(e, sort_keys=True, separators=(',', ':'), allow_nan=False)+'\n' for e in safe)
-    (output/'events.jsonl').write_text(serialized)
+    artifacts.write(output/'events.jsonl',serialized)
     report = weekly.project(output)
-    (output/'report.json').write_text(json.dumps(report, indent=2, allow_nan=False)+'\n')
-    (output/'report.md').write_text(weekly.markdown(report))
+    artifacts.write(output/'report.json',json.dumps(report, indent=2, allow_nan=False)+'\n')
+    artifacts.write(output/'report.md',weekly.markdown(report))
     manifest = {'schemaVersion': 'sermon-safe-observability-export-v1', 'sourceEventCount': len(events),
         'exportedEventCount': len(events), 'sourceLedgerSha256': source_hash,
         'exportedLedgerSha256': hashlib.sha256(serialized.encode()).hexdigest(),
@@ -96,7 +109,7 @@ def export(directory, output):
         'responseIdTransform': 'sha256_preserves_equality_not_original_provider_identifier',
         'scope': 'exported_ledger_only_not_independent_proof_of_execution',
         'reportSha256': hashlib.sha256((output/'report.json').read_bytes()).hexdigest()}
-    (output/'export.json').write_text(json.dumps(manifest, indent=2)+'\n')
+    artifacts.write(output/'export.json',json.dumps(manifest, indent=2)+'\n')
     return manifest
 
 

@@ -154,11 +154,12 @@ def validate_target_candidate(source_package: dict[str, Any], anchor: dict[str, 
     return {"targetLocale": locale, "groupIds": group_ids, "sourceUnitIds": assigned_units}
 
 
-def validate_policy_binding(candidate: dict[str, Any], policy: dict[str, Any]) -> None:
-    result = policy_tools.validate_policy(policy)
+def validate_policy_binding(candidate: dict[str, Any], policy: dict[str, Any], *, strict_rubric=None) -> None:
+    result = (policy_tools.validate_policy(policy) if strict_rubric is None else
+              policy_tools.validate_strict_policy(policy, strict_rubric))
     _require(policy["targetLocale"] == candidate["targetLocale"],
              "Target-Language Policy locale differs from candidate")
-    if policy["schemaVersion"] == policy_tools.POLICY_V2:
+    if policy["schemaVersion"] in {policy_tools.POLICY_V2, policy_tools.POLICY_V3}:
         _require(policy["sourceScope"]["englishSourcePackageJsonSha256"]
                  == candidate["englishSourcePackageJsonSha256"]
                  and policy["sourceScope"]["anchorManifestSha256"]

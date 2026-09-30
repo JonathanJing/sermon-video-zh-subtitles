@@ -11,7 +11,7 @@ import sys
 
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from scripts.sermon_accounting import EXECUTOR_TYPES, READABLE_SCHEMAS, _label, _number, _safe_metadata, safe_execution_identity, read_events, receipt_integrity
+from scripts.sermon_accounting import EXECUTOR_TYPES, READABLE_SCHEMAS, _label, _number, _safe_metadata, safe_execution_identity, read_events, read_event_snapshot, receipt_integrity, profile_integrity
 
 from scripts.sermon_clock_evidence import monotonic_interval
 
@@ -100,8 +100,9 @@ def project_run(run_id, events, integrity=None, receipt_events=None):
                   'workUnitId', 'attemptId', 'decisionId', 'dependencyReadyAt', 'queuedAt')
         if any(start.get(k) != end.get(k) for k in fields):
             issue('span_identity_mismatch'); continue
-        if end['status'] not in {'completed', 'failed'}:
+        if end['status'] not in {'completed', 'failed', 'cancelled', 'outcome_unknown'}:
             issue('unknown_span_status'); continue
+        if end['status'] in {'cancelled','outcome_unknown'}: issue('incomplete_execution_outcome')
         try:
             begin, finish = seconds(start['startedAt']), seconds(end['recordedAt'])
             ready = seconds(start['dependencyReadyAt']) if start.get('dependencyReadyAt') else None
@@ -135,6 +136,22 @@ def project_run(run_id, events, integrity=None, receipt_events=None):
             'dependencyReadyToQueueSeconds': queued - ready if ready is not None and queued is not None else None}
         if timing:
             nodes[ident].update(timing, utcTimingTrusted=utc_trusted)
+    # A wall clock may jump BETWEEN individually sound intervals. Compare the
+    # UTC/monotonic offset across all observations in each process clock domain.
+    offsets = defaultdict(list)
+    for node in nodes.values():
+        if node.get('clockDomainId'):
+            offsets[node['clockDomainId']].extend([
+                node['begin'] - int(node['monotonicStartNs']) / 1e9,
+                node['finish'] - int(node['monotonicEndNs']) / 1e9])
+    unstable_domains = {domain for domain, values in offsets.items()
+                        if max(values) - min(values) > TIMESTAMP_TOLERANCE_SECONDS}
+    if unstable_domains:
+        issue('utc_clock_discontinuity_between_spans')
+        for node in nodes.values():
+            if node.get('clockDomainId') in unstable_domains:
+                node.update(utcTimingTrusted=False, ready=None, queueWaitSeconds=None,
+                            dependencyReadyToQueueSeconds=None)
     # Parent/container spans overlap children. Only executable leaves participate
     # in the active DAG; dependencies on containers need explicit leaf receipts.
     for ident, node in nodes.items():
@@ -180,7 +197,11 @@ def project_run(run_id, events, integrity=None, receipt_events=None):
                         issue('dependency_interval_overlap')
                 else:
                     issue('cross_clock_dependency_timing_unknown')
-                if n['ready'] is not None and leaves[dep]['finish'] > n['ready'] + TIMESTAMP_TOLERANCE_SECONDS:
+                if n['ready'] is not None and not parent.get('utcTimingTrusted', True):
+                    issue('dependency_ready_clock_untrusted')
+                    n['queueWaitSeconds'] = None
+                    n['dependencyReadyToQueueSeconds'] = None
+                elif n['ready'] is not None and parent['finish'] > n['ready'] + TIMESTAMP_TOLERANCE_SECONDS:
                     issue('dependency_not_finished_at_ready')
                     n['queueWaitSeconds'] = None
                     n['dependencyReadyToQueueSeconds'] = None
@@ -323,7 +344,9 @@ def project_run(run_id, events, integrity=None, receipt_events=None):
                                  and all(c in '0123456789abcdef' for c in v))
                              or _number(v) is not None or isinstance(v, bool)}}
                 for e in events if e['event'] == 'workload']
-    return {'runSha256': digest(run_id), 'status': 'partial' if diagnostics else 'projected',
+    from scripts.sermon_review_observation import observations
+    rqc = observations(events)
+    return {**({'reviewObservations': rqc} if rqc else {}), 'runSha256': digest(run_id), 'status': 'partial' if diagnostics else 'projected',
             'endToEndWallSeconds': wall, 'criticalPath': critical, 'diagnostics': diagnostics,
             'leafElapsedByExecutor': totals, 'leafElapsedMeaning': 'completed_leaf_subtotals_not_proof_of_absent_work',
             'executorCoverage': coverage, 'unfinishedSpans': unfinished,
@@ -357,8 +380,10 @@ def project_run(run_id, events, integrity=None, receipt_events=None):
 
 
 def project(directory):
-    events, damaged = read_events(directory)
+    events, damaged, ledger_hash = read_event_snapshot(directory)
+    replay = profile_integrity(events)
     runs, receipt_events, seen, diagnostics = defaultdict(list), defaultdict(list), {}, []
+    if replay['status'] != 'consistent': diagnostics.append('incomplete_or_conflicting_profile_events')
     duplicates = 0
     for event in events:
         if event.get('schemaVersion') not in READABLE_SCHEMAS:
@@ -366,6 +391,7 @@ def project(directory):
         # Conflicting copies of the same event identity are still receipt facts.
         # Reconcile them before selecting representatives for DAG projection.
         receipt_events[event['runId']].append(event)
+        if id(event) in replay['_excluded']: continue
         key = (event['runId'], event['eventId'])
         if key in seen:
             if event != seen[key]:
@@ -382,10 +408,11 @@ def project(directory):
         # A damaged record can hide a dependency: never claim a complete DAG.
         for run in result:
             run['criticalPath'] = None; run['status'] = 'partial'
-    return {'schemaVersion': 'sermon-weekly-pipeline-report-v1', 'runs': result,
+    return {'schemaVersion': 'sermon-weekly-pipeline-report-v1', **({'sourceLedgerSha256': ledger_hash} if replay['profileEventCount'] else {}), 'runs': result,
             'status': 'partial' if diagnostics or not result or any(r['status'] == 'partial' for r in result) else 'projected',
             'diagnostics': diagnostics, 'duplicateEventsIgnored': duplicates,
-            'receiptIntegrity': {k: v for k, v in integrity.items() if not k.startswith('_')}, 'networkCalls': 0, 'acceptance': 'not_evaluated'}
+            'receiptIntegrity': {k: v for k, v in integrity.items() if not k.startswith('_')},
+            **({'eventIntegrity': {k: v for k, v in replay.items() if not k.startswith('_')}} if replay['profileEventCount'] else {}), 'networkCalls': 0, 'acceptance': 'not_evaluated'}
 
 
 def markdown(report):
@@ -427,6 +454,14 @@ def markdown(report):
                 values = [observation['phase'], observation['status'], observation['statePacketBytes'],
                           timing['modelLatencyMs'], timing['decisionValidationMs'], timing['stateCommitMs']]
                 lines.append('| ' + ' | '.join(map(str, values)) + ' |')
+        if run.get('reviewObservations'):
+            lines += ['', 'Private RQC evidence (execution, verdict and admission are separate; no authority inferred):',
+                      '', '| Unit / revision | Role | Execution | Verdict | Admission | Reasons | Receipt hash |', '|---|---|---|---|---|---|---|']
+            for observation in run['reviewObservations']:
+                value=observation['evidence']
+                lines.append('| ' + ' | '.join(map(str,[observation['workUnitId'] + ' / ' + value['revisionId'],
+                    observation['role'],value['executionStatus'],value['reviewVerdict'],value['admissionStatus'],
+                    ','.join(value['reasonCodes']),value['receiptCanonicalJsonSha256']])) + ' |')
         lines += ['', 'Diagnostics: ' + ', '.join(run['diagnostics']), '']
     return '\n'.join(line.rstrip() for line in lines).rstrip() + '\n'
 
@@ -437,14 +472,13 @@ def main():
     parser.add_argument('--out-dir', required=True, type=Path)
     args = parser.parse_args()
     # Keep projections away from the append-only source and existing outputs.
-    args.out_dir.mkdir(parents=True, exist_ok=False)
+    from scripts import sermon_trace_artifacts as artifacts
+    artifacts.new_directory(args.out_dir)
     report = project(args.accounting_dir)
     for name, content in [('report.json', json.dumps(report, indent=2, allow_nan=False) + '\n'),
                           ('report.md', markdown(report))]:
         path = args.out_dir / name
-        with path.open('x') as stream:
-            stream.write(content)
-        path.chmod(0o600)
+        artifacts.write(path,content)
     return 0 if report['status'] == 'projected' else 1
 
 
