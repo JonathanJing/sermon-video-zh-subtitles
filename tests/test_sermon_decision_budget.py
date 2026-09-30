@@ -177,6 +177,24 @@ print(json.dumps(Budget(sys.argv[1],p['productionRunId']).reserve(p)))
         self.assertLess(events.index(('state', 'reserved')), events.index(('responder', None)))
         self.assertEqual(events[:6], [('lock', self.budget.lock_path)] + [('directory', p) for p in required])
 
+    def test_preexisting_ancestors_are_synced_before_responder(self):
+        self.root = (self.root.parent / 'concurrent-parent' / 'nested' / 'jobs').resolve()
+        self.root.mkdir(parents=True)  # Another creator may not have synced yet.
+        self.budget = subject.Budget(self.root, 'a' * 64)
+        synced = []
+        original = jobs._sync_directory
+        def sync(path):
+            original(path)
+            synced.append(path)
+        def respond(p):
+            for directory in (self.root, self.root.parent, self.root.parent.parent,
+                              self.root.parent.parent.parent):
+                self.assertIn(directory, synced)
+            return response(p)
+        with patch.object(jobs, '_sync_directory', side_effect=sync):
+            result = self.propose(packet(), respond)
+        self.assertEqual(result['status'], 'proposal_requires_locked_admission')
+
     def test_each_directory_sync_failure_blocks_call_and_never_resets_evidence(self):
         for boundary in ('lock', 'locks-directory', 'root', 'parent'):
             with self.subTest(boundary=boundary):
