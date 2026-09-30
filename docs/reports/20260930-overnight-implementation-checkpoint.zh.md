@@ -213,7 +213,7 @@ E6 兼容性审查与完整canonical Stage0继续未完成，stage1PromotionAllo
 本夜此前已运行的是 Stage0 synthetic/component/failure drills，并非正式 Stage1 新推理全流程。收到真实 dry run 问题后，另完成以下本机零付费诊断，保留新输出和计时，不覆写历史产物：
 
 - **178.178 秒真实历史片段**：SHA-256 `c931d6f716bd30b9ba9b75ca6cbc9a4f4fd708b8bf8f8e3668187e67bac44c30`，使用既有批准窗口 0–178.16s。新执行音频解码与本地已缓存 MLX Whisper large-v3-turbo-q4，网络 socket 被禁；总耗时 10.135s、ASR 9.084s，41 段/512 词，新增付费调用 0，原媒体不变。对既有冻结英文按小写词归一化比较为 8/513 edits（1.5595%）；这是自动差异诊断，不是内容质量签字，也不是正式 gpt-transcribe/MFA 路径。当前 Source inspector 重验两份已批准 Source 为 validated；这个片段的旧 shadow Astra→Astra policy 被当前生产 gate 拒绝。
-- **138.004534 秒真实历史片段**：SHA-256 `a40c1a37a3c15bea58db26806c117c77cfd91b983eefe98536f72ad633dd956a`。进一步找到匹配当前 source/policy/plugin identity 的三语 Astra→Sol 完整历史缓存。当前 producer 在隔离目录 cache-only 重放每语 11 组，插件与 candidate admission 全部通过；连同真实视频解码共 2.280s，新增模型调用 0，原缓存不变。新候选是 human-pending/releaseEligible=false。Weekly report 为 projected、无诊断，production_model elapsed=0，正确区分缓存和新推理。
+- **138.004534 秒真实历史片段**：SHA-256 `a40c1a37a3c15bea58db26806c117c77cfd91b983eefe98536f72ad633dd956a`。进一步找到匹配当前 source/policy/plugin identity 的三语 Astra→Sol 完整历史缓存。当前 producer 在隔离目录 cache-only 重放每语 11 组，插件与 candidate admission 全部通过；连同真实视频解码共 2.280s，新增模型调用 0，原缓存不变。新候选是 human-pending/releaseEligible=false。当时 Weekly report 为 projected、无诊断，production_model elapsed=0；后续日志审计确认，这只能表示记录中的 DAG 可计算及已结束模型叶小计为0，不能证明模型总时间/成本为0，也没有给出原缓存模型与历史用量。新增模型调用0另由实际禁网守卫与缓存回放路径证明。
 - 同一 138 秒片段的三语旧 Audio Package 经当前真实 builder/full decode 与独立已有听审收据重验，**共33 units通过**，每语约2.1s。没有新TTS或新人工签字。中文最初诊断选了同哈希但不在音频bundle中的job副本；改为对应bundle内job后通过，原文件均未修改。
 
 本地证据在 `evidence/real-clip-178s-diagnostic/`（新ASR、Source gate复核、diff、accounting）和 `evidence/real-clip-138s-cache-replay/`（新cache-only输出、Weekly report、audio-revalidation-final.json）；原媒体、缓存、审批仍在原checkout的ignored artifacts。下载过的本地Whisper、Qwen ASR/TTS、MiLMMT等模型存在不等于它们都是当前正式policy允许的替代；本次实际只新运行上述Whisper诊断。没有读取/验证API credentials，没有新增服务或调用付费API。
@@ -229,3 +229,26 @@ E6 兼容性审查与完整canonical Stage0继续未完成，stage1PromotionAllo
 #158 `b6e793b48d9ecee2f3fe1c6d70ea602e42f5a068` 的两条 Python CI 分片与 unittest aggregate 已核验 SUCCESS；draft iOS/contract validation SKIPPED。最新本地 QA 组合 **`da2b28d4efa34a034000bb25e2ba636b73d4729a`** 包含该修复，干净快照重新跑全量 Root Python：980+1064=2044 reported，**2038实际通过、6条件 smoke skipped**。汇总 `evidence/stack-with158-fanin-validation-summary.json` 记录精确SHA及报告hash。Web/native树与完整验证的8f608a97无差异，没有把旧模拟器结果改记为新快照重跑。
 
 当前可免费继续的是 v3 本地候选/基线一致性检查与回归；当前阻塞正式新推理验收的仍是 Stage0 独立签字、完整 canonical 适配器/端到端证据，以及新付费运行的明确预算。现有本地 MLX Whisper 已实际验证可运行；其他本地模型仅库存存在，不声明服务或生产策略准入。
+
+
+## 2026-09-30 14:47 UTC：按用户目标修复日志后，重新运行真实 dry run
+
+用户明确本次 dry run 的目的是检验日志能否收集足够信息，随后要求“改好重新跑 dry run”。因此停止扩张新业务功能，转为采集、关联、汇总与独立对账；没有为报告好看改变翻译/音频/审批行为。
+
+- [#159](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/159) `fff700be510f41c88e9f31cd94b2de0bba969176` 提供只读 v3 local candidate/baseline 一致性预检，绑定 code、build report、manifest/assets 与 rollback；deploymentAllowed=false，不证明在线基线、CAS、发布权限或人工签字。
+- [#160](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/160) `13c4c8a6bbcc7e423deeacd8550753f5965c8d5b` 把实际 L3 cache admission、receipt、串行单元和 assembly leaf 依赖接入 v3 accounting，冷/热音频一致性、全解码/日志故障/overflow 回归通过；不是跨进程完成。两项在精确 head 的 Python CI 通过，独立审查未留新 P1/P2。
+- [#161](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/161) 采集修复后的执行代码 **`fd788ac8517d381d24bb1a834689e88bcfa4f6c7`**：显式历史 cache/model/usage/hash、canonical L2 request/policy/evidence/candidate/job 链、L3 逐单元全解码观测、本地模型 checkpoint/input/output 身份；Weekly 保留依赖和时间，未知不填零。summary/logs/Weekly 共用全局等价规则；独立审查指出的同 event ID 冲突先去重问题已复现并修复，冲突总量为 null。safe exporter 保留 code/dirty/module/request/parent identity，事件和原 ledger hash 来自同一次读锁快照。
+
+三个正常实际样本在这个干净 code head 重跑：178.16s 窗口新本地 MLX ASR；138s 窗口三语各11组 cache-only producer/candidate；33个旧音频单元逐项 full decode。日志单独重建后，66个历史响应的模型/请求/缓存/raw/response hash/usage 与独立旧缓存 oracle 全吻合；33 starts/completions、3个 job hash、所有音频 hash 与独立包吻合。原文件未改、当前传输守卫0调用，新candidate仍human-pending，没有新TTS/人审。另重跑已有插件绑定拒绝条件，日志现给出稳定原因 `plugin_implementation_mismatch`，没有放松校验。
+
+**可直接读的脱敏证据**：[主报告](https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/82effd0f77e5412802afd015a1e36e59482a8984/docs/reports/20260930-observability/README.zh.md)、[代表事件](https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/82effd0f77e5412802afd015a1e36e59482a8984/docs/reports/20260930-observability/representative-events.json)、[逐项对账](https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/82effd0f77e5412802afd015a1e36e59482a8984/docs/reports/20260930-observability/reconciliation.json)。目录中还有完整 safe trace、仅依赖事件的 JSON/Markdown report、实际命令身份、独立记录及明确标为 synthetic 的等价/冲突/同ID/中断/并行案例。原媒体、模型正文、凭证和机器私有路径未提交。`82effd0` 在实际执行代码之后仅新增上述证据和报告 Markdown 空白规范化；实际运行没有声称发生在之后的报告提交。
+
+最新本地集成 **`cd08cdf350f6e0bf20620092e233dd09ba96746c`** 包含 #159–161 全部 runtime/账务修复，工作树 clean：完整 Root Python 1009+1068=**2077 reported / 2071实际通过 / 6条件skipped**。机器可读结果在 #161 的 `integration-validation.json`；Web、Feedback API、全部 iOS 源树与已完整测试的 `8f608a97` 逐文件相同，没有把旧模拟器结果冒称为新快照重跑。#161 最新报告 head 的远端 CI 仍在运行，不借用此前 head 的绿灯。
+
+### 日志验收仍未覆盖的具体问题
+
+- 当前真实诊断可解释本次程序/本地模型/历史缓存、身份、计时及所列故障，不代表整条生产日志完整；`projected` 明确不等于 completeness。
+- 生产 queue/dependency-ready 时间、调度开销、完整跨进程 critical path 没有实测；不从 start 或 wall 减 subtotal 推算。L2直接回放没有 durable job，不伪造 job ID；worker 元数据的跨进程实跑仍需后续证据。
+- 新付费 provider 的真实 request/response/usage telemetry 与历史账单尚未验证。本轮日志目标无需新增付费推理；若未来要验证该窄缺口，再申请明确服务/样本/预算。
+- 完整 canonical L1/L3/L4 durable adapters、生产 bounded decision runner/锁内 admission、跨 run 资源、Stage0 独立签字、短片段→10分钟→整篇→第二周仍开放。真实人审/声音授权/1x听审、物理设备/Safari/现场误差门槛不变。
+- #159–161 本身为本地产线/观测代码；整夜交付仍含前述 Swift catalog decoder，需要新 iOS binary 与适用审核发布才能到达已安装用户。没有 merge、部署、TestFlight 或 App Store 发布。
