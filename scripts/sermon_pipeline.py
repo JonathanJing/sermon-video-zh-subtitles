@@ -154,10 +154,12 @@ def ffprobe_duration(path):
     return float(json.loads(proc.stdout)["format"]["duration"])
 
 
-def request_json(req, retries=3):
+def request_json(req, retries=3, *, response_observer=None):
     for attempt in range(retries):
         started = time.monotonic()
         attempt_id = record_api_started(getattr(req, "accounting_model", "unknown"), getattr(req, "accounting_settings", {}))
+        if response_observer is not None and hasattr(response_observer, "request_started"):
+            response_observer.request_started(attempt_id)
         try:
             with urllib.request.urlopen(req, timeout=300) as response:
                 result = json.loads(response.read().decode())
@@ -178,7 +180,12 @@ def request_json(req, retries=3):
         else:
             # Receipt failure is not a network failure and must never repeat a
             # request whose successful response has already been received.
-            record_api_attempt(getattr(req, "accounting_model", "unknown"), result, time.monotonic() - started, attempt_id=attempt_id, http_status=200)
+            elapsed = time.monotonic() - started
+            if response_observer is not None:
+                # Strict adapters persist the returned private response before a
+                # telemetry finish failure can interrupt control flow. No retry.
+                response_observer(result, attempt_id, elapsed)
+            record_api_attempt(getattr(req, "accounting_model", "unknown"), result, elapsed, attempt_id=attempt_id, http_status=200)
             return result
         with stage("api.retry_backoff"):
             time.sleep(2**attempt)
@@ -229,7 +236,7 @@ def multipart_request(url, api_key, fields, file_field, file_path, retries=3):
     return request_json(req, retries=retries)
 
 
-def json_request(url, api_key, payload, retries=3):
+def json_request(url, api_key, payload, retries=3, *, response_observer=None):
     req = urllib.request.Request(
         url,
         data=json.dumps(payload).encode(),
@@ -241,7 +248,8 @@ def json_request(url, api_key, payload, retries=3):
     )
     req.accounting_model = payload.get("model", "unknown")
     req.accounting_settings = request_metadata(payload)
-    return request_json(req, retries=retries)
+    options = {"response_observer": response_observer} if response_observer is not None else {}
+    return request_json(req, retries=retries, **options)
 
 
 def load_glossary(path):
