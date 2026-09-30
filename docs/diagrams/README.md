@@ -1,5 +1,14 @@
 # 项目流程图 / Diagram Assets
 
+## 2026-09-30 原生 Mermaid 架构图
+
+新增的英文 DAG 直接维护在[根 README](../../README.md)，中英对应版维护在[后端系统设计](../backend-workflow-system-design.zh-en.md)。两处各包含四层业务 DAG 与计划中的有界修订 DAG；节点 ID 与边保持一致，文案按语言对应。它们是当前依赖视图，不替代旧 SVG 的历史模型／处理记录。PR164 的只读 reviewer/gate/自动返工明确标为 planned。
+
+[App 系统图](../app-system-design.zh.md)与[执行环境图](../execution-environment-design.zh.md)也使用 Markdown 内嵌 Mermaid。源就在文档，无需 ImageGen、SVG renderer 或生成文件；GitHub 原生渲染。维护时校验 Mermaid 语法、英文/双语拓扑一致、所有 locale 的 L3 必经、无修订回边，并目视检查渲染文字与连线。业务汇合只等待 release plan 选择的语言。`git diff --check` 和 `scripts/docs_change_gate.py` 校验文档路径/链接；该 gate 不检查 Mermaid 语法，须另行渲染验证。
+
+以下保留既有 SVG 的来源、时间和再生成说明。
+
+
 本组包含 2026-09-11 校准的 11 张流程图、2026-09-20 新增的四层生产主图，以及 2026-09-25 新增的 Firebase 发布边界图。2026-09-25 对两个根 README 引用的 8 张图统一重新设计为原生 SVG：白色阶段卡片、角色色条、明确的主路径与条件箭头，以及单独的审核门槛。图中的文字和连接仍来自校准后的项目图稿；本轮没有调用 ImageGen。SVG 没有嵌入 PNG、外链字体或脚本。
 
 图面更新时间不等于所有路径的最新实测日期。Agents API 控制层与每周调度已安装；周日实时字幕仍以既有浏览器回放等证据为限，人工语义、真实现场、实体手机与资源上限分别验收。配音候选、人工听审、现场同步与正式发布各自保留边界。历史云端图继续标为 Historical / Discovery；旧 timeline Cloud Run Job 已退役。
