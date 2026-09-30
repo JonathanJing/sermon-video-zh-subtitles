@@ -54,7 +54,7 @@ English index: [backlog.md](./backlog.md)
 | `DEV-L4-004` | Production v3 每周内容发布器与双 App 刷新验收 | `in_progress`（2026-09-27 开始） | 已入库未部署的 v3 候选组装器与负例测试；仍须接入正式音频审计、完整线上基线预检、目录最后发布、逐文件 HTTP／Range，以及同一 Web/iOS App 版本刷新选页与播放收据 | [每周发行清单](tongxing-weekly-release.zh.md#v3-周更发布清单与验收) |
 | `DEV-IOS-001` | 原生多语言消费与真机验收 | `in_progress` | 补齐原生三语音频切换、跨轨 source-unit 定位、`PlaybackHistory` v2 和韩／西语支持，再由真机完成 v2 catalog 刷新、下载、离线恢复、历史隔离、WebView 正文、VoiceOver 和系统媒体验证 | [iOS backlog](../apps/tongxing-ios/BACKLOG.zh.md) |
 | `DEV-FIELD-001` | 远场声音指纹对齐 | `pending` | Web 与 iOS 实现隐私受限诊断、AGC profile 和同一次 10→15 秒自适应采集；不降低匹配门槛，远处同源至少 9/10 正确、30 次负样本零误跳 | [本页专项设计](#dev-field-001远场声音对齐) |
-| `DEV-TRACK-001` | Producer 自动记账、状态与 ETA | `in_progress` | 先把 Layer 2 付费逐组调用与 Layer 3 正式逐单元合成接入同一周账本，再覆盖筛查、同步、构建、部署、审核等待与重试；公开 Tracker 只投影脱敏状态，未测步骤保持未知 | [Tracker 接入项](four-layer-production-tracker.zh.md#tracker-接入-backlog) |
+| `DEV-TRACK-001` | Producer 自动记账、状态与 ETA | `in_progress` | 将已有 Layer 2 逐组调用与 Layer 3 逐单元合成计时统一归入周账本，再覆盖其余筛查、构建、部署、审核等待与重试；按本页效率计划汇总整周各次尝试的时间和 token，公开 Tracker 只投影脱敏状态，未测步骤保持未知 | [Tracker 接入项](four-layer-production-tracker.zh.md#tracker-接入-backlog) |
 | `DEV-REVIEW-001` | 私有多语言人工审核后台 | `pending` | 两位不同语言审核者可并行审阅 Layer 2/3；权限、hash、版本、移交、修订失效和不可变收据均 fail closed | [审核后台设计](four-layer-production-tracker.zh.md#多语言人工审核后台-backlog) |
 | `DEV-LIVE-001` | 独立 Sunday `live_session` | `in_progress` | 现场 ASR final 保持事实源；翻译、术语、延迟、发布和 fallback 有独立真实回放／现场证据，不借用四层预制完成状态 | [工作流总览](workflows/README.zh.md)及本页历史附录 |
 | `DEV-PROD-001` | Dev 晋升 Production | `blocked` | 只有完整周产、Dev HTTP、回滚基线、Production 发布授权和部署前核验齐全后，才从 `dev` 晋升 `main` 并执行 Production 发布；设备／现场仍独立 | [Production 合并检查](multilingual-production-premerge-2026-09-23.zh.md) |
@@ -83,9 +83,48 @@ Firebase Hosting 只发布静态运行时和指纹索引；采集、特征和匹
 | `DEV-CICD-003` | Firebase 页面与后端功能的 Dev→Production 交付 | `pending` | Dev 功能候选在隔离项目／服务完成页面、API、权限和真实读回 smoke；Production 只使用已核对代码版本与当前基线，按实际服务分别部署并保存 HTTP／API 收据及回退目标，不由 `main` push 自动发布 | [CI/CD backlog](ci-cd-backlog.zh.md) |
 | `DEV-CICD-004` | iOS 安装包与 TestFlight 交付链 | `pending` | 已通过目标提交的模拟器门禁后，绑定源码 SHA、版本／build、签名产物和上传结果；TestFlight 安装、真机功能、App Store 审核／上线各有独立状态，内容周更不强制重发 App | [CI/CD backlog](ci-cd-backlog.zh.md) |
 | `DEV-TRK-002` | 第二周真实全流程复现与恢复 | `pending` | 用新周次验证缓存、断点恢复、上游失效、旧资产保留和 ETA 校准，不复用第一周人工结论 | [四层 Tracker](four-layer-production-tracker.zh.md) |
-| `DEV-SPD-001` | 并发、审核等待与模型路由优化 | `pending` | 先完成完整 trace 审计，再逐一比较语言并行、Layer 3 并发和 Astra／Luna shadow；只采用端到端更快且质量门禁不降的方案 | [提速 backlog](four-layer-production-tracker.zh.md#周日页面提速-backlog本轮结束后按审计证据实施) |
+| `DEV-SPD-001` | 并发、审核等待与模型路由优化 | `pending` | 在流程图、统一计量和局部恢复基线上，逐一比较语言并行、Layer 3 并发及模型分工；同时报告端到端时间、总 token、质量与人工返工，不因低单价直接换模型 | [提速 backlog](four-layer-production-tracker.zh.md#周日页面提速-backlog本轮结束后按审计证据实施) |
+| `DEV-SPD-002` | 流程环节与时间／token 基线 | `pending` | 从收到视频链接到 Dev App 交付画出实际依赖图，逐环节绑定入口、输入输出、缓存、审批、耗时与用量；交付可复查的关键路径及 token 消耗排名，缺测项明确列出 | [本页效率计划](#每周流程效率计划)、[记账规则](workflow-accounting.zh.md) |
+| `DEV-SPD-003` | 三类 dry run 与恢复演练 | `pending` | 在 `DEV-E2E-001` 现有模拟器上扩展快速回放、真实代表片段、故障后恢复；区分模拟与真实调用，验证恢复后的完整交付，保留失败和中断证据 | [本页效率计划](#每周流程效率计划)、[后端 dry run](backend-four-layer-dry-run.zh.md) |
+| `DEV-SPD-004` | 局部重试与修订依赖范围 | `pending` | 验证并接通已有翻译 partial repair、响应恢复和音频单元复用；受控故障恢复时，不受影响的成功组新增付费调用为 0、已验证音频重新合成为 0，旧收据与失效范围可追溯 | [本页效率计划](#每周流程效率计划)、[Layer 2/3 backlog](multilingual-layer-2-3-backlog.zh.md) |
+| `DEV-SPD-005` | 整周总 token 与调度开销优化 | `pending` | 汇总调度、内容生成、机器复核、失败与修订的去重用量；减少重复上下文和无效模型调用，按相同工作量比较恢复后总 token 与完成时间，保留费用及缺测边界 | [本页效率计划](#每周流程效率计划)、[模型实验结果](reports/20260928-model-production-ab-results.zh.md) |
 | `DEV-LOCALE-001` | 界面本地化母语复核 | `in_progress` | 中文、英文、韩语、西语、越南语界面候选分别完成核心流程、错误、权限、VoiceOver 和长文本复核；界面语言不改变内容／音频选择 | [Layer 4 语言设计](multilingual-layer-4-delivery-app-backlog.zh.md#24-app-界面语言) |
 | `DEV-USAGE-001` | 按三种语言维度统计收听 | `pending` | 匿名事件分别记录界面语言、页面内容语言、实际播放音频语言及 pageId；后台按天和语言组合汇总去重会话与收听时长，Web／iOS 都有同意与真实事件验证，不从界面选择推断收听 | [使用统计](sermon-app-usage.zh.md) |
+
+### 每周流程效率计划
+
+2026-09-29 确认：下一阶段先搞清楚每周制作的实际环节，再减少从视频链接到 Dev App 交付的总时间和流程总 token。以下是待实施／验收的工程计划，不是已完成优化，也不预设节省百分比。工程优先级只在本页维护；`TRK-*`、`SPD-*` 继续作为专项验收项，复用现有 `DEV-TRACK-001`、`DEV-E2E-001`、`DEV-L2-001`、`DEV-L3-001` 和 `DEV-TRK-002`。
+
+研究依据见[每周证道流程耗时与 token 研究发现](reports/20260929-weekly-workflow-efficiency-findings.zh.md)，记录核查版本、代码与测试入口、缓存计量风险、模型实验边界及旧分支结论的修正。
+
+**当前可复用能力与证据边界**
+
+- [后端快速 dry run](backend-four-layer-dry-run.zh.md)已共用部分生产控制循环、保存逐步计时及失败报告，并有 CI 故障注入；固定响应和测试音不测真实 ASR／翻译／TTS 性能。较早的 [30 秒 bucket 演练](firebase-dev-four-layer-bucket-dry-run.zh.md)是另一条复用素材的交付检查，不能替代真实生成基线，也不应据其旧失败处理推断新版模拟器行为。
+- [Layer 2 runner](../scripts/run_target_language_models.py)已有 `--partial-repair-brief`、`--reuse-from`、`--resume-cache-from`；[Layer 3 renderer](../scripts/render_formal_target_language_speech.py)已有逐单元恢复和跨修订复用。先验证这些能力在同一周编排中的实际恢复边界，补缺口，不重建平行缓存系统。保留付费响应、旧失败及身份校验；未知请求结果不得盲目重付。
+- [9 月 28 日模型实验](reports/20260928-model-production-ab-results.zh.md)已有三语 135 组／臂对照：Luna→Sol 有 10 组结构失败，尚无人审分数或修订分钟数；调度样本也未证明稳定速度优势。延续现有样本、失败证据和盲评材料，不能把较低 token 费用当作较少 token、较短总时间或正式质量通过。
+
+**实施顺序与交付物**
+
+1. **`DEV-SPD-002` + `DEV-TRACK-001`：流程图和可核对基线。** 列出接链、下载、范围审批、ASR／对齐、英文审核、三语翻译／机器复核／人审、TTS／筛查／排程／听审、构建／上传／HTTP／App 检查的实际入口及先后依赖。逐项标记实现／模拟／人工／未接通、输入输出 hash、最小工作单元、并发限制、缓存条件、重试范围与审核等待。冻结运行身份、样本、模型／prompt／策略、代码和初始缓存；区分执行、资源排队、审核等待、外部阻塞和返工，计算三语最长路径，不能把父子 span 或并行时间相加。分别报告首次执行、恢复后成功尝试及包含全部失败／修订的整周累计，完整用量不可得时只报已知小计及缺口。
+2. **`DEV-SPD-003`：复用同一生产路径的三类演练。** 快速回放使用固定夹具和已核验缓存，检查合同及交付；真实片段选择含经文、专名、长句和衔接段落的几分钟素材，实际调用 ASR、翻译、复核和 TTS 并走各层门禁；故障演练在指定组／单元／发布步骤失败或中断后恢复，检查重复工作与新产物。先复用现有 CI 注入点，再补音频单元中断、坏缓存、上传及 HTTP 核验失败。追加记录开始、失败、重试和恢复事件，即使强制中断也保留已持久化证据；模拟用量为 0 不作为真实性能收益。片段通过后按 `DEV-TRK-002` 做完整周次验证，不从片段线性外推整篇提速。
+3. **`DEV-SPD-004`：先缩小返工范围。** 从失败的翻译运行建立新修订，复用身份匹配的成功组，只重做失败及有上下文依赖的组，继续未执行组，并重新走规定复核／插件／准入链。音频修复记录具体单元、原因、旧 hash 和新 attempt，只合成受影响的完整自然句；重新排程／组装／整轨验证与重新 TTS 分开计量。以稳定单元身份核对复用，测试重排、重分组和策略变化造成的真实失效；不能靠忽略全局绑定扩大复用。临时故障采用有界退避，质量失败进入修订，未知付费请求进入状态核对；相同失败且无新证据不得无限循环。
+4. **`DEV-SPD-005` + `DEV-SPD-001`：在基线上逐项优化。** 先减少重复上下文、无变化轮询、已知规则的模型判断和无效重试，再比较有界并发及模型分工。调度传最小必要的状态摘要、失败单元和证据引用，由确定性程序执行已知规则；翻译／复核仍保留所需英文上下文、术语、经文及质量合同。提示词或上下文改变须有版本与质量回归；缓存命中减少实际生成或费用，不自动等于总输入 token 下降。每次只改变一个变量，记录回退方案；基线形成后、实验前冻结接受阈值和调用预算，报告时间、token、费用及质量的取舍，不预设全部同时下降。
+
+**整周 token 统计口径（`DEV-SPD-005`，采集由 `DEV-TRACK-001` 承接）**
+
+- 以同一周次／来源／语言关联所有 `runId`、恢复 attempt 和 revision，统计到约定交付终点；保留成功、失败、废弃修订及返工的实际消耗。范围包括 Supervisor／Codex 调度、子 agent、ASR 中可获得的 token、翻译、机器复核、筛查模型及其他流程模型调用；编写工具的开发对话与正式生产调用分列，不能把编排消耗遗漏后称作流程总量。
+- 按模型、角色、层、语言、组／单元、尝试记录输入、其中缓存输入、输出及可得推理 token。按 provider 口径去重：缓存输入是输入的子集、推理是输出的子集时不再相加；同一响应或 SDK 聚合与底层收据不能重复计算。本地磁盘缓存复用不重新计入旧调用，但旧调用若属于本周统计范围仍计一次。无法证明 SDK 与底层去重关系时分列而不相加。
+- 核实实际缓存命中，而非仅凭 `--reuse-from`／`--resume-cache-from` 存在就计为命中：当前 Layer 2 某些 span 的 `cache_hit` 标志依据复用参数设置，未开始组仍可能发起新调用。补充实际缓存来源、复用响应 ID、新调用数与用量证据，并覆盖“部分命中、部分新调用”的恢复测试，不能从该布尔值推算省下的 token。
+- 无法取得的 Codex／子 agent／失败请求用量为未知，列明缺失调用数、覆盖率和来源；调用总数也未知时不伪造覆盖率。迟到 usage 只读补录并去重。仅有音频计费秒数的 ASR、无 API token 的本地 TTS 单列，不换算成 token。跨模型汇总是观察到的用量汇总，模型 tokenizer 与单价可能不同，不能代替费用或账户额度。
+- 交付表同时列出完整性、整周已知总 token、非缓存输入／输出拆分、失败／返工 token、调用数、每个合格源单元或每分钟源视频的用量、端到端时间和人工修订分钟数。不同模型实验以相同工作量及质量门禁比较；未完成组保留在计划总量和失败栏，另报完成量，不能通过少做工作制造节省。实际费用另按可核实价目和收据统计，实验成本与每周生产成本分列。
+
+**恢复与优化验收**
+
+- 指定一个翻译组失败后恢复：未受影响且通过身份校验的成功组新增付费调用为 **0**；失败组按规定修订，其他语言不重做。
+- 中断一个音频单元后恢复：已验证且未受影响的单元重新合成为 **0**；坏音频进入可追溯的新尝试，旧证据保留。修改时长后重算所需排程／字幕并检查整轨，不把“免重新合成”当作“免重新验证”。
+- 上传或 HTTP 核验失败后恢复：ASR、翻译、TTS 重跑为 **0**；重试受影响的交付步骤，并按基线时效重新核验必要证据。进程重启和重复调度不产生重复发布或未知重复付费。
+- 源身份变化仍按合同使所有语言下游失效；文字／音频修订按语言和上下文依赖重开。人审收据默认整候选失效，只有已证明独立的 `connected_blocks` 可局部保留。保持三语音频齐备后发布的汇合点，HTTP、设备、现场分别留证。
+- 并发与模型实验报告包含成功率、质量问题、恢复后总时间／token、审核修订时间和样本波动；优先完成已有 Sol→Sol 盲评及 Luna 结构失败实验，并核清调度影子模式的状态规则，再决定新路由。新模型／提示词使用独立版本和同批对照，正式 Astra→Sol 与 Qwen TTS 不因 backlog 登记而切换。
 
 ## P2：实验与非阻塞扩展
 
