@@ -1,6 +1,6 @@
-"""Read-only canonical Source/Text adapter using the existing producer validators.
+"""Read-only canonical Source/Text/Audio adapter using existing producer validators.
 
-Layer 3 voice/audio and Layer 4 release inspection remain explicitly unsupported.
+Layer 4 release inspection remains explicitly unsupported.
 No progress-ledger status, model, human approval creation or dispatch is involved.
 """
 from __future__ import annotations
@@ -16,10 +16,12 @@ from scripts import canonical_pipeline_definition as pipeline
 from scripts import build_english_source_package as english
 from scripts import prepare_target_language_speech_job as handoff
 from scripts import produce_target_language_candidate as producer
+from scripts import inspect_canonical_audio as audio_inspector
 from scripts.sermon_release_workflow import _safe_path
 from scripts.sermon_workflow_jobs import _digest, _read
 
 SCHEMA = 'sermon-canonical-package-inspection-config-v1'
+SCHEMA_V2 = 'sermon-canonical-package-inspection-config-v2'
 MAX_JSON_BYTES = 16 * 1024 * 1024
 
 
@@ -40,13 +42,16 @@ def _read_package(root, reference, hashes, key):
 def inspect(config_path):
     path = _safe_path(Path(config_path).absolute())
     config = _read_package(path.parent, str(path), {}, 'configuration')
-    if (set(config) != {'schemaVersion', 'source', 'anchor', 'locales'} or config['schemaVersion'] != SCHEMA
+    if (set(config) != {'schemaVersion', 'source', 'anchor', 'locales'} or config['schemaVersion'] not in {SCHEMA, SCHEMA_V2}
             or not isinstance(config['locales'], dict) or not config['locales']
             or not set(config['locales']) <= set(pipeline.LOCALES)):
         raise ValueError('invalid_inspection_configuration')
     for lane in config['locales'].values():
-        if not isinstance(lane, dict) or set(lane) - {'policy', 'candidate', 'humanReview'} or 'policy' not in lane:
+        allowed = {'policy', 'candidate', 'humanReview'} | ({'audio'} if config['schemaVersion'] == SCHEMA_V2 else set())
+        if not isinstance(lane, dict) or set(lane) - allowed or 'policy' not in lane:
             raise ValueError('invalid_locale_configuration')
+        if 'audio' in lane:
+            audio_inspector.validate_configuration(lane['audio'])
     spec = pipeline.definition(tuple(config['locales']))
     observations, approvals, hashes, diagnostics = {}, {}, {'configuration': _digest(config)}, {}
     def project():
@@ -57,7 +62,8 @@ def inspect(config_path):
         result['packageIdentities'] = dict(hashes)
         result['inspectionDiagnostics'] = dict(diagnostics)
         result['inspectionCoverage'] = {'source': 'production_source_gate', 'text': 'production_candidate_and_review_gates',
-                                        'audio': 'not_integrated', 'release': 'not_integrated'}
+                                        'audio': ('production_artifact_and_review_gates' if config['schemaVersion'] == SCHEMA_V2
+                                                  else 'not_integrated'), 'release': 'not_integrated'}
         # Never label an unvalidated/missing policy as ready to invoke a model.
         for node, code in diagnostics.items():
             if node in result['nodes']:
@@ -147,6 +153,29 @@ def inspect(config_path):
             approvals[audio] = {'translation_review': {'identity': audio_id, 'receiptSha256': hashes['review.' + locale]}}
         except (ValueError, TypeError, KeyError, OSError):
             diagnostics[audio] = 'translation_review_not_validated'
+            continue
+        if 'audio' not in lane:
+            continue
+        try:
+            upstream = {'source': path.parent / config['source'], 'anchor': path.parent / config['anchor'],
+                        'candidate': path.parent / lane['candidate'], 'policy': path.parent / lane['policy'],
+                        'human_receipt': path.parent / lane['humanReview']}
+            checked = audio_inspector.inspect(path.parent, lane['audio'], upstream, _read_package, hashes, locale)
+            expected = {'source': hashes['source'], 'anchor': hashes['anchor'],
+                        'candidate': hashes['candidate.' + locale], 'policy': hashes['policy.' + locale],
+                        'human_receipt': hashes['review.' + locale]}
+            if any(checked['upstreamIdentities'][key] != value for key, value in expected.items()):
+                raise ValueError('audio_upstream_identity_changed')
+            approvals[audio]['voice_authorization'] = {
+                'identity': audio_id, 'receiptSha256': checked['voiceAuthorizationSha256']}
+            observations[audio] = {'identity': audio_id, 'status': 'validated', 'outputSha256': checked['outputSha256']}
+            if checked['listeningReviewSha256'] is not None:
+                page = 'page.' + locale
+                page_id = project()['nodes'][page]['identity']
+                approvals[page] = {'audio_listening_review': {
+                    'identity': page_id, 'receiptSha256': checked['listeningReviewSha256']}}
+        except (ValueError, TypeError, KeyError, OSError):
+            diagnostics[audio] = 'audio_package_or_review_not_validated'
     return project()
 
 
