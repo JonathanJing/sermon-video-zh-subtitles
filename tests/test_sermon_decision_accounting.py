@@ -117,6 +117,38 @@ class DecisionAccountingTests(unittest.TestCase):
             self.assertEqual(self.propose(responder=responder)['reasonCode'], 'decision_budget_unavailable')
         self.assertEqual(calls, [1]); self.assertEqual(self.budget.remaining(), 0)
 
+    def test_validation_log_failure_is_not_semantic_rejection_or_retry_permission(self):
+        original = accounting._emit
+        for boundary in ('stage_started', 'stage_finished'):
+            with self.subTest(boundary=boundary):
+                self.budget = budget_module.Budget(self.root / boundary / 'jobs', 'a' * 64)
+                ledger = self.root / boundary / 'ledger'
+                calls, failures = [], []
+                def emit(event):
+                    if (event.get('event') == boundary and event.get('stage') == 'decision.decisionValidationMs'
+                            and not failures):
+                        failures.append(1)
+                        raise accounting.AccountingWriteError('transient validation log failure')
+                    return original(event)
+                def responder(p):
+                    calls.append(p['decisionId'])
+                    return response(p)
+                with accounting.accounting_session(ledger, 'decision_test'):
+                    with patch.object(accounting, '_emit', side_effect=emit):
+                        with self.assertRaises(accounting.AccountingWriteError):
+                            self.propose(responder=responder)
+                    self.assertEqual(self.budget.remaining(), 0)
+                    self.assertEqual(self.propose(packet(1, 'e' * 64), responder=responder)['reasonCode'],
+                                     'decision_budget_unavailable')
+                self.assertEqual(len(calls), 1)
+                self.assertEqual(failures, [1])
+                events, damaged = accounting.read_events(ledger)
+                self.assertEqual(damaged, [])
+                rows = [e['fields'] for e in events if e.get('code') == observations.CODE]
+                self.assertFalse(any(row['status'] in {'decision_rejected', 'commit_recorded'} for row in rows))
+                saved = budget_module.jobs._read(self.budget.folder / 'state.json')
+                self.assertEqual([row['status'] for row in saved['attempts']], ['reserved'])
+
     def test_commit_log_failure_preserves_actual_durable_outcome_without_replay(self):
         original = accounting._emit
         calls = []

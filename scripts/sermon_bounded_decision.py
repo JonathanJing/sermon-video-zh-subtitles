@@ -11,6 +11,7 @@ import json
 from scripts.canonical_pipeline_definition import LOCALES, VERSION, _sha
 from scripts.sermon_workflow_jobs import _digest
 from scripts.sermon_decision_accounting import Observation
+from scripts import sermon_accounting as accounting
 
 PACKET_SCHEMA = 'sermon-decision-state-v1'
 DECISION_SCHEMA = 'sermon-decision-v1'
@@ -137,6 +138,10 @@ def propose(packet, *, reserve_attempt, responder, fresh_packet):
     try:
         with observation.measure("decisionValidationMs"):
             decision = validate_decision(packet, result, fresh_packet())
+    except accounting.AccountingWriteError:
+        # Failed accounting is not a semantic decision. Preserve the reserved
+        # unknown attempt; a transient log recovery must not enable another call.
+        raise
     except Exception:
         observation.finish('decision_rejected')
         return {**metadata, 'status': 'blocked', 'reasonCode': 'decision_rejected',

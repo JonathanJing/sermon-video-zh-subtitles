@@ -22,6 +22,7 @@
 
 - 预约完成前不会进入 responder；预算耗尽不生成第二个 responder span。
 - 调用前日志失败会阻止调用并保留已存在的未知 reservation；调用后日志失败不会重试或重开预算。
+- validation span 开始／结束日志失败单独传播 `AccountingWriteError`，不伪称语义拒绝，不提交 returned；reservation 保持未知、剩余预算为 0，改建 packet 也不能再次调用。
 - durable commit 后日志失败传播 `AccountingWriteError`，保留实际 returned 状态，不伪称 durable commit 失败；同 packet 仍不能再次调用。
 - 读侧拒绝额外敏感字段、越界计数、非法 action/phase、非有限时间；报告不转发坏 payload。
 
