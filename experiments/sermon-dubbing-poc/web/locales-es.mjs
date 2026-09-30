@@ -68,6 +68,7 @@ export const messages = Object.freeze({
   'player.jump': 'Ir',
   'player.undoSeek': 'Deshacer salto',
   'precision.title': 'Buscar / ajustar',
+  'fingerprint.diagnostic.MIC_BUDGET': "No queda suficiente tiempo de grabación en este intento. La captura se detuvo. Pulsa de nuevo o alinea manualmente.",
   'fingerprint.open': 'Alinear audio en vivo',
   'feedback.point': 'Informar sobre este momento',
   'feedback.close': 'Cerrar comentarios',
