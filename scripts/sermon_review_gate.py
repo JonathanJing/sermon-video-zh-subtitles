@@ -291,8 +291,19 @@ def evaluate_gate(snapshot: GateSnapshot, *, gate_decision_id: str, created_at: 
             known_execution_failures += 1
         else:
             verdicts.add(review['reviewVerdict'])
+            issue_codes = {issue['reasonCode'] for issue in review['issues']}
+            # A fresh finding overrides earlier readiness. These are evidence
+            # or source problems, even when the valid receipt says needs_rework.
+            # Keep the fixed action priorities aligned with the D5 planner.
+            if 'source_ambiguity' in issue_codes:
+                block('source_not_ready', 'request_source_review')
+            if 'contradictory_reviews' in issue_codes:
+                block('review_conflict', 'request_human_review')
+            if 'evidence_insufficient' in issue_codes:
+                block('review_inconclusive', 'request_human_review')
             if review['reviewVerdict'] == 'needs_rework':
-                block('review_failed', 'repair_translation')
+                if not issue_codes & {'source_ambiguity', 'contradictory_reviews', 'evidence_insufficient'}:
+                    block('review_failed', 'repair_translation')
             elif review['reviewVerdict'] == 'inconclusive':
                 block('review_inconclusive', 'request_human_review')
             elif review['reviewVerdict'] != 'pass':
@@ -356,6 +367,8 @@ def evaluate_gate(snapshot: GateSnapshot, *, gate_decision_id: str, created_at: 
             actions = {'request_human_review'} if 'review_conflict' in reasons else {'reconcile'}
         elif 'source_not_ready' in reasons:
             actions = {'request_source_review'}
+        elif 'review_inconclusive' in reasons:
+            actions = {'request_human_review'}
         elif 'review_failed' in reasons:
             actions.discard('retry_review')
         decision.update(reasonCodes=sorted(reasons), allowedNextActions=sorted(actions))

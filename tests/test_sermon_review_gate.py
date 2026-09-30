@@ -202,6 +202,31 @@ class GateEvaluationTests(unittest.TestCase):
         result = self.assert_blocked(change_review(self.snapshot, inconclusive), 'review_inconclusive')
         self.assertEqual(result.decision['allowedNextActions'], ['request_human_review'])
 
+    def test_new_source_ambiguity_overrides_prior_ready_source_and_content_repair(self):
+        for severity in ('major', 'uncertain'):
+            def ambiguity(row):
+                content = copy.deepcopy(load('review-fail')['issues'][0])
+                content['evidenceRefs'] = row['evidenceRefs']
+                source = dict(content, issueId='new-source-ambiguity', reasonCode='source_ambiguity', severity=severity)
+                row.update(reviewVerdict='needs_rework', issues=[content, source])
+                row['checks'][0]['result'] = 'fail'
+            snap = change_review(self.snapshot, ambiguity)
+            result = self.assert_blocked(snap, 'source_not_ready')
+            self.assertEqual(result.decision['allowedNextActions'], ['request_source_review'])
+            self.assertEqual(result.review_states[0].execution_status, 'succeeded')
+            self.assertEqual(result.review_states[0].review_verdict, 'needs_rework')
+
+    def test_evidence_or_conflict_issue_never_authorizes_translation_repair(self):
+        for reason, gate_reason in [('evidence_insufficient', 'review_inconclusive'),
+                                   ('contradictory_reviews', 'review_conflict')]:
+            def unresolved(row):
+                issue = copy.deepcopy(load('review-fail')['issues'][0])
+                issue.update(reasonCode=reason, severity='major', evidenceRefs=row['evidenceRefs'])
+                row.update(reviewVerdict='needs_rework', issues=[issue])
+                row['checks'][0]['result'] = 'fail'
+            result = self.assert_blocked(change_review(self.snapshot, unresolved), gate_reason)
+            self.assertEqual(result.decision['allowedNextActions'], ['request_human_review'])
+
     def test_conflicting_reviews_preserve_both_and_cannot_cherry_pick(self):
         def mutate(row):
             row['reviewId'] = 'other-review'; row['reviewAttemptId'] = 'other-attempt'
