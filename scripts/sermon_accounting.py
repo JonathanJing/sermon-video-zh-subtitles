@@ -76,7 +76,7 @@ def _safe_metadata(data):
             safe[key] = value
         elif key in {"sourceId", "videoId"} and isinstance(value, str) and re.fullmatch(r"[A-Za-z0-9_-]{1,64}", value):
             safe[key] = value
-        elif key in {"jobSha256", "sourceSha256", "videoSha256", "sourceVideoSha256", "sourceAudioSha256"} and isinstance(value, str) and re.fullmatch(r"[0-9a-f]{64}", value):
+        elif key in {"jobSha256", "productionRunId", "sourceSha256", "videoSha256", "sourceVideoSha256", "sourceAudioSha256"} and isinstance(value, str) and re.fullmatch(r"[0-9a-f]{64}", value):
             safe[key] = value
         elif key == "mode" and isinstance(value, str) and value in {"shadow", "execute", "inspect", "dry_run"}:
             safe[key] = value

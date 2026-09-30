@@ -674,6 +674,7 @@ def assemble(context: dict[str, Any], paths: dict[str, Path], root: Path,
     dependencies = accounting.bounded_dependencies(
         "layer3.assembly_join", predecessor_spans, work_unit_id=f"l3.{locale}.assembly_join")
     with accounting.stage("layer3.assembly_admission", depends_on=dependencies,
+                          cache_hit=(root / "render-manifest.json").is_file(),
                           work_unit_id=f"l3.{locale}.assembly_admission") as admission_span:
         policy = DEFAULT_POLICY.copy() if policy is None else policy.copy()
         require(all(isinstance(value, (float, int)) and not isinstance(value, bool)
@@ -692,6 +693,11 @@ def assemble(context: dict[str, Any], paths: dict[str, Path], root: Path,
             require(Path(existing["track"]["path"]).suffix == f".{track_format}",
                     "Cached render uses a different track format")
             package.build_package(paths, manifest_path, root)
+            accounting.record_workload("layer3.cached_manifest", {
+                "renderManifestSha256": identity.sha256(manifest_path),
+                "jobSha256": identity.json_sha256(context["job"]),
+                "checkpointSha256": context["adapter"]["conditioningSha256"],
+                "cacheHit": True})
     if existing is not None:
         if completion_spans is not None:
             completion_spans.append(admission_span)

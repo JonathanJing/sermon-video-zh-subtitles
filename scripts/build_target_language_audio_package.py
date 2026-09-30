@@ -15,17 +15,20 @@ import json
 import math
 from pathlib import Path
 import subprocess
+import time
 from typing import Any
 
 from jsonschema import Draft202012Validator, FormatChecker
 
 try:
+    from scripts import sermon_accounting as accounting
     from scripts import prepare_target_language_speech_job as speech
     from scripts import sermon_sentence_interpretation as interpretation
     from scripts import clip_timeline_map as timeline_map
     from scripts import validate_target_language_audio_unit as unit_integrity
     from scripts import screen_target_language_audio_units as audio_screen
 except ImportError:
+    import sermon_accounting as accounting
     import prepare_target_language_speech_job as speech
     import sermon_sentence_interpretation as interpretation
     import clip_timeline_map as timeline_map
@@ -361,6 +364,9 @@ def build_package(paths: dict[str, Path], render_manifest_path: Path, artifact_r
     units: list[dict[str, Any]] = []
     durations: list[float] = []
     for index, (row, job_unit) in enumerate(zip(rows, job["units"])):
+        unit_started = time.monotonic()
+        accounting.record_workload("layer3.unit_validation_started", {
+            "jobSha256": job_hash, "unitIndex": index, "validationStarted": True})
         group_id = job_unit["translationGroupId"]
         text_hash = hashlib.sha256(job_unit["text"].encode("utf-8")).hexdigest()
         require(isinstance(row, dict) and row.get("textGroupId") == group_id
@@ -388,6 +394,11 @@ def build_package(paths: dict[str, Path], render_manifest_path: Path, artifact_r
         units.append({"textGroupId": group_id, "targetTextSha256": text_hash,
                       "audio": audio, "durationSeconds": round(duration, 6)})
         durations.append(duration)
+        accounting.record_workload("layer3.unit_validation_completed", {
+            "jobSha256": job_hash, "unitIndex": index, "audioSha256": audio["sha256"],
+            "receiptSha256": receipt_artifact["sha256"], "fullDecodePassed": True,
+            "validationCompleted": True, "validationElapsedSeconds": time.monotonic() - unit_started,
+            "timingScope": "current_execution"})
     if "silenceTrimEvidence" in manifest:
         trim_artifact = checked_artifact(artifact_root, manifest["silenceTrimEvidence"],
                                          json_artifact=True)

@@ -108,7 +108,7 @@ def recover(config_path, locale, expected_revision):
                                    'original_execution_binding_changed')
                     return layer2._inputs(current_config, locale, current)
                 with accounting.accounting_session(lane['output'] / 'accounting', 'canonical_layer2_cache_recovery',
-                        {'targetLocale': locale}, evidence_directory=lane['output']):
+                        {'targetLocale': locale, 'jobSha256': key, 'productionRunId': config.run_id}, evidence_directory=lane['output']):
                     with accounting.stage('layer2.cache_admission.' + locale, depends_on=[],
                             executor_type='deterministic_program', work_unit_id='l2.' + locale + '.cache_admission') as admission_span:
                         source, anchor, policy = current_inputs()
@@ -135,6 +135,8 @@ def recover(config_path, locale, expected_revision):
                         _unchanged(lane['output'], hashes)
                         _save_or_match(lane['output'] / 'language-review.json', receipt)
                         _save_or_match(lane['candidate'], candidate)
+                        accounting.record_workload('layer2.candidate_identity', {'candidateSha256': jobs._digest(candidate),
+                            'languageReviewSha256': jobs._digest(receipt)})
                     with accounting.stage('layer2.cache_final_validation.' + locale, depends_on=[candidate_span],
                             executor_type='deterministic_program', work_unit_id='l2.' + locale + '.cache_final_validation'):
                         checked = layer2.package_view(config)

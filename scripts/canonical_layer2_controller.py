@@ -252,7 +252,7 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
     lane = config.lanes[locale]
     with work_lock(lane['output']), accounting.accounting_session(
             lane['output'] / 'accounting', 'canonical_layer2_worker',
-            {'targetLocale': locale}, evidence_directory=lane['output']):
+            {'targetLocale': locale, 'jobSha256': expected_job, 'productionRunId': config.run_id}, evidence_directory=lane['output']):
         with accounting.stage('layer2.worker_admission.' + locale, depends_on=[],
                 executor_type='deterministic_program', work_unit_id='l2.' + locale + '.worker_admission') as admission_span:
             current = package_view(config)
@@ -311,6 +311,8 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                 progress.progress('candidate_validated')
                 models.save_new(lane['output'] / 'language-review.json', receipt)
                 models.save_new(lane['candidate'], candidate)
+                accounting.record_workload('layer2.candidate_identity', {'candidateSha256': jobs._digest(candidate),
+                    'languageReviewSha256': jobs._digest(receipt)})
             with accounting.stage('layer2.final_package_validation.' + locale, depends_on=[candidate_span],
                     executor_type='deterministic_program', work_unit_id='l2.' + locale + '.final_package_validation'):
                 checked = package_view(fresh_config)
