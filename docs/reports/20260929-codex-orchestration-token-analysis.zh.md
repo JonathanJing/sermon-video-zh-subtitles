@@ -381,3 +381,16 @@ Agent 输入不是完整 conversation，而是版本化 State Packet，例如：
 本文不修改生产模型、翻译质量门槛、人工审核、Firebase 发布授权或 iOS/现场验收。三层架构的目的是减少重复编排和上下文搬运，不是削弱质量控制。
 
 Codex cached input 很大不等同于同额非缓存成本，也不等于模型产生了同量新推理；所有成本结论必须依据实际计价/收据。本文不根据历史 token 反推当前账户账单。
+
+
+## 10. 设计修正：不是两条独立并行流水线
+
+针对现有 `sermon_end_to_end.py`、`sermon_release_workflow.py`、durable job 与 accounting 的进一步审核，完整方案采用：
+
+> **dependency-aware 业务 DAG + control plane**
+
+而不是“业务流水线”和“控制流水线”两条独立 scheduler。
+
+Control plane 只在 dependency 满足时 dispatch 工作；durable job 运行期间退出/等待；完成后读取 fresh evidence 再推进。业务 DAG 内 zh/ko/es 等不互相依赖的 branch 可以并行，但 translator→reviewer、人工批准→TTS、三语 convergence→Layer 4、authorization→deploy→verify 等依赖保持严格顺序。
+
+完整 Pipeline、日志 schema、Stage 0/1/2/3 验证和 sign-off 见 [三层编排重构完整设计](../codex-orchestration-pipeline-design.zh.md)。
