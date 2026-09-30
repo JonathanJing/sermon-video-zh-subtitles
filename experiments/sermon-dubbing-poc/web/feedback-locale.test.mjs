@@ -82,12 +82,15 @@ test('fingerprint locale redraw keeps the same active capture and diagnostic sta
     timers: { setTimeout() {}, clearTimeout() {} },
   });
   h.get('fingerprint-open').emit('click');
-  const running = controller.start();
+  const preparing = controller.start();
   assert.equal(controller.getState().phase, 'preparing_index');
   h.setLocale('en');
   assert.equal(h.get('fingerprint-message').textContent, messages.en['fingerprint.phase.preparing_index']);
   assert.equal(captures, 0); assert.equal(pauses, 0);
-  await new Promise(resolve => setImmediate(resolve));
+  await preparing;
+  assert.equal(controller.getState().phase, 'ready_to_record');
+  assert.equal(h.get('fingerprint-start').textContent, messages.en['fingerprint.record']);
+  const running = controller.start();
   assert.equal(controller.getState().phase, 'recording');
   h.setLocale('en');
   assert.equal(h.get('fingerprint-message').textContent, messages.en['fingerprint.phase.recording']);

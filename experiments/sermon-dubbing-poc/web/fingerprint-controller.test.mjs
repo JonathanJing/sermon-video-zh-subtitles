@@ -1,6 +1,7 @@
+const listen=async controller=>{await controller.start();if(controller.getState().phase==='ready_to_record')return controller.start();};
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createFingerprintController, fingerprintBinding, matchInWorker } from './fingerprint-ui.mjs';
+import { createFingerprintController, fingerprintBinding, matchInWorker, prepareInWorker } from './fingerprint-ui.mjs';
 import { captureFingerprintAudio } from './fingerprint-capture.mjs';
 const sha = 'a'.repeat(64), trackSha = 'b'.repeat(64);
 const metadata = { schemaVersion:'sermon-audio-fingerprint-binding-v1', algorithmVersion:'spectral-landmarks-v1', pageId:'week',sourceSha256:sha,trackSha256:trackSha,indexSha256:'c'.repeat(64),indexUrl:'/fingerprints/abc.json',captureSeconds:10,sourceStartSeconds:1793,sourceEndSeconds:4033 };
@@ -16,32 +17,32 @@ test('bind only exact source, track, window, page, metadata schema',()=>{
  for(const mutation of [c=>delete c.week.audioFingerprint,c=>c.track.sha256=sha,c=>c.week.id='other',c=>c.week.sourceStartSeconds=0,c=>c.week.sourceEndSeconds=4000,c=>c.week.audioFingerprint.indexUrl='https://elsewhere/a.json',c=>c.week.audioFingerprint.captureSeconds=20]){let c=structuredClone(h.context);mutation(c);assert.equal(fingerprintBinding(c),null);}
 });
 test('start pauses but never seeks; apply adds PCM duration and monotonic latency once in gesture',async()=>{
- const h=harness();await h.controller.start();assert.equal(h.pauseCalls,1);assert.equal(h.playCalls,0);assert.equal(h.seekCalls.length,0);assert.equal(h.controller.getState().sourceTimeSeconds,1903);h.setClock(12500);assert.equal(h.controller.apply(),true);assert.deepEqual(h.seekCalls,[112.5]);assert.equal(h.playCalls,1);assert.equal(h.controller.apply(),false);
+ const h=harness();await listen(h.controller);assert.equal(h.pauseCalls,1);assert.equal(h.playCalls,0);assert.equal(h.seekCalls.length,0);assert.equal(h.controller.getState().sourceTimeSeconds,1903);h.setClock(12500);assert.equal(h.controller.apply(),true);assert.deepEqual(h.seekCalls,[112.5]);assert.equal(h.playCalls,1);assert.equal(h.controller.apply(),false);
 });
 test('no match, ambiguity and silence never seek',async()=>{
- for(const reason of ['silence','ambiguous','low_confidence']){const h=harness({match:async()=>({result:{matched:false,diagnostics:{reason}}})});await h.controller.start();assert.equal(h.controller.getState().phase,'no_match');assert.equal(h.controller.apply(),false);assert.deepEqual(h.seekCalls,[]);}
+ for(const reason of ['silence','ambiguous','low_confidence']){const h=harness({match:async()=>({result:{matched:false,diagnostics:{reason}}})});await listen(h.controller);assert.equal(h.controller.getState().phase,'no_match');assert.equal(h.controller.apply(),false);assert.deepEqual(h.seekCalls,[]);}
 });
 test('expired result, changed generation or source reject apply',async()=>{
- for(const change of [h=>h.setClock(26000),h=>h.context.generation++,h=>h.context.track.sha256=sha]){const h=harness();await h.controller.start();change(h);assert.equal(h.controller.apply(),false);assert.deepEqual(h.seekCalls,[]);}
+ for(const change of [h=>h.setClock(26000),h=>h.context.generation++,h=>h.context.track.sha256=sha]){const h=harness();await listen(h.controller);change(h);assert.equal(h.controller.apply(),false);assert.deepEqual(h.seekCalls,[]);}
 });
-test('expire timer discards result',async()=>{const h=harness();await h.controller.start();h.jobs.find(x=>x.ms===15000).fn();assert.equal(h.controller.getState().phase,'expired');assert.equal(h.controller.apply(),false);});
+test('expire timer discards result',async()=>{const h=harness();await listen(h.controller);h.jobs.find(x=>x.ms===15000).fn();assert.equal(h.controller.getState().phase,'expired');assert.equal(h.controller.apply(),false);});
 test('late result after cancel or week switch is discarded',async()=>{
- for(const action of ['cancel','switch']){let resolve;const h=harness({match:()=>new Promise(r=>resolve=r)});const pending=h.controller.start();await Promise.resolve();await Promise.resolve();action==='cancel'?h.controller.cancel():h.context.generation++;resolve({result:{matched:true,queryStartSeconds:100,confidence:1}});await pending;assert.equal(h.controller.apply(),false);assert.deepEqual(h.seekCalls,[]);}
+ for(const action of ['cancel','switch']){let resolve;const h=harness({match:()=>new Promise(r=>resolve=r)});const pending=listen(h.controller);await new Promise(r=>setImmediate(r));action==='cancel'?h.controller.cancel():h.context.generation++;resolve({result:{matched:true,queryStartSeconds:100,confidence:1}});await pending;assert.equal(h.controller.apply(),false);assert.deepEqual(h.seekCalls,[]);}
 });
 test('concurrent restart never accepts stale first recording',async()=>{
- let resolves=[];const h=harness({capture:()=>new Promise(r=>resolves.push(r))});const a=h.controller.start();await Promise.resolve();const b=h.controller.start();await Promise.resolve();const recording={samples:new Float32Array(80000),sampleRate:8000,durationSeconds:10,endedAt:10000};resolves[1](recording);await b;resolves[0](recording);await a;assert.equal(h.controller.getState().phase,'matched');assert.equal(h.controller.apply(),true);assert.equal(h.seekCalls.length,1);
+ let resolves=[];const h=harness({capture:()=>new Promise(r=>resolves.push(r))});const a=listen(h.controller);await new Promise(r=>setImmediate(r));const b=listen(h.controller);await new Promise(r=>setImmediate(r));const recording={samples:new Float32Array(80000),sampleRate:8000,durationSeconds:10,endedAt:10000};resolves[1](recording);await b;resolves[0](recording);await a;assert.equal(h.controller.getState().phase,'matched');assert.equal(h.controller.apply(),true);assert.equal(h.seekCalls.length,1);
 });
 test('unsupported and denied permissions leave playback paused or untouched without seek',async()=>{
- const unsupported=harness({supported:()=>false});await unsupported.controller.start();assert.equal(unsupported.controller.getState().phase,'unsupported');assert.equal(unsupported.pauseCalls,0);
- const denied=harness({capture:async()=>{throw new DOMException('No','NotAllowedError');}});await denied.controller.start();assert.equal(denied.controller.getState().phase,'permission_denied');assert.equal(denied.pauseCalls,1);assert.equal(denied.playCalls,0);
+ const unsupported=harness({supported:()=>false});await listen(unsupported.controller);assert.equal(unsupported.controller.getState().phase,'unsupported');assert.equal(unsupported.pauseCalls,0);
+ const denied=harness({capture:async()=>{throw new DOMException('No','NotAllowedError');}});await listen(denied.controller);assert.equal(denied.controller.getState().phase,'permission_denied');assert.equal(denied.pauseCalls,1);assert.equal(denied.playCalls,0);
 });
 test('capture timeout aborts and releases operation',async()=>{
- let signal;const h=harness({capture:({signal:s})=>{signal=s;return new Promise((_,reject)=>s.addEventListener('abort',()=>reject(new DOMException('stop','AbortError'))));}});const pending=h.controller.start();await Promise.resolve();h.jobs.find(x=>x.ms===35000).fn();await pending;assert.ok(signal.aborted);assert.equal(h.controller.getState().phase,'timeout');
+ let signal;const h=harness({capture:({signal:s})=>{signal=s;return new Promise((_,reject)=>s.addEventListener('abort',()=>reject(new DOMException('stop','AbortError'))));}});const pending=listen(h.controller);await new Promise(r=>setImmediate(r));h.jobs.find(x=>x.ms===35000&&!x.cancelled).fn();await pending;assert.ok(signal.aborted);assert.equal(h.controller.getState().phase,'timeout');
 });
 test('out-of-window match and wait past sermon end reject instead of clamp',async()=>{
- const h=harness({match:async()=>({result:{matched:true,queryStartSeconds:2228,confidence:.9}})});await h.controller.start();h.setClock(13000);assert.equal(h.controller.apply(),false);assert.deepEqual(h.seekCalls,[]);
+ const h=harness({match:async()=>({result:{matched:true,queryStartSeconds:2228,confidence:.9}})});await listen(h.controller);h.setClock(13000);assert.equal(h.controller.apply(),false);assert.deepEqual(h.seekCalls,[]);
 });
-test('manual operation invalidates candidate without auto resume',async()=>{const h=harness();await h.controller.start();h.controller.invalidate();assert.equal(h.controller.apply(),false);assert.equal(h.playCalls,0);});
+test('manual operation invalidates candidate without auto resume',async()=>{const h=harness();await listen(h.controller);h.controller.invalidate();assert.equal(h.controller.apply(),false);assert.equal(h.playCalls,0);});
 test('worker terminates on cancellation and transmits PCM only to local worker',async()=>{
  let instance;class Worker {constructor(url,options){instance=this;this.url=url;this.options=options;}postMessage(data,transfer){this.data=data;this.transfer=transfer;}terminate(){this.stopped=true;}}
  const signal=new AbortController();const pcm=new Float32Array(80);const pending=matchInWorker({samples:pcm,sampleRate:8000},metadata,signal.signal,Worker);signal.abort();await assert.rejects(pending,{name:'AbortError'});assert.ok(instance.stopped);assert.equal(instance.options.type,'module');assert.equal(instance.transfer[0],pcm.buffer);
@@ -78,6 +79,7 @@ test('index admission completes before pause or microphone; one prepared session
  const h=harness({prepare:()=>new Promise(r=>resolve=r),capture:async()=>{captures++;return{samples:new Float32Array(80000),sampleRate:8000,durationSeconds:10,endedAt:10000};}});
  const pending=h.controller.start();assert.equal(h.controller.getState().phase,'preparing_index');assert.equal(captures,0);assert.equal(h.pauseCalls,0);
  resolve({timings:{indexMs:1200},close(){closes++;}});await pending;
+ assert.equal(captures,0);assert.equal(h.controller.getState().phase,'ready_to_record');await h.controller.start();
  assert.equal(captures,1);assert.equal(h.pauseCalls,1);assert.equal(closes,1);assert.equal(h.controller.getDiagnostics().timings.indexMs,1200);
 });
 test('missing or corrupt index never opens microphone, pauses playback or seeks',async()=>{
@@ -94,5 +96,37 @@ test('cancel, source switch and timeout during index admission cannot start capt
   if(action==='cancel')h.controller.cancel();else if(action==='switch'){h.context.generation++;finish();}else h.jobs.find(x=>x.ms===35000).fn();
   await pending;assert.equal(h.pauseCalls,0);assert.deepEqual(h.seekCalls,[]);
   if(action==='switch')assert.equal(closes,1);else assert.equal(h.controller.getState().phase,action==='timeout'?'timeout':'cancelled');
+ }
+});
+
+test('deferred Worker admission and permission denial retry require a fresh synchronous record click',async()=>{
+ let worker,gesture=false,prompts=0,cachedDenials=0,closed=0;
+ class Worker{constructor(){worker=this;}postMessage(data){this.requestId=data.requestId;}terminate(){closed++;}}
+ class Context{state='running';resume(){return Promise.resolve();}close(){return Promise.resolve();}}
+ const env={isSecureContext:true,AudioContext:Context,AudioWorkletNode:function(){},Worker,crypto:{subtle:{}},navigator:{mediaDevices:{getUserMedia(){
+  if(prompts&& !gesture){cachedDenials++;return Promise.reject(new DOMException('cached denial','NotAllowedError'));}
+  assert.equal(gesture,true,'getUserMedia must run in the record click, before any await');
+  prompts++;return Promise.reject(new DOMException('fixture',prompts===1?'NotAllowedError':'NotFoundError'));
+ }}}};
+ const h=harness({prepare:(m,s)=>prepareInWorker(m,s,Worker),capture:options=>captureFingerprintAudio({...options,env})});
+ for(let attempt=1;attempt<=2;attempt++){
+  gesture=true;const preflight=h.controller.start();gesture=false;
+  assert.equal(prompts,attempt-1);assert.equal(h.controller.getState().phase,'preparing_index');
+  // A Worker task arrives after the original gesture ended.
+  worker.onmessage({data:{requestId:worker.requestId,ready:true,timings:{indexMs:1}}});await preflight;
+  assert.equal(h.controller.getState().phase,'ready_to_record');assert.equal(prompts,attempt-1);
+  gesture=true;const recording=h.controller.start();assert.equal(prompts,attempt);gesture=false;await recording;
+  assert.equal(h.controller.getState().phase,attempt===1?'permission_denied':'error');
+ }
+ assert.equal(cachedDenials,0);assert.equal(closed,2);assert.deepEqual(h.seekCalls,[]);
+});
+test('ready index expires or changes identity without requesting microphone',async()=>{
+ for(const action of ['expiry','identity','cancel']){
+  let closes=0;const h=harness({prepare:async()=>({close(){closes++;}}),capture:()=>assert.fail('unexpected capture')});
+  await h.controller.start();assert.equal(h.controller.getState().phase,'ready_to_record');
+  if(action==='expiry')h.jobs.find(x=>x.ms===30000&&!x.cancelled).fn();
+  else if(action==='identity'){h.context.generation++;await h.controller.start();}
+  else h.controller.cancel();
+  assert.equal(closes,1);assert.equal(h.pauseCalls,0);assert.equal(h.controller.apply(),false);
  }
 });
