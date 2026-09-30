@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
+from unittest.mock import patch
 
 from scripts import assemble_multilingual_v3_update as update
 
@@ -161,6 +162,67 @@ class AssembleMultilingualV3UpdateTests(unittest.TestCase):
         merged = update.load(out / "public" / update.CATALOG)
         self.assertEqual(merged["defaultPageId"], "new-week")
         self.assertEqual({page["id"] for page in merged["pages"]}, {"old-week", "new-week"})
+
+    def test_rejects_stage_mutation_after_manifest_validation(self):
+        original = update.tempfile.mkdtemp
+        changed = self.stage / "english-reference/new-week.json"
+
+        def change_after_admission(*args, **kwargs):
+            value = update.load(changed)
+            value["fixtureNote"] = "not present in admitted manifest"
+            write(changed, value)
+            return original(*args, **kwargs)
+
+        out = self.root / "changed-stage-candidate"
+        with patch.object(update.tempfile, "mkdtemp", side_effect=change_after_admission):
+            with self.assertRaises(ValueError):
+                update.assemble(self.base, self.stage, self.manifest, out)
+        self.assertFalse(out.exists())
+        self.assertFalse(list(self.root.glob(".changed-stage-candidate-*")))
+
+    def test_rejects_changed_baseline_bytes_after_admission(self):
+        original = update.tempfile.mkdtemp
+
+        def change_after_admission(*args, **kwargs):
+            write(self.base / "app.mjs", b"concurrently replaced reader")
+            return original(*args, **kwargs)
+
+        out = self.root / "changed-base-candidate"
+        with patch.object(update.tempfile, "mkdtemp", side_effect=change_after_admission):
+            with self.assertRaises(ValueError):
+                update.assemble(self.base, self.stage, self.manifest, out)
+        self.assertFalse(out.exists())
+
+    def test_rejects_new_baseline_file_after_admission(self):
+        original = update.tempfile.mkdtemp
+
+        def change_after_admission(*args, **kwargs):
+            write(self.base / "unadmitted-fixture.json", {"synthetic": True})
+            return original(*args, **kwargs)
+
+        out = self.root / "changed-file-set-candidate"
+        with patch.object(update.tempfile, "mkdtemp", side_effect=change_after_admission):
+            with self.assertRaises(ValueError):
+                update.assemble(self.base, self.stage, self.manifest, out)
+        self.assertFalse(out.exists())
+
+    def test_rejects_baseline_symlink_introduced_after_admission(self):
+        original = update.tempfile.mkdtemp
+        outside = self.root / "outside-synthetic.txt"
+        outside.write_bytes(b"synthetic local evidence")
+
+        def change_after_admission(*args, **kwargs):
+            reader = self.base / "app.mjs"
+            reader.unlink()
+            reader.symlink_to(outside)
+            return original(*args, **kwargs)
+
+        out = self.root / "changed-link-candidate"
+        with patch.object(update.tempfile, "mkdtemp", side_effect=change_after_admission):
+            with self.assertRaisesRegex(ValueError, "Symlink"):
+                update.assemble(self.base, self.stage, self.manifest, out)
+        self.assertFalse(out.exists())
+        self.assertFalse(list(self.root.glob(".changed-link-candidate-*")))
 
     def test_rejects_changed_asset_and_keeps_output_absent(self) -> None:
         write(self.stage / "media/new-week/zh-Hans.mp3", b"different audio")
