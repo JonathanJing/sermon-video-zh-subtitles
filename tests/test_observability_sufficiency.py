@@ -250,14 +250,14 @@ class ObservabilitySufficiencyTests(unittest.TestCase):
                 integrity_results.append(report['receiptIntegrity'])
             self.assertEqual(*integrity_results)
 
-    def test_same_event_identity_equivalent_usage_is_selected_even_if_earlier_copy_last(self):
+    def test_same_event_identity_changed_timestamp_keeps_receipt_untrusted(self):
         t = self.fixture(receipt_tests.ReceiptConflictTests)
         other = {**copy.deepcopy(t.api), 'recordedAt': '2026-09-01T00:00:00+00:00'}
         for rows in ([other, *t.events], [*t.events, other]):
             summary = t.summarize(rows); report = weekly.project(t.root)
             self.assertEqual(report['receiptIntegrity'], summary['receiptIntegrity'])
-            self.assertEqual(sum(len(r['usage']['directReceipts']) for r in report['runs']), 1)
-            self.assertEqual(report['receiptIntegrity']['status'], 'consistent')
+            self.assertEqual(sum(len(r['usage']['directReceipts']) for r in report['runs']), 0)
+            self.assertEqual(report['receiptIntegrity']['status'], 'conflicted')
 
     def test_same_event_identity_sdk_conflict_survives_export(self):
         from scripts import export_observability_trace as exporter

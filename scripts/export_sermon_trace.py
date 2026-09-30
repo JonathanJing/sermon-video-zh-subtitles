@@ -13,7 +13,7 @@ import sys
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts.sermon_clock_evidence import monotonic_interval
-from scripts.sermon_accounting import READABLE_SCHEMAS, SCHEMA, read_events, receipt_integrity
+from scripts.sermon_accounting import READABLE_SCHEMAS, SCHEMA, read_events, receipt_integrity, profile_integrity
 
 # Export only known application labels. Unknown labels retain a hash, never text.
 LABELS = frozenset("""
@@ -77,7 +77,12 @@ def export(directory):
     pairs = defaultdict(lambda: {"start": [], "end": []})
     accepted, identities = [], defaultdict(list)
     supported = [e for e in events if e.get("schemaVersion") in READABLE_SCHEMAS]
+    replay = profile_integrity(supported)
     integrity = receipt_integrity(supported)
+    # Replays of a durable profile event are the same fact, not conflicting
+    # legacy rows. Export only the replay-selected representative.
+    projected = [e for e in events if 'contractVersion' not in e or id(e) in replay['_selected']]
+    if replay['status'] != 'consistent': diagnostics.append({'code': 'incomplete_or_conflicting_profile_events'})
 
     def diagnostic(code, key=None):
         row = {"code": code}
@@ -85,7 +90,7 @@ def export(directory):
             row.update(traceId=trace_id(key[0]), spanId=span_id(key))
         diagnostics.append(row)
 
-    for event in events:
+    for event in projected:
         if event.get("schemaVersion") not in READABLE_SCHEMAS:
             diagnostic("unsupported_event_schema")
             continue
@@ -123,7 +128,10 @@ def export(directory):
         if any(start.get(field) != end.get(field) for field in match_fields):
             diagnostic("span_identity_mismatch", key)
             continue
-        if end.get("status") not in {"completed", "failed"}:
+        allowed_statuses = {"completed", "failed"}
+        if start.get('contractVersion') is not None:
+            allowed_statuses |= {'cancelled', 'outcome_unknown'}
+        if end.get("status") not in allowed_statuses:
             diagnostic("unknown_finished_status", key)
             continue
         try:
@@ -177,7 +185,7 @@ def export(directory):
                     attrs.append(attribute("sermon." + field, value))
         spans[key] = {"traceId": trace_id(run), "spanId": span_id(key), "name": "sermon." + kind + "." + label,
                       "kind": 1, "startTimeUnixNano": str(begin), "endTimeUnixNano": str(finish),
-                      "attributes": attrs, "status": {"code": 2 if end["status"] == "failed" else 1}}
+                      "attributes": attrs, "status": {"code": 2 if end["status"] != "completed" else 1}}
         if any(start.get(field) is not None and (not isinstance(start[field], str) or not start[field])
                for field in ("parentWorkflowId", "parentSpanId")):
             diagnostic("invalid_parent_identity", key)
@@ -267,6 +275,15 @@ def export(directory):
         for field, count in sorted(missing[key].items()):
             spans[key]["attributes"].append(attribute("sermon.unknownCalls." + field, count))
 
+    from scripts.sermon_review_observation import observations
+    rqc = observations(accepted)
+    for observation in rqc:
+        key=(observation['runId'], 'stage', observation['spanId'])
+        if key not in spans:
+            diagnostic('review_observation_without_completed_span');continue
+        spans[key].setdefault('events',[]).append({'name':'sermon.rqc.observation',
+            'timeUnixNano':str(nanos(observation['recordedAt'])),
+            'attributes':[attribute('sermon.rqc.evidence',json.dumps(observation,sort_keys=True,separators=(',',':')))]})
     payload = {"resourceSpans": [{"resource": {"attributes": [attribute("service.name", "sermon-saturday-offline")]},
                 "scopeSpans": [{"scope": {"name": "sermon.accounting.otlp_export", "version": "1"},
                                 "spans": list(spans.values())}]}]}
@@ -275,6 +292,8 @@ def export(directory):
               "readableEvents": len(events), "exportedSpans": len(spans),
               "traceCount": len({span["traceId"] for span in spans.values()}), "diagnostics": diagnostics,
               "qaAcceptance": "not_evaluated", "costCompleteness": "not_evaluated", "networkExported": False,
+              **({"eventIntegrity": {k: v for k, v in replay.items() if not k.startswith("_")}} if replay["profileEventCount"] else {}),
+              **({"reviewObservations":rqc} if rqc else {}),
               "receiptIntegrity": {k: v for k, v in integrity.items() if not k.startswith("_")}}
     return payload, report
 
