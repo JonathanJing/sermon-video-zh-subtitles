@@ -263,9 +263,6 @@ class AdmissionTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'admission_registry_changed'): changed.snapshot()
 
 
-if __name__ == '__main__': unittest.main()
-
-
 class FailedReviewInventoryTests(unittest.TestCase):
     def test_two_failed_attempts_remain_distinct_through_planner_and_admission(self):
         import io
@@ -334,3 +331,6 @@ class FailedReviewInventoryTests(unittest.TestCase):
                     self.assertIn('latest_review_not_passed',outcome['reasons'])
                     self.assertEqual((runtime.root/'candidate.json').read_bytes(),candidate_bytes)
                     self.assertEqual(len(fixture.calls),1)
+
+
+if __name__ == '__main__': unittest.main()
