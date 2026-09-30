@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from copy import deepcopy
+import json
 import os
 from pathlib import Path
 import re
@@ -166,12 +167,31 @@ class BudgetStore:
         return canonical_sha256({'chainId': canonical_sha256(request['identity']),
                                  'operationId': request['operationId']})
 
-    def _save(self, folder, ledger):
-        # Ensure we never publish a ledger larger than our bounded reader accepts.
+    @staticmethod
+    def _check_serialized_size(ledger):
         from scripts.sermon_review_contracts import MAX_BYTES
-        import json
+        # Match the bytes jobs._persist writes, not the smaller canonical JSON.
         require(len((json.dumps(ledger, ensure_ascii=False, indent=2, allow_nan=False) + '\n').encode())
                 <= MAX_BYTES, 'budget_ledger_size_limit')
+
+    def _check_settlement_capacity(self, ledger):
+        # Every pending or unknown reservation can still acquire a known result.
+        # Reserve the largest permitted known-result envelope for ALL such rows,
+        # including other chains, before granting any external execution. The
+        # fixed-width hash and bounded metrics make this a deterministic bound;
+        # requests is exactly one even when an actual result exceeds its budget.
+        projected = deepcopy(ledger)
+        largest = {'executionStatus': 'succeeded', 'contentStatus': 'not_assessed',
+                   'receiptSha256': 'f' * 64,
+                   'usage': {key: 1 if key == 'requests' else 10**15 for key in METRICS}}
+        for row in projected['reservations'].values():
+            if row['phase'] != 'result' or row['result']['executionStatus'] == 'outcome_unknown':
+                row.update(phase='result', result=largest)
+        self._check_serialized_size(projected)
+
+    def _save(self, folder, ledger):
+        # Ensure we never publish a ledger larger than our bounded reader accepts.
+        self._check_serialized_size(ledger)
         jobs._persist(folder / 'state.json', ledger)
 
     def reserve(self, identity, *, operation_id, kind, revision_id, revision_number,
@@ -194,6 +214,7 @@ class BudgetStore:
                 used = _sum(relevant)
                 require(all(used[k] + bounds[k] <= cap[k] for k in METRICS), 'budget_exhausted')
             rows[rid] = {'request': request, 'phase': 'intent'}
+            self._check_settlement_capacity(ledger)
             self._save(folder, ledger)
             # Including ancestors is necessary even if a concurrent creator just
             # made the store parent. A failed fsync never grants execution.
@@ -248,10 +269,13 @@ class BudgetStore:
         """Consume intent exactly once immediately before the injected callback."""
         _hash(reservation_id)
         require(reservation_id in self._execution_permits, 'request_requires_fresh_reservation')
-        self._execution_permits.remove(reservation_id)
         with self._locked() as (folder, ledger):
             row = ledger['reservations'].get(reservation_id)
             require(row is not None and row['phase'] == 'intent', 'request_already_started_or_unknown')
+            self._check_settlement_capacity(ledger)
+            # A busy nonblocking lock did not attempt dispatch and must preserve
+            # this fresh permit. Consume before the first possibly uncertain write.
+            self._execution_permits.remove(reservation_id)
             row['phase'] = 'request'
             self._save(folder, ledger)
             jobs._sync_directory_ancestry(folder)
@@ -334,8 +358,11 @@ class BudgetStore:
                 try:
                     # A synthetic safe label only probes transitions; never creates intent.
                     rev_id = revisions.get(str(highest), {}).get('revisionId', 'initial')
+                    used_ids = {value['revisionId'] for value in revisions.values()}
+                    fresh_id = next(f'snapshot-next-{n}' for n in range(len(used_ids) + 1)
+                                    if f'snapshot-next-{n}' not in used_ids)
                     probe = {'kind': kind, 'revisionNumber': highest + (kind == 'content_revision'),
-                             'revisionId': 'next-' + str(highest + 1) if kind == 'content_revision' else rev_id}
+                             'revisionId': fresh_id if kind == 'content_revision' else rev_id}
                     self._check_transition(probe, list(same.values()))
                     availability[kind] = not unknown
                 except ValueError:
