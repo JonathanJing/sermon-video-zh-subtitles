@@ -35,7 +35,7 @@ export function diagnosticSummary(value = {}) {
   const raw = value.match || {}, timing = value.timings || {}, content = value.content || {};
   const hashes = {};
   for (const key of ['sourceSha256', 'trackSha256', 'indexSha256']) if (typeof content[key] === 'string' && /^[a-f0-9]{64}$/.test(content[key])) hashes[key] = content[key];
-  const phases = new Set(['idle', 'permission', 'starting', 'recording', 'recovering', 'matching', 'matched', 'no_match', 'error', 'permission_denied', 'unavailable', 'unsupported', 'expired', 'timeout', 'cancelled', 'play_starting', 'play_failed', 'play_blocked', 'applied']);
+  const phases = new Set(['idle', 'preparing_index', 'permission', 'starting', 'recording', 'recovering', 'matching', 'matched', 'no_match', 'error', 'permission_denied', 'unavailable', 'unsupported', 'expired', 'timeout', 'cancelled', 'play_starting', 'play_failed', 'play_blocked', 'applied']);
   const timings = {};
   for (const key of ['totalMs', 'permissionMs', 'startupMs', 'captureMs', 'microphoneObservedMs', 'indexMs', 'featureMs', 'matchMs', 'workerMs', 'seekCallMs', 'playStartMs']) timings[key] = ms(timing[key]);
   return {

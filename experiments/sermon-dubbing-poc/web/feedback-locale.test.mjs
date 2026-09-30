@@ -76,12 +76,18 @@ test('fingerprint locale redraw keeps the same active capture and diagnostic sta
   const metadata = { schemaVersion: 'sermon-audio-fingerprint-binding-v1', algorithmVersion: 'spectral-landmarks-v1', pageId: 'week', sourceSha256: sha, trackSha256: sha, indexSha256: sha, indexUrl: '/fingerprints/test.json', captureSeconds: 10, sourceStartSeconds: 100, sourceEndSeconds: 200 };
   const controller = h.context.mountFingerprintUI({
     context: () => ({ week: { id: 'week', sourceStartSeconds: 100, audioFingerprint: metadata }, track: { id: 'track', sha256: sha, durationSeconds: 100 }, ready: true }),
+    prepare: async () => ({close(){}}),
     pause: () => pauses++, seek: () => seeks++, play: () => plays++,
     capture: options => { captures++; signal = options.signal; options.onRecording(); return new Promise((resolve, reject) => { rejectCapture = reject; }); },
     timers: { setTimeout() {}, clearTimeout() {} },
   });
   h.get('fingerprint-open').emit('click');
   const running = controller.start();
+  assert.equal(controller.getState().phase, 'preparing_index');
+  h.setLocale('en');
+  assert.equal(h.get('fingerprint-message').textContent, messages.en['fingerprint.phase.preparing_index']);
+  assert.equal(captures, 0); assert.equal(pauses, 0);
+  await new Promise(resolve => setImmediate(resolve));
   assert.equal(controller.getState().phase, 'recording');
   h.setLocale('en');
   assert.equal(h.get('fingerprint-message').textContent, messages.en['fingerprint.phase.recording']);

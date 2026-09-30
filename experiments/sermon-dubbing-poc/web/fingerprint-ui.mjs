@@ -25,6 +25,41 @@ export function matchInWorker(recording, metadata, signal, WorkerClass = globalT
     try { worker.postMessage({ samples: recording.samples, sampleRate: recording.sampleRate, metadata, requestId }, [recording.samples.buffer]); } catch (error) { finish(error); }
   });
 }
+// Keep one verified index in one bounded operation's Worker. Closing the session
+// discards it; HTTP cache hints are not a claim of persistent offline readiness.
+export async function prepareInWorker(metadata, signal, WorkerClass = globalThis.Worker) {
+  const worker = new WorkerClass(new URL('./fingerprint-worker.mjs', import.meta.url), { type: 'module' });
+  let pending = null, serial = 0, closed = false;
+  const close = (error = abortError()) => {
+    if (closed) return;
+    closed = true; worker.terminate(); signal.removeEventListener('abort', abort);
+    const task = pending; pending = null; task?.reject(error);
+  };
+  const abort = () => close();
+  signal.addEventListener('abort', abort, { once: true });
+  worker.onerror = () => close(new Error('match_failed'));
+  worker.onmessage = ({ data }) => {
+    if (!pending || data.requestId !== pending.id || closed) return;
+    const task = pending; pending = null;
+    if (data.error) { const error = new Error(data.error); close(error); task.reject(error); }
+    else task.resolve(data);
+  };
+  const request = (operation, payload = {}, transfer = []) => new Promise((resolve, reject) => {
+    if (closed || signal.aborted) { close(); reject(abortError()); return; }
+    if (pending) { reject(new Error('match_failed')); return; }
+    const id = ++serial; pending = { id, resolve, reject };
+    try { worker.postMessage({ operation, metadata, requestId: id, ...payload }, transfer); }
+    catch (error) { close(error); }
+  });
+  if (signal.aborted) { close(); throw abortError(); }
+  try {
+    const result = await request('prepare');
+    if (result.ready !== true) throw new Error('index_binding');
+    return { timings: result.timings, close, match: recording => request('match',
+      { samples: recording.samples, sampleRate: recording.sampleRate }, [recording.samples.buffer]) };
+  } catch (error) { close(error); throw error; }
+}
+
 // Show bounded diagnostic codes only; never expose native messages or device IDs.
 export function captureDiagnostic(error = {}) {
   const known = {capture_start_timeout:'MIC_START_TIMEOUT',capture_interrupted:'INPUT_INTERRUPTED',audio_context_interrupted:'AUDIO_INTERRUPTED',microphone_ended:'MIC_ENDED',worklet_processor:'PROCESSOR_ERROR',capture_failed:'INVALID_CAPTURE',index_binding:'INDEX_MISMATCH',index_unavailable:'INDEX_UNAVAILABLE',match_failed:'MATCH_ERROR'};
@@ -66,7 +101,7 @@ export function playAlignmentAudio(audio, { signal, timeoutMs = 8000, timers = g
     } catch (error) { finish(error || new Error('audio_play_failed')); }
   });
 }
-export function createFingerprintController({ context, pause, seek, play, position = () => NaN, onState = () => {}, capture = captureFingerprintAudio, match = matchInWorker, supported = microphoneSupported, now = () => performance.now(), timers = globalThis, expirySeconds = 15, autoApply = true }) {
+export function createFingerprintController({ context, pause, seek, play, position = () => NaN, onState = () => {}, capture = captureFingerprintAudio, prepare = prepareInWorker, match = null, supported = microphoneSupported, now = () => performance.now(), timers = globalThis, expirySeconds = 15, autoApply = true }) {
   let serial = 0, active = null, result = null, expiryTimer = null, pendingPlay = null;
   let state = { phase: 'idle' }, session = null;
   const elapsedMs = started => Math.max(0, now() - started);
@@ -102,10 +137,14 @@ export function createFingerprintController({ context, pause, seek, play, positi
     if (!binding) { emit({ phase: 'unavailable' }); return; }
     if (!supported()) { emit({ phase: 'unsupported' }); return; }
     const token = serial, controller = new AbortController(); active = controller;
-    pause(); emit({ phase: 'permission' });
-    let timedOut = false;
+    emit({ phase: 'preparing_index' });
+    let timedOut = false, prepared = null;
     const timeout = timers.setTimeout(() => { timedOut = true; controller.abort(); }, 35000);
     try {
+      prepared = await prepare(binding.metadata, controller.signal);
+      if (!valid(token, binding) || controller.signal.aborted) return;
+      observation.timings.indexMs = prepared.timings?.indexMs;
+      pause(); emit({ phase: 'permission' });
       const recording = await capture({ onTiming: value => {
         observation.attempts++;
         for (const name of ['permissionMs', 'startupMs', 'captureMs', 'microphoneObservedMs']) {
@@ -117,10 +156,13 @@ export function createFingerprintController({ context, pause, seek, play, positi
       if (!Number.isFinite(recording.endedAt) || !Number.isFinite(recording.durationSeconds) || recording.durationSeconds < 9 || recording.durationSeconds > 11 || recording.endedAt > now() + 50) throw new Error('capture_failed');
       emit({ phase: 'matching' });
       const workerStarted = now();
-      const answer = await match(recording, binding.metadata, controller.signal);
+      const answer = await (match ? match(recording, binding.metadata, controller.signal) : prepared.match(recording));
       if (!valid(token, binding) || controller.signal.aborted) return;
       observation.timings.workerMs = elapsedMs(workerStarted);
-      for (const name of ['indexMs', 'featureMs', 'matchMs']) observation.timings[name] = answer.timings?.[name];
+      for (const name of ['indexMs', 'featureMs', 'matchMs']) {
+        const value = answer.timings?.[name];
+        if (typeof value === 'number' && Number.isFinite(value) && value >= 0) observation.timings[name] = value;
+      }
       observation.match = answer.summary;
       const found = answer.result;
       if (!found?.matched) { emit({ phase: 'no_match', reason: matchReason(found?.diagnostics?.reason) }); return; }
@@ -134,6 +176,7 @@ export function createFingerprintController({ context, pause, seek, play, positi
     } catch (error) {
       if (valid(token, binding)) emit({ phase: timedOut ? 'timeout' : error.name === 'AbortError' ? 'cancelled' : error.name === 'NotAllowedError' || error.name === 'SecurityError' ? 'permission_denied' : error.message === 'unsupported' ? 'unsupported' : 'error', diagnostic: captureDiagnostic(error) });
     } finally {
+      prepared?.close();
       timers.clearTimeout(timeout);
       if (active === controller) { controller.abort(); active = null; }
     }
@@ -186,9 +229,9 @@ function clock(seconds) {
 export function mountFingerprintUI(options) {
   const $ = id => document.getElementById(id);
   const dialog = $('fingerprint-dialog');
-  const phases = new Set(["idle", "permission", "recovering", "starting", "recording", "matching", "cancelled", "unavailable", "unsupported", "permission_denied", "timeout", "error", "no_match", "expired", "play_starting", "play_blocked", "play_failed"]);
+  const phases = new Set(["idle", "preparing_index", "permission", "recovering", "starting", "recording", "matching", "cancelled", "unavailable", "unsupported", "permission_denied", "timeout", "error", "no_match", "expired", "play_starting", "play_blocked", "play_failed"]);
   function renderState(value) {
-    const busy = ['permission', 'starting', 'recovering', 'recording', 'matching', 'play_starting'].includes(value.phase);
+    const busy = ['preparing_index', 'permission', 'starting', 'recovering', 'recording', 'matching', 'play_starting'].includes(value.phase);
     $('fingerprint-start').disabled = busy;
     $('fingerprint-start').textContent = t(value.phase === 'idle' ? 'fingerprint.start' : 'fingerprint.restart');
     $('fingerprint-apply').hidden = !['matched', 'play_blocked', 'play_failed'].includes(value.phase);

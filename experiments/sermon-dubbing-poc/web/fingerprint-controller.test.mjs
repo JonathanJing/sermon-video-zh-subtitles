@@ -8,7 +8,7 @@ function harness(overrides = {}) {
   let current = { week:{id:'week',sourceStartSeconds:1793,audioFingerprint:{...metadata}},track:{id:'synced',sha256:trackSha,durationSeconds:2240},generation:1,ready:true };
   let clock=10000, seekCalls=[],playCalls=0,pauseCalls=0,states=[],jobs=[];
   const timers={setTimeout(fn,ms){const job={fn,ms};jobs.push(job);return job;},clearTimeout(job){if(job)job.cancelled=true;}};
-  const controller=createFingerprintController({context:()=>current,pause:()=>pauseCalls++,seek:x=>{seekCalls.push(x);return true;},play:()=>{playCalls++;},autoApply:false,now:()=>clock,timers,supported:()=>true,onState:x=>states.push(x),capture:async()=>({samples:new Float32Array(80000),sampleRate:8000,durationSeconds:10,endedAt:10000}),match:async()=>({result:{matched:true,queryStartSeconds:100,confidence:.9},durationSeconds:10}),...overrides});
+  const controller=createFingerprintController({prepare:async()=>({close(){}}),context:()=>current,pause:()=>pauseCalls++,seek:x=>{seekCalls.push(x);return true;},play:()=>{playCalls++;},autoApply:false,now:()=>clock,timers,supported:()=>true,onState:x=>states.push(x),capture:async()=>({samples:new Float32Array(80000),sampleRate:8000,durationSeconds:10,endedAt:10000}),match:async()=>({result:{matched:true,queryStartSeconds:100,confidence:.9},durationSeconds:10}),...overrides});
   return {controller,timers,jobs,states,seekCalls,setClock:x=>clock=x,setContext:x=>current=x,get context(){return current;},get playCalls(){return playCalls;},get pauseCalls(){return pauseCalls;}};
 }
 test('bind only exact source, track, window, page, metadata schema',()=>{
@@ -26,17 +26,17 @@ test('expired result, changed generation or source reject apply',async()=>{
 });
 test('expire timer discards result',async()=>{const h=harness();await h.controller.start();h.jobs.find(x=>x.ms===15000).fn();assert.equal(h.controller.getState().phase,'expired');assert.equal(h.controller.apply(),false);});
 test('late result after cancel or week switch is discarded',async()=>{
- for(const action of ['cancel','switch']){let resolve;const h=harness({match:()=>new Promise(r=>resolve=r)});const pending=h.controller.start();await Promise.resolve();action==='cancel'?h.controller.cancel():h.context.generation++;resolve({result:{matched:true,queryStartSeconds:100,confidence:1}});await pending;assert.equal(h.controller.apply(),false);assert.deepEqual(h.seekCalls,[]);}
+ for(const action of ['cancel','switch']){let resolve;const h=harness({match:()=>new Promise(r=>resolve=r)});const pending=h.controller.start();await Promise.resolve();await Promise.resolve();action==='cancel'?h.controller.cancel():h.context.generation++;resolve({result:{matched:true,queryStartSeconds:100,confidence:1}});await pending;assert.equal(h.controller.apply(),false);assert.deepEqual(h.seekCalls,[]);}
 });
 test('concurrent restart never accepts stale first recording',async()=>{
- let resolves=[];const h=harness({capture:()=>new Promise(r=>resolves.push(r))});const a=h.controller.start(),b=h.controller.start();const recording={samples:new Float32Array(80000),sampleRate:8000,durationSeconds:10,endedAt:10000};resolves[1](recording);await b;resolves[0](recording);await a;assert.equal(h.controller.getState().phase,'matched');assert.equal(h.controller.apply(),true);assert.equal(h.seekCalls.length,1);
+ let resolves=[];const h=harness({capture:()=>new Promise(r=>resolves.push(r))});const a=h.controller.start();await Promise.resolve();const b=h.controller.start();await Promise.resolve();const recording={samples:new Float32Array(80000),sampleRate:8000,durationSeconds:10,endedAt:10000};resolves[1](recording);await b;resolves[0](recording);await a;assert.equal(h.controller.getState().phase,'matched');assert.equal(h.controller.apply(),true);assert.equal(h.seekCalls.length,1);
 });
 test('unsupported and denied permissions leave playback paused or untouched without seek',async()=>{
  const unsupported=harness({supported:()=>false});await unsupported.controller.start();assert.equal(unsupported.controller.getState().phase,'unsupported');assert.equal(unsupported.pauseCalls,0);
  const denied=harness({capture:async()=>{throw new DOMException('No','NotAllowedError');}});await denied.controller.start();assert.equal(denied.controller.getState().phase,'permission_denied');assert.equal(denied.pauseCalls,1);assert.equal(denied.playCalls,0);
 });
 test('capture timeout aborts and releases operation',async()=>{
- let signal;const h=harness({capture:({signal:s})=>{signal=s;return new Promise((_,reject)=>s.addEventListener('abort',()=>reject(new DOMException('stop','AbortError'))));}});const pending=h.controller.start();h.jobs.find(x=>x.ms===35000).fn();await pending;assert.ok(signal.aborted);assert.equal(h.controller.getState().phase,'timeout');
+ let signal;const h=harness({capture:({signal:s})=>{signal=s;return new Promise((_,reject)=>s.addEventListener('abort',()=>reject(new DOMException('stop','AbortError'))));}});const pending=h.controller.start();await Promise.resolve();h.jobs.find(x=>x.ms===35000).fn();await pending;assert.ok(signal.aborted);assert.equal(h.controller.getState().phase,'timeout');
 });
 test('out-of-window match and wait past sermon end reject instead of clamp',async()=>{
  const h=harness({match:async()=>({result:{matched:true,queryStartSeconds:2228,confidence:.9}})});await h.controller.start();h.setClock(13000);assert.equal(h.controller.apply(),false);assert.deepEqual(h.seekCalls,[]);
@@ -71,4 +71,28 @@ test('worklet rejects discontinuous frames and empty input instead of concatenat
  const other=new Processor({processorOptions:{seconds:10}});let active=true;
  for(let i=0;i<189&&active;i++){scope.currentFrame+=128;active=other.process([[]]);}
  assert.equal(active,false);assert.equal(messages.at(-1).error,'capture_start_timeout');
+});
+
+test('index admission completes before pause or microphone; one prepared session is closed',async()=>{
+ let resolve,closes=0,captures=0;
+ const h=harness({prepare:()=>new Promise(r=>resolve=r),capture:async()=>{captures++;return{samples:new Float32Array(80000),sampleRate:8000,durationSeconds:10,endedAt:10000};}});
+ const pending=h.controller.start();assert.equal(h.controller.getState().phase,'preparing_index');assert.equal(captures,0);assert.equal(h.pauseCalls,0);
+ resolve({timings:{indexMs:1200},close(){closes++;}});await pending;
+ assert.equal(captures,1);assert.equal(h.pauseCalls,1);assert.equal(closes,1);assert.equal(h.controller.getDiagnostics().timings.indexMs,1200);
+});
+test('missing or corrupt index never opens microphone, pauses playback or seeks',async()=>{
+ for(const code of ['index_unavailable','index_binding','match_failed']){
+  const h=harness({prepare:async()=>{throw new Error(code);},capture:()=>assert.fail('microphone requested')});
+  await h.controller.start();assert.equal(h.controller.getState().phase,'error');assert.equal(h.pauseCalls,0);assert.deepEqual(h.seekCalls,[]);
+ }
+});
+test('cancel, source switch and timeout during index admission cannot start capture',async()=>{
+ for(const action of ['cancel','switch','timeout']){
+  let finish,closes=0;
+  const h=harness({prepare:(_,signal)=>new Promise((resolve,reject)=>{finish=()=>resolve({close(){closes++;}});signal.addEventListener('abort',()=>reject(new DOMException('stop','AbortError')));}),capture:()=>assert.fail('microphone requested')});
+  const pending=h.controller.start();
+  if(action==='cancel')h.controller.cancel();else if(action==='switch'){h.context.generation++;finish();}else h.jobs.find(x=>x.ms===35000).fn();
+  await pending;assert.equal(h.pauseCalls,0);assert.deepEqual(h.seekCalls,[]);
+  if(action==='switch')assert.equal(closes,1);else assert.equal(h.controller.getState().phase,action==='timeout'?'timeout':'cancelled');
+ }
 });
