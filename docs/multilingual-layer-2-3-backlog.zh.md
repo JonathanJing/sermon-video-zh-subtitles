@@ -35,6 +35,8 @@
 
 若 English Source Package 只有 `candidate_ready_for_translation`，只允许 shadow fixture，不得生成带人工批准或发布含义的正式候选。
 
+2026-09-30 准入回归：正式 `prepare_request`／模型 runner 在任何模型调用前复用 Source schema 与 `validate_ready_package`，检查 media identity、有效且不超出已知媒体时长的批准窗口、候选/正式资格、空 issues 及 derived package identity。仅保留 ready 标志而删除媒体或改窗口/身份会被拒绝；即使同步刷新下游 policy hash 也不能使不一致来源可用。现有 anchor、人审检查和 policy 门禁保留，不改变模型角色或缓存身份。测试使用真实 Source builder 生成完整合成包；不把这些合成审核标志当实际内容审批。真实整篇门槛仍按下方待验收项处理。
+
 共同不变量：
 
 - 各语言直接读取同一份英文 package；禁止 `en → zh-Hans → ko`。

@@ -99,6 +99,33 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
                                      "fixture-key", self.fake_call), evidence)
         self.assertEqual(self.calls, [])
 
+    def test_incoherent_ready_source_never_reaches_model_or_creates_paid_cache(self):
+        mutations = {
+            "missing-media": lambda s: s["source"].update(media=None),
+            "negative-window": lambda s: s["source"]["approvedWindow"].update(startSeconds=-1),
+            "reversed-window": lambda s: s["source"]["approvedWindow"].update(endSeconds=0),
+            "window-beyond-media": lambda s: s["source"]["approvedWindow"].update(endSeconds=301),
+            "changed-media": lambda s: s["source"]["media"].update(sha256="f" * 64),
+            "stale-derived-identity": lambda s: s.update(downstreamInvalidationKey="f" * 64),
+            "stale-package-id": lambda s: s.update(packageId="english-source-other"),
+            "candidate-not-eligible": lambda s: s.update(candidateTranslationEligible=False),
+        }
+        f = self.fixture
+        for name, mutate in mutations.items():
+            with self.subTest(name=name):
+                source = copy.deepcopy(f.source)
+                mutate(source)
+                # Coherently refresh policy scope so rejection proves source
+                # admission, rather than merely a stale downstream policy hash.
+                policy = copy.deepcopy(f.policy)
+                policy.pop("componentSha256")
+                policy["sourceScope"]["englishSourcePackageJsonSha256"] = producer.interpretation.json_sha256(source)
+                policy = policy_tools.freeze_policy(policy)
+                with self.assertRaises(ValueError):
+                    subject.run(source, f.anchor, policy, self.out, "fixture-key", self.fake_call)
+                self.assertEqual(self.calls, [])
+                self.assertFalse(self.out.exists())
+
     def test_known_runner_identities_resume_paid_cache_but_unknown_identity_fails(self):
         f = self.fixture
         parent_hash = "1922f23b881363ac4f1a32a99de7184fecd1ae445befde5f2282d400bd762e40"
