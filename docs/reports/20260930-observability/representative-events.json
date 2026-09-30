@@ -1,0 +1,353 @@
+[
+  {
+    "trace": "l2-cache-replay",
+    "scope": "selected_events_not_a_complete_DAG",
+    "events": [
+      {
+        "event": "workflow_started",
+        "eventId": "52db0b731f124731bded506026109b6a",
+        "executionIdentity": {
+          "gitCommit": "fd788ac8517d381d24bb1a834689e88bcfa4f6c7",
+          "loadedProjectCodeSha256": {
+            "scripts/build_english_source_package.py": "65024b7cf518a90f800a8042e6a3206cbb83bde6a424258c850aa47e1e0ef740",
+            "scripts/clip_timeline_map.py": "d9edff2f64b301c5d4eece27bade5772aa4d21061f09a191d54606a96e7ce355",
+            "scripts/four_layer_measure.py": "7f628c8c79b9cab65b25c23cc5b4df9a5154b0129726607fa3a2f56aa9f9c2fd",
+            "scripts/four_layer_progress.py": "2789e1bb1625c3b4af02d2bb845d076c905da711913287463b53eee556ff0e5a",
+            "scripts/prepare_target_language_speech_job.py": "614965551b66659faeff4d1ece6e1988a1cce8195e23bd95225f530b87740ac4",
+            "scripts/produce_target_language_candidate.py": "95a9bb39d668051f8942ec6b96de23651281457fd81747c1db13d0092090509d",
+            "scripts/review_prompts.py": "e20cddc289cc2b6a17c072c6a264d36c72d2fd0723675013a53c2257188adcc4",
+            "scripts/run_target_language_models.py": "02872f0a1a1485ffdf0f24f512f414ec58f9f4a8ec645110a7ad934404a30270",
+            "scripts/series_terminology.py": "a2c16cfc353acbb58ea15e6ed95223178e87c49cd8383db8bb92f2426644ce74",
+            "scripts/sermon_accounting.py": "b5857bf3f355c8dd030a33f26e037262557b73cd0dddb67c93e11b0d7952df6f",
+            "scripts/sermon_cache_observation.py": "7b3c83d2f47e7f57dbb885cf0f051f48bde2419ba0bead2b9a3334d453ed549a",
+            "scripts/sermon_decision_accounting.py": "6302895cd3398bd7fd70c204957692eb40ad5edfdf07cb9b37393723e081787c",
+            "scripts/sermon_execution_harness.py": "fde48e91f6c835848cddcc4e824786385939a91fd894526bb2cf40d2878fc0b4",
+            "scripts/sermon_job_liveness.py": "dc4968bd18266c015fde619c772d7bceac31cf66500461ea8da812788aff48a2",
+            "scripts/sermon_local_model_observation.py": "9e640bd51fd0a99d59afa8fa74d7748a9f01ee9c8002717f9c3a9fc63af039b6",
+            "scripts/sermon_pipeline.py": "4666f58a4fa6d8ca23b92ba397db8566306f9cbc9b58d8fb1a6bce897fa16dc8",
+            "scripts/sermon_sentence_interpretation.py": "028b9123c53d9509a965f6c49fa3116f129a9b444202cecab9b3ce71b0aced45",
+            "scripts/sermon_workflow_evidence.py": "b148b6b425b3a56be111730b2bd9822b2014f0f903e8c7aaa3c59f70bccff0ec",
+            "scripts/sermon_workflow_jobs.py": "1adc990a728884b3caecb2b87c58e0bede12b64db452cf0f571611ce4b051f89",
+            "scripts/target_language_policy.py": "49a7659f50b5cc7b662ab593dcf3994363367ad0fcfa019e2bc531a3638bbb79",
+            "scripts/weekly_pipeline_report.py": "1bf6a0ecb329fd336425fb6dd68bea6ab94f410b7fa3a468c8c1a0be8e445d9b"
+          },
+          "pythonVersion": "3.13.15",
+          "scope": "loaded_project_modules_at_workflow_start_not_all_or_remote_code",
+          "trackedWorkingTreeDirty": false
+        },
+        "metadata": {
+          "targetLocale": "zh-Hans"
+        },
+        "parentWorkflowId": "8ff41529dc0f483fa1ec7eca9f907492",
+        "recordedAt": "2026-09-30T14:38:47.764752+00:00",
+        "runId": "b6e0e869ca224efa87d498ec1aa81a73",
+        "schemaVersion": "sermon-workflow-accounting-v3",
+        "spanId": "4fa1aeca6134435aa2996cb4d3551dcc",
+        "stage": "real_clip_trilingual_cached_replay",
+        "workflow": "layer2_models",
+        "workflowId": "2a66d811c5fe4b6e85b398599f178174"
+      },
+      {
+        "attemptId": "d5f4f7b653ba41eab5e0fad076f41b3b",
+        "billing": "local",
+        "blockedBy": [],
+        "cacheHit": false,
+        "decisionId": null,
+        "dependencyReadyAt": null,
+        "dependsOn": [
+          "204af8c5c5214469978a300ef4db4d3f"
+        ],
+        "elapsedSeconds": 0.002677,
+        "event": "stage_finished",
+        "eventId": "6013e945283549e8a82a4e29d6a8e15a",
+        "executorType": "deterministic_program",
+        "level": "INFO",
+        "parentSpanId": "4c331e501d254a4ab745bf40f0067cd9",
+        "queuedAt": null,
+        "recordedAt": "2026-09-30T14:38:47.774345+00:00",
+        "runId": "b6e0e869ca224efa87d498ec1aa81a73",
+        "schemaVersion": "sermon-workflow-accounting-v3",
+        "spanId": "786aac3e8b9d4172aa25233366c24224",
+        "stage": "layer2.run_admission.zh-Hans",
+        "status": "completed",
+        "workUnitId": "l2.zh-Hans.run_admission",
+        "workflowId": "2a66d811c5fe4b6e85b398599f178174"
+      },
+      {
+        "attemptId": "f3693e3cf86e41e392e72abb9820692b",
+        "billing": "local",
+        "blockedBy": [],
+        "cacheHit": true,
+        "decisionId": null,
+        "dependencyReadyAt": null,
+        "dependsOn": [
+          "786aac3e8b9d4172aa25233366c24224"
+        ],
+        "event": "stage_started",
+        "eventId": "4fe2d73c4b984ec483e4882801612d0b",
+        "executorType": "deterministic_program",
+        "parentSpanId": "1723cbe7b4e64086ae7454384caf7bde",
+        "queuedAt": null,
+        "recordedAt": "2026-09-30T14:38:47.774886+00:00",
+        "runId": "b6e0e869ca224efa87d498ec1aa81a73",
+        "schemaVersion": "sermon-workflow-accounting-v3",
+        "spanId": "b596353cf9f643d89ae2ee5efa323d9e",
+        "stage": "layer2.prepare.zh-Hans.group-0001",
+        "startedAt": "2026-09-30T14:38:47.774849+00:00",
+        "workUnitId": "l2.zh-Hans.group-0001.prepare",
+        "workflowId": "2a66d811c5fe4b6e85b398599f178174"
+      },
+      {
+        "code": "model_cache_observation",
+        "event": "log",
+        "eventId": "5b9df1c0482342878eb0d9610b1f71a2",
+        "fields": {
+          "cacheSha256": "143c0fb7cd086db181f67a3ae4acfbe2334fa4842f03794b87889f278326667a",
+          "historicalCostUsd": null,
+          "model": "gpt-6-astra",
+          "newProviderCalls": 0,
+          "originCacheSha256": "143c0fb7cd086db181f67a3ae4acfbe2334fa4842f03794b87889f278326667a",
+          "payloadSha256": "bc9b9e54614fe238b871487908810a071fecb2e72b6d94d93d83cfbd00af7d7e",
+          "provider": "openai",
+          "rawReceiptSha256": "d3ae945b3ebbc43dbe38bc9f71a9606090aea2344fcd79795afa4fe8f36a51cd",
+          "requestedModel": "gpt-6-astra",
+          "responseIdSha256": "634a0af7c9d81873cec9d1abb78d3620cd35e96b4d441adbe4339f2bd920189c",
+          "reuseMode": "carried_forward_group",
+          "role": "translator",
+          "schemaVersion": "sermon-model-cache-observation-v1",
+          "usage": {
+            "audioSeconds": null,
+            "cacheWriteTokens": 0,
+            "cachedInputTokens": 0,
+            "inputTokens": 577,
+            "outputTokens": 439,
+            "reasoningTokens": 182,
+            "totalTokens": 1016
+          },
+          "usageProvenance": "historical_bound_provider_receipt"
+        },
+        "level": "INFO",
+        "recordedAt": "2026-09-30T14:38:47.776529+00:00",
+        "runId": "b6e0e869ca224efa87d498ec1aa81a73",
+        "schemaVersion": "sermon-workflow-accounting-v3",
+        "spanId": "b596353cf9f643d89ae2ee5efa323d9e",
+        "stage": "layer2.prepare.zh-Hans.group-0001",
+        "workflowId": "2a66d811c5fe4b6e85b398599f178174"
+      },
+      {
+        "code": "model_cache_observation",
+        "event": "log",
+        "eventId": "8ef4d75a06b143fcb88832603bf78f79",
+        "fields": {
+          "cacheSha256": "750e97946600cd5e8aa29546f6ad4e43b27fcc954ee386ac275d0cbd2cad8a12",
+          "historicalCostUsd": null,
+          "model": "gpt-6-sol",
+          "newProviderCalls": 0,
+          "originCacheSha256": "750e97946600cd5e8aa29546f6ad4e43b27fcc954ee386ac275d0cbd2cad8a12",
+          "payloadSha256": "51db3867c8c3f23b50acb2d4f818cb2479e0b9ee11a5262508f800f66134385a",
+          "provider": "openai",
+          "rawReceiptSha256": "df88048d280aa7b4692959e40bff3ba8b1f3b6103158e01a6affbd04289b1813",
+          "requestedModel": "gpt-6-sol",
+          "responseIdSha256": "965b3cb18bbe685b911175f742724ba1cbe0d70c1f8200672f74ab3879b41a2d",
+          "reuseMode": "carried_forward_group",
+          "role": "reviewer",
+          "schemaVersion": "sermon-model-cache-observation-v1",
+          "usage": {
+            "audioSeconds": null,
+            "cacheWriteTokens": 0,
+            "cachedInputTokens": 0,
+            "inputTokens": 885,
+            "outputTokens": 465,
+            "reasoningTokens": 89,
+            "totalTokens": 1350
+          },
+          "usageProvenance": "historical_bound_provider_receipt"
+        },
+        "level": "INFO",
+        "recordedAt": "2026-09-30T14:38:47.778336+00:00",
+        "runId": "b6e0e869ca224efa87d498ec1aa81a73",
+        "schemaVersion": "sermon-workflow-accounting-v3",
+        "spanId": "b596353cf9f643d89ae2ee5efa323d9e",
+        "stage": "layer2.prepare.zh-Hans.group-0001",
+        "workflowId": "2a66d811c5fe4b6e85b398599f178174"
+      },
+      {
+        "attemptId": "f3693e3cf86e41e392e72abb9820692b",
+        "billing": "local",
+        "blockedBy": [],
+        "cacheHit": true,
+        "decisionId": null,
+        "dependencyReadyAt": null,
+        "dependsOn": [
+          "786aac3e8b9d4172aa25233366c24224"
+        ],
+        "elapsedSeconds": 0.003871,
+        "event": "stage_finished",
+        "eventId": "b79b4a62528648c1974dab802a6890bf",
+        "executorType": "deterministic_program",
+        "level": "INFO",
+        "parentSpanId": "1723cbe7b4e64086ae7454384caf7bde",
+        "queuedAt": null,
+        "recordedAt": "2026-09-30T14:38:47.778783+00:00",
+        "runId": "b6e0e869ca224efa87d498ec1aa81a73",
+        "schemaVersion": "sermon-workflow-accounting-v3",
+        "spanId": "b596353cf9f643d89ae2ee5efa323d9e",
+        "stage": "layer2.prepare.zh-Hans.group-0001",
+        "status": "completed",
+        "workUnitId": "l2.zh-Hans.group-0001.prepare",
+        "workflowId": "2a66d811c5fe4b6e85b398599f178174"
+      }
+    ]
+  },
+  {
+    "trace": "local-asr",
+    "scope": "selected_events_not_a_complete_DAG",
+    "events": [
+      {
+        "code": "local_model_observation",
+        "event": "log",
+        "eventId": "c388620c2d2449f2ac1f2992ddec54cc",
+        "fields": {
+          "checkpointSha256": "862bbc832b05f3f4ec19dd632b701d61a6d3f5c7906360a10d72a79870642a80",
+          "elapsedSeconds": null,
+          "inputSha256": "2851c3b6bb42985afe6b705e5089e33f289e9da518c16c7527cfe1f2c1240d40",
+          "model": "mlx-community/whisper-large-v3-turbo-q4",
+          "outputSha256": null,
+          "providerCostUsd": null,
+          "providerTokens": null,
+          "schemaVersion": "sermon-local-model-observation-v1",
+          "status": "started",
+          "usageProvenance": "local_execution_no_provider_receipt"
+        },
+        "level": "INFO",
+        "recordedAt": "2026-09-30T14:38:44.608494+00:00",
+        "runId": "6d787f7ef3554e1a8896559b946fda9d",
+        "schemaVersion": "sermon-workflow-accounting-v3",
+        "spanId": "c0c36c629a9d4296a0380102019818d9",
+        "stage": "diagnostic.local_asr",
+        "workflowId": "801c5196b1774e878c1e7b89ecc71e4f"
+      },
+      {
+        "code": "local_model_observation",
+        "event": "log",
+        "eventId": "d28e45252d0b467290f52e9d864acd6b",
+        "fields": {
+          "checkpointSha256": "862bbc832b05f3f4ec19dd632b701d61a6d3f5c7906360a10d72a79870642a80",
+          "elapsedSeconds": 10.738793333002832,
+          "inputSha256": "2851c3b6bb42985afe6b705e5089e33f289e9da518c16c7527cfe1f2c1240d40",
+          "model": "mlx-community/whisper-large-v3-turbo-q4",
+          "outputSha256": "12f79e40e17615ae99c7810cee70e090dc83962b294e1f45ac5ac689370f4080",
+          "providerCostUsd": null,
+          "providerTokens": null,
+          "schemaVersion": "sermon-local-model-observation-v1",
+          "status": "completed",
+          "usageProvenance": "local_execution_no_provider_receipt"
+        },
+        "level": "INFO",
+        "recordedAt": "2026-09-30T14:38:56.558476+00:00",
+        "runId": "6d787f7ef3554e1a8896559b946fda9d",
+        "schemaVersion": "sermon-workflow-accounting-v3",
+        "spanId": "c0c36c629a9d4296a0380102019818d9",
+        "stage": "diagnostic.local_asr",
+        "workflowId": "801c5196b1774e878c1e7b89ecc71e4f"
+      }
+    ]
+  },
+  {
+    "trace": "audio-unit-validation",
+    "scope": "selected_events_not_a_complete_DAG",
+    "events": [
+      {
+        "event": "workload",
+        "eventId": "0e153e0434914493b7080a20c7f3827d",
+        "metrics": {
+          "jobSha256": "69849f396601195e984e2a2f97317fa6f1a8c85263938badac9bd26a7628e2a3",
+          "unitIndex": 0,
+          "validationStarted": true
+        },
+        "recordedAt": "2026-09-30T14:38:46.841350+00:00",
+        "runId": "17b03666779b41bf89b1581f894fad96",
+        "schemaVersion": "sermon-workflow-accounting-v3",
+        "spanId": "b46815e3a6ab423f8f2b18b06f2386cf",
+        "stage": "layer3.unit_validation_started",
+        "workflowId": "043eab16a847425f81c967d416fff085"
+      },
+      {
+        "event": "workload",
+        "eventId": "9a9f02c48a864f0b89463efe0aad5e34",
+        "metrics": {
+          "audioSha256": "bce23df96af408634ed43b37e08f3d46d7814b94b87248ef9f6d36f76f731574",
+          "fullDecodePassed": true,
+          "jobSha256": "69849f396601195e984e2a2f97317fa6f1a8c85263938badac9bd26a7628e2a3",
+          "receiptSha256": "05cb86c29d48039d5c1e780dbf7ad70af76b4c7906cbf6de5b29529c601bbd06",
+          "timingScope": "current_execution",
+          "unitIndex": 0,
+          "validationCompleted": true,
+          "validationElapsedSeconds": 0.20072287501534447
+        },
+        "recordedAt": "2026-09-30T14:38:47.042127+00:00",
+        "runId": "17b03666779b41bf89b1581f894fad96",
+        "schemaVersion": "sermon-workflow-accounting-v3",
+        "spanId": "b46815e3a6ab423f8f2b18b06f2386cf",
+        "stage": "layer3.unit_validation_completed",
+        "workflowId": "043eab16a847425f81c967d416fff085"
+      }
+    ]
+  },
+  {
+    "trace": "blocked-plugin-binding",
+    "scope": "selected_events_not_a_complete_DAG",
+    "events": [
+      {
+        "code": "layer2_admission_rejected",
+        "event": "log",
+        "eventId": "01cf5a282af94ee2a3244926bb4ee6cb",
+        "fields": {
+          "reasonCode": "plugin_implementation_mismatch",
+          "status": "blocked"
+        },
+        "level": "INFO",
+        "recordedAt": "2026-09-30T14:38:50.282423+00:00",
+        "runId": "982f9a33088e4464a968a8ecfcf8ceec",
+        "schemaVersion": "sermon-workflow-accounting-v3",
+        "spanId": "281779a5ea0f4f09850cd9c94cd1d39c",
+        "stage": "layer2.run_admission.zh-Hans",
+        "workflowId": "e538825aa16b46199d7fbb46dadae4e8"
+      }
+    ]
+  },
+  {
+    "trace": "synthetic-interrupted",
+    "scope": "selected_events_not_a_complete_DAG",
+    "events": [
+      {
+        "attemptId": "synthetic-attempt",
+        "event": "api_attempt_started",
+        "eventId": "683a98f82c204532865ed334c3af3f48",
+        "recordedAt": "2026-09-30T14:39:54.156131+00:00",
+        "requestedModel": "gpt-6-astra",
+        "runId": "0f5fc016fb884e669ac33939182943df",
+        "schemaVersion": "sermon-workflow-accounting-v3",
+        "spanId": "3ca10364a4cc4665bd131425065bb07c",
+        "stage": "synthetic.unknown_request",
+        "workflowId": "442a0d8d0a8c4f5fa7acdd1e1a18f52a"
+      },
+      {
+        "code": "synthetic_fault",
+        "event": "log",
+        "eventId": "4dbd0fb6e1a1466b97c2fe0869803db3",
+        "fields": {
+          "reasonCode": "unknown_outcome_requires_reconciliation",
+          "status": "uncertain"
+        },
+        "level": "INFO",
+        "recordedAt": "2026-09-30T14:39:54.156369+00:00",
+        "runId": "0f5fc016fb884e669ac33939182943df",
+        "schemaVersion": "sermon-workflow-accounting-v3",
+        "spanId": "3ca10364a4cc4665bd131425065bb07c",
+        "stage": "synthetic.unknown_request",
+        "workflowId": "442a0d8d0a8c4f5fa7acdd1e1a18f52a"
+      }
+    ]
+  }
+]

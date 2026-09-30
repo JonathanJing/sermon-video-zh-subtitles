@@ -76,7 +76,7 @@ def _safe_metadata(data):
             safe[key] = value
         elif key in {"sourceId", "videoId"} and isinstance(value, str) and re.fullmatch(r"[A-Za-z0-9_-]{1,64}", value):
             safe[key] = value
-        elif key in {"jobSha256", "sourceSha256", "videoSha256", "sourceVideoSha256", "sourceAudioSha256"} and isinstance(value, str) and re.fullmatch(r"[0-9a-f]{64}", value):
+        elif key in {"jobSha256", "productionRunId", "sourceSha256", "videoSha256", "sourceVideoSha256", "sourceAudioSha256"} and isinstance(value, str) and re.fullmatch(r"[0-9a-f]{64}", value):
             safe[key] = value
         elif key == "mode" and isinstance(value, str) and value in {"shadow", "execute", "inspect", "dry_run"}:
             safe[key] = value
@@ -169,6 +169,26 @@ def execution_identity():
             "loadedProjectCodeSha256": modules, "pythonVersion": platform.python_version(),
             "platform": sys.platform, "architecture": platform.machine(),
             "scope": "Loaded project Python modules at workflow start; unimported modules and remote code require their own receipts."}
+
+
+def safe_execution_identity(data):
+    """Read-side whitelist: repository-relative code paths, never host paths."""
+    data = data if isinstance(data, dict) else {}
+    commit = data.get("gitCommit")
+    modules = data.get("loadedProjectCodeSha256")
+    safe_modules = {}
+    if isinstance(modules, dict):
+        for path, digest in list(modules.items())[:1024]:
+            if (isinstance(path, str) and len(path) <= 256
+                    and re.fullmatch(r"(?:scripts|backend|experiments)/[A-Za-z0-9_./-]+\.py", path)
+                    and ".." not in Path(path).parts and isinstance(digest, str)
+                    and re.fullmatch(r"[a-f0-9]{64}", digest)):
+                safe_modules[path] = digest
+    return {"gitCommit": commit if isinstance(commit, str) and re.fullmatch(r"[a-f0-9]{40,64}", commit) else None,
+            "trackedWorkingTreeDirty": data.get("trackedWorkingTreeDirty") if type(data.get("trackedWorkingTreeDirty")) is bool else None,
+            "loadedProjectCodeSha256": safe_modules,
+            "pythonVersion": _label(data.get("pythonVersion"), None),
+            "scope": "loaded_project_modules_at_workflow_start_not_all_or_remote_code"}
 
 
 def resource_snapshot(directory):
@@ -607,10 +627,17 @@ def _valid_event(value):
 
 def read_events(directory):
     """Read a locked snapshot without changing the ledger or its projections."""
-    events, damaged = [], []
+    events, damaged, _ = read_event_snapshot(directory)
+    return events, damaged
+
+
+def read_event_snapshot(directory):
+    """Parse and hash the exact same locked byte snapshot, including blank lines."""
+    events, damaged, digest = [], [], hashlib.sha256()
     with (Path(directory) / "events.jsonl").open("rb") as stream:
         fcntl.flock(stream.fileno(), fcntl.LOCK_SH)
         for index, line in enumerate(stream, 1):
+            digest.update(line)
             if not line.strip():
                 continue
             try:
@@ -624,7 +651,7 @@ def read_events(directory):
                                 "reason": "invalid_or_incomplete_event", "runAttribution": "unknown"})
                 continue
             events.append(value)
-    return events, damaged
+    return events, damaged, digest.hexdigest()
 
 
 def diagnostic_event(event):

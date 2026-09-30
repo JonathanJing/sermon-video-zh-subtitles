@@ -1,0 +1,169 @@
+{
+  "codeCommit": "ebaea29e857afba3bf6d6313ce9a8e3ccb8d66ec",
+  "allRunsClean": true,
+  "allExportsReprojectIdentically": true,
+  "cache": {
+    "historicalObservationsMatched": 66,
+    "sourceMediaSha256": "a40c1a37a3c15bea58db26806c117c77cfd91b983eefe98536f72ad633dd956a",
+    "sourceHashOccurrencesInWorkload": 4,
+    "ledgerWallSeconds": 2.3008508682250977,
+    "criticalPath": {
+      "activeSeconds": 1.889312,
+      "spanPath": [
+        "583d980500c7caf186e140860e3c80126bea7ab0caf4339c670966b4f7ed6ad7",
+        "e0d28683a8ed10965d2721f79cb8e03726585373d7e68987eb3427531115c694",
+        "9f3edd1bb3dad56eeea3671c6dccfc38e345594864a818bcf97cff2633d932dc",
+        "c29df8d2d593b38d19db409b2f397e47bdf79fcbaae4115bbf4396a0c93b2900",
+        "04efcca735bec9fcdefdd97573b24ffa35abaafb9b44f5701964af8ad6f907ef",
+        "75d27d24c89b733547916206b02471ad7fd6c89fc91941ae1f6b5c12d9f86fba"
+      ],
+      "branchSlackSeconds": {
+        "583d980500c7caf186e140860e3c80126bea7ab0caf4339c670966b4f7ed6ad7": 0.0,
+        "e0d28683a8ed10965d2721f79cb8e03726585373d7e68987eb3427531115c694": 0.0,
+        "7fd56079d5b2e89baeafd98ccc052556152944a71d9f817da0bb7101d98c1a52": 0.009411,
+        "79cf486707050e56ee840b3a79b680926700fd606cc2a9525d83288f8c9054d9": 0.006879,
+        "b38d3f685b757370313678655b300558d9db76b27f6b17ed853d94a69c751704": 0.006879,
+        "9f3edd1bb3dad56eeea3671c6dccfc38e345594864a818bcf97cff2633d932dc": 0.0,
+        "6262e74641363646cfb4b4edf97ca75bfc4ab6ae8f85cf4d77dc396f8356a190": 0.009411,
+        "4c5ea225c58815898830c0603cb7d98a234054a4e57e05a425d1ba5e43958ddc": 0.007008,
+        "368ab34c29b770ca60a190d4829653d6ddbfaf01ef8d2b07cabac46d03c91a52": 0.010258,
+        "ab0091bfef3c987c269e72c5b176e29bf47a1e1b943e80e86cb71f5500fd9353": 0.008607,
+        "c5fb23a01e077927ba7fd3761176fb59c72ab0cad0755879ee1998fd6d55e847": 0.007419,
+        "9eaa70a0693d42c4bfa35433073969be39ba6f38d76006d207b62db59eedac8c": 0.010122,
+        "2bbb7d7bc4bdaf73c5b670690313d7a2d4dfe04a70fcf38cbe377310fe3f5240": 0.008316,
+        "7a9e3b23d46cb3599cdf2cb50b6f892fd3a381e9e27bfe8a199ea285abd0f89d": 0.010059,
+        "c29df8d2d593b38d19db409b2f397e47bdf79fcbaae4115bbf4396a0c93b2900": 0.0,
+        "1197a714ad7c98812e7cb3de079bed491da0146bd687e9de35e5930a04c4e69b": 0.009899,
+        "b2aaea8b51e1b1827acb06a0ad536724444165d9232433c6e0f54c9e0771b9a0": 0.007595,
+        "20a967312084d05fd35d62f64a6eff2236133b3b311795b00c6d9afcd1b1fe0e": 0.008521,
+        "2ef6883f5efc598ae9a00a6413319e54c252ac4cf5a7e8344acc7f29afeb7097": 0.008772,
+        "40a85297d3e0c4027a73758d1265265f15af05801d1f4d379837359adbe5d48f": 0.006968,
+        "c8e97a7f5efb3c478be7d989e2e8b2dc4082ead6e6570b15b1c3f451dd0ab6a9": 0.007102,
+        "b951292cc82b998ebed74501962e95140cc6116969692f4b3162a867b3a2183e": 0.00761,
+        "75b141733a8694e879db05f35fe7146af4cf70ee24dd3e67d381d02c77b45a00": 0.009653,
+        "4500f372250d6ca35852f76c7a28c18122316c28e17e74408dcf443bef451f71": 0.007972,
+        "3a1f8ed1351e36c26a1f44676d2865ebe2de7c44af66dec5b3c47706cff66d44": 0.009411,
+        "bbba79da44dc5cfcab258b95c9148c94867e6c82a467d6781317cdd0d134ed92": 0.006973,
+        "bd327dd4dd17d8c97ce1fadb449c57e269a8ea2bff188ad1aa81a5094b152e48": 0.006941,
+        "c0c03a8a8f273196c968aa1a7ead342d40a3274df26e7e53abe1cc3f299fbc8a": 0.008526,
+        "5946b2c2991c06283da0080cbea8e2a706a4cf507d1acf286219a36d303971a2": 0.009914,
+        "5fc919f689ebd5e3b8f31edd4bd51c80c5bbc4dae70800393de9ed43cfa01fc8": 0.009741,
+        "a983d6de4167204ca9a5211c58d4d55ea7777fb3934156cb6996d5939cbcb153": 0.007388,
+        "d29e09ca6e35a6429d66d7030af9db9fe6e9bfd780673034800bc2e6fce9c585": 0.006998,
+        "8ac757cf9d6f98bfd2c781a38c48fc6de3e94bd68769e7a975579ca1e2cb08ef": 0.00848,
+        "144d76cdf02447aac26a7298022a0b251ed21f710b8f4e6c0fdfdec2377c8b1a": 0.007495,
+        "1166f363bc327924b1334c42fe3755da5dc640c3350ef2c2d5195f754f184f84": 0.00792,
+        "5b3394199c7b2110fe2c25142177659015821b490b1ef918ecef29684e82957d": 0.00843,
+        "df306167909da028235832980deccb189bd8dd0f1b3fcbdf629004a24fead992": 0.010101,
+        "4dc1838914ded98195007ff9c86cf8a2cb0d676221dcf6676b50cdc825ce9641": 0.010298,
+        "02ca5c55af04b391548cab2df356257e286e2d119b362b8a939ad99db66dab44": 0.006879,
+        "ca3285cf32e1a7da96f94de5e5ee4eae58d097f75ebf38a0c13ae256e669508f": 0.009921,
+        "fcf598def826bf18ac7b099718cb220366280b7878bce14001ca2f7f7e862476": 0.006879,
+        "b5a3adacb46a773197d292488d8a7d172a75e3dad5ed1d204433ca8b25f9716c": 0.009411,
+        "04efcca735bec9fcdefdd97573b24ffa35abaafb9b44f5701964af8ad6f907ef": 0.0,
+        "3259445da7d47bd65b86d8c5cdfd0254bbf968e797bb724b05b419deb14c2f2b": 0.006879,
+        "75d27d24c89b733547916206b02471ad7fd6c89fc91941ae1f6b5c12d9f86fba": 0.0,
+        "91110d10d2c9d933f633faa74a5534650c3dce92d1c42201c00b919042ca6fc9": 0.009411
+      },
+      "scope": "active_leaf_compute_excludes_human_external_and_engineering"
+    },
+    "candidateAndCacheUnchanged": true
+  },
+  "asr": {
+    "inferenceSeconds": 9.618409875023644,
+    "spans": [
+      {
+        "stage": "diagnostic.source_decode",
+        "executorType": "deterministic_program",
+        "elapsedSeconds": 0.202493,
+        "spanSha256": "3cb80a7839e0c9de3582922914df3a1bd446c5a378c4324a24923f9257c78205",
+        "dependsOnSha256": []
+      },
+      {
+        "stage": "diagnostic.local_asr_setup",
+        "executorType": "deterministic_program",
+        "elapsedSeconds": 1.548344,
+        "spanSha256": "9de080300d28c61d817f2449a30fba36b5a65ef6f8ca4e846d7d8a616533177f",
+        "dependsOnSha256": [
+          "3cb80a7839e0c9de3582922914df3a1bd446c5a378c4324a24923f9257c78205"
+        ]
+      },
+      {
+        "stage": "diagnostic.local_asr",
+        "executorType": "production_model",
+        "elapsedSeconds": 9.618916,
+        "spanSha256": "b5f962168df81d39562a05a2a767ab80357f0979a4395089475fd34a9ff0ce5d",
+        "dependsOnSha256": [
+          "9de080300d28c61d817f2449a30fba36b5a65ef6f8ca4e846d7d8a616533177f"
+        ]
+      },
+      {
+        "stage": "diagnostic.local_asr_output",
+        "executorType": "deterministic_program",
+        "elapsedSeconds": 0.003893,
+        "spanSha256": "1b914162ba127860d3919728607554b751ad727a378737e402a5c2760bc34b41",
+        "dependsOnSha256": [
+          "b5f962168df81d39562a05a2a767ab80357f0979a4395089475fd34a9ff0ce5d"
+        ]
+      }
+    ],
+    "modelSpanMinusInferenceSeconds": 0.0005061249763560483,
+    "outputHashUnchanged": true,
+    "criticalPath": {
+      "activeSeconds": 11.373646,
+      "spanPath": [
+        "3cb80a7839e0c9de3582922914df3a1bd446c5a378c4324a24923f9257c78205",
+        "9de080300d28c61d817f2449a30fba36b5a65ef6f8ca4e846d7d8a616533177f",
+        "b5f962168df81d39562a05a2a767ab80357f0979a4395089475fd34a9ff0ce5d",
+        "1b914162ba127860d3919728607554b751ad727a378737e402a5c2760bc34b41"
+      ],
+      "branchSlackSeconds": {
+        "3cb80a7839e0c9de3582922914df3a1bd446c5a378c4324a24923f9257c78205": 0.0,
+        "9de080300d28c61d817f2449a30fba36b5a65ef6f8ca4e846d7d8a616533177f": 0.0,
+        "b5f962168df81d39562a05a2a767ab80357f0979a4395089475fd34a9ff0ce5d": 0.0,
+        "1b914162ba127860d3919728607554b751ad727a378737e402a5c2760bc34b41": 0.0
+      },
+      "scope": "active_leaf_compute_excludes_human_external_and_engineering"
+    }
+  },
+  "audio": {
+    "unitStarts": 33,
+    "unitCompletions": 33,
+    "hashesMatch": true,
+    "actualSerialLocaleOrder": [
+      "diagnostic.audio.zh-Hans",
+      "diagnostic.audio.ko",
+      "diagnostic.audio.es"
+    ],
+    "criticalPath": {
+      "activeSeconds": 6.388333,
+      "spanPath": [
+        "8a15b552602431665533d725d92585c88523be649c22d205746ae9a25bb4d4cd",
+        "a0f37e2e53b01646d9647df4d07fd64f2b0de6246a001c66d3ccbc11bbd0f5c0",
+        "5e79f6141d8065376719672455d5c3a88577274573a458f4ec95ed9f9cacf464"
+      ],
+      "branchSlackSeconds": {
+        "8a15b552602431665533d725d92585c88523be649c22d205746ae9a25bb4d4cd": 0.0,
+        "a0f37e2e53b01646d9647df4d07fd64f2b0de6246a001c66d3ccbc11bbd0f5c0": 0.0,
+        "5e79f6141d8065376719672455d5c3a88577274573a458f4ec95ed9f9cacf464": 0.0
+      },
+      "scope": "active_leaf_compute_excludes_human_external_and_engineering"
+    },
+    "wrapperSubtotalSeconds": 6.388332999999999,
+    "unitValidationSubtotalSeconds": 5.567544787947554
+  },
+  "newTransportAttempts": 0,
+  "newPaidCalls": 0,
+  "historicalUsageIsCurrentSpend": false,
+  "stage1PromotionAllowed": false,
+  "remainingMissing": [
+    "production_queue_and_ready",
+    "orchestration_overhead",
+    "cross_process_critical_path",
+    "fresh_paid_provider_telemetry",
+    "historical_invoice_cost",
+    "page_ready",
+    "human_device_venue_signoff"
+  ],
+  "timingScope": "Explicit call boundaries only. Model span includes tiny observation/logging boundaries; unmeasured gaps are not zero or scheduling overhead."
+}

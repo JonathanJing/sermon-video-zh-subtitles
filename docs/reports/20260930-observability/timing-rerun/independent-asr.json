@@ -1,0 +1,21 @@
+{
+  "scope": "new_local_decode_and_experimental_asr_not_formal_stage1",
+  "sourceMediaSha256": "c931d6f716bd30b9ba9b75ca6cbc9a4f4fd708b8bf8f8e3668187e67bac44c30",
+  "inputBytes": 15063283,
+  "modelCacheSnapshot": "660c343bbf4e52ac257f0b7d952e5388e6f93bef",
+  "requestedModel": "mlx-community/whisper-large-v3-turbo-q4",
+  "decodedWavSha256": "2851c3b6bb42985afe6b705e5089e33f289e9da518c16c7527cfe1f2c1240d40",
+  "asrWallSeconds": 9.618409875023644,
+  "transcriptSha256": "12f79e40e17615ae99c7810cee70e090dc83962b294e1f45ac5ac689370f4080",
+  "segments": 41,
+  "wordCount": 512,
+  "sourceUnchanged": true,
+  "codeCommit": "ebaea29e857afba3bf6d6313ce9a8e3ccb8d66ec",
+  "codeClean": true,
+  "totalWallSeconds": 11.427686791983433,
+  "actualTransportAttempts": 0,
+  "newPaidCalls": 0,
+  "networkGuard": "socket_connect_denied",
+  "stage1PromotionAllowed": false,
+  "humanAcceptance": "not_evaluated"
+}

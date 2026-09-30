@@ -20,6 +20,12 @@ MAX_WEEK_ENTRIES = 128
 SCHEMA = "sermon-workflow-evidence-v1"
 # Exact relative paths, including layouts accepted by standalone tools.
 PATHS = {
+    "layer2_request": ("request.json",),
+    "layer2_run_identity": ("run-identity.json",),
+    "layer2_evidence": ("evidence.json",),
+    "layer2_candidate": ("candidate.json",),
+    "layer2_language_review": ("language-review.json",),
+    "render_manifest": ("render-manifest.json", "render-manifest-screened.json"),
     "same_video_source": ("same-video-source.json",),
     "same_video_archive": ("same-video-archive.json",),
     "same_video_handoff": ("same-video-reviewed-handoff.json",),
@@ -68,6 +74,14 @@ NUMBER_FIELDS.add("audioSizeBytes")
 IDENTITY_FIELDS.update({"boundaryMethod", "sourceRoute", "boundaryBasis", "humanWindow"})
 BOOL_FIELDS.update({"sameVersionConfirmed", "sermonOnly"})
 CONTAINERS.update({"sourceContract", "sameVideoArchive", "sameVideoHandoff"})
+
+
+HASH_FIELDS.update({"englishSourcePackageJsonSha256", "anchorManifestSha256", "translationPolicySha256",
+    "candidateJsonSha256", "candidateSha256", "languageReviewSha256", "pluginImplementationSha256",
+    "payloadSha256", "jsonSha256", "conditioningSha256", "modelSha256", "audioPackageSha256", "targetLanguageCandidateJsonSha256", "targetLanguageSpeechJobJsonSha256", "clipTimelineMapJsonSha256"})
+IDENTITY_FIELDS.update({"targetLocale", "sourceLocale", "promptVersion", "renderer", "adapter", "modelRevision"})
+CONTAINERS.update({"generation", "translator", "reviewer", "model", "conditioning", "implementation", "request"})
+COUNT_LISTS.update({"groups", "sourceUnits", "requestIds"})
 
 
 def _code(value):
@@ -128,6 +142,8 @@ def _safe_file(root, relative):
 
 def _expected(workflow):
     value = workflow.lower()
+    if value in {"canonical_layer2", "layer2_models", "canonical_layer2_worker", "canonical_layer2_cache_recovery"}:
+        return {"layer2_request", "layer2_run_identity", "layer2_evidence"}
     if value == "same_video_intake":
         return {"same_video_source", "same_video_archive"}
     if value == "same_video_handoff":
@@ -226,6 +242,9 @@ def collect_workflow_evidence(directory: Path, workflow: str) -> dict:
                                             "bytes": len(raw), "category": category,
                                             "executionAssociation": "not_established",
                                             "summary": summary})
+    if workflow in {"canonical_layer2", "layer2_models", "canonical_layer2_worker", "canonical_layer2_cache_recovery"}:
+        result["optionalDownstreamCategories"] = ["layer2_candidate", "layer2_language_review"]
+        result["cacheProvenanceScope"] = "per_cache_observation_events_not_unbounded_file_scan"
     result["artifacts"].sort(key=lambda item: item["path"])
     result["missingCategories"] = sorted(_expected(workflow) - categories)
     unique_identities = sorted({json.dumps(item, sort_keys=True, separators=(",", ":")) for item in identities})

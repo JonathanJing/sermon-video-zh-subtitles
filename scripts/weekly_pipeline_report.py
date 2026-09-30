@@ -11,7 +11,11 @@ import sys
 
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from scripts.sermon_accounting import EXECUTOR_TYPES, READABLE_SCHEMAS, _label, read_events
+from scripts.sermon_accounting import EXECUTOR_TYPES, READABLE_SCHEMAS, _label, _number, _safe_metadata, safe_execution_identity, read_events, receipt_integrity
+
+from scripts import sermon_cache_observation as cache_observation
+from scripts import sermon_local_model_observation as local_model
+from scripts.sermon_workflow_evidence import _summary, PATHS
 
 from scripts.sermon_decision_accounting import CODE as DECISION_CODE, safe_observation
 
@@ -28,43 +32,36 @@ def digest(value):
     return hashlib.sha256(str(value).encode()).hexdigest()
 
 
-def usage_report(events, nodes):
-    """Provider receipts are facts; SDK aggregates are separate, never added."""
-    receipts, aggregates = defaultdict(dict), defaultdict(dict)
+def usage_report(events, nodes, integrity=None):
+    """Use the same all-run receipt equivalence as summary/log validation."""
+    integrity = receipt_integrity(events) if integrity is None else integrity
+    run_ids = {e['runId'] for e in events}
+    conflicts = [c for c in integrity['conflicts'] if run_ids & set(c['runIds'])]
+    rows, sdk = [], []
     for event in events:
-        node = nodes.get(event.get('spanId'), {})
-        if event['event'] == 'sdk_call_finished':
-            fact = {'executorType': node.get('executorType'),
-                    'status': _label(event['status']), 'model': _label(event.get('model'), None),
-                    'usage': event['usage']}
-            key = digest(event['invocationId'])
-            aggregates[key][json.dumps(fact, sort_keys=True)] = fact
-        if event['event'] != 'api_attempt':
+        if id(event) not in integrity['_selected']:
             continue
-        # Only equivalent facts may collapse, never first-writer-wins usage.
-        key = digest((_label(event.get('provider'), None),
-                      event.get('responseId') or event.get('attemptId') or event['eventId']))
-        fact = {'executorType': node.get('executorType'),
-                'status': _label(event['status']), 'usage': event['usage']}
-        receipts[key][json.dumps(fact, sort_keys=True)] = fact
-    rows, sdk, conflicts = [], [], []
-    for groups, target, identity, kind in (
-            (receipts, rows, 'receiptSha256', 'provider'),
-            (aggregates, sdk, 'invocationSha256', 'sdk')):
-        for key, variants in sorted(groups.items()):
-            if len(variants) != 1:
-                conflicts.append({'kind': kind, identity: key,
-                                  'variantSha256': sorted(digest(v) for v in variants)})
-                continue
-            fact = next(iter(variants.values()))
-            usage = {k: fact['usage'].get(k) for k in TOKENS} if kind == 'provider' else {
-                k: v if type(v) is int and v >= 0 else None
-                for k, v in ((k, fact['usage'].get(k)) for k in
-                             ('requests', 'input_tokens', 'output_tokens', 'total_tokens'))}
-            if kind == 'provider':
-                inp, cached = usage['inputTokens'], usage['cachedInputTokens']
-                usage['nonCachedInputTokens'] = inp - cached if inp is not None and cached is not None and inp >= cached else None
-            target.append({identity: key, **fact, 'usage': usage})
+        node = nodes.get(event.get('spanId'), {})
+        common = {'executorType': node.get('executorType'), 'status': _label(event['status']),
+                  'model': _label(event.get('model'), None),
+                  'elapsedSeconds': _number(event.get('elapsedSeconds'))}
+        if event['event'] == 'api_attempt':
+            usage = {k: _number(event['usage'].get(k)) for k in TOKENS}
+            inp, cached = usage['inputTokens'], usage['cachedInputTokens']
+            usage['nonCachedInputTokens'] = inp - cached if inp is not None and cached is not None and inp >= cached else None
+            rows.append({**common, 'receiptSha256': digest((event.get('provider'),
+                event.get('responseId') or event.get('attemptId') or event['eventId'])),
+                'responseIdSha256': digest(event['responseId']) if event.get('responseId') else None,
+                'requestedModel': _label(event.get('requestedModel'), None),
+                'spanSha256': digest(event['spanId']) if event.get('spanId') else None,
+                'attemptSha256': digest(event['attemptId']) if event.get('attemptId') else None,
+                'usage': usage, 'cost': {'status': _label(event['cost'].get('status'), None),
+                    'estimatedUsd': _number(event['cost'].get('estimatedUsd')), 'invoiceVerified': False}})
+        elif event['event'] == 'sdk_call_finished':
+            sdk.append({**common, 'invocationSha256': digest(event['invocationId']), 'usage': {
+                k: v if type(v) is int and v >= 0 else None for k, v in
+                ((k, event['usage'].get(k)) for k in ('requests', 'input_tokens', 'output_tokens', 'total_tokens'))}})
+    rows.sort(key=lambda r: r['receiptSha256']); sdk.sort(key=lambda r: r['invocationSha256'])
     totals = {}
     for executor in sorted(EXECUTOR_TYPES | {'unknown'}):
         selected = [r for r in rows if (r['executorType'] or 'unknown') == executor]
@@ -79,10 +76,12 @@ def usage_report(events, nodes):
     return {'directReceipts': rows, 'byExecutor': totals, 'sdkAggregates': sdk,
             'conflicts': conflicts, 'status': 'conflicted' if conflicts else 'consistent',
             'unresolvedAttempts': len(started - ended), 'combinedTokenTotal': None,
-            'scope': 'direct_receipts_and_sdk_aggregates_separate_no_cross_scope_sum'}
+            'scope': 'globally_deduplicated_direct_receipts_and_sdk_aggregates_separate',
+            'equivalence': 'shared_with_accounting_summary_including_model_cost_latency_and_executor',
+            'countMeaning': 'observed_receipt_count_not_proof_of_no_uninstrumented_calls'}
 
 
-def project_run(run_id, events):
+def project_run(run_id, events, integrity=None, receipt_events=None):
     diagnostics, pairs = [], defaultdict(lambda: {'start': [], 'end': []})
     def issue(code):
         if code not in diagnostics:
@@ -114,6 +113,10 @@ def project_run(run_id, events):
         executor = start.get('executorType')
         nodes[ident] = {'spanSha256': digest(ident), 'stage': _label(start['stage']),
             'workUnitId': start.get('workUnitId'), 'executorType': executor,
+            'attemptSha256': digest(start['attemptId']) if start.get('attemptId') else None,
+            'workflowSha256': digest(start['workflowId']) if start.get('workflowId') else None,
+            'startedAt': start['startedAt'], 'finishedAt': end['recordedAt'], 'cacheHit': start.get('cacheHit'),
+            'queuedAt': start.get('queuedAt'),
             'status': end['status'], 'dependsOn': start.get('dependsOn') or [],
             'dependencyRecorded': isinstance(start.get('dependsOn'), list),
             'parent': start.get('parentSpanId'), 'begin': begin, 'finish': finish,
@@ -134,7 +137,7 @@ def project_run(run_id, events):
             if parent['begin'] > node['begin'] or parent['finish'] < node['finish']:
                 issue('parent_interval_mismatch')
             visited.add(cursor); cursor = parent['parent']
-    parents = {n['parent'] for n in nodes.values() if n['parent']}
+    parents = {e.get('parentSpanId') for pair in pairs.values() for e in pair['start'] + pair['end'] if e.get('parentSpanId')}
     leaves = {key: n for key, n in nodes.items() if key not in parents}
     if not leaves:
         issue('no_complete_execution_spans')
@@ -208,19 +211,111 @@ def project_run(run_id, events):
             issue('conflicting_decision_observations')
         else:
             decision_observations.append(next(iter(facts.values())))
-    usage = usage_report(events, nodes)
+    local_observations = []
+    for event in events:
+        if event.get('event') == 'log' and event.get('code') == local_model.CODE:
+            try:
+                fact = local_model.safe_observation(event.get('fields'))
+                local_observations.append({**fact, 'spanSha256': digest(event['spanId']) if event.get('spanId') else None})
+            except (TypeError, ValueError):
+                issue('invalid_local_model_observation')
+    cached = []
+    for event in events:
+        if event.get('event') == 'log' and event.get('code') == cache_observation.CODE:
+            try:
+                fact = cache_observation.safe_observation(event.get('fields'))
+                cached.append({**fact, 'spanSha256': digest(event['spanId']) if event.get('spanId') else None,
+                    'workflowSha256': digest(event['workflowId']) if event.get('workflowId') else None,
+                    'recordedAt': event['recordedAt']})
+            except (TypeError, ValueError):
+                issue('invalid_model_cache_observation')
+    history = defaultdict(dict)
+    for fact in cached:
+        # Reuse may validate a response repeatedly; count historical usage once.
+        payload = {k: fact[k] for k in ('provider', 'model', 'requestedModel', 'usage', 'usageProvenance', 'payloadSha256')}
+        history[fact['responseIdSha256']][json.dumps(payload, sort_keys=True)] = payload
+    history_conflicts = sorted(k for k, v in history.items() if len(v) != 1)
+    if history_conflicts:
+        issue('conflicting_historical_cache_receipts')
+    historical = [next(iter(v.values())) for v in history.values() if len(v) == 1]
+    cache_summary = {'observations': len(cached), 'distinctHistoricalResponses': len(history),
+        'conflicts': history_conflicts, 'historicalCostUsd': None,
+        'currentSpendMeaning': 'cache_observations_are_not_current_transport_or_spend_receipts',
+        'knownHistoricalTokenSubtotal': {k: sum(f['usage'][k] for f in historical if f['usage'][k] is not None)
+            if not history_conflicts and any(f['usage'][k] is not None for f in historical) else None
+            for k in TOKENS},
+        'missingHistoricalFields': {k: sum(f['usage'][k] is None for f in historical) for k in TOKENS}}
+    usage = usage_report(events if receipt_events is None else receipt_events, nodes, integrity)
     if usage['conflicts']:
         issue('conflicting_usage_receipts')
     if diagnostics:
         critical = None
     totals = {executor: round(sum(n['elapsedSeconds'] for n in leaves.values() if n['executorType'] == executor), 6)
               for executor in sorted(EXECUTOR_TYPES)}
-    safe_nodes = [{k: v for k, v in n.items() if k not in {'dependsOn', 'parent', 'begin', 'finish', 'ready'}} for n in leaves.values()]
+    safe_nodes = [{**{k: v for k, v in n.items() if k not in {'dependsOn', 'parent', 'begin', 'finish', 'ready'}},
+                   'dependsOnSha256': [digest(dep) for dep in n['dependsOn']],
+                   'parentSpanSha256': digest(n['parent']) if n['parent'] else None,
+                   'models': sorted({_label(e.get('model')) for e in events
+                                    if e.get('spanId') == key and e['event'] in {'api_attempt_started', 'api_attempt', 'sdk_call_finished'}}
+                                    | {f['requestedModel'] for f in cached if f['spanSha256'] == digest(key) and f['requestedModel']}
+                                    | {f['model'] for f in local_observations if f['spanSha256'] == digest(key)}),
+                   'queueTimingStatus': 'measured' if n['queueWaitSeconds'] is not None else 'missing_instrumentation'}
+                  for key, n in leaves.items()]
+    unfinished = [{'spanSha256': digest(key), 'stage': _label(e['stage']),
+                   'executorType': e.get('executorType'), 'startedAt': e.get('startedAt'),
+                   'elapsedSeconds': None, 'status': 'unfinished_or_ambiguous'}
+                  for key, pair in pairs.items() if key not in nodes
+                  for e in (pair['start'] or pair['end'])[:1]]
+    coverage = {}
+    for executor in sorted(EXECUTOR_TYPES):
+        count = sum(n['executorType'] == executor for n in leaves.values())
+        missing = sum(n['executorType'] == executor for n in unfinished)
+        coverage[executor] = {'completedSpanCount': count, 'unfinishedSpanCount': missing,
+            'completedSpanSubtotalSeconds': totals[executor],
+            'status': 'incomplete' if missing else 'measured_completed_spans' if count else 'not_observed',
+            'totalExecutionSeconds': None}
+    source_durations = {e['metrics']['sourceDurationSeconds'] for e in events
+                        if e['event'] == 'workload' and _number(e['metrics'].get('sourceDurationSeconds')) is not None}
+    locales = sorted({e.get('metadata', {}).get('targetLocale') for e in events
+                      if e['event'] == 'workflow_started' and _label(e.get('metadata', {}).get('targetLocale'), None)})
+    source_duration = next(iter(source_durations)) if len(source_durations) == 1 else None
+    provenance = [{'workflowSha256': digest(e['workflowId']) if e.get('workflowId') else None,
+                   'metadata': _safe_metadata(e.get('metadata', {})),
+                   'parentWorkflowSha256': digest(e['parentWorkflowId']) if e.get('parentWorkflowId') else None,
+                   'executionIdentity': safe_execution_identity(e.get('executionIdentity'))}
+                  for e in events if e['event'] == 'workflow_started']
+    workload = [{'stage': _label(e.get('stage')), 'spanSha256': digest(e['spanId']) if e.get('spanId') else None,
+                 'metrics': {k: v for k, v in e['metrics'].items()
+                             if (k.endswith('Sha256') and isinstance(v, str) and len(v) == 64
+                                 and all(c in '0123456789abcdef' for c in v))
+                             or _number(v) is not None or isinstance(v, bool)}}
+                for e in events if e['event'] == 'workload']
     return {'runSha256': digest(run_id), 'status': 'partial' if diagnostics else 'projected',
             'endToEndWallSeconds': wall, 'criticalPath': critical, 'diagnostics': diagnostics,
-            'leafElapsedByExecutor': totals, 'usage': usage, 'decisionObservations': decision_observations,
+            'leafElapsedByExecutor': totals, 'leafElapsedMeaning': 'completed_leaf_subtotals_not_proof_of_absent_work',
+            'executorCoverage': coverage, 'unfinishedSpans': unfinished,
+            'usage': usage, 'decisionObservations': decision_observations,
+            'localModelObservations': local_observations, 'cacheObservations': cached, 'historicalCacheUsage': cache_summary,
+            'artifactSnapshots': [{
+                'workflowSha256': digest(e['workflowId']) if e.get('workflowId') else None,
+                'phase': _label(e.get('phase')), 'scope': 'existing_files_not_execution_proof',
+                'artifacts': [{k: a[k] for k in ('category', 'sha256', 'bytes') if k in a} | {'summary': _summary(a.get('summary', {}))}
+                    for a in e['evidence'].get('artifacts', []) if isinstance(a, dict)
+                    and a.get('category') in PATHS and isinstance(a.get('sha256'), str)
+                    and len(a['sha256']) == 64 and all(c in '0123456789abcdef' for c in a['sha256'])]}
+                for e in events if e['event'] == 'workflow_evidence'],
+            'workflowProvenance': provenance, 'workloadEvidence': workload,
             'workUnits': sorted(safe_nodes, key=lambda n: (-n['elapsedSeconds'], n['spanSha256'])),
-            'sourceDurationSeconds': None, 'locales': None, 'pageReadyAt': None,
+            'sourceDurationSeconds': source_duration, 'locales': locales or None, 'pageReadyAt': None,
+            'orchestrationOverheadSeconds': None,
+            'observabilityCoverage': {
+                'sourceDuration': 'recorded' if source_duration is not None else 'missing_or_conflicting',
+                'locales': 'recorded' if locales else 'not_observed',
+                'queueTiming': 'measured' if leaves and all(n['queueWaitSeconds'] is not None for n in leaves.values()) else 'missing_instrumentation',
+                'pageReady': 'not_observed', 'orchestrationOverhead': 'missing_instrumentation',
+                'crossProcessCriticalPath': 'not_established',
+                'logCompleteness': 'not_established',
+                'statusMeaning': 'projected_means_computable_recorded_DAG_not_complete_telemetry'},
             'acceptance': 'not_evaluated', 'notes': [
                 'Executor subtotals overlap across parallel branches; never sum as end-to-end wall.',
                 'dependsOn contains exact same-run span IDs, not stage names or parent span IDs.',
@@ -230,11 +325,14 @@ def project_run(run_id, events):
 
 def project(directory):
     events, damaged = read_events(directory)
-    runs, seen, diagnostics = defaultdict(list), {}, []
+    runs, receipt_events, seen, diagnostics = defaultdict(list), defaultdict(list), {}, []
     duplicates = 0
     for event in events:
         if event.get('schemaVersion') not in READABLE_SCHEMAS:
             diagnostics.append('unsupported_schema'); continue
+        # Conflicting copies of the same event identity are still receipt facts.
+        # Reconcile them before selecting representatives for DAG projection.
+        receipt_events[event['runId']].append(event)
         key = (event['runId'], event['eventId'])
         if key in seen:
             if event != seen[key]:
@@ -245,30 +343,48 @@ def project(directory):
         seen[key] = event; runs[event['runId']].append(event)
     if damaged:
         diagnostics.append('damaged_events')
-    result = [project_run(k, v) for k, v in sorted(runs.items())]
+    integrity = receipt_integrity([event for rows in receipt_events.values() for event in rows])
+    result = [project_run(k, v, integrity, receipt_events[k]) for k, v in sorted(runs.items())]
     if diagnostics:
         # A damaged record can hide a dependency: never claim a complete DAG.
         for run in result:
             run['criticalPath'] = None; run['status'] = 'partial'
     return {'schemaVersion': 'sermon-weekly-pipeline-report-v1', 'runs': result,
             'status': 'partial' if diagnostics or not result or any(r['status'] == 'partial' for r in result) else 'projected',
-            'diagnostics': diagnostics, 'duplicateEventsIgnored': duplicates, 'networkCalls': 0, 'acceptance': 'not_evaluated'}
+            'diagnostics': diagnostics, 'duplicateEventsIgnored': duplicates,
+            'receiptIntegrity': {k: v for k, v in integrity.items() if not k.startswith('_')}, 'networkCalls': 0, 'acceptance': 'not_evaluated'}
 
 
 def markdown(report):
     lines = ['# Weekly Pipeline Report', '', 'Status: ' + report['status'], '',
-             'Local accounting projection. Content, device, venue and release acceptance: not evaluated.', '']
+             'Projected means a computable recorded DAG, not complete telemetry. Content/device/venue/release acceptance: not evaluated.', '']
     for run in report['runs']:
         lines += ['## Run ' + run['runSha256'][:12], '',
                   'End-to-end wall seconds: ' + str(run['endToEndWallSeconds']),
                   'Active critical-path seconds: ' + str((run['criticalPath'] or {}).get('activeSeconds')), '',
                   '| Executor | Leaf elapsed seconds (parallel subtotal) |', '|---|---:|']
-        lines += [f'| {k} | {v} |' for k, v in run['leafElapsedByExecutor'].items()]
+        lines += [f"| {k} | {v} ({run['executorCoverage'][k]['status']}; completed spans only) |" for k, v in run['leafElapsedByExecutor'].items()]
+        lines += ['', 'Coverage: ' + json.dumps(run['observabilityCoverage'], sort_keys=True),
+                  '', '| Stage / attempt | Executor / models | Cache | Start → finish | Dependencies | Queue |',
+                  '|---|---|---|---|---|---|']
+        for row in run['workUnits']:
+            lines.append('| ' + ' | '.join(map(str, [row['stage'] + ' / ' + str(row['attemptSha256'])[:12],
+                str(row['executorType']) + ' / ' + ','.join(row['models']), row['cacheHit'],
+                row['startedAt'] + ' → ' + row['finishedAt'], ','.join(x[:12] for x in row['dependsOnSha256']),
+                row['queueWaitSeconds'] if row['queueWaitSeconds'] is not None else row['queueTimingStatus']])) + ' |')
         lines += ['', 'Direct receipt usage (SDK aggregates remain separate):', '',
                   '| Executor | Calls | Input | Cached | Non-cached | Output | Reasoning |', '|---|---:|---:|---:|---:|---:|---:|']
         for executor, row in run['usage']['byExecutor'].items():
             values = [row['knownSubtotal'][k] for k in ('inputTokens', 'cachedInputTokens', 'nonCachedInputTokens', 'outputTokens', 'reasoningTokens')]
             lines.append('| ' + ' | '.join(map(str, [executor, row['calls'], *values])) + ' |')
+        if run['cacheObservations']:
+            lines += ['', 'Historical cache receipts (excluded from current API usage/spend):', '',
+                      '| Role | Requested / receipt model | Span | Cache hash | Original response hash | Usage provenance | Historical input / output |',
+                      '|---|---|---|---|---|---|---|']
+            for fact in run['cacheObservations']:
+                lines.append('| ' + ' | '.join(map(str, [fact['role'], str(fact['requestedModel']) + ' / ' + str(fact['model']),
+                    str(fact['spanSha256'])[:12], str(fact['cacheSha256'])[:12], str(fact['responseIdSha256'])[:12],
+                    fact['usageProvenance'], str(fact['usage']['inputTokens']) + ' / ' + str(fact['usage']['outputTokens'])])) + ' |')
         if run.get('decisionObservations'):
             lines += ['', 'Decision observations (commit is separate; missing usage remains unknown):', '',
                       '| Phase | Status | Packet bytes | Responder ms | Validation ms | Commit ms |',
@@ -279,7 +395,7 @@ def markdown(report):
                           timing['modelLatencyMs'], timing['decisionValidationMs'], timing['stateCommitMs']]
                 lines.append('| ' + ' | '.join(map(str, values)) + ' |')
         lines += ['', 'Diagnostics: ' + ', '.join(run['diagnostics']), '']
-    return '\n'.join(lines) + '\n'
+    return '\n'.join(line.rstrip() for line in lines).rstrip() + '\n'
 
 
 def main():

@@ -58,7 +58,7 @@ class Layer3DependencyAccountingTests(unittest.TestCase):
             sum(row['elapsedSeconds'] for row in report['workUnits']), places=5)
         audio_hashes = [row['audio']['sha256'] for row in first['units']]
         second = self.render()
-        _, warm = self.report()
+        warm_events, warm = self.report()
         self.assertEqual(second, first)
         self.assertEqual([row['audio']['sha256'] for row in second['units']], audio_hashes)
         self.assertEqual(len(fixtures.FakeSynth.calls), 2)
@@ -66,6 +66,14 @@ class Layer3DependencyAccountingTests(unittest.TestCase):
         self.assertTrue(any(row['stage'] == 'layer3.assembly_admission' for row in warm['workUnits']))
         self.assertFalse(any(row['stage'] == 'layer3.track_assembly' for row in warm['workUnits']))
         self.assertEqual(second['machineScreening']['status'], 'not_run')
+        warm_admission = next(row for row in warm['workUnits'] if row['stage'] == 'layer3.assembly_admission')
+        self.assertTrue(warm_admission['cacheHit'])
+        observations = [e['metrics'] for e in warm_events if e.get('event') == 'workload'
+                        and e.get('stage') == 'layer3.unit_validation_completed']
+        self.assertEqual(len(observations), 2)
+        self.assertTrue(all(row['fullDecodePassed'] and row['validationElapsedSeconds'] > 0 for row in observations))
+        self.assertEqual([row['audioSha256'] for row in observations], audio_hashes)
+        self.assertTrue(any(e.get('stage') == 'layer3.cached_manifest' for e in warm_events))
 
     def test_ledger_mode_counts_real_decode_and_manifest_work_as_leaves(self):
         ledger = self.root.parent / 'progress.json'

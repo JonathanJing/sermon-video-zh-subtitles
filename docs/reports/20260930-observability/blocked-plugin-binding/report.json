@@ -1,0 +1,696 @@
+{
+  "schemaVersion": "sermon-weekly-pipeline-report-v1",
+  "runs": [
+    {
+      "runSha256": "38046d429fac51e363943859aa20fb6774584017220d4e3efa9e3cfeab21024a",
+      "status": "projected",
+      "endToEndWallSeconds": 2.505422830581665,
+      "criticalPath": {
+        "activeSeconds": 2.258317,
+        "spanPath": [
+          "f27c3cadfc38074588a1f355783631a9f612394018f1894220fc42832ff330aa",
+          "cca4b083dfab0f22a8bb9bf4d63703ebaff3be9a30e94981a487ea1d5f8d190b",
+          "228885b33145d4c27a338dee1f16b1ac4894e832fcd995b9d5d867a8c7e48e28"
+        ],
+        "branchSlackSeconds": {
+          "f27c3cadfc38074588a1f355783631a9f612394018f1894220fc42832ff330aa": 0.0,
+          "55b9bc891d9577f0542dde33c28c596c8fc7d0d6a88f3b2f9a95b1c2a5b3c767": 0.000902,
+          "1c1739edfbd567500acb647d11bf6ca95ef41315593016fb1e2c743addab1025": 0.000902,
+          "cca4b083dfab0f22a8bb9bf4d63703ebaff3be9a30e94981a487ea1d5f8d190b": 0.0,
+          "228885b33145d4c27a338dee1f16b1ac4894e832fcd995b9d5d867a8c7e48e28": 0.0,
+          "683a59db6c9b0c62638f4e8c0797c1d86d86387edc72a3f91fa2bc2dcd8f8ae4": 0.000902,
+          "0b7afeae075660d7bd8aa209766cb6858b3256e4e4546de7818277a4be98a2cb": 0.000902
+        },
+        "scope": "active_leaf_compute_excludes_human_external_and_engineering"
+      },
+      "diagnostics": [],
+      "leafElapsedByExecutor": {
+        "decision_agent": 0,
+        "deterministic_program": 2.270131,
+        "engineering_codex": 0,
+        "external_service": 0,
+        "human": 0,
+        "production_model": 0
+      },
+      "leafElapsedMeaning": "completed_leaf_subtotals_not_proof_of_absent_work",
+      "executorCoverage": {
+        "decision_agent": {
+          "completedSpanCount": 0,
+          "unfinishedSpanCount": 0,
+          "completedSpanSubtotalSeconds": 0,
+          "status": "not_observed",
+          "totalExecutionSeconds": null
+        },
+        "deterministic_program": {
+          "completedSpanCount": 7,
+          "unfinishedSpanCount": 0,
+          "completedSpanSubtotalSeconds": 2.270131,
+          "status": "measured_completed_spans",
+          "totalExecutionSeconds": null
+        },
+        "engineering_codex": {
+          "completedSpanCount": 0,
+          "unfinishedSpanCount": 0,
+          "completedSpanSubtotalSeconds": 0,
+          "status": "not_observed",
+          "totalExecutionSeconds": null
+        },
+        "external_service": {
+          "completedSpanCount": 0,
+          "unfinishedSpanCount": 0,
+          "completedSpanSubtotalSeconds": 0,
+          "status": "not_observed",
+          "totalExecutionSeconds": null
+        },
+        "human": {
+          "completedSpanCount": 0,
+          "unfinishedSpanCount": 0,
+          "completedSpanSubtotalSeconds": 0,
+          "status": "not_observed",
+          "totalExecutionSeconds": null
+        },
+        "production_model": {
+          "completedSpanCount": 0,
+          "unfinishedSpanCount": 0,
+          "completedSpanSubtotalSeconds": 0,
+          "status": "not_observed",
+          "totalExecutionSeconds": null
+        }
+      },
+      "unfinishedSpans": [],
+      "usage": {
+        "directReceipts": [],
+        "byExecutor": {
+          "decision_agent": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          },
+          "deterministic_program": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          },
+          "engineering_codex": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          },
+          "external_service": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          },
+          "human": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          },
+          "production_model": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          },
+          "unknown": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          }
+        },
+        "sdkAggregates": [],
+        "conflicts": [],
+        "status": "consistent",
+        "unresolvedAttempts": 0,
+        "combinedTokenTotal": null,
+        "scope": "globally_deduplicated_direct_receipts_and_sdk_aggregates_separate",
+        "equivalence": "shared_with_accounting_summary_including_model_cost_latency_and_executor",
+        "countMeaning": "observed_receipt_count_not_proof_of_no_uninstrumented_calls"
+      },
+      "decisionObservations": [],
+      "localModelObservations": [],
+      "cacheObservations": [],
+      "historicalCacheUsage": {
+        "observations": 0,
+        "distinctHistoricalResponses": 0,
+        "conflicts": [],
+        "historicalCostUsd": null,
+        "currentSpendMeaning": "cache_observations_are_not_current_transport_or_spend_receipts",
+        "knownHistoricalTokenSubtotal": {
+          "inputTokens": null,
+          "cachedInputTokens": null,
+          "outputTokens": null,
+          "reasoningTokens": null
+        },
+        "missingHistoricalFields": {
+          "inputTokens": 0,
+          "cachedInputTokens": 0,
+          "outputTokens": 0,
+          "reasoningTokens": 0
+        }
+      },
+      "artifactSnapshots": [
+        {
+          "workflowSha256": "2e3d9887cfb000b8dfddbb5e1b484f68fbf2e2d33dce3923e97b25e311cd3db6",
+          "phase": "before",
+          "scope": "existing_files_not_execution_proof",
+          "artifacts": []
+        },
+        {
+          "workflowSha256": "a51d9fe3c6734f6612111ed61b1fb21f1aef29e8fbe201adf7f4b476d7454796",
+          "phase": "before",
+          "scope": "existing_files_not_execution_proof",
+          "artifacts": []
+        },
+        {
+          "workflowSha256": "a51d9fe3c6734f6612111ed61b1fb21f1aef29e8fbe201adf7f4b476d7454796",
+          "phase": "after",
+          "scope": "existing_files_not_execution_proof",
+          "artifacts": []
+        },
+        {
+          "workflowSha256": "cdcca087fec343efcf49500b38ea15e64a136de155bfe2222031e443e663e5d6",
+          "phase": "before",
+          "scope": "existing_files_not_execution_proof",
+          "artifacts": []
+        },
+        {
+          "workflowSha256": "cdcca087fec343efcf49500b38ea15e64a136de155bfe2222031e443e663e5d6",
+          "phase": "after",
+          "scope": "existing_files_not_execution_proof",
+          "artifacts": []
+        },
+        {
+          "workflowSha256": "e1764abc2e9495e986f74e3443b5f9aff86fa679d39148c849ed609352294fa1",
+          "phase": "before",
+          "scope": "existing_files_not_execution_proof",
+          "artifacts": []
+        },
+        {
+          "workflowSha256": "e1764abc2e9495e986f74e3443b5f9aff86fa679d39148c849ed609352294fa1",
+          "phase": "after",
+          "scope": "existing_files_not_execution_proof",
+          "artifacts": []
+        },
+        {
+          "workflowSha256": "2e3d9887cfb000b8dfddbb5e1b484f68fbf2e2d33dce3923e97b25e311cd3db6",
+          "phase": "after",
+          "scope": "existing_files_not_execution_proof",
+          "artifacts": []
+        }
+      ],
+      "workflowProvenance": [
+        {
+          "workflowSha256": "2e3d9887cfb000b8dfddbb5e1b484f68fbf2e2d33dce3923e97b25e311cd3db6",
+          "metadata": {},
+          "parentWorkflowSha256": null,
+          "executionIdentity": {
+            "gitCommit": "fd788ac8517d381d24bb1a834689e88bcfa4f6c7",
+            "trackedWorkingTreeDirty": false,
+            "loadedProjectCodeSha256": {
+              "scripts/build_english_source_package.py": "65024b7cf518a90f800a8042e6a3206cbb83bde6a424258c850aa47e1e0ef740",
+              "scripts/clip_timeline_map.py": "d9edff2f64b301c5d4eece27bade5772aa4d21061f09a191d54606a96e7ce355",
+              "scripts/four_layer_measure.py": "7f628c8c79b9cab65b25c23cc5b4df9a5154b0129726607fa3a2f56aa9f9c2fd",
+              "scripts/four_layer_progress.py": "2789e1bb1625c3b4af02d2bb845d076c905da711913287463b53eee556ff0e5a",
+              "scripts/prepare_target_language_speech_job.py": "614965551b66659faeff4d1ece6e1988a1cce8195e23bd95225f530b87740ac4",
+              "scripts/produce_target_language_candidate.py": "95a9bb39d668051f8942ec6b96de23651281457fd81747c1db13d0092090509d",
+              "scripts/review_prompts.py": "e20cddc289cc2b6a17c072c6a264d36c72d2fd0723675013a53c2257188adcc4",
+              "scripts/run_target_language_models.py": "02872f0a1a1485ffdf0f24f512f414ec58f9f4a8ec645110a7ad934404a30270",
+              "scripts/series_terminology.py": "a2c16cfc353acbb58ea15e6ed95223178e87c49cd8383db8bb92f2426644ce74",
+              "scripts/sermon_accounting.py": "b5857bf3f355c8dd030a33f26e037262557b73cd0dddb67c93e11b0d7952df6f",
+              "scripts/sermon_cache_observation.py": "7b3c83d2f47e7f57dbb885cf0f051f48bde2419ba0bead2b9a3334d453ed549a",
+              "scripts/sermon_decision_accounting.py": "6302895cd3398bd7fd70c204957692eb40ad5edfdf07cb9b37393723e081787c",
+              "scripts/sermon_execution_harness.py": "fde48e91f6c835848cddcc4e824786385939a91fd894526bb2cf40d2878fc0b4",
+              "scripts/sermon_job_liveness.py": "dc4968bd18266c015fde619c772d7bceac31cf66500461ea8da812788aff48a2",
+              "scripts/sermon_local_model_observation.py": "9e640bd51fd0a99d59afa8fa74d7748a9f01ee9c8002717f9c3a9fc63af039b6",
+              "scripts/sermon_pipeline.py": "4666f58a4fa6d8ca23b92ba397db8566306f9cbc9b58d8fb1a6bce897fa16dc8",
+              "scripts/sermon_sentence_interpretation.py": "028b9123c53d9509a965f6c49fa3116f129a9b444202cecab9b3ce71b0aced45",
+              "scripts/sermon_workflow_evidence.py": "b148b6b425b3a56be111730b2bd9822b2014f0f903e8c7aaa3c59f70bccff0ec",
+              "scripts/sermon_workflow_jobs.py": "1adc990a728884b3caecb2b87c58e0bede12b64db452cf0f571611ce4b051f89",
+              "scripts/target_language_policy.py": "49a7659f50b5cc7b662ab593dcf3994363367ad0fcfa019e2bc531a3638bbb79",
+              "scripts/weekly_pipeline_report.py": "1bf6a0ecb329fd336425fb6dd68bea6ab94f410b7fa3a468c8c1a0be8e445d9b"
+            },
+            "pythonVersion": "3.13.15",
+            "scope": "loaded_project_modules_at_workflow_start_not_all_or_remote_code"
+          }
+        },
+        {
+          "workflowSha256": "a51d9fe3c6734f6612111ed61b1fb21f1aef29e8fbe201adf7f4b476d7454796",
+          "metadata": {
+            "targetLocale": "zh-Hans"
+          },
+          "parentWorkflowSha256": "2e3d9887cfb000b8dfddbb5e1b484f68fbf2e2d33dce3923e97b25e311cd3db6",
+          "executionIdentity": {
+            "gitCommit": "fd788ac8517d381d24bb1a834689e88bcfa4f6c7",
+            "trackedWorkingTreeDirty": false,
+            "loadedProjectCodeSha256": {
+              "scripts/build_english_source_package.py": "65024b7cf518a90f800a8042e6a3206cbb83bde6a424258c850aa47e1e0ef740",
+              "scripts/clip_timeline_map.py": "d9edff2f64b301c5d4eece27bade5772aa4d21061f09a191d54606a96e7ce355",
+              "scripts/four_layer_measure.py": "7f628c8c79b9cab65b25c23cc5b4df9a5154b0129726607fa3a2f56aa9f9c2fd",
+              "scripts/four_layer_progress.py": "2789e1bb1625c3b4af02d2bb845d076c905da711913287463b53eee556ff0e5a",
+              "scripts/prepare_target_language_speech_job.py": "614965551b66659faeff4d1ece6e1988a1cce8195e23bd95225f530b87740ac4",
+              "scripts/produce_target_language_candidate.py": "95a9bb39d668051f8942ec6b96de23651281457fd81747c1db13d0092090509d",
+              "scripts/review_prompts.py": "e20cddc289cc2b6a17c072c6a264d36c72d2fd0723675013a53c2257188adcc4",
+              "scripts/run_target_language_models.py": "02872f0a1a1485ffdf0f24f512f414ec58f9f4a8ec645110a7ad934404a30270",
+              "scripts/series_terminology.py": "a2c16cfc353acbb58ea15e6ed95223178e87c49cd8383db8bb92f2426644ce74",
+              "scripts/sermon_accounting.py": "b5857bf3f355c8dd030a33f26e037262557b73cd0dddb67c93e11b0d7952df6f",
+              "scripts/sermon_cache_observation.py": "7b3c83d2f47e7f57dbb885cf0f051f48bde2419ba0bead2b9a3334d453ed549a",
+              "scripts/sermon_decision_accounting.py": "6302895cd3398bd7fd70c204957692eb40ad5edfdf07cb9b37393723e081787c",
+              "scripts/sermon_execution_harness.py": "fde48e91f6c835848cddcc4e824786385939a91fd894526bb2cf40d2878fc0b4",
+              "scripts/sermon_job_liveness.py": "dc4968bd18266c015fde619c772d7bceac31cf66500461ea8da812788aff48a2",
+              "scripts/sermon_local_model_observation.py": "9e640bd51fd0a99d59afa8fa74d7748a9f01ee9c8002717f9c3a9fc63af039b6",
+              "scripts/sermon_pipeline.py": "4666f58a4fa6d8ca23b92ba397db8566306f9cbc9b58d8fb1a6bce897fa16dc8",
+              "scripts/sermon_sentence_interpretation.py": "028b9123c53d9509a965f6c49fa3116f129a9b444202cecab9b3ce71b0aced45",
+              "scripts/sermon_workflow_evidence.py": "b148b6b425b3a56be111730b2bd9822b2014f0f903e8c7aaa3c59f70bccff0ec",
+              "scripts/sermon_workflow_jobs.py": "1adc990a728884b3caecb2b87c58e0bede12b64db452cf0f571611ce4b051f89",
+              "scripts/target_language_policy.py": "49a7659f50b5cc7b662ab593dcf3994363367ad0fcfa019e2bc531a3638bbb79",
+              "scripts/weekly_pipeline_report.py": "1bf6a0ecb329fd336425fb6dd68bea6ab94f410b7fa3a468c8c1a0be8e445d9b"
+            },
+            "pythonVersion": "3.13.15",
+            "scope": "loaded_project_modules_at_workflow_start_not_all_or_remote_code"
+          }
+        },
+        {
+          "workflowSha256": "cdcca087fec343efcf49500b38ea15e64a136de155bfe2222031e443e663e5d6",
+          "metadata": {
+            "targetLocale": "ko"
+          },
+          "parentWorkflowSha256": "2e3d9887cfb000b8dfddbb5e1b484f68fbf2e2d33dce3923e97b25e311cd3db6",
+          "executionIdentity": {
+            "gitCommit": "fd788ac8517d381d24bb1a834689e88bcfa4f6c7",
+            "trackedWorkingTreeDirty": false,
+            "loadedProjectCodeSha256": {
+              "scripts/build_english_source_package.py": "65024b7cf518a90f800a8042e6a3206cbb83bde6a424258c850aa47e1e0ef740",
+              "scripts/clip_timeline_map.py": "d9edff2f64b301c5d4eece27bade5772aa4d21061f09a191d54606a96e7ce355",
+              "scripts/four_layer_measure.py": "7f628c8c79b9cab65b25c23cc5b4df9a5154b0129726607fa3a2f56aa9f9c2fd",
+              "scripts/four_layer_progress.py": "2789e1bb1625c3b4af02d2bb845d076c905da711913287463b53eee556ff0e5a",
+              "scripts/prepare_target_language_speech_job.py": "614965551b66659faeff4d1ece6e1988a1cce8195e23bd95225f530b87740ac4",
+              "scripts/produce_target_language_candidate.py": "95a9bb39d668051f8942ec6b96de23651281457fd81747c1db13d0092090509d",
+              "scripts/review_prompts.py": "e20cddc289cc2b6a17c072c6a264d36c72d2fd0723675013a53c2257188adcc4",
+              "scripts/run_target_language_models.py": "02872f0a1a1485ffdf0f24f512f414ec58f9f4a8ec645110a7ad934404a30270",
+              "scripts/series_terminology.py": "a2c16cfc353acbb58ea15e6ed95223178e87c49cd8383db8bb92f2426644ce74",
+              "scripts/sermon_accounting.py": "b5857bf3f355c8dd030a33f26e037262557b73cd0dddb67c93e11b0d7952df6f",
+              "scripts/sermon_cache_observation.py": "7b3c83d2f47e7f57dbb885cf0f051f48bde2419ba0bead2b9a3334d453ed549a",
+              "scripts/sermon_decision_accounting.py": "6302895cd3398bd7fd70c204957692eb40ad5edfdf07cb9b37393723e081787c",
+              "scripts/sermon_execution_harness.py": "fde48e91f6c835848cddcc4e824786385939a91fd894526bb2cf40d2878fc0b4",
+              "scripts/sermon_job_liveness.py": "dc4968bd18266c015fde619c772d7bceac31cf66500461ea8da812788aff48a2",
+              "scripts/sermon_local_model_observation.py": "9e640bd51fd0a99d59afa8fa74d7748a9f01ee9c8002717f9c3a9fc63af039b6",
+              "scripts/sermon_pipeline.py": "4666f58a4fa6d8ca23b92ba397db8566306f9cbc9b58d8fb1a6bce897fa16dc8",
+              "scripts/sermon_sentence_interpretation.py": "028b9123c53d9509a965f6c49fa3116f129a9b444202cecab9b3ce71b0aced45",
+              "scripts/sermon_workflow_evidence.py": "b148b6b425b3a56be111730b2bd9822b2014f0f903e8c7aaa3c59f70bccff0ec",
+              "scripts/sermon_workflow_jobs.py": "1adc990a728884b3caecb2b87c58e0bede12b64db452cf0f571611ce4b051f89",
+              "scripts/target_language_policy.py": "49a7659f50b5cc7b662ab593dcf3994363367ad0fcfa019e2bc531a3638bbb79",
+              "scripts/weekly_pipeline_report.py": "1bf6a0ecb329fd336425fb6dd68bea6ab94f410b7fa3a468c8c1a0be8e445d9b"
+            },
+            "pythonVersion": "3.13.15",
+            "scope": "loaded_project_modules_at_workflow_start_not_all_or_remote_code"
+          }
+        },
+        {
+          "workflowSha256": "e1764abc2e9495e986f74e3443b5f9aff86fa679d39148c849ed609352294fa1",
+          "metadata": {
+            "targetLocale": "es"
+          },
+          "parentWorkflowSha256": "2e3d9887cfb000b8dfddbb5e1b484f68fbf2e2d33dce3923e97b25e311cd3db6",
+          "executionIdentity": {
+            "gitCommit": "fd788ac8517d381d24bb1a834689e88bcfa4f6c7",
+            "trackedWorkingTreeDirty": false,
+            "loadedProjectCodeSha256": {
+              "scripts/build_english_source_package.py": "65024b7cf518a90f800a8042e6a3206cbb83bde6a424258c850aa47e1e0ef740",
+              "scripts/clip_timeline_map.py": "d9edff2f64b301c5d4eece27bade5772aa4d21061f09a191d54606a96e7ce355",
+              "scripts/four_layer_measure.py": "7f628c8c79b9cab65b25c23cc5b4df9a5154b0129726607fa3a2f56aa9f9c2fd",
+              "scripts/four_layer_progress.py": "2789e1bb1625c3b4af02d2bb845d076c905da711913287463b53eee556ff0e5a",
+              "scripts/prepare_target_language_speech_job.py": "614965551b66659faeff4d1ece6e1988a1cce8195e23bd95225f530b87740ac4",
+              "scripts/produce_target_language_candidate.py": "95a9bb39d668051f8942ec6b96de23651281457fd81747c1db13d0092090509d",
+              "scripts/review_prompts.py": "e20cddc289cc2b6a17c072c6a264d36c72d2fd0723675013a53c2257188adcc4",
+              "scripts/run_target_language_models.py": "02872f0a1a1485ffdf0f24f512f414ec58f9f4a8ec645110a7ad934404a30270",
+              "scripts/series_terminology.py": "a2c16cfc353acbb58ea15e6ed95223178e87c49cd8383db8bb92f2426644ce74",
+              "scripts/sermon_accounting.py": "b5857bf3f355c8dd030a33f26e037262557b73cd0dddb67c93e11b0d7952df6f",
+              "scripts/sermon_cache_observation.py": "7b3c83d2f47e7f57dbb885cf0f051f48bde2419ba0bead2b9a3334d453ed549a",
+              "scripts/sermon_decision_accounting.py": "6302895cd3398bd7fd70c204957692eb40ad5edfdf07cb9b37393723e081787c",
+              "scripts/sermon_execution_harness.py": "fde48e91f6c835848cddcc4e824786385939a91fd894526bb2cf40d2878fc0b4",
+              "scripts/sermon_job_liveness.py": "dc4968bd18266c015fde619c772d7bceac31cf66500461ea8da812788aff48a2",
+              "scripts/sermon_local_model_observation.py": "9e640bd51fd0a99d59afa8fa74d7748a9f01ee9c8002717f9c3a9fc63af039b6",
+              "scripts/sermon_pipeline.py": "4666f58a4fa6d8ca23b92ba397db8566306f9cbc9b58d8fb1a6bce897fa16dc8",
+              "scripts/sermon_sentence_interpretation.py": "028b9123c53d9509a965f6c49fa3116f129a9b444202cecab9b3ce71b0aced45",
+              "scripts/sermon_workflow_evidence.py": "b148b6b425b3a56be111730b2bd9822b2014f0f903e8c7aaa3c59f70bccff0ec",
+              "scripts/sermon_workflow_jobs.py": "1adc990a728884b3caecb2b87c58e0bede12b64db452cf0f571611ce4b051f89",
+              "scripts/target_language_policy.py": "49a7659f50b5cc7b662ab593dcf3994363367ad0fcfa019e2bc531a3638bbb79",
+              "scripts/weekly_pipeline_report.py": "1bf6a0ecb329fd336425fb6dd68bea6ab94f410b7fa3a468c8c1a0be8e445d9b"
+            },
+            "pythonVersion": "3.13.15",
+            "scope": "loaded_project_modules_at_workflow_start_not_all_or_remote_code"
+          }
+        }
+      ],
+      "workloadEvidence": [
+        {
+          "stage": "layer2.source_identity",
+          "spanSha256": "cca4b083dfab0f22a8bb9bf4d63703ebaff3be9a30e94981a487ea1d5f8d190b",
+          "metrics": {
+            "anchorManifestSha256": "99838b9998e62d6cf8d28ee6b967081bdeb8c2481f4563cdfe2b7c9f53add026",
+            "englishSourcePackageJsonSha256": "4b674f74755e5268fb5356fc2b10184e41c68c357f899b43e1d0500ce53d4c27",
+            "sourceDurationSeconds": 138.0,
+            "sourceUnits": 33,
+            "translationGroups": 11,
+            "translationPolicySha256": "265e328596e1adb926505529f4c733be021cb338c8649575823bb6ece1ac2374"
+          }
+        },
+        {
+          "stage": "layer2.plugin_binding",
+          "spanSha256": "228885b33145d4c27a338dee1f16b1ac4894e832fcd995b9d5d867a8c7e48e28",
+          "metrics": {
+            "actualPluginSha256": "3103fbe3c52d6bac3779d549d1ad8df61a212f608f9ba3795cb08cbc1f0bf6b8",
+            "expectedPluginSha256": "cf3911e3ec439cd7c97841ec28e1a25c84a481aab38d9afa2ca301de8766f3bf"
+          }
+        },
+        {
+          "stage": "layer2.source_identity",
+          "spanSha256": "55b9bc891d9577f0542dde33c28c596c8fc7d0d6a88f3b2f9a95b1c2a5b3c767",
+          "metrics": {
+            "anchorManifestSha256": "99838b9998e62d6cf8d28ee6b967081bdeb8c2481f4563cdfe2b7c9f53add026",
+            "englishSourcePackageJsonSha256": "4b674f74755e5268fb5356fc2b10184e41c68c357f899b43e1d0500ce53d4c27",
+            "sourceDurationSeconds": 138.0,
+            "sourceUnits": 33,
+            "translationGroups": 11,
+            "translationPolicySha256": "0a84005e589bbd575da59c991679bafddf569a9920e382979b0624d0b3683d33"
+          }
+        },
+        {
+          "stage": "layer2.plugin_binding",
+          "spanSha256": "0b7afeae075660d7bd8aa209766cb6858b3256e4e4546de7818277a4be98a2cb",
+          "metrics": {
+            "actualPluginSha256": "8bb4c4911e541f3a90d44ba670feaa310d63b9d78d1f320fa8da4ce68be707bf",
+            "expectedPluginSha256": "232e94873148426bc4883f8806b09da4671b8ead21d2e63bb7c3bda4e4e876e7"
+          }
+        },
+        {
+          "stage": "layer2.source_identity",
+          "spanSha256": "1c1739edfbd567500acb647d11bf6ca95ef41315593016fb1e2c743addab1025",
+          "metrics": {
+            "anchorManifestSha256": "99838b9998e62d6cf8d28ee6b967081bdeb8c2481f4563cdfe2b7c9f53add026",
+            "englishSourcePackageJsonSha256": "4b674f74755e5268fb5356fc2b10184e41c68c357f899b43e1d0500ce53d4c27",
+            "sourceDurationSeconds": 138.0,
+            "sourceUnits": 33,
+            "translationGroups": 11,
+            "translationPolicySha256": "0a44afb4beb325469fcc37ae58f799d26bb3448112b59bf8085aa59e9397f564"
+          }
+        },
+        {
+          "stage": "layer2.plugin_binding",
+          "spanSha256": "683a59db6c9b0c62638f4e8c0797c1d86d86387edc72a3f91fa2bc2dcd8f8ae4",
+          "metrics": {
+            "actualPluginSha256": "928911bfd089c82a8546e14b6e2390c24708bf7b25ce58b51c25ea0b2ba6f700",
+            "expectedPluginSha256": "7a5e915ae6db74b2cc9566b13957454b59fb1761c11870309379b1412e48972b"
+          }
+        }
+      ],
+      "workUnits": [
+        {
+          "spanSha256": "f27c3cadfc38074588a1f355783631a9f612394018f1894220fc42832ff330aa",
+          "stage": "diagnostic.real_source_decode",
+          "workUnitId": null,
+          "executorType": "deterministic_program",
+          "attemptSha256": "800372b3fecfda5d9016ce996dbcba6831cdf9134d1cad9ce4e1c086b4125217",
+          "workflowSha256": "2e3d9887cfb000b8dfddbb5e1b484f68fbf2e2d33dce3923e97b25e311cd3db6",
+          "startedAt": "2026-09-30T14:38:47.962338+00:00",
+          "finishedAt": "2026-09-30T14:38:50.214156+00:00",
+          "cacheHit": false,
+          "queuedAt": null,
+          "status": "completed",
+          "dependencyRecorded": true,
+          "dependencyReadyAt": null,
+          "elapsedSeconds": 2.251508,
+          "queueWaitSeconds": null,
+          "dependencyReadyToQueueSeconds": null,
+          "dependsOnSha256": [],
+          "parentSpanSha256": "c938d0c12b39eef211d8dcc9137715dfa6806345df097306ecbe34e9df5746d6",
+          "models": [],
+          "queueTimingStatus": "missing_instrumentation"
+        },
+        {
+          "spanSha256": "cca4b083dfab0f22a8bb9bf4d63703ebaff3be9a30e94981a487ea1d5f8d190b",
+          "stage": "layer2.source_admission.zh-Hans",
+          "workUnitId": "l2.zh-Hans.source_admission",
+          "executorType": "deterministic_program",
+          "attemptSha256": "6b6a0ca0d68d174f7fdf5101e6e22a896040d20853d17efbdc9ec4166f391e8a",
+          "workflowSha256": "a51d9fe3c6734f6612111ed61b1fb21f1aef29e8fbe201adf7f4b476d7454796",
+          "startedAt": "2026-09-30T14:38:50.275460+00:00",
+          "finishedAt": "2026-09-30T14:38:50.280992+00:00",
+          "cacheHit": false,
+          "queuedAt": null,
+          "status": "completed",
+          "dependencyRecorded": true,
+          "dependencyReadyAt": null,
+          "elapsedSeconds": 0.005431,
+          "queueWaitSeconds": null,
+          "dependencyReadyToQueueSeconds": null,
+          "dependsOnSha256": [
+            "f27c3cadfc38074588a1f355783631a9f612394018f1894220fc42832ff330aa"
+          ],
+          "parentSpanSha256": "d83e2cae80e91f7159e24ba9939e38294ce44f3e69835cf390e2fadb5dd77b42",
+          "models": [],
+          "queueTimingStatus": "missing_instrumentation"
+        },
+        {
+          "spanSha256": "1c1739edfbd567500acb647d11bf6ca95ef41315593016fb1e2c743addab1025",
+          "stage": "layer2.source_admission.es",
+          "workUnitId": "l2.es.source_admission",
+          "executorType": "deterministic_program",
+          "attemptSha256": "7b43662543c2a746139e9211c74814c38fc96925bb38da9b7b918e0f07bbeef4",
+          "workflowSha256": "e1764abc2e9495e986f74e3443b5f9aff86fa679d39148c849ed609352294fa1",
+          "startedAt": "2026-09-30T14:38:50.403654+00:00",
+          "finishedAt": "2026-09-30T14:38:50.408221+00:00",
+          "cacheHit": false,
+          "queuedAt": null,
+          "status": "completed",
+          "dependencyRecorded": true,
+          "dependencyReadyAt": null,
+          "elapsedSeconds": 0.004483,
+          "queueWaitSeconds": null,
+          "dependencyReadyToQueueSeconds": null,
+          "dependsOnSha256": [
+            "f27c3cadfc38074588a1f355783631a9f612394018f1894220fc42832ff330aa"
+          ],
+          "parentSpanSha256": "6a5eca7d8e8a5440efa0b7fb3f3f8900a50bb60e22d29b904569fa18e854e430",
+          "models": [],
+          "queueTimingStatus": "missing_instrumentation"
+        },
+        {
+          "spanSha256": "55b9bc891d9577f0542dde33c28c596c8fc7d0d6a88f3b2f9a95b1c2a5b3c767",
+          "stage": "layer2.source_admission.ko",
+          "workUnitId": "l2.ko.source_admission",
+          "executorType": "deterministic_program",
+          "attemptSha256": "75c44fe70ec0e74ccc247e8c30b8196a3f66b9e89dd3c95c66cb5f13b1e362fd",
+          "workflowSha256": "cdcca087fec343efcf49500b38ea15e64a136de155bfe2222031e443e663e5d6",
+          "startedAt": "2026-09-30T14:38:50.339187+00:00",
+          "finishedAt": "2026-09-30T14:38:50.343598+00:00",
+          "cacheHit": false,
+          "queuedAt": null,
+          "status": "completed",
+          "dependencyRecorded": true,
+          "dependencyReadyAt": null,
+          "elapsedSeconds": 0.004297,
+          "queueWaitSeconds": null,
+          "dependencyReadyToQueueSeconds": null,
+          "dependsOnSha256": [
+            "f27c3cadfc38074588a1f355783631a9f612394018f1894220fc42832ff330aa"
+          ],
+          "parentSpanSha256": "29a5f5840326b1ce6d7e8c0105611b986fb30c50e6e479d742cc1f5915c7ce98",
+          "models": [],
+          "queueTimingStatus": "missing_instrumentation"
+        },
+        {
+          "spanSha256": "0b7afeae075660d7bd8aa209766cb6858b3256e4e4546de7818277a4be98a2cb",
+          "stage": "layer2.run_admission.ko",
+          "workUnitId": "l2.ko.run_admission",
+          "executorType": "deterministic_program",
+          "attemptSha256": "f1cde88e33115a4b3e20b3f17b7c09bb3d8157e8be7583c796681bbd8c40528a",
+          "workflowSha256": "cdcca087fec343efcf49500b38ea15e64a136de155bfe2222031e443e663e5d6",
+          "startedAt": "2026-09-30T14:38:50.343954+00:00",
+          "finishedAt": "2026-09-30T14:38:50.345879+00:00",
+          "cacheHit": false,
+          "queuedAt": null,
+          "status": "failed",
+          "dependencyRecorded": true,
+          "dependencyReadyAt": null,
+          "elapsedSeconds": 0.00161,
+          "queueWaitSeconds": null,
+          "dependencyReadyToQueueSeconds": null,
+          "dependsOnSha256": [
+            "55b9bc891d9577f0542dde33c28c596c8fc7d0d6a88f3b2f9a95b1c2a5b3c767"
+          ],
+          "parentSpanSha256": "29a5f5840326b1ce6d7e8c0105611b986fb30c50e6e479d742cc1f5915c7ce98",
+          "models": [],
+          "queueTimingStatus": "missing_instrumentation"
+        },
+        {
+          "spanSha256": "683a59db6c9b0c62638f4e8c0797c1d86d86387edc72a3f91fa2bc2dcd8f8ae4",
+          "stage": "layer2.run_admission.es",
+          "workUnitId": "l2.es.run_admission",
+          "executorType": "deterministic_program",
+          "attemptSha256": "81678efed8402c4f26845581c40dca23fbba650dbfaf858b70ff694e5f918ad7",
+          "workflowSha256": "e1764abc2e9495e986f74e3443b5f9aff86fa679d39148c849ed609352294fa1",
+          "startedAt": "2026-09-30T14:38:50.408590+00:00",
+          "finishedAt": "2026-09-30T14:38:50.410321+00:00",
+          "cacheHit": false,
+          "queuedAt": null,
+          "status": "failed",
+          "dependencyRecorded": true,
+          "dependencyReadyAt": null,
+          "elapsedSeconds": 0.001424,
+          "queueWaitSeconds": null,
+          "dependencyReadyToQueueSeconds": null,
+          "dependsOnSha256": [
+            "1c1739edfbd567500acb647d11bf6ca95ef41315593016fb1e2c743addab1025"
+          ],
+          "parentSpanSha256": "6a5eca7d8e8a5440efa0b7fb3f3f8900a50bb60e22d29b904569fa18e854e430",
+          "models": [],
+          "queueTimingStatus": "missing_instrumentation"
+        },
+        {
+          "spanSha256": "228885b33145d4c27a338dee1f16b1ac4894e832fcd995b9d5d867a8c7e48e28",
+          "stage": "layer2.run_admission.zh-Hans",
+          "workUnitId": "l2.zh-Hans.run_admission",
+          "executorType": "deterministic_program",
+          "attemptSha256": "c4f2a52ce9c01f544fcf5fa826af8b3502db0eefb9b34fd31e79ca301a311fd4",
+          "workflowSha256": "a51d9fe3c6734f6612111ed61b1fb21f1aef29e8fbe201adf7f4b476d7454796",
+          "startedAt": "2026-09-30T14:38:50.281280+00:00",
+          "finishedAt": "2026-09-30T14:38:50.283043+00:00",
+          "cacheHit": false,
+          "queuedAt": null,
+          "status": "failed",
+          "dependencyRecorded": true,
+          "dependencyReadyAt": null,
+          "elapsedSeconds": 0.001378,
+          "queueWaitSeconds": null,
+          "dependencyReadyToQueueSeconds": null,
+          "dependsOnSha256": [
+            "cca4b083dfab0f22a8bb9bf4d63703ebaff3be9a30e94981a487ea1d5f8d190b"
+          ],
+          "parentSpanSha256": "d83e2cae80e91f7159e24ba9939e38294ce44f3e69835cf390e2fadb5dd77b42",
+          "models": [],
+          "queueTimingStatus": "missing_instrumentation"
+        }
+      ],
+      "sourceDurationSeconds": 138.0,
+      "locales": [
+        "es",
+        "ko",
+        "zh-Hans"
+      ],
+      "pageReadyAt": null,
+      "orchestrationOverheadSeconds": null,
+      "observabilityCoverage": {
+        "sourceDuration": "recorded",
+        "locales": "recorded",
+        "queueTiming": "missing_instrumentation",
+        "pageReady": "not_observed",
+        "orchestrationOverhead": "missing_instrumentation",
+        "crossProcessCriticalPath": "not_established",
+        "logCompleteness": "not_established",
+        "statusMeaning": "projected_means_computable_recorded_DAG_not_complete_telemetry"
+      },
+      "acceptance": "not_evaluated",
+      "notes": [
+        "Executor subtotals overlap across parallel branches; never sum as end-to-end wall.",
+        "dependsOn contains exact same-run span IDs, not stage names or parent span IDs.",
+        "Human/external elapsed is wait; engineering is separate from production runtime.",
+        "Missing source/locale/page-ready telemetry stays unknown; no sign-off is inferred."
+      ]
+    }
+  ],
+  "status": "projected",
+  "diagnostics": [],
+  "duplicateEventsIgnored": 0,
+  "receiptIntegrity": {
+    "status": "consistent",
+    "conflicts": [],
+    "equivalentDuplicatesIgnored": 0
+  },
+  "networkCalls": 0,
+  "acceptance": "not_evaluated"
+}

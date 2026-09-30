@@ -1,0 +1,26 @@
+{
+  "asr": {
+    "driverSha256": "36cea2a1cc402da8841ff430f1931fbdc52bfd577736ef36225ba4a11b9efbe3",
+    "command": "OPENAI_API_KEY= HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \"$MLX_PYTHON\" \"$EVIDENCE_ROOT/observability-fd788ac-asr/run.py\"",
+    "scope": "actual_local_command_with_host_paths_replaced_by_environment_variables",
+    "consoleSha256": "323d9637d6a0809cb678bb8677dc4463173c09902d55106678448e5696b1c429"
+  },
+  "cache": {
+    "driverSha256": "d02bcd8b0a11738176a0b33555e08b77f38eeba3d4b6cc59da57085d0ee51695",
+    "command": "OPENAI_API_KEY= \"$PROJECT_PYTHON\" \"$EVIDENCE_ROOT/observability-fd788ac-cache/run.py\"",
+    "scope": "actual_local_command_with_host_paths_replaced_by_environment_variables",
+    "consoleSha256": "672afc535440782a695c26234545813c433fd5cd6773a7d92e6409ccb99ea299"
+  },
+  "audio": {
+    "driverSha256": "dff46a5a189081286292f7750dbdf990894847e0336e5768e0745dd435e4aeba",
+    "command": "OPENAI_API_KEY= \"$PROJECT_PYTHON\" \"$EVIDENCE_ROOT/observability-fd788ac-audio/run.py\"",
+    "scope": "actual_local_command_with_host_paths_replaced_by_environment_variables",
+    "consoleSha256": "a156558bf8e007f42ef6d94dad695e105282ef6d9fde28081ece24df75cf40d0"
+  },
+  "blocked": {
+    "driverSha256": "bd2548fc9e6d47f9e5ab8bf721b4850aa6d1017aa74867c9c0429f1d68f88bfa",
+    "command": "OPENAI_API_KEY= \"$PROJECT_PYTHON\" \"$EVIDENCE_ROOT/observability-fd788ac-blocked/run.py\"",
+    "scope": "actual_local_command_with_host_paths_replaced_by_environment_variables",
+    "consoleSha256": "c1d3ba136eacea22316c4f2f5e77ef468e203be0e02b33b3c93fcdd83ac85395"
+  }
+}

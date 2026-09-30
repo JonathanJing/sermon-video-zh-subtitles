@@ -22,6 +22,7 @@ try:
     from scripts import four_layer_measure as measure
     from scripts import produce_target_language_candidate as producer
     from scripts import sermon_accounting as accounting
+    from scripts import sermon_cache_observation as cache_observation
     from scripts import sermon_pipeline
     from scripts import target_language_policy as policy_tools
     from scripts import sermon_workflow_jobs as jobs
@@ -29,6 +30,7 @@ except ImportError:
     import four_layer_measure as measure
     import produce_target_language_candidate as producer
     import sermon_accounting as accounting
+    import sermon_cache_observation as cache_observation
     import sermon_pipeline
     import target_language_policy as policy_tools
     import sermon_workflow_jobs as jobs
@@ -133,6 +135,20 @@ def group_plan(request: dict[str, Any], anchor: dict[str, Any],
     return plan
 
 
+def require_plugin_identity(plugin_path, expected):
+    actual = producer.plugin_implementation_sha256(plugin_path)
+    try:
+        require(actual == expected, "Language plugin implementation differs from frozen policy")
+    except ValueError as exc:
+        def observe():
+            accounting.record_workload("layer2.plugin_binding", {
+                "expectedPluginSha256": expected, "actualPluginSha256": actual})
+            accounting.record_log("layer2_admission_rejected", fields={
+                "status": "blocked", "reasonCode": "plugin_implementation_mismatch"})
+        accounting._finalize(observe, exc)
+        raise
+
+
 def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
                 output: Path, api_key: str,
                 caller: Callable[[str, dict[str, Any]], dict[str, Any]],
@@ -167,10 +183,12 @@ def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
                 and isinstance(saved.get("requestId"), str) and saved["requestId"]
                 and isinstance(saved.get("result"), dict),
                 f"Cached {role} response belongs to different inputs: {output}")
+        cache_observation.record(role, saved, output, mode="validated_cache", origin=reuse_from)
         return saved
     marker = output.with_suffix(".started.json")
     raw_path = output.with_suffix(".raw.json")
-    if raw_path.exists():
+    recovered_raw = raw_path.exists()
+    if recovered_raw:
         raw = producer._load(raw_path)
         require(raw.get("payloadSha256") == fingerprint
                 and isinstance(raw.get("response"), dict),
@@ -201,6 +219,8 @@ def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
     # Both the raw response and validated cache are durable before retiring the
     # uncertainty marker. A failed sync propagates and leaves it for recovery.
     marker.unlink(missing_ok=True)
+    if recovered_raw:
+        cache_observation.record(role, saved, output, mode="raw_response_recovery")
     return saved
 
 
@@ -412,6 +432,7 @@ def carry_forward_group(prior_run: Path, out: Path, index: int,
                         f"Carried-forward raw response changed: {target_raw}")
             else:
                 shutil.copyfile(raw, target_raw)
+        cache_observation.record(role, cached, target, mode="carried_forward_group", origin=source)
     return copy.deepcopy(prior_row)
 
 def ordered_group_results(items: list, worker, workers: int) -> list:
@@ -504,9 +525,7 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                 and type(workers) is int and 1 <= workers <= 3,
                 "Per-group production runner requires batchSize=1 and workers=1..3")
         if plugin_path is not None:
-            require(producer.plugin_implementation_sha256(plugin_path)
-                    == policy["languageReview"]["pluginImplementationSha256"],
-                    "Language plugin implementation differs from frozen policy")
+            require_plugin_identity(plugin_path, policy["languageReview"]["pluginImplementationSha256"])
         plan = group_plan(request, anchor, custom_plan)
         require(revision_brief is None or partial_repair_brief is None,
                 "Use one changed-group revision mechanism at a time")
@@ -794,6 +813,7 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             require(producer._load(evidence_path) == evidence, "Cached evidence changed")
         else:
             save_new(evidence_path, evidence)
+        accounting.record_workload("layer2.evidence_identity", {"evidenceSha256": policy_tools.canonical_sha256(evidence)})
     # Export only after the completion event is durable. Trace identity never
     # enters the canonical evidence payload or its hashes.
     if completion_spans is not None:
@@ -819,6 +839,12 @@ def run_accounted(source: dict, anchor: dict, policy: dict, out_dir: Path,
                                   work_unit_id=f"l2.{locale}.source_admission") as source_span:
                 request = producer.prepare_request(source, anchor, policy)
                 plan = group_plan(request, anchor, group_plan_data)
+                window = source["source"]["approvedWindow"]
+                accounting.record_workload("layer2.source_identity", {
+                    **{k: request[k] for k in ("englishSourcePackageJsonSha256", "anchorManifestSha256", "translationPolicySha256")},
+                    "sourceDurationSeconds": window["endSeconds"] - window["startSeconds"],
+                    "sourceMediaSha256": source["source"]["media"]["sha256"],
+                    "translationGroups": len(plan), "sourceUnits": len(request["sourceUnits"])})
             metrics.update(translationGroups=len(plan), sourceUnits=len(request["sourceUnits"]))
             evidence = _run_prepared_groups(
                 request, anchor, policy, out_dir, api_key, call, plan, plugin,
@@ -862,9 +888,7 @@ def main() -> None:
     request = producer.prepare_request(source, anchor, policy)
     plan = group_plan(request, anchor, json.loads(args.group_plan.read_text(encoding="utf-8"))
                       if args.group_plan else None)
-    require(producer.plugin_implementation_sha256(args.plugin)
-            == policy["languageReview"]["pluginImplementationSha256"],
-            "Language plugin implementation differs from frozen policy")
+    require_plugin_identity(args.plugin, policy["languageReview"]["pluginImplementationSha256"])
     api_key = os.environ.get("OPENAI_API_KEY")
     require(bool(api_key), "OPENAI_API_KEY is not configured")
     evidence = run_accounted(

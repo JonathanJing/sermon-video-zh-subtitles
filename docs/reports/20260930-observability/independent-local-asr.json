@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "sermon-real-clip-local-diagnostic-v1",
+  "scope": "new_local_decode_and_experimental_asr_not_formal_stage1",
+  "sourceMediaSha256": "c931d6f716bd30b9ba9b75ca6cbc9a4f4fd708b8bf8f8e3668187e67bac44c30",
+  "inputBytes": 15063283,
+  "modelCacheSnapshot": "660c343bbf4e52ac257f0b7d952e5388e6f93bef",
+  "requestedModel": "mlx-whisper-large-v3-turbo-q4",
+  "newPaidCalls": 0,
+  "networkGuard": "socket_connect_denied",
+  "stage1PromotionAllowed": false,
+  "humanAcceptance": "not_evaluated",
+  "decodedWavSha256": "2851c3b6bb42985afe6b705e5089e33f289e9da518c16c7527cfe1f2c1240d40",
+  "asrWallSeconds": 10.738793333002832,
+  "transcriptSha256": "12f79e40e17615ae99c7810cee70e090dc83962b294e1f45ac5ac689370f4080",
+  "segments": 41,
+  "wordCount": 512,
+  "codeCommit": "fd788ac8517d381d24bb1a834689e88bcfa4f6c7",
+  "codeClean": true,
+  "totalWallSeconds": 12.546735750045627,
+  "sourceUnchanged": true,
+  "status": "local_diagnostic_completed_not_stage1_acceptance"
+}
