@@ -49,7 +49,7 @@ def save_once(path,value):
 def material_bytes(value):return c.canonical_bytes(value)+b'\n'
 
 
-def prepare(source_bytes,anchor_bytes,policy_bytes,rubric_bytes,group):
+def prepare(source_bytes,anchor_bytes,policy_bytes,rubric_bytes,group,*,request_limits=None):
     source,anchor,policy,rubric=[c.decode_json(b) for b in (source_bytes,anchor_bytes,policy_bytes,rubric_bytes)]
     producer.validate_source_for_translation(source,anchor)
     identity=policies.validate_strict_policy(policy,rubric)
@@ -67,16 +67,20 @@ def prepare(source_bytes,anchor_bytes,policy_bytes,rubric_bytes,group):
     c.require(all_ids[first:last+1]==ids,'noncontiguous_strict_group')
     units=[dict(sourceUnitId=u['sourceUnitId'],english=u['english']) for u in anchor['sourceUnits']]
     context={'before':units[max(0,first-3):first],'after':units[last+1:last+3]}
-    return {'source':source,'anchor':anchor,'policy':policy,'rubric':rubric,'group':copy.deepcopy(group),'workUnitId':unit,
+    result = {'source':source,'anchor':anchor,'policy':policy,'rubric':rubric,'group':copy.deepcopy(group),'workUnitId':unit,
         'units':units[first:last+1],'context':context,
         'bytes':dict(englishSource=source_bytes,anchor=anchor_bytes,policy=policy_bytes,rubric=rubric_bytes,context=material_bytes(context))}
+    if request_limits is not None:
+        from scripts.sermon_provider_limits import validate_request_limits
+        result['requestLimits'] = validate_request_limits(request_limits)
+    return result
 
 
 @contextmanager
 def unit_lock(root,prepared,candidate_id,revision_id):
     c.require(profile.current() is not None,'strict_requires_accounting_profile')
     label(candidate_id);label(revision_id)
-    expected=prepare(*(prepared['bytes'][k] for k in ('englishSource','anchor','policy','rubric')),prepared['group'])
+    expected=prepare(*(prepared['bytes'][k] for k in ('englishSource','anchor','policy','rubric')),prepared['group'],request_limits=prepared.get('requestLimits'))
     c.require(prepared==expected,'strict_prepared_inputs_changed')
     root=_safe_path(root)
     root.mkdir(parents=True,exist_ok=True,mode=0o700)
@@ -86,6 +90,10 @@ def unit_lock(root,prepared,candidate_id,revision_id):
     with jobs._lock(root/'.admission',jobs._digest({'scope':'strict_revision'})) as (_,fd,held):
         c.require(held,'strict_revision_busy')
         save_once(root/'strict-identity.json',identity)
+        if 'requestLimits' in prepared:
+            save_once(root/'request-limits.json',prepared['requestLimits'])
+        else:
+            c.require(not (root/'request-limits.json').exists(),'strict_request_limits_changed')
         yield root
 
 
@@ -190,9 +198,7 @@ def load_repair(root):
 
 
 def _payload(prepared,role,request):
-    return {'model':prepared['policy'][role]['model'],'reasoning_effort':prepared['policy'][role]['reasoningEffort'],
-        'messages':[{'role':'system','content':request['instruction']},{'role':'user','content':json.dumps(request['input'],ensure_ascii=False)}],
-        'response_format':{'type':'json_object'}}
+    return shared.model_payload(role,request,prepared['policy'],prepared.get('requestLimits'))
 
 
 def _transport_rejection(output,payload_sha256):
@@ -243,7 +249,8 @@ def call_model(prepared,role,request,output,api_key,caller,*,attempt_number=1,ca
     persist_response.request_rejected=request_rejected
     with profile.context(logicalCallId=role+'.'+c.canonical_sha256([prepared['workUnitId'],(profile.current() or {}).get('revisionId')])[:32],attemptNumber=attempt_number):
         return shared._model_call(role,request,prepared['policy'],output,api_key,caller,
-                                  cache_only=cache_only,response_observer=persist_response)
+                                  cache_only=cache_only,response_observer=persist_response,
+                                  request_limits=prepared.get('requestLimits'))
 
 
 

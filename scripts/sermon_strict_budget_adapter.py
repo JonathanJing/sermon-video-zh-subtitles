@@ -27,7 +27,7 @@ DISPATCH_LOCK_DELAY_SECONDS = 0.05
 
 def chain_identity(prepared):
     expected = strict.prepare(*(prepared['bytes'][key] for key in
-        ('englishSource', 'anchor', 'policy', 'rubric')), prepared['group'])
+        ('englishSource', 'anchor', 'policy', 'rubric')), prepared['group'], request_limits=prepared.get('requestLimits'))
     c.require(prepared == expected, 'strict_prepared_inputs_changed')
     return budget.chain_identity({
         'sourceIdentitySha256': prepared['source']['downstreamInvalidationKey'],
@@ -75,6 +75,7 @@ def operation_binding(kind, prepared, root, candidate_id, revision_id, attempt_n
         'kind': kind, 'attemptNumber': attempt_number})
     input_sha256 = c.canonical_sha256({
         'payloadSha256': payload_sha256, 'candidateId': candidate_id, 'revisionId': revision_id,
+        **({'requestLimits': prepared['requestLimits']} if 'requestLimits' in prepared else {}),
         'materialBytesSha256': {key: c.bytes_sha256(value) for key, value in prepared['bytes'].items()},
         'revisionBytesSha256': c.bytes_sha256(manifest_bytes) if manifest is not None else None,
         'repair': None if repair is None else {**{key: value for key, value in repair.items()
@@ -114,6 +115,13 @@ class StrictBudgetAdapter:
         identity, operation_id = operation['identity'], operation['operationId']
         input_sha256, payload_sha256 = operation['inputSha256'], operation['payloadSha256']
         output, revision_number = root / operation['outputName'], operation['revisionNumber']
+        if hasattr(caller, 'preflight'):
+            # Pre-dispatch pure checks run before reserving D5 or creating a cache marker.
+            actual_bounds = caller.preflight(prepared, kind, root, repair)
+            budget._amounts(bounds, positive=True)
+            c.require(all(actual_bounds[k] <= bounds[k] for k in budget.METRICS),
+                      'provider_bounds_exceed_authorized_operation')
+            bounds = actual_bounds
         before = self.store.snapshot(identity)
         existing = next((row for row in before['reservations'] if row['operationId'] == operation_id), None)
         if kind == 'review':
@@ -174,7 +182,9 @@ class StrictBudgetAdapter:
             artifact = None
             status, content = 'failed', 'not_assessed'
             receipt_sha256 = c.canonical_sha256(rejection)
-        observed = self._evidence(output, binding, status, artifact)
+        observed = self._evidence(output, binding, status, artifact,
+            requested_model=prepared['policy']['reviewer' if kind == 'review' else 'translator']['model'],
+            service_tier=(prepared.get('requestLimits') or {}).get('serviceTier'))
         result = {'executionStatus': status, 'contentStatus': content,
                   'receiptSha256': receipt_sha256, 'usage': None}
         result_path = output.with_suffix('.budget-result.json')
@@ -306,7 +316,7 @@ class StrictBudgetAdapter:
         return dispatch
 
     @staticmethod
-    def _evidence(output, binding, status, artifact):
+    def _evidence(output, binding, status, artifact, *, requested_model=None, service_tier=None):
         proof, _ = c.read_snapshot(output.with_suffix('.budget-call.json'))
         call, _ = c.read_snapshot(output.with_suffix('.call.json'))
         c.require(type(proof) is dict and set(proof) ==
@@ -342,6 +352,9 @@ class StrictBudgetAdapter:
                       'strict_budget_review_assessment_changed')
         return {'modelCallId': proof['modelCallId'],
                 'providerUsage': accounting.normalize_usage(raw['response'].get('usage')),
+                'providerModel': raw['response'].get('model'),
+                'requestedModel': requested_model,
+                'serviceTier': raw['response'].get('service_tier', service_tier),
                 'elapsedSeconds': raw.get('accounting', {}).get('elapsedSeconds'), 'httpStatus': 200}
 
     @staticmethod

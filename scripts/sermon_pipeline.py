@@ -168,9 +168,9 @@ class TransportRejection(RuntimeError):
         super().__init__('http_request_rejected')
 
 
-def request_json(req, retries=3, *, response_observer=None):
+def request_json(req, retries=3, *, response_observer=None, request_executor=None):
     # Strict recovery is explicitly authorized by D5, never an HTTP retry loop.
-    if response_observer is not None:
+    if response_observer is not None or request_executor is not None:
         retries = 1
     for attempt in range(retries):
         started = time.monotonic()
@@ -178,8 +178,11 @@ def request_json(req, retries=3, *, response_observer=None):
         if response_observer is not None and hasattr(response_observer, "request_started"):
             response_observer.request_started(attempt_id)
         try:
-            with urllib.request.urlopen(req, timeout=300) as response:
-                result = json.loads(response.read().decode())
+            if request_executor is not None:
+                result = request_executor(req)
+            else:
+                with urllib.request.urlopen(req, timeout=300) as response:
+                    result = json.loads(response.read().decode())
         except urllib.error.HTTPError as exc:
             if response_observer is not None and exc.code in KNOWN_REQUEST_REJECTIONS:
                 rejection = TransportRejection(exc.code)

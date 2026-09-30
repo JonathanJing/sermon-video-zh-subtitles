@@ -6,3 +6,4 @@ google-auth>=2.35,<3
 yt-dlp>=2025.6.25
 reportlab>=4.2,<5
 openai-agents>=0.19.1,<0.20
+jsonschema>=4.23,<5
