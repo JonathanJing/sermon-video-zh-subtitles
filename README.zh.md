@@ -13,22 +13,35 @@
 
 帮助中文会众听懂英文证道。当前优先展示**周六预制、周日按同一视频时间轴播放的中文配音**：复用已审英文和中文，采用经授权的讲员原声参考配音，交付 MP3、随声字幕与证道同行大纲。双 PDF 生产和本地实时字幕继续作为独立工作流保留。
 
-> **正式站状态：2026-09-25。** [Firebase 听译 App](https://ai-for-god-sermon-audio.web.app/) 已更新界面：可独立选择中文、英文、韩文、西文界面；正式内容仍为九个已发布的中文周次，英／韩／西内容选项显示“未发布”且不可选。9 月 20 日两段已审核的三语 POC 仍只在 Dev，不在正式站。此次为界面更新，旧媒体保持原字节；发布后的逐文件 HTTP／SHA 和 MP3 Range 检查通过，设备与真实现场验收仍未运行。详见 [Firebase release 记录与 backlog](docs/multilingual-firebase-release-backlog-2026-09-24.zh.md)。完整媒体、音频和 PDF 保存在 Git 之外。
+> **历史发布快照：2026-09-25。** [Firebase 听译 App](https://ai-for-god-sermon-audio.web.app/) 已更新界面：可独立选择中文、英文、韩文、西文界面；正式内容仍为九个已发布的中文周次，英／韩／西内容选项显示“未发布”且不可选。9 月 20 日两段已审核的三语 POC 仍只在 Dev，不在正式站。此次为界面更新，旧媒体保持原字节；发布后的逐文件 HTTP／SHA 和 MP3 Range 检查通过，设备与真实现场验收仍未运行。详见 [Firebase release 记录与 backlog](docs/multilingual-firebase-release-backlog-2026-09-24.zh.md)。完整媒体、音频和 PDF 保存在 Git 之外。
 
 > 这是一个独立的个人开源项目，不属于 Mariners Church 官方项目，也没有获得其隶属、背书、赞助、批准或运营支持。只应处理公开或已获授权的媒体，不得绕过访问控制、DRM 或平台限制。
 
+## 架构与设计导航
+
+产品方向为 **iOS 原生主端、Firebase Web 辅端**；优先级不等于原生功能齐备、完成分发或现场验收。四类设计相互链接，并继续引用已有 UI、生产合同和实验报告：
+
+| 类别 | 当前入口 | 范围 |
+|---|---|---|
+| App 设计 | [客户端系统设计](docs/app-system-design.zh.md) → [原生 UI 设计](apps/tongxing-ios/DESIGN.zh.md) | 播放、阅读、缓存、语言及验收边界 |
+| 后端工作流 | [中英双语 DAG 与实现地图](docs/backend-workflow-system-design.zh-en.md) | 三语独立四层、只读审核计划、确定性 gate 与有界新修订 |
+| 执行环境 | [本地／云端／CI 设计](docs/execution-environment-design.zh.md) | MacBook、可选 Spark、模型 API、存储与发布边界 |
+| 实验方向 | [问题、范围、状态、证据及退出门槛](docs/experiment-directions.zh.md) | 已有实验与未运行提案分别标记 |
+
+2026-09-30 仓库核查：[9 月 27 日记录](docs/sep27-full-video-app-layer4.zh.md)已记录中韩西三语发布，[9 月 28 日记录](docs/reports/20260928-full-video-bucket-migration.zh.md)记录完整视频 bucket 迁移；上方 9 月 25 日说明及下方截图保留为历史快照。本次未重查线上或设备状态。[英文 DAG 在 README 直接渲染](README.md#four-layer-production-architecture-shared-english-source-to-multilingual-playback)，[中英对应 DAG 在后端设计直接渲染](docs/backend-workflow-system-design.zh-en.md#四层业务-dag--four-layer-business-dag)。所有 locale 都必须经过 L3，纯文字也要显式 `audio_unavailable` 包；不从 L2 跳到 L4。PR164 strict-verifier 和自动返工属于计划，不能当成现有 reviewer-editor 已完成的能力。
+
 ## 四层生产架构：从共享英文事实与锚点到多语言发布与播放
 
-生产流程统一分为四层：**共享英文事实与锚点 → 目标语言文字 → 目标语言音频与同步 → 多语言发布与播放**。这是一条逐层交付、逐层验收的链路；上一层通过，不代表下一层已经通过。正式站当前只发布中文内容；韩语和西班牙语已在 Dev 片段 POC 中完成审核，但今后的正式周次仍须按各语言独立完成文字、音频和发布验收。
+生产流程统一分为四层：**共享英文事实与锚点 → 目标语言文字 → 目标语言音频与同步 → 多语言发布与播放**。这是一条逐层交付、逐层验收的链路；上一层通过，不代表下一层已经通过。9 月 27 日记录已包含三语发布；今后的正式周次仍须按各语言独立完成文字、音频和发布验收。业务 DAG 描述必须遵守的包依赖，不表示通用 controller 已自动执行全链。
 
 | 层 | 核心职责 | 模型与程序分工 | 交付物与验收门槛 |
 |---|---|---|---|
 | 1. 共享英文事实与锚点 | 锁定来源、证道范围和完整英文；把字词与原音时间轴对齐，再按句号、逗号、语义分句和停顿建立稳定锚点 | `gpt-transcribe` 或可信原稿提供文字；MFA、Qwen ForcedAligner 等候选负责声学字词定位；LLM 可校对文字、标点和断句，但不能凭语言判断伪造时间戳 | `English Source Package`：不可变英文锚点、字词时间、来源/hash、模型身份和覆盖率 |
-| 2. 目标语言文字 | 从英文锚点直接翻译，完整表达每句意思，并检查否定、因果、经文、专名、数字和术语 | 当前中文由 GPT/Astra 类翻译与独立审核协作；以后每种语言可选择自己的翻译模型、提示词、术语表和审核模型 | `Target-Language Candidate`：每个译文单元关联英文锚点 ID，语义和语言审核独立留证 |
+| 2. 目标语言文字 | 从英文锚点直接翻译，完整表达每句意思，并检查否定、因果、经文、专名、数字和术语 | 当前 Layer 2 policy 使用 Astra 初译和独立 Sol reviewer-editor 请求；语言插件与人审保持独立，计划中的只读 reviewer 尚不是现有 runner | `Target-Language Candidate`：每个译文单元关联英文锚点 ID，语义和语言审核独立留证 |
 | 3. 目标语言音频与同步 | 用已批准译文生成自然语速语音，测量真实时长，并利用英文停顿和分句安排滚动播放 | Qwen3-TTS 等语音模型负责合成；Qwen3-ASR 等回转写只做机器筛查；确定性调度器负责时长、间隔和时间轴，最终仍需人工完整听审 | `Target-Language Audio Package`：音频、字幕、调度时间轴、筛查和听审状态 |
 | 4. 多语言发布与播放 | 把正确的视频、文字、音频、字幕、页面和语言入口绑定在一起，完成部署、下载和端上播放 | 页面构建器、FFmpeg、Firebase、Web/iOS 客户端和验证程序负责交付；Supervisor/Agent 只编排状态，不能替代内容事实或人工验收 | `Target-Language Release Package`：按语言隔离的发布包、hash、HTTP/下载检查和播放器验证 |
 
-![四层多语言生产：每层流程、模型、输出与门禁](docs/diagrams/four-layer-production-workflow.svg)
+[9 月 25 日四层模型／处理概览（历史 SVG）](docs/diagrams/four-layer-production-workflow.svg)；当前依赖与实施状态见[中英后端 DAG](docs/backend-workflow-system-design.zh-en.md)。
 
 下图把**内容审核、Git 晋升和 Firebase 发布**分开：Dev 上通过的片段不会自动进入正式站；代码合入 `main` 也不会自动发布新周次。正式内容须按发布计划单独构建、部署和验证。
 
@@ -73,7 +86,7 @@
 
 ## 1. 优先展示：英文证道视频 → 讲员音色中文配音
 
-[打开中文听译 App](https://ai-for-god-sermon-audio.web.app) · [系统设计与模型选择](docs/sermon-dubbing-system-design.zh.md) · [操作 Runbook](experiments/sermon-dubbing-poc/SATURDAY_AUDIO_RUNBOOK.zh.md) · [本周制作记录](docs/production-2026-09-20.zh.md)
+[打开中文听译 App](https://ai-for-god-sermon-audio.web.app) · [系统设计与模型选择](docs/sermon-dubbing-system-design.zh.md) · [操作 Runbook](experiments/sermon-dubbing-poc/SATURDAY_AUDIO_RUNBOOK.zh.md) · [9 月 20 日制作记录](docs/production-2026-09-20.zh.md)
 
 ![两路来源、讲员音色训练、中文配音审核与周日播放](docs/diagrams/saturday-chinese-voice-workflow.svg)
 
@@ -83,11 +96,11 @@
 |---|---|
 | 视频英文转写 | `gpt-transcribe`；已有可信英文可复用，疑难原声单独复查 |
 | 中文口播修订与审核 | 本对话 `gpt-6-astra`；完整语义、否定、经文、专名及引文边界分别核对 |
-| 讲员音色 | 本周已使用 MacBook 本地 MLX Qwen3-TTS 与获准原声参考；Spark 训练保留为独立路径 |
+| 讲员音色 | 9 月 20 日已使用 MacBook 本地 MLX Qwen3-TTS 与获准原声参考；Spark 训练保留为独立路径 |
 | 语音检查与时间定位 | 本地 Qwen3-ASR 回转写、ForcedAligner 声学定位；自然语音时长逐段核验 |
 | 试听交付 | 独立 Firebase App；按周选择、MP3 下载、字幕、大纲、时间跳转与微调 |
 
-**本周版本：** [9 月 20 日《耶稣的应许》](https://ai-for-god-sermon-audio.web.app/?week=2026-09-20-same_video-7c193fd4-bc90-4f3b-aa00-37dfe8423aa0)，讲员 Eric Geiger，经文《启示录》2–3 章。完成来源绑定、中文与和合本引文审校、本地配音、真实时长核验及发音修复；用户已确认听审与 Firebase／iOS 播放通过。[本周制作记录](docs/production-2026-09-20.zh.md)保留阶段时间、Token 统计与证据边界。
+**9 月 20 日版本记录：** [9 月 20 日《耶稣的应许》](https://ai-for-god-sermon-audio.web.app/?week=2026-09-20-same_video-7c193fd4-bc90-4f3b-aa00-37dfe8423aa0)，讲员 Eric Geiger，经文《启示录》2–3 章。完成来源绑定、中文与和合本引文审校、本地配音、真实时长核验及发音修复；用户已确认听审与 Firebase／iOS 播放通过。[9 月 20 日制作记录](docs/production-2026-09-20.zh.md)保留阶段时间、Token 统计与证据边界。
 
 **每周默认海报：** 内容发布并通过 HTTP 核验后，由 Codex 生成 ImageGen 主视觉，合成目录文字与精确指向本周页面的真实二维码，完成最终 PNG 和分享缩略图解码与目视 QA。无需用户每周重复要求；这不表示定时 Supervisor 自动调用 ImageGen，也不自动上传或发送海报。详见[每周发行流程](docs/tongxing-weekly-release.zh.md#每周海报交付)。
 

@@ -1,0 +1,185 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-review-repair-plan-v1.schema.json",
+  "title": "sermon-review-repair-plan-v1",
+  "$defs": {
+    "label": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.:-]{1,100}(?![\\s\\S])"
+    },
+    "hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}(?![\\s\\S])"
+    },
+    "utc": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d(?:\\.\\d{1,6})?Z(?![\\s\\S])"
+    },
+    "evidenceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "artifactId": {
+          "$ref": "#/$defs/label"
+        },
+        "canonicalJsonSha256": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/hash"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "fileBytesSha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "mediaType": {
+          "enum": [
+            "application/json",
+            "text/plain",
+            "audio/wav",
+            "audio/mpeg"
+          ]
+        }
+      },
+      "required": [
+        "artifactId",
+        "canonicalJsonSha256",
+        "fileBytesSha256",
+        "mediaType"
+      ]
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": "sermon-review-repair-plan-v1"
+    },
+    "repairPlanId": {
+      "$ref": "#/$defs/label"
+    },
+    "triggerReviewId": {
+      "$ref": "#/$defs/label"
+    },
+    "triggerReceiptSha256": {
+      "$ref": "#/$defs/hash"
+    },
+    "sourceIdentitySha256": {
+      "$ref": "#/$defs/hash"
+    },
+    "sourcePackageSha256": {
+      "$ref": "#/$defs/hash"
+    },
+    "anchorSha256": {
+      "$ref": "#/$defs/hash"
+    },
+    "policySha256": {
+      "$ref": "#/$defs/hash"
+    },
+    "rubricSha256": {
+      "$ref": "#/$defs/hash"
+    },
+    "candidateId": {
+      "$ref": "#/$defs/label"
+    },
+    "targetLocale": {
+      "enum": [
+        "zh-Hans",
+        "ko",
+        "es"
+      ]
+    },
+    "fromRevisionId": {
+      "$ref": "#/$defs/label"
+    },
+    "toRevisionId": {
+      "$ref": "#/$defs/label"
+    },
+    "affectedWorkUnitIds": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/label"
+      },
+      "uniqueItems": true,
+      "maxItems": 64,
+      "minItems": 1
+    },
+    "dependencyClosureRef": {
+      "$ref": "#/$defs/evidenceRef"
+    },
+    "reasonCodes": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "meaning_omission",
+          "meaning_addition",
+          "negation_error",
+          "number_error",
+          "name_error",
+          "quotation_attribution_error",
+          "source_coverage_missing",
+          "source_ambiguity",
+          "terminology_error",
+          "language_rule_failed",
+          "evidence_insufficient",
+          "contradictory_reviews",
+          "review_execution_failed",
+          "review_outcome_unknown"
+        ]
+      },
+      "uniqueItems": true,
+      "maxItems": 16,
+      "minItems": 1
+    },
+    "repairAction": {
+      "enum": [
+        "repair_translation",
+        "retry_review",
+        "repair_timing",
+        "resynthesize_units",
+        "request_source_review",
+        "request_human_review",
+        "escalate_engineering"
+      ]
+    },
+    "constraintsRef": {
+      "$ref": "#/$defs/evidenceRef"
+    },
+    "budgetRef": {
+      "$ref": "#/$defs/evidenceRef"
+    },
+    "stateRevision": {
+      "$ref": "#/$defs/hash"
+    },
+    "createdAt": {
+      "$ref": "#/$defs/utc"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "repairPlanId",
+    "triggerReviewId",
+    "triggerReceiptSha256",
+    "sourceIdentitySha256",
+    "sourcePackageSha256",
+    "anchorSha256",
+    "policySha256",
+    "rubricSha256",
+    "candidateId",
+    "targetLocale",
+    "fromRevisionId",
+    "toRevisionId",
+    "affectedWorkUnitIds",
+    "dependencyClosureRef",
+    "reasonCodes",
+    "repairAction",
+    "constraintsRef",
+    "budgetRef",
+    "stateRevision",
+    "createdAt"
+  ]
+}

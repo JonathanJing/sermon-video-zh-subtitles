@@ -2,7 +2,7 @@
 
 这份文档固定周日现场 POC 的下一阶段连接方式。目标是降低感知延迟，同时保留简单、可恢复、可回放的录音与日志链路。
 
-当前状态（2026-09-04）：Phase 1–3 的工程链路已实现。REST 控制面、WebSocket PCM/字幕数据面、Qwen/Whisper provider、MiLMMT NDJSON token streaming、局域网 SSE 只读页、自动化测试和修复后的固定 60 分钟浏览器/扬声器/麦克风长测均有 tracked 证据。教会现场彩排、人工 ASR Gold 和多场连续资源上限仍未完成。
+当前状态（2026-09-04）：Phase 1–3 的工程链路已实现。REST 控制面、WebSocket PCM/字幕数据面、Qwen/Whisper provider、MiLMMT NDJSON token streaming、局域网 SSE 只读页、自动化测试和修复后的固定 60 分钟浏览器注入 MediaStream 回放长测均有 tracked 证据。该回放未经过扬声器、物理麦克风或教会调音台；真实声音接入、教会现场彩排、人工 ASR Gold 和多场连续资源上限仍未完成。
 
 ## 决策
 
@@ -116,7 +116,9 @@ WebSocket 建立后的第一条消息是 JSON 配置；之后音频使用二进�
 - 30 分钟网络/模型故障测试中，断开 ASR 或 Ollama不会停止录音。
 - 同一冻结音频 replay 产生相同 final segment 顺序，所有事件能按 `segmentId` 关联。
 - 记录 capture、ASR partial/final、translation start/end、render 的独立时间戳。
-- 修复后的固定 60 分钟 POC 长测已完成；该结果只证明当次房间、扬声器和麦克风路径，不替代教会现场彩排或人工质量验收。
+- 修复后的固定 60 分钟 POC 长测已完成：20 分钟唯一音频以 1 倍速循环三轮，经浏览器测试 MediaStream 注入真实录制、ASR、翻译和操作页链路。它不是 60 分钟独立材料，也未经过扬声器、物理麦克风或教会调音台，不能证明声学输入或现场验收。详见[原始验收报告](benchmarks/SUNDAY_READINESS_20260904.zh.md)。
+
+2026-09-30 文档校正：以上按原始验收报告收窄旧版“房间、扬声器和麦克风路径”的表述；没有新增测试或提升验收状态。
 
 ## 参考依据
 

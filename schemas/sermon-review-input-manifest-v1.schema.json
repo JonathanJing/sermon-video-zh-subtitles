@@ -1,0 +1,181 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-review-input-manifest-v1.schema.json",
+  "title": "sermon-review-input-manifest-v1",
+  "$defs": {
+    "label": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.:-]{1,100}(?![\\s\\S])"
+    },
+    "hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}(?![\\s\\S])"
+    },
+    "utc": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d(?:\\.\\d{1,6})?Z(?![\\s\\S])"
+    },
+    "evidenceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "artifactId": {
+          "$ref": "#/$defs/label"
+        },
+        "canonicalJsonSha256": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/hash"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "fileBytesSha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "mediaType": {
+          "enum": [
+            "application/json",
+            "text/plain",
+            "audio/wav",
+            "audio/mpeg"
+          ]
+        }
+      },
+      "required": [
+        "artifactId",
+        "canonicalJsonSha256",
+        "fileBytesSha256",
+        "mediaType"
+      ]
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": "sermon-review-input-manifest-v1"
+    },
+    "candidateId": {
+      "$ref": "#/$defs/label"
+    },
+    "revisionId": {
+      "$ref": "#/$defs/label"
+    },
+    "targetLocale": {
+      "enum": [
+        "zh-Hans",
+        "ko",
+        "es"
+      ]
+    },
+    "workUnitIds": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/label"
+      },
+      "uniqueItems": true,
+      "maxItems": 64,
+      "minItems": 1
+    },
+    "sourceIdentitySha256": {
+      "$ref": "#/$defs/hash"
+    },
+    "sourcePackageSha256": {
+      "$ref": "#/$defs/hash"
+    },
+    "anchorSha256": {
+      "$ref": "#/$defs/hash"
+    },
+    "policySha256": {
+      "$ref": "#/$defs/hash"
+    },
+    "reviewedArtifactSha256": {
+      "$ref": "#/$defs/hash"
+    },
+    "rubricSha256": {
+      "$ref": "#/$defs/hash"
+    },
+    "reviewerPromptVersion": {
+      "$ref": "#/$defs/label"
+    },
+    "sourceUnitIds": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/label"
+      },
+      "uniqueItems": true,
+      "maxItems": 64,
+      "minItems": 1
+    },
+    "contextSourceUnitIds": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/label"
+      },
+      "uniqueItems": true,
+      "maxItems": 64,
+      "minItems": 0
+    },
+    "materialRefs": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "candidate": {
+          "$ref": "#/$defs/evidenceRef"
+        },
+        "englishSource": {
+          "$ref": "#/$defs/evidenceRef"
+        },
+        "anchor": {
+          "$ref": "#/$defs/evidenceRef"
+        },
+        "policy": {
+          "$ref": "#/$defs/evidenceRef"
+        },
+        "rubric": {
+          "$ref": "#/$defs/evidenceRef"
+        },
+        "context": {
+          "$ref": "#/$defs/evidenceRef"
+        }
+      },
+      "required": [
+        "candidate",
+        "englishSource",
+        "anchor",
+        "policy",
+        "rubric",
+        "context"
+      ]
+    },
+    "generatorSelfAssessmentIncluded": {
+      "const": false
+    },
+    "parentConversationIncluded": {
+      "const": false
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "candidateId",
+    "revisionId",
+    "targetLocale",
+    "workUnitIds",
+    "sourceIdentitySha256",
+    "sourcePackageSha256",
+    "anchorSha256",
+    "policySha256",
+    "reviewedArtifactSha256",
+    "rubricSha256",
+    "reviewerPromptVersion",
+    "sourceUnitIds",
+    "contextSourceUnitIds",
+    "materialRefs",
+    "generatorSelfAssessmentIncluded",
+    "parentConversationIncluded"
+  ]
+}

@@ -96,12 +96,13 @@ def require(condition: bool, message: str) -> None:
         raise ValueError(message)
 
 
-def save_new(path: Path, value: object) -> None:
+def save_new(path: Path, value: object, *, private=False) -> None:
     # Exclusive creation arbitrates concurrent callers. Sync the file and every
     # containing entry before returning: the started marker must survive a host
     # crash before a paid request, even when its parent directories are new.
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("x", encoding="utf-8") as stream:
+    opener = (lambda name, flags: os.open(name, flags, 0o600)) if private else None
+    with open(path, "x", encoding="utf-8", opener=opener) as stream:
         json.dump(value, stream, ensure_ascii=False, indent=2)
         stream.write("\n")
         stream.flush()
@@ -152,8 +153,10 @@ def require_plugin_identity(plugin_path, expected):
 def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
                 output: Path, api_key: str,
                 caller: Callable[[str, dict[str, Any]], dict[str, Any]],
-                reuse_from: Path | None = None, *, cache_only: bool = False) -> dict[str, Any]:
+                reuse_from: Path | None = None, *, cache_only: bool = False,
+                response_observer=None) -> dict[str, Any]:
     model = policy[role]["model"]
+    save_options = {"private": True} if response_observer is not None else {}
     payload = {"model": model, "reasoning_effort": policy[role]["reasoningEffort"],
                "messages": [{"role": "system", "content": prompt["instruction"]},
                             {"role": "user", "content": json.dumps(prompt["input"], ensure_ascii=False)}],
@@ -198,11 +201,20 @@ def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
         require(not cache_only, f"Cache-only recovery has no returned {role} response: {output}")
         require(not marker.exists(), f"Uncertain paid {role} call; inspect before retry: {marker}")
         save_new(marker, {"role": role, "payloadSha256": fingerprint,
-                          "status": "started_response_unconfirmed"})
-        response = caller(api_key, payload)
+                          "status": "started_response_unconfirmed"}, **save_options)
+        if response_observer is None:
+            response = caller(api_key, payload)
+        else:
+            response = caller(api_key, payload, response_observer=response_observer)
         # Persist the actual completed API response before any identity, finish, or
         # JSON checks; an invalid paid response must remain inspectable and reusable.
-        save_new(raw_path, {"payloadSha256": fingerprint, "response": response})
+        if response_observer is not None:
+            require(raw_path.is_file(), "Strict transport did not persist its returned response")
+            observed = producer._load(raw_path)
+            require(observed.get("payloadSha256") == fingerprint and observed.get("response") == response,
+                    "Strict persisted response differs from transport return")
+        else:
+            save_new(raw_path, {"payloadSha256": fingerprint, "response": response})
     require(isinstance(response, dict) and isinstance(response.get("id"), str)
             and response["id"] and response.get("model") == model,
             f"{role} response lacks exact model and request identity")
@@ -211,11 +223,15 @@ def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
             and choices[0].get("finish_reason") == "stop", f"{role} response is incomplete")
     content = choices[0].get("message", {}).get("content")
     require(isinstance(content, str), f"{role} response has no JSON content")
-    parsed = json.loads(content)
+    if response_observer is not None:
+        from scripts.sermon_review_contracts import decode_json
+        parsed = decode_json(content.encode("utf-8"))
+    else:
+        parsed = json.loads(content)
     require(isinstance(parsed, dict), f"{role} response must be a JSON object")
     saved = {"payloadSha256": fingerprint, "requestId": response["id"],
              "model": model, "result": parsed}
-    save_new(output, saved)
+    save_new(output, saved, **save_options)
     # Both the raw response and validated cache are durable before retiring the
     # uncertainty marker. A failed sync propagates and leaves it for recovery.
     marker.unlink(missing_ok=True)

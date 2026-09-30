@@ -1,0 +1,465 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-target-language-policy-v3.schema.json",
+  "title": "Opt-in strict-verifier policy; experimental, not execution authority",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "sourceLocale",
+    "targetLocale",
+    "translator",
+    "reviewer",
+    "terminology",
+    "scripture",
+    "languageReview",
+    "formatting",
+    "batching",
+    "sourceScope",
+    "componentSha256",
+    "reviewMode",
+    "reviewContract"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "sermon-target-language-policy-v3"
+    },
+    "sourceLocale": {
+      "const": "en"
+    },
+    "targetLocale": {
+      "enum": [
+        "zh-Hans",
+        "ko",
+        "es"
+      ]
+    },
+    "sourceScope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "englishSourcePackageJsonSha256",
+        "anchorManifestSha256",
+        "usedSeriesNames",
+        "usedProperNames",
+        "termApprovalEvidence"
+      ],
+      "properties": {
+        "englishSourcePackageJsonSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "anchorManifestSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "usedSeriesNames": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          },
+          "maxItems": 256
+        },
+        "usedProperNames": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          },
+          "maxItems": 256
+        },
+        "termApprovalEvidence": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "source",
+              "target",
+              "sourceUnitId",
+              "shadowCandidateJsonSha256",
+              "shadowContentApprovalJsonSha256"
+            ],
+            "properties": {
+              "source": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4096
+              },
+              "target": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4096
+              },
+              "sourceUnitId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4096
+              },
+              "shadowCandidateJsonSha256": {
+                "$ref": "#/$defs/sha256"
+              },
+              "shadowContentApprovalJsonSha256": {
+                "$ref": "#/$defs/sha256"
+              }
+            }
+          },
+          "maxItems": 256
+        }
+      }
+    },
+    "translator": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/modelStage"
+        },
+        {
+          "properties": {
+            "model": {
+              "const": "gpt-6-astra"
+            },
+            "promptVersion": {
+              "const": "astra-strict-generator-v1"
+            }
+          }
+        }
+      ]
+    },
+    "reviewer": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/modelStage"
+        },
+        {
+          "properties": {
+            "model": {
+              "const": "gpt-6-sol"
+            },
+            "promptVersion": {
+              "const": "sol-strict-verifier-v1"
+            }
+          }
+        }
+      ]
+    },
+    "terminology": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "seriesTableSha256",
+        "seriesNames",
+        "properNames"
+      ],
+      "properties": {
+        "seriesTableSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "seriesNames": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/term"
+          },
+          "maxItems": 256
+        },
+        "properNames": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/term"
+          },
+          "maxItems": 256
+        }
+      }
+    },
+    "scripture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "editionId",
+        "citationUseStatus",
+        "quoteCheckPolicy",
+        "referenceStyle"
+      ],
+      "properties": {
+        "editionId": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "citationUseStatus": {
+          "enum": [
+            "pending",
+            "project_source_reviewed"
+          ]
+        },
+        "quoteCheckPolicy": {
+          "enum": [
+            "pending",
+            "source_bound_exact_quote",
+            "references_only"
+          ]
+        },
+        "referenceStyle": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        }
+      }
+    },
+    "languageReview": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "pluginId",
+        "pluginImplementationSha256",
+        "implementationStatus",
+        "requiredChecks",
+        "registerRules"
+      ],
+      "properties": {
+        "pluginId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "pluginImplementationSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "implementationStatus": {
+          "enum": [
+            "pending",
+            "verified"
+          ]
+        },
+        "requiredChecks": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          },
+          "maxItems": 256
+        },
+        "registerRules": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          },
+          "maxItems": 256
+        }
+      }
+    },
+    "formatting": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "speechRegister",
+        "punctuationRules",
+        "segmentationRules"
+      ],
+      "properties": {
+        "speechRegister": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "punctuationRules": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          },
+          "maxItems": 256
+        },
+        "segmentationRules": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          },
+          "maxItems": 256
+        }
+      }
+    },
+    "batching": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "batchSize",
+        "workers"
+      ],
+      "properties": {
+        "batchSize": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "workers": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16
+        }
+      }
+    },
+    "componentSha256": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "translator",
+        "reviewer",
+        "terminology",
+        "scripture",
+        "languageReview",
+        "formatting",
+        "batching",
+        "sourceScope",
+        "reviewContract"
+      ],
+      "properties": {
+        "translator": {
+          "$ref": "#/$defs/sha256"
+        },
+        "reviewer": {
+          "$ref": "#/$defs/sha256"
+        },
+        "terminology": {
+          "$ref": "#/$defs/sha256"
+        },
+        "scripture": {
+          "$ref": "#/$defs/sha256"
+        },
+        "languageReview": {
+          "$ref": "#/$defs/sha256"
+        },
+        "formatting": {
+          "$ref": "#/$defs/sha256"
+        },
+        "batching": {
+          "$ref": "#/$defs/sha256"
+        },
+        "sourceScope": {
+          "$ref": "#/$defs/sha256"
+        },
+        "reviewContract": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "reviewMode": {
+      "const": "strict_verifier"
+    },
+    "reviewContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "rubricCanonicalJsonSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}(?![\\s\\S])",
+          "maxLength": 4096
+        },
+        "reviewReceiptSchemaVersion": {
+          "const": "sermon-review-receipt-v1"
+        },
+        "candidateRevisionSchemaVersion": {
+          "const": "sermon-candidate-revision-v1"
+        },
+        "inputManifestSchemaVersion": {
+          "const": "sermon-review-input-manifest-v1"
+        },
+        "revisionGranularity": {
+          "const": "translation_group"
+        }
+      },
+      "required": [
+        "rubricCanonicalJsonSha256",
+        "reviewReceiptSchemaVersion",
+        "candidateRevisionSchemaVersion",
+        "inputManifestSchemaVersion",
+        "revisionGranularity"
+      ]
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$",
+      "maxLength": 4096
+    },
+    "modelStage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model",
+        "reasoningEffort",
+        "promptVersion"
+      ],
+      "properties": {
+        "model": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "reasoningEffort": {
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max",
+            "ultra"
+          ]
+        },
+        "promptVersion": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        }
+      }
+    },
+    "term": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "target",
+        "reviewStatus"
+      ],
+      "properties": {
+        "source": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "target": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "reviewStatus": {
+          "enum": [
+            "pending",
+            "project_established",
+            "human_reviewed"
+          ]
+        }
+      }
+    }
+  }
+}
