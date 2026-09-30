@@ -493,6 +493,7 @@ def render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
         require(speculative_from.is_dir() and speculative_from.resolve() != root.resolve(),
                 "Speculative render root must be a distinct existing directory")
     model = None
+    model_load_span = None
     rows = []
     for index, unit in enumerate(job["units"]):
         overrides = (instructions_by_group or {}).get(unit["translationGroupId"], {})
@@ -540,23 +541,33 @@ def render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
                 if previous is None and speculative_from is not None:
                     previous = _reusable_speculative_audio(speculative_from, unit, index, expected)
                     unit_metrics["reusedPreview"] = previous is not None
+                work_unit = f"l3.{job['targetLocale']}.{index:04d}"
                 if previous is not None:
-                    shutil.copyfile(previous, partial)
+                    with accounting.stage(f"layer3.reuse.{job['targetLocale']}.{index:04d}", work_unit_id=work_unit + ".reuse",
+                                          cache_hit=True) as audio_span:
+                        shutil.copyfile(previous, partial)
                 else:
                     unit_metrics["synthesized"] = True
+                    # Loading is a separate deterministic leaf. Nesting it under
+                    # synthesis would hide the first model call in leaf reports.
+                    if model is None:
+                        with accounting.stage(f"layer3.model_load.{job['targetLocale']}") as model_load_span:
+                            model = synth_factory(context["checkpoint"], device=device, dtype=dtype,
+                                                  attention=attention, instruct=unit_instruct)
+                    else:
+                        model.instruct = unit_instruct
                     with measure.producer_substage("unit_synthesis", billing="local"):
-                        if model is None:
-                            with accounting.stage(f"layer3.model_load.{job['targetLocale']}"):
-                                model = synth_factory(context["checkpoint"], device=device, dtype=dtype,
-                                                      attention=attention, instruct=unit_instruct)
-                        else:
-                            model.instruct = unit_instruct
-                        wavs, rate = model(spoken_text or unit["text"], adapter["languageParameter"],
-                                           adapter["speakerKey"], seed=seed + index)
-                        # A partial belongs to this same intent and is safe to replace on resume.
-                        write_pcm16(partial, wavs, int(rate))
+                        with accounting.stage(f"layer3.synthesis.{job['targetLocale']}.{index:04d}", billing="local",
+                                              executor_type="production_model", work_unit_id=work_unit + ".synthesis",
+                                              depends_on=[model_load_span] if model_load_span else None) as audio_span:
+                            wavs, rate = model(spoken_text or unit["text"], adapter["languageParameter"],
+                                               adapter["speakerKey"], seed=seed + index)
+                            # A partial belongs to this same intent and is safe to replace on resume.
+                            write_pcm16(partial, wavs, int(rate))
                 with measure.producer_substage("audio_validation", billing="local"):
-                    decoded = integrity.probe_full_decode(partial)
+                    with accounting.stage(f"layer3.validation.{job['targetLocale']}.{index:04d}", work_unit_id=work_unit + ".validation",
+                                          depends_on=[audio_span] if audio_span else None):
+                        decoded = integrity.probe_full_decode(partial)
                     measure.record_substage_metrics({"audioSeconds": decoded["durationSeconds"]})
                 commit = {"identity": expected, "audioSha256": identity.sha256(partial)}
                 write_json_atomic(commit_path, commit)

@@ -168,6 +168,20 @@ class FormalRenderTests(unittest.TestCase):
             self.render_units()
         events, damaged = accounting.read_events(directory)
         self.assertFalse(damaged)
+        starts = {e['spanId']: e for e in events if e['event'] == 'stage_started'}
+        synthesis = [e for e in starts.values() if e['stage'].startswith('layer3.synthesis.')]
+        self.assertEqual(len(synthesis), 2)
+        for synth in synthesis:
+            self.assertEqual(synth['executorType'], 'production_model')
+            self.assertEqual(len(synth['dependsOn']), 1)
+            self.assertTrue(starts[synth['dependsOn'][0]]['stage'].startswith('layer3.model_load.'))
+        validations = [e for e in starts.values() if e['stage'].startswith('layer3.validation.')]
+        self.assertEqual(len(validations), 2)
+        for validation in validations:
+            self.assertEqual(validation['executorType'], 'deterministic_program')
+            self.assertIn(validation['dependsOn'][0], {e['spanId'] for e in synthesis})
+        parents = {e['parentSpanId'] for e in starts.values()}
+        self.assertTrue(all(e['spanId'] not in parents for e in synthesis))
         attempts = [row for row in accounting.summarize(directory)["stageAttempts"]
                     if row["stage"].startswith("layer3.unit.")]
         self.assertEqual(len(attempts), 4)

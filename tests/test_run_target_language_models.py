@@ -152,6 +152,21 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
                         "fixture-key", lambda *_: self.fail("must reuse"))
         attempts = accounting.summarize(self.out / "accounting")["stageAttempts"]
         unit_attempts = [row for row in attempts if row["stage"].startswith("layer2.")]
+        events, damaged = accounting.read_events(self.out / "accounting")
+        self.assertFalse(damaged)
+        roles = [e for e in events if e['event'] == 'stage_started' and
+                 (e['stage'].startswith('layer2.translator.') or e['stage'].startswith('layer2.reviewer.'))]
+        by_span = {e['spanId']: e for e in roles}
+        for role in roles:
+            self.assertEqual(role['executorType'], 'deterministic_program' if role['cacheHit'] else 'production_model')
+            self.assertIsNotNone(role['workUnitId'])
+            if '.reviewer.' in role['stage']:
+                self.assertEqual(len(role['dependsOn']), 1)
+                translator = by_span[role['dependsOn'][0]]
+                self.assertEqual(translator['stage'].replace('.translator.', '.reviewer.'), role['stage'])
+            else:
+                # No invented root: source producer boundary is still uninstrumented.
+                self.assertIsNone(role['dependsOn'])
         self.assertEqual(len(unit_attempts), 12)
         self.assertEqual(sum(row["cacheHit"] for row in unit_attempts), 4)
         self.assertTrue(all(row["finishedAt"] and row["elapsedSeconds"] is not None
