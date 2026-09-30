@@ -1,0 +1,74 @@
+{
+  "schemaVersion": "private-sermon-delivery-intent-request-v1",
+  "pageId": "offline-fixture-week",
+  "source": {
+    "sourceId": "synthetic-sermon",
+    "sourceUrlHash": "1111111111111111111111111111111111111111111111111111111111111111",
+    "englishSourcePackageJsonSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+    "downstreamInvalidationKey": "3333333333333333333333333333333333333333333333333333333333333333",
+    "mediaSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+    "mediaDurationSeconds": 300,
+    "window": {
+      "startSeconds": 60,
+      "endSeconds": 240,
+      "approvalReceiptJsonSha256": "5555555555555555555555555555555555555555555555555555555555555555"
+    }
+  },
+  "weeklyPlanBinding": null,
+  "requestedLocales": [
+    {
+      "targetLocale": "zh-Hans",
+      "audioRequirement": "required",
+      "approvedFullText": {
+        "candidateJsonSha256": "6666666666666666666666666666666666666666666666666666666666666666",
+        "humanReviewReceiptJsonSha256": "7777777777777777777777777777777777777777777777777777777777777777"
+      },
+      "approvedSpokenText": {
+        "kind": "full_text",
+        "candidateJsonSha256": "6666666666666666666666666666666666666666666666666666666666666666",
+        "humanReviewReceiptJsonSha256": "7777777777777777777777777777777777777777777777777777777777777777"
+      },
+      "layer3AudioUnavailable": null
+    },
+    {
+      "targetLocale": "ko",
+      "audioRequirement": "required",
+      "approvedFullText": {
+        "candidateJsonSha256": "7777777777777777777777777777777777777777777777777777777777777777",
+        "humanReviewReceiptJsonSha256": "8888888888888888888888888888888888888888888888888888888888888888"
+      },
+      "approvedSpokenText": {
+        "kind": "full_text",
+        "candidateJsonSha256": "7777777777777777777777777777777777777777777777777777777777777777",
+        "humanReviewReceiptJsonSha256": "8888888888888888888888888888888888888888888888888888888888888888"
+      },
+      "layer3AudioUnavailable": null
+    },
+    {
+      "targetLocale": "es",
+      "audioRequirement": "required",
+      "approvedFullText": {
+        "candidateJsonSha256": "8888888888888888888888888888888888888888888888888888888888888888",
+        "humanReviewReceiptJsonSha256": "9999999999999999999999999999999999999999999999999999999999999999"
+      },
+      "approvedSpokenText": {
+        "kind": "full_text",
+        "candidateJsonSha256": "8888888888888888888888888888888888888888888888888888888888888888",
+        "humanReviewReceiptJsonSha256": "9999999999999999999999999999999999999999999999999999999999999999"
+      },
+      "layer3AudioUnavailable": null
+    }
+  ],
+  "delivery": {
+    "fullVideoScope": "complete_approved_source_window",
+    "pagePerLocale": true,
+    "englishReferencePerLocale": true,
+    "appRootUrl": "https://example.invalid/",
+    "webAppEntryUrl": "https://example.invalid/?week=offline-fixture-week",
+    "qrTargetUrl": "https://example.invalid/?week=offline-fixture-week",
+    "iosPageId": "offline-fixture-week",
+    "webAppVersion": "fixture-web-1",
+    "iosInstalledAppVersion": "fixture-ios-1"
+  },
+  "venueAcceptanceRequired": false
+}

@@ -1,0 +1,467 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/private-sermon-delivery-intent-v1.schema.json",
+  "title": "Private frozen delivery intent; separate from weekly scheduling/release plans",
+  "description": "Private planning references only; never an approval or publishing capability. Request and supplied measurement input schemas are in $defs. Cross-field relationships, derived matrix, canonical hash and immutable identity are enforced by sermon_delivery_intent.py.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "visibility",
+    "intentId",
+    "intentSha256",
+    "request",
+    "acceptanceMatrix"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "private-sermon-delivery-intent-v1"
+    },
+    "visibility": {
+      "const": "private"
+    },
+    "intentId": {
+      "type": "string",
+      "pattern": "^delivery-intent-[a-f0-9]{64}(?![\\s\\S])"
+    },
+    "intentSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "request": {
+      "$ref": "#/$defs/request"
+    },
+    "acceptanceMatrix": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/acceptanceRequirement"
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}(?![\\s\\S])"
+    },
+    "locale": {
+      "type": "string",
+      "pattern": "^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*(?![\\s\\S])",
+      "maxLength": 63
+    },
+    "approvedText": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "candidateJsonSha256",
+        "humanReviewReceiptJsonSha256"
+      ],
+      "properties": {
+        "candidateJsonSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "humanReviewReceiptJsonSha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "approvedSpokenText": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "candidateJsonSha256",
+        "humanReviewReceiptJsonSha256"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "full_text",
+            "short_script"
+          ]
+        },
+        "candidateJsonSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "humanReviewReceiptJsonSha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "weeklyPlanBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "planId",
+        "jsonSha256"
+      ],
+      "properties": {
+        "planId": {
+          "type": "string",
+          "pattern": "^multilingual-weekly-[a-f0-9]{24}(?![\\s\\S])"
+        },
+        "jsonSha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sourceId",
+        "sourceUrlHash",
+        "englishSourcePackageJsonSha256",
+        "downstreamInvalidationKey",
+        "mediaSha256",
+        "mediaDurationSeconds",
+        "window"
+      ],
+      "properties": {
+        "sourceId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}(?![\\s\\S])"
+        },
+        "sourceUrlHash": {
+          "$ref": "#/$defs/sha256"
+        },
+        "englishSourcePackageJsonSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "downstreamInvalidationKey": {
+          "$ref": "#/$defs/sha256"
+        },
+        "mediaSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "mediaDurationSeconds": {
+          "oneOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000000000,
+              "exclusiveMinimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "window": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "startSeconds",
+            "endSeconds",
+            "approvalReceiptJsonSha256"
+          ],
+          "properties": {
+            "startSeconds": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000000000
+            },
+            "endSeconds": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000000000,
+              "exclusiveMinimum": 0
+            },
+            "approvalReceiptJsonSha256": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/sha256"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "layer3AudioUnavailable": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "packageJsonSha256",
+        "englishSourcePackageJsonSha256",
+        "targetLanguageCandidateJsonSha256",
+        "targetLocale",
+        "status"
+      ],
+      "properties": {
+        "packageJsonSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "englishSourcePackageJsonSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "targetLanguageCandidateJsonSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "targetLocale": {
+          "$ref": "#/$defs/locale"
+        },
+        "status": {
+          "const": "audio_unavailable"
+        }
+      }
+    },
+    "localeIntent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "targetLocale",
+        "audioRequirement",
+        "approvedFullText",
+        "approvedSpokenText",
+        "layer3AudioUnavailable"
+      ],
+      "properties": {
+        "targetLocale": {
+          "$ref": "#/$defs/locale"
+        },
+        "audioRequirement": {
+          "enum": [
+            "required",
+            "text_only"
+          ]
+        },
+        "approvedFullText": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/approvedText"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "approvedSpokenText": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/approvedSpokenText"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "layer3AudioUnavailable": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/layer3AudioUnavailable"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "acceptanceRequirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "checkId",
+        "targetLocale",
+        "evidenceRequired"
+      ],
+      "properties": {
+        "checkId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}(?![\\s\\S])"
+        },
+        "targetLocale": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/locale"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidenceRequired": {
+          "const": true
+        }
+      }
+    },
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "pageId",
+        "source",
+        "weeklyPlanBinding",
+        "requestedLocales",
+        "delivery",
+        "venueAcceptanceRequired"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": "private-sermon-delivery-intent-request-v1"
+        },
+        "pageId": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]{0,127}(?![\\s\\S])"
+        },
+        "source": {
+          "$ref": "#/$defs/source"
+        },
+        "weeklyPlanBinding": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/weeklyPlanBinding"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "requestedLocales": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/localeIntent"
+          }
+        },
+        "delivery": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "fullVideoScope",
+            "pagePerLocale",
+            "englishReferencePerLocale",
+            "appRootUrl",
+            "webAppEntryUrl",
+            "qrTargetUrl",
+            "iosPageId",
+            "webAppVersion",
+            "iosInstalledAppVersion"
+          ],
+          "properties": {
+            "fullVideoScope": {
+              "const": "complete_approved_source_window"
+            },
+            "pagePerLocale": {
+              "const": true
+            },
+            "englishReferencePerLocale": {
+              "const": true
+            },
+            "appRootUrl": {
+              "type": "string",
+              "pattern": "^https://[A-Za-z0-9](?:[A-Za-z0-9.-]*[A-Za-z0-9])?(?::443)?/(?![\\s\\S])"
+            },
+            "webAppEntryUrl": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2048
+            },
+            "qrTargetUrl": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2048
+            },
+            "iosPageId": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}(?![\\s\\S])"
+            },
+            "webAppVersion": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}(?![\\s\\S])"
+            },
+            "iosInstalledAppVersion": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}(?![\\s\\S])"
+            }
+          }
+        },
+        "venueAcceptanceRequired": {
+          "type": "boolean"
+        }
+      }
+    },
+    "measurement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "targetLocale",
+        "kind",
+        "candidateJsonSha256",
+        "humanReviewReceiptJsonSha256",
+        "sourceBindingSha256",
+        "measuredDurationSeconds",
+        "audioSha256",
+        "measurementReceiptJsonSha256",
+        "method",
+        "ratePolicy"
+      ],
+      "properties": {
+        "targetLocale": {
+          "$ref": "#/$defs/locale"
+        },
+        "kind": {
+          "enum": [
+            "full_text",
+            "short_script"
+          ]
+        },
+        "candidateJsonSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "humanReviewReceiptJsonSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "sourceBindingSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "measuredDurationSeconds": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000000,
+          "exclusiveMinimum": 0
+        },
+        "audioSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "measurementReceiptJsonSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "method": {
+          "const": "decoded_audio"
+        },
+        "ratePolicy": {
+          "const": "natural_no_time_stretch"
+        }
+      }
+    },
+    "measurements": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "intentSha256",
+        "measurements"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": "private-sermon-delivery-measurements-v1"
+        },
+        "intentSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "measurements": {
+          "type": "array",
+          "minItems": 0,
+          "items": {
+            "$ref": "#/$defs/measurement"
+          }
+        }
+      }
+    }
+  }
+}
