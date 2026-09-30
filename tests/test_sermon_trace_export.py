@@ -156,6 +156,14 @@ class SermonTraceExportTests(unittest.TestCase):
         self.assertEqual(attrs['sermon.executorType'], {'stringValue': 'engineering_codex'})
         self.assertIn('sermon.dependencyReadyAt', attrs)
 
+    def test_changed_dependency_identity_between_edges_is_not_exported(self):
+        self.fixture()
+        self.events[2]['dependsOn'] = ['source-a']
+        self.events[3]['dependsOn'] = ['source-b']
+        _, diag, spans = self.result()
+        self.assertIn('span_identity_mismatch', [d['code'] for d in diag['diagnostics']])
+        self.assertNotIn(span_id(('run-one', 'stage', 'render')), spans)
+
     def test_cli_separate_diagnostics_and_no_source_overwrite(self):
         self.fixture()
         source = self.write()

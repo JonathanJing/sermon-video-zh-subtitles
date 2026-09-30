@@ -91,7 +91,8 @@ def project_run(run_id, events):
             ready = seconds(start['dependencyReadyAt']) if start.get('dependencyReadyAt') else None
             queued = seconds(start['queuedAt']) if start.get('queuedAt') else None
             ordered = [v for v in (ready, queued, begin, finish) if v is not None]
-            if ordered != sorted(ordered) or end['elapsedSeconds'] < 0:
+            if (ordered != sorted(ordered) or end['elapsedSeconds'] < 0 or
+                    end['elapsedSeconds'] > finish - begin + 0.01):
                 raise ValueError()
         except (ValueError, TypeError, OverflowError):
             issue('invalid_interval'); continue
@@ -165,6 +166,9 @@ def project_run(run_id, events):
         wall = seconds(ends[0]['recordedAt']) - seconds(starts[0]['recordedAt'])
         if wall < 0:
             wall = None; issue('invalid_run_interval')
+        elif any(n['begin'] < seconds(starts[0]['recordedAt']) or
+                 n['finish'] > seconds(ends[0]['recordedAt']) for n in nodes.values()):
+            issue('span_outside_run_interval')
     else:
         issue('run_wall_unknown')
     if diagnostics:

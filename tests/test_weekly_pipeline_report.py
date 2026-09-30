@@ -152,6 +152,17 @@ class WeeklyPipelineReportTests(unittest.TestCase):
         self.assertEqual(report['status'], 'partial')
         self.assertIsNone(report['runs'][0]['criticalPath'])
 
+    def test_duration_and_run_boundary_cannot_fabricate_measurements(self):
+        self.rows[2]['elapsedSeconds'] = 100
+        run = self.result()['runs'][0]
+        self.assertIn('invalid_interval', run['diagnostics'])
+        self.assertIsNone(run['criticalPath'])
+        self.rows[2]['elapsedSeconds'] = 2
+        self.rows[-1]['recordedAt'] = '2026-09-30T00:00:07+00:00'
+        run = self.result()['runs'][0]
+        self.assertIn('span_outside_run_interval', run['diagnostics'])
+        self.assertIsNone(run['criticalPath'])
+
     def test_identical_span_ids_in_distinct_runs_never_join(self):
         second = [dict(row, runId='second') for row in self.rows]
         self.rows += second
