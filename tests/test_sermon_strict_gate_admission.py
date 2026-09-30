@@ -49,12 +49,12 @@ class AdmissionTests(unittest.TestCase):
             plugin=self.f.f.f.plugin_path, plugin_sha256=self.f.f.f.plugin_sha)
         self.boundary = admission.AdmissionBoundary(self.config, self.store)
 
-    def approve(self):
+    def approve(self, evidence="Synthetic test only, not actual human acceptance"):
         pending = self.f.compile()['candidate']
         source, anchor, policy, rubric = [c.decode_json(b) for b in self.f.f.args]
         worksheet = human.build_worksheet(source, anchor, pending, policy, strict_rubric=rubric)
         reviewed = human.apply_batch_approval(worksheet, reviewer='Synthetic fixture', reviewed_at=NOW,
-            evidence='Synthetic test only, not actual human acceptance')
+            evidence=evidence)
         approved, receipt = human.approve_worksheet(source, anchor, pending, policy, reviewed, strict_rubric=rubric)
         (self.root / 'public.json').write_bytes(c.canonical_bytes(approved))
         (self.root / 'human.json').write_bytes(c.canonical_bytes(receipt))
@@ -90,6 +90,37 @@ class AdmissionTests(unittest.TestCase):
         self.assertEqual(self.admit()['status'], 'existing')
         self.assertEqual(len(self.boundary.reconcile()['intents']), 1)
         self.assertEqual(len(self.f.f.calls), 4)
+
+    def test_reissued_receipt_binds_new_intent_without_changing_candidate(self):
+        old = self.admit()['intent']
+        candidate = (self.root / 'public.json').read_bytes()
+        calls = len(self.f.f.calls)
+        self.approve(evidence='Synthetic reissued per-group evidence')
+        self.assertEqual((self.root / 'public.json').read_bytes(), candidate)
+        new = self.admit()
+        self.assertEqual(new['status'], 'committed', new)
+        self.assertNotEqual(new['intent']['intentId'], old['intentId'])
+        self.assertNotEqual(new['intent']['humanReceiptSha256'], old['humanReceiptSha256'])
+        self.assertEqual(new['intent']['identity']['humanReceiptSha256'],
+                         new['intent']['humanReceiptSha256'])
+        self.assertEqual(self.admit()['intent'], new['intent'])
+        self.assertEqual(len(self.boundary.reconcile()['intents']), 2)
+        self.assertEqual(len(self.f.f.calls), calls)
+
+    def test_legacy_intent_reuse_requires_exact_current_human_receipt(self):
+        current = self.admit()['intent']
+        legacy = copy.deepcopy(current)
+        legacy['identity'].pop('humanReceiptSha256', None)
+        legacy['intentId'] = c.canonical_sha256(legacy['identity'])
+        with self.boundary._locked() as (path, record, _, _):
+            record['intents'] = {legacy['intentId']: legacy}
+            jobs._persist(path, record)
+        self.assertEqual(self.admit()['intent'], legacy)
+        self.approve(evidence='Synthetic renewed evidence for legacy intent')
+        new = self.admit()
+        self.assertEqual(new['status'], 'committed', new)
+        self.assertNotEqual(new['intent']['intentId'], legacy['intentId'])
+        self.assertEqual(len(self.boundary.reconcile()['intents']), 2)
 
     def test_profile_records_group_decisions_and_commit_failure_keeps_unique_intent(self):
         from scripts import sermon_accounting as accounting
