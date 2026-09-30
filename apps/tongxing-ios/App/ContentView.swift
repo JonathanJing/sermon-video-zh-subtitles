@@ -9,11 +9,13 @@ import WebKit
 // export a State macro whose plugin is absent from Command Line Tools.
 private typealias ViewState<Value> = SwiftUI.State<Value>
 
+// Xcode 27.0 and 27.1 share Swift 6.4. These Duo APIs first appear in
+// SwiftUI 8.0.85, so select the SDK API branch by its module version.
 private struct ToolbarVerticalEdgeReader<Content: View>: View {
     let content: (HorizontalEdge?) -> Content
 
     var body: some View {
-        #if os(iOS) && compiler(>=6.4)
+        #if os(iOS) && canImport(SwiftUI, _version: 8.0.85)
         if #available(iOS 27.1, macOS 27.1, *) {
             CurrentToolbarVerticalEdge(content: content)
         } else {
@@ -25,7 +27,7 @@ private struct ToolbarVerticalEdgeReader<Content: View>: View {
     }
 }
 
-#if os(iOS) && compiler(>=6.4)
+#if os(iOS) && canImport(SwiftUI, _version: 8.0.85)
 @available(iOS 27.1, macOS 27.1, *)
 private struct CurrentToolbarVerticalEdge<Content: View>: View {
     @Environment(\.toolbarVerticalEdge) private var edge
@@ -249,7 +251,7 @@ struct ContentView: View {
                             .labelStyle(.iconOnly).accessibilityIdentifier("more-options")
                     }
                 }
-                #if os(iOS) && compiler(>=6.4)
+                #if os(iOS) && canImport(SwiftUI, _version: 8.0.85)
                 if #available(iOS 27.1, macOS 27.1, *), usesSystemVerticalBar,
                    model.selectedTrack != nil || model.selectedAudioLocale != nil {
                     ToolbarItem(placement: .primaryAction) {
@@ -388,7 +390,7 @@ struct ContentView: View {
 
     private func dockControlRegion(in geometry: GeometryProxy) -> CGRect {
         let bounds = CGRect(origin: .zero, size: geometry.size)
-        #if os(iOS) && compiler(>=6.4)
+        #if os(iOS) && canImport(SwiftUI, _version: 8.0.85)
         if #available(iOS 27.1, macOS 27.1, *) {
             let divisions = geometry.reservedRegions(kind: .division)
                 .filter(\.isActive)

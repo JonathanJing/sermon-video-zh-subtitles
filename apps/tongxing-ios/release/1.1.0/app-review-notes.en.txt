@@ -1,4 +1,4 @@
-Tongxing 1.1.0 (44) is an independent sermon listening and reading companion for iPhone and iPad. No sign-in, demo account, subscription, or in-app purchase is required.
+Tongxing 1.1.0 (45) is an independent sermon listening and reading companion for iPhone and iPad. No sign-in, demo account, subscription, or in-app purchase is required.
 
 Connect to the internet on first launch to load the published sermon catalog. For this review, select the September 27, 2026 sermon using the calendar control. The catalog currently provides Simplified Chinese, Korean, and Spanish editions for that sermon. Open the content-language control, choose an available edition, and wait for its verified audio to load. Tap Play in the playback bar, scroll the transcript, or tap a transcript time to seek. Use Watch Full Video to open the complete original English recording in the app. Availability may differ for other dates.
 Test video stream: https://ai-for-god-sermon-audio.web.app/pages/2026-09-27-weekend-sermon-drive-530/full-video-browser.mp4
