@@ -211,7 +211,7 @@ def _state(folder, job_id):
 
 def _write_state(folder, job_id, status, **fields):
     previous = _state(folder, job_id) or {}
-    binding = {"requestSha256": previous["requestSha256"]} if "requestSha256" in previous else {}
+    binding = {key: previous[key] for key in ("requestSha256", "accountingContextSha256") if key in previous}
     state = {"schemaVersion": SCHEMA, "jobId": job_id, "status": status, "updatedAt": utc_now(), **binding, **fields}
     _persist(folder / "state.json", state)
     return state
@@ -320,7 +320,13 @@ def start_job(root: Path, identity: dict, command: list[str], timeout_seconds: f
         _sync_directory(root / ".locks")
         _sync_directory_ancestry(root)
         _persist(folder / "request.json", request)
-        _write_state(folder, job_id, "queued", queuedAt=utc_now(), requestSha256=_digest(request))
+        from scripts import sermon_log_profile as accounting_profile
+        accounting_context = accounting_profile.job_context(job_id)
+        context_binding = {}
+        if accounting_context is not None:
+            _persist(folder / "accounting-context.json", accounting_context)
+            context_binding['accountingContextSha256'] = _digest(accounting_context)
+        _write_state(folder, job_id, "queued", queuedAt=utc_now(), requestSha256=_digest(request), **context_binding)
         # State precedes spawn. Any crash in this interval becomes uncertain;
         # the lock's inherited open-file description closes the post-spawn gap.
         try:
@@ -365,12 +371,20 @@ def _worker(root, job_id, lock_fd):
     if state is None or state["status"] != "queued" or state.get("requestSha256") != _digest(request):
         # Never execute a stale/replayed worker entrypoint.
         return 2
+    environment = None
+    if 'accountingContextSha256' in state:
+        from scripts import sermon_log_profile as accounting_profile
+        accounting_context = _read(folder / 'accounting-context.json')
+        if _digest(accounting_context) != state['accountingContextSha256']:
+            raise ValueError('job_accounting_context_changed')
+        environment = accounting_profile.restore_job_environment(accounting_context, job_id)
     token = _LOCK_FDS.set((lock_fd,))
     os.environ["SERMON_HARNESS_GUARDED_CHILDREN"] = "1"
     _write_state(folder, job_id, "running", workerPid=os.getpid(), startedAt=utc_now())
     monitor = liveness.Monitor(folder, request).start() if 'livenessPolicy' in request else None
     try:
         options = {'cancel_event': monitor.cancel} if monitor else {}
+        if environment is not None: options['env'] = environment
         result = bounded_process(request["command"], timeout=request["timeoutSeconds"], cwd=REPO_ROOT,
                                  stdin=subprocess.DEVNULL, check=False, **options)
         if monitor and (monitor.reason or (result.returncode == 0 and not monitor.completed())):
