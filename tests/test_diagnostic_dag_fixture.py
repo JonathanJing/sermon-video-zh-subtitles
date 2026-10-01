@@ -1,6 +1,7 @@
 """Fixture qualification: real validators and ledgers, fixed synthetic transport."""
 from copy import deepcopy
 from pathlib import Path
+import time
 import unittest
 from unittest.mock import patch
 
@@ -32,7 +33,8 @@ class DiagnosticDAGFixtureTests(unittest.TestCase):
         self.assertFalse(f.source['translationEligible'])
         self.assertTrue(all(row['reviewStatus']=='human_pending' for row in f.request['machineIssues']))
         self.assertTrue(all(row['state']=='returned' for row in f.state['requests'].values()))
-        self.assertGreater(f.state['startedMonotonic'], 100.)
+        self.assertGreater(f.state['startedMonotonic'], 0.)
+        self.assertLessEqual(f.state['startedMonotonic'], time.monotonic())
         self.assertEqual(f.state['clockDomain'], f.subject.domain())
 
     def test_real_continuation_locale_and_preview_inputs_without_new_source_calls(self):
