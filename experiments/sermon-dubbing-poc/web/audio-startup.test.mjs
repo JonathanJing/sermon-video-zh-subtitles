@@ -1,3 +1,4 @@
+import { setIcon, setButtonLabel } from './icons.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -142,7 +143,7 @@ function setup({ bookmark = false, bootstrapFetch, alignmentPlay } = {}) {
     onLocaleChange: listener => localeListeners.push(listener), localizeDOM() {},
     localizeWeek: value => value, translateContent: value => value, appMessages,
   };
-  const context = vm.createContext({
+  const context = vm.createContext({ setIcon, setButtonLabel,
     ...i18n,
     ...timing, ...catalogHelpers, PlaybackMemory, document, window: new Element(),
     localStorage: storage, location: { href: 'https://example.test/', search: '' }, history: { replaceState() {} },

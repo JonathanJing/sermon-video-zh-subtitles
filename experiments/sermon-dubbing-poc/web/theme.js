@@ -8,7 +8,7 @@
     root.dataset.theme = dark ? "dark" : "light";
     document.querySelector('meta[name="theme-color"]').content = dark ? "#141b1a" : "#f5f3eb";
     const icon = document.getElementById("brand-icon");
-    if (icon) icon.src = dark ? "/brand-icon.png" : "/brand-icon-light.png";
+    if (icon) icon.src = dark ? "/brand-icon.svg" : "/brand-icon-light.svg";
     const button = document.getElementById("theme-toggle");
     if (button) {
       const label = document.getElementById("theme-label");

@@ -1,3 +1,4 @@
+import { setIcon, setButtonLabel } from './icons.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -9,7 +10,7 @@ test('shipped transcript renders English once, collapsed, without seeking', () =
   const source = fs.readFileSync(new URL('./app.mjs', import.meta.url), 'utf8');
   const render = source.slice(source.indexOf('function renderTranscript()'), source.indexOf('\nfunction selectTrack('));
   class Element {
-    constructor(tag) { this.tagName = tag; this.children = []; this.listeners = {}; }
+    constructor(tag) { this.dataset = {}; this.tagName = tag; this.children = []; this.listeners = {}; }
     append(...children) { this.children.push(...children); }
     replaceChildren() { this.children = []; }
     setAttribute() {}
@@ -21,7 +22,7 @@ test('shipped transcript renders English once, collapsed, without seeking', () =
   const week = { transcript: { schemaVersion: 'sermon-bilingual-transcript-v1', blocks: [
     { blockId: '0', english: '<Source & original>', sourceTextOrigin: 'job.blocks', reviewState: 'unspecified' },
   ] } };
-  const context = vm.createContext({ $, audio, track, week, bilingualCueRows,
+  const context = vm.createContext({ setIcon, setButtonLabel, $, audio, track, week, bilingualCueRows,
     bilingualDisplay: false, englishByCue: [], englishDetails: [], transcriptRows: [], updateCurrentEnglish() {}, getLocale: () => "zh", t: key => messages.zh[key],
     document: { createElement: tag => new Element(tag) }, formatTime: String,
     setPosition: value => { audio.currentTime = value; }, boundedTime: value => value, update() {},
