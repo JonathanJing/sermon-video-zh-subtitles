@@ -27,7 +27,8 @@ MODES = {
                        "sermon-multilingual-dev-preview-v3"}},
     "production": {"branch": "main", "script": ROOT / "scripts/deploy_multilingual_hosting.py",
                    "schema": {"sermon-multilingual-hosting-candidate-v1",
-                              "sermon-production-voice-overlay-v1"}},
+                              "sermon-production-voice-overlay-v1",
+                              "sermon-production-ui-overlay-v1"}},
 }
 
 
@@ -151,6 +152,78 @@ def release_voice_samples(candidate: Path, out: Path, *, execute: bool,
         return result
 
 
+def release_ui(candidate: Path, out: Path, *, execute: bool,
+               expected_commit: str | None,
+               expected_build_report_sha256: str | None) -> dict:
+    """Publish only the bound root UI delta; preserve all content and config."""
+    from datetime import datetime, timezone
+    try:
+        from scripts import stage_production_ui as ui
+    except ImportError:
+        import stage_production_ui as ui
+
+    build_sha = hosting.digest(candidate / "build-report.json")
+    if expected_build_report_sha256 and build_sha != expected_build_report_sha256:
+        raise ValueError("Selected candidate build report changed")
+    report = ui.verify_candidate(candidate)
+    if Path(report["sourceRoot"]).resolve() != ROOT:
+        raise ValueError("UI candidate must bind this release checkout")
+    code_sha = git_value("rev-parse", "HEAD")
+    if report["sourceCodeCommit"] != code_sha:
+        raise ValueError("UI candidate belongs to a different code commit")
+    if execute:
+        if not expected_commit or not expected_build_report_sha256:
+            raise ValueError("Execution requires explicit code and candidate hashes")
+        code_sha = require_release_checkout("production", expected_commit)
+    out.mkdir(parents=True)
+    lock_path = out.parent / ".sermon-multilingual-production-deploy.lock"
+    with lock_path.open("a+b") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        preflight = ui.check_http(candidate, baseline=True)
+        if (preflight.get("status") != "pass" or preflight.get("phase") != "baseline"
+                or preflight.get("buildReportSha256") != build_sha
+                or preflight.get("checkedFiles") != len(report["baseFiles"])):
+            raise ValueError("UI preflight did not bind the complete live baseline")
+        preflight_path = out / "preflight.json"
+        preflight_path.write_text(json.dumps(preflight, sort_keys=True, indent=2) + "\n")
+        deployment = {"schemaVersion": "sermon-production-ui-deployment-v1",
+                      "status": "validated_not_deployed", "projectId": ui.PROJECT,
+                      "siteId": ui.SITE, "codeCommitSha": code_sha,
+                      "buildReportSha256": build_sha,
+                      "preflightSha256": hosting.digest(preflight_path)}
+        if execute:
+            # Recheck the candidate and protected checkout after the live read.
+            ui.verify_candidate(candidate)
+            require_release_checkout("production", expected_commit)
+            subprocess.run(["npx", "--yes", "firebase-tools@15.29.0", "deploy",
+                            "--only", "hosting", "--project", ui.PROJECT,
+                            "--non-interactive", "--message", "Firebase App SVG icon update"],
+                           cwd=candidate, check=True)
+            deployment.update(status="deployed_http_verification_pending",
+                              deployedAt=datetime.now(timezone.utc).isoformat())
+        deployment_path = out / "deployment.json"
+        deployment_path.write_text(json.dumps(deployment, sort_keys=True, indent=2) + "\n")
+        verification_path = out / "http-verification.json"
+        if execute:
+            checked = ui.check_http(candidate, baseline=False)
+            verification_path.write_text(json.dumps(checked, sort_keys=True, indent=2) + "\n")
+            if (checked.get("status") != "pass" or checked.get("phase") != "published"
+                    or checked.get("buildReportSha256") != build_sha
+                    or checked.get("checkedFiles") != len(report["files"])):
+                raise ValueError("UI HTTP verification did not bind the complete candidate")
+        result = {"schemaVersion": "sermon-multilingual-cd-receipt-v1",
+                  "environment": "production", "scope": "ui_only",
+                  "status": "published_http_verified" if execute else "validated_not_deployed",
+                  "codeCommitSha": code_sha, "buildReportSha256": build_sha,
+                  "preflightSha256": hosting.digest(preflight_path),
+                  "deploymentSha256": hosting.digest(deployment_path),
+                  "httpVerificationSha256": hosting.digest(verification_path) if execute else None,
+                  "feedbackDeploymentStatus": "unchanged",
+                  "deviceAcceptance": "not_run", "venueAcceptance": "not_run"}
+        (out / "cd-receipt.json").write_text(json.dumps(result, sort_keys=True, indent=2) + "\n")
+        return result
+
+
 def release(mode: str, candidate: Path, out: Path, *, execute: bool,
             expected_commit: str | None = None,
             expected_build_report_sha256: str | None = None,
@@ -171,6 +244,12 @@ def release(mode: str, candidate: Path, out: Path, *, execute: bool,
     build_sha = hosting.digest(report_path)
     if expected_build_report_sha256 and build_sha != expected_build_report_sha256:
         raise ValueError("Selected candidate build report changed")
+    if report["schemaVersion"] == "sermon-production-ui-overlay-v1":
+        if mode != "production" or legacy_release is not None:
+            raise ValueError("UI overlay is Production only and cannot change weekly content")
+        return release_ui(candidate, out, execute=execute,
+                          expected_commit=expected_commit,
+                          expected_build_report_sha256=expected_build_report_sha256)
     if report["schemaVersion"] == "sermon-production-voice-overlay-v1":
         if mode != "production":
             raise ValueError("Voice audition overlay is Production only")
