@@ -6,7 +6,7 @@ The existing job store owns process lifetime, single dispatch and uncertainty.
 """
 from __future__ import annotations
 
-from contextlib import nullcontext
+from contextlib import contextmanager, nullcontext
 import hashlib
 import math
 import re
@@ -265,6 +265,19 @@ class Runner:
                     if state['status'] in jobs.ACTIVE|{'uncertain'}:
                         self.dispatch_closed=True
 
+    @contextmanager
+    def execution_slot(self,node):
+        with self.pools[node['resourcePool']]:
+            ownership={'dispatchMayHaveOccurred':False,'terminationConfirmed':False}
+            try:
+                yield ownership
+            finally:
+                # This also covers lost start acknowledgement, polling errors,
+                # log/snapshot failures and cancellation while a child may live.
+                # Latch before releasing the semaphore on EVERY unwind path.
+                if ownership['dispatchMayHaveOccurred'] and not ownership['terminationConfirmed']:
+                    self.dispatch_closed=True
+
     def observe(self,node,status,reason=None,**extra):
         value = {'runId':self.plan['runId'],'planSha256':self.plan['planSha256'],'workUnitId':node['id'],
             'executionStatus':status,'reason':reason,'observedAt':utc_now(), 'evidenceMode':'synthetic',
@@ -300,18 +313,21 @@ class Runner:
             job_id = jobs._digest(job_identity)
             metadata.update(jobId=job_id,identitySha256=ident,attemptId='mock-1')
             self.observe(node,'queued','resource_admission',**metadata)
-            with self.pools[node['resourcePool']]:
+            with self.execution_slot(node) as ownership:
                 if self.dispatch_closed:
                     return self.observe(node,'blocked','prior_worker_lifetime_unresolved',**metadata)
                 argv = [sys.executable,str(REPO/'scripts/run_sermon_prefect_dag.py'),'worker',
                         '--root',str(self.root),'--node',node['id'],'--request-sha',c.canonical_sha256(request)]
                 with profile.context(workKind='control',evidenceMode='synthetic',workUnitId=node['id'],attemptId='mock-1'):
+                    ownership['dispatchMayHaveOccurred']=True
                     state = jobs.start_job(self.root/'jobs',job_identity,argv,node['timeoutSeconds'])
+                ownership['terminationConfirmed']=state['status'] in {'succeeded','failed'}
                 poll_deadline = time.monotonic()+node['timeoutSeconds']+5
                 while state['status'] in jobs.ACTIVE and time.monotonic()<poll_deadline:
                     self.observe(node,'running' if state['status']=='running' else 'queued',**metadata)
                     time.sleep(.1)
                     state = jobs.inspect_job(self.root/'jobs',job_id)
+                    ownership['terminationConfirmed']=state['status'] in {'succeeded','failed'}
                 if state['status']!='succeeded':
                     if state['status'] in jobs.ACTIVE|{'uncertain'}:
                         # Latch BEFORE leaving the semaphore. No waiting/new

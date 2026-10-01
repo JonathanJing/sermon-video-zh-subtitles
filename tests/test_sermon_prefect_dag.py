@@ -140,6 +140,21 @@ class PilotTests(unittest.TestCase):
         self.assertEqual(second['reason'],'prior_worker_lifetime_unresolved')
         self.assertEqual(start.call_count,1)
 
+    def test_polling_error_or_lost_start_ack_latches_before_next_dispatch(self):
+        plan,runner=self.setup_plan(resource_limits={'fixed':4,'api':1,'local_model':1})
+        source=runner.execute(plan['nodes'][0])
+        texts=[n for n in plan['nodes'] if n['layer']==2]
+        with patch.object(jobs,'start_job',return_value={'status':'running'}) as start, \
+             patch.object(jobs,'inspect_job',side_effect=OSError('synthetic')):
+            first=runner.execute(texts[0],[source]);second=runner.execute(texts[1],[source])
+            self.assertEqual(start.call_count,1)
+            self.assertEqual(second['reason'],'prior_worker_lifetime_unresolved')
+        runner=pilot.Runner(self.root,plan)
+        with patch.object(jobs,'start_job',side_effect=OSError('lost_ack')) as start:
+            first=runner.execute(texts[0],[source]);second=runner.execute(texts[1],[source])
+            self.assertEqual(start.call_count,1)
+            self.assertEqual(second['reason'],'prior_worker_lifetime_unresolved')
+
     def test_restarted_owner_blocks_prior_active_or_uncertain_jobs(self):
         plan,runner=self.setup_plan()
         folder=self.root/'jobs'/('a'*64);folder.mkdir(parents=True)
