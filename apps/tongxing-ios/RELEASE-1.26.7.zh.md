@@ -49,7 +49,9 @@ apps/tongxing-ios/scripts/archive-channel.sh \
 
 找到本机此前保存的 Xcode 27.0 (`27A266a`)，与 [Apple 公开正式发行版本](https://developer.apple.com/news/releases/) 一致；`-showsdks` 包含正式 iOS 27.0，`-checkFirstLaunchStatus` 退出 0。采用进程级路径选择该工具链，不替换日常 Xcode 27.1 beta、不修改全局 `xcode-select`。
 
-Build 50 保持用户指定的 `1.26.7` 和相同功能源码，仅为不具备正式审核资格的 Build 49 分配新的技术构建号。它是同一候选的工具链修正；不占用下一个产品迭代 `1.26.8`。准备重新归档、验证并上传，实际源码、归档哈希和 Apple 提交结果将在执行后补齐。
+Build 50 保持用户指定的 `1.26.7` 和相同功能源码，仅为不具备正式审核资格的 Build 49 分配新的技术构建号。它是同一候选的工具链修正；不占用下一个产品迭代 `1.26.8`。正式归档已成功，实际源码为 `f2c0f6e949b5cf6387c1714f41140ea1c2e51572`；App 与扩展版本 / 身份核验及严格深度代码签名检查通过。归档 Manifest SHA-256：`939cf6dca83f8e38867f64183a773185ea8c55e3b61a3b7568e99b55d8f7aa71`。归档内 `DTXcodeBuild=27A266a`、`DTSDKName=iphoneos27.0`、SDK build `24A430`。上传成功：2026-10-01 22:34:58 UTC，`xcodebuild -exportArchive` 退出 0，upload/export succeeded；随后正式 App 的 TestFlight 构建列表显示 Build 50 `Ready to Submit`，Apple 处理完成。GM SDK 模拟器复查已完成，见下；正式审核已提交，见最终状态。
+
+正式发行前先检查进程选定的 `xcodebuild -version`、`-showsdks`，并与 Apple 公开正式发行版本核对；不得只凭 `/Applications/Xcode.app` 的文件名判断工具链资格。归档后复查 App Info.plist 的实际 Xcode / SDK 字段。Apple 接收上传或 TestFlight 测试并不代表构建可提交 App Store 审核。
 
 忽略目录 `artifacts/tongxing-ios/2026-10-01/production-1.26.7/` 保存归档、上传日志、`archive/release-record.json`、xcresult、原始截图与 Manifest。上述产物未提交 Git。
 
@@ -67,8 +69,29 @@ iPad Pro 13-inch (M5) 的中英文截图测试通过：2 passed / 0 failed / 0 s
 
 当前正式内容仍通过 legacy 多音色试听目录提供独立样音：新 `speaker-clips-v2/catalog.json` 正式站返回 404，旧 `2026-09-21-v2/production-ko-es.json` 返回 200。审核材料明确说明不同文稿的独立试听与暂停/继续，不宣称 Dev 的同片段视频 Demo 已发布。
 
+## Build 50 GM SDK 复查与最终截图
+
+截图 helper revision：`926e44c643f183dd63382ff4b0a9507abe3195ad`。正常 UI 先点击全文实际首个时间按钮，避免保留的历史位置落在字幕空档；App 运行源码与归档 revision 相同，语言切换保留进度的行为未变。
+
+| 实际执行 | 结果 |
+| --- | --- |
+| iPhone 中英文商店截图 2 项 + 正式本期三语播放 / 全文 / 原视频检查 1 项 | 3 passed / 0 failed / 0 skipped |
+| iPad 中英文商店截图 2 项 | 2 passed / 0 failed / 0 skipped |
+
+两台模拟器均为 iOS 27.0 (`24A434`)，测试包确认为 `1.26.7 (50)`、Xcode `27A266a`、正式 Bundle ID / 内容源。两份最终 xcresult 的运行时警告均为 0。编译存在既有 allowBluetooth 弃用、未使用测试返回值、测试 actor 隔离和无 AppIntents 依赖提示，单独保存在 `compile-warning-summary.json`，不把它们称为零编译警告。
+
+初次包含 AppIdentity 的 hosted XCTest 未开始执行断言，Agent 在记录正常空闲 RunLoop 后取消，退出 75；xcresult 记录一项 `Testing was canceled` 的基础设施失败，保留 `phone-tests.xcresult` 与 `phone-host-interrupted-summary.json`。该项不计为通过；GM 身份证据使用归档 App / 扩展 Info.plist 与严格签名检查，前轮 Build 49 的身份单测证据另存。UI-only 续跑使用已有编译产物，实际执行的最终 5 项全部通过。
+
+最终 24 张素材在 `gm-build50/screenshots/`，每个设备 × 界面语言各 6 张；iPhone 1320 × 2868、iPad 2064 × 2752。PNG 仅做去除完全不透明 alpha 的 RGB 编码转换，逐张确认 RGB 像素与原附件完全一致，保留原尺寸，没有裁剪、缩放或改写 UI。Manifest SHA-256：`6de070481afda166cabb53c8acfbd6747b2925852a7636b6b6094d1c37e2de89`，包含原附件与最终文件哈希、工具 revision、测试结果及目视记录。截图时 9:41 状态栏临时设置已恢复。
+
+最终 24 张已替换到 App Store Connect，保存后重新回读简中 / 英文、iPhone 6.9-inch / iPad 13-inch 四组，每组 6 张，顺序为当前字幕、双语全文、英文定位、证道语言、证道目录、正式独立样音。证据文件为 `gm-build50/screenshots/asc-*.ax.txt`。首轮 49 素材保留，未用于最终提交。
+
 ## 审核与验收状态
 
-首轮 24 张截图已上传，简中与英文材料已保存。Build 49 因 beta 工具链未能加入正式审核；Build 50 的实际结果将在执行后更新。已选择审核通过后自动发布、向全部用户发布、保留现有评分。Apple 审批与正式商店可下载状态仍须分别观测；不把上传成功当作已上架。
+2026-10-01 22:48 UTC，实际执行 Add for Review → Submit for Review。Apple 显示 `1 Item Submitted`；审核详情明确为正式 App `6809255441` 的 `1.26.7 (50)`、`Waiting for Review`。Submission ID：`dedf8f0d-e2f3-46bb-8574-41307cc6d9b4`。最终 GM 24 张截图已上传，简中与英文材料已保存，审核说明对应 Build 50。Build 49 的 beta 工具链错误保留为历史，不再关联正式更新。
+
+提交前已读回审核通过后自动发布、向全部用户发布、保留现有评分。Apple 审批与正式商店可下载状态仍须分别观测；当前已提交等待审核，未宣称已上架。提交确认和最终审核详情的截图 / AX 在 `gm-build50/asc-submitted-confirmation.*` 与 `gm-build50/asc-waiting-for-review.*`。
+
+[App Store Connect 审核详情](https://appstoreconnect.apple.com/apps/6809255441/distribution/reviewsubmissions/details/dedf8f0d-e2f3-46bb-8574-41307cc6d9b4)。
 
 用户已确认 Beta 检查通过；Agent 本轮未执行正式包真机、锁屏/耳机/来电或现场麦克风验收。模拟器检查和截图不替代这些证据。

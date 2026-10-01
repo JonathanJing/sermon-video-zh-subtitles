@@ -50,4 +50,4 @@ Text, audio and alignment availability depend on each published sermon.
 
 ## 本轮结果
 
-App Store Connect 已创建 1.26.7 草稿，简中与英文更新说明、宣传文字及审核说明已填写；选择审核通过后自动发布。实际截图、构建上传、Apple 处理和提交审核状态以 [正式发行记录](RELEASE-1.26.7.zh.md) 的后续回填为准。
+App Store Connect 的 `1.26.7 (50)` 已在 2026-10-01 22:48 UTC 提交，状态 `Waiting for Review`。简中与英文各提供 iPhone / iPad 六场景截图，共 24 张，更新说明、宣传文字及审核说明已保存；审核通过后自动发布。正式 Xcode 构建、实际定向检查、截图哈希与提交证据见 [正式发行记录](RELEASE-1.26.7.zh.md)。

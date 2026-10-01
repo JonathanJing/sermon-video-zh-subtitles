@@ -13,11 +13,11 @@ Beta 与正式版共用同一套 App、播放器和实时活动源码，由构�
 | Scheme | `TongxingBeta` | `Tongxing` |
 | 开发 / Archive 配置 | `BetaDebug` / `BetaRelease` | `Debug` / `Release` |
 | 默认内容源 | Firebase Dev | Debug 为 Dev；Release 为正式站 |
-| 当前候选版本 | `1.2.0 (48)` | `1.26.7 (50)`（准备正式工具链重建） |
+| 当前候选版本 | `1.2.0 (48)` | `1.26.7 (50)`（Waiting for Review） |
 
 ## 当前分发状态（2026-10-01）
 
-最新 dev 基线 `7e534bb` 的独立 Beta **1.2.0 (48)** 已在 2026-10-01 21:42:51 UTC 上传成功；归档源码为 `fac0c9c4769ad25a86d97ae4fa82dfb1a5c49bd7`，Apple 处理已完成，Rooted 内部测试组的 build 48 显示 `Testing`，测试说明已保存。模拟器 4 项 Beta 身份与交互检查通过，另有目录合成测试通过。随后用户确认 Beta 检查没有问题，并指定正式 `1.26.7`；Build 49 已上传并完成 Apple 处理，但因 beta Xcode / SDK 被拒绝加入正式审核。Build 50 准备使用正式 Xcode 27 (`27A266a`) 重建。正式内容检查、截图和提交状态见 [正式 1.26.7 记录](RELEASE-1.26.7.zh.md)；Beta 原始证据见 [Beta 48 记录](BETA-RELEASE-1.2.0-48.zh.md)。用户确认与 Agent 模拟器、正式包真机及现场证据分别记录。
+最新 dev 基线 `7e534bb` 的独立 Beta **1.2.0 (48)** 已在 2026-10-01 21:42:51 UTC 上传成功；归档源码为 `fac0c9c4769ad25a86d97ae4fa82dfb1a5c49bd7`，Apple 处理已完成，Rooted 内部测试组的 build 48 显示 `Testing`，测试说明已保存。模拟器 4 项 Beta 身份与交互检查通过，另有目录合成测试通过。随后用户确认 Beta 检查没有问题，并指定正式 `1.26.7`；Build 49 已上传并完成 Apple 处理，但因 beta Xcode / SDK 被拒绝加入正式审核。Build 50 已使用正式 Xcode 27 (`27A266a`) 重建，2026-10-01 22:34:58 UTC 上传成功，GM SDK 最终 5 项 UI 检查通过，24 张真实截图已上传；22:48 UTC 提交正式审核并显示 `Waiting for Review`，审核通过后自动发布。正式内容检查、截图和提交状态见 [正式 1.26.7 记录](RELEASE-1.26.7.zh.md)；Beta 原始证据见 [Beta 48 记录](BETA-RELEASE-1.2.0-48.zh.md)。用户确认与 Agent 模拟器、正式包真机及现场证据分别记录。
 
 以下 Beta 47 与原 App 46 是既有分发记录，不作为 Beta 48 的验收证据：
 
