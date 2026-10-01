@@ -1,0 +1,11 @@
+{
+  "scope": "synthetic scheduling acceptance, not production history",
+  "sampleSeconds": 10,
+  "scenarios": [
+    {"name": "serial", "capacity": 2, "queueSeconds": [0, 0], "units": [{"id": "a", "dependsOn": []}, {"id": "b", "dependsOn": ["a"]}], "upperSeconds": 40, "criticalPathSeconds": 40, "serialSeconds": 40},
+    {"name": "parallel", "capacity": 2, "queueSeconds": [0, 0], "units": [{"id": "a", "dependsOn": []}, {"id": "b", "dependsOn": []}], "upperSeconds": 20, "criticalPathSeconds": 20, "serialSeconds": 40},
+    {"name": "resource-serial", "capacity": 1, "queueSeconds": [0], "units": [{"id": "a", "dependsOn": []}, {"id": "b", "dependsOn": []}], "upperSeconds": 40, "criticalPathSeconds": 20, "serialSeconds": 40},
+    {"name": "known-queue", "capacity": 2, "queueSeconds": [30, 30], "units": [{"id": "a", "dependsOn": []}, {"id": "b", "dependsOn": []}], "upperSeconds": 50, "criticalPathSeconds": 20, "serialSeconds": 40},
+    {"name": "convergence", "capacity": 2, "queueSeconds": [0, 0], "units": [{"id": "a", "dependsOn": []}, {"id": "b", "dependsOn": []}, {"id": "join", "dependsOn": ["a", "b"]}], "upperSeconds": 40, "criticalPathSeconds": 40, "serialSeconds": 60}
+  ]
+}
