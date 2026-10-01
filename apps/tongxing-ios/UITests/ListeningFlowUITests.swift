@@ -435,6 +435,14 @@ final class ListeningFlowUITests: XCTestCase {
         try waitFor(secondChinese, "exists == true AND label == '中文第二句：灯塔在港口旁。'")
         XCTAssertTrue(app.staticTexts["published-caption-english-g2"].exists)
         XCTAssertTrue(app.buttons["published-caption-time-g2"].isSelected)
+        let timestamp = app.buttons["published-caption-time-g2"]
+        try reveal(timestamp, in: app, direction: .up)
+        for _ in 0..<2 {
+            timestamp.tap()
+            try waitFor(progress, "value BEGINSWITH '00:12'")
+            XCTAssertEqual(app.buttons["playback-toggle"].label, "开始播放",
+                           "Repeated timestamp activation must retain pause and position")
+        }
         screenshot("full-transcript-locate-chinese-at12", app: app)
 
         let language = element("app-language-menu", in: app)

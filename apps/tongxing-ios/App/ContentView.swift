@@ -712,9 +712,9 @@ struct ContentView: View {
             ForEach(rows, id: \.id) { cue in
                 let audioCue = captions.first { $0.id == cue.id }
                 VStack(alignment: .leading, spacing: 10) {
-                    Button(PlaybackTime.format(audioCue?.start ?? cue.start)) {
+                    TranscriptTimeButton(title: PlaybackTime.format(audioCue?.start ?? cue.start)) {
                         if let audioCue { playback.jump(to: audioCue.start) }
-                    }.buttonStyle(.bordered).font(.caption.monospacedDigit())
+                    }
                         .disabled(!playback.isReady || audioCue == nil)
                         .accessibilityIdentifier("\(prefix)-time-\(cue.id)")
                         .accessibilityAddTraits(cue.start <= playback.position && playback.position < cue.end ? .isSelected : [])
@@ -784,8 +784,7 @@ struct ContentView: View {
             ForEach(rows) { row in
                 let cue = row.cue
                 VStack(alignment: .leading, spacing: 8) {
-                    Button(PlaybackTime.format(cue.start)) { playback.jump(to: cue.start) }
-                        .font(.caption.monospacedDigit()).buttonStyle(.bordered)
+                    TranscriptTimeButton(title: PlaybackTime.format(cue.start)) { playback.jump(to: cue.start) }
                         .frame(minHeight: 44)
                         .accessibilityLabel(localization.text("跳转至 {time}", ["time": PlaybackTime.format(cue.start)]))
                         .accessibilityIdentifier("subtitle-cue-\(row.index)")
