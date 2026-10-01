@@ -99,7 +99,7 @@ struct EnglishLocateSheet: View {
                         }
                     }.padding(20).frame(maxWidth: 720).frame(maxWidth: .infinity)
                 }
-                .task(id: selectionKey) {
+                .task(id: "\(selectionKey):\(rows.count)") {
                     // Scroll once on opening/reloading, never follow playback while reading.
                     await Task.yield()
                     if search.isEmpty, let currentID { proxy.scrollTo(currentID, anchor: .top) }

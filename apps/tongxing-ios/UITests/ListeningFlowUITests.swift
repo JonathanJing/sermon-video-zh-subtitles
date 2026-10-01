@@ -290,6 +290,37 @@ final class ListeningFlowUITests: XCTestCase {
         }
     }
 
+    func testEnglishLocateLateTranscriptArrivesNearRetainedCurrentPosition() throws {
+        let app = launchFixture(locateFlow: true, delayedTranscript: true)
+        try locateSecondEnglishSegment(in: app, fromDock: false)
+        let progress = element("playback-progress", in: app)
+        try waitFor(progress, "value BEGINSWITH '00:12'")
+        let chooser = app.buttons["choose-content-language"]
+        try reveal(chooser, in: app, direction: .down)
+        chooser.tap()
+        app.buttons["content-language-ko"].tap()
+        try waitFor(app.staticTexts["published-audio-locale"], "exists == true AND label CONTAINS '한국어'")
+        try waitFor(app.buttons["playback-toggle"], "enabled == true AND label == '开始播放'")
+        try waitFor(progress, "value BEGINSWITH '00:12'")
+        app.buttons["playback-more"].tap()
+        app.buttons["locate-english-action"].tap()
+        XCTAssertTrue(element("english-locate-sheet", in: app).waitForExistence(timeout: 5))
+        let currentEnglish = app.staticTexts["locate-english-g2"]
+        XCTAssertFalse(currentEnglish.exists, "本轮必须先打开定位页，再收到延迟文稿")
+        // No reveal/swipe: the sheet itself must land at the retained 12s row
+        // when its initially empty transcript is delivered asynchronously.
+        let landed = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            currentEnglish.exists && currentEnglish.isHittable
+                && currentEnglish.frame.minY < app.frame.midY
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [landed], timeout: 15), .completed)
+        XCTAssertTrue(currentEnglish.label.contains("lighthouse"))
+        screenshot("english-locate-delayed-transcript-near-current12", app: app)
+        app.buttons["english-locate-close"].tap()
+        try waitFor(progress, "value BEGINSWITH '00:12'")
+        XCTAssertEqual(app.buttons["playback-toggle"].label, "开始播放")
+    }
+
     func testEnglishLocateWhilePlayingShowsConfirmationAndKeepsPlaying() throws {
         let app = launchFixture(locateFlow: true)
         let play = app.buttons["playback-toggle"]
@@ -797,7 +828,8 @@ final class ListeningFlowUITests: XCTestCase {
     private func launchFixture(largeText: Bool = false, offline: Bool = false,
                                dualScript: Bool = false,
                                independentDefault: Bool = false,
-                               locateFlow: Bool = false) -> XCUIApplication {
+                               locateFlow: Bool = false,
+                               delayedTranscript: Bool = false) -> XCUIApplication {
         continueAfterFailure = false
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing"] + (largeText ? ["--ui-testing-large-text"] : [])
@@ -805,6 +837,7 @@ final class ListeningFlowUITests: XCTestCase {
             + (dualScript ? ["--ui-testing-dual-script"] : [])
             + (independentDefault ? ["--ui-testing-current-page-default"] : [])
             + (locateFlow ? ["--ui-testing-locate-flow"] : [])
+            + (delayedTranscript ? ["--ui-testing-delayed-transcript"] : [])
         app.launchArguments += ["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
         app.launchEnvironment["TONGXING_TEST_HOST"] = "0"
         app.launchEnvironment["TONGXING_UI_TEST_RUN_ID"] = UUID().uuidString

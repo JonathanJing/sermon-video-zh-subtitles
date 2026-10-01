@@ -1,5 +1,6 @@
 #if DEBUG
 import CryptoKit
+import Dispatch
 import Foundation
 import SwiftUI
 import TongxingCore
@@ -363,6 +364,10 @@ private enum UITestContent {
 /// Offline launch reports a real URLSession error; the production repositories
 /// must recover from their own previously written cache and verified audio.
 private class UITestContentProtocol: URLProtocol {
+    private let deliveryLock = NSRecursiveLock()
+    private var delayedResponse: DispatchWorkItem?
+    private var stopped = false
+
     class var offline: Bool { ProcessInfo.processInfo.arguments.contains("--ui-testing-offline") }
     class var dualScript: Bool { ProcessInfo.processInfo.arguments.contains("--ui-testing-dual-script") }
     class var nativeResponses: [String: Data]? {
@@ -382,13 +387,21 @@ private class UITestContentProtocol: URLProtocol {
             return
         }
         if let data = Self.nativeResponses?[url.path] {
-            let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: "HTTP/1.1",
-                headerFields: ["Content-Length": String(data.count),
-                               "Content-Type": url.path.hasSuffix(".json") ? "application/json"
-                                   : url.path.hasSuffix(".mp3") ? "audio/mpeg" : "text/html"])!
-            client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
-            client?.urlProtocol(self, didLoad: data)
-            client?.urlProtocolDidFinishLoading(self)
+            if ProcessInfo.processInfo.arguments.contains("--ui-testing-delayed-transcript"),
+               url.path == "/content/ui-test-locate-flow/ko.json" {
+                // Delay only the transcript request, never the language release
+                // or audio. The URLSession actor remains free to prepare audio.
+                let work = DispatchWorkItem { [weak self] in
+                    self?.deliverNativeResponse(data, at: url)
+                }
+                deliveryLock.lock()
+                delayedResponse = work
+                if stopped { work.cancel() }
+                deliveryLock.unlock()
+                DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + 8, execute: work)
+            } else {
+                deliverNativeResponse(data, at: url)
+            }
             return
         }
         if url.path == "/multilingual-v3.json" {
@@ -411,7 +424,27 @@ private class UITestContentProtocol: URLProtocol {
         client?.urlProtocolDidFinishLoading(self)
     }
 
-    override func stopLoading() {}
+    private func deliverNativeResponse(_ data: Data, at url: URL) {
+        deliveryLock.lock()
+        defer { deliveryLock.unlock() }
+        guard !stopped, delayedResponse?.isCancelled != true else { return }
+        delayedResponse = nil
+        let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: "HTTP/1.1",
+            headerFields: ["Content-Length": String(data.count),
+                           "Content-Type": url.path.hasSuffix(".json") ? "application/json"
+                               : url.path.hasSuffix(".mp3") ? "audio/mpeg" : "text/html"])!
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        client?.urlProtocol(self, didLoad: data)
+        client?.urlProtocolDidFinishLoading(self)
+    }
+
+    override func stopLoading() {
+        deliveryLock.lock()
+        stopped = true
+        delayedResponse?.cancel()
+        delayedResponse = nil
+        deliveryLock.unlock()
+    }
 }
 
 private final class NativePreviewContentProtocol: UITestContentProtocol {
