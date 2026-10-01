@@ -22,6 +22,7 @@ import tempfile
 
 PLAN_SCHEMA = "sermon-run-progress-plan-v1"
 RECEIPT_SCHEMA = "sermon-run-progress-status-v1"
+RECONCILIATION_SCHEMA = "sermon-run-progress-reconciliation-v1"
 SCHEMA = "sermon-run-progress-v1"
 ESTIMATOR_VERSION = "remaining-dag-resource-slots-v1"
 DIMENSIONS = ("stage", "model", "locale", "lengthBucket", "cacheClass", "resourceClass")
@@ -242,6 +243,67 @@ def _facts(row):
             "admitted": success and row["admissionStatus"] == "admitted"}
 
 
+def reconciliation_proof(plan, unit_id, attempt_id, *, proof_id, unknown_event_id,
+                         evidence_sha256, evidence_refs, outcome, evidence_validated=False):
+    """Independent local validator output after reading durable reconciliation.
+
+    The caller must validate the original durable receipt/result and its exact
+    attempt binding. Status assertions or new-attempt success are not proof.
+    """
+    unit = next(row for row in plan["units"] if row["id"] == unit_id)
+    value = {"schemaVersion": RECONCILIATION_SCHEMA,
+             **{k: plan[k] for k in ("planSha256", "runId")}, "unitId": unit_id,
+             "identitySha256": unit["identitySha256"], "attemptId": attempt_id,
+             "proofId": proof_id, "unknownEventId": unknown_event_id,
+             "evidenceSha256": evidence_sha256, "evidenceRefs": evidence_refs,
+             "outcome": outcome, "evidenceValidated": evidence_validated}
+    return {**value, "proofSha256": digest(value)}
+
+
+def _verified_reconciliations(plan, proofs, histories):
+    verified, candidates, issues = defaultdict(dict), defaultdict(dict), []
+    expected = {"schemaVersion", "planSha256", "runId", "unitId", "identitySha256", "attemptId",
+                "proofId", "unknownEventId", "evidenceSha256", "evidenceRefs", "outcome", "evidenceValidated", "proofSha256"}
+    units = {row["id"]: row for row in plan["units"]}
+    for proof in proofs:
+        try:
+            if set(proof) != expected or proof["schemaVersion"] != RECONCILIATION_SCHEMA:
+                raise ValueError("invalid_reconciliation_schema")
+            value = {k: v for k, v in proof.items() if k != "proofSha256"}
+            if digest(value) != proof["proofSha256"]:
+                raise ValueError("reconciliation_hash_mismatch")
+            unit = units[proof["unitId"]]
+            if (proof["planSha256"] != plan["planSha256"] or proof["runId"] != plan["runId"]
+                    or proof["identitySha256"] != unit["identitySha256"]):
+                raise ValueError("reconciliation_binding_mismatch")
+            if proof["evidenceValidated"] is not True or not proof["evidenceRefs"]:
+                raise ValueError("reconciliation_evidence_unverified")
+            _hash(proof["evidenceSha256"])
+            for key in ("proofId", "attemptId", "unknownEventId"):
+                _label(proof[key])
+            if not isinstance(proof["evidenceRefs"], list):
+                raise ValueError("invalid_reconciliation_refs")
+            for ref in proof["evidenceRefs"]:
+                _label(ref)
+            if proof["outcome"] not in {"succeeded", "failed", "cancelled", "not_executed"}:
+                raise ValueError("unknown_reconciliation_outcome")
+            attempts = [row for row in histories[unit["id"]] if row["attemptId"] == proof["attemptId"]]
+            if not attempts:
+                raise ValueError("reconciliation_attempt_not_observed")
+            old = max(attempts, key=lambda row: row["sequence"])
+            if old["eventId"] != proof["unknownEventId"] or old["executionStatus"] not in {"outcome_unknown", "running"}:
+                raise ValueError("reconciliation_old_attempt_binding_mismatch")
+            candidates[(unit["id"], proof["attemptId"])][proof["proofSha256"]] = proof
+        except (KeyError, TypeError, ValueError):
+            issues.append("invalid_or_unverified_reconciliation_evidence")
+    for (unit_id, attempt_id), values in candidates.items():
+        if len(values) == 1:
+            verified[unit_id][attempt_id] = next(iter(values.values()))["outcome"]
+        else:
+            issues.append("conflicting_reconciliation_evidence")
+    return verified, sorted(set(issues))
+
+
 def _dimension(row):
     return tuple(row[k] for k in DIMENSIONS)
 
@@ -319,13 +381,15 @@ def _schedule(units, done, states, estimates, pools, endpoint):
     return max(finishes.values(), default=0), schedule
 
 
-def project_progress(plan, receipts, *, samples=(), at=None, previous=None, resource_state=None, input_issues=()):
+def project_progress(plan, receipts, *, samples=(), at=None, previous=None, resource_state=None,
+                     input_issues=(), reconciliations=()):
     """Pure projection of frozen business units; framework task count is unused."""
     validate_plan(plan)
     clock = _time(at) if isinstance(at, str) else (at or datetime.now(timezone.utc)).astimezone(timezone.utc)
     transition = _transition(plan, previous)
     units = {row["id"]: row for row in plan["units"]}
     by_unit, events, diagnostics = defaultdict(list), {}, [_label(code) for code in input_issues]
+    tainted_units = set()
     for supplied in receipts:
         try:
             row = json.loads(json.dumps(supplied, allow_nan=False))
@@ -334,12 +398,16 @@ def project_progress(plan, receipts, *, samples=(), at=None, previous=None, reso
                 raise ValueError("future_receipt")
             if row["eventId"] in events:
                 if events[row["eventId"]] != row:
+                    tainted_units.add(events[row["eventId"]]["unitId"])
                     raise ValueError("event_id_conflict")
                 continue
             events[row["eventId"]] = row
             by_unit[row["unitId"]].append(row)
         except (KeyError, TypeError, ValueError):
             diagnostics.append("invalid_conflicting_or_unbound_receipt")
+            if isinstance(supplied, dict) and isinstance(supplied.get("unitId"), str) and supplied["unitId"] in units:
+                tainted_units.add(supplied["unitId"])
+    verified_reconciliations, reconciliation_issues = _verified_reconciliations(plan, reconciliations, by_unit)
     states, facts, completed, rows = {}, {}, set(), []
     retry_count, rework_count, unresolved = 0, 0, []
     for key in _order(units):
@@ -347,7 +415,7 @@ def project_progress(plan, receipts, *, samples=(), at=None, previous=None, reso
         sequences = defaultdict(list)
         for row in history:
             sequences[row["sequence"]].append(row)
-        conflict = any(len(values) > 1 for values in sequences.values())
+        conflict = key in tainted_units or any(len(values) > 1 for values in sequences.values())
         state = max(history, key=lambda row: row["sequence"]) if history and not conflict else None
         if conflict:
             diagnostics.append("conflicting_unit_sequence")
@@ -365,13 +433,19 @@ def project_progress(plan, receipts, *, samples=(), at=None, previous=None, reso
         retries = max(0, len(latest_attempts) - 1)
         rework = sum(row["workKind"] == "rework" for row in latest_attempts.values())
         retry_count += retries; rework_count += rework
-        reconciled = set((state or {}).get("reconcilesAttemptIds", []))
+        claimed = set((state or {}).get("reconcilesAttemptIds", []))
+        reconciled = claimed & verified_reconciliations[key].keys()
         unknown = [attempt for attempt, row in latest_attempts.items()
                    if row["executionStatus"] == "outcome_unknown" and attempt not in reconciled]
         unknown += [attempt for attempt, row in latest_attempts.items()
                     if row["executionStatus"] == "running" and (not state or attempt != state["attemptId"])
                     and attempt not in reconciled]
         value = _facts(state)
+        # A retry can invalidate current gates, but cannot erase a trustworthy
+        # terminal execution that already processed this same frozen unit.
+        value["processed"] = not conflict and (any(_facts(row)["processed"] for row in history) or
+            any(verified_reconciliations[key][attempt] in {"succeeded", "failed", "cancelled"} for attempt in reconciled))
+        processed_known = value["processed"] or bool(state and state["executionStatus"] in {"pending", "running"} and not unknown)
         facts[key] = value
         gates = [gate for gate in units[key]["requiredEvidence"] if not value[gate]]
         reason = (state or {}).get("reasonCode")
@@ -389,6 +463,7 @@ def project_progress(plan, receipts, *, samples=(), at=None, previous=None, reso
             unresolved.append({"unitId": key, "reasonCode": reason or "required_evidence_missing", "missingEvidence": gates})
         rows.append({"unitId": key, **{k: units[key][k] for k in ("stage", "locale", "weight")}, **value,
                      "complete": key in completed, "phase": (state or {}).get("phase", "pending"),
+                     "processedKnown": processed_known, "unknownOutcome": bool(unknown),
                      "retryCount": retries, "reworkAttempts": rework, "blockedReason": reason,
                      "heartbeatStatus": heartbeat_status, "heartbeatAgeSeconds": heartbeat_age,
                      "attemptId": (state or {}).get("attemptId")})
@@ -396,6 +471,13 @@ def project_progress(plan, receipts, *, samples=(), at=None, previous=None, reso
     diagnostics.extend(sample_issues)
     denominator = Decimal(plan["denominator"])
     done_weight = sum((Decimal(str(units[k]["weight"])) for k in completed), Decimal(0))
+    processed_weight = sum((Decimal(str(row["weight"])) for row in rows if row["processed"]), Decimal(0))
+    unknown_weight = sum((Decimal(str(row["weight"])) for row in rows if not row["processedKnown"]), Decimal(0))
+    known_weight = denominator - unknown_weight
+    known_processed_percent = round(float(processed_weight * 100 / denominator), 6)
+    if processed_weight < denominator:
+        known_processed_percent = min(99.999999, known_processed_percent)
+    processing_known = not unknown_weight and not diagnostics
     complete = len(completed) == len(units) and not diagnostics
     percent = float(done_weight * 100 / denominator)
     percent = round(percent, 6) if complete else min(99.999999, round(percent, 6))
@@ -428,6 +510,8 @@ def project_progress(plan, receipts, *, samples=(), at=None, previous=None, reso
             eta_reasons.add(state["phase"])
         if state.get("reasonCode"):
             eta_reasons.add("observed_blocker")
+        if state.get("queueRemainingSeconds", 0) is None:
+            eta_reasons.add("unit_queue_unknown")
         if state.get("executionStatus") in {"failed", "cancelled", "outcome_unknown"}:
             eta_reasons.add("retry_or_reconciliation_not_authorized")
         if set(units[key]["requiredEvidence"]) & {"realHumanApproved", "simulatedHumanApproved"}:
@@ -481,15 +565,49 @@ def project_progress(plan, receipts, *, samples=(), at=None, previous=None, reso
     for stage, locale in sorted({(row["stage"], row["locale"]) for row in rows}):
         selected = [row for row in rows if row["stage"] == stage and row["locale"] == locale]
         groups.append({"stage": stage, "locale": locale, "done": sum(row["complete"] for row in selected),
-                       "total": len(selected), **{k: sum(row[k] for row in selected) for k in COUNTS}})
+                       "total": len(selected), **{k: sum(row[k] for row in selected) for k in COUNTS},
+                       "applicableTotals": {k: sum(k in units[row["unitId"]]["requiredEvidence"] for row in selected) for k in COUNTS[1:]}})
+    evidence_progress = {}
+    for kind in COUNTS[1:]:
+        applicable = [row for row in rows if kind in units[row["unitId"]]["requiredEvidence"]]
+        weight = sum((Decimal(str(row["weight"])) for row in applicable), Decimal(0))
+        passed = sum((Decimal(str(row["weight"])) for row in applicable if row[kind]), Decimal(0))
+        unknown_evidence = []
+        for row in applicable:
+            state = states[row["unitId"]]
+            unknown_fact = state is None or row["unknownOutcome"]
+            if state and not row[kind]:
+                if kind == "contentReviewPassed":
+                    unknown_fact |= state["reviewVerdict"] in {"not_assessed", "inconclusive"}
+                elif kind in {"realHumanApproved", "simulatedHumanApproved"}:
+                    unknown_fact |= state["humanApprovalStatus"] == "pending"
+                elif kind == "admitted":
+                    unknown_fact |= state["admissionStatus"] == "not_assessed"
+                elif kind == "executionSucceeded":
+                    unknown_fact |= state["executionStatus"] == "succeeded" and not state["evidenceValidated"]
+            if unknown_fact:
+                unknown_evidence.append(row["unitId"])
+        evidence_progress[kind] = {"status": "not_applicable" if not applicable else "unknown" if unknown_evidence else "known",
+                                   "done": sum(row[kind] for row in applicable), "total": len(applicable),
+                                   "denominator": str(weight), "knownPassedWeight": str(passed), "unknownUnits": unknown_evidence,
+                                   "percent": None if not weight or unknown_evidence else round(float(passed * 100 / weight), 6)}
     return {"schemaVersion": SCHEMA, **{k: plan[k] for k in ("planId", "planVersion", "planSha256", "runId", "dagVersion", "weightPolicyVersion", "denominator", "supersedesPlanSha256", "migrationReason")},
             "updatedAt": clock.isoformat(), "planTransition": transition,
-            "plannedCompletionPercent": percent, "completedWeight": str(done_weight), "complete": complete,
+            "plannedProcessedPercent": known_processed_percent if processing_known else None,
+            "knownProcessedPercentLowerBound": known_processed_percent, "knownProcessedWeight": str(processed_weight),
+            "processingCoverage": {"status": "known" if processing_known else "partial", "knownWeight": str(known_weight),
+                                   "unknownWeight": str(unknown_weight), "unknownUnits": [row["unitId"] for row in rows if not row["processedKnown"]],
+                                   "unattributedEvidence": bool(diagnostics)},
+            "gateCompletionPercent": percent, "plannedCompletionPercent": percent,
+            "completedWeight": str(done_weight), "complete": complete,
             "currentPhases": sorted({row["stage"] for row in rows if not row["complete"] and
                                      (row["phase"] != "pending" or set(units[row["unitId"]]["dependsOn"]) <= completed)}),
             "counts": {"done": len(completed), "total": len(units), **{k: sum(row[k] for row in rows) for k in COUNTS}},
             "phaseLocales": groups, "units": rows, "unresolvedGates": unresolved,
+            "evidenceProgress": evidence_progress,
             "extraWork": {"retryAttempts": retry_count, "reworkAttempts": rework_count, "includedInDenominator": False},
+            "reconciliationEvidence": {"verifiedAttempts": sum(len(v) for v in verified_reconciliations.values()),
+                                       "reasonCodes": reconciliation_issues},
             "integrity": {"status": "partial" if diagnostics else "consistent", "reasonCodes": sorted(set(diagnostics)), "acceptedReceipts": len(events)},
             "cost": {"status": "not_projected", "knownSubtotalUsd": None, "source": "existing_accounting_projection"},
             "resourceConfiguration": plan["resources"],
@@ -610,6 +728,7 @@ def main(argv=None):
     project.add_argument("--receipts", type=Path, required=True, help="JSON list or JSONL of full validated status snapshots")
     project.add_argument("--samples", type=Path)
     project.add_argument("--resource-state", type=Path)
+    project.add_argument("--reconciliations", type=Path)
     project.add_argument("--at")
     project.add_argument("--output", type=Path, required=True)
     args = parser.parse_args(argv)
@@ -619,7 +738,7 @@ def main(argv=None):
             plan = freeze_plan(**spec)
             _atomic(args.output, plan, exclusive=True)
         else:
-            inputs = [args.plan, args.receipts, args.samples, args.resource_state]
+            inputs = [args.plan, args.receipts, args.samples, args.resource_state, args.reconciliations]
             if any(p and p.resolve() == args.output.resolve() for p in inputs):
                 raise ValueError("output_must_not_replace_input")
             plan = json.loads(args.plan.read_text())
@@ -628,6 +747,7 @@ def main(argv=None):
             previous = json.loads(args.output.read_text()) if args.output.exists() else None
             result = project_progress(plan, receipts, samples=json.loads(args.samples.read_text()) if args.samples else [],
                                       resource_state=json.loads(args.resource_state.read_text()) if args.resource_state else None,
+                                      reconciliations=json.loads(args.reconciliations.read_text()) if args.reconciliations else [],
                                       at=args.at, previous=previous)
             write_progress(args.output, result)
         print(json.dumps({"output": str(args.output), "schemaVersion": PLAN_SCHEMA if args.command == "freeze" else SCHEMA}))

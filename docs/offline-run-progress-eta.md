@@ -15,7 +15,7 @@ plan = progress.freeze_plan(
 snapshot = progress.project_progress(
     plan, receipts, samples=samples, at=observed_at,
     previous=previous_projection, resource_state=resource_state,
-    input_issues=integrity_reason_codes,
+    input_issues=integrity_reason_codes, reconciliations=reconciliation_proofs,
 )
 progress.write_progress(output_path, snapshot)
 ```
@@ -58,11 +58,13 @@ receipt = progress.status_receipt(
 
 The adapter must validate the original package/RQC/human receipt with the existing validator and check exact run/source/unit/revision/artifact bindings before setting `evidenceValidated=True`. This module checks its closed envelope and matching review/human artifact hashes, not original content or signatures. A single full snapshot prevents joining review and human approvals for different artifacts. Receipt references are bounded local identifier labels, not raw logs, paths, text or secrets. Additional fields are rejected.
 
-`sequence` increases per unit across attempts; it is not local to a framework task or an attempt. Every input snapshot includes the exact frozen plan/run/unit identity. Exact event duplicates are idempotent; conflicting event IDs, equal unit sequences, missing/mismatched bindings and future observations prevent overall completion and numeric ETA. Keep the entire relevant observation history, including attempts with unknown outcomes. A later success cannot erase an unresolved old attempt. Only a validator-produced reconciliation snapshot with `reconcilesAttemptIds` may close those attempts, after checking the existing durable reconciliation evidence.
+`sequence` increases per unit across attempts; it is not local to a framework task or an attempt. Every input snapshot includes the exact frozen plan/run/unit identity. Exact event duplicates are idempotent; conflicting event IDs, equal unit sequences, missing/mismatched bindings and future observations prevent overall completion and numeric ETA. Keep the entire relevant observation history, including attempts with unknown outcomes. A later success cannot erase an unresolved old attempt. `reconcilesAttemptIds` is only a claim: independently validated durable proof must be supplied through `reconciliations` before any named attempt is cleared.
+
+`reconciliation_proof(plan, unit_id, attempt_id, proof_id=..., unknown_event_id=..., evidence_sha256=..., evidence_refs=[...], outcome=..., evidence_validated=True)` wraps an **independent existing durable-reconciliation validator result**, with schema `sermon-run-progress-reconciliation-v1`. Before calling it, the adapter must read/validate the original saved result or reconciliation receipt, its content hash and exact old attempt/request/input binding through the existing read-only boundary. The helper does not establish original-file validity itself. The projector then checks the closed envelope/hash, run/plan/unit/input identity, the exact old attempt's latest unknown/running event, nonempty durable refs, validated flag and a known outcome. Missing/unverified/mismatched/conflicting proof keeps the attempt unresolved. A pending new status with no artifact validation cannot clear uncertainty merely by naming an old attempt. Verified reconciliation outcomes preserve historical processed facts but grant no current content/human/admission gates.
 
 | Counter | Meaning |
 |---|---|
-| `processed` | Observed succeeded/failed/cancelled execution; unknown outcome excluded |
+| `processed` | At least one identity-matching, unconflicted terminal execution or independently reconciled terminal result in this frozen unit's history; retained through retries |
 | `executionSucceeded` | Succeeded execution plus validated artifact evidence |
 | `contentReviewPassed` | Same-artifact machine review pass with succeeded execution |
 | `realHumanApproved` | Same-artifact actual human approval; machine/simulated approval excluded |
@@ -70,7 +72,9 @@ The adapter must validate the original package/RQC/human receipt with the existi
 | `admitted` | Explicit validated admission observation |
 | `done` | All frozen requirements and dependencies met, explicit complete phase, no unresolved attempt/blocker |
 
-The weighted percentage uses `done` only. Per-stage/locale totals retain planned, failed and unknown units. Incomplete projections are capped below 100 even if display rounding would otherwise produce 100. Global input integrity failures also prevent 100. This is evidence coverage of the local plan, with `executionAuthority=none`; it never grants production, HTTP, device or venue acceptance.
+The primary bar is **planned work processed**: `plannedProcessedPercent = 100 × historical processed weight / frozen denominator`. A weight-3 failed unit and weight-1 pending unit show 75% processed, with failure visible and gate completion at 0%. A retry invalidates current approval/gate counters as observed, while the historical processed fact remains. If processed state is unknown/missing/conflicting, the primary percentage is `null`; `processingCoverage` reports known/unknown weight and unit IDs, and `knownProcessedPercentLowerBound`/`knownProcessedWeight` report only demonstrated work. A confirmed pending unit contributes known zero; absent observations do not prove zero work.
+
+`gateCompletionPercent` uses `done` only. `plannedCompletionPercent` remains a compatibility alias for that gate percentage; integrations should label/select the two explicit fields. Incomplete gate projections are capped below 100 even if rounding would otherwise produce 100. Processing can reach 100% while failures, reviews or human gates remain unresolved: `complete=false`, gate percentage stays below 100, and ETA remains unknown as appropriate. Each review/human/admission requirement has an `evidenceProgress` applicability set/denominator, unknown coverage and separate count; empty applicability is `not_applicable` with a null percentage. Per-stage/locale totals retain planned, failed and unknown units and report `applicableTotals`. This projection has `executionAuthority=none`; neither percentage grants production, HTTP, device or venue acceptance.
 
 Phases are `pending/running/retrying/waiting_review/blocked/complete/unknown_outcome`. `workKind=rework` and distinct attempt IDs supply extra-work counts; they are separate from planned weight. Cost stays `not_projected` here; use the existing accounting/weekly report for known costs and missing-usage coverage instead of adding provider receipts or inventing zero cost.
 
@@ -91,7 +95,7 @@ For fewer than five comparable samples the duration envelope is `[0.5 × observe
 }
 ```
 
-`queueSeconds` contains known remaining **external** occupation per slot, excluding active units in this plan; a zero slot is currently available. Every required pool, capacity and class must match. Missing/unknown/outage/stale queues or impossible active-resource occupancy give unknown ETA. `queueRemainingSeconds` on a unit is its known remaining not-before delay, combined by `max` with dependency/pool availability rather than added twice. Global workflow concurrency can be enforced by listing a workflow pool alongside stage pools.
+`queueSeconds` contains known remaining **external** occupation per slot, excluding active units in this plan; a zero slot is currently available. Every required pool, capacity and class must match. Missing/unknown/outage/stale queues or impossible active-resource occupancy give unknown ETA. `queueRemainingSeconds` on a unit is its known remaining not-before delay, combined by `max` with dependency/pool availability rather than added twice. An explicit `null` produces `unit_queue_unknown` and retains the valid progress projection; it is never coerced to zero or passed to scheduling. Global workflow concurrency can be enforced by listing a workflow pool alongside stage pools.
 
 The estimator computes remaining serial work, dependency-only critical path, and non-preemptive list schedules for both duration endpoints using all resources, current active units, dependencies and known queues. It reports lower/upper remaining seconds and UTC completion times, per-unit estimates, sample count, confidence, assumptions, estimator version and update time. List scheduling is an explicit deterministic scenario, not a promise of optimal scheduling; future arrivals, undeclared retries/rework and future outages are excluded. Known current rework/retry attempts retain their actual history and count as remaining planned units until their gates pass.
 
@@ -113,7 +117,8 @@ The module is local/private. Publishing to an existing public Tracker or exporti
 ```sh
 python scripts/sermon_run_progress.py freeze --input plan-spec.json --output new-plan.json
 python scripts/sermon_run_progress.py project --plan new-plan.json --receipts status-snapshots.jsonl \
-  --samples timing-samples.json --resource-state observed-resources.json --output run-progress.json
+  --samples timing-samples.json --resource-state observed-resources.json \
+  --reconciliations validated-reconciliations.json --output run-progress.json
 ```
 
 Writes use an output-specific lock, temporary file, file fsync, atomic replacement and directory fsync. A freeze cannot overwrite an existing file; projection updates refuse another schema/identity, older projections, symlinks, or an output matching an input. Existing run ledgers are preserved. For a changed denominator/DAG/identity/resource configuration, create a higher `planVersion` with `supersedes=<old planSha256>` and `migration_reason=<explicit code>`, then project against the previous output. The projection records both denominators and the migration reason. New-plan receipts need the new binding; old receipts cannot silently carry approval across revisions.
@@ -125,4 +130,4 @@ python -m unittest tests.test_sermon_run_progress tests.test_weekly_pipeline_rep
   tests.test_four_layer_progress tests.test_timeline_accounting
 ```
 
-[Synthetic scheduling fixtures](../tests/fixtures/sermon_run_progress/offline-scenarios.json) cover serial/parallel/queue/capacity/convergence. Dedicated tests cover retry/rework/reconciliation, stale/unknown evidence, review/human isolation, sample matching/cold start, explicit drift/migration, input invariance, CLI and crash-safe writes. These are code acceptance tests; real production calibration, Prefect integration and the paused real diagnostic are separate evidence.
+[Synthetic scheduling fixtures](../tests/fixtures/sermon_run_progress/offline-scenarios.json) cover serial/parallel/queue/capacity/convergence. Dedicated tests cover failed-history retention through retry, unknown processed weight, independent durable reconciliation proof, null queue in pure API and CLI, stale/unknown evidence, review/human isolation, sample matching/cold start, explicit drift/migration, input invariance and crash-safe writes. These are code acceptance tests; real production calibration, Prefect integration and the paused real diagnostic are separate evidence.

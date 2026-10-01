@@ -136,7 +136,66 @@ class ProgressEvidenceTests(unittest.TestCase):
         self.assertEqual(result["extraWork"], {"retryAttempts": 1, "reworkAttempts": 1, "includedInDenominator": False})
         self.assertEqual(result["denominator"], "1")
         reconciled = {**repaired, "reconcilesAttemptIds": ["one"]}
-        self.assertTrue(project(frozen, [unknown, reconciled])["complete"])
+        proof = p.reconciliation_proof(frozen, "a", "one", proof_id="proof", unknown_event_id="unknown",
+                                        evidence_sha256=SHA, evidence_refs=["durable-reconciliation"],
+                                        outcome="failed", evidence_validated=True)
+        self.assertFalse(project(frozen, [unknown, reconciled])["complete"])
+        self.assertTrue(project(frozen, [unknown, reconciled], reconciliations=[proof])["complete"])
+
+    def test_primary_processed_weight_retains_failed_history_through_retry(self):
+        frozen = plan([unit("a", weight=3), unit("b")])
+        failed = p.status_receipt(frozen, "a", event_id="failed", attempt_id="one", sequence=1, observed_at=AT,
+                                  executionStatus="failed", phase="blocked")
+        pending = p.status_receipt(frozen, "b", event_id="pending", attempt_id="b", sequence=1, observed_at=AT)
+        retry = p.status_receipt(frozen, "a", event_id="retry", attempt_id="two", sequence=2, observed_at=AT,
+                                 executionStatus="running", phase="retrying", heartbeatStatus="fresh",
+                                 heartbeatAgeSeconds=1, heartbeatTimeoutSeconds=30, activeElapsedSeconds=1)
+        for history in ([failed, pending], [failed, retry, pending]):
+            result = project(frozen, history)
+            self.assertEqual(result["plannedProcessedPercent"], 75)
+            self.assertEqual(result["knownProcessedWeight"], "3")
+            self.assertEqual(result["counts"]["processed"], 1)
+            self.assertEqual(result["gateCompletionPercent"], 0)
+            self.assertFalse(result["complete"])
+
+    def test_unknown_processed_weight_and_review_applicability_are_explicit(self):
+        frozen = plan([unit("a", weight=3), unit("b")])
+        unknown = p.status_receipt(frozen, "a", event_id="unknown", attempt_id="one", sequence=1,
+                                   observed_at=AT, executionStatus="outcome_unknown", phase="unknown_outcome")
+        pending = p.status_receipt(frozen, "b", event_id="pending", attempt_id="b", sequence=1, observed_at=AT)
+        result = project(frozen, [unknown, pending])
+        self.assertIsNone(result["plannedProcessedPercent"])
+        self.assertEqual(result["processingCoverage"]["unknownWeight"], "3")
+        self.assertEqual(result["processingCoverage"]["unknownUnits"], ["a"])
+        self.assertEqual(result["knownProcessedPercentLowerBound"], 0)
+        self.assertEqual(result["evidenceProgress"]["realHumanApproved"]["status"], "not_applicable")
+        self.assertIsNone(result["evidenceProgress"]["realHumanApproved"]["percent"])
+        passed = done(frozen, "a")
+        conflicting = {**passed, "eventId": "conflict"}
+        self.assertIsNone(project(frozen, [passed, conflicting, pending])["plannedProcessedPercent"])
+
+    def test_reconciliation_requires_independent_validated_proof_of_exact_old_attempt(self):
+        frozen = plan([unit("a")])
+        unknown = p.status_receipt(frozen, "a", event_id="unknown", attempt_id="one", sequence=1,
+                                   observed_at=AT, executionStatus="outcome_unknown", phase="unknown_outcome")
+        assertion = p.status_receipt(frozen, "a", event_id="assertion", attempt_id="two", sequence=2,
+                                     observed_at=AT, reconcilesAttemptIds=["one"])
+        def proof(**changes):
+            options = dict(proof_id="proof", unknown_event_id="unknown", evidence_sha256=SHA,
+                           evidence_refs=["durable-reconciliation"], outcome="failed", evidence_validated=True)
+            options.update(changes)
+            return p.reconciliation_proof(frozen, "a", options.pop("attempt_id", "one"), **options)
+        invalid = [[], [proof(evidence_validated=False)], [proof(evidence_refs=[])],
+                   [proof(attempt_id="other")], [proof(unknown_event_id="different-event")]]
+        for proofs in invalid:
+            result = project(frozen, [unknown, assertion], reconciliations=proofs)
+            self.assertEqual(result["eta"]["status"], "unknown")
+            self.assertEqual(result["units"][0]["blockedReason"], "attempt_outcome_requires_reconciliation")
+        valid = project(frozen, [unknown, assertion], reconciliations=[proof()])
+        self.assertEqual(valid["eta"]["status"], "estimated")
+        self.assertFalse(valid["complete"])
+        self.assertEqual(valid["plannedProcessedPercent"], 100)
+        self.assertEqual(valid["gateCompletionPercent"], 0)
 
     def test_plan_hash_drift_and_explicit_versioned_transition(self):
         first = plan([unit("a")])
@@ -156,6 +215,7 @@ class ProgressEvidenceTests(unittest.TestCase):
         frozen = plan([unit("a", weight=10**12), unit("b", weight=1)])
         result = project(frozen, [done(frozen, "a")])
         self.assertEqual(result["plannedCompletionPercent"], 99.999999)
+        self.assertEqual(result["knownProcessedPercentLowerBound"], 99.999999)
         self.assertFalse(result["complete"])
 
     def test_input_integrity_issues_hold_completion_and_future_receipt_rejected(self):
@@ -184,6 +244,16 @@ class ProgressEvidenceTests(unittest.TestCase):
 
 
 class EtaProjectionTests(unittest.TestCase):
+    def test_null_unit_queue_keeps_processed_progress_and_degrades_eta(self):
+        frozen = plan([unit("a"), unit("b")])
+        pending = p.status_receipt(frozen, "b", event_id="pending", attempt_id="b", sequence=1,
+                                   observed_at=AT, queueRemainingSeconds=None)
+        result = project(frozen, [done(frozen, "a"), pending])
+        self.assertEqual(result["plannedProcessedPercent"], 50)
+        self.assertEqual(result["gateCompletionPercent"], 50)
+        self.assertEqual(result["eta"]["status"], "unknown")
+        self.assertIn("unit_queue_unknown", result["eta"]["reasonCodes"])
+
     def test_serial_parallel_resource_limit_and_known_queue_fixture(self):
         fixture = json.loads(FIXTURE.read_text())
         for scenario in fixture["scenarios"]:
@@ -297,6 +367,28 @@ class EtaProjectionTests(unittest.TestCase):
 
 
 class AdapterAndDurabilityTests(unittest.TestCase):
+    def test_cli_null_unit_queue_writes_progress_and_unknown_eta(self):
+        scenario = json.loads(FIXTURE.read_text())["scenarios"][1]
+        frozen = plan([unit(row["id"], row["dependsOn"]) for row in scenario["units"]], scenario["capacity"])
+        pending = p.status_receipt(frozen, "b", event_id="pending", attempt_id="b", sequence=1,
+                                   observed_at=AT, queueRemainingSeconds=None)
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            values = {"plan": frozen, "receipts": [done(frozen, "a"), pending],
+                      "samples": [sample(frozen["units"][0])], "resource-state": pools(scenario["capacity"], scenario["queueSeconds"])}
+            for name, value in values.items():
+                (root / (name + ".json")).write_text(json.dumps(value))
+            command = [sys.executable, "scripts/sermon_run_progress.py", "project", "--at", AT,
+                       "--output", str(root / "progress.json")]
+            for name in values:
+                command += ["--" + name, str(root / (name + ".json"))]
+            result = subprocess.run(command, text=True, capture_output=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            snapshot = json.loads((root / "progress.json").read_text())
+            self.assertEqual(snapshot["plannedProcessedPercent"], 50)
+            self.assertEqual(snapshot["eta"]["status"], "unknown")
+            self.assertIn("unit_queue_unknown", snapshot["eta"]["reasonCodes"])
+
     def test_tracker_dependency_reuse_never_imports_complete_checkpoints(self):
         ledger = tracker.new_ledger("fixture-page", ["ko"])
         for row in ledger["steps"].values():
