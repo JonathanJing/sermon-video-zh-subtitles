@@ -15,6 +15,8 @@ public struct VerifiedPublishedTranscript: Sendable, Equatable {
     public let locale: String
     public let sourceIdentitySha256: String
     public let title: String?
+    public let series: String?
+    public let speaker: String?
     public let durationSeconds: Double
     public let fullText: [PublishedTranscriptCue]
     public let captions: [PublishedTranscriptCue]
@@ -56,6 +58,7 @@ public struct VerifiedPublishedTranscript: Sendable, Equatable {
         }
         return .init(pageID: page.id, locale: package.targetLocale,
                      sourceIdentitySha256: page.sourceIdentitySha256, title: source.title,
+                     series: source.series, speaker: source.speaker,
                      durationSeconds: source.durationSeconds, fullText: source.cues.map(convert),
                      captions: spoken.cues.map(convert))
     }
@@ -80,6 +83,8 @@ private struct FullContent: Decodable {
     let sourceMediaSha256: String
     let durationSeconds: Double
     let title: String
+    let series: String?
+    let speaker: String?
     let cues: [RawCue]
 }
 

@@ -1,5 +1,6 @@
 #if DEBUG
 import CryptoKit
+import Dispatch
 import Foundation
 import SwiftUI
 import TongxingCore
@@ -22,6 +23,10 @@ enum UITestLaunch {
             statisticsDefaults: UserDefaults(suiteName: "Tongxing-UITests-\(runID.uuidString)")!)
     }
 
+    static func voiceDemoFixture() throws -> VoiceDemoCatalog {
+        try VoiceDemoCatalog.validatedClips(UITestContent.responses["/voice-demos/speaker-clips-v2/preview-catalog.json"]!)
+    }
+
     /// Hosted render tests share the synthetic catalog/audio transport, while
     /// keeping all downloads, preferences and playback history in private state.
     @MainActor static func makeFixtureModel(supportDirectory: URL, statisticsDefaults: UserDefaults,
@@ -32,8 +37,22 @@ enum UITestLaunch {
         configuration.urlCache = nil
         return AppModel(supportDirectory: supportDirectory, contentOrigin: UITestContent.origin,
                         session: URLSession(configuration: configuration),
-                        statisticsDefaults: statisticsDefaults)
+                        statisticsDefaults: statisticsDefaults,
+                        alignmentCapture: ProcessInfo.processInfo.arguments.contains("--ui-testing-alignment-failure")
+                            ? UITestFailedCapture() : nil)
     }
+}
+
+/// Synthetic capture failure only in the explicitly isolated DEBUG UI fixture.
+@MainActor
+private final class UITestFailedCapture: MicrophoneCapturing {
+    func capture(seconds: Double) async throws -> CapturedAudio {
+        if !ProcessInfo.processInfo.arguments.contains("--ui-testing-alignment-failure-immediate") {
+            try await Task.sleep(for: .milliseconds(250))
+        }
+        throw AudioAlignmentError.invalidCapture
+    }
+    func cancel() {}
 }
 
 struct UITestTextSize: ViewModifier {
@@ -62,6 +81,7 @@ private enum UITestContent {
             for _ in 0..<frameCount { result.append(silentFrame) }
             return result
         }
+        let fixtureVideo = Data(base64Encoded: "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")!
         let firstAudio = audio(frameCount: 500)
         let secondAudio = audio(frameCount: 667)
         let spanishAudio = audio(frameCount: 550)
@@ -146,14 +166,14 @@ private enum UITestContent {
             let speaker = "speaker_\(index)"
             let original: [String: Any] = [
                 "path": "\(demoPrefix)/\(speaker)/en-original.mp3",
-                "sha256": String(repeating: "c", count: 64), "bytes": 100,
+                "sha256": hash(firstAudio), "bytes": firstAudio.count,
                 "text": "Synthetic English reference.",
                 "transcriptStatus": "machine_screening_only",
                 "sourceUrl": "https://example.test/sermon/\(index)",
             ]
             let samples: [[String: Any]] = ["zh-Hans", "ko", "es", "vi"].map { locale in
                 ["path": "\(demoPrefix)/\(speaker)/\(locale).mp3",
-                 "sha256": String(repeating: "d", count: 64), "bytes": 100,
+                 "sha256": hash(secondAudio), "bytes": secondAudio.count,
                  "locale": locale, "text": "Synthetic sample.",
                  "humanListeningStatus": "pending"]
             }
@@ -167,7 +187,7 @@ private enum UITestContent {
             "humanListeningStatus": "pending", "speakerCount": 6, "sampleCount": 24,
             "speakers": demoSpeakers,
         ], options: [.sortedKeys])
-        return ["/weekly.json": try! JSONEncoder().encode(catalog),
+        var result: [String: Data] = ["/weekly.json": try! JSONEncoder().encode(catalog),
                 "/multilingual-v2.json": try! JSONSerialization.data(withJSONObject: multilingual, options: [.sortedKeys]),
                 "\(demoPrefix)/catalog.json": demos,
                 "/releases/ui-test-week/zh-Hans.json": chineseRelease,
@@ -179,12 +199,183 @@ private enum UITestContent {
                 "/media/fixture-first.mp3": firstAudio,
                 "/media/fixture-second.mp3": secondAudio,
                 "/media/ui-test-clip/es.mp3": spanishAudio]
+        for speaker in demoSpeakers {
+            let original = speaker["original"] as! [String: Any]
+            result[original["path"] as! String] = firstAudio
+            for sample in speaker["samples"] as! [[String: Any]] { result[sample["path"] as! String] = secondAudio }
+        }
+        let clipPrefix = "/voice-demos/speaker-clips-v2"
+        let english = "Synthetic English reference."
+        let textHash = hash(Data(english.utf8))
+        let clips: [[String: Any]] = (0..<6).map { index in
+            let id = "speaker_\(index)"
+            let clipID = "\(id)-fixture-v2"
+            func asset(_ name: String, locale: String? = nil) -> [String: Any] {
+                var value: [String: Any] = ["path": "\(clipPrefix)/\(id)/\(name).mp3",
+                    "sha256": hash(firstAudio), "bytes": firstAudio.count, "durationSeconds": 36,
+                    "sourceClipId": clipID, "englishTextSha256": textHash,
+                    "text": locale == nil ? english : "Synthetic \(locale!) sample."]
+                if let locale { value["locale"] = locale; value["humanListeningStatus"] = "pending" }
+                else { value["locale"] = "en"; value["transcriptStatus"] = "machine_screening_only" }
+                result[value["path"] as! String] = firstAudio
+                return value
+            }
+            // Silent black video: synthetic UI fixture, not a sermon excerpt.
+            let video: [String: Any] = ["path": "\(clipPrefix)/\(id)/source.mp4", "sha256": hash(fixtureVideo),
+                "bytes": fixtureVideo.count, "durationSeconds": 36, "sourceClipId": clipID]
+            result[video["path"] as! String] = fixtureVideo
+            return ["speakerId": id, "displayName": "Synthetic speaker \(index)", "clipId": clipID,
+                "source": ["url": "https://example.test/sermon/\(index)", "startSeconds": 100,
+                    "endSeconds": 136, "englishTextSha256": textHash], "original": asset("en-original"),
+                "video": video, "samples": ["zh-Hans", "ko", "es"].map { asset($0, locale: $0) }]
+        }
+        let clipCatalog = try! JSONSerialization.data(withJSONObject: [
+                "schemaVersion": "sermon-speaker-clip-demo-catalog-v2", "status": "audition_demo",
+                "sourceScope": "source_clip_translation_audition_not_sermon_release",
+                "humanListeningStatus": "pending", "speakerCount": 6, "sampleCount": 18, "speakers": clips], options: [.sortedKeys])
+        result["\(clipPrefix)/preview-catalog.json"] = clipCatalog
+        if ProcessInfo.processInfo.arguments.contains("--ui-testing-voice-clips") { result["\(clipPrefix)/catalog.json"] = clipCatalog }
+        return result
     }()
 
     static let dualScriptResponses = nativePublishedResponses(locale: "ko",
         fullText: "전체 원고입니다.", caption: "짧은 자막입니다.")
     static let previewResponses = nativePublishedResponses(locale: "zh-Hans",
         fullText: "这是用于检查页面布局的合成完整文稿。", caption: "这是用于预览的合成字幕。")
+
+    /// Multi-locale timing/search fixture is opt-in and cannot affect the
+    /// existing preview or catalog-routing samples.
+    static let locateResponses: [String: Data] = {
+        let pageID = "ui-test-locate-flow"
+        let audio = responses["/media/fixture-first.mp3"]!
+        let sourceHash = String(repeating: "a", count: 64)
+        let spokenHash = String(repeating: "b", count: 64)
+        let locales = ["zh-Hans", "ko"]
+        let english = [
+            "First synthetic source sentence for the opening.",
+            "Listen for the lighthouse beside the harbor.",
+            "Third synthetic source sentence for the ending."
+        ]
+        let captions = [
+            "zh-Hans": ["中文第一句：开始收听。", "中文第二句：灯塔在港口旁。", "中文第三句：继续收听。"],
+            "ko": ["한국어 첫 번째 문장: 듣기를 시작합니다.", "한국어 두 번째 문장: 등대는 항구 옆에 있습니다.", "한국어 세 번째 문장: 계속 듣습니다."]
+        ]
+        func hash(_ data: Data) -> String { SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined() }
+        func encoded(_ value: [String: Any]) -> Data {
+            try! JSONSerialization.data(withJSONObject: value, options: [.sortedKeys])
+        }
+        var result: [String: Data] = [:]
+        var targets: [String: Any] = [:]
+        var englishTargets: [String: Any] = [:]
+        for locale in locales {
+            let html = Data("<html><body><h1>测试英文定位证道</h1></body></html>".utf8)
+            let sentences: [String] = captions[locale]!
+            let rows: [[String: Any]] = (0..<3).map { (index: Int) -> [String: Any] in
+                let start = Double(index * 12)
+                let end = start + 12.0
+                let row: [String: Any] = [
+                    "textGroupId": "g\(index + 1)", "sourceUnitIds": ["u\(index + 1)"],
+                    "start": start, "end": end, "text": sentences[index]
+                ]
+                return row
+            }
+            let contentValue: [String: Any] = [
+                "schemaVersion": "sermon-full-video-text-content-v1", "pageId": pageID,
+                "sourceLocale": "en", "targetLocale": locale, "status": "human_reviewed",
+                "englishSourcePackageJsonSha256": sourceHash, "sourceMediaSha256": sourceHash,
+                "targetLanguageCandidateJsonSha256": sourceHash,
+                "durationSeconds": 36.0, "title": "测试英文定位证道", "cues": rows
+            ]
+            let content = encoded(contentValue)
+            let captionData = encoded(["cues": rows])
+            let assets: [[String: String]] = [
+                ["role": "page", "path": "/pages/\(pageID)/\(locale)/index.html", "sha256": hash(html)],
+                ["role": "content", "path": "/content/\(pageID)/\(locale).json", "sha256": hash(content)],
+                ["role": "captions", "path": "/captions/\(pageID)/\(locale).json", "sha256": hash(captionData)],
+                ["role": "audio", "path": "/media/\(pageID)/\(locale).mp3", "sha256": hash(audio)]
+            ]
+            let releaseValue: [String: Any] = [
+                "schemaVersion": "sermon-target-language-release-package-v2",
+                "packageId": "\(pageID)-\(locale)", "pageId": pageID,
+                "sourceLocale": "en", "targetLocale": locale,
+                "targetLanguageCandidateJsonSha256": sourceHash,
+                "spokenTargetLanguageCandidateJsonSha256": spokenHash,
+                "targetLanguageAudioPackageJsonSha256": spokenHash,
+                "status": "published_http_verified", "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed", "interfaceLocale": locale,
+                "contentLocale": locale, "audioLocale": locale,
+                "assets": assets,
+                "httpVerification": ["status": "pass", "evidenceSha256": sourceHash],
+                "deviceAcceptance": ["status": "not_run", "evidenceSha256": NSNull()],
+                "venueAcceptance": ["status": "not_run", "evidenceSha256": NSNull()], "issues": []
+            ]
+            let release = encoded(releaseValue)
+            targets[locale] = [
+                "releasePackageUrl": "/releases-v2/\(pageID)/\(locale).json",
+                "releasePackageJsonSha256": hash(release),
+                "contentStatus": "human_reviewed", "audioStatus": "human_reviewed",
+                "capabilities": ["text", "captions", "audio"]
+            ]
+            englishTargets[locale] = [
+                "contentSha256": hash(content), "captionsSha256": hash(captionData),
+                "releasePackageJsonSha256": hash(release),
+                "blocks": (0..<3).map { index -> [String: Any] in
+                    ["textGroupId": "g\(index + 1)", "sourceUnitIds": ["u\(index + 1)"], "english": english[index]]
+                }
+            ]
+            result["/releases-v2/\(pageID)/\(locale).json"] = release
+            result["/pages/\(pageID)/\(locale)/index.html"] = html
+            result["/content/\(pageID)/\(locale).json"] = content
+            result["/captions/\(pageID)/\(locale).json"] = captionData
+            result["/media/\(pageID)/\(locale).mp3"] = audio
+        }
+        result["/english-reference/\(pageID).json"] = encoded([
+            "schemaVersion": "sermon-published-english-reference-v1", "pageId": pageID,
+            "sourceIdentitySha256": sourceHash, "sourceMediaSha256": sourceHash,
+            "reviewState": "human_approved", "targets": englishTargets
+        ])
+        result["/multilingual-v3.json"] = encoded([
+            "schemaVersion": "sermon-multilingual-catalog-v3", "generatedAt": "2026-09-27T00:00:00Z",
+            "defaultPageId": pageID,
+            "pages": [["id": pageID, "title": "测试英文定位证道", "date": "2026-09-27",
+                       "sourceLocale": "en", "sourceIdentitySha256": sourceHash,
+                       "defaultTargetLocale": "zh-Hans", "targets": targets]]
+        ])
+        return result
+    }()
+
+    static let alignmentFailureResponses: [String: Data] = {
+        var result = locateResponses
+        var catalog = try! JSONSerialization.jsonObject(with: result["/multilingual-v3.json"]!) as! [String: Any]
+        var pages = catalog["pages"] as! [[String: Any]]
+        var page = pages[0]
+        var targets = page["targets"] as! [String: [String: Any]]
+        let sourceHash = String(repeating: "a", count: 64)
+        let trackHash = SHA256.hash(data: result["/media/ui-test-locate-flow/zh-Hans.mp3"]!).map { String(format: "%02x", $0) }.joined()
+        let index = try! JSONSerialization.data(withJSONObject: [
+            "schemaVersion": "sermon-landmark-index-v1", "algorithmVersion": "spectral-landmarks-v1",
+            "sampleRate": 8000, "hopSize": 256, "fftSize": 1024,
+            "sourceSha256": sourceHash, "trackSha256": trackHash, "pageId": "ui-test-locate-flow",
+            "sourceStartSeconds": 0, "sourceEndSeconds": 36,
+            "window": ["startSeconds": 0, "endSeconds": 36], "durationSeconds": 36,
+            "landmarkCount": 1, "postings": ["1": [0]]
+        ], options: [.sortedKeys])
+        let indexHash = SHA256.hash(data: index).map { String(format: "%02x", $0) }.joined()
+        let indexPath = "/fingerprints/\(indexHash.prefix(16))-landmarks.json"
+        targets["zh-Hans"]!["audioFingerprint"] = [
+            "schemaVersion": "sermon-audio-fingerprint-binding-v1", "pageId": "ui-test-locate-flow",
+            "sourceSha256": sourceHash, "trackSha256": trackHash,
+            "sourceStartSeconds": 0, "sourceEndSeconds": 36,
+            "algorithmVersion": "spectral-landmarks-v1", "captureSeconds": 10,
+            "indexSha256": indexHash, "indexUrl": indexPath
+        ]
+        targets["zh-Hans"]!["capabilities"] = ["text", "captions", "audio", "alignment"]
+        page["sourceMediaSha256"] = sourceHash; page["targets"] = targets
+        pages[0] = page; catalog["pages"] = pages
+        result["/multilingual-v3.json"] = try! JSONSerialization.data(withJSONObject: catalog, options: [.sortedKeys])
+        result[indexPath] = index
+        return result
+    }()
 
     private static func nativePublishedResponses(locale: String, fullText: String, caption: String) -> [String: Data] {
         let pageID = "ui-test-full-video"
@@ -200,6 +391,7 @@ private enum UITestContent {
             "sourceMediaSha256": displayHash,
             "targetLanguageCandidateJsonSha256": displayHash,
             "durationSeconds": 20.0, "title": "测试完整视频证道",
+            "series": "启示录：耶稣带来的安慰与盼望", "speaker": "Eric Geiger",
             "cues": [["textGroupId": "g1", "sourceUnitIds": ["u1"], "start": 0.0, "end": 10.0, "text": fullText]]
         ], options: [.sortedKeys])
         let captions = try! JSONSerialization.data(withJSONObject: [
@@ -262,9 +454,17 @@ private enum UITestContent {
 /// Offline launch reports a real URLSession error; the production repositories
 /// must recover from their own previously written cache and verified audio.
 private class UITestContentProtocol: URLProtocol {
+    private let deliveryLock = NSRecursiveLock()
+    private var delayedResponse: DispatchWorkItem?
+    private var stopped = false
+
     class var offline: Bool { ProcessInfo.processInfo.arguments.contains("--ui-testing-offline") }
     class var dualScript: Bool { ProcessInfo.processInfo.arguments.contains("--ui-testing-dual-script") }
-    class var nativeResponses: [String: Data]? { dualScript ? UITestContent.dualScriptResponses : nil }
+    class var nativeResponses: [String: Data]? {
+        if ProcessInfo.processInfo.arguments.contains("--ui-testing-alignment-failure") { return UITestContent.alignmentFailureResponses }
+        if ProcessInfo.processInfo.arguments.contains("--ui-testing-locate-flow") { return UITestContent.locateResponses }
+        return dualScript ? UITestContent.dualScriptResponses : nil
+    }
     override class func canInit(with request: URLRequest) -> Bool { true }
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
 
@@ -278,16 +478,25 @@ private class UITestContentProtocol: URLProtocol {
             return
         }
         if let data = Self.nativeResponses?[url.path] {
-            let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: "HTTP/1.1",
-                headerFields: ["Content-Length": String(data.count),
-                               "Content-Type": url.path.hasSuffix(".json") ? "application/json"
-                                   : url.path.hasSuffix(".mp3") ? "audio/mpeg" : "text/html"])!
-            client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
-            client?.urlProtocol(self, didLoad: data)
-            client?.urlProtocolDidFinishLoading(self)
+            if ProcessInfo.processInfo.arguments.contains("--ui-testing-delayed-transcript"),
+               url.path == "/content/ui-test-locate-flow/ko.json" {
+                // Delay only the transcript request, never the language release
+                // or audio. The URLSession actor remains free to prepare audio.
+                let work = DispatchWorkItem { [weak self] in
+                    self?.deliverNativeResponse(data, at: url)
+                }
+                deliveryLock.lock()
+                delayedResponse = work
+                if stopped { work.cancel() }
+                deliveryLock.unlock()
+                DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + 8, execute: work)
+            } else {
+                deliverNativeResponse(data, at: url)
+            }
             return
         }
-        if url.path == "/multilingual-v3.json" {
+        if url.path == "/multilingual-v3.json" || (url.path == "/voice-demos/speaker-clips-v2/catalog.json"
+            && UITestContent.responses[url.path] == nil) {
             let response = HTTPURLResponse(url: url, statusCode: 404, httpVersion: "HTTP/1.1",
                 headerFields: ["Content-Length": "1"])!
             client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
@@ -301,13 +510,33 @@ private class UITestContentProtocol: URLProtocol {
         }
         let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: "HTTP/1.1",
             headerFields: ["Content-Length": String(data.count),
-                           "Content-Type": url.path.hasSuffix(".json") ? "application/json" : "audio/mpeg"])!
+                           "Content-Type": url.path.hasSuffix(".json") ? "application/json" : url.path.hasSuffix(".mp4") ? "video/mp4" : "audio/mpeg"])!
         client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
         client?.urlProtocol(self, didLoad: data)
         client?.urlProtocolDidFinishLoading(self)
     }
 
-    override func stopLoading() {}
+    private func deliverNativeResponse(_ data: Data, at url: URL) {
+        deliveryLock.lock()
+        defer { deliveryLock.unlock() }
+        guard !stopped, delayedResponse?.isCancelled != true else { return }
+        delayedResponse = nil
+        let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: "HTTP/1.1",
+            headerFields: ["Content-Length": String(data.count),
+                           "Content-Type": url.path.hasSuffix(".json") ? "application/json"
+                               : url.path.hasSuffix(".mp3") ? "audio/mpeg" : "text/html"])!
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        client?.urlProtocol(self, didLoad: data)
+        client?.urlProtocolDidFinishLoading(self)
+    }
+
+    override func stopLoading() {
+        deliveryLock.lock()
+        stopped = true
+        delayedResponse?.cancel()
+        delayedResponse = nil
+        deliveryLock.unlock()
+    }
 }
 
 private final class NativePreviewContentProtocol: UITestContentProtocol {

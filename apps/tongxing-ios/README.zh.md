@@ -8,20 +8,28 @@
 
 Dev Debug 与正式版沿用同一原生收听界面、播放器、下载、字幕和现场对齐流程。顶部的短语言标记或“更多 → 界面语言”可选择跟随系统、简体中文、English、한국어、Español、Tiếng Việt；切换只更新 App 的按钮与提示，不改变证道内容、音轨、进度或对齐状态。Debug 读取 Firebase Dev，Release 读取正式站点；Dev POC 目录不符合人工审核的 v2 发布条件时，继续显示原生中文版本，不以演示页替换播放器。
 
-“更多选项 → 多语种音色试听 · Demo”按需读取当前环境同源的试听目录。Release 使用正式站 `weekly.json.voiceBank` 的英文原声／中文样音及 `production-ko-es.json` 的韩语／西班牙语样音；Debug 保留 Dev 的四语试听目录。音频在播放前核对同源地址与 SHA-256，试听结束后恢复当前正式音轨。韩语和西班牙语样音仍待人工听审，不进入正式 Layer 3 审核状态。
+“更多选项 → 多语种音色试听 · Demo”与 Firebase 共用 `speaker-clips-v2/catalog.json`：六位讲员各有一段英文原声、相同区间的视频、英文机器转写参考及中／韩／西三语合成音频和译文。每次只显示所选语言的一条合成音频，文稿可展开对照；音频按钮切换播放／暂停且续播不归零。新目录尚未发布时，仅 HTTP 404 回退旧版独立样音并明确其文稿不同，不冒充同片段翻译。播放前核对同源、字节数与 SHA-256；新样片仍待人工听审，不改变正式 Layer 3 审核状态。内容准备、双端候选及验收见 [同片段试听](VOICE-DEMO.zh.md)。
 
 界面按用户选定的 **iOS 27 设计语言** 实施：系统导航与 Sheet、26 pt 起的动态字幕、单层 Liquid Glass 悬浮播放栏、深色语义配色，以及窄屏、横屏和大字布局。具体规则与 Apple 官方来源见 [设计约定](DESIGN.zh.md)。
 
+当前候选使用的功能符号、状态分支与品牌资源见 [图标清单](ICON-INVENTORY.zh.md)，用于逐组讨论图标优化。
+
+证道主页面和选择列表统一显示标题、系列、日期与讲员；日期和讲员以「·」连接，空间不足时分行。显示规则、元数据校验和候选验证见 [证道信息层级](SERMON-HEADING.zh.md)。
+
+全文里的时间按钮点击时请求一次系统轻触反馈；重复点同一时间也有效，自动滚动不振动，定位继续保留播放／暂停状态。实现和真机验收边界见 [时间按钮触觉反馈](TIMESTAMP-HAPTICS.zh.md)。
+
 ## 打开与运行
+
+正式版与可共存的测试版共用源码：`Tongxing` 使用原 App 标识，`TongxingBeta` 使用独立的 `com.jonathanjing.tongxing.beta`，手机名称为「同行-beta」。BetaDebug/BetaRelease 默认连接 Firebase Dev；灵动岛返回链接与本机存储随 App 身份隔离。开发测试使用 `./scripts/ios.sh test --scheme TongxingBeta`。测试版到正式版的源码冻结、归档记录与发布验证见 [Beta 晋升流程](BETA-PROMOTION.zh.md)。
 
 直接打开 [Tongxing.xcodeproj](Tongxing.xcodeproj)。工程文件已保存，无需先安装依赖管理器；两个 Swift package 都在本地，没有第三方 SDK。
 
-1. 在 Xcode 选择 `Tongxing` scheme 与 iPhone 模拟器或已连接的 iPhone。本机 macOS 27 使用已安装的 `Xcode-beta.app`。
-2. 真机运行时，复制 `Config/Local.example.xcconfig` 为被 Git 忽略的 `Config/Local.xcconfig` 并填写自己的开发者 Team；也可在 Xcode 的 `Signing & Capabilities` 检查实际签名。开发用 Bundle ID 默认 `com.jonathanjing.tongxing.dev`，注册前可根据账号调整。
+1. 在 Xcode 选择 `Tongxing` scheme 与 iPhone 模拟器或已连接的 iPhone。本轮使用已安装的 `/Applications/Xcode.app`；CLI 通过进程级 `DEVELOPER_DIR` 选择工具链，不修改全局设置。
+2. 真机运行时，复制 `Config/Local.example.xcconfig` 为被 Git 忽略的 `Config/Local.xcconfig` 并填写自己的开发者 Team；也可在 Xcode 的 `Signing & Capabilities` 检查实际签名。先核对所选 scheme 的实际 App 身份，开发测试优先使用 `TongxingBeta`，避免覆盖正式 App。
 3. 点击 Run。首次读取目录需要网络；正式多语言页面会自动准备当前语言音频，已验证的本地音频下次直接复用。旧周次仍可手动选择“下载本篇”以离线收听。
 4. 使用 Product → Test（⌘U）运行 `TongxingTests` 和 `TongxingUITests`。播放器测试使用合成静音和独立临时历史；UI 测试使用显式启动的隔离目录与音频夹具。正常 Run 仍加载已发布内容。
 
-Apple 账号、Team 配置、设备信息和签名凭据不进入 Git。App Store Connect 已创建「同行·证道中文听译」记录；旧 build 2 曾完成分发 IPA 导出；本轮 build 3 已完成签名 Archive，新增扩展的分发导出受 Xcode 账号与描述文件阻塞，尚未上传 TestFlight。详见 [Beta 资料与实测](BETA-TESTING.zh.md)。
+Apple 账号、Team 配置、设备信息和签名凭据不进入 Git。独立「同行-beta」1.2.0 (47) 已上传并在内部测试组 Testing；其冻结源码与分发证据见 [Beta 47 记录](BETA-RELEASE-1.2.0-47.zh.md)。本轮暂停修复与同片段 Demo 属于后续开发候选，尚未进入 47。早期 build 2／3 的历史记录见 [Beta 资料与实测](BETA-TESTING.zh.md)。
 
 修改 `project.yml` 后从本目录重新生成：
 

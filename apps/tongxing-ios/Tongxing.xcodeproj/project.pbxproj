@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		042AC6D42BFDE10152C60248 /* VoiceDemoCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01D4A798172E895D46CF48E4 /* VoiceDemoCatalog.swift */; };
 		17719995BCE43C60385DB306 /* PlaybackControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE58D0C358A74F0BDE595617 /* PlaybackControllerTests.swift */; };
 		1F287CC791B5CA1037903C80 /* Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDD37841E68B061E39E91375 /* Localization.swift */; };
 		23FBE0C19259FFC619DE3B8B /* PrivacySupportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E53066E0326AFD8370B5145 /* PrivacySupportView.swift */; };
@@ -20,6 +21,8 @@
 		7EC13E455FCB8AD28F90271C /* AudioAlignmentController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98A292DFC6FBB07302A4DE77 /* AudioAlignmentController.swift */; };
 		82DAE4DBC18C3F1A4BD05687 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 02EF54CEB76892C25F99A6FB /* Localizable.xcstrings */; };
 		8B8A2624687249CFAB61DAFB /* ListeningFlowUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 239227789D17BF0B1B0A1614 /* ListeningFlowUITests.swift */; };
+		94B466A5A536CBD9995786DE /* EnglishLocateSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FEF8605856DB0FE84A04EC2 /* EnglishLocateSheet.swift */; };
+		9A00442EA947A8B5939AB68B /* AppIdentityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 502E58B32BA9CB649A03DB11 /* AppIdentityTests.swift */; };
 		9D37A5E9084A59C6C69B0EEA /* ListeningLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD504056359930D928DD8069 /* ListeningLiveActivity.swift */; };
 		A442F0B6EE2D16D0DAE46A00 /* SwiftUIPreviewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6163F70382A5001D532DC114 /* SwiftUIPreviewTests.swift */; };
 		AAE50D4E51C22893F01DEAFD /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = E8CDE0AD081CB32BAE3CD0CB /* PrivacyInfo.xcprivacy */; };
@@ -31,6 +34,8 @@
 		C7430BCC556F70CBE78D8CDB /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC6D116D3A73A078D6FA5218 /* DesignSystem.swift */; };
 		C84F91355DB74C84BAC96384 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A757BEABA30910DC76E26BE /* ContentView.swift */; };
 		CAB48F9F80542B5845FEF4B7 /* ListeningActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60D53F716EC96280DEAF16C4 /* ListeningActivityAttributes.swift */; };
+		CB435A938093472AA1DF77EB /* VoiceDemoCatalogV2Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E55BEC389D3326BFB083428 /* VoiceDemoCatalogV2Tests.swift */; };
+		D0F9336C23F6D98E4B199A86 /* VoiceDemoSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 270C99CB4AFCBD470C0E1B75 /* VoiceDemoSection.swift */; };
 		DA598EC364686E234B86F56B /* PlaybackController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34B67E7FE8944242C03C8904 /* PlaybackController.swift */; };
 		F104CF6576ABBCDDF4B54A62 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F81E8D165D65FEF70E65FFF /* AppModel.swift */; };
 		FA2D8C343F2F8AC19D4CB662 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = E8AB6F9FA25BB0980EF2FE48 /* InfoPlist.strings */; };
@@ -76,21 +81,26 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		01D4A798172E895D46CF48E4 /* VoiceDemoCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceDemoCatalog.swift; sourceTree = "<group>"; };
 		02EF54CEB76892C25F99A6FB /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		07B59FA4533A491CF4AA2D83 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		0D25C402E721BC4E502AF672 /* tongxing-ios */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "tongxing-ios"; path = .; sourceTree = SOURCE_ROOT; };
 		0F81E8D165D65FEF70E65FFF /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		1EB48128E58E88F812DC4214 /* MicrophoneCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MicrophoneCapture.swift; sourceTree = "<group>"; };
 		239227789D17BF0B1B0A1614 /* ListeningFlowUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningFlowUITests.swift; sourceTree = "<group>"; };
+		270C99CB4AFCBD470C0E1B75 /* VoiceDemoSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceDemoSection.swift; sourceTree = "<group>"; };
 		3258F6BBF467D18B238176B8 /* Tongxing.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Tongxing.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		34B67E7FE8944242C03C8904 /* PlaybackController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackController.swift; sourceTree = "<group>"; };
 		3A757BEABA30910DC76E26BE /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		3E53066E0326AFD8370B5145 /* PrivacySupportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacySupportView.swift; sourceTree = "<group>"; };
 		4AE35BDEC7081304D75711B2 /* ListeningActivityExtension.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = ListeningActivityExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		502E58B32BA9CB649A03DB11 /* AppIdentityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIdentityTests.swift; sourceTree = "<group>"; };
 		58CF4F36B9265709AAF09A1C /* Signing.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Signing.xcconfig; sourceTree = "<group>"; };
 		60D53F716EC96280DEAF16C4 /* ListeningActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningActivityAttributes.swift; sourceTree = "<group>"; };
 		6163F70382A5001D532DC114 /* SwiftUIPreviewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftUIPreviewTests.swift; sourceTree = "<group>"; };
 		61FE1B88425139B2F592ED0A /* TongxingApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TongxingApp.swift; sourceTree = "<group>"; };
+		6E55BEC389D3326BFB083428 /* VoiceDemoCatalogV2Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceDemoCatalogV2Tests.swift; sourceTree = "<group>"; };
+		6FEF8605856DB0FE84A04EC2 /* EnglishLocateSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnglishLocateSheet.swift; sourceTree = "<group>"; };
 		70BEE8330224D04ACF54EE70 /* ListeningActivityWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningActivityWidget.swift; sourceTree = "<group>"; };
 		72F704FFC13274A549628FF2 /* Core */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Core; path = Core; sourceTree = SOURCE_ROOT; };
 		81423A9849E5E7BDFBDA1423 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
@@ -166,6 +176,7 @@
 				98A292DFC6FBB07302A4DE77 /* AudioAlignmentController.swift */,
 				3A757BEABA30910DC76E26BE /* ContentView.swift */,
 				BC6D116D3A73A078D6FA5218 /* DesignSystem.swift */,
+				6FEF8605856DB0FE84A04EC2 /* EnglishLocateSheet.swift */,
 				FD504056359930D928DD8069 /* ListeningLiveActivity.swift */,
 				BDD37841E68B061E39E91375 /* Localization.swift */,
 				1EB48128E58E88F812DC4214 /* MicrophoneCapture.swift */,
@@ -175,6 +186,8 @@
 				3E53066E0326AFD8370B5145 /* PrivacySupportView.swift */,
 				61FE1B88425139B2F592ED0A /* TongxingApp.swift */,
 				BD0FEA1F83F4300CB78A0935 /* UITestLaunch.swift */,
+				01D4A798172E895D46CF48E4 /* VoiceDemoCatalog.swift */,
+				270C99CB4AFCBD470C0E1B75 /* VoiceDemoSection.swift */,
 				E8AB6F9FA25BB0980EF2FE48 /* InfoPlist.strings */,
 				8DE1B32273C5ED188D2CD1CC /* Resources */,
 			);
@@ -208,9 +221,11 @@
 		DDCFFA9BC8A66D0705E124E9 /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				502E58B32BA9CB649A03DB11 /* AppIdentityTests.swift */,
 				9BF531D6B8AD0E94016F0BC3 /* AudioAlignmentControllerTests.swift */,
 				EE58D0C358A74F0BDE595617 /* PlaybackControllerTests.swift */,
 				6163F70382A5001D532DC114 /* SwiftUIPreviewTests.swift */,
+				6E55BEC389D3326BFB083428 /* VoiceDemoCatalogV2Tests.swift */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -401,9 +416,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9A00442EA947A8B5939AB68B /* AppIdentityTests.swift in Sources */,
 				C2AF9808AFFEED2AD7D2DF2A /* AudioAlignmentControllerTests.swift in Sources */,
 				17719995BCE43C60385DB306 /* PlaybackControllerTests.swift in Sources */,
 				A442F0B6EE2D16D0DAE46A00 /* SwiftUIPreviewTests.swift in Sources */,
+				CB435A938093472AA1DF77EB /* VoiceDemoCatalogV2Tests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -424,6 +441,7 @@
 				7EC13E455FCB8AD28F90271C /* AudioAlignmentController.swift in Sources */,
 				C84F91355DB74C84BAC96384 /* ContentView.swift in Sources */,
 				C7430BCC556F70CBE78D8CDB /* DesignSystem.swift in Sources */,
+				94B466A5A536CBD9995786DE /* EnglishLocateSheet.swift in Sources */,
 				32B58C5985220B581D4CF45B /* ListeningActivityAttributes.swift in Sources */,
 				9D37A5E9084A59C6C69B0EEA /* ListeningLiveActivity.swift in Sources */,
 				1F287CC791B5CA1037903C80 /* Localization.swift in Sources */,
@@ -433,6 +451,8 @@
 				23FBE0C19259FFC619DE3B8B /* PrivacySupportView.swift in Sources */,
 				272F205288C38B205D9DE540 /* TongxingApp.swift in Sources */,
 				B415795B942C6189370AAE61 /* UITestLaunch.swift in Sources */,
+				042AC6D42BFDE10152C60248 /* VoiceDemoCatalog.swift in Sources */,
+				D0F9336C23F6D98E4B199A86 /* VoiceDemoSection.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -469,36 +489,12 @@
 /* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
-		3E9A90D181BF152B250F5C27 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = 58CF4F36B9265709AAF09A1C /* Signing.xcconfig */;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 24;
-				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = App/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 1.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.jonathanjing.tongxing.dev;
-				PRODUCT_NAME = Tongxing;
-				SDKROOT = iphoneos;
-				SUPPORTS_MACCATALYST = NO;
-				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TONGXING_CONTENT_ORIGIN = "https://ai-for-god-sermon-audio-dev.web.app";
-			};
-			name = Debug;
-		};
-		4FC68D69CDCDB70DD0D5EEAF /* Debug */ = {
+		3AA2BB9937A69759590A9E5F /* BetaDebug */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 58CF4F36B9265709AAF09A1C /* Signing.xcconfig */;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
-				CURRENT_PROJECT_VERSION = 24;
+				CURRENT_PROJECT_VERSION = 47;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ListeningActivityExtension/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -506,7 +502,95 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 1.2.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.jonathanjing.tongxing.beta.listening-activity";
+				PRODUCT_NAME = ListeningActivityExtension;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TONGXING_ACTIVITY_DISPLAY_NAME = "同行-beta播放状态";
+				TONGXING_URL_SCHEME = "tongxing-beta";
+			};
+			name = BetaDebug;
+		};
+		3E9A90D181BF152B250F5C27 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 58CF4F36B9265709AAF09A1C /* Signing.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 46;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = App/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.2.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jonathanjing.tongxing.dev;
+				PRODUCT_NAME = Tongxing;
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TONGXING_CONTENT_ORIGIN = "https://ai-for-god-sermon-audio-dev.web.app";
+				TONGXING_DISPLAY_NAME = "同行";
+				TONGXING_URL_SCHEME = tongxing;
+			};
+			name = Debug;
+		};
+		3F84AA7A9C48D561B5F3871E /* BetaRelease */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 58CF4F36B9265709AAF09A1C /* Signing.xcconfig */;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.jonathanjing.tongxing.beta.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Tongxing;
+			};
+			name = BetaRelease;
+		};
+		4EB7B7114D526E9C792F2FB2 /* BetaDebug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 58CF4F36B9265709AAF09A1C /* Signing.xcconfig */;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.jonathanjing.tongxing.beta.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Tongxing.app/Tongxing";
+			};
+			name = BetaDebug;
+		};
+		4FC68D69CDCDB70DD0D5EEAF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 58CF4F36B9265709AAF09A1C /* Signing.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CURRENT_PROJECT_VERSION = 46;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ListeningActivityExtension/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.jonathanjing.tongxing.dev.listening-activity";
 				PRODUCT_NAME = ListeningActivityExtension;
 				SDKROOT = iphoneos;
@@ -514,6 +598,8 @@
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				TARGETED_DEVICE_FAMILY = "1,2";
+				TONGXING_ACTIVITY_DISPLAY_NAME = "同行播放状态";
+				TONGXING_URL_SCHEME = tongxing;
 			};
 			name = Debug;
 		};
@@ -594,6 +680,72 @@
 			};
 			name = Release;
 		};
+		688E9F2B01206650347D96CB /* BetaDebug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = BetaDebug;
+		};
 		6F296067A767ED41218C5DC3 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -660,6 +812,58 @@
 			};
 			name = Debug;
 		};
+		7B985A7CC3D25A9D86B046E8 /* BetaRelease */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 58CF4F36B9265709AAF09A1C /* Signing.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 47;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = App/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.2.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jonathanjing.tongxing.beta;
+				PRODUCT_NAME = Tongxing;
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TONGXING_CONTENT_ORIGIN = "https://ai-for-god-sermon-audio-dev.web.app";
+				TONGXING_DISPLAY_NAME = "同行-beta";
+				TONGXING_URL_SCHEME = "tongxing-beta";
+			};
+			name = BetaRelease;
+		};
+		8B2977CAC9084FA557379AC7 /* BetaDebug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 58CF4F36B9265709AAF09A1C /* Signing.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 47;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = App/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.2.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jonathanjing.tongxing.beta;
+				PRODUCT_NAME = Tongxing;
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TONGXING_CONTENT_ORIGIN = "https://ai-for-god-sermon-audio-dev.web.app";
+				TONGXING_DISPLAY_NAME = "同行-beta";
+				TONGXING_URL_SCHEME = "tongxing-beta";
+			};
+			name = BetaDebug;
+		};
 		8ED642C5DD0EA80CEA6F2AAE /* Debug */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 58CF4F36B9265709AAF09A1C /* Signing.xcconfig */;
@@ -678,12 +882,12 @@
 			};
 			name = Debug;
 		};
-		DD7E8BF61EC85D2DCA288A4A /* Release */ = {
+		A869787E08BBBDAF3F4591E1 /* BetaRelease */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 58CF4F36B9265709AAF09A1C /* Signing.xcconfig */;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
-				CURRENT_PROJECT_VERSION = 24;
+				CURRENT_PROJECT_VERSION = 47;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ListeningActivityExtension/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -691,7 +895,128 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 1.2.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.jonathanjing.tongxing.beta.listening-activity";
+				PRODUCT_NAME = ListeningActivityExtension;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TONGXING_ACTIVITY_DISPLAY_NAME = "同行-beta播放状态";
+				TONGXING_URL_SCHEME = "tongxing-beta";
+			};
+			name = BetaRelease;
+		};
+		AEA9DB1E3405ECF03EB359CE /* BetaRelease */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = BetaRelease;
+		};
+		C4A9723E88C70AF41D36EA98 /* BetaDebug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 58CF4F36B9265709AAF09A1C /* Signing.xcconfig */;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.jonathanjing.tongxing.beta.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Tongxing;
+			};
+			name = BetaDebug;
+		};
+		D34A0B1619B6591A9EEB0738 /* BetaRelease */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 58CF4F36B9265709AAF09A1C /* Signing.xcconfig */;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.jonathanjing.tongxing.beta.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Tongxing.app/Tongxing";
+			};
+			name = BetaRelease;
+		};
+		DD7E8BF61EC85D2DCA288A4A /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 58CF4F36B9265709AAF09A1C /* Signing.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CURRENT_PROJECT_VERSION = 46;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ListeningActivityExtension/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.jonathanjing.tongxing.dev.listening-activity";
 				PRODUCT_NAME = ListeningActivityExtension;
 				SDKROOT = iphoneos;
@@ -699,6 +1024,8 @@
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				TARGETED_DEVICE_FAMILY = "1,2";
+				TONGXING_ACTIVITY_DISPLAY_NAME = "同行播放状态";
+				TONGXING_URL_SCHEME = tongxing;
 			};
 			name = Release;
 		};
@@ -708,14 +1035,14 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 24;
+				CURRENT_PROJECT_VERSION = 46;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = App/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 1.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jonathanjing.tongxing.dev;
 				PRODUCT_NAME = Tongxing;
 				SDKROOT = iphoneos;
@@ -723,6 +1050,8 @@
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TONGXING_CONTENT_ORIGIN = "https://ai-for-god-sermon-audio.web.app";
+				TONGXING_DISPLAY_NAME = "同行";
+				TONGXING_URL_SCHEME = tongxing;
 			};
 			name = Release;
 		};
@@ -768,47 +1097,57 @@
 		20266D9C6E0A90A871844E4A /* Build configuration list for PBXNativeTarget "TongxingUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
+				C4A9723E88C70AF41D36EA98 /* BetaDebug */,
+				3F84AA7A9C48D561B5F3871E /* BetaRelease */,
 				8ED642C5DD0EA80CEA6F2AAE /* Debug */,
 				5D241FB778395A1EED019D61 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
+			defaultConfigurationName = BetaDebug;
 		};
 		3AAC76A3DAB8779AA97B315E /* Build configuration list for PBXNativeTarget "ListeningActivityExtension" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
+				3AA2BB9937A69759590A9E5F /* BetaDebug */,
+				A869787E08BBBDAF3F4591E1 /* BetaRelease */,
 				4FC68D69CDCDB70DD0D5EEAF /* Debug */,
 				DD7E8BF61EC85D2DCA288A4A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
+			defaultConfigurationName = BetaDebug;
 		};
 		A0D147F90124C3CF570A1EBC /* Build configuration list for PBXNativeTarget "Tongxing" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
+				8B2977CAC9084FA557379AC7 /* BetaDebug */,
+				7B985A7CC3D25A9D86B046E8 /* BetaRelease */,
 				3E9A90D181BF152B250F5C27 /* Debug */,
 				DECB6AC18673D9ECA82F0B55 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
+			defaultConfigurationName = BetaDebug;
 		};
 		C51F2968F2E20116C81FBF18 /* Build configuration list for PBXNativeTarget "TongxingTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
+				4EB7B7114D526E9C792F2FB2 /* BetaDebug */,
+				D34A0B1619B6591A9EEB0738 /* BetaRelease */,
 				F15F2EC59A594723F52E5E7D /* Debug */,
 				F014A668BAE63FD41133CE1F /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
+			defaultConfigurationName = BetaDebug;
 		};
 		D4C1AD82AD21DBD13925B557 /* Build configuration list for PBXProject "Tongxing" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
+				688E9F2B01206650347D96CB /* BetaDebug */,
+				AEA9DB1E3405ECF03EB359CE /* BetaRelease */,
 				6F296067A767ED41218C5DC3 /* Debug */,
 				64C002D51CA854D7FE689D17 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
+			defaultConfigurationName = BetaDebug;
 		};
 /* End XCConfigurationList section */
 

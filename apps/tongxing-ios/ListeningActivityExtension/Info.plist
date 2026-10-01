@@ -5,7 +5,9 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>zh-Hans</string>
 	<key>CFBundleDisplayName</key>
-	<string>同行播放状态</string>
+	<string>$(TONGXING_ACTIVITY_DISPLAY_NAME)</string>
+	<key>TongxingURLScheme</key>
+	<string>$(TONGXING_URL_SCHEME)</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>

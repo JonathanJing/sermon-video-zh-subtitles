@@ -16,7 +16,7 @@ make preview FILES=ContentView.swift DRY_RUN=1
 
 入口 [scripts/preview.py](scripts/preview.py) 调用 `xcodebuild test`，只执行 [SwiftUIPreviewTests](Tests/SwiftUIPreviewTests.swift) 的 `testRenderRequestedViews`。测试在 iOS 进程中用 `UIHostingController` 挂载实际 SwiftUI，通过 UIKit 的 [drawHierarchy](https://developer.apple.com/documentation/uikit/uiview/drawhierarchy(in:afterscreenupdates:)) 渲染，保存为 XCTest PNG 附件，再用 `xcresulttool` 导出。没有 Xcode Canvas／MCP 预览缓存依赖，也不需要打开 Xcode 窗口。
 
-使用所选模拟器实际屏幕尺寸、比例和安全区；局部组件嵌入一个明确的测试容器。图片只含测试视图窗口，不含 SpringBoard 状态栏和系统截图界面。`ContentView.swift` 是完整原生发布页；`PlaybackDock.swift` 展示现有播放器；`DesignSystem.swift` 展示语义表面与品牌样式。
+使用所选模拟器实际屏幕尺寸、比例和安全区；局部组件嵌入一个明确的测试容器。图片只含测试视图窗口，不含 SpringBoard 状态栏和系统截图界面。`ContentView.swift` 是完整原生发布页；`PlaybackDock.swift` 在静态容器中展示现有播放器与定位浮层组件，便于比较两处图标（不是打开浮层的交互截图）；`DesignSystem.swift` 展示语义表面与品牌样式；`EnglishLocateSheet.swift` 展示英文优先的全文定位面板（未输入搜索词的合成样本）；`VoiceDemoSection.swift` 展示同片段三语试听卡片（合成静音／黑色视频夹具，首位讲员展开）。
 
 预览复用 AppModel、唯一 PlaybackController 与现有合成 UI 测试传输，使用测试临时目录和独立统计偏好。页面标题、字幕、审核状态与静音 MP3 均是合成测试数据，不下载线上媒体、不生成内容、不打开麦克风。外观与字号作用于测试窗口，不修改模拟器系统偏好。常规 XCTest 未提供请求时该测试明确跳过；只有显式预览命令运行它。
 
@@ -49,6 +49,16 @@ make preview FILES=ContentView.swift SIMULATOR="$TONGXING_SIMULATOR_UDID" \
 `FILES` 选择已注册的源文件，不负责猜测一个文件里哪些 View、该怎样初始化模型。添加新视图时，在测试的 `fixture(_:model:)` 中注册实际视图与必要样本，在脚本 `REGISTRY` 中增加文件名，然后通过 `make preview-list` 检查。复用已有模型与生产组件；测试容器只提供预览所需环境。
 
 AI 修改 UI 后执行同一预览命令，读取本轮成功 Manifest 中的 PNG，比较同设备、外观、字号与数据的前后图；修改后再渲染。截图支持排版迭代，不能替代导航、点击、滚动、VoiceOver、真实音频或真机测试。涉及交互时继续执行相关 `TongxingUITests`，按 [UI 迭代流程](UI-ITERATION-WORKFLOW.zh.md) 完成独立审核与人工确认。
+
+同片段试听也可使用已冻结的真实目录做静态渲染（只检查解码／显示，不证明听感或视频播放）：
+
+```sh
+python3 apps/tongxing-ios/scripts/preview.py --files VoiceDemoSection.swift \
+  --voice-demo-catalog artifacts/speaker-clips-v2/20261001/public/voice-demos/speaker-clips-v2/catalog.json \
+  --variants light,dark,dark-large --simulator "$TONGXING_SIMULATOR_UDID"
+```
+
+Manifest 记录目录路径与 SHA-256；默认仍为合成静音／黑色视频夹具。
 
 ## 可选：设备外框展示
 

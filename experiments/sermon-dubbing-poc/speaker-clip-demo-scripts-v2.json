@@ -1,0 +1,293 @@
+{
+  "schemaVersion": "sermon-speaker-clip-demo-scripts-v2",
+  "sourceScope": "source_clip_translation_audition_not_sermon_release",
+  "translationReviewStatus": "machine_candidate_human_review_pending",
+  "speakers": [
+    {
+      "speakerId": "eric_geiger",
+      "clipId": "eric_geiger-source-clip-v2",
+      "displayName": "Eric Geiger",
+      "source": {
+        "id": "ZDQwL3K-A44",
+        "url": "https://www.youtube.com/watch?v=ZDQwL3K-A44",
+        "startSeconds": 1148.4,
+        "endSeconds": 1161.36,
+        "timelineBasis": "current_public_video",
+        "englishTextSha256": "106cfbb3a7a6863e1c76a7577f66f760eb6fb2f35fbb4d10cd345f2be98f78b9",
+        "sourceAudioSha256": "09cf409d28ead6a09e534032de963852d082cc84f7418cbc271e37bc35da8b37",
+        "sourceAudioOffsetSeconds": 1740.0,
+        "archivedSourceVideoStartSeconds": 1751.2,
+        "archivedSourceVideoEndSeconds": 1764.16,
+        "timelineBindingStatus": "machine_audio_correspondence_pass",
+        "timelineBindingMethod": "40ms RMS envelope correlation; archive and current public video have different timelines"
+      },
+      "original": {
+        "text": "We're going to study the book of Revelation. This book has fascinated people for centuries. For some people, it's scary, like the sci-fi section of the Bible. For others, it's confusing. But really, it shouldn't be either one of those.",
+        "sha256": "26688c073a93e551e05a19169d236d53ed1e9bddeb140249c8ac228bf418c807",
+        "transcriptStatus": "machine_screening_only",
+        "referenceAudioSha256": "26688c073a93e551e05a19169d236d53ed1e9bddeb140249c8ac228bf418c807"
+      },
+      "samples": [
+        {
+          "locale": "zh-Hans",
+          "modelLanguage": "Chinese",
+          "text": "我们将研读《启示录》。几个世纪以来，这卷书一直让人着迷。有些人觉得它很可怕，像是圣经中的科幻篇；另一些人觉得它难以理解。但其实，它不该让人害怕，也不该令人困惑。",
+          "textSha256": "3edb454bd857fde54c55e33e51e082d32e23abce4c1d2aa8651f429549ad9e2b",
+          "sourceEnglishTextSha256": "106cfbb3a7a6863e1c76a7577f66f760eb6fb2f35fbb4d10cd345f2be98f78b9",
+          "translationReviewStatus": "machine_candidate_human_review_pending"
+        },
+        {
+          "locale": "ko",
+          "modelLanguage": "Korean",
+          "text": "우리는 요한계시록을 공부하려고 합니다. 이 책은 수세기 동안 사람들의 관심을 끌어 왔습니다. 어떤 사람들에게는 성경의 공상과학 부분처럼 무섭게 느껴집니다. 또 다른 사람들에게는 혼란스럽습니다. 하지만 사실 이 책은 어느 쪽으로도 느껴져서는 안 됩니다.",
+          "textSha256": "cbae98eb96e7b2868a874e23476d4cee1149987999613049d57e3ab5e081a32b",
+          "sourceEnglishTextSha256": "106cfbb3a7a6863e1c76a7577f66f760eb6fb2f35fbb4d10cd345f2be98f78b9",
+          "translationReviewStatus": "machine_candidate_human_review_pending"
+        },
+        {
+          "locale": "es",
+          "modelLanguage": "Spanish",
+          "text": "Vamos a estudiar el libro de Apocalipsis. Este libro ha fascinado a la gente durante siglos. Para algunos, da miedo, como si fuera la sección de ciencia ficción de la Biblia. Para otros, resulta confuso. Pero, en realidad, no debería ser ninguna de las dos cosas.",
+          "textSha256": "8172dc1c9ccbaf6640735f16428fd35b1330526fd152bd1e5bb1b03a27a51162",
+          "sourceEnglishTextSha256": "106cfbb3a7a6863e1c76a7577f66f760eb6fb2f35fbb4d10cd345f2be98f78b9",
+          "translationReviewStatus": "machine_candidate_human_review_pending"
+        }
+      ]
+    },
+    {
+      "speakerId": "jared_kirkwood",
+      "clipId": "jared_kirkwood-source-clip-v2",
+      "displayName": "Jared Kirkwood",
+      "source": {
+        "id": "M20vokXIblw",
+        "url": "https://www.youtube.com/watch?v=M20vokXIblw",
+        "startSeconds": 318.58,
+        "endSeconds": 330.46,
+        "timelineBasis": "original_video",
+        "englishTextSha256": "e41dbff3145828c505db517115d4ecb812de8e90ac064854194f5f0d941e65b5",
+        "sourceAudioSha256": "c30f95cd2834386738a2b5bea98f64094b097994515f210414a88a05d68f186c",
+        "sourceAudioOffsetSeconds": 0.0
+      },
+      "original": {
+        "text": "That consequence was for them as well. So the story continues in verse two. It says there was no water for the community, so they assembled against Moses and Aaron.",
+        "sha256": "926e37b4f92c5c9c33c841886f4e22f54d6b214b1c1a1c3c1be2f22b61987e17",
+        "transcriptStatus": "machine_screening_only",
+        "referenceAudioSha256": "4272afbe9a7c9c33062c8ff1e2beab76f2bc126bfeab447c32e9dde585d9f324"
+      },
+      "samples": [
+        {
+          "locale": "zh-Hans",
+          "modelLanguage": "Chinese",
+          "text": "他们也要承担那个后果。故事接着来到第二节，经文说，会众没有水喝，于是他们聚集起来，反对摩西和亚伦。",
+          "textSha256": "d5c38a3b6e6f7d75b446f3335ad116fb6dd4c3423512a0dd2937efeec220dfc7",
+          "sourceEnglishTextSha256": "e41dbff3145828c505db517115d4ecb812de8e90ac064854194f5f0d941e65b5",
+          "translationReviewStatus": "machine_candidate_human_review_pending"
+        },
+        {
+          "locale": "ko",
+          "modelLanguage": "Korean",
+          "text": "그 결과는 그들에게도 해당되었습니다. 이야기는 이어서 2절로 넘어갑니다. 공동체에 물이 없었으므로, 사람들이 모세와 아론에게 맞서 모였다고 말합니다.",
+          "textSha256": "4d70be3e89959a3c4fa029ed6a60d198fba880ad78391755c2111d2bbb0bdb09",
+          "sourceEnglishTextSha256": "e41dbff3145828c505db517115d4ecb812de8e90ac064854194f5f0d941e65b5",
+          "translationReviewStatus": "machine_candidate_human_review_pending"
+        },
+        {
+          "locale": "es",
+          "modelLanguage": "Spanish",
+          "text": "Esa consecuencia también les correspondía a ellos. La historia continúa en el versículo dos. Dice que no había agua para la comunidad, así que se reunieron contra Moisés y Aarón.",
+          "textSha256": "858a050a267a38eabbdebed4b3044a8ab90aaf095704c2556b25e712b6fb136c",
+          "sourceEnglishTextSha256": "e41dbff3145828c505db517115d4ecb812de8e90ac064854194f5f0d941e65b5",
+          "translationReviewStatus": "machine_candidate_human_review_pending"
+        }
+      ]
+    },
+    {
+      "speakerId": "christine_caine",
+      "clipId": "christine_caine-source-clip-v2",
+      "displayName": "Christine Caine",
+      "source": {
+        "id": "Iaw8oFVI-jM",
+        "url": "https://www.youtube.com/watch?v=Iaw8oFVI-jM",
+        "startSeconds": 541.7,
+        "endSeconds": 553.66,
+        "timelineBasis": "original_video",
+        "englishTextSha256": "50cfa0f9371570d93fa16b0cb825d8534487d170b6f31be162a43223dd9fde41",
+        "sourceAudioSha256": "398d4fe66711073c176e6bed8a911499ed8714c6412048a7120ddebd18971fd8",
+        "sourceAudioOffsetSeconds": 0.0
+      },
+      "original": {
+        "text": "He's talking about looking like Jesus because you're already saved. So Paul is speaking against Jewish legalists who believe that you had to keep the law of Moses in order to be saved.",
+        "sha256": "a96bdd6abf2b94197c56a3d76f94504145e88f79b14372ec53328216c34c2f81",
+        "transcriptStatus": "machine_screening_only",
+        "referenceAudioSha256": "fd9acd161a69732cbe3c1a7eaef7af10c66c1be803340f9b766c1dab516ffddd"
+      },
+      "samples": [
+        {
+          "locale": "zh-Hans",
+          "modelLanguage": "Chinese",
+          "text": "他在说的是：因为你已经得救，所以要活出耶稣的样式。因此，保罗所反对的是那些犹太律法主义者，他们认为，人必须遵守摩西的律法才能得救。",
+          "textSha256": "e4365d36e76af4d224fa344c5b53d44e8c784ded6541afda115615bed57974c5",
+          "sourceEnglishTextSha256": "50cfa0f9371570d93fa16b0cb825d8534487d170b6f31be162a43223dd9fde41",
+          "translationReviewStatus": "machine_candidate_human_review_pending"
+        },
+        {
+          "locale": "ko",
+          "modelLanguage": "Korean",
+          "text": "그는 이미 구원받았기 때문에 예수님을 닮아 가는 것에 대해 말하고 있습니다. 그래서 바울은 구원받으려면 모세의 율법을 지켜야 한다고 믿는 유대 율법주의자들을 반박하고 있습니다.",
+          "textSha256": "0ce80e75ab78b78fd1492a6f7f8d947c2fa8f2847fc5780831a0e0862e873f75",
+          "sourceEnglishTextSha256": "50cfa0f9371570d93fa16b0cb825d8534487d170b6f31be162a43223dd9fde41",
+          "translationReviewStatus": "machine_candidate_human_review_pending"
+        },
+        {
+          "locale": "es",
+          "modelLanguage": "Spanish",
+          "text": "Está hablando de parecernos a Jesús porque ya hemos sido salvados. Por eso Pablo habla en contra de los legalistas judíos que creían que había que cumplir la ley de Moisés para ser salvos.",
+          "textSha256": "4386eefcad719b2f8337e3b6a4f08314965dfbae19e40cfad14db4a4ef0e4ff1",
+          "sourceEnglishTextSha256": "50cfa0f9371570d93fa16b0cb825d8534487d170b6f31be162a43223dd9fde41",
+          "translationReviewStatus": "machine_candidate_human_review_pending"
+        }
+      ]
+    },
+    {
+      "speakerId": "doug_fields",
+      "clipId": "doug_fields-source-clip-v2",
+      "displayName": "Doug Fields",
+      "source": {
+        "id": "Lskg54LVBy4",
+        "url": "https://www.youtube.com/watch?v=Lskg54LVBy4",
+        "startSeconds": 438.18,
+        "endSeconds": 450.06,
+        "timelineBasis": "original_video",
+        "englishTextSha256": "de3a6458d98e7348d2b316a587dc99c6e53b23f675d912a8f6c78af46ff565d4",
+        "sourceAudioSha256": "8c704218053bf22969c49e435dddb387332cfba2f14576d08d9d08118f08a38c",
+        "sourceAudioOffsetSeconds": 0.0
+      },
+      "original": {
+        "text": "Well, the answer to that question is actually in verse three, where it says, Jesus knew that the Father had given everything into His hands, that He had come from God and that He was going back to God.",
+        "sha256": "95fb563d94990e64012cd0463d75313eefe08cfe785ef306ddccaf5001423440",
+        "transcriptStatus": "machine_screening_only",
+        "referenceAudioSha256": "bdb6f08cae460baa567b5a64b9722eb52d68887d06a56fd51553b588cea90e21"
+      },
+      "samples": [
+        {
+          "locale": "zh-Hans",
+          "modelLanguage": "Chinese",
+          "text": "这个问题的答案其实就在第三节。那里说，耶稣知道父已将一切交在祂手里，也知道自己是从神而来，并且要回到神那里去。",
+          "textSha256": "9d60b591e7ce3bc8f1706ae6979f49d07b14382609e42f8bb528398dde902aab",
+          "sourceEnglishTextSha256": "de3a6458d98e7348d2b316a587dc99c6e53b23f675d912a8f6c78af46ff565d4",
+          "translationReviewStatus": "machine_candidate_human_review_pending"
+        },
+        {
+          "locale": "ko",
+          "modelLanguage": "Korean",
+          "text": "그 질문의 답은 사실 3절에 있습니다. 그곳에는 예수님께서 아버지가 모든 것을 자기 손에 맡기신 것과, 자신이 하나님께로부터 왔다가 하나님께로 돌아가실 것을 아셨다고 나옵니다.",
+          "textSha256": "4841ad8272b4ddeb5346eaf58726e401b402e92a1383385cee5670335e2e3a56",
+          "sourceEnglishTextSha256": "de3a6458d98e7348d2b316a587dc99c6e53b23f675d912a8f6c78af46ff565d4",
+          "translationReviewStatus": "machine_candidate_human_review_pending"
+        },
+        {
+          "locale": "es",
+          "modelLanguage": "Spanish",
+          "text": "La respuesta a esa pregunta está, en realidad, en el versículo tres. Allí dice que Jesús sabía que el Padre había puesto todas las cosas en sus manos, que había venido de Dios y que iba a volver a Dios.",
+          "textSha256": "7f60ef44eabd39c3d9aab5d1e16bcf113b172110289678982027756dfb06ac0e",
+          "sourceEnglishTextSha256": "de3a6458d98e7348d2b316a587dc99c6e53b23f675d912a8f6c78af46ff565d4",
+          "translationReviewStatus": "machine_candidate_human_review_pending"
+        }
+      ]
+    },
+    {
+      "speakerId": "kenton_beshore",
+      "clipId": "kenton_beshore-source-clip-v2",
+      "displayName": "Kenton Beshore",
+      "source": {
+        "id": "qzpxdENv6a4",
+        "url": "https://www.youtube.com/watch?v=qzpxdENv6a4",
+        "startSeconds": 390.9,
+        "endSeconds": 402.86,
+        "timelineBasis": "original_video",
+        "englishTextSha256": "219b6a385ef44ca1e63f01e3a6a8031672afaee98d669a23f4076d35e7e63d81",
+        "sourceAudioSha256": "8a8765839f63a52e0f0dc109b5c65e0031b64d62c7ae033993929288ca98d5dc",
+        "sourceAudioOffsetSeconds": 0.0
+      },
+      "original": {
+        "text": "The Bible tells us God created the heavens and the earth, and He saw that it was very good. The first picture that God gives us of Himself is that He is a worker, and so we see God working.",
+        "sha256": "394552afddac93e08f3049b40ecb52fb62c382205418910e721520e4786d7ab3",
+        "transcriptStatus": "machine_screening_only",
+        "referenceAudioSha256": "c6a21527e0f96992d004edbaa592bc59aa265b7b07c9488eaa5cbd192635d2e0"
+      },
+      "samples": [
+        {
+          "locale": "zh-Hans",
+          "modelLanguage": "Chinese",
+          "text": "圣经告诉我们，神创造了天地，并且看见这一切甚好。神向我们展现的第一个形象，就是一位做工的神；因此，我们看见神在工作。",
+          "textSha256": "986c5022726c173d533225c56faf3d13231fbed625f67737d6db74cd85a7a7d0",
+          "sourceEnglishTextSha256": "219b6a385ef44ca1e63f01e3a6a8031672afaee98d669a23f4076d35e7e63d81",
+          "translationReviewStatus": "machine_candidate_human_review_pending"
+        },
+        {
+          "locale": "ko",
+          "modelLanguage": "Korean",
+          "text": "성경은 하나님께서 하늘과 땅을 창조하시고 보시기에 매우 좋았다고 말씀합니다. 하나님께서 우리에게 보여 주시는 자신의 첫 모습은 일하시는 분의 모습입니다. 그래서 우리는 일하시는 하나님을 봅니다.",
+          "textSha256": "b1f616f380955afa14e2ad8529fd60fc15563bd7694aff6f7bf39c754451418f",
+          "sourceEnglishTextSha256": "219b6a385ef44ca1e63f01e3a6a8031672afaee98d669a23f4076d35e7e63d81",
+          "translationReviewStatus": "machine_candidate_human_review_pending"
+        },
+        {
+          "locale": "es",
+          "modelLanguage": "Spanish",
+          "text": "La Biblia nos dice que Dios creó los cielos y la tierra, y vio que todo era muy bueno. La primera imagen que Dios nos da de sí mismo es la de alguien que trabaja. Así que vemos a Dios trabajando.",
+          "textSha256": "58ce46ba5dbc4787bde4da0d70804bc5ed95d4f8c9226a4a408a90be71dd8197",
+          "sourceEnglishTextSha256": "219b6a385ef44ca1e63f01e3a6a8031672afaee98d669a23f4076d35e7e63d81",
+          "translationReviewStatus": "machine_candidate_human_review_pending"
+        }
+      ]
+    },
+    {
+      "speakerId": "steve_bang_lee",
+      "clipId": "steve_bang_lee-source-clip-v2",
+      "displayName": "Steve Bang Lee",
+      "source": {
+        "id": "GNTHmg2a8TM",
+        "url": "https://www.youtube.com/watch?v=GNTHmg2a8TM",
+        "startSeconds": 434.9,
+        "endSeconds": 446.3,
+        "timelineBasis": "original_video",
+        "englishTextSha256": "90db5a02b3ff0919457c22bc3f4dcafda5251c88f2f129aa79c9025e40d7db23",
+        "sourceAudioSha256": "595e4bf84bf5fd58cdcbe67ebf494ece2505d62725666ca3a69e0e9fe4fc907e",
+        "sourceAudioOffsetSeconds": 0.0
+      },
+      "original": {
+        "text": "The people blessed all the men who volunteered to live in Jerusalem. So the city went practically from empty streets into a living, thriving city.",
+        "sha256": "0661d53954b41e34ac96255c9cb67c73e80a06297f19a0b2976854c81eae3950",
+        "transcriptStatus": "machine_screening_only",
+        "referenceAudioSha256": "fe732b84902642bc7b61a9d13dd8fbc0757f9676d544138fede22dd49ca723fc"
+      },
+      "samples": [
+        {
+          "locale": "zh-Hans",
+          "modelLanguage": "Chinese",
+          "text": "百姓为所有自愿住在耶路撒冷的人祝福。于是，这座城从几乎空无一人的街道，变成了一座充满生机、欣欣向荣的城市。",
+          "textSha256": "825e8d64aaaea429d2849c533d16afe3f897fae7c35891fb549388c39dc6c086",
+          "sourceEnglishTextSha256": "90db5a02b3ff0919457c22bc3f4dcafda5251c88f2f129aa79c9025e40d7db23",
+          "translationReviewStatus": "machine_candidate_human_review_pending"
+        },
+        {
+          "locale": "ko",
+          "modelLanguage": "Korean",
+          "text": "백성은 예루살렘에 살기를 자원한 모든 사람을 축복했습니다. 그래서 그 도시는 사실상 텅 빈 거리에서 생기 넘치고 번성하는 도시로 바뀌었습니다.",
+          "textSha256": "8173e592f25f79adc5208b5dd80a24a87ad6e59bb676a9d6232705a6438253d8",
+          "sourceEnglishTextSha256": "90db5a02b3ff0919457c22bc3f4dcafda5251c88f2f129aa79c9025e40d7db23",
+          "translationReviewStatus": "machine_candidate_human_review_pending"
+        },
+        {
+          "locale": "es",
+          "modelLanguage": "Spanish",
+          "text": "El pueblo bendijo a todos los hombres que se ofrecieron a vivir en Jerusalén. Así, la ciudad pasó de tener calles prácticamente vacías a ser una ciudad llena de vida y prosperidad.",
+          "textSha256": "22d80d3cc424a797de491e026f5d2cf44196ba969c8901d051a144593078acf4",
+          "sourceEnglishTextSha256": "90db5a02b3ff0919457c22bc3f4dcafda5251c88f2f129aa79c9025e40d7db23",
+          "translationReviewStatus": "machine_candidate_human_review_pending"
+        }
+      ]
+    }
+  ]
+}

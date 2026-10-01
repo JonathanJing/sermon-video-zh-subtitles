@@ -55,9 +55,9 @@ python3 scripts/check_tongxing_icon_alignment.py
 
 ## 独立 Firebase App 交付（2026-10-01）
 
-`codex/firebase-app-update` 从最新 `dev` 基线 `63c0a18` 单独提取网页实现与构建资产清单；不包含 PR #192 的原生源码、英文全文搜索或语言切轨功能。Firebase 网页可独立审核、合并及晋升。上面的 37 个原生对应符号数量描述固定参考候选；当前 `dev` 有 33 个原生符号，维护检查对其中三个旧名称使用明确的动作映射：
+`codex/firebase-app-update` 从最新 `dev` 基线 `63c0a18` 单独提取网页实现与构建资产清单；不包含 PR #192 的原生源码、英文全文搜索或语言切轨功能。Firebase 网页可独立审核、合并及晋升。上面的 37 个原生对应符号数量描述固定参考候选；该独立分支当时的 `dev` 基线有 33 个原生符号，维护检查对其中三个旧名称使用明确的动作映射：
 
-| 当前 dev 的旧符号 | 网页新图标 | 动作 |
+| 当时 dev 基线的旧符号 | 网页新图标 | 动作 |
 | --- | --- | --- |
 | `ellipsis` | `magnifyingglass` | 定位入口 |
 | `text.line.first.and.arrowtriangle.forward` | `text.bubble` | 回当前句 |
