@@ -1,11 +1,14 @@
 import importlib.util
 import json
 from pathlib import Path
+import re
+import shutil
 import tempfile
 import threading
 import unittest
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
+from urllib.parse import urljoin, urlsplit
 
 HERE = Path(__file__).resolve().parent
 
@@ -103,6 +106,67 @@ class ServerTests(unittest.TestCase):
             self.assertEqual(response.status, 200)
             self.assertEqual(response.headers['Content-Type'], 'text/javascript')
             self.assertEqual(response.read(), module)
+
+    def test_library_fallback_serves_icon_modules_and_svg_bytes(self):
+        self.assert_static_icons(HERE / 'web')
+
+    def test_weekly_pack_serves_its_own_icon_modules_and_svg_bytes(self):
+        (self.pack / 'weekly.json').write_text('{}')
+        for name in ['icons.mjs', 'icons.svg', 'brand-icon.svg', 'brand-icon-light.svg']:
+            data = (HERE / 'web' / name).read_bytes() + b'\n<!-- pack-specific -->' if name.endswith('.svg') else b'export const packOnly = true;'
+            (self.pack / name).write_bytes(data)
+        self.assert_static_icons(self.pack)
+
+    def assert_static_icons(self, root):
+        for name in ['icons.mjs', 'icons.svg', 'brand-icon.svg', 'brand-icon-light.svg']:
+            with self.subTest(name=name), urlopen(self.base + '/' + name) as response:
+                self.assertEqual(response.status, 200)
+                self.assertEqual(response.headers['Content-Type'],
+                                 'image/svg+xml' if name.endswith('.svg') else 'text/javascript')
+                self.assertEqual(response.headers['X-Content-Type-Options'], 'nosniff')
+                self.assertEqual(response.read(), (root / name).read_bytes())
+
+    def test_real_http_html_and_module_dependency_closure_in_both_pack_modes(self):
+        for weekly in [False, True]:
+            with self.subTest(weekly=weekly):
+                if weekly:
+                    (self.pack / 'weekly.json').write_text('{}')
+                    for filename, _ in server.STATIC.values():
+                        source = HERE / 'web' / filename
+                        if source.is_file():
+                            shutil.copyfile(source, self.pack / filename)
+                root = self.pack if weekly else HERE / 'web'
+                pending, visited = ['/'], set()
+                while pending:
+                    route = pending.pop()
+                    if route in visited:
+                        continue
+                    visited.add(route)
+                    # No dynamic filesystem route was enabled to make this pass.
+                    self.assertIn(route, server.STATIC, f'Unregistered dependency: {route}')
+                    filename, mime = server.STATIC[route]
+                    with urlopen(self.base + route) as response:
+                        self.assertEqual(response.status, 200)
+                        self.assertEqual(response.headers['Content-Type'], mime)
+                        data = response.read()
+                    self.assertEqual(data, (root / filename).read_bytes())
+                    text = data.decode('utf-8')
+                    if filename.endswith('.html'):
+                        dependencies = re.findall(r'<script\b[^>]*\bsrc=[\'"]([^\'"]+)[\'"]', text)
+                        dependencies += re.findall(r'(?:href|src)=[\'"]([^\'"]+\.svg)(?:#[^\'"]*)?[\'"]', text)
+                    elif filename.endswith(('.js', '.mjs')):
+                        dependencies = re.findall(r'^\s*(?:import|export)\s+(?:[^\n]*?\s+from\s+)?[\'"]([^\'"]+)[\'"]', text, re.MULTILINE)
+                        dependencies += re.findall(r'\bimport\s*\(\s*[\'"]([^\'"]+)[\'"]', text)
+                        dependencies += re.findall(r'new URL\(\s*[\'"]([^\'"]+\.(?:mjs|js))[\'"]\s*,\s*import\.meta\.url', text)
+                    else:
+                        dependencies = []
+                    for dependency in dependencies:
+                        resolved = urlsplit(urljoin(self.base + route, dependency))
+                        self.assertEqual(resolved.netloc, urlsplit(self.base).netloc)
+                        pending.append(resolved.path)
+                self.assertTrue({'/icons.mjs', '/media-session.mjs', '/voice-samples.mjs',
+                                 '/fingerprint-ui.mjs', '/fingerprint-worker.mjs',
+                                 '/fingerprint-worklet.mjs', '/fingerprint-core.mjs', '/icons.svg'}.issubset(visited))
 
 
 if __name__ == '__main__':
