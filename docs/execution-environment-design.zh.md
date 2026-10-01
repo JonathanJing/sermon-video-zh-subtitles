@@ -4,6 +4,8 @@
 
 核查日期：2026-09-30；代码基线 `dev@fc3e2fbc60b0fd2c5b59c64fcd515c465efc6b0b`。这是仓库代码、配置和既有运行记录支持的拓扑，不是在线资产盘点；本次没有连接 Spark、启动服务、调用模型或部署。部署身份与本机连接参数继续从既有受控配置取得，本文不复制私人主机、账号路径或密钥。
 
+2026-10-01 路由决定：[预制本地制作默认 Spark、MacBook fallback](local-production-compute-policy.zh.md)。本页相应文字和 Mermaid 已更新；下方 SVG 保留 9 月 30 日拓扑快照。云端全流程资源、费用与接入缺口见 [GCP 评估](gcp-production-feasibility-20261001.zh.md)，尚未部署。
+
 ## 拓扑 / Execution topology
 
 箭头标明跨边界的数据或动作；可选路径不意味着当前所有服务在线。
@@ -26,7 +28,7 @@ flowchart TB
       TEMP -.-> LOCAL
     end
     LOCAL -->|"必要音频或文字 / Required model input"| API["云模型 API / Cloud model APIs<br/>transcription, translation, review"]
-    LOCAL -.->|"受控 SSH 与任务 / Authorized remote job"| SPARK["DGX Spark / CUDA runtimes<br/>声音训练、后备推理、隔离实验"]
+    LOCAL -->|"受控 SSH 与任务 / Authorized remote job"| SPARK["DGX Spark / CUDA runtimes<br/>默认预制模型计算、声音训练、隔离实验"]
     LOCAL -->|"批准资产与显式 CD / Approved assets + explicit CD"| HOST["Firebase Hosting<br/>Dev 与 Production 分离 / Separate environments"]
     LOCAL -->|"版本化媒体或状态 / Versioned media or state"| GCS["Cloud Storage<br/>来源证据与视频对象 / Evidence and video objects"]
     HOST --> CLIENT["iOS 主端 + Web 辅端 / Clients"]
@@ -44,8 +46,8 @@ flowchart TB
 | 执行域 | 实际入口 / 数据 | 已有能力与限制 |
 |---|---|---|
 | MacBook 制作工具 | [本地 runbook](codex-local-production-runbook.zh.md)、[固定 L2 controller](../scripts/canonical_layer2_controller.py)、[workflow jobs](../scripts/sermon_workflow_jobs.py) | Python 调度下载、FFmpeg、包校验与生成；磁盘 job/lease/receipt 支持恢复。固定 L2 adapter 与 legacy PDF Supervisor 各有范围，尚非完整 canonical L1–4 自动生产 |
-| Apple Silicon 本地模型 | [语音运行合同](../experiments/sermon-dubbing-poc/SPEECH-RUNTIME.zh.md)、[speech backend](../experiments/sermon-dubbing-poc/speech_backend.py)、[正式 L3 renderer](formal-layer3-renderer.zh.md) | legacy weekly runner 支持 MPS TTS 优先与 MLX ASR/ForcedAligner；正式多语言 renderer 使用自己的授权音色/adapter 合同。不同入口不能互相代称；模型、revision、设备、精度与实际输入写入收据 |
-| DGX Spark | [Spark transport](../experiments/sermon-dubbing-poc/spark_transport.py)、[speech worker](../experiments/sermon-dubbing-poc/spark_speech_worker.py)、[训练说明](../experiments/sermon-dubbing-poc/TRAINING.zh.md) | 受控 SSH 传输、隔离 CUDA 环境、声音训练与指定后备推理；它不是所有生产任务必经的服务器。checkpoint 不匹配或语义失败不能靠换主机绕过 |
+| Apple Silicon 本地模型 | [语音运行合同](../experiments/sermon-dubbing-poc/SPEECH-RUNTIME.zh.md)、[speech backend](../experiments/sermon-dubbing-poc/speech_backend.py)、[正式 L3 renderer](formal-layer3-renderer.zh.md) | legacy weekly runner 的 MPS TTS 与 MLX ASR/ForcedAligner 作为 fallback；现有任务继续原后端恢复。正式多语言 renderer 有自己的授权音色/adapter 合同，尚无完整跨机自动 fallback。模型、revision、设备、精度与实际输入写入收据 |
+| DGX Spark | [Spark transport](../experiments/sermon-dubbing-poc/spark_transport.py)、[speech worker](../experiments/sermon-dubbing-poc/spark_speech_worker.py)、[训练说明](../experiments/sermon-dubbing-poc/TRAINING.zh.md) | 受控 SSH 传输、隔离 CUDA 环境、声音训练及预制本地模型计算默认路径；CPU 打包和正式 API 仍有独立执行边界。checkpoint 不匹配或语义失败不能靠换主机绕过 |
 | 云模型与控制会话 | [Layer 2 runner](../scripts/run_target_language_models.py)、[Supervisor](sermon-production-supervisor-agent.md) | L2 生产 policy 固定 Astra 初译、Sol 审校；文件转写与控制会话分别记录。现有 dual-PDF Agents API 的 `environment: none` 由本地执行受限工具，不是在云会话内托管完整后端 |
 | 本地 Temporal | [Temporal 合同](sermon-temporal.zh.md)、[实现](../scripts/sermon_temporal/) | 已有单机 loopback + SQLite 路径，默认只读；显式执行仍受原 lease/approval 限制。不是 HA 集群；历史不替代媒体、job 和批准备份；不证明当前机器服务在线 |
 | 发现与旧云生产 | [Supervisor 历史边界](sermon-production-supervisor-agent.md)、[Cloud Run 历史设计](system-design.zh.md) | 文档记录 Cloud Scheduler 发现源和 GCS 状态；旧 post-live Cloud Run Job 已退役。现存源码不是正在运行的旧生产服务，调度健康须另查 |

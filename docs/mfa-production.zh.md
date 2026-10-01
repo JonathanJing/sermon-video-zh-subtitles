@@ -1,10 +1,10 @@
 # 生产阅读稿的 MFA 词级对齐
 
-新生成的 reading 模式默认 `--reading-aligner mfa`。在冻结英文 ASR 之后、本篇翻译之前优先在 MacBook 运行 MFA，将原稿句界定位到词/音素时间，取代字符比例估时。MFA 不生成语义句号；当前生产保留原英文标点作为句界依据，长度组织留给阅读块构建器。实验中的声学大模型分类器尚有漏断，不作为无人审核的生产句界来源。
+新生成的 reading 模式默认 `--reading-aligner mfa`。在冻结英文 ASR 之后、本篇翻译之前优先在 Spark 运行 MFA，MacBook 作为 fallback，将原稿句界定位到词/音素时间，取代字符比例估时。MFA 不生成语义句号；当前生产保留原英文标点作为句界依据，长度组织留给阅读块构建器。实验中的声学大模型分类器尚有漏断，不作为无人审核的生产句界来源。
 
-## MacBook 优先，DGX Spark 备用
+## DGX Spark 默认，MacBook fallback
 
-所有本地模型的目标路由为 **MacBook 优先、DGX Spark 备用**。MFA 与可选 G2P 先使用 MacBook 的独立环境；本机健康时不预检或联系 Spark。云端转写／语言模型继续调用原 API；听众浏览器的声音指纹是确定性匹配，不受模型路由影响。MacBook 的授权讲员检查点 TTS 也已单独完成真实短样本合成：一个 10 字中文单元生成 2.56 秒音频；整篇吞吐、音质与人工听审仍需独立验收。
+2026-10-01 起，按[本地制作计算策略](local-production-compute-policy.zh.md)采用 **DGX Spark 优先、MacBook fallback**。MFA 与可选 G2P 默认先使用 Spark 独立环境；确定的基础设施／运行故障才回 MacBook。`MFA_BACKEND=auto`／`--mfa-backend auto` 为默认；`spark`／`macbook` 为强制选择，失败即停。云端转写／语言模型继续调用原 API；听众浏览器的声音指纹是确定性匹配，不受模型路由影响。设备路由不证明整篇吞吐、音质或人工验收。
 
 MFA 本机组合为 3.4.2、官方 `english_mfa` 声学模型／词典与 `english_us_mfa` G2P，可在 CPU 上运行。安装独立环境并预先下载模型：
 
@@ -24,11 +24,12 @@ mfa model download g2p english_us_mfa
 - `MFA_G2P_MODEL`／`--mfa-g2p-model`：本机 `english_us_mfa.zip`；建议配置处理未收录词。
 - `MFA_SPOKEN_FORMS`／`--mfa-spoken-forms`：本机已确认读法 JSON；备用执行时连同哈希传给 Spark。
 
-### 配置 Spark 备用
+### 配置 Spark 默认路径
 
-默认启用 Spark 备用；可用 `MFA_SPARK_FALLBACK=0` 或 `--no-mfa-spark-fallback` 明确禁用。`MFA_SPARK_FALLBACK=1`／`--mfa-spark-fallback` 则明确启用。Spark 使用独立的参数，不能把本机路径当成远端路径：
+旧 `MFA_SPARK_FALLBACK` 名称保留兼容：`0` 或 `--no-mfa-spark-fallback` 在 auto 下仍禁用 Spark、只用本机；`1`／`--mfa-spark-fallback` 允许 Spark 默认路径。强制 `spark` 与禁用 Spark 冲突时拒绝执行。Spark 使用独立的参数，不能把本机路径当成远端路径：
 
 ```sh
+export MFA_BACKEND=auto
 export MFA_SPARK_FALLBACK=1
 export MFA_SPARK_HOST=achillesjing@192.168.1.152
 export MFA_SPARK_PYTHON=/home/achillesjing/sermon-mfa-runtime/env/bin/python
@@ -54,15 +55,15 @@ Spark 运行根目录为 `/home/achillesjing/sermon-mfa-runtime/`，分别保存
 
 ### 哪些失败可以使用备用
 
-缺失本机环境／依赖、版本启动失败，以及推理过程中明确的运行故障（超时、进程被终止、可执行文件消失）可触发已配置的 Spark 备用。必须记录实际后端、触发原因和模型身份。禁用备用时保留本机错误并停止。
+默认 Spark 路径的连接／环境／依赖故障，以及已确认的设备或进程资源故障可触发已配置的 MacBook fallback。必须记录实际后端、触发阶段和原因、模型身份；强制指定时保留错误并停止。执行中的远端断连或超时不能据此证明远端已结束，先保留证据并核对结果，不自动在本机重做未知任务。
 
 **文字不合法、未确认读法、未知音素、词序不符、对齐结果损坏、声音身份或人工审核问题都不能靠备用绕过。** 两端不可用则停止，保留已有产物。任务中不下载模型、不修改全局 Python；交互式终端的环境变量不会自动部署给后台 runner。
 
 ## 来源、缓存与失败
 
-- 先预检 MacBook 环境。只有符合备用条件且已启用备用时才通过 SSH 预检 Spark；两端不可用时不进入付费转写。
+- 默认先预检 Spark 环境。只有符合 fallback 条件且选择 auto 时才预检本机；两端不可用时不进入付费转写。关闭 Spark 或强制 macbook 时不联系网络。
 - 原始 ASR 不改写。为对齐规范化大小写、展开明确整数，并保留原词到发音词的映射；含歧义数字表达时明确失败，需先提供确认的读法。G2P 候选不是人工验证发音。
-- MFA 缓存绑定音频内容、参考文字、起止时间、模型/词典、工具版本及实现身份；内容变化使用新目录，缺失/损坏输出不复用。缓存绑定实际后端；本机成功无需联系 Spark。使用 Spark 时核对传输适配器、音频与读法映射的哈希，保留远端身份；复用 Spark 缓存仍须核对当前远端模型身份。
+- MFA 缓存绑定音频内容、参考文字、起止时间、模型/词典、工具版本及实现身份；内容变化使用新目录，缺失/损坏输出不复用。缓存绑定实际后端，默认切换不将另一后端的缓存冒认为本次结果。使用 Spark 时核对传输适配器、音频与读法映射的哈希，保留远端身份；复用 Spark 缓存仍须核对当前远端模型身份。
 - 没有成功对齐所有所需词、出现未知音素、越界或零长度语音时停止；不自动回退为估算时间。
 - MFA 若在长静默处生成相邻的同词重复，只有其中一个跨度超过 5 秒、完全没有音素，而另一个有音素，且移除无音素项后词序与冻结英文逐词完全一致时，才排除该机器空项；原始 JSON 保留，排除项写入 manifest 的 `normalizationEvents`，仍需人工核听。其他词序差异照常停止。
 - `wordTimes` 与 `phones` 保存剪辑内时间；`timingQuality=mfa_word_aligned` 标记来源，仍是模型估计，不代表人工 Gold。结果保留 `requires_operator_review`。

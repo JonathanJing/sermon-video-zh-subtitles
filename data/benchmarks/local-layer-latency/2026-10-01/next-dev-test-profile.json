@@ -1,0 +1,95 @@
+{
+  "schemaVersion": "local-production-next-dev-test-profile-v1",
+  "decidedAt": "2026-10-01",
+  "status": "not_run",
+  "purpose": "Next representative real-model Dev test; preserve conservative primary defaults and isolate batch candidates",
+  "documentation": "docs/local-production-next-dev-test-parameters.zh.md",
+  "consumption": "Operator reference; current runners do not automatically load this profile",
+  "productionDefaultsChanged": false,
+  "humanApproval": false,
+  "releaseEligible": false,
+  "routing": {
+    "primary": "spark",
+    "primaryDevice": "cuda:0",
+    "primaryDtype": "bfloat16",
+    "attention": "sdpa",
+    "fallback": "macbook",
+    "fallbackDevice": "mps",
+    "fallbackDtype": "float32",
+    "fallbackRequires": "Confirmed infrastructure failure, matching authorized checkpoint and new execution identity",
+    "canonicalAutomaticFallbackComplete": false,
+    "maxConcurrentGpuJobs": 1
+  },
+  "legacySpeech": {
+    "batchSize": 4,
+    "cli": "--speech-batch-size 4",
+    "environment": {"SERMON_SPEECH_BATCH_SIZE": "4"},
+    "dispatchMaximumInputs": 8,
+    "dispatchMaximumBytes": 33554432,
+    "unknownOutcomeAction": "Reconcile; no automatic retry or fallback"
+  },
+  "layer2": {
+    "workersPerLocale": 3,
+    "batchSize": 1,
+    "localeExecution": "sequential",
+    "translator": "gpt-6-astra",
+    "reviewer": "gpt-6-sol",
+    "reasoningEffort": "medium",
+    "policyMutation": "Freeze new policy for new run; preserve existing approved policies",
+    "requestLimitsAdapterRequired": true,
+    "requestLimits": {
+      "schemaVersion": "sermon-openai-chat-request-limits-v1",
+      "maxInputTokens": 16384,
+      "maxCompletionTokens": 4096,
+      "wallTimeMs": 300000,
+      "serviceTier": "default"
+    },
+    "budget": {"status": "freeze_for_actual_selected_workload_before_execution", "reuseHistorical48CallsSixUsdBudget": false}
+  },
+  "formalTts": {
+    "primaryBatchSize": 1,
+    "candidateBatchSizes": [2],
+    "checkpointWeightsSha256": "75d28ce6022b3df3a72df3dd6dbc01e53f584d685770d60ea04b341920968c9a",
+    "checkpointConfigSha256": "9dd6cf2c1b1fdfb1c90dcee20ab81ee5367925bb7a8123b6046af9bce8b2941c",
+    "speakerId": "eric_geiger",
+    "speakerKey": "eric_pilot",
+    "baseSeed": 42,
+    "seedPolicy": "base plus fixed window start",
+    "temperature": 0.7,
+    "repetitionPenalty": 1.05,
+    "maxNewTokens": 768,
+    "speechRate": "natural",
+    "candidateRequiresSeparateIdentityAndOutput": true,
+    "candidateReusesFrozenLayer2TextWithoutRetranslation": true,
+    "humanListening": "not_run"
+  },
+  "formalBackAsr": {
+    "primaryBatchSize": 1,
+    "candidateBatchSizes": [4, 8],
+    "model": "Qwen/Qwen3-ASR-0.6B",
+    "modelRevision": "5eb144179a02acc5e5ba31e748d22b0cf3e303b0",
+    "device": "cuda:0",
+    "dtype": "bfloat16",
+    "maxNewTokens": 2048,
+    "minSimilarity": 0.88,
+    "comparisonInput": "Same frozen WAVs for all ASR batch arms",
+    "separateOutputAndUnitCachePerArm": true,
+    "retainFlagsAcrossAllArms": true,
+    "knownPendingReview": "Spark es-short@es-b2: Soy versus So; no attribution to TTS or ASR until human review"
+  },
+  "legacyCpu": {
+    "workers": 1,
+    "queueBatches": 2,
+    "legacyTtsBatchSize": 4,
+    "formalRendererAcceptsTheseCpuArguments": false,
+    "speedupProven": false
+  },
+  "executionPlan": {
+    "primaryScope": "Representative few-minute complete natural sentences with long sentences, scripture, names and context",
+    "nextScopeAfterAcceptance": "10-minute real production path, then separately full week",
+    "measurement": "Separate preparation, cold load, warm inference, transfer, CPU save, queue, review wait, recovery and total wall",
+    "singleVariableComparisons": true,
+    "devDelivery": "Layer 1-4 handoffs and Dev test page with accurate review states; HTTP and device acceptance separate",
+    "cachedOrSimulatedReplayIsProductionPerformance": false
+  }
+}

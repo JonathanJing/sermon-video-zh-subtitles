@@ -470,6 +470,7 @@ def carry_forward_group(prior_run: Path, out: Path, index: int,
 
 def ordered_group_results(items: list, worker, workers: int) -> list:
     """Keep only a bounded set of paid groups in flight and merge in source order."""
+    require(type(workers) is int and 1 <= workers <= 3, "Group workers must be 1..3")
     if workers == 1 or len(items) < 2:
         return [worker(item) for item in items]
     results = {}
@@ -497,6 +498,25 @@ def ordered_group_results(items: list, worker, workers: int) -> list:
                     next_index, item = next_item
                     pending[pool.submit(copy_context().run, worker, item)] = next_index
     return [results[index] for index in range(len(items))]
+
+
+def require_reconciled_requests(*directories: Path | None) -> None:
+    """Block the whole dispatch before any group can replay an unknown call.
+
+    Returned raw responses and validated caches remain recoverable. A marker
+    without either is an unknown outcome, including in a prior repair attempt;
+    inspection/reconciliation must precede any further paid work in this batch.
+    Never remove markers here or infer a failed request from a transport error.
+    """
+    for directory in directories:
+        if directory is None or not directory.exists():
+            continue
+        for marker in sorted(directory.glob("group-*.started.json")):
+            stem = marker.name.removesuffix(".started.json")
+            role = {"astra": "translator", "sol": "reviewer"}.get(stem.rsplit("-", 1)[-1], "model")
+            require((directory / f"{stem}.json").is_file()
+                    or (directory / f"{stem}.raw.json").is_file(),
+                    f"Uncertain paid {role} call; inspect before retry or dispatch: {marker}")
 
 
 def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
@@ -616,6 +636,10 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             save_new(request_path, request)
         else:
             require(producer._load(request_path) == request, "Cached request changed")
+        require_reconciled_requests(out, reuse_from, resume_cache_from)
+        accounting.record_workload("layer2.concurrency", {
+            "workers": workers, "maxInFlightGroups": workers,
+            "translationGroups": len(plan), "aggregationOrder": "source"})
         units = {row["sourceUnitId"]: row["english"] for row in request["sourceUnits"]}
     def _process_group(item):
         index, group = item

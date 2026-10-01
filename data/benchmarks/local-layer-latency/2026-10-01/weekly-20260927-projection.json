@@ -1,0 +1,107 @@
+{
+  "schemaVersion": "local-weekly-happy-path-planning-v1",
+  "date": "2026-10-01",
+  "sourceWeek": "2026-09-27",
+  "sourceDurationSeconds": 1891.677333,
+  "englishWordIds": 5481,
+  "englishWhitespaceWords": 5480,
+  "englishSentences": 366,
+  "englishAnchors": 420,
+  "translationGroupCounts": {
+    "zh-Hans": 419,
+    "ko": 420,
+    "es": 420
+  },
+  "successfulTranslationAndReviewRequests": 2518,
+  "locales": {
+    "zh-Hans": {
+      "unitCount": 419,
+      "rawGeneratedAudioSeconds": 1877.52,
+      "trimmedAudioSeconds": 1724.15
+    },
+    "ko": {
+      "unitCount": 420,
+      "rawGeneratedAudioSeconds": 1796.16,
+      "trimmedAudioSeconds": 1655.18
+    },
+    "es": {
+      "unitCount": 420,
+      "rawGeneratedAudioSeconds": 1755.92,
+      "trimmedAudioSeconds": 1604.08
+    }
+  },
+  "baseEvidenceSha256": "ffe7887024198444476c79ed1eb5d6b4e4a9d34d2dbbf7e98419eb65b7579510",
+  "sourceReceipts": {
+    "zh-HansLeadingSilenceTrimSha256": "cf1ca847bc37f54b0683a12203a175c7c50bc78e8d226767ac2391ad5f8a3718",
+    "koLeadingSilenceTrimSha256": "4f511d9cdb3f6d278b73bbf8a25213615a7884952ce4f5c33642b82be340452a",
+    "esLeadingSilenceTrimSha256": "e5eb0d8c991fdb313524de86fe256e1f9057bea40b5286d5df58198a9bfaf80a"
+  },
+  "hosts": {
+    "macbook": {
+      "ttsRtfProxy": 2.7518463378783053,
+      "sourceAsrMinutesProxy": 1.2193282573968949,
+      "initialTranslationPerTrialMinutesProxy": [
+        55.16542672636901,
+        56.957586801191795,
+        58.65040378490013
+      ],
+      "textInitialAndEqualReviewMinutesProxy": 113.84894487497395,
+      "ttsMinutesProxy": 249.02374793573415,
+      "backAsrMinutesOptimisticProxy": 3.3621083666867477,
+      "modeledSubtotalMinutes": 367.45412943479175,
+      "unmeasuredStageReserveMinutes": 60,
+      "planningBudgetMinutesRoundedToQuarterHour": 435,
+      "ttsMinutesPerLocale": {
+        "zh-Hans": 86.11077560488793,
+        "ko": 82.37927197072494,
+        "es": 80.53370036012123
+      }
+    },
+    "spark": {
+      "ttsRtfProxy": 0.6146611154286398,
+      "sourceAsrMinutesProxy": 1.342343793535838,
+      "initialTranslationPerTrialMinutesProxy": [
+        50.70491102071557,
+        32.16488403588527,
+        23.515588171367554
+      ],
+      "textInitialAndEqualReviewMinutesProxy": 70.9235888186456,
+      "ttsMinutesProxy": 55.62273320552238,
+      "backAsrMinutesOptimisticProxy": 2.7557489444729355,
+      "modeledSubtotalMinutes": 130.64441476217675,
+      "unmeasuredStageReserveMinutes": 60,
+      "planningBudgetMinutesRoundedToQuarterHour": 195,
+      "ttsMinutesPerLocale": {
+        "zh-Hans": 19.233975623992997,
+        "ko": 18.400495151471763,
+        "es": 17.98826243005762
+      }
+    }
+  },
+  "assumptions": [
+    "Downloaded media; frozen English and final spoken scripts define the recomputed workload; no reused inference results, retry or revisions.",
+    "Models remain resident across serial slices, one GPU worker, no claimed multi-GPU or concurrent speedup.",
+    "TTS uses measured Chinese short-sample RTF for all locales; Korean/Spanish and formal checkpoint were not measured.",
+    "Text uses Qwen3.5-9B Base benchmark speed proxy for all locales; independent review receives equal generation budget, not a measured reviewer.",
+    "Text per-call residual is retained; decode scales with English word count; this is a planning proxy for a different prompt and review policy.",
+    "Back-transcription is an optimistic audio-duration throughput proxy, not 1259 short-unit screening validation.",
+    "About one hour reserved for unmeasured source judge, alignment, transfer, encoding, assembly and publication; subjective planning reserve, not a measured interval.",
+    "Human review and waiting time excluded."
+  ],
+  "unknown": [
+    "formal_Astra_Sol_layer2_latency",
+    "English_judge_local_latency",
+    "MFA_Spark_latency",
+    "short_unit_multilingual_ASR_screening",
+    "whole_release_upload_bandwidth",
+    "long_sentence_TTS_and_formal_checkpoint_transfer"
+  ],
+  "rawGeneratedAudioSeconds": 5429.6,
+  "jointTts": {
+    "idealInferenceMinutes": 45.4670654372209,
+    "macbookWorkFraction": 0.18258124301042425,
+    "sparkWorkFraction": 0.8174187569895758,
+    "equalSplitMinutes": 124.51187396786707
+  },
+  "oneReviewerFullAudioListeningMinutes": 94.58386665000002
+}

@@ -91,6 +91,40 @@ class OriginalDeadlineTests(unittest.TestCase):
                 backend.preflight(local_options={},spark_options={},deadline_monotonic=time.monotonic()+5)
         remote.assert_not_called()
 
+    def test_forced_spark_with_original_deadline_rejects_before_any_backend_dispatch(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);clip=root/'audio';clip.write_bytes(b'inert')
+            args=dict(local_options={},spark_options={},backend='spark',
+                      deadline_monotonic=time.monotonic()+5)
+            with patch.object(backend.spark,'preflight') as remote, \
+                 patch.object(backend.spark,'align_reference_chunks') as align, \
+                 patch.object(backend,'local_identity') as local:
+                with self.assertRaisesRegex(ValueError,'^mfa_deadline_requires_local_only$'):
+                    backend.preflight(**args)
+                with self.assertRaisesRegex(ValueError,'^mfa_deadline_requires_local_only$'):
+                    backend.align_reference_chunks([{'text':'Hello.','start':0.,'end':1.}],
+                        clip,root/'out',**args)
+            remote.assert_not_called();align.assert_not_called();local.assert_not_called()
+            self.assertFalse((root/'out').exists())
+
+    def test_explicit_macbook_retains_original_deadline_without_spark(self):
+        f=alignment_fixtures.AlignmentTest();f.setUp();self.addCleanup(f.doCleanups);f.exe.chmod(0o755)
+        f.chunks=[{'id':2,'start':0.,'end':180.,'text':'No. But I can’t 73.'}]
+        options={'mfa_executable':str(f.exe),'dictionary_path':str(f.dictionary),'acoustic_model':str(f.acoustic)}
+        clock=[100.];caps=[]
+        def run(command,**kwargs):
+            caps.append(kwargs['timeout']);result=f.fake_run(command,**kwargs);clock[0]+=5.;return result
+        with patch.object(mfa.time,'monotonic',side_effect=lambda:clock[0]), \
+             patch.object(mfa.subprocess,'run',side_effect=run), \
+             patch.object(backend.spark,'preflight') as remote, \
+             patch.object(backend.spark,'align_reference_chunks') as remote_align:
+            result=backend.align_reference_chunks(f.chunks,f.clip,f.root/'explicit-mac',
+                local_options=options,spark_options={},backend='macbook',deadline_monotonic=400.)
+        self.assertEqual(caps,[60,60,290.,285.])
+        self.assertTrue(all(row['alignmentExecutionBackend']=='macbook-local' for row in result))
+        self.assertEqual(json.loads((f.root/'explicit-mac/backend.json').read_text())['backend'],'macbook-local')
+        remote.assert_not_called();remote_align.assert_not_called()
+
 
 class SourceTransmissionTests(unittest.TestCase):
     def test_actual_source_builder_reuses_original_budget_deadline_without_dispatch(self):

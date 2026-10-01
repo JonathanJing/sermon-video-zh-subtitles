@@ -2,6 +2,8 @@
 
 当前架构导航：[App](app-system-design.zh.md) · [Backend DAG / 后端工作流](backend-workflow-system-design.zh-en.md) · [Execution environments / 执行环境](execution-environment-design.zh.md) · [Experiments / 实验方向](experiment-directions.zh.md)。
 
+本地预制制作按 [Spark 默认、MacBook fallback](local-production-compute-policy.zh.md) 选择计算后端；[分层 A/B](local-model-layer-latency-ab-20261001.zh.md)与 [GCP 全流程资源／费用评估](gcp-production-feasibility-20261001.zh.md)分别记录实测和假设情景。
+
 <p>
   <a href="./README.md">
     <img src="https://img.shields.io/badge/Language-English-blue" alt="English Documentation" />
@@ -44,6 +46,7 @@
 
 ### 编排、并发与证据
 
+- [本地制作四项提速 backlog](local-production-speed-backlog.zh.md)：批次驻留、文字有限并发、正式音频 batching、CPU 保存与合成重叠
 - [Agents API 端到端扩展](agents-end-to-end-workflow.zh.md)：显式配置才接入页面发行
 - [周六统一入口](saturday-harness.zh.md)与[执行保护](sermon-execution-harness.zh.md)
 - [受限并发](parallel-production.zh.md)与[配音／PDF 汇合合同](parallel-dubbing-contract.zh.md)

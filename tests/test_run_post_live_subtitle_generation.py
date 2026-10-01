@@ -389,6 +389,10 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
             command = mod.build_pipeline_command(args, root, root / "pipeline", "https://example.com/video")
             self.assertEqual(command[command.index("--reading-aligner") + 1], "mfa")
             self.assertEqual(command[command.index("--mfa-dictionary") + 1], str(dictionary))
+            self.assertEqual(command[command.index("--mfa-backend") + 1], "auto")
+            args.mfa_backend = "macbook"
+            forced = mod.build_pipeline_command(args, root, root / "pipeline", "https://example.com/video")
+            self.assertEqual(forced[forced.index("--mfa-backend") + 1], "macbook")
             initial = mod.stable_payload_hash(mod.build_pipeline_input_identity(args, audio))
             self.spark_preflight.return_value = {"backend": "dgx-spark-ssh", "runtime": {"modelSha256": "updated"}}
             self.assertNotEqual(initial, mod.stable_payload_hash(mod.build_pipeline_input_identity(args, audio)))
