@@ -362,7 +362,7 @@ def _estimates(run_id, units, states, samples, at):
         else:
             result[key] = {"lower": None, "upper": None, "sampleCount": 0, "confidence": "unknown", "basis": "no_comparable_history"}
     comparable = {_dimension(row) for row in units.values()}
-    return result, sum(_dimension(row) in comparable for row in seen.values()), issues
+    return result, sum(len(values) for dimension, values in groups.items() if dimension in comparable), issues
 
 
 def _schedule(units, done, states, estimates, pools, endpoint):
