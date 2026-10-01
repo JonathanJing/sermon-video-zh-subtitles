@@ -20,7 +20,7 @@ import uuid
 
 from ios_cli import APP_ROOT, PROJECT, REPO_ROOT, CommandFailed, Runner, developer_directory, select_simulator
 
-REGISTRY = ("ContentView.swift", "PlaybackDock.swift", "DesignSystem.swift", "EnglishLocateSheet.swift")
+REGISTRY = ("ContentView.swift", "PlaybackDock.swift", "DesignSystem.swift", "EnglishLocateSheet.swift", "VoiceDemoSection.swift")
 VARIANTS = ("light", "dark", "dark-large")
 TEST = "TongxingTests/SwiftUIPreviewTests/testRenderRequestedViews"
 
@@ -50,6 +50,7 @@ def parse_arguments():
     parser.add_argument("--files", default=os.environ.get("FILES", ""), help="注册文件名或 App/路径；逗号或空格分隔")
     parser.add_argument("--variants", default="light,dark", help="light,dark,dark-large；默认 light,dark")
     parser.add_argument("--interface-locale", choices=["zh-Hans", "en"], default="zh-Hans")
+    parser.add_argument("--voice-demo-catalog", type=Path, help="已冻结的同片段Demo目录；仅用于VoiceDemoSection静态渲染")
     parser.add_argument("--simulator", metavar="UDID", help="现有模拟器 UDID；默认复用唯一已启动的 iPhone")
     parser.add_argument("--developer-dir", help="完整 Xcode .app 或 Contents/Developer")
     parser.add_argument("--configuration", choices=["Debug"], default="Debug", help="预览夹具仅在 Debug 启用")
@@ -156,6 +157,14 @@ def execute(args, runner, directory, receipt):
     if not variants or set(variants) - set(VARIANTS):
         raise ValueError("预览外观只支持：" + ", ".join(VARIANTS))
     request = {"files": files, "variants": variants, "interfaceLocale": args.interface_locale}
+    if args.voice_demo_catalog:
+        if "VoiceDemoSection.swift" not in files:
+            raise ValueError("--voice-demo-catalog 需要 FILES=VoiceDemoSection.swift")
+        catalog_path = args.voice_demo_catalog.expanduser().resolve(strict=True)
+        request["voiceDemoCatalogPath"] = str(catalog_path)
+        receipt["voice_demo_catalog"] = {"path": str(catalog_path),
+            "sha256": hashlib.sha256(catalog_path.read_bytes()).hexdigest(),
+            "media_playback": "not_run_static_render"}
     encoded = base64.b64encode(json.dumps(request, separators=(",", ":")).encode()).decode()
     receipt.update(source_identity(files), request=request,
                    fixture={"identity": "synthetic-native-published-page-zh-Hans",

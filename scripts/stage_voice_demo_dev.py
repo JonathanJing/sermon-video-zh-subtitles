@@ -150,23 +150,23 @@ def verify_candidate_overlay(candidate: Path, report: dict) -> dict:
             and len(report["sourceRegistrySha256"]) == 64
             and report.get("baseCleanUrls") == hosting.load(candidate / "firebase.json")["hosting"].get("cleanUrls")
             and report.get("modifiedFiles") == list(PAGES)
-            and report.get("addedFileCount") == 33,
+            and report.get("addedFileCount") == 34,
             "Dev voice demo overlay lost its baseline or review boundary")
     base_paths = {item["path"]: item for item in report["devBaseFiles"]}
     current = {item["path"]: item for item in report["files"]}
     require({name for name in base_paths if current.get(name) != base_paths[name]} == set(PAGES)
             and set(current) - set(base_paths) == {
-                "voice-demo.mjs", "voice-demo.css", f"{PREFIX}/catalog.json",
+                "voice-demo.mjs", "voice-demo.css", "speaker-clip-demos.mjs", f"{PREFIX}/catalog.json",
                 *(asset["path"].lstrip("/") for speaker in catalog["speakers"]
                   for asset in [speaker["original"], *speaker["samples"]])}
-            and len(current) - len(base_paths) == 33,
+            and len(current) - len(base_paths) == 34,
             "Voice demo overlay changed an unrelated Dev file")
     for name in PAGES:
         html = (public / name).read_text(encoding="utf-8")
         require(html.count('href="/voice-demo.css"') == 1
                 and html.count('src="/voice-demo.mjs"') == 1,
                 f"Voice demo entry missing in {name}")
-    for name in ("voice-demo.mjs", "voice-demo.css"):
+    for name in ("voice-demo.mjs", "voice-demo.css", "speaker-clip-demos.mjs"):
         require(hosting.digest(public / name) == report.get("voiceDemoUiSha256", {}).get(name),
                 f"Voice demo frontend changed: {name}")
     return catalog
@@ -271,7 +271,7 @@ def stage(base: Path, delivery: Path, prior_http: Path, out: Path,
         catalog_path = public / PREFIX / "catalog.json"
         catalog_path.write_text(json.dumps(catalog, ensure_ascii=False, sort_keys=True,
                                            indent=2) + "\n", encoding="utf-8")
-        for name in ("voice-demo.mjs", "voice-demo.css"):
+        for name in ("voice-demo.mjs", "voice-demo.css", "speaker-clip-demos.mjs"):
             require(not (public / name).exists(), f"Voice demo UI already exists: {name}")
             shutil.copyfile(UI_SOURCE / name, public / name)
         for name in PAGES:
@@ -288,14 +288,14 @@ def stage(base: Path, delivery: Path, prior_http: Path, out: Path,
                   "priorHttpVerificationSha256": hosting.digest(prior_http),
                   "voiceDemoCatalogSha256": hosting.digest(catalog_path),
                   "voiceDemoUiSha256": {name: hosting.digest(public / name)
-                                         for name in ("voice-demo.mjs", "voice-demo.css")},
+                                         for name in ("voice-demo.mjs", "voice-demo.css", "speaker-clip-demos.mjs")},
                   "sourceDeliveryManifestSha256": hosting.digest(delivery / "delivery-manifest.json"),
                   "sourceReferencesSha256": hosting.digest(delivery / "references.json"),
                   "sourceDemoScriptSha256": hosting.digest(delivery / "demo-script.json"),
                   "sourceRegistrySha256": hosting.digest(delivery / "registry.json"),
                   "sourceRegistrySnapshotHashes": source_registry_hashes,
                   "sourceValidation": "bound_registry_manifests_script_and_full_decode_pass",
-                  "modifiedFiles": list(PAGES), "addedFileCount": 33}
+                  "modifiedFiles": list(PAGES), "addedFileCount": 34}
         (temporary / "build-report.json").write_text(
             json.dumps(report, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
             encoding="utf-8")

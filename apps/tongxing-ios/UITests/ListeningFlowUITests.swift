@@ -2,7 +2,8 @@ import XCTest
 
 /// Real application UI and AVPlayer, with generated silence and an injected
 /// URLSession transport. The offline relaunch simulates transport failure;
-/// these tests do not establish real-network, audible, lock-screen, or venue QA.
+/// Fixture tests do not establish real-network, audible, lock-screen, or venue QA.
+/// The explicit live Dev Demo smoke below uses real Hosting assets when opted in.
 @MainActor
 final class ListeningFlowUITests: XCTestCase {
     func testPlaybackStatusAndMoreLabelAreVisibleAtRegularTextSize() {
@@ -121,11 +122,10 @@ final class ListeningFlowUITests: XCTestCase {
         let app = launchFixture()
         app.buttons["more-options"].tap()
         let demos = element("voice-demo-disclosure", in: app)
-        try reveal(demos, in: app, direction: .up)
+        try revealDemo(demos, in: app, direction: .up)
         demos.tap()
         let speaker = element("voice-demo-speaker-speaker_0", in: app)
-        try waitFor(speaker, "exists == true")
-        try reveal(speaker, in: app, direction: .up)
+        try revealDemo(speaker, in: app, direction: .up)
         speaker.tap()
         let original = element("voice-demo-original-speaker_0", in: app)
         let chinese = element("voice-demo-sample-speaker_0-zh-Hans", in: app)
@@ -134,6 +134,145 @@ final class ListeningFlowUITests: XCTestCase {
         XCTAssertTrue(original.label.contains("讲员原始英文片段"))
         XCTAssertTrue(chinese.label.contains("中文"))
         screenshot("voice-demo-more-original-and-samples", app: app)
+    }
+
+    func testVoiceDemoPausesResumesAndLanguageChangeStopsAudio() throws {
+        let app = launchFixture(voiceClips: true)
+        app.buttons["more-options"].tap()
+        let demos = app.buttons["voice-demo-disclosure"]
+        try revealDemo(demos, in: app, direction: .up); demos.tap()
+        let speaker = app.buttons["voice-demo-speaker-speaker_0"]
+        try revealDemo(speaker, in: app, direction: .up); speaker.tap()
+        let original = app.buttons["voice-demo-original-speaker_0"]
+        try revealDemo(original, in: app, direction: .up); original.tap()
+        try waitFor(original, "label BEGINSWITH '暂停'")
+        screenshot("voice-demo-playing", app: app)
+        original.tap()
+        try waitFor(original, "label BEGINSWITH '播放'")
+        XCTAssertEqual(original.value as? String, "已暂停")
+        original.tap()
+        try waitFor(original, "label BEGINSWITH '暂停'")
+        let chinese = app.buttons["voice-demo-sample-speaker_0-zh-Hans"]
+        try revealDemo(chinese, in: app, direction: .up); chinese.tap()
+        try waitFor(chinese, "label BEGINSWITH '暂停'")
+        let korean = app.buttons["voice-demo-locale-speaker_0-ko"]
+        try revealDemo(korean, in: app, direction: .up); korean.tap()
+        let sample = app.buttons["voice-demo-sample-speaker_0-ko"]
+        try waitFor(sample, "label BEGINSWITH '播放'")
+        XCTAssertFalse(app.buttons["voice-demo-sample-speaker_0-zh-Hans"].exists)
+        try waitFor(original, "label BEGINSWITH '播放'")
+        let transcript = app.buttons["voice-demo-transcript-speaker_0"]
+        try revealDemo(transcript, in: app, direction: .up); transcript.tap()
+        XCTAssertTrue(app.staticTexts["Synthetic ko sample."].waitForExistence(timeout: 5))
+        screenshot("voice-demo-korean-transcript", app: app)
+        sample.tap()
+        try waitFor(sample, "label BEGINSWITH '暂停'")
+        try revealDemo(speaker, in: app, direction: .down); speaker.tap()
+        speaker.tap()
+        try waitFor(sample, "label BEGINSWITH '播放'")
+        screenshot("voice-demo-collapsed-paused", app: app)
+    }
+
+    func testVoiceDemoVideoUsesVerifiedClipAndReturnsPaused() throws {
+        let app = launchFixture(voiceClips: true)
+        app.buttons["more-options"].tap()
+        let demos = app.buttons["voice-demo-disclosure"]
+        try revealDemo(demos, in: app, direction: .up); demos.tap()
+        let speaker = app.buttons["voice-demo-speaker-speaker_0"]
+        try revealDemo(speaker, in: app, direction: .up); speaker.tap()
+        let original = app.buttons["voice-demo-original-speaker_0"]
+        try revealDemo(original, in: app, direction: .up); original.tap()
+        try waitFor(original, "label BEGINSWITH '暂停'")
+        let video = app.buttons["voice-demo-video-speaker_0"]
+        try revealDemo(video, in: app, direction: .up); video.tap()
+        XCTAssertTrue(element("voice-demo-video-player", in: app).waitForExistence(timeout: 10))
+        screenshot("voice-demo-verified-video", app: app)
+        app.navigationBars["同片段视频"].buttons["完成"].tap()
+        try waitFor(original, "label BEGINSWITH '播放'")
+        XCTAssertEqual(original.value as? String, "已暂停")
+    }
+
+    /// Run explicitly with a Debug/Beta configuration whose existing origin is Firebase Dev.
+    /// This checks real original-audio progress and in-app verified-video presentation/return.
+    /// Native AVKit play/pause controls are not asserted: their accessibility varies by OS.
+    func testLiveDevVoiceDemoOriginalProgressAndInAppVideoReturnsPaused() throws {
+        try XCTSkipUnless(ProcessInfo.processInfo.environment["TONGXING_LIVE_DEMO"] == "1",
+                          "Opt in with TONGXING_LIVE_DEMO=1 to check real Firebase Dev demo assets.")
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        // No --ui-testing argument or injected transport: use the app's configured content origin.
+        app.launchArguments = ["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
+        app.launchEnvironment["TONGXING_TEST_HOST"] = "0"
+        app.launch()
+        defer {
+            screenshot("live-dev-demo-final-ui-state", app: app)
+            let hierarchy = XCTAttachment(string: app.debugDescription)
+            hierarchy.name = "live-dev-demo-final-accessibility-hierarchy"
+            hierarchy.lifetime = .keepAlways
+            add(hierarchy)
+            app.terminate()
+        }
+
+        let more = app.buttons["more-options"]
+        XCTAssertTrue(more.waitForExistence(timeout: 30))
+        more.tap()
+        let demos = app.buttons["voice-demo-disclosure"]
+        try revealDemo(demos, in: app, direction: .up)
+        demos.tap()
+        // The frozen real catalog uses eric_geiger, never the synthetic speaker_0 fixture.
+        let speaker = app.buttons["voice-demo-speaker-eric_geiger"]
+        XCTAssertTrue(speaker.waitForExistence(timeout: 60))
+        XCTAssertTrue(speaker.label.contains("Eric Geiger"))
+        try revealDemo(speaker, in: app, direction: .up)
+        speaker.tap()
+        let original = app.buttons["voice-demo-original-eric_geiger"]
+        try revealDemo(original, in: app, direction: .up)
+        original.tap()
+        try waitFor(original, "label BEGINSWITH '暂停'", timeout: 60)
+        let clock = original.staticTexts.matching(NSPredicate(format: "label CONTAINS '/'")).firstMatch
+        try waitFor(clock, "exists == true", timeout: 15)
+        try waitFor(clock, "exists == true AND NOT (label BEGINSWITH '00:00/')", timeout: 15)
+        screenshot("live-dev-demo-eric-original-time-advanced", app: app)
+        original.tap()
+        try waitFor(original, "label BEGINSWITH '播放'")
+        XCTAssertEqual(original.value as? String, "已暂停")
+
+        let video = app.buttons["voice-demo-video-eric_geiger"]
+        try revealDemo(video, in: app, direction: .up)
+        video.tap()
+        XCTAssertTrue(element("voice-demo-video-player", in: app).waitForExistence(timeout: 60),
+                      "Verified real clip must open inside the app rather than in a browser.")
+        let done = app.buttons["voice-demo-video-done"]
+        XCTAssertTrue(done.waitForExistence(timeout: 10))
+        screenshot("live-dev-demo-eric-video-in-app", app: app)
+        done.tap()
+        XCTAssertTrue(app.navigationBars["更多选项"].waitForExistence(timeout: 10))
+        try revealDemo(original, in: app, direction: .down)
+        try waitFor(original, "label BEGINSWITH '播放'")
+        XCTAssertEqual(original.value as? String, "已暂停",
+                       "Closing the video must not resume the English audition.")
+        screenshot("live-dev-demo-eric-video-returned-original-paused", app: app)
+    }
+
+    func testVoiceDemoLargeTextLanguageChoiceRemainsUsable() throws {
+        let app = launchFixture(largeText: true, voiceClips: true)
+        app.buttons["more-options"].tap()
+        let demos = app.buttons["voice-demo-disclosure"]
+        try revealDemo(demos, in: app, direction: .up); demos.tap()
+        let speaker = app.buttons["voice-demo-speaker-speaker_0"]
+        try revealDemo(speaker, in: app, direction: .up); speaker.tap()
+        let spanish = app.buttons["voice-demo-locale-speaker_0-es"]
+        try revealDemo(spanish, in: app, direction: .up); spanish.tap()
+        let audio = app.buttons["voice-demo-sample-speaker_0-es"]
+        try revealDemo(audio, in: app, direction: .up)
+        XCTAssertTrue(audio.isEnabled)
+        XCTAssertTrue(audio.label.contains("Español"))
+        XCTAssertGreaterThan(audio.frame.height, 80, "Sheet must inherit the accessibility text size")
+        audio.tap()
+        try waitFor(audio, "label BEGINSWITH '暂停'")
+        audio.tap()
+        try waitFor(audio, "label BEGINSWITH '播放'")
+        screenshot("voice-demo-accessibility-spanish-paused", app: app)
     }
 
     func testTargetLanguageSheetShowsOnlyPublishedCapabilities() throws {
@@ -911,7 +1050,7 @@ final class ListeningFlowUITests: XCTestCase {
                                independentDefault: Bool = false,
                                locateFlow: Bool = false,
                                delayedTranscript: Bool = false, alignmentFailure: Bool = false,
-                               immediateFailure: Bool = false) -> XCUIApplication {
+                               immediateFailure: Bool = false, voiceClips: Bool = false) -> XCUIApplication {
         continueAfterFailure = false
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing"] + (largeText ? ["--ui-testing-large-text"] : [])
@@ -922,6 +1061,7 @@ final class ListeningFlowUITests: XCTestCase {
             + (delayedTranscript ? ["--ui-testing-delayed-transcript"] : [])
             + (alignmentFailure ? ["--ui-testing-alignment-failure"] : [])
             + (immediateFailure ? ["--ui-testing-alignment-failure-immediate"] : [])
+            + (voiceClips ? ["--ui-testing-voice-clips"] : [])
         app.launchArguments += ["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
         app.launchEnvironment["TONGXING_TEST_HOST"] = "0"
         app.launchEnvironment["TONGXING_UI_TEST_RUN_ID"] = UUID().uuidString
@@ -1024,6 +1164,22 @@ final class ListeningFlowUITests: XCTestCase {
         }
         screenshot("unreachable-\(target.identifier)", app: app)
         XCTFail("实际界面无法滚动到可点击控件：\(target.identifier)")
+        throw FlowFailure.unreachable
+    }
+
+    // More is a separate Form, with no listening dock inside its scroll bounds.
+    private func revealDemo(_ target: XCUIElement, in app: XCUIApplication, direction: ScrollDirection) throws {
+        let form = app.collectionViews.firstMatch
+        for _ in 0..<12 {
+            let bounds = form.frame.intersection(app.frame).insetBy(dx: 12, dy: 16)
+            let top = max(bounds.minY, app.navigationBars["更多选项"].frame.maxY + 12)
+            let viewport = CGRect(x: bounds.minX, y: top, width: bounds.width, height: bounds.maxY - top)
+            if target.exists && viewport.contains(target.frame) && target.isHittable { return }
+            if target.exists && target.frame.midY < viewport.midY { form.swipeDown(velocity: .slow) }
+            else { form.swipeUp(velocity: .slow) }
+        }
+        screenshot("unreachable-demo-\(target.identifier)", app: app)
+        XCTFail("Demo 控件未进入可点击区域：\(target.identifier)")
         throw FlowFailure.unreachable
     }
 

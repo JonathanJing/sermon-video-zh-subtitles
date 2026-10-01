@@ -3441,12 +3441,7 @@
             "value": "More options"
           }
         },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "더 보기"
-          }
-        },
+        "ko": { "stringUnit": { "state": "translated", "value": "더 보기" } },
         "es": {
           "stringUnit": {
             "state": "translated",
@@ -6861,6 +6856,325 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bản YouTube"
+          }
+        }
+      }
+    },
+    "同一片段：先听英语原声，再比较中文、韩语和西班牙语。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One clip: listen to the English original, then compare Chinese, Korean and Spanish."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "같은 구간의 영어 원음을 듣고 중국어, 한국어, 스페인어를 비교하세요."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un mismo fragmento: escucha el original inglés y compara chino, coreano y español."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cùng một đoạn: nghe bản gốc tiếng Anh rồi so sánh tiếng Trung, Hàn và Tây Ban Nha."
+          }
+        }
+      }
+    },
+    "旧版独立样音，文稿与英语原声不同；同片段对照正在准备。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Legacy independent samples use different scripts from the English original. Matched clips are being prepared."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이전 독립 샘플은 영어 원음과 원고가 다릅니다. 같은 구간의 대조 샘플을 준비 중입니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las muestras anteriores tienen textos diferentes del original inglés. Se preparan fragmentos coincidentes."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mẫu cũ dùng bản thảo khác bản gốc tiếng Anh. Đang chuẩn bị các đoạn đối chiếu tương ứng."
+          }
+        }
+      }
+    },
+    "试听加载失败，请检查网络后重试。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Demo could not load. Check your connection and retry."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "샘플을 불러올 수 없습니다. 연결을 확인하고 다시 시도하세요."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo cargar la muestra. Comprueba la conexión e inténtalo de nuevo."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể tải mẫu. Kiểm tra kết nối và thử lại."
+          }
+        }
+      }
+    },
+    "观看同片段视频": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Watch the same video clip"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "같은 구간 영상 보기"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ver el vídeo del mismo fragmento"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xem video cùng đoạn"
+          }
+        }
+      }
+    },
+    "原声来源 · 完整视频": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Original source · full video"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "원음 출처 · 전체 영상"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fuente original · vídeo completo"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nguồn âm thanh gốc · video đầy đủ"
+          }
+        }
+      }
+    },
+    "查看英文与译文": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "English and translation"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "영어와 번역문"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inglés y traducción"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiếng Anh và bản dịch"
+          }
+        }
+      }
+    },
+    "查看英文参考与独立样音文稿": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "English reference and independent sample script"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "영어 참고 및 독립 샘플 원고"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Referencia inglesa y texto independiente de muestra"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tham khảo tiếng Anh và bản thảo mẫu độc lập"
+          }
+        }
+      }
+    },
+    "AI 合成样音待人工听审，仅供音色比较，并非正式证道音轨。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI samples await human listening review. For voice comparison only, not released sermon audio."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI 샘플은 청취 검토 대기 중입니다. 음색 비교용이며 정식 설교 음성이 아닙니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Muestras de IA pendientes de revisión auditiva. Solo para comparar voces, no son audio publicado del sermón."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mẫu AI đang chờ người nghe duyệt. Chỉ để so sánh giọng, không phải âm thanh bài giảng chính thức."
+          }
+        }
+      }
+    },
+    "机器转写参考": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Machine transcript reference"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "기계 전사 참고"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transcripción automática de referencia"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bản chép máy để tham khảo"
+          }
+        }
+      }
+    },
+    "与英语原声相同的片段": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The same clip as the English original"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "영어 원음과 같은 구간"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El mismo fragmento que el original inglés"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cùng đoạn với bản gốc tiếng Anh"
+          }
+        }
+      }
+    },
+    "同片段视频": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Same-clip video"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "같은 구간 영상"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vídeo del mismo fragmento"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Video cùng đoạn"
           }
         }
       }

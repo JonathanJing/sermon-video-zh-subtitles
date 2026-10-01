@@ -124,7 +124,10 @@ final class PlaybackController: ObservableObject {
     private let seekCompletionResult: @MainActor (Bool) -> Bool
     private var history = PlaybackHistory()
     private var identity: TrackIdentity?
-    private(set) var isPreview = false
+    @Published private(set) var isPreview = false
+    @Published private(set) var previewID: String?
+    @Published private(set) var previewLoadFailed = false
+    private(set) var isVideoPresented = false
     private var sourceID = ""
     private var title = ""
     private var speaker = ""
@@ -260,6 +263,8 @@ final class PlaybackController: ObservableObject {
         seekGeneration = UUID()
         itemObservation = nil
         isPreview = false
+        previewID = nil
+        previewLoadFailed = false
         identity = next
         loadedSource = source
         sourceID = nextSourceID
@@ -325,10 +330,12 @@ final class PlaybackController: ObservableObject {
 
     /// Play a locally verified audition sample through the same player. Demos
     /// have no weekly identity, bookmark, alignment, or live activity.
-    func loadPreview(url: URL, title: String) {
+    func loadPreview(url: URL, title: String, previewID: String? = nil) {
         guard url.isFileURL else { return }
         clear()
         isPreview = true
+        self.previewID = previewID
+        wantsPlayback = true
         self.title = title
         speaker = ""
         message = "正在准备音频…"
@@ -341,14 +348,19 @@ final class PlaybackController: ObservableObject {
                 case .readyToPlay:
                     let measured = item.duration.seconds
                     guard measured.isFinite, measured > 0 else {
+                        self.previewLoadFailed = true
+                        self.wantsPlayback = false
                         self.message = "音频加载失败，请检查网络或使用已下载版本。"
                         return
                     }
                     self.duration = measured
                     self.isReady = true
                     self.updateRemoteAvailability()
-                    self.play()
+                    if self.wantsPlayback { self.startPlayback() }
+                    else { self.refreshTransport() }
                 case .failed:
+                    self.previewLoadFailed = true
+                    self.wantsPlayback = false
                     self.message = "音频加载失败，请检查网络或使用已下载版本。"
                 case .unknown: break
                 @unknown default: break
@@ -375,6 +387,8 @@ final class PlaybackController: ObservableObject {
         player.replaceCurrentItem(with: nil)
         itemObservation = nil
         isPreview = false
+        previewID = nil
+        previewLoadFailed = false
         identity = nil
         loadedSource = nil
         pendingSeek = nil
@@ -407,7 +421,15 @@ final class PlaybackController: ObservableObject {
         else { play() }
     }
 
+    /// The system play command uses this same owner, so it cannot overlap video audio.
+    func setVideoPresented(_ presented: Bool) {
+        isVideoPresented = presented
+        if presented { pause() }
+    }
+
     func play(automatic: Bool = false) {
+        guard !isVideoPresented else { return }
+        if isPreview { previewLoadFailed = false }
         if !automatic { manualInteraction() }
         guard isReady else { return }
         wantsPlayback = true
@@ -424,7 +446,7 @@ final class PlaybackController: ObservableObject {
     }
 
     private func startPlayback() {
-        guard isReady, wantsPlayback, pendingSeek == nil else { return }
+        guard !isVideoPresented, isReady, wantsPlayback, pendingSeek == nil else { return }
         if sessionIsActivated {
             beginPlayerPlayback()
             return
@@ -459,6 +481,7 @@ final class PlaybackController: ObservableObject {
                 self.sessionIsActivated = false
                 self.wantsPlayback = false
                 self.refreshTransport()
+                if self.isPreview { self.previewLoadFailed = true }
                 self.message = "无法启用音频，请稍后再试。"
             }
         }

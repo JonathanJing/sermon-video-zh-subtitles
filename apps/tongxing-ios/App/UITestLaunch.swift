@@ -23,6 +23,10 @@ enum UITestLaunch {
             statisticsDefaults: UserDefaults(suiteName: "Tongxing-UITests-\(runID.uuidString)")!)
     }
 
+    static func voiceDemoFixture() throws -> VoiceDemoCatalog {
+        try VoiceDemoCatalog.validatedClips(UITestContent.responses["/voice-demos/speaker-clips-v2/preview-catalog.json"]!)
+    }
+
     /// Hosted render tests share the synthetic catalog/audio transport, while
     /// keeping all downloads, preferences and playback history in private state.
     @MainActor static func makeFixtureModel(supportDirectory: URL, statisticsDefaults: UserDefaults,
@@ -77,6 +81,7 @@ private enum UITestContent {
             for _ in 0..<frameCount { result.append(silentFrame) }
             return result
         }
+        let fixtureVideo = Data(base64Encoded: "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")!
         let firstAudio = audio(frameCount: 500)
         let secondAudio = audio(frameCount: 667)
         let spanishAudio = audio(frameCount: 550)
@@ -161,14 +166,14 @@ private enum UITestContent {
             let speaker = "speaker_\(index)"
             let original: [String: Any] = [
                 "path": "\(demoPrefix)/\(speaker)/en-original.mp3",
-                "sha256": String(repeating: "c", count: 64), "bytes": 100,
+                "sha256": hash(firstAudio), "bytes": firstAudio.count,
                 "text": "Synthetic English reference.",
                 "transcriptStatus": "machine_screening_only",
                 "sourceUrl": "https://example.test/sermon/\(index)",
             ]
             let samples: [[String: Any]] = ["zh-Hans", "ko", "es", "vi"].map { locale in
                 ["path": "\(demoPrefix)/\(speaker)/\(locale).mp3",
-                 "sha256": String(repeating: "d", count: 64), "bytes": 100,
+                 "sha256": hash(secondAudio), "bytes": secondAudio.count,
                  "locale": locale, "text": "Synthetic sample.",
                  "humanListeningStatus": "pending"]
             }
@@ -182,7 +187,7 @@ private enum UITestContent {
             "humanListeningStatus": "pending", "speakerCount": 6, "sampleCount": 24,
             "speakers": demoSpeakers,
         ], options: [.sortedKeys])
-        return ["/weekly.json": try! JSONEncoder().encode(catalog),
+        var result: [String: Data] = ["/weekly.json": try! JSONEncoder().encode(catalog),
                 "/multilingual-v2.json": try! JSONSerialization.data(withJSONObject: multilingual, options: [.sortedKeys]),
                 "\(demoPrefix)/catalog.json": demos,
                 "/releases/ui-test-week/zh-Hans.json": chineseRelease,
@@ -194,6 +199,43 @@ private enum UITestContent {
                 "/media/fixture-first.mp3": firstAudio,
                 "/media/fixture-second.mp3": secondAudio,
                 "/media/ui-test-clip/es.mp3": spanishAudio]
+        for speaker in demoSpeakers {
+            let original = speaker["original"] as! [String: Any]
+            result[original["path"] as! String] = firstAudio
+            for sample in speaker["samples"] as! [[String: Any]] { result[sample["path"] as! String] = secondAudio }
+        }
+        let clipPrefix = "/voice-demos/speaker-clips-v2"
+        let english = "Synthetic English reference."
+        let textHash = hash(Data(english.utf8))
+        let clips: [[String: Any]] = (0..<6).map { index in
+            let id = "speaker_\(index)"
+            let clipID = "\(id)-fixture-v2"
+            func asset(_ name: String, locale: String? = nil) -> [String: Any] {
+                var value: [String: Any] = ["path": "\(clipPrefix)/\(id)/\(name).mp3",
+                    "sha256": hash(firstAudio), "bytes": firstAudio.count, "durationSeconds": 36,
+                    "sourceClipId": clipID, "englishTextSha256": textHash,
+                    "text": locale == nil ? english : "Synthetic \(locale!) sample."]
+                if let locale { value["locale"] = locale; value["humanListeningStatus"] = "pending" }
+                else { value["locale"] = "en"; value["transcriptStatus"] = "machine_screening_only" }
+                result[value["path"] as! String] = firstAudio
+                return value
+            }
+            // Silent black video: synthetic UI fixture, not a sermon excerpt.
+            let video: [String: Any] = ["path": "\(clipPrefix)/\(id)/source.mp4", "sha256": hash(fixtureVideo),
+                "bytes": fixtureVideo.count, "durationSeconds": 36, "sourceClipId": clipID]
+            result[video["path"] as! String] = fixtureVideo
+            return ["speakerId": id, "displayName": "Synthetic speaker \(index)", "clipId": clipID,
+                "source": ["url": "https://example.test/sermon/\(index)", "startSeconds": 100,
+                    "endSeconds": 136, "englishTextSha256": textHash], "original": asset("en-original"),
+                "video": video, "samples": ["zh-Hans", "ko", "es"].map { asset($0, locale: $0) }]
+        }
+        let clipCatalog = try! JSONSerialization.data(withJSONObject: [
+                "schemaVersion": "sermon-speaker-clip-demo-catalog-v2", "status": "audition_demo",
+                "sourceScope": "source_clip_translation_audition_not_sermon_release",
+                "humanListeningStatus": "pending", "speakerCount": 6, "sampleCount": 18, "speakers": clips], options: [.sortedKeys])
+        result["\(clipPrefix)/preview-catalog.json"] = clipCatalog
+        if ProcessInfo.processInfo.arguments.contains("--ui-testing-voice-clips") { result["\(clipPrefix)/catalog.json"] = clipCatalog }
+        return result
     }()
 
     static let dualScriptResponses = nativePublishedResponses(locale: "ko",
@@ -453,7 +495,8 @@ private class UITestContentProtocol: URLProtocol {
             }
             return
         }
-        if url.path == "/multilingual-v3.json" {
+        if url.path == "/multilingual-v3.json" || (url.path == "/voice-demos/speaker-clips-v2/catalog.json"
+            && UITestContent.responses[url.path] == nil) {
             let response = HTTPURLResponse(url: url, statusCode: 404, httpVersion: "HTTP/1.1",
                 headerFields: ["Content-Length": "1"])!
             client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
@@ -467,7 +510,7 @@ private class UITestContentProtocol: URLProtocol {
         }
         let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: "HTTP/1.1",
             headerFields: ["Content-Length": String(data.count),
-                           "Content-Type": url.path.hasSuffix(".json") ? "application/json" : "audio/mpeg"])!
+                           "Content-Type": url.path.hasSuffix(".json") ? "application/json" : url.path.hasSuffix(".mp4") ? "video/mp4" : "audio/mpeg"])!
         client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
         client?.urlProtocol(self, didLoad: data)
         client?.urlProtocolDidFinishLoading(self)

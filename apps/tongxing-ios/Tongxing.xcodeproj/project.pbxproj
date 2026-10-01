@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		042AC6D42BFDE10152C60248 /* VoiceDemoCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01D4A798172E895D46CF48E4 /* VoiceDemoCatalog.swift */; };
 		17719995BCE43C60385DB306 /* PlaybackControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE58D0C358A74F0BDE595617 /* PlaybackControllerTests.swift */; };
 		1F287CC791B5CA1037903C80 /* Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDD37841E68B061E39E91375 /* Localization.swift */; };
 		23FBE0C19259FFC619DE3B8B /* PrivacySupportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E53066E0326AFD8370B5145 /* PrivacySupportView.swift */; };
@@ -33,6 +34,8 @@
 		C7430BCC556F70CBE78D8CDB /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC6D116D3A73A078D6FA5218 /* DesignSystem.swift */; };
 		C84F91355DB74C84BAC96384 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A757BEABA30910DC76E26BE /* ContentView.swift */; };
 		CAB48F9F80542B5845FEF4B7 /* ListeningActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60D53F716EC96280DEAF16C4 /* ListeningActivityAttributes.swift */; };
+		CB435A938093472AA1DF77EB /* VoiceDemoCatalogV2Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E55BEC389D3326BFB083428 /* VoiceDemoCatalogV2Tests.swift */; };
+		D0F9336C23F6D98E4B199A86 /* VoiceDemoSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 270C99CB4AFCBD470C0E1B75 /* VoiceDemoSection.swift */; };
 		DA598EC364686E234B86F56B /* PlaybackController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34B67E7FE8944242C03C8904 /* PlaybackController.swift */; };
 		F104CF6576ABBCDDF4B54A62 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F81E8D165D65FEF70E65FFF /* AppModel.swift */; };
 		FA2D8C343F2F8AC19D4CB662 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = E8AB6F9FA25BB0980EF2FE48 /* InfoPlist.strings */; };
@@ -78,12 +81,14 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		01D4A798172E895D46CF48E4 /* VoiceDemoCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceDemoCatalog.swift; sourceTree = "<group>"; };
 		02EF54CEB76892C25F99A6FB /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		07B59FA4533A491CF4AA2D83 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		0D25C402E721BC4E502AF672 /* tongxing-ios */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "tongxing-ios"; path = .; sourceTree = SOURCE_ROOT; };
 		0F81E8D165D65FEF70E65FFF /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		1EB48128E58E88F812DC4214 /* MicrophoneCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MicrophoneCapture.swift; sourceTree = "<group>"; };
 		239227789D17BF0B1B0A1614 /* ListeningFlowUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningFlowUITests.swift; sourceTree = "<group>"; };
+		270C99CB4AFCBD470C0E1B75 /* VoiceDemoSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceDemoSection.swift; sourceTree = "<group>"; };
 		3258F6BBF467D18B238176B8 /* Tongxing.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Tongxing.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		34B67E7FE8944242C03C8904 /* PlaybackController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackController.swift; sourceTree = "<group>"; };
 		3A757BEABA30910DC76E26BE /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -94,6 +99,7 @@
 		60D53F716EC96280DEAF16C4 /* ListeningActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningActivityAttributes.swift; sourceTree = "<group>"; };
 		6163F70382A5001D532DC114 /* SwiftUIPreviewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftUIPreviewTests.swift; sourceTree = "<group>"; };
 		61FE1B88425139B2F592ED0A /* TongxingApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TongxingApp.swift; sourceTree = "<group>"; };
+		6E55BEC389D3326BFB083428 /* VoiceDemoCatalogV2Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceDemoCatalogV2Tests.swift; sourceTree = "<group>"; };
 		6FEF8605856DB0FE84A04EC2 /* EnglishLocateSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnglishLocateSheet.swift; sourceTree = "<group>"; };
 		70BEE8330224D04ACF54EE70 /* ListeningActivityWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningActivityWidget.swift; sourceTree = "<group>"; };
 		72F704FFC13274A549628FF2 /* Core */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Core; path = Core; sourceTree = SOURCE_ROOT; };
@@ -180,6 +186,8 @@
 				3E53066E0326AFD8370B5145 /* PrivacySupportView.swift */,
 				61FE1B88425139B2F592ED0A /* TongxingApp.swift */,
 				BD0FEA1F83F4300CB78A0935 /* UITestLaunch.swift */,
+				01D4A798172E895D46CF48E4 /* VoiceDemoCatalog.swift */,
+				270C99CB4AFCBD470C0E1B75 /* VoiceDemoSection.swift */,
 				E8AB6F9FA25BB0980EF2FE48 /* InfoPlist.strings */,
 				8DE1B32273C5ED188D2CD1CC /* Resources */,
 			);
@@ -217,6 +225,7 @@
 				9BF531D6B8AD0E94016F0BC3 /* AudioAlignmentControllerTests.swift */,
 				EE58D0C358A74F0BDE595617 /* PlaybackControllerTests.swift */,
 				6163F70382A5001D532DC114 /* SwiftUIPreviewTests.swift */,
+				6E55BEC389D3326BFB083428 /* VoiceDemoCatalogV2Tests.swift */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -411,6 +420,7 @@
 				C2AF9808AFFEED2AD7D2DF2A /* AudioAlignmentControllerTests.swift in Sources */,
 				17719995BCE43C60385DB306 /* PlaybackControllerTests.swift in Sources */,
 				A442F0B6EE2D16D0DAE46A00 /* SwiftUIPreviewTests.swift in Sources */,
+				CB435A938093472AA1DF77EB /* VoiceDemoCatalogV2Tests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -441,6 +451,8 @@
 				23FBE0C19259FFC619DE3B8B /* PrivacySupportView.swift in Sources */,
 				272F205288C38B205D9DE540 /* TongxingApp.swift in Sources */,
 				B415795B942C6189370AAE61 /* UITestLaunch.swift in Sources */,
+				042AC6D42BFDE10152C60248 /* VoiceDemoCatalog.swift in Sources */,
+				D0F9336C23F6D98E4B199A86 /* VoiceDemoSection.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

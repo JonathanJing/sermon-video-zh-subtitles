@@ -280,15 +280,75 @@ final class PlaybackControllerTests: XCTestCase {
     func testVerifiedVoicePreviewUsesSharedPlayerWithoutBookmark() async throws {
         let fixture = try Fixture()
         defer { fixture.dispose() }
-        fixture.player.loadPreview(url: fixture.audioURL, title: "Synthetic voice demo")
+        fixture.player.loadPreview(url: fixture.audioURL, title: "Synthetic voice demo", previewID: "clip-en")
         try await eventually("voice demo ready") { fixture.player.isReady }
         XCTAssertTrue(fixture.player.isPreview)
+        XCTAssertEqual(fixture.player.previewID, "clip-en")
         XCTAssertEqual(MPNowPlayingInfoCenter.default().nowPlayingInfo?[MPMediaItemPropertyTitle] as? String,
                        "Synthetic voice demo")
+        await fixture.player.applyAlignedPosition(5)
+        fixture.player.pause()
+        let position = fixture.player.position
+        try await Task.sleep(for: .milliseconds(200))
+        XCTAssertEqual(fixture.player.position, position, accuracy: 0.15)
+        fixture.player.toggle()
+        try await eventually("preview resumed") { fixture.player.isPlaying }
+        XCTAssertGreaterThanOrEqual(fixture.player.position, position - 0.15)
         fixture.player.pause()
         XCTAssertFalse(FileManager.default.fileExists(atPath: fixture.historyURL.path))
         fixture.player.load(week: fixture.week(), track: fixture.track, url: fixture.audioURL)
         XCTAssertFalse(fixture.player.isPreview)
+        XCTAssertNil(fixture.player.previewID)
+    }
+
+    func testPausingPreviewBeforeReadyPreventsLateAutoplay() async throws {
+        let fixture = try Fixture()
+        defer { fixture.dispose() }
+        fixture.player.loadPreview(url: fixture.audioURL, title: "Early pause", previewID: "early")
+        fixture.player.pause()
+        try await eventually("paused preview ready") { fixture.player.isReady }
+        try await Task.sleep(for: .milliseconds(250))
+        XCTAssertFalse(fixture.player.isPlaying)
+        XCTAssertFalse(fixture.player.isWaiting)
+        XCTAssertEqual(fixture.player.position, 0, accuracy: 0.1)
+        fixture.player.toggle()
+        try await eventually("explicit preview resume") { fixture.player.isPlaying }
+    }
+
+    func testVideoPresentationBlocksSharedPlayerUntilDismissed() async throws {
+        let fixture = try Fixture()
+        defer { fixture.dispose() }
+        fixture.player.loadPreview(url: fixture.audioURL, title: "Video exclusion", previewID: "en")
+        try await eventually("preview ready") { fixture.player.isReady }
+        fixture.player.setVideoPresented(true)
+        fixture.player.play()
+        try await Task.sleep(for: .milliseconds(200))
+        XCTAssertFalse(fixture.player.isPlaying)
+        XCTAssertFalse(fixture.player.isWaiting)
+        fixture.player.setVideoPresented(false)
+        XCTAssertFalse(fixture.player.isPlaying)
+        fixture.player.play()
+        try await eventually("explicit play after video dismissal") { fixture.player.isPlaying }
+    }
+
+    func testPreviewCannotReplaceSermonBookmark() async throws {
+        let fixture = try Fixture()
+        defer { fixture.dispose() }
+        try await fixture.load()
+        let sermonSeek = await fixture.player.applyAlignedPosition(6)
+        XCTAssertTrue(sermonSeek)
+        fixture.player.pause()
+        fixture.player.loadPreview(url: fixture.audioURL, title: "Bookmark exclusion", previewID: "en")
+        try await eventually("preview ready") { fixture.player.isReady }
+        let demoSeek = await fixture.player.applyAlignedPosition(2)
+        XCTAssertTrue(demoSeek)
+        fixture.player.clear()
+        fixture.player.load(week: fixture.week(), track: fixture.track, url: fixture.audioURL)
+        try await eventually("sermon restored") { fixture.player.isReady }
+        XCTAssertEqual(try XCTUnwrap(fixture.player.resumePosition).position, 6, accuracy: 0.15)
+        fixture.player.restore(autoplay: false)
+        try await eventually("sermon position restored") { abs(fixture.player.position - 6) < 0.15 }
+        XCTAssertFalse(fixture.player.isPlaying)
     }
 
     func testAutomaticAlignmentUsesSinglePlayerAndManualCommandsInvalidateIt() async throws {
