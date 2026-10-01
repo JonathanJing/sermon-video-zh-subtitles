@@ -498,8 +498,10 @@ def prepare_job(source_package_path: Path, anchor_path: Path, candidate_path: Pa
                 out: Path, *, clip_voice_authorization_path: Path | None = None,
                 source_voice_authorization_path: Path | None = None,
                 clip_voice_capability_path: Path | None = None,
-                clip_timeline_map_path: Path | None = None) -> dict[str, Any]:
-    _require(not out.exists(), "Use a new speech job directory; prior jobs are immutable")
+                clip_timeline_map_path: Path | None = None,
+                strict_rubric=None, build_only: bool = False) -> dict[str, Any]:
+    if not build_only:
+        _require(not out.exists(), "Use a new speech job directory; prior jobs are immutable")
     for path in (source_package_path, anchor_path, candidate_path, policy_path,
                  human_review_receipt_path, adapter_path, registry_path,
                  *((clip_voice_authorization_path,) if clip_voice_authorization_path else ()),
@@ -521,7 +523,7 @@ def prepare_job(source_package_path: Path, anchor_path: Path, candidate_path: Pa
     _validate_schema(candidate, "sermon-target-language-candidate-v2.schema.json", "target candidate")
     identity = validate_target_candidate(source_package, anchor, candidate)
     locale = identity["targetLocale"]
-    validate_policy_binding(candidate, policy)
+    validate_policy_binding(candidate, policy, strict_rubric=strict_rubric)
     validate_human_review_receipt(source_package, anchor, candidate, human_review_receipt)
     validate_adapter(adapter, locale, registry,
                      clip_voice_authorization=clip_voice_authorization,
@@ -627,8 +629,9 @@ def prepare_job(source_package_path: Path, anchor_path: Path, candidate_path: Pa
             "jsonSha256": interpretation.json_sha256(clip_timeline),
         }
     _validate_schema(job, "sermon-target-language-speech-job-v2.schema.json", "speech job")
-    out.mkdir(parents=True)
-    interpretation.write_json(out / "job.json", job)
+    if not build_only:
+        out.mkdir(parents=True)
+        interpretation.write_json(out / "job.json", job)
     return job
 
 
@@ -638,6 +641,7 @@ def main() -> None:
     parser.add_argument("--anchor", type=Path, required=True)
     parser.add_argument("--candidate", type=Path, required=True)
     parser.add_argument("--policy", type=Path, required=True)
+    parser.add_argument("--strict-rubric", type=Path, help="Explicit frozen rubric for strict-v3 policy validation")
     parser.add_argument("--human-review-receipt", type=Path, required=True)
     parser.add_argument("--adapter", type=Path, required=True)
     parser.add_argument("--speaker-registry", type=Path, required=True)
@@ -664,6 +668,7 @@ def main() -> None:
             source_voice_authorization_path=args.source_voice_authorization,
             clip_voice_capability_path=args.clip_voice_capability,
             clip_timeline_map_path=args.clip_timeline_map,
+            strict_rubric=_load(args.strict_rubric) if args.strict_rubric else None,
         )
         metrics["speechUnits"] = len(job.get("units") or [])
     print(json.dumps({

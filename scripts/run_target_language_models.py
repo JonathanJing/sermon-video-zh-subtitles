@@ -150,17 +150,41 @@ def require_plugin_identity(plugin_path, expected):
         raise
 
 
-def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
-                output: Path, api_key: str,
-                caller: Callable[[str, dict[str, Any]], dict[str, Any]],
-                reuse_from: Path | None = None, *, cache_only: bool = False,
-                response_observer=None) -> dict[str, Any]:
+def completed_response_content(response, model, role):
+    """Validate the same terminal envelope for fresh and strict cached calls."""
+    require(isinstance(response, dict) and isinstance(response.get("id"), str)
+            and response["id"] and response.get("model") == model,
+            f"{role} response lacks exact model and request identity")
+    choices = response.get("choices")
+    require(isinstance(choices, list) and len(choices) == 1
+            and isinstance(choices[0], dict) and choices[0].get("finish_reason") == "stop",
+            f"{role} response is incomplete")
+    message = choices[0].get("message")
+    require(isinstance(message, dict) and isinstance(message.get("content"), str),
+            f"{role} response has no JSON content")
+    return message["content"]
+
+
+def model_payload(role, prompt, policy, request_limits=None):
     model = policy[role]["model"]
-    save_options = {"private": True} if response_observer is not None else {}
     payload = {"model": model, "reasoning_effort": policy[role]["reasoningEffort"],
                "messages": [{"role": "system", "content": prompt["instruction"]},
                             {"role": "user", "content": json.dumps(prompt["input"], ensure_ascii=False)}],
                "response_format": {"type": "json_object"}}
+    if request_limits is not None:
+        from scripts.sermon_provider_limits import bounded_payload
+        payload = bounded_payload(payload, request_limits)
+    return payload
+
+
+def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
+                output: Path, api_key: str,
+                caller: Callable[[str, dict[str, Any]], dict[str, Any]],
+                reuse_from: Path | None = None, *, cache_only: bool = False,
+                response_observer=None, request_limits=None) -> dict[str, Any]:
+    model = policy[role]["model"]
+    save_options = {"private": True} if response_observer is not None else {}
+    payload = model_payload(role, prompt, policy, request_limits)
     fingerprint = policy_tools.canonical_sha256(payload)
     if reuse_from is not None and not output.exists():
         require(reuse_from.is_file(), f"Missing reusable {role} cache: {reuse_from}")
@@ -215,14 +239,7 @@ def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
                     "Strict persisted response differs from transport return")
         else:
             save_new(raw_path, {"payloadSha256": fingerprint, "response": response})
-    require(isinstance(response, dict) and isinstance(response.get("id"), str)
-            and response["id"] and response.get("model") == model,
-            f"{role} response lacks exact model and request identity")
-    choices = response.get("choices")
-    require(isinstance(choices, list) and len(choices) == 1
-            and choices[0].get("finish_reason") == "stop", f"{role} response is incomplete")
-    content = choices[0].get("message", {}).get("content")
-    require(isinstance(content, str), f"{role} response has no JSON content")
+    content = completed_response_content(response, model, role)
     if response_observer is not None:
         from scripts.sermon_review_contracts import decode_json
         parsed = decode_json(content.encode("utf-8"))
