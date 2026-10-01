@@ -432,6 +432,8 @@ final class StorageTests {
         let repository = MultilingualCatalogRepository(origin: baseURL, cacheDirectory: directory, session: session)
         let result = try await repository.loadPublishedTranscript(for: fixture.package, page: fixture.page)
         #expect(result.title == "한국어 전체 원고")
+        #expect(result.series == "合成测试系列")
+        #expect(result.speaker == "Synthetic Speaker")
         #expect(result.fullText[0].text == "전체 원고")
         #expect(result.captions[0].text == "짧은 원고")
         #expect(result.fullText[0].start == 0)
@@ -442,6 +444,8 @@ final class StorageTests {
         let offline = try await repository.loadPublishedTranscript(for: fixture.package, page: fixture.page)
         #expect(offline.fullText[0].text == result.fullText[0].text)
         #expect(offline.captions[0].text == result.captions[0].text)
+        #expect(offline.series == result.series)
+        #expect(offline.speaker == result.speaker)
         #expect(offline.fullText[0].english == nil)
     }
 
@@ -531,6 +535,7 @@ final class StorageTests {
             "targetLocale": "ko", "status": "human_reviewed", "englishSourcePackageJsonSha256": hashA,
             "targetLanguageCandidateJsonSha256": hashA, "sourceMediaSha256": hashA,
             "durationSeconds": 10, "title": "한국어 전체 원고",
+            "series": "合成测试系列", "speaker": "Synthetic Speaker",
             "cues": [["textGroupId": "group-1", "sourceUnitIds": ["source-1"], "text": "전체 원고", "start": 0, "end": 2]],
         ])
         let captions = try json(["cues": [["textGroupId": "group-1", "text": "짧은 원고", "start": 1, "end": 3]]])

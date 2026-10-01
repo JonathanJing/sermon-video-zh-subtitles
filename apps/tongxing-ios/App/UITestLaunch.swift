@@ -349,6 +349,7 @@ private enum UITestContent {
             "sourceMediaSha256": displayHash,
             "targetLanguageCandidateJsonSha256": displayHash,
             "durationSeconds": 20.0, "title": "测试完整视频证道",
+            "series": "启示录：耶稣带来的安慰与盼望", "speaker": "Eric Geiger",
             "cues": [["textGroupId": "g1", "sourceUnitIds": ["u1"], "start": 0.0, "end": 10.0, "text": fullText]]
         ], options: [.sortedKeys])
         let captions = try! JSONSerialization.data(withJSONObject: [

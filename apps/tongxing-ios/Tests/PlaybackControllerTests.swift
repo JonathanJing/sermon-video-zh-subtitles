@@ -12,6 +12,47 @@ import XCTest
 /// not represent a real phone call, headphone route, lock-screen or venue test.
 @MainActor
 final class PlaybackControllerTests: XCTestCase {
+    #if DEBUG
+    func testUnselectedPublishedHeadingLoadsWithoutChangingLegacyPlayback() async throws {
+        let run = UUID().uuidString
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("Heading-\(run)")
+        let suite = "Heading-\(run)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        let model = UITestLaunch.makeFixtureModel(supportDirectory: directory,
+                                                   statisticsDefaults: defaults, nativePublishedPage: true)
+        defer {
+            model.playback.pause()
+            model.mediaSession.invalidateAndCancel()
+            defaults.removePersistentDomain(forName: suite)
+            try? FileManager.default.removeItem(at: directory)
+        }
+        await model.start()
+        let page = try XCTUnwrap(model.independentPages.first)
+        let week = try XCTUnwrap(model.weeks.first)
+        await model.select(week: week)
+        // AVPlayer's network process does not use the injected URLProtocol.
+        // Download the verified synthetic MP3 through the model first.
+        model.downloadSelected()
+        try await eventually("legacy playback ready") { model.usingOfflineAudio && model.playback.isReady }
+        model.playback.jump(to: 12)
+        try await eventually("legacy retained position") { abs(model.playback.position - 12) < 0.1 }
+        let track = model.selectedTrack
+        let locale = model.selectedContentLocale
+        await model.loadPublishedHeading(page)
+        let heading = model.heading(for: page)
+        XCTAssertEqual(heading.title, "测试完整视频证道")
+        XCTAssertEqual(heading.series, "启示录：耶稣带来的安慰与盼望")
+        XCTAssertEqual(heading.speaker, "Eric Geiger")
+        XCTAssertEqual(model.selectedWeek, week)
+        XCTAssertEqual(model.selectedPageID, week.id)
+        XCTAssertEqual(model.selectedTrack, track)
+        XCTAssertEqual(model.selectedContentLocale, locale)
+        XCTAssertEqual(model.playback.position, 12, accuracy: 0.1)
+        XCTAssertFalse(model.playback.isPlaying)
+        XCTAssertNil(model.publishedTranscript)
+    }
+    #endif
+
     func testFailedPublishedPositionRestoreRetainsTimelineAndAllowsSameLocaleRetry() async throws {
         var failNextSeek = false
         let fixture = try Fixture(seekCompletionResult: { finished in

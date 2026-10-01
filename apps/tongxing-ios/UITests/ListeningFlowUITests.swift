@@ -202,6 +202,47 @@ final class ListeningFlowUITests: XCTestCase {
         XCTAssertFalse(app.buttons["content-language-es"].exists)
     }
 
+    func testSermonHeadingAndPickerUseTitleSeriesDateSpeakerWithoutSeeking() throws {
+        try verifySermonHeading(largeText: false)
+    }
+
+    func testSermonHeadingLargeTextKeepsLongSeriesAndPickerReachable() throws {
+        try verifySermonHeading(largeText: true)
+    }
+
+    private func verifySermonHeading(largeText: Bool) throws {
+        let app = launchFixture(largeText: largeText, dualScript: true)
+        let series = app.staticTexts["published-page-series"]
+        XCTAssertTrue(series.waitForExistence(timeout: 10))
+        XCTAssertEqual(app.staticTexts["published-page-title"].label, "测试完整视频证道")
+        XCTAssertEqual(series.label, "启示录：耶稣带来的安慰与盼望")
+        XCTAssertEqual(app.staticTexts["published-page-details"].label, "2026-09-27 · Eric Geiger")
+        XCTAssertLessThan(app.staticTexts["published-page-title"].frame.minY, series.frame.minY)
+        XCTAssertLessThan(series.frame.minY, app.staticTexts["published-page-details"].frame.minY)
+        screenshot(largeText ? "sermon-heading-large" : "sermon-heading", app: app)
+        let play = app.buttons["playback-toggle"]
+        try waitFor(play, "exists == true AND enabled == true AND hittable == true")
+        play.tap()
+        try waitFor(element("playback-progress", in: app), "NOT (value BEGINSWITH '00:00，')")
+        play.tap()
+        try waitFor(play, "label == '开始播放'")
+        let position = element("playback-progress", in: app).value as? String
+        app.buttons["choose-sermon"].tap()
+        let row = app.buttons["published-page-ui-test-full-video"]
+        XCTAssertTrue(row.waitForExistence(timeout: 5))
+        XCTAssertTrue(row.label.contains("测试完整视频证道"))
+        XCTAssertTrue(row.label.contains("启示录：耶稣带来的安慰与盼望"))
+        XCTAssertTrue(row.label.contains("2026-09-27 · Eric Geiger"))
+        XCTAssertFalse(row.label.contains("한국어"))
+        XCTAssertTrue(row.isHittable)
+        if largeText {
+            XCTAssertGreaterThan(row.frame.height, 160, "Picker rows must inherit the accessibility text size")
+        }
+        screenshot(largeText ? "sermon-picker-large" : "sermon-picker", app: app)
+        app.buttons["完成"].tap()
+        XCTAssertEqual(element("playback-progress", in: app).value as? String, position)
+    }
+
     func testDualScriptCatalogOpensCurrentPageBeforeLegacyAndPreparesAudio() throws {
         let app = launchFixture(dualScript: true)
         XCTAssertEqual(app.staticTexts["published-page-title"].label, "测试完整视频证道")

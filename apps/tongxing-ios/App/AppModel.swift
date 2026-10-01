@@ -39,6 +39,7 @@ final class AppModel: ObservableObject {
     @Published private(set) var publishedTranscript: VerifiedPublishedTranscript?
     @Published private(set) var isLoadingPublishedTranscript = false
     @Published private(set) var publishedTranscriptError: String?
+    @Published private var publishedHeadings: [String: SermonHeading] = [:]
     private var transcriptRequest = UUID()
     @Published private(set) var downloadStates: [String: DownloadState] = [:]
     @Published private(set) var usingOfflineAudio = false
@@ -241,6 +242,39 @@ final class AppModel: ObservableObject {
         return "\(page.id):\(selectedContentLocale):\(target.releasePackageJsonSha256)"
     }
 
+    func publishedHeadingKey(_ page: MultilingualPage) -> String {
+        "\(page.id):\(page.sourceIdentitySha256):\(page.targets[page.defaultTargetLocale]?.releasePackageJsonSha256 ?? "")"
+    }
+
+    func heading(for page: MultilingualPage) -> SermonHeading {
+        if let transcript = publishedTranscript, transcript.pageID == page.id,
+           transcript.sourceIdentitySha256 == page.sourceIdentitySha256 {
+            return SermonHeading(title: transcript.title ?? page.title ?? page.id,
+                                 series: transcript.series, speaker: transcript.speaker)
+        }
+        return publishedHeadings[publishedHeadingKey(page)] ?? SermonHeading(title: page.title ?? page.id)
+    }
+
+    /// Only visible picker rows request metadata, through the existing verified
+    /// text cache. This never selects a page or touches audio/playback state.
+    func loadPublishedHeading(_ page: MultilingualPage) async {
+        let key = publishedHeadingKey(page)
+        guard publishedHeadings[key] == nil,
+              multilingualCatalog?.schemaVersion == MultilingualCatalog.dualScriptSchemaVersion,
+              page.targets[page.defaultTargetLocale]?.contentStatus == "human_reviewed",
+              let multilingualRepository else { return }
+        do {
+            let package = try await multilingualRepository.loadRelease(page: page, locale: page.defaultTargetLocale)
+            let transcript = try await multilingualRepository.loadPublishedTranscript(for: package, page: page)
+            try Task.checkCancellation()
+            guard independentPages.contains(where: { publishedHeadingKey($0) == key }) else { return }
+            publishedHeadings[key] = SermonHeading(title: transcript.title ?? page.title ?? page.id,
+                                                  series: transcript.series, speaker: transcript.speaker)
+        } catch {
+            // Metadata failure keeps the catalog title/date available, with no invented speaker.
+        }
+    }
+
     func loadSelectedPublishedTranscript() async {
         let request = UUID()
         transcriptRequest = request
@@ -258,6 +292,10 @@ final class AppModel: ObservableObject {
             try Task.checkCancellation()
             guard transcriptRequest == request, publishedTranscriptSelectionKey == key else { return }
             publishedTranscript = transcript
+            if locale == page.defaultTargetLocale {
+                publishedHeadings[publishedHeadingKey(page)] = SermonHeading(
+                    title: transcript.title ?? page.title ?? page.id, series: transcript.series, speaker: transcript.speaker)
+            }
         } catch is CancellationError {
             return
         } catch {

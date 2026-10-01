@@ -14,6 +14,8 @@ Dev Debug 与正式版沿用同一原生收听界面、播放器、下载、字�
 
 当前候选使用的功能符号、状态分支与品牌资源见 [图标清单](ICON-INVENTORY.zh.md)，用于逐组讨论图标优化。
 
+证道主页面和选择列表统一显示标题、系列、日期与讲员；日期和讲员以「·」连接，空间不足时分行。显示规则、元数据校验和候选验证见 [证道信息层级](SERMON-HEADING.zh.md)。
+
 ## 打开与运行
 
 正式版与可共存的测试版共用源码：`Tongxing` 使用原 App 标识，`TongxingBeta` 使用独立的 `com.jonathanjing.tongxing.beta`，手机名称为「同行-beta」。BetaDebug/BetaRelease 默认连接 Firebase Dev；灵动岛返回链接与本机存储随 App 身份隔离。开发测试使用 `./scripts/ios.sh test --scheme TongxingBeta`。测试版到正式版的源码冻结、归档记录与发布验证见 [Beta 晋升流程](BETA-PROMOTION.zh.md)。

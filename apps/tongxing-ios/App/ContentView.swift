@@ -158,11 +158,8 @@ struct ContentView: View {
                                     Spacer(minLength: 8)
                                     appLanguageMenu
                                 }
-                                Text(model.publishedTranscript?.title ?? page.title ?? page.id).font(.largeTitle.bold())
-                                    .fixedSize(horizontal: false, vertical: true)
-                                    .accessibilityAddTraits(.isHeader)
-                                    .accessibilityIdentifier("published-page-title")
-                                Text(page.date).font(.subheadline).foregroundStyle(.secondary)
+                                SermonHeadingView(heading: model.heading(for: page), date: page.date,
+                                                  titleFont: .largeTitle.bold(), identifier: "published-page")
                                 languageButton
                                 if model.fullVideoURL != nil || model.selectedAudioLanguageName != nil {
                                     if typeSize.isAccessibilitySize {
@@ -313,7 +310,9 @@ struct ContentView: View {
                 switch destination {
                 case .weeks:
                     WeekSheet(model: model)
-                        .presentationDetents([.medium, .large]).presentationDragIndicator(.visible)
+                        .environment(\.dynamicTypeSize, typeSize)
+                        .presentationDetents(typeSize.isAccessibilitySize ? [.large] : [.medium, .large])
+                        .presentationDragIndicator(.visible)
                 case .languages:
                     TargetLanguageSheet(model: model)
                         .presentationDetents([.medium, .large]).presentationDragIndicator(.visible)
@@ -462,10 +461,8 @@ struct ContentView: View {
         if verticalSizeClass == .compact {
             HStack(spacing: 16) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(week.title).font(.headline).accessibilityAddTraits(.isHeader)
-                        .accessibilityIdentifier("sermon-title")
-                    Text("\(week.scripture) · \(week.speaker) · \(week.date)")
-                        .font(.caption).foregroundStyle(.secondary)
+                    SermonHeadingView(heading: SermonHeading(title: week.title, series: week.series, speaker: week.speaker),
+                                      date: week.date, titleFont: .headline, identifier: "sermon")
                     Text(reviewLabel).font(.caption).foregroundStyle(Brand.accent)
                 }
                 Spacer(minLength: 8)
@@ -482,15 +479,13 @@ struct ContentView: View {
     private func regularSermonHeading(_ week: SermonWeek) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text(week.date).font(.caption.weight(.medium)).foregroundStyle(.secondary)
+                Text(localization.text("证道")).font(.caption.weight(.medium)).foregroundStyle(.secondary)
                 Spacer()
                 appLanguageMenu
             }
-            Text(week.title).font(.largeTitle.bold()).fixedSize(horizontal: false, vertical: true)
-                .accessibilityAddTraits(.isHeader)
-                .accessibilityIdentifier("sermon-title")
-            Text("\(week.scripture) · \(week.speaker)")
-                .font(.subheadline).foregroundStyle(.secondary)
+            SermonHeadingView(heading: SermonHeading(title: week.title, series: week.series, speaker: week.speaker),
+                              date: week.date, titleFont: .largeTitle.bold(), identifier: "sermon")
+            Text(week.scripture).font(.footnote).foregroundStyle(.secondary)
             languageButton
             if model.selectedContentLocale != "zh-Hans", model.selectedContentTarget != nil {
                 Text(localization.text("所选语言在独立发布页面中打开；原生播放器继续保留当前已验证的中文音轨。"))
@@ -1115,6 +1110,44 @@ private struct BrandTitle: View {
     }
 }
 
+/// The same hierarchy on the listening page and in the picker. A line break
+/// separates title/series; only the short date/speaker pair needs a middle dot.
+private struct SermonHeadingView: View {
+    @ObservedObject private var localization = AppLocalization.shared
+    let heading: SermonHeading
+    let date: String
+    let titleFont: Font
+    let identifier: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(heading.title).font(titleFont)
+                .accessibilityAddTraits(.isHeader)
+                .accessibilityIdentifier("\(identifier)-title")
+            if let series = heading.series {
+                Text(series).font(.subheadline).foregroundStyle(.secondary)
+                    .accessibilityIdentifier("\(identifier)-series")
+            }
+            ViewThatFits(in: .horizontal) {
+                Text(heading.details(date: date)).fixedSize()
+                    .accessibilityIdentifier("\(identifier)-details")
+                // At large type, separate complete fields rather than leaving
+                // a separator stranded at the end or start of a line.
+                Text([date, heading.speaker].compactMap { $0 }.joined(separator: "\n"))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityLabel(heading.details(date: date))
+                    .accessibilityIdentifier("\(identifier)-details")
+            }
+            .font(.subheadline).foregroundStyle(.secondary)
+            if let edition = heading.edition {
+                Text(localization.text(edition)).font(.caption).foregroundStyle(.secondary)
+            }
+        }
+        .fixedSize(horizontal: false, vertical: true)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
 private struct WeekSheet: View {
     @ObservedObject private var localization = AppLocalization.shared
     @ObservedObject var model: AppModel
@@ -1134,11 +1167,8 @@ private struct WeekSheet: View {
                                 dismiss()
                             } label: {
                                 HStack {
-                                    VStack(alignment: .leading, spacing: 7) {
-                                        Text(page.title ?? page.id).font(.headline)
-                                        Text("\(page.date) · \(page.publishedTargets.map { AppModel.languageName($0.locale) }.joined(separator: " · "))")
-                                            .font(.subheadline).foregroundStyle(.secondary)
-                                    }
+                                    SermonHeadingView(heading: model.heading(for: page), date: page.date,
+                                                      titleFont: .headline, identifier: "picker-\(page.id)")
                                     Spacer()
                                     if page.id == model.selectedPageID { Image(systemName: "checkmark") }
                                 }
@@ -1147,6 +1177,7 @@ private struct WeekSheet: View {
                             }
                             .buttonStyle(.plain)
                             .accessibilityIdentifier("published-page-\(page.id)")
+                            .task(id: model.publishedHeadingKey(page)) { await model.loadPublishedHeading(page) }
                             Divider().padding(.horizontal, 20)
                         }
                     }
@@ -1156,10 +1187,8 @@ private struct WeekSheet: View {
                             Task { await model.select(week: week) }
                         } label: {
                             HStack {
-                                VStack(alignment: .leading, spacing: 7) {
-                                    Text(week.title).font(.headline)
-                                    Text("\(week.date) · \(week.speaker)").font(.subheadline).foregroundStyle(.secondary)
-                                }
+                                SermonHeadingView(heading: SermonHeading(title: week.title, series: week.series, speaker: week.speaker),
+                                                  date: week.date, titleFont: .headline, identifier: "picker-\(week.id)")
                                 Spacer()
                                 if week.id == model.selectedWeek?.id { Image(systemName: "checkmark") }
                             }
@@ -1167,7 +1196,6 @@ private struct WeekSheet: View {
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
-                        .accessibilityLabel("\(week.title)，\(week.date)")
                         .accessibilityIdentifier("legacy-week-\(week.id)")
                         Divider().padding(.horizontal, 20)
                     }
