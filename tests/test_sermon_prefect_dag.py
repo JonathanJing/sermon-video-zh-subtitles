@@ -51,6 +51,13 @@ class PilotTests(unittest.TestCase):
         with patch.object(pilot,'code_identity',return_value='a'*64),self.assertRaisesRegex(ValueError,'code_changed'):
             pilot.load(self.root)
 
+    def test_runtime_identity_covers_transitive_execution_and_validation_modules(self):
+        required = {'sermon_job_liveness.py', 'sermon_log_contract.py', 'sermon_log_outbox.py',
+                    'sermon_review_observation.py', 'sermon_clock_evidence.py',
+                    'sermon_workflow_evidence.py', 'sermon_release_workflow.py',
+                    'sermon_guarded_command.py'}
+        self.assertTrue(required.issubset(set(pilot.CLOSURE)))
+
     def test_human_wait_does_not_launch_or_take_resource(self):
         plan,runner = self.setup_plan(simulated_human=False)
         with patch.object(jobs,'start_job') as start:

@@ -33,7 +33,13 @@ REPO = Path(__file__).resolve().parents[1]
 CLOSURE = ('sermon_dag_contract.py', 'sermon_prefect_dag.py', 'run_sermon_prefect_dag.py',
            'canonical_pipeline_definition.py', 'sermon_workflow_jobs.py',
            'sermon_execution_harness.py', 'sermon_review_budget.py', 'sermon_model_resources.py',
-           'sermon_accounting.py','sermon_log_profile.py','sermon_review_contracts.py')
+           'sermon_accounting.py','sermon_log_profile.py','sermon_review_contracts.py',
+           # Transitive runtime and receipt validators used by jobs/profile/accounting.
+           'sermon_job_liveness.py', 'sermon_log_contract.py', 'sermon_log_outbox.py',
+           'sermon_review_observation.py', 'sermon_clock_evidence.py',
+           'sermon_workflow_evidence.py', 'sermon_release_workflow.py',
+           # execution_harness launches this fixed child for bounded commands.
+           'sermon_guarded_command.py')
 
 
 def code_identity():

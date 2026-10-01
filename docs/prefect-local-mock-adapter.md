@@ -33,8 +33,10 @@ python scripts/run_sermon_prefect_dag.py mock \
 
 The repeated command revalidates existing immutable receipts. It does not launch
 another business process or charge another synthetic request. A changed code
-closure or plan is rejected; use a separately identified new **mock** experiment,
-not a new directory to reset a real run's quota. `--root` must initially be empty.
+closure, including transitive job, liveness, logging, accounting and receipt
+validation modules, or plan is rejected; use a separately identified new
+**mock** experiment, not a new directory to reset a real run's quota. `--root`
+must initially be empty.
 The CLI exits 2 if any business node is blocked/failed/unknown, even if Prefect's
 flow state is Completed. Scheduler completion is not business admission.
 
