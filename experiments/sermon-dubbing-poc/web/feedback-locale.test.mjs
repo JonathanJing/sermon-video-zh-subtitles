@@ -1,3 +1,4 @@
+import { setIcon, setButtonLabel } from './icons.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -20,7 +21,7 @@ function fixture(filename, injected = {}) {
   const elements = new Map(), localeListeners = [];
   let locale = 'zh';
   const get = id => { if (!elements.has(id)) elements.set(id, new Element()); return elements.get(id); };
-  const context = vm.createContext({
+  const context = vm.createContext({ setIcon, setButtonLabel,
     console, URL, AbortController, performance, Promise, Map, Set,
     document: { getElementById: get, createElement: () => new Element(), addEventListener() {}, querySelectorAll: () => [], visibilityState: 'visible' },
     window: { addEventListener() {} }, localStorage: { getItem: () => 'no', setItem() {} },
