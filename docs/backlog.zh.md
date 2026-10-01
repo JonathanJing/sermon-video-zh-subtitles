@@ -1,6 +1,6 @@
 # Dev 统一 Backlog
 
-更新：2026-09-30。本页是项目 **Dev 开发工作的唯一顶层 backlog**，统一管理四层生产、Firebase Dev、Web／iOS、现场对齐、审核后台、Tracker、CI/CD 和独立 `live_session` 的优先级与依赖。新增开发事项先在这里取得稳定 ID；专项文档只展开接口、实现和验收，不再各自形成互相竞争的顶层排期。
+更新：2026-10-01。本页是项目 **Dev 开发工作的唯一顶层 backlog**，统一管理四层生产、Firebase Dev、Web／iOS、现场对齐、审核后台、Tracker、CI/CD 和独立 `live_session` 的优先级与依赖。新增开发事项先在这里取得稳定 ID；专项文档只展开接口、实现和验收，不再各自形成互相竞争的顶层排期。
 
 English index: [backlog.md](./backlog.md)
 
@@ -103,7 +103,7 @@ D1 合同实现可以开工；真实 A/B 前仍须冻结实际样本、工具/�
 | `DEV-L4-004` | Production v3 每周内容发布器与双 App 刷新验收 | `in_progress`（2026-09-27 开始） | v3 候选组装器、跨包审计及负例测试已合入 Dev 并随 #116 晋升 main；仍须以同一真实新周候选证明正式音频审计、完整线上基线预检、目录最后发布、逐文件 HTTP／Range、回滚及同一 Web/iOS App 版本刷新选页与播放；代码晋升不是部署收据 | [每周发行清单](tongxing-weekly-release.zh.md#v3-周更发布清单与验收) |
 | `DEV-IOS-001` | 原生多语言消费与真机验收 | `in_progress` | v3 catalog／v2 Release、默认本周、三语内容消费及自动音频已合入；仍须证明完整跨轨 source-unit 定位与 `PlaybackHistory` v2 合同，再由真机完成 v3 主路径／v2 回退、下载、离线恢复、历史隔离、WebView 正文、VoiceOver 和系统媒体验证 | [iOS backlog](../apps/tongxing-ios/BACKLOG.zh.md)、[版本对照](reports/20260929-dev-release-backlog-audit.zh.md) |
 | `DEV-FIELD-001` | 远场声音指纹与字幕对齐 | `in_progress` | 按 FIELD-01—09 补齐诊断、离线预备、版本化 10→15 秒连续采集、raw/AGC A/B、采样时钟、三语映射、防误跳和设备验收；不降低匹配门槛，保留远处同源至少 9/10 正确、30 次负样本零误跳的小规模门槛；FIELD-10 后续实验不阻塞本项 | [本页专项设计](#dev-field-001远场声音对齐)、[执行与验收](field-fingerprint-alignment-backlog.zh.md) |
-| `DEV-TRACK-001` | Producer 自动记账、状态与 ETA | `in_progress` | Layer 2 逐组／Layer 3 逐单元记账接线、子阶段和时间线投影已合入；下一次真实周产验证同一账本覆盖筛查、构建、部署、审核等待、失败与重试，并按效率计划汇总整周时间和 token；公开 Tracker 只投影脱敏状态，未测步骤保持未知 | [Tracker 接入项](four-layer-production-tracker.zh.md#tracker-接入-backlog)、[版本对照](reports/20260929-dev-release-backlog-audit.zh.md) |
+| `DEV-TRACK-001` | Producer 自动记账、状态与 ETA | `in_progress` | Layer 2 逐组／Layer 3 逐单元记账接线、子阶段和时间线投影已合入；下一次真实周产验证同一账本覆盖筛查、构建、部署、审核等待、失败与重试，并按效率计划汇总整周时间和 token；公开 Tracker 只投影脱敏状态，未测步骤保持未知；新增总体进度／ETA 投影为 pending，须当前单次 180 秒诊断完成后实现，见[进度与 ETA 待办](#progress-eta-followup) | [Tracker 接入项](four-layer-production-tracker.zh.md#tracker-接入-backlog)、[版本对照](reports/20260929-dev-release-backlog-audit.zh.md) |
 | `DEV-REVIEW-001` | 私有多语言人工审核后台 | `pending` | 两位不同语言审核者可并行审阅 Layer 2/3；权限、hash、版本、移交、修订失效和不可变收据均 fail closed | [审核后台设计](four-layer-production-tracker.zh.md#多语言人工审核后台-backlog) |
 | `DEV-LIVE-001` | 独立 Sunday `live_session` | `in_progress` | 现场 ASR final 保持事实源；翻译、术语、延迟、发布和 fallback 有独立真实回放／现场证据，不借用四层预制完成状态 | [工作流总览](workflows/README.zh.md)及本页历史附录 |
 | `DEV-PROD-001` | Dev 代码晋升与后续内容发布 | `blocked`（后续内容部署门禁） | W40 代码已由 #116 晋升 main，并由 #118 回同步 Dev；此处不再表示代码未合并。后续内容部署仍须逐次具备完整周产、Dev HTTP、回滚基线、Production 发布授权及部署前核验；设备／现场另记，不因已有代码晋升而放行 | [Production 合并检查](multilingual-production-premerge-2026-09-23.zh.md)、[版本对照](reports/20260929-dev-release-backlog-audit.zh.md) |
@@ -150,7 +150,7 @@ Firebase Hosting 只发布静态运行时和指纹索引；采集、特征和匹
 | `DEV-CICD-004` | iOS 安装包与 TestFlight 交付链 | `in_progress` | 9 月 27 日报告已有 build 42 签名归档、上传及当时 TestFlight 状态，不能继续笼统写未上传；仍须绑定本次目标源码 SHA、版本／build、签名产物和上传结果，再分别记录实际安装、真机、App Store 审核／上线。历史构建不替代当前 Dev 分发；内容周更不强制重发 App | [CI/CD backlog](ci-cd-backlog.zh.md)、[build 42 历史证据](sermon-language-listening-statistics.zh.md) |
 | `DEV-TRK-002` | 第二周真实全流程复现与恢复 | `pending` | 用新周次验证缓存、断点恢复、上游失效、旧资产保留和 ETA 校准，不复用第一周人工结论 | [四层 Tracker](four-layer-production-tracker.zh.md) |
 | `DEV-SPD-001` | 并发、审核等待与模型路由优化 | `pending` | 在流程图、统一计量和局部恢复基线上，逐一比较语言并行、Layer 3 并发及模型分工；同时报告端到端时间、总 token、质量与人工返工，不因低单价直接换模型 | [提速 backlog](four-layer-production-tracker.zh.md#周日页面提速-backlog本轮结束后按审计证据实施) |
-| `DEV-SPD-002` | 流程环节与时间／token 基线 | `in_progress` | 从收到视频链接到 Dev App 交付画出实际依赖图，逐环节绑定入口、输入输出、缓存、审批、耗时与用量；交付可复查的关键路径及 token 消耗排名，缺测项明确列出 | [本页效率计划](#每周流程效率计划)、[记账规则](workflow-accounting.zh.md) |
+| `DEV-SPD-002` | 流程环节与时间／token 基线 | `in_progress` | 从收到视频链接到 Dev App 交付画出实际依赖图，逐环节绑定入口、输入输出、缓存、审批、耗时与用量；交付可复查的关键路径及 token 消耗排名，缺测项明确列出；本轮诊断结束后冻结版本化工作量分母与分桶耗时基线，支持[资源约束 ETA](#progress-eta-followup) | [本页效率计划](#每周流程效率计划)、[记账规则](workflow-accounting.zh.md) |
 | `DEV-SPD-003` | 三类 dry run 与恢复演练 | `in_progress` | 在 `DEV-E2E-001` 现有模拟器上扩展快速回放、真实代表片段、故障后恢复；区分模拟与真实调用，验证恢复后的完整交付，保留失败和中断证据 | [本页效率计划](#每周流程效率计划)、[后端 dry run](backend-four-layer-dry-run.zh.md) |
 | `DEV-SPD-004` | 局部重试与修订依赖范围 | `in_progress` | 验证并接通已有翻译 partial repair、响应恢复和音频单元复用；受控故障恢复时，不受影响的成功组新增付费调用为 0、已验证音频重新合成为 0，旧收据与失效范围可追溯 | [本页效率计划](#每周流程效率计划)、[Layer 2/3 backlog](multilingual-layer-2-3-backlog.zh.md) |
 | `DEV-SPD-005` | 整周总 token 与调度开销优化 | `in_progress` | 汇总调度、内容生成、机器复核、失败与修订的去重用量；减少重复上下文和无效模型调用，按相同工作量比较恢复后总 token 与完成时间，保留费用及缺测边界 | [本页效率计划](#每周流程效率计划)、[模型实验结果](reports/20260928-model-production-ab-results.zh.md) |
@@ -281,6 +281,78 @@ Definition of Ready 已在完整设计中逐项勾选；剩余的 implementation
 - 上传或 HTTP 核验失败后恢复：ASR、翻译、TTS 重跑为 **0**；重试受影响的交付步骤，并按基线时效重新核验必要证据。进程重启和重复调度不产生重复发布或未知重复付费。
 - 源身份变化仍按合同使所有语言下游失效；文字／音频修订按语言和上下文依赖重开。人审收据默认整候选失效，只有已证明独立的 `connected_blocks` 可局部保留。保持三语音频齐备后发布的汇合点，HTTP、设备、现场分别留证。
 - 并发与模型实验报告包含成功率、质量问题、恢复后总时间／token、审核修订时间和样本波动；优先完成已有 Sol→Sol 盲评及 Luna 结构失败实验，并核清调度影子模式的状态规则，再决定新路由。新模型／提示词使用独立版本和同批对照，正式 Astra→Sol 与 Qwen TTS 不因 backlog 登记而切换。
+
+<a id="progress-eta-followup"></a>
+
+### 总体进度与剩余时间：先实现，再恢复本轮诊断
+
+**2026-10-01 新增要求，状态 `pending`（仅文档，尚未实现）。** 归属既有 `DEV-TRACK-001`（进度投影与采集）、`DEV-SPD-002`（工作量／耗时基线）和 `DEV-SPD-001`（资源约束关键路径），沿用 Tracker 的 `TRK-002/003/005b/006`、`SPD-006`，不新增 Epic、独立看板平台或第二套调度器。
+
+**最新顺序（2026-10-01）：先实现有界 Prefect 可执行 DAG、进度／ETA 和 Agents API 只读诊断接口，再恢复本轮单次 180 秒 diagnostic／dry run。** 此顺序取代先前“本轮结束后开发”的要求：主线程在用户 00:52 条件指令后，于 00:53:41 报告 L2 为 0/39、TTS 为 0、无在途请求／新增调用，真实续跑已暂停。这是主线程提供的当时检查点，不是本页实时监测或整轮未执行的声明；保留原 ASR、source/window、代码版本、缓存、收据及预算账本，不重跑已有来源工作。恢复前由运行负责人重新核实 exact run、job/lease、在途结果与版本兼容，记录实现 commit 和固定夹具证据；不得把等待、心跳停止或未知结果当作安全重启许可。本文不启动诊断、不声称扩展已启用，不给出当前总体百分比或 ETA。试点边界及独立调用预算见[试接合同](prefect-agents-diagnostic-pilot.zh.md#sequencing)。
+
+#### 冻结分母与进度语义
+
+在既有私有运行账本中增加**版本化只读投影所需的计划快照**：绑定 `runId + source/window identity + target + selected locales + delivery endpoint`、DAG definition/version/hash、稳定 work-unit IDs、依赖、适用门禁、初始 revision，以及 `planVersion/planHash/weightPolicyVersion`。以上是待实现字段语义，不表示现有 schema 已支持；扩展须走兼容 profile／版本迁移，旧账本与历史收据不改写。
+
+- 冻结原计划工作集合 `U0`、每单元权重 `w(u)` 和总分母 `D0 = sum(w(u), u in U0)`。权重须为有限正数，单元 ID 唯一；空适用集合为 `not_applicable`，不能除以 0 或显示 100%。同质单元可用等权；跨阶段权重取冻结的同类历史服务耗时基线，保留来源、样本数及冷启动假设。权重衡量计划工作量，不是内容质量、费用或完成时间占比。共享 L1 只计一次，zh-Hans/ko/es 分支独立计量；每个所选 locale 的 L3（含允许纯文字的显式 `audio_unavailable`）仍在计划中。
+- 分组／单元总数尚未确定、权重依据不足或计划范围不完整时，总体百分比为 `null/unknown`，显示已知阶段计数和缺口，不拿当前已发现文件数当分母。估时基线可以随本轮样本更新，**冻结权重与分母不能随之漂移**。
+- 总体条命名为**“计划工作已处理进度”**：`100 × sum(w(u) × processed(u)) / D0`。`processed` 只在身份匹配、无冲突的终态执行／有效缓存复用证据存在时取 1；执行失败也可表示“已处理”，必须同屏显示失败、阻塞和审核状态。待执行为 0；未知结果、缺失或冲突证据导致状态不可判定时，受影响百分比为 unknown，仍展示已证实数量和 `unknownUnits`。退出零码、心跳、时间流逝或文件存在都不能单独计为完成。
+- 分开显示 `processed done/total`、`reviewPassed done/total`、`actualHumanApproved done/total`、`simulatedHumanApproved done/total`，并给出各自适用单元集合／分母。机器审核通过需绑定**当前候选 revision/hash**的有效 Review Receipt；真实人工批准需独立有效人审收据，模拟批准永不计入真实人审或正式准入。诊断／synthetic／真实调用模式同时标识；不适用为 `not_applicable`，未知不是 0%。处理进度到 100% 也不能自动写业务 `complete`、发布、设备或现场通过。
+- retry/repair 不新增原计划单元，不将同一单元重复加到分子或分母。单列 `reworkUnits/attempts/elapsed/token/cost`，保存旧失败、新 revision 与依赖闭包；修订使当前机器审核／人审通过计数按既有失效规则回退，历史“曾处理”事实保留。新内容、增减 locale、改变终点或单位拆分导致范围变化时生成新 `planVersion`，记录旧／新分母、变更原因和单元映射；不覆盖旧快照，也不把两版百分比当同口径连续曲线。
+
+#### 每阶段／语言的可复用数据
+
+| 观察面 | 拟议投影及复用来源 |
+|---|---|
+| 阶段、语言、工作量 | 沿 [Tracker 账本](four-layer-production-tracker.zh.md)及 [four_layer_progress.py](../scripts/four_layer_progress.py) 的检查点/history/doneUnits/totalUnits，补齐计划单元到 phase/locale/revision 的映射；每格显示上述分开的 done/total、pending/running/failed/unknown 数量 |
+| 尝试、阻塞、因果 | 复用 [LOGC-01—07](workflow-accounting-log-contract.zh.md) 与 [RQC 日志 profile](rqc-accounting-profile.zh.md) 的 workUnit/attempt/revision、executionStatus/reviewVerdict/admissionStatus、dependsOn/blockedBy、request/response/reconciliation 身份；显示 retry 数、脱敏 blocked reason 和对应证据，不从缺失日志猜成功 |
+| 存活与进展 | 复用 [现有 L2 liveness](canonical-layer2-liveness.zh.md) 的 exact job/request binding、heartbeat sequence、progressSequence 与 policy；同时显示最近心跳、最近真实单元进展、观测时间及 freshness。心跳不增加完成量；其他层无此证据时为 unknown，不宣称全局心跳已接通 |
+| 耗时、缓存与资源 | 复用 [记账规则](workflow-accounting.zh.md)、[four_layer_measure.py](../scripts/four_layer_measure.py) 与 [Weekly DAG 投影](../scripts/weekly_pipeline_report.py) 的可信 elapsed、dependency/queue、模型加载、缓存复用及真实并行区间；读取实际 worker/资源容量与队列证据，缺项明确列出 |
+| 费用与用量 | 沿既有 provider/SDK 去重口径展示累计 token、`known subtotal`、unknown/conflict/coverage 和额外返工费用；原始尝试均保留。本地缓存不是新模型调用，缺 usage 不补 0，不将模拟费用当真实费用；费用估算、实际账单与预算预留分开 |
+
+聚合只读上述事实，沿已有本地摘要／Weekly report／脱敏 Tracker projection 输出，不将原文、私有路径、完整 hash 或自由错误正文送入公开页面。缺失字段通过既有 producer 计量接线补齐，不能为“补数据”重新调用模型、回填文件时间或改业务身份。重放同一账本应得到相同计数；实时 `updatedAt` 与原事件时间分列，重新渲染不能把旧证据刷新成在线。
+
+#### 剩余 DAG 的资源约束 ETA
+
+1. **明确估计终点。** 以冻结计划的剩余 DAG 和当前有效产物／批准为输入，区分“机器工作到下一门禁”和“到约定交付终点”。真实人审等待、未知外部请求结果、服务中断或不可确定的恢复／发布窗口使受影响的交付 ETA 为 unknown；可以另列已有证据的子图或条件情景，但不能把它标为整轮完成时间。
+2. **建立可比耗时样本。** 按阶段、实际模型／runtime、locale、输入长度或组／单元规模、冷／热启动、缓存状态、设备与并发配置分桶。使用完成且时间可信的同类历史服务时长，并由本轮已完成单元更新速率／分布；样本计数按独立完成单元去重。失败尝试／重试退避、排队、人审与模型加载分别估计；正在运行的尝试是未完成观测，不能当成功样本。诊断中的真实模型耗时与模拟步骤分列，模拟人审的零等待不进入真实人审基线。
+3. **投影实际可运行的剩余排程。** 串行依赖累加服务／必要等待；真正并行的分支取汇合前最长完成路径。按照实际启用的并发上限、共享 API／CPU／GPU／模型资源、当前占用和前方队列，在依赖 ready 与资源 available 两者都满足后才估计开始时间；资源竞争可使两条业务独立分支串行。队列等待只计一次，不能把父子 span、并行 wall 或资源等待重复相加，也不能因有三个 locale 就假设三路已并发。此排程仅用于估计，不 dispatch、抢占或调整 concurrency。
+4. **覆盖恢复并保留未知。** 已验证缓存只估核验／读取成本，不再估完整生成；已确定且获准的剩余返工按真实依赖加入 ETA，但不改 `D0`。未来可能返工只作带假设的范围／情景，不预授重试预算。活动阶段的剩余服务时间按可比已完成单元与实际进展更新；不能因经过历史均值就倒计时到 0。缺依赖、未知队列/资源容量、跨时钟不可信、无完成样本或 stale/outcome_unknown 时，不能伪造完整 ETA。
+5. **输出区间与可信度。** 每次估计同时给出 `remainingSecondsRange`／对应完成时间范围、`sampleCount`（历史／本轮、分桶覆盖）、`confidence`、`assumptions`、方法／基线版本、计划版本、`updatedAt` 和输入证据截止时间；说明区间方法与校准误差，区间不是保证。冷启动无可比历史时，仅在有显式人工先验／可解释粗基线时给低置信宽区间，否则 unknown。局部高置信不能掩盖关键路径上的未知；日期用带时区值，不声称本轮已有可用 ETA。
+
+#### 开发顺序与验收夹具（待实现，本文未运行）
+
+按上述更新顺序，先完成 `TRK-002/005b` 的版本化计划／事实映射与缺口标识，再完成 `TRK-003` 的只读进度与 ETA 投影，最后由 `TRK-006`／`SPD-006` 校准历史预测与实测误差。优先重放脱敏固定事件与 fake clock；真实模型／设备验证需按原有任务和预算单独执行，不能由此 backlog 自动发起。
+
+| 固定夹具 | 预期验收 |
+|---|---|
+| 并行 | A=4 秒、B=6 秒，均无前驱且有独立空闲资源；join=2 秒、依赖 A/B。确定性夹具剩余时间为 8 秒，不是 12 秒；两分支单元各计一次 |
+| 串行／实际容量 | 同图但 A/B 共用容量 1 且顺序已知，join 在两者之后：12 秒；不能按 DAG 可并行性忽略资源串行 |
+| 排队 | 上述容量 1 的唯一资源还有 3 秒已知占用：15 秒；去掉可靠队列／占用证据则总体 ETA unknown，不能默认立即开工 |
+| 重试／修订／缓存 | 原计划两等权单元，A 失败后新 attempt 修复与重审；A 的计划处理量最多 1/2，额外尝试、返工时长及成本单列。旧 hash 审核不能批准新 revision；有效缓存不新增调用／费用，失效缓存不能算复用成功 |
+| 状态与人审隔离 | processed 已满而 review 有 needs_rework 或尚无人审，业务仍阻塞；simulatedHumanApproved 增加时 actualHumanApproved 不变，正式包／Gate 不获批准 |
+| 心跳与 stale | 心跳递增但无工作进展时完成量不增；超过绑定 policy 的 freshness／no-progress 界限，展示 stale/unknown 原因并撤下受影响 ETA。投影更新不能恢复活性或续期任务 |
+| 未知结果／停机／人工等待 | 缺 finish、outcome_unknown、外部 outage 或人审待回复：对应 ETA unknown，保留已知子计数、费用小计与未知缺口；不盲重发、不填零成本或固定人审分钟数 |
+| 分母变化 | 冻结 10 个等权单元后计划扩为 12，必须新版本、原因及映射；旧版 5/10 不被改写，新版按映射显示 5/12，不展示成同口径“进度倒退”或隐匿新增范围 |
+| 样本与缺测 | 冷启动、只有缓存样本、跨模型／locale／长度不可比、缺时钟或队列证据分别降级低置信／unknown；缺分母显示已知 done/unknown total，不输出假百分比 |
+| 重放与行为不变 | 乱序、重复、冲突、迟到收据按现有日志合同处理；相同证据的计数稳定。开／关投影及重放前后，dispatch／模型调用、重试策略、审批、缓存身份、预算预留／消费、业务 artifact 与业务决定完全一致；唯有观测输出可变 |
+
+本项完成需要绑定实现 commit、夹具结果、缺测降级和预测校准报告；文档齐备不关闭 `DEV-TRACK-001`／`DEV-SPD-*`，不提升任何生产或人工验收状态。
+
+<a id="prefect-diagnostic-pilot"></a>
+
+### 有界 Prefect DAG 与 Agents API 只读诊断试点
+
+**2026-10-01 设计登记，状态 `pending`（实现由独立分支交付，本文不声明已接通）。** 这是现有 `DEV-SPD-006` 的窄试接，不新建调度平台或重写 producer。按[最新顺序](prefect-agents-diagnostic-pilot.zh.md#sequencing)，先完成本地实现／固定夹具，再恢复已暂停的 180 秒真实诊断。完整接口、官方依据、失败矩阵和退出条件见 [Prefect + Agents API 试点合同](prefect-agents-diagnostic-pilot.zh.md)。
+
+| 既有子项 | 此次新增工作与验收边界 |
+|---|---|
+| `SPD6-ARCH-01/02`、`SPD6-READY-02/05/06` | Prefect flow/task 仅包装现有 DAG node、durable job、receipt、预算与 gate；保持单一 controller 执行授权、本地 GPU 容量和人审身份约束。覆盖 API 响应后收据前崩溃、worker 重启、人审等待重启、并发预算争用；未知结果不自动重发付费请求 |
+| `DEV-TRACK-001`、`DEV-SPD-002/001`、`SPD6-LOG-01/05` | 复用上节冻结计划／进度／资源约束 ETA 与既有日志，关联 flow/task/job/workUnit/revision；Prefect task completed 不能替代业务完成、机器审核或真实人审 |
+| `SPD6-ARCH-03`、`SPD6-READY-07` | Agents API 仅诊断脱敏日志、失败单元引用和版本差异，输出 cause/hypothesis、evidence IDs、confidence、impact、affected units、suggested repair；固定 validator 拒绝过期／越权建议，controller 另行授权执行。诊断 agent 无修改、重试、内容生成、人审或发布权限 |
+| `SPD6-LOG-03/04`、`SPD6-VAL-00` | session/turn/call 与证据关联、缺测费用保持 unknown；先运行固定／mock 故障矩阵。当前 $40 运行预算不包含新 Agents API 试点调用，真实诊断调用须另定模型／限制／独立批准预算；本次文档工作无真实测试或模型调用 |
+
+本试点不改变既有 `DEV-EXP-004` Harness/Terra A/B，不启用生产云部署、定时调度或 rollout；真实诊断与生产／设备／现场验收分别留证。
 
 ## P2：实验与非阻塞扩展
 
