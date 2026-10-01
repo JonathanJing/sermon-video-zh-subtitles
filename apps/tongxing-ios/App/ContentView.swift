@@ -46,6 +46,7 @@ struct ContentView: View {
     @ScaledMetric(relativeTo: .title2) private var readingSize: CGFloat = 26
     @ViewState private var sheet: ListeningSheet?
     @ViewState private var returnToCurrent = UUID()
+    @ViewState private var locateConfirmation: Double?
     @ViewState private var showingPlaybackMore = false
     @ViewState private var playbackMoreButtonFrame: CGRect = .null
     @ViewState private var playbackMorePanelSize = CGSize(width: 320, height: 176)
@@ -69,6 +70,13 @@ struct ContentView: View {
         .task(id: model.publishedTranscriptSelectionKey) {
             await model.loadSelectedPublishedTranscript()
         }
+        .task(id: locateConfirmation) {
+            guard locateConfirmation != nil else { return }
+            try? await Task.sleep(for: .seconds(4))
+            guard !Task.isCancelled else { return }
+            locateConfirmation = nil
+        }
+        .onChange(of: model.selectedPageID) { _, _ in locateConfirmation = nil }
         .onChange(of: scenePhase) { _, phase in
             if phase != .active { playback.saveProgress() }
             else { localization.refreshSystemLanguage() }
@@ -107,10 +115,12 @@ struct ContentView: View {
                                     currentSubtitle(track)
                                 }
                                 else { transcript(track) }
+                                locateConfirmationView
                                 Text(localization.text(model.alignmentDisplayStatus, ["time": model.alignmentPosition.map(PlaybackTime.format) ?? ""]))
                                     .font(.footnote).foregroundStyle(.secondary)
                                     .fixedSize(horizontal: false, vertical: true)
                                     .accessibilityIdentifier("alignment-status")
+                                englishLocateEntry
                                 downloadControl
                             } else {
                                 ContentUnavailableView(localization.text("本周音频尚未准备好"), systemImage: "waveform", description: Text(localization.text("可以先阅读证道大纲。")))
@@ -164,6 +174,11 @@ struct ContentView: View {
                                             .accessibilityIdentifier("preparing-published-audio")
                                     }
                                 }
+                                if playback.publishedPositionRestoreFailed {
+                                    Button(localization.text("重新加载当前音频")) {
+                                        Task { await model.prepareSelectedPublishedAudio() }
+                                    }.accessibilityIdentifier("retry-published-position")
+                                }
                                 if model.selectedAudioLocale != nil {
                                     if let saved = playback.resumePosition { resumeCard(saved) }
                                     if shouldShowPlaybackStatusDetail { playbackStatusDetail }
@@ -216,7 +231,7 @@ struct ContentView: View {
                     } else {
                         model.display = .current
                         withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) {
-                            proxy.scrollTo("top", anchor: .top)
+                            proxy.scrollTo(model.usesNativePublishedReader ? "published-current-card" : "top", anchor: .top)
                         }
                     }
                 }
@@ -288,6 +303,13 @@ struct ContentView: View {
                 case .about:
                     AboutSheet(model: model)
                         .presentationDetents([.large]).presentationDragIndicator(.visible)
+                case .locate:
+                    EnglishLocateSheet(model: model) {
+                        model.display = .current
+                        returnToCurrent = UUID()
+                        locateConfirmation = playback.position
+                    }
+                    .presentationDetents([.large]).presentationDragIndicator(.visible)
                 case .video:
                     if let url = model.fullVideoURL { FullVideoSheet(url: url) }
                 }
@@ -315,6 +337,7 @@ struct ContentView: View {
             playback: playback,
             isPreparing: model.isPreparing || model.isPreparingPublishedAudio,
             alignmentModel: model,
+            locate: { sheet = .locate },
             precision: model.selectedTrack == nil ? nil : { sheet = .precision },
             current: model.selectedTrack == nil ? nil : { returnToCurrent = UUID() },
             placement: placement,
@@ -333,6 +356,7 @@ struct ContentView: View {
             playback: playback,
             isPreparing: model.isPreparing || model.isPreparingPublishedAudio,
             alignmentModel: model,
+            locate: { sheet = .locate },
             precision: model.selectedTrack == nil ? nil : { sheet = .precision },
             current: model.selectedTrack == nil ? nil : { returnToCurrent = UUID() },
             onClose: { showingPlaybackMore = false },
@@ -617,16 +641,50 @@ struct ContentView: View {
                     }
                 }.padding(16).frame(maxWidth: .infinity, alignment: .leading)
                     .background(Brand.surface, in: RoundedRectangle(cornerRadius: 28))
+                    .id("published-current-card")
+                locateConfirmationView
             } else {
                 publishedRows(transcript.captions, captions: transcript.captions, prefix: "published-caption")
             }
             DisclosureGroup(localization.text("完整文稿 · 英文对照")) {
                 publishedRows(transcript.fullText, captions: transcript.captions, prefix: "published-full")
             }.accessibilityIdentifier("published-full-transcript")
-            Text(localization.text(model.alignmentDisplayStatus, ["time": model.alignmentPosition.map(PlaybackTime.format) ?? ""]))
-                .font(.footnote).foregroundStyle(.secondary)
-                .accessibilityIdentifier("alignment-status")
+            englishLocateEntry
+            if model.alignmentAvailable || model.alignmentBusy {
+                Text(localization.text(model.alignmentDisplayStatus, ["time": model.alignmentPosition.map(PlaybackTime.format) ?? ""]))
+                    .font(.footnote).foregroundStyle(.secondary)
+                    .accessibilityIdentifier("alignment-status")
+            }
         }
+    }
+
+    @ViewBuilder private var locateConfirmationView: some View {
+        if let position = locateConfirmation {
+            HStack {
+                Text(localization.text("已定位 {time}", ["time": PlaybackTime.format(position)]))
+                    .accessibilityIdentifier("locate-confirmation")
+                Spacer(minLength: 8)
+                if playback.undoPosition != nil {
+                    Button(localization.text("撤销")) {
+                        playback.undo()
+                        locateConfirmation = nil
+                    }.frame(minHeight: 44).accessibilityIdentifier("locate-undo")
+                }
+            }.font(.subheadline).foregroundStyle(Brand.accent)
+        }
+    }
+
+    private var englishLocateEntry: some View {
+        Button { sheet = .locate } label: {
+            HStack {
+                Label(localization.text("没跟上现场？按英文找位置"), systemImage: "text.magnifyingglass")
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.right").font(.caption.weight(.semibold))
+            }.frame(minHeight: 44).contentShape(Rectangle())
+        }
+        .buttonStyle(.plain).font(.subheadline).foregroundStyle(Brand.accent)
+        .accessibilityIdentifier("open-english-locate")
     }
 
     private func publishedRows(_ rows: [PublishedTranscriptCue], captions: [PublishedTranscriptCue], prefix: String) -> some View {
@@ -639,6 +697,7 @@ struct ContentView: View {
                     }.buttonStyle(.bordered).font(.caption.monospacedDigit())
                         .disabled(!playback.isReady || audioCue == nil)
                         .accessibilityIdentifier("\(prefix)-time-\(cue.id)")
+                        .accessibilityAddTraits(cue.start <= playback.position && playback.position < cue.end ? .isSelected : [])
                     sourceText(cue.text, language: model.selectedContentLocale)
                         .font(.title3).lineSpacing(7).textSelection(.enabled)
                         .fixedSize(horizontal: false, vertical: true)
@@ -754,7 +813,7 @@ struct ContentView: View {
 }
 
 /// Keep source passages in their supplied language, including accessibility.
-private func sourceText(_ value: String, language: String) -> Text {
+func sourceText(_ value: String, language: String) -> Text {
     var text = AttributedString(value)
     text.languageIdentifier = language
     return Text(text)
@@ -763,11 +822,13 @@ private func sourceText(_ value: String, language: String) -> Text {
 struct AlignmentControls: View {
     @State private var showingUnavailableReason = false
     var compact: Bool
+    var locate: (() -> Void)?
     @ObservedObject var model: AppModel
     @ObservedObject private var playback: PlaybackController
     @ObservedObject private var localization = AppLocalization.shared
 
-    init(model: AppModel, compact: Bool = false) {
+    init(model: AppModel, compact: Bool = false, locate: (() -> Void)? = nil) {
+        self.locate = locate
         self.model = model
         self.playback = model.playback
         self.compact = compact
@@ -796,6 +857,7 @@ struct AlignmentControls: View {
             .accessibilityIdentifier("align-live-audio")
             .accessibilityHint(status)
             .alert(localization.text("现场自动对齐暂不可用"), isPresented: $showingUnavailableReason) {
+                if let locate { Button(localization.text("按英文找位置"), action: locate) }
                 Button(localization.text("刷新目录")) { Task { await model.refresh() } }
                 Button(localization.text("关闭"), role: .cancel) {}
             } message: { Text(status) }
@@ -810,7 +872,7 @@ struct AlignmentControls: View {
 }
 
 private enum ListeningSheet: String, Identifiable {
-    case weeks, languages, precision, outline, about, video
+    case weeks, languages, precision, outline, about, video, locate
     var id: String { rawValue }
 }
 

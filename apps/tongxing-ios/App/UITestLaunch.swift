@@ -186,6 +186,107 @@ private enum UITestContent {
     static let previewResponses = nativePublishedResponses(locale: "zh-Hans",
         fullText: "这是用于检查页面布局的合成完整文稿。", caption: "这是用于预览的合成字幕。")
 
+    /// Multi-locale timing/search fixture is opt-in and cannot affect the
+    /// existing preview or catalog-routing samples.
+    static let locateResponses: [String: Data] = {
+        let pageID = "ui-test-locate-flow"
+        let audio = responses["/media/fixture-first.mp3"]!
+        let sourceHash = String(repeating: "a", count: 64)
+        let spokenHash = String(repeating: "b", count: 64)
+        let locales = ["zh-Hans", "ko"]
+        let english = [
+            "First synthetic source sentence for the opening.",
+            "Listen for the lighthouse beside the harbor.",
+            "Third synthetic source sentence for the ending."
+        ]
+        let captions = [
+            "zh-Hans": ["中文第一句：开始收听。", "中文第二句：灯塔在港口旁。", "中文第三句：继续收听。"],
+            "ko": ["한국어 첫 번째 문장: 듣기를 시작합니다.", "한국어 두 번째 문장: 등대는 항구 옆에 있습니다.", "한국어 세 번째 문장: 계속 듣습니다."]
+        ]
+        func hash(_ data: Data) -> String { SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined() }
+        func encoded(_ value: [String: Any]) -> Data {
+            try! JSONSerialization.data(withJSONObject: value, options: [.sortedKeys])
+        }
+        var result: [String: Data] = [:]
+        var targets: [String: Any] = [:]
+        var englishTargets: [String: Any] = [:]
+        for locale in locales {
+            let html = Data("<html><body><h1>测试英文定位证道</h1></body></html>".utf8)
+            let sentences: [String] = captions[locale]!
+            let rows: [[String: Any]] = (0..<3).map { (index: Int) -> [String: Any] in
+                let start = Double(index * 12)
+                let end = start + 12.0
+                let row: [String: Any] = [
+                    "textGroupId": "g\(index + 1)", "sourceUnitIds": ["u\(index + 1)"],
+                    "start": start, "end": end, "text": sentences[index]
+                ]
+                return row
+            }
+            let contentValue: [String: Any] = [
+                "schemaVersion": "sermon-full-video-text-content-v1", "pageId": pageID,
+                "sourceLocale": "en", "targetLocale": locale, "status": "human_reviewed",
+                "englishSourcePackageJsonSha256": sourceHash, "sourceMediaSha256": sourceHash,
+                "targetLanguageCandidateJsonSha256": sourceHash,
+                "durationSeconds": 36.0, "title": "测试英文定位证道", "cues": rows
+            ]
+            let content = encoded(contentValue)
+            let captionData = encoded(["cues": rows])
+            let assets: [[String: String]] = [
+                ["role": "page", "path": "/pages/\(pageID)/\(locale)/index.html", "sha256": hash(html)],
+                ["role": "content", "path": "/content/\(pageID)/\(locale).json", "sha256": hash(content)],
+                ["role": "captions", "path": "/captions/\(pageID)/\(locale).json", "sha256": hash(captionData)],
+                ["role": "audio", "path": "/media/\(pageID)/\(locale).mp3", "sha256": hash(audio)]
+            ]
+            let releaseValue: [String: Any] = [
+                "schemaVersion": "sermon-target-language-release-package-v2",
+                "packageId": "\(pageID)-\(locale)", "pageId": pageID,
+                "sourceLocale": "en", "targetLocale": locale,
+                "targetLanguageCandidateJsonSha256": sourceHash,
+                "spokenTargetLanguageCandidateJsonSha256": spokenHash,
+                "targetLanguageAudioPackageJsonSha256": spokenHash,
+                "status": "published_http_verified", "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed", "interfaceLocale": locale,
+                "contentLocale": locale, "audioLocale": locale,
+                "assets": assets,
+                "httpVerification": ["status": "pass", "evidenceSha256": sourceHash],
+                "deviceAcceptance": ["status": "not_run", "evidenceSha256": NSNull()],
+                "venueAcceptance": ["status": "not_run", "evidenceSha256": NSNull()], "issues": []
+            ]
+            let release = encoded(releaseValue)
+            targets[locale] = [
+                "releasePackageUrl": "/releases-v2/\(pageID)/\(locale).json",
+                "releasePackageJsonSha256": hash(release),
+                "contentStatus": "human_reviewed", "audioStatus": "human_reviewed",
+                "capabilities": ["text", "captions", "audio"]
+            ]
+            englishTargets[locale] = [
+                "contentSha256": hash(content), "captionsSha256": hash(captionData),
+                "releasePackageJsonSha256": hash(release),
+                "blocks": (0..<3).map { index -> [String: Any] in
+                    ["textGroupId": "g\(index + 1)", "sourceUnitIds": ["u\(index + 1)"], "english": english[index]]
+                }
+            ]
+            result["/releases-v2/\(pageID)/\(locale).json"] = release
+            result["/pages/\(pageID)/\(locale)/index.html"] = html
+            result["/content/\(pageID)/\(locale).json"] = content
+            result["/captions/\(pageID)/\(locale).json"] = captionData
+            result["/media/\(pageID)/\(locale).mp3"] = audio
+        }
+        result["/english-reference/\(pageID).json"] = encoded([
+            "schemaVersion": "sermon-published-english-reference-v1", "pageId": pageID,
+            "sourceIdentitySha256": sourceHash, "sourceMediaSha256": sourceHash,
+            "reviewState": "human_approved", "targets": englishTargets
+        ])
+        result["/multilingual-v3.json"] = encoded([
+            "schemaVersion": "sermon-multilingual-catalog-v3", "generatedAt": "2026-09-27T00:00:00Z",
+            "defaultPageId": pageID,
+            "pages": [["id": pageID, "title": "测试英文定位证道", "date": "2026-09-27",
+                       "sourceLocale": "en", "sourceIdentitySha256": sourceHash,
+                       "defaultTargetLocale": "zh-Hans", "targets": targets]]
+        ])
+        return result
+    }()
+
     private static func nativePublishedResponses(locale: String, fullText: String, caption: String) -> [String: Data] {
         let pageID = "ui-test-full-video"
         let audio = responses["/media/ui-test-clip/es.mp3"]!
@@ -264,7 +365,10 @@ private enum UITestContent {
 private class UITestContentProtocol: URLProtocol {
     class var offline: Bool { ProcessInfo.processInfo.arguments.contains("--ui-testing-offline") }
     class var dualScript: Bool { ProcessInfo.processInfo.arguments.contains("--ui-testing-dual-script") }
-    class var nativeResponses: [String: Data]? { dualScript ? UITestContent.dualScriptResponses : nil }
+    class var nativeResponses: [String: Data]? {
+        if ProcessInfo.processInfo.arguments.contains("--ui-testing-locate-flow") { return UITestContent.locateResponses }
+        return dualScript ? UITestContent.dualScriptResponses : nil
+    }
     override class func canInit(with request: URLRequest) -> Bool { true }
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
 

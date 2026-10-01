@@ -16,6 +16,7 @@ struct PlaybackDock: View {
     @State private var showingMore = false
     var isPreparing = false
     var alignmentModel: AppModel? = nil
+    var locate: (() -> Void)? = nil
     var precision: (() -> Void)? = nil
     var current: (() -> Void)? = nil
     var placement: PlaybackDockPlacement = .bottom
@@ -86,19 +87,19 @@ struct PlaybackDock: View {
             else { showingMore = true }
         } label: {
             VStack(spacing: 1) {
-                Image(systemName: "ellipsis").font(.body.weight(.semibold))
+                Image(systemName: "scope").font(.body.weight(.semibold))
                 if !typeSize.isAccessibilitySize {
-                    Text(localization.text("更多")).font(.caption2.weight(.medium))
+                    Text(localization.text("定位")).font(.caption2.weight(.medium))
                 }
             }
             .frame(width: 48, height: 52)
             .contentShape(Rectangle())
         }
-        .accessibilityLabel(localization.text("更多"))
+        .accessibilityLabel(localization.text("定位"))
         .accessibilityIdentifier("playback-more")
         .popover(isPresented: $showingMore, arrowEdge: placement == .trailing ? .trailing : .bottom) {
             PlaybackMoreControls(playback: playback, isPreparing: isPreparing,
-                                 alignmentModel: alignmentModel, precision: precision,
+                                 alignmentModel: alignmentModel, locate: locate, precision: precision,
                                  current: current, onClose: { showingMore = false })
                 .presentationCompactAdaptation(.popover)
         }
@@ -207,6 +208,7 @@ struct PlaybackMoreControls: View {
     @AccessibilityFocusState private var closeFocused: Bool
     var isPreparing: Bool
     var alignmentModel: AppModel?
+    var locate: (() -> Void)? = nil
     var precision: (() -> Void)?
     var current: (() -> Void)?
     var onClose: () -> Void
@@ -215,7 +217,7 @@ struct PlaybackMoreControls: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text(localization.text("更多")).font(.headline)
+                Text(localization.text("定位")).font(.headline)
                 Spacer()
                 Button(action: onClose) {
                     Image(systemName: "xmark")
@@ -227,7 +229,16 @@ struct PlaybackMoreControls: View {
                 .accessibilityFocused($closeFocused)
             }
             if let alignmentModel {
-                AlignmentControls(model: alignmentModel, compact: true)
+                AlignmentControls(model: alignmentModel, compact: true, locate: locate == nil ? nil : openLocate)
+            }
+            if locate != nil {
+                Button(action: openLocate) {
+                    Label(localization.text("按英文找位置"), systemImage: "text.magnifyingglass")
+                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain).foregroundStyle(Brand.accent)
+                .accessibilityIdentifier("locate-english-action")
             }
             if current != nil || precision != nil || playback.undoPosition != nil {
                 utilityActions
@@ -240,6 +251,11 @@ struct PlaybackMoreControls: View {
         .accessibilityAddTraits(.isModal)
         .accessibilityAction(.escape, onClose)
         .task { closeFocused = true }
+    }
+
+    private func openLocate() {
+        onClose()
+        if let locate { DispatchQueue.main.async(execute: locate) }
     }
 
     private var utilityActions: some View {

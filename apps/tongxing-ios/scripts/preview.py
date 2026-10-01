@@ -20,7 +20,7 @@ import uuid
 
 from ios_cli import APP_ROOT, PROJECT, REPO_ROOT, CommandFailed, Runner, developer_directory, select_simulator
 
-REGISTRY = ("ContentView.swift", "PlaybackDock.swift", "DesignSystem.swift")
+REGISTRY = ("ContentView.swift", "PlaybackDock.swift", "DesignSystem.swift", "EnglishLocateSheet.swift")
 VARIANTS = ("light", "dark", "dark-large")
 TEST = "TongxingTests/SwiftUIPreviewTests/testRenderRequestedViews"
 

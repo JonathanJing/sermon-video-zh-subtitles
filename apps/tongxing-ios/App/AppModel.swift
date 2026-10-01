@@ -111,6 +111,8 @@ final class AppModel: ObservableObject {
     private var started = false
     private var preparation = UUID()
     private var publishedAudioRequest = UUID()
+    private var publishedSelectionRevision = UUID()
+    private var languageSelectionRequest = UUID()
     private var publishedAudioTask: Task<VerifiedLanguageAudio, Error>?
     private var downloadTasks: [String: Task<Void, Never>] = [:]
 
@@ -256,9 +258,10 @@ final class AppModel: ObservableObject {
         guard usesNativePublishedReader, let page = selectedMultilingualPage,
               page.targets[locale]?.contentStatus == "human_reviewed" else { return }
         guard locale != selectedContentLocale else { return }
+        publishedSelectionRevision = UUID()
         cancelPublishedAudioPreparation()
+        playback.preparePublishedLanguageSwitch(pageID: page.id, sourceIdentity: page.sourceIdentitySha256)
         alignmentController.cancel()
-        playback.clear()
         selectedAudioLocale = nil
         publishedAudioSha256 = nil
         publishedAudioError = nil
@@ -345,9 +348,9 @@ final class AppModel: ObservableObject {
                 selectedPageID = result.catalog.defaultPageId
             }
             resolveContentLanguage(pageID: selectedPageID)
-            if let selectedAudioLocale,
-               (selectedMultilingualPage?.targets[selectedAudioLocale] != oldAudioTarget
-                || selectedMultilingualPage?.sourceIdentitySha256 != oldSourceIdentity) {
+            if selectedWeek == nil && (selectedMultilingualPage?.sourceIdentitySha256 != oldSourceIdentity
+                || (selectedAudioLocale != nil && selectedAudioLocale.flatMap { selectedMultilingualPage?.targets[$0] } != oldAudioTarget)) {
+                publishedSelectionRevision = UUID()
                 cancelPublishedAudioPreparation()
                 playback.clear()
                 self.selectedAudioLocale = nil
@@ -366,16 +369,25 @@ final class AppModel: ObservableObject {
     func selectContentLanguage(_ locale: String) async -> VerifiedLanguagePage? {
         guard !isSelectingLanguage, let page = selectedMultilingualPage,
               page.targets[locale]?.contentStatus == "human_reviewed", let multilingualRepository else { return nil }
+        let request = UUID()
+        let selectionRevision = publishedSelectionRevision
+        languageSelectionRequest = request
         isSelectingLanguage = true
         languageSelectionError = nil
-        defer { isSelectingLanguage = false }
+        defer { if languageSelectionRequest == request { isSelectingLanguage = false } }
         do {
             let package = try await multilingualRepository.loadRelease(page: page, locale: locale)
             let verifiedPage = try await multilingualRepository.loadPage(for: package)
-            guard selectedMultilingualPage?.id == page.id else { return nil }
-            if locale != selectedContentLocale { cancelPublishedAudioPreparation() }
-            if selectedAudioLocale != nil && selectedAudioLocale != locale {
-                playback.clear()
+            try Task.checkCancellation()
+            guard languageSelectionRequest == request, publishedSelectionRevision == selectionRevision,
+                  selectedMultilingualPage?.id == page.id,
+                  selectedMultilingualPage?.sourceIdentitySha256 == page.sourceIdentitySha256 else { return nil }
+            if locale != selectedContentLocale {
+                publishedSelectionRevision = UUID()
+                cancelPublishedAudioPreparation()
+                if selectedWeek == nil {
+                    playback.preparePublishedLanguageSwitch(pageID: page.id, sourceIdentity: page.sourceIdentitySha256)
+                }
                 selectedAudioLocale = nil
                 publishedAudioSha256 = nil
                 alignmentController.cancel()
@@ -389,6 +401,7 @@ final class AppModel: ObservableObject {
             preparePublishedAudioIfNeeded()
             return verifiedPage
         } catch {
+            guard languageSelectionRequest == request, publishedSelectionRevision == selectionRevision else { return nil }
             languageSelectionError = "暂时无法打开这个语言版本；当前内容和音频没有改变。"
             return nil
         }
@@ -424,6 +437,7 @@ final class AppModel: ObservableObject {
     func selectPublishedPage(_ page: MultilingualPage) {
         guard independentPages.contains(where: { $0.id == page.id }) else { return }
         guard selectedWeek != nil || selectedPageID != page.id else { return }
+        publishedSelectionRevision = UUID()
         cancelPublishedAudioPreparation()
         playback.clear()
         preparation = UUID()
@@ -518,6 +532,7 @@ final class AppModel: ObservableObject {
     }
 
     func select(week: SermonWeek, track: SermonTrack? = nil, force: Bool = false) async {
+        publishedSelectionRevision = UUID()
         cancelPublishedAudioPreparation()
         selectedAudioLocale = nil
         publishedAudioSha256 = nil
@@ -587,7 +602,9 @@ final class AppModel: ObservableObject {
             await select(week: week, track: selectedTrack, force: true)
         } else if selectedContentTarget?.audioStatus == "human_reviewed" {
             cancelPublishedAudioPreparation()
-            playback.clear()
+            if let page = selectedMultilingualPage {
+                playback.preparePublishedLanguageSwitch(pageID: page.id, sourceIdentity: page.sourceIdentitySha256)
+            } else { playback.clear() }
             selectedAudioLocale = nil
             publishedAudioSha256 = nil
             await prepareSelectedPublishedAudio()

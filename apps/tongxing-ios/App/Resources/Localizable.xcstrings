@@ -6439,6 +6439,286 @@
           }
         }
       }
+    },
+    "定位": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Locate"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "위치 찾기"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Localizar"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Định vị"
+          }
+        }
+      }
+    },
+    "按英文找位置": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Find by English"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "영어로 위치 찾기"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buscar por inglés"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tìm theo tiếng Anh"
+          }
+        }
+      }
+    },
+    "没跟上现场？按英文找位置": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lost your place? Find by English"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "진행을 놓치셨나요? 영어로 위치 찾기"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Perdiste el hilo? Busca por inglés"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không theo kịp? Tìm theo tiếng Anh"
+          }
+        }
+      }
+    },
+    "搜索刚听到的英文": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search the English you just heard"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "방금 들은 영어 검색"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Busca el inglés que acabas de oír"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tìm tiếng Anh bạn vừa nghe"
+          }
+        }
+      }
+    },
+    "搜索刚听到的英文，再定位到段落开头。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search what you heard, then jump to the start of the passage."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "들은 영어를 검색한 뒤 해당 문단의 시작으로 이동하세요."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Busca lo que oíste y ve al inicio del pasaje."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tìm câu bạn vừa nghe, rồi chuyển đến đầu đoạn."
+          }
+        }
+      }
+    },
+    "当前音频尚不可定位，可以先阅读和搜索。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Audio seeking is unavailable. You can still read and search."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "현재 오디오 위치 이동은 사용할 수 없습니다. 읽기와 검색은 가능합니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se puede localizar el audio. Puedes leer y buscar."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa thể định vị âm thanh. Bạn vẫn có thể đọc và tìm kiếm."
+          }
+        }
+      }
+    },
+    "没有找到这句英文，试试更短的关键词。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No matching English found. Try a shorter keyword."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "일치하는 영어가 없습니다. 더 짧은 검색어를 사용해 보세요."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hay coincidencias. Prueba una palabra más corta."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không tìm thấy tiếng Anh khớp. Thử từ khóa ngắn hơn."
+          }
+        }
+      }
+    },
+    "定位到这段": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jump to this passage"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 문단으로 이동"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ir a este pasaje"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chuyển đến đoạn này"
+          }
+        }
+      }
+    },
+    "这段没有可用的音频时间，暂时只能阅读。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This passage has no audio anchor. Reading is available."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 문단에는 오디오 시간이 없습니다. 읽기만 가능합니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este pasaje no tiene tiempo de audio. Puedes leerlo."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đoạn này chưa có mốc âm thanh. Bạn có thể đọc."
+          }
+        }
+      }
+    },
+    "收听位置恢复失败，已保留原进度，请重试。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not restore your listening position. Progress is kept. Please retry."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "듣던 위치를 복원하지 못했습니다. 진행 위치는 유지됩니다. 다시 시도하세요."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo restaurar tu posición. Se conserva el progreso. Vuelve a intentarlo."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể khôi phục vị trí nghe. Tiến độ được giữ nguyên. Vui lòng thử lại."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

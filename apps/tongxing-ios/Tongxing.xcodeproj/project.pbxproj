@@ -20,6 +20,7 @@
 		7EC13E455FCB8AD28F90271C /* AudioAlignmentController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98A292DFC6FBB07302A4DE77 /* AudioAlignmentController.swift */; };
 		82DAE4DBC18C3F1A4BD05687 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 02EF54CEB76892C25F99A6FB /* Localizable.xcstrings */; };
 		8B8A2624687249CFAB61DAFB /* ListeningFlowUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 239227789D17BF0B1B0A1614 /* ListeningFlowUITests.swift */; };
+		94B466A5A536CBD9995786DE /* EnglishLocateSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FEF8605856DB0FE84A04EC2 /* EnglishLocateSheet.swift */; };
 		9D37A5E9084A59C6C69B0EEA /* ListeningLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD504056359930D928DD8069 /* ListeningLiveActivity.swift */; };
 		A442F0B6EE2D16D0DAE46A00 /* SwiftUIPreviewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6163F70382A5001D532DC114 /* SwiftUIPreviewTests.swift */; };
 		AAE50D4E51C22893F01DEAFD /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = E8CDE0AD081CB32BAE3CD0CB /* PrivacyInfo.xcprivacy */; };
@@ -91,6 +92,7 @@
 		60D53F716EC96280DEAF16C4 /* ListeningActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningActivityAttributes.swift; sourceTree = "<group>"; };
 		6163F70382A5001D532DC114 /* SwiftUIPreviewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftUIPreviewTests.swift; sourceTree = "<group>"; };
 		61FE1B88425139B2F592ED0A /* TongxingApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TongxingApp.swift; sourceTree = "<group>"; };
+		6FEF8605856DB0FE84A04EC2 /* EnglishLocateSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnglishLocateSheet.swift; sourceTree = "<group>"; };
 		70BEE8330224D04ACF54EE70 /* ListeningActivityWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningActivityWidget.swift; sourceTree = "<group>"; };
 		72F704FFC13274A549628FF2 /* Core */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Core; path = Core; sourceTree = SOURCE_ROOT; };
 		81423A9849E5E7BDFBDA1423 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
@@ -166,6 +168,7 @@
 				98A292DFC6FBB07302A4DE77 /* AudioAlignmentController.swift */,
 				3A757BEABA30910DC76E26BE /* ContentView.swift */,
 				BC6D116D3A73A078D6FA5218 /* DesignSystem.swift */,
+				6FEF8605856DB0FE84A04EC2 /* EnglishLocateSheet.swift */,
 				FD504056359930D928DD8069 /* ListeningLiveActivity.swift */,
 				BDD37841E68B061E39E91375 /* Localization.swift */,
 				1EB48128E58E88F812DC4214 /* MicrophoneCapture.swift */,
@@ -424,6 +427,7 @@
 				7EC13E455FCB8AD28F90271C /* AudioAlignmentController.swift in Sources */,
 				C84F91355DB74C84BAC96384 /* ContentView.swift in Sources */,
 				C7430BCC556F70CBE78D8CDB /* DesignSystem.swift in Sources */,
+				94B466A5A536CBD9995786DE /* EnglishLocateSheet.swift in Sources */,
 				32B58C5985220B581D4CF45B /* ListeningActivityAttributes.swift in Sources */,
 				9D37A5E9084A59C6C69B0EEA /* ListeningLiveActivity.swift in Sources */,
 				1F287CC791B5CA1037903C80 /* Localization.swift in Sources */,

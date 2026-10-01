@@ -21,7 +21,7 @@ final class SwiftUIPreviewTests: XCTestCase {
         }
         let data = try XCTUnwrap(Data(base64Encoded: encoded), "Invalid preview request encoding")
         let request = try JSONDecoder().decode(Request.self, from: data)
-        let supportedFiles = Set(["ContentView.swift", "PlaybackDock.swift", "DesignSystem.swift"])
+        let supportedFiles = Set(["ContentView.swift", "PlaybackDock.swift", "DesignSystem.swift", "EnglishLocateSheet.swift"])
         let supportedVariants = Set(["light", "dark", "dark-large"])
         try XCTUnwrap(request.files.first, "Select at least one registered view fixture")
         try XCTUnwrap(request.variants.first, "Select at least one appearance variant")
@@ -73,6 +73,8 @@ final class SwiftUIPreviewTests: XCTestCase {
         switch file {
         case "ContentView.swift":
             return AnyView(ContentView(model: model))
+        case "EnglishLocateSheet.swift":
+            return AnyView(EnglishLocateSheet(model: model, onLocated: {}))
         case "PlaybackDock.swift":
             return AnyView(ZStack {
                 Brand.background.ignoresSafeArea()

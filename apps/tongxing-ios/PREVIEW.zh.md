@@ -16,7 +16,7 @@ make preview FILES=ContentView.swift DRY_RUN=1
 
 入口 [scripts/preview.py](scripts/preview.py) 调用 `xcodebuild test`，只执行 [SwiftUIPreviewTests](Tests/SwiftUIPreviewTests.swift) 的 `testRenderRequestedViews`。测试在 iOS 进程中用 `UIHostingController` 挂载实际 SwiftUI，通过 UIKit 的 [drawHierarchy](https://developer.apple.com/documentation/uikit/uiview/drawhierarchy(in:afterscreenupdates:)) 渲染，保存为 XCTest PNG 附件，再用 `xcresulttool` 导出。没有 Xcode Canvas／MCP 预览缓存依赖，也不需要打开 Xcode 窗口。
 
-使用所选模拟器实际屏幕尺寸、比例和安全区；局部组件嵌入一个明确的测试容器。图片只含测试视图窗口，不含 SpringBoard 状态栏和系统截图界面。`ContentView.swift` 是完整原生发布页；`PlaybackDock.swift` 展示现有播放器；`DesignSystem.swift` 展示语义表面与品牌样式。
+使用所选模拟器实际屏幕尺寸、比例和安全区；局部组件嵌入一个明确的测试容器。图片只含测试视图窗口，不含 SpringBoard 状态栏和系统截图界面。`ContentView.swift` 是完整原生发布页；`PlaybackDock.swift` 展示现有播放器；`DesignSystem.swift` 展示语义表面与品牌样式；`EnglishLocateSheet.swift` 展示英文优先的全文定位面板（未输入搜索词的合成样本）。
 
 预览复用 AppModel、唯一 PlaybackController 与现有合成 UI 测试传输，使用测试临时目录和独立统计偏好。页面标题、字幕、审核状态与静音 MP3 均是合成测试数据，不下载线上媒体、不生成内容、不打开麦克风。外观与字号作用于测试窗口，不修改模拟器系统偏好。常规 XCTest 未提供请求时该测试明确跳过；只有显式预览命令运行它。
 
