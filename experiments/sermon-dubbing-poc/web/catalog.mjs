@@ -127,7 +127,8 @@ const DIAGNOSTIC_REASONS = new Set(['machine_candidate_missing', 'preview_audio_
   'provider_request_limit', 'provider_cost_limit', 'provider_run_deadline_reached',
   'provider_outcome_reconciliation_required', 'provider_configuration_stopped',
   'preview_worker_failed_requires_reconciliation',
-  'native_runtime_unavailable', 'diagnostic_state_binding_invalid', 'unclassified_failure']);
+  'native_runtime_unavailable', 'diagnostic_state_binding_invalid', 'unclassified_failure',
+  'diagnostic_flow_plan_changed', 'diagnostic_flow_frozen_inputs_changed', 'diagnostic_unbounded_subprocess_forbidden', 'historical_current_code_changed', 'historical_identity_file_changed_during_read', 'historical_identity_file_missing', 'historical_identity_file_not_regular_or_too_large', 'historical_identity_fixed_repository_required', 'historical_identity_git_inspection_failed', 'historical_identity_git_or_tree_changed', 'historical_identity_git_path_invalid', 'historical_identity_head_invalid', 'historical_identity_tracked_inventory_invalid', 'historical_identity_tracked_inventory_too_large', 'historical_identity_witness_changed', 'invalid_snapshot_file']);
 export function diagnosticPresentation(week) {
   if (week?.diagnosticOnly !== true) return null;
   const typed = week.diagnosticState;

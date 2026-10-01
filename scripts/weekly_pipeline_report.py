@@ -24,6 +24,24 @@ from scripts.sermon_decision_accounting import CODE as DECISION_CODE, safe_obser
 TOKENS = ('inputTokens', 'cachedInputTokens', 'outputTokens', 'reasoningTokens')
 ACTIVE = {'deterministic_program', 'production_model', 'decision_agent'}
 TIMESTAMP_TOLERANCE_SECONDS = 0.01
+# These affect UTC correlation only. They never exempt an invalid/missing DAG
+# edge, interval, outcome, or cross-process clock witness. Boundary warnings
+# are eligible only when complete monotonic observations already prove a jump.
+UTC_CORRELATION_WARNINGS = frozenset({
+    "utc_clock_discontinuity_local_duration_preserved",
+    "utc_clock_discontinuity_between_spans", "run_utc_wall_untrusted",
+    "invalid_run_interval", "span_outside_run_interval"})
+
+
+
+def _verified_monotonic_dag_with_utc_warnings(nodes, diagnostics):
+    # project_run has already checked every parent, dependency and cross-domain
+    # edge. Only its UTC-correlation warnings may survive this independent path.
+    return (bool(nodes) and all(n.get('durationBasis') == 'same_process_monotonic'
+        for n in nodes.values()) and bool(set(diagnostics) & {
+            'utc_clock_discontinuity_local_duration_preserved',
+            'utc_clock_discontinuity_between_spans'}) and
+        set(diagnostics) <= UTC_CORRELATION_WARNINGS)
 
 
 def seconds(value):
@@ -137,7 +155,8 @@ def telemetry_projection(events, nodes, leaves, shared_clock, diagnostics, start
             a, b = n.get('clockDomainId'), nodes[dep].get('clockDomainId')
             if a and b and a != b:
                 cross.append(shared_clock(n, nodes[dep]))
-    cross_status = ('verified_recorded_edges' if cross and all(cross) and not diagnostics else
+    cross_status = ('verified_recorded_edges' if cross and all(cross) and
+                    (not diagnostics or _verified_monotonic_dag_with_utc_warnings(nodes, diagnostics)) else
                     'partial_recorded_edges' if any(cross) else 'not_established' if cross or any(not n.get('clockDomainId') for n in nodes.values()) else 'not_observed')
     publications = []
     for e in events:
@@ -341,8 +360,9 @@ def project_run(run_id, events, integrity=None, receipt_events=None):
         if not ready:
             issue('dependency_cycle'); break
         order.extend(ready); pending.difference_update(ready)
+
     critical = None
-    if not diagnostics:
+    if not diagnostics or _verified_monotonic_dag_with_utc_warnings(nodes, diagnostics):
         earliest, previous = {}, {}
         weights = {k: n['elapsedSeconds'] if n['executorType'] in ACTIVE else 0 for k, n in leaves.items()}
         for key in order:
@@ -364,7 +384,10 @@ def project_run(run_id, events, integrity=None, receipt_events=None):
             path.append(leaves[cursor]['spanSha256']); cursor = previous[cursor]
         critical = {'activeSeconds': round(duration, 6), 'spanPath': list(reversed(path)),
                     'branchSlackSeconds': {leaves[k]['spanSha256']: round(latest[k] - earliest[k], 6) for k in order},
-                    'scope': 'active_leaf_compute_excludes_human_external_and_engineering'}
+                    'scope': 'active_leaf_compute_excludes_human_external_and_engineering',
+                    'durationBasis': 'verified_monotonic_dag' if all(
+                        n.get('durationBasis') == 'same_process_monotonic' for n in nodes.values())
+                        else 'recorded_utc_intervals'}
     starts = [e for e in events if e['event'] == 'run_started']
     ends = [e for e in events if e['event'] == 'run_finished']
     wall = None
@@ -432,7 +455,7 @@ def project_run(run_id, events, integrity=None, receipt_events=None):
     usage = usage_report(events if receipt_events is None else receipt_events, nodes, integrity)
     if usage['conflicts']:
         issue('conflicting_usage_receipts')
-    if diagnostics:
+    if diagnostics and not _verified_monotonic_dag_with_utc_warnings(nodes, diagnostics):
         critical = None
     totals = {executor: round(sum(n['elapsedSeconds'] for n in leaves.values() if n['executorType'] == executor), 6)
               for executor in sorted(EXECUTOR_TYPES)}

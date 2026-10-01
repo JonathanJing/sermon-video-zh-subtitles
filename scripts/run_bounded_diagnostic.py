@@ -108,6 +108,11 @@ class BoundedRun:
                       diagnostic_context['runConfigSha256'] == c.canonical_sha256(self.provider.config) and
                       diagnostic_context['storeSha256'] == self.provider.store.store_sha256,
                       'diagnostic_continuation_provider_changed')
+        if historical_reuse is not None:
+            from scripts import sermon_historical_layer2 as historical
+            c.require(type(historical_reuse) is historical.HistoricalLayer2Reuse,
+                      'diagnostic_historical_fixed_resolver_required')
+            historical_reuse.bind_current()
         with bounded_network_only():
             return locale.run_locale(source_bytes, anchor_bytes, policy_bytes, rubric_bytes,
                 root=self.root / 'locales' / target, store=self.provider.store,

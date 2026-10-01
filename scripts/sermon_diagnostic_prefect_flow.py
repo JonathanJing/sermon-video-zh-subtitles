@@ -18,6 +18,7 @@ import threading
 from types import SimpleNamespace
 
 from scripts import sermon_accounting as accounting
+from scripts import sermon_historical_identity as historical_identity
 from scripts import sermon_dag_evidence as dag_evidence
 from scripts import sermon_bounded_business_callbacks as offline
 from scripts import sermon_diagnostic_preview_worker as preview_worker
@@ -79,6 +80,9 @@ def _inventory(config, session):
     historical=session.binding.get('historicalLayer2Inputs')
     if historical is not None:
         paths.add(_input_path(session,historical['path']))
+    native=session.binding.get('historicalNativeInputs')
+    if native is not None:
+        paths.add(_input_path(session,native['path']))
     for lane in config['locales'].values():
         spec, preview = lane['localeSpec'], lane['previewSpec']
         paths.update(_input_path(session, spec[key]) for key in ('source', 'anchor', 'policy', 'rubric'))
@@ -177,6 +181,7 @@ class DiagnosticDAG:
                            (f'preview.{locale}', 'preview', locale, (f'text.{locale}',))]
         self.nodes.append(('delivery.readonly', 'delivery', None, tuple(f'preview.{x}' for x in self.locales)))
         self.results, self.observations = {}, {}
+        self._reliability_failure = None
 
     def freeze(self):
         self._check()
@@ -239,6 +244,8 @@ class DiagnosticDAG:
             'completionSpans': [], 'publicationAuthorized': False}
         dispatched = False
         with _LOCK:
+            if self._reliability_failure is not None:
+                raise self._reliability_failure
             try:
                 self._check()
                 parents = [self.observations[key] for key in dependencies]
@@ -276,10 +283,18 @@ class DiagnosticDAG:
                         completionSpans=dag_evidence.current_terminal_leaves(span) if ready and not unknown else [],
                         completedAt=accounting.now())
             except Exception as exc:
-                reason = str(exc) if isinstance(exc, ValueError) and re.fullmatch(r'[a-z][a-z0-9_]{0,119}', str(exc)) else 'callback_or_evidence_not_confirmed'
-                observation.update(executionStatus='outcome_unknown' if dispatched else 'blocked',
-                    processed=None if dispatched else False, reason=reason,
+                if isinstance(exc,accounting.AccountingWriteError) or getattr(exc,'sermon_logging_failed',False):
+                    self._reliability_failure=exc
+                    raise  # Stop all later callbacks; preserve the original failure.
+                typed_local=(type(exc) is historical_identity.HistoricalIdentityPreDispatchRejected)
+                known_local=(typed_local and exc.reason_code in historical_identity.PRE_PROVIDER_CODES)
+                reason=(exc.reason_code if known_local else str(exc) if not typed_local and isinstance(exc, ValueError) and
+                    re.fullmatch(r'[a-z][a-z0-9_]{0,119}', str(exc)) else 'callback_or_evidence_not_confirmed')
+                observation.update(executionStatus='outcome_unknown' if dispatched and not known_local else 'blocked',
+                    processed=None if dispatched and not known_local else False, reason=reason,
                     errorType=type(exc).__name__)
+                if known_local:
+                    observation.update(failurePhase=exc.phase,providerDispatchOccurred=False)
             self.observations[node_id] = observation
             _safe_path(self.root, recursive=True)
             strict.save_once(self.root / 'observations' / node_id /

@@ -113,3 +113,30 @@ v6实际Source-cache通过，历史2、本轮ASR/sourcecheck/MFA0；完整13-fil
 最终软件整合在无live任务的v6闭父后进行：加入原始MFA绝对期限、typed Source终态和唯一精确producer兼容映射，保留旧Source生产身份另记当前inspector，未知hash/semantic模块变动不放行。隔离实际v3缓存重验历史2/new0、45旧JSON不变，明确synthetic successor且未创建真实新权限。下一v7真实复用将再次核验这些绑定。另确认同一行lambda/genexpr归一后出现重复error frame，违反uniqueItems并造成AccountingWriteError，008/013补稳定去重；发布重放的检查span/原intent-returned SHA绑定属于观测改进，未观察变量未定义或重复部署事故。
 
 最终软件根级整合：362 tests，361通过/1optionalSDKskip，131.292秒exit0。包括真实挂起子进程期限、精确历史Source兼容、历史12组恢复/失败修订、完整checkpoint/native固定夹具、发布重放零重复部署、数字HTTP进度、实际跨进程clock握手、异常帧去重与业务workload兼容。中韩未付费draft各追加一条原有非空匹配target表面约束说明，术语、pending、模型、引文及Source字段均原样，正常freezer/plugin loader通过；西语policy与v4付费原policy canonical bytes精确相等。预期故障注入AccountingWriteError保留失败语义，未调用真实provider。下一真实v7会核验迁移Source、新Text/native及发布；queue字段的local inline dispatch不代表资源/provider排队，编排耗时仅explicit bookkeeping小计，未观测工作保留unknown。
+
+
+## 第七轮真实原生路径与局部恢复
+
+固定 `bc955f1424c3b7db4aefa5a23114c9e616a4e127` 的 v7 复用已验证 Source（本轮 ASR/source-check/MFA 为0），实际返回56次新模型请求：韩语26、中文30（两组真实普通内容返工追加4次）。两语13组最终机器、插件及整 locale candidate admission 均通过；正式人审 pending。西语在HTTP-only守卫内执行Git身份查询，被正确拒绝，实际新provider请求为0；旧DAG将其记录为outcome_unknown，原观察不改写。
+
+两语真实 native worker 在冻结MPS float32/sdpa/seed42、完整runtime与13-file checkpoint下加载模型并合成26个WAV，全部完整解码。新worker四事实时钟、绝对期限和终态收据核验通过；韩语213.68秒、中文191.52秒。两语可播、西语blocked的Dev候选已实际部署，300文件完成HTTP内容SHA与source Range206核验；Chrome仅观察两语约4秒播放和西语禁用，不能称整轨或三语完成。私有证据保存在 `artifacts/dev-fresh-180s-supervised-20261001-v7` 与 `artifacts/native-preview-acceptance-20261001/v7-partial-ui-observation-1`。
+
+v7全部provider请求known-returned，按原instruction创建永久关闭收据。完整历史累计385请求、84,189,830 microUSD保守占额，仍承接旧42项D5未知、不退款。下一独立恢复规划最多16新请求、8,000,000 microUSD、5,400秒；累计430请求/110,000,000 microUSD，另保留Agents四phase合计8,000,000 microUSD观察预留。请求上界不表示必须重跑；预计只对西语失败组实际返工，其余已付费结果只读重绑定。
+
+新增身份witness在守卫外获取精确Git/完整tracked tree身份，守卫内使用稳定文件读取重新校验；HTTP-only子进程allowlist不放宽。只有可信且有限reason的派发前拒绝标blocked；普通异常保守unknown。AccountingWriteError仍抛回原异常并停止后续回调，不能降级后继续执行。
+
+历史Layer2增加 `sermon-historical-layer2-spec-v2` / `sermon-historical-layer2-rebind-v2`，支持同一闭父provider来源的普通内容返工最终修订及完整祖先证据，v1保持兼容；语言插件返工及混合来源不能冒充该普通返工路径。原paid/D5账本不迁移；当前candidate/context与审核收据重新生成。
+
+原生worker迁移request/receipt v4，显式互绑historicalSeedProof；v3仅接受精确原worker `2ca16aac1ed10826307394ea6c277d37a4feeb117a4bb3bee67ea86e334d8172` 与原 `bc955f1` plan加载身份的只读核验，完整runtime/checkpoint/期限/clock校验仍执行。历史请求不能重执行。闭父完整直接v3原生lane可在新空目录复制已完整解码的WAV并重建当前candidate/context单位收据，再由真实新worker执行缓存准入、解码与postcheck；独立proof记录旧音频来源及本轮0模型合成，不复制旧worker时钟，不改旧账本或收据。部分lane、未知终态、不同声音身份、seed再seed与中断非空目录均拒绝。该版本实现和夹具不代替下一轮真实缓存worker及三语全程浏览器验收。
+
+
+Fresh入口增加可选 `historical_native_specs`：每locale采用 `sermon-fresh-historical-native-locale-v1`，仅允许精确parentPlan/workerReceipt/parentPreflight的path+fileBytesSha256引用及targetLocale。首个付费动作前检查实际闭父、完整祖先与独占successor、新plan授权/source四项范围；Source准备后实际 `diagnostic.historical_native_preflight` leaf再次绑定当前Source/Anchor，冻结 `sermon-fresh-historical-native-inputs-v1`。sidecar、helper、runtime/checkpoint、旧单位/WAV及祖先refs进入DAG输入清单，每次接入仍稳定FD分块SHA重验；使用16MiB aggregate而非private256KiB收据上限。默认None保持普通执行，offline fixture不得采用原生历史缓存。该检查不授予模型、人审、预算或发布权。
+
+整合后根级74项native/history/guard测试通过（77.486秒），入口、Source-cache、DAG、attempts、Dev、bounded 91项回归中90通过、1 optional SDK skip（48.251秒），18项Node页面/catalog测试通过。当前tracked版本在原冻结路径实际只读preflight_parent核验KO/ZH各13个完整闭父原生单元，0 provider/0 model；证据 `artifacts/native-preview-acceptance-20261001/v7-closed-parent-preflight`。Fresh新接线定向测试与下一轮实际worker另记，以上不提升为实际新attempt成功。
+
+
+Fresh历史原生接线最新定向49项：48通过/1可选SDK跳过（23.588秒），含9项新接线回归；真实positive入口记录profile、workload及completed native-preflight leaf，并进入Source初始依赖。v7原始日志有1782 events/322对完整span，provider56次与API起止ID双射、D5全部result。缺少dependsOn的29个容器不属于执行叶子；288个执行叶子依赖均已记录，6条跨进程边有完整四事实证据。仅3个跨PID入口的local dependencyReadyAt未观测，保持unknown；没有实际资源排队证据。
+
+UTC相关的局部/跨span跳变导致旧报告整体partial且抹去单调时钟下可验证的DAG关键路径。修复只允许完整monotonic区间及全DAG/跨进程证明下，有限UTC-correlation警告不抑制独立active critical path；图损坏、缺叶子、cycle、unknown outcome或缺clock proof仍拒绝。原UTC总wall、page UTC/比例与未测资源queue保留unknown，不重写原事件、不把active叶子时长称端到端耗时或ETA。v7只读投影的已验证active path为665.992194秒（Source为缓存、只两语原生成功的实际scope）；这不是完整生产性能基准。
+
+报告时钟修复及Dev安全原因映射的最新整合50项全部通过（18.105秒），包含真实子进程UTC跳变的单调DAG正例、四事实任一缺失、混合时钟、缺依赖、稳定时钟错误run边界等否定测试；保持renderer、native runtime与Source十模块原字节。

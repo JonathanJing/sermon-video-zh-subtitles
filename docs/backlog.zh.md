@@ -668,3 +668,15 @@ Canonical package adapter 第一批：Source/Text shadow inspection 已复用生
 监督执行已启动：先完成第一批三语真实单组验收（六次返回请求，重启零新增），再整合后续修复并运行 fresh 三分钟 Dev 全链路。当前实现与证据边界见[监督验收记录](reports/20261001-dev-diagnostic-supervised-plan.zh.md)。尚未通过整链路或正式门禁的条目继续保持 in_progress / waiting_evidence。
 
 2026-10-01 监督续跑新增实际证据：第四只读Agent合法final=needs_more_evidence（004真实合同验收通过、400根因仍证据不足）；v5历史账本1730059字节/v6 DAG计划559435字节误用private reader分别归006/005，均0新provider；只扩大版本化aggregate读写。v6 blocked状态真实Dev部署、298资产HTTP与Range通过、三语Chrome禁播/无误导通过；安全reason映射及长HTTP数值进度归009/008/013。原生合成与ready完整播放仍待下一恢复，007正式听审/同步/设备/现场未执行。完整收据见监督报告。
+
+
+## 2026-10-01 监督续跑更新
+
+实施和真实验收以[监督计划及证据](reports/20261001-dev-diagnostic-supervised-plan.zh.md)为准，原问题观察保持原时间边界。
+
+- `DEV-DIAG-004`：真实只读Agent第四phase已完成两次实际工具提交及最终诊断合同核验，唯一root completed；诊断为needs_more_evidence，因为旧HTTP400正文缺失。只读诊断没有生成、人审或发布权限，四phase成本仍unknown，观察预留保留。
+- `DEV-DIAG-005/008/014`：v7真实Source-cache→韩语/中文13组最终文字→26个原生WAV→Dev300文件HTTP全部SHA/Range206已经观察。西语派发前守卫失败，三语join仍blocked；Chrome两语仅短播放，整轨三语验收尚待续跑。原sox启动问题在冻结native runtime中已解阻并真实加载/合成；不得继续将两语状态写为原生尚未运行。
+- `DEV-DIAG-006/010/013`：新增派发前Git/tree身份witness，守卫内不用Git子进程；精确受控失败blocked，未知结果及日志写失败仍保守处理。Layer2 v2可复用同闭父普通返工最终修订；完整直接原生v3 lane可按worker v4独立历史proof重绑定，必须在新attempt完整冻结后实际复验。旧预算、期限、42项D5未知保留。
+- `DEV-DIAG-007`：继续保持waiting_evidence。诊断试听与default-pass不关闭正式逐单元回转写、疑点人工裁决、整轨听审、同步、正式Audio/Release、设备与现场验收。将这些作为正式交付的独立验收项，不能用本次preview验收替代。
+
+本次用户已授权按plan持续开发和续验；下一恢复局部修西语并复用已验证中韩产物，完成同一Dev诊断页三语整轨浏览器播放，再更新上述软件诊断项终态。

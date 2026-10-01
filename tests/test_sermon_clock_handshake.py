@@ -1,4 +1,5 @@
 """Real local processes only; no API, model, media or transport calls."""
+from datetime import datetime, timedelta
 import json
 import os
 from pathlib import Path
@@ -63,6 +64,28 @@ class ClockHandshakeTests(unittest.TestCase):
         result = report.project(self.root / 'logs')
         self.assertEqual(result['status'], 'projected', result['runs'][0]['diagnostics'])
         self.assertIsNotNone(result['runs'][0]['criticalPath'])
+
+    def test_real_handshake_utc_jump_preserves_independent_monotonic_path_only(self):
+        session,_,_,_,_=self.execute()
+        events,errors=accounting.read_events(self.root/'logs');self.assertFalse(errors)
+        end=next(e for e in events if e['event']=='stage_finished' and e['stage']=='clock.source')
+        end['recordedAt']=(datetime.fromisoformat(end['recordedAt'])-timedelta(seconds=30)).isoformat().replace('+00:00','Z')
+        run=report.project_run(session['runId'],events)
+        self.assertEqual(run['status'],'partial')
+        self.assertIsNone(run['endToEndWallSeconds'])
+        self.assertIn('utc_clock_discontinuity_local_duration_preserved',run['diagnostics'])
+        self.assertEqual(run['criticalPath']['durationBasis'],'verified_monotonic_dag')
+        cross=run['telemetryEvidence']['cross']
+        self.assertEqual(cross['status'],'verified_recorded_edges')
+        self.assertGreater(cross['recordedCrossProcessEdges'],0)
+        self.assertEqual(cross['verifiedCrossProcessEdges'],cross['recordedCrossProcessEdges'])
+        self.assertEqual(run['telemetryEvidence']['queue']['resourceQueueStatus'],'not_established')
+        for missing_phase in ('clock.worker_launch_v1','clock.worker_started_v1','clock.worker_finished_v1','clock.worker_joined_v1'):
+            changed=[e for e in events if e.get('stage')!=missing_phase]
+            failed=report.project_run(session['runId'],changed)
+            self.assertIsNone(failed['criticalPath'])
+            self.assertIn('cross_clock_dependency_timing_unknown',failed['diagnostics'])
+            self.assertNotEqual(failed['telemetryEvidence']['cross']['status'],'verified_recorded_edges')
 
     def test_missing_join_preserves_unknown_cross_clock(self):
         self.execute(join=False)

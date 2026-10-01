@@ -103,7 +103,7 @@ def _inspect_preview(root, subject, context, locale, envelope, files):
     c.require(files.file(receipt_path) == envelope['receiptFileSha256'] and receipt == {
         k: v for k, v in envelope.items() if k not in ('receiptPath', 'receiptFileSha256')},
         'diagnostic_delivery_worker_receipt_changed')
-    c.require(receipt['schemaVersion'] in {WORKER_SCHEMA, worker.V2_SCHEMA, worker.SCHEMA} and receipt['status'] == 'preview_only'
+    c.require(receipt['schemaVersion'] in {WORKER_SCHEMA, worker.V2_SCHEMA, worker.V3_SCHEMA, worker.SCHEMA} and receipt['status'] == 'preview_only'
         and receipt['humanAcceptance'] == 'pending' and receipt['productionEligible'] is False
         and receipt['runId'] == context['runId'] and receipt['storeSha256'] == context['storeSha256']
         and receipt['runConfigSha256'] == context['runConfigSha256']

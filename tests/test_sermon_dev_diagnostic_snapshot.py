@@ -80,6 +80,43 @@ class DevSnapshotTests(unittest.TestCase):
             self.assertTrue(row['diagnosticOnly']);self.assertEqual(row['humanContentReview'],'pending')
         self.no_network.assert_not_called()
 
+    def test_exact_pre_provider_identity_reason_survives_snapshot_without_private_fields(self):
+        from scripts import sermon_historical_identity as identity
+        reason='historical_current_code_changed'
+        nodes={'text.es':dict(nodeId='text.es',executionStatus='blocked',processed=False,
+            readyForDownstream=False,reason=reason,failurePhase='before_locale_provider_dispatch',
+            providerDispatchOccurred=False,errorType=identity.HistoricalIdentityPreDispatchRejected.__name__,
+            privateMessage='/private/operator/identity/body')}
+        with patch.object(dev,'_decode'),patch.object(dev,'_probe',return_value=180.):self.build(nodes)
+        payload=dev._read(self.out/'hosting/public/diagnostic/fixture-fresh/latest.json')
+        row=payload['week']['contentVariants']['es']
+        self.assertEqual(row['diagnosticState']['status'],'blocked')
+        self.assertEqual(row['diagnosticState']['reasonCode'],reason)
+        self.assertFalse(row['diagnosticState']['machineCandidateAvailable'])
+        self.assertEqual(row['tracks'],[])
+        self.assertNotIn('/private/operator/identity/body',json.dumps(payload))
+        self.assertNotIn('failurePhase',row['diagnosticState'])  # Existing public schema stays fixed.
+        self.no_network.assert_not_called()
+
+    def test_original_guard_reason_projects_exactly_without_rewriting_unknown_receipt(self):
+        reason='diagnostic_unbounded_subprocess_forbidden'
+        node=dict(reason=reason,executionStatus='outcome_unknown',processed=None,readyForDownstream=False)
+        before=deepcopy(node)
+        self.assertEqual(dev.stage_presentation(node,candidate=False,preview=False),('blocked',reason))
+        self.assertEqual(node,before)
+        self.assertNotIn('providerDispatchOccurred',node)
+        node['reason']=reason+': /private/operator/command'
+        self.assertEqual(dev.stage_presentation(node,candidate=False,preview=False),('blocked','unclassified_failure'))
+
+    def test_identity_reason_catalog_is_exact_no_prefix_or_message_projection(self):
+        from scripts import sermon_historical_identity as identity
+        for reason in identity.PRE_PROVIDER_CODES:
+            with self.subTest(reason=reason):
+                node=dict(reason=reason,executionStatus='blocked',readyForDownstream=False)
+                self.assertEqual(dev.stage_presentation(node,candidate=False,preview=False),('blocked',reason))
+                node['reason']=reason+': /private/operator/body'
+                self.assertEqual(dev.stage_presentation(node,candidate=False,preview=False),('blocked','unclassified_failure'))
+
     def test_known_reason_prefixes_and_private_freeform_errors_remain_unclassified(self):
         for reason in ('invalid_snapshot_file: /private/operator/large-plan.json',
                        'diagnostic_flow_plan_changed /private/operator/plan.json',

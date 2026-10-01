@@ -17,6 +17,7 @@ from urllib.parse import quote
 from urllib.request import Request,urlopen
 
 from scripts import sermon_accounting as accounting
+from scripts import sermon_historical_identity as historical_identity
 from scripts import sermon_review_contracts as c
 from scripts import sermon_strict_layer2 as immutable
 from scripts import sermon_diagnostic_context as diagnostic
@@ -35,7 +36,7 @@ SAFE_REASONS=frozenset({'machine_candidate_missing','preview_audio_unavailable',
     'provider_outcome_reconciliation_required','provider_configuration_stopped','native_runtime_unavailable',
     'preview_worker_failed_requires_reconciliation',
     'diagnostic_state_binding_invalid','invalid_snapshot_file',
-    'diagnostic_flow_plan_changed','diagnostic_flow_frozen_inputs_changed','unclassified_failure'})
+    'diagnostic_flow_plan_changed','diagnostic_flow_frozen_inputs_changed','diagnostic_unbounded_subprocess_forbidden','unclassified_failure'}) | historical_identity.PRE_PROVIDER_CODES
 
 
 def stage_presentation(observation, *, candidate, preview):

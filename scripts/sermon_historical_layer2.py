@@ -15,6 +15,11 @@ from scripts.sermon_release_workflow import _safe_path
 
 SPEC = 'sermon-historical-layer2-spec-v1'
 REBIND = 'sermon-historical-layer2-rebind-v1'
+SPEC_V2 = 'sermon-historical-layer2-spec-v2'
+REBIND_V2 = 'sermon-historical-layer2-rebind-v2'
+REPAIR_FILES = ('parent-revision.json','parent-candidate.json','repair-plan.json',
+    'trigger-review.json','repair-input.json','repair-sidecars.json','repair-history.json')
+
 REPAIR = 'sermon-language-plugin-repair-v1'
 ENFORCEMENT = 'new_provider_ledger_historical_parent_repair'
 
@@ -55,7 +60,7 @@ class HistoricalLayer2Reuse:
         keys = {'schemaVersion', 'parentPlanRef', 'newPlanRef', 'linkedHistoryRef',
                 'parentLocaleRoot', 'parentMaterialRefs', 'parentLanguageRoot', 'parentPluginRef'}
         c.require(type(specification) is dict and set(specification) == keys and
-                  specification['schemaVersion'] == SPEC, 'invalid_historical_layer2_spec')
+                  specification['schemaVersion'] in (SPEC, SPEC_V2), 'invalid_historical_layer2_spec')
         self.spec = deepcopy(specification)
         c.require(set(self.spec['parentMaterialRefs']) == {'englishSource', 'anchor', 'policy', 'rubric'},
                   'historical_materials_required')
@@ -109,11 +114,18 @@ class HistoricalLayer2Reuse:
         self.parent, self.successor, self.closed_ref = parent, successor, ref(closed_path)
         return terminal
 
-    def _current(self):
+    def bind_current(self):
+        """Acquire real Git/tree identity outside the HTTP-only process guard."""
+        from scripts import sermon_historical_identity as identity
         self._closed()
-        current=accounting.execution_identity()
-        c.require(current['trackedWorkingTreeDirty'] is False and current == self.new_plan['executionIdentity'],
-                  'historical_current_code_changed')
+        self._identity_witness=identity.ExecutionIdentityWitness.capture(self.new_plan['executionIdentity'])
+
+    def _current(self):
+        from scripts import sermon_historical_identity as identity
+        self._closed()
+        c.require(type(getattr(self,'_identity_witness',None)) is identity.ExecutionIdentityWitness,
+                  'historical_identity_witness_required')
+        self._identity_witness.validate(self.new_plan['executionIdentity'])
 
     def _inventory(self):
         from scripts import sermon_strict_candidate_bridge as bridge, produce_target_language_candidate as producer
@@ -139,6 +151,9 @@ class HistoricalLayer2Reuse:
         language, _ = c.read_snapshot(language_root/'language-review.json')
         bindings, _ = c.read_snapshot(language_root/'revision-bindings.json')
         roots = [(locale_root/'groups'/c.canonical_sha256(g)/'revisions/initial', 1) for g in locale['groups']]
+        if self.spec['schemaVersion'] == SPEC_V2:
+            c.require(len(bindings['groups']) == len(locale['groups']), 'historical_final_bindings_required')
+            roots = [final_root(locale_root, group, binding) for group, binding in zip(locale['groups'],bindings['groups'])]
         try:
             actual = bridge.compile_candidate(*raw, roots, plugin_path=plugin_path,
                 expected_plugin_sha256=producer.plugin_implementation_sha256(plugin_path),
@@ -166,6 +181,8 @@ class HistoricalLayer2Reuse:
         return deepcopy(self._inventory_cache)
 
     def inspect(self, prepared):
+        if self.spec['schemaVersion'] == SPEC_V2:
+            return self._inspect_v2(prepared)
         locale_root, locale, raw, language = self._inventory()
         c.require([c.bytes_sha256(prepared['bytes'][k]) for k in ('englishSource', 'anchor', 'policy', 'rubric')] ==
                   [c.bytes_sha256(b) for b in raw] and prepared.get('requestLimits') == locale.get('requestLimits'),
@@ -214,17 +231,43 @@ class HistoricalLayer2Reuse:
                     parentReview=receipt, parentInput=inputs, language=language, groupReview=groups[0],
                     references=references)
 
+    def _inspect_v2(self, prepared):
+        locale_root, locale, raw, language = self._inventory()
+        c.require([c.bytes_sha256(prepared['bytes'][k]) for k in ('englishSource','anchor','policy','rubric')] ==
+            [c.bytes_sha256(b) for b in raw] and prepared.get('requestLimits') == locale.get('requestLimits'),
+            'historical_current_materials_changed')
+        c.require(prepared['group'] in locale['groups'], 'historical_group_not_in_parent')
+        bindings,_=c.read_snapshot(Path(self.spec['parentLanguageRoot'])/'revision-bindings.json')
+        index=locale['groups'].index(prepared['group'])
+        old=strict.prepare(*raw,prepared['group'],request_limits=locale.get('requestLimits'),
+            diagnostic_context=locale.get('diagnosticContext'))
+        result=inspect_final_origin(old,locale_root,bindings['groups'][index],
+            self.parent/'budget'/budget.STORE_ID/'provider-run',self.parent_plan['providerConfig'], current=prepared)
+        groups=[g for g in language['groupReviews'] if g['translationGroupId']==prepared['group']['translationGroupId']]
+        c.require(len(groups)==1 and groups[0]['status']=='pass', 'historical_final_plugin_not_passed')
+        base=[self.spec['parentPlanRef'],self.closed_ref,self.spec['newPlanRef'],self.spec['linkedHistoryRef'],
+            ref(locale_root/'locale-input.json'),*self.spec['parentMaterialRefs'].values(),
+            ref(Path(self.spec['parentLanguageRoot'])/'language-review.json'),
+            ref(Path(self.spec['parentLanguageRoot'])/'revision-bindings.json'),self.spec['parentPluginRef']]
+        result.update(language=language,groupReview=groups[0],references=base+result['references'])
+        return result
+
     def run_group(self, prepared, *, root, candidate_id, api_key, caller, depends_on=None, completion_spans=None):
         self._current(); prior = self.inspect(prepared)
         c.require(prior['parentRevision']['candidateId'] == candidate_id, 'historical_candidate_identity_changed')
         parent_root = prior['parentRoot']; group_root = _safe_path(Path(root))
         c.require(self.successor in group_root.parents, 'historical_current_root_changed')
         repair = None
-        if prior['groupReview']['status'] == 'pass':
-            revision_id = 'historical-initial'; current = group_root/'revisions'/revision_id
+        historical_reuse = prior['groupReview']['status'] == 'pass'
+        review_attempt = prior.get('reviewAttempt', 1)
+        suffix = '' if review_attempt == 1 else '-2'
+        if historical_reuse:
+            repair = prior.get('archivedRepair')
+            revision_id = prior['parentRevision']['revisionId'] if self.spec['schemaVersion']==SPEC_V2 else 'historical-initial'
+            current = group_root/'revisions'/revision_id
             # Only returned response caches are seeded. No old manifests, receipts,
             # budget bindings, failure markers or provider ledger rows are copied.
-            for stem in ('generator', 'reviewer'):
+            for stem in ('generator', 'reviewer'+suffix):
                 for suffix in ('', '.raw', '.call'):
                     value, _ = c.read_snapshot(parent_root/(stem+suffix+'.json'))
                     strict.save_once(current/(stem+suffix+'.json'), value)
@@ -246,39 +289,42 @@ class HistoricalLayer2Reuse:
         try:
             generated = strict.generate(prepared, current, candidate_id, revision_id, api_key, transport,
                 cache_only=cache_only, repair=repair, depends_on=depends_on, completion_spans=completion_spans)
-            if repair is not None:
+            if not historical_reuse:
                 self._bind_return(current,repair,caller,'translator')
                 self._repair_proof(prepared, current, repair, caller, 'reviewer')
             reviewed = strict.review(prepared, current, candidate_id, revision_id, api_key, transport,
-                cache_only=cache_only, depends_on=depends_on, completion_spans=completion_spans)
+                cache_only=cache_only, attempt_number=review_attempt, depends_on=depends_on, completion_spans=completion_spans)
         except accounting.AccountingWriteError:raise
         except (ValueError,OSError) as exc:
             if getattr(exc,'sermon_logging_failed',False):raise
-            if repair is not None:
+            if not historical_reuse:
                 stopped=self._repair_stop(current,repair,caller)
                 if stopped is not None:return stopped
             raise
-        if repair is not None:
+        if not historical_reuse:
             stopped=self._repair_stop(current,repair,caller)
             if stopped is not None:return stopped
             self._bind_return(current,repair,caller,'reviewer')
-        if repair is None:
+        if historical_reuse:
             proof = dict(schemaVersion=REBIND, specification=self.spec, parentRefs=prior['references'],
                 newRoot=str(current), inputBytesSha256={k:c.bytes_sha256(v) for k,v in prepared['bytes'].items()},
-                artifactRefs=[ref(current/name) for name in ('revision.json','candidate.json','review-input.json',
-                    'review-receipt.json','generator.json','generator.raw.json','generator.call.json',
-                    'reviewer.json','reviewer.raw.json','reviewer.call.json')],
+                artifactRefs=rebound_artifact_refs(current,review_attempt,repair),
                 newPaidRequests=0, newBudgetReservations=0, historicalProviderPaidRequests=2,
                 executionAuthority='none', productionEligible=False)
+            if self.spec['schemaVersion']==SPEC_V2:
+                proof.update(schemaVersion=REBIND_V2,artifactRefs=rebound_artifact_refs(current,review_attempt,repair),
+                    archivedRepairRefs=prior['archivedRepairRefs'],
+                    historicalAncestorPaidRequests=prior['historicalAncestorPaidRequests'],
+                    selectedRevisionId=revision_id,reviewAttemptNumber=review_attempt)
             strict.save_once(current/'historical-rebind.json', proof)
         attempts._verify_refs(prior['references'])
         self._current()
         return dict(schemaVersion='sermon-strict-group-controller-v1', status='machine_review_passed' if
             reviewed['executionStatus']=='succeeded' and reviewed['reviewVerdict']=='pass' else 'blocked',
-            reasonCode='historical_paid_cache_rebound' if repair is None else 'language_plugin_repair_reviewed',
-            root=str(current), revisionId=revision_id, revisionNumber=generated['revisionNumber'], reviewAttempt=1,
+            reasonCode='historical_paid_cache_rebound' if historical_reuse else 'language_plugin_repair_reviewed',
+            root=str(current), revisionId=revision_id, revisionNumber=generated['revisionNumber'], reviewAttempt=review_attempt,
             candidateRevision=generated, reviewReceipt=reviewed, executionAuthority='none',
-            budgetStatus='historical_paid_zero_current' if repair is None else ENFORCEMENT)
+            budgetStatus='historical_paid_zero_current' if historical_reuse else ENFORCEMENT)
 
     def _bind_return(self, root, repair, caller, role):
         stem='generator' if role=='translator' else 'reviewer'
@@ -383,6 +429,8 @@ def validate_language_repair(prepared, candidate_id, revision_id, repair):
 
 
 def validate_rebind(prepared, root, proof):
+    if type(proof) is dict and proof.get('schemaVersion') == REBIND_V2:
+        return validate_rebind_v2(prepared,root,proof)
     c.require(type(proof) is dict and set(proof)=={'schemaVersion','specification','parentRefs','newRoot',
         'inputBytesSha256','artifactRefs','newPaidRequests','newBudgetReservations','historicalProviderPaidRequests',
         'executionAuthority','productionEligible'}, 'historical_rebind_changed')
@@ -419,4 +467,146 @@ def validate_repair_return(root, repair, role, proof):
         row['receiptSha256']==c.bytes_sha256(paid_bytes) and
         proof['payloadSha256']==saved['payloadSha256']==raw['payloadSha256']==row['requestSha256']==paid['payloadSha256'] and
         paid['modelCallId']==call_id and paid['response']==raw['response'],'historical_repair_paid_return_unproven')
+    return proof
+
+
+def final_root(locale_root, group, binding):
+    """Only controlled group/revision paths from a subsequently verified binding."""
+    c.require(type(binding) is dict and type(binding.get('reviewAttemptNumber')) is int and
+        binding['reviewAttemptNumber'] in (1,2), 'historical_final_bindings_required')
+    revision_id=strict.label(binding.get('revisionId'))
+    return _safe_path(Path(locale_root)/'groups'/c.canonical_sha256(group)/'revisions'/revision_id), binding['reviewAttemptNumber']
+
+
+def rebound_artifact_refs(root, attempt, repair):
+    suffix='' if attempt==1 else '-2'
+    names=['revision.json','candidate.json','review-input.json','review-receipt'+suffix+'.json',
+        'generator.json','generator.raw.json','generator.call.json',
+        'reviewer'+suffix+'.json','reviewer'+suffix+'.raw.json','reviewer'+suffix+'.call.json']
+    if repair is not None:names.extend(REPAIR_FILES)
+    return [ref(Path(root)/name) for name in names]
+
+
+def inspect_final_origin(prepared, locale_root, binding, provider_root, provider_config, *, current=None):
+    """Read-only payload/paid evidence inspector, NOT closure or dispatch authority.
+
+    All revisions have one provider origin. Ordinary content repairs only, up to
+    the existing three-revision bound; language-plugin repairs/mixed rebinds fail
+    closed. Caller must additionally prove closed lineage before reuse.
+    """
+    current=prepared if current is None else current
+    c.require(prepared['bytes']==current['bytes'] and prepared.get('requestLimits')==current.get('requestLimits') and
+        prepared['group']==current['group'],'historical_current_materials_changed')
+    root,attempt=final_root(locale_root,prepared['group'],binding)
+    provider_root=_safe_path(Path(provider_root))
+    state,_=c.read_snapshot(provider_root/'state.json')
+    c.require(state.get('config')==provider_config,'historical_provider_origin_changed')
+    final,_=c.read_snapshot(root/'revision.json')
+    c.require(binding.get('candidateId')==final['candidateId'] and binding.get('workUnitId')==prepared['workUnitId'] and
+        final['revisionId']==binding['revisionId'] and type(final['revisionNumber']) is int and
+        1<=final['revisionNumber']<=3,'historical_final_bindings_required')
+    archived=strict.load_repair(root)
+    if archived is not None:
+        c.require('languagePluginRepair' not in archived,'historical_ordinary_repair_required')
+        strict.validate_repair(prepared,final['candidateId'],final['revisionId'],archived)
+        strict.validate_repair(current,final['candidateId'],final['revisionId'],archived)
+        chain=archived['priorRevisions']+[archived['parentRevision'],final]
+    else:chain=[final]
+    c.require(len(chain)==final['revisionNumber'],'historical_repair_history_missing')
+    references=[];repair_refs=[];call_ids=[];final_result=None;previous=None
+    for index,expected in enumerate(chain):
+        revision_id=strict.label(expected['revisionId'])
+        directory=root.parent/revision_id
+        c.require(not (directory/'language-plugin-repair.json').exists() and
+            not (directory/'historical-rebind.json').exists(),'historical_single_provider_origin_required')
+        manifest,_=c.read_snapshot(directory/'revision.json')
+        candidate,candidate_bytes=c.read_snapshot(directory/'candidate.json')
+        inputs,_=c.read_snapshot(directory/'review-input.json')
+        repair=strict.load_repair(directory)
+        c.require(manifest==expected and manifest['revisionNumber']==index+1 and
+            (repair is None)==(index==0),'historical_repair_ancestor_changed')
+        for key,value in strict.common_identity(prepared,final['candidateId'],revision_id).items():
+            c.require(manifest[key]==value,'historical_revision_identity_changed')
+        c.validate_candidate_artifact(manifest,candidate_bytes)
+        c.require(inputs==strict.input_manifest(prepared,manifest,candidate_bytes),'historical_review_input_changed')
+        if repair is not None:
+            c.require('languagePluginRepair' not in repair,'historical_ordinary_repair_required')
+            strict.validate_repair(prepared,final['candidateId'],revision_id,repair)
+            strict.validate_repair(current,final['candidateId'],revision_id,repair)
+            c.require(repair['parentRevision']==previous['parentRevision'] and
+                repair['parentCandidateBytes']==previous['parentCandidateBytes'] and
+                repair['inputManifest']==previous['parentInput'] and
+                repair['triggerReview']==previous['parentReview'] and
+                repair['priorRevisions']==chain[:index-1] and
+                repair['priorRepairs']==[strict.load_repair(root.parent/row['revisionId'])['plan'] for row in chain[1:index]],
+                'historical_repair_ancestor_changed')
+            row_refs=[ref(directory/name) for name in REPAIR_FILES];references.extend(row_refs);repair_refs.extend(row_refs)
+        c.validate_revision_lineage(manifest,repair['parentRevision'] if repair else None,repair['plan'] if repair else None)
+        # The next actual repair's trigger identifies its exact parent review.
+        review_attempt=attempt if index==len(chain)-1 else None
+        if review_attempt is None:
+            next_repair=strict.load_repair(root.parent/chain[index+1]['revisionId'])
+            target=next_repair['triggerReview'];matches=[]
+            for number in (1,2):
+                path=directory/('review-receipt'+('' if number==1 else '-2')+'.json')
+                if path.exists() and c.read_snapshot(path)[0]==target:matches.append(number)
+            c.require(len(matches)==1,'historical_repair_trigger_missing_or_duplicate');review_attempt=matches[0]
+        suffix='' if review_attempt==1 else '-2'
+        receipt,_=c.read_snapshot(directory/('review-receipt'+suffix+'.json'))
+        c.validate_review_binding(receipt,manifest,prepared['rubric'],inputs)
+        c.require(receipt['executionStatus']=='succeeded' and
+            (receipt['reviewVerdict']=='pass' if index==len(chain)-1 else receipt['reviewVerdict']!='pass'),
+            'historical_semantic_review_not_passed')
+        strict._validate_cached_review_evidence(receipt,manifest,directory/('reviewer'+suffix+'.json'),prepared,inputs)
+        references.extend(ref(directory/name) for name in ('revision.json','candidate.json','review-input.json','review-receipt'+suffix+'.json'))
+        for role,stem in (('translator','generator'),('reviewer','reviewer'+suffix)):
+            saved,data=c.read_snapshot(directory/(stem+'.json'))
+            response=strict.require_call_binding(directory/(stem+'.json'),saved)
+            old_request=strict.generation_prompt(prepared,repair) if role=='translator' else strict.prompt(prepared,role,candidate=candidate,input_manifest=inputs)
+            new_request=strict.generation_prompt(current,repair) if role=='translator' else strict.prompt(current,role,candidate=candidate,input_manifest=strict.input_manifest(current,manifest,candidate_bytes))
+            payload_sha=c.canonical_sha256(strict._payload(prepared,role,old_request))
+            c.require(saved['payloadSha256']==payload_sha==c.canonical_sha256(strict._payload(current,role,new_request)) and
+                saved['model']==prepared['policy'][role]['model'],'historical_exact_payload_changed')
+            if role=='translator':
+                c.require(saved['result']==candidate and manifest['generationReceiptRef']==strict.reference('generation',data),
+                    'historical_generation_evidence_changed')
+            call_id=response['accounting']['modelCallId'];strict.label(call_id);call_ids.append(call_id)
+            row=state['requests'].get(call_id);path=provider_root/(call_id+'.json');paid,paid_bytes=c.read_snapshot(path)
+            c.require(row is not None and row['state']=='returned' and row['requestSha256']==payload_sha and
+                row['receiptSha256']==c.bytes_sha256(paid_bytes) and paid['modelCallId']==call_id and
+                paid['payloadSha256']==payload_sha and paid['response']==response['response'],
+                'historical_paid_response_binding_changed')
+            references.extend(ref(directory/(stem+end+'.json')) for end in ('','.raw','.call'));references.append(ref(path))
+        previous=dict(parentRevision=manifest,parentCandidateBytes=candidate_bytes,parentInput=inputs,parentReview=receipt)
+        if index==len(chain)-1:final_result=previous
+    c.require(len(set(call_ids))==len(call_ids),'historical_duplicate_paid_call')
+    for name,snapshot in binding.get('artifacts',{}).items():
+        c.require(name in {Path(row['path']).name for row in references if Path(row['path']).parent==root} or
+            name in ('request-limits.json','diagnostic-context.json'),'historical_final_artifact_not_supported')
+        path=_safe_path(root/name);data=c.read_snapshot(path)[1]
+        c.require(snapshot==strict.reference(name,data),'historical_final_binding_changed');references.append(ref(path))
+    final_result.update(parentRoot=root,reviewAttempt=attempt,archivedRepair=archived,
+        archivedRepairRefs=repair_refs,historicalAncestorPaidRequests=len(call_ids)-2,
+        references=references,historicalCallIds=call_ids)
+    return final_result
+
+
+def validate_rebind_v2(prepared, root, proof):
+    c.require(set(proof)=={'schemaVersion','specification','parentRefs','newRoot','inputBytesSha256','artifactRefs',
+        'newPaidRequests','newBudgetReservations','historicalProviderPaidRequests','executionAuthority','productionEligible',
+        'archivedRepairRefs','historicalAncestorPaidRequests','selectedRevisionId','reviewAttemptNumber'} and
+        proof['specification']['schemaVersion']==SPEC_V2,'historical_rebind_changed')
+    inspector=HistoricalLayer2Reuse(proof['specification']);prior=inspector.inspect(prepared)
+    root=_safe_path(Path(root))
+    c.require(inspector.successor in root.parents and root.name==prior['parentRevision']['revisionId'] and
+        proof['newRoot']==str(root) and proof['parentRefs']==prior['references'] and
+        proof['newPaidRequests']==0 and proof['newBudgetReservations']==0 and
+        proof['historicalProviderPaidRequests']==2 and proof['executionAuthority']=='none' and
+        proof['productionEligible'] is False and proof['inputBytesSha256']=={k:c.bytes_sha256(v) for k,v in prepared['bytes'].items()} and
+        proof['selectedRevisionId']==prior['parentRevision']['revisionId'] and
+        proof['reviewAttemptNumber']==prior['reviewAttempt'] and proof['archivedRepairRefs']==prior['archivedRepairRefs'] and
+        proof['historicalAncestorPaidRequests']==prior['historicalAncestorPaidRequests'], 'historical_rebind_changed')
+    c.require(strict.load_repair(root)==prior['archivedRepair'],'historical_rebind_repair_changed')
+    c.require(proof['artifactRefs']==rebound_artifact_refs(root,prior['reviewAttempt'],prior['archivedRepair']),
+        'historical_rebind_artifacts_changed')
     return proof

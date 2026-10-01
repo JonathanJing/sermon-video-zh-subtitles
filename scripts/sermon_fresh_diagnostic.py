@@ -14,6 +14,7 @@ from scripts import run_bounded_diagnostic as bounded
 from scripts import sermon_accounting as accounting
 from scripts import sermon_log_profile as profile
 from scripts import sermon_review_contracts as c
+from scripts import sermon_public_snapshot as public
 from scripts import sermon_strict_layer2 as strict
 from scripts import sermon_diagnostic_context as diagnostic
 from scripts import sermon_bounded_business_callbacks as offline
@@ -42,7 +43,10 @@ TERMINAL_REASONS=frozenset({'diagnostic_continuation_code_changed','diagnostic_d
     'dev_publish_snapshot_changed','dev_publish_target_changed','dev_publish_timeout_invalid',
     'fresh_historical_layer2_inputs_changed','fresh_historical_layer2_locales_invalid',
     'fresh_historical_layer2_already_frozen','fresh_historical_layer2_type_invalid',
-    'fresh_historical_layer2_new_plan_changed'})
+    'fresh_historical_layer2_new_plan_changed','fresh_historical_native_specs_invalid',
+    'fresh_historical_native_ref_changed','fresh_historical_native_parent_changed',
+    'fresh_historical_native_locales_invalid','fresh_historical_native_already_frozen',
+    'fresh_historical_native_inputs_changed','fresh_historical_native_source_changed'})
 
 
 @contextmanager
@@ -87,7 +91,7 @@ def preload_execution_modules(plugin_paths=()):
                  'render_formal_target_language_speech','render_multilingual_voice_demos',
                  'validate_target_language_audio_unit','sermon_local_model_observation',
                  'sermon_trace_artifacts','sermon_review_diagnostics','sermon_preview_checkpoint_manifest',
-                 'sermon_historical_layer2','sermon_source_producer_compatibility','sermon_source_failure'):
+                 'sermon_historical_layer2','sermon_historical_native_seed','sermon_historical_identity','sermon_source_producer_compatibility','sermon_source_failure'):
         importlib.import_module('scripts.'+name)
     repository=Path(__file__).resolve().parents[1]
     for path in plugin_paths:
@@ -124,6 +128,7 @@ class FreshDiagnosticSession(sessions.DiagnosticSession):
         self._locale_results={}; self._locale_specs={}; self.context=None; self.binding=None
         self._cached_source=False
         self._historical_reuse={}; self._historical_specification=None
+        self._historical_native_seeds={}; self._historical_native_specification=None
 
     def _check(self):
         active=profile.current()
@@ -160,6 +165,7 @@ class FreshDiagnosticSession(sessions.DiagnosticSession):
         return self.binding['sourceEvidence'] if self.binding else None
 
     def _check_historical_inputs(self):
+        self._check_historical_native_inputs()
         if self._historical_specification is not None:
             from scripts import sermon_historical_layer2 as historical
             frozen_spec,data=c.read_snapshot(self._historical_specification_path)
@@ -169,6 +175,61 @@ class FreshDiagnosticSession(sessions.DiagnosticSession):
                 and all(type(resolver) is historical.HistoricalLayer2Reuse
                     and resolver.spec==frozen_spec['locales'][locale] for locale,resolver in self._historical_reuse.items()),
                 'fresh_historical_layer2_inputs_changed')
+
+    def _check_historical_native_inputs(self):
+        frozen=getattr(self,'_historical_native_specification',None)
+        if frozen is None:
+            return
+        from scripts import sermon_historical_native_seed as historical
+        from scripts import sermon_diagnostic_delivery_preflight as delivery
+        files=delivery._Snapshot()
+        path=self._historical_native_specification_path
+        actual=files.json(path)
+        c.require(actual==frozen and files.file(path)==self.binding['historicalNativeInputs']['bytesSha256']
+            and set(self._historical_native_seeds)==set(frozen['locales']), 'fresh_historical_native_inputs_changed')
+        for locale,lane in frozen['locales'].items():
+            seed=self._historical_native_seeds[locale]
+            spec=lane['specification']
+            c.require(type(seed) is historical.HistoricalSeed
+                and seed==historical.HistoricalSeed(spec['parentPlan']['path'],spec['workerReceipt']['path']),
+                'fresh_historical_native_inputs_changed')
+            # Stable streaming FD hashes: never materialize multi-GB checkpoint
+            # bytes and never replace this guard with an mtime-only cache.
+            for reference in lane['references']:
+                c.require(files.file(reference['path'])==reference['fileBytesSha256'],
+                    'fresh_historical_native_inputs_changed')
+        files.recheck()
+
+    def configure_historical_native(self, specifications, locales, *, parent_preflight=None):
+        """Bind closed native V3 evidence to current Source; no model authority."""
+        self._check()
+        c.require(getattr(self,'_historical_native_specification',None) is None,
+            'fresh_historical_native_already_frozen')
+        lanes=_preflight_historical_native_specs(specifications,{locale:None for locale in locales},
+            offline_fixture=self.offline_fixture,plan=self.plan)
+        c.require(parent_preflight is None or lanes==parent_preflight,'fresh_historical_native_parent_changed')
+        from scripts import sermon_historical_native_seed as historical
+        from scripts import sermon_diagnostic_delivery_preflight as delivery
+        files=delivery._Snapshot();source=files.json(self.root/'source.json');anchor=files.json(self.root/'anchor-manifest.json')
+        for lane in lanes.values():
+            c.require(lane['parentPreflight']['sourceJsonSha256']==c.canonical_sha256(source)
+                and lane['parentPreflight']['anchorJsonSha256']==c.canonical_sha256(anchor),
+                'fresh_historical_native_source_changed')
+        frozen={'schemaVersion':'sermon-fresh-historical-native-inputs-v1',
+            'runId':self.subject.config['runId'],'originalPlanSha256':c.canonical_sha256(self.plan),
+            'diagnosticContextSha256':c.canonical_sha256(self.context),'locales':lanes,
+            'productionEligible':False,'humanAcceptance':'pending','executionAuthority':'none'}
+        path=self.root/'fresh-historical-native-inputs.json';data=public.save_once(path,frozen)
+        self._historical_native_specification=frozen;self._historical_native_specification_path=path
+        self._historical_native_seeds={locale:historical.HistoricalSeed(lane['specification']['parentPlan']['path'],
+            lane['specification']['workerReceipt']['path']) for locale,lane in lanes.items()}
+        self.binding['historicalNativeInputs']={'path':str(path),'bytesSha256':c.bytes_sha256(data)}
+        self._check()
+
+    def preview(self, locale, spec, *, depends_on=None):
+        seed=getattr(self,'_historical_native_seeds',{}).get(locale)
+        return super().preview(locale,spec,depends_on=depends_on,
+            **({'historical_seed':seed} if seed is not None else {}))
 
     def configure_historical_locales(self, specifications, locales):
         """Freeze explicit closed-parent rebind specs, never general callbacks."""
@@ -250,6 +311,58 @@ class FreshDiagnosticSession(sessions.DiagnosticSession):
             'humanAcceptance':'pending','productionEligible':False,'implementationSha256':c.bytes_sha256(Path(__file__).read_bytes())}
         self.source_spans=prepared['completionSpans'];self._check()
         return prepared
+
+
+def _preflight_historical_native_specs(specifications, locale_drafts, *, offline_fixture, plan=None):
+    """Zero-dispatch validation before Source or any paid locale repair.
+
+    V1 JSON specification contains only exact hashed refs; a persisted public
+    parent preflight is inspection evidence, never an execution authority.
+    Normal callers use None and retain their existing behavior.
+    """
+    if specifications is None:
+        return {}
+    from scripts import sermon_historical_native_seed as historical
+    from scripts import sermon_diagnostic_delivery_preflight as delivery
+    c.require(not offline_fixture and type(specifications) is dict and bool(specifications)
+        and set(specifications)<=set(locale_drafts) and set(specifications)<=flow.LOCALES,
+        'fresh_historical_native_locales_invalid')
+    c.require(type(plan) is dict and Path(plan['runDirectory']).is_absolute(),'fresh_historical_native_specs_invalid')
+    new_root=_safe_path(Path(plan['runDirectory']))
+    files=delivery._Snapshot();lanes={}
+    helper_ref={'path':str(Path(historical.__file__).resolve()),
+                'fileBytesSha256':files.file(Path(historical.__file__).resolve())}
+    for locale,spec in specifications.items():
+        c.require(type(spec) is dict and set(spec)=={'schemaVersion','targetLocale','parentPlan','workerReceipt','parentPreflight'}
+            and spec['schemaVersion']=='sermon-fresh-historical-native-locale-v1' and spec['targetLocale']==locale,
+            'fresh_historical_native_specs_invalid')
+        for key in ('parentPlan','workerReceipt','parentPreflight'):
+            ref=spec[key]
+            c.require(type(ref) is dict and set(ref)=={'path','fileBytesSha256'}
+                and files.file(ref['path'])==ref['fileBytesSha256'],'fresh_historical_native_ref_changed')
+        seed=historical.HistoricalSeed(spec['parentPlan']['path'],spec['workerReceipt']['path'])
+        observed=historical.preflight_parent(seed)
+        persisted=files.json(spec['parentPreflight']['path'])
+        c.require(persisted==observed and observed['targetLocale']==locale
+            and observed['parentPlan']==spec['parentPlan'] and observed['workerReceipt']==spec['workerReceipt']
+            and observed['grantsExecutionAuthority'] is False and observed['productionEligible'] is False,
+            'fresh_historical_native_parent_changed')
+        from scripts import sermon_diagnostic_attempts as attempts
+        parent_plan,parent_root=attempts._project(spec['parentPlan']['path'])
+        c.require(all(plan['providerConfig'][key]==parent_plan['providerConfig'][key] for key in
+            ('sourceMediaSha256','sourceClipSha256','sourceAudioSha256','sourceWindowSeconds')),
+            'fresh_historical_native_source_changed')
+        lineage=historical._lineage(new_root,plan,parent_plan,parent_root,files)
+        history=files.json(new_root/'linked-history.json')
+        ancestors=[{'path':ref['path'],'fileBytesSha256':ref['bytesSha256']}
+            for ref in (*history['legacyObservationBaseline']['snapshots'],*history['parentClosureSnapshots'])]
+        refs=[helper_ref,*lineage,*ancestors,*[spec[k] for k in ('parentPlan','workerReceipt','parentPreflight')],observed['closure'],
+              observed['workerRequest'],*observed['originalInputs'],*observed['originalArtifacts']]
+        refs=list({ref['path']:deepcopy(ref) for ref in refs}.values())
+        files.refs(refs)
+        lanes[locale]={'specification':deepcopy(spec),'parentPreflight':deepcopy(observed),'references':refs}
+    files.recheck()
+    return lanes
 
 
 def _preflight_preview_specs(preview_specs, locale_drafts, *, offline_fixture, plan=None):
@@ -338,7 +451,7 @@ def freeze_locale_inputs(session, locale_drafts):
 def run_fresh_diagnostic(plan, *, key, execute=False, source_recipe, authorization, locale_drafts,
                          preview_specs, request_limits=None, dev_snapshot=None, offline_transport=None,
                          execute_publish=False, publication_approval_sha256=None, source_cache_parent_plan_path=None,
-                         historical_locale_specs=None):
+                         historical_locale_specs=None, historical_native_specs=None):
     """Unified fixed sequential DAG. Business ledgers decide all replay/retries.
 
     Produces preview/read-only delivery evidence, plus optional explicitly
@@ -353,6 +466,8 @@ def run_fresh_diagnostic(plan, *, key, execute=False, source_recipe, authorizati
                   'fresh_dev_publication_scope_invalid')
     c.require(source_cache_parent_plan_path is None or source_recipe is None,'fresh_source_cache_recipe_conflict')
     _preflight_preview_specs(preview_specs,locale_drafts,offline_fixture=offline_transport is not None,plan=plan)
+    native_preflight=_preflight_historical_native_specs(historical_native_specs,locale_drafts,
+        offline_fixture=offline_transport is not None,plan=plan)
     session=FreshDiagnosticSession(plan,key=key,execute=execute,request_limits=request_limits,offline_transport=offline_transport)
     with profile.session(session.root/'fresh-diagnostic-logs','fresh_diagnostic',work_kind='production',
                          evidence_mode=session.evidence_mode,production_run_id=session.subject.config['runId']):
@@ -377,6 +492,16 @@ def run_fresh_diagnostic(plan, *, key, execute=False, source_recipe, authorizati
             specs=freeze_locale_inputs(session,locale_drafts)
             if historical_locale_specs is not None:
                 session.configure_historical_locales(historical_locale_specs,specs)
+            native_preflight_spans=[]
+            if historical_native_specs is not None:
+                with accounting.stage('diagnostic.historical_native_preflight',
+                        work_unit_id='diagnostic.historical_native_preflight', executor_type='deterministic_program',
+                        depends_on=prepared['completionSpans']) as native_preflight_span:
+                    session.configure_historical_native(historical_native_specs,specs,parent_preflight=native_preflight)
+                    accounting.record_workload('diagnostic.historical_native_preflight', {
+                        'localeCount':len(native_preflight),'providerDispatchOccurred':False,
+                        'modelExecutedCurrentAttempt':False,'productionEligible':False})
+                native_preflight_spans=[native_preflight_span]
             c.require(set(preview_specs)==set(specs),'fresh_diagnostic_preview_locales_changed')
             config={'schemaVersion':flow.SCHEMA,'locales':{loc:{'localeSpec':spec,'previewSpec':deepcopy(preview_specs[loc])}
                                                         for loc,spec in specs.items()}}
@@ -385,7 +510,7 @@ def run_fresh_diagnostic(plan, *, key, execute=False, source_recipe, authorizati
                     lane['previewSpec']['paths'][key]=lane['localeSpec'][key]
                 lane['previewSpec']['strict_rubric_path']=lane['localeSpec']['rubric']
             dag=flow.DiagnosticDAG(session,config); dag.freeze()
-            dag.initial_source_spans=prepared['completionSpans']
+            dag.initial_source_spans=[*prepared['completionSpans'],*native_preflight_spans]
             results={node[0]:dag.execute(node[0]) for node in dag.nodes}
             result={'schemaVersion':'sermon-fresh-diagnostic-result-v1','nodes':results,
                 'status':'diagnostic_traversal_complete' if results['delivery.readonly']['readyForDownstream'] else 'incomplete',

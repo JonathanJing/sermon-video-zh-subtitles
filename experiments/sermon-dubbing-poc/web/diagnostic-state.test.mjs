@@ -44,3 +44,12 @@ test('historical diagnostic without a state is conservative and legacy weeks are
   assert.equal(diagnosticPresentation({simulationOnly:true,tracks:[]}),null);
   assert.equal(diagnosticPresentation({tracks:[]}),null);
 });
+
+test('controlled historical identity reasons remain bound and public-safe',()=>{
+  for (const reason of ['historical_identity_git_or_tree_changed', 'historical_current_code_changed',
+    'diagnostic_unbounded_subprocess_forbidden', 'invalid_snapshot_file']) {
+    const week=variant('es','blocked',false); week.diagnosticState.reasonCode=reason;
+    assert.equal(diagnosticPresentation(week).reasonCode,reason);
+    assert.equal(diagnosticPresentation(week).canPlay,false);
+  }
+});
