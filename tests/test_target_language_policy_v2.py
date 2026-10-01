@@ -79,6 +79,33 @@ class ScopedPolicyTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "proper names are incomplete"):
             subject.validate_source_scope(altered, self.source, self.anchor)
 
+    def test_new_series_hit_requires_new_source_scope_and_retains_pending_gate(self):
+        frozen = self.freeze()
+        term = frozen['terminology']['seriesNames'][0]
+        self.assertIsNone(term['target'])
+        changed_anchor = copy.deepcopy(self.anchor)
+        changed_anchor['sourceUnits'][1]['english'] += ' ' + term['source'] + '.'
+        changed_source = copy.deepcopy(self.source)
+        changed_source['anchors']['artifact']['jsonSha256'] = subject.canonical_sha256(changed_anchor)
+        with self.assertRaisesRegex(ValueError, 'another English package or anchor'):
+            subject.validate_source_scope(frozen, changed_source, changed_anchor)
+        changed_policy = copy.deepcopy(frozen)
+        scope = changed_policy['sourceScope']
+        scope['englishSourcePackageJsonSha256'] = subject.canonical_sha256(changed_source)
+        scope['anchorManifestSha256'] = subject.canonical_sha256(changed_anchor)
+        scope['termApprovalEvidence'] = []  # Changed source cannot reuse the old shadow approval.
+        with self.assertRaisesRegex(ValueError, 'series terminology is incomplete'):
+            subject.validate_source_scope(changed_policy, changed_source, changed_anchor)
+        scope['usedSeriesNames'] = [term['source']]
+        subject.validate_source_scope(changed_policy, changed_source, changed_anchor)
+        # A new source-bound fixture keeps every unresolved production gate.
+        changed_policy['componentSha256']['sourceScope'] = subject.canonical_sha256(scope)
+        identity = subject.validate_policy(changed_policy)
+        self.assertIn('terminology_review_pending', identity['unresolved'])
+        self.assertIn('proper_name_approval_evidence_pending', identity['unresolved'])
+        self.assertFalse(identity['productionPolicyReady'])
+        self.assertIsNone(changed_policy['terminology']['seriesNames'][0]['target'])
+
     def test_shadow_approval_is_bound_to_exact_term_and_candidate(self):
         with self.assertRaisesRegex(ValueError, "exact shadow candidate and human receipt"):
             subject.freeze_policy(self.draft)

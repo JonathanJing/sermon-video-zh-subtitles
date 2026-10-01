@@ -168,6 +168,41 @@ class TransportRejection(RuntimeError):
         super().__init__('http_request_rejected')
 
 
+# Fixed guard codes only. This type is proof supplied by a trusted guard before
+# its transport executor is invoked, never inferred from an exception message.
+PRE_DISPATCH_REASONS = frozenset({
+    'provider_run_deadline_reached', 'provider_attempt_deadline_reached',
+    'provider_request_limit', 'provider_cost_limit', 'provider_source_call_limit',
+    'provider_outcome_reconciliation_required', 'provider_call_already_reserved',
+    'provider_operation_already_reserved',
+})
+
+
+class PreDispatchRejection(ValueError):
+    """A local guard refused this attempt before any transport dispatch.
+
+    Existing callers catching ValueError remain compatible. No provider receipt,
+    permit refund or reconciliation of a prior unknown call is implied.
+    """
+    def __init__(self, reason_code):
+        if type(reason_code) is not str or reason_code not in PRE_DISPATCH_REASONS:
+            raise ValueError('invalid_pre_dispatch_reason')
+        self.reason_code = reason_code
+        self._attempt_id = None
+        super().__init__(reason_code)
+
+    @property
+    def attempt_id(self):
+        return self._attempt_id
+
+    def bind_attempt(self, attempt_id):
+        """Bind only the local API start ID, never a provider response ID."""
+        if (type(attempt_id) is not str or re.fullmatch(r'[a-f0-9]{32}', attempt_id) is None
+                or self._attempt_id not in (None, attempt_id)):
+            raise ValueError('invalid_pre_dispatch_attempt_binding')
+        self._attempt_id = attempt_id
+
+
 def request_json(req, retries=3, *, response_observer=None, request_executor=None):
     # Strict recovery is explicitly authorized by D5, never an HTTP retry loop.
     if response_observer is not None or request_executor is not None:
@@ -175,14 +210,32 @@ def request_json(req, retries=3, *, response_observer=None, request_executor=Non
     for attempt in range(retries):
         started = time.monotonic()
         attempt_id = record_api_started(getattr(req, "accounting_model", "unknown"), getattr(req, "accounting_settings", {}))
-        if response_observer is not None and hasattr(response_observer, "request_started"):
-            response_observer.request_started(attempt_id)
+        try:
+            if response_observer is not None and hasattr(response_observer, "request_started"):
+                response_observer.request_started(attempt_id)
+        except BaseException as exc:
+            # A trusted guard can prove no dispatch; arbitrary observer failures
+            # (including durable-write failures) carry no such proof. Never feed
+            # an observer's HTTPError into provider rejection/retry handling.
+            if isinstance(exc, PreDispatchRejection):
+                exc.bind_attempt(attempt_id)
+            reason = exc.reason_code if isinstance(exc, PreDispatchRejection) else None
+            _finalize(lambda: record_api_attempt(getattr(req, "accounting_model", "unknown"), None,
+                time.monotonic() - started, "failed", type(exc).__name__,
+                attempt_id=attempt_id, not_dispatched_reason=reason), exc)
+            raise
         try:
             if request_executor is not None:
                 result = request_executor(req)
             else:
                 with urllib.request.urlopen(req, timeout=300) as response:
                     result = json.loads(response.read().decode())
+        except PreDispatchRejection as exc:
+            exc.bind_attempt(attempt_id)
+            _finalize(lambda: record_api_attempt(getattr(req, "accounting_model", "unknown"), None,
+                time.monotonic() - started, "failed", type(exc).__name__,
+                attempt_id=attempt_id, not_dispatched_reason=exc.reason_code), exc)
+            raise
         except urllib.error.HTTPError as exc:
             if response_observer is not None and exc.code in KNOWN_REQUEST_REJECTIONS:
                 rejection = TransportRejection(exc.code)

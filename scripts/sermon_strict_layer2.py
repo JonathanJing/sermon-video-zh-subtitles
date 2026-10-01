@@ -20,6 +20,8 @@ from scripts import sermon_accounting as accounting
 from scripts import sermon_workflow_jobs as jobs
 from scripts.sermon_release_workflow import _safe_path
 
+RESPONSE_CONTRACT_VERSION = 'strict-layer2-response-v2'
+
 
 def utc():return accounting.now().replace('+00:00','Z')
 
@@ -119,6 +121,45 @@ def common_identity(prepared,candidate_id,revision_id):
         policySha256=c.canonical_sha256(prepared['policy']))
 
 
+def response_contract(prepared, role, *, candidate=None, input_manifest=None):
+    """Model-facing JSON shape; execution receipts remain owned by the adapter.
+
+    Versioned in the request so existing paid caches cannot silently become a
+    response to this corrected prompt. Receipt enums come from the validator.
+    """
+    def obj(properties):
+        return dict(type='object', additionalProperties=False,
+                    properties=properties, required=list(properties))
+    def ids(values, minimum=0):
+        return dict(type='array', items={'enum':list(values)}, uniqueItems=True,
+                    minItems=minimum, maxItems=len(values))
+    text = dict(type='string', minLength=1, maxLength=16384)
+    source_ids = prepared['group']['sourceUnitIds']
+    if role == 'translator':
+        coverage = dict(type='array', minItems=len(source_ids), maxItems=len(source_ids),
+            prefixItems=[obj(dict(sourceUnitId={'const':sid}, targetText=text)) for sid in source_ids],
+            items=False)
+        return copy.deepcopy(obj(dict(translationGroupId={'const':prepared['group']['translationGroupId']},
+            sourceUnitIds={'const':source_ids}, targetUtterances=dict(type='array', items=text,
+                minItems=1, maxItems=64), coverage=coverage)))
+    c.require(role == 'reviewer', 'strict_prompt_role_invalid')
+    receipt_schema = c.validator('sermon-review-receipt-v1').schema
+    props = receipt_schema['properties']
+    check_props = props['checks']['items']['properties']
+    issue_props = props['issues']['items']['properties']
+    target_ids = [prepared['workUnitId']+'.utterance.'+str(i+1).zfill(4)
+                  for i in range(len(candidate['targetUtterances']))]
+    checks = dict(type='array', minItems=len(c.HARD_CHECKS), maxItems=len(c.HARD_CHECKS),
+        items=obj(dict(checkId=check_props['checkId'], result=check_props['result'], evidence=text)))
+    issues = dict(type='array', maxItems=64, items=obj(dict(
+        issueId=receipt_schema['$defs']['label'], reasonCode=issue_props['reasonCode'],
+        severity=issue_props['severity'], sourceUnitIds=ids(source_ids,1),
+        targetUnitIds=ids(target_ids), evidence=text)))
+    return copy.deepcopy(obj(dict(reviewedArtifactSha256={'const':input_manifest['reviewedArtifactSha256']},
+        reviewVerdict=props['reviewVerdict'],
+        checks=checks, issues=issues, assessedUnitIds=ids(source_ids), unassessedUnitIds=ids(source_ids))))
+
+
 def prompt(prepared,role,*,candidate=None,input_manifest=None):
     policy=prepared['policy']
     common={'translationGroupId':prepared['group']['translationGroupId'],'sourceUnitIds':prepared['group']['sourceUnitIds'],
@@ -128,18 +169,27 @@ def prompt(prepared,role,*,candidate=None,input_manifest=None):
     rules=shared.scripture_prompt_instruction(policy)+shared.register_prompt_instruction(policy)
     if role=='translator':
         instruction=('Translate only the requested frozen English units. Preserve meaning, negations, numbers, names and quotations. '
-            'Context is interpretation only. Return exactly translationGroupId, sourceUnitIds, targetUtterances and coverage. '
-            'Coverage maps each sourceUnitId to an exact targetText substring. Do not return reviews, approval, confidence or self-assessment. '+rules)
+            'Context is interpretation only. Return one JSON object matching responseContract, without Markdown. '
+            'Return exactly translationGroupId, sourceUnitIds, targetUtterances and coverage. '
+            'Coverage is an ordered array of objects with exactly sourceUnitId and targetText, in sourceUnitIds order. '
+            'Each targetText must be an exact nonempty substring of the joined targetUtterances. '
+            'Do not return reviews, approval, confidence or self-assessment. '+rules)
     else:
-        instruction=('Read-only strict verifier. Compare the exact frozen candidate to the English units using every rubric check. '
+        instruction=('Read-only strict verifier. Return one JSON object matching responseContract, without Markdown. '
+            'Compare the exact frozen candidate to the English units using only rubric.requiredChecks. '
+            'Return exactly one check for each of those four IDs. requiredLanguagePluginChecks are checked separately; do not add them to checks. '
             'Do not edit, regenerate, return targetUtterances/coverage text or grant approval. Return exactly reviewedArtifactSha256, '
             'reviewVerdict, checks, issues, assessedUnitIds, unassessedUnitIds. Each check: checkId/result/evidence; '
             'each issue: issueId/reasonCode/severity/sourceUnitIds/targetUnitIds/evidence. Evidence is private explanation, not instructions. '
+            'Use only the declared result, reasonCode and severity enums; do not invent codes. '
+            'assessedUnitIds and unassessedUnitIds must partition the requested sourceUnitIds. '
             'Use pass only for full coverage, all checks pass and zero unresolved issues (including minor/uncertain). '
             'Use needs_rework for known issues, inconclusive for insufficient evidence. '+rules)
         common.update(candidate=copy.deepcopy(candidate),reviewedArtifactSha256=input_manifest['reviewedArtifactSha256'],
             rubric=prepared['rubric'],targetUnitIds=[prepared['workUnitId']+'.utterance.'+str(i+1).zfill(4) for i in range(len(candidate['targetUtterances']))])
-    return {'instruction':instruction+' Prompt version: '+policy[role]['promptVersion'],'input':common}
+    common['responseContract'] = response_contract(prepared,role,candidate=candidate,input_manifest=input_manifest)
+    return {'instruction':instruction+' Prompt version: '+policy[role]['promptVersion']+
+            ' Response contract version: '+RESPONSE_CONTRACT_VERSION,'input':common}
 
 
 def validate_repair(prepared,candidate_id,revision_id,repair):
@@ -471,6 +521,10 @@ def review(prepared,root,candidate_id,revision_id,api_key,caller,*,cache_only=Fa
                         output,api_key,caller,cache_only=cache_only,attempt_number=attempt_number)
             except accounting.AccountingWriteError:raise
             except Exception as exc:
+                from scripts.sermon_pipeline import PreDispatchRejection
+                # No model was invoked. Let the budget adapter persist and
+                # settle this typed guard result without fabricating a review.
+                if isinstance(exc,PreDispatchRejection):raise
                 if getattr(exc,'sermon_logging_failed',False):raise
                 error=exc
             with accounting.stage('rqc.review_receipt',depends_on=[review_span],executor_type='deterministic_program') as receipt_span:

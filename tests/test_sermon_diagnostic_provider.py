@@ -128,8 +128,55 @@ class ProviderTests(unittest.TestCase):
         with self.f.session():
             self.provider.chat('synthetic',payload)
             self.provider=self.provider_for(targetMicrousd=cost,hardLimitMicrousd=cost)
-            with self.assertRaisesRegex(ValueError,'provider_cost_limit'):self.generate()
+            ledger=self.store.root/budget.STORE_ID/'provider-run/state.json'
+            frozen=ledger.read_bytes()
+            result=self.generate()
+            self.assertEqual(result['executionStatus'],'failed')
+            self.assertEqual(result['budgetStatus'],'recorded')
+            self.assertIsNone(result['artifact'])
+            self.assertEqual(result['failureEvidence']['reasonCode'],'provider_cost_limit')
+            self.assertEqual(result['failureEvidence']['providerOutcome'],'not_dispatched')
+            self.assertEqual(ledger.read_bytes(),frozen)
+            self.subject=adapter.StrictBudgetAdapter(self.store)
+            self.assertEqual(self.generate(),result)
+            self.assertEqual(ledger.read_bytes(),frozen)
         self.assertEqual(len(self.calls),1);self.assertEqual(self.provider.snapshot()['remainingMicrousd'],0)
+        rows,damaged=accounting.read_events(self.f.root/'logs')
+        self.assertFalse(damaged)
+        self.assertEqual(len([r for r in rows if r['event']=='api_attempt_started']),2)
+        terminal=[r for r in rows if r['event']=='api_attempt']
+        self.assertEqual(len(terminal),2)
+        self.assertEqual(terminal[-1]['reasonCode'],'provider_cost_limit')
+        self.assertEqual(terminal[-1]['metrics'],{'dispatched':False})
+        self.assertFalse(accounting.summarize(self.f.root/'logs')['unfinishedApiAttempts'])
+
+    def test_request_cap_denial_closes_api_attempt_without_dispatch_or_refund(self):
+        self.provider=self.provider_for(maxRequests=1)
+        with self.f.session():
+            self.provider.chat('synthetic',self.payload(),operation_id='source.first')
+            before=self.provider.snapshot()
+            ledger=self.store.root/budget.STORE_ID/'provider-run/state.json'
+            frozen=ledger.read_bytes()
+            with self.assertRaisesRegex(p.pipeline.PreDispatchRejection,'provider_request_limit'):
+                self.provider.chat('synthetic',self.payload(),operation_id='source.second')
+            self.assertEqual(ledger.read_bytes(),frozen)
+            self.assertEqual(self.provider.snapshot(),before)
+        rows,damaged=accounting.read_events(self.f.root/'logs')
+        self.assertEqual(damaged,[])
+        starts=[r for r in rows if r['event']=='api_attempt_started']
+        terminals=[r for r in rows if r['event']=='api_attempt']
+        self.assertEqual(len(starts),2)
+        self.assertEqual({r['attemptId'] for r in starts},{r['attemptId'] for r in terminals})
+        rejected=next(r for r in terminals if r['status']=='failed')
+        self.assertEqual(rejected['metrics'],{'dispatched':False})
+        self.assertEqual(rejected['reasonCode'],'provider_request_limit')
+        self.assertEqual(rejected['cost']['estimatedUsd'],0)
+        self.assertIsNone(rejected['responseId'])
+        self.assertTrue(all(v is None for v in rejected['usage'].values()))
+        from scripts import sermon_log_contract as log_contract
+        self.assertFalse(any(r['code']=='missing_model_finish'
+            for r in log_contract.replay_integrity(rows)['diagnostics']))
+        self.assertEqual(len(self.calls),1)
 
     def test_unknown_timeout_and_restart_never_issue_another_request(self):
         self.provider.executor=Mock(side_effect=TimeoutError('synthetic'))
@@ -173,7 +220,14 @@ class ProviderTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,'attempt_deadline_reached'):
                 self.provider.chat('synthetic',self.payload())
         self.assertEqual(self.calls,[])
-        self.assertEqual(len(self.provider.snapshot()['unknownModelCallIds']),1)
+        snapshot=self.provider.snapshot()
+        self.assertEqual(len(snapshot['unknownModelCallIds']),1)
+        self.assertGreater(snapshot['reservedMicrousd'],0)
+        rows,damaged=accounting.read_events(self.f.root/'logs')
+        terminal=next(r for r in rows if r['event']=='api_attempt')
+        self.assertEqual(damaged,[])
+        self.assertEqual(terminal['reasonCode'],'provider_attempt_deadline_reached')
+        self.assertEqual(terminal['metrics'],{'dispatched':False})
 
     def test_foreign_source_or_window_rejects_before_both_ledgers(self):
         for field in ('media', 'window'):
@@ -318,6 +372,24 @@ class TranscriptionIntegrationTests(unittest.TestCase):
         rows,_=accounting.read_events(self.f.root/'logs')
         receipt=next(row for row in rows if row['event']=='api_attempt')
         self.assertIsNone(receipt['usage']['inputTokens']);self.assertEqual(receipt['usage']['audioSeconds'],180)
+
+    def test_audio_request_cap_denial_has_matching_undispatched_terminal(self):
+        raw=self.wav(180);subject=self.audio_provider(raw,maxRequests=1)
+        with self.f.session():
+            subject.transcribe('synthetic',raw)
+            before=subject.snapshot()
+            with self.assertRaisesRegex(p.pipeline.PreDispatchRejection,'provider_request_limit'):
+                subject.transcribe('synthetic',raw,operation_id='transcription.explicit-second')
+            self.assertEqual(subject.snapshot(),before)
+        rows,damaged=accounting.read_events(self.f.root/'logs')
+        starts=[r for r in rows if r['event']=='api_attempt_started']
+        terminals=[r for r in rows if r['event']=='api_attempt']
+        self.assertEqual(damaged,[])
+        self.assertEqual({r['attemptId'] for r in starts},{r['attemptId'] for r in terminals})
+        failed=next(r for r in terminals if r['status']=='failed')
+        self.assertEqual(failed['metrics'],{'dispatched':False})
+        self.assertEqual(failed['reasonCode'],'provider_request_limit')
+        self.assertEqual(len(self.calls),1)
 
     def test_audio_and_chat_share_hard_ceiling_without_zero_tokens(self):
         raw=self.wav(180);subject=self.audio_provider(raw,targetMicrousd=13500,hardLimitMicrousd=13500)

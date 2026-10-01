@@ -531,20 +531,32 @@ def record_api_started(model, settings=None):
     return attempt_id
 
 
-def record_api_attempt(model, response, elapsed_seconds, status="completed", error_type=None, *, audio_seconds=None, attempt_id=None, http_status=None):
+def record_api_attempt(model, response, elapsed_seconds, status="completed", error_type=None, *, audio_seconds=None, attempt_id=None, http_status=None, not_dispatched_reason=None):
+    # Reuse contract-v1's bounded extension slots instead of silently extending
+    # the schema. No arbitrary exception text or provider error body is accepted.
+    if not_dispatched_reason is not None:
+        from scripts.sermon_pipeline import PRE_DISPATCH_REASONS
+        if (type(not_dispatched_reason) is not str or not_dispatched_reason not in PRE_DISPATCH_REASONS
+                or status != "failed" or response is not None or http_status is not None):
+            raise ValueError("invalid_not_dispatched_evidence")
     response = response if isinstance(response, dict) else {}
     usage = response.get("usage")
     actual_model = _label(response.get("model"), None) if log_profile.current() is not None else _label(response.get("model") or model)
     tier = _safe_settings({"service_tier": response.get("service_tier") or "default"}).get("service_tier", "unknown")
     cost = estimate_cost(actual_model, usage, tier, audio_seconds) if status == "completed" else {
         "status": "unknown", "estimatedUsd": None, "currency": "USD", "reason": "failed_attempt_billing_unknown"}
+    if not_dispatched_reason is not None:
+        cost = {"status": "not_incurred", "estimatedUsd": 0, "currency": "USD",
+                "reason": "transport_not_dispatched", "invoiceVerified": False}
+    evidence = ({"metrics": {"dispatched": False}, "reasonCode": not_dispatched_reason}
+                if not_dispatched_reason is not None else {})
     _emit({"event": "api_attempt", "attemptId": attempt_id or uuid.uuid4().hex,
            "stage": _stage.get() or os.environ.get(ENV_KEYS[2], "unattributed_api"),
            "spanId": _span.get() or os.environ.get(ENV_KEYS[3]),
            "status": _label(status), "errorType": _label(error_type) if error_type else None,
            "httpStatus": _number(http_status), "elapsedSeconds": _number(elapsed_seconds),
            "requestedModel": _label(model), "model": actual_model, "responseId": _label(response.get("id"), None),
-           "usage": normalize_usage(usage), "cost": cost})
+           "usage": normalize_usage(usage), "cost": cost, **evidence})
 
 
 @contextmanager

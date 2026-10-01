@@ -34,6 +34,11 @@ from scripts import sermon_workflow_jobs as jobs
 SCHEMA = 'sermon-diagnostic-provider-v1'
 
 
+def _require_before_dispatch(condition, reason_code):
+    if not condition:
+        raise pipeline.PreDispatchRejection(reason_code)
+
+
 @lru_cache(maxsize=1)
 def boot_identity():
     # A process restart must not reset the monotonic run deadline. Reboot or
@@ -138,7 +143,7 @@ class DiagnosticProvider:
 
     def _remaining(self, state):
         elapsed = self.monotonic() - state['startedMonotonic']
-        c.require(0 <= elapsed < self.config['totalWallSeconds'], 'provider_run_deadline_reached')
+        _require_before_dispatch(0 <= elapsed < self.config['totalWallSeconds'], 'provider_run_deadline_reached')
         return self.config['totalWallSeconds'] - elapsed
 
     def _save(self, root, state):
@@ -162,19 +167,19 @@ class DiagnosticProvider:
             self._remaining(state)
             deadline = min(state['startedMonotonic'] + self.config['totalWallSeconds'],
                            self.monotonic() + request_limits['wallTimeMs']/1000)
-            c.require(not any(row['state'] in ('reserved','outcome_unknown') for row in state['requests'].values()),
+            _require_before_dispatch(not any(row['state'] in ('reserved','outcome_unknown') for row in state['requests'].values()),
                       'provider_outcome_reconciliation_required')
-            c.require(call_id not in state['requests'], 'provider_call_already_reserved')
-            c.require(operation_id is None or not any(row['operationId'] == operation_id
+            _require_before_dispatch(call_id not in state['requests'], 'provider_call_already_reserved')
+            _require_before_dispatch(operation_id is None or not any(row['operationId'] == operation_id
                 for row in state['requests'].values()), 'provider_operation_already_reserved')
             model=payload.get('model',payload.get('api',{}).get('model'))
             if operation_id is not None:
                 audio = model=='gpt-transcribe'
-                c.require(sum(row['operationId'] is not None and (row['model']=='gpt-transcribe')==audio
+                _require_before_dispatch(sum(row['operationId'] is not None and (row['model']=='gpt-transcribe')==audio
                               for row in state['requests'].values())<2, 'provider_source_call_limit')
-            c.require(len(state['requests']) < self.config['maxRequests'], 'provider_request_limit')
+            _require_before_dispatch(len(state['requests']) < self.config['maxRequests'], 'provider_request_limit')
             used = sum(row['bounds']['costMicrousd'] for row in state['requests'].values())
-            c.require(used + bound['costMicrousd'] <= self.config['hardLimitMicrousd'], 'provider_cost_limit')
+            _require_before_dispatch(used + bound['costMicrousd'] <= self.config['hardLimitMicrousd'], 'provider_cost_limit')
             state['requests'][strict.label(call_id)] = {
                 'requestSha256': c.canonical_sha256(payload), 'bounds': bound,
                 'model': model, 'state': 'reserved', 'receiptSha256': None, 'operationId':operation_id}
@@ -348,7 +353,7 @@ class DiagnosticProvider:
         returned.request_started=started;returned.request_rejected=rejected
         def execute(request):
             left = state['deadline']-self.monotonic()
-            c.require(left>0, 'provider_attempt_deadline_reached')
+            _require_before_dispatch(left>0, 'provider_attempt_deadline_reached')
             return self.executor(request,left,deadline=state['deadline'])
         # A session root is a deterministic wrapper, not a model span. Strict
         # adapters supply their own model span together with the observer;
@@ -405,7 +410,7 @@ class DiagnosticProvider:
         returned.request_started=started;returned.request_rejected=rejected
         def execute(req):
             remaining=state['deadline']-self.monotonic()
-            c.require(remaining>0,'provider_attempt_deadline_reached')
+            _require_before_dispatch(remaining>0,'provider_attempt_deadline_reached')
             return self.executor(req,remaining,deadline=state['deadline'])
         c.require(profile.current() is not None,'diagnostic_requires_accounting_profile')
         with profile.context(logicalCallId=operation_id,

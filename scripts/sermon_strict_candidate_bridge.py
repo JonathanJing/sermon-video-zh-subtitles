@@ -14,6 +14,17 @@ from scripts import prepare_target_language_speech_job as handoff
 from scripts.sermon_release_workflow import _safe_path
 
 
+class LanguagePluginRejected(c.ContractError):
+    """Known plugin verdict; retain its exact receipt without granting admission."""
+
+    def __init__(self, receipt, revision_bindings):
+        super().__init__('strict_bridge_plugin_rejected')
+        self.language_receipt = copy.deepcopy(receipt)
+        self.revision_bindings = copy.deepcopy(revision_bindings)
+        self.failed_groups = [copy.deepcopy(row) for row in receipt['groupReviews']
+                              if row['status'] != 'pass']
+
+
 def compile_candidate(source_bytes, anchor_bytes, policy_bytes, rubric_bytes,
                       revisions, *, plugin_path, expected_plugin_sha256, diagnostic_context=None):
     """Validate complete current group receipts; return human-pending artifacts.
@@ -120,9 +131,14 @@ def compile_candidate(source_bytes, anchor_bytes, policy_bytes, rubric_bytes,
     evidence = {**request, 'generation': generation, 'groups': groups}
     plugin = producer.run_language_plugin(source, anchor, policy, request, evidence,
         Path(plugin_path), expected_plugin_sha256, strict_rubric=rubric, diagnostic_context=diagnostic_context)
+    # Retain the actual result only after rechecking the evidence it assessed.
+    for root, captured in snapshots:
+        for name, data in captured.items():
+            c.require(c.read_snapshot(root / name)[1] == data, 'strict_bridge_snapshot_changed')
+    if any(row['status'] != 'pass' for row in plugin['groupReviews']):
+        raise LanguagePluginRejected(plugin, bindings)
     candidate_groups = []
     for group, result in zip(groups, plugin['groupReviews']):
-        c.require(result['status'] == 'pass', 'strict_bridge_plugin_rejected')
         candidate_groups.append({**{k: copy.deepcopy(v) for k, v in group.items()
             if k not in ('translatorRequestId', 'reviewerRequestId')},
             'targetText': ''.join(group['targetUtterances']),

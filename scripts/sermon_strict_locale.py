@@ -104,8 +104,37 @@ def run_locale(source_bytes, anchor_bytes, policy_bytes, rubric_bytes, *, root,
                     'groups': results, 'executionAuthority': 'none', 'output': None}
         with accounting.stage('rqc.locale_candidate_assembly', depends_on=dependencies,
                               executor_type='deterministic_program'):
-            result = bridge.compile_candidate(*raw, revisions, plugin_path=plugin_path,
-                                               expected_plugin_sha256=expected_plugin_sha256, diagnostic_context=diagnostic_context)
+            try:
+                result = bridge.compile_candidate(*raw, revisions, plugin_path=plugin_path,
+                    expected_plugin_sha256=expected_plugin_sha256, diagnostic_context=diagnostic_context)
+            except bridge.LanguagePluginRejected as exc:
+                # This is known machine evidence, not an approved candidate. Keep
+                # the original plugin receipt before exposing a typed locale stop.
+                failure = {'schemaVersion': 'sermon-strict-locale-plugin-failure-v1',
+                    'status': 'blocked', 'reasonCode': 'strict_bridge_plugin_rejected',
+                    'executionAuthority': 'none', 'localeInputSha256': c.canonical_sha256(binding),
+                    'languageReceiptSha256': c.canonical_sha256(exc.language_receipt),
+                    'revisionBindingsSha256': c.canonical_sha256({'groups': exc.revision_bindings}),
+                    'failedGroups': exc.failed_groups}
+                evidence = root / 'failures' / c.canonical_sha256(failure)
+                evidence.mkdir(parents=True, exist_ok=True, mode=0o700)
+                language_bytes = public.save_once(evidence / 'language-review.json', exc.language_receipt)
+                public.save_once(evidence / 'revision-bindings.json', {'groups': exc.revision_bindings})
+                failure_bytes = public.save_once(evidence / 'failure.json', failure)
+                jobs._sync_directory_ancestry(evidence)
+                accounting.record_log('rqc_locale_candidate', fields={
+                    'status': 'blocked', 'reasonCode': failure['reasonCode'],
+                    'targetLocale': policy['targetLocale'],
+                    'languageReceiptSha256': failure['languageReceiptSha256']})
+                return {'status': 'blocked', 'reasonCode': failure['reasonCode'],
+                    'groups': results, 'executionAuthority': 'none', 'output': None,
+                    'failedGroups': exc.failed_groups, 'failureOutput': str(evidence),
+                    'failureReceipt': {'artifactId': 'locale-plugin-failure', 'mediaType': 'application/json',
+                        'canonicalJsonSha256': c.canonical_sha256(failure),
+                        'fileBytesSha256': c.bytes_sha256(failure_bytes)},
+                    'languageReceipt': {'artifactId': 'language-review', 'mediaType': 'application/json',
+                        'canonicalJsonSha256': c.canonical_sha256(exc.language_receipt),
+                        'fileBytesSha256': c.bytes_sha256(language_bytes)}}
             identity = c.canonical_sha256(result)
             output = root / 'machine-candidates' / identity
             output.mkdir(parents=True, exist_ok=True, mode=0o700)

@@ -7,6 +7,7 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
+from jsonschema import Draft202012Validator, ValidationError
 from scripts import sermon_strict_layer2 as s
 from scripts import sermon_review_contracts as c
 from scripts import sermon_accounting as accounting
@@ -44,6 +45,13 @@ class StrictAdapterTests(unittest.TestCase):
             if self.mode=='fail':
                 value['reviewVerdict']='needs_rework';value['checks'][0]['result']='fail'
                 value['issues']=[dict(issueId='issue-1',reasonCode='meaning_omission',severity='major',sourceUnitIds=inp['sourceUnitIds'],targetUnitIds=inp['targetUnitIds'],evidence='synthetic omission')]
+            if self.mode=='duplicate_check':
+                value['checks'][1]['checkId']=value['checks'][0]['checkId']
+            if self.mode=='overlap_coverage':
+                value['unassessedUnitIds']=inp['sourceUnitIds'][:1]
+            if self.mode in ('duplicate_check','overlap_coverage'):
+                # These fit the declared JSON shape but violate semantic gates.
+                Draft202012Validator(inp['responseContract']).validate(value)
         response={'id':'response-'+str(len(self.calls)),'model':payload['model'],'choices':[{'finish_reason':'stop','message':{'content':json.dumps(value)}}],
             'usage':{'input_tokens':100,'output_tokens':20}}
         response_observer(response,aid,.01)
@@ -53,6 +61,70 @@ class StrictAdapterTests(unittest.TestCase):
     def session(self):return profile.session(self.root/'logs','strict-test',work_kind='production',evidence_mode='synthetic')
     def generate(self):return s.generate(self.prepared,self.root/'revision','candidate','r1','fixture',self.transport)
     def review(self):return s.review(self.prepared,self.root/'revision','candidate','r1','fixture',self.transport)
+
+    def test_json_mode_prompt_contract_covers_generator_and_verifier_shapes(self):
+        original = self.transport
+        responses = []
+        def contract_transport(key, payload, *, response_observer):
+            # The real API JSON mode requires JSON to be explicit in messages.
+            self.assertEqual(payload['response_format'], {'type':'json_object'})
+            self.assertIn('JSON', payload['messages'][0]['content'])
+            self.assertIn(s.RESPONSE_CONTRACT_VERSION, payload['messages'][0]['content'])
+            inp = json.loads(payload['messages'][1]['content'])
+            schema = inp['responseContract']
+            Draft202012Validator.check_schema(schema)
+            response = original(key, payload, response_observer=response_observer)
+            content = json.loads(response['choices'][0]['message']['content'])
+            Draft202012Validator(schema).validate(content)
+            responses.append((schema, content))
+            return response
+        with self.session():
+            s.generate(self.prepared,self.root/'revision','candidate','r1','fixture',contract_transport)
+            receipt=s.review(self.prepared,self.root/'revision','candidate','r1','fixture',contract_transport)
+        self.assertEqual(receipt['reviewVerdict'],'pass')
+        generator_schema, generated = responses[0]
+        bad = copy.deepcopy(generated)
+        bad['coverage'] = {row['sourceUnitId']:row['targetText'] for row in bad['coverage']}
+        with self.assertRaises(ValidationError):Draft202012Validator(generator_schema).validate(bad)
+        if len(generated['coverage']) > 1:
+            bad = copy.deepcopy(generated);bad['coverage'].reverse()
+            with self.assertRaises(ValidationError):Draft202012Validator(generator_schema).validate(bad)
+        reviewer_schema, reviewed = responses[1]
+        checks=reviewer_schema['properties']['checks']['items']['properties']['checkId']['enum']
+        self.assertEqual(set(checks),c.HARD_CHECKS)
+        self.assertTrue(set(self.prepared['rubric']['requiredLanguagePluginChecks'])-set(checks))
+        bad=copy.deepcopy(reviewed)
+        bad['checks'].append(dict(checkId='languagePluginCheck',result='pass',evidence='synthetic'))
+        with self.assertRaises(ValidationError):Draft202012Validator(reviewer_schema).validate(bad)
+        issue_schema=reviewer_schema['properties']['issues']['items']['properties']
+        receipt_issue=c.validator('sermon-review-receipt-v1').schema['properties']['issues']['items']['properties']
+        self.assertEqual(issue_schema['reasonCode'],receipt_issue['reasonCode'])
+        self.assertEqual(issue_schema['severity'],receipt_issue['severity'])
+        bad=copy.deepcopy(reviewed)
+        bad['issues']=[dict(issueId='issue-1',reasonCode='invented_reason',severity='major',
+            sourceUnitIds=self.group['sourceUnitIds'],targetUnitIds=[],evidence='synthetic')]
+        with self.assertRaises(ValidationError):Draft202012Validator(reviewer_schema).validate(bad)
+
+    def test_response_contract_version_change_cannot_reuse_old_paid_cache(self):
+        with self.session():
+            self.generate()
+            before=(self.root/'revision/generator.raw.json').read_bytes()
+            with patch.object(s,'RESPONSE_CONTRACT_VERSION','strict-layer2-response-next'):
+                with self.assertRaises(ValueError):self.generate()
+            self.assertEqual(len(self.calls),1)
+            self.assertEqual((self.root/'revision/generator.raw.json').read_bytes(),before)
+
+    def test_shape_valid_review_still_requires_unique_checks_and_partitioned_coverage(self):
+        base=self.root
+        for mode in ('duplicate_check','overlap_coverage'):
+            with self.subTest(mode=mode):
+                self.root=base/mode
+                with self.session():
+                    self.generate();self.mode=mode;before=(self.root/'revision/candidate.json').read_bytes()
+                    receipt=self.review()
+                    self.assertEqual(receipt['executionStatus'],'failed')
+                    self.assertEqual(receipt['reviewVerdict'],'not_assessed')
+                    self.assertEqual((self.root/'revision/candidate.json').read_bytes(),before)
 
     def test_immutable_generator_and_read_only_reviewer_use_independent_inputs(self):
         with self.session():
