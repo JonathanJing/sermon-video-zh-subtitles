@@ -1,3 +1,4 @@
+import { setIcon, setButtonLabel } from './icons.mjs';
 import {
   fetchVerified, validateDemoCatalog, validateDemoContent, validateDemoRelease
 } from "./dev-integrity.mjs";
@@ -415,13 +416,13 @@ function renderInterfaceCopy() {
   $("languageCardLabel").textContent = copy.languageCard;
   $("mockNoticeTitle").textContent = state.locale === "en" ? copy.sourceTitle : copy.mockTitle;
   $("mockNoticeBody").textContent = state.locale === "en" ? copy.sourceBody : copy.mockBody;
-  [$("listenTab"), $("transcriptTab"), $("outlineTab")].forEach((node, index) => node.textContent = copy.tabs[index]);
-  $("moreToggle").textContent = extra.more;
+  [$("listenTab"), $("transcriptTab"), $("outlineTab")].forEach((node, index) => setButtonLabel(node, copy.tabs[index]));
+  setButtonLabel($("moreToggle"), extra.more);
   $("nowHeading").textContent = copy.now;
   $("sourceToggle").textContent = extra.sourceToggle;
   $("sourceReferenceLabel").textContent = extra.sourceReference;
   $("transcriptHint").textContent = extra.transcriptHint;
-  $("showTranscript").textContent = extra.showTranscript;
+  setButtonLabel($("showTranscript"), extra.showTranscript);
   $("captionNote").textContent = state.audioVariant ? extra.captionNote : textOnlyCaptionCopy[state.ui];
   $("transcriptHeading").textContent = copy.transcript;
   $("outlineHeading").textContent = copy.outline;
@@ -469,28 +470,29 @@ function renderInterfaceCopy() {
   $("footerMotto").textContent = extra.footerMotto;
   $("footerText").textContent = copy.footer;
   $("retryLoad").textContent = utility.retry;
-  $("resumePosition").textContent = utility.resume;
-  $("restartPosition").textContent = utility.restart;
-  $("downloadAudio").textContent = utility.download;
+  setButtonLabel($("resumePosition"), utility.resume);
+  setButtonLabel($("restartPosition"), utility.restart);
+  setButtonLabel($("downloadAudio"), utility.download);
   if (!$("loadError").hidden) $("loadErrorMessage").textContent = utility.error;
   $("interfaceLanguageCode").textContent = interfaceLocales[state.ui].code;
   $("interfaceLanguage").setAttribute("aria-label", extra.interfaceLabel);
   $("interfaceLanguageMenu").setAttribute("aria-label", extra.interfaceLabel);
   $("themeLabel").textContent = document.documentElement.dataset.theme === "dark" ? statuses.themeLight : statuses.themeDark;
+  document.querySelector(".brand-icon").src = document.documentElement.dataset.theme === "dark" ? "/brand-icon.svg" : "/brand-icon-light.svg";
   $("themeToggle").setAttribute("aria-label", $("themeLabel").textContent);
   $("audioVariantLabel").textContent = copy.audioVariant;
   $("backHint").textContent = extra.backHint;
   $("backLabel").textContent = extra.back;
   $("forwardHint").textContent = extra.forwardHint;
   $("forwardLabel").textContent = extra.forward;
-  $("transcriptCurrent").textContent = extra.current;
-  $("precisionOpen").textContent = extra.precision;
+  setButtonLabel($("transcriptCurrent"), extra.current);
+  setButtonLabel($("precisionOpen"), extra.precision);
   $("alignmentNotice").textContent = extra.alignment;
   $("alignmentDetail").textContent = extra.alignment;
   $("progressTrack").setAttribute("aria-label", extra.progress);
   document.querySelector('[data-skip="-5"]').setAttribute("aria-label", extra.back);
   document.querySelector('[data-skip="5"]').setAttribute("aria-label", extra.forward);
-  $("playIcon").textContent = audio.paused ? "▶" : "❚❚";
+  setIcon($("playIcon"), audio.paused ? "play.fill" : "pause.fill");
   $("playLabel").textContent = audio.paused ? extra.play : extra.pause;
   $("playButton").setAttribute("aria-label", $("playLabel").textContent);
   $("playerStatus").textContent = audio.paused ? (audio.readyState ? extra.paused : extra.loading) : extra.playing;
@@ -510,7 +512,7 @@ function renderInterfaceLanguageMenu() {
     button.lang = info.htmlLang;
     const code = document.createElement("span"); code.className = "locale-code"; code.textContent = info.code;
     const name = document.createElement("span"); name.textContent = info.native;
-    const check = document.createElement("span"); check.className = "locale-check"; check.textContent = locale === state.ui ? "✓" : "";
+    const check = document.createElement("span"); check.className = "locale-check"; if (locale === state.ui) setIcon(check, "checkmark");
     button.append(code, name, check);
     button.addEventListener("click", () => {
       state.ui = locale;
@@ -539,6 +541,10 @@ function renderLanguageList() {
       : locale === "en" ? extra.sourceMedia : extra.targetMedia;
     const displayName = new Intl.DisplayNames([interfaceLocales[state.ui].htmlLang], { type: "language" }).of(locale);
     button.innerHTML = `<span class="language-option-name"><span class="language-code">${info.code}</span><span><strong lang="${locale}">${info.native}</strong><small>${escapeHTML(displayName)}</small></span></span><span class="language-option-caps">${media}<br>${status}</span>`;
+    button.setAttribute("aria-pressed", String(locale === state.locale));
+    if (locale === state.locale) {
+      const selected = document.createElement("span"); selected.className = "content-language-check"; setIcon(selected, "checkmark"); button.append(selected);
+    }
     button.addEventListener("click", () => selectLocale(locale, { manual: true }).catch(showError));
     return button;
   }));
@@ -552,7 +558,8 @@ function renderTranscript() {
     button.type = "button";
     row.className = `transcript-item${currentCueIndex() === index ? " is-current" : ""}`;
     button.className = "transcript-time";
-    button.textContent = formatTime(cue.start);
+    setIcon(button, "arrow.right.to.line");
+    const time = document.createElement("span"); time.textContent = formatTime(cue.start); button.append(time);
     button.setAttribute("aria-label", `${utilityFor(state.ui).seekTo} ${formatTime(cue.start)}`);
     copy.className = "transcript-copy";
     const source = state.locale === "en" || !cue.source || cue.source === cue.text ? "" : `<span lang="en">${escapeHTML(cue.source)}</span>`;
@@ -622,7 +629,7 @@ function syncPlayer() {
   $("elapsed").textContent = formatTime(audio.currentTime);
   $("duration").textContent = formatTime(duration);
   const extra = extraCopy[state.ui];
-  $("playIcon").textContent = audio.paused ? "▶" : "❚❚";
+  setIcon($("playIcon"), audio.paused ? "play.fill" : "pause.fill");
   $("playLabel").textContent = audio.paused ? extra.play : extra.pause;
   $("playButton").setAttribute("aria-label", $("playLabel").textContent);
   $("playButton").disabled = !state.audioVariant;
