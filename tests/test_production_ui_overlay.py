@@ -158,7 +158,7 @@ class ProductionUIOverlayTest(unittest.TestCase):
                 path.write_bytes(original)
 
     def test_non_icon_overlay_bytes_must_match_selected_release_code(self):
-        for name in ('app.mjs', 'style.css', 'locales-interface.mjs', 'locales-feedback.mjs', 'fingerprint-ui.mjs', 'theme.js'):
+        for name in ('app.mjs', 'style.css', 'locales-interface.mjs', 'locales-feedback.mjs', 'fingerprint-ui.mjs', 'fingerprint-capture.mjs', 'fingerprint-worker.mjs', 'fingerprint-diagnostics.mjs', 'theme.js'):
             with self.subTest(name=name):
                 path = self.overlay / 'public' / name
                 original = path.read_bytes()
@@ -170,7 +170,7 @@ class ProductionUIOverlayTest(unittest.TestCase):
 
     def test_non_icon_source_drift_invalidates_bound_candidate(self):
         self.stage()
-        for name in ('app.mjs', 'style.css', 'locales-interface.mjs', 'locales-feedback.mjs', 'fingerprint-ui.mjs', 'theme.js'):
+        for name in ('app.mjs', 'style.css', 'locales-interface.mjs', 'locales-feedback.mjs', 'fingerprint-ui.mjs', 'fingerprint-capture.mjs', 'fingerprint-worker.mjs', 'fingerprint-diagnostics.mjs', 'theme.js'):
             with self.subTest(name=name):
                 path = self.source_ui / name
                 original = path.read_bytes()
