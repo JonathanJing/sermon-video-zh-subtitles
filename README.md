@@ -25,7 +25,8 @@ The product direction is **native iOS as the primary listening client, with Fire
 |---|---|---|
 | App design | [Client system design (中文)](docs/app-system-design.zh.md) → [existing iOS UI design](apps/tongxing-ios/DESIGN.zh.md) | Native/Web responsibilities, package readers, playback, offline storage and acceptance limits |
 | Backend workflow | [Bilingual DAG and implementation map](docs/backend-workflow-system-design.zh-en.md) | Four layers, independent locales, review/gate roles and bounded new revisions |
-| Execution environments | [Local/cloud/CI architecture (中文)](docs/execution-environment-design.zh.md) | MacBook, optional Spark, model APIs, storage, Firebase, CI and explicit release boundaries |
+| Execution environments | [Local/cloud/CI architecture (中文)](docs/execution-environment-design.zh.md) → [Spark default / MacBook fallback (中文)](docs/local-production-compute-policy.zh.md) | Local routing, model APIs, storage, Firebase, CI and explicit release boundaries |
+| Production performance and cloud evaluation | [Sliced local A/B (中文)](docs/local-model-layer-latency-ab-20261001.zh.md) → [GCP resources and cost scenarios (中文)](docs/gcp-production-feasibility-20261001.zh.md) | September 27 workload, optimization priorities, cloud migration scope and unmeasured costs |
 | Experiment directions | [Questions, scope, status, evidence and exit criteria (中文)](docs/experiment-directions.zh.md) | Existing ASR, translation, review, prosody, voice, orchestration and device experiments |
 
 **Repository evidence as of 2026-09-30:** the [September 27 release record](docs/sep27-full-video-app-layer4.zh.md) documents Chinese, Korean and Spanish publication; the [September 28 migration record](docs/reports/20260928-full-video-bucket-migration.zh.md) records full-video delivery through a separate media bucket. The September 25 screenshots below remain dated examples. This documentation update did not recheck live deployment or device acceptance.

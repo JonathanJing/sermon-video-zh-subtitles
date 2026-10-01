@@ -14,6 +14,8 @@ Treat an action request as permission to complete its reversible preparation and
 | iOS client | [iOS instructions](apps/tongxing-ios/AGENTS.md) |
 | Benchmark, model trial, or post-training | README Discovery links and that experiment's contract |
 
+For prepared local production, follow [the compute policy](docs/local-production-compute-policy.zh.md): DGX Spark is the default model-compute host and MacBook is the fallback. Preserve an existing job's verified backend/cache identity. Fail over only for confirmed infrastructure/runtime failures, never content, identity, review failures or an unknown remote outcome. Canonical producers without a cross-host adapter still require explicit dispatch; do not claim automatic fallback from policy alone.
+
 Before translating or reviewing sermon wording, preparing dubbing, or delivering a series page, use the relevant entries in the [shared terminology table](docs/series-terminology.zh.md). Add a verified new series with source evidence when it enters production. Reading or updating this table does not establish that a producer consumed it.
 
 ## Prepared production: four layers

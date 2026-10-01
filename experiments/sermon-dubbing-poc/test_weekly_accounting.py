@@ -126,7 +126,7 @@ class WeeklyAccountingTests(unittest.TestCase):
             runner.main()
             events, summary, finished = self.read_accounting(f.work / "accounting")
             names = [row["stage"] for row in finished]
-            self.assertEqual(names, ["job_validation", "cache_validation", "local_render_attempt", "transfer_upload", "render",
+            self.assertEqual(names, ["job_validation", "cache_validation", "transfer_upload", "render",
                 "transfer_download", "render_validation", "assemble", "source_alignment", "local_asr",
                 "timing", "candidate_validation", "weekly_dubbing"])
             self.assertTrue(all(not row["cacheHit"] and row["status"] == "completed" for row in finished))

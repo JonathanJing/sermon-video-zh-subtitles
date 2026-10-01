@@ -25,7 +25,8 @@
 |---|---|---|
 | App 设计 | [客户端系统设计](docs/app-system-design.zh.md) → [原生 UI 设计](apps/tongxing-ios/DESIGN.zh.md) | 播放、阅读、缓存、语言及验收边界 |
 | 后端工作流 | [中英双语 DAG 与实现地图](docs/backend-workflow-system-design.zh-en.md) | 三语独立四层、只读审核计划、确定性 gate 与有界新修订 |
-| 执行环境 | [本地／云端／CI 设计](docs/execution-environment-design.zh.md) | MacBook、可选 Spark、模型 API、存储与发布边界 |
+| 执行环境 | [本地／云端／CI 设计](docs/execution-environment-design.zh.md) → [Spark 默认、MacBook fallback](docs/local-production-compute-policy.zh.md) | 本地路由、模型 API、存储与发布边界 |
+| 生产性能与云端评估 | [切片 A/B](docs/local-model-layer-latency-ab-20261001.zh.md) → [GCP 资源与费用情景](docs/gcp-production-feasibility-20261001.zh.md) | 9 月 27 日工作量、提速优先级、迁移范围和未测费用 |
 | 实验方向 | [问题、范围、状态、证据及退出门槛](docs/experiment-directions.zh.md) | 已有实验与未运行提案分别标记 |
 
 2026-09-30 仓库核查：[9 月 27 日记录](docs/sep27-full-video-app-layer4.zh.md)已记录中韩西三语发布，[9 月 28 日记录](docs/reports/20260928-full-video-bucket-migration.zh.md)记录完整视频 bucket 迁移；上方 9 月 25 日说明及下方截图保留为历史快照。本次未重查线上或设备状态。[英文 DAG 在 README 直接渲染](README.md#four-layer-production-architecture-shared-english-source-to-multilingual-playback)，[中英对应 DAG 在后端设计直接渲染](docs/backend-workflow-system-design.zh-en.md#四层业务-dag--four-layer-business-dag)。所有 locale 都必须经过 L3，纯文字也要显式 `audio_unavailable` 包；不从 L2 跳到 L4。PR164 strict-verifier 和自动返工属于计划，不能当成现有 reviewer-editor 已完成的能力。

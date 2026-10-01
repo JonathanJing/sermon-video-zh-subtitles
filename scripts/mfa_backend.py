@@ -1,4 +1,4 @@
-"""MacBook-first MFA selection with a bounded, explicit Spark failover policy."""
+"""Spark-first MFA selection with bounded runtime-only MacBook fallback."""
 import hashlib
 import json
 import math
@@ -16,6 +16,9 @@ class LocalRuntimeUnavailable(RuntimeError):
 
 def add_arguments(parser):
     import argparse
+    parser.add_argument('--mfa-backend', choices=('auto', 'spark', 'macbook'),
+                        default=os.environ.get('MFA_BACKEND', 'auto'),
+                        help='auto: Spark first, MacBook on runtime failure; forced backends fail closed')
     parser.add_argument('--mfa-spark-fallback', action=argparse.BooleanOptionalAction,
                         default=os.environ.get('MFA_SPARK_FALLBACK', '1').lower() not in ('0', 'false', 'no'))
     for name, default in [('executable', spark.DEFAULT_ROOT + '/bin/mfa-run'),
@@ -37,6 +40,7 @@ def options(args):
     local_options = mfa_options(args)
     remote['spoken_forms_path'] = local_options.get('spoken_forms_path')
     return {'local_options':local_options, 'spark_options':remote,
+            'backend':getattr(args, 'mfa_backend', os.environ.get('MFA_BACKEND', 'auto')),
             'allow_spark_fallback':getattr(args, 'mfa_spark_fallback', os.environ.get('MFA_SPARK_FALLBACK', '1').lower() not in ('0','false','no'))}
 
 
@@ -74,14 +78,30 @@ def local_identity(options):
     return {'schemaVersion':1, 'backend':'macbook-local', 'runtime':runtime}
 
 
-def preflight(*, local_options, spark_options, allow_spark_fallback=True):
-    try:
+def _mode(backend, allow_spark_fallback):
+    if backend not in ('auto', 'spark', 'macbook'):
+        raise ValueError('MFA backend must be auto, spark or macbook')
+    # Keep the historical disable-Spark flag an offline Mac-only choice.
+    if not allow_spark_fallback:
+        if backend == 'spark':
+            raise ValueError('Forced Spark conflicts with disabled Spark')
+        return 'macbook'
+    return backend
+
+
+def preflight(*, local_options, spark_options, allow_spark_fallback=True, backend='auto'):
+    local._spoken_forms(local_options.get('spoken_forms_path'))
+    mode = _mode(backend, allow_spark_fallback)
+    if mode == 'macbook':
         return local_identity(local_options)
-    except LocalRuntimeUnavailable as exc:
-        if not allow_spark_fallback:
+    try:
+        return spark.preflight(**spark_options)
+    except (RuntimeError, OSError, subprocess.SubprocessError, MemoryError) as exc:
+        if mode != 'auto' or not _runtime_failure(exc):
             raise
-        selected = dict(spark.preflight(**spark_options))
-        selected["fallbackReason"] = {"phase":"preflight", "code":"local-runtime-unavailable", "detail":str(exc)}
+        selected = dict(local_identity(local_options))
+        selected['fallbackReason'] = {'phase':'preflight', 'code':'spark-runtime-unavailable',
+                                      'detail':type(exc.__cause__ or exc).__name__}
         return selected
 
 
@@ -90,15 +110,56 @@ def _runtime_failure(exc):
     # General MFA nonzero exits can mean invalid corpus data: do not retry them.
     cause = exc
     while cause is not None:
-        if isinstance(cause, (FileNotFoundError, PermissionError, subprocess.TimeoutExpired, MemoryError)):
+        if isinstance(cause, (OSError, subprocess.TimeoutExpired, MemoryError)):
             return True
-        if isinstance(cause, subprocess.CalledProcessError) and cause.returncode in (-9, -11, 137, 139):
-            return True
+        if isinstance(cause, subprocess.CalledProcessError):
+            if cause.returncode in (-9, -11, 75, 126, 127, 137, 139, 255):
+                return True
+            detail = cause.stderr or ''
+            if isinstance(detail, bytes):
+                detail = detail.decode(errors='replace')
+            terminal = detail.strip().splitlines()[-1] if detail.strip() else ''
+            if terminal.startswith(('ModuleNotFoundError:', 'ImportError:', 'MemoryError:', 'FileNotFoundError:')):
+                return True
+            dependencies = ('MFA executable', 'MFA dictionary', 'MFA acoustic model', 'MFA G2P model')
+            if any(terminal.startswith('ValueError: ' + name + ' must be an existing local file (no automatic downloads):') for name in dependencies):
+                return True
+            if terminal.startswith(('ValueError: MFA executable is not executable:',
+                                    'ValueError: ffmpeg is required for MFA audio extraction')):
+                return True
         cause = cause.__cause__
     return False
 
 
-def align_reference_chunks(chunks, clip_path, outdir, *, local_options, spark_options, allow_spark_fallback=True):
+def _alignment_runtime_failure(exc):
+    # SSH timeout/disconnect after launch can leave an aligner running remotely.
+    # Only a known remote exit, or a proven connection-establishment failure,
+    # permits another machine to execute this frozen request.
+    cause = exc
+    while cause is not None:
+        if isinstance(cause, subprocess.TimeoutExpired):
+            return False
+        if isinstance(cause, subprocess.CalledProcessError):
+            if cause.returncode in (-9, -11):
+                return False
+            if cause.returncode == 255:
+                detail = cause.stderr or ''
+                if isinstance(detail, bytes):
+                    detail = detail.decode(errors='replace')
+                return any(token in detail.lower() for token in (
+                    'connection refused', 'no route to host', 'network is unreachable',
+                    'connection timed out', 'could not resolve hostname',
+                    'permission denied (', 'host key verification failed'))
+            return _runtime_failure(cause)
+        if isinstance(cause, OSError):
+            # _call wraps transport startup errors; output/cache write errors
+            # from an already completed remote alignment must fail closed.
+            return str(exc).startswith('DGX Spark MFA unavailable;')
+        cause = cause.__cause__
+    return False
+
+
+def align_reference_chunks(chunks, clip_path, outdir, *, local_options, spark_options, allow_spark_fallback=True, backend='auto'):
     # Pin inputs before dispatch; failover cannot quietly consume modified text,
     # audio or spoken forms.
     audio_sha = local._sha(clip_path)
@@ -117,22 +178,27 @@ def align_reference_chunks(chunks, clip_path, outdir, *, local_options, spark_op
         previous_end = end
     if not nonempty:
         raise ValueError('No reference chunks for MFA')
+    mode = _mode(backend, allow_spark_fallback)
     selected = preflight(local_options=local_options, spark_options=spark_options,
-                         allow_spark_fallback=allow_spark_fallback)
-    if selected['backend'] == 'macbook-local':
+                         allow_spark_fallback=allow_spark_fallback, backend=backend)
+    if local._sha(clip_path) != audio_sha or (local._sha(forms) if forms else None) != forms_sha:
+        raise ValueError('MFA inputs changed before alignment dispatch')
+    if selected['backend'] == 'dgx-spark-ssh':
         try:
-            runtime_key = hashlib.sha256(json.dumps(selected['runtime'], sort_keys=True).encode()).hexdigest()
-            segments = local.align_reference_chunks(frozen, clip_path, Path(outdir)/runtime_key, **local_options)
+            segments = spark.align_reference_chunks(frozen, clip_path, outdir, **spark_options)
         except (RuntimeError, OSError, subprocess.SubprocessError, MemoryError) as exc:
-            if not allow_spark_fallback or not _runtime_failure(exc):
+            if mode != 'auto' or not _alignment_runtime_failure(exc):
                 raise
             if local._sha(clip_path) != audio_sha or (local._sha(forms) if forms else None) != forms_sha:
-                raise ValueError('MFA inputs changed before Spark fallback') from exc
-            selected = dict(spark.preflight(**spark_options))
-            selected["fallbackReason"] = {"phase":"alignment", "code":"local-runtime-failed", "detail":type(exc.__cause__ or exc).__name__}
-            segments = spark.align_reference_chunks(frozen, clip_path, outdir, **spark_options)
+                raise ValueError('MFA inputs changed before MacBook fallback') from exc
+            selected = dict(local_identity(local_options))
+            selected['fallbackReason'] = {'phase':'alignment', 'code':'spark-runtime-failed',
+                                          'detail':type(exc.__cause__ or exc).__name__}
+            runtime_key = hashlib.sha256(json.dumps(selected['runtime'], sort_keys=True).encode()).hexdigest()
+            segments = local.align_reference_chunks(frozen, clip_path, Path(outdir)/runtime_key, **local_options)
     else:
-        segments = spark.align_reference_chunks(frozen, clip_path, outdir, **spark_options)
+        runtime_key = hashlib.sha256(json.dumps(selected['runtime'], sort_keys=True).encode()).hexdigest()
+        segments = local.align_reference_chunks(frozen, clip_path, Path(outdir)/runtime_key, **local_options)
     if local._sha(clip_path) != audio_sha or (local._sha(forms) if forms else None) != forms_sha:
         raise ValueError('MFA inputs changed during alignment')
     if selected['backend'] == 'dgx-spark-ssh':
