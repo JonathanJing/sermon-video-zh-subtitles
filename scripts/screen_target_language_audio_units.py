@@ -23,9 +23,13 @@ from typing import Callable
 try:
     from scripts import prepare_target_language_speech_job as speech
     from scripts import sermon_sentence_interpretation as identity
+    from scripts import dev_audio_test_profile as dev_profile
+    from scripts import dev_audio_test_receipts as dev_receipts
 except ImportError:
     import prepare_target_language_speech_job as speech
     import sermon_sentence_interpretation as identity
+    import dev_audio_test_profile as dev_profile
+    import dev_audio_test_receipts as dev_receipts
 
 
 SCHEMA = "sermon-target-language-audio-screening-v1"
@@ -233,7 +237,7 @@ def screen(job: dict, manifest: dict, artifact_root: Path,
     return receipt, screened
 
 
-def main() -> None:
+def main(argv=None) -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--job", type=Path, required=True)
     parser.add_argument("--render-manifest", type=Path, required=True)
@@ -241,12 +245,20 @@ def main() -> None:
     parser.add_argument("--model-path", type=Path, required=True)
     parser.add_argument("--model-revision", required=True)
     parser.add_argument("--min-similarity", type=float, default=0.88)
-    parser.add_argument("--batch-size", type=int, choices=BATCH_SIZES, default=1)
+    parser.add_argument("--batch-size", type=int, choices=BATCH_SIZES, default=None,
+                        help="Production default1; Dev profile default4; explicit8 selects a comparison")
+    dev_profile.add_arguments(parser)
     parser.add_argument("--unit-cache", type=Path,
                         help="Immutable per-unit ASR cache within the artifact root")
     parser.add_argument("--out-receipt", type=Path, required=True)
     parser.add_argument("--out-manifest", type=Path, required=True)
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
+    dev_settings = dev_profile.resolve("back-asr", enabled=args.dev_test,
+        profile_path=args.dev_test_profile, batch_size=args.batch_size)
+    args.batch_size = dev_settings["batchSize"]
+    dev_receipt_path = args.out_receipt.with_suffix(".dev-test.json")
+    if dev_settings["profile"] is not None:
+        dev_receipts.check_destination(dev_receipt_path, dev_settings)
     require(not args.out_receipt.exists() and not args.out_manifest.exists(),
             "ASR receipt and screened manifest are immutable")
     require(args.out_receipt.resolve().is_relative_to(args.artifact_root.resolve()),
@@ -313,9 +325,13 @@ def main() -> None:
     }
     args.out_manifest.parent.mkdir(parents=True, exist_ok=True)
     args.out_manifest.write_text(json.dumps(screened, ensure_ascii=False, indent=2) + "\n")
+    if dev_settings["profile"] is not None:
+        dev_receipts.write(dev_settings, args.out_receipt, dev_receipt_path)
     print(json.dumps({"status": receipt["status"], "groups": len(receipt["results"]),
                       "reviewQueue": [row["textGroupId"] for row in receipt["results"]
-                                      if row["status"] != "pass"]}, ensure_ascii=False))
+                                      if row["status"] != "pass"],
+                      **({"devTestConsumptionReceipt": str(dev_receipt_path.resolve())}
+                         if dev_settings["profile"] is not None else {})}, ensure_ascii=False))
 
 
 if __name__ == "__main__":

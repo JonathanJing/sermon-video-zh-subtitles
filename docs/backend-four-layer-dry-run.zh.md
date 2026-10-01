@@ -2,7 +2,7 @@
 
 **Dry run 的范围是模拟收到视频链接，检查 Layer 1–4 的后端交接，最后在 Firebase Dev 生成测试页面。** 之前的 [Dev App 页面预演](firebase-dev-weekly-dry-run.zh.md)只覆盖页面、语言与播放；它是本流程的 Layer 4 前端检查，不能代替这条后端演练。
 
-下一次涉及本地制作性能的Dev测试，另按[固定模型执行参数](local-production-next-dev-test-parameters.zh.md)采集真实模型与候选批处理收据。下文固定响应模拟器不会自动消费该profile；模拟交接/页面通过与真实模型性能、音频听审分别记录。
+下一次涉及本地制作性能的Dev测试，另按[固定模型执行参数](local-production-next-dev-test-parameters.zh.md)采集真实模型与候选批处理收据。真实音频使用`scripts.run_dev_local_audio_test`，默认TTS2/回转写4；下文固定响应模拟器继续不消费该profile；模拟交接/页面通过与真实模型性能、音频听审分别记录。
 
 ## 当前可运行的短流程
 
