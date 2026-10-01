@@ -86,14 +86,10 @@ struct PlaybackDock: View {
             if let onMoreTap { onMoreTap() }
             else { showingMore = true }
         } label: {
-            VStack(spacing: 1) {
-                Image(systemName: "scope").font(.body.weight(.semibold))
-                if !typeSize.isAccessibilitySize {
-                    Text(localization.text("定位")).font(.caption2.weight(.medium))
-                }
-            }
-            .frame(width: 48, height: 52)
-            .contentShape(Rectangle())
+            Image(systemName: "waveform")
+                .font(.title3.weight(.medium))
+                .frame(width: 48, height: 52)
+                .contentShape(Rectangle())
         }
         .accessibilityLabel(localization.text("定位"))
         .accessibilityIdentifier("playback-more")
