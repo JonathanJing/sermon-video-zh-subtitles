@@ -18,6 +18,8 @@ Start with `App/ContentView.swift`, `App/PlaybackDock.swift`, and `App/DesignSys
 
 The design baseline is the **accepted iOS revision, its actual screenshots, and its interaction rules**, not an unversioned image. SwiftUI code defines implementation; existing design rules define shared intent; screenshots demonstrate only the captured state. System materials, safe areas, Dynamic Type, and accessibility take precedence over matching fixed pixels.
 
+For registered views, `make preview FILES=ContentView.swift` now renders actual iOS views with `xcodebuild test` and exports PNGs. Use the same configuration for before/after images and inspect them after each UI edit. See [PREVIEW.zh.md](PREVIEW.zh.md) for fixtures, rendering boundaries and worktree concurrency. Keep the full interaction checks required below.
+
 ## 2. The small-change loop
 
 **Screenshot/annotation → scoped SwiftUI change → build and real interaction checks → independent review and iOS acceptance → browser applicability decision → optional web adaptation → authorized weekly release.**

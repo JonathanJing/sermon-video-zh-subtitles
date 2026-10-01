@@ -21,6 +21,7 @@
 		82DAE4DBC18C3F1A4BD05687 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 02EF54CEB76892C25F99A6FB /* Localizable.xcstrings */; };
 		8B8A2624687249CFAB61DAFB /* ListeningFlowUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 239227789D17BF0B1B0A1614 /* ListeningFlowUITests.swift */; };
 		9D37A5E9084A59C6C69B0EEA /* ListeningLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD504056359930D928DD8069 /* ListeningLiveActivity.swift */; };
+		A442F0B6EE2D16D0DAE46A00 /* SwiftUIPreviewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6163F70382A5001D532DC114 /* SwiftUIPreviewTests.swift */; };
 		AAE50D4E51C22893F01DEAFD /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = E8CDE0AD081CB32BAE3CD0CB /* PrivacyInfo.xcprivacy */; };
 		B23482E21D63D7D5A3E4F670 /* TongxingCore in Frameworks */ = {isa = PBXBuildFile; productRef = C194255167B8AD9FCB74BBA5 /* TongxingCore */; };
 		B415795B942C6189370AAE61 /* UITestLaunch.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD0FEA1F83F4300CB78A0935 /* UITestLaunch.swift */; };
@@ -88,6 +89,7 @@
 		4AE35BDEC7081304D75711B2 /* ListeningActivityExtension.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = ListeningActivityExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		58CF4F36B9265709AAF09A1C /* Signing.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Signing.xcconfig; sourceTree = "<group>"; };
 		60D53F716EC96280DEAF16C4 /* ListeningActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningActivityAttributes.swift; sourceTree = "<group>"; };
+		6163F70382A5001D532DC114 /* SwiftUIPreviewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftUIPreviewTests.swift; sourceTree = "<group>"; };
 		61FE1B88425139B2F592ED0A /* TongxingApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TongxingApp.swift; sourceTree = "<group>"; };
 		70BEE8330224D04ACF54EE70 /* ListeningActivityWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningActivityWidget.swift; sourceTree = "<group>"; };
 		72F704FFC13274A549628FF2 /* Core */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Core; path = Core; sourceTree = SOURCE_ROOT; };
@@ -208,6 +210,7 @@
 			children = (
 				9BF531D6B8AD0E94016F0BC3 /* AudioAlignmentControllerTests.swift */,
 				EE58D0C358A74F0BDE595617 /* PlaybackControllerTests.swift */,
+				6163F70382A5001D532DC114 /* SwiftUIPreviewTests.swift */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -400,6 +403,7 @@
 			files = (
 				C2AF9808AFFEED2AD7D2DF2A /* AudioAlignmentControllerTests.swift in Sources */,
 				17719995BCE43C60385DB306 /* PlaybackControllerTests.swift in Sources */,
+				A442F0B6EE2D16D0DAE46A00 /* SwiftUIPreviewTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

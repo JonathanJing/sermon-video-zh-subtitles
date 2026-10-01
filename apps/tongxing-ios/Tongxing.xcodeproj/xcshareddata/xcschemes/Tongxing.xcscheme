@@ -67,6 +67,11 @@
       </CommandLineArguments>
       <EnvironmentVariables>
          <EnvironmentVariable
+            key = "TONGXING_PREVIEW_REQUEST"
+            value = "$(TONGXING_PREVIEW_REQUEST)"
+            isEnabled = "YES">
+         </EnvironmentVariable>
+         <EnvironmentVariable
             key = "TONGXING_TEST_HOST"
             value = "1"
             isEnabled = "YES">

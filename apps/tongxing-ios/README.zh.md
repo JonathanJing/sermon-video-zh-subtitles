@@ -78,6 +78,8 @@ swift test
 
 日志、实际退出码、所选 scheme/设备及唯一 `.xcresult` 保存到仓库忽略目录 `artifacts/tongxing-ios/<日期>/cli/`。已有结果不覆盖，DerivedData 可以复用。具体维护约定见 [本目录 AGENTS.md](AGENTS.md)。
 
+SwiftUI 图片预览可在仓库根目录运行 `make preview FILES=ContentView.swift`；它使用 `xcodebuild test` 挂载真实 iOS 视图，输出浅色／深色 PNG、测试结果与 Manifest。`make preview-list` 列出已注册视图；更多字号、worktree 与扩展方法见 [测试渲染预览](PREVIEW.zh.md)。常规测试未提供请求时明确跳过该专用预览测试。
+
 存储测试默认仅使用合成 fixture。需要明确验证线上目录及一条已发布短音轨时：
 
 ```sh
