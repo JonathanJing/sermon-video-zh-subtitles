@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		042AC6D42BFDE10152C60248 /* VoiceDemoCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01D4A798172E895D46CF48E4 /* VoiceDemoCatalog.swift */; };
 		17719995BCE43C60385DB306 /* PlaybackControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE58D0C358A74F0BDE595617 /* PlaybackControllerTests.swift */; };
+		1922373411A3F2980F9E9B7A /* AppStoreScreenshotUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D941F809567228C8BDF94B2 /* AppStoreScreenshotUITests.swift */; };
 		1F287CC791B5CA1037903C80 /* Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDD37841E68B061E39E91375 /* Localization.swift */; };
 		23FBE0C19259FFC619DE3B8B /* PrivacySupportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E53066E0326AFD8370B5145 /* PrivacySupportView.swift */; };
 		23FDF718141336A8978A8DB3 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 07B59FA4533A491CF4AA2D83 /* Assets.xcassets */; };
@@ -104,6 +105,7 @@
 		70BEE8330224D04ACF54EE70 /* ListeningActivityWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningActivityWidget.swift; sourceTree = "<group>"; };
 		72F704FFC13274A549628FF2 /* Core */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Core; path = Core; sourceTree = SOURCE_ROOT; };
 		81423A9849E5E7BDFBDA1423 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		8D941F809567228C8BDF94B2 /* AppStoreScreenshotUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStoreScreenshotUITests.swift; sourceTree = "<group>"; };
 		98A292DFC6FBB07302A4DE77 /* AudioAlignmentController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioAlignmentController.swift; sourceTree = "<group>"; };
 		9BF531D6B8AD0E94016F0BC3 /* AudioAlignmentControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioAlignmentControllerTests.swift; sourceTree = "<group>"; };
 		AAE586AE0AE5D2F197DC5483 /* PlaybackDock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackDock.swift; sourceTree = "<group>"; };
@@ -143,6 +145,7 @@
 		462945D15FD6BA273AA558BE /* UITests */ = {
 			isa = PBXGroup;
 			children = (
+				8D941F809567228C8BDF94B2 /* AppStoreScreenshotUITests.swift */,
 				239227789D17BF0B1B0A1614 /* ListeningFlowUITests.swift */,
 			);
 			path = UITests;
@@ -408,6 +411,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1922373411A3F2980F9E9B7A /* AppStoreScreenshotUITests.swift in Sources */,
 				8B8A2624687249CFAB61DAFB /* ListeningFlowUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -521,14 +525,14 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 46;
+				CURRENT_PROJECT_VERSION = 49;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = App/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2.0;
+				MARKETING_VERSION = 1.26.7;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jonathanjing.tongxing.dev;
 				PRODUCT_NAME = Tongxing;
 				SDKROOT = iphoneos;
@@ -582,7 +586,7 @@
 			baseConfigurationReference = 58CF4F36B9265709AAF09A1C /* Signing.xcconfig */;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
-				CURRENT_PROJECT_VERSION = 46;
+				CURRENT_PROJECT_VERSION = 49;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ListeningActivityExtension/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -590,7 +594,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.2.0;
+				MARKETING_VERSION = 1.26.7;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.jonathanjing.tongxing.dev.listening-activity";
 				PRODUCT_NAME = ListeningActivityExtension;
 				SDKROOT = iphoneos;
@@ -1008,7 +1012,7 @@
 			baseConfigurationReference = 58CF4F36B9265709AAF09A1C /* Signing.xcconfig */;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
-				CURRENT_PROJECT_VERSION = 46;
+				CURRENT_PROJECT_VERSION = 49;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ListeningActivityExtension/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1016,7 +1020,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.2.0;
+				MARKETING_VERSION = 1.26.7;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.jonathanjing.tongxing.dev.listening-activity";
 				PRODUCT_NAME = ListeningActivityExtension;
 				SDKROOT = iphoneos;
@@ -1035,14 +1039,14 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 46;
+				CURRENT_PROJECT_VERSION = 49;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = App/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2.0;
+				MARKETING_VERSION = 1.26.7;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jonathanjing.tongxing.dev;
 				PRODUCT_NAME = Tongxing;
 				SDKROOT = iphoneos;
