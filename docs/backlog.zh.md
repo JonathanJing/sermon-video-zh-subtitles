@@ -22,43 +22,46 @@ English index: [backlog.md](./backlog.md)
 
 <a id="dev-180s-diagnostic-followup"></a>
 
-## 2026-09-30：三分钟真实诊断的未解决问题
+## 2026-09-30 三分钟诊断问题与修复状态（2026-10-01 更新）
+
+以下首轮结果保留为2026-09-30历史快照；表格状态按2026-10-01最终监督验收更新，当前边界见本文件末尾最终对账。
 
 证据：[续跑与交付报告](reports/20260930-dev-180s-continuation.zh.md)；[首次阻断快照](reports/20260930-dev-180s-dag-log-agent-api-test.zh.md)保留原失败。测试代码为 `dev@63c0a18040b7f7744b334cebdb31778de228b064`。用户授权放宽额度后，三语 39 组 Astra→Sol→真实插件核验通过，独立 preview renderer 新合成 39 段 WAV 并完整解码；Dev 298 文件核验和 App 内三语超过 20 秒的短时播放通过。原生 TTS worker 三语仍在依赖导入阶段失败。合并日志为 3,409 events / 963 spans / 26 traces，全部 span 闭合，但 API 终态、依赖和跨时钟缺口使关键路径仍为 partial；live Agent 自动诊断未执行。**已交付真实三语 Dev preview，未完成统一 live DAG、原生 worker 验收或正式四层发布。**
 
-以下稳定 ID 是既有顶层工程项的具体 follow-up，不新增竞品排期或替换旧项。`pending` 表示尚未实施修复；`in_progress` 表示独立分支正在实现，未合并或尚缺真实验收。测试暴露失败不等于代码已修复。人工 default-pass 仅属本次测试，不能补出缺失内容或关闭正式人工门禁。
+以下稳定 ID 是既有顶层工程项的具体 follow-up，不新增竞品排期或替换旧项。`pending`表示尚未实施；`in_progress`表示还在实现/验收；`done`表示本次诊断范围的实现及指定验收完成于工作分支，不表示已合入dev、正式发布或所有顶层项目完成。测试暴露失败不等于代码已修复。人工 default-pass 仅属本次测试，不能补出缺失内容或关闭正式人工门禁。
 
 | ID | 优先级／状态 | 既有归属／问题证据 | 待交付与验收条件 | 依赖 |
 |---|---|---|---|---|
-| `DEV-DIAG-001` | P0 / `in_progress` | `DEV-L2-001`；F01 | 定位并修复 Astra 生成请求的 HTTP 400。先在同一冻结输入上验证单组最小请求和安全错误摘要，再跑三语 Astra→Sol→语言插件→候选 admission；记录 actual model、参数身份、请求与候选 hash。不得未经证据指定根因或以换模型绕过既定策略 | `DEV-DIAG-002` |
-| `DEV-DIAG-002` | P0 / `in_progress` | `DEV-TRACK-001`、`SPD6-LOG-03`；F02 | HTTP 拒绝收据保留可定位的结构化 error code/param 和限长脱敏摘要，绑定 call/attempt/HTTP status；固定错误夹具验证可诊断且无 key、正文或私人路径泄露。拒绝请求的 usage/billing 缺测保持 unknown | 无 |
-| `DEV-DIAG-003` | P0 / `in_progress` | `DEV-SPD-004`、`SPD6-ARCH-02`、`RQC-03`；F03 | 区分同配置系统性请求错误与局部可恢复失败；确认系统性错误后停止受影响配置的后续派发，保留已完成/在途收据及未启动单元的原因。只阻断受影响范围，其他有效 locale 不被拖停；恢复不重付成功单元、不静默重置账本 | `DEV-DIAG-002` |
-| `DEV-DIAG-004` | P1 / `in_progress` | `DEV-SPD-006`、`SPD6-READY-07`；F04 | 接通受授权和独立预算约束的 Agents live 只读诊断；用本次脱敏 trace 产生绑定 session/turn、evidence IDs、confidence 的诊断，验证 stale/越权输出拒绝。真实首次诊断因合法 opaque call ID 被 call_ 前缀断言拒绝，需修复并重新验收；旧 root turn 已只读确认 cancelled，usage 9796/147 保留且不双算。会话 GET 成功不作为诊断通过；Agent 无修订、重试、生成、人审或发布权限 | `DEV-DIAG-002`、`DEV-DIAG-008`；真实调用前冻结模型与预算 |
-| `DEV-DIAG-005` | P0 / `in_progress` | `DEV-SPD-006`、`DEV-E2E-001`、`DEV-L4-001/005`；F05 | 提供统一 fresh ASR→Source/Anchor→各 locale Text/Audio→Dev 发布与 HTTP 核验入口，接入已有 durable job、hash/gate、预算与恢复协议。Dev 目标身份明确、旧资产不丢失；Stage 0 固定失败矩阵后，以真实短片证明整条 live DAG 和发布收据，独立桥接不代替完成。真实入口发现 profile 延迟加载 workflow_evidence 未预冻结，派发前身份拒绝；修复预加载与真实 session 回归后重验 | `DEV-DIAG-001/003/008`；沿用四层与发布门禁 |
-| `DEV-DIAG-006` | P1 / `in_progress` | `DEV-SPD-004`、`SPD6-ARCH-02`；F06 | 为期限已过的暂停运行设计显式续期或新 attempt 恢复协议，绑定新授权/期限/预算及旧 run 的结果和身份。保留过期守卫和旧账本；测试暂停超时、未知结果与重启，确保不会自动重发付费请求或重复成功阶段 | 沿用 durable receipt / outcome reconciliation |
-| `DEV-DIAG-007` | P0 / `waiting_evidence` | `DEV-L3-001`、`DEV-SPD-003`、`RQC-06`；F07、续跑音频收据 | 已测得三语有效候选、39 段独立真实 TTS 与完整解码、Dev HTTP/短时可播；原生 worker 仍因 sox import-time shell 被 guard 拒绝，见 `014`。继续验收原生路径、正式 Audio/Release 包、逐单元回转写筛查/疑点裁决、时间轴/同步、整轨 1 倍速听审和设备/现场，分开记录事实。默认人审仅测试授权；独立 renderer 成功不关闭原生 worker 或正式发布门禁 | `DEV-DIAG-014`；统一端到端验收还依赖 `DEV-DIAG-005` |
-| `DEV-DIAG-008` | P0 / `in_progress` | `DEV-TRACK-001`、`DEV-SPD-002`、`SPD6-LOG-01`；F08 | 补齐实际 producer / 跨阶段 executor、dependsOn、blockedBy、ready/queued 与 run/workUnit/attempt 绑定；重放本次脱敏事件定位缺口，再用真实 live 路径证明 source/locale/join/delivery 的完整关键路径。续跑 963 spans 闭合，但 19 traces 有局部依赖/executor/跨时钟缺口；旧 A 两条派发前预算拒绝缺 API 终态，全局缺口使其余 7 traces 也被标 partial。补足具体终态和跨进程因果；缺测项保持 partial/unknown，不据 span 数量推算 ETA，兼容旧日志 | `DEV-DIAG-002` 的错误与调用关联；整体验收与 `DEV-DIAG-005` 联动 |
-| `DEV-DIAG-009` | P1 / `in_progress` | `DEV-L4-005`、`DEV-TRACK-001`；F09 | Dev App 区分 failed / blocked / pending / ready：机器候选缺失时不得显示“大纲已就绪”或暗示配音仍在生成；保留准确失败原因和禁用播放。三语切换及既有成功周次浏览器验证通过，不混淆内容语言与界面语言 | 实际业务状态/原因绑定；不要求为诊断展示重新生成内容 |
-| `DEV-DIAG-010` | P1 / `in_progress` | `DEV-SPD-006`、`SPD6-ARCH-01/02`；H02 | 定义跨阶段模块加载时 executionIdentity 的冻结/扩展收据协议；正常进入新阶段不需临时绕过 exact identity 校验，原模块/hash、输入和预算绑定仍严格有效。验证合法扩展、源码变化、旧输入及恢复时身份不一致均被正确处理 | 保留当前原身份及扩展收据，不放宽原 hash 守卫 |
-| `DEV-DIAG-011` | P0／`in_progress` | `DEV-L2-001`、`RQC-03`；衔接 `DEV-DIAG-001`。`sermon_strict_layer2.py:122–145,339–350`；`run_target_language_models.py:168–173`；`sermon_review_contracts.py:194–211`；`sermon-review-receipt-v1.schema.json:209–230` | role prompt 与真实 API／响应 schema 一致：JSON-mode 明确 JSON；coverage 指定有序数组和精确字段；verifier 仅四个 requiredChecks，插件另审；声明 check／issue 的合法枚举。合法普通 registerRules 无须私有格式补丁即可通过预检及单组真实 Astra→Sol。保留无效响应证据，不能将其提升为机器通过。原 39 次 HTTP400 的精确错误 body 未保留，JSON 声明缺失是代码观察及解阻探针支持的定位，不能补写供应商原 error code。 | `DEV-DIAG-002/013`；保留 API 与 schema 身份 |
-| `DEV-DIAG-012` | P0／`in_progress` | `DEV-L2-001`、`RQC-03`；衔接 `DEV-DIAG-001`。`target_language_policy.py:65–82,98–118`；`language_review_plugins/diagnostic_structural.py:84–96` | 解决全表 terminology coverage 与未使用 pending target=None 的合同冲突：明确 source scope、未使用项及使用项的验证规则，保留术语表来源 SHA 和有效术语约束；未使用项不应仅因空 target 使所有组失败。用零命中系列／确实使用系列／源码变化矩阵及真实插件收据验收。临时 English passthrough 仍 pending，不能称译名或审核通过；禁止全面放宽术语插件。 | `DEV-DIAG-011`；保留术语表 SHA 与有效约束 |
-| `DEV-DIAG-013` | P0／`in_progress` | `DEV-TRACK-001`、`SPD6-LOG-03`、`RQC-03`；衔接 `DEV-DIAG-002/003/008`。`sermon_strict_budget_adapter.py:166–205`；`sermon_strict_controller.py:147–158`；`sermon_strict_candidate_bridge.py:121–145`；`sermon_strict_locale.py:102–123` | 分别表达 known returned／known rejected／transport unknown／artifact validation failed／plugin failed；具体 reason、受影响组、call／revision／artifact hash 关联并持久化。provider 已返回不能仅显示泛化执行未知；插件失败需保存原始结构化回执后返回 failed locale。保持保守预算与 outcome reconciliation，不能退款、清账或猜测未执行。以真实无效 coverage、HTTP 拒绝、插件拒绝和未知运输夹具验收恢复与日志；其他成功 locale 独立保留；派发前预算拒绝也写具体 API 终态并标 dispatched=false，不能把未进网络的请求误称在途或靠猜测补账。 | `DEV-DIAG-002/003/008`；保守账本与 outcome reconciliation |
-| `DEV-DIAG-014` | P0／`in_progress` | `DEV-L3-001`、`DEV-SPD-003`、`RQC-06`；衔接 `DEV-DIAG-007/010`。`sermon_diagnostic_preview_worker.py:362–379,382–397`；`render_formal_target_language_speech.py:195–206` | 验收 native worker 的真实依赖导入、模型加载与安全 guard 兼容性。实际 qwen_tts→sox 导入通过 os.popen(sox -h) 触发 shell，被守卫正确拒绝；应提供明确、受控的依赖探测／导入路径，或移除该 import-time shell 需求，并冻结依赖与命令身份。不可全面开放 shell／任意子进程／网络。真实三语 native worker 模型加载、单元推理、WAV 完整解码及原绝对期限收据需全部完成；fixture 成功或独立 renderer 成功不能代替 native worker 验收。 | `DEV-DIAG-010`；完整验收关联 `DEV-DIAG-007` |
+| `DEV-DIAG-001` | P0 / `done` | `DEV-L2-001`；F01 | 定位并修复 Astra 生成请求的 HTTP 400。先在同一冻结输入上验证单组最小请求和安全错误摘要，再跑三语 Astra→Sol→语言插件→候选 admission；记录 actual model、参数身份、请求与候选 hash。不得未经证据指定根因或以换模型绕过既定策略 | `DEV-DIAG-002` |
+| `DEV-DIAG-002` | P0 / `done` | `DEV-TRACK-001`、`SPD6-LOG-03`；F02 | HTTP 拒绝收据保留可定位的结构化 error code/param 和限长脱敏摘要，绑定 call/attempt/HTTP status；固定错误夹具验证可诊断且无 key、正文或私人路径泄露。拒绝请求的 usage/billing 缺测保持 unknown | 无 |
+| `DEV-DIAG-003` | P0 / `done` | `DEV-SPD-004`、`SPD6-ARCH-02`、`RQC-03`；F03 | 区分同配置系统性请求错误与局部可恢复失败；确认系统性错误后停止受影响配置的后续派发，保留已完成/在途收据及未启动单元的原因。只阻断受影响范围，其他有效 locale 不被拖停；恢复不重付成功单元、不静默重置账本 | `DEV-DIAG-002` |
+| `DEV-DIAG-004` | P1 / `done` | `DEV-SPD-006`、`SPD6-READY-07`；F04 | 接通受授权和独立预算约束的 Agents live 只读诊断；用本次脱敏 trace 产生绑定 session/turn、evidence IDs、confidence 的诊断，验证 stale/越权输出拒绝。opaque call ID、required_actions绑定及期限重读已修复；第四真实phase已完成工具提交与final合同核验，root completed，diagnosisStatus=needs_more_evidence。旧阶段cancelled/usage照实保留且不双算。会话 GET 成功不作为诊断通过；Agent 无修订、重试、生成、人审或发布权限 | `DEV-DIAG-002`、`DEV-DIAG-008`；真实调用前冻结模型与预算 |
+| `DEV-DIAG-005` | P0 / `done` | `DEV-SPD-006`、`DEV-E2E-001`、`DEV-L4-001/005`；F05 | 固定fresh入口已覆盖真实ASR/Source/MFA与可恢复三语Text/native/Dev，测试与正式门禁分别记录。v3真实Source与v7/v8真实三语原生通过，v8发布301文件HTTP/Range及三语/源视频完整Chrome1x通过。首次全ready汇合发现legacy Source目录不兼容，新增版本化Fresh专用检查并在闭父独立只读恢复通过，0新生成/0账本写；原incomplete/DAG失败不回填，未重新发布恢复badge。不是新代码全阶段冷启动性能证明 | 诊断scope通过；正式Audio/Release/device/venue仍007，完整性能仍DEV-TRACK-001 |
+| `DEV-DIAG-006` | P1 / `done` | `DEV-SPD-004`、`SPD6-ARCH-02`；F06 | 为期限已过的暂停运行设计显式续期或新 attempt 恢复协议，绑定新授权/期限/预算及旧 run 的结果和身份。保留过期守卫和旧账本；测试暂停超时、未知结果与重启，确保不会自动重发付费请求或重复成功阶段 | 沿用 durable receipt / outcome reconciliation |
+| `DEV-DIAG-007` | P0 / `waiting_evidence` | `DEV-L3-001`、`DEV-SPD-003`、`RQC-06`；F07、续跑音频收据 | 三语39组机器候选、原生worker39单元及完整解码、Dev301文件HTTP/Range均已核验；原生依赖问题已修复并真实验收，见 `014`。正式 Audio/Release 包、逐单元回转写筛查/疑点裁决、时间轴/同步、整轨1倍速人工听审和设备/现场仍待各自真实证据，分开记录事实。默认人审仅测试授权；独立 renderer 成功不关闭原生 worker 或正式发布门禁 | `DEV-DIAG-014`；统一端到端验收还依赖 `DEV-DIAG-005` |
+| `DEV-DIAG-008` | P0 / `done` | `DEV-TRACK-001`、`DEV-SPD-002`、`SPD6-LOG-01`；F08 | 当前诊断合同已补真实executor、叶子dependsOn/blockedBy、run/workUnit/attempt与跨进程四事实。v8日志1819 events/311执行叶依赖无缺失，25条跨进程边通过，OTLP366 spans保留因果属性。UTC跳变/四个未观测本地ready/资源queue保持partial或unknown，active CP858.009秒不能冒充wall/ETA；原A缺口不补写。新发现的收尾观测空档移交015，真实资源队列/完整性能仍归原DEV-TRACK-001 | 诊断可追溯scope通过；原预算/日志历史不改，正式指标与015独立跟进 |
+| `DEV-DIAG-009` | P1 / `done` | `DEV-L4-005`、`DEV-TRACK-001`；F09 | Dev App 区分 failed / blocked / pending / ready：机器候选缺失时不得显示“大纲已就绪”或暗示配音仍在生成；保留准确失败原因和禁用播放。失败/blocked/pending夹具和真实blocked页均禁用音频；v8三语ready绑定当前candidate/context，正式人审仍pending。三语切换及既有周次浏览器行为分别留证，不混淆内容语言与界面语言 | 实际业务状态/原因绑定；不要求为诊断展示重新生成内容 |
+| `DEV-DIAG-010` | P1 / `done` | `DEV-SPD-006`、`SPD6-ARCH-01/02`；H02 | 定义跨阶段模块加载时 executionIdentity 的冻结/扩展收据协议；正常进入新阶段不需临时绕过 exact identity 校验，原模块/hash、输入和预算绑定仍严格有效。验证合法扩展、源码变化、旧输入及恢复时身份不一致均被正确处理 | 保留当前原身份及扩展收据，不放宽原 hash 守卫 |
+| `DEV-DIAG-011` | P0／`done` | `DEV-L2-001`、`RQC-03`；衔接 `DEV-DIAG-001`。`sermon_strict_layer2.py:122–145,339–350`；`run_target_language_models.py:168–173`；`sermon_review_contracts.py:194–211`；`sermon-review-receipt-v1.schema.json:209–230` | role prompt 与真实 API／响应 schema 一致：JSON-mode 明确 JSON；coverage 指定有序数组和精确字段；verifier 仅四个 requiredChecks，插件另审；声明 check／issue 的合法枚举。合法普通 registerRules 无须私有格式补丁即可通过预检及单组真实 Astra→Sol。保留无效响应证据，不能将其提升为机器通过。原 39 次 HTTP400 的精确错误 body 未保留，JSON 声明缺失是代码观察及解阻探针支持的定位，不能补写供应商原 error code。 | `DEV-DIAG-002/013`；保留 API 与 schema 身份 |
+| `DEV-DIAG-012` | P0／`done` | `DEV-L2-001`、`RQC-03`；衔接 `DEV-DIAG-001`。`target_language_policy.py:65–82,98–118`；`language_review_plugins/diagnostic_structural.py:84–96` | 解决全表 terminology coverage 与未使用 pending target=None 的合同冲突：明确 source scope、未使用项及使用项的验证规则，保留术语表来源 SHA 和有效术语约束；未使用项不应仅因空 target 使所有组失败。用零命中系列／确实使用系列／源码变化矩阵及真实插件收据验收。临时 English passthrough 仍 pending，不能称译名或审核通过；禁止全面放宽术语插件。 | `DEV-DIAG-011`；保留术语表 SHA 与有效约束 |
+| `DEV-DIAG-013` | P0／`done` | `DEV-TRACK-001`、`SPD6-LOG-03`、`RQC-03`；衔接 `DEV-DIAG-002/003/008`。`sermon_strict_budget_adapter.py:166–205`；`sermon_strict_controller.py:147–158`；`sermon_strict_candidate_bridge.py:121–145`；`sermon_strict_locale.py:102–123` | 分别表达 known returned／known rejected／transport unknown／artifact validation failed／plugin failed；具体 reason、受影响组、call／revision／artifact hash 关联并持久化。provider 已返回不能仅显示泛化执行未知；插件失败需保存原始结构化回执后返回 failed locale。保持保守预算与 outcome reconciliation，不能退款、清账或猜测未执行。以真实无效 coverage、HTTP 拒绝、插件拒绝和未知运输夹具验收恢复与日志；其他成功 locale 独立保留；派发前预算拒绝也写具体 API 终态并标 dispatched=false，不能把未进网络的请求误称在途或靠猜测补账。 | `DEV-DIAG-002/003/008`；保守账本与 outcome reconciliation |
+| `DEV-DIAG-014` | P0／`done` | `DEV-L3-001`、`DEV-SPD-003`、`RQC-06`；衔接 `DEV-DIAG-007/010`。`sermon_diagnostic_preview_worker.py:362–379,382–397`；`render_formal_target_language_speech.py:195–206` | 验收 native worker 的真实依赖导入、模型加载与安全 guard 兼容性。实际 qwen_tts→sox 导入通过 os.popen(sox -h) 触发 shell，被守卫正确拒绝；应提供明确、受控的依赖探测／导入路径，或移除该 import-time shell 需求，并冻结依赖与命令身份。不可全面开放 shell／任意子进程／网络。v7韩/中文26个真实native推理及v8西语13个真实native推理全部完成；v8韩/中文真实worker另以cacheHit准入26单元、0模型加载/合成，39个当前WAV完整解码/声音身份/runtime/checkpoint/原绝对期限/四事实clock核验通过。fixture或独立renderer不充当该实际证据。 | `DEV-DIAG-010`；完整验收关联 `DEV-DIAG-007` |
+| `DEV-DIAG-015` | P1 / `todo` | `DEV-DIAG-008`、`DEV-TRACK-001`；v8真实收尾观测 | 给原生worker完成后的确定性收尾/历史绑定/文件核验增加独立monotonic执行叶子及限频安全进度。KO/ZH实际容器尾空档108.443/105.117秒；没有profiler不能指定hash/模型/排队根因。四个跨PID入口ready未观测，资源/provider队列没有真实仪表，保持unknown；全DAG active CP不充当总wall/ETA。验证进度、异常/未知结果、无重复生成和旧音频收据兼容；测量与优化分开 | 现有worker/helper/runtime身份不放宽；真实资源队列验收仍归原`DEV-TRACK-001` |
 
-本轮监督记录：[2026-10-01 修复与真实验收](reports/20261001-dev-diagnostic-supervised-plan.zh.md)。新增已证实的日志预加载遗漏归 `005/010`、Agent opaque call ID 与 required_actions/items 真实协议兼容归 `004`；新观察的 617KB alignment 被 review reader 上限拒绝、DAG遗漏native runtime_manifest_path合同及已验证Source缓存恢复归 `005`，HTTP -I worker 缺 -B 污染冻结 runtime 归 `014/010`；这些接口/启动边界已有修复或真实零请求回归，仍待完整流程。恢复 v4 的西语26调用全部返回，插件第10组术语表面缺失归 `012/013`，随后 locale 延迟加载导致 exact identity 拒绝归 `005/010`；须复用有效付费产物并只修受影响组，归 `006/013`。第三 Agent 实际2工具提交成功，30秒结束时一次读取未知；真实终态 checkpoint elapsed 超限被本地 validator 拒绝归 `004/006`，保留真实耗时和未知收据，耗尽重读不得派发。补登记只读边界：Source 受控错误原因泛化归 `013`，变化 ASR 的 MFA 原期限传递归 `005`，native tokenizer/辅助权重全树绑定归 `014/010`。后者尚缺真实分支证据，不能记为已修复或通过。
+监督记录及每次原失败见[2026-10-01修复与真实验收](reports/20261001-dev-diagnostic-supervised-plan.zh.md)。启动预加载、opaque IDs/required_actions、aggregate读取、Source-cache与修订恢复、原生runtime/checkpoint、MFA期限和日志终态均在对应诊断项留证；旧账本、unknown和耗时不回填。最新真实三语/HTTP/Chrome和闭父只读恢复结果见最终对账，015与正式007仍独立待验。
 
-建议修复顺序：`DEV-DIAG-002/011/012` → `001/003/013`，并补 `008`；随后修 `014`、接通 `005` 并完成 `007` 的剩余真实验收。`004/006/009/010` 按各自依赖推进；此表登记不自动启动产品修复、新模型调用、Production 发布或设备验收。
+诊断软件已完成本次计划的修复及监督验收。后续分别推进007正式内容/设备/现场证据与015收尾观测；资源排队、Prefect实际引擎和完整性能继续使用既有归属。该状态不自动授权Production发布或代替正式人工审核。
 
 累计 provider 请求 293（254 returned / 39 rejected），终态 unknown/reserved 均为 0。最坏情况预算保留 $51.582263；已知 returned usage 估算 $5.140327，非供应商账单，39 次 rejected 的 usage/billing 未知。旧 A/B 账本未清空，新的预算/期限/输入 lineage 显式冻结。
 
-H01（测试脚本插件哈希）、H03（首次 deploy 选错 Dev project，CLI 拒绝且未发布）、H04（World War pending target 输入）和 H05（helper 冻结次序）已在测试中纠正并留证，**不新增未修复产品缺陷**。H02 仍只有临时恢复办法，按 `DEV-DIAG-010` 待办。私有 v6 driver 的异常漏写与过长 registerRules 被正确上限拒绝，分别作为测试准备问题；错误原因泛化归 `013`。原报告 F01—F09/H01—H03 保留；媒体、日志、输入版本和账本留在 ignored artifacts。上述诊断阶段未实施产品源码修复；后续开发进度见下表，不关闭既有 `DEV-SPD-*`、Layer 2/3 或 Prefect/Agents 验收。
+H01（测试脚本插件哈希）、H03（首次 deploy 选错 Dev project，CLI 拒绝且未发布）、H04（World War pending target 输入）和 H05（helper 冻结次序）已在测试中纠正并留证，**不新增未修复产品缺陷**。H02后续已由010的严格身份冻结/扩展及006恢复合同覆盖，见最终监督证据。私有 v6 driver 的异常漏写与过长 registerRules 被正确上限拒绝，分别作为测试准备问题；错误原因泛化归 `013`。原报告 F01—F09/H01—H03 保留；媒体、日志、输入版本和账本留在 ignored artifacts。上述首轮历史诊断当时未实施源码修复；下表保留开始开发前的复盘快照，当前进度见最终对账，不关闭既有 `DEV-SPD-*`、Layer 2/3 或 Prefect/Agents 验收。
 
 
 <a id="dev-180s-first-implementation-batch"></a>
 
 ### 2026-10-01 复盘覆盖检查与第一批开发
 
-复盘的十个环节逐项检查如下，优先复用既有 ID；已经执行的诊断证据与尚未完成的工程验收分开维护，不重复新建顶层事项。
+以下为第一批开始开发前的历史复盘快照；最终对账记录后续结果。复盘十个环节优先复用既有 ID；已经执行的诊断证据与尚未完成的工程验收分开维护，不重复新建顶层事项。
 
 | 复盘环节 | 已验证范围 | 未完成事项归属及补充验收 |
 |---|---|---|
@@ -680,3 +683,17 @@ Canonical package adapter 第一批：Source/Text shadow inspection 已复用生
 - `DEV-DIAG-007`：继续保持waiting_evidence。诊断试听与default-pass不关闭正式逐单元回转写、疑点人工裁决、整轨听审、同步、正式Audio/Release、设备与现场验收。将这些作为正式交付的独立验收项，不能用本次preview验收替代。
 
 本次用户已授权按plan持续开发和续验；下一恢复局部修西语并复用已验证中韩产物，完成同一Dev诊断页三语整轨浏览器播放，再更新上述软件诊断项终态。
+
+
+### 2026-10-01 监督验收最终对账
+
+`DEV-DIAG-001–006/008–014` 的本次隔离诊断软件范围已完成实现、定向回归和相应真实路径核验；`done`不关闭既有正式Layer1–4/Prefect/Agents执行权限或完整性能项目。旧HTTP400正文缺失，原供应商精确原因仍无法追认。008通过的是已记录因果/终态/单调时钟合同，资源/provider排队没有真实测量；新收尾空档明确留在015，不冒充完整ETA。
+
+- 39组最终机器/完整语言插件/admission通过；v7/v8合计39个真实native单元，本轮13新合成+26缓存完整核验，人审pending。
+- Dev301文件HTTP内容SHA/源Range通过；旧295资产无丢失、正式catalog未改。真实Chrome三语音轨和180.013秒源视频均从0、1倍速到ended；旧周次观察5秒进度。初次浏览器工具按钮遮挡/未处理watch退出已保留，只修工具后独立重测，不作为产品故障或人工听审。
+- 首次ready汇合的Fresh/legacy Source目录错误已修复。闭父只读恢复检查三语交付通过，0新provider/ASR/Text/TTS/MFA/账本写，原920个证据文件不变。原v8 final=incomplete/失败日志仍保留，恢复报告独立绑定旧执行与新检查器；没有重新发布App中的恢复状态标记。
+- 本轮2条provider returned、0unknown、新D5为空；累计业务387请求/84,563,795 microUSD保守占额，Agents四phase8M观察预留另保留，旧42项未知不退款/不补结算。费用缺测仅报已知小计。
+- `DEV-DIAG-004`真实只读Agents完成工具提交和final合同核验；needs_more_evidence是缺少原400正文的正确诊断结果，不代表故障根因已确定。Prefect实际SDK引擎测试仍为可选skip，不把固定Python DAG等同引擎验收。
+- `DEV-DIAG-007`继续waiting_evidence：正式源文/译文/术语人审、逐单元回转写与疑点裁决、人工整轨听审/语言质量/同步、正式Audio/Release、物理设备与现场逐项验收；诊断default-pass和浏览器播放不能替代。
+
+证据与验证边界统一见[监督最终报告](reports/20261001-dev-diagnostic-supervised-plan.zh.md)。私有模型/媒体/日志/账本留在ignored artifacts，不进入Git。

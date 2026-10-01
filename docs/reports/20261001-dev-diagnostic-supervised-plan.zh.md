@@ -140,3 +140,41 @@ Fresh历史原生接线最新定向49项：48通过/1可选SDK跳过（23.588秒
 UTC相关的局部/跨span跳变导致旧报告整体partial且抹去单调时钟下可验证的DAG关键路径。修复只允许完整monotonic区间及全DAG/跨进程证明下，有限UTC-correlation警告不抑制独立active critical path；图损坏、缺叶子、cycle、unknown outcome或缺clock proof仍拒绝。原UTC总wall、page UTC/比例与未测资源queue保留unknown，不重写原事件、不把active叶子时长称端到端耗时或ETA。v7只读投影的已验证active path为665.992194秒（Source为缓存、只两语原生成功的实际scope）；这不是完整生产性能基准。
 
 报告时钟修复及Dev安全原因映射的最新整合50项全部通过（18.105秒），包含真实子进程UTC跳变的单调DAG正例、四事实任一缺失、混合时钟、缺依赖、稳定时钟错误run边界等否定测试；保持renderer、native runtime与Source十模块原字节。
+
+
+## 第八轮三语原生与真实交付终态
+
+v8固定代码 `1848f420508da57162528b291081ae844b605c08`（已包含最新 `origin/dev` 的 `63c0a18040b7f7744b334cebdb31778de228b064`），原生/source/runtime/checkpoint全过程保持冻结。实际会话退出0且已按原instruction追加永久关闭收据。Source来自v3真实ASR/英文检查/MFA，本轮三者均0新执行；这是完整诊断恢复，不是全阶段冷启动性能测试。
+
+三语共39组最终Sol审核、完整locale语言插件和候选admission全部pass，人审pending/releaseEligible=false。ES只对原g010插件失败建立真实修订并重新Astra→Sol，2次新provider均returned，usage4040 input/703 output/4743 total各累计一次；12组ES和13组KO复用v1，ZH13组复用v2并保留两组普通返工祖先。选用历史provider响应76，另外保留4个ZH失败修订调用及2个ES原插件失败父调用，82个独立历史调用不重计新费用。本轮新D5预约为空，enforcementScope保持new_provider_ledger_historical_parent_repair，不伪称旧D5已settled。新保守占额373,965 microUSD，业务历史累计387请求/84,563,795 microUSD；加Agents8,000,000观察预留仍在110,000,000总上界内，均不作账单或退款。
+
+v8 ES原生MPS worker实际加载一次模型、合成13单元；KO/ZH当前真实worker各13单元cacheHit、0加载/0合成。三份v4原生收据、完整runtime与13-file checkpoint、当前candidate/context/Source/声音身份、原期限、四事实clock和39个WAV完整解码已由独立只读审计核验。26个历史WAV字节SHA不变；v7原959JSON不变，v8仅追加两份精确绑定的新授权/successor sidecar。私有审计在 `artifacts/v8-layer2-final-audit` 和 `artifacts/v8-final-delivery-audit`；审计0provider/0TTS，账本前后SHA不变。
+
+本轮也首次走到全部ready后的 `delivery.readonly`，发现旧preflight硬读 `simulated-review-inputs/simulation-authorization.json`，Fresh根目录没有该legacy布局，真实FileNotFoundError保留。原 `final-result.status=incomplete` 和DAG blocked/callback_or_evidence_not_confirmed不改写；外层run_finished=completed只证明执行已封闭，不提升业务验收。流程继续完成真实Dev发布，301文件全部HTTP内容SHA、源视频Range206通过；manifest canonical SHA `d3ea6bc1165a20feeb8ce77cc230492b6b501851e3a3cac7f7d224e195a50e59`。原295公开资产0丢失、正式catalog不改；独立12资产readback及4媒体Range也通过。App为三语ready的诊断试听页，正式Audio/Release包未创建。
+
+终态日志1819 events、361对完整stage、311执行叶，缺叶子dependsOn=0；1 run和4 workflow均封闭。三套真实worker四事实握手，25条已记录跨进程边全部验证。OTLP1 trace/366 spans保留dependsOn属性；没有创建原生OTLP links。周报为partial，三项UTC跳变/UTC-wall警告仍保留；独立可验证的monotonic active critical path=858.008982秒，不能作整周wall、完整生产性能或ETA。UTC wall/pageReady、资源/provider排队均unknown。四个叶子没有本地ready观测（3×preview.validate_inputs、dev_snapshot），不根据其他字段补写。当前两次provider费用只有1项estimated $0.0362925，另一项cost missing；这个数是已知小计。
+
+独立审计量得KO/ZH在worker结束后的容器尾空档分别108.443/105.117秒，全部preview直接子stage未覆盖时间ES42.610/KO130.597/ZH122.939秒。没有profiler证据，不能归因为hash、模型或排队。此观测进入backlog，要求补确定性收尾检查的monotonic叶子和安全进度，不把容器差值自动称为资源排队。日志证据在 `artifacts/v8-final-dag-audit`。
+
+
+## 真实 Chrome 完整播放验收
+
+第一份full-playback私有脚本在Chrome原生视频页的测试按钮被video覆盖，click超时；未处理的pending watch在页面关闭时reject，浏览器任务提前退出，没有整轨通过收据。这是测试工具故障，原source失败回执保留，不作为媒体、App或供应商故障。只修正测试按钮的固定位置/层级，并将源视频与三语音频隔离重测；没有改发布文件、伪造事件或加速播放。
+
+真实Chrome154.0.8037.59 headless直接使用已发布URL，三条音轨从0以1倍速到ended，未seek/变速：ZH191.52秒（实际elapsed192.376秒）、KO213.68秒（214.609秒）、ES199.36秒（200.490秒）；源MP4180.013167秒（180.133秒）完整ended。页面和媒体错误均0，旧正式周次入口真实播放进度超过5秒；旧周次这条观察不称完整讲道播放。App人审状态仍pending，subtitleTiming仍preview_unsynchronized。
+
+两次独立播放收据绑定同一v8 manifest，严格合并记录在 `artifacts/native-preview-acceptance-20261001/chrome-complete-fresh-v8-aggregate.json`，保留原初次失败。原始完整时序、10秒采样、起止截图及收据在 `chrome-audio-fresh-v8-3` 和 `chrome-source-fresh-v8-2`。这是实际浏览器完整解码及经过时长的播放验收；不是人工语言质量/整轨听审、原视频同步、物理iOS设备或现场验收。
+
+
+## Fresh 交付兼容修复与零生成恢复
+
+新增固定 `sermon_fresh_source_evidence.py`，显式识别current Fresh证据v1与closed-parent cached证据v1/v2，校验plan、context、原provider receipt/payload/usage、Source/Anchor/对齐/MFA、simulation pending及生产代码绑定；未知schema不会回退旧目录。`inspect_fresh_delivery`采用该专用合同，FreshSession真实入口override并预载新模块。旧 `inspect_delivery` 的四条pending finding合同与原v1报告保持不变。
+
+独立 `inspect_completed_fresh_delivery` 先核永久关闭收据、原终态账本与provider receipts，再执行同一Fresh交付检查，记录原执行身份和新的检查器文件SHA。它是只读重验，不重入旧FreshSession执行入口，不延长原deadline、不授予dispatch或publish权。
+
+实际v8闭父恢复退出0，`status=diagnostic_traversal_complete`，完整重新核验3语×13原生单元及Source历史绑定；ASR/Text/TTS/MFA/provider新增调用、账本写入均0。运行期间provider chat/transcribe及provider/store锁均被显式禁止；原920个JSON/WAV及日志SHA前后完全一致。独立monotonic检查耗时196.764727秒，仅是本次读取/核验耗时。原final-result=incomplete、原失败DAG/日志和原HTTP receipt不回填；页面继续使用原已核验三语ready音轨，原production-stages仍显示那次汇合失败历史，不声称新代码整轮冷启动重跑或恢复状态已重新发布。
+
+恢复证据在 `artifacts/v8-fresh-delivery-recovery-20261001/recovery-result.json`，绑定原plan/final/closed/log、301文件HTTP、完整Chrome验收及三个新检查器源码SHA。此结果完成本计划的诊断交付核验；正式人审、Audio/Release包、人工整轨听审/语言质量/同步、设备/现场仍不在本次诊断通过范围。原生收尾观测缺口另作为DEV-DIAG-015跟进，资源队列/正式性能与原DEV-TRACK-001继续独立验收。
+
+
+最终兼容补丁验证：5个受影响Source/Fresh/cache/delivery/legacy模块58 tests全部通过（40.299秒），含实际FreshSession constructor/_check/profile及真实Source读取重复检查、冷预载身份、cached v1/v2、闭父过期只读、tamper/unknown拒绝；MFA分支使用合成completed runtime链并保持0实际MFA/模型。根级DAG/会话回归26 tests中25通过、1既有optional Prefect SDK skip（13.199秒）。独立只读代码review无阻断；恢复报告绑定的三个检查器文件SHA与最终补丁完全相等。文档本地链接与git diff --check通过，不重复已验证native/runtime全套。所有代码均提交到工作分支；dev合入和正式验收仍独立。

@@ -14,6 +14,7 @@ from scripts import sermon_diagnostic_context as diagnostic
 from scripts import sermon_diagnostic_provider as provider
 from scripts import sermon_diagnostic_preview_worker as worker
 from scripts import sermon_diagnostic_source_evidence as source_evidence
+from scripts import sermon_fresh_source_evidence as fresh_source
 from scripts import sermon_public_snapshot as public
 from scripts import sermon_review_budget as budget
 from scripts import sermon_review_contracts as c
@@ -198,8 +199,8 @@ def _inspect_preview(root, subject, context, locale, envelope, files):
         pendingRealGates={gate: 'pending' for gate in PENDING_GATES})
 
 
-def inspect_delivery(root, subject, context, previews, *, expected_locales):
-    """Inspect exact locale worker receipts without mutating any ledger or file."""
+def _delivery_inputs(root, subject, context, previews, expected_locales):
+    """Shared fixed ledger/locale checks; no injected validation callback."""
     files = _Snapshot()
     root = files.path(root)
     context = diagnostic.validate_context(context)
@@ -222,6 +223,12 @@ def inspect_delivery(root, subject, context, previews, *, expected_locales):
         subject.store._validate_row(key, row)
         c.require(row['phase'] == 'result' and row['result']['executionStatus'] != 'outcome_unknown',
                   'diagnostic_delivery_unknown_budget_outcome')
+    return root, context, files, state, state_path, budget_path
+
+
+def inspect_delivery(root, subject, context, previews, *, expected_locales):
+    """Legacy four-pending Source contract remains the default."""
+    root, context, files, state, state_path, budget_path = _delivery_inputs(root, subject, context, previews, expected_locales)
     original = source_evidence.validate_prior_source_evidence(root, state, context)
     locales = {locale: _inspect_preview(root, subject, context, locale, previews[locale], files)
                for locale in expected_locales}
@@ -235,4 +242,61 @@ def inspect_delivery(root, subject, context, previews, *, expected_locales):
         humanAcceptance='pending', productionEligible=False, formalAudioPackageCreated=False,
         publicationAuthorized=False, modelCalls=0,
         pendingRealGates={gate: 'pending' for gate in PENDING_GATES})
+    return dict(result, resultSha256=c.canonical_sha256(result))
+
+
+FRESH_SCHEMA = 'sermon-fresh-diagnostic-delivery-preflight-v1'
+REINSPECTION_SCHEMA = 'sermon-fresh-diagnostic-delivery-reinspection-v1'
+
+
+def inspect_fresh_delivery(root, subject, context, previews, *, expected_locales, plan, source_evidence):
+    """Read only explicit Fresh evidence; never infer a legacy fallback."""
+    root, context, files, state, state_path, budget_path = _delivery_inputs(root, subject, context, previews, expected_locales)
+    original = fresh_source.validate_fresh_source_evidence(root, plan, subject, context, source_evidence)
+    locales = {locale: _inspect_preview(root, subject, context, locale, previews[locale], files)
+               for locale in expected_locales}
+    c.require(fresh_source.validate_fresh_source_evidence(root, plan, subject, context, source_evidence) == original,
+        'diagnostic_delivery_source_evidence_changed')
+    files.recheck()
+    result = dict(schemaVersion=FRESH_SCHEMA, status='diagnostic_traversal_complete',
+        diagnosticContextSha256=c.canonical_sha256(context), sourceEvidence=original,
+        originalPlanSha256=c.canonical_sha256(plan), originalExecutionIdentitySha256=c.canonical_sha256(plan['executionIdentity']),
+        providerStateFileSha256=files.hashes[state_path], budgetStateFileSha256=files.hashes[budget_path],
+        locales=locales, sourceMachineStatus='returned_review_human_pending',
+        humanAcceptance='pending', productionEligible=False, formalAudioPackageCreated=False,
+        publicationAuthorized=False, modelCalls=0,
+        pendingRealGates={gate: 'pending' for gate in PENDING_GATES})
+    return dict(result, resultSha256=c.canonical_sha256(result))
+
+
+def inspect_completed_fresh_delivery(root, subject, context, previews, *, expected_locales, plan, source_evidence):
+    """Inspect a closed root after execution; do not resume its old plan.
+
+    No current execution identity equality or deadline renewal is needed for
+    read-only completed evidence. Original worker deadlines, clock domain and
+    unchanged producers are still validated. The caller records the original
+    run result separately; this report never overwrites a failed DAG/result.
+    """
+    from scripts import sermon_diagnostic_attempts as attempts
+    files = _Snapshot(); root = files.path(root)
+    closed_path = root/'budget'/budget.STORE_ID/'provider-run/closed.json'
+    closed = files.json(closed_path)
+    evidence = attempts.terminal_parent(plan, _legacy_observation=True)
+    c.require(not evidence['unsettledBudgetReservations'] and
+        closed['budgetStateFileSha256'] == evidence['snapshots'][1]['bytesSha256'] and
+        closed['closureEvidenceSha256'] == c.canonical_sha256(evidence), 'fresh_delivery_closed_evidence_changed')
+    attempts._unavailable({**evidence, 'projectedPlan': plan, 'runDirectory': str(root)})
+    for row in evidence['snapshots']:
+        c.require(files.file(row['path']) == row['bytesSha256'], 'fresh_delivery_closed_evidence_changed')
+    inspected = inspect_fresh_delivery(root, subject, context, previews, expected_locales=expected_locales,
+        plan=plan, source_evidence=source_evidence)
+    implementation = {name: files.file(Path(__file__).parent/name) for name in
+        ('sermon_fresh_source_evidence.py', 'sermon_diagnostic_delivery_preflight.py', 'sermon_fresh_diagnostic.py')}
+    files.recheck()
+    result = dict(schemaVersion=REINSPECTION_SCHEMA, status='fresh_delivery_evidence_validated',
+        inspectionOnly=True, grantsExecutionAuthority=False, originalPlanSha256=c.canonical_sha256(plan),
+        originalExecutionIdentitySha256=c.canonical_sha256(plan['executionIdentity']),
+        closureFileSha256=files.hashes[closed_path], inspectorCodeSha256=implementation,
+        deliveryInspection=inspected, modelCalls=0, ledgerWrites=0, newASRCalls=0, newTextCalls=0,
+        newTTSCalls=0, newMFACalls=0, humanAcceptance='pending', productionEligible=False, publicationAuthorized=False)
     return dict(result, resultSha256=c.canonical_sha256(result))

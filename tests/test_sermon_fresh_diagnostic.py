@@ -326,3 +326,59 @@ class FreshSourceTests(unittest.TestCase):
                 self.assertEqual(prepared['evidence'],session.inspect_source()['sourceEvidence'])
             self.assertEqual(len(self.f.transport.observations),before)
             self.assertTrue((self.root/'fresh-source-recipe.json').exists())
+
+
+class FreshDeliveryRoutingTests(unittest.TestCase):
+    def test_fixed_fresh_override_passes_actual_bound_plan_context_evidence(self):
+        from scripts import sermon_diagnostic_delivery_preflight as delivery
+        session = entry.FreshDiagnosticSession.__new__(entry.FreshDiagnosticSession)
+        session.root = Path('/synthetic/frozen-root'); session.subject = object()
+        session.context = {'bound': 'context'}; session.plan = {'bound': 'plan'}
+        evidence = {'bound': 'actual-fresh-evidence'}; previews = {'zh-Hans': {'bound': 'worker'}}
+        with patch.object(session, '_check', return_value=evidence) as check, \
+             patch.object(delivery, 'inspect_fresh_delivery', return_value={'modelCalls': 0}) as inspect:
+            self.assertEqual(session.inspect_delivery(previews, ('zh-Hans',)), {'modelCalls': 0})
+        check.assert_called_once_with()
+        inspect.assert_called_once_with(session.root, session.subject, session.context, previews,
+            expected_locales=('zh-Hans',), plan=session.plan, source_evidence=evidence)
+        with patch.object(session, '_check', return_value=None), patch.object(delivery, 'inspect_fresh_delivery') as inspect:
+            with self.assertRaisesRegex(c.ContractError, 'source_preparation_required'):
+                session.inspect_delivery(previews, ('zh-Hans',))
+        inspect.assert_not_called()
+
+    def test_new_fresh_validator_dependencies_are_eagerly_frozen(self):
+        frozen = entry.preload_execution_modules()
+        for path in ('scripts/sermon_fresh_source_evidence.py', 'scripts/sermon_transcription_request.py'):
+            self.assertEqual(frozen['loadedProjectCodeSha256'][path], c.bytes_sha256((Path(entry.__file__).resolve().parents[1]/path).read_bytes()))
+
+
+class ActualFreshDeliverySessionTests(unittest.TestCase):
+    def test_actual_check_source_profile_frozen_identity_and_delivery_without_late_import_or_dispatch(self):
+        from scripts import sermon_diagnostic_delivery_preflight as delivery
+        f = FreshSourceTests(); f.setUp(); self.addCleanup(f.doCleanups)
+        actual_identity = accounting.execution_identity
+        def fixture_clean_identity():
+            # Only the clean checkout flag is normalized for this editable unit
+            # fixture. Actual loaded modules/bytes/HEAD are reread every time.
+            current = actual_identity(); current['trackedWorkingTreeDirty'] = False
+            return current
+        with patch.object(accounting, 'execution_identity', side_effect=fixture_clean_identity):
+            self.assertEqual(fixture_clean_identity(), f.plan['executionIdentity'])
+            session = entry.FreshDiagnosticSession(f.plan, offline_transport=f.f.transport)
+            calls = len(f.f.transport.observations)
+            with profile.session(f.root/'actual-delivery-logs', 'fresh-delivery-fixture',
+                    work_kind='engineering', evidence_mode='synthetic'):
+                prepared = session.prepare_source(f.recipe, f.authorization)
+                frozen = fixture_clean_identity()
+                before = {p: p.read_bytes() for p in f.root.rglob('*') if p.is_file() and 'actual-delivery-logs' not in p.parts}
+                with patch.object(delivery, '_inspect_preview', return_value={'previewStatus': 'preview_only'}) as native:
+                    first = session.inspect_delivery({'zh-Hans': {}}, ('zh-Hans',))
+                    second = session.inspect_delivery({'zh-Hans': {}}, ('zh-Hans',))
+                self.assertEqual(first, second); self.assertEqual(native.call_count, 2)
+                self.assertEqual(first['sourceEvidence']['sourceEvidenceCanonicalSha256'], c.canonical_sha256(prepared['evidence']))
+                self.assertEqual(first['sourceEvidence']['currentSourceProviderCalls'], 2)
+                self.assertEqual(first['modelCalls'], 0); self.assertEqual(first['humanAcceptance'], 'pending')
+                self.assertEqual(fixture_clean_identity(), frozen)
+                self.assertEqual(before, {p: p.read_bytes() for p in f.root.rglob('*') if p.is_file() and 'actual-delivery-logs' not in p.parts})
+            self.assertEqual(fixture_clean_identity(), frozen)
+            self.assertEqual(calls, len(f.f.transport.observations))

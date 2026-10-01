@@ -91,7 +91,7 @@ def preload_execution_modules(plugin_paths=()):
                  'render_formal_target_language_speech','render_multilingual_voice_demos',
                  'validate_target_language_audio_unit','sermon_local_model_observation',
                  'sermon_trace_artifacts','sermon_review_diagnostics','sermon_preview_checkpoint_manifest',
-                 'sermon_historical_layer2','sermon_historical_native_seed','sermon_historical_identity','sermon_source_producer_compatibility','sermon_source_failure'):
+                 'sermon_fresh_source_evidence','sermon_historical_layer2','sermon_historical_native_seed','sermon_historical_identity','sermon_source_producer_compatibility','sermon_source_failure'):
         importlib.import_module('scripts.'+name)
     repository=Path(__file__).resolve().parents[1]
     for path in plugin_paths:
@@ -287,6 +287,13 @@ class FreshDiagnosticSession(sessions.DiagnosticSession):
         self.source_spans=prepared['completionSpans']
         self._check()
         return prepared
+
+    def inspect_delivery(self, previews, expected_locales):
+        from scripts import sermon_diagnostic_delivery_preflight as delivery
+        evidence = self._check()
+        c.require(evidence is not None and self.context is not None, 'fresh_source_preparation_required')
+        return delivery.inspect_fresh_delivery(self.root, self.subject, self.context, previews,
+            expected_locales=expected_locales, plan=self.plan, source_evidence=evidence)
 
     def inspect_source(self):
         evidence=self._check()
