@@ -33,7 +33,8 @@ SCHEMA = 'sermon-production-ui-overlay-v1'
 UI_FILES = ('index.html', 'style.css', 'app.mjs', 'fingerprint-ui.mjs', 'theme.js',
             'locales-app.mjs', 'locales-interface.mjs', 'locales-ko.mjs', 'locales-es.mjs',
             'icons.svg', 'icons.mjs', 'brand-icon.svg', 'brand-icon-light.svg')
-DIRECT_SOURCE_FILES = ('icons.svg', 'icons.mjs', 'brand-icon.svg', 'brand-icon-light.svg')
+# Every deployable UI file must come from the selected release checkout.
+DIRECT_SOURCE_FILES = UI_FILES
 
 
 def require(ok, message):
@@ -79,7 +80,7 @@ def source_directory(root: Path) -> Path:
     source = root / 'experiments/sermon-dubbing-poc/web'
     require(all(path.is_dir() and not path.is_symlink() for path in
                 (root, root / 'experiments', root / 'experiments/sermon-dubbing-poc', source)),
-            'Linked or missing artwork source directory')
+            'Linked or missing UI source directory')
     return source
 
 
@@ -113,7 +114,7 @@ def stage(base: Path, overlay: Path, out: Path, *, source_root: Path = ROOT) -> 
     for name in DIRECT_SOURCE_FILES:
         path = regular_file(source / name)
         require(hosting.digest(path) == hosting.digest(overlay / 'public' / name),
-                f'Overlay artwork differs from checked-in source: {name}')
+                f'Overlay UI differs from checked-in source: {name}')
         source_files.append({'path': name, 'sha256': hosting.digest(path), 'bytes': path.stat().st_size})
     commit = source_commit(source_root)
     require(bool(re.fullmatch(r'[a-f0-9]{40,64}', commit)), 'Invalid source code commit')
@@ -175,12 +176,12 @@ def verify_candidate(candidate: Path) -> dict:
             'Candidate Firebase configuration changed')
     source = source_directory(Path(report['sourceRoot']))
     require([item['path'] for item in report['sourceFiles']] == list(DIRECT_SOURCE_FILES),
-            'Artwork source manifest incomplete')
+            'UI source manifest incomplete')
     for item in report['sourceFiles']:
         path = regular_file(source / item['path'])
         require(hosting.digest(path) == item['sha256'] and path.stat().st_size == item['bytes']
                 and hosting.digest(candidate / 'public' / item['path']) == item['sha256'],
-                f'Artwork source changed: {item["path"]}')
+                f'UI source changed: {item["path"]}')
     validate_config(hosting.load(candidate / 'firebase.json'), candidate / 'public')
     return report
 
