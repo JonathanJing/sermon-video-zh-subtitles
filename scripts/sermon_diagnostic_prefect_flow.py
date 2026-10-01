@@ -76,6 +76,9 @@ def _references(session, value):
 def _inventory(config, session):
     """Freeze named static inputs; candidate is owned by the locale producer."""
     paths = set()
+    historical=session.binding.get('historicalLayer2Inputs')
+    if historical is not None:
+        paths.add(_input_path(session,historical['path']))
     for lane in config['locales'].values():
         spec, preview = lane['localeSpec'], lane['previewSpec']
         paths.update(_input_path(session, spec[key]) for key in ('source', 'anchor', 'policy', 'rubric'))
@@ -83,8 +86,9 @@ def _inventory(config, session):
         paths.update(_input_path(session, value) for value in preview['paths'].values())
         paths.update(_input_path(session, preview[key]) for key in
                      ('checkpoint_map_path', 'operation_policies_path', 'strict_rubric_path'))
-        if 'runtime_manifest_path' in preview:
-            paths.add(_input_path(session, preview['runtime_manifest_path']))
+        for key in ('runtime_manifest_path','checkpoint_manifest_path','checkpoint_stage_declaration_path'):
+            if key in preview:
+                paths.add(_input_path(session, preview[key]))
         mapping = public.read_snapshot(_input_path(session, preview['checkpoint_map_path']))[0]
         for checkpoint in mapping.get('checkpoints', []):
             root = _input_path(session, checkpoint['path'])
@@ -113,14 +117,20 @@ def _config(config, session):
             'graph', 'pluginPath', 'pluginSha256', 'groupPlan'}, 'diagnostic_flow_locale_spec_invalid')
         c.require(type(preview) is dict and preview_worker.REQUIRED <= set(preview) and
                   set(preview) <= preview_worker.REQUIRED | preview_worker.OPTIONS |
-                  {'fixture_behavior', 'runtime_manifest_path'} and
+                  {'fixture_behavior', 'runtime_manifest_path', 'checkpoint_manifest_path', 'checkpoint_stage_declaration_path'} and
                   type(preview['execute']) is bool and preview['execute'] is (not session.offline_fixture), 'diagnostic_flow_preview_mode_changed')
         c.require(session.offline_fixture or 'runtime_manifest_path' in preview,
                   'diagnostic_flow_preview_runtime_manifest_required')
         c.require(not session.offline_fixture or 'runtime_manifest_path' not in preview,
                   'diagnostic_flow_fixture_cannot_claim_native_runtime')
-        if 'runtime_manifest_path' in preview:
-            _input_path(session, preview['runtime_manifest_path'])
+        checkpoint_keys={'checkpoint_manifest_path','checkpoint_stage_declaration_path'}
+        c.require(session.offline_fixture or checkpoint_keys <= set(preview),
+                  'diagnostic_flow_preview_checkpoint_manifest_required')
+        c.require(not session.offline_fixture or not checkpoint_keys & set(preview),
+                  'diagnostic_flow_fixture_cannot_claim_checkpoint_manifest')
+        for key in ('runtime_manifest_path',*sorted(checkpoint_keys)):
+            if key in preview:
+                _input_path(session, preview[key])
         c.require(type(preview['paths']) is dict and set(preview['paths']) ==
                   set(preview_worker.PATH_KEYS) - {'candidate'}, 'diagnostic_flow_candidate_owned_by_session')
         for key in ('source', 'anchor', 'policy', 'rubric'):

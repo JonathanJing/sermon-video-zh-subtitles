@@ -94,7 +94,7 @@ class BoundedRun:
 
     def run_locale(self, source_bytes, anchor_bytes, policy_bytes, rubric_bytes, *,
                    graph, plugin_path, plugin_sha256, group_plan=None, diagnostic_context=None,
-                   depends_on=None):
+                   depends_on=None, historical_reuse=None):
         verify_source_clip(self.source_clip, self.provider.config['sourceClipSha256'])
         source, policy = map(c.decode_json, (source_bytes, policy_bytes))
         target = policy['targetLocale']
@@ -120,6 +120,7 @@ class BoundedRun:
                         'costMicrousd':max(limits._cost(model,self.provider.limits['maxInputTokens'],
                             self.provider.limits['maxCompletionTokens']) for model in limits.SUPPORTED_MODELS)},
                 group_plan=group_plan, request_limits=self.provider.limits, depends_on=depends_on,
+                **({'historical_reuse': historical_reuse} if historical_reuse is not None else {}),
                 **({'diagnostic_context': diagnostic_context} if diagnostic_context is not None else {}))
 
 

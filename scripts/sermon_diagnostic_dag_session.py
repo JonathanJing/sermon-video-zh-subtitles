@@ -120,7 +120,7 @@ class DiagnosticSession:
                 'newASRCalls': 0, 'newSourceCheckCalls': 0,
                 'humanAcceptance': 'pending', 'productionEligible': False}
 
-    def run_locale(self, locale, spec, *, depends_on=None):
+    def run_locale(self, locale, spec, *, depends_on=None, historical_reuse=None):
         self._check()
         for key in ('source', 'anchor', 'policy', 'rubric'):
             self._path(spec[key])
@@ -132,7 +132,8 @@ class DiagnosticSession:
                 offline.no_transport() if self.offline_fixture else nullcontext():
             result = self.runner.run_locale(*artifacts, graph=spec['graph'],
                 plugin_path=Path(spec['pluginPath']), plugin_sha256=spec['pluginSha256'],
-                group_plan=spec['groupPlan'], diagnostic_context=self.context, depends_on=depends_on)
+                group_plan=spec['groupPlan'], diagnostic_context=self.context, depends_on=depends_on,
+                **({'historical_reuse': historical_reuse} if historical_reuse is not None else {}))
         self._locale_specs[locale] = deepcopy(spec)
         self._locale_results[locale] = deepcopy(result)
         return result

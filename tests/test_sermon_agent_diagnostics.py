@@ -539,6 +539,29 @@ class DiagnosticLifecycleTest(unittest.TestCase):
                 with self.subTest(target=target, invalid=invalid), self.assertRaises(contract.DiagnosticContractError):
                     adapter.diagnose(self.manifest, client=self.client(), checkpoint=checkpoint)
 
+    def test_exhausted_checkpoint_keeps_true_elapsed_and_never_dispatches(self):
+        client=self.client()
+        with patch.object(client, "submit_tool_result", side_effect=RuntimeError()):
+            state=adapter.diagnose(self.manifest,client=client,clock=lambda:0.0)["checkpoint"]
+        bundle=adapter.build_context_bundle(self.manifest)
+        for elapsed in (30.0,30.17549,120.5):
+            with self.subTest(elapsed=elapsed):
+                saved=copy.deepcopy(state);saved["elapsedSeconds"]=elapsed
+                self.assertEqual(adapter._validate_checkpoint(saved,saved["payloadSha256"],bundle,
+                    adapter.DiagnosticLimits()),saved)
+                resumed=self.client()
+                result=adapter.diagnose(self.manifest,client=resumed,checkpoint=saved,clock=lambda:0.0)
+                self.assertEqual(result["reasonCode"],"diagnostic_deadline_exceeded")
+                self.assertEqual(result["checkpoint"]["elapsedSeconds"],elapsed)
+                self.assertEqual(result["checkpoint"]["transportCalls"],saved["transportCalls"])
+                self.assertEqual(resumed.index,-1);self.assertEqual(resumed.submitted,[])
+                self.assertEqual(resumed.created_payloads,[])
+        for elapsed in (-1,True,float("nan"),float("inf")):
+            with self.subTest(invalid_elapsed=elapsed):
+                saved=copy.deepcopy(state);saved["elapsedSeconds"]=elapsed
+                with self.assertRaises(contract.DiagnosticContractError):
+                    adapter.diagnose(self.manifest,client=self.client(),checkpoint=saved)
+
 
 if __name__ == "__main__":
     unittest.main()

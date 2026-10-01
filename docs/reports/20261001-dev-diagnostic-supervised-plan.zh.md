@@ -79,3 +79,27 @@ HTTP worker 的真实 `-I` 启动遗漏 `-B`，忽略环境中的禁止字节码
 恢复阶段承接历史 **303 requests / 70,072,204 microUSD** 占额；新124 requests /25,000,000 microUSD/5,400秒，以及累计三 Agent phase 6,000,000 microUSD观察预留，共保守规划101,072,204 microUSD，仍在110,000,000上界内。模型 unknown 与预留不作实际账单。
 
 恢复入口与 Agent 合并后的定向集成 **97 tests 全部通过**（16.829秒）：包括 Source-cache 与冷启动身份、Agent core/live/API 和晚到 action 观察。该验证没有调用 provider、加载 TTS 模型或发布 Dev；实际恢复验收在固定代码后执行。
+
+## 缓存恢复的真实结果
+
+固定 `d786693` 的 v4 Source-cache 确认历史2请求、本轮 ASR/source-check/MFA为0。西语13组26次生成/审核全部 returned，无未知，保守占额 **4,367,422 microUSD**。插件拒绝 `fresh-g010` 的术语表面保留检查，失败 language receipt、revision bindings 和结构化组证据已持久化。进入另两 locale 时 exact identity 发现延迟加载模块，Dev build 同守卫拒绝；本轮0 native worker、0 WAV、未发布。v4已在全部请求 known-returned、预算无未结算项时永久关闭；后续恢复必须复用有效付费产物、对失败组建立新修订并重审。
+
+准备 v4 时旧 A/v8/v9 因原 clock domain 的期限证明不可用被拒绝；现用追加的关闭收据禁止这三个旧 attempt 新派发，不改原状态、预算、期限或未知结果。历史 A 的42项未知预算保留，仍按原完整40,000,000 microUSD保守承接。
+
+第三只读 Agent phase 在第6/8轮真实提交两次工具结果并得到返回，required-action-v2 绑定核验通过。第15轮 retrieve_session 无 returned 收据，随后 cancel 得到确认；额外3个 bounded GET 确认唯一 root `cancelled`、session idle/无 actions，usage **32,395 input / 1,568 output / 33,963 total**。三次唯一 root 只各累计一次，为 **51,982 input / 2,006 output / 53,988 total**；actualModel、账单仍 unknown。尚未取得经过合同验证的最终诊断，不能称 Agent 验收通过。
+
+第三 phase 真实 checkpoint elapsed=30.17549383302685秒，旧 validator 因超过30秒拒绝重读。这是终态证据兼容缺陷，不能截短实际耗时或丢弃未知调用。修复保留原elapsed，耗尽 checkpoint 仅返回截止/待对账且0派发；显式版本化新授权允许120秒/60轮/132 API方法调用，默认与旧授权不变，单HTTP I/O仍30秒、cleanup5秒、16 metadata reads、单session/root/2,000,000 microUSD观察预留。方法调用上限不等于分页HTTP请求上限。
+
+下一业务恢复承接 **329 requests / 74,439,626 microUSD** 历史占额；规划80新请求/25,000,000 microUSD/5,400秒，累计最多409请求。第四 Agent 累计8,000,000 microUSD观察预留后，保守规划107,439,626 microUSD仍在110,000,000上界内；不得把预留当实际费用。
+
+v4 真实日志独立安全导出为248 events、62 spans、1 trace；OTLP diagnostics为空、event/receipt integrity均consistent，26直接provider收据无未闭合调用。运行在 native 前失败，因此周报仍明确 crossProcessCriticalPath=not_established、queueTiming=missing_instrumentation，不能把可计算的已记录DAG称完整跨进程/排队观测。原始和脱敏导出各保留ledger SHA，不改写旧日志。
+
+零请求冷进程用实际 v4 响应缓存复现生成产物冻结，定位新增模块仅 `scripts/sermon_trace_artifacts.py`：`strict_layer2` 首次原子写 candidate 时才导入它，下一 locale 才再次检查身份。修复显式预加载并以实际冻结路径回归，保留旧模块/hash严格校验；单独重放 bridge 没有触发该生成冻结分支，不能代替这个回归。
+
+Agent 延长观察/终态重读修复93项测试通过；checkpoint全树及worker/delivery版本兼容41项测试通过。真实checkpoint已冻结13文件，包含主权重、tokenizer/config与speech tokenizer辅助权重，树SHA `a4ab384856b5c68ceeb4c93610bf0035a3f9ac2216543d7b85c3ceec7d77a456`；manifest文件SHA `6b807bf500b6c265b8fb28062df71435fc0eaa210be627f0ba860c4bd9bbdabe`（与canonical SHA分别记录）。新native worker要求v3 spec/预先声明的manifest文件SHA及tree SHA，父/子/完成前重新验证；旧v1/v2仅保留实际旧证据范围的只读兼容，不允许旧request重执行。FD无follow、读前后inode/size/mtime/ctime与路径lstat一致，文件替换/符号链接竞争回归通过。该清单准备未加载模型、未调用provider或发布。
+
+历史L2重绑定在隔离 successor 与测试 execution identity 下消费真实 v4 的12个通过插件的组：实际 strict.generate/review cache-only全部通过，生成与审核完整payload均逐一相等，新provider调用0、新D5预约0，旧parent JSON快照不变。该离线验证明确标注 synthetic successor，不能称新live运行通过。新组收据重建并单独绑定闭父lineage/provider/candidate/review/hash；不复制旧预算预约、revision manifest或review receipt到新账本，不因不匹配回退付费重发。实际新plan继续核验这些绑定。
+
+g010的真实语言插件失败走版本化 `sermon-language-plugin-repair-v1`：保留原Sol semantic pass及失败语言回执，不伪造Sol needs_rework；只修被冻结pending `World War`目标表面，保留policy各字段和未人审状态，建立带parentRevisionId的新修订，重跑Astra、Sol和完整locale插件/admission。该跨run历史父修订的两次新请求使用新provider总请求/成本/绝对期限与单请求上限，enforcementScope=`new_provider_ledger_historical_parent_repair`，显式不声称旧D5父预约已在新账本settled；普通新组仍走既有D5。正式跨run D5父历史记录迁移不在这条诊断路径中伪造。
+
+恢复补丁根级集成验证：249 tests，248通过、1 optional SDK skip，91.108秒、exit 0；覆盖Agent、完整checkpoint/native/DAG、真实Source缓存和历史Layer2修订/桥接。预期AccountingWriteError故障注入保留退出语义，未调用真实provider。代码固定后执行v5真实恢复及第四只读Agent。

@@ -23,7 +23,124 @@ from scripts import sermon_public_snapshot as aggregate
 from tests.diagnostic_dag_fixture import DiagnosticDAGFixture
 
 
+class FreshTerminalFailureTests(unittest.TestCase):
+    def test_private_messages_and_unapproved_contract_codes_are_not_persisted(self):
+        from types import SimpleNamespace
+        for error in (ValueError('/private/audio secret model text'),
+                      c.ContractError('dev_unknown_/private/secret'),
+                      c.ContractError('fresh_private_unapproved_code')):
+            with self.subTest(errorType=type(error).__name__),tempfile.TemporaryDirectory() as directory:
+                session=SimpleNamespace(root=Path(directory),plan={'fixture':True},
+                    subject=SimpleNamespace(config={'runId':'a'*64}),context={'pending':True},
+                    binding={'sourceEvidence':{'fixture':True}})
+                with self.assertRaises(type(error)) as caught:
+                    with entry._terminal_failure_receipt(session):raise error
+                self.assertIs(caught.exception,error)
+                files=list((session.root/'fresh-diagnostic-failures').glob('*.json'));self.assertEqual(len(files),1)
+                receipt,raw=c.read_snapshot(files[0])
+                self.assertEqual(receipt['reasonCode'],'unclassified_stage_failure')
+                self.assertEqual(receipt['lastCompletedResultRef'],None)
+                self.assertNotIn(b'secret',raw);self.assertNotIn(b'private',raw)
+
+    def test_accounting_failure_is_reraised_without_business_failure_sidecar(self):
+        from types import SimpleNamespace
+        flagged=RuntimeError('receipt logging failed');flagged.sermon_logging_failed=True
+        for error in (accounting.AccountingWriteError('structured_logging_write_failed'),flagged):
+            with self.subTest(errorType=type(error).__name__),tempfile.TemporaryDirectory() as directory:
+                session=SimpleNamespace(root=Path(directory))
+                with self.assertRaises(type(error)) as caught:
+                    with entry._terminal_failure_receipt(session):raise error
+                self.assertIs(caught.exception,error)
+                self.assertEqual(list(session.root.iterdir()),[])
+
+
+class FreshHistoricalPlumbingTests(unittest.TestCase):
+    def test_real_closed_parent_resolver_is_frozen_and_forwarded_with_drift_rejected(self):
+        from types import SimpleNamespace
+        from tests.test_sermon_historical_layer2 import HistoricalLayer2Tests
+        from scripts import sermon_historical_layer2 as historical
+        fixture=HistoricalLayer2Tests();fixture.setUp();self.addCleanup(fixture.doCleanups)
+        plan=fixture.build(failed=True);parent_before={path:path.read_bytes() for path in fixture.parent.rglob('*.json')}
+        # Source and accounting validity have independent integration suites;
+        # this unit isolates the immutable input handoff with a genuine closed
+        # parent, linked successor, actual paid fixture receipts and fixed type.
+        session=entry.FreshDiagnosticSession.__new__(entry.FreshDiagnosticSession)
+        session.root=fixture.new;session.plan=plan
+        session.subject=SimpleNamespace(config=plan['providerConfig'])
+        session.context={'fixture':'pending'};session.binding={}
+        session._historical_reuse={};session._historical_specification=None
+        with patch.object(session,'_check'):
+            session.configure_historical_locales({'zh-Hans':fixture.spec},['zh-Hans'])
+        self.assertIs(type(session._historical_reuse['zh-Hans']),historical.HistoricalLayer2Reuse)
+        session._check_historical_inputs()
+        sidecar=session.root/'fresh-historical-layer2-inputs.json';frozen,raw=c.read_snapshot(sidecar)
+        self.assertEqual(session.binding['historicalLayer2Inputs']['bytesSha256'],c.bytes_sha256(raw))
+        self.assertEqual(frozen['runId'],plan['providerConfig']['runId'])
+        with patch.object(entry.sessions.DiagnosticSession,'run_locale',return_value={'fixture':'forwarded'}) as call:
+            result=session.run_locale('zh-Hans',{'fixture':'current'},depends_on=['parent-span'])
+        self.assertEqual(result,{'fixture':'forwarded'})
+        self.assertIs(call.call_args.kwargs['historical_reuse'],session._historical_reuse['zh-Hans'])
+        self.assertEqual(call.call_args.kwargs['depends_on'],['parent-span'])
+        self.assertFalse((session.root/'budget').exists());self.assertEqual(len(fixture.f.calls),2)
+        session._historical_reuse['zh-Hans'].spec['parentPluginRef']['bytesSha256']='0'*64
+        with self.assertRaisesRegex(c.ContractError,'fresh_historical_layer2_inputs_changed'):
+            session._check_historical_inputs()
+        session._historical_reuse['zh-Hans'].spec=deepcopy(fixture.spec)
+        sidecar.write_bytes(raw+b' ')
+        with self.assertRaisesRegex(c.ContractError,'fresh_historical_layer2_inputs_changed'):
+            session._check_historical_inputs()
+        self.assertEqual(parent_before,{path:path.read_bytes() for path in parent_before})
+
+
 class FreshPreloadTests(unittest.TestCase):
+    def test_cold_real_generation_freeze_and_review_preserve_frozen_identity(self):
+        # Execute the atomic candidate writer, not just an already assembled
+        # bridge. The first real generation imported trace_artifacts lazily.
+        child = textwrap.dedent('''
+            import json, sys
+            from pathlib import Path
+            from unittest.mock import patch
+            sys.path.insert(0, sys.argv[1])
+            from scripts import sermon_fresh_diagnostic as entry
+            from scripts import sermon_accounting as accounting
+            from scripts import sermon_strict_layer2 as strict
+            from tests.test_sermon_strict_layer2 import StrictAdapterTests
+            fixture = StrictAdapterTests()
+            fixture.setUp()
+            try:
+                assert 'scripts.sermon_trace_artifacts' not in sys.modules
+                frozen = entry.preload_execution_modules([
+                    Path(sys.argv[1]) / 'scripts/language_review_plugins/diagnostic_structural.py'])
+                assert 'scripts/sermon_trace_artifacts.py' in frozen['loadedProjectCodeSha256']
+                with patch('urllib.request.OpenerDirector.open', side_effect=AssertionError('network forbidden')) as network:
+                    with fixture.session():
+                        fixture.generate()
+                        assert accounting.execution_identity() == frozen, 'identity changed at candidate freeze'
+                        receipt = fixture.review()
+                        assert receipt['reviewVerdict'] == 'pass'
+                        assert accounting.execution_identity() == frozen, 'identity changed at review'
+                        calls = len(fixture.calls)
+                        strict.generate(fixture.prepared, fixture.root/'revision', 'candidate', 'r1',
+                            'fixture', fixture.transport, cache_only=True)
+                        strict.review(fixture.prepared, fixture.root/'revision', 'candidate', 'r1',
+                            'fixture', fixture.transport, cache_only=True)
+                        assert len(fixture.calls) == calls == 2
+                        assert accounting.execution_identity() == frozen, 'identity changed at cache replay'
+                    network.assert_not_called()
+                assert not any(fixture.root.rglob('provider-run/state.json'))
+                print(json.dumps({'identityUnchanged': True, 'fixtureCalls': 2, 'networkCalls': 0}))
+            finally:
+                fixture.doCleanups()
+        ''')
+        environment = {key: value for key, value in os.environ.items()
+                       if not key.startswith('SERMON_ACCOUNTING_')}
+        result = subprocess.run([sys.executable, '-I', '-B', '-c', child,
+                                 str(Path(entry.__file__).resolve().parents[1])], env=environment,
+                                capture_output=True, text=True, timeout=60)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout),
+                         {'identityUnchanged': True, 'fixtureCalls': 2, 'networkCalls': 0})
+
     def test_cold_profile_session_preserves_actual_frozen_identity_without_dispatch(self):
         # A separate interpreter is essential: other profile tests have already
         # imported workflow evidence and would hide this production-start bug.

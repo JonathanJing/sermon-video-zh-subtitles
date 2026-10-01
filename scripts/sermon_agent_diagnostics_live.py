@@ -22,6 +22,10 @@ from scripts import sermon_workflow_jobs as jobs
 from scripts.sermon_release_workflow import _safe_path
 
 SCHEMA = 'sermon-live-diagnostic-authorization-v1'
+EXTENDED_SCHEMA = 'sermon-live-diagnostic-authorization-v2'
+
+# Transport receipts count API method invocations. Paginated list methods may
+# perform up to four HTTP requests within one invocation and its I/O deadline.
 
 
 def observed_cost(model, usage):
@@ -43,21 +47,22 @@ def validate_authorization(value):
     keys = {'schemaVersion', 'approvalSha256', 'manifestSha256', 'model', 'limits',
             'reservationMicrousd', 'maxSessions', 'maxRootTurns', 'maxTransportCalls',
             'budgetEnforcement', 'evidenceMode'}
-    c.require(type(value) is dict and set(value) == keys and value['schemaVersion'] == SCHEMA,
+    c.require(type(value) is dict and set(value) == keys and value['schemaVersion'] in (SCHEMA, EXTENDED_SCHEMA),
               'invalid_live_diagnostic_authorization')
+    max_steps, max_seconds, max_calls = (16, 30, 44) if value['schemaVersion'] == SCHEMA else (60, 120, 132)
     for key in ('approvalSha256', 'manifestSha256'):
         c.require(type(value[key]) is str and len(value[key]) == 64 and
                   all(ch in '0123456789abcdef' for ch in value[key]), 'invalid_live_diagnostic_authorization')
     c.require(value['model'] == 'gpt-6-sol' and type(value['maxSessions']) is int and value['maxSessions'] == 1
               and type(value['maxRootTurns']) is int and value['maxRootTurns'] == 1
               and type(value['reservationMicrousd']) is int and 0 < value['reservationMicrousd'] <= 2_000_000
-              and type(value['maxTransportCalls']) is int and 4 <= value['maxTransportCalls'] <= 44
+              and type(value['maxTransportCalls']) is int and 4 <= value['maxTransportCalls'] <= max_calls
               and value['budgetEnforcement'] == 'observer_stop_not_server_enforced'
               and value['evidenceMode'] in ('synthetic', 'current_execution'), 'invalid_live_diagnostic_authorization')
     c.require(type(value['limits']) is dict and set(value['limits']) == set(asdict(diagnostic.DiagnosticLimits())),
               'invalid_live_diagnostic_authorization')
     limits = diagnostic.DiagnosticLimits(**value['limits']); limits.validate()
-    c.require(limits.max_steps <= 16 and limits.max_tool_reads <= 16 and limits.max_seconds <= 30,
+    c.require(limits.max_steps <= max_steps and limits.max_tool_reads <= 16 and limits.max_seconds <= max_seconds,
               'invalid_live_diagnostic_authorization')
     return json.loads(c.bounded_json(value))
 
@@ -103,7 +108,7 @@ class LiveDiagnosticClient:
         return raw
 
     def _invoke(self, method, args, timeout_seconds, *, cleanup=False):
-        c.require(type(timeout_seconds) in (float, int) and 0 < timeout_seconds <= 30,
+        c.require(type(timeout_seconds) in (float, int) and 0 < timeout_seconds <= (5 if cleanup else self.authorization['limits']['max_seconds']),
                   'diagnostic_deadline_exceeded')
         bound = self.root / 'observer.json'
         if bound.exists():
@@ -114,7 +119,7 @@ class LiveDiagnosticClient:
                         'deadlineAt': self.clock() + self.authorization['limits']['max_seconds']}
             immutable.save_once(bound, observer)
         c.require(observer['authorizationSha256'] == c.fingerprint(self.authorization), 'live_diagnostic_scope_changed')
-        remaining = timeout_seconds if cleanup else min(timeout_seconds, observer['deadlineAt'] - self.clock())
+        remaining = timeout_seconds if cleanup else min(30, timeout_seconds, observer['deadlineAt'] - self.clock())
         c.require(remaining > 0, 'diagnostic_deadline_exceeded')
         intents = list((self.root / 'transport').glob('*.intent.json'))
         c.require(len(intents) < self.authorization['maxTransportCalls'] - (0 if cleanup else 3),
@@ -312,8 +317,9 @@ def run_live_diagnostic(manifest, *, root, authorization, current_identity, key=
         if result['diagnosis'] is not None:
             identity = current_identity() if callable(current_identity) else current_identity
             diagnostic.validate_recommendation(result['diagnosis'], bundle, current_identity=identity)
-        cancellation = {'status': 'not_required'}
-        if result['status'] != 'completed' and result['checkpoint']['sessionId'] is not None:
+        exhausted_checkpoint = checkpoint is not None and checkpoint['elapsedSeconds'] >= limits.max_seconds
+        cancellation = {'status': 'not_attempted_exhausted_checkpoint_requires_reconciliation'} if exhausted_checkpoint else {'status': 'not_required'}
+        if not exhausted_checkpoint and result['status'] != 'completed' and result['checkpoint']['sessionId'] is not None:
             try:
                 cancellation = client.cancel_once(result['checkpoint']['sessionId'])
             except (ValueError, OSError):

@@ -144,6 +144,45 @@ class CachedFreshSourceTests(unittest.TestCase):
         with self.subject._locked() as (_,state):self.assertEqual(state['requests'],{})
         self.assertEqual(len(transport.observations),self.calls)
 
+    def test_unified_entry_dev_builder_failure_keeps_safe_terminal_receipt_and_reraises(self):
+        from types import SimpleNamespace
+        from tests.test_sermon_diagnostic_prefect_flow import config_fixture
+        identity=self.plan['executionIdentity'];transport=self.fixture.f.transport
+        public.save_once(self.root/'offline-business-scope.json',{'schemaVersion':'sermon-offline-business-scope-v1',
+            'fixtureId':transport.fixture_id,'providerConfigSha256':c.canonical_sha256(self.subject.config),
+            'storeSha256':self.subject.store.store_sha256,'mode':'offline_fixture','productionEligible':False})
+        draft=self.root/'draft-policy.json';rubric=self.root/'draft-rubric.json'
+        public.save_once(draft,self.fixture.f.policy);public.save_once(rubric,self.fixture.f.rubric)
+        plugin=self.root/'plugin.py';plugin.write_bytes(Path(self.fixture.f.locale_specs['zh-Hans']['pluginPath']).read_bytes())
+        drafts={'zh-Hans':{'policy':str(draft),'rubric':str(rubric),'pluginPath':str(plugin)}}
+        config=config_fixture(self.root/'inert-preview-contract',locales=('zh-Hans',))
+        previews={loc:lane['previewSpec'] for loc,lane in config['locales'].items()}
+        # This test exercises post-traversal Dev failure, not translation/TTS.
+        observation={'readyForDownstream':False,'completionSpans':[]}
+        dag=SimpleNamespace(nodes=[('delivery.readonly','delivery',None,())],
+            results={'delivery.readonly':observation},freeze=lambda:None,execute=lambda _:observation)
+        baseline=self.root/'private-baseline-path';baseline.mkdir();(baseline/'firebase.json').write_text('{}')
+        with patch.object(accounting,'execution_identity',return_value=identity),patch.object(entry.flow,'DiagnosticDAG',return_value=dag):
+            with self.assertRaisesRegex(c.ContractError,'^dev_snapshot_target_invalid$'):
+                entry.run_fresh_diagnostic(self.plan,key=None,execute=False,source_recipe=None,
+                    source_cache_parent_plan_path=self.parent/'run-plan.json',authorization=self.fixture.authorization,
+                    locale_drafts=drafts,preview_specs=previews,offline_transport=transport,
+                    dev_snapshot={'baseline':str(baseline),'out':str(self.root/'dev-candidate'),'page_id':'fixture'})
+        files=list((self.root/'fresh-diagnostic-failures').glob('*.json'));self.assertEqual(len(files),1)
+        failed,data=public.read_snapshot(files[0])
+        self.assertEqual(failed['status'],'failed');self.assertEqual(failed['reasonCode'],'dev_snapshot_target_invalid')
+        self.assertEqual(failed['errorType'],'ContractError')
+        self.assertNotIn(b'private-baseline-path',data)
+        last=next((self.root/'fresh-diagnostic-results').glob('*.json'));result,result_bytes=public.read_snapshot(last)
+        self.assertEqual(failed['lastCompletedResultRef']['canonicalJsonSha256'],c.canonical_sha256(result))
+        self.assertEqual(failed['lastCompletedResultRef']['bytesSha256'],c.bytes_sha256(result_bytes))
+        self.assertFalse(failed['productionEligible']);self.assertEqual(failed['humanAcceptance'],'pending')
+        with self.subject._locked() as (_,state):self.assertEqual(state['requests'],{})
+        self.assertEqual(len(transport.observations),self.calls)
+        events,_=accounting.read_events(self.root/'fresh-diagnostic-logs')
+        self.assertTrue(any(row['event']=='run_finished' and row['status']=='failed' for row in events))
+        self.assertEqual(self.parent_files,{path:Path(path).read_bytes() for path in self.parent_files})
+
 
 class FreshPreviewPreflightTests(unittest.TestCase):
     def test_fixture_scope_and_future_source_paths_need_no_native_runtime(self):
@@ -171,6 +210,41 @@ class FreshPreviewPreflightTests(unittest.TestCase):
                         locale_drafts={'zh-Hans':{}},preview_specs=previews)
             previews['zh-Hans']['runtime_manifest_path']=str(Path(directory)/'missing-runtime.json')
             with patch.object(entry,'FreshDiagnosticSession',side_effect=AssertionError('provider must not initialize')):
+                with self.assertRaisesRegex(c.ContractError,'fresh_diagnostic_preview_checkpoint_manifest_required'):
+                    entry.run_fresh_diagnostic({},key='unused',execute=True,source_recipe={},authorization={},
+                        locale_drafts={'zh-Hans':{}},preview_specs=previews)
+            previews['zh-Hans'].update(checkpoint_manifest_path=str(Path(directory)/'missing-checkpoint.json'),
+                checkpoint_stage_declaration_path=str(Path(directory)/'missing-declaration.json'))
+            with patch.object(entry,'FreshDiagnosticSession',side_effect=AssertionError('provider must not initialize')):
                 with self.assertRaises((ValueError,OSError)):
                     entry.run_fresh_diagnostic({},key='unused',execute=True,source_recipe={},authorization={},
+                        locale_drafts={'zh-Hans':{}},preview_specs=previews)
+
+    def test_real_checkpoint_tree_and_declaration_checked_before_provider_initialization(self):
+        from tests.test_sermon_preview_checkpoint_manifest import CheckpointManifestTests
+        from tests.test_sermon_diagnostic_prefect_flow import config_fixture
+        from scripts import sermon_native_preview_runtime as native
+        fixture=CheckpointManifestTests();fixture.setUp();self.addCleanup(fixture.doCleanups)
+        bindings={'previewCheckpointManifest':fixture.binding['checkpointManifest']['fileBytesSha256'],
+                  'previewCheckpointTree':fixture.binding['treeSha256']}
+        run,declaration,_=fixture.declaration(bindings)
+        plan=c.read_snapshot(run/'run-plan.json')[0]
+        config=config_fixture(run,locales=('zh-Hans',))
+        previews={locale:lane['previewSpec'] for locale,lane in config['locales'].items()}
+        previews['zh-Hans'].update(execute=True,runtime_manifest_path=str(run/'runtime.json'),
+            checkpoint_manifest_path=str(fixture.path),checkpoint_stage_declaration_path=str(declaration))
+        before={str(path):path.read_bytes() for path in fixture.root.rglob('*') if path.is_file()}
+        # Only the independent native Python prefix seam is mocked. Complete
+        # checkpoint and frozen declaration validation run with real bytes.
+        with patch.object(native,'validate',return_value={'fixture':'native-prefix-only'}):
+            entry._preflight_preview_specs(previews,{'zh-Hans':{}},offline_fixture=False,plan=plan)
+            self.assertEqual(before,{str(path):path.read_bytes() for path in fixture.root.rglob('*') if path.is_file()})
+            with self.assertRaisesRegex(c.ContractError,'fresh_diagnostic_fixture_cannot_claim_native_runtime'):
+                previews['zh-Hans']['execute']=False
+                entry._preflight_preview_specs(previews,{'zh-Hans':{}},offline_fixture=True,plan=plan)
+            previews['zh-Hans']['execute']=True
+            (fixture.checkpoint/'speech_tokenizer/model.safetensors').write_bytes(b'changed auxiliary weights')
+            with patch.object(entry,'FreshDiagnosticSession',side_effect=AssertionError('provider must not initialize')):
+                with self.assertRaisesRegex(c.ContractError,'checkpoint_tree_changed'):
+                    entry.run_fresh_diagnostic(plan,key='unused',execute=True,source_recipe={},authorization={},
                         locale_drafts={'zh-Hans':{}},preview_specs=previews)

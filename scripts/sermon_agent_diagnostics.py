@@ -44,9 +44,9 @@ class DiagnosticLimits:
     max_transport_bytes: int = 256 * 1024
 
     def validate(self):
-        require(type(self.max_steps) is int and 1 <= self.max_steps <= 32, "invalid_limits")
+        require(type(self.max_steps) is int and 1 <= self.max_steps <= 60, "invalid_limits")
         require(type(self.max_tool_reads) is int and 0 <= self.max_tool_reads <= 64, "invalid_limits")
-        require(type(self.max_seconds) in (int, float) and 0 < self.max_seconds <= 60, "invalid_limits")
+        require(type(self.max_seconds) in (int, float) and 0 < self.max_seconds <= 120, "invalid_limits")
         require(type(self.max_transport_bytes) is int and 1024 <= self.max_transport_bytes <= 256 * 1024,
                 "invalid_limits")
 
@@ -264,6 +264,10 @@ def diagnose(manifest, *, client: OfflineAgentsClient, limits=DiagnosticLimits()
             checkpoint_writer(json.loads(bounded_json(state, 256 * 1024)))
         require(elapsed() < limits.max_seconds, "diagnostic_deadline_exceeded")
         return value
+    # Exhausted evidence remains readable with its true elapsed time. Reading
+    # that checkpoint grants no further create, poll or tool submission allowance.
+    if checkpoint is not None and elapsed_before >= limits.max_seconds:
+        return result("outcome_unknown", "diagnostic_deadline_exceeded")
     try:
         if state["sessionId"] is None:
             state["creationAttempted"] = True
@@ -361,7 +365,9 @@ def _validate_checkpoint(checkpoint, payload_hash, bundle, limits):
             "checkpoint_identity_mismatch")
     require(state["creationAttempted"] is True and type(state["steps"]) is int
             and 0 <= state["steps"] <= limits.max_steps and type(state["elapsedSeconds"]) in (float, int)
-            and 0 <= state["elapsedSeconds"] <= limits.max_seconds, "invalid_checkpoint")
+            and 0 <= state["elapsedSeconds"], "invalid_checkpoint")
+    # bounded_json already rejects non-finite numbers. An overrun is evidence of
+    # exhaustion, not malformed state; diagnose cannot dispatch it again.
     for key in ("sessionId", "turnId", "actualModel"):
         if state[key] is not None:
             _identifier(state[key])

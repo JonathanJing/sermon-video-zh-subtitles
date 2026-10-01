@@ -68,7 +68,23 @@ def compile_candidate(source_bytes, anchor_bytes, policy_bytes, rubric_bytes,
         group = {k: artifact[k] for k in ('translationGroupId', 'sourceUnitIds')}
         limits = read('request-limits.json')[0] if (root / 'request-limits.json').exists() else None
         prepared = strict.prepare(source_bytes, anchor_bytes, policy_bytes, rubric_bytes, group, request_limits=limits, diagnostic_context=diagnostic_context)
+        dispatch_proofs={}
         if repair is not None:strict.validate_repair(prepared,manifest['candidateId'],manifest['revisionId'],repair)
+        if repair is not None and 'languagePluginRepair' in repair:
+            from scripts.sermon_historical_layer2 import validate_repair_return
+            read('language-plugin-repair.json')
+            for role in ('translator','reviewer'):
+                returned,_=read(role+'-historical-return-proof.json')
+                validate_repair_return(root,repair,role,returned)
+                proof,_=read(role+'-historical-dispatch-proof.json')
+                c.require(proof.get('schemaVersion')=='sermon-language-repair-dispatch-v1' and
+                    proof.get('repairContextSha256')==c.canonical_sha256(repair['languagePluginRepair']) and
+                    proof.get('enforcementScope')=='new_provider_ledger_historical_parent_repair',
+                    'strict_bridge_language_repair_proof_changed')
+                dispatch_proofs[role]=proof
+        if (root/'historical-rebind.json').exists():
+            from scripts.sermon_historical_layer2 import validate_rebind
+            proof,_=read('historical-rebind.json');validate_rebind(prepared,root,proof)
         for key, value in strict.common_identity(prepared, manifest['candidateId'], manifest['revisionId']).items():
             c.require(manifest[key] == value, 'strict_bridge_current_identity_changed')
         for data, key in ((source_bytes, 'sourcePackageBytesSha256'),
@@ -95,6 +111,13 @@ def compile_candidate(source_bytes, anchor_bytes, policy_bytes, rubric_bytes,
             prompt = (strict.generation_prompt(prepared, repair) if role=='translator' else
                       strict.prompt(prepared, role, candidate=artifact, input_manifest=inputs))
             payload = strict._payload(prepared, role, prompt)
+            if role in dispatch_proofs:
+                proof=dispatch_proofs[role]
+                c.require(set(proof)=={'schemaVersion','enforcementScope','role','repairContextSha256','newPlanRef',
+                    'payloadSha256','requestLimits','productionEligible'} and proof['role']==role and
+                    proof['newPlanRef']==repair['languagePluginRepair']['specification']['newPlanRef'] and
+                    proof['payloadSha256']==c.canonical_sha256(payload) and proof['requestLimits']==limits and
+                    proof['productionEligible'] is False,'strict_bridge_language_repair_proof_changed')
             c.require(result['payloadSha256'] == c.canonical_sha256(payload),
                       'strict_bridge_request_payload_changed')
             if role == 'translator':

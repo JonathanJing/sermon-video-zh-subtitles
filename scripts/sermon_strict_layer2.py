@@ -198,6 +198,9 @@ def validate_repair(prepared,candidate_id,revision_id,repair):
     This proves evidence/lineage, never budget or execution authority. D5 must
     reserve against the pinned shared ledger before invoking this adapter.
     """
+    if type(repair) is dict and 'languagePluginRepair' in repair:
+        from scripts.sermon_historical_layer2 import validate_language_repair
+        return validate_language_repair(prepared,candidate_id,revision_id,repair)
     from scripts.sermon_repair_planning import CONTENT_FAILURES
     c.require(type(repair) is dict and set(repair)=={'parentRevision','parentCandidateBytes','plan',
         'triggerReview','inputManifest','sidecars','priorRevisions','priorRepairs'},'invalid_strict_repair_inputs')
@@ -231,7 +234,14 @@ def validate_repair(prepared,candidate_id,revision_id,repair):
 
 def generation_prompt(prepared,repair=None):
     request=prompt(prepared,'translator')
-    if repair is not None:
+    if repair is not None and 'languagePluginRepair' in repair:
+        context=repair['languagePluginRepair']
+        request['instruction']+=' Repair only this group using the actual language-plugin surface failure. The original semantic review passed. Preserve every frozen policy field, including pending review status. Include each declared missing target surface exactly; do not grant human or production approval.'
+        request['input'].update(parentCandidate=c.decode_json(repair['parentCandidateBytes']),
+            repairPlanId=repair['plan']['repairPlanId'],reasonCodes=repair['plan']['reasonCodes'],
+            originalSemanticReviewVerdict='pass',languagePluginFailure=context['failedGroup'],
+            originalLanguageReceiptSha256=context['languageReceiptSha256'],termSurfaceRepairs=context['termRepairs'])
+    elif repair is not None:
         request['instruction']+=' Repair only this group using the bound failure findings. Preserve the frozen source and policy; never approve your output.'
         request['input'].update(parentCandidate=c.decode_json(repair['parentCandidateBytes']),
             repairPlanId=repair['plan']['repairPlanId'],reasonCodes=repair['plan']['reasonCodes'],
@@ -246,6 +256,8 @@ def save_repair(root,repair):
         save_once(root/(name+'.json'),repair[key])
     save_once(root/'repair-sidecars.json',{key:c.decode_json(data) for key,data in repair['sidecars'].items()})
     save_once(root/'repair-history.json',{key:repair[key] for key in ('priorRevisions','priorRepairs')})
+    if 'languagePluginRepair' in repair:
+        save_once(root/'language-plugin-repair.json',repair['languagePluginRepair'])
     path=root/'parent-candidate.json';data=repair['parentCandidateBytes']
     if path.exists():c.require(c.read_snapshot(path)[1]==data,'strict_repair_parent_bytes_changed')
     else:artifacts.write(path,data.decode('utf-8'))
@@ -259,6 +271,8 @@ def load_repair(root):
     result['parentCandidateBytes']=c.read_snapshot(root/'parent-candidate.json')[1]
     result['sidecars']={key:c.canonical_bytes(value) for key,value in c.read_snapshot(root/'repair-sidecars.json')[0].items()}
     result.update(c.read_snapshot(root/'repair-history.json')[0])
+    if (root/'language-plugin-repair.json').exists():
+        result['languagePluginRepair']=c.read_snapshot(root/'language-plugin-repair.json')[0]
     return result
 
 

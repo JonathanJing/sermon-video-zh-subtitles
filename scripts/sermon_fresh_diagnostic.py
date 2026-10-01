@@ -1,11 +1,12 @@
 """Fixed fresh diagnostic entry: real Source -> strict text -> preview -> inspect.
 
 Only an explicit execute plus injected credential enables provider calls. This
-entry creates no formal Audio/Release Package and publishes nothing. A reviewed
-Dev snapshot is a separate output/action. The original store/clock are preserved
+entry creates no formal Audio/Release Package. A reviewed Dev diagnostic snapshot
+can be published only by its explicit publication option and frozen target. The original store/clock are preserved
 on replay; changed code/source/policy requires its proper new attempt identity.
 """
 from copy import deepcopy
+from contextlib import contextmanager
 from pathlib import Path
 import importlib
 
@@ -25,6 +26,58 @@ from scripts import produce_target_language_candidate as producer
 from scripts import run_target_language_models as models
 from scripts.sermon_release_workflow import _safe_path
 
+TERMINAL_REASONS=frozenset({'diagnostic_continuation_code_changed','diagnostic_dag_binding_changed',
+    'diagnostic_prior_outcome_requires_reconciliation','diagnostic_flow_frozen_inputs_changed',
+    'diagnostic_dag_source_or_clock_changed','fresh_dev_snapshot_inputs_invalid',
+    'fresh_dev_publication_scope_invalid','fresh_diagnostic_preview_locales_changed',
+    'strict_bridge_plugin_rejected','dev_snapshot_target_invalid','dev_snapshot_output_scope_changed',
+    'dev_diagnostic_page_invalid','dev_machine_candidate_changed','dev_preview_candidate_changed',
+    'dev_preview_without_candidate','dev_preview_unit_changed','dev_preview_audio_path_invalid',
+    'dev_preview_duration_changed','dev_preview_mode_changed','dev_preview_track_short',
+    'dev_snapshot_formal_catalog_changed','dev_stage_results_binding_changed','dev_stage_results_invalid',
+    'dev_http_asset_changed','dev_http_range_changed','dev_publication_outcome_requires_reconciliation',
+    'dev_publication_replay_changed','dev_publication_requires_reconciliation','dev_publish_context_changed',
+    'dev_publish_explicit_authorization_required','dev_publish_fixture_scope_forbidden',
+    'dev_publish_original_deadline_reached','dev_publish_provider_outcome_unknown','dev_publish_run_changed',
+    'dev_publish_snapshot_changed','dev_publish_target_changed','dev_publish_timeout_invalid',
+    'fresh_historical_layer2_inputs_changed','fresh_historical_layer2_locales_invalid',
+    'fresh_historical_layer2_already_frozen','fresh_historical_layer2_type_invalid',
+    'fresh_historical_layer2_new_plan_changed'})
+
+
+@contextmanager
+def _terminal_failure_receipt(session):
+    """Persist safe post-Source failures and rethrow the original exception."""
+    try:
+        yield
+    except accounting.AccountingWriteError:
+        raise
+    except Exception as exc:
+        if getattr(exc,'sermon_logging_failed',False):
+            raise
+        # Exception messages may include source text, paths or provider bodies.
+        reason=str(exc) if type(exc) is c.ContractError and str(exc) in TERMINAL_REASONS else 'unclassified_stage_failure'
+        failed={'schemaVersion':'sermon-fresh-diagnostic-terminal-failure-v1','status':'failed',
+            'reasonCode':reason,'errorType':type(exc).__name__,
+            'runId':session.subject.config['runId'],'planSha256':c.canonical_sha256(session.plan),
+            'diagnosticContextSha256':c.canonical_sha256(session.context),
+            'sourceEvidenceSha256':c.canonical_sha256(session.binding['sourceEvidence']),
+            'lastCompletedResultRef':deepcopy(getattr(session,'_last_completed_result_ref',None)),
+            'productionEligible':False,'humanAcceptance':'pending','executionAuthority':'none'}
+        try:
+            strict.save_once(session.root/'fresh-diagnostic-failures'/(c.canonical_sha256(failed)+'.json'),failed)
+        except Exception:
+            # Preserve the business exception; do not claim the sidecar exists.
+            exc.sermon_failure_receipt_persistence_failed=True
+        raise
+
+
+def _save_result(session,result):
+    path=session.root/'fresh-diagnostic-results'/(c.canonical_sha256(result)+'.json')
+    data=strict.save_once(path,result)
+    session._last_completed_result_ref={'artifactId':'fresh-diagnostic-result',
+        'canonicalJsonSha256':c.canonical_sha256(result),'bytesSha256':c.bytes_sha256(data)}
+
 
 def preload_execution_modules(plugin_paths=()):
     """Call BEFORE freezing a fresh plan; imports only fixed local stage code."""
@@ -32,7 +85,9 @@ def preload_execution_modules(plugin_paths=()):
                  'sermon_native_preview_runtime','sermon_strict_candidate_bridge','sermon_strict_controller',
                  'sermon_strict_budget_adapter','sermon_strict_locale','prepare_target_language_speech_job',
                  'render_formal_target_language_speech','render_multilingual_voice_demos',
-                 'validate_target_language_audio_unit','sermon_local_model_observation'):
+                 'validate_target_language_audio_unit','sermon_local_model_observation',
+                 'sermon_trace_artifacts','sermon_review_diagnostics','sermon_preview_checkpoint_manifest',
+                 'sermon_historical_layer2'):
         importlib.import_module('scripts.'+name)
     repository=Path(__file__).resolve().parents[1]
     for path in plugin_paths:
@@ -68,6 +123,7 @@ class FreshDiagnosticSession(sessions.DiagnosticSession):
         self.runner=bounded.BoundedRun(self.subject,offline.OFFLINE_KEY if fixture else key,self.root,source_clip=plan['sourceClipPath'])
         self._locale_results={}; self._locale_specs={}; self.context=None; self.binding=None
         self._cached_source=False
+        self._historical_reuse={}; self._historical_specification=None
 
     def _check(self):
         active=profile.current()
@@ -76,6 +132,7 @@ class FreshDiagnosticSession(sessions.DiagnosticSession):
         c.require(identity and self.root in self._path(identity[0]).parents,'diagnostic_dag_accounting_outside_scope')
         current=accounting.execution_identity(); frozen=self.plan['executionIdentity']
         c.require(current==frozen,'diagnostic_continuation_code_changed')
+        self._check_historical_inputs()
         c.require(c.read_snapshot(self.root/'run-plan.json')[0]==self.plan and self.subject.executor is self.transport
             and self.subject.config==self.plan['providerConfig'] and
             c.read_snapshot(self.root/'fresh-request-limits.json')[0]==self.subject.limits,'diagnostic_dag_binding_changed')
@@ -101,6 +158,46 @@ class FreshDiagnosticSession(sessions.DiagnosticSession):
                     _,reference=source_adapter.returned_receipt(self.root,self.subject.config,operation,model)
                     c.require(reference==self.binding['sourceEvidence'][key],'fresh_source_receipt_binding_changed')
         return self.binding['sourceEvidence'] if self.binding else None
+
+    def _check_historical_inputs(self):
+        if self._historical_specification is not None:
+            from scripts import sermon_historical_layer2 as historical
+            frozen_spec,data=c.read_snapshot(self._historical_specification_path)
+            c.require(frozen_spec==self._historical_specification
+                and c.bytes_sha256(data)==self.binding['historicalLayer2Inputs']['bytesSha256']
+                and set(self._historical_reuse)==set(frozen_spec['locales'])
+                and all(type(resolver) is historical.HistoricalLayer2Reuse
+                    and resolver.spec==frozen_spec['locales'][locale] for locale,resolver in self._historical_reuse.items()),
+                'fresh_historical_layer2_inputs_changed')
+
+    def configure_historical_locales(self, specifications, locales):
+        """Freeze explicit closed-parent rebind specs, never general callbacks."""
+        from scripts import sermon_historical_layer2 as historical
+        self._check()
+        c.require(type(specifications) is dict and bool(specifications)
+            and set(specifications)<=set(locales) and c._strict_json(specifications),
+            'fresh_historical_layer2_locales_invalid')
+        c.require(self._historical_specification is None,'fresh_historical_layer2_already_frozen')
+        resolvers={locale:historical.HistoricalLayer2Reuse(spec) for locale,spec in specifications.items()}
+        c.require(all(type(resolver) is historical.HistoricalLayer2Reuse for resolver in resolvers.values()),
+            'fresh_historical_layer2_type_invalid')
+        for locale,resolver in resolvers.items():
+            new,_=historical.check_ref(resolver.spec['newPlanRef'])
+            c.require(new==self.plan and Path(resolver.spec['newPlanRef']['path'])==self.root/'run-plan.json'
+                and c.read_snapshot(Path(resolver.spec['parentMaterialRefs']['policy']['path']))[0]['targetLocale']==locale,
+                'fresh_historical_layer2_new_plan_changed')
+        frozen={'schemaVersion':'sermon-fresh-historical-layer2-inputs-v1',
+            'runId':self.subject.config['runId'],'diagnosticContextSha256':c.canonical_sha256(self.context),
+            'locales':deepcopy(specifications),'productionEligible':False,'humanAcceptance':'pending'}
+        path=self.root/'fresh-historical-layer2-inputs.json';data=strict.save_once(path,frozen)
+        self._historical_specification=frozen;self._historical_specification_path=path
+        self._historical_reuse=resolvers
+        self.binding['historicalLayer2Inputs']={'path':str(path),'bytesSha256':c.bytes_sha256(data)}
+        self._check()
+
+    def run_locale(self, locale, spec, *, depends_on=None):
+        return super().run_locale(locale,spec,depends_on=depends_on,
+            historical_reuse=self._historical_reuse.get(locale))
 
     def prepare_source(self, recipe, authorization):
         self._check()
@@ -151,15 +248,17 @@ class FreshDiagnosticSession(sessions.DiagnosticSession):
         return prepared
 
 
-def _preflight_preview_specs(preview_specs, locale_drafts, *, offline_fixture):
+def _preflight_preview_specs(preview_specs, locale_drafts, *, offline_fixture, plan=None):
     """Validate cheap native input contracts before any paid Source stage."""
     from scripts import sermon_diagnostic_preview_worker as worker
     from scripts import sermon_native_preview_runtime as native
+    from scripts import sermon_preview_checkpoint_manifest as checkpoint
+    checkpoint_keys={'checkpoint_manifest_path','checkpoint_stage_declaration_path'}
     c.require(type(preview_specs) is dict and set(preview_specs)==set(locale_drafts)
         and bool(preview_specs) and set(preview_specs)<=flow.LOCALES,'fresh_diagnostic_preview_locales_changed')
     for spec in preview_specs.values():
         c.require(type(spec) is dict and worker.REQUIRED <= set(spec)
-            and set(spec) <= worker.REQUIRED|worker.OPTIONS|{'fixture_behavior','runtime_manifest_path'}
+            and set(spec) <= worker.REQUIRED|worker.OPTIONS|{'fixture_behavior','runtime_manifest_path'}|checkpoint_keys
             and type(spec['execute']) is bool and spec['execute'] is (not offline_fixture),
             'fresh_diagnostic_preview_mode_changed')
         c.require(type(spec['paths']) is dict and set(spec['paths'])==set(worker.PATH_KEYS)-{'candidate'},
@@ -167,12 +266,24 @@ def _preflight_preview_specs(preview_specs, locale_drafts, *, offline_fixture):
         c.require(offline_fixture or 'runtime_manifest_path' in spec,'fresh_diagnostic_preview_runtime_manifest_required')
         c.require(not offline_fixture or 'runtime_manifest_path' not in spec,'fresh_diagnostic_fixture_cannot_claim_native_runtime')
         c.require(offline_fixture or 'fixture_behavior' not in spec,'fresh_diagnostic_preview_fixture_forbidden')
+        c.require(offline_fixture or checkpoint_keys <= set(spec),'fresh_diagnostic_preview_checkpoint_manifest_required')
+        c.require(not offline_fixture or not checkpoint_keys & set(spec),'fresh_diagnostic_fixture_cannot_claim_checkpoint_manifest')
         for value in (*spec['paths'].values(),*[spec[key] for key in
-                ('checkpoint_map_path','operation_policies_path','strict_rubric_path','out')]):
+                ('checkpoint_map_path','operation_policies_path','strict_rubric_path','out',*sorted(checkpoint_keys))
+                if key in spec]):
             c.require(type(value) is str and Path(value).is_absolute(),'fresh_diagnostic_preview_absolute_path_required')
             _safe_path(value)  # Future Source/policy outputs need not exist yet.
         if not offline_fixture:
             native.validate(_safe_path(spec['runtime_manifest_path']),require_process=True)
+            c.require(type(plan) is dict,'fresh_diagnostic_preview_checkpoint_plan_required')
+            manifest_path=_safe_path(spec['checkpoint_manifest_path'])
+            manifest=c.read_snapshot(manifest_path)[0]
+            bound=checkpoint.validate(manifest_path,root=manifest['checkpointRoot'],
+                checkpoint_ref=manifest['checkpointRef'],conditioning_sha256=manifest['conditioningSha256'])
+            checkpoint.validate_declaration(Path(plan['runDirectory']),
+                _safe_path(spec['checkpoint_stage_declaration_path']),bound,
+                {'runConfigSha256':c.canonical_sha256(plan['providerConfig']),
+                 'continuationCodeCommit':plan['executionIdentity']['gitCommit']})
 
 
 def freeze_locale_inputs(session, locale_drafts):
@@ -222,11 +333,13 @@ def freeze_locale_inputs(session, locale_drafts):
 
 def run_fresh_diagnostic(plan, *, key, execute=False, source_recipe, authorization, locale_drafts,
                          preview_specs, request_limits=None, dev_snapshot=None, offline_transport=None,
-                         execute_publish=False, publication_approval_sha256=None, source_cache_parent_plan_path=None):
+                         execute_publish=False, publication_approval_sha256=None, source_cache_parent_plan_path=None,
+                         historical_locale_specs=None):
     """Unified fixed sequential DAG. Business ledgers decide all replay/retries.
 
-    Produces preview/read-only delivery evidence only. Does not call Prefect's
-    cache, grant human approval, publish Hosting, or relabel preview as release.
+    Produces preview/read-only delivery evidence, plus optional explicitly
+    authorized Dev snapshot publication and HTTP verification. Does not call
+    Prefect's cache, grant human approval, or relabel preview as formal release.
     """
     c.require(type(execute_publish) is bool and (not execute_publish or (dev_snapshot is not None
         and offline_transport is None)), 'fresh_dev_publication_scope_invalid')
@@ -235,7 +348,7 @@ def run_fresh_diagnostic(plan, *, key, execute=False, source_recipe, authorizati
         c.require(type(publication_approval_sha256) is str and re.fullmatch('[a-f0-9]{64}',publication_approval_sha256),
                   'fresh_dev_publication_scope_invalid')
     c.require(source_cache_parent_plan_path is None or source_recipe is None,'fresh_source_cache_recipe_conflict')
-    _preflight_preview_specs(preview_specs,locale_drafts,offline_fixture=offline_transport is not None)
+    _preflight_preview_specs(preview_specs,locale_drafts,offline_fixture=offline_transport is not None,plan=plan)
     session=FreshDiagnosticSession(plan,key=key,execute=execute,request_limits=request_limits,offline_transport=offline_transport)
     with profile.session(session.root/'fresh-diagnostic-logs','fresh_diagnostic',work_kind='production',
                          evidence_mode=session.evidence_mode,production_run_id=session.subject.config['runId']):
@@ -250,39 +363,42 @@ def run_fresh_diagnostic(plan, *, key, execute=False, source_recipe, authorizati
                 'reasonCode':reason,'errorType':type(exc).__name__,'productionEligible':False,'humanAcceptance':'pending'}
             strict.save_once(session.root/'fresh-source-failures'/(c.canonical_sha256(failed)+'.json'),failed)
             return failed
-        specs=freeze_locale_inputs(session,locale_drafts)
-        c.require(set(preview_specs)==set(specs),'fresh_diagnostic_preview_locales_changed')
-        config={'schemaVersion':flow.SCHEMA,'locales':{loc:{'localeSpec':spec,'previewSpec':deepcopy(preview_specs[loc])}
-                                                    for loc,spec in specs.items()}}
-        for locale,lane in config['locales'].items():
-            for key in ('source','anchor','policy'):
-                lane['previewSpec']['paths'][key]=lane['localeSpec'][key]
-            lane['previewSpec']['strict_rubric_path']=lane['localeSpec']['rubric']
-        dag=flow.DiagnosticDAG(session,config); dag.freeze()
-        dag.initial_source_spans=prepared['completionSpans']
-        results={node[0]:dag.execute(node[0]) for node in dag.nodes}
-        result={'schemaVersion':'sermon-fresh-diagnostic-result-v1','nodes':results,
-            'status':'diagnostic_traversal_complete' if results['delivery.readonly']['readyForDownstream'] else 'incomplete',
-            'productionEligible':False,'humanAcceptance':'pending','publicationAuthorized':False,'formalAudioPackageCreated':False,
-            'formalReleasePackageCreated':False,'planSha256':c.canonical_sha256(plan),'sourceEvidenceSha256':c.canonical_sha256(prepared['evidence'])}
-        strict.save_once(session.root/'fresh-diagnostic-results'/(c.canonical_sha256(result)+'.json'),result)
-        if dev_snapshot is not None:
-            from scripts import sermon_dev_diagnostic_snapshot as dev
-            c.require(type(dev_snapshot) is dict and set(dev_snapshot)=={'baseline','out','page_id'},'fresh_dev_snapshot_inputs_invalid')
-            previews={loc:dag.results[f'preview.{loc}'] for loc in specs if f'preview.{loc}' in dag.results}
-            leaves=[span for observation in results.values() for span in observation['completionSpans']]
-            stages={'schemaVersion':'sermon-dev-diagnostic-stage-results-v1','runId':session.subject.config['runId'],
-                'diagnosticContextSha256':c.canonical_sha256(session.context),'nodes':results}
-            built=dev.build_snapshot(session,**dev_snapshot,preview_receipts=previews,stage_results=stages,depends_on=leaves)
-            result={**result,'devSnapshot':built,'publicationStatus':'not_deployed'}
-            strict.save_once(session.root/'fresh-diagnostic-results'/(c.canonical_sha256(result)+'.json'),result)
-            if execute_publish:
-                publication={'schemaVersion':'sermon-dev-diagnostic-publication-authorization-v1',
-                    'manifestSha256':c.canonical_sha256(built['manifest']),'project':dev.PROJECT,'site':dev.PROJECT,
-                    'origin':dev.ORIGIN,'publicationScope':'diagnostic_preview_only','productionEligible':False,
-                    'approvalSha256':publication_approval_sha256}
-                delivery=dev.publish_and_verify(built,plan=plan,authorization=publication,execute=True,
-                    depends_on=built['completionSpans'])
-                result={**result,'publicationStatus':delivery['status'],'publicationReceipt':delivery}
-                strict.save_once(session.root/'fresh-diagnostic-results'/(c.canonical_sha256(result)+'.json'),result)
-        return result
+        with _terminal_failure_receipt(session):
+            specs=freeze_locale_inputs(session,locale_drafts)
+            if historical_locale_specs is not None:
+                session.configure_historical_locales(historical_locale_specs,specs)
+            c.require(set(preview_specs)==set(specs),'fresh_diagnostic_preview_locales_changed')
+            config={'schemaVersion':flow.SCHEMA,'locales':{loc:{'localeSpec':spec,'previewSpec':deepcopy(preview_specs[loc])}
+                                                        for loc,spec in specs.items()}}
+            for locale,lane in config['locales'].items():
+                for key in ('source','anchor','policy'):
+                    lane['previewSpec']['paths'][key]=lane['localeSpec'][key]
+                lane['previewSpec']['strict_rubric_path']=lane['localeSpec']['rubric']
+            dag=flow.DiagnosticDAG(session,config); dag.freeze()
+            dag.initial_source_spans=prepared['completionSpans']
+            results={node[0]:dag.execute(node[0]) for node in dag.nodes}
+            result={'schemaVersion':'sermon-fresh-diagnostic-result-v1','nodes':results,
+                'status':'diagnostic_traversal_complete' if results['delivery.readonly']['readyForDownstream'] else 'incomplete',
+                'productionEligible':False,'humanAcceptance':'pending','publicationAuthorized':False,'formalAudioPackageCreated':False,
+                'formalReleasePackageCreated':False,'planSha256':c.canonical_sha256(plan),'sourceEvidenceSha256':c.canonical_sha256(prepared['evidence'])}
+            _save_result(session,result)
+            if dev_snapshot is not None:
+                from scripts import sermon_dev_diagnostic_snapshot as dev
+                c.require(type(dev_snapshot) is dict and set(dev_snapshot)=={'baseline','out','page_id'},'fresh_dev_snapshot_inputs_invalid')
+                previews={loc:dag.results[f'preview.{loc}'] for loc in specs if f'preview.{loc}' in dag.results}
+                leaves=[span for observation in results.values() for span in observation['completionSpans']]
+                stages={'schemaVersion':'sermon-dev-diagnostic-stage-results-v1','runId':session.subject.config['runId'],
+                    'diagnosticContextSha256':c.canonical_sha256(session.context),'nodes':results}
+                built=dev.build_snapshot(session,**dev_snapshot,preview_receipts=previews,stage_results=stages,depends_on=leaves)
+                result={**result,'devSnapshot':built,'publicationStatus':'not_deployed'}
+                _save_result(session,result)
+                if execute_publish:
+                    publication={'schemaVersion':'sermon-dev-diagnostic-publication-authorization-v1',
+                        'manifestSha256':c.canonical_sha256(built['manifest']),'project':dev.PROJECT,'site':dev.PROJECT,
+                        'origin':dev.ORIGIN,'publicationScope':'diagnostic_preview_only','productionEligible':False,
+                        'approvalSha256':publication_approval_sha256}
+                    delivery=dev.publish_and_verify(built,plan=plan,authorization=publication,execute=True,
+                        depends_on=built['completionSpans'])
+                    result={**result,'publicationStatus':delivery['status'],'publicationReceipt':delivery}
+                    _save_result(session,result)
+            return result

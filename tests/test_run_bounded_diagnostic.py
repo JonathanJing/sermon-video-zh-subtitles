@@ -124,6 +124,14 @@ class BoundedRunTests(unittest.TestCase):
             'wallTimeMs':300000,'costMicrousd':409600})
         self.assertEqual(self.calls,[])
 
+    def test_optional_historical_resolver_is_forwarded_without_new_provider_calls(self):
+        resolver=object()  # Exact class enforcement belongs to strict_locale.
+        with patch.object(run.locale,'run_locale',return_value={'status':'fixture_boundary'}) as dispatch:
+            self.runner.run_locale(*self.f.args,graph=self.graph,plugin_path=self.f.f.plugin_path,
+                plugin_sha256=self.f.f.plugin_sha,group_plan=self.plan,historical_reuse=resolver)
+        self.assertIs(dispatch.call_args.kwargs['historical_reuse'],resolver)
+        self.assertEqual(self.calls,[])
+
     def test_simulated_human_context_keeps_one_bounded_provider_and_real_review(self):
         from scripts import sermon_diagnostic_context as diagnostic
         from tests.test_sermon_diagnostic_context import reidentify

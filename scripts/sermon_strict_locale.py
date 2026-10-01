@@ -24,7 +24,8 @@ from scripts.sermon_release_workflow import _safe_path
 def run_locale(source_bytes, anchor_bytes, policy_bytes, rubric_bytes, *, root,
                store, job_root, production_run_id, graph, plugin_path,
                expected_plugin_sha256, api_key, caller, bounds,
-               usage_resolver=None, group_plan=None, created_at=None, request_limits=None, diagnostic_context=None, depends_on=None):
+               usage_resolver=None, group_plan=None, created_at=None, request_limits=None, diagnostic_context=None, depends_on=None,
+               historical_reuse=None):
     """Run fixed groups and bounded repairs, then the real public/plugin bridge.
 
     All group inputs and the complete locale coverage are validated before the
@@ -44,6 +45,11 @@ def run_locale(source_bytes, anchor_bytes, policy_bytes, rubric_bytes, *, root,
     # Do not spend on a locale that cannot reach that existing boundary.
     c.require(len(plan) <= 128, 'strict_locale_admission_inventory_limit')
     prepared = [strict.prepare(*raw, group, request_limits=request_limits, diagnostic_context=diagnostic_context) for group in plan]
+    if historical_reuse is not None:
+        from scripts.sermon_historical_layer2 import HistoricalLayer2Reuse
+        c.require(type(historical_reuse) is HistoricalLayer2Reuse,'trusted_historical_layer2_required')
+        historical_reuse._current()
+        for item in prepared:historical_reuse.inspect(item)
     if hasattr(caller, 'preflight_locale'):
         caller.preflight_locale(prepared)
     units = [item['workUnitId'] for item in prepared]
@@ -68,7 +74,8 @@ def run_locale(source_bytes, anchor_bytes, policy_bytes, rubric_bytes, *, root,
         'groups': plan, 'graph': graph, 'pluginSha256': expected_plugin_sha256,
         'storeSha256': store.store_sha256, 'authoritySha256': store.authority_sha256,
         'bounds': bounds, **({'requestLimits': prepared[0]['requestLimits']} if request_limits is not None else {}),
-        **({'diagnosticContext': diagnostic_context} if diagnostic_context is not None else {})}
+        **({'diagnosticContext': diagnostic_context} if diagnostic_context is not None else {}),
+        **({'historicalReuseSha256':c.canonical_sha256(historical_reuse.spec)} if historical_reuse is not None else {})}
     lock_key = c.canonical_sha256({'purpose': 'strict-locale-run',
         'productionRunId': production_run_id, 'targetLocale': policy['targetLocale']})
     with jobs._lock(job_root, lock_key) as (_, _, held):
@@ -107,11 +114,16 @@ def run_locale(source_bytes, anchor_bytes, policy_bytes, rubric_bytes, *, root,
                 results.append(skipped)
                 continue
             completed = []
-            result = controller.run_group(item, root=root / 'groups' / c.canonical_sha256(item['group']),
-                store=store, job_root=job_root, production_run_id=production_run_id,
-                graph=graph, candidate_id='candidate.' + c.canonical_sha256(item['group']),
-                api_key=api_key, caller=caller, bounds=bounds, usage_resolver=usage_resolver,
-                created_at=created_at, depends_on=dependencies, completion_spans=completed)
+            if historical_reuse is not None:
+                result=historical_reuse.run_group(item,root=group_root,
+                    candidate_id='candidate.'+c.canonical_sha256(item['group']),api_key=api_key,caller=caller,
+                    depends_on=dependencies,completion_spans=completed)
+            else:
+                result = controller.run_group(item, root=root / 'groups' / c.canonical_sha256(item['group']),
+                    store=store, job_root=job_root, production_run_id=production_run_id,
+                    graph=graph, candidate_id='candidate.' + c.canonical_sha256(item['group']),
+                    api_key=api_key, caller=caller, bounds=bounds, usage_resolver=usage_resolver,
+                    created_at=created_at, depends_on=dependencies, completion_spans=completed)
             results.append(result)
             if completed: dependencies = completed[-1:]
             if result['status'] == 'machine_review_passed':

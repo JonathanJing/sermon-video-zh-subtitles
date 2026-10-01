@@ -104,6 +104,18 @@ class DiagnosticFlowTests(unittest.TestCase):
             dag.freeze()
             return {node[0]: dag.execute(node[0]) for node in dag.nodes}
 
+    def checkpoint_contract(self, config):
+        # Orchestration inventory only; actual complete-tree/declaration
+        # validation is exercised by the worker and fresh-entry contracts.
+        auxiliary=self.root/'speech-tokenizer.bin';auxiliary.write_bytes(b'inert auxiliary weights')
+        manifest=self.root/'checkpoint-manifest.json'
+        manifest.write_bytes(c.canonical_bytes({'files':[{'path':str(auxiliary)}]}))
+        declaration=self.root/'checkpoint-stage-declaration.json';declaration.write_text('{}')
+        for lane in config['locales'].values():
+            lane['previewSpec'].update(checkpoint_manifest_path=str(manifest),
+                checkpoint_stage_declaration_path=str(declaration))
+        return manifest,declaration,auxiliary
+
     def test_fixed_graph_preview_candidate_not_caller_supplied_and_all_gates_pending(self):
         dag = flow.DiagnosticDAG(self.session, self.config)
         self.assertEqual(dag.nodes[0], ('source.existing', 'source', None, ()))
@@ -159,18 +171,41 @@ class DiagnosticFlowTests(unittest.TestCase):
             'files':[{'path':str(runtime_file),'sha256':c.bytes_sha256(runtime_file.read_bytes())}]}))
         for lane in config['locales'].values():
             lane['previewSpec'].update(execute=True,runtime_manifest_path=str(manifest))
+        checkpoint,declaration,auxiliary=self.checkpoint_contract(config)
         dag=flow.DiagnosticDAG(self.session,config)
         self.assertEqual(dag.binding['inputFiles'][str(manifest)],c.bytes_sha256(manifest.read_bytes()))
         self.assertEqual(dag.binding['inputFiles'][str(runtime_file)],c.bytes_sha256(runtime_file.read_bytes()))
+        for path in (checkpoint,declaration,auxiliary):
+            self.assertEqual(dag.binding['inputFiles'][str(path)],c.bytes_sha256(path.read_bytes()))
         dag.freeze()
         original=manifest.read_bytes()
         manifest.write_text('{"changed":true}')
         with self.assertRaisesRegex(c.ContractError,'diagnostic_flow_frozen_inputs_changed'):
             dag._check()
         manifest.write_bytes(original)
+        runtime_file.write_bytes(b'inert runtime fixture')
+        auxiliary.write_bytes(b'changed auxiliary weights')
+        with self.assertRaisesRegex(c.ContractError,'diagnostic_flow_frozen_inputs_changed'):
+            dag._check()
+        auxiliary.write_bytes(b'inert auxiliary weights')
         runtime_file.write_bytes(b'changed runtime fixture')
         with self.assertRaisesRegex(c.ContractError,'diagnostic_flow_frozen_inputs_changed'):
             dag._check()
+        self.assertEqual(self.session.calls,[])
+
+    def test_checkpoint_inputs_required_for_live_and_forbidden_for_fixture_before_read(self):
+        config=copy.deepcopy(self.config);self.session.offline_fixture=False
+        for lane in config['locales'].values():
+            lane['previewSpec'].update(execute=True,runtime_manifest_path=str(self.root/'runtime.json'))
+        with patch.object(flow.public,'read_snapshot',side_effect=AssertionError('unexpected input read')):
+            with self.assertRaisesRegex(c.ContractError,'diagnostic_flow_preview_checkpoint_manifest_required'):
+                flow.DiagnosticDAG(self.session,config)
+        self.session.offline_fixture=True;config=copy.deepcopy(self.config)
+        for lane in config['locales'].values():
+            lane['previewSpec']['checkpoint_manifest_path']=str(self.root/'checkpoint.json')
+        with patch.object(flow.public,'read_snapshot',side_effect=AssertionError('unexpected input read')):
+            with self.assertRaisesRegex(c.ContractError,'diagnostic_flow_fixture_cannot_claim_checkpoint_manifest'):
+                flow.DiagnosticDAG(self.session,config)
         self.assertEqual(self.session.calls,[])
 
     def test_live_manifest_required_and_fixture_cannot_claim_native_before_read(self):
@@ -195,6 +230,7 @@ class DiagnosticFlowTests(unittest.TestCase):
         manifest=self.root/'runtime.json';manifest.write_text('{}')
         for lane in config['locales'].values():
             lane['previewSpec'].update(execute=True,runtime_manifest_path=str(manifest))
+        self.checkpoint_contract(config)
         lane=config['locales']['ko']['previewSpec']
         lane['runtime_manifest_path']='relative.json'
         with self.assertRaisesRegex(c.ContractError,'diagnostic_flow_absolute_path_required'):
