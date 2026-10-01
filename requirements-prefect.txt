@@ -1,0 +1,3 @@
+# Optional local orchestration pilot; production defaults do not import Prefect.
+prefect==3.8.7
+jsonschema>=4.23,<5
