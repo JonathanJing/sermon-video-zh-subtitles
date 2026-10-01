@@ -697,3 +697,5 @@ Canonical package adapter 第一批：Source/Text shadow inspection 已复用生
 - `DEV-DIAG-007`继续waiting_evidence：正式源文/译文/术语人审、逐单元回转写与疑点裁决、人工整轨听审/语言质量/同步、正式Audio/Release、物理设备与现场逐项验收；诊断default-pass和浏览器播放不能替代。
 
 证据与验证边界统一见[监督最终报告](reports/20261001-dev-diagnostic-supervised-plan.zh.md)。私有模型/媒体/日志/账本留在ignored artifacts，不进入Git。
+
+PR #198 首轮CI进一步发现旧CLI夹具缺runtime/checkpoint声明，补齐后暴露live preflight只读scope遗漏`binding`属性；两项均已修复，守卫不放宽。相关48项回归47通过、1本地可选Prefect SDK跳过，0真实API/模型调用；原失败保留，远程实际引擎及测试结果以最新PR head检查为准。此项归入既有诊断入口修复范围，详见报告的PR CI记录。

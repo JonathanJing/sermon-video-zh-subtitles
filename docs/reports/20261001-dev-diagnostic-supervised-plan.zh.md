@@ -178,3 +178,9 @@ v8 ES原生MPS worker实际加载一次模型、合成13单元；KO/ZH当前真�
 
 
 最终兼容补丁验证：5个受影响Source/Fresh/cache/delivery/legacy模块58 tests全部通过（40.299秒），含实际FreshSession constructor/_check/profile及真实Source读取重复检查、冷预载身份、cached v1/v2、闭父过期只读、tamper/unknown拒绝；MFA分支使用合成completed runtime链并保持0实际MFA/模型。根级DAG/会话回归26 tests中25通过、1既有optional Prefect SDK skip（13.199秒）。独立只读代码review无阻断；恢复报告绑定的三个检查器文件SHA与最终补丁完全相等。文档本地链接与git diff --check通过，不重复已验证native/runtime全套。所有代码均提交到工作分支；dev合入和正式验收仍独立。
+
+### PR CI 发现与修复
+
+PR #198 首轮 `f559fac` 的 Local Prefect pilot（run 36905429735）在156项测试中报1个CLI夹具错误：旧夹具缺少新增必需的runtime/checkpoint输入，生产守卫在读取凭据前正确拒绝。补齐明确不可执行的静态runtime夹具及完整惰性checkpoint/declaration后，复现出真实live preflight只读scope遗漏`binding`属性的问题。生产修复仅增加`binding={}`，未放宽输入、身份、期限或派发守卫。
+
+实际CLI四项通过（1.761秒）；CLI/Flow/DAGSession/native runtime/checkpoint/Fresh preview相关48项中47通过、1项本地可选实际Prefect SDK跳过（13.329秒）。有效夹具走真实preflight/config/inventory，禁止网络；缺清单、未知配置及缺checkpoint声明均在读凭据和执行前拒绝。原失败与回归日志、两文件冻结SHA留在`artifacts/v8-source-delivery-gap-audit/ci-cli-fixture`。此次修复0真实API/模型调用、0账本或旧媒体证据写入；远程CI结果以PR最新head检查为准。

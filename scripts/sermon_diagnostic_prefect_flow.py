@@ -371,7 +371,7 @@ def preflight_live(plan, continuation, config):
     root, subject, context, _, _ = entry.prepare_continuation(plan, continuation)
     c.require(not (root / 'offline-business-scope.json').exists(),
               'diagnostic_dag_fixture_cannot_become_live')
-    scope = SimpleNamespace(root=root, offline_fixture=False,
+    scope = SimpleNamespace(root=root, offline_fixture=False, binding={},
                             _path=lambda value, plugin=False: _path(str(value)))
     config = _config(config, scope)
     for lane in config['locales'].values():
