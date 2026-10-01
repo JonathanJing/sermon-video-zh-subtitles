@@ -1,3 +1,4 @@
+import { setIcon, setButtonLabel } from './icons.mjs';
 import { t, getLocale, setLocale, onLocaleChange, localizeDOM } from "/i18n.mjs";
 import { localizeWeek } from "/content-locales.mjs";
 import { messages as appMessages } from "/locales-app.mjs";
@@ -120,7 +121,7 @@ function renderWeekLabels() {
   $("week-status").textContent = isFormalPlayback(week) ? t("app.week.published") : week.humanContentReview === "approved" || week.audioStatus === "full_reviewed" ? t("app.week.ready") : week.audioStatus === "full_candidate" ? t("app.week.review") : week.tracks.length ? t("app.week.sample") : t("app.week.outline");
   $("audio-scope").textContent = isFormalPlayback(week) && track ? t("app.release.formal") : week.humanContentReview === "approved" && track ? t("app.release.full") : track?.scope === "full_candidate" ? t("app.release.review") : track?.scope === "full_reviewed" ? t("app.release.full") : track ? t("app.release.sample") : t("app.release.pending");
   $("voice").textContent = track ? t("app.voice.active", { speaker: week.speaker }) : t("app.voice.pending");
-  $("source-link").textContent = view.sourceLabel ? t("app.source.link", { label: view.sourceLabel }) : t("app.source.open");
+  setButtonLabel($("source-link"), view.sourceLabel ? t("app.source.link", { label: view.sourceLabel }) : t("app.source.open"));
   for (const button of $("variants").children) button.textContent = isFormalPlayback(week) ? t("app.release.formal") : getLocale() !== "zh" ? t("app.voice.active", { speaker: week.speaker }) : week.tracks.find(item => item.id === button.dataset.id)?.label || "";
   $("subtitle-note").textContent = t("app.subtitle.follow");
   document.title = `${activeView === "tab-voices" ? t("app.voices.title") : view.title} · ${t("app.brand")}`;
@@ -140,7 +141,7 @@ function showResume() {
   $("restart-position").disabled = !track || (!metadataReady && !pendingResume);
   if (!pendingResume) return;
   $("resume-message").textContent = t("app.resume.message", { time: formatTime(pendingResume.positionSeconds) });
-  $("resume-position").textContent = t("app.resume.button", { time: formatTime(pendingResume.positionSeconds) });
+  setButtonLabel($("resume-position"), t("app.resume.button", { time: formatTime(pendingResume.positionSeconds) }));
 }
 function stopStartup() {
   clearTimeout(startupTimer); startupTimer = null;
@@ -198,7 +199,8 @@ function update() {
   const sourceClock = track ? sourceTime(time) : null;
   $("source-clock").hidden = sourceClock === null;
   $("source-clock").textContent = sourceClock === null ? "" : t("app.source.clock", { time: sourceClock });
-  $("play-icon").textContent = audio.paused ? "▶" : "Ⅱ";
+  setIcon($("play-icon"), audio.paused ? "play.fill" : "pause.fill");
+  document.querySelectorAll("[data-play-icon]").forEach(node => setIcon(node, audio.paused ? "play.fill" : "pause.fill"));
   const playLabel = !track ? t("app.audio.preparing") : playPending ? t("app.audio.cancel") : playFailed ? t("app.audio.retry") : pendingResume ? t("app.audio.continue") : audio.ended ? t("app.audio.replay") : audio.paused ? t("app.audio.play") : t("app.audio.pause");
   $("play-label").textContent = playLabel;
   document.querySelectorAll("[data-play-label]").forEach(label => { label.textContent = playLabel; });
@@ -368,7 +370,8 @@ function renderTranscript() {
     button.setAttribute("aria-label", t("app.seek.to", { time: formatTime(cue.start) }));
     const time = document.createElement("time"); time.textContent = formatTime(cue.start);
     const text = document.createElement("span"); text.textContent = cue.text;
-    button.append(time);
+    const seekIcon = document.createElement("span"); setIcon(seekIcon, "arrow.right.to.line");
+    button.append(seekIcon, time);
     const originalTime = Number.isFinite(week?.sourceStartSeconds) ? sourceTime(cue.start) : null;
     if (originalTime !== null) {
       const sourceLabel = document.createElement("small");
@@ -482,7 +485,7 @@ function renderProduction() {
     li.dataset.status = item.status;
     const mark = document.createElement("span");
     mark.className = "stage-mark";
-    mark.textContent = item.status === "pass" ? "✓" : item.status === "review" ? "◐" : "○";
+    setIcon(mark, item.status === "pass" ? "checkmark.circle.fill" : item.status === "review" ? "clock.arrow.circlepath" : "circle");
     const body = document.createElement("div"), heading = document.createElement("h3"), detail = document.createElement("p"), state = document.createElement("small");
     heading.textContent = appText(item.label);
     detail.textContent = appText(item.detail);
@@ -560,7 +563,7 @@ function selectWeek(id) {
   $("central-message").textContent = week.centralMessage;
   $("audio-notice").textContent = week.audioNotice;
   $("source-link").href = week.sourceUrl;
-  $("source-link").textContent = week.sourceLabel ? t("app.source.link", { label: week.sourceLabel }) : t("app.source.open");
+  setButtonLabel($("source-link"), week.sourceLabel ? t("app.source.link", { label: week.sourceLabel }) : t("app.source.open"));
   $("source-link").hidden = false;
   $("variants").replaceChildren();
   $("variants").hidden = !week.tracks.length;

@@ -166,14 +166,14 @@ test('head palette script localizes after DOMContentLoaded, language changes, an
     assert.equal(doc.documentElement.dataset.theme, 'dark');
     doc.dispatchEvent({ type: 'DOMContentLoaded' });
     assert.equal(theme.label.textContent, '深色');
-    assert.equal(theme.icon.src, '/brand-icon.png');
+    assert.equal(theme.icon.src, '/brand-icon.svg');
     assert.equal(theme.label.getAttribute('data-i18n'), 'theme.dark');
     core.setLocale('en');
     assert.equal(theme.label.textContent, 'Dark');
     assert.equal(theme.button.getAttribute('aria-label'), 'Switch to light mode');
     theme.button.dispatchEvent({ type: 'click' });
     assert.equal(doc.documentElement.dataset.theme, 'light');
-    assert.equal(theme.icon.src, '/brand-icon-light.png');
+    assert.equal(theme.icon.src, '/brand-icon-light.svg');
     assert.equal(theme.label.textContent, 'Light');
     assert.equal(theme.button.getAttribute('aria-label'), 'Switch to dark mode');
     core.setLocale('zh');
