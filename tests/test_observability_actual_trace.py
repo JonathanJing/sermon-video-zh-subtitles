@@ -14,7 +14,18 @@ class ActualTraceTests(unittest.TestCase):
     def test_safe_ledgers_reconstruct_reports_without_business_artifacts(self):
         for mode in ('cache','asr','audio'):
             with self.subTest(mode=mode):
-                self.assertEqual(weekly.project(RERUN/mode),read(RERUN/mode/'report.json'))
+                projected = weekly.project(RERUN/mode)
+                original = read(RERUN/mode/'report.json')
+                # Historical reports stay immutable. The corrected network
+                # coverage fields are the only permitted projection delta.
+                self.assertEqual(projected['networkCalls'], original['networkCalls'])
+                self.assertEqual(projected.pop('networkCallsScope'), 'report_generation_only_deprecated')
+                self.assertEqual(projected.pop('reportGenerationNetworkCalls'), 0)
+                calls = projected.pop('observedProviderCalls')
+                self.assertEqual(calls['status'], 'not_observed')
+                self.assertIsNone(calls['directReceiptCount'])
+                self.assertIsNone(calls['totalNetworkCalls'])
+                self.assertEqual(projected, original)
                 independent=read(RERUN/f'independent-{mode}.json')
                 self.assertTrue(independent['codeClean'])
                 self.assertEqual(independent['actualTransportAttempts'],0)
