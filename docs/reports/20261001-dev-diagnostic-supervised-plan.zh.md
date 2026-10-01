@@ -103,3 +103,5 @@ Agent 延长观察/终态重读修复93项测试通过；checkpoint全树及work
 g010的真实语言插件失败走版本化 `sermon-language-plugin-repair-v1`：保留原Sol semantic pass及失败语言回执，不伪造Sol needs_rework；只修被冻结pending `World War`目标表面，保留policy各字段和未人审状态，建立带parentRevisionId的新修订，重跑Astra、Sol和完整locale插件/admission。该跨run历史父修订的两次新请求使用新provider总请求/成本/绝对期限与单请求上限，enforcementScope=`new_provider_ledger_historical_parent_repair`，显式不声称旧D5父预约已在新账本settled；普通新组仍走既有D5。正式跨run D5父历史记录迁移不在这条诊断路径中伪造。
 
 恢复补丁根级集成验证：249 tests，248通过、1 optional SDK skip，91.108秒、exit 0；覆盖Agent、完整checkpoint/native/DAG、真实Source缓存和历史Layer2修订/桥接。预期AccountingWriteError故障注入保留退出语义，未调用真实provider。代码固定后执行v5真实恢复及第四只读Agent。
+
+v5在准备阶段0请求失败：1,730,059字节linked-history误用256KiB private reader。修复仅版本化linked-attempt aggregate用既有16MiB stable reader，其他收据上限不变、对读取精确bytes验证SHA。v5原plan与失败记录保留，新v6恢复仍承接同一闭父v4、源缓存v3和329历史请求，未启动v5不重复计数。第四Agent准备时私有driver原因值不在固定schema枚举；改用receipt_observed和事实packageVersion historical_http_400_body_missing，未改schema或推定根因，零API。

@@ -10,6 +10,7 @@ from pathlib import Path
 from scripts import sermon_review_contracts as c, sermon_review_budget as budget
 from scripts import sermon_strict_layer2 as strict, sermon_accounting as accounting
 from scripts import sermon_diagnostic_attempts as attempts
+from scripts import sermon_public_snapshot as aggregate
 from scripts.sermon_release_workflow import _safe_path
 
 SPEC = 'sermon-historical-layer2-spec-v1'
@@ -24,10 +25,25 @@ def ref(path):
     return {'path': str(path), 'bytesSha256': c.bytes_sha256(path.read_bytes())}
 
 
-def check_ref(value, *, json_required=True):
-    c.require(type(value) is dict and set(value) == {'path', 'bytesSha256'} and
-              ref(value['path']) == value, 'historical_snapshot_changed')
-    return c.read_snapshot(Path(value['path'])) if json_required else (None, Path(value['path']).read_bytes())
+def check_ref(value, *, json_required=True, aggregate_schema=None):
+    c.require(type(value) is dict and set(value) == {'path', 'bytesSha256'},
+              'historical_snapshot_changed')
+    c.require(aggregate_schema is None or
+              (json_required and aggregate_schema == attempts.SCHEMA_V2),
+              'historical_aggregate_type_required')
+    path = _safe_path(Path(value['path']))
+    c.require(path.is_absolute(), 'historical_snapshot_required')
+    if json_required:
+        # Only the versioned linked-attempt aggregate gets the larger bound.
+        # Individual paid receipts and revision records retain the private cap.
+        parsed, raw = (aggregate.read_snapshot if aggregate_schema else c.read_snapshot)(path)
+    else:
+        parsed, raw = None, path.read_bytes()
+    c.require(c.bytes_sha256(raw) == value['bytesSha256'], 'historical_snapshot_changed')
+    if aggregate_schema:
+        c.require(type(parsed) is dict and parsed.get('schemaVersion') == aggregate_schema,
+                  'historical_aggregate_type_required')
+    return parsed, raw
 
 
 def _no_dispatch(*args, **kwargs):
@@ -48,7 +64,7 @@ class HistoricalLayer2Reuse:
     def _closed(self):
         plan, _ = check_ref(self.spec['parentPlanRef'])
         new, _ = check_ref(self.spec['newPlanRef'])
-        lineage, _ = check_ref(self.spec['linkedHistoryRef'])
+        lineage, _ = check_ref(self.spec['linkedHistoryRef'], aggregate_schema=attempts.SCHEMA_V2)
         c.require(plan['schemaVersion'] == new['schemaVersion'] == 'sermon-bounded-diagnostic-plan-v1',
                   'historical_plan_required')
         parent, successor = map(lambda p: _safe_path(Path(p['runDirectory'])), (plan, new))

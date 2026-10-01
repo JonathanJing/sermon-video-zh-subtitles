@@ -105,6 +105,35 @@ def review_group(policy,english_units,group):
     def assert_parent_unchanged(self):
         self.assertTrue(all(p.read_bytes()==data for p,data in self.snapshots.items()))
 
+    def test_large_linked_history_aggregate_preserves_private_receipt_limit_and_exact_hash(self):
+        self.build()
+        lineage, _ = c.read_snapshot(self.new/'linked-history.json')
+        # Model a long accumulated lineage using complete closed-parent evidence
+        # and baseline projections, rather than an unrelated padding string.
+        lineage['parentEvidence'] *= 180
+        lineage['legacyObservationBaseline']['observations'] *= 180
+        path = self.new/'large-linked-history.json'
+        raw = c.canonical_bytes(lineage)
+        self.assertGreater(len(raw), 1_730_059)
+        self.assertLess(len(raw), h.aggregate.MAX_BYTES)
+        path.write_bytes(raw)
+        reference = h.ref(path)
+        parsed, returned = h.check_ref(reference, aggregate_schema=attempts.SCHEMA_V2)
+        self.assertEqual(parsed, lineage)
+        self.assertEqual(returned, raw)
+        with self.assertRaisesRegex(c.ContractError, 'invalid_snapshot_file'):
+            h.check_ref(reference)  # Ordinary receipts retain the 256 KiB bound.
+        with self.assertRaisesRegex(c.ContractError, 'historical_snapshot_changed'):
+            h.check_ref({**reference, 'bytesSha256': '0'*64}, aggregate_schema=attempts.SCHEMA_V2)
+        lineage['schemaVersion'] = 'sermon-provider-receipt-v1'
+        path.write_bytes(c.canonical_bytes(lineage))
+        with self.assertRaisesRegex(c.ContractError, 'historical_aggregate_type_required'):
+            h.check_ref(h.ref(path), aggregate_schema=attempts.SCHEMA_V2)
+        with self.assertRaisesRegex(c.ContractError, 'historical_aggregate_type_required'):
+            h.check_ref(h.ref(path), aggregate_schema='sermon-provider-receipt-v1')
+        self.assertEqual(len(self.f.calls), 2)
+        self.assert_parent_unchanged();self.network.assert_not_called()
+
     def test_real_strict_cache_rebind_recomputes_receipts_zero_new_paid_or_d5(self):
         self.build();result=self.run_group();root=Path(result['root'])
         self.assertEqual(result['status'],'machine_review_passed')
