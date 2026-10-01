@@ -75,7 +75,7 @@ export const messages = {
     "app.week.review": "整篇配音 · 待审核",
     "app.week.sample": "配音样片可试听",
     "app.week.outline": "大纲已就绪 · 待配音",
-    "app.source.open": "查看原证道视频 ↗",
+    "app.source.open": "查看原证道视频",
     "app.align.start": "已对齐，正在开始配音播放…",
     "app.audio.playing": "正在播放",
     "app.align.failed": "已定位，但播放未能开始。请手动播放，并微调跟上原声。",
@@ -106,7 +106,7 @@ export const messages = {
     "app.seek.to": "跳至 {time}",
     "app.seek.source": "跳至音频 {time}，原视频 {source}",
     "app.voices.meta": "英文原声 {english} · 中文示例 {chinese}",
-    "app.source.link": "{label} · 查看原视频 ↗",
+    "app.source.link": "{label} · 查看原视频",
     "app.seek.release": "{time}，松开后跳转",
     "app.seek.preview": "准备跳至 {time}，松开后生效",
     "app.seek.range": "超出当前音频，请输入 00:00 至 {duration}。",
@@ -119,7 +119,7 @@ export const messages = {
     "app.subtitle.hideEnglish": "仅显示英文原文",
     "app.transcript.englishReference": "英文原文参考 · 按段落显示",
     "app.content.disclosure": "AI 合成配音与整理文字，供个人跟读参考。",
-    "app.voices.source": "原声出处 ↗"
+    "app.voices.source": "原声出处"
   },
   "en": {
     "app.content.available": "Choose a published audio and subtitle language for this sermon.",
@@ -196,7 +196,7 @@ export const messages = {
     "app.week.review": "Full dubbed audio · Review pending",
     "app.week.sample": "Audio samples available",
     "app.week.outline": "Outline ready · Audio pending",
-    "app.source.open": "Watch the source sermon ↗",
+    "app.source.open": "Watch the source sermon",
     "app.align.start": "Aligned. Starting dubbed audio…",
     "app.audio.playing": "Playing",
     "app.align.failed": "Position found, but playback did not start. Press Play and fine-tune to the source audio.",
@@ -227,7 +227,7 @@ export const messages = {
     "app.seek.to": "Seek to {time}",
     "app.seek.source": "Seek to audio {time}, source video {source}",
     "app.voices.meta": "English {english} · Chinese sample {chinese}",
-    "app.source.link": "{label} · Watch source video ↗",
+    "app.source.link": "{label} · Watch source video",
     "app.seek.release": "{time}; release to seek",
     "app.seek.preview": "Seek to {time} on release",
     "app.seek.range": "Outside this audio. Enter a time from 00:00 to {duration}.",
@@ -240,6 +240,6 @@ export const messages = {
     "app.subtitle.hideEnglish": "Show English source only",
     "app.transcript.englishReference": "English source reference · By passage",
     "app.content.disclosure": "AI-generated dubbed audio and companion text for personal study.",
-    "app.voices.source": "Original sermon ↗"
+    "app.voices.source": "Original sermon"
   }
 };

@@ -22,7 +22,8 @@ from jsonschema import Draft202012Validator, FormatChecker
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG = "multilingual-v2.json"
 READER_FILES = ("app.js", "styles.css", "formal-dev-adapter.mjs", "dev-integrity.mjs")
-SHARED_READER_FILES = ("playback-memory.mjs", "brand-icon.png")
+SHARED_READER_FILES = ("playback-memory.mjs", "brand-icon.png", "icons.svg", "icons.mjs",
+                       "brand-icon.svg", "brand-icon-light.svg")
 ENTRY_LABEL = "多语言证道 · 中文 / 한국어 / Español"
 
 

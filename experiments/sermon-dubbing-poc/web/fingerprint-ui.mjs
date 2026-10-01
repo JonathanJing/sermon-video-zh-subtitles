@@ -1,3 +1,4 @@
+import { setButtonLabel } from './icons.mjs';
 import { t, onLocaleChange } from './i18n.mjs';
 import { captureFingerprintAudio, microphoneSupported, abortError } from './fingerprint-capture.mjs';
 import { diagnosticSummary, matchReason } from './fingerprint-diagnostics.mjs';
@@ -260,9 +261,9 @@ export function mountFingerprintUI(options) {
   function renderState(value) {
     const busy = ['preparing_index', 'permission', 'starting', 'recovering', 'recording', 'matching', 'play_starting'].includes(value.phase);
     $('fingerprint-start').disabled = busy;
-    $('fingerprint-start').textContent = t(value.phase === 'ready_to_record' ? 'fingerprint.record' : value.phase === 'idle' ? 'fingerprint.start' : 'fingerprint.restart');
+    setButtonLabel($('fingerprint-start'), t(value.phase === 'ready_to_record' ? 'fingerprint.record' : value.phase === 'idle' ? 'fingerprint.start' : 'fingerprint.restart'));
     $('fingerprint-apply').hidden = !['matched', 'play_blocked', 'play_failed'].includes(value.phase);
-    $('fingerprint-apply').textContent = t('fingerprint.apply');
+    setButtonLabel($('fingerprint-apply'), t('fingerprint.apply'));
     $('fingerprint-message').textContent = value.phase === 'matched' ? t('fingerprint.matched', { time: clock(value.sourceTimeSeconds) }) : value.phase === 'applied' ? t('fingerprint.applied', { time: clock(value.sourceTimeSeconds) }) : value.phase === 'no_match' ? t(`fingerprint.reason.${matchReason(value.reason)}`) : value.phase === 'error' && value.diagnostic ? diagnosticMessage(value.diagnostic) : t(`fingerprint.phase.${phases.has(value.phase) ? value.phase : 'error'}`);
   }
   const controller = createFingerprintController({ ...options, onState(value) {

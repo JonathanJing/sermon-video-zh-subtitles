@@ -184,6 +184,42 @@ body{padding-bottom:calc(var(--dock-height,196px) + 18px)}
 .full-reading{margin:0 0 24px;padding:16px;border:1px solid var(--line);border-radius:12px}.full-reading summary{cursor:pointer;font-weight:650}.full-reading>p{line-height:1.8;white-space:pre-wrap;overflow-wrap:anywhere}
 
 .full-reading .full-reading-english{margin-top:-.5em;color:var(--muted);line-height:1.6}
+
+/* Shared SVGs follow the native app's symbol choices and theme colors. */
+.app-icon{display:inline-block;width:20px;height:20px;flex:0 0 auto;vertical-align:middle;overflow:visible}
+button:has(>.app-icon),a:has(>.app-icon){display:inline-flex;align-items:center;justify-content:center;gap:6px}
+#play-icon,[data-play-icon]{display:inline-flex;align-items:center;justify-content:center}
+.play .app-icon{width:24px;height:24px}
+.field-nudge>.app-icon{width:24px;height:24px}
+.field-nudge .nudge-copy{display:flex;flex-direction:column;gap:3px}
+.field-nudge{align-items:center}
+.close-button{display:flex;align-items:center;justify-content:center;padding:0}
+.stage-mark{display:flex;align-items:center;justify-content:center;--icon-cutout:var(--success-bg)}
+.stage-mark .app-icon{width:22px;height:22px}
+.cue-button .app-icon{width:16px;height:16px;color:var(--teal)}
+.theme-toggle .app-icon{width:18px;height:18px}
+[data-theme="dark"] .theme-sun,[data-theme="light"] .theme-moon{display:none}
+.dock-tools{flex-wrap:wrap}
+.dock-tools .app-icon{width:18px;height:18px}
+@media(max-width:380px){.dock-tools{gap:0 8px}.dock-tools button{font-size:11px}}
+
+@media(max-width:350px){.language-toggle #language-label{display:inline}}
+
+@media(max-width:480px){
+ .dock-tools{flex-wrap:nowrap;align-items:center}
+ .dock-tools button{min-width:44px;min-height:44px;justify-content:center}
+ .dock-tools button [data-icon-label]{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+ .dock-tools .app-icon{width:24px;height:24px}
+}
+
+.coarse-row .skip>[data-icon-label]{font-size:inherit;line-height:1.4}
+
+/* Existing navigation/status entries mirror the native icon semantics. */
+.caption-icon{color:var(--teal)}
+.week-picker label{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.week-picker label>.app-icon{width:18px;height:18px}
+.locale-pickers label .app-icon,.privacy-controls summary .app-icon{width:18px;height:18px;margin-right:6px}
+.week-download-links a{display:inline-flex;align-items:center;gap:7px}
 /* Dev-only controls share the production page's palette, rhythm and component grid. */
 .field-main { padding-bottom: 250px; }
 .topbar-actions { position: relative; }
@@ -295,3 +331,10 @@ body{padding-bottom:calc(var(--dock-height,196px) + 18px)}
   .field-nav .tabs { gap: 5px; }
   .field-nav .tabs button { font-size: 12px; }
 }
+
+/* Reader-specific SVG placement. */
+.content-language-button>.app-icon{color:var(--teal)}
+.locale-check .app-icon{width:18px;height:18px}
+
+.content-language-check{display:inline-flex;color:var(--teal);flex-shrink:0}
+.load-error>.app-icon{flex-shrink:0}
