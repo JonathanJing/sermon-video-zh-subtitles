@@ -308,31 +308,45 @@ def _dimension(row):
     return tuple(row[k] for k in DIMENSIONS)
 
 
-def _estimates(units, states, samples, at):
-    groups, seen, issues = defaultdict(list), {}, []
+def _completed_work_unit_id(run_id, unit_id, attempt_id):
+    return f"{run_id}:{unit_id}:{attempt_id}"
+
+
+def _estimates(run_id, units, states, samples, at):
+    groups, seen_samples, work_units, issues = defaultdict(list), {}, defaultdict(list), []
     current = []
     for unit_id, row in states.items():
         if row and row["executionStatus"] == "succeeded" and row["measurementValidated"] and row["elapsedSeconds"] is not None and row["elapsedSeconds"] > 0:
             current.append({**{k: units[unit_id][k] for k in DIMENSIONS}, "sampleId": row["timingSampleId"],
+                            "workUnitId": _completed_work_unit_id(run_id, unit_id, row["attemptId"]),
                             "elapsedSeconds": row["elapsedSeconds"], "observedAt": row["observedAt"],
                             "executionStatus": "succeeded", "measurementKind": "empirical", "sourceRef": row["timingSampleId"]})
     for row in [*samples, *current]:
         try:
-            _label(row["sampleId"]); _label(row["sourceRef"])
+            sample_id = _label(row["sampleId"]); _label(row["sourceRef"])
+            work_unit_id = _label(row["workUnitId"])
             if (row["measurementKind"] != "empirical" or row["executionStatus"] != "succeeded"
                     or _time(row["observedAt"]) > at):
                 raise ValueError("untrusted_sample")
             for key in DIMENSIONS:
                 _label(row[key])
             duration = _number(row["elapsedSeconds"], positive=True)
-            if row["sampleId"] in seen:
-                if seen[row["sampleId"]] != row:
+            signature = (_dimension(row), duration, row["observedAt"], row["measurementKind"], row["executionStatus"])
+            if sample_id in seen_samples:
+                if seen_samples[sample_id] != (work_unit_id, signature):
                     raise ValueError("conflicting_sample")
                 continue
-            seen[row["sampleId"]] = row
-            groups[_dimension(row)].append(duration)
+            seen_samples[sample_id] = (work_unit_id, signature)
+            work_units[work_unit_id].append((signature, duration))
         except (KeyError, TypeError, ValueError):
             issues.append("invalid_or_conflicting_empirical_sample")
+    for observations in work_units.values():
+        signatures = {signature for signature, _ in observations}
+        if len(signatures) != 1:
+            issues.append("invalid_or_conflicting_empirical_sample")
+            continue
+        signature, duration = observations[0]
+        groups[signature[0]].append(duration)
     result = {}
     for key, unit in units.items():
         values = groups[_dimension(unit)]
@@ -467,7 +481,7 @@ def project_progress(plan, receipts, *, samples=(), at=None, previous=None, reso
                      "retryCount": retries, "reworkAttempts": rework, "blockedReason": reason,
                      "heartbeatStatus": heartbeat_status, "heartbeatAgeSeconds": heartbeat_age,
                      "attemptId": (state or {}).get("attemptId")})
-    estimates, sample_count, sample_issues = _estimates(units, states, samples, clock)
+    estimates, sample_count, sample_issues = _estimates(plan["runId"], units, states, samples, clock)
     diagnostics.extend(sample_issues)
     denominator = Decimal(plan["denominator"])
     done_weight = sum((Decimal(str(units[k]["weight"])) for k in completed), Decimal(0))
@@ -667,6 +681,7 @@ def samples_from_accounting(plan, events, bindings):
             if any(code in report["diagnostics"] for code in ("invalid_interval", "span_identity_mismatch", "unfinished_or_ambiguous_span")):
                 issues.append("accounting_timing_integrity_unknown"); continue
             samples.append({**{k: unit[k] for k in DIMENSIONS}, "sampleId": "span:" + span_digest(span_id),
+                            "workUnitId": binding["accountingWorkUnitId"],
                             "elapsedSeconds": row["elapsedSeconds"], "executionStatus": "succeeded",
                             "measurementKind": "empirical", "observedAt": row["finishedAt"], "sourceRef": "span:" + span_digest(span_id)})
     return {"samples": samples, "reasonCodes": sorted(set(issues)), "statusReceipts": []}

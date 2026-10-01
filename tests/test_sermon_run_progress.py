@@ -41,7 +41,7 @@ def pools(capacity=2, queue=None):
 
 
 def sample(unit_row, seconds=10, key="sample"):
-    return {**{k: unit_row[k] for k in p.DIMENSIONS}, "sampleId": key, "elapsedSeconds": seconds,
+    return {**{k: unit_row[k] for k in p.DIMENSIONS}, "sampleId": key, "workUnitId": key, "elapsedSeconds": seconds,
             "sourceRef": "fixture-timing", "observedAt": AT, "executionStatus": "succeeded", "measurementKind": "empirical"}
 
 
@@ -346,10 +346,22 @@ class EtaProjectionTests(unittest.TestCase):
         for other in ({**valid, "elapsedSeconds": 20}, {**valid, "executionStatus": "failed"}):
             self.assertEqual(project(frozen, samples=[valid, other])["eta"]["status"], "unknown")
 
+    def test_distinct_exports_for_same_work_unit_count_only_once(self):
+        frozen = plan([unit("a")])
+        first = sample(frozen["units"][0], key="span-one")
+        replay = {**first, "sampleId": "span-two", "sourceRef": "replayed-export"}
+        result = project(frozen, samples=[first, replay])
+        self.assertEqual(result["eta"]["sampleCount"], 1)
+        self.assertEqual(result["eta"]["confidence"], "low")
+        conflict = {**replay, "elapsedSeconds": 20}
+        self.assertEqual(project(frozen, samples=[first, conflict])["eta"]["status"], "unknown")
+
     def test_current_measurement_duplicate_external_sample_counted_once(self):
         frozen = plan([unit("a"), unit("b")])
         measured = done(frozen, "a", elapsedSeconds=30, measurementValidated=True, timingSampleId="span-fixture")
-        external = {**sample(frozen["units"][0], 30, "span-fixture"), "sourceRef": "span-fixture"}
+        external = {**sample(frozen["units"][0], 30, "span-fixture"),
+                    "workUnitId": p._completed_work_unit_id(frozen["runId"], "a", measured["attemptId"]),
+                    "sourceRef": "span-fixture"}
         result = project(frozen, [measured], samples=[external])
         self.assertEqual(result["eta"]["sampleCount"], 1)
         self.assertEqual(result["eta"]["status"], "estimated")
