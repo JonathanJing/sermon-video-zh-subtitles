@@ -1,0 +1,4145 @@
+{
+  "schemaVersion": "sermon-pilot-demonstration-v1",
+  "cases": [
+    {
+      "case": "complete",
+      "codeCommit": "f7b56935a130813d30c64e39130e1a4df561be64",
+      "runId": "068b2cf314f656418c10725e5e1c25d6c0d1d80accee13d56dcf5452bc085ec6",
+      "executionPlanSha256": "7474e4400005f48d212420b26876ab516e79254521fb942ce20b8b58f0bbdc8a",
+      "sourceIdentitySha256": "4444444444444444444444444444444444444444444444444444444444444444",
+      "runtimeCodeSha256": "c27b681b2d2c31ae538ac7daf8f528e0e5bfecdcb4519f92d2ff7b8b90809ff0",
+      "readerCodeSha256": "94a365aa2d4a96f7a91418c5a9d1daf0e091d3ca34b0965840b8207e45d5e5ce",
+      "evidenceSnapshotSha256": "6811079372d36150b2adea484ba03b273408d754877a0065a2997283218083ed",
+      "sourceLedgerSha256": "0bd37214d0e9bbdd07a6ea1cd9db175023bcd7a5a638b5181f5a88df1e547010",
+      "plannedProcessedPercent": 100.0,
+      "gateCompletionPercent": 100.0,
+      "counts": {
+        "done": 10,
+        "total": 10,
+        "processed": 10,
+        "executionSucceeded": 10,
+        "contentReviewPassed": 10,
+        "realHumanApproved": 0,
+        "simulatedHumanApproved": 7,
+        "admitted": 10
+      },
+      "processingCoverage": {
+        "status": "known",
+        "knownWeight": "10",
+        "unknownWeight": "0",
+        "unknownUnits": [],
+        "unattributedEvidence": false
+      },
+      "eta": {
+        "status": "complete",
+        "lowerSeconds": 0,
+        "upperSeconds": 0,
+        "earliestAt": "2026-10-01T02:10:39.926444+00:00",
+        "latestAt": "2026-10-01T02:10:39.926444+00:00",
+        "remainingSerialSeconds": null,
+        "criticalPathSeconds": null,
+        "sampleCount": 10,
+        "confidence": "unknown",
+        "reasonCodes": [],
+        "estimatorVersion": "remaining-dag-resource-slots-v1",
+        "updatedAt": "2026-10-01T02:10:39.926444+00:00",
+        "perUnit": {
+          "audio.es": {
+            "lower": 0.2048813750152476,
+            "upper": 0.8195255000609905,
+            "sampleCount": 1,
+            "confidence": "low",
+            "basis": "empirical_envelope"
+          },
+          "audio.ko": {
+            "lower": 0.20105433301068842,
+            "upper": 0.8042173320427537,
+            "sampleCount": 1,
+            "confidence": "low",
+            "basis": "empirical_envelope"
+          },
+          "audio.zh-Hans": {
+            "lower": 0.20144543750211596,
+            "upper": 0.8057817500084639,
+            "sampleCount": 1,
+            "confidence": "low",
+            "basis": "empirical_envelope"
+          },
+          "page.es": {
+            "lower": 0.20405302051221952,
+            "upper": 0.8162120820488781,
+            "sampleCount": 1,
+            "confidence": "low",
+            "basis": "empirical_envelope"
+          },
+          "page.ko": {
+            "lower": 0.20485856250161305,
+            "upper": 0.8194342500064522,
+            "sampleCount": 1,
+            "confidence": "low",
+            "basis": "empirical_envelope"
+          },
+          "page.zh-Hans": {
+            "lower": 0.20473295799456537,
+            "upper": 0.8189318319782615,
+            "sampleCount": 1,
+            "confidence": "low",
+            "basis": "empirical_envelope"
+          },
+          "source": {
+            "lower": 0.20532872949843295,
+            "upper": 0.8213149179937318,
+            "sampleCount": 1,
+            "confidence": "low",
+            "basis": "empirical_envelope"
+          },
+          "text.es": {
+            "lower": 0.2129131874826271,
+            "upper": 0.8516527499305084,
+            "sampleCount": 1,
+            "confidence": "low",
+            "basis": "empirical_envelope"
+          },
+          "text.ko": {
+            "lower": 0.202651582978433,
+            "upper": 0.810606331913732,
+            "sampleCount": 1,
+            "confidence": "low",
+            "basis": "empirical_envelope"
+          },
+          "text.zh-Hans": {
+            "lower": 0.20599910448072478,
+            "upper": 0.8239964179228991,
+            "sampleCount": 1,
+            "confidence": "low",
+            "basis": "empirical_envelope"
+          }
+        },
+        "assumptions": [
+          "Comparable stage/model/locale/length/cache/resource-class samples only.",
+          "Envelope is a conservative scenario range, not a calibrated probability interval.",
+          "Non-preemptive deterministic list order; no new retries, future rework or unrecorded queue arrivals.",
+          "UTC is descriptive; active elapsed and heartbeat are supplied by the local monotonic monitor."
+        ]
+      },
+      "cost": {
+        "status": "not_projected",
+        "knownSubtotalUsd": null,
+        "source": "existing_accounting_projection"
+      },
+      "readOnlyEvidenceUnchanged": true,
+      "replayWithoutNewJobOrReservation": true,
+      "productionEligible": false,
+      "evidenceMode": "synthetic",
+      "validatedNodeEvidence": {
+        "source": {
+          "status": "succeeded",
+          "reason": null,
+          "jobId": "bb043c0dd50f71b00acabad411183c418208e70c6417a39f105d99c120a066dd",
+          "receiptSha256": "31e475cd345c96009357d84007301bb17783efff358c34f1cb601e7a551cb50f",
+          "spanId": "dde79801d7504597ab4b7eacd7d71713"
+        },
+        "text.es": {
+          "status": "succeeded",
+          "reason": null,
+          "jobId": "1fcd098b881a553acd3e4135d4218eb77cc6601f8451e522f82c088655e0348c",
+          "receiptSha256": "13ff3b31d6517dafd0bd817553949f1dbee2bb5aba43516a6e3ff9b389efb24d",
+          "spanId": "500069b28696483fba90dff11503b268"
+        },
+        "audio.es": {
+          "status": "succeeded",
+          "reason": null,
+          "jobId": "b330e1a8b85130b40cfe183853a6fbaa7250f160de265290e73d60157dc752d5",
+          "receiptSha256": "cedd545d743920c6dd79f51cb1358b2272ef1534063ac8a4e143c0536cc9b4ce",
+          "spanId": "890771939d1c4082a718a0f9b9940db1"
+        },
+        "page.es": {
+          "status": "succeeded",
+          "reason": null,
+          "jobId": "58c333caa94eedb2a67ae22a10d909bb200df84173e980d89a82fa4eaae9d396",
+          "receiptSha256": "5b3dfa8f0a12d630f443208b6aa0f523b059ba0f7538f44f7a868548624d874e",
+          "spanId": "35b5ba2cd44247b4bdc6e04d5cc54426"
+        },
+        "text.ko": {
+          "status": "succeeded",
+          "reason": null,
+          "jobId": "0201a937abdbbd60523aa1a9f298f66a7953d414800c684904f006fa211288a5",
+          "receiptSha256": "cafe0e7e83116a11f7933aa3124b9c7a945e44102adc7db301d056475fac100a",
+          "spanId": "540a37e89d0445b69419f84eb82e4513"
+        },
+        "audio.ko": {
+          "status": "succeeded",
+          "reason": null,
+          "jobId": "ec64d269ccc94184e8f1161edc25b585c5304b356990bef7cba500c7302f7b96",
+          "receiptSha256": "03c72c2e4c6d00ca4312f80e01a8a8db0fb95f058ef51afb69f0727328514d17",
+          "spanId": "c6f43c49b65b4cb1acdede478221dec7"
+        },
+        "page.ko": {
+          "status": "succeeded",
+          "reason": null,
+          "jobId": "5fa6bdf734629447832e6abc6b5fea69dd110fb87194644b57e78970af35b2e8",
+          "receiptSha256": "0ec4026938e43695a38b363a6eea03d107b367e737f466b681ffba7b76de655e",
+          "spanId": "5ad77c690ee94bd8a6d372d0a741d973"
+        },
+        "text.zh-Hans": {
+          "status": "succeeded",
+          "reason": null,
+          "jobId": "7b811b9b5e1333c75b79bfebd1310108f62e7961e6c4742bc50e5f36c513a31c",
+          "receiptSha256": "56f13e723054fe39109f40c2b6c375c872deeeef7d983f2a4f4117796cf3cbbc",
+          "spanId": "411dfe6d7b734644b2ca71503265f9d3"
+        },
+        "audio.zh-Hans": {
+          "status": "succeeded",
+          "reason": null,
+          "jobId": "fbea94ed3844cc7c53fb3467d3a9549bea12c7d819bc8c258b6e60ceabd99f52",
+          "receiptSha256": "9d221851586d3e235ebb4c6d1c1b02ae2f095b10a56b9072eb6d0a3e52907f98",
+          "spanId": "e14585c4ce314831a3f4b001cce1da1a"
+        },
+        "page.zh-Hans": {
+          "status": "succeeded",
+          "reason": null,
+          "jobId": "941b728a27abafdecb5f3173d3c076b9676d86bd92cb7045d2493cade8a16e8b",
+          "receiptSha256": "4ab957c2c7aeb2481963c9de8de104f82f7a87561c5a48593e663829069bf4b0",
+          "spanId": "2bf8e4860e124e858d86012b05de17db"
+        }
+      },
+      "trace": [
+        {
+          "event": "stage_finished",
+          "runId": "7a0cb2436cb34d249f761b2a89c142ec",
+          "workflowId": "3878380edf704d43b67694897ef5eb9b",
+          "jobId": "bb043c0dd50f71b00acabad411183c418208e70c6417a39f105d99c120a066dd",
+          "workUnitId": "source",
+          "attemptId": "mock-1",
+          "spanId": "dde79801d7504597ab4b7eacd7d71713",
+          "dependsOn": [],
+          "executorType": "deterministic_program",
+          "evidenceMode": "synthetic",
+          "status": "completed",
+          "elapsedSeconds": 0.540898,
+          "dependencyReadyAt": "2026-10-01T02:10:32.199783Z",
+          "queuedAt": "2026-10-01T02:10:32.199788Z",
+          "recordedAt": "2026-10-01T02:10:33.002775Z"
+        },
+        {
+          "event": "stage_finished",
+          "runId": "7a0cb2436cb34d249f761b2a89c142ec",
+          "workflowId": "3878380edf704d43b67694897ef5eb9b",
+          "jobId": "0201a937abdbbd60523aa1a9f298f66a7953d414800c684904f006fa211288a5",
+          "workUnitId": "text.ko",
+          "attemptId": "mock-1",
+          "spanId": "540a37e89d0445b69419f84eb82e4513",
+          "dependsOn": [
+            "dde79801d7504597ab4b7eacd7d71713"
+          ],
+          "executorType": "deterministic_program",
+          "evidenceMode": "synthetic",
+          "status": "completed",
+          "elapsedSeconds": 0.419143,
+          "dependencyReadyAt": "2026-10-01T02:10:33.154608Z",
+          "queuedAt": "2026-10-01T02:10:33.154612Z",
+          "recordedAt": "2026-10-01T02:10:33.954092Z"
+        },
+        {
+          "event": "stage_finished",
+          "runId": "7a0cb2436cb34d249f761b2a89c142ec",
+          "workflowId": "3878380edf704d43b67694897ef5eb9b",
+          "jobId": "1fcd098b881a553acd3e4135d4218eb77cc6601f8451e522f82c088655e0348c",
+          "workUnitId": "text.es",
+          "attemptId": "mock-1",
+          "spanId": "500069b28696483fba90dff11503b268",
+          "dependsOn": [
+            "dde79801d7504597ab4b7eacd7d71713"
+          ],
+          "executorType": "deterministic_program",
+          "evidenceMode": "synthetic",
+          "status": "completed",
+          "elapsedSeconds": 0.437819,
+          "dependencyReadyAt": "2026-10-01T02:10:33.144901Z",
+          "queuedAt": "2026-10-01T02:10:33.144908Z",
+          "recordedAt": "2026-10-01T02:10:33.973830Z"
+        },
+        {
+          "event": "stage_finished",
+          "runId": "7a0cb2436cb34d249f761b2a89c142ec",
+          "workflowId": "3878380edf704d43b67694897ef5eb9b",
+          "jobId": "7b811b9b5e1333c75b79bfebd1310108f62e7961e6c4742bc50e5f36c513a31c",
+          "workUnitId": "text.zh-Hans",
+          "attemptId": "mock-1",
+          "spanId": "411dfe6d7b734644b2ca71503265f9d3",
+          "dependsOn": [
+            "dde79801d7504597ab4b7eacd7d71713"
+          ],
+          "executorType": "deterministic_program",
+          "evidenceMode": "synthetic",
+          "status": "completed",
+          "elapsedSeconds": 0.43428,
+          "dependencyReadyAt": "2026-10-01T02:10:33.143333Z",
+          "queuedAt": "2026-10-01T02:10:33.143342Z",
+          "recordedAt": "2026-10-01T02:10:35.009255Z"
+        },
+        {
+          "event": "stage_finished",
+          "runId": "7a0cb2436cb34d249f761b2a89c142ec",
+          "workflowId": "3878380edf704d43b67694897ef5eb9b",
+          "jobId": "b330e1a8b85130b40cfe183853a6fbaa7250f160de265290e73d60157dc752d5",
+          "workUnitId": "audio.es",
+          "attemptId": "mock-1",
+          "spanId": "890771939d1c4082a718a0f9b9940db1",
+          "dependsOn": [
+            "500069b28696483fba90dff11503b268"
+          ],
+          "executorType": "deterministic_program",
+          "evidenceMode": "synthetic",
+          "status": "completed",
+          "elapsedSeconds": 0.420102,
+          "dependencyReadyAt": "2026-10-01T02:10:34.138405Z",
+          "queuedAt": "2026-10-01T02:10:34.138411Z",
+          "recordedAt": "2026-10-01T02:10:35.033341Z"
+        },
+        {
+          "event": "stage_finished",
+          "runId": "7a0cb2436cb34d249f761b2a89c142ec",
+          "workflowId": "3878380edf704d43b67694897ef5eb9b",
+          "jobId": "ec64d269ccc94184e8f1161edc25b585c5304b356990bef7cba500c7302f7b96",
+          "workUnitId": "audio.ko",
+          "attemptId": "mock-1",
+          "spanId": "c6f43c49b65b4cb1acdede478221dec7",
+          "dependsOn": [
+            "540a37e89d0445b69419f84eb82e4513"
+          ],
+          "executorType": "deterministic_program",
+          "evidenceMode": "synthetic",
+          "status": "completed",
+          "elapsedSeconds": 0.423794,
+          "dependencyReadyAt": "2026-10-01T02:10:34.185127Z",
+          "queuedAt": "2026-10-01T02:10:34.185133Z",
+          "recordedAt": "2026-10-01T02:10:36.302859Z"
+        },
+        {
+          "event": "stage_finished",
+          "runId": "7a0cb2436cb34d249f761b2a89c142ec",
+          "workflowId": "3878380edf704d43b67694897ef5eb9b",
+          "jobId": "58c333caa94eedb2a67ae22a10d909bb200df84173e980d89a82fa4eaae9d396",
+          "workUnitId": "page.es",
+          "attemptId": "mock-1",
+          "spanId": "35b5ba2cd44247b4bdc6e04d5cc54426",
+          "dependsOn": [
+            "500069b28696483fba90dff11503b268",
+            "890771939d1c4082a718a0f9b9940db1"
+          ],
+          "executorType": "deterministic_program",
+          "evidenceMode": "synthetic",
+          "status": "completed",
+          "elapsedSeconds": 0.417649,
+          "dependencyReadyAt": "2026-10-01T02:10:35.437506Z",
+          "queuedAt": "2026-10-01T02:10:35.437514Z",
+          "recordedAt": "2026-10-01T02:10:36.371736Z"
+        },
+        {
+          "event": "stage_finished",
+          "runId": "7a0cb2436cb34d249f761b2a89c142ec",
+          "workflowId": "3878380edf704d43b67694897ef5eb9b",
+          "jobId": "fbea94ed3844cc7c53fb3467d3a9549bea12c7d819bc8c258b6e60ceabd99f52",
+          "workUnitId": "audio.zh-Hans",
+          "attemptId": "mock-1",
+          "spanId": "e14585c4ce314831a3f4b001cce1da1a",
+          "dependsOn": [
+            "411dfe6d7b734644b2ca71503265f9d3"
+          ],
+          "executorType": "deterministic_program",
+          "evidenceMode": "synthetic",
+          "status": "completed",
+          "elapsedSeconds": 0.41969,
+          "dependencyReadyAt": "2026-10-01T02:10:35.283694Z",
+          "queuedAt": "2026-10-01T02:10:35.283700Z",
+          "recordedAt": "2026-10-01T02:10:37.587097Z"
+        },
+        {
+          "event": "stage_finished",
+          "runId": "7a0cb2436cb34d249f761b2a89c142ec",
+          "workflowId": "3878380edf704d43b67694897ef5eb9b",
+          "jobId": "5fa6bdf734629447832e6abc6b5fea69dd110fb87194644b57e78970af35b2e8",
+          "workUnitId": "page.ko",
+          "attemptId": "mock-1",
+          "spanId": "5ad77c690ee94bd8a6d372d0a741d973",
+          "dependsOn": [
+            "540a37e89d0445b69419f84eb82e4513",
+            "c6f43c49b65b4cb1acdede478221dec7"
+          ],
+          "executorType": "deterministic_program",
+          "evidenceMode": "synthetic",
+          "status": "completed",
+          "elapsedSeconds": 0.420543,
+          "dependencyReadyAt": "2026-10-01T02:10:36.714386Z",
+          "queuedAt": "2026-10-01T02:10:36.714392Z",
+          "recordedAt": "2026-10-01T02:10:37.694571Z"
+        },
+        {
+          "event": "stage_finished",
+          "runId": "7a0cb2436cb34d249f761b2a89c142ec",
+          "workflowId": "3878380edf704d43b67694897ef5eb9b",
+          "jobId": "941b728a27abafdecb5f3173d3c076b9676d86bd92cb7045d2493cade8a16e8b",
+          "workUnitId": "page.zh-Hans",
+          "attemptId": "mock-1",
+          "spanId": "2bf8e4860e124e858d86012b05de17db",
+          "dependsOn": [
+            "411dfe6d7b734644b2ca71503265f9d3",
+            "e14585c4ce314831a3f4b001cce1da1a"
+          ],
+          "executorType": "deterministic_program",
+          "evidenceMode": "synthetic",
+          "status": "completed",
+          "elapsedSeconds": 0.419859,
+          "dependencyReadyAt": "2026-10-01T02:10:38.052761Z",
+          "queuedAt": "2026-10-01T02:10:38.052767Z",
+          "recordedAt": "2026-10-01T02:10:39.070680Z"
+        }
+      ],
+      "diagnostics": {},
+      "executionPlan": {
+        "schemaVersion": "sermon-dag-plan-v1",
+        "runId": "068b2cf314f656418c10725e5e1c25d6c0d1d80accee13d56dcf5452bc085ec6",
+        "inputIdentitySha256": "4444444444444444444444444444444444444444444444444444444444444444",
+        "definition": {
+          "workflowDefinitionVersion": "sermon-canonical-pipeline-v1",
+          "workflowScope": "four_layer_release",
+          "targetLocales": [
+            "es",
+            "ko",
+            "zh-Hans"
+          ],
+          "textOnlyLocales": [],
+          "terminalScope": "page_ready",
+          "terminalDependencies": [
+            "page.es",
+            "page.ko",
+            "page.zh-Hans"
+          ],
+          "nodes": [
+            {
+              "id": "source",
+              "layer": 1,
+              "locale": null,
+              "depends_on": [],
+              "human_gates": [
+                "source_review"
+              ],
+              "executor_type": "deterministic_program",
+              "timeout_seconds": 600,
+              "side_effect_policy": "immutable_artifact"
+            },
+            {
+              "id": "text.es",
+              "layer": 2,
+              "locale": "es",
+              "depends_on": [
+                "source"
+              ],
+              "human_gates": [],
+              "executor_type": "production_model",
+              "timeout_seconds": 21600,
+              "side_effect_policy": "reconcile_before_retry"
+            },
+            {
+              "id": "audio.es",
+              "layer": 3,
+              "locale": "es",
+              "depends_on": [
+                "text.es"
+              ],
+              "human_gates": [
+                "translation_review",
+                "voice_authorization"
+              ],
+              "executor_type": "production_model",
+              "timeout_seconds": 21600,
+              "side_effect_policy": "reconcile_before_retry"
+            },
+            {
+              "id": "page.es",
+              "layer": 4,
+              "locale": "es",
+              "depends_on": [
+                "text.es",
+                "audio.es"
+              ],
+              "human_gates": [
+                "audio_listening_review"
+              ],
+              "executor_type": "deterministic_program",
+              "timeout_seconds": 600,
+              "side_effect_policy": "immutable_artifact"
+            },
+            {
+              "id": "text.ko",
+              "layer": 2,
+              "locale": "ko",
+              "depends_on": [
+                "source"
+              ],
+              "human_gates": [],
+              "executor_type": "production_model",
+              "timeout_seconds": 21600,
+              "side_effect_policy": "reconcile_before_retry"
+            },
+            {
+              "id": "audio.ko",
+              "layer": 3,
+              "locale": "ko",
+              "depends_on": [
+                "text.ko"
+              ],
+              "human_gates": [
+                "translation_review",
+                "voice_authorization"
+              ],
+              "executor_type": "production_model",
+              "timeout_seconds": 21600,
+              "side_effect_policy": "reconcile_before_retry"
+            },
+            {
+              "id": "page.ko",
+              "layer": 4,
+              "locale": "ko",
+              "depends_on": [
+                "text.ko",
+                "audio.ko"
+              ],
+              "human_gates": [
+                "audio_listening_review"
+              ],
+              "executor_type": "deterministic_program",
+              "timeout_seconds": 600,
+              "side_effect_policy": "immutable_artifact"
+            },
+            {
+              "id": "text.zh-Hans",
+              "layer": 2,
+              "locale": "zh-Hans",
+              "depends_on": [
+                "source"
+              ],
+              "human_gates": [],
+              "executor_type": "production_model",
+              "timeout_seconds": 21600,
+              "side_effect_policy": "reconcile_before_retry"
+            },
+            {
+              "id": "audio.zh-Hans",
+              "layer": 3,
+              "locale": "zh-Hans",
+              "depends_on": [
+                "text.zh-Hans"
+              ],
+              "human_gates": [
+                "translation_review",
+                "voice_authorization"
+              ],
+              "executor_type": "production_model",
+              "timeout_seconds": 21600,
+              "side_effect_policy": "reconcile_before_retry"
+            },
+            {
+              "id": "page.zh-Hans",
+              "layer": 4,
+              "locale": "zh-Hans",
+              "depends_on": [
+                "text.zh-Hans",
+                "audio.zh-Hans"
+              ],
+              "human_gates": [
+                "audio_listening_review"
+              ],
+              "executor_type": "deterministic_program",
+              "timeout_seconds": 600,
+              "side_effect_policy": "immutable_artifact"
+            }
+          ],
+          "dispatchEnabled": false,
+          "admission": "requires_validated_package_adapter_and_existing_durable_locks"
+        },
+        "mode": "mock_only",
+        "evidenceMode": "synthetic",
+        "productionEligible": false,
+        "simulatedHuman": true,
+        "weightVersion": "equal_nodes_v1",
+        "resourceLimits": {
+          "fixed": 4,
+          "api": 2,
+          "local_model": 1
+        },
+        "mockDelaySeconds": 0.4,
+        "mockRequestLimit": 3,
+        "nodes": [
+          {
+            "id": "source",
+            "layer": 1,
+            "locale": null,
+            "dependsOn": [],
+            "humanGates": [
+              "source_review"
+            ],
+            "executorType": "deterministic_program",
+            "resourcePool": "fixed",
+            "timeoutSeconds": 30,
+            "weight": 1,
+            "maxSchedulerRetries": 0,
+            "mockScenario": "pass"
+          },
+          {
+            "id": "text.es",
+            "layer": 2,
+            "locale": "es",
+            "dependsOn": [
+              "source"
+            ],
+            "humanGates": [],
+            "executorType": "production_model",
+            "resourcePool": "api",
+            "timeoutSeconds": 30,
+            "weight": 1,
+            "maxSchedulerRetries": 0,
+            "mockScenario": "pass"
+          },
+          {
+            "id": "audio.es",
+            "layer": 3,
+            "locale": "es",
+            "dependsOn": [
+              "text.es"
+            ],
+            "humanGates": [
+              "translation_review",
+              "voice_authorization"
+            ],
+            "executorType": "production_model",
+            "resourcePool": "local_model",
+            "timeoutSeconds": 30,
+            "weight": 1,
+            "maxSchedulerRetries": 0,
+            "mockScenario": "pass"
+          },
+          {
+            "id": "page.es",
+            "layer": 4,
+            "locale": "es",
+            "dependsOn": [
+              "text.es",
+              "audio.es"
+            ],
+            "humanGates": [
+              "audio_listening_review"
+            ],
+            "executorType": "deterministic_program",
+            "resourcePool": "fixed",
+            "timeoutSeconds": 30,
+            "weight": 1,
+            "maxSchedulerRetries": 0,
+            "mockScenario": "pass"
+          },
+          {
+            "id": "text.ko",
+            "layer": 2,
+            "locale": "ko",
+            "dependsOn": [
+              "source"
+            ],
+            "humanGates": [],
+            "executorType": "production_model",
+            "resourcePool": "api",
+            "timeoutSeconds": 30,
+            "weight": 1,
+            "maxSchedulerRetries": 0,
+            "mockScenario": "pass"
+          },
+          {
+            "id": "audio.ko",
+            "layer": 3,
+            "locale": "ko",
+            "dependsOn": [
+              "text.ko"
+            ],
+            "humanGates": [
+              "translation_review",
+              "voice_authorization"
+            ],
+            "executorType": "production_model",
+            "resourcePool": "local_model",
+            "timeoutSeconds": 30,
+            "weight": 1,
+            "maxSchedulerRetries": 0,
+            "mockScenario": "pass"
+          },
+          {
+            "id": "page.ko",
+            "layer": 4,
+            "locale": "ko",
+            "dependsOn": [
+              "text.ko",
+              "audio.ko"
+            ],
+            "humanGates": [
+              "audio_listening_review"
+            ],
+            "executorType": "deterministic_program",
+            "resourcePool": "fixed",
+            "timeoutSeconds": 30,
+            "weight": 1,
+            "maxSchedulerRetries": 0,
+            "mockScenario": "pass"
+          },
+          {
+            "id": "text.zh-Hans",
+            "layer": 2,
+            "locale": "zh-Hans",
+            "dependsOn": [
+              "source"
+            ],
+            "humanGates": [],
+            "executorType": "production_model",
+            "resourcePool": "api",
+            "timeoutSeconds": 30,
+            "weight": 1,
+            "maxSchedulerRetries": 0,
+            "mockScenario": "pass"
+          },
+          {
+            "id": "audio.zh-Hans",
+            "layer": 3,
+            "locale": "zh-Hans",
+            "dependsOn": [
+              "text.zh-Hans"
+            ],
+            "humanGates": [
+              "translation_review",
+              "voice_authorization"
+            ],
+            "executorType": "production_model",
+            "resourcePool": "local_model",
+            "timeoutSeconds": 30,
+            "weight": 1,
+            "maxSchedulerRetries": 0,
+            "mockScenario": "pass"
+          },
+          {
+            "id": "page.zh-Hans",
+            "layer": 4,
+            "locale": "zh-Hans",
+            "dependsOn": [
+              "text.zh-Hans",
+              "audio.zh-Hans"
+            ],
+            "humanGates": [
+              "audio_listening_review"
+            ],
+            "executorType": "deterministic_program",
+            "resourcePool": "fixed",
+            "timeoutSeconds": 30,
+            "weight": 1,
+            "maxSchedulerRetries": 0,
+            "mockScenario": "pass"
+          }
+        ],
+        "planSha256": "7474e4400005f48d212420b26876ab516e79254521fb942ce20b8b58f0bbdc8a"
+      },
+      "businessReceipts": {
+        "text.ko": {
+          "schemaVersion": "sermon-dag-node-receipt-v1",
+          "runId": "068b2cf314f656418c10725e5e1c25d6c0d1d80accee13d56dcf5452bc085ec6",
+          "planSha256": "7474e4400005f48d212420b26876ab516e79254521fb942ce20b8b58f0bbdc8a",
+          "workUnitId": "text.ko",
+          "identitySha256": "48df112ec7e4d941e9b4211c72814bf6046c0be6cf4726c939abf519dfeb1a4b",
+          "attemptId": "mock-1",
+          "revisionId": "r1",
+          "dependencies": {
+            "source": "595886dcb640206f4fe4706086f4c9c742715df3429acfa3a0a9fc1eceba68dc"
+          },
+          "evidenceMode": "synthetic",
+          "productionEligible": false,
+          "realHumanStatus": "not_applicable",
+          "simulatedHumanStatus": "not_applicable",
+          "mockScenario": "pass",
+          "outputSha256": "01737433626ccef4590911b981b9be497365499a4d75768107a6c34df422f9db",
+          "spanId": "540a37e89d0445b69419f84eb82e4513",
+          "startedAt": "2026-10-01T02:10:33.538844+00:00",
+          "completedAt": "2026-10-01T02:10:33.944139+00:00",
+          "elapsedSeconds": 0.405303165956866,
+          "executionStatus": "succeeded",
+          "reviewVerdict": "synthetic_pass",
+          "admissionStatus": "mock_only",
+          "reservationId": "654322d805b85fa0339bde54166fa0b211f508096c036963e08d950698b7cb3f"
+        },
+        "audio.es": {
+          "schemaVersion": "sermon-dag-node-receipt-v1",
+          "runId": "068b2cf314f656418c10725e5e1c25d6c0d1d80accee13d56dcf5452bc085ec6",
+          "planSha256": "7474e4400005f48d212420b26876ab516e79254521fb942ce20b8b58f0bbdc8a",
+          "workUnitId": "audio.es",
+          "identitySha256": "8f46b98632b1f138560f797fe44d42666587a556698d985e1fbe808fa3df15d4",
+          "attemptId": "mock-1",
+          "revisionId": "r1",
+          "dependencies": {
+            "text.es": "d86ae3336ae0f52e6eb410dc0e7e785c209373bcc71b4295238e101e05b7867a"
+          },
+          "evidenceMode": "synthetic",
+          "productionEligible": false,
+          "realHumanStatus": "pending",
+          "simulatedHumanStatus": "simulated",
+          "mockScenario": "pass",
+          "outputSha256": "e827103617ecdf0bf681c05bf47fd88a27fc433124f8248aad1e5bf5a4fa78c4",
+          "spanId": "890771939d1c4082a718a0f9b9940db1",
+          "startedAt": "2026-10-01T02:10:34.617077+00:00",
+          "completedAt": "2026-10-01T02:10:35.026835+00:00",
+          "elapsedSeconds": 0.4097627500304952,
+          "executionStatus": "succeeded",
+          "reviewVerdict": "synthetic_pass",
+          "admissionStatus": "mock_only",
+          "reservationId": null
+        },
+        "page.zh-Hans": {
+          "schemaVersion": "sermon-dag-node-receipt-v1",
+          "runId": "068b2cf314f656418c10725e5e1c25d6c0d1d80accee13d56dcf5452bc085ec6",
+          "planSha256": "7474e4400005f48d212420b26876ab516e79254521fb942ce20b8b58f0bbdc8a",
+          "workUnitId": "page.zh-Hans",
+          "identitySha256": "95a7eeb07dfc7359d6a281bbe68f4dcf792aec002ac37f5e2868cc91b34e3eeb",
+          "attemptId": "mock-1",
+          "revisionId": "r1",
+          "dependencies": {
+            "text.zh-Hans": "6c693ae6e69083dcc9b79f8e0bcc9f6cda91b03677aa5ef516dfff796c8f6e0c",
+            "audio.zh-Hans": "c7c9606145303892384286f4dc8864f21387664f5da17e5c127586cd2a69d079"
+          },
+          "evidenceMode": "synthetic",
+          "productionEligible": false,
+          "realHumanStatus": "pending",
+          "simulatedHumanStatus": "simulated",
+          "mockScenario": "pass",
+          "outputSha256": "c219049e65f6d58ac5dfe7361844e35040ab6ec6f3cfd5e8c8887fd169adfaf8",
+          "spanId": "2bf8e4860e124e858d86012b05de17db",
+          "startedAt": "2026-10-01T02:10:38.655091+00:00",
+          "completedAt": "2026-10-01T02:10:39.064555+00:00",
+          "elapsedSeconds": 0.40946591598913074,
+          "executionStatus": "succeeded",
+          "reviewVerdict": "synthetic_pass",
+          "admissionStatus": "mock_only",
+          "reservationId": null
+        },
+        "audio.zh-Hans": {
+          "schemaVersion": "sermon-dag-node-receipt-v1",
+          "runId": "068b2cf314f656418c10725e5e1c25d6c0d1d80accee13d56dcf5452bc085ec6",
+          "planSha256": "7474e4400005f48d212420b26876ab516e79254521fb942ce20b8b58f0bbdc8a",
+          "workUnitId": "audio.zh-Hans",
+          "identitySha256": "c54719fc59d54b63b96097affd0c97210bee704f3abb09b33627a0c124ddcafe",
+          "attemptId": "mock-1",
+          "revisionId": "r1",
+          "dependencies": {
+            "text.zh-Hans": "6c693ae6e69083dcc9b79f8e0bcc9f6cda91b03677aa5ef516dfff796c8f6e0c"
+          },
+          "evidenceMode": "synthetic",
+          "productionEligible": false,
+          "realHumanStatus": "pending",
+          "simulatedHumanStatus": "simulated",
+          "mockScenario": "pass",
+          "outputSha256": "c7c9606145303892384286f4dc8864f21387664f5da17e5c127586cd2a69d079",
+          "spanId": "e14585c4ce314831a3f4b001cce1da1a",
+          "startedAt": "2026-10-01T02:10:37.175942+00:00",
+          "completedAt": "2026-10-01T02:10:37.578829+00:00",
+          "elapsedSeconds": 0.40289087500423193,
+          "executionStatus": "succeeded",
+          "reviewVerdict": "synthetic_pass",
+          "admissionStatus": "mock_only",
+          "reservationId": null
+        },
+        "source": {
+          "schemaVersion": "sermon-dag-node-receipt-v1",
+          "runId": "068b2cf314f656418c10725e5e1c25d6c0d1d80accee13d56dcf5452bc085ec6",
+          "planSha256": "7474e4400005f48d212420b26876ab516e79254521fb942ce20b8b58f0bbdc8a",
+          "workUnitId": "source",
+          "identitySha256": "f159a6b7a35362e740160cea61553baeb4ab153ac033a84abb9f45326d030982",
+          "attemptId": "mock-1",
+          "revisionId": "r1",
+          "dependencies": {},
+          "evidenceMode": "synthetic",
+          "productionEligible": false,
+          "realHumanStatus": "pending",
+          "simulatedHumanStatus": "simulated",
+          "mockScenario": "pass",
+          "outputSha256": "595886dcb640206f4fe4706086f4c9c742715df3429acfa3a0a9fc1eceba68dc",
+          "spanId": "dde79801d7504597ab4b7eacd7d71713",
+          "startedAt": "2026-10-01T02:10:32.583319+00:00",
+          "completedAt": "2026-10-01T02:10:32.993968+00:00",
+          "elapsedSeconds": 0.4106574589968659,
+          "executionStatus": "succeeded",
+          "reviewVerdict": "synthetic_pass",
+          "admissionStatus": "mock_only",
+          "reservationId": null
+        },
+        "audio.ko": {
+          "schemaVersion": "sermon-dag-node-receipt-v1",
+          "runId": "068b2cf314f656418c10725e5e1c25d6c0d1d80accee13d56dcf5452bc085ec6",
+          "planSha256": "7474e4400005f48d212420b26876ab516e79254521fb942ce20b8b58f0bbdc8a",
+          "workUnitId": "audio.ko",
+          "identitySha256": "c49bb10fe38b9882c49d819ce86f8eae63e01a56b88a787e0f4de542dad46e62",
+          "attemptId": "mock-1",
+          "revisionId": "r1",
+          "dependencies": {
+            "text.ko": "01737433626ccef4590911b981b9be497365499a4d75768107a6c34df422f9db"
+          },
+          "evidenceMode": "synthetic",
+          "productionEligible": false,
+          "realHumanStatus": "pending",
+          "simulatedHumanStatus": "simulated",
+          "mockScenario": "pass",
+          "outputSha256": "4f3bf9acf8360c6f82fc98f23a37e1f082ad9ae875a45d04e8af99c9faa94828",
+          "spanId": "c6f43c49b65b4cb1acdede478221dec7",
+          "startedAt": "2026-10-01T02:10:35.882943+00:00",
+          "completedAt": "2026-10-01T02:10:36.285020+00:00",
+          "elapsedSeconds": 0.40210866602137685,
+          "executionStatus": "succeeded",
+          "reviewVerdict": "synthetic_pass",
+          "admissionStatus": "mock_only",
+          "reservationId": null
+        },
+        "text.es": {
+          "schemaVersion": "sermon-dag-node-receipt-v1",
+          "runId": "068b2cf314f656418c10725e5e1c25d6c0d1d80accee13d56dcf5452bc085ec6",
+          "planSha256": "7474e4400005f48d212420b26876ab516e79254521fb942ce20b8b58f0bbdc8a",
+          "workUnitId": "text.es",
+          "identitySha256": "837bb7a12eb3fd696f5820f89e57cc2218491999a0c499fee6f38f049adfbc3c",
+          "attemptId": "mock-1",
+          "revisionId": "r1",
+          "dependencies": {
+            "source": "595886dcb640206f4fe4706086f4c9c742715df3429acfa3a0a9fc1eceba68dc"
+          },
+          "evidenceMode": "synthetic",
+          "productionEligible": false,
+          "realHumanStatus": "not_applicable",
+          "simulatedHumanStatus": "not_applicable",
+          "mockScenario": "pass",
+          "outputSha256": "d86ae3336ae0f52e6eb410dc0e7e785c209373bcc71b4295238e101e05b7867a",
+          "spanId": "500069b28696483fba90dff11503b268",
+          "startedAt": "2026-10-01T02:10:33.540006+00:00",
+          "completedAt": "2026-10-01T02:10:33.965831+00:00",
+          "elapsedSeconds": 0.4258263749652542,
+          "executionStatus": "succeeded",
+          "reviewVerdict": "synthetic_pass",
+          "admissionStatus": "mock_only",
+          "reservationId": "b3ef554b370a335acb98b4b92b48ff3f2dbd7b5949628bad11f2d270301bbf7a"
+        },
+        "page.es": {
+          "schemaVersion": "sermon-dag-node-receipt-v1",
+          "runId": "068b2cf314f656418c10725e5e1c25d6c0d1d80accee13d56dcf5452bc085ec6",
+          "planSha256": "7474e4400005f48d212420b26876ab516e79254521fb942ce20b8b58f0bbdc8a",
+          "workUnitId": "page.es",
+          "identitySha256": "1b8c085d8b2c2472f8ced16f487f18ab2841193a19c83a78d59d465df78b6d14",
+          "attemptId": "mock-1",
+          "revisionId": "r1",
+          "dependencies": {
+            "text.es": "d86ae3336ae0f52e6eb410dc0e7e785c209373bcc71b4295238e101e05b7867a",
+            "audio.es": "e827103617ecdf0bf681c05bf47fd88a27fc433124f8248aad1e5bf5a4fa78c4"
+          },
+          "evidenceMode": "synthetic",
+          "productionEligible": false,
+          "realHumanStatus": "pending",
+          "simulatedHumanStatus": "simulated",
+          "mockScenario": "pass",
+          "outputSha256": "88c3a926fd129f5151cf725b86e33849cbb851f256e638e9a248a6a83e52cfc9",
+          "spanId": "35b5ba2cd44247b4bdc6e04d5cc54426",
+          "startedAt": "2026-10-01T02:10:35.957761+00:00",
+          "completedAt": "2026-10-01T02:10:36.365864+00:00",
+          "elapsedSeconds": 0.40810604102443904,
+          "executionStatus": "succeeded",
+          "reviewVerdict": "synthetic_pass",
+          "admissionStatus": "mock_only",
+          "reservationId": null
+        },
+        "page.ko": {
+          "schemaVersion": "sermon-dag-node-receipt-v1",
+          "runId": "068b2cf314f656418c10725e5e1c25d6c0d1d80accee13d56dcf5452bc085ec6",
+          "planSha256": "7474e4400005f48d212420b26876ab516e79254521fb942ce20b8b58f0bbdc8a",
+          "workUnitId": "page.ko",
+          "identitySha256": "2b2a9ff463fa7ca7ffc0f02c005acdbee0406587c8e5c17844acf7c0b06c9dd9",
+          "attemptId": "mock-1",
+          "revisionId": "r1",
+          "dependencies": {
+            "text.ko": "01737433626ccef4590911b981b9be497365499a4d75768107a6c34df422f9db",
+            "audio.ko": "4f3bf9acf8360c6f82fc98f23a37e1f082ad9ae875a45d04e8af99c9faa94828"
+          },
+          "evidenceMode": "synthetic",
+          "productionEligible": false,
+          "realHumanStatus": "pending",
+          "simulatedHumanStatus": "simulated",
+          "mockScenario": "pass",
+          "outputSha256": "fc52ffcf963caf0efb0b99719db0a2d67982ec94687f842f47011979d5ff356d",
+          "spanId": "5ad77c690ee94bd8a6d372d0a741d973",
+          "startedAt": "2026-10-01T02:10:37.277633+00:00",
+          "completedAt": "2026-10-01T02:10:37.687347+00:00",
+          "elapsedSeconds": 0.4097171250032261,
+          "executionStatus": "succeeded",
+          "reviewVerdict": "synthetic_pass",
+          "admissionStatus": "mock_only",
+          "reservationId": null
+        },
+        "text.zh-Hans": {
+          "schemaVersion": "sermon-dag-node-receipt-v1",
+          "runId": "068b2cf314f656418c10725e5e1c25d6c0d1d80accee13d56dcf5452bc085ec6",
+          "planSha256": "7474e4400005f48d212420b26876ab516e79254521fb942ce20b8b58f0bbdc8a",
+          "workUnitId": "text.zh-Hans",
+          "identitySha256": "e1b60673f6954735021923c38cfd54b39304ca4e1c988c8110a754a445eb3c0e",
+          "attemptId": "mock-1",
+          "revisionId": "r1",
+          "dependencies": {
+            "source": "595886dcb640206f4fe4706086f4c9c742715df3429acfa3a0a9fc1eceba68dc"
+          },
+          "evidenceMode": "synthetic",
+          "productionEligible": false,
+          "realHumanStatus": "not_applicable",
+          "simulatedHumanStatus": "not_applicable",
+          "mockScenario": "pass",
+          "outputSha256": "6c693ae6e69083dcc9b79f8e0bcc9f6cda91b03677aa5ef516dfff796c8f6e0c",
+          "spanId": "411dfe6d7b734644b2ca71503265f9d3",
+          "startedAt": "2026-10-01T02:10:34.586172+00:00",
+          "completedAt": "2026-10-01T02:10:34.998153+00:00",
+          "elapsedSeconds": 0.41199820896144956,
+          "executionStatus": "succeeded",
+          "reviewVerdict": "synthetic_pass",
+          "admissionStatus": "mock_only",
+          "reservationId": "0909c271deecab0d95d9e20a19785480af3aa7eda87107710f825c6fb165cb17"
+        }
+      },
+      "mockOutputs": {
+        "text.ko": {
+          "identitySha256": "48df112ec7e4d941e9b4211c72814bf6046c0be6cf4726c939abf519dfeb1a4b",
+          "syntheticOutput": true,
+          "audioDisposition": "mock_artifact"
+        },
+        "audio.es": {
+          "identitySha256": "8f46b98632b1f138560f797fe44d42666587a556698d985e1fbe808fa3df15d4",
+          "syntheticOutput": true,
+          "audioDisposition": "mock_artifact"
+        },
+        "page.zh-Hans": {
+          "identitySha256": "95a7eeb07dfc7359d6a281bbe68f4dcf792aec002ac37f5e2868cc91b34e3eeb",
+          "syntheticOutput": true,
+          "audioDisposition": "mock_artifact"
+        },
+        "audio.zh-Hans": {
+          "identitySha256": "c54719fc59d54b63b96097affd0c97210bee704f3abb09b33627a0c124ddcafe",
+          "syntheticOutput": true,
+          "audioDisposition": "mock_artifact"
+        },
+        "source": {
+          "identitySha256": "f159a6b7a35362e740160cea61553baeb4ab153ac033a84abb9f45326d030982",
+          "syntheticOutput": true,
+          "audioDisposition": "mock_artifact"
+        },
+        "audio.ko": {
+          "identitySha256": "c49bb10fe38b9882c49d819ce86f8eae63e01a56b88a787e0f4de542dad46e62",
+          "syntheticOutput": true,
+          "audioDisposition": "mock_artifact"
+        },
+        "text.es": {
+          "identitySha256": "837bb7a12eb3fd696f5820f89e57cc2218491999a0c499fee6f38f049adfbc3c",
+          "syntheticOutput": true,
+          "audioDisposition": "mock_artifact"
+        },
+        "page.es": {
+          "identitySha256": "1b8c085d8b2c2472f8ced16f487f18ab2841193a19c83a78d59d465df78b6d14",
+          "syntheticOutput": true,
+          "audioDisposition": "mock_artifact"
+        },
+        "page.ko": {
+          "identitySha256": "2b2a9ff463fa7ca7ffc0f02c005acdbee0406587c8e5c17844acf7c0b06c9dd9",
+          "syntheticOutput": true,
+          "audioDisposition": "mock_artifact"
+        },
+        "text.zh-Hans": {
+          "identitySha256": "e1b60673f6954735021923c38cfd54b39304ca4e1c988c8110a754a445eb3c0e",
+          "syntheticOutput": true,
+          "audioDisposition": "mock_artifact"
+        }
+      },
+      "controlledFailures": {},
+      "receiptHashObservations": [
+        {
+          "event": "workload",
+          "runId": "7a0cb2436cb34d249f761b2a89c142ec",
+          "jobId": "bb043c0dd50f71b00acabad411183c418208e70c6417a39f105d99c120a066dd",
+          "workUnitId": "source",
+          "attemptId": "mock-1",
+          "spanId": "dde79801d7504597ab4b7eacd7d71713",
+          "evidenceMode": "synthetic",
+          "recordedAt": "2026-10-01T02:10:32.998793Z",
+          "metrics": {
+            "nodeIdentitySha256": "f159a6b7a35362e740160cea61553baeb4ab153ac033a84abb9f45326d030982",
+            "planSha256": "7474e4400005f48d212420b26876ab516e79254521fb942ce20b8b58f0bbdc8a",
+            "receiptSha256": "31e475cd345c96009357d84007301bb17783efff358c34f1cb601e7a551cb50f",
+            "synthetic": true
+          }
+        },
+        {
+          "event": "workload",
+          "runId": "7a0cb2436cb34d249f761b2a89c142ec",
+          "jobId": "0201a937abdbbd60523aa1a9f298f66a7953d414800c684904f006fa211288a5",
+          "workUnitId": "text.ko",
+          "attemptId": "mock-1",
+          "spanId": "540a37e89d0445b69419f84eb82e4513",
+          "evidenceMode": "synthetic",
+          "recordedAt": "2026-10-01T02:10:33.947267Z",
+          "metrics": {
+            "nodeIdentitySha256": "48df112ec7e4d941e9b4211c72814bf6046c0be6cf4726c939abf519dfeb1a4b",
+            "planSha256": "7474e4400005f48d212420b26876ab516e79254521fb942ce20b8b58f0bbdc8a",
+            "receiptSha256": "cafe0e7e83116a11f7933aa3124b9c7a945e44102adc7db301d056475fac100a",
+            "synthetic": true
+          }
+        },
+        {
+          "event": "workload",
+          "runId": "7a0cb2436cb34d249f761b2a89c142ec",
+          "jobId": "1fcd098b881a553acd3e4135d4218eb77cc6601f8451e522f82c088655e0348c",
+          "workUnitId": "text.es",
+          "attemptId": "mock-1",
+          "spanId": "500069b28696483fba90dff11503b268",
+          "evidenceMode": "synthetic",
+          "recordedAt": "2026-10-01T02:10:33.967712Z",
+          "metrics": {
+            "nodeIdentitySha256": "837bb7a12eb3fd696f5820f89e57cc2218491999a0c499fee6f38f049adfbc3c",
+            "planSha256": "7474e4400005f48d212420b26876ab516e79254521fb942ce20b8b58f0bbdc8a",
+            "receiptSha256": "13ff3b31d6517dafd0bd817553949f1dbee2bb5aba43516a6e3ff9b389efb24d",
+            "synthetic": true
+          }
+        },
+        {
+          "event": "workload",
+          "runId": "7a0cb2436cb34d249f761b2a89c142ec",
+          "jobId": "7b811b9b5e1333c75b79bfebd1310108f62e7961e6c4742bc50e5f36c513a31c",
+          "workUnitId": "text.zh-Hans",
+          "attemptId": "mock-1",
+          "spanId": "411dfe6d7b734644b2ca71503265f9d3",
+          "evidenceMode": "synthetic",
+          "recordedAt": "2026-10-01T02:10:35.003531Z",
+          "metrics": {
+            "nodeIdentitySha256": "e1b60673f6954735021923c38cfd54b39304ca4e1c988c8110a754a445eb3c0e",
+            "planSha256": "7474e4400005f48d212420b26876ab516e79254521fb942ce20b8b58f0bbdc8a",
+            "receiptSha256": "56f13e723054fe39109f40c2b6c375c872deeeef7d983f2a4f4117796cf3cbbc",
+            "synthetic": true
+          }
+        },
+        {
+          "event": "workload",
+          "runId": "7a0cb2436cb34d249f761b2a89c142ec",
+          "jobId": "b330e1a8b85130b40cfe183853a6fbaa7250f160de265290e73d60157dc752d5",
+          "workUnitId": "audio.es",
+          "attemptId": "mock-1",
+          "spanId": "890771939d1c4082a718a0f9b9940db1",
+          "evidenceMode": "synthetic",
+          "recordedAt": "2026-10-01T02:10:35.029568Z",
+          "metrics": {
+            "nodeIdentitySha256": "8f46b98632b1f138560f797fe44d42666587a556698d985e1fbe808fa3df15d4",
+            "planSha256": "7474e4400005f48d212420b26876ab516e79254521fb942ce20b8b58f0bbdc8a",
+            "receiptSha256": "cedd545d743920c6dd79f51cb1358b2272ef1534063ac8a4e143c0536cc9b4ce",
+            "synthetic": true
+          }
+        },
+        {
+          "event": "workload",
+          "runId": "7a0cb2436cb34d249f761b2a89c142ec",
+          "jobId": "ec64d269ccc94184e8f1161edc25b585c5304b356990bef7cba500c7302f7b96",
+          "workUnitId": "audio.ko",
+          "attemptId": "mock-1",
+          "spanId": "c6f43c49b65b4cb1acdede478221dec7",
+          "evidenceMode": "synthetic",
+          "recordedAt": "2026-10-01T02:10:36.298805Z",
+          "metrics": {
+            "nodeIdentitySha256": "c49bb10fe38b9882c49d819ce86f8eae63e01a56b88a787e0f4de542dad46e62",
+            "planSha256": "7474e4400005f48d212420b26876ab516e79254521fb942ce20b8b58f0bbdc8a",
+            "receiptSha256": "03c72c2e4c6d00ca4312f80e01a8a8db0fb95f058ef51afb69f0727328514d17",
+            "synthetic": true
+          }
+        },
+        {
+          "event": "workload",
+          "runId": "7a0cb2436cb34d249f761b2a89c142ec",
+          "jobId": "58c333caa94eedb2a67ae22a10d909bb200df84173e980d89a82fa4eaae9d396",
+          "workUnitId": "page.es",
+          "attemptId": "mock-1",
+          "spanId": "35b5ba2cd44247b4bdc6e04d5cc54426",
+          "evidenceMode": "synthetic",
+          "recordedAt": "2026-10-01T02:10:36.368188Z",
+          "metrics": {
+            "nodeIdentitySha256": "1b8c085d8b2c2472f8ced16f487f18ab2841193a19c83a78d59d465df78b6d14",
+            "planSha256": "7474e4400005f48d212420b26876ab516e79254521fb942ce20b8b58f0bbdc8a",
+            "receiptSha256": "5b3dfa8f0a12d630f443208b6aa0f523b059ba0f7538f44f7a868548624d874e",
+            "synthetic": true
+          }
+        },
+        {
+          "event": "workload",
+          "runId": "7a0cb2436cb34d249f761b2a89c142ec",
+          "jobId": "fbea94ed3844cc7c53fb3467d3a9549bea12c7d819bc8c258b6e60ceabd99f52",
+          "workUnitId": "audio.zh-Hans",
+          "attemptId": "mock-1",
+          "spanId": "e14585c4ce314831a3f4b001cce1da1a",
+          "evidenceMode": "synthetic",
+          "recordedAt": "2026-10-01T02:10:37.584109Z",
+          "metrics": {
+            "nodeIdentitySha256": "c54719fc59d54b63b96097affd0c97210bee704f3abb09b33627a0c124ddcafe",
+            "planSha256": "7474e4400005f48d212420b26876ab516e79254521fb942ce20b8b58f0bbdc8a",
+            "receiptSha256": "9d221851586d3e235ebb4c6d1c1b02ae2f095b10a56b9072eb6d0a3e52907f98",
+            "synthetic": true
+          }
+        },
+        {
+          "event": "workload",
+          "runId": "7a0cb2436cb34d249f761b2a89c142ec",
+          "jobId": "5fa6bdf734629447832e6abc6b5fea69dd110fb87194644b57e78970af35b2e8",
+          "workUnitId": "page.ko",
+          "attemptId": "mock-1",
+          "spanId": "5ad77c690ee94bd8a6d372d0a741d973",
+          "evidenceMode": "synthetic",
+          "recordedAt": "2026-10-01T02:10:37.689659Z",
+          "metrics": {
+            "nodeIdentitySha256": "2b2a9ff463fa7ca7ffc0f02c005acdbee0406587c8e5c17844acf7c0b06c9dd9",
+            "planSha256": "7474e4400005f48d212420b26876ab516e79254521fb942ce20b8b58f0bbdc8a",
+            "receiptSha256": "0ec4026938e43695a38b363a6eea03d107b367e737f466b681ffba7b76de655e",
+            "synthetic": true
+          }
+        },
+        {
+          "event": "workload",
+          "runId": "7a0cb2436cb34d249f761b2a89c142ec",
+          "jobId": "941b728a27abafdecb5f3173d3c076b9676d86bd92cb7045d2493cade8a16e8b",
+          "workUnitId": "page.zh-Hans",
+          "attemptId": "mock-1",
+          "spanId": "2bf8e4860e124e858d86012b05de17db",
+          "evidenceMode": "synthetic",
+          "recordedAt": "2026-10-01T02:10:39.067303Z",
+          "metrics": {
+            "nodeIdentitySha256": "95a7eeb07dfc7359d6a281bbe68f4dcf792aec002ac37f5e2868cc91b34e3eeb",
+            "planSha256": "7474e4400005f48d212420b26876ab516e79254521fb942ce20b8b58f0bbdc8a",
+            "receiptSha256": "4ab957c2c7aeb2481963c9de8de104f82f7a87561c5a48593e663829069bf4b0",
+            "synthetic": true
+          }
+        }
+      ],
+      "syntheticBudgetLedger": {
+        "schemaVersion": "sermon-review-budget-v1",
+        "authority": {
+          "approvalSha256": "7474e4400005f48d212420b26876ab516e79254521fb942ce20b8b58f0bbdc8a",
+          "globalBounds": {
+            "requests": 3,
+            "inputTokens": 3,
+            "outputTokens": 3,
+            "wallTimeMs": 90000,
+            "costMicrousd": 3
+          },
+          "unitBounds": {
+            "requests": 1,
+            "inputTokens": 1,
+            "outputTokens": 1,
+            "wallTimeMs": 30000,
+            "costMicrousd": 1
+          },
+          "limits": {
+            "contentRevisions": 2,
+            "reviewAttemptsPerRevision": 2,
+            "decisionProposals": 1
+          }
+        },
+        "storeSha256": "8f265219ed1ca5621c7870b72e0b38e5429091c8e6120b80380527e188edb1b6",
+        "reservations": {
+          "654322d805b85fa0339bde54166fa0b211f508096c036963e08d950698b7cb3f": {
+            "request": {
+              "identity": {
+                "sourceIdentitySha256": "4444444444444444444444444444444444444444444444444444444444444444",
+                "sourcePackageSha256": "7474e4400005f48d212420b26876ab516e79254521fb942ce20b8b58f0bbdc8a",
+                "anchorSha256": "7474e4400005f48d212420b26876ab516e79254521fb942ce20b8b58f0bbdc8a",
+                "policySha256": "7474e4400005f48d212420b26876ab516e79254521fb942ce20b8b58f0bbdc8a",
+                "rubricSha256": "7474e4400005f48d212420b26876ab516e79254521fb942ce20b8b58f0bbdc8a",
+                "targetLocale": "ko",
+                "workUnitId": "l2.ko.mock"
+              },
+              "operationId": "mock.initial",
+              "kind": "initial_generation",
+              "revisionId": "r1",
+              "revisionNumber": 1,
+              "inputSha256": "48df112ec7e4d941e9b4211c72814bf6046c0be6cf4726c939abf519dfeb1a4b",
+              "bounds": {
+                "requests": 1,
+                "inputTokens": 1,
+                "outputTokens": 1,
+                "wallTimeMs": 30000,
+                "costMicrousd": 1
+              }
+            },
+            "phase": "result",
+            "result": {
+              "executionStatus": "succeeded",
+              "contentStatus": "pass",
+              "receiptSha256": "cafe0e7e83116a11f7933aa3124b9c7a945e44102adc7db301d056475fac100a",
+              "usage": {
+                "requests": 1,
+                "inputTokens": 1,
+                "outputTokens": 1,
+                "wallTimeMs": 30000,
+                "costMicrousd": 1
+              }
+            }
+          },
+          "b3ef554b370a335acb98b4b92b48ff3f2dbd7b5949628bad11f2d270301bbf7a": {
+            "request": {
+              "identity": {
+                "sourceIdentitySha256": "4444444444444444444444444444444444444444444444444444444444444444",
+                "sourcePackageSha256": "7474e4400005f48d212420b26876ab516e79254521fb942ce20b8b58f0bbdc8a",
+                "anchorSha256": "7474e4400005f48d212420b26876ab516e79254521fb942ce20b8b58f0bbdc8a",
+                "policySha256": "7474e4400005f48d212420b26876ab516e79254521fb942ce20b8b58f0bbdc8a",
+                "rubricSha256": "7474e4400005f48d212420b26876ab516e79254521fb942ce20b8b58f0bbdc8a",
+                "targetLocale": "es",
+                "workUnitId": "l2.es.mock"
+              },
+              "operationId": "mock.initial",
+              "kind": "initial_generation",
+              "revisionId": "r1",
+              "revisionNumber": 1,
+              "inputSha256": "837bb7a12eb3fd696f5820f89e57cc2218491999a0c499fee6f38f049adfbc3c",
+              "bounds": {
+                "requests": 1,
+                "inputTokens": 1,
+                "outputTokens": 1,
+                "wallTimeMs": 30000,
+                "costMicrousd": 1
+              }
+            },
+            "phase": "result",
+            "result": {
+              "executionStatus": "succeeded",
+              "contentStatus": "pass",
+              "receiptSha256": "13ff3b31d6517dafd0bd817553949f1dbee2bb5aba43516a6e3ff9b389efb24d",
+              "usage": {
+                "requests": 1,
+                "inputTokens": 1,
+                "outputTokens": 1,
+                "wallTimeMs": 30000,
+                "costMicrousd": 1
+              }
+            }
+          },
+          "0909c271deecab0d95d9e20a19785480af3aa7eda87107710f825c6fb165cb17": {
+            "request": {
+              "identity": {
+                "sourceIdentitySha256": "4444444444444444444444444444444444444444444444444444444444444444",
+                "sourcePackageSha256": "7474e4400005f48d212420b26876ab516e79254521fb942ce20b8b58f0bbdc8a",
+                "anchorSha256": "7474e4400005f48d212420b26876ab516e79254521fb942ce20b8b58f0bbdc8a",
+                "policySha256": "7474e4400005f48d212420b26876ab516e79254521fb942ce20b8b58f0bbdc8a",
+                "rubricSha256": "7474e4400005f48d212420b26876ab516e79254521fb942ce20b8b58f0bbdc8a",
+                "targetLocale": "zh-Hans",
+                "workUnitId": "l2.zh-Hans.mock"
+              },
+              "operationId": "mock.initial",
+              "kind": "initial_generation",
+              "revisionId": "r1",
+              "revisionNumber": 1,
+              "inputSha256": "e1b60673f6954735021923c38cfd54b39304ca4e1c988c8110a754a445eb3c0e",
+              "bounds": {
+                "requests": 1,
+                "inputTokens": 1,
+                "outputTokens": 1,
+                "wallTimeMs": 30000,
+                "costMicrousd": 1
+              }
+            },
+            "phase": "result",
+            "result": {
+              "executionStatus": "succeeded",
+              "contentStatus": "pass",
+              "receiptSha256": "56f13e723054fe39109f40c2b6c375c872deeeef7d983f2a4f4117796cf3cbbc",
+              "usage": {
+                "requests": 1,
+                "inputTokens": 1,
+                "outputTokens": 1,
+                "wallTimeMs": 30000,
+                "costMicrousd": 1
+              }
+            }
+          }
+        }
+      },
+      "budgetScope": "Synthetic test quota only; not provider usage, spend, or the paused diagnostic budget."
+    },
+    {
+      "case": "failure",
+      "codeCommit": "f7b56935a130813d30c64e39130e1a4df561be64",
+      "runId": "c8c237e1cb3328c3ccaff43805ed404392a712cfa6b4cfbf1f32dff27c8a0b31",
+      "executionPlanSha256": "b0a6b19015491cf129a53176368b50cfe6888cad090a0cffae7d314f618497be",
+      "sourceIdentitySha256": "4444444444444444444444444444444444444444444444444444444444444444",
+      "runtimeCodeSha256": "c27b681b2d2c31ae538ac7daf8f528e0e5bfecdcb4519f92d2ff7b8b90809ff0",
+      "readerCodeSha256": "94a365aa2d4a96f7a91418c5a9d1daf0e091d3ca34b0965840b8207e45d5e5ce",
+      "evidenceSnapshotSha256": "2fe7eca4779e71d28b552a45c7efdc558ec22646f0b985c54bab4efe5de53c8c",
+      "sourceLedgerSha256": "59b5c79da6798efd0101f03c59c1ab1d13ccdfc17ab759280ab357ea100d13ce",
+      "plannedProcessedPercent": 80.0,
+      "gateCompletionPercent": 70.0,
+      "counts": {
+        "done": 7,
+        "total": 10,
+        "processed": 8,
+        "executionSucceeded": 7,
+        "contentReviewPassed": 7,
+        "realHumanApproved": 0,
+        "simulatedHumanApproved": 5,
+        "admitted": 7
+      },
+      "processingCoverage": {
+        "status": "known",
+        "knownWeight": "10",
+        "unknownWeight": "0",
+        "unknownUnits": [],
+        "unattributedEvidence": false
+      },
+      "eta": {
+        "status": "unknown",
+        "lowerSeconds": null,
+        "upperSeconds": null,
+        "earliestAt": null,
+        "latestAt": null,
+        "remainingSerialSeconds": null,
+        "criticalPathSeconds": null,
+        "sampleCount": 7,
+        "confidence": "unknown",
+        "reasonCodes": [
+          "blocked",
+          "human_review_remaining",
+          "no_comparable_history",
+          "observed_blocker",
+          "resource_state_missing",
+          "retry_or_reconciliation_not_authorized",
+          "unit_queue_unknown"
+        ],
+        "estimatorVersion": "remaining-dag-resource-slots-v1",
+        "updatedAt": "2026-10-01T02:11:02.952267+00:00",
+        "perUnit": {
+          "audio.es": {
+            "lower": 0.20642510399920866,
+            "upper": 0.8257004159968346,
+            "sampleCount": 1,
+            "confidence": "low",
+            "basis": "empirical_envelope"
+          },
+          "audio.ko": {
+            "lower": null,
+            "upper": null,
+            "sampleCount": 0,
+            "confidence": "unknown",
+            "basis": "no_comparable_history"
+          },
+          "audio.zh-Hans": {
+            "lower": 0.20490347902523354,
+            "upper": 0.8196139161009341,
+            "sampleCount": 1,
+            "confidence": "low",
+            "basis": "empirical_envelope"
+          },
+          "page.es": {
+            "lower": 0.20334450001246296,
+            "upper": 0.8133780000498518,
+            "sampleCount": 1,
+            "confidence": "low",
+            "basis": "empirical_envelope"
+          },
+          "page.ko": {
+            "lower": null,
+            "upper": null,
+            "sampleCount": 0,
+            "confidence": "unknown",
+            "basis": "no_comparable_history"
+          },
+          "page.zh-Hans": {
+            "lower": 0.20242779201362282,
+            "upper": 0.8097111680544913,
+            "sampleCount": 1,
+            "confidence": "low",
+            "basis": "empirical_envelope"
+          },
+          "source": {
+            "lower": 0.20562060401425697,
+            "upper": 0.8224824160570279,
+            "sampleCount": 1,
+            "confidence": "low",
+            "basis": "empirical_envelope"
+          },
+          "text.es": {
+            "lower": 0.20768612500978634,
+            "upper": 0.8307445000391454,
+            "sampleCount": 1,
+            "confidence": "low",
+            "basis": "empirical_envelope"
+          },
+          "text.ko": {
+            "lower": null,
+            "upper": null,
+            "sampleCount": 0,
+            "confidence": "unknown",
+            "basis": "no_comparable_history"
+          },
+          "text.zh-Hans": {
+            "lower": 0.20682289550313726,
+            "upper": 0.827291582012549,
+            "sampleCount": 1,
+            "confidence": "low",
+            "basis": "empirical_envelope"
+          }
+        },
+        "assumptions": [
+          "Comparable stage/model/locale/length/cache/resource-class samples only.",
+          "Envelope is a conservative scenario range, not a calibrated probability interval.",
+          "Non-preemptive deterministic list order; no new retries, future rework or unrecorded queue arrivals.",
+          "UTC is descriptive; active elapsed and heartbeat are supplied by the local monotonic monitor."
+        ]
+      },
+      "cost": {
+        "status": "not_projected",
+        "knownSubtotalUsd": null,
+        "source": "existing_accounting_projection"
+      },
+      "readOnlyEvidenceUnchanged": true,
+      "replayWithoutNewJobOrReservation": false,
+      "productionEligible": false,
+      "evidenceMode": "synthetic",
+      "validatedNodeEvidence": {
+        "source": {
+          "status": "succeeded",
+          "reason": null,
+          "jobId": "2c5c9fc3d79212500f288367b96eda10678300ee94a7b63c1c1ca311d23767ea",
+          "receiptSha256": "31da0da7f63e40c8162d5dfdbce9650828387c959c49cdbfeba2900f59a16952",
+          "spanId": "6dcfbfc636a347f792f8e8f72f387169"
+        },
+        "text.es": {
+          "status": "succeeded",
+          "reason": null,
+          "jobId": "19460b71207652a7a4a8f77c167053cbb8566329c978efda04b3ce775788d56e",
+          "receiptSha256": "679fa532fc4fcbc0b2570f6b38be0fe059decf30cf8cfa310a2c58fa6f4690e3",
+          "spanId": "9a6e92bbfb904ee683ab7776ea574ca0"
+        },
+        "audio.es": {
+          "status": "succeeded",
+          "reason": null,
+          "jobId": "51681690f86eb0a2edeea662490f7976bca9ce847c4c7ac103f35cd77c4c70d7",
+          "receiptSha256": "a0a2e5892dd3183beb0fa1121e7ce870d86f8e95388667ac4540295bfa5e9e62",
+          "spanId": "aa502ff76cb34100b496e6f58045cc3c"
+        },
+        "page.es": {
+          "status": "succeeded",
+          "reason": null,
+          "jobId": "48e966a2c951784f7e573ebba8316fc7e69de7c1634f400fce31d1c1b868eb7b",
+          "receiptSha256": "4bb29bf2712d34be182e751fc1de0071f6f3e8688009a1e4fdc4d9361831b6b0",
+          "spanId": "3e25ddabb1a54185890aa0fcdffffe9b"
+        },
+        "text.ko": {
+          "status": "failed",
+          "reason": "controlled_known_failure",
+          "jobId": "95d7eb90ccb324ff4f64d54ff65239a9a2659b8b7c6ddc7506b2f2c2a659f6ce",
+          "receiptSha256": "f19eb41765bed64f37152d30ecb745997aeff327e12a13f9226d0ec1e153f401"
+        },
+        "audio.ko": {
+          "status": "blocked",
+          "reason": "dependency_not_verified",
+          "jobId": null,
+          "receiptSha256": null
+        },
+        "page.ko": {
+          "status": "blocked",
+          "reason": "dependency_not_verified",
+          "jobId": null,
+          "receiptSha256": null
+        },
+        "text.zh-Hans": {
+          "status": "succeeded",
+          "reason": null,
+          "jobId": "7cd135eda4c5528bf7e5908281566ee180c350cff428d8fb59a0e873e27981c0",
+          "receiptSha256": "57685dca647e379eff6ed44066dfe5a425e4a57e6d77676d16e69884e9ea826f",
+          "spanId": "db6f4f79c4fb4bdc997f19d3286805ba"
+        },
+        "audio.zh-Hans": {
+          "status": "succeeded",
+          "reason": null,
+          "jobId": "2e79a8def6356fdc1aee9c971ec1a9358bb487b9a37c0507726a5d171c47f3ab",
+          "receiptSha256": "d3370c74e13301be58f6203c2ea8764bc5d27a1891b719c77c52d270aeabf792",
+          "spanId": "f16965b2ae7642569b65ab49e732327e"
+        },
+        "page.zh-Hans": {
+          "status": "succeeded",
+          "reason": null,
+          "jobId": "1332c6899e0afd21ebaef46b43b4caf90f3df147c9845ea17f82f9539a875c85",
+          "receiptSha256": "c3df5ea6c6e5adab2f21909c895272f4452da514f7be0979ca64c63c7de31629",
+          "spanId": "be4f551495c3411d80ecc5b1a6aa7fa2"
+        }
+      },
+      "trace": [
+        {
+          "event": "stage_finished",
+          "runId": "9f250c664f58422cbe7975a4d3179215",
+          "workflowId": "7ca96e49d9ec4e37bd9361d3c2ee523e",
+          "jobId": "2c5c9fc3d79212500f288367b96eda10678300ee94a7b63c1c1ca311d23767ea",
+          "workUnitId": "source",
+          "attemptId": "mock-1",
+          "spanId": "6dcfbfc636a347f792f8e8f72f387169",
+          "dependsOn": [],
+          "executorType": "deterministic_program",
+          "evidenceMode": "synthetic",
+          "status": "completed",
+          "elapsedSeconds": 0.544495,
+          "dependencyReadyAt": "2026-10-01T02:10:56.321253Z",
+          "queuedAt": "2026-10-01T02:10:56.321258Z",
+          "recordedAt": "2026-10-01T02:10:57.119252Z"
+        },
+        {
+          "event": "stage_finished",
+          "runId": "9f250c664f58422cbe7975a4d3179215",
+          "workflowId": "7ca96e49d9ec4e37bd9361d3c2ee523e",
+          "jobId": "7cd135eda4c5528bf7e5908281566ee180c350cff428d8fb59a0e873e27981c0",
+          "workUnitId": "text.zh-Hans",
+          "attemptId": "mock-1",
+          "spanId": "db6f4f79c4fb4bdc997f19d3286805ba",
+          "dependsOn": [
+            "6dcfbfc636a347f792f8e8f72f387169"
+          ],
+          "executorType": "deterministic_program",
+          "evidenceMode": "synthetic",
+          "status": "completed",
+          "elapsedSeconds": 0.431682,
+          "dependencyReadyAt": "2026-10-01T02:10:57.261935Z",
+          "queuedAt": "2026-10-01T02:10:57.261943Z",
+          "recordedAt": "2026-10-01T02:10:58.098115Z"
+        },
+        {
+          "event": "stage_finished",
+          "runId": "9f250c664f58422cbe7975a4d3179215",
+          "workflowId": "7ca96e49d9ec4e37bd9361d3c2ee523e",
+          "jobId": "95d7eb90ccb324ff4f64d54ff65239a9a2659b8b7c6ddc7506b2f2c2a659f6ce",
+          "workUnitId": "text.ko",
+          "attemptId": "mock-1",
+          "spanId": "4bcacdec4c05418796e813403f2e1268",
+          "dependsOn": [
+            "6dcfbfc636a347f792f8e8f72f387169"
+          ],
+          "executorType": "deterministic_program",
+          "evidenceMode": "synthetic",
+          "status": "failed",
+          "elapsedSeconds": 0.43558,
+          "dependencyReadyAt": "2026-10-01T02:10:57.274203Z",
+          "queuedAt": "2026-10-01T02:10:57.274210Z",
+          "recordedAt": "2026-10-01T02:10:58.103582Z"
+        },
+        {
+          "event": "stage_finished",
+          "runId": "9f250c664f58422cbe7975a4d3179215",
+          "workflowId": "7ca96e49d9ec4e37bd9361d3c2ee523e",
+          "jobId": "19460b71207652a7a4a8f77c167053cbb8566329c978efda04b3ce775788d56e",
+          "workUnitId": "text.es",
+          "attemptId": "mock-1",
+          "spanId": "9a6e92bbfb904ee683ab7776ea574ca0",
+          "dependsOn": [
+            "6dcfbfc636a347f792f8e8f72f387169"
+          ],
+          "executorType": "deterministic_program",
+          "evidenceMode": "synthetic",
+          "status": "completed",
+          "elapsedSeconds": 0.439181,
+          "dependencyReadyAt": "2026-10-01T02:10:57.286601Z",
+          "queuedAt": "2026-10-01T02:10:57.286607Z",
+          "recordedAt": "2026-10-01T02:10:59.062868Z"
+        },
+        {
+          "event": "stage_finished",
+          "runId": "9f250c664f58422cbe7975a4d3179215",
+          "workflowId": "7ca96e49d9ec4e37bd9361d3c2ee523e",
+          "jobId": "2e79a8def6356fdc1aee9c971ec1a9358bb487b9a37c0507726a5d171c47f3ab",
+          "workUnitId": "audio.zh-Hans",
+          "attemptId": "mock-1",
+          "spanId": "f16965b2ae7642569b65ab49e732327e",
+          "dependsOn": [
+            "db6f4f79c4fb4bdc997f19d3286805ba"
+          ],
+          "executorType": "deterministic_program",
+          "evidenceMode": "synthetic",
+          "status": "completed",
+          "elapsedSeconds": 0.421847,
+          "dependencyReadyAt": "2026-10-01T02:10:58.243869Z",
+          "queuedAt": "2026-10-01T02:10:58.243876Z",
+          "recordedAt": "2026-10-01T02:10:59.079594Z"
+        },
+        {
+          "event": "stage_finished",
+          "runId": "9f250c664f58422cbe7975a4d3179215",
+          "workflowId": "7ca96e49d9ec4e37bd9361d3c2ee523e",
+          "jobId": "51681690f86eb0a2edeea662490f7976bca9ce847c4c7ac103f35cd77c4c70d7",
+          "workUnitId": "audio.es",
+          "attemptId": "mock-1",
+          "spanId": "aa502ff76cb34100b496e6f58045cc3c",
+          "dependsOn": [
+            "9a6e92bbfb904ee683ab7776ea574ca0"
+          ],
+          "executorType": "deterministic_program",
+          "evidenceMode": "synthetic",
+          "status": "completed",
+          "elapsedSeconds": 0.423023,
+          "dependencyReadyAt": "2026-10-01T02:10:59.406367Z",
+          "queuedAt": "2026-10-01T02:10:59.406375Z",
+          "recordedAt": "2026-10-01T02:11:00.279163Z"
+        },
+        {
+          "event": "stage_finished",
+          "runId": "9f250c664f58422cbe7975a4d3179215",
+          "workflowId": "7ca96e49d9ec4e37bd9361d3c2ee523e",
+          "jobId": "1332c6899e0afd21ebaef46b43b4caf90f3df147c9845ea17f82f9539a875c85",
+          "workUnitId": "page.zh-Hans",
+          "attemptId": "mock-1",
+          "spanId": "be4f551495c3411d80ecc5b1a6aa7fa2",
+          "dependsOn": [
+            "db6f4f79c4fb4bdc997f19d3286805ba",
+            "f16965b2ae7642569b65ab49e732327e"
+          ],
+          "executorType": "deterministic_program",
+          "evidenceMode": "synthetic",
+          "status": "completed",
+          "elapsedSeconds": 0.413599,
+          "dependencyReadyAt": "2026-10-01T02:10:59.342298Z",
+          "queuedAt": "2026-10-01T02:10:59.342307Z",
+          "recordedAt": "2026-10-01T02:11:00.343684Z"
+        },
+        {
+          "event": "stage_finished",
+          "runId": "9f250c664f58422cbe7975a4d3179215",
+          "workflowId": "7ca96e49d9ec4e37bd9361d3c2ee523e",
+          "jobId": "48e966a2c951784f7e573ebba8316fc7e69de7c1634f400fce31d1c1b868eb7b",
+          "workUnitId": "page.es",
+          "attemptId": "mock-1",
+          "spanId": "3e25ddabb1a54185890aa0fcdffffe9b",
+          "dependsOn": [
+            "9a6e92bbfb904ee683ab7776ea574ca0",
+            "aa502ff76cb34100b496e6f58045cc3c"
+          ],
+          "executorType": "deterministic_program",
+          "evidenceMode": "synthetic",
+          "status": "completed",
+          "elapsedSeconds": 0.416655,
+          "dependencyReadyAt": "2026-10-01T02:11:00.641625Z",
+          "queuedAt": "2026-10-01T02:11:00.641635Z",
+          "recordedAt": "2026-10-01T02:11:01.676071Z"
+        }
+      ],
+      "diagnostics": {
+        "text.ko": {
+          "status": "completed",
+          "provenance": {
+            "api": "agents-v1",
+            "transportMode": "offline",
+            "liveCompatibility": "untested",
+            "snapshotId": "snapshot_ee4fb685aa6aae7408198fdf734127b3577b3dbe99e536130d6500bb8a41e70f",
+            "contextSha256": "922285e0ab56860cd9a6be572c1e764ae5e04f65040e5a7b0c4c570f75bb2e87",
+            "payloadSha256": "4a8d90be4a0aa20e6296628640d2e692e224f09089a404c330dd95bcc38af5b2",
+            "sessionId": "sess_offline",
+            "turnId": "turn_offline",
+            "requestedModel": "gpt-6-sol",
+            "actualModel": null,
+            "sessionUsage": null,
+            "turnUsage": null,
+            "usageAggregation": "separate_do_not_sum",
+            "costUsd": null,
+            "validationScope": "frozen_bundle_only",
+            "executionAuthorized": false
+          },
+          "diagnosis": {
+            "contextSha256": "922285e0ab56860cd9a6be572c1e764ae5e04f65040e5a7b0c4c570f75bb2e87",
+            "hypotheses": [],
+            "identity": {
+              "evidenceCutoff": "2026-10-01T02:11:02.952267Z",
+              "packageVersion": "packageVersion_a1f1e5e1168b6b12459bf19f89dd1211",
+              "planVersion": "planVersion_5b04eb15e47747c3b73a815059a113d1",
+              "policyVersion": "policyVersion_972d07af22d8125222461d75997f9da2",
+              "revisionId": "revisionId_c3ba1e2cb9ad0323a4aa0338273e767c",
+              "runId": "runId_279bda6beddbca76a9bd3aeac7ee9e7a",
+              "sourceId": "sourceId_697d12a8da4b6472d4d4d2f22b31b25a",
+              "sourceSha256": "74feb7444c38ed932a8d2af0de8fd97891753aea116694cd7570a4c95ece6355",
+              "stage": "layer2",
+              "stateRevision": 1,
+              "targetLocale": "ko"
+            },
+            "limitations": [
+              "Synthetic offline lifecycle fixture. No model diagnosis or cause was inferred."
+            ],
+            "missingDataRequests": [
+              {
+                "kind": "reproduction",
+                "question": "Independently validate the original failure and any proposed recovery before execution.",
+                "unitIds": [
+                  "unit_01491fd46a80df9e9ab1e17b60af2705"
+                ]
+              },
+              {
+                "kind": "receipt",
+                "question": "Independently validate the original failure and any proposed recovery before execution.",
+                "unitIds": [
+                  "unit_01491fd46a80df9e9ab1e17b60af2705"
+                ]
+              }
+            ],
+            "schemaVersion": "sermon-agent-diagnosis-v1",
+            "snapshotId": "snapshot_ee4fb685aa6aae7408198fdf734127b3577b3dbe99e536130d6500bb8a41e70f",
+            "status": "needs_more_evidence"
+          }
+        },
+        "audio.ko": {
+          "status": "completed",
+          "provenance": {
+            "api": "agents-v1",
+            "transportMode": "offline",
+            "liveCompatibility": "untested",
+            "snapshotId": "snapshot_404e5b6154114c4378fb90b50075e40beca4b9098cf882044e412f034d9ccf09",
+            "contextSha256": "b3667f98e20b85ab7e23ac5dc2e6d4121a14728e13b702e4036bb29884b6c665",
+            "payloadSha256": "6be186b5597090dc3f63cf5629fdc7543c6c1a488b4be12d7d11bc0526d5ed66",
+            "sessionId": "sess_offline",
+            "turnId": "turn_offline",
+            "requestedModel": "gpt-6-sol",
+            "actualModel": null,
+            "sessionUsage": null,
+            "turnUsage": null,
+            "usageAggregation": "separate_do_not_sum",
+            "costUsd": null,
+            "validationScope": "frozen_bundle_only",
+            "executionAuthorized": false
+          },
+          "diagnosis": {
+            "contextSha256": "b3667f98e20b85ab7e23ac5dc2e6d4121a14728e13b702e4036bb29884b6c665",
+            "hypotheses": [],
+            "identity": {
+              "evidenceCutoff": "2026-10-01T02:11:02.952267Z",
+              "packageVersion": "packageVersion_df2b3d9830ddadad21ae1a928d129c09",
+              "planVersion": "planVersion_828aafb56ef7b7a3f51aee4f1c67005d",
+              "policyVersion": "policyVersion_956811d7174d68309e3cfcc2eef34fa4",
+              "revisionId": "revisionId_64d9be9c2423a904e96070937ca0fafb",
+              "runId": "runId_46c9a520191577f756290536576f1450",
+              "sourceId": "sourceId_0ee25ed47d7b5593f74258ea1273797e",
+              "sourceSha256": "dc71e47f976c2948d3bbd620a3fcada0db76240c9cc5600a4cf51d84aa1a9a2f",
+              "stage": "layer3",
+              "stateRevision": 1,
+              "targetLocale": "ko"
+            },
+            "limitations": [
+              "Synthetic offline lifecycle fixture. No model diagnosis or cause was inferred."
+            ],
+            "missingDataRequests": [
+              {
+                "kind": "reproduction",
+                "question": "Independently validate the original failure and any proposed recovery before execution.",
+                "unitIds": [
+                  "unit_9ebb21e6eaa8823f88d6c7679e3d3867"
+                ]
+              },
+              {
+                "kind": "receipt",
+                "question": "Independently validate the original failure and any proposed recovery before execution.",
+                "unitIds": [
+                  "unit_9ebb21e6eaa8823f88d6c7679e3d3867"
+                ]
+              }
+            ],
+            "schemaVersion": "sermon-agent-diagnosis-v1",
+            "snapshotId": "snapshot_404e5b6154114c4378fb90b50075e40beca4b9098cf882044e412f034d9ccf09",
+            "status": "needs_more_evidence"
+          }
+        },
+        "page.ko": {
+          "status": "completed",
+          "provenance": {
+            "api": "agents-v1",
+            "transportMode": "offline",
+            "liveCompatibility": "untested",
+            "snapshotId": "snapshot_7861b4bb1d948475d1c4047bbf065a450a68941003b7bddccae40b68ada978df",
+            "contextSha256": "f85db45e29cb8df80e2953ad6e1ee458a9047a5f1205c1246924568c709db477",
+            "payloadSha256": "278722df824167bcd4508cfa15f31fdf1dd4376112368e078b7b7c5392348a56",
+            "sessionId": "sess_offline",
+            "turnId": "turn_offline",
+            "requestedModel": "gpt-6-sol",
+            "actualModel": null,
+            "sessionUsage": null,
+            "turnUsage": null,
+            "usageAggregation": "separate_do_not_sum",
+            "costUsd": null,
+            "validationScope": "frozen_bundle_only",
+            "executionAuthorized": false
+          },
+          "diagnosis": {
+            "contextSha256": "f85db45e29cb8df80e2953ad6e1ee458a9047a5f1205c1246924568c709db477",
+            "hypotheses": [],
+            "identity": {
+              "evidenceCutoff": "2026-10-01T02:11:02.952267Z",
+              "packageVersion": "packageVersion_3f0cf2d244d13bd09f1cf7f1cfddfa5f",
+              "planVersion": "planVersion_a31733a21d3e952a5b5816ce013da41f",
+              "policyVersion": "policyVersion_dd98ce0270eaaaeaf4a525110bd03326",
+              "revisionId": "revisionId_d39c7247ac1166a83da70331c2ebe275",
+              "runId": "runId_8c8953512117dc4be70e04cee32c4724",
+              "sourceId": "sourceId_704495c3f97be66b5b0fe19c61997598",
+              "sourceSha256": "ab1aa57b90cc7c6264e9617c8672b439288fcc0fe1d1e373f6f110047b86ddd8",
+              "stage": "layer4",
+              "stateRevision": 1,
+              "targetLocale": "ko"
+            },
+            "limitations": [
+              "Synthetic offline lifecycle fixture. No model diagnosis or cause was inferred."
+            ],
+            "missingDataRequests": [
+              {
+                "kind": "reproduction",
+                "question": "Independently validate the original failure and any proposed recovery before execution.",
+                "unitIds": [
+                  "unit_872c532a1f733743125880b84134db2d"
+                ]
+              },
+              {
+                "kind": "receipt",
+                "question": "Independently validate the original failure and any proposed recovery before execution.",
+                "unitIds": [
+                  "unit_872c532a1f733743125880b84134db2d"
+                ]
+              }
+            ],
+            "schemaVersion": "sermon-agent-diagnosis-v1",
+            "snapshotId": "snapshot_7861b4bb1d948475d1c4047bbf065a450a68941003b7bddccae40b68ada978df",
+            "status": "needs_more_evidence"
+          }
+        }
+      },
+      "executionPlan": {
+        "schemaVersion": "sermon-dag-plan-v1",
+        "runId": "c8c237e1cb3328c3ccaff43805ed404392a712cfa6b4cfbf1f32dff27c8a0b31",
+        "inputIdentitySha256": "4444444444444444444444444444444444444444444444444444444444444444",
+        "definition": {
+          "workflowDefinitionVersion": "sermon-canonical-pipeline-v1",
+          "workflowScope": "four_layer_release",
+          "targetLocales": [
+            "es",
+            "ko",
+            "zh-Hans"
+          ],
+          "textOnlyLocales": [],
+          "terminalScope": "page_ready",
+          "terminalDependencies": [
+            "page.es",
+            "page.ko",
+            "page.zh-Hans"
+          ],
+          "nodes": [
+            {
+              "id": "source",
+              "layer": 1,
+              "locale": null,
+              "depends_on": [],
+              "human_gates": [
+                "source_review"
+              ],
+              "executor_type": "deterministic_program",
+              "timeout_seconds": 600,
+              "side_effect_policy": "immutable_artifact"
+            },
+            {
+              "id": "text.es",
+              "layer": 2,
+              "locale": "es",
+              "depends_on": [
+                "source"
+              ],
+              "human_gates": [],
+              "executor_type": "production_model",
+              "timeout_seconds": 21600,
+              "side_effect_policy": "reconcile_before_retry"
+            },
+            {
+              "id": "audio.es",
+              "layer": 3,
+              "locale": "es",
+              "depends_on": [
+                "text.es"
+              ],
+              "human_gates": [
+                "translation_review",
+                "voice_authorization"
+              ],
+              "executor_type": "production_model",
+              "timeout_seconds": 21600,
+              "side_effect_policy": "reconcile_before_retry"
+            },
+            {
+              "id": "page.es",
+              "layer": 4,
+              "locale": "es",
+              "depends_on": [
+                "text.es",
+                "audio.es"
+              ],
+              "human_gates": [
+                "audio_listening_review"
+              ],
+              "executor_type": "deterministic_program",
+              "timeout_seconds": 600,
+              "side_effect_policy": "immutable_artifact"
+            },
+            {
+              "id": "text.ko",
+              "layer": 2,
+              "locale": "ko",
+              "depends_on": [
+                "source"
+              ],
+              "human_gates": [],
+              "executor_type": "production_model",
+              "timeout_seconds": 21600,
+              "side_effect_policy": "reconcile_before_retry"
+            },
+            {
+              "id": "audio.ko",
+              "layer": 3,
+              "locale": "ko",
+              "depends_on": [
+                "text.ko"
+              ],
+              "human_gates": [
+                "translation_review",
+                "voice_authorization"
+              ],
+              "executor_type": "production_model",
+              "timeout_seconds": 21600,
+              "side_effect_policy": "reconcile_before_retry"
+            },
+            {
+              "id": "page.ko",
+              "layer": 4,
+              "locale": "ko",
+              "depends_on": [
+                "text.ko",
+                "audio.ko"
+              ],
+              "human_gates": [
+                "audio_listening_review"
+              ],
+              "executor_type": "deterministic_program",
+              "timeout_seconds": 600,
+              "side_effect_policy": "immutable_artifact"
+            },
+            {
+              "id": "text.zh-Hans",
+              "layer": 2,
+              "locale": "zh-Hans",
+              "depends_on": [
+                "source"
+              ],
+              "human_gates": [],
+              "executor_type": "production_model",
+              "timeout_seconds": 21600,
+              "side_effect_policy": "reconcile_before_retry"
+            },
+            {
+              "id": "audio.zh-Hans",
+              "layer": 3,
+              "locale": "zh-Hans",
+              "depends_on": [
+                "text.zh-Hans"
+              ],
+              "human_gates": [
+                "translation_review",
+                "voice_authorization"
+              ],
+              "executor_type": "production_model",
+              "timeout_seconds": 21600,
+              "side_effect_policy": "reconcile_before_retry"
+            },
+            {
+              "id": "page.zh-Hans",
+              "layer": 4,
+              "locale": "zh-Hans",
+              "depends_on": [
+                "text.zh-Hans",
+                "audio.zh-Hans"
+              ],
+              "human_gates": [
+                "audio_listening_review"
+              ],
+              "executor_type": "deterministic_program",
+              "timeout_seconds": 600,
+              "side_effect_policy": "immutable_artifact"
+            }
+          ],
+          "dispatchEnabled": false,
+          "admission": "requires_validated_package_adapter_and_existing_durable_locks"
+        },
+        "mode": "mock_only",
+        "evidenceMode": "synthetic",
+        "productionEligible": false,
+        "simulatedHuman": true,
+        "weightVersion": "equal_nodes_v1",
+        "resourceLimits": {
+          "fixed": 4,
+          "api": 2,
+          "local_model": 1
+        },
+        "mockDelaySeconds": 0.4,
+        "mockRequestLimit": 3,
+        "nodes": [
+          {
+            "id": "source",
+            "layer": 1,
+            "locale": null,
+            "dependsOn": [],
+            "humanGates": [
+              "source_review"
+            ],
+            "executorType": "deterministic_program",
+            "resourcePool": "fixed",
+            "timeoutSeconds": 30,
+            "weight": 1,
+            "maxSchedulerRetries": 0,
+            "mockScenario": "pass"
+          },
+          {
+            "id": "text.es",
+            "layer": 2,
+            "locale": "es",
+            "dependsOn": [
+              "source"
+            ],
+            "humanGates": [],
+            "executorType": "production_model",
+            "resourcePool": "api",
+            "timeoutSeconds": 30,
+            "weight": 1,
+            "maxSchedulerRetries": 0,
+            "mockScenario": "pass"
+          },
+          {
+            "id": "audio.es",
+            "layer": 3,
+            "locale": "es",
+            "dependsOn": [
+              "text.es"
+            ],
+            "humanGates": [
+              "translation_review",
+              "voice_authorization"
+            ],
+            "executorType": "production_model",
+            "resourcePool": "local_model",
+            "timeoutSeconds": 30,
+            "weight": 1,
+            "maxSchedulerRetries": 0,
+            "mockScenario": "pass"
+          },
+          {
+            "id": "page.es",
+            "layer": 4,
+            "locale": "es",
+            "dependsOn": [
+              "text.es",
+              "audio.es"
+            ],
+            "humanGates": [
+              "audio_listening_review"
+            ],
+            "executorType": "deterministic_program",
+            "resourcePool": "fixed",
+            "timeoutSeconds": 30,
+            "weight": 1,
+            "maxSchedulerRetries": 0,
+            "mockScenario": "pass"
+          },
+          {
+            "id": "text.ko",
+            "layer": 2,
+            "locale": "ko",
+            "dependsOn": [
+              "source"
+            ],
+            "humanGates": [],
+            "executorType": "production_model",
+            "resourcePool": "api",
+            "timeoutSeconds": 30,
+            "weight": 1,
+            "maxSchedulerRetries": 0,
+            "mockScenario": "known_failure"
+          },
+          {
+            "id": "audio.ko",
+            "layer": 3,
+            "locale": "ko",
+            "dependsOn": [
+              "text.ko"
+            ],
+            "humanGates": [
+              "translation_review",
+              "voice_authorization"
+            ],
+            "executorType": "production_model",
+            "resourcePool": "local_model",
+            "timeoutSeconds": 30,
+            "weight": 1,
+            "maxSchedulerRetries": 0,
+            "mockScenario": "pass"
+          },
+          {
+            "id": "page.ko",
+            "layer": 4,
+            "locale": "ko",
+            "dependsOn": [
+              "text.ko",
+              "audio.ko"
+            ],
+            "humanGates": [
+              "audio_listening_review"
+            ],
+            "executorType": "deterministic_program",
+            "resourcePool": "fixed",
+            "timeoutSeconds": 30,
+            "weight": 1,
+            "maxSchedulerRetries": 0,
+            "mockScenario": "pass"
+          },
+          {
+            "id": "text.zh-Hans",
+            "layer": 2,
+            "locale": "zh-Hans",
+            "dependsOn": [
+              "source"
+            ],
+            "humanGates": [],
+            "executorType": "production_model",
+            "resourcePool": "api",
+            "timeoutSeconds": 30,
+            "weight": 1,
+            "maxSchedulerRetries": 0,
+            "mockScenario": "pass"
+          },
+          {
+            "id": "audio.zh-Hans",
+            "layer": 3,
+            "locale": "zh-Hans",
+            "dependsOn": [
+              "text.zh-Hans"
+            ],
+            "humanGates": [
+              "translation_review",
+              "voice_authorization"
+            ],
+            "executorType": "production_model",
+            "resourcePool": "local_model",
+            "timeoutSeconds": 30,
+            "weight": 1,
+            "maxSchedulerRetries": 0,
+            "mockScenario": "pass"
+          },
+          {
+            "id": "page.zh-Hans",
+            "layer": 4,
+            "locale": "zh-Hans",
+            "dependsOn": [
+              "text.zh-Hans",
+              "audio.zh-Hans"
+            ],
+            "humanGates": [
+              "audio_listening_review"
+            ],
+            "executorType": "deterministic_program",
+            "resourcePool": "fixed",
+            "timeoutSeconds": 30,
+            "weight": 1,
+            "maxSchedulerRetries": 0,
+            "mockScenario": "pass"
+          }
+        ],
+        "planSha256": "b0a6b19015491cf129a53176368b50cfe6888cad090a0cffae7d314f618497be"
+      },
+      "businessReceipts": {
+        "audio.es": {
+          "schemaVersion": "sermon-dag-node-receipt-v1",
+          "runId": "c8c237e1cb3328c3ccaff43805ed404392a712cfa6b4cfbf1f32dff27c8a0b31",
+          "planSha256": "b0a6b19015491cf129a53176368b50cfe6888cad090a0cffae7d314f618497be",
+          "workUnitId": "audio.es",
+          "identitySha256": "20aa17ee143841862454c2c6a600f224a199c794b684b9b9f43adc0a6e6f052e",
+          "attemptId": "mock-1",
+          "revisionId": "r1",
+          "dependencies": {
+            "text.es": "bf72f9fe31cd0c9b7a0e6627d962ae2df77ff28d5eca5a4b56c8930602662d9b"
+          },
+          "evidenceMode": "synthetic",
+          "productionEligible": false,
+          "realHumanStatus": "pending",
+          "simulatedHumanStatus": "simulated",
+          "mockScenario": "pass",
+          "outputSha256": "8eded0823dbe57760c7f7f7b19bd043a6544d1781840df5f76336ae3303a0d30",
+          "spanId": "aa502ff76cb34100b496e6f58045cc3c",
+          "startedAt": "2026-10-01T02:10:59.860021+00:00",
+          "completedAt": "2026-10-01T02:11:00.272854+00:00",
+          "elapsedSeconds": 0.4128502079984173,
+          "executionStatus": "succeeded",
+          "reviewVerdict": "synthetic_pass",
+          "admissionStatus": "mock_only",
+          "reservationId": null
+        },
+        "page.zh-Hans": {
+          "schemaVersion": "sermon-dag-node-receipt-v1",
+          "runId": "c8c237e1cb3328c3ccaff43805ed404392a712cfa6b4cfbf1f32dff27c8a0b31",
+          "planSha256": "b0a6b19015491cf129a53176368b50cfe6888cad090a0cffae7d314f618497be",
+          "workUnitId": "page.zh-Hans",
+          "identitySha256": "af4ec45bcadcbdaf4930185dddc468133875c24503ceba5e9d79c74583f80b8f",
+          "attemptId": "mock-1",
+          "revisionId": "r1",
+          "dependencies": {
+            "text.zh-Hans": "a1e9d0cd4ab59436d15ba0956da6508f209d015d1eb67548f56191788d8e4706",
+            "audio.zh-Hans": "d2b203c2a6b19d6668fa3fc1f3084ceecd695d05c9ca23ec0793f2c3e3f074d3"
+          },
+          "evidenceMode": "synthetic",
+          "productionEligible": false,
+          "realHumanStatus": "pending",
+          "simulatedHumanStatus": "simulated",
+          "mockScenario": "pass",
+          "outputSha256": "0dfa4f7b3aa6b75295c4485cf17b801a446f1369ca19e66be30a4754920729af",
+          "spanId": "be4f551495c3411d80ecc5b1a6aa7fa2",
+          "startedAt": "2026-10-01T02:10:59.934067+00:00",
+          "completedAt": "2026-10-01T02:11:00.338924+00:00",
+          "elapsedSeconds": 0.40485558402724564,
+          "executionStatus": "succeeded",
+          "reviewVerdict": "synthetic_pass",
+          "admissionStatus": "mock_only",
+          "reservationId": null
+        },
+        "audio.zh-Hans": {
+          "schemaVersion": "sermon-dag-node-receipt-v1",
+          "runId": "c8c237e1cb3328c3ccaff43805ed404392a712cfa6b4cfbf1f32dff27c8a0b31",
+          "planSha256": "b0a6b19015491cf129a53176368b50cfe6888cad090a0cffae7d314f618497be",
+          "workUnitId": "audio.zh-Hans",
+          "identitySha256": "7f6969430e33857e4fdb27d83b9014376a291713c48a48d1c14bad73c4cb6bf9",
+          "attemptId": "mock-1",
+          "revisionId": "r1",
+          "dependencies": {
+            "text.zh-Hans": "a1e9d0cd4ab59436d15ba0956da6508f209d015d1eb67548f56191788d8e4706"
+          },
+          "evidenceMode": "synthetic",
+          "productionEligible": false,
+          "realHumanStatus": "pending",
+          "simulatedHumanStatus": "simulated",
+          "mockScenario": "pass",
+          "outputSha256": "d2b203c2a6b19d6668fa3fc1f3084ceecd695d05c9ca23ec0793f2c3e3f074d3",
+          "spanId": "f16965b2ae7642569b65ab49e732327e",
+          "startedAt": "2026-10-01T02:10:58.661506+00:00",
+          "completedAt": "2026-10-01T02:10:59.071308+00:00",
+          "elapsedSeconds": 0.4098069580504671,
+          "executionStatus": "succeeded",
+          "reviewVerdict": "synthetic_pass",
+          "admissionStatus": "mock_only",
+          "reservationId": null
+        },
+        "source": {
+          "schemaVersion": "sermon-dag-node-receipt-v1",
+          "runId": "c8c237e1cb3328c3ccaff43805ed404392a712cfa6b4cfbf1f32dff27c8a0b31",
+          "planSha256": "b0a6b19015491cf129a53176368b50cfe6888cad090a0cffae7d314f618497be",
+          "workUnitId": "source",
+          "identitySha256": "bb4985ed18ebf926d9cb18dc1f91beb67fc0ccbc2ea6d7a488891465d85b4af4",
+          "attemptId": "mock-1",
+          "revisionId": "r1",
+          "dependencies": {},
+          "evidenceMode": "synthetic",
+          "productionEligible": false,
+          "realHumanStatus": "pending",
+          "simulatedHumanStatus": "simulated",
+          "mockScenario": "pass",
+          "outputSha256": "83888b2d9400e1f915571d294e21e09b2d87e486d9a248a429582b8a51730045",
+          "spanId": "6dcfbfc636a347f792f8e8f72f387169",
+          "startedAt": "2026-10-01T02:10:56.700573+00:00",
+          "completedAt": "2026-10-01T02:10:57.111135+00:00",
+          "elapsedSeconds": 0.41124120802851394,
+          "executionStatus": "succeeded",
+          "reviewVerdict": "synthetic_pass",
+          "admissionStatus": "mock_only",
+          "reservationId": null
+        },
+        "text.es": {
+          "schemaVersion": "sermon-dag-node-receipt-v1",
+          "runId": "c8c237e1cb3328c3ccaff43805ed404392a712cfa6b4cfbf1f32dff27c8a0b31",
+          "planSha256": "b0a6b19015491cf129a53176368b50cfe6888cad090a0cffae7d314f618497be",
+          "workUnitId": "text.es",
+          "identitySha256": "6f38ce6c6c251e3725c37f28ffb156abd8c95391e4ddf54a0b894c83c7d424c2",
+          "attemptId": "mock-1",
+          "revisionId": "r1",
+          "dependencies": {
+            "source": "83888b2d9400e1f915571d294e21e09b2d87e486d9a248a429582b8a51730045"
+          },
+          "evidenceMode": "synthetic",
+          "productionEligible": false,
+          "realHumanStatus": "not_applicable",
+          "simulatedHumanStatus": "not_applicable",
+          "mockScenario": "pass",
+          "outputSha256": "bf72f9fe31cd0c9b7a0e6627d962ae2df77ff28d5eca5a4b56c8930602662d9b",
+          "spanId": "9a6e92bbfb904ee683ab7776ea574ca0",
+          "startedAt": "2026-10-01T02:10:58.635723+00:00",
+          "completedAt": "2026-10-01T02:10:59.051058+00:00",
+          "elapsedSeconds": 0.4153722500195727,
+          "executionStatus": "succeeded",
+          "reviewVerdict": "synthetic_pass",
+          "admissionStatus": "mock_only",
+          "reservationId": "d54f8a42b6476abdb83a298df600fb06330ffb03e94400a76cb00f8764cf9da1"
+        },
+        "page.es": {
+          "schemaVersion": "sermon-dag-node-receipt-v1",
+          "runId": "c8c237e1cb3328c3ccaff43805ed404392a712cfa6b4cfbf1f32dff27c8a0b31",
+          "planSha256": "b0a6b19015491cf129a53176368b50cfe6888cad090a0cffae7d314f618497be",
+          "workUnitId": "page.es",
+          "identitySha256": "5becfb7b68b60fa59f753313f3f7e188776a5f89ae1f378d99348acf57bd3be2",
+          "attemptId": "mock-1",
+          "revisionId": "r1",
+          "dependencies": {
+            "text.es": "bf72f9fe31cd0c9b7a0e6627d962ae2df77ff28d5eca5a4b56c8930602662d9b",
+            "audio.es": "8eded0823dbe57760c7f7f7b19bd043a6544d1781840df5f76336ae3303a0d30"
+          },
+          "evidenceMode": "synthetic",
+          "productionEligible": false,
+          "realHumanStatus": "pending",
+          "simulatedHumanStatus": "simulated",
+          "mockScenario": "pass",
+          "outputSha256": "c5392fad0ed85b3a59864546c7d09c43a77d3c4d819c62aabda7230345d59609",
+          "spanId": "3e25ddabb1a54185890aa0fcdffffe9b",
+          "startedAt": "2026-10-01T02:11:01.263156+00:00",
+          "completedAt": "2026-10-01T02:11:01.669837+00:00",
+          "elapsedSeconds": 0.4066890000249259,
+          "executionStatus": "succeeded",
+          "reviewVerdict": "synthetic_pass",
+          "admissionStatus": "mock_only",
+          "reservationId": null
+        },
+        "text.zh-Hans": {
+          "schemaVersion": "sermon-dag-node-receipt-v1",
+          "runId": "c8c237e1cb3328c3ccaff43805ed404392a712cfa6b4cfbf1f32dff27c8a0b31",
+          "planSha256": "b0a6b19015491cf129a53176368b50cfe6888cad090a0cffae7d314f618497be",
+          "workUnitId": "text.zh-Hans",
+          "identitySha256": "977b694c9abda72947983ccbe242391bdf713153800ed4618bc5ddd281393258",
+          "attemptId": "mock-1",
+          "revisionId": "r1",
+          "dependencies": {
+            "source": "83888b2d9400e1f915571d294e21e09b2d87e486d9a248a429582b8a51730045"
+          },
+          "evidenceMode": "synthetic",
+          "productionEligible": false,
+          "realHumanStatus": "not_applicable",
+          "simulatedHumanStatus": "not_applicable",
+          "mockScenario": "pass",
+          "outputSha256": "a1e9d0cd4ab59436d15ba0956da6508f209d015d1eb67548f56191788d8e4706",
+          "spanId": "db6f4f79c4fb4bdc997f19d3286805ba",
+          "startedAt": "2026-10-01T02:10:57.670143+00:00",
+          "completedAt": "2026-10-01T02:10:58.083747+00:00",
+          "elapsedSeconds": 0.4136457910062745,
+          "executionStatus": "succeeded",
+          "reviewVerdict": "synthetic_pass",
+          "admissionStatus": "mock_only",
+          "reservationId": "1a72c3f649c6c42fbf3dcdb522c4ad2f6bc73359a91eaa7fe74e0369c10bdf94"
+        }
+      },
+      "mockOutputs": {
+        "audio.es": {
+          "identitySha256": "20aa17ee143841862454c2c6a600f224a199c794b684b9b9f43adc0a6e6f052e",
+          "syntheticOutput": true,
+          "audioDisposition": "mock_artifact"
+        },
+        "page.zh-Hans": {
+          "identitySha256": "af4ec45bcadcbdaf4930185dddc468133875c24503ceba5e9d79c74583f80b8f",
+          "syntheticOutput": true,
+          "audioDisposition": "mock_artifact"
+        },
+        "audio.zh-Hans": {
+          "identitySha256": "7f6969430e33857e4fdb27d83b9014376a291713c48a48d1c14bad73c4cb6bf9",
+          "syntheticOutput": true,
+          "audioDisposition": "mock_artifact"
+        },
+        "source": {
+          "identitySha256": "bb4985ed18ebf926d9cb18dc1f91beb67fc0ccbc2ea6d7a488891465d85b4af4",
+          "syntheticOutput": true,
+          "audioDisposition": "mock_artifact"
+        },
+        "text.es": {
+          "identitySha256": "6f38ce6c6c251e3725c37f28ffb156abd8c95391e4ddf54a0b894c83c7d424c2",
+          "syntheticOutput": true,
+          "audioDisposition": "mock_artifact"
+        },
+        "page.es": {
+          "identitySha256": "5becfb7b68b60fa59f753313f3f7e188776a5f89ae1f378d99348acf57bd3be2",
+          "syntheticOutput": true,
+          "audioDisposition": "mock_artifact"
+        },
+        "text.zh-Hans": {
+          "identitySha256": "977b694c9abda72947983ccbe242391bdf713153800ed4618bc5ddd281393258",
+          "syntheticOutput": true,
+          "audioDisposition": "mock_artifact"
+        }
+      },
+      "controlledFailures": {
+        "text.ko": {
+          "schemaVersion": "sermon-dag-node-receipt-v1",
+          "runId": "c8c237e1cb3328c3ccaff43805ed404392a712cfa6b4cfbf1f32dff27c8a0b31",
+          "planSha256": "b0a6b19015491cf129a53176368b50cfe6888cad090a0cffae7d314f618497be",
+          "workUnitId": "text.ko",
+          "identitySha256": "0a6282923e0e3d00e2ab6ec0d5f70af370e048d75b674d291fc0b6f59763fd7c",
+          "attemptId": "mock-1",
+          "revisionId": "r1",
+          "dependencies": {
+            "source": "83888b2d9400e1f915571d294e21e09b2d87e486d9a248a429582b8a51730045"
+          },
+          "evidenceMode": "synthetic",
+          "productionEligible": false,
+          "realHumanStatus": "not_applicable",
+          "simulatedHumanStatus": "not_applicable",
+          "mockScenario": "known_failure",
+          "executionStatus": "failed",
+          "reason": "controlled_known_failure"
+        }
+      },
+      "receiptHashObservations": [
+        {
+          "event": "workload",
+          "runId": "9f250c664f58422cbe7975a4d3179215",
+          "jobId": "2c5c9fc3d79212500f288367b96eda10678300ee94a7b63c1c1ca311d23767ea",
+          "workUnitId": "source",
+          "attemptId": "mock-1",
+          "spanId": "6dcfbfc636a347f792f8e8f72f387169",
+          "evidenceMode": "synthetic",
+          "recordedAt": "2026-10-01T02:10:57.115117Z",
+          "metrics": {
+            "nodeIdentitySha256": "bb4985ed18ebf926d9cb18dc1f91beb67fc0ccbc2ea6d7a488891465d85b4af4",
+            "planSha256": "b0a6b19015491cf129a53176368b50cfe6888cad090a0cffae7d314f618497be",
+            "receiptSha256": "31da0da7f63e40c8162d5dfdbce9650828387c959c49cdbfeba2900f59a16952",
+            "synthetic": true
+          }
+        },
+        {
+          "event": "workload",
+          "runId": "9f250c664f58422cbe7975a4d3179215",
+          "jobId": "7cd135eda4c5528bf7e5908281566ee180c350cff428d8fb59a0e873e27981c0",
+          "workUnitId": "text.zh-Hans",
+          "attemptId": "mock-1",
+          "spanId": "db6f4f79c4fb4bdc997f19d3286805ba",
+          "evidenceMode": "synthetic",
+          "recordedAt": "2026-10-01T02:10:58.087999Z",
+          "metrics": {
+            "nodeIdentitySha256": "977b694c9abda72947983ccbe242391bdf713153800ed4618bc5ddd281393258",
+            "planSha256": "b0a6b19015491cf129a53176368b50cfe6888cad090a0cffae7d314f618497be",
+            "receiptSha256": "57685dca647e379eff6ed44066dfe5a425e4a57e6d77676d16e69884e9ea826f",
+            "synthetic": true
+          }
+        },
+        {
+          "event": "workload",
+          "runId": "9f250c664f58422cbe7975a4d3179215",
+          "jobId": "19460b71207652a7a4a8f77c167053cbb8566329c978efda04b3ce775788d56e",
+          "workUnitId": "text.es",
+          "attemptId": "mock-1",
+          "spanId": "9a6e92bbfb904ee683ab7776ea574ca0",
+          "evidenceMode": "synthetic",
+          "recordedAt": "2026-10-01T02:10:59.056481Z",
+          "metrics": {
+            "nodeIdentitySha256": "6f38ce6c6c251e3725c37f28ffb156abd8c95391e4ddf54a0b894c83c7d424c2",
+            "planSha256": "b0a6b19015491cf129a53176368b50cfe6888cad090a0cffae7d314f618497be",
+            "receiptSha256": "679fa532fc4fcbc0b2570f6b38be0fe059decf30cf8cfa310a2c58fa6f4690e3",
+            "synthetic": true
+          }
+        },
+        {
+          "event": "workload",
+          "runId": "9f250c664f58422cbe7975a4d3179215",
+          "jobId": "2e79a8def6356fdc1aee9c971ec1a9358bb487b9a37c0507726a5d171c47f3ab",
+          "workUnitId": "audio.zh-Hans",
+          "attemptId": "mock-1",
+          "spanId": "f16965b2ae7642569b65ab49e732327e",
+          "evidenceMode": "synthetic",
+          "recordedAt": "2026-10-01T02:10:59.074375Z",
+          "metrics": {
+            "nodeIdentitySha256": "7f6969430e33857e4fdb27d83b9014376a291713c48a48d1c14bad73c4cb6bf9",
+            "planSha256": "b0a6b19015491cf129a53176368b50cfe6888cad090a0cffae7d314f618497be",
+            "receiptSha256": "d3370c74e13301be58f6203c2ea8764bc5d27a1891b719c77c52d270aeabf792",
+            "synthetic": true
+          }
+        },
+        {
+          "event": "workload",
+          "runId": "9f250c664f58422cbe7975a4d3179215",
+          "jobId": "51681690f86eb0a2edeea662490f7976bca9ce847c4c7ac103f35cd77c4c70d7",
+          "workUnitId": "audio.es",
+          "attemptId": "mock-1",
+          "spanId": "aa502ff76cb34100b496e6f58045cc3c",
+          "evidenceMode": "synthetic",
+          "recordedAt": "2026-10-01T02:11:00.276279Z",
+          "metrics": {
+            "nodeIdentitySha256": "20aa17ee143841862454c2c6a600f224a199c794b684b9b9f43adc0a6e6f052e",
+            "planSha256": "b0a6b19015491cf129a53176368b50cfe6888cad090a0cffae7d314f618497be",
+            "receiptSha256": "a0a2e5892dd3183beb0fa1121e7ce870d86f8e95388667ac4540295bfa5e9e62",
+            "synthetic": true
+          }
+        },
+        {
+          "event": "workload",
+          "runId": "9f250c664f58422cbe7975a4d3179215",
+          "jobId": "1332c6899e0afd21ebaef46b43b4caf90f3df147c9845ea17f82f9539a875c85",
+          "workUnitId": "page.zh-Hans",
+          "attemptId": "mock-1",
+          "spanId": "be4f551495c3411d80ecc5b1a6aa7fa2",
+          "evidenceMode": "synthetic",
+          "recordedAt": "2026-10-01T02:11:00.340862Z",
+          "metrics": {
+            "nodeIdentitySha256": "af4ec45bcadcbdaf4930185dddc468133875c24503ceba5e9d79c74583f80b8f",
+            "planSha256": "b0a6b19015491cf129a53176368b50cfe6888cad090a0cffae7d314f618497be",
+            "receiptSha256": "c3df5ea6c6e5adab2f21909c895272f4452da514f7be0979ca64c63c7de31629",
+            "synthetic": true
+          }
+        },
+        {
+          "event": "workload",
+          "runId": "9f250c664f58422cbe7975a4d3179215",
+          "jobId": "48e966a2c951784f7e573ebba8316fc7e69de7c1634f400fce31d1c1b868eb7b",
+          "workUnitId": "page.es",
+          "attemptId": "mock-1",
+          "spanId": "3e25ddabb1a54185890aa0fcdffffe9b",
+          "evidenceMode": "synthetic",
+          "recordedAt": "2026-10-01T02:11:01.672550Z",
+          "metrics": {
+            "nodeIdentitySha256": "5becfb7b68b60fa59f753313f3f7e188776a5f89ae1f378d99348acf57bd3be2",
+            "planSha256": "b0a6b19015491cf129a53176368b50cfe6888cad090a0cffae7d314f618497be",
+            "receiptSha256": "4bb29bf2712d34be182e751fc1de0071f6f3e8688009a1e4fdc4d9361831b6b0",
+            "synthetic": true
+          }
+        }
+      ],
+      "syntheticBudgetLedger": {
+        "schemaVersion": "sermon-review-budget-v1",
+        "authority": {
+          "approvalSha256": "b0a6b19015491cf129a53176368b50cfe6888cad090a0cffae7d314f618497be",
+          "globalBounds": {
+            "requests": 3,
+            "inputTokens": 3,
+            "outputTokens": 3,
+            "wallTimeMs": 90000,
+            "costMicrousd": 3
+          },
+          "unitBounds": {
+            "requests": 1,
+            "inputTokens": 1,
+            "outputTokens": 1,
+            "wallTimeMs": 30000,
+            "costMicrousd": 1
+          },
+          "limits": {
+            "contentRevisions": 2,
+            "reviewAttemptsPerRevision": 2,
+            "decisionProposals": 1
+          }
+        },
+        "storeSha256": "da68462e89cf01a9f8483a803d50aa35f5295f7f2dfa62a071b89a2008bf3529",
+        "reservations": {
+          "1a72c3f649c6c42fbf3dcdb522c4ad2f6bc73359a91eaa7fe74e0369c10bdf94": {
+            "request": {
+              "identity": {
+                "sourceIdentitySha256": "4444444444444444444444444444444444444444444444444444444444444444",
+                "sourcePackageSha256": "b0a6b19015491cf129a53176368b50cfe6888cad090a0cffae7d314f618497be",
+                "anchorSha256": "b0a6b19015491cf129a53176368b50cfe6888cad090a0cffae7d314f618497be",
+                "policySha256": "b0a6b19015491cf129a53176368b50cfe6888cad090a0cffae7d314f618497be",
+                "rubricSha256": "b0a6b19015491cf129a53176368b50cfe6888cad090a0cffae7d314f618497be",
+                "targetLocale": "zh-Hans",
+                "workUnitId": "l2.zh-Hans.mock"
+              },
+              "operationId": "mock.initial",
+              "kind": "initial_generation",
+              "revisionId": "r1",
+              "revisionNumber": 1,
+              "inputSha256": "977b694c9abda72947983ccbe242391bdf713153800ed4618bc5ddd281393258",
+              "bounds": {
+                "requests": 1,
+                "inputTokens": 1,
+                "outputTokens": 1,
+                "wallTimeMs": 30000,
+                "costMicrousd": 1
+              }
+            },
+            "phase": "result",
+            "result": {
+              "executionStatus": "succeeded",
+              "contentStatus": "pass",
+              "receiptSha256": "57685dca647e379eff6ed44066dfe5a425e4a57e6d77676d16e69884e9ea826f",
+              "usage": {
+                "requests": 1,
+                "inputTokens": 1,
+                "outputTokens": 1,
+                "wallTimeMs": 30000,
+                "costMicrousd": 1
+              }
+            }
+          },
+          "e0267bceaef443896c48e110ccc5d175dbf8125bfc91aeae500037c20951be8b": {
+            "request": {
+              "identity": {
+                "sourceIdentitySha256": "4444444444444444444444444444444444444444444444444444444444444444",
+                "sourcePackageSha256": "b0a6b19015491cf129a53176368b50cfe6888cad090a0cffae7d314f618497be",
+                "anchorSha256": "b0a6b19015491cf129a53176368b50cfe6888cad090a0cffae7d314f618497be",
+                "policySha256": "b0a6b19015491cf129a53176368b50cfe6888cad090a0cffae7d314f618497be",
+                "rubricSha256": "b0a6b19015491cf129a53176368b50cfe6888cad090a0cffae7d314f618497be",
+                "targetLocale": "ko",
+                "workUnitId": "l2.ko.mock"
+              },
+              "operationId": "mock.initial",
+              "kind": "initial_generation",
+              "revisionId": "r1",
+              "revisionNumber": 1,
+              "inputSha256": "0a6282923e0e3d00e2ab6ec0d5f70af370e048d75b674d291fc0b6f59763fd7c",
+              "bounds": {
+                "requests": 1,
+                "inputTokens": 1,
+                "outputTokens": 1,
+                "wallTimeMs": 30000,
+                "costMicrousd": 1
+              }
+            },
+            "phase": "result",
+            "result": {
+              "executionStatus": "failed",
+              "contentStatus": "not_assessed",
+              "receiptSha256": "f19eb41765bed64f37152d30ecb745997aeff327e12a13f9226d0ec1e153f401",
+              "usage": {
+                "requests": 1,
+                "inputTokens": 1,
+                "outputTokens": 1,
+                "wallTimeMs": 30000,
+                "costMicrousd": 1
+              }
+            }
+          },
+          "d54f8a42b6476abdb83a298df600fb06330ffb03e94400a76cb00f8764cf9da1": {
+            "request": {
+              "identity": {
+                "sourceIdentitySha256": "4444444444444444444444444444444444444444444444444444444444444444",
+                "sourcePackageSha256": "b0a6b19015491cf129a53176368b50cfe6888cad090a0cffae7d314f618497be",
+                "anchorSha256": "b0a6b19015491cf129a53176368b50cfe6888cad090a0cffae7d314f618497be",
+                "policySha256": "b0a6b19015491cf129a53176368b50cfe6888cad090a0cffae7d314f618497be",
+                "rubricSha256": "b0a6b19015491cf129a53176368b50cfe6888cad090a0cffae7d314f618497be",
+                "targetLocale": "es",
+                "workUnitId": "l2.es.mock"
+              },
+              "operationId": "mock.initial",
+              "kind": "initial_generation",
+              "revisionId": "r1",
+              "revisionNumber": 1,
+              "inputSha256": "6f38ce6c6c251e3725c37f28ffb156abd8c95391e4ddf54a0b894c83c7d424c2",
+              "bounds": {
+                "requests": 1,
+                "inputTokens": 1,
+                "outputTokens": 1,
+                "wallTimeMs": 30000,
+                "costMicrousd": 1
+              }
+            },
+            "phase": "result",
+            "result": {
+              "executionStatus": "succeeded",
+              "contentStatus": "pass",
+              "receiptSha256": "679fa532fc4fcbc0b2570f6b38be0fe059decf30cf8cfa310a2c58fa6f4690e3",
+              "usage": {
+                "requests": 1,
+                "inputTokens": 1,
+                "outputTokens": 1,
+                "wallTimeMs": 30000,
+                "costMicrousd": 1
+              }
+            }
+          }
+        }
+      },
+      "budgetScope": "Synthetic test quota only; not provider usage, spend, or the paused diagnostic budget."
+    },
+    {
+      "case": "unknown",
+      "codeCommit": "f7b56935a130813d30c64e39130e1a4df561be64",
+      "runId": "acb033af06bd1c9048ce7a77c0ec8ff624218212380910e8b3e172d5de5b28e2",
+      "executionPlanSha256": "ecd38b6c661da2a2f261477d6e85921ca7ca3650c81a8bd1824f503e4f330bca",
+      "sourceIdentitySha256": "4444444444444444444444444444444444444444444444444444444444444444",
+      "runtimeCodeSha256": "c27b681b2d2c31ae538ac7daf8f528e0e5bfecdcb4519f92d2ff7b8b90809ff0",
+      "readerCodeSha256": "94a365aa2d4a96f7a91418c5a9d1daf0e091d3ca34b0965840b8207e45d5e5ce",
+      "evidenceSnapshotSha256": "05f9c2f682baf16764475a389b3fae9d5a5c7203ca81eb70f37ec1aefbce91c5",
+      "sourceLedgerSha256": "9ce810f3ab4ac40618fe2e54c2be9e4ae98cddb5d32b9aecbc37d61ae66d9ee6",
+      "plannedProcessedPercent": null,
+      "gateCompletionPercent": 70.0,
+      "counts": {
+        "done": 7,
+        "total": 10,
+        "processed": 7,
+        "executionSucceeded": 7,
+        "contentReviewPassed": 7,
+        "realHumanApproved": 0,
+        "simulatedHumanApproved": 5,
+        "admitted": 7
+      },
+      "processingCoverage": {
+        "status": "partial",
+        "knownWeight": "9",
+        "unknownWeight": "1",
+        "unknownUnits": [
+          "text.ko"
+        ],
+        "unattributedEvidence": false
+      },
+      "eta": {
+        "status": "unknown",
+        "lowerSeconds": null,
+        "upperSeconds": null,
+        "earliestAt": null,
+        "latestAt": null,
+        "remainingSerialSeconds": null,
+        "criticalPathSeconds": null,
+        "sampleCount": 7,
+        "confidence": "unknown",
+        "reasonCodes": [
+          "blocked",
+          "human_review_remaining",
+          "no_comparable_history",
+          "observed_blocker",
+          "resource_state_missing",
+          "retry_or_reconciliation_not_authorized",
+          "unit_queue_unknown",
+          "unknown_attempt_outcome",
+          "unknown_outcome"
+        ],
+        "estimatorVersion": "remaining-dag-resource-slots-v1",
+        "updatedAt": "2026-10-01T02:11:17.056022+00:00",
+        "perUnit": {
+          "audio.es": {
+            "lower": 0.2045212709927,
+            "upper": 0.8180850839708,
+            "sampleCount": 1,
+            "confidence": "low",
+            "basis": "empirical_envelope"
+          },
+          "audio.ko": {
+            "lower": null,
+            "upper": null,
+            "sampleCount": 0,
+            "confidence": "unknown",
+            "basis": "no_comparable_history"
+          },
+          "audio.zh-Hans": {
+            "lower": 0.2048584794974886,
+            "upper": 0.8194339179899544,
+            "sampleCount": 1,
+            "confidence": "low",
+            "basis": "empirical_envelope"
+          },
+          "page.es": {
+            "lower": 0.20252502098446712,
+            "upper": 0.8101000839378685,
+            "sampleCount": 1,
+            "confidence": "low",
+            "basis": "empirical_envelope"
+          },
+          "page.ko": {
+            "lower": null,
+            "upper": null,
+            "sampleCount": 0,
+            "confidence": "unknown",
+            "basis": "no_comparable_history"
+          },
+          "page.zh-Hans": {
+            "lower": 0.20503918750910088,
+            "upper": 0.8201567500364035,
+            "sampleCount": 1,
+            "confidence": "low",
+            "basis": "empirical_envelope"
+          },
+          "source": {
+            "lower": 0.20239770799526013,
+            "upper": 0.8095908319810405,
+            "sampleCount": 1,
+            "confidence": "low",
+            "basis": "empirical_envelope"
+          },
+          "text.es": {
+            "lower": 0.20187074999557808,
+            "upper": 0.8074829999823123,
+            "sampleCount": 1,
+            "confidence": "low",
+            "basis": "empirical_envelope"
+          },
+          "text.ko": {
+            "lower": null,
+            "upper": null,
+            "sampleCount": 0,
+            "confidence": "unknown",
+            "basis": "no_comparable_history"
+          },
+          "text.zh-Hans": {
+            "lower": 0.20464675000403076,
+            "upper": 0.8185870000161231,
+            "sampleCount": 1,
+            "confidence": "low",
+            "basis": "empirical_envelope"
+          }
+        },
+        "assumptions": [
+          "Comparable stage/model/locale/length/cache/resource-class samples only.",
+          "Envelope is a conservative scenario range, not a calibrated probability interval.",
+          "Non-preemptive deterministic list order; no new retries, future rework or unrecorded queue arrivals.",
+          "UTC is descriptive; active elapsed and heartbeat are supplied by the local monotonic monitor."
+        ]
+      },
+      "cost": {
+        "status": "not_projected",
+        "knownSubtotalUsd": null,
+        "source": "existing_accounting_projection"
+      },
+      "readOnlyEvidenceUnchanged": true,
+      "replayWithoutNewJobOrReservation": false,
+      "productionEligible": false,
+      "evidenceMode": "synthetic",
+      "validatedNodeEvidence": {
+        "source": {
+          "status": "succeeded",
+          "reason": null,
+          "jobId": "aad7cb993efe15963e5c6f9526e76179562957e64529949196843e064fc5fa19",
+          "receiptSha256": "78f7f046578563d2c1771171086f7068cf160b0a2b03f6d0d1438819761565a1",
+          "spanId": "0783ef26f5b04b4ab54813a8e9f45eae"
+        },
+        "text.es": {
+          "status": "succeeded",
+          "reason": null,
+          "jobId": "67576695c7819c4d4913df5a78cfe44c4b84c4c8a2d4f572aa4d37e837dd79ee",
+          "receiptSha256": "94fdef8e19e2f2a3c4167497c943e6e1f76221ff4b86b03813cd14dedb202fb3",
+          "spanId": "c3cf0a0ab9e646fe8b4ed8f695543f99"
+        },
+        "audio.es": {
+          "status": "succeeded",
+          "reason": null,
+          "jobId": "5a6569d656c90fe56e2d25b60f739e4ee31cb1ab4eacbbadf50e1351c678bd8c",
+          "receiptSha256": "748d618b882fbde8cb407a90c3377ab34d064c4beaf4ecc83d2331c47ebac70a",
+          "spanId": "96edf80bd7c64c2dbf84d05b5fae2fea"
+        },
+        "page.es": {
+          "status": "succeeded",
+          "reason": null,
+          "jobId": "c2eb5e30d29c0271c439f188c95fc55f2273ba1f7b4169ea4ef81857ebf88a01",
+          "receiptSha256": "411106308b6a147dfbac14a18a035aeb44769810becd41e5dd1e0f088ca23fe0",
+          "spanId": "fed56f6129cf4429813aa4ce18c553e2"
+        },
+        "text.ko": {
+          "status": "outcome_unknown",
+          "reason": "controlled_outcome_unknown",
+          "jobId": "4d79a52406a4207d7792c94d91d24c2e9441d8f8e87d2eb623c12695c5e72934",
+          "receiptSha256": "07b4282aef3a15eccc1d2f8a34f9690b2c32396f2aaa5e7e4839f8520c226d67"
+        },
+        "audio.ko": {
+          "status": "blocked",
+          "reason": "dependency_not_verified",
+          "jobId": null,
+          "receiptSha256": null
+        },
+        "page.ko": {
+          "status": "blocked",
+          "reason": "dependency_not_verified",
+          "jobId": null,
+          "receiptSha256": null
+        },
+        "text.zh-Hans": {
+          "status": "succeeded",
+          "reason": null,
+          "jobId": "530407fcb21bffcb13a9744f90ba429d338f69370eb757aad0dfcdeab1754b22",
+          "receiptSha256": "122d5ce795a4e6c37dd2660c6d83b4b9500a1a48b4ba25712d504ded4ae01033",
+          "spanId": "c831a4bc4009454c97dd7e7d379713b7"
+        },
+        "audio.zh-Hans": {
+          "status": "succeeded",
+          "reason": null,
+          "jobId": "b7c33189d447e4d50c84206a183041f284d6d900b984145cdc9bd702dc6d08d0",
+          "receiptSha256": "67260187407a85a72fd56abaa601b83452922e41e2ee055b4ecfe21016d01330",
+          "spanId": "394d533f727f4496bc6bf506e0170e6a"
+        },
+        "page.zh-Hans": {
+          "status": "succeeded",
+          "reason": null,
+          "jobId": "5f5056ccbdc62da58214273b944757e91c11f5d369627c9b98cc51bdd7a3a175",
+          "receiptSha256": "0ea8af92b4829b7de0cfb43dc0f48bc1a0ddd6ee42234b2ff010b02b4baf4937",
+          "spanId": "bb2a3c61618941e19e137f84abc44d6e"
+        }
+      },
+      "trace": [
+        {
+          "event": "stage_finished",
+          "runId": "1876678737a248dda122afb750d1a03a",
+          "workflowId": "6ce9eebed6ad4e79a32ce8afe44bb4d2",
+          "jobId": "aad7cb993efe15963e5c6f9526e76179562957e64529949196843e064fc5fa19",
+          "workUnitId": "source",
+          "attemptId": "mock-1",
+          "spanId": "0783ef26f5b04b4ab54813a8e9f45eae",
+          "dependsOn": [],
+          "executorType": "deterministic_program",
+          "evidenceMode": "synthetic",
+          "status": "completed",
+          "elapsedSeconds": 0.539188,
+          "dependencyReadyAt": "2026-10-01T02:11:10.233724Z",
+          "queuedAt": "2026-10-01T02:11:10.233730Z",
+          "recordedAt": "2026-10-01T02:11:11.038035Z"
+        },
+        {
+          "event": "stage_finished",
+          "runId": "1876678737a248dda122afb750d1a03a",
+          "workflowId": "6ce9eebed6ad4e79a32ce8afe44bb4d2",
+          "jobId": "530407fcb21bffcb13a9744f90ba429d338f69370eb757aad0dfcdeab1754b22",
+          "workUnitId": "text.zh-Hans",
+          "attemptId": "mock-1",
+          "spanId": "c831a4bc4009454c97dd7e7d379713b7",
+          "dependsOn": [
+            "0783ef26f5b04b4ab54813a8e9f45eae"
+          ],
+          "executorType": "deterministic_program",
+          "evidenceMode": "synthetic",
+          "status": "completed",
+          "elapsedSeconds": 0.423822,
+          "dependencyReadyAt": "2026-10-01T02:11:11.178568Z",
+          "queuedAt": "2026-10-01T02:11:11.178576Z",
+          "recordedAt": "2026-10-01T02:11:11.993565Z"
+        },
+        {
+          "event": "stage_finished",
+          "runId": "1876678737a248dda122afb750d1a03a",
+          "workflowId": "6ce9eebed6ad4e79a32ce8afe44bb4d2",
+          "jobId": "4d79a52406a4207d7792c94d91d24c2e9441d8f8e87d2eb623c12695c5e72934",
+          "workUnitId": "text.ko",
+          "attemptId": "mock-1",
+          "spanId": "ff20d7a15ed44d93b70a54015d86a60e",
+          "dependsOn": [
+            "0783ef26f5b04b4ab54813a8e9f45eae"
+          ],
+          "executorType": "deterministic_program",
+          "evidenceMode": "synthetic",
+          "status": "failed",
+          "elapsedSeconds": 0.43279,
+          "dependencyReadyAt": "2026-10-01T02:11:11.166743Z",
+          "queuedAt": "2026-10-01T02:11:11.166750Z",
+          "recordedAt": "2026-10-01T02:11:12.003696Z"
+        },
+        {
+          "event": "stage_finished",
+          "runId": "1876678737a248dda122afb750d1a03a",
+          "workflowId": "6ce9eebed6ad4e79a32ce8afe44bb4d2",
+          "jobId": "67576695c7819c4d4913df5a78cfe44c4b84c4c8a2d4f572aa4d37e837dd79ee",
+          "workUnitId": "text.es",
+          "attemptId": "mock-1",
+          "spanId": "c3cf0a0ab9e646fe8b4ed8f695543f99",
+          "dependsOn": [
+            "0783ef26f5b04b4ab54813a8e9f45eae"
+          ],
+          "executorType": "deterministic_program",
+          "evidenceMode": "synthetic",
+          "status": "completed",
+          "elapsedSeconds": 0.466294,
+          "dependencyReadyAt": "2026-10-01T02:11:11.191780Z",
+          "queuedAt": "2026-10-01T02:11:11.191788Z",
+          "recordedAt": "2026-10-01T02:11:12.963228Z"
+        },
+        {
+          "event": "stage_finished",
+          "runId": "1876678737a248dda122afb750d1a03a",
+          "workflowId": "6ce9eebed6ad4e79a32ce8afe44bb4d2",
+          "jobId": "b7c33189d447e4d50c84206a183041f284d6d900b984145cdc9bd702dc6d08d0",
+          "workUnitId": "audio.zh-Hans",
+          "attemptId": "mock-1",
+          "spanId": "394d533f727f4496bc6bf506e0170e6a",
+          "dependsOn": [
+            "c831a4bc4009454c97dd7e7d379713b7"
+          ],
+          "executorType": "deterministic_program",
+          "evidenceMode": "synthetic",
+          "status": "completed",
+          "elapsedSeconds": 0.419471,
+          "dependencyReadyAt": "2026-10-01T02:11:12.163865Z",
+          "queuedAt": "2026-10-01T02:11:12.163872Z",
+          "recordedAt": "2026-10-01T02:11:13.003566Z"
+        },
+        {
+          "event": "stage_finished",
+          "runId": "1876678737a248dda122afb750d1a03a",
+          "workflowId": "6ce9eebed6ad4e79a32ce8afe44bb4d2",
+          "jobId": "5a6569d656c90fe56e2d25b60f739e4ee31cb1ab4eacbbadf50e1351c678bd8c",
+          "workUnitId": "audio.es",
+          "attemptId": "mock-1",
+          "spanId": "96edf80bd7c64c2dbf84d05b5fae2fea",
+          "dependsOn": [
+            "c3cf0a0ab9e646fe8b4ed8f695543f99"
+          ],
+          "executorType": "deterministic_program",
+          "evidenceMode": "synthetic",
+          "status": "completed",
+          "elapsedSeconds": 0.428307,
+          "dependencyReadyAt": "2026-10-01T02:11:13.270961Z",
+          "queuedAt": "2026-10-01T02:11:13.270967Z",
+          "recordedAt": "2026-10-01T02:11:14.248336Z"
+        },
+        {
+          "event": "stage_finished",
+          "runId": "1876678737a248dda122afb750d1a03a",
+          "workflowId": "6ce9eebed6ad4e79a32ce8afe44bb4d2",
+          "jobId": "5f5056ccbdc62da58214273b944757e91c11f5d369627c9b98cc51bdd7a3a175",
+          "workUnitId": "page.zh-Hans",
+          "attemptId": "mock-1",
+          "spanId": "bb2a3c61618941e19e137f84abc44d6e",
+          "dependsOn": [
+            "c831a4bc4009454c97dd7e7d379713b7",
+            "394d533f727f4496bc6bf506e0170e6a"
+          ],
+          "executorType": "deterministic_program",
+          "evidenceMode": "synthetic",
+          "status": "completed",
+          "elapsedSeconds": 0.418595,
+          "dependencyReadyAt": "2026-10-01T02:11:13.392642Z",
+          "queuedAt": "2026-10-01T02:11:13.392648Z",
+          "recordedAt": "2026-10-01T02:11:14.314390Z"
+        },
+        {
+          "event": "stage_finished",
+          "runId": "1876678737a248dda122afb750d1a03a",
+          "workflowId": "6ce9eebed6ad4e79a32ce8afe44bb4d2",
+          "jobId": "c2eb5e30d29c0271c439f188c95fc55f2273ba1f7b4169ea4ef81857ebf88a01",
+          "workUnitId": "page.es",
+          "attemptId": "mock-1",
+          "spanId": "fed56f6129cf4429813aa4ce18c553e2",
+          "dependsOn": [
+            "c3cf0a0ab9e646fe8b4ed8f695543f99",
+            "96edf80bd7c64c2dbf84d05b5fae2fea"
+          ],
+          "executorType": "deterministic_program",
+          "evidenceMode": "synthetic",
+          "status": "completed",
+          "elapsedSeconds": 0.415887,
+          "dependencyReadyAt": "2026-10-01T02:11:14.666637Z",
+          "queuedAt": "2026-10-01T02:11:14.666645Z",
+          "recordedAt": "2026-10-01T02:11:15.631340Z"
+        }
+      ],
+      "diagnostics": {
+        "text.ko": {
+          "status": "completed",
+          "provenance": {
+            "api": "agents-v1",
+            "transportMode": "offline",
+            "liveCompatibility": "untested",
+            "snapshotId": "snapshot_36388771ced049e862040dba0ec5cd75907e214efdb8b1d86702f0ea40124544",
+            "contextSha256": "d15c4201054d731f721b92986b9428809483f3b2f71123f85d287fcabb6b965f",
+            "payloadSha256": "6c761a4f09778f731004ff47ae426d499ab547d36f27766ec531297b32f33eab",
+            "sessionId": "sess_offline",
+            "turnId": "turn_offline",
+            "requestedModel": "gpt-6-sol",
+            "actualModel": null,
+            "sessionUsage": null,
+            "turnUsage": null,
+            "usageAggregation": "separate_do_not_sum",
+            "costUsd": null,
+            "validationScope": "frozen_bundle_only",
+            "executionAuthorized": false
+          },
+          "diagnosis": {
+            "contextSha256": "d15c4201054d731f721b92986b9428809483f3b2f71123f85d287fcabb6b965f",
+            "hypotheses": [],
+            "identity": {
+              "evidenceCutoff": "2026-10-01T02:11:17.056022Z",
+              "packageVersion": "packageVersion_16dbad709499e77d5bc28e35d4b67ade",
+              "planVersion": "planVersion_028897251a6f4cded37ee4cd7f6a7aa7",
+              "policyVersion": "policyVersion_742be8ecf0910aaa4f5af65480c53e74",
+              "revisionId": "revisionId_64fff0359687ef111845a7a6a6ae668d",
+              "runId": "runId_db57a7664301f24ae435b76a389ce6ea",
+              "sourceId": "sourceId_f1a3ac9048ab6eae7da846975c46ab88",
+              "sourceSha256": "ebced4da545acf745ca38cace64ca931e6d27d647e771fd535ccaff761f70715",
+              "stage": "layer2",
+              "stateRevision": 1,
+              "targetLocale": "ko"
+            },
+            "limitations": [
+              "Synthetic offline lifecycle fixture. No model diagnosis or cause was inferred."
+            ],
+            "missingDataRequests": [
+              {
+                "kind": "reproduction",
+                "question": "Independently validate the original failure and any proposed recovery before execution.",
+                "unitIds": [
+                  "unit_1da99699dcf2d57c69b8e07ca1e935f9"
+                ]
+              },
+              {
+                "kind": "receipt",
+                "question": "Independently validate the original failure and any proposed recovery before execution.",
+                "unitIds": [
+                  "unit_1da99699dcf2d57c69b8e07ca1e935f9"
+                ]
+              }
+            ],
+            "schemaVersion": "sermon-agent-diagnosis-v1",
+            "snapshotId": "snapshot_36388771ced049e862040dba0ec5cd75907e214efdb8b1d86702f0ea40124544",
+            "status": "needs_more_evidence"
+          }
+        },
+        "audio.ko": {
+          "status": "completed",
+          "provenance": {
+            "api": "agents-v1",
+            "transportMode": "offline",
+            "liveCompatibility": "untested",
+            "snapshotId": "snapshot_7637bad0a3c22787687374e795c1102ee9682bf42a5b0e9a5c1a9e49a4fa7fa1",
+            "contextSha256": "0d5344301860c2c6f89b3e2511168651a3daabc6bc2c8965ee863d31aea78e95",
+            "payloadSha256": "8dbe8cc54b8bc0a4ac473685fd14750832f9cfd5387c82655c708b2c112039a7",
+            "sessionId": "sess_offline",
+            "turnId": "turn_offline",
+            "requestedModel": "gpt-6-sol",
+            "actualModel": null,
+            "sessionUsage": null,
+            "turnUsage": null,
+            "usageAggregation": "separate_do_not_sum",
+            "costUsd": null,
+            "validationScope": "frozen_bundle_only",
+            "executionAuthorized": false
+          },
+          "diagnosis": {
+            "contextSha256": "0d5344301860c2c6f89b3e2511168651a3daabc6bc2c8965ee863d31aea78e95",
+            "hypotheses": [],
+            "identity": {
+              "evidenceCutoff": "2026-10-01T02:11:17.056022Z",
+              "packageVersion": "packageVersion_b2ba4aed0bcdc6e8a2d0a611736463a5",
+              "planVersion": "planVersion_be8ffbe5828267cdbd2b8edfacbdd000",
+              "policyVersion": "policyVersion_807e2bdbdd2b7a260996f8d872091470",
+              "revisionId": "revisionId_764386beea9d9c8c934a6a690a179e23",
+              "runId": "runId_1fdb6e5c0f28561ca49f77f8eca2daac",
+              "sourceId": "sourceId_3cc8c5004924d58362581446d228d3be",
+              "sourceSha256": "6496821c71dab68612c9a82c7b28630dc42b231a6321951beaa52fd3e0ae7c71",
+              "stage": "layer3",
+              "stateRevision": 1,
+              "targetLocale": "ko"
+            },
+            "limitations": [
+              "Synthetic offline lifecycle fixture. No model diagnosis or cause was inferred."
+            ],
+            "missingDataRequests": [
+              {
+                "kind": "reproduction",
+                "question": "Independently validate the original failure and any proposed recovery before execution.",
+                "unitIds": [
+                  "unit_4ee62d9f845469d5fa88833b1df0612e"
+                ]
+              },
+              {
+                "kind": "receipt",
+                "question": "Independently validate the original failure and any proposed recovery before execution.",
+                "unitIds": [
+                  "unit_4ee62d9f845469d5fa88833b1df0612e"
+                ]
+              }
+            ],
+            "schemaVersion": "sermon-agent-diagnosis-v1",
+            "snapshotId": "snapshot_7637bad0a3c22787687374e795c1102ee9682bf42a5b0e9a5c1a9e49a4fa7fa1",
+            "status": "needs_more_evidence"
+          }
+        },
+        "page.ko": {
+          "status": "completed",
+          "provenance": {
+            "api": "agents-v1",
+            "transportMode": "offline",
+            "liveCompatibility": "untested",
+            "snapshotId": "snapshot_4a7bb1146271465c5c3d48c07aac29e1561b54bc23956f483dbeb635f3faa4b1",
+            "contextSha256": "8819eff818ed00a18ca7f1e3e56d3c1530bb7a46aadb04d1807ad52056ec77d8",
+            "payloadSha256": "643abbc7582db8344723db4a43b6043106bfdd06bb81ea79ba7b7ff5f956ab63",
+            "sessionId": "sess_offline",
+            "turnId": "turn_offline",
+            "requestedModel": "gpt-6-sol",
+            "actualModel": null,
+            "sessionUsage": null,
+            "turnUsage": null,
+            "usageAggregation": "separate_do_not_sum",
+            "costUsd": null,
+            "validationScope": "frozen_bundle_only",
+            "executionAuthorized": false
+          },
+          "diagnosis": {
+            "contextSha256": "8819eff818ed00a18ca7f1e3e56d3c1530bb7a46aadb04d1807ad52056ec77d8",
+            "hypotheses": [],
+            "identity": {
+              "evidenceCutoff": "2026-10-01T02:11:17.056022Z",
+              "packageVersion": "packageVersion_4ea810d233b4da876c02f8d516285ee9",
+              "planVersion": "planVersion_9f087b8c5d76ccac350f0bbfbfc5ab50",
+              "policyVersion": "policyVersion_137b58b29bc0dd6cfcf409fbf37489f5",
+              "revisionId": "revisionId_c1bb836bf81ae5d26ce3db0dfdd374dd",
+              "runId": "runId_df49d64d97bcb8199e0a2b19f53d3798",
+              "sourceId": "sourceId_0a82561aa2eb34470f6985eb67011496",
+              "sourceSha256": "1e43d6847173d1531f479d22daae654458b89f09ebe5cf5a107da7ee7123698c",
+              "stage": "layer4",
+              "stateRevision": 1,
+              "targetLocale": "ko"
+            },
+            "limitations": [
+              "Synthetic offline lifecycle fixture. No model diagnosis or cause was inferred."
+            ],
+            "missingDataRequests": [
+              {
+                "kind": "reproduction",
+                "question": "Independently validate the original failure and any proposed recovery before execution.",
+                "unitIds": [
+                  "unit_ae185ed09f725c64ce8f45e652e6471d"
+                ]
+              },
+              {
+                "kind": "receipt",
+                "question": "Independently validate the original failure and any proposed recovery before execution.",
+                "unitIds": [
+                  "unit_ae185ed09f725c64ce8f45e652e6471d"
+                ]
+              }
+            ],
+            "schemaVersion": "sermon-agent-diagnosis-v1",
+            "snapshotId": "snapshot_4a7bb1146271465c5c3d48c07aac29e1561b54bc23956f483dbeb635f3faa4b1",
+            "status": "needs_more_evidence"
+          }
+        }
+      },
+      "executionPlan": {
+        "schemaVersion": "sermon-dag-plan-v1",
+        "runId": "acb033af06bd1c9048ce7a77c0ec8ff624218212380910e8b3e172d5de5b28e2",
+        "inputIdentitySha256": "4444444444444444444444444444444444444444444444444444444444444444",
+        "definition": {
+          "workflowDefinitionVersion": "sermon-canonical-pipeline-v1",
+          "workflowScope": "four_layer_release",
+          "targetLocales": [
+            "es",
+            "ko",
+            "zh-Hans"
+          ],
+          "textOnlyLocales": [],
+          "terminalScope": "page_ready",
+          "terminalDependencies": [
+            "page.es",
+            "page.ko",
+            "page.zh-Hans"
+          ],
+          "nodes": [
+            {
+              "id": "source",
+              "layer": 1,
+              "locale": null,
+              "depends_on": [],
+              "human_gates": [
+                "source_review"
+              ],
+              "executor_type": "deterministic_program",
+              "timeout_seconds": 600,
+              "side_effect_policy": "immutable_artifact"
+            },
+            {
+              "id": "text.es",
+              "layer": 2,
+              "locale": "es",
+              "depends_on": [
+                "source"
+              ],
+              "human_gates": [],
+              "executor_type": "production_model",
+              "timeout_seconds": 21600,
+              "side_effect_policy": "reconcile_before_retry"
+            },
+            {
+              "id": "audio.es",
+              "layer": 3,
+              "locale": "es",
+              "depends_on": [
+                "text.es"
+              ],
+              "human_gates": [
+                "translation_review",
+                "voice_authorization"
+              ],
+              "executor_type": "production_model",
+              "timeout_seconds": 21600,
+              "side_effect_policy": "reconcile_before_retry"
+            },
+            {
+              "id": "page.es",
+              "layer": 4,
+              "locale": "es",
+              "depends_on": [
+                "text.es",
+                "audio.es"
+              ],
+              "human_gates": [
+                "audio_listening_review"
+              ],
+              "executor_type": "deterministic_program",
+              "timeout_seconds": 600,
+              "side_effect_policy": "immutable_artifact"
+            },
+            {
+              "id": "text.ko",
+              "layer": 2,
+              "locale": "ko",
+              "depends_on": [
+                "source"
+              ],
+              "human_gates": [],
+              "executor_type": "production_model",
+              "timeout_seconds": 21600,
+              "side_effect_policy": "reconcile_before_retry"
+            },
+            {
+              "id": "audio.ko",
+              "layer": 3,
+              "locale": "ko",
+              "depends_on": [
+                "text.ko"
+              ],
+              "human_gates": [
+                "translation_review",
+                "voice_authorization"
+              ],
+              "executor_type": "production_model",
+              "timeout_seconds": 21600,
+              "side_effect_policy": "reconcile_before_retry"
+            },
+            {
+              "id": "page.ko",
+              "layer": 4,
+              "locale": "ko",
+              "depends_on": [
+                "text.ko",
+                "audio.ko"
+              ],
+              "human_gates": [
+                "audio_listening_review"
+              ],
+              "executor_type": "deterministic_program",
+              "timeout_seconds": 600,
+              "side_effect_policy": "immutable_artifact"
+            },
+            {
+              "id": "text.zh-Hans",
+              "layer": 2,
+              "locale": "zh-Hans",
+              "depends_on": [
+                "source"
+              ],
+              "human_gates": [],
+              "executor_type": "production_model",
+              "timeout_seconds": 21600,
+              "side_effect_policy": "reconcile_before_retry"
+            },
+            {
+              "id": "audio.zh-Hans",
+              "layer": 3,
+              "locale": "zh-Hans",
+              "depends_on": [
+                "text.zh-Hans"
+              ],
+              "human_gates": [
+                "translation_review",
+                "voice_authorization"
+              ],
+              "executor_type": "production_model",
+              "timeout_seconds": 21600,
+              "side_effect_policy": "reconcile_before_retry"
+            },
+            {
+              "id": "page.zh-Hans",
+              "layer": 4,
+              "locale": "zh-Hans",
+              "depends_on": [
+                "text.zh-Hans",
+                "audio.zh-Hans"
+              ],
+              "human_gates": [
+                "audio_listening_review"
+              ],
+              "executor_type": "deterministic_program",
+              "timeout_seconds": 600,
+              "side_effect_policy": "immutable_artifact"
+            }
+          ],
+          "dispatchEnabled": false,
+          "admission": "requires_validated_package_adapter_and_existing_durable_locks"
+        },
+        "mode": "mock_only",
+        "evidenceMode": "synthetic",
+        "productionEligible": false,
+        "simulatedHuman": true,
+        "weightVersion": "equal_nodes_v1",
+        "resourceLimits": {
+          "fixed": 4,
+          "api": 2,
+          "local_model": 1
+        },
+        "mockDelaySeconds": 0.4,
+        "mockRequestLimit": 3,
+        "nodes": [
+          {
+            "id": "source",
+            "layer": 1,
+            "locale": null,
+            "dependsOn": [],
+            "humanGates": [
+              "source_review"
+            ],
+            "executorType": "deterministic_program",
+            "resourcePool": "fixed",
+            "timeoutSeconds": 30,
+            "weight": 1,
+            "maxSchedulerRetries": 0,
+            "mockScenario": "pass"
+          },
+          {
+            "id": "text.es",
+            "layer": 2,
+            "locale": "es",
+            "dependsOn": [
+              "source"
+            ],
+            "humanGates": [],
+            "executorType": "production_model",
+            "resourcePool": "api",
+            "timeoutSeconds": 30,
+            "weight": 1,
+            "maxSchedulerRetries": 0,
+            "mockScenario": "pass"
+          },
+          {
+            "id": "audio.es",
+            "layer": 3,
+            "locale": "es",
+            "dependsOn": [
+              "text.es"
+            ],
+            "humanGates": [
+              "translation_review",
+              "voice_authorization"
+            ],
+            "executorType": "production_model",
+            "resourcePool": "local_model",
+            "timeoutSeconds": 30,
+            "weight": 1,
+            "maxSchedulerRetries": 0,
+            "mockScenario": "pass"
+          },
+          {
+            "id": "page.es",
+            "layer": 4,
+            "locale": "es",
+            "dependsOn": [
+              "text.es",
+              "audio.es"
+            ],
+            "humanGates": [
+              "audio_listening_review"
+            ],
+            "executorType": "deterministic_program",
+            "resourcePool": "fixed",
+            "timeoutSeconds": 30,
+            "weight": 1,
+            "maxSchedulerRetries": 0,
+            "mockScenario": "pass"
+          },
+          {
+            "id": "text.ko",
+            "layer": 2,
+            "locale": "ko",
+            "dependsOn": [
+              "source"
+            ],
+            "humanGates": [],
+            "executorType": "production_model",
+            "resourcePool": "api",
+            "timeoutSeconds": 30,
+            "weight": 1,
+            "maxSchedulerRetries": 0,
+            "mockScenario": "outcome_unknown"
+          },
+          {
+            "id": "audio.ko",
+            "layer": 3,
+            "locale": "ko",
+            "dependsOn": [
+              "text.ko"
+            ],
+            "humanGates": [
+              "translation_review",
+              "voice_authorization"
+            ],
+            "executorType": "production_model",
+            "resourcePool": "local_model",
+            "timeoutSeconds": 30,
+            "weight": 1,
+            "maxSchedulerRetries": 0,
+            "mockScenario": "pass"
+          },
+          {
+            "id": "page.ko",
+            "layer": 4,
+            "locale": "ko",
+            "dependsOn": [
+              "text.ko",
+              "audio.ko"
+            ],
+            "humanGates": [
+              "audio_listening_review"
+            ],
+            "executorType": "deterministic_program",
+            "resourcePool": "fixed",
+            "timeoutSeconds": 30,
+            "weight": 1,
+            "maxSchedulerRetries": 0,
+            "mockScenario": "pass"
+          },
+          {
+            "id": "text.zh-Hans",
+            "layer": 2,
+            "locale": "zh-Hans",
+            "dependsOn": [
+              "source"
+            ],
+            "humanGates": [],
+            "executorType": "production_model",
+            "resourcePool": "api",
+            "timeoutSeconds": 30,
+            "weight": 1,
+            "maxSchedulerRetries": 0,
+            "mockScenario": "pass"
+          },
+          {
+            "id": "audio.zh-Hans",
+            "layer": 3,
+            "locale": "zh-Hans",
+            "dependsOn": [
+              "text.zh-Hans"
+            ],
+            "humanGates": [
+              "translation_review",
+              "voice_authorization"
+            ],
+            "executorType": "production_model",
+            "resourcePool": "local_model",
+            "timeoutSeconds": 30,
+            "weight": 1,
+            "maxSchedulerRetries": 0,
+            "mockScenario": "pass"
+          },
+          {
+            "id": "page.zh-Hans",
+            "layer": 4,
+            "locale": "zh-Hans",
+            "dependsOn": [
+              "text.zh-Hans",
+              "audio.zh-Hans"
+            ],
+            "humanGates": [
+              "audio_listening_review"
+            ],
+            "executorType": "deterministic_program",
+            "resourcePool": "fixed",
+            "timeoutSeconds": 30,
+            "weight": 1,
+            "maxSchedulerRetries": 0,
+            "mockScenario": "pass"
+          }
+        ],
+        "planSha256": "ecd38b6c661da2a2f261477d6e85921ca7ca3650c81a8bd1824f503e4f330bca"
+      },
+      "businessReceipts": {
+        "audio.es": {
+          "schemaVersion": "sermon-dag-node-receipt-v1",
+          "runId": "acb033af06bd1c9048ce7a77c0ec8ff624218212380910e8b3e172d5de5b28e2",
+          "planSha256": "ecd38b6c661da2a2f261477d6e85921ca7ca3650c81a8bd1824f503e4f330bca",
+          "workUnitId": "audio.es",
+          "identitySha256": "244bbad2efa5a173ce8dda249bbb2ebcfe8a8bbe4ee9f486cb26e37213324c66",
+          "attemptId": "mock-1",
+          "revisionId": "r1",
+          "dependencies": {
+            "text.es": "f966102b02a2e7842f3937690a8c1389b4b4273feda964e99ce5963d4c0bdccf"
+          },
+          "evidenceMode": "synthetic",
+          "productionEligible": false,
+          "realHumanStatus": "pending",
+          "simulatedHumanStatus": "simulated",
+          "mockScenario": "pass",
+          "outputSha256": "496f58087e1490af5c1ba966ab0f8cbf965cb2ae4e55e37995357b69bab2fb67",
+          "spanId": "96edf80bd7c64c2dbf84d05b5fae2fea",
+          "startedAt": "2026-10-01T02:11:13.823814+00:00",
+          "completedAt": "2026-10-01T02:11:14.232843+00:00",
+          "elapsedSeconds": 0.4090425419854,
+          "executionStatus": "succeeded",
+          "reviewVerdict": "synthetic_pass",
+          "admissionStatus": "mock_only",
+          "reservationId": null
+        },
+        "page.zh-Hans": {
+          "schemaVersion": "sermon-dag-node-receipt-v1",
+          "runId": "acb033af06bd1c9048ce7a77c0ec8ff624218212380910e8b3e172d5de5b28e2",
+          "planSha256": "ecd38b6c661da2a2f261477d6e85921ca7ca3650c81a8bd1824f503e4f330bca",
+          "workUnitId": "page.zh-Hans",
+          "identitySha256": "a772d08d76a765df0cdc7d9fc3c42d403b7470c46919f8258be25a76d1daebe3",
+          "attemptId": "mock-1",
+          "revisionId": "r1",
+          "dependencies": {
+            "text.zh-Hans": "2655117efb21c38c88ee2dcc1bd39869da926b9f7f1a169ff0d90244eba6bc68",
+            "audio.zh-Hans": "2270c3c2f0d9550b03116f29c3364c445296d032bc40b59e43d31aafd8461d3d"
+          },
+          "evidenceMode": "synthetic",
+          "productionEligible": false,
+          "realHumanStatus": "pending",
+          "simulatedHumanStatus": "simulated",
+          "mockScenario": "pass",
+          "outputSha256": "dd6dd41b4e6a71ad198b52704ed628fa4df7fe0bcd5a6874bedec59d970deec5",
+          "spanId": "bb2a3c61618941e19e137f84abc44d6e",
+          "startedAt": "2026-10-01T02:11:13.899528+00:00",
+          "completedAt": "2026-10-01T02:11:14.309609+00:00",
+          "elapsedSeconds": 0.41007837501820177,
+          "executionStatus": "succeeded",
+          "reviewVerdict": "synthetic_pass",
+          "admissionStatus": "mock_only",
+          "reservationId": null
+        },
+        "audio.zh-Hans": {
+          "schemaVersion": "sermon-dag-node-receipt-v1",
+          "runId": "acb033af06bd1c9048ce7a77c0ec8ff624218212380910e8b3e172d5de5b28e2",
+          "planSha256": "ecd38b6c661da2a2f261477d6e85921ca7ca3650c81a8bd1824f503e4f330bca",
+          "workUnitId": "audio.zh-Hans",
+          "identitySha256": "e7cf9ed551b1a90d2156e0c3d055eb36218fc6b35585522e775131e241a0083c",
+          "attemptId": "mock-1",
+          "revisionId": "r1",
+          "dependencies": {
+            "text.zh-Hans": "2655117efb21c38c88ee2dcc1bd39869da926b9f7f1a169ff0d90244eba6bc68"
+          },
+          "evidenceMode": "synthetic",
+          "productionEligible": false,
+          "realHumanStatus": "pending",
+          "simulatedHumanStatus": "simulated",
+          "mockScenario": "pass",
+          "outputSha256": "2270c3c2f0d9550b03116f29c3364c445296d032bc40b59e43d31aafd8461d3d",
+          "spanId": "394d533f727f4496bc6bf506e0170e6a",
+          "startedAt": "2026-10-01T02:11:12.587994+00:00",
+          "completedAt": "2026-10-01T02:11:12.997709+00:00",
+          "elapsedSeconds": 0.4097169589949772,
+          "executionStatus": "succeeded",
+          "reviewVerdict": "synthetic_pass",
+          "admissionStatus": "mock_only",
+          "reservationId": null
+        },
+        "source": {
+          "schemaVersion": "sermon-dag-node-receipt-v1",
+          "runId": "acb033af06bd1c9048ce7a77c0ec8ff624218212380910e8b3e172d5de5b28e2",
+          "planSha256": "ecd38b6c661da2a2f261477d6e85921ca7ca3650c81a8bd1824f503e4f330bca",
+          "workUnitId": "source",
+          "identitySha256": "e75410880284c540ac141102bcf252c1f31e0583b9c0e3f53ad451912eb0943a",
+          "attemptId": "mock-1",
+          "revisionId": "r1",
+          "dependencies": {},
+          "evidenceMode": "synthetic",
+          "productionEligible": false,
+          "realHumanStatus": "pending",
+          "simulatedHumanStatus": "simulated",
+          "mockScenario": "pass",
+          "outputSha256": "48455c7a48ba1fb4847a729df01c5437f437278337c2f67b231f0dc87a2b5cf4",
+          "spanId": "0783ef26f5b04b4ab54813a8e9f45eae",
+          "startedAt": "2026-10-01T02:11:10.625022+00:00",
+          "completedAt": "2026-10-01T02:11:11.029812+00:00",
+          "elapsedSeconds": 0.40479541599052027,
+          "executionStatus": "succeeded",
+          "reviewVerdict": "synthetic_pass",
+          "admissionStatus": "mock_only",
+          "reservationId": null
+        },
+        "text.es": {
+          "schemaVersion": "sermon-dag-node-receipt-v1",
+          "runId": "acb033af06bd1c9048ce7a77c0ec8ff624218212380910e8b3e172d5de5b28e2",
+          "planSha256": "ecd38b6c661da2a2f261477d6e85921ca7ca3650c81a8bd1824f503e4f330bca",
+          "workUnitId": "text.es",
+          "identitySha256": "48dcb9bc1869c264b518a3206ce9ce398f5bb772e21a1d7f76ab9c10e2a7ab4a",
+          "attemptId": "mock-1",
+          "revisionId": "r1",
+          "dependencies": {
+            "source": "48455c7a48ba1fb4847a729df01c5437f437278337c2f67b231f0dc87a2b5cf4"
+          },
+          "evidenceMode": "synthetic",
+          "productionEligible": false,
+          "realHumanStatus": "not_applicable",
+          "simulatedHumanStatus": "not_applicable",
+          "mockScenario": "pass",
+          "outputSha256": "f966102b02a2e7842f3937690a8c1389b4b4273feda964e99ce5963d4c0bdccf",
+          "spanId": "c3cf0a0ab9e646fe8b4ed8f695543f99",
+          "startedAt": "2026-10-01T02:11:12.539789+00:00",
+          "completedAt": "2026-10-01T02:11:12.943508+00:00",
+          "elapsedSeconds": 0.40374149999115616,
+          "executionStatus": "succeeded",
+          "reviewVerdict": "synthetic_pass",
+          "admissionStatus": "mock_only",
+          "reservationId": "eff96395fb23d0b8f60367eaefaf22941f44f5d8b6ed3ac3728fd6a0a24be177"
+        },
+        "page.es": {
+          "schemaVersion": "sermon-dag-node-receipt-v1",
+          "runId": "acb033af06bd1c9048ce7a77c0ec8ff624218212380910e8b3e172d5de5b28e2",
+          "planSha256": "ecd38b6c661da2a2f261477d6e85921ca7ca3650c81a8bd1824f503e4f330bca",
+          "workUnitId": "page.es",
+          "identitySha256": "49a5e34e282342ab856e2afeea9a8fad2e060abde89e63776dc285bf5cce806a",
+          "attemptId": "mock-1",
+          "revisionId": "r1",
+          "dependencies": {
+            "text.es": "f966102b02a2e7842f3937690a8c1389b4b4273feda964e99ce5963d4c0bdccf",
+            "audio.es": "496f58087e1490af5c1ba966ab0f8cbf965cb2ae4e55e37995357b69bab2fb67"
+          },
+          "evidenceMode": "synthetic",
+          "productionEligible": false,
+          "realHumanStatus": "pending",
+          "simulatedHumanStatus": "simulated",
+          "mockScenario": "pass",
+          "outputSha256": "4a0efba1300f76ccea3f0ea4916f0b8be77800a3c8a53f5186c4906572354d4a",
+          "spanId": "fed56f6129cf4429813aa4ce18c553e2",
+          "startedAt": "2026-10-01T02:11:15.219430+00:00",
+          "completedAt": "2026-10-01T02:11:15.624475+00:00",
+          "elapsedSeconds": 0.40505004196893424,
+          "executionStatus": "succeeded",
+          "reviewVerdict": "synthetic_pass",
+          "admissionStatus": "mock_only",
+          "reservationId": null
+        },
+        "text.zh-Hans": {
+          "schemaVersion": "sermon-dag-node-receipt-v1",
+          "runId": "acb033af06bd1c9048ce7a77c0ec8ff624218212380910e8b3e172d5de5b28e2",
+          "planSha256": "ecd38b6c661da2a2f261477d6e85921ca7ca3650c81a8bd1824f503e4f330bca",
+          "workUnitId": "text.zh-Hans",
+          "identitySha256": "fc3031a9d7f2129328583751057da73747a1a34a7644a3d7f0fe87eaa813723f",
+          "attemptId": "mock-1",
+          "revisionId": "r1",
+          "dependencies": {
+            "source": "48455c7a48ba1fb4847a729df01c5437f437278337c2f67b231f0dc87a2b5cf4"
+          },
+          "evidenceMode": "synthetic",
+          "productionEligible": false,
+          "realHumanStatus": "not_applicable",
+          "simulatedHumanStatus": "not_applicable",
+          "mockScenario": "pass",
+          "outputSha256": "2655117efb21c38c88ee2dcc1bd39869da926b9f7f1a169ff0d90244eba6bc68",
+          "spanId": "c831a4bc4009454c97dd7e7d379713b7",
+          "startedAt": "2026-10-01T02:11:11.573554+00:00",
+          "completedAt": "2026-10-01T02:11:11.982840+00:00",
+          "elapsedSeconds": 0.40929350000806153,
+          "executionStatus": "succeeded",
+          "reviewVerdict": "synthetic_pass",
+          "admissionStatus": "mock_only",
+          "reservationId": "b7a20fde0300665e5a0dec1faf7fd80a0ce98aa7c8b7891252fe40ca69e38195"
+        }
+      },
+      "mockOutputs": {
+        "audio.es": {
+          "identitySha256": "244bbad2efa5a173ce8dda249bbb2ebcfe8a8bbe4ee9f486cb26e37213324c66",
+          "syntheticOutput": true,
+          "audioDisposition": "mock_artifact"
+        },
+        "page.zh-Hans": {
+          "identitySha256": "a772d08d76a765df0cdc7d9fc3c42d403b7470c46919f8258be25a76d1daebe3",
+          "syntheticOutput": true,
+          "audioDisposition": "mock_artifact"
+        },
+        "audio.zh-Hans": {
+          "identitySha256": "e7cf9ed551b1a90d2156e0c3d055eb36218fc6b35585522e775131e241a0083c",
+          "syntheticOutput": true,
+          "audioDisposition": "mock_artifact"
+        },
+        "source": {
+          "identitySha256": "e75410880284c540ac141102bcf252c1f31e0583b9c0e3f53ad451912eb0943a",
+          "syntheticOutput": true,
+          "audioDisposition": "mock_artifact"
+        },
+        "text.es": {
+          "identitySha256": "48dcb9bc1869c264b518a3206ce9ce398f5bb772e21a1d7f76ab9c10e2a7ab4a",
+          "syntheticOutput": true,
+          "audioDisposition": "mock_artifact"
+        },
+        "page.es": {
+          "identitySha256": "49a5e34e282342ab856e2afeea9a8fad2e060abde89e63776dc285bf5cce806a",
+          "syntheticOutput": true,
+          "audioDisposition": "mock_artifact"
+        },
+        "text.zh-Hans": {
+          "identitySha256": "fc3031a9d7f2129328583751057da73747a1a34a7644a3d7f0fe87eaa813723f",
+          "syntheticOutput": true,
+          "audioDisposition": "mock_artifact"
+        }
+      },
+      "controlledFailures": {
+        "text.ko": {
+          "schemaVersion": "sermon-dag-node-receipt-v1",
+          "runId": "acb033af06bd1c9048ce7a77c0ec8ff624218212380910e8b3e172d5de5b28e2",
+          "planSha256": "ecd38b6c661da2a2f261477d6e85921ca7ca3650c81a8bd1824f503e4f330bca",
+          "workUnitId": "text.ko",
+          "identitySha256": "b53c6c9fbb345b9346f236a5d5b1ff2782a0ae14d54ea351def0f5d97785264f",
+          "attemptId": "mock-1",
+          "revisionId": "r1",
+          "dependencies": {
+            "source": "48455c7a48ba1fb4847a729df01c5437f437278337c2f67b231f0dc87a2b5cf4"
+          },
+          "evidenceMode": "synthetic",
+          "productionEligible": false,
+          "realHumanStatus": "not_applicable",
+          "simulatedHumanStatus": "not_applicable",
+          "mockScenario": "outcome_unknown",
+          "executionStatus": "outcome_unknown",
+          "reason": "controlled_outcome_unknown"
+        }
+      },
+      "receiptHashObservations": [
+        {
+          "event": "workload",
+          "runId": "1876678737a248dda122afb750d1a03a",
+          "jobId": "aad7cb993efe15963e5c6f9526e76179562957e64529949196843e064fc5fa19",
+          "workUnitId": "source",
+          "attemptId": "mock-1",
+          "spanId": "0783ef26f5b04b4ab54813a8e9f45eae",
+          "evidenceMode": "synthetic",
+          "recordedAt": "2026-10-01T02:11:11.034767Z",
+          "metrics": {
+            "nodeIdentitySha256": "e75410880284c540ac141102bcf252c1f31e0583b9c0e3f53ad451912eb0943a",
+            "planSha256": "ecd38b6c661da2a2f261477d6e85921ca7ca3650c81a8bd1824f503e4f330bca",
+            "receiptSha256": "78f7f046578563d2c1771171086f7068cf160b0a2b03f6d0d1438819761565a1",
+            "synthetic": true
+          }
+        },
+        {
+          "event": "workload",
+          "runId": "1876678737a248dda122afb750d1a03a",
+          "jobId": "530407fcb21bffcb13a9744f90ba429d338f69370eb757aad0dfcdeab1754b22",
+          "workUnitId": "text.zh-Hans",
+          "attemptId": "mock-1",
+          "spanId": "c831a4bc4009454c97dd7e7d379713b7",
+          "evidenceMode": "synthetic",
+          "recordedAt": "2026-10-01T02:11:11.987178Z",
+          "metrics": {
+            "nodeIdentitySha256": "fc3031a9d7f2129328583751057da73747a1a34a7644a3d7f0fe87eaa813723f",
+            "planSha256": "ecd38b6c661da2a2f261477d6e85921ca7ca3650c81a8bd1824f503e4f330bca",
+            "receiptSha256": "122d5ce795a4e6c37dd2660c6d83b4b9500a1a48b4ba25712d504ded4ae01033",
+            "synthetic": true
+          }
+        },
+        {
+          "event": "workload",
+          "runId": "1876678737a248dda122afb750d1a03a",
+          "jobId": "67576695c7819c4d4913df5a78cfe44c4b84c4c8a2d4f572aa4d37e837dd79ee",
+          "workUnitId": "text.es",
+          "attemptId": "mock-1",
+          "spanId": "c3cf0a0ab9e646fe8b4ed8f695543f99",
+          "evidenceMode": "synthetic",
+          "recordedAt": "2026-10-01T02:11:12.956145Z",
+          "metrics": {
+            "nodeIdentitySha256": "48dcb9bc1869c264b518a3206ce9ce398f5bb772e21a1d7f76ab9c10e2a7ab4a",
+            "planSha256": "ecd38b6c661da2a2f261477d6e85921ca7ca3650c81a8bd1824f503e4f330bca",
+            "receiptSha256": "94fdef8e19e2f2a3c4167497c943e6e1f76221ff4b86b03813cd14dedb202fb3",
+            "synthetic": true
+          }
+        },
+        {
+          "event": "workload",
+          "runId": "1876678737a248dda122afb750d1a03a",
+          "jobId": "b7c33189d447e4d50c84206a183041f284d6d900b984145cdc9bd702dc6d08d0",
+          "workUnitId": "audio.zh-Hans",
+          "attemptId": "mock-1",
+          "spanId": "394d533f727f4496bc6bf506e0170e6a",
+          "evidenceMode": "synthetic",
+          "recordedAt": "2026-10-01T02:11:13.000200Z",
+          "metrics": {
+            "nodeIdentitySha256": "e7cf9ed551b1a90d2156e0c3d055eb36218fc6b35585522e775131e241a0083c",
+            "planSha256": "ecd38b6c661da2a2f261477d6e85921ca7ca3650c81a8bd1824f503e4f330bca",
+            "receiptSha256": "67260187407a85a72fd56abaa601b83452922e41e2ee055b4ecfe21016d01330",
+            "synthetic": true
+          }
+        },
+        {
+          "event": "workload",
+          "runId": "1876678737a248dda122afb750d1a03a",
+          "jobId": "5a6569d656c90fe56e2d25b60f739e4ee31cb1ab4eacbbadf50e1351c678bd8c",
+          "workUnitId": "audio.es",
+          "attemptId": "mock-1",
+          "spanId": "96edf80bd7c64c2dbf84d05b5fae2fea",
+          "evidenceMode": "synthetic",
+          "recordedAt": "2026-10-01T02:11:14.245171Z",
+          "metrics": {
+            "nodeIdentitySha256": "244bbad2efa5a173ce8dda249bbb2ebcfe8a8bbe4ee9f486cb26e37213324c66",
+            "planSha256": "ecd38b6c661da2a2f261477d6e85921ca7ca3650c81a8bd1824f503e4f330bca",
+            "receiptSha256": "748d618b882fbde8cb407a90c3377ab34d064c4beaf4ecc83d2331c47ebac70a",
+            "synthetic": true
+          }
+        },
+        {
+          "event": "workload",
+          "runId": "1876678737a248dda122afb750d1a03a",
+          "jobId": "5f5056ccbdc62da58214273b944757e91c11f5d369627c9b98cc51bdd7a3a175",
+          "workUnitId": "page.zh-Hans",
+          "attemptId": "mock-1",
+          "spanId": "bb2a3c61618941e19e137f84abc44d6e",
+          "evidenceMode": "synthetic",
+          "recordedAt": "2026-10-01T02:11:14.311328Z",
+          "metrics": {
+            "nodeIdentitySha256": "a772d08d76a765df0cdc7d9fc3c42d403b7470c46919f8258be25a76d1daebe3",
+            "planSha256": "ecd38b6c661da2a2f261477d6e85921ca7ca3650c81a8bd1824f503e4f330bca",
+            "receiptSha256": "0ea8af92b4829b7de0cfb43dc0f48bc1a0ddd6ee42234b2ff010b02b4baf4937",
+            "synthetic": true
+          }
+        },
+        {
+          "event": "workload",
+          "runId": "1876678737a248dda122afb750d1a03a",
+          "jobId": "c2eb5e30d29c0271c439f188c95fc55f2273ba1f7b4169ea4ef81857ebf88a01",
+          "workUnitId": "page.es",
+          "attemptId": "mock-1",
+          "spanId": "fed56f6129cf4429813aa4ce18c553e2",
+          "evidenceMode": "synthetic",
+          "recordedAt": "2026-10-01T02:11:15.627125Z",
+          "metrics": {
+            "nodeIdentitySha256": "49a5e34e282342ab856e2afeea9a8fad2e060abde89e63776dc285bf5cce806a",
+            "planSha256": "ecd38b6c661da2a2f261477d6e85921ca7ca3650c81a8bd1824f503e4f330bca",
+            "receiptSha256": "411106308b6a147dfbac14a18a035aeb44769810becd41e5dd1e0f088ca23fe0",
+            "synthetic": true
+          }
+        }
+      ],
+      "syntheticBudgetLedger": {
+        "schemaVersion": "sermon-review-budget-v1",
+        "authority": {
+          "approvalSha256": "ecd38b6c661da2a2f261477d6e85921ca7ca3650c81a8bd1824f503e4f330bca",
+          "globalBounds": {
+            "requests": 3,
+            "inputTokens": 3,
+            "outputTokens": 3,
+            "wallTimeMs": 90000,
+            "costMicrousd": 3
+          },
+          "unitBounds": {
+            "requests": 1,
+            "inputTokens": 1,
+            "outputTokens": 1,
+            "wallTimeMs": 30000,
+            "costMicrousd": 1
+          },
+          "limits": {
+            "contentRevisions": 2,
+            "reviewAttemptsPerRevision": 2,
+            "decisionProposals": 1
+          }
+        },
+        "storeSha256": "603580c836009cdaad855f504767d43c3d9569d35b551b3e021bfc7957922a38",
+        "reservations": {
+          "b7a20fde0300665e5a0dec1faf7fd80a0ce98aa7c8b7891252fe40ca69e38195": {
+            "request": {
+              "identity": {
+                "sourceIdentitySha256": "4444444444444444444444444444444444444444444444444444444444444444",
+                "sourcePackageSha256": "ecd38b6c661da2a2f261477d6e85921ca7ca3650c81a8bd1824f503e4f330bca",
+                "anchorSha256": "ecd38b6c661da2a2f261477d6e85921ca7ca3650c81a8bd1824f503e4f330bca",
+                "policySha256": "ecd38b6c661da2a2f261477d6e85921ca7ca3650c81a8bd1824f503e4f330bca",
+                "rubricSha256": "ecd38b6c661da2a2f261477d6e85921ca7ca3650c81a8bd1824f503e4f330bca",
+                "targetLocale": "zh-Hans",
+                "workUnitId": "l2.zh-Hans.mock"
+              },
+              "operationId": "mock.initial",
+              "kind": "initial_generation",
+              "revisionId": "r1",
+              "revisionNumber": 1,
+              "inputSha256": "fc3031a9d7f2129328583751057da73747a1a34a7644a3d7f0fe87eaa813723f",
+              "bounds": {
+                "requests": 1,
+                "inputTokens": 1,
+                "outputTokens": 1,
+                "wallTimeMs": 30000,
+                "costMicrousd": 1
+              }
+            },
+            "phase": "result",
+            "result": {
+              "executionStatus": "succeeded",
+              "contentStatus": "pass",
+              "receiptSha256": "122d5ce795a4e6c37dd2660c6d83b4b9500a1a48b4ba25712d504ded4ae01033",
+              "usage": {
+                "requests": 1,
+                "inputTokens": 1,
+                "outputTokens": 1,
+                "wallTimeMs": 30000,
+                "costMicrousd": 1
+              }
+            }
+          },
+          "8281f03fe0b55920a38510fa5a5398185751892f06ca013875643fd1102e8d25": {
+            "request": {
+              "identity": {
+                "sourceIdentitySha256": "4444444444444444444444444444444444444444444444444444444444444444",
+                "sourcePackageSha256": "ecd38b6c661da2a2f261477d6e85921ca7ca3650c81a8bd1824f503e4f330bca",
+                "anchorSha256": "ecd38b6c661da2a2f261477d6e85921ca7ca3650c81a8bd1824f503e4f330bca",
+                "policySha256": "ecd38b6c661da2a2f261477d6e85921ca7ca3650c81a8bd1824f503e4f330bca",
+                "rubricSha256": "ecd38b6c661da2a2f261477d6e85921ca7ca3650c81a8bd1824f503e4f330bca",
+                "targetLocale": "ko",
+                "workUnitId": "l2.ko.mock"
+              },
+              "operationId": "mock.initial",
+              "kind": "initial_generation",
+              "revisionId": "r1",
+              "revisionNumber": 1,
+              "inputSha256": "b53c6c9fbb345b9346f236a5d5b1ff2782a0ae14d54ea351def0f5d97785264f",
+              "bounds": {
+                "requests": 1,
+                "inputTokens": 1,
+                "outputTokens": 1,
+                "wallTimeMs": 30000,
+                "costMicrousd": 1
+              }
+            },
+            "phase": "result",
+            "result": {
+              "executionStatus": "outcome_unknown",
+              "contentStatus": "not_assessed",
+              "receiptSha256": "07b4282aef3a15eccc1d2f8a34f9690b2c32396f2aaa5e7e4839f8520c226d67",
+              "usage": null
+            }
+          },
+          "eff96395fb23d0b8f60367eaefaf22941f44f5d8b6ed3ac3728fd6a0a24be177": {
+            "request": {
+              "identity": {
+                "sourceIdentitySha256": "4444444444444444444444444444444444444444444444444444444444444444",
+                "sourcePackageSha256": "ecd38b6c661da2a2f261477d6e85921ca7ca3650c81a8bd1824f503e4f330bca",
+                "anchorSha256": "ecd38b6c661da2a2f261477d6e85921ca7ca3650c81a8bd1824f503e4f330bca",
+                "policySha256": "ecd38b6c661da2a2f261477d6e85921ca7ca3650c81a8bd1824f503e4f330bca",
+                "rubricSha256": "ecd38b6c661da2a2f261477d6e85921ca7ca3650c81a8bd1824f503e4f330bca",
+                "targetLocale": "es",
+                "workUnitId": "l2.es.mock"
+              },
+              "operationId": "mock.initial",
+              "kind": "initial_generation",
+              "revisionId": "r1",
+              "revisionNumber": 1,
+              "inputSha256": "48dcb9bc1869c264b518a3206ce9ce398f5bb772e21a1d7f76ab9c10e2a7ab4a",
+              "bounds": {
+                "requests": 1,
+                "inputTokens": 1,
+                "outputTokens": 1,
+                "wallTimeMs": 30000,
+                "costMicrousd": 1
+              }
+            },
+            "phase": "result",
+            "result": {
+              "executionStatus": "succeeded",
+              "contentStatus": "pass",
+              "receiptSha256": "94fdef8e19e2f2a3c4167497c943e6e1f76221ff4b86b03813cd14dedb202fb3",
+              "usage": {
+                "requests": 1,
+                "inputTokens": 1,
+                "outputTokens": 1,
+                "wallTimeMs": 30000,
+                "costMicrousd": 1
+              }
+            }
+          }
+        }
+      },
+      "budgetScope": "Synthetic test quota only; not provider usage, spend, or the paused diagnostic budget."
+    }
+  ]
+}
