@@ -49,12 +49,20 @@ def save_once(path,value):
 def material_bytes(value):return c.canonical_bytes(value)+b'\n'
 
 
-def prepare(source_bytes,anchor_bytes,policy_bytes,rubric_bytes,group,*,request_limits=None):
+def prepare(source_bytes,anchor_bytes,policy_bytes,rubric_bytes,group,*,request_limits=None,diagnostic_context=None):
     source,anchor,policy,rubric=[c.decode_json(b) for b in (source_bytes,anchor_bytes,policy_bytes,rubric_bytes)]
-    producer.validate_source_for_translation(source,anchor)
+    if diagnostic_context is None:
+        producer.validate_source_for_translation(source,anchor)
+    else:
+        from scripts.sermon_diagnostic_context import validate_source
+        validate_source(source,anchor,diagnostic_context)
     identity=policies.validate_strict_policy(policy,rubric)
     policies.validate_strict_source_scope(policy,rubric,source,anchor)
-    c.require(identity['productionPolicyReady'],'strict_policy_not_ready')
+    if diagnostic_context is None:
+        c.require(identity['productionPolicyReady'],'strict_policy_not_ready')
+    else:
+        from scripts.sermon_diagnostic_context import require_policy_ready
+        require_policy_ready(identity,diagnostic_context)
     c.require(type(group) is dict and set(group)=={'translationGroupId','sourceUnitIds'},'invalid_strict_group')
     label(group['translationGroupId']);unit=label('l2.'+policy['targetLocale']+'.'+group['translationGroupId'])
     # Every supported candidate has at most 64 utterances, hence a four-digit
@@ -73,6 +81,9 @@ def prepare(source_bytes,anchor_bytes,policy_bytes,rubric_bytes,group,*,request_
     if request_limits is not None:
         from scripts.sermon_provider_limits import validate_request_limits
         result['requestLimits'] = validate_request_limits(request_limits)
+    if diagnostic_context is not None:
+        from scripts.sermon_diagnostic_context import validate_context
+        result['diagnosticContext'] = validate_context(diagnostic_context)
     return result
 
 
@@ -80,7 +91,7 @@ def prepare(source_bytes,anchor_bytes,policy_bytes,rubric_bytes,group,*,request_
 def unit_lock(root,prepared,candidate_id,revision_id):
     c.require(profile.current() is not None,'strict_requires_accounting_profile')
     label(candidate_id);label(revision_id)
-    expected=prepare(*(prepared['bytes'][k] for k in ('englishSource','anchor','policy','rubric')),prepared['group'],request_limits=prepared.get('requestLimits'))
+    expected=prepare(*(prepared['bytes'][k] for k in ('englishSource','anchor','policy','rubric')),prepared['group'],request_limits=prepared.get('requestLimits'),diagnostic_context=prepared.get('diagnosticContext'))
     c.require(prepared==expected,'strict_prepared_inputs_changed')
     root=_safe_path(root)
     root.mkdir(parents=True,exist_ok=True,mode=0o700)
@@ -94,6 +105,10 @@ def unit_lock(root,prepared,candidate_id,revision_id):
             save_once(root/'request-limits.json',prepared['requestLimits'])
         else:
             c.require(not (root/'request-limits.json').exists(),'strict_request_limits_changed')
+        if 'diagnosticContext' in prepared:
+            save_once(root/'diagnostic-context.json',prepared['diagnosticContext'])
+        else:
+            c.require(not (root/'diagnostic-context.json').exists(),'strict_diagnostic_context_changed')
         yield root
 
 

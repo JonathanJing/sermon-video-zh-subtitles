@@ -61,6 +61,9 @@ def run_group(prepared, *, root, store, job_root, production_run_id, graph,
     c.require(completion_spans is None or type(completion_spans) is list, 'invalid_controller_span_sink')
     budget._amounts(bounds, positive=True)
     c.require(bounds['requests'] == 1, 'reservation_requires_one_request')
+    if 'diagnosticContext' in prepared:
+        from scripts.sermon_diagnostic_context import validate_runtime
+        validate_runtime(prepared['diagnosticContext'], run_id=production_run_id, store_sha256=store.store_sha256)
     identity = adapter.chain_identity(prepared)
     closure = planning.dependency_closure(graph, [prepared['workUnitId']])
     c.require(prepared['workUnitId'] in closure['regenerateWorkUnitIds'], 'controller_requires_layer2_group')
@@ -71,7 +74,8 @@ def run_group(prepared, *, root, store, job_root, production_run_id, graph,
         'materialBytesSha256': {key: c.bytes_sha256(raw) for key, raw in prepared['bytes'].items()},
         'graphSha256': closure['graphSha256'], 'candidateId': candidate_id,
         'initialRevisionId': initial_revision_id, 'bounds': dict(bounds),
-        **({'requestLimits': prepared['requestLimits']} if 'requestLimits' in prepared else {})}
+        **({'requestLimits': prepared['requestLimits']} if 'requestLimits' in prepared else {}),
+        **({'diagnosticContext': prepared['diagnosticContext']} if 'diagnosticContext' in prepared else {})}
     # Identity excludes output/revision/issue names, so a second local caller
     # cannot run the same chain concurrently by choosing another output folder.
     lock_id = jobs._digest({'scope': SCHEMA, 'store': store.store_sha256, 'chain': identity})
