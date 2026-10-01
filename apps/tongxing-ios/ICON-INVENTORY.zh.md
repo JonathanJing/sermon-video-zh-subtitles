@@ -1,19 +1,26 @@
 # 同行 iOS 图标清单
 
-盘点日期：2026-10-01。源代码基线：`6168a023d7134a4e8694388c39fe926f7703df24`（PR #192 的最新 UI 候选）。此清单盘点当前源码，不代表已发布版本。
+盘点日期：2026-10-01。本轮四图标优化基于 `5d31793d20bcb95febd65cc91bf0afd649b89706`，清单已同步优化后的候选源码（PR #192）。此清单不代表已发布版本。
 
-范围：`App/`、`ListeningActivityExtension/`、`Shared/` 的实际界面代码与品牌资产。共 **36 个不同的 SF Symbols**、**50 次符号字面量引用**（包含动态状态分支），另有 **2 类品牌资源**。同一符号跨页面复用只计一种；测试示例、生成工具和系统自动绘制的图形不计入符号数。
+范围：`App/`、`ListeningActivityExtension/`、`Shared/` 的实际界面代码与品牌资产。共 **37 个不同的 SF Symbols**、**50 次符号字面量引用**（包含动态状态分支），另有 **2 类品牌资源**。同一符号跨页面复用只计一种；测试示例、生成工具和系统自动绘制的图形不计入符号数。
 
-图标总览采用本机 AppKit 的真实 SF Symbols，统一 medium / 32 pt 便于形状比较；不是 iOS 页面截图，也不反映各控件原有字重、字号、颜色、动态字体或禁用效果。品牌主屏幕项展示 Icon Composer 图层源图，不是系统最终合成效果。实际 iOS 外观继续以 `make preview` 和页面操作为准。
+初次盘点的图标总览采用本机 AppKit 的真实 SF Symbols，统一 medium / 32 pt 便于形状比较；不是 iOS 页面截图，也不反映各控件原有字重、字号、颜色、动态字体或禁用效果。品牌主屏幕项展示 Icon Composer 图层源图，不是系统最终合成效果。初次总览保留为优化前快照；本轮四图标的外观以 `make preview` 和实际 iOS 页面操作为准。
 
-## 优先一起讨论的组
+## 本轮已优化的组
 
-- **05、06、09、10：定位语义。** 波形同时表示定位入口、字幕状态及无音频占位；全文跳转仍用准星，听音对齐带麦克风，回当前句的符号细节多。先明确各操作表达的区别，再选形状。
+- **05 定位入口：** `waveform` → `magnifyingglass`，纯放大镜表示找位置，无可见文字；不再与字幕／音频占位的波形状态复用。
+- **06 听音对齐：** `waveform.badge.mic` → `mic`，麦克风直接表达听现场，忙时仍用 `stop.circle`。
+- **09 段落跳转：** `scope` → `arrow.right.to.line`，在具体段落旁表达跳转，保留“定位到这段”。
+- **10 回当前句：** `text.line.first.and.arrowtriangle.forward` → `text.bubble`，简化为文字气泡，保留“当前句”与无障碍“回到当前句”。
+
+四项保留点击区域、状态条件、标签、无障碍标识及回调。底栏放大镜为 48×52 pt，内部操作至少 44 pt 高。编号沿用初次清单；仍在使用的波形另列为 39，避免改变其他项目编号。网页适用性：`not_applicable`，本轮仅替换原生 SF Symbols，不改变共享语义或内容。
+
+## 后续讨论点
 - **03、04：前后微调。** 当前图标不显示“1 秒”；保留无文字外观时，需要评估新用户是否明白调整幅度。
 - **14、15：更多和语言。** 页头更多仍是省略号圆圈；地球仅代表证道内容语言。界面语言现在用短文字标记，应保持三类语言的区分。
 - **01、02、16、24：播放相关。** 正式播放、暂停、完整视频和音色试听各有场景；优化时保留状态切换和媒介差异。
 
-这些是讨论点，尚未替换 App 图标或修改交互。
+后续组尚未改动；品牌资源本轮保持现状。
 
 ## 播放栏
 
@@ -23,17 +30,17 @@
 | 02 · 暂停 | `pause.fill` | 底栏播放中或等待时显示；灵动岛暂停状态也用此符号。 | [PlaybackDock.swift:150](App/PlaybackDock.swift#L150)、[ListeningActivityWidget.swift:98](ListeningActivityExtension/ListeningActivityWidget.swift#L98) |
 | 03 · 后退 1 秒 | `gobackward` | 底栏手动后退 1 秒。图标本身不含秒数，需评估首次使用的可理解性。 | [PlaybackDock.swift:135](App/PlaybackDock.swift#L135) |
 | 04 · 前进 1 秒 | `goforward` | 底栏手动前进 1 秒，与后退按钮成对。 | [PlaybackDock.swift:135](App/PlaybackDock.swift#L135) |
-| 05 · 定位入口 | `waveform` | 底栏纯图标定位入口；旧周次当前字幕状态和无音频占位也复用。需区分操作与状态语义。 | [ContentView.swift:126](App/ContentView.swift#L126)、[ContentView.swift:723](App/ContentView.swift#L723)、[PlaybackDock.swift:89](App/PlaybackDock.swift#L89) |
+| 05 · 定位入口 | `magnifyingglass` | 底栏纯图标找位置入口；打开定位浮层，包含听音、英文搜索、当前句及精调等已有操作。 | [PlaybackDock.swift:89](App/PlaybackDock.swift#L89) |
 
 ## 定位与精调
 
 | 编号 | 当前符号／资源 | 用途与状态 | 源码位置 |
 | --- | --- | --- | --- |
-| 06 · 听音对齐 | `waveform.badge.mic` | 定位浮层：听现场并对齐；不忙时显示，包含麦克风角标。 | [ContentView.swift:849](App/ContentView.swift#L849) |
+| 06 · 听音对齐 | `mic` | 定位浮层：听现场并对齐；不忙时显示麦克风。 | [ContentView.swift:849](App/ContentView.swift#L849) |
 | 07 · 取消对齐 | `stop.circle` | 听音对齐进行中替换麦克风波形，点击取消。 | [ContentView.swift:849](App/ContentView.swift#L849) |
 | 08 · 英文找位置 | `text.magnifyingglass` | 首页“没跟上现场”入口与定位浮层的英文全文搜索入口。 | [ContentView.swift:680](App/ContentView.swift#L680)、[PlaybackDock.swift:232](App/PlaybackDock.swift#L232) |
-| 09 · 定位到段落 | `scope` | 英文全文每段的跳转按钮仍用准星，与底栏定位波形应一起评估。 | [EnglishLocateSheet.swift:152](App/EnglishLocateSheet.swift#L152) |
-| 10 · 回到当前句 | `text.line.first.and.arrowtriangle.forward` | 定位浮层：回到当前字幕位置。符号细节较多，需观察小尺寸辨识度。 | [PlaybackDock.swift:281](App/PlaybackDock.swift#L281) |
+| 09 · 定位到段落 | `arrow.right.to.line` | 英文全文每段的跳转按钮；只用于具体段落定位，不用于播放器传输控制。 | [EnglishLocateSheet.swift:152](App/EnglishLocateSheet.swift#L152) |
+| 10 · 回到当前句 | `text.bubble` | 定位浮层：回到当前字幕位置，使用简洁文字气泡。 | [PlaybackDock.swift:281](App/PlaybackDock.swift#L281) |
 | 11 · 定位与精调 | `slider.horizontal.3` | 定位浮层：打开精调面板。 | [PlaybackDock.swift:293](App/PlaybackDock.swift#L293) |
 | 12 · 撤销跳转 | `arrow.uturn.backward` | 定位浮层：返回跳转前确认的位置；仅有可撤销历史时出现。 | [PlaybackDock.swift:305](App/PlaybackDock.swift#L305) |
 
@@ -67,6 +74,7 @@
 | 31 · 读取证道失败 | `wifi.exclamationmark` | 页面暂时无法读取证道的错误提示。 | [ContentView.swift:193](App/ContentView.swift#L193) |
 | 32 · 暂不可定位 | `info.circle` | 英文全文音频未就绪时的阅读和搜索提示。 | [EnglishLocateSheet.swift:83](App/EnglishLocateSheet.swift#L83) |
 | 33 · 暂无语言版本 | `globe.badge.chevron.backward` | 证道语言列表为空时的占位符号。 | [ContentView.swift:943](App/ContentView.swift#L943) |
+| 39 · 字幕／音频状态 | `waveform` | 当前字幕状态与无音频占位；本轮不再用作底栏定位按钮。 | [ContentView.swift:126](App/ContentView.swift#L126)、[ContentView.swift:723](App/ContentView.swift#L723) |
 
 ## 灵动岛与锁屏
 

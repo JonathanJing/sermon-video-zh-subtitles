@@ -86,7 +86,7 @@ struct PlaybackDock: View {
             if let onMoreTap { onMoreTap() }
             else { showingMore = true }
         } label: {
-            Image(systemName: "waveform")
+            Image(systemName: "magnifyingglass")
                 .font(.title3.weight(.medium))
                 .frame(width: 48, height: 52)
                 .contentShape(Rectangle())
@@ -278,7 +278,7 @@ struct PlaybackMoreControls: View {
             onClose()
             action()
         } label: {
-            Label(localization.text("当前句"), systemImage: "text.line.first.and.arrowtriangle.forward")
+            Label(localization.text("当前句"), systemImage: "text.bubble")
                 .frame(minWidth: 44, minHeight: 44).contentShape(Rectangle())
         }
         .accessibilityLabel(localization.text("回到当前句"))

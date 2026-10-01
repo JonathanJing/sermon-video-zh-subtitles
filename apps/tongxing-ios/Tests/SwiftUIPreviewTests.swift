@@ -82,6 +82,8 @@ final class SwiftUIPreviewTests: XCTestCase {
                     Text("PlaybackDock").font(.title2)
                     Text("合成静音音轨 · 暂停就绪").foregroundStyle(.secondary)
                     PlaybackDock(playback: model.playback, alignmentModel: model)
+                    PlaybackMoreControls(playback: model.playback, isPreparing: false,
+                        alignmentModel: model, locate: {}, precision: {}, current: {}, onClose: {})
                 }
             })
         default:

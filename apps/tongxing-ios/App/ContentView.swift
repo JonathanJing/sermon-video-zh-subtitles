@@ -846,7 +846,7 @@ struct AlignmentControls: View {
                 else { showingUnavailableReason = true }
             } label: {
                 Label(localization.text(model.alignmentBusy ? "取消对齐" : "听现场并对齐"),
-                      systemImage: model.alignmentBusy ? "stop.circle" : "waveform.badge.mic")
+                      systemImage: model.alignmentBusy ? "stop.circle" : "mic")
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, minHeight: 44)
                     .contentShape(Rectangle())

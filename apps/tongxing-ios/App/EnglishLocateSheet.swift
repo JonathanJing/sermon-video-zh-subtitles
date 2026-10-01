@@ -149,7 +149,7 @@ struct EnglishLocateSheet: View {
                         else { seekFailed = true }
                     }
                 } label: {
-                    Label(localization.text("定位到这段"), systemImage: "scope")
+                    Label(localization.text("定位到这段"), systemImage: "arrow.right.to.line")
                         .frame(minHeight: 44)
                 }.buttonStyle(.bordered).disabled(!canLocate || locating)
                     .accessibilityIdentifier("locate-segment-\(row.id)")
