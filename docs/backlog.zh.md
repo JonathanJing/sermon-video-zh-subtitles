@@ -156,6 +156,16 @@ H01（测试脚本插件哈希）、H03（首次 deploy 选错 Dev project，CLI
 
 交付分别列 mock batch、真实 remote roundtrip、真实模型 batch、fallback 和真实 scheduler 的实现 SHA／测试结果／收据／未测项；某一通过不提升其余资格。原 `018` 与 `007`、`DEV-TRACK-001` 等状态不变，本次不实现、不跑模型／远端任务、不部署。
 
+#### 云端／MacBook 共用 Mac mini 接口与稳定性（既有 `018/017`、`DEV-SPD-006`）
+
+用户要求两类客户端都经同一 Mac mini 接口，并考虑稳定性与后续通用性。**这是目标设计和待实现验收，不是现有部署事实。** 以用户指定的既有外部 Hub/job contract 为接入与调度合同承载；本仓库尚未提供该统一接入的 contract 名称／版本及 speech 映射证据，标为 waiting_evidence，实施前须冻结其版本／支持任务类型及 adapter 映射，复用本项目 durable job/receipt 机制；不新建第二条绕过鉴权、队列、日志或门禁的客户端 speech launch 接口。云端与 MacBook 都提交任务、按 jobId 查询／对账并取结果，SSH 仅作为内部 transport；legacy direct/relay 客户端在迁移时保留独立版本边界，不能声称已切换。
+
+统一语义／schema／auth／log／DAG 合同须覆盖 submit、jobId/idempotency、status/events、artifact bytes/hash、requested/selected/actual executor 与 route reason、run/workUnit/attempt/profile 身份、授权 task allowlist、durable queue/state、receipt acceptance、reconcile/replay duplicate/conflict。可以有不同传输，但两端消费同一版本及状态机，不能一端只看 SSH exit、另一端只看 HTTP success；客户端身份及任务／结果读取隔离，未知 job、越权任务／artifact、stale/cross-client/cross-run 访问拒绝。新任务类型以版本化 adapter 和能力声明接入，不通过任意 shell／环境透传扩大权限。
+
+稳定性验收分客户端云端／MacBook 断线、mini 重启、Spark 断线／重启，要求提交 intent/job 状态持久化、按原 jobId 恢复观察与对账、未决结果不重复执行、不自动 fallback/reinference；已返回产物仍核验 bytes/hash，outbox/replay 等价去重、冲突隔离，部分 batch 只恢复确实受影响单元，成功单元不重复派发。记录真实服务版本、授权路径、重启窗口、queue/state/worker receipts 与新增请求数；mock 故障测试和真实服务恢复测试分别列证，不把进程存活当业务继续成功。
+
+现有云端→mini 任务 delegation 不证明云端可直接到达 Hub 网络 API。两类客户端的实际接入各需独立验证**获授权的网络路径**、认证／task scope 与结果读取；本次文档工作不创建凭据、不开放端口、不改变网络／安全配置，也不实际核验 MacBook 路径。CPU smoke 通过不证明 speech production 就绪，统一接口不得放宽声音授权、review/human/delivery/publication gates。下一步先实施同合同 adapter／客户端与稳定性验证，再在独立授权下验真实模型；本次仅写 backlog，实际路由核验在文档完成之后单独进行。
+
 #### 版本、兼容与实施顺序
 
 1. 先冻结当前版本映射及正反例，明确新增 schema/profile 版本和字段语义；旧事件／报告原始字节保持不变，旧 decoder 缺测照实，不做历史升级。
