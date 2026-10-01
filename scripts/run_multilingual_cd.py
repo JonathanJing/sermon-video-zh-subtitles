@@ -193,8 +193,10 @@ def release_ui(candidate: Path, out: Path, *, execute: bool,
                       "preflightSha256": hosting.digest(preflight_path)}
         if execute:
             # Recheck the candidate and protected checkout after the live read.
-            ui.verify_candidate(candidate)
+            final_report = ui.verify_candidate(candidate)
             require_release_checkout("production", expected_commit)
+            if final_report != report or hosting.digest(candidate / "build-report.json") != build_sha:
+                raise ValueError("UI candidate changed after preflight")
             subprocess.run(["npx", "--yes", "firebase-tools@15.29.0", "deploy",
                             "--only", "hosting", "--project", ui.PROJECT,
                             "--non-interactive", "--message", "Firebase App SVG icon update"],

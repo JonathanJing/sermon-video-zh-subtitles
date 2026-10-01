@@ -158,6 +158,28 @@ class MultilingualCDTest(unittest.TestCase):
         deploy.assert_not_called()
         self.assertFalse((self.out / "cd-receipt.json").exists())
 
+    def test_ui_report_change_after_preflight_stops_before_deploy(self):
+        from scripts import stage_production_ui as ui
+        report = {"schemaVersion": "sermon-production-ui-overlay-v1",
+                  "status": "validated_not_deployed", "sourceRoot": str(cd.ROOT),
+                  "sourceCodeCommit": "a" * 40, "baseFiles": [{}], "files": [{}, {}]}
+        report_path = self.candidate / "build-report.json"
+        report_path.write_text(json.dumps(report))
+        build_hash = cd.hosting.digest(report_path)
+        def mutate_after_read(candidate, *, baseline):
+            report_path.write_text(json.dumps({**report, "changed": True}))
+            return {"status": "pass", "phase": "baseline", "checkedFiles": 1,
+                    "buildReportSha256": build_hash}
+        with patch.object(ui, "verify_candidate", return_value=report), \
+             patch.object(ui, "check_http", side_effect=mutate_after_read), \
+             patch.object(cd, "git_value", return_value="a" * 40), \
+             patch.object(cd, "require_release_checkout", return_value="a" * 40), \
+             patch.object(cd.subprocess, "run") as deploy:
+            with self.assertRaisesRegex(ValueError, "UI candidate changed after preflight"):
+                cd.release("production", self.candidate, self.out, execute=True,
+                           expected_commit="a" * 40, expected_build_report_sha256=build_hash)
+        deploy.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()
