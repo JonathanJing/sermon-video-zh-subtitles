@@ -1,0 +1,120 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "scope",
+    "archiveId",
+    "identity",
+    "originalPackage",
+    "approvalReceipt",
+    "artifacts"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "sermon-private-media-recovery-manifest-v1"
+    },
+    "scope": {
+      "const": "layer3_package_artifacts_only"
+    },
+    "archiveId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,95}$"
+    },
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "englishSourcePackageJsonSha256",
+        "targetLanguageCandidateJsonSha256",
+        "targetLanguageSpeechJobJsonSha256",
+        "downstreamInvalidationKey",
+        "packageId",
+        "targetLocale"
+      ],
+      "properties": {
+        "englishSourcePackageJsonSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "targetLanguageCandidateJsonSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "targetLanguageSpeechJobJsonSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "downstreamInvalidationKey": {
+          "$ref": "#/$defs/sha256"
+        },
+        "packageId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "targetLocale": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$"
+        }
+      }
+    },
+    "originalPackage": {
+      "$ref": "#/$defs/jsonIdentity"
+    },
+    "approvalReceipt": {
+      "$ref": "#/$defs/jsonIdentity"
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 4,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "artifactId",
+          "archiveRelativePath",
+          "sha256"
+        ],
+        "properties": {
+          "artifactId": {
+            "type": "string",
+            "pattern": "^/(?:units/(?:0|[1-9][0-9]*)/audio|track|captions|schedule)$"
+          },
+          "archiveRelativePath": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Canonical relative POSIX path under languages/<targetLocale>/; runtime rejects traversal, symlinks and ambiguous mappings."
+          },
+          "sha256": {
+            "$ref": "#/$defs/sha256"
+          },
+          "jsonSha256": {
+            "$ref": "#/$defs/sha256"
+          }
+        }
+      }
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-private-media-recovery-manifest-v1.schema.json",
+  "title": "Private Layer 3 media recovery sidecar (not a release approval)",
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "jsonIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sha256",
+        "jsonSha256"
+      ],
+      "properties": {
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "jsonSha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    }
+  }
+}
