@@ -10,6 +10,8 @@ Canonical backlog: [backlog.zh.md](./backlog.zh.md)
 
 Dated implementation evidence and the remaining gates for all 38 active items: [2026-09-30 checkpoint (Chinese)](./reports/20260930-overnight-implementation-checkpoint.zh.md). Draft PRs and synthetic tests do not establish merged, real-media, device, or venue acceptance.
 
+Planned progress and ETA follow-up: [canonical requirements and acceptance fixtures](./backlog.zh.md#progress-eta-followup), under existing `DEV-TRACK-001` / `DEV-SPD-002` / `DEV-SPD-001`. Implementation starts **only after the current single 180-second diagnostic/dry run finishes**. Frozen work denominators, separate processing/review/actual-versus-simulated human approval, and resource-aware ETA ranges are requirements, not current capabilities or a current ETA.
+
 CI/CD implementation details: [CI/CD backlog (Chinese)](./ci-cd-backlog.zh.md). The canonical backlog retains the priorities and stable IDs.
 
 Current native-client requests are maintained in the [Tongxing iOS backlog (Chinese)](../apps/tongxing-ios/BACKLOG.zh.md): Dynamic Island, on-demand microphone alignment, localization, and bilingual transcripts.
