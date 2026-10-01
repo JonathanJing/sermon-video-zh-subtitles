@@ -15,7 +15,7 @@ Beta 与正式版共用同一套 App、播放器和实时活动源码，由构�
 
 ## 当前分发状态（2026-10-01）
 
-原 App 的 `1.2.0 (46)` 已上传 TestFlight，Rooted 内部测试组显示 `Testing`；该构建仍使用正式 App 身份，会替换同身份的已安装正式版。独立 Beta `1.2.0 (47)` 在本文建立时尚未上传，不能将旧 App 的 Testing 状态写成独立 Beta 已可安装。独立 Beta 需要自己的 App Store Connect App 记录以及对应的 App / 扩展签名配置。
+原 App 的 `1.2.0 (46)` 已上传 TestFlight，Rooted 内部测试组显示 `Testing`；该构建仍使用正式 App 身份，会替换同身份的已安装正式版。独立 Beta `1.2.0 (47)` 已创建独立 App Store Connect App `6818272039`，并于 2026-10-01 18:32:21 UTC 上传成功。Apple 处理已完成，独立 Beta 的 Rooted 内部测试组显示 `Testing`（1 个测试账户、1 个构建），测试说明已保存。新 Beta 的实机安装与验收尚未完成。完整源码、归档哈希、实际测试及分发证据见 [Beta 1.2.0 (47) 候选记录](BETA-RELEASE-1.2.0-47.zh.md)。
 
 TestFlight 上传、Apple 处理、测试组可用、实机验收和 App Store 发布分别记录。现有 Duo 外屏与大字号测试可作为历史证据，但不能替代新 Bundle ID 的双 App 共存、实时活动返回目标和真机验收；Duo 展开内屏、半折与现场验收仍未完成。本任务不包含 App Store 发布或未验收差异的合并。
 
