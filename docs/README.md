@@ -50,7 +50,10 @@ These preserve observed values and evidence boundaries; they do not track later 
 
 These files are retained for provenance and research, not as operator entrypoints:
 
-- [Sermon production challenges and design for a 10–12 hour window (Chinese)](blog/sermon-production-workflow-lessons.zh.md): blog draft covering Codex and Agents API tradeoffs, quality and rework lessons, and the three-tier control/DAG design; verified scope and unmeasured benefits remain separate.
+- [Weekly retrospective on 169 million recorded tokens (Chinese)](blog/sermon-production-workflow-lessons.zh.md): release lessons for nontechnical readers, covering rework, repeated history, cached input, iterations and the next timing priorities.
+- [LinkedIn and X drafts (Chinese)](blog/sermon-production-release-social-posts.zh.md): a ready-to-copy post and thread.
+- [Technical appendix (Chinese)](blog/sermon-production-workflow-technical-notes.zh.md): accounting, recovery, code entrypoints, implementation boundaries and measurement.
+- [Project technical overview](project-technical-overview.md): technical diagrams and historical notes moved out of the root README, with links to current contracts.
 
 - Superseded plans: [speaker-voice plan](saturday-to-sunday-chinese-voice-plan.zh.md) and [Context Pack design/implementation record](saturday-to-sunday-context-pack-plan.zh.md).
 - Historical cloud architecture: [system design](system-design.md), [gap analysis](system-design-gap-analysis.md), [Cloud Run deployment prep](cloud-run-deployment-prep.md), [old Sunday cloud runbook](sunday-live-test-runbook.md), [cloud observability](observability.md), and [admin workflow](admin-workflow.md).
