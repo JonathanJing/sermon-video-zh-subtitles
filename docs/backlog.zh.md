@@ -162,6 +162,8 @@ H01（测试脚本插件哈希）、H03（首次 deploy 选错 Dev project，CLI
 
 统一语义／schema／auth／log／DAG 合同须覆盖 submit、jobId/idempotency、status/events、artifact bytes/hash、requested/selected/actual executor 与 route reason、run/workUnit/attempt/profile 身份、授权 task allowlist、durable queue/state、receipt acceptance、reconcile/replay duplicate/conflict。可以有不同传输，但两端消费同一版本及状态机，不能一端只看 SSH exit、另一端只看 HTTP success；客户端身份及任务／结果读取隔离，未知 job、越权任务／artifact、stale/cross-client/cross-run 访问拒绝。新任务类型以版本化 adapter 和能力声明接入，不通过任意 shell／环境透传扩大权限。
 
+SSH／Tailscale 可作为受授权的传输／网络路径，本身不提供 scheduler 语义。云端与 MacBook 均使用同一固定、受限的 submit/status/log/artifact client，任务持久化及按 jobId 对账不依赖 SSH 会话存活；断开会话不能当作取消、失败或允许重新派发的证明。实际选路和连接证据单独记录；本次不安装／启用 SSH 或 Tailscale、不新增端口／凭据、不修改网络或安全设置。实际 MacBook 配置核验须使用受支持且已授权的只读路径；平台任务权限未开放时，不通过替代 SSH／Tailscale 绕过限制。
+
 稳定性验收分客户端云端／MacBook 断线、mini 重启、Spark 断线／重启，要求提交 intent/job 状态持久化、按原 jobId 恢复观察与对账、未决结果不重复执行、不自动 fallback/reinference；已返回产物仍核验 bytes/hash，outbox/replay 等价去重、冲突隔离，部分 batch 只恢复确实受影响单元，成功单元不重复派发。记录真实服务版本、授权路径、重启窗口、queue/state/worker receipts 与新增请求数；mock 故障测试和真实服务恢复测试分别列证，不把进程存活当业务继续成功。
 
 现有云端→mini 任务 delegation 不证明云端可直接到达 Hub 网络 API。两类客户端的实际接入各需独立验证**获授权的网络路径**、认证／task scope 与结果读取；本次文档工作不创建凭据、不开放端口、不改变网络／安全配置，也不实际核验 MacBook 路径。CPU smoke 通过不证明 speech production 就绪，统一接口不得放宽声音授权、review/human/delivery/publication gates。下一步先实施同合同 adapter／客户端与稳定性验证，再在独立授权下验真实模型；本次仅写 backlog，实际路由核验在文档完成之后单独进行。
