@@ -38,6 +38,8 @@ apps/tongxing-ios/scripts/ios.sh launch --simulator "$TONGXING_SIMULATOR_UDID"
 
 `build` 默认只构建通用 iOS Simulator。`test` 默认只运行 `TongxingTests`；UI 测试须显式 `--ui` 或 `--only-testing TongxingUITests/...`，具体类与方法从当前测试源码获取。`launch` 只安装并启动已有构建，不自动重建；可用 `--derived-data` 复用指定构建目录，或用 `--app` 指定已有 App。它会启动所选模拟器，但不会打开或关闭其他模拟器。
 
+视图图片预览用仓库根目录的 `make preview FILES=ContentView.swift`，细节见 [PREVIEW.zh.md](PREVIEW.zh.md)。每次 UI 修改后读取本轮成功 Manifest 的真实 PNG；保持前后设备与样本配置一致。预览锁仅协调该工具的并发命令，不能与 `ios.sh test`／Xcode Run 同时操作同一模拟器；不同 worktree 并行使用不同设备和构建目录。预览测试未收到请求时会跳过，不把跳过计为运行通过。
+
 每次实际命令在忽略目录 `artifacts/tongxing-ios/<日期>/cli/` 下生成唯一运行目录、`run.log` 与 `status.json`；`build`/`test` 另有唯一 `.xcresult`。默认 DerivedData 在当日 `cli/DerivedData` 复用，也可用参数覆盖。失败保留工具退出码和已有产物，不覆盖旧结果。`--dry-run` 只查询 scheme、设备和构建设置并展示命令，不构建、安装、启动或运行测试。
 
 ## 按改动验证

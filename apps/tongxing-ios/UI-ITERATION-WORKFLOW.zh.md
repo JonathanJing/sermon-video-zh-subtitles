@@ -18,6 +18,8 @@ open apps/tongxing-ios/Tongxing.xcodeproj
 
 设计基准是**已确认的 iOS revision、实际截图及交互规则**，不是无版本的图片。SwiftUI 定义实现，既有设计约定定义共同意图，截图只证明被捕获的状态。系统材质、安全区、Dynamic Type 和无障碍优先于固定像素一致。
 
+指定视图的测试渲染已提供 `make preview FILES=ContentView.swift`，使用 `xcodebuild test` 输出真实 iOS 视图 PNG；用同配置渲染改前／改后，再读取图片迭代。样本、边界与 worktree 并发规则见 [PREVIEW.zh.md](PREVIEW.zh.md)。这条命令支持外观检查；完整交互仍按本流程操作验证。
+
 ## 2. 小改动闭环
 
 **截图／批注 → 小范围 SwiftUI 修改 → 构建与实际操作检查 → 独立审核及 iOS 确认 → 判断网页适用性 → 按需适配网页 → 获授权的每周发布。**

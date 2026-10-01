@@ -35,6 +35,11 @@ final class AppLocalization: ObservableObject {
             return AppLocalization(preferenceURL: support.appendingPathComponent("Tongxing-UITests")
                 .appendingPathComponent(run.uuidString).appendingPathComponent("ui-language-v1.json"))
         }
+        if ProcessInfo.processInfo.environment["TONGXING_TEST_HOST"] == "1" {
+            return AppLocalization(preferenceURL: FileManager.default.temporaryDirectory
+                .appendingPathComponent("Tongxing-HostedTests-\(UUID().uuidString)")
+                .appendingPathComponent("ui-language-v1.json"))
+        }
         #endif
         return AppLocalization()
     }()

@@ -18,12 +18,21 @@ enum UITestLaunch {
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
             .appendingPathComponent("Tongxing-UITests", isDirectory: true)
             .appendingPathComponent(runID.uuidString, isDirectory: true)
+        return makeFixtureModel(supportDirectory: support,
+            statisticsDefaults: UserDefaults(suiteName: "Tongxing-UITests-\(runID.uuidString)")!)
+    }
+
+    /// Hosted render tests share the synthetic catalog/audio transport, while
+    /// keeping all downloads, preferences and playback history in private state.
+    @MainActor static func makeFixtureModel(supportDirectory: URL, statisticsDefaults: UserDefaults,
+                                            nativePublishedPage: Bool = false) -> AppModel {
         let configuration = URLSessionConfiguration.ephemeral
-        configuration.protocolClasses = [UITestContentProtocol.self]
+        configuration.protocolClasses = nativePublishedPage
+            ? [NativePreviewContentProtocol.self] : [UITestContentProtocol.self]
         configuration.urlCache = nil
-        return AppModel(supportDirectory: support, contentOrigin: UITestContent.origin,
+        return AppModel(supportDirectory: supportDirectory, contentOrigin: UITestContent.origin,
                         session: URLSession(configuration: configuration),
-                        statisticsDefaults: UserDefaults(suiteName: "Tongxing-UITests-\(runID.uuidString)")!)
+                        statisticsDefaults: statisticsDefaults)
     }
 }
 
@@ -172,11 +181,15 @@ private enum UITestContent {
                 "/media/ui-test-clip/es.mp3": spanishAudio]
     }()
 
-    static let dualScriptResponses: [String: Data] = {
+    static let dualScriptResponses = nativePublishedResponses(locale: "ko",
+        fullText: "전체 원고입니다.", caption: "짧은 자막입니다.")
+    static let previewResponses = nativePublishedResponses(locale: "zh-Hans",
+        fullText: "这是用于检查页面布局的合成完整文稿。", caption: "这是用于预览的合成字幕。")
+
+    private static func nativePublishedResponses(locale: String, fullText: String, caption: String) -> [String: Data] {
         let pageID = "ui-test-full-video"
-        let locale = "ko"
         let audio = responses["/media/ui-test-clip/es.mp3"]!
-        let html = Data("<html><head><style>body{font-size:20px}</style></head><body><h1>完整韩语文稿</h1></body></html>".utf8)
+        let html = Data("<html><head><style>body{font-size:20px}</style></head><body><h1>\(fullText)</h1></body></html>".utf8)
         func hash(_ data: Data) -> String { SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined() }
         let displayHash = String(repeating: "a", count: 64)
         let spokenHash = String(repeating: "b", count: 64)
@@ -187,10 +200,10 @@ private enum UITestContent {
             "sourceMediaSha256": displayHash,
             "targetLanguageCandidateJsonSha256": displayHash,
             "durationSeconds": 20.0, "title": "测试完整视频证道",
-            "cues": [["textGroupId": "g1", "sourceUnitIds": ["u1"], "start": 0.0, "end": 10.0, "text": "전체 원고입니다."]]
+            "cues": [["textGroupId": "g1", "sourceUnitIds": ["u1"], "start": 0.0, "end": 10.0, "text": fullText]]
         ], options: [.sortedKeys])
         let captions = try! JSONSerialization.data(withJSONObject: [
-            "cues": [["textGroupId": "g1", "start": 0.0, "end": 10.0, "text": "짧은 자막입니다."]]
+            "cues": [["textGroupId": "g1", "start": 0.0, "end": 10.0, "text": caption]]
         ], options: [.sortedKeys])
         let release: [String: Any] = [
             "schemaVersion": "sermon-target-language-release-package-v2",
@@ -242,13 +255,16 @@ private enum UITestContent {
             "/english-reference/\(pageID).json": english,
             "/media/\(pageID)/\(locale).mp3": audio,
         ]
-    }()
+    }
 }
 
 /// This transport belongs only to the explicitly constructed fixture session.
 /// Offline launch reports a real URLSession error; the production repositories
 /// must recover from their own previously written cache and verified audio.
-private final class UITestContentProtocol: URLProtocol {
+private class UITestContentProtocol: URLProtocol {
+    class var offline: Bool { ProcessInfo.processInfo.arguments.contains("--ui-testing-offline") }
+    class var dualScript: Bool { ProcessInfo.processInfo.arguments.contains("--ui-testing-dual-script") }
+    class var nativeResponses: [String: Data]? { dualScript ? UITestContent.dualScriptResponses : nil }
     override class func canInit(with request: URLRequest) -> Bool { true }
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
 
@@ -257,12 +273,11 @@ private final class UITestContentProtocol: URLProtocol {
             client?.urlProtocol(self, didFailWithError: URLError(.unsupportedURL))
             return
         }
-        guard !ProcessInfo.processInfo.arguments.contains("--ui-testing-offline") else {
+        guard !Self.offline else {
             client?.urlProtocol(self, didFailWithError: URLError(.notConnectedToInternet))
             return
         }
-        let dualScript = ProcessInfo.processInfo.arguments.contains("--ui-testing-dual-script")
-        if dualScript, let data = UITestContent.dualScriptResponses[url.path] {
+        if let data = Self.nativeResponses?[url.path] {
             let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: "HTTP/1.1",
                 headerFields: ["Content-Length": String(data.count),
                                "Content-Type": url.path.hasSuffix(".json") ? "application/json"
@@ -293,5 +308,10 @@ private final class UITestContentProtocol: URLProtocol {
     }
 
     override func stopLoading() {}
+}
+
+private final class NativePreviewContentProtocol: UITestContentProtocol {
+    override class var offline: Bool { false }
+    override class var nativeResponses: [String: Data]? { UITestContent.previewResponses }
 }
 #endif
