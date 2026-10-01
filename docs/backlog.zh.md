@@ -24,11 +24,11 @@ English index: [backlog.md](./backlog.md)
 
 ## 2026-09-30 三分钟诊断问题与修复状态（2026-10-01 更新）
 
-以下首轮结果保留为2026-09-30历史快照；表格状态按2026-10-01最终监督验收更新，当前边界见本文件末尾最终对账。
+以下首轮结果保留为2026-09-30历史快照；旧 v7/v8 验收见末尾历史对账。当前状态已纳入最新 dev 全新重跑：008重新打开，新增016–021；见[本轮完整重跑](#dev-full-fresh-rerun-20261001)。
 
 证据：[续跑与交付报告](reports/20260930-dev-180s-continuation.zh.md)；[首次阻断快照](reports/20260930-dev-180s-dag-log-agent-api-test.zh.md)保留原失败。测试代码为 `dev@63c0a18040b7f7744b334cebdb31778de228b064`。用户授权放宽额度后，三语 39 组 Astra→Sol→真实插件核验通过，独立 preview renderer 新合成 39 段 WAV 并完整解码；Dev 298 文件核验和 App 内三语超过 20 秒的短时播放通过。原生 TTS worker 三语仍在依赖导入阶段失败。合并日志为 3,409 events / 963 spans / 26 traces，全部 span 闭合，但 API 终态、依赖和跨时钟缺口使关键路径仍为 partial；live Agent 自动诊断未执行。**已交付真实三语 Dev preview，未完成统一 live DAG、原生 worker 验收或正式四层发布。**
 
-以下稳定 ID 是既有顶层工程项的具体 follow-up，不新增竞品排期或替换旧项。`pending`表示尚未实施；`in_progress`表示还在实现/验收；`done`表示本次诊断范围的实现及指定验收完成于工作分支，不表示已合入dev、正式发布或所有顶层项目完成。测试暴露失败不等于代码已修复。人工 default-pass 仅属本次测试，不能补出缺失内容或关闭正式人工门禁。
+以下稳定 ID 是既有顶层工程项的具体 follow-up，不新增竞品排期或替换旧项。`pending`表示尚未实施；`in_progress`表示还在实现/验收；`done`表示指定历史诊断范围的实现及验收完成；相关八个PR现已由#205合入dev@7e534bb，仍不表示新增分支问题通过、正式发布或所有顶层项目完成。测试暴露失败不等于代码已修复。人工 default-pass 仅属本次测试，不能补出缺失内容或关闭正式人工门禁。
 
 | ID | 优先级／状态 | 既有归属／问题证据 | 待交付与验收条件 | 依赖 |
 |---|---|---|---|---|
@@ -36,10 +36,10 @@ English index: [backlog.md](./backlog.md)
 | `DEV-DIAG-002` | P0 / `done` | `DEV-TRACK-001`、`SPD6-LOG-03`；F02 | HTTP 拒绝收据保留可定位的结构化 error code/param 和限长脱敏摘要，绑定 call/attempt/HTTP status；固定错误夹具验证可诊断且无 key、正文或私人路径泄露。拒绝请求的 usage/billing 缺测保持 unknown | 无 |
 | `DEV-DIAG-003` | P0 / `done` | `DEV-SPD-004`、`SPD6-ARCH-02`、`RQC-03`；F03 | 区分同配置系统性请求错误与局部可恢复失败；确认系统性错误后停止受影响配置的后续派发，保留已完成/在途收据及未启动单元的原因。只阻断受影响范围，其他有效 locale 不被拖停；恢复不重付成功单元、不静默重置账本 | `DEV-DIAG-002` |
 | `DEV-DIAG-004` | P1 / `done` | `DEV-SPD-006`、`SPD6-READY-07`；F04 | 接通受授权和独立预算约束的 Agents live 只读诊断；用本次脱敏 trace 产生绑定 session/turn、evidence IDs、confidence 的诊断，验证 stale/越权输出拒绝。opaque call ID、required_actions绑定及期限重读已修复；第四真实phase已完成工具提交与final合同核验，root completed，diagnosisStatus=needs_more_evidence。旧阶段cancelled/usage照实保留且不双算。会话 GET 成功不作为诊断通过；Agent 无修订、重试、生成、人审或发布权限 | `DEV-DIAG-002`、`DEV-DIAG-008`；真实调用前冻结模型与预算 |
-| `DEV-DIAG-005` | P0 / `done` | `DEV-SPD-006`、`DEV-E2E-001`、`DEV-L4-001/005`；F05 | 固定fresh入口已覆盖真实ASR/Source/MFA与可恢复三语Text/native/Dev，测试与正式门禁分别记录。v3真实Source与v7/v8真实三语原生通过，v8发布301文件HTTP/Range及三语/源视频完整Chrome1x通过。首次全ready汇合发现legacy Source目录不兼容，新增版本化Fresh专用检查并在闭父独立只读恢复通过，0新生成/0账本写；原incomplete/DAG失败不回填，未重新发布恢复badge。不是新代码全阶段冷启动性能证明 | 诊断scope通过；正式Audio/Release/device/venue仍007，完整性能仍DEV-TRACK-001 |
+| `DEV-DIAG-005` | P0 / `done` | `DEV-SPD-006`、`DEV-E2E-001`、`DEV-L4-001/005`；F05 | 固定fresh入口已覆盖真实ASR/Source/MFA与可恢复三语Text/native/Dev，测试与正式门禁分别记录。v3真实Source与v7/v8真实三语原生通过，v8发布301文件HTTP/Range及三语/源视频完整Chrome1x通过。首次全ready汇合发现legacy Source目录不兼容，新增版本化Fresh专用检查并在闭父独立只读恢复通过，0新生成/0账本写；原incomplete/DAG失败不回填，未重新发布恢复badge。不是新代码全阶段冷启动性能证明；最新dev全新MFA重跑又暴露独立runtime seed比较问题，转016，规范全程入口转017 | 诊断scope通过；正式Audio/Release/device/venue仍007，完整性能仍DEV-TRACK-001 |
 | `DEV-DIAG-006` | P1 / `done` | `DEV-SPD-004`、`SPD6-ARCH-02`；F06 | 为期限已过的暂停运行设计显式续期或新 attempt 恢复协议，绑定新授权/期限/预算及旧 run 的结果和身份。保留过期守卫和旧账本；测试暂停超时、未知结果与重启，确保不会自动重发付费请求或重复成功阶段 | 沿用 durable receipt / outcome reconciliation |
 | `DEV-DIAG-007` | P0 / `waiting_evidence` | `DEV-L3-001`、`DEV-SPD-003`、`RQC-06`；F07、续跑音频收据 | 三语39组机器候选、原生worker39单元及完整解码、Dev301文件HTTP/Range均已核验；原生依赖问题已修复并真实验收，见 `014`。正式 Audio/Release 包、逐单元回转写筛查/疑点裁决、时间轴/同步、整轨1倍速人工听审和设备/现场仍待各自真实证据，分开记录事实。默认人审仅测试授权；独立 renderer 成功不关闭原生 worker 或正式发布门禁 | `DEV-DIAG-014`；统一端到端验收还依赖 `DEV-DIAG-005` |
-| `DEV-DIAG-008` | P0 / `done` | `DEV-TRACK-001`、`DEV-SPD-002`、`SPD6-LOG-01`；F08 | 当前诊断合同已补真实executor、叶子dependsOn/blockedBy、run/workUnit/attempt与跨进程四事实。v8日志1819 events/311执行叶依赖无缺失，25条跨进程边通过，OTLP366 spans保留因果属性。UTC跳变/四个未观测本地ready/资源queue保持partial或unknown，active CP858.009秒不能冒充wall/ETA；原A缺口不补写。新发现的收尾观测空档移交015，真实资源队列/完整性能仍归原DEV-TRACK-001 | 诊断可追溯scope通过；原预算/日志历史不改，正式指标与015独立跟进 |
+| `DEV-DIAG-008` | P0 / `in_progress` | `DEV-TRACK-001`、`DEV-SPD-002`、`SPD6-LOG-01`；F08及最新fresh重跑 | 旧v8的1819 events/311叶依赖与25跨进程边通过范围保留。最新dev新ASR/MFA路径暴露transcription/source_model两实际provider leaf缺dependsOn、alignment引用source-check container；2469 events/479 spans全部终态，但完整criticalPath=null。补typed completion leaf传递及新Source真实因果边，验证完整图/OTLP；UTCwall与资源/provider queue缺测保持unknown，不按容器依赖补造通过。确定性收尾仍015 | [最新重跑](reports/20261001-dev-full-180s-fresh-rerun.zh.md)；原日志/预算不改 |
 | `DEV-DIAG-009` | P1 / `done` | `DEV-L4-005`、`DEV-TRACK-001`；F09 | Dev App 区分 failed / blocked / pending / ready：机器候选缺失时不得显示“大纲已就绪”或暗示配音仍在生成；保留准确失败原因和禁用播放。失败/blocked/pending夹具和真实blocked页均禁用音频；v8三语ready绑定当前candidate/context，正式人审仍pending。三语切换及既有周次浏览器行为分别留证，不混淆内容语言与界面语言 | 实际业务状态/原因绑定；不要求为诊断展示重新生成内容 |
 | `DEV-DIAG-010` | P1 / `done` | `DEV-SPD-006`、`SPD6-ARCH-01/02`；H02 | 定义跨阶段模块加载时 executionIdentity 的冻结/扩展收据协议；正常进入新阶段不需临时绕过 exact identity 校验，原模块/hash、输入和预算绑定仍严格有效。验证合法扩展、源码变化、旧输入及恢复时身份不一致均被正确处理 | 保留当前原身份及扩展收据，不放宽原 hash 守卫 |
 | `DEV-DIAG-011` | P0／`done` | `DEV-L2-001`、`RQC-03`；衔接 `DEV-DIAG-001`。`sermon_strict_layer2.py:122–145,339–350`；`run_target_language_models.py:168–173`；`sermon_review_contracts.py:194–211`；`sermon-review-receipt-v1.schema.json:209–230` | role prompt 与真实 API／响应 schema 一致：JSON-mode 明确 JSON；coverage 指定有序数组和精确字段；verifier 仅四个 requiredChecks，插件另审；声明 check／issue 的合法枚举。合法普通 registerRules 无须私有格式补丁即可通过预检及单组真实 Astra→Sol。保留无效响应证据，不能将其提升为机器通过。原 39 次 HTTP400 的精确错误 body 未保留，JSON 声明缺失是代码观察及解阻探针支持的定位，不能补写供应商原 error code。 | `DEV-DIAG-002/013`；保留 API 与 schema 身份 |
@@ -50,11 +50,31 @@ English index: [backlog.md](./backlog.md)
 
 监督记录及每次原失败见[2026-10-01修复与真实验收](reports/20261001-dev-diagnostic-supervised-plan.zh.md)。启动预加载、opaque IDs/required_actions、aggregate读取、Source-cache与修订恢复、原生runtime/checkpoint、MFA期限和日志终态均在对应诊断项留证；旧账本、unknown和耗时不回填。最新真实三语/HTTP/Chrome和闭父只读恢复结果见最终对账，015与正式007仍独立待验。
 
-诊断软件已完成本次计划的修复及监督验收。后续分别推进007正式内容/设备/现场证据与015收尾观测；资源排队、Prefect实际引擎和完整性能继续使用既有归属。该状态不自动授权Production发布或代替正式人工审核。
+上述为旧v7/v8计划范围的完成记录。最新Dev全新重跑已暴露新分支问题：008重新打开、016–021待开发；007正式内容/设备/现场与015收尾观测继续待验。资源排队、Prefect真实生产引擎和完整性能使用既有归属；该状态不自动授权Production发布或代替正式人工审核。
 
 累计 provider 请求 293（254 returned / 39 rejected），终态 unknown/reserved 均为 0。最坏情况预算保留 $51.582263；已知 returned usage 估算 $5.140327，非供应商账单，39 次 rejected 的 usage/billing 未知。旧 A/B 账本未清空，新的预算/期限/输入 lineage 显式冻结。
 
 H01（测试脚本插件哈希）、H03（首次 deploy 选错 Dev project，CLI 拒绝且未发布）、H04（World War pending target 输入）和 H05（helper 冻结次序）已在测试中纠正并留证，**不新增未修复产品缺陷**。H02后续已由010的严格身份冻结/扩展及006恢复合同覆盖，见最终监督证据。私有 v6 driver 的异常漏写与过长 registerRules 被正确上限拒绝，分别作为测试准备问题；错误原因泛化归 `013`。原报告 F01—F09/H01—H03 保留；媒体、日志、输入版本和账本留在 ignored artifacts。上述首轮历史诊断当时未实施源码修复；下表保留开始开发前的复盘快照，当前进度见最终对账，不关闭既有 `DEV-SPD-*`、Layer 2/3 或 Prefect/Agents 验收。
+
+
+<a id="dev-full-fresh-rerun-20261001"></a>
+
+### 2026-10-01 最新 Dev 全新三分钟重跑与新增待办
+
+[完整报告](reports/20261001-dev-full-180s-fresh-rerun.zh.md)：`dev@7e534bb`，相同180.013秒片段，新ASR/source check/本地MFA、三语39组、39新native WAV、Dev发布344用户文件/346线上完整map、Chrome三语及源片段1×完整播放、真实只读Agent均已执行。原业务仍`incomplete`：delivery.readonly被`fresh_delivery_source_mfa_changed`阻断；HTTP与播放成功独立记录。正式人审/回转写/同步/Audio/Release/device/venue不提升。
+
+| ID | 优先级／状态 | 既有归属／真实问题 | 待交付与验收条件 | 依赖 |
+|---|---|---|---|---|
+| `DEV-DIAG-016` | P0 / `pending` | `DEV-DIAG-005/010/013`、`DEV-L1-001`；新MFA runtime整体比较拒绝当前冻结adapter及新executionHost | 分离稳定依赖身份、当前冻结producer和本次execution provenance；付费前校验recipe/consumer兼容。新MFA与cache路径均验证；篡改依赖/未知runtime/非冻结adapter仍拒绝，逐文件健康核验保留；不可删除守卫或回填旧失败 | 最新重跑MFA失败与当前plan |
+| `DEV-DIAG-017` | P1 / `pending` | `DEV-DIAG-005/006/010`、`DEV-E2E-001`、`DEV-L1-001`；全程仍依赖私有driver/bootstrap/input/observer/browser桥接 | 提供规范化可重复入口：链接或明确本地clip来源绑定、预检/冻结/预算/真正fresh执行/断点/闭父/Dev核验/Agent与浏览器验收。提前核实124requests/5400s等当前hard cap、runtime/checkpoint/Source consumer；default-pass scope独立，旧有效素材/模型可复用、要重测的Source/L2/audio不复用；不依赖私有prompt补丁 | `016`、`008`；保留durable receipts与未知结果 |
+| `DEV-DIAG-018` | P1 / `pending` | `DEV-SPD-003`、`DEV-L3-001`、`DEV-DIAG-007/014`；Spark可用但诊断runtime固定Mac/Python3.13且无远程adapter | 版本化Linux/NGC/Python runtime与远程host adapter、受控命令、依赖/进程/跨时钟收据；真实测默认Spark路径与profile。诊断scalar和正式TTS2/back-ASR4分别验收；正式/测试门禁须真实合同，不伪造批准，fixture不当性能证据 | `DEV-DIAG-007/010`；实际模型/资源/授权 |
+| `DEV-DIAG-019` | P1 / `pending` | `DEV-L4-001/005`、`DEV-CICD-001`；旧301快照遗漏近期资产，需私有完整线上基线重构；发布前GET非原子 | 规范发布器核验完整live版本文件map/配置/管理资源并追加新周，旧媒体与catalog保留；明确stale检测及并发目标lease或可用服务端条件机制，验证另一发布插入时拒绝/重建/恢复。Firebase管理路径使用独立合同，不把动态HTTP响应当存储gzip；不得先声称CAS已支持 | `DEV-DIAG-017`；完整baseline及独立发布/HTTP收据 |
+| `DEV-DIAG-020` | P1 / `pending` | `DEV-TRACK-001`、`DEV-L4-005`；页面没有展示真实delivery.readonly blocked原因 | 公共安全状态绑定当前run/版本，整体incomplete及具体安全原因与音轨ready/HTTP成功/人审pending分别展示；stale/cross-run/失败或缺测fixture验证，不把可播提升成全流程完成 | `016`、`DEV-DIAG-013`；当前final/public snapshot合同 |
+| `DEV-DIAG-021` | P1 / `pending` | `DEV-DIAG-004/013`、`DEV-SPD-006`；真实Agent完成6工具提交但证据不足，needs_more_evidence | 版本化安全白名单提供比较字段名、expected/observed hash及语义、真实事件时间/monotonic关系、receipt接纳与确定性复现；不发host/私人path/正文/key。以本次MFA比较及依赖漂移负例验根因定位；证据不足仍未知，readonly无修复执行权限。actualModel/usage/cost缺测不估成已知 | `008`、`016`；frozen snapshot/stale/预算/工具身份守卫 |
+
+已有项同步：008改为in_progress补新Source叶因果；015保持todo（确定性收尾与安全进度），007保持waiting_evidence（正式人审/回转写/同步/设备/现场）。source URL hash缺失及规范intake继续归DEV-L1-001/017，不另建重复事项。中文g12的meaning_addition经局部Astra→Sol新revision修复、插件/admission绑定通过，是003/013/RQC的本轮实际证据，不新增未修复缺陷。
+
+82业务请求全部returned、终态unknown=0；保守预留14,202,634microUSD非账单，ASR token缺测。Agents独立2M观察预留保留，66transport均returned但actualModel/usage/cost仍unknown；业务父已永久闭合，observer未改业务账本。私有额度/manifest路径/监督工具准备错误已纠正并保留原版本，不混入未修复产品问题。新发现优先修016与008，再验证状态/Agent证据，再逐步收敛规范全程入口与默认compute/发布路径；不因本次可播关闭整个backlog。
 
 
 <a id="dev-180s-first-implementation-batch"></a>
@@ -685,7 +705,7 @@ Canonical package adapter 第一批：Source/Text shadow inspection 已复用生
 本次用户已授权按plan持续开发和续验；下一恢复局部修西语并复用已验证中韩产物，完成同一Dev诊断页三语整轨浏览器播放，再更新上述软件诊断项终态。
 
 
-### 2026-10-01 监督验收最终对账
+### 2026-10-01 旧 v7/v8 监督验收最终对账（历史范围）
 
 `DEV-DIAG-001–006/008–014` 的本次隔离诊断软件范围已完成实现、定向回归和相应真实路径核验；`done`不关闭既有正式Layer1–4/Prefect/Agents执行权限或完整性能项目。旧HTTP400正文缺失，原供应商精确原因仍无法追认。008通过的是已记录因果/终态/单调时钟合同，资源/provider排队没有真实测量；新收尾空档明确留在015，不冒充完整ETA。
 
