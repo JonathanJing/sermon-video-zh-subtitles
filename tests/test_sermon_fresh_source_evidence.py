@@ -151,15 +151,18 @@ class CachedFreshEvidenceTests(unittest.TestCase):
 
 
 class MigratedCachedFreshEvidenceTests(unittest.TestCase):
-    def test_real_pinned_v2_migration_zero_calls_and_tamper_rejection(self):
+    def migration_fixture(self, *, approved_identity=False):
         from scripts import sermon_source_producer_compatibility as compatibility
         from scripts import sermon_diagnostic_attempts as attempts, sermon_diagnostic_provider as provider
-        from scripts import sermon_log_profile as profile
         f = fresh_fixtures.FreshSourceTests(); f.setUp(); self.addCleanup(f.doCleanups)
         prepared = freeze_current(f)
         current_identity = deepcopy(f.plan['executionIdentity'])
-        # Build a historical fixture before closing it. Only the three actual
-        # approved producer changes differ; no live/historical receipt is edited.
+        if approved_identity:
+            current_identity['loadedProjectCodeSha256'].update(compatibility.CURRENT_SOURCE_SHA256)
+        # Build a synthetic historical parent before closing it. The approved
+        # identity models only the three reviewed producer changes; the actual
+        # current negative case deliberately retains additional code drift.
+        # No live/historical receipt is edited.
         parent_plan = deepcopy(f.plan)
         parent_plan['executionIdentity']['loadedProjectCodeSha256'].update(compatibility.HISTORICAL_SOURCE_SHA256)
         parent_plan['providerConfig']['codeSha256'] = c.canonical_sha256(parent_plan['executionIdentity'])
@@ -184,19 +187,61 @@ class MigratedCachedFreshEvidenceTests(unittest.TestCase):
         runtime = provider.DiagnosticProvider(budget.BudgetStore(root/'budget', plan['authority']),
             plan['providerConfig'], executor=f.f.transport)
         with runtime._locked(): pass
-        with profile.session(root/'logs', 'migration-fixture', work_kind='engineering', evidence_mode='synthetic'):
-            result = subject.cache.prepare_source(plan, runtime, parent_plan_path=f.root/'run-plan.json', authorization=f.authorization)
-        self.assertEqual(result['evidence']['schemaVersion'], 'sermon-cached-fresh-diagnostic-source-v2')
-        self.assertEqual(result['evidence']['sourceProducerCompatibility']['migrationId'], compatibility.MIGRATION)
+        return f, root, plan, runtime
+
+    def test_synthetic_approved_identity_v2_migration_zero_calls_and_tamper_rejection(self):
+        from scripts import sermon_source_producer_compatibility as compatibility
+        from scripts import sermon_log_profile as profile
+        f, root, plan, runtime = self.migration_fixture(approved_identity=True)
+        repository = Path(subject.cache.__file__).resolve().parents[1]
+        approved_paths = {repository/path: sha for path, sha in compatibility.CURRENT_SOURCE_SHA256.items()}
+        original_ref = subject.cache._ref
+        observed_producers = set()
+        def approved_fixture_ref(path):
+            # Model only the read-only producer identity observation for the
+            # reviewed historical transition. Actual current code is checked
+            # independently below; receipts/media/state still use real bytes.
+            ref = original_ref(path)
+            resolved = Path(ref['path'])
+            if resolved in approved_paths:
+                observed_producers.add(resolved)
+                ref = {**ref, 'bytesSha256': approved_paths[resolved]}
+            return ref
+        with patch.object(subject.cache, '_ref', side_effect=approved_fixture_ref):
+            with profile.session(root/'logs', 'migration-fixture', work_kind='engineering', evidence_mode='synthetic'):
+                result = subject.cache.prepare_source(plan, runtime, parent_plan_path=f.root/'run-plan.json', authorization=f.authorization)
+            self.assertEqual(observed_producers, set(approved_paths))
+            self.assertEqual(result['evidence']['schemaVersion'], 'sermon-cached-fresh-diagnostic-source-v2')
+            self.assertEqual(result['evidence']['sourceProducerCompatibility']['migrationId'], compatibility.MIGRATION)
+            self.assertEqual(result['evidence']['sourceProducerCompatibility']['currentInspectorProducerSha256'],
+                             compatibility.CURRENT_SOURCE_SHA256)
+            before = existing_bytes(f.root, root); calls = len(f.f.transport.observations)
+            with patch.object(runtime, '_locked', side_effect=AssertionError('lock forbidden')):
+                proof = subject.validate_fresh_source_evidence(root, plan, runtime, result['context'], result['evidence'])
+            self.assertEqual(proof['sourceEvidenceSchema'], 'sermon-cached-fresh-diagnostic-source-v2')
+            self.assertEqual(proof['currentSourceProviderCalls'], 0); self.assertEqual(proof['historicalSourceProviderCalls'], 2)
+            self.assertEqual(before, existing_bytes(f.root, root)); self.assertEqual(calls, len(f.f.transport.observations))
+            result['evidence']['sourceProducerCompatibility']['binding']['asrReceiptSha256'] = 'f'*64
+            with self.assertRaises(c.ContractError):
+                subject.validate_fresh_source_evidence(root, plan, runtime, result['context'], result['evidence'])
+
+    def test_actual_current_unknown_revision_rejects_without_calls_locks_or_cache_artifacts(self):
+        from scripts import sermon_source_producer_compatibility as compatibility
+        f, root, plan, runtime = self.migration_fixture()
+        repository = Path(subject.cache.__file__).resolve().parents[1]
+        actual = {path: subject.cache._ref(repository/path)['bytesSha256']
+                  for path in compatibility.CURRENT_SOURCE_SHA256}
+        self.assertNotEqual(actual, compatibility.CURRENT_SOURCE_SHA256)
+        self.assertTrue(all(plan['executionIdentity']['loadedProjectCodeSha256'][path] == sha
+                            for path, sha in actual.items()))
         before = existing_bytes(f.root, root); calls = len(f.f.transport.observations)
         with patch.object(runtime, '_locked', side_effect=AssertionError('lock forbidden')):
-            proof = subject.validate_fresh_source_evidence(root, plan, runtime, result['context'], result['evidence'])
-        self.assertEqual(proof['sourceEvidenceSchema'], 'sermon-cached-fresh-diagnostic-source-v2')
-        self.assertEqual(proof['currentSourceProviderCalls'], 0); self.assertEqual(proof['historicalSourceProviderCalls'], 2)
-        self.assertEqual(before, existing_bytes(f.root, root)); self.assertEqual(calls, len(f.f.transport.observations))
-        result['evidence']['sourceProducerCompatibility']['binding']['asrReceiptSha256'] = 'f'*64
-        with self.assertRaises(c.ContractError):
-            subject.validate_fresh_source_evidence(root, plan, runtime, result['context'], result['evidence'])
+            with self.assertRaisesRegex(c.ContractError, '^source_producer_compatibility_unknown_revision$'):
+                subject.cache.prepare_source(plan, runtime, parent_plan_path=f.root/'run-plan.json', authorization=f.authorization)
+        self.assertEqual(before, existing_bytes(f.root, root))
+        self.assertEqual(calls, len(f.f.transport.observations))
+        for name in ('source.json', 'anchor-manifest.json', 'cached-source-proof.json', 'diagnostic-context.json'):
+            self.assertFalse((root/name).exists())
 
 
 class CurrentMFAEvidenceTests(unittest.TestCase):
