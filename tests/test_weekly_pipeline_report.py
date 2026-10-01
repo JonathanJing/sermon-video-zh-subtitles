@@ -127,7 +127,9 @@ class WeeklyPipelineReportTests(unittest.TestCase):
                    usage={'requests': 9, 'input_tokens': 500})
         report = self.result()
         calls = report['observedProviderCalls']
-        self.assertNotIn('networkCalls', report)
+        self.assertEqual(report['schemaVersion'], 'sermon-weekly-pipeline-report-v1')
+        self.assertEqual(report['networkCalls'], 0)
+        self.assertEqual(report['networkCallsScope'], 'report_generation_only_deprecated')
         self.assertEqual(report['reportGenerationNetworkCalls'], 0)
         self.assertEqual(calls['directReceiptCount'], 1)
         self.assertEqual(calls['status'], 'observed_receipts')

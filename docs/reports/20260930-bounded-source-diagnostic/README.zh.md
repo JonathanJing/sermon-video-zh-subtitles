@@ -28,3 +28,7 @@ Source 审查收据的通用 accounting 估计为 $0.076010，采用 input $10/M
 ## 离线回归
 
 103 项通过：bounded diagnostic capture、provider、Weekly Report、observability sufficiency、receipt conflicts、LOGC/profile。测试覆盖 Source 模型分类、同一收据去重、SDK 不重复计数、未完成/缺失/冲突不得写成零，以及端到端 mock 六次调用与报告计数一致。没有再次运行付费模型。
+
+## v1 读取兼容
+
+生成器继续保留 v1 的整数 `networkCalls: 0`，其旧语义仅是报告生成不联网；新增 `networkCallsScope: report_generation_only_deprecated` 明确弃用范围。新消费者改读 `reportGenerationNetworkCalls` 与 `observedProviderCalls`，不能用旧字段判断实际模型调用。旧报告与本目录已导出的审计快照不改写；可读 renderer 同时接受旧字段和新增字段。此改动是 v1 的兼容字段扩展，没有删除或改变旧字段类型。

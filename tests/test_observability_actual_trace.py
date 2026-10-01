@@ -18,7 +18,8 @@ class ActualTraceTests(unittest.TestCase):
                 original = read(RERUN/mode/'report.json')
                 # Historical reports stay immutable. The corrected network
                 # coverage fields are the only permitted projection delta.
-                self.assertEqual(original.pop('networkCalls'), 0)
+                self.assertEqual(projected['networkCalls'], original['networkCalls'])
+                self.assertEqual(projected.pop('networkCallsScope'), 'report_generation_only_deprecated')
                 self.assertEqual(projected.pop('reportGenerationNetworkCalls'), 0)
                 calls = projected.pop('observedProviderCalls')
                 self.assertEqual(calls['status'], 'not_observed')

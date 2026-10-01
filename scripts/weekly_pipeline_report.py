@@ -427,6 +427,9 @@ def project(directory):
             'diagnostics': diagnostics, 'duplicateEventsIgnored': duplicates,
             'receiptIntegrity': {k: v for k, v in integrity.items() if not k.startswith('_')},
             **({'eventIntegrity': {k: v for k, v in replay.items() if not k.startswith('_')}} if replay['profileEventCount'] else {}),
+            # Preserve the v1 integer field for existing consumers. Its legacy
+            # scope is report generation, never observed workload traffic.
+            'networkCalls': 0, 'networkCallsScope': 'report_generation_only_deprecated',
             'reportGenerationNetworkCalls': 0, 'observedProviderCalls': provider_calls, 'acceptance': 'not_evaluated'}
 
 
