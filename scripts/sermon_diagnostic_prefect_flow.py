@@ -18,6 +18,7 @@ import threading
 from types import SimpleNamespace
 
 from scripts import sermon_accounting as accounting
+from scripts import sermon_dag_evidence as dag_evidence
 from scripts import sermon_bounded_business_callbacks as offline
 from scripts import sermon_diagnostic_preview_worker as preview_worker
 from scripts import sermon_log_profile as profile
@@ -134,7 +135,8 @@ def _config(config, session):
 
 class DiagnosticDAG:
     def __init__(self, session, config):
-        c.require(type(session) is _session_class() and
+        from scripts.sermon_fresh_diagnostic import FreshDiagnosticSession
+        c.require(type(session) in (_session_class(), FreshDiagnosticSession) and
                   (not session.offline_fixture or type(session.subject.executor) is offline.OfflineHTTPTransport),
                   'diagnostic_flow_offline_session_required')
         self.session = session
@@ -209,6 +211,7 @@ class DiagnosticDAG:
 
     def execute(self, node_id):
         node_id, operation, locale, dependencies = next(node for node in self.nodes if node[0] == node_id)
+        queued_at = accounting.now()
         observation = {'nodeId': node_id, 'operation': operation, 'locale': locale,
             'executionStatus': 'blocked', 'processed': False, 'readyForDownstream': False,
             'humanAcceptance': 'pending', 'productionEligible': False, 'evidenceMode': self.session.evidence_mode,
@@ -222,15 +225,19 @@ class DiagnosticDAG:
                     observation['reason'] = 'upstream_not_completed'
                 else:
                     spans = [span for parent in parents for span in parent['completionSpans']]
+                    if operation == 'source':
+                        spans.extend(getattr(self, 'initial_source_spans', []))
+                    ready_at = max((parent['completedAt'] for parent in parents), default=queued_at)
                     with accounting.stage('diagnostic.dag.' + operation, depends_on=spans,
-                                          work_unit_id=node_id, executor_type='deterministic_program') as span:
+                                          work_unit_id=node_id, executor_type='deterministic_program',
+                                          dependency_ready_at=ready_at, queued_at=queued_at) as span:
                         dispatched = operation in {'locale', 'preview'}
                         if operation == 'source':
                             result = self.session.inspect_source()
                         elif operation == 'locale':
-                            result = self.session.run_locale(locale, self.config['locales'][locale]['localeSpec'])
+                            result = self.session.run_locale(locale, self.config['locales'][locale]['localeSpec'], depends_on=spans)
                         elif operation == 'preview':
-                            result = self.session.preview(locale, self.config['locales'][locale]['previewSpec'])
+                            result = self.session.preview(locale, self.config['locales'][locale]['previewSpec'], depends_on=spans)
                         else:
                             previews = {name: self.results[f'preview.{name}'] for name in self.locales}
                             result = self.session.inspect_delivery(previews, expected_locales=self.locales)
@@ -245,7 +252,8 @@ class DiagnosticDAG:
                     observation.update(executionStatus='outcome_unknown' if unknown else 'completed',
                         processed=None if unknown else True, readyForDownstream=ready and not unknown,
                         resultSha256=digest, artifactSha256=artifact, businessStatus=status,
-                        completionSpans=[span])
+                        completionSpans=dag_evidence.current_terminal_leaves(span) if ready and not unknown else [],
+                        completedAt=accounting.now())
             except Exception as exc:
                 reason = str(exc) if isinstance(exc, ValueError) and re.fullmatch(r'[a-z][a-z0-9_]{0,119}', str(exc)) else 'callback_or_evidence_not_confirmed'
                 observation.update(executionStatus='outcome_unknown' if dispatched else 'blocked',

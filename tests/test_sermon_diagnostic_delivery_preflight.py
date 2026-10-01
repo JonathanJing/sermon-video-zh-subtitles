@@ -111,6 +111,22 @@ class PreviewInspectionTests(unittest.TestCase):
         path.symlink_to(real)
         with self.assertRaisesRegex(ValueError, 'Symlink'): self.inspect()
 
+    def test_v2_requires_clock_proof_and_fixture_cannot_claim_runtime(self):
+        self.receipt['schemaVersion'] = subject.worker.SCHEMA
+        self.save_receipt()
+        with self.assertRaisesRegex(ValueError,'worker_clock_missing'):self.inspect()
+        self.receipt.update(clockHandshake=dict(launch={},finished={},joined={}),offlineFixture=True,
+            nativeRuntimeBinding={'untrusted':'claim'})
+        self.save_receipt()
+        with patch.object(subject.worker.clock,'validate_worker_handshake',return_value={}):
+            with self.assertRaisesRegex(ValueError,'fixture_cannot_claim_runtime'):self.inspect()
+
+    def test_v2_rejects_invalid_real_clock_without_relying_on_worker_mock(self):
+        self.receipt.update(schemaVersion=subject.worker.SCHEMA,
+            clockHandshake=dict(launch={},finished={},joined={}),offlineFixture=True,nativeRuntimeBinding=None)
+        self.save_receipt()
+        with self.assertRaises(ValueError):self.inspect()
+
 
 class OriginalSourceInspectionTests(unittest.TestCase):
     def setUp(self):

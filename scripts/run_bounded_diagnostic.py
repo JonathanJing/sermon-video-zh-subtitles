@@ -27,6 +27,7 @@ from scripts import sermon_review_budget as budget
 from scripts import sermon_review_contracts as c
 from scripts import sermon_strict_layer2 as strict
 from scripts import sermon_strict_locale as locale
+from scripts import sermon_execution_extensions as extensions
 from scripts.sermon_release_workflow import _safe_path
 
 
@@ -92,7 +93,8 @@ class BoundedRun:
                                       operation_id=operation_id)
 
     def run_locale(self, source_bytes, anchor_bytes, policy_bytes, rubric_bytes, *,
-                   graph, plugin_path, plugin_sha256, group_plan=None, diagnostic_context=None):
+                   graph, plugin_path, plugin_sha256, group_plan=None, diagnostic_context=None,
+                   depends_on=None):
         verify_source_clip(self.source_clip, self.provider.config['sourceClipSha256'])
         source, policy = map(c.decode_json, (source_bytes, policy_bytes))
         target = policy['targetLocale']
@@ -112,13 +114,16 @@ class BoundedRun:
                 job_root=self.root / 'jobs', production_run_id=self.provider.config['runId'],
                 graph=graph, plugin_path=plugin_path, expected_plugin_sha256=plugin_sha256,
                 api_key=self.key, caller=self.provider, usage_resolver=self.provider.usage_resolver,
-                bounds={'requests':1, 'inputTokens':8192, 'outputTokens':4096,
-                        'wallTimeMs':300000, 'costMicrousd':307200},
-                group_plan=group_plan, request_limits=self.provider.limits,
+                bounds={'requests':1, 'inputTokens':self.provider.limits['maxInputTokens'],
+                        'outputTokens':self.provider.limits['maxCompletionTokens'],
+                        'wallTimeMs':self.provider.limits['wallTimeMs'],
+                        'costMicrousd':max(limits._cost(model,self.provider.limits['maxInputTokens'],
+                            self.provider.limits['maxCompletionTokens']) for model in limits.SUPPORTED_MODELS)},
+                group_plan=group_plan, request_limits=self.provider.limits, depends_on=depends_on,
                 **({'diagnostic_context': diagnostic_context} if diagnostic_context is not None else {}))
 
 
-def prepare_plan(plan):
+def prepare_plan(plan, *, stage_declaration=None, extension_receipt=None):
     c.require(type(plan) is dict and set(plan) == {'schemaVersion', 'runDirectory',
         'providerConfig', 'authority', 'executionIdentity', 'sourceClipPath'}, 'invalid_diagnostic_plan')
     c.require(plan['schemaVersion'] == 'sermon-bounded-diagnostic-plan-v1', 'invalid_diagnostic_plan')
@@ -126,12 +131,31 @@ def prepare_plan(plan):
     identity = accounting.execution_identity()
     c.require(identity['trackedWorkingTreeDirty'] is False and identity['gitCommit'] is not None,
               'diagnostic_requires_clean_fixed_code')
-    c.require(identity == plan['executionIdentity'] and c.canonical_sha256(identity) == config['codeSha256'],
+    c.require(c.canonical_sha256(plan['executionIdentity']) == config['codeSha256'],
               'diagnostic_code_identity_changed')
     root = _safe_path(Path(plan['runDirectory']))
     c.require(root.is_absolute(), 'diagnostic_absolute_directory_required')
     verify_source_clip(plan['sourceClipPath'], config['sourceClipSha256'])
     store = budget.BudgetStore(root / 'budget', plan['authority'])
+    c.require((stage_declaration is None) == (extension_receipt is None),
+              'diagnostic_extension_and_declaration_required')
+    if stage_declaration is None:
+        c.require(identity == plan['executionIdentity'], 'diagnostic_code_identity_changed')
+    else:
+        extensions.validate_declaration(plan, stage_declaration)
+        frozen, _ = c.read_snapshot(extensions.declaration_path(plan, stage_declaration))
+        c.require(frozen == stage_declaration, 'diagnostic_stage_declaration_not_frozen')
+        saved, _ = c.read_snapshot(root / 'run-plan.json')
+        c.require(saved == plan, 'diagnostic_original_plan_changed')
+        binding = {'runId': config['runId'], 'runConfigSha256': c.canonical_sha256(config),
+            'storeSha256': store.store_sha256, 'sourceIdentitySha256': c.canonical_sha256({
+                key: config[key] for key in ('sourceMediaSha256', 'sourceClipSha256',
+                                            'sourceAudioSha256', 'sourceWindowSeconds')}),
+            'inputSha256': c.canonical_sha256(plan)}
+        extensions.validate_extension(extension_receipt, plan['executionIdentity'], identity,
+            stage_id=stage_declaration['stageId'], declared_additions=stage_declaration['moduleAdditions'],
+            external_runtime_sha256=stage_declaration['externalRuntimeSha256'], binding=binding)
+        extensions.persist_extension(root, extension_receipt)
     subject = provider.DiagnosticProvider(store, config)
     # Constructor/preflight does not initialize ledger or start its deadline.
     return root, subject
@@ -140,13 +164,24 @@ def prepare_plan(plan):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--plan', type=Path, required=True)
-    parser.add_argument('--phase', choices=('preflight', 'transcribe', 'source-check', 'locale'), required=True)
+    parser.add_argument('--phase', choices=('preflight', 'declare-stage', 'transcribe', 'source-check', 'locale'), required=True)
     parser.add_argument('--input', type=Path)
     parser.add_argument('--key-fd', type=int)
     parser.add_argument('--operation-id', default='source.initial')
+    parser.add_argument('--stage-declaration', type=Path)
+    parser.add_argument('--identity-extension', type=Path)
     args = parser.parse_args(argv)
     plan, _ = c.read_snapshot(args.plan)
-    root, subject = prepare_plan(plan)
+    declaration = c.read_snapshot(args.stage_declaration)[0] if args.stage_declaration else None
+    extension = c.read_snapshot(args.identity_extension)[0] if args.identity_extension else None
+    if args.phase == 'declare-stage':
+        c.require(declaration is not None and extension is None, 'diagnostic_stage_declaration_required')
+        prepare_plan(plan)
+        extensions.freeze_stage_declaration(plan, accounting.execution_identity(), declaration)
+        print(json.dumps({'status':'stage_declared', 'declarationSha256':c.canonical_sha256(declaration),
+                          'newCalls':0, 'credentialRead':False}))
+        return
+    root, subject = prepare_plan(plan, stage_declaration=declaration, extension_receipt=extension)
     if args.phase == 'preflight':
         print(json.dumps({'status':'prepared', 'configSha256':c.canonical_sha256(subject.config),
                           'newCalls':0, 'credentialRead':False}))

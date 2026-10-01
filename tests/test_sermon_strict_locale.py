@@ -131,6 +131,16 @@ class LocaleTests(unittest.TestCase):
                 self.run_locale(graph=changed)
         self.assertEqual(len(self.f.calls), 4)
 
+    def test_locale_input_binding_accepts_actual_upstream_span(self):
+        with self.f.session():
+            with subject.accounting.stage('source.actual',executor_type='deterministic_program') as upstream:
+                pass
+            self.run_locale(depends_on=[upstream])
+        rows,invalid=subject.accounting.read_events(self.f.root/'logs')
+        self.assertEqual(invalid,[])
+        bound=next(row for row in rows if row['event']=='stage_started' and row['stage']=='rqc.locale_input_binding')
+        self.assertEqual(bound['dependsOn'],[upstream])
+
     def test_trace_binds_source_and_actual_serial_groups_without_extra_api_receipts(self):
         with self.f.session():
             result = self.run_locale()

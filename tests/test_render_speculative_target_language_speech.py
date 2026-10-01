@@ -126,6 +126,19 @@ class SpeculativeRenderTests(unittest.TestCase):
         self.assertTrue(audio.is_file())
         self.assertEqual(len(FakeSynth.calls), 1)
 
+    def test_missing_predecessors_remain_unknown_and_explicit_root_is_known(self):
+        from scripts import sermon_log_profile as profile
+        logs = self.fixture.root / 'predecessor-accounting'
+        with profile.session(logs,'legacy-render',work_kind='engineering',evidence_mode='synthetic') as legacy:
+            self.render(group_ids=['g1'])
+        with profile.session(logs,'root-render',work_kind='engineering',evidence_mode='synthetic') as root:
+            self.render(group_ids=['g1'],predecessor_spans=[])
+        rows, errors = subject.accounting.read_events(logs)
+        self.assertFalse(errors)
+        entries = {row['runId']:row for row in rows if row['event']=='stage_started' and row['stage']=='preview.validate_inputs'}
+        self.assertIsNone(entries[legacy['runId']]['dependsOn'])
+        self.assertEqual(entries[root['runId']]['dependsOn'],[])
+
 
 class FormalAdmissionTests(unittest.TestCase):
     def setUp(self):

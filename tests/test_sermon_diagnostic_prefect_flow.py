@@ -39,7 +39,7 @@ class SessionFixture:
         self.calls.append(('source', None))
         return {'humanAcceptance': 'pending', 'productionEligible': False, 'sourceSha256': '3' * 64}
 
-    def run_locale(self, locale, spec):
+    def run_locale(self, locale, spec, *, depends_on=None):
         self.calls.append(('locale', locale))
         if locale in self.unknown: raise TimeoutError('synthetic unknown')
         if locale in self.failed: return {'status': 'blocked', 'groups': []}
@@ -50,7 +50,7 @@ class SessionFixture:
         return {'status': 'waiting_human', 'candidateSha256': c.canonical_sha256(candidate),
                 'output': str(root), 'groups': []}
 
-    def preview(self, locale, spec):
+    def preview(self, locale, spec, *, depends_on=None):
         self.calls.append(('preview', locale))
         return {'status': 'preview_only', 'humanAcceptance': 'pending', 'productionEligible': False,
                 'offlineFixture': True, 'receiptFileSha256': c.canonical_sha256({'locale': locale})}

@@ -13,7 +13,7 @@ if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts.sermon_accounting import EXECUTOR_TYPES, READABLE_SCHEMAS, _label, _number, _safe_metadata, safe_execution_identity, read_events, read_event_snapshot, receipt_integrity, profile_integrity
 
-from scripts.sermon_clock_evidence import monotonic_interval
+from scripts.sermon_clock_evidence import monotonic_interval, handshake_windows, _hash as clock_hash
 
 from scripts import sermon_cache_observation as cache_observation
 from scripts import sermon_local_model_observation as local_model
@@ -152,6 +152,24 @@ def project_run(run_id, events, integrity=None, receipt_events=None):
             if node.get('clockDomainId') in unstable_domains:
                 node.update(utcTimingTrusted=False, ready=None, queueWaitSeconds=None,
                             dependencyReadyToQueueSeconds=None)
+    # Process domains stay distinct. Only a same-run, four-phase actual worker
+    # handshake establishes a shared kernel monotonic basis across processes.
+    comparable_domains = set()
+    for proof in handshake_windows(events, run_id):
+        launches = [n for ident, n in nodes.items() if clock_hash(ident) == proof['clockParentSpanSha256']]
+        if len(launches) != 1:
+            continue
+        launcher = launches[0]
+        if (not launcher.get('clockDomainId') or
+                clock_hash(launcher['clockDomainId']) != proof['clockParentDomainSha256'] or
+                not int(launcher['monotonicStartNs']) <= proof['clockParentStartNs'] <=
+                    proof['clockParentEndNs'] <= int(launcher['monotonicEndNs'])):
+            continue
+        comparable_domains.add(frozenset((proof['clockParentDomainSha256'], proof['clockChildDomainSha256'])))
+
+    def shared_clock(left, right):
+        a, b = left.get('clockDomainId'), right.get('clockDomainId')
+        return bool(a and b and (a == b or frozenset((clock_hash(a), clock_hash(b))) in comparable_domains))
     # Parent/container spans overlap children. Only executable leaves participate
     # in the active DAG; dependencies on containers need explicit leaf receipts.
     for ident, node in nodes.items():
@@ -162,7 +180,7 @@ def project_run(run_id, events, integrity=None, receipt_events=None):
             if cursor not in nodes:
                 issue('missing_parent'); break
             parent = nodes[cursor]
-            same_clock = node.get('clockDomainId') and node.get('clockDomainId') == parent.get('clockDomainId')
+            same_clock = shared_clock(node, parent)
             if same_clock:
                 if int(parent['monotonicStartNs']) > int(node['monotonicStartNs']) or int(parent['monotonicEndNs']) < int(node['monotonicEndNs']):
                     issue('parent_interval_mismatch')
@@ -186,7 +204,7 @@ def project_run(run_id, events, integrity=None, receipt_events=None):
                 issue('missing_or_container_dependency')
             else:
                 parent = leaves[dep]
-                same_clock = n.get('clockDomainId') and n.get('clockDomainId') == parent.get('clockDomainId')
+                same_clock = shared_clock(n, parent)
                 if same_clock:
                     if int(parent['monotonicEndNs']) > int(n['monotonicStartNs']):
                         issue('dependency_interval_overlap')

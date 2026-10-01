@@ -12,6 +12,7 @@ import urllib.request
 import urllib.response
 
 from scripts import sermon_provider_http as http
+from scripts import sermon_provider_error as errors
 
 URL = 'https://api.openai.com/v1/chat/completions'
 TOKEN = 'Bearer synthetic-never-real-key'
@@ -147,8 +148,9 @@ class ProviderHTTPTests(unittest.TestCase):
         body = SecretBody(b'synthetic-private-provider-body')
         result, opener = self.worker(error=urllib.error.HTTPError(URL, 429, 'private reason',
             {'Private': 'synthetic-secret'}, body))
-        self.assertEqual(result, {'status': 'http_error', 'httpStatus': 429})
-        self.assertEqual(body.reads, 0)
+        self.assertEqual(result, {'status': 'http_error', 'httpStatus': 429,
+            'diagnostic':errors.diagnostic(429,b'')})
+        self.assertEqual(body.reads, 1)
         self.assertTrue(body.closed)
         opener.open.assert_called_once()
         process = Mock(returncode=0)
@@ -160,6 +162,20 @@ class ProviderHTTPTests(unittest.TestCase):
         self.assertEqual(caught.exception.read(), b'')
         self.assertEqual(caught.exception.headers, {})
         self.assertNotIn('private', str(caught.exception))
+
+    def test_structured_error_survives_worker_pipe_without_original_message(self):
+        body=io.BytesIO(json.dumps({'error':{'code':'unsupported_parameter',
+            'param':'max_completion_tokens','message':'private key /Users/private source'}}).encode())
+        result,_=self.worker(error=urllib.error.HTTPError(URL,400,'private reason',{},body))
+        self.assertEqual(result['diagnostic']['errorCode'],'unsupported_parameter')
+        self.assertNotIn('private',json.dumps(result))
+        process=Mock(returncode=0)
+        process.communicate.return_value=(json.dumps(result).encode(),None)
+        with patch.object(http.subprocess,'Popen',return_value=process),self.assertRaises(urllib.error.HTTPError) as caught:
+            http.execute(request(),1)
+        self.assertEqual(caught.exception.safe_diagnostic,result['diagnostic'])
+        self.assertEqual(caught.exception.read(),b'')
+        self.assertTrue(body.closed)
 
     def test_redirect_is_rejected_without_forwarding_credentials(self):
         calls = []

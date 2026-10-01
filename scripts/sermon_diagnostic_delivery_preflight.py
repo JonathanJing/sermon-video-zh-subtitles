@@ -103,13 +103,24 @@ def _inspect_preview(root, subject, context, locale, envelope, files):
     c.require(files.file(receipt_path) == envelope['receiptFileSha256'] and receipt == {
         k: v for k, v in envelope.items() if k not in ('receiptPath', 'receiptFileSha256')},
         'diagnostic_delivery_worker_receipt_changed')
-    c.require(receipt['schemaVersion'] == WORKER_SCHEMA and receipt['status'] == 'preview_only'
+    c.require(receipt['schemaVersion'] in {WORKER_SCHEMA, worker.SCHEMA} and receipt['status'] == 'preview_only'
         and receipt['humanAcceptance'] == 'pending' and receipt['productionEligible'] is False
         and receipt['runId'] == context['runId'] and receipt['storeSha256'] == context['storeSha256']
         and receipt['runConfigSha256'] == context['runConfigSha256']
         and receipt['diagnosticContextSha256'] == c.canonical_sha256(context),
         'diagnostic_delivery_worker_context_changed')
     spec = receipt['spec']
+    if receipt['schemaVersion'] == worker.SCHEMA:
+        c.require(type(receipt.get('clockHandshake')) is dict
+            and set(receipt['clockHandshake']) == {'launch','finished','joined'}, 'diagnostic_delivery_worker_clock_missing')
+        proof = receipt['clockHandshake']
+        worker.clock.validate_worker_handshake(proof['launch'],proof['finished'],proof['joined'])
+        if receipt['offlineFixture']:
+            c.require(receipt.get('nativeRuntimeBinding') is None and 'runtime_manifest_path' not in spec,
+                'diagnostic_delivery_fixture_cannot_claim_runtime')
+        else:
+            binding = worker.native_runtime.validate(files.path(spec['runtime_manifest_path']))
+            c.require(receipt.get('nativeRuntimeBinding') == binding, 'diagnostic_delivery_native_runtime_changed')
     c.require(c.canonical_sha256(spec) == receipt['specSha256'], 'diagnostic_delivery_preview_spec_changed')
     out = files.path(spec['out'], root)
     c.require(receipt_path == out / 'worker-receipt.json', 'diagnostic_delivery_worker_receipt_path_changed')

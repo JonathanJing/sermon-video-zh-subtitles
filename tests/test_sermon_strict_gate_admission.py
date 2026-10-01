@@ -362,6 +362,13 @@ class FailedReviewInventoryTests(unittest.TestCase):
                     self.assertIn('latest_review_not_passed',outcome['reasons'])
                     self.assertEqual((runtime.root/'candidate.json').read_bytes(),candidate_bytes)
                     self.assertEqual(len(fixture.calls),1)
+                    sidecar=runtime.root/('reviewer-2.structural-diagnostic.json' if second_kind=='invalid_json'
+                        else 'reviewer-2.rejection-diagnostic.json')
+                    value=json.loads(sidecar.read_text())
+                    value['payloadSha256']='0'*64
+                    sidecar.write_text(json.dumps(value))
+                    with self.assertRaises(ValueError):boundary.snapshot()
+                    self.assertEqual(len(fixture.calls),1)
 
 
 if __name__ == '__main__': unittest.main()

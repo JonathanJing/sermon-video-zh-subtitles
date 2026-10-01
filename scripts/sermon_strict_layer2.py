@@ -293,7 +293,17 @@ def call_model(prepared,role,request,output,api_key,caller,*,attempt_number=1,ca
     rejection=_transport_rejection(output,payload_sha256)
     if rejection is not None:
         from scripts.sermon_pipeline import TransportRejection
-        raise TransportRejection(rejection['httpStatus'])
+        details = output.with_suffix('.rejection-diagnostic.json')
+        diagnostic = None
+        if details.exists():
+            saved, _ = c.read_snapshot(details)
+            c.require(type(saved) is dict and set(saved)=={'schemaVersion','rejectionSha256','modelCallId',
+                'payloadSha256','diagnostic'} and saved['schemaVersion']=='sermon-strict-rejection-diagnostic-v1' and
+                saved['rejectionSha256']==c.canonical_sha256(rejection) and
+                saved['modelCallId']==rejection['modelCallId'] and
+                saved['payloadSha256']==payload_sha256,'strict_rejection_diagnostic_binding_changed')
+            diagnostic=saved['diagnostic']
+        raise TransportRejection(rejection['httpStatus'],diagnostic)
     def persist_response(response,model_call_id,elapsed):
         save_once(output.with_suffix('.raw.json'),dict(payloadSha256=payload_sha256,response=response,
             accounting=dict(modelCallId=label(model_call_id),elapsedSeconds=elapsed)))
@@ -307,7 +317,12 @@ def call_model(prepared,role,request,output,api_key,caller,*,attempt_number=1,ca
                 'schemaVersion':'sermon-strict-transport-rejection-v1','modelCallId':label(model_call_id),
                 'payloadSha256':payload_sha256,'httpStatus':error.http_status,
                 'executionStatus':'failed','reasonCode':'http_request_rejected'})
-            _transport_rejection(output,payload_sha256)
+            rejection=_transport_rejection(output,payload_sha256)
+            if error.diagnostic is not None:
+                save_once(output.with_suffix('.rejection-diagnostic.json'),{
+                    'schemaVersion':'sermon-strict-rejection-diagnostic-v1',
+                    'modelCallId':label(model_call_id),'payloadSha256':payload_sha256,
+                    'rejectionSha256':c.canonical_sha256(rejection),'diagnostic':error.diagnostic})
         except (OSError,ValueError,TypeError,KeyError) as exc:
             raise accounting.AccountingWriteError('strict_transport_rejection_evidence_failed') from exc
     persist_response.request_started=request_started
@@ -419,6 +434,46 @@ def review_failure_evidence_id(kind, attempt_number):
     return kind + ('' if attempt_number == 1 else '-2')
 
 
+def _review_structural_diagnostic(prepared,manifest,inputs,output):
+    """Bind finite findings to the actual returned bytes and frozen inputs.
+
+    Separate v1 sidecar migration is additive: old failure/receipt v1 caches
+    without this sidecar retain their original evidence and are not rewritten.
+    """
+    from scripts import sermon_review_diagnostics as diagnostics
+    raw,raw_bytes=c.read_snapshot(output.with_suffix('.raw.json'))
+    call,call_bytes=c.read_snapshot(output.with_suffix('.call.json'))
+    candidate,candidate_bytes=c.read_snapshot(output.parent/'candidate.json')
+    saved_inputs,input_bytes=c.read_snapshot(output.parent/'review-input.json')
+    request=prompt(prepared,'reviewer',candidate=candidate,input_manifest=inputs)
+    payload_sha256=policies.canonical_sha256(_payload(prepared,'reviewer',request))
+    c.require(type(raw) is dict and type(raw.get('response')) is dict and
+        raw.get('payloadSha256')==payload_sha256 and
+        type(raw.get('accounting')) is dict and type(call) is dict and
+        raw.get('accounting',{}).get('modelCallId')==call.get('modelCallId'),
+        'strict_review_raw_binding_changed')
+    c.require(saved_inputs==inputs and c.canonical_sha256(candidate)==manifest['artifactSha256'],
+        'strict_review_diagnostic_inputs_changed')
+    response=raw['response']
+    try:
+        content=shared.completed_response_content(response,prepared['policy']['reviewer']['model'],'strict review')
+    except (ValueError,KeyError,TypeError,IndexError):
+        detail=diagnostics.finding('invalid_response_envelope')
+    else:
+        try:result=c.decode_json(content.encode('utf-8'))
+        except (ValueError,UnicodeError):detail=diagnostics.finding('invalid_json')
+        else:
+            detail=diagnostics.classify(result,request['input']['responseContract'],
+                manifest['sourceUnitIds'],c.HARD_CHECKS)
+    return {'schemaVersion':diagnostics.SCHEMA,'modelCallId':label(call['modelCallId']),
+        'payloadSha256':payload_sha256,'callBytesSha256':c.bytes_sha256(call_bytes),
+        'rawFileBytesSha256':c.bytes_sha256(raw_bytes),'responseSha256':c.canonical_sha256(response),
+        'candidateArtifactSha256':manifest['artifactSha256'],
+        'candidateBytesSha256':c.bytes_sha256(candidate_bytes),
+        'reviewerInputManifestSha256':c.canonical_sha256(inputs),
+        'reviewerInputBytesSha256':c.bytes_sha256(input_bytes),**detail}
+
+
 def _failed_review(prepared,manifest,inputs,output,attempt_number,error):
     # No observed transport identity means no model receipt can be manufactured.
     call,_=c.read_snapshot(output.with_suffix('.call.json'))
@@ -439,6 +494,11 @@ def _failed_review(prepared,manifest,inputs,output,attempt_number,error):
                      'invalid_review_response' if returned else 'transport_outcome_unknown',
         'errorType':accounting._label(type(error).__name__)}
     evidence_path=output.with_suffix('.failure.json');save_once(evidence_path,failure)
+    structural_refs=[]
+    if returned:
+        detail_path=output.with_suffix('.structural-diagnostic.json')
+        save_once(detail_path,_review_structural_diagnostic(prepared,manifest,inputs,output))
+        structural_refs=[reference('review-structural-diagnostic'+('' if attempt_number==1 else '-2'),detail_path.read_bytes())]
     accounting.record_log('rqc_review_execution',fields={'status':'failed' if known else 'outcome_unknown','reasonCode':failure['reasonCode']})
     return {**_review_receipt_base(prepared,manifest,inputs,attempt_number),
         'modelCallId':label(call['modelCallId']),'reviewerModelActual':model,'providerResponseId':provider_id,
@@ -446,18 +506,22 @@ def _failed_review(prepared,manifest,inputs,output,attempt_number,error):
         'checks':[],'issues':[],
         'coverage':dict(expectedUnitIds=manifest['sourceUnitIds'],assessedUnitIds=[],unassessedUnitIds=manifest['sourceUnitIds']),
         'evidenceRefs':[reference(review_failure_evidence_id('review-execution-failure',attempt_number),evidence_path.read_bytes())]+
-            ([reference(review_failure_evidence_id('review-transport-rejection',attempt_number),output.with_suffix('.rejection.json').read_bytes())] if rejection else []),
+            ([reference(review_failure_evidence_id('review-transport-rejection',attempt_number),output.with_suffix('.rejection.json').read_bytes())] if rejection else [])+
+            ([reference('review-rejection-diagnostic'+('' if attempt_number==1 else '-2'),output.with_suffix('.rejection-diagnostic.json').read_bytes())]
+             if output.with_suffix('.rejection-diagnostic.json').exists() else [])+structural_refs,
         'missingReasons':{k:'not_observed' if known else 'outcome_unknown' for k,v in
             [('reviewerModelActual',model),('providerResponseId',provider_id)] if v is None}}
 
 
-def _validate_cached_review_evidence(receipt,manifest,output):
+def _validate_cached_review_evidence(receipt,manifest,output,prepared=None,inputs=None):
     """Reopen the immutable reviewer evidence before trusting a cached receipt."""
     c.require(output.stem in {'reviewer','reviewer-2'},'invalid_review_evidence_identity')
     attempt_number=1 if output.stem=='reviewer' else 2
     call,_=c.read_snapshot(output.with_suffix('.call.json'))
     c.require(call.get('modelCallId')==receipt['modelCallId'],'strict_review_call_identity_changed')
     if receipt['executionStatus']=='succeeded':
+        c.require(not any(output.with_suffix(suffix).exists() for suffix in
+            ('.structural-diagnostic.json','.rejection-diagnostic.json')),'conflicting_strict_review_evidence')
         result,_=c.read_snapshot(output)
         raw=require_call_binding(output,result)
         model_call=raw.get('accounting',{}).get('modelCallId')
@@ -477,7 +541,32 @@ def _validate_cached_review_evidence(receipt,manifest,output):
         rejection_path=output.with_suffix('.rejection.json')
         if rejection_path.exists():
             expected.append(reference(review_failure_evidence_id('review-transport-rejection',attempt_number),rejection_path.read_bytes()))
+        details=output.with_suffix('.rejection-diagnostic.json')
+        if details.exists():
+            expected.append(reference('review-rejection-diagnostic'+('' if attempt_number==1 else '-2'),details.read_bytes()))
+        structural=output.with_suffix('.structural-diagnostic.json')
+        if structural.exists():
+            structural_saved,data=c.read_snapshot(structural)
+            expected.append(reference('review-structural-diagnostic'+('' if attempt_number==1 else '-2'),data))
         c.require(receipt['evidenceRefs']==expected,'strict_review_failure_evidence_changed')
+        if details.exists():
+            c.require(prepared is not None and inputs is not None,'strict_review_diagnostic_context_required')
+            candidate,_=c.read_snapshot(output.parent/'candidate.json')
+            payload_sha256=policies.canonical_sha256(_payload(prepared,'reviewer',
+                prompt(prepared,'reviewer',candidate=candidate,input_manifest=inputs)))
+            rejection=_transport_rejection(output,payload_sha256)
+            saved,_=c.read_snapshot(details)
+            c.require(type(saved) is dict and set(saved)=={'schemaVersion','rejectionSha256','modelCallId',
+                'payloadSha256','diagnostic'} and saved['schemaVersion']=='sermon-strict-rejection-diagnostic-v1' and
+                rejection is not None and saved['rejectionSha256']==c.canonical_sha256(rejection) and
+                saved['modelCallId']==receipt['modelCallId']==rejection['modelCallId'] and
+                saved['payloadSha256']==payload_sha256,'strict_rejection_diagnostic_binding_changed')
+            from scripts.sermon_pipeline import TransportRejection
+            TransportRejection(rejection['httpStatus'],saved['diagnostic'])
+        if structural.exists():
+            c.require(prepared is not None and inputs is not None,'strict_review_diagnostic_context_required')
+            c.require(structural_saved==_review_structural_diagnostic(prepared,manifest,inputs,output),
+                'strict_review_structural_diagnostic_changed')
 
 
 def review(prepared,root,candidate_id,revision_id,api_key,caller,*,cache_only=False,attempt_number=1,depends_on=None,completion_spans=None):
@@ -508,7 +597,7 @@ def review(prepared,root,candidate_id,revision_id,api_key,caller,*,cache_only=Fa
             if receipt_path.exists():
                 with accounting.stage('rqc.review_receipt_cache',depends_on=depends_on,cache_hit=True,executor_type='deterministic_program') as cached_span:
                     receipt,_=c.read_snapshot(receipt_path);c.validate_review_binding(receipt,manifest,prepared['rubric'],inputs)
-                    _validate_cached_review_evidence(receipt,manifest,root/('reviewer'+suffix+'.json'))
+                    _validate_cached_review_evidence(receipt,manifest,root/('reviewer'+suffix+'.json'),prepared,inputs)
                     observation.record(receipt)
                 if completion_spans is not None:completion_spans.append(cached_span)
                 return receipt

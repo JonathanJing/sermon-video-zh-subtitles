@@ -113,9 +113,55 @@ export function weekOptionLabel(week) {
   const date = String(week.date || week.id || '').replaceAll('-', '.');
   const title = typeof week.title === 'string' ? week.title.trim() : '';
   const route = typeof week.sourceLabel === 'string' ? week.sourceLabel.trim() : '';
-  const status = isFormalPlayback(week) ? '正式播放版' : week.humanContentReview === 'approved' ? '整篇中文' : week.audioStatus === 'full_candidate' ? '整篇待审' : week.tracks?.length ? '可试听' : '待配音';
+  const diagnostic = diagnosticPresentation(week);
+  const status = diagnostic ? ({failed:'处理失败',blocked:'流程受阻',pending:'待生成',ready:'DEV 可试听'})[diagnostic.status] : isFormalPlayback(week) ? '正式播放版' : week.humanContentReview === 'approved' ? '整篇中文' : week.audioStatus === 'full_candidate' ? '整篇待审' : week.tracks?.length ? '可试听' : '待配音';
   const displayStatus = isFormalPlayback(week) && [title, route].some(text => text.includes(status)) ? '' : status;
   return [date, title, route && !title.includes(route) ? route : '', displayStatus].filter(Boolean).join(' · ');
+}
+
+// Only diagnostic variants consume this state. Formal and legacy weeks retain
+// their existing contracts. Public messages never display raw exception text.
+const DIAGNOSTIC_REASONS = new Set(['machine_candidate_missing', 'preview_audio_unavailable',
+  'strict_locale_group_not_passed', 'strict_bridge_plugin_rejected', 'invalid_candidate_coverage',
+  'invalid_generated_candidate', 'invalid_review_response', 'provider_input_bound_exceeded',
+  'provider_request_limit', 'provider_cost_limit', 'provider_run_deadline_reached',
+  'provider_outcome_reconciliation_required', 'provider_configuration_stopped',
+  'preview_worker_failed_requires_reconciliation',
+  'native_runtime_unavailable', 'diagnostic_state_binding_invalid', 'unclassified_failure']);
+export function diagnosticPresentation(week) {
+  if (week?.diagnosticOnly !== true) return null;
+  const typed = week.diagnosticState;
+  const hasActualText = Array.isArray(week.fullTranscript) && week.fullTranscript.length > 0
+    && week.fullTranscript.every(row => typeof row?.text === 'string' && row.text.trim().length > 0);
+  let hasCandidate = hasActualText;
+  let status = hasCandidate ? (week.tracks?.length ? 'ready' : 'pending') : 'blocked';
+  let reasonCode = hasCandidate ? (week.tracks?.length ? null : 'preview_audio_unavailable') : 'machine_candidate_missing';
+  if (typed) {
+    const valid = typed.schemaVersion === 'sermon-dev-diagnostic-presentation-v1'
+      && ['failed','blocked','pending','ready'].includes(typed.status)
+      && typeof typed.machineCandidateAvailable === 'boolean'
+      && typed.targetLocale === week.targetLocale
+      && /^[a-f0-9]{64}$/.test(typed.inputBindingSha256 || '')
+      && typed.inputBindingSha256 === week.diagnosticInputSha256
+      && (!typed.machineCandidateAvailable || (hasActualText && /^[a-f0-9]{64}$/.test(typed.candidateSha256 || '')));
+    if (valid) {
+      hasCandidate = typed.machineCandidateAvailable;
+      status = typed.status;
+      reasonCode = typeof typed.reasonCode === 'string' && DIAGNOSTIC_REASONS.has(typed.reasonCode)
+        ? typed.reasonCode : typed.reasonCode == null ? null : 'unclassified_failure';
+    } else { hasCandidate = false; status = 'blocked'; reasonCode = 'diagnostic_state_binding_invalid'; }
+  }
+  if (status === 'ready' && (!hasCandidate || !week.tracks?.length)) {
+    status = 'blocked'; reasonCode = hasCandidate ? 'preview_audio_unavailable' : 'machine_candidate_missing';
+  }
+  return { status, statusKey:`app.diagnostic.${status}`, reasonCode, hasCandidate,
+    canPlay: status === 'ready' && hasCandidate && Boolean(week.tracks?.length),
+    stages: [
+      { labelKey:'app.diagnostic.text', status:hasCandidate?'pass':status, detailKey:hasCandidate?'app.diagnostic.textReady':'app.diagnostic.textMissing' },
+      { labelKey:'app.diagnostic.audio', status:status==='ready'?'review':status, detailKey:`app.diagnostic.${status}` },
+      { labelKey:'app.diagnostic.review', status:'pending', detailKey:'app.diagnostic.reviewPending' },
+      { labelKey:'app.diagnostic.delivery', status:'pending', detailKey:'app.diagnostic.previewOnly' },
+    ] };
 }
 
 export function parseTimecode(value) {

@@ -186,5 +186,40 @@ class PreviewWorkerTests(unittest.TestCase):
             subject.launch_preview(self.root, self.subject, self.context, self.spec)
         self.assertFalse(self.out.exists())
 
+    def test_real_execution_requires_bound_runtime_before_model_load(self):
+        with self.session(), self.assertRaisesRegex(ValueError, 'native_runtime_manifest_required'):
+            subject.launch_preview(self.root, self.subject, self.context, dict(self.spec, execute=True))
+        self.assertFalse(self.out.exists())
+
+    def test_fixture_cannot_claim_real_runtime(self):
+        with self.session(), self.assertRaisesRegex(ValueError, 'fixture_cannot_claim_native_runtime'):
+            self.launch(runtime_manifest_path=str(self.root / 'untrusted-runtime.json'))
+        self.assertFalse(self.out.exists())
+
+    def test_real_child_clock_handshake_and_actual_predecessor_are_bound(self):
+        with self.session():
+            with subject.accounting.stage('actual.upstream', depends_on=[]) as upstream:
+                pass
+            receipt = subject.launch_preview(self.root, self.subject, self.context, self.spec,
+                offline_fixture=True, depends_on=[upstream])
+        request = subject._read(self.out / 'worker-request.json')
+        self.assertEqual(request['predecessorSpans'], [upstream])
+        proof = receipt['clockHandshake']
+        self.assertEqual(subject.clock.validate_worker_handshake(proof['launch'],proof['finished'],proof['joined']), proof['joined'])
+        events, errors = subject.accounting.read_events(self.root / 'preview-accounting')
+        self.assertFalse(errors)
+        entry = next(row for row in events if row.get('stage') == 'preview.validate_inputs' and row['event'] == 'stage_started')
+        self.assertEqual(entry['dependsOn'], [upstream])
+        proof['joined']['clockChildEndNs'] += 1
+        with self.assertRaises(ValueError):
+            subject.clock.validate_worker_handshake(proof['launch'],proof['finished'],proof['joined'])
+
+    def test_shell_and_network_guards_remain_closed(self):
+        with subject._local_only(False):
+            with self.assertRaisesRegex(ValueError,'subprocess_forbidden'):
+                subprocess.Popen('sox -h',shell=True)
+            with self.assertRaisesRegex(RuntimeError,'network_forbidden'):
+                subject.socket.create_connection(('example.invalid',443))
+
 
 if __name__ == '__main__': unittest.main()

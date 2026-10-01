@@ -9,6 +9,7 @@ import urllib.error
 
 from scripts import sermon_diagnostic_provider as p
 from scripts import sermon_provider_limits as limits
+from scripts import sermon_provider_error as errors
 from scripts import sermon_review_budget as budget
 from scripts import sermon_review_contracts as c
 from scripts import sermon_strict_layer2 as strict
@@ -177,6 +178,165 @@ class ProviderTests(unittest.TestCase):
         self.assertFalse(any(r['code']=='missing_model_finish'
             for r in log_contract.replay_integrity(rows)['diagnostics']))
         self.assertEqual(len(self.calls),1)
+
+    def test_configuration_stop_is_scoped_persistent_and_recovery_does_not_retry_or_reset(self):
+        original=self.http
+        def configured(req,timeout,*,deadline=None):
+            if json.loads(req.data)['model']=='gpt-6-astra':
+                self.calls.append((req,timeout))
+                error=urllib.error.HTTPError(req.full_url,400,'private',{},io.BytesIO(b''))
+                error.safe_diagnostic=errors.diagnostic(400,json.dumps({'error':{
+                    'code':'unsupported_parameter','param':'max_completion_tokens','message':'private'}}).encode())
+                raise error
+            return original(req,timeout,deadline=deadline)
+        self.provider.executor=configured
+        with self.f.session():
+            with self.assertRaises(p.pipeline.TransportRejection) as rejected:
+                self.provider.chat('synthetic',self.payload(),operation_id='source.first')
+            self.assertEqual(rejected.exception.diagnostic['errorCode'],'unsupported_parameter')
+            snapshot=self.provider.snapshot()
+            root=self.store.root/budget.STORE_ID/'provider-run'
+            state_bytes=(root/'state.json').read_bytes()
+            self.provider=self.provider_for();self.provider.executor=configured
+            with self.assertRaisesRegex(p.pipeline.PreDispatchRejection,'provider_configuration_blocked'):
+                self.provider.chat('synthetic',self.payload(),operation_id='source.second')
+            self.assertEqual((root/'state.json').read_bytes(),state_bytes)
+            self.assertEqual(self.provider.snapshot(),snapshot)
+            # Different valid model scope is still allowed in this SAME ledger.
+            other={**self.payload(),'model':'gpt-6-sol'}
+            self.provider._scoped_payloads.add(c.canonical_sha256(other))
+            self.provider.chat('synthetic',other,response_observer=Mock())
+            stop_path=next((root/'configuration-stops').glob('*.stop.json'))
+            stop=c.read_snapshot(stop_path)[0]
+            preserved=(root/'state.json').read_bytes()
+            recovery=self.provider.recover_configuration(c.canonical_sha256(stop),
+                resolution_evidence_sha256='a'*64,approval_sha256='2'*64)
+            self.assertTrue(recovery['requiresNewAttempt'])
+            self.assertFalse(recovery['automaticDispatch'])
+            self.assertEqual((root/'state.json').read_bytes(),preserved)
+            self.assertEqual(len(self.calls),2)
+            # Old rejected source operation cannot silently become a new request.
+            with self.assertRaisesRegex(ValueError,'reconciliation_required'):
+                self.provider.chat('synthetic',self.payload(),operation_id='source.first')
+            self.assertEqual(len(self.calls),2)
+            self.assertTrue(stop_path.is_file())
+            self.assertEqual(self.provider.recover_configuration(c.canonical_sha256(stop),
+                resolution_evidence_sha256='a'*64,approval_sha256='2'*64),recovery)
+            with self.assertRaisesRegex(ValueError,'provider_recovery_approval_changed'):
+                self.provider.recover_configuration(c.canonical_sha256(stop),
+                    resolution_evidence_sha256='a'*64,approval_sha256='3'*64)
+
+    def test_configuration_stop_skips_untouched_locale_groups_without_new_reservations(self):
+        from scripts import sermon_strict_locale as locale
+        calls=[]
+        def rejected(req,timeout,*,deadline=None):
+            calls.append(req)
+            error=urllib.error.HTTPError(req.full_url,400,'private',{},io.BytesIO(b''))
+            error.safe_diagnostic=errors.diagnostic(400,json.dumps({'error':{
+                'code':'unsupported_parameter','param':'max_completion_tokens'}}).encode())
+            raise error
+        self.provider.executor=rejected
+        plan=[{key:row[key] for key in ('translationGroupId','sourceUnitIds')}
+              for row in self.f.f.evidence['groups']]
+        graph=[{'workUnitId':strict.prepare(*self.f.args,row)['workUnitId'],
+                'layer':2,'targetLocale':'zh-Hans','dependsOn':[]} for row in plan]
+        with self.f.session():
+            result=locale.run_locale(*self.f.args,root=self.f.root/'locale',store=self.store,
+                job_root=self.f.root/'jobs',production_run_id='b'*64,graph=graph,
+                plugin_path=self.f.f.plugin_path,expected_plugin_sha256=self.f.f.plugin_sha,
+                api_key='synthetic',caller=self.provider,bounds=self.bound,
+                usage_resolver=self.provider.usage_resolver,group_plan=plan,
+                request_limits=self.selected)
+        self.assertEqual(len(calls),1)
+        self.assertEqual(result['groups'][1]['status'],'not_started')
+        self.assertEqual(result['groups'][1]['reasonCode'],'provider_configuration_blocked')
+        self.assertEqual(len(self.store.snapshot(adapter.chain_identity(self.prepared))['reservations']),1)
+        self.assertFalse((self.f.root/'locale'/'machine-candidates').exists())
+        self.assertEqual(len(list((self.f.root/'locale'/'not-started').glob('*.json'))),1)
+
+    def test_reviewer_configuration_stop_preserves_generation_and_does_not_auto_retry(self):
+        from scripts import sermon_strict_controller as controller
+        from tests import test_sermon_strict_budget_adapter as budgets
+        original=self.http
+        def configured(req,timeout,*,deadline=None):
+            if json.loads(req.data)['model']=='gpt-6-sol':
+                self.calls.append((req,timeout))
+                error=urllib.error.HTTPError(req.full_url,400,'private',{},io.BytesIO(b''))
+                error.safe_diagnostic=errors.diagnostic(400,json.dumps({'error':{
+                    'code':'unsupported_parameter','param':'max_completion_tokens'}}).encode())
+                raise error
+            return original(req,timeout,deadline=deadline)
+        self.provider.executor=configured
+        graph=[{'workUnitId':self.prepared['workUnitId'],'layer':2,
+            'targetLocale':'zh-Hans','dependsOn':[]}]
+        def run():
+            return controller.run_group(self.prepared,root=self.f.root/'controller',store=self.store,
+                job_root=self.f.root/'jobs',production_run_id='b'*64,graph=graph,
+                candidate_id='candidate',api_key='synthetic',caller=self.provider,
+                bounds=self.bound,usage_resolver=budgets.measured)
+        with self.f.session():
+            result=run()
+            self.assertEqual(result['reasonCode'],'provider_configuration_blocked')
+            self.assertEqual(result['failureEvidence']['diagnostic']['errorParam'],'max_completion_tokens')
+            self.assertEqual(result['reviewAttempt'],1)
+            generator=Path(result['root'])/'generator.raw.json'
+            frozen=generator.read_bytes()
+            self.provider=self.provider_for();self.provider.executor=configured
+            again=run()
+            self.assertEqual(again['reasonCode'],'provider_configuration_blocked')
+            self.assertEqual(generator.read_bytes(),frozen)
+            self.assertEqual(again['reviewAttempt'],1)
+        self.assertEqual(len(self.calls),2)
+        self.assertFalse((Path(result['root'])/'reviewer-2.started.json').exists())
+        diagnostic=c.read_snapshot(Path(result['root'])/'reviewer.rejection-diagnostic.json')[0]
+        self.assertEqual(diagnostic['diagnostic']['errorCode'],'unsupported_parameter')
+
+    def test_stop_receipt_write_failure_is_unknown_preserves_reservation_and_closes_api_terminal(self):
+        def rejected(req,timeout,*,deadline=None):
+            self.calls.append((req,timeout))
+            error=urllib.error.HTTPError(req.full_url,400,'private',{},io.BytesIO(b''))
+            error.safe_diagnostic=errors.diagnostic(400,json.dumps({'error':{
+                'code':'unsupported_parameter','param':'max_completion_tokens'}}).encode())
+            raise error
+        self.provider.executor=rejected
+        original=strict.save_once
+        def failing(path,value):
+            if str(path).endswith('.stop.json'):raise OSError('private-secret')
+            return original(path,value)
+        with self.f.session(),patch.object(strict,'save_once',side_effect=failing):
+            with self.assertRaises(OSError) as failure:
+                self.provider.chat('synthetic',self.payload())
+            self.assertTrue(failure.exception.sermon_logging_failed)
+        self.assertEqual(len(self.calls),1)
+        self.assertEqual(len(self.provider.snapshot()['unknownModelCallIds']),1)
+        rows,invalid=accounting.read_events(self.f.root/'logs')
+        self.assertEqual(invalid,[])
+        self.assertEqual(len([r for r in rows if r['event']=='api_attempt_started']),1)
+        terminal=next(r for r in rows if r['event']=='api_attempt')
+        self.assertEqual(terminal['httpStatus'],400)
+        self.assertIsNone(terminal['cost']['estimatedUsd'])
+        self.assertNotIn('metrics',terminal)
+        self.assertNotIn('private-secret',json.dumps(rows))
+
+    def test_unknown_400_and_temporary_429_do_not_stop_the_configuration(self):
+        for code,error_code in ((400,None),(429,'rate_limit_exceeded')):
+            with self.subTest(code=code):
+                store=budget.BudgetStore(self.f.root/str(code),authority())
+                def rejected(req,timeout,*,deadline=None):
+                    self.calls.append((req,timeout))
+                    error=urllib.error.HTTPError(req.full_url,code,'private',{},io.BytesIO(b''))
+                    error.safe_diagnostic=errors.diagnostic(code,json.dumps({'error':{'code':error_code}}).encode())
+                    raise error
+                subject=p.DiagnosticProvider(store,config(),self.selected,executor=rejected,
+                    monotonic=lambda:self.clock,domain=lambda:'7'*64)
+                subject.source_check_payload=Mock(side_effect=self.payload)
+                before=len(self.calls)
+                with self.f.session():
+                    for n in range(2):
+                        with self.assertRaises(p.pipeline.TransportRejection):
+                            subject.chat('synthetic',self.payload(),operation_id='source.'+str(n))
+                self.assertEqual(len(self.calls)-before,2)
+                self.assertFalse((store.root/budget.STORE_ID/'provider-run/configuration-stops').exists())
 
     def test_unknown_timeout_and_restart_never_issue_another_request(self):
         self.provider.executor=Mock(side_effect=TimeoutError('synthetic'))

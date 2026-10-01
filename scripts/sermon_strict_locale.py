@@ -24,7 +24,7 @@ from scripts.sermon_release_workflow import _safe_path
 def run_locale(source_bytes, anchor_bytes, policy_bytes, rubric_bytes, *, root,
                store, job_root, production_run_id, graph, plugin_path,
                expected_plugin_sha256, api_key, caller, bounds,
-               usage_resolver=None, group_plan=None, created_at=None, request_limits=None, diagnostic_context=None):
+               usage_resolver=None, group_plan=None, created_at=None, request_limits=None, diagnostic_context=None, depends_on=None):
     """Run fixed groups and bounded repairs, then the real public/plugin bridge.
 
     All group inputs and the complete locale coverage are validated before the
@@ -73,7 +73,7 @@ def run_locale(source_bytes, anchor_bytes, policy_bytes, rubric_bytes, *, root,
         'productionRunId': production_run_id, 'targetLocale': policy['targetLocale']})
     with jobs._lock(job_root, lock_key) as (_, _, held):
         c.require(held, 'strict_locale_busy')
-        with accounting.stage('rqc.locale_input_binding', executor_type='deterministic_program') as bound_span:
+        with accounting.stage('rqc.locale_input_binding', depends_on=depends_on, executor_type='deterministic_program') as bound_span:
             root.mkdir(parents=True, exist_ok=True, mode=0o700)
             strict.save_once(root / 'locale-input.json', binding)
             jobs._sync_directory_ancestry(root)
@@ -89,6 +89,23 @@ def run_locale(source_bytes, anchor_bytes, policy_bytes, rubric_bytes, *, root,
                     'productionEligible': False} if diagnostic_context is not None else {})})
         results, revisions, dependencies = [], [], [bound_span]
         for item in prepared:
+            group_root=root/'groups'/c.canonical_sha256(item['group'])
+            stop=caller.configuration_stop(item) if hasattr(caller,'configuration_stop') else None
+            if stop is not None and not group_root.exists():
+                skipped={'schemaVersion':'sermon-strict-group-not-started-v1','status':'not_started',
+                    'reasonCode':'provider_configuration_blocked','workUnitId':item['workUnitId'],
+                    'localeInputSha256':c.canonical_sha256(binding),'scopeSha256':stop['scopeSha256'],
+                    'stopReceiptSha256':c.canonical_sha256(stop),'executionAuthority':'none'}
+                folder=root/'not-started';folder.mkdir(mode=0o700,exist_ok=True)
+                strict.save_once(folder/(c.canonical_sha256(skipped)+'.json'),skipped)
+                jobs._sync_directory_ancestry(folder)
+                with profile.context(workUnitId=item['workUnitId']):
+                    with accounting.stage('rqc.locale_group_not_started',depends_on=dependencies,
+                            executor_type='deterministic_program'):
+                        accounting.record_log('rqc_configuration_stop',fields={
+                            'status':'not_started','reasonCode':'provider_configuration_blocked'})
+                results.append(skipped)
+                continue
             completed = []
             result = controller.run_group(item, root=root / 'groups' / c.canonical_sha256(item['group']),
                 store=store, job_root=job_root, production_run_id=production_run_id,

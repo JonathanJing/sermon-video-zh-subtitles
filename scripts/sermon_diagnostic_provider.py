@@ -23,6 +23,7 @@ import urllib.request
 
 from scripts import sermon_accounting as accounting
 from scripts import sermon_pipeline as pipeline
+from scripts import sermon_provider_error as errors
 from scripts import sermon_log_profile as profile
 from scripts import sermon_provider_limits as limits
 from scripts import sermon_provider_http as http
@@ -161,9 +162,145 @@ class DiagnosticProvider:
                     'unknownModelCallIds': sorted(k for k,v in state['requests'].items() if v['state'] in ('reserved','outcome_unknown')),
                     'budgetBasis': 'worst_case_reservations_no_refunds', 'invoiceVerified': False}
 
+    def _configuration_scope(self, payload, diagnostic):
+        diagnostic = errors.validate(diagnostic)
+        if 'model' not in payload and type(payload.get('api')) is dict:
+            payload={**payload,'model':payload['api'].get('model')}
+        reason, param = diagnostic['reasonCode'], diagnostic['errorParam']
+        base = {k:self.config[k] for k in ('credentialReferenceSha256','projectId','organizationId')}
+        if diagnostic['httpStatus'] == 401:
+            return c.canonical_sha256(dict(base, kind='credential'))
+        if diagnostic['httpStatus'] == 429 and reason == 'insufficient_quota':
+            return c.canonical_sha256(dict(base, kind='credential'))
+        if diagnostic['httpStatus'] != 400:
+            return None
+        if reason in ('unsupported_parameter','unsupported_value') and param in {
+                'model','reasoning_effort','response_format','response_format.type',
+                'max_completion_tokens','max_tokens','service_tier','temperature'}:
+            if param.split('.')[0] not in payload: return None
+            value = payload.get(param.split('.')[0])
+            return c.canonical_sha256(dict(base, kind='model_parameter', model=payload.get('model'),
+                parameter=param, valueSha256=c.canonical_sha256(value)))
+        if reason == 'json_mode_requires_json_word' and payload.get('response_format')=={'type':'json_object'}:
+            system = [row['content'] for row in payload.get('messages',[]) if row.get('role') in ('system','developer')]
+            return c.canonical_sha256(dict(base, kind='json_prompt_contract', model=payload.get('model'),
+                promptSha256=c.canonical_sha256(system), formatSha256=c.canonical_sha256(payload.get('response_format'))))
+        return None
+
+    def _active_stops(self, root):
+        folder = root/'configuration-stops'
+        if not folder.exists(): return []
+        paths = sorted(folder.glob('*.stop.json'))
+        c.require(len(paths) <= self.config['maxRequests'], 'provider_configuration_stop_limit')
+        state,_=c.read_snapshot(root/'state.json')
+        active = []
+        for path in paths:
+            stop, _ = c.read_snapshot(path)
+            c.require(type(stop) is dict and set(stop) == {'schemaVersion','scopeSha256','runConfigSha256',
+                'modelCallId','requestSha256','providerReceiptSha256','diagnostic'} and
+                stop['schemaVersion']=='sermon-provider-configuration-stop-v1' and
+                stop['runConfigSha256']==c.canonical_sha256(self.config) and
+                path.name==c.canonical_sha256(stop)+'.stop.json', 'provider_configuration_stop_changed')
+            for key in ('scopeSha256','runConfigSha256','requestSha256','providerReceiptSha256'): budget._hash(stop[key])
+            strict.label(stop['modelCallId']); errors.validate(stop['diagnostic'])
+            row=state['requests'].get(stop['modelCallId'])
+            c.require(row is not None and row['state']=='rejected' and
+                row['receiptSha256']==stop['providerReceiptSha256'] and
+                row['requestSha256']==stop['requestSha256'],'provider_configuration_stop_changed')
+            receipt, receipt_bytes = c.read_snapshot(root/(stop['modelCallId']+'.json'))
+            c.require(c.bytes_sha256(receipt_bytes)==stop['providerReceiptSha256'] and
+                receipt.get('payloadSha256')==stop['requestSha256'] and
+                receipt.get('diagnostic')==stop['diagnostic'] and
+                receipt.get('configurationScopeSha256')==stop['scopeSha256'], 'provider_configuration_stop_changed')
+            recovered = path.with_suffix('.recovery.json')
+            if recovered.exists():
+                recovery, _ = c.read_snapshot(recovered)
+                c.require(type(recovery) is dict and set(recovery)=={'schemaVersion','stopReceiptSha256',
+                    'scopeSha256','approvalSha256','resolutionEvidenceSha256','requiresNewAttempt'} and
+                    recovery['schemaVersion']=='sermon-provider-configuration-recovery-v1' and
+                    recovery['stopReceiptSha256']==c.canonical_sha256(stop) and
+                    recovery['scopeSha256']==stop['scopeSha256'] and
+                    recovery['approvalSha256']==self.config['approvalSha256'] and
+                    recovery['requiresNewAttempt'] is True, 'provider_configuration_recovery_changed')
+                budget._hash(recovery['resolutionEvidenceSha256'])
+            else: active.append(stop)
+        return active
+
+    def _matching_stop(self, root, payload):
+        return next((stop for stop in self._active_stops(root)
+            if self._configuration_scope(payload,stop['diagnostic'])==stop['scopeSha256']),None)
+
+    def configuration_stop(self, prepared, role=None):
+        self._check_source(prepared)
+        roles = (role,) if role is not None else ('translator','reviewer')
+        with self._locked() as (root, _):
+            for selected in roles:
+                # Only settings/system prompt identity matter for stop scope.
+                c.require(selected in ('translator','reviewer'),'provider_configuration_role_invalid')
+                # The candidate placeholder is never dispatched or admitted; it
+                # obtains the actual reviewer system instruction without opening
+                # a per-group private cache. Stop identity excludes user content.
+                request = strict.prompt(prepared,selected,
+                    **({'candidate':{'targetUtterances':['scope-only']},
+                        'input_manifest':{'reviewedArtifactSha256':'0'*64}} if selected=='reviewer' else {}))
+                payload={'model':prepared['policy'][selected]['model'],
+                    'reasoning_effort':prepared['policy'][selected]['reasoningEffort'],
+                    'messages':[{'role':'system','content':request['instruction']}],
+                    'response_format':{'type':'json_object'}}
+                selected_limits=prepared.get('requestLimits')
+                if selected_limits is not None:
+                    payload.update(max_completion_tokens=selected_limits['maxCompletionTokens'],
+                        service_tier=selected_limits['serviceTier'])
+                stop = self._matching_stop(root,payload)
+                if stop is not None: return deepcopy(stop)
+        return None
+
+    def recover_configuration(self, stop_receipt_sha256, *, resolution_evidence_sha256, approval_sha256):
+        """Explicit operator evidence clears only this scope, never cached failure.
+
+        Failed operations require a separately authorized new attempt. Successful
+        immutable outputs stay reusable under their existing upstream bindings.
+        This method never refunds, resets clocks, retries or reconciles unknowns.
+        """
+        for value in (stop_receipt_sha256,resolution_evidence_sha256,approval_sha256): budget._hash(value)
+        c.require(approval_sha256==self.config['approvalSha256'],'provider_recovery_approval_changed')
+        with self._locked() as (root,state):
+            c.require(not any(row['state'] in ('reserved','outcome_unknown') for row in state['requests'].values()),
+                'provider_outcome_reconciliation_required')
+            path=root/'configuration-stops'/(stop_receipt_sha256+'.stop.json')
+            stop,_=c.read_snapshot(path)
+            # Validate all immutable stops/recovery receipts before mutation.
+            self._active_stops(root)
+            c.require(c.canonical_sha256(stop)==stop_receipt_sha256,'provider_configuration_stop_changed')
+            recovery={'schemaVersion':'sermon-provider-configuration-recovery-v1',
+                'stopReceiptSha256':stop_receipt_sha256,'scopeSha256':stop['scopeSha256'],
+                'approvalSha256':approval_sha256,'resolutionEvidenceSha256':resolution_evidence_sha256,
+                'requiresNewAttempt':True}
+            strict.save_once(path.with_suffix('.recovery.json'),recovery)
+            jobs._sync_directory_ancestry(path.parent)
+            return {**recovery,'status':'scope_recovered_requires_new_attempt',
+                'cachedFailuresChanged':False,'budgetReset':False,'automaticDispatch':False}
+
     def _reserve(self, call_id, payload, request_limits, operation_id=None, audio_bounds=None):
         bound = audio_bounds if audio_bounds is not None else limits.request_bounds(payload, request_limits)
         with self._locked() as (root, state):
+            closed_path = root / 'closed.json'
+            if closed_path.exists():
+                closed,_ = c.read_snapshot(closed_path)
+                c.require(set(closed) == {'schemaVersion','runId','runConfigSha256','storeSha256',
+                    'providerStateFileSha256','budgetStateFileSha256','closureEvidenceSha256',
+                    'instructionReferenceSha256','productionEligible','newDispatchAllowed'}
+                    and closed['schemaVersion'] == 'sermon-diagnostic-provider-closed-v1'
+                    and closed['runId'] == self.config['runId']
+                    and closed['runConfigSha256'] == c.canonical_sha256(self.config)
+                    and closed['storeSha256'] == self.store.store_sha256
+                    and closed['providerStateFileSha256'] == c.bytes_sha256(c.read_snapshot(root/'state.json')[1])
+                    and closed['productionEligible'] is False and closed['newDispatchAllowed'] is False,
+                    'provider_closed_binding_changed')
+                for field in ('budgetStateFileSha256','closureEvidenceSha256','instructionReferenceSha256'):
+                    budget._hash(closed[field])
+                _require_before_dispatch(False,'provider_run_permanently_closed')
+            _require_before_dispatch(self._matching_stop(root,payload) is None,'provider_configuration_blocked')
             self._remaining(state)
             deadline = min(state['startedMonotonic'] + self.config['totalWallSeconds'],
                            self.monotonic() + request_limits['wallTimeMs']/1000)
@@ -229,6 +366,16 @@ class DiagnosticProvider:
                 if measured is None or any(measured[k] > row['bounds'][k] for k in
                         ('inputTokens','outputTokens','costMicrousd')):
                     status = 'outcome_unknown'
+            if status == 'rejected' and value.get('diagnostic') is not None:
+                scope=value.get('configurationScopeSha256')
+                if scope is not None:
+                    stop={'schemaVersion':'sermon-provider-configuration-stop-v1','scopeSha256':scope,
+                        'runConfigSha256':c.canonical_sha256(self.config),'modelCallId':call_id,
+                        'requestSha256':row['requestSha256'],'providerReceiptSha256':c.bytes_sha256(raw),
+                        'diagnostic':value['diagnostic']}
+                    folder=root/'configuration-stops';folder.mkdir(mode=0o700,exist_ok=True)
+                    strict.save_once(folder/(c.canonical_sha256(stop)+'.stop.json'),stop)
+                    jobs._sync_directory_ancestry(folder)
             row.update(state=status, receiptSha256=c.bytes_sha256(raw))
             self._save(root, state)
             if status == 'outcome_unknown':
@@ -347,8 +494,11 @@ class DiagnosticProvider:
                 'cachedInputTokens':observed['providerUsage']['cachedInputTokens'],
                 'cacheWriteTokens':observed['providerUsage']['cacheWriteTokens']})
         def rejected(error, call_id):
+            diagnostic=error.diagnostic or errors.diagnostic(error.http_status)
             self._receipt(call_id, {'modelCallId':call_id,'httpStatus':error.http_status,
-                                   'payloadSha256':c.canonical_sha256(payload)}, 'rejected')
+                'payloadSha256':c.canonical_sha256(payload),
+                'diagnostic':diagnostic,
+                'configurationScopeSha256':self._configuration_scope(payload,diagnostic)}, 'rejected')
             if response_observer is not None:response_observer.request_rejected(error,call_id)
         returned.request_started=started;returned.request_rejected=rejected
         def execute(request):
@@ -405,8 +555,11 @@ class DiagnosticProvider:
                 'priceEvidenceSha256':c.canonical_sha256(cost),
                 'estimatedCostMicrousd':cost.get('costMicrousd'),'invoiceVerified':False})
         def rejected(error,call_id):
+            diagnostic=error.diagnostic or errors.diagnostic(error.http_status)
             self._receipt(call_id,{'modelCallId':call_id,'httpStatus':error.http_status,
-                'payloadSha256':c.canonical_sha256(payload)},'rejected')
+                'payloadSha256':c.canonical_sha256(payload),
+                'diagnostic':diagnostic,
+                'configurationScopeSha256':self._configuration_scope(payload,diagnostic)},'rejected')
         returned.request_started=started;returned.request_rejected=rejected
         def execute(req):
             remaining=state['deadline']-self.monotonic()

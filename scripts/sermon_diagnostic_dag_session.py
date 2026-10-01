@@ -120,7 +120,7 @@ class DiagnosticSession:
                 'newASRCalls': 0, 'newSourceCheckCalls': 0,
                 'humanAcceptance': 'pending', 'productionEligible': False}
 
-    def run_locale(self, locale, spec):
+    def run_locale(self, locale, spec, *, depends_on=None):
         self._check()
         for key in ('source', 'anchor', 'policy', 'rubric'):
             self._path(spec[key])
@@ -132,12 +132,12 @@ class DiagnosticSession:
                 offline.no_transport() if self.offline_fixture else nullcontext():
             result = self.runner.run_locale(*artifacts, graph=spec['graph'],
                 plugin_path=Path(spec['pluginPath']), plugin_sha256=spec['pluginSha256'],
-                group_plan=spec['groupPlan'], diagnostic_context=self.context)
+                group_plan=spec['groupPlan'], diagnostic_context=self.context, depends_on=depends_on)
         self._locale_specs[locale] = deepcopy(spec)
         self._locale_results[locale] = deepcopy(result)
         return result
 
-    def preview(self, locale, spec):
+    def preview(self, locale, spec, *, depends_on=None):
         from scripts import sermon_diagnostic_preview_worker as worker
         self._check()
         result = self._locale_results.get(locale)
@@ -166,7 +166,7 @@ class DiagnosticSession:
                   'diagnostic_dag_preview_output_changed')
         with profile.context(workKind='production', productionRunId=self.subject.config['runId']):
             return worker.launch_preview(self.root, self.subject, self.context, spec,
-                                         offline_fixture=self.offline_fixture)
+                                         offline_fixture=self.offline_fixture, depends_on=depends_on)
 
     def inspect_delivery(self, previews, expected_locales):
         from scripts import sermon_diagnostic_delivery_preflight as delivery

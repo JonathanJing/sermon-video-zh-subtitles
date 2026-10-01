@@ -9,7 +9,7 @@ import socket
 import struct
 import subprocess
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 import urllib.request
 
 from scripts import run_bounded_diagnostic as run
@@ -107,6 +107,19 @@ class BoundedRunTests(unittest.TestCase):
                        lambda: self.runner.source_check(operation_id='source.initial'), self.locale):
             with self.assertRaisesRegex(ValueError,'diagnostic_source_clip_changed'):action()
         self.assertFalse(self.subject.store.root.exists())
+        self.assertEqual(self.calls,[])
+
+    def test_explicit_request_limit_change_is_also_reserved_at_the_locale_boundary(self):
+        selected=dict(self.subject.limits,maxInputTokens=16384)
+        subject=provider.DiagnosticProvider(self.subject.store,self.subject.config,
+            request_limits=selected,executor=self.capture,monotonic=lambda:100.,domain=lambda:'7'*64)
+        self.runner=run.BoundedRun(subject,'synthetic',self.f.root,source_clip=self.clip)
+        with patch.object(run.locale,'run_locale',return_value={'status':'synthetic_boundary'}) as dispatch:
+            self.locale()
+        actual=dispatch.call_args.kwargs
+        self.assertEqual(actual['request_limits'],selected)
+        self.assertEqual(actual['bounds'],{'requests':1,'inputTokens':16384,'outputTokens':4096,
+            'wallTimeMs':300000,'costMicrousd':409600})
         self.assertEqual(self.calls,[])
 
     def test_simulated_human_context_keeps_one_bounded_provider_and_real_review(self):
