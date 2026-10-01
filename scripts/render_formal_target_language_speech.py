@@ -9,6 +9,7 @@ and fully decoded units, but no release manifest.
 from __future__ import annotations
 
 import argparse
+import copy
 import hashlib
 import json
 import math
@@ -29,6 +30,8 @@ try:
     from scripts import sermon_accounting as accounting
     from scripts import sermon_sentence_interpretation as identity
     from scripts import validate_target_language_audio_unit as integrity
+    from scripts import dev_audio_test_profile as dev_profile
+    from scripts import dev_audio_test_receipts as dev_receipts
 except ImportError:
     import build_target_language_audio_package as package
     import four_layer_measure as measure
@@ -36,6 +39,8 @@ except ImportError:
     import sermon_accounting as accounting
     import sermon_sentence_interpretation as identity
     import validate_target_language_audio_unit as integrity
+    import dev_audio_test_profile as dev_profile
+    import dev_audio_test_receipts as dev_receipts
 
 
 VERSION = "sermon-formal-target-speech-render-v1"
@@ -44,6 +49,8 @@ VERSION = "sermon-formal-target-speech-render-v1"
 RENDERER_SOUND_IDENTITY_SHA256 = "fef7604882470137f46f1b01fbd06c7c3c9a07166da91003243608785fa47f0b"
 DEFAULT_POLICY = {"reactionLagSeconds": 0.05, "interUtteranceGapSeconds": 0.05,
                   "maxEndLagSeconds": 8.0}
+BATCH_SIZES = (1, 2, 4, 8)
+BATCH_SEED_POLICY = "base_plus_fixed_window_start_ordered_missing_units_v1"
 
 
 def require(ok: bool, message: str) -> None:
@@ -214,12 +221,29 @@ class QwenSynthesizer:
         if self.instruct:
             kwargs["instruct"] = self.instruct
         wavs, sample_rate = self.model.generate_custom_voice(**kwargs)
+        require(len(wavs) == 1, "TTS returned an incomplete or extra scalar output")
         return wavs[0], sample_rate
+
+    def batch(self, requests: list[dict[str, Any]], *, seed: int) -> list[dict[str, Any]]:
+        self.torch.manual_seed(seed)
+        if self.torch.cuda.is_available():
+            self.torch.cuda.manual_seed_all(seed)
+        kwargs = {"text": [row["text"] for row in requests],
+                  "language": [row["language"] for row in requests],
+                  "speaker": [row["speaker"] for row in requests],
+                  "temperature": 0.7, "repetition_penalty": 1.05, "max_new_tokens": 768}
+        if any(row["instruct"] for row in requests):
+            kwargs["instruct"] = [row["instruct"] or "" for row in requests]
+        wavs, sample_rate = self.model.generate_custom_voice(**kwargs)
+        require(len(wavs) == len(requests), "TTS batch output cardinality differs")
+        return [{"identity": row["identity"], "wave": wav, "sampleRate": sample_rate}
+                for row, wav in zip(requests, wavs)]
 
 
 def _intent(context: dict[str, Any], paths: dict[str, Path], index: int, *, seed: int,
             dtype: str, attention: str | None, instruct: str | None,
-            spoken_text: str | None = None) -> dict[str, Any]:
+            spoken_text: str | None = None, batch_size: int = 1,
+            device: str = "cuda:0", batch_window_sha256: str | None = None) -> dict[str, Any]:
     job, adapter = context["job"], context["adapter"]
     unit = job["units"][index]
     result = {
@@ -251,6 +275,15 @@ def _intent(context: dict[str, Any], paths: dict[str, Path], index: int, *, seed
     }
     if spoken_text is not None:
         result["spokenTextSha256"] = hashlib.sha256(spoken_text.encode()).hexdigest()
+    if batch_size != 1:
+        start = index // batch_size * batch_size
+        result.update(batchSize=batch_size, batchSeedPolicy=BATCH_SEED_POLICY,
+                      batchExecutionDevice=device,
+                      batchImplementationSha256=identity.sha256(Path(__file__)),
+                      batchWindowInputsSha256=batch_window_sha256,
+                      batchWindowStart=start,
+                      batchWindowUnitIndices=list(range(start, min(start + batch_size, len(job["units"])))),
+                      batchCachedUnitPolicy="exclude_committed_or_admitted_reuse")
     return result
 
 
@@ -330,7 +363,7 @@ def unit_instructions(job: dict[str, Any], path: Path | None) -> dict[str, dict[
 def _reusable_speculative_audio(previous_root: Path, unit: dict[str, Any], index: int,
                                 expected: dict[str, Any], *, strict_rubric=None) -> Path | None:
     """Admit only the same sound from an explicitly non-formal pre-render lane."""
-    if expected.get("spokenTextSha256") is not None:
+    if expected.get("spokenTextSha256") is not None or expected.get("batchSize", 1) != 1:
         return None
     manifest_path = previous_root / "manifest.json"
     if not manifest_path.is_file():
@@ -481,6 +514,116 @@ def write_pcm16(path: Path, samples: Any, rate: int) -> None:
         handle.writeframes(pcm)
 
 
+def _batch_admission(context, paths, root, *, seed, dtype, attention, instruct, device,
+                     instructions_by_group, batch_size, reuse_from, speculative_from,
+                     window_hashes):
+    """Freeze/check every unit before a batched call can synthesize future units."""
+    job, adapter = context["job"], context["adapter"]
+    require(identity.json_sha256(package.read_object(paths["job"])) == identity.json_sha256(job),
+            "Batch job differs from the checked input")
+    requests, reusable, pending_intents = {}, {}, []
+    groups, outputs = set(), set()
+    for index, unit in enumerate(job["units"]):
+        group = unit["translationGroupId"]
+        require(isinstance(unit.get("text"), str) and unit["text"].strip()
+                and group not in groups and unit["outputRelativePath"] not in outputs,
+                "TTS batch units require unique groups/outputs and nonempty text")
+        groups.add(group)
+        outputs.add(unit["outputRelativePath"])
+        wav = root / unit["outputRelativePath"]
+        require(wav.resolve().is_relative_to(root.resolve()), "TTS batch unit escapes render root")
+        overrides = (instructions_by_group or {}).get(group, {})
+        instruction = overrides.get("instruction", instruct)
+        spoken = overrides.get("spokenText")
+        expected = _intent(context, paths, index, seed=seed, dtype=dtype,
+                           attention=attention, instruct=instruction, spoken_text=spoken,
+                           batch_size=batch_size, device=device,
+                           batch_window_sha256=window_hashes[index // batch_size * batch_size])
+        intent_path = root / f"receipts/unit-{index:04d}.intent.json"
+        commit_path = root / f"receipts/unit-{index:04d}.render.json"
+        receipt_path = root / f"receipts/unit-{index:04d}.json"
+        if intent_path.exists():
+            require(package.read_object(intent_path) == expected,
+                    f"Cached render identity differs: {group}")
+        else:
+            require(not any(path.exists() for path in (wav, commit_path, receipt_path)),
+                    f"Orphaned audio/receipt cannot be reused: {group}")
+            pending_intents.append((intent_path, expected))
+        if commit_path.exists():
+            commit = package.read_object(commit_path)
+            audio = wav if wav.exists() else wav.with_suffix(".partial.wav")
+            require(commit.get("identity") == expected and audio.is_file()
+                    and commit.get("audioSha256") == identity.sha256(audio),
+                    f"Cached audio identity or hash changed: {group}")
+            if receipt_path.exists():
+                if audio != wav:
+                    # Recover only bytes already bound by the immutable commit.
+                    os.replace(audio, wav)
+                integrity.validate_receipt(paths["job"], index, wav,
+                    package.read_object(receipt_path),
+                    validated_job=job, validated_job_file_sha256=expected["jobFileSha256"],
+                    **({"strict_rubric": context["strict_rubric"]}
+                       if context.get("strict_rubric") is not None else {}))
+            continue
+        require(not wav.exists(), f"Uncommitted audio cannot be reused: {wav}")
+        previous = (_reusable_audio(reuse_from, unit, index, expected)
+                    if reuse_from is not None else None)
+        # Preview scalar audio deliberately cannot satisfy a batch sound intent.
+        reusable[index] = previous
+        if previous is None:
+            requests[index] = {"identity": expected, "text": spoken or unit["text"],
+                               "language": adapter["languageParameter"],
+                               "speaker": adapter["speakerKey"], "instruct": instruction}
+    for path, expected in pending_intents:
+        write_json_atomic(path, expected)
+    return requests, reusable
+
+
+class _BatchedUnitSynthesizer:
+    """One resident engine, at most one fixed window of uncommitted waveforms."""
+    def __init__(self, engine, requests, *, seed, batch_size, job_path):
+        require(callable(getattr(engine, "batch", None)), "TTS engine has no batch method")
+        self.engine, self.requests = engine, requests
+        self.seed, self.batch_size, self.job_path = seed, batch_size, job_path
+        self.frozen_job_sha = identity.sha256(job_path)
+        self.remaining = list(requests)
+        self.outputs = {}
+        self.last_generation = None
+        self.instruct = None
+
+    def __call__(self, text, language, speaker, *, seed):
+        require(self.remaining, "TTS batch received an extra unit call")
+        index = self.remaining[0]
+        request = self.requests[index]
+        require((text, language, speaker, seed) == (
+            request["text"], request["language"], request["speaker"], self.seed + index),
+            "TTS batch unit request order or input differs")
+        require(identity.sha256(self.job_path) == self.frozen_job_sha,
+                "Frozen TTS batch job changed before synthesis")
+        if index not in self.outputs:
+            require(not self.outputs, "TTS batch window was not fully consumed")
+            start = index // self.batch_size * self.batch_size
+            indices = [i for i in self.remaining if start <= i < start + self.batch_size]
+            batch = [self.requests[i] for i in indices]
+            batch_seed = self.seed + start
+            values = self.engine.batch(copy.deepcopy(batch), seed=batch_seed)
+            require(isinstance(values, list) and len(values) == len(batch),
+                    "TTS batch output cardinality differs")
+            for row, expected in zip(values, batch):
+                require(isinstance(row, dict) and row.get("identity") == expected["identity"]
+                        and "wave" in row and isinstance(row.get("sampleRate"), int)
+                        and row["sampleRate"] > 0,
+                        "TTS batch output identity/order or sample rate differs")
+            require(identity.sha256(self.job_path) == self.frozen_job_sha,
+                    "Frozen TTS batch job changed during synthesis")
+            generation = {"unitIndices": indices, "seed": batch_seed,
+                          "seedPolicy": BATCH_SEED_POLICY, "batchSize": self.batch_size}
+            self.outputs = {i: (row, generation) for i, row in zip(indices, values)}
+        value, self.last_generation = self.outputs.pop(index)
+        self.remaining.pop(0)
+        return value["wave"], value["sampleRate"]
+
+
 def render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
                  checkpoint_map_path: Path, *, seed: int = 42, device: str = "cuda:0",
                  dtype: str = "bfloat16", attention: str | None = "sdpa",
@@ -488,16 +631,42 @@ def render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
                  instructions_by_group: dict[str, dict[str, str]] | None = None,
                  reuse_from: Path | None = None,
                  speculative_from: Path | None = None,
+                 batch_size: int = 1,
                  synth_factory: Callable[..., Any] = QwenSynthesizer,
                  predecessor_spans: tuple[str, ...] = (),
                  completion_spans: list[str] | None = None) -> list[dict[str, Any]]:
     job, adapter = context["job"], context["adapter"]
+    require(type(batch_size) is int and batch_size in BATCH_SIZES,
+            "TTS batch size must be 1, 2, 4 or 8")
     if reuse_from is not None:
         require(reuse_from.is_dir() and reuse_from.resolve() != root.resolve(),
                 "Previous render root must be a distinct existing directory")
     if speculative_from is not None:
         require(speculative_from.is_dir() and speculative_from.resolve() != root.resolve(),
                 "Speculative render root must be a distinct existing directory")
+    reusable_batches = None
+    window_hashes = {}
+    if batch_size != 1:
+        for start in range(0, len(job["units"]), batch_size):
+            inputs = []
+            for index in range(start, min(start + batch_size, len(job["units"]))):
+                unit = job["units"][index]
+                overrides = (instructions_by_group or {}).get(unit["translationGroupId"], {})
+                inputs.append({"unitIndex": index, "groupId": unit["translationGroupId"],
+                    "sourceUnitIds": unit["sourceUnitIds"], "text": unit["text"],
+                    "spokenText": overrides.get("spokenText"),
+                    "instruction": overrides.get("instruction", instruct),
+                    "language": adapter["languageParameter"], "speaker": adapter["speakerKey"]})
+            window_hashes[start] = identity.json_sha256(inputs)
+        requests, reusable_batches = _batch_admission(
+            context, paths, root, seed=seed, dtype=dtype, attention=attention,
+            instruct=instruct, device=device, instructions_by_group=instructions_by_group,
+            batch_size=batch_size, reuse_from=reuse_from, speculative_from=speculative_from,
+            window_hashes=window_hashes)
+        original_factory = synth_factory
+        def synth_factory(*args, **kwargs):
+            return _BatchedUnitSynthesizer(original_factory(*args, **kwargs), requests,
+                seed=seed, batch_size=batch_size, job_path=paths["job"])
     model = None
     model_load_span = None
     previous_receipts = accounting.bounded_dependencies(
@@ -523,7 +692,8 @@ def render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
                                   depends_on=previous_receipts) as admission_span:
                 expected = _intent(context, paths, index, seed=seed, dtype=dtype,
                                    attention=attention, instruct=unit_instruct,
-                                   spoken_text=spoken_text)
+                                   spoken_text=spoken_text, batch_size=batch_size, device=device,
+                                   batch_window_sha256=window_hashes.get(index // batch_size * batch_size))
                 if intent_path.exists():
                     stored_intent = package.read_object(intent_path)
                     require(stored_intent == expected
@@ -548,7 +718,8 @@ def render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
                     require(not wav_path.exists(), f"Uncommitted audio cannot be reused: {wav_path}")
                     wav_path.parent.mkdir(parents=True, exist_ok=True)
                     partial = wav_path.with_suffix(".partial.wav")
-                    previous = (_reusable_audio(reuse_from, unit, index, expected)
+                    previous = (reusable_batches[index] if reusable_batches is not None else
+                                _reusable_audio(reuse_from, unit, index, expected)
                                 if reuse_from is not None else None)
                     unit_metrics["reusedPrior"] = previous is not None
                     if previous is None and speculative_from is not None:
@@ -588,6 +759,8 @@ def render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
                 with accounting.stage(f"layer3.commit.{job['targetLocale']}.{index:04d}",
                                       work_unit_id=work_unit + ".commit", depends_on=[validation_span]) as commit_span:
                     commit = {"identity": expected, "audioSha256": identity.sha256(partial)}
+                    if batch_size != 1 and unit_metrics["synthesized"]:
+                        commit["generationBatch"] = model.last_generation
                     write_json_atomic(commit_path, commit)
                     os.replace(partial, wav_path)
             with accounting.stage(f"layer3.receipt.{job['targetLocale']}.{index:04d}",
@@ -616,6 +789,8 @@ def render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
         previous_receipts = [receipt_span]
     if completion_spans is not None:
         completion_spans.extend(previous_receipts)
+    require(len(rows) == len(job["units"]) and (batch_size == 1 or model is None
+            or (not model.remaining and not model.outputs)), "TTS batch unit coverage is incomplete")
     return rows
 
 
@@ -832,7 +1007,7 @@ def render(paths: dict[str, Path], checkpoint_map_path: Path,
            operation_policies_path: Path, *, path_map_path: Path | None = None,
            reuse_from: Path | None = None,
            speculative_from: Path | None = None,
-           seed: int = 42,
+           seed: int = 42, batch_size: int = 1,
            device: str = "cuda:0", dtype: str = "bfloat16",
            attention: str | None = "sdpa", instruct: str | None = None,
            unit_instructions_path: Path | None = None,
@@ -859,6 +1034,7 @@ def render(paths: dict[str, Path], checkpoint_map_path: Path,
                             instructions_by_group=instructions_by_group,
                             reuse_from=reuse_from,
                             speculative_from=speculative_from,
+                            batch_size=batch_size,
                             synth_factory=synth_factory, predecessor_spans=(validation_span,),
                             completion_spans=completed_units)
     with accounting.stage("layer3.assemble"):
@@ -880,7 +1056,7 @@ def render_accounted(paths: dict[str, Path], checkpoint_map_path: Path,
     return result
 
 
-def main() -> None:
+def main(argv=None) -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("source", "anchor", "candidate", "job", "adapter", "policy"):
         parser.add_argument(f"--{name}", type=Path, required=True)
@@ -900,6 +1076,9 @@ def main() -> None:
     parser.add_argument("--dtype", choices=("bfloat16", "float32"), default="bfloat16")
     parser.add_argument("--attention", default="sdpa")
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--batch-size", type=int, choices=BATCH_SIZES, default=None,
+                        help="Production default1; Dev profile default2. Use a new render root when changing it")
+    dev_profile.add_arguments(parser)
     parser.add_argument("--instruct", help="Frozen natural delivery instruction; never edits approved text")
     parser.add_argument("--unit-instructions", type=Path,
                         help="Source-bound per-unit pronunciation and pause instructions")
@@ -914,7 +1093,13 @@ def main() -> None:
                         help="Preview-only unit audio; formal human and rights gates still run first")
     parser.add_argument("--progress-ledger", type=Path,
                         help="Bind render and per-unit timing to this week's four-layer ledger")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
+    dev_settings = dev_profile.resolve("tts", enabled=args.dev_test,
+        profile_path=args.dev_test_profile, batch_size=args.batch_size)
+    args.batch_size = dev_settings["batchSize"]
+    dev_receipt_path = args.job.parent / f"dev-test-tts-b{args.batch_size}.json"
+    if dev_settings["profile"] is not None:
+        dev_receipts.check_destination(dev_receipt_path, dev_settings)
     paths = {name: getattr(args, name) for name in ("source", "anchor", "candidate",
                                                    "job", "adapter", "policy", "human_receipt",
                                                    "registry",
@@ -933,14 +1118,18 @@ def main() -> None:
         progress_ledger=args.progress_ledger,
         path_map_path=args.path_map, reuse_from=args.reuse_from,
         speculative_from=args.speculative_from,
-        seed=args.seed, device=args.device,
+        seed=args.seed, batch_size=args.batch_size, device=args.device,
         dtype=args.dtype, attention=args.attention, instruct=args.instruct,
         unit_instructions_path=args.unit_instructions,
         policy=policy, track_format=args.track_format,
         strict_rubric=package.read_object(args.strict_rubric) if args.strict_rubric else None)
+    if dev_settings["profile"] is not None:
+        dev_receipts.write(dev_settings, paths["job"].parent / "render-manifest.json", dev_receipt_path)
     print(json.dumps({"status": "candidate", "targetLocale": result["targetLocale"],
                       "renderManifest": str((paths["job"].parent / "render-manifest.json").resolve()),
-                      "machineScreening": "not_run", "humanListeningReview": "pending"},
+                      "machineScreening": "not_run", "humanListeningReview": "pending",
+                      **({"devTestConsumptionReceipt": str(dev_receipt_path.resolve())}
+                         if dev_settings["profile"] is not None else {})},
                      ensure_ascii=False))
 
 

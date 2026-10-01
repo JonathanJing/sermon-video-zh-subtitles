@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Execute/resume a prepared weekly job with MacBook-first model routing.
+"""Execute/resume a prepared weekly job with Spark-first model routing.
 
 This command never approves audio, sends messages, or deploys automatically.
 The final review candidate remains bound to the existing Saturday evidence.
@@ -321,6 +321,8 @@ def main():
     p.add_argument("--work", type=Path, required=True)
     p.add_argument("--remote-checkpoint", required=True)
     p.add_argument("--host", default="achillesjing@192.168.1.152")
+    p.add_argument("--tts-backend", choices=("auto", "spark", "macbook"),
+                   default=os.environ.get("SERMON_TTS_BACKEND", "auto"))
     p.add_argument("--local-checkpoint", type=Path, default=os.environ.get("SERMON_LOCAL_TTS_CHECKPOINT", str(HERE.parents[1] / "artifacts/model-routing/macbook-tts/checkpoint")))
     p.add_argument("--local-python", default=os.environ.get("SERMON_LOCAL_TTS_PYTHON", str(HERE.parents[1] / "artifacts/model-routing/macbook-tts/runtime/bin/python")))
     p.add_argument("--speech-python", "--mlx-python", dest="speech_python", type=Path, default=Path.home() / ".local/share/uv/tools/mlx-audio/bin/python")
@@ -577,31 +579,33 @@ def _run(args, work, job, execution):
 
 def _render_and_finish(args, work, job, execution, stage, command, before, join_alignment):
     local_rendered = False
-    if not (work / "render/report.json").exists():
-        with stage("local_render_attempt", billing="local"):
-            local_checkpoint = getattr(args, "local_checkpoint", None)
-            local_receipt = {"primary": "macbook_mps", "fallback": "dgx_spark_cuda"}
-            if (work / "render").exists():
-                local_receipt["fallbackReason"] = "preserve_existing_render_backend"
-            elif not local_checkpoint or not Path(local_checkpoint).is_dir():
-                local_receipt["fallbackReason"] = "local_checkpoint_unavailable"
-            else:
-                # Checkpoint mismatches and output validation failures never trigger fallback.
-                require(sha256(Path(local_checkpoint) / "model.safetensors") == job["voice"]["checkpointSha256"], "Wrong local speaker checkpoint")
-                try:
-                    command([str(getattr(args, "local_python", sys.executable)), str(HERE / "render_weekly_audio.py"),
-                        "--job", str(work / "job.json"), "--checkpoint", str(local_checkpoint), "--out", str(work / "local-render-mps"), "--device", "mps"], check=True)
-                    (work / "local-render-mps").rename(work / "render")
-                    validate_render(work, job)
-                    local_receipt["status"] = "local_render_complete"
-                    local_rendered = True
-                except FileNotFoundError:
-                    local_receipt["fallbackReason"] = "local_python_unavailable"
-                except subprocess.CalledProcessError as exc:
-                    if exc.returncode != 75:
-                        raise
-                    local_receipt["fallbackReason"] = "local_model_runtime_unavailable"
-            atomic_json(work / "accounting" / "local-render-attempt.json", local_receipt)
+    mode = getattr(args, 'tts_backend', 'auto')
+    require(mode in {'auto', 'spark', 'macbook'}, 'Invalid TTS backend')
+    frozen_job_sha = sha256(work / 'job.json')
+
+    def local_render(reason=None):
+        nonlocal local_rendered
+        require(sha256(work / 'job.json') == frozen_job_sha, 'Frozen TTS job changed before MacBook execution')
+        require(not (work / 'render').exists(), 'Preserve existing render backend; do not mix CUDA and MPS audio')
+        receipt = {'primary': 'dgx_spark_cuda' if mode == 'auto' else mode,
+                   'executionBackend': 'macbook_mps', 'fallbackReason': reason}
+        with stage('local_render_attempt', billing='local'):
+            atomic_json(work / 'accounting' / 'local-render-attempt.json', receipt)
+            checkpoint = getattr(args, 'local_checkpoint', None)
+            if not checkpoint or not Path(checkpoint).is_dir():
+                raise FileNotFoundError('MacBook TTS checkpoint unavailable')
+            require(sha256(Path(checkpoint) / 'model.safetensors') == job['voice']['checkpointSha256'],
+                    'Wrong local speaker checkpoint')
+            command([str(getattr(args, 'local_python', sys.executable)), str(HERE / 'render_weekly_audio.py'),
+                     '--job', str(work / 'job.json'), '--checkpoint', str(checkpoint),
+                     '--out', str(work / 'local-render-mps'), '--device', 'mps'], check=True)
+            require(sha256(work / 'job.json') == frozen_job_sha, 'Frozen TTS job changed during MacBook execution')
+            validate_local_render_cache(work, job)
+            (work / 'local-render-mps').rename(work / 'render')
+            validate_render(work, job)
+            local_rendered = True
+            atomic_json(work / 'accounting' / 'local-render-attempt.json', {**receipt, 'status': 'local_render_complete'})
+
     checkpoint = Path(args.remote_checkpoint)
     if not checkpoint.is_absolute() or not str(checkpoint).startswith(REMOTE_ROOT + "/sermon-") or ".." in checkpoint.parts:
         raise ValueError("Use a checkpoint in the isolated sermon results directory")
@@ -634,62 +638,121 @@ def _render_and_finish(args, work, job, execution, stage, command, before, join_
                 raise RemoteOutcomeUnknown("SSH disconnected; remote model outcome must be reconciled") from exc
             # A name conflict/transport failure must not launch a repair against a live job.
             ensure_remote_idle()
+            if exc.returncode in (75, 126, 127, 137, 139):
+                partial = ssh('if test -d ' + shlex.quote(remote + '/render')
+                    + '; then find ' + shlex.quote(remote + '/render')
+                    + " -maxdepth 1 -name 'unit-*' -print -quit; fi", transfer=True, capture=True)
+                if partial.stdout.strip():
+                    atomic_json(remote_state, {'schemaVersion': 1, 'jobSha256': sha256(work / 'job.json'),
+                        'attemptId': execution.attempt, 'status': 'runtime_failed_preserve_partial', 'endedAt': utc_now()})
+                    raise ValueError('Spark runtime failed with CUDA unit artifacts; preserve them and resume CUDA, never restart the whole job on MPS') from exc
+                atomic_json(remote_state, {'schemaVersion': 1, 'jobSha256': sha256(work / 'job.json'),
+                    'attemptId': execution.attempt, 'status': 'runtime_unavailable', 'endedAt': utc_now()})
             raise
         else:
             atomic_json(remote_state, {"schemaVersion": 1, "jobSha256": sha256(work / "job.json"),
                 "attemptId": execution.attempt, "status": "command_completed", "endedAt": utc_now()})
 
-    if not (work / "render/report.json").exists():
-        with stage("transfer_upload", billing="local"):
-            ensure_remote_idle()
-            if remote_state.exists():
-                saved = read(remote_state)
-                require(saved.get("jobSha256") == sha256(work / "job.json"), "Remote attempt belongs to another job; preserve and inspect")
-                if saved.get("status") in {"outcome_unknown", "command_completed"}:
-                    try:
-                        reconcile_remote(work, job, lambda folder: command([*scp_options, "-r", args.host + ":" + remote + "/render", str(folder)], transfer=True, check=True))
-                    except (ValueError, OSError, subprocess.SubprocessError) as exc:
-                        raise RemoteOutcomeUnknown("Remote output could not be safely reconciled; preserved copies require inspection") from exc
-                    atomic_json(remote_state, {**saved, "status": "output_reconciled", "reconciledAt": utc_now()})
-            if not (work / "render/report.json").exists():
-                ssh("mkdir -p " + shlex.quote(remote), transfer=True)
-                command([*scp_options, str(work / "job.json"), str(HERE / "render_weekly_audio.py"),
-                         str(HERE / "sentence_synthesis_policy.py"), str(HERE / "retry_weekly_unit.py"),
-                         str(HERE / "run_qwen_training_smoke.py"), args.host + ":" + remote + "/"], transfer=True, check=True)
-                if (work / "render/identity.json").exists():
-                    exists = command([*ssh_options, "test -d " + shlex.quote(remote + "/render")], transfer=True)
-                    if exists.returncode == 1:
-                        command([*scp_options, "-r", str(work / "render"), args.host + ":" + remote + "/"], transfer=True, check=True)
-                    elif exists.returncode != 0:
-                        raise ValueError("Cannot inspect the remote resume directory")
-            else:
-                imported_render = True
-    if not (work / "render/report.json").exists():
-        render_command = ["docker", "run", "--rm", "--name", container, "--gpus", "all", "--memory", "24g", "--memory-swap", "28g", "--cpus", "6", "--shm-size", "1g", "--user", "1000:1000",
-            "-v", remote + ":/work", "-v", RUNTIME + "/venv:/work/venv:ro", "-v", str(checkpoint) + ":/checkpoint:ro", "-v", RUNTIME + "/model-cache:/cache", "-w", "/work", "-e", "HF_HOME=/cache", "-e", "USE_TF=0", "-e", "PYTHONUNBUFFERED=1",
-            "nvcr.io/nvidia/pytorch:26.06-py3", "/work/venv/bin/python", "/work/render_weekly_audio.py", "--job", "/work/job.json", "--checkpoint", "/checkpoint", "--out", "/work/render"]
-        for attempt in range(6):
+    def spark_render():
+        nonlocal imported_render
+        require(sha256(work / 'job.json') == frozen_job_sha, 'Frozen TTS job changed before Spark execution')
+        if not (work / "render/report.json").exists():
+            with stage("transfer_upload", billing="local"):
+                ensure_remote_idle()
+                if remote_state.exists():
+                    saved = read(remote_state)
+                    require(saved.get("jobSha256") == sha256(work / "job.json"), "Remote attempt belongs to another job; preserve and inspect")
+                    if saved.get("status") in {"outcome_unknown", "command_completed"}:
+                        try:
+                            reconcile_remote(work, job, lambda folder: command([*scp_options, "-r", args.host + ":" + remote + "/render", str(folder)], transfer=True, check=True))
+                        except (ValueError, OSError, subprocess.SubprocessError) as exc:
+                            raise RemoteOutcomeUnknown("Remote output could not be safely reconciled; preserved copies require inspection") from exc
+                        atomic_json(remote_state, {**saved, "status": "output_reconciled", "reconciledAt": utc_now()})
+                if not (work / "render/report.json").exists():
+                    ssh("mkdir -p " + shlex.quote(remote), transfer=True)
+                    command([*scp_options, str(work / "job.json"), str(HERE / "render_weekly_audio.py"),
+                             str(HERE / "bounded_cpu_pipeline.py"),
+                             str(HERE / "sentence_synthesis_policy.py"), str(HERE / "retry_weekly_unit.py"),
+                             str(HERE / "run_qwen_training_smoke.py"), args.host + ":" + remote + "/"], transfer=True, check=True)
+                    if (work / "render/identity.json").exists():
+                        exists = command([*ssh_options, "test -d " + shlex.quote(remote + "/render")], transfer=True)
+                        if exists.returncode == 1:
+                            command([*scp_options, "-r", str(work / "render"), args.host + ":" + remote + "/"], transfer=True, check=True)
+                        elif exists.returncode != 0:
+                            raise ValueError("Cannot inspect the remote resume directory")
+                else:
+                    imported_render = True
+        if not (work / "render/report.json").exists():
+            render_command = ["docker", "run", "--rm", "--name", container, "--gpus", "all", "--memory", "24g", "--memory-swap", "28g", "--cpus", "6", "--shm-size", "1g", "--user", "1000:1000",
+                "-v", remote + ":/work", "-v", RUNTIME + "/venv:/work/venv:ro", "-v", str(checkpoint) + ":/checkpoint:ro", "-v", RUNTIME + "/model-cache:/cache", "-w", "/work", "-e", "HF_HOME=/cache", "-e", "USE_TF=0", "-e", "PYTHONUNBUFFERED=1",
+                "nvcr.io/nvidia/pytorch:26.06-py3", "/work/venv/bin/python", "/work/render_weekly_audio.py", "--job", "/work/job.json", "--checkpoint", "/checkpoint", "--out", "/work/render"]
+            for attempt in range(6):
+                try:
+                    with stage("render", billing="local"):
+                        remote_model(render_command, "runner.log")
+                    break
+                except subprocess.CalledProcessError as exc:
+                    if exc.returncode in (75, 126, 127, 137, 139) or attempt == 5:
+                        raise
+                    with stage("render_recovery", billing="local"):
+                        identity = json.loads(ssh("test " + shlex.quote(remote + "/render/failure.json")
+                            + " -nt " + shlex.quote(remote_marker) + " && cat "
+                            + shlex.quote(remote + "/render/identity.json"), transfer=True, capture=True).stdout)
+                        require(identity == render_identity(work / "job.json", job["voice"]["checkpointSha256"]),
+                            "Repair requires current renderer identity and a failure written by this attempt")
+                        failure = json.loads(ssh("cat " + shlex.quote(remote + "/render/failure.json"), transfer=True, capture=True).stdout)
+                        if failure.get("reason") != "duration_or_signal" or not isinstance(failure.get("unit"), int) or not 0 <= failure["unit"] < len(job["units"]):
+                            raise ValueError("Failure needs inspection; automatic recovery is limited to an identified audio unit")
+                        index = render_command.index("/work/render_weekly_audio.py")
+                        repair = render_command[:index] + ["/work/retry_weekly_unit.py"] + render_command[index + 1:] + ["--unit", str(failure["unit"]), "--seed", str(142 + attempt)]
+                        remote_model(repair, "recovery.log")
+            with stage("transfer_download", billing="local"):
+                reconcile_remote(work, job, lambda folder: command([*scp_options, "-r", args.host + ":" + remote + "/render", str(folder)], transfer=True, check=True))
+
+    if not (work / 'render/report.json').exists():
+        cached_device = None
+        if (work / 'render/identity.json').exists():
+            cached_device = read(work / 'render/identity.json').get('executionDevice')
+            require(cached_device in {'mps', 'cuda:0'}, 'Unknown cached render backend')
+        if remote_state.exists():
+            prior = read(remote_state)
+            require(prior.get('jobSha256') == frozen_job_sha, 'Remote attempt belongs to another frozen TTS job')
+        resume_mac = (work / 'local-render-mps').exists() or cached_device == 'mps'
+        require(mode == 'auto' or not resume_mac or mode == 'macbook', 'Forced Spark conflicts with MPS partial render')
+        require(mode == 'auto' or cached_device != 'cuda:0' or mode == 'spark', 'Forced MacBook conflicts with CUDA partial render')
+        if resume_mac or mode == 'macbook':
+            if remote_state.exists() and read(remote_state).get('status') == 'runtime_failed_preserve_partial':
+                raise ValueError('Preserve remote CUDA units and resume Spark; MacBook cannot replace this partial job')
+            if remote_state.exists() and read(remote_state).get('status') in {'outcome_unknown', 'command_completed'}:
+                raise RemoteOutcomeUnknown('Reconcile the prior Spark attempt before MacBook execution')
+            if cached_device == 'mps':
+                require(not (work / 'local-render-mps').exists(), 'Two MPS partial directories require inspection')
+                (work / 'render').rename(work / 'local-render-mps')
+            local_render('resume_existing_mps_backend' if resume_mac else None)
+        else:
             try:
-                with stage("render", billing="local"):
-                    remote_model(render_command, "runner.log")
-                break
-            except subprocess.CalledProcessError:
-                if attempt == 5:
+                spark_render()
+            except (OSError, subprocess.SubprocessError) as exc:
+                # A lost remote result must be reconciled, never replaced by a
+                # new Mac render. Only a pre-launch outage or confirmed idle
+                # runtime exit75 is eligible for automatic fallback.
+                saved = read(remote_state) if remote_state.exists() else None
+                safe = not saved or saved.get('status') == 'runtime_unavailable'
+                eligible = isinstance(exc, (OSError, subprocess.TimeoutExpired)) or (
+                    isinstance(exc, subprocess.CalledProcessError) and exc.returncode in (75, 126, 127, 137, 139, 255))
+                if mode != 'auto' or not safe or not eligible or (work / 'render').exists():
                     raise
-                with stage("render_recovery", billing="local"):
-                    identity = json.loads(ssh("test " + shlex.quote(remote + "/render/failure.json")
-                        + " -nt " + shlex.quote(remote_marker) + " && cat "
-                        + shlex.quote(remote + "/render/identity.json"), transfer=True, capture=True).stdout)
-                    require(identity == render_identity(work / "job.json", job["voice"]["checkpointSha256"]),
-                        "Repair requires current renderer identity and a failure written by this attempt")
-                    failure = json.loads(ssh("cat " + shlex.quote(remote + "/render/failure.json"), transfer=True, capture=True).stdout)
-                    if failure.get("reason") != "duration_or_signal" or not isinstance(failure.get("unit"), int) or not 0 <= failure["unit"] < len(job["units"]):
-                        raise ValueError("Failure needs inspection; automatic recovery is limited to an identified audio unit")
-                    index = render_command.index("/work/render_weekly_audio.py")
-                    repair = render_command[:index] + ["/work/retry_weekly_unit.py"] + render_command[index + 1:] + ["--unit", str(failure["unit"]), "--seed", str(142 + attempt)]
-                    remote_model(repair, "recovery.log")
-        with stage("transfer_download", billing="local"):
-            reconcile_remote(work, job, lambda folder: command([*scp_options, "-r", args.host + ":" + remote + "/render", str(folder)], transfer=True, check=True))
+                require(sha256(work / 'job.json') == frozen_job_sha, 'Frozen TTS job changed before fallback')
+                local_render(type(exc).__name__ + ': Spark runtime unavailable before safe fallback')
+    require(sha256(work / 'job.json') == frozen_job_sha, 'Frozen TTS job changed during rendering')
+    actual_device = read(work / 'render/report.json').get('executionDevice')
+    if actual_device is None and (work / 'render/identity.json').exists():
+        actual_device = read(work / 'render/identity.json').get('executionDevice')
+    atomic_json(work / 'accounting' / 'tts-routing.json', {'requestedBackend': mode,
+        'executionBackend': 'macbook_mps' if actual_device == 'mps' or local_rendered else 'dgx_spark_cuda',
+        'jobSha256': frozen_job_sha,
+        'fallbackReason': read(work / 'accounting/local-render-attempt.json').get('fallbackReason')
+            if (actual_device == 'mps' or local_rendered) and (work / 'accounting/local-render-attempt.json').exists() else None})
     with stage("render" if imported_render else "render_validation", cache_hit=imported_render, billing="local"):
         render = stage_check("Render", RENDER_RECOVERY, lambda: validate_render(work, job))
         record_render_workload(work, job, render, before, imported_render)

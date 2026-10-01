@@ -10,8 +10,8 @@ Compare the six generated files with their checked-in counterparts. For document
 
 | SVG | Document / editable topology |
 |---|---|
-| architecture-dag-en.svg | [English README](../../README.md) |
-| review-revision-dag-en.svg | [English README](../../README.md) |
+| architecture-dag-en.svg | [English technical overview](../project-technical-overview.md) |
+| review-revision-dag-en.svg | [English technical overview](../project-technical-overview.md) |
 | architecture-dag-zh-en.svg | [Bilingual backend](../backend-workflow-system-design.zh-en.md) |
 | review-revision-dag-zh-en.svg | [Bilingual backend](../backend-workflow-system-design.zh-en.md) |
 | app-system-architecture.svg | [App](../app-system-design.zh.md) |

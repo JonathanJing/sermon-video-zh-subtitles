@@ -39,7 +39,7 @@ class SessionFixture:
         self.calls.append(('source', None))
         return {'humanAcceptance': 'pending', 'productionEligible': False, 'sourceSha256': '3' * 64}
 
-    def run_locale(self, locale, spec):
+    def run_locale(self, locale, spec, *, depends_on=None):
         self.calls.append(('locale', locale))
         if locale in self.unknown: raise TimeoutError('synthetic unknown')
         if locale in self.failed: return {'status': 'blocked', 'groups': []}
@@ -50,7 +50,7 @@ class SessionFixture:
         return {'status': 'waiting_human', 'candidateSha256': c.canonical_sha256(candidate),
                 'output': str(root), 'groups': []}
 
-    def preview(self, locale, spec):
+    def preview(self, locale, spec, *, depends_on=None):
         self.calls.append(('preview', locale))
         return {'status': 'preview_only', 'humanAcceptance': 'pending', 'productionEligible': False,
                 'offlineFixture': True, 'receiptFileSha256': c.canonical_sha256({'locale': locale})}
@@ -104,6 +104,66 @@ class DiagnosticFlowTests(unittest.TestCase):
             dag.freeze()
             return {node[0]: dag.execute(node[0]) for node in dag.nodes}
 
+    def checkpoint_contract(self, config):
+        # Orchestration inventory only; actual complete-tree/declaration
+        # validation is exercised by the worker and fresh-entry contracts.
+        auxiliary=self.root/'speech-tokenizer.bin';auxiliary.write_bytes(b'inert auxiliary weights')
+        manifest=self.root/'checkpoint-manifest.json'
+        manifest.write_bytes(c.canonical_bytes({'files':[{'path':str(auxiliary)}]}))
+        declaration=self.root/'checkpoint-stage-declaration.json';declaration.write_text('{}')
+        for lane in config['locales'].values():
+            lane['previewSpec'].update(checkpoint_manifest_path=str(manifest),
+                checkpoint_stage_declaration_path=str(declaration))
+        return manifest,declaration,auxiliary
+
+    def large_plan(self):
+        # Real frozen session evidence aggregates are larger than one private
+        # per-revision record (observed live plan: 559435 bytes).
+        self.session.binding['historicalEvidence'] = [
+            {'observationId': f'fixture-{index}', 'artifactSha256': '3' * 64,
+             'sourceEvidenceSha256': '4' * 64, 'runConfigSha256': '5' * 64}
+            for index in range(2200)]
+        dag = flow.DiagnosticDAG(self.session, self.config)
+        self.assertGreater(len(c.canonical_bytes(dag.binding)), c.MAX_BYTES)
+        return dag
+
+    def test_large_aggregate_plan_freezes_reads_and_replays_without_private_cap_change(self):
+        dag = self.large_plan()
+        private_cap = c.MAX_BYTES
+        with patch.object(flow.strict, 'save_once', side_effect=AssertionError('private plan writer')), \
+             patch.object(c, 'read_snapshot', side_effect=AssertionError('private plan reader')):
+            dag.freeze()
+            before = (dag.root / 'plan.json').read_bytes()
+            dag._check()
+            dag.freeze()
+        self.assertEqual((dag.root / 'plan.json').read_bytes(), before)
+        saved, raw = flow.public.read_snapshot(dag.root / 'plan.json')
+        self.assertEqual(saved, dag.binding)
+        self.assertEqual(c.canonical_sha256(saved), dag.plan_sha256)
+        self.assertEqual(raw, before)
+        self.assertEqual(c.MAX_BYTES, private_cap)
+        self.assertEqual(self.session.calls, [])
+        with profile.session(self.root / 'logs', 'large-plan-unit', work_kind='engineering', evidence_mode='synthetic'):
+            source = dag.execute('source.existing')
+        self.assertTrue(source['readyForDownstream'])
+        self.assertEqual(self.session.calls, [('source', None)])
+
+    def test_large_plan_saved_binding_and_canonical_hash_tampering_stop_before_callback(self):
+        dag = self.large_plan(); dag.freeze()
+        path = dag.root / 'plan.json'; original = path.read_bytes()
+        changed = copy.deepcopy(dag.binding); changed['maxWorkers'] = 2
+        path.write_bytes(c.canonical_bytes(changed))
+        with self.assertRaisesRegex(c.ContractError, 'diagnostic_flow_plan_changed'):
+            dag._check()
+        with self.assertRaisesRegex(c.ContractError, 'diagnostic_flow_plan_changed'):
+            dag.freeze()
+        self.assertEqual(flow.public.read_snapshot(path)[0], changed)  # Never overwritten.
+        path.write_bytes(original)
+        dag.binding['maxWorkers'] = 2  # Hash is still the original frozen plan.
+        with self.assertRaisesRegex(c.ContractError, 'diagnostic_flow_frozen_inputs_changed'):
+            dag._check()
+        self.assertEqual(self.session.calls, [])
+
     def test_fixed_graph_preview_candidate_not_caller_supplied_and_all_gates_pending(self):
         dag = flow.DiagnosticDAG(self.session, self.config)
         self.assertEqual(dag.nodes[0], ('source.existing', 'source', None, ()))
@@ -147,6 +207,89 @@ class DiagnosticFlowTests(unittest.TestCase):
             result = dag.execute('source.existing')
         self.assertEqual(result['executionStatus'], 'blocked')
         self.assertEqual(self.session.calls, [])
+
+    def test_live_v2_runtime_manifest_is_accepted_and_frozen_as_static_input(self):
+        # This only exercises the DAG contract/inventory; no native runtime,
+        # model, transport or session callback is invoked by the fixture.
+        self.session.offline_fixture=False
+        config=copy.deepcopy(self.config)
+        manifest=self.root/'runtime-manifest.json'
+        runtime_file=self.root/'runtime-binding-file';runtime_file.write_bytes(b'inert runtime fixture')
+        manifest.write_bytes(c.canonical_bytes({'fixture':'inventory-only-not-native',
+            'files':[{'path':str(runtime_file),'sha256':c.bytes_sha256(runtime_file.read_bytes())}]}))
+        for lane in config['locales'].values():
+            lane['previewSpec'].update(execute=True,runtime_manifest_path=str(manifest))
+        checkpoint,declaration,auxiliary=self.checkpoint_contract(config)
+        dag=flow.DiagnosticDAG(self.session,config)
+        self.assertEqual(dag.binding['inputFiles'][str(manifest)],c.bytes_sha256(manifest.read_bytes()))
+        self.assertEqual(dag.binding['inputFiles'][str(runtime_file)],c.bytes_sha256(runtime_file.read_bytes()))
+        for path in (checkpoint,declaration,auxiliary):
+            self.assertEqual(dag.binding['inputFiles'][str(path)],c.bytes_sha256(path.read_bytes()))
+        dag.freeze()
+        original=manifest.read_bytes()
+        manifest.write_text('{"changed":true}')
+        with self.assertRaisesRegex(c.ContractError,'diagnostic_flow_frozen_inputs_changed'):
+            dag._check()
+        manifest.write_bytes(original)
+        runtime_file.write_bytes(b'inert runtime fixture')
+        auxiliary.write_bytes(b'changed auxiliary weights')
+        with self.assertRaisesRegex(c.ContractError,'diagnostic_flow_frozen_inputs_changed'):
+            dag._check()
+        auxiliary.write_bytes(b'inert auxiliary weights')
+        runtime_file.write_bytes(b'changed runtime fixture')
+        with self.assertRaisesRegex(c.ContractError,'diagnostic_flow_frozen_inputs_changed'):
+            dag._check()
+        self.assertEqual(self.session.calls,[])
+
+    def test_checkpoint_inputs_required_for_live_and_forbidden_for_fixture_before_read(self):
+        config=copy.deepcopy(self.config);self.session.offline_fixture=False
+        for lane in config['locales'].values():
+            lane['previewSpec'].update(execute=True,runtime_manifest_path=str(self.root/'runtime.json'))
+        with patch.object(flow.public,'read_snapshot',side_effect=AssertionError('unexpected input read')):
+            with self.assertRaisesRegex(c.ContractError,'diagnostic_flow_preview_checkpoint_manifest_required'):
+                flow.DiagnosticDAG(self.session,config)
+        self.session.offline_fixture=True;config=copy.deepcopy(self.config)
+        for lane in config['locales'].values():
+            lane['previewSpec']['checkpoint_manifest_path']=str(self.root/'checkpoint.json')
+        with patch.object(flow.public,'read_snapshot',side_effect=AssertionError('unexpected input read')):
+            with self.assertRaisesRegex(c.ContractError,'diagnostic_flow_fixture_cannot_claim_checkpoint_manifest'):
+                flow.DiagnosticDAG(self.session,config)
+        self.assertEqual(self.session.calls,[])
+
+    def test_live_manifest_required_and_fixture_cannot_claim_native_before_read(self):
+        config=copy.deepcopy(self.config)
+        for lane in config['locales'].values():lane['previewSpec']['execute']=True
+        self.session.offline_fixture=False
+        with patch.object(flow.public,'read_snapshot',side_effect=AssertionError('unexpected input read')):
+            with self.assertRaisesRegex(c.ContractError,'diagnostic_flow_preview_runtime_manifest_required'):
+                flow.DiagnosticDAG(self.session,config)
+        self.session.offline_fixture=True
+        config=copy.deepcopy(self.config)
+        for lane in config['locales'].values():
+            lane['previewSpec']['runtime_manifest_path']=str(self.root/'untrusted-runtime.json')
+        with patch.object(flow.public,'read_snapshot',side_effect=AssertionError('unexpected input read')):
+            with self.assertRaisesRegex(c.ContractError,'diagnostic_flow_fixture_cannot_claim_native_runtime'):
+                flow.DiagnosticDAG(self.session,config)
+        self.assertEqual(self.session.calls,[])
+
+    def test_live_manifest_must_be_caller_selected_absolute_nonredirected_file(self):
+        self.session.offline_fixture=False
+        config=copy.deepcopy(self.config)
+        manifest=self.root/'runtime.json';manifest.write_text('{}')
+        for lane in config['locales'].values():
+            lane['previewSpec'].update(execute=True,runtime_manifest_path=str(manifest))
+        self.checkpoint_contract(config)
+        lane=config['locales']['ko']['previewSpec']
+        lane['runtime_manifest_path']='relative.json'
+        with self.assertRaisesRegex(c.ContractError,'diagnostic_flow_absolute_path_required'):
+            flow.DiagnosticDAG(self.session,config)
+        outside=Path(self.enterContext(tempfile.TemporaryDirectory())).resolve()
+        manifest=outside/'runtime.json';manifest.write_text('{}')
+        link=self.root/'redirected-runtime.json';link.symlink_to(manifest)
+        lane['runtime_manifest_path']=str(link)
+        with self.assertRaisesRegex(ValueError,'Symlink'):
+            flow.DiagnosticDAG(self.session,config)
+        self.assertEqual(self.session.calls,[])
 
     def test_relative_paths_candidate_injection_live_preview_and_outside_output_rejected(self):
         changes = [lambda lane: lane['localeSpec'].update(policy='relative.json'),

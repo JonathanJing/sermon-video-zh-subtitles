@@ -2,7 +2,7 @@
 
 以原生 iOS 候选的 [图标清单](https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/062cbab91270190f5ceaa42ab96b31b547f99686/apps/tongxing-ios/ICON-INVENTORY.zh.md)（PR #192 的固定参考版本，四图标优化）作为动作与形状基准。`icons.svg` 是手工重绘、可编辑的 SVG 路径库；符号名称表示参考的原生图标，不是导出的 SF Symbols 文件。iOS 继续使用系统符号。
 
-两套网页实现（每周播放器与 `firebase/dev/public` 多语言阅读器）使用字节一致的 `icons.svg`、`icons.mjs`、`brand-icon.svg`、`brand-icon-light.svg`。共 43 个图形（37 个原生对应符号与 6 个网页补充符号）；其中部分预留给对应动作，并非所有页面都有该功能。
+两套网页实现（每周播放器与 `firebase/dev/public` 多语言阅读器）使用字节一致的 `icons.svg`、`icons.mjs`、`brand-icon.svg`、`brand-icon-light.svg`。共 44 个图形（38 个原生对应符号与 6 个网页补充符号，包含同片段试听的 `pause.circle` 独立圆环暂停图形）；其中部分预留给对应动作，并非所有页面都有该功能。
 
 | 动作 | SVG 图形名称（对应原生选择） |
 | --- | --- |
@@ -55,9 +55,9 @@ python3 scripts/check_tongxing_icon_alignment.py
 
 ## 独立 Firebase App 交付（2026-10-01）
 
-`codex/firebase-app-update` 从最新 `dev` 基线 `63c0a18` 单独提取网页实现与构建资产清单；不包含 PR #192 的原生源码、英文全文搜索或语言切轨功能。Firebase 网页可独立审核、合并及晋升。上面的 37 个原生对应符号数量描述固定参考候选；当前 `dev` 有 33 个原生符号，维护检查对其中三个旧名称使用明确的动作映射：
+`codex/firebase-app-update` 从最新 `dev` 基线 `63c0a18` 单独提取网页实现与构建资产清单；不包含 PR #192 的原生源码、英文全文搜索或语言切轨功能。Firebase 网页可独立审核、合并及晋升。上面的 37 个原生对应符号数量描述固定参考候选；该独立分支当时的 `dev` 基线有 33 个原生符号，维护检查对其中三个旧名称使用明确的动作映射：
 
-| 当前 dev 的旧符号 | 网页新图标 | 动作 |
+| 当时 dev 基线的旧符号 | 网页新图标 | 动作 |
 | --- | --- | --- |
 | `ellipsis` | `magnifyingglass` | 定位入口 |
 | `text.line.first.and.arrowtriangle.forward` | `text.bubble` | 回当前句 |

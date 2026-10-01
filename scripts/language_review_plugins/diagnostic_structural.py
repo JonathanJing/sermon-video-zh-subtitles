@@ -26,7 +26,7 @@ except ImportError:
 
 DIAGNOSTIC_ONLY = True
 PLUGIN_ID = 'diagnostic-structural-v1'
-PLUGIN_VERSION = '2026-10-01-v1'
+PLUGIN_VERSION = '2026-10-01-v2'
 REQUIRED = ['target_script', 'term_surface_preservation', 'number_surface_preservation',
             'utterance_structure', 'scripture_reference_only']
 LOCALES = ('zh-Hans', 'ko', 'es')
@@ -84,13 +84,22 @@ def _term_check(policy, english, target, locale):
         for term in terms:
             if (type(term) is not dict or set(term) != {'source', 'target', 'reviewStatus'} or
                 type(term['source']) is not str or not term['source'].strip() or len(term['source']) > 4096 or
-                type(term['target']) is not str or not term['target'].strip() or len(term['target']) > 4096 or
                 term['reviewStatus'] not in ('pending', 'project_established', 'human_reviewed') or
-                _unsafe(term['source']) or _unsafe(term['target'])):
+                _unsafe(term['source'])):
+                return False, pending, missing
+            surface = term['target']
+            # The policy permits unresolved targets only for pending entries.
+            # Validate the whole table, then require a target for actual hits;
+            # unused unresolved series must not fail every translation group.
+            if surface is None:
+                if term['reviewStatus'] != 'pending':
+                    return False, pending, missing
+            elif (type(surface) is not str or not surface.strip() or len(surface) > 4096 or
+                  _unsafe(surface)):
                 return False, pending, missing
             pending += term['reviewStatus'] == 'pending'
-            if _contains(term['source'], english, latin_boundary=True) and not _contains(
-                    term['target'], target, latin_boundary=locale == 'es'):
+            if _contains(term['source'], english, latin_boundary=True) and (
+                    surface is None or not _contains(surface, target, latin_boundary=locale == 'es')):
                 missing += 1
     return missing == 0, pending, missing
 

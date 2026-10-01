@@ -117,7 +117,7 @@ class _Runner:
         self.current = root / 'revisions' / initial
         self.candidate, self.receipt, self.budget_status = None, None, 'not_observed'
 
-    def result(self, status, reason, *, planning_result=None, error_type=None):
+    def result(self, status, reason, *, planning_result=None, error_type=None, failure_evidence=None):
         return {'schemaVersion': SCHEMA, 'status': status, 'reasonCode': reason,
             'root': str(self.current), 'revisionId': self.revision_id, 'revisionNumber': self.number,
             'reviewAttempt': self.attempt, 'candidateRevision': self.candidate,
@@ -125,7 +125,8 @@ class _Runner:
             'planning': planning_result, 'errorType': error_type,
             'completedSpans': list(self.completed), 'executionAuthority': 'none',
             'remainingGates': ['whole_locale_language_plugin_and_public_candidate',
-                               'independent_human_translation_review', 'same_locale_layer3_and_release']}
+                               'independent_human_translation_review', 'same_locale_layer3_and_release'],
+            **({'failureEvidence': failure_evidence} if failure_evidence is not None else {})}
 
     def invoke(self, method, *args, **kwargs):
         finished = []
@@ -154,7 +155,8 @@ class _Runner:
             if unknown:
                 self.budget_status = 'reconciliation_required'
             return self.result('reconciliation_required' if unknown else 'blocked',
-                'current_evidence_or_execution_unknown' if unknown else 'current_evidence_not_validated',
+                adapter.safe_failure_reason(exc, 'current_evidence_or_execution_unknown'
+                    if unknown else 'current_evidence_not_validated'),
                 error_type=type(exc).__name__)
 
     def drive(self):
@@ -173,6 +175,17 @@ class _Runner:
                 self.candidate_id, self.revision_id, self.api_key, self.caller,
                 repair=repair, **self._options())
             self.candidate, self.budget_status = generated['artifact'], generated['budgetStatus']
+            failure = generated.get('failureEvidence')
+            if failure is not None:
+                return self.result('blocked' if self.budget_status == 'recorded' else 'reconciliation_required',
+                    failure['reasonCode'], failure_evidence=failure)
+            if generated['executionStatus'] != 'succeeded' and hasattr(self.caller,'configuration_stop'):
+                stop=self.caller.configuration_stop(self.prepared,'translator')
+                if stop is not None:
+                    return self.result('blocked' if self.budget_status=='recorded' else 'reconciliation_required',
+                        'provider_configuration_blocked',failure_evidence={
+                            'providerOutcome':'rejected','diagnostic':stop['diagnostic'],
+                            'scopeSha256':stop['scopeSha256'],'stopReceiptSha256':c.canonical_sha256(stop)})
             if self.budget_status != 'recorded':
                 return self.result('reconciliation_required', 'generation_budget_' + self.budget_status)
             if generated['executionStatus'] != 'succeeded':
@@ -184,6 +197,17 @@ class _Runner:
                     self.candidate_id, self.revision_id, self.api_key, self.caller,
                     attempt_number=self.attempt, **self._options())
                 self.receipt, self.budget_status = reviewed['artifact'], reviewed['budgetStatus']
+                failure = reviewed.get('failureEvidence')
+                if failure is not None:
+                    return self.result('blocked' if self.budget_status == 'recorded' else 'reconciliation_required',
+                        failure['reasonCode'], failure_evidence=failure)
+                if hasattr(self.caller,'configuration_stop') and reviewed['executionStatus'] != 'succeeded':
+                    stop=self.caller.configuration_stop(self.prepared,'reviewer')
+                    if stop is not None:
+                        return self.result('blocked' if self.budget_status=='recorded' else 'reconciliation_required',
+                            'provider_configuration_blocked',failure_evidence={
+                                'providerOutcome':'rejected','diagnostic':stop['diagnostic'],
+                                'scopeSha256':stop['scopeSha256'],'stopReceiptSha256':c.canonical_sha256(stop)})
                 if self.budget_status != 'recorded' or reviewed['executionStatus'] == 'outcome_unknown':
                     return self.result('reconciliation_required', 'review_budget_' + self.budget_status)
                 if reviewed['executionStatus'] == 'succeeded' and self.receipt['reviewVerdict'] == 'pass':

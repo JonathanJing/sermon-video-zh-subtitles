@@ -8,6 +8,10 @@
 
 重跑时按 job、源与候选、adapter、checkpoint map/权重、策略文件、文本、renderer SHA 与合成参数比较缓存身份；任何旧稿或旧音色无法复用。一个单元在 WAV 写出后中断时，可凭已写的 SHA commit 记录恢复。`render-manifest.json` 的机器筛查为 `not_run`，人工听审仍待完成。
 
+2026-10-01 新增 `--batch-size 1|2|4|8`，默认仍为 1。大于 1 时先校验整个 job，按固定索引窗口只合成没有有效 commit 或可准入复用的单元；每批一次驻留模型调用，短尾批也完整校验映射与数量。新 intent 绑定 batch size、设备、窗口及 seed 策略，commit 记录实际生成的单元索引；seed 为基础值加窗口起始索引。已提交单元保持原字节，缺失单元的批成员可能随恢复改变，因此不宣称随机采样结果与不中断运行逐字节相同。batch=1 保留原 intent/逐单元 seed 格式，其他 batch 使用新身份，不能混用缓存或绕过人审。新 renderer SHA 仍须与缓存相符，旧产物不能因为 batch=1 而忽略代码身份变化。
+
+`screen_target_language_audio_units.py` 同样新增 `--batch-size 1|2|4|8`（默认 1），CLI 只加载一次 ASR 模型；可用 `--unit-cache <artifact-root 内的新缓存目录>` 保存逐单元不可覆盖的识别回执，续跑只转写缺失单元。cache 绑定 job、locale、文字、音频 hash、模型 revision 和 batch 设置，错身份或错映射直接停止。Qwen 高层接口返回值不暴露 EOS/finish-reason；这里只验证函数返回、数量、身份、可解码音频和全单元覆盖，实际截断风险仍需回转写及人工听审。性能／质量验收见[提速 backlog](local-production-speed-backlog.zh.md)。
+
 若 Layer 2 的独立机器复核已通过而文字人审仍待定，可先在独立目录用 `scripts/render_speculative_target_language_speech.py` 按组生成 `preview_only` WAV。它不创建正式 speech job 或 Audio Package。文字获批并准备好完整正式 job 后，给本 renderer 增加 `--speculative-from <预生成目录>`；正式来源、人审、音色能力与授权先过门禁，随后只复制候选快照、单元文字、来源、参数和音频 hash 全部匹配且可完整解码的 WAV，并重新签发正式单元收据。改文单元重新合成，整轨排程、ASR 和全文听审重新执行。具体命令与失效范围见[层内解耦设计](multilingual-intralayer-review-decoupling.zh.md)。
 
 Mac 绝对输入路径可用 `--path-map` 映射到容器中的 staged 文件。JSON 形状：`{"schemaVersion":"sermon-deployment-path-map-v1","paths":{"/原始/绝对/文件":"/work/staged/文件"}}`。必须列出 job 的每个不可访问 input 路径以及 source/voice/timeline 收据中引用的不可访问文件。renderer 在建立临时路径别名之前逐项重新核对文件 SHA 和提供的 JSON SHA，绝不改写 job JSON。为了让现有验证器沿用不可变 job 内的原路径，容器需要 `/Users` 与 `/private` 两个临时文件系统；只在隔离容器里创建别名。

@@ -8,13 +8,14 @@ The isolated worker disables proxies/redirects and uses normal verified TLS.
 Its stdout is a bounded private result pipe; stderr is discarded.
 
 A timeout kills and reaps the worker but cannot cancel a remote provider request:
-its outcome remains unknown. HTTP errors preserve only their numeric status for
+its outcome remains unknown. HTTP errors preserve their status and bounded, allowlisted diagnostics for
 the pipeline's existing rejection policy. No HTTP response body reaches errors.
 This module neither loads credentials nor grants budget/execution authority.
 """
 from __future__ import annotations
 
 import io
+import importlib.util
 import json
 import math
 from pathlib import Path
@@ -36,6 +37,15 @@ ENDPOINTS = frozenset({
     'https://api.openai.com/v1/audio/transcriptions',
 })
 _HEADERS = frozenset({'authorization', 'content-type', 'openai-project', 'openai-organization'})
+
+
+def _errors():
+    # The isolated -I worker deliberately has no package/CWD search path.
+    spec = importlib.util.spec_from_file_location('sermon_provider_error',
+        Path(__file__).with_name('sermon_provider_error.py'))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 class ProviderTimeout(TimeoutError):
@@ -128,15 +138,15 @@ def _remaining(deadline):
 def execute(req, timeout_seconds, *, deadline=None):
     """Perform at most one request, returning its parsed JSON object.
 
-    All validation happens before spawning. HTTPError carries an empty body and
-    no response headers. Other worker failures are deliberately unknown, never
+    All validation happens before spawning. HTTPError carries an empty body, no response headers, and optional
+    validated safe_diagnostic. Other worker failures are deliberately unknown, never
     evidence of a safe retry. This function itself performs no retry.
     """
     timeout_seconds = _timeout(timeout_seconds)
     deadline = min(time.monotonic() + timeout_seconds, _deadline(deadline)) if deadline is not None else time.monotonic() + timeout_seconds
     _remaining(deadline)
     packet = _encode_request(req, timeout_seconds, deadline=deadline)
-    command = [sys.executable, '-I', str(Path(__file__).resolve()), '--worker']
+    command = [sys.executable, '-I', '-B', str(Path(__file__).resolve()), '--worker']
     _remaining(deadline)
     try:
         process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
@@ -158,14 +168,20 @@ def execute(req, timeout_seconds, *, deadline=None):
         if set(envelope) == {'status', 'response'} and envelope['status'] == 'ok':
             _require(type(envelope['response']) is dict, 'invalid_provider_response')
             return envelope['response']
-        if set(envelope) == {'status', 'httpStatus'} and envelope['status'] == 'http_error':
+        if set(envelope) in ({'status', 'httpStatus'}, {'status', 'httpStatus', 'diagnostic'}) and envelope['status'] == 'http_error':
             code = envelope['httpStatus']
             _require(type(code) is int and 300 <= code <= 599, 'invalid_provider_http_status')
         else:
             raise ValueError('provider_outcome_unknown')
     except (ValueError, TypeError, RecursionError):
         raise ProviderOutcomeUnknown('provider_worker_outcome_unknown') from None
-    raise urllib.error.HTTPError(req.full_url, code, 'provider_http_error', {}, io.BytesIO(b'')) from None
+    error = urllib.error.HTTPError(req.full_url, code, 'provider_http_error', {}, io.BytesIO(b''))
+    if 'diagnostic' in envelope:
+        try: error.safe_diagnostic = _errors().validate(envelope['diagnostic'])
+        except ValueError: raise ProviderOutcomeUnknown('provider_worker_outcome_unknown') from None
+        if error.safe_diagnostic['httpStatus'] != code:
+            raise ProviderOutcomeUnknown('provider_worker_outcome_unknown') from None
+    raise error from None
 
 
 def _kill_and_reap(process):
@@ -228,11 +244,22 @@ def _perform(metadata, body, opener):
             result = _strict_json(raw.decode('utf-8'))
             return {'status': 'ok', 'response': result}
     except urllib.error.HTTPError as error:
-        # Never read/log/return body, headers, reason text or redirect Location.
         code = error.code
-        error.close()
         _require(type(code) is int and 300 <= code <= 599, 'invalid_provider_http_status')
-        return {'status': 'http_error', 'httpStatus': code}
+        # Only a bounded JSON error body is inspected. Redirect bodies/headers,
+        # original message and unknown labels never cross the private pipe.
+        raw = b''
+        try:
+            encoding=(error.headers or {}).get('Content-Encoding','identity')
+            if code >= 400 and type(encoding) is str and encoding.lower() == 'identity':
+                raw = error.read(_errors().MAX_ERROR_BYTES + 1)
+        except (OSError, ValueError):
+            pass
+        finally:
+            error.close()
+        result = {'status': 'http_error', 'httpStatus': code}
+        if code >= 400: result['diagnostic'] = _errors().diagnostic(code, raw)
+        return result
 
 
 def _worker(stdin, stdout, *, opener=None):

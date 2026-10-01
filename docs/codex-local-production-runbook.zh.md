@@ -1,5 +1,7 @@
 # Codex 本地周末生产 Runbook
 
+真实Dev音频测试按[已接入的参数入口](local-production-next-dev-test-parameters.zh.md#已接入的音频入口)运行`python -m scripts.run_dev_local_audio_test tts|back-asr`：自动读取profile选配音batch2、回转写batch4，显式batch1作基线、回转写8作对照。此入口保留正式producer门禁与独立回执；合并dev和CI不会自动运行GPU或付费模型。
+
 每周正式制作前先运行 `python scripts/evaluate_backend_four_layer_dry_run.py --out <忽略目录内的评估收据>`，再按[后端四层快速 Dry Run](backend-four-layer-dry-run.zh.md)生成 Firebase Dev 独立测试页。该评估模拟拿到链接，走 Layer 1–4 的短夹具交接，并测试四处失败阻断及无效故障点；CI 也在非文档 PR 上执行。模拟通过只说明这条测试链路工作；正式周次仍从真实来源、审核和音频证据继续。本 runbook 下文的 Supervisor 仍只覆盖 `dual_pdf` 范围。
 
 2026-09-11 的安装与验收状态见 [Agents API 生产切换记录](agents-api-production-cutover-20260911.zh.md)：当时代码已安装，正式入口 shadow/execute 验收通过，每周调度已启用，业务状态为等待目标周日匹配源。该状态是切换收据，不是永久运行状态；每次执行必须重新读取当前 source、lease、审批、run status 与 QA。2026-09-20 的完整内容制作证据另见[本周制作记录](production-2026-09-20.zh.md)。
@@ -38,11 +40,11 @@
 
 ## MFA 阅读对齐
 
-新 reading 生产默认使用 MFA 词/音素对齐，替代字符比例估时。所有本地模型的目标路由为 **MacBook 优先、DGX Spark 备用**；MFA／G2P 优先使用本机独立环境，本机健康时不联系 Spark。备用默认启用，可用 `MFA_SPARK_FALLBACK=0` 或 `--no-mfa-spark-fallback` 禁用，远端使用独立的 `MFA_SPARK_*` 模型路径。远程可经 Tailscale 的 Mac mini relay。配置、ARM64 备用环境限制与缓存边界见 [MFA 生产接入](mfa-production.zh.md)。
+新 reading 生产默认使用 MFA 词/音素对齐，替代字符比例估时。2026-10-01 起按[本地计算策略](local-production-compute-policy.zh.md)采用 **DGX Spark 优先、MacBook fallback**；MFA／G2P 先检查 Spark 独立环境，明确的基础设施故障才回本机。`--mfa-backend auto` 为默认，`spark`／`macbook` 可明确指定且失败即停；旧 `MFA_SPARK_FALLBACK=0` 或 `--no-mfa-spark-fallback` 在 auto 下仍关闭 Spark、只用本机。远端使用独立的 `MFA_SPARK_*` 模型路径。远程可经 Tailscale 的 Mac mini relay。配置与缓存边界见 [MFA 生产接入](mfa-production.zh.md)。
 
 备用仅处理运行环境或推理可用性故障；文字错误、未知音素、损坏对齐与待审核状态仍停止，不能通过切换机器绕过。MFA 时间仍为模型估计，句界来自冻结英文标点；源窗口审批与人工审核要求保持不变。代码路由不代表两端部署、真实推理或某周产物已验收。
 
-OpenAI 云端转写与语言 API 保持不变。每周 TTS 和配音质检也采用 MacBook 优先、Spark 备用。MacBook MPS 已用授权讲员检查点完成 10 字中文单元的真实合成，输出 2.56 秒音频；短样本成功不代表整篇吞吐、音质或人工听审获准。媒体处理、排版和校验保留在调度端；无模型声音指纹匹配继续在听众浏览器内执行。
+OpenAI 云端转写与语言 API 保持不变。legacy 每周 TTS 和配音质检的新任务也默认 Spark 优先、MacBook fallback；已存在的任务继续其核验后的原后端。canonical TTS 的 CUDA 默认与完整跨机 dispatch/fallback 是不同能力，接入边界见[计算策略](local-production-compute-policy.zh.md)。MacBook MPS 已有真实短样本合成证据；短样本成功不代表整篇吞吐、音质或人工听审获准。媒体处理、排版和校验可保留在调度端；无模型声音指纹匹配继续在听众浏览器内执行。提速和云端资源调研见 [GCP 评估](gcp-production-feasibility-20261001.zh.md)。
 
 ### Layer 1：英文事实与锚点 shadow
 

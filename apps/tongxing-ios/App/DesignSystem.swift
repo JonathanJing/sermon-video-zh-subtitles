@@ -5,6 +5,24 @@ import UIKit
 import AppKit
 #endif
 
+/// Feedback belongs to the explicit timestamp action, not playback progress.
+/// Repeated taps at the same time still produce one light impact per activation.
+struct TranscriptTimeButton: View {
+    let title: String
+    let action: () -> Void
+    @SwiftUI.State private var feedbackTrigger = 0
+
+    var body: some View {
+        Button(title) {
+            feedbackTrigger += 1
+            action()
+        }
+        .font(.caption.monospacedDigit())
+        .buttonStyle(.bordered)
+        .sensoryFeedback(.impact(weight: .light, intensity: 0.7), trigger: feedbackTrigger)
+    }
+}
+
 enum Brand {
     static let ink = Color(red: 0.09, green: 0.20, blue: 0.22)
     static let sage = Color(red: 0.68, green: 0.82, blue: 0.75)

@@ -5,11 +5,13 @@ points are actively denied, not substituted with successful fake producers.
 """
 import io
 import json
+from pathlib import Path
 import socket
 import struct
 import subprocess
+import sys
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 import urllib.request
 
 from scripts import run_bounded_diagnostic as run
@@ -109,6 +111,37 @@ class BoundedRunTests(unittest.TestCase):
         self.assertFalse(self.subject.store.root.exists())
         self.assertEqual(self.calls,[])
 
+    def test_explicit_request_limit_change_is_also_reserved_at_the_locale_boundary(self):
+        selected=dict(self.subject.limits,maxInputTokens=16384)
+        subject=provider.DiagnosticProvider(self.subject.store,self.subject.config,
+            request_limits=selected,executor=self.capture,monotonic=lambda:100.,domain=lambda:'7'*64)
+        self.runner=run.BoundedRun(subject,'synthetic',self.f.root,source_clip=self.clip)
+        with patch.object(run.locale,'run_locale',return_value={'status':'synthetic_boundary'}) as dispatch:
+            self.locale()
+        actual=dispatch.call_args.kwargs
+        self.assertEqual(actual['request_limits'],selected)
+        self.assertEqual(actual['bounds'],{'requests':1,'inputTokens':16384,'outputTokens':4096,
+            'wallTimeMs':300000,'costMicrousd':409600})
+        self.assertEqual(self.calls,[])
+
+    def test_optional_historical_resolver_is_forwarded_without_new_provider_calls(self):
+        from scripts import sermon_historical_layer2 as historical
+        resolver=object.__new__(historical.HistoricalLayer2Reuse)
+        with patch.object(historical.HistoricalLayer2Reuse,'bind_current') as bind, patch.object(run.locale,'run_locale',return_value={'status':'fixture_boundary'}) as dispatch:
+            self.runner.run_locale(*self.f.args,graph=self.graph,plugin_path=self.f.f.plugin_path,
+                plugin_sha256=self.f.f.plugin_sha,group_plan=self.plan,historical_reuse=resolver)
+        self.assertIs(dispatch.call_args.kwargs['historical_reuse'],resolver)
+        bind.assert_called_once_with()
+        self.assertEqual(self.calls,[])
+
+    def test_arbitrary_historical_resolver_rejected_before_guard_or_provider(self):
+        with patch.object(run.locale,'run_locale') as dispatch:
+            with self.assertRaisesRegex(c.ContractError,'diagnostic_historical_fixed_resolver_required'):
+                self.runner.run_locale(*self.f.args,graph=self.graph,plugin_path=self.f.f.plugin_path,
+                    plugin_sha256=self.f.f.plugin_sha,group_plan=self.plan,historical_reuse=object())
+        dispatch.assert_not_called()
+        self.assertEqual(self.calls,[])
+
     def test_simulated_human_context_keeps_one_bounded_provider_and_real_review(self):
         from scripts import sermon_diagnostic_context as diagnostic
         from tests.test_sermon_diagnostic_context import reidentify
@@ -165,6 +198,23 @@ class BoundedRunTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,'unbounded_subprocess_forbidden'):
                 subprocess.run(['curl','https://example.invalid'],check=True)
         self.assertEqual(self.calls,[])
+
+    def test_worker_guard_admits_only_exact_no_bytecode_private_launch(self):
+        expected = [sys.executable, '-I', '-B', str(Path(run.http.__file__).resolve()), '--worker']
+        with patch.object(subprocess, 'Popen') as real_spawn:
+            with run.bounded_network_only():
+                subprocess.Popen(expected, env={}, close_fds=True, stdin=subprocess.PIPE,
+                                 stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+                for command, kwargs in (
+                    ([sys.executable, '-I', *expected[3:]], {'env': {}, 'close_fds': True}),
+                    (expected, {'env': {'PYTHONDONTWRITEBYTECODE': '1'}, 'close_fds': True}),
+                    (expected, {'env': {}, 'close_fds': False}),
+                    (expected, {'env': {}, 'close_fds': True, 'shell': True}),
+                ):
+                    with self.subTest(command=command, kwargs=kwargs), self.assertRaisesRegex(
+                            ValueError, 'unbounded_subprocess_forbidden'):
+                        subprocess.Popen(command, **kwargs)
+            real_spawn.assert_called_once()
 
     def test_changed_source_or_unknown_asr_stops_downstream(self):
         self.subject.executor=Mock(return_value={'model':'wrong-model','text':'Synthetic',

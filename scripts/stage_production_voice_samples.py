@@ -137,14 +137,15 @@ def stage(base: Path, dev_public: Path, delivery: Path, out: Path) -> dict:
         style = public / "style.css"
         style.unlink()
         shutil.copyfile(SOURCE_UI / "style.css", style)
-        shutil.copyfile(SOURCE_UI / "voice-samples.mjs", public / "voice-samples.mjs")
+        for name in ("voice-samples.mjs", "speaker-clip-demos.mjs", "voice-demo.css"):
+            shutil.copyfile(SOURCE_UI / name, public / name)
         shutil.copyfile(base / "firebase.json", temporary / "firebase.json")
         after = inventory(public)
         before_map, after_map = ({item["path"]: item for item in items} for items in (before, after))
         modified = sorted(name for name in before_map if before_map[name] != after_map.get(name))
         added = sorted(set(after_map) - set(before_map))
         require(modified == ["index.html", "style.css"]
-                and set(added) == {"voice-samples.mjs", CATALOG_NAME,
+                and set(added) == {"voice-samples.mjs", "speaker-clip-demos.mjs", "voice-demo.css", CATALOG_NAME,
                                    *(f"{PREFIX}/{speaker['speakerId']}/{locale}.mp3"
                                      for speaker in speakers for locale in ("ko", "es"))},
                 "Unexpected Production file change")
@@ -197,9 +198,8 @@ def verify_candidate(candidate: Path) -> dict:
                  for item in manifest["tracks"]}
     script_text = {item["targetLocale"]: item["text"] for item in script["locales"]}
     registered = {item["speakerId"]: item["displayName"] for item in registry["speakers"]}
-    require(hosting.digest(public / "voice-samples.mjs") ==
-            hosting.digest(SOURCE_UI / "voice-samples.mjs")
-            and hosting.digest(public / "style.css") == hosting.digest(SOURCE_UI / "style.css"),
+    require(all(hosting.digest(public / name) == hosting.digest(SOURCE_UI / name)
+                for name in ("voice-samples.mjs", "speaker-clip-demos.mjs", "voice-demo.css", "style.css")),
             "Voice audition UI differs from checked-in code")
     validate_config(hosting.load(candidate / "firebase.json"))
     if report["oldFormalCatalogSha256"] is not None:

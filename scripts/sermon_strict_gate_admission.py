@@ -154,7 +154,7 @@ class AdmissionBoundary:
                      'parent-revision.json', 'parent-candidate.json', 'repair-plan.json', 'trigger-review.json',
                      'repair-input.json', 'repair-sidecars.json', 'repair-history.json'}
             c.require(all(name in fixed or re.fullmatch(
-                r'(?:generator|reviewer(?:-2)?)\.(?:json|raw\.json|call\.json|started\.json|failure\.json|rejection\.json|budget-binding\.json|budget-call\.json|budget-result\.json)|review-receipt(?:-2)?\.json', name)
+                r'(?:generator|reviewer(?:-2)?)\.(?:json|raw\.json|call\.json|started\.json|failure\.json|rejection\.json|budget-binding\.json|budget-call\.json|budget-result\.json)|reviewer(?:-2)?\.(?:structural-diagnostic|rejection-diagnostic)\.json|review-receipt(?:-2)?\.json', name)
                 for name in names), 'unrecognized_revision_evidence')
             data = {}
             for name in names:
@@ -230,7 +230,7 @@ class AdmissionBoundary:
                       'incomplete_review_inventory')
             for name in data:
                 if name.startswith('reviewer'):
-                    match = re.fullmatch(r'reviewer(?:-([2]))?\.(?:json|raw\.json|call\.json|started\.json|failure\.json|rejection\.json|budget-binding\.json|budget-call\.json|budget-result\.json)', name)
+                    match = re.fullmatch(r'reviewer(?:-([2]))?\.(?:json|raw\.json|call\.json|started\.json|failure\.json|rejection\.json|structural-diagnostic\.json|rejection-diagnostic\.json|budget-binding\.json|budget-call\.json|budget-result\.json)', name)
                     c.require(match is not None, 'unrecognized_reviewer_evidence')
                     if int(match[1] or 1) not in attempts: pending = True
             hashes = [c.canonical_sha256(c.decode_json(raw)) for _, raw in receipts]
@@ -239,6 +239,12 @@ class AdmissionBoundary:
                 diagnostics.append('review_budget_inventory_mismatch')
             for receipt_name, receipt_bytes in receipts:
                 receipt = c.decode_json(receipt_bytes)
+                stem='reviewer'+('' if receipt_name=='review-receipt.json' else '-2')
+                if any(stem+'.'+suffix in data for suffix in ('structural-diagnostic.json','rejection-diagnostic.json')):
+                    inputs=strict.input_manifest(prepared,manifest,data['candidate.json'])
+                    c.require(c.decode_json(data['review-input.json'])==inputs,'admission_review_input_changed')
+                    c.validate_review_binding(receipt,manifest,prepared['rubric'],inputs)
+                    strict._validate_cached_review_evidence(receipt,manifest,root/(stem+'.json'),prepared,inputs)
                 matches = [row for row in review_rows if row.get('result', {}).get('receiptSha256') == c.canonical_sha256(receipt)]
                 if len(matches) == 1:
                     row = matches[0]

@@ -18,6 +18,8 @@ import threading
 from types import SimpleNamespace
 
 from scripts import sermon_accounting as accounting
+from scripts import sermon_historical_identity as historical_identity
+from scripts import sermon_dag_evidence as dag_evidence
 from scripts import sermon_bounded_business_callbacks as offline
 from scripts import sermon_diagnostic_preview_worker as preview_worker
 from scripts import sermon_log_profile as profile
@@ -75,6 +77,12 @@ def _references(session, value):
 def _inventory(config, session):
     """Freeze named static inputs; candidate is owned by the locale producer."""
     paths = set()
+    historical=session.binding.get('historicalLayer2Inputs')
+    if historical is not None:
+        paths.add(_input_path(session,historical['path']))
+    native=session.binding.get('historicalNativeInputs')
+    if native is not None:
+        paths.add(_input_path(session,native['path']))
     for lane in config['locales'].values():
         spec, preview = lane['localeSpec'], lane['previewSpec']
         paths.update(_input_path(session, spec[key]) for key in ('source', 'anchor', 'policy', 'rubric'))
@@ -82,6 +90,9 @@ def _inventory(config, session):
         paths.update(_input_path(session, value) for value in preview['paths'].values())
         paths.update(_input_path(session, preview[key]) for key in
                      ('checkpoint_map_path', 'operation_policies_path', 'strict_rubric_path'))
+        for key in ('runtime_manifest_path','checkpoint_manifest_path','checkpoint_stage_declaration_path'):
+            if key in preview:
+                paths.add(_input_path(session, preview[key]))
         mapping = public.read_snapshot(_input_path(session, preview['checkpoint_map_path']))[0]
         for checkpoint in mapping.get('checkpoints', []):
             root = _input_path(session, checkpoint['path'])
@@ -109,8 +120,21 @@ def _config(config, session):
         c.require(type(spec) is dict and set(spec) == {'source', 'anchor', 'policy', 'rubric',
             'graph', 'pluginPath', 'pluginSha256', 'groupPlan'}, 'diagnostic_flow_locale_spec_invalid')
         c.require(type(preview) is dict and preview_worker.REQUIRED <= set(preview) and
-                  set(preview) <= preview_worker.REQUIRED | preview_worker.OPTIONS | {'fixture_behavior'} and
+                  set(preview) <= preview_worker.REQUIRED | preview_worker.OPTIONS |
+                  {'fixture_behavior', 'runtime_manifest_path', 'checkpoint_manifest_path', 'checkpoint_stage_declaration_path'} and
                   type(preview['execute']) is bool and preview['execute'] is (not session.offline_fixture), 'diagnostic_flow_preview_mode_changed')
+        c.require(session.offline_fixture or 'runtime_manifest_path' in preview,
+                  'diagnostic_flow_preview_runtime_manifest_required')
+        c.require(not session.offline_fixture or 'runtime_manifest_path' not in preview,
+                  'diagnostic_flow_fixture_cannot_claim_native_runtime')
+        checkpoint_keys={'checkpoint_manifest_path','checkpoint_stage_declaration_path'}
+        c.require(session.offline_fixture or checkpoint_keys <= set(preview),
+                  'diagnostic_flow_preview_checkpoint_manifest_required')
+        c.require(not session.offline_fixture or not checkpoint_keys & set(preview),
+                  'diagnostic_flow_fixture_cannot_claim_checkpoint_manifest')
+        for key in ('runtime_manifest_path',*sorted(checkpoint_keys)):
+            if key in preview:
+                _input_path(session, preview[key])
         c.require(type(preview['paths']) is dict and set(preview['paths']) ==
                   set(preview_worker.PATH_KEYS) - {'candidate'}, 'diagnostic_flow_candidate_owned_by_session')
         for key in ('source', 'anchor', 'policy', 'rubric'):
@@ -134,7 +158,8 @@ def _config(config, session):
 
 class DiagnosticDAG:
     def __init__(self, session, config):
-        c.require(type(session) is _session_class() and
+        from scripts.sermon_fresh_diagnostic import FreshDiagnosticSession
+        c.require(type(session) in (_session_class(), FreshDiagnosticSession) and
                   (not session.offline_fixture or type(session.subject.executor) is offline.OfflineHTTPTransport),
                   'diagnostic_flow_offline_session_required')
         self.session = session
@@ -156,10 +181,13 @@ class DiagnosticDAG:
                            (f'preview.{locale}', 'preview', locale, (f'text.{locale}',))]
         self.nodes.append(('delivery.readonly', 'delivery', None, tuple(f'preview.{x}' for x in self.locales)))
         self.results, self.observations = {}, {}
+        self._reliability_failure = None
 
     def freeze(self):
         self._check()
-        strict.save_once(self.root / 'plan.json', self.binding)
+        self.root.mkdir(parents=True, exist_ok=True, mode=0o700)
+        _safe_path(self.root, recursive=True)
+        public.save_once(self.root / 'plan.json', self.binding)
 
     def _check(self):
         c.require(_safe_path(self.session.root) == self.fixture_root and
@@ -171,7 +199,7 @@ class DiagnosticDAG:
                   _inventory(self.config, self.session) == self.binding['inputFiles'], 'diagnostic_flow_frozen_inputs_changed')
         path = self.root / 'plan.json'
         if path.exists():
-            c.require(c.read_snapshot(path)[0] == self.binding, 'diagnostic_flow_plan_changed')
+            c.require(public.read_snapshot(path)[0] == self.binding, 'diagnostic_flow_plan_changed')
 
     def _validate(self, operation, locale, result):
         c.require(type(result) is dict, 'diagnostic_flow_result_required')
@@ -209,12 +237,15 @@ class DiagnosticDAG:
 
     def execute(self, node_id):
         node_id, operation, locale, dependencies = next(node for node in self.nodes if node[0] == node_id)
+        queued_at = accounting.now()
         observation = {'nodeId': node_id, 'operation': operation, 'locale': locale,
             'executionStatus': 'blocked', 'processed': False, 'readyForDownstream': False,
             'humanAcceptance': 'pending', 'productionEligible': False, 'evidenceMode': self.session.evidence_mode,
             'completionSpans': [], 'publicationAuthorized': False}
         dispatched = False
         with _LOCK:
+            if self._reliability_failure is not None:
+                raise self._reliability_failure
             try:
                 self._check()
                 parents = [self.observations[key] for key in dependencies]
@@ -222,15 +253,19 @@ class DiagnosticDAG:
                     observation['reason'] = 'upstream_not_completed'
                 else:
                     spans = [span for parent in parents for span in parent['completionSpans']]
+                    if operation == 'source':
+                        spans.extend(getattr(self, 'initial_source_spans', []))
+                    ready_at = max((parent['completedAt'] for parent in parents), default=queued_at)
                     with accounting.stage('diagnostic.dag.' + operation, depends_on=spans,
-                                          work_unit_id=node_id, executor_type='deterministic_program') as span:
+                                          work_unit_id=node_id, executor_type='deterministic_program',
+                                          dependency_ready_at=ready_at, queued_at=queued_at) as span:
                         dispatched = operation in {'locale', 'preview'}
                         if operation == 'source':
                             result = self.session.inspect_source()
                         elif operation == 'locale':
-                            result = self.session.run_locale(locale, self.config['locales'][locale]['localeSpec'])
+                            result = self.session.run_locale(locale, self.config['locales'][locale]['localeSpec'], depends_on=spans)
                         elif operation == 'preview':
-                            result = self.session.preview(locale, self.config['locales'][locale]['previewSpec'])
+                            result = self.session.preview(locale, self.config['locales'][locale]['previewSpec'], depends_on=spans)
                         else:
                             previews = {name: self.results[f'preview.{name}'] for name in self.locales}
                             result = self.session.inspect_delivery(previews, expected_locales=self.locales)
@@ -245,12 +280,21 @@ class DiagnosticDAG:
                     observation.update(executionStatus='outcome_unknown' if unknown else 'completed',
                         processed=None if unknown else True, readyForDownstream=ready and not unknown,
                         resultSha256=digest, artifactSha256=artifact, businessStatus=status,
-                        completionSpans=[span])
+                        completionSpans=dag_evidence.current_terminal_leaves(span) if ready and not unknown else [],
+                        completedAt=accounting.now())
             except Exception as exc:
-                reason = str(exc) if isinstance(exc, ValueError) and re.fullmatch(r'[a-z][a-z0-9_]{0,119}', str(exc)) else 'callback_or_evidence_not_confirmed'
-                observation.update(executionStatus='outcome_unknown' if dispatched else 'blocked',
-                    processed=None if dispatched else False, reason=reason,
+                if isinstance(exc,accounting.AccountingWriteError) or getattr(exc,'sermon_logging_failed',False):
+                    self._reliability_failure=exc
+                    raise  # Stop all later callbacks; preserve the original failure.
+                typed_local=(type(exc) is historical_identity.HistoricalIdentityPreDispatchRejected)
+                known_local=(typed_local and exc.reason_code in historical_identity.PRE_PROVIDER_CODES)
+                reason=(exc.reason_code if known_local else str(exc) if not typed_local and isinstance(exc, ValueError) and
+                    re.fullmatch(r'[a-z][a-z0-9_]{0,119}', str(exc)) else 'callback_or_evidence_not_confirmed')
+                observation.update(executionStatus='outcome_unknown' if dispatched and not known_local else 'blocked',
+                    processed=None if dispatched and not known_local else False, reason=reason,
                     errorType=type(exc).__name__)
+                if known_local:
+                    observation.update(failurePhase=exc.phase,providerDispatchOccurred=False)
             self.observations[node_id] = observation
             _safe_path(self.root, recursive=True)
             strict.save_once(self.root / 'observations' / node_id /
@@ -327,7 +371,7 @@ def preflight_live(plan, continuation, config):
     root, subject, context, _, _ = entry.prepare_continuation(plan, continuation)
     c.require(not (root / 'offline-business-scope.json').exists(),
               'diagnostic_dag_fixture_cannot_become_live')
-    scope = SimpleNamespace(root=root, offline_fixture=False,
+    scope = SimpleNamespace(root=root, offline_fixture=False, binding={},
                             _path=lambda value, plugin=False: _path(str(value)))
     config = _config(config, scope)
     for lane in config['locales'].values():

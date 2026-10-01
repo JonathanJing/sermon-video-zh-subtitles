@@ -1,6 +1,18 @@
 // Application state and playback messages. Keys are stable across languages.
 export const messages = {
   "zh": {
+    "app.diagnostic.failed": "DEV 处理失败",
+    "app.diagnostic.blocked": "DEV 流程受阻",
+    "app.diagnostic.pending": "DEV 等待生成",
+    "app.diagnostic.ready": "DEV 试听可用（待审）",
+    "app.diagnostic.text": "机器文字候选",
+    "app.diagnostic.audio": "片段试听音频",
+    "app.diagnostic.review": "人工审核与同步",
+    "app.diagnostic.delivery": "正式发布资格",
+    "app.diagnostic.textReady": "机器文字候选已有；正式人工审核待完成。",
+    "app.diagnostic.textMissing": "机器文字候选尚未完成，不能显示为大纲就绪。",
+    "app.diagnostic.reviewPending": "测试默认通过；正式文字、听审和视频同步仍待验收。",
+    "app.diagnostic.previewOnly": "仅 Dev 诊断预览，不授予正式发布资格。",
     "app.content.available": "选择本期已发布的配音与字幕语言。",
     "app.content.legacy": "本期仅提供已发布的中文内容和音频。",
     "app.content.fullText": "完整文稿",
@@ -122,6 +134,18 @@ export const messages = {
     "app.voices.source": "原声出处"
   },
   "en": {
+    "app.diagnostic.failed": "DEV processing failed",
+    "app.diagnostic.blocked": "DEV workflow blocked",
+    "app.diagnostic.pending": "DEV awaiting generation",
+    "app.diagnostic.ready": "DEV preview available (review pending)",
+    "app.diagnostic.text": "Machine text candidate",
+    "app.diagnostic.audio": "Excerpt preview audio",
+    "app.diagnostic.review": "Human review and synchronization",
+    "app.diagnostic.delivery": "Formal release eligibility",
+    "app.diagnostic.textReady": "Machine text exists; formal human review is pending.",
+    "app.diagnostic.textMissing": "Machine text is incomplete; the outline is not ready.",
+    "app.diagnostic.reviewPending": "Test gates passed by default; formal text, listening and video synchronization acceptance remain pending.",
+    "app.diagnostic.previewOnly": "Dev diagnostic preview only; no formal release eligibility.",
     "app.content.available": "Choose a published audio and subtitle language for this sermon.",
     "app.content.legacy": "This sermon has published Chinese content and audio only.",
     "app.content.fullText": "Full reading text",

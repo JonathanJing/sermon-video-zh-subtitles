@@ -18,10 +18,11 @@ STATIC.update({f"/{name}": (name, "application/json" if name.endswith(".json") e
 # Explicit HTML/module dependency closure, including worker/worklet entrypoints.
 # Keep this allowlist independent of filesystem discovery to avoid exposing code.
 STATIC.update({f"/{name}": (name, "text/javascript") for name in (
-    "icons.mjs", "media-session.mjs", "voice-samples.mjs", "fingerprint-ui.mjs",
+    "icons.mjs", "media-session.mjs", "voice-samples.mjs", "speaker-clip-demos.mjs", "fingerprint-ui.mjs",
     "fingerprint-capture.mjs", "fingerprint-core.mjs", "fingerprint-diagnostics.mjs",
     "fingerprint-worker.mjs", "fingerprint-worklet.mjs",
 )})
+STATIC["/voice-demo.css"] = ("voice-demo.css", "text/css")
 STATIC.update({f"/{name}": (name, "image/svg+xml") for name in (
     "icons.svg", "brand-icon.svg", "brand-icon-light.svg",
 )})

@@ -158,6 +158,7 @@ class ServerTests(unittest.TestCase):
                         dependencies = re.findall(r'^\s*(?:import|export)\s+(?:[^\n]*?\s+from\s+)?[\'"]([^\'"]+)[\'"]', text, re.MULTILINE)
                         dependencies += re.findall(r'\bimport\s*\(\s*[\'"]([^\'"]+)[\'"]', text)
                         dependencies += re.findall(r'new URL\(\s*[\'"]([^\'"]+\.(?:mjs|js))[\'"]\s*,\s*import\.meta\.url', text)
+                        dependencies += re.findall(r'\.href\s*=\s*[\'"]([^\'"]+\.css)[\'"]', text)
                     else:
                         dependencies = []
                     for dependency in dependencies:
@@ -165,6 +166,7 @@ class ServerTests(unittest.TestCase):
                         self.assertEqual(resolved.netloc, urlsplit(self.base).netloc)
                         pending.append(resolved.path)
                 self.assertTrue({'/icons.mjs', '/media-session.mjs', '/voice-samples.mjs',
+                                 '/speaker-clip-demos.mjs', '/voice-demo.css',
                                  '/fingerprint-ui.mjs', '/fingerprint-worker.mjs',
                                  '/fingerprint-worklet.mjs', '/fingerprint-core.mjs', '/icons.svg'}.issubset(visited))
 

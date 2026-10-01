@@ -1,0 +1,294 @@
+# Project technical overview
+
+[Project introduction](../README.md) · [项目介绍](../README.zh.md) · [Other language](project-technical-overview.zh.md)
+
+This page preserves the architecture, implementation notes, diagrams and experiment summaries moved from the root README on **2026-10-01**, at `dev@d25d58d`. It is a dated documentation snapshot, not a fresh deployment or acceptance check. Dates and older PR/model statements below retain their historical scope. For maintained requirements, use the [four-layer contract](multilingual-production-interfaces.zh.md), [workflow map](workflows/README.zh.md), [backend design](backend-workflow-system-design.zh-en.md), and [experiment index](experiment-directions.zh.md). The September 20 production record includes subsequent venue quality failures; earlier preview acceptance does not establish field success.
+
+> **Historical release snapshot, 2026-09-25.** The [Firebase listening app](https://ai-for-god-sermon-audio.web.app/) now offers separate Chinese, English, Korean, and Spanish interface choices. Its nine published weeks still contain Chinese content only; English, Korean, and Spanish content choices are disabled as unpublished. The two reviewed September 20 trilingual POC clips remain on Dev and are absent from Production. This was a UI-only release: prior media bytes were preserved, and post-deployment HTTP/SHA and MP3 Range checks passed. Physical-device and venue acceptance have not run. See the [Firebase release record and backlog (中文)](multilingual-firebase-release-backlog-2026-09-24.zh.md). Full weekly media, audio and PDFs stay outside Git.
+
+## Architecture and design map
+
+The product direction is **native iOS as the primary listening client, with Firebase Web as the secondary access path**. This priority does not imply iOS feature parity, completed distribution, or venue acceptance. The existing UI design and dated implementation records remain authoritative.
+
+| Design area | Start here | What it covers |
+|---|---|---|
+| App design | [Client system design (中文)](app-system-design.zh.md) → [existing iOS UI design](../apps/tongxing-ios/DESIGN.zh.md) | Native/Web responsibilities, package readers, playback, offline storage and acceptance limits |
+| Backend workflow | [Bilingual DAG and implementation map](backend-workflow-system-design.zh-en.md) | Four layers, independent locales, review/gate roles and bounded new revisions |
+| Execution environments | [Local/cloud/CI architecture (中文)](execution-environment-design.zh.md) → [Spark default / MacBook fallback (中文)](local-production-compute-policy.zh.md) | Local routing, model APIs, storage, Firebase, CI and explicit release boundaries |
+| Production performance and cloud evaluation | [Sliced local A/B (中文)](local-model-layer-latency-ab-20261001.zh.md) → [Component acceptance (中文)](local-production-performance-acceptance-20261001.zh.md) → [GCP resources and cost scenarios (中文)](gcp-production-feasibility-20261001.zh.md) | September 27 workload, measured component timing and quality, migration scope and unmeasured costs |
+| Experiment directions | [Questions, scope, status, evidence and exit criteria (中文)](experiment-directions.zh.md) | Existing ASR, translation, review, prosody, voice, orchestration and device experiments |
+
+**Repository evidence as of 2026-09-30:** the [September 27 release record](sep27-full-video-app-layer4.zh.md) documents Chinese, Korean and Spanish publication; the [September 28 migration record](reports/20260928-full-video-bucket-migration.zh.md) records full-video delivery through a separate media bucket. The September 25 screenshots below remain dated examples. This documentation update did not recheck live deployment or device acceptance.
+
+## Four-layer production architecture: shared English source to multilingual playback
+
+The production pipeline has four layers: **Shared English Source & Anchors → Target-Language Text → Target-Language Audio & Synchronization → Multilingual Delivery & Playback**. Each layer has its own deliverable and acceptance gate; passing one layer does not imply that the next layer has passed. The September 27 record documents a three-language release; every new edition still needs separate text, audio, and release acceptance for each locale. The DAG below describes the required package dependencies, not a claim that a generic controller already executes the entire pipeline.
+
+| Layer | Responsibility | Model and program roles | Deliverable and acceptance gate |
+|---|---|---|---|
+| 1. Shared English Source & Anchors | Lock the source and sermon window, recover the complete English, align words to source audio, then establish stable sentence, clause, punctuation and pause anchors | `gpt-transcribe` or a trustworthy manuscript supplies text; MFA, Qwen ForcedAligner and other candidates supply acoustic word locations; an LLM may review text, punctuation and sentence boundaries but must not invent timestamps | `English Source Package`: immutable anchors, word times, provenance, hashes and coverage evidence |
+| 2. Target-Language Text | Translate directly from English anchors, preserving every unit and checking negation, causality, Scripture, names, numbers and terminology | The current Layer 2 policy uses Astra translation and a separate Sol reviewer-editor request; language plugins and human approval remain separate, and the planned read-only reviewer is not yet this runner | `Target-Language Candidate`: target text, exact English-anchor coverage, model receipts and independent review state |
+| 3. Target-Language Audio & Synchronization | Generate natural-rate speech from approved text, measure actual duration and schedule it against English clauses and pauses | Qwen3-TTS and similar speech models synthesize audio; Qwen3-ASR-style back-transcription is a machine screen only; a deterministic scheduler owns duration, gaps and timeline placement, followed by complete human listening | `Target-Language Audio Package`: audio, captions, schedule, screening and listening state |
+| 4. Multilingual Delivery & Playback | Bind the correct video, text, audio, captions, page and language selectors, then deploy, download and play them on supported clients | Page builders, FFmpeg, Firebase, Web/iOS clients and validators deliver artifacts; a Supervisor/Agent orchestrates state but does not replace content truth or human acceptance | `Target-Language Release Package`: locale-isolated assets, hashes, HTTP/download checks and player verification |
+
+![Four-layer production DAG](diagrams/architecture-dag-en.svg)
+
+<details>
+<summary>Mermaid source / 可编辑拓扑源</summary>
+
+```text
+flowchart TB
+    SRC["L1 English Source + Anchors<br/>Frozen identity, hashes, provenance and review"]
+    SRC --> ZT["L2 zh-Hans Text<br/>Locale review + human approval"]
+    SRC --> KT["L2 ko Text<br/>Locale review + human approval"]
+    SRC --> ET["L2 es Text<br/>Locale review + human approval"]
+    ZT --> ZA["L3 zh-Hans Audio Package<br/>human_reviewed<br/>or explicit audio_unavailable"]
+    KT --> KA["L3 ko Audio Package<br/>human_reviewed<br/>or explicit audio_unavailable"]
+    ET --> EA["L3 es Audio Package<br/>human_reviewed<br/>or explicit audio_unavailable"]
+    ZA --> ZR["L4 zh-Hans Release Package<br/>Bound hashes + page approval"]
+    KA --> KR["L4 ko Release Package<br/>Bound hashes + page approval"]
+    EA --> ER["L4 es Release Package<br/>Bound hashes + page approval"]
+    ZR --> PLAN["Selected locales only, per release plan<br/>Text-only needs client capability"]
+    KR --> PLAN
+    ER --> PLAN
+    PLAN --> AUTH["Release authorization + target check"]
+    AUTH --> HTTP["Deploy + HTTP and hash verification"]
+    HTTP --> CLIENT["iOS primary, Web secondary<br/>Separate device and venue acceptance"]
+```
+
+</details>
+
+Every locale must pass through **L3 Audio Package**, including explicit `audio_unavailable` when its release plan permits text-only delivery. The selected-locale join does not require all three languages unless the release plan says so. Source changes invalidate all locales; text/audio changes invalidate only that locale’s descendants. Existing text-only readers and catalog validation do not establish support in every producer; see the [implementation map](backend-workflow-system-design.zh-en.md#实际实现地图--implementation-map).
+
+The earlier [four-layer SVG](diagrams/four-layer-production-workflow.svg) is a dated September 25 model/process overview; the DAG above is the maintained dependency view.
+
+The release diagram separates **content review, Git promotion, and Firebase deployment**. Reviewed Dev clips do not automatically appear in Production, and merging code to `main` does not publish a new weekly edition.
+
+![Dev review, main promotion, and Firebase Production release gates](diagrams/firebase-release-flow.svg)
+
+### Planned generation, review and bounded repair DAG
+
+**Planned:** PR164’s [design snapshot](https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/fb0da4903717be3844e8114a44c7fcb46d5c9f35/docs/generation-review-gate-design.zh.md) separates immutable generation, independent read-only review and a deterministic gate. At the inspected `dev@fc3e2fb` baseline, the [L2 runner](../scripts/run_target_language_models.py) still allows Sol to edit text; the [fixed L2 controller](canonical-layer2-controller.zh.md) stops at human review. Strict-verifier receipts and automatic repair integration are pending, and the full four-layer controller is incomplete. The in-flight [PR165 D1 private contracts](https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/f731e98863761366836787bab56a5d61a77c281d/docs/rqc-private-contracts.zh.md) add schemas and explicit policy parsing on a separate unmerged branch; they do not yet execute strict review, gate admission or repairs.
+
+![Planned generation, review and repair](diagrams/review-revision-dag-en.svg)
+
+<details>
+<summary>Mermaid source / 可编辑拓扑源</summary>
+
+```text
+flowchart TB
+    F["PLANNED: strict workflow<br/>Frozen source, policy and rubric"]
+    F --> G1["Generate immutable r1"]
+    G1 --> P1["Deterministic precheck r1"]
+    P1 -->|"valid"| R1["Independent read-only review r1"]
+    R1 --> Q1["Deterministic gate r1"]
+    P1 -->|"invalid"| B1["Bounded repair plan 1"]
+    Q1 -->|"needs_rework"| B1
+    B1 --> G2["Generate immutable r2"]
+    G2 --> P2["Deterministic precheck r2"]
+    P2 -->|"valid"| R2["Independent read-only re-review r2"]
+    R2 --> Q2["Deterministic gate r2"]
+    P2 -->|"invalid"| B2["Bounded repair plan 2"]
+    Q2 -->|"needs_rework"| B2
+    B2 --> G3["Generate immutable r3"]
+    G3 --> P3["Deterministic precheck r3"]
+    P3 -->|"valid"| R3["Independent read-only re-review r3"]
+    R3 --> Q3["Deterministic gate r3"]
+    P3 -->|"invalid"| STOP["Stop and escalate with evidence"]
+    Q3 -->|"needs_rework"| STOP
+    Q1 -->|"machine pass"| H["Whole-locale aggregation + human gate"]
+    Q2 -->|"machine pass"| H
+    Q3 -->|"machine pass"| H
+    H -->|"matching receipt"| L3["Admit this locale to L3"]
+    H -->|"pending"| WAIT["Durable wait"]
+    classDef planned fill:#fff4d6,stroke:#8a5a00,color:#202020;
+    class F,G1,P1,R1,Q1,B1,G2,P2,R2,Q2,B2,G3,P3,R3,Q3,STOP,H,L3,WAIT planned;
+```
+
+</details>
+
+This expands one locale/work unit into new revisions without cycles. Two repairs after r1 are a proposed experimental cap, not an implemented budget. Gates bind the exact candidate, source, policy, rubric, coverage and approval receipts. Execution failure may resume review of the same frozen candidate; unknown outcomes require reconciliation, and inconclusive evidence waits for resolution. Machine pass still requires whole-locale human approval before formal L3. See the [bilingual design](backend-workflow-system-design.zh-en.md) for failure routes, current code and remaining limits.
+
+### Production app screenshots
+
+These are captures of the same Chinese weekly edition at the Production URL on 2026-09-25. The Spanish screenshot changes the **interface** language; the content remains Chinese and unpublished languages stay disabled. Browser screenshots do not establish device or venue acceptance.
+
+**Chinese interface, Chinese content**
+
+![Production app with Chinese interface and Chinese content](assets/firebase-production-2026-09-25-zh.jpg)
+
+**Spanish interface, Chinese content**
+
+![Production app with Spanish interface and Chinese content](assets/firebase-production-2026-09-25-es.jpg)
+
+Multilingual expansion follows these contracts:
+
+- Shared English Source & Anchors produces one shared, frozen anchor set. Chinese, Korean, Spanish and other languages branch directly from English; Chinese must not become a pivot source for another language.
+- Each target language records its `locale`, English-anchor hash, translation/review model identities, voice model or checkpoint, timeline and human-review state. Failure in one locale neither blocks nor approves another automatically.
+- Models may be replaced or A/B-tested within a layer, but responsibilities do not blur across layers: a Forced Aligner does not prove semantic completeness, a translation model does not determine acoustic time, back-transcription is not human listening, and a successful deployment is not venue acceptance.
+- Sentence anchoring and clause-stable splitting sit at the English-to-translation boundary: first stabilize what was said and when, then let each target language express it early, completely and naturally.
+
+The canonical names, input/output schemas and invalidation rules live in the [four-layer multilingual interfaces (中文)](multilingual-production-interfaces.zh.md). See also the [workflow map (中文)](workflows/README.zh.md), [sentence-aligned interpretation design (中文)](sentence-aligned-interpretation.zh.md), and [system design and model choices (中文)](sermon-dubbing-system-design.zh.md).
+
+All future prepared multilingual production runs must be tracked through these four layers. Existing dual-PDF and Chinese page tools remain usable as scoped legacy adapters, but their own `complete` state is not the same as a complete four-layer release. Sunday live captions remain a separate real-time path; publishing a finalized live recording later starts at Layer 1.
+
+## Sunday operation: prepare a new caption session
+
+[Operations whitepaper (中文)](sunday-live-operations-whitepaper.zh.md) · [Agent execution entry (中文)](sunday-live-agent-runbook.zh.md)
+
+Use the existing Sunday app to prepare the operator page, create a recording session and obtain its phone-viewer link. Each session gets a new identity; routine Sunday operation does not redeploy the website. The Agent entry covers preflight, microphone and sharing scope, recovery, and verified saving. “Prepare” opens a standby page without starting a recording.
+
+```text
+Read docs/sunday-live-agent-runbook.zh.md and prepare this Sunday's caption page
+using the installed runtime. Check for an active recording first, open the
+operator page in standby, and report the effective model and preflight results.
+```
+
+## 1. Featured: English sermon video → Chinese dubbing in the speaker’s voice
+
+[Listening app](https://ai-for-god-sermon-audio.web.app) · [System design and model choices (中文)](sermon-dubbing-system-design.zh.md) · [Operator runbook](../experiments/sermon-dubbing-poc/SATURDAY_AUDIO_RUNBOOK.zh.md) · [September 20 production record (中文)](production-2026-09-20.zh.md)
+
+![Parallel source routes, speaker training, Chinese audio review and Sunday playback](diagrams/saturday-chinese-voice-workflow.svg)
+
+**Source identity determines playback.** The September 20 edition uses the user-confirmed complete service recording, with the sermon window **29:49–1:02:09** inside a **1:16:07** video. Same-video intake supports an approved window in a full recording as well as a verified sermon-only file. Archive intake remains available; another recording of the same message is not automatically interchangeable.
+
+| Stage | Current implementation |
+|---|---|
+| English video transcription | `gpt-transcribe`; reuse trustworthy English sources and check ambiguous audio separately |
+| Spoken Chinese revision and review | In-conversation `gpt-6-astra`, checking complete meaning, negation, Scripture, names and quotation boundaries |
+| Speaker voice | This edition: MacBook-local MLX Qwen3-TTS with an authorized speaker reference; Spark training remains a separate route |
+| Audio checks and timing | Local Qwen3-ASR back-transcription, ForcedAligner acoustic anchors, and measured natural speech budgets |
+| Listening delivery | Dedicated Firebase app with weekly selection, MP3 downloads, captions, outline, seeking and fine adjustment |
+
+**Documented September 20 edition:** [Jesus promises — September 20](https://ai-for-god-sermon-audio.web.app/?week=2026-09-20-same_video-7c193fd4-bc90-4f3b-aa00-37dfe8423aa0), Eric Geiger, Revelation 2–3. Source-bound Chinese review, exact CUV quotation locks, local speech synthesis and measured timing were followed by pronunciation repairs and user listening acceptance. Firebase and iOS playback were accepted by the user; the [production record](production-2026-09-20.zh.md) keeps stage timing, token accounting and evidence boundaries.
+
+**Default weekly poster:** after publication and HTTP verification, Codex creates ImageGen artwork and composes catalog text plus a real QR code for the exact weekly-page link. Final PNG and sharing-preview decoding and visual QA are required. This is a delivery step; the scheduled Supervisor does not automatically call ImageGen, upload or send the poster. See the [weekly release procedure](tongxing-weekly-release.zh.md#每周海报交付).
+
+**Current limits:** user listening and Firebase/iOS acceptance do not establish venue synchronization. Source timeline alignment and same-recording sound-location capability retain their separate evidence; a different live delivery cannot reuse the timing unchanged. The [August 30 candidate report](sermon-dubbing-astra-review-2026-09-05.zh.md) remains historical evidence.
+
+## Why dual PDFs and live captions remain
+
+![Dual-PDF and live-caption workflow map](diagrams/project-map.svg)
+
+Sunday services currently do not have dependable Chinese captions. Generic live speech translation can produce a useful draft, but it does not reliably preserve Scripture references, biblical names, quoted verses, or church-specific terminology. Unstable segmentation and end-to-end delay can also make otherwise correct text difficult to follow in the room.
+
+When Sunday is a new live delivery rather than playback of the same video, prepared dubbing cannot be applied directly. The earlier live-caption hypothesis was to extract and translate the Saturday public livestream, then reuse that content on Sunday. Testing exposed an important boundary: the Saturday and Sunday sermons may follow the same message framework, but they cannot be assumed to be the same delivery word for word. Wording, order, examples, and live additions may differ. A Saturday transcript is therefore useful preparation, but it cannot be the source of truth for Sunday captions.
+
+The current architecture supports an optional guarded hybrid; the tested Sunday default remains `contextPolicy=none`: Sunday live audio and the English recognized from it remain authoritative, while authorized Saturday material supplies guarded structure, terminology, Scripture references, and reviewed examples. Domain post-training remains a separate evaluation track, with a v4.1 candidate now available for local trials. Quality and latency improvements require frozen evaluations; successful integration does not promote the candidate.
+
+![Solution journey from the Sunday caption gap to a guarded hybrid workflow](diagrams/solution-journey.svg)
+
+## 2. Other independent workflows
+
+### A. Saturday: livestream/archive to two reviewed PDFs
+
+The Saturday workflow discovers or receives the public livestream URL, preserves the complete post-live media, asks an operator to confirm the sermon window, transcribes the English sermon, prepares the Chinese reading text, and renders two canonical outputs for Sunday use:
+
+1. `sermon_zh_en_reading.pdf` — the bilingual translation/reading edition.
+2. `sermon_interpretation_zh.pdf` — the Chinese sermon companion/outline, limited to sermon-related supporting information.
+
+<table>
+  <tr>
+    <th>Bilingual reading edition</th>
+    <th>Chinese sermon companion</th>
+  </tr>
+  <tr>
+    <td><img src="assets/pdf-examples/sermon-zh-en-reading-real-page-1.png" alt="Real page 1 from the bilingual sermon reading PDF" /></td>
+    <td><img src="assets/pdf-examples/sermon-interpretation-zh-real-page-1.png" alt="Real page 1 from the Chinese sermon companion PDF" /></td>
+  </tr>
+</table>
+
+_Real page-1 renders from the 2026-08-30 run. Both individual PDF QA reports pass; complete per-run PDFs remain outside Git. See the [example provenance](assets/pdf-examples/README.md)._
+
+![Saturday post-live dual-PDF workflow](diagrams/saturday-post-live-workflow.svg)
+
+The weekly Supervisor uses Astra Medium for translation, two reading reviews and the companion text, and enables Context Pack export after PDF QA. Exported message identity starts as `unknown`; automatic export is not human approval.
+
+This is the repository's mature post-live path. A run is not complete until the source, approved window, reading-text QA, both PDFs, and both PDF QA reports are present and passing.
+
+Key references:
+
+- [Stable post-live reading-PDF workflow](stable-post-live-reading-pdf-workflow.md)
+- [Codex local weekend production runbook](codex-local-production-runbook.zh.md)
+- [Sermon Production Supervisor Agent](sermon-production-supervisor-agent.md)
+
+### B. Sunday: local microphone to live Chinese captions
+
+The Sunday workflow runs locally on a MacBook: browser microphone capture, durable audio/event logging, local English ASR, MiLMMT English-to-Chinese translation, and a one-page large-type caption display.
+
+![Sunday local live-caption workflow](diagrams/sunday-live-workflow.svg)
+
+The default implementation uses independent MediaRecorder recovery audio, 16 kHz PCM over WebSocket, Qwen3-ASR/MLX, and MiLMMT Q8 through Ollama. Immutable English finals pass a lexical fragment guard before immediate translation. The `readable_chunks` display retains the previous complete bilingual pair; Firebase Hosting/Realtime Database provides public read-only viewing, with a separate LAN/SSE fallback. Gateway recovery resumes the same session, preserves recording and viewer identity, and records caption gaps explicitly.
+
+The merged runtime completed a **60-minute browser WAV replay** (20 minutes of unique audio repeated three times): **1,287 ASR finals → 1,287 translations → 1,287 readable operator-page displays**. P95 was **1.776 seconds from audio-segment end**, or **4.763 seconds from segment start**, to the first readable caption. This is delivery evidence, not translation accuracy, physical microphone/phone proof, or venue acceptance. See the [current readiness report](../experiments/local-live-poc/benchmarks/SUNDAY_READINESS_20260904.zh.md).
+
+**Optional v4.1 trial:** start the POC with [Sunday Live Captions.command](../experiments/local-live-poc/Sunday%20Live%20Captions.command), then choose **v4.1 Q5 · 实验候选** before recording. The page can start its separate local MLX service when the frozen model package is installed. This candidate has not passed the theological quality gate; its sessions display and save locally, with LAN/Firebase sharing disabled. See the [setup and recovery guide](../experiments/local-live-poc/MILMMT_V41_LOCAL.zh.md).
+
+![Local runtime, recovery storage and public/LAN viewing](diagrams/local-live-architecture.svg)
+
+Key references:
+
+- [Complete Saturday/Sunday workflow and latency budget](workflows/README.zh.md)
+- [Local live-caption POC](../experiments/local-live-poc/README.md)
+- [Local live-caption design](../experiments/local-live-poc/DESIGN.zh.md)
+
+## 3. Discovery, gaps, and next work
+
+The [Tongxing native iOS client](../apps/tongxing-ios/README.zh.md) is integrated on `main` and remains a development-validation client. It reuses the published catalog, audio, and captions for offline listening, system audio controls, bilingual text, and short microphone-based sound alignment; code integration or a development build does not establish physical-device, TestFlight, venue, or App Store acceptance.
+
+### What has been demonstrated
+
+| Area | Current evidence |
+|---|---|
+| Saturday PDF production | Workflow code, tests, dated QA evidence, human sermon-window gate, resumable state; generated PDFs remain local/ignored |
+| Sunday live POC | Real-model browser WAV replay, readable display acknowledgements, verified recovery recording, phone viewport and reconnect checks; field gates remain |
+| Saturday-to-Sunday context | Exporter, builder/retriever, readiness and Gateway capability ceiling implemented; Supervisor exports after PDF QA with message identity initially `unknown` |
+| Replay and A/B | Frozen inputs and hashes; actual 3s/6s ASR and bounded translation-unit comparisons; neither candidate promoted |
+| v4.1 post-training integration | Optional Q5/MLX provider in the POC; 45-second original-audio file replay produced 17 English and 17 Chinese finals; browser recording/save controls verified separately; quality gate still fails |
+| Operations | One-click start/stop, runtime identity, current-connection drain, same-session recovery, bounded public publisher and LAN fallback |
+
+### Active discovery and missing gates
+
+- **Saturday production bridge:** the Supervisor enables `--export-sunday-context` after dual-PDF QA. Export does not grant live usage: same-message approval, hashes, expiry and review status determine readiness. English-only alignment does not change the frozen A0 prompt. See the [Context Pack contract](saturday-to-sunday-context-pack-plan.zh.md).
+- **Semantic fidelity:** proper names, incomplete sentences, negation, causality and Scripture relations still need listening and bilingual human review. ASR Gold remains fail-closed; eight diagnostic listening groups are prepared locally. Machine-reviewed references are not human Gold.
+- **Segmentation:** keep the 3-second window, `translationUnitPolicy=legacy`, `content_words` fragment guard and `contextPolicy=none` defaults. Longer windows and bounded semantic assembly produced both improvements and regressions; the latter remains opt-in evaluation code.
+- **Recovery:** the actual Gateway restart replay preserved the independent recording, but had a 1.6-second PCM gap, one unresolved in-flight ASR task and a 7.234-second interval between new captions. Recovery is not lossless captioning.
+- **Field acceptance:** venue microphone/mixer input, non-speech, physical phones on Wi-Fi/cellular and actual phone render latency still require validation. Public-viewer tab reconnect and portrait/landscape browser tests do not close these gates.
+- **Resource ceiling:** 357 in-recording samples in the latest replay had zero swap, with initial/tail sampling gaps explicitly reported. Translation-process RSS rose from 5,863.719 to 9,664.609 MiB and still grew in the last ten minutes; no plateau or consecutive-service bound has been demonstrated.
+- **Optional enhancements:** real weekly Pack benefit, alternate local serving and domain post-training remain separate evaluations. The no-Pack A0 path must continue working.
+
+### Post-training track
+
+The v4.1 candidate can now be selected in the local POC. Its fixed runtime keeps recording independent and binds the model identity to each session. The [integration report](../experiments/local-live-poc/benchmarks/MILMMT_V41_POC_INTEGRATION_20260905.zh.md) separates file replay from the quiet-room browser recording check: this run did not verify speech translation rendered in the browser, acoustic input, or venue readiness.
+
+Training and quality acceptance remain separate from the operator workflow:
+
+1. Build a provenance-preserving parallel corpus from existing subtitle sources, reviewed Saturday/Sunday translations, terminology corrections, and selected audio evidence.
+2. Freeze train/dev/test splits by sermon to prevent segment leakage; only human-approved `Gold` material is eligible for promotion.
+3. Use a strong teacher translation plus independent bilingual review; send only risky segments and a stable sample to audio review.
+4. Train a smaller student translation model with SFT/LoRA, then compare it against MiLMMT A0 on terminology, Scripture names, adequacy, hallucination rate, and latency.
+5. Promote a model only when the frozen evaluation gate passes. Ollama models use `LOCAL_LIVE_OLLAMA_MODEL`; the experimental v4.1 MLX provider uses its own pinned adapter and explicit pre-recording selection. A successful launch or code merge does not change the default model.
+
+Detailed architecture, provider comparisons, cloud experiments, historical realtime prototypes, and deployment notes are indexed in the [documentation index](README.md). The completed experiment boundaries are summarized below.
+
+## 4. 已做实验与 A/B：不同方向的边界探索
+
+[实验方向索引：问题、范围、状态、证据与退出门槛](experiment-directions.zh.md)补充导航；下表保留原有中文实测摘要。
+
+下表只列已实际运行的比较或 POC。它们使用的音频、文本、设备和评价方式不同，不能合并成一张“最佳模型”排行榜。机器参考、模型裁判、文件回放、浏览器事件和人工听审分别是不同等级的证据。
+
+| 探索方向与方法 | 已观察到的结果 | 当前边界与选择 | 证据 |
+|---|---|---|---|
+| 本地翻译模型，四模型同源文本比较 | 239 个冻结英文段均完成；Qwen3.5 9B 自动参考 BLEU `43.25` 最高，Hy-MT2 1.8B 的请求 P95 `1.627s` 最短。 | 量化格式不同，且缺独立语义人审和 ASR／字幕共存验证；不凭自动分数替换周日默认模型。 | [翻译榜单](../data/benchmarks/live-sermon-translation-v1/runs/macbook-text-baselines/translation-only-leaderboard-20260903.md) |
+| 英文 ASR，同音频 Qwen 与 Whisper 对照 | 10 分钟 1 倍速回放给出 Qwen3-ASR 与 `small.en` 的暂定质量／资源比较；Qwen 后续完成 MiLMMT 共存和浏览器长测。 | 参考文本仍是模型审核层，且两条流式延迟口径不同；没有人工逐字 Gold 或现场麦克风验收。 | [本地 ASR 基准](local-asr-benchmark.zh.md) |
+| 实时 ASR 最长窗口，3 秒／6 秒 A/B | 90 秒同源回放中，6 秒减少部分碎片，却仍截断关键关系并出现增译；从音频段开始到首条字幕事件的 P95 从 `4.790s` 升至 `7.910s`。 | 保留 3 秒默认；字幕事件不是屏幕呈现，单一开发片段也不能证明总体准确率。 | [窗口 A/B](../experiments/local-live-poc/benchmarks/asr-window-ab-20260904.md) |
+| 翻译单元，原始 final／有界合并 A/B | 对 42 个发生变化的单元完成 126 次 MiLMMT 请求；合并修复部分断句，也在否定、因果和经文关系上产生严重退化。 | `legacy` 保持默认；少一次请求不等于端到端更快或语义更准。 | [单元 A/B](../experiments/local-live-poc/benchmarks/translation-unit-ab-20260904.md) |
+| Layer 1 英文词对齐，Qwen／MFA 同输入对照 | 同一 60 秒音频与 191 词上，两者都保留词序；Qwen 有 3 个零时长词，MFA 没有。 | MFA 只通过本轮结构门槛；无人工逐词 Gold，不能宣称其边界更准确。 | [对齐器对照](../experiments/english-word-timeline-poc/ALIGNER-COMPARISON-2026-09-20.zh.md) |
+| Layer 2 韩语，Astra／Sol 初译与复核 A/B，Gemini 裁判 | 14 单元小样本里，Astra 与 Sol reviewer 均检出 6/6 植入错误；扩至 45 单元／44 组时，Sol 的逐组发现促使 Gemini 定向裁决确认 2 处需修订，而 Gemini 全文扫描曾报告 0 问题。 | 当前生产选择 Astra 初译、Sol 逐组独立复核；实验支持逐组复核的作用，尚不能比较 Sol 与 Astra 的复核优劣，也不能证明单模型初译足够。仍须冻结 policy、语言插件与人工批准。模型会话缺成本／延迟收据，样本也非整篇证道。 | [A/B 证据摘要](reports/20260923-layer2-astra-sol-gemini-ab.zh.md) · [生产流程](target-language-astra-sol-production.zh.md) |
+| GPT-6 Supervisor 与三语 Layer 2 影子实验 | 12 个状态中 Sol／Luna 的下一步动作均为 12/12 正确，但完整状态仅 7/12／6/12 通过校验。178 秒同源片段的 135 组／臂中，Astra→Sol 与 Sol→Sol 均完成 135 组；后者估算 token 费用低约 51%，机器双检通过 127 组，对照为 128 组；Luna→Sol 有 10 组结构失败。 | 保留确定性 Supervisor 校验和正式 Astra→Sol 政策。Sol→Sol 先做母语盲评；机器通过不等于人工批准，单片段结果不能外推整篇。 | [实验结果](reports/20260928-model-production-ab-results.zh.md) · [冻结输入](reports/20260928-model-production-ab-inputs.json) · [盲评说明](reports/20260928-model-production-ab-blind-review.zh.md) |
+| Layer 2 中文初译提示词／模型 A/B，双机器裁判 | 首轮 8 条比较 A/B/C/D；第二轮 24 条比较现版 Astra medium 与改写版 Sol medium，两组结构均 24/24。Sol 组生成费用按公开未缓存费率估算低 71.8%，但 API 响应中位数慢 0.65 秒。 | 两裁判及反向顺序复判仅在 7/24 条形成稳定一致结论，不能证明质量非劣效；样本是未完成音频核对的文字诊断，且 A/C 同时改变提示词与模型。保留正式 Astra 初译 → Sol 复核策略。 | [首轮记录](../experiments/prompt-model-ab-20260928/README.zh.md) · [扩样与裁判结果](../experiments/prompt-model-ab-20260928/round2.zh.md) |
+| Layer 3 语速／停顿，整句、pace 指令与短语装配对照 | 六句英文窗口 `40.88s`；复制句间停顿的韩语音轨为 `35.83s`，同模型 pace 指令后为 `35.59s`。中文句内拼接版虽接近总时长，用户听后指出语速与接缝不自然。 | 总时长和完整解码不能替代局部同步、源语声学停顿证据或目标语人耳自然度；完整句自然语速对照仍非同步达标。 | [多语言韵律 POC](multilingual-prosody-poc.zh.md) |
+| 声音适配，Qwen Base／训练 speaker 同稿探针 | 固定中文稿的第二轮探针中，Base 出现较大片段重复和混杂，训练 speaker 的回转写只留下两处差异候选。 | 条件输入也从参考音频变为 speaker slot，不能把差异单独归因于训练；跨证道、音色相似度和人耳验收未完成。 | [授权声音试验](../experiments/sermon-dubbing-poc/AUTHORIZED_VOICE_REPORT_20260905.zh.md) |
+| 周日模型后训练，v4.1 单路径集成 POC | 45 秒原声文件回放产生 17 条英文 final、17 条中文 final；网页录音与保存控制单独验证。 | 这不是与当前 Q8 的同条件质量 A/B；v4.1 神学质量门仍未通过，文件事件不等于现场或浏览器中文字幕验收。 | [v4.1 集成报告](../experiments/local-live-poc/benchmarks/MILMMT_V41_POC_INTEGRATION_20260905.zh.md) |
+
+实验结论仅在其冻结输入与验证路径内成立。提升默认模型或生产资产时，仍需匹配的来源身份、独立质量审核、时延／资源与恢复证据，以及对应层的人审、听审和设备验收。媒体与完整模型响应保留在 Git ignored 的本地 `artifacts/`；README 链接的是可提交的紧凑报告。

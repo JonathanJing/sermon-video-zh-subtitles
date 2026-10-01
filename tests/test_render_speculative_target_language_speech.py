@@ -126,6 +126,19 @@ class SpeculativeRenderTests(unittest.TestCase):
         self.assertTrue(audio.is_file())
         self.assertEqual(len(FakeSynth.calls), 1)
 
+    def test_missing_predecessors_remain_unknown_and_explicit_root_is_known(self):
+        from scripts import sermon_log_profile as profile
+        logs = self.fixture.root / 'predecessor-accounting'
+        with profile.session(logs,'legacy-render',work_kind='engineering',evidence_mode='synthetic') as legacy:
+            self.render(group_ids=['g1'])
+        with profile.session(logs,'root-render',work_kind='engineering',evidence_mode='synthetic') as root:
+            self.render(group_ids=['g1'],predecessor_spans=[])
+        rows, errors = subject.accounting.read_events(logs)
+        self.assertFalse(errors)
+        entries = {row['runId']:row for row in rows if row['event']=='stage_started' and row['stage']=='preview.validate_inputs'}
+        self.assertIsNone(entries[legacy['runId']]['dependsOn'])
+        self.assertEqual(entries[root['runId']]['dependsOn'],[])
+
 
 class FormalAdmissionTests(unittest.TestCase):
     def setUp(self):
@@ -436,13 +449,15 @@ class DiagnosticPreviewTests(unittest.TestCase):
         self.assertEqual(len(models), 2)
         first_commit = next(row for row in starts.values() if row['stage'] == 'preview.zh-Hans.0000.commit')
         second = next(row for row in starts.values() if row['stage'] == 'preview.zh-Hans.0001.cache_admission')
-        self.assertEqual(second['dependsOn'], [first_commit['spanId']])
+        dispatch = next(row for row in starts.values() if row['stage'] == 'preview.zh-Hans.0001.dispatch')
+        self.assertEqual(dispatch['dependsOn'], [first_commit['spanId']])
+        self.assertEqual(second['dependsOn'], [dispatch['spanId']])
         observations = [row['fields'] for row in cold_rows if row.get('code') == subject.local_observation.CODE]
         self.assertEqual([row['status'] for row in observations], ['started', 'completed', 'started', 'completed'])
         self.assertTrue(all(row['model'] == self.f.adapter['model'] and row['providerTokens'] is None
                             and row['providerCostUsd'] is None for row in observations))
         self.assertFalse(any(row.get('executorType') == 'production_model' for row in warm_rows))
-        metrics = [row['metrics'] for row in warm_rows if row['event'] == 'workload']
+        metrics = [row['metrics'] for row in warm_rows if row['event'] == 'workload' and 'unitIndex' in row['metrics']]
         self.assertEqual(len(metrics), 2)
         self.assertTrue(all(row['cacheHit'] and row['providerInputTokens'] is None
                             and row['previewOnly'] and row['humanAcceptancePending'] and not row['productionEligible']

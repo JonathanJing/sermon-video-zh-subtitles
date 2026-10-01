@@ -19,6 +19,7 @@ final class PlaybackController: ObservableObject {
     @Published private(set) var resumePosition: ResumePosition?
     @Published private(set) var undoPosition: Double?
     @Published private(set) var storageWarning: String?
+    @Published private(set) var publishedPositionRestoreFailed = false
 
     private(set) var alignmentRevision = UUID()
     var onManualInteraction: (() -> Void)?
@@ -118,9 +119,15 @@ final class PlaybackController: ObservableObject {
     private var player = AVPlayer()
     private let historyURL: URL
     private let audioSessionActivator: any AudioSessionActivating
+    // Production uses AVPlayer's result unchanged; hosted tests can force an
+    // interrupted seek completion while retaining the real player and item.
+    private let seekCompletionResult: @MainActor (Bool) -> Bool
     private var history = PlaybackHistory()
     private var identity: TrackIdentity?
-    private(set) var isPreview = false
+    @Published private(set) var isPreview = false
+    @Published private(set) var previewID: String?
+    @Published private(set) var previewLoadFailed = false
+    private(set) var isVideoPresented = false
     private var sourceID = ""
     private var title = ""
     private var speaker = ""
@@ -135,6 +142,37 @@ final class PlaybackController: ObservableObject {
     private var interruptedGeneration: UUID?
     private var undoSnapshot: (position: Double, offset: Double)?
     private var pendingSeek: (position: Double, offset: Double)?
+    private struct PublishedLanguageTransfer {
+        let pageID: String
+        let sourceIdentity: String
+        let position: Double
+        let duration: Double
+        let offset: Double
+        var autoplay: Bool
+    }
+    private var publishedLanguageTransfer: PublishedLanguageTransfer?
+
+    /// Hold the requested timeline position while another reviewed locale is
+    /// downloaded, including a text-only stop between two audio locales.
+    func preparePublishedLanguageSwitch(pageID: String, sourceIdentity: String) {
+        let retained: PublishedLanguageTransfer?
+        if let existing = publishedLanguageTransfer,
+           existing.pageID == pageID, existing.sourceIdentity == sourceIdentity {
+            if isReady {
+                retained = PublishedLanguageTransfer(pageID: pageID, sourceIdentity: sourceIdentity,
+                    position: pendingSeek?.position ?? currentPosition(), duration: duration,
+                    offset: pendingSeek?.offset ?? offset, autoplay: wantsPlayback || isPlaying)
+            } else { retained = existing }
+        } else if case .some(.published(let audio)) = loadedSource,
+                  audio.pageID == pageID, audio.sourceIdentitySha256 == sourceIdentity {
+            retained = PublishedLanguageTransfer(pageID: pageID, sourceIdentity: sourceIdentity,
+                position: pendingSeek?.position ?? currentPosition(), duration: duration,
+                offset: pendingSeek?.offset ?? offset, autoplay: wantsPlayback || isPlaying)
+        } else {
+            retained = nil
+        }
+        clear(retaining: retained)
+    }
     private enum LoadedSource {
         case legacy(week: SermonWeek, track: SermonTrack, url: URL)
         case published(VerifiedLanguageAudio)
@@ -147,9 +185,11 @@ final class PlaybackController: ObservableObject {
     private var notifications: [NSObjectProtocol] = []
     private var remoteTargets: [(MPRemoteCommand, Any)] = []
 
-    init(historyURL: URL, audioSessionActivator: any AudioSessionActivating = SystemAudioSessionActivator.shared) {
+    init(historyURL: URL, audioSessionActivator: any AudioSessionActivating = SystemAudioSessionActivator.shared,
+         seekCompletionResult: @escaping @MainActor (Bool) -> Bool = { $0 }) {
         self.historyURL = historyURL
         self.audioSessionActivator = audioSessionActivator
+        self.seekCompletionResult = seekCompletionResult
         if let data = try? Data(contentsOf: historyURL) {
             history = PlaybackHistory(data: data)
         }
@@ -197,14 +237,19 @@ final class PlaybackController: ObservableObject {
     func loadPublishedAudio(_ audio: VerifiedLanguageAudio) {
         let next = TrackIdentity(weekID: audio.pageID, trackID: "published_\(audio.locale)", audioSHA256: audio.sha256)
         guard next.isValid, audio.localURL.isFileURL, audio.sourceIdentitySha256.count == 64 else { return }
-        if next == identity, sourceID == audio.sourceIdentitySha256 { return }
+        if next == identity, sourceID == audio.sourceIdentitySha256, !publishedPositionRestoreFailed { return }
+        let transfer = publishedLanguageTransfer.flatMap {
+            $0.pageID == audio.pageID && $0.sourceIdentity == audio.sourceIdentitySha256 ? $0 : nil
+        }
         loadSource(identity: next, sourceID: audio.sourceIdentitySha256, title: audio.pageID,
-                   speaker: audio.locale, url: audio.localURL, duration: 0, source: .published(audio))
+                   speaker: audio.locale, url: audio.localURL, duration: 0, source: .published(audio),
+                   transfer: transfer)
     }
 
     private func loadSource(identity next: TrackIdentity, sourceID nextSourceID: String,
                             title nextTitle: String, speaker nextSpeaker: String, url: URL,
-                            duration estimatedDuration: Double, source: LoadedSource) {
+                            duration estimatedDuration: Double, source: LoadedSource,
+                            transfer: PublishedLanguageTransfer? = nil) {
         sampleStatistics(playing: false, clearing: true)
         manualInteraction()
         saveProgress()
@@ -218,14 +263,18 @@ final class PlaybackController: ObservableObject {
         seekGeneration = UUID()
         itemObservation = nil
         isPreview = false
+        previewID = nil
+        previewLoadFailed = false
         identity = next
         loadedSource = source
         sourceID = nextSourceID
         title = nextTitle
         speaker = nextSpeaker
-        position = 0
-        duration = estimatedDuration
-        offset = 0
+        publishedLanguageTransfer = transfer
+        publishedPositionRestoreFailed = false
+        position = transfer?.position ?? 0
+        duration = transfer?.duration ?? estimatedDuration
+        offset = transfer?.offset ?? 0
         positionTouched = false
         pendingSeek = nil
         undoSnapshot = nil
@@ -234,7 +283,7 @@ final class PlaybackController: ObservableObject {
         isPlaying = false
         isWaiting = false
         message = "正在准备音频…"
-        resumePosition = history.resume(identity: next, sourceID: sourceID, duration: duration)
+        resumePosition = transfer == nil ? history.resume(identity: next, sourceID: sourceID, duration: duration) : nil
         let token = generation
         let item = AVPlayerItem(url: url)
         itemObservation = item.observe(\.status, options: [.initial, .new]) { [weak self] _, _ in
@@ -245,11 +294,18 @@ final class PlaybackController: ObservableObject {
                     let measured = item.duration.seconds
                     if measured.isFinite, measured > 0 {
                         self.duration = measured
-                        if !self.positionTouched, let identity = self.identity {
+                        if self.publishedLanguageTransfer == nil, !self.positionTouched, let identity = self.identity {
                             self.resumePosition = self.history.resume(identity: identity, sourceID: self.sourceID, duration: measured)
                         }
                     }
                     self.isReady = true
+                    if let transfer = self.publishedLanguageTransfer {
+                        self.wantsPlayback = transfer.autoplay && transfer.position < self.duration - 0.1
+                        self.seek(to: transfer.position, newOffset: transfer.offset, rememberUndo: false)
+                        self.updateRemoteAvailability()
+                        self.publishNowPlaying()
+                        return
+                    }
                     self.message = self.resumePosition == nil
                         ? (self.isPublishedAudio ? "音频就绪 · 可以播放" : "音频就绪 · 请按现场起点开始")
                         : "已找到上次收听的位置"
@@ -274,10 +330,12 @@ final class PlaybackController: ObservableObject {
 
     /// Play a locally verified audition sample through the same player. Demos
     /// have no weekly identity, bookmark, alignment, or live activity.
-    func loadPreview(url: URL, title: String) {
+    func loadPreview(url: URL, title: String, previewID: String? = nil) {
         guard url.isFileURL else { return }
         clear()
         isPreview = true
+        self.previewID = previewID
+        wantsPlayback = true
         self.title = title
         speaker = ""
         message = "正在准备音频…"
@@ -290,14 +348,19 @@ final class PlaybackController: ObservableObject {
                 case .readyToPlay:
                     let measured = item.duration.seconds
                     guard measured.isFinite, measured > 0 else {
+                        self.previewLoadFailed = true
+                        self.wantsPlayback = false
                         self.message = "音频加载失败，请检查网络或使用已下载版本。"
                         return
                     }
                     self.duration = measured
                     self.isReady = true
                     self.updateRemoteAvailability()
-                    self.play()
+                    if self.wantsPlayback { self.startPlayback() }
+                    else { self.refreshTransport() }
                 case .failed:
+                    self.previewLoadFailed = true
+                    self.wantsPlayback = false
                     self.message = "音频加载失败，请检查网络或使用已下载版本。"
                 case .unknown: break
                 @unknown default: break
@@ -312,7 +375,10 @@ final class PlaybackController: ObservableObject {
         return false
     }
 
-    func clear() {
+    func clear() { clear(retaining: nil) }
+
+    private func clear(retaining transfer: PublishedLanguageTransfer?) {
+        publishedLanguageTransfer = nil
         sampleStatistics(playing: false, clearing: true)
         saveProgress()
         pause()
@@ -321,6 +387,8 @@ final class PlaybackController: ObservableObject {
         player.replaceCurrentItem(with: nil)
         itemObservation = nil
         isPreview = false
+        previewID = nil
+        previewLoadFailed = false
         identity = nil
         loadedSource = nil
         pendingSeek = nil
@@ -328,9 +396,11 @@ final class PlaybackController: ObservableObject {
         undoPosition = nil
         undoSnapshot = nil
         isReady = false
-        position = 0
-        duration = 0
-        offset = 0
+        publishedLanguageTransfer = transfer
+        publishedPositionRestoreFailed = false
+        position = transfer?.position ?? 0
+        duration = transfer?.duration ?? 0
+        offset = transfer?.offset ?? 0
         message = "正在准备所选证道…"
         updateRemoteAvailability()
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
@@ -351,10 +421,19 @@ final class PlaybackController: ObservableObject {
         else { play() }
     }
 
+    /// The system play command uses this same owner, so it cannot overlap video audio.
+    func setVideoPresented(_ presented: Bool) {
+        isVideoPresented = presented
+        if presented { pause() }
+    }
+
     func play(automatic: Bool = false) {
+        guard !isVideoPresented else { return }
+        if isPreview { previewLoadFailed = false }
         if !automatic { manualInteraction() }
         guard isReady else { return }
         wantsPlayback = true
+        publishedLanguageTransfer?.autoplay = true
         // Finish the user's latest requested position before starting audio.
         // A pending restart must take precedence over an older resume card.
         if pendingSeek != nil { return }
@@ -367,7 +446,7 @@ final class PlaybackController: ObservableObject {
     }
 
     private func startPlayback() {
-        guard isReady, wantsPlayback, pendingSeek == nil else { return }
+        guard !isVideoPresented, isReady, wantsPlayback, pendingSeek == nil else { return }
         if sessionIsActivated {
             beginPlayerPlayback()
             return
@@ -402,6 +481,7 @@ final class PlaybackController: ObservableObject {
                 self.sessionIsActivated = false
                 self.wantsPlayback = false
                 self.refreshTransport()
+                if self.isPreview { self.previewLoadFailed = true }
                 self.message = "无法启用音频，请稍后再试。"
             }
         }
@@ -423,6 +503,7 @@ final class PlaybackController: ObservableObject {
     }
 
     func pause(automatic: Bool = false) {
+        publishedLanguageTransfer?.autoplay = false
         sampleStatistics(playing: false)
         if !automatic { manualInteraction() }
         wantsPlayback = false
@@ -458,7 +539,10 @@ final class PlaybackController: ObservableObject {
         seek(to: after, newOffset: (pendingSeek?.offset ?? offset) + after - before, rememberUndo: true)
     }
 
-    func jump(to value: Double) { manualInteraction(); seek(to: value, newOffset: pendingSeek?.offset ?? offset, rememberUndo: true) }
+    func jump(to value: Double, completion: ((Bool) -> Void)? = nil) {
+        manualInteraction()
+        seek(to: value, newOffset: pendingSeek?.offset ?? offset, rememberUndo: true, completion: completion)
+    }
 
     func undo() {
         manualInteraction()
@@ -487,13 +571,29 @@ final class PlaybackController: ObservableObject {
             Task { @MainActor [weak self] in
                 guard let self, self.generation == token, self.seekGeneration == seekToken else { completion?(false); return }
                 self.pendingSeek = nil
-                guard finished else {
+                guard self.seekCompletionResult(finished) else {
                     self.wantsPlayback = false
                     self.invalidateActivation()
-                    self.message = "定位未完成，已保留上次确认的位置。"
+                    self.player.pause()
+                    self.refreshTransport()
+                    if self.publishedLanguageTransfer != nil {
+                        // The replacement locale has not reached the requested
+                        // position. Keep the timeline visible, block playback,
+                        // and retain it for an explicit reload/retry.
+                        self.publishedLanguageTransfer?.autoplay = false
+                        self.publishedPositionRestoreFailed = true
+                        self.isReady = false
+                        self.message = "收听位置恢复失败，已保留原进度，请重试。"
+                    } else {
+                        self.message = "定位未完成，已保留上次确认的位置。"
+                    }
+                    self.updateRemoteAvailability()
+                    self.publishNowPlaying()
                     completion?(false)
                     return
                 }
+                self.publishedPositionRestoreFailed = false
+                self.publishedLanguageTransfer = nil
                 self.resumePosition = nil
                 self.positionTouched = true
                 self.position = self.currentPosition()
@@ -527,7 +627,7 @@ final class PlaybackController: ObservableObject {
 
     private func tick() {
         guard identity != nil || isPreview else { return }
-        guard pendingSeek == nil else { return }
+        guard pendingSeek == nil, publishedLanguageTransfer == nil else { return }
         position = currentPosition()
         sampleStatistics()
         statisticsInterfaceVisit()
@@ -601,6 +701,7 @@ final class PlaybackController: ObservableObject {
         guard let type, let kind = AVAudioSession.InterruptionType(rawValue: type) else { return }
         switch kind {
         case .began:
+            publishedLanguageTransfer?.autoplay = false
             manualInteraction()
             interruptedIntent = wantsPlayback || isPlaying
             interruptedGeneration = generation
@@ -636,6 +737,7 @@ final class PlaybackController: ObservableObject {
     }
 
     private func recoverMediaServices() {
+        publishedLanguageTransfer?.autoplay = false
         manualInteraction()
         let source = loadedSource
         saveProgress()

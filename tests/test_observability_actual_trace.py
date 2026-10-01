@@ -16,8 +16,9 @@ class ActualTraceTests(unittest.TestCase):
             with self.subTest(mode=mode):
                 projected = weekly.project(RERUN/mode)
                 original = read(RERUN/mode/'report.json')
-                # Historical reports stay immutable. The corrected network
-                # coverage fields are the only permitted projection delta.
+                # Historical reports stay immutable. Validate the exact added
+                # network and clock-provenance fields before comparing every
+                # remaining historical metric and evidence field unchanged.
                 self.assertEqual(projected['networkCalls'], original['networkCalls'])
                 self.assertEqual(projected.pop('networkCallsScope'), 'report_generation_only_deprecated')
                 self.assertEqual(projected.pop('reportGenerationNetworkCalls'), 0)
@@ -25,6 +26,39 @@ class ActualTraceTests(unittest.TestCase):
                 self.assertEqual(calls['status'], 'not_observed')
                 self.assertIsNone(calls['directReceiptCount'])
                 self.assertIsNone(calls['totalNetworkCalls'])
+                self.assertEqual(len(projected['runs']), 1)
+                run = projected['runs'][0]
+                self.assertEqual(run['criticalPath'].pop('durationBasis'),
+                                 'recorded_utc_intervals')
+                for node in run['workUnits']:
+                    self.assertEqual(node.pop('readinessTimingStatus'), 'not_established')
+                # These UTC-only ledgers contain no monotonic/dispatch/worker
+                # handshake or publication receipts. Additions must describe
+                # missing instrumentation, never upgrade historical coverage.
+                self.assertEqual(run.pop('telemetryEvidence'), {
+                    'queue': {
+                        'leafCount': len(run['workUnits']),
+                        'observedDispatchCount': 0,
+                        'observedReadyAndDispatchCount': 0,
+                        'localInlineDispatchCount': 0,
+                        'resourceQueueStatus': 'not_established',
+                        'meaning': 'inline_dispatch_to_stage_entry_is_not_resource_or_provider_queue_wait',
+                        'status': 'missing_instrumentation',
+                    },
+                    'cross': {
+                        'status': 'not_established',
+                        'recordedCrossProcessEdges': 0,
+                        'verifiedCrossProcessEdges': 0,
+                    },
+                    'pageReadyAt': None,
+                    'pageReadyMeaning': 'completed_HTTP_verification_binding_observed_at_not_rollout_or_content_acceptance',
+                    'publicationBinding': None,
+                    'orchestrationOverheadSeconds': None,
+                    'orchestrationScope': 'observed_explicit_program_bookkeeping_interval_union_excluding_recorded_producer_overlap_not_total_overhead',
+                    'orchestrationSpanCount': 0,
+                    'logCompleteness': 'not_established',
+                    'logCompletenessMeaning': 'recorded_profile_boundaries_and_receipts_only_uninstrumented_work_not_proven_absent',
+                })
                 self.assertEqual(projected, original)
                 independent=read(RERUN/f'independent-{mode}.json')
                 self.assertTrue(independent['codeClean'])

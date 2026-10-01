@@ -29,12 +29,23 @@ from scripts import sermon_diagnostic_provider as provider
 from scripts import sermon_execution_harness as harness
 from scripts import sermon_log_profile as profile
 from scripts import sermon_public_snapshot as public
+from scripts import sermon_native_preview_runtime as native_runtime
+from scripts import sermon_clock_evidence as clock
+from scripts import sermon_preview_checkpoint_manifest as checkpoint_manifest
 from scripts import sermon_review_budget as budget
 from scripts import sermon_review_contracts as c
 from scripts import sermon_workflow_jobs as jobs
 from scripts.sermon_release_workflow import _safe_path
 
-SCHEMA = 'sermon-diagnostic-preview-worker-receipt-v1'
+SCHEMA = 'sermon-diagnostic-preview-worker-receipt-v4'
+V3_SCHEMA = 'sermon-diagnostic-preview-worker-receipt-v3'
+V2_SCHEMA = 'sermon-diagnostic-preview-worker-receipt-v2'
+V1_SCHEMA = 'sermon-diagnostic-preview-worker-receipt-v1'
+READONLY_WORKER_CODE_SHA256 = '4e20ac030220414690509a2c81b6b2fd73ea4cc97b7ba2c9e522d0e50290f068'
+# Narrow read-only native producer pin; never authorizes old requests.
+READONLY_NATIVE_WORKER_CODE_SHA256 = '2ca16aac1ed10826307394ea6c277d37a4feeb117a4bb3bee67ea86e334d8172'
+from scripts import sermon_historical_native_seed as historical_seed_helper
+
 PATH_KEYS = ('source', 'anchor', 'candidate', 'policy', 'adapter', 'registry')
 REQUIRED = {'paths', 'checkpoint_map_path', 'operation_policies_path', 'strict_rubric_path', 'out', 'execute'}
 OPTIONS = {'group_ids', 'seed', 'device', 'dtype', 'attention', 'instruct'}
@@ -99,12 +110,14 @@ def _embedded(value):
     return refs
 
 
-def _spec(root, spec, context, offline):
+def _spec(root, spec, context, offline, *, require_runtime_process=False, legacy_receipt=False, legacy_checkpoint=False):
     c.require(type(spec) is dict and REQUIRED <= set(spec)
-              and set(spec) <= REQUIRED | OPTIONS | {'fixture_behavior'}, 'invalid_preview_spec')
+              and set(spec) <= REQUIRED | OPTIONS | {'fixture_behavior', 'runtime_manifest_path', 'checkpoint_manifest_path', 'checkpoint_stage_declaration_path'}, 'invalid_preview_spec')
     c.require(type(spec['execute']) is bool and (offline or spec['execute']), 'preview_execute_required')
     c.require(type(spec['paths']) is dict and set(spec['paths']) == set(PATH_KEYS), 'invalid_preview_paths')
     c.require(offline or 'fixture_behavior' not in spec, 'preview_fixture_behavior_forbidden')
+    c.require(offline or legacy_receipt or 'runtime_manifest_path' in spec, 'preview_native_runtime_manifest_required')
+    c.require(not offline or 'runtime_manifest_path' not in spec, 'preview_fixture_cannot_claim_native_runtime')
     c.require(spec.get('fixture_behavior', 'pcm') in {'pcm', 'hang', 'fail_after_render'}, 'invalid_preview_fixture')
     normalized = dict(spec, paths={key: str(_path(value)) for key, value in spec['paths'].items()})
     for key in ('checkpoint_map_path', 'operation_policies_path', 'strict_rubric_path'):
@@ -112,6 +125,12 @@ def _spec(root, spec, context, offline):
     out = _tree(root, spec['out'])
     c.require(out != root and not root.is_relative_to(out), 'preview_output_overlaps_run')
     normalized['out'] = str(out)
+    runtime_binding = None
+    if not offline and not legacy_receipt:
+        normalized['runtime_manifest_path'] = str(_path(spec['runtime_manifest_path']))
+        runtime_binding = native_runtime.validate(normalized['runtime_manifest_path'], require_process=require_runtime_process)
+        runtime_root = _path(runtime_binding['runtimeRoot'])
+        c.require(not out.is_relative_to(runtime_root) and not runtime_root.is_relative_to(out), 'preview_output_overlaps_runtime')
     inputs = [*map(Path, normalized['paths'].values()),
               *(Path(normalized[key]) for key in ('checkpoint_map_path', 'operation_policies_path', 'strict_rubric_path'))]
     for path in tuple(inputs):
@@ -124,11 +143,38 @@ def _spec(root, spec, context, offline):
     checkpoint = _path(checked['checkpoint'])
     c.require(not checkpoint.is_relative_to(out) and not out.is_relative_to(checkpoint), 'preview_output_overlaps_checkpoint')
     inputs += [checkpoint / 'model.safetensors', checkpoint / 'config.json']
+    checkpoint_binding = None
+    if not offline and not legacy_checkpoint:
+        c.require({'checkpoint_manifest_path', 'checkpoint_stage_declaration_path'} <= set(spec),
+                  'preview_checkpoint_manifest_required')
+        for key in ('checkpoint_manifest_path', 'checkpoint_stage_declaration_path'):
+            normalized[key] = str(_path(spec[key]))
+        checkpoint_binding = checkpoint_manifest.validate(normalized['checkpoint_manifest_path'], root=checkpoint,
+            checkpoint_ref=checked['adapter']['conditioningRef'], conditioning_sha256=checked['adapter']['conditioningSha256'])
+        declaration = checkpoint_manifest.validate_declaration(root, normalized['checkpoint_stage_declaration_path'], checkpoint_binding, context)
+        inputs += [Path(checkpoint_binding[key]['path']) for key in ('checkpointManifest','checkpointInventory','checkpointCode')]
+        inputs += [Path(row['path']) for row in checkpoint_binding['files']]
+        inputs += [Path(declaration['path']), root / 'run-plan.json']
+    c.require(not offline or not {'checkpoint_manifest_path','checkpoint_stage_declaration_path'} & set(spec),
+              'preview_fixture_cannot_claim_checkpoint_manifest')
+    c.require(not any(path == out or path.is_relative_to(out) for path in inputs), 'preview_output_overlaps_input')
+    checked['checkpoint_binding'] = checkpoint_binding
+    if runtime_binding is not None:
+        inputs += [Path(runtime_binding[k]['path']) for k in ('runtimeManifest', 'runtimeInventory', 'runtimeCode')]
+    checked['native_runtime_binding'] = runtime_binding
     groups = [row['translationGroupId'] for row in checked['candidate']['groups']]
     selected = normalized.get('group_ids')
     c.require(selected is None or (type(selected) is list and selected and len(selected) == len(set(selected))
               and set(selected) <= set(groups)), 'invalid_preview_group_selection')
     return normalized, checked, [_ref(path) for path in sorted(set(inputs))]
+
+
+def _recheck_checkpoint(spec, checked):
+    binding = checked['checkpoint_binding']
+    if binding is not None:
+        c.require(checkpoint_manifest.validate(spec['checkpoint_manifest_path'], root=binding['checkpointRoot'],
+            checkpoint_ref=binding['checkpointRef'], conditioning_sha256=binding['conditioningSha256']) == binding,
+            'preview_checkpoint_changed_during_worker')
 
 
 def _runtime(root, subject, context):
@@ -167,6 +213,7 @@ def _environment(root, out, offline):
               'preview_accounting_session_required')
     _tree(root, env['SERMON_ACCOUNTING_DIR'])
     env.update(PATH='/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin',
+        PYTHONDONTWRITEBYTECODE='1',
         HF_HUB_OFFLINE='1', TRANSFORMERS_OFFLINE='1', HF_DATASETS_OFFLINE='1',
         HF_HUB_DISABLE_TELEMETRY='1', TOKENIZERS_PARALLELISM='false',
         HF_HOME=str(out / 'local-model-cache'), TMPDIR=str(out / 'tmp'))
@@ -215,6 +262,12 @@ def _outputs(root, spec, checked):
     return _ref(manifest), units, audio, snapshots
 
 
+def _seed_ref(reference):
+    c.require(reference is None or (type(reference) is dict and set(reference) == {'path','fileBytesSha256'}
+        and reference == _ref(reference['path'])), 'preview_historical_seed_reference_changed')
+    return reference
+
+
 def validate_preview_receipt(root, subject, context, receipt):
     """Read-only completed-preview validation; never dispatch, approve or renew time."""
     root = _path(root)
@@ -223,15 +276,26 @@ def validate_preview_receipt(root, subject, context, receipt):
     saved_path = _inside(root, receipt['receiptPath'])
     c.require(_ref(saved_path)['fileBytesSha256'] == receipt['receiptFileSha256'], 'preview_worker_receipt_changed')
     saved = {key: value for key, value in receipt.items() if key not in {'receiptPath', 'receiptFileSha256'}}
-    c.require(_read(saved_path) == saved and saved.get('schemaVersion') == SCHEMA
+    version = saved.get('schemaVersion')
+    c.require(_read(saved_path) == saved and version in {SCHEMA, V1_SCHEMA, V2_SCHEMA, V3_SCHEMA}
         and saved.get('status') == 'preview_only' and saved.get('humanAcceptance') == 'pending'
         and saved.get('productionEligible') is False, 'preview_worker_receipt_changed')
     c.require(saved['runId'] == subject.config['runId'] and saved['storeSha256'] == subject.store.store_sha256
         and saved['runConfigSha256'] == c.canonical_sha256(subject.config)
         and saved['diagnosticContextSha256'] == c.canonical_sha256(diagnostic.validate_context(context)),
         'preview_worker_context_changed')
-    spec, checked, inputs = _spec(root, saved['spec'], context, saved['offlineFixture'])
+    if version == SCHEMA:
+        c.require('historicalSeedProof' in saved, 'preview_historical_seed_contract_changed')
+        _seed_ref(saved['historicalSeedProof'])
+    if version == V3_SCHEMA:
+        c.require('historicalSeedProof' not in saved, 'preview_legacy_v3_contract_changed')
+    legacy = version == V1_SCHEMA
+    spec, checked, inputs = _spec(root, saved['spec'], context, saved['offlineFixture'], legacy_receipt=legacy, legacy_checkpoint=version not in {SCHEMA,V3_SCHEMA})
     c.require(inputs == saved['inputs'] and c.canonical_sha256(spec) == saved['specSha256'], 'preview_inputs_changed')
+    if not legacy:
+        c.require(saved['nativeRuntimeBinding'] == checked['native_runtime_binding'], 'preview_native_runtime_binding_changed')
+    if version in {SCHEMA,V3_SCHEMA}:
+        c.require(saved['checkpointBinding'] == checked['checkpoint_binding'], 'preview_checkpoint_binding_changed')
     out = Path(spec['out'])
     c.require(saved_path == out / 'worker-receipt.json', 'preview_worker_receipt_location_changed')
     for row in saved['artifacts']:
@@ -250,14 +314,34 @@ def validate_preview_receipt(root, subject, context, receipt):
         and request['context'] == context and request['inputs'] == inputs
         and request['deadlineMonotonic'] == saved['deadlineMonotonic']
         and request['offlineFixture'] == saved['offlineFixture']
-        and request['workerCodeSha256'] == preview.identity.sha256(Path(__file__)),
+        and request.get('schemaVersion') == {V1_SCHEMA:'sermon-diagnostic-preview-worker-request-v1', V2_SCHEMA:'sermon-diagnostic-preview-worker-request-v2', V3_SCHEMA:'sermon-diagnostic-preview-worker-request-v3', SCHEMA:'sermon-diagnostic-preview-worker-request-v4'}[version]
+        and (legacy or request['nativeRuntimeBinding'] == saved['nativeRuntimeBinding'])
+        and (version not in {SCHEMA,V3_SCHEMA} or request['checkpointBinding'] == saved['checkpointBinding'])
+        and ((version != V3_SCHEMA and request['workerCodeSha256'] == preview.identity.sha256(Path(__file__)))
+             or (version in {V1_SCHEMA,V2_SCHEMA} and request['workerCodeSha256'] == READONLY_WORKER_CODE_SHA256)
+             or (version == V3_SCHEMA and request['workerCodeSha256'] == READONLY_NATIVE_WORKER_CODE_SHA256
+                 and _read(root / 'run-plan.json')['executionIdentity']['gitCommit'] == historical_seed_helper.FROZEN_PARENT_COMMIT
+                 and _read(root / 'run-plan.json')['executionIdentity']['loadedProjectCodeSha256'].get(
+                     'scripts/sermon_diagnostic_preview_worker.py') == READONLY_NATIVE_WORKER_CODE_SHA256)),
         'preview_worker_attempt_changed')
+    if version == SCHEMA:
+        c.require('historicalSeedProof' in saved and 'historicalSeedProof' in request
+            and saved['historicalSeedProof'] == request['historicalSeedProof'], 'preview_historical_seed_contract_changed')
+        _seed_ref(saved['historicalSeedProof'])
+    if version == V3_SCHEMA:
+        c.require('historicalSeedProof' not in saved and 'historicalSeedProof' not in request,
+            'preview_legacy_v3_contract_changed')
     child_result = _read(out / 'worker-result.json')
     c.require(child_result['requestSha256'] == request_sha
         and child_result['result']['status'] == 'preview_only'
         and child_result['result']['out'] == str(out)
         and child_result['result']['targetLocale'] == checked['candidate']['targetLocale'],
         'preview_worker_result_changed')
+    if not legacy:
+        proof = saved['clockHandshake']
+        c.require(proof['launch'] == request['clockLaunch'] and proof['finished'] == child_result['clockFinished']
+            and clock.validate_worker_handshake(proof['launch'], proof['finished'], proof['joined']) == proof['joined'],
+            'preview_worker_clock_handshake_changed')
     original = _read(saved['providerStateSnapshot']['path'])
     c.require(c.canonical_sha256(original) == request['providerStateCanonicalSha256']
         and c.canonical_sha256(_read(saved['budgetStateSnapshot']['path'])) == request['budgetStateCanonicalSha256']
@@ -278,15 +362,27 @@ def validate_preview_receipt(root, subject, context, receipt):
     manifest, units, audio, _ = _outputs(root, spec, checked)
     c.require(manifest == saved['manifest'] and units == saved['unitReceipts'] and audio == saved['audio'],
               'preview_outputs_changed')
+    if saved.get('historicalSeedProof') is not None:
+        c.require(saved['historicalSeedProof'] in saved['artifacts'], 'preview_historical_seed_proof_missing')
+        historical_seed_helper.validate_completed(root, subject, context, spec, checked, inputs, saved['historicalSeedProof'])
     return receipt
 
 
-def launch_preview(root, subject, context, spec, *, offline_fixture=False):
+def launch_preview(root, subject, context, spec, *, offline_fixture=False, depends_on=None, historical_seed=None):
     root = _path(root)
     c.require(type(offline_fixture) is bool, 'preview_explicit_fixture_mode_required')
+    c.require(historical_seed is None or (not offline_fixture and type(historical_seed) is historical_seed_helper.HistoricalSeed),
+        'preview_historical_seed_trusted_native_required')
     context = diagnostic.validate_context(context)
     state, ledger, deadline = _runtime(root, subject, context)
-    spec, checked, inputs = _spec(root, spec, context, offline_fixture)
+    c.require(depends_on is None or (type(depends_on) is list and len(depends_on) <= 256
+        and len(set(depends_on)) == len(depends_on)
+        and all(type(value) is str and accounting._label(value, None) == value for value in depends_on)),
+        'preview_invalid_predecessor_spans')
+    prior_path = _tree(root, spec['out']) / 'worker-receipt.json'
+    prior_version = _read(prior_path).get('schemaVersion') if prior_path.exists() else None
+    spec, checked, inputs = _spec(root, spec, context, offline_fixture, require_runtime_process=not offline_fixture,
+        legacy_receipt=prior_version == V1_SCHEMA, legacy_checkpoint=prior_version in {V1_SCHEMA,V2_SCHEMA})
     out = Path(spec['out'])
     c.require(offline_fixture or (profile.current() or {}).get('productionRunId') == subject.config['runId'],
               'preview_accounting_run_changed')
@@ -298,40 +394,57 @@ def launch_preview(root, subject, context, spec, *, offline_fixture=False):
         if receipt_path.exists():
             saved = _read(receipt_path)
             c.require(saved['spec'] == spec and saved['offlineFixture'] == offline_fixture, 'preview_worker_request_changed')
+            if historical_seed is not None:
+                c.require(saved.get('historicalSeedProof') is not None, 'preview_historical_seed_proof_missing')
+                historical_seed_helper.match_seed(saved['historicalSeedProof'], historical_seed)
             return validate_preview_receipt(root, subject, context, dict(saved,
                 receiptPath=str(receipt_path), receiptFileSha256=_ref(receipt_path)['fileBytesSha256']))
         _tree(root, out)
         c.require(not out.exists() or not any(out.iterdir()), 'preview_worker_outcome_requires_reconciliation')
+        seed_proof = None
+        if historical_seed is not None:
+            seed_proof, inspection_span = historical_seed_helper.seed(root, subject, context, spec, checked, inputs,
+                historical_seed, depends_on=depends_on)
+            depends_on = [inspection_span]
         out.mkdir(parents=True, exist_ok=True, mode=0o700)
-        request = {'schemaVersion': 'sermon-diagnostic-preview-worker-request-v1',
-            'root': str(root), 'spec': spec, 'context': context, 'inputs': inputs,
-            'deadlineMonotonic': deadline, 'offlineFixture': offline_fixture,
-            'providerStateCanonicalSha256': c.canonical_sha256(state),
-            'budgetStateCanonicalSha256': c.canonical_sha256(ledger),
-            'workerCodeSha256': preview.identity.sha256(Path(__file__))}
-        request_sha = c.canonical_sha256(request)
-        attempt = {'workerAttemptId': request_sha, 'requestSha256': request_sha, 'status': 'reserved'}
-        preview._reserve_model_attempt(out / 'worker-attempt.json', attempt)
-        jobs._persist(out / 'worker-request.json', request)
-        jobs._persist(out / 'provider-state.snapshot.json', state)
-        jobs._persist(out / 'budget-state.snapshot.json', ledger)
-        (out / 'tmp').mkdir()
         try:
-            remaining = deadline - time.monotonic()
-            c.require(remaining > 0, 'preview_original_deadline_reached')
-            with accounting.stage('diagnostic.preview_worker', executor_type='deterministic_program'):
+            with accounting.stage('diagnostic.preview_worker', executor_type='deterministic_program', depends_on=depends_on) as parent_span:
+                launch_clock = clock.worker_launch(parent_span)
+                request = {'schemaVersion': 'sermon-diagnostic-preview-worker-request-v4',
+                    'historicalSeedProof': seed_proof,
+                    'root': str(root), 'spec': spec, 'context': context, 'inputs': inputs,
+                    'deadlineMonotonic': deadline, 'offlineFixture': offline_fixture,
+                    'providerStateCanonicalSha256': c.canonical_sha256(state),
+                    'budgetStateCanonicalSha256': c.canonical_sha256(ledger),
+                    'workerCodeSha256': preview.identity.sha256(Path(__file__)),
+                    'nativeRuntimeBinding': checked['native_runtime_binding'],
+                    'checkpointBinding': checked['checkpoint_binding'],
+                    'predecessorSpans': depends_on, 'clockLaunch': launch_clock}
+                request_sha = c.canonical_sha256(request)
+                attempt = {'workerAttemptId': request_sha, 'requestSha256': request_sha, 'status': 'reserved'}
+                preview._reserve_model_attempt(out / 'worker-attempt.json', attempt)
+                jobs._persist(out / 'worker-request.json', request)
+                jobs._persist(out / 'provider-state.snapshot.json', state)
+                jobs._persist(out / 'budget-state.snapshot.json', ledger)
+                (out / 'tmp').mkdir()
                 with (out / 'worker.stdout.log').open('x') as stdout, (out / 'worker.stderr.log').open('x') as stderr:
                     # Accounting/file setup consumes the same original clock.
                     remaining = deadline - time.monotonic()
                     c.require(remaining > 0, 'preview_original_deadline_reached')
-                    result = harness.bounded_process([sys.executable, '-I', str(Path(__file__).resolve()),
+                    result = harness.bounded_process([sys.executable, '-I', '-B', str(Path(__file__).resolve()),
                         '--worker', str(out / 'worker-request.json')], timeout=remaining, check=False,
                         cwd=REPO_ROOT, env=env, stdout=stdout, stderr=stderr, text=True)
                 c.require(result.returncode == 0, 'preview_worker_failed_requires_reconciliation')
+                child_result = _read(out / 'worker-result.json')
+                c.require(child_result['requestSha256'] == request_sha, 'preview_worker_result_changed')
+                joined_clock = clock.worker_joined(launch_clock, child_result['clockFinished'])
             current, _, current_deadline = _runtime(root, subject, context)
             _same_history(state, current)
             c.require(current_deadline == deadline, 'preview_original_deadline_changed')
             _check_refs(inputs)
+            c.require(offline_fixture or native_runtime.validate(spec['runtime_manifest_path'], require_process=True)
+                == checked['native_runtime_binding'], 'preview_native_runtime_changed_during_worker')
+            _recheck_checkpoint(spec, checked)
             manifest, units, audio, snapshots = _outputs(root, spec, checked)
             child_result = _read(out / 'worker-result.json')
             c.require(child_result['requestSha256'] == request_sha
@@ -341,6 +454,9 @@ def launch_preview(root, subject, context, spec, *, offline_fixture=False):
             artifacts = [manifest, *units, *audio, *snapshots, provider_snapshot, budget_snapshot,
                 *[_ref(out / name) for name in ('worker-attempt.json', 'worker-request.json', 'worker-result.json')],
                 *[_ref(path) for path in sorted((out / 'receipts').glob('*.attempt.json'))]]
+            if seed_proof is not None:
+                artifacts.append(seed_proof)
+                historical_seed_helper.validate_completed(root, subject, context, spec, checked, inputs, seed_proof)
             receipt = dict(schemaVersion=SCHEMA, status='preview_only', runId=subject.config['runId'],
                 storeSha256=subject.store.store_sha256, runConfigSha256=c.canonical_sha256(subject.config),
                 diagnosticContextSha256=c.canonical_sha256(context), deadlineMonotonic=deadline,
@@ -349,7 +465,11 @@ def launch_preview(root, subject, context, spec, *, offline_fixture=False):
                 budgetStateFileSha256=budget_snapshot['fileBytesSha256'], spec=spec,
                 specSha256=c.canonical_sha256(spec), workerAttemptId=request_sha, requestSha256=request_sha,
                 inputs=inputs, artifacts=artifacts, manifest=manifest, unitReceipts=units, audio=audio,
-                offlineFixture=offline_fixture, humanAcceptance='pending', productionEligible=False)
+                offlineFixture=offline_fixture, humanAcceptance='pending', productionEligible=False,
+                nativeRuntimeBinding=checked['native_runtime_binding'],
+                checkpointBinding=checked['checkpoint_binding'],
+                clockHandshake={'launch': launch_clock, 'finished': child_result['clockFinished'], 'joined': joined_clock})
+            receipt['historicalSeedProof'] = seed_proof
             c.require(time.monotonic() < deadline, 'preview_original_deadline_reached')
             jobs._persist(receipt_path, receipt)
             return dict(receipt, receiptPath=str(receipt_path), receiptFileSha256=_ref(receipt_path)['fileBytesSha256'])
@@ -381,6 +501,9 @@ def _local_only(offline):
 
 def _worker(path):
     request = _read(path)
+    c.require(request.get('schemaVersion') == 'sermon-diagnostic-preview-worker-request-v4', 'preview_worker_request_version_changed')
+    c.require('historicalSeedProof' in request, 'preview_historical_seed_contract_changed')
+    _seed_ref(request['historicalSeedProof'])
     c.require(request['workerCodeSha256'] == preview.identity.sha256(Path(__file__)), 'preview_worker_code_changed')
     root = _path(request['root']); out = _inside(root, request['spec']['out'])
     c.require(_path(path) == out / 'worker-request.json', 'preview_worker_request_location_changed')
@@ -397,30 +520,43 @@ def _worker(path):
         'preview_original_deadline_changed')
     _same_history(state, _read(root / 'budget' / budget.STORE_ID / 'provider-run/state.json'))
     c.require(time.monotonic() < request['deadlineMonotonic'], 'preview_original_deadline_reached')
-    with _local_only(request['offlineFixture']):
-        spec, checked, refs = _spec(root, request['spec'], request['context'], request['offlineFixture'])
-        c.require(refs == request['inputs'], 'preview_inputs_changed')
-        class FixtureSynth:
-            def __init__(self, checkpoint, **kwargs):
-                pass
-            def __call__(self, text, language, speaker, *, seed):
-                if spec.get('fixture_behavior') == 'hang':
-                    time.sleep(3600)
-                with (out / 'fixture-synth-calls.jsonl').open('a') as stream:
-                    stream.write(json.dumps({'textSha256': hashlib.sha256(text.encode()).hexdigest()}) + '\n')
-                return [0.03] * 1280, 16000
-        kwargs = {key: spec[key] for key in OPTIONS if key in spec}
-        if request['offlineFixture']:
-            kwargs['synth_factory'] = FixtureSynth
-        with accounting.accounting_session(Path(os.environ['SERMON_ACCOUNTING_DIR']), 'diagnostic_preview_worker'):
+    with accounting.accounting_session(Path(os.environ['SERMON_ACCOUNTING_DIR']), 'diagnostic_preview_worker'):
+        started_clock = clock.worker_started(request['clockLaunch'])
+        with _local_only(request['offlineFixture']):
+            spec, checked, refs = _spec(root, request['spec'], request['context'], request['offlineFixture'],
+                require_runtime_process=not request['offlineFixture'])
+            c.require(refs == request['inputs'] and spec == request['spec'], 'preview_inputs_changed')
+            c.require(checked['native_runtime_binding'] == request['nativeRuntimeBinding'], 'preview_native_runtime_binding_changed')
+            c.require(checked['checkpoint_binding'] == request['checkpointBinding'], 'preview_checkpoint_binding_changed')
+            if request['historicalSeedProof'] is not None:
+                state_subject = provider.DiagnosticProvider(budget.BudgetStore(root / 'budget', ledger['authority']), state['config'])
+                historical_seed_helper.validate_completed(root, state_subject, request['context'], spec, checked, refs, request['historicalSeedProof'])
+            class FixtureSynth:
+                def __init__(self, checkpoint, **kwargs):
+                    pass
+                def __call__(self, text, language, speaker, *, seed):
+                    if spec.get('fixture_behavior') == 'hang':
+                        time.sleep(3600)
+                    with (out / 'fixture-synth-calls.jsonl').open('a') as stream:
+                        stream.write(json.dumps({'textSha256': hashlib.sha256(text.encode()).hexdigest()}) + '\n')
+                    return [0.03] * 1280, 16000
+            kwargs = {key: spec[key] for key in OPTIONS if key in spec}
+            if request['offlineFixture']:
+                kwargs['synth_factory'] = FixtureSynth
             result = preview.render({key: Path(value) for key, value in spec['paths'].items()},
-                Path(spec['checkpoint_map_path']), Path(spec['operation_policies_path']), out,
-                strict_rubric=checked['strict_rubric'], diagnostic_context=request['context'],
-                deadline_monotonic=request['deadlineMonotonic'], **kwargs)
+                    Path(spec['checkpoint_map_path']), Path(spec['operation_policies_path']), out,
+                    strict_rubric=checked['strict_rubric'], diagnostic_context=request['context'],
+                    deadline_monotonic=request['deadlineMonotonic'], predecessor_spans=request['predecessorSpans'], **kwargs)
             if spec.get('fixture_behavior') == 'fail_after_render':
                 raise RuntimeError('synthetic failure after preview render')
             _check_refs(refs)
-            jobs._persist(out / 'worker-result.json', {'requestSha256': c.canonical_sha256(request), 'result': result})
+            c.require(request['offlineFixture'] or native_runtime.validate(spec['runtime_manifest_path'], require_process=True)
+                == checked['native_runtime_binding'], 'preview_native_runtime_changed_during_worker')
+            _recheck_checkpoint(spec, checked)
+            c.require(time.monotonic() < request['deadlineMonotonic'], 'preview_original_deadline_reached')
+            finished_clock = clock.worker_finished(started_clock)
+            jobs._persist(out / 'worker-result.json', {'requestSha256': request_sha, 'result': result,
+                'clockFinished': finished_clock})
 
 
 def main(argv=None):

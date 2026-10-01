@@ -44,9 +44,9 @@ class DiagnosticLimits:
     max_transport_bytes: int = 256 * 1024
 
     def validate(self):
-        require(type(self.max_steps) is int and 1 <= self.max_steps <= 32, "invalid_limits")
+        require(type(self.max_steps) is int and 1 <= self.max_steps <= 60, "invalid_limits")
         require(type(self.max_tool_reads) is int and 0 <= self.max_tool_reads <= 64, "invalid_limits")
-        require(type(self.max_seconds) in (int, float) and 0 < self.max_seconds <= 60, "invalid_limits")
+        require(type(self.max_seconds) in (int, float) and 0 < self.max_seconds <= 120, "invalid_limits")
         require(type(self.max_transport_bytes) is int and 1024 <= self.max_transport_bytes <= 256 * 1024,
                 "invalid_limits")
 
@@ -144,7 +144,7 @@ def diagnostic_tools():
 def build_session_payload(bundle, limits=DiagnosticLimits(), model="gpt-6-sol"):
     limits.validate()
     require(type(model) is str and re.fullmatch(r"gpt-[a-z0-9][a-z0-9._-]{0,60}", model), "invalid_model")
-    payload = {"agent": {"model": model, "instructions": INSTRUCTIONS,
+    payload = {"agent": {"model": model, "reasoning": {"effort": "medium"}, "instructions": INSTRUCTIONS,
                          "multi_agent": {"enabled": False}, "tools": diagnostic_tools()},
                "environment": {"type": "none"},
                "input": json.dumps({"packet": _packet(bundle, limits),
@@ -191,7 +191,7 @@ def _usage(value):
 
 
 def diagnose(manifest, *, client: OfflineAgentsClient, limits=DiagnosticLimits(), model="gpt-6-sol",
-             checkpoint=None, clock=time.monotonic):
+             checkpoint=None, clock=time.monotonic, checkpoint_writer=None):
     """One bounded offline session; resume only the same saved session/checkpoint.
 
     No automatic create/submission retry or cancellation. On unknown outcomes the
@@ -199,7 +199,12 @@ def diagnose(manifest, *, client: OfflineAgentsClient, limits=DiagnosticLimits()
     Transport implementations own preemptive I/O deadlines. We also check elapsed
     time before/after each call and cap polls, responses and pending tool reads.
     """
-    require(getattr(client, "offline", False) is True, "live_diagnostic_not_authorized")
+    live = getattr(client, 'offline', False) is not True
+    if live:
+        from scripts.sermon_agent_diagnostics_live import LiveDiagnosticClient
+        require(type(client) is LiveDiagnosticClient, 'live_diagnostic_not_authorized')
+        client.validate_scope(manifest, limits, model)
+        require(callable(checkpoint_writer), 'live_checkpoint_writer_required')
     limits.validate()
     bundle = build_context_bundle(manifest)
     payload = build_session_payload(bundle, limits, model)
@@ -218,10 +223,12 @@ def diagnose(manifest, *, client: OfflineAgentsClient, limits=DiagnosticLimits()
         return elapsed_before + max(0.0, clock() - started)
     def result(status, reason, diagnosis=None):
         state["elapsedSeconds"] = elapsed()
+        if checkpoint_writer is not None:
+            checkpoint_writer(json.loads(bounded_json(state, 256 * 1024)))
         return {"schemaVersion": "sermon-agent-diagnostic-result-v1", "status": status,
                 "reasonCode": reason, "diagnosis": diagnosis,
-                "provenance": {"api": "agents-v1", "transportMode": "offline",
-                    "liveCompatibility": "untested", "snapshotId": bundle["snapshotId"],
+                "provenance": {"api": "agents-v1", "transportMode": "live" if live else "offline",
+                    "liveCompatibility": "current_execution_only" if live else "untested", "snapshotId": bundle["snapshotId"],
                     "contextSha256": bundle["contextSha256"], "payloadSha256": payload_hash,
                     "sessionId": state["sessionId"], "turnId": state["turnId"],
                     "requestedModel": model, "actualModel": state["actualModel"],
@@ -236,8 +243,14 @@ def diagnose(manifest, *, client: OfflineAgentsClient, limits=DiagnosticLimits()
                 "transport_call_limit")
         receipt = {"method": method, "outcome": "unknown"}
         state["transportCalls"].append(receipt)
+        # Write intent and pure tool output before any remote side effect.
+        if checkpoint_writer is not None:
+            state['elapsedSeconds'] = elapsed()
+            checkpoint_writer(json.loads(bounded_json(state, 256 * 1024)))
         try:
             value = getattr(client, method)(*args, timeout_seconds=remaining)
+        except DiagnosticContractError:
+            raise
         except Exception:
             raise DiagnosticContractError("transport_outcome_unknown") from None
         receipt["outcome"] = "returned"
@@ -246,8 +259,15 @@ def diagnose(manifest, *, client: OfflineAgentsClient, limits=DiagnosticLimits()
         # deadline. It is evidence for reconciliation, not permission to continue.
         if method == "create_session" and type(value) is dict:
             state["sessionId"] = _remote_identifier(value.get("id"), "sess_")
+        if checkpoint_writer is not None:
+            state['elapsedSeconds'] = elapsed()
+            checkpoint_writer(json.loads(bounded_json(state, 256 * 1024)))
         require(elapsed() < limits.max_seconds, "diagnostic_deadline_exceeded")
         return value
+    # Exhausted evidence remains readable with its true elapsed time. Reading
+    # that checkpoint grants no further create, poll or tool submission allowance.
+    if checkpoint is not None and elapsed_before >= limits.max_seconds:
+        return result("outcome_unknown", "diagnostic_deadline_exceeded")
     try:
         if state["sessionId"] is None:
             state["creationAttempted"] = True
@@ -306,7 +326,10 @@ def diagnose(manifest, *, client: OfflineAgentsClient, limits=DiagnosticLimits()
                 require(type(action) is dict and set(action) == {"type", "turn_id", "call_id", "name", "arguments"}
                         and action["type"] == "function_call", "unsupported_required_action")
                 require(state["turnId"] is not None and action["turn_id"] == state["turnId"], "tool_turn_mismatch")
-                call_id = _remote_identifier(action["call_id"], "call_")
+                # Agents function-call IDs are opaque wire identifiers. Session
+                # and turn prefixes remain strict; live submission binds it to
+                # actual same-poll required_actions and unique root metadata.
+                call_id = _identifier(action["call_id"])
                 action_hash = fingerprint(action)
                 previous = next((row for row in state["toolResults"] if row["callId"] == call_id), None)
                 if previous is not None:
@@ -342,7 +365,9 @@ def _validate_checkpoint(checkpoint, payload_hash, bundle, limits):
             "checkpoint_identity_mismatch")
     require(state["creationAttempted"] is True and type(state["steps"]) is int
             and 0 <= state["steps"] <= limits.max_steps and type(state["elapsedSeconds"]) in (float, int)
-            and 0 <= state["elapsedSeconds"] <= limits.max_seconds, "invalid_checkpoint")
+            and 0 <= state["elapsedSeconds"], "invalid_checkpoint")
+    # bounded_json already rejects non-finite numbers. An overrun is evidence of
+    # exhaustion, not malformed state; diagnose cannot dispatch it again.
     for key in ("sessionId", "turnId", "actualModel"):
         if state[key] is not None:
             _identifier(state[key])
@@ -359,7 +384,7 @@ def _validate_checkpoint(checkpoint, payload_hash, bundle, limits):
         require(type(row) is dict and set(row) == {"callId", "turnId", "action", "actionSha256", "output", "outputSha256"},
                 "invalid_checkpoint")
         action = row["action"]
-        _remote_identifier(row["callId"], "call_")
+        _identifier(row["callId"])
         require(type(action) is dict and set(action) == {"type", "turn_id", "call_id", "name", "arguments"}
                 and action.get("type") == "function_call"
                 and row["turnId"] == state["turnId"] == action.get("turn_id")

@@ -67,6 +67,11 @@
       </CommandLineArguments>
       <EnvironmentVariables>
          <EnvironmentVariable
+            key = "TONGXING_EXPECTED_CHANNEL"
+            value = "production"
+            isEnabled = "YES">
+         </EnvironmentVariable>
+         <EnvironmentVariable
             key = "TONGXING_PREVIEW_REQUEST"
             value = "$(TONGXING_PREVIEW_REQUEST)"
             isEnabled = "YES">

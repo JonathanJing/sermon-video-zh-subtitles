@@ -100,11 +100,52 @@ class DiagnosticStructuralTests(unittest.TestCase):
         p,u,g=fixtures('es');replace_text(g,'Eric Geigers habló de 12 personas.')
         self.assertEqual(statuses(p,u,g)['term_surface_preservation'],'fail')
 
-    def test_null_empty_or_unsafe_targets_fail_even_if_unmentioned(self):
-        for target in (None,'','   ','<break>','\u202eunsafe',123):
+    def test_unused_pending_null_terms_are_valid_without_changing_policy_or_coverage(self):
+        for locale in plugin.LOCALES:
+            for kind in ('seriesNames','properNames'):
+                p,u,g=fixtures(locale)
+                p['terminology'][kind].append(
+                    {'source':'Unmentioned Series','target':None,'reviewStatus':'pending'})
+                before=deepcopy((p,u,g))
+                with self.subTest(locale=locale,kind=kind):
+                    self.assertEqual(statuses(p,u,g)['term_surface_preservation'],'pass')
+                    self.assertEqual((p,u,g),before)
+
+    def test_matched_pending_null_term_blocks_even_with_other_target_text(self):
+        for locale in plugin.LOCALES:
+            for kind in ('seriesNames','properNames'):
+                p,u,g=fixtures(locale)
+                p['terminology'][kind].append(
+                    {'source':'Unresolved Series','target':None,'reviewStatus':'pending'})
+                u[0]['english']+=' The Unresolved Series begins.'
+                with self.subTest(locale=locale,kind=kind):
+                    self.assertEqual(statuses(p,u,g)['term_surface_preservation'],'fail')
+
+    def test_new_source_hit_rechecks_previously_unused_pending_null_term(self):
+        p,u,g=fixtures('es');p['terminology']['seriesNames']=[
+            {'source':'Unseen','target':None,'reviewStatus':'pending'}]
+        self.assertEqual(statuses(p,u,g)['term_surface_preservation'],'pass')
+        u[0]['english']+=' He introduced the Unseen series.'
+        self.assertEqual(statuses(p,u,g)['term_surface_preservation'],'fail')
+
+    def test_reviewed_null_empty_or_unsafe_targets_fail_even_if_unmentioned(self):
+        for target in ('','   ','<break>','\u202eunsafe',123):
             p,u,g=fixtures();p['terminology']['seriesNames']=[
                 {'source':'Unmentioned Series','target':target,'reviewStatus':'pending'}]
             with self.subTest(target=target):
+                self.assertEqual(statuses(p,u,g)['term_surface_preservation'],'fail')
+        for review in ('project_established','human_reviewed'):
+            p,u,g=fixtures();p['terminology']['seriesNames']=[
+                {'source':'Unmentioned Series','target':None,'reviewStatus':review}]
+            with self.subTest(review=review):
+                self.assertEqual(statuses(p,u,g)['term_surface_preservation'],'fail')
+
+    def test_unused_terms_still_validate_source_and_review_status(self):
+        for mutation in ({'source':'   '},{'source':'<unsafe>'},{'reviewStatus':'approved'},
+                         {'unexpectedField':'extra'}):
+            p,u,g=fixtures();entry={'source':'Unmentioned Series','target':None,'reviewStatus':'pending'}
+            entry.update(mutation);p['terminology']['seriesNames']=[entry]
+            with self.subTest(mutation=mutation):
                 self.assertEqual(statuses(p,u,g)['term_surface_preservation'],'fail')
 
     def test_source_term_boundary_does_not_match_unrelated_english_word(self):

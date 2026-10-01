@@ -111,6 +111,22 @@ class PreviewInspectionTests(unittest.TestCase):
         path.symlink_to(real)
         with self.assertRaisesRegex(ValueError, 'Symlink'): self.inspect()
 
+    def test_v2_requires_clock_proof_and_fixture_cannot_claim_runtime(self):
+        self.receipt['schemaVersion'] = subject.worker.SCHEMA
+        self.save_receipt()
+        with self.assertRaisesRegex(ValueError,'worker_clock_missing'):self.inspect()
+        self.receipt.update(clockHandshake=dict(launch={},finished={},joined={}),offlineFixture=True,
+            nativeRuntimeBinding={'untrusted':'claim'})
+        self.save_receipt()
+        with patch.object(subject.worker.clock,'validate_worker_handshake',return_value={}):
+            with self.assertRaisesRegex(ValueError,'fixture_cannot_claim_runtime'):self.inspect()
+
+    def test_v2_rejects_invalid_real_clock_without_relying_on_worker_mock(self):
+        self.receipt.update(schemaVersion=subject.worker.SCHEMA,
+            clockHandshake=dict(launch={},finished={},joined={}),offlineFixture=True,nativeRuntimeBinding=None)
+        self.save_receipt()
+        with self.assertRaises(ValueError):self.inspect()
+
 
 class OriginalSourceInspectionTests(unittest.TestCase):
     def setUp(self):
@@ -154,6 +170,83 @@ class OriginalSourceInspectionTests(unittest.TestCase):
                                   (('zh-Hans',), {'zh-Hans': {}, 'ko': {}})):
             with self.subTest(expected=expected), self.assertRaisesRegex(ValueError, 'locale_coverage'):
                 self.inspect(expected, entries)
+
+
+class FreshDeliveryInspectionTests(unittest.TestCase):
+    def setUp(self):
+        from tests import test_sermon_fresh_diagnostic as fixtures
+        from tests.test_sermon_fresh_source_evidence import freeze_current
+        f = fixtures.FreshSourceTests(); f.setUp(); self.addCleanup(f.doCleanups)
+        self.f = f; self.prepared = freeze_current(f)
+        self.entries = {locale: {} for locale in ('es', 'ko', 'zh-Hans')}
+
+    def inspect(self, **overrides):
+        options = dict(expected_locales=tuple(self.entries), plan=self.f.plan, source_evidence=self.prepared['evidence'])
+        options.update(overrides)
+        return subject.inspect_fresh_delivery(self.f.root, self.f.subject, self.prepared['context'], self.entries, **options)
+
+    def test_fresh_contract_avoids_legacy_four_pending_and_keeps_full_locale_gate(self):
+        from tests.test_sermon_fresh_source_evidence import existing_bytes
+        before = existing_bytes(self.f.f.root); calls = len(self.f.f.transport.observations)
+        with patch.object(subject.source_evidence, 'validate_prior_source_evidence', side_effect=AssertionError('legacy forbidden')), \
+             patch.object(subject, '_inspect_preview', side_effect=lambda root, runtime, context, locale, envelope, files:
+                 {'previewStatus': 'preview_only', 'targetLocale': locale, 'realHumanAcceptance': 'pending'}) as native, \
+             patch.object(self.f.subject, '_locked', side_effect=AssertionError('lock forbidden')):
+            first = self.inspect(); self.assertEqual(first, self.inspect())
+        self.assertEqual(native.call_count, 6)
+        self.assertEqual(first['schemaVersion'], subject.FRESH_SCHEMA)
+        self.assertEqual(set(first['locales']), set(self.entries)); self.assertEqual(first['modelCalls'], 0)
+        self.assertEqual(first['sourceMachineStatus'], 'returned_review_human_pending')
+        self.assertEqual(set(first['pendingRealGates'].values()), {'pending'})
+        self.assertFalse(first['publicationAuthorized']); self.assertFalse(first['productionEligible'])
+        self.assertEqual(before, existing_bytes(self.f.f.root)); self.assertEqual(calls, len(self.f.f.transport.observations))
+        self.assertNotIn(str(self.f.root), json.dumps(first))
+        # The default legacy entry still rejects this actual Fresh directory.
+        with self.assertRaises(FileNotFoundError):
+            subject.inspect_delivery(self.f.root, self.f.subject, self.prepared['context'], self.entries, expected_locales=tuple(self.entries))
+
+    def test_unknown_provider_missing_locale_and_source_tamper_block_before_native(self):
+        with patch.object(subject, '_inspect_preview') as native:
+            with self.assertRaisesRegex(c.ContractError, 'locale_coverage'):
+                self.inspect(expected_locales=('es', 'ko'))
+            path = self.f.root/'budget'/budget.STORE_ID/'provider-run/state.json'
+            state = json.loads(path.read_bytes()); original = path.read_bytes()
+            next(iter(state['requests'].values()))['state'] = 'outcome_unknown'; path.write_bytes(c.canonical_bytes(state))
+            with self.assertRaisesRegex(c.ContractError, 'unknown_provider'): self.inspect()
+            path.write_bytes(original)
+            self.prepared['evidence']['sourceReviewStatus'] = 'approved'
+            with self.assertRaises(c.ContractError): self.inspect()
+            native.assert_not_called()
+
+    def test_expired_closed_inspection_repeats_without_dispatch_deadline_reset_or_original_result_write(self):
+        from scripts import sermon_diagnostic_attempts as attempts
+        from tests.test_sermon_fresh_source_evidence import existing_bytes
+        # Time can pass while inspecting complete evidence; it cannot authorize
+        # another execution. Real worker deadline/native proofs remain tested
+        # by PreviewInspectionTests and the dedicated worker integrations.
+        attempts.close_parent(self.f.root/'run-plan.json', instruction_reference_sha256='f'*64)
+        original_result = self.f.root/'original-incomplete-result.json'
+        original_result.write_bytes(c.canonical_bytes({'status': 'incomplete', 'delivery': 'failed'}))
+        before = existing_bytes(self.f.f.root)
+        with patch.object(subject, '_inspect_preview', return_value={'previewStatus': 'preview_only'}), \
+             patch.object(self.f.subject, '_locked', side_effect=AssertionError('lock forbidden')), \
+             patch.object(self.f.subject, '_remaining', side_effect=AssertionError('deadline execution forbidden')), \
+             patch.object(self.f.subject, 'monotonic', return_value=10**20):
+            first = subject.inspect_completed_fresh_delivery(self.f.root, self.f.subject, self.prepared['context'], self.entries,
+                expected_locales=tuple(self.entries), plan=self.f.plan, source_evidence=self.prepared['evidence'])
+            second = subject.inspect_completed_fresh_delivery(self.f.root, self.f.subject, self.prepared['context'], self.entries,
+                expected_locales=tuple(self.entries), plan=self.f.plan, source_evidence=self.prepared['evidence'])
+        self.assertEqual(first, second); self.assertEqual(first['schemaVersion'], subject.REINSPECTION_SCHEMA)
+        self.assertTrue(first['inspectionOnly']); self.assertFalse(first['grantsExecutionAuthority'])
+        self.assertEqual(first['modelCalls'], 0); self.assertEqual(first['ledgerWrites'], 0)
+        self.assertEqual(first['originalPlanSha256'], c.canonical_sha256(self.f.plan))
+        self.assertEqual(before, existing_bytes(self.f.f.root))
+        closed = self.f.root/'budget'/budget.STORE_ID/'provider-run/closed.json'
+        closed.write_bytes(c.canonical_bytes({'budgetStateFileSha256': 'f'*64, 'closureEvidenceSha256': 'f'*64}))
+        with patch.object(subject, '_inspect_preview') as native, self.assertRaisesRegex(c.ContractError, 'closed_evidence_changed'):
+            subject.inspect_completed_fresh_delivery(self.f.root, self.f.subject, self.prepared['context'], self.entries,
+                expected_locales=tuple(self.entries), plan=self.f.plan, source_evidence=self.prepared['evidence'])
+        native.assert_not_called()
 
 
 if __name__ == '__main__':

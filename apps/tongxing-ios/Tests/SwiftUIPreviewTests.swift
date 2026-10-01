@@ -12,6 +12,7 @@ final class SwiftUIPreviewTests: XCTestCase {
         let files: [String]
         let variants: [String]
         let interfaceLocale: String
+        let voiceDemoCatalogPath: String?
     }
 
     func testRenderRequestedViews() async throws {
@@ -21,7 +22,7 @@ final class SwiftUIPreviewTests: XCTestCase {
         }
         let data = try XCTUnwrap(Data(base64Encoded: encoded), "Invalid preview request encoding")
         let request = try JSONDecoder().decode(Request.self, from: data)
-        let supportedFiles = Set(["ContentView.swift", "PlaybackDock.swift", "DesignSystem.swift"])
+        let supportedFiles = Set(["ContentView.swift", "PlaybackDock.swift", "DesignSystem.swift", "EnglishLocateSheet.swift", "VoiceDemoSection.swift"])
         let supportedVariants = Set(["light", "dark", "dark-large"])
         try XCTUnwrap(request.files.first, "Select at least one registered view fixture")
         try XCTUnwrap(request.variants.first, "Select at least one appearance variant")
@@ -56,9 +57,12 @@ final class SwiftUIPreviewTests: XCTestCase {
         XCTAssertNotNil(model.publishedTranscript, "Preview must show loaded captions, not a spinner")
         guard model.publishedTranscript != nil else { return }
 
+        let voiceDemoCatalog = try request.voiceDemoCatalogPath.map {
+            try VoiceDemoCatalog.validatedClips(Data(contentsOf: URL(fileURLWithPath: $0)))
+        }
         for file in request.files {
             for variant in request.variants {
-                let image = try await render(view: fixture(file, model: model), variant: variant)
+                let image = try await render(view: fixture(file, model: model, voiceDemoCatalog: voiceDemoCatalog), variant: variant)
                 let attachment = XCTAttachment(image: image)
                 attachment.name = "preview-\(file.dropLast(6))-\(variant).png"
                 attachment.lifetime = .keepAlways
@@ -69,10 +73,17 @@ final class SwiftUIPreviewTests: XCTestCase {
 
     // A SwiftUI source file can contain multiple views or require dependencies.
     // Register a factory here instead of guessing how to initialize arbitrary code.
-    private func fixture(_ file: String, model: AppModel) -> AnyView {
+    private func fixture(_ file: String, model: AppModel, voiceDemoCatalog: VoiceDemoCatalog? = nil) -> AnyView {
         switch file {
         case "ContentView.swift":
             return AnyView(ContentView(model: model))
+        case "VoiceDemoSection.swift":
+            return AnyView(NavigationStack {
+                Form { Section { VoiceDemoSection(model: model, fixture: voiceDemoCatalog ?? (try? UITestLaunch.voiceDemoFixture())) } }
+                    .navigationTitle("多语种音色试听")
+            })
+        case "EnglishLocateSheet.swift":
+            return AnyView(EnglishLocateSheet(model: model, onLocated: {}))
         case "PlaybackDock.swift":
             return AnyView(ZStack {
                 Brand.background.ignoresSafeArea()
@@ -80,6 +91,8 @@ final class SwiftUIPreviewTests: XCTestCase {
                     Text("PlaybackDock").font(.title2)
                     Text("合成静音音轨 · 暂停就绪").foregroundStyle(.secondary)
                     PlaybackDock(playback: model.playback, alignmentModel: model)
+                    PlaybackMoreControls(playback: model.playback, isPreparing: false,
+                        alignmentModel: model, locate: {}, precision: {}, current: {}, onClose: {})
                 }
             })
         default:
