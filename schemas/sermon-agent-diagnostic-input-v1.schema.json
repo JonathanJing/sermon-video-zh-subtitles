@@ -1,0 +1,540 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "sermon-agent-diagnostic-input-v1.schema.json",
+  "title": "sermon-agent-diagnostic-input-v1",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "const": "sermon-agent-diagnostic-input-v1"
+    },
+    "redacted": {
+      "const": true
+    },
+    "identity": {
+      "$ref": "#/$defs/identity"
+    },
+    "failedUnits": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/unit"
+      },
+      "maxItems": 32,
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "evidenceId": {
+            "$ref": "#/$defs/identifier"
+          },
+          "evidenceType": {
+            "type": "string",
+            "enum": [
+              "event",
+              "receipt",
+              "version_diff",
+              "reproduction"
+            ]
+          },
+          "sha256": {
+            "$ref": "#/$defs/sha256"
+          },
+          "identity": {
+            "$ref": "#/$defs/identity"
+          },
+          "units": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/unit"
+            },
+            "maxItems": 32,
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "observedAt": {
+            "type": "string",
+            "format": "date-time",
+            "maxLength": 32
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "succeeded",
+              "failed",
+              "uncertain",
+              "blocked",
+              "not_run"
+            ]
+          },
+          "reasonCode": {
+            "type": "string",
+            "enum": [
+              "outcome_unknown",
+              "quality_rejected",
+              "identity_mismatch",
+              "dependency_blocked",
+              "transport_error",
+              "timeout",
+              "missing_receipt",
+              "policy_changed",
+              "version_changed",
+              "invalid_artifact",
+              "worker_lost",
+              "schema_failure",
+              "not_assessed",
+              "receipt_observed"
+            ]
+          },
+          "attemptId": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/identifier"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "callId": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/identifier"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "model": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/identifier"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "usage": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/usage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "evidenceId",
+          "evidenceType",
+          "sha256",
+          "identity",
+          "units",
+          "observedAt",
+          "status",
+          "reasonCode",
+          "attemptId",
+          "callId",
+          "model",
+          "usage"
+        ],
+        "additionalProperties": false
+      },
+      "maxItems": 64,
+      "minItems": 0,
+      "uniqueItems": true
+    },
+    "receipts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "evidenceId": {
+            "$ref": "#/$defs/identifier"
+          },
+          "evidenceType": {
+            "type": "string",
+            "enum": [
+              "event",
+              "receipt",
+              "version_diff",
+              "reproduction"
+            ]
+          },
+          "sha256": {
+            "$ref": "#/$defs/sha256"
+          },
+          "identity": {
+            "$ref": "#/$defs/identity"
+          },
+          "units": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/unit"
+            },
+            "maxItems": 32,
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "observedAt": {
+            "type": "string",
+            "format": "date-time",
+            "maxLength": 32
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "succeeded",
+              "failed",
+              "uncertain",
+              "blocked",
+              "not_run"
+            ]
+          },
+          "reasonCode": {
+            "type": "string",
+            "enum": [
+              "outcome_unknown",
+              "quality_rejected",
+              "identity_mismatch",
+              "dependency_blocked",
+              "transport_error",
+              "timeout",
+              "missing_receipt",
+              "policy_changed",
+              "version_changed",
+              "invalid_artifact",
+              "worker_lost",
+              "schema_failure",
+              "not_assessed",
+              "receipt_observed"
+            ]
+          },
+          "attemptId": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/identifier"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "callId": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/identifier"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "model": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/identifier"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "usage": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/usage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "evidenceId",
+          "evidenceType",
+          "sha256",
+          "identity",
+          "units",
+          "observedAt",
+          "status",
+          "reasonCode",
+          "attemptId",
+          "callId",
+          "model",
+          "usage"
+        ],
+        "additionalProperties": false
+      },
+      "maxItems": 64,
+      "minItems": 0,
+      "uniqueItems": true
+    },
+    "versionDiffs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "evidenceId": {
+            "$ref": "#/$defs/identifier"
+          },
+          "evidenceType": {
+            "type": "string",
+            "enum": [
+              "event",
+              "receipt",
+              "version_diff",
+              "reproduction"
+            ]
+          },
+          "sha256": {
+            "$ref": "#/$defs/sha256"
+          },
+          "identity": {
+            "$ref": "#/$defs/identity"
+          },
+          "units": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/unit"
+            },
+            "maxItems": 32,
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "observedAt": {
+            "type": "string",
+            "format": "date-time",
+            "maxLength": 32
+          },
+          "changedFields": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "source",
+                "source_units",
+                "text",
+                "audio",
+                "policy",
+                "model",
+                "prompt_version",
+                "code",
+                "package"
+              ]
+            },
+            "maxItems": 9,
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "beforeSha256": {
+            "$ref": "#/$defs/sha256"
+          },
+          "afterSha256": {
+            "$ref": "#/$defs/sha256"
+          }
+        },
+        "required": [
+          "evidenceId",
+          "evidenceType",
+          "sha256",
+          "identity",
+          "units",
+          "observedAt",
+          "changedFields",
+          "beforeSha256",
+          "afterSha256"
+        ],
+        "additionalProperties": false
+      },
+      "maxItems": 16,
+      "minItems": 0,
+      "uniqueItems": true
+    },
+    "missingEvidenceTypes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "event",
+          "receipt",
+          "version_diff",
+          "reproduction",
+          "identity"
+        ]
+      },
+      "maxItems": 5,
+      "minItems": 0,
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "redacted",
+    "identity",
+    "failedUnits",
+    "events",
+    "receipts",
+    "versionDiffs",
+    "missingEvidenceTypes"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,79}$",
+      "maxLength": 80
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$",
+      "minLength": 64,
+      "maxLength": 64
+    },
+    "unit": {
+      "type": "object",
+      "properties": {
+        "unitId": {
+          "$ref": "#/$defs/identifier"
+        },
+        "unitVersion": {
+          "$ref": "#/$defs/identifier"
+        }
+      },
+      "required": [
+        "unitId",
+        "unitVersion"
+      ],
+      "additionalProperties": false
+    },
+    "identity": {
+      "type": "object",
+      "properties": {
+        "runId": {
+          "$ref": "#/$defs/identifier"
+        },
+        "sourceId": {
+          "$ref": "#/$defs/identifier"
+        },
+        "sourceSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "targetLocale": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$",
+          "maxLength": 24
+        },
+        "stage": {
+          "type": "string",
+          "enum": [
+            "layer1",
+            "layer2",
+            "layer3",
+            "layer4"
+          ]
+        },
+        "stateRevision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000000
+        },
+        "packageVersion": {
+          "$ref": "#/$defs/identifier"
+        },
+        "planVersion": {
+          "$ref": "#/$defs/identifier"
+        },
+        "policyVersion": {
+          "$ref": "#/$defs/identifier"
+        },
+        "revisionId": {
+          "$ref": "#/$defs/identifier"
+        },
+        "evidenceCutoff": {
+          "type": "string",
+          "format": "date-time",
+          "maxLength": 32
+        }
+      },
+      "required": [
+        "runId",
+        "sourceId",
+        "sourceSha256",
+        "targetLocale",
+        "stage",
+        "stateRevision",
+        "packageVersion",
+        "planVersion",
+        "policyVersion",
+        "revisionId",
+        "evidenceCutoff"
+      ],
+      "additionalProperties": false
+    },
+    "usage": {
+      "type": "object",
+      "properties": {
+        "inputTokens": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1000000000000
+        },
+        "cachedInputTokens": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1000000000000
+        },
+        "outputTokens": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1000000000000
+        },
+        "reasoningTokens": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1000000000000
+        },
+        "totalTokens": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1000000000000
+        }
+      },
+      "required": [
+        "inputTokens",
+        "cachedInputTokens",
+        "outputTokens",
+        "reasoningTokens",
+        "totalTokens"
+      ],
+      "additionalProperties": false
+    },
+    "safeText": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024,
+      "pattern": "^(?![\\s\\S]*(?:[Hh][Tt][Tt][Pp][Ss]?://|[Ff][Ii][Ll][Ee]://|/[Uu][Ss][Ee][Rr][Ss]/|/[Ww][Oo][Rr][Kk][Ss][Pp][Aa][Cc][Ee]/|[Ss][Kk]-[A-Za-z0-9_-]{8,}|[Bb][Ee][Aa][Rr][Ee][Rr]\\s))[\\s\\S]*$"
+    }
+  }
+}
