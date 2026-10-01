@@ -1,6 +1,7 @@
 """Synthetic adapter checks; no provider, model, real approval or publication."""
 from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
+from contextlib import chdir
 import json
 import os
 import sys
@@ -127,6 +128,66 @@ class PilotTests(unittest.TestCase):
                 pilot.isolated_prefect_environment(self.root)
         with patch.dict(sys.modules,{'prefect':object()}),self.assertRaisesRegex(ValueError,'fresh_prefect'):
             pilot.isolated_prefect_environment(self.root)
+
+    def test_hostile_file_settings_rejected_before_prefect_import_or_side_effects(self):
+        plan=contract.make_plan(run_id='1'*64,input_identity_sha256='2'*64)
+        outside=Path(self.temp.name)/'outside-marker'
+        samples={'.env':'PREFECT_API_URL=https://synthetic.invalid/api\n',
+                 'prefect.toml':'[server]\nmemo_store_path="'+str(outside)+'"\n',
+                 'pyproject.toml':'[tool.prefect.api]\nurl="https://synthetic.invalid/api"\n'}
+        import builtins
+        original=builtins.__import__
+        def guarded(name,*args,**kwargs):
+            if name=='prefect' or name.startswith('prefect.'):
+                outside.write_text('unexpected SDK import side effect')
+                raise AssertionError('Prefect must not be imported')
+            return original(name,*args,**kwargs)
+        for filename,contents in samples.items():
+            cwd=Path(self.temp.name)/('cwd-'+filename.replace('.','_'));cwd.mkdir()
+            (cwd/filename).write_text(contents)
+            with chdir(cwd),patch('builtins.__import__',side_effect=guarded), \
+                 patch.object(pilot.socket.socket,'connect') as connect, \
+                 self.assertRaisesRegex(ValueError,'file_prefect_settings'):
+                pilot.run(self.root,plan)
+            connect.assert_not_called();self.assertFalse(outside.exists())
+        # A broken symlink must be rejected without following/reading it.
+        cwd=Path(self.temp.name)/'links';cwd.mkdir();(cwd/'.env').symlink_to(outside)
+        with chdir(cwd),self.assertRaisesRegex(ValueError,'file_prefect_settings'):
+            pilot.isolated_prefect_environment(self.root)
+
+    def test_late_caller_config_cannot_enter_import_cwd(self):
+        plan=contract.make_plan(run_id='1'*64,input_identity_sha256='2'*64)
+        caller=Path(self.temp.name)/'caller';caller.mkdir()
+        import builtins
+        original=builtins.__import__;seen=[]
+        class StopBeforeSDK(Exception):pass
+        def guarded(name,*args,**kwargs):
+            if name=='prefect':
+                (caller/'.env').write_text('PREFECT_API_URL=https://synthetic.invalid/api\n')
+                self.assertNotEqual(Path.cwd(),caller)
+                self.assertTrue(Path.cwd().is_relative_to(self.root.resolve()))
+                self.assertFalse((Path.cwd()/'.env').exists())
+                self.assertEqual(os.environ['DO_NOT_TRACK'],'1')
+                seen.append(True)
+                raise StopBeforeSDK()
+            return original(name,*args,**kwargs)
+        with chdir(caller),patch.dict(os.environ,dict(os.environ)), \
+             patch('builtins.__import__',side_effect=guarded),self.assertRaises(StopBeforeSDK):
+            pilot.run(self.root,plan)
+        self.assertEqual(seen,[True])
+
+    def test_existing_profile_is_rejected_and_sdk_tracking_disabled_before_import(self):
+        home=self.root/'prefect';home.mkdir(parents=True)
+        profile=home/'profiles.toml';profile.write_text('[profiles.hostile]\nPREFECT_API_URL="https://synthetic.invalid"\n')
+        with self.assertRaisesRegex(ValueError,'file_prefect_settings'):
+            pilot.isolated_prefect_environment(self.root)
+        profile.unlink()
+        # Only this isolated test environment is changed, never a user profile.
+        with patch.dict(os.environ,{},clear=True):
+            actual,database=pilot.isolated_prefect_environment(self.root)
+            self.assertEqual(os.environ['DO_NOT_TRACK'],'1')
+            self.assertEqual(os.environ['PREFECT_SERVER_MEMO_STORE_PATH'],str(home/'memo_store.toml'))
+            self.assertEqual(actual,home)
 
     def test_active_lifetime_latches_dispatch_before_releasing_slot(self):
         plan,runner=self.setup_plan(resource_limits={'fixed':4,'api':1,'local_model':1})

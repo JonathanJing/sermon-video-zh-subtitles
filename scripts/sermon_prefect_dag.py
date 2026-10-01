@@ -17,6 +17,7 @@ from pathlib import Path
 import socket
 import sys
 import threading
+import tempfile
 import time
 
 from scripts import sermon_accounting as accounting
@@ -367,13 +368,23 @@ def isolated_prefect_environment(root):
     c.require('prefect' not in sys.modules, 'pilot_requires_fresh_prefect_process')
     c.require(not any(key.upper().startswith('PREFECT_') for key in os.environ),
               'pilot_rejects_ambient_prefect_settings')
+    # Prefect 3.8 reads these files before our post-import Settings assertion.
+    # Reject by metadata only: do not read arbitrary dotenv/profile secrets.
+    # This fresh-CLI contract deliberately refuses even unrelated pyproject
+    # files rather than partially interpreting another configuration language.
+    for name in ('.env','prefect.toml','pyproject.toml'):
+        c.require(not os.path.lexists(Path.cwd()/name), 'pilot_rejects_file_prefect_settings')
     home=Path(root)/'prefect'
+    c.require(not os.path.lexists(home/'profiles.toml'), 'pilot_rejects_file_prefect_settings')
     jobs._reject_link(home,directory=True)
     jobs._reject_link(home/'prefect.db',directory=False)
     jobs._reject_link(home/'profiles.toml',directory=False)
     database='sqlite+aiosqlite:///'+str(home/'prefect.db')
-    os.environ.update(PREFECT_HOME=str(home),PREFECT_PROFILES_PATH=str(home/'profiles.toml'),
+    # SDK analytics can run DURING import on non-CI interactive installations.
+    # Server/cloud analytics settings alone do not stop that initialization.
+    os.environ.update(DO_NOT_TRACK='1',PREFECT_HOME=str(home),PREFECT_PROFILES_PATH=str(home/'profiles.toml'),
         PREFECT_SERVER_DATABASE_CONNECTION_URL=database,PREFECT_LOCAL_STORAGE_PATH=str(home/'storage'),
+        PREFECT_SERVER_MEMO_STORE_PATH=str(home/'memo_store.toml'),
         PREFECT_SERVER_ALLOW_EPHEMERAL_MODE='true',PREFECT_SERVER_ANALYTICS_ENABLED='false',
         PREFECT_LOGGING_TO_API_ENABLED='false',PREFECT_CLOUD_ENABLE_ORCHESTRATION_TELEMETRY='false')
     return home,database
@@ -385,6 +396,11 @@ def run(root,plan):
     with work_lock(root):
         root = initialize(root,plan)
         home,database=isolated_prefect_environment(root)
+        # Keep all lazy/import-time config loads in a newly created private cwd,
+        # including the ephemeral server. A file appearing in the caller's cwd
+        # after the guard cannot enter a later Settings refresh. Fresh CLI only;
+        # retain this cwd until process exit, including SDK shutdown hooks.
+        os.chdir(tempfile.mkdtemp(prefix='.prefect-config-',dir=root))
         from prefect import flow, task
         from prefect.cache_policies import NO_CACHE
         from prefect.context import get_run_context
@@ -394,6 +410,7 @@ def run(root,plan):
         c.require(settings.api.url is None and settings.api.key is None and settings.home==home
                   and settings.server.database.connection_url.get_secret_value()==database
                   and settings.results.local_storage_path==home/'storage'
+                  and settings.server.memo_store_path==home/'memo_store.toml'
                   and not settings.server.analytics_enabled and not settings.cloud.enable_orchestration_telemetry,
                   'pilot_prefect_settings_not_isolated')
         runner = Runner(root,plan)

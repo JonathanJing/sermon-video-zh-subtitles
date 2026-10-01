@@ -8,9 +8,16 @@ model, media, real human-approval or publication adapter is exposed. The paused
 
 Install `requirements-prefect.txt` into an isolated virtual environment. Production
 requirements/defaults do not import Prefect. Run from a fresh CLI process without
-ambient `PREFECT_*` settings. The adapter pins a temporary loopback server, local
+ambient `PREFECT_*` settings or working-directory `.env`, `prefect.toml`,
+`pyproject.toml` files (even unrelated files are rejected without reading them).
+An existing pilot `profiles.toml` is also rejected before SDK import. The adapter pins a temporary loopback server, local
 SQLite database, profile and result storage below its own dedicated root; it
-rejects imported/cached Prefect settings and disables cloud/server telemetry.
+rejects imported/cached Prefect settings, pins the memo store, and sets
+`DO_NOT_TRACK=1` before import to disable interactive SDK onboarding analytics
+as well as cloud/server telemetry. Before importing the SDK it moves this fresh
+CLI process into a newly created private config directory under the pilot root,
+retained through shutdown, so later file creation in the caller cwd cannot enter
+a lazy settings reload or the ephemeral server.
 
 ```sh
 python - <<'PY'

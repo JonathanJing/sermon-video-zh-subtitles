@@ -14,6 +14,59 @@ from scripts import sermon_prefect_dag as pilot
 
 @unittest.skipUnless(os.environ.get('SERMON_TEST_PREFECT')=='1','optional local Prefect integration')
 class PrefectRuntimeTests(unittest.TestCase):
+    def test_actual_sdk_import_non_ci_interactive_has_no_network_or_outside_writes(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp)/'run';root.mkdir()
+            script=r"""
+import os, sys, socket
+from pathlib import Path
+from unittest.mock import patch
+sys.path.insert(0,sys.argv[1])
+from scripts import sermon_prefect_dag as pilot
+root=Path(sys.argv[2])
+for key in ('CI','GITHUB_ACTIONS','GITLAB_CI','JENKINS_URL','TRAVIS','CIRCLECI',
+            'BUILDKITE','TF_BUILD','CODEBUILD_BUILD_ID','BITBUCKET_COMMIT',
+            'TEAMCITY_VERSION','DRONE','SEMAPHORE','APPVEYOR','BUDDY','CI_NAME'):
+    os.environ.pop(key,None)
+network=[];outside=[]
+def deny(*args,**kwargs):
+    network.append(True)
+    raise AssertionError('network forbidden during SDK import')
+def audit(event,args):
+    if event=='open' and isinstance(args[0],(str,bytes)):
+        mode,flags=args[1],args[2]
+        writing=(isinstance(mode,str) and any(c in mode for c in 'wax+')) or (
+            isinstance(flags,int) and bool(flags & (os.O_WRONLY|os.O_RDWR|os.O_CREAT)))
+        if writing and not Path(os.fsdecode(args[0])).absolute().is_relative_to(root):
+            outside.append(True)
+            raise AssertionError('outside write forbidden during SDK import')
+    if event=='os.mkdir' and not Path(os.fsdecode(args[0])).absolute().is_relative_to(root):
+        outside.append(True)
+        raise AssertionError('outside directory forbidden during SDK import')
+sys.dont_write_bytecode=True
+sys.addaudithook(audit)
+with patch.object(sys.stdout,'isatty',return_value=True),patch.object(sys.stderr,'isatty',return_value=True), \
+     patch.object(socket.socket,'connect',side_effect=deny),patch.object(socket.socket,'connect_ex',side_effect=deny), \
+     patch.object(socket,'create_connection',side_effect=deny),patch.object(socket,'getaddrinfo',side_effect=deny):
+    home,database=pilot.isolated_prefect_environment(root)
+    import prefect
+    from prefect.settings import get_current_settings
+    from prefect._internal.analytics.ci_detection import is_ci_environment
+    from prefect._internal.analytics.enabled import is_telemetry_enabled
+    assert not is_ci_environment()
+    assert not is_telemetry_enabled()
+    settings=get_current_settings()
+    assert settings.api.url is None
+    assert settings.server.memo_store_path==home/'memo_store.toml'
+    assert settings.server.database.connection_url.get_secret_value()==database
+assert not network and not outside
+print('isolated-interactive-import-ok')
+"""
+            result=subprocess.run([sys.executable,'-c',script,str(pilot.REPO),str(root)],
+                cwd=temp,capture_output=True,text=True,timeout=30)
+            self.assertEqual(result.returncode,0,result.stderr[-4000:])
+            self.assertIn('isolated-interactive-import-ok',result.stdout)
+
     def test_three_locales_engine_processes_trace_replay_and_capacity(self):
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp)/'run'; plan_path=Path(temp)/'plan.json'
