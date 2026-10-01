@@ -1,6 +1,7 @@
 import { setButtonLabel } from './icons.mjs';
 import { t, onLocaleChange } from './i18n.mjs';
 import { captureFingerprintAudio, microphoneSupported, abortError } from './fingerprint-capture.mjs';
+import { diagnosticSummary, matchReason } from './fingerprint-diagnostics.mjs';
 const HASH = /^[a-f0-9]{64}$/;
 export function fingerprintBinding(context) {
   const { week, track, generation } = context || {}, m = week?.audioFingerprint;
@@ -25,9 +26,45 @@ export function matchInWorker(recording, metadata, signal, WorkerClass = globalT
     try { worker.postMessage({ samples: recording.samples, sampleRate: recording.sampleRate, metadata, requestId }, [recording.samples.buffer]); } catch (error) { finish(error); }
   });
 }
+// Keep one verified index in one bounded operation's Worker. Closing the session
+// discards session state. Persistent public bytes are revalidated by each Worker;
+// cached indexes alone do not establish offline audio/catalog readiness.
+export async function prepareInWorker(metadata, signal, WorkerClass = globalThis.Worker) {
+  const worker = new WorkerClass(new URL('./fingerprint-worker.mjs', import.meta.url), { type: 'module' });
+  let pending = null, serial = 0, closed = false;
+  const close = (error = abortError()) => {
+    if (closed) return;
+    closed = true; worker.terminate(); signal.removeEventListener('abort', abort);
+    const task = pending; pending = null; task?.reject(error);
+  };
+  const abort = () => close();
+  signal.addEventListener('abort', abort, { once: true });
+  worker.onerror = () => close(new Error('match_failed'));
+  worker.onmessage = ({ data }) => {
+    if (!pending || data.requestId !== pending.id || closed) return;
+    const task = pending; pending = null;
+    if (data.error) { const error = new Error(data.error); close(error); task.reject(error); }
+    else task.resolve(data);
+  };
+  const request = (operation, payload = {}, transfer = []) => new Promise((resolve, reject) => {
+    if (closed || signal.aborted) { close(); reject(abortError()); return; }
+    if (pending) { reject(new Error('match_failed')); return; }
+    const id = ++serial; pending = { id, resolve, reject };
+    try { worker.postMessage({ operation, metadata, requestId: id, ...payload }, transfer); }
+    catch (error) { close(error); }
+  });
+  if (signal.aborted) { close(); throw abortError(); }
+  try {
+    const result = await request('prepare');
+    if (result.ready !== true) throw new Error('index_binding');
+    return { timings: result.timings, close, match: recording => request('match',
+      { samples: recording.samples, sampleRate: recording.sampleRate }, [recording.samples.buffer]) };
+  } catch (error) { close(error); throw error; }
+}
+
 // Show bounded diagnostic codes only; never expose native messages or device IDs.
 export function captureDiagnostic(error = {}) {
-  const known = {capture_start_timeout:'MIC_START_TIMEOUT',capture_interrupted:'INPUT_INTERRUPTED',audio_context_interrupted:'AUDIO_INTERRUPTED',microphone_ended:'MIC_ENDED',worklet_processor:'PROCESSOR_ERROR',capture_failed:'INVALID_CAPTURE',index_binding:'INDEX_MISMATCH',index_unavailable:'INDEX_UNAVAILABLE',match_failed:'MATCH_ERROR'};
+  const known = {capture_budget_exhausted:'MIC_BUDGET',capture_start_timeout:'MIC_START_TIMEOUT',capture_interrupted:'INPUT_INTERRUPTED',audio_context_interrupted:'AUDIO_INTERRUPTED',microphone_ended:'MIC_ENDED',worklet_processor:'PROCESSOR_ERROR',capture_failed:'INVALID_CAPTURE',index_binding:'INDEX_MISMATCH',index_unavailable:'INDEX_UNAVAILABLE',match_failed:'MATCH_ERROR'};
   const native = {NotAllowedError:'MIC_PERMISSION',SecurityError:'MIC_PERMISSION',NotFoundError:'MIC_MISSING',NotReadableError:'MIC_BUSY',OverconstrainedError:'MIC_SETTINGS',NotSupportedError:'AUDIO_UNSUPPORTED'};
   const stages = new Set(['context','permission','startup','worklet_load','input','recording']);
   const stage = stages.has(error.captureStage) ? error.captureStage : 'matching';
@@ -36,9 +73,11 @@ export function captureDiagnostic(error = {}) {
   const detail = Object.hasOwn(details, error.captureDetail) ? details[error.captureDetail] : null;
   return {code,stage,...(detail ? {detail} : {}),version:'C3'};
 }
-export function diagnosticMessage(diagnostic) {
-  const known = new Set('MIC_START_TIMEOUT INPUT_INTERRUPTED AUDIO_INTERRUPTED MIC_BUSY MIC_MISSING MIC_ENDED WORKLET_LOAD PROCESSOR_ERROR AUDIO_START INDEX_UNAVAILABLE'.split(' '));
-  return t('fingerprint.diagnostic.detail', { message: t(`fingerprint.diagnostic.${known.has(diagnostic.code) ? diagnostic.code : 'UNKNOWN'}`), code: `${diagnostic.code}${diagnostic.detail ? ':' + diagnostic.detail : ''}`, stage: diagnostic.stage, version: diagnostic.version });
+export function diagnosticMessage(diagnostic, { includeDetails = true } = {}) {
+  const known = new Set('MIC_BUDGET MIC_START_TIMEOUT INPUT_INTERRUPTED AUDIO_INTERRUPTED MIC_BUSY MIC_MISSING MIC_ENDED WORKLET_LOAD PROCESSOR_ERROR AUDIO_START INDEX_UNAVAILABLE'.split(' '));
+  const message = t(`fingerprint.diagnostic.${known.has(diagnostic.code) ? diagnostic.code : 'UNKNOWN'}`);
+  if (!includeDetails) return message;
+  return t('fingerprint.diagnostic.detail', { message, code: `${diagnostic.code}${diagnostic.detail ? ':' + diagnostic.detail : ''}`, stage: diagnostic.stage, version: diagnostic.version });
 }
 // The native play promise resolves only when playback can actually start.
 // Cleanup never pauses a later attempt; only this pending operation may pause.
@@ -66,15 +105,27 @@ export function playAlignmentAudio(audio, { signal, timeoutMs = 8000, timers = g
     } catch (error) { finish(error || new Error('audio_play_failed')); }
   });
 }
-export function createFingerprintController({ context, pause, seek, play, position = () => NaN, onState = () => {}, capture = captureFingerprintAudio, match = matchInWorker, supported = microphoneSupported, now = () => performance.now(), timers = globalThis, expirySeconds = 15, autoApply = true }) {
+export function createFingerprintController({ context, pause, seek, play, position = () => NaN, onState = () => {}, capture = captureFingerprintAudio, prepare = prepareInWorker, match = null, supported = microphoneSupported, now = () => performance.now(), timers = globalThis, expirySeconds = 15, autoApply = true }) {
   let serial = 0, active = null, result = null, expiryTimer = null, pendingPlay = null;
-  let state = { phase: 'idle' };
-  const emit = value => { state = value; onState(value); };
+  let state = { phase: 'idle' }, session = null, readyCapture = null;
+  const elapsedMs = started => Math.max(0, now() - started);
+  const emit = value => {
+    state = value;
+    if (session) {
+      session.phase = value.phase;
+      if (value.diagnostic) session.errorCode = value.diagnostic.code;
+      if (!session.finished) session.timings.totalMs = elapsedMs(session.started);
+      if (['no_match', 'error', 'permission_denied', 'unavailable', 'unsupported', 'expired', 'timeout', 'cancelled', 'applied'].includes(value.phase)) session.finished = true;
+    }
+    onState(value);
+  };
+  const diagnostics = () => session ? diagnosticSummary(session) : null;
   const clearExpiry = () => { timers.clearTimeout(expiryTimer); expiryTimer = null; };
   function cancel(reason = 'cancelled') {
     const pending = pendingPlay; pendingPlay = null;
-    serial++; active?.abort(); active = null; result = null; clearExpiry();
+    serial++; active?.abort(); active = null; readyCapture?.prepared.close(); readyCapture = null; result = null; clearExpiry();
     if (pending) { pending.controller.abort(); pause(); }
+    if (reason === 'idle') session = null;
     emit({ phase: reason });
   }
   const valid = (token, binding) => serial === token && key(binding) === key(fingerprintBinding(context()));
@@ -83,23 +134,68 @@ export function createFingerprintController({ context, pause, seek, play, positi
     return valid(item.token, item.binding) && elapsed >= 0 && elapsed < expirySeconds && target < item.binding.metadata.sourceEndSeconds - item.binding.metadata.sourceStartSeconds ? target : null;
   }
   async function start() {
+    // The ready branch reaches getUserMedia synchronously in this new click.
+    if (readyCapture) return record();
     cancel('idle');
     const binding = fingerprintBinding(context());
+    session = { started: now(), phase: 'idle', content: binding?.metadata, attempts: 0, timings: {} };
+    const observation = session;
     if (!binding) { emit({ phase: 'unavailable' }); return; }
     if (!supported()) { emit({ phase: 'unsupported' }); return; }
     const token = serial, controller = new AbortController(); active = controller;
-    pause(); emit({ phase: 'permission' });
-    let timedOut = false;
+    emit({ phase: 'preparing_index' });
+    let timedOut = false, prepared = null, retained = false;
     const timeout = timers.setTimeout(() => { timedOut = true; controller.abort(); }, 35000);
     try {
-      const recording = await capture({ seconds: 10, signal: controller.signal, onRecovering: () => { if (valid(token, binding)) emit({ phase: 'recovering' }); }, onPreparing: () => { if (valid(token, binding)) emit({ phase: 'starting' }); }, onRecording: () => { if (valid(token, binding)) emit({ phase: 'recording' }); } });
+      prepared = await prepare(binding.metadata, controller.signal);
+      if (!valid(token, binding) || controller.signal.aborted) return;
+      observation.timings.indexMs = prepared.timings?.indexMs;
+      readyCapture = {prepared, binding, token, controller, observation}; retained = true;
+      expiryTimer = timers.setTimeout(() => {
+        if (readyCapture?.controller === controller) cancel('expired');
+      }, 30000);
+      emit({phase: 'ready_to_record'});
+    } catch (error) {
+      if (valid(token, binding)) emit({phase: timedOut ? 'timeout' : error.name === 'AbortError' ? 'cancelled' : 'error', diagnostic: captureDiagnostic(error)});
+    } finally {
+      timers.clearTimeout(timeout);
+      if (!retained) {
+        prepared?.close();
+        if (active === controller) {controller.abort(); active = null;}
+      }
+    }
+  }
+  async function record() {
+    const {prepared, binding, token, controller, observation} = readyCapture;
+    readyCapture = null; clearExpiry();
+    if (!valid(token, binding) || controller.signal.aborted) {
+      prepared.close(); cancel('expired'); return;
+    }
+    let timedOut = false;
+    const timeout = timers.setTimeout(() => {timedOut = true; controller.abort();}, 35000);
+    try {
+      pause(); emit({ phase: 'permission' });
+      const recording = await capture({ onTiming: value => {
+        observation.attempts++;
+        for (const name of ['permissionMs', 'startupMs', 'captureMs', 'microphoneObservedMs']) {
+          if (typeof value[name] === 'number' && Number.isFinite(value[name]) && value[name] >= 0)
+            observation.timings[name] = (observation.timings[name] || 0) + value[name];
+        }
+      }, seconds: 10, signal: controller.signal, onRecovering: () => { if (valid(token, binding)) emit({ phase: 'recovering' }); }, onPreparing: () => { if (valid(token, binding)) emit({ phase: 'starting' }); }, onRecording: () => { if (valid(token, binding)) emit({ phase: 'recording' }); } });
       if (!valid(token, binding) || controller.signal.aborted) return;
       if (!Number.isFinite(recording.endedAt) || !Number.isFinite(recording.durationSeconds) || recording.durationSeconds < 9 || recording.durationSeconds > 11 || recording.endedAt > now() + 50) throw new Error('capture_failed');
       emit({ phase: 'matching' });
-      const answer = await match(recording, binding.metadata, controller.signal);
+      const workerStarted = now();
+      const answer = await (match ? match(recording, binding.metadata, controller.signal) : prepared.match(recording));
       if (!valid(token, binding) || controller.signal.aborted) return;
+      observation.timings.workerMs = elapsedMs(workerStarted);
+      for (const name of ['indexMs', 'featureMs', 'matchMs']) {
+        const value = answer.timings?.[name];
+        if (typeof value === 'number' && Number.isFinite(value) && value >= 0) observation.timings[name] = value;
+      }
+      observation.match = answer.summary;
       const found = answer.result;
-      if (!found?.matched) { emit({ phase: 'no_match', reason: found?.diagnostics?.reason || 'low_confidence' }); return; }
+      if (!found?.matched) { emit({ phase: 'no_match', reason: matchReason(found?.diagnostics?.reason) }); return; }
       const end = found.queryStartSeconds + recording.durationSeconds;
       const elapsed = (now() - recording.endedAt) / 1000;
       if (!Number.isFinite(found.queryStartSeconds) || found.queryStartSeconds < 0 || !Number.isFinite(found.confidence) || found.confidence <= 0 || end >= binding.metadata.sourceEndSeconds - binding.metadata.sourceStartSeconds || elapsed < 0 || elapsed >= expirySeconds) { emit({ phase: 'expired' }); return; }
@@ -110,6 +206,7 @@ export function createFingerprintController({ context, pause, seek, play, positi
     } catch (error) {
       if (valid(token, binding)) emit({ phase: timedOut ? 'timeout' : error.name === 'AbortError' ? 'cancelled' : error.name === 'NotAllowedError' || error.name === 'SecurityError' ? 'permission_denied' : error.message === 'unsupported' ? 'unsupported' : 'error', diagnostic: captureDiagnostic(error) });
     } finally {
+      prepared?.close();
       timers.clearTimeout(timeout);
       if (active === controller) { controller.abort(); active = null; }
     }
@@ -120,6 +217,7 @@ export function createFingerprintController({ context, pause, seek, play, positi
     const target = targetFor(item);
     if (target === null) { cancel('expired'); return false; }
     if (!context().ready) { emit({ phase: 'play_failed' }); return false; }
+    const observation = session;
     const pending = { controller: new AbortController() }; pendingPlay = pending;
     const current = () => pendingPlay === pending && result === item && valid(item.token, item.binding);
     const failed = error => {
@@ -131,10 +229,15 @@ export function createFingerprintController({ context, pause, seek, play, positi
     emit({ phase: 'play_starting', sourceTimeSeconds: target + item.binding.metadata.sourceStartSeconds });
     try {
       // Invoke seek and play synchronously; the fallback click retains its gesture.
-      if (!seek(target, { correction: Boolean(item.positioned) })) { failed(); return false; }
+      const seekStarted = now();
+      const positioned = seek(target, { correction: Boolean(item.positioned) });
+      observation.timings.seekCallMs = elapsedMs(seekStarted);
+      if (!positioned) { failed(); return false; }
       item.positioned = true;
+      const playStarted = now();
       Promise.resolve(play({ signal: pending.controller.signal })).then(() => {
         if (!current()) { if (pendingPlay === pending) cancel('cancelled'); return; }
+        observation.timings.playStartMs = elapsedMs(playStarted);
         const latest = targetFor(item);
         if (latest === null) { cancel('expired'); return; }
         // One bounded correction for buffering delay, never a tracking loop.
@@ -146,31 +249,56 @@ export function createFingerprintController({ context, pause, seek, play, positi
     } catch (error) { failed(error); return false; }
     return true;
   }
-  return { start, apply, cancel, playbackStarted() { if (!pendingPlay) this.invalidate(); }, invalidate() { if (active || result || pendingPlay) cancel('cancelled'); }, getState: () => state, available: () => Boolean(fingerprintBinding(context())) };
+  return { start, apply, cancel, playbackStarted() { if (!pendingPlay) this.invalidate(); }, invalidate() { if (active || result || pendingPlay) cancel('cancelled'); }, getState: () => state, getDiagnostics: diagnostics, available: () => Boolean(fingerprintBinding(context())) };
 }
 
 function clock(seconds) {
   const n = Math.floor(seconds), mm = String(Math.floor(n / 60) % 60).padStart(2, '0'), ss = String(n % 60).padStart(2, '0');
   return n >= 3600 ? `${Math.floor(n / 3600)}:${mm}:${ss}` : `${mm}:${ss}`;
 }
+// Status text and color describe the same state; raw diagnostics stay out of the main prompt.
+export function fingerprintStatusTone(phase) {
+  if (['idle', 'cancelled'].includes(phase)) return 'neutral';
+  if (['matched', 'applied'].includes(phase)) return 'success';
+  if (['preparing_index', 'ready_to_record', 'permission', 'recovering', 'starting',
+       'recording', 'matching', 'play_starting'].includes(phase)) return 'pending';
+  return 'failure';
+}
 export function mountFingerprintUI(options) {
   const $ = id => document.getElementById(id);
   const dialog = $('fingerprint-dialog');
-  const phases = new Set(["idle", "permission", "recovering", "starting", "recording", "matching", "cancelled", "unavailable", "unsupported", "permission_denied", "timeout", "error", "no_match", "expired", "play_starting", "play_blocked", "play_failed"]);
+  const phases = new Set(["idle", "preparing_index", "ready_to_record", "permission", "recovering", "starting", "recording", "matching", "cancelled", "unavailable", "unsupported", "permission_denied", "timeout", "error", "no_match", "expired", "play_starting", "play_blocked", "play_failed"]);
   function renderState(value) {
-    const busy = ['permission', 'starting', 'recovering', 'recording', 'matching', 'play_starting'].includes(value.phase);
+    const busy = ['preparing_index', 'permission', 'starting', 'recovering', 'recording', 'matching', 'play_starting'].includes(value.phase);
     $('fingerprint-start').disabled = busy;
-    setButtonLabel($('fingerprint-start'), t(value.phase === 'idle' ? 'fingerprint.start' : 'fingerprint.restart'));
+    $('fingerprint-start').hidden = busy;
+    setButtonLabel($('fingerprint-start'), t(value.phase === 'ready_to_record' ? 'fingerprint.record' : value.phase === 'idle' ? 'fingerprint.start' : 'fingerprint.restart'));
     $('fingerprint-apply').hidden = !['matched', 'play_blocked', 'play_failed'].includes(value.phase);
     setButtonLabel($('fingerprint-apply'), t('fingerprint.apply'));
-    $('fingerprint-message').textContent = value.phase === 'matched' ? t('fingerprint.matched', { time: clock(value.sourceTimeSeconds) }) : value.phase === 'applied' ? t('fingerprint.applied', { time: clock(value.sourceTimeSeconds) }) : value.phase === 'error' && value.diagnostic ? diagnosticMessage(value.diagnostic) : t(`fingerprint.phase.${phases.has(value.phase) ? value.phase : 'error'}`);
+    const message = $('fingerprint-message');
+    message.setAttribute('data-tone', fingerprintStatusTone(value.phase));
+    message.hidden = ['idle', 'cancelled'].includes(value.phase);
+    $('fingerprint-stop').hidden = !busy;
+    message.textContent = value.phase === 'matched' ? t('fingerprint.matched', { time: clock(value.sourceTimeSeconds) }) : value.phase === 'applied' ? t('fingerprint.applied', { time: clock(value.sourceTimeSeconds) }) : value.phase === 'no_match' ? t(`fingerprint.reason.${matchReason(value.reason)}`) : value.phase === 'error' && value.diagnostic ? diagnosticMessage(value.diagnostic, { includeDetails: false }) : t(`fingerprint.phase.${phases.has(value.phase) ? value.phase : 'error'}`);
   }
   const controller = createFingerprintController({ ...options, onState(value) {
     renderState(value);
+    renderDiagnostics();
     if (value.phase === 'applied' && dialog.open) dialog.close();
   } });
-  onLocaleChange(() => renderState(controller.getState()));
-  renderState(controller.getState());
+  function renderDiagnostics() {
+    const node = $('fingerprint-diagnostics');
+    if (!node) return;
+    const d = controller.getDiagnostics();
+    node.textContent = d ? t('fingerprint.sessionSummary', {
+      level: t(`fingerprint.level.${d.match.level}`), clipping: t(`fingerprint.clipping.${d.match.clipping}`),
+      landmarks: d.match.landmarks ?? '—', anchors: d.match.supportingAnchors ?? '—',
+      total: d.timings.totalMs === null ? '—' : d.timings.totalMs / 1000,
+      microphone: d.timings.microphoneObservedMs === null ? '—' : d.timings.microphoneObservedMs / 1000,
+    }) : t('fingerprint.sessionEmpty');
+  }
+  onLocaleChange(() => { renderState(controller.getState()); renderDiagnostics(); });
+  renderState(controller.getState()); renderDiagnostics();
   $('fingerprint-open').addEventListener('click', () => { controller.cancel('idle'); dialog.showModal(); });
   $('fingerprint-start').addEventListener('click', () => controller.start());
   $('fingerprint-apply').addEventListener('click', () => controller.apply());
