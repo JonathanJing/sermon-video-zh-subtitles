@@ -15,6 +15,16 @@ DEFAULT_PACK = HERE.parents[1] / "artifacts/sermon-dubbing/2026-09-05-weekly-app
 STATIC = {"/theme.js": ("theme.js", "text/javascript"), "/": ("index.html", "text/html; charset=utf-8"), "/app.mjs": ("app.mjs", "text/javascript"), "/catalog.mjs": ("catalog.mjs", "text/javascript"), "/timing.mjs": ("timing.mjs", "text/javascript"), "/style.css": ("style.css", "text/css")}
 STATIC["/brand-icon.png"] = ("brand-icon.png", "image/png")
 STATIC.update({f"/{name}": (name, "application/json" if name.endswith(".json") else "text/javascript") for name in ["engagement.json", "feedback.mjs", "feedback-client.mjs", "listening.mjs", "usage.mjs", "usage-client.mjs", "language-listening.mjs", "language-listening-client.mjs", "playback-memory.mjs", "published-weeks.mjs", "i18n.mjs", "locales-interface.mjs", "locales-app.mjs", "locales-feedback.mjs", "locales-ko.mjs", "locales-es.mjs", "content-locales.mjs"]})
+# Explicit HTML/module dependency closure, including worker/worklet entrypoints.
+# Keep this allowlist independent of filesystem discovery to avoid exposing code.
+STATIC.update({f"/{name}": (name, "text/javascript") for name in (
+    "icons.mjs", "media-session.mjs", "voice-samples.mjs", "fingerprint-ui.mjs",
+    "fingerprint-capture.mjs", "fingerprint-core.mjs", "fingerprint-diagnostics.mjs",
+    "fingerprint-worker.mjs", "fingerprint-worklet.mjs",
+)})
+STATIC.update({f"/{name}": (name, "image/svg+xml") for name in (
+    "icons.svg", "brand-icon.svg", "brand-icon-light.svg",
+)})
 
 
 def byte_range(value: str | None, size: int) -> tuple[int, int]:
