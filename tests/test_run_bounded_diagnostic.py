@@ -109,6 +109,40 @@ class BoundedRunTests(unittest.TestCase):
         self.assertFalse(self.subject.store.root.exists())
         self.assertEqual(self.calls,[])
 
+    def test_simulated_human_context_keeps_one_bounded_provider_and_real_review(self):
+        from scripts import sermon_diagnostic_context as diagnostic
+        from tests.test_sermon_diagnostic_context import reidentify
+        source,anchor,policy,rubric=map(c.decode_json,self.f.args)
+        source.update(status='blocked',translationEligible=False,candidateTranslationEligible=False)
+        source['review'].update(humanApproval=False,reviewedBy=None,reviewedAt=None,
+            reviewedSourceUnitIds=[],evidence=None,checks={k:'pending' for k in diagnostic.PENDING_CHECKS})
+        source['source']['approvedWindow'].update(status='pending',humanApproval=False,evidence=None)
+        source['transcript']['completenessReview']='pending'
+        source['issues']=[{'stage':'source','type':'approved_sermon_window_missing'}]+[
+            {'stage':'review','type':k+'_review_pending'} for k in diagnostic.PENDING_CHECKS]
+        reidentify(source)
+        policy['sourceScope']['englishSourcePackageJsonSha256']=c.canonical_sha256(source)
+        policy['componentSha256']['sourceScope']=c.canonical_sha256(policy['sourceScope'])
+        raw=[strict.material_bytes(x) for x in (source,anchor,policy,rubric)]
+        ctx=dict(schemaVersion=diagnostic.SCHEMA,runId=self.subject.config['runId'],
+            runConfigSha256=c.canonical_sha256(self.subject.config),storeSha256=self.subject.store.store_sha256,
+            sourceCanonicalSha256=c.canonical_sha256(source),anchorCanonicalSha256=c.canonical_sha256(anchor),
+            simulationAuthorizationRef='a'*64,continuationCodeCommit='b'*40,
+            humanAcceptance='pending',productionEligible=False)
+        with self.f.session():
+            self.runner.transcribe(self.raw)
+            self.runner.source_check(operation_id='source.initial')
+            kwargs=dict(graph=self.graph,plugin_path=self.f.f.plugin_path,
+                plugin_sha256=self.f.f.plugin_sha,group_plan=self.plan,diagnostic_context=ctx)
+            result=self.runner.run_locale(*raw,**kwargs)
+            replay=self.runner.run_locale(*raw,**kwargs)
+        self.assertEqual(result['status'],'waiting_human')
+        self.assertEqual(result['candidateSha256'],replay['candidateSha256'])
+        self.assertEqual(len(self.calls),6)
+        self.assertEqual(self.subject.snapshot()['requestCount'],6)
+        self.assertFalse(source['review']['humanApproval'])
+        self.assertFalse(source['translationEligible'])
+
     def test_source_check_requires_actual_saved_asr_and_cannot_substitute_prompt(self):
         with self.f.session():
             with self.assertRaisesRegex(ValueError,'verified_transcription_required'):

@@ -24,7 +24,7 @@ from scripts.sermon_release_workflow import _safe_path
 def run_locale(source_bytes, anchor_bytes, policy_bytes, rubric_bytes, *, root,
                store, job_root, production_run_id, graph, plugin_path,
                expected_plugin_sha256, api_key, caller, bounds,
-               usage_resolver=None, group_plan=None, created_at=None, request_limits=None):
+               usage_resolver=None, group_plan=None, created_at=None, request_limits=None, diagnostic_context=None):
     """Run fixed groups and bounded repairs, then the real public/plugin bridge.
 
     All group inputs and the complete locale coverage are validated before the
@@ -33,14 +33,17 @@ def run_locale(source_bytes, anchor_bytes, policy_bytes, rubric_bytes, *, root,
     candidate. A non-pass group prevents public assembly, not other groups.
     """
     c.require(profile.current() is not None, 'strict_requires_accounting_profile')
+    if diagnostic_context is not None:
+        from scripts.sermon_diagnostic_context import validate_runtime
+        diagnostic_context = validate_runtime(diagnostic_context, run_id=production_run_id, store_sha256=store.store_sha256)
     raw = (source_bytes, anchor_bytes, policy_bytes, rubric_bytes)
     source, anchor, policy, rubric = map(c.decode_json, raw)
-    request = producer.prepare_request(source, anchor, policy, strict_rubric=rubric)
+    request = producer.prepare_request(source, anchor, policy, strict_rubric=rubric, diagnostic_context=diagnostic_context)
     plan = models.group_plan(request, anchor, group_plan)
     # The current whole-locale Gate accepts at most 128 current revisions.
     # Do not spend on a locale that cannot reach that existing boundary.
     c.require(len(plan) <= 128, 'strict_locale_admission_inventory_limit')
-    prepared = [strict.prepare(*raw, group, request_limits=request_limits) for group in plan]
+    prepared = [strict.prepare(*raw, group, request_limits=request_limits, diagnostic_context=diagnostic_context) for group in plan]
     if hasattr(caller, 'preflight_locale'):
         caller.preflight_locale(prepared)
     units = [item['workUnitId'] for item in prepared]
@@ -64,7 +67,8 @@ def run_locale(source_bytes, anchor_bytes, policy_bytes, rubric_bytes, *, root,
         'inputBytesSha256': [c.bytes_sha256(data) for data in raw],
         'groups': plan, 'graph': graph, 'pluginSha256': expected_plugin_sha256,
         'storeSha256': store.store_sha256, 'authoritySha256': store.authority_sha256,
-        'bounds': bounds, **({'requestLimits': prepared[0]['requestLimits']} if request_limits is not None else {})}
+        'bounds': bounds, **({'requestLimits': prepared[0]['requestLimits']} if request_limits is not None else {}),
+        **({'diagnosticContext': diagnostic_context} if diagnostic_context is not None else {})}
     lock_key = c.canonical_sha256({'purpose': 'strict-locale-run',
         'productionRunId': production_run_id, 'targetLocale': policy['targetLocale']})
     with jobs._lock(job_root, lock_key) as (_, _, held):
@@ -79,7 +83,10 @@ def run_locale(source_bytes, anchor_bytes, policy_bytes, rubric_bytes, *, root,
                 'policySha256': c.canonical_sha256(policy),
                 'rubricSha256': c.canonical_sha256(rubric),
                 'localeInputSha256': c.canonical_sha256(binding),
-                'targetLocale': policy['targetLocale'], 'groupCount': len(prepared)})
+                'targetLocale': policy['targetLocale'], 'groupCount': len(prepared),
+                **({'diagnosticContextSha256': c.canonical_sha256(diagnostic_context),
+                    'simulatedHumanGate': True, 'humanAcceptancePending': True,
+                    'productionEligible': False} if diagnostic_context is not None else {})})
         results, revisions, dependencies = [], [], [bound_span]
         for item in prepared:
             completed = []
@@ -98,7 +105,7 @@ def run_locale(source_bytes, anchor_bytes, policy_bytes, rubric_bytes, *, root,
         with accounting.stage('rqc.locale_candidate_assembly', depends_on=dependencies,
                               executor_type='deterministic_program'):
             result = bridge.compile_candidate(*raw, revisions, plugin_path=plugin_path,
-                                               expected_plugin_sha256=expected_plugin_sha256)
+                                               expected_plugin_sha256=expected_plugin_sha256, diagnostic_context=diagnostic_context)
             identity = c.canonical_sha256(result)
             output = root / 'machine-candidates' / identity
             output.mkdir(parents=True, exist_ok=True, mode=0o700)

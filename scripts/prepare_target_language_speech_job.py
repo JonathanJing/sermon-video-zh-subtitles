@@ -66,13 +66,18 @@ def _reviewed_at(value: object) -> bool:
 
 
 def validate_target_candidate(source_package: dict[str, Any], anchor: dict[str, Any], candidate: dict[str, Any], *,
-                              require_human_approval: bool = True) -> dict[str, Any]:
+                              require_human_approval: bool = True, diagnostic_context=None) -> dict[str, Any]:
     """Fail closed on locale identity, source coverage and review boundaries."""
     _require(source_package.get("schemaVersion") == SOURCE_PACKAGE_SCHEMA,
              "Unsupported English Source Package")
-    _require(source_package.get("status") == "ready_for_translation"
-             and source_package.get("translationEligible") is True,
-             "English Source Package is not approved for translation")
+    if diagnostic_context is None:
+        _require(source_package.get("status") == "ready_for_translation"
+                 and source_package.get("translationEligible") is True,
+                 "English Source Package is not approved for translation")
+    else:
+        _require(require_human_approval is False, "Diagnostic context cannot grant production approval")
+        from scripts.sermon_diagnostic_context import validate_source
+        validate_source(source_package, anchor, diagnostic_context)
     _require(interpretation.is_supported_anchor_manifest(anchor), "Unsupported anchor manifest")
     _require(candidate.get("schemaVersion") == CANDIDATE_SCHEMA,
              "Unsupported target-language candidate")
@@ -154,7 +159,7 @@ def validate_target_candidate(source_package: dict[str, Any], anchor: dict[str, 
     return {"targetLocale": locale, "groupIds": group_ids, "sourceUnitIds": assigned_units}
 
 
-def validate_policy_binding(candidate: dict[str, Any], policy: dict[str, Any], *, strict_rubric=None) -> None:
+def validate_policy_binding(candidate: dict[str, Any], policy: dict[str, Any], *, strict_rubric=None, diagnostic_context=None) -> None:
     result = (policy_tools.validate_policy(policy) if strict_rubric is None else
               policy_tools.validate_strict_policy(policy, strict_rubric))
     _require(policy["targetLocale"] == candidate["targetLocale"],
@@ -167,8 +172,12 @@ def validate_policy_binding(candidate: dict[str, Any], policy: dict[str, Any], *
                  "Source-scoped policy differs from target candidate source")
     _require(candidate["translationPolicySha256"] == result["translationPolicySha256"],
              "Target candidate belongs to another Target-Language Policy")
-    _require(result["productionPolicyReady"],
-             "Target-Language Policy has unresolved scripture, terminology, or language-review gates")
+    if diagnostic_context is None:
+        _require(result["productionPolicyReady"],
+                 "Target-Language Policy has unresolved scripture, terminology, or language-review gates")
+    else:
+        from scripts.sermon_diagnostic_context import require_policy_ready
+        require_policy_ready(result, diagnostic_context)
     for stage in ("translator", "reviewer"):
         expected = policy[stage]
         actual = candidate["generation"][stage]
