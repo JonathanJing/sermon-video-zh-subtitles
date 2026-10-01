@@ -81,14 +81,18 @@ class LiveDiagnosticClient:
         immutable.save_once(self.root / 'authorization.json', self.authorization)
         self.created_session = None
         self.poll_at = 0
+        self._poll_sequence = 0
+        self._session_snapshot = None
+        self._turns_snapshot = None
 
     def validate_scope(self, manifest, limits, model):
         c.validate_manifest(manifest)
         c.require(c.fingerprint(manifest) == self.authorization['manifestSha256'] and
                   asdict(limits) == self.authorization['limits'] and model == self.authorization['model'],
                   'live_diagnostic_scope_changed')
-        self.payload_sha256 = c.fingerprint(diagnostic.build_session_payload(
-            diagnostic.build_context_bundle(manifest), limits, model))
+        self._bundle = diagnostic.build_context_bundle(manifest)
+        self._limits = limits
+        self.payload_sha256 = c.fingerprint(diagnostic.build_session_payload(self._bundle, limits, model))
 
     def save_checkpoint(self, state):
         # Hash-named append-only checkpoints retain create/submission intent even
@@ -134,6 +138,7 @@ class LiveDiagnosticClient:
         immutable.save_once(path.with_suffix('.returned.json'), {**intent, 'outcome': 'returned',
             'responseSha256': c.fingerprint(value)})
         jobs._sync_directory_ancestry(path.parent)
+        self._last_transport = {'method':method,'sequence':sequence,'responseSha256':c.fingerprint(value)}
         return value
 
     def create_session(self, payload, *, timeout_seconds):
@@ -158,12 +163,24 @@ class LiveDiagnosticClient:
 
     def retrieve_session(self, session_id, *, timeout_seconds):
         self._session_scope(session_id)
+        # A fresh poll invalidates the previous pair even if its GET fails.
+        self._poll_sequence += 1
+        self._session_snapshot = None
+        self._turns_snapshot = None
         if not self.synthetic_fixture and self.clock() < self.poll_at:
             delay = min(self.poll_at - self.clock(), timeout_seconds)
             time.sleep(delay)
             timeout_seconds -= delay
         self.poll_at = self.clock() + 2
-        return self._invoke('retrieve_session', (session_id,), timeout_seconds)
+        value = self._invoke('retrieve_session', (session_id,), timeout_seconds)
+        self._session_snapshot = self._snapshot(value, session_id)
+        return value
+
+    def _snapshot(self, value, session_id):
+        return {'value':c.decode_json(c.bounded_json(value,self.authorization['limits']['max_transport_bytes'])),
+                'sessionId':session_id,'pollSequence':self._poll_sequence,
+                'transportSequence':self._last_transport['sequence'],
+                'responseSha256':self._last_transport['responseSha256'],'observedAt':self.clock()}
 
     def _session_scope(self, session_id):
         saved = json.loads((self.root / 'session-created.json').read_text())
@@ -171,12 +188,14 @@ class LiveDiagnosticClient:
 
     def list_turns(self, session_id, *, timeout_seconds):
         self._session_scope(session_id)
+        self._turns_snapshot = None
         rows = self._invoke('list_turns', (session_id,), timeout_seconds)
         for row in rows if type(rows) is list else []:
             if type(row) is dict and row.get('subagent_id') is None and type(row.get('usage')) is dict:
                 amount = observed_cost(row.get('model'), row['usage'])['estimatedMicrousd']
                 if amount is not None and amount >= self.authorization['reservationMicrousd']:
                     raise c.DiagnosticContractError('diagnostic_cost_observation_threshold')
+        self._turns_snapshot = self._snapshot(rows, session_id)
         return rows
 
     def list_items(self, session_id, *, timeout_seconds):
@@ -185,40 +204,80 @@ class LiveDiagnosticClient:
 
     def submit_tool_result(self, session_id, action, output, *, timeout_seconds):
         self._session_scope(session_id)
-        # Wire call IDs do not have a guaranteed call_ prefix. Accept only the
-        # existing bounded identifier shape, then prove the pending action's
-        # identity against the actual function_call item before any POST.
-        started = self.clock()
+        # Pending function calls need not yet appear in list_items. The actual
+        # current required_actions and same-poll unique root turn are the wire
+        # authority, retained separately from old call-item-binding-v1 evidence.
         c.require(type(action) is dict and set(action) == {'type','turn_id','call_id','name','arguments'}
                   and action['type'] == 'function_call', 'unsupported_required_action')
         call_id = diagnostic._identifier(action['call_id'])
         turn_id = diagnostic._remote_identifier(action['turn_id'], 'turn_')
         c.require(action['name'] in diagnostic.READ_TOOLS and type(action['arguments']) is dict,
                   'unsupported_required_action')
-        items = self._invoke('list_items', (session_id,), timeout_seconds)
-        c.require(type(items) is list and all(type(item) is dict for item in items), 'invalid_items')
-        matches = [item for item in items if item.get('type') == 'function_call'
-                   and item.get('call_id') == call_id]
-        c.require(len(matches) == 1, 'diagnostic_call_item_missing_or_duplicate')
-        item = matches[0]
-        item_id = diagnostic._identifier(item.get('id'))
-        item_arguments = item.get('arguments')
-        if type(item_arguments) is str:
-            item_arguments = c.decode_json(item_arguments.encode('utf-8'))
-        c.require(item.get('turn_id') == turn_id and item.get('name') == action['name']
-                  and item_arguments == action['arguments']
-                  and item.get('session_id', session_id) == session_id, 'diagnostic_call_item_binding_mismatch')
-        binding = {'schemaVersion':'sermon-live-diagnostic-call-item-binding-v1',
+        session_snapshot,turns_snapshot = self._session_snapshot,self._turns_snapshot
+        c.require(session_snapshot is not None and turns_snapshot is not None,'diagnostic_action_snapshot_missing')
+        observer = c.decode_json((self.root/'observer.json').read_bytes())
+        c.require(type(observer) is dict and set(observer)=={'schemaVersion','authorizationSha256','deadlineAt'} and
+                  observer['schemaVersion']=='sermon-live-diagnostic-observer-v1' and
+                  observer['authorizationSha256']==c.fingerprint(self.authorization) and
+                  type(observer['deadlineAt']) in (int,float) and 0<observer['deadlineAt']<float('inf'),
+                  'live_diagnostic_scope_changed')
+        current = self.clock()
+        c.require(session_snapshot['sessionId']==turns_snapshot['sessionId']==session_id and
+                  session_snapshot['pollSequence']==turns_snapshot['pollSequence']==self._poll_sequence and
+                  session_snapshot['transportSequence'] < turns_snapshot['transportSequence'] and
+                  session_snapshot['observedAt'] <= turns_snapshot['observedAt'] <= current < observer['deadlineAt'],
+                  'diagnostic_action_snapshot_stale')
+        session,rows=session_snapshot['value'],turns_snapshot['value']
+        c.require(c.fingerprint(session)==session_snapshot['responseSha256'] and
+                  c.fingerprint(rows)==turns_snapshot['responseSha256'],'diagnostic_action_snapshot_changed')
+        for snapshot,method in ((session_snapshot,'retrieve_session'),(turns_snapshot,'list_turns')):
+            receipt=c.decode_json((self.root/'transport'/f"{snapshot['transportSequence']:04d}.returned.json").read_bytes())
+            c.require(type(receipt) is dict and set(receipt)=={'schemaVersion','sequence','method','inputSha256',
+                      'outcome','authorizationSha256','responseSha256'} and
+                      receipt['schemaVersion']=='sermon-live-diagnostic-call-v1' and receipt['method']==method and
+                      receipt['sequence']==snapshot['transportSequence'] and receipt['outcome']=='returned' and
+                      receipt['authorizationSha256']==c.fingerprint(self.authorization) and
+                      receipt['inputSha256']==c.fingerprint([session_id]) and
+                      receipt['responseSha256']==snapshot['responseSha256'],'diagnostic_action_snapshot_changed')
+        c.require(type(session) is dict and session.get('id')==session_id and
+                  type(session.get('status')) is str and
+                  session.get('status') in diagnostic.SESSION_STATUSES-{'failed'},'session_identity_mismatch')
+        c.require(type(rows) is list and len(rows)==1 and type(rows[0]) is dict and
+                  'subagent_id' in rows[0] and rows[0]['subagent_id'] is None,'diagnostic_action_root_mismatch')
+        root=rows[0]
+        c.require(diagnostic._remote_identifier(root.get('id'),'turn_')==turn_id and
+                  root.get('session_id',session_id)==session_id and
+                  type(root.get('status')) is str and
+                  root.get('status') in diagnostic.TURN_STATUSES-{'completed','failed','cancelled'},
+                  'diagnostic_action_root_mismatch')
+        actions=session.get('required_actions')
+        c.require(type(actions) is list and len(actions)<=self._limits.max_tool_reads,'invalid_required_actions')
+        seen=set();matches=[]
+        for pending in actions:
+            c.require(type(pending) is dict and set(pending)=={'type','turn_id','call_id','name','arguments'} and
+                      pending['type']=='function_call' and pending['turn_id']==turn_id and
+                      pending['name'] in diagnostic.READ_TOOLS and type(pending['arguments']) is dict,
+                      'unsupported_required_action')
+            pending_id=diagnostic._identifier(pending['call_id'])
+            c.require(pending_id not in seen,'diagnostic_action_duplicate_call')
+            seen.add(pending_id)
+            diagnostic.read_diagnostic_tool(self._bundle,pending['name'],pending['arguments'],self._limits)
+            if pending_id==call_id:matches.append(pending)
+        c.require(len(matches)==1 and matches[0]==action,'diagnostic_action_binding_mismatch')
+        c.require(output==diagnostic.read_diagnostic_tool(self._bundle,action['name'],action['arguments'],self._limits),
+                  'diagnostic_tool_output_mismatch')
+        binding = {'schemaVersion':'sermon-live-diagnostic-required-action-binding-v2',
                    'authorizationSha256':c.fingerprint(self.authorization),
-                   'sessionId':session_id,'turnId':turn_id,'callId':call_id,'itemId':item_id,
+                   'sessionId':session_id,'turnId':turn_id,'callId':call_id,'name':action['name'],
                    'actionSha256':c.fingerprint(action),
-                   'itemEvidenceSha256':c.fingerprint({k:item[k] for k in
-                       ('id','type','turn_id','call_id','name','arguments')}),
-                   'argumentsSha256':c.fingerprint(action['arguments'])}
-        immutable.save_once(self.root/'call-item-bindings'/(c.fingerprint(action)+'.json'),binding)
-        jobs._sync_directory_ancestry(self.root/'call-item-bindings')
-        timeout_seconds -= max(0.0, self.clock()-started)
-        c.require(timeout_seconds > 0, 'diagnostic_deadline_exceeded')
+                   'argumentsSha256':c.fingerprint(action['arguments']),
+                   'sessionResponseSha256':session_snapshot['responseSha256'],
+                   'turnsResponseSha256':turns_snapshot['responseSha256'],
+                   'sessionTransportSequence':session_snapshot['transportSequence'],
+                   'turnsTransportSequence':turns_snapshot['transportSequence'],
+                   'pollSequence':self._poll_sequence,'observerDeadlineAt':observer['deadlineAt']}
+        immutable.save_once(self.root/'required-action-bindings'/(c.fingerprint(binding)+'.json'),binding)
+        jobs._sync_directory_ancestry(self.root/'required-action-bindings')
         return self._invoke('submit_tool_result', (session_id, action, output), timeout_seconds)
 
     def cancel_once(self, session_id):

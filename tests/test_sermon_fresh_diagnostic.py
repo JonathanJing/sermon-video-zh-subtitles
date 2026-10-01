@@ -19,6 +19,7 @@ from scripts import sermon_log_profile as profile
 from scripts import sermon_strict_layer2 as immutable
 from scripts import sermon_accounting as accounting
 from scripts import sermon_bounded_business_callbacks as callbacks
+from scripts import sermon_public_snapshot as aggregate
 from tests.diagnostic_dag_fixture import DiagnosticDAGFixture
 
 
@@ -109,6 +110,57 @@ class FreshSourceTests(unittest.TestCase):
         self.assertEqual(out['evidence'],self.prepare()['evidence'])
         self.assertEqual(before,fresh._sha(self.f.root/'budget'/budget.STORE_ID/'provider-run/state.json'))
         self.network.assert_not_called()
+
+    def test_large_alignment_actual_builders_hash_binding_and_restart(self):
+        aligned=c.read_snapshot(self.recipe['prior_aligned_path'])[0]
+        # Same genuine word/time shape as the small fixture, with aggregate
+        # alignment diagnostics large enough to expose the private-record cap.
+        aligned[0]['alignmentDiagnostics']={'tokenTrace':'fixture ' * 40000}
+        self.recipe['prior_aligned_path'].write_bytes(c.canonical_bytes(aligned)+b'\n')
+        self.assertGreater(self.recipe['prior_aligned_path'].stat().st_size,c.MAX_BYTES)
+        prior=c.read_snapshot(self.recipe['prior_source_path'])[0]
+        prior['transcript']['artifact'].update(sha256=fresh._sha(self.recipe['prior_aligned_path']),
+                                             jsonSha256=c.canonical_sha256(aligned))
+        self.recipe['prior_source_path'].write_bytes(c.canonical_bytes(prior))
+        before=fresh._sha(self.root/'budget'/budget.STORE_ID/'provider-run/state.json')
+        prepared=self.prepare()
+        self.assertEqual(prepared['anchor']['sourceUnits'],self.prepare()['anchor']['sourceUnits'])
+        self.assertEqual(prepared['source']['transcript']['artifact']['sha256'],
+                         fresh._sha(self.root/'aligned-segments.json'))
+        self.assertEqual(aggregate.read_snapshot(self.root/'aligned-segments.json')[0],aligned)
+        self.assertFalse(prepared['source']['translationEligible'])
+        self.assertEqual(before,fresh._sha(self.root/'budget'/budget.STORE_ID/'provider-run/state.json'))
+        self.network.assert_not_called()
+        # A large but altered aggregate must still fail its upstream byte hash.
+        aligned[0]['alignmentDiagnostics']['tokenTrace']+='changed'
+        self.recipe['prior_aligned_path'].write_bytes(c.canonical_bytes(aligned))
+        with self.assertRaisesRegex(ValueError,'fresh_alignment_prior_artifact_changed'):
+            self.prepare()
+
+    def test_alignment_aggregate_json_shape_and_size_fail_with_safe_domain_reason(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path=Path(directory)/'alignment.json'
+            for raw in (b'{',b'{}',b'[1]',b'[{"text":NaN}]',b'[{"text":"a","text":"b"}]'):
+                path.write_bytes(raw)
+                with self.subTest(raw=raw),self.assertRaisesRegex(c.ContractError,'^fresh_alignment_snapshot_invalid$'):
+                    fresh._read_alignment(path)
+            with path.open('wb') as stream:stream.truncate(aggregate.MAX_BYTES+1)
+            with self.assertRaisesRegex(c.ContractError,'^fresh_alignment_snapshot_invalid$'):
+                fresh._read_alignment(path)
+        self.assertEqual(c.MAX_BYTES,262144)
+
+    def test_large_alignment_does_not_weaken_source_identity_guard(self):
+        aligned=c.read_snapshot(self.recipe['prior_aligned_path'])[0]
+        aligned[0]['alignmentDiagnostics']={'tokenTrace':'fixture ' * 40000}
+        self.recipe['prior_aligned_path'].write_bytes(c.canonical_bytes(aligned))
+        prior=c.read_snapshot(self.recipe['prior_source_path'])[0]
+        prior['transcript']['artifact'].update(sha256=fresh._sha(self.recipe['prior_aligned_path']),
+                                             jsonSha256=c.canonical_sha256(aligned))
+        prior['source']['media']['sha256']='0'*64
+        self.recipe['prior_source_path'].write_bytes(c.canonical_bytes(prior))
+        with self.assertRaisesRegex(c.ContractError,'fresh_alignment_prior_artifact_changed'):
+            self.prepare()
+        self.assertFalse((self.root/'source.json').exists())
 
     def test_alignment_and_audio_hash_mismatch_fail_before_downstream(self):
         self.audio.write_bytes(b'wrong')

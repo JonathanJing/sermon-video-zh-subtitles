@@ -1,15 +1,19 @@
 """Offline stdlib transport tests: synthetic credentials, no provider requests."""
 import io
+import hashlib
 import json
+from pathlib import Path
 import ssl
 import subprocess
 import sys
 import time
+import tempfile
 import unittest
 from unittest.mock import Mock, patch
 import urllib.error
 import urllib.request
 import urllib.response
+import venv
 
 from scripts import sermon_provider_http as http
 from scripts import sermon_provider_error as errors
@@ -74,7 +78,7 @@ class ProviderHTTPTests(unittest.TestCase):
         with patch.object(http.subprocess, 'Popen', return_value=process) as popen:
             self.assertEqual(http.execute(request(), 3), {'id': 'fixture'})
         command = popen.call_args.args[0]
-        self.assertEqual(command[:2], [sys.executable, '-I'])
+        self.assertEqual(command, [sys.executable, '-I', '-B', str(Path(http.__file__).resolve()), '--worker'])
         self.assertEqual(command[-1], '--worker')
         self.assertNotIn(TOKEN, repr(command))
         self.assertEqual(popen.call_args.kwargs['env'], {})
@@ -82,6 +86,55 @@ class ProviderHTTPTests(unittest.TestCase):
         self.assertTrue(popen.call_args.kwargs['close_fds'])
         self.assertIn(TOKEN.encode(), process.communicate.call_args.args[0])
         process.communicate.assert_called_once()
+
+    def test_real_isolated_worker_startup_does_not_write_site_bytecode(self):
+        # -I ignores PYTHONDONTWRITEBYTECODE and still runs site/.pth imports.
+        # A disposable venv exercises actual startup, without a model or request.
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            runtime = root / 'runtime'
+            venv.EnvBuilder(with_pip=False).create(runtime)
+            executable = runtime / ('Scripts/python.exe' if sys.platform == 'win32' else 'bin/python')
+            location = subprocess.run([str(executable), '-I', '-B', '-c',
+                'import sysconfig;print(sysconfig.get_path("purelib"))'], env={},
+                capture_output=True, text=True, check=True, timeout=30)
+            site = Path(location.stdout.strip())
+            observed = root / 'startup.json'
+            network = root / 'network-attempted'
+            (site / 'startup_probe.py').write_text(
+                'import json,pathlib,socket,sys\n'
+                f'pathlib.Path({str(observed)!r}).write_text(json.dumps(dict(dontWriteBytecode=sys.dont_write_bytecode)))\n'
+                'def deny(*args, **kwargs):\n'
+                f'    pathlib.Path({str(network)!r}).write_text("attempted")\n'
+                '    raise RuntimeError("fixture_network_forbidden")\n'
+                'socket.socket.connect=deny\n'
+                'socket.socket.connect_ex=deny\n'
+                'socket.create_connection=deny\n', encoding='utf-8')
+            (site / 'startup_probe.pth').write_text('import startup_probe\n', encoding='utf-8')
+            def files():
+                return {p.relative_to(runtime).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
+                        for p in runtime.rglob('*') if p.is_file()}
+            def startup(flags):
+                return subprocess.run([str(executable), *flags, str(Path(http.__file__).resolve()), '--worker'],
+                    input=b'', stdout=subprocess.PIPE, stderr=subprocess.PIPE, env={}, close_fds=True, timeout=30)
+            # Prove the fixture detects the original startup write, rather than
+            # relying only on a mocked command or environment setting.
+            control = startup(['-I'])
+            self.assertEqual(control.returncode, 0)
+            self.assertEqual(json.loads(control.stdout), {'status': 'outcome_unknown'})
+            self.assertFalse(json.loads(observed.read_text())['dontWriteBytecode'])
+            caches = list(runtime.rglob('*.pyc'))
+            self.assertTrue(caches)
+            for cache in caches:
+                cache.unlink()
+            before = files()
+            result = startup(['-I', '-B'])
+            self.assertEqual(result.returncode, 0)
+            self.assertEqual(json.loads(result.stdout), {'status': 'outcome_unknown'})
+            self.assertTrue(json.loads(observed.read_text())['dontWriteBytecode'])
+            self.assertEqual(files(), before)
+            self.assertFalse(list(runtime.rglob('*.pyc')))
+            self.assertFalse(network.exists())
 
     def test_encoding_delay_does_not_renew_absolute_deadline(self):
         clock = [100.]

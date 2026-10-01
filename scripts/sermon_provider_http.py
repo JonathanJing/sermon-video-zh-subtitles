@@ -146,7 +146,7 @@ def execute(req, timeout_seconds, *, deadline=None):
     deadline = min(time.monotonic() + timeout_seconds, _deadline(deadline)) if deadline is not None else time.monotonic() + timeout_seconds
     _remaining(deadline)
     packet = _encode_request(req, timeout_seconds, deadline=deadline)
-    command = [sys.executable, '-I', str(Path(__file__).resolve()), '--worker']
+    command = [sys.executable, '-I', '-B', str(Path(__file__).resolve()), '--worker']
     _remaining(deadline)
     try:
         process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,

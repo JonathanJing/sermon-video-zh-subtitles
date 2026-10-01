@@ -16,6 +16,7 @@ from scripts import sermon_sentence_interpretation as anchors
 from scripts import build_english_source_package as english
 from scripts import sermon_diagnostic_context as diagnostic
 from scripts import sermon_accounting as accounting
+from scripts import sermon_public_snapshot as aggregate
 from scripts import mfa_backend
 from scripts.sermon_release_workflow import _safe_path
 
@@ -26,6 +27,22 @@ def _read(path):
 
 def _sha(path):
     return c.bytes_sha256(_safe_path(Path(path)).read_bytes())
+
+
+def _read_alignment(path):
+    """Alignment is aggregate evidence, not a private per-review receipt."""
+    try:
+        value, data = aggregate.read_snapshot(_safe_path(Path(path)))
+    except c.ContractError as exc:
+        # Bind the safe failure to this input domain; never publish paths or
+        # parse bodies, and leave the private review contract's cap unchanged.
+        if str(exc) in {'invalid_public_snapshot_file', 'public_snapshot_size_limit',
+                        'invalid_public_json_bytes', 'public_snapshot_changed_during_read'}:
+            raise c.ContractError('fresh_alignment_snapshot_invalid') from exc
+        raise
+    c.require(type(value) is list and all(type(row) is dict for row in value),
+              'fresh_alignment_snapshot_invalid')
+    return value, data
 
 
 def normalized_text(text):
@@ -86,7 +103,7 @@ def prepare_source(plan, subject, *, prior_plan_path, prior_source_path, prior_a
     c.require(all(config[k]==old_config[k] for k in ('sourceMediaSha256','sourceAudioSha256',
         'sourceClipSha256','sourceWindowSeconds')), 'fresh_alignment_prior_source_changed')
     old_asr,old_ref=returned_receipt(prior['runDirectory'],old_config,'transcription.initial','gpt-transcribe')
-    old_source,_=_read(prior_source_path); aligned,aligned_raw=_read(prior_aligned_path)
+    old_source,_=_read(prior_source_path); aligned,aligned_raw=_read_alignment(prior_aligned_path)
     artifact=old_source['transcript']['artifact']
     c.require(artifact['sha256']==c.bytes_sha256(aligned_raw) and
         artifact['jsonSha256']==c.canonical_sha256(aligned) and
@@ -115,7 +132,7 @@ def prepare_source(plan, subject, *, prior_plan_path, prior_source_path, prior_a
             options={key:item['path'] if item else None for key,item in files.items()}
             aligned=mfa_backend.align_reference_chunks(chunks,audio_path,root/'mfa',local_options=options,
                 spark_options={},allow_spark_fallback=False)
-        immutable.save_once(root/'aligned-segments.json',aligned)
+        aggregate.save_once(root/'aligned-segments.json',aligned)
         mode='validated_prior_alignment_cache' if same else 'fresh_local_mfa'
         accounting.record_workload('diagnostic.alignment_binding',{'sourceAudioSha256':config['sourceAudioSha256'],
             'newASRReceiptSha256':asr_ref['receiptSha256'],'oldASRReceiptSha256':old_ref['receiptSha256'],

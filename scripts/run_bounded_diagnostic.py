@@ -40,7 +40,7 @@ def bounded_network_only():
     This is a regression/scope guard, not an adversarial Python sandbox.
     """
     popen = subprocess.Popen
-    expected = [sys.executable, '-I', str(Path(http.__file__).resolve()), '--worker']
+    expected = [sys.executable, '-I', '-B', str(Path(http.__file__).resolve()), '--worker']
     def denied(*args, **kwargs):
         raise RuntimeError('diagnostic_legacy_network_forbidden')
     def spawn(command, *args, **kwargs):

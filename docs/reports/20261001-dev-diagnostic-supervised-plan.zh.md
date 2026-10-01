@@ -57,3 +57,13 @@
 启动兼容修复整合 **77 tests 通过**：fresh 的冷进程真实日志身份回归，以及 Agent opaque call ID、唯一 function-call item／turn／name／arguments 绑定和错配拒绝。session/turn 身份约束不变；工具结果 POST 前增加实际 item 证据核验。`git diff --check` 通过。
 
 只读审查新增待验边界：fresh Source 捕获部分非 `fresh_*` 受控错误时仍泛化原因，归 `013`；变化 ASR 的本地 MFA 分支尚未透传原 provider 剩余 deadline，归 `005`；native checkpoint 回执绑定主权重/config，辅助 tokenizer 权重全树绑定尚缺，归 `014/010`。这些审查发现不作为已通过或已观察故障，保留验收要求。
+
+## 第二轮真实结果与修复
+
+固定 `e9d1ad7` 的 v2 fresh 已实际返回 ASR 和英文检查两次请求，无未知；占额 **474,113 microUSD**。新 ASR 规范化后与原 ASR 完全一致，可继续核验复用 MFA。Source 准备失败的准确原因是旧对齐文件 **616,744 字节**被 private review 的 262,144 字节 reader 拒绝；现仅对齐文件改用既有 16 MiB aggregate 稳定读写，保留 review/receipt 上限。真实旧对齐经实际 Anchor/English Source builder 产生 39 units，媒体 SHA 保持、translationEligible=false、不可变重放通过；该定向检查没有 API 请求。v2 父运行在两请求 known-returned 后永久关闭，旧计划、收据和账本未覆写。
+
+HTTP worker 的真实 `-I` 启动遗漏 `-B`，忽略环境中的禁止字节码设置，生成唯一 `_distutils_hack` pyc，导致 native runtime inventory 拒绝。启动与对应 subprocess 守卫同时加 `-B`，环境仍为空，shell/network 约束不变。25 项定向测试包括独立 venv 的实际 `.pth` 导入对照；原 runtime 唯一派生缓存已精确副本隔离后移出，原 manifest/inventory 校验恢复。真实 native HTTP worker 空 packet 的零请求 probe 不生成缓存，但 `outcome_unknown` 不能当业务成功。隔离与恢复收据在 `artifacts/native-runtime-cache-quarantine-20261001-provider-no-bytecode-v1`。
+
+第二个只读 Agent session 仍未产出诊断：额外要求 items 已存在 pending function_call 的断言失败。真实 required_actions 有调用，而取消后的完整 items 只有 user message/reasoning，不能推断列表当时已同步。该前提不能用作 API 可用性条件；提交仍须绑定实际 session.required_actions 和唯一实际 root turn、call/name/arguments，并落版本化证据。v2 终态 cancelled；root usage 9,791 input / 291 output，两阶段各累计一次为 **19,587 input / 438 output**，actual model 和费用仍 unknown，4,000,000 microUSD 预留保留。第三独立 bounded 诊断阶段累计预留为 6,000,000 microUSD，仍承接完整业务累计授权内。
+
+第二轮修复整合验证：provider/bounded/fresh/aggregate/attempts/identity 的 **94 tests 通过**；Agent core/live/API 的 **84 tests 通过**，覆盖 required_actions 唯一调用、同 poll 根 turn/snapshot、缺失／重复／参数错配／陈旧响应和工具输出错配拒绝。绑定证据使用 `sermon-live-diagnostic-required-action-binding-v2`，不改写旧 item-binding-v1。下一 fresh 独立 attempt 承接 **301 请求 / 69,598,104 microUSD** 历史占额，124 新请求 / 25,000,000 microUSD / 5,400 秒，累计 430 请求 / 110,000,000 microUSD；额外 Agent 三阶段共 6,000,000 microUSD 观察预留纳入累计规划，不是服务端硬费用限制。

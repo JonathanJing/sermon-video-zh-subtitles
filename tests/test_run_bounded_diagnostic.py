@@ -5,9 +5,11 @@ points are actively denied, not substituted with successful fake producers.
 """
 import io
 import json
+from pathlib import Path
 import socket
 import struct
 import subprocess
+import sys
 import unittest
 from unittest.mock import Mock, patch
 import urllib.request
@@ -178,6 +180,23 @@ class BoundedRunTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,'unbounded_subprocess_forbidden'):
                 subprocess.run(['curl','https://example.invalid'],check=True)
         self.assertEqual(self.calls,[])
+
+    def test_worker_guard_admits_only_exact_no_bytecode_private_launch(self):
+        expected = [sys.executable, '-I', '-B', str(Path(run.http.__file__).resolve()), '--worker']
+        with patch.object(subprocess, 'Popen') as real_spawn:
+            with run.bounded_network_only():
+                subprocess.Popen(expected, env={}, close_fds=True, stdin=subprocess.PIPE,
+                                 stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+                for command, kwargs in (
+                    ([sys.executable, '-I', *expected[3:]], {'env': {}, 'close_fds': True}),
+                    (expected, {'env': {'PYTHONDONTWRITEBYTECODE': '1'}, 'close_fds': True}),
+                    (expected, {'env': {}, 'close_fds': False}),
+                    (expected, {'env': {}, 'close_fds': True, 'shell': True}),
+                ):
+                    with self.subTest(command=command, kwargs=kwargs), self.assertRaisesRegex(
+                            ValueError, 'unbounded_subprocess_forbidden'):
+                        subprocess.Popen(command, **kwargs)
+            real_spawn.assert_called_once()
 
     def test_changed_source_or_unknown_asr_stops_downstream(self):
         self.subject.executor=Mock(return_value={'model':'wrong-model','text':'Synthetic',

@@ -323,8 +323,8 @@ def diagnose(manifest, *, client: OfflineAgentsClient, limits=DiagnosticLimits()
                         and action["type"] == "function_call", "unsupported_required_action")
                 require(state["turnId"] is not None and action["turn_id"] == state["turnId"], "tool_turn_mismatch")
                 # Agents function-call IDs are opaque wire identifiers. Session
-                # and turn prefixes remain strict; live submission additionally
-                # binds this identifier to the actual function_call item.
+                # and turn prefixes remain strict; live submission binds it to
+                # actual same-poll required_actions and unique root metadata.
                 call_id = _identifier(action["call_id"])
                 action_hash = fingerprint(action)
                 previous = next((row for row in state["toolResults"] if row["callId"] == call_id), None)
