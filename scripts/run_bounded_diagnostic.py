@@ -92,13 +92,20 @@ class BoundedRun:
                                       operation_id=operation_id)
 
     def run_locale(self, source_bytes, anchor_bytes, policy_bytes, rubric_bytes, *,
-                   graph, plugin_path, plugin_sha256, group_plan=None):
+                   graph, plugin_path, plugin_sha256, group_plan=None, diagnostic_context=None):
         verify_source_clip(self.source_clip, self.provider.config['sourceClipSha256'])
         source, policy = map(c.decode_json, (source_bytes, policy_bytes))
         target = policy['targetLocale']
         c.require(target in ('zh-Hans', 'ko', 'es'), 'invalid_diagnostic_locale')
         c.require(source['source']['media']['sha256'] == self.provider.config['sourceMediaSha256'],
                   'diagnostic_source_media_changed')
+        if diagnostic_context is not None:
+            from scripts import sermon_diagnostic_context as diagnostic
+            diagnostic.validate_context(diagnostic_context)
+            c.require(diagnostic_context['runId'] == self.provider.config['runId'] and
+                      diagnostic_context['runConfigSha256'] == c.canonical_sha256(self.provider.config) and
+                      diagnostic_context['storeSha256'] == self.provider.store.store_sha256,
+                      'diagnostic_continuation_provider_changed')
         with bounded_network_only():
             return locale.run_locale(source_bytes, anchor_bytes, policy_bytes, rubric_bytes,
                 root=self.root / 'locales' / target, store=self.provider.store,
@@ -107,7 +114,8 @@ class BoundedRun:
                 api_key=self.key, caller=self.provider, usage_resolver=self.provider.usage_resolver,
                 bounds={'requests':1, 'inputTokens':8192, 'outputTokens':4096,
                         'wallTimeMs':300000, 'costMicrousd':307200},
-                group_plan=group_plan, request_limits=self.provider.limits)
+                group_plan=group_plan, request_limits=self.provider.limits,
+                **({'diagnostic_context': diagnostic_context} if diagnostic_context is not None else {}))
 
 
 def prepare_plan(plan):

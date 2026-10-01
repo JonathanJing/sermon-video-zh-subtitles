@@ -15,7 +15,7 @@ from scripts.sermon_release_workflow import _safe_path
 
 
 def compile_candidate(source_bytes, anchor_bytes, policy_bytes, rubric_bytes,
-                      revisions, *, plugin_path, expected_plugin_sha256):
+                      revisions, *, plugin_path, expected_plugin_sha256, diagnostic_context=None):
     """Validate complete current group receipts; return human-pending artifacts.
 
     ``revisions`` is an ordered sequence of trusted local revision directories
@@ -24,7 +24,7 @@ def compile_candidate(source_bytes, anchor_bytes, policy_bytes, rubric_bytes,
     """
     source, anchor, policy, rubric = [c.decode_json(b) for b in
         (source_bytes, anchor_bytes, policy_bytes, rubric_bytes)]
-    request = producer.prepare_request(source, anchor, policy, strict_rubric=rubric)
+    request = producer.prepare_request(source, anchor, policy, strict_rubric=rubric, diagnostic_context=diagnostic_context)
     c.require(type(revisions) in (list, tuple) and 1 <= len(revisions) <= 4096,
               'strict_bridge_revision_count')
     groups, bindings, seen, snapshots = [], [], set(), []
@@ -41,6 +41,11 @@ def compile_candidate(source_bytes, anchor_bytes, policy_bytes, rubric_bytes,
             captured[name] = data
             return value, data
 
+        if diagnostic_context is not None:
+            from scripts.sermon_diagnostic_context import validate_context
+            c.require(read('diagnostic-context.json')[0] == validate_context(diagnostic_context), 'strict_bridge_diagnostic_context_changed')
+        else:
+            c.require(not (root/'diagnostic-context.json').exists(), 'strict_bridge_diagnostic_context_required')
         manifest, _ = read('revision.json')
         artifact, artifact_bytes = read('candidate.json')
         c.validate_candidate_artifact(manifest, artifact_bytes)
@@ -51,7 +56,7 @@ def compile_candidate(source_bytes, anchor_bytes, policy_bytes, rubric_bytes,
         c.validate_revision_lineage(manifest,repair['parentRevision'] if repair else None,repair['plan'] if repair else None)
         group = {k: artifact[k] for k in ('translationGroupId', 'sourceUnitIds')}
         limits = read('request-limits.json')[0] if (root / 'request-limits.json').exists() else None
-        prepared = strict.prepare(source_bytes, anchor_bytes, policy_bytes, rubric_bytes, group, request_limits=limits)
+        prepared = strict.prepare(source_bytes, anchor_bytes, policy_bytes, rubric_bytes, group, request_limits=limits, diagnostic_context=diagnostic_context)
         if repair is not None:strict.validate_repair(prepared,manifest['candidateId'],manifest['revisionId'],repair)
         for key, value in strict.common_identity(prepared, manifest['candidateId'], manifest['revisionId']).items():
             c.require(manifest[key] == value, 'strict_bridge_current_identity_changed')
@@ -114,7 +119,7 @@ def compile_candidate(source_bytes, anchor_bytes, policy_bytes, rubric_bytes,
               'strict_bridge_response_identity_reused')
     evidence = {**request, 'generation': generation, 'groups': groups}
     plugin = producer.run_language_plugin(source, anchor, policy, request, evidence,
-        Path(plugin_path), expected_plugin_sha256, strict_rubric=rubric)
+        Path(plugin_path), expected_plugin_sha256, strict_rubric=rubric, diagnostic_context=diagnostic_context)
     candidate_groups = []
     for group, result in zip(groups, plugin['groupReviews']):
         c.require(result['status'] == 'pass', 'strict_bridge_plugin_rejected')
@@ -131,8 +136,8 @@ def compile_candidate(source_bytes, anchor_bytes, policy_bytes, rubric_bytes,
         'modelReview': {'status': 'pass', 'reviewedGroupIds': [g['translationGroupId'] for g in groups]},
         'humanReview': {'translation': 'pending', 'reviewer': None, 'reviewedAt': None, 'reviewedGroupIds': []}}
     handoff._validate_schema(candidate, 'sermon-target-language-candidate-v2.schema.json', 'strict public candidate')
-    handoff.validate_target_candidate(source, anchor, candidate, require_human_approval=False)
-    handoff.validate_policy_binding(candidate, policy, strict_rubric=rubric)
+    handoff.validate_target_candidate(source, anchor, candidate, require_human_approval=False, diagnostic_context=diagnostic_context)
+    handoff.validate_policy_binding(candidate, policy, strict_rubric=rubric, diagnostic_context=diagnostic_context)
     for root, captured in snapshots:
         for name, data in captured.items():
             c.require(c.read_snapshot(root / name)[1] == data, 'strict_bridge_snapshot_changed')

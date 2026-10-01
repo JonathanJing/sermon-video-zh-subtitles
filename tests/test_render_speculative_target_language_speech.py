@@ -258,5 +258,194 @@ class FormalAdmissionTests(unittest.TestCase):
             self.spec_root, unit, 2, expected))
 
 
-if __name__ == "__main__":
+
+
+class DiagnosticPreviewTests(unittest.TestCase):
+    """Actual strict machine candidate + original pending Source; fake local TTS."""
+    def setUp(self):
+        import json
+        from tests import test_sermon_diagnostic_context as context_fixture
+        self.preview = SpeculativeRenderTests()
+        self.preview.setUp(); self.addCleanup(self.preview.doCleanups)
+        self.diag = context_fixture.DiagnosticContextTests()
+        self.diag.setUp(); self.addCleanup(self.diag.doCleanups)
+        with self.diag.f.f.session():
+            result = self.diag.run_locale(self.diag.context)
+        self.assertEqual(result['status'], 'waiting_human', result)
+        candidates = list((self.diag.f.f.root / 'locale/machine-candidates').glob('*/candidate.json'))
+        self.candidate = json.loads(candidates[0].read_text())
+        self.rubric = self.diag.rubric
+        self.context = self.diag.context
+        self.f = self.preview.fixture
+        for name, value in (('source', self.diag.source), ('anchor', self.diag.anchor),
+                            ('policy', self.diag.policy), ('candidate', self.candidate)):
+            speech_fixture.write_json(self.preview.paths[name], value)
+        capability = next(row for row in self.f.registry['speakers'][0]['localeCapabilities']
+                          if row['targetLocale'] == 'zh-Hans')
+        self.f.adapter.update(targetLocale='zh-Hans', languageParameter=capability['modelLanguage'],
+            capabilityEvidenceSha256=subject.identity.json_sha256(capability['reviewEvidence']))
+        speech_fixture.write_json(self.f.adapter_path, self.f.adapter)
+        FakeSynth.calls = []
+
+    def render(self, **overrides):
+        options = dict(strict_rubric=self.rubric, diagnostic_context=self.context,
+                       deadline_monotonic=subject._monotonic() + 60)
+        options.update(overrides)
+        return self.preview.render(**options)
+
+    def test_pending_source_and_candidate_stay_unapproved_in_scoped_preview(self):
+        before = {key: path.read_bytes() for key, path in self.preview.paths.items()}
+        result = self.render()
+        self.assertEqual(result['status'], 'preview_only')
+        self.assertEqual(len(FakeSynth.calls), 2)
+        self.assertEqual({key: path.read_bytes() for key, path in self.preview.paths.items()}, before)
+        manifest = formal.package.read_object(self.preview.out / 'manifest.json')
+        self.assertEqual(manifest['schemaVersion'], subject.SCOPED_MANIFEST_VERSION)
+        self.assertFalse(manifest['productionEligible'])
+        self.assertEqual(manifest['humanAcceptance'], 'pending')
+        self.assertEqual(manifest['diagnosticContextSha256'], subject.identity.json_sha256(self.context))
+        saved_source = formal.package.read_object(self.preview.out / 'source.json')
+        self.assertEqual(saved_source, self.diag.source)
+        self.assertFalse(saved_source['review']['humanApproval'])
+        self.assertFalse(saved_source['source']['approvedWindow']['humanApproval'])
+        self.assertFalse(saved_source['translationEligible'])
+        self.assertEqual(formal.package.read_object(self.preview.out / 'candidate.json'), self.candidate)
+        self.assertFalse((self.preview.out / 'job.json').exists())
+        self.render()
+        self.assertEqual(len(FakeSynth.calls), 2)
+
+    def test_context_and_original_deadline_are_mandatory_for_pending_source(self):
+        for overrides in ({'diagnostic_context': None}, {'deadline_monotonic': None},
+                          {'strict_rubric': None}, {'deadline_monotonic': float('nan')},
+                          {'deadline_monotonic': subject._monotonic() - 1}):
+            with self.subTest(overrides=overrides), self.assertRaises((ValueError, TimeoutError)):
+                self.render(**overrides)
+        self.assertFalse(self.preview.out.exists())
+        self.assertEqual(FakeSynth.calls, [])
+
+    def test_context_rubric_and_checkpoint_drift_never_reuses_preview(self):
+        self.render(group_ids=['g1'])
+        for overrides in ({'diagnostic_context': dict(self.context, simulationAuthorizationRef='f' * 64)},
+                          {'strict_rubric': dict(self.rubric, rubricId='changed')}):
+            with self.subTest(overrides=overrides), self.assertRaises(ValueError):
+                self.render(group_ids=['g1'], **overrides)
+        self.f.adapter['conditioningSha256'] = 'f' * 64
+        speech_fixture.write_json(self.f.adapter_path, self.f.adapter)
+        with self.assertRaises(ValueError): self.render(group_ids=['g1'])
+        self.assertEqual(len(FakeSynth.calls), 1)
+
+    def test_failed_machine_verdict_or_revoked_voice_is_not_simulated(self):
+        changed = copy.deepcopy(self.candidate)
+        changed['groups'][0]['semanticReview']['status'] = 'fail'
+        speech_fixture.write_json(self.preview.paths['candidate'], changed)
+        with self.assertRaisesRegex(ValueError, 'Semantic review'): self.render()
+        speech_fixture.write_json(self.preview.paths['candidate'], self.candidate)
+        self.f.registry['speakers'][0]['authorization']['status'] = 'revoked'
+        self.f.adapter['registryJsonSha256'] = subject.identity.json_sha256(self.f.registry)
+        speech_fixture.write_json(self.f.registry_path, self.f.registry)
+        speech_fixture.write_json(self.f.adapter_path, self.f.adapter)
+        with self.assertRaises(ValueError): self.render()
+        self.assertEqual(FakeSynth.calls, [])
+
+    def test_actual_checkpoint_validator_failure_blocks_before_tts(self):
+        with patch.object(subject.demos, 'validate_checkpoint', side_effect=ValueError('fixture checkpoint mismatch')):
+            with self.assertRaisesRegex(ValueError, 'checkpoint mismatch'):
+                subject.render(self.preview.paths, self.preview.checkpoint_map, self.preview.policies,
+                    self.preview.out, strict_rubric=self.rubric, diagnostic_context=self.context,
+                    deadline_monotonic=subject._monotonic() + 60, synth_factory=FakeSynth)
+        self.assertEqual(FakeSynth.calls, [])
+
+    def test_expired_model_result_is_not_committed_and_cannot_restart_same_unit(self):
+        clock = [0.]
+        class LateSynth(FakeSynth):
+            def __call__(self, *args, **kwargs):
+                result = super().__call__(*args, **kwargs)
+                clock[0] = 11.
+                return result
+        with patch.object(subject, '_monotonic', side_effect=lambda: clock[0]), \
+             patch.object(subject.demos, 'validate_checkpoint', return_value=self.f.root / 'checkpoint'):
+            with self.assertRaises(TimeoutError):
+                subject.render(self.preview.paths, self.preview.checkpoint_map, self.preview.policies,
+                    self.preview.out, strict_rubric=self.rubric, diagnostic_context=self.context,
+                    deadline_monotonic=10., synth_factory=LateSynth)
+            self.assertFalse((self.preview.out / 'receipts/unit-0000.json').exists())
+            self.assertTrue((self.preview.out / 'receipts/unit-0000.attempt.json').exists())
+            clock[0] = 0.
+            with self.assertRaisesRegex(ValueError, 'requires reconciliation'):
+                self.render(deadline_monotonic=10.)
+        self.assertEqual(len(FakeSynth.calls), 1)
+
+    def test_late_model_load_does_not_begin_inference(self):
+        clock = [0.]
+        class LateLoad(FakeSynth):
+            def __init__(self, *args, **kwargs):
+                clock[0] = 11.
+        with patch.object(subject, '_monotonic', side_effect=lambda: clock[0]), \
+             patch.object(subject.demos, 'validate_checkpoint', return_value=self.f.root / 'checkpoint'):
+            with self.assertRaises(TimeoutError):
+                subject.render(self.preview.paths, self.preview.checkpoint_map, self.preview.policies,
+                    self.preview.out, strict_rubric=self.rubric, diagnostic_context=self.context,
+                    deadline_monotonic=10., synth_factory=LateLoad)
+        self.assertEqual(FakeSynth.calls, [])
+
+    def test_log_failure_after_model_return_blocks_implicit_second_synthesis(self):
+        real = subject.local_observation.record
+        def fail_completed(*args, **kwargs):
+            if kwargs['status'] == 'completed':
+                raise subject.accounting.AccountingWriteError('synthetic log failure')
+            return real(*args, **kwargs)
+        with patch.object(subject.local_observation, 'record', side_effect=fail_completed):
+            with self.assertRaises(subject.accounting.AccountingWriteError): self.render(group_ids=['g1'])
+        with self.assertRaisesRegex(ValueError, 'requires reconciliation'): self.render(group_ids=['g1'])
+        self.assertEqual(len(FakeSynth.calls), 1)
+
+    def test_cold_and_cache_accounting_contains_real_unit_dag_and_unknown_tokens(self):
+        import json
+        from scripts import sermon_log_profile as profile
+        log_root = self.f.root / 'preview-accounting'
+        with profile.session(log_root, 'preview-test', work_kind='production', evidence_mode='synthetic') as cold:
+            self.render()
+        with profile.session(log_root, 'preview-test', work_kind='production', evidence_mode='synthetic') as warm:
+            self.render()
+        rows, errors = subject.accounting.read_events(log_root)
+        self.assertFalse(errors)
+        cold_rows = [row for row in rows if row['runId'] == cold['runId']]
+        warm_rows = [row for row in rows if row['runId'] == warm['runId']]
+        starts = {row['spanId']: row for row in cold_rows if row['event'] == 'stage_started'}
+        models = [row for row in starts.values() if row['executorType'] == 'production_model']
+        self.assertEqual(len(models), 2)
+        first_commit = next(row for row in starts.values() if row['stage'] == 'preview.zh-Hans.0000.commit')
+        second = next(row for row in starts.values() if row['stage'] == 'preview.zh-Hans.0001.cache_admission')
+        self.assertEqual(second['dependsOn'], [first_commit['spanId']])
+        observations = [row['fields'] for row in cold_rows if row.get('code') == subject.local_observation.CODE]
+        self.assertEqual([row['status'] for row in observations], ['started', 'completed', 'started', 'completed'])
+        self.assertTrue(all(row['model'] == self.f.adapter['model'] and row['providerTokens'] is None
+                            and row['providerCostUsd'] is None for row in observations))
+        self.assertFalse(any(row.get('executorType') == 'production_model' for row in warm_rows))
+        metrics = [row['metrics'] for row in warm_rows if row['event'] == 'workload']
+        self.assertEqual(len(metrics), 2)
+        self.assertTrue(all(row['cacheHit'] and row['providerInputTokens'] is None
+                            and row['previewOnly'] and row['humanAcceptancePending'] and not row['productionEligible']
+                            and row['fullDecodePassed'] and not row['providerTokensApplicable'] and row['cacheManifestSha256']
+                            and row['cacheUnitReceiptSha256'] for row in metrics))
+        self.assertEqual(len(FakeSynth.calls), 2)
+        self.assertFalse(any(row['event'] == 'api_attempt' for row in rows))
+        self.assertNotIn(self.candidate['groups'][0]['targetText'], json.dumps(rows, ensure_ascii=False))
+
+    def test_scoped_attempt_reservation_is_exclusive_and_durable_before_model_load(self):
+        from concurrent.futures import ThreadPoolExecutor
+        path = self.f.root / 'one-attempt.json'
+        def reserve(_):
+            try:
+                subject._reserve_model_attempt(path, {'status': 'model_outcome_uncommitted'})
+                return 'reserved'
+            except ValueError:
+                return 'reconciliation'
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            results = list(pool.map(reserve, range(2)))
+        self.assertEqual(sorted(results), ['reconciliation', 'reserved'])
+        self.assertEqual(formal.package.read_object(path), {'status': 'model_outcome_uncommitted'})
+
+
+if __name__ == '__main__':
     unittest.main()
