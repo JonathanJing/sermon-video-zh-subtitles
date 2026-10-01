@@ -20,6 +20,8 @@ Dev Debug 与正式版沿用同一原生收听界面、播放器、下载、字�
 
 ## 打开与运行
 
+后续 App 版本统一用点分隔的 `1.26.N`，下一次新 Beta 候选从 `1.26.1` 开始；Beta 验收后转正式保留同一数字版本，后台 Build 独立递增。跨年、重试与实际归档要求见 [版本号约定](VERSIONING.zh.md)。
+
 正式版与可共存的测试版共用源码：`Tongxing` 使用原 App 标识，`TongxingBeta` 使用独立的 `com.jonathanjing.tongxing.beta`，手机名称为「同行-beta」。BetaDebug/BetaRelease 默认连接 Firebase Dev；灵动岛返回链接与本机存储随 App 身份隔离。开发测试使用 `./scripts/ios.sh test --scheme TongxingBeta`。测试版到正式版的源码冻结、归档记录与发布验证见 [Beta 晋升流程](BETA-PROMOTION.zh.md)。
 
 直接打开 [Tongxing.xcodeproj](Tongxing.xcodeproj)。工程文件已保存，无需先安装依赖管理器；两个 Swift package 都在本地，没有第三方 SDK。
@@ -29,7 +31,7 @@ Dev Debug 与正式版沿用同一原生收听界面、播放器、下载、字�
 3. 点击 Run。首次读取目录需要网络；正式多语言页面会自动准备当前语言音频，已验证的本地音频下次直接复用。旧周次仍可手动选择“下载本篇”以离线收听。
 4. 使用 Product → Test（⌘U）运行 `TongxingTests` 和 `TongxingUITests`。播放器测试使用合成静音和独立临时历史；UI 测试使用显式启动的隔离目录与音频夹具。正常 Run 仍加载已发布内容。
 
-Apple 账号、Team 配置、设备信息和签名凭据不进入 Git。独立「同行-beta」1.2.0 (47) 已上传并在内部测试组 Testing；其冻结源码与分发证据见 [Beta 47 记录](BETA-RELEASE-1.2.0-47.zh.md)。本轮暂停修复与同片段 Demo 属于后续开发候选，尚未进入 47。早期 build 2／3 的历史记录见 [Beta 资料与实测](BETA-TESTING.zh.md)。
+Apple 账号、Team 配置、设备信息和签名凭据不进入 Git。独立「同行-beta」1.2.0 (48) 已上传并在内部测试组 Testing，包含本轮暂停修复与同片段 Demo；其冻结源码、实际测试与分发证据见 [Beta 48 记录](BETA-RELEASE-1.2.0-48.zh.md)。此已上传包保留原版本，下一候选采用新约定。早期 build 2／3 的历史记录见 [Beta 资料与实测](BETA-TESTING.zh.md)。
 
 修改 `project.yml` 后从本目录重新生成：
 
