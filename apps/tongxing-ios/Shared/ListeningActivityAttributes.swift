@@ -42,6 +42,12 @@ struct ListeningActivityAttributes: ActivityAttributes {
     let sourceKey: String
 
     /// Opens the current app scene. It never selects a different source or plays.
-    static let widgetURL = URL(string: "tongxing://listening")!
+    static let widgetURL: URL = {
+        let scheme = Bundle.main.object(forInfoDictionaryKey: "TongxingURLScheme") as? String ?? "tongxing"
+        var components = URLComponents()
+        components.scheme = scheme
+        components.host = "listening"
+        return components.url!
+    }()
 }
 #endif

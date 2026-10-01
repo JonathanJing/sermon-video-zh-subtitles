@@ -16,6 +16,8 @@ Dev Debug 与正式版沿用同一原生收听界面、播放器、下载、字�
 
 ## 打开与运行
 
+正式版与可共存的测试版共用源码：`Tongxing` 使用原 App 标识，`TongxingBeta` 使用独立的 `com.jonathanjing.tongxing.beta`，手机名称为「同行-beta」。BetaDebug/BetaRelease 默认连接 Firebase Dev；灵动岛返回链接与本机存储随 App 身份隔离。开发测试使用 `./scripts/ios.sh test --scheme TongxingBeta`。测试版到正式版的源码冻结、归档记录与发布验证见 [Beta 晋升流程](BETA-PROMOTION.zh.md)。
+
 直接打开 [Tongxing.xcodeproj](Tongxing.xcodeproj)。工程文件已保存，无需先安装依赖管理器；两个 Swift package 都在本地，没有第三方 SDK。
 
 1. 在 Xcode 选择 `Tongxing` scheme 与 iPhone 模拟器或已连接的 iPhone。本机 macOS 27 使用已安装的 `Xcode-beta.app`。
