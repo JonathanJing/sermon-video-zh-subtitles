@@ -67,7 +67,7 @@ H01（测试脚本插件哈希）、H03（首次 deploy 选错 Dev project，CLI
 |---|---|---|---|---|
 | `DEV-DIAG-016` | P0 / `pending` | `DEV-DIAG-005/010/013`、`DEV-L1-001`；新MFA runtime整体比较拒绝当前冻结adapter及新executionHost | 分离稳定依赖身份、当前冻结producer和本次execution provenance；付费前校验recipe/consumer兼容。新MFA与cache路径均验证；篡改依赖/未知runtime/非冻结adapter仍拒绝，逐文件健康核验保留；不可删除守卫或回填旧失败；字段与机制验收见[日志清单](#log-contract-followup-20261001) | 最新重跑MFA失败与当前plan |
 | `DEV-DIAG-017` | P1 / `pending` | `DEV-DIAG-005/006/010`、`DEV-E2E-001`、`DEV-L1-001`；全程仍依赖私有driver/bootstrap/input/observer/browser桥接 | 提供规范化可重复入口：链接或明确本地clip来源绑定、预检/冻结/预算/真正fresh执行/断点/闭父/Dev核验/Agent与浏览器验收。提前核实124requests/5400s等当前hard cap、runtime/checkpoint/Source consumer；default-pass scope独立，旧有效素材/模型可复用、要重测的Source/L2/audio不复用；不依赖私有prompt补丁；下一轮[隔离 mock TTS worker 流程控制验收](#log-contract-followup-20261001)见日志清单 | `016`、`008`；保留durable receipts与未知结果 |
-| `DEV-DIAG-018` | P1 / `pending` | `DEV-SPD-003`、`DEV-L3-001`、`DEV-DIAG-007/014`；Spark可用但诊断runtime固定Mac/Python3.13且无远程adapter | 版本化Linux/NGC/Python runtime与远程host adapter、受控命令、依赖/进程/跨时钟收据；真实测默认Spark路径与profile。诊断scalar和正式TTS2/back-ASR4分别验收；正式/测试门禁须真实合同，不伪造批准，fixture不当性能证据 | `DEV-DIAG-007/010`；实际模型/资源/授权 |
+| `DEV-DIAG-018` | P1 / `pending` | `DEV-SPD-003`、`DEV-L3-001`、`DEV-DIAG-007/014`；Spark可用但诊断runtime固定Mac/Python3.13且无远程adapter | 版本化Linux/NGC/Python runtime与远程host adapter、受控命令、依赖/进程/跨时钟收据；真实测默认Spark路径与profile。诊断scalar和正式TTS2/back-ASR4分别验收；正式/测试门禁须真实合同，不伪造批准，fixture不当性能证据；下一轮[Spark往返与batch验收](#log-contract-followup-20261001)含路由实测/fallback边界 | `DEV-DIAG-007/010`；实际模型/资源/授权 |
 | `DEV-DIAG-019` | P1 / `pending` | `DEV-L4-001/005`、`DEV-CICD-001`；旧301快照遗漏近期资产，需私有完整线上基线重构；发布前GET非原子 | 规范发布器核验完整live版本文件map/配置/管理资源并追加新周，旧媒体与catalog保留；明确stale检测及并发目标lease或可用服务端条件机制，验证另一发布插入时拒绝/重建/恢复。Firebase管理路径使用独立合同，不把动态HTTP响应当存储gzip；不得先声称CAS已支持 | `DEV-DIAG-017`；完整baseline及独立发布/HTTP收据 |
 | `DEV-DIAG-020` | P1 / `pending` | `DEV-TRACK-001`、`DEV-L4-005`；页面没有展示真实delivery.readonly blocked原因 | 公共安全状态绑定当前run/版本，整体incomplete及具体安全原因与音轨ready/HTTP成功/人审pending分别展示；stale/cross-run/失败或缺测fixture验证，不把可播提升成全流程完成；字段与机制验收见[日志清单](#log-contract-followup-20261001) | `016`、`DEV-DIAG-013`；当前final/public snapshot合同 |
 | `DEV-DIAG-021` | P1 / `pending` | `DEV-DIAG-004/013`、`DEV-SPD-006`；真实Agent完成6工具提交但证据不足，needs_more_evidence | 版本化安全白名单提供比较字段名、expected/observed hash及语义、真实事件时间/monotonic关系、receipt接纳与确定性复现；不发host/私人path/正文/key。以本次MFA比较及依赖漂移负例验根因定位；证据不足仍未知，readonly无修复执行权限。actualModel/usage/cost缺测不估成已知；字段与机制验收见[日志清单](#log-contract-followup-20261001) | `008`、`016`；frozen snapshot/stale/预算/工具身份守卫 |
@@ -137,6 +137,24 @@ H01（测试脚本插件哈希）、H03（首次 deploy 选错 Dev project，CLI
 验收交付实际请求／收据／outbox／重建 DAG 和 gates 输出，分别覆盖：成功；timeout/outcome_unknown 且 reconciliation 在任何 retry 前；worker failure；产物缺失、无效 WAV、hash mismatch；replay duplicate 与冲突 receipt；restart/outbox pending replay；上游 failed/incomplete 阻断；正确 join；局部 resume 仅派发受影响单元且不重复 dispatch 已成功单元；typed completion leaf 绑定实际 mock worker 完成、artifact/attempt/run/version，漏边或 container 替代仍拒绝。对同 eventId 重投／replay 的幂等去重和冲突隔离逐项核验，原事件时间不变，日志修复不重发工作。超时仅表示控制器观察到超时，不能猜 worker 未执行；未知结果维持保守状态直到真实 mock receipt 对账。
 
 分别报告实际提交／控制器／mock worker／日志耗时与人为模拟等待；本测试只能证明隔离 synthetic 路径的流程合同，不证明真实 TTS 质量、推理性能、Spark 部署、正式音频、人审、设备或生产资格。真实 TTS／scheduler 验收仍按原 ID 单独执行；mock 通过不关闭相关真实验收项。
+
+#### 下一轮 Spark 优先／MacBook fallback 全程往返与 batch 验收（既有 `018`、`008/015/017`）
+
+本项是用户新授权的**独立下一轮测试设计，仅文档，尚未运行**；在前述 mock TTS 控制测试之外，验证 submit→Spark receive/execute→日志与产物 bytes/hash 返回的完整链。CPU smoke 成功只说明其对应 CPU 合同，不证明 speech runtime、checkpoint、GPU 或正式配音就绪；不扩张 write gate、模型、人工或发布授权。
+
+代码路由核对基线为 `6a71ba14f411d9e599957aaee70fb33ecc43795a`：legacy TTS [spark_transport.dispatch](../experiments/sermon-dubbing-poc/spark_transport.py) 与 [run_weekly_dubbing](../experiments/sermon-dubbing-poc/run_weekly_dubbing.py) 使用 `SERMON_SPARK_BRIDGE` 默认 Mac mini 二段 SSH/SCP；[spark_speech.remote_command](../experiments/sermon-dubbing-poc/spark_speech.py) 的 ASR/aligner 同样默认经 mini，显式空 bridge 才直连 Spark。[mfa_spark](../scripts/mfa_spark.py) 默认 relay/proxy_jump 为空，支持直接 SSH、显式 relay 或 `-J`，relay 与 ProxyJump 互斥。relay 在 mini 使用第二段 SSH 凭据，ProxyJump 仅转发连接；mini transport 不等于 Hub 全局队列或统一 scheduler 已调度业务；最新 canonical diagnostic 仍为报告记录的本地 Mac 路径。canonical producer 仍需显式跨机 dispatch，见[计算策略](local-production-compute-policy.zh.md)。云端任务→mini→Spark 与 MacBook→mini→Spark 是不同入口；本次仅在当前任务只读源码，没有读取 MacBook runtime/env/SSH 配置或执行远端探针，**MacBook 实际路由仍 waiting_evidence**。下一轮必须记录调用端身份、选择路径与安全路由收据；不将源码默认值冒充其实际配置，也不公开私人 host/address/path/key。
+
+待实现／验收的边界：
+
+- 同一冻结输入下记录 requested/selected/actual executor、route reason、jobId、idempotency key、run/workUnit/attempt、profile hash，以及实际 transport/worker/runtime/checkpoint/code 身份和 completion leaf；Spark 接收、排队、执行、返回与本地接纳分别有真实收据，核对实际返回 artifact bytes/hash，不以 SSH exit 0 或摘要代替产物验收。
+- 单独测 load、inference、save/validate、transfer/return、wait/queue 的实际 stage timing 和时钟证据；缺资源/provider queue 或跨 host clock relation 保持 null + reason，不把 SSH wall 当 GPU inference，也不把 mock simulated time 当真实性能。
+- batch 请求绑定有序 unit list、请求与实际 batch size、每单元 input/output hash、revision/attempt、状态与返回 receipt；正确 fan-out/join。部分失败只重试已确认失败且获授权的单元，已成功单元复用真实结果不重复 dispatch/收费。duplicate、conflict、missing/invalid/hash-mismatch artifact、重启／outbox replay、过期或 cross-run identity 必须分项验收。
+- dispatch 后 timeout/disconnect/outcome_unknown 先与原 job/intent/idempotency 对账，取得终态／产物证据前不得 fallback 或 reinference；仅确认基础设施／运行故障才可按计算策略进入已配置 MacBook fallback。内容／审核／输入／身份失败不切机；fallback 保持输入与声音授权，新的 executor/profile/精度有新 execution identity 和独立产物，不能拼接 CUDA/MPS 成同一正式 render。两端不可用则保留证据停止。
+- mock batch 验控制／状态／日志／DAG，0真实模型调用；真实模型 batch 性能需另获授权、独立运行和真实 GPU/产物／质量证据，分别记录 TTS batch 与 back-ASR batch、实际样本、冷／热加载、并发、缓存及逐单元结果。已有 batching 源码／fixture 不等于本轮 Spark speech performance 或 canonical takeover 通过。
+
+用户报告“三分钟视频 TTS 约55分钟”目前为**未经核验的用户测量描述**；只有假定相同配置和线性扩展，才可粗算一小时视频约 `55 × (60/3) = 1100` 分钟，即18小时20分钟。它不是实测容量、吞吐承诺或 ETA，不能与既有组件 A/B 样本直接混算。下一轮须绑定实际 source/audio duration、语言与单元数量、配置、batch、executor、冷／热模型加载、失败／重试／等待、阶段 wall/monotonic 和产物证据，分别报首轮／局部恢复／累计耗时后才能讨论容量与优化。
+
+交付分别列 mock batch、真实 remote roundtrip、真实模型 batch、fallback 和真实 scheduler 的实现 SHA／测试结果／收据／未测项；某一通过不提升其余资格。原 `018` 与 `007`、`DEV-TRACK-001` 等状态不变，本次不实现、不跑模型／远端任务、不部署。
 
 #### 版本、兼容与实施顺序
 
