@@ -27,7 +27,7 @@ DISPATCH_LOCK_DELAY_SECONDS = 0.05
 
 def chain_identity(prepared):
     expected = strict.prepare(*(prepared['bytes'][key] for key in
-        ('englishSource', 'anchor', 'policy', 'rubric')), prepared['group'], request_limits=prepared.get('requestLimits'))
+        ('englishSource', 'anchor', 'policy', 'rubric')), prepared['group'], request_limits=prepared.get('requestLimits'), diagnostic_context=prepared.get('diagnosticContext'))
     c.require(prepared == expected, 'strict_prepared_inputs_changed')
     return budget.chain_identity({
         'sourceIdentitySha256': prepared['source']['downstreamInvalidationKey'],
@@ -76,6 +76,7 @@ def operation_binding(kind, prepared, root, candidate_id, revision_id, attempt_n
     input_sha256 = c.canonical_sha256({
         'payloadSha256': payload_sha256, 'candidateId': candidate_id, 'revisionId': revision_id,
         **({'requestLimits': prepared['requestLimits']} if 'requestLimits' in prepared else {}),
+        **({'diagnosticContext': prepared['diagnosticContext']} if 'diagnosticContext' in prepared else {}),
         'materialBytesSha256': {key: c.bytes_sha256(value) for key, value in prepared['bytes'].items()},
         'revisionBytesSha256': c.bytes_sha256(manifest_bytes) if manifest is not None else None,
         'repair': None if repair is None else {**{key: value for key, value in repair.items()
@@ -110,6 +111,9 @@ class StrictBudgetAdapter:
     def _run(self, kind, prepared, root, candidate_id, revision_id, api_key, caller,
              bounds, usage_resolver, attempt_number, depends_on, completion_spans, repair):
         c.require(profile.current() is not None, 'strict_requires_accounting_profile')
+        if 'diagnosticContext' in prepared:
+            c.require(prepared['diagnosticContext']['storeSha256'] == self.store.store_sha256,
+                      'diagnostic_budget_store_changed')
         root = _safe_path(Path(root))
         operation = operation_binding(kind, prepared, root, candidate_id, revision_id, attempt_number, repair)
         identity, operation_id = operation['identity'], operation['operationId']
