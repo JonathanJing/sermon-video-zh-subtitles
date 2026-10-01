@@ -183,7 +183,8 @@ function renderDownloads() {
     const url = downloadUrl(week?.downloads?.[key], extension);
     if (!url) continue;
     const link = document.createElement("a");
-    link.href = url; link.download = ""; link.textContent = label;
+    link.href = url; link.download = ""; setIcon(link, "arrow.down.circle");
+    const downloadLabel = document.createElement("span"); downloadLabel.textContent = label; link.append(downloadLabel);
     list.append(link);
   }
   $("week-downloads").hidden = !list.children.length;

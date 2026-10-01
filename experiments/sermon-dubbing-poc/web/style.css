@@ -213,3 +213,10 @@ button:has(>.app-icon),a:has(>.app-icon){display:inline-flex;align-items:center;
 }
 
 .coarse-row .skip>[data-icon-label]{font-size:inherit;line-height:1.4}
+
+/* Existing navigation/status entries mirror the native icon semantics. */
+.caption-icon{color:var(--teal)}
+.week-picker label{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.week-picker label>.app-icon{width:18px;height:18px}
+.locale-pickers label .app-icon,.privacy-controls summary .app-icon{width:18px;height:18px;margin-right:6px}
+.week-download-links a{display:inline-flex;align-items:center;gap:7px}

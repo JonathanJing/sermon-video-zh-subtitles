@@ -33,7 +33,7 @@
   </header>
 
   <main class="field-main">
-    <div id="loadError" class="load-error" role="alert" hidden><span id="loadErrorMessage"></span><button id="retryLoad" type="button">重试</button></div>
+    <div id="loadError" class="load-error" role="alert" hidden><svg class="app-icon " viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/icons.svg#wifi.exclamationmark"></use></svg><span id="loadErrorMessage"></span><button id="retryLoad" type="button">重试</button></div>
 
     <section class="sermon-banner" aria-label="证道信息">
       <p id="seriesLabel" class="banner-series"></p>
@@ -49,14 +49,14 @@
       <div class="tabs" role="tablist" aria-label="收听内容">
         <button class="is-active" type="button" role="tab" aria-selected="true" aria-controls="panel-listen" data-tab="listen" id="listenTab">收听</button>
         <button type="button" role="tab" aria-selected="false" aria-controls="panel-transcript" data-tab="transcript" id="transcriptTab">字幕全文</button>
-        <button id="outlineTab" type="button" role="tab" aria-selected="false" aria-controls="panel-outline" data-tab="outline">大纲</button>
+        <button id="outlineTab" type="button" role="tab" aria-selected="false" aria-controls="panel-outline" data-tab="outline"><svg class="app-icon " viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/icons.svg#list.bullet.rectangle"></use></svg><span data-icon-label>大纲</span></button>
       </div>
       <button id="moreToggle" class="nav-action" type="button" aria-expanded="false" aria-controls="moreOptions"><svg class="app-icon " viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/icons.svg#ellipsis.circle"></use></svg><span data-icon-label>更多</span></button>
     </div>
     <section id="moreOptions" class="more-options dev-more" aria-label="更多选项" hidden>
       <section class="week-browser" aria-label="本期与往期证道">
         <div class="week-picker">
-          <label for="weekSelect"><span id="weekLabel">本期与往期</span><span id="weekHint">选择日期，收听往期证道</span></label>
+          <label for="weekSelect"><svg class="app-icon " viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/icons.svg#calendar"></use></svg><span id="weekLabel">本期与往期</span><span id="weekHint">选择日期，收听往期证道</span></label>
           <select id="weekSelect"><option>2026.09.20 · 耶稣的应许 · Dev POC</option></select>
         </div>
       </section>
@@ -75,7 +75,7 @@
     </section>
 
     <section class="panel subtitle-card is-active" id="panel-listen" role="tabpanel" aria-labelledby="listenTab">
-      <div class="section-heading"><span class="subtitle-dot" aria-hidden="true"></span><h2 id="nowHeading">正在讲述</h2><span id="cueCounter">0 / 0</span><button id="sourceToggle" class="text-button" type="button" aria-pressed="false">中英对照</button></div>
+      <div class="section-heading"><svg class="app-icon caption-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/icons.svg#waveform"></use></svg><h2 id="nowHeading">正在讲述</h2><span id="cueCounter">0 / 0</span><button id="sourceToggle" class="text-button" type="button" aria-pressed="false">中英对照</button></div>
       <p class="current-text" id="currentCaption">—</p>
       <div id="sourceBlock" class="current-english" hidden><span id="sourceReferenceLabel">英文原文参考</span><p id="sourceCaption" lang="en">—</p></div>
       <p id="nextCaption" class="next-text"></p>

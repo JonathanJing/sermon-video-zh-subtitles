@@ -416,7 +416,7 @@ function renderInterfaceCopy() {
   $("languageCardLabel").textContent = copy.languageCard;
   $("mockNoticeTitle").textContent = state.locale === "en" ? copy.sourceTitle : copy.mockTitle;
   $("mockNoticeBody").textContent = state.locale === "en" ? copy.sourceBody : copy.mockBody;
-  [$("listenTab"), $("transcriptTab"), $("outlineTab")].forEach((node, index) => node.textContent = copy.tabs[index]);
+  [$("listenTab"), $("transcriptTab"), $("outlineTab")].forEach((node, index) => setButtonLabel(node, copy.tabs[index]));
   setButtonLabel($("moreToggle"), extra.more);
   $("nowHeading").textContent = copy.now;
   $("sourceToggle").textContent = extra.sourceToggle;
@@ -541,6 +541,10 @@ function renderLanguageList() {
       : locale === "en" ? extra.sourceMedia : extra.targetMedia;
     const displayName = new Intl.DisplayNames([interfaceLocales[state.ui].htmlLang], { type: "language" }).of(locale);
     button.innerHTML = `<span class="language-option-name"><span class="language-code">${info.code}</span><span><strong lang="${locale}">${info.native}</strong><small>${escapeHTML(displayName)}</small></span></span><span class="language-option-caps">${media}<br>${status}</span>`;
+    button.setAttribute("aria-pressed", String(locale === state.locale));
+    if (locale === state.locale) {
+      const selected = document.createElement("span"); selected.className = "content-language-check"; setIcon(selected, "checkmark"); button.append(selected);
+    }
     button.addEventListener("click", () => selectLocale(locale, { manual: true }).catch(showError));
     return button;
   }));
