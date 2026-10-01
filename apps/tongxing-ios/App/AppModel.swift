@@ -47,7 +47,14 @@ final class AppModel: ObservableObject {
     @Published private(set) var alignmentBusy = false
     @Published private(set) var alignmentPosition: Double?
     private var alignmentController: AudioAlignmentController!
-    private var hasAlignmentFeedback = false
+    private(set) var hasAlignmentFeedback = false
+    struct AlignmentFailure: Identifiable {
+        let id = UUID()
+        let message: String
+    }
+    @Published private(set) var alignmentFailure: AlignmentFailure?
+
+    func dismissAlignmentFailure() { alignmentFailure = nil }
 
     var alignmentDisplayStatus: String {
         if alignmentBusy || hasAlignmentFeedback { return alignmentStatus }
@@ -60,6 +67,7 @@ final class AppModel: ObservableObject {
     }
 
     func updateAlignmentState(status: String, busy: Bool, position: Double?) {
+        if busy { dismissAlignmentFailure() }
         alignmentStatus = status
         alignmentBusy = busy
         alignmentPosition = position
@@ -67,6 +75,7 @@ final class AppModel: ObservableObject {
     }
 
     private func resetAlignmentState() {
+        dismissAlignmentFailure()
         hasAlignmentFeedback = false
         alignmentBusy = false
         alignmentPosition = nil
@@ -88,6 +97,7 @@ final class AppModel: ObservableObject {
         guard UIApplication.shared.applicationState != .background else { return }
         #endif
         guard alignmentAvailable else { return }
+        dismissAlignmentFailure()
         alignmentController.start()
     }
 
@@ -130,7 +140,8 @@ final class AppModel: ObservableObject {
         Task { [weak self] in await self?.prepareSelectedPublishedAudio() }
     }
 
-    init(supportDirectory: URL? = nil, contentOrigin: URL? = nil, session: URLSession = .shared, statisticsDefaults: UserDefaults = .standard) {
+    init(supportDirectory: URL? = nil, contentOrigin: URL? = nil, session: URLSession = .shared, statisticsDefaults: UserDefaults = .standard,
+         alignmentCapture: (any MicrophoneCapturing)? = nil) {
         let support = supportDirectory ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
             .appendingPathComponent("Tongxing", isDirectory: true)
         mediaOrigin = contentOrigin ?? Self.contentOrigin
@@ -161,7 +172,7 @@ final class AppModel: ObservableObject {
         let indexStore = FingerprintIndexStore(directory: support.appendingPathComponent("Alignment", isDirectory: true),
                                                baseURL: mediaOrigin, session: session)
         alignmentController = AudioAlignmentController(
-            playback: playback, capture: MicrophoneCapture(),
+            playback: playback, capture: alignmentCapture ?? MicrophoneCapture(),
             getSelection: { [weak self] in
                 guard let week = self?.selectedWeek, let track = self?.selectedTrack else { return nil }
                 return .init(week: week, track: track)
@@ -194,7 +205,8 @@ final class AppModel: ObservableObject {
             },
             onState: { [weak self] status, busy, position in
                 self?.updateAlignmentState(status: status, busy: busy, position: position)
-            }
+            },
+            onFailure: { [weak self] message in self?.alignmentFailure = AlignmentFailure(message: message) }
         )
         playback.onManualInteraction = { [weak self] in self?.alignmentController.cancel() }
 

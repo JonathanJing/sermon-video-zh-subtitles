@@ -26,6 +26,7 @@ final class AudioAlignmentControllerTests: XCTestCase {
         XCTAssertGreaterThan(f.capture.stops, 0)
         XCTAssertEqual(f.status, "已对齐至 {time}。")
         XCTAssertEqual(f.resultPosition, 108)
+        XCTAssertTrue(f.failures.isEmpty)
     }
 
     func testFailedMatchNeverSeeksAndRestoresPriorPlayingIntent() async throws {
@@ -36,6 +37,7 @@ final class AudioAlignmentControllerTests: XCTestCase {
         XCTAssertEqual(f.player.resumes, 1)
         XCTAssertTrue(f.player.isPlaying)
         XCTAssertEqual(f.status, "未找到可靠匹配，播放位置未改变。")
+        XCTAssertEqual(f.failures, [f.status])
     }
 
     func testManualSeekCancelsLateMatcherWithoutOverwritingUserPosition() async throws {
@@ -51,6 +53,7 @@ final class AudioAlignmentControllerTests: XCTestCase {
         XCTAssertEqual(f.player.position, 42)
         XCTAssertEqual(f.player.seeks, [])
         XCTAssertFalse(f.controller.busy)
+        XCTAssertTrue(f.failures.isEmpty)
     }
 
     func testSourceChangeDefeatsLateResultEvenWithoutExplicitCancel() async throws {
@@ -63,6 +66,7 @@ final class AudioAlignmentControllerTests: XCTestCase {
         try await eventually { !f.controller.busy }
         XCTAssertEqual(f.player.seeks, [])
         XCTAssertEqual(f.player.resumes, 0)
+        XCTAssertTrue(f.failures.isEmpty)
     }
 
     func testRevokedCapabilityOnSameTrackDefeatsLateMatch() async throws {
@@ -88,6 +92,7 @@ final class AudioAlignmentControllerTests: XCTestCase {
         f.controller.start()
         try await eventually { !f.controller.busy }
         XCTAssertEqual(f.status, "对齐超时，请保持前台后重试。")
+        XCTAssertEqual(f.failures, [f.status])
         XCTAssertGreaterThan(f.capture.stops, 0)
         await gate.finish(Self.match)
         try await Task.sleep(for: .milliseconds(20))
@@ -101,7 +106,20 @@ final class AudioAlignmentControllerTests: XCTestCase {
         try await eventually { !f.controller.busy }
         XCTAssertEqual(f.player.seeks, [])
         XCTAssertEqual(f.status, AudioAlignmentError.permissionDenied.localizedDescription)
+        XCTAssertEqual(f.failures, [f.status])
         XCTAssertGreaterThan(f.capture.stops, 0)
+    }
+
+    func testInvalidCaptureReportsFailureWithoutMovingPausedPlayer() async throws {
+        let f = try Fixture()
+        f.player.position = 42
+        f.capture.failure = AudioAlignmentError.invalidCapture
+        f.controller.start()
+        try await eventually { !f.controller.busy }
+        XCTAssertEqual(f.failures, [AudioAlignmentError.invalidCapture.localizedDescription])
+        XCTAssertEqual(f.player.position, 42)
+        XCTAssertEqual(f.player.seeks, [])
+        XCTAssertEqual(f.player.resumes, 0)
     }
 
     func testInterruptedCaptureDoesNotResumeAudioWithoutSystemPermission() async throws {
@@ -111,6 +129,7 @@ final class AudioAlignmentControllerTests: XCTestCase {
         try await eventually { !f.controller.busy }
         XCTAssertEqual(f.player.resumes, 0)
         XCTAssertFalse(f.player.isPlaying)
+        XCTAssertEqual(f.failures, [AudioAlignmentError.interrupted.localizedDescription])
     }
 
     func testPlaybackStartupDelayGetsOneFinalCorrection() async throws {
@@ -387,6 +406,7 @@ final class AudioAlignmentControllerTests: XCTestCase {
         var elapsed = 8.0
         var selection: AudioAlignmentController.Selection?
         var status = ""
+        var failures: [String] = []
         var resultPosition: Double?
         var controller: AudioAlignmentController!
 
@@ -445,7 +465,8 @@ final class AudioAlignmentControllerTests: XCTestCase {
             controller = AudioAlignmentController(playback: player, capture: capture, getSelection: { [weak self] in self?.selection },
                 loadIndex: { _ in index }, loadPublishedIndex: publishedLoader, match: matcher ?? { _, _ in result }, now: { [weak self] in
                     self!.start.advanced(by: .seconds(self!.elapsed))
-                }, deadline: deadline, onState: { [weak self] status, _, position in self?.status = status; self?.resultPosition = position })
+                }, deadline: deadline, onState: { [weak self] status, _, position in self?.status = status; self?.resultPosition = position },
+                onFailure: { [weak self] message in self?.failures.append(message) })
         }
     }
 

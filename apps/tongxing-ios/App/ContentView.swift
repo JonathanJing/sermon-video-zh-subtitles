@@ -48,6 +48,7 @@ struct ContentView: View {
     @ViewState private var returnToCurrent = UUID()
     @ViewState private var locateConfirmation: Double?
     @ViewState private var showingPlaybackMore = false
+    @ViewState private var showingAlignmentFailure = false
     @ViewState private var playbackMoreButtonFrame: CGRect = .null
     @ViewState private var playbackMorePanelSize = CGSize(width: 320, height: 176)
     @ViewState private var playbackMorePlacement: PlaybackDockPlacement = .bottom
@@ -76,11 +77,34 @@ struct ContentView: View {
             guard !Task.isCancelled else { return }
             locateConfirmation = nil
         }
+        .onChange(of: model.alignmentFailure?.id) { _, failure in
+            if failure != nil { showingPlaybackMore = false }
+            updateAlignmentFailurePresentation()
+        }
+        .onChange(of: sheet) { _, destination in
+            if destination != nil { showingAlignmentFailure = false }
+        }
+        .alert(localization.text("听音对齐未完成"), isPresented: $showingAlignmentFailure,
+               presenting: model.alignmentFailure) { _ in
+            Button(localization.text("按英文找位置")) {
+                model.dismissAlignmentFailure()
+                DispatchQueue.main.async { sheet = .locate }
+            }
+            if model.alignmentAvailable {
+                Button(localization.text("重试对齐")) { model.startAlignment() }
+            }
+            Button(localization.text("关闭"), role: .cancel) { model.dismissAlignmentFailure() }
+        } message: { failure in Text(localization.text(failure.message)) }
         .onChange(of: model.selectedPageID) { _, _ in locateConfirmation = nil }
         .onChange(of: scenePhase) { _, phase in
             if phase != .active { playback.saveProgress() }
             else { localization.refreshSystemLanguage() }
+            updateAlignmentFailurePresentation()
         }
+    }
+
+    private func updateAlignmentFailurePresentation() {
+        showingAlignmentFailure = model.alignmentFailure != nil && sheet == nil && scenePhase == .active
     }
 
     private func listeningNavigation(controlRegion: CGRect, usesTrailingDock: Bool) -> some View {
@@ -285,7 +309,7 @@ struct ContentView: View {
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
-            .sheet(item: $sheet) { destination in
+            .sheet(item: $sheet, onDismiss: updateAlignmentFailurePresentation) { destination in
                 switch destination {
                 case .weeks:
                     WeekSheet(model: model)
@@ -650,7 +674,7 @@ struct ContentView: View {
                 publishedRows(transcript.fullText, captions: transcript.captions, prefix: "published-full")
             }.accessibilityIdentifier("published-full-transcript")
             englishLocateEntry
-            if model.alignmentAvailable || model.alignmentBusy {
+            if model.alignmentAvailable || model.alignmentBusy || model.hasAlignmentFeedback {
                 Text(localization.text(model.alignmentDisplayStatus, ["time": model.alignmentPosition.map(PlaybackTime.format) ?? ""]))
                     .font(.footnote).foregroundStyle(.secondary)
                     .accessibilityIdentifier("alignment-status")
@@ -861,7 +885,7 @@ struct AlignmentControls: View {
                 Button(localization.text("刷新目录")) { Task { await model.refresh() } }
                 Button(localization.text("关闭"), role: .cancel) {}
             } message: { Text(status) }
-            if !compact {
+            if !compact || model.alignmentBusy || model.hasAlignmentFeedback {
                 Text(status)
                     .font(.footnote).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)

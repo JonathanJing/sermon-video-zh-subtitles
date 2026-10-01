@@ -33,8 +33,22 @@ enum UITestLaunch {
         configuration.urlCache = nil
         return AppModel(supportDirectory: supportDirectory, contentOrigin: UITestContent.origin,
                         session: URLSession(configuration: configuration),
-                        statisticsDefaults: statisticsDefaults)
+                        statisticsDefaults: statisticsDefaults,
+                        alignmentCapture: ProcessInfo.processInfo.arguments.contains("--ui-testing-alignment-failure")
+                            ? UITestFailedCapture() : nil)
     }
+}
+
+/// Synthetic capture failure only in the explicitly isolated DEBUG UI fixture.
+@MainActor
+private final class UITestFailedCapture: MicrophoneCapturing {
+    func capture(seconds: Double) async throws -> CapturedAudio {
+        if !ProcessInfo.processInfo.arguments.contains("--ui-testing-alignment-failure-immediate") {
+            try await Task.sleep(for: .milliseconds(250))
+        }
+        throw AudioAlignmentError.invalidCapture
+    }
+    func cancel() {}
 }
 
 struct UITestTextSize: ViewModifier {
@@ -288,6 +302,39 @@ private enum UITestContent {
         return result
     }()
 
+    static let alignmentFailureResponses: [String: Data] = {
+        var result = locateResponses
+        var catalog = try! JSONSerialization.jsonObject(with: result["/multilingual-v3.json"]!) as! [String: Any]
+        var pages = catalog["pages"] as! [[String: Any]]
+        var page = pages[0]
+        var targets = page["targets"] as! [String: [String: Any]]
+        let sourceHash = String(repeating: "a", count: 64)
+        let trackHash = SHA256.hash(data: result["/media/ui-test-locate-flow/zh-Hans.mp3"]!).map { String(format: "%02x", $0) }.joined()
+        let index = try! JSONSerialization.data(withJSONObject: [
+            "schemaVersion": "sermon-landmark-index-v1", "algorithmVersion": "spectral-landmarks-v1",
+            "sampleRate": 8000, "hopSize": 256, "fftSize": 1024,
+            "sourceSha256": sourceHash, "trackSha256": trackHash, "pageId": "ui-test-locate-flow",
+            "sourceStartSeconds": 0, "sourceEndSeconds": 36,
+            "window": ["startSeconds": 0, "endSeconds": 36], "durationSeconds": 36,
+            "landmarkCount": 1, "postings": ["1": [0]]
+        ], options: [.sortedKeys])
+        let indexHash = SHA256.hash(data: index).map { String(format: "%02x", $0) }.joined()
+        let indexPath = "/fingerprints/\(indexHash.prefix(16))-landmarks.json"
+        targets["zh-Hans"]!["audioFingerprint"] = [
+            "schemaVersion": "sermon-audio-fingerprint-binding-v1", "pageId": "ui-test-locate-flow",
+            "sourceSha256": sourceHash, "trackSha256": trackHash,
+            "sourceStartSeconds": 0, "sourceEndSeconds": 36,
+            "algorithmVersion": "spectral-landmarks-v1", "captureSeconds": 10,
+            "indexSha256": indexHash, "indexUrl": indexPath
+        ]
+        targets["zh-Hans"]!["capabilities"] = ["text", "captions", "audio", "alignment"]
+        page["sourceMediaSha256"] = sourceHash; page["targets"] = targets
+        pages[0] = page; catalog["pages"] = pages
+        result["/multilingual-v3.json"] = try! JSONSerialization.data(withJSONObject: catalog, options: [.sortedKeys])
+        result[indexPath] = index
+        return result
+    }()
+
     private static func nativePublishedResponses(locale: String, fullText: String, caption: String) -> [String: Data] {
         let pageID = "ui-test-full-video"
         let audio = responses["/media/ui-test-clip/es.mp3"]!
@@ -371,6 +418,7 @@ private class UITestContentProtocol: URLProtocol {
     class var offline: Bool { ProcessInfo.processInfo.arguments.contains("--ui-testing-offline") }
     class var dualScript: Bool { ProcessInfo.processInfo.arguments.contains("--ui-testing-dual-script") }
     class var nativeResponses: [String: Data]? {
+        if ProcessInfo.processInfo.arguments.contains("--ui-testing-alignment-failure") { return UITestContent.alignmentFailureResponses }
         if ProcessInfo.processInfo.arguments.contains("--ui-testing-locate-flow") { return UITestContent.locateResponses }
         return dualScript ? UITestContent.dualScriptResponses : nil
     }

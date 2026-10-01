@@ -343,6 +343,46 @@ final class ListeningFlowUITests: XCTestCase {
         screenshot("english-locate-large-text-current-at12", app: app)
     }
 
+    func testCaptureFailureShowsReasonRetryAndEnglishLocateWithoutReset() throws {
+        try assertCaptureFailureFeedback(largeText: false)
+    }
+
+    func testCaptureFailureLargeTextKeepsFallbackReachable() throws {
+        try assertCaptureFailureFeedback(largeText: true)
+    }
+
+    func testImmediateRepeatedCaptureFailureAlwaysShowsFeedback() throws {
+        try assertCaptureFailureFeedback(largeText: false, immediateFailure: true)
+    }
+
+    private func assertCaptureFailureFeedback(largeText: Bool, immediateFailure: Bool = false) throws {
+        let app = launchFixture(largeText: largeText, locateFlow: true, alignmentFailure: true,
+                                immediateFailure: immediateFailure)
+        try locateSecondEnglishSegment(in: app, fromDock: true)
+        try waitFor(element("playback-progress", in: app), "value BEGINSWITH '00:12'")
+        app.buttons["playback-more"].tap()
+        app.buttons["align-live-audio"].tap()
+        let failure = app.alerts["听音对齐未完成"]
+        XCTAssertTrue(failure.waitForExistence(timeout: 5))
+        XCTAssertTrue(failure.staticTexts["未能取得有效声音，请重试。"].exists)
+        XCTAssertFalse(app.alerts["playback-more-panel"].exists)
+        XCTAssertTrue(failure.buttons["重试对齐"].isHittable)
+        screenshot(largeText ? "alignment-capture-failure-large-after" : "alignment-capture-failure-after", app: app)
+        failure.buttons["重试对齐"].tap()
+        XCTAssertTrue(failure.waitForExistence(timeout: 5))
+        failure.buttons["关闭"].tap()
+        XCTAssertFalse(failure.exists)
+        try waitFor(element("playback-progress", in: app), "value BEGINSWITH '00:12'")
+        XCTAssertEqual(app.buttons["playback-toggle"].label, "开始播放")
+        app.buttons["playback-more"].tap()
+        app.buttons["align-live-audio"].tap()
+        XCTAssertTrue(failure.waitForExistence(timeout: 5))
+        failure.buttons["按英文找位置"].tap()
+        XCTAssertTrue(element("english-locate-sheet", in: app).waitForExistence(timeout: 5))
+        XCTAssertTrue(app.textFields["english-locate-search"].exists)
+        screenshot("alignment-failure-english-fallback", app: app)
+    }
+
     func testUnavailableAlignmentOffersEnglishLocate() throws {
         let app = launchFixture(locateFlow: true)
         try waitFor(app.buttons["playback-toggle"], "exists == true AND enabled == true")
@@ -829,7 +869,8 @@ final class ListeningFlowUITests: XCTestCase {
                                dualScript: Bool = false,
                                independentDefault: Bool = false,
                                locateFlow: Bool = false,
-                               delayedTranscript: Bool = false) -> XCUIApplication {
+                               delayedTranscript: Bool = false, alignmentFailure: Bool = false,
+                               immediateFailure: Bool = false) -> XCUIApplication {
         continueAfterFailure = false
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing"] + (largeText ? ["--ui-testing-large-text"] : [])
@@ -838,6 +879,8 @@ final class ListeningFlowUITests: XCTestCase {
             + (independentDefault ? ["--ui-testing-current-page-default"] : [])
             + (locateFlow ? ["--ui-testing-locate-flow"] : [])
             + (delayedTranscript ? ["--ui-testing-delayed-transcript"] : [])
+            + (alignmentFailure ? ["--ui-testing-alignment-failure"] : [])
+            + (immediateFailure ? ["--ui-testing-alignment-failure-immediate"] : [])
         app.launchArguments += ["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
         app.launchEnvironment["TONGXING_TEST_HOST"] = "0"
         app.launchEnvironment["TONGXING_UI_TEST_RUN_ID"] = UUID().uuidString
