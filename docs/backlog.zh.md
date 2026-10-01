@@ -168,6 +168,26 @@ SSH／Tailscale 可作为受授权的传输／网络路径，本身不提供 sch
 
 现有云端→mini 任务 delegation 不证明云端可直接到达 Hub 网络 API。两类客户端的实际接入各需独立验证**获授权的网络路径**、认证／task scope 与结果读取；本次文档工作不创建凭据、不开放端口、不改变网络／安全配置，也不实际核验 MacBook 路径。CPU smoke 通过不证明 speech production 就绪，统一接口不得放宽声音授权、review/human/delivery/publication gates。下一步先实施同合同 adapter／客户端与稳定性验证，再在独立授权下验真实模型；本次仅写 backlog，实际路由核验在文档完成之后单独进行。
 
+#### 下一轮主验收：真实 DAG 执行器与状态机完整监管（既有 `008/017/018`、`DEV-SPD-006`）
+
+用户指定下一轮重点验证 DAG 对整个 pipeline 的监管。**本节为可执行验收计划与实现缺口清单，尚未实现或执行。** 最新报告的私有 driver／dependency checks 不证明真实 DAG engine 已接管。优先先用隔离 mock TTS 验控制面；实际 DAG executor、状态机、durable jobs、日志与 gates 保持真实，mock compute 使用独立 synthetic identity/目录，不能被标为 production passed；随后独立授权的真实计算另验 runtime／性能／质量。
+
+主通过条件：同一冻结 run 的 submit→冻结 inputs/config/budget→按依赖派发→queued/running/outcome_unknown→artifact bytes/hash/revision 返回与接纳→review/gate→join/final state 全链均由真实 DAG executor 和状态机监管，可按 job/workUnit/attempt/span 追溯，而非入口脚本顺序调用后补图。机器审核、人工、delivery、publication 资格独立绑定，不因 mock 成功或引擎终态提升。
+
+1. **实施准备与预检**：绑定真实 executor/engine 与 schema/profile 实现 SHA、冻结 plan/recipe、任务 allowlist、预算／授权、输入和缓存身份、恢复策略及独立 synthetic namespace。拒绝缺必需边、非法依赖／跨 run、未授权 dispatch；真实 engine 接管尚未就绪即报告 blocked，不能用 fixture 代替。
+2. **正常链**：通过固定受限 client 实际 submit，记录 durable intent/jobId/idempotency；逐步观察 dependency-ready、实际 queue/start/end、typed completion leaf、artifact bytes/hash/revision 接纳与 review/gate 判定。正确 fan-out/join 只在全部必需前驱及门禁有效时完成；最终状态与原事件、账本、报告和安全投影一致，缺 clock/queue/edge 的 CP/ETA 仍 partial/unknown。
+3. **失败与恢复矩阵**：上游 failed/incomplete 阻断实际下游；timeout/outcome_unknown 先按原 job/intent 对账，未确认前不重试／fallback；部分修订只恢复受影响 descendants，成功单元不重新 dispatch/收费。重复 idempotency 等价接纳、冲突拒绝；missing/corrupt/hash-mismatch artifact 不入门禁；真实 completion leaf 与 artifact/attempt/run/version 错绑拒绝。批次部分失败只恢复确认失败单元，不重跑成功部分。
+4. **持久化与连接故障**：断开云端／MacBook client、重启 mini 服务／worker、断开／重启 Spark，重连后按原 jobId 恢复事件和结果观察；durable intent/state/outbox 与 reconciliation 确保未知工作不重复派发、重复事件不双记。会话断开不是取消或失败证据，工作是否继续以真实收据为准。
+5. **交付与裁决**：交付冻结 plan、实现 SHA／engine version、实际各阶段收据、故障注入点／恢复窗口、完整依赖／状态轨迹、artifact 核验、join/gate/final 投影、新增请求和重复 dispatch 数、缺测清单。分别裁决 real control plane + mock compute、真实 remote roundtrip、真实模型、scheduler 接管及正式资格；任一必需监管环节缺证据，则本主验收未通过，不按 span 闭合或“图非空”补通过。
+
+实现缺口须沿原 ID 回写：`008` producer typed completion leaf 与 recipe 必需边的语义验证；`017` 规范入口／冻结计划到真实 engine 的绑定、durable 状态／恢复和全消费者一致性；`018` 同合同 mini 接入／Spark worker、结果 bytes/hash 返回、batch partial recovery、未知对账与受限 fallback；`DEV-SPD-006` 真实 scheduler adapter、依赖驱动 dispatch／joins 与重启证据。现有 schema、outbox、账本／job primitives 可复用，不表示上述端到端接线已有；不得再建第二条顶层 backlog 或用日志修复重新推理。
+
+#### 离开本地 Wi‑Fi 的 Tailscale 接入实施计划（既有 `017/018`）
+
+先确认已知且获授权的 tailnet、mini 服务身份、client 身份和 ACL/task scopes，以同一受限 submit/status/log/artifact 合同接入；实际使用方式须在外部 Hub contract 版本与 MacBook 只读任务权限确认后冻结。验证离开本地 Wi‑Fi 后的授权连通性、认证、重连和结果读取，区分 Tailscale 网络 direct/relay 与应用内部 mini→Spark SSH direct/relay，两者不是同一证据；分别测 direct／relay 条件、断网／网络切换、ACL 拒绝、stale/cross-client 请求和重连恢复。
+
+持久化 job 与 client 网络独立，切换网络后按原 jobId 查询／reconcile，不以新 session 重派已提交工作；mini/Spark 未知结果仍先对账，Tailscale 连通不代表 scheduler、模型或产物通过。本次只记录实施顺序与验收，不安装／启用 Tailscale、不登录／新增认证、不修改 ACL、端口、SSH、凭据或网络安全配置。MacBook 平台任务权限仍未开放，实际路径核验保持 blocked，不通过替代路由绕过；后续在受支持只读访问获准后再核验配置与原执行收据。
+
 #### 版本、兼容与实施顺序
 
 1. 先冻结当前版本映射及正反例，明确新增 schema/profile 版本和字段语义；旧事件／报告原始字节保持不变，旧 decoder 缺测照实，不做历史升级。
