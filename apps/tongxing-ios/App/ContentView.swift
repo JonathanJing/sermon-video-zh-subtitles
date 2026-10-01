@@ -82,7 +82,7 @@ struct ContentView: View {
                 return ScrollViewReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: verticalSizeClass == .compact ? 12 : 16) {
-                        if model.selectedWeek == nil {
+                        if model.selectedWeek == nil && model.selectedMultilingualPage == nil {
                             HStack { Spacer(); appLanguageMenu }
                         }
                         if let week = model.selectedWeek {
@@ -117,49 +117,63 @@ struct ContentView: View {
                             }
                             footer(week)
                         } else if let page = model.selectedMultilingualPage {
-                            VStack(alignment: .leading, spacing: 12) {
-                                Text(localization.text("已发布页面"))
-                                    .font(.caption.weight(.medium)).foregroundStyle(.secondary)
+                            VStack(alignment: .leading, spacing: verticalSizeClass == .compact ? 8 : 12) {
+                                HStack {
+                                    Text(localization.text("已发布页面"))
+                                        .font(.caption.weight(.medium)).foregroundStyle(.secondary)
+                                    Spacer(minLength: 8)
+                                    appLanguageMenu
+                                }
                                 Text(model.publishedTranscript?.title ?? page.title ?? page.id).font(.largeTitle.bold())
                                     .fixedSize(horizontal: false, vertical: true)
                                     .accessibilityAddTraits(.isHeader)
                                     .accessibilityIdentifier("published-page-title")
                                 Text(page.date).font(.subheadline).foregroundStyle(.secondary)
                                 languageButton
-                                if model.fullVideoURL != nil {
-                                    Button {
-                                        playback.pause()
-                                        sheet = .video
-                                    } label: {
-                                        Label(localization.text("观看完整视频"), systemImage: "play.rectangle")
-                                    }
-                                    .accessibilityIdentifier("watch-full-video")
-                                }
-                                Text("\(localization.text("内容语言")) · \(model.selectedContentLanguageName)")
-                                    .font(.footnote).foregroundStyle(.secondary)
-                                if let audioLanguage = model.selectedAudioLanguageName {
-                                    Text("\(localization.text("音频语言")) · \(audioLanguage)")
-                                        .font(.footnote.weight(.medium))
-                                        .accessibilityIdentifier("published-audio-locale")
-                                } else if model.selectedContentTarget?.audioStatus == "human_reviewed" {
-                                    if let error = model.publishedAudioError {
-                                        Label(localization.text(error), systemImage: "exclamationmark.circle")
-                                            .font(.footnote)
-                                        Button(localization.text("重新加载当前音频")) {
-                                            Task { await model.prepareSelectedPublishedAudio() }
+                                if model.fullVideoURL != nil || model.selectedAudioLanguageName != nil {
+                                    HStack(spacing: 12) {
+                                        if model.fullVideoURL != nil {
+                                            Button {
+                                                playback.pause()
+                                                sheet = .video
+                                            } label: {
+                                                Label(localization.text("观看完整视频"), systemImage: "play.rectangle")
+                                            }
+                                            .buttonStyle(.plain)
+                                            .font(.subheadline.weight(.medium))
+                                            .frame(minHeight: 44, alignment: .leading)
+                                            .accessibilityIdentifier("watch-full-video")
                                         }
-                                        .accessibilityIdentifier("retry-published-audio")
+                                        Spacer(minLength: 8)
+                                        if let audioLanguage = model.selectedAudioLanguageName {
+                                            Text("\(localization.text("音频语言")) · \(audioLanguage)")
+                                                .font(.footnote.weight(.medium))
+                                                .accessibilityIdentifier("published-audio-locale")
+                                        }
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .frame(minHeight: 44)
+                                }
+                                if model.selectedAudioLanguageName == nil,
+                                   model.selectedContentTarget?.audioStatus == "human_reviewed" {
+                                    if let error = model.publishedAudioError {
+                                        HStack(spacing: 8) {
+                                            Label(localization.text(error), systemImage: "exclamationmark.circle")
+                                                .font(.footnote)
+                                            Spacer(minLength: 8)
+                                            Button(localization.text("重新加载当前音频")) {
+                                                Task { await model.prepareSelectedPublishedAudio() }
+                                            }
+                                            .accessibilityIdentifier("retry-published-audio")
+                                        }
                                     } else {
                                         ProgressView(localization.text("正在准备音频…"))
                                             .accessibilityIdentifier("preparing-published-audio")
                                     }
-                                } else {
-                                    Text(localization.text("本语言仅提供文字"))
-                                        .font(.footnote).foregroundStyle(.secondary)
                                 }
                                 if model.selectedAudioLocale != nil {
                                     if let saved = playback.resumePosition { resumeCard(saved) }
-                                    playbackStatusDetail
+                                    if shouldShowPlaybackStatusDetail { playbackStatusDetail }
                                 }
                                 if model.usesNativePublishedReader { publishedReading }
                             }
@@ -296,6 +310,10 @@ struct ContentView: View {
             .foregroundStyle(.secondary)
             .fixedSize(horizontal: false, vertical: true)
             .accessibilityIdentifier("playback-status-detail")
+    }
+
+    private var shouldShowPlaybackStatusDetail: Bool {
+        model.isPreparing || model.isPreparingPublishedAudio || playback.message != "音频就绪 · 可以播放"
     }
 
     private func listeningPlaybackDock(placement: PlaybackDockPlacement,
@@ -570,7 +588,7 @@ struct ContentView: View {
             if model.display == .current {
                 let cue = transcript.captions.first { $0.start <= playback.position && playback.position < $0.end }
                     ?? (playback.position < (transcript.captions.first?.start ?? 0) ? transcript.captions.first : nil)
-                VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 12) {
                     Text(localization.text("当前字幕")).font(.subheadline).foregroundStyle(Brand.accent)
                     sourceText(cue?.text ?? localization.text("等待下一段字幕…"), language: model.selectedContentLocale)
                         .font(.system(size: readingSize, weight: .medium)).lineSpacing(6)
@@ -581,7 +599,7 @@ struct ContentView: View {
                             .fixedSize(horizontal: false, vertical: true)
                             .accessibilityIdentifier("published-current-english")
                     }
-                }.padding(20).frame(maxWidth: .infinity, alignment: .leading)
+                }.padding(16).frame(maxWidth: .infinity, alignment: .leading)
                     .background(Brand.surface, in: RoundedRectangle(cornerRadius: 28))
             } else {
                 publishedRows(transcript.captions, captions: transcript.captions, prefix: "published-caption")
