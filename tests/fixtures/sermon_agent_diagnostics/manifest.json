@@ -1,0 +1,134 @@
+{
+  "schemaVersion": "sermon-agent-diagnostic-input-v1",
+  "redacted": true,
+  "identity": {
+    "runId": "run_fixture",
+    "sourceId": "source_fixture",
+    "sourceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "targetLocale": "zh-Hans",
+    "stage": "layer2",
+    "stateRevision": 3,
+    "packageVersion": "candidate_v1",
+    "planVersion": "dag_v1",
+    "policyVersion": "policy_v1",
+    "revisionId": "revision_3",
+    "evidenceCutoff": "2026-10-01T01:00:00Z"
+  },
+  "failedUnits": [
+    {
+      "unitId": "group_001",
+      "unitVersion": "v3"
+    },
+    {
+      "unitId": "group_002",
+      "unitVersion": "v3"
+    }
+  ],
+  "events": [
+    {
+      "evidenceId": "event_review",
+      "evidenceType": "event",
+      "identity": {
+        "runId": "run_fixture",
+        "sourceId": "source_fixture",
+        "sourceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "targetLocale": "zh-Hans",
+        "stage": "layer2",
+        "stateRevision": 3,
+        "packageVersion": "candidate_v1",
+        "planVersion": "dag_v1",
+        "policyVersion": "policy_v1",
+        "revisionId": "revision_3",
+        "evidenceCutoff": "2026-10-01T01:00:00Z"
+      },
+      "units": [
+        {
+          "unitId": "group_001",
+          "unitVersion": "v3"
+        }
+      ],
+      "observedAt": "2026-10-01T00:59:00Z",
+      "status": "failed",
+      "reasonCode": "quality_rejected",
+      "attemptId": "attempt_1",
+      "callId": "provider_call_1",
+      "model": "fixture_model",
+      "usage": null,
+      "sha256": "fc3a33d5fb6a03ed460d0b8313364efdc98d914dc6478b8ab26a219dd656dc85"
+    }
+  ],
+  "receipts": [
+    {
+      "evidenceId": "receipt_unknown",
+      "evidenceType": "receipt",
+      "identity": {
+        "runId": "run_fixture",
+        "sourceId": "source_fixture",
+        "sourceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "targetLocale": "zh-Hans",
+        "stage": "layer2",
+        "stateRevision": 3,
+        "packageVersion": "candidate_v1",
+        "planVersion": "dag_v1",
+        "policyVersion": "policy_v1",
+        "revisionId": "revision_3",
+        "evidenceCutoff": "2026-10-01T01:00:00Z"
+      },
+      "units": [
+        {
+          "unitId": "group_002",
+          "unitVersion": "v3"
+        }
+      ],
+      "observedAt": "2026-10-01T00:59:00Z",
+      "status": "uncertain",
+      "reasonCode": "outcome_unknown",
+      "attemptId": "attempt_2",
+      "callId": "provider_call_2",
+      "model": "fixture_model",
+      "usage": {
+        "inputTokens": 0,
+        "cachedInputTokens": null,
+        "outputTokens": null,
+        "reasoningTokens": null,
+        "totalTokens": null
+      },
+      "sha256": "43fe5f683acae560ae8adce85d55c4f2237e1e36e2225a1ac83ffc6977ecf704"
+    }
+  ],
+  "versionDiffs": [
+    {
+      "evidenceId": "diff_policy",
+      "evidenceType": "version_diff",
+      "identity": {
+        "runId": "run_fixture",
+        "sourceId": "source_fixture",
+        "sourceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "targetLocale": "zh-Hans",
+        "stage": "layer2",
+        "stateRevision": 3,
+        "packageVersion": "candidate_v1",
+        "planVersion": "dag_v1",
+        "policyVersion": "policy_v1",
+        "revisionId": "revision_3",
+        "evidenceCutoff": "2026-10-01T01:00:00Z"
+      },
+      "units": [
+        {
+          "unitId": "group_001",
+          "unitVersion": "v3"
+        }
+      ],
+      "observedAt": "2026-10-01T00:59:00Z",
+      "changedFields": [
+        "policy"
+      ],
+      "beforeSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "afterSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "sha256": "955f112a880326f95f7192ea9edcae589b411fa873899b3c89c4be72e1f273f9"
+    }
+  ],
+  "missingEvidenceTypes": [
+    "reproduction"
+  ]
+}
