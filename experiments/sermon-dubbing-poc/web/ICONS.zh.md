@@ -2,7 +2,7 @@
 
 以原生 iOS 候选的 [图标清单](https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/062cbab91270190f5ceaa42ab96b31b547f99686/apps/tongxing-ios/ICON-INVENTORY.zh.md)（PR #192 的固定参考版本，四图标优化）作为动作与形状基准。`icons.svg` 是手工重绘、可编辑的 SVG 路径库；符号名称表示参考的原生图标，不是导出的 SF Symbols 文件。iOS 继续使用系统符号。
 
-两套网页实现（每周播放器与 `firebase/dev/public` 多语言阅读器）使用字节一致的 `icons.svg`、`icons.mjs`、`brand-icon.svg`、`brand-icon-light.svg`。共 43 个图形（37 个原生对应符号与 6 个网页补充符号）；其中部分预留给对应动作，并非所有页面都有该功能。
+两套网页实现（每周播放器与 `firebase/dev/public` 多语言阅读器）使用字节一致的 `icons.svg`、`icons.mjs`、`brand-icon.svg`、`brand-icon-light.svg`。共 44 个图形（38 个原生对应符号与 6 个网页补充符号，包含同片段试听的 `pause.circle` 独立圆环暂停图形）；其中部分预留给对应动作，并非所有页面都有该功能。
 
 | 动作 | SVG 图形名称（对应原生选择） |
 | --- | --- |

@@ -9,6 +9,7 @@ from urllib.parse import urlsplit
 from pathlib import Path
 from types import SimpleNamespace
 import unittest
+import xml.etree.ElementTree as ET
 from unittest.mock import patch
 
 from scripts import sermon_dev_diagnostic_snapshot as dev
@@ -58,15 +59,17 @@ class DevSnapshotTests(unittest.TestCase):
         self.assertIn('published-weeks-parent-',(public/'published-weeks.mjs').read_text())
         self.assertFalse(result['publicationAuthorized']);self.no_network.assert_not_called()
 
-    def test_old_baseline_missing_five_new_ui_dependencies_gets_complete_current_ui_and_preserves_formal_bytes(self):
+    def test_old_baseline_missing_new_ui_and_demo_dependencies_gets_complete_current_ui_and_preserves_formal_bytes(self):
         expected = ('app.mjs','catalog.mjs','locales-app.mjs','index.html','style.css','theme.js',
             'fingerprint-ui.mjs','locales-interface.mjs','locales-ko.mjs','locales-es.mjs',
-            'icons.mjs','icons.svg','brand-icon.svg','brand-icon-light.svg','fingerprint-diagnostics.mjs')
+            'icons.mjs','icons.svg','brand-icon.svg','brand-icon-light.svg','fingerprint-diagnostics.mjs',
+            'voice-samples.mjs','speaker-clip-demos.mjs','voice-demo.css')
         self.assertEqual(dev.UI, expected)
         source = dev.REPO/'experiments/sermon-dubbing-poc/web'; old_public = self.base/'public'
-        new_dependencies = {'icons.mjs','icons.svg','brand-icon.svg','brand-icon-light.svg','fingerprint-diagnostics.mjs'}
+        new_dependencies = {'icons.mjs','icons.svg','brand-icon.svg','brand-icon-light.svg',
+            'fingerprint-diagnostics.mjs','speaker-clip-demos.mjs','voice-demo.css'}
         # Real-shaped old Hosting tree: retain all earlier dependency modules,
-        # old media/catalog and only obsolete bytes for the ten updated assets.
+        # old media/catalog and obsolete UI bytes, including the legacy voice-samples entry point.
         for path in source.iterdir():
             if path.is_file() and path.suffix in {'.mjs','.js','.css','.svg','.png','.html'} \
                     and '.test.' not in path.name and path.name not in new_dependencies and not (old_public/path.name).exists():
@@ -124,8 +127,14 @@ class DevSnapshotTests(unittest.TestCase):
             seen.add(path)
             if path.suffix not in {'.js','.mjs'}: continue
             imports = {url for pattern in patterns for url in re.findall(pattern, path.read_text())}
+            # voice-samples installs its stylesheet dynamically, outside HTML.
+            imports.update(re.findall(r"\.href\s*=\s*['\"]([^'\"]+\.css)['\"]", path.read_text()))
             dependencies = {item for url in imports if (item := target(path, url)) is not None}
             edges[path.name] = {item.name for item in dependencies}; pending += list(dependencies)
+        self.assertIn('speaker-clip-demos.mjs', edges['voice-samples.mjs'])
+        self.assertIn('voice-demo.css', edges['voice-samples.mjs'])
+        self.assertIn('icons.mjs', edges['speaker-clip-demos.mjs'])
+        self.assertIn(public/'voice-demo.css', seen)
         self.assertIn('icons.mjs', edges['app.mjs'])
         self.assertIn('icons.mjs', edges['fingerprint-ui.mjs'])
         self.assertIn('fingerprint-diagnostics.mjs', edges['fingerprint-ui.mjs'])
@@ -136,6 +145,17 @@ class DevSnapshotTests(unittest.TestCase):
         for name in ('brand-icon.svg','brand-icon-light.svg'):
             self.assertIn('/'+name, (public/'theme.js').read_text()); self.assertTrue((public/name).is_file())
         self.assertIn(public/'icons.svg', seen)
+        ns = {'svg':'http://www.w3.org/2000/svg'}
+        symbols = ET.parse(public/'icons.svg').getroot()
+        pause = symbols.find("svg:symbol[@id='pause.circle']", ns)
+        self.assertIsNotNone(pause)
+        self.assertIsNotNone(pause.find('svg:circle', ns))
+        self.assertEqual(len(pause.findall('svg:rect', ns)), 2)
+        self.assertEqual(pause.findall('svg:use', ns), [])
+        registry = re.search(r"const names = new Set\(\[(.*?)\]\)", (public/'icons.mjs').read_text()).group(1)
+        self.assertEqual(set(re.findall(r"'([^']+)'", registry)), {node.attrib['id'] for node in symbols})
+        for name in ('icons.svg','icons.mjs'):
+            self.assertEqual((source/name).read_bytes(), (dev.REPO/'firebase/dev/public'/name).read_bytes())
         for name in ('app.mjs','catalog.mjs','fingerprint-ui.mjs','locales-interface.mjs','locales-ko.mjs','locales-es.mjs'):
             self.assertIn(public/name, seen)
 

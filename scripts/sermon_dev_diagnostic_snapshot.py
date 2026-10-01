@@ -31,7 +31,8 @@ REPO=Path(__file__).resolve().parents[1]
 SCHEMA='sermon-dev-diagnostic-snapshot-v1'
 UI=('app.mjs','catalog.mjs','locales-app.mjs','index.html','style.css','theme.js',
     'fingerprint-ui.mjs','locales-interface.mjs','locales-ko.mjs','locales-es.mjs',
-    'icons.mjs','icons.svg','brand-icon.svg','brand-icon-light.svg','fingerprint-diagnostics.mjs')
+    'icons.mjs','icons.svg','brand-icon.svg','brand-icon-light.svg','fingerprint-diagnostics.mjs',
+    'voice-samples.mjs','speaker-clip-demos.mjs','voice-demo.css')
 SAFE_REASONS=frozenset({'machine_candidate_missing','preview_audio_unavailable','strict_locale_group_not_passed',
     'strict_bridge_plugin_rejected','invalid_candidate_coverage','invalid_generated_candidate','invalid_review_response',
     'provider_input_bound_exceeded','provider_request_limit','provider_cost_limit','provider_run_deadline_reached',

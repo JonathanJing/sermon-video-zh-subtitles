@@ -179,7 +179,8 @@ class FramesTests(unittest.TestCase):
         assets.mkdir()
         code, output, _ = self.invoke("--assets", assets, self.one)
         self.assertEqual(code, 0)
-        self.assertIn(str(assets), self.receipt(output)["command"])
+        command = self.receipt(output)["command"]
+        self.assertEqual(command[command.index("--assets") + 1], str(assets.resolve()))
 
 
 if __name__ == "__main__":

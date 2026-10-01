@@ -26,7 +26,9 @@ class PortableMediaTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.root = Path(self.temp.name)
+        # macOS exposes its temporary directory through the /var symlink;
+        # the auditor deliberately rejects symlink ancestors.
+        self.root = Path(self.temp.name).resolve()
         self.archive = self.root / "machine-a"
         self.package_path = self.root / "package.json"
         self.approval_path = self.root / "approval.json"
@@ -376,13 +378,14 @@ class PortableMediaTests(unittest.TestCase):
         package, approval = review.approve(package, screening, worksheet)
         write_json(self.package_path, package)
         write_json(self.approval_path, approval)
-        rows = [{"artifactId": key, "archiveRelativePath": str(Path(binding["path"]).relative_to(fixture.asset_root))}
+        archive_root = fixture.asset_root.resolve()
+        rows = [{"artifactId": key, "archiveRelativePath": str(Path(binding["path"]).relative_to(archive_root))}
                 for key, binding in subject.artifact_bindings(package).items()]
         write_json(self.mapping_path, {"artifacts": rows})
         expected = dict(expected_source=package["englishSourcePackageJsonSha256"], expected_locale="ko",
                         expected_candidate=package["targetLanguageCandidateJsonSha256"])
         manifest = subject.prepare_manifest(self.package_path, self.approval_path, self.mapping_path,
-                                            fixture.asset_root, archive_id="real-producer-synthetic-media", **expected)
+                                            archive_root, archive_id="real-producer-synthetic-media", **expected)
         write_json(self.manifest_path, manifest)
         relocated = self.root / "producer-relocated"
         shutil.copytree(fixture.asset_root / "languages", relocated / "languages")
