@@ -131,28 +131,21 @@ struct ContentView: View {
                                 Text(page.date).font(.subheadline).foregroundStyle(.secondary)
                                 languageButton
                                 if model.fullVideoURL != nil || model.selectedAudioLanguageName != nil {
-                                    HStack(spacing: 12) {
-                                        if model.fullVideoURL != nil {
-                                            Button {
-                                                playback.pause()
-                                                sheet = .video
-                                            } label: {
-                                                Label(localization.text("观看完整视频"), systemImage: "play.rectangle")
-                                            }
-                                            .buttonStyle(.plain)
-                                            .font(.subheadline.weight(.medium))
-                                            .frame(minHeight: 44, alignment: .leading)
-                                            .accessibilityIdentifier("watch-full-video")
+                                    if typeSize.isAccessibilitySize {
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            publishedVideoButton
+                                                .frame(maxWidth: .infinity, alignment: .leading)
+                                            publishedAudioLocaleLabel
                                         }
-                                        Spacer(minLength: 8)
-                                        if let audioLanguage = model.selectedAudioLanguageName {
-                                            Text("\(localization.text("音频语言")) · \(audioLanguage)")
-                                                .font(.footnote.weight(.medium))
-                                                .accessibilityIdentifier("published-audio-locale")
+                                    } else {
+                                        HStack(spacing: 12) {
+                                            publishedVideoButton
+                                            Spacer(minLength: 8)
+                                            publishedAudioLocaleLabel
                                         }
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .frame(minHeight: 44)
                                     }
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .frame(minHeight: 44)
                                 }
                                 if model.selectedAudioLanguageName == nil,
                                    model.selectedContentTarget?.audioStatus == "human_reviewed" {
@@ -509,6 +502,29 @@ struct ContentView: View {
             .accessibilityLabel(localization.text("选择证道语言"))
             .accessibilityValue("\(model.selectedContentLanguageName)，\(localization.text(model.selectedContentCapabilitySummary))")
             .accessibilityIdentifier("choose-content-language")
+    }
+
+    @ViewBuilder private var publishedVideoButton: some View {
+        if model.fullVideoURL != nil {
+            Button {
+                playback.pause()
+                sheet = .video
+            } label: {
+                Label(localization.text("观看完整视频"), systemImage: "play.rectangle")
+            }
+            .buttonStyle(.plain)
+            .font(.subheadline.weight(.medium))
+            .frame(minHeight: 44, alignment: .leading)
+            .accessibilityIdentifier("watch-full-video")
+        }
+    }
+
+    @ViewBuilder private var publishedAudioLocaleLabel: some View {
+        if let audioLanguage = model.selectedAudioLanguageName {
+            Text("\(localization.text("音频语言")) · \(audioLanguage)")
+                .font(.footnote.weight(.medium))
+                .accessibilityIdentifier("published-audio-locale")
+        }
     }
 
     private var reviewLabel: String {
