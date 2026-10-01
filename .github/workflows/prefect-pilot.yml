@@ -11,6 +11,8 @@ on:
       - 'tests/test_sermon_business*'
       - 'tests/test_sermon_bounded_business_callbacks.py'
       - 'tests/test_sermon_local_business_callbacks.py'
+      - 'tests/test_sermon_diagnostic*'
+      - 'tests/diagnostic_dag_fixture.py'
       - 'scripts/inspect_sermon_prefect_pilot.py'
       - 'requirements-prefect.txt'
       - '.github/workflows/prefect-pilot.yml'
@@ -35,4 +37,4 @@ jobs:
       - name: Validate durable adapter and real local Prefect engine
         env:
           SERMON_TEST_PREFECT: '1'
-        run: python -m unittest tests.test_sermon_prefect_dag tests.test_sermon_prefect_runtime tests.test_sermon_pilot_evidence tests.test_sermon_bounded_business_callbacks tests.test_sermon_local_business_callbacks tests.test_sermon_business_prefect_flow tests.test_sermon_business_progress -v
+        run: python -m unittest tests.test_sermon_prefect_dag tests.test_sermon_prefect_runtime tests.test_sermon_pilot_evidence tests.test_sermon_bounded_business_callbacks tests.test_sermon_local_business_callbacks tests.test_sermon_business_prefect_flow tests.test_sermon_business_progress tests.test_diagnostic_dag_fixture tests.test_sermon_diagnostic_dag_session tests.test_sermon_diagnostic_prefect_cli tests.test_sermon_diagnostic_preview_worker tests.test_sermon_diagnostic_delivery_preflight tests.test_sermon_diagnostic_prefect_flow -v
