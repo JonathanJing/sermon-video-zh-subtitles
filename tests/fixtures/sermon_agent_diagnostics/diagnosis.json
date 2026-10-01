@@ -1,0 +1,75 @@
+{
+  "schemaVersion": "sermon-agent-diagnosis-v1",
+  "identity": {
+    "evidenceCutoff": "2026-10-01T01:00:00Z",
+    "packageVersion": "packageVersion_bb0ae52090d99087820183a635a06d65",
+    "planVersion": "planVersion_da0ec266db82cfadb4975cf4f478f706",
+    "policyVersion": "policyVersion_5dca0f27c6e5b8dedd933ab97089eeb7",
+    "revisionId": "revisionId_42b6a5c76e68b50fe64cae5789c9ceea",
+    "runId": "runId_243a5bcd56fe10083c5935a4cfa04d01",
+    "sourceId": "sourceId_f5b9b1e7554ccce646436e7c3489ccdb",
+    "sourceSha256": "efdd2b69a671bcce0a316e1cdacae1e859c26f79faf9e9584d9e99016463e99e",
+    "stage": "layer2",
+    "stateRevision": 3,
+    "targetLocale": "zh-Hans"
+  },
+  "contextSha256": "69038f82b0f4c2b57862835ff483501026ca48502df1a71879165edee7634836",
+  "snapshotId": "snapshot_4920c613235b6d6dc124c8c963211f14b8446414509d490635e59c75e9549e67",
+  "status": "needs_more_evidence",
+  "hypotheses": [
+    {
+      "hypothesisId": "h_quality",
+      "classification": "hypothesis",
+      "claim": "The failed group may need a bounded quality revision.",
+      "reason": "The frozen event records a quality rejection, but does not establish a root cause.",
+      "evidenceIds": [
+        "evidence_d4db3ce3b36b86c1dacfd83911cd48dc"
+      ],
+      "confidence": "low",
+      "confidenceReason": "A metadata-only event supports investigation, without content or reproduction evidence.",
+      "impact": {
+        "stage": "layer2",
+        "blockingScope": "affected_unit",
+        "progressRisk": "observed",
+        "qualityRisk": "possible",
+        "costRisk": "unknown"
+      },
+      "affectedUnitIds": [
+        "unit_1e4f9af192d01d51f1e1e5271d28ef5a"
+      ],
+      "suggestedRepair": {
+        "action": "propose_new_revision",
+        "unitIds": [
+          "unit_1e4f9af192d01d51f1e1e5271d28ef5a"
+        ],
+        "evidenceIds": [
+          "evidence_d4db3ce3b36b86c1dacfd83911cd48dc"
+        ],
+        "requiresDeterministicValidation": true,
+        "preconditions": [
+          "Controller must reread current identity, gates, lease and budget."
+        ],
+        "rationale": "A proposal cannot authorize generation or admission."
+      },
+      "reproducibility": {
+        "status": "not_run",
+        "evidenceIds": []
+      },
+      "unknowns": [
+        "Root cause and reproducibility are unknown."
+      ]
+    }
+  ],
+  "missingDataRequests": [
+    {
+      "kind": "reproduction",
+      "unitIds": [
+        "unit_1e4f9af192d01d51f1e1e5271d28ef5a"
+      ],
+      "question": "Provide a redacted reproduction receipt bound to this snapshot and unit version."
+    }
+  ],
+  "limitations": [
+    "Offline fixture diagnosis only; no content approval or execution authority."
+  ]
+}
