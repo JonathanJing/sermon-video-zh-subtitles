@@ -1,5 +1,6 @@
 """Receipt imports may duplicate equivalent facts, never pick a conflicting winner."""
 import copy
+from datetime import datetime, timedelta
 import json
 from pathlib import Path
 import tempfile
@@ -109,7 +110,8 @@ class ReceiptConflictTests(unittest.TestCase):
         events, _ = accounting.read_events(self.root)
         original = next(e for e in events if e['event']=='sdk_call_finished')
         imported = {**copy.deepcopy(original), 'eventId':'sdk-cross-run-import',
-                    'runId':'imported-sdk-run', 'recordedAt':'2026-10-01T00:00:00+00:00'}
+                    'runId':'imported-sdk-run', 'recordedAt':
+                        (datetime.fromisoformat(original['recordedAt']) + timedelta(seconds=1)).isoformat()}
         parent = next(e for e in events if e['event']=='stage_started' and e['spanId']==original['spanId'])
         events.append({**copy.deepcopy(parent), 'runId':'imported-sdk-run', 'eventId':'imported-sdk-stage'})
         report = self.summarize([imported, *events])

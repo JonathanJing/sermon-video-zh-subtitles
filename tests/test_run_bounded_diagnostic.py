@@ -81,6 +81,17 @@ class BoundedRunTests(unittest.TestCase):
         rows,errors=accounting.read_events(self.f.root/'logs');self.assertFalse(errors)
         receipts=[row for row in rows if row['event']=='api_attempt']
         self.assertEqual(len(receipts),6)
+        self.assertTrue(all(row['executorType']=='production_model' for row in receipts))
+        source_receipt=next(row for row in receipts if row['stage']=='diagnostic.source_model')
+        self.assertIsNotNone(source_receipt['parentSpanId'])
+        source_spans=[row for row in rows if row['event']=='stage_finished'
+                      and row['spanId']==source_receipt['spanId']]
+        self.assertEqual(len(source_spans),1)
+        self.assertGreaterEqual(source_spans[0]['elapsedSeconds'],source_receipt['elapsedSeconds'])
+        from scripts.weekly_pipeline_report import project
+        report=project(self.f.root/'logs')
+        self.assertEqual(report['observedProviderCalls']['directReceiptCount'],len(self.calls))
+        self.assertEqual(report['reportGenerationNetworkCalls'],0)
         self.assertEqual(len({row['providerScopeKey'] for row in receipts}),1)
         self.assertEqual(len({row['productionRunId'] for row in receipts}),1)
         self.assertEqual(len({row['modelCallId'] for row in receipts}),6)
