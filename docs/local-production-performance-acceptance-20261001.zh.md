@@ -106,3 +106,5 @@ PRODUCTION_PYTHON=/absolute/path/to/existing-production-env/bin/python
 新增验收回归 **56项通过（1.915秒）**，覆盖缺条件/缺尾单元、错snapshot/音频/文本身份、路径越界、批次尾部、只加载一次、GPU前拒绝错误输入、异常结果无完整回执，以及CPU串并行PCM/cues、超时与冻结设置漂移。文字项覆盖硬预算、跨caller停止、unknown不重放、账本写失败、错model/usage/cache、原预留绑定及迁移中断。系统Python缺jsonschema；验证使用已有项目`.venv/bin/python`，未安装新环境。
 
 10 分钟及整周生产仍需质量问题解释、生成音频听审和代表性整链计时；原 7h15/3h15 外推暂不替换为实测。正式 batch 默认仍为 1，Spark 默认与 Mac fallback 策略沿用现有合同。
+
+用户已决定下一次Dev测试采用[固定参数与分步候选验收](local-production-next-dev-test-parameters.zh.md)；对应profile为`not_run`，不代表本轮已执行新参数或升级生产默认。

@@ -82,4 +82,6 @@ PRODUCTION_PYTHON=/absolute/path/to/production-env/bin/python
 
 ### 下一阶段性能验收
 
+下一次Dev测试已固定[主流程参数与候选对照步骤](local-production-next-dev-test-parameters.zh.md)，并保存[机器可读参数表](../data/benchmarks/local-layer-latency/2026-10-01/next-dev-test-profile.json)：Spark、语音驻留4、文字worker3/group batch1、正式TTS/回转写batch1、legacy CPU1/queue2；随后分别验收TTS2与同WAV回转写1/4/8。参数表当前由操作员传入，runner不自动加载，执行状态`not_run`。
+
 本轮组件实测的cold/warm、load、推理、CPU保存/解码、总墙钟、内存与文字独立预算及质量回执见[验收报告](local-production-performance-acceptance-20261001.zh.md)。先处理西语样本听审，再做10分钟及整周关键路径；一次只改变worker/batch/CPU队列之一。正式默认batch仍1，不切换原冻结音频身份，不启动已暂停诊断；CPU项需更长样本和重复顺序控制后才宣称时间收益，文字完整串行与并发仍需代表性重复实测。

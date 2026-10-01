@@ -2,6 +2,8 @@
 
 **Dry run 的范围是模拟收到视频链接，检查 Layer 1–4 的后端交接，最后在 Firebase Dev 生成测试页面。** 之前的 [Dev App 页面预演](firebase-dev-weekly-dry-run.zh.md)只覆盖页面、语言与播放；它是本流程的 Layer 4 前端检查，不能代替这条后端演练。
 
+下一次涉及本地制作性能的Dev测试，另按[固定模型执行参数](local-production-next-dev-test-parameters.zh.md)采集真实模型与候选批处理收据。下文固定响应模拟器不会自动消费该profile；模拟交接/页面通过与真实模型性能、音频听审分别记录。
+
 ## 当前可运行的短流程
 
 `scripts/backend_four_layer_dry_run.py` 使用仓库内 6 秒固定夹具。模拟链接固定为 `.invalid` 域名，不发网络请求。它在本地生成短 WAV、固定英文词时间和三语文字；通过真实的 Layer 1 锚点/English Source Package 构建器和三语 shadow lane planner。Layer 2 逐组使用正式 Astra→Sol 调度循环，但响应由固定夹具提供；Layer 3 使用正式的 1 倍速排程和 PCM16 音轨拼接函数，最后输出独立的 `preview_only` 页面和报告。接链、媒体夹具、Layer 1、shadow 规划、每个语言及每次模拟模型响应／音频单元、Layer 4 均记录开始、结束、耗时和失败原因；失败注入可定位断点。
