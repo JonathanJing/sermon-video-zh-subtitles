@@ -31,7 +31,7 @@ SITE = 'ai-for-god-sermon-audio'
 ORIGIN = f'https://{SITE}.web.app'
 SCHEMA = 'sermon-production-ui-overlay-v1'
 UI_FILES = ('index.html', 'style.css', 'app.mjs', 'fingerprint-ui.mjs', 'theme.js',
-            'locales-app.mjs', 'locales-interface.mjs', 'locales-ko.mjs', 'locales-es.mjs',
+            'locales-app.mjs', 'locales-interface.mjs', 'locales-feedback.mjs', 'locales-ko.mjs', 'locales-es.mjs',
             'icons.svg', 'icons.mjs', 'brand-icon.svg', 'brand-icon-light.svg')
 # Every deployable UI file must come from the selected release checkout.
 DIRECT_SOURCE_FILES = UI_FILES
