@@ -124,6 +124,19 @@ class DiagnosticContractsTest(unittest.TestCase):
         self.assertEqual(payload["agent"]["multi_agent"], {"enabled": False})
         self.assertEqual([tool["name"] for tool in payload["agent"]["tools"]], list(adapter.READ_TOOLS))
 
+    def test_version_diff_aliases_preserve_original_hash_equality(self):
+        original = self.manifest["versionDiffs"][0]
+        exported = self.bundle["manifest"]["versionDiffs"][0]
+        self.assertNotEqual(original["beforeSha256"], original["afterSha256"])
+        self.assertNotEqual(exported["beforeSha256"], exported["afterSha256"])
+        manifest = copy.deepcopy(self.manifest)
+        row = manifest["versionDiffs"][0]
+        row["afterSha256"] = row["beforeSha256"]
+        row["sha256"] = contract.evidence_sha256(row)
+        exported = adapter.build_context_bundle(manifest)["manifest"]["versionDiffs"][0]
+        self.assertEqual(exported["beforeSha256"], exported["afterSha256"])
+        self.assertNotEqual(exported["beforeSha256"], row["beforeSha256"])
+
     def test_read_tools_confined_to_same_frozen_packet(self):
         args = {"snapshotId": self.bundle["snapshotId"], "evidenceId": self.evidence_id}
         row = adapter.read_diagnostic_tool(self.bundle, "read_evidence", args)

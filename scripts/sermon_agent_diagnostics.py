@@ -111,7 +111,7 @@ def build_context_bundle(manifest):
                     row[key] = alias(key, row[key])
             for key in ("beforeSha256", "afterSha256"):
                 if key in row:
-                    row[key] = fingerprint([snapshot_id, key, row[key]])
+                    row[key] = fingerprint([snapshot_id, "versionDiffArtifactSha256", row[key]])
             row["sha256"] = evidence_sha256(row)
             exported[collection].append(row)
     validate_manifest(exported)
