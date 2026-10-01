@@ -11,7 +11,7 @@ import sys
 
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from scripts.sermon_accounting import EXECUTOR_TYPES, READABLE_SCHEMAS, _label, _number, _safe_metadata, safe_execution_identity, read_events, read_event_snapshot, receipt_integrity, profile_integrity
+from scripts.sermon_accounting import EXECUTOR_TYPES, INTERNAL_TIMING_WORKLOADS, READABLE_SCHEMAS, _label, _number, _safe_metadata, safe_execution_identity, read_events, read_event_snapshot, receipt_integrity, profile_integrity
 
 from scripts.sermon_clock_evidence import monotonic_interval, handshake_windows, _hash as clock_hash
 
@@ -81,6 +81,118 @@ def usage_report(events, nodes, integrity=None):
             'scope': 'globally_deduplicated_direct_receipts_and_sdk_aggregates_separate',
             'equivalence': 'shared_with_accounting_summary_including_model_cost_latency_and_executor',
             'countMeaning': 'observed_receipt_count_not_proof_of_no_uninstrumented_calls'}
+
+
+
+def _interval_union(intervals):
+    merged = []
+    for begin, end in sorted(intervals):
+        if merged and begin <= merged[-1][1]:
+            merged[-1][1] = max(merged[-1][1], end)
+        else:
+            merged.append([begin, end])
+    return sum(end - begin for begin, end in merged)
+
+
+def _workload_witnesses(events, nodes, stage, expected):
+    observations = defaultdict(list)
+    for event in events:
+        if event.get('event') == 'workload' and event.get('stage') == stage:
+            observations[event.get('spanId')].append(event)
+    witnessed = set()
+    for key, rows in observations.items():
+        n = nodes.get(key)
+        if n is None or not n.get('utcTimingTrusted', True):
+            continue
+        try:
+            if all(e.get('metrics') == expected(n) and
+                   n['begin'] <= seconds(e['recordedAt']) <= n['finish'] for e in rows):
+                witnessed.add(key)
+        except (ValueError, TypeError, KeyError):
+            continue
+    return witnessed
+
+
+def telemetry_projection(events, nodes, leaves, shared_clock, diagnostics, starts, ends, usage):
+    """Read existing observations; absence cannot be repaired by projection."""
+    inline = _workload_witnesses(events, nodes, 'timing.inline_dispatch_v1',
+        lambda n: {'dispatchObserved': True, 'dependencyReadyObserved': n.get('ready') is not None,
+                   'resourceQueueObserved': False})
+    queue = {'leafCount': len(leaves),
+        'observedDispatchCount': sum(n['queueWaitSeconds'] is not None for n in leaves.values()),
+        'observedReadyAndDispatchCount': sum(n['queueWaitSeconds'] is not None and
+            n['dependencyReadyToQueueSeconds'] is not None for n in leaves.values()),
+        'localInlineDispatchCount': len(inline & set(leaves)),
+        'resourceQueueStatus': 'not_established',
+        'meaning': 'inline_dispatch_to_stage_entry_is_not_resource_or_provider_queue_wait'}
+    queue['status'] = ('measured_recorded_timestamps' if leaves and
+        queue['observedReadyAndDispatchCount'] == len(leaves) else
+        'partial_recorded_timestamps' if queue['observedDispatchCount'] else 'missing_instrumentation')
+    cross = []
+    for ident, n in nodes.items():
+        relatives = ([n['parent']] if n['parent'] in nodes else [])
+        if ident in leaves:
+            relatives += [dep for dep in n['dependsOn'] if dep in leaves]
+        for dep in relatives:
+            a, b = n.get('clockDomainId'), nodes[dep].get('clockDomainId')
+            if a and b and a != b:
+                cross.append(shared_clock(n, nodes[dep]))
+    cross_status = ('verified_recorded_edges' if cross and all(cross) and not diagnostics else
+                    'partial_recorded_edges' if any(cross) else 'not_established' if cross or any(not n.get('clockDomainId') for n in nodes.values()) else 'not_observed')
+    publications = []
+    for e in events:
+        n, m = nodes.get(e.get('spanId')), e.get('metrics', {})
+        if (e.get('event') != 'workload' or e.get('stage') != 'diagnostic.dev_http_binding'
+                or n is None or n['stage'] != 'diagnostic.dev_http' or n['status'] != 'completed'
+                or m.get('productionEligible') is not False):
+            continue
+        if any(type(m.get(k)) is not str or len(m[k]) != 64 or
+               any(ch not in '0123456789abcdef' for ch in m[k])
+               for k in ('manifestSha256','receiptSha256')):
+            continue
+        try:
+            at = seconds(e['recordedAt'])
+            if n.get('utcTimingTrusted', True) and n['begin'] <= at <= n['finish']:
+                publications.append((e['recordedAt'], m['manifestSha256'], m['receiptSha256']))
+        except (ValueError, TypeError):
+            continue
+    bindings = {(m, r) for _, m, r in publications}
+    page = min((at for at, _, _ in publications), default=None) if len(bindings) == 1 else None
+    marked = _workload_witnesses(events, nodes, 'timing.orchestration_v1',
+        lambda n: {'orchestrationWorkObserved': True})
+    selected = [nodes[key] for key in marked if key in nodes]
+    overhead = None
+    # Only explicit program-bookkeeping spans are measured. Never use wrapper
+    # duration minus leaves: those gaps can hide uninstrumented work or waits.
+    participants = [*selected, *leaves.values()]
+    # Several native children retain distinct process domains. A common actual
+    # parent can establish the same kernel basis for each via separate valid
+    # handshakes; never equate children merely because their UTC looks close.
+    basis = next((n for n in nodes.values() if n.get('clockDomainId') and
+                  all(shared_clock(n, participant) for participant in participants)), None)
+    if (selected and len(selected) == len(marked) and not diagnostics and basis is not None
+            and all(n['executorType'] == 'deterministic_program' and n.get('clockDomainId') for n in selected)):
+        ranges = [(int(n['monotonicStartNs']), int(n['monotonicEndNs'])) for n in selected]
+        other = [(int(n['monotonicStartNs']), int(n['monotonicEndNs']))
+                 for key, n in leaves.items() if key not in marked]
+        intersect = [(max(a,c), min(b,d)) for a,b in ranges for c,d in other if max(a,c) < min(b,d)]
+        overhead = round((_interval_union(ranges) - _interval_union(intersect)) / 1e9, 6)
+    sdk_start = {e.get('invocationId') for e in events if e.get('event') == 'sdk_call_started'}
+    sdk_end = {e.get('invocationId') for e in events if e.get('event') == 'sdk_call_finished'}
+    profile = profile_integrity(events)
+    complete = (len(starts) == len(ends) == 1 and not diagnostics and
+                usage['unresolvedAttempts'] == 0 and not sdk_start - sdk_end and
+                profile['status'] == 'consistent' and profile['profileEventCount'] > 0)
+    return {'queue': queue, 'cross': {'status': cross_status, 'recordedCrossProcessEdges': len(cross),
+        'verifiedCrossProcessEdges': sum(cross)}, 'pageReadyAt': page,
+        'pageReadyMeaning': 'completed_HTTP_verification_binding_observed_at_not_rollout_or_content_acceptance',
+        'publicationBinding': {'manifestSha256': next(iter(bindings))[0],
+            'receiptSha256': next(iter(bindings))[1]} if page else None,
+        'orchestrationOverheadSeconds': overhead,
+        'orchestrationScope': 'observed_explicit_program_bookkeeping_interval_union_excluding_recorded_producer_overlap_not_total_overhead',
+        'orchestrationSpanCount': len(selected),
+        'logCompleteness': 'recorded_events_reconciled' if complete else 'not_established',
+        'logCompletenessMeaning': 'recorded_profile_boundaries_and_receipts_only_uninstrumented_work_not_proven_absent'}
 
 
 def project_run(run_id, events, integrity=None, receipt_events=None):
@@ -324,6 +436,7 @@ def project_run(run_id, events, integrity=None, receipt_events=None):
         critical = None
     totals = {executor: round(sum(n['elapsedSeconds'] for n in leaves.values() if n['executorType'] == executor), 6)
               for executor in sorted(EXECUTOR_TYPES)}
+    telemetry = telemetry_projection(events, nodes, leaves, shared_clock, diagnostics, starts, ends, usage)
     safe_nodes = [{**{k: v for k, v in n.items() if k not in {'dependsOn', 'parent', 'begin', 'finish', 'ready'}},
                    'dependsOnSha256': [digest(dep) for dep in n['dependsOn']],
                    'parentSpanSha256': digest(n['parent']) if n['parent'] else None,
@@ -331,7 +444,8 @@ def project_run(run_id, events, integrity=None, receipt_events=None):
                                     if e.get('spanId') == key and e['event'] in {'api_attempt_started', 'api_attempt', 'sdk_call_finished'}}
                                     | {f['requestedModel'] for f in cached if f['spanSha256'] == digest(key) and f['requestedModel']}
                                     | {f['model'] for f in local_observations if f['spanSha256'] == digest(key)}),
-                   'queueTimingStatus': 'measured' if n['queueWaitSeconds'] is not None else 'missing_instrumentation'}
+                   'queueTimingStatus': 'measured' if n['queueWaitSeconds'] is not None else 'missing_instrumentation',
+                   'readinessTimingStatus': 'observed' if n['dependencyReadyToQueueSeconds'] is not None else 'not_established'}
                   for key, n in leaves.items()]
     unfinished = [{'spanSha256': digest(key), 'stage': _label(e['stage']),
                    'executorType': e.get('executorType'), 'startedAt': e.get('startedAt'),
@@ -361,7 +475,7 @@ def project_run(run_id, events, integrity=None, receipt_events=None):
                              if (k.endswith('Sha256') and isinstance(v, str) and len(v) == 64
                                  and all(c in '0123456789abcdef' for c in v))
                              or _number(v) is not None or isinstance(v, bool)}}
-                for e in events if e['event'] == 'workload']
+                for e in events if e['event'] == 'workload' and e.get('stage') not in INTERNAL_TIMING_WORKLOADS]
     from scripts.sermon_review_observation import observations
     rqc = observations(events)
     return {**({'reviewObservations': rqc} if rqc else {}), 'runSha256': digest(run_id), 'status': 'partial' if diagnostics else 'projected',
@@ -380,15 +494,17 @@ def project_run(run_id, events, integrity=None, receipt_events=None):
                 for e in events if e['event'] == 'workflow_evidence'],
             'workflowProvenance': provenance, 'workloadEvidence': workload,
             'workUnits': sorted(safe_nodes, key=lambda n: (-n['elapsedSeconds'], n['spanSha256'])),
-            'sourceDurationSeconds': source_duration, 'locales': locales or None, 'pageReadyAt': None,
-            'orchestrationOverheadSeconds': None,
+            'sourceDurationSeconds': source_duration, 'locales': locales or None,
+            'pageReadyAt': telemetry['pageReadyAt'], 'orchestrationOverheadSeconds': telemetry['orchestrationOverheadSeconds'],
+            'telemetryEvidence': telemetry,
             'observabilityCoverage': {
                 'sourceDuration': 'recorded' if source_duration is not None else 'missing_or_conflicting',
                 'locales': 'recorded' if locales else 'not_observed',
-                'queueTiming': 'measured' if leaves and all(n['queueWaitSeconds'] is not None for n in leaves.values()) else 'missing_instrumentation',
-                'pageReady': 'not_observed', 'orchestrationOverhead': 'missing_instrumentation',
-                'crossProcessCriticalPath': 'not_established',
-                'logCompleteness': 'not_established',
+                'queueTiming': telemetry['queue']['status'],
+                'pageReady': 'http_verified_observation' if telemetry['pageReadyAt'] else 'not_observed',
+                'orchestrationOverhead': 'measured_explicit_spans' if telemetry['orchestrationOverheadSeconds'] is not None else 'missing_instrumentation',
+                'crossProcessCriticalPath': telemetry['cross']['status'],
+                'logCompleteness': telemetry['logCompleteness'],
                 'statusMeaning': 'projected_means_computable_recorded_DAG_not_complete_telemetry'},
             'acceptance': 'not_evaluated', 'notes': [
                 'Executor subtotals overlap across parallel branches; never sum as end-to-end wall.',
@@ -440,6 +556,17 @@ def project(directory):
         # A damaged record can hide a dependency: never claim a complete DAG.
         for run in result:
             run['criticalPath'] = None; run['status'] = 'partial'
+            run['observabilityCoverage']['logCompleteness'] = 'not_established'
+            run['telemetryEvidence']['logCompleteness'] = 'not_established'
+            run['orchestrationOverheadSeconds'] = None
+            run['telemetryEvidence']['orchestrationOverheadSeconds'] = None
+            run['observabilityCoverage']['orchestrationOverhead'] = 'missing_or_damaged_evidence'
+            run['pageReadyAt'] = None
+            run['telemetryEvidence']['pageReadyAt'] = None
+            run['telemetryEvidence']['publicationBinding'] = None
+            run['observabilityCoverage']['pageReady'] = 'missing_or_damaged_evidence'
+            run['observabilityCoverage']['crossProcessCriticalPath'] = 'not_established'
+            run['telemetryEvidence']['cross']['status'] = 'not_established'
     return {'schemaVersion': 'sermon-weekly-pipeline-report-v1', **({'sourceLedgerSha256': ledger_hash} if replay['profileEventCount'] else {}), 'runs': result,
             'status': 'partial' if diagnostics or not result or any(r['status'] == 'partial' for r in result) else 'projected',
             'diagnostics': diagnostics, 'duplicateEventsIgnored': duplicates,

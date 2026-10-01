@@ -116,6 +116,54 @@ class DiagnosticFlowTests(unittest.TestCase):
                 checkpoint_stage_declaration_path=str(declaration))
         return manifest,declaration,auxiliary
 
+    def large_plan(self):
+        # Real frozen session evidence aggregates are larger than one private
+        # per-revision record (observed live plan: 559435 bytes).
+        self.session.binding['historicalEvidence'] = [
+            {'observationId': f'fixture-{index}', 'artifactSha256': '3' * 64,
+             'sourceEvidenceSha256': '4' * 64, 'runConfigSha256': '5' * 64}
+            for index in range(2200)]
+        dag = flow.DiagnosticDAG(self.session, self.config)
+        self.assertGreater(len(c.canonical_bytes(dag.binding)), c.MAX_BYTES)
+        return dag
+
+    def test_large_aggregate_plan_freezes_reads_and_replays_without_private_cap_change(self):
+        dag = self.large_plan()
+        private_cap = c.MAX_BYTES
+        with patch.object(flow.strict, 'save_once', side_effect=AssertionError('private plan writer')), \
+             patch.object(c, 'read_snapshot', side_effect=AssertionError('private plan reader')):
+            dag.freeze()
+            before = (dag.root / 'plan.json').read_bytes()
+            dag._check()
+            dag.freeze()
+        self.assertEqual((dag.root / 'plan.json').read_bytes(), before)
+        saved, raw = flow.public.read_snapshot(dag.root / 'plan.json')
+        self.assertEqual(saved, dag.binding)
+        self.assertEqual(c.canonical_sha256(saved), dag.plan_sha256)
+        self.assertEqual(raw, before)
+        self.assertEqual(c.MAX_BYTES, private_cap)
+        self.assertEqual(self.session.calls, [])
+        with profile.session(self.root / 'logs', 'large-plan-unit', work_kind='engineering', evidence_mode='synthetic'):
+            source = dag.execute('source.existing')
+        self.assertTrue(source['readyForDownstream'])
+        self.assertEqual(self.session.calls, [('source', None)])
+
+    def test_large_plan_saved_binding_and_canonical_hash_tampering_stop_before_callback(self):
+        dag = self.large_plan(); dag.freeze()
+        path = dag.root / 'plan.json'; original = path.read_bytes()
+        changed = copy.deepcopy(dag.binding); changed['maxWorkers'] = 2
+        path.write_bytes(c.canonical_bytes(changed))
+        with self.assertRaisesRegex(c.ContractError, 'diagnostic_flow_plan_changed'):
+            dag._check()
+        with self.assertRaisesRegex(c.ContractError, 'diagnostic_flow_plan_changed'):
+            dag.freeze()
+        self.assertEqual(flow.public.read_snapshot(path)[0], changed)  # Never overwritten.
+        path.write_bytes(original)
+        dag.binding['maxWorkers'] = 2  # Hash is still the original frozen plan.
+        with self.assertRaisesRegex(c.ContractError, 'diagnostic_flow_frozen_inputs_changed'):
+            dag._check()
+        self.assertEqual(self.session.calls, [])
+
     def test_fixed_graph_preview_candidate_not_caller_supplied_and_all_gates_pending(self):
         dag = flow.DiagnosticDAG(self.session, self.config)
         self.assertEqual(dag.nodes[0], ('source.existing', 'source', None, ()))

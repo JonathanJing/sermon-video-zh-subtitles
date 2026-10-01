@@ -105,3 +105,11 @@ g010的真实语言插件失败走版本化 `sermon-language-plugin-repair-v1`�
 恢复补丁根级集成验证：249 tests，248通过、1 optional SDK skip，91.108秒、exit 0；覆盖Agent、完整checkpoint/native/DAG、真实Source缓存和历史Layer2修订/桥接。预期AccountingWriteError故障注入保留退出语义，未调用真实provider。代码固定后执行v5真实恢复及第四只读Agent。
 
 v5在准备阶段0请求失败：1,730,059字节linked-history误用256KiB private reader。修复仅版本化linked-attempt aggregate用既有16MiB stable reader，其他收据上限不变、对读取精确bytes验证SHA。v5原plan与失败记录保留，新v6恢复仍承接同一闭父v4、源缓存v3和329历史请求，未启动v5不重复计数。第四Agent准备时私有driver原因值不在固定schema枚举；改用receipt_observed和事实packageVersion historical_http_400_body_missing，未改schema或推定根因，零API。
+
+第四只读Agent真实完成：16 polls/35.2017秒、36 transport methods全returned，两次required-action-binding-v2工具提交、final schema及推荐绑定通过，diagnosisStatus=needs_more_evidence。3次同session bounded GET补账确认唯一root completed，21459 input/1628 output/23087 total；四phase各root累计一次73441 input/3634 output/77075 total，actualModel/cost仍unknown、8M观察预留不退款。缺失原400正文不能追认根因。
+
+v6实际Source-cache通过，历史2、本轮ASR/sourcecheck/MFA0；完整13-file checkpoint校验通过、未加载模型。DAG冻结plan559435字节重读误用private256KiB cap，所有nodes在派发前被blocked，本轮provider0/native0。流程继续发布blocked Dev状态并完成298文件约2040508528字节全部HTTP SHA校验、source Range206。三语真实Chrome blocked UI均播放禁用、无音轨、无大纲就绪误导、pageErrors0；失败reason仍unclassified_failure，需补精确安全映射。v6已以0provider请求闭父，下一v7从它追加恢复授权，不覆盖旧plan/收据。资产GET长阶段无中途日志已记录008/013，补数值下载及已验证进度；下载bytes不冒充hash已核验。
+
+最终软件整合在无live任务的v6闭父后进行：加入原始MFA绝对期限、typed Source终态和唯一精确producer兼容映射，保留旧Source生产身份另记当前inspector，未知hash/semantic模块变动不放行。隔离实际v3缓存重验历史2/new0、45旧JSON不变，明确synthetic successor且未创建真实新权限。下一v7真实复用将再次核验这些绑定。另确认同一行lambda/genexpr归一后出现重复error frame，违反uniqueItems并造成AccountingWriteError，008/013补稳定去重；发布重放的检查span/原intent-returned SHA绑定属于观测改进，未观察变量未定义或重复部署事故。
+
+最终软件根级整合：362 tests，361通过/1optionalSDKskip，131.292秒exit0。包括真实挂起子进程期限、精确历史Source兼容、历史12组恢复/失败修订、完整checkpoint/native固定夹具、发布重放零重复部署、数字HTTP进度、实际跨进程clock握手、异常帧去重与业务workload兼容。中韩未付费draft各追加一条原有非空匹配target表面约束说明，术语、pending、模型、引文及Source字段均原样，正常freezer/plugin loader通过；西语policy与v4付费原policy canonical bytes精确相等。预期故障注入AccountingWriteError保留失败语义，未调用真实provider。下一真实v7会核验迁移Source、新Text/native及发布；queue字段的local inline dispatch不代表资源/provider排队，编排耗时仅explicit bookkeeping小计，未观测工作保留unknown。

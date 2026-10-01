@@ -666,3 +666,5 @@ E4 crash-window 证据补充：新增真实短子进程在本地 side effect 已
 Canonical package adapter 第一批：Source/Text shadow inspection 已复用生产 Source/Anchor、完整 source/candidate schema、policy、机器 review 与独立人工 receipt validators，额外核对冻结 transcript 与 source review evidence。纯读取真实路径，输出只含 identity hashes 与固定诊断；缺/过期 policy/candidate/review 按语言阻塞。Audio/Release inspection 与任何 canonical dispatch 仍未接通；文本批准不会生成 voice authorization。
 
 监督执行已启动：先完成第一批三语真实单组验收（六次返回请求，重启零新增），再整合后续修复并运行 fresh 三分钟 Dev 全链路。当前实现与证据边界见[监督验收记录](reports/20261001-dev-diagnostic-supervised-plan.zh.md)。尚未通过整链路或正式门禁的条目继续保持 in_progress / waiting_evidence。
+
+2026-10-01 监督续跑新增实际证据：第四只读Agent合法final=needs_more_evidence（004真实合同验收通过、400根因仍证据不足）；v5历史账本1730059字节/v6 DAG计划559435字节误用private reader分别归006/005，均0新provider；只扩大版本化aggregate读写。v6 blocked状态真实Dev部署、298资产HTTP与Range通过、三语Chrome禁播/无误导通过；安全reason映射及长HTTP数值进度归009/008/013。原生合成与ready完整播放仍待下一恢复，007正式听审/同步/设备/现场未执行。完整收据见监督报告。

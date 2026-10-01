@@ -40,9 +40,10 @@ def options(args):
             'allow_spark_fallback':getattr(args, 'mfa_spark_fallback', os.environ.get('MFA_SPARK_FALLBACK', '1').lower() not in ('0','false','no'))}
 
 
-def local_identity(options):
+def local_identity(options, *, deadline_monotonic=None):
     # Reference configuration errors are not a runtime outage, and must never
     # be hidden by failover. Validate user supplied forms before dependency checks.
+    local.deadline_timeout(60,deadline_monotonic)
     local._spoken_forms(options.get('spoken_forms_path'))
     executable = shutil.which(str(options['mfa_executable'])) or str(options['mfa_executable'])
     required = [executable, options.get('dictionary_path'), options.get('acoustic_model')]
@@ -56,8 +57,10 @@ def local_identity(options):
     env = os.environ.copy()
     env['PATH'] = str(Path(checked['mfa_executable']).parent) + os.pathsep + env.get('PATH', '')
     try:
-        version = subprocess.run([checked['mfa_executable'], 'version'], capture_output=True,
-                                 text=True, check=True, timeout=60, env=env).stdout.strip()
+        version = local.bounded_process([checked['mfa_executable'], 'version'], capture_output=True,
+                                 text=True, check=True, timeout=60, env=env,deadline_monotonic=deadline_monotonic).stdout.strip()
+    except local.MFADeadlineReached:
+        raise
     except (OSError, subprocess.SubprocessError) as exc:
         raise LocalRuntimeUnavailable('Mac MFA runtime cannot start') from exc
     if not version:
@@ -74,9 +77,13 @@ def local_identity(options):
     return {'schemaVersion':1, 'backend':'macbook-local', 'runtime':runtime}
 
 
-def preflight(*, local_options, spark_options, allow_spark_fallback=True):
+def preflight(*, local_options, spark_options, allow_spark_fallback=True, deadline_monotonic=None):
+    if deadline_monotonic is not None:
+        local.deadline_timeout(60,deadline_monotonic)
+        if allow_spark_fallback:
+            raise ValueError('mfa_deadline_requires_local_only')
     try:
-        return local_identity(local_options)
+        return local_identity(local_options,**({'deadline_monotonic':deadline_monotonic} if deadline_monotonic is not None else {}))
     except LocalRuntimeUnavailable as exc:
         if not allow_spark_fallback:
             raise
@@ -98,7 +105,8 @@ def _runtime_failure(exc):
     return False
 
 
-def align_reference_chunks(chunks, clip_path, outdir, *, local_options, spark_options, allow_spark_fallback=True):
+def align_reference_chunks(chunks, clip_path, outdir, *, local_options, spark_options, allow_spark_fallback=True, deadline_monotonic=None):
+    local.deadline_timeout(60,deadline_monotonic)
     # Pin inputs before dispatch; failover cannot quietly consume modified text,
     # audio or spoken forms.
     audio_sha = local._sha(clip_path)
@@ -118,11 +126,15 @@ def align_reference_chunks(chunks, clip_path, outdir, *, local_options, spark_op
     if not nonempty:
         raise ValueError('No reference chunks for MFA')
     selected = preflight(local_options=local_options, spark_options=spark_options,
-                         allow_spark_fallback=allow_spark_fallback)
+                         allow_spark_fallback=allow_spark_fallback,
+                         **({'deadline_monotonic':deadline_monotonic} if deadline_monotonic is not None else {}))
     if selected['backend'] == 'macbook-local':
         try:
             runtime_key = hashlib.sha256(json.dumps(selected['runtime'], sort_keys=True).encode()).hexdigest()
-            segments = local.align_reference_chunks(frozen, clip_path, Path(outdir)/runtime_key, **local_options)
+            segments = local.align_reference_chunks(frozen, clip_path, Path(outdir)/runtime_key, **local_options,
+                **({'deadline_monotonic':deadline_monotonic} if deadline_monotonic is not None else {}))
+        except local.MFADeadlineReached:
+            raise
         except (RuntimeError, OSError, subprocess.SubprocessError, MemoryError) as exc:
             if not allow_spark_fallback or not _runtime_failure(exc):
                 raise
@@ -146,5 +158,6 @@ def align_reference_chunks(chunks, clip_path, outdir, *, local_options, spark_op
     for segment in segments:
         segment['alignmentExecutionBackend'] = selected['backend']
     Path(outdir).mkdir(parents=True, exist_ok=True)
+    local.deadline_timeout(60,deadline_monotonic)
     local._write(Path(outdir)/'backend.json', selected)
     return segments

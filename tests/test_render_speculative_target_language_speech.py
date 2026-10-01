@@ -449,13 +449,15 @@ class DiagnosticPreviewTests(unittest.TestCase):
         self.assertEqual(len(models), 2)
         first_commit = next(row for row in starts.values() if row['stage'] == 'preview.zh-Hans.0000.commit')
         second = next(row for row in starts.values() if row['stage'] == 'preview.zh-Hans.0001.cache_admission')
-        self.assertEqual(second['dependsOn'], [first_commit['spanId']])
+        dispatch = next(row for row in starts.values() if row['stage'] == 'preview.zh-Hans.0001.dispatch')
+        self.assertEqual(dispatch['dependsOn'], [first_commit['spanId']])
+        self.assertEqual(second['dependsOn'], [dispatch['spanId']])
         observations = [row['fields'] for row in cold_rows if row.get('code') == subject.local_observation.CODE]
         self.assertEqual([row['status'] for row in observations], ['started', 'completed', 'started', 'completed'])
         self.assertTrue(all(row['model'] == self.f.adapter['model'] and row['providerTokens'] is None
                             and row['providerCostUsd'] is None for row in observations))
         self.assertFalse(any(row.get('executorType') == 'production_model' for row in warm_rows))
-        metrics = [row['metrics'] for row in warm_rows if row['event'] == 'workload']
+        metrics = [row['metrics'] for row in warm_rows if row['event'] == 'workload' and 'unitIndex' in row['metrics']]
         self.assertEqual(len(metrics), 2)
         self.assertTrue(all(row['cacheHit'] and row['providerInputTokens'] is None
                             and row['previewOnly'] and row['humanAcceptancePending'] and not row['productionEligible']

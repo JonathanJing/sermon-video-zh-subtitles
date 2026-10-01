@@ -140,6 +140,7 @@ def _capture(new_plan, subject, parent_plan_path, authorization):
         'fresh_source_cache_review_content_changed')
     aligned_path = _safe_path(source['transcript']['artifact']['path'])
     aligned, raw = fresh._read_alignment(aligned_path)
+    aligned_bytes_sha=c.bytes_sha256(raw)
     c.require(c.bytes_sha256(raw) == source['transcript']['artifact']['sha256'] == evidence['alignedSegmentsSha256']
         and c.canonical_sha256(aligned) == source['transcript']['artifact']['jsonSha256']
         and fresh.normalized_text(' '.join(row['text'] for row in aligned)) == fresh.normalized_text(asr['response']['text'])
@@ -185,13 +186,19 @@ def _capture(new_plan, subject, parent_plan_path, authorization):
     else:
         c.require(evidence['alignmentMode'] == 'validated_prior_alignment_cache', 'fresh_source_cache_alignment_mode_invalid')
     repository = Path(__file__).resolve().parents[1]
-    producers = {}
+    from scripts import sermon_source_producer_compatibility as compatibility
+    producers = {}; current_producers={}
     for name in SOURCE_MODULES:
-        relative = 'scripts/'+name+'.py'; sha = _ref(repository/relative)['bytesSha256']
-        c.require(parent['executionIdentity']['loadedProjectCodeSha256'].get(relative) == sha
-            and new_plan['executionIdentity']['loadedProjectCodeSha256'].get(relative) == sha,
-            'fresh_source_cache_producer_code_changed')
-        producers[relative] = sha
+        relative='scripts/'+name+'.py';current_producers[relative]=_ref(repository/relative)['bytesSha256']
+        producers[relative]=parent['executionIdentity']['loadedProjectCodeSha256'].get(relative)
+    c.require(all(new_plan['executionIdentity']['loadedProjectCodeSha256'].get(path)==sha
+        for path,sha in current_producers.items()), 'fresh_source_cache_producer_code_changed')
+    migration=compatibility.verify(producers,current_producers,
+        new_plan['executionIdentity']['loadedProjectCodeSha256'],{
+            'parentPlanSha256':c.canonical_sha256(parent),'newPlanSha256':c.canonical_sha256(new_plan),
+            'sourceCanonicalSha256':c.canonical_sha256(source),'anchorCanonicalSha256':c.canonical_sha256(anchor),
+            'alignmentBytesSha256':aligned_bytes_sha,'asrReceiptSha256':asr_ref['receiptSha256'],
+            'sourceCheckReceiptSha256':review_ref['receiptSha256']})
     c.require(source['implementation']['builderSha256'] == producers['scripts/build_english_source_package.py']
         and source['implementation']['anchorGeneratorSha256'] == producers['scripts/sermon_sentence_interpretation.py'],
         'fresh_source_cache_source_implementation_changed')
@@ -204,6 +211,9 @@ def _capture(new_plan, subject, parent_plan_path, authorization):
         'historicalSourceProviderCalls':2,'newASRCalls':0,'newSourceCheckCalls':0,'newMFACalls':0,
         'sourceExecution':'historical_receipts_reused_current_deterministic_inspection',
         'productionEligible':False,'humanAcceptance':'pending'}
+    if migration is not None:
+        proof.update(schemaVersion='sermon-cached-fresh-diagnostic-source-v2',
+            sourceProducerCompatibility=migration)
     return source, anchor, proof
 
 

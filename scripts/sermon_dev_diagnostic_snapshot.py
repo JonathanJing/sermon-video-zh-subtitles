@@ -34,7 +34,8 @@ SAFE_REASONS=frozenset({'machine_candidate_missing','preview_audio_unavailable',
     'provider_input_bound_exceeded','provider_request_limit','provider_cost_limit','provider_run_deadline_reached',
     'provider_outcome_reconciliation_required','provider_configuration_stopped','native_runtime_unavailable',
     'preview_worker_failed_requires_reconciliation',
-    'diagnostic_state_binding_invalid','unclassified_failure'})
+    'diagnostic_state_binding_invalid','invalid_snapshot_file',
+    'diagnostic_flow_plan_changed','diagnostic_flow_frozen_inputs_changed','unclassified_failure'})
 
 
 def stage_presentation(observation, *, candidate, preview):
@@ -226,38 +227,73 @@ def publish_and_verify(snapshot, *, plan, authorization, execute=False, depends_
     c.require(type(timeout_seconds) is int and 1<=timeout_seconds<=300,'dev_publish_timeout_invalid')
     c.require(_read(out/'hosting/firebase.json').get('hosting',{}).get('site')==PROJECT,'dev_publish_target_changed')
     intent=out/'publish-intent.json';returned=out/'publish-returned.json'
+    expected_intent={'schemaVersion':'sermon-dev-diagnostic-publication-intent-v1',
+        'authorizationSha256':c.canonical_sha256(authorization),
+        'manifestSha256':c.canonical_sha256(manifest),'status':'outcome_unknown'}
     if intent.exists():
         c.require(returned.exists(),'dev_publication_requires_reconciliation')
-        c.require(_read(intent)['authorizationSha256']==c.canonical_sha256(authorization) and
-            _read(returned)['manifestSha256']==c.canonical_sha256(manifest) and _read(returned)['exitCode']==0,
-            'dev_publication_replay_changed')
+        replay=True
     else:
-        immutable.save_once(intent,{'schemaVersion':'sermon-dev-diagnostic-publication-intent-v1','authorizationSha256':c.canonical_sha256(authorization),
-            'manifestSha256':c.canonical_sha256(manifest),'status':'outcome_unknown'})
-    replay=returned.exists()
-    with accounting.stage('diagnostic.dev_publish',depends_on=depends_on,cache_hit=replay,
-                          executor_type='deterministic_program' if replay else 'external_service') as published_span:
-        try:
-            if not returned.exists():
+        c.require(not returned.exists(),'dev_publication_replay_changed')
+        immutable.save_once(intent,expected_intent)
+        replay=False
+    if replay:
+        with accounting.stage('diagnostic.dev_publish_replay',depends_on=depends_on,cache_hit=True,
+                              executor_type='deterministic_program') as published_span:
+            intent_value,intent_raw=c.read_snapshot(intent)
+            returned_value,returned_raw=c.read_snapshot(returned)
+            c.require(intent_value==expected_intent and type(returned_value) is dict and
+                set(returned_value)=={'status','manifestSha256','stdoutSha256','stderrSha256','exitCode'} and
+                returned_value['status']=='deploy_command_returned_success' and
+                returned_value['manifestSha256']==c.canonical_sha256(manifest) and
+                type(returned_value['exitCode']) is int and returned_value['exitCode']==0 and
+                all(type(returned_value[key]) is str and re.fullmatch('[a-f0-9]{64}',returned_value[key])
+                    for key in ('stdoutSha256','stderrSha256')),'dev_publication_replay_changed')
+            remaining(30)
+            accounting.record_workload('diagnostic.dev_publish_replay_binding',{
+                'manifestSha256':c.canonical_sha256(manifest),'intentSha256':c.bytes_sha256(intent_raw),
+                'returnedSha256':c.bytes_sha256(returned_raw)})
+    else:
+        with accounting.stage('diagnostic.dev_publish',depends_on=depends_on,
+                              executor_type='external_service') as published_span:
+            try:
+                c.require(not returned.exists(),'dev_publication_replay_changed')
                 result=subprocess.run(['firebase','deploy','--project',PROJECT,'--only','hosting','--non-interactive'],cwd=out/'hosting',
                     env=accounting.subprocess_environment(),capture_output=True,timeout=remaining(timeout_seconds))
                 c.require(result.returncode==0,'dev_publication_outcome_requires_reconciliation')
                 immutable.save_once(returned,{'status':'deploy_command_returned_success',
                     'manifestSha256':c.canonical_sha256(manifest),'stdoutSha256':c.bytes_sha256(result.stdout),
                     'stderrSha256':c.bytes_sha256(result.stderr),'exitCode':0})
-        except BaseException:
-            immutable.save_once(out/'publish-unconfirmed.json',{'status':'outcome_unknown','manifestSha256':c.canonical_sha256(manifest)})
-            raise
+            except BaseException:
+                immutable.save_once(out/'publish-unconfirmed.json',{'status':'outcome_unknown','manifestSha256':c.canonical_sha256(manifest)})
+                raise
     with accounting.stage('diagnostic.dev_http',depends_on=[published_span],executor_type='external_service') as http_span:
-        for relative,sha in manifest['publicFiles'].items():
+        verified_assets=0;verified_bytes=0;manifest_sha=c.canonical_sha256(manifest)
+        def progress(complete):
+            accounting.record_workload('diagnostic.dev_http_progress',{'manifestSha256':manifest_sha,
+                'verifiedAssets':verified_assets,'totalAssets':len(manifest['publicFiles']),
+                'verifiedBytes':verified_bytes,'verificationComplete':int(complete)})
+        for asset_index,(relative,sha) in enumerate(manifest['publicFiles'].items(),1):
+            last_download_progress=-1;next_download_progress=16*1024*1024
+            def download_progress():
+                # Streamed byte observations are explicitly unverified until SHA passes.
+                accounting.record_workload('diagnostic.dev_http_download_progress',{'manifestSha256':manifest_sha,
+                    'assetIndex':asset_index,'currentDownloadedBytes':total,'verificationComplete':0})
             local=out/'hosting/public'/relative;size=local.stat().st_size;total=0;digest=hashlib.sha256()
             with urlopen(Request(ORIGIN+'/'+quote(relative,safe='/'),headers={'Cache-Control':'no-cache'}),timeout=remaining(30)) as response:
                 c.require(response.status==200,'dev_http_asset_changed')
                 while True:
                     block=response.read(min(1024*1024,size+1-total));remaining(30)
-                    if not block:break
+                    if not block:
+                        if last_download_progress!=total:download_progress()
+                        break
                     total+=len(block);c.require(total<=size,'dev_http_asset_changed');digest.update(block)
+                    if total>=next_download_progress:
+                        download_progress();last_download_progress=total
+                        next_download_progress=(total//(16*1024*1024)+1)*(16*1024*1024)
                 c.require(total==size and digest.hexdigest()==sha,'dev_http_asset_changed')
+            verified_assets+=1;verified_bytes+=total
+            if verified_assets%10==0:progress(False)
         relative='media/'+manifest['pageId']+'/source.mp4';local=out/'hosting/public'/relative
         with urlopen(Request(ORIGIN+'/'+quote(relative,safe='/'),headers={'Range':'bytes=0-1023','Cache-Control':'no-cache'}),timeout=remaining(30)) as response:
             c.require(response.status==206 and response.headers.get('Content-Range')==f'bytes 0-1023/{local.stat().st_size}'
@@ -269,4 +305,5 @@ def publish_and_verify(snapshot, *, plan, authorization, execute=False, depends_
         immutable.save_once(out/'http-receipt.json',receipt)
         accounting.record_workload('diagnostic.dev_http_binding',{'manifestSha256':c.canonical_sha256(manifest),
             'receiptSha256':c.canonical_sha256(receipt),'productionEligible':False})
+        progress(True)  # Final only after every asset, Range and persisted receipt pass.
     return {**receipt,'completionSpans':[http_span]}

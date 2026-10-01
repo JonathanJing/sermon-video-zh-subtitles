@@ -180,7 +180,9 @@ class DiagnosticDAG:
 
     def freeze(self):
         self._check()
-        strict.save_once(self.root / 'plan.json', self.binding)
+        self.root.mkdir(parents=True, exist_ok=True, mode=0o700)
+        _safe_path(self.root, recursive=True)
+        public.save_once(self.root / 'plan.json', self.binding)
 
     def _check(self):
         c.require(_safe_path(self.session.root) == self.fixture_root and
@@ -192,7 +194,7 @@ class DiagnosticDAG:
                   _inventory(self.config, self.session) == self.binding['inputFiles'], 'diagnostic_flow_frozen_inputs_changed')
         path = self.root / 'plan.json'
         if path.exists():
-            c.require(c.read_snapshot(path)[0] == self.binding, 'diagnostic_flow_plan_changed')
+            c.require(public.read_snapshot(path)[0] == self.binding, 'diagnostic_flow_plan_changed')
 
     def _validate(self, operation, locale, result):
         c.require(type(result) is dict, 'diagnostic_flow_result_required')

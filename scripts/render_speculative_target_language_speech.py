@@ -244,16 +244,18 @@ def render(paths: dict[str, Path], checkpoint_map_path: Path,
             continue
         _check_deadline(deadline_monotonic)
         work = f"preview.{candidate['targetLocale']}.{index:04d}"
-        expected = sound_identity(context, index, seed=seed, dtype=dtype,
-                                  attention=attention, instruct=instruct)
-        wav_path = out / f"units/unit-{index:04d}.wav"
-        receipt_path = out / f"receipts/unit-{index:04d}.json"
-        attempt_path = out / f"receipts/unit-{index:04d}.attempt.json"
-        partial = wav_path.with_suffix(".partial.wav")
-        cache_hit = wav_path.exists() or receipt_path.exists()
+        with accounting.orchestration(work + '.dispatch', work_unit_id=work + '.dispatch',
+                                      depends_on=[previous_span]) as dispatch_span:
+            expected = sound_identity(context, index, seed=seed, dtype=dtype,
+                                      attention=attention, instruct=instruct)
+            wav_path = out / f"units/unit-{index:04d}.wav"
+            receipt_path = out / f"receipts/unit-{index:04d}.json"
+            attempt_path = out / f"receipts/unit-{index:04d}.attempt.json"
+            partial = wav_path.with_suffix(".partial.wav")
+            cache_hit = wav_path.exists() or receipt_path.exists()
         with accounting.stage(work, cache_hit=cache_hit):
             with accounting.stage(work + '.cache_admission', work_unit_id=work + '.cache_admission',
-                                  depends_on=[previous_span], cache_hit=cache_hit) as admission_span:
+                                  depends_on=[dispatch_span], cache_hit=cache_hit) as admission_span:
                 if cache_hit:
                     formal.require(receipt_path.is_file(), "Uncommitted speculative unit cannot be reused")
                     receipt = formal.package.read_object(receipt_path)

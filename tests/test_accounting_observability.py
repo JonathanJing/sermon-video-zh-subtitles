@@ -29,14 +29,39 @@ class ObservabilityTests(unittest.TestCase):
             work = Path(t)
             (work/'workflow-receipt.json').write_text(json.dumps({'status':'candidate_ready_for_extended_saturday_review','jobSha256':'a'*64,'humanAudioReview':'pending','command':'private-key'}))
             with accounting.accounting_session(work/'accounting', 'weekly_dubbing', {'jobSha256':'a'*64}):
+                with accounting.orchestration('bookkeeping', depends_on=[]):
+                    sum(range(100))
                 accounting.record_workload('render', {'inputUnits': 119, 'actualModelInputs': None, 'cookie': 'private-key'})
             d = accounting.summarize(work/'accounting')
             run = d['runs'][0]
+            self.assertEqual(len(run['workloads']), 1)
+            self.assertEqual(run['workloads'][0]['stage'], 'render')
             self.assertEqual(run['workloads'][0]['metrics']['inputUnits'],119)
             self.assertNotIn('cookie', run['workloads'][0]['metrics'])
             self.assertIsNotNone(run['workflows'][0]['executionIdentity'])
             self.assertTrue(run['workflows'][0]['evidenceAfter']['artifacts'])
             self.assertNotIn('private-key', (work/'accounting/events.jsonl').read_text())
+            raw = (work/'accounting/events.jsonl').read_bytes()
+            events, damaged = accounting.read_events(work/'accounting')
+            self.assertFalse(damaged)
+            internal = {e['stage'] for e in events if e['event'] == 'workload'
+                        and e['stage'] in accounting.INTERNAL_TIMING_WORKLOADS}
+            self.assertEqual(internal, accounting.INTERNAL_TIMING_WORKLOADS)
+            from scripts import weekly_pipeline_report as weekly
+            projection = weekly.project(work/'accounting')['runs'][0]
+            self.assertEqual([e['stage'] for e in projection['workloadEvidence']], ['render'])
+            self.assertEqual(projection['workloadEvidence'][0]['metrics']['inputUnits'], 119)
+            self.assertEqual(projection['telemetryEvidence']['queue']['localInlineDispatchCount'], 1)
+            self.assertGreater(projection['orchestrationOverheadSeconds'], 0)
+            self.assertEqual((work/'accounting/events.jsonl').read_bytes(), raw)
+
+    def test_only_exact_internal_timing_stages_are_separated(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            with accounting.accounting_session(temporary, 'test'):
+                accounting.record_workload('timing.business', {'inputUnits': 7})
+                accounting.record_workload('timing.inline_dispatch_v2', {'inputUnits': 8})
+            workloads = accounting.summarize(temporary)['runs'][0]['workloads']
+            self.assertEqual([e['stage'] for e in workloads], ['timing.business', 'timing.inline_dispatch_v2'])
 
     def test_latency_percentiles_and_duration_usage_coverage(self):
         with tempfile.TemporaryDirectory() as t:

@@ -87,7 +87,7 @@ def preload_execution_modules(plugin_paths=()):
                  'render_formal_target_language_speech','render_multilingual_voice_demos',
                  'validate_target_language_audio_unit','sermon_local_model_observation',
                  'sermon_trace_artifacts','sermon_review_diagnostics','sermon_preview_checkpoint_manifest',
-                 'sermon_historical_layer2'):
+                 'sermon_historical_layer2','sermon_source_producer_compatibility','sermon_source_failure'):
         importlib.import_module('scripts.'+name)
     repository=Path(__file__).resolve().parents[1]
     for path in plugin_paths:
@@ -213,7 +213,11 @@ class FreshDiagnosticSession(sessions.DiagnosticSession):
             self.runner.transcribe(_safe_path(Path(recipe['audio_path'])).read_bytes())
         with accounting.stage('diagnostic.fresh_source_check',depends_on=[asr_span],executor_type='production_model') as review_span:
             self.runner.source_check(operation_id='source.initial')
-        prepared=source_adapter.prepare_source(self.plan,self.subject,**recipe,authorization=authorization,depends_on=[review_span])
+        with self.subject._locked() as (_,state):
+            self.subject._remaining(state)
+            original_deadline=state['startedMonotonic']+self.subject.config['totalWallSeconds']
+        prepared=source_adapter.prepare_source(self.plan,self.subject,**recipe,authorization=authorization,
+            depends_on=[review_span],deadline_monotonic=original_deadline)
         self.context=prepared['context']
         self.binding={'schemaVersion':'sermon-fresh-diagnostic-session-v1','originalPlanSha256':c.canonical_sha256(self.plan),
             'diagnosticContextSha256':c.canonical_sha256(self.context),'sourceEvidence':prepared['evidence'],
@@ -353,15 +357,21 @@ def run_fresh_diagnostic(plan, *, key, execute=False, source_recipe, authorizati
     with profile.session(session.root/'fresh-diagnostic-logs','fresh_diagnostic',work_kind='production',
                          evidence_mode=session.evidence_mode,production_run_id=session.subject.config['runId']):
         try:
-            prepared=(session.prepare_cached_source(source_cache_parent_plan_path,authorization)
-                      if source_cache_parent_plan_path is not None else session.prepare_source(source_recipe,authorization))
+            with accounting.stage('diagnostic.source_preparation',depends_on=[],executor_type='deterministic_program'):
+                prepared=(session.prepare_cached_source(source_cache_parent_plan_path,authorization)
+                          if source_cache_parent_plan_path is not None else session.prepare_source(source_recipe,authorization))
         except Exception as exc:
-            # Safe typed code only; legacy builder messages may contain paths.
-            import re
-            reason=str(exc) if type(exc) is c.ContractError and re.fullmatch('fresh_[a-z0-9_]{1,100}',str(exc)) else 'source_preparation_not_confirmed'
-            failed={'schemaVersion':'sermon-fresh-diagnostic-source-failure-v1','status':'blocked',
-                'reasonCode':reason,'errorType':type(exc).__name__,'productionEligible':False,'humanAcceptance':'pending'}
+            from scripts import sermon_source_failure as source_failure
+            if isinstance(exc,accounting.AccountingWriteError) or getattr(exc,'sermon_logging_failed',False):
+                raise
+            try:
+                provider_snapshot=session.subject.snapshot()
+            except Exception:
+                provider_snapshot=None
+            failed=source_failure.receipt(exc,plan=session.plan,provider_snapshot=provider_snapshot)
             strict.save_once(session.root/'fresh-source-failures'/(c.canonical_sha256(failed)+'.json'),failed)
+            if failed['requiresReconciliation']:
+                raise  # Preserve unknown calls, ledger corruption and original exit.
             return failed
         with _terminal_failure_receipt(session):
             specs=freeze_locale_inputs(session,locale_drafts)

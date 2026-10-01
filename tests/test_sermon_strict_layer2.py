@@ -419,7 +419,11 @@ class StrictAdapterTests(unittest.TestCase):
         self.assertTrue(all(e['usage']['cachedInputTokens'] is None for e in receipts))
         run=weekly.project(self.root/'logs')['runs'][0]
         self.assertEqual(len(run['reviewObservations']),2)
-        self.assertEqual(run['observabilityCoverage']['queueTiming'],'missing_instrumentation')
+        self.assertEqual(run['observabilityCoverage']['queueTiming'],'measured_recorded_timestamps')
+        queue = run['telemetryEvidence']['queue']
+        self.assertEqual(queue['observedReadyAndDispatchCount'], len(run['workUnits']))
+        self.assertEqual(queue['resourceQueueStatus'], 'not_established')
+        self.assertEqual(queue['meaning'], 'inline_dispatch_to_stage_entry_is_not_resource_or_provider_queue_wait')
 
     def test_cached_raw_receipt_must_bind_the_original_call_and_output(self):
         with self.session():

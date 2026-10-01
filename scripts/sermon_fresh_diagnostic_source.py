@@ -72,7 +72,7 @@ def returned_receipt(root, config, operation, model):
 
 def prepare_source(plan, subject, *, prior_plan_path, prior_source_path, prior_aligned_path,
                    prior_summary_path, audio_path, authorization, run_mfa=False,
-                   local_runtime_path=None, depends_on=None):
+                   local_runtime_path=None, depends_on=None, deadline_monotonic=None):
     """Deterministic/fixed-MFA bridge from fresh ASR to actual English/Anchors.
 
     Prior references are user-selected local frozen source evidence. No old
@@ -86,6 +86,12 @@ def prepare_source(plan, subject, *, prior_plan_path, prior_source_path, prior_a
         authorization.get('productionEligible') is False and
         authorization.get('humanReviewMode')=='default_pass_for_isolated_test_only',
         'fresh_source_test_authorization_required')
+    with subject._locked() as (_,state):
+        subject._remaining(state)
+        original_deadline=state['startedMonotonic']+config['totalWallSeconds']
+    c.require(deadline_monotonic is None or deadline_monotonic==original_deadline,
+              'fresh_mfa_original_deadline_changed')
+    deadline_monotonic=original_deadline
     audio_path=_safe_path(Path(audio_path))
     c.require(_sha(audio_path)==config['sourceAudioSha256'], 'fresh_source_audio_changed')
     asr,asr_ref=returned_receipt(root,config,'transcription.initial','gpt-transcribe')
@@ -130,8 +136,17 @@ def prepare_source(plan, subject, *, prior_plan_path, prior_source_path, prior_a
             for item in files.values():
                 if item: c.require(_sha(item['path'])==item['sha256'],'fresh_mfa_runtime_file_changed')
             options={key:item['path'] if item else None for key,item in files.items()}
-            aligned=mfa_backend.align_reference_chunks(chunks,audio_path,root/'mfa',local_options=options,
-                spark_options={},allow_spark_fallback=False)
+            try:
+                aligned=mfa_backend.align_reference_chunks(chunks,audio_path,root/'mfa',local_options=options,
+                    spark_options={},allow_spark_fallback=False,deadline_monotonic=deadline_monotonic)
+            except mfa_backend.local.MFADeadlineReached as exc:
+                raise c.ContractError('fresh_mfa_original_deadline_reached') from exc
+            except mfa_backend.LocalRuntimeUnavailable as exc:
+                raise c.ContractError('fresh_mfa_runtime_unavailable') from exc
+            except ValueError as exc:
+                raise c.ContractError('fresh_mfa_alignment_invalid') from exc
+            except (RuntimeError,OSError) as exc:
+                raise c.ContractError('fresh_mfa_command_failed') from exc
         aggregate.save_once(root/'aligned-segments.json',aligned)
         mode='validated_prior_alignment_cache' if same else 'fresh_local_mfa'
         accounting.record_workload('diagnostic.alignment_binding',{'sourceAudioSha256':config['sourceAudioSha256'],
@@ -139,7 +154,10 @@ def prepare_source(plan, subject, *, prior_plan_path, prior_source_path, prior_a
             'oldAlignedSegmentsSha256':c.bytes_sha256(aligned_raw),'alignmentCacheHit':same,
             'alignedSegmentsSha256':_sha(root/'aligned-segments.json')})
     with accounting.stage('diagnostic.source_package',depends_on=[alignment_span],executor_type='deterministic_program') as source_span:
-        anchor=anchors.build_anchor_manifest(aligned,source_path=root/'aligned-segments.json',unit_policy=anchors.UNIT_POLICY_V2)
+        try:
+            anchor=anchors.build_anchor_manifest(aligned,source_path=root/'aligned-segments.json',unit_policy=anchors.UNIT_POLICY_V2)
+        except ValueError as exc:
+            raise c.ContractError('fresh_anchor_contract_invalid') from exc
         immutable.save_once(root/'anchor-manifest.json',anchor)
         summary=deepcopy(summary)
         summary['pipelineInputIdentity']['sourceAudio']['sha256']=config['sourceMediaSha256']
@@ -147,9 +165,12 @@ def prepare_source(plan, subject, *, prior_plan_path, prior_source_path, prior_a
         summary['diagnosticASRReceiptSha256']=asr_ref['receiptSha256']
         summary['diagnosticAlignmentMode']=mode
         immutable.save_once(root/'source-summary.json',summary)
-        source=english.build_package(root/'aligned-segments.json',root/'anchor-manifest.json',summary_path=root/'source-summary.json',
-            source_id=old_source['source']['sourceId'],source_url_hash=old_source['source']['sourceUrlHash'],
-            service_date=old_source['source']['serviceDate'])
+        try:
+            source=english.build_package(root/'aligned-segments.json',root/'anchor-manifest.json',summary_path=root/'source-summary.json',
+                source_id=old_source['source']['sourceId'],source_url_hash=old_source['source']['sourceUrlHash'],
+                service_date=old_source['source']['serviceDate'])
+        except ValueError as exc:
+            raise c.ContractError('fresh_english_source_contract_invalid') from exc
         immutable.save_once(root/'source.json',source)
         simulation={'schemaVersion':'sermon-fresh-diagnostic-simulation-v1',
             'authorizationSha256':c.canonical_sha256(authorization),'sourceCanonicalSha256':c.canonical_sha256(source),
