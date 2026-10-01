@@ -46,6 +46,7 @@
 
 ### 编排、并发与证据
 
+- [本地制作四项提速 backlog](local-production-speed-backlog.zh.md)：批次驻留、文字有限并发、正式音频 batching、CPU 保存与合成重叠
 - [Agents API 端到端扩展](agents-end-to-end-workflow.zh.md)：显式配置才接入页面发行
 - [周六统一入口](saturday-harness.zh.md)与[执行保护](sermon-execution-harness.zh.md)
 - [受限并发](parallel-production.zh.md)与[配音／PDF 汇合合同](parallel-dubbing-contract.zh.md)

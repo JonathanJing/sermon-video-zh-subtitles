@@ -671,6 +671,7 @@ def _render_and_finish(args, work, job, execution, stage, command, before, join_
                 if not (work / "render/report.json").exists():
                     ssh("mkdir -p " + shlex.quote(remote), transfer=True)
                     command([*scp_options, str(work / "job.json"), str(HERE / "render_weekly_audio.py"),
+                             str(HERE / "bounded_cpu_pipeline.py"),
                              str(HERE / "sentence_synthesis_policy.py"), str(HERE / "retry_weekly_unit.py"),
                              str(HERE / "run_qwen_training_smoke.py"), args.host + ":" + remote + "/"], transfer=True, check=True)
                     if (work / "render/identity.json").exists():

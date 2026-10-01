@@ -19,6 +19,8 @@
 
 ## 本地优先优化什么
 
+以下“现状”是本次调研的开发前基线。四项 P1 已按用户决定并行开发，实际入口和离线验收见[提速开发 backlog](local-production-speed-backlog.zh.md)；性能和质量实验尚未运行。
+
 | 优先级 | 方法 | 当前代码事实 | 实施与验证要求 |
 |---|---|---|---|
 | P0 | 量到实际关键路径 | accounting 已有阶段／依赖日志，网络、远端排队、部分进程外阶段仍有缺口 | 同一请求记录 dispatch、queue、import、load、prefill/decode 或 synthesis、save、transfer、encode、gate；机器耗时、人审和等待分开。先测正式 checkpoint 的三语 10 分钟代表样本，再外推 |
@@ -32,7 +34,7 @@
 
 模型驻留是“同阶段的一批单元只加载一次”，不要求所有模型同时留在显存。不要让多个 TTS 进程互相争抢一个 GPU；Spark 原有文字服务也要计入共享资源与排队，不能通过重启生产服务制造基准。
 
-默认换到 Spark 本身不保证整篇更快：legacy 质检逐片重载时，启动成本可能抵消热推理收益。之前 3 小时 15 分预算假设模型驻留，不能套用到当前未优化的 legacy 逐片 worker；正式驻留 producer 和 legacy 执行路径要分别计时。
+默认换到 Spark 本身不保证整篇更快：开发前 legacy 质检逐片重载的启动成本可能抵消热推理收益。批次驻留代码仍须实测；之前 3 小时 15 分预算假设模型驻留，正式 producer 和 legacy 执行路径要分别计时。
 
 Qwen 的公开说明提供批推理和加速路径，可作为实验入口；当前项目还需要 adapter、身份和质量验收。[Qwen3-TTS 官方入口](https://github.com/QwenLM/Qwen3-TTS)、[vLLM-Omni Qwen3-TTS 批推理](https://docs.vllm.ai/projects/vllm-omni/en/v0.16.0/user_guide/examples/offline_inference/qwen3_tts/)
 

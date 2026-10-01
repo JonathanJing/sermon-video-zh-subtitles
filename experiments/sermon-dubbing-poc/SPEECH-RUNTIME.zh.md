@@ -33,7 +33,11 @@ Spark ASR/aligner 在独立 `/home/achillesjing/sermon-speech-runtime` 下安装
 - Qwen/Qwen3-ASR-0.6B：`5eb144179a02acc5e5ba31e748d22b0cf3e303b0`
 - Qwen/Qwen3-ForcedAligner-0.6B：`c7cbfc2048c462b0d63a45797104fc9db3ad62b7`
 
-`SERMON_SPARK_SPEECH_COMMAND` 可用 argv JSON 指向另一已验证 CUDA 容器命令。每次请求默认 600 秒超时（`SERMON_SPARK_SPEECH_TIMEOUT`），按片段启动进程，当前会重复加载模型，尚未做吞吐优化。响应绑定音频 hash、模型 revision、实际模型文件 hashes、worker hash、依赖版本和 CUDA 设备；auto 仅在可归因且无未知远端执行结果的基础设施故障时回 MacBook，无效输出不换机绕过。
+`SERMON_SPARK_SPEECH_COMMAND` 可用 argv JSON 指向另一已验证 CUDA 容器命令。一次受限调用默认 600 秒超时（`SERMON_SPARK_SPEECH_TIMEOUT`）。`screen_weekly_audio.py` 与 `align_weekly_source.py` 提供 `--speech-batch-size 1|2|4|8`／`SERMON_SPEECH_BATCH_SIZE`，默认 4；每批最多 8 个输入、32 MiB 音频，一次 SSH/Docker/权重 hash/模型加载，随后逐单元计算并输出回执。这是批次内驻留，不是长期常驻服务。单请求接口保持兼容。响应绑定音频 hash、模型 revision、实际模型文件 hashes、worker hash、依赖版本和 CUDA 设备；auto 仅在可归因且无未知远端执行结果的基础设施故障时回 MacBook，无效输出不换机绕过。
+
+两个 caller 在模型启动前检查 `speech-dispatch/batch-<hash>.json`。派发以非阻塞文件锁保护并持久化 started、已保存单元及 complete/confirmed_terminal/unknown/failed_invalid 状态；已确认终止的资源失败允许补缺失单元，未知、正在执行或无效结果则下次先停止。timeout/断链中已验证的前缀保留，但剩余不能自动重派，必须核对远端和现有收据后对账；不要删除记录强制恢复。低层 `generate` 单请求仍沿原合同，不声称已成为统一跨机调度器。
+
+legacy `render_weekly_audio.py` 维持 `--batch-size 4` 默认；新增 `--cpu-workers 0|1|2`（默认 1）及 `--cpu-queue-batches 1|2|3|4`（默认 2）。模型调用保持单线程，输出 buffer 复制后交给有界 CPU 队列保存、验证及 hash，队列满时等待；所有写入 drain 后才流式组装整轨和写完成报告。已有有效回执单元不重新合成，全缓存组装不加载 TTS 模型；异常保留诊断，已确认的多个坏单元可由原有限 repair 流程逐个恢复，未知未收据音频仍须检查。代码变化进入 render identity，旧缓存需原版本恢复或独立新运行，不能静默跨身份复用。具体开发和性能边界见[提速 backlog](../../docs/local-production-speed-backlog.zh.md)。
 
 ## 2026-09-19 样本验证边界
 
