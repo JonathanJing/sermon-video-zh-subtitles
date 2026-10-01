@@ -19,6 +19,8 @@ Beta 与正式版共用同一套 App、播放器和实时活动源码，由构�
 
 TestFlight 上传、Apple 处理、测试组可用、实机验收和 App Store 发布分别记录。现有 Duo 外屏与大字号测试可作为历史证据，但不能替代新 Bundle ID 的双 App 共存、实时活动返回目标和真机验收；Duo 展开内屏、半折与现场验收仍未完成。本任务不包含 App Store 发布或未验收差异的合并。
 
+待下一构建的麦克风失败反馈修复见 [修复记录](ALIGNMENT-FEEDBACK.zh.md)。该记录与已分发 Beta 47 分开，未改变旧包的源码或归档哈希；新分发须递增构建号并建立新的实际记录。
+
 ## 冻结源码并归档
 
 先提交已验证的 iOS 候选，记录完整 commit，再运行 [archive-channel.sh](scripts/archive-channel.sh)。脚本拒绝 tracked iOS 文件的未提交差异，要求 `--expected-commit` 完全匹配 HEAD；仓库其他模块的未提交变化不会无故阻塞归档。输出必须在 Git 忽略目录，并且使用新目录保留旧证据。私有签名配置、帐号、Team、设备唯一标识、Archive 和上传日志都不提交 Git。
