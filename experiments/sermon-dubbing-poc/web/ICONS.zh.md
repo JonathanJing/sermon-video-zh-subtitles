@@ -73,7 +73,7 @@ python3 scripts/check_tongxing_icon_alignment.py
 
 ## 生产 UI-only 发布入口
 
-生产站已有完整 v3 页面、音轨与音色示例；图标更新使用 `scripts/stage_production_ui.py`，不能直接复制整份 Dev reader 或 weekly UI refresh。候选只允许 13 个根目录 UI 路径变化；现有 catalog、页面、音频、PDF、图片、设置、API rewrite 和视频 redirect 保持原字节。SVG/module/brand 直接绑定当前代码，生产适配过的 HTML/JS 则绑定已验证 overlay 的完整哈希清单。
+生产站已有完整 v3 页面、音轨与音色示例；图标更新使用 `scripts/stage_production_ui.py`，不能直接复制整份 Dev reader 或 weekly UI refresh。候选只允许 13 个根目录 UI 路径变化；现有 catalog、页面、音频、PDF、图片、设置、API rewrite 和视频 redirect 保持原字节。全部 13 个 UI 文件（HTML、CSS、JS、语言资源及 SVG）逐字节绑定当前 release/main 源码，并记录完整哈希清单；不接受仅图标相符的旧页面覆盖包。
 
 从经 PR 晋升、干净且与远端一致的 `main` checkout 执行：
 

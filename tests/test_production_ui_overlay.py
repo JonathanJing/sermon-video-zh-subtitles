@@ -32,7 +32,7 @@ class ProductionUIOverlayTest(unittest.TestCase):
         self.source_ui = self.source / 'experiments/sermon-dubbing-poc/web'
         self.source_ui.mkdir(parents=True)
         for name in ui.UI_FILES:
-            if name not in ui.DIRECT_SOURCE_FILES:
+            if name not in ('icons.svg', 'icons.mjs', 'brand-icon.svg', 'brand-icon-light.svg'):
                 (public / name).write_text('published ' + name)
         self.video = {'canonicalUrl': '/pages/week/full-video.mp4',
                       'storageUrl': 'https://storage.googleapis.com/ai-for-god-sermon-media-prod/video.mp4'}
@@ -72,7 +72,9 @@ class ProductionUIOverlayTest(unittest.TestCase):
         self.assertEqual(report['schemaVersion'], ui.SCHEMA)
         self.assertEqual(report['files'], ui.inventory(self.overlay / 'public'))
         self.assertEqual(report['feedbackDeploymentStatus'], 'unchanged')
-        self.assertEqual(set(report['addedFiles']), set(ui.DIRECT_SOURCE_FILES))
+        self.assertEqual(set(report['addedFiles']),
+                         {'icons.svg', 'icons.mjs', 'brand-icon.svg', 'brand-icon-light.svg'})
+        self.assertEqual([item['path'] for item in report['sourceFiles']], list(ui.UI_FILES))
         for name, value in self.preserved.items():
             self.assertEqual((self.out / 'public' / name).read_text(), value)
         self.assertEqual((self.out / 'firebase.json').read_bytes(), (self.base / 'firebase.json').read_bytes())
@@ -145,12 +147,34 @@ class ProductionUIOverlayTest(unittest.TestCase):
 
     def test_post_stage_source_and_overlay_tamper_are_rejected(self):
         self.stage()
-        for path, message in [(self.source_ui / 'icons.svg', 'Artwork source'),
+        for path, message in [(self.source_ui / 'icons.svg', 'UI source'),
                               (self.overlay / 'public/index.html', 'overlay UI')]:
             with self.subTest(path=path):
                 original = path.read_bytes()
                 path.write_bytes(b'changed')
                 with self.assertRaisesRegex(ValueError, message):
+                    ui.verify_candidate(self.out)
+                path.write_bytes(original)
+
+    def test_non_icon_overlay_bytes_must_match_selected_release_code(self):
+        for name in ('app.mjs', 'style.css', 'locales-interface.mjs', 'fingerprint-ui.mjs', 'theme.js'):
+            with self.subTest(name=name):
+                path = self.overlay / 'public' / name
+                original = path.read_bytes()
+                path.write_bytes(b'unreviewed UI code')
+                with self.assertRaisesRegex(ValueError, 'checked-in source'):
+                    self.stage()
+                path.write_bytes(original)
+                self.assertFalse(self.out.exists())
+
+    def test_non_icon_source_drift_invalidates_bound_candidate(self):
+        self.stage()
+        for name in ('app.mjs', 'style.css', 'locales-interface.mjs', 'fingerprint-ui.mjs', 'theme.js'):
+            with self.subTest(name=name):
+                path = self.source_ui / name
+                original = path.read_bytes()
+                path.write_bytes(b'changed release code')
+                with self.assertRaisesRegex(ValueError, 'UI source changed'):
                     ui.verify_candidate(self.out)
                 path.write_bytes(original)
 
