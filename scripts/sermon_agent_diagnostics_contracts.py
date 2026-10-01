@@ -146,7 +146,8 @@ def validate_diagnosis(diagnosis, bundle):
     units = {unit["unitId"] for unit in bundle["manifest"]["failedUnits"]}
     rows = bundle["manifest"]["events"] + bundle["manifest"]["receipts"] + bundle["manifest"]["versionDiffs"]
     evidence = {row["evidenceId"]: {unit["unitId"] for unit in row["units"]} for row in rows}
-    reproduction_ids = {row["evidenceId"] for row in rows if row["evidenceType"] == "reproduction"}
+    reproduction_ids = {row["evidenceId"] for row in rows
+                        if row["evidenceType"] == "reproduction" and row["status"] == "succeeded"}
     def refs(ids, affected):
         require(set(ids) <= evidence.keys(), "unknown_evidence_reference")
         require(all(evidence[key] & set(affected) for key in ids), "evidence_outside_hypothesis_scope")

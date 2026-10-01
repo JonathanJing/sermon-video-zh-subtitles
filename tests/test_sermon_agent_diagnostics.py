@@ -17,7 +17,7 @@ def fixture(name):
 
 
 def frame(actions=None, status="in_progress", usage=None, turn_id="turn_offline"):
-    return {"session": {"id": "sess_offline", "status": "idle" if status == "completed" else "running",
+    return {"session": {"id": "sess_offline", "status": "idle" if status == "completed" else "in_progress",
                         "required_actions": actions or [], "usage": usage},
             "turns": [{"id": turn_id, "subagent_id": None, "status": status, "usage": usage}]}
 
@@ -191,6 +191,54 @@ class DiagnosticContractsTest(unittest.TestCase):
         report["hypotheses"][0]["impact"]["blockingScope"] = "all_locales_downstream"
         with self.assertRaisesRegex(contract.DiagnosticContractError, "scope_not_supported"):
             contract.validate_diagnosis(report, self.bundle)
+
+    def test_forbidden_text_is_scanned_across_lines_and_ascii_case(self):
+        malicious = ("Ordinary first line\nhttps://evil.invalid", "First line\r\nHtTpS://evil.invalid",
+                     "First line\nBearer fixture-secret", "First line\nbEARER fixture-secret",
+                     "First line\nFILE://private", "First line\n/Users/private/audio.wav",
+                     "First line\n/WORKSPACE/private", "First line\nSK-proj-fixturesecret")
+        for text in malicious:
+            for field in ("claim", "reason", "confidenceReason", "unknowns", "rationale", "preconditions",
+                          "question", "limitations"):
+                report = copy.deepcopy(self.report)
+                hypothesis = report["hypotheses"][0]
+                if field in ("claim", "reason", "confidenceReason"):
+                    hypothesis[field] = text
+                elif field == "unknowns":
+                    hypothesis[field] = [text]
+                elif field in ("rationale", "preconditions"):
+                    hypothesis["suggestedRepair"][field] = [text] if field == "preconditions" else text
+                elif field == "question":
+                    report["missingDataRequests"][0][field] = text
+                else:
+                    report["limitations"] = [text]
+                with self.subTest(text=text, field=field), self.assertRaisesRegex(
+                        contract.DiagnosticContractError, "invalid_diagnostic_schema"):
+                    contract.validate_diagnosis(report, self.bundle)
+
+    def test_replayable_requires_successful_reproduction_not_just_its_type(self):
+        for status in ("succeeded", "not_run", "uncertain", "blocked", "failed"):
+            manifest = copy.deepcopy(self.manifest)
+            row = manifest["events"][0]
+            row.update(evidenceType="reproduction", status=status)
+            row["sha256"] = contract.evidence_sha256(row)
+            bundle = adapter.build_context_bundle(manifest)
+            report = copy.deepcopy(self.report)
+            report.update(identity=bundle["manifest"]["identity"], contextSha256=bundle["contextSha256"],
+                          snapshotId=bundle["snapshotId"])
+            hypothesis = report["hypotheses"][0]
+            unit = bundle["manifest"]["failedUnits"][0]["unitId"]
+            evidence_id = bundle["manifest"]["events"][0]["evidenceId"]
+            hypothesis.update(affectedUnitIds=[unit], evidenceIds=[evidence_id])
+            hypothesis["suggestedRepair"].update(unitIds=[unit], evidenceIds=[evidence_id])
+            hypothesis["reproducibility"] = {"status": "replayable", "evidenceIds": [evidence_id]}
+            report["missingDataRequests"][0]["unitIds"] = [unit]
+            with self.subTest(status=status):
+                if status == "succeeded":
+                    self.assertEqual(contract.validate_diagnosis(report, bundle), report)
+                else:
+                    with self.assertRaisesRegex(contract.DiagnosticContractError, "reproducibility_not_supported"):
+                        contract.validate_diagnosis(report, bundle)
 
     def test_fresh_recommendation_validation_does_not_authorize_execution(self):
         self.assertEqual(adapter.validate_recommendation(self.report, self.bundle,
@@ -424,10 +472,52 @@ class DiagnosticLifecycleTest(unittest.TestCase):
         frames = [frame(status="completed")]
         del frames[0]["turns"][0]["subagent_id"]
         result = adapter.diagnose(self.manifest, client=self.client(frames), limits=adapter.DiagnosticLimits(max_steps=1))
-        self.assertEqual(result["reasonCode"], "diagnostic_step_limit")
+        self.assertEqual(result["reasonCode"], "incomplete_turn_metadata")
         frames = [frame(status="completed")]
         frames[0]["turns"].append({"id": "turn_other", "subagent_id": None, "status": "completed"})
         self.assertEqual(adapter.diagnose(self.manifest, client=self.client(frames))["reasonCode"], "ambiguous_root_turn")
+
+    def test_malformed_session_and_root_status_returns_blocked_checkpoint(self):
+        for invalid in ({}, [], "unknown_status", None):
+            for target in ("session", "root"):
+                frames = [frame(status="completed")]
+                row = frames[0]["session"] if target == "session" else frames[0]["turns"][0]
+                row["status"] = invalid
+                with self.subTest(invalid=invalid, target=target):
+                    result = adapter.diagnose(self.manifest, client=self.client(frames))
+                    self.assertEqual(result["status"], "blocked")
+                    self.assertEqual(result["reasonCode"], "invalid_session_status" if target == "session" else "invalid_turn_status")
+                    self.assertEqual(result["checkpoint"]["sessionId"], "sess_offline")
+                    self.assertIsNone(result["diagnosis"])
+
+    def test_mixed_completed_root_and_incomplete_turn_metadata_is_rejected(self):
+        frames = [frame(status="completed")]
+        frames[0]["turns"].append({"id": "turn_unidentified", "status": "completed"})
+        result = adapter.diagnose(self.manifest, client=self.client(frames))
+        self.assertEqual(result["status"], "blocked")
+        self.assertEqual(result["reasonCode"], "incomplete_turn_metadata")
+        self.assertEqual(result["checkpoint"]["sessionId"], "sess_offline")
+        self.assertIsNone(result["diagnosis"])
+
+    def test_official_waiting_and_requires_action_statuses_are_supported(self):
+        frames = [frame([self.action], status="waiting"), frame(status="completed")]
+        frames[0]["session"]["status"] = "requires_action"
+        result = adapter.diagnose(self.manifest, client=self.client(frames))
+        self.assertEqual(result["status"], "completed")
+
+    def test_malformed_checkpoint_tokens_raise_only_fixed_contract_errors(self):
+        client = self.client()
+        with patch.object(client, "submit_tool_result", side_effect=RuntimeError()):
+            state = adapter.diagnose(self.manifest, client=client)["checkpoint"]
+        for invalid in ({}, []):
+            for target in ("callId", "method", "outcome"):
+                checkpoint = copy.deepcopy(state)
+                if target == "callId":
+                    checkpoint["toolResults"][0][target] = invalid
+                else:
+                    checkpoint["transportCalls"][0][target] = invalid
+                with self.subTest(target=target, invalid=invalid), self.assertRaises(contract.DiagnosticContractError):
+                    adapter.diagnose(self.manifest, client=self.client(), checkpoint=checkpoint)
 
 
 if __name__ == "__main__":

@@ -449,7 +449,7 @@
       "type": "string",
       "minLength": 1,
       "maxLength": 1024,
-      "pattern": "^(?!.*(?:https?://|file://|/Users/|/workspace/|sk-[A-Za-z0-9_-]{8,}|Bearer\\s))[\\s\\S]*$"
+      "pattern": "^(?![\\s\\S]*(?:[Hh][Tt][Tt][Pp][Ss]?://|[Ff][Ii][Ll][Ee]://|/[Uu][Ss][Ee][Rr][Ss]/|/[Ww][Oo][Rr][Kk][Ss][Pp][Aa][Cc][Ee]/|[Ss][Kk]-[A-Za-z0-9_-]{8,}|[Bb][Ee][Aa][Rr][Ee][Rr]\\s))[\\s\\S]*$"
     }
   }
 }
