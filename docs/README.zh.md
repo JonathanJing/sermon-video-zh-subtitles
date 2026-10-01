@@ -79,6 +79,11 @@
 
 以下资料不再作为 operator 入口。使用时必须回到上面的当前规范重新核对。
 
+- [每周复盘 为什么一篇证道的制作用了 1.69 亿 token](blog/sermon-production-workflow-lessons.zh.md)：面向非技术读者的 release 复盘，解释返工、重复历史与高缓存用量，以及已经做过的迭代和下一轮耗时重点。
+- [LinkedIn 与 X 发布稿](blog/sermon-production-release-social-posts.zh.md)：可复制的中文长帖与帖串。
+- [生产复盘技术附录](blog/sermon-production-workflow-technical-notes.zh.md)：准确计量、错误恢复、代码入口、实现边界和瓶颈测量。
+- [项目技术导览](project-technical-overview.zh.md)：从根 README 迁出的技术图和历史说明，当前合同另有链接。
+
 | 类别 | 文档 |
 |---|---|
 | 已由实现与 Runbook 取代的方案 | [原讲员音色方案草案](saturday-to-sunday-chinese-voice-plan.zh.md)、[Context Pack 设计与实施记录](saturday-to-sunday-context-pack-plan.zh.md) |

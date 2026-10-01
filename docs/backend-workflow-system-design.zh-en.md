@@ -105,4 +105,4 @@ flowchart TB
 
 [Dual-PDF Supervisor](sermon-production-supervisor-agent.md)的 `complete` 只代表 `dual_pdf`；[周日现场字幕](../experiments/local-live-poc/DESIGN.zh.md)属于 `live_session`。两者不接到 L4 冒充 `four_layer_release`；最终录音进入耐久内容生产时重新从 L1 开始。`preview_only` 预生成 WAV 也不是 L3 包，正式复用须按[层内解耦合同](multilingual-intralayer-review-decoupling.zh.md)重核身份并重新排程、听审。
 
-英文主图在 [README](../README.md#four-layer-production-architecture-shared-english-source-to-multilingual-playback)，本页为中英对应版。修改时同时核对节点 ID、边集合、L3 必经、locale 隔离、修订无回边和状态标签；原生 SVG 由现有 JSON 图稿与 renderer 重建，Markdown 折叠区保留可复制 Mermaid 源；GitHub 默认显示 SVG，不依赖 rich Mermaid 服务。[图表维护入口](diagrams/README.md)记录验证方式。历史云图继续保留在 [system-design](system-design.zh.md)，不作为当前执行拓扑。
+英文主图在 [项目技术导览](project-technical-overview.md#four-layer-production-architecture-shared-english-source-to-multilingual-playback)，本页为中英对应版。修改时同时核对节点 ID、边集合、L3 必经、locale 隔离、修订无回边和状态标签；原生 SVG 由现有 JSON 图稿与 renderer 重建，Markdown 折叠区保留可复制 Mermaid 源；GitHub 默认显示 SVG，不依赖 rich Mermaid 服务。[图表维护入口](diagrams/README.md)记录验证方式。历史云图继续保留在 [system-design](system-design.zh.md)，不作为当前执行拓扑。
