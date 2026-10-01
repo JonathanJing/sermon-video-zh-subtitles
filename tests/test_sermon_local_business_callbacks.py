@@ -1,5 +1,7 @@
 """Real business validators/producers, synthetic approvals and injected PCM only."""
 from contextlib import chdir
+from dataclasses import replace
+import copy
 import hashlib
 import os
 import json
@@ -93,6 +95,35 @@ class SpeechTests(ScopeTests):
             self.f.f.approve(evidence='Synthetic changed receipt')
             with self.assertRaisesRegex(ValueError, 'admission_evidence_changed'):
                 self.prepare()
+
+    def test_relative_admission_job_root_cannot_write_into_external_cwd(self):
+        with tempfile.TemporaryDirectory(dir=self.root.parent) as outside, chdir(outside):
+            sentinel = Path(outside) / 'sentinel'
+            sentinel.write_bytes(b'unchanged')
+            boundary = subject.admission.AdmissionBoundary(
+                replace(self.f.f.boundary.config, job_root=Path('jobs')), self.f.f.boundary.store)
+            with self.context(), self.assertRaisesRegex(ValueError, 'boundary_paths_must_be_absolute'):
+                subject.prepare_speech(boundary, self.f.intent, adapter_path=self.f.adapter_path,
+                    registry_path=self.f.registry_path, out=self.f.out, **self.scope)
+            self.assertEqual(list(Path(outside).iterdir()), [sentinel])
+            self.assertEqual(sentinel.read_bytes(), b'unchanged')
+            self.assertFalse(self.f.out.exists())
+
+    def test_all_immutable_boundary_paths_reject_relative_or_external_values(self):
+        original = self.f.f.boundary
+        for field in ('source', 'anchor', 'policy', 'rubric', 'public_candidate',
+                      'human_receipt', 'plugin', 'job_root', 'revision_root', 'revision_roots', 'store'):
+            for value in (Path('relative'), self.root.parent / 'external'):
+                with self.subTest(field=field, value=value):
+                    boundary = copy.copy(original)
+                    if field == 'store':
+                        boundary.store = copy.copy(original.store)
+                        boundary.store.root = value
+                    else:
+                        replacement = (value,) if field == 'revision_roots' else value
+                        boundary.config = replace(original.config, **{field: replacement})
+                    with self.assertRaisesRegex(ValueError, 'must_be_absolute|outside_scope'):
+                        subject._boundary_paths(self.root, boundary)
 
 
 class PreflightTests(ScopeTests):
@@ -229,12 +260,73 @@ class RenderTests(ScopeTests):
             self.assertEqual(list(Path(outside).iterdir()), [ledger])
         self.assertEqual(render_fixtures.FakeSynth.calls, [])
 
+    def test_inherited_progress_accounting_symlink_cannot_write_outside(self):
+        progress_root = self.root / 'progress-fixture'
+        progress_root.mkdir()
+        ledger = progress_root / 'progress.json'
+        ledger.write_text('{}')
+        with tempfile.TemporaryDirectory(dir=self.root.parent) as outside:
+            sentinel = Path(outside) / 'sentinel'
+            sentinel.write_bytes(b'unchanged progress accounting')
+            (progress_root / 'accounting').symlink_to(outside, target_is_directory=True)
+            with self.context(), patch.dict(os.environ, {'SERMON_FOUR_LAYER_LEDGER': str(ledger)}):
+                with self.assertRaisesRegex(ValueError, 'outside_scope|symlink_forbidden'):
+                    self.render()
+            self.assertEqual(list(Path(outside).iterdir()), [sentinel])
+            self.assertEqual(sentinel.read_bytes(), b'unchanged progress accounting')
+            self.assertEqual(ledger.read_text(), '{}')
+        self.assertEqual(render_fixtures.FakeSynth.calls, [])
+
     def test_changed_voice_receipt_blocks_before_synth(self):
         path = self.f.paths['clip_voice_authorization']
         value = json.loads(path.read_text()); value['englishSourcePackageJsonSha256'] = '0' * 64
         path.write_text(json.dumps(value))
         with self.context(), self.assertRaises(ValueError): self.render()
         self.assertEqual(render_fixtures.FakeSynth.calls, [])
+
+    def test_derived_output_symlinks_reject_before_intent_write_or_synth(self):
+        locale = self.f.context['job']['targetLocale']
+        directories = ['receipts', 'languages', f'languages/{locale}/audio',
+                       f'languages/{locale}/synchronization']
+        files = [f'languages/{locale}/audio/unit-0000.wav',
+                 f'languages/{locale}/audio/unit-0000.partial.wav',
+                 f'languages/{locale}/audio/track.wav',
+                 f'languages/{locale}/synchronization/captions.json',
+                 f'languages/{locale}/synchronization/schedule.json',
+                 'receipts/unit-0000.intent.json', 'render-manifest.json']
+        with tempfile.TemporaryDirectory(dir=self.root.parent) as outside:
+            outside = Path(outside)
+            sentinel = outside / 'sentinel'
+            sentinel.write_bytes(b'unchanged external output')
+            constructors = []
+            def factory(*args, **kwargs):
+                constructors.append(True)
+                return render_fixtures.FakeSynth(*args, **kwargs)
+            for index, relative in enumerate(directories + files):
+                with self.subTest(path=relative):
+                    path = self.f.root / relative
+                    saved = self.root / f'saved-output-{index}'
+                    existed = path.exists()
+                    if existed:
+                        path.rename(saved)
+                    target = outside if relative in directories else sentinel
+                    path.symlink_to(target, target_is_directory=target.is_dir())
+                    before = {str(p.relative_to(self.f.root)): p.read_bytes()
+                              for p in self.f.root.rglob('*') if p.is_file() and not p.is_symlink()}
+                    try:
+                        with self.context(), self.assertRaisesRegex(ValueError, 'outside_scope|symlink_forbidden'):
+                            self.render(factory=factory)
+                        self.assertEqual(list(outside.iterdir()), [sentinel])
+                        self.assertEqual(sentinel.read_bytes(), b'unchanged external output')
+                        self.assertEqual(render_fixtures.FakeSynth.calls, [])
+                        self.assertEqual(constructors, [])
+                        after = {str(p.relative_to(self.f.root)): p.read_bytes()
+                                 for p in self.f.root.rglob('*') if p.is_file() and not p.is_symlink()}
+                        self.assertEqual(after, before)
+                    finally:
+                        path.unlink()
+                        if existed:
+                            saved.rename(path)
 
 
 class LocalDeliveryTests(ScopeTests):

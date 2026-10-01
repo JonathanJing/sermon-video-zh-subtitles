@@ -244,6 +244,58 @@ class BusinessFlowTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'store_or_run_changed'):
             flow.BusinessDAG(self.root, self.callbacks, nodes)
 
+    def test_admission_direct_paths_reject_external_cwd_and_absolute_escape_before_reads(self):
+        from dataclasses import replace
+        from unittest.mock import patch
+        from scripts import sermon_strict_gate_admission as admission
+        root = self.callbacks.root
+        config = admission.Configuration(self.callbacks.subject.config['runId'], 'zh-Hans',
+            root / 'jobs', root / 'revisions', (root / 'revisions' / 'r1',),
+            **{key: root / (key + '.json') for key in ('source', 'anchor', 'policy', 'rubric')},
+            public_candidate=root / 'approved.json', human_receipt=root / 'human.json',
+            plugin=root / 'plugin.py', plugin_sha256='a' * 64)
+        outside = Path(self.enterContext(tempfile.TemporaryDirectory())).resolve()
+        dag = flow.BusinessDAG(self.root, self.callbacks, self.nodes[:3])
+        previous = Path.cwd()
+        try:
+            os.chdir(outside)
+            for job_root in (Path('escaped-jobs'), outside / 'escaped-jobs'):
+                boundary = admission.AdmissionBoundary(replace(config, job_root=job_root),
+                                                       self.callbacks.subject.store)
+                node = flow.Node('admit', 'admit_locale', {'boundary': boundary,
+                    'created_at': '2026-10-01T00:00:00Z'}, ('text.zh-Hans',))
+                # Neither entry may read a source or acquire a boundary lock
+                # before rejecting paths resolved against the external cwd.
+                with patch.object(Path, 'read_bytes', side_effect=AssertionError('unexpected input read')):
+                    with self.assertRaisesRegex(ValueError, 'absolute|outside_scope'):
+                        flow.BusinessDAG(root / 'unsafe-dag', self.callbacks, [*self.nodes[:3], node])
+                    with self.assertRaisesRegex(ValueError, 'absolute|outside_scope'):
+                        dag._admit(node)
+                self.assertFalse((root / 'unsafe-dag').exists())
+                self.assertEqual(list(outside.iterdir()), [])
+        finally:
+            os.chdir(previous)
+        self.assertEqual(self.transport.observations, [])
+
+    def test_mutated_admission_paths_are_rechecked_before_frozen_input_reads(self):
+        from dataclasses import replace
+        from unittest.mock import patch
+        from scripts import sermon_strict_gate_admission as admission
+        root = self.callbacks.root
+        config = admission.Configuration(self.callbacks.subject.config['runId'], 'zh-Hans',
+            root / 'jobs', root / 'revisions', (root / 'revisions' / 'r1',),
+            **{key: root / (key + '.json') for key in ('source', 'anchor', 'policy', 'rubric')},
+            public_candidate=root / 'approved.json', human_receipt=root / 'human.json',
+            plugin=root / 'plugin.py', plugin_sha256='a' * 64)
+        boundary = admission.AdmissionBoundary(config, self.callbacks.subject.store)
+        node = flow.Node('admit', 'admit_locale', {'boundary': boundary,
+            'created_at': '2026-10-01T00:00:00Z'}, ('text.zh-Hans',))
+        dag = flow.BusinessDAG(self.root, self.callbacks, [*self.nodes[:3], node])
+        boundary.config = replace(config, source=Path('relative-source.json'))
+        with patch.object(Path, 'read_bytes', side_effect=AssertionError('unexpected frozen input read')):
+            with self.assertRaisesRegex(ValueError, 'must_be_absolute'): dag._check()
+        self.assertEqual(self.transport.observations, [])
+
     def test_forged_or_mutated_upstream_observations_do_not_grant_dispatch(self):
         dag = flow.BusinessDAG(self.root, self.callbacks, self.nodes)
         with self.f.f.session():

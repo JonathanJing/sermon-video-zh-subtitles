@@ -18,7 +18,10 @@ code is trusted test Python, not an adversarial-code sandbox.
 `sermon_local_business_callbacks` wraps existing speech preparation, rendering,
 delivery intent validation and local formal staging. Inputs/outputs/accounting
 and inherited progress paths must remain inside the declared fixture scope.
-Hash-bound embedded filesystem paths must be absolute; relative public asset
+Immutable AdmissionBoundary configuration paths must be absolute and scoped;
+they are checked again before direct admission. Existing derived output trees
+(including receipts and accounting) are checked for redirects before invoking
+the renderer or its synth constructor. Hash-bound embedded filesystem paths must be absolute; relative public asset
 paths retain the existing explicit asset-root resolution. The default real synth
 is forbidden. Injected PCM fixtures exercise the real renderer and full decode
 validation. Original public Candidate, strict gate, human/voice and audio review

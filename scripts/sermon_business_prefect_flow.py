@@ -168,6 +168,7 @@ class BusinessDAG:
             c.require(value.store is self.callbacks.subject.store and
                       value.config.production_run_id == self.callbacks.subject.config['runId'],
                       'business_admission_store_or_run_changed')
+            local._boundary_paths(self._fixture_root, value)
         elif type(value) is dict:
             for item in value.values(): self._boundaries(item)
         elif isinstance(value, (tuple, list)):
@@ -183,12 +184,12 @@ class BusinessDAG:
     def _check(self):
         c.require(_orchestration_root(self.root, self.callbacks) == self.root and
                   _safe_path(self.callbacks.root) == self._fixture_root, 'business_fixture_root_changed')
+        for node in self.nodes: self._boundaries(node.kwargs)
         c.require(c.read_snapshot(self.root / 'business-plan.json')[0] == self.binding and
                   self.binding['nodes'] == [_node_identity(n) for n in self.nodes] and
                   self.binding['callbackBinding'] == self.callbacks.binding,
                   'business_frozen_inputs_changed')
         self.callbacks._check()
-        for node in self.nodes: self._boundaries(node.kwargs)
 
     def _alignment(self, node):
         source, anchor = map(c.decode_json, (node.kwargs['source_bytes'], node.kwargs['anchor_bytes']))
@@ -284,6 +285,7 @@ class BusinessDAG:
 
     def _admit(self, node):
         boundary = node.kwargs['boundary']
+        self._boundaries(boundary)
         parents = [n for n in self._ancestors(node) if n.operation == 'locale' and
                    c.decode_json(n.kwargs['policy_bytes'])['targetLocale'] == boundary.config.target_locale]
         c.require(len(parents) == 1, 'business_matching_locale_required')

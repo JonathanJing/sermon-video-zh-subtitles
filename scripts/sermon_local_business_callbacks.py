@@ -79,13 +79,35 @@ def _json_inputs(root, paths):
             _embedded(root, json.loads(path.read_text()))
 
 
-def _boundary(root, boundary):
+def _boundary_paths(root, boundary):
     if type(boundary) is not admission.AdmissionBoundary:
         raise ValueError('offline_requires_admission_boundary')
     config = boundary.config
+    paths = [config.source, config.anchor, config.public_candidate,
+             config.human_receipt, config.policy, config.rubric, config.plugin,
+             boundary.store.root, config.job_root, config.revision_root,
+             *config.revision_roots]
+    # The immutable boundary resolves its own paths against cwd. Reject relative
+    # paths instead of silently normalizing an existing permission differently.
+    if any(not Path(path).is_absolute() for path in paths):
+        raise ValueError('offline_boundary_paths_must_be_absolute')
+    for path in paths:
+        _path(root, path)
+
+
+def _boundary(root, boundary):
+    _boundary_paths(root, boundary)
+    config = boundary.config
     _json_inputs(root, [config.source, config.anchor, config.public_candidate,
                        config.human_receipt, config.policy, config.rubric])
-    for path in (boundary.store.root, config.job_root, *config.revision_roots):
+
+
+def _output_tree(root, directory):
+    """Reject output redirects before a producer writes any intent or audio."""
+    directory = _path(root, directory)
+    # rglob yields symlink entries without following symlink directories. Check
+    # all existing descendants, including dangling links and in-scope links.
+    for path in directory.rglob('*'):
         _path(root, path)
 
 
@@ -106,7 +128,7 @@ def _scope(*, offline, fixture_id, fixture_root):
         os.environ.get(key) for key in accounting.ENV_KEYS[:2])
     if not directory or not run_id:
         raise ValueError('offline_callback_requires_scoped_accounting_session')
-    _path(root, Path(directory).absolute())
+    _output_tree(root, Path(directory).absolute())
     original = marker.read_bytes()
     import_module = builtins.__import__
     def fixture_import(name, *args, **kwargs):
@@ -181,10 +203,13 @@ def render_speech(paths, checkpoint_map_path, operation_policies_path, *, synth_
             if kwargs.get(key) is not None:
                 inputs.append(kwargs[key])
                 _json_inputs(root, [kwargs[key]])
+        if kwargs.get('progress_ledger') is not None:
+            _output_tree(root, kwargs['progress_ledger'].parent / 'accounting')
         # Materialization can write original absolute paths; use already local inputs.
         if kwargs.get('path_map_path') is not None:
             raise ValueError('offline_render_requires_materialized_fixture_inputs')
         job_root = Path(paths['job']).parent
+        _output_tree(root, job_root)
         with accounting.stage('local.business.render_speech', executor_type='deterministic_program') as span:
             result = renderer.render_accounted(paths, checkpoint_map_path, operation_policies_path,
                 synth_factory=synth_factory, **kwargs)
