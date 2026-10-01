@@ -12,6 +12,8 @@ Dev Debug 与正式版沿用同一原生收听界面、播放器、下载、字�
 
 界面按用户选定的 **iOS 27 设计语言** 实施：系统导航与 Sheet、26 pt 起的动态字幕、单层 Liquid Glass 悬浮播放栏、深色语义配色，以及窄屏、横屏和大字布局。具体规则与 Apple 官方来源见 [设计约定](DESIGN.zh.md)。
 
+当前候选使用的功能符号、状态分支与品牌资源见 [图标清单](ICON-INVENTORY.zh.md)，用于逐组讨论图标优化。
+
 ## 打开与运行
 
 直接打开 [Tongxing.xcodeproj](Tongxing.xcodeproj)。工程文件已保存，无需先安装依赖管理器；两个 Swift package 都在本地，没有第三方 SDK。
