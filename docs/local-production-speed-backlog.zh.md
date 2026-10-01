@@ -4,10 +4,10 @@
 
 | ID | 项目与 Owner | 开发状态 | 写入边界 | 必须交付 |
 |---|---|---|---|---|
-| `SPD-OPT-01` | Spark 语音批次驻留；语音 worker 开发者 | `offline_verified` | legacy Spark speech client/worker、speech backend、screen/align callers 及专属测试 | 一次受限远端调用处理多个冻结输入，模型 hash/load 每批一次，逐单元身份和结果回执；单请求兼容；执行未知不自动重做 |
-| `SPD-OPT-02` | Layer 2 有限并发；文字 producer 开发者 | `offline_verified` | L2 runner/controller、实验并发策略生成／评估入口、专属测试 | 明确 worker 1/2/3 新运行策略，保留每组 Astra→Sol 和有序聚合；失败后缓存可续，未知请求先对账；不得改既有冻结 policy 或默认把付费任务启动 |
-| `SPD-OPT-03` | 正式 TTS／回转写批处理；正式音频开发者 | `offline_verified` | formal TTS renderer、canonical back-ASR、专属测试 | batch 1/2/4/8 有界、完整单元映射、返回与覆盖检查；生成设置进入身份；batch=1 保持现有格式兼容；缓存命中不重新生成；实际终止／截断质量另列实测 |
-| `SPD-OPT-04` | CPU/GPU 重叠与精确续跑；主开发者 | `offline_verified` | legacy weekly renderer 的 CPU 保存／核验流水线、新有界 helper 和专属测试 | 单 GPU 合成与 CPU 保存/hash 重叠，有界内存／背压、错误传播与 drain；已收据单元不被覆盖；失败后只重做未提交单元；不提前产出完成报告 |
+| `SPD-OPT-01` | Spark 语音批次驻留；语音 worker 开发者 | `component_verified` | legacy Spark speech client/worker、speech backend、screen/align callers 及专属测试 | 一次受限远端调用处理多个冻结输入，模型 hash/load 每批一次，逐单元身份和结果回执；单请求兼容；执行未知不自动重做；真实正反序减少73%–75%，转写相同 |
+| `SPD-OPT-02` | Layer 2 有限并发；文字 producer 开发者 | `bounded_sample_measured` | L2 runner/controller、实验并发策略生成／评估入口、专属测试 | 正式Astra/Sol八组/档、48次响应全部返回，worker2/3实测44.96/30.40s；原13响应审计复用，串行恢复段不冒称完整基线；独立$6硬预算，usage费用上界$0.871，账单未核验；整周尚未测 |
+| `SPD-OPT-03` | 正式 TTS／回转写批处理；正式音频开发者 | `component_measured_quality_pending` | formal TTS renderer、canonical back-ASR、专属测试 | batch 1/2/4/8 有界、完整单元映射、返回与覆盖检查；生成设置进入身份；batch=1 保持现有格式兼容；缓存命中不重新生成；三语短长句有实测，一处西语回转写待听审；mixed4/8仅引擎诊断 |
+| `SPD-OPT-04` | CPU/GPU 重叠与精确续跑；主开发者 | `runtime_correctness_verified_speedup_unproven` | legacy weekly renderer 的 CPU 保存／核验流水线、新有界 helper 和专属测试 | 两端CPU0/1/2真实PCM/cues一致；单 GPU 合成与 CPU 保存/hash 重叠，有界内存／背压、错误传播与 drain；已收据单元不被覆盖；失败后只重做未提交单元；短样本CPU收尾不足0.1s，未证实可重复提速 |
 
 四项可分别开发；整合时按代码依赖合并测试。01 不修改 formal 音频文件；03 不修改 legacy renderer；04 不修改 ASR transport/worker 或 L2。跨项需要接口变化时先给主开发者消息，不并发改同一文件。
 
@@ -17,11 +17,11 @@
 - 先冻结输入，缓存绑定 source/text/checkpoint/model/runtime/生成设置；批处理不能丢失 unitId、locale 或旧收据，不把候选输出当正式人审批准。
 - 串行与并发／批处理用相同工作量比较；测试验证有界重叠、单模型装载次数、逆序完成仍正确映射、短批、失败／取消、缓存命中、错 hash、未知请求与局部恢复。线程并行的计时 fixture 不冒称 GPU 实测加速。
 - 不重新切碎已审自然句、不用变速凑同步，不逐片跳过完整语言包的人审／发布门禁。
-- 不重启 Spark 现有服务，不创建 GCP，不调用付费 API，不恢复已暂停的 180 秒诊断。若做真实性能试验，使用独立目录与受限资源，单列运行和质量证据。
+- 不重启 Spark 现有服务，不创建 GCP，不恢复已暂停的 180 秒诊断。开发阶段未调用付费 API；随后用户明确授权正式 Astra/Sol 受限小样本，独立48calls/$6预算与账本。真实性能试验使用独立目录与受限资源，单列运行和质量证据。
 
 ## 完成证据
 
-`offline_verified` 仅指代码及离线行为通过，不等同实际吞吐或生产部署。顶层 `DEV-SPD-001` 仍为 `in_progress`；真实三语正式 checkpoint 吞吐、10 分钟／整周性能和生产 rollout 尚未运行，不能仅因代码通过而改写之前 7h15／3h15 的估算。
+`offline_verified` 仅指代码及离线行为通过，不等同实际吞吐或生产部署。顶层 `DEV-SPD-001` 仍为 `in_progress`；[本轮组件验收](local-production-performance-acceptance-20261001.zh.md)已取得正式checkpoint三语短长句、正反序ASR驻留、两端CPU正确性及正式Astra/Sol受限小样本证据。新增56项验收回归通过。TTS听审、10分钟／整周性能和生产rollout仍未完成，不能据短样本改写之前7h15／3h15的整周估算。
 
 | 子项 | 入口与恢复行为 |
 |---|---|
@@ -78,8 +78,8 @@ PRODUCTION_PYTHON=/absolute/path/to/production-env/bin/python
 
 `--group-plan` 可沿用已有审定分组。freeze 不调用 API、不生成批准、不调度收费任务；manifest 中的 `executionArgv` 是后续实验命令。旧 policy 文件不变，worker1 保留同 hash 基线，worker2/3 只改 batching 与其 component hash，各自运行／账本目录隔离，跨策略不共享付费调用缓存。
 
-实际 9/27 三语的 frozen experiment 已准备在 ignored `artifacts/local-production-speed-20261001/layer2-concurrency/{zh-Hans,ko,es}/experiment.json`：419/420/420 组，三种 worker 均 `not_run`，未调用 API。正式音频参数见[renderer runbook](formal-layer3-renderer.zh.md)；legacy 参数见[语音运行合同](../experiments/sermon-dubbing-poc/SPEECH-RUNTIME.zh.md)。
+实际9/27三语的完整frozen experiment已准备在ignored `artifacts/local-production-speed-20261001/layer2-concurrency/{zh-Hans,ko,es}/experiment.json`：419/420/420组，完整计划三种worker均`not_run`。另在`artifacts/local-production-acceptance-20261001/layer2-run/real-3`完成中文原八组/档受限API验收，不能代称完整计划。正式音频参数见[renderer runbook](formal-layer3-renderer.zh.md)；legacy参数见[语音运行合同](../experiments/sermon-dubbing-poc/SPEECH-RUNTIME.zh.md)。
 
 ### 下一阶段性能验收
 
-每项保留同输入串行基线与优化组，分别记录 cold/warm、模型 load、推理、CPU 保存、组装、总墙钟、峰值内存及恢复新增调用数。先固定三语短／长句片段，再做 10 分钟及整周关键路径；一次只改变 worker/batch/CPU 队列之一，并复核生成质量及正式人审边界。验收前不提高生产默认并发、不切换原冻结音频身份，不启动已暂停诊断。
+本轮组件实测的cold/warm、load、推理、CPU保存/解码、总墙钟、内存与文字独立预算及质量回执见[验收报告](local-production-performance-acceptance-20261001.zh.md)。先处理西语样本听审，再做10分钟及整周关键路径；一次只改变worker/batch/CPU队列之一。正式默认batch仍1，不切换原冻结音频身份，不启动已暂停诊断；CPU项需更长样本和重复顺序控制后才宣称时间收益，文字完整串行与并发仍需代表性重复实测。
