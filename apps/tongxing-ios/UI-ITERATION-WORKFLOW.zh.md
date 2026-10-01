@@ -88,6 +88,30 @@ iOS 确认后判断并按需适配 Firebase Web UI，保留响应式行为。
 提交 PR；未经相应授权，不合并、不分发 TestFlight、不部署。
 ```
 
-## 7. 第一批落地范围（本文未完成）
+## 7. Xcode Preview 采集闭环
 
-下一次真实截图批注以现有收听页为试点，优先复用已有 UI 测试样本和截图工具；必要时只补一个局部预览样本或稳定无障碍标识，不启动通用截图平台项目。完成一轮原生真实前后对比、只读审核与人工确认，再记录网页适用性及独立适配证据。观察是否减少返工，再扩展工具。本文件不声明已经修改界面、截图、测试通过或获得 sign-off。
+日常布局迭代使用文件内的 `#Preview` 变体；需要可复核截图时，使用单独的 `IPhone18ProListeningCapturePreview`（Deprecated `PreviewProvider`），明确指定 iPhone 18 Pro。两种预览共用真实页面、组件和合成夹具，不访问生产目录、网络或真实证道内容。Canvas 渲染不等同于真机验收。
+
+修改 SwiftUI、Core 或 Infrastructure 源码后，在 iOS 项目目录执行：
+
+```sh
+python3 scripts/preview-capture.py prepare
+xcodegen generate --spec project.yml
+```
+
+然后在 Xcode 打开 `App/UIComponentPreviews.swift`，刷新 Canvas，选择 `Capture · iPhone 18 Pro · Listening`，等待无错误渲染后导出截图。`prepare` 会写入生成的源码指纹；采集层同时记录 Xcode Preview 运行环境、屏幕／安全区、明暗模式、Dynamic Type，以及标题、当前字幕、播放、更多控件的坐标。默认输出位于 `~/Library/Caches/Tongxing/PreviewCaptures`；可用 `TONGXING_PREVIEW_CAPTURE_DIR` 指定目录。
+
+传入元数据路径复核截图身份；传截图路径时也会计算 SHA-256：
+
+```sh
+python3 scripts/preview-capture.py verify \
+  --metadata /path/to/listening-light-<fingerprint>.json \
+  --screenshot /path/to/listening.png \
+  --device "iPhone 18 Pro"
+```
+
+若源码在截图后变化、指纹不匹配或必要锚点缺失，该截图作废；更新指纹后从 Canvas 重新捕获。Preview 元数据描述 Xcode 渲染状态，不证明设备拍摄或人工交互验收。不要将缓存元数据或截图提交 Git。
+
+## 8. 第一批后续范围
+
+下一次真实截图批注以现有收听页为试点，复用这里的合成样本和采集流程，不启动通用截图平台项目。完成一轮原生真实前后对比、只读审核与人工确认，再记录网页适用性及独立适配证据。观察是否减少返工，再扩展工具。本文记录预览采集实现；不声明已修改产品 UI、完成测试或人工确认。

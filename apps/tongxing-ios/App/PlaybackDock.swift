@@ -96,6 +96,7 @@ struct PlaybackDock: View {
         }
         .accessibilityLabel(localization.text("更多"))
         .accessibilityIdentifier("playback-more")
+        .designAnchor("playback-more")
         .popover(isPresented: $showingMore, arrowEdge: placement == .trailing ? .trailing : .bottom) {
             PlaybackMoreControls(playback: playback, isPreparing: isPreparing,
                                  alignmentModel: alignmentModel, precision: precision,
@@ -162,6 +163,7 @@ struct PlaybackDock: View {
         .accessibilityLabel(playLabel)
         .accessibilityValue(statusLabel)
         .accessibilityIdentifier("playback-toggle")
+        .designAnchor("playback-toggle")
         .accessibilityHint(localization.text(isCollapsed ? "向上轻扫展开播放栏" : "向下轻扫收起播放栏"))
         .accessibilityAction(named: Text(localization.text(isCollapsed ? "展开播放栏" : "收起播放栏"))) {
             setCollapsed(!isCollapsed)
@@ -237,6 +239,7 @@ struct PlaybackMoreControls: View {
         .frame(width: width)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("playback-more-panel")
+        .designAnchor("playback-more-panel")
         .accessibilityAddTraits(.isModal)
         .accessibilityAction(.escape, onClose)
         .task { closeFocused = true }

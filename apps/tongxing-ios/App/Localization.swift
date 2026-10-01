@@ -28,6 +28,10 @@ enum AppLanguage: String, Codable, CaseIterable, Identifiable {
 final class AppLocalization: ObservableObject {
     static let shared: AppLocalization = {
         #if DEBUG
+        if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" {
+            return AppLocalization(preferenceURL: FileManager.default.temporaryDirectory
+                .appendingPathComponent("Tongxing-Canvas-\(UUID().uuidString)/ui-language.json"))
+        }
         if ProcessInfo.processInfo.arguments.contains("--ui-testing"),
            let value = ProcessInfo.processInfo.environment["TONGXING_UI_TEST_RUN_ID"],
            let run = UUID(uuidString: value),

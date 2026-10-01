@@ -88,6 +88,30 @@ After iOS acceptance, assess and optionally adapt the Firebase web UI; keep resp
 Submit a PR. Do not merge, distribute TestFlight, or deploy without applicable authorization.
 ```
 
-## 7. First implementation slice (not completed by this document)
+## 7. Xcode Preview capture loop
 
-Use the next real annotated request on the existing listening page as the pilot. First reuse existing UI-test fixtures and screenshot tools. Add a small preview fixture or stable accessibility identifier only when needed; do not start a generalized screenshot platform. Complete one real native before/after loop, read-only review, and human acceptance; then record the browser decision and any separate adaptation evidence. Measure whether the task reduced rework before expanding tooling. No UI implementation, screenshot capture, test pass, or sign-off is claimed here.
+Use inline `#Preview` variants for normal layout iteration. For a reproducible capture, use the separate `IPhone18ProListeningCapturePreview` (deprecated `PreviewProvider`) with an explicit iPhone 18 Pro destination. Both paths share the production screen/components and synthetic fixtures; they do not read production directories, use the network, or load real sermon content. A Canvas render is not device acceptance.
+
+After changing SwiftUI, Core, or Infrastructure source, run from the iOS project directory:
+
+```sh
+python3 scripts/preview-capture.py prepare
+xcodegen generate --spec project.yml
+```
+
+Then open `App/UIComponentPreviews.swift` in Xcode, refresh Canvas, select `Capture · iPhone 18 Pro · Listening`, wait for a successful render, and export the screenshot. `prepare` writes the generated source fingerprint. The capture layer records the Xcode Preview runtime, screen/safe-area geometry, appearance, Dynamic Type, and coordinates for the sermon title, current subtitle, playback, and More controls. By default metadata is written under `~/Library/Caches/Tongxing/PreviewCaptures`; set `TONGXING_PREVIEW_CAPTURE_DIR` to choose another capture directory.
+
+Verify metadata against the current source; when supplied, the screenshot path is also hashed with SHA-256:
+
+```sh
+python3 scripts/preview-capture.py verify \
+  --metadata /path/to/listening-light-<fingerprint>.json \
+  --screenshot /path/to/listening.png \
+  --device "iPhone 18 Pro"
+```
+
+If source changes after capture, fingerprints differ, or required anchors are absent, discard and recapture after regenerating the fingerprint. Preview metadata describes Xcode's rendered state; it does not prove device capture or human interaction acceptance. Do not commit cached metadata or screenshots.
+
+## 8. Follow-up scope
+
+Use the next real annotated request on the existing listening page as the pilot. Reuse these synthetic fixtures and capture flow; do not start a generalized screenshot platform. Complete one real native before/after loop, read-only review, and human acceptance; then record the browser decision and any separate adaptation evidence. Measure whether the task reduced rework before expanding tooling. This document records preview-capture tooling, not a product UI change, test pass, or human sign-off.

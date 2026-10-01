@@ -405,6 +405,7 @@ struct ContentView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(week.title).font(.headline).accessibilityAddTraits(.isHeader)
                         .accessibilityIdentifier("sermon-title")
+                        .designAnchor("sermon-title")
                     Text("\(week.scripture) · \(week.speaker) · \(week.date)")
                         .font(.caption).foregroundStyle(.secondary)
                     Text(reviewLabel).font(.caption).foregroundStyle(Brand.accent)
@@ -430,6 +431,7 @@ struct ContentView: View {
             Text(week.title).font(.largeTitle.bold()).fixedSize(horizontal: false, vertical: true)
                 .accessibilityAddTraits(.isHeader)
                 .accessibilityIdentifier("sermon-title")
+                        .designAnchor("sermon-title")
             Text("\(week.scripture) · \(week.speaker)")
                 .font(.subheadline).foregroundStyle(.secondary)
             languageButton
@@ -643,6 +645,7 @@ struct ContentView: View {
                 .accessibilityLabel(localization.text("当前字幕"))
                 .accessibilityValue(sourceText(cue?.text ?? localization.text("暂无字幕"), language: cue == nil ? localization.language.rawValue : "zh-Hans"))
                 .accessibilityIdentifier("current-subtitle")
+                .designAnchor("current-subtitle")
             if let next {
                 (Text(localization.text("接下来")) + Text(" · ") + sourceText(next.text, language: "zh-Hans"))
                     .font(.body).foregroundStyle(.secondary)
