@@ -20,6 +20,31 @@ English index: [backlog.md](./backlog.md)
 
 状态枚举：`verified_baseline`、`in_progress`、`pending`、`waiting_evidence`、`blocked`、`complete`。`verified_baseline` 只说明列出的基线已验证，不代表该项所有未来周次完成；只有满足本页第 2 条维护规则和该项验收定义后才能标记 `complete`。
 
+<a id="dev-180s-diagnostic-followup"></a>
+
+## 2026-09-30：三分钟真实诊断的未解决问题
+
+证据：[本次测试报告](reports/20260930-dev-180s-dag-log-agent-api-test.zh.md)，测试代码为 `dev@63c0a18040b7f7744b334cebdb31778de228b064`。新的 ASR 与英文源检查成功，三语 39 个生成请求全部 HTTP 400，未产生机器候选、独立审核或 TTS；已通过独立桥接发布 Dev 诊断入口，295 个线上文件及视频 Range 通过。日志有 323 events / 84 spans，但 7/9 trace 关键路径为 partial；Agents 已有会话读取成功，live 诊断未执行。**本次只完成部分真实诊断和 Dev HTTP 验证，未完成统一 live DAG 或完整四层发布。**
+
+以下稳定 ID 是既有顶层工程项的具体 follow-up，不新增竞品排期或替换旧项。`pending` 表示尚未实施修复；测试暴露失败不等于代码已修复。人工 default-pass 仅属本次测试，不能补出缺失内容或关闭正式人工门禁。
+
+| ID | 优先级／状态 | 既有归属／问题证据 | 待交付与验收条件 | 依赖 |
+|---|---|---|---|---|
+| `DEV-DIAG-001` | P0 / `pending` | `DEV-L2-001`；F01 | 定位并修复 Astra 生成请求的 HTTP 400。先在同一冻结输入上验证单组最小请求和安全错误摘要，再跑三语 Astra→Sol→语言插件→候选 admission；记录 actual model、参数身份、请求与候选 hash。不得未经证据指定根因或以换模型绕过既定策略 | `DEV-DIAG-002` |
+| `DEV-DIAG-002` | P0 / `pending` | `DEV-TRACK-001`、`SPD6-LOG-03`；F02 | HTTP 拒绝收据保留可定位的结构化 error code/param 和限长脱敏摘要，绑定 call/attempt/HTTP status；固定错误夹具验证可诊断且无 key、正文或私人路径泄露。拒绝请求的 usage/billing 缺测保持 unknown | 无 |
+| `DEV-DIAG-003` | P0 / `pending` | `DEV-SPD-004`、`SPD6-ARCH-02`、`RQC-03`；F03 | 区分同配置系统性请求错误与局部可恢复失败；确认系统性错误后停止受影响配置的后续派发，保留已完成/在途收据及未启动单元的原因。只阻断受影响范围，其他有效 locale 不被拖停；恢复不重付成功单元、不静默重置账本 | `DEV-DIAG-002` |
+| `DEV-DIAG-004` | P1 / `pending` | `DEV-SPD-006`、`SPD6-READY-07`；F04 | 接通受授权和独立预算约束的 Agents live 只读诊断；用本次脱敏 trace 产生绑定 session/turn、evidence IDs、confidence 的诊断，验证 stale/越权输出拒绝。会话 GET 成功不作为诊断通过；Agent 无修订、重试、生成、人审或发布权限 | `DEV-DIAG-002`、`DEV-DIAG-008`；真实调用前冻结模型与预算 |
+| `DEV-DIAG-005` | P0 / `pending` | `DEV-SPD-006`、`DEV-E2E-001`、`DEV-L4-001/005`；F05 | 提供统一 fresh ASR→Source/Anchor→各 locale Text/Audio→Dev 发布与 HTTP 核验入口，接入已有 durable job、hash/gate、预算与恢复协议。Dev 目标身份明确、旧资产不丢失；Stage 0 固定失败矩阵后，以真实短片证明整条 live DAG 和发布收据，独立桥接不代替完成 | `DEV-DIAG-001/003/008`；沿用四层与发布门禁 |
+| `DEV-DIAG-006` | P1 / `pending` | `DEV-SPD-004`、`SPD6-ARCH-02`；F06 | 为期限已过的暂停运行设计显式续期或新 attempt 恢复协议，绑定新授权/期限/预算及旧 run 的结果和身份。保留过期守卫和旧账本；测试暂停超时、未知结果与重启，确保不会自动重发付费请求或重复成功阶段 | 沿用 durable receipt / outcome reconciliation |
+| `DEV-DIAG-007` | P0 / `blocked` | `DEV-L3-001`、`DEV-SPD-003`、`RQC-06`；F07 | 上游有效候选与机器审核恢复后，再执行三语真实 TTS、完整解码、时间轴与既定听审/同步检查，记录推理调用、费用和每语言 Audio/Release 状态。本次 TTS=0 属上游阻断，未观察到 TTS 引擎故障；人工 default-pass 不生成候选 | `DEV-DIAG-001`；统一端到端验收还依赖 `DEV-DIAG-005` |
+| `DEV-DIAG-008` | P0 / `pending` | `DEV-TRACK-001`、`DEV-SPD-002`、`SPD6-LOG-01`；F08 | 补齐实际 producer / 跨阶段 executor、dependsOn、blockedBy、ready/queued 与 run/workUnit/attempt 绑定；重放本次脱敏事件定位缺口，再用真实 live 路径证明 source/locale/join/delivery 的完整关键路径。缺测项显式 partial/unknown，不从 span 数量推算 ETA；兼容旧日志 | `DEV-DIAG-002` 的错误与调用关联；整体验收与 `DEV-DIAG-005` 联动 |
+| `DEV-DIAG-009` | P1 / `pending` | `DEV-L4-005`、`DEV-TRACK-001`；F09 | Dev App 区分 failed / blocked / pending / ready：机器候选缺失时不得显示“大纲已就绪”或暗示配音仍在生成；保留准确失败原因和禁用播放。三语切换及既有成功周次浏览器验证通过，不混淆内容语言与界面语言 | 实际业务状态/原因绑定；不要求为诊断展示重新生成内容 |
+| `DEV-DIAG-010` | P1 / `pending` | `DEV-SPD-006`、`SPD6-ARCH-01/02`；H02 | 定义跨阶段模块加载时 executionIdentity 的冻结/扩展收据协议；正常进入新阶段不需临时绕过 exact identity 校验，原模块/hash、输入和预算绑定仍严格有效。验证合法扩展、源码变化、旧输入及恢复时身份不一致均被正确处理 | 保留当前原身份及扩展收据，不放宽原 hash 守卫 |
+
+建议修复顺序：`DEV-DIAG-002` → `001/003`，并补 `008`；随后接通 `005` 并完成 `007` 的真实三语验收。`004/006/009/010` 按各自依赖推进；此表登记不自动启动新模型调用、生产发布或设备验收。
+
+H01（测试脚本插件哈希误用）和 H03（首次 deploy 选错 Dev project、CLI 拒绝且未发布）已在本次测试纠正并留证，**不新增未修复产品缺陷**。H02 只有临时恢复办法，仍按 `DEV-DIAG-010` 待办。原报告 F01—F09/H01—H03 保留不改写；原媒体、失败日志和账本留在 ignored artifacts。本节未实施任何修复，也不关闭现有 `DEV-SPD-*`、Layer 2/3 或 Prefect/Agents 的验收项。
+
 ## 2026-09-30：生成、独立审核、门禁与返工闭环
 
 本次核查 `dev@fc3e2fbc60b0fd2c5b59c64fcd515c465efc6b0b`；[PR #163](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/163) 已将 #121—#162 的冻结实现整合到 Dev。下方早期“draft/尚未合并”的段落是对应批次的历史快照，不应再当作当前合并状态。合并及历史组件测试不等于完整生产、内容、设备或现场 sign-off。
@@ -342,6 +367,8 @@ Definition of Ready 已在完整设计中逐项勾选；剩余的 implementation
 <a id="prefect-diagnostic-pilot"></a>
 
 ### 有界 Prefect DAG 与 Agents API 只读诊断试点
+
+当前运行证据与未解决项见[三分钟真实诊断 follow-up](#dev-180s-diagnostic-followup)；下方为设计登记时的范围与状态，不能作为当前 live 集成通过的证明。
 
 **2026-10-01 设计登记，状态 `pending`（实现由独立分支交付，本文不声明已接通）。** 这是现有 `DEV-SPD-006` 的窄试接，不新建调度平台或重写 producer。按[最新顺序](prefect-agents-diagnostic-pilot.zh.md#sequencing)，先完成本地实现／固定夹具，再恢复已暂停的 180 秒真实诊断。完整接口、官方依据、失败矩阵和退出条件见 [Prefect + Agents API 试点合同](prefect-agents-diagnostic-pilot.zh.md)。
 

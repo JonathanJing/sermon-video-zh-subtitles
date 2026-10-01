@@ -4,6 +4,8 @@
 >
 > The English sections below are the preserved 2026-06-22 live-caption snapshot. They are not the current top-level plan; active work is mapped in the canonical backlog.
 
+Latest real-run follow-up: [180-second diagnostic issues and acceptance criteria](./backlog.zh.md#dev-180s-diagnostic-followup), tracked as `DEV-DIAG-001`–`010` under existing engineering items. The run produced 39 HTTP 400 translation rejections, incomplete critical-path evidence and no live Agent diagnosis; the published Dev entry is a partial diagnostic result, not a completed four-layer release.
+
 Legacy snapshot last updated: 2026-06-22
 
 Canonical backlog: [backlog.zh.md](./backlog.zh.md)
