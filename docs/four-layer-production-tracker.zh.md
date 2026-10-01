@@ -35,7 +35,7 @@ Layer 4 的发布包、catalog、Web／iOS 语言选择、回滚和验证矩阵�
 
 ### Tracker 接入 Backlog
 
-2026-10-01 新增的总体工作进度与资源约束 ETA 仍为 **pending**，详细分母、状态、数据复用、排程估计与夹具见[统一 Backlog 的进度／ETA 待办](backlog.zh.md#progress-eta-followup)。**当前单次 180 秒 diagnostic／dry run 完成后才开始实现**；以下已有检查点百分比和连续串行估时不能冒充该新能力。沿用 `TRK-002/003/005b/006` 与 `SPD-006`，不新增平行平台。
+2026-10-01 新增的总体工作进度与资源约束 ETA 仍为 **pending**，详细分母、状态、数据复用、排程估计与夹具见[统一 Backlog 的进度／ETA 待办](backlog.zh.md#progress-eta-followup)。**最新顺序为先实现有界 Prefect DAG、进度／ETA 和只读诊断接口，再恢复已暂停的单次 180 秒 diagnostic／dry run**；主线程确认的暂停检查点、保留原 ASR／账本和恢复条件见[试点合同](prefect-agents-diagnostic-pilot.zh.md#sequencing)。以下已有检查点百分比和连续串行估时不能冒充该新能力。沿用 `TRK-002/003/005b/006` 与 `SPD-006`，不新增平行平台，也不因有 Prefect 状态就改变业务或人工审核状态。
 
 本节承接 `DEV-TRACK-001`；下一轮流程梳理、三类 dry run、局部恢复与整周 token 优化的依赖及验收统一见[每周流程效率计划](backlog.zh.md#每周流程效率计划)（`DEV-SPD-002`—`DEV-SPD-005`）。实际运行分别保留首次执行、失败／修订及恢复证据，不能只展示最后成功一次的消耗。
 

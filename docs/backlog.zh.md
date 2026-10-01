@@ -284,11 +284,11 @@ Definition of Ready 已在完整设计中逐项勾选；剩余的 implementation
 
 <a id="progress-eta-followup"></a>
 
-### 总体进度与剩余时间：本轮诊断完成后开发
+### 总体进度与剩余时间：先实现，再恢复本轮诊断
 
 **2026-10-01 新增要求，状态 `pending`（仅文档，尚未实现）。** 归属既有 `DEV-TRACK-001`（进度投影与采集）、`DEV-SPD-002`（工作量／耗时基线）和 `DEV-SPD-001`（资源约束关键路径），沿用 Tracker 的 `TRK-002/003/005b/006`、`SPD-006`，不新增 Epic、独立看板平台或第二套调度器。
 
-**开工依赖：当前正在进行的单次 180 秒 diagnostic／dry run 完成后，才开始本项实现。** 先由该轮运行证据记录 exact run/source/window、代码版本、约定诊断终点、终态与结果汇总，包括失败、模拟审核及尚未通过的正式门禁；不能把一个子阶段完成、等待人审、心跳停止或未知请求结果自行解释为整轮完成。这里不更新该轮状态，不给出当前完成百分比或 ETA，也不启动／重跑诊断。诊断结束不等于正式生产通过；进度功能的后续实现不改变该轮预算、模型策略或验收结论。
+**最新顺序（2026-10-01）：先实现有界 Prefect 可执行 DAG、进度／ETA 和 Agents API 只读诊断接口，再恢复本轮单次 180 秒 diagnostic／dry run。** 此顺序取代先前“本轮结束后开发”的要求：主线程在用户 00:52 条件指令后，于 00:53:41 报告 L2 为 0/39、TTS 为 0、无在途请求／新增调用，真实续跑已暂停。这是主线程提供的当时检查点，不是本页实时监测或整轮未执行的声明；保留原 ASR、source/window、代码版本、缓存、收据及预算账本，不重跑已有来源工作。恢复前由运行负责人重新核实 exact run、job/lease、在途结果与版本兼容，记录实现 commit 和固定夹具证据；不得把等待、心跳停止或未知结果当作安全重启许可。本文不启动诊断、不声称扩展已启用，不给出当前总体百分比或 ETA。试点边界及独立调用预算见[试接合同](prefect-agents-diagnostic-pilot.zh.md#sequencing)。
 
 #### 冻结分母与进度语义
 
@@ -322,7 +322,7 @@ Definition of Ready 已在完整设计中逐项勾选；剩余的 implementation
 
 #### 开发顺序与验收夹具（待实现，本文未运行）
 
-依赖完成后，先完成 `TRK-002/005b` 的版本化计划／事实映射与缺口标识，再完成 `TRK-003` 的只读进度与 ETA 投影，最后由 `TRK-006`／`SPD-006` 校准历史预测与实测误差。优先重放脱敏固定事件与 fake clock；真实模型／设备验证需按原有任务和预算单独执行，不能由此 backlog 自动发起。
+按上述更新顺序，先完成 `TRK-002/005b` 的版本化计划／事实映射与缺口标识，再完成 `TRK-003` 的只读进度与 ETA 投影，最后由 `TRK-006`／`SPD-006` 校准历史预测与实测误差。优先重放脱敏固定事件与 fake clock；真实模型／设备验证需按原有任务和预算单独执行，不能由此 backlog 自动发起。
 
 | 固定夹具 | 预期验收 |
 |---|---|
@@ -338,6 +338,21 @@ Definition of Ready 已在完整设计中逐项勾选；剩余的 implementation
 | 重放与行为不变 | 乱序、重复、冲突、迟到收据按现有日志合同处理；相同证据的计数稳定。开／关投影及重放前后，dispatch／模型调用、重试策略、审批、缓存身份、预算预留／消费、业务 artifact 与业务决定完全一致；唯有观测输出可变 |
 
 本项完成需要绑定实现 commit、夹具结果、缺测降级和预测校准报告；文档齐备不关闭 `DEV-TRACK-001`／`DEV-SPD-*`，不提升任何生产或人工验收状态。
+
+<a id="prefect-diagnostic-pilot"></a>
+
+### 有界 Prefect DAG 与 Agents API 只读诊断试点
+
+**2026-10-01 设计登记，状态 `pending`（实现由独立分支交付，本文不声明已接通）。** 这是现有 `DEV-SPD-006` 的窄试接，不新建调度平台或重写 producer。按[最新顺序](prefect-agents-diagnostic-pilot.zh.md#sequencing)，先完成本地实现／固定夹具，再恢复已暂停的 180 秒真实诊断。完整接口、官方依据、失败矩阵和退出条件见 [Prefect + Agents API 试点合同](prefect-agents-diagnostic-pilot.zh.md)。
+
+| 既有子项 | 此次新增工作与验收边界 |
+|---|---|
+| `SPD6-ARCH-01/02`、`SPD6-READY-02/05/06` | Prefect flow/task 仅包装现有 DAG node、durable job、receipt、预算与 gate；保持单一 controller 执行授权、本地 GPU 容量和人审身份约束。覆盖 API 响应后收据前崩溃、worker 重启、人审等待重启、并发预算争用；未知结果不自动重发付费请求 |
+| `DEV-TRACK-001`、`DEV-SPD-002/001`、`SPD6-LOG-01/05` | 复用上节冻结计划／进度／资源约束 ETA 与既有日志，关联 flow/task/job/workUnit/revision；Prefect task completed 不能替代业务完成、机器审核或真实人审 |
+| `SPD6-ARCH-03`、`SPD6-READY-07` | Agents API 仅诊断脱敏日志、失败单元引用和版本差异，输出 cause/hypothesis、evidence IDs、confidence、impact、affected units、suggested repair；固定 validator 拒绝过期／越权建议，controller 另行授权执行。诊断 agent 无修改、重试、内容生成、人审或发布权限 |
+| `SPD6-LOG-03/04`、`SPD6-VAL-00` | session/turn/call 与证据关联、缺测费用保持 unknown；先运行固定／mock 故障矩阵。当前 $40 运行预算不包含新 Agents API 试点调用，真实诊断调用须另定模型／限制／独立批准预算；本次文档工作无真实测试或模型调用 |
+
+本试点不改变既有 `DEV-EXP-004` Harness/Terra A/B，不启用生产云部署、定时调度或 rollout；真实诊断与生产／设备／现场验收分别留证。
 
 ## P2：实验与非阻塞扩展
 
