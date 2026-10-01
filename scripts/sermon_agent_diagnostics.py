@@ -322,7 +322,10 @@ def diagnose(manifest, *, client: OfflineAgentsClient, limits=DiagnosticLimits()
                 require(type(action) is dict and set(action) == {"type", "turn_id", "call_id", "name", "arguments"}
                         and action["type"] == "function_call", "unsupported_required_action")
                 require(state["turnId"] is not None and action["turn_id"] == state["turnId"], "tool_turn_mismatch")
-                call_id = _remote_identifier(action["call_id"], "call_")
+                # Agents function-call IDs are opaque wire identifiers. Session
+                # and turn prefixes remain strict; live submission additionally
+                # binds this identifier to the actual function_call item.
+                call_id = _identifier(action["call_id"])
                 action_hash = fingerprint(action)
                 previous = next((row for row in state["toolResults"] if row["callId"] == call_id), None)
                 if previous is not None:
@@ -375,7 +378,7 @@ def _validate_checkpoint(checkpoint, payload_hash, bundle, limits):
         require(type(row) is dict and set(row) == {"callId", "turnId", "action", "actionSha256", "output", "outputSha256"},
                 "invalid_checkpoint")
         action = row["action"]
-        _remote_identifier(row["callId"], "call_")
+        _identifier(row["callId"])
         require(type(action) is dict and set(action) == {"type", "turn_id", "call_id", "name", "arguments"}
                 and action.get("type") == "function_call"
                 and row["turnId"] == state["turnId"] == action.get("turn_id")

@@ -185,6 +185,40 @@ class LiveDiagnosticClient:
 
     def submit_tool_result(self, session_id, action, output, *, timeout_seconds):
         self._session_scope(session_id)
+        # Wire call IDs do not have a guaranteed call_ prefix. Accept only the
+        # existing bounded identifier shape, then prove the pending action's
+        # identity against the actual function_call item before any POST.
+        started = self.clock()
+        c.require(type(action) is dict and set(action) == {'type','turn_id','call_id','name','arguments'}
+                  and action['type'] == 'function_call', 'unsupported_required_action')
+        call_id = diagnostic._identifier(action['call_id'])
+        turn_id = diagnostic._remote_identifier(action['turn_id'], 'turn_')
+        c.require(action['name'] in diagnostic.READ_TOOLS and type(action['arguments']) is dict,
+                  'unsupported_required_action')
+        items = self._invoke('list_items', (session_id,), timeout_seconds)
+        c.require(type(items) is list and all(type(item) is dict for item in items), 'invalid_items')
+        matches = [item for item in items if item.get('type') == 'function_call'
+                   and item.get('call_id') == call_id]
+        c.require(len(matches) == 1, 'diagnostic_call_item_missing_or_duplicate')
+        item = matches[0]
+        item_id = diagnostic._identifier(item.get('id'))
+        item_arguments = item.get('arguments')
+        if type(item_arguments) is str:
+            item_arguments = c.decode_json(item_arguments.encode('utf-8'))
+        c.require(item.get('turn_id') == turn_id and item.get('name') == action['name']
+                  and item_arguments == action['arguments']
+                  and item.get('session_id', session_id) == session_id, 'diagnostic_call_item_binding_mismatch')
+        binding = {'schemaVersion':'sermon-live-diagnostic-call-item-binding-v1',
+                   'authorizationSha256':c.fingerprint(self.authorization),
+                   'sessionId':session_id,'turnId':turn_id,'callId':call_id,'itemId':item_id,
+                   'actionSha256':c.fingerprint(action),
+                   'itemEvidenceSha256':c.fingerprint({k:item[k] for k in
+                       ('id','type','turn_id','call_id','name','arguments')}),
+                   'argumentsSha256':c.fingerprint(action['arguments'])}
+        immutable.save_once(self.root/'call-item-bindings'/(c.fingerprint(action)+'.json'),binding)
+        jobs._sync_directory_ancestry(self.root/'call-item-bindings')
+        timeout_seconds -= max(0.0, self.clock()-started)
+        c.require(timeout_seconds > 0, 'diagnostic_deadline_exceeded')
         return self._invoke('submit_tool_result', (session_id, action, output), timeout_seconds)
 
     def cancel_once(self, session_id):

@@ -2,6 +2,11 @@
 from copy import deepcopy
 from pathlib import Path
 import json
+import os
+import subprocess
+import sys
+import tempfile
+import textwrap
 import unittest
 from unittest.mock import patch
 
@@ -15,6 +20,49 @@ from scripts import sermon_strict_layer2 as immutable
 from scripts import sermon_accounting as accounting
 from scripts import sermon_bounded_business_callbacks as callbacks
 from tests.diagnostic_dag_fixture import DiagnosticDAGFixture
+
+
+class FreshPreloadTests(unittest.TestCase):
+    def test_cold_profile_session_preserves_actual_frozen_identity_without_dispatch(self):
+        # A separate interpreter is essential: other profile tests have already
+        # imported workflow evidence and would hide this production-start bug.
+        child = textwrap.dedent('''
+            import json
+            import sys
+            from pathlib import Path
+            from unittest.mock import patch
+            repository = Path(sys.argv[1])
+            directory = Path(sys.argv[2])
+            sys.path.insert(0, str(repository))
+            from scripts import sermon_fresh_diagnostic as entry
+            from scripts import sermon_accounting as accounting
+            from scripts import sermon_log_profile as profile
+            assert 'scripts.sermon_workflow_evidence' not in sys.modules
+            with patch('urllib.request.OpenerDirector.open', side_effect=AssertionError('network forbidden')) as network:
+                frozen = entry.preload_execution_modules([
+                    repository / 'scripts/language_review_plugins/diagnostic_structural.py'])
+                assert 'scripts/sermon_workflow_evidence.py' in frozen['loadedProjectCodeSha256']
+                with profile.session(directory, 'fresh-preload-regression',
+                                     work_kind='engineering', evidence_mode='synthetic'):
+                    assert accounting.execution_identity() == frozen, 'identity changed at session start'
+                assert accounting.execution_identity() == frozen, 'identity changed at session finish'
+                network.assert_not_called()
+            events = [json.loads(line) for line in (directory / 'events.jsonl').read_text().splitlines()]
+            assert any(row['event'] == 'workflow_evidence' for row in events)
+            assert any(row['event'] == 'run_finished' and row['status'] == 'completed' for row in events)
+            assert not any(row['event'].startswith(('api_attempt', 'sdk_call_')) for row in events)
+            assert not any(directory.parent.rglob('provider-run/state.json'))
+            print(json.dumps({'identityUnchanged': True, 'dispatchEvents': 0}))
+        ''')
+        environment = {key: value for key, value in os.environ.items()
+                       if not key.startswith('SERMON_ACCOUNTING_')}
+        with tempfile.TemporaryDirectory() as directory:
+            result = subprocess.run([sys.executable, '-I', '-B', '-c', child,
+                                     str(Path(entry.__file__).resolve().parents[1]),
+                                     str(Path(directory) / 'logs')], env=environment,
+                                    capture_output=True, text=True, timeout=30)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout), {'identityUnchanged': True, 'dispatchEvents': 0})
 
 
 class FreshSourceTests(unittest.TestCase):

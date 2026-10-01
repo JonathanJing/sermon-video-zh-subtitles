@@ -30,7 +30,10 @@ class WireReplay:
         return self.fake.list_turns(session, timeout_seconds=self.timeout)
     def list_items(self, session):
         self.calls.append('list_items')
-        return self.fake.list_items(session, timeout_seconds=self.timeout)
+        items=self.fake.list_items(session, timeout_seconds=self.timeout)
+        # Replay the actual required function_call item alongside any messages.
+        actions=self.fake.frames[self.fake.index]['session'].get('required_actions',[]) if self.fake.index>=0 else []
+        return items+[{'id':action['call_id'],**action,'status':'in_progress'} for action in actions]
     def submit_tool_result(self, session, action, output):
         self.calls.append('submit_tool_result')
         if self.fail_submit: raise OSError('private')
@@ -104,6 +107,91 @@ class LiveDiagnosticTests(unittest.TestCase):
         self.assertTrue(any(state['toolResults'] for state in saved))
         self.assertEqual(result['provenance']['cancellation']['status'], 'acknowledged_terminal_not_confirmed')
         self.assertEqual(self.transport.calls.count('cancel'), 1)
+
+    def test_opaque_wire_call_identifier_binds_actual_item_and_survives_checkpoint(self):
+        bundle=diagnostic.build_context_bundle(self.manifest)
+        # Real safe projection: length 55, bounded charset, item.id == call_id,
+        # no guaranteed call_ prefix. This is synthetic and contains no real ID.
+        opaque='opaque_'+('a'*48)
+        action=dict(type='function_call',turn_id='turn_offline',call_id=opaque,
+            name=diagnostic.READ_TOOLS[0],arguments={'snapshotId':bundle['snapshotId']})
+        self.transport=WireReplay([frame(actions=[action]),frame(status='completed')],[final_item(self.report)])
+        result=self.run_diagnostic()
+        self.assertEqual(result['status'],'completed');self.assertEqual(len(opaque),55)
+        self.assertEqual(result['checkpoint']['toolResults'][0]['callId'],opaque)
+        self.assertEqual(diagnostic._validate_checkpoint(result['checkpoint'],result['provenance']['payloadSha256'],
+            bundle,diagnostic.DiagnosticLimits()),result['checkpoint'])
+        saved=list((self.root/'call-item-bindings').glob('*.json'));self.assertEqual(len(saved),1)
+        binding=json.loads(saved[0].read_text())
+        self.assertEqual(binding['callId'],opaque);self.assertEqual(binding['itemId'],opaque)
+        self.assertEqual(binding['actionSha256'],c.fingerprint(action))
+        self.assertEqual(self.transport.calls.count('submit_tool_result'),1)
+        self.assertEqual(self.transport.calls.count('create_session'),1);self.network.assert_not_called()
+
+    def test_opaque_call_requires_unique_actual_item_with_same_turn_name_arguments(self):
+        bundle=diagnostic.build_context_bundle(self.manifest)
+        action=dict(type='function_call',turn_id='turn_offline',call_id='opaque_'+('b'*48),
+            name=diagnostic.READ_TOOLS[0],arguments={'snapshotId':bundle['snapshotId']})
+        base=self.root
+        for case in ('missing','duplicate','call_id','turn','name','arguments','session','item_id'):
+            with self.subTest(case=case):
+                self.root=base/case;self.transport=WireReplay([frame(actions=[action])],[])
+                original=self.transport.list_items
+                def items(session,case=case,original=original):
+                    value=original(session)
+                    if case=='missing':return []
+                    if case=='duplicate':return value+value
+                    field={'call_id':'call_id','turn':'turn_id','name':'name','arguments':'arguments',
+                           'session':'session_id','item_id':'id'}[case]
+                    value[0][field]={'snapshotId':'other'} if case=='arguments' else '../invalid' if case=='item_id' else 'other'
+                    return value
+                self.transport.list_items=items
+                result=self.run_diagnostic()
+                self.assertEqual(result['status'],'blocked')
+                self.assertNotIn('submit_tool_result',self.transport.calls)
+                self.assertFalse((self.root/'call-item-bindings').exists())
+        self.network.assert_not_called()
+
+    def test_item_arguments_json_representation_is_strict_and_semantically_bound(self):
+        bundle=diagnostic.build_context_bundle(self.manifest)
+        action=dict(type='function_call',turn_id='turn_offline',call_id='opaque_'+('c'*48),
+            name=diagnostic.READ_TOOLS[0],arguments={'snapshotId':bundle['snapshotId']})
+        self.transport=WireReplay([frame(actions=[action]),frame(status='completed')],[final_item(self.report)])
+        original=self.transport.list_items
+        def items(session):
+            rows=original(session)
+            for row in rows:
+                if row.get('type')=='function_call':row['arguments']=json.dumps(row['arguments'])
+            return rows
+        self.transport.list_items=items
+        self.assertEqual(self.run_diagnostic()['status'],'completed')
+        self.assertEqual(self.transport.calls.count('submit_tool_result'),1)
+
+    def test_opaque_call_identifier_keeps_original_charset_and_length_bounds(self):
+        bundle=diagnostic.build_context_bundle(self.manifest);base=self.root
+        for index,invalid in enumerate(('opaque_'+('d'*74),'../opaque','opaque:bad','opaque bad','',None,{})):
+            with self.subTest(invalid=invalid):
+                self.root=base/str(index)
+                action=dict(type='function_call',turn_id='turn_offline',call_id=invalid,
+                    name=diagnostic.READ_TOOLS[0],arguments={'snapshotId':bundle['snapshotId']})
+                self.transport=WireReplay([frame(actions=[action])],[])
+                result=self.run_diagnostic()
+                self.assertEqual(result['reasonCode'],'invalid_remote_identifier')
+                self.assertNotIn('submit_tool_result',self.transport.calls)
+                self.assertFalse((self.root/'call-item-bindings').exists())
+
+    def test_duplicate_json_keys_in_item_arguments_do_not_reach_submission(self):
+        bundle=diagnostic.build_context_bundle(self.manifest)
+        action=dict(type='function_call',turn_id='turn_offline',call_id='opaque_'+('e'*48),
+            name=diagnostic.READ_TOOLS[0],arguments={'snapshotId':bundle['snapshotId']})
+        self.transport=WireReplay([frame(actions=[action])],[]);original=self.transport.list_items
+        def items(session):
+            rows=original(session)
+            rows[0]['arguments']='{"snapshotId":"one","snapshotId":"two"}'
+            return rows
+        self.transport.list_items=items
+        self.assertEqual(self.run_diagnostic()['status'],'blocked')
+        self.assertNotIn('submit_tool_result',self.transport.calls)
 
     def test_stale_or_unapproved_scope_cannot_dispatch(self):
         changed = {**self.manifest['identity'], 'stateRevision':99}

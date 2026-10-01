@@ -27,7 +27,7 @@ from scripts.sermon_release_workflow import _safe_path
 
 def preload_execution_modules(plugin_paths=()):
     """Call BEFORE freezing a fresh plan; imports only fixed local stage code."""
-    for name in ('sermon_diagnostic_delivery_preflight','sermon_dev_diagnostic_snapshot',
+    for name in ('sermon_workflow_evidence','sermon_diagnostic_delivery_preflight','sermon_dev_diagnostic_snapshot',
                  'sermon_native_preview_runtime','sermon_strict_candidate_bridge','sermon_strict_controller',
                  'sermon_strict_budget_adapter','sermon_strict_locale','prepare_target_language_speech_job',
                  'render_formal_target_language_speech','render_multilingual_voice_demos',

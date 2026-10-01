@@ -45,3 +45,15 @@
 最终整合回归覆盖 29 个受影响测试模块，**417 tests 通过，1 项既有 SDK 集成测试跳过**；28 Node tests 通过，`git diff --check` 通过。故障注入夹具输出的 `SERMON_LOGGING_WRITE_FAILED` 是预期拒绝路径，其终态与不重复派发由测试验证。
 
 下一真实阶段冻结为 fresh 独立 attempt：bounded provider 最多 124 次新请求、25,000,000 microUSD、5,400 秒；完整历史累计请求上限 430、占额上限 110,000,000 microUSD。只读 Agent 另限单 session / 单 root turn，最多 8 steps / 16 metadata reads / 30 秒、2,000,000 microUSD 观察预留；其金额是 observer stop threshold，不能称服务端硬封顶。对应预算、代码、源与 runtime 在 ignored 运行目录持久化后执行。
+
+## 真实启动暴露的兼容问题
+
+固定 `8305b2e` 的 fresh 启动已保存两个派发前失败：原生 runtime 没有 `dotenv`，启动器改用匿名继承 FD 传递既有私有凭据，保留原 driver/input/plan hash，未改冻结 runtime；随后 `profile.session` 延迟加载 `sermon_workflow_evidence.py`，入口预加载遗漏该模块，引发 `diagnostic_continuation_code_changed`。两次都没有 provider 请求。失败 attempt 已初始化空账本并永久关闭新派发，0 requests / 0 reservation；继承该父 attempt 准备修复后的新运行，不重用已消耗的后继授权或覆盖旧计划。
+
+真实只读 Agent 已创建一个 session/root turn，但合法 opaque function call ID 被本地 `call_` 固定前缀断言拒绝，未产出诊断。三个额外只读 GET 已确认 session idle / root turn cancelled，required actions 为空；根 turn 报告 input 9,796 / output 147 / total 9,943 tokens。session 汇总与之相同，不能再相加；GET 未报告 actual model，费用仍 unknown，原 2,000,000 microUSD 观察预留不退款。新阶段只能在保留旧账和明确独立授权/观察期限后执行。私有脱敏回读收据在 `artifacts/dev-agent-diagnostic-live-20261001/reconciliation`。
+
+上述入口冻结遗漏归入 `DEV-DIAG-005/010`，opaque call 标识兼容归入 `DEV-DIAG-004`，凭据 FD 启动与原生依赖边界归入 `DEV-DIAG-014`；均需修复回归及真实续验，不因 GET 或零调用失败记为通过。
+
+启动兼容修复整合 **77 tests 通过**：fresh 的冷进程真实日志身份回归，以及 Agent opaque call ID、唯一 function-call item／turn／name／arguments 绑定和错配拒绝。session/turn 身份约束不变；工具结果 POST 前增加实际 item 证据核验。`git diff --check` 通过。
+
+只读审查新增待验边界：fresh Source 捕获部分非 `fresh_*` 受控错误时仍泛化原因，归 `013`；变化 ASR 的本地 MFA 分支尚未透传原 provider 剩余 deadline，归 `005`；native checkpoint 回执绑定主权重/config，辅助 tokenizer 权重全树绑定尚缺，归 `014/010`。这些审查发现不作为已通过或已观察故障，保留验收要求。
