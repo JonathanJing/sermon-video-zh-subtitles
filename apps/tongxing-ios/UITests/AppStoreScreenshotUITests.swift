@@ -43,6 +43,24 @@ final class AppStoreScreenshotUITests: XCTestCase {
         chineseContent.tap()
 
         let currentMode = app.segmentedControls["listening-display"].buttons[interfaceLanguage.currentMode]
+        let fullMode = app.segmentedControls["listening-display"].buttons[interfaceLanguage.fullMode]
+        // Real app history persists across captures. Establish a valid published
+        // cue through normal UI, rather than assuming the retained time has text.
+        let play = app.buttons["playback-toggle"]
+        let prepare = app.buttons["prepare-published-audio"]
+        if prepare.exists { prepare.tap() }
+        let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format:
+            "exists == true AND enabled == true"), object: play)
+        guard XCTWaiter.wait(for: [ready], timeout: 90) == .completed else {
+            XCTFail("The real published audio must be ready for explicit timestamp selection.")
+            throw CaptureFailure.unreachable
+        }
+        try reveal(fullMode, in: app, towardTop: true)
+        fullMode.tap()
+        let firstTime = app.buttons["published-caption-time-translation-0-u001"]
+        XCTAssertTrue(firstTime.waitForExistence(timeout: 15))
+        try reveal(firstTime, in: app, towardTop: false)
+        firstTime.tap()
         try reveal(currentMode, in: app, towardTop: true)
         currentMode.tap()
         let subtitle = app.staticTexts["published-current-subtitle"]
@@ -56,7 +74,6 @@ final class AppStoreScreenshotUITests: XCTestCase {
         try reveal(subtitle, in: app, towardTop: false)
         capture("store-01-current-subtitle-\(interfaceLanguage.rawValue)", app: app)
 
-        let fullMode = app.segmentedControls["listening-display"].buttons[interfaceLanguage.fullMode]
         try reveal(fullMode, in: app, towardTop: true)
         fullMode.tap()
         let reference = app.staticTexts.matching(NSPredicate(format:
