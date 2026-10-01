@@ -703,3 +703,5 @@ PR #198 首轮CI进一步发现旧CLI夹具缺runtime/checkpoint声明，补齐�
 收尾head `885d0f1` 的实际Prefect SDK CI157项全部通过，仍只证明模拟/本地回放引擎合同。随后dev合入PR #194图标更新：保留新SVG按钮及diagnostic文案两者，补齐Dev snapshot固定15个UI资产依赖（包括真实旧baseline遗漏的fingerprint-diagnostics.mjs），避免旧baseline缺icons模块/精灵图。此项归入DEV-DIAG-005交付兼容；原v8发布/完整播放版本与新合并代码验证分开，正式catalog/旧媒体/历史证据不改。
 
 最新CI还发现两处旧测试兼容：POC父修订测试误取时钟workload，现精确选render_output；历史actual-trace测试逐项验新增clock/telemetry缺测字段后完整比较旧合同。生产指标、收据守卫和历史报告未变；全POC346项、报告/时钟90项及最终15资产快照20项定向回归通过，原失败保留。
+
+CI环境还暴露工具下载占用原job期限：18ae2f0的root-0已通过1609 tests/8可选skip；Prefect安装阶段被10分钟上限取消，root-1安装后测试被20分钟上限取消，均保留日志且不冒充完整测试终态。仅将CI job上限改为30/40分钟，测试和业务provider预算/期限/守卫不变；归入既有诊断验证接线，最终远程结果以最新head检查为准。
