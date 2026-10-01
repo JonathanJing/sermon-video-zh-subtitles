@@ -30,6 +30,8 @@ try:
     from scripts import sermon_accounting as accounting
     from scripts import sermon_sentence_interpretation as identity
     from scripts import validate_target_language_audio_unit as integrity
+    from scripts import dev_audio_test_profile as dev_profile
+    from scripts import dev_audio_test_receipts as dev_receipts
 except ImportError:
     import build_target_language_audio_package as package
     import four_layer_measure as measure
@@ -37,6 +39,8 @@ except ImportError:
     import sermon_accounting as accounting
     import sermon_sentence_interpretation as identity
     import validate_target_language_audio_unit as integrity
+    import dev_audio_test_profile as dev_profile
+    import dev_audio_test_receipts as dev_receipts
 
 
 VERSION = "sermon-formal-target-speech-render-v1"
@@ -1052,7 +1056,7 @@ def render_accounted(paths: dict[str, Path], checkpoint_map_path: Path,
     return result
 
 
-def main() -> None:
+def main(argv=None) -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("source", "anchor", "candidate", "job", "adapter", "policy"):
         parser.add_argument(f"--{name}", type=Path, required=True)
@@ -1072,8 +1076,9 @@ def main() -> None:
     parser.add_argument("--dtype", choices=("bfloat16", "float32"), default="bfloat16")
     parser.add_argument("--attention", default="sdpa")
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--batch-size", type=int, choices=BATCH_SIZES, default=1,
-                        help="Immutable synthesis setting; use a new render root when changing it")
+    parser.add_argument("--batch-size", type=int, choices=BATCH_SIZES, default=None,
+                        help="Production default1; Dev profile default2. Use a new render root when changing it")
+    dev_profile.add_arguments(parser)
     parser.add_argument("--instruct", help="Frozen natural delivery instruction; never edits approved text")
     parser.add_argument("--unit-instructions", type=Path,
                         help="Source-bound per-unit pronunciation and pause instructions")
@@ -1088,7 +1093,13 @@ def main() -> None:
                         help="Preview-only unit audio; formal human and rights gates still run first")
     parser.add_argument("--progress-ledger", type=Path,
                         help="Bind render and per-unit timing to this week's four-layer ledger")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
+    dev_settings = dev_profile.resolve("tts", enabled=args.dev_test,
+        profile_path=args.dev_test_profile, batch_size=args.batch_size)
+    args.batch_size = dev_settings["batchSize"]
+    dev_receipt_path = args.job.parent / f"dev-test-tts-b{args.batch_size}.json"
+    if dev_settings["profile"] is not None:
+        dev_receipts.check_destination(dev_receipt_path, dev_settings)
     paths = {name: getattr(args, name) for name in ("source", "anchor", "candidate",
                                                    "job", "adapter", "policy", "human_receipt",
                                                    "registry",
@@ -1112,9 +1123,13 @@ def main() -> None:
         unit_instructions_path=args.unit_instructions,
         policy=policy, track_format=args.track_format,
         strict_rubric=package.read_object(args.strict_rubric) if args.strict_rubric else None)
+    if dev_settings["profile"] is not None:
+        dev_receipts.write(dev_settings, paths["job"].parent / "render-manifest.json", dev_receipt_path)
     print(json.dumps({"status": "candidate", "targetLocale": result["targetLocale"],
                       "renderManifest": str((paths["job"].parent / "render-manifest.json").resolve()),
-                      "machineScreening": "not_run", "humanListeningReview": "pending"},
+                      "machineScreening": "not_run", "humanListeningReview": "pending",
+                      **({"devTestConsumptionReceipt": str(dev_receipt_path.resolve())}
+                         if dev_settings["profile"] is not None else {})},
                      ensure_ascii=False))
 
 

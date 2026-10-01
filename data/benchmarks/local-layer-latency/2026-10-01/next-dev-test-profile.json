@@ -1,10 +1,10 @@
 {
-  "schemaVersion": "local-production-next-dev-test-profile-v1",
+  "schemaVersion": "local-production-next-dev-test-profile-v2",
   "decidedAt": "2026-10-01",
   "status": "not_run",
-  "purpose": "Next representative real-model Dev test; preserve conservative primary defaults and isolate batch candidates",
+  "purpose": "Next Dev audio test automatically selects TTS2 and back-ASR4; production and explicit baselines remain1",
   "documentation": "docs/local-production-next-dev-test-parameters.zh.md",
-  "consumption": "Operator reference; current runners do not automatically load this profile",
+  "consumption": "Audio batch fields consumed by run_dev_local_audio_test and both formal producer --dev-test CLIs; other profile sections remain operator references",
   "productionDefaultsChanged": false,
   "humanApproval": false,
   "releaseEligible": false,
@@ -23,7 +23,9 @@
   "legacySpeech": {
     "batchSize": 4,
     "cli": "--speech-batch-size 4",
-    "environment": {"SERMON_SPEECH_BATCH_SIZE": "4"},
+    "environment": {
+      "SERMON_SPEECH_BATCH_SIZE": "4"
+    },
     "dispatchMaximumInputs": 8,
     "dispatchMaximumBytes": 33554432,
     "unknownOutcomeAction": "Reconcile; no automatic retry or fallback"
@@ -44,11 +46,16 @@
       "wallTimeMs": 300000,
       "serviceTier": "default"
     },
-    "budget": {"status": "freeze_for_actual_selected_workload_before_execution", "reuseHistorical48CallsSixUsdBudget": false}
+    "budget": {
+      "status": "freeze_for_actual_selected_workload_before_execution",
+      "reuseHistorical48CallsSixUsdBudget": false
+    }
   },
   "formalTts": {
     "primaryBatchSize": 1,
-    "candidateBatchSizes": [2],
+    "candidateBatchSizes": [
+      2
+    ],
     "checkpointWeightsSha256": "75d28ce6022b3df3a72df3dd6dbc01e53f584d685770d60ea04b341920968c9a",
     "checkpointConfigSha256": "9dd6cf2c1b1fdfb1c90dcee20ab81ee5367925bb7a8123b6046af9bce8b2941c",
     "speakerId": "eric_geiger",
@@ -65,7 +72,10 @@
   },
   "formalBackAsr": {
     "primaryBatchSize": 1,
-    "candidateBatchSizes": [4, 8],
+    "candidateBatchSizes": [
+      4,
+      8
+    ],
     "model": "Qwen/Qwen3-ASR-0.6B",
     "modelRevision": "5eb144179a02acc5e5ba31e748d22b0cf3e303b0",
     "device": "cuda:0",
@@ -75,7 +85,9 @@
     "comparisonInput": "Same frozen WAVs for all ASR batch arms",
     "separateOutputAndUnitCachePerArm": true,
     "retainFlagsAcrossAllArms": true,
-    "knownPendingReview": "Spark es-short@es-b2: Soy versus So; no attribution to TTS or ASR until human review"
+    "knownPendingReview": "Spark es-short@es-b2: Soy versus So; no attribution to TTS or ASR until human review",
+    "weightsSha256": "79d6cbd4c98c7bbffe9db2edac07f56cd6637d0d5944b27f6c2b8353840323ea",
+    "cliModelRevision": "model.safetensors:sha256:79d6cbd4c98c7bbffe9db2edac07f56cd6637d0d5944b27f6c2b8353840323ea"
   },
   "legacyCpu": {
     "workers": 1,
@@ -91,5 +103,10 @@
     "singleVariableComparisons": true,
     "devDelivery": "Layer 1-4 handoffs and Dev test page with accurate review states; HTTP and device acceptance separate",
     "cachedOrSimulatedReplayIsProductionPerformance": false
-  }
+  },
+  "devTestBatchSize": {
+    "formalTts": 2,
+    "formalBackAsr": 4
+  },
+  "migrationFromV1": "primaryBatchSize remains baseline/production default1; added devTestBatchSize for automatic Dev audio selection. v1 operator-only profiles rejected by Dev loader."
 }
