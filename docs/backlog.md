@@ -10,6 +10,10 @@ Canonical backlog: [backlog.zh.md](./backlog.zh.md)
 
 Dated implementation evidence and the remaining gates for all 38 active items: [2026-09-30 checkpoint (Chinese)](./reports/20260930-overnight-implementation-checkpoint.zh.md). Draft PRs and synthetic tests do not establish merged, real-media, device, or venue acceptance.
 
+Planned progress and ETA follow-up: [canonical requirements and acceptance fixtures](./backlog.zh.md#progress-eta-followup), under existing `DEV-TRACK-001` / `DEV-SPD-002` / `DEV-SPD-001`. The updated sequence is **implement the bounded Prefect DAG, progress/ETA and read-only diagnosis interfaces before resuming the paused 180-second diagnostic**. The primary run owner reported L2 0/39, TTS 0 and no in-flight request at the sequencing checkpoint; retain existing ASR, source evidence and ledgers, then recheck live state before resuming. Frozen denominators, separate processing/review/actual-versus-simulated human approval, and resource-aware ETA ranges remain requirements, not current capabilities or a current ETA.
+
+The [Prefect and Agents API pilot contract (Chinese)](./prefect-agents-diagnostic-pilot.zh.md) extends `DEV-SPD-006` with editable interfaces, existing-code mappings and a failure acceptance matrix. Prefect wraps existing local jobs, receipts, budgets and gates. Agents API diagnoses redacted evidence with no business mutation or execution authority. New real diagnostic calls require a separate approved budget; the current $40 run budget does not fund them. This documentation does not activate either integration or production rollout.
+
 CI/CD implementation details: [CI/CD backlog (Chinese)](./ci-cd-backlog.zh.md). The canonical backlog retains the priorities and stable IDs.
 
 Current native-client requests are maintained in the [Tongxing iOS backlog (Chinese)](../apps/tongxing-ios/BACKLOG.zh.md): Dynamic Island, on-demand microphone alignment, localization, and bilingual transcripts.
