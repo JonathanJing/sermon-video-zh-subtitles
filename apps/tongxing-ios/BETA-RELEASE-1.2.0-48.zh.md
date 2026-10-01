@@ -41,7 +41,7 @@ Archive 有既存 `allowBluetooth` 弃用及无 AppIntents 依赖的提示；构
 
 ## 分发状态
 
-2026-10-01 21:42:51 UTC 使用 `xcodebuild -exportArchive` 上传成功，退出码 0，日志包含 `Upload succeeded` 和 `EXPORT SUCCEEDED`。App Store Connect 已显示 1.2.0 (48)，当前为 `Processing`；测试组可用尚待处理完成后核对。未提交外部 Beta 审核、正式版构建或 App Store 发布。
+2026-10-01 21:42:51 UTC 使用 `xcodebuild -exportArchive` 上传成功，退出码 0，日志包含 `Upload succeeded` 和 `EXPORT SUCCEEDED`。App Store Connect 已完成处理，独立 Beta 的 Rooted 内部测试组中 1.2.0 (48) 显示 `Testing`（1 个现有测试账户、共 2 个构建）；本轮测试说明显示 `Saved`。48 的真机安装与验收仍未确认。未提交外部 Beta 审核、正式版构建或 App Store 发布。
 
 ## 后续验收与晋升
 
@@ -49,4 +49,4 @@ Archive 有既存 `allowBluetooth` 弃用及无 AppIntents 依赖的提示；构
 
 遵循 [晋升流程](BETA-PROMOTION.zh.md) 和 [真机清单](BETA-TESTING.zh.md)。Beta 默认读取 Dev 内容；需对正式内容验证时，使用同一源码建立记录明确的 Beta 正式内容候选。正式版使用原有正式身份与正式内容源重新构建，不将 Beta IPA 重签名。正式上传、App Store 审核和正式发布尚未执行。
 
-私有证据根目录：`artifacts/tongxing-ios/2026-10-01/beta48/`；归档、签名、上传及状态记录：`archive/release-record.json`、`archive/archive.log`、`archive/upload.log`。模拟器证据：`artifacts/tongxing-ios/2026-10-01/cli/20261001T143830-test-95cd9eb8/test.xcresult`。
+私有证据根目录：`artifacts/tongxing-ios/2026-10-01/beta48/`；归档、签名、上传及状态记录：`archive/release-record.json`、`archive/archive.log`、`archive/upload.log`、`testflight-internal-testing.jpg`、`testflight-internal-testing.ax.txt` 与 `testflight-build48-saved.ax.txt`。模拟器证据：`artifacts/tongxing-ios/2026-10-01/cli/20261001T143830-test-95cd9eb8/test.xcresult`。
