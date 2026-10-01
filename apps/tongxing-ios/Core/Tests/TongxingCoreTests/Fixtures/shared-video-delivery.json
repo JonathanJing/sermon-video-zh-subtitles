@@ -1,0 +1,2656 @@
+{
+  "schemaVersion": "sermon-shared-video-delivery-fixtures-v1",
+  "scope": "synthetic_decoder_tests_not_production_approval",
+  "baselineCommit": "63c0a18040b7f7744b334cebdb31778de228b064",
+  "acceptanceMeaning": {
+    "schemaAcceptance": "Catalog v3 JSON Schema validation with format checking; not producer, media integrity or publication validation.",
+    "webAcceptance": "Current published-weeks catalog header/page/target admission only; not video playback or URL fetching.",
+    "swiftAcceptance": "Current MultilingualCatalog.decode admission only; not video playback or media verification."
+  },
+  "cases": [
+    {
+      "id": "legacy-without-video-with-source-hash",
+      "category": "legacy",
+      "note": "Existing v3 catalogs without videoDelivery remain admissible.",
+      "schemaAcceptance": "accept",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "legacy-without-video-or-source-hash",
+      "category": "legacy",
+      "note": "sourceMediaSha256 remains optional when videoDelivery is absent.",
+      "schemaAcceptance": "accept",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "legacy-without-video-null-source-hash",
+      "category": "source",
+      "note": "Schema rejects explicit null; both clients treat it as absent.",
+      "schemaAcceptance": "reject",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": null,
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "valid-dev-zh-Hans",
+      "category": "valid",
+      "note": "One page-level video is independent of target locale; the schema allows either dedicated bucket. Source-media and browser-video hashes need not be equal.",
+      "schemaAcceptance": "accept",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "/pages/synthetic-video-page/full-video-browser.mp4",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-dev/weekly/synthetic-video-page/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "bytes": 4096
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "valid-dev-ko",
+      "category": "valid",
+      "note": "One page-level video is independent of target locale; the schema allows either dedicated bucket. Source-media and browser-video hashes need not be equal.",
+      "schemaAcceptance": "accept",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "ko",
+            "targets": {
+              "ko": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/ko.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "/pages/synthetic-video-page/full-video-browser.mp4",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-dev/weekly/synthetic-video-page/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "bytes": 4096
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "valid-dev-es",
+      "category": "valid",
+      "note": "One page-level video is independent of target locale; the schema allows either dedicated bucket. Source-media and browser-video hashes need not be equal.",
+      "schemaAcceptance": "accept",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "es",
+            "targets": {
+              "es": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/es.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "/pages/synthetic-video-page/full-video-browser.mp4",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-dev/weekly/synthetic-video-page/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "bytes": 4096
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "valid-prod-zh-Hans",
+      "category": "valid",
+      "note": "One page-level video is independent of target locale; the schema allows either dedicated bucket. Source-media and browser-video hashes need not be equal.",
+      "schemaAcceptance": "accept",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "/pages/synthetic-video-page/full-video-browser.mp4",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/synthetic-video-page/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "bytes": 4096
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "valid-prod-ko",
+      "category": "valid",
+      "note": "One page-level video is independent of target locale; the schema allows either dedicated bucket. Source-media and browser-video hashes need not be equal.",
+      "schemaAcceptance": "accept",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "ko",
+            "targets": {
+              "ko": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/ko.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "/pages/synthetic-video-page/full-video-browser.mp4",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/synthetic-video-page/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "bytes": 4096
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "valid-prod-es",
+      "category": "valid",
+      "note": "One page-level video is independent of target locale; the schema allows either dedicated bucket. Source-media and browser-video hashes need not be equal.",
+      "schemaAcceptance": "accept",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "es",
+            "targets": {
+              "es": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/es.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "/pages/synthetic-video-page/full-video-browser.mp4",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/synthetic-video-page/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "bytes": 4096
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "valid-one-byte-boundary",
+      "category": "bytes",
+      "note": "Minimum schema byte count is one; no media bytes are fetched.",
+      "schemaAcceptance": "accept",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "/pages/synthetic-video-page/full-video-browser.mp4",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/synthetic-video-page/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "bytes": 1
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "valid-160-character-page",
+      "category": "valid",
+      "note": "The video and release paths retain the existing maximum page identifier length.",
+      "schemaAcceptance": "accept",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp",
+        "pages": [
+          {
+            "id": "pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "/pages/pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp/full-video-browser.mp4",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "bytes": 4096
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "canonical-other-page",
+      "category": "binding",
+      "note": "The schema checks field syntax, not equality with other page/video fields; current clients do not inspect videoDelivery.",
+      "schemaAcceptance": "accept",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "/pages/other-page/full-video-browser.mp4",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/synthetic-video-page/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "bytes": 4096
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "storage-other-page",
+      "category": "binding",
+      "note": "The schema checks field syntax, not equality with other page/video fields; current clients do not inspect videoDelivery.",
+      "schemaAcceptance": "accept",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "/pages/synthetic-video-page/full-video-browser.mp4",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/other-page/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "bytes": 4096
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "storage-other-valid-hash",
+      "category": "binding",
+      "note": "The schema checks field syntax, not equality with other page/video fields; current clients do not inspect videoDelivery.",
+      "schemaAcceptance": "accept",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "/pages/synthetic-video-page/full-video-browser.mp4",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/synthetic-video-page/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee.mp4",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "bytes": 4096
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "declared-other-valid-video-hash",
+      "category": "binding",
+      "note": "The schema checks field syntax, not equality with other page/video fields; current clients do not inspect videoDelivery.",
+      "schemaAcceptance": "accept",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "/pages/synthetic-video-page/full-video-browser.mp4",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/synthetic-video-page/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4",
+              "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+              "bytes": 4096
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "canonical-locale-segment",
+      "category": "path",
+      "note": "Schema rejects this video field; current clients do not inspect videoDelivery.",
+      "schemaAcceptance": "reject",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "/pages/synthetic-video-page/zh-Hans/full-video-browser.mp4",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/synthetic-video-page/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "bytes": 4096
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "canonical-other-locale-segment",
+      "category": "path",
+      "note": "Schema rejects this video field; current clients do not inspect videoDelivery.",
+      "schemaAcceptance": "reject",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "/pages/synthetic-video-page/es/full-video-browser.mp4",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/synthetic-video-page/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "bytes": 4096
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "canonical-relative",
+      "category": "path",
+      "note": "Schema rejects this video field; current clients do not inspect videoDelivery.",
+      "schemaAcceptance": "reject",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "pages/synthetic-video-page/full-video-browser.mp4",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/synthetic-video-page/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "bytes": 4096
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "canonical-absolute",
+      "category": "path",
+      "note": "Schema rejects this video field; current clients do not inspect videoDelivery.",
+      "schemaAcceptance": "reject",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "https://synthetic.example.test/pages/synthetic-video-page/full-video-browser.mp4",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/synthetic-video-page/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "bytes": 4096
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "canonical-protocol-relative",
+      "category": "path",
+      "note": "Schema rejects this video field; current clients do not inspect videoDelivery.",
+      "schemaAcceptance": "reject",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "//synthetic.example.test/pages/synthetic-video-page/full-video-browser.mp4",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/synthetic-video-page/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "bytes": 4096
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "canonical-traversal",
+      "category": "path",
+      "note": "Schema rejects this video field; current clients do not inspect videoDelivery.",
+      "schemaAcceptance": "reject",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "/pages/synthetic-video-page/../full-video-browser.mp4",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/synthetic-video-page/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "bytes": 4096
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "canonical-encoded-traversal",
+      "category": "path",
+      "note": "Schema rejects this video field; current clients do not inspect videoDelivery.",
+      "schemaAcceptance": "reject",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "/pages/%2e%2e/full-video-browser.mp4",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/synthetic-video-page/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "bytes": 4096
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "canonical-query",
+      "category": "path",
+      "note": "Schema rejects this video field; current clients do not inspect videoDelivery.",
+      "schemaAcceptance": "reject",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "/pages/synthetic-video-page/full-video-browser.mp4?download=1",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/synthetic-video-page/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "bytes": 4096
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "canonical-fragment",
+      "category": "path",
+      "note": "Schema rejects this video field; current clients do not inspect videoDelivery.",
+      "schemaAcceptance": "reject",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "/pages/synthetic-video-page/full-video-browser.mp4#t=10",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/synthetic-video-page/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "bytes": 4096
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "canonical-wrong-filename",
+      "category": "path",
+      "note": "Schema rejects this video field; current clients do not inspect videoDelivery.",
+      "schemaAcceptance": "reject",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "/pages/synthetic-video-page/source.mp4",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/synthetic-video-page/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "bytes": 4096
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "canonical-161-character-page",
+      "category": "path",
+      "note": "Schema rejects this video field; current clients do not inspect videoDelivery.",
+      "schemaAcceptance": "reject",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "/pages/ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp/full-video-browser.mp4",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/synthetic-video-page/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "bytes": 4096
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "storage-wrong-bucket",
+      "category": "bucket",
+      "note": "Schema rejects this video field; current clients do not inspect videoDelivery.",
+      "schemaAcceptance": "reject",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "/pages/synthetic-video-page/full-video-browser.mp4",
+              "storageUrl": "https://storage.googleapis.com/unrelated-bucket/weekly/synthetic-video-page/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "bytes": 4096
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "storage-wrong-environment",
+      "category": "bucket",
+      "note": "Schema rejects this video field; current clients do not inspect videoDelivery.",
+      "schemaAcceptance": "reject",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "/pages/synthetic-video-page/full-video-browser.mp4",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-staging/weekly/synthetic-video-page/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "bytes": 4096
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "storage-wrong-host",
+      "category": "bucket",
+      "note": "Schema rejects this video field; current clients do not inspect videoDelivery.",
+      "schemaAcceptance": "reject",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "/pages/synthetic-video-page/full-video-browser.mp4",
+              "storageUrl": "https://synthetic.example.test/ai-for-god-sermon-media-prod/weekly/synthetic-video-page/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "bytes": 4096
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "storage-http",
+      "category": "path",
+      "note": "Schema rejects this video field; current clients do not inspect videoDelivery.",
+      "schemaAcceptance": "reject",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "/pages/synthetic-video-page/full-video-browser.mp4",
+              "storageUrl": "http://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/synthetic-video-page/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "bytes": 4096
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "storage-query",
+      "category": "path",
+      "note": "Schema rejects this video field; current clients do not inspect videoDelivery.",
+      "schemaAcceptance": "reject",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "/pages/synthetic-video-page/full-video-browser.mp4",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/synthetic-video-page/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4?download=1",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "bytes": 4096
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "storage-fragment",
+      "category": "path",
+      "note": "Schema rejects this video field; current clients do not inspect videoDelivery.",
+      "schemaAcceptance": "reject",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "/pages/synthetic-video-page/full-video-browser.mp4",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/synthetic-video-page/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4#t=10",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "bytes": 4096
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "storage-locale-segment",
+      "category": "path",
+      "note": "Schema rejects this video field; current clients do not inspect videoDelivery.",
+      "schemaAcceptance": "reject",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "/pages/synthetic-video-page/full-video-browser.mp4",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/synthetic-video-page/ko/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "bytes": 4096
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "storage-traversal",
+      "category": "path",
+      "note": "Schema rejects this video field; current clients do not inspect videoDelivery.",
+      "schemaAcceptance": "reject",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "/pages/synthetic-video-page/full-video-browser.mp4",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/synthetic-video-page/../cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "bytes": 4096
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "storage-uppercase-hash",
+      "category": "path",
+      "note": "Schema rejects this video field; current clients do not inspect videoDelivery.",
+      "schemaAcceptance": "reject",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "/pages/synthetic-video-page/full-video-browser.mp4",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/synthetic-video-page/CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC.mp4",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "bytes": 4096
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "video-hash-malformed",
+      "category": "hash",
+      "note": "Schema rejects this video field; current clients do not inspect videoDelivery.",
+      "schemaAcceptance": "reject",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "/pages/synthetic-video-page/full-video-browser.mp4",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/synthetic-video-page/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4",
+              "sha256": "not-a-sha256",
+              "bytes": 4096
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "video-hash-uppercase",
+      "category": "hash",
+      "note": "Schema rejects this video field; current clients do not inspect videoDelivery.",
+      "schemaAcceptance": "reject",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "/pages/synthetic-video-page/full-video-browser.mp4",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/synthetic-video-page/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4",
+              "sha256": "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC",
+              "bytes": 4096
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "video-missing-schemaVersion",
+      "category": "shape",
+      "note": "Schema requires this video field; current clients do not inspect videoDelivery.",
+      "schemaAcceptance": "reject",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "canonicalUrl": "/pages/synthetic-video-page/full-video-browser.mp4",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/synthetic-video-page/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "bytes": 4096
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "video-missing-canonicalUrl",
+      "category": "shape",
+      "note": "Schema requires this video field; current clients do not inspect videoDelivery.",
+      "schemaAcceptance": "reject",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/synthetic-video-page/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "bytes": 4096
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "video-missing-storageUrl",
+      "category": "shape",
+      "note": "Schema requires this video field; current clients do not inspect videoDelivery.",
+      "schemaAcceptance": "reject",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "/pages/synthetic-video-page/full-video-browser.mp4",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "bytes": 4096
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "video-missing-sha256",
+      "category": "shape",
+      "note": "Schema requires this video field; current clients do not inspect videoDelivery.",
+      "schemaAcceptance": "reject",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "/pages/synthetic-video-page/full-video-browser.mp4",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/synthetic-video-page/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4",
+              "bytes": 4096
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "video-missing-bytes",
+      "category": "shape",
+      "note": "Schema requires this video field; current clients do not inspect videoDelivery.",
+      "schemaAcceptance": "reject",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "/pages/synthetic-video-page/full-video-browser.mp4",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/synthetic-video-page/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "video-wrong-schema",
+      "category": "shape",
+      "note": "Schema rejects this video field; current clients do not inspect videoDelivery.",
+      "schemaAcceptance": "reject",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v999",
+              "canonicalUrl": "/pages/synthetic-video-page/full-video-browser.mp4",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/synthetic-video-page/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "bytes": 4096
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "video-bytes-zero",
+      "category": "bytes",
+      "note": "Schema rejects this video field; current clients do not inspect videoDelivery.",
+      "schemaAcceptance": "reject",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "/pages/synthetic-video-page/full-video-browser.mp4",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/synthetic-video-page/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "bytes": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "video-bytes-negative",
+      "category": "bytes",
+      "note": "Schema rejects this video field; current clients do not inspect videoDelivery.",
+      "schemaAcceptance": "reject",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "/pages/synthetic-video-page/full-video-browser.mp4",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/synthetic-video-page/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "bytes": -1
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "video-bytes-fractional",
+      "category": "bytes",
+      "note": "Schema rejects this video field; current clients do not inspect videoDelivery.",
+      "schemaAcceptance": "reject",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "/pages/synthetic-video-page/full-video-browser.mp4",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/synthetic-video-page/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "bytes": 1.5
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "video-bytes-string",
+      "category": "bytes",
+      "note": "Schema rejects this video field; current clients do not inspect videoDelivery.",
+      "schemaAcceptance": "reject",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "/pages/synthetic-video-page/full-video-browser.mp4",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/synthetic-video-page/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "bytes": "4096"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "video-bytes-boolean",
+      "category": "bytes",
+      "note": "Schema rejects this video field; current clients do not inspect videoDelivery.",
+      "schemaAcceptance": "reject",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "/pages/synthetic-video-page/full-video-browser.mp4",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/synthetic-video-page/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "bytes": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "video-null",
+      "category": "shape",
+      "note": "Schema requires the complete object; current clients ignore even non-object videoDelivery.",
+      "schemaAcceptance": "reject",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "video-array",
+      "category": "shape",
+      "note": "Schema requires the complete object; current clients ignore even non-object videoDelivery.",
+      "schemaAcceptance": "reject",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "video-scalar",
+      "category": "shape",
+      "note": "Schema requires the complete object; current clients ignore even non-object videoDelivery.",
+      "schemaAcceptance": "reject",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": "ignored"
+          }
+        ]
+      }
+    },
+    {
+      "id": "video-empty-object",
+      "category": "shape",
+      "note": "Schema requires the complete object; current clients ignore even non-object videoDelivery.",
+      "schemaAcceptance": "reject",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "video-missing-source-hash",
+      "category": "source",
+      "note": "Schema dependentRequired requires sourceMediaSha256 when videoDelivery is present; current clients still allow absence.",
+      "schemaAcceptance": "reject",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "/pages/synthetic-video-page/full-video-browser.mp4",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/synthetic-video-page/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "bytes": 4096
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "video-null-source-hash",
+      "category": "source",
+      "note": "Schema rejects explicit null, but clients treat optional sourceMediaSha256 as absent.",
+      "schemaAcceptance": "reject",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": null,
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "/pages/synthetic-video-page/full-video-browser.mp4",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/synthetic-video-page/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "bytes": 4096
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "video-malformed-source-hash",
+      "category": "source",
+      "note": "Existing known source-media validation still rejects this page, despite ignoring videoDelivery.",
+      "schemaAcceptance": "reject",
+      "webAcceptance": "reject",
+      "swiftAcceptance": "reject",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "not-a-sha256",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "/pages/synthetic-video-page/full-video-browser.mp4",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/synthetic-video-page/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "bytes": 4096
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "video-number-source-hash",
+      "category": "source",
+      "note": "Existing known source-media validation still rejects this page, despite ignoring videoDelivery.",
+      "schemaAcceptance": "reject",
+      "webAcceptance": "reject",
+      "swiftAcceptance": "reject",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": 42,
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "/pages/synthetic-video-page/full-video-browser.mp4",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/synthetic-video-page/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "bytes": 4096
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "video-wrong-release-locale",
+      "category": "locale",
+      "note": "Schema permits the syntactically valid release URL, but clients require the target locale binding.",
+      "schemaAcceptance": "accept",
+      "webAcceptance": "reject",
+      "swiftAcceptance": "reject",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/es.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "/pages/synthetic-video-page/full-video-browser.mp4",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/synthetic-video-page/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "bytes": 4096
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "unknown-catalog-field",
+      "category": "unknown",
+      "note": "Schema additionalProperties rejects unknown fields at this level; both clients ignore unknown keys.",
+      "schemaAcceptance": "reject",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "/pages/synthetic-video-page/full-video-browser.mp4",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/synthetic-video-page/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "bytes": 4096
+            }
+          }
+        ],
+        "futureExtension": {
+          "enabled": true
+        }
+      }
+    },
+    {
+      "id": "unknown-page-field",
+      "category": "unknown",
+      "note": "Schema additionalProperties rejects unknown fields at this level; both clients ignore unknown keys.",
+      "schemaAcceptance": "reject",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "/pages/synthetic-video-page/full-video-browser.mp4",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/synthetic-video-page/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "bytes": 4096
+            },
+            "futureExtension": {
+              "enabled": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "unknown-target-field",
+      "category": "unknown",
+      "note": "Schema additionalProperties rejects unknown fields at this level; both clients ignore unknown keys.",
+      "schemaAcceptance": "reject",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ],
+                "futureExtension": {
+                  "enabled": true
+                }
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "/pages/synthetic-video-page/full-video-browser.mp4",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/synthetic-video-page/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "bytes": 4096
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "unknown-video-field",
+      "category": "unknown",
+      "note": "Schema additionalProperties rejects unknown fields at this level; both clients ignore unknown keys.",
+      "schemaAcceptance": "reject",
+      "webAcceptance": "accept",
+      "swiftAcceptance": "accept",
+      "catalog": {
+        "schemaVersion": "sermon-multilingual-catalog-v3",
+        "generatedAt": "2026-10-01T00:00:00Z",
+        "defaultPageId": "synthetic-video-page",
+        "pages": [
+          {
+            "id": "synthetic-video-page",
+            "title": "Synthetic video delivery contract",
+            "date": "2026-10-01",
+            "sourceLocale": "en",
+            "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceMediaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "defaultTargetLocale": "zh-Hans",
+            "targets": {
+              "zh-Hans": {
+                "releasePackageUrl": "/releases-v2/synthetic-video-page/zh-Hans.json",
+                "releasePackageJsonSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "contentStatus": "human_reviewed",
+                "audioStatus": "human_reviewed",
+                "capabilities": [
+                  "text",
+                  "captions",
+                  "audio"
+                ]
+              }
+            },
+            "videoDelivery": {
+              "schemaVersion": "sermon-video-delivery-v1",
+              "canonicalUrl": "/pages/synthetic-video-page/full-video-browser.mp4",
+              "storageUrl": "https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/synthetic-video-page/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.mp4",
+              "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "bytes": 4096,
+              "futureExtension": {
+                "enabled": true
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
