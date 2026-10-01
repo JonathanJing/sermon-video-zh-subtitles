@@ -272,13 +272,17 @@ def diagnose(manifest, *, client: OfflineAgentsClient, limits=DiagnosticLimits()
                 root_id = _remote_identifier(roots[0].get("id"), "turn_")
                 require(state["turnId"] in (None, root_id), "root_turn_identity_mismatch")
                 state["turnId"] = root_id
-                state["turnUsage"] = _usage(roots[0].get("usage"))
+                turn_usage = _usage(roots[0].get("usage"))
+                if turn_usage is not None:
+                    state["turnUsage"] = turn_usage
                 actual = roots[0].get("model")
                 if actual is not None:
                     require(type(actual) is str and re.fullmatch(r"gpt-[a-z0-9][a-z0-9._-]{0,60}", actual),
                             "invalid_actual_model")
                     state["actualModel"] = actual
-            state["sessionUsage"] = _usage(session.get("usage"))
+            session_usage = _usage(session.get("usage"))
+            if session_usage is not None:
+                state["sessionUsage"] = session_usage
             actions = session.get("required_actions", [])
             require(type(actions) is list and len(actions) <= limits.max_tool_reads, "invalid_required_actions")
             status = roots[0].get("status") if roots else None

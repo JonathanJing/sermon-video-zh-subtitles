@@ -439,6 +439,13 @@ class DiagnosticLifecycleTest(unittest.TestCase):
         self.assertEqual(result["provenance"]["actualModel"], "gpt-6-sol")
         self.assertIsNone(result["provenance"]["costUsd"])
 
+    def test_later_missing_usage_does_not_erase_observed_counters(self):
+        observed = {"input_tokens": 12, "output_tokens": 5}
+        frames = [frame(usage=observed), frame(status="completed")]
+        result = adapter.diagnose(self.manifest, client=self.client(frames))
+        self.assertEqual(result["provenance"]["turnUsage"]["input_tokens"], 12)
+        self.assertEqual(result["provenance"]["sessionUsage"]["output_tokens"], 5)
+
     def test_transport_error_details_and_untrusted_identifier_never_exported(self):
         client = self.client()
         private = "Bearer fixture-private-body /Users/private/audio.wav"
