@@ -50,6 +50,8 @@ These preserve observed values and evidence boundaries; they do not track later 
 
 These files are retained for provenance and research, not as operator entrypoints:
 
+- [Sermon production challenges and design for a 10–12 hour window (Chinese)](blog/sermon-production-workflow-lessons.zh.md): blog draft covering Codex and Agents API tradeoffs, quality and rework lessons, and the three-tier control/DAG design; verified scope and unmeasured benefits remain separate.
+
 - Superseded plans: [speaker-voice plan](saturday-to-sunday-chinese-voice-plan.zh.md) and [Context Pack design/implementation record](saturday-to-sunday-context-pack-plan.zh.md).
 - Historical cloud architecture: [system design](system-design.md), [gap analysis](system-design-gap-analysis.md), [Cloud Run deployment prep](cloud-run-deployment-prep.md), [old Sunday cloud runbook](sunday-live-test-runbook.md), [cloud observability](observability.md), and [admin workflow](admin-workflow.md).
 - Historical publication and offline implementation: [July 5 publication retrospective](post-live-reviewed-sunday-publication.zh.md) and [old offline subtitle notes](weekly-offline-subtitle-generation.zh.md).

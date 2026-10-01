@@ -79,6 +79,8 @@
 
 以下资料不再作为 operator 入口。使用时必须回到上面的当前规范重新核对。
 
+- [在 10 到 12 小时内完成证道内容生产的挑战与方案](blog/sermon-production-workflow-lessons.zh.md)：中文博客初稿，复盘 Codex 与 Agents API 的取舍、内容质量与返工问题，以及三层控制和 DAG 编排方案；已验证范围与待验证收益分别说明。
+
 | 类别 | 文档 |
 |---|---|
 | 已由实现与 Runbook 取代的方案 | [原讲员音色方案草案](saturday-to-sunday-chinese-voice-plan.zh.md)、[Context Pack 设计与实施记录](saturday-to-sunday-context-pack-plan.zh.md) |
