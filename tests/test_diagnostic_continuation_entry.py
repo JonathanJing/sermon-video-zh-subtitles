@@ -18,7 +18,12 @@ class ContinuationTests(unittest.TestCase):
         self.identity={'gitCommit':'b'*40,'trackedWorkingTreeDirty':False}
         original={'gitCommit':'a'*40,'trackedWorkingTreeDirty':False}
         config={**self.f.subject.config,'codeSha256':c.canonical_sha256(original)}
-        self.subject=provider.DiagnosticProvider(self.f.subject.store,config,executor=self.f.capture, domain=lambda:"7"*64)
+        # Fresh CI hosts may have less than 5400 seconds of uptime. Keep the
+        # synthetic start positive when testing a past deadline, independently
+        # of the host's monotonic epoch.
+        self.now=10000.0
+        self.subject=provider.DiagnosticProvider(self.f.subject.store,config,executor=self.f.capture,
+                                                domain=lambda:"7"*64,monotonic=lambda:self.now)
         self.plan={'schemaVersion':'sermon-bounded-diagnostic-plan-v1','runDirectory':str(self.root),
                    'providerConfig':config,'authority':self.subject.store.authority,
                    'executionIdentity':original,'sourceClipPath':str(self.f.clip)}
@@ -38,7 +43,8 @@ class ContinuationTests(unittest.TestCase):
     def prepare(self):
         constructor=provider.DiagnosticProvider
         with patch.object(accounting,'execution_identity',return_value=self.identity), patch.object(
-                entry.provider,'DiagnosticProvider', side_effect=lambda store,config: constructor(store,config,domain=lambda:'7'*64)), \
+                entry.provider,'DiagnosticProvider', side_effect=lambda store,config: constructor(
+                    store,config,domain=lambda:'7'*64,monotonic=lambda:self.now)), \
                 patch.object(entry,'validate_prior_source_evidence',return_value={'sourceEvidenceSnapshotSha256':'e'*64}):
             return entry.prepare_continuation(self.plan,self.cont)
 
