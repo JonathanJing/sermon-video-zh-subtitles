@@ -117,6 +117,7 @@ schemes:
       gatherCoverageData: true
       environmentVariables:
         TONGXING_TEST_HOST: "1"
+        TONGXING_PREVIEW_REQUEST: "$(TONGXING_PREVIEW_REQUEST)"
       targets:
         - name: TongxingTests
           parallelizable: false
