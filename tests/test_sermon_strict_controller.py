@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 import unittest
 from unittest.mock import patch
+from unittest.mock import Mock
 
 from scripts import sermon_accounting as accounting
 from scripts import sermon_review_budget as budget
@@ -10,6 +11,8 @@ from scripts import sermon_review_contracts as c
 from scripts import sermon_strict_controller as controller
 from scripts import sermon_workflow_jobs as jobs
 from scripts import sermon_strict_budget_adapter as adapter
+from scripts import sermon_provider_limits as limits
+from scripts import sermon_strict_layer2 as strict
 from tests import test_sermon_strict_budget_adapter as fixtures
 
 
@@ -50,6 +53,79 @@ class StrictControllerTests(unittest.TestCase):
             self.assertEqual(path.read_bytes(), before)
         self.assertEqual(len(self.f.calls), 2)
         self.assertEqual(len(self.snapshot()['reservations']), 2)
+
+    def test_returned_structural_failure_keeps_specific_reason_and_stops_before_review(self):
+        self.f.f.evidence['groups'][0]['coverage'] = {}
+        with self.f.session():
+            result = self.run_group()
+            self.assertEqual(result['status'], 'blocked')
+            self.assertEqual(result['reasonCode'], 'invalid_candidate_coverage')
+            self.assertEqual(result['failureEvidence']['providerOutcome'], 'returned')
+            self.assertIsNone(result['candidateRevision'])
+            self.assertIsNone(result['reviewReceipt'])
+            self.assertEqual(self.run_group()['failureEvidence'], result['failureEvidence'])
+        self.assertEqual(len(self.f.calls), 1)
+        self.assertFalse(self.snapshot()['unknownReservations'])
+
+    def test_known_returned_structural_failure_does_not_invent_missing_usage(self):
+        self.f.f.evidence['groups'][0]['coverage'] = {}
+        with self.f.session():
+            result = self.run_group(usage_resolver=lambda _: None)
+            self.assertEqual(result['status'], 'reconciliation_required')
+            self.assertEqual(result['reasonCode'], 'invalid_candidate_coverage')
+            self.assertEqual(result['failureEvidence']['providerOutcome'], 'returned')
+        self.assertTrue(self.snapshot()['unknownReservations'])
+        self.assertEqual(len(self.f.calls), 1)
+
+    def test_safe_contract_reason_is_preserved_but_exception_body_is_not(self):
+        with self.f.session(), patch.object(adapter.StrictBudgetAdapter, 'generate',
+                side_effect=c.ContractError('provider_input_bound_exceeded')):
+            self.assertEqual(self.run_group()['reasonCode'], 'provider_input_bound_exceeded')
+        private = 'private text /Users/secret API_KEY=secret'
+        with self.f.session(), patch.object(adapter.StrictBudgetAdapter, 'generate',
+                side_effect=c.ContractError(private)):
+            result = self.run_group()
+            self.assertEqual(result['reasonCode'], 'current_evidence_not_validated')
+            self.assertNotIn(private, json.dumps(result))
+        self.assertEqual(self.f.calls, [])
+
+    def test_actual_input_preflight_preserves_reason_without_reservation_or_dispatch(self):
+        class InputBoundCaller:
+            def preflight(self, prepared, kind, root, repair):
+                selected = dict(limits.DEFAULT_REQUEST_LIMITS, maxInputTokens=1)
+                payload = strict._payload(prepared, 'translator', strict.prompt(prepared, 'translator'))
+                return limits.request_bounds(payload, selected)
+
+            def __call__(self, *args, **kwargs):
+                raise AssertionError('preflight failure must not dispatch')
+
+        with self.f.session():
+            result = self.run_group(caller=InputBoundCaller())
+            self.assertEqual(result['status'], 'blocked')
+            self.assertEqual(result['reasonCode'], 'provider_input_bound_exceeded')
+            self.assertIsNone(result['candidateRevision'])
+        self.assertEqual(self.f.calls, [])
+        self.assertEqual(self.snapshot()['reservations'], [])
+        self.assertEqual(adapter.safe_failure_reason(ValueError('private transcript /Users/secret')),
+                         'current_evidence_not_validated')
+
+    def test_review_pre_dispatch_refusal_is_a_known_stop_and_restart_never_retries(self):
+        attempts = []; executor = Mock(side_effect=AssertionError('must not dispatch'))
+        refused = fixtures.refused_before_observer(attempts, executor)
+        original = self.f.transport
+        def caller(key, payload, **options):
+            return (original if payload['model'] == 'gpt-6-astra' else refused)(key, payload, **options)
+        with self.f.session():
+            result = self.run_group(caller=caller)
+            self.assertEqual(result['status'], 'blocked')
+            self.assertEqual(result['reasonCode'], 'provider_request_limit')
+            self.assertEqual(result['failureEvidence']['providerOutcome'], 'not_dispatched')
+            self.assertIsNone(result['reviewReceipt'])
+            self.assertEqual(self.run_group(caller=caller)['failureEvidence'], result['failureEvidence'])
+        self.assertEqual(len(self.f.calls), 1)
+        self.assertEqual(len(attempts), 1)
+        self.assertFalse(self.snapshot()['unknownReservations'])
+        executor.assert_not_called()
 
     def test_known_review_execution_failure_retries_only_review(self):
         reviews = []; original = self.f.transport

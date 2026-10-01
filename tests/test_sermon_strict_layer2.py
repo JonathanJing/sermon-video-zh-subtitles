@@ -7,6 +7,7 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
+from jsonschema import Draft202012Validator, ValidationError
 from scripts import sermon_strict_layer2 as s
 from scripts import sermon_review_contracts as c
 from scripts import sermon_accounting as accounting
@@ -44,8 +45,26 @@ class StrictAdapterTests(unittest.TestCase):
             if self.mode=='fail':
                 value['reviewVerdict']='needs_rework';value['checks'][0]['result']='fail'
                 value['issues']=[dict(issueId='issue-1',reasonCode='meaning_omission',severity='major',sourceUnitIds=inp['sourceUnitIds'],targetUnitIds=inp['targetUnitIds'],evidence='synthetic omission')]
+            if self.mode=='duplicate_check':
+                value['checks'][1]['checkId']=value['checks'][0]['checkId']
+            if self.mode=='overlap_coverage':
+                value['unassessedUnitIds']=inp['sourceUnitIds'][:1]
+            if self.mode=='invalid_enum':value['checks'][0]['result']='private-illegal-value'
+            if self.mode=='invalid_field':value['checks'][0]['private-illegal-field']='private message'
+            if self.mode=='invalid_issue_enum':
+                value['issues']=[dict(issueId='issue-1',reasonCode='private-illegal-value',severity='major',
+                    sourceUnitIds=inp['sourceUnitIds'],targetUnitIds=[],evidence='private message')]
+            if self.mode in ('duplicate_check','overlap_coverage'):
+                # These fit the declared JSON shape but violate semantic gates.
+                Draft202012Validator(inp['responseContract']).validate(value)
         response={'id':'response-'+str(len(self.calls)),'model':payload['model'],'choices':[{'finish_reason':'stop','message':{'content':json.dumps(value)}}],
             'usage':{'input_tokens':100,'output_tokens':20}}
+        if payload['model']=='gpt-6-sol' and self.mode=='invalid_json':
+            response['choices'][0]['message']['content']='{"private-message":'
+        if payload['model']=='gpt-6-sol' and self.mode=='duplicate_json':
+            response['choices'][0]['message']['content']='{"private-message":1,"private-message":2}'
+        if payload['model']=='gpt-6-sol' and self.mode=='invalid_envelope':
+            response['choices'][0]['finish_reason']='length'
         response_observer(response,aid,.01)
         accounting.record_api_attempt(payload['model'],response,.01,attempt_id=aid)
         return response
@@ -53,6 +72,210 @@ class StrictAdapterTests(unittest.TestCase):
     def session(self):return profile.session(self.root/'logs','strict-test',work_kind='production',evidence_mode='synthetic')
     def generate(self):return s.generate(self.prepared,self.root/'revision','candidate','r1','fixture',self.transport)
     def review(self):return s.review(self.prepared,self.root/'revision','candidate','r1','fixture',self.transport)
+
+    def test_json_mode_prompt_contract_covers_generator_and_verifier_shapes(self):
+        original = self.transport
+        responses = []
+        def contract_transport(key, payload, *, response_observer):
+            # The real API JSON mode requires JSON to be explicit in messages.
+            self.assertEqual(payload['response_format'], {'type':'json_object'})
+            self.assertIn('JSON', payload['messages'][0]['content'])
+            self.assertIn(s.RESPONSE_CONTRACT_VERSION, payload['messages'][0]['content'])
+            inp = json.loads(payload['messages'][1]['content'])
+            schema = inp['responseContract']
+            Draft202012Validator.check_schema(schema)
+            response = original(key, payload, response_observer=response_observer)
+            content = json.loads(response['choices'][0]['message']['content'])
+            Draft202012Validator(schema).validate(content)
+            responses.append((schema, content))
+            return response
+        with self.session():
+            s.generate(self.prepared,self.root/'revision','candidate','r1','fixture',contract_transport)
+            receipt=s.review(self.prepared,self.root/'revision','candidate','r1','fixture',contract_transport)
+        self.assertEqual(receipt['reviewVerdict'],'pass')
+        generator_schema, generated = responses[0]
+        bad = copy.deepcopy(generated)
+        bad['coverage'] = {row['sourceUnitId']:row['targetText'] for row in bad['coverage']}
+        with self.assertRaises(ValidationError):Draft202012Validator(generator_schema).validate(bad)
+        if len(generated['coverage']) > 1:
+            bad = copy.deepcopy(generated);bad['coverage'].reverse()
+            with self.assertRaises(ValidationError):Draft202012Validator(generator_schema).validate(bad)
+        reviewer_schema, reviewed = responses[1]
+        checks=reviewer_schema['properties']['checks']['items']['properties']['checkId']['enum']
+        self.assertEqual(set(checks),c.HARD_CHECKS)
+        self.assertTrue(set(self.prepared['rubric']['requiredLanguagePluginChecks'])-set(checks))
+        bad=copy.deepcopy(reviewed)
+        bad['checks'].append(dict(checkId='languagePluginCheck',result='pass',evidence='synthetic'))
+        with self.assertRaises(ValidationError):Draft202012Validator(reviewer_schema).validate(bad)
+        issue_schema=reviewer_schema['properties']['issues']['items']['properties']
+        receipt_issue=c.validator('sermon-review-receipt-v1').schema['properties']['issues']['items']['properties']
+        self.assertEqual(issue_schema['reasonCode'],receipt_issue['reasonCode'])
+        self.assertEqual(issue_schema['severity'],receipt_issue['severity'])
+        bad=copy.deepcopy(reviewed)
+        bad['issues']=[dict(issueId='issue-1',reasonCode='invented_reason',severity='major',
+            sourceUnitIds=self.group['sourceUnitIds'],targetUnitIds=[],evidence='synthetic')]
+        with self.assertRaises(ValidationError):Draft202012Validator(reviewer_schema).validate(bad)
+
+    def test_response_contract_version_change_cannot_reuse_old_paid_cache(self):
+        with self.session():
+            self.generate()
+            before=(self.root/'revision/generator.raw.json').read_bytes()
+            with patch.object(s,'RESPONSE_CONTRACT_VERSION','strict-layer2-response-next'):
+                with self.assertRaises(ValueError):self.generate()
+            self.assertEqual(len(self.calls),1)
+            self.assertEqual((self.root/'revision/generator.raw.json').read_bytes(),before)
+
+    def test_shape_valid_review_still_requires_unique_checks_and_partitioned_coverage(self):
+        base=self.root
+        for mode in ('duplicate_check','overlap_coverage'):
+            with self.subTest(mode=mode):
+                self.root=base/mode
+                with self.session():
+                    self.generate();self.mode=mode;before=(self.root/'revision/candidate.json').read_bytes()
+                    receipt=self.review()
+                    self.assertEqual(receipt['executionStatus'],'failed')
+                    self.assertEqual(receipt['reviewVerdict'],'not_assessed')
+                    self.assertEqual((self.root/'revision/candidate.json').read_bytes(),before)
+
+    def test_failed_review_structural_diagnostic_is_safe_bound_and_restart_cached(self):
+        base=self.root
+        for mode,reason in [('invalid_enum','invalid_enum'),('invalid_field','invalid_fields'),
+                            ('invalid_issue_enum','invalid_enum'),('duplicate_check','duplicate_check'),
+                            ('overlap_coverage','coverage_partition_mismatch'),('rewrite','invalid_fields'),
+                            ('invalid_json','invalid_json'),('duplicate_json','invalid_json'),
+                            ('invalid_envelope','invalid_response_envelope')]:
+            with self.subTest(mode=mode):
+                self.root=base/mode;prior=len(self.calls)
+                with self.session():
+                    self.generate();self.mode=mode;receipt=self.review()
+                path=self.root/'revision/reviewer.structural-diagnostic.json'
+                detail,data=c.read_snapshot(path)
+                self.assertEqual(detail['reasonCode'],reason)
+                self.assertEqual(detail['rawFileBytesSha256'],c.bytes_sha256((path.parent/'reviewer.raw.json').read_bytes()))
+                self.assertEqual(detail['candidateBytesSha256'],c.bytes_sha256((path.parent/'candidate.json').read_bytes()))
+                self.assertEqual(detail['reviewerInputBytesSha256'],c.bytes_sha256((path.parent/'review-input.json').read_bytes()))
+                self.assertEqual(detail['modelCallId'],receipt['modelCallId'])
+                self.assertEqual(detail['candidateArtifactSha256'],receipt['reviewedArtifactSha256'])
+                self.assertEqual(receipt['evidenceRefs'][-1],s.reference('review-structural-diagnostic',data))
+                self.assertNotIn(b'private-illegal',data);self.assertNotIn(b'private message',data)
+                self.assertEqual(c.read_snapshot(path.parent/'reviewer.failure.json')[0]['reasonCode'],'invalid_review_response')
+                with self.session():self.assertEqual(self.review(),receipt)
+                self.assertEqual(len(self.calls),prior+2)
+
+    def test_second_review_structural_sidecar_binds_its_own_returned_call(self):
+        with self.session():
+            self.generate();self.mode='invalid_enum';first=self.review()
+            second=s.review(self.prepared,self.root/'revision','candidate','r1','fixture',self.transport,attempt_number=2)
+            detail,data=c.read_snapshot(self.root/'revision/reviewer-2.structural-diagnostic.json')
+            self.assertEqual(second['evidenceRefs'][-1],s.reference('review-structural-diagnostic-2',data))
+            self.assertEqual(detail['modelCallId'],second['modelCallId'])
+            self.assertNotEqual(detail['modelCallId'],first['modelCallId'])
+            with self.assertRaisesRegex(ValueError,'strict_review_diagnostic_context_required'):
+                s._validate_cached_review_evidence(second,c.read_snapshot(self.root/'revision/revision.json')[0],self.root/'revision/reviewer-2.json')
+            self.assertEqual(s.review(self.prepared,self.root/'revision','candidate','r1','fixture',self.transport,attempt_number=2),second)
+        self.assertEqual(len(self.calls),3)
+
+    def test_succeeded_review_rejects_injected_unbound_failure_diagnostic(self):
+        with self.session():
+            self.generate();self.review()
+            (self.root/'revision/reviewer.structural-diagnostic.json').write_text('{}')
+            with self.assertRaisesRegex(ValueError,'conflicting_strict_review_evidence'):self.review()
+        self.assertEqual(len(self.calls),2)
+
+    def test_structural_diagnostic_rejects_tampering_without_dispatch(self):
+        base=self.root
+        for name in ['reviewer.raw.json','reviewer.call.json','reviewer.structural-diagnostic.json','review-input.json','candidate.json']:
+            with self.subTest(name=name):
+                self.root=base/name.replace('.','-');prior=len(self.calls)
+                with self.session():
+                    self.generate();self.mode='invalid_enum';self.review()
+                    path=self.root/'revision'/name;value=json.loads(path.read_text())
+                    if name=='reviewer.raw.json':value['response']['usage']['input_tokens']=999
+                    elif name=='reviewer.call.json':value['modelCallId']='tampered-call'
+                    elif name=='reviewer.structural-diagnostic.json':value['reasonCode']='invalid_fields'
+                    elif name=='review-input.json':value['sourceUnitIds']=[]
+                    else:value['targetUtterances'][0]='tampered'
+                    path.write_text(json.dumps(value))
+                    with self.assertRaises((ValueError,OSError)):self.review()
+                self.assertEqual(len(self.calls),prior+2)
+
+    def test_old_failure_receipt_without_structural_sidecar_remains_read_only(self):
+        with self.session():
+            self.generate();self.mode='rewrite';receipt=self.review()
+            sidecar=self.root/'revision/reviewer.structural-diagnostic.json';sidecar.unlink()
+            receipt['evidenceRefs']=receipt['evidenceRefs'][:-1];receipt['receiptSha256']=c.receipt_sha256(receipt)
+            path=self.root/'revision/review-receipt.json';path.write_bytes(s.material_bytes(receipt))
+            before=path.read_bytes()
+            self.assertEqual(self.review(),receipt)
+            self.assertEqual(path.read_bytes(),before);self.assertFalse(sidecar.exists())
+        self.assertEqual(len(self.calls),2)
+
+    def test_structural_failure_preserves_d5_actual_usage_and_reservation_bounds(self):
+        from scripts import sermon_review_budget as budget
+        from scripts import sermon_strict_budget_adapter as adapter
+        from tests.test_sermon_strict_budget_adapter import authority,bounds,measured
+        store=budget.BudgetStore(self.root/'shared-budget',authority());subject=adapter.StrictBudgetAdapter(store)
+        root=self.root/'revision'
+        def run(subject,role,usage=measured):
+            return getattr(subject,role)(self.prepared,root,'candidate','r1','fixture',self.transport,
+                bounds=bounds(),usage_resolver=usage)
+        with self.session():
+            run(subject,'generate');self.mode='invalid_enum';receipt=run(subject,'review')
+            self.assertEqual(receipt['executionStatus'],'failed');self.assertEqual(receipt['budgetStatus'],'recorded')
+            snapshot=store.snapshot(adapter.chain_identity(self.prepared))
+            row=next(row for row in snapshot['reservations'] if row['kind']=='review')
+            with store._locked() as (_,ledger):
+                self.assertEqual(ledger['reservations'][row['reservationId']]['result']['usage'],measured(None))
+            self.assertEqual(snapshot['remaining']['global']['costMicrousd'],authority()['globalBounds']['costMicrousd']-2*bounds()['costMicrousd'])
+            restarted=adapter.StrictBudgetAdapter(budget.BudgetStore(store.root,authority()))
+            self.assertEqual(run(restarted,'review',lambda _:self.fail('cached measured usage must be preserved')),receipt)
+        self.assertEqual(len(self.calls),2)
+
+    def test_structural_sidecar_write_failure_keeps_budget_pending_and_recovers_without_call(self):
+        from tests import test_sermon_strict_budget_adapter as fixtures
+        runtime=fixtures.StrictBudgetTests();runtime.setUp();self.addCleanup(runtime.doCleanups)
+        original=s.save_once
+        def broken(path,value):
+            if str(path).endswith('.structural-diagnostic.json'):raise OSError('synthetic write failure')
+            return original(path,value)
+        with runtime.f.session():
+            runtime.generate();runtime.f.mode='invalid_enum'
+            with patch.object(s,'save_once',side_effect=broken),self.assertRaises(OSError):runtime.review()
+            self.assertTrue(runtime.snapshot()['unknownReservations'])
+            self.assertFalse((runtime.root/'reviewer.budget-result.json').exists())
+            before=(runtime.root/'reviewer.raw.json').read_bytes()
+            runtime.restart();result=runtime.review()
+            self.assertEqual(result['executionStatus'],'failed');self.assertEqual(result['budgetStatus'],'recorded')
+            self.assertEqual((runtime.root/'reviewer.raw.json').read_bytes(),before)
+        self.assertEqual(len(runtime.f.calls),2)
+
+    def test_closed_provider_run_is_typed_non_dispatch_with_safe_reason_and_cached_terminal(self):
+        from unittest.mock import Mock
+        from scripts import sermon_pipeline as pipeline
+        from scripts import sermon_strict_budget_adapter as adapter
+        from tests import test_sermon_strict_budget_adapter as fixtures
+        runtime=fixtures.StrictBudgetTests();runtime.setUp();self.addCleanup(runtime.doCleanups)
+        executor=Mock(side_effect=AssertionError('closed run must not dispatch'))
+        def closed(key,payload,*,response_observer):
+            request=pipeline.urllib.request.Request(pipeline.CHAT_URL)
+            request.accounting_model=payload['model'];request.accounting_settings=accounting.request_metadata(payload)
+            def observer(response,call_id,elapsed):response_observer(response,call_id,elapsed)
+            def guard(call_id):raise pipeline.PreDispatchRejection('provider_run_permanently_closed')
+            observer.request_started=guard
+            return pipeline.request_json(request,response_observer=observer,request_executor=executor)
+        with runtime.f.session():
+            result=runtime.generate(caller=closed)
+            self.assertEqual(result['failureEvidence']['reasonCode'],'provider_run_permanently_closed')
+            self.assertEqual(result['failureEvidence']['providerOutcome'],'not_dispatched')
+            self.assertEqual(result['budgetStatus'],'recorded')
+            self.assertEqual(adapter.safe_failure_reason(pipeline.PreDispatchRejection('provider_run_permanently_closed')),'provider_run_permanently_closed')
+            runtime.restart();self.assertEqual(runtime.generate(caller=closed),result)
+        executor.assert_not_called()
+        events,_=accounting.read_events(runtime.f.root/'logs')
+        terminal=[row for row in events if row['event']=='api_attempt']
+        self.assertEqual(len(terminal),1)
+        self.assertEqual(terminal[0]['metrics']['dispatched'],False)
+        self.assertEqual(terminal[0]['reasonCode'],'provider_run_permanently_closed')
 
     def test_immutable_generator_and_read_only_reviewer_use_independent_inputs(self):
         with self.session():
@@ -196,7 +419,11 @@ class StrictAdapterTests(unittest.TestCase):
         self.assertTrue(all(e['usage']['cachedInputTokens'] is None for e in receipts))
         run=weekly.project(self.root/'logs')['runs'][0]
         self.assertEqual(len(run['reviewObservations']),2)
-        self.assertEqual(run['observabilityCoverage']['queueTiming'],'missing_instrumentation')
+        self.assertEqual(run['observabilityCoverage']['queueTiming'],'measured_recorded_timestamps')
+        queue = run['telemetryEvidence']['queue']
+        self.assertEqual(queue['observedReadyAndDispatchCount'], len(run['workUnits']))
+        self.assertEqual(queue['resourceQueueStatus'], 'not_established')
+        self.assertEqual(queue['meaning'], 'inline_dispatch_to_stage_entry_is_not_resource_or_provider_queue_wait')
 
     def test_cached_raw_receipt_must_bind_the_original_call_and_output(self):
         with self.session():
@@ -322,7 +549,10 @@ class StrictAdapterTests(unittest.TestCase):
                 with patch.object(s,'save_once',side_effect=fail),patch.object(pipeline,'record_api_attempt') as finish:
                     with self.assertRaises(accounting.AccountingWriteError):
                         s.review(self.prepared,self.root/'revision','candidate','r1','fixture',self.http_caller)
-                    finish.assert_not_called()
+                    finish.assert_called_once()
+                    self.assertEqual(finish.call_args.args[3:5],('failed','AccountingWriteError'))
+                    self.assertEqual(finish.call_args.kwargs['http_status'],401)
+                    self.assertNotIn('not_dispatched_reason',finish.call_args.kwargs)
                 self.assertTrue((self.root/'revision/reviewer.started.json').exists())
                 self.assertFalse((self.root/'revision/review-receipt.json').exists())
                 receipt=s.review(self.prepared,self.root/'revision','candidate','r1','fixture',self.http_caller)

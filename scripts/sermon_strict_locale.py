@@ -24,7 +24,8 @@ from scripts.sermon_release_workflow import _safe_path
 def run_locale(source_bytes, anchor_bytes, policy_bytes, rubric_bytes, *, root,
                store, job_root, production_run_id, graph, plugin_path,
                expected_plugin_sha256, api_key, caller, bounds,
-               usage_resolver=None, group_plan=None, created_at=None, request_limits=None, diagnostic_context=None):
+               usage_resolver=None, group_plan=None, created_at=None, request_limits=None, diagnostic_context=None, depends_on=None,
+               historical_reuse=None):
     """Run fixed groups and bounded repairs, then the real public/plugin bridge.
 
     All group inputs and the complete locale coverage are validated before the
@@ -44,6 +45,11 @@ def run_locale(source_bytes, anchor_bytes, policy_bytes, rubric_bytes, *, root,
     # Do not spend on a locale that cannot reach that existing boundary.
     c.require(len(plan) <= 128, 'strict_locale_admission_inventory_limit')
     prepared = [strict.prepare(*raw, group, request_limits=request_limits, diagnostic_context=diagnostic_context) for group in plan]
+    if historical_reuse is not None:
+        from scripts.sermon_historical_layer2 import HistoricalLayer2Reuse
+        c.require(type(historical_reuse) is HistoricalLayer2Reuse,'trusted_historical_layer2_required')
+        historical_reuse._current()
+        for item in prepared:historical_reuse.inspect(item)
     if hasattr(caller, 'preflight_locale'):
         caller.preflight_locale(prepared)
     units = [item['workUnitId'] for item in prepared]
@@ -68,12 +74,13 @@ def run_locale(source_bytes, anchor_bytes, policy_bytes, rubric_bytes, *, root,
         'groups': plan, 'graph': graph, 'pluginSha256': expected_plugin_sha256,
         'storeSha256': store.store_sha256, 'authoritySha256': store.authority_sha256,
         'bounds': bounds, **({'requestLimits': prepared[0]['requestLimits']} if request_limits is not None else {}),
-        **({'diagnosticContext': diagnostic_context} if diagnostic_context is not None else {})}
+        **({'diagnosticContext': diagnostic_context} if diagnostic_context is not None else {}),
+        **({'historicalReuseSha256':c.canonical_sha256(historical_reuse.spec)} if historical_reuse is not None else {})}
     lock_key = c.canonical_sha256({'purpose': 'strict-locale-run',
         'productionRunId': production_run_id, 'targetLocale': policy['targetLocale']})
     with jobs._lock(job_root, lock_key) as (_, _, held):
         c.require(held, 'strict_locale_busy')
-        with accounting.stage('rqc.locale_input_binding', executor_type='deterministic_program') as bound_span:
+        with accounting.stage('rqc.locale_input_binding', depends_on=depends_on, executor_type='deterministic_program') as bound_span:
             root.mkdir(parents=True, exist_ok=True, mode=0o700)
             strict.save_once(root / 'locale-input.json', binding)
             jobs._sync_directory_ancestry(root)
@@ -89,12 +96,34 @@ def run_locale(source_bytes, anchor_bytes, policy_bytes, rubric_bytes, *, root,
                     'productionEligible': False} if diagnostic_context is not None else {})})
         results, revisions, dependencies = [], [], [bound_span]
         for item in prepared:
+            group_root=root/'groups'/c.canonical_sha256(item['group'])
+            stop=caller.configuration_stop(item) if hasattr(caller,'configuration_stop') else None
+            if stop is not None and not group_root.exists():
+                skipped={'schemaVersion':'sermon-strict-group-not-started-v1','status':'not_started',
+                    'reasonCode':'provider_configuration_blocked','workUnitId':item['workUnitId'],
+                    'localeInputSha256':c.canonical_sha256(binding),'scopeSha256':stop['scopeSha256'],
+                    'stopReceiptSha256':c.canonical_sha256(stop),'executionAuthority':'none'}
+                folder=root/'not-started';folder.mkdir(mode=0o700,exist_ok=True)
+                strict.save_once(folder/(c.canonical_sha256(skipped)+'.json'),skipped)
+                jobs._sync_directory_ancestry(folder)
+                with profile.context(workUnitId=item['workUnitId']):
+                    with accounting.stage('rqc.locale_group_not_started',depends_on=dependencies,
+                            executor_type='deterministic_program'):
+                        accounting.record_log('rqc_configuration_stop',fields={
+                            'status':'not_started','reasonCode':'provider_configuration_blocked'})
+                results.append(skipped)
+                continue
             completed = []
-            result = controller.run_group(item, root=root / 'groups' / c.canonical_sha256(item['group']),
-                store=store, job_root=job_root, production_run_id=production_run_id,
-                graph=graph, candidate_id='candidate.' + c.canonical_sha256(item['group']),
-                api_key=api_key, caller=caller, bounds=bounds, usage_resolver=usage_resolver,
-                created_at=created_at, depends_on=dependencies, completion_spans=completed)
+            if historical_reuse is not None:
+                result=historical_reuse.run_group(item,root=group_root,
+                    candidate_id='candidate.'+c.canonical_sha256(item['group']),api_key=api_key,caller=caller,
+                    depends_on=dependencies,completion_spans=completed)
+            else:
+                result = controller.run_group(item, root=root / 'groups' / c.canonical_sha256(item['group']),
+                    store=store, job_root=job_root, production_run_id=production_run_id,
+                    graph=graph, candidate_id='candidate.' + c.canonical_sha256(item['group']),
+                    api_key=api_key, caller=caller, bounds=bounds, usage_resolver=usage_resolver,
+                    created_at=created_at, depends_on=dependencies, completion_spans=completed)
             results.append(result)
             if completed: dependencies = completed[-1:]
             if result['status'] == 'machine_review_passed':
@@ -104,8 +133,37 @@ def run_locale(source_bytes, anchor_bytes, policy_bytes, rubric_bytes, *, root,
                     'groups': results, 'executionAuthority': 'none', 'output': None}
         with accounting.stage('rqc.locale_candidate_assembly', depends_on=dependencies,
                               executor_type='deterministic_program'):
-            result = bridge.compile_candidate(*raw, revisions, plugin_path=plugin_path,
-                                               expected_plugin_sha256=expected_plugin_sha256, diagnostic_context=diagnostic_context)
+            try:
+                result = bridge.compile_candidate(*raw, revisions, plugin_path=plugin_path,
+                    expected_plugin_sha256=expected_plugin_sha256, diagnostic_context=diagnostic_context)
+            except bridge.LanguagePluginRejected as exc:
+                # This is known machine evidence, not an approved candidate. Keep
+                # the original plugin receipt before exposing a typed locale stop.
+                failure = {'schemaVersion': 'sermon-strict-locale-plugin-failure-v1',
+                    'status': 'blocked', 'reasonCode': 'strict_bridge_plugin_rejected',
+                    'executionAuthority': 'none', 'localeInputSha256': c.canonical_sha256(binding),
+                    'languageReceiptSha256': c.canonical_sha256(exc.language_receipt),
+                    'revisionBindingsSha256': c.canonical_sha256({'groups': exc.revision_bindings}),
+                    'failedGroups': exc.failed_groups}
+                evidence = root / 'failures' / c.canonical_sha256(failure)
+                evidence.mkdir(parents=True, exist_ok=True, mode=0o700)
+                language_bytes = public.save_once(evidence / 'language-review.json', exc.language_receipt)
+                public.save_once(evidence / 'revision-bindings.json', {'groups': exc.revision_bindings})
+                failure_bytes = public.save_once(evidence / 'failure.json', failure)
+                jobs._sync_directory_ancestry(evidence)
+                accounting.record_log('rqc_locale_candidate', fields={
+                    'status': 'blocked', 'reasonCode': failure['reasonCode'],
+                    'targetLocale': policy['targetLocale'],
+                    'languageReceiptSha256': failure['languageReceiptSha256']})
+                return {'status': 'blocked', 'reasonCode': failure['reasonCode'],
+                    'groups': results, 'executionAuthority': 'none', 'output': None,
+                    'failedGroups': exc.failed_groups, 'failureOutput': str(evidence),
+                    'failureReceipt': {'artifactId': 'locale-plugin-failure', 'mediaType': 'application/json',
+                        'canonicalJsonSha256': c.canonical_sha256(failure),
+                        'fileBytesSha256': c.bytes_sha256(failure_bytes)},
+                    'languageReceipt': {'artifactId': 'language-review', 'mediaType': 'application/json',
+                        'canonicalJsonSha256': c.canonical_sha256(exc.language_receipt),
+                        'fileBytesSha256': c.bytes_sha256(language_bytes)}}
             identity = c.canonical_sha256(result)
             output = root / 'machine-candidates' / identity
             output.mkdir(parents=True, exist_ok=True, mode=0o700)

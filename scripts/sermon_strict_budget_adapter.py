@@ -19,10 +19,40 @@ from scripts import sermon_review_contracts as c
 from scripts import sermon_strict_layer2 as strict
 from scripts import sermon_workflow_jobs as jobs
 from scripts.sermon_pipeline import TransportRejection
+from scripts.sermon_pipeline import PreDispatchRejection, PRE_DISPATCH_REASONS
 from scripts.sermon_release_workflow import _safe_path
 
 DISPATCH_LOCK_ATTEMPTS = 100
 DISPATCH_LOCK_DELAY_SECONDS = 0.05
+
+# Only fixed program codes may cross the diagnostic boundary. Provider/library
+# exception messages can contain transcript text, credentials or local paths.
+GENERATION_FAILURE_REASONS = frozenset({
+    'invalid_generated_candidate', 'invalid_frozen_group_artifact',
+    'invalid_translation_group_id', 'candidate_group_scope_mismatch',
+    'invalid_candidate_utterances', 'candidate_target_unit_mapping_mismatch',
+    'invalid_candidate_coverage', 'candidate_source_coverage_mismatch',
+    'candidate_coverage_text_not_present', 'invalid_strict_raw_content',
+    'invalid_json_bytes', 'invalid_json_value', 'duplicate_json_key',
+    'nonfinite_json_number', 'invalid_review_contract_schema',
+})
+SAFE_FAILURE_REASONS = GENERATION_FAILURE_REASONS | frozenset({
+    'provider_input_bound_exceeded', 'provider_output_cap_mismatch',
+    'provider_request_limit', 'provider_cost_limit',
+    'provider_bounds_exceed_authorized_operation', 'budget_store_busy',
+    'strict_budget_raw_binding_changed', 'strict_raw_receipt_binding_changed',
+    'strict_raw_content_changed', 'immutable_candidate_changed',
+    'candidate_changed_during_review', 'strict_budget_call_binding_changed',
+    'controller_repair_evidence_missing', 'strict_repair_context_required',
+})
+
+
+def safe_failure_reason(error, fallback='current_evidence_not_validated'):
+    if type(error) is PreDispatchRejection and error.reason_code in PRE_DISPATCH_REASONS:
+        return error.reason_code
+    if type(error) in (c.ContractError, ValueError) and len(error.args) == 1 and type(error.args[0]) is str and error.args[0] in SAFE_FAILURE_REASONS:
+        return error.args[0]
+    return fallback
 
 
 def chain_identity(prepared):
@@ -163,7 +193,14 @@ class StrictBudgetAdapter:
         transport = self._transport(output, binding, reservation, caller)
         options = dict(cache_only=not reservation['created'], depends_on=depends_on,
                        completion_spans=completion_spans)
+        failure = None
+        not_dispatched = False
         try:
+            prior_rejection = self._non_dispatch_failure(output, binding)
+            if prior_rejection is not None:
+                stopped = PreDispatchRejection(prior_rejection['reasonCode'])
+                stopped.bind_attempt(prior_rejection['modelCallId'])
+                raise stopped
             if kind != 'review':
                 if repair is not None: options['repair'] = repair
                 artifact = strict.generate(prepared, root, candidate_id, revision_id, api_key, transport, **options)
@@ -176,6 +213,19 @@ class StrictBudgetAdapter:
                 content = {'pass': 'pass', 'needs_rework': 'fail', 'inconclusive': 'uncertain',
                            'not_assessed': 'not_assessed'}[artifact['reviewVerdict']]
                 receipt_sha256 = c.canonical_sha256(artifact)
+        except PreDispatchRejection as exc:
+            if getattr(exc, 'sermon_logging_failed', False):
+                raise
+            rejected = self._non_dispatch_failure(output, binding)
+            c.require(rejected is not None and rejected['modelCallId'] == exc.attempt_id and
+                rejected['reasonCode'] == exc.reason_code, 'strict_budget_non_dispatch_unproven')
+            artifact = None
+            status, content = 'failed', 'not_assessed'
+            receipt_sha256 = c.canonical_sha256(rejected)
+            failure = {'reasonCode': rejected['reasonCode'], 'providerOutcome': 'not_dispatched',
+                'receipt': strict.reference('generation-or-review-non-dispatch',
+                    output.with_suffix('.non-dispatch.json').read_bytes())}
+            not_dispatched = True
         except TransportRejection as exc:
             if kind == 'review' or getattr(exc, 'sermon_logging_failed', False):
                 raise
@@ -186,9 +236,48 @@ class StrictBudgetAdapter:
             artifact = None
             status, content = 'failed', 'not_assessed'
             receipt_sha256 = c.canonical_sha256(rejection)
-        observed = self._evidence(output, binding, status, artifact,
-            requested_model=prepared['policy']['reviewer' if kind == 'review' else 'translator']['model'],
-            service_tier=(prepared.get('requestLimits') or {}).get('serviceTier'))
+        except (ValueError, TypeError, KeyError) as exc:
+            if kind == 'review' or getattr(exc, 'sermon_logging_failed', False):
+                raise
+            # A mismatched/tampered binding is not evidence of a new structural
+            # model failure. Only verified returned proof may settle this call.
+            if isinstance(exc, c.ContractError) and (len(exc.args) != 1 or
+                    type(exc.args[0]) is not str or exc.args[0] not in GENERATION_FAILURE_REASONS):
+                raise
+            if not output.with_suffix('.raw.json').is_file():
+                raise
+            observed = self._evidence(output, binding, 'failed', None,
+                requested_model=prepared['policy']['translator']['model'],
+                service_tier=(prepared.get('requestLimits') or {}).get('serviceTier'))
+            _, raw_bytes = c.read_snapshot(output.with_suffix('.raw.json'))
+            c.require(c.bytes_sha256(raw_bytes) == observed['rawResponseBytesSha256'],
+                      'strict_budget_raw_binding_changed')
+            failure = {
+                **binding,
+                'schemaVersion': 'sermon-strict-generation-artifact-failure-v1',
+                'executionStatus': 'failed', 'contentStatus': 'not_assessed',
+                'providerOutcome': 'returned',
+                'reasonCode': safe_failure_reason(exc, 'invalid_generated_candidate_response'),
+                'errorType': type(exc).__name__,
+                'candidateId': candidate_id, 'revisionId': revision_id,
+                'workUnitId': prepared['workUnitId'], 'kind': kind,
+                'modelCallId': observed['modelCallId'],
+                'rawResponse': strict.reference('generation-raw', raw_bytes),
+            }
+            # Private versioned sidecar, not a Candidate or a Review Receipt.
+            failure_bytes = strict.save_once(output.with_suffix('.artifact-failure.json'), failure)
+            jobs._sync_directory_ancestry(root)
+            artifact = None
+            status, content = 'failed', 'not_assessed'
+            receipt_sha256 = c.canonical_sha256(failure)
+            failure = {'reasonCode': failure['reasonCode'], 'providerOutcome': 'returned',
+                'receipt': strict.reference('generation-artifact-failure', failure_bytes)}
+        if not_dispatched:
+            observed = None
+        elif failure is None:
+            observed = self._evidence(output, binding, status, artifact,
+                requested_model=prepared['policy']['reviewer' if kind == 'review' else 'translator']['model'],
+                service_tier=(prepared.get('requestLimits') or {}).get('serviceTier'))
         result = {'executionStatus': status, 'contentStatus': content,
                   'receiptSha256': receipt_sha256, 'usage': None}
         result_path = output.with_suffix('.budget-result.json')
@@ -199,13 +288,17 @@ class StrictBudgetAdapter:
                       'strict_budget_result_binding_changed')
             result = saved
         elif status != 'outcome_unknown':
-            usage = usage_resolver(deepcopy(dict(observed, kind=kind, executionStatus=status,
-                receiptSha256=receipt_sha256))) if usage_resolver is not None else None
+            # The typed guard proves zero provider execution/usage. D5 counts a
+            # logical reservation, and max(bound, usage) retains EVERY bound.
+            # This is neither measured billing nor a refund of reserved capacity.
+            usage = ({key: int(key == 'requests') for key in budget.METRICS} if not_dispatched else
+                usage_resolver(deepcopy(dict(observed, kind=kind, executionStatus=status,
+                    receiptSha256=receipt_sha256))) if usage_resolver is not None else None)
             if usage is not None:
                 c.require(type(usage) is dict and set(usage) <= set(budget.METRICS),
                           'invalid_strict_budget_measured_usage')
             if usage is None or set(usage) != set(budget.METRICS) or any(value is None for value in usage.values()):
-                return self._public(artifact, result, rid, 'reconciliation_required')
+                return self._public(artifact, result, rid, 'reconciliation_required', failure)
             result['usage'] = usage
         budget._result(result)
         strict.save_once(result_path, result)
@@ -218,7 +311,7 @@ class StrictBudgetAdapter:
         budget_status = 'reconciliation_required' if status == 'outcome_unknown' else 'recorded'
         if result['usage'] is not None and any(result['usage'][key] > bounds[key] for key in budget.METRICS):
             budget_status = 'bound_exceeded'
-        return self._public(artifact, result, rid, budget_status)
+        return self._public(artifact, result, rid, budget_status, failure)
 
     @staticmethod
     def _repair_guard(folder, ledger, operation, repair):
@@ -316,8 +409,58 @@ class StrictBudgetAdapter:
                 return response_observer.request_rejected(error, model_call_id)
             returned.request_started = started
             returned.request_rejected = rejected
-            return caller(api_key, payload, response_observer=returned)
+            try:
+                return caller(api_key, payload, response_observer=returned)
+            except PreDispatchRejection as exc:
+                if getattr(exc, 'sermon_logging_failed', False):
+                    raise
+                c.require(type(exc) is PreDispatchRejection and exc.reason_code in PRE_DISPATCH_REASONS,
+                          'strict_budget_non_dispatch_unproven')
+                call_id = exc.attempt_id
+                c.require(type(call_id) is str and len(call_id) == 32 and
+                    all(ch in '0123456789abcdef' for ch in call_id) and
+                    (observed_call is None or observed_call == call_id), 'strict_budget_non_dispatch_unproven')
+                stopped = {**binding, 'schemaVersion': 'sermon-strict-non-dispatch-failure-v1',
+                    'modelCallId': call_id, 'reasonCode': exc.reason_code, 'dispatched': False,
+                    'providerOutcome': 'not_dispatched', 'executionStatus': 'failed',
+                    'usageBasis': 'verified_not_dispatched_zero_provider_usage_logical_reservation_retained'}
+                strict.save_once(output.with_suffix('.non-dispatch.json'), stopped)
+                jobs._sync_directory_ancestry(output.parent)
+                self._non_dispatch_failure(output, binding)
+                raise
         return dispatch
+
+    @staticmethod
+    def _non_dispatch_failure(output, binding):
+        path = output.with_suffix('.non-dispatch.json')
+        if not path.exists():
+            return None
+        stopped, _ = c.read_snapshot(path)
+        c.require(type(stopped) is dict and set(stopped) == set(binding) | {
+            'modelCallId', 'reasonCode', 'dispatched', 'providerOutcome', 'executionStatus', 'usageBasis'},
+            'strict_budget_non_dispatch_binding_changed')
+        expected = {**binding, 'schemaVersion': 'sermon-strict-non-dispatch-failure-v1',
+            'modelCallId': stopped['modelCallId'], 'reasonCode': stopped['reasonCode'], 'dispatched': False,
+            'providerOutcome': 'not_dispatched', 'executionStatus': 'failed',
+            'usageBasis': 'verified_not_dispatched_zero_provider_usage_logical_reservation_retained'}
+        c.require(stopped == expected and type(stopped['modelCallId']) is str and
+            len(stopped['modelCallId']) == 32 and all(ch in '0123456789abcdef' for ch in stopped['modelCallId']) and
+            stopped['reasonCode'] in PRE_DISPATCH_REASONS, 'strict_budget_non_dispatch_binding_changed')
+        marker, _ = c.read_snapshot(output.with_suffix('.started.json'))
+        c.require(marker.get('payloadSha256') == binding['payloadSha256'] and
+            marker.get('status') == 'started_response_unconfirmed', 'strict_budget_non_dispatch_binding_changed')
+        c.require(not any(p.exists() for p in (output, output.with_suffix('.raw.json'),
+            output.with_suffix('.rejection.json'))), 'strict_budget_non_dispatch_conflicting_evidence')
+        for suffix in ('.call.json', '.budget-call.json'):
+            if output.with_suffix(suffix).exists():
+                call, _ = c.read_snapshot(output.with_suffix(suffix))
+                expected_call = ({'modelCallId': stopped['modelCallId']} if suffix == '.call.json' else {
+                    'schemaVersion': 'sermon-strict-budget-call-v1',
+                    'reservationId': binding['reservationId'], 'payloadSha256': binding['payloadSha256'],
+                    'modelCallId': stopped['modelCallId']})
+                c.require(call == expected_call,
+                          'strict_budget_non_dispatch_binding_changed')
+        return stopped
 
     @staticmethod
     def _evidence(output, binding, status, artifact, *, requested_model=None, service_tier=None):
@@ -340,7 +483,7 @@ class StrictBudgetAdapter:
         if status == 'outcome_unknown':
             return {'modelCallId': proof['modelCallId'], 'providerUsage': None,
                     'elapsedSeconds': None, 'httpStatus': None}
-        raw, _ = c.read_snapshot(output.with_suffix('.raw.json'))
+        raw, raw_bytes = c.read_snapshot(output.with_suffix('.raw.json'))
         c.require(type(raw) is dict and type(raw.get('response')) is dict and
                   raw.get('payloadSha256') == binding['payloadSha256'] and
                   raw.get('accounting', {}).get('modelCallId') == proof['modelCallId'],
@@ -355,6 +498,7 @@ class StrictBudgetAdapter:
             c.require(all(artifact[key] == value for key, value in assessment.items()),
                       'strict_budget_review_assessment_changed')
         return {'modelCallId': proof['modelCallId'],
+                'rawResponseBytesSha256': c.bytes_sha256(raw_bytes),
                 'providerUsage': accounting.normalize_usage(raw['response'].get('usage')),
                 'providerModel': raw['response'].get('model'),
                 'requestedModel': requested_model,
@@ -362,7 +506,10 @@ class StrictBudgetAdapter:
                 'elapsedSeconds': raw.get('accounting', {}).get('elapsedSeconds'), 'httpStatus': 200}
 
     @staticmethod
-    def _public(artifact, result, rid, budget_status):
+    def _public(artifact, result, rid, budget_status, failure=None):
         return {'artifact': artifact, 'executionStatus': result['executionStatus'],
                 'contentStatus': result['contentStatus'], 'receiptSha256': result['receiptSha256'],
-                'reservationId': rid, 'budgetStatus': budget_status, 'executionAuthority': 'none'}
+                'reservationId': rid, 'budgetStatus': budget_status, 'executionAuthority': 'none',
+                **({'failureEvidence': {**failure,
+                    'budgetUsageStatus': 'complete' if result['usage'] is not None else 'missing_or_incomplete'}}
+                   if failure is not None else {})}

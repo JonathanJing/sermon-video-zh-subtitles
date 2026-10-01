@@ -13,6 +13,9 @@ from scripts import sermon_diagnostic_provider as provider
 from scripts import sermon_log_profile as profile
 from scripts import sermon_review_budget as budget
 from scripts import sermon_review_contracts as c
+from scripts import sermon_preview_checkpoint_manifest as checkpoint
+from scripts import sermon_public_snapshot as public
+from scripts import sermon_diagnostic_delivery_preflight as delivery
 from tests import test_render_speculative_target_language_speech as fixtures
 from tests import test_sermon_diagnostic_provider as provider_fixtures
 
@@ -59,6 +62,94 @@ class PreviewWorkerTests(unittest.TestCase):
     def launch(self, **changes):
         return subject.launch_preview(self.root, self.subject, self.context,
                                       dict(self.spec, **changes), offline_fixture=True)
+
+    def native_spec_fixture(self):
+        """Inert files and a mocked runtime validator; never native synthesis."""
+        spec=copy.deepcopy(self.spec);spec['execute']=True
+        checked=subject.preview.checked_context({k:Path(v) for k,v in spec['paths'].items()},
+            Path(spec['checkpoint_map_path']),Path(spec['operation_policies_path']),strict_rubric=self.f.rubric,
+            diagnostic_context=self.context)
+        tree=Path(checked['checkpoint'])
+        for name in checkpoint.REQUIRED_FILES:
+            path=tree/name
+            if not path.exists():path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(('inert '+name).encode())
+        binding=checkpoint.build(tree,self.root/'checkpoint-evidence',checkpoint_ref=checked['adapter']['conditioningRef'],
+            conditioning_sha256=checked['adapter']['conditioningSha256'])
+        identity={'gitCommit':self.context['continuationCodeCommit'],'loadedProjectCodeSha256':{}}
+        config={**self.subject.config,'codeSha256':c.canonical_sha256(identity)}
+        context={**self.context,'runConfigSha256':c.canonical_sha256(config)}
+        plan={'runDirectory':str(self.root),'executionIdentity':identity,'providerConfig':config}
+        public.save_once(self.root/'run-plan.json',plan)
+        declaration={'schemaVersion':'sermon-stage-code-declaration-v1','originalPlanSha256':c.canonical_sha256(plan),
+            'stageId':'preview.checkpoint','moduleAdditions':{},'externalRuntimeSha256':{
+                'previewCheckpointManifest':binding['checkpointManifest']['fileBytesSha256'],
+                'previewCheckpointTree':binding['treeSha256']}}
+        path=self.root/'stage-declarations/preview.checkpoint.json';path.parent.mkdir();public.save_once(path,declaration)
+        runtime=self.root/'synthetic-runtime.json';runtime.write_text('{}');runtime_root=self.root/'synthetic-runtime';runtime_root.mkdir()
+        runtime_binding={'runtimeRoot':str(runtime_root),**{key:subject._ref(runtime) for key in ('runtimeManifest','runtimeInventory','runtimeCode')}}
+        spec.update(runtime_manifest_path=str(runtime),checkpoint_manifest_path=binding['checkpointManifest']['path'],
+            checkpoint_stage_declaration_path=str(path))
+        return spec,context,binding,runtime_binding
+
+    def test_native_spec_binds_complete_aux_tree_and_frozen_runtime_declaration(self):
+        spec,context,binding,runtime=self.native_spec_fixture()
+        with patch.object(subject.native_runtime,'validate',return_value=runtime):
+            _,checked,inputs=subject._spec(self.root,spec,context,False)
+            self.assertEqual(checked['checkpoint_binding'],binding)
+            self.assertIn(str(Path(binding['checkpointRoot'])/'speech_tokenizer/model.safetensors'),{row['path'] for row in inputs})
+            self.assertIn(spec['checkpoint_stage_declaration_path'],{row['path'] for row in inputs})
+            subject._recheck_checkpoint(spec,checked)
+            (Path(binding['checkpointRoot'])/'generation_config.json').write_bytes(b'changed')
+            with self.assertRaisesRegex(ValueError,'checkpoint_tree_changed'):subject._recheck_checkpoint(spec,checked)
+
+    def test_missing_checkpoint_contract_rejects_fresh_native_but_old_readonly_spec_keeps_scope(self):
+        spec,context,_,runtime=self.native_spec_fixture()
+        del spec['checkpoint_manifest_path'];del spec['checkpoint_stage_declaration_path']
+        with patch.object(subject.native_runtime,'validate',return_value=runtime):
+            with self.assertRaisesRegex(ValueError,'checkpoint_manifest_required'):subject._spec(self.root,spec,context,False)
+            _,checked,_=subject._spec(self.root,spec,context,False,legacy_checkpoint=True)
+            self.assertIsNone(checked['checkpoint_binding'])
+
+    def test_checkpoint_evidence_output_overlap_and_fixture_claim_are_rejected(self):
+        spec,context,_,runtime=self.native_spec_fixture()
+        overlapping={**spec,'out':str(self.root/'checkpoint-evidence')}
+        with patch.object(subject.native_runtime,'validate',return_value=runtime):
+            with self.assertRaisesRegex(ValueError,'output_overlaps_input'):subject._spec(self.root,overlapping,context,False)
+        with self.assertRaisesRegex(ValueError,'fixture_cannot_claim_checkpoint_manifest'):
+            subject._spec(self.root,{**self.spec,'checkpoint_manifest_path':spec['checkpoint_manifest_path'],
+                'checkpoint_stage_declaration_path':spec['checkpoint_stage_declaration_path']},self.context,True)
+
+    def test_synthetic_v1_v2_readonly_receipt_projection_never_respawns(self):
+        # These are explicit test projections, not historical production claims.
+        for version in (subject.V1_SCHEMA,subject.V2_SCHEMA):
+            with self.subTest(version=version),self.session():
+                out=self.root/('legacy-'+version.rsplit('-',1)[-1]);receipt=self.launch(out=str(out))
+                saved=json.loads((out/'worker-receipt.json').read_text());request=json.loads((out/'worker-request.json').read_text())
+                saved['schemaVersion']=version;saved.pop('checkpointBinding');request.pop('checkpointBinding')
+                request['schemaVersion']='sermon-diagnostic-preview-worker-request-'+version.rsplit('-',1)[-1]
+                request['workerCodeSha256']=subject.READONLY_WORKER_CODE_SHA256
+                if version==subject.V1_SCHEMA:
+                    saved.pop('nativeRuntimeBinding');saved.pop('clockHandshake')
+                    for key in ('nativeRuntimeBinding','clockLaunch','predecessorSpans'):request.pop(key)
+                digest=c.canonical_sha256(request)
+                (out/'worker-request.json').write_text(json.dumps(request))
+                (out/'worker-attempt.json').write_text(json.dumps({'workerAttemptId':digest,'requestSha256':digest,'status':'reserved'}))
+                child=json.loads((out/'worker-result.json').read_text());child['requestSha256']=digest
+                if version==subject.V1_SCHEMA:child.pop('clockFinished')
+                (out/'worker-result.json').write_text(json.dumps(child))
+                saved['workerAttemptId']=saved['requestSha256']=digest
+                saved['artifacts']=[subject._ref(row['path']) for row in saved['artifacts']]
+                (out/'worker-receipt.json').write_text(json.dumps(saved))
+                envelope={**saved,'receiptPath':str(out/'worker-receipt.json'),
+                    'receiptFileSha256':subject._ref(out/'worker-receipt.json')['fileBytesSha256']}
+                before=(self.state_path.read_bytes(),self.ledger_path.read_bytes(),(out/'fixture-synth-calls.jsonl').read_bytes())
+                with patch.object(subject.harness,'bounded_process',side_effect=AssertionError('readonly must not spawn')):
+                    self.assertEqual(subject.validate_preview_receipt(self.root,self.subject,self.context,envelope),envelope)
+                    self.assertEqual(self.launch(out=str(out)),envelope)
+                    inspected=delivery._inspect_preview(self.root,self.subject,self.context,
+                        self.f.candidate['targetLocale'],envelope,delivery._Snapshot())
+                    self.assertEqual(inspected['previewStatus'],'preview_only')
+                self.assertEqual(before,(self.state_path.read_bytes(),self.ledger_path.read_bytes(),(out/'fixture-synth-calls.jsonl').read_bytes()))
 
     def test_actual_subprocess_render_and_readonly_replay_keep_pending_and_original_ledgers(self):
         state, ledger = self.state_path.read_bytes(), self.ledger_path.read_bytes()
@@ -185,6 +276,41 @@ class PreviewWorkerTests(unittest.TestCase):
         with self.session(), self.assertRaisesRegex(ValueError, 'execute_required'):
             subject.launch_preview(self.root, self.subject, self.context, self.spec)
         self.assertFalse(self.out.exists())
+
+    def test_real_execution_requires_bound_runtime_before_model_load(self):
+        with self.session(), self.assertRaisesRegex(ValueError, 'native_runtime_manifest_required'):
+            subject.launch_preview(self.root, self.subject, self.context, dict(self.spec, execute=True))
+        self.assertFalse(self.out.exists())
+
+    def test_fixture_cannot_claim_real_runtime(self):
+        with self.session(), self.assertRaisesRegex(ValueError, 'fixture_cannot_claim_native_runtime'):
+            self.launch(runtime_manifest_path=str(self.root / 'untrusted-runtime.json'))
+        self.assertFalse(self.out.exists())
+
+    def test_real_child_clock_handshake_and_actual_predecessor_are_bound(self):
+        with self.session():
+            with subject.accounting.stage('actual.upstream', depends_on=[]) as upstream:
+                pass
+            receipt = subject.launch_preview(self.root, self.subject, self.context, self.spec,
+                offline_fixture=True, depends_on=[upstream])
+        request = subject._read(self.out / 'worker-request.json')
+        self.assertEqual(request['predecessorSpans'], [upstream])
+        proof = receipt['clockHandshake']
+        self.assertEqual(subject.clock.validate_worker_handshake(proof['launch'],proof['finished'],proof['joined']), proof['joined'])
+        events, errors = subject.accounting.read_events(self.root / 'preview-accounting')
+        self.assertFalse(errors)
+        entry = next(row for row in events if row.get('stage') == 'preview.validate_inputs' and row['event'] == 'stage_started')
+        self.assertEqual(entry['dependsOn'], [upstream])
+        proof['joined']['clockChildEndNs'] += 1
+        with self.assertRaises(ValueError):
+            subject.clock.validate_worker_handshake(proof['launch'],proof['finished'],proof['joined'])
+
+    def test_shell_and_network_guards_remain_closed(self):
+        with subject._local_only(False):
+            with self.assertRaisesRegex(ValueError,'subprocess_forbidden'):
+                subprocess.Popen('sox -h',shell=True)
+            with self.assertRaisesRegex(RuntimeError,'network_forbidden'):
+                subject.socket.create_connection(('example.invalid',443))
 
 
 if __name__ == '__main__': unittest.main()

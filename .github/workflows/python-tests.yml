@@ -45,7 +45,8 @@ jobs:
     needs: changes
     if: needs.changes.outputs.docs_only != 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # Audio-tool downloads may precede a 15-minute test shard.
+    timeout-minutes: 40
     strategy:
       fail-fast: false
       matrix:

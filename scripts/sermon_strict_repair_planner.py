@@ -181,16 +181,21 @@ class RepairPlanner:
                 matches[0]['result']['contentStatus']==content[review['reviewVerdict']],
                 'repair_review_budget_status_mismatch')
             stem='reviewer'+suffix
+            strict._validate_cached_review_evidence(review,manifest,root/(stem+'.json'),prepared,inputs)
             for ref in review['evidenceRefs']:
                 filename={'review-result':stem+'.json',
                           strict.review_failure_evidence_id('review-execution-failure',attempt):stem+'.failure.json',
-                          strict.review_failure_evidence_id('review-transport-rejection',attempt):stem+'.rejection.json'}.get(ref['artifactId'])
+                          strict.review_failure_evidence_id('review-transport-rejection',attempt):stem+'.rejection.json',
+                          'review-structural-diagnostic'+suffix:stem+'.structural-diagnostic.json',
+                          'review-rejection-diagnostic'+suffix:stem+'.rejection-diagnostic.json'}.get(ref['artifactId'])
                 c.require(filename is not None,'unknown_repair_review_evidence')
                 _,evidence_bytes=read(filename)
                 c.require(strict.reference(ref['artifactId'],evidence_bytes)==ref,'repair_review_evidence_changed')
                 add(ref['artifactId'],evidence_bytes)
             if review['executionStatus']=='succeeded':
                 result,_=read(stem+'.json');strict.require_call_binding(root/(stem+'.json'),result)
+                read(stem+'.raw.json');read(stem+'.call.json')
+            elif (root/(stem+'.structural-diagnostic.json')).exists():
                 read(stem+'.raw.json');read(stem+'.call.json')
             reviews.append(gate.ReviewEvidence(gate.JsonArtifact('review-'+str(attempt),data),
                 gate.JsonArtifact('input-'+str(attempt),input_bytes)))

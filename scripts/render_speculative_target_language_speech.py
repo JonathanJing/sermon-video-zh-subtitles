@@ -167,7 +167,8 @@ def render(paths: dict[str, Path], checkpoint_map_path: Path,
            attention: str | None = "sdpa", instruct: str | None = None,
            synth_factory: Callable[..., Any] = formal.QwenSynthesizer,
            strict_rubric=None, diagnostic_context=None,
-           deadline_monotonic: float | None = None) -> dict[str, Any]:
+           deadline_monotonic: float | None = None,
+           predecessor_spans: list[str] | None = None) -> dict[str, Any]:
     """Preview only, with one original absolute deadline for diagnostic workers.
 
     Deadline checks surround validation, loading, synthesis and commit; the
@@ -180,7 +181,7 @@ def render(paths: dict[str, Path], checkpoint_map_path: Path,
                    "Diagnostic preview requires original absolute deadline")
     _check_deadline(deadline_monotonic)
     with accounting.stage("preview.validate_inputs", work_unit_id="preview.validate_inputs",
-                          depends_on=[]) as inputs_span:
+                          depends_on=predecessor_spans) as inputs_span:
         context = checked_context(paths, checkpoint_map_path, operation_policies_path,
                                   strict_rubric=strict_rubric, diagnostic_context=diagnostic_context)
         _check_deadline(deadline_monotonic)
@@ -243,16 +244,18 @@ def render(paths: dict[str, Path], checkpoint_map_path: Path,
             continue
         _check_deadline(deadline_monotonic)
         work = f"preview.{candidate['targetLocale']}.{index:04d}"
-        expected = sound_identity(context, index, seed=seed, dtype=dtype,
-                                  attention=attention, instruct=instruct)
-        wav_path = out / f"units/unit-{index:04d}.wav"
-        receipt_path = out / f"receipts/unit-{index:04d}.json"
-        attempt_path = out / f"receipts/unit-{index:04d}.attempt.json"
-        partial = wav_path.with_suffix(".partial.wav")
-        cache_hit = wav_path.exists() or receipt_path.exists()
+        with accounting.orchestration(work + '.dispatch', work_unit_id=work + '.dispatch',
+                                      depends_on=[previous_span]) as dispatch_span:
+            expected = sound_identity(context, index, seed=seed, dtype=dtype,
+                                      attention=attention, instruct=instruct)
+            wav_path = out / f"units/unit-{index:04d}.wav"
+            receipt_path = out / f"receipts/unit-{index:04d}.json"
+            attempt_path = out / f"receipts/unit-{index:04d}.attempt.json"
+            partial = wav_path.with_suffix(".partial.wav")
+            cache_hit = wav_path.exists() or receipt_path.exists()
         with accounting.stage(work, cache_hit=cache_hit):
             with accounting.stage(work + '.cache_admission', work_unit_id=work + '.cache_admission',
-                                  depends_on=[previous_span], cache_hit=cache_hit) as admission_span:
+                                  depends_on=[dispatch_span], cache_hit=cache_hit) as admission_span:
                 if cache_hit:
                     formal.require(receipt_path.is_file(), "Uncommitted speculative unit cannot be reused")
                     receipt = formal.package.read_object(receipt_path)

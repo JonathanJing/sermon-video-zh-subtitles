@@ -58,14 +58,20 @@ class AgentsAPIClient:
 
     max_pages = 100
 
-    def __init__(self, api_key: str | None = None, timeout: float = 30.0):
+    def __init__(self, api_key: str | None = None, timeout: float = 30.0, *,
+                 max_response_bytes: int = 16 * 1024 * 1024, max_pages: int = 100):
         key = api_key if api_key is not None else os.environ.get("OPENAI_API_KEY")
         if not isinstance(key, str) or not key.strip() or "\n" in key or "\r" in key:
             raise AgentsAPIError("missing_or_invalid_api_key")
         if not math.isfinite(timeout) or timeout <= 0:
             raise AgentsAPIError("invalid_timeout")
+        if (type(max_response_bytes) is not int or not 1024 <= max_response_bytes <= 16 * 1024 * 1024
+                or type(max_pages) is not int or not 1 <= max_pages <= 100):
+            raise AgentsAPIError("invalid_transport_bounds")
         self._api_key = key
         self.timeout = timeout
+        self.max_response_bytes = max_response_bytes
+        self.max_pages = max_pages
         self.deadline_at: float | None = None
         self._opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), _NoRedirect())
 
@@ -94,7 +100,7 @@ class AgentsAPIClient:
         try:
             with self._opener.open(request, timeout=timeout) as response:
                 status = getattr(response, "status", 200)
-                raw = response.read(16 * 1024 * 1024 + 1)
+                raw = response.read(self.max_response_bytes + 1)
         except urllib.error.HTTPError as exc:
             status = exc.code
             exc.close()
@@ -102,7 +108,7 @@ class AgentsAPIClient:
         except (urllib.error.URLError, OSError, ValueError, http.client.HTTPException):
             raise AgentsAPIError("transport_error", error_type="transport") from None
         self._remaining_timeout()
-        if len(raw) > 16 * 1024 * 1024:
+        if len(raw) > self.max_response_bytes:
             raise AgentsAPIError("response_too_large")
         # Input-event submission can acknowledge with an empty 2xx response.
         # Creation/retrieval/listing still require their JSON resource body.

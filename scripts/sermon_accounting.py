@@ -31,15 +31,18 @@ if __package__ in {None, ""}:
 
 try:
     from scripts.sermon_clock_evidence import clock_domain
+    from scripts import sermon_dispatch_observation as dispatch_observation
     from scripts import sermon_log_profile as log_profile
 except ImportError:  # Preserve direct script invocation.
     from sermon_clock_evidence import clock_domain
+    import sermon_dispatch_observation as dispatch_observation
     import sermon_log_profile as log_profile
 
 SCHEMA = "sermon-workflow-accounting-v3"
 READABLE_SCHEMAS = frozenset({"sermon-workflow-accounting-v1", "sermon-workflow-accounting-v2", SCHEMA})
 EXECUTOR_TYPES = frozenset({"deterministic_program", "production_model", "decision_agent",
                             "human", "external_service", "engineering_codex"})
+INTERNAL_TIMING_WORKLOADS = frozenset({'timing.inline_dispatch_v1', 'timing.orchestration_v1'})
 PRICE_SOURCE = "https://developers.openai.com/api/docs/pricing"
 PRICE_DATE = "2026-09-05"
 _stage = contextvars.ContextVar("sermon_accounting_stage", default=None)
@@ -117,7 +120,12 @@ def error_location(exc):
             continue
         if relative.parts[0] not in {"scripts", "backend", "experiments", "tests"}:
             continue
-        frames.append({"file": str(relative), "line": lineno, "function": _label(frame.f_code.co_name)})
+        location = {"file": str(relative), "line": lineno, "function": _label(frame.f_code.co_name)}
+        # Distinct lambda/generator frames may normalize to the same safe tuple.
+        # Retain first-seen provenance order while honoring schema uniqueItems;
+        # never append code, exception bodies or original unsafe function names.
+        if location not in frames:
+            frames.append(location)
     return {"errorType": _label(type(exc).__name__), "frames": frames[-12:]}
 
 
@@ -366,8 +374,9 @@ def stage(name, *, cache_hit=False, billing="local", executor_type=None,
     """Record one stage attempt with dependency-aware v3 trace identity.
 
     Callers provide stable stage/work-unit identities; ``spanId`` remains unique
-    to this execution attempt. Timestamps are optional because legacy and
-    inline execution has no distinct queue interval.
+    to this execution attempt. Explicit queue timestamps remain authoritative.
+    Otherwise capture synchronous dispatch-to-entry; external readiness stays
+    unknown and these observations never claim a resource queue measurement.
     """
     name = _label(name)
     span_id = uuid.uuid4().hex
@@ -389,6 +398,11 @@ def stage(name, *, cache_hit=False, billing="local", executor_type=None,
     for value in (dependency_ready_at, queued_at):
         if value is not None and (not isinstance(value, str) or len(value) > 40 or datetime.fromisoformat(value).tzinfo is None):
             raise ValueError("invalid_queue_timestamp")
+    dispatch_identity = _identity.get() or tuple(os.environ.get(k) for k in ENV_KEYS[:2])
+    automatic_dispatch = dependency_ready_at is None and queued_at is None
+    if automatic_dispatch:
+        observed_ready, observed_dispatch = dispatch_observation.observe(dispatch_identity, depends_on, now)
+        dependency_ready_at, queued_at = observed_ready, observed_dispatch
     base = {"stage": name, "spanId": span_id, "parentSpanId": parent,
             "cacheHit": bool(cache_hit), "billing": billing,
             "executorType": executor_type, "dependsOn": None if depends_on is None else _labels(depends_on),
@@ -409,6 +423,10 @@ def stage(name, *, cache_hit=False, billing="local", executor_type=None,
     outcome = "completed"
     error = None
     try:
+        if automatic_dispatch:
+            _emit({'event': 'workload', 'stage': 'timing.inline_dispatch_v1', 'metrics': {
+                'dispatchObserved': True, 'dependencyReadyObserved': dependency_ready_at is not None,
+                'resourceQueueObserved': False}})
         yield span_id
     except BaseException as exc:
         outcome, error = "failed", exc
@@ -416,12 +434,15 @@ def stage(name, *, cache_hit=False, billing="local", executor_type=None,
     finally:
         try:
             finished_ns = time.monotonic_ns()
-            _finalize(lambda: _emit({**base, "event": "stage_finished", "status": outcome,
-                "monotonicEndNs": str(finished_ns),
-                "level": "ERROR" if error else "INFO",
-                "elapsedSeconds": round((finished_ns-started_ns)/1_000_000_000, 6),
-                "errorType": _label(type(error).__name__) if error else None,
-                "error": error_location(error) if error else None}), error)
+            def finish_event():
+                _emit({**base, "event": "stage_finished", "status": outcome,
+                    "monotonicEndNs": str(finished_ns),
+                    "level": "ERROR" if error else "INFO",
+                    "elapsedSeconds": round((finished_ns-started_ns)/1_000_000_000, 6),
+                    "errorType": _label(type(error).__name__) if error else None,
+                    "error": error_location(error) if error else None})
+                dispatch_observation.finished(dispatch_identity, span_id)
+            _finalize(finish_event, error)
         finally:
             _stage.reset(tokens[0]); _span.reset(tokens[1])
             profile_context.__exit__(None, None, None)
@@ -456,6 +477,16 @@ def bounded_dependencies(name, dependencies, *, work_unit_id):
         pending = joined
         level += 1
     return pending
+
+
+@contextmanager
+def orchestration(name, *, depends_on=None, work_unit_id=None):
+    """Measure explicitly selected program bookkeeping; no wrapper-gap inference."""
+    with stage(name, depends_on=depends_on, executor_type='deterministic_program',
+               work_unit_id=work_unit_id) as span:
+        _emit({'event': 'workload', 'stage': 'timing.orchestration_v1',
+               'metrics': {'orchestrationWorkObserved': True}})
+        yield span
 
 
 @contextmanager
@@ -531,20 +562,32 @@ def record_api_started(model, settings=None):
     return attempt_id
 
 
-def record_api_attempt(model, response, elapsed_seconds, status="completed", error_type=None, *, audio_seconds=None, attempt_id=None, http_status=None):
+def record_api_attempt(model, response, elapsed_seconds, status="completed", error_type=None, *, audio_seconds=None, attempt_id=None, http_status=None, not_dispatched_reason=None):
+    # Reuse contract-v1's bounded extension slots instead of silently extending
+    # the schema. No arbitrary exception text or provider error body is accepted.
+    if not_dispatched_reason is not None:
+        from scripts.sermon_pipeline import PRE_DISPATCH_REASONS
+        if (type(not_dispatched_reason) is not str or not_dispatched_reason not in PRE_DISPATCH_REASONS
+                or status != "failed" or response is not None or http_status is not None):
+            raise ValueError("invalid_not_dispatched_evidence")
     response = response if isinstance(response, dict) else {}
     usage = response.get("usage")
     actual_model = _label(response.get("model"), None) if log_profile.current() is not None else _label(response.get("model") or model)
     tier = _safe_settings({"service_tier": response.get("service_tier") or "default"}).get("service_tier", "unknown")
     cost = estimate_cost(actual_model, usage, tier, audio_seconds) if status == "completed" else {
         "status": "unknown", "estimatedUsd": None, "currency": "USD", "reason": "failed_attempt_billing_unknown"}
+    if not_dispatched_reason is not None:
+        cost = {"status": "not_incurred", "estimatedUsd": 0, "currency": "USD",
+                "reason": "transport_not_dispatched", "invoiceVerified": False}
+    evidence = ({"metrics": {"dispatched": False}, "reasonCode": not_dispatched_reason}
+                if not_dispatched_reason is not None else {})
     _emit({"event": "api_attempt", "attemptId": attempt_id or uuid.uuid4().hex,
            "stage": _stage.get() or os.environ.get(ENV_KEYS[2], "unattributed_api"),
            "spanId": _span.get() or os.environ.get(ENV_KEYS[3]),
            "status": _label(status), "errorType": _label(error_type) if error_type else None,
            "httpStatus": _number(http_status), "elapsedSeconds": _number(elapsed_seconds),
            "requestedModel": _label(model), "model": actual_model, "responseId": _label(response.get("id"), None),
-           "usage": normalize_usage(usage), "cost": cost})
+           "usage": normalize_usage(usage), "cost": cost, **evidence})
 
 
 @contextmanager
@@ -874,7 +917,11 @@ def _summarize_locked(directory):
             else:
                 w["evidenceBefore" if event["phase"] == "before" else "evidenceAfter"] = event["evidence"]
         elif event["event"] == "workload":
-            run.setdefault("workloads", []).append({"stage": event["stage"], "metrics": event["metrics"]})
+            # Preserve the business-workload projection and its existing order.
+            # These exact versioned internal observations remain in the raw
+            # ledger and are projected separately by weekly telemetryEvidence.
+            if event["stage"] not in INTERNAL_TIMING_WORKLOADS:
+                run.setdefault("workloads", []).append({"stage": event["stage"], "metrics": event["metrics"]})
         elif event["event"] in {"sdk_call_started", "sdk_call_finished"}:
             key = (rid, event["invocationId"])
             call = sdk_calls.setdefault(key, {"runId": rid, "invocationId": event["invocationId"],

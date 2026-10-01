@@ -88,6 +88,24 @@ if __name__=='__main__':unittest.main()
 
 
 class RealAdapterPlanningTests(unittest.TestCase):
+    def test_structural_sidecar_is_verified_evidence_without_new_retry_authority(self):
+        runtime=runtime_fixtures.StrictBudgetTests();runtime.setUp();self.addCleanup(runtime.doCleanups)
+        f=runtime.f;f.mode='invalid_enum'
+        planner=adapter.RepairPlanner(runtime.store,f.root/'jobs','7'*64)
+        graph=[dict(workUnitId=f.prepared['workUnitId'],layer=2,targetLocale='zh-Hans',dependsOn=[])]
+        with f.session():
+            runtime.generate();receipt=runtime.review()['artifact']
+            result=planner.plan_group(f.prepared,runtime.root,graph,created_at='2026-09-30T00:00:00Z')
+            self.assertEqual(result['planning']['action'],'retry_review')
+            restarted=adapter.RepairPlanner(budget.BudgetStore(runtime.store.root,runtime.store.authority),f.root/'jobs','7'*64)
+            self.assertEqual(restarted.plan_group(f.prepared,runtime.root,graph,created_at='2026-09-30T00:00:00Z'),result)
+            path=runtime.root/'reviewer.raw.json';raw=json.loads(path.read_text())
+            raw['response']['usage']['input_tokens']=999;path.write_text(json.dumps(raw))
+            with self.assertRaisesRegex(ValueError,'strict_review_structural_diagnostic_changed'):
+                restarted.plan_group(f.prepared,runtime.root,graph,created_at='2026-09-30T00:00:00Z')
+            self.assertEqual(c.read_snapshot(runtime.root/'review-receipt.json')[0],receipt)
+        self.assertEqual(len(f.calls),2)
+
     def setUp(self):
         self.runtime=runtime_fixtures.StrictBudgetTests();self.runtime.setUp();self.addCleanup(self.runtime.doCleanups)
         self.f=self.runtime.f

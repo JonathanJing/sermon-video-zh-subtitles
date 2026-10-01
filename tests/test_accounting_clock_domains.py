@@ -32,7 +32,9 @@ class ClockDomainTests(unittest.TestCase):
                 run=source.result()['runs'][0]
                 self.assertEqual(run['leafElapsedByExecutor']['deterministic_program'],3)
                 self.assertEqual(run['leafElapsedByExecutor']['production_model'],8)
-                self.assertIsNone(run['endToEndWallSeconds']);self.assertIsNone(run['criticalPath'])
+                self.assertIsNone(run['endToEndWallSeconds'])
+                self.assertEqual(run['criticalPath']['activeSeconds'],8)
+                self.assertEqual(run['criticalPath']['durationBasis'],'verified_monotonic_dag')
                 self.assertIn('utc_clock_discontinuity_local_duration_preserved',run['diagnostics'])
                 self.assertEqual(len(run['workUnits']),4)
                 safe_export.export(source.root,source.root/'export')
@@ -57,7 +59,38 @@ class ClockDomainTests(unittest.TestCase):
                 self.assertEqual(run['leafElapsedByExecutor']['production_model'],8)
                 self.assertEqual(run['leafElapsedByExecutor']['deterministic_program'],3)
                 self.assertEqual(len(run['workUnits']),4)
+                self.assertEqual(run['criticalPath']['activeSeconds'],8)
+                self.assertEqual(run['criticalPath']['durationBasis'],'verified_monotonic_dag')
+
+    def test_utc_jump_does_not_exempt_missing_mixed_or_utc_only_clock_evidence(self):
+        for fault in ('missing_dependency','mixed_clock','utc_only'):
+            with self.subTest(fault=fault):
+                source=self.fixture()
+                next(e for e in source.rows if e['event']=='stage_finished' and e['spanId']=='source')['recordedAt']='2026-09-29T23:59:50+00:00'
+                for row in source.rows:
+                    if row.get('spanId')=='join' and fault=='missing_dependency':row['dependsOn']=['missing']
+                    if row.get('spanId')=='join' and fault=='mixed_clock':row['clockDomainId']='b'*32
+                    if fault=='utc_only':
+                        for field in ('clockDomainId','monotonicStartNs','monotonicEndNs'):row.pop(field,None)
+                run=source.result()['runs'][0]
                 self.assertIsNone(run['criticalPath'])
+                self.assertEqual(run['status'],'partial')
+
+    def test_stable_monotonic_spans_do_not_forgive_corrupt_run_boundary_without_jump(self):
+        source=self.fixture();source.rows[-1]['recordedAt']='2026-09-30T00:00:07+00:00'
+        run=source.result()['runs'][0]
+        self.assertIn('span_outside_run_interval',run['diagnostics'])
+        self.assertIsNone(run['criticalPath'])
+
+    def test_partial_monotonic_graph_cannot_rescue_utc_discontinuity(self):
+        source=self.fixture()
+        next(e for e in source.rows if e['event']=='stage_finished' and e['spanId']=='ko')['recordedAt']='2026-09-30T00:00:32+00:00'
+        for row in source.rows:
+            if row.get('spanId')=='source':
+                for field in ('clockDomainId','monotonicStartNs','monotonicEndNs'):row.pop(field,None)
+        run=source.result()['runs'][0]
+        self.assertIsNone(run['criticalPath'])
+        self.assertIn('cross_clock_dependency_timing_unknown',run['diagnostics'])
 
     def test_mismatched_domain_and_forged_duration_are_not_trusted(self):
         for field,value in [('clockDomainId','b'*32),('monotonicEndNs','1'),('elapsedSeconds',50)]:

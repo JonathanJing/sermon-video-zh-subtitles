@@ -107,6 +107,78 @@ class AccountingTests(unittest.TestCase):
             self.assertEqual([r["status"] for r in calls],["failed","completed"])
             self.assertNotIn("private",(Path(t)/"events.jsonl").read_text())
 
+    def test_start_observer_failure_gets_terminal_but_is_not_assumed_undispatched(self):
+        for failure in (ValueError('provider_request_limit'), a.AccountingWriteError('private-secret'),
+                        urllib.error.HTTPError('https://example.test',400,'private-secret',{},io.BytesIO(b'private-secret'))):
+            with self.subTest(error=type(failure).__name__), tempfile.TemporaryDirectory() as t:
+                observer=unittest.mock.Mock()
+                observer.request_started.side_effect=failure
+                executor=unittest.mock.Mock()
+                with a.accounting_session(t,'test'), self.assertRaises(type(failure)):
+                    pipeline.request_json(urllib.request.Request('https://example.test'),
+                        response_observer=observer,request_executor=executor)
+                executor.assert_not_called()
+                observer.request_rejected.assert_not_called()
+                rows,damaged=a.read_events(t)
+                self.assertEqual(damaged,[])
+                start=next(r for r in rows if r['event']=='api_attempt_started')
+                terminal=next(r for r in rows if r['event']=='api_attempt')
+                self.assertEqual(start['attemptId'],terminal['attemptId'])
+                self.assertEqual(terminal['status'],'failed')
+                self.assertNotIn('metrics',terminal)
+                self.assertNotIn('reasonCode',terminal)
+                self.assertIsNone(terminal['cost']['estimatedUsd'])
+                self.assertNotIn('private-secret',(Path(t)/'events.jsonl').read_text())
+
+    def test_transport_timeout_does_not_become_a_pre_dispatch_rejection(self):
+        with tempfile.TemporaryDirectory() as t:
+            observer=unittest.mock.Mock()
+            executor=unittest.mock.Mock(side_effect=TimeoutError('private-secret'))
+            with a.accounting_session(t,'test'), self.assertRaises(TimeoutError):
+                pipeline.request_json(urllib.request.Request('https://example.test'),
+                    response_observer=observer,request_executor=executor)
+            executor.assert_called_once()
+            rows,_=a.read_events(t)
+            terminal=next(r for r in rows if r['event']=='api_attempt')
+            self.assertNotIn('metrics',terminal)
+            self.assertIsNone(terminal['cost']['estimatedUsd'])
+
+    def test_pre_dispatch_terminal_write_failure_preserves_failure_and_never_dispatches(self):
+        with tempfile.TemporaryDirectory() as t:
+            observer=unittest.mock.Mock()
+            failure=pipeline.PreDispatchRejection('provider_request_limit')
+            observer.request_started.side_effect=failure
+            executor=unittest.mock.Mock()
+            with a.accounting_session(t,'test'), patch.object(pipeline,'record_api_attempt',
+                    side_effect=a.AccountingWriteError('private-secret')), self.assertRaises(pipeline.PreDispatchRejection):
+                pipeline.request_json(urllib.request.Request('https://example.test'),
+                    response_observer=observer,request_executor=executor)
+            executor.assert_not_called()
+            self.assertTrue(failure.sermon_logging_failed)
+            rows,_=a.read_events(t)
+            self.assertEqual(failure.attempt_id,next(r for r in rows if r['event']=='api_attempt_started')['attemptId'])
+            self.assertEqual(len([r for r in rows if r['event']=='api_attempt_started']),1)
+            self.assertFalse(any(r['event']=='api_attempt' for r in rows))
+
+    def test_not_dispatched_evidence_accepts_only_fixed_reason_without_http_response(self):
+        for kw in ({'not_dispatched_reason':'private-secret'},
+                   {'not_dispatched_reason':'provider_request_limit','http_status':400}):
+            with self.assertRaisesRegex(ValueError,'invalid_not_dispatched_evidence'):
+                a.record_api_attempt('gpt-6-astra',None,0,'failed',**kw)
+        with self.assertRaisesRegex(ValueError,'invalid_not_dispatched_evidence'):
+            a.record_api_attempt('gpt-6-astra',response(),0,'completed',
+                not_dispatched_reason='provider_request_limit')
+        with self.assertRaisesRegex(ValueError,'invalid_pre_dispatch_reason'):
+            pipeline.PreDispatchRejection('private-secret')
+        failure=pipeline.PreDispatchRejection('provider_request_limit')
+        self.assertIsNone(failure.attempt_id)
+        failure.bind_attempt('a'*32)
+        failure.bind_attempt('a'*32)
+        self.assertEqual(failure.attempt_id,'a'*32)
+        for invalid in ('b'*32,'private-secret',None):
+            with self.assertRaisesRegex(ValueError,'invalid_pre_dispatch_attempt_binding'):
+                failure.bind_attempt(invalid)
+
     def test_unfinished_span_detected(self):
         with tempfile.TemporaryDirectory() as t, patch.dict(os.environ,{"SERMON_ACCOUNTING_DIR":t,"SERMON_ACCOUNTING_RUN_ID":"interrupted"}):
             a._emit({"event":"stage_started","stage":"lost","spanId":"open","startedAt":a.now()})

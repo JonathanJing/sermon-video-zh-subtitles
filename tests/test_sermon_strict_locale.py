@@ -9,6 +9,7 @@ from scripts import sermon_strict_locale as subject
 from scripts import sermon_review_budget as budget
 from scripts import sermon_review_contracts as c
 from scripts import sermon_strict_layer2 as strict
+from scripts import produce_target_language_candidate as producer
 from tests import test_sermon_strict_layer2 as fixtures
 from tests import test_sermon_strict_budget_adapter as budget_fixtures
 
@@ -35,6 +36,46 @@ class LocaleTests(unittest.TestCase):
 
     def run_locale(self, **changes):
         return subject.run_locale(*self.f.args, **{**self.kw, **changes})
+
+    def test_actual_plugin_failure_is_persisted_with_groups_without_public_candidate(self):
+        self.groups[0]['targetUtterances'][0] += '禁'
+        receipts = []; original = producer.run_language_plugin
+        def capture(*args, **kwargs):
+            receipt = original(*args, **kwargs); receipts.append(receipt); return receipt
+        with self.f.session(), patch.object(producer, 'run_language_plugin', side_effect=capture):
+            result = self.run_locale()
+            self.assertEqual(result['status'], 'blocked')
+            self.assertEqual(result['reasonCode'], 'strict_bridge_plugin_rejected')
+            self.assertIsNone(result['output'])
+            self.assertTrue(all(row['status'] == 'machine_review_passed' for row in result['groups']))
+            self.assertEqual([row['translationGroupId'] for row in result['failedGroups']],
+                [self.groups[0]['translationGroupId']])
+            self.assertTrue(all(row['status'] == 'fail' for row in result['failedGroups'][0]['checks']))
+            output = Path(result['failureOutput'])
+            saved, raw = c.read_snapshot(output / 'language-review.json')
+            self.assertEqual(saved, receipts[0])
+            self.assertEqual(result['languageReceipt']['fileBytesSha256'], c.bytes_sha256(raw))
+            self.assertEqual(c.read_snapshot(output / 'failure.json')[0]['languageReceiptSha256'], c.canonical_sha256(saved))
+            self.assertFalse((self.kw['root'] / 'machine-candidates').exists())
+            resumed = self.run_locale()
+            self.assertEqual(resumed['failureOutput'], result['failureOutput'])
+            self.assertEqual(resumed['failureReceipt'], result['failureReceipt'])
+            self.assertEqual(resumed['languageReceipt'], result['languageReceipt'])
+        self.assertEqual(len(self.f.calls), 4)
+
+    def test_plugin_failure_receipt_write_error_propagates_then_reuses_paid_groups(self):
+        self.groups[0]['targetUtterances'][0] += '禁'
+        original = subject.public.save_once
+        def fail(path, value):
+            if path.name == 'language-review.json': raise OSError('synthetic persistence failure')
+            return original(path, value)
+        with self.f.session(), patch.object(subject.public, 'save_once', side_effect=fail):
+            with self.assertRaises(OSError): self.run_locale()
+        self.assertEqual(len(self.f.calls), 4)
+        with self.f.session():
+            result = self.run_locale()
+        self.assertEqual(result['reasonCode'], 'strict_bridge_plugin_rejected')
+        self.assertEqual(len(self.f.calls), 4)
 
     def test_complete_locale_is_machine_pending_and_resume_makes_no_new_calls(self):
         with self.f.session():
@@ -89,6 +130,16 @@ class LocaleTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'immutable_strict_artifact_changed'):
                 self.run_locale(graph=changed)
         self.assertEqual(len(self.f.calls), 4)
+
+    def test_locale_input_binding_accepts_actual_upstream_span(self):
+        with self.f.session():
+            with subject.accounting.stage('source.actual',executor_type='deterministic_program') as upstream:
+                pass
+            self.run_locale(depends_on=[upstream])
+        rows,invalid=subject.accounting.read_events(self.f.root/'logs')
+        self.assertEqual(invalid,[])
+        bound=next(row for row in rows if row['event']=='stage_started' and row['stage']=='rqc.locale_input_binding')
+        self.assertEqual(bound['dependsOn'],[upstream])
 
     def test_trace_binds_source_and_actual_serial_groups_without_extra_api_receipts(self):
         with self.f.session():

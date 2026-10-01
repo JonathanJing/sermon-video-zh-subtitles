@@ -36,6 +36,22 @@ def measured(_):
     return dict(requests=1, inputTokens=100, outputTokens=20, wallTimeMs=10, costMicrousd=50)
 
 
+def refused_before_observer(attempts, executor):
+    """Use the real pipeline lifecycle: guard denies before strict call proof."""
+    def caller(key, payload, *, response_observer):
+        req = pipeline.urllib.request.Request(pipeline.CHAT_URL)
+        req.accounting_model = payload['model']
+        req.accounting_settings = accounting.request_metadata(payload)
+        def observer(response, call_id, elapsed):
+            response_observer(response, call_id, elapsed)
+        def guard(call_id):
+            attempts.append(call_id)
+            raise pipeline.PreDispatchRejection('provider_request_limit')
+        observer.request_started = guard
+        return pipeline.request_json(req, response_observer=observer, request_executor=executor)
+    return caller
+
+
 class StrictBudgetTests(unittest.TestCase):
     def setUp(self):
         self.f = strict_fixtures.StrictAdapterTests(); self.f.setUp(); self.addCleanup(self.f.doCleanups)
@@ -145,6 +161,140 @@ class StrictBudgetTests(unittest.TestCase):
             self.assertEqual(settled['artifact'], result['artifact'])
             self.assertEqual(settled['budgetStatus'], 'recorded')
         self.assertEqual(len(self.f.calls), 1)
+
+    def test_returned_invalid_coverage_is_known_failure_not_unknown_transport(self):
+        self.f.f.evidence['groups'][0]['coverage'] = {'invalid': 'shape'}
+        with self.f.session():
+            result = self.generate()
+            self.assertEqual(result['executionStatus'], 'failed')
+            self.assertEqual(result['contentStatus'], 'not_assessed')
+            self.assertIsNone(result['artifact'])
+            self.assertEqual(result['budgetStatus'], 'recorded')
+            self.assertEqual(result['failureEvidence']['reasonCode'], 'invalid_candidate_coverage')
+            self.assertEqual(result['failureEvidence']['providerOutcome'], 'returned')
+            failure, data = contracts.read_snapshot(self.root / 'generator.artifact-failure.json')
+            self.assertEqual(failure['rawResponse']['fileBytesSha256'],
+                contracts.bytes_sha256((self.root / 'generator.raw.json').read_bytes()))
+            self.assertEqual(failure['modelCallId'], contracts.read_snapshot(self.root / 'generator.call.json')[0]['modelCallId'])
+            self.assertEqual(result['receiptSha256'], contracts.canonical_sha256(failure))
+            self.assertNotIn('response', failure)
+            self.assertFalse((self.root / 'revision.json').exists())
+            self.assertFalse((self.root / 'candidate.json').exists())
+            self.assertFalse(self.snapshot()['unknownReservations'])
+            self.assertEqual(self.snapshot()['remaining']['global']['costMicrousd'],
+                authority()['globalBounds']['costMicrousd'] - bounds()['costMicrousd'])
+            self.restart()
+            self.assertEqual(self.generate(), result)
+            with self.assertRaises((ValueError, OSError)): self.review()
+        self.assertEqual(len(self.f.calls), 1)
+
+    def test_returned_invalid_artifact_missing_usage_stays_reserved_then_reconciles_from_cache(self):
+        self.f.f.evidence['groups'][0]['coverage'] = {}
+        with self.f.session():
+            result = self.generate(usage_resolver=lambda _: None)
+            self.assertEqual(result['executionStatus'], 'failed')
+            self.assertEqual(result['failureEvidence']['providerOutcome'], 'returned')
+            self.assertEqual(result['budgetStatus'], 'reconciliation_required')
+            self.assertEqual(result['failureEvidence']['budgetUsageStatus'], 'missing_or_incomplete')
+            self.assertTrue(self.snapshot()['unknownReservations'])
+            self.restart()
+            recovered = self.generate()
+            self.assertEqual(recovered['failureEvidence']['receipt'], result['failureEvidence']['receipt'])
+            self.assertEqual(recovered['failureEvidence']['budgetUsageStatus'], 'complete')
+            self.assertEqual(recovered['budgetStatus'], 'recorded')
+            self.assertFalse(self.snapshot()['unknownReservations'])
+        self.assertEqual(len(self.f.calls), 1)
+
+    def test_returned_failure_rejects_tampered_proof_without_settlement_or_redispatch(self):
+        self.f.f.evidence['groups'][0]['coverage'] = {}
+        with self.f.session():
+            self.generate(usage_resolver=lambda _: None)
+            path = self.root / 'generator.raw.json'
+            value = contracts.read_snapshot(path)[0]; value['payloadSha256'] = '0'*64
+            path.write_bytes(contracts.canonical_bytes(value))
+            before = self.snapshot()
+            self.restart()
+            with self.assertRaises(ValueError): self.generate()
+            self.assertEqual(self.snapshot(), before)
+        self.assertEqual(len(self.f.calls), 1)
+
+    def test_guard_refusal_before_strict_observer_settles_and_replays_without_dispatch(self):
+        attempts = []; executor = Mock(side_effect=AssertionError('must not dispatch'))
+        caller = refused_before_observer(attempts, executor)
+        resolver = Mock(side_effect=AssertionError('not measured provider usage'))
+        with self.f.session():
+            result = self.generate(caller=caller, usage_resolver=resolver)
+            self.assertEqual(result['executionStatus'], 'failed')
+            self.assertEqual(result['failureEvidence']['providerOutcome'], 'not_dispatched')
+            self.assertEqual(result['failureEvidence']['reasonCode'], 'provider_request_limit')
+            self.assertEqual(result['budgetStatus'], 'recorded')
+            self.assertFalse(self.snapshot()['unknownReservations'])
+            self.assertFalse((self.root / 'generator.call.json').exists())
+            self.assertFalse((self.root / 'generator.budget-call.json').exists())
+            self.assertEqual(contracts.read_snapshot(self.root / 'generator.non-dispatch.json')[0]['modelCallId'], attempts[0])
+            self.assertEqual(self.snapshot()['remaining']['global'],
+                {key: authority()['globalBounds'][key] - value for key, value in bounds().items()})
+            self.restart()
+            self.assertEqual(self.generate(caller=caller, usage_resolver=resolver), result)
+        self.assertEqual(len(attempts), 1)
+        executor.assert_not_called(); resolver.assert_not_called()
+        rows, _ = accounting.read_events(self.f.root / 'logs')
+        ended = [row for row in rows if row['event'] == 'api_attempt']
+        self.assertEqual(len(ended), 1)
+        self.assertIs(ended[0]['metrics']['dispatched'], False)
+
+    def test_review_guard_refusal_is_not_a_fabricated_or_unknown_review_receipt(self):
+        attempts = []; executor = Mock(side_effect=AssertionError('must not dispatch'))
+        caller = refused_before_observer(attempts, executor)
+        with self.f.session():
+            self.generate()
+            result = self.review(caller=caller)
+            self.assertIsNone(result['artifact'])
+            self.assertEqual(result['failureEvidence']['providerOutcome'], 'not_dispatched')
+            self.assertFalse((self.root / 'review-receipt.json').exists())
+            self.assertFalse(self.snapshot()['unknownReservations'])
+            self.restart()
+            self.assertEqual(self.review(caller=caller), result)
+        self.assertEqual(len(self.f.calls), 1)
+        self.assertEqual(len(attempts), 1); executor.assert_not_called()
+
+    def test_unbound_guard_refusal_cannot_settle(self):
+        def unbound(*args, **kwargs): raise pipeline.PreDispatchRejection('provider_request_limit')
+        with self.f.session(), self.assertRaisesRegex(ValueError, 'non_dispatch_unproven'):
+            self.generate(caller=unbound)
+        self.assertTrue(self.snapshot()['unknownReservations'])
+        self.assertFalse((self.root / 'generator.non-dispatch.json').exists())
+
+    def test_logging_failed_guard_refusal_cannot_settle_or_redispatch(self):
+        attempts = []; executor = Mock(side_effect=AssertionError('must not dispatch'))
+        caller = refused_before_observer(attempts, executor)
+        with self.f.session():
+            with patch.object(pipeline, 'record_api_attempt', side_effect=accounting.AccountingWriteError('fault')):
+                with self.assertRaises(pipeline.PreDispatchRejection) as raised:
+                    self.generate(caller=caller)
+            self.assertTrue(raised.exception.sermon_logging_failed)
+            self.assertEqual(raised.exception.attempt_id, attempts[0])
+            self.assertTrue(self.snapshot()['unknownReservations'])
+            self.assertFalse((self.root / 'generator.non-dispatch.json').exists())
+            self.assertFalse((self.root / 'generator.budget-result.json').exists())
+            before = self.snapshot(); self.restart()
+            with self.assertRaises(ValueError): self.generate(caller=caller)
+            self.assertEqual(self.snapshot(), before)
+        self.assertEqual(len(attempts), 1); executor.assert_not_called()
+
+    def test_tampered_non_dispatch_proof_is_not_adopted_or_refunded(self):
+        attempts = []; executor = Mock(side_effect=AssertionError('must not dispatch'))
+        caller = refused_before_observer(attempts, executor)
+        with self.f.session():
+            self.generate(caller=caller)
+            path = self.root / 'generator.non-dispatch.json'
+            value = contracts.read_snapshot(path)[0]; value['payloadSha256'] = '0'*64
+            path.write_bytes(contracts.canonical_bytes(value))
+            before = self.snapshot(); self.restart()
+            with self.assertRaisesRegex(ValueError, 'non_dispatch_binding_changed'):
+                self.generate(caller=caller)
+            self.assertEqual(self.snapshot(), before)
+        self.assertEqual(len(attempts), 1); executor.assert_not_called()
 
     def test_saved_generation_response_recovers_after_finish_log_failure(self):
         with self.f.session():

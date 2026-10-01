@@ -120,7 +120,7 @@ class DiagnosticSession:
                 'newASRCalls': 0, 'newSourceCheckCalls': 0,
                 'humanAcceptance': 'pending', 'productionEligible': False}
 
-    def run_locale(self, locale, spec):
+    def run_locale(self, locale, spec, *, depends_on=None, historical_reuse=None):
         self._check()
         for key in ('source', 'anchor', 'policy', 'rubric'):
             self._path(spec[key])
@@ -132,13 +132,17 @@ class DiagnosticSession:
                 offline.no_transport() if self.offline_fixture else nullcontext():
             result = self.runner.run_locale(*artifacts, graph=spec['graph'],
                 plugin_path=Path(spec['pluginPath']), plugin_sha256=spec['pluginSha256'],
-                group_plan=spec['groupPlan'], diagnostic_context=self.context)
+                group_plan=spec['groupPlan'], diagnostic_context=self.context, depends_on=depends_on,
+                **({'historical_reuse': historical_reuse} if historical_reuse is not None else {}))
         self._locale_specs[locale] = deepcopy(spec)
         self._locale_results[locale] = deepcopy(result)
         return result
 
-    def preview(self, locale, spec):
+    def preview(self, locale, spec, *, depends_on=None, historical_seed=None):
         from scripts import sermon_diagnostic_preview_worker as worker
+        from scripts import sermon_historical_native_seed as historical
+        c.require(historical_seed is None or (not self.offline_fixture and type(historical_seed) is historical.HistoricalSeed),
+            'diagnostic_dag_native_seed_type_invalid')
         self._check()
         result = self._locale_results.get(locale)
         c.require(result is not None and result['status'] == 'waiting_human' and result.get('output'),
@@ -166,7 +170,8 @@ class DiagnosticSession:
                   'diagnostic_dag_preview_output_changed')
         with profile.context(workKind='production', productionRunId=self.subject.config['runId']):
             return worker.launch_preview(self.root, self.subject, self.context, spec,
-                                         offline_fixture=self.offline_fixture)
+                                         offline_fixture=self.offline_fixture, depends_on=depends_on,
+                                         **({'historical_seed':historical_seed} if historical_seed is not None else {}))
 
     def inspect_delivery(self, previews, expected_locales):
         from scripts import sermon_diagnostic_delivery_preflight as delivery
