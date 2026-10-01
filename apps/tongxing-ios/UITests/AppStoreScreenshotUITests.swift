@@ -5,12 +5,21 @@ import XCTest
 @MainActor
 final class AppStoreScreenshotUITests: XCTestCase {
     func testCaptureProductionStoreScreenshots() throws {
+        try captureProduction(language: .chinese)
+    }
+
+    func testCaptureEnglishProductionStoreScreenshots() throws {
+        try captureProduction(language: .english)
+    }
+
+    private func captureProduction(language interfaceLanguage: CaptureLanguage) throws {
         #if DEBUG
         throw XCTSkip("Capture store screenshots with Tongxing / Release and production content.")
         #else
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = ["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
+        app.launchArguments = ["-AppleLanguages", interfaceLanguage.appleLanguages,
+                               "-AppleLocale", interfaceLanguage.appleLocale]
         app.launchEnvironment["TONGXING_TEST_HOST"] = "0"
         app.launch()
         defer { app.terminate() }
@@ -23,9 +32,9 @@ final class AppStoreScreenshotUITests: XCTestCase {
         let interface = element("app-language-menu", in: app)
         try reveal(interface, in: app, towardTop: true)
         interface.tap()
-        let chineseInterface = app.buttons["简体中文"]
-        XCTAssertTrue(chineseInterface.waitForExistence(timeout: 5))
-        chineseInterface.tap()
+        let selectedInterface = app.buttons[interfaceLanguage.menuTitle]
+        XCTAssertTrue(selectedInterface.waitForExistence(timeout: 5))
+        selectedInterface.tap()
         let language = app.buttons["choose-content-language"]
         try reveal(language, in: app, towardTop: true)
         language.tap()
@@ -33,7 +42,7 @@ final class AppStoreScreenshotUITests: XCTestCase {
         XCTAssertTrue(chineseContent.waitForExistence(timeout: 15))
         chineseContent.tap()
 
-        let currentMode = app.segmentedControls["listening-display"].buttons["现场收听"]
+        let currentMode = app.segmentedControls["listening-display"].buttons[interfaceLanguage.currentMode]
         try reveal(currentMode, in: app, towardTop: true)
         currentMode.tap()
         let subtitle = app.staticTexts["published-current-subtitle"]
@@ -45,16 +54,16 @@ final class AppStoreScreenshotUITests: XCTestCase {
         let searchWord = english.label.components(separatedBy: CharacterSet.letters.inverted)
             .first { $0.count >= 4 && $0.unicodeScalars.allSatisfy { $0.isASCII } }
         try reveal(subtitle, in: app, towardTop: false)
-        capture("store-01-current-subtitle-zh", app: app)
+        capture("store-01-current-subtitle-\(interfaceLanguage.rawValue)", app: app)
 
-        let fullMode = app.segmentedControls["listening-display"].buttons["字幕全文"]
+        let fullMode = app.segmentedControls["listening-display"].buttons[interfaceLanguage.fullMode]
         try reveal(fullMode, in: app, towardTop: true)
         fullMode.tap()
         let reference = app.staticTexts.matching(NSPredicate(format:
             "identifier BEGINSWITH %@", "published-caption-english-")).firstMatch
         XCTAssertTrue(reference.waitForExistence(timeout: 15))
         try reveal(reference, in: app, towardTop: false)
-        capture("store-02-full-transcript-english", app: app)
+        capture("store-02-full-transcript-english-\(interfaceLanguage.rawValue)", app: app)
 
         // The home lookup entry follows the current card; do not scroll through
         // hundreds of published transcript rows to reach the same control.
@@ -72,7 +81,7 @@ final class AppStoreScreenshotUITests: XCTestCase {
                 "identifier BEGINSWITH %@", "locate-english-")).firstMatch
             XCTAssertTrue(result.waitForExistence(timeout: 10), "Search uses a word from the actual English subtitle.")
         }
-        capture("store-03-english-lookup", app: app)
+        capture("store-03-english-lookup-\(interfaceLanguage.rawValue)", app: app)
         app.buttons["english-locate-close"].tap()
         XCTAssertTrue(fullMode.waitForExistence(timeout: 5))
 
@@ -81,8 +90,8 @@ final class AppStoreScreenshotUITests: XCTestCase {
         XCTAssertTrue(app.buttons["content-language-zh-Hans"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.buttons["content-language-ko"].exists)
         XCTAssertTrue(app.buttons["content-language-es"].exists)
-        capture("store-04-published-content-languages", app: app)
-        try closeSheet("选择证道语言", in: app)
+        capture("store-04-published-content-languages-\(interfaceLanguage.rawValue)", app: app)
+        try closeSheet(interfaceLanguage.languageSheet, done: interfaceLanguage.done, in: app)
 
         let chooser = app.buttons["choose-sermon"]
         try reveal(chooser, in: app, towardTop: true)
@@ -90,8 +99,8 @@ final class AppStoreScreenshotUITests: XCTestCase {
         let publishedSermon = app.buttons.matching(NSPredicate(format:
             "identifier BEGINSWITH %@", "published-page-")).firstMatch
         XCTAssertTrue(publishedSermon.waitForExistence(timeout: 15))
-        capture("store-05-sermon-catalog", app: app)
-        try closeSheet("选择证道", in: app)
+        capture("store-05-sermon-catalog-\(interfaceLanguage.rawValue)", app: app)
+        try closeSheet(interfaceLanguage.sermonSheet, done: interfaceLanguage.done, in: app)
 
         app.buttons["more-options"].tap()
         let demos = element("voice-demo-disclosure", in: app)
@@ -106,7 +115,7 @@ final class AppStoreScreenshotUITests: XCTestCase {
                 let original = app.buttons.matching(NSPredicate(format:
                     "identifier BEGINSWITH %@", "voice-demo-original-")).firstMatch
                 if original.waitForExistence(timeout: 10), revealIfPossible(original, in: app, towardTop: false) {
-                    capture("store-06-production-voice-auditions", app: app)
+                    capture("store-06-production-voice-auditions-\(interfaceLanguage.rawValue)", app: app)
                     capturedDemo = true
                 }
             }
@@ -116,15 +125,15 @@ final class AppStoreScreenshotUITests: XCTestCase {
             try reveal(privacy, in: app, towardTop: true)
             privacy.tap()
             XCTAssertTrue(element("privacy-support-page", in: app).waitForExistence(timeout: 10))
-            capture("store-06-privacy-and-support", app: app)
+            capture("store-06-privacy-and-support-\(interfaceLanguage.rawValue)", app: app)
             // Close from the owning About navigation root, independent of
             // whether SwiftUI inherits its Done toolbar onto the pushed page.
-            let back = app.navigationBars["隐私与支持"].buttons.element(boundBy: 0)
+            let back = app.navigationBars[interfaceLanguage.privacySheet].buttons.element(boundBy: 0)
             XCTAssertTrue(back.waitForExistence(timeout: 5))
             back.tap()
-            XCTAssertTrue(app.navigationBars["更多选项"].waitForExistence(timeout: 5))
+            XCTAssertTrue(app.navigationBars[interfaceLanguage.aboutSheet].waitForExistence(timeout: 5))
         }
-        try closeSheet("更多选项", in: app)
+        try closeSheet(interfaceLanguage.aboutSheet, done: interfaceLanguage.done, in: app)
         XCTAssertTrue(app.buttons["more-options"].waitForExistence(timeout: 5))
         #endif
     }
@@ -133,8 +142,8 @@ final class AppStoreScreenshotUITests: XCTestCase {
         app.descendants(matching: .any).matching(identifier: identifier).firstMatch
     }
 
-    private func closeSheet(_ title: String, in app: XCUIApplication) throws {
-        let done = app.navigationBars[title].buttons["完成"]
+    private func closeSheet(_ title: String, done doneTitle: String, in app: XCUIApplication) throws {
+        let done = app.navigationBars[title].buttons[doneTitle]
         XCTAssertTrue(done.waitForExistence(timeout: 5))
         done.tap()
         let bar = app.navigationBars[title]
@@ -161,7 +170,7 @@ final class AppStoreScreenshotUITests: XCTestCase {
             let trailingRail = play.exists && play.frame.midX >= app.frame.maxX - 84
                 && play.frame.width <= 52
             // Sheets cover the underlying playback dock, so it must not clip them.
-            let inAbout = app.navigationBars["更多选项"].exists
+            let inAbout = app.navigationBars["更多选项"].exists || app.navigationBars["More options"].exists
             let bottom = !inAbout && !trailingRail && progress.exists
                 ? min(app.frame.maxY, progress.frame.minY - 24) : app.frame.maxY
             if target.exists && target.isHittable && frame.minY >= app.frame.minY
@@ -196,4 +205,22 @@ final class AppStoreScreenshotUITests: XCTestCase {
     }
 
     private enum CaptureFailure: Error { case unreachable, sheetDidNotClose }
+
+    /// Labels are kept in sync with App/Resources/Localizable.xcstrings.
+    /// Content remains Simplified Chinese in both interface-language captures.
+    private enum CaptureLanguage: String {
+        case chinese = "zh"
+        case english = "en"
+
+        var appleLanguages: String { self == .english ? "(en)" : "(zh-Hans)" }
+        var appleLocale: String { self == .english ? "en_US" : "zh_CN" }
+        var menuTitle: String { self == .english ? "English" : "简体中文" }
+        var currentMode: String { self == .english ? "Listen" : "现场收听" }
+        var fullMode: String { self == .english ? "Full transcript" : "字幕全文" }
+        var languageSheet: String { self == .english ? "Choose sermon language" : "选择证道语言" }
+        var sermonSheet: String { self == .english ? "Choose a sermon" : "选择证道" }
+        var aboutSheet: String { self == .english ? "More options" : "更多选项" }
+        var privacySheet: String { self == .english ? "Privacy & Support" : "隐私与支持" }
+        var done: String { self == .english ? "Done" : "完成" }
+    }
 }
