@@ -902,14 +902,23 @@ final class ListeningFlowUITests: XCTestCase {
             // a whole-ScrollView percentage can land on the large-text play button.
             let visibleFrame = scroll.frame.intersection(app.frame)
             let top = max(visibleFrame.minY, app.navigationBars.firstMatch.frame.maxY) + 16
-            let bottom = min(visibleFrame.maxY, element("playback-progress", in: app).frame.minY - 36)
+            let playFrame = app.buttons["playback-toggle"].frame
+            let usesTrailingRail = playFrame.midX >= app.frame.maxX - 84
+                && playFrame.width <= 52
+            // Duo puts progress in a side rail: its Y must not truncate the
+            // reading viewport as it does for a bottom playback dock.
+            let bottom = usesTrailingRail ? visibleFrame.maxY - 16
+                : min(visibleFrame.maxY, element("playback-progress", in: app).frame.minY - 36)
+            let readingWidth = usesTrailingRail
+                ? min(visibleFrame.maxX, playFrame.minX - 16) - visibleFrame.minX
+                : visibleFrame.width
             guard bottom - top >= 80 else {
                 screenshot("insufficient-reading-region", app: app)
                 XCTFail("实际界面没有足够的阅读区域供滚动")
                 throw FlowFailure.unreachable
             }
             let readingFrame = CGRect(x: visibleFrame.minX, y: top,
-                                      width: visibleFrame.width, height: bottom - top)
+                                      width: readingWidth, height: bottom - top)
             let targetFrame = target.exists ? target.frame : nil
             // XCTest can report hittable for controls hidden behind Liquid Glass.
             // Every control used by these flows fits in this viewport, so require
@@ -922,7 +931,7 @@ final class ListeningFlowUITests: XCTestCase {
             let distance = min(readingFrame.height * 0.72, max(40, requestedDistance))
             let startY = upwards ? bottom - readingFrame.height * 0.12 : top + readingFrame.height * 0.12
             let origin = app.coordinate(withNormalizedOffset: .zero)
-            let x = visibleFrame.midX - app.frame.minX
+            let x = readingFrame.midX - app.frame.minX
             let start = origin.withOffset(CGVector(dx: x, dy: startY - app.frame.minY))
             let end = origin.withOffset(CGVector(dx: x, dy: startY + (upwards ? -distance : distance) - app.frame.minY))
             // Holding briefly at the destination avoids a fling past the target;

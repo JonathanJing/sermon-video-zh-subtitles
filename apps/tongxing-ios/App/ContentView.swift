@@ -13,7 +13,7 @@ private struct ToolbarVerticalEdgeReader<Content: View>: View {
     let content: (HorizontalEdge?) -> Content
 
     var body: some View {
-        #if os(iOS) && compiler(>=6.4)
+        #if os(iOS) && canImport(SwiftUI, _version: 8.0.85)
         if #available(iOS 27.1, macOS 27.1, *) {
             CurrentToolbarVerticalEdge(content: content)
         } else {
@@ -25,7 +25,7 @@ private struct ToolbarVerticalEdgeReader<Content: View>: View {
     }
 }
 
-#if os(iOS) && compiler(>=6.4)
+#if os(iOS) && canImport(SwiftUI, _version: 8.0.85)
 @available(iOS 27.1, macOS 27.1, *)
 private struct CurrentToolbarVerticalEdge<Content: View>: View {
     @Environment(\.toolbarVerticalEdge) private var edge
@@ -271,7 +271,7 @@ struct ContentView: View {
                             .labelStyle(.iconOnly).accessibilityIdentifier("more-options")
                     }
                 }
-                #if os(iOS) && compiler(>=6.4)
+                #if os(iOS) && canImport(SwiftUI, _version: 8.0.85)
                 if #available(iOS 27.1, macOS 27.1, *), usesSystemVerticalBar,
                    model.selectedTrack != nil || model.selectedAudioLocale != nil {
                     ToolbarItem(placement: .primaryAction) {
@@ -423,7 +423,7 @@ struct ContentView: View {
 
     private func dockControlRegion(in geometry: GeometryProxy) -> CGRect {
         let bounds = CGRect(origin: .zero, size: geometry.size)
-        #if os(iOS) && compiler(>=6.4)
+        #if os(iOS) && canImport(SwiftUI, _version: 8.0.85)
         if #available(iOS 27.1, macOS 27.1, *) {
             let divisions = geometry.reservedRegions(kind: .division)
                 .filter(\.isActive)

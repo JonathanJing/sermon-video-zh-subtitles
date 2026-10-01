@@ -156,6 +156,7 @@ struct PlaybackDock: View {
                 .opacity(playback.isReady && !isPreparing ? 1 : 0.5)
         }
         .buttonStyle(.plain)
+        .disabled(!playback.isReady || isPreparing)
         .accessibilityLabel(playLabel)
         .accessibilityValue(statusLabel)
         .accessibilityIdentifier("playback-toggle")
