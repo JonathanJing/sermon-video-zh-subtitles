@@ -57,7 +57,7 @@ def validate_authorization(value):
     c.require(type(value['limits']) is dict and set(value['limits']) == set(asdict(diagnostic.DiagnosticLimits())),
               'invalid_live_diagnostic_authorization')
     limits = diagnostic.DiagnosticLimits(**value['limits']); limits.validate()
-    c.require(limits.max_steps <= 8 and limits.max_tool_reads <= 16 and limits.max_seconds <= 30,
+    c.require(limits.max_steps <= 16 and limits.max_tool_reads <= 16 and limits.max_seconds <= 30,
               'invalid_live_diagnostic_authorization')
     return json.loads(c.bounded_json(value))
 

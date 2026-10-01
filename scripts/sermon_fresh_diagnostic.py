@@ -19,6 +19,7 @@ from scripts import sermon_bounded_business_callbacks as offline
 from scripts import sermon_diagnostic_dag_session as sessions
 from scripts import sermon_diagnostic_prefect_flow as flow
 from scripts import sermon_fresh_diagnostic_source as source_adapter
+from scripts import sermon_cached_fresh_diagnostic_source as cached_source
 from scripts import target_language_policy as policy_builder
 from scripts import produce_target_language_candidate as producer
 from scripts import run_target_language_models as models
@@ -66,6 +67,7 @@ class FreshDiagnosticSession(sessions.DiagnosticSession):
         self.transport=self.subject.executor
         self.runner=bounded.BoundedRun(self.subject,offline.OFFLINE_KEY if fixture else key,self.root,source_clip=plan['sourceClipPath'])
         self._locale_results={}; self._locale_specs={}; self.context=None; self.binding=None
+        self._cached_source=False
 
     def _check(self):
         active=profile.current()
@@ -90,11 +92,14 @@ class FreshDiagnosticSession(sessions.DiagnosticSession):
         if self.context is not None:
             source=c.read_snapshot(self.root/'source.json')[0]; anchor=c.read_snapshot(self.root/'anchor-manifest.json')[0]
             diagnostic.validate_source(source,anchor,self.context)
-            c.require(c.read_snapshot(self.root/'fresh-source-evidence.json')[0]==self.binding['sourceEvidence'],
-                      'fresh_source_evidence_changed')
-            for operation,model,key in (('transcription.initial','gpt-transcribe','asr'),('source.initial','gpt-6-astra','sourceCheck')):
-                _,reference=source_adapter.returned_receipt(self.root,self.subject.config,operation,model)
-                c.require(reference==self.binding['sourceEvidence'][key],'fresh_source_receipt_binding_changed')
+            if self._cached_source:
+                cached_source.validate_evidence(self.plan,self.subject,self.context,self.binding['sourceEvidence'])
+            else:
+                c.require(c.read_snapshot(self.root/'fresh-source-evidence.json')[0]==self.binding['sourceEvidence'],
+                          'fresh_source_evidence_changed')
+                for operation,model,key in (('transcription.initial','gpt-transcribe','asr'),('source.initial','gpt-6-astra','sourceCheck')):
+                    _,reference=source_adapter.returned_receipt(self.root,self.subject.config,operation,model)
+                    c.require(reference==self.binding['sourceEvidence'][key],'fresh_source_receipt_binding_changed')
         return self.binding['sourceEvidence'] if self.binding else None
 
     def prepare_source(self, recipe, authorization):
@@ -124,8 +129,50 @@ class FreshDiagnosticSession(sessions.DiagnosticSession):
     def inspect_source(self):
         evidence=self._check()
         c.require(evidence is not None,'fresh_source_preparation_required')
-        return {'status':'existing_evidence_validated','sourceEvidence':evidence,'humanAcceptance':'pending',
-                'newASRCalls':0,'newSourceCheckCalls':0,'productionEligible':False}
+        inspected={'status':'existing_evidence_validated','sourceEvidence':evidence,'humanAcceptance':'pending',
+                   'newASRCalls':0,'newSourceCheckCalls':0,'productionEligible':False}
+        if self._cached_source:
+            inspected.update(newMFACalls=0,historicalSourceProviderCalls=2,
+                sourceExecution='historical_receipts_reused_current_deterministic_inspection')
+        return inspected
+
+    def prepare_cached_source(self, parent_plan_path, authorization):
+        """A distinct attempt consumes closed-parent Source, never its budget."""
+        self._check()
+        c.require(self.context is None or self._cached_source,'fresh_source_cache_mode_changed')
+        prepared=cached_source.prepare_source(self.plan,self.subject,parent_plan_path=parent_plan_path,
+                                             authorization=authorization)
+        self.context=prepared['context'];self._cached_source=True
+        self.binding={'schemaVersion':'sermon-fresh-diagnostic-session-v1','originalPlanSha256':c.canonical_sha256(self.plan),
+            'diagnosticContextSha256':c.canonical_sha256(self.context),'sourceEvidence':prepared['evidence'],
+            'runId':self.context['runId'],'storeSha256':self.subject.store.store_sha256,'evidenceMode':self.evidence_mode,
+            'humanAcceptance':'pending','productionEligible':False,'implementationSha256':c.bytes_sha256(Path(__file__).read_bytes())}
+        self.source_spans=prepared['completionSpans'];self._check()
+        return prepared
+
+
+def _preflight_preview_specs(preview_specs, locale_drafts, *, offline_fixture):
+    """Validate cheap native input contracts before any paid Source stage."""
+    from scripts import sermon_diagnostic_preview_worker as worker
+    from scripts import sermon_native_preview_runtime as native
+    c.require(type(preview_specs) is dict and set(preview_specs)==set(locale_drafts)
+        and bool(preview_specs) and set(preview_specs)<=flow.LOCALES,'fresh_diagnostic_preview_locales_changed')
+    for spec in preview_specs.values():
+        c.require(type(spec) is dict and worker.REQUIRED <= set(spec)
+            and set(spec) <= worker.REQUIRED|worker.OPTIONS|{'fixture_behavior','runtime_manifest_path'}
+            and type(spec['execute']) is bool and spec['execute'] is (not offline_fixture),
+            'fresh_diagnostic_preview_mode_changed')
+        c.require(type(spec['paths']) is dict and set(spec['paths'])==set(worker.PATH_KEYS)-{'candidate'},
+            'fresh_diagnostic_preview_candidate_owned_by_session')
+        c.require(offline_fixture or 'runtime_manifest_path' in spec,'fresh_diagnostic_preview_runtime_manifest_required')
+        c.require(not offline_fixture or 'runtime_manifest_path' not in spec,'fresh_diagnostic_fixture_cannot_claim_native_runtime')
+        c.require(offline_fixture or 'fixture_behavior' not in spec,'fresh_diagnostic_preview_fixture_forbidden')
+        for value in (*spec['paths'].values(),*[spec[key] for key in
+                ('checkpoint_map_path','operation_policies_path','strict_rubric_path','out')]):
+            c.require(type(value) is str and Path(value).is_absolute(),'fresh_diagnostic_preview_absolute_path_required')
+            _safe_path(value)  # Future Source/policy outputs need not exist yet.
+        if not offline_fixture:
+            native.validate(_safe_path(spec['runtime_manifest_path']),require_process=True)
 
 
 def freeze_locale_inputs(session, locale_drafts):
@@ -175,7 +222,7 @@ def freeze_locale_inputs(session, locale_drafts):
 
 def run_fresh_diagnostic(plan, *, key, execute=False, source_recipe, authorization, locale_drafts,
                          preview_specs, request_limits=None, dev_snapshot=None, offline_transport=None,
-                         execute_publish=False, publication_approval_sha256=None):
+                         execute_publish=False, publication_approval_sha256=None, source_cache_parent_plan_path=None):
     """Unified fixed sequential DAG. Business ledgers decide all replay/retries.
 
     Produces preview/read-only delivery evidence only. Does not call Prefect's
@@ -187,11 +234,14 @@ def run_fresh_diagnostic(plan, *, key, execute=False, source_recipe, authorizati
         import re
         c.require(type(publication_approval_sha256) is str and re.fullmatch('[a-f0-9]{64}',publication_approval_sha256),
                   'fresh_dev_publication_scope_invalid')
+    c.require(source_cache_parent_plan_path is None or source_recipe is None,'fresh_source_cache_recipe_conflict')
+    _preflight_preview_specs(preview_specs,locale_drafts,offline_fixture=offline_transport is not None)
     session=FreshDiagnosticSession(plan,key=key,execute=execute,request_limits=request_limits,offline_transport=offline_transport)
     with profile.session(session.root/'fresh-diagnostic-logs','fresh_diagnostic',work_kind='production',
                          evidence_mode=session.evidence_mode,production_run_id=session.subject.config['runId']):
         try:
-            prepared=session.prepare_source(source_recipe,authorization)
+            prepared=(session.prepare_cached_source(source_cache_parent_plan_path,authorization)
+                      if source_cache_parent_plan_path is not None else session.prepare_source(source_recipe,authorization))
         except Exception as exc:
             # Safe typed code only; legacy builder messages may contain paths.
             import re

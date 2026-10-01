@@ -67,3 +67,15 @@ HTTP worker 的真实 `-I` 启动遗漏 `-B`，忽略环境中的禁止字节码
 第二个只读 Agent session 仍未产出诊断：额外要求 items 已存在 pending function_call 的断言失败。真实 required_actions 有调用，而取消后的完整 items 只有 user message/reasoning，不能推断列表当时已同步。该前提不能用作 API 可用性条件；提交仍须绑定实际 session.required_actions 和唯一实际 root turn、call/name/arguments，并落版本化证据。v2 终态 cancelled；root usage 9,791 input / 291 output，两阶段各累计一次为 **19,587 input / 438 output**，actual model 和费用仍 unknown，4,000,000 microUSD 预留保留。第三独立 bounded 诊断阶段累计预留为 6,000,000 microUSD，仍承接完整业务累计授权内。
 
 第二轮修复整合验证：provider/bounded/fresh/aggregate/attempts/identity 的 **94 tests 通过**；Agent core/live/API 的 **84 tests 通过**，覆盖 required_actions 唯一调用、同 poll 根 turn/snapshot、缺失／重复／参数错配／陈旧响应和工具输出错配拒绝。绑定证据使用 `sermon-live-diagnostic-required-action-binding-v2`，不改写旧 item-binding-v1。下一 fresh 独立 attempt 承接 **301 请求 / 69,598,104 microUSD** 历史占额，124 新请求 / 25,000,000 microUSD / 5,400 秒，累计 430 请求 / 110,000,000 microUSD；额外 Agent 三阶段共 6,000,000 microUSD 观察预留纳入累计规划，不是服务端硬费用限制。
+
+## 第三轮 Source 成功与恢复边界
+
+固定 `a0769fc` 的 v3 实际返回两次 provider 请求，占额 **474,100 microUSD**。本次 ASR 与原文本不同，执行了真实本地 MFA；`diagnostic.alignment` 和 `diagnostic.source_package` 均完成，39 English units、Source 真实 humanApproval=false / translationEligible=false，保留一条受测试上下文允许的短句边界 warning。随后 DAG 的配置 allowlist 漏了 native worker 已支持的 `runtime_manifest_path`，在进入 Text/native 前失败：0 worker request / 0 native WAV / 无发布收据。Source/MFA 产物和真实收据保留；父运行已在两次 known-returned 后永久关闭。
+
+修复将该字段纳入 DAG 及输入 inventory，并在任何付费 Source 阶段前校验 preview shape/执行模式/实际 runtime prefix 与 manifest。恢复采用独立新 attempt 的明确 Source-cache inspector：绑定已关闭父计划、Source/Anchor/summary/对齐、实际 ASR/source-check 收据、MFA 外部文件和源生产代码；保留 Source canonical 和原引用路径，生成属于新 config/store/code 的 pending diagnostic context。当前确定性 cache 检查记录 historicalSourceProviderCalls=2，而 newASR/newSourceCheck/newMFA 均为0，不向新 provider ledger 复制旧收据，不重置原账本或期限。
+
+只读 Agent 的 8 轮观察在前两次真实阶段均到第 8 轮才出现 action，故显式新授权可选 16 轮，默认与旧授权仍为8；30秒/16 metadata reads/44 transport/单 session-root/2,000,000 microUSD 预留均不变。晚到 action 第9轮完成、无动作截止和 transport 截止新增回归；Agent core/live/API **87 tests 通过**。原 v3 已准备但未运行，0 session，状态 `not_started`，不计入第三次 usage。
+
+恢复阶段承接历史 **303 requests / 70,072,204 microUSD** 占额；新124 requests /25,000,000 microUSD/5,400秒，以及累计三 Agent phase 6,000,000 microUSD观察预留，共保守规划101,072,204 microUSD，仍在110,000,000上界内。模型 unknown 与预留不作实际账单。
+
+恢复入口与 Agent 合并后的定向集成 **97 tests 全部通过**（16.829秒）：包括 Source-cache 与冷启动身份、Agent core/live/API 和晚到 action 观察。该验证没有调用 provider、加载 TTS 模型或发布 Dev；实际恢复验收在固定代码后执行。

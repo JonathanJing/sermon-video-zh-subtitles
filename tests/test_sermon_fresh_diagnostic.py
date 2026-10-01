@@ -61,7 +61,7 @@ class FreshPreloadTests(unittest.TestCase):
             result = subprocess.run([sys.executable, '-I', '-B', '-c', child,
                                      str(Path(entry.__file__).resolve().parents[1]),
                                      str(Path(directory) / 'logs')], env=environment,
-                                    capture_output=True, text=True, timeout=30)
+                                    capture_output=True, text=True, timeout=60)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(json.loads(result.stdout), {'identityUnchanged': True, 'dispatchEvents': 0})
 

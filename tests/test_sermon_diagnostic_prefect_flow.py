@@ -148,6 +148,65 @@ class DiagnosticFlowTests(unittest.TestCase):
         self.assertEqual(result['executionStatus'], 'blocked')
         self.assertEqual(self.session.calls, [])
 
+    def test_live_v2_runtime_manifest_is_accepted_and_frozen_as_static_input(self):
+        # This only exercises the DAG contract/inventory; no native runtime,
+        # model, transport or session callback is invoked by the fixture.
+        self.session.offline_fixture=False
+        config=copy.deepcopy(self.config)
+        manifest=self.root/'runtime-manifest.json'
+        runtime_file=self.root/'runtime-binding-file';runtime_file.write_bytes(b'inert runtime fixture')
+        manifest.write_bytes(c.canonical_bytes({'fixture':'inventory-only-not-native',
+            'files':[{'path':str(runtime_file),'sha256':c.bytes_sha256(runtime_file.read_bytes())}]}))
+        for lane in config['locales'].values():
+            lane['previewSpec'].update(execute=True,runtime_manifest_path=str(manifest))
+        dag=flow.DiagnosticDAG(self.session,config)
+        self.assertEqual(dag.binding['inputFiles'][str(manifest)],c.bytes_sha256(manifest.read_bytes()))
+        self.assertEqual(dag.binding['inputFiles'][str(runtime_file)],c.bytes_sha256(runtime_file.read_bytes()))
+        dag.freeze()
+        original=manifest.read_bytes()
+        manifest.write_text('{"changed":true}')
+        with self.assertRaisesRegex(c.ContractError,'diagnostic_flow_frozen_inputs_changed'):
+            dag._check()
+        manifest.write_bytes(original)
+        runtime_file.write_bytes(b'changed runtime fixture')
+        with self.assertRaisesRegex(c.ContractError,'diagnostic_flow_frozen_inputs_changed'):
+            dag._check()
+        self.assertEqual(self.session.calls,[])
+
+    def test_live_manifest_required_and_fixture_cannot_claim_native_before_read(self):
+        config=copy.deepcopy(self.config)
+        for lane in config['locales'].values():lane['previewSpec']['execute']=True
+        self.session.offline_fixture=False
+        with patch.object(flow.public,'read_snapshot',side_effect=AssertionError('unexpected input read')):
+            with self.assertRaisesRegex(c.ContractError,'diagnostic_flow_preview_runtime_manifest_required'):
+                flow.DiagnosticDAG(self.session,config)
+        self.session.offline_fixture=True
+        config=copy.deepcopy(self.config)
+        for lane in config['locales'].values():
+            lane['previewSpec']['runtime_manifest_path']=str(self.root/'untrusted-runtime.json')
+        with patch.object(flow.public,'read_snapshot',side_effect=AssertionError('unexpected input read')):
+            with self.assertRaisesRegex(c.ContractError,'diagnostic_flow_fixture_cannot_claim_native_runtime'):
+                flow.DiagnosticDAG(self.session,config)
+        self.assertEqual(self.session.calls,[])
+
+    def test_live_manifest_must_be_caller_selected_absolute_nonredirected_file(self):
+        self.session.offline_fixture=False
+        config=copy.deepcopy(self.config)
+        manifest=self.root/'runtime.json';manifest.write_text('{}')
+        for lane in config['locales'].values():
+            lane['previewSpec'].update(execute=True,runtime_manifest_path=str(manifest))
+        lane=config['locales']['ko']['previewSpec']
+        lane['runtime_manifest_path']='relative.json'
+        with self.assertRaisesRegex(c.ContractError,'diagnostic_flow_absolute_path_required'):
+            flow.DiagnosticDAG(self.session,config)
+        outside=Path(self.enterContext(tempfile.TemporaryDirectory())).resolve()
+        manifest=outside/'runtime.json';manifest.write_text('{}')
+        link=self.root/'redirected-runtime.json';link.symlink_to(manifest)
+        lane['runtime_manifest_path']=str(link)
+        with self.assertRaisesRegex(ValueError,'Symlink'):
+            flow.DiagnosticDAG(self.session,config)
+        self.assertEqual(self.session.calls,[])
+
     def test_relative_paths_candidate_injection_live_preview_and_outside_output_rejected(self):
         changes = [lambda lane: lane['localeSpec'].update(policy='relative.json'),
                    lambda lane: lane['previewSpec']['paths'].update(candidate=str(self.root / 'candidate.json')),

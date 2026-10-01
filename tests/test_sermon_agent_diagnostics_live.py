@@ -241,6 +241,76 @@ class LiveDiagnosticTests(unittest.TestCase):
         with self.assertRaises(ValueError): self.run_diagnostic()
         self.assertFalse(self.transport.calls)
 
+    def test_poll16_authorization_preserves_default8_and_other_scope_bounds(self):
+        self.assertEqual(diagnostic.DiagnosticLimits().max_steps, 8)
+        for steps in (8, 16):
+            with self.subTest(accepted_steps=steps):
+                value=json.loads(json.dumps(self.authorization))
+                value['limits']['max_steps']=steps
+                self.assertEqual(live.validate_authorization(value),value)
+        for key,value in (('max_steps',17),('max_tool_reads',17),('max_seconds',31),
+                          ('maxTransportCalls',45),('reservationMicrousd',2_000_001),
+                          ('maxSessions',2),('maxRootTurns',2)):
+            with self.subTest(rejected_scope=key):
+                authorization=json.loads(json.dumps(self.authorization))
+                authorization['limits']['max_steps']=16
+                target=authorization['limits'] if key in authorization['limits'] else authorization
+                target[key]=value
+                with self.assertRaises(c.DiagnosticContractError):
+                    live.validate_authorization(authorization)
+        self.assertFalse(self.transport.calls);self.network.assert_not_called()
+
+    def test_late_action_at8_can_complete_on_poll9_with_explicit_poll16(self):
+        bundle=diagnostic.build_context_bundle(self.manifest)
+        action=dict(type='function_call',turn_id='turn_offline',call_id='opaque_late',
+            name=diagnostic.READ_TOOLS[0],arguments={'snapshotId':bundle['snapshotId']})
+        base=self.root
+        for steps,reason,polls,calls,cancels in ((8,'diagnostic_step_limit',8,19,1),
+                                                (16,'diagnosis_validated',9,21,0)):
+            with self.subTest(max_steps=steps):
+                self.root=base/str(steps);self.authorization['limits']['max_steps']=steps
+                self.transport=WireReplay([frame() for _ in range(7)]+
+                    [frame(actions=[action]),frame(status='completed')],[final_item(self.report)])
+                result=self.run_diagnostic()
+                self.assertEqual(result['reasonCode'],reason)
+                self.assertEqual(result['checkpoint']['steps'],polls)
+                self.assertEqual(self.transport.calls.count('retrieve_session'),polls)
+                self.assertEqual(len(list((self.root/'transport').glob('*.intent.json'))),calls)
+                self.assertEqual(self.transport.calls.count('submit_tool_result'),1)
+                self.assertEqual(self.transport.calls.count('create_session'),1)
+                self.assertEqual(self.transport.calls.count('cancel'),cancels)
+                self.assertEqual(len(list((self.root/'required-action-bindings').glob('*.json'))),1)
+                self.assertEqual(result['provenance']['reservationMicrousd'],2_000_000)
+                self.assertFalse(result['provenance']['reservationRefunded'])
+                self.assertFalse(result['provenance']['executionAuthorized'])
+                self.assertIsNone(result['provenance']['actualModel'])
+        self.network.assert_not_called()
+
+    def test_poll16_stops_without_actions_and_transport_limit_still_precedes_steps(self):
+        bundle=diagnostic.build_context_bundle(self.manifest)
+        action=dict(type='function_call',turn_id='turn_offline',call_id='opaque_repeated',
+            name=diagnostic.READ_TOOLS[0],arguments={'snapshotId':bundle['snapshotId']})
+        self.authorization['limits']['max_steps']=16;base=self.root
+        for name,actions,reason,steps,calls,submits in (
+                ('no_actions',[],'diagnostic_step_limit',16,34,0),
+                ('transport_cap',[action],'transport_call_limit',14,42,13)):
+            with self.subTest(case=name):
+                self.root=base/name;self.transport=WireReplay([frame(actions=actions)],[])
+                result=self.run_diagnostic()
+                self.assertEqual(result['reasonCode'],reason)
+                self.assertEqual(result['checkpoint']['steps'],steps)
+                self.assertEqual(len(list((self.root/'transport').glob('*.intent.json'))),calls)
+                self.assertLessEqual(calls,self.authorization['maxTransportCalls'])
+                self.assertEqual(self.transport.calls.count('submit_tool_result'),submits)
+                self.assertEqual(self.transport.calls.count('cancel'),1)
+                self.assertEqual(self.transport.calls.count('create_session'),1)
+                self.assertFalse(result['provenance']['reservationRefunded'])
+                self.assertFalse(result['provenance']['executionAuthorized'])
+                again=self.run_diagnostic()
+                self.assertEqual(again['status'],'blocked')
+                self.assertEqual(len(self.transport.calls),calls)
+        self.network.assert_not_called()
+
     def test_observed_cost_threshold_stops_and_missing_usage_is_not_zero(self):
         self.assertEqual(live.observed_cost('gpt-6-sol', None)['costStatus'], 'unknown')
         self.assertIsNone(live.observed_cost('gpt-6-sol', {'input_tokens':1})['estimatedMicrousd'])
