@@ -2,6 +2,10 @@
 from copy import deepcopy
 import io
 import json
+import re
+import shutil
+from html.parser import HTMLParser
+from urllib.parse import urlsplit
 from pathlib import Path
 from types import SimpleNamespace
 import unittest
@@ -53,6 +57,87 @@ class DevSnapshotTests(unittest.TestCase):
         self.assertEqual((public/'published-weeks-before-diagnostic.mjs').read_text(),'original formal catalog loader')
         self.assertIn('published-weeks-parent-',(public/'published-weeks.mjs').read_text())
         self.assertFalse(result['publicationAuthorized']);self.no_network.assert_not_called()
+
+    def test_old_baseline_missing_five_new_ui_dependencies_gets_complete_current_ui_and_preserves_formal_bytes(self):
+        expected = ('app.mjs','catalog.mjs','locales-app.mjs','index.html','style.css','theme.js',
+            'fingerprint-ui.mjs','locales-interface.mjs','locales-ko.mjs','locales-es.mjs',
+            'icons.mjs','icons.svg','brand-icon.svg','brand-icon-light.svg','fingerprint-diagnostics.mjs')
+        self.assertEqual(dev.UI, expected)
+        source = dev.REPO/'experiments/sermon-dubbing-poc/web'; old_public = self.base/'public'
+        new_dependencies = {'icons.mjs','icons.svg','brand-icon.svg','brand-icon-light.svg','fingerprint-diagnostics.mjs'}
+        # Real-shaped old Hosting tree: retain all earlier dependency modules,
+        # old media/catalog and only obsolete bytes for the ten updated assets.
+        for path in source.iterdir():
+            if path.is_file() and path.suffix in {'.mjs','.js','.css','.svg','.png','.html'} \
+                    and '.test.' not in path.name and path.name not in new_dependencies and not (old_public/path.name).exists():
+                shutil.copyfile(path, old_public/path.name)
+        for name in set(expected)-new_dependencies:
+            (old_public/name).write_bytes(('obsolete old baseline UI '+name).encode())
+        for name in new_dependencies: self.assertFalse((old_public/name).exists())
+        media = old_public/'media/older-formal/approved.mp3'; media.parent.mkdir(parents=True)
+        media.write_bytes(b'old formal media bytes remain verbatim')
+        (old_public/'older-formal-receipt.json').write_bytes(b'{"approval":"existing-only"}\n')
+        before = {str(path.relative_to(self.base)): path.read_bytes() for path in self.base.rglob('*') if path.is_file()}
+        calls = len(self.f.transport.observations)
+        # Existing tests independently cover Source/video decoding. Only media
+        # probing is isolated here; source UI copying and dependency reads are real.
+        with patch.object(dev,'_decode'), patch.object(dev,'_probe',return_value=180.): result = self.build()
+        public = self.out/'hosting/public'
+        self.assertEqual(before, {str(path.relative_to(self.base)): path.read_bytes() for path in self.base.rglob('*') if path.is_file()})
+        for name in expected:
+            self.assertEqual(dev._sha(public/name), dev._sha(source/name))
+            self.assertEqual(result['manifest']['publicFiles'][name], dev._sha(source/name))
+        for relative, raw in before.items():
+            if relative not in {'public/'+name for name in expected} | {'public/published-weeks.mjs'}:
+                self.assertEqual((self.out/'hosting'/relative).read_bytes(), raw)
+        wrapper = (public/'published-weeks.mjs').read_text()
+        parent = re.search(r"from './(published-weeks-parent-[a-f0-9]+\.mjs)'", wrapper).group(1)
+        self.assertEqual((public/parent).read_bytes(), before['public/published-weeks.mjs'])
+        self.assertEqual(result['manifest']['baselineFilesRemoved'], [])
+        self.assertFalse(result['manifest']['formalCatalogUpdated'])
+        self.assertFalse(result['manifest']['formalReleasePackageCreated'])
+        self.assertFalse(result['publicationAuthorized']); self.no_network.assert_not_called()
+        self.assertEqual(calls, len(self.f.transport.observations))
+
+        # Read the actual published files. Walk static/dynamic local module
+        # imports and HTML entry points; never execute app/runtime/model code.
+        def target(owner, url):
+            parsed = urlsplit(url)
+            if parsed.scheme or parsed.netloc or not parsed.path: return None
+            return public/parsed.path.lstrip('/') if parsed.path.startswith('/') else owner.parent/parsed.path
+        class EntryPoints(HTMLParser):
+            def __init__(self): super().__init__(); self.urls=[]
+            def handle_starttag(self, tag, attrs):
+                for key, value in attrs:
+                    if value and ((key == 'src' and tag in {'script','img','source','audio','video'})
+                            or (key == 'href' and tag in {'link','use'})): self.urls.append(value)
+        parser = EntryPoints(); parser.feed((public/'index.html').read_text())
+        pending = [target(public/'index.html', url) for url in parser.urls]
+        pending += [public/name for name in expected if name.endswith(('.js','.mjs'))]
+        edges = {}; seen = set()
+        patterns = (r"\b(?:import|export)\s+[^;]*?\bfrom\s*['\"]([^'\"]+)['\"]",
+            r"\bimport\s*(?:\(\s*)?['\"]([^'\"]+)['\"]")
+        while pending:
+            path = pending.pop()
+            if path is None or path in seen: continue
+            self.assertTrue(path.is_relative_to(public)); self.assertTrue(path.is_file(), path.name)
+            seen.add(path)
+            if path.suffix not in {'.js','.mjs'}: continue
+            imports = {url for pattern in patterns for url in re.findall(pattern, path.read_text())}
+            dependencies = {item for url in imports if (item := target(path, url)) is not None}
+            edges[path.name] = {item.name for item in dependencies}; pending += list(dependencies)
+        self.assertIn('icons.mjs', edges['app.mjs'])
+        self.assertIn('icons.mjs', edges['fingerprint-ui.mjs'])
+        self.assertIn('fingerprint-diagnostics.mjs', edges['fingerprint-ui.mjs'])
+        self.assertEqual(edges['fingerprint-diagnostics.mjs'], set())
+        self.assertIn('/icons.svg#', (public/'icons.mjs').read_text())
+        self.assertIn('/icons.svg#', (public/'index.html').read_text())
+        self.assertIn('/theme.js', parser.urls)
+        for name in ('brand-icon.svg','brand-icon-light.svg'):
+            self.assertIn('/'+name, (public/'theme.js').read_text()); self.assertTrue((public/name).is_file())
+        self.assertIn(public/'icons.svg', seen)
+        for name in ('app.mjs','catalog.mjs','fingerprint-ui.mjs','locales-interface.mjs','locales-ko.mjs','locales-es.mjs'):
+            self.assertIn(public/name, seen)
 
     def test_real_candidate_text_binding_no_audio_is_pending_and_never_formal(self):
         with self.f.session():

@@ -184,3 +184,19 @@ v8 ES原生MPS worker实际加载一次模型、合成13单元；KO/ZH当前真�
 PR #198 首轮 `f559fac` 的 Local Prefect pilot（run 36905429735）在156项测试中报1个CLI夹具错误：旧夹具缺少新增必需的runtime/checkpoint输入，生产守卫在读取凭据前正确拒绝。补齐明确不可执行的静态runtime夹具及完整惰性checkpoint/declaration后，复现出真实live preflight只读scope遗漏`binding`属性的问题。生产修复仅增加`binding={}`，未放宽输入、身份、期限或派发守卫。
 
 实际CLI四项通过（1.761秒）；CLI/Flow/DAGSession/native runtime/checkpoint/Fresh preview相关48项中47通过、1项本地可选实际Prefect SDK跳过（13.329秒）。有效夹具走真实preflight/config/inventory，禁止网络；缺清单、未知配置及缺checkpoint声明均在读凭据和执行前拒绝。原失败与回归日志、两文件冻结SHA留在`artifacts/v8-source-delivery-gap-audit/ci-cli-fixture`。此次修复0真实API/模型调用、0账本或旧媒体证据写入；远程CI结果以PR最新head检查为准。
+
+修复head `885d0f1` 的实际Prefect SDK CI（run 36907031278，SERMON_TEST_PREFECT=1）157项全部通过（453.337秒），业务仍为模拟/本地回放，不提升为全阶段真实生产引擎验收。Python分片首轮因新head替代由GitHub取消；其取消不记为单元测试失败。
+
+### 收尾与新 dev UI 的兼容
+
+CI期间remote dev合入PR #194并推进到`d927032c408e581cd3e787ec124188095700310d`。合并只发生一处文本冲突：播放按钮同时需要新SVG `setIcon`和本分支无音轨时的diagnosticNotice；保留两者，locale文案自动合并。原Fresh/Source三个恢复检查器源码SHA不变，原v8执行身份、HTTP和Chrome收据仍绑定原冻结版本，不把新UI当作已经发布或播放验收。
+
+兼容检查还发现旧Dev snapshot仅复制3模块，但新app/fingerprint依赖icons.mjs/icons.svg；实际旧v8 baseline也没有新图标与两个brand SVG。真实本地Chrome进一步发现旧baseline也缺少新fingerprint-ui导入的fingerprint-diagnostics.mjs，HTTP404导致App模块未启动；原失败截图/请求记录保留。快照构建固定同步15个当前源码UI资产，保留published-weeks wrapper、正式catalog、旧媒体与Firebase目标。合并前端368项Node测试全部通过（7.530秒）；快照定向检查与最新合并head CI结果独立记录，不重跑paid阶段或改写原证据。
+
+最终15资产快照20项回归全部通过（13.574秒）；缺第5资产的14资产版本先用同一旧baseline夹具实际复现依赖缺失，未由复制当前目录掩盖。固定源码SHA、模块/HTML依赖与旧非UI字节逐项核验。
+
+head `885d0f1` 的Python CI进一步暴露两处历史测试兼容问题：POC渲染测试取首个任意workload，误取新时钟握手事件；改为精确选render_output，实际父修订receipt指标完整，12项accounting与346项全POC通过（14.445秒），未改生产renderer/守卫。旧sanitized报告比对只允许旧网络字段delta，未考虑已实现的clock provenance新增字段；精确递归比较cache/asr/audio分别48/6/5项全为added，原字段changed/removed均0。测试先逐字段核UTC-only durationBasis、readiness not_established及完整telemetry缺测合同，再比对整份旧报告；历史报告和生产reporter不改。actual-trace/report/clock/telemetry90项通过（14.330秒）。失败日志与冻结摘要留在ignored审计目录，最终远程结果以合并head CI为准。
+
+实际旧v8公开301资产独立复制为本地UI兼容候选，固定15源码资产覆盖后306文件；旧资产无丢失，全部非UI与原媒体SHA不变，原snapshot不改。真实Chrome154.0.8037.59三语各1倍速实际播放超过5秒（ZH5.012/KO5.016/ES5.006），SVG暂停图标24px；页面错误/HTTP404/非预期请求失败均0。39项成功200/206媒体元数据或range读取被浏览器取消的观察保留，不能称网络失败全为0。该工具最初将正常取消也当成失败，原工具退出和截图保留，改为只接受有实际成功HTTP证据的媒体取消，模块404仍拒绝。收据在`artifacts/v8-fresh-delivery-recovery-20261001/merged-ui-local-v3/browser-v4`；这是新UI的本地短播放，0provider/模型/发布，不是新版本公开整轨验收。原v8公开整轨证据仍独立有效。
+
+随后dev的main同步推进到`aece2e8b20439fe675ca25d74155be9e498d268b`，tree与`d927032`完全相同，只同步历史祖先；合并保留已核验的相同UI/业务代码，不重跑paid阶段。

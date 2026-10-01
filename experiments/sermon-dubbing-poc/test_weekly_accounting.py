@@ -313,7 +313,8 @@ class WeeklyAccountingTests(unittest.TestCase):
             with patch.dict(os.environ, {key: "" for key in ENV_KEYS}), accounting_session(work / "accounting", "fixture"):
                 runner.record_render_workload(work, job, render, {}, False)
             events, _, _ = self.read_accounting(work / "accounting")
-            metrics = next(row["metrics"] for row in events if row["event"] == "workload")
+            metrics = next(row["metrics"] for row in events
+                           if row["event"] == "workload" and row["stage"] == "render_output")
             self.assertEqual(metrics["newlyAvailableOutputUnitCount"], 2)
             self.assertEqual(metrics["parentReusedUnitCount"], 1)
             self.assertEqual(metrics["revisionRegenerateUnitCount"], 1)

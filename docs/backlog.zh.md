@@ -699,3 +699,7 @@ Canonical package adapter 第一批：Source/Text shadow inspection 已复用生
 证据与验证边界统一见[监督最终报告](reports/20261001-dev-diagnostic-supervised-plan.zh.md)。私有模型/媒体/日志/账本留在ignored artifacts，不进入Git。
 
 PR #198 首轮CI进一步发现旧CLI夹具缺runtime/checkpoint声明，补齐后暴露live preflight只读scope遗漏`binding`属性；两项均已修复，守卫不放宽。相关48项回归47通过、1本地可选Prefect SDK跳过，0真实API/模型调用；原失败保留，远程实际引擎及测试结果以最新PR head检查为准。此项归入既有诊断入口修复范围，详见报告的PR CI记录。
+
+收尾head `885d0f1` 的实际Prefect SDK CI157项全部通过，仍只证明模拟/本地回放引擎合同。随后dev合入PR #194图标更新：保留新SVG按钮及diagnostic文案两者，补齐Dev snapshot固定15个UI资产依赖（包括真实旧baseline遗漏的fingerprint-diagnostics.mjs），避免旧baseline缺icons模块/精灵图。此项归入DEV-DIAG-005交付兼容；原v8发布/完整播放版本与新合并代码验证分开，正式catalog/旧媒体/历史证据不改。
+
+最新CI还发现两处旧测试兼容：POC父修订测试误取时钟workload，现精确选render_output；历史actual-trace测试逐项验新增clock/telemetry缺测字段后完整比较旧合同。生产指标、收据守卫和历史报告未变；全POC346项、报告/时钟90项及最终15资产快照20项定向回归通过，原失败保留。
