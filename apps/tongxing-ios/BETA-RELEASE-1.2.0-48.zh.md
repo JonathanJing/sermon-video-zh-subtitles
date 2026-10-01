@@ -50,3 +50,7 @@ Archive 有既存 `allowBluetooth` 弃用及无 AppIntents 依赖的提示；构
 遵循 [晋升流程](BETA-PROMOTION.zh.md) 和 [真机清单](BETA-TESTING.zh.md)。Beta 默认读取 Dev 内容；需对正式内容验证时，使用同一源码建立记录明确的 Beta 正式内容候选。正式版使用原有正式身份与正式内容源重新构建，不将 Beta IPA 重签名。正式上传、App Store 审核和正式发布尚未执行。
 
 私有证据根目录：`artifacts/tongxing-ios/2026-10-01/beta48/`；归档、签名、上传及状态记录：`archive/release-record.json`、`archive/archive.log`、`archive/upload.log`、`testflight-internal-testing.jpg`、`testflight-internal-testing.ax.txt` 与 `testflight-build48-saved.ax.txt`。模拟器证据：`artifacts/tongxing-ios/2026-10-01/cli/20261001T143830-test-95cd9eb8/test.xcresult`。
+
+## 后续用户验收与正式晋升（2026-10-01）
+
+在上述上传记录之后，用户明确确认“beta检查没有问题”，并要求按 `1.26.7` 正式构建、准备截图和提交发布。此为用户提供的 Beta 验收结论，不改写本轮 Agent 未执行真机与现场测试的历史事实。正式 `1.26.7` 从同一功能源码重新归档，身份与内容源按正式渠道配置；首轮 Build 49 已上传但因 beta 工具链不能提交正式审核，Build 50 准备使用正式工具链重建。实际证据和审核状态见 [正式发行记录](RELEASE-1.26.7.zh.md)。Beta 48 原包、源码、版本与归档哈希保持不变。
