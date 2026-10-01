@@ -270,7 +270,10 @@ def render(paths: dict[str, Path], checkpoint_map_path: Path,
                         os.replace(partial, wav_path)
                     formal.require(not partial.exists() and receipt.get("audioSha256") == identity.sha256(wav_path),
                                    "Speculative unit identity or audio changed")
-                    integrity.probe_full_decode(wav_path)
+                    decoded = integrity.probe_full_decode(wav_path)
+                    formal.require(type(receipt.get("durationSeconds")) in (int, float)
+                                   and receipt["durationSeconds"] == decoded["durationSeconds"],
+                                   "Speculative cached duration differs from decoded audio; requires reconciliation")
                 else:
                     formal.require(not partial.exists(), "Uncommitted speculative audio exists")
                     formal.require(not scoped or not attempt_path.exists(),
@@ -335,7 +338,7 @@ def render(paths: dict[str, Path], checkpoint_map_path: Path,
             accounting.record_workload(work, {'unitIndex': index, 'cacheHit': cache_hit,
                 'modelExecutedCurrentAttempt': not cache_hit, 'previewOnly': True,
                 'productionEligible': False, 'humanAcceptancePending': True, 'fullDecodePassed': True,
-                'inputTextCodePoints': len(group['targetText']), 'audioSeconds': receipt['durationSeconds'],
+                'inputTextCodePoints': len(group['targetText']), 'audioSeconds': decoded['durationSeconds'],
                 'checkpointSha256': context['adapter']['conditioningSha256'],
                 'modelIdentitySha256': identity.json_sha256({'model': context['adapter']['model'],
                                                             'revision': context['adapter']['modelRevision']}),

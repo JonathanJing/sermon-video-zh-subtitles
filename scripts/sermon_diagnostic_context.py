@@ -55,6 +55,11 @@ def validate_source(source, anchor, context):
     c.require(c.canonical_sha256(source) == context['sourceCanonicalSha256'] and
         c.canonical_sha256(anchor) == context['anchorCanonicalSha256'], 'diagnostic_source_identity_changed')
     speech._validate_schema(source, 'sermon-english-source-package-v1.schema.json', 'diagnostic source')
+    # This narrow continuation uses the separately bound text-only source-check
+    # receipt. It cannot override a canonical machine judge whose findings are
+    # not necessarily copied into package.issues by the Source builder.
+    c.require(source['evidence']['machineJudge'] is None,
+              'diagnostic_canonical_machine_judge_requires_reconciliation')
     c.require(source['status'] in ('blocked', 'candidate_ready_for_translation') and
         source['translationEligible'] is False and source['review']['humanApproval'] is False,
         'diagnostic_requires_unapproved_source')

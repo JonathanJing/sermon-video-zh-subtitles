@@ -20,6 +20,7 @@ from scripts import sermon_review_contracts as c
 from scripts import sermon_strict_layer2 as strict
 from scripts import produce_target_language_candidate as producer
 from scripts import run_target_language_models as models
+from scripts.sermon_diagnostic_source_evidence import validate_prior_source_evidence
 from scripts.sermon_release_workflow import _safe_path
 
 
@@ -59,8 +60,9 @@ def prepare_continuation(plan, continuation):
         subject._remaining(state)
         c.require(state['requests'] and all(row['state'] in ('returned', 'rejected')
                   for row in state['requests'].values()), 'diagnostic_prior_outcome_requires_reconciliation')
+        source_evidence = validate_prior_source_evidence(root, state, context)
         deadline = state['startedMonotonic'] + config['totalWallSeconds']
-    return root, subject, context, deadline
+    return root, subject, context, deadline, source_evidence
 
 
 def preflight_locale_inputs(subject, context, spec):
@@ -90,7 +92,7 @@ def main(argv=None):
     args = parser.parse_args(argv)
     plan, _ = c.read_snapshot(args.plan)
     continuation, _ = c.read_snapshot(args.continuation)
-    root, subject, context, deadline = prepare_continuation(plan, continuation)
+    root, subject, context, deadline, source_evidence = prepare_continuation(plan, continuation)
     spec = None
     if args.input is not None:
         spec, _ = c.read_snapshot(args.input)
@@ -115,7 +117,7 @@ def main(argv=None):
         accounting.record_workload('diagnostic.simulated_review', {
             'simulatedHumanApproval': True, 'realHumanAcceptancePending': True,
             'productionEligible': False, 'continuationSha256': c.canonical_sha256(continuation),
-            'sourceMediaSha256': subject.config['sourceMediaSha256']})
+            'sourceMediaSha256': subject.config['sourceMediaSha256'], **source_evidence})
         result = runner.run_locale(*artifacts, graph=spec['graph'], plugin_path=Path(spec['pluginPath']),
             plugin_sha256=spec['pluginSha256'], group_plan=spec['groupPlan'], diagnostic_context=context)
         wrapped = {'schemaVersion': 'sermon-isolated-diagnostic-result-v1',

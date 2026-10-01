@@ -399,6 +399,26 @@ class DiagnosticPreviewTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'requires reconciliation'): self.render(group_ids=['g1'])
         self.assertEqual(len(FakeSynth.calls), 1)
 
+    def test_cache_duration_mismatch_blocks_without_synthesis_or_measured_workload(self):
+        self.render(group_ids=['g1'])
+        receipt_path = self.preview.out / 'receipts/unit-0000.json'
+        receipt = formal.package.read_object(receipt_path)
+        for invalid in (999.0, None, True, '0.08'):
+            with self.subTest(duration=invalid):
+                formal.write_json_atomic(receipt_path, dict(receipt, durationSeconds=invalid))
+                with patch.object(subject.accounting, 'record_workload') as record:
+                    with self.assertRaisesRegex(ValueError, 'duration.*requires reconciliation'):
+                        self.render(group_ids=['g1'])
+                record.assert_not_called()
+                self.assertEqual(len(FakeSynth.calls), 1)
+        formal.write_json_atomic(receipt_path, receipt)
+        with patch.object(subject.accounting, 'record_workload') as record:
+            self.render(group_ids=['g1'])
+        measured = subject.integrity.probe_full_decode(self.preview.out / 'units/unit-0000.wav')
+        self.assertEqual(record.call_args.args[1]['audioSeconds'], measured['durationSeconds'])
+        self.assertTrue(record.call_args.args[1]['cacheHit'])
+        self.assertEqual(len(FakeSynth.calls), 1)
+
     def test_cold_and_cache_accounting_contains_real_unit_dag_and_unknown_tokens(self):
         import json
         from scripts import sermon_log_profile as profile

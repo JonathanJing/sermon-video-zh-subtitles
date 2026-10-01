@@ -38,16 +38,18 @@ class ContinuationTests(unittest.TestCase):
     def prepare(self):
         constructor=provider.DiagnosticProvider
         with patch.object(accounting,'execution_identity',return_value=self.identity), patch.object(
-                entry.provider,'DiagnosticProvider', side_effect=lambda store,config: constructor(store,config,domain=lambda:'7'*64)):
+                entry.provider,'DiagnosticProvider', side_effect=lambda store,config: constructor(store,config,domain=lambda:'7'*64)), \
+                patch.object(entry,'validate_prior_source_evidence',return_value={'sourceEvidenceSnapshotSha256':'e'*64}):
             return entry.prepare_continuation(self.plan,self.cont)
 
     def test_reuses_prior_receipt_budget_deadline_without_call_or_mutation(self):
-        root,subject,context,deadline=self.prepare()
+        root,subject,context,deadline,source_evidence=self.prepare()
         state=json.loads(self.original_state)
         self.assertEqual(root,self.root.resolve())
         self.assertEqual(deadline,state['startedMonotonic']+5400)
         self.assertEqual(subject.config,self.subject.config)
         self.assertEqual(context,self.context)
+        self.assertEqual(source_evidence,{'sourceEvidenceSnapshotSha256':'e'*64})
         self.assertEqual(subject.snapshot()['requestCount'],1)
         self.assertEqual(self.statepath.read_bytes(),self.original_state)
         self.assertEqual(len(self.f.calls),1)
