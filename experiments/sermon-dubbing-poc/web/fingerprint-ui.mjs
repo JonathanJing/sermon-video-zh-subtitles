@@ -73,9 +73,11 @@ export function captureDiagnostic(error = {}) {
   const detail = Object.hasOwn(details, error.captureDetail) ? details[error.captureDetail] : null;
   return {code,stage,...(detail ? {detail} : {}),version:'C3'};
 }
-export function diagnosticMessage(diagnostic) {
+export function diagnosticMessage(diagnostic, { includeDetails = true } = {}) {
   const known = new Set('MIC_BUDGET MIC_START_TIMEOUT INPUT_INTERRUPTED AUDIO_INTERRUPTED MIC_BUSY MIC_MISSING MIC_ENDED WORKLET_LOAD PROCESSOR_ERROR AUDIO_START INDEX_UNAVAILABLE'.split(' '));
-  return t('fingerprint.diagnostic.detail', { message: t(`fingerprint.diagnostic.${known.has(diagnostic.code) ? diagnostic.code : 'UNKNOWN'}`), code: `${diagnostic.code}${diagnostic.detail ? ':' + diagnostic.detail : ''}`, stage: diagnostic.stage, version: diagnostic.version });
+  const message = t(`fingerprint.diagnostic.${known.has(diagnostic.code) ? diagnostic.code : 'UNKNOWN'}`);
+  if (!includeDetails) return message;
+  return t('fingerprint.diagnostic.detail', { message, code: `${diagnostic.code}${diagnostic.detail ? ':' + diagnostic.detail : ''}`, stage: diagnostic.stage, version: diagnostic.version });
 }
 // The native play promise resolves only when playback can actually start.
 // Cleanup never pauses a later attempt; only this pending operation may pause.
@@ -254,6 +256,14 @@ function clock(seconds) {
   const n = Math.floor(seconds), mm = String(Math.floor(n / 60) % 60).padStart(2, '0'), ss = String(n % 60).padStart(2, '0');
   return n >= 3600 ? `${Math.floor(n / 3600)}:${mm}:${ss}` : `${mm}:${ss}`;
 }
+// Status text and color describe the same state; raw diagnostics stay out of the main prompt.
+export function fingerprintStatusTone(phase) {
+  if (['idle', 'cancelled'].includes(phase)) return 'neutral';
+  if (['matched', 'applied'].includes(phase)) return 'success';
+  if (['preparing_index', 'ready_to_record', 'permission', 'recovering', 'starting',
+       'recording', 'matching', 'play_starting'].includes(phase)) return 'pending';
+  return 'failure';
+}
 export function mountFingerprintUI(options) {
   const $ = id => document.getElementById(id);
   const dialog = $('fingerprint-dialog');
@@ -261,10 +271,15 @@ export function mountFingerprintUI(options) {
   function renderState(value) {
     const busy = ['preparing_index', 'permission', 'starting', 'recovering', 'recording', 'matching', 'play_starting'].includes(value.phase);
     $('fingerprint-start').disabled = busy;
+    $('fingerprint-start').hidden = busy;
     setButtonLabel($('fingerprint-start'), t(value.phase === 'ready_to_record' ? 'fingerprint.record' : value.phase === 'idle' ? 'fingerprint.start' : 'fingerprint.restart'));
     $('fingerprint-apply').hidden = !['matched', 'play_blocked', 'play_failed'].includes(value.phase);
     setButtonLabel($('fingerprint-apply'), t('fingerprint.apply'));
-    $('fingerprint-message').textContent = value.phase === 'matched' ? t('fingerprint.matched', { time: clock(value.sourceTimeSeconds) }) : value.phase === 'applied' ? t('fingerprint.applied', { time: clock(value.sourceTimeSeconds) }) : value.phase === 'no_match' ? t(`fingerprint.reason.${matchReason(value.reason)}`) : value.phase === 'error' && value.diagnostic ? diagnosticMessage(value.diagnostic) : t(`fingerprint.phase.${phases.has(value.phase) ? value.phase : 'error'}`);
+    const message = $('fingerprint-message');
+    message.setAttribute('data-tone', fingerprintStatusTone(value.phase));
+    message.hidden = ['idle', 'cancelled'].includes(value.phase);
+    $('fingerprint-stop').hidden = !busy;
+    message.textContent = value.phase === 'matched' ? t('fingerprint.matched', { time: clock(value.sourceTimeSeconds) }) : value.phase === 'applied' ? t('fingerprint.applied', { time: clock(value.sourceTimeSeconds) }) : value.phase === 'no_match' ? t(`fingerprint.reason.${matchReason(value.reason)}`) : value.phase === 'error' && value.diagnostic ? diagnosticMessage(value.diagnostic, { includeDetails: false }) : t(`fingerprint.phase.${phases.has(value.phase) ? value.phase : 'error'}`);
   }
   const controller = createFingerprintController({ ...options, onState(value) {
     renderState(value);

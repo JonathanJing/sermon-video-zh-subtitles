@@ -9,11 +9,12 @@ import { messages as appMessages } from './locales-app.mjs';
 import { localizeWeek } from './content-locales.mjs';
 
 class Element {
-  constructor() { this.children = []; this.listeners = new Map(); this.textContent = ''; this.value = ''; this.disabled = false; this.open = false; }
+  constructor() { this.children = []; this.listeners = new Map(); this.textContent = ''; this.value = ''; this.disabled = false; this.open = false; this.attributes = new Map(); }
   addEventListener(event, callback) { this.listeners.set(event, callback); }
   emit(event) { return this.listeners.get(event)?.({ target: this, preventDefault() {} }); }
   append(...children) { this.children.push(...children); }
-  setAttribute() {}
+  setAttribute(name, value) { this.attributes.set(name, value); }
+  getAttribute(name) { return this.attributes.get(name); }
   reset() { this.resets = (this.resets || 0) + 1; }
   showModal() { this.open = true; }
   close() { this.open = false; }
@@ -83,8 +84,14 @@ test('fingerprint locale redraw keeps the same active capture and diagnostic sta
     timers: { setTimeout() {}, clearTimeout() {} },
   });
   h.get('fingerprint-open').emit('click');
+  assert.equal(h.get('fingerprint-message').hidden, true);
+  assert.equal(h.get('fingerprint-stop').hidden, true);
   const preparing = controller.start();
   assert.equal(controller.getState().phase, 'preparing_index');
+  assert.equal(h.get('fingerprint-message').getAttribute('data-tone'), 'pending');
+  assert.equal(h.get('fingerprint-message').hidden, false);
+  assert.equal(h.get('fingerprint-start').hidden, true);
+  assert.equal(h.get('fingerprint-stop').hidden, false);
   h.setLocale('en');
   assert.equal(h.get('fingerprint-message').textContent, messages.en['fingerprint.phase.preparing_index']);
   assert.equal(captures, 0); assert.equal(pauses, 0);
@@ -98,12 +105,20 @@ test('fingerprint locale redraw keeps the same active capture and diagnostic sta
   assert.equal(h.get('fingerprint-dialog').open, true); assert.equal(signal.aborted, false);
   assert.equal(captures, 1); assert.equal(pauses, 1); assert.equal(seeks, 0); assert.equal(plays, 0);
   rejectCapture(Object.assign(new Error('private native text'), { name: 'NotReadableError', captureStage: 'startup' })); await running;
-  assert.match(h.get('fingerprint-message').textContent, /microphone/);
+  assert.match(h.get('fingerprint-message').textContent, /microphone/i);
+  assert.equal(h.get('fingerprint-message').getAttribute('data-tone'), 'failure');
+  assert.equal(h.get('fingerprint-start').hidden, false);
+  assert.equal(h.get('fingerprint-stop').hidden, true);
+  assert.ok(!/C3|MIC_BUSY|Diagnostic/i.test(h.get('fingerprint-message').textContent));
   assert.ok(!h.get('fingerprint-message').textContent.includes('private native text'));
   const state = controller.getState();
   h.setLocale('zh');
   assert.match(h.get('fingerprint-message').textContent, /麦克风/);
   assert.equal(controller.getState(), state); assert.equal(captures, 1); assert.equal(pauses, 1);
+  assert.equal(h.get('fingerprint-message').getAttribute('data-tone'), 'failure');
+  h.get('fingerprint-open').emit('click');
+  assert.equal(h.get('fingerprint-message').hidden, true);
+  assert.equal(h.get('fingerprint-message').getAttribute('data-tone'), 'neutral');
 });
 
 

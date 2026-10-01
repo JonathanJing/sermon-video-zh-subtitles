@@ -220,6 +220,22 @@ button:has(>.app-icon),a:has(>.app-icon){display:inline-flex;align-items:center;
 .week-picker label>.app-icon{width:18px;height:18px}
 .locale-pickers label .app-icon,.privacy-controls summary .app-icon{width:18px;height:18px;margin-right:6px}
 .week-download-links a{display:inline-flex;align-items:center;gap:7px}
+
+/* Sound location: one instruction, one live status; secondary help stays collapsed. */
+#fingerprint-dialog{--location-pending:#f0cf70;--location-failure:#ff9292}
+[data-theme="light"] #fingerprint-dialog{--location-pending:#806200;--location-failure:#b42328}
+#fingerprint-dialog .dialog-header{align-items:center}
+.fingerprint-body{display:flex;flex-direction:column;gap:18px}
+.fingerprint-body>.fingerprint-instructions{font-size:16px;line-height:1.65;margin:0}
+#fingerprint-message{font-size:16px;line-height:1.6;font-weight:600;margin:0;color:var(--ink)}
+#fingerprint-message[data-tone="pending"]{color:var(--location-pending)}
+#fingerprint-message[data-tone="failure"]{color:var(--location-failure)}
+#fingerprint-message[data-tone="success"]{color:var(--success)}
+.fingerprint-body .fingerprint-actions{margin:0}
+.fingerprint-help{font-size:13px;color:var(--muted)}
+.fingerprint-help>summary{cursor:pointer;min-height:44px;box-sizing:border-box;padding:12px 0;}
+.fingerprint-help[open]>summary{margin-bottom:10px}
+.fingerprint-help p{line-height:1.7}
 /* Dev-only controls share the production page's palette, rhythm and component grid. */
 .field-main { padding-bottom: 250px; }
 .topbar-actions { position: relative; }
