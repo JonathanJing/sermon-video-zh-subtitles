@@ -86,3 +86,15 @@ Dev Web 的「更多」可按讲员展开音色 Demo：每位先放原始英语�
 5. 旧 `deploy_firebase.py` 若发现 Production 已有 v2 catalog，默认拒绝用 legacy-only 包覆盖；只有明确回退时才使用 `--allow-multilingual-rollback`。未来周更应走多语言叠加路径，保留旧 `weekly.json` 和所有已发布三语文件。
 
 本流程的本地锁只协调同一台机器上的发布命令；Firebase Hosting 没有此处使用的原子 CAS。同站点发布窗口仍须避免来自其他机器或控制台的并发部署，预检超过 30 分钟必须重做。
+
+
+## 2026-10-01：声音定位弹窗生产更新
+
+[Dev PR #201](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/201) 与 [生产晋升 PR #202](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/202) 已合并，生产代码为 `b91d0083ade0712629db4f7f4b9dbf4165b28e6a`。弹窗默认只展示简短引导、状态和可用操作；详细使用说明默认折叠。中英韩西同步，准备／听取／匹配使用黄色提示，失败使用红色原因与下一步。发布同时带入该界面必需的 capture／worker／diagnostics 模块，17 个客户端文件逐字节绑定到发布源码。
+
+- Dev：在独立 Hosting 测试频道完成受控合成静音输入的真实 `getUserMedia → AudioWorklet → Worker` 流程，检查四语言、深浅主题、匹配失败、重试和取消；41 个测试资源 HTTP／SHA 核对通过。没有替换既有 Dev live 入口。
+- Production：[实际 App](https://ai-for-god-sermon-audio.web.app/) 已发布，Hosting 版本 `205af555092a012d`，时间 `2026-10-01T20:05:52.176Z`。收据状态为 `published_http_verified`，候选报告 SHA 为 `6c0854ebe10291201f5ef4ac88741b5ba4421da3c9119f742d9fb6a9c87ab996`。
+- 112 个应用资源逐项 HTTP／SHA 核对、音频 Range 与视频 302 检查通过；另有 2 个 Firebase 管理资源保持不变。相较先前生产版本 `906a6c30ecaa12d3`，仅 9 个客户端文件修改、1 个客户端文件新增，其余 102 个文件与 Firebase 配置保持原字节。反馈 Function 与媒体 bucket 未重新部署。
+- 实际生产页面的受控合成麦克风录制／匹配失败、四语言及深浅状态颜色、重试和取消检查通过；真实物理麦克风、真机播放和现场接受状态仍为 `not_run`，不能以浏览器合成输入代替。
+
+部署与验证收据保存在 ignored `artifacts/sound-location-release/2026-10-01/`，生产 checkout 中的 `production-published/cd-receipt.json`、`live-production.json` 与 `production-browser-receipt.json`分别记录发布、完整路径清单和浏览器范围。本次更新不新增周次内容或四层素材发布。
