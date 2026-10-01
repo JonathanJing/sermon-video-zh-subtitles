@@ -49,3 +49,7 @@ make preview FILES=ContentView.swift SIMULATOR="$TONGXING_SIMULATOR_UDID" \
 `FILES` 选择已注册的源文件，不负责猜测一个文件里哪些 View、该怎样初始化模型。添加新视图时，在测试的 `fixture(_:model:)` 中注册实际视图与必要样本，在脚本 `REGISTRY` 中增加文件名，然后通过 `make preview-list` 检查。复用已有模型与生产组件；测试容器只提供预览所需环境。
 
 AI 修改 UI 后执行同一预览命令，读取本轮成功 Manifest 中的 PNG，比较同设备、外观、字号与数据的前后图；修改后再渲染。截图支持排版迭代，不能替代导航、点击、滚动、VoiceOver、真实音频或真机测试。涉及交互时继续执行相关 `TongxingUITests`，按 [UI 迭代流程](UI-ITERATION-WORKFLOW.zh.md) 完成独立审核与人工确认。
+
+## 可选：设备外框展示
+
+本轮预览成功后，可以按 [Frames 指南](FRAMES.zh.md) 把实际导出的 PNG 套进设备外框，或生成页面对照图。使用 `python3 apps/tongxing-ios/scripts/frames.py --dry-run "<本轮实际 PNG 路径>"` 检查命令，移除 `--dry-run` 才实际生成；输出独立保存到 `artifacts/tongxing-ios/<日期>/frames/`，不改原始预览 Manifest 与图片。测试容器图仍标注为测试渲染，不因套框变成真机截图；这一步不是 preview 成功条件。
