@@ -165,6 +165,7 @@ def inspect(root, *, diagnose_offline=False):
                 issues.append('unexpected_model_transport_in_mock')
         else:
             issues.append('accounting_not_observed')
+        global_issues = tuple(issues)
         # Observations of the same frozen ledger have stable IDs/times; repeat
         # inspections cannot fabricate another attempt or conflicting replay.
         observed_at = max((datetime.fromisoformat(e['recordedAt'].replace('Z', '+00:00'))
@@ -194,7 +195,7 @@ def inspect(root, *, diagnose_offline=False):
                         job_status = pilot.jobs.peek_job(root/'jobs', job_id)['status']
                         if job_status == 'succeeded':
                             receipt = pilot.valid_receipt(root, plan, node, dependencies)
-                            if issues:
+                            if global_issues:
                                 raise ValueError('input_integrity_unknown')
                             valid[key] = receipt
                             sha = pilot.c.canonical_sha256(receipt)

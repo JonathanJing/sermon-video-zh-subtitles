@@ -23,7 +23,8 @@ class PilotEvidenceTests(unittest.TestCase):
         self.root = Path(self.tmp.name)/'run'
 
     def execute(self, **kwargs):
-        plan = contract.make_plan(run_id='1'*64, input_identity_sha256='2'*64, locales=('ko',), text_only=('ko',), **kwargs)
+        locales = kwargs.pop('locales', ('ko',))
+        plan = contract.make_plan(run_id='1'*64, input_identity_sha256='2'*64, locales=locales, text_only=locales, **kwargs)
         with work_lock(self.root):
             pilot.initialize(self.root, plan)
             with profile.session(self.root/'accounting', 'pilot_evidence_test', work_kind='control', evidence_mode='synthetic'):
@@ -94,6 +95,38 @@ class PilotEvidenceTests(unittest.TestCase):
         self.assertFalse(result['progress']['complete'])
         self.assertFalse(next(r for r in result['statusReceipts'] if r['unitId']=='text.ko')['evidenceValidated'])
         self.assertEqual(result['validatedNodeEvidence']['audio.ko']['status'], 'outcome_unknown')
+
+    def test_locale_corruption_is_local_and_independent_of_traversal_position(self):
+        self.execute(locales=('es', 'ko', 'zh-Hans'))
+        baseline = self.inspect_unchanged()
+        self.assertEqual(baseline['progress']['counts']['done'], 10)
+        for locale in ('es', 'ko', 'zh-Hans'):
+            with self.subTest(corrupted_locale=locale):
+                path = self.root/('nodes/text.'+locale)/'output.json'
+                original = path.read_bytes()
+                value = json.loads(original);value['syntheticOutput'] = False
+                path.write_text(json.dumps(value))
+                try:
+                    result = self.inspect_unchanged()
+                    for unit, proof in result['validatedNodeEvidence'].items():
+                        if unit.endswith('.'+locale):
+                            self.assertEqual(proof['status'], 'outcome_unknown')
+                        else:
+                            self.assertEqual(proof, baseline['validatedNodeEvidence'][unit])
+                    self.assertEqual(result['progress']['counts']['executionSucceeded'], 7)
+                    self.assertEqual(result['progress']['counts']['done'], 7)
+                    self.assertIsNone(result['progress']['plannedProcessedPercent'])
+                finally:
+                    path.write_bytes(original)
+
+    def test_global_accounting_corruption_still_blocks_all_positive_evidence(self):
+        self.execute()
+        with (self.root/'accounting/events.jsonl').open('a') as stream:
+            stream.write('not-json\n')
+        result = self.inspect_unchanged()
+        self.assertFalse(any(r['evidenceValidated'] for r in result['statusReceipts']))
+        self.assertFalse(result['progress']['complete'])
+        self.assertIn('accounting_integrity_unknown', result['progress']['integrity']['reasonCodes'])
 
     def test_abandoned_job_is_unknown_without_rewriting_it(self):
         self.execute()
