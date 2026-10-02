@@ -73,17 +73,63 @@ class FormalTTSBatchTests(unittest.TestCase):
         self.assertEqual(BatchEngine.calls, [])
         self.assertEqual(BatchEngine.loads, 1)
 
-    def test_mixed_cached_window_never_regenerates_receipted_audio(self):
+    def test_mixed_cached_window_replays_full_bound_batch_without_replacing_commits(self):
         self.setup_units()
         rows = self.render()
         hashes = [row['audio']['sha256'] for row in rows]
         self.remove_commit(1); self.remove_commit(3)
         BatchEngine.calls.clear()
         resumed = self.render()
-        self.assertEqual([call[:2] for call in BatchEngine.calls], [([1, 3], 42)])
+        self.assertEqual([call[:2] for call in BatchEngine.calls], [([0, 1, 2, 3], 42)])
         self.assertEqual([row['audio']['sha256'] for row in resumed], hashes)
         commit = tts.package.read_object(self.root / 'receipts/unit-0003.render.json')
-        self.assertEqual(commit['generationBatch']['unitIndices'], [1, 3])
+        self.assertEqual(commit['generationBatch']['unitIndices'], [0, 1, 2, 3])
+
+    def test_resume_replays_full_batch_when_neighbor_audio_is_reused(self):
+        self.setup_units(4)
+        original = self.render()
+        legacy_hash = 'a86c470ed8f2efb7b94f62cc5451e0f3e6af9a15d13110d86086489daeedd58c'
+        for index in range(4):
+            intent_path = self.root / f'receipts/unit-{index:04d}.intent.json'
+            commit_path = self.root / f'receipts/unit-{index:04d}.render.json'
+            intent = tts.package.read_object(intent_path)
+            intent['batchImplementationSha256'] = legacy_hash
+            intent['batchSeedPolicy'] = tts.LEGACY_BATCH_SEED_POLICY
+            intent['batchCachedUnitPolicy'] = tts.LEGACY_BATCH_CACHED_UNIT_POLICY
+            intent_path.write_text(json.dumps(intent))
+            commit = tts.package.read_object(commit_path)
+            commit['identity'] = intent
+            commit['generationBatch']['seedPolicy'] = tts.LEGACY_BATCH_SEED_POLICY
+            commit_path.write_text(json.dumps(commit))
+        self.remove_commit(1)
+        (self.root / 'receipts/unit-0001.intent.json').unlink()
+
+        next_root = self.root.parent / 'batch-resume-with-reuse'
+        next_root.mkdir()
+        BatchEngine.calls.clear()
+        with patch.object(tts.integrity, 'probe_full_decode',
+                          return_value={'fullDecode': 'pass', 'durationSeconds': 0.08}):
+            resumed = tts.render_units(self.context, self.paths, next_root,
+                next_root / 'checkpoint-map.json', batch_size=4, reuse_from=self.root,
+                synth_factory=BatchEngine)
+        self.assertEqual([call[:2] for call in BatchEngine.calls], [([0, 1, 2, 3], 42)])
+        self.assertEqual([row['audio']['sha256'] for row in resumed],
+                         [row['audio']['sha256'] for row in original])
+        commit = tts.package.read_object(next_root / 'receipts/unit-0001.render.json')
+        self.assertEqual(commit['generationBatch']['unitIndices'], [0, 1, 2, 3])
+
+    def test_cached_subset_generation_is_rejected_as_unbound_audio(self):
+        self.setup_units(4)
+        self.render()
+        commit_path = self.root / 'receipts/unit-0001.render.json'
+        commit = tts.package.read_object(commit_path)
+        commit['generationBatch']['unitIndices'] = [1, 3]
+        commit_path.write_text(json.dumps(commit))
+        BatchEngine.calls.clear(); BatchEngine.loads = 0
+        with self.assertRaisesRegex(ValueError, 'did not preserve its full window'):
+            self.render()
+        self.assertEqual(BatchEngine.loads, 0)
+        self.assertEqual(BatchEngine.calls, [])
 
     def test_batch_configuration_changes_do_not_rewrite_cache(self):
         self.setup_units()
