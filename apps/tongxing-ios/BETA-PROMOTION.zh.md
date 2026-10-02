@@ -2,6 +2,8 @@
 
 Beta 与正式版共用同一套 App、播放器和实时活动源码，由构建配置区分身份和内容环境。桌面名称不同还不足以实现共存；两版的 App、扩展和返回链接身份均独立，下载与播放历史保存在各自沙盒中，不自动迁移。
 
+后续数字版本按 [版本号约定](VERSIONING.zh.md) 使用 `1.26.N`，下一新候选从 `1.26.1` 开始。Beta 到正式版保留已验收的数字版本，正式重建分配新 Build；功能变更需要新的 `N`。下面的 `1.2.0` 为现有历史候选，不因采用新规则而重命名或重建。
+
 | 项目 | 独立 Beta | 正式版 |
 | --- | --- | --- |
 | 桌面名称 | 同行-beta | 同行 |
@@ -11,15 +13,19 @@ Beta 与正式版共用同一套 App、播放器和实时活动源码，由构�
 | Scheme | `TongxingBeta` | `Tongxing` |
 | 开发 / Archive 配置 | `BetaDebug` / `BetaRelease` | `Debug` / `Release` |
 | 默认内容源 | Firebase Dev | Debug 为 Dev；Release 为正式站 |
-| 当前候选版本 | `1.2.0 (47)` | `1.2.0 (46)` |
+| 当前候选版本 | `1.2.0 (48)` | `1.2.0 (46)` |
 
 ## 当前分发状态（2026-10-01）
+
+最新 dev 基线 `7e534bb` 的独立 Beta **1.2.0 (48)** 已在 2026-10-01 21:42:51 UTC 上传成功；归档源码为 `fac0c9c4769ad25a86d97ae4fa82dfb1a5c49bd7`，Apple 处理已完成，Rooted 内部测试组的 build 48 显示 `Testing`，测试说明已保存。模拟器 4 项 Beta 身份与交互检查通过，另有目录合成测试通过；真机与现场未测，正式晋升尚未执行。完整证据见 [Beta 48 记录](BETA-RELEASE-1.2.0-48.zh.md)。
+
+以下 Beta 47 与原 App 46 是既有分发记录，不作为 Beta 48 的验收证据：
 
 原 App 的 `1.2.0 (46)` 已上传 TestFlight，Rooted 内部测试组显示 `Testing`；该构建仍使用正式 App 身份，会替换同身份的已安装正式版。独立 Beta `1.2.0 (47)` 已创建独立 App Store Connect App `6818272039`，并于 2026-10-01 18:32:21 UTC 上传成功。Apple 处理已完成，独立 Beta 的 Rooted 内部测试组显示 `Testing`（1 个测试账户、1 个构建），测试说明已保存。新 Beta 的实机安装与验收尚未完成。完整源码、归档哈希、实际测试及分发证据见 [Beta 1.2.0 (47) 候选记录](BETA-RELEASE-1.2.0-47.zh.md)。
 
 TestFlight 上传、Apple 处理、测试组可用、实机验收和 App Store 发布分别记录。现有 Duo 外屏与大字号测试可作为历史证据，但不能替代新 Bundle ID 的双 App 共存、实时活动返回目标和真机验收；Duo 展开内屏、半折与现场验收仍未完成。本任务不包含 App Store 发布或未验收差异的合并。
 
-待下一构建的麦克风失败反馈修复见 [修复记录](ALIGNMENT-FEEDBACK.zh.md)。该记录与已分发 Beta 47 分开，未改变旧包的源码或归档哈希；新分发须递增构建号并建立新的实际记录。
+Beta 48 已包含的麦克风失败反馈修复见 [修复记录](ALIGNMENT-FEEDBACK.zh.md)。该记录与已分发 Beta 47 分开，未改变旧包的源码或归档哈希；本次 48 的新归档与实际测试另行记录。
 
 ## 冻结源码并归档
 
@@ -33,7 +39,7 @@ apps/tongxing-ios/scripts/archive-channel.sh \
   --channel beta \
   --expected-commit "$TONGXING_CANDIDATE_COMMIT" \
   --developer-dir /Applications/Xcode.app \
-  --output-dir artifacts/tongxing-ios/beta-1.2.0-47 \
+  --output-dir artifacts/tongxing-ios/beta-1.2.0-48 \
   --dry-run
 ```
 

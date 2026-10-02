@@ -23,6 +23,10 @@ iOS 确认后记录网页 `required`／`not_applicable`／`deferred`，再按需
 - 查看已有差异再编辑；修改 `project.yml` 后从本目录执行 `xcodegen generate`，同时检查生成工程。`App/Info.plist` 独立维护，保留后台音频配置，不让生成器覆盖它。
 - 本机 Team、账号、签名与设备标识不写入源码或工程。提交、push、真机签名、TestFlight 和发布仍依照用户已授权的阶段处理。
 
+## 版本与发行
+
+后续候选按 [版本号约定](VERSIONING.zh.md) 使用 `产品代数.年份后两位.当年迭代序号`，下一次从 `1.26.1` 开始；每次提交新的分发候选递增末段，本地编译不递增。Apple Build 独立递增，App 与扩展一致；Beta 验收后晋升正式沿用同一数字版本，记录新 Build 与渠道配置差异。准备归档前核对最新发行记录和 Apple 状态，不复用已分配号码；保留 `1.2.0 (48)` 的历史记录，不提前改动正在验收的包。本文约定不代表已实现自动递增。
+
 ## CLI 与共享设备
 
 优先使用 [scripts/ios.sh](scripts/ios.sh)，它从任何工作目录定位本工程，并通过进程级 `DEVELOPER_DIR` 选择完整 Xcode。顺序为 `--developer-dir`、已有环境变量、已安装的 Xcode beta、正式 Xcode；不修改全局 `xcode-select`。
