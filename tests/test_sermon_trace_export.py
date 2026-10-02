@@ -118,6 +118,65 @@ class SermonTraceExportTests(unittest.TestCase):
         _, diag, _ = self.result()
         self.assertTrue({"invalid_span_time", "duplicate_event_id", "unsupported_event_schema"} <= {d["code"] for d in diag["diagnostics"]})
 
+    def test_v1_and_v2_events_remain_exportable(self):
+        self.fixture()
+        for index, event in enumerate(self.events):
+            event["schemaVersion"] = "sermon-workflow-accounting-v1" if index % 2 else "sermon-workflow-accounting-v2"
+        _, diag, spans = self.result()
+        self.assertEqual(diag["status"], "exported")
+        self.assertEqual(len(spans), 4)
+
+    def test_v1_and_v2_non_success_terminal_states_remain_unknown(self):
+        for status in ("cancelled", "outcome_unknown"):
+            with self.subTest(status=status):
+                self.events = []
+                self.fixture()
+                for index, event in enumerate(self.events):
+                    event["schemaVersion"] = "sermon-workflow-accounting-v1" if index % 2 else "sermon-workflow-accounting-v2"
+                    if event["event"] == "stage_finished" and event["spanId"] == "render":
+                        event["status"] = status
+                _, diag, spans = self.result()
+                self.assertIn("unknown_finished_status", [row["code"] for row in diag["diagnostics"]])
+                self.assertNotIn(span_id(("run-one", "stage", "render")), spans)
+
+    def test_dependency_extensions_reject_unsafe_imports_on_all_schemas(self):
+        for schema in ('sermon-workflow-accounting-v1', 'sermon-workflow-accounting-v2', SCHEMA):
+            for field, value in [('dependsOn', ['PRIVATE text']), ('blockedBy', ['x'] * 65),
+                    ('dependsOn', ['same', 'same']), ('workUnitId', 'x' * 101),
+                    ('decisionId', {'secret': 'PRIVATE'}), ('attemptId', 'PRIVATE\ntext'),
+                    ('queuedAt', 'PRIVATE'), ('dependencyReadyAt', '2026-01-01'),
+                    ('executorType', 'fixed_program')]:
+                with self.subTest(schema=schema, field=field):
+                    self.events = []
+                    self.fixture()
+                    for event in self.events:
+                        event['schemaVersion'] = schema
+                        if event['event'].startswith('stage_'):
+                            event[field] = value
+                    payload, diag, _ = self.result()
+                    self.assertEqual(diag['status'], 'partial')
+                    self.assertNotIn('PRIVATE', json.dumps((payload, diag)))
+
+    def test_canonical_executor_and_dependency_timestamps_export(self):
+        self.fixture()
+        for event in self.events:
+            if event['event'].startswith('stage_'):
+                event.update(executorType='engineering_codex', dependsOn=['source'],
+                             dependencyReadyAt='2026-09-06T07:59:59+00:00')
+        _, diag, spans = self.result()
+        self.assertEqual(diag['status'], 'exported')
+        attrs = {a['key']: a['value'] for a in spans[span_id(('run-one', 'stage', 'render'))]['attributes']}
+        self.assertEqual(attrs['sermon.executorType'], {'stringValue': 'engineering_codex'})
+        self.assertIn('sermon.dependencyReadyAt', attrs)
+
+    def test_changed_dependency_identity_between_edges_is_not_exported(self):
+        self.fixture()
+        self.events[2]['dependsOn'] = ['source-a']
+        self.events[3]['dependsOn'] = ['source-b']
+        _, diag, spans = self.result()
+        self.assertIn('span_identity_mismatch', [d['code'] for d in diag['diagnostics']])
+        self.assertNotIn(span_id(('run-one', 'stage', 'render')), spans)
+
     def test_cli_separate_diagnostics_and_no_source_overwrite(self):
         self.fixture()
         source = self.write()
@@ -136,3 +195,167 @@ class SermonTraceExportTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+class ReceiptExportTests(unittest.TestCase):
+    setUp = SermonTraceExportTests.setUp
+    event = SermonTraceExportTests.event
+    fixture = SermonTraceExportTests.fixture
+    write = SermonTraceExportTests.write
+    result = SermonTraceExportTests.result
+
+    def test_outbox_postappend_preack_replay_is_exported_once(self):
+        from scripts import sermon_accounting as accounting
+        from scripts import sermon_log_profile as profile
+        import copy
+        logdir=self.work/'profile-log'
+        with profile.session(logdir,'export-replay-test',work_kind='production',evidence_mode='synthetic'):
+            with accounting.accounting_session(logdir,'weekly_dubbing'):
+                with accounting.stage('render'):
+                    pass
+        self.events,_=accounting.read_events(logdir)
+        end=next(row for row in self.events if row['event']=='stage_finished' and row['stage']=='render')
+        self.events.append(copy.deepcopy(end))
+        _,diag,_=self.result()
+        self.assertEqual(diag['status'],'exported')
+        self.assertNotIn('duplicate_event_id',[row['code'] for row in diag['diagnostics']])
+        self.events.append(dict(copy.deepcopy(end),status='failed'))
+        _,diag,_=self.result()
+        self.assertEqual(diag['status'],'partial')
+        self.assertIn('incomplete_or_conflicting_profile_events',[row['code'] for row in diag['diagnostics']])
+
+    def test_unfinished_attempts_keep_usage_partial_with_or_without_completed_receipts(self):
+        import copy
+        from scripts.export_sermon_trace import TOKEN_KEYS
+        for with_completed in (False, True):
+            with self.subTest(with_completed=with_completed):
+                self.events = []
+                self.fixture()
+                # An interrupted request can outlive its failed containing stage.
+                for event in self.events:
+                    if event['event'] == 'stage_finished' and event['spanId'] == 'render':
+                        event['status'] = 'failed'
+                if with_completed:
+                    self.event('api_attempt_started', stage='render', spanId='render', attemptId='completed')
+                    self.event('api_attempt', stage='render', spanId='render', attemptId='completed',
+                               status='completed', usage=dict(inputTokens=100, outputTokens=20,
+                               cachedInputTokens=0, cacheWriteTokens=0, reasoningTokens=0),
+                               cost={}, elapsedSeconds=1, responseId='completed-response')
+                started = self.event('api_attempt_started', stage='render', spanId='render', attemptId='unknown')
+                duplicate = copy.deepcopy(started)
+                duplicate['eventId'] = 'reimported-start'
+                self.events.append(duplicate)
+                for reverse in (False, True):
+                    if reverse:
+                        self.events.reverse()
+                    _, diag, spans = self.result()
+                    attrs = {a['key']: a['value'] for a in spans[span_id(('run-one', 'stage', 'render'))]['attributes']}
+                    self.assertEqual(diag['status'], 'partial')
+                    self.assertIn('unfinished_api_attempts', [row['code'] for row in diag['diagnostics']])
+                    self.assertEqual(attrs['sermon.usageCoverage'], {'stringValue': 'partial'})
+                    self.assertEqual(attrs['sermon.apiAttempts'], {'intValue': '2' if with_completed else '1'})
+                    self.assertEqual(attrs['sermon.unresolvedApiAttempts'], {'intValue': '1'})
+                    for field in TOKEN_KEYS:
+                        self.assertNotIn('sermon.' + field, attrs)
+                        self.assertEqual(attrs['sermon.unknownCalls.' + field], {'intValue': '1'})
+                    if with_completed:
+                        self.assertEqual(attrs['sermon.knownSubtotal.inputTokens'], {'intValue': '100'})
+                    else:
+                        self.assertFalse(any(key.startswith('sermon.knownSubtotal.') for key in attrs))
+
+    def test_replay_excluded_terminal_does_not_close_started_attempt(self):
+        from unittest.mock import patch
+
+        self.events = []
+        self.fixture()
+        self.event('api_attempt_started', stage='render', spanId='render', attemptId='call-1',
+                   contractVersion='sermon-accounting-log-contract-v1', modelCallId='call-1',
+                   producerId='profile-producer', sequence=1)
+        terminal = self.event('api_attempt', stage='render', spanId='render', attemptId='call-1',
+                              status='completed', usage=dict(inputTokens=100, outputTokens=20,
+                              cachedInputTokens=0, cacheWriteTokens=0, reasoningTokens=0),
+                              cost={}, elapsedSeconds=1, responseId='response-1',
+                              contractVersion='sermon-accounting-log-contract-v1', modelCallId='call-1',
+                              producerId='profile-producer', sequence=2, provider='openai',
+                              providerScopeKey=None, providerResponseId='response-1')
+
+        def replay_with_quarantined_terminal(events):
+            excluded = {id(event) for event in events if event.get('eventId') == terminal['eventId']}
+            selected = {id(event) for event in events
+                        if 'contractVersion' in event and id(event) not in excluded}
+            return {'status': 'partial', 'diagnostics': [], 'profileEventCount': 2,
+                    '_excluded': excluded, '_selected': selected}
+
+        with patch('scripts.export_sermon_trace.read_events', return_value=(self.events, [])), \
+             patch('scripts.export_sermon_trace.profile_integrity', side_effect=replay_with_quarantined_terminal), \
+             patch('scripts.sermon_accounting.profile_integrity', side_effect=replay_with_quarantined_terminal):
+            payload, diagnostics = export(self.work)
+        spans = {s['spanId']: s for s in payload['resourceSpans'][0]['scopeSpans'][0]['spans']}
+
+        attrs = {a['key']: a['value'] for a in spans[span_id(('run-one', 'stage', 'render'))]['attributes']}
+        self.assertIn('unfinished_api_attempts', [row['code'] for row in diagnostics['diagnostics']])
+        self.assertEqual(attrs['sermon.unresolvedApiAttempts'], {'intValue': '1'})
+        self.assertEqual(attrs['sermon.apiAttempts'], {'intValue': '1'})
+        self.assertNotIn('sermon.inputTokens', attrs)
+        self.assertEqual(attrs['sermon.unknownCalls.inputTokens'], {'intValue': '1'})
+
+    def test_receipt_in_other_run_or_span_cannot_complete_started_attempt(self):
+        for receipt_run, receipt_span in (('run-two', 'render'), ('run-one', 'assemble')):
+            with self.subTest(receipt_run=receipt_run, receipt_span=receipt_span):
+                self.events = []
+                self.fixture()
+                if receipt_run != 'run-one':
+                    self.fixture(receipt_run)
+                self.event('api_attempt_started', stage='render', spanId='render', attemptId='shared-label')
+                self.event('api_attempt', run=receipt_run, stage=receipt_span, spanId=receipt_span,
+                           attemptId='shared-label', status='completed', usage=dict(inputTokens=100,
+                           outputTokens=20, cachedInputTokens=0, cacheWriteTokens=0, reasoningTokens=0),
+                           cost={}, elapsedSeconds=1, responseId='other-response')
+                _, _, spans = self.result()
+                attrs = {a['key']: a['value'] for a in spans[span_id(('run-one', 'stage', 'render'))]['attributes']}
+                self.assertEqual(attrs['sermon.usageCoverage'], {'stringValue': 'partial'})
+                self.assertEqual(attrs['sermon.unresolvedApiAttempts'], {'intValue': '1'})
+
+    def test_provider_receipts_are_reconciled_before_event_representatives(self):
+        import copy
+        for same_id in (False,True):
+            for conflict in (False,True):
+                for reverse in (False,True):
+                    with self.subTest(same_id=same_id,conflict=conflict,reverse=reverse):
+                        self.events=[];self.fixture()
+                        usage=dict(inputTokens=100,outputTokens=20,cachedInputTokens=0,cacheWriteTokens=0,reasoningTokens=0)
+                        first=self.event('api_attempt',stage='render',spanId='render',status='completed',usage=usage,cost={'estimatedUsd':None},elapsedSeconds=1,model='fixture',requestedModel='fixture',responseId='response-one')
+                        other=copy.deepcopy(first)
+                        if not same_id:other['eventId']='second-receipt'
+                        if conflict:other['usage']['inputTokens']=200
+                        self.events.append(other)
+                        if reverse:self.events.reverse()
+                        _,diag,spans=self.result()
+                        attrs={a['key']:a['value'] for a in spans[span_id(('run-one','stage','render'))]['attributes']}
+                        if conflict:
+                            self.assertEqual(diag['receiptIntegrity']['status'],'conflicted')
+                            self.assertNotIn('sermon.inputTokens',attrs)
+                            self.assertEqual(attrs['sermon.usageCoverage'],{'stringValue':'conflicted'})
+                        else:
+                            self.assertEqual(diag['receiptIntegrity']['status'],'consistent')
+                            self.assertEqual(attrs['sermon.inputTokens'],{'intValue':'100'})
+                            self.assertEqual(attrs['sermon.apiAttempts'],{'intValue':'1'})
+
+    def test_same_event_changed_response_or_attempt_quarantines_usage(self):
+        import copy
+        for changed in ('responseId', 'attemptId'):
+            for reverse in (False, True):
+                with self.subTest(changed=changed, reverse=reverse):
+                    self.events = []; self.fixture()
+                    first = self.event('api_attempt', stage='render', spanId='render', status='completed',
+                        usage=dict(inputTokens=100, outputTokens=20, cachedInputTokens=0, cacheWriteTokens=0, reasoningTokens=0),
+                        cost={'estimatedUsd': None}, elapsedSeconds=1, model='fixture', requestedModel='fixture',
+                        responseId=None if changed == 'attemptId' else 'response-one', attemptId='attempt-one')
+                    other = copy.deepcopy(first); other[changed] = 'changed-identity'; other['usage']['inputTokens'] = 200
+                    self.events.append(other)
+                    if reverse: self.events.reverse()
+                    _, diagnostics, spans = self.result()
+                    attrs = {a['key']: a['value'] for a in spans[span_id(('run-one','stage','render'))]['attributes']}
+                    self.assertEqual(diagnostics['receiptIntegrity']['status'], 'conflicted')
+                    self.assertEqual(attrs['sermon.usageCoverage'], {'stringValue': 'conflicted'})
+                    self.assertNotIn('sermon.inputTokens', attrs)
+                    self.assertNotIn('sermon.outputTokens', attrs)

@@ -1,0 +1,121 @@
+{
+  "schemaVersion": "gcp-production-cost-scenarios-v1",
+  "evaluatedDate": "2026-10-01",
+  "region": "us-central1",
+  "currency": "USD",
+  "pricing": "Linux on-demand full VM with default RAM; excludes tax and discounts",
+  "rates": {
+    "g2-standard-8": 0.853624312,
+    "g2-standard-12": 1.000416348,
+    "g2-standard-24": 2.000832696,
+    "e2-standard-4": 0.13402284,
+    "balancedDiskGiBHour": 0.000136986,
+    "standardStorageGiBHour": 2.7397e-05,
+    "standardStorageGiBMonthRounded": 0.02,
+    "storageClassAPer1000": 0.005,
+    "storageClassBPer1000": 0.0004,
+    "usInternetEgressGiB": 0.12,
+    "workflowInternalPer1000": 0.01,
+    "workflowExternalPer1000": 0.025
+  },
+  "sources": {
+    "gpuVm": "https://cloud.google.com/products/compute/pricing/accelerator-optimized",
+    "cpuVm": "https://cloud.google.com/products/compute/pricing/general-purpose",
+    "disk": "https://cloud.google.com/compute/disks-image-pricing",
+    "storage": "https://cloud.google.com/storage/pricing",
+    "workflow": "https://cloud.google.com/workflows/pricing"
+  },
+  "assumedInputs": {
+    "cpuHours": 1,
+    "ephemeralDiskGiB": 100,
+    "newArtifactGiBMonths": 5,
+    "classAOperations": 10000,
+    "classBOperations": 10000,
+    "workflowInternalSteps": 10000,
+    "workflowExternalSteps": 1000,
+    "reviewEgressGiB": 1,
+    "sharedModelGiBMonths": 50,
+    "episodesPerMonth": 4,
+    "hoursPerMonth": 730
+  },
+  "fixedIncrementalCostBreakdownUsd": {
+    "cpu": 0.13402284,
+    "storage": 0.1,
+    "storageOperations": 0.054000000000000006,
+    "workflow": 0.125,
+    "reviewEgress": 0.12
+  },
+  "singleL4Scenarios": [
+    {
+      "gpuVmUptimeHoursAssumed": 2,
+      "gpuVmUsd": 2.000832696,
+      "ephemeralDiskUsd": 0.0273972,
+      "otherAssumedIncrementalUsd": 0.53302284,
+      "incrementalInfrastructureUsd": 2.5612527359999997,
+      "fourEpisodesAndSharedModelCacheUsd": 11.245010943999999
+    },
+    {
+      "gpuVmUptimeHoursAssumed": 4,
+      "gpuVmUsd": 4.001665392,
+      "ephemeralDiskUsd": 0.0547944,
+      "otherAssumedIncrementalUsd": 0.53302284,
+      "incrementalInfrastructureUsd": 4.589482631999999,
+      "fourEpisodesAndSharedModelCacheUsd": 19.357930527999997
+    },
+    {
+      "gpuVmUptimeHoursAssumed": 6,
+      "gpuVmUsd": 6.002498087999999,
+      "ephemeralDiskUsd": 0.0821916,
+      "otherAssumedIncrementalUsd": 0.53302284,
+      "incrementalInfrastructureUsd": 6.617712527999999,
+      "fourEpisodesAndSharedModelCacheUsd": 27.470850111999997
+    }
+  ],
+  "localSparkSensitivity": [
+    {
+      "assumedTtsSpeedup": 2,
+      "assumedTextSpeedup": 1,
+      "modeledSubtotalMinutes": 102.83304815941557,
+      "budgetMinutesWithSameUnmeasuredReserveRounded15": 165
+    },
+    {
+      "assumedTtsSpeedup": 2,
+      "assumedTextSpeedup": 2,
+      "modeledSubtotalMinutes": 67.37125375009276,
+      "budgetMinutesWithSameUnmeasuredReserveRounded15": 135
+    }
+  ],
+  "jointCloudIdealFourGpuHours": {
+    "oneG2Standard12VmHours": 4,
+    "oneG2Standard12Usd": 4.001665392,
+    "oneG2Standard24VmHours": 2,
+    "oneG2Standard24Usd": 4.001665392,
+    "twoG2Standard8PerWallHourUsd": 1.707248624
+  },
+  "monthlyAlwaysOnG2Standard12VmUsd": 730.30393404,
+  "releaseGiB": 0.9560500523075461,
+  "hundredFullUsGcsReleaseReadsUsd": 11.472600627690554,
+  "formulas": {
+    "gpu": "fullVmHourlyRate * actualVmUptimeHours",
+    "disk": "provisionedGiB * diskHourlyRate * lifetimeHoursUntilDeleted",
+    "incremental": "gpu + ephemeralDisk + cpu + newArtifactStorage + storageOperations + workflow + reviewEgress",
+    "monthly": "episodesPerMonth * incremental + sharedModelCacheStorage",
+    "officialProductionTotal": "incrementalInfrastructure + measuredExternalApiFees + persistentHosting + additionalStorageAndDelivery + tax"
+  },
+  "unknownOrExcluded": [
+    "L4 actual inference runtime and peak memory",
+    "external API transcription translation review judge and supervisor usage",
+    "Cloud Run / Firebase / Firestore steady state service charges",
+    "image registry secrets build logging costs",
+    "additional cold starts retries and transfers",
+    "retained disks snapshots and old-week media growth",
+    "audience and cross-region delivery traffic",
+    "human review and wait wall time"
+  ],
+  "notes": [
+    "GPU VM hours are hypothetical sensitivity inputs, not predicted L4 production ETA.",
+    "Qwen9B text and equal reviewer budget do not replace the approved Astra/Sol production policy.",
+    "GPU jobs terminate before human approval waits; whole-cloud orchestration is proposed, not deployed.",
+    "Free usage discounts and taxes excluded; not a full monthly bill estimate."
+  ]
+}

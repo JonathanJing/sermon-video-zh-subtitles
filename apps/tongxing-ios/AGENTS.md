@@ -2,6 +2,18 @@
 
 本目录补充仓库根 `AGENTS.md`。先阅读 [README.zh.md](README.zh.md) 的模块与验收边界；界面变更同时参考 [DESIGN.zh.md](DESIGN.zh.md)，工具链或平台故障先查 [PLATFORM-NOTES.zh.md](PLATFORM-NOTES.zh.md)。
 
+## UI／UX 小迭代
+
+遵循 [Xcode-first workflow (English)](UI-ITERATION-WORKFLOW.md)／[中文流程](UI-ITERATION-WORKFLOW.zh.md)：当前不使用 Figma，以 Xcode／SwiftUI 的实际 iOS 页面为主，Firebase 网页端为辅。
+
+截图批注只需说明改哪里；交互需补“状态 → 操作 → 预期结果”。在独立开发分支复用既有组件，先记录基线，再构建、实际操作并返回同条件前后截图。独立审核者只读审核精确 revision；实现者修复后重验，机器审核不代替人工确认。默认两轮定向修复，超限保留证据并报告阻塞，不无限重做。
+
+iOS 确认后记录网页 `required`／`not_applicable`／`deferred`，再按需适配品牌、信息层级和交互语义，不强求像素相同或原生能力照搬。每周汇总候选；PR、合并、TestFlight、App Store 和网页部署分别按授权处理。不得为了 UI 微调重跑上游生产、引入新播放器或把未执行测试写为通过。具体证据、兼容和发布边界见上述流程。
+
+## 截图／录屏展示素材
+
+需要设备外框或页面拼图时使用 [Frames 指南](FRAMES.zh.md) 与 `python3 apps/tongxing-ios/scripts/frames.py`。它是可选后处理：从本轮成功预览 Manifest 或已授权录屏选取原始文件，先 dry-run，再显式执行；不得自动安装工具、下载素材或发布。原始截图／批注仍是 UI 评审依据，套框图标记为展示素材，不替代交互、真机、音频或现场验收。产物与日志留在忽略目录，保留源 Manifest；缺少 Frames 不阻塞原有开发流程。
+
 ## 范围与实现
 
 - 原生客户端沿用 `weekly.json` 和同源音频，不重生成、不重新审核内容，不改变周六生产或周日实时字幕流程。
@@ -10,6 +22,10 @@
 - 保留来源、音频 SHA-256、同步候选与审核声明。播放历史绑定周次、来源和音轨；部分下载、坏哈希或坏缓存不得显示为离线可用。
 - 查看已有差异再编辑；修改 `project.yml` 后从本目录执行 `xcodegen generate`，同时检查生成工程。`App/Info.plist` 独立维护，保留后台音频配置，不让生成器覆盖它。
 - 本机 Team、账号、签名与设备标识不写入源码或工程。提交、push、真机签名、TestFlight 和发布仍依照用户已授权的阶段处理。
+
+## 版本与发行
+
+后续候选按 [版本号约定](VERSIONING.zh.md) 使用 `产品代数.年份后两位.当年迭代序号`，下一次从 `1.26.1` 开始；每次提交新的分发候选递增末段，本地编译不递增。Apple Build 独立递增，App 与扩展一致；Beta 验收后晋升正式沿用同一数字版本，记录新 Build 与渠道配置差异。准备归档前核对最新发行记录和 Apple 状态，不复用已分配号码；保留 `1.2.0 (48)` 的历史记录，不提前改动正在验收的包。本文约定不代表已实现自动递增。
 
 ## CLI 与共享设备
 
@@ -29,6 +45,8 @@ apps/tongxing-ios/scripts/ios.sh launch --simulator "$TONGXING_SIMULATOR_UDID"
 从现有模拟器列表取得 `TONGXING_SIMULATOR_UDID`，不要把示例当作固定设备。脚本默认发现 `Tongxing` scheme；测试与启动优先复用唯一已启动的 iPhone，有多个时必须指定 UDID。没有启动设备时选择已有的可用 iPhone，脚本不创建或抹除模拟器。并行 Agent 共享设备时，先约定 UDID 与操作顺序；`test` 已关闭测试并行，不能同时对同一设备运行 UI 操作或另一轮测试。
 
 `build` 默认只构建通用 iOS Simulator。`test` 默认只运行 `TongxingTests`；UI 测试须显式 `--ui` 或 `--only-testing TongxingUITests/...`，具体类与方法从当前测试源码获取。`launch` 只安装并启动已有构建，不自动重建；可用 `--derived-data` 复用指定构建目录，或用 `--app` 指定已有 App。它会启动所选模拟器，但不会打开或关闭其他模拟器。
+
+视图图片预览用仓库根目录的 `make preview FILES=ContentView.swift`，细节见 [PREVIEW.zh.md](PREVIEW.zh.md)。每次 UI 修改后读取本轮成功 Manifest 的真实 PNG；保持前后设备与样本配置一致。预览锁仅协调该工具的并发命令，不能与 `ios.sh test`／Xcode Run 同时操作同一模拟器；不同 worktree 并行使用不同设备和构建目录。预览测试未收到请求时会跳过，不把跳过计为运行通过。
 
 每次实际命令在忽略目录 `artifacts/tongxing-ios/<日期>/cli/` 下生成唯一运行目录、`run.log` 与 `status.json`；`build`/`test` 另有唯一 `.xcresult`。默认 DerivedData 在当日 `cli/DerivedData` 复用，也可用参数覆盖。失败保留工具退出码和已有产物，不覆盖旧结果。`--dry-run` 只查询 scheme、设备和构建设置并展示命令，不构建、安装、启动或运行测试。
 

@@ -45,7 +45,7 @@
 截至 2026-09-20，当前代码已连接以下阶段：
 
 - 人工批准的完整礼拜窗口或核验后的 sermon-only 来源；不再用模型自动寻找证道边界。
-- `gpt-transcribe` 英文、MFA 阅读对齐、Astra Medium 中文／CUV 审核，以及 MacBook 优先、DGX Spark 备用的本地模型路由。
+- `gpt-transcribe` 英文、MFA 阅读对齐、Astra Medium 中文／CUV 审核；2026-10-01 起，本地模型按 [Spark 默认、MacBook fallback](../local-production-compute-policy.zh.md) 路由，已存在任务保留原后端恢复身份。
 - 讲员检查点 TTS、中文回转写、原声锚点、同步组装、人工听审、页面构建、声音指纹绑定、发行和 HTTP 文件核验。
 - 页面发行后由 Codex 单独生成并检查本周二维码海报；现有定时 Supervisor 不自动调用 ImageGen，也不自动上传或发送海报。
 

@@ -135,6 +135,30 @@ class ReleaseWorkflowTests(unittest.TestCase):
             return releases if name == 'weekly_release' else self.bridge
         with patch.object(flow, '_module', side_effect=module), patch.object(flow, '_review', return_value=True), patch.object(flow, '_audio_binding', return_value=audio_binding):
             self.assertEqual(flow.snapshot(self.path, self.week)['status'], 'prepare_release')
+            # Real composed/release snapshots and manifest validation: rebuilding
+            # a valid candidate plus its receipt must invalidate page-ready.
+            from scripts import sermon_deterministic_controller as ctrl
+            from scripts.sermon_production_supervisor import SupervisorConfig
+            supervisor = SupervisorConfig(self.week, 'fixture', work_root=self.root / 'controller',
+                release_workflow_config=self.path, gcs_bucket=None)
+            controller = ctrl.Controller(supervisor, mode='deterministic_execute')
+            upstream = {'recommendedAction': {'action': 'complete', 'humanActionRequired': False},
+                        'locations': {'runRoot': str(self.root / 'source')}}
+            with patch.object(ctrl.workflow.production, 'production_snapshot', return_value=upstream), \
+                 patch.object(ctrl.workflow, 'start_action') as dispatch:
+                original = ctrl.workflow.snapshot(supervisor, read_only=True)
+                self.assertEqual(controller.tick()['reasonCode'], 'page_ready')
+                (candidate / 'public/index.html').write_text('rebuilt valid fixture')
+                fixture.refresh_manifest(candidate)
+                receipt_path = Path(self.row['stateDir']) / 'build_page.json'
+                receipt = flow.read(receipt_path)
+                receipt['outputSha256'] = flow.digest(candidate / 'build-report.json')
+                self.write(receipt_path, receipt)
+                changed = ctrl.workflow.snapshot(supervisor, read_only=True)
+                self.assertEqual(changed['recommendedAction'], original['recommendedAction'])
+                self.assertNotEqual(ctrl.revision(changed), ctrl.revision(original))
+                self.assertEqual(controller.tick()['reasonCode'], 'terminal_evidence_changed')
+                dispatch.assert_not_called()
             release = Path(self.row['release'])
             releases.prepare(Path(self.row['registry']), candidate, release)
             waiting = flow.snapshot(self.path, self.week)

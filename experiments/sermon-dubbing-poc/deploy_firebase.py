@@ -15,7 +15,7 @@ from poc import sha256, write_json
 HERE = Path(__file__).resolve().parent
 DOWNLOAD_EXTENSIONS = {"readingPdf": "pdf", "companionPdf": "pdf", "fullVideoMp3": "mp3", "fullVideoSrt": "srt"}
 DOWNLOAD_PATH = re.compile(r"/downloads/([a-f0-9]{16})-[A-Za-z0-9][A-Za-z0-9._-]*\.(pdf|mp3|srt)")
-FINGERPRINT_UI = {"fingerprint-core.mjs", "fingerprint-capture.mjs", "fingerprint-worklet.mjs", "fingerprint-worker.mjs", "fingerprint-ui.mjs"}
+FINGERPRINT_UI = {"fingerprint-core.mjs", "fingerprint-diagnostics.mjs", "fingerprint-capture.mjs", "fingerprint-worklet.mjs", "fingerprint-worker.mjs", "fingerprint-ui.mjs"}
 PRODUCTION_SITE = "ai-for-god-sermon-audio"
 PRODUCTION_PROJECT = "ai-for-god-caption-dev"
 
@@ -240,7 +240,7 @@ def verify_release(release):
         path = public / name
         if not path.resolve().is_relative_to(public) or sha256(path) != info["sha256"]:
             raise ValueError("Release file or path changed")
-        if name not in {"index.html", "style.css", "app.mjs", "voice-samples.mjs", "timing.mjs", "catalog.mjs", "published-weeks.mjs", "theme.js", "weekly.json", "feedback.mjs", "feedback-client.mjs", "listening.mjs", "usage.mjs", "usage-client.mjs", "language-listening.mjs", "language-listening-client.mjs", "playback-memory.mjs", "media-session.mjs", "i18n.mjs", "locales-interface.mjs", "locales-app.mjs", "locales-feedback.mjs", "locales-ko.mjs", "locales-es.mjs", "content-locales.mjs", "engagement.json", "brand-icon.png", "brand-icon-light.png", "icons.svg", "icons.mjs", "brand-icon.svg", "brand-icon-light.svg"} | FINGERPRINT_UI and not re.fullmatch(r"media/[a-f0-9]{16}-[\w.-]+\.mp3", name) and name not in downloads | fingerprints:
+        if name not in {"index.html", "style.css", "app.mjs", "voice-samples.mjs", "speaker-clip-demos.mjs", "voice-demo.css", "timing.mjs", "catalog.mjs", "published-weeks.mjs", "theme.js", "weekly.json", "feedback.mjs", "feedback-client.mjs", "listening.mjs", "usage.mjs", "usage-client.mjs", "language-listening.mjs", "language-listening-client.mjs", "playback-memory.mjs", "media-session.mjs", "i18n.mjs", "locales-interface.mjs", "locales-app.mjs", "locales-feedback.mjs", "locales-ko.mjs", "locales-es.mjs", "content-locales.mjs", "engagement.json", "brand-icon.png", "brand-icon-light.png", "icons.svg", "icons.mjs", "brand-icon.svg", "brand-icon-light.svg"} | FINGERPRINT_UI and not re.fullmatch(r"media/[a-f0-9]{16}-[\w.-]+\.mp3", name) and name not in downloads | fingerprints:
             raise ValueError("Only UI, weekly content, hashed listening MP3s and bound downloads may be uploaded")
     return report
 

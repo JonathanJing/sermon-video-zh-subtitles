@@ -1,0 +1,681 @@
+{
+  "schemaVersion": "sermon-weekly-pipeline-report-v1",
+  "runs": [
+    {
+      "runSha256": "a84c701b1b1aaf5cdfe6614269c80c4735864f8193283ac25b529d621bd0007a",
+      "status": "projected",
+      "endToEndWallSeconds": 0.05231785774230957,
+      "criticalPath": {
+        "activeSeconds": 0.000709,
+        "spanPath": [
+          "be4a95cbcd6edd390aa269e4d6061453e15990424f715990243587072f6b1909"
+        ],
+        "branchSlackSeconds": {
+          "be4a95cbcd6edd390aa269e4d6061453e15990424f715990243587072f6b1909": 0.0
+        },
+        "scope": "active_leaf_compute_excludes_human_external_and_engineering"
+      },
+      "diagnostics": [],
+      "leafElapsedByExecutor": {
+        "decision_agent": 0,
+        "deterministic_program": 0,
+        "engineering_codex": 0,
+        "external_service": 0,
+        "human": 0,
+        "production_model": 0.000709
+      },
+      "leafElapsedMeaning": "completed_leaf_subtotals_not_proof_of_absent_work",
+      "executorCoverage": {
+        "decision_agent": {
+          "completedSpanCount": 0,
+          "unfinishedSpanCount": 0,
+          "completedSpanSubtotalSeconds": 0,
+          "status": "not_observed",
+          "totalExecutionSeconds": null
+        },
+        "deterministic_program": {
+          "completedSpanCount": 0,
+          "unfinishedSpanCount": 0,
+          "completedSpanSubtotalSeconds": 0,
+          "status": "not_observed",
+          "totalExecutionSeconds": null
+        },
+        "engineering_codex": {
+          "completedSpanCount": 0,
+          "unfinishedSpanCount": 0,
+          "completedSpanSubtotalSeconds": 0,
+          "status": "not_observed",
+          "totalExecutionSeconds": null
+        },
+        "external_service": {
+          "completedSpanCount": 0,
+          "unfinishedSpanCount": 0,
+          "completedSpanSubtotalSeconds": 0,
+          "status": "not_observed",
+          "totalExecutionSeconds": null
+        },
+        "human": {
+          "completedSpanCount": 0,
+          "unfinishedSpanCount": 0,
+          "completedSpanSubtotalSeconds": 0,
+          "status": "not_observed",
+          "totalExecutionSeconds": null
+        },
+        "production_model": {
+          "completedSpanCount": 1,
+          "unfinishedSpanCount": 0,
+          "completedSpanSubtotalSeconds": 0.000709,
+          "status": "measured_completed_spans",
+          "totalExecutionSeconds": null
+        }
+      },
+      "unfinishedSpans": [],
+      "usage": {
+        "directReceipts": [],
+        "byExecutor": {
+          "decision_agent": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          },
+          "deterministic_program": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          },
+          "engineering_codex": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          },
+          "external_service": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          },
+          "human": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          },
+          "production_model": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          },
+          "unknown": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          }
+        },
+        "sdkAggregates": [],
+        "conflicts": [],
+        "status": "consistent",
+        "unresolvedAttempts": 0,
+        "combinedTokenTotal": null,
+        "scope": "globally_deduplicated_direct_receipts_and_sdk_aggregates_separate",
+        "equivalence": "shared_with_accounting_summary_including_model_cost_latency_and_executor",
+        "countMeaning": "observed_receipt_count_not_proof_of_no_uninstrumented_calls"
+      },
+      "decisionObservations": [],
+      "localModelObservations": [],
+      "cacheObservations": [],
+      "historicalCacheUsage": {
+        "observations": 0,
+        "distinctHistoricalResponses": 0,
+        "conflicts": [],
+        "historicalCostUsd": null,
+        "currentSpendMeaning": "cache_observations_are_not_current_transport_or_spend_receipts",
+        "knownHistoricalTokenSubtotal": {
+          "inputTokens": null,
+          "cachedInputTokens": null,
+          "outputTokens": null,
+          "reasoningTokens": null
+        },
+        "missingHistoricalFields": {
+          "inputTokens": 0,
+          "cachedInputTokens": 0,
+          "outputTokens": 0,
+          "reasoningTokens": 0
+        }
+      },
+      "artifactSnapshots": [
+        {
+          "workflowSha256": "60286b33d31ecd1cacbbe49d151e47d38b5acf9a1e50557cdcbf2be7e2fb4eb0",
+          "phase": "before",
+          "scope": "existing_files_not_execution_proof",
+          "artifacts": []
+        },
+        {
+          "workflowSha256": "60286b33d31ecd1cacbbe49d151e47d38b5acf9a1e50557cdcbf2be7e2fb4eb0",
+          "phase": "after",
+          "scope": "existing_files_not_execution_proof",
+          "artifacts": []
+        }
+      ],
+      "workflowProvenance": [
+        {
+          "workflowSha256": "60286b33d31ecd1cacbbe49d151e47d38b5acf9a1e50557cdcbf2be7e2fb4eb0",
+          "metadata": {
+            "mode": "dry_run"
+          },
+          "parentWorkflowSha256": null,
+          "executionIdentity": {
+            "gitCommit": "fd788ac8517d381d24bb1a834689e88bcfa4f6c7",
+            "trackedWorkingTreeDirty": false,
+            "loadedProjectCodeSha256": {
+              "scripts/export_observability_trace.py": "90ff85bab8dad5442391e54d87aa1935a7b94d9f0eaba91deb9524318307df39",
+              "scripts/sermon_accounting.py": "b5857bf3f355c8dd030a33f26e037262557b73cd0dddb67c93e11b0d7952df6f",
+              "scripts/sermon_cache_observation.py": "7b3c83d2f47e7f57dbb885cf0f051f48bde2419ba0bead2b9a3334d453ed549a",
+              "scripts/sermon_decision_accounting.py": "6302895cd3398bd7fd70c204957692eb40ad5edfdf07cb9b37393723e081787c",
+              "scripts/sermon_execution_harness.py": "fde48e91f6c835848cddcc4e824786385939a91fd894526bb2cf40d2878fc0b4",
+              "scripts/sermon_job_liveness.py": "dc4968bd18266c015fde619c772d7bceac31cf66500461ea8da812788aff48a2",
+              "scripts/sermon_local_model_observation.py": "9e640bd51fd0a99d59afa8fa74d7748a9f01ee9c8002717f9c3a9fc63af039b6",
+              "scripts/sermon_workflow_evidence.py": "b148b6b425b3a56be111730b2bd9822b2014f0f903e8c7aaa3c59f70bccff0ec",
+              "scripts/sermon_workflow_jobs.py": "1adc990a728884b3caecb2b87c58e0bede12b64db452cf0f571611ce4b051f89",
+              "scripts/weekly_pipeline_report.py": "1bf6a0ecb329fd336425fb6dd68bea6ab94f410b7fa3a468c8c1a0be8e445d9b"
+            },
+            "pythonVersion": "3.13.15",
+            "scope": "loaded_project_modules_at_workflow_start_not_all_or_remote_code"
+          }
+        }
+      ],
+      "workloadEvidence": [],
+      "workUnits": [
+        {
+          "spanSha256": "be4a95cbcd6edd390aa269e4d6061453e15990424f715990243587072f6b1909",
+          "stage": "synthetic.model",
+          "workUnitId": null,
+          "executorType": "production_model",
+          "attemptSha256": "859452dbbdb0437b6163117df6d6800110af01e254a5e0afdc10880da705631b",
+          "workflowSha256": "60286b33d31ecd1cacbbe49d151e47d38b5acf9a1e50557cdcbf2be7e2fb4eb0",
+          "startedAt": "2026-09-30T14:39:53.913614+00:00",
+          "finishedAt": "2026-09-30T14:39:53.914356+00:00",
+          "cacheHit": false,
+          "queuedAt": null,
+          "status": "completed",
+          "dependencyRecorded": true,
+          "dependencyReadyAt": null,
+          "elapsedSeconds": 0.000709,
+          "queueWaitSeconds": null,
+          "dependencyReadyToQueueSeconds": null,
+          "dependsOnSha256": [],
+          "parentSpanSha256": "e3b28e9634230bac503a36a7efc289b99fdf715143772c7fa047340a50de2ce3",
+          "models": [
+            "gpt-6-astra",
+            "model-a"
+          ],
+          "queueTimingStatus": "missing_instrumentation"
+        }
+      ],
+      "sourceDurationSeconds": null,
+      "locales": null,
+      "pageReadyAt": null,
+      "orchestrationOverheadSeconds": null,
+      "observabilityCoverage": {
+        "sourceDuration": "missing_or_conflicting",
+        "locales": "not_observed",
+        "queueTiming": "missing_instrumentation",
+        "pageReady": "not_observed",
+        "orchestrationOverhead": "missing_instrumentation",
+        "crossProcessCriticalPath": "not_established",
+        "logCompleteness": "not_established",
+        "statusMeaning": "projected_means_computable_recorded_DAG_not_complete_telemetry"
+      },
+      "acceptance": "not_evaluated",
+      "notes": [
+        "Executor subtotals overlap across parallel branches; never sum as end-to-end wall.",
+        "dependsOn contains exact same-run span IDs, not stage names or parent span IDs.",
+        "Human/external elapsed is wait; engineering is separate from production runtime.",
+        "Missing source/locale/page-ready telemetry stays unknown; no sign-off is inferred."
+      ]
+    },
+    {
+      "runSha256": "56e552de2df8377a4a3e9d5b441375ff3338d63531ed7e1624e1b885d91c9815",
+      "status": "projected",
+      "endToEndWallSeconds": 0.05833005905151367,
+      "criticalPath": {
+        "activeSeconds": 0.001282,
+        "spanPath": [
+          "ab27a53540e910736a5ca2824258403b8e5fc861488cc11f4750402e80425eff"
+        ],
+        "branchSlackSeconds": {
+          "ab27a53540e910736a5ca2824258403b8e5fc861488cc11f4750402e80425eff": 0.0
+        },
+        "scope": "active_leaf_compute_excludes_human_external_and_engineering"
+      },
+      "diagnostics": [],
+      "leafElapsedByExecutor": {
+        "decision_agent": 0,
+        "deterministic_program": 0,
+        "engineering_codex": 0,
+        "external_service": 0,
+        "human": 0,
+        "production_model": 0.001282
+      },
+      "leafElapsedMeaning": "completed_leaf_subtotals_not_proof_of_absent_work",
+      "executorCoverage": {
+        "decision_agent": {
+          "completedSpanCount": 0,
+          "unfinishedSpanCount": 0,
+          "completedSpanSubtotalSeconds": 0,
+          "status": "not_observed",
+          "totalExecutionSeconds": null
+        },
+        "deterministic_program": {
+          "completedSpanCount": 0,
+          "unfinishedSpanCount": 0,
+          "completedSpanSubtotalSeconds": 0,
+          "status": "not_observed",
+          "totalExecutionSeconds": null
+        },
+        "engineering_codex": {
+          "completedSpanCount": 0,
+          "unfinishedSpanCount": 0,
+          "completedSpanSubtotalSeconds": 0,
+          "status": "not_observed",
+          "totalExecutionSeconds": null
+        },
+        "external_service": {
+          "completedSpanCount": 0,
+          "unfinishedSpanCount": 0,
+          "completedSpanSubtotalSeconds": 0,
+          "status": "not_observed",
+          "totalExecutionSeconds": null
+        },
+        "human": {
+          "completedSpanCount": 0,
+          "unfinishedSpanCount": 0,
+          "completedSpanSubtotalSeconds": 0,
+          "status": "not_observed",
+          "totalExecutionSeconds": null
+        },
+        "production_model": {
+          "completedSpanCount": 1,
+          "unfinishedSpanCount": 0,
+          "completedSpanSubtotalSeconds": 0.001282,
+          "status": "measured_completed_spans",
+          "totalExecutionSeconds": null
+        }
+      },
+      "unfinishedSpans": [],
+      "usage": {
+        "directReceipts": [
+          {
+            "executorType": "production_model",
+            "status": "completed",
+            "model": "gpt-6-astra",
+            "elapsedSeconds": 0.1,
+            "receiptSha256": "c4ee05d37cce2eaa30d76ba0840cc27ac00989bc3615a2552a21a808432ba8e5",
+            "responseIdSha256": "0c6fcba2d6ed38a860d458cf86d53ea41e690f27c0592eb2da1db075374e4eb8",
+            "requestedModel": "gpt-6-astra",
+            "spanSha256": "ab27a53540e910736a5ca2824258403b8e5fc861488cc11f4750402e80425eff",
+            "attemptSha256": "9b995e7f30fc5f544c436d448ae64bdc14cf6de4b8ff723b16b8a5d553c95ede",
+            "usage": {
+              "inputTokens": 100,
+              "cachedInputTokens": 0,
+              "outputTokens": 20,
+              "reasoningTokens": 5,
+              "nonCachedInputTokens": 100
+            },
+            "cost": {
+              "status": "estimated",
+              "estimatedUsd": 0.002,
+              "invoiceVerified": false
+            }
+          }
+        ],
+        "byExecutor": {
+          "decision_agent": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          },
+          "deterministic_program": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          },
+          "engineering_codex": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          },
+          "external_service": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          },
+          "human": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          },
+          "production_model": {
+            "calls": 1,
+            "knownSubtotal": {
+              "inputTokens": 100,
+              "cachedInputTokens": 0,
+              "outputTokens": 20,
+              "reasoningTokens": 5,
+              "nonCachedInputTokens": 100
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          },
+          "unknown": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          }
+        },
+        "sdkAggregates": [
+          {
+            "executorType": "production_model",
+            "status": "completed",
+            "model": "model-a",
+            "elapsedSeconds": 0.1,
+            "invocationSha256": "a2ab09d5da44378936955de363e65d0673de3cdffc341766f01c59d5deb69527",
+            "usage": {
+              "requests": 1,
+              "input_tokens": 100,
+              "output_tokens": 20,
+              "total_tokens": 120
+            }
+          }
+        ],
+        "conflicts": [],
+        "status": "consistent",
+        "unresolvedAttempts": 0,
+        "combinedTokenTotal": null,
+        "scope": "globally_deduplicated_direct_receipts_and_sdk_aggregates_separate",
+        "equivalence": "shared_with_accounting_summary_including_model_cost_latency_and_executor",
+        "countMeaning": "observed_receipt_count_not_proof_of_no_uninstrumented_calls"
+      },
+      "decisionObservations": [],
+      "localModelObservations": [],
+      "cacheObservations": [],
+      "historicalCacheUsage": {
+        "observations": 0,
+        "distinctHistoricalResponses": 0,
+        "conflicts": [],
+        "historicalCostUsd": null,
+        "currentSpendMeaning": "cache_observations_are_not_current_transport_or_spend_receipts",
+        "knownHistoricalTokenSubtotal": {
+          "inputTokens": null,
+          "cachedInputTokens": null,
+          "outputTokens": null,
+          "reasoningTokens": null
+        },
+        "missingHistoricalFields": {
+          "inputTokens": 0,
+          "cachedInputTokens": 0,
+          "outputTokens": 0,
+          "reasoningTokens": 0
+        }
+      },
+      "artifactSnapshots": [
+        {
+          "workflowSha256": "fd7c0a0faa13c72c13339f3f3f024eb9da01c26f591ee19ed51c267b5dfa7b32",
+          "phase": "before",
+          "scope": "existing_files_not_execution_proof",
+          "artifacts": []
+        },
+        {
+          "workflowSha256": "fd7c0a0faa13c72c13339f3f3f024eb9da01c26f591ee19ed51c267b5dfa7b32",
+          "phase": "after",
+          "scope": "existing_files_not_execution_proof",
+          "artifacts": []
+        }
+      ],
+      "workflowProvenance": [
+        {
+          "workflowSha256": "fd7c0a0faa13c72c13339f3f3f024eb9da01c26f591ee19ed51c267b5dfa7b32",
+          "metadata": {
+            "mode": "dry_run"
+          },
+          "parentWorkflowSha256": null,
+          "executionIdentity": {
+            "gitCommit": "fd788ac8517d381d24bb1a834689e88bcfa4f6c7",
+            "trackedWorkingTreeDirty": false,
+            "loadedProjectCodeSha256": {
+              "scripts/export_observability_trace.py": "90ff85bab8dad5442391e54d87aa1935a7b94d9f0eaba91deb9524318307df39",
+              "scripts/sermon_accounting.py": "b5857bf3f355c8dd030a33f26e037262557b73cd0dddb67c93e11b0d7952df6f",
+              "scripts/sermon_cache_observation.py": "7b3c83d2f47e7f57dbb885cf0f051f48bde2419ba0bead2b9a3334d453ed549a",
+              "scripts/sermon_decision_accounting.py": "6302895cd3398bd7fd70c204957692eb40ad5edfdf07cb9b37393723e081787c",
+              "scripts/sermon_execution_harness.py": "fde48e91f6c835848cddcc4e824786385939a91fd894526bb2cf40d2878fc0b4",
+              "scripts/sermon_job_liveness.py": "dc4968bd18266c015fde619c772d7bceac31cf66500461ea8da812788aff48a2",
+              "scripts/sermon_local_model_observation.py": "9e640bd51fd0a99d59afa8fa74d7748a9f01ee9c8002717f9c3a9fc63af039b6",
+              "scripts/sermon_workflow_evidence.py": "b148b6b425b3a56be111730b2bd9822b2014f0f903e8c7aaa3c59f70bccff0ec",
+              "scripts/sermon_workflow_jobs.py": "1adc990a728884b3caecb2b87c58e0bede12b64db452cf0f571611ce4b051f89",
+              "scripts/weekly_pipeline_report.py": "1bf6a0ecb329fd336425fb6dd68bea6ab94f410b7fa3a468c8c1a0be8e445d9b"
+            },
+            "pythonVersion": "3.13.15",
+            "scope": "loaded_project_modules_at_workflow_start_not_all_or_remote_code"
+          }
+        }
+      ],
+      "workloadEvidence": [],
+      "workUnits": [
+        {
+          "spanSha256": "ab27a53540e910736a5ca2824258403b8e5fc861488cc11f4750402e80425eff",
+          "stage": "synthetic.model",
+          "workUnitId": null,
+          "executorType": "production_model",
+          "attemptSha256": "4bc4f501a8ad2da5e8c2586b3906dbd0737a9068dfd3396ac2a3fb5d3f0ac0c9",
+          "workflowSha256": "fd7c0a0faa13c72c13339f3f3f024eb9da01c26f591ee19ed51c267b5dfa7b32",
+          "startedAt": "2026-09-30T14:39:53.855024+00:00",
+          "finishedAt": "2026-09-30T14:39:53.856338+00:00",
+          "cacheHit": false,
+          "queuedAt": null,
+          "status": "completed",
+          "dependencyRecorded": true,
+          "dependencyReadyAt": null,
+          "elapsedSeconds": 0.001282,
+          "queueWaitSeconds": null,
+          "dependencyReadyToQueueSeconds": null,
+          "dependsOnSha256": [],
+          "parentSpanSha256": "7f0f26b9c183e0f628cd971063c6dc1aceda0f3f64af6c083f82692b1cc5e388",
+          "models": [
+            "gpt-6-astra",
+            "model-a"
+          ],
+          "queueTimingStatus": "missing_instrumentation"
+        }
+      ],
+      "sourceDurationSeconds": null,
+      "locales": null,
+      "pageReadyAt": null,
+      "orchestrationOverheadSeconds": null,
+      "observabilityCoverage": {
+        "sourceDuration": "missing_or_conflicting",
+        "locales": "not_observed",
+        "queueTiming": "missing_instrumentation",
+        "pageReady": "not_observed",
+        "orchestrationOverhead": "missing_instrumentation",
+        "crossProcessCriticalPath": "not_established",
+        "logCompleteness": "not_established",
+        "statusMeaning": "projected_means_computable_recorded_DAG_not_complete_telemetry"
+      },
+      "acceptance": "not_evaluated",
+      "notes": [
+        "Executor subtotals overlap across parallel branches; never sum as end-to-end wall.",
+        "dependsOn contains exact same-run span IDs, not stage names or parent span IDs.",
+        "Human/external elapsed is wait; engineering is separate from production runtime.",
+        "Missing source/locale/page-ready telemetry stays unknown; no sign-off is inferred."
+      ]
+    }
+  ],
+  "status": "projected",
+  "diagnostics": [],
+  "duplicateEventsIgnored": 0,
+  "receiptIntegrity": {
+    "status": "consistent",
+    "conflicts": [],
+    "equivalentDuplicatesIgnored": 2
+  },
+  "networkCalls": 0,
+  "acceptance": "not_evaluated"
+}

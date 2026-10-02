@@ -58,6 +58,23 @@
   --out artifacts/<本周视频HTTP收据>.json
 ```
 
+组装后的本地候选可再独立运行只读检查，先固定当前干净代码 commit 和 `build-report.json` 的文件 SHA-256：
+
+```bash
+.venv/bin/python scripts/inspect_multilingual_v3_release.py \
+  --candidate artifacts/<本周-v3-候选> \
+  --baseline artifacts/<原始完整正式站快照>/public \
+  --expected-commit <40位代码commit> \
+  --expected-report-sha256 <build-report.json的64位文件SHA256> \
+  --project ai-for-god-caption-dev \
+  --site ai-for-god-sermon-audio \
+  --video-file artifacts/<本周已审完整播放视频>.mp4
+```
+
+旧 Hosting 视频配置不传 `--video-file`。检查器重新读取所有候选和基线文件，核对 manifest、rollback catalog、旧页面/资产保留、新三语 package/sidecar 绑定、精确文件数量，以及 bucket 视频本地字节和候选 Hosting 目标；结束前再检查文件和代码身份。输出到 stdout，输入目录不变、无网络或部署动作。成功只标记 `local_snapshot_consistent_release_gates_pending` 且 `deploymentAllowed=false`，同时保留新增/替换/保留文件集合及上游 package hashes。
+
+这个本地结果不能证明基线仍与线上一致，不独立验证上游人审收据，也不验证 Firebase alias 的当前映射或取得发布授权。当前没有部署器消费该结果来自动放行；线上基线 CAS、独立人审、精确发布批准、受保护代码晋升、site 串行锁、部署后 HTTP/Range、设备与现场门槛仍需分别完成。不要将旧 v2 部署 CLI 用于该 v3 候选。
+
 | 阶段 | 必须保存的结果 |
 | --- | --- |
 | 构建 | 从冻结的 Layer 1–3 包与批准的系列／标题生成本周各语言 v2 Release、页面、全文、英文对照、字幕、完整播放视频、音频和定位 sidecar；按所选配置把视频放在 Hosting 或独立 bucket。每个公开资源有固定路径及 SHA；不公开含绝对路径的私有包。 |

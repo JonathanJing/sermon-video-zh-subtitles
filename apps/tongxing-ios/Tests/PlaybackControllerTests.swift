@@ -3,6 +3,7 @@ import CryptoKit
 import Foundation
 import MediaPlayer
 import TongxingCore
+@testable import TongxingInfrastructure
 import XCTest
 @testable import Tongxing
 
@@ -11,18 +12,343 @@ import XCTest
 /// not represent a real phone call, headphone route, lock-screen or venue test.
 @MainActor
 final class PlaybackControllerTests: XCTestCase {
+    #if DEBUG
+    func testUnselectedPublishedHeadingLoadsWithoutChangingLegacyPlayback() async throws {
+        let run = UUID().uuidString
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("Heading-\(run)")
+        let suite = "Heading-\(run)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        let model = UITestLaunch.makeFixtureModel(supportDirectory: directory,
+                                                   statisticsDefaults: defaults, nativePublishedPage: true)
+        defer {
+            model.playback.pause()
+            model.mediaSession.invalidateAndCancel()
+            defaults.removePersistentDomain(forName: suite)
+            try? FileManager.default.removeItem(at: directory)
+        }
+        await model.start()
+        let page = try XCTUnwrap(model.independentPages.first)
+        let week = try XCTUnwrap(model.weeks.first)
+        await model.select(week: week)
+        // AVPlayer's network process does not use the injected URLProtocol.
+        // Download the verified synthetic MP3 through the model first.
+        model.downloadSelected()
+        try await eventually("legacy playback ready") { model.usingOfflineAudio && model.playback.isReady }
+        model.playback.jump(to: 12)
+        try await eventually("legacy retained position") { abs(model.playback.position - 12) < 0.1 }
+        let track = model.selectedTrack
+        let locale = model.selectedContentLocale
+        await model.loadPublishedHeading(page)
+        let heading = model.heading(for: page)
+        XCTAssertEqual(heading.title, "测试完整视频证道")
+        XCTAssertEqual(heading.series, "启示录：耶稣带来的安慰与盼望")
+        XCTAssertEqual(heading.speaker, "Eric Geiger")
+        XCTAssertEqual(model.selectedWeek, week)
+        XCTAssertEqual(model.selectedPageID, week.id)
+        XCTAssertEqual(model.selectedTrack, track)
+        XCTAssertEqual(model.selectedContentLocale, locale)
+        XCTAssertEqual(model.playback.position, 12, accuracy: 0.1)
+        XCTAssertFalse(model.playback.isPlaying)
+        XCTAssertNil(model.publishedTranscript)
+    }
+    #endif
+
+    func testFailedPublishedPositionRestoreRetainsTimelineAndAllowsSameLocaleRetry() async throws {
+        var failNextSeek = false
+        let fixture = try Fixture(seekCompletionResult: { finished in
+            if failNextSeek { failNextSeek = false; return false }
+            return finished
+        })
+        defer { fixture.dispose() }
+        let original = fixture.publishedAudio(locale: "zh-Hans")
+        let replacement = fixture.publishedAudio(locale: "ko")
+        fixture.player.loadPublishedAudio(original)
+        try await eventually("original published ready") { fixture.player.isReady }
+        fixture.player.jump(to: 6)
+        try await eventually("original position") { abs(fixture.player.position - 6) < 0.1 }
+        fixture.player.play()
+        try await eventually("original playing") { fixture.player.isPlaying }
+        fixture.player.preparePublishedLanguageSwitch(pageID: original.pageID, sourceIdentity: original.sourceIdentitySha256)
+        let retained = fixture.player.position
+        failNextSeek = true
+        fixture.player.loadPublishedAudio(replacement)
+        try await eventually("interrupted restore reports failure") { fixture.player.publishedPositionRestoreFailed }
+        try await settleCallbacks()
+        XCTAssertFalse(fixture.player.isReady)
+        XCTAssertFalse(fixture.player.isPlaying)
+        XCTAssertEqual(fixture.player.position, retained, accuracy: 0.01)
+        XCTAssertTrue(fixture.player.message.contains("恢复失败"))
+        fixture.player.play()
+        try await settleCallbacks()
+        XCTAssertFalse(fixture.player.isPlaying, "失败后不得从新语言开头继续播放")
+        // Same identity must reload, rather than the normal duplicate-load no-op.
+        fixture.player.loadPublishedAudio(replacement)
+        try await eventually("same locale retry restores requested position") {
+            fixture.player.isReady && !fixture.player.publishedPositionRestoreFailed
+                && fixture.player.message.contains("已定位")
+        }
+        XCTAssertEqual(fixture.player.position, retained, accuracy: 0.1)
+        XCTAssertFalse(fixture.player.isPlaying, "重试完成后等待用户明确播放")
+        fixture.player.clear()
+        XCTAssertFalse(fixture.player.publishedPositionRestoreFailed)
+    }
+
+    func testJumpCompletionReportsConfirmedSeekAndInterruptedFailure() async throws {
+        var failNextSeek = false
+        let fixture = try Fixture(seekCompletionResult: { finished in
+            if failNextSeek { failNextSeek = false; return false }
+            return finished
+        })
+        defer { fixture.dispose() }
+        try await fixture.load()
+        var completed: Bool?
+        fixture.player.jump(to: 5) { completed = $0 }
+        XCTAssertNil(completed, "跳转请求发出不代表定位完成")
+        try await eventually("confirmed jump completion") { completed != nil }
+        XCTAssertEqual(completed, true)
+        XCTAssertEqual(fixture.player.position, 5, accuracy: 0.1)
+        completed = nil
+        failNextSeek = true
+        fixture.player.jump(to: 7) { completed = $0 }
+        try await eventually("interrupted jump completion") { completed != nil }
+        XCTAssertEqual(completed, false)
+        XCTAssertFalse(fixture.player.isPlaying)
+    }
+
+    func testPublishedLanguageTransferHonorsPendingSeekAndPausedIntent() async throws {
+        let fixture = try Fixture()
+        defer { fixture.dispose() }
+        let original = fixture.publishedAudio(locale: "zh-Hans")
+        fixture.player.loadPublishedAudio(original)
+        try await eventually("published fixture ready") { fixture.player.isReady }
+        fixture.player.jump(to: 7)
+        // Capture synchronously before AVPlayer delivers this seek completion.
+        fixture.player.preparePublishedLanguageSwitch(pageID: original.pageID, sourceIdentity: original.sourceIdentitySha256)
+        XCTAssertEqual(fixture.player.position, 7, accuracy: 0.01)
+        XCTAssertFalse(fixture.player.isReady)
+        fixture.player.loadPublishedAudio(fixture.publishedAudio(locale: "ko"))
+        XCTAssertEqual(fixture.player.position, 7, accuracy: 0.01)
+        try await eventually("requested position transferred") { fixture.player.isReady && abs(fixture.player.position - 7) < 0.1 && fixture.player.message.contains("已定位") }
+        try await settleCallbacks()
+        XCTAssertFalse(fixture.player.isPlaying)
+        XCTAssertNil(fixture.player.resumePosition)
+    }
+
+    func testPublishedLanguageTransferPreservesOffsetOverDestinationBookmark() async throws {
+        let fixture = try Fixture()
+        defer { fixture.dispose() }
+        let chinese = fixture.publishedAudio(locale: "zh-Hans")
+        let korean = fixture.publishedAudio(locale: "ko")
+        fixture.player.loadPublishedAudio(korean)
+        try await eventually("destination fixture ready") { fixture.player.isReady }
+        fixture.player.jump(to: 8)
+        try await eventually("destination bookmark") { abs(fixture.player.position - 8) < 0.1 }
+        fixture.player.loadPublishedAudio(chinese)
+        try await eventually("source fixture ready") { fixture.player.isReady }
+        fixture.player.jump(to: 4)
+        try await eventually("source position") { abs(fixture.player.position - 4) < 0.1 }
+        fixture.player.nudge(1)
+        try await eventually("source offset") { abs(fixture.player.position - 5) < 0.1 }
+        fixture.player.preparePublishedLanguageSwitch(pageID: chinese.pageID, sourceIdentity: chinese.sourceIdentitySha256)
+        fixture.player.loadPublishedAudio(korean)
+        try await eventually("transfer overrides bookmark") { fixture.player.isReady && fixture.player.message.contains("已定位") }
+        XCTAssertEqual(fixture.player.position, 5, accuracy: 0.1)
+        XCTAssertEqual(fixture.player.offset, 1, accuracy: 0.01)
+        XCTAssertNil(fixture.player.resumePosition)
+        XCTAssertFalse(fixture.player.isPlaying)
+    }
+
+    func testPublishedLanguageTransferKeepsPlayingIntentThroughTextOnlyLocale() async throws {
+        let fixture = try Fixture()
+        defer { fixture.dispose() }
+        let original = fixture.publishedAudio(locale: "zh-Hans")
+        fixture.player.loadPublishedAudio(original)
+        try await eventually("published fixture ready") { fixture.player.isReady }
+        fixture.player.jump(to: 4)
+        try await eventually("published fixture positioned") { abs(fixture.player.position - 4) < 0.1 }
+        fixture.player.play()
+        try await eventually("published fixture playing") { fixture.player.isPlaying }
+        fixture.player.preparePublishedLanguageSwitch(pageID: original.pageID, sourceIdentity: original.sourceIdentitySha256)
+        let retained = fixture.player.position
+        try await settleCallbacks()
+        XCTAssertEqual(fixture.player.position, retained, accuracy: 0.01)
+        XCTAssertFalse(fixture.player.isPlaying)
+        // Text-only has no audio load. A further locale change must reuse retention.
+        fixture.player.preparePublishedLanguageSwitch(pageID: original.pageID, sourceIdentity: original.sourceIdentitySha256)
+        XCTAssertEqual(fixture.player.position, retained, accuracy: 0.01)
+        fixture.player.loadPublishedAudio(fixture.publishedAudio(locale: "es"))
+        try await eventually("replacement resumes playing") { fixture.player.isPlaying }
+        fixture.player.pause()
+        XCTAssertEqual(fixture.player.position, retained, accuracy: 0.5)
+    }
+
+    func testPauseDuringPublishedLanguagePreparationPreventsAutoplay() async throws {
+        let fixture = try Fixture()
+        defer { fixture.dispose() }
+        let original = fixture.publishedAudio(locale: "zh-Hans")
+        fixture.player.loadPublishedAudio(original)
+        try await eventually("published fixture ready") { fixture.player.isReady }
+        fixture.player.play()
+        try await eventually("published fixture playing") { fixture.player.isPlaying }
+        fixture.player.preparePublishedLanguageSwitch(pageID: original.pageID, sourceIdentity: original.sourceIdentitySha256)
+        fixture.player.pause()
+        fixture.player.loadPublishedAudio(fixture.publishedAudio(locale: "ko"))
+        try await eventually("replacement positioned while paused") { fixture.player.isReady && fixture.player.message.contains("已定位") }
+        try await settleCallbacks()
+        XCTAssertFalse(fixture.player.isPlaying)
+        XCTAssertFalse(fixture.player.isWaiting)
+    }
+
+    func testPublishedLanguageTransferClampsShortAudioWithoutRestarting() async throws {
+        let fixture = try Fixture()
+        defer { fixture.dispose() }
+        let original = fixture.publishedAudio(locale: "zh-Hans")
+        fixture.player.loadPublishedAudio(original)
+        try await eventually("published fixture ready") { fixture.player.isReady }
+        fixture.player.jump(to: 9)
+        try await eventually("position near original end") { abs(fixture.player.position - 9) < 0.1 }
+        fixture.player.play()
+        try await eventually("original playing") { fixture.player.isPlaying }
+        fixture.player.preparePublishedLanguageSwitch(pageID: original.pageID, sourceIdentity: original.sourceIdentitySha256)
+        fixture.player.loadPublishedAudio(try fixture.publishedAudio(locale: "ko", seconds: 3))
+        try await eventually("short replacement positioned") { fixture.player.isReady && fixture.player.message.contains("已定位") }
+        XCTAssertEqual(fixture.player.position, 3, accuracy: 0.1)
+        XCTAssertFalse(fixture.player.isPlaying)
+    }
+
+    func testRapidPublishedLanguageLoadsAndExplicitClearCannotRestoreStalePosition() async throws {
+        let fixture = try Fixture()
+        defer { fixture.dispose() }
+        let original = fixture.publishedAudio(locale: "zh-Hans")
+        fixture.player.loadPublishedAudio(original)
+        try await eventually("published fixture ready") { fixture.player.isReady }
+        fixture.player.jump(to: 6)
+        fixture.player.preparePublishedLanguageSwitch(pageID: original.pageID, sourceIdentity: original.sourceIdentitySha256)
+        fixture.player.loadPublishedAudio(fixture.publishedAudio(locale: "ko"))
+        fixture.player.preparePublishedLanguageSwitch(pageID: original.pageID, sourceIdentity: original.sourceIdentitySha256)
+        fixture.player.loadPublishedAudio(fixture.publishedAudio(locale: "es"))
+        try await eventually("latest language positioned") { fixture.player.isReady && fixture.player.message.contains("已定位") }
+        XCTAssertEqual(fixture.player.position, 6, accuracy: 0.1)
+        fixture.player.preparePublishedLanguageSwitch(pageID: original.pageID, sourceIdentity: original.sourceIdentitySha256)
+        fixture.player.clear()
+        fixture.player.loadPublishedAudio(original)
+        try await eventually("same page loaded after explicit clear") { fixture.player.isReady }
+        try await settleCallbacks()
+        XCTAssertEqual(fixture.player.position, 0, accuracy: 0.1)
+        XCTAssertFalse(fixture.player.isPlaying)
+    }
+
+    func testPublishedLanguageTransferNeverCrossesSourceIdentity() async throws {
+        let fixture = try Fixture()
+        defer { fixture.dispose() }
+        let original = fixture.publishedAudio(locale: "zh-Hans")
+        fixture.player.loadPublishedAudio(original)
+        try await eventually("published fixture ready") { fixture.player.isReady }
+        fixture.player.jump(to: 6)
+        fixture.player.preparePublishedLanguageSwitch(pageID: original.pageID, sourceIdentity: original.sourceIdentitySha256)
+        fixture.player.loadPublishedAudio(fixture.publishedAudio(locale: "ko", sourceIdentity: String(repeating: "b", count: 64)))
+        try await eventually("different source ready") { fixture.player.isReady }
+        try await settleCallbacks()
+        XCTAssertEqual(fixture.player.position, 0, accuracy: 0.1)
+        XCTAssertNil(fixture.player.resumePosition)
+        XCTAssertFalse(fixture.player.isPlaying)
+    }
+
+    func testInterfaceLanguageChangesPreservePublishedPositionAndPendingSeek() async throws {
+        let fixture = try Fixture()
+        defer { fixture.dispose() }
+        let localization = AppLocalization.shared
+        let originalPreference = localization.preference
+        defer { localization.setPreference(originalPreference) }
+        fixture.player.loadPublishedAudio(fixture.publishedAudio(locale: "zh-Hans"))
+        try await eventually("published fixture ready") { fixture.player.isReady }
+        fixture.player.jump(to: 5)
+        localization.setPreference(.english)
+        localization.setPreference(.korean)
+        try await eventually("position survives interface changes") { abs(fixture.player.position - 5) < 0.1 }
+        try await settleCallbacks()
+        XCTAssertTrue(fixture.player.isReady)
+        XCTAssertFalse(fixture.player.isPlaying)
+        fixture.player.play()
+        try await eventually("published playing") { fixture.player.isPlaying }
+        localization.setPreference(.spanish)
+        try await settleCallbacks()
+        XCTAssertTrue(fixture.player.isPlaying)
+        XCTAssertGreaterThanOrEqual(fixture.player.position, 5)
+    }
+
     func testVerifiedVoicePreviewUsesSharedPlayerWithoutBookmark() async throws {
         let fixture = try Fixture()
         defer { fixture.dispose() }
-        fixture.player.loadPreview(url: fixture.audioURL, title: "Synthetic voice demo")
+        fixture.player.loadPreview(url: fixture.audioURL, title: "Synthetic voice demo", previewID: "clip-en")
         try await eventually("voice demo ready") { fixture.player.isReady }
         XCTAssertTrue(fixture.player.isPreview)
+        XCTAssertEqual(fixture.player.previewID, "clip-en")
         XCTAssertEqual(MPNowPlayingInfoCenter.default().nowPlayingInfo?[MPMediaItemPropertyTitle] as? String,
                        "Synthetic voice demo")
+        await fixture.player.applyAlignedPosition(5)
+        fixture.player.pause()
+        let position = fixture.player.position
+        try await Task.sleep(for: .milliseconds(200))
+        XCTAssertEqual(fixture.player.position, position, accuracy: 0.15)
+        fixture.player.toggle()
+        try await eventually("preview resumed") { fixture.player.isPlaying }
+        XCTAssertGreaterThanOrEqual(fixture.player.position, position - 0.15)
         fixture.player.pause()
         XCTAssertFalse(FileManager.default.fileExists(atPath: fixture.historyURL.path))
         fixture.player.load(week: fixture.week(), track: fixture.track, url: fixture.audioURL)
         XCTAssertFalse(fixture.player.isPreview)
+        XCTAssertNil(fixture.player.previewID)
+    }
+
+    func testPausingPreviewBeforeReadyPreventsLateAutoplay() async throws {
+        let fixture = try Fixture()
+        defer { fixture.dispose() }
+        fixture.player.loadPreview(url: fixture.audioURL, title: "Early pause", previewID: "early")
+        fixture.player.pause()
+        try await eventually("paused preview ready") { fixture.player.isReady }
+        try await Task.sleep(for: .milliseconds(250))
+        XCTAssertFalse(fixture.player.isPlaying)
+        XCTAssertFalse(fixture.player.isWaiting)
+        XCTAssertEqual(fixture.player.position, 0, accuracy: 0.1)
+        fixture.player.toggle()
+        try await eventually("explicit preview resume") { fixture.player.isPlaying }
+    }
+
+    func testVideoPresentationBlocksSharedPlayerUntilDismissed() async throws {
+        let fixture = try Fixture()
+        defer { fixture.dispose() }
+        fixture.player.loadPreview(url: fixture.audioURL, title: "Video exclusion", previewID: "en")
+        try await eventually("preview ready") { fixture.player.isReady }
+        fixture.player.setVideoPresented(true)
+        fixture.player.play()
+        try await Task.sleep(for: .milliseconds(200))
+        XCTAssertFalse(fixture.player.isPlaying)
+        XCTAssertFalse(fixture.player.isWaiting)
+        fixture.player.setVideoPresented(false)
+        XCTAssertFalse(fixture.player.isPlaying)
+        fixture.player.play()
+        try await eventually("explicit play after video dismissal") { fixture.player.isPlaying }
+    }
+
+    func testPreviewCannotReplaceSermonBookmark() async throws {
+        let fixture = try Fixture()
+        defer { fixture.dispose() }
+        try await fixture.load()
+        let sermonSeek = await fixture.player.applyAlignedPosition(6)
+        XCTAssertTrue(sermonSeek)
+        fixture.player.pause()
+        fixture.player.loadPreview(url: fixture.audioURL, title: "Bookmark exclusion", previewID: "en")
+        try await eventually("preview ready") { fixture.player.isReady }
+        let demoSeek = await fixture.player.applyAlignedPosition(2)
+        XCTAssertTrue(demoSeek)
+        fixture.player.clear()
+        fixture.player.load(week: fixture.week(), track: fixture.track, url: fixture.audioURL)
+        try await eventually("sermon restored") { fixture.player.isReady }
+        XCTAssertEqual(try XCTUnwrap(fixture.player.resumePosition).position, 6, accuracy: 0.15)
+        fixture.player.restore(autoplay: false)
+        try await eventually("sermon position restored") { abs(fixture.player.position - 6) < 0.15 }
+        XCTAssertFalse(fixture.player.isPlaying)
     }
 
     func testAutomaticAlignmentUsesSinglePlayerAndManualCommandsInvalidateIt() async throws {
@@ -386,7 +712,8 @@ final class PlaybackControllerTests: XCTestCase {
         var track: SermonTrack { makeTrack(id: "synthetic-track") }
 
         init(bookmark: (position: Double, offset: Double)? = nil, bookmarkTrackID: String = "synthetic-track",
-             audioSessionActivator: any AudioSessionActivating = SystemAudioSessionActivator.shared) throws {
+             audioSessionActivator: any AudioSessionActivating = SystemAudioSessionActivator.shared,
+             seekCompletionResult: @escaping @MainActor (Bool) -> Bool = { $0 }) throws {
             directory = FileManager.default.temporaryDirectory.appendingPathComponent("TongxingPlaybackTests-\(UUID().uuidString)")
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             audioURL = directory.appendingPathComponent("silence.wav")
@@ -400,7 +727,8 @@ final class PlaybackControllerTests: XCTestCase {
                                sourceID: "synthetic-source", position: bookmark.position, offset: bookmark.offset, duration: 12)
                 try history.encoded().write(to: historyURL, options: .atomic)
             }
-            player = PlaybackController(historyURL: historyURL, audioSessionActivator: audioSessionActivator)
+            player = PlaybackController(historyURL: historyURL, audioSessionActivator: audioSessionActivator,
+                                        seekCompletionResult: seekCompletionResult)
         }
 
         func load() async throws {
@@ -425,6 +753,20 @@ final class PlaybackControllerTests: XCTestCase {
                         audioUrl: "/media/silence.wav", file: "silence.wav", sha256: sha256,
                         durationSeconds: duration, cues: [SubtitleCue(start: 0, end: duration, text: "合成测试字幕。")],
                         subtitleTiming: "synthetic_fixture", scope: "synthetic_fixture")
+        }
+
+        func publishedAudio(locale: String, sourceIdentity: String = String(repeating: "a", count: 64)) -> VerifiedLanguageAudio {
+            VerifiedLanguageAudio(localURL: audioURL, pageID: "synthetic-published-page", locale: locale,
+                                  sourceIdentitySha256: sourceIdentity, sha256: sha256)
+        }
+
+        func publishedAudio(locale: String, seconds: Int) throws -> VerifiedLanguageAudio {
+            let data = Self.makeSilence(duration: seconds, sampleRate: 8_000)
+            let url = directory.appendingPathComponent("silence-\(seconds).wav")
+            try data.write(to: url, options: .atomic)
+            return VerifiedLanguageAudio(localURL: url, pageID: "synthetic-published-page", locale: locale,
+                sourceIdentitySha256: String(repeating: "a", count: 64),
+                sha256: SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined())
         }
 
         func savedPosition() throws -> ResumePosition {

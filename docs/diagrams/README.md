@@ -1,16 +1,25 @@
 # 项目流程图 / Diagram Assets
 
+## 2026-09-30 当前架构图：SVG 预览与 Mermaid 拓扑
+
+[英文技术导览](../project-technical-overview.md)与[中英后端设计](../backend-workflow-system-design.zh-en.md)各包含四层业务 DAG 和计划中的有界修订 DAG；[App 系统图](../app-system-design.zh.md)与[执行环境图](../execution-environment-design.zh.md)补充另两个设计面。默认展示原生 SVG，Markdown 折叠区保留可复制的 Mermaid 拓扑源。GitHub rich Mermaid 预览曾返回无法渲染，因此静态图不依赖该服务。
+
+六张新图沿用现有 `diagram-specs.json` 与 `render_diagrams.py`，既有 SVG 图稿输出保持不变；渲染器仅增加新图显式箭头颜色的可选字段，兼容静态 SVG 预览。节点 ID、边、状态与英/双语源对应；PR164 strict review/gate/repair 明确为 planned，PR165 D1 的 schema 不代表执行已完成。渲染命令、文件映射与校验见[架构 SVG 再生成](architecture-rendering.md)。纯文档 PR 的 `scripts/docs_change_gate.py` 在 spec 改变时重建全组并比较；修改 renderer 会触发完整代码 CI，仍须单独执行图稿再生成比较；另外核查无环、L3 必经、locale 隔离、实际字号、箭头与文字边界。
+
+以下保留既有 SVG 的来源、时间和再生成说明。
+
+
 本组包含 2026-09-11 校准的 11 张流程图、2026-09-20 新增的四层生产主图，以及 2026-09-25 新增的 Firebase 发布边界图。2026-09-25 对两个根 README 引用的 8 张图统一重新设计为原生 SVG：白色阶段卡片、角色色条、明确的主路径与条件箭头，以及单独的审核门槛。图中的文字和连接仍来自校准后的项目图稿；本轮没有调用 ImageGen。SVG 没有嵌入 PNG、外链字体或脚本。
 
 图面更新时间不等于所有路径的最新实测日期。Agents API 控制层与每周调度已安装；周日实时字幕仍以既有浏览器回放等证据为限，人工语义、真实现场、实体手机与资源上限分别验收。配音候选、人工听审、现场同步与正式发布各自保留边界。历史云端图继续标为 Historical / Discovery；旧 timeline Cloud Run Job 已退役。
 
 | Asset | Purpose | Primary documents |
 |---|---|---|
-| [four-layer-production-workflow.svg](four-layer-production-workflow.svg) | Canonical Layer 1–4 flow with each layer's input, process, models/tools, output and gate | root READMEs, workflow map and bilingual HTML guide |
-| [firebase-release-flow.svg](firebase-release-flow.svg) | Separate content approval, Dev preview, Git promotion, Production deployment and device/venue acceptance | root READMEs, branch policy and Firebase release backlog |
-| [project-map.svg](project-map.svg) | Documents, reviewed audio and live captions with shared evidence and Discovery boundaries | root READMEs |
-| [solution-journey.svg](solution-journey.svg) | Observed bottlenecks, rejected assumption, current hybrid, and gated future enhancement | root READMEs |
-| [saturday-chinese-voice-workflow.svg](saturday-chinese-voice-workflow.svg) | Featured parallel source routes, speaker training, Chinese audio review and Sunday playback gates | root READMEs, dubbing system design and runbook |
+| [four-layer-production-workflow.svg](four-layer-production-workflow.svg) | Canonical Layer 1–4 flow with each layer's input, process, models/tools, output and gate | project technical overviews, workflow map and bilingual HTML guide |
+| [firebase-release-flow.svg](firebase-release-flow.svg) | Separate content approval, Dev preview, Git promotion, Production deployment and device/venue acceptance | project technical overviews, branch policy and Firebase release backlog |
+| [project-map.svg](project-map.svg) | Documents, reviewed audio and live captions with shared evidence and Discovery boundaries | project technical overviews |
+| [solution-journey.svg](solution-journey.svg) | Observed bottlenecks, rejected assumption, current hybrid, and gated future enhancement | project technical overviews |
+| [saturday-chinese-voice-workflow.svg](saturday-chinese-voice-workflow.svg) | Featured parallel source routes, speaker training, Chinese audio review and Sunday playback gates | project technical overviews, dubbing system design and runbook |
 | [saturday-post-live-workflow.svg](saturday-post-live-workflow.svg) | Astra Medium weekly profile, dual-PDF QA, automatic export and separate readiness gates | workflow and stable post-live docs |
 | [sunday-live-workflow.svg](sunday-live-workflow.svg) | Detailed Sunday live path and visible degradation branches | workflow and POC docs |
 | [saturday-to-sunday-context-pack-flow.svg](saturday-to-sunday-context-pack-flow.svg) | Separate message/content approval, capability ceiling and live-English source of truth | Context Pack plan and POC docs |
@@ -31,7 +40,7 @@
 
 ## 可复现来源
 
-`diagram-specs.json` 保存原有 12 张图的节点、文案与连接坐标；`render_diagrams.py` 生成全部 13 张 SVG。`readme_diagram_renderer.py` 为根 README 的 7 张图提供新版样式，并生成 Firebase 发布边界图；其余 5 张继续使用原有渲染器：
+历史部分的 `diagram-specs.json` 保存原有 12 张图的节点、文案与连接坐标；加上本次 6 张架构图共 18 个 spec，`render_diagrams.py` 连同独立 Firebase 图生成 19 张 SVG。`readme_diagram_renderer.py` 为迁入技术导览的 7 张历史 README 图提供新版样式，并生成 Firebase 发布边界图；其余 5 张继续使用原有渲染器：
 
 ```bash
 python3 docs/diagrams/render_diagrams.py \
@@ -43,7 +52,7 @@ python3 docs/diagrams/render_diagrams.py \
 
 2026-09-25 对四层主图的状态文字作局部校准：两段三语片段已在 Dev 审核，正式站仍只保留九周中文；图中的四层接口和通用 producer 迁移边界不变。新增发布图以 [分支与环境策略](../development-branch-and-firebase-environments.zh.md)和 [Firebase release 记录](../multilingual-firebase-release-backlog-2026-09-24.zh.md)为事实依据。
 
-`imagegen-prompts.jsonl` 保存 2026-09-11 的 11 份历史 CLI 提示，显式指定 `gpt-image-2.5-sunburst`、high、1536×1024。四层图的历史 ImageGen 参考见[四层更新记录](refresh-four-layer-20260920.md)。当前 README 图由 SVG 代码直接绘制；流程事实仍以图稿和源文档为准。
+`imagegen-prompts.jsonl` 保存 2026-09-11 的 11 份历史 CLI 提示，显式指定 `gpt-image-2.5-sunburst`、high、1536×1024。四层图的历史 ImageGen 参考见[四层更新记录](refresh-four-layer-20260920.md)。从 README 迁出的技术导览图由 SVG 代码直接绘制；流程事实仍以图稿和源文档为准。
 
 ## 内容依据与验证
 

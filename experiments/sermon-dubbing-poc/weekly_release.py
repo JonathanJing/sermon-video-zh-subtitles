@@ -427,7 +427,8 @@ UI_REFRESH_FILES = ("index.html", "style.css", "app.mjs", "usage.mjs", "usage-cl
                     "media-session.mjs", "locales-app.mjs", "locales-feedback.mjs", "i18n.mjs",
                     "locales-interface.mjs", "locales-ko.mjs", "locales-es.mjs",
                     "icons.svg", "icons.mjs", "brand-icon.svg", "brand-icon-light.svg",
-                    "theme.js", "fingerprint-ui.mjs")
+                    "theme.js", "fingerprint-ui.mjs",
+                    "voice-samples.mjs", "speaker-clip-demos.mjs", "voice-demo.css")
 
 
 def prepare_ui_refresh(registry, ui_source, out):

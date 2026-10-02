@@ -1,0 +1,407 @@
+{
+  "schemaVersion": "sermon-weekly-pipeline-report-v1",
+  "runs": [
+    {
+      "runSha256": "a3b97ee1fad43921f024ad7f546fc61d4af6148965b8c34db74d720224ad6e2d",
+      "status": "projected",
+      "endToEndWallSeconds": 12.493408918380737,
+      "criticalPath": {
+        "activeSeconds": 12.461977,
+        "spanPath": [
+          "4447e0b1b8e62ed2d962a78dda077ee5d7c6922326698c92ec6cbdddde8e2d5d",
+          "4f3a68b57cf5696531a172382fdc5707f9028a6212fe056648dbc29d064064f9",
+          "2ad6e556b955c312f943c3cb81438582cd533715dbb624464150e0041ce8f3f4"
+        ],
+        "branchSlackSeconds": {
+          "4447e0b1b8e62ed2d962a78dda077ee5d7c6922326698c92ec6cbdddde8e2d5d": 0.0,
+          "4f3a68b57cf5696531a172382fdc5707f9028a6212fe056648dbc29d064064f9": 0.0,
+          "2ad6e556b955c312f943c3cb81438582cd533715dbb624464150e0041ce8f3f4": 0.0
+        },
+        "scope": "active_leaf_compute_excludes_human_external_and_engineering"
+      },
+      "diagnostics": [],
+      "leafElapsedByExecutor": {
+        "decision_agent": 0,
+        "deterministic_program": 0.51144,
+        "engineering_codex": 0,
+        "external_service": 0,
+        "human": 0,
+        "production_model": 11.950537
+      },
+      "leafElapsedMeaning": "completed_leaf_subtotals_not_proof_of_absent_work",
+      "executorCoverage": {
+        "decision_agent": {
+          "completedSpanCount": 0,
+          "unfinishedSpanCount": 0,
+          "completedSpanSubtotalSeconds": 0,
+          "status": "not_observed",
+          "totalExecutionSeconds": null
+        },
+        "deterministic_program": {
+          "completedSpanCount": 2,
+          "unfinishedSpanCount": 0,
+          "completedSpanSubtotalSeconds": 0.51144,
+          "status": "measured_completed_spans",
+          "totalExecutionSeconds": null
+        },
+        "engineering_codex": {
+          "completedSpanCount": 0,
+          "unfinishedSpanCount": 0,
+          "completedSpanSubtotalSeconds": 0,
+          "status": "not_observed",
+          "totalExecutionSeconds": null
+        },
+        "external_service": {
+          "completedSpanCount": 0,
+          "unfinishedSpanCount": 0,
+          "completedSpanSubtotalSeconds": 0,
+          "status": "not_observed",
+          "totalExecutionSeconds": null
+        },
+        "human": {
+          "completedSpanCount": 0,
+          "unfinishedSpanCount": 0,
+          "completedSpanSubtotalSeconds": 0,
+          "status": "not_observed",
+          "totalExecutionSeconds": null
+        },
+        "production_model": {
+          "completedSpanCount": 1,
+          "unfinishedSpanCount": 0,
+          "completedSpanSubtotalSeconds": 11.950537,
+          "status": "measured_completed_spans",
+          "totalExecutionSeconds": null
+        }
+      },
+      "unfinishedSpans": [],
+      "usage": {
+        "directReceipts": [],
+        "byExecutor": {
+          "decision_agent": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          },
+          "deterministic_program": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          },
+          "engineering_codex": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          },
+          "external_service": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          },
+          "human": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          },
+          "production_model": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          },
+          "unknown": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          }
+        },
+        "sdkAggregates": [],
+        "conflicts": [],
+        "status": "consistent",
+        "unresolvedAttempts": 0,
+        "combinedTokenTotal": null,
+        "scope": "globally_deduplicated_direct_receipts_and_sdk_aggregates_separate",
+        "equivalence": "shared_with_accounting_summary_including_model_cost_latency_and_executor",
+        "countMeaning": "observed_receipt_count_not_proof_of_no_uninstrumented_calls"
+      },
+      "decisionObservations": [],
+      "localModelObservations": [
+        {
+          "checkpointSha256": "862bbc832b05f3f4ec19dd632b701d61a6d3f5c7906360a10d72a79870642a80",
+          "elapsedSeconds": null,
+          "inputSha256": "2851c3b6bb42985afe6b705e5089e33f289e9da518c16c7527cfe1f2c1240d40",
+          "model": "mlx-community/whisper-large-v3-turbo-q4",
+          "outputSha256": null,
+          "providerCostUsd": null,
+          "providerTokens": null,
+          "schemaVersion": "sermon-local-model-observation-v1",
+          "status": "started",
+          "usageProvenance": "local_execution_no_provider_receipt",
+          "spanSha256": "2ad6e556b955c312f943c3cb81438582cd533715dbb624464150e0041ce8f3f4"
+        },
+        {
+          "checkpointSha256": "862bbc832b05f3f4ec19dd632b701d61a6d3f5c7906360a10d72a79870642a80",
+          "elapsedSeconds": 10.738793333002832,
+          "inputSha256": "2851c3b6bb42985afe6b705e5089e33f289e9da518c16c7527cfe1f2c1240d40",
+          "model": "mlx-community/whisper-large-v3-turbo-q4",
+          "outputSha256": "12f79e40e17615ae99c7810cee70e090dc83962b294e1f45ac5ac689370f4080",
+          "providerCostUsd": null,
+          "providerTokens": null,
+          "schemaVersion": "sermon-local-model-observation-v1",
+          "status": "completed",
+          "usageProvenance": "local_execution_no_provider_receipt",
+          "spanSha256": "2ad6e556b955c312f943c3cb81438582cd533715dbb624464150e0041ce8f3f4"
+        }
+      ],
+      "cacheObservations": [],
+      "historicalCacheUsage": {
+        "observations": 0,
+        "distinctHistoricalResponses": 0,
+        "conflicts": [],
+        "historicalCostUsd": null,
+        "currentSpendMeaning": "cache_observations_are_not_current_transport_or_spend_receipts",
+        "knownHistoricalTokenSubtotal": {
+          "inputTokens": null,
+          "cachedInputTokens": null,
+          "outputTokens": null,
+          "reasoningTokens": null
+        },
+        "missingHistoricalFields": {
+          "inputTokens": 0,
+          "cachedInputTokens": 0,
+          "outputTokens": 0,
+          "reasoningTokens": 0
+        }
+      },
+      "artifactSnapshots": [
+        {
+          "workflowSha256": "40ed0485dac76edde6d681b83b5478329c948088ac10b2c1905bc14a93ce6c61",
+          "phase": "before",
+          "scope": "existing_files_not_execution_proof",
+          "artifacts": []
+        },
+        {
+          "workflowSha256": "40ed0485dac76edde6d681b83b5478329c948088ac10b2c1905bc14a93ce6c61",
+          "phase": "after",
+          "scope": "existing_files_not_execution_proof",
+          "artifacts": []
+        }
+      ],
+      "workflowProvenance": [
+        {
+          "workflowSha256": "40ed0485dac76edde6d681b83b5478329c948088ac10b2c1905bc14a93ce6c61",
+          "metadata": {},
+          "parentWorkflowSha256": null,
+          "executionIdentity": {
+            "gitCommit": "fd788ac8517d381d24bb1a834689e88bcfa4f6c7",
+            "trackedWorkingTreeDirty": false,
+            "loadedProjectCodeSha256": {
+              "scripts/sermon_accounting.py": "b5857bf3f355c8dd030a33f26e037262557b73cd0dddb67c93e11b0d7952df6f",
+              "scripts/sermon_local_model_observation.py": "9e640bd51fd0a99d59afa8fa74d7748a9f01ee9c8002717f9c3a9fc63af039b6"
+            },
+            "pythonVersion": "3.11.16",
+            "scope": "loaded_project_modules_at_workflow_start_not_all_or_remote_code"
+          }
+        }
+      ],
+      "workloadEvidence": [
+        {
+          "stage": "diagnostic.source_identity",
+          "spanSha256": "4f3a68b57cf5696531a172382fdc5707f9028a6212fe056648dbc29d064064f9",
+          "metrics": {
+            "checkpointSha256": "862bbc832b05f3f4ec19dd632b701d61a6d3f5c7906360a10d72a79870642a80",
+            "sourceDurationSeconds": 178.16,
+            "sourceMediaSha256": "c931d6f716bd30b9ba9b75ca6cbc9a4f4fd708b8bf8f8e3668187e67bac44c30"
+          }
+        }
+      ],
+      "workUnits": [
+        {
+          "spanSha256": "2ad6e556b955c312f943c3cb81438582cd533715dbb624464150e0041ce8f3f4",
+          "stage": "diagnostic.local_asr",
+          "workUnitId": null,
+          "executorType": "production_model",
+          "attemptSha256": "19b07091c3136243f0b32af45ad3c8080f0b4a08f8b9f3d91402f54b9e462c49",
+          "workflowSha256": "40ed0485dac76edde6d681b83b5478329c948088ac10b2c1905bc14a93ce6c61",
+          "startedAt": "2026-09-30T14:38:44.608121+00:00",
+          "finishedAt": "2026-09-30T14:38:56.558752+00:00",
+          "cacheHit": false,
+          "queuedAt": null,
+          "status": "completed",
+          "dependencyRecorded": true,
+          "dependencyReadyAt": null,
+          "elapsedSeconds": 11.950537,
+          "queueWaitSeconds": null,
+          "dependencyReadyToQueueSeconds": null,
+          "dependsOnSha256": [
+            "4f3a68b57cf5696531a172382fdc5707f9028a6212fe056648dbc29d064064f9"
+          ],
+          "parentSpanSha256": "0ebab555f8e5269c9ee75905300b1e63378e1f2583bf9e502a0ba79d39c6b6d6",
+          "models": [
+            "mlx-community/whisper-large-v3-turbo-q4"
+          ],
+          "queueTimingStatus": "missing_instrumentation"
+        },
+        {
+          "spanSha256": "4447e0b1b8e62ed2d962a78dda077ee5d7c6922326698c92ec6cbdddde8e2d5d",
+          "stage": "diagnostic.source_decode",
+          "workUnitId": null,
+          "executorType": "deterministic_program",
+          "attemptSha256": "e3e15cd69bb90eccda18f911ec3c1d26f26da4579527ee6ce25d8e9547e6b23e",
+          "workflowSha256": "40ed0485dac76edde6d681b83b5478329c948088ac10b2c1905bc14a93ce6c61",
+          "startedAt": "2026-09-30T14:38:44.095781+00:00",
+          "finishedAt": "2026-09-30T14:38:44.367194+00:00",
+          "cacheHit": false,
+          "queuedAt": null,
+          "status": "completed",
+          "dependencyRecorded": true,
+          "dependencyReadyAt": null,
+          "elapsedSeconds": 0.271283,
+          "queueWaitSeconds": null,
+          "dependencyReadyToQueueSeconds": null,
+          "dependsOnSha256": [],
+          "parentSpanSha256": "0ebab555f8e5269c9ee75905300b1e63378e1f2583bf9e502a0ba79d39c6b6d6",
+          "models": [],
+          "queueTimingStatus": "missing_instrumentation"
+        },
+        {
+          "spanSha256": "4f3a68b57cf5696531a172382fdc5707f9028a6212fe056648dbc29d064064f9",
+          "stage": "diagnostic.model_identity",
+          "workUnitId": null,
+          "executorType": "deterministic_program",
+          "attemptSha256": "540b55b037dc6fa4be8299f36c85c20614afc7da6850113913b49b17a91f9756",
+          "workflowSha256": "40ed0485dac76edde6d681b83b5478329c948088ac10b2c1905bc14a93ce6c61",
+          "startedAt": "2026-09-30T14:38:44.367648+00:00",
+          "finishedAt": "2026-09-30T14:38:44.607880+00:00",
+          "cacheHit": false,
+          "queuedAt": null,
+          "status": "completed",
+          "dependencyRecorded": true,
+          "dependencyReadyAt": null,
+          "elapsedSeconds": 0.240157,
+          "queueWaitSeconds": null,
+          "dependencyReadyToQueueSeconds": null,
+          "dependsOnSha256": [
+            "4447e0b1b8e62ed2d962a78dda077ee5d7c6922326698c92ec6cbdddde8e2d5d"
+          ],
+          "parentSpanSha256": "0ebab555f8e5269c9ee75905300b1e63378e1f2583bf9e502a0ba79d39c6b6d6",
+          "models": [],
+          "queueTimingStatus": "missing_instrumentation"
+        }
+      ],
+      "sourceDurationSeconds": 178.16,
+      "locales": null,
+      "pageReadyAt": null,
+      "orchestrationOverheadSeconds": null,
+      "observabilityCoverage": {
+        "sourceDuration": "recorded",
+        "locales": "not_observed",
+        "queueTiming": "missing_instrumentation",
+        "pageReady": "not_observed",
+        "orchestrationOverhead": "missing_instrumentation",
+        "crossProcessCriticalPath": "not_established",
+        "logCompleteness": "not_established",
+        "statusMeaning": "projected_means_computable_recorded_DAG_not_complete_telemetry"
+      },
+      "acceptance": "not_evaluated",
+      "notes": [
+        "Executor subtotals overlap across parallel branches; never sum as end-to-end wall.",
+        "dependsOn contains exact same-run span IDs, not stage names or parent span IDs.",
+        "Human/external elapsed is wait; engineering is separate from production runtime.",
+        "Missing source/locale/page-ready telemetry stays unknown; no sign-off is inferred."
+      ]
+    }
+  ],
+  "status": "projected",
+  "diagnostics": [],
+  "duplicateEventsIgnored": 0,
+  "receiptIntegrity": {
+    "status": "consistent",
+    "conflicts": [],
+    "equivalentDuplicatesIgnored": 0
+  },
+  "networkCalls": 0,
+  "acceptance": "not_evaluated"
+}

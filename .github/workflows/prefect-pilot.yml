@@ -1,0 +1,48 @@
+name: Local Prefect pilot
+on:
+  pull_request:
+    branches: [dev, main]
+    paths:
+      - 'scripts/sermon*'
+      - 'scripts/canonical_pipeline_definition.py'
+      - 'scripts/run_sermon_prefect_dag.py'
+      - 'tests/test_sermon_prefect*'
+      - 'tests/test_sermon_pilot_evidence.py'
+      - 'tests/test_sermon_business*'
+      - 'tests/test_sermon_bounded_business_callbacks.py'
+      - 'tests/test_sermon_local_business_callbacks.py'
+      - 'tests/test_sermon_diagnostic*'
+      - 'tests/diagnostic_dag_fixture.py'
+      - 'scripts/inspect_sermon_prefect_pilot.py'
+      - 'requirements-prefect.txt'
+      - '.github/workflows/prefect-pilot.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: prefect-pilot-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  local-mock:
+    runs-on: ubuntu-latest
+    # Include hosted-runner audio-tool installation as well as the SDK suite.
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements-prefect.txt
+      - name: Install audio verification tools
+        run: |
+          # Reuse working runner tools; avoid recommended desktop/model packages.
+          if ! ffmpeg -version >/dev/null 2>&1 || ! ffprobe -version >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends ffmpeg
+          fi
+          ffmpeg -version
+          ffprobe -version
+      - name: Validate durable adapter and real local Prefect engine
+        env:
+          SERMON_TEST_PREFECT: '1'
+        run: python -m unittest tests.test_sermon_prefect_dag tests.test_sermon_prefect_runtime tests.test_sermon_pilot_evidence tests.test_sermon_bounded_business_callbacks tests.test_sermon_local_business_callbacks tests.test_sermon_business_prefect_flow tests.test_sermon_business_progress tests.test_diagnostic_dag_fixture tests.test_sermon_diagnostic_dag_session tests.test_sermon_diagnostic_prefect_cli tests.test_sermon_diagnostic_preview_worker tests.test_sermon_diagnostic_delivery_preflight tests.test_sermon_diagnostic_prefect_flow -v

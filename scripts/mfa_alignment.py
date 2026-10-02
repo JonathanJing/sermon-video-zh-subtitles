@@ -11,8 +11,37 @@ from pathlib import Path
 import re
 import shutil
 import subprocess
+import time
 
 SCHEMA_VERSION = 1
+
+
+class MFADeadlineReached(TimeoutError):
+    """The original caller deadline expired; never a failover/retry signal."""
+
+
+def deadline_timeout(cap, deadline_monotonic=None):
+    if deadline_monotonic is None:
+        return cap  # Legacy callers retain their original per-command cap.
+    if (type(deadline_monotonic) not in (int,float) or not math.isfinite(deadline_monotonic)
+            or type(cap) not in (int,float) or not math.isfinite(cap) or cap <= 0):
+        raise ValueError('mfa_deadline_invalid')
+    remaining=deadline_monotonic-time.monotonic()
+    if remaining <= 0:
+        raise MFADeadlineReached('mfa_original_deadline_reached')
+    return min(cap,remaining)
+
+
+def bounded_process(command, *, timeout, deadline_monotonic=None, **options):
+    limited=deadline_timeout(timeout,deadline_monotonic)
+    try:
+        result=subprocess.run(command,timeout=limited,**options)
+    except subprocess.TimeoutExpired as exc:
+        if deadline_monotonic is not None and time.monotonic() >= deadline_monotonic:
+            raise MFADeadlineReached('mfa_original_deadline_reached') from exc
+        raise  # Existing per-command cap expired before the global deadline.
+    deadline_timeout(timeout,deadline_monotonic)
+    return result
 WORD_RE = re.compile(r"[A-Za-z]+(?:['’][A-Za-z]+)*|\d+|[^\W\d_]+", re.UNICODE)
 SMALL = 'zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen'.split()
 TENS = 'zero ten twenty thirty forty fifty sixty seventy eighty ninety'.split()
@@ -104,11 +133,14 @@ def _sentences(text):
     yield text[start:]
 
 
-def _run(command, *, env, log, timeout):
+def _run(command, *, env, log, timeout, deadline_monotonic=None):
+    deadline_timeout(timeout,deadline_monotonic)
     with Path(log).open('w') as stream:
         try:
-            subprocess.run([str(x) for x in command], env=env, stdout=stream,
-                           stderr=subprocess.STDOUT, check=True, timeout=timeout)
+            bounded_process([str(x) for x in command], env=env, stdout=stream,
+                           stderr=subprocess.STDOUT, check=True, timeout=timeout,deadline_monotonic=deadline_monotonic)
+        except MFADeadlineReached:
+            raise
         except (subprocess.SubprocessError, OSError) as exc:
             raise RuntimeError(f'MFA command failed; inspect {log}') from exc
 
@@ -245,7 +277,7 @@ def preflight(mfa_executable, dictionary_path, acoustic_model, g2p_model=None, s
 
 
 def align_reference_chunks(chunks, clip_path, outdir, *, mfa_executable,
-                           dictionary_path, acoustic_model, g2p_model=None, spoken_forms_path=None):
+                           dictionary_path, acoustic_model, g2p_model=None, spoken_forms_path=None, deadline_monotonic=None):
     """Return original-punctuation sentences with absolute clip-relative MFA times.
 
     Models and dictionaries must be local files. Cache reuse requires exact source,
@@ -253,6 +285,7 @@ def align_reference_chunks(chunks, clip_path, outdir, *, mfa_executable,
     content-addressed run; corrupted cached outputs fail instead of being accepted.
     Integer expansion is recorded as an unverified spoken-form assumption.
     """
+    deadline_timeout(60,deadline_monotonic)
     clip = _local_file(clip_path, 'Audio')
     executable = shutil.which(str(mfa_executable)) or str(mfa_executable)
     executable = _local_file(executable, 'MFA executable')
@@ -267,8 +300,10 @@ def align_reference_chunks(chunks, clip_path, outdir, *, mfa_executable,
     env['PATH'] = str(executable.parent) + os.pathsep + env.get('PATH', '')
     env['MFA_ROOT_DIR'] = str(root / 'version-runtime')
     try:
-        version = subprocess.run([str(executable), 'version'], env=env, capture_output=True,
-                                 text=True, check=True, timeout=60).stdout.strip()
+        version = bounded_process([str(executable), 'version'], env=env, capture_output=True,
+                                 text=True, check=True, timeout=60,deadline_monotonic=deadline_monotonic).stdout.strip()
+    except MFADeadlineReached:
+        raise
     except (subprocess.SubprocessError, OSError) as exc:
         raise RuntimeError('Cannot identify local MFA executable version') from exc
     if not version:
@@ -327,7 +362,7 @@ def align_reference_chunks(chunks, clip_path, outdir, *, mfa_executable,
             oov.write_text('\n'.join(missing) + '\n')
             candidate = run / 'oov.dict'
             _run([executable, 'g2p', oov, g2p, candidate, '-n', '1'], env=env,
-                 log=run / 'g2p.log', timeout=600)
+                 log=run / 'g2p.log', timeout=600,deadline_monotonic=deadline_monotonic)
             if not candidate.is_file() or set(missing) - _dictionary_words(candidate):
                 raise ValueError('G2P did not produce pronunciations for every missing word')
             with lexicon.open('a') as stream:
@@ -339,7 +374,7 @@ def align_reference_chunks(chunks, clip_path, outdir, *, mfa_executable,
             _run(['ffmpeg', '-nostdin', '-hide_banner', '-loglevel', 'error', '-y', '-ss',
                   str(chunk['start']), '-i', clip, '-t', str(duration), '-vn', '-ac', '1',
                   '-ar', '16000', '-c:a', 'pcm_s16le', stem.with_suffix('.wav')],
-                 env=env, log=run / f'ffmpeg_{i:04d}.log', timeout=300)
+                 env=env, log=run / f'ffmpeg_{i:04d}.log', timeout=300,deadline_monotonic=deadline_monotonic)
             import wave
             with wave.open(str(stem.with_suffix('.wav'))) as wav:
                 actual = wav.getnframes() / wav.getframerate()
@@ -349,7 +384,8 @@ def align_reference_chunks(chunks, clip_path, outdir, *, mfa_executable,
         _run([executable, 'align', corpus.parent, lexicon, acoustic, run / 'aligned',
               '--output_format', 'json', '--num_jobs', '2', '--single_speaker',
               '--no_textgrid_cleanup', '--clean', '--overwrite'], env=env,
-             log=run / 'align.log', timeout=max(600, min(14400, int(total_duration * 6 + 300))))
+             log=run / 'align.log', timeout=max(600, min(14400, int(total_duration * 6 + 300))),
+             deadline_monotonic=deadline_monotonic)
     segments = []
     normalization_events = []
     for path, (chunk, text, spoken, mapping) in zip(raw_paths, prepared):
@@ -362,6 +398,7 @@ def align_reference_chunks(chunks, clip_path, outdir, *, mfa_executable,
     for i, segment in enumerate(segments):
         segment['id'] = i
         segment['mfaManifest'] = str(manifest_path)
+    deadline_timeout(60,deadline_monotonic)
     if not manifest:
         _write(manifest_path, {'schemaVersion': SCHEMA_VERSION, 'identity': identity,
                               'outputHashes': {str(p.relative_to(run)): _sha(p) for p in raw_paths},
@@ -371,4 +408,5 @@ def align_reference_chunks(chunks, clip_path, outdir, *, mfa_executable,
                               'limitations': ['Times are forced-alignment estimates, not human verified.',
                                               'Integer expansion and G2P pronunciations are unverified candidates.']})
     _write(run / 'segments.json', segments)
+    deadline_timeout(60,deadline_monotonic)
     return segments

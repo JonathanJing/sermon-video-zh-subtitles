@@ -12,6 +12,8 @@ packages:
 configs:
   Debug: debug
   Release: release
+  BetaDebug: debug
+  BetaRelease: release
 settings:
   base:
     SWIFT_VERSION: "5.0"
@@ -24,6 +26,8 @@ targets:
     configFiles:
       Debug: Config/Signing.xcconfig
       Release: Config/Signing.xcconfig
+      BetaDebug: Config/Signing.xcconfig
+      BetaRelease: Config/Signing.xcconfig
     type: application
     platform: iOS
     sources:
@@ -35,9 +39,11 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.jonathanjing.tongxing.dev
         PRODUCT_NAME: Tongxing
+        TONGXING_DISPLAY_NAME: 同行
+        TONGXING_URL_SCHEME: tongxing
         INFOPLIST_FILE: App/Info.plist
-        MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "24"
+        MARKETING_VERSION: "1.2.0"
+        CURRENT_PROJECT_VERSION: "46"
         GENERATE_INFOPLIST_FILE: NO
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         SUPPORTS_MACCATALYST: NO
@@ -47,6 +53,18 @@ targets:
           TONGXING_CONTENT_ORIGIN: "https://ai-for-god-sermon-audio-dev.web.app"
         Release:
           TONGXING_CONTENT_ORIGIN: "https://ai-for-god-sermon-audio.web.app"
+        BetaDebug:
+          PRODUCT_BUNDLE_IDENTIFIER: com.jonathanjing.tongxing.beta
+          TONGXING_DISPLAY_NAME: 同行-beta
+          TONGXING_URL_SCHEME: tongxing-beta
+          CURRENT_PROJECT_VERSION: "48"
+          TONGXING_CONTENT_ORIGIN: "https://ai-for-god-sermon-audio-dev.web.app"
+        BetaRelease:
+          PRODUCT_BUNDLE_IDENTIFIER: com.jonathanjing.tongxing.beta
+          TONGXING_DISPLAY_NAME: 同行-beta
+          TONGXING_URL_SCHEME: tongxing-beta
+          CURRENT_PROJECT_VERSION: "48"
+          TONGXING_CONTENT_ORIGIN: "https://ai-for-god-sermon-audio-dev.web.app"
     dependencies:
       - package: TongxingCore
       - package: TongxingInfrastructure
@@ -57,6 +75,8 @@ targets:
     configFiles:
       Debug: Config/Signing.xcconfig
       Release: Config/Signing.xcconfig
+      BetaDebug: Config/Signing.xcconfig
+      BetaRelease: Config/Signing.xcconfig
     type: app-extension
     platform: iOS
     sources:
@@ -68,18 +88,33 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.jonathanjing.tongxing.dev.listening-activity
         PRODUCT_NAME: ListeningActivityExtension
+        TONGXING_ACTIVITY_DISPLAY_NAME: 同行播放状态
+        TONGXING_URL_SCHEME: tongxing
         INFOPLIST_FILE: ListeningActivityExtension/Info.plist
-        MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "24"
+        MARKETING_VERSION: "1.2.0"
+        CURRENT_PROJECT_VERSION: "46"
         GENERATE_INFOPLIST_FILE: NO
         APPLICATION_EXTENSION_API_ONLY: YES
         SKIP_INSTALL: YES
         SUPPORTS_MACCATALYST: NO
         SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD: NO
+      configs:
+        BetaDebug:
+          PRODUCT_BUNDLE_IDENTIFIER: com.jonathanjing.tongxing.beta.listening-activity
+          TONGXING_ACTIVITY_DISPLAY_NAME: 同行-beta播放状态
+          TONGXING_URL_SCHEME: tongxing-beta
+          CURRENT_PROJECT_VERSION: "48"
+        BetaRelease:
+          PRODUCT_BUNDLE_IDENTIFIER: com.jonathanjing.tongxing.beta.listening-activity
+          TONGXING_ACTIVITY_DISPLAY_NAME: 同行-beta播放状态
+          TONGXING_URL_SCHEME: tongxing-beta
+          CURRENT_PROJECT_VERSION: "48"
   TongxingTests:
     configFiles:
       Debug: Config/Signing.xcconfig
       Release: Config/Signing.xcconfig
+      BetaDebug: Config/Signing.xcconfig
+      BetaRelease: Config/Signing.xcconfig
     type: bundle.unit-test
     platform: iOS
     sources:
@@ -88,6 +123,11 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.jonathanjing.tongxing.dev.tests
         GENERATE_INFOPLIST_FILE: YES
+      configs:
+        BetaDebug:
+          PRODUCT_BUNDLE_IDENTIFIER: com.jonathanjing.tongxing.beta.tests
+        BetaRelease:
+          PRODUCT_BUNDLE_IDENTIFIER: com.jonathanjing.tongxing.beta.tests
     dependencies:
       - target: Tongxing
       - package: TongxingCore
@@ -95,6 +135,8 @@ targets:
     configFiles:
       Debug: Config/Signing.xcconfig
       Release: Config/Signing.xcconfig
+      BetaDebug: Config/Signing.xcconfig
+      BetaRelease: Config/Signing.xcconfig
     type: bundle.ui-testing
     platform: iOS
     sources:
@@ -103,6 +145,11 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.jonathanjing.tongxing.dev.uitests
         GENERATE_INFOPLIST_FILE: YES
+      configs:
+        BetaDebug:
+          PRODUCT_BUNDLE_IDENTIFIER: com.jonathanjing.tongxing.beta.uitests
+        BetaRelease:
+          PRODUCT_BUNDLE_IDENTIFIER: com.jonathanjing.tongxing.beta.uitests
     dependencies:
       - target: Tongxing
 schemes:
@@ -116,7 +163,9 @@ schemes:
       config: Debug
       gatherCoverageData: true
       environmentVariables:
+        TONGXING_EXPECTED_CHANNEL: production
         TONGXING_TEST_HOST: "1"
+        TONGXING_PREVIEW_REQUEST: "$(TONGXING_PREVIEW_REQUEST)"
       targets:
         - name: TongxingTests
           parallelizable: false
@@ -126,3 +175,29 @@ schemes:
           randomExecutionOrder: false
     archive:
       config: Release
+  TongxingBeta:
+    build:
+      targets:
+        Tongxing: all
+    run:
+      config: BetaDebug
+    test:
+      config: BetaDebug
+      gatherCoverageData: true
+      environmentVariables:
+        TONGXING_EXPECTED_CHANNEL: beta
+        TONGXING_TEST_HOST: "1"
+        TONGXING_PREVIEW_REQUEST: "$(TONGXING_PREVIEW_REQUEST)"
+      targets:
+        - name: TongxingTests
+          parallelizable: false
+          randomExecutionOrder: false
+        - name: TongxingUITests
+          parallelizable: false
+          randomExecutionOrder: false
+    archive:
+      config: BetaRelease
+    profile:
+      config: BetaRelease
+    analyze:
+      config: BetaDebug

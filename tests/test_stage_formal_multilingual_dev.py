@@ -475,6 +475,18 @@ class FormalDevStageTests(unittest.TestCase):
         self.assertEqual(staged["deploymentStatus"], "not_deployed")
         with self.assertRaisesRegex(ValueError, "immutable"):
             assets_builder.build(args)
+        args.out = self.root / "changed-during-copy"
+        copy = assets_builder.copy_bound_asset
+        def changed(source, root, path, expected):
+            if path.startswith("/media/"):
+                source.write_bytes(b"changed after upstream validation")
+            return copy(source, root, path, expected)
+        with patch.object(assets_builder.stage, "read_package", side_effect=lambda path, schema:
+                          self.source if path == self.source_path else real(path, schema)), \
+             patch.object(assets_builder, "copy_bound_asset", side_effect=changed):
+            with self.assertRaisesRegex(ValueError, "admitted_identity"):
+                assets_builder.build(args)
+        self.assertFalse(args.out.exists())
 
 
 if __name__ == "__main__":

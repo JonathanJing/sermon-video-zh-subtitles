@@ -1,4 +1,4 @@
-"""Export completed accounting v2 spans to local OTLP/JSON; never send telemetry."""
+"""Export completed accounting v1-v3 spans to local OTLP/JSON; never send telemetry."""
 from __future__ import annotations
 
 import argparse
@@ -12,7 +12,8 @@ import sys
 
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from scripts.sermon_accounting import SCHEMA, read_events
+from scripts.sermon_clock_evidence import monotonic_interval
+from scripts.sermon_accounting import READABLE_SCHEMAS, SCHEMA, read_events, receipt_integrity, profile_integrity
 
 # Export only known application labels. Unknown labels retain a hash, never text.
 LABELS = frozenset("""
@@ -74,7 +75,14 @@ def export(directory):
     events, damaged = read_events(directory)
     diagnostics = [{"code": "damaged_event", "line": d["line"], "sha256": d["sha256"]} for d in damaged]
     pairs = defaultdict(lambda: {"start": [], "end": []})
-    accepted, seen = [], set()
+    accepted, identities = [], defaultdict(list)
+    supported = [e for e in events if e.get("schemaVersion") in READABLE_SCHEMAS]
+    replay = profile_integrity(supported)
+    integrity = receipt_integrity(supported)
+    # Replays of a durable profile event are the same fact, not conflicting
+    # legacy rows. Export only the replay-selected representative.
+    projected = [e for e in events if 'contractVersion' not in e or id(e) in replay['_selected']]
+    if replay['status'] != 'consistent': diagnostics.append({'code': 'incomplete_or_conflicting_profile_events'})
 
     def diagnostic(code, key=None):
         row = {"code": code}
@@ -82,15 +90,19 @@ def export(directory):
             row.update(traceId=trace_id(key[0]), spanId=span_id(key))
         diagnostics.append(row)
 
-    for event in events:
-        if event.get("schemaVersion") != SCHEMA:
+    for event in projected:
+        if event.get("schemaVersion") not in READABLE_SCHEMAS:
             diagnostic("unsupported_event_schema")
             continue
-        identity = (event["runId"], event["eventId"])
-        if identity in seen:
-            diagnostic("duplicate_event_id")
+        identities[(event["runId"], event["eventId"])].append(event)
+    for identity, rows in sorted(identities.items()):
+        variants = {hashed(json.dumps(row, sort_keys=True, separators=(",", ":"))) for row in rows}
+        if len(variants) > 1:
+            diagnostic("conflicting_event_id")
             continue
-        seen.add(identity)
+        if len(rows) > 1:
+            diagnostic("duplicate_event_id")
+        event = rows[0]
         accepted.append(event)
         if event["event"] not in PAIRS:
             continue
@@ -108,18 +120,30 @@ def export(directory):
             continue
         start, end = edges["start"][0], edges["end"][0]
         match_fields = ("workflow",) if key[1] == "run" else (("workflow", "parentWorkflowId") if key[1] == "workflow" else ("stage", "workflowId", "parentSpanId"))
+        if key[1] == "stage":
+            match_fields += ("executorType", "workUnitId", "attemptId", "decisionId",
+                             "dependsOn", "blockedBy", "dependencyReadyAt", "queuedAt")
         # workflow_finished does not repeat parentWorkflowId in accounting v2.
         match_fields = tuple(field for field in match_fields if field != "parentWorkflowId")
         if any(start.get(field) != end.get(field) for field in match_fields):
             diagnostic("span_identity_mismatch", key)
             continue
-        if end.get("status") not in {"completed", "failed"}:
+        allowed_statuses = {"completed", "failed"}
+        if start.get('contractVersion') is not None:
+            allowed_statuses |= {'cancelled', 'outcome_unknown'}
+        if end.get("status") not in allowed_statuses:
             diagnostic("unknown_finished_status", key)
             continue
         try:
             begin = nanos(start.get("startedAt", start["recordedAt"]))
             finish = nanos(end["recordedAt"])
-            if finish < begin:
+            timing = monotonic_interval(start, end) if key[1] == 'stage' else None
+            clock_shift = timing and abs((finish-begin)/1e9 - timing['elapsedSeconds']) > .01
+            recorded_finish = finish
+            if clock_shift:
+                finish = begin + int(timing['monotonicEndNs']) - int(timing['monotonicStartNs'])
+                diagnostic('utc_clock_discontinuity_monotonic_anchored_export', key)
+            elif finish < begin:
                 raise ValueError("clock moved backwards")
         except (ValueError, TypeError, OverflowError):
             diagnostic("invalid_span_time", key)
@@ -130,12 +154,29 @@ def export(directory):
         attrs = [attribute("sermon.accounting.run.sha256", hashed(run)),
                  attribute("sermon.accounting.identity.sha256", hashed(kind, ident)),
                  attribute("sermon.accounting.kind", kind)]
+        if timing:
+            attrs.extend([attribute('sermon.durationBasis', timing['durationBasis']),
+                          attribute('sermon.clockDomainId', timing['clockDomainId'])])
+        if clock_shift:
+            attrs.extend([attribute('sermon.recordedEndTimeUnixNano', str(recorded_finish)),
+                          attribute('sermon.exportEndTimeBasis', 'monotonic_anchored_estimate')])
         if isinstance(raw_label, str):
             attrs.append(attribute("sermon.accounting.label.sha256", hashed(raw_label)))
         if isinstance(start.get("workflowId"), str):
             attrs.append(attribute("sermon.accounting.workflow.sha256", hashed(start["workflowId"])))
         if type(end.get("cacheHit")) is bool:
             attrs.append(attribute("sermon.cache_hit", end["cacheHit"]))
+        if kind == "stage":
+            for field in ("executorType", "workUnitId", "attemptId", "decisionId"):
+                if isinstance(start.get(field), str):
+                    attrs.append(attribute("sermon." + field, start[field]))
+            for field in ("dependsOn", "blockedBy"):
+                values = start.get(field)
+                if isinstance(values, list):
+                    attrs.append(attribute("sermon." + field, json.dumps(values, separators=(",", ":"))))
+            for field in ("dependencyReadyAt", "queuedAt"):
+                if isinstance(start.get(field), str):
+                    attrs.append(attribute("sermon." + field, start[field]))
         metadata = start.get("metadata", {})
         if isinstance(metadata, dict):
             for field in HASH_KEYS:
@@ -144,7 +185,7 @@ def export(directory):
                     attrs.append(attribute("sermon." + field, value))
         spans[key] = {"traceId": trace_id(run), "spanId": span_id(key), "name": "sermon." + kind + "." + label,
                       "kind": 1, "startTimeUnixNano": str(begin), "endTimeUnixNano": str(finish),
-                      "attributes": attrs, "status": {"code": 2 if end["status"] == "failed" else 1}}
+                      "attributes": attrs, "status": {"code": 2 if end["status"] != "completed" else 1}}
         if any(start.get(field) is not None and (not isinstance(start[field], str) or not start[field])
                for field in ("parentWorkflowId", "parentSpanId")):
             diagnostic("invalid_parent_identity", key)
@@ -171,13 +212,18 @@ def export(directory):
         spans[key]["parentSpanId"] = span_id(parent)
 
     # API usage is counted only within its recorded stage, never summed into ancestors.
-    counters = defaultdict(Counter)
-    for event in accepted:
+    counters, missing = defaultdict(Counter), defaultdict(Counter)
+    conflicted_spans = set()
+    for event in supported:
         if event["event"] != "api_attempt":
             continue
         key = (event["runId"], "stage", event.get("spanId"))
         if key not in spans:
             diagnostic("api_without_exported_stage")
+            continue
+        if (event['runId'], event.get('stage')) in integrity['_affected']:
+            conflicted_spans.add(key)
+        if id(event) not in integrity['_selected']:
             continue
         counters[key]["apiAttempts"] += 1
         if event.get("status") == "failed":
@@ -186,20 +232,71 @@ def export(directory):
             value = event.get("usage", {}).get(field)
             if type(value) is int and 0 <= value < 2**63:
                 counters[key][field] += value
-    for key, counts in counters.items():
-        for field, value in sorted(counts.items()):
-            if value < 2**63:
-                spans[key]["attributes"].append(attribute("sermon." + field, value))
             else:
+                missing[key][field] += 1
+    # A request may have reached the provider even when its terminal receipt
+    # never arrived. Preserve that uncertainty alongside completed receipts.
+    # Scope the join to the actual run and span so another attempt cannot close
+    # this request merely by reusing an imported attempt label.
+    replay_events = [event for event in supported
+                     if "contractVersion" not in event or id(event) in replay["_selected"]]
+    finished_attempts = {(event["runId"], event.get("spanId"), event.get("attemptId"))
+                         for event in replay_events if event["event"] == "api_attempt"
+                         and event.get("attemptId") is not None}
+    unfinished = defaultdict(set)
+    for event in replay_events:
+        if event["event"] != "api_attempt_started":
+            continue
+        identity = (event["runId"], event.get("spanId"), event["attemptId"])
+        if identity in finished_attempts:
+            continue
+        key = (event["runId"], "stage", event.get("spanId"))
+        if key not in spans:
+            diagnostic("api_without_exported_stage")
+            continue
+        unfinished[key].add(event["attemptId"])
+    for key, attempts in unfinished.items():
+        counters[key]["apiAttempts"] += len(attempts)
+        counters[key]["unresolvedApiAttempts"] = len(attempts)
+        for field in TOKEN_KEYS:
+            missing[key][field] += len(attempts)
+        diagnostic("unfinished_api_attempts", key)
+    for key in set(counters) | conflicted_spans:
+        coverage = "conflicted" if key in conflicted_spans else "partial" if missing[key] else "reported"
+        spans[key]["attributes"].append(attribute("sermon.usageCoverage", coverage))
+        if key in conflicted_spans:
+            diagnostic("conflicting_provider_receipts", key)
+        for field, value in sorted(counters[key].items()):
+            if value >= 2**63:
                 diagnostic("counter_overflow", key)
+                continue
+            if field in TOKEN_KEYS and (key in conflicted_spans or missing[key][field]):
+                spans[key]["attributes"].append(attribute("sermon.knownSubtotal." + field, value))
+            else:
+                spans[key]["attributes"].append(attribute("sermon." + field, value))
+        for field, count in sorted(missing[key].items()):
+            spans[key]["attributes"].append(attribute("sermon.unknownCalls." + field, count))
 
+    from scripts.sermon_review_observation import observations
+    rqc = observations(accepted)
+    for observation in rqc:
+        key=(observation['runId'], 'stage', observation['spanId'])
+        if key not in spans:
+            diagnostic('review_observation_without_completed_span');continue
+        spans[key].setdefault('events',[]).append({'name':'sermon.rqc.observation',
+            'timeUnixNano':str(nanos(observation['recordedAt'])),
+            'attributes':[attribute('sermon.rqc.evidence',json.dumps(observation,sort_keys=True,separators=(',',':')))]})
     payload = {"resourceSpans": [{"resource": {"attributes": [attribute("service.name", "sermon-saturday-offline")]},
                 "scopeSpans": [{"scope": {"name": "sermon.accounting.otlp_export", "version": "1"},
                                 "spans": list(spans.values())}]}]}
     report = {"schemaVersion": "sermon-trace-export-diagnostics-v1", "status": "partial" if diagnostics else "exported",
-              "sourceSchema": SCHEMA, "readableEvents": len(events), "exportedSpans": len(spans),
+              "sourceSchema": SCHEMA, "readableSourceSchemas": sorted(READABLE_SCHEMAS),
+              "readableEvents": len(events), "exportedSpans": len(spans),
               "traceCount": len({span["traceId"] for span in spans.values()}), "diagnostics": diagnostics,
-              "qaAcceptance": "not_evaluated", "costCompleteness": "not_evaluated", "networkExported": False}
+              "qaAcceptance": "not_evaluated", "costCompleteness": "not_evaluated", "networkExported": False,
+              **({"eventIntegrity": {k: v for k, v in replay.items() if not k.startswith("_")}} if replay["profileEventCount"] else {}),
+              **({"reviewObservations":rqc} if rqc else {}),
+              "receiptIntegrity": {k: v for k, v in integrity.items() if not k.startswith("_")}}
     return payload, report
 
 

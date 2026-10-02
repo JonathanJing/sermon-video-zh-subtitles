@@ -1,0 +1,1587 @@
+{
+  "schemaVersion": "sermon-weekly-pipeline-report-v1",
+  "sourceLedgerSha256": "ec7f1b5e08b3dc9aadc5f32ea9d8e16308565606447fb6f3611060a6cbccb358",
+  "runs": [
+    {
+      "runSha256": "38256ea116c75fb53b2338be8933bb191495fc9dff23a01ee75dfc08327ba7b8",
+      "status": "partial",
+      "endToEndWallSeconds": 0.7784478664398193,
+      "criticalPath": null,
+      "diagnostics": [
+        "legacy_dependency_or_executor_unknown"
+      ],
+      "leafElapsedByExecutor": {
+        "decision_agent": 0,
+        "deterministic_program": 0.039883,
+        "engineering_codex": 0,
+        "external_service": 0,
+        "human": 0,
+        "production_model": 0
+      },
+      "leafElapsedMeaning": "completed_leaf_subtotals_not_proof_of_absent_work",
+      "executorCoverage": {
+        "decision_agent": {
+          "completedSpanCount": 0,
+          "unfinishedSpanCount": 0,
+          "completedSpanSubtotalSeconds": 0,
+          "status": "not_observed",
+          "totalExecutionSeconds": null
+        },
+        "deterministic_program": {
+          "completedSpanCount": 1,
+          "unfinishedSpanCount": 0,
+          "completedSpanSubtotalSeconds": 0.039883,
+          "status": "measured_completed_spans",
+          "totalExecutionSeconds": null
+        },
+        "engineering_codex": {
+          "completedSpanCount": 0,
+          "unfinishedSpanCount": 0,
+          "completedSpanSubtotalSeconds": 0,
+          "status": "not_observed",
+          "totalExecutionSeconds": null
+        },
+        "external_service": {
+          "completedSpanCount": 0,
+          "unfinishedSpanCount": 0,
+          "completedSpanSubtotalSeconds": 0,
+          "status": "not_observed",
+          "totalExecutionSeconds": null
+        },
+        "human": {
+          "completedSpanCount": 0,
+          "unfinishedSpanCount": 0,
+          "completedSpanSubtotalSeconds": 0,
+          "status": "not_observed",
+          "totalExecutionSeconds": null
+        },
+        "production_model": {
+          "completedSpanCount": 0,
+          "unfinishedSpanCount": 0,
+          "completedSpanSubtotalSeconds": 0,
+          "status": "not_observed",
+          "totalExecutionSeconds": null
+        }
+      },
+      "unfinishedSpans": [],
+      "usage": {
+        "directReceipts": [],
+        "byExecutor": {
+          "decision_agent": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          },
+          "deterministic_program": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          },
+          "engineering_codex": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          },
+          "external_service": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          },
+          "human": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          },
+          "production_model": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          },
+          "unknown": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          }
+        },
+        "sdkAggregates": [],
+        "conflicts": [],
+        "status": "consistent",
+        "unresolvedAttempts": 0,
+        "combinedTokenTotal": null,
+        "scope": "globally_deduplicated_direct_receipts_and_sdk_aggregates_separate",
+        "equivalence": "shared_with_accounting_summary_including_model_cost_latency_and_executor",
+        "countMeaning": "observed_receipt_count_not_proof_of_no_uninstrumented_calls"
+      },
+      "decisionObservations": [],
+      "localModelObservations": [],
+      "cacheObservations": [],
+      "historicalCacheUsage": {
+        "observations": 0,
+        "distinctHistoricalResponses": 0,
+        "conflicts": [],
+        "historicalCostUsd": null,
+        "currentSpendMeaning": "cache_observations_are_not_current_transport_or_spend_receipts",
+        "knownHistoricalTokenSubtotal": {
+          "inputTokens": null,
+          "cachedInputTokens": null,
+          "outputTokens": null,
+          "reasoningTokens": null
+        },
+        "missingHistoricalFields": {
+          "inputTokens": 0,
+          "cachedInputTokens": 0,
+          "outputTokens": 0,
+          "reasoningTokens": 0
+        }
+      },
+      "artifactSnapshots": [
+        {
+          "workflowSha256": "92f69750cc46f7dd88cfb97a7590e50281cc5531fb947848a715712cdc330a6e",
+          "phase": "before",
+          "scope": "existing_files_not_execution_proof",
+          "artifacts": []
+        },
+        {
+          "workflowSha256": "92f69750cc46f7dd88cfb97a7590e50281cc5531fb947848a715712cdc330a6e",
+          "phase": "after",
+          "scope": "existing_files_not_execution_proof",
+          "artifacts": []
+        }
+      ],
+      "workflowProvenance": [
+        {
+          "workflowSha256": "92f69750cc46f7dd88cfb97a7590e50281cc5531fb947848a715712cdc330a6e",
+          "metadata": {},
+          "parentWorkflowSha256": null,
+          "executionIdentity": {
+            "gitCommit": "bc7f44b91a4ab0f13cfd9d2acdb09b5ca88aa685",
+            "trackedWorkingTreeDirty": false,
+            "loadedProjectCodeSha256": {
+              "scripts/build_english_source_package.py": "65024b7cf518a90f800a8042e6a3206cbb83bde6a424258c850aa47e1e0ef740",
+              "scripts/build_target_language_audio_package.py": "d73633f99c8f68e1857535e8cbca603bf837338d8adfadd7586432e3864dda5a",
+              "scripts/canonical_pipeline_definition.py": "230596fda992d66f9b8f8c82fae874e2d5528f5d3b574d188ed010bf872f2738",
+              "scripts/clip_timeline_map.py": "d9edff2f64b301c5d4eece27bade5772aa4d21061f09a191d54606a96e7ce355",
+              "scripts/four_layer_measure.py": "7f628c8c79b9cab65b25c23cc5b4df9a5154b0129726607fa3a2f56aa9f9c2fd",
+              "scripts/four_layer_progress.py": "2789e1bb1625c3b4af02d2bb845d076c905da711913287463b53eee556ff0e5a",
+              "scripts/inspect_canonical_audio.py": "3d363192127e66a931bfedd320edf63bb66d1b6e749edfc98fa7da0b58596651",
+              "scripts/inspect_canonical_packages.py": "9e020df372988a1d649734ce57761e4db13f26424cbefefe5e5c231332189b18",
+              "scripts/inspect_canonical_release.py": "845278a8446c678620f84111e4028e3e83bca471ece84c1a0bb5c8cdbb7c6f39",
+              "scripts/prepare_target_language_speech_job.py": "be1fb1a0477f2921ff3f66fb1afe86f158e40cf1face812261a29aaf81014ce3",
+              "scripts/produce_target_language_candidate.py": "5d4380db034a0aaaa72e1b1e2acbbb651d2bb932e702cea0ab892bc0201a9803",
+              "scripts/review_prompts.py": "e20cddc289cc2b6a17c072c6a264d36c72d2fd0723675013a53c2257188adcc4",
+              "scripts/run_target_language_models.py": "354fe85198ed50194c32f31a90a2fedd92334ab2f213da270e9148c579b16f9d",
+              "scripts/screen_target_language_audio_units.py": "367ba0e53003fe180b5420f8e2f54846e4309091b56fc79a1d05b401595691b0",
+              "scripts/series_terminology.py": "a2c16cfc353acbb58ea15e6ed95223178e87c49cd8383db8bb92f2426644ce74",
+              "scripts/sermon_accounting.py": "d6e436054dc8705b8305e0ba4cde69e218550765b44b6f253c70145f927219a8",
+              "scripts/sermon_cache_observation.py": "7b3c83d2f47e7f57dbb885cf0f051f48bde2419ba0bead2b9a3334d453ed549a",
+              "scripts/sermon_clock_evidence.py": "d9ccb7a1f04088f554f150c415d36d970d1a3c05ac2a8ee95d4cebda734d16b2",
+              "scripts/sermon_execution_harness.py": "fde48e91f6c835848cddcc4e824786385939a91fd894526bb2cf40d2878fc0b4",
+              "scripts/sermon_job_liveness.py": "dc4968bd18266c015fde619c772d7bceac31cf66500461ea8da812788aff48a2",
+              "scripts/sermon_log_contract.py": "7568362199fb9991145773eb1188e3dfc5dd0fe3b5e35eefd1657d08f12ab987",
+              "scripts/sermon_log_outbox.py": "99dabe5dd06f6bf2f46beadd907da2a43a678c716c8405eb5b889aed5eddf3bf",
+              "scripts/sermon_log_profile.py": "04f99be71e083843fd7846082dd6e181b31a49489a5aaa2dc65a732421b7d4bc",
+              "scripts/sermon_pipeline.py": "51628d9d02142ee1bf6c54b3ec7d6a6df9cdff808238169f28dff9443f7fdac9",
+              "scripts/sermon_public_snapshot.py": "824d43f2ff64e473277e1a26447a8d4c435b5d5b5a93498be29320a6225c6af8",
+              "scripts/sermon_release_workflow.py": "8f6a6cb3cd04915d414fb65f9b606fcc91fe60a6e7bed7e78ec4e2b901a26069",
+              "scripts/sermon_review_contracts.py": "17cf677ee068cd898b90310c2ff489b9bce01b9333bc59c0a5c23a6d3a115466",
+              "scripts/sermon_review_observation.py": "8d20d7a84ceabf7da0e0f1fac7b744c38d0bf28fb19d6f697de256fc3c24f9ce",
+              "scripts/sermon_sentence_interpretation.py": "028b9123c53d9509a965f6c49fa3116f129a9b444202cecab9b3ce71b0aced45",
+              "scripts/sermon_strict_layer2.py": "78c5e02883b6425a40b598cd2e7e384c5d05c357d8b6c04527f2299e818dd18d",
+              "scripts/sermon_workflow_jobs.py": "60c12804264b445b67a5f9ffdd20d5fcef4e7f677d1ca0e8c7662d73628b24aa",
+              "scripts/stage_formal_multilingual_dev.py": "fe3c565ef5cacaabab6eb67dfe80d17dd5ef8c93781b786f4bfeec52ff5eec62",
+              "scripts/target_language_policy.py": "c44a1b2efc1547fbd2c30427737a2e13807731dd1e8bd7c7b63df3c15774f912",
+              "scripts/validate_target_language_audio_unit.py": "2b24cfc7bc17202d555d7b5bce7c48f37fdf149965dbb3f7afd2b0ef46280560"
+            },
+            "pythonVersion": "3.13.15",
+            "scope": "loaded_project_modules_at_workflow_start_not_all_or_remote_code"
+          }
+        }
+      ],
+      "workloadEvidence": [
+        {
+          "stage": "diagnostic.source_review.possible_boundary_fragment",
+          "spanSha256": "c28e2714e767951f414856354b56ee8166f95f7dc245669a16df5e795cea18e5",
+          "metrics": {
+            "confirmedError": false,
+            "issueNumber": 1,
+            "matchedSegmentCount": 1,
+            "needsHumanReview": true,
+            "privateEvidenceSha256": "c5b01880e375ffb2a919228b65fc3fd5eb552fd136899515190acc284d765254",
+            "sourceReviewReceiptSha256": "6f7eb29dbf68fa0ff4394894139d6843f7c7a98fedaf7e74a5b013768f29659c"
+          }
+        },
+        {
+          "stage": "diagnostic.source_review.title_orthography",
+          "spanSha256": "c28e2714e767951f414856354b56ee8166f95f7dc245669a16df5e795cea18e5",
+          "metrics": {
+            "confirmedError": false,
+            "issueNumber": 2,
+            "matchedSegmentCount": 1,
+            "needsHumanReview": true,
+            "privateEvidenceSha256": "c2043890e898f7812df58d300334083fd91d49a52fc503550d4933ba6e0b379e",
+            "sourceReviewReceiptSha256": "6f7eb29dbf68fa0ff4394894139d6843f7c7a98fedaf7e74a5b013768f29659c"
+          }
+        },
+        {
+          "stage": "diagnostic.source_review.speech_restart",
+          "spanSha256": "c28e2714e767951f414856354b56ee8166f95f7dc245669a16df5e795cea18e5",
+          "metrics": {
+            "confirmedError": false,
+            "issueNumber": 3,
+            "matchedSegmentCount": 1,
+            "needsHumanReview": true,
+            "privateEvidenceSha256": "88f517b0011bf10aa06ef1f534760bdda54181dabbe16d519fe27f6ce6b84787",
+            "sourceReviewReceiptSha256": "6f7eb29dbf68fa0ff4394894139d6843f7c7a98fedaf7e74a5b013768f29659c"
+          }
+        },
+        {
+          "stage": "diagnostic.source_review.unusual_wording",
+          "spanSha256": "c28e2714e767951f414856354b56ee8166f95f7dc245669a16df5e795cea18e5",
+          "metrics": {
+            "confirmedError": false,
+            "issueNumber": 4,
+            "matchedSegmentCount": 1,
+            "needsHumanReview": true,
+            "privateEvidenceSha256": "4436991c3de51a7b8730cfd8fef30070864e231f2028bb4c1c78e3fe831cac47",
+            "sourceReviewReceiptSha256": "6f7eb29dbf68fa0ff4394894139d6843f7c7a98fedaf7e74a5b013768f29659c"
+          }
+        },
+        {
+          "stage": "diagnostic.source_review_gate",
+          "spanSha256": "c28e2714e767951f414856354b56ee8166f95f7dc245669a16df5e795cea18e5",
+          "metrics": {
+            "alignedSegmentsSha256": "9b05682acdb2d9ad3d34e9fe0e6f74dc3249252ca3e1a7e1f78db58b4c33f0cc",
+            "anchorIssueCount": 1,
+            "anchorManifestSha256": "3e839266eeb21f17fba7ee871691a37c74b2a14ec175173aa2047328b117112c",
+            "humanApproval": false,
+            "machineIssueCount": 4,
+            "needsHumanReview": true,
+            "reviewRequestSha256": "1dcfe2dc774b6563de2dfd6797cb744f0d85c7aac5827e7c5762c225668be235",
+            "sourceSentenceCount": 27,
+            "sourceUnitCount": 39
+          }
+        }
+      ],
+      "workUnits": [
+        {
+          "spanSha256": "c28e2714e767951f414856354b56ee8166f95f7dc245669a16df5e795cea18e5",
+          "stage": "diagnostic.source_anchor_preparation",
+          "workUnitId": null,
+          "executorType": "deterministic_program",
+          "attemptSha256": "9154fc079b1154768bb2872faf6baeef573f2076b8cd0b921f72d36661261769",
+          "workflowSha256": "92f69750cc46f7dd88cfb97a7590e50281cc5531fb947848a715712cdc330a6e",
+          "startedAt": "2026-09-30T23:34:59.597171Z",
+          "finishedAt": "2026-09-30T23:34:59.637073Z",
+          "cacheHit": false,
+          "queuedAt": null,
+          "status": "completed",
+          "dependencyRecorded": false,
+          "dependencyReadyAt": null,
+          "elapsedSeconds": 0.039883,
+          "queueWaitSeconds": null,
+          "dependencyReadyToQueueSeconds": null,
+          "clockDomainId": "8b257078ac7c44238404b3ab040546aa",
+          "monotonicStartNs": "498160059806375",
+          "monotonicEndNs": "498160099689041",
+          "durationBasis": "same_process_monotonic",
+          "utcTimingTrusted": true,
+          "dependsOnSha256": [],
+          "parentSpanSha256": "dfdf1de830cd842109ff1e0dc9a874e57c7cab81047954aca37955b6a529a9dc",
+          "models": [],
+          "queueTimingStatus": "missing_instrumentation"
+        }
+      ],
+      "sourceDurationSeconds": null,
+      "locales": null,
+      "pageReadyAt": null,
+      "orchestrationOverheadSeconds": null,
+      "observabilityCoverage": {
+        "sourceDuration": "missing_or_conflicting",
+        "locales": "not_observed",
+        "queueTiming": "missing_instrumentation",
+        "pageReady": "not_observed",
+        "orchestrationOverhead": "missing_instrumentation",
+        "crossProcessCriticalPath": "not_established",
+        "logCompleteness": "not_established",
+        "statusMeaning": "projected_means_computable_recorded_DAG_not_complete_telemetry"
+      },
+      "acceptance": "not_evaluated",
+      "notes": [
+        "Executor subtotals overlap across parallel branches; never sum as end-to-end wall.",
+        "dependsOn contains exact same-run span IDs, not stage names or parent span IDs.",
+        "Human/external elapsed is wait; engineering is separate from production runtime.",
+        "Missing source/locale/page-ready telemetry stays unknown; no sign-off is inferred."
+      ]
+    },
+    {
+      "runSha256": "40c30dcef6b805b76a7f4d7ba779220f9b79ce581850d9a10e1cc213c2bcfbc8",
+      "status": "partial",
+      "endToEndWallSeconds": 7.365380048751831,
+      "criticalPath": null,
+      "diagnostics": [
+        "legacy_dependency_or_executor_unknown"
+      ],
+      "leafElapsedByExecutor": {
+        "decision_agent": 0,
+        "deterministic_program": 0,
+        "engineering_codex": 0,
+        "external_service": 0,
+        "human": 0,
+        "production_model": 7.07024
+      },
+      "leafElapsedMeaning": "completed_leaf_subtotals_not_proof_of_absent_work",
+      "executorCoverage": {
+        "decision_agent": {
+          "completedSpanCount": 0,
+          "unfinishedSpanCount": 0,
+          "completedSpanSubtotalSeconds": 0,
+          "status": "not_observed",
+          "totalExecutionSeconds": null
+        },
+        "deterministic_program": {
+          "completedSpanCount": 0,
+          "unfinishedSpanCount": 0,
+          "completedSpanSubtotalSeconds": 0,
+          "status": "not_observed",
+          "totalExecutionSeconds": null
+        },
+        "engineering_codex": {
+          "completedSpanCount": 0,
+          "unfinishedSpanCount": 0,
+          "completedSpanSubtotalSeconds": 0,
+          "status": "not_observed",
+          "totalExecutionSeconds": null
+        },
+        "external_service": {
+          "completedSpanCount": 0,
+          "unfinishedSpanCount": 0,
+          "completedSpanSubtotalSeconds": 0,
+          "status": "not_observed",
+          "totalExecutionSeconds": null
+        },
+        "human": {
+          "completedSpanCount": 0,
+          "unfinishedSpanCount": 0,
+          "completedSpanSubtotalSeconds": 0,
+          "status": "not_observed",
+          "totalExecutionSeconds": null
+        },
+        "production_model": {
+          "completedSpanCount": 1,
+          "unfinishedSpanCount": 0,
+          "completedSpanSubtotalSeconds": 7.07024,
+          "status": "measured_completed_spans",
+          "totalExecutionSeconds": null
+        }
+      },
+      "unfinishedSpans": [],
+      "usage": {
+        "directReceipts": [
+          {
+            "executorType": "production_model",
+            "status": "completed",
+            "model": null,
+            "elapsedSeconds": 7.053511750011239,
+            "receiptSha256": "b1005f78faf61abdd3582e0171e1031fca57bd1f037c041c8b13c5e8d37d1272",
+            "responseIdSha256": null,
+            "requestedModel": "gpt-transcribe",
+            "spanSha256": "985fff8271d688e3edfc16c24ec7f5ac3ef50fc8f21926790dc7795109d2b5e8",
+            "attemptSha256": "be49a8fce02a00ce09d5285449283594e54ff0c8f8c7160e18e71db407fd32e0",
+            "usage": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "cost": {
+              "status": "unknown",
+              "estimatedUsd": null,
+              "invoiceVerified": false
+            }
+          }
+        ],
+        "byExecutor": {
+          "decision_agent": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          },
+          "deterministic_program": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          },
+          "engineering_codex": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          },
+          "external_service": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          },
+          "human": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          },
+          "production_model": {
+            "calls": 1,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 1,
+              "cachedInputTokens": 1,
+              "outputTokens": 1,
+              "reasoningTokens": 1,
+              "nonCachedInputTokens": 1
+            }
+          },
+          "unknown": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          }
+        },
+        "sdkAggregates": [],
+        "conflicts": [],
+        "status": "consistent",
+        "unresolvedAttempts": 0,
+        "combinedTokenTotal": null,
+        "scope": "globally_deduplicated_direct_receipts_and_sdk_aggregates_separate",
+        "equivalence": "shared_with_accounting_summary_including_model_cost_latency_and_executor",
+        "countMeaning": "observed_receipt_count_not_proof_of_no_uninstrumented_calls"
+      },
+      "decisionObservations": [],
+      "localModelObservations": [],
+      "cacheObservations": [],
+      "historicalCacheUsage": {
+        "observations": 0,
+        "distinctHistoricalResponses": 0,
+        "conflicts": [],
+        "historicalCostUsd": null,
+        "currentSpendMeaning": "cache_observations_are_not_current_transport_or_spend_receipts",
+        "knownHistoricalTokenSubtotal": {
+          "inputTokens": null,
+          "cachedInputTokens": null,
+          "outputTokens": null,
+          "reasoningTokens": null
+        },
+        "missingHistoricalFields": {
+          "inputTokens": 0,
+          "cachedInputTokens": 0,
+          "outputTokens": 0,
+          "reasoningTokens": 0
+        }
+      },
+      "artifactSnapshots": [
+        {
+          "workflowSha256": "fdd8cceddc866df21705da9f7c3fef05571b93405de3b16e8b3b0cb4853344a7",
+          "phase": "before",
+          "scope": "existing_files_not_execution_proof",
+          "artifacts": []
+        },
+        {
+          "workflowSha256": "fdd8cceddc866df21705da9f7c3fef05571b93405de3b16e8b3b0cb4853344a7",
+          "phase": "after",
+          "scope": "existing_files_not_execution_proof",
+          "artifacts": []
+        }
+      ],
+      "workflowProvenance": [
+        {
+          "workflowSha256": "fdd8cceddc866df21705da9f7c3fef05571b93405de3b16e8b3b0cb4853344a7",
+          "metadata": {},
+          "parentWorkflowSha256": null,
+          "executionIdentity": {
+            "gitCommit": "bc7f44b91a4ab0f13cfd9d2acdb09b5ca88aa685",
+            "trackedWorkingTreeDirty": false,
+            "loadedProjectCodeSha256": {
+              "scripts/build_english_source_package.py": "65024b7cf518a90f800a8042e6a3206cbb83bde6a424258c850aa47e1e0ef740",
+              "scripts/build_target_language_audio_package.py": "d73633f99c8f68e1857535e8cbca603bf837338d8adfadd7586432e3864dda5a",
+              "scripts/canonical_durable_jobs.py": "0271f1cfe06be587a4b0919893e87c68de13f24211e0d3ec9ab089d05a176cfa",
+              "scripts/canonical_layer2_controller.py": "a8c8aca6a71429e276b6f553f5ac89c5a869cb0f3514ab2c76f5ac81d94546b6",
+              "scripts/canonical_pipeline_definition.py": "230596fda992d66f9b8f8c82fae874e2d5528f5d3b574d188ed010bf872f2738",
+              "scripts/clip_timeline_map.py": "d9edff2f64b301c5d4eece27bade5772aa4d21061f09a191d54606a96e7ce355",
+              "scripts/four_layer_measure.py": "7f628c8c79b9cab65b25c23cc5b4df9a5154b0129726607fa3a2f56aa9f9c2fd",
+              "scripts/four_layer_progress.py": "2789e1bb1625c3b4af02d2bb845d076c905da711913287463b53eee556ff0e5a",
+              "scripts/inspect_canonical_audio.py": "3d363192127e66a931bfedd320edf63bb66d1b6e749edfc98fa7da0b58596651",
+              "scripts/inspect_canonical_packages.py": "9e020df372988a1d649734ce57761e4db13f26424cbefefe5e5c231332189b18",
+              "scripts/inspect_canonical_release.py": "845278a8446c678620f84111e4028e3e83bca471ece84c1a0bb5c8cdbb7c6f39",
+              "scripts/prepare_target_language_speech_job.py": "be1fb1a0477f2921ff3f66fb1afe86f158e40cf1face812261a29aaf81014ce3",
+              "scripts/produce_target_language_candidate.py": "5d4380db034a0aaaa72e1b1e2acbbb651d2bb932e702cea0ab892bc0201a9803",
+              "scripts/review_prompts.py": "e20cddc289cc2b6a17c072c6a264d36c72d2fd0723675013a53c2257188adcc4",
+              "scripts/run_bounded_diagnostic.py": "74ed5b0b1e91bf1b4b02c125258c3bccb93edaadfd7e7b3c3d2fb779a7ec511b",
+              "scripts/run_target_language_models.py": "354fe85198ed50194c32f31a90a2fedd92334ab2f213da270e9148c579b16f9d",
+              "scripts/screen_target_language_audio_units.py": "367ba0e53003fe180b5420f8e2f54846e4309091b56fc79a1d05b401595691b0",
+              "scripts/series_terminology.py": "a2c16cfc353acbb58ea15e6ed95223178e87c49cd8383db8bb92f2426644ce74",
+              "scripts/sermon_accounting.py": "d6e436054dc8705b8305e0ba4cde69e218550765b44b6f253c70145f927219a8",
+              "scripts/sermon_bounded_decision.py": "24e9d8f2007ddafeadbbe3c6a3a627732e6ea362525f50a845cc27d66b9b7c9b",
+              "scripts/sermon_cache_observation.py": "7b3c83d2f47e7f57dbb885cf0f051f48bde2419ba0bead2b9a3334d453ed549a",
+              "scripts/sermon_clock_evidence.py": "d9ccb7a1f04088f554f150c415d36d970d1a3c05ac2a8ee95d4cebda734d16b2",
+              "scripts/sermon_decision_accounting.py": "6302895cd3398bd7fd70c204957692eb40ad5edfdf07cb9b37393723e081787c",
+              "scripts/sermon_diagnostic_provider.py": "33f94498f092218c08eddf2a8a389d97720797457fc55158db89f4de774a502e",
+              "scripts/sermon_execution_harness.py": "fde48e91f6c835848cddcc4e824786385939a91fd894526bb2cf40d2878fc0b4",
+              "scripts/sermon_job_liveness.py": "dc4968bd18266c015fde619c772d7bceac31cf66500461ea8da812788aff48a2",
+              "scripts/sermon_log_contract.py": "7568362199fb9991145773eb1188e3dfc5dd0fe3b5e35eefd1657d08f12ab987",
+              "scripts/sermon_log_outbox.py": "99dabe5dd06f6bf2f46beadd907da2a43a678c716c8405eb5b889aed5eddf3bf",
+              "scripts/sermon_log_profile.py": "04f99be71e083843fd7846082dd6e181b31a49489a5aaa2dc65a732421b7d4bc",
+              "scripts/sermon_pipeline.py": "51628d9d02142ee1bf6c54b3ec7d6a6df9cdff808238169f28dff9443f7fdac9",
+              "scripts/sermon_provider_http.py": "388ced9869ba63bf077979b29527fd4dd8b8173dd2b7a80a282356869ee49a55",
+              "scripts/sermon_provider_limits.py": "00f86ebe695aca41f83b54391f726fb7b8fd9bf841ba8a614246408946ac70c4",
+              "scripts/sermon_public_snapshot.py": "824d43f2ff64e473277e1a26447a8d4c435b5d5b5a93498be29320a6225c6af8",
+              "scripts/sermon_release_workflow.py": "8f6a6cb3cd04915d414fb65f9b606fcc91fe60a6e7bed7e78ec4e2b901a26069",
+              "scripts/sermon_repair_planning.py": "bd7c78116d1b9a18ccd9a43c1d8b6186df7a74c71a43b3bf75843531c42bc0fb",
+              "scripts/sermon_review_budget.py": "7207f6111d89dfd480dd63ebc92adddc169d257f6cbc231c41a2f8e48ed0aa4f",
+              "scripts/sermon_review_contracts.py": "17cf677ee068cd898b90310c2ff489b9bce01b9333bc59c0a5c23a6d3a115466",
+              "scripts/sermon_review_gate.py": "6ccc5d279217e697186731fe45cdb55b011d73594de4fb45068acc30528a7709",
+              "scripts/sermon_review_observation.py": "8d20d7a84ceabf7da0e0f1fac7b744c38d0bf28fb19d6f697de256fc3c24f9ce",
+              "scripts/sermon_sentence_interpretation.py": "028b9123c53d9509a965f6c49fa3116f129a9b444202cecab9b3ce71b0aced45",
+              "scripts/sermon_strict_budget_adapter.py": "c2928dcfe483ed4661dca125c725b132f488d2df061ab4963f73af78dc45af16",
+              "scripts/sermon_strict_candidate_bridge.py": "5371f44251cda17c245bf2585d77a9898f369aad9323c6aff60244d9d3fe54db",
+              "scripts/sermon_strict_controller.py": "531aaaa4a7538fd7e1dbb6b95042cb045a88f1f122ec617f800b4732301d677d",
+              "scripts/sermon_strict_layer2.py": "78c5e02883b6425a40b598cd2e7e384c5d05c357d8b6c04527f2299e818dd18d",
+              "scripts/sermon_strict_locale.py": "e7c6299d3bb301b1795b54351b5e8994bb9e69427b2d5eb4b8a20d34cbbdff31",
+              "scripts/sermon_strict_repair_planner.py": "7d2ba562f3220c82455704ee9113678f4ce63054ce865e27f07bb7e6895c72a2",
+              "scripts/sermon_workflow_jobs.py": "60c12804264b445b67a5f9ffdd20d5fcef4e7f677d1ca0e8c7662d73628b24aa",
+              "scripts/stage_formal_multilingual_dev.py": "fe3c565ef5cacaabab6eb67dfe80d17dd5ef8c93781b786f4bfeec52ff5eec62",
+              "scripts/target_language_policy.py": "c44a1b2efc1547fbd2c30427737a2e13807731dd1e8bd7c7b63df3c15774f912",
+              "scripts/validate_target_language_audio_unit.py": "2b24cfc7bc17202d555d7b5bce7c48f37fdf149965dbb3f7afd2b0ef46280560"
+            },
+            "pythonVersion": "3.13.15",
+            "scope": "loaded_project_modules_at_workflow_start_not_all_or_remote_code"
+          }
+        }
+      ],
+      "workloadEvidence": [
+        {
+          "stage": "diagnostic.transcription",
+          "spanSha256": "985fff8271d688e3edfc16c24ec7f5ac3ef50fc8f21926790dc7795109d2b5e8",
+          "metrics": {
+            "estimatedCostMicrousd": 13500,
+            "inputAudioSeconds": 180.0,
+            "invoiceVerified": false,
+            "priceEvidenceSha256": "b49c62098a8adc21eec821258446a2918287f0ac2e8b4d5f5570e80382117efe",
+            "requestPayloadSha256": "4a48ffe55b200e49fa291bde2a628e0714ba8ac1d20e9b4dcc730933162e2c59",
+            "sourceAudioSha256": "9ad222f8bb9799d999757be2f380a52a0b74e2966f90b7dd67f302f90ffdad56"
+          }
+        }
+      ],
+      "workUnits": [
+        {
+          "spanSha256": "985fff8271d688e3edfc16c24ec7f5ac3ef50fc8f21926790dc7795109d2b5e8",
+          "stage": "diagnostic.transcription",
+          "workUnitId": null,
+          "executorType": "production_model",
+          "attemptSha256": "d4046a19293989a66e4fafb07e2bea50e0f25c59b8302fd5430e655593ab5d11",
+          "workflowSha256": "fdd8cceddc866df21705da9f7c3fef05571b93405de3b16e8b3b0cb4853344a7",
+          "startedAt": "2026-09-30T23:27:21.665514Z",
+          "finishedAt": "2026-09-30T23:27:28.735848Z",
+          "cacheHit": false,
+          "queuedAt": null,
+          "status": "completed",
+          "dependencyRecorded": false,
+          "dependencyReadyAt": null,
+          "elapsedSeconds": 7.07024,
+          "queueWaitSeconds": null,
+          "dependencyReadyToQueueSeconds": null,
+          "clockDomainId": "513bbc7517804a07821a01d724abb59f",
+          "monotonicStartNs": "497702131620000",
+          "monotonicEndNs": "497709201860000",
+          "durationBasis": "same_process_monotonic",
+          "utcTimingTrusted": true,
+          "dependsOnSha256": [],
+          "parentSpanSha256": "adcef265e7c6257de015fe852047c3aa7ad8850101bc544ca1b078f6c7352b76",
+          "models": [
+            "unknown"
+          ],
+          "queueTimingStatus": "missing_instrumentation"
+        }
+      ],
+      "sourceDurationSeconds": null,
+      "locales": null,
+      "pageReadyAt": null,
+      "orchestrationOverheadSeconds": null,
+      "observabilityCoverage": {
+        "sourceDuration": "missing_or_conflicting",
+        "locales": "not_observed",
+        "queueTiming": "missing_instrumentation",
+        "pageReady": "not_observed",
+        "orchestrationOverhead": "missing_instrumentation",
+        "crossProcessCriticalPath": "not_established",
+        "logCompleteness": "not_established",
+        "statusMeaning": "projected_means_computable_recorded_DAG_not_complete_telemetry"
+      },
+      "acceptance": "not_evaluated",
+      "notes": [
+        "Executor subtotals overlap across parallel branches; never sum as end-to-end wall.",
+        "dependsOn contains exact same-run span IDs, not stage names or parent span IDs.",
+        "Human/external elapsed is wait; engineering is separate from production runtime.",
+        "Missing source/locale/page-ready telemetry stays unknown; no sign-off is inferred."
+      ]
+    },
+    {
+      "runSha256": "6e70ae961bfbe187ae7f5902824570c5872b59e0912ce8b0c608305b3cb27871",
+      "status": "partial",
+      "endToEndWallSeconds": 33.19463491439819,
+      "criticalPath": null,
+      "diagnostics": [
+        "legacy_dependency_or_executor_unknown"
+      ],
+      "leafElapsedByExecutor": {
+        "decision_agent": 0,
+        "deterministic_program": 32.961328,
+        "engineering_codex": 0,
+        "external_service": 0,
+        "human": 0,
+        "production_model": 0
+      },
+      "leafElapsedMeaning": "completed_leaf_subtotals_not_proof_of_absent_work",
+      "executorCoverage": {
+        "decision_agent": {
+          "completedSpanCount": 0,
+          "unfinishedSpanCount": 0,
+          "completedSpanSubtotalSeconds": 0,
+          "status": "not_observed",
+          "totalExecutionSeconds": null
+        },
+        "deterministic_program": {
+          "completedSpanCount": 1,
+          "unfinishedSpanCount": 0,
+          "completedSpanSubtotalSeconds": 32.961328,
+          "status": "measured_completed_spans",
+          "totalExecutionSeconds": null
+        },
+        "engineering_codex": {
+          "completedSpanCount": 0,
+          "unfinishedSpanCount": 0,
+          "completedSpanSubtotalSeconds": 0,
+          "status": "not_observed",
+          "totalExecutionSeconds": null
+        },
+        "external_service": {
+          "completedSpanCount": 0,
+          "unfinishedSpanCount": 0,
+          "completedSpanSubtotalSeconds": 0,
+          "status": "not_observed",
+          "totalExecutionSeconds": null
+        },
+        "human": {
+          "completedSpanCount": 0,
+          "unfinishedSpanCount": 0,
+          "completedSpanSubtotalSeconds": 0,
+          "status": "not_observed",
+          "totalExecutionSeconds": null
+        },
+        "production_model": {
+          "completedSpanCount": 0,
+          "unfinishedSpanCount": 0,
+          "completedSpanSubtotalSeconds": 0,
+          "status": "not_observed",
+          "totalExecutionSeconds": null
+        }
+      },
+      "unfinishedSpans": [],
+      "usage": {
+        "directReceipts": [
+          {
+            "executorType": "deterministic_program",
+            "status": "completed",
+            "model": "gpt-6-astra",
+            "elapsedSeconds": 32.882253999996465,
+            "receiptSha256": "b4508d93d5a7ee3d23e17191ffa6801077124418f1f0420e45197bec12d8a5cb",
+            "responseIdSha256": "61f7888c72db54ad499bab21ee162d1ce455fea771967f5a456e49886df582a6",
+            "requestedModel": "gpt-6-astra",
+            "spanSha256": "387d5e88b8b49c3e65e4d9c7a2793b7247b0a4f12590663a92ffb4c3df5c9b35",
+            "attemptSha256": "20954db4ea0b9024db7762ffe90275fc744124f826c63ee65f5fc7acdcaaa156",
+            "usage": {
+              "inputTokens": 806,
+              "cachedInputTokens": 0,
+              "outputTokens": 1359,
+              "reasoningTokens": 850,
+              "nonCachedInputTokens": 806
+            },
+            "cost": {
+              "status": "estimated",
+              "estimatedUsd": 0.07601,
+              "invoiceVerified": false
+            }
+          }
+        ],
+        "byExecutor": {
+          "decision_agent": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          },
+          "deterministic_program": {
+            "calls": 1,
+            "knownSubtotal": {
+              "inputTokens": 806,
+              "cachedInputTokens": 0,
+              "outputTokens": 1359,
+              "reasoningTokens": 850,
+              "nonCachedInputTokens": 806
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          },
+          "engineering_codex": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          },
+          "external_service": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          },
+          "human": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          },
+          "production_model": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          },
+          "unknown": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          }
+        },
+        "sdkAggregates": [],
+        "conflicts": [],
+        "status": "consistent",
+        "unresolvedAttempts": 0,
+        "combinedTokenTotal": null,
+        "scope": "globally_deduplicated_direct_receipts_and_sdk_aggregates_separate",
+        "equivalence": "shared_with_accounting_summary_including_model_cost_latency_and_executor",
+        "countMeaning": "observed_receipt_count_not_proof_of_no_uninstrumented_calls"
+      },
+      "decisionObservations": [],
+      "localModelObservations": [],
+      "cacheObservations": [],
+      "historicalCacheUsage": {
+        "observations": 0,
+        "distinctHistoricalResponses": 0,
+        "conflicts": [],
+        "historicalCostUsd": null,
+        "currentSpendMeaning": "cache_observations_are_not_current_transport_or_spend_receipts",
+        "knownHistoricalTokenSubtotal": {
+          "inputTokens": null,
+          "cachedInputTokens": null,
+          "outputTokens": null,
+          "reasoningTokens": null
+        },
+        "missingHistoricalFields": {
+          "inputTokens": 0,
+          "cachedInputTokens": 0,
+          "outputTokens": 0,
+          "reasoningTokens": 0
+        }
+      },
+      "artifactSnapshots": [
+        {
+          "workflowSha256": "d672df26ccacbc0e143d15cd70d164348f401dd1c27a9a2efe0eb354ea11c259",
+          "phase": "before",
+          "scope": "existing_files_not_execution_proof",
+          "artifacts": []
+        },
+        {
+          "workflowSha256": "d672df26ccacbc0e143d15cd70d164348f401dd1c27a9a2efe0eb354ea11c259",
+          "phase": "after",
+          "scope": "existing_files_not_execution_proof",
+          "artifacts": []
+        }
+      ],
+      "workflowProvenance": [
+        {
+          "workflowSha256": "d672df26ccacbc0e143d15cd70d164348f401dd1c27a9a2efe0eb354ea11c259",
+          "metadata": {},
+          "parentWorkflowSha256": null,
+          "executionIdentity": {
+            "gitCommit": "bc7f44b91a4ab0f13cfd9d2acdb09b5ca88aa685",
+            "trackedWorkingTreeDirty": false,
+            "loadedProjectCodeSha256": {
+              "scripts/build_english_source_package.py": "65024b7cf518a90f800a8042e6a3206cbb83bde6a424258c850aa47e1e0ef740",
+              "scripts/build_target_language_audio_package.py": "d73633f99c8f68e1857535e8cbca603bf837338d8adfadd7586432e3864dda5a",
+              "scripts/canonical_durable_jobs.py": "0271f1cfe06be587a4b0919893e87c68de13f24211e0d3ec9ab089d05a176cfa",
+              "scripts/canonical_layer2_controller.py": "a8c8aca6a71429e276b6f553f5ac89c5a869cb0f3514ab2c76f5ac81d94546b6",
+              "scripts/canonical_pipeline_definition.py": "230596fda992d66f9b8f8c82fae874e2d5528f5d3b574d188ed010bf872f2738",
+              "scripts/clip_timeline_map.py": "d9edff2f64b301c5d4eece27bade5772aa4d21061f09a191d54606a96e7ce355",
+              "scripts/four_layer_measure.py": "7f628c8c79b9cab65b25c23cc5b4df9a5154b0129726607fa3a2f56aa9f9c2fd",
+              "scripts/four_layer_progress.py": "2789e1bb1625c3b4af02d2bb845d076c905da711913287463b53eee556ff0e5a",
+              "scripts/inspect_canonical_audio.py": "3d363192127e66a931bfedd320edf63bb66d1b6e749edfc98fa7da0b58596651",
+              "scripts/inspect_canonical_packages.py": "9e020df372988a1d649734ce57761e4db13f26424cbefefe5e5c231332189b18",
+              "scripts/inspect_canonical_release.py": "845278a8446c678620f84111e4028e3e83bca471ece84c1a0bb5c8cdbb7c6f39",
+              "scripts/prepare_target_language_speech_job.py": "be1fb1a0477f2921ff3f66fb1afe86f158e40cf1face812261a29aaf81014ce3",
+              "scripts/produce_target_language_candidate.py": "5d4380db034a0aaaa72e1b1e2acbbb651d2bb932e702cea0ab892bc0201a9803",
+              "scripts/review_prompts.py": "e20cddc289cc2b6a17c072c6a264d36c72d2fd0723675013a53c2257188adcc4",
+              "scripts/run_bounded_diagnostic.py": "74ed5b0b1e91bf1b4b02c125258c3bccb93edaadfd7e7b3c3d2fb779a7ec511b",
+              "scripts/run_target_language_models.py": "354fe85198ed50194c32f31a90a2fedd92334ab2f213da270e9148c579b16f9d",
+              "scripts/screen_target_language_audio_units.py": "367ba0e53003fe180b5420f8e2f54846e4309091b56fc79a1d05b401595691b0",
+              "scripts/series_terminology.py": "a2c16cfc353acbb58ea15e6ed95223178e87c49cd8383db8bb92f2426644ce74",
+              "scripts/sermon_accounting.py": "d6e436054dc8705b8305e0ba4cde69e218550765b44b6f253c70145f927219a8",
+              "scripts/sermon_bounded_decision.py": "24e9d8f2007ddafeadbbe3c6a3a627732e6ea362525f50a845cc27d66b9b7c9b",
+              "scripts/sermon_cache_observation.py": "7b3c83d2f47e7f57dbb885cf0f051f48bde2419ba0bead2b9a3334d453ed549a",
+              "scripts/sermon_clock_evidence.py": "d9ccb7a1f04088f554f150c415d36d970d1a3c05ac2a8ee95d4cebda734d16b2",
+              "scripts/sermon_decision_accounting.py": "6302895cd3398bd7fd70c204957692eb40ad5edfdf07cb9b37393723e081787c",
+              "scripts/sermon_diagnostic_provider.py": "33f94498f092218c08eddf2a8a389d97720797457fc55158db89f4de774a502e",
+              "scripts/sermon_execution_harness.py": "fde48e91f6c835848cddcc4e824786385939a91fd894526bb2cf40d2878fc0b4",
+              "scripts/sermon_job_liveness.py": "dc4968bd18266c015fde619c772d7bceac31cf66500461ea8da812788aff48a2",
+              "scripts/sermon_log_contract.py": "7568362199fb9991145773eb1188e3dfc5dd0fe3b5e35eefd1657d08f12ab987",
+              "scripts/sermon_log_outbox.py": "99dabe5dd06f6bf2f46beadd907da2a43a678c716c8405eb5b889aed5eddf3bf",
+              "scripts/sermon_log_profile.py": "04f99be71e083843fd7846082dd6e181b31a49489a5aaa2dc65a732421b7d4bc",
+              "scripts/sermon_pipeline.py": "51628d9d02142ee1bf6c54b3ec7d6a6df9cdff808238169f28dff9443f7fdac9",
+              "scripts/sermon_provider_http.py": "388ced9869ba63bf077979b29527fd4dd8b8173dd2b7a80a282356869ee49a55",
+              "scripts/sermon_provider_limits.py": "00f86ebe695aca41f83b54391f726fb7b8fd9bf841ba8a614246408946ac70c4",
+              "scripts/sermon_public_snapshot.py": "824d43f2ff64e473277e1a26447a8d4c435b5d5b5a93498be29320a6225c6af8",
+              "scripts/sermon_release_workflow.py": "8f6a6cb3cd04915d414fb65f9b606fcc91fe60a6e7bed7e78ec4e2b901a26069",
+              "scripts/sermon_repair_planning.py": "bd7c78116d1b9a18ccd9a43c1d8b6186df7a74c71a43b3bf75843531c42bc0fb",
+              "scripts/sermon_review_budget.py": "7207f6111d89dfd480dd63ebc92adddc169d257f6cbc231c41a2f8e48ed0aa4f",
+              "scripts/sermon_review_contracts.py": "17cf677ee068cd898b90310c2ff489b9bce01b9333bc59c0a5c23a6d3a115466",
+              "scripts/sermon_review_gate.py": "6ccc5d279217e697186731fe45cdb55b011d73594de4fb45068acc30528a7709",
+              "scripts/sermon_review_observation.py": "8d20d7a84ceabf7da0e0f1fac7b744c38d0bf28fb19d6f697de256fc3c24f9ce",
+              "scripts/sermon_sentence_interpretation.py": "028b9123c53d9509a965f6c49fa3116f129a9b444202cecab9b3ce71b0aced45",
+              "scripts/sermon_strict_budget_adapter.py": "c2928dcfe483ed4661dca125c725b132f488d2df061ab4963f73af78dc45af16",
+              "scripts/sermon_strict_candidate_bridge.py": "5371f44251cda17c245bf2585d77a9898f369aad9323c6aff60244d9d3fe54db",
+              "scripts/sermon_strict_controller.py": "531aaaa4a7538fd7e1dbb6b95042cb045a88f1f122ec617f800b4732301d677d",
+              "scripts/sermon_strict_layer2.py": "78c5e02883b6425a40b598cd2e7e384c5d05c357d8b6c04527f2299e818dd18d",
+              "scripts/sermon_strict_locale.py": "e7c6299d3bb301b1795b54351b5e8994bb9e69427b2d5eb4b8a20d34cbbdff31",
+              "scripts/sermon_strict_repair_planner.py": "7d2ba562f3220c82455704ee9113678f4ce63054ce865e27f07bb7e6895c72a2",
+              "scripts/sermon_workflow_jobs.py": "60c12804264b445b67a5f9ffdd20d5fcef4e7f677d1ca0e8c7662d73628b24aa",
+              "scripts/stage_formal_multilingual_dev.py": "fe3c565ef5cacaabab6eb67dfe80d17dd5ef8c93781b786f4bfeec52ff5eec62",
+              "scripts/target_language_policy.py": "c44a1b2efc1547fbd2c30427737a2e13807731dd1e8bd7c7b63df3c15774f912",
+              "scripts/validate_target_language_audio_unit.py": "2b24cfc7bc17202d555d7b5bce7c48f37fdf149965dbb3f7afd2b0ef46280560"
+            },
+            "pythonVersion": "3.13.15",
+            "scope": "loaded_project_modules_at_workflow_start_not_all_or_remote_code"
+          }
+        }
+      ],
+      "workloadEvidence": [
+        {
+          "stage": "diagnostic.provider_usage",
+          "spanSha256": "387d5e88b8b49c3e65e4d9c7a2793b7247b0a4f12590663a92ffb4c3df5c9b35",
+          "metrics": {
+            "cacheWriteTokens": 0,
+            "cachedInputTokens": 0,
+            "costIsEstimate": true,
+            "estimatedCostMicrousd": 78025,
+            "invoiceVerified": false,
+            "modelCallIdSha256": "b56d3bc60a9969e77da64c493a0bcc90cbb44e668675e8b4671122edcce9cf17",
+            "priceEvidenceSha256": "0255a084a8c4eb9bc817bcaaa1a8055031f3527932be4bb4066c66111612c9a0",
+            "requestPayloadSha256": "8cf557171cf03d98d8898f0b9ed169b51f9c04b7664f5054984b9542af1151b6",
+            "runConfigSha256": "ba0e57acf1c6b2092740fcb81c81bf4d33bc155f58de8755fc511211d1cbac42"
+          }
+        }
+      ],
+      "workUnits": [
+        {
+          "spanSha256": "387d5e88b8b49c3e65e4d9c7a2793b7247b0a4f12590663a92ffb4c3df5c9b35",
+          "stage": "bounded-diagnostic",
+          "workUnitId": null,
+          "executorType": "deterministic_program",
+          "attemptSha256": "1aa4841fa24abe9640b2c696c0b01511c549847768a0bd8aa188626375c0bf79",
+          "workflowSha256": "d672df26ccacbc0e143d15cd70d164348f401dd1c27a9a2efe0eb354ea11c259",
+          "startedAt": "2026-09-30T23:28:26.369825Z",
+          "finishedAt": "2026-09-30T23:28:59.331427Z",
+          "cacheHit": false,
+          "queuedAt": null,
+          "status": "completed",
+          "dependencyRecorded": false,
+          "dependencyReadyAt": null,
+          "elapsedSeconds": 32.961328,
+          "queueWaitSeconds": null,
+          "dependencyReadyToQueueSeconds": null,
+          "clockDomainId": "52d0e4f4ffc94fc8988cd66043f9d132",
+          "monotonicStartNs": "497766835433416",
+          "monotonicEndNs": "497799796760916",
+          "durationBasis": "same_process_monotonic",
+          "utcTimingTrusted": true,
+          "dependsOnSha256": [],
+          "parentSpanSha256": null,
+          "models": [
+            "gpt-6-astra",
+            "unknown"
+          ],
+          "queueTimingStatus": "missing_instrumentation"
+        }
+      ],
+      "sourceDurationSeconds": null,
+      "locales": null,
+      "pageReadyAt": null,
+      "orchestrationOverheadSeconds": null,
+      "observabilityCoverage": {
+        "sourceDuration": "missing_or_conflicting",
+        "locales": "not_observed",
+        "queueTiming": "missing_instrumentation",
+        "pageReady": "not_observed",
+        "orchestrationOverhead": "missing_instrumentation",
+        "crossProcessCriticalPath": "not_established",
+        "logCompleteness": "not_established",
+        "statusMeaning": "projected_means_computable_recorded_DAG_not_complete_telemetry"
+      },
+      "acceptance": "not_evaluated",
+      "notes": [
+        "Executor subtotals overlap across parallel branches; never sum as end-to-end wall.",
+        "dependsOn contains exact same-run span IDs, not stage names or parent span IDs.",
+        "Human/external elapsed is wait; engineering is separate from production runtime.",
+        "Missing source/locale/page-ready telemetry stays unknown; no sign-off is inferred."
+      ]
+    },
+    {
+      "runSha256": "4a21fbdc9b724d8ec201189bfadd8d2f78e9bc7fa7b93af897d1d9f54df1a4ba",
+      "status": "partial",
+      "endToEndWallSeconds": 35.76890206336975,
+      "criticalPath": null,
+      "diagnostics": [
+        "legacy_dependency_or_executor_unknown"
+      ],
+      "leafElapsedByExecutor": {
+        "decision_agent": 0,
+        "deterministic_program": 0.010178,
+        "engineering_codex": 0,
+        "external_service": 0,
+        "human": 0,
+        "production_model": 35.291707
+      },
+      "leafElapsedMeaning": "completed_leaf_subtotals_not_proof_of_absent_work",
+      "executorCoverage": {
+        "decision_agent": {
+          "completedSpanCount": 0,
+          "unfinishedSpanCount": 0,
+          "completedSpanSubtotalSeconds": 0,
+          "status": "not_observed",
+          "totalExecutionSeconds": null
+        },
+        "deterministic_program": {
+          "completedSpanCount": 1,
+          "unfinishedSpanCount": 0,
+          "completedSpanSubtotalSeconds": 0.010178,
+          "status": "measured_completed_spans",
+          "totalExecutionSeconds": null
+        },
+        "engineering_codex": {
+          "completedSpanCount": 0,
+          "unfinishedSpanCount": 0,
+          "completedSpanSubtotalSeconds": 0,
+          "status": "not_observed",
+          "totalExecutionSeconds": null
+        },
+        "external_service": {
+          "completedSpanCount": 0,
+          "unfinishedSpanCount": 0,
+          "completedSpanSubtotalSeconds": 0,
+          "status": "not_observed",
+          "totalExecutionSeconds": null
+        },
+        "human": {
+          "completedSpanCount": 0,
+          "unfinishedSpanCount": 0,
+          "completedSpanSubtotalSeconds": 0,
+          "status": "not_observed",
+          "totalExecutionSeconds": null
+        },
+        "production_model": {
+          "completedSpanCount": 1,
+          "unfinishedSpanCount": 0,
+          "completedSpanSubtotalSeconds": 35.291707,
+          "status": "measured_completed_spans",
+          "totalExecutionSeconds": null
+        }
+      },
+      "unfinishedSpans": [],
+      "usage": {
+        "directReceipts": [],
+        "byExecutor": {
+          "decision_agent": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          },
+          "deterministic_program": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          },
+          "engineering_codex": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          },
+          "external_service": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          },
+          "human": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          },
+          "production_model": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          },
+          "unknown": {
+            "calls": 0,
+            "knownSubtotal": {
+              "inputTokens": null,
+              "cachedInputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "nonCachedInputTokens": null
+            },
+            "missingFields": {
+              "inputTokens": 0,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningTokens": 0,
+              "nonCachedInputTokens": 0
+            }
+          }
+        },
+        "sdkAggregates": [],
+        "conflicts": [],
+        "status": "consistent",
+        "unresolvedAttempts": 0,
+        "combinedTokenTotal": null,
+        "scope": "globally_deduplicated_direct_receipts_and_sdk_aggregates_separate",
+        "equivalence": "shared_with_accounting_summary_including_model_cost_latency_and_executor",
+        "countMeaning": "observed_receipt_count_not_proof_of_no_uninstrumented_calls"
+      },
+      "decisionObservations": [],
+      "localModelObservations": [],
+      "cacheObservations": [],
+      "historicalCacheUsage": {
+        "observations": 0,
+        "distinctHistoricalResponses": 0,
+        "conflicts": [],
+        "historicalCostUsd": null,
+        "currentSpendMeaning": "cache_observations_are_not_current_transport_or_spend_receipts",
+        "knownHistoricalTokenSubtotal": {
+          "inputTokens": null,
+          "cachedInputTokens": null,
+          "outputTokens": null,
+          "reasoningTokens": null
+        },
+        "missingHistoricalFields": {
+          "inputTokens": 0,
+          "cachedInputTokens": 0,
+          "outputTokens": 0,
+          "reasoningTokens": 0
+        }
+      },
+      "artifactSnapshots": [
+        {
+          "workflowSha256": "c312607adc31ff2a3060594d0a5585aac1c93f6bcf7e2c396acee67f0735e4ca",
+          "phase": "before",
+          "scope": "existing_files_not_execution_proof",
+          "artifacts": []
+        },
+        {
+          "workflowSha256": "c312607adc31ff2a3060594d0a5585aac1c93f6bcf7e2c396acee67f0735e4ca",
+          "phase": "after",
+          "scope": "existing_files_not_execution_proof",
+          "artifacts": []
+        }
+      ],
+      "workflowProvenance": [
+        {
+          "workflowSha256": "c312607adc31ff2a3060594d0a5585aac1c93f6bcf7e2c396acee67f0735e4ca",
+          "metadata": {},
+          "parentWorkflowSha256": null,
+          "executionIdentity": {
+            "gitCommit": "bc7f44b91a4ab0f13cfd9d2acdb09b5ca88aa685",
+            "trackedWorkingTreeDirty": false,
+            "loadedProjectCodeSha256": {
+              "scripts/build_english_source_package.py": "65024b7cf518a90f800a8042e6a3206cbb83bde6a424258c850aa47e1e0ef740",
+              "scripts/clip_timeline_map.py": "d9edff2f64b301c5d4eece27bade5772aa4d21061f09a191d54606a96e7ce355",
+              "scripts/four_layer_measure.py": "7f628c8c79b9cab65b25c23cc5b4df9a5154b0129726607fa3a2f56aa9f9c2fd",
+              "scripts/four_layer_progress.py": "2789e1bb1625c3b4af02d2bb845d076c905da711913287463b53eee556ff0e5a",
+              "scripts/mfa_alignment.py": "6183298a18704f32336bd543a157fc7dbdfd83776baa2cf1155cc71ff872ddc3",
+              "scripts/mfa_backend.py": "4cd8c6606b65f686bfa6bea9af82f3e15e0be02740e82124ef7ea6312788e246",
+              "scripts/mfa_spark.py": "0d659a2361b67ccfe2892cc80deaca03c9aea7e3771a5033df7b3de743689a8b",
+              "scripts/prepare_target_language_speech_job.py": "be1fb1a0477f2921ff3f66fb1afe86f158e40cf1face812261a29aaf81014ce3",
+              "scripts/produce_target_language_candidate.py": "5d4380db034a0aaaa72e1b1e2acbbb651d2bb932e702cea0ab892bc0201a9803",
+              "scripts/review_prompts.py": "e20cddc289cc2b6a17c072c6a264d36c72d2fd0723675013a53c2257188adcc4",
+              "scripts/run_target_language_models.py": "354fe85198ed50194c32f31a90a2fedd92334ab2f213da270e9148c579b16f9d",
+              "scripts/series_terminology.py": "a2c16cfc353acbb58ea15e6ed95223178e87c49cd8383db8bb92f2426644ce74",
+              "scripts/sermon_accounting.py": "d6e436054dc8705b8305e0ba4cde69e218550765b44b6f253c70145f927219a8",
+              "scripts/sermon_cache_observation.py": "7b3c83d2f47e7f57dbb885cf0f051f48bde2419ba0bead2b9a3334d453ed549a",
+              "scripts/sermon_clock_evidence.py": "d9ccb7a1f04088f554f150c415d36d970d1a3c05ac2a8ee95d4cebda734d16b2",
+              "scripts/sermon_execution_harness.py": "fde48e91f6c835848cddcc4e824786385939a91fd894526bb2cf40d2878fc0b4",
+              "scripts/sermon_job_liveness.py": "dc4968bd18266c015fde619c772d7bceac31cf66500461ea8da812788aff48a2",
+              "scripts/sermon_log_contract.py": "7568362199fb9991145773eb1188e3dfc5dd0fe3b5e35eefd1657d08f12ab987",
+              "scripts/sermon_log_outbox.py": "99dabe5dd06f6bf2f46beadd907da2a43a678c716c8405eb5b889aed5eddf3bf",
+              "scripts/sermon_log_profile.py": "04f99be71e083843fd7846082dd6e181b31a49489a5aaa2dc65a732421b7d4bc",
+              "scripts/sermon_pipeline.py": "51628d9d02142ee1bf6c54b3ec7d6a6df9cdff808238169f28dff9443f7fdac9",
+              "scripts/sermon_release_workflow.py": "8f6a6cb3cd04915d414fb65f9b606fcc91fe60a6e7bed7e78ec4e2b901a26069",
+              "scripts/sermon_review_contracts.py": "17cf677ee068cd898b90310c2ff489b9bce01b9333bc59c0a5c23a6d3a115466",
+              "scripts/sermon_review_observation.py": "8d20d7a84ceabf7da0e0f1fac7b744c38d0bf28fb19d6f697de256fc3c24f9ce",
+              "scripts/sermon_sentence_interpretation.py": "028b9123c53d9509a965f6c49fa3116f129a9b444202cecab9b3ce71b0aced45",
+              "scripts/sermon_strict_layer2.py": "78c5e02883b6425a40b598cd2e7e384c5d05c357d8b6c04527f2299e818dd18d",
+              "scripts/sermon_workflow_jobs.py": "60c12804264b445b67a5f9ffdd20d5fcef4e7f677d1ca0e8c7662d73628b24aa",
+              "scripts/target_language_policy.py": "c44a1b2efc1547fbd2c30427737a2e13807731dd1e8bd7c7b63df3c15774f912"
+            },
+            "pythonVersion": "3.13.15",
+            "scope": "loaded_project_modules_at_workflow_start_not_all_or_remote_code"
+          }
+        }
+      ],
+      "workloadEvidence": [
+        {
+          "stage": "diagnostic.mfa_inputs",
+          "spanSha256": "132d65515e6fed79dcb20bcaff8b31e2cc483183296d4f518dce92e1e166651a",
+          "metrics": {
+            "asrReceiptSha256": "b5234cfe2f5217a071cb5f9fe49b826ae1f0d727240c701633e0743d773387b2",
+            "providerCallIdSha256": "b09517783e23d72bd1c898509ebc5456689bcf2592f6feb88659c449c1ec640d",
+            "referenceSha256": "63f0c1506b25785e5e37640fd053c93f9f635cf13f4efddbbafec44bcdeb31c0",
+            "sourceAudioSha256": "9ad222f8bb9799d999757be2f380a52a0b74e2966f90b7dd67f302f90ffdad56",
+            "sourceMediaSha256": "374662dc7c00993820360b2095e277ecd7ebf17bc4d873ccf7e2b76a6c7c7930"
+          }
+        },
+        {
+          "stage": "diagnostic.mfa_models",
+          "spanSha256": "644449cd2d89bb363901c92df5997d5574573b98876ce89f91647ed233aed161",
+          "metrics": {
+            "acousticModelSha256": "2c08bd4f82c3943dd57ac09aeac99dbce17a1e1bfe9fd932c8d95cd13d971068",
+            "dictionarySha256": "975bf9c7791535c5aec57995e0bd2b77eb7ca364d1d974c2134e07bb0f16b079",
+            "g2pModelSha256": "9923b38d59a8b3e3e322f225c52523c2a6248e5ffc9fd89be151ade2dc97cb02",
+            "networkInference": false
+          }
+        },
+        {
+          "stage": "diagnostic.mfa_result",
+          "spanSha256": "644449cd2d89bb363901c92df5997d5574573b98876ce89f91647ed233aed161",
+          "metrics": {
+            "elapsedSeconds": 35.19343733298592,
+            "segmentCount": 27,
+            "segmentsSha256": "fa6505ed30ddbd8c8bafadcaf6b5044d7f9c8ede9e44012fc299d99fe3570891"
+          }
+        }
+      ],
+      "workUnits": [
+        {
+          "spanSha256": "644449cd2d89bb363901c92df5997d5574573b98876ce89f91647ed233aed161",
+          "stage": "diagnostic.mfa_alignment",
+          "workUnitId": null,
+          "executorType": "production_model",
+          "attemptSha256": "45d5a36c3e02bcf280334bd8cc6deac36d37b485d1441ddff93f221d6caab945",
+          "workflowSha256": "c312607adc31ff2a3060594d0a5585aac1c93f6bcf7e2c396acee67f0735e4ca",
+          "startedAt": "2026-09-30T23:30:57.623719Z",
+          "finishedAt": "2026-09-30T23:31:32.915720Z",
+          "cacheHit": false,
+          "queuedAt": null,
+          "status": "completed",
+          "dependencyRecorded": true,
+          "dependencyReadyAt": null,
+          "elapsedSeconds": 35.291707,
+          "queueWaitSeconds": null,
+          "dependencyReadyToQueueSeconds": null,
+          "clockDomainId": "7a325ef495694737bfc6a41e4e8b881e",
+          "monotonicStartNs": "497918088189541",
+          "monotonicEndNs": "497953379896833",
+          "durationBasis": "same_process_monotonic",
+          "utcTimingTrusted": true,
+          "dependsOnSha256": [
+            "132d65515e6fed79dcb20bcaff8b31e2cc483183296d4f518dce92e1e166651a"
+          ],
+          "parentSpanSha256": "cb442a44d1b03e5de97891b89d4aaf6441ba3ae240dc88a9d0758587aad4f845",
+          "models": [],
+          "queueTimingStatus": "missing_instrumentation"
+        },
+        {
+          "spanSha256": "132d65515e6fed79dcb20bcaff8b31e2cc483183296d4f518dce92e1e166651a",
+          "stage": "diagnostic.mfa_input_binding",
+          "workUnitId": null,
+          "executorType": "deterministic_program",
+          "attemptSha256": "9e64975f4e7c794904318e135ce0c62deaeaee676a9f62087c0e3b8af50e8088",
+          "workflowSha256": "c312607adc31ff2a3060594d0a5585aac1c93f6bcf7e2c396acee67f0735e4ca",
+          "startedAt": "2026-09-30T23:30:57.610220Z",
+          "finishedAt": "2026-09-30T23:30:57.620429Z",
+          "cacheHit": false,
+          "queuedAt": null,
+          "status": "completed",
+          "dependencyRecorded": false,
+          "dependencyReadyAt": null,
+          "elapsedSeconds": 0.010178,
+          "queueWaitSeconds": null,
+          "dependencyReadyToQueueSeconds": null,
+          "clockDomainId": "7a325ef495694737bfc6a41e4e8b881e",
+          "monotonicStartNs": "497918074689375",
+          "monotonicEndNs": "497918084867833",
+          "durationBasis": "same_process_monotonic",
+          "utcTimingTrusted": true,
+          "dependsOnSha256": [],
+          "parentSpanSha256": "cb442a44d1b03e5de97891b89d4aaf6441ba3ae240dc88a9d0758587aad4f845",
+          "models": [],
+          "queueTimingStatus": "missing_instrumentation"
+        }
+      ],
+      "sourceDurationSeconds": null,
+      "locales": null,
+      "pageReadyAt": null,
+      "orchestrationOverheadSeconds": null,
+      "observabilityCoverage": {
+        "sourceDuration": "missing_or_conflicting",
+        "locales": "not_observed",
+        "queueTiming": "missing_instrumentation",
+        "pageReady": "not_observed",
+        "orchestrationOverhead": "missing_instrumentation",
+        "crossProcessCriticalPath": "not_established",
+        "logCompleteness": "not_established",
+        "statusMeaning": "projected_means_computable_recorded_DAG_not_complete_telemetry"
+      },
+      "acceptance": "not_evaluated",
+      "notes": [
+        "Executor subtotals overlap across parallel branches; never sum as end-to-end wall.",
+        "dependsOn contains exact same-run span IDs, not stage names or parent span IDs.",
+        "Human/external elapsed is wait; engineering is separate from production runtime.",
+        "Missing source/locale/page-ready telemetry stays unknown; no sign-off is inferred."
+      ]
+    }
+  ],
+  "status": "partial",
+  "diagnostics": [],
+  "duplicateEventsIgnored": 0,
+  "receiptIntegrity": {
+    "status": "consistent",
+    "conflicts": [],
+    "equivalentDuplicatesIgnored": 0
+  },
+  "eventIntegrity": {
+    "status": "consistent",
+    "diagnostics": [],
+    "equivalentDuplicatesIgnored": 0,
+    "profileEventCount": 54,
+    "executionAuthority": "none"
+  },
+  "reportGenerationNetworkCalls": 0,
+  "observedProviderCalls": {
+    "directReceiptCount": 2,
+    "unresolvedStartedAttemptCount": 0,
+    "status": "observed_receipts",
+    "totalNetworkCalls": null,
+    "scope": "globally_deduplicated_direct_receipts_sdk_aggregates_excluded",
+    "countMeaning": "observed_receipts_not_proof_of_total_dispatches_or_absent_uninstrumented_calls"
+  },
+  "acceptance": "not_evaluated"
+}

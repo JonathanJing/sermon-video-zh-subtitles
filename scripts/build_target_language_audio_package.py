@@ -15,17 +15,20 @@ import json
 import math
 from pathlib import Path
 import subprocess
+import time
 from typing import Any
 
 from jsonschema import Draft202012Validator, FormatChecker
 
 try:
+    from scripts import sermon_accounting as accounting
     from scripts import prepare_target_language_speech_job as speech
     from scripts import sermon_sentence_interpretation as interpretation
     from scripts import clip_timeline_map as timeline_map
     from scripts import validate_target_language_audio_unit as unit_integrity
     from scripts import screen_target_language_audio_units as audio_screen
 except ImportError:
+    import sermon_accounting as accounting
     import prepare_target_language_speech_job as speech
     import sermon_sentence_interpretation as interpretation
     import clip_timeline_map as timeline_map
@@ -121,7 +124,8 @@ def validate_job(source: dict[str, Any], anchor: dict[str, Any], candidate: dict
                  clip_voice_capability: dict[str, Any] | None,
                  clip_timeline: dict[str, Any],
                  paths: dict[str, Path], *,
-                 source_voice_authorization: dict[str, Any] | None = None) -> None:
+                 source_voice_authorization: dict[str, Any] | None = None,
+                 strict_rubric: dict[str, Any] | None = None) -> None:
     speech.validate_target_candidate(source, anchor, candidate)
     review = source.get("review", {})
     window = source.get("source", {}).get("approvedWindow", {})
@@ -133,7 +137,7 @@ def validate_job(source: dict[str, Any], anchor: dict[str, Any], candidate: dict
             and window.get("humanApproval") is True
             and source.get("anchors", {}).get("issueCount") == 0,
             "English Source Package lacks source/window/anchor human gates")
-    speech.validate_policy_binding(candidate, policy)
+    speech.validate_policy_binding(candidate, policy, strict_rubric=strict_rubric)
     speech.validate_human_review_receipt(source, anchor, candidate, human_receipt)
     speech.validate_adapter(adapter, candidate["targetLocale"], registry,
                             clip_voice_authorization=clip_voice_authorization,
@@ -282,7 +286,8 @@ def validate_captions(captions: dict[str, Any], candidate: dict[str, Any],
         previous_end = end
 
 
-def build_package(paths: dict[str, Path], render_manifest_path: Path, artifact_root: Path) -> dict[str, Any]:
+def build_package(paths: dict[str, Path], render_manifest_path: Path, artifact_root: Path, *,
+                  strict_rubric: dict[str, Any] | None = None) -> dict[str, Any]:
     source, anchor, candidate, job, adapter, policy, human_receipt, registry, clip_timeline = (
         read_object(paths[key]) for key in ("source", "anchor", "candidate", "job",
                                            "adapter", "policy", "human_receipt", "registry",
@@ -293,7 +298,7 @@ def build_package(paths: dict[str, Path], render_manifest_path: Path, artifact_r
     clip_cap = read_object(paths["clip_voice_capability"]) if paths.get("clip_voice_capability") else None
     validate_job(source, anchor, candidate, job, adapter, policy, human_receipt, registry,
                  clip_auth, clip_cap, clip_timeline, paths,
-                 source_voice_authorization=source_auth)
+                 source_voice_authorization=source_auth, strict_rubric=strict_rubric)
     job_file_sha256 = file_sha256(paths["job"])
     manifest = read_object(render_manifest_path)
     locale = candidate["targetLocale"]
@@ -361,6 +366,9 @@ def build_package(paths: dict[str, Path], render_manifest_path: Path, artifact_r
     units: list[dict[str, Any]] = []
     durations: list[float] = []
     for index, (row, job_unit) in enumerate(zip(rows, job["units"])):
+        unit_started = time.monotonic()
+        accounting.record_workload("layer3.unit_validation_started", {
+            "jobSha256": job_hash, "unitIndex": index, "validationStarted": True})
         group_id = job_unit["translationGroupId"]
         text_hash = hashlib.sha256(job_unit["text"].encode("utf-8")).hexdigest()
         require(isinstance(row, dict) and row.get("textGroupId") == group_id
@@ -388,6 +396,11 @@ def build_package(paths: dict[str, Path], render_manifest_path: Path, artifact_r
         units.append({"textGroupId": group_id, "targetTextSha256": text_hash,
                       "audio": audio, "durationSeconds": round(duration, 6)})
         durations.append(duration)
+        accounting.record_workload("layer3.unit_validation_completed", {
+            "jobSha256": job_hash, "unitIndex": index, "audioSha256": audio["sha256"],
+            "receiptSha256": receipt_artifact["sha256"], "fullDecodePassed": True,
+            "validationCompleted": True, "validationElapsedSeconds": time.monotonic() - unit_started,
+            "timingScope": "current_execution"})
     if "silenceTrimEvidence" in manifest:
         trim_artifact = checked_artifact(artifact_root, manifest["silenceTrimEvidence"],
                                          json_artifact=True)
@@ -527,7 +540,7 @@ def build_package(paths: dict[str, Path], render_manifest_path: Path, artifact_r
     # fails, without rehashing the source video for every audio unit.
     validate_job(source, anchor, candidate, job, adapter, policy, human_receipt, registry,
                  clip_auth, clip_cap, clip_timeline, paths,
-                 source_voice_authorization=source_auth)
+                 source_voice_authorization=source_auth, strict_rubric=strict_rubric)
     require(file_sha256(paths["job"]) == job_file_sha256,
             "Speech job changed during audio package build")
     return package
@@ -537,6 +550,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("source", "anchor", "candidate", "job", "adapter", "policy"):
         parser.add_argument(f"--{name}", type=Path, required=True)
+    parser.add_argument("--strict-rubric", type=Path, help="Explicit frozen rubric for strict-v3 policy validation")
     parser.add_argument("--human-review-receipt", dest="human_receipt", type=Path, required=True)
     parser.add_argument("--speaker-registry", dest="registry", type=Path, required=True)
     authorization = parser.add_mutually_exclusive_group(required=True)
@@ -559,7 +573,8 @@ def main() -> None:
     if args.clip_voice_capability:
         paths["clip_voice_capability"] = args.clip_voice_capability
     paths["clip_timeline_map"] = args.clip_timeline_map
-    package = build_package(paths, args.render_manifest, args.artifact_root)
+    package = build_package(paths, args.render_manifest, args.artifact_root,
+                            strict_rubric=read_object(args.strict_rubric) if args.strict_rubric else None)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(package, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({"status": package["status"], "targetLocale": package["targetLocale"],

@@ -787,6 +787,7 @@ def build_pipeline_command(
         if getattr(args, "reading_aligner", "mfa") == "mfa":
             from scripts.mfa_backend import options
             backend = options(args)
+            command.extend(["--mfa-backend", backend["backend"]])
             command.append("--mfa-spark-fallback" if backend["allow_spark_fallback"] else "--no-mfa-spark-fallback")
             for key, value in backend["spark_options"].items():
                 key = {"mfa_executable":"executable", "dictionary_path":"dictionary"}.get(key, key)

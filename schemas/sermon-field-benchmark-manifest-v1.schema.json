@@ -1,0 +1,290 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "sermon-field-benchmark-manifest-v1.schema.json",
+  "title": "Offline FIELD-09 benchmark manifest; local/private input, never acoustic acceptance",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "const": "sermon-field-benchmark-manifest-v1"
+    },
+    "datasetId": {
+      "$ref": "#/$defs/id"
+    },
+    "datasetKind": {
+      "enum": [
+        "synthetic_only",
+        "authorized_recordings"
+      ]
+    },
+    "splitPolicy": {
+      "const": "source_family_recording_and_capture_session_disjoint"
+    },
+    "protocol": {
+      "type": "object",
+      "properties": {
+        "frozenAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "localizationToleranceSeconds": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10
+        },
+        "caseTimeoutSeconds": {
+          "type": "number",
+          "minimum": 0.001,
+          "maximum": 600
+        }
+      },
+      "required": [
+        "frozenAt",
+        "localizationToleranceSeconds",
+        "caseTimeoutSeconds"
+      ],
+      "additionalProperties": false
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/source"
+      },
+      "minItems": 1,
+      "maxItems": 1000
+    },
+    "sessions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/session"
+      },
+      "minItems": 1,
+      "maxItems": 1000
+    },
+    "cases": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/case"
+      },
+      "minItems": 1,
+      "maxItems": 10000
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "datasetId",
+    "datasetKind",
+    "splitPolicy",
+    "protocol",
+    "sources",
+    "sessions",
+    "cases"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,80}$"
+    },
+    "split": {
+      "enum": [
+        "dev",
+        "holdout"
+      ]
+    },
+    "asset": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "maxLength": 512,
+          "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*[\\\\:])[A-Za-z0-9_./-]+$"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "additionalProperties": false
+    },
+    "source": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "familyId": {
+          "$ref": "#/$defs/id"
+        },
+        "split": {
+          "$ref": "#/$defs/split"
+        },
+        "recording": {
+          "$ref": "#/$defs/asset"
+        },
+        "index": {
+          "$ref": "#/$defs/asset"
+        }
+      },
+      "required": [
+        "id",
+        "familyId",
+        "split",
+        "recording"
+      ],
+      "additionalProperties": false
+    },
+    "session": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "split": {
+          "$ref": "#/$defs/split"
+        },
+        "sourceRecordingId": {
+          "$ref": "#/$defs/id"
+        },
+        "recording": {
+          "$ref": "#/$defs/asset"
+        },
+        "authorization": {
+          "enum": [
+            "synthetic_generated",
+            "user_authorized_local"
+          ]
+        },
+        "capturePlatform": {
+          "enum": [
+            "synthetic",
+            "web_safari",
+            "ios_native",
+            "other"
+          ]
+        },
+        "systemVersion": {
+          "type": "string",
+          "pattern": "^(?:[0-9]{1,3}(?:\\.[0-9]{1,3}){0,2}|not_recorded)$"
+        },
+        "deviceTier": {
+          "enum": [
+            "minimum_supported",
+            "current",
+            "not_recorded"
+          ]
+        },
+        "route": {
+          "enum": [
+            "builtin",
+            "supported_headset",
+            "not_recorded"
+          ]
+        },
+        "condition": {
+          "enum": [
+            "synthetic",
+            "clean",
+            "transcoded",
+            "low_volume",
+            "eq",
+            "reverberation",
+            "nearby_speech",
+            "occluded",
+            "silence",
+            "unrelated",
+            "speed_changed",
+            "edit_changed"
+          ]
+        },
+        "captureSessionId": {
+          "$ref": "#/$defs/id"
+        }
+      },
+      "required": [
+        "id",
+        "split",
+        "sourceRecordingId",
+        "recording",
+        "authorization",
+        "capturePlatform",
+        "systemVersion",
+        "deviceTier",
+        "route",
+        "condition",
+        "captureSessionId"
+      ],
+      "additionalProperties": false
+    },
+    "case": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "sessionId": {
+          "$ref": "#/$defs/id"
+        },
+        "targetSourceRecordingId": {
+          "$ref": "#/$defs/id"
+        },
+        "captureStartSeconds": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 7200
+        },
+        "durationSeconds": {
+          "type": "number",
+          "minimum": 0.001,
+          "maximum": 20
+        },
+        "expected": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "const": "positive"
+                },
+                "sourceStartSeconds": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 7200
+                }
+              },
+              "required": [
+                "kind",
+                "sourceStartSeconds"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "const": "negative"
+                }
+              },
+              "required": [
+                "kind"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "sessionId",
+        "targetSourceRecordingId",
+        "captureStartSeconds",
+        "durationSeconds",
+        "expected"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

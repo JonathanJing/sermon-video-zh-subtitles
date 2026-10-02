@@ -69,6 +69,7 @@ class AudioPackageTests(unittest.TestCase):
         self.source["review"] = {"humanApproval": True, "checks": {
             "sourceIdentity": "approved", "transcriptCompleteness": "approved",
             "wordAlignment": "approved", "sentenceAndPauseBoundaries": "approved"}}
+        self.source = self.complete_source_fixture(self.source)
         self.candidate = fixture.candidate
         self.candidate["englishSourcePackageJsonSha256"] = subject.json_sha256(self.source)
         self.candidate["anchorManifestSha256"] = subject.json_sha256(self.anchor)
@@ -276,6 +277,11 @@ class AudioPackageTests(unittest.TestCase):
         self.manifest["machineScreeningReceipt"] = self.artifact(screening_rel, json_artifact=True)
         self.manifest_path = self.root / "render-manifest.json"
         write_json(self.manifest_path, self.manifest)
+
+    @staticmethod
+    def complete_source_fixture(source):
+        """Allow integration fixtures to supply a fully built Layer 1 package."""
+        return source
 
     @staticmethod
     def group(group_id: str, source_id: str, text: str) -> dict:

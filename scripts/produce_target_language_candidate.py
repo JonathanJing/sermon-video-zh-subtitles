@@ -23,11 +23,13 @@ try:
     from scripts import prepare_target_language_speech_job as handoff
     from scripts import sermon_sentence_interpretation as interpretation
     from scripts import target_language_policy as policy_tools
+    from scripts import build_english_source_package as english_source
 except ImportError:  # Direct execution via ``python scripts/...``.
     import four_layer_measure as measure
     import prepare_target_language_speech_job as handoff
     import sermon_sentence_interpretation as interpretation
     import target_language_policy as policy_tools
+    import build_english_source_package as english_source
 
 
 REQUEST_SCHEMA = "sermon-target-language-evidence-request-v1"
@@ -62,6 +64,8 @@ def plugin_implementation_sources(plugin_path: Path) -> list[Path]:
     if path.parent == builtins and path.name in ZH_WEEKLY_CUV_PLUGIN_NAMES:
         return [path, builtins / "common.py", builtins.parent / "cuv_scripture.py",
                 builtins.parent / "build_scripture_index.py"]
+    if path.parent == builtins and path.name == "diagnostic_structural.py":
+        return [path, builtins / "common.py", builtins.parent / "sermon_diagnostic_context.py"]
     return [path]
 
 
@@ -74,9 +78,8 @@ def plugin_implementation_sha256(plugin_path: Path) -> str:
     return digest.hexdigest()
 
 
-def prepare_request(source: dict[str, Any], anchor: dict[str, Any],
-                    policy: dict[str, Any]) -> dict[str, Any]:
-    """Freeze exactly one source and locale; leave all generated fields blank."""
+def validate_source_for_translation(source: dict[str, Any], anchor: dict[str, Any]) -> str:
+    """Reuse the production source/anchor gate without a locale policy or writes."""
     _require(source.get("schemaVersion") == handoff.SOURCE_PACKAGE_SCHEMA
              and source.get("status") == "ready_for_translation"
              and source.get("translationEligible") is True,
@@ -100,10 +103,34 @@ def prepare_request(source: dict[str, Any], anchor: dict[str, Any],
     anchor_hash = interpretation.json_sha256(anchor)
     _require(source.get("anchors", {}).get("artifact", {}).get("jsonSha256") == anchor_hash,
              "Source package and anchor manifest differ")
-    identity = policy_tools.validate_policy(policy)
-    policy_tools.validate_source_scope(policy, source, anchor)
-    _require(identity["productionPolicyReady"],
-             "Production policy has unresolved scripture, terminology, or language-review gates")
+    # Status flags and human-review fields cannot make an incoherent package
+    # ready. Reuse construction/read-side invariants before any paid request.
+    handoff._validate_schema(source, "sermon-english-source-package-v1.schema.json", "source package")
+    english_source.validate_ready_package(source)
+    return anchor_hash
+
+
+def prepare_request(source: dict[str, Any], anchor: dict[str, Any],
+                    policy: dict[str, Any], *, strict_rubric=None, diagnostic_context=None) -> dict[str, Any]:
+    """Freeze exactly one source and locale; leave all generated fields blank."""
+    if diagnostic_context is None:
+        anchor_hash = validate_source_for_translation(source, anchor)
+    else:
+        from scripts.sermon_diagnostic_context import validate_source
+        anchor_hash = validate_source(source, anchor, diagnostic_context)
+    units = anchor["sourceUnits"]
+    if strict_rubric is None:
+        identity = policy_tools.validate_policy(policy)
+        policy_tools.validate_source_scope(policy, source, anchor)
+    else:
+        identity = policy_tools.validate_strict_policy(policy, strict_rubric)
+        policy_tools.validate_strict_source_scope(policy, strict_rubric, source, anchor)
+    if diagnostic_context is None:
+        _require(identity["productionPolicyReady"],
+                 "Production policy has unresolved scripture, terminology, or language-review gates")
+    else:
+        from scripts.sermon_diagnostic_context import require_policy_ready
+        require_policy_ready(identity, diagnostic_context)
     return {
         "schemaVersion": REQUEST_SCHEMA,
         "sourceLocale": "en",
@@ -203,7 +230,7 @@ def admit_evidence(source: dict[str, Any], anchor: dict[str, Any],
 def run_language_plugin(source: dict[str, Any], anchor: dict[str, Any],
                         policy: dict[str, Any], request: dict[str, Any],
                         evidence: dict[str, Any], plugin_path: Path,
-                        expected_plugin_sha256: str) -> dict[str, Any]:
+                        expected_plugin_sha256: str, *, strict_rubric=None, diagnostic_context=None) -> dict[str, Any]:
     """Run a pinned locale plugin and return a source/text-bound receipt.
 
     The plugin is a reviewed Python module exposing PLUGIN_ID, PLUGIN_VERSION,
@@ -211,7 +238,7 @@ def run_language_plugin(source: dict[str, Any], anchor: dict[str, Any],
     are recalculated at admission; a pass string in translation evidence is
     never accepted as language-review evidence.
     """
-    expected = prepare_request(source, anchor, policy)
+    expected = prepare_request(source, anchor, policy, strict_rubric=strict_rubric, diagnostic_context=diagnostic_context)
     _require(request == expected, "Layer 2 request was changed or belongs to another source/policy")
     for key in ("schemaVersion", "sourceLocale", "targetLocale",
                 "englishSourcePackageJsonSha256", "anchorManifestSha256",
@@ -219,7 +246,7 @@ def run_language_plugin(source: dict[str, Any], anchor: dict[str, Any],
         _require(evidence.get(key) == expected[key], f"Layer 2 evidence identity changed: {key}")
     _require(plugin_path.is_file(), "Language plugin implementation is missing")
     implementation_sha = plugin_implementation_sha256(plugin_path)
-    _require(policy["schemaVersion"] == policy_tools.POLICY_V2
+    _require(policy["schemaVersion"] == (policy_tools.POLICY_V3 if strict_rubric is not None else policy_tools.POLICY_V2)
              and policy["languageReview"]["pluginImplementationSha256"] == expected_plugin_sha256
              and expected_plugin_sha256 == implementation_sha,
              "Language plugin implementation hash differs from frozen policy or file")
@@ -230,6 +257,9 @@ def run_language_plugin(source: dict[str, Any], anchor: dict[str, Any],
              and module["PLUGIN_VERSION"].strip()
              and callable(module.get("review_group")),
              "Language plugin ID, version, or entry point is invalid")
+    diagnostic_only = module.get("DIAGNOSTIC_ONLY") is True
+    _require(not diagnostic_only or diagnostic_context is not None,
+             "Diagnostic plugin requires explicit diagnostic context")
     groups = evidence.get("groups")
     _require(isinstance(groups, list) and groups, "Language plugin needs translation groups")
     source_by_id = {row["sourceUnitId"]: row for row in expected["sourceUnits"]}
@@ -257,6 +287,7 @@ def run_language_plugin(source: dict[str, Any], anchor: dict[str, Any],
             copy.deepcopy(policy),
             copy.deepcopy([source_by_id[unit_id] for unit_id in unit_ids]),
             copy.deepcopy(plugin_group),
+            **({"diagnostic_context": copy.deepcopy(diagnostic_context)} if diagnostic_only else {}),
         )
         _require(isinstance(checks, list) and len(checks) == len(required_checks)
                  and all(isinstance(check, dict) and set(check)
@@ -277,7 +308,8 @@ def run_language_plugin(source: dict[str, Any], anchor: dict[str, Any],
     _require([row["translationGroupId"] for row in group_reviews]
              == [group["translationGroupId"] for group in groups],
              "Language plugin receipt group order changed")
-    identity = policy_tools.validate_policy(policy)
+    identity = (policy_tools.validate_policy(policy) if strict_rubric is None else
+                policy_tools.validate_strict_policy(policy, strict_rubric))
     return {
         "schemaVersion": LANGUAGE_RECEIPT_SCHEMA,
         "englishSourcePackageJsonSha256": expected["englishSourcePackageJsonSha256"],

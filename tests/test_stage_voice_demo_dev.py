@@ -102,9 +102,9 @@ class VoiceDemoStagingTest(unittest.TestCase):
 
     def test_stages_originals_before_samples_without_promoting_review(self):
         report = self.stage_fixture()
-        self.assertEqual(report["addedFileCount"], 33)
+        self.assertEqual(report["addedFileCount"], 34)
         self.assertEqual(len(preview.candidate_report(self.out)["files"]),
-                         len(report["devBaseFiles"]) + 33)
+                         len(report["devBaseFiles"]) + 34)
         catalog = demo.public_catalog(self.out / "public")
         self.assertEqual(catalog["humanListeningStatus"], "pending")
         for speaker in catalog["speakers"]:

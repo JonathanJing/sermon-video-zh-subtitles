@@ -31,6 +31,8 @@ from scripts.sermon_execution_harness import (  # noqa: E402
     ExecutionTerminated, _LOCK_FDS, bounded_process, utc_now,
 )
 
+from scripts import sermon_job_liveness as liveness
+
 SCHEMA = "sermon-workflow-job-v1"
 STATUSES = {"queued", "running", "succeeded", "failed", "uncertain"}
 ACTIVE = {"queued", "running"}
@@ -78,6 +80,22 @@ def _sync_directory(path):
         os.fsync(fd)
     finally:
         os.close(fd)
+
+
+def _sync_directory_ancestry(path):
+    """Persist every containing entry on this filesystem before side effects.
+
+    An existing parent may have just been created by a concurrent admission,
+    so stopping at the first directory that exists is insufficient. A mount
+    boundary is pre-existing infrastructure, not a directory created here.
+    """
+    current = Path(path).resolve()
+    while True:
+        _sync_directory(current)
+        parent = current.parent
+        if parent == current or parent.stat().st_dev != current.stat().st_dev:
+            break
+        current = parent
 
 
 def _persist(path, value):
@@ -177,7 +195,8 @@ def _lock(root, job_id):
 def _request_valid(request, job_id):
     return (isinstance(request, dict) and request.get("schemaVersion") == SCHEMA
             and request.get("jobId") == job_id and _digest(request.get("identity")) == job_id
-            and request.get("commandSha256") == _digest(request.get("command")))
+            and request.get("commandSha256") == _digest(request.get("command"))
+            and ("livenessPolicy" not in request or liveness.valid_policy(request["livenessPolicy"])))
 
 
 def _state(folder, job_id):
@@ -192,20 +211,21 @@ def _state(folder, job_id):
 
 def _write_state(folder, job_id, status, **fields):
     previous = _state(folder, job_id) or {}
-    binding = {"requestSha256": previous["requestSha256"]} if "requestSha256" in previous else {}
+    binding = {key: previous[key] for key in ("requestSha256", "accountingContextSha256") if key in previous}
     state = {"schemaVersion": SCHEMA, "jobId": job_id, "status": status, "updatedAt": utc_now(), **binding, **fields}
     _persist(folder / "state.json", state)
     return state
 
 
-def _inspect_locked(folder, job_id, held):
+def _inspect_locked(folder, job_id, held, *, reconcile=True):
     state = _state(folder, job_id)
     if not folder.exists():
         raise FileNotFoundError("Unknown workflow job")
     if state is None:
         if not held:
             return _public(job_id, "queued")
-        _write_state(folder, job_id, "uncertain", reason="missing_or_invalid_state")
+        if reconcile:
+            _write_state(folder, job_id, "uncertain", reason="missing_or_invalid_state")
         return _public(job_id, "uncertain")
     try:
         request = _read(folder / "request.json")
@@ -213,11 +233,12 @@ def _inspect_locked(folder, job_id, held):
     except (OSError, ValueError, TypeError):
         bound = False
     if not bound:
-        if held:
+        if held and reconcile:
             _write_state(folder, job_id, "uncertain", reason="invalid_request_binding")
         return _public(job_id, "uncertain")
     if held and state["status"] in ACTIVE:
-        _write_state(folder, job_id, "uncertain", reason="owner_disappeared", previousStatus=state["status"])
+        if reconcile:
+            _write_state(folder, job_id, "uncertain", reason="owner_disappeared", previousStatus=state["status"])
         return _public(job_id, "uncertain")
     return _public(job_id, state["status"])
 
@@ -228,7 +249,40 @@ def inspect_job(root: Path, job_id: str) -> dict:
         return _inspect_locked(folder, job_id, held)
 
 
-def start_job(root: Path, identity: dict, command: list[str], timeout_seconds: float) -> dict:
+def peek_job(root: Path, job_id: str) -> dict:
+    """Inspect existing evidence without creating locks or reconciling state.
+
+    An abandoned owner is still reported as uncertain; only execution inspection
+    persists that reconciliation. A read-only lock probe never launches work.
+    """
+    _, folder, path = _paths(root, job_id)
+    try:
+        directory_fd = _directory_fd(path.parent)
+    except FileNotFoundError:
+        return _inspect_locked(folder, job_id, True, reconcile=False)
+    try:
+        try:
+            fd = os.open(path.name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=directory_fd)
+        except FileNotFoundError:
+            return _inspect_locked(folder, job_id, True, reconcile=False)
+    finally:
+        os.close(directory_fd)
+    try:
+        if not stat.S_ISREG(os.fstat(fd).st_mode):
+            raise ValueError("Workflow lock must be a regular file")
+        held = False
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            held = True
+        except BlockingIOError:
+            pass
+        return _inspect_locked(folder, job_id, held, reconcile=False)
+    finally:
+        os.close(fd)
+
+
+def start_job(root: Path, identity: dict, command: list[str], timeout_seconds: float,
+              *, liveness_policy: dict | None = None) -> dict:
     """Launch exactly once per identity; caller supplies a fixed trusted argv.
 
     This is a backend function, not a model tool accepting arbitrary commands.
@@ -245,6 +299,8 @@ def start_job(root: Path, identity: dict, command: list[str], timeout_seconds: f
     root = Path(root).resolve()
     request = {"schemaVersion": SCHEMA, "jobId": job_id, "identity": identity,
                "command": command, "commandSha256": _digest(command), "timeoutSeconds": float(timeout_seconds)}
+    if liveness_policy is not None:
+        request["livenessPolicy"] = liveness.validate_policy(liveness_policy)
     with _lock(root, job_id) as (folder, fd, held):
         if folder.exists():
             try:
@@ -258,10 +314,19 @@ def start_job(root: Path, identity: dict, command: list[str], timeout_seconds: f
             # A creator has the lock but has not yet published the directory.
             return _public(job_id, "queued")
         folder.mkdir(mode=0o700)
-        _sync_directory(root.parent)
-        _sync_directory(root)
+        # Publish the uncertainty marker and its entire directory chain before
+        # a worker can start. Other admissions may have just created ancestors.
+        os.fsync(fd)
+        _sync_directory(root / ".locks")
+        _sync_directory_ancestry(root)
         _persist(folder / "request.json", request)
-        _write_state(folder, job_id, "queued", queuedAt=utc_now(), requestSha256=_digest(request))
+        from scripts import sermon_log_profile as accounting_profile
+        accounting_context = accounting_profile.job_context(job_id)
+        context_binding = {}
+        if accounting_context is not None:
+            _persist(folder / "accounting-context.json", accounting_context)
+            context_binding['accountingContextSha256'] = _digest(accounting_context)
+        _write_state(folder, job_id, "queued", queuedAt=utc_now(), requestSha256=_digest(request), **context_binding)
         # State precedes spawn. Any crash in this interval becomes uncertain;
         # the lock's inherited open-file description closes the post-spawn gap.
         try:
@@ -306,24 +371,42 @@ def _worker(root, job_id, lock_fd):
     if state is None or state["status"] != "queued" or state.get("requestSha256") != _digest(request):
         # Never execute a stale/replayed worker entrypoint.
         return 2
+    environment = None
+    if 'accountingContextSha256' in state:
+        from scripts import sermon_log_profile as accounting_profile
+        accounting_context = _read(folder / 'accounting-context.json')
+        if _digest(accounting_context) != state['accountingContextSha256']:
+            raise ValueError('job_accounting_context_changed')
+        environment = accounting_profile.restore_job_environment(accounting_context, job_id)
     token = _LOCK_FDS.set((lock_fd,))
     os.environ["SERMON_HARNESS_GUARDED_CHILDREN"] = "1"
     _write_state(folder, job_id, "running", workerPid=os.getpid(), startedAt=utc_now())
+    monitor = liveness.Monitor(folder, request).start() if 'livenessPolicy' in request else None
     try:
+        options = {'cancel_event': monitor.cancel} if monitor else {}
+        if environment is not None: options['env'] = environment
         result = bounded_process(request["command"], timeout=request["timeoutSeconds"], cwd=REPO_ROOT,
-                                 stdin=subprocess.DEVNULL, check=False)
+                                 stdin=subprocess.DEVNULL, check=False, **options)
+        if monitor and (monitor.reason or (result.returncode == 0 and not monitor.completed())):
+            _write_state(folder, job_id, "uncertain", reason=monitor.reason,
+                         completedAt=utc_now(), automaticRetryAllowed=False)
+            return 0
         _write_state(folder, job_id, "succeeded" if result.returncode == 0 else "failed",
                      returnCode=result.returncode, reason="command_completed", completedAt=utc_now())
     except (subprocess.TimeoutExpired, ExecutionTerminated) as exc:
         cleanup_uncertain = any("cleanup failed" in note.lower() for note in getattr(exc, "__notes__", []))
-        _write_state(folder, job_id, "uncertain" if cleanup_uncertain else "failed",
-                     reason="cleanup_uncertain" if cleanup_uncertain else "timeout_or_termination",
+        liveness_reason = monitor.reason if monitor else None
+        reason = "cleanup_uncertain" if cleanup_uncertain else liveness_reason or "timeout_or_termination"
+        _write_state(folder, job_id, "uncertain" if cleanup_uncertain or liveness_reason else "failed",
+                     reason=reason,
                      errorType=type(exc).__name__, completedAt=utc_now())
     except OSError as exc:
         _write_state(folder, job_id, "failed", reason="command_launch_failed", errorType=type(exc).__name__)
     except BaseException as exc:
         _write_state(folder, job_id, "uncertain", reason="worker_interrupted", errorType=type(exc).__name__)
     finally:
+        if monitor:
+            monitor.close()
         _LOCK_FDS.reset(token)
         os.close(lock_fd)
     return 0

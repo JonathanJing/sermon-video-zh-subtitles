@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "sermon-safe-observability-export-v1",
+  "sourceEventCount": 24,
+  "exportedEventCount": 24,
+  "sourceLedgerSha256": "5e6cfd41a3b14d29953fba366f6398d8037b53e3c0669b5b295ec934acb046dc",
+  "exportedLedgerSha256": "5d85c40f0c6994f698ab9474d56b8ed058ecf0d94405b64c982de233c8c95f48",
+  "excluded": [
+    "pid",
+    "thread",
+    "error_payloads",
+    "resource_host_details",
+    "paths",
+    "unknown_log_fields",
+    "transcript_and_response_text"
+  ],
+  "responseIdTransform": "sha256_preserves_equality_not_original_provider_identifier",
+  "scope": "exported_ledger_only_not_independent_proof_of_execution",
+  "reportSha256": "873c437aec50084f7466748911db732d2274575e8544fde6a3f839a4aa9b4d4b"
+}

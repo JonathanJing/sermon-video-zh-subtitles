@@ -74,7 +74,7 @@ Supervisor 的 `Runner.run` 另记录 `sdk_call_started/finished`，保存 SDK �
 
 ## 已接入的指标与保留边界
 
-本地入口现写入 `sermon-workflow-accounting-v2`：每个子流程都有独立 `workflowId`、状态、起止时间、执行代码身份、开始／结束资源快照，以及运行前后的业务证据摘要。汇总器仍可读取原有 v1 事件；旧事件不改写，也不会凭新字段补造历史值。
+本地入口现写入 `sermon-workflow-accounting-v3`：每个子流程都有独立 `workflowId`、状态、起止时间、执行代码身份、开始／结束资源快照，以及运行前后的业务证据摘要。阶段事件另可记录 `executorType`、`dependsOn`、`blockedBy`、`dependencyReadyAt`、`queuedAt`、`workUnitId`、`attemptId` 与 `decisionId`；未知执行器和值不安全的依赖标签会在写入前拒绝。汇总器与 trace exporter 仍可读取原有 v1/v2 事件；旧事件不改写，也不会凭新字段补造历史值。
 
 证据采集仅查看已知相对路径，记录 JSON 文件 hash 和白名单字段；不遍历任意目录、不读取报告指向的任意外部文件、不抄录机器中文。`currentRunExecutionProven=false` 表明这些是现存文件快照；本次是否执行、复用或失败，以对应阶段事件为准。
 
@@ -116,3 +116,60 @@ Supervisor 的 `Runner.run` 另记录 `sdk_call_started/finished`，保存 SDK �
 `artifacts/saturday-validation/2026-09-05-aug30-astra/accounting-history-audit.json` 保存本次 8 月 30 日视频验证的逐项证据与缺口；同目录 `accounting-report.json`、`accounting-report.md`、`accounting-stages.csv` 给出可读汇总和价格快照。
 
 114 条新翻译／阅读缓存只保留了解析后文本，无法恢复旧 Token、请求重试数和独立延迟；没有重新调用模型来“补齐”账目。已保存的证道解读原始响应单独计入已知小计。旧 ASR、旧模型缓存和同一失败报告的副本均不重复计费。原报告里相同的 core 耗时被填入三个阶段、PDF QA 耗时又包含两份 PDF 的时间，本次补录均显式去重，原始证据保留不改。
+
+### v3 契约兼容说明
+
+`stage` 使用冻结的 `deterministic_program/production_model/decision_agent/human/external_service/engineering_codex` executor。旧调用未显式指定时，`api` 与用于内容生成的 `codex` billing 映射 production_model，`cloud` 映射 external_service，其余本地及程序编排映射 deterministic_program；本地模型和真正工程 Codex 调用须显式声明。dependency-ready 时间字段为 `dependencyReadyAt`（Python 参数 `dependency_ready_at`）。
+
+v1/v2 无扩展字段仍可读取，不补造依赖或时间；所有导入事件若携带扩展字段，都执行与写入相同的有界 label 校验。PR #121 的未发布 v3 草案中的 fixed_program/external_system 与 readyAt 不属于冻结契约；不重写历史账本。
+
+### 依赖图与 Weekly Pipeline Report（E1 初始实现）
+
+运行 `python3 -m scripts.weekly_pipeline_report --accounting-dir PATH --out-dir NEW_DIRECTORY`，产生只读 `report.json` 与由该 JSON 投影的 `report.md`。输出目录必须不存在；不修改源账本，不调用网络或模型。返回 0 表示投影可计算，1 表示证据不完整；这不是生产或人工验收。
+
+`with stage("source") as source_span:` 返回本次 attempt 的 span ID。下游 `depends_on=[source_span]` 绑定同一 run 中的准确 attempt；不能使用含糊 stage 名称，也不把 parent containment 当成执行依赖。每个 root 显式记录空 dependsOn；未传 depends_on 的旧调用写 null，不能冒充无依赖 root。汇合节点引用全部必需前置；重试引用实际前一 attempt。
+
+投影器检查重复身份冲突、缺依赖、循环、依赖时间重叠、负区间、parent 循环/越界和未完成 span。相同事件重导入不重复计数。父容器不参与 leaf active 时间合计；关键路径只计算 deterministic_program、production_model、decision_agent 的 active leaf duration，human/external wait 和 engineering_codex 单列。并行分支合计不代表端到端 wall。老 v1/v2 未记录依赖时仍可读取，但 criticalPath 为 null，绝不猜测 DAG。
+
+底层 usage 按 provider/response identity 去重（无 response 时回退 attempt/event），SDK aggregate 单列，combinedTokenTotal 保持 null。缺 token 字段显示 unknown/null 及 missingFields。仍需各 producer 接入真实 DAG/queue/decision receipts，补 source duration、locales、page-ready 及全路径 usage 覆盖；当前不存在真实每周性能结论。
+
+### backend-only 兼容性快照（E6 初始实现）
+
+运行 `python3 -m scripts.pipeline_compatibility_gate --base BASE_SHA --head HEAD_SHA --out NEW_RECEIPT.json`。收据绑定两个完整 commit tree，冻结 Web/iOS、schemas、Firebase、客户端生产入口和 bundle 输入的 Git object/mode 快照。只有这些表面完全未变，且其他改动全部属于已审计 accounting 文件、docs/tests，才给出 `ios_review_required=false`。客户端变化、未分类生产代码或缺失表面返回 1 与 review_required；不会把“不知道”写成不需审查。
+
+该收据只覆盖已跟踪源码/合同/bundle 输入；未证明已部署 binary、真机播放、合同改变后的语义兼容性或人工 Compatibility sign-off。Stage 1–3 必须按最终 SHA 重跑并补适用 decoder/fixture 与人工证据；任何新 controller/producer 要先评估才可进入 backend-only allowlist。
+
+### Producer 接线第一批
+
+L2 实际 group runner 将每个 reviewer span 依赖到同组、本次 translator span；生产请求按 production_model、完整缓存/模拟响应按 deterministic_program 计量。是否传入 resume 目录不等于缓存存在。现有 HTTP receipt 仍是 usage 来源，没有再包一层重复 API 计数。
+
+L2 后续补齐本次 producer 内的确定性叶节点：既有 Source 包准入 → run/cache/policy 准入 → 每组 prompt 准备 → translator → draft/coverage 校验 → reviewer → semantic/coverage 校验 → 汇合全部组的 evidence 构造及持久化。完整组复用的复制和校验留在 prepare 叶节点，依然进入 evidence 汇合，不因 group 变成 container 而从总量消失。正式 accounted 入口在会话内执行同一 Source 准入一次，保留所有生产门禁。失败的校验留下 failed span，不能生成成功 evidence。
+
+这里的根只表示读取、验证已存在的 Source 包，**不是** Layer 1 下载/转写/审核工作；本次 L2 producer 可以投影自己的局部 DAG，但没有补造跨进程依赖或完整四层 critical path。回归仅用固定假模型响应与本地文件操作，不能据此报告真实模型性能节省。
+
+L3 实际 render_units 将模型加载、每单元本地模型推理、音频复用及 full-decode 校验分开。推理显式 production_model，校验依赖本次推理/复制 span，首个推理不会因嵌套加载被 leaf projection 丢失。请求、声音 identity 和缓存契约未变。源包与跨进程边界尚未完整接线，因此未证明的根依赖仍为 null；不能据这些局部边宣布完整 critical path 或正式周验收。
+
+审查修复：provider/response 和 SDK invocation 仅合并等价事实；usage/status/executor 冲突使报告 partial 并撤销可信总量。dependencyReadyAt 保留原值，任何前驱晚于 ready 超过 10ms 时撤销对应 queue 指标及 critical path。
+
+
+## 导入收据的等价性与冲突
+
+`summary.json` / `stages.csv` 与只读 `sermon_logs --check` 先检查收据等价性。provider + response identity（缺失时退回 attempt/event identity）相同的记录，只有 status、usage、实际/请求 model、估计费用、latency 和 stage executor 全部一致才去重。不同 provider 的相同 response ID 不合并。等价跨 run 导入按稳定的 receipt 时间/标识选定归属；不能因 JSONL 行顺序不同改变费用归属。
+
+相同 identity 有冲突事实时，`receiptIntegrity.status=conflicted`，记录 identity/variant hash 与受影响 run，保留所有原始字节。受影响的非限定 token、调用次数、latency 和 `knownEstimatedUsd` 为 null，状态明确为 conflicted；另外的 `knownNonconflicting*` 只是剔除冲突后的可核验子集，不能当作整周总量或实际账单。SDK invocation 在跨 run 导入时也按同一 identity 检查；等价导入标记 `duplicate_import`，不再贡献 SDK token 或 invocation 次数。冲突同样不能 last-writer-wins；聚合 usage 保持未知，仍与直接 HTTP receipts 分开。
+
+只读检查在跨 run 范围先查冲突，再筛选当前 run；`--check` 对相关冲突退出 2，终端显示冲突数量，不改写 summary 或原账本。语法损坏与语义冲突分开记录，缺失历史字段保持未知。运行本身的完成状态、有效执行 span、人工审批和发布状态不会因用量冲突被改写；用量报告也不会自动调模型或重试。
+
+### 固定 L2 worker 的同进程依赖链
+
+固定 L2 worker 与 cache-only recovery 各自使用一个 accounting run，把准入、模型组（或返回缓存）、evidence assembly、身份复核、language plugin/candidate admission 和最终 package validation 连起来。嵌套 workflow/group 仍是 container，报表只累计叶子；completion span 仅在成功写完结束事件后交给调用方，不进入规范 evidence/candidate JSON 或包哈希。失败准入可以留下失败账务日志，但不等同于模型缓存或候选产物。
+
+这覆盖同一个 L2 worker 内的实际依赖；不宣称已覆盖跨进程四层 DAG、人工等待、真实媒体表现或完整 Stage 0 验收。缓存恢复仍保留原 job 的 uncertain 状态，必须走独立 reconciliation。
+
+L2 evidence assembly 对超过 64 个完成组建立有界 fan-in tree；单条事件的 `dependsOn` 仍最多 64 项，每个 deterministic join 保留全部上游可达性。65/129 组真实 producer（合成模型回复）及 65 组 cache-only recovery 回归覆盖，不截断依赖、不在所有模型返回后因日志上限失败。4097 个依赖另有多层 join 单元测试。
+
+### Layer 3 单进程实际 renderer DAG（2026-09-30）
+
+正式 `render_accounted` 现在连接实际输入核验→串行单元缓存准入/模型加载/合成或复制/完整解码/提交/收据→排程→整轨组装与解码→manifest提交。下个单元依赖前个已结束收据，符合现有单模型串行执行，不虚构并行路径。已有manifest的恢复把真实package与音频复验计入确定性准入leaf；缓存复用不计新模型时间。四层progress ledger的旧substage指标保留，整轨组装不再因schedule子span使自身耗时被leaf projector排除。
+
+完成span只在finish日志成功后返回；日志失败不提供可供下游使用的完成身份，已持久化的音频/manifest保留给显式恢复。声音identity、模型参数、文字/声音批准、1x排程与筛查/听审状态未变。这里是同一renderer进程的生产路径账务，未实现canonical L3 durable controller dispatch、跨进程DAG或新的真实TTS/人工验收。

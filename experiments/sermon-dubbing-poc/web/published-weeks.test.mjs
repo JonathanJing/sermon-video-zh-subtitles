@@ -8,7 +8,7 @@ const pageId = '2026-09-27-weekend-sermon-drive-530';
 function fixture(mutate = () => {}) {
   const files = new Map(), requests = [];
   const page = {
-    id: pageId, date: '2026-09-27', sourceLocale: 'en', defaultTargetLocale: 'zh-Hans',
+    id: pageId, title: 'Synthetic published page', date: '2026-09-27', sourceLocale: 'en', defaultTargetLocale: 'zh-Hans',
     sourceIdentitySha256: 'a'.repeat(64), targets: {},
   };
   for (const locale of ['zh-Hans', 'ko', 'es']) {
@@ -22,15 +22,20 @@ function fixture(mutate = () => {}) {
     };
     const captions = { cues: [{ textGroupId: 'first', start: .5, end: 7, text: `Short spoken text ${locale}` }] };
     const release = {
-      schemaVersion: 'sermon-target-language-release-package-v2', pageId,
+      schemaVersion: 'sermon-target-language-release-package-v2', pageId, packageId: `${pageId}-${locale}`,
+      interfaceLocale: locale, spokenTargetLanguageCandidateJsonSha256: 'e'.repeat(64),
+      targetLanguageAudioPackageJsonSha256: 'f'.repeat(64), issues: [],
+      deviceAcceptance: { status: 'not_run', evidenceSha256: null },
+      venueAcceptance: { status: 'not_run', evidenceSha256: null },
       targetLocale: locale, audioLocale: locale, contentLocale: locale, sourceLocale: 'en',
-      status: 'published_http_verified', httpVerification: { status: 'pass' },
+      status: 'published_http_verified', httpVerification: { status: 'pass', evidenceSha256: '1'.repeat(64) },
       audioStatus: 'human_reviewed', contentStatus: 'human_reviewed',
       targetLanguageCandidateJsonSha256: content.targetLanguageCandidateJsonSha256,
       assets: [
         { role: 'content', path: `/content/${pageId}/${locale}.json` },
         { role: 'captions', path: `/captions/${pageId}/${locale}.json` },
         { role: 'audio', path: `/media/${pageId}/${locale}.mp3`, sha256: 'c'.repeat(64) },
+        { role: 'page', path: `/pages/${pageId}/${locale}/index.html`, sha256: '2'.repeat(64) },
       ],
     };
     mutate({ content, captions, release, locale });
@@ -46,7 +51,7 @@ function fixture(mutate = () => {}) {
       contentStatus: 'human_reviewed', audioStatus: 'human_reviewed', capabilities: ['text', 'captions', 'audio'],
     };
   }
-  files.set('/multilingual-v3.json', JSON.stringify({ schemaVersion: 'sermon-multilingual-catalog-v3', defaultPageId: pageId, pages: [page] }));
+  files.set('/multilingual-v3.json', JSON.stringify({ schemaVersion: 'sermon-multilingual-catalog-v3', generatedAt: '2026-09-30T00:00:00Z', defaultPageId: pageId, pages: [page] }));
   const fetchImpl = async path => {
     requests.push(path);
     return files.has(path) ? new Response(files.get(path)) : new Response('', { status: 404 });
@@ -116,6 +121,23 @@ test('wrong identity, unreviewed release, unsafe assets and mismatched caption g
   }
 });
 
+test('missing contract evidence rejects only the affected locale after release hash verification', async () => {
+  const changes = [
+    release => { delete release.spokenTargetLanguageCandidateJsonSha256; },
+    release => { delete release.targetLanguageAudioPackageJsonSha256; },
+    release => { release.assets = release.assets.filter(asset => asset.role !== 'page'); },
+    release => { release.httpVerification.evidenceSha256 = null; },
+    release => { release.deviceAcceptance = { status: 'pass', evidenceSha256: null }; },
+  ];
+  for (const change of changes) {
+    const f = fixture(({ release, locale }) => { if (locale === 'ko') change(release); });
+    const result = await loadPublishedWeeks(f.fetchImpl);
+    assert.deepEqual(Object.keys(result.weeks[0].contentVariants), ['zh-Hans', 'es']);
+    assert.equal(result.errors.length, 1);
+    assert.ok(!f.requests.includes(`/content/${pageId}/ko.json`));
+  }
+});
+
 test('optional missing or unavailable catalog keeps the legacy app usable', async () => {
   assert.deepEqual(await loadPublishedWeeks(async () => new Response('', { status: 404 })), { weeks: [], defaultWeekId: null, errors: [] });
   const failed = await loadPublishedWeeks(async () => { throw new Error('offline'); });
@@ -172,7 +194,19 @@ function addHistory(f, count) {
   f.files.set('/multilingual-v3.json', JSON.stringify(catalog));
 }
 
-test('current page loads first and slow archive pages cannot hold the player indefinitely', async () => {
+function checkpoint() {
+  let resolve;
+  const promise = new Promise(done => { resolve = done; });
+  return { promise, resolve };
+}
+
+// Advance the deadline only after healthy async hashing/reads settle. Real
+// wall-clock deadlines race CI load and can incorrectly reject healthy pages.
+const settleReads = () => new Promise(resolve => setImmediate(resolve));
+
+test('current page loads first and slow archive pages cannot hold the player indefinitely', { timeout: 10000 }, async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const currentRead = checkpoint(), archiveStalled = checkpoint();
   const f = fixture();
   addHistory(f, 104);
   let active = 0, peak = 0;
@@ -182,14 +216,19 @@ test('current page loads first and slow archive pages cannot hold the player ind
       active++;
       peak = Math.max(peak, active);
       pendingSignals.push(options.signal);
+      if (pendingSignals.length === 12) archiveStalled.resolve();
       options.signal.addEventListener('abort', () => { active--; }, { once: true });
       return new Promise(() => {});
     }
+    if (path === `/english-reference/${pageId}.json`) currentRead.resolve();
     return f.fetchImpl(path, options);
   };
-  const started = Date.now();
-  const result = await loadPublishedWeeks(fetchImpl, { requestTimeoutMs: 1000, pageLoadTimeoutMs: 50 });
-  assert.ok(Date.now() - started < 500);
+  const loading = loadPublishedWeeks(fetchImpl, { requestTimeoutMs: 1000, pageLoadTimeoutMs: 50 });
+  await Promise.all([currentRead.promise, archiveStalled.promise]);
+  await settleReads();
+  assert.ok(pendingSignals.every(signal => !signal.aborted));
+  t.mock.timers.tick(50);
+  const result = await loading;
   assert.equal(result.defaultWeekId, pageId);
   assert.ok(result.weeks.some(week => week.id === pageId));
   assert.ok(f.requests.indexOf(`/releases-v2/${pageId}/zh-Hans.json`) < f.requests.findIndex(path => path.startsWith('/releases-v2/history-')));
@@ -198,7 +237,10 @@ test('current page loads first and slow archive pages cannot hold the player ind
   assert.ok(result.errors.some(error => /loading timed out/.test(error)));
 });
 
-test('healthy archive pages load while the current-page sidecar is stalled', async () => {
+test('healthy archive pages load while the current-page sidecar is stalled', { timeout: 10000 }, async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const currentStalled = checkpoint(), archiveRead = checkpoint();
+  let archiveReferences = 0;
   const f = fixture();
   addHistory(f, 3);
   let stalledSignal;
@@ -207,33 +249,50 @@ test('healthy archive pages load while the current-page sidecar is stalled', asy
   const fetchImpl = (path, options) => {
     if (path === `/alignment/${pageId}.json`) {
       stalledSignal = options.signal;
+      currentStalled.resolve();
       stalledSignal.addEventListener('abort', () => { defaultAborted = true; }, { once: true });
       return new Promise(() => {});
     }
     if (path.startsWith('/releases-v2/history-')) {
       historyRequestedBeforeAbort ||= !defaultAborted;
     }
+    if (path.startsWith('/english-reference/history-') && ++archiveReferences === 2) archiveRead.resolve();
     return f.fetchImpl(path, options);
   };
-  const result = await loadPublishedWeeks(fetchImpl, { requestTimeoutMs: 1000, pageLoadTimeoutMs: 50 });
+  const loading = loadPublishedWeeks(fetchImpl, { requestTimeoutMs: 1000, pageLoadTimeoutMs: 50 });
+  await Promise.all([currentStalled.promise, archiveRead.promise]);
+  await settleReads();
+  assert.equal(stalledSignal.aborted, false);
+  t.mock.timers.tick(50);
+  const result = await loading;
   assert.equal(result.weeks.length, 3);
   assert.equal(result.defaultWeekId, pageId);
   assert.equal(historyRequestedBeforeAbort, true);
   assert.equal(stalledSignal.aborted, true);
 });
 
-test('healthy archive remains selectable when current-page release assets stall', async () => {
+test('healthy archive remains selectable when current-page release assets stall', { timeout: 10000 }, async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const currentStalled = checkpoint(), archiveRead = checkpoint();
+  let archiveReferences = 0;
   const f = fixture();
   addHistory(f, 3);
   const stalledSignals = [];
   const fetchImpl = (path, options) => {
     if (path.startsWith(`/releases-v2/${pageId}/`)) {
       stalledSignals.push(options.signal);
+      if (stalledSignals.length === 3) currentStalled.resolve();
       return new Promise(() => {});
     }
+    if (path.startsWith('/english-reference/history-') && ++archiveReferences === 2) archiveRead.resolve();
     return f.fetchImpl(path, options);
   };
-  const result = await loadPublishedWeeks(fetchImpl, { requestTimeoutMs: 1000, pageLoadTimeoutMs: 50 });
+  const loading = loadPublishedWeeks(fetchImpl, { requestTimeoutMs: 1000, pageLoadTimeoutMs: 50 });
+  await Promise.all([currentStalled.promise, archiveRead.promise]);
+  await settleReads();
+  assert.ok(stalledSignals.every(signal => !signal.aborted));
+  t.mock.timers.tick(50);
+  const result = await loading;
   assert.equal(result.weeks.length, 2);
   assert.ok(result.weeks.every(week => week.id.startsWith('history-')));
   assert.ok(result.defaultWeekId.startsWith('history-'));
@@ -321,4 +380,73 @@ test('changed English source, release hashes or unit associations cannot show wr
     assert.equal(result.weeks[0].contentVariants.ko.tracks.length,1);
     assert.ok(result.errors.length);
   }
+});
+
+test('invalid catalog target is rejected before release fetch while valid locales remain', async () => {
+  const mutations = [
+    target => { target.releasePackageUrl = '/releases-v2/wrong-page/ko.json'; },
+    target => { target.capabilities.push('audio'); },
+    target => { target.capabilities.push('unknown'); },
+    target => { target.capabilities.push('alignment'); },
+  ];
+  for (const mutate of mutations) {
+    const f = fixture();
+    const catalog = JSON.parse(f.files.get('/multilingual-v3.json'));
+    const target = catalog.pages[0].targets.ko;
+    const original = target.releasePackageUrl;
+    mutate(target);
+    // The wrong path still serves matching release bytes and a correct hash;
+    // rejection must be from catalog admission, not a later transport failure.
+    f.files.set(target.releasePackageUrl, f.files.get(original));
+    f.files.set('/multilingual-v3.json', JSON.stringify(catalog));
+    const result = await loadPublishedWeeks(f.fetchImpl);
+    assert.deepEqual(Object.keys(result.weeks[0].contentVariants), ['zh-Hans', 'es']);
+    assert.ok(!f.requests.includes(target.releasePackageUrl));
+    assert.equal(result.errors.length, 1);
+  }
+});
+
+test('valid text-only catalog target never requests a release or becomes an audio fallback', async () => {
+  const f = fixture();
+  const catalog = JSON.parse(f.files.get('/multilingual-v3.json'));
+  Object.assign(catalog.pages[0].targets['zh-Hans'], { audioStatus: 'unavailable', capabilities: ['text'] });
+  f.files.set('/multilingual-v3.json', JSON.stringify(catalog));
+  const result = await loadPublishedWeeks(f.fetchImpl);
+  assert.deepEqual(Object.keys(result.weeks[0].contentVariants), ['ko', 'es']);
+  assert.equal(result.weeks[0].defaultTargetLocale, 'ko');
+  assert.ok(!f.requests.includes(`/releases-v2/${pageId}/zh-Hans.json`));
+  assert.match(result.errors[0], /not ready for playback/);
+});
+
+for (const [name, mutate] of [
+  ['missing default page', c => { c.defaultPageId = 'missing'; }],
+  ['duplicate page identity', c => { c.pages.push(structuredClone(c.pages[0])); }],
+  ['impossible calendar date', c => { c.pages[0].date = '2026-02-30'; }],
+  ['missing title', c => { delete c.pages[0].title; }],
+  ['missing default locale', c => { c.pages[0].defaultTargetLocale = 'vi'; }],
+  ['bad source media hash', c => { c.pages[0].sourceMediaSha256 = 'bad'; }],
+]) {
+  test(`catalog metadata admission rejects ${name} before asset requests`, async () => {
+    const f = fixture();
+    const catalog = JSON.parse(f.files.get('/multilingual-v3.json'));
+    mutate(catalog);
+    f.files.set('/multilingual-v3.json', JSON.stringify(catalog));
+    const result = await loadPublishedWeeks(f.fetchImpl);
+    assert.deepEqual(result.weeks, []);
+    assert.ok(result.errors.length);
+    assert.deepEqual(f.requests, ['/multilingual-v3.json']);
+  });
+}
+
+test('bad page metadata does not hide a different valid page or request bad-page assets', async () => {
+  const f = fixture();
+  addHistory(f, 2);
+  const catalog = JSON.parse(f.files.get('/multilingual-v3.json'));
+  catalog.pages[0].title = '';
+  f.files.set('/multilingual-v3.json', JSON.stringify(catalog));
+  const result = await loadPublishedWeeks(f.fetchImpl);
+  assert.deepEqual(result.weeks.map(week => week.id), ['history-1']);
+  assert.equal(result.defaultWeekId, 'history-1');
+  assert.deepEqual(result.errors, ['Invalid published page']);
+  assert.ok(!f.requests.some(path => path.includes(pageId)));
 });

@@ -126,7 +126,7 @@ class WeeklyAccountingTests(unittest.TestCase):
             runner.main()
             events, summary, finished = self.read_accounting(f.work / "accounting")
             names = [row["stage"] for row in finished]
-            self.assertEqual(names, ["job_validation", "cache_validation", "local_render_attempt", "transfer_upload", "render",
+            self.assertEqual(names, ["job_validation", "cache_validation", "transfer_upload", "render",
                 "transfer_download", "render_validation", "assemble", "source_alignment", "local_asr",
                 "timing", "candidate_validation", "weekly_dubbing"])
             self.assertTrue(all(not row["cacheHit"] and row["status"] == "completed" for row in finished))
@@ -313,7 +313,8 @@ class WeeklyAccountingTests(unittest.TestCase):
             with patch.dict(os.environ, {key: "" for key in ENV_KEYS}), accounting_session(work / "accounting", "fixture"):
                 runner.record_render_workload(work, job, render, {}, False)
             events, _, _ = self.read_accounting(work / "accounting")
-            metrics = next(row["metrics"] for row in events if row["event"] == "workload")
+            metrics = next(row["metrics"] for row in events
+                           if row["event"] == "workload" and row["stage"] == "render_output")
             self.assertEqual(metrics["newlyAvailableOutputUnitCount"], 2)
             self.assertEqual(metrics["parentReusedUnitCount"], 1)
             self.assertEqual(metrics["revisionRegenerateUnitCount"], 1)

@@ -1,0 +1,79 @@
+{
+  "schemaVersion": "sermon-observability-reconciliation-v1",
+  "codeCommit": "fd788ac8517d381d24bb1a834689e88bcfa4f6c7",
+  "classification": "real_offline_diagnostic_and_historical_cache_revalidation_not_stage1",
+  "logOnlyProjection": "exported events.jsonl regenerated identical report.json without media/cache/business files",
+  "l2": {
+    "locales": [
+      "es",
+      "ko",
+      "zh-Hans"
+    ],
+    "groups": 33,
+    "historicResponseCount": 66,
+    "oracleFieldsMatch": true,
+    "cacheBytesAndEvidenceUnchanged": true,
+    "sourceDurationSeconds": 138.0,
+    "ledgerWallSeconds": 2.8146939277648926,
+    "independentOuterMonotonicSeconds": 2.8665096670156345,
+    "groupCacheValidationSubtotalSeconds": 0.118539,
+    "currentTransportAttemptsByIndependentGuard": 0,
+    "directProviderReceiptsInTrace": 0,
+    "historicalTokenSubtotal": {
+      "inputTokens": 49600,
+      "cachedInputTokens": 0,
+      "outputTokens": 34989,
+      "reasoningTokens": 12916
+    },
+    "missingCacheWriteTokens": 0,
+    "historicalCostUsd": null,
+    "historicalUsageIsCurrentSpend": false,
+    "baselineCachedResponseObservations": 0,
+    "baselineSourceDurationSeconds": null
+  },
+  "audio": {
+    "unitStarts": 33,
+    "unitCompletions": 33,
+    "hashesMatchIndependentPackages": true,
+    "fullDecodeValidatedUnits": 33,
+    "validationSubtotalSeconds": 6.304528836917598,
+    "jobIdentities": 3,
+    "newTtsCalls": 0,
+    "oldTraceHadOnlyLocaleWrappers": true
+  },
+  "asr": {
+    "actualNewLocalInference": true,
+    "model": "mlx-community/whisper-large-v3-turbo-q4",
+    "checkpointSha256": "862bbc832b05f3f4ec19dd632b701d61a6d3f5c7906360a10d72a79870642a80",
+    "asrSeconds": 10.738793333002832,
+    "inputOutputHashesMatch": true,
+    "outputEqualsEarlierActualAsr": true,
+    "providerTokens": null,
+    "providerCostUsd": null
+  },
+  "notEstablished": [
+    "complete_pipeline_telemetry",
+    "production_queue_and_dependency_ready_timestamps",
+    "orchestration_overhead",
+    "cross_process_critical_path",
+    "fresh_paid_provider_telemetry",
+    "historical_invoice_cost",
+    "page_ready_timestamp",
+    "real_media_human_quality_signoff",
+    "device_or_venue_acceptance"
+  ],
+  "stage1PromotionAllowed": false,
+  "humanApprovalCreated": false,
+  "blockedPluginBinding": {
+    "safeReasonCode": "plugin_implementation_mismatch",
+    "localeRejections": 3,
+    "newTransportCalls": 0,
+    "validatorsUnchanged": true
+  },
+  "executionIdentityPreserved": {
+    "allActualWorkflowStartsAtCodeCommit": true,
+    "trackedWorkingTreeDirty": false,
+    "parentWorkflowIdsAndLoadedProjectCodeHashesExported": true,
+    "snapshotHashComputedUnderSameReadLock": true
+  }
+}

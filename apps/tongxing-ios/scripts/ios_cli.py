@@ -70,7 +70,8 @@ def arguments():
     parser.add_argument("--developer-dir", help="完整 Xcode 的 .app 或 Contents/Developer；覆盖 DEVELOPER_DIR")
     parser.add_argument("--scheme", help="默认发现并使用 Tongxing scheme")
     parser.add_argument("--simulator", metavar="UDID", help="指定已有模拟器；测试/启动优先复用唯一已启动的 iPhone")
-    parser.add_argument("--configuration", choices=["Debug", "Release"], default="Debug")
+    parser.add_argument("--configuration", choices=["Debug", "Release", "BetaDebug", "BetaRelease"],
+                        help="默认 Tongxing 使用 Debug，TongxingBeta 使用 BetaDebug")
     parser.add_argument("--derived-data", type=Path, help="复用构建目录，默认当日 artifacts/cli/DerivedData")
     parser.add_argument("--artifacts-dir", type=Path, help="日志与唯一结果目录的父路径，默认当日 artifacts/cli")
     selection = parser.add_mutually_exclusive_group()
@@ -149,14 +150,17 @@ def execute(args, runner, artifact_root, run_directory, receipt):
     scheme = args.scheme or ("Tongxing" if "Tongxing" in schemes else schemes[0] if len(schemes) == 1 else None)
     if scheme not in schemes:
         raise ValueError("请用 --scheme 选择实际 scheme：" + ", ".join(schemes))
+    configuration = args.configuration or ("BetaDebug" if scheme == "TongxingBeta" else "Debug")
+    if (scheme == "TongxingBeta") != configuration.startswith("Beta"):
+        raise ValueError("TongxingBeta 必须使用 BetaDebug/BetaRelease；Tongxing 使用 Debug/Release。")
     simulator = select_simulator(runner, args.simulator) if args.action != "build" or args.simulator else None
     destination = "platform=iOS Simulator,id=" + simulator["udid"] if simulator else "generic/platform=iOS Simulator"
     derived = (args.derived_data or artifact_root / "DerivedData").expanduser().resolve()
-    receipt.update(scheme=scheme, destination=destination, derived_data=str(derived))
+    receipt.update(scheme=scheme, configuration=configuration, destination=destination, derived_data=str(derived))
     if simulator:
         receipt["simulator"] = {key: simulator[key] for key in ("udid", "name", "runtime", "state")}
     common = ["/usr/bin/xcrun", "xcodebuild", "-project", PROJECT, "-scheme", scheme,
-              "-configuration", args.configuration, "-sdk", "iphonesimulator", "-destination", destination,
+              "-configuration", configuration, "-sdk", "iphonesimulator", "-destination", destination,
               "-derivedDataPath", derived, "-disableAutomaticPackageResolution",
               "CODE_SIGNING_ALLOWED=NO", "CODE_SIGNING_REQUIRED=NO"]
     if args.action == "launch":
@@ -171,6 +175,10 @@ def execute(args, runner, artifact_root, run_directory, receipt):
         if (app / "Info.plist").is_file():
             with (app / "Info.plist").open("rb") as info:
                 bundle_id = plistlib.load(info)["CFBundleIdentifier"]
+            expected_bundle = ("com.jonathanjing.tongxing.beta" if scheme == "TongxingBeta"
+                               else "com.jonathanjing.tongxing.dev")
+            if bundle_id != expected_bundle:
+                raise ValueError("App Bundle ID 与所选渠道不符；拒绝安装，避免覆盖另一版本。")
         elif not args.dry_run:
             raise ValueError("未找到已有 App：" + str(app) + "。先使用相同 --derived-data 构建。")
         else:

@@ -2,6 +2,8 @@
 
 **Dry run 的范围是模拟收到视频链接，检查 Layer 1–4 的后端交接，最后在 Firebase Dev 生成测试页面。** 之前的 [Dev App 页面预演](firebase-dev-weekly-dry-run.zh.md)只覆盖页面、语言与播放；它是本流程的 Layer 4 前端检查，不能代替这条后端演练。
 
+下一次涉及本地制作性能的Dev测试，另按[固定模型执行参数](local-production-next-dev-test-parameters.zh.md)采集真实模型与候选批处理收据。真实音频使用`scripts.run_dev_local_audio_test`，默认TTS2/回转写4；下文固定响应模拟器继续不消费该profile；模拟交接/页面通过与真实模型性能、音频听审分别记录。
+
 ## 当前可运行的短流程
 
 `scripts/backend_four_layer_dry_run.py` 使用仓库内 6 秒固定夹具。模拟链接固定为 `.invalid` 域名，不发网络请求。它在本地生成短 WAV、固定英文词时间和三语文字；通过真实的 Layer 1 锚点/English Source Package 构建器和三语 shadow lane planner。Layer 2 逐组使用正式 Astra→Sol 调度循环，但响应由固定夹具提供；Layer 3 使用正式的 1 倍速排程和 PCM16 音轨拼接函数，最后输出独立的 `preview_only` 页面和报告。接链、媒体夹具、Layer 1、shadow 规划、每个语言及每次模拟模型响应／音频单元、Layer 4 均记录开始、结束、耗时和失败原因；失败注入可定位断点。
@@ -46,7 +48,7 @@ OUT=/absolute/path/to/ignored/dry-run-run
 
 ## 尚需接入的生产共用编排
 
-当前 Supervisor 只覆盖 `dual_pdf`，并无同一个正式入口贯通四个 package。这个短流程已共用 Layer 1 锚点构建、Layer 2 逐组模型调度、Layer 3 排程与拼接、Dev 页面导入；它**不证明**正式 Layer 2/3 producer 在新周会成功。正式 Layer 2 候选准入、Layer 3 授权/整轨听审和 Layer 4 v3 release builder 仍只能接收真实批准证据。后续可将真实批准包加入只读 hash 回放，并把 Layer 4 的纯页面资产组装与正式发布器共用。任何模拟收据都不得成为正式审批或 Production 发布依据。
+当前 Supervisor 只覆盖 `dual_pdf`，并无同一个正式入口贯通四个 package。这个短流程已共用 Layer 1 锚点构建、Layer 2 逐组模型调度、Layer 3 排程与拼接、Dev 页面导入；它**不证明**正式 Layer 2/3 producer 在新周会成功。正式 Layer 2 候选准入、Layer 3 授权/整轨听审和 Layer 4 v3 release builder 仍只能接收真实批准证据。当前 Layer 4 共用正式准备器的 SHA 绑定资产复制函数；它尚未共用完整页面／catalog／Release 组装，也未贯通 canonical durable dispatch。真实批准包只读回放仍须另行留证。任何模拟收据都不得成为正式审批或 Production 发布依据。
 
 ## 2026-10-04 首次 Dev 实跑
 
@@ -60,3 +62,11 @@ OUT=/absolute/path/to/ignored/dry-run-run
 - 第二版固定夹具本地评估生成 29 条步骤事件，其中 12 次是固定模型响应，另有 6 个音频单元事件。下载、ASR、翻译 API、TTS 和 Firebase 外部调用仍全部为 0。
 - 成功路径及 `layer1`、韩语首组 Sol、`layer3:es`、`layer4` 四处失败注入全部通过；不存在的单元故障点会被拒绝，失败运行不能被 Dev 导入器接收。定向测试覆盖 Layer 2 真实 runner、Layer 3 renderer 与此模拟器。
 - Python CI 的非文档 PR 检查会运行 `evaluate_backend_four_layer_dry_run.py` 并保存 JSON 评估收据。正式审核门禁、iOS 和现场仍单独验证。
+
+## 2026-09-30 Layer 4 绑定资产复制
+
+模拟流程先在私有 `layer3/media/` 生成测试 WAV，再由 `release_asset_io.copy_bound_asset` 按 Layer 3 已记录 SHA 复制到 `public/flow/media/`。同一函数用于 formal-dev 和 full-video App 两个正式准备器；它只输出路径、字节数和 SHA，不产生审批或发布状态。正式准备器仍先执行各自现有来源、文字、声音、metadata 和审核门禁。
+
+复制流逐块核对已准入 hash，以新文件原子建立目标，拒绝覆盖。源字节变化、读写/fsync 失败或目标冲突不会留下未验证的目标文件；保留其他已存在文件。正式 App 的全文内容 hash 来自实际解析的同一份 bytes，音频与字幕 hash 来自已准入 Audio Package，不能用复制后重新读取源文件的 hash 掩盖变化。这个函数面向调用方独占的本地 staging 树，不是发布事务或跨主机持久化承诺。
+
+29 项相关本地测试通过，包含真实 formal-dev 组装、模拟链路、修改准入后音频、SHA 不符、IO/sync 失败、目标冲突及路径/链接拒绝。模拟报告的 Layer 4 单独记录 `assetAssembly: copy_bound_asset_v1` 和三项资产证据；老报告不因此获得新覆盖。Stage 0 组件矩阵已纳入这些回归，完整 canonical 执行与各阶段 sign-off 继续待完成。没有运行媒体 API、部署或生成新人工批准。

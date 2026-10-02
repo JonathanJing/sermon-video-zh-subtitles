@@ -1,0 +1,180 @@
+{
+  "schemaVersion": "bounded-source-diagnostic-reconciliation-v1",
+  "runId": "0190d07b4ae426f1217ce56c40360327cb4729209efd0e4c0cae08c620c56b20",
+  "executionGitCommit": "bc7f44b91a4ab0f13cfd9d2acdb09b5ca88aa685",
+  "eventCount": 54,
+  "observedDirectReceipts": 2,
+  "durableRequestCount": 2,
+  "transportCountReconciliation": "two_returned_receipts_match_two_durable_requests_no_retries_observed",
+  "reservedCostMicrousd": 474113,
+  "conservativeEstimatedCostMicrousd": 91525,
+  "invoiceVerified": false,
+  "sourceMediaSha256": "374662dc7c00993820360b2095e277ecd7ebf17bc4d873ccf7e2b76a6c7c7930",
+  "sourceClipSha256": "79bada8f2e960adb470a146f183449db433308b53c20d03ea9c7e2e0a66e906b",
+  "sourceWindowSeconds": [
+    60,
+    240
+  ],
+  "providerStateSha256": "c1854bf5f25b37b0f19cb596001db2db7ca2dd4460c8f4d9e986e937e91d28ff",
+  "runPlanSha256": "006e58a416b6658e1b1012761c4ca7aa5060a3aaa356cd99722bf00fbe2506c3",
+  "originalLedgerSha256": "f91d2583e276137a10d2d7ac162a46375af27017bae556284177628124300b20",
+  "originalExportedLedgerSha256": "ec7f1b5e08b3dc9aadc5f32ea9d8e16308565606447fb6f3611060a6cbccb358",
+  "originalReportSha256": "9cdd7105c7681927a70200f0a7ea71b442cde7bde7ac96a7dc10aadf94eef703",
+  "correctedReportSha256": "dae1dd29b063021f8de3acad2fa558c5210b22c680c8ad727493200b493e6845",
+  "calls": [
+    {
+      "eventId": "bd725997d4bb4d708e9f004b7055c93f",
+      "runId": "7241d345b8434ed08c4220bd8452e016",
+      "productionRunId": "0190d07b4ae426f1217ce56c40360327cb4729209efd0e4c0cae08c620c56b20",
+      "spanId": "309d2f8f6d834432af59063a48cd84bc",
+      "modelCallId": "5801e25a905247e593bb7133b1f8db0b",
+      "requestedModel": "gpt-transcribe",
+      "model": null,
+      "elapsedSeconds": 7.053511750011239,
+      "usage": {
+        "audioSeconds": 180,
+        "cacheWriteTokens": null,
+        "cachedInputTokens": null,
+        "inputTokens": null,
+        "outputTokens": null,
+        "reasoningTokens": null,
+        "totalTokens": null
+      },
+      "cost": {
+        "currency": "USD",
+        "estimatedUsd": null,
+        "invoiceVerified": false,
+        "priceSource": "https://developers.openai.com/api/docs/pricing",
+        "priceVerifiedAt": "2026-09-05",
+        "reason": "model_price_unverified",
+        "serviceTier": "default",
+        "status": "unknown"
+      },
+      "status": "completed",
+      "executorType": "production_model",
+      "stage": "diagnostic.transcription",
+      "providerReceiptSha256": "b5234cfe2f5217a071cb5f9fe49b826ae1f0d727240c701633e0743d773387b2",
+      "requestPayloadSha256": "4a48ffe55b200e49fa291bde2a628e0714ba8ac1d20e9b4dcc730933162e2c59",
+      "durableState": "returned",
+      "reservation": {
+        "requests": 1,
+        "wallTimeMs": 300000,
+        "costMicrousd": 13500
+      },
+      "conservativeCostEvidence": {
+        "model": "gpt-transcribe",
+        "currency": "USD",
+        "priceSource": "https://developers.openai.com/api/docs/models/gpt-transcribe",
+        "priceVerifiedAt": "2026-09-30",
+        "priceUsdPerAudioMinute": "0.0045",
+        "invoiceVerified": false,
+        "billingBasis": "transcription_audio_duration",
+        "inputAudioDurationSeconds": 180.0,
+        "inputDurationProvenance": "caller_supplied_decoded_pcm_frames_over_sample_rate",
+        "inputDurationEstimatedCostMicrousd": 13500,
+        "inputDurationReservationCostMicrousd": 13500,
+        "inputTokens": null,
+        "outputTokens": null,
+        "cachedInputTokens": null,
+        "tokenUsageReason": "not_reported_duration_billed_api",
+        "providerAudioDurationSeconds": 180.0,
+        "costMicrousd": 13500,
+        "costStatus": "estimated_from_provider_duration",
+        "providerDurationStatus": "reported"
+      },
+      "correction": null
+    },
+    {
+      "eventId": "3c3d24866ced412e9b9f8f6fa09f761e",
+      "runId": "7b972e2f134c4cdfa80b8da4ae551549",
+      "productionRunId": "0190d07b4ae426f1217ce56c40360327cb4729209efd0e4c0cae08c620c56b20",
+      "spanId": "e716b25fa9e24cee897375e0c886f12a",
+      "modelCallId": "23673db1d9fb4ffeaa0db2792ccaacd5",
+      "requestedModel": "gpt-6-astra",
+      "model": "gpt-6-astra",
+      "elapsedSeconds": 32.882253999996465,
+      "usage": {
+        "audioSeconds": null,
+        "cacheWriteTokens": 0,
+        "cachedInputTokens": 0,
+        "inputTokens": 806,
+        "outputTokens": 1359,
+        "reasoningTokens": 850,
+        "totalTokens": 2165
+      },
+      "cost": {
+        "contextTier": "short",
+        "currency": "USD",
+        "estimatedUsd": 0.07601,
+        "invoiceVerified": false,
+        "priceSource": "https://developers.openai.com/api/docs/pricing",
+        "priceVerifiedAt": "2026-09-05",
+        "ratesPerMillion": {
+          "cacheWrite": 12.5,
+          "cachedInput": 1.0,
+          "input": 10,
+          "output": 50
+        },
+        "reasoningIncludedInOutput": true,
+        "serviceTier": "default",
+        "status": "estimated"
+      },
+      "status": "completed",
+      "executorType": "deterministic_program",
+      "stage": "bounded-diagnostic",
+      "providerReceiptSha256": "6f7eb29dbf68fa0ff4394894139d6843f7c7a98fedaf7e74a5b013768f29659c",
+      "requestPayloadSha256": "8cf557171cf03d98d8898f0b9ed169b51f9c04b7664f5054984b9542af1151b6",
+      "durableState": "returned",
+      "reservation": {
+        "requests": 1,
+        "inputTokens": 4081,
+        "outputTokens": 8192,
+        "wallTimeMs": 300000,
+        "costMicrousd": 460613
+      },
+      "conservativeCostEvidence": {
+        "currency": "USD",
+        "priceAssumptionVersion": "strict-chat-worst-case-2026-09-30-v1",
+        "priceBasis": "frozen_worst_case_input_and_output_rate_assumption",
+        "invoiceVerified": false,
+        "priceVerifiedAt": "2026-09-30",
+        "priceSource": "https://developers.openai.com/api/docs/pricing?tab=suite",
+        "costStatus": "estimated_upper_bound",
+        "reasonCode": null,
+        "model": "gpt-6-astra",
+        "inputTokens": 806,
+        "outputTokens": 1359,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 850,
+        "totalTokens": 2165,
+        "wallTimeMs": 32883,
+        "costMicrousd": 78025,
+        "serviceTier": "default",
+        "ratesUsdPerMillion": {
+          "inputWorstCase": "12.5",
+          "output": "50"
+        },
+        "cacheDetailStatus": "reported",
+        "reasoningIncludedInOutputTokens": true
+      },
+      "correction": {
+        "executorType": "production_model",
+        "scope": "API_receipt_latency_only_not_reconstructed_span",
+        "basis": "reviewed_provider_chat_dispatch_and_actual_receipt",
+        "originalEventUnchanged": true
+      }
+    }
+  ],
+  "scope": "ASR_and_text_source_review_only_L2_TTS_not_run_at_snapshot",
+  "humanReview": "pending_no_approval_created",
+  "remainingGaps": [
+    "ASR_provider_model_not_reported",
+    "ASR_tokens_not_reported_duration_billed",
+    "source_review_missing_model_child_span_in_original_trace",
+    "queue_readiness_orchestration_missing",
+    "cross_process_critical_path_not_established",
+    "MFA_wrapper_includes_setup_not_isolated_inference"
+  ],
+  "provenance": "original_events_copied_byte_for_byte_report_regenerated_offline_executor_correction_separate_not_applied_to_events"
+}

@@ -1,0 +1,66 @@
+{
+  "scope": "new_deterministic_replay_of_historical_paid_results_not_new_inference",
+  "locales": [
+    {
+      "locale": "zh-Hans",
+      "status": "cache_replayed_candidate_validated",
+      "groups": 11,
+      "historicalModels": {
+        "translator": "gpt-6-astra",
+        "reviewer": "gpt-6-sol"
+      },
+      "newModelCalls": 0,
+      "candidateJsonSha256": "e4182c05fa5aa8229ae64c78c444244af46cd8598cb52ee6dc4e8a53a90b3cab",
+      "candidateStatus": "machine_review_pass_human_review_pending",
+      "releaseEligible": false,
+      "evidenceEqualsPrior": true,
+      "cacheFilesByteIdentical": true,
+      "priorFilesUnchanged": true,
+      "elapsedSeconds": 0.14319650002289563
+    },
+    {
+      "locale": "ko",
+      "status": "cache_replayed_candidate_validated",
+      "groups": 11,
+      "historicalModels": {
+        "translator": "gpt-6-astra",
+        "reviewer": "gpt-6-sol"
+      },
+      "newModelCalls": 0,
+      "candidateJsonSha256": "02f8a5955256c7cecee6652c6835fa047fee8411546319464026a7d1aed12ff0",
+      "candidateStatus": "machine_review_pass_human_review_pending",
+      "releaseEligible": false,
+      "evidenceEqualsPrior": true,
+      "cacheFilesByteIdentical": true,
+      "priorFilesUnchanged": true,
+      "elapsedSeconds": 0.12421308300690725
+    },
+    {
+      "locale": "es",
+      "status": "cache_replayed_candidate_validated",
+      "groups": 11,
+      "historicalModels": {
+        "translator": "gpt-6-astra",
+        "reviewer": "gpt-6-sol"
+      },
+      "newModelCalls": 0,
+      "candidateJsonSha256": "62fb1cb934afb0bcecd59f8f536ba8752e5e0a1461ef36b6d47ea847073b1ac7",
+      "candidateStatus": "machine_review_pass_human_review_pending",
+      "releaseEligible": false,
+      "evidenceEqualsPrior": true,
+      "cacheFilesByteIdentical": true,
+      "priorFilesUnchanged": true,
+      "elapsedSeconds": 0.14173779200064018
+    }
+  ],
+  "sourceMediaSha256": "a40c1a37a3c15bea58db26806c117c77cfd91b983eefe98536f72ad633dd956a",
+  "sourceUnchanged": true,
+  "codeCommit": "ebaea29e857afba3bf6d6313ce9a8e3ccb8d66ec",
+  "codeClean": true,
+  "totalWallSeconds": 2.3973195829894394,
+  "actualTransportAttempts": 0,
+  "newPaidCalls": 0,
+  "networkGuard": "socket_connect_denied",
+  "stage1PromotionAllowed": false,
+  "humanAcceptance": "not_evaluated"
+}

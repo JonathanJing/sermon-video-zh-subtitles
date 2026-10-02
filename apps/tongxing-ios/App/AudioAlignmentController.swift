@@ -70,6 +70,7 @@ final class AudioAlignmentController {
     private let loadPublishedIndex: PublishedIndexLoader?
     private let loadPageIndex: PageIndexLoader?
     private let onState: (String, Bool, Double?) -> Void
+    private let onFailure: (String) -> Void
     private let now: () -> ContinuousClock.Instant
     private let deadline: Duration
     private var requestID: UUID?
@@ -92,9 +93,11 @@ final class AudioAlignmentController {
              }
              return try await withTaskCancellationHandler { try await work.value } onCancel: { work.cancel() }
          }, now: @escaping () -> ContinuousClock.Instant = { ContinuousClock.now }, deadline: Duration = .seconds(20),
-         onState: @escaping (String, Bool, Double?) -> Void) {
+         onState: @escaping (String, Bool, Double?) -> Void,
+         onFailure: @escaping (String) -> Void = { _ in }) {
         self.playback = playback; self.capture = capture; self.getSelection = getSelection
         self.loadIndex = loadIndex; self.match = match; self.onState = onState
+        self.onFailure = onFailure
         self.now = now; self.deadline = deadline
         self.loadPublishedIndex = loadPublishedIndex
         self.getPublishedSelection = getPublishedSelection
@@ -169,15 +172,16 @@ final class AudioAlignmentController {
             do {
                 try await Task.sleep(for: deadline)
                 guard self?.requestID == token else { return }
-                self?.cancel(message: "对齐超时，请保持前台后重试。", resume: true)
+                self?.cancel(message: "对齐超时，请保持前台后重试。", resume: true, reportFailure: true)
             } catch {}
         }
         runningTask = Task { [weak self] in await self?.run(selected, token: token) }
     }
 
-    func cancel(message: String = "已取消对齐。", resume: Bool = false) {
+    func cancel(message: String = "已取消对齐。", resume: Bool = false, reportFailure: Bool = false) {
         guard requestID != nil else { return }
-        let mayResume = resume && wasPlaying && sourceStillCurrent
+        let sameSelection = sourceStillCurrent
+        let mayResume = resume && wasPlaying && sameSelection
         requestID = nil
         runningTask?.cancel(); runningTask = nil
         timeoutTask?.cancel(); timeoutTask = nil
@@ -185,12 +189,14 @@ final class AudioAlignmentController {
         playback.cancelAlignmentSeek()
         if mayResume { playback.resumeAfterAlignment() }
         onState(message, false, nil)
+        if reportFailure && sameSelection { onFailure(message) }
     }
 
     private func run(_ selected: ActiveSelection, token: UUID) async {
         var resumed = false, mayResume = true
         var status = "听声对齐未完成，请重试或手动调整。"
         var confirmedPosition: Double?
+        var failed = true
         var capturedStart = now()
         defer {
             if requestID == token {
@@ -200,6 +206,7 @@ final class AudioAlignmentController {
                 capture.cancel()
                 if sameSelection && wasPlaying && !resumed && mayResume { playback.resumeAfterAlignment() }
                 onState(status, false, confirmedPosition)
+                if failed && sameSelection { onFailure(status) }
             }
         }
         do {
@@ -250,6 +257,7 @@ final class AudioAlignmentController {
             guard current(token) else { return }
             guard applied else { status = "定位未完成，请重试或手动调整。"; return }
             confirmedPosition = target
+            failed = false
             status = "已对齐至 {time}。"
             if wasPlaying {
                 resumed = true
@@ -269,10 +277,11 @@ final class AudioAlignmentController {
                     let corrected = await playback.applyAlignedPosition(final)
                     guard current(token) else { return }
                     if corrected { confirmedPosition = final }
-                    else { status = "定位未完成，请重试或手动调整。" }
+                    else { failed = true; status = "定位未完成，请重试或手动调整。" }
                 }
             }
         } catch is CancellationError {
+            failed = false
             status = "已取消对齐。"
         } catch let error as AudioAlignmentError {
             mayResume = error != .interrupted

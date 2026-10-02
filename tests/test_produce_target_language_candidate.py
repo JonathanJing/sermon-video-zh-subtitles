@@ -14,6 +14,8 @@ from scripts import target_language_policy as policy_tools
 from scripts import four_layer_progress as progress
 from scripts import sermon_accounting as accounting
 from scripts import build_four_layer_tracker_snapshot as tracker_snapshot
+from scripts import build_english_source_package as english_source
+from tests import test_build_english_source_package as source_fixtures
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -34,26 +36,33 @@ def review_group(policy, english_units, group):
             for check in policy["languageReview"]["requiredChecks"]]
 ''', encoding="utf-8")
         self.plugin_sha = subject.plugin_implementation_sha256(self.plugin_path)
-        self.anchor = {
-            "schemaVersion": interpretation.ANCHOR_SCHEMA_V2,
-            "sourceUnits": [
-                {"sourceUnitId": "block-1-u001", "english": "Remember your first love."},
-                {"sourceUnitId": "block-1-u002", "english": "Return to it."},
-            ],
-        }
-        self.source = {
-            "schemaVersion": handoff.SOURCE_PACKAGE_SCHEMA,
-            "status": "ready_for_translation", "translationEligible": True,
-            "anchors": {"artifact": {"jsonSha256": interpretation.json_sha256(self.anchor)}},
-            "source": {"approvedWindow": {"humanApproval": True}},
-            "review": {
-                "humanApproval": True,
-                "reviewedSourceUnitIds": ["block-1-u001", "block-1-u002"],
-                "checks": {check: "approved" for check in (
-                    "sourceIdentity", "transcriptCompleteness", "wordAlignment",
-                    "sentenceAndPauseBoundaries")},
-            },
-        }
+        # Build a complete synthetic Layer 1 package through the real builder,
+        # rather than teaching production admission to accept incomplete stubs.
+        source = source_fixtures.EnglishSourcePackageTests()
+        source.setUp(); self.addCleanup(source.doCleanups)
+        segments = []
+        for index, text in enumerate(("Remember your first love.", "Return to it.")):
+            words = text.split()
+            start = index * 3.0
+            segments.append({"id": index, "referenceChunkId": "block-1", "text": text,
+                "start": start, "end": start + len(words) * .3,
+                "sentenceBoundarySource": "frozen_reference_punctuation",
+                "wordTimes": [{"text": word, "start": start + n * .3,
+                               "end": start + (n + 1) * .3} for n, word in enumerate(words)]})
+        source_fixtures.write_json(source.segments_path, segments)
+        self.anchor = interpretation.build_anchor_manifest(segments, source_path=source.segments_path,
+                                                           unit_policy=interpretation.UNIT_POLICY_V2)
+        source_fixtures.write_json(source.manifest_path, self.anchor)
+        review_path = source.root / "synthetic-review.json"
+        source_fixtures.write_json(review_path, {
+            "schemaVersion": english_source.REVIEW_SCHEMA_VERSION,
+            "alignedSegmentsSha256": english_source.file_sha256(source.segments_path),
+            "anchorManifestJsonSha256": interpretation.json_sha256(self.anchor),
+            "humanApproval": True, "reviewedBy": "Synthetic fixture reviewer",
+            "reviewedAt": "2026-09-30T00:00:00Z",
+            "reviewedSourceUnitIds": [u["sourceUnitId"] for u in self.anchor["sourceUnits"]],
+            "checks": {name: "approved" for name in english_source.APPROVED_CHECKS}})
+        self.source = source.build(review_path=review_path)
         policy = json.loads((ROOT / "config/target-language-policies/zh-Hans.json")
                             .read_text(encoding="utf-8"))
         policy.pop("componentSha256")

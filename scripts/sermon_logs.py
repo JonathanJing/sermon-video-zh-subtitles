@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from scripts.sermon_accounting import diagnostic_event, format_diagnostic, read_events
+from scripts.sermon_accounting import diagnostic_event, format_diagnostic, read_events, receipt_integrity, profile_integrity
 
 LEVELS = {"DEBUG": 10, "INFO": 20, "WARNING": 30, "ERROR": 40, "CRITICAL": 50}
 
@@ -25,6 +25,13 @@ def inspect_logs(directory, *, run_id="latest", level="INFO", tail=50):
     if selected != "all" and selected not in run_ids:
         raise ValueError("run_not_found")
     selected_events = [e for e in events if selected == "all" or e["runId"] == selected]
+    # Compare the whole ledger before filtering: a conflicting duplicate in
+    # another run also invalidates this run's attributed receipt.
+    replay = profile_integrity(events)
+    integrity = receipt_integrity(events, event_integrity=replay)
+    affected = {key for (rid, _), keys in integrity['_affected'].items()
+                if selected == 'all' or rid == selected for key in keys}
+    conflicts = [c for c in integrity['conflicts'] if c['identitySha256'] in affected]
     diagnostics = [diagnostic_event(e) for e in selected_events]
     failed = [d for d in diagnostics if LEVELS[d["level"]] >= LEVELS["ERROR"]]
     warnings = [d for d in diagnostics if d["level"] == "WARNING"]
@@ -41,8 +48,10 @@ def inspect_logs(directory, *, run_id="latest", level="INFO", tail=50):
                                    "status": "interrupted_or_running"})
     filtered = [d for d in diagnostics if LEVELS[d["level"]] >= LEVELS[level]]
     return {"schemaVersion": "sermon-log-inspection-v1", "runId": selected,
-            "status": "needs_attention" if damaged or failed or unfinished else "no_detected_error",
-            "ledgerIntegrity": "incomplete_corrupt_events" if damaged else "readable",
+            "status": "needs_attention" if damaged or failed or unfinished or conflicts or replay['status'] != 'consistent' else "no_detected_error",
+            "ledgerIntegrity": "incomplete_corrupt_events" if damaged else "conflicting_receipts" if conflicts else "readable",
+            "receiptConflicts": conflicts,
+            **({"eventIntegrity": {k:v for k,v in replay.items() if not k.startswith("_")}} if replay["profileEventCount"] else {}),
             "damagedEvents": damaged, "errorEvents": len(failed), "warningEvents": len(warnings),
             "unfinished": unfinished, "matchingEvents": len(filtered), "events": filtered[-tail:],
             "scope": "Local recorded execution only; no production acceptance or current process health inferred."}
@@ -55,7 +64,7 @@ def main(argv=None):
     parser.add_argument("--level", choices=LEVELS, default="INFO", help="Minimum severity")
     parser.add_argument("--tail", type=int, default=50, help="Maximum number of matching events (1..10000)")
     parser.add_argument("--json", action="store_true", help="Print a structured diagnostic view")
-    parser.add_argument("--check", action="store_true", help="Exit 2 for errors, damaged or unfinished records; 3 for unreadable logs")
+    parser.add_argument("--check", action="store_true", help="Exit 2 for errors, conflicting, damaged or unfinished records; 3 for unreadable logs")
     args = parser.parse_args(argv)
     if not 1 <= args.tail <= 10000:
         parser.error("--tail must be between 1 and 10000")
@@ -68,7 +77,7 @@ def main(argv=None):
     if args.json:
         print(json.dumps(report, ensure_ascii=False, indent=2))
     else:
-        print(f"run={report['runId']} status={report['status']} errors={report['errorEvents']} warnings={report['warningEvents']} unfinished={len(report['unfinished'])} damaged={len(report['damagedEvents'])}")
+        print(f"run={report['runId']} status={report['status']} errors={report['errorEvents']} warnings={report['warningEvents']} unfinished={len(report['unfinished'])} damaged={len(report['damagedEvents'])} conflicts={len(report['receiptConflicts'])}")
         for event in report["events"]:
             print(format_diagnostic(event))
     return 2 if args.check and report["status"] == "needs_attention" else 0

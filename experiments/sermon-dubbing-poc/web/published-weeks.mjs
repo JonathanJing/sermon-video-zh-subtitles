@@ -22,7 +22,8 @@ const LABELS = {
   },
 };
 const HASH = /^[a-f0-9]{64}$/;
-const ID = /^[A-Za-z0-9][A-Za-z0-9_-]*$/;
+const ID = /^[A-Za-z0-9_-]{1,160}$/;
+const LOCALE = /^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/;
 const required = (condition, message) => { if (!condition) throw new Error(message); };
 const text = value => typeof value === 'string' && value.trim().length > 0;
 
@@ -85,25 +86,101 @@ function validatedCues(cues, duration) {
   });
 }
 
-async function loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal) {
-  const target = page.targets[locale];
-  required(target?.contentStatus === 'human_reviewed' && target.audioStatus === 'human_reviewed'
-    && ['text', 'captions', 'audio'].every(capability => target.capabilities?.includes(capability)), 'Target is not ready for playback');
-  const release = await readJson(fetchImpl, target.releasePackageUrl, target.releasePackageJsonSha256, timeoutMs, false, pageSignal);
+// Shared contract fixtures exercise this same admission used by the loader.
+// This validates bound evidence, never creates human/device/venue acceptance.
+export function validatePublishedRelease(release, page, locale) {
   required(release.schemaVersion === 'sermon-target-language-release-package-v2'
     && release.pageId === page.id && release.targetLocale === locale && release.contentLocale === locale
     && release.audioLocale === locale && release.sourceLocale === 'en'
+    && typeof release.packageId === 'string' && release.packageId.length > 0 && release.interfaceLocale === locale
+    && HASH.test(release.targetLanguageCandidateJsonSha256)
+    && HASH.test(release.spokenTargetLanguageCandidateJsonSha256)
+    && HASH.test(release.targetLanguageAudioPackageJsonSha256)
+    && Array.isArray(release.issues) && release.issues.length === 0
     && release.status === 'published_http_verified' && release.httpVerification?.status === 'pass'
     && release.contentStatus === 'human_reviewed' && release.audioStatus === 'human_reviewed', 'Invalid published release identity or status');
+  for (const name of ['httpVerification', 'deviceAcceptance', 'venueAcceptance']) {
+    const gate = release[name];
+    required(gate && ['not_run', 'pass', 'fail'].includes(gate.status)
+      && (gate.status === 'not_run' ? gate.evidenceSha256 === null : HASH.test(gate.evidenceSha256)),
+    'Invalid published acceptance evidence');
+  }
   const assets = {};
-  for (const role of ['content', 'captions', 'audio']) {
+  for (const role of ['page', 'content', 'captions', 'audio']) {
     const matches = release.assets?.filter(asset => asset.role === role) || [];
     required(matches.length === 1 && HASH.test(matches[0].sha256), `Invalid ${role} asset`);
     assets[role] = { ...matches[0], path: assetPath(matches[0].path) };
     const extension = role === 'audio' ? 'mp3' : 'json';
     const directory = role === 'audio' ? 'media' : role;
-    required(assets[role].path === `/${directory}/${page.id}/${locale}.${extension}`, 'Published asset identity mismatch');
+    const expected = role === 'page' ? `/pages/${page.id}/${locale}/index.html`
+      : `/${directory}/${page.id}/${locale}.${extension}`;
+    required(assets[role].path === expected, 'Published asset identity mismatch');
   }
+  return assets;
+}
+
+// Catalog admission is distinct from this audio player's capabilities. A valid
+// text-only target stays valid, but must never trigger an audio-release request.
+export function validatePublishedTarget(target, page, locale) {
+  const capabilities = target?.capabilities;
+  required(target && target.releasePackageUrl === `/releases-v2/${page.id}/${locale}.json`
+    && HASH.test(target.releasePackageJsonSha256) && target.contentStatus === 'human_reviewed'
+    && ['unavailable', 'human_reviewed'].includes(target.audioStatus)
+    && Array.isArray(capabilities) && capabilities.includes('text')
+    && capabilities.every(value => ['text', 'captions', 'audio', 'download', 'alignment'].includes(value))
+    && new Set(capabilities).size === capabilities.length
+    && (target.audioStatus === 'human_reviewed') === capabilities.includes('audio')
+    && (target.audioFingerprint != null) === capabilities.includes('alignment'),
+  'Invalid published catalog target');
+  const binding = target.audioFingerprint;
+  if (binding != null) {
+    const duration = binding.sourceEndSeconds - binding.sourceStartSeconds;
+    required(binding.schemaVersion === 'sermon-audio-fingerprint-binding-v1'
+      && binding.algorithmVersion === 'spectral-landmarks-v1'
+      && binding.pageId === page.id && target.audioStatus === 'human_reviewed'
+      && HASH.test(binding.sourceSha256) && HASH.test(binding.trackSha256) && HASH.test(binding.indexSha256)
+      && Number.isFinite(binding.sourceStartSeconds) && binding.sourceStartSeconds >= 0
+      && Number.isFinite(binding.sourceEndSeconds) && duration > 0
+      && binding.captureSeconds === 10
+      && binding.indexUrl === `/fingerprints/${binding.indexSha256.slice(0, 16)}-landmarks.json`,
+    'Invalid published catalog alignment binding');
+  }
+  return target;
+}
+
+// Header and page metadata are admitted before requesting any release asset.
+// Locale asset failures remain isolated by loadVariant, as before.
+export function validatePublishedCatalogHeader(catalog) {
+  required(catalog && catalog.schemaVersion === 'sermon-multilingual-catalog-v3'
+    && typeof catalog.generatedAt === 'string' && typeof catalog.defaultPageId === 'string'
+    && Array.isArray(catalog.pages) && catalog.pages.length > 0 && catalog.pages.length <= 104
+    && new Set(catalog.pages.map(page => page?.id)).size === catalog.pages.length
+    && catalog.pages.some(page => page?.id === catalog.defaultPageId), 'Invalid published catalog');
+  return catalog;
+}
+
+export function validatePublishedPage(page) {
+  const date = typeof page?.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(page.date)
+    ? new Date(`${page.date}T00:00:00.000Z`) : null;
+  required(page && typeof page.id === 'string' && ID.test(page.id)
+    && date && Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === page.date
+    && text(page.title) && Array.from(page.title).length <= 180
+    && page.sourceLocale === 'en' && typeof page.sourceIdentitySha256 === 'string' && HASH.test(page.sourceIdentitySha256)
+    && (page.sourceMediaSha256 == null || (typeof page.sourceMediaSha256 === 'string' && HASH.test(page.sourceMediaSha256)))
+    && typeof page.defaultTargetLocale === 'string' && LOCALE.test(page.defaultTargetLocale)
+    && page.targets && typeof page.targets === 'object' && !Array.isArray(page.targets)
+    && Object.keys(page.targets).length > 0 && Object.keys(page.targets).length <= 16
+    && Object.keys(page.targets).every(locale => LOCALE.test(locale))
+    && Object.hasOwn(page.targets, page.defaultTargetLocale), 'Invalid published page');
+  return page;
+}
+
+async function loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal) {
+  const target = validatePublishedTarget(page.targets[locale], page, locale);
+  required(target?.contentStatus === 'human_reviewed' && target.audioStatus === 'human_reviewed'
+    && ['text', 'captions', 'audio'].every(capability => target.capabilities?.includes(capability)), 'Target is not ready for playback');
+  const release = await readJson(fetchImpl, target.releasePackageUrl, target.releasePackageJsonSha256, timeoutMs, false, pageSignal);
+  const assets = validatePublishedRelease(release, page, locale);
   const [content, captions] = await Promise.all([
     readJson(fetchImpl, assets.content.path, assets.content.sha256, timeoutMs, false, pageSignal),
     readJson(fetchImpl, assets.captions.path, assets.captions.sha256, timeoutMs, false, pageSignal),
@@ -229,19 +306,13 @@ export async function loadPublishedWeeks(fetchImpl = globalThis.fetch, { request
   try {
     catalog = await readJson(fetchImpl, '/multilingual-v3.json', undefined, timeoutMs, true);
     if (catalog === null) return empty;
-    required(catalog.schemaVersion === 'sermon-multilingual-catalog-v3' && Array.isArray(catalog.pages), 'Invalid published catalog');
+    validatePublishedCatalogHeader(catalog);
   } catch (error) { return { ...empty, errors: [error.message] }; }
   const errors = [];
-  const seen = new Set();
   const pages = [];
   for (const page of catalog.pages) {
-    if (!page || typeof page !== 'object' || !ID.test(page.id) || !/^\d{4}-\d{2}-\d{2}$/.test(page.date) || seen.has(page.id)
-      || page.sourceLocale !== 'en' || !HASH.test(page.sourceIdentitySha256) || !page.targets) {
-      errors.push('Invalid published page');
-      continue;
-    }
-    seen.add(page.id);
-    pages.push(page);
+    try { pages.push(validatePublishedPage(page)); }
+    catch (error) { errors.push(error.message); }
   }
   pages.sort((a, b) => (b.id === catalog.defaultPageId) - (a.id === catalog.defaultPageId) || b.date.localeCompare(a.date));
   const pageController = new AbortController();

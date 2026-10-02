@@ -128,3 +128,74 @@ class SpeechInventoryTests(unittest.TestCase):
             write_json(work / 'audio/asr-screening.json', report)
             with self.assertRaisesRegex(ValueError, 'model inventory'):
                 runner.validate_screening(work, read(work / 'job.json'), read(work / 'render/report.json'), read(work / 'audio/library.json')['tracks'][0])
+
+class SparkFirstRoutingTests(unittest.TestCase):
+    def modules(self, local):
+        from types import SimpleNamespace
+        return {'huggingface_hub': SimpleNamespace(snapshot_download=lambda **kw: '/cached'),
+                'mlx_audio.stt.utils': SimpleNamespace(load_model=lambda path: local),
+                'mlx.core': SimpleNamespace(clear_cache=lambda: None),
+                'mlx': SimpleNamespace(core=SimpleNamespace(clear_cache=lambda: None))}
+
+    def test_default_uses_spark_without_loading_mac(self):
+        from speech_backend import SpeechModel, ASR
+        from unittest.mock import MagicMock
+        remote = MagicMock(); remote.generate.return_value = 'result'; remote.last_receipt = {'device': 'cuda'}
+        with tempfile.TemporaryDirectory() as tmp, patch.dict(os.environ, {'SERMON_SPEECH_BACKEND': 'auto'}), patch('speech_backend.SparkModel', return_value=remote), patch.dict('sys.modules', {'mlx_audio.stt.utils': None}):
+            path = Path(tmp) / 'clip'; path.write_bytes(b'audio')
+            model = SpeechModel(ASR)
+            self.assertEqual(model.generate(path, language='English'), 'result')
+            self.assertEqual(model.backend, 'spark')
+
+    def test_connection_failure_falls_back_with_same_arguments_and_receipt(self):
+        from speech_backend import SpeechModel, ASR
+        from unittest.mock import MagicMock
+        remote, local = MagicMock(), MagicMock()
+        remote.generate.side_effect = subprocess.CalledProcessError(255, 'ssh', stderr='ssh: connect to host spark port 22: Connection refused')
+        local.generate.return_value = 'local result'
+        with tempfile.TemporaryDirectory() as tmp, patch.dict(os.environ, {'SERMON_SPEECH_BACKEND': 'auto'}), patch('speech_backend.SparkModel', return_value=remote), patch.dict('sys.modules', self.modules(local)):
+            path = Path(tmp) / 'clip'; path.write_bytes(b'audio')
+            model = SpeechModel(ASR)
+            self.assertEqual(model.generate(path, language='English', text='Hello'), 'local result')
+            self.assertEqual(remote.generate.call_args, local.generate.call_args)
+            self.assertEqual(model.last_receipt['model'], ASR[0])
+            self.assertIn('Spark', model.last_receipt['fallbackReason'])
+
+    def test_content_identity_decode_and_generic_exit_fail_closed(self):
+        from speech_backend import SpeechModel, ASR
+        from unittest.mock import MagicMock
+        for failure in (ValueError('identity mismatch'), json.JSONDecodeError('bad', 'bad', 0), RuntimeError('nonfinite output'), subprocess.CalledProcessError(1, 'ssh', stderr='ValueError: bad audio'), subprocess.TimeoutExpired('ssh', 1), subprocess.CalledProcessError(255, 'ssh', stderr='Connection closed by remote host')):
+            remote = MagicMock(); remote.generate.side_effect = failure
+            with tempfile.TemporaryDirectory() as tmp, patch.dict(os.environ, {'SERMON_SPEECH_BACKEND': 'auto'}), patch('speech_backend.SparkModel', return_value=remote), patch.dict('sys.modules', {'mlx_audio.stt.utils': None}):
+                path = Path(tmp) / 'clip'; path.write_bytes(b'audio')
+                with self.assertRaises(type(failure)):
+                    SpeechModel(ASR).generate(path, language='English')
+
+    def test_explicit_spark_does_not_fallback(self):
+        from speech_backend import SpeechModel, ASR
+        from unittest.mock import MagicMock
+        remote = MagicMock(); remote.generate.side_effect = subprocess.TimeoutExpired('ssh', 1)
+        with tempfile.TemporaryDirectory() as tmp, patch.dict(os.environ, {'SERMON_SPEECH_BACKEND': 'spark'}), patch('speech_backend.SparkModel', return_value=remote), patch.dict('sys.modules', {'mlx_audio.stt.utils': None}):
+            path = Path(tmp) / 'clip'; path.write_bytes(b'audio')
+            with self.assertRaises(subprocess.TimeoutExpired):
+                SpeechModel(ASR).generate(path, language='English')
+
+    def test_input_mutation_blocks_fallback(self):
+        from speech_backend import SpeechModel, ASR
+        from unittest.mock import MagicMock
+        remote = MagicMock()
+        with tempfile.TemporaryDirectory() as tmp, patch.dict(os.environ, {'SERMON_SPEECH_BACKEND': 'auto'}), patch('speech_backend.SparkModel', return_value=remote), patch.dict('sys.modules', {'mlx_audio.stt.utils': None}):
+            path = Path(tmp) / 'clip'; path.write_bytes(b'audio')
+            def mutate(*args, **kwargs):
+                path.write_bytes(b'changed')
+                raise subprocess.CalledProcessError(137, 'ssh')
+            remote.generate.side_effect = mutate
+            with self.assertRaisesRegex(ValueError, 'audio changed'):
+                SpeechModel(ASR).generate(path, language='English')
+
+    def test_missing_audio_never_dispatches(self):
+        from speech_backend import SpeechModel, ASR
+        with patch.dict(os.environ, {'SERMON_SPEECH_BACKEND': 'auto'}), patch('speech_backend.SparkModel') as remote:
+            with self.assertRaises(FileNotFoundError):
+                SpeechModel(ASR).generate('/missing-test-audio', language='English')
+            remote.return_value.generate.assert_not_called()

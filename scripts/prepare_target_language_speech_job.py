@@ -66,13 +66,18 @@ def _reviewed_at(value: object) -> bool:
 
 
 def validate_target_candidate(source_package: dict[str, Any], anchor: dict[str, Any], candidate: dict[str, Any], *,
-                              require_human_approval: bool = True) -> dict[str, Any]:
+                              require_human_approval: bool = True, diagnostic_context=None) -> dict[str, Any]:
     """Fail closed on locale identity, source coverage and review boundaries."""
     _require(source_package.get("schemaVersion") == SOURCE_PACKAGE_SCHEMA,
              "Unsupported English Source Package")
-    _require(source_package.get("status") == "ready_for_translation"
-             and source_package.get("translationEligible") is True,
-             "English Source Package is not approved for translation")
+    if diagnostic_context is None:
+        _require(source_package.get("status") == "ready_for_translation"
+                 and source_package.get("translationEligible") is True,
+                 "English Source Package is not approved for translation")
+    else:
+        _require(require_human_approval is False, "Diagnostic context cannot grant production approval")
+        from scripts.sermon_diagnostic_context import validate_source
+        validate_source(source_package, anchor, diagnostic_context)
     _require(interpretation.is_supported_anchor_manifest(anchor), "Unsupported anchor manifest")
     _require(candidate.get("schemaVersion") == CANDIDATE_SCHEMA,
              "Unsupported target-language candidate")
@@ -154,11 +159,12 @@ def validate_target_candidate(source_package: dict[str, Any], anchor: dict[str, 
     return {"targetLocale": locale, "groupIds": group_ids, "sourceUnitIds": assigned_units}
 
 
-def validate_policy_binding(candidate: dict[str, Any], policy: dict[str, Any]) -> None:
-    result = policy_tools.validate_policy(policy)
+def validate_policy_binding(candidate: dict[str, Any], policy: dict[str, Any], *, strict_rubric=None, diagnostic_context=None) -> None:
+    result = (policy_tools.validate_policy(policy) if strict_rubric is None else
+              policy_tools.validate_strict_policy(policy, strict_rubric))
     _require(policy["targetLocale"] == candidate["targetLocale"],
              "Target-Language Policy locale differs from candidate")
-    if policy["schemaVersion"] == policy_tools.POLICY_V2:
+    if policy["schemaVersion"] in {policy_tools.POLICY_V2, policy_tools.POLICY_V3}:
         _require(policy["sourceScope"]["englishSourcePackageJsonSha256"]
                  == candidate["englishSourcePackageJsonSha256"]
                  and policy["sourceScope"]["anchorManifestSha256"]
@@ -166,8 +172,12 @@ def validate_policy_binding(candidate: dict[str, Any], policy: dict[str, Any]) -
                  "Source-scoped policy differs from target candidate source")
     _require(candidate["translationPolicySha256"] == result["translationPolicySha256"],
              "Target candidate belongs to another Target-Language Policy")
-    _require(result["productionPolicyReady"],
-             "Target-Language Policy has unresolved scripture, terminology, or language-review gates")
+    if diagnostic_context is None:
+        _require(result["productionPolicyReady"],
+                 "Target-Language Policy has unresolved scripture, terminology, or language-review gates")
+    else:
+        from scripts.sermon_diagnostic_context import require_policy_ready
+        require_policy_ready(result, diagnostic_context)
     for stage in ("translator", "reviewer"):
         expected = policy[stage]
         actual = candidate["generation"][stage]
@@ -497,8 +507,10 @@ def prepare_job(source_package_path: Path, anchor_path: Path, candidate_path: Pa
                 out: Path, *, clip_voice_authorization_path: Path | None = None,
                 source_voice_authorization_path: Path | None = None,
                 clip_voice_capability_path: Path | None = None,
-                clip_timeline_map_path: Path | None = None) -> dict[str, Any]:
-    _require(not out.exists(), "Use a new speech job directory; prior jobs are immutable")
+                clip_timeline_map_path: Path | None = None,
+                strict_rubric=None, build_only: bool = False) -> dict[str, Any]:
+    if not build_only:
+        _require(not out.exists(), "Use a new speech job directory; prior jobs are immutable")
     for path in (source_package_path, anchor_path, candidate_path, policy_path,
                  human_review_receipt_path, adapter_path, registry_path,
                  *((clip_voice_authorization_path,) if clip_voice_authorization_path else ()),
@@ -520,7 +532,7 @@ def prepare_job(source_package_path: Path, anchor_path: Path, candidate_path: Pa
     _validate_schema(candidate, "sermon-target-language-candidate-v2.schema.json", "target candidate")
     identity = validate_target_candidate(source_package, anchor, candidate)
     locale = identity["targetLocale"]
-    validate_policy_binding(candidate, policy)
+    validate_policy_binding(candidate, policy, strict_rubric=strict_rubric)
     validate_human_review_receipt(source_package, anchor, candidate, human_review_receipt)
     validate_adapter(adapter, locale, registry,
                      clip_voice_authorization=clip_voice_authorization,
@@ -626,8 +638,9 @@ def prepare_job(source_package_path: Path, anchor_path: Path, candidate_path: Pa
             "jsonSha256": interpretation.json_sha256(clip_timeline),
         }
     _validate_schema(job, "sermon-target-language-speech-job-v2.schema.json", "speech job")
-    out.mkdir(parents=True)
-    interpretation.write_json(out / "job.json", job)
+    if not build_only:
+        out.mkdir(parents=True)
+        interpretation.write_json(out / "job.json", job)
     return job
 
 
@@ -637,6 +650,7 @@ def main() -> None:
     parser.add_argument("--anchor", type=Path, required=True)
     parser.add_argument("--candidate", type=Path, required=True)
     parser.add_argument("--policy", type=Path, required=True)
+    parser.add_argument("--strict-rubric", type=Path, help="Explicit frozen rubric for strict-v3 policy validation")
     parser.add_argument("--human-review-receipt", type=Path, required=True)
     parser.add_argument("--adapter", type=Path, required=True)
     parser.add_argument("--speaker-registry", type=Path, required=True)
@@ -663,6 +677,7 @@ def main() -> None:
             source_voice_authorization_path=args.source_voice_authorization,
             clip_voice_capability_path=args.clip_voice_capability,
             clip_timeline_map_path=args.clip_timeline_map,
+            strict_rubric=_load(args.strict_rubric) if args.strict_rubric else None,
         )
         metrics["speechUnits"] = len(job.get("units") or [])
     print(json.dumps({
