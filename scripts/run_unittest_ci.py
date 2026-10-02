@@ -7,7 +7,8 @@ import json
 import sys
 import time
 import unittest
-from collections import defaultdict
+from collections import Counter, defaultdict
+import math
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -23,8 +24,25 @@ def cases_in(suite: unittest.TestSuite):
 
 
 def module_name(case: unittest.TestCase) -> str:
-    # unittest discover -s tests imports root test files by their stem.
-    return case.id().split(".", 1)[0]
+    # Fixtures may import a test class through the tests package.
+    return case.id().removeprefix("tests.").split(".", 1)[0]
+
+
+def timing_weights(test_counts: dict[str, int], previous: dict) -> dict[str, float]:
+    """Scale known timings by case count; estimate new modules from measured cost."""
+    measured = previous["modules"]
+    for data in measured.values():
+        if not math.isfinite(float(data["seconds"])) or float(data["seconds"]) < 0 or int(data["tests"]) < 1:
+            raise ValueError("Module timings must have finite nonnegative seconds and positive test counts")
+    total_cases = sum(int(data["tests"]) for data in measured.values())
+    if not total_cases:
+        raise ValueError("No measured module timings")
+    per_case = max(0.001, sum(float(data["seconds"]) for data in measured.values()) / total_cases)
+    return {
+        name: max(0.001, float(measured[name]["seconds"]) / int(measured[name]["tests"])) * count
+        if name in measured else per_case * count
+        for name, count in test_counts.items()
+    }
 
 
 def shard_assignments(modules: list[str], weights: dict[str, float], count: int) -> dict[str, int]:
@@ -71,16 +89,17 @@ def main() -> int:
 
     loader = unittest.TestLoader()
     discovered = list(cases_in(loader.discover(str(ROOT / "tests"), pattern="test_*.py")))
-    modules = sorted({module_name(case) for case in discovered})
+    test_counts = Counter(module_name(case) for case in discovered)
+    modules = sorted(test_counts)
     if not discovered:
         raise SystemExit("No root tests discovered")
 
     if args.weights:
         previous = json.loads(args.weights.read_text(encoding="utf-8"))
-        weights = {
-            name: max(0.001, float(data["seconds"]))
-            for name, data in previous["modules"].items()
-        }
+        weights = timing_weights(test_counts, previous)
+        missing = sorted(set(modules) - previous["modules"].keys())
+        if missing:
+            print(f"Estimating {len(missing)} unprofiled modules from measured per-case cost", flush=True)
     else:
         weights = {}
 
