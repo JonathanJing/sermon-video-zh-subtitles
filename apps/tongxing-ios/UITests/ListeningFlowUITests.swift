@@ -629,6 +629,20 @@ final class ListeningFlowUITests: XCTestCase {
         app.launch()
         defer { app.terminate() }
         XCTAssertTrue(app.staticTexts["published-page-title"].waitForExistence(timeout: 30))
+        // Other real-content tests may have saved an English interface preference.
+        // Establish this test's visible Chinese controls through the normal menu.
+        let interface = element("app-language-menu", in: app)
+        // This header sits immediately below the navigation bar. The reading
+        // helper's extra 16-point inset excludes its frame even at scroll top.
+        // Use the header's own actual hittability, as in the language UI flow.
+        for _ in 0..<4 where !interface.isHittable {
+            app.scrollViews["listening-scroll"].swipeDown()
+        }
+        try waitFor(interface, "exists == true AND hittable == true")
+        XCTAssertTrue(app.frame.contains(interface.frame))
+        interface.tap()
+        XCTAssertTrue(app.buttons["简体中文"].waitForExistence(timeout: 5))
+        app.buttons["简体中文"].tap()
         app.buttons["choose-sermon"].tap()
         let currentPage = app.buttons["published-page-2026-09-27-weekend-sermon-drive-530"]
         let previousWeek = app.buttons["legacy-week-2026-09-20-same_video-7c193fd4-bc90-4f3b-aa00-37dfe8423aa0"]
@@ -645,13 +659,28 @@ final class ListeningFlowUITests: XCTestCase {
             app.buttons["choose-content-language"].tap()
             app.buttons["content-language-\(locale)"].tap()
             XCTAssertTrue(app.staticTexts["published-current-subtitle"].waitForExistence(timeout: 30))
-            XCTAssertTrue(app.staticTexts["published-current-english"].waitForExistence(timeout: 10))
             let prepare = app.buttons["prepare-published-audio"]
             if prepare.exists {
                 prepare.tap()
                 XCTAssertTrue(app.staticTexts["published-audio-locale"].waitForExistence(timeout: 60))
             }
-            XCTAssertTrue(app.staticTexts["published-audio-locale"].label.contains(appLanguageNames[locale]!))
+            try waitFor(app.staticTexts["published-audio-locale"],
+                        "exists == true AND label CONTAINS '\(appLanguageNames[locale]!)'", timeout: 60)
+            try waitFor(app.buttons["playback-toggle"], "exists == true AND enabled == true", timeout: 60)
+            // Language changes deliberately retain time. A paused position may
+            // fall between this locale's cues, where no current English exists.
+            // Explicitly select a real bound cue before checking its English.
+            let transcriptMode = app.segmentedControls["listening-display"].buttons["字幕全文"]
+            try reveal(transcriptMode, in: app, direction: .down)
+            transcriptMode.tap()
+            let firstTime = app.buttons["published-caption-time-translation-0-u001"]
+            XCTAssertTrue(firstTime.waitForExistence(timeout: 10))
+            try reveal(firstTime, in: app, direction: .up)
+            firstTime.tap()
+            let currentMode = app.segmentedControls["listening-display"].buttons["现场收听"]
+            try reveal(currentMode, in: app, direction: .down)
+            currentMode.tap()
+            XCTAssertTrue(app.staticTexts["published-current-english"].waitForExistence(timeout: 10))
             app.buttons["playback-toggle"].tap()
             try waitFor(element("playback-progress", in: app), "NOT (value BEGINSWITH '00:00，')")
             screenshot("production-native-\(locale)-playing-english", app: app)
