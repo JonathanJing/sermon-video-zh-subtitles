@@ -333,5 +333,123 @@ class TrackerSnapshotTest(unittest.TestCase):
                 tracker.release_packages([path], self.ledger["pageId"], self.ledger["locales"])
 
 
+class TrackerDagSnapshotIntegrationTest(unittest.TestCase):
+    """Public snapshot integration stays optional and exactly source-bound."""
+    def setUp(self):
+        from tests.test_build_tracker_dag_projection import RUN, events, profiled
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.ledger = four_layer_progress.new_ledger("integration-week", ["ko"])
+        self.ledger_path = self.root / "ledger.json"
+        four_layer_progress.save(self.ledger_path, self.ledger)
+        self.accounting = self.root / "accounting"
+        self.accounting.mkdir()
+        self.run_id = RUN
+        rows = events()
+        metadata = {"pageId": self.ledger["pageId"], "target": self.ledger["target"],
+                    "ledgerIdentitySha256": four_layer_progress.ledger_identity(self.ledger)}
+        rows.insert(1, dict(rows[0], event="workflow_started", eventId="bound-root", parentWorkflowId=None, metadata=metadata))
+        self.rows = profiled(rows, "synthetic")
+        self.events_path = self.accounting / "events.jsonl"
+        self.events_path.write_text("".join(json.dumps(row) + "\n" for row in self.rows))
+
+    def test_embedded_projection_is_exact_source_bound_and_secret_free(self):
+        import copy
+        before = self.events_path.read_bytes()
+        original = copy.deepcopy(self.ledger)
+        result = tracker.build_snapshot(self.ledger, dag_accounting_dir=self.accounting, dag_run_id=self.run_id)
+        self.assertEqual(result["dag"]["schemaVersion"], "sermon-public-tracker-dag-v1")
+        self.assertLess(abs((datetime.fromisoformat(result["dag"]["generatedAt"]) -
+                             datetime.fromisoformat(result["generatedAt"])).total_seconds()), 1)
+        self.assertEqual(result["dag"]["evidenceMode"], "synthetic")
+        self.assertEqual(len(result["dag"]["nodes"]), 4)
+        self.assertEqual(result["progress"]["complete"], 0)
+        self.assertTrue(all(step["status"] == "pending" for step in result["steps"]))
+        self.assertEqual(self.events_path.read_bytes(), before)
+        self.assertEqual(self.ledger, original)
+        serialized = json.dumps(result["dag"])
+        for secret in (self.run_id, "private-workflow", "private-production", str(self.root),
+                       four_layer_progress.ledger_identity(self.ledger), "spanSha256", "private-ko"):
+            self.assertNotIn(secret, serialized)
+        self.assertNotRegex(serialized, r'\b[a-f0-9]{64}\b')
+
+    def test_exact_target_incarnation_and_selected_run_are_required(self):
+        import copy
+        for changes in ({"target": "production"}, {"ledgerId": "new-incarnation"}, {"pageId": "another-week"}):
+            ledger = {**copy.deepcopy(self.ledger), **changes}
+            with self.subTest(changes=changes), self.assertRaisesRegex(ValueError, "ledger_run_binding_mismatch"):
+                tracker.build_snapshot(ledger, dag_accounting_dir=self.accounting, dag_run_id=self.run_id)
+        with self.assertRaisesRegex(ValueError, "ledger_run_binding_mismatch"):
+            tracker.build_snapshot(self.ledger, dag_accounting_dir=self.accounting, dag_run_id="different-run")
+
+    def test_missing_or_unreadable_bound_accounting_fails_instead_of_overwriting(self):
+        with self.assertRaisesRegex(ValueError, "ledger_run_binding_mismatch"):
+            tracker.build_snapshot(self.ledger, dag_accounting_dir=self.root / "missing", dag_run_id=self.run_id)
+        from scripts import build_tracker_dag_projection as dag
+        with patch.object(dag, "_snapshot", side_effect=PermissionError("private path must not escape")), \
+                self.assertRaisesRegex(ValueError, "^ledger_run_binding_mismatch$"):
+            tracker.build_snapshot(self.ledger, dag_accounting_dir=self.accounting, dag_run_id=self.run_id)
+
+    def test_optional_arguments_require_an_explicit_pair(self):
+        for kwargs in ({"dag_accounting_dir": self.accounting}, {"dag_run_id": self.run_id},
+                       {"dag_progress_inputs": {}}, {"dag_accounting_dir": self.accounting, "dag_progress_inputs": {}}):
+            with self.subTest(kwargs=kwargs), self.assertRaisesRegex(ValueError, "required together"):
+                tracker.build_snapshot(self.ledger, **kwargs)
+
+    def test_legacy_snapshot_does_not_auto_scan_or_gain_dag(self):
+        from scripts import build_tracker_dag_projection as dag
+        with patch.object(dag, "build_projection", side_effect=AssertionError("must be opt-in")):
+            result = tracker.build_snapshot(self.ledger)
+        self.assertNotIn("dag", result)
+        self.assertEqual(result["schemaVersion"], "sermon-public-tracker-snapshot-v2")
+        self.assertEqual(result["progress"]["complete"], 0)
+
+    def test_cli_missing_or_malformed_bundle_preserves_last_snapshot(self):
+        import subprocess
+        output = self.root / "public-snapshot.json"
+        output.write_text('{"lastPublished":"keep"}\n')
+        previous = output.read_bytes()
+        before = self.events_path.read_bytes()
+        bundle = self.root / "private-progress.json"
+        command = [sys.executable, str(Path(tracker.__file__)), "--ledger", str(self.ledger_path),
+                   "--out", str(output), "--dag-accounting-dir", str(self.accounting),
+                   "--dag-run-id", self.run_id, "--dag-progress-inputs", str(bundle)]
+        for payload in (None, '{"plan":', '["wrong-shape"]'):
+            if payload is not None:
+                bundle.write_text(payload)
+            result = subprocess.run(command, capture_output=True, text=True)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertEqual(output.read_bytes(), previous)
+            self.assertEqual(self.events_path.read_bytes(), before)
+            self.assertFalse((self.root / "source-video-state.private.json").exists())
+
+    def test_cli_valid_bundle_publishes_only_closed_projection_and_wrong_binding_preserves_output(self):
+        import subprocess
+        from tests.test_build_tracker_dag_projection import plan, unit, inputs, receipt
+        frozen = plan([unit("private-unit")])
+        bundle = self.root / "private-progress.json"
+        bundle.write_text(json.dumps(inputs(frozen, [receipt(frozen, "private-unit")])))
+        output = self.root / "public-snapshot.json"
+        command = [sys.executable, str(Path(tracker.__file__)), "--ledger", str(self.ledger_path),
+                   "--out", str(output), "--dag-accounting-dir", str(self.accounting),
+                   "--dag-run-id", self.run_id, "--dag-progress-inputs", str(bundle)]
+        result = subprocess.run(command, capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        before = output.read_bytes()
+        public = json.loads(before)
+        self.assertEqual(public["dag"]["progress"]["nodes"][0]["id"], "p1")
+        self.assertEqual(public["dag"]["progress"]["counts"]["realHumanApproved"], 0)
+        self.assertEqual(public["dag"]["eta"]["status"], "unknown")
+        self.assertNotIn("private-unit", before.decode())
+        self.assertNotIn("identitySha256", before.decode())
+        self.assertEqual(json.loads(bundle.read_text())["plan"], frozen)
+        self.rows[1]["metadata"]["target"] = "another-target"
+        self.events_path.write_text("".join(json.dumps(row) + "\n" for row in self.rows))
+        result = subprocess.run(command, capture_output=True, text=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(output.read_bytes(), before)
+
+
 if __name__ == "__main__":
     unittest.main()

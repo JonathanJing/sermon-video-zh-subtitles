@@ -408,7 +408,12 @@ def build_snapshot(ledger: dict, *, monitor: dict | None = None,
                    fingerprints: dict | None = None,
                    site_url: str | None = None,
                    timing_report: dict | None = None,
-                   timeline_report: dict | None = None) -> dict:
+                   timeline_report: dict | None = None,
+                   dag_accounting_dir: Path | None = None,
+                   dag_run_id: str | None = None,
+                   dag_progress_inputs: dict | None = None) -> dict:
+    if bool(dag_accounting_dir) != bool(dag_run_id) or (dag_progress_inputs is not None and not dag_run_id):
+        raise ValueError("dag accounting directory and explicit run ID required together")
     if site_url and not https_url(site_url):
         raise ValueError("site URL must be HTTPS")
     if catalog and catalog.get("schemaVersion") != "sermon-weekly-catalog-v1":
@@ -506,6 +511,11 @@ def build_snapshot(ledger: dict, *, monitor: dict | None = None,
         "timeline": timeline_report,
         "readOnly": True,
     }
+    if dag_run_id:
+        from scripts.build_tracker_dag_projection import build_projection
+        snapshot["dag"] = build_projection(dag_accounting_dir, run_id=dag_run_id,
+                                            ledger=ledger, at=generated,
+                                            progress_inputs=dag_progress_inputs)
     if len(json.dumps(snapshot, ensure_ascii=False).encode("utf-8")) > MAX_BYTES:
         raise ValueError("tracker snapshot exceeds size limit")
     return snapshot
@@ -526,7 +536,14 @@ def main() -> None:
     parser.add_argument("--release-package", type=Path, action="append", default=[])
     parser.add_argument("--fingerprint-evidence", type=Path, action="append", default=[])
     parser.add_argument("--site-url")
+    parser.add_argument("--dag-accounting-dir", type=Path,
+                        help="Private v3 accounting directory; requires exact ledger binding")
+    parser.add_argument("--dag-run-id", help="Explicit same-ledger run ID; never inferred from newest logs")
+    parser.add_argument("--dag-progress-inputs", type=Path,
+                        help="Private frozen plan + validator receipts bundle; never published directly")
     args = parser.parse_args()
+    if args.dag_progress_inputs and args.dag_progress_inputs.stat().st_size > 32 * 1024 * 1024:
+        raise ValueError("DAG progress inputs exceed size limit")
     private_state_path = args.source_state or args.out.with_name("source-video-state.private.json")
     private_source_state = read_json(private_state_path) if private_state_path.exists() else None
     ledger = progress.load(args.ledger)
@@ -550,7 +567,10 @@ def main() -> None:
                               fingerprints=fingerprints,
                               timing_report=timing_report,
                               timeline_report=timeline_report,
-                              site_url=args.site_url)
+                              site_url=args.site_url,
+                              dag_accounting_dir=args.dag_accounting_dir,
+                              dag_run_id=args.dag_run_id,
+                              dag_progress_inputs=read_json(args.dag_progress_inputs))
     progress.save(args.out, snapshot)
     if monitor:
         _, next_private_state = source_summary(monitor, private_source_state,

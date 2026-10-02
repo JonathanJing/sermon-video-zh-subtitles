@@ -180,6 +180,16 @@ H01（测试脚本插件哈希）、H03（首次 deploy 选错 Dev project，CLI
 
 job.v1 仍只返回 artifact manifest，没有音频字节 HTTP endpoint。必须先实现并 CPU 验证固定 job／attempt／session／trial 的有界产物 collector：真实终态、owned CID 退出证据、41单元逐trial的 WAV bytes／SHA／大小／24kHz mono PCM16／frame count／重复缺失与路径逃逸拒绝、传输后本地重新验收及 unified-log receipt。SSH/SCP 仅能作为受控内部字节回传，不能作为绕过 admission 的 inference dispatch。独立截断／完整性／试听验收仍待执行；CPU smoke／健康检查／非空 WAV 均不能提升为 speech 或 release acceptance。MacBook 平台访问仍未开放，不宣称该客户端已贯通。
 
+##### 2026-10-02 14:26 UTC：代码阻塞关闭，部署／真实语音验收仍待前置条件
+
+以上13:44观察保留为历史。backlog [PR #219](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/219) 已正常合入 Dev（`c4035e05dfaeffe58e80a964437c8cb73c93b2f3`）；Spark [PR #11](https://github.com/JonathanJing/spark-agent/pull/11) 的 exact head `10f01cdc87765393ba76d00fdf0e7a78a6aa5727` 通过独立复审及全部 CI，正常 merge SHA `abf9531287ace338711b76261a1fdbaf7491ff64`，目标为既有 `codex/bounded-tts-on-cpu-candidate` stack branch，不能写成已入 main 或已部署。
+
+- **源码合同修复完成：** manifest／sample v2 保留 opaque sourceUnitIds 原身份、顺序及 selection hash；41单元真实私有样本已通过新验证器，没有强制转整数。guardian 使用严格私有 bundle 验证及自身当前 ledger／lease／epoch／digest／expiry 绑定；外部 API／worker 的 live peer admission 不放宽。
+- **collector 代码／CPU 验收完成：** 默认关闭、operator 内部入口，读取固定 shared Job DB；只有 exact succeeded job／attempt1 和12个已完成、退出已确认的 owned session 才可导出。固定819个注册文件含738个 WAV，双端核验 artifact ID／job／hash／大小、完整24kHz mono PCM16帧、矩阵／单元身份和文件／总字节上限；拒绝未知状态、链接、越界、重复、缺失和覆盖。接收端最终原子发布字节收据，传输／校验失败不触发 inference retry；原执行日志保留，独立接收观察经冻结统一日志 bridge 验证。没有新增 HTTP／MCP binary endpoint。
+- **验证边界：** exact-head CI 为226项 CPU＋2项 schema；Mac mini 测试 venv 与 Spark 既有 Python3.12.3 venv 均228项通过、无跳过。Spark 测试源码仅放隔离 `/tmp`，无线上 release／状态／配置变更。历史 profiles、Stage1 基线、generation／checkpoint／resource policy 和新增 source locks 检查通过。完整往返使用 synthetic PCM，不能当作真实模型 ABI、音频内容、截断或性能验收。
+
+**仍阻塞启用：**实际 user-systemd namespace 可用性和最小权限设计；三项常驻 service＋socket、native隔离／producer hooks／mounts 的具体部署包及必要维护影响；matching source／manifest／caller context／真实 CID／PID／UTC 窗口；线上 `/proc` 身份证明所需的最小权限方案；MacBook 的授权接入和完整 artifact transport。尚未部署 PR #11，原在线 Spark `d455e4e`、全局 writes 关闭、CPU gate 和 TTS unavailable 保持。真实 GPU trial仍0，正式 speech／release acceptance不提升；collector收据继续 `speech_acceptance=not_evaluated`、`release_eligible=false`。后续先完成可审查的启用前置条件，再独立授权运行原18trial矩阵；本批仅代码／测试／默认关闭配置，不安装或启用上述持久入口。云端016／008与mock DAG保持独立，本项及完整 `DEV-SPD-006` 不关闭。
+
 #### 云端／MacBook 共用 Mac mini 接口与稳定性（既有 `018/017`、`DEV-SPD-006`）
 
 用户要求两类客户端都经同一 Mac mini 接口，并考虑稳定性与后续通用性。**这是目标设计和待实现验收，不是现有部署事实。** 以用户指定的既有外部 Hub/job contract 为接入与调度合同承载；本仓库尚未提供该统一接入的 contract 名称／版本及 speech 映射证据，标为 waiting_evidence，实施前须冻结其版本／支持任务类型及 adapter 映射，复用本项目 durable job/receipt 机制；不新建第二条绕过鉴权、队列、日志或门禁的客户端 speech launch 接口。云端与 MacBook 都提交任务、按 jobId 查询／对账并取结果，SSH 仅作为内部 transport；legacy direct/relay 客户端在迁移时保留独立版本边界，不能声称已切换。
