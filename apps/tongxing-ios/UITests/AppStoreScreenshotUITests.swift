@@ -57,7 +57,8 @@ final class AppStoreScreenshotUITests: XCTestCase {
         }
         try reveal(fullMode, in: app, towardTop: true)
         fullMode.tap()
-        let firstTime = app.buttons["published-caption-time-translation-0-u001"]
+        let firstTime = app.buttons.matching(NSPredicate(format:
+            "identifier BEGINSWITH %@ AND enabled == true", "published-caption-time-")).firstMatch
         XCTAssertTrue(firstTime.waitForExistence(timeout: 15))
         try reveal(firstTime, in: app, towardTop: false)
         firstTime.tap()
