@@ -12,6 +12,9 @@ on:
       - 'tests/test_sermon_bounded_business_callbacks.py'
       - 'tests/test_sermon_local_business_callbacks.py'
       - 'tests/test_sermon_diagnostic*'
+      - 'tests/test_sermon_mock_tts*'
+      - 'tests/test_sermon_durable_accounting.py'
+      - 'tests/mock_tts_dag_fixture.py'
       - 'tests/diagnostic_dag_fixture.py'
       - 'scripts/inspect_sermon_prefect_pilot.py'
       - 'requirements-prefect.txt'
@@ -54,4 +57,5 @@ jobs:
           tests.test_sermon_prefect_runtime.PrefectRuntimeTests
           tests.test_sermon_pilot_evidence.PilotEngineEvidenceTests
           tests.test_sermon_business_prefect_flow.PrefectBusinessRuntimeTests
-          tests.test_sermon_diagnostic_prefect_flow.ActualPrefectRuntimeTests -v
+          tests.test_sermon_diagnostic_prefect_flow.ActualPrefectRuntimeTests
+          tests.test_sermon_mock_tts_dag.ActualMockTTSPrefectTests -v

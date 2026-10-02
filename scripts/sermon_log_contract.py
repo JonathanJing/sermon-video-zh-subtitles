@@ -15,6 +15,10 @@ from jsonschema import Draft202012Validator, FormatChecker, validators
 
 VERSION = 'sermon-accounting-log-contract-v1'
 MAX_EVENT_BYTES = 64 * 1024
+# At most 16 MiB of canonical payload keys, plus bounded LRU/schema-key overhead.
+# Larger valid events still validate normally and never occupy cache memory.
+MAX_CACHED_EVENT_BYTES = 8 * 1024
+MAX_VALIDATION_CACHE_ENTRIES = 2048
 SCHEMA_PATH = Path(__file__).resolve().parents[1] / 'schemas/sermon-accounting-log-contract-v1.schema.json'
 
 
@@ -61,7 +65,29 @@ def validate_event(row):
     data = canonical_bytes(row)
     if len(data) + 1 > MAX_EVENT_BYTES:
         raise ContractError('event_size_limit')
-    if not _strict_values(row) or next(validator().iter_errors(row), None) is not None:
+    if not _strict_values(row):
+        raise ContractError('invalid_contract_event')
+    checker = validator()
+    if len(data) <= MAX_CACHED_EVENT_BYTES and row.get('event') != 'rqc_observation':
+        # Content-address both payload and current schema. A nested mutation,
+        # schema edit/reload or contract version change cannot reuse old success.
+        # RQC semantics consult another versioned policy; keep those uncached.
+        schema_sha = hashlib.sha256(canonical_bytes(checker.schema)).digest()
+        _validate_frozen_event(data, schema_sha, VERSION)
+    else:
+        _validate_event_uncached(row, checker)
+    return row
+
+
+@lru_cache(maxsize=MAX_VALIDATION_CACHE_ENTRIES)
+def _validate_frozen_event(data, schema_sha, version):
+    # Exceptions are not cached. This records only complete validation success,
+    # not a partial schema pass, projection, sequence or mutable high-water mark.
+    _validate_event_uncached(json.loads(data), validator())
+
+
+def _validate_event_uncached(row, checker):
+    if next(checker.iter_errors(row), None) is not None:
         raise ContractError('invalid_contract_event')
     kind = row['event']
     if kind == 'rqc_observation':
