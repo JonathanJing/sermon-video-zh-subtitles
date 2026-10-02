@@ -158,6 +158,28 @@ H01（测试脚本插件哈希）、H03（首次 deploy 选错 Dev project，CLI
 
 交付分别列 mock batch、真实 remote roundtrip、真实模型 batch、fallback 和真实 scheduler 的实现 SHA／测试结果／收据／未测项；某一通过不提升其余资格。原 `018` 与 `007`、`DEV-TRACK-001` 等状态不变，本次不实现、不跑模型／远端任务、不部署。
 
+##### 2026-10-02：统一日志已合入，Stage2 真实 preload／batch 仍被前置条件阻塞
+
+统一日志 [PR #213](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/213) 已正常合入 Dev，merge SHA `8a645e9f2572baaf98e22aaf0efc149be60e9958`。Stage1 已将该 merged source 构建的日志 release `9741a72b544567d0` 安装到 Mac mini／Spark；Hub 实际 source 为 `10392408e046e9daa5aad8a44375b3b6f0201efd`，Spark 为 `d455e4e39dd966140ebd92dffcac89f8a33bde5c`。这些 stack merge／部署结果不等于全部源码已进入各仓库 main，也不证明语音性能。已完成 Hub 278 项测试及 Spark 原部署 venv 的 199 项 CPU 测试；真实 GPU trial 为 0，未在线演练回滚。云端 `016/008` 与 mock DAG 工作保持独立。
+
+2026-10-02 13:44 UTC 的只读核验：Hub 健康，outstanding=0、running=null、queue=0，Spark 可用内存约39.45 GiB、GPU utilization=0，既有三个 resident compute PID 保持。`cpu_smoke.available=true`、`tts_experiment.available=false`；guardian／controller／native proxy service 和 socket 均未安装、未启用。全局写入保持关闭，CPU gate 不扩张。
+
+已冻结源窗0..180秒的41个完整语音单元／1171字符，末单元上下文显式延长至182.600006秒；本地私有样本 byte SHA `cbeae5eb16228ea264606d152a241bbb2a93d63df87f1b9fec99108b596c9b68`，selection SHA `e23ca743106e4c291f43563221f94fc42549e9053d113db351b56be69a34f9d4`。原7份输入的完整 byte hash 均匹配；checkpoint 13文件／4,520,218,514 bytes、venv site 4,924文件／166,214,042 bytes 已完整只读核验。样本正文、模型及私人 runtime 清单不进入 Git 或统一日志。
+
+**真实输入与控制边界尚有代码阻塞，先修复并重新审查／CI，不能据已有 CPU PASS 请求启用：**
+
+- 真实 sourceUnitIds 是字符串（例如 `0-u001`），而已部署 `tts_experiment_contract.validate_sample` 只接受非负整数。保持原 source identity 和 selection hash 的样本被实际验证器拒绝（`source unit identity required`）。需要版本化合同修复及真实形状的脱敏 fixture；不得改写原 ID、伪造 selection hash 或更换未授权样本来通过。
+- guardian 的 `InstalledVerifier.job` 调用 `admitted_bundle`，后者会以 guardian 身份查询 admission live window；`GuardianDispatch.get_lease` 的 admission allowlist 仅接受 Spark API／agent cgroup。CPU 边界复现证实 guardian 被拒绝，Docker launch 前无法通过。需要分离私有 bundle 校验与 guardian 自有 ledger／epoch／lease 验证，保留 API／worker 的真实 peer 检查；不能简单放宽公共 admission 身份。已有测试 mock 掉了该调用，因此199 CPU PASS 未覆盖此启动边界。
+- kernel/systemd 具备 namespace 编译支持，但 `apparmor_restrict_unprivileged_userns=1` 且既有 journal 有 namespace capability 拒绝。实际 llama 仍 `PrivateNetwork=no`；未创建 namespace 或 transient unit，未证明 user-systemd `PrivateNetwork`／`JoinsNamespaceOf` 可用。先准备独立 CPU 可行性探针和精确隔离方案，再单独授权执行；不得禁用全局 AppArmor 或扩大持续访问来绕过。
+
+固定离线镜像已存在；镜像与宿主解释器均为 Python3.12.3。venv 的宿主 `bin/python` 链接失效，但设计使用镜像解释器＋venv site overlay，不能仅凭该链接宣布 runtime 不可用或修改 live venv。依赖 metadata 核对不等于 CUDA／模型 ABI／实际加载通过。
+
+后续审批包仍需具体冻结：四生产者 source/hooks 与只读 SDK mounts、实际 container/PID identity、namespace drop-in、三项新常驻 service＋一项 socket、matching flags／manifest／UTC expiry、必要维护重启及可能 container recreate／模型重载、private settings 和 source locks、故障影响与回滚。保持 Hub3456／Spark7070／ImageLab7862／Comfy8188；native guarded ingress 仍宿主loopback8000，backend18000只在私有 namespace，不新增宿主18000入口。准入窗口最多2小时；unknown cleanup 会继续保持 intake hold，不能承诺到时自动恢复生产。
+
+首轮矩阵保持 cold batch1/2/4各3次（9个新进程）＋warm三个 session 的顺序124／241／412（每session加载一次，共9个trial），合计18trial／12顺序session；冻结bf16、sdpa、temperature0.7、repetition_penalty1.05、max_new_tokens768、seed42+offset，关闭输出缓存和 dummy warmup。先验证 preload／batch 参数，不训练 checkpoint。没有正式 warm/preload 公共 API；唯一 task 参数是 manifest SHA，batch 由冻结矩阵确定，runtime 按 batch 切单元后将文本列表真正传给模型。
+
+job.v1 仍只返回 artifact manifest，没有音频字节 HTTP endpoint。必须先实现并 CPU 验证固定 job／attempt／session／trial 的有界产物 collector：真实终态、owned CID 退出证据、41单元逐trial的 WAV bytes／SHA／大小／24kHz mono PCM16／frame count／重复缺失与路径逃逸拒绝、传输后本地重新验收及 unified-log receipt。SSH/SCP 仅能作为受控内部字节回传，不能作为绕过 admission 的 inference dispatch。独立截断／完整性／试听验收仍待执行；CPU smoke／健康检查／非空 WAV 均不能提升为 speech 或 release acceptance。MacBook 平台访问仍未开放，不宣称该客户端已贯通。
+
 #### 云端／MacBook 共用 Mac mini 接口与稳定性（既有 `018/017`、`DEV-SPD-006`）
 
 用户要求两类客户端都经同一 Mac mini 接口，并考虑稳定性与后续通用性。**这是目标设计和待实现验收，不是现有部署事实。** 以用户指定的既有外部 Hub/job contract 为接入与调度合同承载；本仓库尚未提供该统一接入的 contract 名称／版本及 speech 映射证据，标为 waiting_evidence，实施前须冻结其版本／支持任务类型及 adapter 映射，复用本项目 durable job/receipt 机制；不新建第二条绕过鉴权、队列、日志或门禁的客户端 speech launch 接口。云端与 MacBook 都提交任务、按 jobId 查询／对账并取结果，SSH 仅作为内部 transport；legacy direct/relay 客户端在迁移时保留独立版本边界，不能声称已切换。
