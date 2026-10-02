@@ -97,3 +97,9 @@ SERMON_FRESH_FULL_TEST_EVIDENCE_DIR="$PWD/artifacts/experiment1-merged-dev-evide
 - 重新经原 Tailscale 地址 SSH 到 mini：退出0，系统 Darwin；mini 本地 `http://127.0.0.1:3456/health` 返回 ok=true、local-api-hub 0.2.0；同一远端命令通过 mini 再 SSH 到 Spark 执行只读 `uname -s`，返回 Linux，退出0。
 - 此次证实 MacBook→mini→Spark 的实际 SSH 可达性；不等于调度器提交、DAG、模拟 WAV 或统一日志端到端验收。未调用模型/启动GPU/提交实验作业/重启生产进程。
 - PR221 再核仍 OPEN、mergeCommit=null；正式模拟 DAG 实验继续等待原定合并后 dev 条件。
+
+## 本轮连接策略更新
+
+用户指定：同一 Wi-Fi/局域网使用普通 SSH，不在同一网络时使用 Tailscale。当前已通过 Mac mini 的既有 `.local` 名称（原 HostKeyAlias、StrictHostKeyChecking=yes、BatchMode=yes、ConnectTimeout=5）实际登录，并由 mini 经 LAN SSH 到 Spark；返回 Darwin / Linux，整体退出0，约0.31秒。此为连接探针耗时，不是业务或模型耗时。
+
+后续本轮操作在派发前选择路径：优先已验证的局域网 Mac mini SSH；异地使用既有 Tailscale 地址，mini→Spark 保持内网链路。主机身份或权限拒绝须解决原错误，不能以网络切换绕过；已经提交的任务发生 timeout/unknown 时先按原 jobId 对账，不切换路径重派。现有 legacy transport 支持显式 SERMON_SPARK_BRIDGE，必要时只为本次进程指定 LAN bridge；没有修改全局 SSH 配置、生产代码默认值或其他正在运行的任务。真实 DAG 仍须经受支持的 scheduler 入口，不能用 legacy transport 绕过调度门禁。
