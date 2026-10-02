@@ -306,7 +306,10 @@ struct ContentView: View {
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
-            .sheet(item: $sheet, onDismiss: updateAlignmentFailurePresentation) { destination in
+            .sheet(item: $sheet, onDismiss: {
+                playback.setVideoPresented(false)
+                updateAlignmentFailurePresentation()
+            }) { destination in
                 switch destination {
                 case .weeks:
                     WeekSheet(model: model)
@@ -551,7 +554,7 @@ struct ContentView: View {
     @ViewBuilder private var publishedVideoButton: some View {
         if model.fullVideoURL != nil {
             Button {
-                playback.pause()
+                playback.setVideoPresented(true)
                 sheet = .video
             } label: {
                 Label(localization.text("观看完整视频"), systemImage: "play.rectangle")
@@ -664,10 +667,10 @@ struct ContentView: View {
                     .id("published-current-card")
                 locateConfirmationView
             } else {
-                publishedRows(transcript.captions, captions: transcript.captions, prefix: "published-caption")
+                publishedRows(transcript.captions, prefix: "published-caption")
             }
             DisclosureGroup(localization.text("完整文稿 · 英文对照")) {
-                publishedRows(transcript.fullText, captions: transcript.captions, prefix: "published-full")
+                publishedRows(transcript.fullText, prefix: "published-full")
             }.accessibilityIdentifier("published-full-transcript")
             englishLocateEntry
             if model.alignmentAvailable || model.alignmentBusy || model.hasAlignmentFeedback {
@@ -707,17 +710,17 @@ struct ContentView: View {
         .accessibilityIdentifier("open-english-locate")
     }
 
-    private func publishedRows(_ rows: [PublishedTranscriptCue], captions: [PublishedTranscriptCue], prefix: String) -> some View {
+    private func publishedRows(_ rows: [PublishedTranscriptCue], prefix: String) -> some View {
         LazyVStack(alignment: .leading, spacing: 20) {
             ForEach(rows, id: \.id) { cue in
-                let audioCue = captions.first { $0.id == cue.id }
+                let audioCue = model.publishedCaptionsByID[cue.id]
                 VStack(alignment: .leading, spacing: 10) {
                     TranscriptTimeButton(title: PlaybackTime.format(audioCue?.start ?? cue.start)) {
                         if let audioCue { playback.jump(to: audioCue.start) }
                     }
                         .disabled(!playback.isReady || audioCue == nil)
                         .accessibilityIdentifier("\(prefix)-time-\(cue.id)")
-                        .accessibilityAddTraits(cue.start <= playback.position && playback.position < cue.end ? .isSelected : [])
+                        .accessibilityAddTraits(audioCue.map { $0.start <= playback.position && playback.position < $0.end } == true ? .isSelected : [])
                     sourceText(cue.text, language: model.selectedContentLocale)
                         .font(.title3).lineSpacing(7).textSelection(.enabled)
                         .fixedSize(horizontal: false, vertical: true)
@@ -757,7 +760,7 @@ struct ContentView: View {
                 .accessibilityValue(sourceText(cue?.text ?? localization.text("暂无字幕"), language: cue == nil ? localization.language.rawValue : "zh-Hans"))
                 .accessibilityIdentifier("current-subtitle")
             if let next {
-                (Text(localization.text("接下来")) + Text(" · ") + sourceText(next.text, language: "zh-Hans"))
+                Text("\(Text(localization.text("接下来"))) · \(sourceText(next.text, language: "zh-Hans"))")
                     .font(.body).foregroundStyle(.secondary)
                     .lineLimit(2).lineSpacing(4)
             }
@@ -767,7 +770,7 @@ struct ContentView: View {
     }
 
     private func transcript(_ track: SermonTrack) -> some View {
-        let bilingual = model.selectedWeek?.bilingualCueRows(for: track)
+        let bilingual = model.bilingualRows
         let rows = bilingual?.rows ?? []
         return LazyVStack(alignment: .leading, spacing: 22) {
             Text(localization.text("点击时间定位；正文可直接阅读。"))

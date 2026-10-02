@@ -29,9 +29,15 @@ struct EnglishLocateSheet: View {
         let audioStart: Double?
     }
 
-    private var rows: [Row] {
+    @State private var rows: [Row] = []
+
+    private func rebuildRows() {
+        rows = makeRows()
+    }
+
+    private func makeRows() -> [Row] {
         if let transcript = model.publishedTranscript {
-            let captions = Dictionary(uniqueKeysWithValues: transcript.captions.map { ($0.id, $0) })
+            let captions = model.publishedCaptionsByID
             return transcript.fullText.map { cue in
                 let caption = captions[cue.id]
                 return Row(id: cue.id, english: cue.english, translated: cue.text,
@@ -39,8 +45,8 @@ struct EnglishLocateSheet: View {
                            audioStart: caption?.start)
             }
         }
-        guard let track = model.selectedTrack, let week = model.selectedWeek else { return [] }
-        return week.bilingualCueRows(for: track).rows.enumerated().map { index, row in
+        guard let bilingual = model.bilingualRows else { return [] }
+        return bilingual.rows.enumerated().map { index, row in
             Row(id: "legacy-\(index)", english: row.english, translated: row.cue.text,
                 start: row.cue.start, end: row.cue.end, audioStart: row.cue.start)
         }
@@ -118,6 +124,7 @@ struct EnglishLocateSheet: View {
                 }
             }
         }
+        .onChange(of: model.transcriptRowsRevision, initial: true) { _, _ in rebuildRows() }
         .environment(\.locale, localization.locale)
         .accessibilityIdentifier("english-locate-sheet")
     }
@@ -165,13 +172,16 @@ struct EnglishLocateSheet: View {
 
     private func highlighted(_ text: String) -> Text {
         guard !search.isEmpty else { return sourceText(text, language: "en") }
+        var output = AttributedString(text)
+        output.languageIdentifier = "en"
         var remaining = text.startIndex..<text.endIndex
-        var output = Text("")
         while let match = text.range(of: search, options: [.caseInsensitive, .diacriticInsensitive], range: remaining) {
-            output = output + sourceText(String(text[remaining.lowerBound..<match.lowerBound]), language: "en")
-                + sourceText(String(text[match]), language: "en").bold().foregroundColor(Brand.accent)
+            if let range = Range(match, in: output) {
+                output[range].font = .title3.bold()
+                output[range].foregroundColor = Brand.accent
+            }
             remaining = match.upperBound..<text.endIndex
         }
-        return output + sourceText(String(text[remaining]), language: "en")
+        return Text(output)
     }
 }
