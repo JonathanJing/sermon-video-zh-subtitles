@@ -1,0 +1,10 @@
+{
+  "schema_version": "local.experiment.manifest.v1",
+  "experiment_id": null,
+  "evidence_kind": null,
+  "duration_mode": null,
+  "duration_seconds": 180,
+  "layer_component_mapping": {},
+  "admission_design_reference": null,
+  "artifact_return_reference": null
+}
