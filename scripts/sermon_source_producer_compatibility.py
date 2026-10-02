@@ -1,4 +1,4 @@
-"""One reviewed source-producer migration; no generic old-code waiver.
+"""Exact reviewed source-producer migrations; no generic old-code waiver.
 
 Only these exact old/new bytes are eligible. Inspect immutable historical Source
 with zero new ASR/MFA; this does not claim re-execution under the new producer.
@@ -17,6 +17,12 @@ FOLLOWUP_SOURCE_SHA256 = {**CURRENT_SOURCE_SHA256,
     'scripts/sermon_fresh_diagnostic_source.py': 'd0d2f0dcdbbb98a126a4f83820c2791a2116b5be085221bfa9dd23dd42846be6'}
 FOLLOWUP_MIGRATION = 'fresh-source-typed-leaves-and-mfa-identity-v2'
 
+# Preserve both earlier exact transitions; this independently reviewed refactor
+# only changes fixed stage composition and read-only original result adoption.
+EXTRACTION_SOURCE_SHA256 = {**FOLLOWUP_SOURCE_SHA256,
+    'scripts/sermon_fresh_diagnostic_source.py': 'cfb2677efea593c9d680435de5582f5df1cfda83bd76899dcaae9ba5c706aed0'}
+EXTRACTION_MIGRATION = 'fresh-source-fixed-stage-extraction-v3'
+
 
 def verify(historical,current,planned,binding):
     c.require(type(historical) is dict and type(current) is dict and type(planned) is dict
@@ -27,17 +33,19 @@ def verify(historical,current,planned,binding):
         return None
     original = historical==HISTORICAL_SOURCE_SHA256 and current==CURRENT_SOURCE_SHA256
     followup = historical==CURRENT_SOURCE_SHA256 and current==FOLLOWUP_SOURCE_SHA256
+    extraction = historical==FOLLOWUP_SOURCE_SHA256 and current==EXTRACTION_SOURCE_SHA256
     changed = CHANGED if original else ['scripts/sermon_fresh_diagnostic_source.py']
-    c.require((original or followup) and {path for path in current if current[path]!=historical[path]}==set(changed),
+    c.require((original or followup or extraction) and {path for path in current if current[path]!=historical[path]}==set(changed),
         'source_producer_compatibility_unknown_revision')
     c.require(type(binding) is dict and set(binding)=={'parentPlanSha256','newPlanSha256',
         'sourceCanonicalSha256','anchorCanonicalSha256','alignmentBytesSha256','asrReceiptSha256','sourceCheckReceiptSha256'}
         and all(type(value) is str and len(value)==64 and all(ch in '0123456789abcdef' for ch in value)
                 for value in binding.values()),'source_producer_compatibility_binding_required')
-    return {'schemaVersion':SCHEMA,'migrationId':MIGRATION if original else FOLLOWUP_MIGRATION,'binding':binding,
+    return {'schemaVersion':SCHEMA,'migrationId':MIGRATION if original else EXTRACTION_MIGRATION if extraction else FOLLOWUP_MIGRATION,'binding':binding,
         'historicalProducerSha256':historical,'currentInspectorProducerSha256':current,
         'changedModules':changed,'migrationCodeSha256':c.bytes_sha256(Path(__file__).read_bytes()),
         'acceptedScope':('original_deadline_and_typed_failures_only_no_source_semantic_change' if original else
+            'read_only_original_source_under_fixed_stage_extraction_no_new_inference' if extraction else
             'read_only_original_source_under_typed_completion_and_identity_inspector_no_new_inference'),
         'sourceExecution':'historical_receipts_reused_current_deterministic_inspection',
         'historicalSourcePreserved':True,'newASRCalls':0,'newSourceCheckCalls':0,'newMFACalls':0,

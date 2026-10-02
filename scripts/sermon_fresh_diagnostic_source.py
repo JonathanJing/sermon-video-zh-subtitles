@@ -134,7 +134,7 @@ def preflight_recipe(plan, recipe, authorization):
             'fresh_source_consumer_not_frozen')
 
 
-def prepare_source(plan, subject, *, prior_plan_path, prior_source_path, prior_aligned_path,
+def _source_inputs(plan, subject, *, prior_plan_path, prior_source_path, prior_aligned_path,
                    prior_summary_path, audio_path, authorization, run_mfa=False,
                    local_runtime_path=None, depends_on=None, deadline_monotonic=None, source_completions=None):
     """Deterministic/fixed-MFA bridge from fresh ASR to actual English/Anchors.
@@ -204,6 +204,31 @@ def prepare_source(plan, subject, *, prior_plan_path, prior_source_path, prior_a
             artifact_sha256=review_ref['receiptSha256'], dependencies=[source_completions['transcription']['spanId']])
         c.require(upstream['stage'] in causality.STAGES['sourceCheck'], 'fresh_causality_provider_leaf_required')
         depends_on = [upstream['spanId']]
+    return dict(plan=plan, subject=subject, config=config, root=root, audio_path=audio_path,
+        asr=asr, asr_ref=asr_ref, review_ref=review_ref, review_content=review_content,
+        old_ref=old_ref, old_source=old_source, aligned=aligned, aligned_raw=aligned_raw,
+        summary=summary, same=same, text=text, preflight=preflight, authorization=authorization,
+        run_mfa=run_mfa, local_runtime_path=local_runtime_path, depends_on=depends_on,
+        deadline_monotonic=deadline_monotonic, source_completions=source_completions)
+
+
+def _align(inputs):
+    plan=inputs['plan']
+    config=inputs['config']
+    root=inputs['root']
+    audio_path=inputs['audio_path']
+    asr_ref=inputs['asr_ref']
+    old_ref=inputs['old_ref']
+    aligned=inputs['aligned']
+    aligned_raw=inputs['aligned_raw']
+    same=inputs['same']
+    text=inputs['text']
+    preflight=inputs['preflight']
+    run_mfa=inputs['run_mfa']
+    local_runtime_path=inputs['local_runtime_path']
+    depends_on=inputs['depends_on']
+    deadline_monotonic=inputs['deadline_monotonic']
+    source_completions=inputs['source_completions']
     chunks=[{'id':'fresh-diagnostic','start':0.,'end':config['sourceWindowSeconds'][1]-config['sourceWindowSeconds'][0],'text':text}]
     immutable.save_once(root/'reference-chunks.json',chunks)
     with accounting.stage('diagnostic.alignment',executor_type='deterministic_program',
@@ -247,6 +272,26 @@ def prepare_source(plan, subject, *, prior_plan_path, prior_source_path, prior_a
     alignment_completion = completion.capture(alignment_span, production_run_id=config['runId'],
         artifact_sha256=_sha(root/'aligned-segments.json'), artifact_kind='aligned_segments',
         execution_mode='cache_replay' if same else 'backend_execution_unobserved') if source_completions is not None else None
+    return dict(aligned=aligned, mode=mode, comparison=comparison,
+        completion=alignment_completion, span=alignment_span)
+
+
+def _package(inputs, alignment):
+    subject=inputs['subject']
+    plan=inputs['plan']
+    config=inputs['config']
+    root=inputs['root']
+    asr_ref=inputs['asr_ref']
+    review_ref=inputs['review_ref']
+    review_content=inputs['review_content']
+    old_source=inputs['old_source']
+    summary=inputs['summary']
+    same=inputs['same']
+    preflight=inputs['preflight']
+    authorization=inputs['authorization']
+    source_completions=inputs['source_completions']
+    aligned, mode, comparison = (alignment[key] for key in ('aligned', 'mode', 'comparison'))
+    alignment_span, alignment_completion = alignment['span'], alignment['completion']
     with accounting.stage('diagnostic.source_package',depends_on=[alignment_span],executor_type='deterministic_program',
             work_unit_id='source.package') as source_span:
         try:
@@ -306,3 +351,118 @@ def prepare_source(plan, subject, *, prior_plan_path, prior_source_path, prior_a
         sourceCausalitySha256=c.canonical_sha256(causal) if causal else None)
     immutable.save_once(root/'fresh-source-evidence.json',evidence)
     return {'source':source,'anchor':anchor,'context':context,'evidence':evidence,'completionSpans':[source_span]}
+
+
+def prepare_source(plan, subject, *, prior_plan_path, prior_source_path, prior_aligned_path,
+                   prior_summary_path, audio_path, authorization, run_mfa=False,
+                   local_runtime_path=None, depends_on=None, deadline_monotonic=None, source_completions=None):
+    """Compatibility entry: same validators/builders, synchronously composed stages."""
+    inputs = _source_inputs(plan, subject, prior_plan_path=prior_plan_path,
+        prior_source_path=prior_source_path, prior_aligned_path=prior_aligned_path,
+        prior_summary_path=prior_summary_path, audio_path=audio_path, authorization=authorization,
+        run_mfa=run_mfa, local_runtime_path=local_runtime_path, depends_on=depends_on,
+        deadline_monotonic=deadline_monotonic, source_completions=source_completions)
+    return _package(inputs, _align(inputs))
+
+
+ALIGNMENT_STAGE = 'sermon-fresh-source-alignment-stage-v1'
+
+
+def _prefix(inputs, handles, *, through, aligned_sha256=None):
+    identity, events = completion.current_events()
+    recipe = _read(inputs['root']/'fresh-source-recipe.json')[0]
+    value = {'schemaVersion': causality.SCHEMA, 'runId': inputs['config']['runId'],
+        'planSha256': c.canonical_sha256(inputs['plan']), 'recipeSha256': c.canonical_sha256(recipe),
+        'logDirectory': str(identity[0]), 'handles': deepcopy(handles)}
+    causality.validate_prefix(value, events, through=through, plan=inputs['plan'], recipe=recipe,
+        asr_ref=inputs['asr_ref'], review_ref=inputs['review_ref'], aligned_sha256=aligned_sha256)
+    return value
+
+
+def _alignment_stage(inputs, value):
+    """Read-only validation of an independently completed alignment stage."""
+    root = inputs['root']
+    keys = {'schemaVersion', 'runId', 'planSha256', 'recipeSha256', 'upstreamSha256',
+        'alignmentMode', 'alignedSegmentsSha256', 'completion', 'productionEligible'}
+    recipe = _read(root/'fresh-source-recipe.json')[0]
+    c.require(type(value) is dict and set(value) == keys and value['schemaVersion'] == ALIGNMENT_STAGE
+        and value['runId'] == inputs['config']['runId'] and value['productionEligible'] is False
+        and value['planSha256'] == c.canonical_sha256(inputs['plan'])
+        and value['recipeSha256'] == c.canonical_sha256(recipe)
+        and value['upstreamSha256'] == c.canonical_sha256(inputs['source_completions'])
+        and value['alignmentMode'] == ('validated_prior_alignment_cache' if inputs['same'] else 'fresh_local_mfa')
+        and value['alignedSegmentsSha256'] == _sha(root/'aligned-segments.json'),
+        'fresh_alignment_stage_binding_changed')
+    aligned, _ = _read_alignment(root/'aligned-segments.json')
+    comparison = None
+    if inputs['same']:
+        c.require(aligned == inputs['aligned'], 'fresh_alignment_stage_output_changed')
+    else:
+        comparison = _read(root/'mfa-identity-comparison.json')[0]
+        checked = mfa_identity.validate_alignment(inputs['plan'], inputs['local_runtime_path'], root/'mfa/backend.json',
+            preflight_receipt=inputs['preflight'], expected_receipt=comparison,
+            aligned_segments=aligned, reference_chunks=_read(root/'reference-chunks.json')[0])
+        mfa_identity.require_accepted(checked)
+    _prefix(inputs, dict(inputs['source_completions'], alignment=value['completion']),
+        through='alignment', aligned_sha256=value['alignedSegmentsSha256'])
+    return dict(aligned=aligned, mode=value['alignmentMode'], comparison=comparison,
+        completion=value['completion'], span=value['completion']['spanId'])
+
+
+def _stage_inputs(plan, subject, recipe, authorization, source_completions):
+    c.require(type(recipe) is dict and set(recipe) <= {'prior_plan_path', 'prior_source_path',
+        'prior_aligned_path', 'prior_summary_path', 'audio_path', 'run_mfa', 'local_runtime_path'},
+        'fresh_source_recipe_invalid')
+    frozen = {'schemaVersion': 'sermon-fresh-source-recipe-v2',
+        'files': {key: {'path': str(_safe_path(Path(value))), 'sha256': _sha(value)}
+            for key, value in recipe.items() if key.endswith('_path') and value is not None},
+        'runMFA': recipe.get('run_mfa', False), 'authorizationSha256': c.canonical_sha256(authorization)}
+    c.require(_read(Path(plan['runDirectory'])/'fresh-source-recipe.json')[0] == frozen,
+        'fresh_source_recipe_changed')
+    return _source_inputs(plan, subject, **recipe, authorization=authorization,
+        source_completions=source_completions)
+
+
+def prepare_alignment(plan, subject, *, recipe, authorization, source_completions):
+    """Complete only alignment; no Source package or session admission is created."""
+    inputs = _stage_inputs(plan, subject, recipe, authorization, source_completions)
+    _prefix(inputs, source_completions, through='sourceCheck')
+    path = inputs['root']/'fresh-source-stages'/'alignment.json'
+    if path.exists():
+        value = _read(path)[0]
+        _alignment_stage(inputs, value)
+        return value
+    result = _align(inputs)
+    frozen_recipe = _read(inputs['root']/'fresh-source-recipe.json')[0]
+    value = {'schemaVersion': ALIGNMENT_STAGE, 'runId': inputs['config']['runId'],
+        'planSha256': c.canonical_sha256(plan), 'recipeSha256': c.canonical_sha256(frozen_recipe),
+        'upstreamSha256': c.canonical_sha256(source_completions), 'alignmentMode': result['mode'],
+        'alignedSegmentsSha256': _sha(inputs['root']/'aligned-segments.json'),
+        'completion': result['completion'], 'productionEligible': False}
+    _alignment_stage(inputs, value)
+    immutable.save_once(path, value)
+    return value
+
+
+def prepare_source_package(plan, subject, *, recipe, authorization, source_completions, alignment_result):
+    """Consume exact persisted alignment evidence before executing the package builder."""
+    inputs = _stage_inputs(plan, subject, recipe, authorization, source_completions)
+    c.require(_read(inputs['root']/'fresh-source-stages'/'alignment.json')[0] == alignment_result,
+        'fresh_alignment_stage_result_changed')
+    alignment = _alignment_stage(inputs, alignment_result)
+    if (inputs['root']/'fresh-source-evidence.json').exists():
+        # A complete original package is authoritative even when a separate
+        # controller acknowledgement was not saved. Inspect, never rebuild it.
+        from scripts import sermon_fresh_source_evidence as inspector
+        prepared = {key: _read(inputs['root']/name)[0] for key, name in
+            (('source', 'source.json'), ('anchor', 'anchor-manifest.json'),
+             ('context', 'diagnostic-context.json'), ('evidence', 'fresh-source-evidence.json'))}
+        inspector.validate_fresh_source_evidence(inputs['root'], plan, subject,
+            prepared['context'], prepared['evidence'])
+        causal = _read(inputs['root']/'fresh-source-causality.json')[0]
+        c.require({key: causal['handles'][key] for key in causality.ORDER[:4]}
+            == dict(source_completions, alignment=alignment_result['completion']),
+            'fresh_source_package_predecessor_changed')
+        prepared['completionSpans'] = [causal['handles']['sourcePackage']['spanId']]
+        return prepared
+    return _package(inputs, alignment)

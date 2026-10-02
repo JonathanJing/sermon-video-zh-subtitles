@@ -18,8 +18,12 @@ final class AppModel: ObservableObject {
 
     let playback: PlaybackController
     @Published private(set) var catalog: WeeklyCatalog?
-    @Published private(set) var selectedWeek: SermonWeek?
-    @Published private(set) var selectedTrack: SermonTrack?
+    @Published private(set) var selectedWeek: SermonWeek? {
+        didSet { rebuildBilingualRows() }
+    }
+    @Published private(set) var selectedTrack: SermonTrack? {
+        didSet { rebuildBilingualRows() }
+    }
     @Published private(set) var isLoading = false
     @Published private(set) var isPreparing = false
     @Published private(set) var errorMessage: String?
@@ -36,7 +40,24 @@ final class AppModel: ObservableObject {
     @Published private(set) var publishedAudioSha256: String?
     @Published private(set) var isPreparingPublishedAudio = false
     @Published private(set) var publishedAudioError: String?
-    @Published private(set) var publishedTranscript: VerifiedPublishedTranscript?
+    @Published private(set) var publishedTranscript: VerifiedPublishedTranscript? {
+        didSet {
+            publishedCaptionsByID = Dictionary(uniqueKeysWithValues:
+                (publishedTranscript?.captions ?? []).map { ($0.id, $0) })
+            transcriptRowsRevision = UUID()
+        }
+    }
+    @Published private(set) var publishedCaptionsByID: [String: PublishedTranscriptCue] = [:]
+    @Published private(set) var bilingualRows: BilingualTranscriptRows?
+
+    // A scalar invalidation token keeps view observation independent of cue count.
+    @Published private(set) var transcriptRowsRevision = UUID()
+
+    // Selection changes invalidate derived text; player ticks never rebuild it.
+    private func rebuildBilingualRows() {
+        bilingualRows = selectedTrack.flatMap { selectedWeek?.bilingualCueRows(for: $0) }
+        transcriptRowsRevision = UUID()
+    }
     @Published private(set) var isLoadingPublishedTranscript = false
     @Published private(set) var publishedTranscriptError: String?
     @Published private var publishedHeadings: [String: SermonHeading] = [:]
