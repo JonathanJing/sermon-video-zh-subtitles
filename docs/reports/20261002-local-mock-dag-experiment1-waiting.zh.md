@@ -75,3 +75,13 @@ SERMON_FRESH_FULL_TEST_EVIDENCE_DIR="$PWD/artifacts/experiment1-merged-dev-evide
 7. Git 远端分支引用可能陈旧；后续继续显式刷新 dev 并对照 GitHub SHA，不能仅信本地 origin/dev。
 
 本轮没有产品发布、PR 合并或对其他实验的操作。所有未来模拟产物必须保持 synthetic、productionEligible=false；失败历史不得因恢复成功而抹除。
+
+## 用户要求实机 mini→Spark 后的只读预检
+
+检查时间：2026-10-02T14:41:06.116564+00:00。用户指定通过 Mac mini 实机调度 DGX Spark；保留两单元、模拟 TTS、合并后 dev 和不改网络/服务的原约束。
+
+- 再次查询 PR221：OPEN，mergeCommit=null，head 仍为 `aec52bad183e686601d5825a383a79832cd0b7fb`；远端 dev 仍为 `c47bc54c511615b79d576456c0e5c31b398d5dd4`。
+- 按仓库 spark_transport 的既有默认 bridge/HostKeyAlias 发起一次只读 SSH 探针：BatchMode=yes、ConnectTimeout=5、StrictHostKeyChecking=yes；远端命令仅为 `uname -s` 和带 10 秒超时的 loopback Hub `/health` GET。未输出凭据，本文省略私人地址。
+- SSH exit=255，TCP 22 连接超时（`Operation timed out`），约5秒；未进入远端 shell，Hub health 未执行。没有任务提交、jobId、跨机收据或 WAV；不能声称 mini→Spark 已请求或已验收。
+- 未尝试直连 Spark 替代路由，未开启 SSH/Tailscale、修改 ACL/端口/凭据、安装常驻服务或干扰 batch。
+- Backlog：先恢复/确认既有获准 Mac mini 连接路径；随后只读核验已部署任务 allowlist 与模拟产物字节回传合同。PR221 合并和连接恢复后仍需正式全链验收。最新仓库文档的接口部署状态不等于本次实时核验。
