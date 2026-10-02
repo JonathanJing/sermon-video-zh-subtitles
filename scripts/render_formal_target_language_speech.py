@@ -50,7 +50,13 @@ RENDERER_SOUND_IDENTITY_SHA256 = "fef7604882470137f46f1b01fbd06c7c3c9a07166da910
 DEFAULT_POLICY = {"reactionLagSeconds": 0.05, "interUtteranceGapSeconds": 0.05,
                   "maxEndLagSeconds": 8.0}
 BATCH_SIZES = (1, 2, 4, 8)
-BATCH_SEED_POLICY = "base_plus_fixed_window_start_ordered_missing_units_v1"
+BATCH_SEED_POLICY = "base_plus_fixed_window_start_ordered_full_window_v2"
+BATCH_CACHED_UNIT_POLICY = "replay_full_bound_window_when_units_are_missing_v1"
+LEGACY_BATCH_SEED_POLICY = "base_plus_fixed_window_start_ordered_missing_units_v1"
+LEGACY_BATCH_CACHED_UNIT_POLICY = "exclude_committed_or_admitted_reuse"
+COMPATIBLE_BATCH_REPAIR_IMPLEMENTATION_SHA256 = {
+    "a86c470ed8f2efb7b94f62cc5451e0f3e6af9a15d13110d86086489daeedd58c"
+}
 
 
 def require(ok: bool, message: str) -> None:
@@ -283,7 +289,7 @@ def _intent(context: dict[str, Any], paths: dict[str, Path], index: int, *, seed
                       batchWindowInputsSha256=batch_window_sha256,
                       batchWindowStart=start,
                       batchWindowUnitIndices=list(range(start, min(start + batch_size, len(job["units"])))),
-                      batchCachedUnitPolicy="exclude_committed_or_admitted_reuse")
+                      batchCachedUnitPolicy=BATCH_CACHED_UNIT_POLICY)
     return result
 
 
@@ -320,6 +326,36 @@ def _same_integrated_parent_sound_intent(actual: dict[str, Any],
     return (actual.get("rendererSha256") in COMPATIBLE_INTEGRATED_PARENT_RENDERER_SHA256
             and {key: value for key, value in actual.items() if key != "rendererSha256"}
             == {key: value for key, value in expected.items() if key != "rendererSha256"})
+
+
+def _same_compatible_batch_repair_intent(actual: dict[str, Any],
+                                         expected: dict[str, Any]) -> bool:
+    """Keep safe full-window cache entries across the resume-membership repair."""
+    if actual.get("batchImplementationSha256") not in COMPATIBLE_BATCH_REPAIR_IMPLEMENTATION_SHA256:
+        return False
+    old = dict(actual)
+    new = dict(expected)
+    old.pop("batchImplementationSha256", None)
+    new.pop("batchImplementationSha256", None)
+    if old.get("batchSeedPolicy") == LEGACY_BATCH_SEED_POLICY:
+        old["batchSeedPolicy"] = new.get("batchSeedPolicy")
+    if old.get("batchCachedUnitPolicy") == LEGACY_BATCH_CACHED_UNIT_POLICY:
+        old["batchCachedUnitPolicy"] = new.get("batchCachedUnitPolicy")
+    return old == new
+
+
+def _generation_batch_matches(commit: dict[str, Any], intent: dict[str, Any]) -> bool:
+    generation = commit.get("generationBatch")
+    indices = intent.get("batchWindowUnitIndices")
+    seed, start = intent.get("seed"), intent.get("batchWindowStart")
+    if (not isinstance(generation, dict) or not isinstance(indices, list)
+            or type(seed) is not int or type(start) is not int
+            or generation.get("unitIndices") != indices
+            or generation.get("seed") != seed + start
+            or generation.get("batchSize") != intent.get("batchSize")):
+        return False
+    policy = generation.get("seedPolicy")
+    return policy in {intent.get("batchSeedPolicy"), LEGACY_BATCH_SEED_POLICY, BATCH_SEED_POLICY}
 
 
 def _spoken_equivalent(approved: str, spoken: str) -> bool:
@@ -473,6 +509,8 @@ def _reusable_audio(previous_root: Path, unit: dict[str, Any], index: int,
     require(old_commit.get("identity") == old_intent
             and old_commit.get("audioSha256") == identity.sha256(old_audio_path),
             f"Previous render evidence or audio changed: {unit['translationGroupId']}")
+    if expected.get("batchSize", 1) != 1 and not _generation_batch_matches(old_commit, old_intent):
+        return None
     whole_job_fields = {"jobJsonSha256", "jobFileSha256", "candidateJsonSha256"}
     old_unit_identity = {key: value for key, value in old_intent.items()
                          if key not in whole_job_fields}
@@ -480,6 +518,9 @@ def _reusable_audio(previous_root: Path, unit: dict[str, Any], index: int,
                          if key not in whole_job_fields}
     if old_unit_identity != new_unit_identity:
         if _same_integrated_parent_sound_intent(old_unit_identity, new_unit_identity):
+            integrity.probe_full_decode(old_audio_path)
+            return old_audio_path
+        if _same_compatible_batch_repair_intent(old_unit_identity, new_unit_identity):
             integrity.probe_full_decode(old_audio_path)
             return old_audio_path
         previous_renderer = old_unit_identity.get("rendererSha256")
@@ -521,7 +562,7 @@ def _batch_admission(context, paths, root, *, seed, dtype, attention, instruct, 
     job, adapter = context["job"], context["adapter"]
     require(identity.json_sha256(package.read_object(paths["job"])) == identity.json_sha256(job),
             "Batch job differs from the checked input")
-    requests, reusable, pending_intents = {}, {}, []
+    requests, reusable, window_requests, pending_intents = {}, {}, {}, []
     groups, outputs = set(), set()
     for index, unit in enumerate(job["units"]):
         group = unit["translationGroupId"]
@@ -539,11 +580,17 @@ def _batch_admission(context, paths, root, *, seed, dtype, attention, instruct, 
                            attention=attention, instruct=instruction, spoken_text=spoken,
                            batch_size=batch_size, device=device,
                            batch_window_sha256=window_hashes[index // batch_size * batch_size])
+        request = {"identity": expected, "text": spoken or unit["text"],
+                   "language": adapter["languageParameter"],
+                   "speaker": adapter["speakerKey"], "instruct": instruction}
+        window_requests[index] = request
         intent_path = root / f"receipts/unit-{index:04d}.intent.json"
         commit_path = root / f"receipts/unit-{index:04d}.render.json"
         receipt_path = root / f"receipts/unit-{index:04d}.json"
         if intent_path.exists():
-            require(package.read_object(intent_path) == expected,
+            stored_intent = package.read_object(intent_path)
+            require(stored_intent == expected
+                    or _same_compatible_batch_repair_intent(stored_intent, expected),
                     f"Cached render identity differs: {group}")
         else:
             require(not any(path.exists() for path in (wav, commit_path, receipt_path)),
@@ -552,9 +599,12 @@ def _batch_admission(context, paths, root, *, seed, dtype, attention, instruct, 
         if commit_path.exists():
             commit = package.read_object(commit_path)
             audio = wav if wav.exists() else wav.with_suffix(".partial.wav")
-            require(commit.get("identity") == expected and audio.is_file()
+            stored_intent = package.read_object(intent_path)
+            require(commit.get("identity") == stored_intent and audio.is_file()
                     and commit.get("audioSha256") == identity.sha256(audio),
                     f"Cached audio identity or hash changed: {group}")
+            require(_generation_batch_matches(commit, stored_intent),
+                    f"Cached batch generation did not preserve its full window: {group}")
             if receipt_path.exists():
                 if audio != wav:
                     # Recover only bytes already bound by the immutable commit.
@@ -571,24 +621,24 @@ def _batch_admission(context, paths, root, *, seed, dtype, attention, instruct, 
         # Preview scalar audio deliberately cannot satisfy a batch sound intent.
         reusable[index] = previous
         if previous is None:
-            requests[index] = {"identity": expected, "text": spoken or unit["text"],
-                               "language": adapter["languageParameter"],
-                               "speaker": adapter["speakerKey"], "instruct": instruction}
+            requests[index] = request
     for path, expected in pending_intents:
         write_json_atomic(path, expected)
-    return requests, reusable
+    return requests, reusable, window_requests
 
 
 class _BatchedUnitSynthesizer:
-    """One resident engine, at most one fixed window of uncommitted waveforms."""
-    def __init__(self, engine, requests, *, seed, batch_size, job_path):
+    """Replay each complete bound window, then return only missing waveforms."""
+    def __init__(self, engine, requests, *, window_requests, seed, batch_size, job_path):
         require(callable(getattr(engine, "batch", None)), "TTS engine has no batch method")
         self.engine, self.requests = engine, requests
+        self.window_requests = window_requests
         self.seed, self.batch_size, self.job_path = seed, batch_size, job_path
         self.frozen_job_sha = identity.sha256(job_path)
         self.remaining = list(requests)
         self.outputs = {}
         self.last_generation = None
+        self.last_generation_trigger_index = None
         self.instruct = None
 
     def __call__(self, text, language, speaker, *, seed):
@@ -603,8 +653,10 @@ class _BatchedUnitSynthesizer:
         if index not in self.outputs:
             require(not self.outputs, "TTS batch window was not fully consumed")
             start = index // self.batch_size * self.batch_size
-            indices = [i for i in self.remaining if start <= i < start + self.batch_size]
-            batch = [self.requests[i] for i in indices]
+            indices = list(range(start, min(start + self.batch_size, len(self.window_requests))))
+            require(all(i in self.window_requests for i in indices),
+                    "TTS batch window is missing a bound member")
+            batch = [self.window_requests[i] for i in indices]
             batch_seed = self.seed + start
             values = self.engine.batch(copy.deepcopy(batch), seed=batch_seed)
             require(isinstance(values, list) and len(values) == len(batch),
@@ -618,7 +670,9 @@ class _BatchedUnitSynthesizer:
                     "Frozen TTS batch job changed during synthesis")
             generation = {"unitIndices": indices, "seed": batch_seed,
                           "seedPolicy": BATCH_SEED_POLICY, "batchSize": self.batch_size}
-            self.outputs = {i: (row, generation) for i, row in zip(indices, values)}
+            self.last_generation_trigger_index = index
+            self.outputs = {i: (row, generation) for i, row in zip(indices, values)
+                            if i in self.requests}
         value, self.last_generation = self.outputs.pop(index)
         self.remaining.pop(0)
         return value["wave"], value["sampleRate"]
@@ -658,7 +712,7 @@ def render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
                     "instruction": overrides.get("instruction", instruct),
                     "language": adapter["languageParameter"], "speaker": adapter["speakerKey"]})
             window_hashes[start] = identity.json_sha256(inputs)
-        requests, reusable_batches = _batch_admission(
+        requests, reusable_batches, window_requests = _batch_admission(
             context, paths, root, seed=seed, dtype=dtype, attention=attention,
             instruct=instruct, device=device, instructions_by_group=instructions_by_group,
             batch_size=batch_size, reuse_from=reuse_from, speculative_from=speculative_from,
@@ -666,7 +720,8 @@ def render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
         original_factory = synth_factory
         def synth_factory(*args, **kwargs):
             return _BatchedUnitSynthesizer(original_factory(*args, **kwargs), requests,
-                seed=seed, batch_size=batch_size, job_path=paths["job"])
+                window_requests=window_requests, seed=seed, batch_size=batch_size,
+                job_path=paths["job"])
     model = None
     model_load_span = None
     previous_receipts = accounting.bounded_dependencies(
@@ -697,12 +752,15 @@ def render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
                 if intent_path.exists():
                     stored_intent = package.read_object(intent_path)
                     require(stored_intent == expected
-                            or _same_integrated_parent_sound_intent(stored_intent, expected),
+                            or _same_integrated_parent_sound_intent(stored_intent, expected)
+                            or _same_compatible_batch_repair_intent(stored_intent, expected),
                             f"Cached render identity differs: {unit['translationGroupId']}")
+                    render_identity = stored_intent
                 else:
                     require(not any(path.exists() for path in (wav_path, receipt_path, commit_path)),
                             f"Orphaned audio/receipt cannot be reused: {unit['translationGroupId']}")
                     write_json_atomic(intent_path, expected)
+                    render_identity = expected
                 if has_commit:
                     commit = package.read_object(commit_path)
                     require(commit.get("identity") == stored_intent,
@@ -749,6 +807,10 @@ def render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
                                               depends_on=[admission_span, model_load_span] if model_load_span else [admission_span]) as audio_span:
                             wavs, rate = model(spoken_text or unit["text"], adapter["languageParameter"],
                                                adapter["speakerKey"], seed=seed + index)
+                            if (batch_size != 1
+                                    and model.last_generation_trigger_index == index):
+                                unit_metrics["batchInvocationUnitIndices"] = (
+                                    model.last_generation["unitIndices"])
                             # A partial belongs to this same intent and is safe to replace on resume.
                             write_pcm16(partial, wavs, int(rate))
                 with measure.producer_substage("audio_validation", billing="local"):
@@ -758,9 +820,13 @@ def render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
                     measure.record_substage_metrics({"audioSeconds": decoded["durationSeconds"]})
                 with accounting.stage(f"layer3.commit.{job['targetLocale']}.{index:04d}",
                                       work_unit_id=work_unit + ".commit", depends_on=[validation_span]) as commit_span:
-                    commit = {"identity": expected, "audioSha256": identity.sha256(partial)}
+                    commit = {"identity": render_identity, "audioSha256": identity.sha256(partial)}
                     if batch_size != 1 and unit_metrics["synthesized"]:
                         commit["generationBatch"] = model.last_generation
+                    elif batch_size != 1 and unit_metrics["reusedPrior"]:
+                        previous_commit = package.read_object(
+                            reuse_from / f"receipts/unit-{index:04d}.render.json")
+                        commit["generationBatch"] = previous_commit["generationBatch"]
                     write_json_atomic(commit_path, commit)
                     os.replace(partial, wav_path)
             with accounting.stage(f"layer3.receipt.{job['targetLocale']}.{index:04d}",
