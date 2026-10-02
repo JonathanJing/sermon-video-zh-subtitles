@@ -67,3 +67,7 @@ test('contradictory complete flags do not overrule missing required evidence', (
   const input=fixture();input.evidenceMode='real';input.progress={nodes:[{...node('p1'),status:'complete',evidenceMode:'real',complete:true,requiredEvidence:['executionSucceeded'],evidence:{executionSucceeded:false}}],status:'consistent',complete:true,gateCompletionPercent:100,denominator:'1',counts:{total:1,done:1}};input.eta={status:'complete',lowerSeconds:0,upperSeconds:0};
   const safe=sanitizeDag(input);assert.equal(safe.progress.complete,false);assert.equal(safe.progress.nodes[0].complete,false);assert.equal(safe.progress.gateCompletionPercent,null);assert.equal(safe.eta.status,'unknown');
 });
+test('unknown ETA never preserves contradictory numeric endpoints in a valid real plan', () => {
+  const input=fixture();input.evidenceMode='real';input.progress={nodes:[{...node('p1'),status:'pending',evidenceMode:'real'}],status:'consistent',complete:false,denominator:'1',counts:{total:1,done:0}};input.eta={status:'estimated',lowerSeconds:30,upperSeconds:10};
+  const safe=sanitizeDag(input);assert.equal(safe.eta.status,'unknown');assert.equal(safe.eta.lowerSeconds,null);assert.equal(safe.eta.upperSeconds,null);
+});

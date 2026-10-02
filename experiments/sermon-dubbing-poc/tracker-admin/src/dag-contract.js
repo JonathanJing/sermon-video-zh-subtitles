@@ -93,8 +93,8 @@ export function sanitizeDag(value) {
     || ['blocked','waiting_review','unknown_outcome','outcome_unknown'].includes(node.status)
     || (node.status === 'running' && node.heartbeatStatus !== 'fresh'));
   const coherentComplete = planReady && progress.complete && progress.counts.done === planned.length && planned.every((node) => node.complete);
-  const etaStatus = eta.status === 'complete' ? (coherentComplete ? 'complete' : 'unknown')
-    : etaReady && eta.status === 'estimated' ? 'estimated' : 'unknown';
+  const etaStatus = eta.status === 'complete' ? (coherentComplete && lower === 0 && upper === 0 ? 'complete' : 'unknown')
+    : etaReady && eta.status === 'estimated' && lower !== null && upper !== null && upper >= lower ? 'estimated' : 'unknown';
   return {schemaVersion:DAG_SCHEMA,scope:'accounting_run',generatedAt:stamp(value.generatedAt),executionAuthority:'none',acceptance:'not_evaluated',
     evidenceMode:pick(value.evidenceMode,MODES),freshness:{status:pick(value.freshness?.status,['recent','fresh','stale','unknown','clock_skew']),sourceObservedAt:stamp(value.freshness?.sourceObservedAt),ageSeconds:number(value.freshness?.ageSeconds)},
     quality:{status:pick(value.quality?.status,['projected','partial','unavailable']),reasonCodes:reasons(value.quality?.reasonCodes),damagedRowCount:count(value.quality?.damagedRowCount),duplicateEventsIgnored:count(value.quality?.duplicateEventsIgnored),omittedNodeCount:count(value.quality?.omittedNodeCount)},
@@ -102,7 +102,7 @@ export function sanitizeDag(value) {
     nodes:observed,criticalPath:{status:pick(value.criticalPath?.status,['measured','projected','partial','unknown','unavailable']),activeSeconds:number(value.criticalPath?.activeSeconds),nodeIds:(Array.isArray(value.criticalPath?.nodeIds) ? value.criticalPath.nodeIds : []).filter((v) => observed.some((n) => n.id === v)).slice(0,256),durationBasis:pick(value.criticalPath?.durationBasis,['verified_monotonic_dag','recorded_utc_intervals'], 'unknown')},
     io:{status:pick(value.io?.status,['observed','not_observed','partial']),beforeArtifactCount:count(value.io?.beforeArtifactCount),afterArtifactCount:count(value.io?.afterArtifactCount),scope:'observed_file_snapshots_not_execution_proof'},
     logs:{schemaVersions:(Array.isArray(value.logs?.schemaVersions) ? value.logs.schemaVersions : []).filter((v) => ['sermon-workflow-accounting-v1','sermon-workflow-accounting-v2','sermon-workflow-accounting-v3'].includes(v)).slice(0,3),contractVersions:Array.isArray(value.logs?.contractVersions) && value.logs.contractVersions.includes('sermon-accounting-log-contract-v1') ? ['sermon-accounting-log-contract-v1'] : [],...Object.fromEntries(['eventCount','profileEventCount','legacyEventCount','damagedRowCount'].map((k) => [k,count(value.logs?.[k])]))},
-    progress,eta:{status:etaStatus === 'estimated' && (lower === null || upper === null || upper < lower) ? 'unknown' : etaStatus,
+    progress,eta:{status:etaStatus,
       lowerSeconds:etaStatus === 'unknown' ? null : lower,upperSeconds:etaStatus === 'unknown' ? null : upper,remainingSerialSeconds:etaStatus === 'unknown' ? null : number(eta.remainingSerialSeconds),criticalPathSeconds:etaStatus === 'unknown' ? null : number(eta.criticalPathSeconds),sampleCount:count(eta.sampleCount),confidence:pick(eta.confidence,['low','medium','unknown']),reasonCodes:reasons(eta.reasonCodes),estimatorVersion:eta.estimatorVersion === 'remaining-dag-resource-slots-v1' ? eta.estimatorVersion : null},
   };
 }
