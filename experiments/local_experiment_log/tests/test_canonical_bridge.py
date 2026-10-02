@@ -14,8 +14,9 @@ class CanonicalCompatibilityTests(unittest.TestCase):
 
     def test_existing_schema_and_canonical_replay_accept_all_events(self):
         manifest, events, contexts, rows = self.converted()
+        starts = {(e["trace_id"], e["span_id"]): e for e in events if e["event"] == "span.started"}
         for row, sidecar in zip(rows, events):
-            verify_pair(row, sidecar)
+            verify_pair(row, sidecar, starts.get((sidecar["trace_id"], sidecar["span_id"])))
             self.assertNotIn("experiment_id", row)
             self.assertEqual(row["runId"], contexts[sidecar["event_id"]]["runId"])
         self.assertEqual(accounting.replay_integrity(rows)["status"], "consistent")
@@ -23,10 +24,37 @@ class CanonicalCompatibilityTests(unittest.TestCase):
 
     def test_preload_sidecar_preserves_canonical_run_trace_identity(self):
         _, events, _, rows = self.converted(warm=True)
+        starts = {(e["trace_id"], e["span_id"]): e for e in events if e["event"] == "span.started"}
         self.assertEqual(accounting.replay_integrity(rows)["status"], "consistent")
         self.assertEqual(len({r["runId"] for r in rows}), 2)
         for row, event in zip(rows, events):
-            verify_pair(row, event)
+            verify_pair(row, event, starts.get((event["trace_id"], event["span_id"])))
+
+    def test_canonical_failure_cannot_be_hidden_by_success_sidecar(self):
+        _, events, _, rows = self.converted()
+        end = next(e for e in events if e["event"] == "span.ended")
+        start = next(e for e in events if e["event"] == "span.started" and e["span_id"] == end["span_id"])
+        row = copy.deepcopy(next(r for r in rows if r["eventId"] == end["event_id"]))
+        row["status"] = "failed"
+        with self.assertRaisesRegex(ValueError, "sidecar_semantic_conflict"):
+            verify_pair(row, end, start)
+
+    def test_canonical_timing_cannot_disagree_with_observed_span(self):
+        _, events, _, rows = self.converted()
+        end = next(e for e in events if e["event"] == "span.ended")
+        start = next(e for e in events if e["event"] == "span.started" and e["span_id"] == end["span_id"])
+        row = copy.deepcopy(next(r for r in rows if r["eventId"] == end["event_id"]))
+        row["monotonicStartNs"] = str(int(row["monotonicStartNs"]) - 1)
+        row["elapsedSeconds"] += 1e-9
+        with self.assertRaisesRegex(ValueError, "sidecar_semantic_conflict"):
+            verify_pair(row, end, start)
+
+    def test_terminal_pair_requires_observed_start(self):
+        _, events, _, rows = self.converted()
+        end = next(e for e in events if e["event"] == "span.ended")
+        row = next(r for r in rows if r["eventId"] == end["event_id"])
+        with self.assertRaisesRegex(ValueError, "start_evidence_required"):
+            verify_pair(row, end)
 
     def test_context_identity_conflict_rejected(self):
         _, events, contexts = compatible_fixture()

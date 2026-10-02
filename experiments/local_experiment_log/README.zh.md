@@ -8,7 +8,7 @@ L1 是英文事实与锚点，L2 是目标语言文字，L3 是音频与同步�
 
 `canonical_bridge.convert(measurement, context, start=None)` 接收调用方已有 run/workflow/workUnit/attempt/event/producer/span/trace/clock 身份和分类字段。trace 沿用 profile 的 run 绑定算法，attemptId 是字符串身份；可选 attemptNumber 是次数。不得使用 fixture 的身份生成方式创建生产身份。
 
-正式事件使用既有 stage_started/stage_finished/workload。详细参数放在 `sermon-local-experiment-measurement-v1` sidecar，正式事件的 `metrics.experimentObservationSha256` 绑定其 canonical JSON hash。`verify_pair` 核对 hash、身份、job、已有 attemptNumber、业务层和证据类型，拒绝 synthetic→current_execution 的提升。实验参数不能改变原内容包、付费请求或缓存身份。
+正式事件使用既有 stage_started/stage_finished/workload。详细参数放在 `sermon-local-experiment-measurement-v1` sidecar，正式事件的 `metrics.experimentObservationSha256` 绑定其 canonical JSON hash。`verify_pair(row, measurement, start=None)` 核对 hash、身份、job、已有 attemptNumber、业务层、证据类型及 adapter-derived 状态/计时；终态必须提供同 span 的 start 测量。拒绝 synthetic→current_execution 的提升。实验参数不能改变原内容包、付费请求或缓存身份。
 
 接入者应先从当前 accounting/profile 获取 context，调用适配器，再由现有 writer/outbox 持久化正式 facts 和受限的 sidecar。纯转换不直接写生产 accounting，不提交任务或授予执行、审核、发布权限。云端 DAG 可复用这套适配器；完整工作流的状态投影继续使用现有项目工具。
 

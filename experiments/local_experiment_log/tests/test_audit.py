@@ -97,6 +97,13 @@ class ContractAuditTests(unittest.TestCase):
                     e["payload"]["worker_pid"] = 1000
         self.assertIn("batch_does_not_use_loaded_worker", self.report(mutate, warm=True)["trials"][0]["reasons"])
 
+    def test_batch_terminal_pid_changed_excludes_preload(self):
+        def mutate(m, es):
+            for e in es:
+                if e["event"] == "span.ended" and e["payload"].get("name") == "batch.inference":
+                    e["payload"]["worker_pid"] = 1000
+        self.assertIn("batch_does_not_use_loaded_worker", self.report(mutate, warm=True)["trials"][0]["reasons"])
+
     def test_template_values_are_not_events(self):
         r = self.report(lambda m, es: es[0].update(event_id=None))
         self.assertTrue(r["errors"])

@@ -93,7 +93,7 @@ def convert(measurement, context, start=None):
     return row
 
 
-def verify_pair(row, measurement):
+def verify_pair(row, measurement, start=None):
     accounting.validate_event(row)
     validate_event(measurement)
     if row.get("metrics", {}).get("experimentObservationSha256") != digest(measurement):
@@ -112,6 +112,10 @@ def verify_pair(row, measurement):
     expected_evidence = {"real": "current_execution", "synthetic": "synthetic", "replay": "cache_replay"}[measurement["evidence_kind"]]
     if row["evidenceMode"] != expected_evidence:
         raise ValueError("measurement_sidecar_evidence_conflict")
+    context = {key: row[key] for key in CONTEXT_KEYS if key in row}
+    expected = convert(measurement, context, start)
+    if any(row.get(key) != value for key, value in expected.items()):
+        raise ValueError("measurement_sidecar_semantic_conflict")
 
 
 def main():
@@ -128,7 +132,7 @@ def main():
         starts = {(e["trace_id"], e["span_id"]): e for e in measurements if e["event"] == "span.started"}
         rows = [convert(e, contexts[e["event_id"]], starts.get((e["trace_id"], e["span_id"]))) for e in measurements]
         for row, measurement in zip(rows, measurements):
-            verify_pair(row, measurement)
+            verify_pair(row, measurement, starts.get((measurement["trace_id"], measurement["span_id"])))
         integrity = accounting.replay_integrity(rows)
         if integrity["status"] != "consistent":
             raise ValueError("canonical_replay_inconsistent")

@@ -169,6 +169,7 @@ def audit(manifest, raw_events):
             if any(starts[k]["worker_id"] != load["worker_id"] or starts[k]["clock_id"] != load["clock_id"] or
                    starts[k]["producer_id"] != load["producer_id"] or
                    starts[k]["payload"].get("worker_pid") != load["payload"].get("worker_pid") or
+                   k not in ends or ends[k]["payload"].get("worker_pid") != load["payload"].get("worker_pid") or
                    starts[k]["monotonic_ns"] < ends[load_key]["monotonic_ns"] for k in batches):
                 reasons.append("batch_does_not_use_loaded_worker")
             worker_loads = [s for s in starts.values() if s["payload"]["name"] == "model.load" and s["worker_id"] == load["worker_id"]]
@@ -344,8 +345,9 @@ def main():
                 if row["eventId"] in by_id and canonical(by_id[row["eventId"]]) != canonical(row):
                     raise ValueError("canonical_event_conflict")
                 by_id[row["eventId"]] = row
+            starts = {(e["trace_id"], e["span_id"]): e for e in events if e["event"] == "span.started"}
             for e in events:
-                verify_pair(by_id[e["event_id"]], e)
+                verify_pair(by_id[e["event_id"]], e, starts.get((e["trace_id"], e["span_id"])))
             integrity = accounting.replay_integrity(canonical_rows)
             if integrity["status"] != "consistent":
                 raise ValueError("canonical_replay_inconsistent")
