@@ -61,7 +61,7 @@
 
 每个场景的原 direct synthetic receipt 是 Layer1=2、Layer2=4，重复与恢复不新增调用。故障记录仍让原 logs inspector 保持 needs_attention，不为最后恢复成功抹去历史。脱路径摘要及 result hashes 见 [acceptance-summary.json](../evidence/2026-10-02-fresh-full-dag/acceptance-summary.json)。
 
-这份本地证据属于上述测量提交；后续仅报告/证据变更及 GitHub 发布提交的 exact-head CI 另行记录。当前代码建立在 PR #217 上；只有该依赖正常通过合并门后，才可称 dev 已集成。
+这份本地证据属于上述测量提交；后续仅报告/证据变更及 GitHub 发布提交的 exact-head CI 另行记录。PR #217 与 PR #224 后来已合入 dev。合并提交 `58b46767` 的本机三场景复测见[合并回执](20261002-merged-dev-mock-dag-receipt.zh.md)，不改写上面这次历史测量。
 
 ## 仍开放
 

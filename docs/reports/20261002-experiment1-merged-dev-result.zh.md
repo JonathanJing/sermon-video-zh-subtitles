@@ -111,4 +111,4 @@ SSH 使用 BatchMode=yes、ConnectTimeout=5、StrictHostKeyChecking=yes 和原 H
 4. evidence保存应覆盖恢复所需冻结输入或明确声明缺失媒体/外部引用，不能把当前副本标为可执行恢复包。
 5. 真正跨机模拟调度需版本化Hub任务allowlist、Spark无模型mock worker、DAG adapter及有界artifact byte回传/双端完成凭证。当前未实现/未部署。该路径需要新增任务权限与服务代码部署，可能涉及服务重启；须准备精确变更、回滚及影响后按用户要求确认。不得扩张cpu_smoke或开启真实TTS实验权限代替。
 
-本轮没有生产发布、PR合并、真实模型/GPU调用或扩大两单元上限。结论是“合并后SHA上的失败实测与部分证据校验完成”，不是第1条实验已验收。
+本轮没有生产发布、PR合并、真实模型/GPU调用或扩大两单元上限。结论是“合并后SHA上的失败实测与部分证据校验完成”，不是第1条实验已验收。该失败 SHA 保持原样。修复进入 dev `58b46767` 之后的本机通过记录见[合并回执](20261002-merged-dev-mock-dag-receipt.zh.md)。
