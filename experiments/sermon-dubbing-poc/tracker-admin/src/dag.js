@@ -45,6 +45,11 @@ function etaText(dag, snapshot) {
   return `${duration(dag.eta.lowerSeconds)} – ${duration(dag.eta.upperSeconds)}`;
 }
 
+function evidenceAgeText(dag) {
+  const { status } = snapshotFreshness(dag.freshness.sourceObservedAt);
+  return tr(`日志证据：${status === 'recent' ? '最近记录' : status === 'stale' ? '旧记录' : '时间未知'} · 投影完整性：${dag.quality.status} · 节点 ID 仅在本快照内有效`, `Log evidence: ${status} · Projection integrity: ${dag.quality.status} · Node IDs are snapshot-local`);
+}
+
 export function renderDag(snapshot) {
   const host = document.getElementById('dag-panel');
   const dag = sanitizeDag(snapshot.dag);
@@ -75,8 +80,9 @@ export function renderDag(snapshot) {
     el('p','',`${tr('未闭合执行', 'Open executions')}: ${dag.summary.unfinishedSpanCount ?? '?'} · ${tr('损坏日志行', 'Damaged log rows')}: ${dag.quality.damagedRowCount ?? '?'} · ${tr('未展示节点', 'Omitted nodes')}: ${dag.quality.omittedNodeCount ?? '?'}`));
   if (dag.eta.reasonCodes.length) detail.append(el('p','dag-reasons', `${tr('未知／降级原因代码', 'Unknown / degraded reason codes')}: ${dag.eta.reasonCodes.join(' · ')}`));
   host.append(modes, metrics, detail);
-  const evidenceAge = snapshotFreshness(dag.freshness.sourceObservedAt);
-  host.append(el('p','dag-empty',tr(`日志证据：${evidenceAge.status === 'recent' ? '最近记录' : evidenceAge.status === 'stale' ? '旧记录' : '时间未知'} · 投影完整性：${dag.quality.status} · 节点 ID 仅在本快照内有效`, `Log evidence: ${evidenceAge.status} · Projection integrity: ${dag.quality.status} · Node IDs are snapshot-local`)));
+  const evidence = el('p','dag-empty',evidenceAgeText(dag));
+  evidence.id = 'dag-evidence-age';
+  host.append(evidence);
   const toolbar = el('div','dag-toolbar');
   const chooser = el('div','dag-tabs'); chooser.setAttribute('role','group'); chooser.setAttribute('aria-label',tr('DAG 数据视图','DAG data view'));
   for (const mode of ['planned','observed']) {
@@ -138,7 +144,11 @@ export function renderDag(snapshot) {
 export function refreshDagEstimate(snapshot) {
   const target = document.getElementById('dag-eta-value');
   const dag = target ? sanitizeDag(snapshot.dag) : null;
-  if (dag) target.textContent = etaText(dag, snapshot);
+  if (dag) {
+    target.textContent = etaText(dag, snapshot);
+    const evidence = document.getElementById('dag-evidence-age');
+    if (evidence) evidence.textContent = evidenceAgeText(dag);
+  }
   if (!freshProjection(snapshot, dag)) {
     for (const element of document.querySelectorAll('[data-run-state="running"]')) {
       element.classList.remove('active'); element.classList.add('warn');

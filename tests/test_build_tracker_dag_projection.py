@@ -302,6 +302,21 @@ class PublicDagTests(unittest.TestCase):
         self.rows.reverse()
         self.assertEqual(self.project(), first)
 
+    def test_unrelated_conflicting_identity_preserves_selected_run_dag(self):
+        baseline = self.project()
+        other = [dict(row, runId="historical-run") for row in self.rows]
+        other.append({**other[2], "elapsedSeconds": 1})
+        self.rows += other
+        result = self.project()
+        self.assertNotEqual(result["quality"]["status"], "unavailable")
+        self.assertEqual(result["nodes"], baseline["nodes"])
+        self.assertEqual(result["summary"], baseline["summary"])
+        self.assertEqual(result["logs"], baseline["logs"])
+        self.rows.reverse()
+        self.assertEqual(self.project(), result)
+        missing = public.build_projection(self.root, run_id="absent-run", at=AT)
+        self.assertEqual(missing["quality"]["reasonCodes"], ["run_not_found"])
+
     def test_selected_run_does_not_become_latest_neighbor_run(self):
         other = [dict(row, runId="another-private-run") for row in self.rows]
         self.rows += other

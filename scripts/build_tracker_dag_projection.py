@@ -472,7 +472,19 @@ def build_projection(accounting_dir, *, run_id, at=None, progress_inputs=None, s
         selected = [event for event in events if event["runId"] == run_id and
                     event.get("schemaVersion") in accounting.READABLE_SCHEMAS]
         run = next((r for r in report["runs"] if r["runSha256"] == weekly.digest(run_id)), None)
+        conflicting_identity = False
         if "conflicting_event_identity" in report["diagnostics"]:
+            # Match the canonical reader's identity check, but only for this run.
+            excluded = accounting.profile_integrity(events)["_excluded"]
+            seen = {}
+            for event in selected:
+                if id(event) in excluded:
+                    continue
+                previous = seen.setdefault(event["eventId"], event)
+                if event != previous:
+                    conflicting_identity = True
+                    break
+        if conflicting_identity:
             # The legacy report retains a diagnostic representative; it is not
             # a public choice of which contradictory timing fact to believe.
             result = _blank(clock, "conflicting_event_identity")

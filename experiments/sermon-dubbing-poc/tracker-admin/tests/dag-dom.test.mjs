@@ -55,3 +55,19 @@ test('a refreshed outer wrapper cannot revive an old nested DAG ETA or heartbeat
   const dag=structuredClone(fixture);dag.evidenceMode='real';dag.progress.nodes.forEach((n)=>{n.evidenceMode='real';n.unknownOutcome=false;n.status='pending';});dag.eta={...dag.eta,status:'estimated',lowerSeconds:10,upperSeconds:30};
   const {host,snapshot}=setup(dag);assert.notEqual(host.querySelector('#dag-eta-value').textContent,'未知');snapshot.dag.generatedAt='2026-01-01T00:00:00Z';refreshDagEstimate(snapshot);assert.equal(host.querySelector('#dag-eta-value').textContent,'未知');
 });
+
+for (const language of ['zh', 'en']) test(`timer refresh ages log evidence without a new snapshot (${language})`, (t) => {
+  const now = Date.now();
+  const clock = t.mock.method(Date, 'now', () => now);
+  const dag = structuredClone(fixture);dag.freshness.sourceObservedAt = new Date(now).toISOString();
+  const {host,snapshot}=setup(dag);setUiLanguage(language);renderDag(snapshot);
+  const evidence=host.querySelector('#dag-evidence-age');
+  assert.match(evidence.textContent,language === 'zh' ? /日志证据：最近记录/ : /Log evidence: recent/);
+  const button=host.querySelector('.dag-tabs button');button.focus();
+  const detail=host.querySelector('.dag-estimate-detail');detail.open=true;
+  clock.mock.mockImplementation(() => now + 150_000);
+  refreshDagEstimate(snapshot);
+  assert.equal(host.querySelector('#dag-evidence-age'),evidence);
+  assert.match(evidence.textContent,language === 'zh' ? /日志证据：旧记录/ : /Log evidence: stale/);
+  assert.equal(document.activeElement,button);assert.equal(detail.open,true);
+});
