@@ -24,6 +24,18 @@ journal 原文：`PrivateNetwork=yes is configured, but the kernel does not supp
 
 因此 user-systemd 的 `PrivateNetwork` 目前会在缺少权限时继续跑在宿主网络里。`JoinsNamespaceOf` 没有可加入的私有命名空间，不能算通过。这个结果不允许把 18 个 cold/warm trial 标成已隔离执行。
 
+## Docker 离线网络探针
+
+语音 supervisor 固定使用已有镜像的 `docker run --network=none --read-only --cap-drop=ALL`。这次用同一镜像、同一网络参数跑了一个立即退出的 Python 进程，没有挂载模型、没有申请 GPU、没有提交 job。容器结束后没有留下 `tongxing.tts.owner` 容器。
+
+| 观察 | 宿主 | `--network=none` 容器 |
+|---|---|---|
+| 网络命名空间 | `net:[4026531833]` | `net:[4026533140]` |
+| 非 loopback 网卡 | 有 | 无 |
+| `/proc/net/route` | 未作为对照读取 | 只有表头，没有路由项 |
+
+这条隔离由 root dockerd 创建，不依赖当前用户的 `unshare`，也没有修改 AppArmor。它只证明容器网络命名空间可用，不证明 llama 后端已经迁入私有命名空间，也不证明 guardian 或 18 个 trial 已执行。当前账号 `sudo -n` 需要密码，因此不能在这次会话里安装 system unit 或迁移宿主 llama。
+
 ## 仍不能开始的部分
 
-真实 batch 1/2/4 的速度、稳定性和音质仍是 0 次 GPU trial。下一步仍是单独审查的隔离方案：不能关闭全局 AppArmor，不能把“进程退出 0”当成命名空间已生效，也不能在 `tts_experiment.available=false` 时改走旧 SSH 推理。MacBook 接入和产物传输仍未验收。
+真实 batch 1/2/4 的速度、稳定性和音质仍是 0 次 GPU trial。user-systemd 不能当作隔离成功。Docker 容器网络隔离已经单独证实，但启用窗口仍要求 llama 进入私有命名空间、四生产者覆盖和 guardian/controller。这些步骤需要 Spark 上的 root，本次没有密码，不能改走旧 SSH 推理，也不能关闭 AppArmor。MacBook 接入和产物传输仍未验收。
