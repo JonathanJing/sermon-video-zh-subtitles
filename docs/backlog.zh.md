@@ -213,6 +213,8 @@ SSH／Tailscale 可作为受授权的传输／网络路径，本身不提供 sch
 - 单一 Fresh→strict text→mock audio→readonly final 的实现与验证合同见 [2026-10-02 Fresh full-DAG](reports/20261002-fresh-full-dag.zh.md)。本地测量 `5048daa` 的真实 Prefect 3/3（六次 invocation / 114 tasks）已通过；保留 two-unit 实验资格、layer-map 与原 canonical 日志。GitHub exact-head CI 及 PR #217 依赖合并门另计，不提前称 dev 已集成；39/128-unit 规模与被阻断的 controller 故障窗口仍 open。
 - 后续有界 Source-engine 切片见 [2026-10-02 Fresh Source 六任务接管](reports/20261002-fresh-source-engine.zh.md)：五个 Source stages + locale.freeze 的固定 recipe / typed prefix / canonical stream；不得与 source.existing continuation 相加宣称完整 fresh 全流程接管，真实 SDK 以精确 PR head 验收为准。
 
+- **2026-10-02 合并后 dev 本机失败实测**（`8c64502404f9ae7110ee49aa990bcaeb2f8cd24d`）：正常SDK场景60.804秒后失败，Source/text完成、2个submit intent均unknown、0 job/0 TTS WAV，后续重放/重试/timeout未运行。macOS framework Python自动注入`__CF_USER_TEXT_ENCODING`与mock worker环境白名单冲突已由无任务探针复现；原launcher退出详情未留存，须补脱敏失败诊断而不放宽unknown重派。206条账本事件一致，但logs inspector仍报no_detected_error，须区分完整性与业务未决状态；证据副本未覆盖全部兄弟目录输入，不能标为完整恢复包。mini的实时job.v1能力表无mock TTS task，真实tts_experiment不可用，018跨机adapter/byte回收仍未接通，不以cpu_smoke替代。修复、独立部署权限与重新验收继续开放，详见[实验报告](reports/20261002-experiment1-merged-dev-result.zh.md)。
+
 
 #### 离开本地 Wi‑Fi 的 Tailscale 接入实施计划（既有 `017/018`）
 
