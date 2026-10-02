@@ -3,12 +3,26 @@ import copy
 import hashlib
 import json
 from pathlib import Path
+import tempfile
 import unittest
 from unittest.mock import patch
 
 from scripts import sermon_delivery_intent as intent
 from scripts import sermon_delivery_intent_binding as subject
 from tests import test_inspect_canonical_packages as inspection_fixtures
+
+
+class _DeliveryFiles:
+    """Isolated delivery files; upstream packages belong to the admission fixture."""
+    def __init__(self, root):
+        self.root = root
+
+    def write(self, name, value):
+        (self.root / name).write_text(json.dumps(value, ensure_ascii=False))
+
+    def files(self):
+        return {str(path.relative_to(self.root)): (path.read_bytes(), path.stat().st_mode, path.stat().st_mtime_ns)
+                for path in self.root.rglob('*') if path.is_file()}
 
 
 class DeliveryBindingTests(unittest.TestCase):
@@ -19,6 +33,10 @@ class DeliveryBindingTests(unittest.TestCase):
         self.root = self.fixture.root
         self.candidate, self.review = self.fixture.approve_fixture()
         self.source = self.fixture.fixture.source
+        self._set_up_delivery_inputs()
+
+    def _set_up_delivery_inputs(self):
+        """Bind request/audio/config to this test's actual upstream evidence."""
         raw = self.source['source']; window = raw['approvedWindow']
         approval = json.loads(Path(window['evidence']['path']).read_text())
         self.request = intent.read_object(Path(__file__).parent / 'fixtures/sermon_delivery_intent/synthetic-request.json')
@@ -208,7 +226,6 @@ class DeliveryBindingTests(unittest.TestCase):
 class StrictDeliveryBindingTests(DeliveryBindingTests):
     """Real strict adapters and durable ledger, synthetic provider/human evidence."""
     def setUp(self):
-        super().setUp()
         from tests import test_sermon_strict_gate_admission as gate_fixtures
         from scripts import sermon_review_contracts as contracts
         self.strict_fixture = gate_fixtures.AdmissionTests()
@@ -221,28 +238,14 @@ class StrictDeliveryBindingTests(DeliveryBindingTests):
         self.source = contracts.read_snapshot(self.boundary.config.source)[0]
         self.candidate = contracts.read_snapshot(self.boundary.config.public_candidate)[0]
         self.review = contracts.read_snapshot(self.boundary.config.human_receipt)[0]
-        raw = self.source['source']; window = raw['approvedWindow']
-        approval = json.loads(Path(window['evidence']['path']).read_text())
-        self.request['source'] = {
-            'sourceId': raw['sourceId'], 'sourceUrlHash': raw['sourceUrlHash'],
-            'englishSourcePackageJsonSha256': intent.canonical_hash(self.source),
-            'downstreamInvalidationKey': self.source['downstreamInvalidationKey'],
-            'mediaSha256': raw['media']['sha256'], 'mediaDurationSeconds': raw['media']['durationSeconds'],
-            'window': {'startSeconds': window['startSeconds'], 'endSeconds': window['endSeconds'],
-                       'approvalReceiptJsonSha256': intent.canonical_hash(approval)}}
-        target = self.request['requestedLocales'][0]
-        target['approvedFullText'] = {'candidateJsonSha256': intent.canonical_hash(self.candidate),
-                                     'humanReviewReceiptJsonSha256': intent.canonical_hash(self.review)}
-        self.audio.update(englishSourcePackageJsonSha256=intent.canonical_hash(self.source),
-                          targetLanguageCandidateJsonSha256=intent.canonical_hash(self.candidate))
-        target['layer3AudioUnavailable'] = dict(packageJsonSha256=intent.canonical_hash(self.audio),
-            **{key: self.audio[key] for key in ('englishSourcePackageJsonSha256',
-                'targetLanguageCandidateJsonSha256', 'targetLocale', 'status')})
-        self.fixture.write('audio.json', self.audio)
+        # Build only the delivery files here. The strict fixture already created
+        # the source, reviewed candidate, durable ledger and admission receipts.
+        self.root = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        self.fixture = _DeliveryFiles(self.root)
+        self._set_up_delivery_inputs()
         self.config.update(source=str(self.boundary.config.source), anchor=str(self.boundary.config.anchor))
         self.config['locales']['zh-Hans'].update(policy=str(self.boundary.config.policy),
             candidate=str(self.boundary.config.public_candidate), humanReview=str(self.boundary.config.human_receipt))
-        self.manifest = intent.freeze_intent(self.request)
 
     def rewrite_intent_receipt_identity(self, receipt_hash):
         from scripts import sermon_review_contracts as contracts
@@ -319,6 +322,13 @@ class StrictDeliveryBindingTests(DeliveryBindingTests):
         with self.assertRaisesRegex(ValueError, 'current_chain_blocked'): self.freeze()
 
     def test_strict_config_cannot_substitute_other_approved_package(self):
+        # Only this case needs another candidate approved through the real
+        # fixture validators, in addition to its own strict admission chain.
+        other = inspection_fixtures.PackageInspectionTests(
+            methodName='test_independent_bound_review_is_required_and_never_grants_voice')
+        other.setUp(); self.addCleanup(other.doCleanups)
+        candidate, _ = other.approve_fixture()
+        self.fixture.write('candidate.json', candidate)
         self.config['locales']['zh-Hans']['candidate'] = 'candidate.json'
         with self.assertRaisesRegex(ValueError, 'config_evidence_mismatch'): self.freeze()
 
