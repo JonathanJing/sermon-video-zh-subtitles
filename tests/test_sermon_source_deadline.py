@@ -146,9 +146,9 @@ class SourceTransmissionTests(unittest.TestCase):
             if Path(root)==f.root and operation=='transcription.initial':
                 receipt=deepcopy(receipt);receipt['response']['text']+=' Changed.'
             return receipt,ref
-        runtime=f.root/'runtime.json';item=f.root/'inert-local-mfa';item.write_bytes(b'inert')
-        runtime.write_bytes(c.canonical_bytes({'backend':'macbook-local','runtime':{'files':{
-            'mfa_executable':{'path':str(item),'sha256':c.bytes_sha256(item.read_bytes())}}}}))
+        from tests.test_sermon_mfa_identity import runtime_fixture
+        runtime=f.root/'runtime.json'
+        runtime.write_bytes(c.canonical_bytes(runtime_fixture(f.root)))
         with f.subject._locked() as (_,state):deadline=state['startedMonotonic']+f.subject.config['totalWallSeconds']
         calls=len(f.f.transport.observations)
         with patch.object(source,'returned_receipt',side_effect=changed),patch.object(backend,'align_reference_chunks',side_effect=mfa.MFADeadlineReached('private subprocess payload')) as align:
