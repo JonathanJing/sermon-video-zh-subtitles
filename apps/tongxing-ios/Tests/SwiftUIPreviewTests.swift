@@ -15,6 +15,41 @@ final class SwiftUIPreviewTests: XCTestCase {
         let voiceDemoCatalogPath: String?
     }
 
+    func testDerivedTranscriptDataFollowsSelectionChanges() async throws {
+        let support = FileManager.default.temporaryDirectory.appendingPathComponent("Tongxing-Derived-\(UUID())")
+        let suite = "Tongxing-Derived-\(UUID())"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        let model = UITestLaunch.makeFixtureModel(supportDirectory: support,
+            statisticsDefaults: defaults, nativePublishedPage: true)
+        defer {
+            model.playback.clear()
+            model.mediaSession.invalidateAndCancel()
+            defaults.removePersistentDomain(forName: suite)
+            try? FileManager.default.removeItem(at: support)
+        }
+        await model.start()
+        await model.loadSelectedPublishedTranscript()
+        let transcript = try XCTUnwrap(model.publishedTranscript)
+        XCTAssertFalse(transcript.captions.isEmpty)
+        XCTAssertEqual(model.publishedCaptionsByID.count, transcript.captions.count)
+        for cue in transcript.captions {
+            XCTAssertEqual(model.publishedCaptionsByID[cue.id], cue)
+        }
+
+        let week = try XCTUnwrap(model.weeks.first)
+        let track = try XCTUnwrap(week.tracks.first)
+        await model.select(week: week, track: track)
+        XCTAssertNil(model.publishedTranscript)
+        XCTAssertTrue(model.publishedCaptionsByID.isEmpty)
+        XCTAssertEqual(model.bilingualRows, week.bilingualCueRows(for: track))
+        let page = try XCTUnwrap(model.independentPages.first)
+        model.selectPublishedPage(page)
+        XCTAssertNil(model.bilingualRows)
+        await model.loadSelectedPublishedTranscript()
+        XCTAssertEqual(model.publishedTranscript?.locale, "zh-Hans")
+        XCTAssertEqual(model.publishedCaptionsByID[transcript.captions[0].id], transcript.captions[0])
+    }
+
     func testRenderRequestedViews() async throws {
         guard let encoded = ProcessInfo.processInfo.environment["TONGXING_PREVIEW_REQUEST"],
               !encoded.isEmpty, !encoded.hasPrefix("$(") else {
