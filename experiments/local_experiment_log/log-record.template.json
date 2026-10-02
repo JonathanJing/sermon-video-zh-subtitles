@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "sermon-workflow-accounting-v3",
+  "contractVersion": "sermon-accounting-log-contract-v1",
+  "event": null,
+  "eventId": null,
+  "producerId": null,
+  "sequence": null,
+  "recordedAt": null,
+  "runId": null,
+  "workflowId": null,
+  "spanId": null,
+  "parentSpanId": null,
+  "executorType": null,
+  "workKind": null,
+  "evidenceMode": null,
+  "workUnitId": null,
+  "attemptId": null,
+  "decisionId": null,
+  "productionRunId": null,
+  "engineeringRunId": null,
+  "missingReasons": {},
+  "traceId": null
+}

@@ -1,0 +1,95 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "sample_sha256",
+    "checkpoint_sha256",
+    "code_sha256",
+    "runtime_sha256",
+    "duration_mode",
+    "duration_seconds",
+    "budget_scope",
+    "unit_ids",
+    "load_policy",
+    "batch_size",
+    "device",
+    "dtype",
+    "generation",
+    "output_cache_hit",
+    "dummy_warmup"
+  ],
+  "properties": {
+    "sample_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "checkpoint_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "code_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "runtime_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "duration_mode": {
+      "enum": [
+        "fixed_sample",
+        "wall_budget"
+      ]
+    },
+    "duration_seconds": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "budget_scope": {
+      "enum": [
+        null,
+        "generation_and_validation",
+        "including_load"
+      ]
+    },
+    "unit_ids": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "load_policy": {
+      "enum": [
+        "load_once_per_trial_process",
+        "preload_and_reuse_admitted_worker"
+      ]
+    },
+    "batch_size": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "device": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "dtype": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "generation": {
+      "type": "object",
+      "minProperties": 1
+    },
+    "output_cache_hit": {
+      "type": "boolean"
+    },
+    "dummy_warmup": {
+      "type": "boolean"
+    }
+  }
+}

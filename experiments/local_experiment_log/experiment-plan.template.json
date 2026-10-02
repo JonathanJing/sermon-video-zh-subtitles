@@ -1,0 +1,124 @@
+{
+  "schema_version": "local.tts-experiment-plan.v1",
+  "status": "prepared_blocked_before_real_execution",
+  "experiment_id": null,
+  "duration_mode": null,
+  "duration_mode_options": [
+    "fixed_sample",
+    "wall_budget"
+  ],
+  "proposed_default_duration_mode": "fixed_sample",
+  "duration_seconds": 180,
+  "objective": "Evaluate preloading and real inference batch throughput, then tune runtime parameters",
+  "execution_route": [
+    "macbook",
+    "mac-mini-admission",
+    "spark"
+  ],
+  "execution_route_verified": false,
+  "logging_contract": {
+    "layers": [
+      "L1",
+      "L2",
+      "L3",
+      "L4"
+    ],
+    "layer_component_mapping": {
+      "local_experiment_client": "L3",
+      "mini_experiment_control": "L3",
+      "spark_tts_worker": "L3"
+    },
+    "mapping_status": "bound_to_canonical_logical_layers_tts_is_layer3",
+    "shared_event_schema": "sermon-accounting-log-contract-v1",
+    "trace_scope": "canonical runId trace; trial/session are hash-bound measurement sidecars",
+    "experiment_scope": "all trial traces in the parameter comparison",
+    "storage": "per-component append-only logs plus experiment-level aggregation",
+    "job_state_authority": "Spark Job DB; logs are observation evidence only",
+    "contract_reference": "README.zh.md",
+    "measurement_sidecar_schema": "sermon-local-experiment-measurement-v1"
+  },
+  "weight_training_in_scope": false,
+  "sample": {
+    "manifest_path": null,
+    "manifest_sha256": null,
+    "source_media_sha256": null,
+    "absolute_start_seconds": null,
+    "absolute_end_seconds": null,
+    "job_sha256": null,
+    "unit_count": null,
+    "input_text_characters": null,
+    "authorization_reference": null
+  },
+  "runtime": {
+    "checkpoint_path": null,
+    "checkpoint_sha256": null,
+    "model_config_sha256": null,
+    "worker_code_sha256": null,
+    "runtime_identity_manifest_sha256": null,
+    "device": "cuda:0",
+    "dtype": "bfloat16",
+    "attention_implementation": "sdpa",
+    "offline": true
+  },
+  "fixed_generation_parameters": {
+    "temperature": 0.7,
+    "repetition_penalty": 1.05,
+    "max_new_tokens": 768,
+    "seed_policy": "42 plus batch start index; waveform equality across batch sizes is not guaranteed"
+  },
+  "matrix": {
+    "load_policies": [
+      "load_once_per_trial_process",
+      "preload_and_reuse_admitted_worker"
+    ],
+    "batch_sizes": [
+      1,
+      2,
+      4
+    ],
+    "repetitions_per_cell": 3,
+    "proposed_trial_count": 18,
+    "batch_orders_by_repetition": [
+      [
+        1,
+        2,
+        4
+      ],
+      [
+        2,
+        4,
+        1
+      ],
+      [
+        4,
+        1,
+        2
+      ]
+    ],
+    "parallel_trials": 1,
+    "dummy_warmup": false,
+    "reuse_generated_audio": false,
+    "auto_retry": false
+  },
+  "admission": {
+    "reviewed_execution_design_reference": null,
+    "macbook_access_verified": false,
+    "gpu_reservation_reference": null,
+    "resource_limits": null,
+    "trial_timeout_seconds": null,
+    "worker_lifetime_seconds": null,
+    "artifact_return_design_reference": null,
+    "full_source_hash_verification_reference": null
+  },
+  "execution_count": 0,
+  "measured_results": [],
+  "blockers": [
+    "MacBook task access is not enabled",
+    "No registered and admitted speech experiment entrypoint",
+    "Legacy transport bypasses production scheduler admission",
+    "No resident/preload worker implementation",
+    "No verified exclusive GPU resource window",
+    "Sample and checkpoint/runtime identities not frozen for this experiment",
+    "Artifact byte return design must be established without inventing an HTTP endpoint"
+  ]
+}
