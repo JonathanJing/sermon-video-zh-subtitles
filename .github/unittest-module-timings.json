@@ -868,6 +868,10 @@
       "seconds": 57.345,
       "tests": 17
     },
+    "test_sermon_fresh_full_dag": {
+      "seconds": 743.52,
+      "tests": 8
+    },
     "test_sermon_fresh_native_history": {
       "seconds": 9.331,
       "tests": 9
@@ -903,6 +907,10 @@
     "test_sermon_logs": {
       "seconds": 3.537,
       "tests": 5
+    },
+    "test_sermon_mock_tts_dag": {
+      "seconds": 374.59,
+      "tests": 11
     },
     "test_sermon_native_preview_runtime": {
       "seconds": 0.015,
@@ -1234,5 +1242,5 @@
     }
   },
   "schemaVersion": 1,
-  "source": "Median successful hosted Ubuntu/Python 3.12 module timings, 2026-10-01 America/Los_Angeles; https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/36964825157 (dcecefe), https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/36966111559 (faaf3d3), https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/36966580906 (fb8f1da). Used for sharding estimates only; packaged fixture aliases are normalized by the runner."
+  "source": "Median successful hosted Ubuntu/Python 3.12 module timings, 2026-10-01 America/Los_Angeles; https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/36964825157 (dcecefe), https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/36966111559 (faaf3d3), https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/36966580906 (fb8f1da). Used for sharding estimates only; packaged fixture aliases are normalized by the runner. Added mock-TTS and full-Fresh modules from the observed 30704a8 root-0 job (374.59s/11 cases; 743.52s/8 cases): https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/36998657059/job/110811114474 . That full-Fresh module had one failed case, so its elapsed cost is a scheduling estimate/lower bound, not passing acceptance. All tests, required gates and timeout budgets remain unchanged."
 }

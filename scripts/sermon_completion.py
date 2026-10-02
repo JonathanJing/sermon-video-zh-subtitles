@@ -64,7 +64,15 @@ def _rows(events, run_id=None):
 
 def validate(handle, events, *, production_run_id, stage=None, artifact_sha256=None,
              dependencies=None):
-    synthetic = type(handle) is dict and handle.get('schemaVersion') == SYNTHETIC_SCHEMA
+    """Validate a v1 production completion; synthetic evidence is opt-in only."""
+    return _validate(handle, events, production_run_id=production_run_id, stage=stage,
+        artifact_sha256=artifact_sha256, dependencies=dependencies, synthetic=False)
+
+
+def _validate(handle, events, *, production_run_id, synthetic, stage=None,
+              artifact_sha256=None, dependencies=None):
+    # The public entry point selects the evidence domain. Never infer it from
+    # caller-supplied handles at an existing production acceptance gate.
     if synthetic:
         validate_synthetic_shape(handle)
     keys, artifacts, modes = ((SYNTHETIC_KEYS, SYNTHETIC_ARTIFACTS, {'synthetic'}) if synthetic
@@ -134,7 +142,7 @@ def validate_synthetic(handle, events, *, production_run_id, job_id=None, revisi
                        **kwargs):
     c.require(type(handle) is dict and handle.get('schemaVersion') == SYNTHETIC_SCHEMA,
         'completion_synthetic_version_required')
-    checked = validate(handle, events, production_run_id=production_run_id, **kwargs)
+    checked = _validate(handle, events, production_run_id=production_run_id, synthetic=True, **kwargs)
     c.require(job_id is None or checked['jobId'] == job_id, 'completion_job_changed')
     c.require(revision_id is None or checked['revisionId'] == revision_id, 'completion_revision_changed')
     return checked
