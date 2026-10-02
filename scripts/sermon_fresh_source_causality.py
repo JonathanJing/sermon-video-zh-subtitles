@@ -3,6 +3,7 @@
 Only actual execution/receipt-validation leaves are accepted. This validator
 cannot manufacture dependencies from containment, timestamps or empty arrays.
 """
+from copy import deepcopy
 from pathlib import Path
 
 from scripts import sermon_accounting as accounting
@@ -37,15 +38,26 @@ def _validate(value, events, *, plan, recipe, asr_ref, review_ref, aligned_sha25
                  aligned_sha256, source_sha256)
     c.require(all(type(value) is str and len(value) == 64 for value in artifacts[:len(order)]),
         'fresh_causality_artifact_required')
+    value = deepcopy(value)
+    # Share integrity checks across this frozen prefix, retaining all semantic
+    # checks below against the same private event bytes. No validated view escapes.
+    events = deepcopy(events)
+    checks, prior = [], None
+    for key, artifact in zip(order, artifacts):
+        handle = value['handles'][key]
+        checks.append({'handle': handle, 'artifact_sha256': artifact,
+            'dependencies': [] if prior is None else [prior['spanId']]})
+        prior = handle
+    completion.validate_many(checks, events, production_run_id=value['runId'])
+    unique = {r['eventId']: r for r in events if r.get('contractVersion') == completion.log.VERSION}
+    rows = list(unique.values())
     prior, log_run, spans = None, None, set()
     for key, artifact in zip(order, artifacts):
         handle = value['handles'][key]
-        completion.validate(handle, events, production_run_id=value['runId'], artifact_sha256=artifact,
-            dependencies=[] if prior is None else [prior['spanId']])
         c.require(handle['stage'] in STAGES[key] and handle['artifactKind'] == KINDS[key]
             and handle['spanId'] not in spans and handle['workUnitId'] == WORK_UNITS[key], 'fresh_causality_stage_changed')
         c.require(log_run is None or log_run == handle['runId'], 'fresh_causality_cross_run')
-        facts = [r for r in completion._rows(events, handle['runId']) if r.get('runId') == handle['runId']
+        facts = [r for r in rows if r.get('runId') == handle['runId']
             and r.get('spanId') == handle['spanId']]
         binding_fields = {
             'intake': ('diagnostic.source_recipe_binding', 'recipeSha256'),
@@ -64,7 +76,7 @@ def _validate(value, events, *, plan, recipe, asr_ref, review_ref, aligned_sha25
             c.require(handle['executionMode'] == (expected_mode or 'current_execution'),
                 'fresh_causality_execution_mode_changed')
             reference = asr_ref if key == 'transcription' else review_ref
-            facts = [r for r in completion._rows(events, handle['runId']) if r.get('runId') == handle['runId']
+            facts = [r for r in rows if r.get('runId') == handle['runId']
                 and r.get('spanId') == handle['spanId']]
             if expected_mode:
                 c.require(not any(r['event'].startswith('api_attempt') for r in facts)
@@ -88,7 +100,6 @@ def _validate(value, events, *, plan, recipe, asr_ref, review_ref, aligned_sha25
                     and len(starts) == 1 and starts[0]['settings'].get('requestPayloadSha256') == reference['requestSha256'],
                     'fresh_causality_provider_receipt_unbound')
         if prior is not None:
-            rows = completion._rows(events, handle['runId'])
             start = next(r for r in rows if r['event'] == 'stage_started' and r.get('runId') == handle['runId']
                 and r.get('spanId') == handle['spanId'])
             end = next(r for r in rows if r['event'] == 'stage_finished' and r.get('runId') == prior['runId']

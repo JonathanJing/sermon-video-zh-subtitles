@@ -563,18 +563,20 @@ class MockTTSClient:
             'mock_tts_completion_changed')
         _, events = completion.current_events()
         previous = request['parentCompletion']['spanId']
+        checks = []
         for name in ('received', 'queued', 'worker'):
             handle = proof['handles'][name]
             digest = receipt['artifact']['sha256'] if name == 'worker' else c.canonical_sha256(
                 public.read_snapshot(root/'lifecycle'/(name+'.json'))[0])
-            completion.validate_synthetic(handle, events, production_run_id=request['runId'],
-                job_id=request['jobId'], revision_id=request['revisionId'], artifact_sha256=digest,
-                stage='mock_tts.'+name, dependencies=[previous])
+            checks.append({'handle': handle, 'job_id': request['jobId'],
+                'revision_id': request['revisionId'], 'artifact_sha256': digest,
+                'stage': 'mock_tts.'+name, 'dependencies': [previous]})
             c.require(handle['artifactKind'] == ('mock_wav' if name == 'worker' else 'control_receipt'),
                 'mock_tts_completion_artifact_kind_changed')
             c.require(handle['attemptId'] == (request['attemptId'] if name == 'worker'
                 else request['attemptId']+'.'+name), 'mock_tts_completion_attempt_changed')
             previous = handle['spanId']
+        completion.validate_synthetic_many(checks, events, production_run_id=request['runId'])
         artifact = contract.verify_wav(root/'fixture.wav', request, receipt['artifact'])
         return {'schemaVersion': ADMISSION, 'requestSha256': c.canonical_sha256(request),
             'workerReceiptSha256': c.canonical_sha256(receipt), 'completionSha256': c.canonical_sha256(proof),

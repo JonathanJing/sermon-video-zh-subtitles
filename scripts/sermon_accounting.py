@@ -11,6 +11,7 @@ import csv
 import fcntl
 import hashlib
 import json
+import marshal
 import os
 import platform
 import re
@@ -681,11 +682,44 @@ def sdk_invocation(model, *, backend="sdk"):
 
 
 def summarize(directory):
+    return _with_summary_snapshot(directory, lambda events, damaged, digest, replay, summary: summary)
+
+
+def _with_report_snapshot(directory, project):
+    """One private, operation-local read; never accept reusable caller authority.
+
+    Rows belong only to this call. The callback is an internal pure projector,
+    not an API for accepting externally prevalidated rows. Exact typed bytes
+    guard accidental mutation; current schema identity must remain unchanged
+    for the operation. Later calls always reread/revalidate the actual ledger.
+    """
+    events, damaged, digest = read_event_snapshot(directory)
+    contract = log_profile.contract
+    has_profile = any('contractVersion' in row for row in events)
+    with contract._schema_snapshot_lock:
+        schema = (contract.VERSION, contract._schema_snapshot()[0]) if has_profile else None
+        replay = profile_integrity(events)
+        frozen = marshal.dumps((events, damaged), 2)
+        result = project(events, damaged, digest, replay)
+        if marshal.dumps((events, damaged), 2) != frozen:
+            raise ValueError('report_snapshot_mutated')
+        if has_profile and (contract.VERSION, contract._schema_snapshot()[0]) != schema:
+            raise ValueError('report_schema_changed')
+    return result
+
+
+def _with_summary_snapshot(directory, project):
+    """Preserve summarize's serialized output writes while sharing its read."""
     directory = Path(directory)
-    # Serialize snapshot + both outputs, preventing an old snapshot replacing a new one.
-    with open(directory / ".summary.lock", "a", opener=_private_open) as lock:
+    with open(directory / '.summary.lock', 'a', opener=_private_open) as lock:
         fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
-        return _summarize_locked(directory)
+        def build(events, damaged, digest, replay):
+            summary, projected = _summarize_events(events, damaged, digest, replay)
+            result = project(events, damaged, digest, replay, summary)
+            return result, summary, projected
+        result, summary, projected = _with_report_snapshot(directory, build)
+        _write_summary(directory, summary, projected)
+        return result
 
 
 def _percentile(values, fraction):
@@ -922,8 +956,13 @@ def receipt_integrity(events, *, event_integrity=None):
 
 
 def _summarize_locked(directory):
-    events, damaged, ledger_hash = read_event_snapshot(directory)
-    replay = profile_integrity(events)
+    # Retained private compatibility entry for callers already holding the lock.
+    result, events = _with_report_snapshot(directory, _summarize_events)
+    _write_summary(Path(directory), result, events)
+    return result
+
+
+def _summarize_events(events, damaged, ledger_hash, replay):
     # Reconcile all raw receipts below, but aggregate one representative of
     # every equivalent profile fact, including stage/review/start events.
     projected = [e for e in events if 'contractVersion' not in e or id(e) in replay['_selected']]
@@ -1126,6 +1165,11 @@ def _summarize_locked(directory):
                          "cacheHit": finish["cacheHit"] if finish else start.get("cacheHit"),
                          "billing": finish["billing"] if finish else start.get("billing")})
     result["stageAttempts"] = attempts
+    return result, events
+
+
+def _write_summary(directory, result, events):
+    attempts = result['stageAttempts']
     temp = directory / (".summary-" + uuid.uuid4().hex + ".json")
     with open(temp, "w", opener=_private_open) as stream:
         stream.write(json.dumps(result, ensure_ascii=False, indent=2) + "\n")

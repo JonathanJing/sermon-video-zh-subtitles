@@ -225,10 +225,10 @@ class MockTTSDAG:
             c.require(key in self.observations and passed == self.observations[key], 'mock_dag_dependency_result_changed')
             parents.append(self.observations[key])
         _, events = completion.current_events()
-        for parent in parents:
-            if parent['readyForDownstream']:
-                for handle in parent['completionHandles']:
-                    completion.validate_synthetic(handle, events, production_run_id=self._production_run_id())
+        checks = [{'handle': handle} for parent in parents if parent['readyForDownstream']
+            for handle in parent['completionHandles']]
+        if checks:
+            completion.validate_synthetic_many(checks, events, production_run_id=self._production_run_id())
         return parents
 
     def _locale_spec(self, locale):
@@ -362,7 +362,7 @@ class MockTTSDAG:
     def observed_edges(self):
         """Verify every ready executable edge against actual typed control leaves."""
         _, events = completion.current_events()
-        edges = []
+        edges, checks = [], []
         for node in self.nodes:
             row = self.observations[node['id']]
             if not row['readyForDownstream']:
@@ -370,8 +370,8 @@ class MockTTSDAG:
                 continue
             c.require(len(row['completionHandles']) == 1, 'mock_dag_control_leaf_required')
             handle = row['completionHandles'][0]
-            completion.validate_synthetic(handle, events, production_run_id=self._production_run_id(),
-                stage='mock_dag.'+node['operation'], artifact_sha256=c.canonical_sha256(self.results[node['id']]))
+            checks.append({'handle': handle, 'stage': 'mock_dag.'+node['operation'],
+                'artifact_sha256': c.canonical_sha256(self.results[node['id']])})
             for parent_id in node['dependsOn']:
                 parent = self.observations[parent_id]
                 c.require(parent['readyForDownstream'], 'mock_dag_upstream_not_completed')
@@ -379,6 +379,8 @@ class MockTTSDAG:
                 c.require(parent_span in handle['dependsOn'], 'mock_dag_observed_edge_missing')
                 edges.append({'fromNode': parent_id, 'toNode': node['id'],
                     'fromSpanId': parent_span, 'toSpanId': handle['spanId']})
+        if checks:
+            completion.validate_synthetic_many(checks, events, production_run_id=self._production_run_id())
         return edges
 
     def _before_operation(self, node, parents):
