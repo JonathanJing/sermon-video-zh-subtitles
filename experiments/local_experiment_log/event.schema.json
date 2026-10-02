@@ -1,0 +1,214 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Hash-bound experiment measurement sidecar v1; not a production log envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "evidence_kind",
+    "event_id",
+    "experiment_id",
+    "trial_id",
+    "trace_id",
+    "span_id",
+    "parent_span_id",
+    "links",
+    "event",
+    "layer_id",
+    "component",
+    "host_role",
+    "host_id",
+    "producer_id",
+    "sequence",
+    "clock_id",
+    "monotonic_ns",
+    "timestamp_utc",
+    "level",
+    "job_id",
+    "attempt",
+    "worker_id",
+    "config_sha256",
+    "payload"
+  ],
+  "properties": {
+    "schema_version": {
+      "enum": [
+        "sermon-local-experiment-measurement-v1"
+      ]
+    },
+    "evidence_kind": {
+      "enum": [
+        "real",
+        "synthetic",
+        "replay"
+      ]
+    },
+    "event_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "experiment_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "trace_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "component": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "host_role": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "host_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "producer_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "clock_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "trial_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "span_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "parent_span_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "job_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "worker_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "links": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "relation",
+          "trace_id",
+          "span_id"
+        ],
+        "properties": {
+          "relation": {
+            "enum": [
+              "uses_preloaded_model",
+              "caused_by"
+            ]
+          },
+          "trace_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "span_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        }
+      }
+    },
+    "event": {
+      "enum": [
+        "trial.configured",
+        "span.started",
+        "span.ended",
+        "admission.decided",
+        "artifact.manifested",
+        "artifact.verified",
+        "quality.checked",
+        "resource.sampled",
+        "trial.completed"
+      ]
+    },
+    "layer_id": {
+      "enum": [
+        "L1",
+        "L2",
+        "L3",
+        "L4"
+      ]
+    },
+    "level": {
+      "enum": [
+        "info",
+        "warning",
+        "error"
+      ]
+    },
+    "sequence": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "monotonic_ns": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "timestamp_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "attempt": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1
+    },
+    "config_sha256": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "payload": {
+      "type": "object"
+    }
+  }
+}

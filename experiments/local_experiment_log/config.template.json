@@ -1,0 +1,17 @@
+{
+  "sample_sha256": null,
+  "checkpoint_sha256": null,
+  "code_sha256": null,
+  "runtime_sha256": null,
+  "duration_mode": null,
+  "duration_seconds": null,
+  "budget_scope": null,
+  "unit_ids": null,
+  "load_policy": null,
+  "batch_size": null,
+  "device": null,
+  "dtype": null,
+  "generation": null,
+  "output_cache_hit": null,
+  "dummy_warmup": null
+}
