@@ -750,5 +750,7 @@
     "baseline": 5,
     "optimized": 1,
     "allMeasurementsEqual": true
-  }
+  },
+  "implementationCommit": "988102d4df5c1a523943a1c414582087635cb94f",
+  "implementationFingerprintsMatch": true
 }

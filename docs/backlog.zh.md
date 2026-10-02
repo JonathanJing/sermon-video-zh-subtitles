@@ -237,7 +237,7 @@ SSH／Tailscale 可作为受授权的传输／网络路径，本身不提供 sch
 
 - [x] 同一操作内批量验证completion，保留全局冲突、单handle绑定及新调用重新验证。V1/V2入口分离、负例与三场景配对输出等价通过，详见[批量凭证与共享快照](reports/20261002-completion-report-snapshots.zh.md)。
 - [ ] 为批处理减少重复schema类型指纹；RQC policy语义与超限事件保护不能直接绕过，任何schema-only缓存须有独立版本/变更反例。
-- [x] 最终layer/accounting/summary/inspect共享同一操作快照，账本读取5→1；三场景返回值和四份摘要文件等价，追加/损坏/冲突仍检出。仅优化候选与操作级性能通过，完整SDK及合并后dev状态见[验证报告](reports/20261002-completion-report-snapshots.zh.md)。
+- [x] 最终layer/accounting/summary/inspect共享同一操作快照，账本读取5→1；三场景返回值和四份摘要文件等价，追加/损坏/冲突仍检出。优化候选、操作级性能及完整SDK三场景通过，合并后dev状态见[验证报告](reports/20261002-completion-report-snapshots.zh.md)。
 - [ ] 完整DAG内记录调用次数/CPU/写入与锁等待，确认分项优化对真实路径的收益；当前微基准不能给出143秒重复执行的耗时占比，也不关闭规模资格。
 
 

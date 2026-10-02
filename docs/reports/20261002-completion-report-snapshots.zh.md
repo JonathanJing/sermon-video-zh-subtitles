@@ -32,7 +32,19 @@ macOS 27 arm64、Python 3.12.8、jsonschema 4.26.0。18 个独立子进程、每
 
 100 项定向/回归通过：completion/batch、worker/control、schema/cache 共 55 项；Source causality 10 项；报告快照 7 项及原 accounting/logs 28 项。覆盖跨 run/序号冲突、V1/V2 分离、全部绑定、失败/容器终态、schema/version 改变、输入/返回对象突变、追加后重读和损坏日志。
 
-完整 Prefect 三场景将在干净提交上运行，并单独记录其结果。当前操作级结果不能替代该项或合并后 dev 验收。
+干净代码提交 `988102d4df5c1a523943a1c414582087635cb94f` 上，真实 Prefect 三场景均通过（6 次独立 invocation / 114 tasks），原统一入口退出 0：
+
+| 场景 | 包含验证的总 wall time | 已验证行为 |
+|---|---:|---|
+| 正常执行与凭证复用 | 195.721 s | 第二轮新增 provider fixture 调用为 0、mock job 派发为 0 |
+| 确认失败后选择性重试 | 188.536 s | 仅失败单元新建 attempt，成功邻居保持原 job |
+| 普通等待超时后对账 | 162.249 s | 沿原 job 对账成功，没有新派发 |
+
+见 [SDK 验证摘要](../evidence/2026-10-02-snapshot-optimization/sdk-validation.json)。这些时间包含 SDK 进程和测试验证，不是关键路径或受控整轮配对性能结果；不得用它们与旧单次运行之差宣称确定的整轮提速。真实模型/付费 API 调用为 0。
+
+独立只读审计确认 114 个不同任务、160 个 V1/V2 凭证及 6 份成功 WAV 的完整解码与 SHA，7 个 worker jobs 的身份和恢复行为一致，1001 份证据文件未改变。末轮报告 hash 与完整账本字节一致；首轮只验证其 hash 匹配最终账本的完整行重建前缀，不声称存在独立冻结的首轮快照。failure/timeout 的历史 `needs_attention` 保留。见[独立审计](../evidence/2026-10-02-snapshot-optimization/independent-audit.json)。
+
+后续提交只补充证据文档；代码文件与配对测量指纹一致。合并后 dev 验收、跨机、39/128-unit 规模及 controller 故障窗口仍未完成。
 
 ## 复现
 
