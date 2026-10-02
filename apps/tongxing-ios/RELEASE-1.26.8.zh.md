@@ -1,6 +1,6 @@
 # 同行正式身份 TestFlight 候选 1.26.8 (51)
 
-2026-10-02，用户要求独立推进 iOS 更新线，不等待 PR224。本候选使用正式 App 身份进入 TestFlight；未提交 App Store 审核或发布。版本分配前实时查看 App Store Connect：正式 App 最高上传为 1.26.7 (50)，随后按版本约定分配 1.26.8 (51)。既有独立 Beta 配置 1.2.0 (48) 保持不变。
+2026-10-02，用户要求独立推进 iOS 更新线，不等待 PR224。本候选使用正式 App 身份进入 TestFlight；随后用户明确要求撰写更新说明并提交发布，已于当日 10:36 PDT 提交 App Review，状态 Waiting for Review，审核通过后自动发布。版本分配前实时查看 App Store Connect：正式 App 最高上传为 1.26.7 (50)，随后按版本约定分配 1.26.8 (51)。既有独立 Beta 配置 1.2.0 (48) 保持不变。
 
 ## 冻结来源与归档
 
@@ -31,4 +31,28 @@ Release UI 测试使用命令行 `ENABLE_TESTABILITY=YES` 以允许测试 target
 
 2026-10-02 10:26:44 PDT，`xcodebuild -exportArchive` 退出 0，日志明确 `Upload succeeded` / `EXPORT SUCCEEDED`。Apple 上传列表已显示 1.26.8 (51) Processing。Apple 处理完成、内部组可用与手机安装验收分别记录，不将上传成功视为已可测试。
 
-本候选使用正式 App 自身 TestFlight。后续实机验收通过后可选择同一 build 提交 App Store；本次未执行该操作。独立 Beta App 的重新构建晋升规则不适用于这一条同身份 TestFlight 路径。
+本候选使用正式 App 自身 TestFlight。独立 Beta App 的重新构建晋升规则不适用于这一条同身份 TestFlight 路径。用户随后明确授权提交发布；未由此推断新增真机验收证据。
+
+## 正式审核提交（2026-10-02 10:36 PDT）
+
+提交前实时核对：上一正式版本 1.26.7 (50) 在 App Store Connect 为 Ready for Distribution；1.26.8 (51) 上传处理为 Complete，TestFlight 显示既有 Rooted 组。对照上一归档源码 `f2c0f6e949b5cf6387c1714f41140ea1c2e51572`，确认本次更新说明对应 PR220 的增量。
+
+在正式版本 1.26.8 中选择同一已归档、上传的 build 51，没有重打包或改变功能源码。简中与英文更新说明已保存并回读；既有截图、描述、隐私及联系人沿用，审核说明仅更新本次版本与修复概述。发布设置回读为 Automatically release this version、Release update to all users immediately、Keep existing rating。
+
+执行 Add for Review → Submit for Review 后，Apple 返回 1 Item Submitted；审核详情明确显示 1.26.8 (51)、Waiting for Review，提交时间 Oct 2, 2026 at 10:36 AM。Submission ID：`00c31421-a163-4c21-aa51-600d2b78b700`。
+
+[App Store Connect 审核详情](https://appstoreconnect.apple.com/apps/6809255441/distribution/reviewsubmissions/details/00c31421-a163-4c21-aa51-600d2b78b700)。该状态是待审核，不是已上架。证据为本次忽略目录内 `asc-submitted-confirmation.jpg/.txt`、`asc-waiting-for-review.jpg/.txt`。
+
+### 简体中文更新说明
+
+本次更新优化了播放与字幕体验：
+• 修复观看完整视频时，证道音频可能被系统播放控制意外启动的问题。
+• 改进字幕与双语文稿的显示和切换体验。
+• 改进全文阅读的辅助功能选中提示与英文搜索高亮。
+
+### English What's New
+
+This update improves playback and transcripts:
+• Fixed an issue where system playback controls could start sermon audio while the full video was open.
+• Improved subtitle and bilingual transcript display when changing selections.
+• Improved accessibility selection cues in full transcripts and English search highlighting.
