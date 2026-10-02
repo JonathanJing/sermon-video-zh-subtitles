@@ -13,6 +13,8 @@ from pathlib import Path
 import stat
 from types import SimpleNamespace
 
+from scripts import sermon_mfa_identity as mfa_identity
+from scripts import sermon_fresh_source_causality as causality
 from scripts import sermon_accounting as accounting
 from scripts import sermon_diagnostic_attempts as attempts
 from scripts import sermon_diagnostic_context as diagnostic
@@ -116,7 +118,7 @@ def _capture(new_plan, subject, parent_plan_path, authorization):
         and simulation.get('sourceCanonicalSha256') == c.canonical_sha256(source)
         and simulation.get('anchorCanonicalSha256') == c.canonical_sha256(anchor),
         'fresh_source_cache_simulation_changed')
-    c.require(evidence.get('schemaVersion') == 'sermon-fresh-diagnostic-source-evidence-v1'
+    c.require(evidence.get('schemaVersion') in {'sermon-fresh-diagnostic-source-evidence-v1', 'sermon-fresh-diagnostic-source-evidence-v2'}
         and evidence.get('sourceCanonicalSha256') == c.canonical_sha256(source)
         and evidence.get('anchorCanonicalSha256') == c.canonical_sha256(anchor)
         and evidence.get('contextSha256') == c.canonical_sha256(old_context)
@@ -167,24 +169,18 @@ def _capture(new_plan, subject, parent_plan_path, authorization):
     c.require(_ref(parent['sourceClipPath'])['bytesSha256']==parent['providerConfig']['sourceClipSha256'],
         'fresh_source_cache_clip_changed')
     refs += [recipe_path,Path(recipe['files']['audio_path']['path']),Path(parent['sourceClipPath'])]
-    if evidence['alignmentMode'] == 'fresh_local_mfa':
-        runtime_path = oldroot/'mfa/backend.json'; runtime, _ = public.read_snapshot(runtime_path)
-        c.require(runtime['backend'] == 'macbook-local', 'fresh_source_cache_mfa_backend_changed')
-        refs.append(runtime_path); runtime = runtime['runtime']
-        for item in runtime['files'].values():
-            if item:
-                c.require(_ref(item['path'])['bytesSha256'] == item['sha256'],'fresh_source_cache_mfa_file_changed')
-                refs.append(Path(item['path']))
-        for path,sha in runtime.get('nativeKalpy',{}).items():
-            c.require(_ref(path)['bytesSha256'] == sha,'fresh_source_cache_mfa_file_changed');refs.append(Path(path))
-        env_root = Path(runtime['files']['mfa_executable']['path']).parent.parent
-        for name,sha in runtime.get('condaRecords',{}).items():
-            c.require(Path(name).name == name, 'fresh_source_cache_mfa_file_changed')
-            path = env_root/'conda-meta'/name
-            c.require(_ref(path)['bytesSha256'] == sha,'fresh_source_cache_mfa_file_changed');refs.append(path)
-        refs += [Path(row['mfaManifest']) for row in aligned if row.get('mfaManifest')]
-    else:
-        c.require(evidence['alignmentMode'] == 'validated_prior_alignment_cache', 'fresh_source_cache_alignment_mode_invalid')
+    def observed_file(path):
+        ref = _ref(path); refs.append(Path(ref['path']))
+        return ref['bytesSha256']
+    mfa_identity.inspect_source_alignment(parent, recipe, evidence, aligned, file_sha256=observed_file)
+    causal_hash = evidence.get('sourceCausalitySha256')
+    c.require(recipe.get('schemaVersion') != 'sermon-fresh-source-recipe-v2' or causal_hash is not None,
+        'fresh_causality_required')
+    if causal_hash is not None:
+        causal = causality.inspect(oldroot, parent, recipe, asr_ref=asr_ref, review_ref=review_ref,
+            aligned_sha256=evidence['alignedSegmentsSha256'], source_sha256=evidence['sourceCanonicalSha256'])
+        c.require(c.canonical_sha256(causal) == causal_hash, 'fresh_causality_receipt_changed')
+        refs.append(oldroot/'fresh-source-causality.json')
     repository = Path(__file__).resolve().parents[1]
     from scripts import sermon_source_producer_compatibility as compatibility
     producers = {}; current_producers={}
