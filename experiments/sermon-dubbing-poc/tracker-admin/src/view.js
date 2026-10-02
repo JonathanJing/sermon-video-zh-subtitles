@@ -3,6 +3,8 @@ import { formatDuration, stepTimingSummary, timingCoverageNote } from './timing.
 import { substageProgressLabel } from './substage.js';
 import { tr, uiLanguage } from './i18n.js';
 import { renderTimeline } from './timeline.js';
+import { snapshotFreshness, legacyEtaState } from './snapshot-state.js';
+import { renderDag } from './dag.js';
 
 const LABELS = {
   pending: '待开始', running: '进行中', waiting_review: '待审核', blocked: '阻塞', complete: '已记录',
@@ -141,7 +143,8 @@ function renderShared(row, steps) {
   const sharedSteps = steps.filter((step) => step.layer === 1);
   setBadge('shared-status', row.complete === row.total ? 'complete' :
     sharedSteps.some((step) => step.status === 'blocked') ? 'blocked' :
-    sharedSteps.some((step) => step.status === 'waiting_review') ? 'waiting_review' : 'running');
+    sharedSteps.some((step) => step.status === 'waiting_review') ? 'waiting_review' :
+    sharedSteps.some((step) => step.status === 'running') ? 'running' : 'pending');
   byId('shared-fill').style.width = `${Math.max(0, Math.min(100, row.percent || 0))}%`;
   const list = byId('shared-steps');
   list.replaceChildren(...steps.filter((step) => step.layer === 1).map((step) => {
@@ -225,7 +228,14 @@ function renderFlow(snapshot) {
   byId('flow-map').replaceChildren(shared, branches, join);
 }
 
-function renderEta(report) {
+function renderEta(report, freshness) {
+  const state = legacyEtaState(report, freshness);
+  if (state === 'complete' || state === 'stale') {
+    text('metric-eta', state === 'complete' ? tr('检查点已记录', 'Checkpoints recorded') : tr('未知', 'Unknown'));
+    text('metric-eta-note', state === 'complete' ? tr('无剩余检查点；实际完成时刻未在此推断', 'No remaining checkpoints; no finish time inferred') : tr('快照过期或时间未知；旧估计已暂停显示', 'Snapshot stale or untimed; old estimate withheld'));
+    text('eta-explanation', tr('快照生成时刻不是制作完成时刻。检查点、执行 DAG 与内容审核分别记录。', 'Snapshot generation is not the production finish time. Checkpoints, execution DAG and content review are separate.'));
+    return;
+  }
   const missing = report.missingEstimateCount || 0;
   const blockers = report.blockerCount || 0;
   text('metric-eta', report.earliestContinuousEta ? dateTime(report.earliestContinuousEta) : tr('未知', 'Unknown'));
@@ -475,6 +485,7 @@ export function renderSnapshot(snapshot) {
   text('updated-at', tr(
     `状态更新 ${dateTime(snapshot.ledgerUpdatedAt)} · 快照 ${dateTime(snapshot.generatedAt)}`,
     `Status updated ${dateTime(snapshot.ledgerUpdatedAt)} · Snapshot ${dateTime(snapshot.generatedAt)}`));
+  renderFreshness(snapshot);
   const report = snapshot.progress || {};
   const complete = report.complete || 0;
   const total = report.total || 0;
@@ -483,8 +494,9 @@ export function renderSnapshot(snapshot) {
   text('metric-progress-count', tr(`${complete} / ${total} 检查点已记录`, `${complete} / ${total} checkpoints recorded`));
   byId('overall-fill').style.width = `${Math.max(0, Math.min(100, percent))}%`;
   text('metric-progress-note', timingCoverageNote(snapshot.timingCoverage, snapshot.steps));
-  renderEta(report);
+  renderEta(report, snapshotFreshness(snapshot.generatedAt).status);
   renderBlockers(report, snapshot.steps || []);
+  renderDag(snapshot);
   renderFlow(snapshot);
   renderTimeline(snapshot, stepName);
   renderSource(snapshot.source);
@@ -508,3 +520,14 @@ export function showConnection(message, status = 'neutral') {
 }
 
 export { dateTime, label };
+
+export function renderFreshness(snapshot, mode = 'cloud', fromCache = false) {
+  const value = snapshotFreshness(snapshot?.generatedAt);
+  const prefix = mode === 'demo' ? tr('合成演示', 'Synthetic demo') : mode === 'local' ? tr('本地静态预览', 'Static local preview') : fromCache ? tr('浏览器缓存', 'Browser cache') : tr('已发布快照', 'Published snapshot');
+  const age = value.ageSeconds == null ? tr('时间未知', 'Time unknown') : tr(`距今 ${formatDuration(value.ageSeconds)}`, `${formatDuration(value.ageSeconds)} old`);
+  const status = { recent: tr('最近生成', 'Recently generated'), stale: tr('快照过期', 'Snapshot stale'), unknown: tr('新鲜度未知', 'Freshness unknown'), clock_skew: tr('时间异常', 'Clock mismatch') }[value.status];
+  const node = byId('snapshot-health');
+  node.className = `snapshot-health ${value.status === 'recent' && mode === 'cloud' && !fromCache ? '' : 'warn'}`;
+  node.textContent = `${prefix} · ${status} · ${age} · ${tr('云端连接不代表执行器仍在线', 'Cloud connection does not prove executor liveness')}`;
+  renderEta(snapshot.progress || {}, value.status);
+}

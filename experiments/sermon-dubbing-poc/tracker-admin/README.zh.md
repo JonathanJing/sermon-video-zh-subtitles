@@ -80,3 +80,59 @@ node publish.mjs --project YOUR_PROJECT --database sermon-tracker \
 - 该 POC 的中文、韩语、西语、越南语各有机器文字候选与可访问的短音轨；四条音轨的 SHA 和 Range 通过。越南语机器音频筛查标记需复核。四语的正式文字审核、音色听审、完整 Layer 3 音轨、声纹、设备和现场验收均未由此 POC 获得批准；正式检查点为 0/60。来源页面／视频更新尚无本周 source monitor 收据，保持“未检查”；ETA 仍未知。
 - 正式四层 producer 到工作账本的自动同步仍在[Tracker Backlog](../../../docs/four-layer-production-tracker.zh.md) 的 TRK-002。人工更新必须引用真实包与收据。
 - “视频已更新”仅指同周源监控发现的视频 ID 相对上次本地状态变化，不证明下载、解码或人工范围批准。
+
+## 运行 DAG 投影（可选接入，不改变正式门禁）
+
+新版布局是「概览 → DAG 依赖层 → 节点证据」。原有四层检查点和发布验收仍独立显示。
+这不是新的调度器：浏览器不发模型请求、不写账本、不重新判断人工批准。
+
+数据流只有一条：
+
+1. producer 追加私有 `sermon-workflow-accounting-v3` / `sermon-accounting-log-contract-v1` 事件；冻结计划与完整 validator 状态收据仍按原合同保存
+2. `scripts/build_tracker_dag_projection.py` 在同一有界、加读锁的日志字节快照上复用现有 weekly report / `sermon_run_progress`，投影已观测 DAG 与可选计划进度
+3. `build_four_layer_tracker_snapshot.py` 合入嵌套版本 `sermon-public-tracker-dag-v1`；现有公开快照 v2 仍兼容，旧快照不补造 DAG
+4. `publish.mjs` 的显式字段 sanitizer 再次过滤，沿用同一 Firestore 文档；前端只渲染这一份快照
+
+### 明确绑定某一次执行
+
+默认不扫描其他日志、不选择“最新 run”。添加以下参数时，选定 run 的 workflow 必须绑定当前账本的 `pageId + target + ledgerIdentitySha256`，且工作流祖先无冲突、无环；无关工作流和显式矛盾的子流程会阻止生成。账本重建、来源窗口改变或 Dev/production 不同均不能沿用绑定。
+
+```sh
+python scripts/build_four_layer_tracker_snapshot.py \
+  --ledger artifacts/my-run/four-layer-progress.json \
+  --out artifacts/my-run/public-tracker-snapshot.json \
+  --dag-accounting-dir artifacts/my-run/accounting \
+  --dag-run-id EXACT_BOUND_RUN_ID \
+  --dag-progress-inputs artifacts/my-run/progress-inputs.private.json
+```
+
+`--dag-progress-inputs` 可省略；省略时只显示已观测执行和实测关键路径，计划进度及剩余 ETA 保持未知。私有 JSON bundle 为 `{ "plan": ..., "receipts": [...] }`，可加既有 `samples`、`resource_state`、`reconciliations`、`previous`；它必须来自已冻结计划和原 validator 证据，不接受预先填好的百分比或 ETA。模型配置、身份和输入 hash 在私有层核验，不直接公开。
+
+watch 配置可添加 `dagAccountingDir`、`dagRunId`、`dagProgressInputs`，参数与上例对应。只重生成快照不会启动工作。仅生成时间或日志年龄变化不视为工作进度变化。绑定失败时本次生成不覆盖原快照，watch 保留最后一次成功发布；不要用删除旧日志或改身份绕过失败。
+
+### 展示语义
+
+- 已观测 DAG：只显示有效执行叶节点，容器不重复累计；失败／取消／未闭合执行保留。并行累计耗时不冒充端到端墙钟时间，实测关键路径不是剩余 ETA
+- 冻结计划：处理、执行成功、机器复核、真实人审、模拟人审、准入分开。`phase=complete` 不是 `complete=true`；缺门禁和未对账旧尝试仍明确提示
+- 运行中：只有原 monitor 的新鲜心跳和实测 active elapsed 才能显示对应事实；不在网页累加执行时间。快照变旧后降为“当前未知”
+- ETA：只复用既有资源容量／剩余 DAG 估计区间，显示可比样本数和置信度；无计划、未知尝试、人审等待、过期心跳、资源未知和不足历史保持未知。它不承诺交付时刻
+- synthetic / mixed / unknown 不能授予真实人审、准入、正式完成或数值 production ETA；`?demo=1` 的 DAG 明确为合成夹具
+- 节点 ID 是本快照内的匿名引用；跨 run / 迟到历史事件后不保证相同 ID 对应相同私有 span。页面选择和视图可保留，节点选择会在新 DAG 到达时安全重置
+- 模型和步骤名只公开明确 allowlist；计划配置模型与已观测模型分开。逻辑层不由 executor 或运行主机推断
+- I/O 目前只显示已有明确绑定的安全数量或 run 级文件快照计数；没有逐节点产物绑定、主机／排队／加载收据时保持未知。公开页不下载私有路径、正文、哈希、原始日志或任意 URL；原有已批准播放页链接保留在交付面板
+
+### 运行期间与断线
+
+顶部“状态库已连接”仅代表 Firestore 读取，不代表本机 publisher 或执行器在线。页面分别显示状态更新时间、快照生成时间和日志证据新鲜度。超过 120 秒的快照显示过期，旧 ETA 暂停显示；不会据此宣称任务失败。读取中断保留最后快照，并可点击重新连接。迟到、同时间冲突或缺关键渲染字段的记录不会替换较新的已知快照。
+
+### 检查与剩余接入
+
+```sh
+python -m unittest tests.test_build_tracker_dag_projection tests.test_build_four_layer_tracker_snapshot tests.test_weekly_pipeline_report tests.test_sermon_run_progress
+cd experiments/sermon-dubbing-poc/tracker-admin
+npm ci --ignore-scripts
+npm test
+npm run build
+```
+
+DOM 测试覆盖节点／上游跳转、重复切换、中英文、状态降级与键盘焦点；不能冒充真实浏览器视觉、响应式或完整无障碍验收。此改动没有部署、写 Firestore、启动实机制作或运行 GPU/API。当前 full-DAG synthetic sidecar 的逻辑层与旧 tracker 账本尚需单独的已验证绑定适配；不能用阶段名或“最新一次测试”强行套进周页面。合并后的实机 canary 还需：用同一个真实账本启动已有 publisher、核对指定 run 收据，再验证断线恢复、手机布局和实际进度更新。
