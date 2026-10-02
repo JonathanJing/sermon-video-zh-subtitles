@@ -79,6 +79,7 @@ jobs:
           tests.test_ci_change_scope
           tests.test_docs_change_gate
           tests.test_ios_ci_route
+          tests.test_xcode_cloud_archive_admission
           tests.test_tongxing_interface_locales
           tests.test_shared_client_contract_fixtures
           tests.test_shared_text_only_release_fixtures
