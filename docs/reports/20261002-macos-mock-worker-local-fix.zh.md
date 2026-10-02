@@ -106,3 +106,19 @@ export SERMON_FRESH_FULL_TEST_EVIDENCE_DIR="$PWD/artifacts/mock-worker-local-fix
 保存的`summary-<invocation>.json`新增`statusDiagnostics`，分别展示SDK任务状态、原业务结果、历史错误和显式对账。历史错误来自整个当前保存账本，可能包含晚于该invocation的记录。只有完整一致账本中相同run/attempt/job/revision的唯一显式reconciliation才能记为`recorded`；没有证据时为`unknown`，不凭后来成功消除历史错误，也不授权重试。
 
 性能改进本批先交付可重复的分场景/分invocation wall time。SDK、日志读取及校验的CPU耗时归因、配对性能实验、生产吞吐量和跨机/规模验收仍保留为独立待办。
+
+### 复盘改进的验证结果
+
+候选提交`8ff42bc740824640f0116cb759bf21d590a951b9`上，17项新增定向测试与6项归档回归通过。新入口三场景全部通过，实际每个子进程还校验统一候选SHA；场景前后发现代码版本或工作区变化会停止。原始本机修复结果仍对应前文的`ab98774`，不得将两次测量混为同一个版本。
+
+| 场景 | 预检 | 首次invocation | 第二次invocation | 场景总wall time |
+|---|---:|---:|---:|---:|
+| happy | 0.465秒 | 96.916秒 | 142.960秒 | 243.074秒 |
+| failure | 0.458秒 | 69.150秒 | 156.046秒 | 228.484秒 |
+| timeout | 0.468秒 | 55.585秒 | 147.338秒 | 206.142秒 |
+
+三场景各有完整7条进度事件，每次预检均先于fixture创建；6份保存的invocation输入均绑定同一干净候选SHA。独立审计仍通过7份WAV、typed completion和全部1001个证据文件的前后哈希不变。新摘要中，正常场景0条历史错误；失败场景保留2条历史错误且不虚构对账；超时场景保留2条历史错误并关联2条显式对账。
+
+本轮首次与第二次invocation的耗时差异只说明需要进一步分析；例如happy的凭证复用耗时比首次更长，不能据此归因为某个函数或声称性能提升。下一项性能工作应分别profile读取/校验和SDK开销，并做配对测量。
+
+日志及证据在`artifacts/mock-retro-validation/`，入口完整输出为`artifacts/mock-retro-runner.log`，本批定向测试输出为`artifacts/mock-retro-targeted.log`。`progress-audit.json`保存阶段/候选版本与状态摘要核验，`audit-result.json`保存产物审计。所有复测仍是本机模拟候选验证，不扩大生产、跨机或规模资格。
