@@ -28,3 +28,13 @@
 ## 后续边界
 
 `017/DEV-SPD-006` 下一批在已有 `source.existing` continuation graph 中接 durable mock TTS lifecycle，必须用真实 Prefect 引擎执行并验证失败、unknown reconciliation、partial resume、idempotency 和 outbox 恢复，不能宣称 fresh whole-engine 已完成。MFA backend 内部推理/缓存命中尚无独立观察；其外层只记确定性 adapter，typed completion 标为 backend_execution_unobserved，不计作新的模型执行证明。资源/provider queue、跨 host clock、完整 ETA、真实 MFA 重跑和正式 Layer 1–4 门禁仍分别待验。`018` 外部 speech task/bytes 契约未建立，不发明第二套 Hub 接口。
+
+## PR 210 追加审查：下游 MFA 身份门禁
+
+审查基于 `3a095917d8134bf3fe8edf8e2a663a3e89980370`。P1 已离线复现：准备完成后，历史 causality receipt 仍然成立，但 MFA 比较 receipt、manifest/output 或实际依赖已经缺失/损坏；原 `_check()` 没有重新验证这些当前字节。Fresh Session 现在在每个下游边界复用完整的只读 Source evidence validator，统一验证原 receipt、当前产物、MFA 稳定依赖和因果证据，不等到 delivery 才发现问题。
+
+新增回归覆盖 9 类文件各自缺失/损坏的 18 个场景，每个场景检查 `inspect_source`、`freeze_locale_inputs`、`run_locale` 三个边界，断言拒绝先于 Layer 2 派发，原文件不改写、调用不增加；恢复原始字节后仍可正常检查。有效证据的正例通过真实 locale 输入预检到达显式 mock runner 边界，不重跑 MFA。
+
+P2 的“ContractError 未被捕获”未成立：`ContractError` 继承 `ValueError`，已包含在既有 handler 中。因此不添加多余生产异常分支；新增回归直接证明 raw-output hash/reference-chunks 违反合同后，expected-receipt 和 legacy 读取路径均保留安全 operand hash、rejected acceptance 和原观察时间，且不回填历史 receipt。
+
+本次局部回归 93 tests：92 passed，1 optional Prefect skipped；包含新边界用例 2 tests，以及 Fresh/MFA/cache、completion、deadline、DAG session/flow 91 tests。独立审查、干净提交的真实 Prefect 检查与新 exact-head CI 另行核验。没有真实模型调用；合并仍须按当前确认与检查门禁执行，下一批 DAG/mock 工作尚未启动。

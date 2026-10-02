@@ -159,18 +159,13 @@ class FreshDiagnosticSession(sessions.DiagnosticSession):
             if self._cached_source:
                 cached_source.validate_evidence(self.plan,self.subject,self.context,self.binding['sourceEvidence'])
             else:
-                c.require(c.read_snapshot(self.root/'fresh-source-evidence.json')[0]==self.binding['sourceEvidence'],
-                          'fresh_source_evidence_changed')
-                for operation,model,key in (('transcription.initial','gpt-transcribe','asr'),('source.initial','gpt-6-astra','sourceCheck')):
-                    _,reference=source_adapter.returned_receipt(self.root,self.subject.config,operation,model)
-                    c.require(reference==self.binding['sourceEvidence'][key],'fresh_source_receipt_binding_changed')
-                evidence=self.binding['sourceEvidence']
-                if evidence.get('sourceCausalitySha256') is not None:
-                    causal=source_adapter.causality.inspect(self.root,self.plan,frozen_recipe,
-                        asr_ref=evidence['asr'],review_ref=evidence['sourceCheck'],
-                        aligned_sha256=evidence['alignedSegmentsSha256'],source_sha256=evidence['sourceCanonicalSha256'])
-                    c.require(c.canonical_sha256(causal)==evidence['sourceCausalitySha256'],
-                        'fresh_causality_receipt_changed')
+                # Use the same read-only identity gate at every downstream
+                # boundary, not only delivery. A valid completion proves what
+                # finished then; it cannot certify MFA artifacts/dependencies
+                # that have changed since Source preparation.
+                from scripts import sermon_fresh_source_evidence as inspector
+                inspector.validate_fresh_source_evidence(self.root, self.plan, self.subject,
+                    self.context, self.binding['sourceEvidence'])
         return self.binding['sourceEvidence'] if self.binding else None
 
     def _check_historical_inputs(self):
