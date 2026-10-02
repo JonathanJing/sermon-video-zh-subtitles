@@ -20,7 +20,7 @@ Dev Debug 与正式版沿用同一原生收听界面、播放器、下载、字�
 
 ## 打开与运行
 
-后续 App 版本统一用点分隔的 `1.26.N`，下一次新 Beta 候选从 `1.26.1` 开始；Beta 验收后转正式保留同一数字版本，后台 Build 独立递增。跨年、重试与实际归档要求见 [版本号约定](VERSIONING.zh.md)。
+后续 App 版本统一用点分隔的 `1.26.N`，本次正式候选由用户指定为 `1.26.7`，下一新候选从 `1.26.8` 开始；Beta 验收后转正式保留同一数字版本，后台 Build 独立递增。跨年、重试与实际归档要求见 [版本号约定](VERSIONING.zh.md)。
 
 正式版与可共存的测试版共用源码：`Tongxing` 使用原 App 标识，`TongxingBeta` 使用独立的 `com.jonathanjing.tongxing.beta`，手机名称为「同行-beta」。BetaDebug/BetaRelease 默认连接 Firebase Dev；灵动岛返回链接与本机存储随 App 身份隔离。开发测试使用 `./scripts/ios.sh test --scheme TongxingBeta`。测试版到正式版的源码冻结、归档记录与发布验证见 [Beta 晋升流程](BETA-PROMOTION.zh.md)。
 
