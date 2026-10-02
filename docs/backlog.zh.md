@@ -185,6 +185,7 @@ SSH／Tailscale 可作为受授权的传输／网络路径，本身不提供 sch
 实现缺口须沿原 ID 回写：`008` producer typed completion leaf 与 recipe 必需边的语义验证；`017` 规范入口／冻结计划到真实 engine 的绑定、durable 状态／恢复和全消费者一致性；`018` 同合同 mini 接入／Spark worker、结果 bytes/hash 返回、batch partial recovery、未知对账与受限 fallback；`DEV-SPD-006` 真实 scheduler adapter、依赖驱动 dispatch／joins 与重启证据。现有 schema、outbox、账本／job primitives 可复用，不表示上述端到端接线已有；不得再建第二条顶层 backlog 或用日志修复重新推理。
 
 **2026-10-02 云端实施进展**：PR #210 已通过独立复核及 exact-head CI 后合入 dev（`84e9d71`），补齐 `016/008` 的 MFA 分项身份比较、实际 Source completion leaves 与下游重新核验；旧真实重跑失败记录仍保留。`017/DEV-SPD-006` 的 durable mock worker / canonical log / real Prefect continuation 接线已进入实现与分项验收，详见[云端生命周期记录](reports/20261002-cloud-mock-dag-lifecycle.zh.md)。新增 controller crash-window 回归编写遇到工具安全筛查阻断，保留为明确覆盖缺口；不得据普通组件通过关闭完整引擎、Fresh takeover、真实计算或正式资格。
+- 后续独立 review / CI 揭示 generic completion 接受 synthetic v2，以及 active worker terminal receipt publication 的普通读序竞争；前者修为显式 v1/v2 入口，后者先看 physical job active 状态，保留全部严格检查与原期限。PR #217/#218 修正 head 重新验收前继续 hold；旧绿色结果不替代新验收。详见生命周期记录的后续修复节。
 - mock v1 的已验证准入暂限 2 units；39/128-unit 实际规模验收继续 open。schema snapshot 优化不能消除全量 ledger 扫描的 O(N²) 累计成本；后续须验证完整字节/冲突/序号不减弱的有界或增量校验，不能把 admission 上限或更长 timeout 当成性能通过。
 
 

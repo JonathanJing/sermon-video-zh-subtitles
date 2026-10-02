@@ -439,7 +439,12 @@ class MockTTSClient:
                 deadline = time.monotonic() + timeout
                 while True:
                     job = self._job(request)
-                    receipt = self._terminal_receipt(request, path)
+                    # The immutable receipt may already be linked while its
+                    # writer is still finishing publication/accounting. Only
+                    # read it after the physical job leaves its active states;
+                    # retain the strict snapshot checks and original deadline.
+                    receipt = (None if job['status'] in {'queued', 'running'}
+                        else self._terminal_receipt(request, path))
                     if receipt is not None and job['status'] not in {'queued', 'running'}:
                         if receipt['status'] == 'worker_failed':
                             self._confirmed_failure(request, path, receipt)
@@ -558,8 +563,10 @@ class MockTTSClient:
             and e.get('runId') == self.stream.run_id and e.get('attemptId') == original['observerAttemptId']}
         c.require(len(ends) == 1 and next(iter(ends.values()))['status'] == 'outcome_unknown',
             'mock_tts_unknown_terminal_required')
+        if self._job(request)['status'] in {'queued', 'running'}:
+            return {'status': 'still_unknown', 'newDispatch': False, 'productionEligible': False}
         receipt = self._terminal_receipt(request, path)
-        if receipt is None or self._job(request)['status'] in {'queued', 'running'}:
+        if receipt is None:
             return {'status': 'still_unknown', 'newDispatch': False, 'productionEligible': False}
         if receipt['status'] == 'worker_failed':
             self._confirmed_failure(request, path, receipt)

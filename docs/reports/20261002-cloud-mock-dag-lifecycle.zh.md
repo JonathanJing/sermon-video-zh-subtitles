@@ -80,3 +80,13 @@ CLI 为 `python -m scripts.sermon_mock_tts_dag`，只接受显式 `--offline-fix
 - 当前新 mock v1 只接纳已验证的最多 2 个 unit；这是实验范围的 fail-closed 限制，**不是可扩展性修复**。39-unit 与 128-unit 的吞吐、deadline 和完整生命周期验收继续开放
 - 精确内容/类型绑定的私有 schema snapshot 降低重复校验开销。相同正例 client profile 4.133 → 2.688 秒；256 events × 20 replay batches 2.548 → 0.155 秒。每 event 的 JSON/type/size/schema/semantic 与 replay 检查保留；实际 ledger bytes、delivery records、锁和 scope 仍全量校验
 - 全量 ledger 校验仍为每 append O(N)、累计可能 O(N²)。本切片不宣称增量 prefix 校验已经实现；后续优化必须继续验证原字节、冲突、scope 与 sequence，不准用 mtime 或对象 identity 代替事实完整性
+
+## 后续 correctness 修复与重新验收
+
+PR #217 在 `ddff97e` 的可见 CI 曾全部通过，但后续独立 review 确认 generic `completion.validate()` 根据调用方 handle 自动接受 synthetic v2，会让既有 Source predecessor gate 失去 v1/v2 类型边界。离线负例复现了 generic 接受，以及实际 `prepare_source` 到达 gate 后第一步。修复将 generic API 固定为 v1，v2 只能显式走 `validate_synthetic()`；共享内部检查仍保留原 event/terminal/dependency/artifact/run/job/revision 约束，不改变 Source producer 文件或扩张 migration。
+
+依赖 PR #218 的 `30704a8` required root CI 另有一个真实失败：确认 worker failure 的普通组件场景，observe 返回 `public_snapshot_changed_during_read` / blocked。它不是测试 job timeout；旧 hosted SDK 全部通过也不能覆盖这个失败。独立临时目录复现证明正常 hard-link publication 的临时 link 清理会改变同一 inode 的 ctime，payload/device/inode/size/mtime 均不变，严格 reader 因而可以在 writer 尚未结束时拒绝快照。原 CI 没保存具体文件 traceback，因此这证明机制而非追溯断言唯一原始文件。
+
+观察与 reconciliation 现先检查原 physical job 是否仍 queued/running；active 时不提前读 terminal receipt。仍在原 deadline 内等待或返回 still_unknown，无重新派发、无放宽 strict snapshot/hash/terminal 检查、无吞掉 ContractError。两个普通状态顺序断言在旧代码失败，修复后控制器 8/8 通过。此前被阻断的新 crash/ACK/tamper 故障测试没有换文件重做。
+
+这两项修改需要修正提交的独立复核和 genuine exact-head CI；旧通过记录保持历史属性，不能冒充新提交验收。全量 ledger 扫描 P1、39/128-unit 规模与 production 资格仍 open。CI 两个新增重模块的分片成本采用观察值，含失败 full-Fresh 模块时明确作为调度估计/下界；不删测试，不改 required gates 或 timeout。

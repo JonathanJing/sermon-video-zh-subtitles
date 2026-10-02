@@ -53,6 +53,35 @@ class MockTTSControlTests(fixtures.WorkerFixture):
         launch.assert_not_called()
         self.assertFalse((self.scope/'jobs').exists())
 
+    def test_observation_defers_terminal_receipt_until_worker_is_not_active(self):
+        request, path = self.make_request(fault='fail_after_render')
+        self.client.submit(path)
+        self.assertEqual(self.wait(request)['status'], 'failed')
+        original_job = self.client._job
+        original_receipt = self.client._terminal_receipt
+        observations = []
+        receipt_reads = []
+
+        def observed_job(selected):
+            # An ordinary observer can see earlier queued/running snapshots
+            # before seeing the physical worker's terminal state.
+            value = ({'jobId': selected['jobId'], 'status': 'running'}
+                if len(observations) < 2 else original_job(selected))
+            observations.append(value['status'])
+            return value
+
+        def read_terminal(selected, selected_path):
+            self.assertNotIn(observations[-1], {'queued', 'running'})
+            receipt_reads.append(selected['jobId'])
+            return original_receipt(selected, selected_path)
+
+        with patch.object(self.client, '_job', side_effect=observed_job), \
+                patch.object(self.client, '_terminal_receipt', side_effect=read_terminal):
+            result = self.client.observe(path)
+        self.assertEqual(result['status'], 'failed')
+        self.assertEqual(receipt_reads, [request['jobId']])
+        self.assertEqual(observations[:3], ['running', 'running', 'failed'])
+
     def test_capacity_rejection_is_known_before_launch(self):
         first, first_path = self.make_request(unit_id='zh-Hans.unit.002')
         self.client.submit(first_path)
@@ -90,6 +119,14 @@ class MockTTSControlTests(fixtures.WorkerFixture):
         unknown = self.client.observe(path, timeout_seconds=.01)
         self.assertEqual(unknown['status'], 'outcome_unknown')
         original = self.client._observation_path(request).read_bytes()
+        with patch.object(self.client, '_job', return_value={'jobId': request['jobId'], 'status': 'running'}), \
+                patch.object(self.client, '_terminal_receipt',
+                    side_effect=AssertionError('active worker receipt is not yet an observation boundary')) as reader:
+            still = self.client.reconcile(path)
+        self.assertEqual(still['status'], 'still_unknown')
+        self.assertFalse(still['newDispatch'])
+        reader.assert_not_called()
+        self.assertEqual(self.client._observation_path(request).read_bytes(), original)
         retry, retry_path = self.make_request(attempt_number=2, retry_of=c.canonical_sha256(request))
         with self.assertRaises((c.ContractError, OSError)):
             self.client.submit(retry_path)
