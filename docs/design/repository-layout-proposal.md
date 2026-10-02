@@ -2,7 +2,7 @@
 
 [中文](repository-layout-proposal.zh.md) · [Current system overview](../backend-workflow-system-design.zh-en.md) · [Four-layer contract](../multilingual-production-interfaces.zh.md)
 
-Status: **proposal for review, not approval to migrate**. Evidence date: 2026-10-02. Source baseline: [dev@84e9d71d24ae86170efbb4c57755246f369ec9d9][baseline]. This document designs directory ownership, dependency boundaries and migration gates. It does not change production contracts or claim that the proposed packages, directories or unified execution capabilities already exist.
+Status: **proposal for review, not approval to migrate**. Evidence date: 2026-10-02. Original inventory baseline: [dev@84e9d71d24ae86170efbb4c57755246f369ec9d9][baseline]. Amendment review baseline: [dev@8c64502404f9ae7110ee49aa990bcaeb2f8cd24d][review-baseline], fetched and checked against the remote branch on 2026-10-02. The original counts below remain tied to the original baseline; the delta inventory in §1.1 covers the amendment review. This document designs directory ownership, dependency boundaries and migration gates. It does not change production contracts or claim that the proposed packages, directories or unified execution capabilities already exist.
 
 Keep one multilingual monorepo. Separate clients, services, reusable production code, deployment configuration and experiments at the top level; express L1–L4 within the production package. Establish dependency direction before moving modules. Confirm implementation scope and sequencing only after the cloud Source/DAG diagnostic line and the local Spark performance line finish and their results are reconciled.
 
@@ -20,6 +20,23 @@ Counts refer to the pinned Git tree, not executed test cases. No model execution
 
 **This change adds only the English and Chinese design files.** It moves no code and changes no `AGENTS.md`, backlog, shared documentation index, entrypoint, CI, configuration or deployment target. It does not merge another branch or authorize deployment, infrastructure changes, data migration or paid reruns.
 
+### 1.1 Amendment delta inventory
+
+The PR head reviewed before this amendment was `a3dcff3bdb3df111409b49d87f19deafc2554391`. Its two design files were unchanged from `52759ffb977c36224959d0832593becaef59978e`; that head had merged dev, not refreshed the design. The following assignments reconcile the original inventory with the pinned amendment baseline and active Tracker design. They are ownership decisions for later migration, not implementation or deployment evidence.
+
+| Evidence at amendment review | Proposed owner | Boundary to preserve |
+|---|---|---|
+| Existing fingerprint Node CLI and browser worker both consume the same algorithm | `packages/fingerprint/`; Python runtime adapter in production compute | Two actual consumers already justify the shared package; no production runtime dependency on an app checkout (§3.1) |
+| Existing `tracker-admin/` UI, publisher, sanitizer and Firebase/Firestore files | Four distinct owners in §3.2 | Public reads, authenticated writes and private evidence remain separate |
+| `sermon_fresh_source_stages.py`, `sermon_fresh_source_prefect.py`, `sermon_fresh_full_dag.py`, `sermon_mock_tts_{contract,control,dag,worker}.py` added after the original inventory | Keep experimental until promotion is decided; later engine/controller adapters in orchestration, synthetic workers in compute, stage semantics in the relevant stage | Preserve synthetic/diagnostic qualifications; no native GPU, human approval or production publication inferred from a real Prefect engine. [Fresh DAG][fresh-dag], [mock DAG][mock-dag] |
+| `sermon_durable_accounting.py` and changed log outbox/completion behavior | Durable event delivery in observability; safe file/lock primitives in storage; completion shape in contracts and evidence validation with its owning review/orchestration consumer | Extract shared I/O APIs before moving imports of workflow-job helpers; preserve append/ACK crash recovery, immutable facts, opt-in behavior and synthetic versus production completion domains. [Durable accounting][durable-accounting], [outbox][review-outbox], [completion][completion] |
+| Updated `sermon_log_contract.py` validation/schema caches, including merged PR #221 | Observability contract validation; packaged schema supplied through contracts | Preserve exact typed/schema identity, 8,192-entry/16 MiB dual bounds, success-only caching and fork reset; full-byte reads, hashes and durable sequence/conflict authority remain independent. [Log validator][review-log-validator] |
+| `experiments/local_experiment_log/` | Remain experiments; only demonstrated stable measurement entrypoints may later move to tools/benchmarks | Reuse the canonical validator/writer/outbox; no second production log authority or automatic permission to run GPU trials. [Experiment contract][local-log] |
+| `ci_change_scope.py`, sharded runner and current Web/Swift contract routing | tools/development plus existing workflow location | Test discovery, fixture ownership and required-check routing must migrate together (§5.5). [Python discovery][test-discovery], [Python CI][python-ci], [iOS routing][ios-ci] |
+| Planned `build_tracker_dag_projection.py`, nested DAG snapshot, frontend `dag.js` / `snapshot-state.js` and extra sanitizer | Same four Tracker boundaries in §3.2 | Active design, **not present in the pinned dev baseline**; reconcile the final reviewed files and public schema before any move |
+
+SparkHub/resource-guardian implementations remain in their own repositories. This proposal owns only this repository's explicit compute adapters and versioned exchange contracts; it does not absorb those projects or enable their execution gates. Recheck the final revisions of both experiment lines and any further cache/Tracker PRs before implementation.
+
 ## 2 Proposed target tree
 
 This is the complete review target, not a request to create empty directories. Establish each directory only when it has actual contents and a clear responsibility. Conditional entries remain where they are until their stated condition is resolved.
@@ -33,6 +50,7 @@ repository/
 │   │   ├── public/                     # Authored static assets, not generated weekly releases
 │   │   ├── tests/
 │   │   └── package.json
+│   ├── tracker-web/                     # Read-only public tracker client, no privileged publisher
 │   ├── operator-web/                    # Conditional on inventory of legacy web/ consumers
 │   └── support-web/                     # Existing static support and privacy pages
 ├── services/
@@ -46,6 +64,11 @@ repository/
 │       ├── tests/
 │       └── package.json
 ├── packages/
+│   ├── fingerprint/                     # Shared browser algorithm and Node runtime CLI
+│   │   ├── src/
+│   │   ├── bin/
+│   │   ├── tests/
+│   │   └── package.json
 │   └── production/                     # One installable Python package initially
 │       ├── pyproject.toml
 │       ├── src/tongxing_production/
@@ -71,6 +94,7 @@ repository/
 │   └── cloud-run/                      # Conditional on moving actual deployment definitions
 ├── tools/
 │   ├── ops/                            # Operations, preflight and diagnostic CLIs
+│   │   └── tracker-publisher/           # Privileged publisher/watch and mandatory public sanitizer
 │   ├── benchmarks/                     # Stable reusable performance/quality measurement entrypoints
 │   └── development/                    # Repository and CI tooling
 ├── experiments/                        # Unpromoted research with status, environment and exit criteria
@@ -140,13 +164,38 @@ foundation interfaces/contracts → no dependency back on workflows/services/cli
 
 Rules:
 
-1. Production packages must not import `apps/`, `services/`, `tools/`, `scripts/` or `experiments/`. Experiments may consume production packages.
+1. Production packages must not import `apps/`, `services/`, `tools/`, `scripts/` or `experiments/`. This also forbids resolving subprocess programs or runtime resources from those source trees. Experiments may consume production packages. Declared shared packages may be consumed through explicit APIs/runtime adapters.
 2. Stages exchange versioned packages, receipts and explicit public APIs rather than arbitrary internal paths. A high-level assembler legitimately reads several packages.
 3. `contracts/` contains common shape/identity validation. Stage-specific semantic checks stay with their stage; it is not a container for all shared-looking business code.
 4. `observability/events` is a lightweight interface. `observability/projections` reads existing contract evidence; neither imports controllers to re-execute work. Extract event interfaces before moving code to avoid low-level logging depending on workflows.
 5. Prefect, Temporal and existing supervisor integrations remain adapters. Experiment results determine which become supported production paths. Layout does not choose an engine or authorize a competing approval/retry ledger.
 6. Export public interfaces instead of downstream imports of `_safe_path`, `_digest` and other private implementations. Add equivalent public APIs and tests before switching callers; do not combine that move with behavioral changes.
 7. Do not create a generic `utils/` dumping ground. Hash/JSON, media, storage and provider functions follow their responsibilities. Extract lightweight common code only for demonstrated stable consumers.
+
+### 3.1 Shared fingerprint runtime
+
+The [Python L1 path][fingerprint-runtime] executes `build_fingerprint_index.mjs` during production and hashes both that CLI and `web/fingerprint-core.mjs`. The [Node CLI][fingerprint-cli] and [browser worker][fingerprint-worker] already consume the same core. Assign the algorithm and Node CLI to `packages/fingerprint/`; the browser bundles the public algorithm API, while a production compute adapter invokes the declared, installed CLI. L1 source identity and L4 final-track binding remain business responsibilities of their stages.
+
+The adapter receives an explicit runtime location/version rather than finding `apps/listening-web` through repository-relative paths. Deployment installs the shared package and its required Node/ffmpeg runtime through a declared artifact/resource manifest. A Python wheel import smoke is insufficient: verify an installed, non-repository-CWD precompute/bind fixture without an app source checkout. The app and pipeline must neither fork the algorithm nor depend on each other's private source files.
+
+Migration preserves CLI modes/flags, stdout JSON, exit/error behavior, source/window/track binding, algorithm version, output bytes and manifest hashes. Moving or editing the CLI/core may change implementation identity: record real new hashes, retain old frozen runtime manifests, and add exact compatibility mappings only after equivalence tests. Do not bypass cache or historical receipt validation merely because the algorithm's name is unchanged.
+
+### 3.2 Tracker projection and publication boundaries
+
+The existing `experiments/sermon-dubbing-poc/tracker-admin/` contains both a browser client and an ADC-authenticated [publisher][tracker-publisher]; it is not a frontend-only directory. Its [Firestore rules][tracker-rules] allow public snapshot reads and deny client writes. The following four-way split is required; moving the entire directory to an app or treating it all as observability is not equivalent.
+
+| Boundary | Proposed owner | Allowed input/output |
+|---|---|---|
+| Private evidence projection and public export | `production/observability/projections/` | Read verified accounting/progress/receipt evidence; produce a versioned, bounded public allowlist projection. No execution, ledger repair or approval writes |
+| Read-only presentation | `apps/tracker-web/` | Consume only the public snapshot contract; display freshness and observed/planned/unknown states. No raw ledger, ADC or publisher dependency |
+| Authenticated publication/watch and independent sanitization | `tools/ops/tracker-publisher/` | Own the CLI, Firebase Admin dependency and runtime credential use; revalidate/allowlist the candidate before its sole Firestore write path |
+| Hosting/database deployment and access policy | `infra/firebase/` | Own Hosting targets, CSP, database IDs, rules and indexes; preserve separate Dev/Production destinations and existing access semantics |
+
+The read-only portions of `weekly_pipeline_report.py`, `four_layer_measure.py` and `build_four_layer_tracker_snapshot.py` belong to the projection side after separating CLI/I/O wrappers and producer instrumentation. Timing/event writers stay on the lightweight event/accounting side; projection code must not acquire a command-execution or ledger-write capability. The operator-maintained `four_layer_progress.py` ledger remains explicitly non-authoritative for production gates; its write commands must not become a browser or projection capability. The existing private `source-video-state.private.json` stays outside Hosting outputs and Firestore. [Snapshot builder][tracker-builder]
+
+Keep both the Python public export boundary and the independent Node [sanitizer][tracker-sanitizer]. Sanitize **before transmission**, never only in the browser; unknown fields must be dropped or rejected. The publisher must not import privileged behavior from the frontend bundle. Use one versioned public contract and shared positive/negative fixtures to keep both checks aligned. Raw paths, private hashes/execution identities, provider messages, credentials and private source state cannot be added to public data by copying an internal report. Publish only explicitly allowed safe categories/counts, statuses, bounded timing and already approved links; missing evidence stays unknown and synthetic/planned data stays labeled.
+
+The active DAG enhancement is planned to add `build_tracker_dag_projection.py`, a nested versioned snapshot, a DAG sanitizer, `src/dag.js` and `src/snapshot-state.js` in today's paths. These are **planned files at this review baseline**, not evidence that dev already implements the feature. Its selected-run/page/target/ledger binding, reconnect freshness and observed-versus-planned distinctions must survive migration. The publisher remains the sole writer. Real review submission, private evidence access and production control require separately reviewed authenticated services and are outside this directory change.
 
 ## 4 Current to target mapping
 
@@ -161,6 +210,7 @@ Confidence describes responsibility assignment; risk describes migration impact.
 | `web/` | Conditional `apps/operator-web/` | Medium / high | Preserve public caption entry and backend serving consumers |
 | `firebase/tongxing-support/public/` | `apps/support-web/` | High / medium | Preserve page URLs, legal text and links |
 | `experiments/sermon-dubbing-poc/feedback-api/` | `services/feedback/` | High / high | Preserve function ID, database, service account, retention and routing |
+| `experiments/sermon-dubbing-poc/tracker-admin/` plus Python Tracker projections | Four owners in §3.2 | High / high | Split UI, private/public projection, privileged publisher/sanitizer and infra; retain public allowlists and private state isolation |
 | `backend/app.py`, `cloud_run_jobs.py`, HTTP worker glue | `services/api/src/tongxing_api/` | High / high | Thin handlers gradually; preserve API/auth/command behavior |
 | Reusable parts of `backend/cloud.py`, `storage.py` | production storage and minimal provider/secret adapters | High / high | Runtime-injected secrets; split business helpers rather than blindly moving whole files |
 | `backend/realtime.py`, `live_playback.py` | production live plus service protocol shell | Medium / high | Preserve session/archive contracts and separation from prepared production |
@@ -176,7 +226,7 @@ Confidence describes responsibility assignment; risk describes migration impact.
 | Shared review/gate/revision primitives | production review/contracts | High / high | L2-specific logic stays in text; no new approval authority |
 | Post-live/local production entrypoints | production workflows plus CLI | High / high | Preserve dual_pdf/legacy versus four_layer_release scopes |
 | `sermon_pipeline.py` | Gradual extraction into source/text/compute/workflows | High / high | Equivalent function extraction; retain original facade initially |
-| POC `build_fingerprint_index.mjs` production use | Listening-web build tool or a distinct JS package | Medium / high | Python already calls it; separate package only for a second actual consumer |
+| POC `build_fingerprint_index.mjs` and `web/fingerprint-core.mjs` | `packages/fingerprint/`; explicit production compute adapter | High / high | Existing Python and browser consumers share one runtime artifact; no app-source dependency, hash/CLI/cache compatibility per §3.1 |
 | Stable benchmark code in `scripts/experiments/` | tools benchmarks; unstable approaches remain experiments | Medium / medium | Preserve inputs, sampling, identities and measurement definitions |
 | Firebase Hosting JSON, CORS and deployment templates | `infra/firebase/` | High / high | Separate Dev/Production; validate config-relative paths |
 | `schemas/`, `config/` | Keep in place initially | High / low | Specify ownership/loading instead of introducing needless path changes |
@@ -213,6 +263,14 @@ Spark-first/Mac fallback remains limited to allowed infrastructure/runtime failu
 There are no tracked `.sql` files at the baseline. Prefect/Temporal SQLite is tool state, while Firestore is current service storage. Do not create an empty SQL directory. If a business SQL database is introduced, migrations follow its owning service; read-only analysis queries follow the analytics tool, based on actual use.
 
 `tools/` holds operational/development/measurement entrypoints and tool-specific logic. Reusable business code belongs in production. Transitional `scripts/` must not become a second permanent implementation tree.
+
+### 5.5 Test discovery and inventory equivalence
+
+The current [sharded Python runner][test-discovery] discovers only root `tests/`; package-local tests will not run just because files moved under `packages/production/tests/` or `services/api/tests/`. The current [Python workflow][python-ci] also invokes POC Python, listener and feedback suites by explicit paths. [SwiftPM fixtures][swift-fixtures] are bundled under Core tests and are read by both Python and Web consumers. Preserve that coverage as one migration batch, not at a later cleanup phase.
+
+For every test move, capture a pre-move manifest of suites and discovered test IDs without executing model/deployment work. Record a one-to-one old/new test-ID mapping for path/module renames; the after-move union must cover every previous test, with intentional additions/removals explicitly reviewed. Compare inventory per runtime/suite, not only aggregate counts: duplicate facade discovery must not hide a missing suite. Discovery/import failures fail the gate. Keep package-qualified IDs for sharding/timing so identically named modules in two packages do not collide, and map old timing weights explicitly rather than silently dropping them.
+
+Add the new package/service discovery roots, installed-package/non-repository-CWD tests, shared JS fingerprint tests and Tracker projection/sanitizer/frontend tests to the relevant runner/workflow commands in the same PR that moves them. Do not count a documented but unexecuted suite as covered. Regenerate SwiftPM fixture resource copies from the single shared source and compare hashes; update all Python/Node readers and Swift resource declarations together. Exercise rename/delete routing and preserve the required `unittest` and `native-client` aggregators. A green required check is insufficient if its expected test inventory shrank unexpectedly.
 
 ## 6 Command compatibility and execution identity
 
@@ -253,13 +311,15 @@ All phases occur only after both experiment lines finish and the relevant implem
 |---|---|---|
 | 0 Baseline | Inventory entrypoints, call graph, targets, code/resources, schemas and experiment outcomes | Active jobs recoverable; every production POC dependency assigned |
 | 1 Package boundary | Add package skeleton and one low-coupling extraction with legacy import/CLI facades | Installed/non-repo-CWD smoke; no new reverse dependencies |
-| 2 Product sources | Move listener, feedback and support by unique source ownership; decide operator separately | Equivalent build manifest; unchanged URLs/CSP/API/database configuration |
+| 2 Product sources | Move listener, feedback, support and the four Tracker boundaries by unique ownership; decide operator separately | Equivalent build manifest; unchanged URLs/CSP/API/database configuration; no privileged code/private evidence in client output |
 | 3 Foundation and stages | Establish contract/review/event/storage interfaces, then extract L1–L4 in batches | Golden, failure, identity and recovery tests for each stage |
 | 4 Orchestration and compute | Connect selected engine/compute adapters through public APIs | Unchanged concurrency/cancel/lease/budget/unknown behavior; no duplicate work |
 | 5 Build and entrypoint completion | Complete Docker/resources/CI routes/runbooks | Required checks route correctly; old/new CLI parity; rollback available |
 | 6 Compatibility retirement | Remove only wrappers with no active consumers; version historical docs | Empty consumer inventory, old jobs terminal and rollback window confirmed |
 
 Each batch updates its necessary build and CI paths immediately. Phase 5 is final consolidation, not permission to leave phases 1–4 unbuildable. Roll back code/configuration to the matching revision while retaining artifacts and audit history. Do not delete old assets, rewrite ledgers or force-rewrite Git history as rollback.
+
+Move the shared fingerprint runtime before, or atomically with, switching its Python/browser callers; never leave an intermediate dependency on app source. A Tracker move carries its exporter/sanitizer contract, publisher entrypoint and access-policy fixtures together. Test-discovery inventory equivalence from §5.5 is an exit condition for every affected phase. Neither this documentation amendment nor either experiment's completion authorizes merging into dev or starting a migration; both lines must finish and the user must renew the implementation decision.
 
 ## 9 Acceptance gates
 
@@ -268,6 +328,7 @@ Each batch updates its necessary build and CI paths immediately. Phase 5 is fina
 - Exactly two new `docs/design/` files; no source, entrypoint, CI, configuration, backlog or shared index changes.
 - English/Chinese target trees, phases, constraints and key mappings agree. Relative links and pinned source links refer to actual paths.
 - `git diff --check` and the existing documentation-only gate pass. Keep the PR in draft; do not merge.
+- Record the exact amended head and comparison base in the PR verification report after committing; verify the pushed remote SHA and CI for that SHA. The prior `52759ff...` checks are historical, not validation of this amendment. Link/source checks and bilingual tree comparison are separate from CI completion; pending or skipped runtime/device checks remain explicitly pending or not run.
 - CI success describes documentation validation only, not completed migration, model execution or device acceptance.
 
 ### Future migration batches
@@ -277,7 +338,7 @@ Each batch updates its necessary build and CI paths immediately. Phase 5 is fina
 - **Recovery:** old jobs resume under frozen revisions; identities do not mix; test cancellation, original deadlines, budget, leases, unknown outcomes, reconciliation and duplicate requests.
 - **Artifacts:** schema/shared-fixture parity; preserve scope, review status, actual text-only capability, locale independence and historical package readability.
 - **Build:** clean install/package; all runtime resources in wheel/Docker/Functions; non-repository CWD works; optional CUDA/MLX does not contaminate basic imports.
-- **Tests:** affected Python shards, Node listener/feedback suites and Swift Core/storage/shared-contract tests. Add device/interaction checks for UI changes. Select full scope from actual impact.
+- **Tests:** affected Python shards, package/service installed tests, shared fingerprint and Node listener/feedback/Tracker suites, and Swift Core/storage/shared-contract tests. Require the reviewed before/after discovery inventory mapping in §5.5 and fixture-copy hashes. Add device/interaction checks for UI changes. Select full scope from actual impact.
 - **CI:** preserve required `unittest` and `native-client` names; new paths and renames/deletions route correctly without permanently pending or false-skipped checks.
 - **Release:** candidate-only allowlist/hash/Range and historical-asset checks. Actual deployment and Web/iOS/venue acceptance retain their separate authorization/evidence requirements.
 
@@ -288,6 +349,25 @@ Separating apps/services from reusable packages is a common monorepo convention.
 Keep root schemas/configuration, iOS and externally consumed command paths initially to avoid low-value compatibility breaks. Start with one production Python package rather than premature services. Reconsider additional packages when independent release, ownership or dependency-isolation needs actually arise.
 
 [baseline]: https://github.com/JonathanJing/sermon-video-zh-subtitles/commit/84e9d71d24ae86170efbb4c57755246f369ec9d9
+[review-baseline]: https://github.com/JonathanJing/sermon-video-zh-subtitles/commit/8c64502404f9ae7110ee49aa990bcaeb2f8cd24d
+[fingerprint-runtime]: https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/8c64502404f9ae7110ee49aa990bcaeb2f8cd24d/scripts/sermon_pipeline.py#L1552-L1575
+[fingerprint-cli]: https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/8c64502404f9ae7110ee49aa990bcaeb2f8cd24d/experiments/sermon-dubbing-poc/build_fingerprint_index.mjs#L1-L6
+[fingerprint-worker]: https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/8c64502404f9ae7110ee49aa990bcaeb2f8cd24d/experiments/sermon-dubbing-poc/web/fingerprint-worker.mjs
+[tracker-publisher]: https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/8c64502404f9ae7110ee49aa990bcaeb2f8cd24d/experiments/sermon-dubbing-poc/tracker-admin/publish.mjs#L57-L107
+[tracker-sanitizer]: https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/8c64502404f9ae7110ee49aa990bcaeb2f8cd24d/experiments/sermon-dubbing-poc/tracker-admin/sanitize.mjs#L92-L115
+[tracker-rules]: https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/8c64502404f9ae7110ee49aa990bcaeb2f8cd24d/experiments/sermon-dubbing-poc/tracker-admin/firestore.rules
+[tracker-builder]: https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/8c64502404f9ae7110ee49aa990bcaeb2f8cd24d/scripts/build_four_layer_tracker_snapshot.py#L514-L560
+[fresh-dag]: https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/8c64502404f9ae7110ee49aa990bcaeb2f8cd24d/scripts/sermon_fresh_full_dag.py
+[mock-dag]: https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/8c64502404f9ae7110ee49aa990bcaeb2f8cd24d/scripts/sermon_mock_tts_dag.py
+[durable-accounting]: https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/8c64502404f9ae7110ee49aa990bcaeb2f8cd24d/scripts/sermon_durable_accounting.py
+[review-outbox]: https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/8c64502404f9ae7110ee49aa990bcaeb2f8cd24d/scripts/sermon_log_outbox.py#L13-L15
+[completion]: https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/8c64502404f9ae7110ee49aa990bcaeb2f8cd24d/scripts/sermon_completion.py
+[review-log-validator]: https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/8c64502404f9ae7110ee49aa990bcaeb2f8cd24d/scripts/sermon_log_contract.py
+[local-log]: https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/8c64502404f9ae7110ee49aa990bcaeb2f8cd24d/experiments/local_experiment_log/README.zh.md
+[test-discovery]: https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/8c64502404f9ae7110ee49aa990bcaeb2f8cd24d/scripts/run_unittest_ci.py#L90-L118
+[python-ci]: https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/8c64502404f9ae7110ee49aa990bcaeb2f8cd24d/.github/workflows/python-tests.yml
+[ios-ci]: https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/8c64502404f9ae7110ee49aa990bcaeb2f8cd24d/.github/workflows/tongxing-ios.yml#L45-L102
+[swift-fixtures]: https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/8c64502404f9ae7110ee49aa990bcaeb2f8cd24d/apps/tongxing-ios/Core/Package.swift#L8-L10
 [api-imports]: https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/84e9d71d24ae86170efbb4c57755246f369ec9d9/backend/app.py#L11-L44
 [pipeline-imports]: https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/84e9d71d24ae86170efbb4c57755246f369ec9d9/scripts/run_post_live_subtitle_generation.py#L24-L39
 [ui-source]: https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/84e9d71d24ae86170efbb4c57755246f369ec9d9/scripts/stage_production_ui.py#L80-L85
