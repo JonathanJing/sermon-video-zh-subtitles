@@ -10,7 +10,7 @@ L1 是英文事实与锚点，L2 是目标语言文字，L3 是音频与同步�
 
 正式事件使用既有 stage_started/stage_finished/workload。详细参数放在 `sermon-local-experiment-measurement-v1` sidecar，正式事件的 `metrics.experimentObservationSha256` 绑定其 canonical JSON hash。`verify_pair(row, measurement, start=None)` 核对 hash、身份、job、已有 attemptNumber、业务层、证据类型及 adapter-derived 状态/计时；终态必须提供同 span 的 start 测量。拒绝 synthetic→current_execution 的提升。实验参数不能改变原内容包、付费请求或缓存身份。
 
-接入者应先从当前 accounting/profile 获取 context，调用适配器，再由现有 writer/outbox 持久化正式 facts 和受限的 sidecar。纯转换不直接写生产 accounting，不提交任务或授予执行、审核、发布权限。云端 DAG 可复用这套适配器；完整工作流的状态投影继续使用现有项目工具。
+接入者应先从当前 accounting/profile 获取 context，调用适配器，再由现有 writer/outbox 持久化正式 facts 和受限的 sidecar。除了配置事件，trial 执行、质量、回收与终态必须携带同一非空 job/attempt；不能仅靠一个 admission 事件补全其他事实的身份。真正发生在准入前的无 job 观察保留独立 observer 身份，不倒填历史事实。纯转换不直接写生产 accounting，不提交任务或授予执行、审核、发布权限。云端 DAG 可复用这套适配器；完整工作流的状态投影继续使用现有项目工具。
 
 此 PR 未连接生产采集 hook 或 MacBook 端，未实现 resident worker 或新的语音任务 API。已有 Job DB 仍是任务状态权威来源。
 

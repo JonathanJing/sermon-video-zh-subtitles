@@ -56,6 +56,14 @@ class CanonicalCompatibilityTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "start_evidence_required"):
             verify_pair(row, end)
 
+    def test_workload_cannot_masquerade_as_stage_fact(self):
+        _, events, _, rows = self.converted()
+        start = next(e for e in events if e["event"] == "span.started")
+        row = copy.deepcopy(next(r for r in rows if r["eventId"] == start["event_id"]))
+        row["event"] = "workload"
+        with self.assertRaisesRegex(ValueError, "sidecar_semantic_conflict"):
+            verify_pair(row, start)
+
     def test_context_identity_conflict_rejected(self):
         _, events, contexts = compatible_fixture()
         ctx = copy.deepcopy(contexts[events[0]["event_id"]]); ctx["runId"] = "changed"

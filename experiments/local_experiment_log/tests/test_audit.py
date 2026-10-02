@@ -76,6 +76,18 @@ class ContractAuditTests(unittest.TestCase):
             next(e for e in es if e["event"] == "admission.decided")["payload"]["decision"] = "rejected"
         self.assertIn("missing_admitted_job", self.report(mutate)["trials"][0]["reasons"])
 
+    def test_admission_alone_cannot_bind_unidentified_execution(self):
+        def mutate(m, es):
+            for e in es:
+                if e["event"] != "admission.decided":
+                    e.update(job_id=None, attempt=None)
+        self.assertIn("applicable_trial_evidence_missing_job_attempt", self.report(mutate)["trials"][0]["reasons"])
+
+    def test_returned_bytes_must_carry_admitted_job_attempt(self):
+        def mutate(m, es):
+            next(e for e in es if e["event"] == "artifact.verified").update(job_id=None, attempt=None)
+        self.assertIn("applicable_trial_evidence_missing_job_attempt", self.report(mutate)["trials"][0]["reasons"])
+
     def test_actual_batch_not_matching_config_excluded(self):
         def mutate(m, es):
             c = es[0]["payload"]["config"]; c["batch_size"] = 4

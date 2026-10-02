@@ -116,6 +116,9 @@ def audit(manifest, raw_events):
         jobs = {(e["job_id"], e["attempt"]) for e in items if e["job_id"]}
         if len(jobs) != 1:
             reasons.append("one_job_attempt_required_per_trial")
+        applicable = [e for e in items if e["event"] != "trial.configured"]
+        if any(not e["job_id"] or e["attempt"] is None for e in applicable):
+            reasons.append("applicable_trial_evidence_missing_job_attempt")
         if config["duration_mode"] != manifest["duration_mode"] or config["duration_seconds"] != manifest["duration_seconds"]:
             errors.append(f"trial duration differs from manifest: {trial_id}")
         if len(terminals) != 1:
