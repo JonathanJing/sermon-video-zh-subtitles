@@ -3,7 +3,7 @@
 No dispatch, recovery, approval or network authority lives in this module.
 Legacy records are never upgraded by manufacturing missing observations.
 """
-from collections import OrderedDict, defaultdict
+from collections import OrderedDict, defaultdict, namedtuple
 from datetime import datetime
 from functools import lru_cache
 import hashlib
@@ -19,10 +19,13 @@ from jsonschema.exceptions import SchemaError
 
 VERSION = 'sermon-accounting-log-contract-v1'
 MAX_EVENT_BYTES = 64 * 1024
-# At most 16 MiB of canonical payload keys, plus bounded LRU/schema-key overhead.
+# At most 16 MiB of canonical payload keys, plus explicitly bounded entry and
+# schema-key overhead. A count-only 2048-entry LRU thrashed on the measured
+# 39-job working set despite its eligible payload occupying less than 6 MiB.
 # Larger valid events still validate normally and never occupy cache memory.
 MAX_CACHED_EVENT_BYTES = 8 * 1024
-MAX_VALIDATION_CACHE_ENTRIES = 2048
+MAX_VALIDATION_CACHE_ENTRIES = 8192
+MAX_VALIDATION_CACHE_PAYLOAD_BYTES = 16 * 1024 * 1024
 # Each interned snapshot retains at most 256 KiB of typed content bytes and
 # a validator compiled from at most 256 KiB of canonical JSON. Eviction clears
 # successful-event keys first, so those keys cannot retain an unbounded history.
@@ -30,12 +33,23 @@ MAX_SCHEMA_SNAPSHOT_BYTES = 256 * 1024
 MAX_SCHEMA_SNAPSHOT_ENTRIES = 2
 _schema_snapshots = OrderedDict()
 _schema_snapshot_lock = threading.RLock()
+_event_successes = OrderedDict()
+_event_success_payload_bytes = 0
+_event_success_hits = _event_success_misses = 0
+_CacheInfo = namedtuple('CacheInfo', 'hits misses maxsize currsize')
 SCHEMA_PATH = Path(__file__).resolve().parents[1] / 'schemas/sermon-accounting-log-contract-v1.schema.json'
 
 
 def _reset_snapshot_lock_after_fork():
-    global _schema_snapshot_lock
+    global _schema_snapshot_lock, _schema_snapshots, _event_successes
+    global _event_success_payload_bytes, _event_success_hits, _event_success_misses
     _schema_snapshot_lock = threading.RLock()
+    # Another thread can fork between an OrderedDict update and its accounting
+    # update. The child owns a fresh empty cache, never an inherited partial
+    # cache/counter mutation or a lock held by a vanished thread.
+    _schema_snapshots = OrderedDict()
+    _event_successes = OrderedDict()
+    _event_success_payload_bytes = _event_success_hits = _event_success_misses = 0
 
 
 if hasattr(os, 'register_at_fork'):
@@ -153,11 +167,60 @@ def validate_event(row):
     return row
 
 
-@lru_cache(maxsize=MAX_VALIDATION_CACHE_ENTRIES)
 def _validate_frozen_event(data, schema_key, version):
-    # Exceptions are not cached. This records only complete validation success,
-    # not a partial schema pass, projection, sequence or mutable high-water mark.
-    _validate_event_uncached(json.loads(data), _schema_snapshots[schema_key][1])
+    """Cache only complete validation success, never storage/sequence authority.
+
+    The caller has reread and serialized the current event and captured the
+    exact current schema. Retaining a success avoids repeated schema work only;
+    it cannot establish that a file, union, record hash or sequence is valid.
+    """
+    global _event_success_payload_bytes, _event_success_hits, _event_success_misses
+    with _schema_snapshot_lock:
+        key = (data, schema_key, version)
+        if key in _event_successes:
+            _event_success_hits += 1
+            _event_successes.move_to_end(key)
+            return
+        _event_success_misses += 1
+        # Exceptions never populate the success cache. Policy-dependent RQC
+        # and oversized events use the uncached caller path as before.
+        _validate_event_uncached(json.loads(data), _schema_snapshots[schema_key][1])
+        size = len(data)
+        if (size > MAX_CACHED_EVENT_BYTES or size > MAX_VALIDATION_CACHE_PAYLOAD_BYTES
+                or MAX_VALIDATION_CACHE_ENTRIES < 1):
+            return
+        while _event_successes and (len(_event_successes) >= MAX_VALIDATION_CACHE_ENTRIES
+                or _event_success_payload_bytes + size > MAX_VALIDATION_CACHE_PAYLOAD_BYTES):
+            oldest, _ = _event_successes.popitem(last=False)
+            _event_success_payload_bytes -= len(oldest[0])
+        _event_successes[key] = None
+        _event_success_payload_bytes += size
+
+
+def _validation_cache_clear():
+    global _event_success_payload_bytes, _event_success_hits, _event_success_misses
+    with _schema_snapshot_lock:
+        _event_successes.clear()
+        _event_success_payload_bytes = _event_success_hits = _event_success_misses = 0
+
+
+def _validation_cache_info():
+    with _schema_snapshot_lock:
+        return _CacheInfo(_event_success_hits, _event_success_misses,
+            MAX_VALIDATION_CACHE_ENTRIES, len(_event_successes))
+
+
+def _validation_cache_usage():
+    with _schema_snapshot_lock:
+        return {'payloadBytes': _event_success_payload_bytes,
+            'maxPayloadBytes': MAX_VALIDATION_CACHE_PAYLOAD_BYTES,
+            'entries': len(_event_successes), 'maxEntries': MAX_VALIDATION_CACHE_ENTRIES}
+
+
+# Preserve the private cache-control API used by schema eviction and tests.
+_validate_frozen_event.cache_clear = _validation_cache_clear
+_validate_frozen_event.cache_info = _validation_cache_info
+_validate_frozen_event.cache_usage = _validation_cache_usage
 
 
 def _validate_event_uncached(row, checker):
