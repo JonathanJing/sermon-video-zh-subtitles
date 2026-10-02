@@ -1,0 +1,609 @@
+{
+  "scope": "observed_shape_only_no_workflow_scale_admission",
+  "baseCommit": "8bee25447d62504cb99a4b4b6b05b3e052042f10",
+  "units": 39,
+  "locales": 3,
+  "unitsPerLocale": [
+    13,
+    13,
+    13
+  ],
+  "sourceSha256": {
+    "baseline": "afe224e4c08dcf08448bf02bae6494e6839b1fbec13518afeba3c8d450162925",
+    "candidate": "6f27582152da84d53cc2accf1258c9d2c690f3916c8bcdabb9746fa5934f068f"
+  },
+  "cases": [
+    {
+      "shape": "happy-u39-l3-p0",
+      "events": 3475,
+      "controllerRecords": 219,
+      "pendingEvents": 0,
+      "variants": {
+        "baseline": {
+          "phases": [
+            {
+              "phase": "pure_replay_cold",
+              "wallSeconds": 4.4138724059885135,
+              "cpuSeconds": 4.413427110000001,
+              "cacheHits": 0,
+              "cacheMisses": 3396,
+              "cacheSizeBefore": 0,
+              "cacheSizeAfter": 2048,
+              "cacheUsageBefore": null,
+              "cacheUsageAfter": null,
+              "processPeakRssKiB": 53056,
+              "resultSha256": "147411a35801b2c298bc8c317a8706126212b4c2ce9b3bb5bc668f842137d122"
+            },
+            {
+              "phase": "pure_replay_warm",
+              "wallSeconds": 3.9674856209894642,
+              "cpuSeconds": 3.966910243,
+              "cacheHits": 0,
+              "cacheMisses": 3396,
+              "cacheSizeBefore": 2048,
+              "cacheSizeAfter": 2048,
+              "cacheUsageBefore": null,
+              "cacheUsageAfter": null,
+              "processPeakRssKiB": 53184,
+              "resultSha256": "147411a35801b2c298bc8c317a8706126212b4c2ce9b3bb5bc668f842137d122"
+            },
+            {
+              "phase": "locked_union_cold",
+              "wallSeconds": 8.92413543901057,
+              "cpuSeconds": 8.922809038,
+              "cacheHits": 106,
+              "cacheMisses": 6905,
+              "cacheSizeBefore": 0,
+              "cacheSizeAfter": 2048,
+              "cacheUsageBefore": null,
+              "cacheUsageAfter": null,
+              "processPeakRssKiB": 70848,
+              "resultSha256": "19a700f075fdef11a72699538dcfbe8180cc48aef686de9e1d6021204ea72313"
+            },
+            {
+              "phase": "locked_union_warm",
+              "wallSeconds": 8.3127872650075,
+              "cpuSeconds": 8.311647972000003,
+              "cacheHits": 266,
+              "cacheMisses": 6745,
+              "cacheSizeBefore": 2048,
+              "cacheSizeAfter": 2048,
+              "cacheUsageBefore": null,
+              "cacheUsageAfter": null,
+              "processPeakRssKiB": 79424,
+              "resultSha256": "19a700f075fdef11a72699538dcfbe8180cc48aef686de9e1d6021204ea72313"
+            },
+            {
+              "phase": "existing_prepare",
+              "wallSeconds": 8.629170595988398,
+              "cpuSeconds": 8.628289239,
+              "cacheHits": 266,
+              "cacheMisses": 6745,
+              "cacheSizeBefore": 2048,
+              "cacheSizeAfter": 2048,
+              "cacheUsageBefore": null,
+              "cacheUsageAfter": null,
+              "processPeakRssKiB": 79540,
+              "resultSha256": "1d51fcd46024373c679c72ded047a9727fe069a21d11f76f3e2dff844e3700f6"
+            },
+            {
+              "phase": "new_prepare",
+              "wallSeconds": 12.278760228000465,
+              "cpuSeconds": 12.276096684999999,
+              "cacheHits": 266,
+              "cacheMisses": 10143,
+              "cacheSizeBefore": 2048,
+              "cacheSizeAfter": 2048,
+              "cacheUsageBefore": null,
+              "cacheUsageAfter": null,
+              "processPeakRssKiB": 79540,
+              "resultSha256": "e8f66fa3f3a066f1926eb75aa710bee4c49d663f379069f2863a26fb8548ad2b"
+            },
+            {
+              "phase": "new_deliver",
+              "wallSeconds": 8.509193972000503,
+              "cpuSeconds": 8.508258372,
+              "cacheHits": 269,
+              "cacheMisses": 6747,
+              "cacheSizeBefore": 2048,
+              "cacheSizeAfter": 2048,
+              "cacheUsageBefore": null,
+              "cacheUsageAfter": null,
+              "processPeakRssKiB": 79540,
+              "resultSha256": "e8f66fa3f3a066f1926eb75aa710bee4c49d663f379069f2863a26fb8548ad2b"
+            }
+          ],
+          "prepareDeliverSeconds": 20.787954200000968,
+          "postWriteFileCount": 223
+        },
+        "candidate": {
+          "phases": [
+            {
+              "phase": "pure_replay_cold",
+              "wallSeconds": 4.42756852999446,
+              "cpuSeconds": 4.4248451840000005,
+              "cacheHits": 0,
+              "cacheMisses": 3396,
+              "cacheSizeBefore": 0,
+              "cacheSizeAfter": 3396,
+              "cacheUsageBefore": {
+                "payloadBytes": 0,
+                "maxPayloadBytes": 16777216,
+                "entries": 0,
+                "maxEntries": 8192
+              },
+              "cacheUsageAfter": {
+                "payloadBytes": 4816163,
+                "maxPayloadBytes": 16777216,
+                "entries": 3396,
+                "maxEntries": 8192
+              },
+              "processPeakRssKiB": 52824,
+              "resultSha256": "147411a35801b2c298bc8c317a8706126212b4c2ce9b3bb5bc668f842137d122"
+            },
+            {
+              "phase": "pure_replay_warm",
+              "wallSeconds": 0.26742217599530704,
+              "cpuSeconds": 0.2672400909999997,
+              "cacheHits": 3396,
+              "cacheMisses": 0,
+              "cacheSizeBefore": 3396,
+              "cacheSizeAfter": 3396,
+              "cacheUsageBefore": {
+                "payloadBytes": 4816163,
+                "maxPayloadBytes": 16777216,
+                "entries": 3396,
+                "maxEntries": 8192
+              },
+              "cacheUsageAfter": {
+                "payloadBytes": 4816163,
+                "maxPayloadBytes": 16777216,
+                "entries": 3396,
+                "maxEntries": 8192
+              },
+              "processPeakRssKiB": 53080,
+              "resultSha256": "147411a35801b2c298bc8c317a8706126212b4c2ce9b3bb5bc668f842137d122"
+            },
+            {
+              "phase": "locked_union_cold",
+              "wallSeconds": 5.3406306369870435,
+              "cpuSeconds": 5.339885733,
+              "cacheHits": 3615,
+              "cacheMisses": 3396,
+              "cacheSizeBefore": 0,
+              "cacheSizeAfter": 3396,
+              "cacheUsageBefore": {
+                "payloadBytes": 0,
+                "maxPayloadBytes": 16777216,
+                "entries": 0,
+                "maxEntries": 8192
+              },
+              "cacheUsageAfter": {
+                "payloadBytes": 4816163,
+                "maxPayloadBytes": 16777216,
+                "entries": 3396,
+                "maxEntries": 8192
+              },
+              "processPeakRssKiB": 70744,
+              "resultSha256": "19a700f075fdef11a72699538dcfbe8180cc48aef686de9e1d6021204ea72313"
+            },
+            {
+              "phase": "locked_union_warm",
+              "wallSeconds": 1.1652475940063596,
+              "cpuSeconds": 1.1651638040000005,
+              "cacheHits": 7011,
+              "cacheMisses": 0,
+              "cacheSizeBefore": 3396,
+              "cacheSizeAfter": 3396,
+              "cacheUsageBefore": {
+                "payloadBytes": 4816163,
+                "maxPayloadBytes": 16777216,
+                "entries": 3396,
+                "maxEntries": 8192
+              },
+              "cacheUsageAfter": {
+                "payloadBytes": 4816163,
+                "maxPayloadBytes": 16777216,
+                "entries": 3396,
+                "maxEntries": 8192
+              },
+              "processPeakRssKiB": 80600,
+              "resultSha256": "19a700f075fdef11a72699538dcfbe8180cc48aef686de9e1d6021204ea72313"
+            },
+            {
+              "phase": "existing_prepare",
+              "wallSeconds": 1.2078935890021967,
+              "cpuSeconds": 1.2076652069999998,
+              "cacheHits": 7011,
+              "cacheMisses": 0,
+              "cacheSizeBefore": 3396,
+              "cacheSizeAfter": 3396,
+              "cacheUsageBefore": {
+                "payloadBytes": 4816163,
+                "maxPayloadBytes": 16777216,
+                "entries": 3396,
+                "maxEntries": 8192
+              },
+              "cacheUsageAfter": {
+                "payloadBytes": 4816163,
+                "maxPayloadBytes": 16777216,
+                "entries": 3396,
+                "maxEntries": 8192
+              },
+              "processPeakRssKiB": 80604,
+              "resultSha256": "1d51fcd46024373c679c72ded047a9727fe069a21d11f76f3e2dff844e3700f6"
+            },
+            {
+              "phase": "new_prepare",
+              "wallSeconds": 1.5184696100041037,
+              "cpuSeconds": 1.5183753370000002,
+              "cacheHits": 10408,
+              "cacheMisses": 1,
+              "cacheSizeBefore": 3396,
+              "cacheSizeAfter": 3397,
+              "cacheUsageBefore": {
+                "payloadBytes": 4816163,
+                "maxPayloadBytes": 16777216,
+                "entries": 3396,
+                "maxEntries": 8192
+              },
+              "cacheUsageAfter": {
+                "payloadBytes": 4817090,
+                "maxPayloadBytes": 16777216,
+                "entries": 3397,
+                "maxEntries": 8192
+              },
+              "processPeakRssKiB": 80604,
+              "resultSha256": "e8f66fa3f3a066f1926eb75aa710bee4c49d663f379069f2863a26fb8548ad2b"
+            },
+            {
+              "phase": "new_deliver",
+              "wallSeconds": 1.1860507740057074,
+              "cpuSeconds": 1.1858965369999996,
+              "cacheHits": 7016,
+              "cacheMisses": 0,
+              "cacheSizeBefore": 3397,
+              "cacheSizeAfter": 3397,
+              "cacheUsageBefore": {
+                "payloadBytes": 4817090,
+                "maxPayloadBytes": 16777216,
+                "entries": 3397,
+                "maxEntries": 8192
+              },
+              "cacheUsageAfter": {
+                "payloadBytes": 4817090,
+                "maxPayloadBytes": 16777216,
+                "entries": 3397,
+                "maxEntries": 8192
+              },
+              "processPeakRssKiB": 80604,
+              "resultSha256": "e8f66fa3f3a066f1926eb75aa710bee4c49d663f379069f2863a26fb8548ad2b"
+            }
+          ],
+          "prepareDeliverSeconds": 2.704520384009811,
+          "postWriteFileCount": 223
+        }
+      },
+      "observedRatio": 7.6863736442540915
+    },
+    {
+      "shape": "reconciled-u39-l3-p32-controller",
+      "events": 4451,
+      "controllerRecords": 282,
+      "pendingEvents": 32,
+      "variants": {
+        "baseline": {
+          "phases": [
+            {
+              "phase": "pure_replay_cold",
+              "wallSeconds": 5.124472406998393,
+              "cpuSeconds": 5.123985039,
+              "cacheHits": 0,
+              "cacheMisses": 4293,
+              "cacheSizeBefore": 0,
+              "cacheSizeAfter": 2048,
+              "cacheUsageBefore": null,
+              "cacheUsageAfter": null,
+              "processPeakRssKiB": 61604,
+              "resultSha256": "d5d56e488eb050c98e746e0924ecf825d4343768f199913e8f3770bebfa54200"
+            },
+            {
+              "phase": "pure_replay_warm",
+              "wallSeconds": 4.81693717300368,
+              "cpuSeconds": 4.816602746,
+              "cacheHits": 0,
+              "cacheMisses": 4293,
+              "cacheSizeBefore": 2048,
+              "cacheSizeAfter": 2048,
+              "cacheUsageBefore": null,
+              "cacheUsageAfter": null,
+              "processPeakRssKiB": 61860,
+              "resultSha256": "d5d56e488eb050c98e746e0924ecf825d4343768f199913e8f3770bebfa54200"
+            },
+            {
+              "phase": "locked_union_cold",
+              "wallSeconds": 11.362090737005929,
+              "cpuSeconds": 11.361260629,
+              "cacheHits": 145,
+              "cacheMisses": 8723,
+              "cacheSizeBefore": 0,
+              "cacheSizeAfter": 2048,
+              "cacheUsageBefore": null,
+              "cacheUsageAfter": null,
+              "processPeakRssKiB": 84516,
+              "resultSha256": "042d987544c05bd540d99b7d194f1ec64e9a3131617db3ca6f1b61eca4d6f35f"
+            },
+            {
+              "phase": "locked_union_warm",
+              "wallSeconds": 12.23123024799861,
+              "cpuSeconds": 12.22995023,
+              "cacheHits": 241,
+              "cacheMisses": 8627,
+              "cacheSizeBefore": 2048,
+              "cacheSizeAfter": 2048,
+              "cacheUsageBefore": null,
+              "cacheUsageAfter": null,
+              "processPeakRssKiB": 94116,
+              "resultSha256": "042d987544c05bd540d99b7d194f1ec64e9a3131617db3ca6f1b61eca4d6f35f"
+            },
+            {
+              "phase": "existing_prepare",
+              "wallSeconds": 11.23561341300956,
+              "cpuSeconds": 11.233290801999999,
+              "cacheHits": 241,
+              "cacheMisses": 8627,
+              "cacheSizeBefore": 2048,
+              "cacheSizeAfter": 2048,
+              "cacheUsageBefore": null,
+              "cacheUsageAfter": null,
+              "processPeakRssKiB": 94404,
+              "resultSha256": "47e8b7bfb3c11caa0e4bfe55474f997583ec7a3bf5312a317cd1af43aa901e6c"
+            },
+            {
+              "phase": "new_prepare",
+              "wallSeconds": 16.556388981000055,
+              "cpuSeconds": 16.554537284,
+              "cacheHits": 241,
+              "cacheMisses": 12922,
+              "cacheSizeBefore": 2048,
+              "cacheSizeAfter": 2048,
+              "cacheUsageBefore": null,
+              "cacheUsageAfter": null,
+              "processPeakRssKiB": 94404,
+              "resultSha256": "0e8434e72ab2bd6bb975a3b60de52bb04ce5e23bddced166fe1e84d7bcef96c5"
+            },
+            {
+              "phase": "new_deliver",
+              "wallSeconds": 10.96028846698755,
+              "cpuSeconds": 10.959576382999991,
+              "cacheHits": 275,
+              "cacheMisses": 8630,
+              "cacheSizeBefore": 2048,
+              "cacheSizeAfter": 2048,
+              "cacheUsageBefore": null,
+              "cacheUsageAfter": null,
+              "processPeakRssKiB": 94404,
+              "resultSha256": "0e8434e72ab2bd6bb975a3b60de52bb04ce5e23bddced166fe1e84d7bcef96c5"
+            }
+          ],
+          "prepareDeliverSeconds": 27.516677447987604,
+          "postWriteFileCount": 317
+        },
+        "candidate": {
+          "phases": [
+            {
+              "phase": "pure_replay_cold",
+              "wallSeconds": 5.292290333003621,
+              "cpuSeconds": 5.282181528,
+              "cacheHits": 0,
+              "cacheMisses": 4293,
+              "cacheSizeBefore": 0,
+              "cacheSizeAfter": 4293,
+              "cacheUsageBefore": {
+                "payloadBytes": 0,
+                "maxPayloadBytes": 16777216,
+                "entries": 0,
+                "maxEntries": 8192
+              },
+              "cacheUsageAfter": {
+                "payloadBytes": 5996700,
+                "maxPayloadBytes": 16777216,
+                "entries": 4293,
+                "maxEntries": 8192
+              },
+              "processPeakRssKiB": 61752,
+              "resultSha256": "d5d56e488eb050c98e746e0924ecf825d4343768f199913e8f3770bebfa54200"
+            },
+            {
+              "phase": "pure_replay_warm",
+              "wallSeconds": 0.4296426000073552,
+              "cpuSeconds": 0.42963681800000053,
+              "cacheHits": 4293,
+              "cacheMisses": 0,
+              "cacheSizeBefore": 4293,
+              "cacheSizeAfter": 4293,
+              "cacheUsageBefore": {
+                "payloadBytes": 5996700,
+                "maxPayloadBytes": 16777216,
+                "entries": 4293,
+                "maxEntries": 8192
+              },
+              "cacheUsageAfter": {
+                "payloadBytes": 5996700,
+                "maxPayloadBytes": 16777216,
+                "entries": 4293,
+                "maxEntries": 8192
+              },
+              "processPeakRssKiB": 61752,
+              "resultSha256": "d5d56e488eb050c98e746e0924ecf825d4343768f199913e8f3770bebfa54200"
+            },
+            {
+              "phase": "locked_union_cold",
+              "wallSeconds": 7.123421888012672,
+              "cpuSeconds": 7.123035031,
+              "cacheHits": 4575,
+              "cacheMisses": 4293,
+              "cacheSizeBefore": 0,
+              "cacheSizeAfter": 4293,
+              "cacheUsageBefore": {
+                "payloadBytes": 0,
+                "maxPayloadBytes": 16777216,
+                "entries": 0,
+                "maxEntries": 8192
+              },
+              "cacheUsageAfter": {
+                "payloadBytes": 5996700,
+                "maxPayloadBytes": 16777216,
+                "entries": 4293,
+                "maxEntries": 8192
+              },
+              "processPeakRssKiB": 84408,
+              "resultSha256": "042d987544c05bd540d99b7d194f1ec64e9a3131617db3ca6f1b61eca4d6f35f"
+            },
+            {
+              "phase": "locked_union_warm",
+              "wallSeconds": 1.733565656002611,
+              "cpuSeconds": 1.7333671380000002,
+              "cacheHits": 8868,
+              "cacheMisses": 0,
+              "cacheSizeBefore": 4293,
+              "cacheSizeAfter": 4293,
+              "cacheUsageBefore": {
+                "payloadBytes": 5996700,
+                "maxPayloadBytes": 16777216,
+                "entries": 4293,
+                "maxEntries": 8192
+              },
+              "cacheUsageAfter": {
+                "payloadBytes": 5996700,
+                "maxPayloadBytes": 16777216,
+                "entries": 4293,
+                "maxEntries": 8192
+              },
+              "processPeakRssKiB": 96824,
+              "resultSha256": "042d987544c05bd540d99b7d194f1ec64e9a3131617db3ca6f1b61eca4d6f35f"
+            },
+            {
+              "phase": "existing_prepare",
+              "wallSeconds": 1.7404447450098814,
+              "cpuSeconds": 1.7400882839999987,
+              "cacheHits": 8868,
+              "cacheMisses": 0,
+              "cacheSizeBefore": 4293,
+              "cacheSizeAfter": 4293,
+              "cacheUsageBefore": {
+                "payloadBytes": 5996700,
+                "maxPayloadBytes": 16777216,
+                "entries": 4293,
+                "maxEntries": 8192
+              },
+              "cacheUsageAfter": {
+                "payloadBytes": 5996700,
+                "maxPayloadBytes": 16777216,
+                "entries": 4293,
+                "maxEntries": 8192
+              },
+              "processPeakRssKiB": 96824,
+              "resultSha256": "47e8b7bfb3c11caa0e4bfe55474f997583ec7a3bf5312a317cd1af43aa901e6c"
+            },
+            {
+              "phase": "new_prepare",
+              "wallSeconds": 2.3583857500052545,
+              "cpuSeconds": 2.3576094969999986,
+              "cacheHits": 13162,
+              "cacheMisses": 1,
+              "cacheSizeBefore": 4293,
+              "cacheSizeAfter": 4294,
+              "cacheUsageBefore": {
+                "payloadBytes": 5996700,
+                "maxPayloadBytes": 16777216,
+                "entries": 4293,
+                "maxEntries": 8192
+              },
+              "cacheUsageAfter": {
+                "payloadBytes": 5997627,
+                "maxPayloadBytes": 16777216,
+                "entries": 4294,
+                "maxEntries": 8192
+              },
+              "processPeakRssKiB": 96824,
+              "resultSha256": "0e8434e72ab2bd6bb975a3b60de52bb04ce5e23bddced166fe1e84d7bcef96c5"
+            },
+            {
+              "phase": "new_deliver",
+              "wallSeconds": 1.9081983270007186,
+              "cpuSeconds": 1.9080450800000008,
+              "cacheHits": 8905,
+              "cacheMisses": 0,
+              "cacheSizeBefore": 4294,
+              "cacheSizeAfter": 4294,
+              "cacheUsageBefore": {
+                "payloadBytes": 5997627,
+                "maxPayloadBytes": 16777216,
+                "entries": 4294,
+                "maxEntries": 8192
+              },
+              "cacheUsageAfter": {
+                "payloadBytes": 5997627,
+                "maxPayloadBytes": 16777216,
+                "entries": 4294,
+                "maxEntries": 8192
+              },
+              "processPeakRssKiB": 96824,
+              "resultSha256": "0e8434e72ab2bd6bb975a3b60de52bb04ce5e23bddced166fe1e84d7bcef96c5"
+            }
+          ],
+          "prepareDeliverSeconds": 4.266584077005973,
+          "postWriteFileCount": 317
+        }
+      },
+      "observedRatio": 6.449346116553531
+    }
+  ],
+  "qualifications": {
+    "runtimeAdmissionCap": 2,
+    "full39WorkflowAccepted": false,
+    "full128WorkflowAccepted": false,
+    "realProviderCalls": 0
+  },
+  "caseWallBudgetSeconds": 180,
+  "candidateCacheLimits": {
+    "payloadBytes": 16777216,
+    "entries": 8192,
+    "perEventBytes": 8192
+  },
+  "equivalence": [
+    {
+      "fixture": "happy-u39-l3-p0",
+      "commonPhases": [
+        "existing_prepare",
+        "locked_union_cold",
+        "locked_union_warm",
+        "new_deliver",
+        "new_prepare",
+        "pure_replay_cold",
+        "pure_replay_warm"
+      ],
+      "commonPhaseResultsEqual": true,
+      "bothWriterComplete": true,
+      "beforeBytesEqual": true,
+      "afterBytesEqual": true
+    },
+    {
+      "fixture": "reconciled-u39-l3-p32-controller",
+      "commonPhases": [
+        "existing_prepare",
+        "locked_union_cold",
+        "locked_union_warm",
+        "new_deliver",
+        "new_prepare",
+        "pure_replay_cold",
+        "pure_replay_warm"
+      ],
+      "commonPhaseResultsEqual": true,
+      "bothWriterComplete": true,
+      "beforeBytesEqual": true,
+      "afterBytesEqual": true
+    }
+  ]
+}
