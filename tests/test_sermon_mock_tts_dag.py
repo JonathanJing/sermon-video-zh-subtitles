@@ -215,9 +215,12 @@ from scripts import sermon_mock_tts_dag as dag
 from scripts import sermon_workflow_jobs as jobs
 from scripts.sermon_diagnostic_dag_session import DiagnosticSession
 from tests.mock_tts_dag_fixture import MockTTSDAGFixture
+from tests.mock_tts_sdk_diagnostics import result_summary, preserve_evidence
 f=MockTTSDAGFixture(); f.setUp()
+scenario=sys.argv[2]
+def brief(value):
+    return result_summary(value,f.root/'mock-tts-dag'/value['planSha256'])
 try:
-    scenario=sys.argv[2]
     faults={} if scenario=='happy' else {'zh-Hans.g1': {'mode':
         'fail_after_render' if scenario=='failure' else 'none',
         'queueDelaySeconds': 0, 'runDelaySeconds': 2 if scenario=='timeout' else 0}}
@@ -237,8 +240,8 @@ try:
         cwd=str(f.root), env=env, capture_output=True, text=True, timeout=600)
     assert first.returncode==0, first.stdout[-3000:]+first.stderr[-9000:]
     result=json.loads(first_result.read_text())
-    assert result['newMockDispatches']==2, result
-    assert result['syntheticProviderDispatches']==4, result
+    assert result['newMockDispatches']==2, brief(result)
+    assert result['syntheticProviderDispatches']==4, brief(result)
     assert result['realProviderCalls']==0 and result['newSourceCalls']==0
     assert len(f.transport.observations)==2  # Only historical Source fixture calls in this parent.
     assert f.subject.snapshot()['requestCount']==6
@@ -256,17 +259,17 @@ try:
     assert all(row['humanAcceptance']=='pending' and row['productionEligible'] is False
         for row in result['nodes'].values())
     if scenario=='failure':
-        assert result['status']=='incomplete', result
-        assert result['nodes']['mock.observe.zh-Hans.g1']['executionStatus']=='failed', result
-        assert result['nodes']['mock.gate.zh-Hans.g2']['readyForDownstream'], result
+        assert result['status']=='incomplete', brief(result)
+        assert result['nodes']['mock.observe.zh-Hans.g1']['executionStatus']=='failed', brief(result)
+        assert result['nodes']['mock.gate.zh-Hans.g2']['readyForDownstream'], brief(result)
         assert not result['nodes']['join.zh-Hans']['readyForDownstream']
     if scenario!='failure':
         if scenario=='happy':
-            assert result['status']=='synthetic_complete', result
+            assert result['status']=='synthetic_complete', brief(result)
             assert len(result['observedEdges'])==14, result['observedEdges']
         else:
-            assert result['status']=='incomplete', result
-            assert result['nodes']['mock.observe.zh-Hans.g1']['executionStatus']=='outcome_unknown', result
+            assert result['status']=='incomplete', brief(result)
+            assert result['nodes']['mock.observe.zh-Hans.g1']['executionStatus']=='outcome_unknown', brief(result)
     frozen=f.root/'mock-tts-dag'/result['planSha256']
     deadline=time.monotonic()+90
     while time.monotonic()<deadline:
@@ -285,8 +288,8 @@ try:
     assert repeated.returncode==0, repeated.stdout[-3000:]+repeated.stderr[-9000:]
     again=json.loads(resume_result.read_text())
     assert again['planSha256']==result['planSha256']
-    assert again['status']=='synthetic_complete', again
-    assert again['newMockDispatches']==(1 if scenario=='failure' else 0) and again['syntheticProviderDispatches']==0, again
+    assert again['status']=='synthetic_complete', brief(again)
+    assert again['newMockDispatches']==(1 if scenario=='failure' else 0) and again['syntheticProviderDispatches']==0, brief(again)
     assert all(Path(path).read_bytes()==value for path,value in originals.items())
     assert again['nodes']['mock.input.zh-Hans.g2']['jobId']==result['nodes']['mock.input.zh-Hans.g2']['jobId']
     if scenario=='failure':
@@ -295,7 +298,8 @@ try:
     assert len(again['observedEdges'])==14
     print('actual-mock-tts-prefect-'+scenario+'-ok')
 finally:
-    f.doCleanups()
+    try: preserve_evidence(f.root,scenario)
+    finally: f.doCleanups()
 '''
         env = {k: v for k, v in os.environ.items() if not k.startswith('PREFECT_')}
         with tempfile.TemporaryDirectory() as root:

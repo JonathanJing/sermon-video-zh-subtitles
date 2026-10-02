@@ -15,6 +15,7 @@ on:
       - 'tests/test_sermon_mock_tts*'
       - 'tests/test_sermon_durable_accounting.py'
       - 'tests/mock_tts_dag_fixture.py'
+      - 'tests/mock_tts_sdk_diagnostics.py'
       - 'tests/diagnostic_dag_fixture.py'
       - 'scripts/inspect_sermon_prefect_pilot.py'
       - 'requirements-prefect.txt'
@@ -52,6 +53,7 @@ jobs:
       - name: Validate actual local Prefect engine and runtime evidence
         env:
           SERMON_TEST_PREFECT: '1'
+          SERMON_MOCK_TEST_EVIDENCE_DIR: ${{ runner.temp }}/mock-tts-sdk-evidence
         run: >-
           python -m unittest
           tests.test_sermon_prefect_runtime.PrefectRuntimeTests
@@ -59,3 +61,11 @@ jobs:
           tests.test_sermon_business_prefect_flow.PrefectBusinessRuntimeTests
           tests.test_sermon_diagnostic_prefect_flow.ActualPrefectRuntimeTests
           tests.test_sermon_mock_tts_dag.ActualMockTTSPrefectTests -v
+
+      - name: Preserve synthetic SDK lifecycle diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mock-tts-sdk-evidence-${{ github.sha }}
+          path: ${{ runner.temp }}/mock-tts-sdk-evidence
+          if-no-files-found: warn
