@@ -220,11 +220,12 @@ SSH／Tailscale 可作为受授权的传输／网络路径，本身不提供 sch
 - 后续独立 review / CI 揭示 generic completion 接受 synthetic v2，以及 active worker terminal receipt publication 的普通读序竞争；前者修为显式 v1/v2 入口，后者先看 physical job active 状态，保留全部严格检查与原期限。PR #217/#218 修正 head 重新验收前继续 hold；旧绿色结果不替代新验收。详见生命周期记录的后续修复节。
 - mock v1 的已验证准入暂限 2 units；39/128-unit 实际规模验收继续 open。schema snapshot 优化不能消除全量 ledger 扫描的 O(N²) 累计成本；后续须验证完整字节/冲突/序号不减弱的有界或增量校验，不能把 admission 上限或更长 timeout 当成性能通过。
 - `017 / DEV-SPD-006` 的下一小批性能修复保留全部 write-time 字节核验：将 exact event/schema/version success cache 改为原 16 MiB payload ceiling + 8,192-entry 双上界，修正 39-job 日志 working set 未满 byte budget 却在 2,048 entries 抖动的问题。原 full-union authority、record/hash/scope/conflict/sequence 和 cap 2 均不变；pure reconciliation index 单独评估未见足够收益，不随本修复合入。配对字节、内存边界、负例与 timing 证据见[保留完整性保证的 cache 修复](reports/20261002-preserved-log-cache-scaling.zh.md)。这项 CPU 修复、PR #217/#218 已合并、完整 39/128-job 资格三者分别记录，规模 P1 不关闭。
-- 单一 Fresh→strict text→mock audio→readonly final 的实现与验证合同见 [2026-10-02 Fresh full-DAG](reports/20261002-fresh-full-dag.zh.md)。本地测量 `5048daa` 的真实 Prefect 3/3（六次 invocation / 114 tasks）已通过；保留 two-unit 实验资格、layer-map 与原 canonical 日志。GitHub exact-head CI 及 PR #217 依赖合并门另计，不提前称 dev 已集成；39/128-unit 规模与被阻断的 controller 故障窗口仍 open。
+- 单一 Fresh→strict text→mock audio→readonly final 的实现与验证合同见 [2026-10-02 Fresh full-DAG](reports/20261002-fresh-full-dag.zh.md)。本地测量 `5048daa` 的真实 Prefect 3/3（六次 invocation / 114 tasks）已通过；保留 two-unit 实验资格、layer-map 与原 canonical 日志。该测量当时的 GitHub exact-head CI 及 PR #217 合并门另计。PR #217/#224 随后已合入 dev，`58b46767` 本机回执见[合并回执](reports/20261002-merged-dev-mock-dag-receipt.zh.md)。39/128-unit 规模与被阻断的 controller 故障窗口仍 open。
 - 后续有界 Source-engine 切片见 [2026-10-02 Fresh Source 六任务接管](reports/20261002-fresh-source-engine.zh.md)：五个 Source stages + locale.freeze 的固定 recipe / typed prefix / canonical stream；不得与 source.existing continuation 相加宣称完整 fresh 全流程接管，真实 SDK 以精确 PR head 验收为准。
 
 - **2026-10-02 合并后 dev 本机失败实测**（`8c64502404f9ae7110ee49aa990bcaeb2f8cd24d`）：正常SDK场景60.804秒后失败，Source/text完成、2个submit intent均unknown、0 job/0 TTS WAV，后续重放/重试/timeout未运行。macOS framework Python自动注入`__CF_USER_TEXT_ENCODING`与mock worker环境白名单冲突已由无任务探针复现；原launcher退出详情未留存，须补脱敏失败诊断而不放宽unknown重派。206条账本事件一致，但logs inspector仍报no_detected_error，须区分完整性与业务未决状态；证据副本未覆盖全部兄弟目录输入，不能标为完整恢复包。mini的实时job.v1能力表无mock TTS task，真实tts_experiment不可用，018跨机adapter/byte回收仍未接通，不以cpu_smoke替代。修复、独立部署权限与重新验收继续开放，详见[实验报告](reports/20261002-experiment1-merged-dev-result.zh.md)。
-- **2026-10-02 本机修复候选已验证**（`ab98774b4674d44a976d0e3999120e4ee8d2062a`）：收窄兼容macOS解释器注入字段、增加脱敏launcher错误、修正unknown/blocked日志诊断，并归档7份固定fixture输入。21项定向+37项集成通过；真实SDK三场景（6次invocation / 114 tasks）通过，正常重复无派发、确认失败仅重试1单元、timeout沿原job对账且无派发。独立审计7份WAV（6成功+1预设失败）、typed handles与1001个文件SHA均通过。原失败证据保留；正式验收仍待合并后dev复测，018跨机实现与部署按用户本轮范围推迟，规模及crash-window缺口不关闭。详见[修复报告](reports/20261002-macos-mock-worker-local-fix.zh.md)。
+- **2026-10-02 本机修复候选已验证**（`ab98774b4674d44a976d0e3999120e4ee8d2062a`）：收窄兼容macOS解释器注入字段、增加脱敏launcher错误、修正unknown/blocked日志诊断，并归档7份固定fixture输入。21项定向+37项集成通过；真实SDK三场景（6次invocation / 114 tasks）通过，正常重复无派发、确认失败仅重试1单元、timeout沿原job对账且无派发。独立审计7份WAV（6成功+1预设失败）、typed handles与1001个文件SHA均通过。原失败证据保留；该候选不能代替合并后 SHA。018跨机实现与部署按用户本轮范围推迟，规模及crash-window缺口不关闭。详见[修复报告](reports/20261002-macos-mock-worker-local-fix.zh.md)。
+- **2026-10-02 合并后 dev 本机复测已记录**（`58b46767aea3cfad04fd89c75a27f490369d2045`，tree `77df394cc0f43a994fd231db3fb34e43d9534b09`）：既有本机三场景在该精确 SHA 上通过，工作树干净。happy／failure／timeout 场景 wall 为 230.610／209.910／185.427 秒；6 次 invocation、114 个互异 taskRunId。正常重复 2→0 mock 派发，失败恢复只新增 1 个 job，超时沿原 job 对账且新派发为 0。历史 failure／timeout 错误仍保留。真实模型调用为 0。这只补上两单元 mock 的合并 SHA 回执，不关闭 018、真实 Spark batch、39/128-unit 或 crash-window。详见[合并回执](reports/20261002-merged-dev-mock-dag-receipt.zh.md)。
 
 
 **第1条实验复盘落实（PR #224；沿用 `017 / DEV-SPD-006 / 018`）**：
@@ -238,10 +239,10 @@ SSH／Tailscale 可作为受授权的传输／网络路径，本身不提供 sch
 | 输入归档完整性 | 候选已验证 | 固定7份输入SHA/大小验证及audit-only标记；可执行恢复包仍未实现，不以归档代替恢复资格 |
 | 测量与性能分析 | 分项归因及两项优化已验证 | 保存首次执行/凭证复用/重试/对账的独立耗时；随后定位验证、日志读取和SDK开销，成对测量后才作性能结论；不放宽cap2或校验 |
 | 进度沟通 | 执行约定 | 优先汇报新证据、阶段结果和阻塞；运行中使用结构化进度，避免反复人工轮询文件 |
-| 合并后dev正式复测 | 待合并 | 固定合并后SHA；候选通过不能替代最终验收 |
+| 合并后dev正式复测 | 已记录 | `58b46767` 本机三场景通过；候选 SHA 与该回执分开 |
 | 跨机、39/128-unit规模、controller故障窗口 | 独立待办 | 本批保持原范围，跨机部署/服务变更另行按明确目标执行，不关闭018或规模资格 |
 
-本批落实于`8ff42bc740824640f0116cb759bf21d590a951b9`：17项新增测试+6项归档回归通过，新统一入口三场景通过（243.074/228.484/206.142秒），并完成进度/版本/状态摘要与WAV证据审计。通过[复盘验证结果](reports/20261002-macos-mock-worker-local-fix.zh.md#复盘改进的验证结果)复核；性能归因/优化、可执行恢复包、合并后dev、跨机及规模项仍开放。
+本批落实于`8ff42bc740824640f0116cb759bf21d590a951b9`：17项新增测试+6项归档回归通过，新统一入口三场景通过（243.074/228.484/206.142秒），并完成进度/版本/状态摘要与WAV证据审计。通过[复盘验证结果](reports/20261002-macos-mock-worker-local-fix.zh.md#复盘改进的验证结果)复核。合并后 dev `58b46767` 的本机复测已记入[合并回执](reports/20261002-merged-dev-mock-dag-receipt.zh.md)。性能归因之后的进一步优化、可执行恢复包、跨机及规模项仍开放。
 
 **验证/日志开销分项归因（优化前基线）**：三场景270次操作级测量、3个代表操作cProfile及90次临时文件追加。happy warm完整读取99.479ms、57个完成凭证校验2.753s、durable只读precheck141.275ms；缓存444条/592,732bytes，warm无miss。profile确认57个handle触发114次整账本回放，10条不缓存事件被重复校验1,140次。临时文件低层追加+os.fsync约0.047ms；非整个durable事务，不据此排除其他IO等待。详见[独立归因报告](reports/20261002-mock-log-validation-cost.zh.md)。后续仍沿`017 / DEV-SPD-006`：
 
