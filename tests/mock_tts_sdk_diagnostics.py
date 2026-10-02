@@ -13,6 +13,54 @@ from scripts import sermon_accounting as accounting
 from scripts import sermon_review_contracts as c
 
 
+def status_diagnostics(value, events, damaged):
+    """Separate observed outcomes; this projection never grants recovery authority."""
+    nodes = value.get('nodes', {})
+    engine = value.get('engineEvidence', {})
+    states = [row.get('engineState') for row in engine.values()]
+    engine_complete = bool(nodes) and set(engine) == set(nodes) and all(s == 'Completed' for s in states)
+    replay = accounting.profile_integrity(events)
+    seen, errors, reconciliations = set(), [], []
+    for event in events:
+        identity = event.get('eventId')
+        if identity and identity in seen:
+            continue
+        if identity:
+            seen.add(identity)
+        diagnostic = accounting.diagnostic_event(event)
+        if (diagnostic['level'] in {'ERROR', 'CRITICAL'} or
+                diagnostic.get('status') in {'failed', 'cancelled', 'blocked', 'outcome_unknown'} or
+                event.get('status') in {'failed', 'cancelled', 'blocked', 'outcome_unknown'}):
+            errors.append(event)
+        if event.get('event') == 'attempt_reconciled':
+            reconciliations.append(event)
+    recovery = []
+    for event in errors:
+        matches = [r for r in reconciliations
+            if event.get('event') == 'stage_finished' and event.get('status') == 'outcome_unknown'
+            and r.get('runId') == event.get('runId')
+            and r.get('reconcilesAttemptId') == event.get('attemptId')
+            and all(r.get(k) == event.get(k) for k in ('jobId', 'revisionId'))]
+        verified = (not damaged and replay['status'] == 'consistent' and len(matches) == 1
+            and id(event) in replay.get('_selected', set())
+            and id(matches[0]) in replay.get('_selected', set()))
+        recovery.append({'eventId': event.get('eventId'), 'attemptId': event.get('attemptId'),
+            'historicalStatus': accounting.diagnostic_event(event).get('status'),
+            'reconciliation': 'recorded' if verified else 'unknown',
+            'reconciliationResult': matches[0].get('result') if verified else None,
+            'reconciliationEventId': matches[0].get('eventId') if verified else None})
+    return {'diagnosticOnly': True, 'executionAuthority': 'none',
+        'scope': 'saved_invocation_and_entire_current_ledger_not_live_health',
+        'engine': {'aggregate': 'all_tasks_completed' if engine_complete else 'not_all_tasks_completed' if states else 'unknown',
+            'observedTaskCount': len(states), 'expectedTaskCount': len(nodes),
+            'stateCounts': {str(state): states.count(state) for state in sorted(set(states), key=str)}},
+        'business': {'status': value.get('status', 'unknown'), 'authority': 'original_result_unchanged'},
+        'history': {'errorEventCount': len(errors) if events else None,
+            'reconciliationEventCount': len(reconciliations) if events else None,
+            'integrity': 'damaged' if damaged else replay['status'] if events else 'unknown', 'errors': recovery,
+            'recoveryInterpretation': 'Only explicit canonical attempt reconciliation is reported; successful later work does not resolve every historical error.'}}
+
+
 def result_summary(value, root):
     root = Path(root)
     result = {key: value.get(key) for key in ('planSha256', 'invocationId', 'status',
@@ -40,12 +88,14 @@ def result_summary(value, root):
         result['jobs'].append(item)
     try:
         events, damaged = accounting.read_events(root/'accounting')
+        result['statusDiagnostics'] = status_diagnostics(value, events, damaged)
         result['damagedLogRows'] = len(damaged)
         failed = [row for row in events if row.get('event') == 'stage_finished'
             and row.get('status') not in {'completed'}]
         result['terminalDiagnostics'] = [accounting.diagnostic_event(row) for row in failed[-4:]]
     except (OSError, ValueError) as exc:
         result['diagnosticReadErrorType'] = type(exc).__name__
+        result['statusDiagnostics'] = status_diagnostics(value, [], [True])
     return result
 
 

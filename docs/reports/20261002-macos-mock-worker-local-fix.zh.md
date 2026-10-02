@@ -89,3 +89,20 @@ export SERMON_FRESH_FULL_TEST_EVIDENCE_DIR="$PWD/artifacts/mock-worker-local-fix
 ## 未覆盖与后续
 
 本机修复候选已通过所列验证；正式第1条实验仍等待修复合并后的dev精确SHA复测。跨机模拟任务、Hub/Spark adapter及artifact byte回传按用户本轮范围推迟，未部署、未运行，不声称SSH调度验收通过。39/128-unit规模、controller crash-window、断网/服务重启、真实模型/生产音频均不在本次证据内。继续沿[统一backlog](../backlog.zh.md)的`017 / DEV-SPD-006 / 018`跟踪，不关闭无关项。
+
+## 复盘改进：预检、进度与状态诊断
+
+复盘项沿`017 / DEV-SPD-006 / 018`写入backlog。增加仓库内可复用入口，替代仅保存在artifacts中的临时driver：
+
+```sh
+.venv/bin/python -m tests.run_mock_dag_experiment \
+  --output-dir artifacts/mock-retro-validation
+```
+
+要求干净提交，输出目录必须不存在；仓库内输出必须被Git忽略。默认依次执行原有三个两单元SDK场景，遇到失败停止，保留完整场景日志、`summary.json`、`*-timing.json`、`progress.jsonl`与原有evidence。可用一次或多次`--scenario happy|failure|timeout`选择场景，但不允许重复同一场景。它不恢复旧任务，也不接纳现有证据目录作为执行输入。
+
+每个场景在创建fixture前，以真实`sys.executable -I`、原worker环境清理和临时synthetic engineering profile运行只调用环境校验的预检。预检不提交job、不调用provider；失败立即停止。随后记录preflight、两次invocation和场景验证的开始/结束及wall time；运行中每30秒显示当前阶段和耗时。结构化进度是诊断记录，不能作为完成凭证或critical path。终端仅转发固定进度字段，原始子进程输出存入独立log。
+
+保存的`summary-<invocation>.json`新增`statusDiagnostics`，分别展示SDK任务状态、原业务结果、历史错误和显式对账。历史错误来自整个当前保存账本，可能包含晚于该invocation的记录。只有完整一致账本中相同run/attempt/job/revision的唯一显式reconciliation才能记为`recorded`；没有证据时为`unknown`，不凭后来成功消除历史错误，也不授权重试。
+
+性能改进本批先交付可重复的分场景/分invocation wall time。SDK、日志读取及校验的CPU耗时归因、配对性能实验、生产吞吐量和跨机/规模验收仍保留为独立待办。

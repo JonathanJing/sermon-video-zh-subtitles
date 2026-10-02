@@ -118,6 +118,8 @@ def clean_child(payload_path):
     identity = accounting.execution_identity()
     assert identity['trackedWorkingTreeDirty'] is False, 'actual SDK requires clean committed code'
     assert identity == expected, 'fresh clean-process code identity must match exactly'
+    candidate = os.environ.get('SERMON_MOCK_EXPERIMENT_COMMIT')
+    assert candidate is None or identity['gitCommit'] == candidate, 'experiment candidate commit changed'
     transport = fixture_transport(value['fixtureSourceText'], value['fixtureSourceReview'],
         value['fixtureGroups'], allow_calls=value['allowFixtureCalls'])
     session = fresh.FreshDiagnosticSession(value['plan'], offline_transport=transport)
