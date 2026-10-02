@@ -18,19 +18,23 @@ class MockTTSControlTests(fixtures.WorkerFixture):
         self.policy = {'schemaVersion': control.POLICY,
             'units': {'zh-Hans.unit.001': 'zh-Hans', 'zh-Hans.unit.002': 'zh-Hans'},
             'maxJobs': 4, 'maxAttemptsPerUnit': 2, 'maxConcurrentJobs': 1,
-            'workerTimeoutSeconds': 10, 'observationTimeoutSeconds': 8}
+            'workerTimeoutSeconds': 60, 'observationTimeoutSeconds': 45}
         self.client = control.MockTTSClient(self.scope, self.stream, self.policy, create=True)
 
     def test_actual_submit_observe_verify_and_repeated_key_no_new_dispatch(self):
         request, path = self.make_request()
-        self.assertTrue(self.client.submit(path)['newDispatch'])
+        submitted = self.client.submit(path)
+        self.assertTrue(submitted['newDispatch'])
+        self.assertTrue(submitted['launchEntered'])
         observed = self.client.observe(path)
         self.assertEqual(observed['status'], 'succeeded')
         admitted = self.client.verify(path)
         self.assertEqual(admitted['admissionStatus'], 'verified_synthetic')
         before = (self.stream.directory/'events.jsonl').read_bytes()
         with patch.object(control.subprocess, 'run', side_effect=AssertionError('redispatch forbidden')):
-            self.assertFalse(self.client.submit(path)['newDispatch'])
+            repeated = self.client.submit(path)
+            self.assertFalse(repeated['newDispatch'])
+            self.assertFalse(repeated['launchEntered'])
             self.assertEqual(self.client.observe(path), observed)
             self.assertEqual(self.client.verify(path), admitted)
         self.assertEqual(before, (self.stream.directory/'events.jsonl').read_bytes())
@@ -38,6 +42,29 @@ class MockTTSControlTests(fixtures.WorkerFixture):
         self.assertEqual(logs.replay_integrity(events)['status'], 'consistent')
         states = [e['toState'] for e in events if e['event'] == 'step_state_changed']
         self.assertEqual(states, ['pending', 'ready', 'queued', 'running', 'succeeded'])
+
+    def test_unqualified_larger_plan_is_rejected_before_any_launch(self):
+        selected = deepcopy(self.policy)
+        selected['units']['zh-Hans.unit.003'] = 'zh-Hans'
+        selected['maxJobs'] = 6
+        with patch.object(control.subprocess, 'run', side_effect=AssertionError('policy must prevent launch')) as launch:
+            with self.assertRaisesRegex(c.ContractError, 'mock_tts_control_policy_invalid'):
+                control.validate_policy(selected)
+        launch.assert_not_called()
+        self.assertFalse((self.scope/'jobs').exists())
+
+    def test_capacity_rejection_is_known_before_launch(self):
+        first, first_path = self.make_request(unit_id='zh-Hans.unit.002')
+        self.client.submit(first_path)
+        second, second_path = self.make_request()
+        with patch.object(control.jobs, 'peek_job', return_value={'jobId': first['jobId'], 'status': 'running'}), \
+                patch.object(control.subprocess, 'run', side_effect=AssertionError('capacity must prevent launch')) as launch:
+            with self.assertRaisesRegex(control.SubmissionError, 'mock_tts_capacity_blocked') as caught:
+                self.client.submit(second_path)
+        self.assertFalse(caught.exception.launch_entered)
+        launch.assert_not_called()
+        self.assertFalse(self.client._intent_path(second).exists())
+        self.assertEqual(self.wait(first)['status'], 'succeeded')
 
     def test_verified_gate_preserves_pending_human_and_reuses_original_proof(self):
         request, path = self.make_request()

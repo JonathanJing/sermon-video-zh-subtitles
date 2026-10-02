@@ -120,6 +120,29 @@ class MockTTSDAGComponents(unittest.TestCase):
         self.assertEqual(originals, {p: p.read_bytes() for p in originals})
         self.assertEqual(repeated.results['mock.observe.zh-Hans.g1']['reconciliation']['status'], 'succeeded')
 
+    def test_prelaunch_capacity_failure_is_blocked_not_unknown(self):
+        config = self.f.dag_config(); config['mockPolicy']['maxConcurrentJobs'] = 1
+        current = self.make(config); current.freeze()
+        with current.stream.context():
+            current.activate()
+            source = current.execute('source.existing', [])
+            text = current.execute('text.zh-Hans', [source])
+            first = current.execute('mock.input.zh-Hans.g1', [text])
+            current.execute('mock.submit.zh-Hans.g1', [first])
+            second = current.execute('mock.input.zh-Hans.g2', [text])
+            with patch.object(dag.control.jobs, 'peek_job', return_value={'status': 'running'}), \
+                    patch.object(dag.control.subprocess, 'run', side_effect=AssertionError('capacity must prevent launch')) as launch:
+                result = current.execute('mock.submit.zh-Hans.g2', [second])
+            self.assertEqual(result['executionStatus'], 'blocked', result)
+            self.assertFalse(result['processed'])
+            self.assertFalse(result['readyForDownstream'])
+            self.assertEqual(result['reason'], 'mock_tts_capacity_blocked')
+            self.assertEqual(result['completionHandles'], [])
+            launch.assert_not_called()
+            self.assertEqual(len(list((current.client.root/'intents').glob('*.json'))), 1)
+            _, first_path = current._request('zh-Hans.g1')
+            self.assertEqual(current.client.observe(first_path)['status'], 'succeeded')
+
     def test_policy_and_graph_membership_are_rejected_before_dispatch(self):
         config = self.f.dag_config(); del config['mockPolicy']['units']['zh-Hans.g2']
         with self.assertRaisesRegex(ValueError, 'policy_membership_changed'): self.make(config)

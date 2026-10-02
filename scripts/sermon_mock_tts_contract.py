@@ -195,13 +195,19 @@ def verify_wav(path, request, artifact):
     return deepcopy(artifact)
 
 
+# This isolated acceptance contract has only two-unit end-to-end evidence.
+# Larger plans require a separately measured contract revision, not an implied
+# throughput guarantee from a broad JSON shape limit.
+MAX_TESTED_UNITS = 2
+
+
 def validate_policy(value):
     c.require(type(value) is dict and set(value) == {'schemaVersion', 'units', 'maxJobs',
         'maxAttemptsPerUnit', 'maxConcurrentJobs', 'workerTimeoutSeconds', 'observationTimeoutSeconds'}
-        and value['schemaVersion'] == 'sermon-mock-tts-control-policy-v1' and type(value['units']) is dict and 1 <= len(value['units']) <= 128
+        and value['schemaVersion'] == 'sermon-mock-tts-control-policy-v1' and type(value['units']) is dict and 1 <= len(value['units']) <= MAX_TESTED_UNITS
         and all(label(unit) and len(unit) <= 80 and locale in LOCALES for unit, locale in value['units'].items())
         and type(value['maxAttemptsPerUnit']) is int and 1 <= value['maxAttemptsPerUnit'] <= 3
-        and type(value['maxJobs']) is int and len(value['units']) <= value['maxJobs'] <= 384
+        and type(value['maxJobs']) is int and len(value['units']) <= value['maxJobs'] <= MAX_TESTED_UNITS * 3
         and type(value['maxConcurrentJobs']) is int and 1 <= value['maxConcurrentJobs'] <= 4
         and number(value['workerTimeoutSeconds'], 1, 60)
         and number(value['observationTimeoutSeconds'], .01, value['workerTimeoutSeconds']),

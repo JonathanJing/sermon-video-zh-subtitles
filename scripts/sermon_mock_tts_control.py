@@ -5,6 +5,7 @@ never permission to resubmit. Reconciliation reads original evidence only.
 """
 from copy import deepcopy
 import json
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -26,6 +27,13 @@ POLICY = 'sermon-mock-tts-control-policy-v1'
 INTENT = 'sermon-mock-tts-intent-v1'
 OBSERVATION = 'sermon-mock-tts-observation-v1'
 ADMISSION = 'sermon-mock-tts-admission-v1'
+
+
+class SubmissionError(c.ContractError):
+    """A safe failure code plus whether this call entered its fixed launcher."""
+    def __init__(self, reason, *, launch_entered):
+        super().__init__(reason)
+        self.launch_entered = launch_entered
 
 
 def _save(path, value):
@@ -124,6 +132,18 @@ class MockTTSClient:
             return {'jobId': request['jobId'], 'status': 'not_observed'}
 
     def submit(self, request_path):
+        boundary = {'entered': False}
+        try:
+            result = self._submit(request_path, boundary)
+        except Exception as exc:
+            if isinstance(exc, accounting.AccountingWriteError) or getattr(exc, 'sermon_logging_failed', False):
+                raise
+            reason = str(exc) if isinstance(exc, ValueError) and re.fullmatch(r'[a-z][a-z0-9_]{0,119}', str(exc)) else (
+                'mock_tts_submission_unconfirmed' if boundary['entered'] else 'mock_tts_prelaunch_rejected')
+            raise SubmissionError(reason, launch_entered=boundary['entered']) from exc
+        return {**result, 'launchEntered': boundary['entered']}
+
+    def _submit(self, request_path, boundary):
         request, path = self._request(request_path)
         key = c.canonical_sha256({'scope': self.scope, 'purpose': 'admission'})
         with jobs._lock(self.root/'control-locks', key) as (_, _, held):
@@ -162,9 +182,11 @@ class MockTTSClient:
                         depends_on=[request['parentCompletion']['spanId']]) as dispatch:
                     # Capture this actual dispatch leaf in the detached job context.
                     env = worker.environment(self.root/'launcher')
+                    command = [sys.executable, '-I', worker.__file__, 'submit', '--request', str(path),
+                        '--request-sha256', c.canonical_sha256(request)]
                     try:
-                        result = subprocess.run([sys.executable, '-I', worker.__file__, 'submit', '--request', str(path),
-                            '--request-sha256', c.canonical_sha256(request)],
+                        boundary['entered'] = True
+                        result = subprocess.run(command,
                             env=env, stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=10)
                         c.require(result.returncode == 0, 'mock_tts_submit_ack_missing')
                         ack = json.loads(result.stdout)

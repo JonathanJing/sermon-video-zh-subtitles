@@ -59,8 +59,8 @@ def _groups(session, diagnostic_config):
             result[unit] = {'unitId': unit, 'targetLocale': locale,
                 'translationGroupId': group['translationGroupId'],
                 'sourceUnitIds': group['sourceUnitIds'], 'groupPlanSha256': c.canonical_sha256(group)}
-    c.require(1 <= len(result) <= 128 and all(sum(row['targetLocale'] == locale
-        for row in result.values()) <= 64 for locale in diagnostic_config['locales']), 'mock_dag_unit_limit')
+    c.require(1 <= len(result) <= contract.MAX_TESTED_UNITS and all(sum(row['targetLocale'] == locale
+        for row in result.values()) <= contract.MAX_TESTED_UNITS for locale in diagnostic_config['locales']), 'mock_dag_unit_limit')
     return result
 
 
@@ -123,7 +123,9 @@ class MockTTSDAG:
         self.binding = {'schemaVersion': SCHEMA, 'scope': 'existing_source_continuation_group_mock_tts',
             'diagnosticBinding': deepcopy(self.diagnostic.binding), 'units': deepcopy(self.units),
             'nodes': deepcopy(self.nodes), 'permissions': deepcopy(PERMISSIONS),
-            'graphLimits': {'maxUnits': 128, 'maxLocaleUnits': 64, 'maxDependencies': 64},
+            'graphLimits': {'maxUnits': contract.MAX_TESTED_UNITS,
+                'maxLocaleUnits': contract.MAX_TESTED_UNITS, 'maxDependencies': 64,
+                'scaleQualification': 'two_unit_offline_acceptance_only'},
             'mockPolicy': deepcopy(self.policy), 'faults': deepcopy(self.faults),
             'codeFiles': _code_files(), 'mockImplementationSha256': contract.implementation_sha256(),
             'engine': {'name': 'prefect', 'version': version('prefect'), 'maxWorkers': 1,
@@ -396,8 +398,8 @@ class MockTTSDAG:
                         handles = [self._control_leaf(node, result, spans+[h['spanId'] for h in original_handles])]
                     elif op == 'submit':
                         _, path = self._request(unit)
-                        dispatched = True
                         result = self.client.submit(path)
+                        dispatched = result['launchEntered']
                         # Submission is acknowledgement/intent only, not worker completion.
                         dispatch_handle = result.get('dispatchCompletion')
                         supplemental = [dispatch_handle['spanId']] if dispatch_handle is not None else []
@@ -455,6 +457,8 @@ class MockTTSDAG:
                 if isinstance(exc, accounting.AccountingWriteError) or getattr(exc, 'sermon_logging_failed', False):
                     self._reliability_failure = exc
                     raise
+                if isinstance(exc, control.SubmissionError):
+                    dispatched = exc.launch_entered
                 reason = str(exc) if isinstance(exc, ValueError) and re.fullmatch(r'[a-z][a-z0-9_]{0,119}', str(exc)) else 'evidence_not_confirmed'
                 observed.update(executionStatus='outcome_unknown' if dispatched else 'blocked',
                     processed=None if dispatched else False, reason=reason, errorType=type(exc).__name__)

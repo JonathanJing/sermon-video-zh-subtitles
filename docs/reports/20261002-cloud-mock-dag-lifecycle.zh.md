@@ -72,3 +72,11 @@ python -m unittest tests.test_sermon_mock_tts_worker tests.test_sermon_mock_tts_
 ```
 
 CLI 为 `python -m scripts.sermon_mock_tts_dag`，只接受显式 `--offline-fixture`、原 plan / continuation、冻结 spec 和 fixture responses；恢复还需精确 `unitId → 原 request SHA256` 的 `--recovery-manifest`。这不是生产 TTS 入口。
+
+## 外部审查补强与规模边界
+
+- 修正 submit 的分派边界：capacity / retry / intent 等前置失败明确为 blocked，只有进入固定 launcher 后才可能记录 dispatch unknown；同 key 正常复用明确 `launchEntered=false`
+- 成功功能测试使用显式 60 秒 worker / 45 秒 observation 预算，不把 8 秒微性能窗口当作成功语义。专门的短观察测试仍以 0.01 秒触发 unknown，并保留原 receipt 对账验证
+- 当前新 mock v1 只接纳已验证的最多 2 个 unit；这是实验范围的 fail-closed 限制，**不是可扩展性修复**。39-unit 与 128-unit 的吞吐、deadline 和完整生命周期验收继续开放
+- 精确内容/类型绑定的私有 schema snapshot 降低重复校验开销。相同正例 client profile 4.133 → 2.688 秒；256 events × 20 replay batches 2.548 → 0.155 秒。每 event 的 JSON/type/size/schema/semantic 与 replay 检查保留；实际 ledger bytes、delivery records、锁和 scope 仍全量校验
+- 全量 ledger 校验仍为每 append O(N)、累计可能 O(N²)。本切片不宣称增量 prefix 校验已经实现；后续优化必须继续验证原字节、冲突、scope 与 sequence，不准用 mtime 或对象 identity 代替事实完整性

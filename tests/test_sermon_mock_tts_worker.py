@@ -33,7 +33,7 @@ class WorkerFixture(unittest.TestCase):
         self.policy = {'schemaVersion': 'sermon-mock-tts-control-policy-v1',
             'units': {'zh-Hans.unit.001': 'zh-Hans', 'zh-Hans.unit.002': 'zh-Hans'},
             'maxJobs': 4, 'maxAttemptsPerUnit': 2, 'maxConcurrentJobs': 1,
-            'workerTimeoutSeconds': 10, 'observationTimeoutSeconds': 8}
+            'workerTimeoutSeconds': 60, 'observationTimeoutSeconds': 45}
         public.save_once(self.scope/'policy.json', self.policy)
         self.scope_value = {'schemaVersion': 'sermon-mock-tts-scope-v1', 'runId': self.run_id,
             'planSha256': self.plan_sha, 'implementationSha256': contract.implementation_sha256(),
@@ -51,7 +51,7 @@ class WorkerFixture(unittest.TestCase):
             'implementationSha256': self.scope_value['implementationSha256'],
             'waveform': {'sampleRate': 16000, 'frames': 2400, 'seed': 7},
             'fault': {'mode': fault, 'queueDelaySeconds': .02, 'runDelaySeconds': delay},
-            'workerTimeoutSeconds': 10, 'attemptNumber': attempt_number, 'retryOfRequestSha256': retry_of, 'productionEligible': False, 'humanAcceptance': 'pending'}
+            'workerTimeoutSeconds': self.policy['workerTimeoutSeconds'], 'attemptNumber': attempt_number, 'retryOfRequestSha256': retry_of, 'productionEligible': False, 'humanAcceptance': 'pending'}
         input_binding = {'schemaVersion': 'sermon-mock-tts-unit-input-v1', 'unitId': unit_id,
             'targetLocale': 'zh-Hans', 'sourceCanonicalSha256': 'e'*64, 'anchorCanonicalSha256': 'f'*64,
             'policySha256': 'a'*64, 'groupPlanSha256': 'a'*64, 'rubricSha256': 'b'*64,
@@ -87,7 +87,7 @@ class WorkerFixture(unittest.TestCase):
         return json.loads(result.stdout)
 
     def wait(self, request):
-        end = time.monotonic() + 15
+        end = time.monotonic() + request['workerTimeoutSeconds'] + 5
         while time.monotonic() < end:
             result = jobs.inspect_job(self.scope/'jobs', request['jobId'])
             if result['status'] not in {'queued', 'running'}:
