@@ -64,12 +64,12 @@ def _groups(session, diagnostic_config):
     return result
 
 
-def _graph(units):
-    nodes = [{'id': 'source.existing', 'operation': 'source', 'locale': None, 'unitId': None, 'dependsOn': []}]
+def _graph(units, *, source_node='source.existing'):
+    nodes = [{'id': source_node, 'operation': 'source', 'locale': None, 'unitId': None, 'dependsOn': []}]
     locales = sorted({row['targetLocale'] for row in units.values()})
     for locale in locales:
         nodes.append({'id': 'text.'+locale, 'operation': 'text', 'locale': locale,
-            'unitId': None, 'dependsOn': ['source.existing']})
+            'unitId': None, 'dependsOn': [source_node]})
         for unit, row in units.items():
             if row['targetLocale'] != locale:
                 continue
@@ -95,6 +95,25 @@ def _code_files():
     return {name: diagnostic._hash_file(diagnostic.pilot.REPO/name) for name in sorted(paths)}
 
 
+def policy_and_faults(units, config):
+    """Shared closed mock policy preflight, before any Source/text callback."""
+    policy = control.validate_policy(config['mockPolicy'])
+    c.require(policy['units'] == {unit: row['targetLocale'] for unit, row in units.items()},
+        'mock_dag_policy_membership_changed')
+    c.require(type(config['faults']) is dict and set(config['faults']) <= set(units),
+        'mock_dag_fault_membership_changed')
+    faults = {unit: deepcopy(config['faults'].get(unit,
+        {'mode': 'none', 'queueDelaySeconds': 0, 'runDelaySeconds': 0})) for unit in units}
+    for fault in faults.values():
+        c.require(type(fault) is dict and set(fault) == {'mode', 'queueDelaySeconds', 'runDelaySeconds'}
+            and fault['mode'] in contract.FAULTS
+            and contract.number(fault['queueDelaySeconds'], 0, 5)
+            and contract.number(fault['runDelaySeconds'], 0, 5)
+            and fault['queueDelaySeconds']+fault['runDelaySeconds'] < policy['workerTimeoutSeconds'],
+            'mock_dag_fault_invalid')
+    return policy, faults
+
+
 class MockTTSDAG:
     """Frozen closed graph; Prefect schedules, original ledgers decide business state."""
     def __init__(self, session, config, *, recovery=None):
@@ -105,20 +124,7 @@ class MockTTSDAG:
         self.session = session
         self.diagnostic = diagnostic.DiagnosticDAG(session, config['diagnostic'])
         self.units = _groups(session, self.diagnostic.config)
-        self.policy = control.validate_policy(config['mockPolicy'])
-        c.require(self.policy['units'] == {unit: row['targetLocale'] for unit, row in self.units.items()},
-            'mock_dag_policy_membership_changed')
-        c.require(type(config['faults']) is dict and set(config['faults']) <= set(self.units),
-            'mock_dag_fault_membership_changed')
-        self.faults = {unit: deepcopy(config['faults'].get(unit,
-            {'mode': 'none', 'queueDelaySeconds': 0, 'runDelaySeconds': 0})) for unit in self.units}
-        for fault in self.faults.values():
-            c.require(type(fault) is dict and set(fault) == {'mode', 'queueDelaySeconds', 'runDelaySeconds'}
-                and fault['mode'] in contract.FAULTS
-                and contract.number(fault['queueDelaySeconds'], 0, 5)
-                and contract.number(fault['runDelaySeconds'], 0, 5)
-                and fault['queueDelaySeconds']+fault['runDelaySeconds'] < self.policy['workerTimeoutSeconds'],
-                'mock_dag_fault_invalid')
+        self.policy, self.faults = policy_and_faults(self.units, config)
         self.nodes = _graph(self.units)
         self.binding = {'schemaVersion': SCHEMA, 'scope': 'existing_source_continuation_group_mock_tts',
             'diagnosticBinding': deepcopy(self.diagnostic.binding), 'units': deepcopy(self.units),
@@ -178,7 +184,7 @@ class MockTTSDAG:
         _save(self.root/'plan.json', self.binding)
         _save(self.root/'invocations'/(self.invocation+'.json'), self.invocation_binding)
         self.stream = durable.open_stream(self.root/'accounting', scope_id='mock-tts-dag',
-            plan_sha256=self.plan_sha256, production_run_id=self.session.context['runId'],
+            plan_sha256=self.plan_sha256, production_run_id=self._production_run_id(),
             purpose='mock_tts_dag_continuation', create=True)
 
     def activate(self):
@@ -188,6 +194,9 @@ class MockTTSDAG:
         # Reject unknown/unconfirmed recovery before scheduling any callbacks.
         for unit, prior_sha in self.recovery.items():
             self._retry_parent(unit, prior_sha)
+
+    def _production_run_id(self):
+        return self.session.context['runId']
 
     def _control_leaf(self, node, result, dependencies):
         digest = c.canonical_sha256(result)
@@ -206,7 +215,7 @@ class MockTTSDAG:
                     'syntheticFixtureOnly': True, 'productionEligible': False})
                 attempt.finish('completed', artifact_sha256=digest)
             return completion.capture_synthetic(attempt.span_id,
-                production_run_id=self.session.context['runId'], artifact_sha256=digest,
+                production_run_id=self._production_run_id(), artifact_sha256=digest,
                 artifact_kind='control_receipt', job_id=job, revision_id=revision)
 
     def _parents(self, node, upstream):
@@ -219,14 +228,27 @@ class MockTTSDAG:
         for parent in parents:
             if parent['readyForDownstream']:
                 for handle in parent['completionHandles']:
-                    completion.validate_synthetic(handle, events, production_run_id=self.session.context['runId'])
+                    completion.validate_synthetic(handle, events, production_run_id=self._production_run_id())
         return parents
+
+    def _locale_spec(self, locale):
+        return self.diagnostic.config['locales'][locale]['localeSpec']
+
+    def _validate_callback(self, operation, locale, result):
+        return self.diagnostic._validate(operation, locale, result)
+
+    def _final_result(self, expected):
+        return {'schemaVersion': 'sermon-mock-tts-final-v1', 'status': 'synthetic_complete',
+            'planSha256': self.plan_sha256, 'expectedLocales': expected,
+            'localeJoinSha256': {locale: c.canonical_sha256(self.results['join.'+locale]) for locale in expected},
+            'formalAudioPackageCreated': False, 'realProviderCalls': 0,
+            'realModelCalls': 0, 'newSourceCalls': 0, **QUALIFICATIONS}
 
     def _candidate(self, locale):
         result = self.results['text.'+locale]['callbackResult']
-        self.diagnostic._validate('locale', locale, result)
+        self._validate_callback('locale', locale, result)
         candidate = public.read_snapshot(Path(result['output'])/'candidate.json')[0]
-        spec = self.diagnostic.config['locales'][locale]['localeSpec']
+        spec = self._locale_spec(locale)
         raw, _ = continuation.preflight_locale_inputs(self.session.subject, self.session.context, spec)
         revisions = [(self.session._path(row['root']), row['reviewAttempt']) for row in result['revisions']]
         # Re-run the strict receipt, plugin and public-candidate validators from
@@ -283,11 +305,11 @@ class MockTTSDAG:
         c.require(fault == expected_fault, 'mock_dag_retry_fault_changed')
         return attempt, retry_of, fault
 
-    def _input(self, node, parents):
-        candidate = self._candidate(node['locale'])
+    def _derive_input(self, node, *, candidate=None):
+        candidate = self._candidate(node['locale']) if candidate is None else candidate
         member = self.units[node['unitId']]
         group = next(g for g in candidate['groups'] if g['translationGroupId'] == member['translationGroupId'])
-        spec = self.diagnostic.config['locales'][node['locale']]['localeSpec']
+        spec = self._locale_spec(node['locale'])
         binding = {'schemaVersion': INPUT, 'unitId': member['unitId'], 'targetLocale': member['targetLocale'],
             'sourceUnitIds': member['sourceUnitIds'], 'groupPlanSha256': member['groupPlanSha256'],
             'sourceCanonicalSha256': candidate['englishSourcePackageJsonSha256'],
@@ -301,6 +323,10 @@ class MockTTSDAG:
         digest = c.canonical_sha256(binding)
         unit = {'unitId': node['unitId'], 'targetLocale': node['locale'],
             'inputSha256': digest, 'revisionId': c.canonical_sha256(['mock_group_revision', binding])}
+        return unit, binding
+
+    def _input(self, node, parents):
+        unit, binding = self._derive_input(node)
         handles = [handle for parent in parents for handle in parent['completionHandles']]
         attempt, retry_of, fault = self._selection(unit)
         request, path = self.client.prepare_request(unit, handles, input_binding=binding,
@@ -344,7 +370,7 @@ class MockTTSDAG:
                 continue
             c.require(len(row['completionHandles']) == 1, 'mock_dag_control_leaf_required')
             handle = row['completionHandles'][0]
-            completion.validate_synthetic(handle, events, production_run_id=self.session.context['runId'],
+            completion.validate_synthetic(handle, events, production_run_id=self._production_run_id(),
                 stage='mock_dag.'+node['operation'], artifact_sha256=c.canonical_sha256(self.results[node['id']]))
             for parent_id in node['dependsOn']:
                 parent = self.observations[parent_id]
@@ -354,6 +380,9 @@ class MockTTSDAG:
                 edges.append({'fromNode': parent_id, 'toNode': node['id'],
                     'fromSpanId': parent_span, 'toSpanId': handle['spanId']})
         return edges
+
+    def _before_operation(self, node, parents):
+        """Trusted extension point for a stricter enclosing frozen graph."""
 
     def execute(self, node_id, upstream):
         """A single node body. Only run() supplies the actual scheduler evidence."""
@@ -372,6 +401,7 @@ class MockTTSDAG:
                 if any(not p['readyForDownstream'] for p in parents):
                     observed['reason'] = 'upstream_not_completed'
                 else:
+                    self._before_operation(node, parents)
                     handles = [h for p in parents for h in p['completionHandles']]
                     spans = [h['spanId'] for h in handles]
                     op, unit = node['operation'], node['unitId']
@@ -381,8 +411,8 @@ class MockTTSDAG:
                                 work_unit_id=node_id+'.callback', executor_type='deterministic_program') as callback_span:
                             dispatched = op == 'text'
                             value = (self.session.inspect_source() if op == 'source' else
-                                self.session.run_locale(node['locale'], self.diagnostic.config['locales'][node['locale']]['localeSpec'], depends_on=spans))
-                            ready, reason, _ = self.diagnostic._validate('source' if op == 'source' else 'locale', node['locale'], value)
+                                self.session.run_locale(node['locale'], self._locale_spec(node['locale']), depends_on=spans))
+                            ready, reason, _ = self._validate_callback('source' if op == 'source' else 'locale', node['locale'], value)
                         result = {'callbackResult': value, 'businessStatus': reason, **QUALIFICATIONS}
                         self.results[node_id] = result
                         if ready:
@@ -437,11 +467,7 @@ class MockTTSDAG:
                             join_node = next(row for row in self.nodes if row['id'] == 'join.'+locale)
                             checked = self._join(join_node, [self.observations[key] for key in join_node['dependsOn']])
                             c.require(checked == self.results['join.'+locale], 'mock_dag_final_join_changed')
-                        result = {'schemaVersion': 'sermon-mock-tts-final-v1', 'status': 'synthetic_complete',
-                            'planSha256': self.plan_sha256, 'expectedLocales': expected,
-                            'localeJoinSha256': {locale: c.canonical_sha256(self.results['join.'+locale]) for locale in expected},
-                            'formalAudioPackageCreated': False, 'realProviderCalls': 0,
-                            'realModelCalls': 0, 'newSourceCalls': 0, **QUALIFICATIONS}
+                        result = self._final_result(expected)
                         handles = [self._control_leaf(node, result, spans)]
                     self.results[node_id] = result
                     digest = c.canonical_sha256(result)

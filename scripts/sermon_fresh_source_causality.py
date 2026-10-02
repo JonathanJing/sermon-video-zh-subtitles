@@ -21,21 +21,24 @@ KINDS = dict(zip(ORDER, ('frozen_recipe', 'provider_receipt', 'provider_receipt'
 WORK_UNITS = dict(zip(ORDER, ('source.preflight', 'transcription.initial', 'source.initial', 'source.alignment', 'source.package')))
 
 
-def validate(value, events, *, plan, recipe, asr_ref, review_ref, aligned_sha256, source_sha256):
+def _validate(value, events, *, plan, recipe, asr_ref, review_ref, aligned_sha256, source_sha256, order):
     c.require(type(value) is dict and set(value) == {'schemaVersion', 'runId', 'planSha256',
         'recipeSha256', 'logDirectory', 'handles'} and value['schemaVersion'] == SCHEMA
         and value['runId'] == plan['providerConfig']['runId']
         and value['planSha256'] == c.canonical_sha256(plan)
         and value['recipeSha256'] == c.canonical_sha256(recipe)
-        and type(value['handles']) is dict and set(value['handles']) == set(ORDER),
+        and type(value['handles']) is dict and set(value['handles']) == set(order),
         'fresh_causality_binding_changed')
     root = _safe_path(Path(plan['runDirectory']))
     directory = _safe_path(Path(value['logDirectory']))
     c.require(directory.is_relative_to(root) and directory != root, 'fresh_causality_log_scope_changed')
-    artifacts = (c.canonical_sha256(recipe), asr_ref['receiptSha256'], review_ref['receiptSha256'],
+    artifacts = (c.canonical_sha256(recipe), asr_ref['receiptSha256'] if asr_ref else None,
+                 review_ref['receiptSha256'] if review_ref else None,
                  aligned_sha256, source_sha256)
+    c.require(all(type(value) is str and len(value) == 64 for value in artifacts[:len(order)]),
+        'fresh_causality_artifact_required')
     prior, log_run, spans = None, None, set()
-    for key, artifact in zip(ORDER, artifacts):
+    for key, artifact in zip(order, artifacts):
         handle = value['handles'][key]
         completion.validate(handle, events, production_run_id=value['runId'], artifact_sha256=artifact,
             dependencies=[] if prior is None else [prior['spanId']])
@@ -95,6 +98,20 @@ def validate(value, events, *, plan, recipe, asr_ref, review_ref, aligned_sha256
                 'fresh_causality_completion_not_observed_before_dispatch')
         prior, log_run = handle, handle['runId']; spans.add(handle['spanId'])
     return value
+
+
+def validate(value, events, *, plan, recipe, asr_ref, review_ref, aligned_sha256, source_sha256):
+    return _validate(value, events, plan=plan, recipe=recipe, asr_ref=asr_ref,
+        review_ref=review_ref, aligned_sha256=aligned_sha256, source_sha256=source_sha256, order=ORDER)
+
+
+def validate_prefix(value, events, *, through, plan, recipe, asr_ref=None,
+                    review_ref=None, aligned_sha256=None, source_sha256=None):
+    """Validate every actual completed predecessor before the next stage dispatch."""
+    c.require(type(through) is str and through in ORDER, 'fresh_causality_prefix_invalid')
+    return _validate(value, events, plan=plan, recipe=recipe, asr_ref=asr_ref,
+        review_ref=review_ref, aligned_sha256=aligned_sha256, source_sha256=source_sha256,
+        order=ORDER[:ORDER.index(through)+1])
 
 
 def inspect(root, plan, recipe, *, asr_ref, review_ref, aligned_sha256, source_sha256):
