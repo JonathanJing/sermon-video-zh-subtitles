@@ -44,14 +44,19 @@ final class AppModel: ObservableObject {
         didSet {
             publishedCaptionsByID = Dictionary(uniqueKeysWithValues:
                 (publishedTranscript?.captions ?? []).map { ($0.id, $0) })
+            transcriptRowsRevision = UUID()
         }
     }
     @Published private(set) var publishedCaptionsByID: [String: PublishedTranscriptCue] = [:]
     @Published private(set) var bilingualRows: BilingualTranscriptRows?
 
+    // A scalar invalidation token keeps view observation independent of cue count.
+    @Published private(set) var transcriptRowsRevision = UUID()
+
     // Selection changes invalidate derived text; player ticks never rebuild it.
     private func rebuildBilingualRows() {
         bilingualRows = selectedTrack.flatMap { selectedWeek?.bilingualCueRows(for: $0) }
+        transcriptRowsRevision = UUID()
     }
     @Published private(set) var isLoadingPublishedTranscript = false
     @Published private(set) var publishedTranscriptError: String?

@@ -124,8 +124,7 @@ struct EnglishLocateSheet: View {
                 }
             }
         }
-        .onChange(of: model.publishedTranscript, initial: true) { _, _ in rebuildRows() }
-        .onChange(of: model.bilingualRows) { _, _ in rebuildRows() }
+        .onChange(of: model.transcriptRowsRevision, initial: true) { _, _ in rebuildRows() }
         .environment(\.locale, localization.locale)
         .accessibilityIdentifier("english-locate-sheet")
     }

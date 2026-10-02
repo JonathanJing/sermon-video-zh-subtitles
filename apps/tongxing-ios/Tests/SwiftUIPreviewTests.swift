@@ -36,16 +36,25 @@ final class SwiftUIPreviewTests: XCTestCase {
             XCTAssertEqual(model.publishedCaptionsByID[cue.id], cue)
         }
 
+        let publishedRevision = model.transcriptRowsRevision
+        model.playback.pause()
+        XCTAssertEqual(model.transcriptRowsRevision, publishedRevision,
+                       "Transport changes must not invalidate transcript rows")
         let week = try XCTUnwrap(model.weeks.first)
         let track = try XCTUnwrap(week.tracks.first)
         await model.select(week: week, track: track)
+        XCTAssertNotEqual(model.transcriptRowsRevision, publishedRevision)
+        let legacyRevision = model.transcriptRowsRevision
         XCTAssertNil(model.publishedTranscript)
         XCTAssertTrue(model.publishedCaptionsByID.isEmpty)
         XCTAssertEqual(model.bilingualRows, week.bilingualCueRows(for: track))
         let page = try XCTUnwrap(model.independentPages.first)
         model.selectPublishedPage(page)
+        XCTAssertNotEqual(model.transcriptRowsRevision, legacyRevision)
+        let clearedRevision = model.transcriptRowsRevision
         XCTAssertNil(model.bilingualRows)
         await model.loadSelectedPublishedTranscript()
+        XCTAssertNotEqual(model.transcriptRowsRevision, clearedRevision)
         XCTAssertEqual(model.publishedTranscript?.locale, "zh-Hans")
         XCTAssertEqual(model.publishedCaptionsByID[transcript.captions[0].id], transcript.captions[0])
     }
