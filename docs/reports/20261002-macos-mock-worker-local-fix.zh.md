@@ -88,7 +88,7 @@ export SERMON_FRESH_FULL_TEST_EVIDENCE_DIR="$PWD/artifacts/mock-worker-local-fix
 
 ## 未覆盖与后续
 
-本机修复候选已通过所列验证；正式第1条实验仍等待修复合并后的dev精确SHA复测。跨机模拟任务、Hub/Spark adapter及artifact byte回传按用户本轮范围推迟，未部署、未运行，不声称SSH调度验收通过。39/128-unit规模、controller crash-window、断网/服务重启、真实模型/生产音频均不在本次证据内。继续沿[统一backlog](../backlog.zh.md)的`017 / DEV-SPD-006 / 018`跟踪，不关闭无关项。
+本机修复候选已通过所列验证。修复合入后的精确 dev `58b46767` 本机三场景复测已另记于[合并回执](20261002-merged-dev-mock-dag-receipt.zh.md)，不能把本候选 SHA 写成那次结果。跨机模拟任务、Hub/Spark adapter及artifact byte回传按用户本轮范围推迟，未部署、未运行，不声称SSH调度验收通过。39/128-unit规模、controller crash-window、断网/服务重启、真实模型/生产音频均不在本次证据内。继续沿[统一backlog](../backlog.zh.md)的`017 / DEV-SPD-006 / 018`跟踪，不关闭无关项。
 
 ## 复盘改进：预检、进度与状态诊断
 

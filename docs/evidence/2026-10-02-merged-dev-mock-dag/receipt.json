@@ -1,0 +1,129 @@
+{
+  "schemaVersion": "mock-experiment-run-v1",
+  "scope": "local_two_unit_synthetic_merged_dev_not_production",
+  "status": "passed",
+  "candidateSha": "58b46767aea3cfad04fd89c75a27f490369d2045",
+  "tree": "77df394cc0f43a994fd231db3fb34e43d9534b09",
+  "trackedWorkingTreeDirty": false,
+  "startedAt": "2026-10-02T17:51:57.934535+00:00",
+  "endedAt": "2026-10-02T18:02:24.119952+00:00",
+  "timingScope": "wall_time_including_sdk_processes_and_validation_not_critical_path",
+  "requestedScenarios": ["happy", "failure", "timeout"],
+  "uniqueTaskRunIds": 114,
+  "workflowStartedEvents": 13,
+  "realModelCalls": 0,
+  "ignoredEvidenceDir": "artifacts/pr224-merged-sdk-58b4676",
+  "separateAuditFileSavedWithRun": false,
+  "savedFixtureWavRecheck": {
+    "performedAtRecording": true,
+    "reranDag": false,
+    "files": 7,
+    "bytesEach": 4844,
+    "codec": "pcm_s16le",
+    "sampleRate": "16000",
+    "channels": 1,
+    "probeExit": 0,
+    "decodeExit": 0
+  },
+  "scenarios": [
+    {
+      "scenario": "happy",
+      "status": "passed",
+      "exitCode": 0,
+      "wallSeconds": 230.61041695799213,
+      "preflightWallSeconds": 0.549598958925344,
+      "planSha256": "2aad57927fe21c79948db0d597d489f9bd3d6e25d3cc9ab0bd92bf4589f5597f",
+      "canonicalEvents": 454,
+      "invocations": [
+        {
+          "invocationId": "97c2ec8d2f8c45e2a8018e2fad631ef4",
+          "status": "synthetic_complete",
+          "wallSeconds": 96.27803475002293,
+          "newMockDispatches": 2,
+          "syntheticProviderDispatches": 6,
+          "unknownDispatchAcknowledgements": 0,
+          "historyErrorEventCount": 0,
+          "reconciliationEventCount": 0,
+          "observedTaskCount": 19
+        },
+        {
+          "invocationId": "9176c627a510469e8c2dcb90af28dd4a",
+          "status": "synthetic_complete",
+          "wallSeconds": 130.09064179100096,
+          "newMockDispatches": 0,
+          "syntheticProviderDispatches": 0,
+          "unknownDispatchAcknowledgements": 0,
+          "historyErrorEventCount": 0,
+          "reconciliationEventCount": 0,
+          "observedTaskCount": 19
+        }
+      ]
+    },
+    {
+      "scenario": "failure",
+      "status": "passed",
+      "exitCode": 0,
+      "wallSeconds": 209.90966620889958,
+      "preflightWallSeconds": 0.5402541670482606,
+      "planSha256": "33952d33d86a1c4d80b53c837aa75b157b77d0390276a97ae00854e5ef2e82ca",
+      "canonicalEvents": 468,
+      "invocations": [
+        {
+          "invocationId": "7e0fd5c1fd664161a41fa4c13a43069f",
+          "status": "incomplete",
+          "wallSeconds": 65.04439466702752,
+          "newMockDispatches": 2,
+          "syntheticProviderDispatches": 6,
+          "unknownDispatchAcknowledgements": 0,
+          "historyErrorEventCount": 2,
+          "reconciliationEventCount": 0,
+          "observedTaskCount": 19
+        },
+        {
+          "invocationId": "18c558723198409ca11c7afecc7a001e",
+          "status": "synthetic_complete",
+          "wallSeconds": 141.10312708292622,
+          "newMockDispatches": 1,
+          "syntheticProviderDispatches": 0,
+          "unknownDispatchAcknowledgements": 0,
+          "historyErrorEventCount": 2,
+          "reconciliationEventCount": 0,
+          "observedTaskCount": 19
+        }
+      ]
+    },
+    {
+      "scenario": "timeout",
+      "status": "passed",
+      "exitCode": 0,
+      "wallSeconds": 185.42729649995454,
+      "preflightWallSeconds": 0.5311749590327963,
+      "planSha256": "6192d3565e503e07f9bd7f9f6cd6ce682962d7335d62d5a7befcb643952841b0",
+      "canonicalEvents": 424,
+      "invocations": [
+        {
+          "invocationId": "7ea86d32be68400d8b414a8794667955",
+          "status": "incomplete",
+          "wallSeconds": 53.46957087505143,
+          "newMockDispatches": 2,
+          "syntheticProviderDispatches": 6,
+          "unknownDispatchAcknowledgements": 0,
+          "historyErrorEventCount": 2,
+          "reconciliationEventCount": 2,
+          "observedTaskCount": 19
+        },
+        {
+          "invocationId": "284aced36db344afb38b4b0e674d95f3",
+          "status": "synthetic_complete",
+          "wallSeconds": 128.37983233400155,
+          "newMockDispatches": 0,
+          "syntheticProviderDispatches": 0,
+          "unknownDispatchAcknowledgements": 0,
+          "historyErrorEventCount": 2,
+          "reconciliationEventCount": 2,
+          "observedTaskCount": 19
+        }
+      ]
+    }
+  ]
+}

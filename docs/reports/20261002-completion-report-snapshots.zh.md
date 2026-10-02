@@ -44,7 +44,7 @@ macOS 27 arm64、Python 3.12.8、jsonschema 4.26.0。18 个独立子进程、每
 
 独立只读审计确认 114 个不同任务、160 个 V1/V2 凭证及 6 份成功 WAV 的完整解码与 SHA，7 个 worker jobs 的身份和恢复行为一致，1001 份证据文件未改变。末轮报告 hash 与完整账本字节一致；首轮只验证其 hash 匹配最终账本的完整行重建前缀，不声称存在独立冻结的首轮快照。failure/timeout 的历史 `needs_attention` 保留。见[独立审计](../evidence/2026-10-02-snapshot-optimization/independent-audit.json)。
 
-后续提交只补充证据文档；代码文件与配对测量指纹一致。合并后 dev 验收、跨机、39/128-unit 规模及 controller 故障窗口仍未完成。
+后续提交只补充证据文档；代码文件与配对测量指纹一致。合并后 dev `58b46767` 的本机三场景复测见[合并回执](20261002-merged-dev-mock-dag-receipt.zh.md)。跨机、39/128-unit 规模及 controller 故障窗口仍未完成。
 
 ## 复现
 
