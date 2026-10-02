@@ -5,6 +5,7 @@ import argparse
 import json
 import os
 from pathlib import Path
+import re
 import sys
 import time
 
@@ -47,7 +48,18 @@ def environment(root):
 
 
 def require_environment():
-    c.require(not (set(os.environ) - ENV_KEYS), 'mock_tts_environment_not_scrubbed')
+    # macOS's framework interpreter adds this CoreFoundation locale hint after
+    # exec, even when the parent supplied only our scrubbed environment. Do not
+    # inherit it in environment(), or permit it on other platforms. It carries
+    # only the current uid and two bounded encoding identifiers, not paths or
+    # interpreter options; every other unknown key still fails closed.
+    runtime_keys = set()
+    encoding = os.environ.get('__CF_USER_TEXT_ENCODING')
+    if (sys.platform == 'darwin' and encoding is not None and re.fullmatch(
+            r'0x[0-9A-Fa-f]{1,8}:0x[0-9A-Fa-f]{1,8}:0x[0-9A-Fa-f]{1,8}', encoding)
+            and int(encoding.split(':')[0], 16) == os.getuid()):
+        runtime_keys.add('__CF_USER_TEXT_ENCODING')
+    c.require(not (set(os.environ) - ENV_KEYS - runtime_keys), 'mock_tts_environment_not_scrubbed')
     active = profile.current()
     c.require(active and active['evidenceMode'] == 'synthetic', 'mock_tts_synthetic_accounting_required')
     c.require(all(os.environ.get(key) == '1' for key in

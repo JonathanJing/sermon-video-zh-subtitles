@@ -11,13 +11,18 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from scripts.sermon_accounting import diagnostic_event, format_diagnostic, read_events, receipt_integrity, profile_integrity
+from scripts.sermon_accounting import diagnostic_event, format_diagnostic, read_events, receipt_integrity, profile_integrity, _with_report_snapshot
 
 LEVELS = {"DEBUG": 10, "INFO": 20, "WARNING": 30, "ERROR": 40, "CRITICAL": 50}
 
 
 def inspect_logs(directory, *, run_id="latest", level="INFO", tail=50):
-    events, damaged = read_events(directory)
+    return _with_report_snapshot(directory, lambda events, damaged, digest, replay:
+        _inspect_events(events, damaged, replay, run_id=run_id, level=level, tail=tail))
+
+
+def _inspect_events(events, damaged, replay, *, run_id="latest", level="INFO", tail=50):
+    """Pure internal projection of a call-owned, already checked snapshot."""
     run_ids = list(dict.fromkeys(e["runId"] for e in events))
     # Select by run start, not whichever old child wrote most recently.
     starts = [e["runId"] for e in events if e["event"] == "run_started"]
@@ -27,12 +32,19 @@ def inspect_logs(directory, *, run_id="latest", level="INFO", tail=50):
     selected_events = [e for e in events if selected == "all" or e["runId"] == selected]
     # Compare the whole ledger before filtering: a conflicting duplicate in
     # another run also invalidates this run's attributed receipt.
-    replay = profile_integrity(events)
     integrity = receipt_integrity(events, event_integrity=replay)
     affected = {key for (rid, _), keys in integrity['_affected'].items()
                 if selected == 'all' or rid == selected for key in keys}
     conflicts = [c for c in integrity['conflicts'] if c['identitySha256'] in affected]
     diagnostics = [diagnostic_event(e) for e in selected_events]
+    # Recorded severity can remain INFO for explicit non-success outcomes.
+    # This is a diagnostic projection, not a rewrite of the immutable ledger:
+    # keep every historical outcome visible even after a successful recovery.
+    for event, diagnostic in zip(selected_events, diagnostics):
+        if (event.get("status") in {"failed", "cancelled", "outcome_unknown", "blocked"}
+                or diagnostic.get("status") in {"failed", "cancelled", "outcome_unknown", "blocked"}):
+            if LEVELS[diagnostic["level"]] < LEVELS["ERROR"]:
+                diagnostic["level"] = "ERROR"
     failed = [d for d in diagnostics if LEVELS[d["level"]] >= LEVELS["ERROR"]]
     warnings = [d for d in diagnostics if d["level"] == "WARNING"]
     unfinished = []
