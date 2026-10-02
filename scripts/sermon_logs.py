@@ -33,6 +33,14 @@ def inspect_logs(directory, *, run_id="latest", level="INFO", tail=50):
                 if selected == 'all' or rid == selected for key in keys}
     conflicts = [c for c in integrity['conflicts'] if c['identitySha256'] in affected]
     diagnostics = [diagnostic_event(e) for e in selected_events]
+    # Recorded severity can remain INFO for explicit non-success outcomes.
+    # This is a diagnostic projection, not a rewrite of the immutable ledger:
+    # keep every historical outcome visible even after a successful recovery.
+    for event, diagnostic in zip(selected_events, diagnostics):
+        if (event.get("status") in {"failed", "cancelled", "outcome_unknown", "blocked"}
+                or diagnostic.get("status") in {"failed", "cancelled", "outcome_unknown", "blocked"}):
+            if LEVELS[diagnostic["level"]] < LEVELS["ERROR"]:
+                diagnostic["level"] = "ERROR"
     failed = [d for d in diagnostics if LEVELS[d["level"]] >= LEVELS["ERROR"]]
     warnings = [d for d in diagnostics if d["level"] == "WARNING"]
     unfinished = []

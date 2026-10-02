@@ -11,6 +11,7 @@ import json
 import os
 import re
 import shutil
+import stat
 from pathlib import Path
 import time
 
@@ -82,6 +83,7 @@ class FullFreshDAGFixture(SourceEngineFixture):
         self.subject.snapshot()
         self.provider_state_path = self.subject.store.root/budget.STORE_ID/'provider-run'/'state.json'
         self.initial_provider_state = json.loads(self.provider_state_path.read_text())
+        archive_fixture_inputs(self.root, self.recipe, self.plan)
 
     def session(self):
         return fresh.FreshDiagnosticSession(self.plan, offline_transport=self.transport)
@@ -104,6 +106,8 @@ class FullFreshDAGFixture(SourceEngineFixture):
 
 def clean_child(payload_path):
     """Actual SDK only: clean committed code, genuine identities, no gate patch."""
+    if any((parent/'EVIDENCE_ONLY.json').exists() for parent in Path(payload_path).resolve().parents):
+        raise ValueError('fresh_full_saved_evidence_dispatch_forbidden')
     value = json.loads(Path(payload_path).read_text())
     expected = value['plan']['executionIdentity']
     repository = Path(dag.__file__).resolve().parents[1]
@@ -156,6 +160,62 @@ def assert_provider_bounds_unchanged(before, after, *, expected_requests):
     assert all(row['state'] == 'returned' for row in after['requests'].values())
 
 
+def archive_fixture_inputs(root, recipe, plan):
+    """Snapshot only this fixture's known inputs; never crawl JSON path references.
+
+    Original paths and receipts stay unchanged. These byte copies are audit
+    evidence, not rewritten execution inputs or permission to dispatch jobs.
+    """
+    root = Path(root)
+    if root.name != 'real-leaf-run' or root.is_symlink():
+        raise ValueError('fresh_full_fixture_root_invalid')
+    expected = {
+        'prior_plan_path': 'run-plan.json',
+        'prior_source_path': 'simulated-review-inputs/source.json',
+        'prior_aligned_path': 'aligned-segments.json',
+        'prior_summary_path': 'source-pipeline-summary.json',
+        'audio_path': 'fresh-run/source.wav',
+        'sourceClipPath': 'source-180s.mp4',
+        'sourceAnchor': 'anchor-manifest.json',
+    }
+    supplied = {**recipe, 'sourceClipPath': plan['sourceClipPath'],
+        'sourceAnchor': root.parent/'anchor-manifest.json'}
+    snapshots = []
+    total = 0
+    for role, relative in expected.items():
+        path = root.parent/relative
+        # macOS temporary paths can spell /private/var as /var. Resolve that
+        # alias only for comparison; read solely the fixed owned path below.
+        if any(part.is_symlink() for part in (path, *path.parents)):
+            raise ValueError('fresh_full_fixture_input_link_rejected')
+        if Path(supplied[role]).resolve() != path:
+            raise ValueError('fresh_full_fixture_input_path_invalid')
+        info = path.stat()
+        if not stat.S_ISREG(info.st_mode) or info.st_size > 8*1024*1024:
+            raise ValueError('fresh_full_fixture_input_size_invalid')
+        raw = path.read_bytes()
+        total += len(raw)
+        if total > 32*1024*1024:
+            raise ValueError('fresh_full_fixture_input_size_invalid')
+        snapshots.append((role, Path(supplied[role]), relative, raw))
+    archive = root/'fixture-input-archive'
+    archive.mkdir()
+    entries = []
+    for role, path, relative, raw in snapshots:
+        target = archive/'bytes'/relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(raw)
+        entries.append({'role': role, 'originalPath': str(path),
+            'savedPath': str(target.relative_to(root)), 'sha256': c.bytes_sha256(raw),
+            'sizeBytes': len(raw)})
+    (archive/'manifest.json').write_text(json.dumps({
+        'schemaVersion': 'sermon-fresh-fixture-input-archive-v1',
+        'evidenceMode': 'synthetic', 'captureScope': 'fixture_setup_frozen_inputs',
+        'auditOnly': True, 'dispatchAuthorized': False, 'productionEligible': False,
+        'originalReferencesRewritten': False,
+        'entries': entries}, sort_keys=True, indent=2)+'\n')
+
+
 def preserve_full_evidence(fixture_root, scenario):
     """Optional read-only synthetic SDK evidence copy before normal cleanup."""
     from tests.mock_tts_sdk_diagnostics import result_summary
@@ -166,14 +226,13 @@ def preserve_full_evidence(fixture_root, scenario):
         raise ValueError('invalid_fresh_full_sdk_scenario')
     fixture_root = Path(fixture_root)
     source = fixture_root/'fresh-full-dag'
-    if not source.exists():
-        return
     if any(path.is_symlink() for path in fixture_root.rglob('*')):
         raise ValueError('fresh_full_sdk_evidence_link_rejected')
-    for plan in sorted(source.iterdir()):
-        if not plan.is_dir() or re.fullmatch('[a-f0-9]{64}', plan.name) is None:
-            continue
-        target = Path(destination)/scenario/plan.name
+    plans = [path for path in sorted(source.iterdir())
+        if path.is_dir() and re.fullmatch('[a-f0-9]{64}', path.name)] if source.exists() else []
+    # Early failures can precede a frozen DAG plan; keep their fixture inputs too.
+    for plan_name in [path.name for path in plans] or ['pre-plan']:
+        target = Path(destination)/scenario/plan_name
         if target.exists() or target.resolve().is_relative_to(fixture_root.resolve()):
             raise ValueError('fresh_full_sdk_evidence_destination_invalid')
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -181,7 +240,12 @@ def preserve_full_evidence(fixture_root, scenario):
         # mock facts together; the ephemeral Prefect database is unnecessary.
         shutil.copytree(fixture_root, target, symlinks=True,
             ignore=shutil.ignore_patterns('prefect', '.prefect*'))
-        saved_plan = target/'fresh-full-dag'/plan.name
+        (target/'EVIDENCE_ONLY.json').write_text(json.dumps({
+            'schemaVersion': 'sermon-fresh-fixture-evidence-v1',
+            'auditOnly': True, 'dispatchAuthorized': False,
+            'productionEligible': False, 'originalReferencesRewritten': False,
+            'inputManifest': 'fixture-input-archive/manifest.json'}, sort_keys=True)+'\n')
+        saved_plan = target/'fresh-full-dag'/plan_name
         for result_path in sorted((saved_plan/'runs').glob('*.json')):
             value = json.loads(result_path.read_text())
             summary = result_summary(value, saved_plan)

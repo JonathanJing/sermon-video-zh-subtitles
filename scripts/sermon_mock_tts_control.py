@@ -29,6 +29,20 @@ OBSERVATION = 'sermon-mock-tts-observation-v1'
 ADMISSION = 'sermon-mock-tts-admission-v1'
 
 
+def _launcher_exit_reason(stderr):
+    """Diagnostic hints only; never evidence that a job did not start.
+
+    Keep a tiny allowlist instead of retaining child stderr, paths, exception
+    bodies, environment values or arbitrary producer-supplied error codes.
+    """
+    last = stderr[-4096:].splitlines()[-1:] if isinstance(stderr, str) else []
+    if last == ['scripts.sermon_review_contracts.ContractError: mock_tts_environment_not_scrubbed']:
+        return 'mock_tts_environment_not_scrubbed'
+    if last and re.match(r'^(ModuleNotFoundError|ImportError):', last[0]):
+        return 'mock_tts_launcher_import_error'
+    return 'mock_tts_launcher_nonzero_exit'
+
+
 class SubmissionError(c.ContractError):
     """A safe failure code plus whether this call entered its fixed launcher."""
     def __init__(self, reason, *, launch_entered):
@@ -184,20 +198,37 @@ class MockTTSClient:
                     env = worker.environment(self.root/'launcher')
                     command = [sys.executable, '-I', worker.__file__, 'submit', '--request', str(path),
                         '--request-sha256', c.canonical_sha256(request)]
+                    failure = None
                     try:
                         boundary['entered'] = True
                         result = subprocess.run(command,
                             env=env, stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=10)
-                        c.require(result.returncode == 0, 'mock_tts_submit_ack_missing')
-                        ack = json.loads(result.stdout)
-                        c.require(type(ack) is dict and set(ack) == {'jobId', 'status'}
-                            and ack['jobId'] == request['jobId'] and ack['status'] in jobs.STATUSES,
-                            'mock_tts_submit_ack_invalid')
+                    except subprocess.TimeoutExpired:
+                        failure = {'reasonCode': 'mock_tts_launcher_timeout'}
+                    except OSError:
+                        failure = {'reasonCode': 'mock_tts_launcher_os_error'}
+                    else:
+                        if result.returncode != 0:
+                            failure = {'exitCode': result.returncode,
+                                'reasonCode': _launcher_exit_reason(result.stderr)}
+                        else:
+                            try:
+                                ack = json.loads(result.stdout)
+                                c.require(type(ack) is dict and set(ack) == {'jobId', 'status'}
+                                    and ack['jobId'] == request['jobId'] and ack['status'] in jobs.STATUSES,
+                                    'mock_tts_submit_ack_invalid')
+                            except (ValueError, TypeError):
+                                failure = {'exitCode': 0, 'reasonCode': 'mock_tts_submit_ack_invalid'}
+                    if failure is None:
                         _save(self.root/'submit-acks'/(request['idempotencyKey']+'.json'), ack)
                         dispatch.finish('completed', artifact_sha256=c.canonical_sha256(ack))
-                    except (subprocess.TimeoutExpired, OSError, ValueError):
+                    else:
                         ack = None
                         # A missing launcher ACK says nothing about detached work.
+                        # Diagnostic writes must succeed, never be swallowed as
+                        # another launcher failure or authorize a retry.
+                        accounting.record_log('mock_tts.launcher_unconfirmed', level='ERROR',
+                            fields={'status': 'outcome_unknown', **failure})
                         dispatch.finish('outcome_unknown')
                 if ack is not None:
                     handle = completion.capture_synthetic(dispatch.span_id, production_run_id=request['runId'],
