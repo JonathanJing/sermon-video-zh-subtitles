@@ -12,6 +12,8 @@ import importlib
 
 from scripts import run_bounded_diagnostic as bounded
 from scripts import sermon_accounting as accounting
+from scripts import sermon_completion as completion
+from scripts import sermon_mfa_identity as mfa_identity
 from scripts import sermon_log_profile as profile
 from scripts import sermon_review_contracts as c
 from scripts import sermon_public_snapshot as public
@@ -162,6 +164,13 @@ class FreshDiagnosticSession(sessions.DiagnosticSession):
                 for operation,model,key in (('transcription.initial','gpt-transcribe','asr'),('source.initial','gpt-6-astra','sourceCheck')):
                     _,reference=source_adapter.returned_receipt(self.root,self.subject.config,operation,model)
                     c.require(reference==self.binding['sourceEvidence'][key],'fresh_source_receipt_binding_changed')
+                evidence=self.binding['sourceEvidence']
+                if evidence.get('sourceCausalitySha256') is not None:
+                    causal=source_adapter.causality.inspect(self.root,self.plan,frozen_recipe,
+                        asr_ref=evidence['asr'],review_ref=evidence['sourceCheck'],
+                        aligned_sha256=evidence['alignedSegmentsSha256'],source_sha256=evidence['sourceCanonicalSha256'])
+                    c.require(c.canonical_sha256(causal)==evidence['sourceCausalitySha256'],
+                        'fresh_causality_receipt_changed')
         return self.binding['sourceEvidence'] if self.binding else None
 
     def _check_historical_inputs(self):
@@ -261,24 +270,66 @@ class FreshDiagnosticSession(sessions.DiagnosticSession):
             historical_reuse=self._historical_reuse.get(locale))
 
     def prepare_source(self, recipe, authorization):
+        active = profile.current() or {}
+        c.require(active.get('productionRunId') in (None, self.subject.config['runId']),
+            'fresh_causality_production_run_changed')
+        with profile.context(productionRunId=self.subject.config['runId']):
+            return self._prepare_source(recipe, authorization)
+
+    def _prepare_source(self, recipe, authorization):
         self._check()
         c.require(type(recipe) is dict and set(recipe) <= {'prior_plan_path','prior_source_path','prior_aligned_path',
             'prior_summary_path','audio_path','run_mfa','local_runtime_path'} and {'prior_plan_path','prior_source_path',
             'prior_aligned_path','prior_summary_path','audio_path'} <= set(recipe),'fresh_source_recipe_invalid')
         file_refs={key:{'path':str(_safe_path(Path(value))),'sha256':source_adapter._sha(value)}
                    for key,value in recipe.items() if key.endswith('_path') and value is not None}
-        strict.save_once(self.root/'fresh-source-recipe.json',{'files':file_refs,'runMFA':recipe.get('run_mfa',False),
-            'authorizationSha256':c.canonical_sha256(authorization)})
-        # Genuine provider callbacks own request receipts, stop guards and cache.
-        with accounting.stage('diagnostic.fresh_asr',depends_on=[],executor_type='production_model') as asr_span:
-            self.runner.transcribe(_safe_path(Path(recipe['audio_path'])).read_bytes())
-        with accounting.stage('diagnostic.fresh_source_check',depends_on=[asr_span],executor_type='production_model') as review_span:
-            self.runner.source_check(operation_id='source.initial')
-        with self.subject._locked() as (_,state):
-            self.subject._remaining(state)
-            original_deadline=state['startedMonotonic']+self.subject.config['totalWallSeconds']
-        prepared=source_adapter.prepare_source(self.plan,self.subject,**recipe,authorization=authorization,
-            depends_on=[review_span],deadline_monotonic=original_deadline)
+        frozen_recipe = {'schemaVersion':'sermon-fresh-source-recipe-v2','files':file_refs,
+            'runMFA':recipe.get('run_mfa',False),'authorizationSha256':c.canonical_sha256(authorization)}
+        existing_recipe = self.root/'fresh-source-recipe.json'
+        if existing_recipe.exists():
+            prior_recipe = c.read_snapshot(existing_recipe)[0]
+            # Legacy receipts retain their original schema and evidence. They
+            # can be inspected/reused, never backfilled with invented leaves.
+            if 'schemaVersion' not in prior_recipe:
+                frozen_recipe.pop('schemaVersion')
+        strict.save_once(existing_recipe, frozen_recipe)
+        if (self.root/'fresh-source-evidence.json').exists():
+            from scripts import sermon_fresh_source_evidence as inspector
+            prepared = {key:c.read_snapshot(self.root/name)[0] for key,name in
+                (('source','source.json'),('anchor','anchor-manifest.json'),
+                 ('context','diagnostic-context.json'),('evidence','fresh-source-evidence.json'))}
+            with accounting.stage('diagnostic.source_resume', depends_on=[],
+                    work_unit_id='source.resume', executor_type='deterministic_program', cache_hit=True) as resume_span:
+                inspector.validate_fresh_source_evidence(self.root,self.plan,self.subject,
+                    prepared['context'],prepared['evidence'])
+            prepared['completionSpans']=[resume_span]
+        else:
+            with accounting.stage('diagnostic.source_preflight', depends_on=[],
+                    work_unit_id='source.preflight', executor_type='deterministic_program') as intake_span:
+                source_adapter.preflight_recipe(self.plan, recipe, authorization)
+                if recipe.get('run_mfa',False):
+                    preflight_path=self.root/'mfa-identity-preflight.json'
+                    previous=c.read_snapshot(preflight_path)[0] if preflight_path.exists() else None
+                    comparison=mfa_identity.preflight(self.plan, recipe.get('local_runtime_path'),
+                        expected_receipt=previous)
+                    strict.save_once(preflight_path, comparison)
+                    mfa_identity.require_accepted(comparison)
+                accounting.record_workload('diagnostic.source_recipe_binding', {
+                    'recipeSha256':c.canonical_sha256(frozen_recipe), 'planSha256':c.canonical_sha256(self.plan)})
+            intake=completion.capture(intake_span, production_run_id=self.subject.config['runId'],
+                artifact_sha256=c.canonical_sha256(frozen_recipe), artifact_kind='frozen_recipe',
+                execution_mode='deterministic_validation')
+            # Return typed actual provider leaves, never their parent wrappers.
+            asr=self.runner.transcribe(_safe_path(Path(recipe['audio_path'])).read_bytes(),
+                depends_on=[intake['spanId']],completion_result=True)
+            review=self.runner.source_check(operation_id='source.initial',
+                depends_on=[asr['completion']['spanId']],completion_result=True)
+            with self.subject._locked() as (_,state):
+                self.subject._remaining(state)
+                original_deadline=state['startedMonotonic']+self.subject.config['totalWallSeconds']
+            prepared=source_adapter.prepare_source(self.plan,self.subject,**recipe,authorization=authorization,
+                deadline_monotonic=original_deadline,source_completions={
+                    'intake':intake,'transcription':asr['completion'],'sourceCheck':review['completion']})
         self.context=prepared['context']
         self.binding={'schemaVersion':'sermon-fresh-diagnostic-session-v1','originalPlanSha256':c.canonical_sha256(self.plan),
             'diagnosticContextSha256':c.canonical_sha256(self.context),'sourceEvidence':prepared['evidence'],
