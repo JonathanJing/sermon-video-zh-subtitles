@@ -13,6 +13,8 @@ on:
       - 'tests/test_sermon_local_business_callbacks.py'
       - 'tests/test_sermon_diagnostic*'
       - 'tests/test_sermon_mock_tts*'
+      - 'tests/test_sermon_fresh*'
+      - 'tests/fresh_full_dag_fixture.py'
       - 'tests/test_sermon_durable_accounting.py'
       - 'tests/mock_tts_dag_fixture.py'
       - 'tests/mock_tts_sdk_diagnostics.py'
@@ -68,4 +70,67 @@ jobs:
         with:
           name: mock-tts-sdk-evidence-${{ github.sha }}
           path: ${{ runner.temp }}/mock-tts-sdk-evidence
+          if-no-files-found: warn
+
+  fresh-source-mock:
+    runs-on: ubuntu-latest
+    # Source-engine acceptance is independent of the 26-minute continuation SDK suite.
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: requirements-prefect.txt
+      - run: python -m pip install -r requirements-prefect.txt
+      - name: Install audio verification tools
+        run: |
+          if ! ffmpeg -version >/dev/null 2>&1 || ! ffprobe -version >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends ffmpeg
+          fi
+      - name: Validate actual Fresh Source engine boundaries
+        env:
+          SERMON_TEST_PREFECT: '1'
+        run: python -m unittest tests.test_sermon_fresh_source_prefect.ActualFreshSourcePrefectTests -v
+
+  fresh-full-mock:
+    runs-on: ubuntu-latest
+    # Every full lifecycle scenario runs genuinely; split jobs avoid hiding
+    # missing coverage behind the existing continuation job's wall budget.
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        scenario:
+          - test_actual_full_graph_then_clean_process_receipt_only_repeat
+          - test_actual_confirmed_failure_explicit_retry_keeps_successful_neighbor
+          - test_actual_ordinary_timeout_then_original_receipt_reconciliation
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: requirements-prefect.txt
+      - run: python -m pip install -r requirements-prefect.txt
+      - name: Install audio verification tools
+        run: |
+          if ! ffmpeg -version >/dev/null 2>&1 || ! ffprobe -version >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends ffmpeg
+          fi
+      - name: Validate actual Fresh full-DAG lifecycle
+        env:
+          SERMON_TEST_PREFECT: '1'
+          SERMON_FRESH_FULL_TEST_EVIDENCE_DIR: ${{ runner.temp }}/fresh-full-sdk-evidence
+        run: python -m unittest tests.test_sermon_fresh_full_dag.ActualFreshFullPrefectTests.${{ matrix.scenario }} -v
+
+      - name: Preserve synthetic full-DAG lifecycle diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fresh-full-sdk-evidence-${{ matrix.scenario }}-${{ github.sha }}
+          path: ${{ runner.temp }}/fresh-full-sdk-evidence
           if-no-files-found: warn

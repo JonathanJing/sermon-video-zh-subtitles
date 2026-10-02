@@ -325,6 +325,10 @@ class FreshDiagnosticSession(sessions.DiagnosticSession):
             prepared=source_adapter.prepare_source(self.plan,self.subject,**recipe,authorization=authorization,
                 deadline_monotonic=original_deadline,source_completions={
                     'intake':intake,'transcription':asr['completion'],'sourceCheck':review['completion']})
+        return self.adopt_prepared_source(prepared)
+
+    def adopt_prepared_source(self, prepared):
+        """Bind completed builder output, then apply the full existing Source gate."""
         self.context=prepared['context']
         self.binding={'schemaVersion':'sermon-fresh-diagnostic-session-v1','originalPlanSha256':c.canonical_sha256(self.plan),
             'diagnosticContextSha256':c.canonical_sha256(self.context),'sourceEvidence':prepared['evidence'],

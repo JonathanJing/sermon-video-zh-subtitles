@@ -144,7 +144,15 @@ class CompletionTests(unittest.TestCase):
             'anchorCanonicalSha256','alignmentBytesSha256','asrReceiptSha256','sourceCheckReceiptSha256')}
         current=compatibility.FOLLOWUP_SOURCE_SHA256
         actual=c.bytes_sha256((Path(compatibility.__file__).parent/'sermon_fresh_diagnostic_source.py').read_bytes())
-        self.assertEqual(current['scripts/sermon_fresh_diagnostic_source.py'],actual)
+        self.assertEqual(compatibility.EXTRACTION_SOURCE_SHA256['scripts/sermon_fresh_diagnostic_source.py'],actual)
+        extracted=compatibility.verify(current,compatibility.EXTRACTION_SOURCE_SHA256,
+            compatibility.EXTRACTION_SOURCE_SHA256,binding)
+        self.assertEqual(extracted['migrationId'],compatibility.EXTRACTION_MIGRATION)
+        self.assertFalse(extracted['productionEligible'])
+        self.assertEqual(extracted['newASRCalls'],0)
+        with self.assertRaises(c.ContractError):
+            compatibility.verify(compatibility.CURRENT_SOURCE_SHA256,compatibility.EXTRACTION_SOURCE_SHA256,
+                compatibility.EXTRACTION_SOURCE_SHA256,binding)
         accepted=compatibility.verify(compatibility.CURRENT_SOURCE_SHA256,current,current,binding)
         self.assertEqual(accepted['migrationId'],compatibility.FOLLOWUP_MIGRATION)
         changed=dict(current);changed['scripts/mfa_alignment.py']='f'*64
