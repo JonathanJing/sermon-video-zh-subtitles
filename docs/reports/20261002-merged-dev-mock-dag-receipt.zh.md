@@ -32,6 +32,18 @@
 
 完整日志、账本和媒体在 Git 忽略目录 `artifacts/pr224-merged-sdk-58b4676/`。该目录当时没有单独的 `audit-result.json`。记录本回执时只读复核了已保存的 7 份 `fixture.wav`：每份 4,844 字节，均为 16 kHz、mono、PCM16，`ffprobe` 与 `ffmpeg` 完整解码退出码都是 0。failure 的三份字节 SHA 相同；happy 与 timeout 各两份、SHA 各不相同。这次复核没有重派任务。源 WAV 归档不计入 mock 产物。这些 fixture 不能当作真实语音质量或生产音频。
 
+事后对仍留在该目录里的文件做了只读 SHA-256，没有重跑 DAG，也没有补写 `audit-result.json`。7 份 `fixture.wav` 的字节摘要与各自 worker receipt 里已经保存的 `artifact.sha256` 一致：
+
+| 场景 | SHA-256 |
+|---|---|
+| happy | `0746f869d4327215c71fa109f0f0034eb072ce1ec47f8be7fcdb774474474e27` |
+| happy | `110c1de333c9012c4833800102fb2d7b2fe5bd7dd51efc8489477994ff3ebfa8` |
+| failure（三份相同） | `b0f089889040ce0e8557f2b4f6ef75f732f88140684a8eb140f63aea8d9c9e9f` |
+| timeout | `24d19501dde2145f8f2b45fc0355e23d4b49bec6353e78364f92e32096b252e9` |
+| timeout | `1d7f1c67b79d598aebc5d7cbf818e25c49bb1ec74af26868206c9471cfbad5c7` |
+
+已发表计数所抄的文件摘要在 [receipt.json](../evidence/2026-10-02-merged-dev-mock-dag/receipt.json) 的 `savedOutputBindings`：三份 `source-summary.json`、`progress.jsonl`、三份账本 `accounting/events.jsonl`（行数与上面的 canonical 事件数一致：happy 454、failure 468、timeout 424），以及六份 invocation summary、运行 summary 和三份场景 timing。真实模型调用仍为 0。范围仍是 `58b46767` 上的两单元本机合成 mock，没有生产资格。
+
 ## 仍开放
 
 跨机 mock adapter、Spark 真实 preload／batch 1/2/4、39/128-unit 规模、controller crash-window、断网或服务重启、真实模型质量和客户端／网页验收仍沿 `017 / DEV-SPD-006 / 018` 开放。本回执只关闭“合并后精确 dev SHA 的两单元本机 mock 复测尚未记录”这一项。
