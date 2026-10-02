@@ -85,3 +85,15 @@ SERMON_FRESH_FULL_TEST_EVIDENCE_DIR="$PWD/artifacts/experiment1-merged-dev-evide
 - SSH exit=255，TCP 22 连接超时（`Operation timed out`），约5秒；未进入远端 shell，Hub health 未执行。没有任务提交、jobId、跨机收据或 WAV；不能声称 mini→Spark 已请求或已验收。
 - 未尝试直连 Spark 替代路由，未开启 SSH/Tailscale、修改 ACL/端口/凭据、安装常驻服务或干扰 batch。
 - Backlog：先恢复/确认既有获准 Mac mini 连接路径；随后只读核验已部署任务 allowlist 与模拟产物字节回传合同。PR221 合并和连接恢复后仍需正式全链验收。最新仓库文档的接口部署状态不等于本次实时核验。
+
+## 连接恢复实测
+
+2026-10-02T14:43:51.269291+00:00，按用户“先恢复连接”授权执行。
+
+- 根因：本机和 Mac mini 的 Tailscale 均为 Stopped。本机原 tailnet 地址走默认 LAN 网关。
+- 本机执行已有 Tailscale.app 的 `up --timeout=20s`，状态恢复 Running、selfOnline=true。
+- mini 经现有 mDNS/LAN SSH 连接，保持 BatchMode 与 StrictHostKeyChecking=yes，使用原 HostKeyAlias 验证同一主机；没有接纳新主机密钥。
+- mini 普通 `up` 因残留 `exit-node-allow-lan-access` 非默认设置被 CLI 拒绝；显式保留该参数又因没有 exit-node 被拒绝。以 `tailscale set --exit-node-allow-lan-access=false` 清除不一致选项后，`up --timeout=20s` 成功。未使用 reset、未改 ACL/认证/端口、未安装服务。
+- 重新经原 Tailscale 地址 SSH 到 mini：退出0，系统 Darwin；mini 本地 `http://127.0.0.1:3456/health` 返回 ok=true、local-api-hub 0.2.0；同一远端命令通过 mini 再 SSH 到 Spark 执行只读 `uname -s`，返回 Linux，退出0。
+- 此次证实 MacBook→mini→Spark 的实际 SSH 可达性；不等于调度器提交、DAG、模拟 WAV 或统一日志端到端验收。未调用模型/启动GPU/提交实验作业/重启生产进程。
+- PR221 再核仍 OPEN、mergeCommit=null；正式模拟 DAG 实验继续等待原定合并后 dev 条件。
