@@ -65,8 +65,8 @@ H01（测试脚本插件哈希）、H03（首次 deploy 选错 Dev project，CLI
 
 | ID | 优先级／状态 | 既有归属／真实问题 | 待交付与验收条件 | 依赖 |
 |---|---|---|---|---|
-| `DEV-DIAG-016` | P0 / `pending` | `DEV-DIAG-005/010/013`、`DEV-L1-001`；新MFA runtime整体比较拒绝当前冻结adapter及新executionHost | 分离稳定依赖身份、当前冻结producer和本次execution provenance；付费前校验recipe/consumer兼容。新MFA与cache路径均验证；篡改依赖/未知runtime/非冻结adapter仍拒绝，逐文件健康核验保留；不可删除守卫或回填旧失败；字段与机制验收见[日志清单](#log-contract-followup-20261001) | 最新重跑MFA失败与当前plan |
-| `DEV-DIAG-017` | P1 / `pending` | `DEV-DIAG-005/006/010`、`DEV-E2E-001`、`DEV-L1-001`；全程仍依赖私有driver/bootstrap/input/observer/browser桥接 | 提供规范化可重复入口：链接或明确本地clip来源绑定、预检/冻结/预算/真正fresh执行/断点/闭父/Dev核验/Agent与浏览器验收。提前核实124requests/5400s等当前hard cap、runtime/checkpoint/Source consumer；default-pass scope独立，旧有效素材/模型可复用、要重测的Source/L2/audio不复用；不依赖私有prompt补丁；下一轮[隔离 mock TTS worker 流程控制验收](#log-contract-followup-20261001)见日志清单 | `016`、`008`；保留durable receipts与未知结果 |
+| `DEV-DIAG-016` | P0 / `in_progress` | `DEV-DIAG-005/010/013`、`DEV-L1-001`；新MFA runtime整体比较拒绝当前冻结adapter及新executionHost | 分离稳定依赖身份、当前冻结producer和本次execution provenance；付费前校验recipe/consumer兼容。新MFA与cache路径均验证；篡改依赖/未知runtime/非冻结adapter仍拒绝，逐文件健康核验保留；不可删除守卫或回填旧失败；字段与机制验收见[日志清单](#log-contract-followup-20261001) | 最新重跑MFA失败与当前plan |
+| `DEV-DIAG-017` | P1 / `in_progress` | `DEV-DIAG-005/006/010`、`DEV-E2E-001`、`DEV-L1-001`；全程仍依赖私有driver/bootstrap/input/observer/browser桥接 | 提供规范化可重复入口：链接或明确本地clip来源绑定、预检/冻结/预算/真正fresh执行/断点/闭父/Dev核验/Agent与浏览器验收。提前核实124requests/5400s等当前hard cap、runtime/checkpoint/Source consumer；default-pass scope独立，旧有效素材/模型可复用、要重测的Source/L2/audio不复用；不依赖私有prompt补丁；下一轮[隔离 mock TTS worker 流程控制验收](#log-contract-followup-20261001)见日志清单 | `016`、`008`；保留durable receipts与未知结果 |
 | `DEV-DIAG-018` | P1 / `pending` | `DEV-SPD-003`、`DEV-L3-001`、`DEV-DIAG-007/014`；Spark可用但诊断runtime固定Mac/Python3.13且无远程adapter | 版本化Linux/NGC/Python runtime与远程host adapter、受控命令、依赖/进程/跨时钟收据；真实测默认Spark路径与profile。诊断scalar和正式TTS2/back-ASR4分别验收；正式/测试门禁须真实合同，不伪造批准，fixture不当性能证据；下一轮[Spark往返与batch验收](#log-contract-followup-20261001)含路由实测/fallback边界 | `DEV-DIAG-007/010`；实际模型/资源/授权 |
 | `DEV-DIAG-019` | P1 / `pending` | `DEV-L4-001/005`、`DEV-CICD-001`；旧301快照遗漏近期资产，需私有完整线上基线重构；发布前GET非原子 | 规范发布器核验完整live版本文件map/配置/管理资源并追加新周，旧媒体与catalog保留；明确stale检测及并发目标lease或可用服务端条件机制，验证另一发布插入时拒绝/重建/恢复。Firebase管理路径使用独立合同，不把动态HTTP响应当存储gzip；不得先声称CAS已支持 | `DEV-DIAG-017`；完整baseline及独立发布/HTTP收据 |
 | `DEV-DIAG-020` | P1 / `pending` | `DEV-TRACK-001`、`DEV-L4-005`；页面没有展示真实delivery.readonly blocked原因 | 公共安全状态绑定当前run/版本，整体incomplete及具体安全原因与音轨ready/HTTP成功/人审pending分别展示；stale/cross-run/失败或缺测fixture验证，不把可播提升成全流程完成；字段与机制验收见[日志清单](#log-contract-followup-20261001) | `016`、`DEV-DIAG-013`；当前final/public snapshot合同 |
@@ -183,6 +183,13 @@ SSH／Tailscale 可作为受授权的传输／网络路径，本身不提供 sch
 5. **交付与裁决**：交付冻结 plan、实现 SHA／engine version、实际各阶段收据、故障注入点／恢复窗口、完整依赖／状态轨迹、artifact 核验、join/gate/final 投影、新增请求和重复 dispatch 数、缺测清单。分别裁决 real control plane + mock compute、真实 remote roundtrip、真实模型、scheduler 接管及正式资格；任一必需监管环节缺证据，则本主验收未通过，不按 span 闭合或“图非空”补通过。
 
 实现缺口须沿原 ID 回写：`008` producer typed completion leaf 与 recipe 必需边的语义验证；`017` 规范入口／冻结计划到真实 engine 的绑定、durable 状态／恢复和全消费者一致性；`018` 同合同 mini 接入／Spark worker、结果 bytes/hash 返回、batch partial recovery、未知对账与受限 fallback；`DEV-SPD-006` 真实 scheduler adapter、依赖驱动 dispatch／joins 与重启证据。现有 schema、outbox、账本／job primitives 可复用，不表示上述端到端接线已有；不得再建第二条顶层 backlog 或用日志修复重新推理。
+
+**2026-10-02 云端实施进展**：PR #210 已通过独立复核及 exact-head CI 后合入 dev（`84e9d71`），补齐 `016/008` 的 MFA 分项身份比较、实际 Source completion leaves 与下游重新核验；旧真实重跑失败记录仍保留。`017/DEV-SPD-006` 的 durable mock worker / canonical log / real Prefect continuation 接线已进入实现与分项验收，详见[云端生命周期记录](reports/20261002-cloud-mock-dag-lifecycle.zh.md)。新增 controller crash-window 回归编写遇到工具安全筛查阻断，保留为明确覆盖缺口；不得据普通组件通过关闭完整引擎、Fresh takeover、真实计算或正式资格。
+- 后续独立 review / CI 揭示 generic completion 接受 synthetic v2，以及 active worker terminal receipt publication 的普通读序竞争；前者修为显式 v1/v2 入口，后者先看 physical job active 状态，保留全部严格检查与原期限。PR #217/#218 修正 head 重新验收前继续 hold；旧绿色结果不替代新验收。详见生命周期记录的后续修复节。
+- mock v1 的已验证准入暂限 2 units；39/128-unit 实际规模验收继续 open。schema snapshot 优化不能消除全量 ledger 扫描的 O(N²) 累计成本；后续须验证完整字节/冲突/序号不减弱的有界或增量校验，不能把 admission 上限或更长 timeout 当成性能通过。
+- 单一 Fresh→strict text→mock audio→readonly final 的实现与验证合同见 [2026-10-02 Fresh full-DAG](reports/20261002-fresh-full-dag.zh.md)。本地测量 `5048daa` 的真实 Prefect 3/3（六次 invocation / 114 tasks）已通过；保留 two-unit 实验资格、layer-map 与原 canonical 日志。GitHub exact-head CI 及 PR #217 依赖合并门另计，不提前称 dev 已集成；39/128-unit 规模与被阻断的 controller 故障窗口仍 open。
+- 后续有界 Source-engine 切片见 [2026-10-02 Fresh Source 六任务接管](reports/20261002-fresh-source-engine.zh.md)：五个 Source stages + locale.freeze 的固定 recipe / typed prefix / canonical stream；不得与 source.existing continuation 相加宣称完整 fresh 全流程接管，真实 SDK 以精确 PR head 验收为准。
+
 
 #### 离开本地 Wi‑Fi 的 Tailscale 接入实施计划（既有 `017/018`）
 

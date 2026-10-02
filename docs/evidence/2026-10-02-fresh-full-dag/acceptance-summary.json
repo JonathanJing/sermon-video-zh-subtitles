@@ -1,0 +1,214 @@
+{
+  "commit": "5048daa38567e4f700d58aa450cb12f6642b8bab",
+  "tree": "1b976a02b561c946cd112b5a48e48923002d59c0",
+  "suite": "tests.test_sermon_fresh_full_dag.ActualFreshFullPrefectTests",
+  "testsPassed": 3,
+  "sdk": "Prefect3.8.7",
+  "runnerDurationSeconds": 724.7176632979972,
+  "testTimings": [
+    {
+      "testId": "tests.test_sermon_fresh_full_dag.ActualFreshFullPrefectTests.test_actual_confirmed_failure_explicit_retry_keeps_successful_neighbor",
+      "wallSeconds": 246.50209797400748
+    },
+    {
+      "testId": "tests.test_sermon_fresh_full_dag.ActualFreshFullPrefectTests.test_actual_full_graph_then_clean_process_receipt_only_repeat",
+      "wallSeconds": 260.47423046700715
+    },
+    {
+      "testId": "tests.test_sermon_fresh_full_dag.ActualFreshFullPrefectTests.test_actual_ordinary_timeout_then_original_receipt_reconciliation",
+      "wallSeconds": 217.49878767201153
+    }
+  ],
+  "capturedInvocations": 6,
+  "uniqueFlowRuns": 6,
+  "uniqueTaskRuns": 114,
+  "originalSourceLeaves": 15,
+  "validatedControlCompletions": 101,
+  "canonicalStreams": [
+    {
+      "planSha256": "9b89b0f4230b20803959738457848d4536d1a1d0745b6511fa61be2e4af9b4d6",
+      "canonicalRunId": "a9797b8a70b0f218a88a302d1d529336",
+      "eventCount": 468,
+      "replayIntegrity": "consistent"
+    },
+    {
+      "planSha256": "33a9fda94efe276a3b15701c7806c55cd783d8151a0e4fcf622606982ca6f0f8",
+      "canonicalRunId": "e027c8842186bb9e0898c9aca3a387f6",
+      "eventCount": 454,
+      "replayIntegrity": "consistent"
+    },
+    {
+      "planSha256": "90c4ff6c3e0bc772ea7a0507bdd81858a7059432b71cc5a3e6d037db7a2ca884",
+      "canonicalRunId": "b84447e1cdd173049a946c8e6562f65d",
+      "eventCount": 424,
+      "replayIntegrity": "consistent"
+    }
+  ],
+  "runs": [
+    {
+      "invocationId": "7c272404da944eb58aa8fb6348fb90eb",
+      "planSha256": "9b89b0f4230b20803959738457848d4536d1a1d0745b6511fa61be2e4af9b4d6",
+      "status": "incomplete",
+      "newMockDispatches": 2,
+      "syntheticProviderDispatches": 6,
+      "canonicalDirectApiAttempts": 6,
+      "invocationDirectApiAttempts": 6,
+      "logInspectionStatus": "needs_attention",
+      "flowRunId": "5c78ec9f-804b-4af5-aa16-f177011f9301",
+      "taskCount": 19,
+      "resultBytesSha256": "09ea33e53637a3cf2d5895271f9b7b4bdb246ac9953e70f14e4a88d30001a9cb",
+      "retainedResultName": "9b89b0f4230b20803959738457848d4536d1a1d0745b6511fa61be2e4af9b4d6/runs/7c272404da944eb58aa8fb6348fb90eb.json"
+    },
+    {
+      "invocationId": "c891d79468914bbca1c4b78ddfb29652",
+      "planSha256": "9b89b0f4230b20803959738457848d4536d1a1d0745b6511fa61be2e4af9b4d6",
+      "status": "synthetic_complete",
+      "newMockDispatches": 1,
+      "syntheticProviderDispatches": 0,
+      "canonicalDirectApiAttempts": 6,
+      "invocationDirectApiAttempts": 0,
+      "logInspectionStatus": "needs_attention",
+      "flowRunId": "bd8736a1-2b96-41e5-a63d-3f53783f9a57",
+      "taskCount": 19,
+      "resultBytesSha256": "03d1bfdc52d09a0a49e20f8bfaf13848f08f21d4021ff4d117db7310d1a561ad",
+      "retainedResultName": "9b89b0f4230b20803959738457848d4536d1a1d0745b6511fa61be2e4af9b4d6/runs/c891d79468914bbca1c4b78ddfb29652.json"
+    },
+    {
+      "invocationId": "e3d825e3096443ed862bd140915525c9",
+      "planSha256": "33a9fda94efe276a3b15701c7806c55cd783d8151a0e4fcf622606982ca6f0f8",
+      "status": "synthetic_complete",
+      "newMockDispatches": 2,
+      "syntheticProviderDispatches": 6,
+      "canonicalDirectApiAttempts": 6,
+      "invocationDirectApiAttempts": 6,
+      "logInspectionStatus": "no_detected_error",
+      "flowRunId": "22eb1692-bc41-4ba5-a260-f1ded777819f",
+      "taskCount": 19,
+      "resultBytesSha256": "1c2c52819984fdf0991de87dd52dd882a0e1af2b62f91f666c64afe18071f42c",
+      "retainedResultName": "33a9fda94efe276a3b15701c7806c55cd783d8151a0e4fcf622606982ca6f0f8/runs/e3d825e3096443ed862bd140915525c9.json"
+    },
+    {
+      "invocationId": "6b440562c5d948c58645f7be05f3d570",
+      "planSha256": "33a9fda94efe276a3b15701c7806c55cd783d8151a0e4fcf622606982ca6f0f8",
+      "status": "synthetic_complete",
+      "newMockDispatches": 0,
+      "syntheticProviderDispatches": 0,
+      "canonicalDirectApiAttempts": 6,
+      "invocationDirectApiAttempts": 0,
+      "logInspectionStatus": "no_detected_error",
+      "flowRunId": "30fbe354-b88c-4a12-ac4b-c0c3ee86662a",
+      "taskCount": 19,
+      "resultBytesSha256": "1ad89ecb88e3f769839c3e14976a135f96108487a213e46e9b7144dd6969aead",
+      "retainedResultName": "33a9fda94efe276a3b15701c7806c55cd783d8151a0e4fcf622606982ca6f0f8/runs/6b440562c5d948c58645f7be05f3d570.json"
+    },
+    {
+      "invocationId": "44bebdc1ecaa4cee93e7dc310f374c85",
+      "planSha256": "90c4ff6c3e0bc772ea7a0507bdd81858a7059432b71cc5a3e6d037db7a2ca884",
+      "status": "incomplete",
+      "newMockDispatches": 2,
+      "syntheticProviderDispatches": 6,
+      "canonicalDirectApiAttempts": 6,
+      "invocationDirectApiAttempts": 6,
+      "logInspectionStatus": "no_detected_error",
+      "flowRunId": "edf60b46-7aec-425a-883d-89f2b3b9a8a3",
+      "taskCount": 19,
+      "resultBytesSha256": "0458d829a59e285d4fd1897e1741da6cb5d818908fc4d811f0a803ad8d5de070",
+      "retainedResultName": "90c4ff6c3e0bc772ea7a0507bdd81858a7059432b71cc5a3e6d037db7a2ca884/runs/44bebdc1ecaa4cee93e7dc310f374c85.json"
+    },
+    {
+      "invocationId": "adb893451fbf4d58b3cfc5f2ebc3d7b5",
+      "planSha256": "90c4ff6c3e0bc772ea7a0507bdd81858a7059432b71cc5a3e6d037db7a2ca884",
+      "status": "synthetic_complete",
+      "newMockDispatches": 0,
+      "syntheticProviderDispatches": 0,
+      "canonicalDirectApiAttempts": 6,
+      "invocationDirectApiAttempts": 0,
+      "logInspectionStatus": "no_detected_error",
+      "flowRunId": "1c43c716-45d8-4034-8e9b-17be7a1cf4bd",
+      "taskCount": 19,
+      "resultBytesSha256": "def97ff64b6f85b83e138363b32e45a391ecfe0cffb776863d540d704227381d",
+      "retainedResultName": "90c4ff6c3e0bc772ea7a0507bdd81858a7059432b71cc5a3e6d037db7a2ca884/runs/adb893451fbf4d58b3cfc5f2ebc3d7b5.json"
+    }
+  ],
+  "workers": [
+    {
+      "jobId": "31bf4e7a047e5cf7a76c38abbd6285e897dd3a90451549809e65087356c6b2d3",
+      "unitId": "zh-Hans.fresh-g002",
+      "attemptNumber": 1,
+      "status": "succeeded",
+      "receiptStatus": "artifact_returned",
+      "wavSha256": "3d06f04b262308825b03e7214c6aa6299c8cae8ba3be74db49e404c83a4ebea8"
+    },
+    {
+      "jobId": "3511f0b29caf4f996a0110a32f28c67c5e0de438ba99236c99ab5e1bcf93e15d",
+      "unitId": "zh-Hans.fresh-g001",
+      "attemptNumber": 1,
+      "status": "failed",
+      "receiptStatus": "worker_failed"
+    },
+    {
+      "jobId": "fbd07332d770a6e4fa5a5755e5556cb74339fa62781b89f680aa91cb8d07efb6",
+      "unitId": "zh-Hans.fresh-g001",
+      "attemptNumber": 2,
+      "status": "succeeded",
+      "receiptStatus": "artifact_returned",
+      "wavSha256": "f68897aab8abab3e261c008a97968df209a83cb3e9e56d3cc088399d4d123856"
+    },
+    {
+      "jobId": "8e211f4f049d1803e24aa8dd0bdd4eb9965a7f356b90342dad80e5c2654362ed",
+      "unitId": "zh-Hans.fresh-g001",
+      "attemptNumber": 1,
+      "status": "succeeded",
+      "receiptStatus": "artifact_returned",
+      "wavSha256": "f4c5b8eec6b357016bb507855266e741f67915c25b2a5bfd2a47024c876c16d0"
+    },
+    {
+      "jobId": "5c111accb67bdc8ef44389b36a8cac05eb9a27b1632f087c77b62c43b2ddf6d4",
+      "unitId": "zh-Hans.fresh-g002",
+      "attemptNumber": 1,
+      "status": "succeeded",
+      "receiptStatus": "artifact_returned",
+      "wavSha256": "7feb63bc65f70fa57061f8ef0c15f4d410374d2c8c949d0eb487b6f30359209f"
+    },
+    {
+      "jobId": "bfe6ec09f8e0a3000870c82d6315f8c4ff707785888b9577927d4f73b2b0a4da",
+      "unitId": "zh-Hans.fresh-g001",
+      "attemptNumber": 1,
+      "status": "succeeded",
+      "receiptStatus": "artifact_returned",
+      "wavSha256": "108629e174d3286133e793380ed9e0fe204b8995dedcf2afc80294ded13527a8"
+    },
+    {
+      "jobId": "401417ece8dcd2ae2fdaa86d42082e3b62e0fae923caa20285f47053dcd3b1ef",
+      "unitId": "zh-Hans.fresh-g002",
+      "attemptNumber": 1,
+      "status": "succeeded",
+      "receiptStatus": "artifact_returned",
+      "wavSha256": "b0f089889040ce0e8557f2b4f6ef75f732f88140684a8eb140f63aea8d9c9e9f"
+    }
+  ],
+  "successfulWAVsFullyDecoded": 6,
+  "qualification": "two_unit_offline_acceptance_only",
+  "scope": "One frozen19-node Fresh Source-to-strict-text-to-mock-TTS-to-readonly-final graph and one durable stream per scenario",
+  "realProviderCalls": 0,
+  "realModelCalls": 0,
+  "newMFACalls": 0,
+  "humanAcceptance": "pending",
+  "listeningAcceptance": "not_performed",
+  "formalAudioEligible": false,
+  "productionEligible": false,
+  "publicationAuthorized": false,
+  "unverified": [
+    "Hosted CI outcome is separate",
+    "39/128-unit scalability and cumulative-ledger O(N^2) remain open",
+    "Changed-text cross-plan migration not implemented",
+    "Blocked process interruption/crash-window/missing-ACK/tamper regressions not run",
+    "No real API/GPU/model/MFA execution, deployment, human/listening or production qualification"
+  ],
+  "unittestDurationSeconds": 724.476,
+  "optionalRetentionCopiesVerified": 6,
+  "projectionLedgerPrefixesVerified": 6,
+  "completedInvocationWorkflowsVerified": 6,
+  "sourceEvidenceSummarySha256": "628575b1857e1fabc974bb3b3639620c47c9b411bd9427e909d82b616e511ec7",
+  "evidenceLocation": "Original full evidence retained in cloud test artifacts; exact-head hosted runs upload synthetic evidence independently"
+}
