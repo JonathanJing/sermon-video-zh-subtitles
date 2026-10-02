@@ -222,11 +222,29 @@ class SupervisorLeaseExecutionTests(unittest.TestCase):
     def test_real_timeline_child_completes_after_multiple_original_ttls(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            command = [sys.executable, "-c", "import time,json,pathlib;time.sleep(2);pathlib.Path(" + repr(str(root / "report.json")) + ").write_text(json.dumps({'status':'requires_operator_review'}))"]
-            config, _, patches = self.fixture(root, command, ttl=.75)
-            with patches[0], patches[1], patches[2]:
+            # A successful real-process test must not require disk fsync and
+            # thread scheduling to finish within a 250ms renewal budget. Keep
+            # the child alive beyond two full TTLs, with a realistic I/O budget.
+            ttl = 3.0
+            command = [sys.executable, "-c", "import time,json,pathlib;time.sleep(" + repr(ttl * 2.5) + ");pathlib.Path(" + repr(str(root / "report.json")) + ").write_text(json.dumps({'status':'requires_operator_review'}))"]
+            config, _, patches = self.fixture(root, command, ttl=ttl)
+            renewals = []
+
+            def observed_renewal(handle, **kwargs):
+                renewed = leases.renew_lease(handle, **kwargs)
+                renewals.append(renewed)
+                return renewed
+
+            def guard_factory(handle, **kwargs):
+                return leases.LeaseGuard(handle, renewer=observed_renewal, **kwargs)
+
+            started = time.monotonic()
+            with patches[0], patches[1], patches[2], mock.patch.object(supervisor, "LeaseGuard", side_effect=guard_factory):
                 result = supervisor.run_timeline_probe(config)
             self.assertEqual(result["status"], "requires_operator_review")
+            self.assertGreater(time.monotonic() - started, ttl * 2)
+            self.assertGreaterEqual(len(renewals), 3, "background renewals were not observed")
+            self.assertEqual(len({(handle.token, handle.generation) for handle in renewals}), 1)
             self.assertFalse((root / "lease.json").exists())
 
     def test_takeover_kills_real_child_group_and_cannot_release_successor(self):

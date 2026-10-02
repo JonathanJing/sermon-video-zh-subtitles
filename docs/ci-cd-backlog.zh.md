@@ -1,6 +1,6 @@
 # 同行项目 CI/CD 执行 Backlog
 
-更新：2026-09-29。顶层优先级、状态和稳定 ID 以 [Dev 统一 Backlog](backlog.zh.md) 为准；本文展开 `DEV-CICD-*` 的工作边界与验收，不记录某一周的实时完成状态。
+更新：2026-10-01。顶层优先级、状态和稳定 ID 以 [Dev 统一 Backlog](backlog.zh.md) 为准；本文展开 `DEV-CICD-*` 的工作边界与验收，不记录某一周的实时完成状态。
 
 ## 目标与现有基线
 
@@ -40,6 +40,27 @@
 2026-09-30 路由回归补充（`DEV-CICD-002` 仍为 `in_progress`）：iOS workflow 的共享路径扩展到 catalog v3／Release v2 及其后续版本、legacy weekly catalog family、实际 v3／v2 producer 和 Web 合同 adapter。Git diff 禁用 rename 合并，删除或移动旧合同仍触发检查。真实 Git fixture 和工作流内原脚本覆盖已知路径、混合改动、删除／重命名、手动运行及 draft／失败／取消／跳过汇总；未知 scope 拒绝通过。 后续补充保守 fallback：未知顶层路径、未列入矩阵的文件类型、所有 `.github/` 输入和空 diff 选择 `native`，混合改动取更广范围；使用 `--no-renames` 保留移走文件的原路径。已明确的 backend／producer／Web／API 源码及纯文档路径可保留 `none`，既有共享合同优先走 `contract`。`native` 在非 draft 的 dev PR 上运行 Core／storage 合同检查，在 main PR 上运行模拟器检查；draft 仍跳过，不声称自动验收。Python 的非文档改动已运行完整两 shard／Web／API／producer 模拟套件，本批不改变其范围。19 项路由／文档 gate／分片测试通过；未来新增表面须补矩阵，不把该路径分类当语义兼容证明。
 
 本批只修正测试选择，不修改 draft 的 macOS 跳过策略、required check 名称、客户端协议或发布行为。`native-client` 成功且 `contract-validation`／`ios-validation` skipped 仍不是 Swift／模拟器通过。未知路径走全检查的策略和真实设备验收仍待后续，不能据本批关闭矩阵全部验收。随后补充的 [共用 Release v2 夹具](shared-client-release-contracts.zh.md) 以同一 18 个场景验证 Web／原生并修正入站证据检查；catalog／text-only 等其他共用 fixture 尚未齐备，E6 仍需客户端兼容性审核。
+
+2026-10-01 CI 减负补充：Python 的选择范围由 [路径分类器](../scripts/ci_change_scope.py) 给出，固定 `unittest` 汇总须确认分类成功、对应检查成功且其他检查按计划跳过。错误 scope、失败或取消均不能通过。
+
+| 改动范围 | Python workflow |
+|---|---|
+| 纯文档，PR 或 push | 保留既有文档结构、链接与图片验证 |
+| PR 仅修改 `apps/tongxing-ios/`，可附带文档 | 原生和共享客户端合同：8 个 Python 模块、6 个 Web Node 测试文件；覆盖共用 fixture、界面语言和指纹基准消费者 |
+| producer、后端、Web、schema、测试或工作流；混合、未知路径；缺失 base／空 diff | 完整两 shard、producer 模拟流程及 Web／API 检查 |
+| 非文档 push 到 `dev`／`main` | 完整检查，包括纯 iOS 改动 |
+
+独立的 iOS workflow 继续按原生／共享合同与目标分支执行 Swift 或模拟器检查。此处的小合同套件不代替它，`DEV-CICD-002` 的完整领域矩阵仍待完善。
+
+[模块权重](../.github/unittest-module-timings.json) 保持 schema v1，改用三次成功的 hosted Ubuntu／Python 3.12 报告中位数，来源 run URL 和提交保存在 `source`。仅用来估算分片；不以本机耗时冒充 CI 实测。runner 根据当前用例数调整已有模块权重，未测模块按已测平均每例成本估算，并在日志提示。测试结构明显改变或新增模块较多时，从成功 run 下载两份 `unittest-timings-root-*` artifact 后刷新权重；不得以失败或不完整分片更新。用以下命令检查完整根套件并保存新计时：
+
+```sh
+python scripts/run_unittest_ci.py --weights .github/unittest-module-timings.json --report artifacts/ci/unittest-local.json
+```
+
+测试准备优化保留每例独立文件、真实 validator 与 ledger。基础 scope 检查单独执行，严格交付 fixture 直接构造所需上游，避免重复准备随后丢弃的 legacy chain；完整集成与失败恢复测试继续执行。
+
+Prefect 的 `local-mock` 检查名与触发范围保留，pip 下载启用缓存。该 job 只增加根套件默认跳过的全部真实 SDK 用例：engine 环境、容量与重放、engine 证据报告、业务 callback、diagnostic flow；确定性 adapter／合同用例由 required 根套件执行，避免在两个 job 中重复。路由回归测试从源码枚举 `SERMON_TEST_PREFECT` 标记的测试类，验证 dedicated job 没有遗漏。
 
 ### `DEV-CICD-003`：页面与后端功能交付
 

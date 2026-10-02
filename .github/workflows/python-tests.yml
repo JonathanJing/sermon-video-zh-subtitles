@@ -22,6 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       docs_only: ${{ steps.classify.outputs.docs_only }}
+      scope: ${{ steps.scope.outputs.scope }}
     steps:
       - name: Check out repository history
         uses: actions/checkout@v7
@@ -40,10 +41,64 @@ jobs:
           --event "$CHANGE_EVENT"
           --output "$GITHUB_OUTPUT"
 
+      - name: Select full or native contract suite
+        id: scope
+        env:
+          BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          CHANGE_EVENT: ${{ github.event_name }}
+        run: >-
+          python3 scripts/ci_change_scope.py
+          --base "$BASE_SHA"
+          --head "$HEAD_SHA"
+          --event "$CHANGE_EVENT"
+          --output "$GITHUB_OUTPUT"
+
+  native_contracts:
+    name: Native and shared client contracts
+    needs: changes
+    if: needs.changes.outputs.scope == 'native'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install contract dependency
+        run: python -m pip install 'jsonschema>=4.23,<5'
+
+      - name: Check Python native and shared fixture contracts
+        run: >-
+          python -m unittest
+          tests.test_ci_change_scope
+          tests.test_docs_change_gate
+          tests.test_ios_ci_route
+          tests.test_tongxing_interface_locales
+          tests.test_shared_client_contract_fixtures
+          tests.test_shared_text_only_release_fixtures
+          tests.test_shared_video_delivery_fixtures
+          tests.test_pipeline_compatibility_gate
+
+      - name: Check Web consumers of shared native fixtures
+        run: >-
+          node --test
+          experiments/sermon-dubbing-poc/web/shared-catalog-targets.test.mjs
+          experiments/sermon-dubbing-poc/web/shared-catalog-pages.test.mjs
+          experiments/sermon-dubbing-poc/web/shared-release-contracts.test.mjs
+          experiments/sermon-dubbing-poc/web/shared-text-only-releases.test.mjs
+          experiments/sermon-dubbing-poc/web/shared-video-delivery.test.mjs
+          experiments/sermon-dubbing-poc/web/fingerprint-baseline.test.mjs
+
   test_group:
     name: test-group (root-${{ matrix.shard_index }})
     needs: changes
-    if: needs.changes.outputs.docs_only != 'true'
+    if: needs.changes.outputs.scope == 'full'
     runs-on: ubuntu-latest
     # Audio-tool downloads may precede a 15-minute test shard.
     timeout-minutes: 40
@@ -133,22 +188,36 @@ jobs:
 
   # Keep this job name stable: branch protection requires the unittest check.
   unittest:
-    needs: [changes, test_group]
+    needs: [changes, test_group, native_contracts]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
-      - name: Require docs validation or every test group
+      - name: Require the selected validation suite
         env:
           CHANGE_RESULT: ${{ needs.changes.result }}
           DOCS_ONLY: ${{ needs.changes.outputs.docs_only }}
+          SCOPE: ${{ needs.changes.outputs.scope }}
           TEST_GROUP_RESULT: ${{ needs.test_group.result }}
+          NATIVE_RESULT: ${{ needs.native_contracts.result }}
         run: |
           set -euo pipefail
           test "$CHANGE_RESULT" = success
-          if test "$DOCS_ONLY" = true; then
-            test "$TEST_GROUP_RESULT" = skipped
-          else
-            test "$DOCS_ONLY" = false
-            test "$TEST_GROUP_RESULT" = success
-          fi
+          case "$SCOPE" in
+            docs)
+              test "$DOCS_ONLY" = true
+              test "$TEST_GROUP_RESULT" = skipped
+              test "$NATIVE_RESULT" = skipped
+              ;;
+            native)
+              test "$DOCS_ONLY" = false
+              test "$TEST_GROUP_RESULT" = skipped
+              test "$NATIVE_RESULT" = success
+              ;;
+            full)
+              test "$DOCS_ONLY" = false
+              test "$TEST_GROUP_RESULT" = success
+              test "$NATIVE_RESULT" = skipped
+              ;;
+            *) exit 1 ;;
+          esac
