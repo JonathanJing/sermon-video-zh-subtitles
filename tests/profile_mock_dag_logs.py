@@ -9,6 +9,7 @@ import fcntl
 import hashlib
 from importlib.metadata import version
 import json
+import marshal
 import os
 from pathlib import Path
 import platform
@@ -160,7 +161,9 @@ def child(saved, operation, profile_output=None):
         start = time.perf_counter()
         profiler.runcall(action)
         output['profiledWallSeconds'] = time.perf_counter()-start
-        profiler.dump_stats(str(profile_output))
+        profiler.create_stats()
+        with profile_output.open('xb') as stream:
+            marshal.dump(profiler.stats, stream)
         stats = pstats.Stats(profiler)
         functions = []
         for (filename, line, name), (cc, nc, tt, ct, callers) in stats.stats.items():
@@ -185,6 +188,18 @@ def aggregate(samples):
     return result
 
 
+def profile_evidence_root(saved, destination):
+    saved = saved.resolve(strict=True)
+    if saved.parent.name not in {'happy', 'failure', 'timeout'}:
+        raise ValueError('saved_scenario_layout_required')
+    evidence = saved.parent.parent
+    if destination.exists() or destination.is_symlink():
+        raise ValueError('profile_output_already_exists')
+    if destination.resolve().is_relative_to(evidence):
+        raise ValueError('profile_output_inside_evidence')
+    return evidence
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--evidence-root', type=Path)
@@ -198,9 +213,14 @@ def main(argv=None):
     if args.child:
         if args.saved is None or args.operation is None:
             parser.error('--child requires --saved and --operation')
-        if args.profile_output and args.profile_output.resolve().is_relative_to(args.saved.resolve()):
-            parser.error('profile output must be outside saved evidence')
-        print(json.dumps(child(args.saved, args.operation, args.profile_output)))
+        evidence = profile_evidence_root(args.saved, args.profile_output) if args.profile_output else None
+        before = fingerprints(evidence) if evidence else None
+        try:
+            result = child(args.saved, args.operation, args.profile_output)
+        finally:
+            if evidence and before != fingerprints(evidence):
+                raise RuntimeError('evidence_changed_during_profile')
+        print(json.dumps(result))
         return
     if args.evidence_root is None or args.output_dir is None:
         parser.error('--evidence-root and --output-dir required')

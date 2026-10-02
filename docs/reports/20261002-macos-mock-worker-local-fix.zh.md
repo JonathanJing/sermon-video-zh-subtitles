@@ -122,3 +122,5 @@ export SERMON_FRESH_FULL_TEST_EVIDENCE_DIR="$PWD/artifacts/mock-worker-local-fix
 本轮首次与第二次invocation的耗时差异只说明需要进一步分析；例如happy的凭证复用耗时比首次更长，不能据此归因为某个函数或声称性能提升。下一项性能工作应分别profile读取/校验和SDK开销，并做配对测量。
 
 日志及证据在`artifacts/mock-retro-validation/`，入口完整输出为`artifacts/mock-retro-runner.log`，本批定向测试输出为`artifacts/mock-retro-targeted.log`。`progress-audit.json`保存阶段/候选版本与状态摘要核验，`audit-result.json`保存产物审计。所有复测仍是本机模拟候选验证，不扩大生产、跨机或规模资格。
+
+后续已完成[验证与日志开销的分项归因](20261002-mock-log-validation-cost.zh.md)：热点与缓存证据、微基准限制和下一步优化顺序见该报告。它不替代整轮DAG的CPU/调用次数分析，也不表示已实施性能优化。
