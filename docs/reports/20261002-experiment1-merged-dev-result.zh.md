@@ -14,7 +14,7 @@ MacBook→Mac mini 使用同一局域网普通 SSH；通过 mini 的现有 Hub �
 | PR221 | MERGED，2026-10-02T15:09:30Z |
 | 正式测量 dev SHA | `8c64502404f9ae7110ee49aa990bcaeb2f8cd24d` |
 | PR217 / PR218 | 已进入该 SHA 的祖先链 |
-| 独立 worktree | `/Users/jonathan_jing/.codex/worktrees/mock-dag-experiment-one/sermon-video-zh-subtitles` |
+| 独立 worktree | `$WORKTREE` |
 | 工作分支 | `codex/mock-dag-merged-dev-acceptance` |
 | 运行时 | macOS 27.0 / arm64，Python 3.12.8（python.org framework），Prefect 3.8.7，jsonschema 4.26.0 |
 | 音频工具 | ffmpeg/ffprobe 9.0.1 已安装；本轮未生成可供解码的 TTS WAV |

@@ -6,7 +6,7 @@
 
 - 修复候选 SHA：`ab98774b4674d44a976d0e3999120e4ee8d2062a`，分支 `codex/mock-worker-macos-diagnostics`；SDK运行时工作树干净，每个子进程检查精确代码身份。
 - 基线：PR217、PR218、PR221 已合并的 dev `8c64502404f9ae7110ee49aa990bcaeb2f8cd24d`；本轮没有自动合并 PR。
-- 独立 worktree：`/Users/jonathan_jing/.codex/worktrees/mock-dag-experiment-one/sermon-video-zh-subtitles`。原工作区保持 `sync/main-to-dev-2026-10-02` 且干净。
+- 独立 worktree：`$WORKTREE`。原工作区保持 `sync/main-to-dev-2026-10-02` 且干净。
 - macOS 27.0 / arm64，python.org framework Python 3.12.8，Prefect 3.8.7，jsonschema 4.26.0，ffmpeg/ffprobe 9.0.1。
 
 ## 修复范围
