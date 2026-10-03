@@ -971,3 +971,42 @@ CI环境还暴露工具下载占用原job期限：18ae2f0的root-0已通过1609 
 - App 页面及翻译/配音/大纲/默想、生产术语映射兼容、PDF ad hoc：`DEV-L4-006`，依赖与验收见对应表；细节需冻结，底层协议不删除。
 - Dev 诊断/演练与正式入口、稳定 ID/命名：`DEV-L4-007`，实际目录身份待核对，不将重复标签认作重复数据。
 - 同一候选 iOS Beta + Firebase Dev → 人工批准 → iOS 正式 + Firebase 正式，双端可用及部分失败/回退一致性：`DEV-L4-006` 的内容发布顺序章节。范围已确定；实际候选、批准收据与执行窗口未取得，本轮不发布。
+
+<a id="provider-cost-isolation-20261003"></a>
+
+## OpenAI 环境隔离、用途归因与费用对账
+
+| ID | 优先级／状态 | 待交付与验收 | 依赖／待决定 |
+|---|---|---|---|
+| `DEV-COST-001` | P1 / `pending` | 优先 tongxing-dev / tongxing-prod 两 Project 隔离测试与生产，各 Project 分 transcription / translation / reviewer 用途专属 key。离线路由、别名隔离/脱敏、重试/unknown 与每日费用对账；获批后才验证真实映射、账单归因与限额，不误伤生产 | 既有日志合同与 `DEV-STE-006`；真实 Project 映射、最小权限、secrets、hard limits 数值及执行窗口待单独安全授权；实现按用户要求在云端，本轮不启动 |
+
+只在实际 ASR provider=OpenAI 时配置 OpenAI transcription key；其他 provider 独立账本，按实际计量，不强制换 provider。纯阶段归因不必每 stage 拆 Project；只有需要各阶段独立 hard budget、权限或模型/速率政策时，再决定 workload Projects。
+
+截至 2026-10-03 核实：[Costs API](https://developers.openai.com/api/reference/resources/admin/subresources/organization/subresources/usage/methods/costs) 支持 api_key_id 分组及 api_key_ids 筛选，成本按日聚合，归因字段可为 null。保留 unattributed，不强行分摊。组织/Project 的 [hard spend limit](https://developers.openai.com/api/docs/guides/spend-limits) 达限会拒绝受影响请求（429）；传播并非即时，金额可能略超。Spend alert 仅通知而不中断，不能把所有 budget 写成 soft，也不能承诺绝对实时零超额。环境隔离参照 [production best practices](https://developers.openai.com/api/docs/guides/production-best-practices)。
+
+应用账本建议字段：environment、provider、project_id、credential_alias 或 api_key_id、job_id、stage、experiment_arm、model、provider_request_id、attempt_id、usage、estimated_cost、pricing_version、status。仅记安全别名/ID，不记 key 原值；最小权限和 Secret Manager 配置步骤需独立授权。不得将个人充值金额、卡号或付款资料写入仓库。
+
+每次重试独立计账，unknown 不记零；估算与 provider cost 每日对账，保留时间桶、归因缺口及差异，不能把 aggregate 当逐请求账单。输入、输出、缓存 token 分开保存，缓存 token 与输入总量的包含关系按 provider 定义，避免重复相加；ASR 按实际 provider 计量。历史充值不等于 usage 或阶段费用；新分 key 不能追溯恢复缺失旧日志。
+
+- [ ] 无付费 offline fixtures 验证 dev/prod 和用途别名路由、错误映射拒绝、非 OpenAI ASR 不取 OpenAI key、日志脱敏及无密钥原文。
+- [ ] 离线覆盖每 attempt、未知结果、缓存 token、nullable/unattributed、日聚合延迟/分页和估算对账差异，不伪造精确阶段费用。
+- [ ] 将 A/B 成本预算和独立缓存接入 `DEV-STE-006`；应用有界派发预算与 provider hard limit 分别验收，429/unknown 不自动重发。
+- [ ] 后续单独授权真实 Project/key/service-account/权限/限额配置及实际账单归因测试；以隔离 Dev 范围验证限额传播、429 与恢复，禁止为测试限额中断生产。
+
+本轮仅记录，不创建 Project、key 或 service account，不改额度/权限、不读秘密、不调用模型。未配置云环境不授权转成本地实现。
+
+<a id="ios-live-alignment-dynamic-island-20261003"></a>
+
+## iOS 麦克风现场自动对齐的灵动岛状态
+
+| ID | 优先级／状态 | 待交付与验收 | 依赖／待决定 |
+|---|---|---|---|
+| `DEV-IOS-003` | P1 / `pending` | 麦克风现场自动对齐期间在 Dynamic Island 显示真实监听/对齐状态，暂停/停止/权限拒绝/系统中断及时更新，结束不残留假活跃；支持范围与替代呈现核验后做 iOS Beta 真机人工验收 | `DEV-IOS-001/002`、既有 live_session 录音授权与状态机、`DEV-L4-006` 发布门禁；ActivityKit/Live Activities、版本/机型、后台与锁屏限制、无灵动岛替代 UI 待官方资料及架构核验 |
+
+用户明确要显示现场自动对齐状态；技术选型仍待验证。麦克风采集不自动产生可定制 Dynamic Island。应用状态展示与系统隐私麦克风指示分别遵守系统规则，不绕过隐私指示，不承诺无限后台录音。只沿用既有采集授权，不新增上传或音频保存策略。
+
+- [ ] 核对 ActivityKit/Live Activities 与现场对齐状态机、系统麦克风指示的关系，冻结支持 iOS/机型、后台/锁屏行为和无灵动岛替代呈现，不虚构所有设备可用。
+- [ ] iOS Beta 真机覆盖开始/正在监听/对齐、暂停/恢复、停止、首次权限拒绝及后续权限变更、系统中断、切后台/锁屏及结束；按系统允许的可观测更新机制和预定时限核验状态，无残留活动或假监听。
+- [ ] 保存 App/OS/机型与状态事件证据，人工确认后再晋级正式 iOS。关联 Beta/Dev→人工→正式双端内容流程，但这是 iOS 特有 UI，不强造 Firebase 同样灵动岛；若需二进制变化另走 TestFlight/App Review。
+
+现在不实现、不改权限、不发布、不启动现场录音。
