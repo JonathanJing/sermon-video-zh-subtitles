@@ -29,4 +29,15 @@ public enum ListeningAlignmentPhase: String, Codable, Hashable, Sendable {
         case .failed: english ? "Alignment failed · open app" : "对齐未完成 · 打开 App"
         }
     }
+
+    public func compactText(english: Bool) -> String {
+        switch self {
+        case .preparing: english ? "Wait" : "准备"
+        case .listening: english ? "Listen" : "监听"
+        case .matching: english ? "Match" : "匹配"
+        case .aligned: english ? "Aligned" : "已对齐"
+        case .cancelled: english ? "Stopped" : "已停止"
+        case .failed: english ? "Failed" : "未完成"
+        }
+    }
 }

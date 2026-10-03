@@ -5,6 +5,7 @@ import TongxingCore
 import ActivityKit
 import CryptoKit
 import UIKit
+import OSLog
 #endif
 
 /// PlaybackController supplies every state transition and periodic observation.
@@ -16,6 +17,7 @@ final class ListeningLiveActivityCoordinator {
     private struct Snapshot {
         let sourceKey: String
         let state: ListeningActivityAttributes.ContentState
+        let alignmentSessionID: UUID?
     }
 
     private let enabled: Bool
@@ -30,13 +32,22 @@ final class ListeningLiveActivityCoordinator {
     private var lastRequestAttempt = Date.distantPast
     private var lastRequestSourceKey: String?
     private var startedForAlignment = false
+    private var alignmentActivity: ListeningActivity?
+    private var alignmentSourceKey: String?
+    private var alignmentSessionID: UUID?
+    private var alignmentDismissed = false
+    private let logger = Logger(subsystem: "Tongxing", category: "LiveActivity")
     #endif
 
     init(enabled: Bool = true) {
         #if os(iOS) && canImport(ActivityKit)
         // Automated player tests must not create system activities as a side effect.
-        self.enabled = enabled && ProcessInfo.processInfo.environment["TONGXING_TEST_HOST"] != "1"
-            && !ProcessInfo.processInfo.arguments.contains("--ui-testing")
+        var isTest = ProcessInfo.processInfo.environment["TONGXING_TEST_HOST"] == "1"
+            || ProcessInfo.processInfo.arguments.contains("--ui-testing")
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("--ui-testing-live-activity") { isTest = false }
+        #endif
+        self.enabled = enabled && !isTest
         if self.enabled { enqueue(nil) }
         #endif
     }
@@ -46,7 +57,8 @@ final class ListeningLiveActivityCoordinator {
     /// User-dismissed activities are not recreated for the same loaded source.
     func update(title: String, speaker: String, position: Double, duration: Double,
                 isPlaying: Bool, sourceKey: String, languageCode: String = "zh",
-                isWaiting: Bool = false, alignmentPhase: ListeningAlignmentPhase? = nil) {
+                isWaiting: Bool = false, alignmentPhase: ListeningAlignmentPhase? = nil,
+                alignmentSessionID: UUID? = nil) {
         #if os(iOS) && canImport(ActivityKit)
         guard enabled else { return }
         guard position.isFinite, duration.isFinite, duration > 0, duration <= 24 * 3600,
@@ -60,7 +72,7 @@ final class ListeningLiveActivityCoordinator {
             position: max(0, position), duration: duration, isPlaying: isPlaying,
             isWaiting: isWaiting, sampledAt: Date(), languageCode: languageCode.hasPrefix("en") ? "en" : "zh", alignmentPhase: alignmentPhase
         )
-        enqueue(Snapshot(sourceKey: key, state: state))
+        enqueue(Snapshot(sourceKey: key, state: state, alignmentSessionID: alignmentSessionID))
         #endif
     }
 
@@ -80,6 +92,9 @@ final class ListeningLiveActivityCoordinator {
     deinit {
         worker?.cancel()
         stateObserver?.cancel()
+        if let alignmentActivity {
+            Task { await alignmentActivity.end(nil, dismissalPolicy: .immediate) }
+        }
         if let activity {
             var stopped = activity.content.state
             stopped.isPlaying = false
@@ -108,13 +123,25 @@ final class ListeningLiveActivityCoordinator {
         worker = nil
     }
 
-    private func reconcile(_ snapshot: Snapshot?, token: UInt64) async {
+    private func reconcile(_ requested: Snapshot?, token: UInt64) async {
         if !cleanedPreviousLaunch {
             cleanedPreviousLaunch = true
             // A cold launch has no verified ongoing AVPlayer session to adopt.
             for previous in ListeningActivity.activities { await finish(previous) }
         }
         guard token == revision, !Task.isCancelled else { return }
+        var snapshot = requested
+        if #available(iOS 18.0, *) {
+            await reconcileForegroundAlignment(requested, token: token)
+            guard token == revision, !Task.isCancelled else { return }
+            // A separate transient presentation owns foreground alignment.
+            // Keep the ordinary playback activity independent of its dismissal.
+            if let requested {
+                var state = requested.state
+                state.alignmentPhase = nil
+                snapshot = Snapshot(sourceKey: requested.sourceKey, state: state, alignmentSessionID: nil)
+            }
+        }
         guard let snapshot else {
             await endCurrent()
             lastPublished = nil
@@ -156,6 +183,7 @@ final class ListeningLiveActivityCoordinator {
             } catch {
                 // Live Activities are optional; denial or system limits must not
                 // replace the player's real error/status or interrupt playback.
+                logger.error("Playback Live Activity request failed: \(String(describing: error), privacy: .public)")
             }
             return
         }
@@ -175,6 +203,51 @@ final class ListeningLiveActivityCoordinator {
         guard shouldPublish(snapshot) else { return }
         await activity.update(content(for: snapshot.state))
         lastPublished = snapshot
+    }
+
+    @available(iOS 18.0, *)
+    private func reconcileForegroundAlignment(_ snapshot: Snapshot?, token: UInt64) async {
+        let phase = snapshot?.state.alignmentPhase
+        let newTransaction = alignmentSessionID != snapshot?.alignmentSessionID
+        let sourceChanged = alignmentSourceKey != snapshot?.sourceKey
+        defer { alignmentSessionID = snapshot?.alignmentSessionID; alignmentSourceKey = snapshot?.sourceKey }
+        if phase == nil || sourceChanged || newTransaction {
+            if let previous = alignmentActivity {
+                alignmentActivity = nil
+                await previous.end(nil, dismissalPolicy: .immediate)
+            }
+            alignmentDismissed = false
+        }
+        guard token == revision, !Task.isCancelled else { return }
+        guard let snapshot, let phase else { return }
+        if let current = alignmentActivity,
+           current.activityState == .dismissed || current.activityState == .ended {
+            alignmentActivity = nil
+            alignmentDismissed = true
+        }
+        if let current = alignmentActivity {
+            // Terminal feedback stays active until PlaybackController clears it
+            // after eight seconds; end(.after) would remove the island at once.
+            await current.update(content(for: snapshot.state))
+            return
+        }
+        // Wait for real capture-start, after the permission dialog has closed.
+        // Tapping that dialog can dismiss a transient created during preparing.
+        guard phase == .listening || phase == .matching, !alignmentDismissed else { return }
+        guard ActivityAuthorizationInfo().areActivitiesEnabled else {
+            alignmentDismissed = true
+            logger.notice("Foreground alignment activity unavailable: activities disabled")
+            return
+        }
+        guard UIApplication.shared.applicationState == .active else { return }
+        do {
+            alignmentActivity = try ListeningActivity.request(
+                attributes: ListeningActivityAttributes(sourceKey: snapshot.sourceKey),
+                content: content(for: snapshot.state), pushType: nil, style: .transient)
+        } catch {
+            alignmentDismissed = true
+            logger.error("Foreground alignment activity request failed: \(String(describing: error), privacy: .public)")
+        }
     }
 
     private func observeState(of activity: ListeningActivity) {
@@ -207,7 +280,8 @@ final class ListeningLiveActivityCoordinator {
         // If the app stops reporting while playing, show a stale message instead
         // of indefinitely projecting progress from the last reported position.
         ActivityContent(state: state, staleDate: state.alignmentPhase?.isActive == true ? state.sampledAt.addingTimeInterval(15)
-                        : state.isPlaying ? state.sampledAt.addingTimeInterval(45) : nil)
+                        : state.isPlaying ? state.sampledAt.addingTimeInterval(45) : nil,
+                        relevanceScore: state.alignmentPhase == nil ? 50 : 100)
     }
 
     private func endCurrent() async {

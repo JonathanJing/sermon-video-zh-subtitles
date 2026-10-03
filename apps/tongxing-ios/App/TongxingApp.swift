@@ -34,6 +34,9 @@ struct TongxingApp: App {
                         || UITestLaunch.isEnabled else { return }
                     #endif
                     await model.start()
+                    #if DEBUG
+                    await UITestLaunch.runLiveActivitySmoke(in: model)
+                    #endif
                     #if os(iOS)
                     notifications.openPending(in: model)
                     #endif

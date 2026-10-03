@@ -16,6 +16,7 @@
 		23FBE0C19259FFC619DE3B8B /* PrivacySupportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E53066E0326AFD8370B5145 /* PrivacySupportView.swift */; };
 		23FDF718141336A8978A8DB3 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 07B59FA4533A491CF4AA2D83 /* Assets.xcassets */; };
 		272F205288C38B205D9DE540 /* TongxingApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61FE1B88425139B2F592ED0A /* TongxingApp.swift */; };
+		2BFA9AF2842D1D85CEAB3804 /* ListeningActivityUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5407843D3180E72B300943F4 /* ListeningActivityUITests.swift */; };
 		30E1F08014CAA176EDE20CAE /* TongxingCore in Frameworks */ = {isa = PBXBuildFile; productRef = 2304DE01708325CD4783A9D2 /* TongxingCore */; };
 		318C506CF300A57522C9F2F9 /* PlaybackDock.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAE586AE0AE5D2F197DC5483 /* PlaybackDock.swift */; };
 		32B58C5985220B581D4CF45B /* ListeningActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60D53F716EC96280DEAF16C4 /* ListeningActivityAttributes.swift */; };
@@ -100,6 +101,7 @@
 		3E53066E0326AFD8370B5145 /* PrivacySupportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacySupportView.swift; sourceTree = "<group>"; };
 		4AE35BDEC7081304D75711B2 /* ListeningActivityExtension.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = ListeningActivityExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		502E58B32BA9CB649A03DB11 /* AppIdentityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIdentityTests.swift; sourceTree = "<group>"; };
+		5407843D3180E72B300943F4 /* ListeningActivityUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningActivityUITests.swift; sourceTree = "<group>"; };
 		584EEEF8EAD4278FE9B4381A /* BetaNotificationUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetaNotificationUITests.swift; sourceTree = "<group>"; };
 		58CF4F36B9265709AAF09A1C /* Signing.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Signing.xcconfig; sourceTree = "<group>"; };
 		60D53F716EC96280DEAF16C4 /* ListeningActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningActivityAttributes.swift; sourceTree = "<group>"; };
@@ -162,6 +164,7 @@
 			children = (
 				8D941F809567228C8BDF94B2 /* AppStoreScreenshotUITests.swift */,
 				584EEEF8EAD4278FE9B4381A /* BetaNotificationUITests.swift */,
+				5407843D3180E72B300943F4 /* ListeningActivityUITests.swift */,
 				239227789D17BF0B1B0A1614 /* ListeningFlowUITests.swift */,
 			);
 			path = UITests;
@@ -433,6 +436,7 @@
 			files = (
 				1922373411A3F2980F9E9B7A /* AppStoreScreenshotUITests.swift in Sources */,
 				6ED24D1A41D86A3FD506381B /* BetaNotificationUITests.swift in Sources */,
+				2BFA9AF2842D1D85CEAB3804 /* ListeningActivityUITests.swift in Sources */,
 				8B8A2624687249CFAB61DAFB /* ListeningFlowUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

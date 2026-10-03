@@ -1,5 +1,7 @@
 # 同行-beta 1.26.9 (50) 分发记录
 
+后续验收：用户报告 iPhone 17 / iOS 27.0.1 真机定位时没有看到灵动岛。当前前台展示仍未解决，见 [诊断与失败证据](BETA-ISLAND-DIAGNOSTIC.zh.md)；Testing 不代表此项验收通过。后续源码候选尚未上传，以下冻结来源与上传记录保持原绑定。
+
 2026-10-03，用户授权「检查设计，写 PR，推送到 Beta TestFlight」。正式 App 与正式内容部署继续等待 Beta 人工核对。本轮使用独立 branch/worktree，PR [#232](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/232) 指向 dev，未合并。
 
 ## 冻结来源与包身份

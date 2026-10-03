@@ -58,12 +58,15 @@ final class PlaybackController: ObservableObject {
 
     private let liveActivity = ListeningLiveActivityCoordinator()
     private var alignmentPhase: ListeningAlignmentPhase?
+    private var alignmentSessionID: UUID?
     private var alignmentFeedbackTask: Task<Void, Never>?
 
     func setAlignmentPhase(_ phase: ListeningAlignmentPhase?) {
         // First ship this UI in the separately installed Beta app.
         guard Bundle.main.object(forInfoDictionaryKey: "TongxingURLScheme") as? String == "tongxing-beta" else { return }
         alignmentFeedbackTask?.cancel()
+        if phase == .preparing { alignmentSessionID = UUID() }
+        if phase == nil { alignmentSessionID = nil }
         alignmentPhase = phase
         publishLiveActivity()
         if let phase, !phase.isActive {
@@ -71,6 +74,7 @@ final class PlaybackController: ObservableObject {
                 do { try await Task.sleep(for: .seconds(8)) } catch { return }
                 guard let self else { return }
                 self.alignmentPhase = nil
+                self.alignmentSessionID = nil
                 self.publishLiveActivity()
             }
         }
@@ -815,7 +819,7 @@ final class PlaybackController: ObservableObject {
         liveActivity.update(title: title, speaker: speaker, position: position, duration: duration,
                             isPlaying: isPlaying, sourceKey: identity.key + "|" + sourceID,
                             languageCode: AppLocalization.shared.language.rawValue, isWaiting: isWaiting,
-                            alignmentPhase: alignmentPhase)
+                            alignmentPhase: alignmentPhase, alignmentSessionID: alignmentSessionID)
     }
 
     private func publishNowPlaying() {

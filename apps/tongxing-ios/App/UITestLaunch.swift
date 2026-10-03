@@ -28,6 +28,31 @@ enum UITestLaunch {
         try VoiceDemoCatalog.validatedClips(UITestContent.responses["/voice-demos/speaker-clips-v2/preview-catalog.json"]!)
     }
 
+    /// Explicit system-UI smoke only: synthetic media, no microphone or network.
+    /// Unlike ordinary UI tests, this launch opts into real ActivityKit.
+    @MainActor static func runLiveActivitySmoke(in model: AppModel) async {
+        guard isEnabled, ProcessInfo.processInfo.arguments.contains("--ui-testing-live-activity"),
+              let week = model.weeks.first else { return }
+        await model.select(week: week)
+        model.downloadSelected()
+        do {
+            for _ in 0..<100 {
+                if model.playback.isReady && model.usingOfflineAudio { break }
+                try await Task.sleep(for: .milliseconds(100))
+            }
+            guard model.playback.isReady else { return }
+            for phase in [ListeningAlignmentPhase.preparing, .listening, .matching, .aligned] {
+                model.playback.setAlignmentPhase(phase)
+                try await Task.sleep(for: .seconds(phase == .preparing ? 1 : 6))
+            }
+            try await Task.sleep(for: .seconds(4))
+            model.playback.setAlignmentPhase(.preparing)
+            model.playback.setAlignmentPhase(.listening)
+            try await Task.sleep(for: .seconds(6))
+            model.playback.setAlignmentPhase(nil)
+        } catch { model.playback.setAlignmentPhase(nil) }
+    }
+
     /// Hosted render tests share the synthetic catalog/audio transport, while
     /// keeping all downloads, preferences and playback history in private state.
     @MainActor static func makeFixtureModel(supportDirectory: URL, statisticsDefaults: UserDefaults,

@@ -1,5 +1,7 @@
 # Beta 现场对齐状态（2026-10-03）
 
+**当前验收未通过**：用户真机未看到灵动岛定位效果，分支后续临时活动候选在 iOS 27 系统展示测试也失败。下面保留已上传初版的实现与测试记录；当前修改、复现命令和上传暂停状态见 [诊断记录](BETA-ISLAND-DIAGNOSTIC.zh.md)。
+
 本轮基于 PR #230 的 DEV-IOS-003 开始实现。用户本轮明确授权在独立 branch/worktree 开发 iOS Beta、通知测试并提交 PR；正式版留到人工核对后更新。本文件取代此前文档对本次 iOS 开发的暂停安排，不授权其他生产或实验。
 
 `AudioAlignmentController` 发出类型化事务状态，`PlaybackController` 仍是唯一播放器并将其交给现有 ActivityKit coordinator；不是另一条录音／播放时间线。只有 `tongxing-beta` channel 向实时活动加入这些状态，正式 channel 保留播放状态。新增的可选字段可读取旧播放 payload。

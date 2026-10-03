@@ -28,8 +28,12 @@ struct ListeningActivityWidget: Widget {
                 }
                 DynamicIslandExpandedRegion(.bottom) {
                     VStack(alignment: .leading, spacing: 4) {
+                        if context.state.alignmentPhase != nil {
+                            Text(verbatim: context.state.statusText(isStale: context.isStale))
+                                .font(.headline).foregroundStyle(.green)
+                        }
                         Text(verbatim: context.state.title)
-                            .font(.headline).lineLimit(2)
+                            .font(context.state.alignmentPhase == nil ? .headline : .caption).lineLimit(2)
                         HStack {
                             Text(verbatim: context.state.speaker).lineLimit(1)
                             Spacer(minLength: 8)
@@ -43,7 +47,13 @@ struct ListeningActivityWidget: Widget {
             } compactLeading: {
                 ListeningActivitySymbol(state: context.state, isStale: context.isStale)
             } compactTrailing: {
-                ListeningActivityElapsed(state: context.state, isStale: context.isStale)
+                Group {
+                    if let phase = context.state.alignmentPhase, !context.isStale {
+                        Text(verbatim: phase.compactText(english: context.state.usesEnglish))
+                    } else {
+                        ListeningActivityElapsed(state: context.state, isStale: context.isStale)
+                    }
+                }
                     .font(.caption.monospacedDigit())
                     .frame(width: context.state.duration >= 3600 ? 62 : 48)
             } minimal: {
