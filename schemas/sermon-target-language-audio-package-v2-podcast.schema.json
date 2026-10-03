@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-target-language-audio-package-v2-podcast.schema.json",
+  "title": "Podcast Layer 3 dual-speaker audio package",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "packageId", "englishSourcePackageJsonSha256", "targetLanguageCandidateJsonSha256", "targetLanguageSpeechJobJsonSha256", "speakerRouteJsonSha256", "targetLocale", "status", "ratePolicy", "videoSyncPolicy", "voices", "units", "track", "captions", "schedule", "machineScreening", "humanReview", "issues", "downstreamInvalidationKey"],
+  "properties": {
+    "schemaVersion": { "const": "sermon-target-language-audio-package-v2-podcast" },
+    "packageId": { "type": "string", "minLength": 1 },
+    "englishSourcePackageJsonSha256": { "$ref": "#/$defs/sha256" },
+    "targetLanguageCandidateJsonSha256": { "$ref": "#/$defs/sha256" },
+    "targetLanguageSpeechJobJsonSha256": { "$ref": "#/$defs/sha256" },
+    "speakerRouteJsonSha256": { "$ref": "#/$defs/sha256" },
+    "targetLocale": { "const": "zh-Hans" },
+    "status": { "enum": ["candidate", "machine_screened", "human_reviewed", "rejected"] },
+    "ratePolicy": { "const": "natural_no_time_stretch" },
+    "videoSyncPolicy": { "const": "not_applicable_audio_only" },
+    "voices": {
+      "type": "array", "minItems": 2, "maxItems": 2,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["speakerId", "provider", "model", "checkpointSha256", "targetLocaleCapability", "authorizationStatus", "authorizationJsonSha256"],
+        "properties": {
+          "speakerId": { "type": "string", "minLength": 1 },
+          "provider": { "type": "string", "minLength": 1 },
+          "model": { "type": "string", "minLength": 1 },
+          "checkpointSha256": { "$ref": "#/$defs/sha256" },
+          "targetLocaleCapability": { "enum": ["unverified", "candidate", "reviewed"] },
+          "authorizationStatus": { "enum": ["missing", "authorized"] },
+          "authorizationJsonSha256": { "$ref": "#/$defs/sha256" }
+        }
+      }
+    },
+    "units": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["textGroupId", "targetTextSha256", "speakerId", "checkpointSha256", "workerId", "audio", "durationSeconds", "receipt"],
+        "properties": {
+          "textGroupId": { "type": "string", "minLength": 1 },
+          "targetTextSha256": { "$ref": "#/$defs/sha256" },
+          "speakerId": { "type": "string", "minLength": 1 },
+          "checkpointSha256": { "$ref": "#/$defs/sha256" },
+          "workerId": { "type": "string", "minLength": 1 },
+          "audio": { "$ref": "#/$defs/artifact" },
+          "durationSeconds": { "type": "number", "exclusiveMinimum": 0 },
+          "receipt": { "$ref": "#/$defs/jsonArtifact" }
+        }
+      }
+    },
+    "track": { "$ref": "#/$defs/artifact" },
+    "captions": { "$ref": "#/$defs/artifact" },
+    "schedule": { "$ref": "#/$defs/jsonArtifact" },
+    "machineScreening": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "model", "coverage"],
+      "properties": {
+        "status": { "enum": ["not_run", "pass", "requires_review", "fail"] },
+        "model": { "type": ["string", "null"] },
+        "coverage": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "humanReview": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "humanApproval", "reviewedBy", "reviewedAt", "fullPlayback", "audioTimelineReview", "videoSync"],
+      "properties": {
+        "status": { "enum": ["pending", "approved", "rejected"] },
+        "humanApproval": { "type": "boolean" },
+        "reviewedBy": { "type": ["string", "null"] },
+        "reviewedAt": { "type": ["string", "null"] },
+        "fullPlayback": { "enum": ["pending", "approved", "rejected"] },
+        "audioTimelineReview": { "enum": ["pending", "approved", "rejected"] },
+        "videoSync": { "const": "not_applicable" }
+      }
+    },
+    "issues": { "type": "array" },
+    "downstreamInvalidationKey": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "artifact": { "type": "object", "additionalProperties": false, "required": ["path", "sha256"], "properties": { "path": { "type": "string", "minLength": 1 }, "sha256": { "$ref": "#/$defs/sha256" } } },
+    "jsonArtifact": { "type": "object", "additionalProperties": false, "required": ["path", "sha256", "jsonSha256"], "properties": { "path": { "type": "string", "minLength": 1 }, "sha256": { "$ref": "#/$defs/sha256" }, "jsonSha256": { "$ref": "#/$defs/sha256" } } }
+  }
+}

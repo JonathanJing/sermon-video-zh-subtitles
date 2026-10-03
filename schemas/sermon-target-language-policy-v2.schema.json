@@ -78,7 +78,7 @@
       "required": ["batchSize", "workers"],
       "properties": {
         "batchSize": {"type": "integer", "minimum": 1, "maximum": 100},
-        "workers": {"type": "integer", "minimum": 1, "maximum": 16}
+        "workers": {"type": "integer", "minimum": 1, "maximum": 24}
       }
     },
     "componentSha256": {

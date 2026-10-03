@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-podcast-audio-human-review-receipt-v1.schema.json",
+  "title": "Human listening and ASR adjudication receipt for an audio-only podcast track",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "targetLocale", "englishSourcePackageJsonSha256",
+    "targetLanguageCandidateJsonSha256", "targetLanguageSpeechJobJsonSha256",
+    "targetLanguageAudioPackageJsonSha256", "trackSha256", "priorAudioReviewReceiptFileSha256", "screeningReceiptFileSha256",
+    "decision", "reviewedBy", "reviewedAt", "userDecision", "fullPlayback",
+    "audioTimelineReview", "videoSync", "reviewedUnitIds", "asrAdjudications", "issues"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "sermon-podcast-audio-human-review-receipt-v1" },
+    "targetLocale": { "const": "zh-Hans" },
+    "englishSourcePackageJsonSha256": { "$ref": "#/$defs/sha256" },
+    "targetLanguageCandidateJsonSha256": { "$ref": "#/$defs/sha256" },
+    "targetLanguageSpeechJobJsonSha256": { "$ref": "#/$defs/sha256" },
+    "targetLanguageAudioPackageJsonSha256": { "$ref": "#/$defs/sha256" },
+    "trackSha256": { "$ref": "#/$defs/sha256" },
+    "priorAudioReviewReceiptFileSha256": { "$ref": "#/$defs/sha256" },
+    "screeningReceiptFileSha256": { "$ref": "#/$defs/sha256" },
+    "decision": { "const": "approved" },
+    "reviewedBy": { "type": "string", "minLength": 1 },
+    "reviewedAt": { "type": "string", "format": "date-time" },
+    "userDecision": {
+      "type": "object", "additionalProperties": false,
+      "required": ["windowId", "itemId", "text"],
+      "properties": {
+        "windowId": { "type": "string", "minLength": 1 },
+        "itemId": { "type": "string", "minLength": 1 },
+        "text": { "const": "音轨符合文字，可以继续" }
+      }
+    },
+    "fullPlayback": { "const": "approved" },
+    "audioTimelineReview": { "const": "approved" },
+    "videoSync": { "const": "not_applicable_audio_only" },
+    "reviewedUnitIds": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+    "asrAdjudications": {
+      "type": "array", "minItems": 1, "uniqueItems": true,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["textGroupId", "targetTextSha256", "audioSha256", "recognizedTextSha256", "decision", "evidence"],
+        "properties": {
+          "textGroupId": { "type": "string", "minLength": 1 },
+          "targetTextSha256": { "$ref": "#/$defs/sha256" },
+          "audioSha256": { "$ref": "#/$defs/sha256" },
+          "recognizedTextSha256": { "$ref": "#/$defs/sha256" },
+          "decision": { "const": "approved" },
+          "evidence": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "issues": { "type": "array", "maxItems": 0 }
+  },
+  "$defs": { "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" } }
+}

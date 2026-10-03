@@ -266,7 +266,7 @@ def source_scoped_proper_names(rows: list[dict[str, Any]],
         ):
             candidates.add(title)
             candidates.discard(title.removeprefix("If I "))
-    discourse_starts = {"So", "Now", "And", "But", "Then", "His", "This", "Only",
+    discourse_starts = {"So", "Now", "And", "But", "Then", "His", "This", "That", "Only",
                         "First", "If", "When", "The", "Our", "As", "In", "What"}
     return {name for name in candidates
             if (name.split()[0] not in discourse_starts or name.startswith("If I "))

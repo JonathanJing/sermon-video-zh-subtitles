@@ -1,6 +1,6 @@
 # 2026-10-02 第二轮启用包：可审查清单，尚未执行
 
-本清单只冻结启用前要核对的对象、影响和回退。没有安装 unit，没有打开 `tts_experiment`，没有加载模型，也没有提交 18 个 trial。root 探针仍待在 Spark 上由操作者执行。
+本清单只冻结启用前要核对的对象、影响和回退。没有安装 unit，没有打开 `tts_experiment`，没有加载模型，也没有提交 trial。2026-10-02 已完成 root transient systemd `PrivateNetwork` 探针，host 与 unit 网络命名空间不同；此结果只验证隔离前提，不等于已安装或准入。
 
 ## 今天重新核对的身份
 
@@ -14,9 +14,9 @@ Spark 上既有 checkpoint 目录仍是 13 个普通文件、4,520,218,514 字�
 
 离线镜像 `sha256:9629b436aef8bd90147fd657137047aee94e7b81ada54c3f7209cbce1d24b490` 仍在本机 Docker 中。同日 `--network=none` 探针见[namespace 记录](20261002-stage2-namespace-probe.zh.md)。
 
-`lib/python3.12/site-packages` 下当前普通文件为 9,261 个、259,682,636 字节。这和 13:44 UTC 记录的 4,924 个文件、166,214,042 字节不是同一份清单。启用 manifest 的 `venv_files` 必须按当天字节重算，不能沿用旧计数。
+截至 2026-10-03，Spark TTS venv `lib/python3.12/site-packages` 的 runtime 同口径清单已重算：4,924 个普通文件、166,214,042 字节；排除了 `__pycache__` 和 `.pyc`，与执行器校验逻辑一致。清单 SHA-256 为 `d38d583ac551082ed7354086e5011646b88a38762926ff6f8a7d29435dae98a2`，文件为 `artifacts/stage2/venv-files-20261003.json`。旧 9,261/259,682,636 清单包含不同范围的文件，不用于本次 manifest。
 
-选择哈希仍是合同里的 `e23ca743106e4c291f43563221f94fc42549e9053d113db351b56be69a34f9d4`。本次在 Spark 的当前发布树和语音结果目录没有找到含该哈希的 sample/manifest JSON。10 月 2 日的样本字节核验不能当成文件今天还在。
+既有 18-trial 合同仍绑定选择哈希 `e23ca743106e4c291f43563221f94fc42549e9053d113db351b56be69a34f9d4`。它不是本播客样本的准入。按已批准的 Layer 2 候选，已生成 41 个连续中文单元的源样本，byte SHA `52b0827211251e7923b507c885c0c7159f3ac14664d36ddb81b4798786602d76`，另生成校验器格式样本，SHA `936b58eb29eca1cb5b75a1d797e91a8ac286ae024fe120e44db00ac301fe88f3`；后者含 908 个目标文字，绑定当前 source、anchor、candidate 和 speaker route。样本覆盖源音频 5.74–139.23 秒，属于原 0–180 秒摘录；其余摘录内容不在 41 单元样本内。2026-10-03 已将候选与样本复制到 Spark 隔离目录并通过 CPU 校验，但没有部署或接入活跃服务。
 
 ## 启用时要动的对象
 
@@ -61,6 +61,20 @@ ImageLab `:7862` 与 Comfy `:8188` 的容器保持运行。窗口只挡住新的
 4. 不停止 ImageLab 或 Comfy 的常驻容器，不删 Job DB，不关 AppArmor。
 5. 产物和账本留下。缺字节或未知退出不授权再推理。
 
+## 2026-10-03 候选验证补充
+
+隔离候选目录为 `/home/achillesjing/dgx-spark-benchmark/podcast-runs/if-i-had-more-time-jesus-is-worthy-20261003/stage2-candidate-v3`。候选压缩包 SHA-256 为 `c0d1e7eee1650dac45c79c7af80a4896c76712bc6ed8e46f3bc36ae0eac53c59`，解包后的 297 文件树清单 SHA-256 为 `0438ded452de63567bf522ef099d65238873745420fd18392271835817c03b13`。候选 harness 为 1.0.4，runtime profile 为 1.0.3；v3 合同固定一个 cold batch=2 trial 和 41 单元样本，旧 18-trial 合同保留。
+
+本机测试 161 项通过、1 项跳过；Spark Python 3.12 候选测试 140 项通过。测试覆盖样本字节与源选择、版本化 harness 锁、一次加载、20 个双单元批次加一个末批单元、单试验收据校验、资源门控以及旧合同回归。Spark 检查时 GPU 利用率为 0%，可用内存约 43 GiB。候选没有调用模型，没有安装 unit 或更改当前 symlink；现有 ImageLab 与 Comfy 容器仍运行。root PrivateNetwork 探针已通过，但 `spark-resource-controller.service` 和 `spark-resource-guardian.service` 尚未安装，正式 intake hooks 尚未启用。
+
+**本候选不等于 TTS 运行或生产准入。** 单 trial manifest SHA、私有资源窗口与 lease、logging release 身份、生产 hooks 的确切安装/回退包和 idempotency key 仍待就绪。按 Spark 准入合同，在提交前须审查确切 manifest SHA、UTC 窗口和幂等键；安装 controller/四个生产入口 hooks 也须单独审查。现有 18-trial SHA 不得用于本次单试验。
+
 ## 仍缺的动作
 
-Spark 上的 root 探针还没有输出。样本 JSON 还没有按今天的字节重新定位。单 trial manifest 还没有冻结。`venv_files`、producer PID 和 logging release 都要在启用当时重读。MacBook 路径仍未验收。
+root `PrivateNetwork` 探针已完成；样本与候选已放入隔离目录，但活跃 validator 没有改变。单 trial manifest 候选已生成并通过上下文预检；正式部署、安装审查、lease 窗口和 TTS 提交均未完成。producer 身份、可用资源、logging release 与服务状态必须在实际启用时重读。MacBook 路径仍未验收。
+
+### 2026-10-03 canonical context 复核
+
+首份 podcast 单 trial manifest 现绑定 SHA-256 `ba115214ed2903186ed546bc1aebc8f2ac782f8dd09fd3ff7caf522a79c18aed`，幂等键为 `tts-exp:ba115214ed2903186ed546bc1aebc8f2ac782f8dd09fd3ff7caf522a79c18aed`。它只冻结一个 cold batch=2 trial，样本 SHA 仍为 `936b58eb29eca1cb5b75a1d797e91a8ac286ae024fe120e44db00ac301fe88f3`。本机候选 validator 与 Spark 隔离候选均通过 manifest、sample 和已安装 canonical logging release 的上下文预检。失败原因是 `missingReasons` 原先为空；修订后按会计合同明确记录不适用或未观测字段。原 SHA `7511848e…` 作废，不可用于提交。
+
+这只关闭 manifest 上下文形状问题。本次逐项重验了该 SHA 绑定的 20 个实现文件、4,924 个 venv 文件和 13 个 checkpoint 文件，Spark 上均与 manifest 哈希一致；样本和 logging 上下文预检也通过。候选仍未部署。controller、guardian、native proxy/socket 与生产 intake hooks 仍未安装，TTS 未提交。按本报告的启用边界，仍须针对此确切 SHA 审查安装包、UTC 窗口和回退；提交前重读 producer 身份、资源与 outstanding jobs。用户要求在后续页面生成阶段暂缓 Spark 新任务接入并排队。这项要求仅适用于页面生成窗口；到该阶段时需确认控制器能只拦截新准入、让既有任务 drain，并恢复排队任务，不终止正在运行的任务或卸载常驻模型。当前不宣称队列暂停已安装或生效。

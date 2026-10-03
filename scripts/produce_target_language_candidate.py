@@ -111,7 +111,8 @@ def validate_source_for_translation(source: dict[str, Any], anchor: dict[str, An
 
 
 def prepare_request(source: dict[str, Any], anchor: dict[str, Any],
-                    policy: dict[str, Any], *, strict_rubric=None, diagnostic_context=None) -> dict[str, Any]:
+                    policy: dict[str, Any], *, strict_rubric=None, diagnostic_context=None,
+                    review_waiver: dict[str, Any] | None = None) -> dict[str, Any]:
     """Freeze exactly one source and locale; leave all generated fields blank."""
     if diagnostic_context is None:
         anchor_hash = validate_source_for_translation(source, anchor)
@@ -125,13 +126,20 @@ def prepare_request(source: dict[str, Any], anchor: dict[str, Any],
     else:
         identity = policy_tools.validate_strict_policy(policy, strict_rubric)
         policy_tools.validate_strict_source_scope(policy, strict_rubric, source, anchor)
+    waiver_sha = None
+    if review_waiver is not None:
+        try:
+            from scripts import podcast_user_review_waiver as waiver_tools
+        except ImportError:
+            import podcast_user_review_waiver as waiver_tools
+        waiver_sha = waiver_tools.validate(review_waiver, source, anchor, policy, identity)
     if diagnostic_context is None:
-        _require(identity["productionPolicyReady"],
-                 "Production policy has unresolved scripture, terminology, or language-review gates")
+        _require(identity["productionPolicyReady"] or waiver_sha is not None,
+                 "Production policy has unresolved gates and no matching user review waiver")
     else:
         from scripts.sermon_diagnostic_context import require_policy_ready
         require_policy_ready(identity, diagnostic_context)
-    return {
+    result = {
         "schemaVersion": REQUEST_SCHEMA,
         "sourceLocale": "en",
         "targetLocale": policy["targetLocale"],
@@ -143,14 +151,18 @@ def prepare_request(source: dict[str, Any], anchor: dict[str, Any],
         "generation": None,
         "groups": None,
     }
+    if waiver_sha is not None:
+        result["reviewWaiverJsonSha256"] = waiver_sha
+    return result
 
 
 def admit_evidence(source: dict[str, Any], anchor: dict[str, Any],
                    policy: dict[str, Any], request: dict[str, Any],
                    evidence: dict[str, Any], language_receipt: dict[str, Any],
-                   plugin_path: Path, expected_plugin_sha256: str) -> dict[str, Any]:
+                   plugin_path: Path, expected_plugin_sha256: str,
+                   review_waiver: dict[str, Any] | None = None) -> dict[str, Any]:
     """Validate externally produced evidence; preserve human review as pending."""
-    expected = prepare_request(source, anchor, policy)
+    expected = prepare_request(source, anchor, policy, review_waiver=review_waiver)
     _require(request == expected, "Layer 2 request was changed or belongs to another source/policy")
     for key in ("schemaVersion", "sourceLocale", "targetLocale",
                 "englishSourcePackageJsonSha256", "anchorManifestSha256",
@@ -194,7 +206,8 @@ def admit_evidence(source: dict[str, Any], anchor: dict[str, Any],
              and not set(translator_ids).intersection(reviewer_ids),
              "Model request IDs do not bind separate translator and reviewer calls")
     actual_receipt = run_language_plugin(source, anchor, policy, request,
-                                         evidence, plugin_path, expected_plugin_sha256)
+                                         evidence, plugin_path, expected_plugin_sha256,
+                                         review_waiver=review_waiver)
     _require(language_receipt == actual_receipt,
              "Language plugin receipt is missing, stale, or differs from a fresh plugin run")
     for group, result in zip(candidate_groups, actual_receipt["groupReviews"]):
@@ -223,14 +236,15 @@ def admit_evidence(source: dict[str, Any], anchor: dict[str, Any],
     handoff._validate_schema(candidate, "sermon-target-language-candidate-v2.schema.json",
                              "target candidate")
     handoff.validate_target_candidate(source, anchor, candidate, require_human_approval=False)
-    handoff.validate_policy_binding(candidate, policy)
+    handoff.validate_policy_binding(candidate, policy, review_waiver=review_waiver)
     return candidate
 
 
 def run_language_plugin(source: dict[str, Any], anchor: dict[str, Any],
                         policy: dict[str, Any], request: dict[str, Any],
                         evidence: dict[str, Any], plugin_path: Path,
-                        expected_plugin_sha256: str, *, strict_rubric=None, diagnostic_context=None) -> dict[str, Any]:
+                        expected_plugin_sha256: str, *, strict_rubric=None, diagnostic_context=None,
+                        review_waiver: dict[str, Any] | None = None) -> dict[str, Any]:
     """Run a pinned locale plugin and return a source/text-bound receipt.
 
     The plugin is a reviewed Python module exposing PLUGIN_ID, PLUGIN_VERSION,
@@ -238,7 +252,8 @@ def run_language_plugin(source: dict[str, Any], anchor: dict[str, Any],
     are recalculated at admission; a pass string in translation evidence is
     never accepted as language-review evidence.
     """
-    expected = prepare_request(source, anchor, policy, strict_rubric=strict_rubric, diagnostic_context=diagnostic_context)
+    expected = prepare_request(source, anchor, policy, strict_rubric=strict_rubric,
+                               diagnostic_context=diagnostic_context, review_waiver=review_waiver)
     _require(request == expected, "Layer 2 request was changed or belongs to another source/policy")
     for key in ("schemaVersion", "sourceLocale", "targetLocale",
                 "englishSourcePackageJsonSha256", "anchorManifestSha256",
@@ -334,6 +349,8 @@ def main() -> None:
     parser.add_argument("--request", type=Path)
     parser.add_argument("--evidence", type=Path)
     parser.add_argument("--language-receipt", type=Path)
+    parser.add_argument("--review-waiver", type=Path,
+                        help="Exact user-authorized podcast content-review waiver; never marks human approval")
     parser.add_argument("--plugin", type=Path)
     parser.add_argument("--plugin-sha256")
     parser.add_argument("--progress-ledger", type=Path,
@@ -347,6 +364,7 @@ def main() -> None:
         _require(not args.out.exists(), "Use a new output path; Layer 2 artifacts are immutable")
         source, anchor = (_load(path) for path in
                           (args.english_source_package, args.anchor))
+        review_waiver = _load(args.review_waiver) if args.review_waiver else None
         metrics.update(sourceUnits=len(anchor.get("sourceUnits", [])),
                        sourcePackageSha256=interpretation.json_sha256(source),
                        policySha256=interpretation.json_sha256(policy))
@@ -360,7 +378,7 @@ def main() -> None:
         if args.command == "prepare":
             _require(args.request is None and args.evidence is None and args.language_receipt is None,
                      "prepare does not consume prior evidence")
-            result = prepare_request(source, anchor, policy)
+            result = prepare_request(source, anchor, policy, review_waiver=review_waiver)
         else:
             _require(args.request is not None and args.evidence is not None,
                      "review-language and admit require the original request and completed evidence")
@@ -373,14 +391,15 @@ def main() -> None:
                          "review-language creates, not consumes, a plugin receipt")
                 result = run_language_plugin(source, anchor, policy,
                                              _load(args.request), evidence,
-                                             args.plugin, args.plugin_sha256)
+                                             args.plugin, args.plugin_sha256,
+                                             review_waiver=review_waiver)
             else:
                 _require(args.language_receipt is not None,
                          "admit requires a separate language plugin receipt")
                 result = admit_evidence(source, anchor, policy,
                                         _load(args.request), evidence,
                                         _load(args.language_receipt), args.plugin,
-                                        args.plugin_sha256)
+                                        args.plugin_sha256, review_waiver=review_waiver)
         interpretation.write_json(args.out, result)
     status = {"prepare": "source_bound_request", "review-language": "language_plugin_reviewed",
               "admit": "machine_review_pass_human_review_pending"}[args.command]

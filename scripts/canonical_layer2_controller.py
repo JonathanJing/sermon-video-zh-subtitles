@@ -163,7 +163,7 @@ def _inputs(config, locale, view):
     # Existing fixed model/worker limits remain production admission gates.
     require(all(policy[role]['model'] == model for role, model in models.MODEL_ROLES.items()), 'production_model_policy_changed')
     require(policy['batching']['batchSize'] == 1 and type(policy['batching']['workers']) is int
-            and 1 <= policy['batching']['workers'] <= 3, 'invalid_production_worker_budget')
+            and 1 <= policy['batching']['workers'] <= 24, 'invalid_production_worker_budget')
     producer.prepare_request(values['source'], values['anchor'], policy)
     return values['source'], values['anchor'], policy
 
@@ -197,7 +197,7 @@ class Controller:
 
     def _capacity_full(self, view):
         # Initial fixed adapter permits one locale job at a time within this
-        # production run. Existing policy still bounds its group workers 1..3.
+        # production run. The frozen policy bounds its group workers 1..24.
         active = [row for row in view['durableJobInspection']['jobs']
                   if row['workUnitId'].startswith('text.') and row['status'] in jobs.ACTIVE | {'uncertain'}]
         return len(active) >= MAX_ACTIVE_LAYER2_JOBS

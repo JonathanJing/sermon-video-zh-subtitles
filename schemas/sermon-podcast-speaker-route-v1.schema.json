@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-podcast-speaker-route-v1.schema.json",
+  "title": "Source-bound podcast speaker route for target-language units",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "sourceId", "sourcePackageFileSha256", "anchorManifestCanonicalJsonSha256", "targetCandidateCanonicalJsonSha256", "speakerOverlapReportFileSha256", "speakerRegistryFileSha256", "mappingRule", "userDecision", "status", "counts", "groups"],
+  "properties": {
+    "schemaVersion": { "const": "podcast-layer3-speaker-route-v1" },
+    "sourceId": { "type": "string", "minLength": 1 },
+    "sourcePackageFileSha256": { "$ref": "#/$defs/sha256" },
+    "anchorManifestCanonicalJsonSha256": { "$ref": "#/$defs/sha256" },
+    "targetCandidateCanonicalJsonSha256": { "$ref": "#/$defs/sha256" },
+    "speakerOverlapReportFileSha256": { "$ref": "#/$defs/sha256" },
+    "speakerRegistryFileSha256": { "$ref": "#/$defs/sha256" },
+    "mappingRule": { "type": "string", "minLength": 1 },
+    "userDecision": {
+      "type": "object", "additionalProperties": false,
+      "required": ["itemId", "windowId", "scope"],
+      "properties": {
+        "itemId": { "type": "string", "minLength": 1 },
+        "windowId": { "type": "string", "minLength": 1 },
+        "scope": { "type": "string", "minLength": 1 }
+      }
+    },
+    "status": { "enum": ["speaker_resolution_required", "human_review_pending", "approved"] },
+    "counts": { "type": "object", "minProperties": 1 },
+    "groups": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["translationGroupId", "sourceUnitIds", "status", "sourceEvidence"],
+        "properties": {
+          "translationGroupId": { "type": "string", "minLength": 1 },
+          "sourceUnitIds": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+          "speakerId": { "type": ["string", "null"] },
+          "speakerDisplayName": { "type": ["string", "null"] },
+          "status": { "enum": ["routed", "requires_speaker_resolution"] },
+          "sourceEvidence": {
+            "type": "array", "minItems": 1,
+            "items": {
+              "type": "object", "additionalProperties": false,
+                "required": ["sourceUnitId", "sourceSentenceId", "speakerId", "speakerDisplayName", "resolutionMethod", "lowCoverage", "confidenceShare"],
+              "properties": {
+                "sourceUnitId": { "type": "string", "minLength": 1 },
+                "sourceSentenceId": { "type": "string", "minLength": 1 },
+                "speakerId": { "type": ["string", "null"] },
+                "speakerDisplayName": { "type": ["string", "null"] },
+                "resolutionMethod": { "enum": ["online_diarization", "local_diarization_fallback", "unresolved", "human_review"] },
+                "onlineCoverageFraction": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+                "dominantOnlineShare": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+                "textHypothesis": { "type": ["string", "null"] },
+                "lowCoverage": { "type": "boolean" },
+                "confidenceShare": { "type": "number", "minimum": 0, "maximum": 1 }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": { "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" } }
+}

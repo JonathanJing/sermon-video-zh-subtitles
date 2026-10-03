@@ -159,7 +159,7 @@ def validate_target_candidate(source_package: dict[str, Any], anchor: dict[str, 
     return {"targetLocale": locale, "groupIds": group_ids, "sourceUnitIds": assigned_units}
 
 
-def validate_policy_binding(candidate: dict[str, Any], policy: dict[str, Any], *, strict_rubric=None, diagnostic_context=None) -> None:
+def validate_policy_binding(candidate: dict[str, Any], policy: dict[str, Any], *, strict_rubric=None, diagnostic_context=None, review_waiver=None) -> None:
     result = (policy_tools.validate_policy(policy) if strict_rubric is None else
               policy_tools.validate_strict_policy(policy, strict_rubric))
     _require(policy["targetLocale"] == candidate["targetLocale"],
@@ -173,8 +173,14 @@ def validate_policy_binding(candidate: dict[str, Any], policy: dict[str, Any], *
     _require(candidate["translationPolicySha256"] == result["translationPolicySha256"],
              "Target candidate belongs to another Target-Language Policy")
     if diagnostic_context is None:
-        _require(result["productionPolicyReady"],
-                 "Target-Language Policy has unresolved scripture, terminology, or language-review gates")
+        if not result["productionPolicyReady"]:
+            _require(review_waiver is not None,
+                     "Target-Language Policy has unresolved gates and no user review waiver")
+            try:
+                from scripts import podcast_user_review_waiver as waiver_tools
+            except ImportError:
+                import podcast_user_review_waiver as waiver_tools
+            waiver_tools.validate_candidate_binding(review_waiver, candidate, policy, result)
     else:
         from scripts.sermon_diagnostic_context import require_policy_ready
         require_policy_ready(result, diagnostic_context)

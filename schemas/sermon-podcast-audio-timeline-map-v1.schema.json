@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-podcast-audio-timeline-map-v1.schema.json",
+  "title": "Audio-only podcast timeline map",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "timebase", "sourceId", "sourcePackageJsonSha256", "anchorManifestJsonSha256", "sourceMediaSha256", "sourceAudioPath", "sourceAudioSha256", "sourceAudioDurationSeconds", "windowApprovalJsonSha256", "approvedWindow", "anchorOffsetSeconds", "videoSyncPolicy"],
+  "properties": {
+    "schemaVersion": { "const": "sermon-podcast-audio-timeline-map-v1" },
+    "timebase": { "const": "audio_source_relative_to_complete_recording" },
+    "sourceId": { "type": "string", "minLength": 1 },
+    "sourcePackageJsonSha256": { "$ref": "#/$defs/sha256" },
+    "anchorManifestJsonSha256": { "$ref": "#/$defs/sha256" },
+    "sourceMediaSha256": { "$ref": "#/$defs/sha256" },
+    "sourceAudioPath": { "type": "string", "minLength": 1 },
+    "sourceAudioSha256": { "$ref": "#/$defs/sha256" },
+    "sourceAudioDurationSeconds": { "type": "number", "exclusiveMinimum": 0 },
+    "windowApprovalJsonSha256": { "$ref": "#/$defs/sha256" },
+    "approvedWindow": {
+      "type": "object", "additionalProperties": false,
+      "required": ["startSeconds", "endSeconds"],
+      "properties": { "startSeconds": { "const": 0 }, "endSeconds": { "type": "number", "exclusiveMinimum": 0 } }
+    },
+    "anchorOffsetSeconds": { "const": 0 },
+    "videoSyncPolicy": { "const": "not_applicable_audio_only" }
+  },
+  "$defs": { "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" } }
+}

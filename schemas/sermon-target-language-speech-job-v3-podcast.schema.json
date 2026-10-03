@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-target-language-speech-job-v3-podcast.schema.json",
+  "title": "Source-bound dual-speaker podcast target-language speech job",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "status", "releaseEligible", "synthesisEligible", "targetLocale", "inputs", "workers", "renderContract", "units"],
+  "properties": {
+    "schemaVersion": { "const": "sermon-target-language-speech-job-v3-podcast" },
+    "status": { "enum": ["prepared_for_target_language_speech", "rendering", "candidate", "failed"] },
+    "releaseEligible": { "const": false },
+    "synthesisEligible": { "type": "boolean" },
+    "targetLocale": { "const": "zh-Hans" },
+    "inputs": {
+      "type": "object", "additionalProperties": false,
+      "required": ["englishSourcePackage", "anchorManifest", "targetLanguageCandidate", "humanReviewReceipt", "targetLanguagePolicy", "speakerRegistry", "speakerRoute", "audioTimelineMap", "audioOperationPolicies"],
+      "properties": {
+        "englishSourcePackage": { "$ref": "#/$defs/jsonArtifact" },
+        "anchorManifest": { "$ref": "#/$defs/jsonArtifact" },
+        "targetLanguageCandidate": { "$ref": "#/$defs/jsonArtifact" },
+        "humanReviewReceipt": { "$ref": "#/$defs/jsonArtifact" },
+        "targetLanguagePolicy": { "$ref": "#/$defs/jsonArtifact" },
+        "speakerRegistry": { "$ref": "#/$defs/jsonArtifact" },
+        "speakerRoute": { "$ref": "#/$defs/jsonArtifact" },
+        "audioTimelineMap": { "$ref": "#/$defs/jsonArtifact" },
+        "audioOperationPolicies": { "$ref": "#/$defs/jsonArtifact" },
+        "voiceAuthorizations": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "$ref": "#/$defs/jsonArtifact" } },
+        "adapters": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "$ref": "#/$defs/jsonArtifact" } }
+      }
+    },
+    "workers": {
+      "type": "array", "minItems": 2, "maxItems": 2,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["workerId", "speakerId", "speakerKey", "adapterJsonSha256", "checkpointRef", "checkpointSha256", "authorizationJsonSha256", "batchSize"],
+        "properties": {
+          "workerId": { "type": "string", "minLength": 1 },
+          "speakerId": { "type": "string", "minLength": 1 },
+          "speakerKey": { "type": "string", "minLength": 1 },
+          "adapterJsonSha256": { "$ref": "#/$defs/sha256" },
+          "checkpointRef": { "type": "string", "minLength": 1 },
+          "checkpointSha256": { "$ref": "#/$defs/sha256" },
+          "authorizationJsonSha256": { "$ref": "#/$defs/sha256" },
+          "batchSize": { "const": 8 }
+        }
+      }
+    },
+    "renderContract": {
+      "type": "object", "additionalProperties": false,
+      "required": ["textPolicy", "ratePolicy", "playbackRate", "postProcessing", "videoSyncPolicy", "audioTimingPolicy"],
+      "properties": {
+        "textPolicy": { "const": "exact_human_approved_target_text" },
+        "ratePolicy": { "const": "natural_no_time_stretch" },
+        "playbackRate": { "const": 1 },
+        "postProcessing": { "const": "none_before_measurement" },
+        "videoSyncPolicy": { "const": "not_applicable_audio_only" },
+        "audioTimingPolicy": { "const": "preserve_source_audio_clock_and_measure_target_duration" }
+      }
+    },
+    "units": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["unitIndex", "translationGroupId", "sourceUnitIds", "text", "outputRelativePath", "workerId", "speakerId", "checkpointSha256"],
+        "properties": {
+          "unitIndex": { "type": "integer", "minimum": 0 },
+          "translationGroupId": { "type": "string", "minLength": 1 },
+          "sourceUnitIds": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+          "text": { "type": "string", "minLength": 1 },
+          "outputRelativePath": { "type": "string", "minLength": 1 },
+          "workerId": { "type": "string", "minLength": 1 },
+          "speakerId": { "type": "string", "minLength": 1 },
+          "checkpointSha256": { "$ref": "#/$defs/sha256" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "jsonArtifact": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "sha256", "jsonSha256"],
+      "properties": { "path": { "type": "string", "minLength": 1 }, "sha256": { "$ref": "#/$defs/sha256" }, "jsonSha256": { "$ref": "#/$defs/sha256" } }
+    }
+  }
+}

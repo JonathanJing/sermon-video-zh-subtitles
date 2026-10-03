@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-podcast-layer2-user-review-waiver-v1.schema.json",
+  "title": "User authorized podcast Layer 2 content review waiver",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "decision", "targetLocale", "englishSourcePackageJsonSha256", "anchorManifestSha256", "translationPolicySha256", "userRequest", "waivedReviews", "humanApproval", "releaseEligible", "audioHumanReviewRequired", "recordedAt"],
+  "properties": {
+    "schemaVersion": {"const": "sermon-podcast-layer2-user-review-waiver-v1"},
+    "decision": {"const": "user_authorized_skip_content_review"},
+    "targetLocale": {"enum": ["es", "ko"]},
+    "englishSourcePackageJsonSha256": {"$ref": "#/$defs/sha256"},
+    "anchorManifestSha256": {"$ref": "#/$defs/sha256"},
+    "translationPolicySha256": {"$ref": "#/$defs/sha256"},
+    "userRequest": {
+      "type": "object", "additionalProperties": false,
+      "required": ["windowId", "itemId", "text"],
+      "properties": {
+        "windowId": {"const": "01a101e7-0ff6-7010-82b7-827c9f3ca596"},
+        "itemId": {"const": "263928392"},
+        "text": {"const": "开始做剩下的语言，layer2按照我们测试的24并发。layer3模型双副本batch8来配音，内容部分跳过我审核，直接往下进行。开始做"}
+      }
+    },
+    "waivedReviews": {"const": ["human_translation_content", "source_scoped_term_content"]},
+    "humanApproval": {"const": false},
+    "releaseEligible": {"const": false},
+    "audioHumanReviewRequired": {"const": true},
+    "recordedAt": {"type": "string", "format": "date-time"}
+  },
+  "$defs": {"sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}}
+}

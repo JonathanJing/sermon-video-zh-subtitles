@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-podcast-multilingual-voice-extension-v1.schema.json",
+  "title": "User authorized source-bound multilingual podcast voice extension",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "decision", "sourceId", "sourceMediaSha256", "approvedWindow", "targetLocale", "speakerId", "voiceCheckpointSha256", "authorizedUse", "humanAudioReviewRequired", "releaseEligible", "userAuthority", "recordedAt"],
+  "properties": {
+    "schemaVersion": {"const": "sermon-podcast-multilingual-voice-extension-v1"},
+    "decision": {"const": "user_authorized_voice_use_for_es_ko_podcast_dubbing"},
+    "sourceId": {"const": "if-i-had-more-time-jesus-is-worthy"},
+    "sourceMediaSha256": {"$ref": "#/$defs/sha256"},
+    "approvedWindow": {
+      "type": "object", "additionalProperties": false,
+      "required": ["startSeconds", "endSeconds"],
+      "properties": {"startSeconds": {"const": 0}, "endSeconds": {"const": 3369.099}}
+    },
+    "targetLocale": {"enum": ["es", "ko"]},
+    "speakerId": {"enum": ["eric_geiger", "steve_bang_lee"]},
+    "voiceCheckpointSha256": {"$ref": "#/$defs/sha256"},
+    "authorizedUse": {"const": "formal_audio_generation_only"},
+    "humanAudioReviewRequired": {"const": true},
+    "releaseEligible": {"const": false},
+    "userAuthority": {
+      "type": "object", "additionalProperties": false,
+      "required": ["itemId", "windowId", "instruction", "clarification"],
+      "properties": {
+        "itemId": {"const": "263928392"},
+        "windowId": {"const": "01a101e7-0ff6-7010-82b7-827c9f3ca596"},
+        "instruction": {"const": "开始做剩下的语言，layer2按照我们测试的24并发。layer3模型双副本batch8来配音，内容部分跳过我审核，直接往下进行。开始做"},
+        "clarification": {"const": "ES/KO 也配音（推荐）"}
+      }
+    },
+    "recordedAt": {"type": "string", "format": "date-time"}
+  },
+  "$defs": {"sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}}
+}

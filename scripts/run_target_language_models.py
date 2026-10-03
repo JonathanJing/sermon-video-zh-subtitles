@@ -36,9 +36,8 @@ except ImportError:
     import sermon_workflow_jobs as jobs
 
 
-# Timing-only edits do not change the model request or group admission rules.
-# Use the direct dev parent's runner hash for existing in-place paid runs.
-RUNNER_PRODUCTION_IDENTITY_SHA256 = "1922f23b881363ac4f1a32a99de7184fecd1ae445befde5f2282d400bd762e40"
+# This normalized-source identity binds the prompt and 24-worker production runner.
+RUNNER_PRODUCTION_IDENTITY_SHA256 = "a7bb86af31d1abb0eecb95b325e7874f4d59999d04fdd738fa5885941a32a2ed"
 COMPATIBLE_RUNNER_IDENTITIES = {
     # Existing run directories created after the W40 merge or on its release side.
     "8bcd568926f2062919268c185a6d67bf2be4113158e28cd8ca1b6e6e1d7071f3",
@@ -68,9 +67,17 @@ def scripture_prompt_instruction(policy: dict[str, Any]) -> str:
                 "and paraphrase the speaker's meaning in the target language. "
                 "Do not present the text as an exact quotation from any Bible edition. ")
     if scripture["quoteCheckPolicy"] == "source_bound_exact_quote":
-        return ("For a direct Bible quotation, use only the reviewed source-bound "
-                "wording from the pinned edition. Flag uncertainty if the quote "
-                "boundary or exact wording is unavailable; never invent it. ")
+        scope = scripture.get("referenceStyle", "").strip()
+        return ("Apply the scripture quotation scope stated in the frozen policy. "
+                "Use reviewed source-bound wording from the pinned edition only "
+                "for explicitly approved quotation fragments. For every passage "
+                "outside that approved scope, paraphrase the speaker's meaning "
+                "naturally and do not present it as a direct Bible quotation. "
+                "Do not flag uncertainty merely because an unapproved passage "
+                "is quoted in English; flag uncertainty only when the requested "
+                "target text requires an approved exact quotation and its wording "
+                "or boundary is unavailable. Never invent exact wording. "
+                + ("Frozen scope: " + scope + " ") if scope else "")
     raise ValueError("Scripture quotation policy is unresolved")
 
 
@@ -385,24 +392,36 @@ def validate_partial_repair_brief(brief: dict[str, Any] | None,
                 f"Unknown or duplicate partial repair group: {group_id}")
         index, group = plan_by_id[group_id]
         require(row["sourceUnitIds"] == group["sourceUnitIds"]
-                and row["failedRole"] in {"translator", "reviewer"}
+                and row["failedRole"] in {"translator", "reviewer", "language_plugin"}
                 and isinstance(row["failureReason"], str) and row["failureReason"].strip()
                 and isinstance(row["instruction"], str) and row["instruction"].strip()
                 and len(row["instruction"]) <= 2000,
                 f"Invalid partial repair source, role, or instruction: {group_id}")
-        suffix = "astra" if row["failedRole"] == "translator" else "sol"
-        failed_cache = reuse_from / f"group-{index:04d}-{suffix}.json"
+        if row["failedRole"] == "language_plugin":
+            failed_cache = reuse_from / "language-receipt.json"
+        else:
+            suffix = "astra" if row["failedRole"] == "translator" else "sol"
+            failed_cache = reuse_from / f"group-{index:04d}-{suffix}.json"
         require(failed_cache.is_file()
                 and row["failedCacheSha256"] == hashlib.sha256(failed_cache.read_bytes()).hexdigest(),
                 f"Partial repair failed cache is missing or changed: {group_id}")
         saved = producer._load(failed_cache)
-        prior_result = saved.get("result")
-        require(saved.get("model") == MODEL_ROLES[row["failedRole"]]
-                and isinstance(saved.get("payloadSha256"), str)
-                and isinstance(prior_result, dict)
-                and prior_result.get("translationGroupId") == group_id
-                and prior_result.get("sourceUnitIds") == group["sourceUnitIds"],
-                f"Partial repair failed cache has different group identity: {group_id}")
+        if row["failedRole"] == "language_plugin":
+            failed_group = next((item for item in saved.get("groupReviews", [])
+                                 if item.get("translationGroupId") == group_id), None)
+            require(saved.get("targetLocale") == request["targetLocale"]
+                    and failed_group is not None
+                    and failed_group.get("sourceUnitIds") == group["sourceUnitIds"]
+                    and failed_group.get("status") == "fail",
+                    f"Partial repair language-plugin receipt has different group identity: {group_id}")
+        else:
+            prior_result = saved.get("result")
+            require(saved.get("model") == MODEL_ROLES[row["failedRole"]]
+                    and isinstance(saved.get("payloadSha256"), str)
+                    and isinstance(prior_result, dict)
+                    and prior_result.get("translationGroupId") == group_id
+                    and prior_result.get("sourceUnitIds") == group["sourceUnitIds"],
+                    f"Partial repair failed cache has different group identity: {group_id}")
         result[group_id] = row
     return result
 
@@ -470,7 +489,7 @@ def carry_forward_group(prior_run: Path, out: Path, index: int,
 
 def ordered_group_results(items: list, worker, workers: int) -> list:
     """Keep only a bounded set of paid groups in flight and merge in source order."""
-    require(type(workers) is int and 1 <= workers <= 3, "Group workers must be 1..3")
+    require(type(workers) is int and 1 <= workers <= 24, "Group workers must be 1..24")
     if workers == 1 or len(items) < 2:
         return [worker(item) for item in items]
     results = {}
@@ -527,11 +546,12 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
         revision_brief: dict[str, Any] | None = None,
         reuse_from: Path | None = None,
         partial_repair_brief: dict[str, Any] | None = None,
-        resume_cache_from: Path | None = None) -> dict[str, Any]:
+        resume_cache_from: Path | None = None,
+        review_waiver: dict[str, Any] | None = None) -> dict[str, Any]:
     with accounting.stage(f"layer2.source_admission.{policy['targetLocale']}",
                           depends_on=[], executor_type="deterministic_program",
                           work_unit_id=f"l2.{policy['targetLocale']}.source_admission") as source_span:
-        request = producer.prepare_request(source, anchor, policy)
+        request = producer.prepare_request(source, anchor, policy, review_waiver=review_waiver)
     return _run_prepared_groups(
         request, anchor, policy, out, api_key, caller, custom_plan, plugin_path,
         revision_brief, reuse_from, partial_repair_brief, resume_cache_from,
@@ -575,8 +595,8 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                     f"Production {role} model must be {expected}; freeze a new policy")
         workers = policy["batching"].get("workers")
         require(policy["batching"].get("batchSize") == 1
-                and type(workers) is int and 1 <= workers <= 3,
-                "Per-group production runner requires batchSize=1 and workers=1..3")
+                and type(workers) is int and 1 <= workers <= 24,
+                "Per-group production runner requires batchSize=1 and workers=1..24")
         if plugin_path is not None:
             require_plugin_identity(plugin_path, policy["languageReview"]["pluginImplementationSha256"])
         plan = group_plan(request, anchor, custom_plan)
@@ -883,6 +903,7 @@ def run_accounted(source: dict, anchor: dict, policy: dict, out_dir: Path,
                   revision_brief: dict | None, reuse_from: Path | None,
                   *, partial_repair_brief: dict | None = None,
                   resume_cache_from: Path | None = None,
+                  review_waiver: dict[str, Any] | None = None,
                   progress_ledger: Path | None = None,
                   cache_only: bool = False, progress_callback=None,
                   predecessor_spans=(), completion_spans: list[str] | None = None) -> dict:
@@ -894,7 +915,7 @@ def run_accounted(source: dict, anchor: dict, policy: dict, out_dir: Path,
             with accounting.stage(f"layer2.source_admission.{locale}", depends_on=list(predecessor_spans),
                                   executor_type="deterministic_program",
                                   work_unit_id=f"l2.{locale}.source_admission") as source_span:
-                request = producer.prepare_request(source, anchor, policy)
+                request = producer.prepare_request(source, anchor, policy, review_waiver=review_waiver)
                 plan = group_plan(request, anchor, group_plan_data)
                 window = source["source"]["approvedWindow"]
                 accounting.record_workload("layer2.source_identity", {
@@ -927,6 +948,8 @@ def main() -> None:
                         help="Source-bound failed-group repair; accepts an incomplete prior run")
     parser.add_argument("--resume-cache-from", type=Path,
                         help="Reuse verified paid responses from an incomplete attempt of this revision")
+    parser.add_argument("--review-waiver", type=Path,
+                        help="Exact source-bound user waiver for content review; candidate remains release-ineligible")
     parser.add_argument("--progress-ledger", type=Path,
                         help="Record checkpoint and per-group substage timing in the four-layer ledger")
     parser.add_argument("--out-dir", type=Path, required=True)
@@ -941,8 +964,9 @@ def main() -> None:
             "--resume-cache-from requires --partial-repair-brief")
     source, anchor, policy = (producer._load(path) for path in
                               (args.english_source_package, args.anchor, args.policy))
+    review_waiver = producer._load(args.review_waiver) if args.review_waiver else None
     # Validate all policy/source/plan conditions before requiring a secret or making a paid call.
-    request = producer.prepare_request(source, anchor, policy)
+    request = producer.prepare_request(source, anchor, policy, review_waiver=review_waiver)
     plan = group_plan(request, anchor, json.loads(args.group_plan.read_text(encoding="utf-8"))
                       if args.group_plan else None)
     require_plugin_identity(args.plugin, policy["languageReview"]["pluginImplementationSha256"])
@@ -957,6 +981,7 @@ def main() -> None:
         partial_repair_brief=producer._load(args.partial_repair_brief)
         if args.partial_repair_brief else None,
         resume_cache_from=args.resume_cache_from,
+        review_waiver=review_waiver,
         progress_ledger=args.progress_ledger)
     print(json.dumps({"status": "independent_model_review_pass",
                       "groups": len(evidence["groups"]),
