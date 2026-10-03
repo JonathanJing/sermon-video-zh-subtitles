@@ -948,3 +948,26 @@ CI环境还暴露工具下载占用原job期限：18ae2f0的root-0已通过1609 
 | `DEV-L4-007` | P1 / `pending` | 父任务视觉核对第二张截图：域名尾部 -sermon-audio-dev.web.app 的“本期与往期”下拉混列正式讲道名称、DEV 诊断、DEV 演练及可试听/流程受阻；两项同文案“2026.09.27 · [DEV 诊断] 真实片段 · 原片段 / 机器 ASR · DEV 可试听”，另有 9/30 真实 180 秒原片/英文 ASR/诊断报告受阻。区分开发诊断/演练与面向用户正式期次入口，定义可辨识名称及状态显示，核对稳定 ID、显示名、排序、语言/音频路由与环境过滤，重复标签不当作重复数据。以同名不同 ID、重复 ID、诊断受阻/可试听、正式期次及旧期次回归目录验收。 | `DEV-L4-006`、`DEV-L4-005`；实际 catalog/run 身份待核对 |
 
 截图只证明 Dev 下拉混展示，不证明正式生产目录如此。菜单遮挡正文，只可见语言选择和音频区域；不能据此判断翻译/配音/大纲/默想缺失或质量差。图中没有 v2/v3/PDF；生产术语与 PDF 定位变更依据明确用户决策，不归因于截图。具体分区/过滤交互需后续设计，不在此预定新客户端实现。
+
+<a id="ste-instructions-ab-backlog-20261003"></a>
+
+## STE 五项修复与 A/B 跟进
+
+| ID | 优先级／状态 | 待交付与验收 | 依赖／待决定 |
+|---|---|---|---|
+| `DEV-STE-001` | P1 / `pending` | references_only 与短口播引用规则分阅读稿/元数据/口播明确；候选文本、source SHA、证据及 paired A/B 见[审核与计划](ste-agent-instructions-audit-2026-10-03.zh.md)。预注册分层样本，验忠实度/未授权新增引用；不得直接改生产 prompt | 用户签字引用范围；`DEV-L2-001`；新 prompt/policy 身份与独立缓存 |
+| `DEV-STE-002` | P1 / `pending` | 澄清 Sol 修一个 issue 不清掉其他未解决 concern，保留 reviewer-editor。离线门禁及真实 paired 评估覆盖部分修复/疑点/全部修复，验漏报率和文本质量 | `DEV-L2-001`；批准候选、新版本及回归预算 |
+| `DEV-STE-003` | P1 / `pending` | 文档区分 locale 审批依赖独立与单 active job 容量/uncertain 占位；静态核对 controller 和 release-plan 条件，不无谓模型调用 | 确认保留容量限制；并发实现若需要另立范围 |
+| `DEV-STE-004` | P1 / `pending` | 文档区分 renderer 声音身份、batch 实现身份与受控兼容规则，保留全部 hash。离线验证明确兼容/不兼容/WAV-commit 篡改，不扩大名单 | `DEV-L3-001`；确认仅澄清现有边界 |
+| `DEV-STE-005` | P1 / `pending` | unit-instructions 文档写现有完整 schema、job/locale/group/text hash、operatorEvidence、override 与 zh-Hans spokenText 限制；静态与离线拒绝例验证，不扩展文本修改权 | `DEV-L3-001`；现有输入契约不变 |
+| `DEV-STE-006` | P2 / `waiting_decision` | 仅实际 prompt 行为变化做 A/B，A 原 prompt、B 文本只存文档；固定模型/参数/获批输入、paired 语言及全文/口播分层、独立缓存、盲评裁决、忠实度/漏报/通过率/文本质量/延迟/token 成本、回滚与 unknown reconciliation。预先阈值，离线通过不宣称 API 验收 | `DEV-STE-001/002`；样本/费用硬上限/验收阈值/窗口待签字；未决 B 不执行 |
+
+以上全部是待修复/验收事项，没有自封实现完成。原审核缓存恢复、人工审批和专用 Dev staging 的通过范围仅为静态核对，见审核报告；不作为本 backlog 的真实运行验收收据。
+
+### 本轮覆盖索引
+
+- 五项 STE 与 A/B：`DEV-STE-001`—`006`，候选、行号与版本风险在关联审核计划中。
+- ES/KO policy 模板及独立豁免/批准：`DEV-L2-002`；声音逐语言授权/绑定/adapter：`DEV-L3-003`；资源门禁与双副本：`DEV-L3-004`。具体 run 身份及每语言覆盖仍待确认，未授权跨语言选声。
+- App 页面及翻译/配音/大纲/默想、生产术语映射兼容、PDF ad hoc：`DEV-L4-006`，依赖与验收见对应表；细节需冻结，底层协议不删除。
+- Dev 诊断/演练与正式入口、稳定 ID/命名：`DEV-L4-007`，实际目录身份待核对，不将重复标签认作重复数据。
+- 同一候选 iOS Beta + Firebase Dev → 人工批准 → iOS 正式 + Firebase 正式，双端可用及部分失败/回退一致性：`DEV-L4-006` 的内容发布顺序章节。范围已确定；实际候选、批准收据与执行窗口未取得，本轮不发布。
