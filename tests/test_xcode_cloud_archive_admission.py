@@ -167,8 +167,8 @@ class ArchiveAdmissionTest(unittest.TestCase):
         cases += [{k: v for k, v in self.intent.items() if k != field} for field in self.intent]
         cases += [{**self.intent, key: value} for key, value in (
             ("schemaVersion", True), ("schemaVersion", 2), ("sourceCommit", "a" * 7),
-            ("sourceCommit", "b" * 40), ("version", "01.26.7"), ("version", "1.26.8"),
-            ("version", "1.26.7 Beta"), ("sourceBuild", "51"), ("sourceBuild", 50),
+            ("sourceCommit", "b" * 40), ("version", "01.26.7"), ("version", "1.26.9"),
+            ("version", "1.26.7 Beta"), ("sourceBuild", 51), ("sourceBuild", 50),
             ("cloudBuild", "124"), ("cloudBuild", "0123"), ("cloudBuild", "0"),
             ("channel", "unknown"), ("scheme", "TongxingBeta"), ("configuration", "Debug"),
             ("resourcesSHA256", {}), ("resourcesSHA256", []),
@@ -208,12 +208,14 @@ class ArchiveAdmissionTest(unittest.TestCase):
     def test_changed_project_semantics_rejected_even_with_matching_digest(self):
         path = self.directory / "project.pbxproj"
         original = path.read_text()
+        current_version = self.intent["version"]
+        current_build = self.intent["sourceBuild"]
         for old, new in (
-            ("MARKETING_VERSION = 1.26.7;", "MARKETING_VERSION = 1.26.8;"),
-            ("CURRENT_PROJECT_VERSION = 50;", "CURRENT_PROJECT_VERSION = 49;"),
+            (f"MARKETING_VERSION = {current_version};", "MARKETING_VERSION = 1.26.9;"),
+            (f"CURRENT_PROJECT_VERSION = {current_build};", "CURRENT_PROJECT_VERSION = 49;"),
             ('PRODUCT_BUNDLE_IDENTIFIER = "com.jonathanjing.tongxing.dev.listening-activity";', "PRODUCT_BUNDLE_IDENTIFIER = wrong;"),
-            ("MARKETING_VERSION = 1.26.7;", 'MARKETING_VERSION = "$(OVERRIDE_VERSION)";'),
-            ("MARKETING_VERSION = 1.26.7;", 'MARKETING_VERSION = 1.26.7; "MARKETING_VERSION[sdk=iphoneos*]" = 1.2.0;'),
+            (f"MARKETING_VERSION = {current_version};", 'MARKETING_VERSION = "$(OVERRIDE_VERSION)";'),
+            (f"MARKETING_VERSION = {current_version};", f'MARKETING_VERSION = {current_version}; "MARKETING_VERSION[sdk=iphoneos*]" = 1.2.0;'),
         ):
             with self.subTest(new=new), self.assertRaises(GUARD.AdmissionError):
                 self.assertIn(old, original)
