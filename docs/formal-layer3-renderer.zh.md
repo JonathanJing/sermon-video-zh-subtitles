@@ -8,7 +8,19 @@
 
 重跑时按 job、源与候选、adapter、checkpoint map/权重、策略文件、文本、renderer SHA 与合成参数比较缓存身份；任何旧稿或旧音色无法复用。一个单元在 WAV 写出后中断时，可凭已写的 SHA commit 记录恢复。`render-manifest.json` 的机器筛查为 `not_run`，人工听审仍待完成。
 
-2026-10-01 新增 `--batch-size 1|2|4|8`，默认仍为 1。大于 1 时先校验整个 job，按固定索引窗口只合成没有有效 commit 或可准入复用的单元；每批一次驻留模型调用，短尾批也完整校验映射与数量。新 intent 绑定 batch size、设备、窗口及 seed 策略，commit 记录实际生成的单元索引；seed 为基础值加窗口起始索引。已提交单元保持原字节，缺失单元的批成员可能随恢复改变，因此不宣称随机采样结果与不中断运行逐字节相同。batch=1 保留原 intent/逐单元 seed 格式，其他 batch 使用新身份，不能混用缓存或绕过人审。新 renderer SHA 仍须与缓存相符，旧产物不能因为 batch=1 而忽略代码身份变化。
+## 周日单讲员：Spark 生产按 8×8
+
+2026-10-03 决定：新建的单讲员周日证道任务在 Spark 使用 **8 个常驻模型副本 × 每批 8 句**，正式入口增加 `--spark-production`（等效于 `--replicas 8 --batch-size 8`）。保留上述正式输入、文字人审、音色授权及 checkpoint 校验；只改变 Layer 3 TTS 调度。CUDA:0、BF16、SDPA 固定为此次测量设置；不支持多讲员分路，回转写 ASR 与其他 Layer 配置不变。在包含完整正式输入与授权参数的原命令末尾追加 `--spark-production`。下方 staged 模板已包含该参数。
+
+八个独立 spawn 进程各加载同一授权 checkpoint，全部 ready 后按 job 原始索引的固定八句窗口分配，seed 为基础值加窗口起始索引；419 句分为 53 个窗口，末批 3 句。最多八个未消费窗口，加上父进程正在处理的当前窗口，返回音频最多驻留九个窗口。模型副本跨窗口驻留；不让八个完整 renderer 同时操作同一目录。主进程按原顺序校验数量、身份、有限波形和采样率，保存、完整解码、hash、commit、receipt，再执行原排程与整轨组装。artifact root 的非阻塞文件锁覆盖正式输入校验、单元写入及组装，重复执行直接拒绝。
+
+模型加载前、等待结果期间及每次派发／取出结果时检查 Linux `/proc/meminfo` 的 `MemAvailable`，低于 **24 GiB** 即停止本次拥有的子进程；默认加载和单窗口生成超时均为 600 秒。等待轮询为 0.2 秒，但单批 IPC 反序列化和父进程媒体验证期间不是连续内存采样。保护基于宿主统一内存，不能把 CUDA、cgroup 与宿主数值相加；此路径要求 Spark/Linux，未自动退回 MacBook。
+
+失败后保留已写的 SHA commit 和正式收据，只清理当前 pool 拥有的进程；续跑重新准入整个 job，只合成包含缺失单元的固定窗口，完整重放该窗口的全部成员，已提交的邻居字节不变。全部音频可复用时不创建模型进程。任意未来单元身份或音频 hash 不符会在加载前失败。`replica-runtime.json` 记录 worker PID、加载／生成耗时、窗口索引及采样到的最低可用内存，不记录证道正文；`closed` 仅表示 pool 关闭。成功依然以完整 manifest／单元收据为准，ASR 与人耳听审仍独立待完成。原逐单元 accounting 计量父进程的有序写入和等待，真实重叠计算耗时见 replica runtime，不把等待时间相加作为 GPU 墙钟。
+
+缓存迁移：旧的串行单元保持 `sermon-formal-target-speech-render-v1`，不带生产参数时 CLI 仍为单副本／batch1，旧 Dev profile 仍使用其原设置，避免隐式改变现存任务。新八副本 intent 使用 `sermon-formal-target-speech-render-v2`，绑定 replicaCount、调度策略与 pool／scheduler 实现 hash；必须使用新 render root，禁止与旧串行缓存混写。此次直接 dev 父版本的串行完整窗口音频，在其他输入、参数、窗口和字节 hash 匹配时可继续准入。切换 batch size、设备或单／八副本模式都不能绕过身份检查。正式 speech job 和 Audio Package schema 未改变。
+
+选择证据和 419 段预算见[单讲员 Spark 测量报告](reports/20261003-spark-production-8x8.zh.md)。8×8 的 64 句重复实测中位数 56.81 秒，最低可用内存 38.43 GiB；16×4 两次触发 24 GiB 保护，没有有效速度结果。419 句的约 6.2 分钟热 TTS／7.1 分钟加 cold load 为组件外推，不代表整篇实际完成或语言质量通过。
 
 `screen_target_language_audio_units.py` 同样新增 `--batch-size 1|2|4|8`（默认 1），CLI 只加载一次 ASR 模型；可用 `--unit-cache <artifact-root 内的新缓存目录>` 保存逐单元不可覆盖的识别回执，续跑只转写缺失单元。cache 绑定 job、locale、文字、音频 hash、模型 revision 和 batch 设置，错身份或错映射直接停止。Qwen 高层接口返回值不暴露 EOS/finish-reason；这里只验证函数返回、数量、身份、可解码音频和全单元覆盖，实际截断风险仍需回转写及人工听审。性能／质量验收见[提速 backlog](local-production-speed-backlog.zh.md)。
 
@@ -44,7 +56,8 @@ docker run --rm --gpus all --ipc=host --read-only --network none \
   --job /work/output/ko/speech-job/job.json \
   --checkpoint-map /results/sermon-voice-sep20-long-probe-20260923-v1/work/speaker-checkpoints.dgx.json \
   --audio-operation-policies /work/inputs/audio-operation-policies.json \
-  --path-map /work/path-map.json
+  --path-map /work/path-map.json \
+  --spark-production
 ```
 
 中文已有全局人审能力时可省略 `--clip-voice-capability`。以上命令是路径模板；2026-09-23 的真实结果见 [Layer 2/3 backlog](multilingual-layer-2-3-backlog.zh.md)。`build_target_language_audio_package.py` 以 renderer 的 manifest 构建最高为 `candidate` 的 Layer 3 包。三语均有完整 Qwen3-ASR 筛查收据，机器结果仍为 `requires_review`。`review_target_language_audio.py prepare` 从候选包和同一整轨／单元 hash 的筛查收据生成待审工作表；只在真人完成全文 1 倍速播放、视频同步及每个 ASR 疑点的显式裁决后，`approve` 才能产出 `human_reviewed` 包与 v2 人审收据。Dev staging 继续核对该收据及原机器筛查，不把机器状态改写为通过。
