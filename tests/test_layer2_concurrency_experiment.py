@@ -58,8 +58,8 @@ class Layer2ConcurrencyTests(unittest.TestCase):
             return index
         self.assertEqual(list(range(9)), runner.ordered_group_results(list(range(9)), worker, 3))
         self.assertEqual(peak, 3)
-        for budget in (0, -1, 4, True, 1.5):
-            with self.subTest(budget=budget), self.assertRaisesRegex(ValueError, "1..3"):
+        for budget in (0, -1, 25, True, 1.5):
+            with self.subTest(budget=budget), self.assertRaisesRegex(ValueError, "1..24"):
                 runner.ordered_group_results([], lambda _: self.fail("invalid budget started work"), budget)
 
     def test_parallel_failure_drains_success_and_repair_reuses_successful_cache(self):

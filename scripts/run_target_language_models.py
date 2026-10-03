@@ -470,7 +470,7 @@ def carry_forward_group(prior_run: Path, out: Path, index: int,
 
 def ordered_group_results(items: list, worker, workers: int) -> list:
     """Keep only a bounded set of paid groups in flight and merge in source order."""
-    require(type(workers) is int and 1 <= workers <= 3, "Group workers must be 1..3")
+    require(type(workers) is int and 1 <= workers <= 16, "Group workers must be 1..16")
     if workers == 1 or len(items) < 2:
         return [worker(item) for item in items]
     results = {}
@@ -575,8 +575,8 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                     f"Production {role} model must be {expected}; freeze a new policy")
         workers = policy["batching"].get("workers")
         require(policy["batching"].get("batchSize") == 1
-                and type(workers) is int and 1 <= workers <= 3,
-                "Per-group production runner requires batchSize=1 and workers=1..3")
+                and type(workers) is int and 1 <= workers <= 16,
+                "Per-group production runner requires batchSize=1 and workers=1..16")
         if plugin_path is not None:
             require_plugin_identity(plugin_path, policy["languageReview"]["pluginImplementationSha256"])
         plan = group_plan(request, anchor, custom_plan)

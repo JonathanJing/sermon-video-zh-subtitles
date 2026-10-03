@@ -278,9 +278,9 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
 
     def test_worker_limit_is_checked_before_paid_calls(self):
         policy = copy.deepcopy(self.fixture.policy)
-        policy["batching"]["workers"] = 4
+        policy["batching"]["workers"] = 25
         policy["componentSha256"]["batching"] = policy_tools.canonical_sha256(policy["batching"])
-        with self.assertRaisesRegex(ValueError, "workers=1..3"):
+        with self.assertRaisesRegex(ValueError, "workers=1..16"):
             subject.run(self.fixture.source, self.fixture.anchor, policy,
                         self.out, "fixture-key", self.fake_call)
         self.assertEqual([], self.calls)

@@ -13,7 +13,7 @@
   },
   "batching": {
     "batchSize": 1,
-    "workers": 1
+    "workers": 16
   },
   "targetLocale": "zh-Hans",
   "terminology": {
