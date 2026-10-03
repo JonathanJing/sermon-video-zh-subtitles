@@ -31,7 +31,7 @@ Dev Debug 与正式版沿用同一原生收听界面、播放器、下载、字�
 3. 点击 Run。首次读取目录需要网络；正式多语言页面会自动准备当前语言音频，已验证的本地音频下次直接复用。旧周次仍可手动选择“下载本篇”以离线收听。
 4. 使用 Product → Test（⌘U）运行 `TongxingTests` 和 `TongxingUITests`。播放器测试使用合成静音和独立临时历史；UI 测试使用显式启动的隔离目录与音频夹具。正常 Run 仍加载已发布内容。
 
-Apple 账号、Team 配置、设备信息和签名凭据不进入 Git。独立「同行-beta」1.2.0 (48) 已上传并在内部测试组 Testing，包含本轮暂停修复与同片段 Demo；其冻结源码、实际测试与分发证据见 [Beta 48 记录](BETA-RELEASE-1.2.0-48.zh.md)。此已上传包保留原版本，下一候选采用新约定。早期 build 2／3 的历史记录见 [Beta 资料与实测](BETA-TESTING.zh.md)。
+Apple 账号、Team 配置、设备信息和签名凭据不进入 Git。最新独立 Beta「同行-beta」1.26.8 (49) 已进入 Rooted 内部测试组 Testing，支持 Firebase Dev 的多语播客候选；冻结源码、验证和分发证据见 [Beta 1.26.8 记录](BETA-RELEASE-1.26.8.zh.md)。历史 Beta 48 仍保留在 [Beta 48 记录](BETA-RELEASE-1.2.0-48.zh.md)。此已上传包保留原版本，下一候选采用新约定。早期 build 2／3 的历史记录见 [Beta 资料与实测](BETA-TESTING.zh.md)。
 
 修改 `project.yml` 后从本目录重新生成：
 

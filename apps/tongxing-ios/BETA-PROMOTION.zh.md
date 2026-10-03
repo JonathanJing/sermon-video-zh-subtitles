@@ -13,7 +13,11 @@ Beta 与正式版共用同一套 App、播放器和实时活动源码，由构�
 | Scheme | `TongxingBeta` | `Tongxing` |
 | 开发 / Archive 配置 | `BetaDebug` / `BetaRelease` | `Debug` / `Release` |
 | 默认内容源 | Firebase Dev | Debug 为 Dev；Release 为正式站 |
-| 当前候选版本 | `1.2.0 (48)` | `1.26.7 (50)`（Waiting for Review） |
+| 当前候选版本 | `1.26.8 (49)`（Rooted 内测组 Testing） | `1.26.7 (50)`（Waiting for Review） |
+
+## 最新 Beta 候选（2026-10-03）
+
+`1.26.8 (49)` 已上传并完成 Apple 处理，已关联 Rooted 内部测试组；ASC Builds 页显示 `Testing`。本候选支持 Firebase Dev 的 ES／KO 播客候选，译文机器审核通过、人工全文审核按用户指示豁免。模拟器测试、归档身份校验、What to Test 内容和实测分发状态见 [Beta 1.26.8 发布记录](BETA-RELEASE-1.26.8.zh.md)。真机与场地验收仍为 `not_run`；未提交外部 Beta 审核或 App Store 正式发布。
 
 ## 当前分发状态（2026-10-01）
 
