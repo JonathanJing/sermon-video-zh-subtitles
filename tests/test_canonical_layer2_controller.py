@@ -278,7 +278,7 @@ class CanonicalLayer2ControllerTests(unittest.TestCase):
         self.config_data['locales']['zh-Hans']['outputDirectory'] = '.'; self.save_config()
         with self.assertRaises(ValueError): subject.load_configuration(self.path)
 
-    def test_running_job_applies_one_locale_capacity_without_new_dispatch(self):
+    def test_running_job_leaves_capacity_for_an_independent_locale(self):
         with self.active() as (config, _, _, _):
             controller = subject.Controller(self.path, mode='deterministic_execute')
             with patch.object(jobs, 'start_job') as start:
@@ -286,11 +286,10 @@ class CanonicalLayer2ControllerTests(unittest.TestCase):
             self.assertFalse(result['dispatched'])
             start.assert_not_called()
             view = subject.snapshot(config)
-            # Even a separate ready lane cannot exceed this adapter's initial
-            # per-production-run locale capacity.
+            # A running locale does not block an independent ready locale.
             view['nodes']['text.ko'] = {'status': 'ready'}
             controller.config.lanes['ko'] = {}
-            self.assertIsNone(controller._choose(view))
+            self.assertEqual(controller._choose(view), 'ko')
 
     def test_actual_worker_cli_without_key_stops_before_any_model_cache(self):
         with self.active() as (config, code, key, _):
@@ -354,8 +353,11 @@ class CanonicalLayer2ControllerTests(unittest.TestCase):
             pass
         controller = subject.Controller(self.path)
         view = subject.snapshot(controller.config)
-        view['nodes']['text.ko'] = {'status': 'ready'}
-        controller.config.lanes['ko'] = {}
+        # Uncertain jobs conservatively consume locale slots. One uncertain
+        # owner leaves the other locales able to proceed; three fill capacity.
+        for locale in ('ko', 'es'):
+            view['durableJobInspection']['jobs'].append({
+                'workUnitId': 'text.' + locale, 'status': 'uncertain'})
         self.assertTrue(controller._capacity_full(view))
         self.assertIsNone(controller._choose(view))
 
@@ -387,7 +389,7 @@ class CanonicalLayer2ControllerTests(unittest.TestCase):
             self.assertEqual(subject.Controller(self.path).tick()['proposedWorkUnit'], 'text.' + locale)
             with self.active(locale=locale) as (config, code, key, folder):
                 held = subject.Controller(self.path).tick()
-                self.assertEqual(held['reasonCode'], 'layer2_capacity_reached')
+                self.assertEqual(held['reasonCode'], 'shadow_only')
                 self.execute(config, code, key, locale=locale)
                 jobs._write_state(folder, key, 'succeeded')
             candidate = json.loads((self.root / 'outputs' / locale / 'candidate.json').read_text())
