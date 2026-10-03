@@ -70,6 +70,70 @@ final class VoiceDemoCatalogV2Tests: XCTestCase {
         XCTAssertThrowsError(try VoiceDemoCatalog.validated(encode(fixture())))
     }
 
+    func testBothEnvironmentsLoadIdenticalMatchedContractFromOwnOrigin() async throws {
+        let data = try encode(fixture())
+        for host in ["ai-for-god-sermon-audio-dev.web.app", "ai-for-god-sermon-audio.web.app"] {
+            let origin = URL(string: "https://\(host)")!
+            var requests: [URLRequest] = []
+            let catalog = try await VoiceDemoCatalog.loadMatched(origin: origin) { request in
+                requests.append(request)
+                return (data, HTTPURLResponse(url: request.url!, statusCode: 200,
+                    httpVersion: nil, headerFields: nil)!)
+            }
+            XCTAssertEqual(requests.count, 1)
+            XCTAssertEqual(requests[0].url?.host, host)
+            XCTAssertEqual(requests[0].url?.path, "/" + VoiceDemoCatalog.clipsRelativePath)
+            XCTAssertEqual(requests[0].cachePolicy, .reloadIgnoringLocalCacheData)
+            XCTAssertTrue(catalog.isSourceMatched)
+            XCTAssertEqual(catalog.speakers[0].samples.count, 3)
+            XCTAssertNotNil(catalog.speakers[0].video)
+        }
+    }
+
+    func testMissingOrInvalidMatchedCatalogNeverRequestsLegacyOrAnotherEnvironment() async throws {
+        let valid = try encode(fixture())
+        let origin = URL(string: "https://ai-for-god-sermon-audio.web.app")!
+        for status in [404, 403, 500, 200] {
+            var requests: [URLRequest] = []
+            do {
+                _ = try await VoiceDemoCatalog.loadMatched(origin: origin) { request in
+                    requests.append(request)
+                    return (status == 200 ? Data("{}".utf8) : valid,
+                        HTTPURLResponse(url: request.url!, statusCode: status,
+                            httpVersion: nil, headerFields: nil)!)
+                }
+                XCTFail("Missing/invalid matched clips must remain unavailable (HTTP \(status)).")
+            } catch { }
+            XCTAssertEqual(requests.count, 1)
+            XCTAssertEqual(requests.first?.url?.host, origin.host)
+            XCTAssertEqual(requests.first?.url?.path, "/" + VoiceDemoCatalog.clipsRelativePath)
+        }
+    }
+
+    func testMatchedCatalogRejectsRedirectAndUnsafeConfiguredOrigin() async throws {
+        let valid = try encode(fixture())
+        let origin = URL(string: "https://ai-for-god-sermon-audio.web.app")!
+        let redirected = URL(string: "https://ai-for-god-sermon-audio-dev.web.app/" + VoiceDemoCatalog.clipsRelativePath)!
+        do {
+            _ = try await VoiceDemoCatalog.loadMatched(origin: origin) { _ in
+                (valid, HTTPURLResponse(url: redirected, statusCode: 200, httpVersion: nil, headerFields: nil)!)
+            }
+            XCTFail("A redirect must not cross environments even when the catalog is valid.")
+        } catch { }
+        for unsafe in ["http://example.test", "https://user:password@example.test", "https://example.test?token=private"] {
+            var requested = false
+            do {
+                _ = try await VoiceDemoCatalog.loadMatched(origin: URL(string: unsafe)!) { request in
+                    requested = true
+                    return (valid, HTTPURLResponse(url: request.url!, statusCode: 200,
+                        httpVersion: nil, headerFields: nil)!)
+                }
+                XCTFail("Unsafe origin must be rejected before transport.")
+            } catch { }
+            XCTAssertFalse(requested)
+        }
+    }
+
     func testRejectsCrossClipAssetAndChangedEnglishManuscript() throws {
         let crossClip = changingFirstSpeaker { speaker in
             var samples = speaker["samples"] as! [[String: Any]]

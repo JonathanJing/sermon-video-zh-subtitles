@@ -95,7 +95,7 @@ private struct ListeningActivitySymbol: View {
     let isStale: Bool
 
     var body: some View {
-        Image(systemName: isStale ? "arrow.clockwise" : state.isWaiting ? "hourglass" : state.isPlaying ? "headphones" : "pause.fill")
+        Image(systemName: isStale ? "arrow.clockwise" : state.alignmentPhase?.symbolName ?? (state.isWaiting ? "hourglass" : state.isPlaying ? "headphones" : "pause.fill"))
             .foregroundStyle(.green)
             .accessibilityLabel(state.statusText(isStale: isStale))
     }

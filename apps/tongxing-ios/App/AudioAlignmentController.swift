@@ -71,6 +71,7 @@ final class AudioAlignmentController {
     private let loadPageIndex: PageIndexLoader?
     private let onState: (String, Bool, Double?) -> Void
     private let onFailure: (String) -> Void
+    private let onPhase: (ListeningAlignmentPhase) -> Void
     private let now: () -> ContinuousClock.Instant
     private let deadline: Duration
     private var requestID: UUID?
@@ -94,10 +95,12 @@ final class AudioAlignmentController {
              return try await withTaskCancellationHandler { try await work.value } onCancel: { work.cancel() }
          }, now: @escaping () -> ContinuousClock.Instant = { ContinuousClock.now }, deadline: Duration = .seconds(20),
          onState: @escaping (String, Bool, Double?) -> Void,
-         onFailure: @escaping (String) -> Void = { _ in }) {
+         onFailure: @escaping (String) -> Void = { _ in },
+         onPhase: @escaping (ListeningAlignmentPhase) -> Void = { _ in }) {
         self.playback = playback; self.capture = capture; self.getSelection = getSelection
         self.loadIndex = loadIndex; self.match = match; self.onState = onState
         self.onFailure = onFailure
+        self.onPhase = onPhase
         self.now = now; self.deadline = deadline
         self.loadPublishedIndex = loadPublishedIndex
         self.getPublishedSelection = getPublishedSelection
@@ -153,6 +156,7 @@ final class AudioAlignmentController {
     func start() {
         guard !busy else { return }
         guard playback.isReady, available, let selected = activeSelection() else {
+            onPhase(.failed)
             onState("当前音频没有可用的听声对齐资料。", false, nil); return
         }
         let token = UUID()
@@ -167,6 +171,7 @@ final class AudioAlignmentController {
         }
         wasPlaying = playback.alignmentPlaybackIntent
         playback.pauseForAlignment()
+        onPhase(.preparing)
         onState("正在准备听声对齐…", true, nil)
         timeoutTask = Task { [weak self, deadline] in
             do {
@@ -186,10 +191,22 @@ final class AudioAlignmentController {
         runningTask?.cancel(); runningTask = nil
         timeoutTask?.cancel(); timeoutTask = nil
         capture.cancel()
+        capture.onCaptureStarted = nil
         playback.cancelAlignmentSeek()
         if mayResume { playback.resumeAfterAlignment() }
+        onPhase(reportFailure ? .failed : .cancelled)
         onState(message, false, nil)
         if reportFailure && sameSelection { onFailure(message) }
+    }
+
+    private func captureAudio(seconds: Double, token: UUID) async throws -> CapturedAudio {
+        capture.onCaptureStarted = { [weak self] in
+            guard let self, self.current(token) else { return }
+            self.onPhase(.listening)
+            self.onState(seconds == 10 ? "正在听原声，约 10 秒；请保持 App 前台。"
+                         : "正在听原声，约 8 秒；请保持 App 前台。", true, nil)
+        }
+        return try await capture.capture(seconds: seconds)
     }
 
     private func run(_ selected: ActiveSelection, token: UUID) async {
@@ -204,7 +221,9 @@ final class AudioAlignmentController {
                 requestID = nil; runningTask = nil
                 timeoutTask?.cancel(); timeoutTask = nil
                 capture.cancel()
+                capture.onCaptureStarted = nil
                 if sameSelection && wasPlaying && !resumed && mayResume { playback.resumeAfterAlignment() }
+                onPhase(failed ? .failed : confirmedPosition != nil ? .aligned : .cancelled)
                 onState(status, false, confirmedPosition)
                 if failed && sameSelection { onFailure(status) }
             }
@@ -214,10 +233,10 @@ final class AudioAlignmentController {
             if case .published(let page) = selected, let loadPageIndex {
                 let index = try await loadPageIndex(page)
                 guard current(token) else { return }
-                onState("正在听原声，约 10 秒；请保持 App 前台。", true, nil)
-                let recording = try await capture.capture(seconds: 10)
+                let recording = try await captureAudio(seconds: 10, token: token)
                 guard current(token) else { return }
                 capturedStart = recording.startedAt
+                onPhase(.matching)
                 onState("正在本机匹配播放位置…", true, nil)
                 let worker = Task.detached(priority: .userInitiated) {
                     try PublishedFingerprintMatcher.match(samples: recording.samples, sampleRate: recording.sampleRate, index: index)
@@ -227,10 +246,10 @@ final class AudioAlignmentController {
                       let loadPublishedIndex {
                 let index = try await loadPublishedIndex(legacy)
                 guard current(token) else { return }
-                onState("正在听原声，约 10 秒；请保持 App 前台。", true, nil)
-                let recording = try await capture.capture(seconds: 10)
+                let recording = try await captureAudio(seconds: 10, token: token)
                 guard current(token) else { return }
                 capturedStart = recording.startedAt
+                onPhase(.matching)
                 onState("正在本机匹配播放位置…", true, nil)
                 let worker = Task.detached(priority: .userInitiated) {
                     try PublishedFingerprintMatcher.match(samples: recording.samples, sampleRate: recording.sampleRate, index: index)
@@ -240,10 +259,10 @@ final class AudioAlignmentController {
                 guard case .legacy(let legacy) = selected else { throw AudioAlignmentError.unavailable }
                 let index = try await loadIndex(legacy)
                 guard current(token) else { return }
-                onState("正在听原声，约 8 秒；请保持 App 前台。", true, nil)
-                let recording = try await capture.capture(seconds: 8)
+                let recording = try await captureAudio(seconds: 8, token: token)
                 guard current(token) else { return }
                 capturedStart = recording.startedAt
+                onPhase(.matching)
                 onState("正在本机匹配播放位置…", true, nil)
                 result = try await match(recording, index)
             }

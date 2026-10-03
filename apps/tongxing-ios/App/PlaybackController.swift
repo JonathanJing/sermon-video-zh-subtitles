@@ -29,6 +29,7 @@ final class PlaybackController: ObservableObject {
         alignmentRevision = UUID()
         cancelAlignmentSeek()
         onManualInteraction?()
+        setAlignmentPhase(nil)
     }
 
     var alignmentPlaybackIntent: Bool { wantsPlayback || isPlaying || isWaiting }
@@ -56,6 +57,24 @@ final class PlaybackController: ObservableObject {
     }
 
     private let liveActivity = ListeningLiveActivityCoordinator()
+    private var alignmentPhase: ListeningAlignmentPhase?
+    private var alignmentFeedbackTask: Task<Void, Never>?
+
+    func setAlignmentPhase(_ phase: ListeningAlignmentPhase?) {
+        // First ship this UI in the separately installed Beta app.
+        guard Bundle.main.object(forInfoDictionaryKey: "TongxingURLScheme") as? String == "tongxing-beta" else { return }
+        alignmentFeedbackTask?.cancel()
+        alignmentPhase = phase
+        publishLiveActivity()
+        if let phase, !phase.isActive {
+            alignmentFeedbackTask = Task { [weak self] in
+                do { try await Task.sleep(for: .seconds(8)) } catch { return }
+                guard let self else { return }
+                self.alignmentPhase = nil
+                self.publishLiveActivity()
+            }
+        }
+    }
     private var languageObservation: AnyCancellable?
     @Published private(set) var statisticsEnabled = UserDefaults.standard.bool(forKey: ListeningStatistics.preferenceKey)
     var statisticsContentLocale = "zh-Hans"
@@ -378,6 +397,7 @@ final class PlaybackController: ObservableObject {
     func clear() { clear(retaining: nil) }
 
     private func clear(retaining transfer: PublishedLanguageTransfer?) {
+        setAlignmentPhase(nil)
         publishedLanguageTransfer = nil
         sampleStatistics(playing: false, clearing: true)
         saveProgress()
@@ -794,7 +814,8 @@ final class PlaybackController: ObservableObject {
         guard let identity, isReady else { liveActivity.end(); return }
         liveActivity.update(title: title, speaker: speaker, position: position, duration: duration,
                             isPlaying: isPlaying, sourceKey: identity.key + "|" + sourceID,
-                            languageCode: AppLocalization.shared.language.rawValue, isWaiting: isWaiting)
+                            languageCode: AppLocalization.shared.language.rawValue, isWaiting: isWaiting,
+                            alignmentPhase: alignmentPhase)
     }
 
     private func publishNowPlaying() {

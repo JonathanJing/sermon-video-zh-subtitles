@@ -1,4 +1,5 @@
 import Foundation
+import TongxingCore
 
 #if os(iOS) && canImport(ActivityKit)
 import ActivityKit
@@ -28,6 +29,7 @@ final class ListeningLiveActivityCoordinator {
     private var suppressedSourceKey: String?
     private var lastRequestAttempt = Date.distantPast
     private var lastRequestSourceKey: String?
+    private var startedForAlignment = false
     #endif
 
     init(enabled: Bool = true) {
@@ -44,7 +46,7 @@ final class ListeningLiveActivityCoordinator {
     /// User-dismissed activities are not recreated for the same loaded source.
     func update(title: String, speaker: String, position: Double, duration: Double,
                 isPlaying: Bool, sourceKey: String, languageCode: String = "zh",
-                isWaiting: Bool = false) {
+                isWaiting: Bool = false, alignmentPhase: ListeningAlignmentPhase? = nil) {
         #if os(iOS) && canImport(ActivityKit)
         guard enabled else { return }
         guard position.isFinite, duration.isFinite, duration > 0, duration <= 24 * 3600,
@@ -56,7 +58,7 @@ final class ListeningLiveActivityCoordinator {
         let state = ListeningActivityAttributes.ContentState(
             title: boundedText(title, maximumBytes: 800), speaker: boundedText(speaker, maximumBytes: 400),
             position: max(0, position), duration: duration, isPlaying: isPlaying,
-            isWaiting: isWaiting, sampledAt: Date(), languageCode: languageCode.hasPrefix("en") ? "en" : "zh"
+            isWaiting: isWaiting, sampledAt: Date(), languageCode: languageCode.hasPrefix("en") ? "en" : "zh", alignmentPhase: alignmentPhase
         )
         enqueue(Snapshot(sourceKey: key, state: state))
         #endif
@@ -82,6 +84,7 @@ final class ListeningLiveActivityCoordinator {
             var stopped = activity.content.state
             stopped.isPlaying = false
             stopped.isWaiting = false
+            stopped.alignmentPhase = nil
             let finalContent = ActivityContent(state: stopped, staleDate: nil)
             Task { await activity.end(finalContent, dismissalPolicy: .immediate) }
         }
@@ -135,7 +138,7 @@ final class ListeningLiveActivityCoordinator {
         }
 
         guard let activity else {
-            guard snapshot.state.isPlaying, suppressedSourceKey != snapshot.sourceKey,
+            guard snapshot.state.isPlaying || snapshot.state.alignmentPhase?.isActive == true, suppressedSourceKey != snapshot.sourceKey,
                   ActivityAuthorizationInfo().areActivitiesEnabled,
                   UIApplication.shared.applicationState == .active,
                   lastRequestSourceKey != snapshot.sourceKey || Date().timeIntervalSince(lastRequestAttempt) >= 30 else { return }
@@ -147,12 +150,26 @@ final class ListeningLiveActivityCoordinator {
                     content: content(for: snapshot.state), pushType: nil
                 )
                 self.activity = created
+                startedForAlignment = !snapshot.state.isPlaying
                 lastPublished = snapshot
                 observeState(of: created)
             } catch {
                 // Live Activities are optional; denial or system limits must not
                 // replace the player's real error/status or interrupt playback.
             }
+            return
+        }
+        if snapshot.state.isPlaying { startedForAlignment = false }
+        if startedForAlignment && snapshot.state.alignmentPhase?.isActive != true && !snapshot.state.isPlaying {
+            // A paused alignment-only session has ended; retain its final result
+            // briefly on the Lock Screen, with no active microphone/timer symbol.
+            self.activity = nil
+            stateObserver?.cancel()
+            stateObserver = nil
+            await activity.end(content(for: snapshot.state), dismissalPolicy: .after(Date().addingTimeInterval(8)))
+            lastPublished = nil
+            lastRequestSourceKey = nil
+            lastRequestAttempt = .distantPast
             return
         }
         guard shouldPublish(snapshot) else { return }
@@ -180,6 +197,7 @@ final class ListeningLiveActivityCoordinator {
         let elapsed = new.sampledAt.timeIntervalSince(old.sampledAt)
         let expectedPosition = old.position + (old.isPlaying ? max(0, elapsed) : 0)
         return old.title != new.title || old.speaker != new.speaker || old.languageCode != new.languageCode
+            || old.alignmentPhase != new.alignmentPhase
             || old.isPlaying != new.isPlaying || old.isWaiting != new.isWaiting
             || abs(old.duration - new.duration) > 0.2 || abs(expectedPosition - new.position) > 0.2
             || (new.isPlaying && elapsed >= 15)
@@ -188,7 +206,8 @@ final class ListeningLiveActivityCoordinator {
     private func content(for state: ListeningActivityAttributes.ContentState) -> ActivityContent<ListeningActivityAttributes.ContentState> {
         // If the app stops reporting while playing, show a stale message instead
         // of indefinitely projecting progress from the last reported position.
-        ActivityContent(state: state, staleDate: state.isPlaying ? state.sampledAt.addingTimeInterval(45) : nil)
+        ActivityContent(state: state, staleDate: state.alignmentPhase?.isActive == true ? state.sampledAt.addingTimeInterval(15)
+                        : state.isPlaying ? state.sampledAt.addingTimeInterval(45) : nil)
     }
 
     private func endCurrent() async {
@@ -203,6 +222,7 @@ final class ListeningLiveActivityCoordinator {
         var stopped = previous.content.state
         stopped.isPlaying = false
         stopped.isWaiting = false
+        stopped.alignmentPhase = nil
         await previous.end(ActivityContent(state: stopped, staleDate: nil), dismissalPolicy: .immediate)
     }
 

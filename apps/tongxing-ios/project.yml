@@ -113,6 +113,8 @@ targets:
           TONGXING_URL_SCHEME: tongxing-beta
           MARKETING_VERSION: "1.2.0"
           CURRENT_PROJECT_VERSION: "48"
+    dependencies:
+      - package: TongxingCore
   TongxingTests:
     configFiles:
       Debug: Config/Signing.xcconfig

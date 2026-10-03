@@ -7,18 +7,22 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		01889D8EA2866C1BBA9A3B83 /* BetaNotifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = A53125E45FD7C62523C2E7E2 /* BetaNotifications.swift */; };
 		042AC6D42BFDE10152C60248 /* VoiceDemoCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01D4A798172E895D46CF48E4 /* VoiceDemoCatalog.swift */; };
+		07BD5A2684273F556EB2A486 /* ListeningActivityStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE351B05886BDF3AF8AB9ECE /* ListeningActivityStateTests.swift */; };
 		17719995BCE43C60385DB306 /* PlaybackControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE58D0C358A74F0BDE595617 /* PlaybackControllerTests.swift */; };
 		1922373411A3F2980F9E9B7A /* AppStoreScreenshotUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D941F809567228C8BDF94B2 /* AppStoreScreenshotUITests.swift */; };
 		1F287CC791B5CA1037903C80 /* Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDD37841E68B061E39E91375 /* Localization.swift */; };
 		23FBE0C19259FFC619DE3B8B /* PrivacySupportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E53066E0326AFD8370B5145 /* PrivacySupportView.swift */; };
 		23FDF718141336A8978A8DB3 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 07B59FA4533A491CF4AA2D83 /* Assets.xcassets */; };
 		272F205288C38B205D9DE540 /* TongxingApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61FE1B88425139B2F592ED0A /* TongxingApp.swift */; };
+		30E1F08014CAA176EDE20CAE /* TongxingCore in Frameworks */ = {isa = PBXBuildFile; productRef = 2304DE01708325CD4783A9D2 /* TongxingCore */; };
 		318C506CF300A57522C9F2F9 /* PlaybackDock.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAE586AE0AE5D2F197DC5483 /* PlaybackDock.swift */; };
 		32B58C5985220B581D4CF45B /* ListeningActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60D53F716EC96280DEAF16C4 /* ListeningActivityAttributes.swift */; };
 		35529B2801237F81F67785E8 /* TongxingCore in Frameworks */ = {isa = PBXBuildFile; productRef = 46FC649E9CD7E0BF9CEF7E49 /* TongxingCore */; };
 		4ABE01FD69729C4F7F3EC0BD /* ListeningActivityExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 4AE35BDEC7081304D75711B2 /* ListeningActivityExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		6C29EA8473280EA03BE25CF6 /* ListeningActivityWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70BEE8330224D04ACF54EE70 /* ListeningActivityWidget.swift */; };
+		6ED24D1A41D86A3FD506381B /* BetaNotificationUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 584EEEF8EAD4278FE9B4381A /* BetaNotificationUITests.swift */; };
 		7EC13E455FCB8AD28F90271C /* AudioAlignmentController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98A292DFC6FBB07302A4DE77 /* AudioAlignmentController.swift */; };
 		82DAE4DBC18C3F1A4BD05687 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 02EF54CEB76892C25F99A6FB /* Localizable.xcstrings */; };
 		8B8A2624687249CFAB61DAFB /* ListeningFlowUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 239227789D17BF0B1B0A1614 /* ListeningFlowUITests.swift */; };
@@ -96,6 +100,7 @@
 		3E53066E0326AFD8370B5145 /* PrivacySupportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacySupportView.swift; sourceTree = "<group>"; };
 		4AE35BDEC7081304D75711B2 /* ListeningActivityExtension.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = ListeningActivityExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		502E58B32BA9CB649A03DB11 /* AppIdentityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIdentityTests.swift; sourceTree = "<group>"; };
+		584EEEF8EAD4278FE9B4381A /* BetaNotificationUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetaNotificationUITests.swift; sourceTree = "<group>"; };
 		58CF4F36B9265709AAF09A1C /* Signing.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Signing.xcconfig; sourceTree = "<group>"; };
 		60D53F716EC96280DEAF16C4 /* ListeningActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningActivityAttributes.swift; sourceTree = "<group>"; };
 		6163F70382A5001D532DC114 /* SwiftUIPreviewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftUIPreviewTests.swift; sourceTree = "<group>"; };
@@ -108,11 +113,13 @@
 		8D941F809567228C8BDF94B2 /* AppStoreScreenshotUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStoreScreenshotUITests.swift; sourceTree = "<group>"; };
 		98A292DFC6FBB07302A4DE77 /* AudioAlignmentController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioAlignmentController.swift; sourceTree = "<group>"; };
 		9BF531D6B8AD0E94016F0BC3 /* AudioAlignmentControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioAlignmentControllerTests.swift; sourceTree = "<group>"; };
+		A53125E45FD7C62523C2E7E2 /* BetaNotifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetaNotifications.swift; sourceTree = "<group>"; };
 		AAE586AE0AE5D2F197DC5483 /* PlaybackDock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackDock.swift; sourceTree = "<group>"; };
 		BC6D116D3A73A078D6FA5218 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
 		BD0FEA1F83F4300CB78A0935 /* UITestLaunch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITestLaunch.swift; sourceTree = "<group>"; };
 		BDD37841E68B061E39E91375 /* Localization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Localization.swift; sourceTree = "<group>"; };
 		D76315F9ECA722C00FEE69F2 /* TongxingUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = TongxingUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		DE351B05886BDF3AF8AB9ECE /* ListeningActivityStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningActivityStateTests.swift; sourceTree = "<group>"; };
 		E5859794C1B0B7852C183B63 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		E89C7099077BFCEE7659F81B /* TongxingTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = TongxingTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E8CDE0AD081CB32BAE3CD0CB /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
@@ -139,6 +146,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		4949B611AFE09920E1B8F369 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				30E1F08014CAA176EDE20CAE /* TongxingCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -146,6 +161,7 @@
 			isa = PBXGroup;
 			children = (
 				8D941F809567228C8BDF94B2 /* AppStoreScreenshotUITests.swift */,
+				584EEEF8EAD4278FE9B4381A /* BetaNotificationUITests.swift */,
 				239227789D17BF0B1B0A1614 /* ListeningFlowUITests.swift */,
 			);
 			path = UITests;
@@ -177,6 +193,7 @@
 				0F81E8D165D65FEF70E65FFF /* AppModel.swift */,
 				07B59FA4533A491CF4AA2D83 /* Assets.xcassets */,
 				98A292DFC6FBB07302A4DE77 /* AudioAlignmentController.swift */,
+				A53125E45FD7C62523C2E7E2 /* BetaNotifications.swift */,
 				3A757BEABA30910DC76E26BE /* ContentView.swift */,
 				BC6D116D3A73A078D6FA5218 /* DesignSystem.swift */,
 				6FEF8605856DB0FE84A04EC2 /* EnglishLocateSheet.swift */,
@@ -226,6 +243,7 @@
 			children = (
 				502E58B32BA9CB649A03DB11 /* AppIdentityTests.swift */,
 				9BF531D6B8AD0E94016F0BC3 /* AudioAlignmentControllerTests.swift */,
+				DE351B05886BDF3AF8AB9ECE /* ListeningActivityStateTests.swift */,
 				EE58D0C358A74F0BDE595617 /* PlaybackControllerTests.swift */,
 				6163F70382A5001D532DC114 /* SwiftUIPreviewTests.swift */,
 				6E55BEC389D3326BFB083428 /* VoiceDemoCatalogV2Tests.swift */,
@@ -264,6 +282,7 @@
 			buildConfigurationList = 3AAC76A3DAB8779AA97B315E /* Build configuration list for PBXNativeTarget "ListeningActivityExtension" */;
 			buildPhases = (
 				C61392996C455A6CC18E7F94 /* Sources */,
+				4949B611AFE09920E1B8F369 /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -271,6 +290,7 @@
 			);
 			name = ListeningActivityExtension;
 			packageProductDependencies = (
+				2304DE01708325CD4783A9D2 /* TongxingCore */,
 			);
 			productName = ListeningActivityExtension;
 			productReference = 4AE35BDEC7081304D75711B2 /* ListeningActivityExtension.appex */;
@@ -412,6 +432,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				1922373411A3F2980F9E9B7A /* AppStoreScreenshotUITests.swift in Sources */,
+				6ED24D1A41D86A3FD506381B /* BetaNotificationUITests.swift in Sources */,
 				8B8A2624687249CFAB61DAFB /* ListeningFlowUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -422,6 +443,7 @@
 			files = (
 				9A00442EA947A8B5939AB68B /* AppIdentityTests.swift in Sources */,
 				C2AF9808AFFEED2AD7D2DF2A /* AudioAlignmentControllerTests.swift in Sources */,
+				07BD5A2684273F556EB2A486 /* ListeningActivityStateTests.swift in Sources */,
 				17719995BCE43C60385DB306 /* PlaybackControllerTests.swift in Sources */,
 				A442F0B6EE2D16D0DAE46A00 /* SwiftUIPreviewTests.swift in Sources */,
 				CB435A938093472AA1DF77EB /* VoiceDemoCatalogV2Tests.swift in Sources */,
@@ -443,6 +465,7 @@
 			files = (
 				F104CF6576ABBCDDF4B54A62 /* AppModel.swift in Sources */,
 				7EC13E455FCB8AD28F90271C /* AudioAlignmentController.swift in Sources */,
+				01889D8EA2866C1BBA9A3B83 /* BetaNotifications.swift in Sources */,
 				C84F91355DB74C84BAC96384 /* ContentView.swift in Sources */,
 				C7430BCC556F70CBE78D8CDB /* DesignSystem.swift in Sources */,
 				94B466A5A536CBD9995786DE /* EnglishLocateSheet.swift in Sources */,
@@ -1167,6 +1190,10 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		2304DE01708325CD4783A9D2 /* TongxingCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TongxingCore;
+		};
 		46FC649E9CD7E0BF9CEF7E49 /* TongxingCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = TongxingCore;

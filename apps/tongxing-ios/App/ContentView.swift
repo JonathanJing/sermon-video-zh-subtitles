@@ -68,6 +68,12 @@ struct ContentView: View {
             .overlay { playbackMoreOverlay }
         }
         .environment(\.locale, localization.locale)
+        #if os(iOS)
+        .onReceive(NotificationCenter.default.publisher(for: .betaNotificationOpened)) { _ in
+            sheet = nil
+            showingPlaybackMore = false
+        }
+        #endif
         .task(id: model.publishedTranscriptSelectionKey) {
             await model.loadSelectedPublishedTranscript()
         }
@@ -1337,6 +1343,13 @@ private struct AboutSheet: View {
                         Label(localization.text("隐私与支持"), systemImage: "hand.raised")
                     }
                     .accessibilityIdentifier("privacy-support-link")
+                    #if os(iOS)
+                    if BetaNotificationController.isBeta {
+                        NavigationLink { BetaNotificationSettingsView(model: model) } label: {
+                            Label("Beta 通知测试", systemImage: "bell.badge")
+                        }.accessibilityIdentifier("beta-notification-settings")
+                    }
+                    #endif
                 }
                 if let week = model.selectedWeek {
                     Section(localization.text("音频版本")) {

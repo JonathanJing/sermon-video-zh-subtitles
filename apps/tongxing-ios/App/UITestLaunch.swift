@@ -20,7 +20,8 @@ enum UITestLaunch {
             .appendingPathComponent("Tongxing-UITests", isDirectory: true)
             .appendingPathComponent(runID.uuidString, isDirectory: true)
         return makeFixtureModel(supportDirectory: support,
-            statisticsDefaults: UserDefaults(suiteName: "Tongxing-UITests-\(runID.uuidString)")!)
+            statisticsDefaults: UserDefaults(suiteName: "Tongxing-UITests-\(runID.uuidString)")!,
+            nativePublishedPage: ProcessInfo.processInfo.arguments.contains("--ui-testing-notification"))
     }
 
     static func voiceDemoFixture() throws -> VoiceDemoCatalog {

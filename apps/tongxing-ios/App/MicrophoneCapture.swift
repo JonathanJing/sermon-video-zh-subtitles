@@ -24,11 +24,20 @@ enum AudioAlignmentError: Error, LocalizedError, Equatable {
 protocol MicrophoneCapturing: AnyObject {
     func capture(seconds: Double) async throws -> CapturedAudio
     func cancel()
+    var onCaptureStarted: (() -> Void)? { get set }
+}
+
+extension MicrophoneCapturing {
+    var onCaptureStarted: (() -> Void)? {
+        get { nil }
+        set {}
+    }
 }
 
 /// One finite, in-memory capture. This object never writes audio to disk or network.
 @MainActor
 final class MicrophoneCapture: MicrophoneCapturing {
+    var onCaptureStarted: (() -> Void)?
     #if os(iOS)
     private var engine: AVAudioEngine?
     private var continuation: CheckedContinuation<CapturedAudio, Error>?
@@ -77,6 +86,7 @@ final class MicrophoneCapture: MicrophoneCapturing {
                         }
                         engine.prepare()
                         try engine.start()
+                        onCaptureStarted?()
                         if Task.isCancelled { finish(.failure(CancellationError()), token: token) }
                     } catch { finish(.failure(error), token: token) }
                 }
