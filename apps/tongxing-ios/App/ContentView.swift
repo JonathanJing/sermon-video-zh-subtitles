@@ -159,7 +159,7 @@ struct ContentView: View {
                         } else if let page = model.selectedMultilingualPage {
                             VStack(alignment: .leading, spacing: verticalSizeClass == .compact ? 8 : 12) {
                                 HStack {
-                                    Text(localization.text("已发布页面"))
+                                    Text(localization.text(model.allowsDevCandidates ? "Dev 内容" : "已发布页面"))
                                         .font(.caption.weight(.medium)).foregroundStyle(.secondary)
                                     Spacer(minLength: 8)
                                     appLanguageMenu
@@ -643,6 +643,10 @@ struct ContentView: View {
     }
 
     @ViewBuilder private var publishedReading: some View {
+        if let notice = model.selectedContentReviewNotice {
+            Text(localization.text(notice)).font(.footnote).foregroundStyle(.secondary)
+                .accessibilityIdentifier("content-review-notice")
+        }
         if model.isLoadingPublishedTranscript {
             ProgressView(localization.text("正在读取本周证道…"))
         } else if let error = model.publishedTranscriptError {
@@ -1023,6 +1027,7 @@ private struct TargetLanguageSheet: View {
         if target.capabilities.contains(.captions) { values.append(localization.text("字幕")) }
         if target.audioStatus == "human_reviewed" { values.append(localization.text("音频")) }
         if target.capabilities.contains(.download) { values.append(localization.text("可下载")) }
+        if target.contentStatus == "machine_reviewed" { values.append(localization.text("Dev 候选 · 仅机器审核")) }
         return values.joined(separator: " · ")
     }
 }
@@ -1166,7 +1171,7 @@ private struct WeekSheet: View {
             ScrollView {
                 LazyVStack(spacing: 0) {
                     if !model.independentPages.isEmpty {
-                        Text(localization.text("已发布页面"))
+                        Text(localization.text(model.allowsDevCandidates ? "Dev 内容" : "已发布页面"))
                             .font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal, 20).padding(.top, 18)

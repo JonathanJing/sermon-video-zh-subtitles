@@ -1,6 +1,6 @@
 # Dev 统一 Backlog
 
-更新：2026-10-01。本页是项目 **Dev 开发工作的唯一顶层 backlog**，统一管理四层生产、Firebase Dev、Web／iOS、现场对齐、审核后台、Tracker、CI/CD 和独立 `live_session` 的优先级与依赖。新增开发事项先在这里取得稳定 ID；专项文档只展开接口、实现和验收，不再各自形成互相竞争的顶层排期。
+更新：2026-10-03。本页是项目 **Dev 开发工作的唯一顶层 backlog**，统一管理四层生产、Firebase Dev、Web／iOS、现场对齐、审核后台、Tracker、CI/CD 和独立 `live_session` 的优先级与依赖。新增开发事项先在这里取得稳定 ID；专项文档只展开接口、实现和验收，不再各自形成互相竞争的顶层排期。
 
 English index: [backlog.md](./backlog.md)
 
@@ -916,3 +916,110 @@ PR #198 首轮CI进一步发现旧CLI夹具缺runtime/checkpoint声明，补齐�
 最新CI还发现两处旧测试兼容：POC父修订测试误取时钟workload，现精确选render_output；历史actual-trace测试逐项验新增clock/telemetry缺测字段后完整比较旧合同。生产指标、收据守卫和历史报告未变；全POC346项、报告/时钟90项及最终15资产快照20项定向回归通过，原失败保留。
 
 CI环境还暴露工具下载占用原job期限：18ae2f0的root-0已通过1609 tests/8可选skip；Prefect安装阶段被10分钟上限取消，root-1安装后测试被20分钟上限取消，均保留日志且不冒充完整测试终态。仅将CI job上限改为30/40分钟，测试和业务provider预算/期限/守卫不变；归入既有诊断验证接线，最终远程结果以最新head检查为准。
+
+
+## 今天（10/3）
+
+本节最初只授权文档与只读计划；文档已写不表示实现完成。用户随后在本任务明确“在我们这开始开发”，并要求“审核，继续开发完”，本地软件实施范围已更新，见[本地开发入口](pr229-local-development.zh.md)。模型／设备实验、通知、新 build、部署和真实账号配置仍须各自前置及授权。
+
+<a id="app-final-delivery-contract-20261003"></a>
+
+## 2026-10-03 最终 App 交付合同与 PDF 按需解耦
+
+用户反馈当前最终页面与预期有出入；尚未凭截图定位具体 App UI 缺陷。明确的产品目标是 **App 内讲道页面及配套翻译、配音、大纲、默想**。初稿记录待实现合同；后续本地实现新增只读产物与证据检查，实际客户端功能、每语言配音批准和发布仍按完整交付范围处理。
+
+| ID | 优先级／状态 | 待交付与验收条件 | 依赖 |
+|---|---|---|---|
+| `DEV-L4-006` | P1 / `in_progress` | 新增四产物准入及显式 App 交付包 producer，接入 Supervisor、end_to_end 和 local production 的独立 completion scope；无 PDF、失败／恢复、重启去重、旧批准拒绝、活／未知 owner 和自包含包消费通过离线集成。完成仅 prepared_not_published，默认 dual_pdf 保留。详见[入口](pr229-local-development.zh.md)及[producer](app-delivery-workflow.zh.md)。模型生成、双端 publisher／回退、通知及真实双端批准／设备验收仍待完成；软件测试不关闭实际交付。 | `DEV-L4-001/003/004/005`、`DEV-E2E-001`；语言及声音决策分别归 `DEV-L2-002` / `DEV-L3-003` |
+
+用户已确定产品目标和 PDF 按需定位；语言覆盖、跨语言声音授权和实际执行窗口仍按运行计划确认。后续本地实现新增独立 schema／检查入口和客户端能力门禁，保留旧协议／历史收据；没有改正式发布器、PDF 生产配置或新增客户端产品功能，没有启动生成／部署。
+
+
+### 内容页面必需发布顺序（用户 2026-10-03 决策）
+
+`DEV-L4-006` 的正式内容发布门禁：冻结同一内容候选 → iOS Beta 与 Firebase Dev 都可见 → 人工查看并保存明确批准收据 → 提升至 iOS 正式内容源与 Firebase 正式 App。两端校验相同来源、内容版本及翻译/配音/大纲/默想的对应产物 hash；记录环境身份、App/协议版本、审核范围、批准者与时间。受影响内容或绑定变化后，相关查看/批准失效并重做；机器 pass、HTTP 成功或一端可见不能替代两端人工批准。
+
+这是内容页面发布路径，不要求每周重打 iOS 包。若代码/协议变更确需新版 iOS，另走 TestFlight/App Review，核对仓库 Beta/Production 各自身份和配置；不承诺同一二进制直接晋级。用户 14:26 UTC 明确正式 App 指 iOS 和 Firebase 两个正式版 App，两端分别验收可见、可用。生产双端发布须记录各自版本与产物 hash、部分失败及回退一致性；一端成功不得宣布整体发布完成。本地检查覆盖同源双端、错误环境/版本、变更后旧批准拒绝及未批准不提升，不发布任何 Beta、Dev 或正式内容。
+
+
+### Dev 期次目录可辨识与正式入口范围
+
+| ID | 优先级／状态 | 已知证据及待交付与验收 | 依赖 |
+|---|---|---|---|
+| `DEV-L4-007` | P1 / `in_progress` | Web 已分组并区分同名 ID；修复冻结真实三语 Dev 候选的 Web／Swift reader 与 Beta 选择。明确 Beta＋Dev origin 才接纳候选并标机器审核；Production cold／cache／offline 只保留 hash 核验后的已发布人审语言，超时不丢已通过 sibling。Web 464、Core 71 通过／6 跳过、Infrastructure 42 通过／5 跳过、AppModel 真实 JSON 2 项及未签名 Beta build 通过。待合并和实际部署／设备验收；未改线上目录。 | `DEV-L4-006`、`DEV-L4-005`；实际 catalog/run 身份待核对 |
+
+原截图只证明 Dev 下拉混展示，不证明正式生产目录如此。菜单遮挡正文，不能据此判断四项产物缺失或质量差。图中没有 v2/v3/PDF；术语与 PDF 定位变更依据明确用户决策。后续 Web 分区／过滤实现的本地验证与原截图、远程环境验收分别记录。
+
+
+<a id="ste-instructions-ab-backlog-20261003"></a>
+
+### STE 文档澄清准备
+
+| ID | 优先级／状态 | 待交付与验收 | 依赖／待决定 |
+|---|---|---|---|
+| `DEV-STE-003` | P1 / `in_progress` | 文档已区分 locale 审批依赖独立与单 active job 容量/uncertain 占位；controller 定向离线回归通过，release-plan 条件静态核对。待合并，不标 complete | 保留现有容量；跨 locale 并发另立范围 |
+| `DEV-STE-004` | P1 / `in_progress` | 文档已区分 renderer 声音身份、batch 实现身份与受控兼容分支；离线验证兼容/不兼容及 WAV/收据篡改拒绝，未扩大名单。待合并 | `DEV-L3-001`；仅澄清现有边界 |
+| `DEV-STE-005` | P1 / `in_progress` | 已补 unit-instructions 完整输入、job/locale/group/text hash、operatorEvidence、override 与 zh-Hans spokenText 限制。审核后恢复 renderer 原字节，现有 CLI 参数用新增文档交接，避免说明改动使音频缓存失效。离线输入拒绝例通过，待合并 | `DEV-L3-001`；现有输入契约不变 |
+
+#### 2026-10-03 本地首批开发与验证
+
+用户在当前任务明确“在我们这开始开发”，本批在基于 PR #229 的 `codex/pr229-development` 独立 worktree 实施 `DEV-STE-003/004/005`。此前“今天仅文档计划／云端实现”的执行限制在这三项本地开发范围内由此授权更新；其他 App、费用配置、模型／设备实验、生产与发布事项仍按各自前置和授权处理。
+
+后续“审核，继续开发完”将本地软件范围扩至 `DEV-L4-006/007` 和 `DEV-COST-001` 的离线部分，交付在 [PR #231](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/231)。真实客户端／账号／生产结果仍独立验收；完整范围与迁移边界见[本地开发入口](pr229-local-development.zh.md)。
+
+改动见 [Agent 指令](../AGENTS.md)、[四层合同](multilingual-production-interfaces.zh.md) 和 [renderer 说明](formal-layer3-renderer.zh.md)。首批 `4899885` 未改变 controller 容量、输入校验、合成参数、声音身份或兼容名单，但 CLI help 改变实现文件 SHA。后续独立审核复现旧 batch>1 缓存续跑拒绝及 preview 重新合成，现已恢复 renderer 与 #229 基线完全相同的文件字节；原 cache 身份、兼容名单和生产产物不变。
+
+验证：临时隔离 Python 环境按 requirements 的 `jsonschema>=4.23,<5` 补齐依赖后，`python -m unittest tests.test_canonical_layer2_controller tests.test_render_formal_target_language_speech tests.test_formal_audio_batching` 共 69 项通过；renderer `--help` 退出 0。临时离线夹具另核验 unit-instructions 的 3 条接受路径、11 条拒绝路径，以及现有兼容谓词的 2 条接受／3 条拒绝路径。仅调用现有校验函数和模拟测试，不调用真实模型、不修改生产产物，不作为新音频或设备验收。
+
+<a id="provider-cost-isolation-20261003"></a>
+
+## OpenAI 环境隔离、用途归因与费用对账
+
+| ID | 优先级／状态 | 待交付与验收 | 依赖／待决定 |
+|---|---|---|---|
+| `DEV-COST-001` | P1 / `in_progress` | 已实现离线 dev/prod／用途隔离、逐 attempt／unknown、缓存 token、分页／nullable 归因和 Decimal 对账；新增原生 Costs 导出的离线解析，拒绝重复分区／断链／缺日／错误类型／极限日期，固定 pending 结算，40 项相关回归及独立审核通过。[入口](pr229-local-development.zh.md)。未调用真实 Costs API 或接入 producer 归因；预算接线及真实配置／账单另行验收，实际配置归 DEV-COST-002。 | 既有日志合同与 `DEV-STE-006`；真实 Project 映射、最小权限、secrets、hard limits 数值及执行窗口待单独安全授权 |
+
+只在实际 ASR provider=OpenAI 时配置 OpenAI transcription key；其他 provider 独立账本，按实际计量，不强制换 provider。纯阶段归因不必每 stage 拆 Project；只有需要各阶段独立 hard budget、权限或模型/速率政策时，再决定 workload Projects。
+
+截至 2026-10-03 核实：[Costs API](https://developers.openai.com/api/reference/resources/admin/subresources/organization/subresources/usage/methods/costs) 支持 api_key_id 分组及 api_key_ids 筛选，成本按日聚合，归因字段可为 null。保留 unattributed，不强行分摊。组织/Project 的 [hard spend limit](https://developers.openai.com/api/docs/guides/spend-limits) 达限会拒绝受影响请求（429）；传播并非即时，金额可能略超。Spend alert 仅通知而不中断，不能把所有 budget 写成 soft，也不能承诺绝对实时零超额。环境隔离参照 [production best practices](https://developers.openai.com/api/docs/guides/production-best-practices)。
+
+应用账本建议字段：environment、provider、project_id、credential_alias 或 api_key_id、job_id、stage、experiment_arm、model、provider_request_id、attempt_id、usage、estimated_cost、pricing_version、status。仅记安全别名/ID，不记 key 原值；最小权限和 Secret Manager 配置步骤需独立授权。不得将个人充值金额、卡号或付款资料写入仓库。
+
+每次重试独立计账，unknown 不记零；估算与 provider cost 每日对账，保留时间桶、归因缺口及差异，不能把 aggregate 当逐请求账单。输入、输出、缓存 token 分开保存，缓存 token 与输入总量的包含关系按 provider 定义，避免重复相加；ASR 按实际 provider 计量。历史充值不等于 usage 或阶段费用；新分 key 不能追溯恢复缺失旧日志。
+
+- [x] 无付费 offline fixtures 验证 dev/prod 和用途别名路由、错误映射拒绝、非 OpenAI ASR 不取 OpenAI key、日志脱敏及无密钥原文。
+- [x] 离线覆盖每 attempt、未知结果、缓存 token、nullable/unattributed、日聚合延迟/分页和估算对账差异，不伪造精确阶段费用。
+- [ ] 将 A/B 成本预算和独立缓存接入 `DEV-STE-006`；应用有界派发预算与 provider hard limit 分别验收，429/unknown 不自动重发。
+实际 Project/key/service-account/权限/限额配置和真实归因测试移交明天 DEV-COST-002；DEV-COST-001 后续已按本地授权实现离线检查，不配置账号。
+
+本地软件实现不创建 Project、key 或 service account，不改额度／权限、不读秘密、不调用模型。新代码是离线证据检查，不证明真实配置、限额生效或账单验证。
+
+
+## 明天（10/4）
+
+以下稳定任务定义由本主 backlog 保留。独立依赖 [PR #230](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/230) 的日期文档展开候选文本、实验矩阵及操作清单；其延迟、关闭或分支删除不移除这些任务的状态和验收标准。没有前提的工作不承诺当天完成。
+
+| ID | 优先级／状态 | 交付与验收 | 依赖／待决定 |
+| --- | --- | --- | --- |
+| `DEV-STE-001` | P1 / `pending` | 分阅读稿、元数据和口播明确 references_only 与经文短引用规则；冻结完整候选文本、来源 SHA、插入／替换位置和新 prompt／policy 身份。预注册全文／口播分层的 paired A/B，验忠实度、未授权新增引用；未批准候选不得改生产提示词。 | `DEV-L2-001`；引用范围签字、获批样本、费用上限及执行窗口 |
+| `DEV-STE-002` | P1 / `pending` | 保留 Sol reviewer-editor 职责；修复一个 issue 不得清除其余 concern，未解决项保留 issues／uncertainty 并 fail。覆盖部分修复、疑点与全部修复的离线门禁和真实 paired 评估，验漏报率与文本质量，模型评估不代替人审。 | `DEV-L2-001`；候选批准、新版本／独立缓存及回归预算 |
+| `DEV-STE-006` | P2 / `waiting_decision` | 仅实际 prompt 行为变化做 A/B；A 冻结原提示词和请求拼接，B 未批准时只存文档。固定模型、参数、获批来源、语言与全文／口播分层、独立缓存和盲评裁决；预注册忠实度、漏报、通过率、质量、延迟及 token／费用阈值，记录回滚与 unknown reconciliation。离线通过不声明真实 API 验收。 | `DEV-STE-001/002`；样本、费用硬上限、阈值及窗口待签字；未决 B 不执行 |
+| `DEV-L2-002` | P1 / `waiting_evidence` | 将 ES／KO 待定模板补为可批准的 source-bound 语言策略，冻结模型、机器筛查、术语、经文、register 及全文／口播规则；逐项绑定实际 run、决策与责任。豁免依据／范围和批准状态独立保存。付费前拒绝模板、缺字段、错误来源及未批准输入；旧片段或 fixture 不替代真实全文批准。 | `DEV-L2-001`；实际 run／截图身份、策略与独立豁免／批准 |
+| `DEV-L3-003` | P1 / `waiting_evidence` | 先确认 ES／KO 配音范围，再明确 locale、声音选择、跨语言用途授权、参考音频、adapter／checkpoint／policy 与获批口播／speech job 的身份绑定。核验语言能力与音质并独立批准；未知或不匹配仅阻断受影响 locale。中文声音授权不外推其他语言，不自动选声或用生成替代批准。 | `DEV-L2-002`、`DEV-L3-001`；语言覆盖、声音及真实测试授权 |
+| `DEV-L3-004` | P1 / `waiting_evidence` | 冻结获批输入和受控运行环境，核对资源门禁、双副本实际路由与各自声音／checkpoint；在明确样本与预算后验证完整链路、缓存恢复、失败和 unknown 处理。截图中 batch／API／GPU 状态只属于当时观察，不证明双副本或跨语言运行已通过，不自动启动服务。 | `DEV-L3-003`；运行范围、授权、资源及 checkpoint 绑定 |
+| `DEV-COST-002` | P1 / `waiting_decision` | 获批后配置真实 dev／prod Project、用途专属 key、最小权限、secrets 与 hard limit；先验离线路由、脱敏、逐重试／unknown 和日费用对账，再独立验 Dev 真实账单归因、429 传播和恢复，不误伤生产。未知旧归因不补造，限额／权限／实际费用分别取证。 | `DEV-COST-001`、`DEV-STE-006`；云端环境、安全授权、额度数值和窗口 |
+| `DEV-NOTIFY-001` | P1 / `pending` | 按订阅内容语言生成文案、对应语言海报和落地内容，绑定 page／locale／版本／hash；Beta／Dev 候选人工批准、正式 iOS／Firebase 双端验证后才发正式通知。验订阅／退订、去重、环境隔离及图片失败纯文字回退；单设备分别记录 sender accepted、设备收到和点击正确内容，不默认扩大收件人。 | `DEV-L4-006`、`DEV-IOS-001`、海报流程；APNs／FCM、sender／安全配置、单设备身份与权限 |
+| `DEV-IOS-003` | P1 / `pending` | 现场自动对齐期间在 Dynamic Island 显示真实监听／对齐状态，暂停、停止、权限拒绝和系统中断及时更新，结束不残留假活跃。核验版本／机型、后台／锁屏、ActivityKit 支持及无灵动岛替代呈现，再做 Beta 真机人工验收；内容 HTTP 或模拟测试不代替设备验收。 | `DEV-IOS-001/002`、live_session 录音授权／状态机、`DEV-L4-006`；能力与架构核验 |
+
+日期文档展开范围：
+
+- DEV-STE-001 / 002 / 006：提示词行为修复及有预算、有阈值的 A/B。
+- DEV-L2-002：ES/KO 策略模板补齐、独立豁免/批准与输入绑定。
+- DEV-L3-003 / 004：跨语言声音授权绑定、资源门禁及双副本真实链路。
+- DEV-COST-002：实际账号/key/额度配置，需安全授权和云端环境。
+- DEV-NOTIFY-001：多语言通知/海报实现、单设备 Beta 验收。
+- DEV-IOS-003：现场对齐灵动岛新能力及真机验收。
+
+依赖本 PR 的今天合同；先合并今天文档，再将明天 PR base 改为 dev。PR #228 保持独立。
+
+2026-10-03 后续修复及联合检查：用户明确合并 #228–#231；候选隔离／Beta 入口、App 准备包 durable 接线与费用导入已修复并独立审核，证据见[修复回执](reports/20261003-pr231-fixes-and-stack-review.zh.md)。实际内容生成、双端批准、发布、通知与设备／现场状态继续独立记录。

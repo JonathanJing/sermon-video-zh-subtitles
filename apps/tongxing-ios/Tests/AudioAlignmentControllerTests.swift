@@ -5,6 +5,67 @@ import XCTest
 
 @MainActor
 final class AudioAlignmentControllerTests: XCTestCase {
+    func testDevCandidateSelectionRequiresBetaIdentityAndExactOrigin() throws {
+        let origin = URL(string: "https://ai-for-god-sermon-audio-dev.web.app")!
+        XCTAssertTrue(AppModel.permitsDevCandidates(origin: origin, bundleIdentifier: "com.jonathanjing.tongxing.beta"))
+        for identifier in ["com.jonathanjing.tongxing", "com.jonathanjing.tongxing.beta.tests", "unknown"] {
+            XCTAssertFalse(AppModel.permitsDevCandidates(origin: origin, bundleIdentifier: identifier))
+        }
+        for url in ["https://ai-for-god-sermon-audio.web.app", "http://ai-for-god-sermon-audio-dev.web.app", "https://ai-for-god-sermon-audio-dev.web.app:444", "https://other.example", "https://user@ai-for-god-sermon-audio-dev.web.app"] {
+            XCTAssertFalse(AppModel.permitsDevCandidates(origin: URL(string: url)!, bundleIdentifier: "com.jonathanjing.tongxing.beta"))
+        }
+        let fixtureURL = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("Core/Tests/TongxingCoreTests/Fixtures/dev-candidate-catalog-readback.json")
+        let fixture = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: fixtureURL)) as? [String: Any])
+        let catalog = try MultilingualCatalog.decode(JSONSerialization.data(withJSONObject: fixture["catalog"]!), allowDevCandidates: true)
+        let page = catalog.pages[1]
+        XCTAssertEqual(AppModel.selectableTargets(in: page, allowDevCandidates: true).map(\.locale), ["es", "ko", "zh-Hans"])
+        XCTAssertEqual(AppModel.selectableTargets(in: page, allowDevCandidates: false).map(\.locale), ["zh-Hans"])
+        XCTAssertEqual(page.targets["ko"]?.contentStatus, "machine_reviewed")
+    }
+
+    func testFrozenDevCandidateLanguagesCanBeSelectedAndReadWithoutHumanPromotion() async throws {
+        guard let path = ProcessInfo.processInfo.environment["TONGXING_DEV_CATALOG_FIXTURE_ROOT"] else {
+            throw XCTSkip("Frozen public Dev assets were not provided; no live network fallback")
+        }
+        let fixtureRoot = URL(fileURLWithPath: path)
+        CandidateAppModelProtocol.fixtureRoot = fixtureRoot
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [CandidateAppModelProtocol.self]
+        let session = URLSession(configuration: config)
+        let support = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let suite = "Tongxing-Candidate-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        let origin = URL(string: "https://ai-for-god-sermon-audio-dev.web.app")!
+        let model = AppModel(supportDirectory: support, contentOrigin: origin, session: session,
+            statisticsDefaults: defaults, applicationBundleIdentifier: "com.jonathanjing.tongxing.beta")
+        defer {
+            model.playback.clear(); session.invalidateAndCancel(); defaults.removePersistentDomain(forName: suite)
+            try? FileManager.default.removeItem(at: support)
+        }
+        await model.refresh()
+        let page = try XCTUnwrap(model.independentPages.first { $0.id == "if-i-had-more-time-jesus-is-worthy" })
+        model.selectPublishedPage(page)
+        XCTAssertNil(model.fullVideoURL, "Podcast candidates must not invent a full-video path")
+        XCTAssertEqual(model.availableContentLanguages.map(\.locale), ["es", "ko", "zh-Hans"])
+        for locale in ["ko", "es", "zh-Hans"] {
+            model.selectPublishedContentLanguage(locale)
+            await model.loadSelectedPublishedTranscript()
+            XCTAssertEqual(model.selectedContentLocale, locale)
+            XCTAssertEqual(model.publishedTranscript?.captions.count, 839)
+            XCTAssertEqual(model.publishedTranscript?.releaseStatus, "candidate")
+            XCTAssertEqual(model.publishedTranscript?.contentStatus, locale == "zh-Hans" ? "human_reviewed" : "machine_reviewed")
+            XCTAssertTrue(model.selectedContentReviewNotice?.contains(locale == "zh-Hans" ? "设备验收尚未完成" : "人工全文审核未批准") == true)
+        }
+        let production = AppModel(supportDirectory: support.appendingPathComponent("production"), contentOrigin: origin,
+            session: session, statisticsDefaults: defaults, applicationBundleIdentifier: "com.jonathanjing.tongxing")
+        defer { production.playback.clear() }
+        await production.refresh()
+        XCTAssertFalse(production.independentPages.contains { $0.id == page.id })
+        production.selectPublishedPage(page)
+        XCTAssertNotEqual(production.selectedPageID, page.id)
+    }
+
     func testQueryStartUsesMonotonicElapsedOnceAndRejectsExpiredOrOutOfRange() {
         let start = ContinuousClock.now
         XCTAssertEqual(AlignmentTarget.position(offset: 100, startedAt: start,
@@ -527,4 +588,23 @@ final class AudioAlignmentControllerTests: XCTestCase {
             while !started { try await Task.sleep(for: .milliseconds(5)) }
         }
     }
+}
+
+/// All requests are served from frozen JSON or fail locally. Audio is never
+/// downloaded; this harness validates selection and reader state, not playback.
+private final class CandidateAppModelProtocol: URLProtocol {
+    static var fixtureRoot: URL?
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override func startLoading() {
+        guard let url = request.url else { client?.urlProtocol(self, didFailWithError: URLError(.badURL)); return }
+        let bytes = url.pathExtension == "json" ? Self.fixtureRoot.flatMap {
+            try? Data(contentsOf: $0.appendingPathComponent(String(url.path.dropFirst())))
+        } : nil
+        let response = HTTPURLResponse(url: url, statusCode: bytes == nil ? 404 : 200, httpVersion: "HTTP/1.1", headerFields: nil)!
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        if let bytes { client?.urlProtocol(self, didLoad: bytes) }
+        client?.urlProtocolDidFinishLoading(self)
+    }
+    override func stopLoading() { }
 }

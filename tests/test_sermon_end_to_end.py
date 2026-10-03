@@ -167,6 +167,7 @@ class EndToEndTests(unittest.TestCase):
         from dataclasses import asdict
         config=replace(self.config,release_workflow_config=None)
         legacy=asdict(config);legacy.pop('release_workflow_config')
+        legacy.pop('app_delivery_config')
         self.assertEqual(agent.bound_configuration(config),legacy)
 
     def test_orphan_job_is_discovered_without_active_pointer(self):
