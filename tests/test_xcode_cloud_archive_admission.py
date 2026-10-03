@@ -22,13 +22,30 @@ def stamp(value):
     return value.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def source_configuration(directory, channel):
+    project = GUARD.parse_project((directory / "project.pbxproj").read_text())
+    objects = project["objects"]
+    root = objects[project["rootObject"]]
+    _, configuration, _ = GUARD.CHANNELS[channel]
+    target_name = "Tongxing"
+    targets = [objects[key] for key in root["targets"] if objects[key].get("name") == target_name]
+    if len(targets) != 1:
+        raise AssertionError(f"expected one {target_name} target")
+    configurations = objects[targets[0]["buildConfigurationList"]]["buildConfigurations"]
+    matches = [objects[key] for key in configurations if objects[key].get("name") == configuration]
+    if len(matches) != 1:
+        raise AssertionError(f"expected one {configuration} configuration")
+    return matches[0]["buildSettings"]
+
+
 def fixture(directory, channel="production", now=NOW):
     scheme, config, bundle = GUARD.CHANNELS[channel]
+    settings = source_configuration(directory, channel)
     intent = {
         "schemaVersion": 1, "sourceCommit": "a" * 40,
         "channel": channel, "scheme": scheme, "configuration": config,
-        "version": "1.26.7" if channel == "production" else "1.26.9",
-        "sourceBuild": "50",
+        "version": settings["MARKETING_VERSION"],
+        "sourceBuild": settings["CURRENT_PROJECT_VERSION"],
         # Cloud's separately selected counter need not equal CURRENT_PROJECT_VERSION.
         "cloudBuild": "123", "issuedAt": stamp(now - timedelta(minutes=5)),
         "expiresAt": stamp(now + timedelta(minutes=55)),
