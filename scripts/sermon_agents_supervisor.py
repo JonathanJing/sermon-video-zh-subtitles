@@ -144,6 +144,13 @@ def tool_definitions(execute: bool, decision_schema: dict, release_enabled: bool
 
 def bound_configuration(config):
     value = asdict(config)
+    # Default dual-PDF/page-release sessions keep their previous fingerprint.
+    if getattr(config, 'app_delivery_config', None) is None:
+        value.pop('app_delivery_config', None)
+    else:
+        from scripts import sermon_app_delivery_workflow
+        value['appDeliveryConfigurationSha256'] = sermon_app_delivery_workflow.load_configuration(
+            config.app_delivery_config, sunday=config.sunday).sha256
     path = workflow.configuration(config)
     if path is not None:
         value["releaseWorkflowSha256"] = workflow.config_hash(path)
