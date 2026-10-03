@@ -119,13 +119,15 @@ final class ListeningFlowUITests: XCTestCase {
     }
 
     func testMoreExpandsVoiceDemosWithOriginalEnglishBeforeSamples() throws {
-        let app = launchFixture()
+        let app = launchFixture(voiceClips: true)
         app.buttons["more-options"].tap()
         let demos = element("voice-demo-disclosure", in: app)
         try revealDemo(demos, in: app, direction: .up)
         demos.tap()
         let speaker = element("voice-demo-speaker-speaker_0", in: app)
         try revealDemo(speaker, in: app, direction: .up)
+        XCTAssertTrue(app.staticTexts["同一片段：先听英语原声，再比较中文、韩语和西班牙语。"].exists)
+        XCTAssertFalse(app.staticTexts["旧版独立样音，文稿与英语原声不同；同片段对照正在准备。"].exists)
         speaker.tap()
         let original = element("voice-demo-original-speaker_0", in: app)
         let chinese = element("voice-demo-sample-speaker_0-zh-Hans", in: app)
@@ -134,7 +136,24 @@ final class ListeningFlowUITests: XCTestCase {
         try waitFor(chinese, "exists == true")
         XCTAssertTrue(original.label.contains("讲员原始英文片段"))
         XCTAssertTrue(chinese.label.contains("中文"))
+        XCTAssertTrue(app.buttons["voice-demo-video-speaker_0"].exists)
         screenshot("voice-demo-more-original-and-samples", app: app)
+    }
+
+    func testMissingMatchedDemoShowsRetryInsteadOfLegacySamples() throws {
+        // This transport has an old catalog but deliberately returns 404 for V2.
+        let app = launchFixture()
+        app.buttons["more-options"].tap()
+        let demos = element("voice-demo-disclosure", in: app)
+        try revealDemo(demos, in: app, direction: .up)
+        demos.tap()
+        let retry = app.buttons["voice-demo-unavailable"]
+        XCTAssertTrue(retry.waitForExistence(timeout: 10))
+        XCTAssertFalse(app.buttons["voice-demo-speaker-speaker_0"].exists)
+        XCTAssertFalse(app.staticTexts["旧版独立样音，文稿与英语原声不同；同片段对照正在准备。"].exists)
+        retry.tap()
+        XCTAssertTrue(retry.waitForExistence(timeout: 10))
+        screenshot("voice-demo-missing-matched-catalog", app: app)
     }
 
     func testVoiceDemoPausesResumesAndLanguageChangeStopsAudio() throws {

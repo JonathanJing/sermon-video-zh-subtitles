@@ -247,7 +247,8 @@ final class AppModel: ObservableObject {
             onState: { [weak self] status, busy, position in
                 self?.updateAlignmentState(status: status, busy: busy, position: position)
             },
-            onFailure: { [weak self] message in self?.alignmentFailure = AlignmentFailure(message: message) }
+            onFailure: { [weak self] message in self?.alignmentFailure = AlignmentFailure(message: message) },
+            onPhase: { [weak self] phase in self?.playback.setAlignmentPhase(phase) }
         )
         playback.onManualInteraction = { [weak self] in self?.alignmentController.cancel() }
 

@@ -2,6 +2,11 @@ import SwiftUI
 
 @main
 struct TongxingApp: App {
+    @ObservedObject private var localization = AppLocalization.shared
+    #if os(iOS)
+    @UIApplicationDelegateAdaptor(BetaNotificationAppDelegate.self) private var notificationDelegate
+    @ObservedObject private var notifications = BetaNotificationController.shared
+    #endif
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var model: AppModel = {
         #if DEBUG
@@ -29,7 +34,21 @@ struct TongxingApp: App {
                         || UITestLaunch.isEnabled else { return }
                     #endif
                     await model.start()
+                    #if DEBUG
+                    await UITestLaunch.runLiveActivitySmoke(in: model)
+                    #endif
+                    #if os(iOS)
+                    notifications.openPending(in: model)
+                    #endif
                 }
+                #if os(iOS)
+                .onChange(of: notifications.pending) { _, _ in notifications.openPending(in: model) }
+                .onChange(of: model.multilingualCatalog) { _, _ in notifications.openPending(in: model) }
+                .alert(localization.text("Beta 通知测试"), isPresented: Binding(get: { notifications.landingMessage != nil },
+                                                      set: { if !$0 { notifications.landingMessage = nil } })) {
+                    Button(localization.text("完成")) { notifications.landingMessage = nil }
+                } message: { Text(localization.text(notifications.landingMessage ?? "")) }
+                #endif
                 #if os(macOS)
                 .modifier(DevelopmentPreviewAppearance())
                 #endif

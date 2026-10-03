@@ -88,6 +88,7 @@ final class AudioAlignmentControllerTests: XCTestCase {
         XCTAssertEqual(f.status, "已对齐至 {time}。")
         XCTAssertEqual(f.resultPosition, 108)
         XCTAssertTrue(f.failures.isEmpty)
+        XCTAssertEqual(f.phases, [.preparing, .listening, .matching, .aligned])
     }
 
     func testFailedMatchNeverSeeksAndRestoresPriorPlayingIntent() async throws {
@@ -154,6 +155,7 @@ final class AudioAlignmentControllerTests: XCTestCase {
         try await eventually { !f.controller.busy }
         XCTAssertEqual(f.status, "对齐超时，请保持前台后重试。")
         XCTAssertEqual(f.failures, [f.status])
+        XCTAssertEqual(f.phases, [.preparing, .listening, .matching, .failed])
         XCTAssertGreaterThan(f.capture.stops, 0)
         await gate.finish(Self.match)
         try await Task.sleep(for: .milliseconds(20))
@@ -166,6 +168,7 @@ final class AudioAlignmentControllerTests: XCTestCase {
         f.controller.start()
         try await eventually { !f.controller.busy }
         XCTAssertEqual(f.player.seeks, [])
+        XCTAssertEqual(f.phases, [.preparing, .failed], "Permission dialog must never be reported as active listening")
         XCTAssertEqual(f.status, AudioAlignmentError.permissionDenied.localizedDescription)
         XCTAssertEqual(f.failures, [f.status])
         XCTAssertGreaterThan(f.capture.stops, 0)
@@ -326,6 +329,7 @@ final class AudioAlignmentControllerTests: XCTestCase {
         XCTAssertEqual(f.player.seeks, [])
         XCTAssertFalse(f.controller.busy)
         XCTAssertEqual(f.status, "已取消对齐。")
+        XCTAssertEqual(f.phases, [.preparing, .cancelled])
     }
 
     func testPublishedSourceWindowChangeRejectsLateIndexWithoutResume() async throws {
@@ -468,6 +472,7 @@ final class AudioAlignmentControllerTests: XCTestCase {
         var selection: AudioAlignmentController.Selection?
         var status = ""
         var failures: [String] = []
+        var phases: [ListeningAlignmentPhase] = []
         var resultPosition: Double?
         var controller: AudioAlignmentController!
 
@@ -527,7 +532,8 @@ final class AudioAlignmentControllerTests: XCTestCase {
                 loadIndex: { _ in index }, loadPublishedIndex: publishedLoader, match: matcher ?? { _, _ in result }, now: { [weak self] in
                     self!.start.advanced(by: .seconds(self!.elapsed))
                 }, deadline: deadline, onState: { [weak self] status, _, position in self?.status = status; self?.resultPosition = position },
-                onFailure: { [weak self] message in self?.failures.append(message) })
+                onFailure: { [weak self] message in self?.failures.append(message) },
+                onPhase: { [weak self] phase in self?.phases.append(phase) })
         }
     }
 
@@ -551,6 +557,7 @@ final class AudioAlignmentControllerTests: XCTestCase {
 
     @MainActor
     private final class FakeCapture: MicrophoneCapturing {
+        var onCaptureStarted: (() -> Void)?
         var start = ContinuousClock.now
         var failure: Error?
         var calls = 0
@@ -561,6 +568,7 @@ final class AudioAlignmentControllerTests: XCTestCase {
             calls += 1
             requestedSeconds.append(seconds)
             if let failure { throw failure }
+            onCaptureStarted?()
             return CapturedAudio(samples: samples, sampleRate: 8000, startedAt: start)
         }
         func cancel() { stops += 1 }

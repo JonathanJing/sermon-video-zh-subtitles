@@ -27,8 +27,8 @@ def fixture(directory, channel="production", now=NOW):
     intent = {
         "schemaVersion": 1, "sourceCommit": "a" * 40,
         "channel": channel, "scheme": scheme, "configuration": config,
-        "version": "1.26.7" if channel == "production" else "1.2.0",
-        "sourceBuild": "50" if channel == "production" else "48",
+        "version": "1.26.7" if channel == "production" else "1.26.9",
+        "sourceBuild": "50",
         # Cloud's separately selected counter need not equal CURRENT_PROJECT_VERSION.
         "cloudBuild": "123", "issuedAt": stamp(now - timedelta(minutes=5)),
         "expiresAt": stamp(now + timedelta(minutes=55)),
