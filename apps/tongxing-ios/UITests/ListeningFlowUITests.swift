@@ -119,13 +119,15 @@ final class ListeningFlowUITests: XCTestCase {
     }
 
     func testMoreExpandsVoiceDemosWithOriginalEnglishBeforeSamples() throws {
-        let app = launchFixture()
+        let app = launchFixture(voiceClips: true)
         app.buttons["more-options"].tap()
         let demos = element("voice-demo-disclosure", in: app)
         try revealDemo(demos, in: app, direction: .up)
         demos.tap()
         let speaker = element("voice-demo-speaker-speaker_0", in: app)
         try revealDemo(speaker, in: app, direction: .up)
+        XCTAssertTrue(app.staticTexts["同一片段：先听英语原声，再比较中文、韩语和西班牙语。"].exists)
+        XCTAssertFalse(app.staticTexts["旧版独立样音，文稿与英语原声不同；同片段对照正在准备。"].exists)
         speaker.tap()
         let original = element("voice-demo-original-speaker_0", in: app)
         let chinese = element("voice-demo-sample-speaker_0-zh-Hans", in: app)
@@ -134,7 +136,24 @@ final class ListeningFlowUITests: XCTestCase {
         try waitFor(chinese, "exists == true")
         XCTAssertTrue(original.label.contains("讲员原始英文片段"))
         XCTAssertTrue(chinese.label.contains("中文"))
+        XCTAssertTrue(app.buttons["voice-demo-video-speaker_0"].exists)
         screenshot("voice-demo-more-original-and-samples", app: app)
+    }
+
+    func testMissingMatchedDemoShowsRetryInsteadOfLegacySamples() throws {
+        // This transport has an old catalog but deliberately returns 404 for V2.
+        let app = launchFixture()
+        app.buttons["more-options"].tap()
+        let demos = element("voice-demo-disclosure", in: app)
+        try revealDemo(demos, in: app, direction: .up)
+        demos.tap()
+        let retry = app.buttons["voice-demo-unavailable"]
+        XCTAssertTrue(retry.waitForExistence(timeout: 10))
+        XCTAssertFalse(app.buttons["voice-demo-speaker-speaker_0"].exists)
+        XCTAssertFalse(app.staticTexts["旧版独立样音，文稿与英语原声不同；同片段对照正在准备。"].exists)
+        retry.tap()
+        XCTAssertTrue(retry.waitForExistence(timeout: 10))
+        screenshot("voice-demo-missing-matched-catalog", app: app)
     }
 
     func testVoiceDemoPausesResumesAndLanguageChangeStopsAudio() throws {
@@ -629,6 +648,20 @@ final class ListeningFlowUITests: XCTestCase {
         app.launch()
         defer { app.terminate() }
         XCTAssertTrue(app.staticTexts["published-page-title"].waitForExistence(timeout: 30))
+        // Other real-content tests may have saved an English interface preference.
+        // Establish this test's visible Chinese controls through the normal menu.
+        let interface = element("app-language-menu", in: app)
+        // This header sits immediately below the navigation bar. The reading
+        // helper's extra 16-point inset excludes its frame even at scroll top.
+        // Use the header's own actual hittability, as in the language UI flow.
+        for _ in 0..<4 where !interface.isHittable {
+            app.scrollViews["listening-scroll"].swipeDown()
+        }
+        try waitFor(interface, "exists == true AND hittable == true")
+        XCTAssertTrue(app.frame.contains(interface.frame))
+        interface.tap()
+        XCTAssertTrue(app.buttons["简体中文"].waitForExistence(timeout: 5))
+        app.buttons["简体中文"].tap()
         app.buttons["choose-sermon"].tap()
         let currentPage = app.buttons["published-page-2026-09-27-weekend-sermon-drive-530"]
         let previousWeek = app.buttons["legacy-week-2026-09-20-same_video-7c193fd4-bc90-4f3b-aa00-37dfe8423aa0"]
@@ -645,13 +678,28 @@ final class ListeningFlowUITests: XCTestCase {
             app.buttons["choose-content-language"].tap()
             app.buttons["content-language-\(locale)"].tap()
             XCTAssertTrue(app.staticTexts["published-current-subtitle"].waitForExistence(timeout: 30))
-            XCTAssertTrue(app.staticTexts["published-current-english"].waitForExistence(timeout: 10))
             let prepare = app.buttons["prepare-published-audio"]
             if prepare.exists {
                 prepare.tap()
                 XCTAssertTrue(app.staticTexts["published-audio-locale"].waitForExistence(timeout: 60))
             }
-            XCTAssertTrue(app.staticTexts["published-audio-locale"].label.contains(appLanguageNames[locale]!))
+            try waitFor(app.staticTexts["published-audio-locale"],
+                        "exists == true AND label CONTAINS '\(appLanguageNames[locale]!)'", timeout: 60)
+            try waitFor(app.buttons["playback-toggle"], "exists == true AND enabled == true", timeout: 60)
+            // Language changes deliberately retain time. A paused position may
+            // fall between this locale's cues, where no current English exists.
+            // Explicitly select a real bound cue before checking its English.
+            let transcriptMode = app.segmentedControls["listening-display"].buttons["字幕全文"]
+            try reveal(transcriptMode, in: app, direction: .down)
+            transcriptMode.tap()
+            let firstTime = app.buttons["published-caption-time-translation-0-u001"]
+            XCTAssertTrue(firstTime.waitForExistence(timeout: 10))
+            try reveal(firstTime, in: app, direction: .up)
+            firstTime.tap()
+            let currentMode = app.segmentedControls["listening-display"].buttons["现场收听"]
+            try reveal(currentMode, in: app, direction: .down)
+            currentMode.tap()
+            XCTAssertTrue(app.staticTexts["published-current-english"].waitForExistence(timeout: 10))
             app.buttons["playback-toggle"].tap()
             try waitFor(element("playback-progress", in: app), "NOT (value BEGINSWITH '00:00，')")
             screenshot("production-native-\(locale)-playing-english", app: app)
