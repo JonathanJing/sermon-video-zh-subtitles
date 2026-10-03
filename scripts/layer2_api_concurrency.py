@@ -17,7 +17,10 @@ MAX_GROUP_WORKERS_PER_LOCALE = 16
 
 @contextmanager
 def request_slot(job_root: Path):
-    slots = Path(job_root) / '.layer2-api-slots'
+    job_root = Path(job_root)
+    # Keep lock metadata beside the durable job tree. The canonical job
+    # inspector treats entries under job_root as durable job records.
+    slots = job_root.parent / f'.{job_root.name}.layer2-api-slots'
     slots.mkdir(parents=True, exist_ok=True)
     while True:
         for index in range(MAX_IN_FLIGHT_API_CALLS):

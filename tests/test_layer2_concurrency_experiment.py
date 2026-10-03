@@ -3,6 +3,7 @@ import copy
 import hashlib
 import json
 from pathlib import Path
+import tempfile
 import threading
 import time
 import unittest
@@ -10,6 +11,7 @@ import unittest
 from scripts import run_target_language_models as runner
 from scripts import sermon_accounting as accounting
 from scripts import target_language_policy as policies
+from scripts import layer2_api_concurrency as api_concurrency
 from scripts import weekly_pipeline_report as weekly
 from scripts.experiments import layer2_concurrency as experiment
 from tests import test_run_target_language_models as fixtures
@@ -61,6 +63,33 @@ class Layer2ConcurrencyTests(unittest.TestCase):
         for budget in (0, -1, 25, True, 1.5):
             with self.subTest(budget=budget), self.assertRaisesRegex(ValueError, "1..16"):
                 runner.ordered_group_results([], lambda _: self.fail("invalid budget started work"), budget)
+
+    def test_shared_api_slots_cap_run_requests_without_polluting_durable_job_tree(self):
+        active = peak = 0
+        lock = threading.Lock()
+        with tempfile.TemporaryDirectory() as tmp:
+            job_root = Path(tmp) / 'jobs'
+            job_root.mkdir()
+
+            def request():
+                nonlocal active, peak
+                with api_concurrency.request_slot(job_root):
+                    with lock:
+                        active += 1
+                        peak = max(peak, active)
+                    time.sleep(.02)
+                    with lock:
+                        active -= 1
+
+            workers = [threading.Thread(target=request) for _ in range(80)]
+            for worker in workers:
+                worker.start()
+            for worker in workers:
+                worker.join(timeout=5)
+                self.assertFalse(worker.is_alive())
+            self.assertGreater(peak, 1)
+            self.assertLessEqual(peak, api_concurrency.MAX_IN_FLIGHT_API_CALLS)
+            self.assertEqual(list(job_root.iterdir()), [])
 
     def test_parallel_failure_drains_success_and_repair_reuses_successful_cache(self):
         plan = runner.group_plan(runner.producer.prepare_request(self.f.source, self.f.anchor, self.policy), self.f.anchor)
