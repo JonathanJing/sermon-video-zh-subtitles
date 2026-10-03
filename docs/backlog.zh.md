@@ -987,7 +987,7 @@ CI环境还暴露工具下载占用原job期限：18ae2f0的root-0已通过1609 
 
 ## 明天（10/4）
 
-完整定义移到[明天 backlog](https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/codex/docs-backlog-tomorrow-20261004/docs/backlog-2026-10-04.zh.md) 的独立依赖 PR；当前仅保留索引，不承诺缺前提工作当天完成。
+完整定义移到[明天 backlog](https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/codex/docs-backlog-tomorrow-20261004/docs/backlog-2026-10-04.zh.md) 的独立依赖 [PR #230](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/230)；当前仅保留索引，不承诺缺前提工作当天完成。
 
 - DEV-STE-001 / 002 / 006：提示词行为修复及有预算、有阈值的 A/B。
 - DEV-L2-002：ES/KO 策略模板补齐、独立豁免/批准与输入绑定。
