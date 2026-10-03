@@ -66,6 +66,12 @@ test('downloaded same-week versions have explicit distinct filenames', () => {
   assert.match(downloadFilename({ ...page, sourceRoute: 'same_video' }, track), /YouTube 版/);
 });
 
+test('WAV podcast tracks retain their media extension in app downloads', () => {
+  const week = { date: '2026-10-02', title: '如果我有更多时间', speaker: 'Eric Geiger · Steve Bang Lee',
+    targetLocale: 'zh-Hans', sourceRoute: 'podcast', sourceLabel: '播客原片', devCandidate: true };
+  assert.match(downloadFilename(week, { audioUrl: '/media/if-i-had-more-time-jesus-is-worthy/zh-Hans.wav' }), /\.wav$/);
+});
+
 test('archive downloads preserve series source without claiming Sunday playback', () => {
   const name = downloadFilename({ date: '2026-08-16', title: '当羞耻缠绕我 · 当生活令人费解', speaker: 'Eric', sourceRoute: 'archive_caption' }, { scope: 'full_candidate' });
   assert.match(name, /YouTube 版/);

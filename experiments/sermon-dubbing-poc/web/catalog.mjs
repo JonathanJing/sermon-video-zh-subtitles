@@ -54,7 +54,7 @@ export function validateCatalog(catalog) {
     ids.add(week.id);
     validateTranscript(week);
     for (const track of week.tracks) {
-      if (!/^\/media\/(?:[a-zA-Z0-9_-]+\/)*[a-zA-Z0-9_.-]+\.mp3$/.test(track.audioUrl) || !(track.durationSeconds > 0) || !track.cues?.length) throw new Error("Invalid track");
+      if (!/^\/media\/(?:[a-zA-Z0-9_-]+\/)*[a-zA-Z0-9_.-]+\.(?:mp3|wav)$/.test(track.audioUrl) || !(track.durationSeconds > 0) || !track.cues?.length) throw new Error("Invalid track");
       let previous = 0;
       for (const cue of track.cues) {
         if (!(previous <= cue.start && cue.start < cue.end && cue.end <= track.durationSeconds + 0.001) || !cue.text?.trim()) throw new Error("Invalid cues");
@@ -105,7 +105,8 @@ export function downloadFilename(week, track) {
   } else if (track.scope !== "full_reviewed") {
     parts.push("样片", track.label);
   }
-  return `${parts.map(clean).filter(Boolean).join("_")}.mp3`;
+  const extension = track.audioUrl?.toLowerCase().endsWith('.wav') ? 'wav' : 'mp3';
+  return `${parts.map(clean).filter(Boolean).join("_")}.${extension}`;
 }
 
 
@@ -114,7 +115,7 @@ export function weekOptionLabel(week) {
   const title = typeof week.title === 'string' ? week.title.trim() : '';
   const route = typeof week.sourceLabel === 'string' ? week.sourceLabel.trim() : '';
   const diagnostic = diagnosticPresentation(week);
-  const status = diagnostic ? ({failed:'处理失败',blocked:'流程受阻',pending:'待生成',ready:'DEV 可试听'})[diagnostic.status] : isFormalPlayback(week) ? '正式播放版' : week.humanContentReview === 'approved' ? '整篇中文' : week.audioStatus === 'full_candidate' ? '整篇待审' : week.tracks?.length ? '可试听' : '待配音';
+  const status = diagnostic ? ({failed:'处理失败',blocked:'流程受阻',pending:'待生成',ready:'DEV 可试听'})[diagnostic.status] : week.devCandidate === true ? 'DEV 可试听' : isFormalPlayback(week) ? '正式播放版' : week.humanContentReview === 'approved' ? '整篇中文' : week.audioStatus === 'full_candidate' ? '整篇待审' : week.tracks?.length ? '可试听' : '待配音';
   const displayStatus = isFormalPlayback(week) && [title, route].some(text => text.includes(status)) ? '' : status;
   return [date, title, route && !title.includes(route) ? route : '', displayStatus].filter(Boolean).join(' · ');
 }

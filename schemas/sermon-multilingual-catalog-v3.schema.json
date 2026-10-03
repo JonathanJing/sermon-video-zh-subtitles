@@ -147,6 +147,8 @@
       "type": "object",
       "additionalProperties": false,
       "dependentRequired": { "videoDelivery": ["sourceMediaSha256"] },
+      "if": { "properties": { "mediaType": { "const": "podcast" } }, "required": ["mediaType"] },
+      "then": { "required": ["sourceUrl"] },
       "required": [
         "id",
         "date",
@@ -192,6 +194,14 @@
           "minLength": 1,
           "maxLength": 180,
           "pattern": "\\S"
+        },
+        "mediaType": {
+          "enum": ["video", "podcast"]
+        },
+        "sourceUrl": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://(?:www\\.)?youtube\\.com/watch\\?v=[A-Za-z0-9_-]{6,}$"
         },
         "videoDelivery": {
           "type": "object",

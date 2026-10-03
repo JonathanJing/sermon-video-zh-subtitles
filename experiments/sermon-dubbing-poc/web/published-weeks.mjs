@@ -119,6 +119,39 @@ export function validatePublishedRelease(release, page, locale) {
   return assets;
 }
 
+/** A human-reviewed podcast may be played in this Dev reader before a formal release.
+ * This path deliberately keeps the package in `candidate` state and is never used
+ * unless the caller explicitly enables Dev candidates. */
+export function validateDevPodcastCandidateRelease(release, page, locale) {
+  required(page.mediaType === 'podcast'
+    && release.schemaVersion === 'sermon-target-language-release-package-v2'
+    && release.pageId === page.id && release.targetLocale === locale
+    && release.contentLocale === locale && release.audioLocale === locale
+    && release.sourceLocale === 'en' && release.interfaceLocale === locale
+    && release.status === 'candidate' && release.contentStatus === 'human_reviewed'
+    && release.audioStatus === 'human_reviewed'
+    && HASH.test(release.targetLanguageCandidateJsonSha256)
+    && HASH.test(release.spokenTargetLanguageCandidateJsonSha256)
+    && HASH.test(release.targetLanguageAudioPackageJsonSha256)
+    && Array.isArray(release.issues) && release.issues.length === 0,
+  'Invalid Dev podcast candidate identity or status');
+  for (const name of ['httpVerification', 'deviceAcceptance', 'venueAcceptance']) {
+    required(release[name]?.status === 'not_run' && release[name].evidenceSha256 === null,
+      'Dev candidate cannot claim publication, device, or venue acceptance');
+  }
+  const assets = {};
+  for (const role of ['page', 'content', 'captions', 'audio']) {
+    const matches = release.assets?.filter(asset => asset.role === role) || [];
+    required(matches.length === 1 && HASH.test(matches[0].sha256), `Invalid ${role} candidate asset`);
+    assets[role] = { ...matches[0], path: assetPath(matches[0].path) };
+    const expected = role === 'page' ? `/pages/${page.id}/${locale}/index.html`
+      : role === 'audio' ? `/media/${page.id}/${locale}.wav`
+        : `/${role}/${page.id}/${locale}.json`;
+    required(assets[role].path === expected, 'Dev candidate asset identity mismatch');
+  }
+  return assets;
+}
+
 // Catalog admission is distinct from this audio player's capabilities. A valid
 // text-only target stays valid, but must never trigger an audio-release request.
 export function validatePublishedTarget(target, page, locale) {
@@ -171,33 +204,79 @@ export function validatePublishedPage(page) {
     && page.targets && typeof page.targets === 'object' && !Array.isArray(page.targets)
     && Object.keys(page.targets).length > 0 && Object.keys(page.targets).length <= 16
     && Object.keys(page.targets).every(locale => LOCALE.test(locale))
-    && Object.hasOwn(page.targets, page.defaultTargetLocale), 'Invalid published page');
+    && Object.hasOwn(page.targets, page.defaultTargetLocale)
+    && (page.mediaType === undefined || page.mediaType === 'podcast' || page.mediaType === 'video')
+    && (page.sourceUrl === undefined || (typeof page.sourceUrl === 'string'
+      && /^https:\/\/(?:www\.)?youtube\.com\/watch\?v=[A-Za-z0-9_-]{6,}$/.test(page.sourceUrl)))
+    && (page.mediaType !== 'podcast' || typeof page.sourceUrl === 'string'), 'Invalid published page');
   return page;
 }
 
-async function loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal) {
+async function loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal, allowDevCandidates) {
   const target = validatePublishedTarget(page.targets[locale], page, locale);
   required(target?.contentStatus === 'human_reviewed' && target.audioStatus === 'human_reviewed'
     && ['text', 'captions', 'audio'].every(capability => target.capabilities?.includes(capability)), 'Target is not ready for playback');
   const release = await readJson(fetchImpl, target.releasePackageUrl, target.releasePackageJsonSha256, timeoutMs, false, pageSignal);
-  const assets = validatePublishedRelease(release, page, locale);
+  const devPodcastCandidate = release.status === 'candidate';
+  if (devPodcastCandidate && (!allowDevCandidates || page.mediaType !== 'podcast')) return null;
+  const assets = devPodcastCandidate
+    ? validateDevPodcastCandidateRelease(release, page, locale)
+    : validatePublishedRelease(release, page, locale);
   const [content, captions] = await Promise.all([
     readJson(fetchImpl, assets.content.path, assets.content.sha256, timeoutMs, false, pageSignal),
     readJson(fetchImpl, assets.captions.path, assets.captions.sha256, timeoutMs, false, pageSignal),
   ]);
-  required(content.schemaVersion === 'sermon-full-video-text-content-v1'
-    && content.pageId === page.id && content.targetLocale === locale && content.sourceLocale === 'en'
-    && content.status === 'human_reviewed' && content.englishSourcePackageJsonSha256 === page.sourceIdentitySha256
+  const podcastCandidate = devPodcastCandidate && content.schemaVersion === 'sermon-formal-dev-content-v1';
+  required((podcastCandidate || content.schemaVersion === 'sermon-full-video-text-content-v1')
+    && content.pageId === page.id && (podcastCandidate ? content.locale === locale : content.targetLocale === locale)
+    && content.sourceLocale === 'en'
+    && (podcastCandidate ? content.contentStatus === 'human_reviewed' && content.audioStatus === 'human_reviewed'
+      : content.status === 'human_reviewed')
+    && content.englishSourcePackageJsonSha256 === page.sourceIdentitySha256
     && content.targetLanguageCandidateJsonSha256 === release.targetLanguageCandidateJsonSha256
     && HASH.test(release.targetLanguageCandidateJsonSha256), 'Published content identity mismatch');
   required(['title', 'speaker', 'series', 'scripture', 'summary'].every(key => text(content[key]))
-    && Array.isArray(content.outline) && content.outline.every(text)
+    && Array.isArray(content.outline) && content.outline.every(item => podcastCandidate
+      ? text(item?.title) && text(item?.body) : text(item))
     && Number.isFinite(content.durationSeconds) && content.durationSeconds > 0, 'Invalid published content metadata');
   const cues = validatedCues(captions.cues, content.durationSeconds);
   const fullTranscript = validatedCues(content.cues, content.durationSeconds);
   // Full reading text and shorter spoken captions remain separate, explicitly linked by group ID.
   const fullIds = new Set(fullTranscript.map(cue => cue.textGroupId));
   required(cues.length === fullTranscript.length && cues.every(cue => fullIds.has(cue.textGroupId)), 'Spoken captions do not match full-text groups');
+  if (podcastCandidate) {
+    required(captions.schemaVersion === 'sermon-target-language-captions-v1'
+      && captions.pageId === page.id && captions.locale === locale
+      && captions.audioPackageJsonSha256 === release.targetLanguageAudioPackageJsonSha256
+      && captions.timingBasis === 'concatenated target audio; natural unit durations; no source-video synchronization',
+    'Invalid podcast candidate caption identity');
+    const track = {
+      id: `${page.id}-${locale}-${assets.audio.sha256.slice(0, 12)}`,
+      audioUrl: assets.audio.path, sha256: assets.audio.sha256,
+      durationSeconds: content.durationSeconds, cues, scope: 'full_reviewed',
+      label: '中文播客配音', voiceLabel: content.speaker, targetLocale: locale,
+      subtitleTiming: 'target_audio_clock',
+    };
+    return {
+      id: page.id, date: content.date, number: '', targetLocale: locale, defaultTargetLocale: locale,
+      title: content.title, series: content.series, speaker: content.speaker, scripture: content.scripture,
+      sourceUrl: page.sourceUrl, sourceLabel: '播客原片', sourceRoute: 'podcast',
+      releaseLabel: 'DEV 候选', devCandidate: true, humanContentReview: 'approved', audioStatus: 'full_reviewed',
+      audioNotice: '中文双讲员配音 · 字幕按中文音轨时间显示；本播客没有视频同步。',
+      contentReview: '中文文稿与整篇音轨已人工审核；当前为 Firebase Dev 候选。',
+      productionStages: [
+        { label: '英文来源与锚点', status: 'pass', detail: '来源窗口、文本边界和讲员映射已审核。' },
+        { label: '中文译文', status: 'pass', detail: '839 组中文译文已审核批准。' },
+        { label: '双讲员配音', status: 'pass', detail: '整篇音轨已听审；字幕跟随中文音轨时间。' },
+        { label: 'App 页面', status: 'review', detail: 'Dev 可试听；设备与生产验收仍未完成。' },
+      ],
+      centralMessage: content.summary, summary: content.summary,
+      outline: content.outline.map(item => ({ title: item.title, points: [item.body] })), questions: [],
+      scriptureRefs: [content.scripture], tracks: [track], fullTranscript,
+      contentSha256: assets.content.sha256, captionsSha256: assets.captions.sha256,
+      releasePackageJsonSha256: target.releasePackageJsonSha256,
+    };
+  }
   const labels = LABELS[locale];
   const track = {
     id: `${page.id}-${locale}-${assets.audio.sha256.slice(0, 12)}`,
@@ -222,13 +301,13 @@ async function loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal) {
   };
 }
 
-async function loadPage(fetchImpl, page, timeoutMs, pageSignal) {
+async function loadPage(fetchImpl, page, timeoutMs, pageSignal, allowDevCandidates) {
   const errors = [];
   const variants = await Promise.all(LOCALES.filter(locale => page.targets[locale]).map(async locale => {
-    try { return [locale, await loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal)]; }
+    try { return [locale, await loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal, allowDevCandidates)]; }
     catch (error) { errors.push(`${page.id}/${locale}: ${error.message}`); return null; }
   }));
-  const contentVariants = Object.fromEntries(variants.filter(Boolean));
+  const contentVariants = Object.fromEntries(variants.filter(entry => entry && entry[1]));
   // Optional delivery sidecar: never change a reviewed release or hide its audio
   // because listening alignment is unavailable. Each locale binds its own track.
   try {
@@ -298,7 +377,7 @@ async function loadPage(fetchImpl, page, timeoutMs, pageSignal) {
  * spoken cues and fullTranscript. An unavailable optional catalog leaves legacy
  * weeks usable; a rejected locale is reported in errors and is never selectable.
  */
-export async function loadPublishedWeeks(fetchImpl = globalThis.fetch, { requestTimeoutMs = 10000, pageLoadTimeoutMs = 30000 } = {}) {
+export async function loadPublishedWeeks(fetchImpl = globalThis.fetch, { requestTimeoutMs = 10000, pageLoadTimeoutMs = 30000, allowDevCandidates = false } = {}) {
   const timeoutMs = Number.isFinite(requestTimeoutMs) && requestTimeoutMs > 0 ? Math.min(requestTimeoutMs, 30000) : 10000;
   const loadTimeoutMs = Number.isFinite(pageLoadTimeoutMs) && pageLoadTimeoutMs > 0 ? Math.min(pageLoadTimeoutMs, 30000) : 30000;
   const empty = { weeks: [], defaultWeekId: null, errors: [] };
@@ -323,13 +402,13 @@ export async function loadPublishedWeeks(fetchImpl = globalThis.fetch, { request
     // Issue current-page requests first, then let the archive make progress even
     // if a current-page asset or optional sidecar stalls.
     const currentPage = pages.length
-      ? loadPage(fetchImpl, pages[0], timeoutMs, pageController.signal).then(result => { results[0] = result; })
+      ? loadPage(fetchImpl, pages[0], timeoutMs, pageController.signal, allowDevCandidates).then(result => { results[0] = result; })
       : Promise.resolve();
     // Historical pages are independent; cap simultaneous pages and the total wait.
     const worker = async () => {
       while (!pageController.signal.aborted && next < pages.length - 1) {
         const index = ++next;
-        results[index] = await loadPage(fetchImpl, pages[index], timeoutMs, pageController.signal);
+        results[index] = await loadPage(fetchImpl, pages[index], timeoutMs, pageController.signal, allowDevCandidates);
       }
     };
     await Promise.all([currentPage, ...Array.from({ length: Math.min(12, pages.length - 1) }, worker)]);

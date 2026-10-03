@@ -59,6 +59,60 @@ function fixture(mutate = () => {}) {
   return { files, requests, fetchImpl };
 }
 
+function podcastCandidateFixture(mutate = () => {}) {
+  const files = new Map(), requests = [], id = 'if-i-had-more-time-jesus-is-worthy', locale = 'zh-Hans';
+  const page = {
+    id, title: '如果我有更多时间 · 耶稣配得', date: '2026-10-02', sourceLocale: 'en',
+    sourceIdentitySha256: 'a'.repeat(64), defaultTargetLocale: locale, mediaType: 'podcast',
+    sourceUrl: 'https://www.youtube.com/watch?v=N-y3EqlUtdU', targets: {},
+  };
+  const content = {
+    schemaVersion: 'sermon-formal-dev-content-v1', pageId: id, date: page.date,
+    sourceLocale: 'en', locale, contentStatus: 'human_reviewed', audioStatus: 'human_reviewed',
+    englishSourcePackageJsonSha256: page.sourceIdentitySha256,
+    targetLanguageCandidateJsonSha256: 'b'.repeat(64), targetLanguageAudioPackageJsonSha256: 'f'.repeat(64),
+    title: page.title, speaker: 'Eric Geiger · Steve Bang Lee', series: '启示录：耶稣带来的安慰与盼望',
+    scripture: '启示录第4–5章', summary: '播客对谈摘要。', outline: [{ title: '耶稣配得敬拜', body: '讨论耶稣为何配得敬拜。' }], durationSeconds: 12,
+    cues: [{ textGroupId: 'translation-0-u001', sourceUnitIds: ['0-u001'], start: 0, end: 11,
+      text: '欢迎大家收听。' }],
+  };
+  const captions = {
+    schemaVersion: 'sermon-target-language-captions-v1', pageId: id, locale,
+    audioPackageJsonSha256: 'f'.repeat(64), timingBasis: 'concatenated target audio; natural unit durations; no source-video synchronization',
+    cues: [{ textGroupId: 'translation-0-u001', sourceUnitIds: ['0-u001'], start: 0, end: 2,
+      text: '欢迎大家收听。' }],
+  };
+  const release = {
+    schemaVersion: 'sermon-target-language-release-package-v2', pageId: id, packageId: `${id}-${locale}`,
+    interfaceLocale: locale, targetLocale: locale, audioLocale: locale, contentLocale: locale, sourceLocale: 'en',
+    status: 'candidate', httpVerification: { status: 'not_run', evidenceSha256: null },
+    deviceAcceptance: { status: 'not_run', evidenceSha256: null }, venueAcceptance: { status: 'not_run', evidenceSha256: null },
+    contentStatus: 'human_reviewed', audioStatus: 'human_reviewed', issues: [],
+    targetLanguageCandidateJsonSha256: content.targetLanguageCandidateJsonSha256,
+    spokenTargetLanguageCandidateJsonSha256: 'c'.repeat(64),
+    targetLanguageAudioPackageJsonSha256: content.targetLanguageAudioPackageJsonSha256,
+    assets: [
+      { role: 'page', path: `/pages/${id}/${locale}/index.html`, sha256: '1'.repeat(64) },
+      { role: 'content', path: `/content/${id}/${locale}.json`, sha256: '' },
+      { role: 'captions', path: `/captions/${id}/${locale}.json`, sha256: '' },
+      { role: 'audio', path: `/media/${id}/${locale}.wav`, sha256: 'd'.repeat(64), bytes: 1024 },
+    ],
+  };
+  mutate({ content, captions, release, page });
+  for (const [role, data] of [['content', content], ['captions', captions]]) {
+    const asset = release.assets.find(item => item.role === role);
+    const body = JSON.stringify(data); files.set(asset.path, body); asset.sha256 = hash(body);
+  }
+  const releasePath = `/releases-v2/${id}/${locale}.json`, body = JSON.stringify(release);
+  files.set(releasePath, body);
+  page.targets[locale] = { releasePackageUrl: releasePath, releasePackageJsonSha256: hash(body),
+    contentStatus: 'human_reviewed', audioStatus: 'human_reviewed', capabilities: ['text', 'captions', 'audio'] };
+  files.set('/multilingual-v3.json', JSON.stringify({ schemaVersion: 'sermon-multilingual-catalog-v3',
+    generatedAt: '2026-10-03T00:00:00Z', defaultPageId: id, pages: [page] }));
+  const fetchImpl = async path => { requests.push(path); return files.has(path) ? new Response(files.get(path)) : new Response('', { status: 404 }); };
+  return { files, requests, fetchImpl, id };
+}
+
 test('published three-language tracks work inside the legacy week shape without mixing reading text and spoken captions', async () => {
   const f = fixture();
   const result = await loadPublishedWeeks(f.fetchImpl);
@@ -85,6 +139,36 @@ test('published three-language tracks work inside the legacy week shape without 
     assert.equal(variant.fingerprint, undefined);
   }
   assert.ok(!f.requests.some(path => /\.mp3$/.test(path)), 'runtime never predownloads audio for validation');
+});
+
+test('podcast candidate appears only in the explicitly enabled Dev reader and uses audio-clock WAV cues', async () => {
+  const f = podcastCandidateFixture();
+  const hidden = await loadPublishedWeeks(f.fetchImpl);
+  assert.deepEqual(hidden.weeks, []);
+  assert.deepEqual(hidden.errors, []);
+
+  const result = await loadPublishedWeeks(f.fetchImpl, { allowDevCandidates: true });
+  assert.deepEqual(result.errors, []);
+  assert.equal(result.weeks.length, 1);
+  assert.equal(result.defaultWeekId, f.id);
+  const [week] = result.weeks;
+  assert.equal(week.title, '如果我有更多时间 · 耶稣配得');
+  assert.equal(week.sourceRoute, 'podcast');
+  assert.equal(week.devCandidate, true);
+  assert.equal(week.releaseLabel, 'DEV 候选');
+  assert.equal(week.tracks[0].audioUrl, `/media/${f.id}/zh-Hans.wav`);
+  assert.equal(week.tracks[0].subtitleTiming, 'target_audio_clock');
+  assert.equal(week.tracks[0].cues[0].text, '欢迎大家收听。');
+  assert.ok(!f.requests.some(path => path.endsWith('.wav')));
+});
+
+test('podcast candidates cannot claim HTTP, device, or venue acceptance', async () => {
+  const f = podcastCandidateFixture(({ release }) => {
+    release.deviceAcceptance = { status: 'pass', evidenceSha256: 'e'.repeat(64) };
+  });
+  const result = await loadPublishedWeeks(f.fetchImpl, { allowDevCandidates: true });
+  assert.deepEqual(result.weeks, []);
+  assert.match(result.errors[0], /cannot claim publication, device, or venue acceptance/);
 });
 
 test('tampered caption bytes reject only that locale', async () => {

@@ -790,7 +790,9 @@ try {
   const response = await fetch("/weekly.json");
   if (!response.ok) throw new Error("Catalog unavailable");
   catalog = validateCatalog(await response.json());
-  const published = await loadPublishedWeeks();
+  const published = await loadPublishedWeeks(undefined, {
+    allowDevCandidates: location.hostname === "ai-for-god-sermon-audio-dev.web.app",
+  });
   if (published.weeks.length) {
     const ids = new Set(published.weeks.map(item => item.id));
     catalog = validateCatalog({ ...catalog,
