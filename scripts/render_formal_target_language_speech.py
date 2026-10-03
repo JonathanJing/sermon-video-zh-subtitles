@@ -1147,9 +1147,7 @@ def main(argv=None) -> None:
     dev_profile.add_arguments(parser)
     parser.add_argument("--instruct", help="Frozen natural delivery instruction; never edits approved text")
     parser.add_argument("--unit-instructions", type=Path,
-                        help="JSON instructions bound to the job, locale, and approved text; "
-                             "per-unit instructions override --instruct. "
-                             "See docs/formal-layer3-renderer.zh.md for the input schema and limits")
+                        help="Source-bound per-unit pronunciation and pause instructions")
     parser.add_argument("--reaction-lag-seconds", type=float, default=0.05)
     parser.add_argument("--inter-utterance-gap-seconds", type=float, default=0.05)
     parser.add_argument("--max-end-lag-seconds", type=float, default=8.0)

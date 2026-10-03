@@ -3,7 +3,7 @@ import { t, getLocale, setLocale, onLocaleChange, localizeDOM } from "/i18n.mjs"
 import { localizeWeek } from "/content-locales.mjs";
 import { messages as appMessages } from "/locales-app.mjs";
 import { boundedTime, formatTime, cueIndex } from "/timing.mjs";
-import { validateCatalog, chooseWeek, parseTimecode, downloadFilename, engagementWeek, weekOptionLabel, bilingualCueRows, isFormalPlayback, diagnosticPresentation } from "/catalog.mjs";
+import { validateCatalog, chooseWeek, parseTimecode, downloadFilename, engagementWeek, buildCatalogNavigation, catalogNavigationEnvironment, bilingualCueRows, isFormalPlayback, diagnosticPresentation } from "/catalog.mjs";
 import { createFeedback } from "/feedback.mjs";
 import { createUsage } from "/usage.mjs";
 import { mountFingerprintUI, playAlignmentAudio } from "/fingerprint-ui.mjs";
@@ -17,6 +17,8 @@ for (const id of ["week-select", "series", "title", "speaker", "scripture", "cen
 }
 const audio = $("audio");
 let catalog, week, track, fineOffset = 0, lastCue = -2, generation = 0;
+let navigationGroups = [];
+const navigationEnvironment = catalogNavigationEnvironment(location.origin);
 let activeSource = null, pendingResume = null, positionTouched = false, undoPoint = null, scrubbing = false, lastSavedAt = 0;
 let metadataReady = false, playPending = false, playFailed = false, resumeOnMetadata = false, playAttempt = 0, startupTimer = null;
 let activeView = "tab-listen";
@@ -103,11 +105,22 @@ function renderContentLanguages() {
 }
 function renderWeekOptions() {
   $("week-select").replaceChildren();
-  for (const original of catalog.weeks) {
-    const option = document.createElement("option");
-    option.value = original.id;
-    option.textContent = weekOptionLabel(original);
-    $("week-select").append(option);
+  const groupLabels = {
+    zh: ['本期与往期', '开发诊断', '开发演练'],
+    en: ['Sermons', 'Development diagnostics', 'Development rehearsals'],
+    ko: ['설교', '개발 진단', '개발 연습'],
+    es: ['Sermones', 'Diagnósticos de desarrollo', 'Ensayos de desarrollo'],
+  };
+  for (const group of navigationGroups) {
+    const options = document.createElement("optgroup");
+    options.label = (groupLabels[getLocale()] || groupLabels.zh)[['sermons', 'diagnostics', 'simulations'].indexOf(group.id)];
+    for (const { week: original, label } of group.items) {
+      const option = document.createElement("option");
+      option.value = original.id;
+      option.textContent = label;
+      options.append(option);
+    }
+    $("week-select").append(options);
   }
   if (week) $("week-select").value = week.id;
 }
@@ -798,6 +811,9 @@ try {
       weeks: [...published.weeks, ...catalog.weeks.filter(item => !ids.has(item.id))],
     });
   }
+  const navigation = buildCatalogNavigation(catalog, { environment: navigationEnvironment });
+  catalog = navigation.catalog;
+  navigationGroups = navigation.groups;
   renderWeekOptions();
   $("week-select").disabled = false;
   renderVoiceBank();

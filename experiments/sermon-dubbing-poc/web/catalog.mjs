@@ -119,6 +119,55 @@ export function weekOptionLabel(week) {
   return [date, title, route && !title.includes(route) ? route : '', displayStatus].filter(Boolean).join(' · ');
 }
 
+// Development entries are opt-in by the reader's environment, never by a
+// title, URL query parameter, or a catalog claiming to be a development build.
+export function catalogNavigationEnvironment(origin) {
+  try {
+    const url = new URL(origin);
+    if (url.origin !== origin) return 'production';
+    if (url.protocol === 'https:' && ['ai-for-god-sermon-audio-dev.web.app',
+      'ai-for-god-sermon-audio-dev.firebaseapp.com'].includes(url.hostname)) return 'development';
+    if (['http:', 'https:'].includes(url.protocol)
+        && ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname)) return 'development';
+  } catch { /* Unknown origins use the production navigation policy. */ }
+  return 'production';
+}
+
+function navigationGroup(week) {
+  const variants = [week, ...Object.values(week.contentVariants || {})];
+  if (variants.some(item => item?.diagnosticOnly === true)) return 'diagnostics';
+  if (variants.some(item => item?.simulationOnly === true)) return 'simulations';
+  return 'sermons';
+}
+
+export function buildCatalogNavigation(catalog, { environment } = {}) {
+  if (!['development', 'production'].includes(environment)) throw new Error('Explicit navigation environment required');
+  validateCatalog(catalog); // Reject duplicate identities before environment filtering.
+  const groupIds = ['sermons', 'diagnostics', 'simulations'];
+  const groups = groupIds.map(id => ({ id, items: [] }));
+  const weeks = catalog.weeks.filter(item => environment === 'development' || navigationGroup(item) === 'sermons')
+    .slice().sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')) || a.id.localeCompare(b.id));
+  if (!weeks.length) throw new Error('No selectable weeks in this environment');
+  const labels = weeks.map(weekOptionLabel), counts = new Map();
+  for (const label of labels) counts.set(label, (counts.get(label) || 0) + 1);
+  // Reserve every existing label as well as generated labels. Full stable IDs
+  // distinguish same-name runs without introducing a shortened-ID collision.
+  const reserved = new Set(labels);
+  weeks.forEach((week, index) => {
+    let label = labels[index];
+    if (counts.get(label) > 1) {
+      do { label += ` [ID: ${week.id}]`; } while (reserved.has(label));
+      reserved.add(label);
+    }
+    groups.find(group => group.id === navigationGroup(week)).items.push({ week, label });
+  });
+  const visibleGroups = groups.filter(group => group.items.length);
+  const orderedWeeks = visibleGroups.flatMap(group => group.items.map(item => item.week));
+  const defaultWeekId = orderedWeeks.some(item => item.id === catalog.defaultWeekId)
+    ? catalog.defaultWeekId : orderedWeeks[0].id;
+  return { catalog: { ...catalog, weeks: orderedWeeks, defaultWeekId }, groups: visibleGroups };
+}
+
 // Only diagnostic variants consume this state. Formal and legacy weeks retain
 // their existing contracts. Public messages never display raw exception text.
 const DIAGNOSTIC_REASONS = new Set(['machine_candidate_missing', 'preview_audio_unavailable',
