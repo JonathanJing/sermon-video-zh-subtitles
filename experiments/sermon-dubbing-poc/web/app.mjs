@@ -3,7 +3,7 @@ import { t, getLocale, setLocale, onLocaleChange, localizeDOM } from "/i18n.mjs"
 import { localizeWeek } from "/content-locales.mjs";
 import { messages as appMessages } from "/locales-app.mjs";
 import { boundedTime, formatTime, cueIndex } from "/timing.mjs";
-import { validateCatalog, chooseWeek, parseTimecode, downloadFilename, engagementWeek, weekOptionLabel, bilingualCueRows, isFormalPlayback, diagnosticPresentation } from "/catalog.mjs";
+import { validateCatalog, chooseWeek, parseTimecode, downloadFilename, engagementWeek, weekOptionLabel, bilingualCueRows, isFormalPlayback, diagnosticPresentation, sermonContentCategory } from "/catalog.mjs";
 import { createFeedback } from "/feedback.mjs";
 import { createUsage } from "/usage.mjs";
 import { mountFingerprintUI, playAlignmentAudio } from "/fingerprint-ui.mjs";
@@ -115,6 +115,7 @@ function renderWeekLabels() {
   if (!week) return;
   const view = displayWeek();
   renderContentLanguages();
+  renderContentCategory(view);
   $("title").textContent = view.title;
   $("series").textContent = [view.series, view.sourceLabel].filter(Boolean).join(" · ");
   $("speaker").textContent = view.speaker; $("scripture").textContent = view.scripture;
@@ -131,6 +132,15 @@ function renderWeekLabels() {
   for (const button of $("variants").children) button.textContent = isFormalPlayback(week) ? t("app.release.formal") : getLocale() !== "zh" ? t("app.voice.active", { speaker: week.speaker }) : week.tracks.find(item => item.id === button.dataset.id)?.label || "";
   $("subtitle-note").textContent = t("app.subtitle.follow");
   document.title = `${activeView === "tab-voices" ? t("app.voices.title") : view.title} · ${t("app.brand")}`;
+}
+
+function renderContentCategory(value) {
+  const category = sermonContentCategory(value);
+  const badge = $("content-category");
+  badge.hidden = !category;
+  if (!category) return;
+  $("content-category-label").textContent = t(`sermon.category.${category}`);
+  setIcon($("content-category-icon"), category === 'podcast' ? 'waveform' : 'play.rectangle');
 }
 
 function ready(value) {
@@ -564,6 +574,7 @@ function selectWeek(id) {
   contentLocale = selectedLocale;
   if (week?.id === nextWeek.id && week?.targetLocale === nextWeek.targetLocale) return;
   week = nextWeek;
+  renderContentCategory(displayWeek());
   $("week-select").value = week.id;
   $("title").textContent = week.title;
   $("series").textContent = [week.series, week.sourceLabel].filter(Boolean).join(" · ");

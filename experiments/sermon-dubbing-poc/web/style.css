@@ -236,3 +236,5 @@ button:has(>.app-icon),a:has(>.app-icon){display:inline-flex;align-items:center;
 .fingerprint-help>summary{cursor:pointer;min-height:44px;box-sizing:border-box;padding:12px 0;}
 .fingerprint-help[open]>summary{margin-bottom:10px}
 .fingerprint-help p{line-height:1.7}
+.content-category{display:inline-flex;align-items:center;gap:7px;width:max-content;max-width:100%;margin:0 0 10px;padding:5px 10px;border:1px solid var(--control-line);border-radius:999px;background:var(--selected);color:var(--teal);font-size:12px;font-weight:650;line-height:1.4;letter-spacing:.2px}
+.content-category .app-icon{width:16px;height:16px;flex:0 0 auto}

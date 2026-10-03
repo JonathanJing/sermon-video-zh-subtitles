@@ -35,12 +35,18 @@ public struct MultilingualCatalog: Codable, Sendable, Equatable {
 public struct MultilingualPage: Codable, Sendable, Equatable, Identifiable {
     public let id: String
     public let title: String?
+    /// Optional wire metadata already carried by Dev podcast catalog entries.
+    public var mediaType: String? = nil
     public let date: String
     public let sourceLocale: String
     public let sourceIdentitySha256: String
     public let sourceMediaSha256: String?
     public let defaultTargetLocale: String
     public let targets: [String: PageTarget]
+
+    public var contentCategory: SermonContentCategory? {
+        SermonContentCategory.resolve(mediaType: mediaType, defaultVideo: mediaType == nil)
+    }
 
     public func validate(catalogSchemaVersion: String = MultilingualCatalog.supportedSchemaVersion) throws {
         guard Validation.identifier(id), Validation.isoDate(date), sourceLocale == "en",

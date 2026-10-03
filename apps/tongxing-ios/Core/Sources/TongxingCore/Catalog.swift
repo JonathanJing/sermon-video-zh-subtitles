@@ -34,6 +34,43 @@ public enum CatalogError: Error, LocalizedError, Equatable, Sendable {
     }
 }
 
+public enum SermonContentCategory: String, Codable, Sendable, Equatable {
+    case podcast
+    case sundaySermonVideo = "sunday-sermon-video"
+    case youtubeSermonVideo = "youtube-sermon-video"
+
+    public var localizationKey: String {
+        switch self {
+        case .podcast: "播客节目"
+        case .sundaySermonVideo: "周日证道视频"
+        case .youtubeSermonVideo: "YouTube 证道视频"
+        }
+    }
+
+    public var systemImage: String {
+        switch self {
+        case .podcast: "waveform"
+        case .sundaySermonVideo, .youtubeSermonVideo: "play.rectangle"
+        }
+    }
+
+    public static func resolve(mediaType: String? = nil, sourceRoute: String? = nil,
+                               sourceLabel: String? = nil, defaultVideo: Bool = false) -> Self? {
+        if mediaType == "podcast" || sourceRoute == "podcast" { return .podcast }
+        let label = sourceLabel?.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if label.contains("youtube") { return .youtubeSermonVideo }
+        if label.contains("主日") || label.contains("正式播放") { return .sundaySermonVideo }
+        switch sourceRoute {
+        case "archive_caption", "same_video": return .youtubeSermonVideo
+        case "live_archive", "full_video": return .sundaySermonVideo
+        default: break
+        }
+        if mediaType == "video" || defaultVideo { return .sundaySermonVideo }
+        return nil
+    }
+}
+
 public struct WeeklyCatalog: Codable, Sendable, Equatable {
     public static let supportedSchemaVersion = "sermon-weekly-catalog-v1"
     public let schemaVersion: String
@@ -77,6 +114,9 @@ public struct SermonWeek: Codable, Sendable, Equatable, Identifiable {
     public let date: String
     public let sourceId: String
     public let sourceUrl: String
+    public let mediaType: String?
+    public let sourceRoute: String?
+    public let sourceLabel: String?
     public let title: String
     public let speaker: String
     public let scripture: String
@@ -104,6 +144,10 @@ public struct SermonWeek: Codable, Sendable, Equatable, Identifiable {
     public let sourceEndSeconds: Double?
     public let audioFingerprint: PublishedFingerprintBinding?
 
+    public var contentCategory: SermonContentCategory? {
+        SermonContentCategory.resolve(mediaType: mediaType, sourceRoute: sourceRoute, sourceLabel: sourceLabel)
+    }
+
     public init(id: String, date: String, sourceId: String, sourceUrl: String, title: String,
                 speaker: String, scripture: String, tracks: [SermonTrack], number: String? = nil,
                 series: String? = nil, centralMessage: String? = nil, summary: String? = nil,
@@ -114,8 +158,10 @@ public struct SermonWeek: Codable, Sendable, Equatable, Identifiable {
                 outlineSourceSha256: String? = nil, speakerSource: String? = nil, titleEvidence: String? = nil,
                 transcript: BilingualTranscript? = nil, sourceSha256: String? = nil,
                 sourceStartSeconds: Double? = nil, sourceEndSeconds: Double? = nil,
-                audioFingerprint: PublishedFingerprintBinding? = nil) {
+                audioFingerprint: PublishedFingerprintBinding? = nil, mediaType: String? = nil,
+                sourceRoute: String? = nil, sourceLabel: String? = nil) {
         self.id = id; self.date = date; self.sourceId = sourceId; self.sourceUrl = sourceUrl
+        self.mediaType = mediaType; self.sourceRoute = sourceRoute; self.sourceLabel = sourceLabel
         self.title = title; self.speaker = speaker; self.scripture = scripture; self.tracks = tracks
         self.number = number; self.series = series; self.centralMessage = centralMessage; self.summary = summary
         self.outline = outline; self.scriptureRefs = scriptureRefs; self.questions = questions

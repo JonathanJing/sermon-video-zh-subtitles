@@ -159,7 +159,8 @@ struct ContentView: View {
                                     appLanguageMenu
                                 }
                                 SermonHeadingView(heading: model.heading(for: page), date: page.date,
-                                                  titleFont: .largeTitle.bold(), identifier: "published-page")
+                                                  titleFont: .largeTitle.bold(), identifier: "published-page",
+                                                  category: page.contentCategory)
                                 languageButton
                                 if model.fullVideoURL != nil || model.selectedAudioLanguageName != nil {
                                     if typeSize.isAccessibilitySize {
@@ -466,7 +467,8 @@ struct ContentView: View {
             HStack(spacing: 16) {
                 VStack(alignment: .leading, spacing: 4) {
                     SermonHeadingView(heading: SermonHeading(title: week.title, series: week.series, speaker: week.speaker),
-                                      date: week.date, titleFont: .headline, identifier: "sermon")
+                                      date: week.date, titleFont: .headline, identifier: "sermon",
+                                      category: week.contentCategory)
                     Text(reviewLabel).font(.caption).foregroundStyle(Brand.accent)
                 }
                 Spacer(minLength: 8)
@@ -483,12 +485,12 @@ struct ContentView: View {
     private func regularSermonHeading(_ week: SermonWeek) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text(localization.text("证道")).font(.caption.weight(.medium)).foregroundStyle(.secondary)
                 Spacer()
                 appLanguageMenu
             }
             SermonHeadingView(heading: SermonHeading(title: week.title, series: week.series, speaker: week.speaker),
-                              date: week.date, titleFont: .largeTitle.bold(), identifier: "sermon")
+                              date: week.date, titleFont: .largeTitle.bold(), identifier: "sermon",
+                              category: week.contentCategory)
             Text(week.scripture).font(.footnote).foregroundStyle(.secondary)
             languageButton
             if model.selectedContentLocale != "zh-Hans", model.selectedContentTarget != nil {
@@ -1121,9 +1123,19 @@ private struct SermonHeadingView: View {
     let date: String
     let titleFont: Font
     let identifier: String
+    var category: SermonContentCategory? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
+            if let category {
+                Label(localization.text(category.localizationKey), systemImage: category.systemImage)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Brand.accent)
+                    .padding(.horizontal, 10).padding(.vertical, 6)
+                    .background(Brand.accent.opacity(0.11), in: Capsule())
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("\(identifier)-category")
+            }
             Text(heading.title).font(titleFont)
                 .accessibilityAddTraits(.isHeader)
                 .accessibilityIdentifier("\(identifier)-title")
@@ -1170,8 +1182,9 @@ private struct WeekSheet: View {
                                 dismiss()
                             } label: {
                                 HStack {
-                                    SermonHeadingView(heading: model.heading(for: page), date: page.date,
-                                                      titleFont: .headline, identifier: "picker-\(page.id)")
+                                SermonHeadingView(heading: model.heading(for: page), date: page.date,
+                                                  titleFont: .headline, identifier: "picker-\(page.id)",
+                                                  category: page.contentCategory)
                                     Spacer()
                                     if page.id == model.selectedPageID { Image(systemName: "checkmark") }
                                 }
@@ -1191,7 +1204,8 @@ private struct WeekSheet: View {
                         } label: {
                             HStack {
                                 SermonHeadingView(heading: SermonHeading(title: week.title, series: week.series, speaker: week.speaker),
-                                                  date: week.date, titleFont: .headline, identifier: "picker-\(week.id)")
+                                                  date: week.date, titleFont: .headline, identifier: "picker-\(week.id)",
+                                                  category: week.contentCategory)
                                 Spacer()
                                 if week.id == model.selectedWeek?.id { Image(systemName: "checkmark") }
                             }

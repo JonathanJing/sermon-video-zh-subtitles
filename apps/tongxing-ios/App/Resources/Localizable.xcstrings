@@ -289,73 +289,233 @@
     "更多": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "More" } },
-        "ko": { "stringUnit": { "state": "translated", "value": "더 보기" } },
-        "es": { "stringUnit": { "state": "translated", "value": "Más" } },
-        "vi": { "stringUnit": { "state": "translated", "value": "Thêm" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "더 보기"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Más"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thêm"
+          }
+        }
       }
     },
     "已发布页面": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Published pages" } },
-        "ko": { "stringUnit": { "state": "translated", "value": "게시된 페이지" } },
-        "es": { "stringUnit": { "state": "translated", "value": "Páginas publicadas" } },
-        "vi": { "stringUnit": { "state": "translated", "value": "Trang đã xuất bản" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Published pages"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "게시된 페이지"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Páginas publicadas"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trang đã xuất bản"
+          }
+        }
       }
     },
     "内容语言": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Content language" } },
-        "ko": { "stringUnit": { "state": "translated", "value": "콘텐츠 언어" } },
-        "es": { "stringUnit": { "state": "translated", "value": "Idioma del contenido" } },
-        "vi": { "stringUnit": { "state": "translated", "value": "Ngôn ngữ nội dung" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Content language"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "콘텐츠 언어"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Idioma del contenido"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ngôn ngữ nội dung"
+          }
+        }
       }
     },
     "音频语言": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Audio language" } },
-        "ko": { "stringUnit": { "state": "translated", "value": "오디오 언어" } },
-        "es": { "stringUnit": { "state": "translated", "value": "Idioma del audio" } },
-        "vi": { "stringUnit": { "state": "translated", "value": "Ngôn ngữ âm thanh" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Audio language"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "오디오 언어"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Idioma del audio"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ngôn ngữ âm thanh"
+          }
+        }
       }
     },
     "下载并准备本语言音频": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Download this language's audio" } },
-        "ko": { "stringUnit": { "state": "translated", "value": "이 언어의 오디오 다운로드" } },
-        "es": { "stringUnit": { "state": "translated", "value": "Descargar audio de este idioma" } },
-        "vi": { "stringUnit": { "state": "translated", "value": "Tải âm thanh ngôn ngữ này" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download this language's audio"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 언어의 오디오 다운로드"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descargar audio de este idioma"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tải âm thanh ngôn ngữ này"
+          }
+        }
       }
     },
     "本语言仅提供文字": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Text only in this language" } },
-        "ko": { "stringUnit": { "state": "translated", "value": "이 언어는 텍스트만 제공됩니다" } },
-        "es": { "stringUnit": { "state": "translated", "value": "Solo texto en este idioma" } },
-        "vi": { "stringUnit": { "state": "translated", "value": "Ngôn ngữ này chỉ có văn bản" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Text only in this language"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 언어는 텍스트만 제공됩니다"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Solo texto en este idioma"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ngôn ngữ này chỉ có văn bản"
+          }
+        }
       }
     },
     "无法下载或校验所选语言音频，请联网后重试。": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Could not download or verify this language's audio. Connect to the internet and retry." } },
-        "ko": { "stringUnit": { "state": "translated", "value": "이 언어의 오디오를 다운로드하거나 확인할 수 없습니다. 인터넷에 연결한 후 다시 시도하세요." } },
-        "es": { "stringUnit": { "state": "translated", "value": "No se pudo descargar o verificar el audio. Conéctate a Internet y vuelve a intentarlo." } },
-        "vi": { "stringUnit": { "state": "translated", "value": "Không thể tải hoặc xác minh âm thanh. Hãy kết nối Internet rồi thử lại." } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not download or verify this language's audio. Connect to the internet and retry."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 언어의 오디오를 다운로드하거나 확인할 수 없습니다. 인터넷에 연결한 후 다시 시도하세요."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo descargar o verificar el audio. Conéctate a Internet y vuelve a intentarlo."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể tải hoặc xác minh âm thanh. Hãy kết nối Internet rồi thử lại."
+          }
+        }
       }
     },
     "音频就绪 · 可以播放": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Audio ready · Tap play" } },
-        "ko": { "stringUnit": { "state": "translated", "value": "오디오 준비 완료 · 재생을 누르세요" } },
-        "es": { "stringUnit": { "state": "translated", "value": "Audio listo · Toca reproducir" } },
-        "vi": { "stringUnit": { "state": "translated", "value": "Âm thanh đã sẵn sàng · Nhấn phát" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Audio ready · Tap play"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "오디오 준비 완료 · 재생을 누르세요"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Audio listo · Toca reproducir"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Âm thanh đã sẵn sàng · Nhấn phát"
+          }
+        }
       }
     },
     "当前中文版本": {
@@ -3441,7 +3601,12 @@
             "value": "More options"
           }
         },
-        "ko": { "stringUnit": { "state": "translated", "value": "더 보기" } },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "더 보기"
+          }
+        },
         "es": {
           "stringUnit": {
             "state": "translated",
@@ -4503,19 +4668,59 @@
     "原始英文视频": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Original English video" } },
-        "ko": { "stringUnit": { "state": "translated", "value": "영어 원본 영상" } },
-        "es": { "stringUnit": { "state": "translated", "value": "Video original en inglés" } },
-        "vi": { "stringUnit": { "state": "translated", "value": "Video gốc tiếng Anh" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Original English video"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "영어 원본 영상"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Video original en inglés"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Video gốc tiếng Anh"
+          }
+        }
       }
     },
     "观看完整视频": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Watch full video" } },
-        "ko": { "stringUnit": { "state": "translated", "value": "전체 영상 보기" } },
-        "es": { "stringUnit": { "state": "translated", "value": "Ver video completo" } },
-        "vi": { "stringUnit": { "state": "translated", "value": "Xem video đầy đủ" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Watch full video"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "전체 영상 보기"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ver video completo"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xem video đầy đủ"
+          }
+        }
       }
     },
     "英文原视频 ↗": {
@@ -5853,10 +6058,30 @@
     "先听讲员英语原声，再比较中文、韩语和西班牙语 AI 样音。示例文稿并非本周证道。": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Hear the speaker’s original English clip, then compare the Chinese, Korean, and Spanish AI samples. The sample scripts are not this week’s sermon." } },
-        "ko": { "stringUnit": { "state": "translated", "value": "설교자의 영어 원음을 먼저 듣고 중국어, 한국어, 스페인어 AI 샘플을 비교하세요. 예문은 이번 주 설교가 아닙니다." } },
-        "es": { "stringUnit": { "state": "translated", "value": "Escucha primero el audio original en inglés y luego compara las muestras de IA en chino, coreano y español. Los textos de muestra no son el sermón de esta semana." } },
-        "vi": { "stringUnit": { "state": "translated", "value": "Nghe đoạn tiếng Anh gốc của diễn giả, rồi so sánh các mẫu AI bằng tiếng Trung, Hàn và Tây Ban Nha. Văn bản mẫu không phải bài giảng tuần này." } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hear the speaker’s original English clip, then compare the Chinese, Korean, and Spanish AI samples. The sample scripts are not this week’s sermon."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "설교자의 영어 원음을 먼저 듣고 중국어, 한국어, 스페인어 AI 샘플을 비교하세요. 예문은 이번 주 설교가 아닙니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escucha primero el audio original en inglés y luego compara las muestras de IA en chino, coreano y español. Los textos de muestra no son el sermón de esta semana."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nghe đoạn tiếng Anh gốc của diễn giả, rồi so sánh các mẫu AI bằng tiếng Trung, Hàn và Tây Ban Nha. Văn bản mẫu không phải bài giảng tuần này."
+          }
+        }
       }
     },
     "先听讲员英语原声，再比较四种 AI 样音。示例文稿并非本周证道。": {
@@ -6094,10 +6319,30 @@
     "韩语、西班牙语样音待人工听审；试听并非本周证道音轨。": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "The Korean and Spanish samples await human listening review; these demos are not this week’s sermon tracks." } },
-        "ko": { "stringUnit": { "state": "translated", "value": "한국어와 스페인어 샘플은 사람의 청취 검토를 기다리고 있습니다. 이 데모는 이번 주 설교 음성이 아닙니다." } },
-        "es": { "stringUnit": { "state": "translated", "value": "Las muestras en coreano y español esperan revisión auditiva humana; estas demos no son las pistas del sermón de esta semana." } },
-        "vi": { "stringUnit": { "state": "translated", "value": "Các bản mẫu tiếng Hàn và Tây Ban Nha đang chờ người nghe kiểm duyệt; đây không phải bản âm thanh bài giảng tuần này." } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The Korean and Spanish samples await human listening review; these demos are not this week’s sermon tracks."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "한국어와 스페인어 샘플은 사람의 청취 검토를 기다리고 있습니다. 이 데모는 이번 주 설교 음성이 아닙니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las muestras en coreano y español esperan revisión auditiva humana; estas demos no son las pistas del sermón de esta semana."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Các bản mẫu tiếng Hàn và Tây Ban Nha đang chờ người nghe kiểm duyệt; đây không phải bản âm thanh bài giảng tuần này."
+          }
+        }
       }
     },
     "样音待人工听审，不代表正式证道音轨。": {
@@ -7175,6 +7420,93 @@
           "stringUnit": {
             "state": "translated",
             "value": "Video cùng đoạn"
+          }
+        }
+      }
+    },
+    "播客节目": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podcast"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "팟캐스트 프로그램"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Programa de pódcast"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chương trình podcast"
+          }
+        }
+      }
+    },
+    "周日证道视频": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sunday sermon video"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "주일 설교 영상"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Video del sermón dominical"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Video bài giảng Chúa nhật"
+          }
+        }
+      }
+    },
+    "YouTube 证道视频": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "YouTube sermon video"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "YouTube 설교 영상"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sermón en video de YouTube"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Video bài giảng trên YouTube"
           }
         }
       }

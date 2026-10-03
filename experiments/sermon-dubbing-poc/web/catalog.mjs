@@ -3,6 +3,16 @@ export function isFormalPlayback(week) {
   return week?.releaseLabel === "正式播放版";
 }
 
+export function sermonContentCategory(week) {
+  if (week?.mediaType === 'podcast' || week?.sourceRoute === 'podcast') return 'podcast';
+  const label = typeof week?.sourceLabel === 'string' ? week.sourceLabel.toLocaleLowerCase() : '';
+  if (label.includes('youtube')) return 'youtubeVideo';
+  if (label.includes('主日') || label.includes('正式播放')) return 'sundayVideo';
+  if (week?.mediaType === 'video' || week?.sourceRoute === 'full_video' || week?.sourceRoute === 'live_archive') return 'sundayVideo';
+  if (week?.sourceRoute === 'same_video' || week?.sourceRoute === 'archive_caption') return 'youtubeVideo';
+  return null;
+}
+
 const blockKey = value => typeof value === 'string' ? value : Number.isSafeInteger(value) && value >= 0 ? String(value) : null;
 const validBlockKey = value => typeof value === 'string' && value.length > 0 && value.length <= 128 && value.trim() === value && !/[\u0000-\u001f\u007f]/.test(value);
 

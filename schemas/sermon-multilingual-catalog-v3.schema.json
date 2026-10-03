@@ -196,6 +196,9 @@
           "pattern": "\\S"
         },
         "mediaType": {
+          "enum": ["podcast", "video"]
+        },
+        "mediaType": {
           "enum": ["video", "podcast"]
         },
         "sourceUrl": {
