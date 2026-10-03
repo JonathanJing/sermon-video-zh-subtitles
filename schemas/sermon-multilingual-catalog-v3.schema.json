@@ -116,7 +116,7 @@
           "$ref": "#/$defs/sha256"
         },
         "contentStatus": {
-          "const": "human_reviewed"
+          "enum": ["human_reviewed", "machine_reviewed"]
         },
         "audioStatus": {
           "enum": [

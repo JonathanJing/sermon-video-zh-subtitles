@@ -10,12 +10,14 @@ const LABELS = {
   },
   ko: {
     source: '전체 영상', audio: '한국어 동기화 더빙', voice: 'Eric Geiger · AI 더빙',
+    podcastAudio: '한국어 팟캐스트 더빙',
     notice: 'AI 더빙은 승인된 간결한 구술 원고를 사용합니다. 자막은 더빙을 따르며 전체 읽기 원고는 별도로 제공됩니다.',
     review: '전체 원고와 더빙의 사람 검토 및 승인이 기록되었습니다',
     stages: [['원고 검토', '전체 원고가 검토 및 승인되었습니다.'], ['더빙과 자막', '더빙이 검토 및 승인되었으며 자막은 해당 구술 원고를 사용합니다.'], ['온라인 게시', '정식 음원과 원고가 게시되었고 온라인 파일 검증을 통과했습니다.']],
   },
   es: {
     source: 'Video completo', audio: 'Doblaje sincronizado en español', voice: 'Eric Geiger · doblaje con IA',
+    podcastAudio: 'Doblaje de pódcast en español',
     notice: 'El doblaje con IA utiliza el guion oral abreviado aprobado. Los subtítulos siguen el audio; el texto íntegro se ofrece por separado.',
     review: 'El texto íntegro y el doblaje tienen revisión y aprobación humanas registradas',
     stages: [['Revisión del texto', 'El texto íntegro está revisado y aprobado.'], ['Doblaje y subtítulos', 'El doblaje está revisado y aprobado; los subtítulos utilizan su guion oral.'], ['Publicación', 'El audio oficial y el texto están publicados y sus archivos en línea están verificados.']],
@@ -96,6 +98,7 @@ export function validatePublishedRelease(release, page, locale) {
     && HASH.test(release.targetLanguageCandidateJsonSha256)
     && HASH.test(release.spokenTargetLanguageCandidateJsonSha256)
     && HASH.test(release.targetLanguageAudioPackageJsonSha256)
+    && (release.contentStatus !== 'machine_reviewed' || HASH.test(release.audioHumanReviewReceiptJsonSha256))
     && Array.isArray(release.issues) && release.issues.length === 0
     && release.status === 'published_http_verified' && release.httpVerification?.status === 'pass'
     && release.contentStatus === 'human_reviewed' && release.audioStatus === 'human_reviewed', 'Invalid published release identity or status');
@@ -127,8 +130,8 @@ export function validateDevPodcastCandidateRelease(release, page, locale) {
     && release.schemaVersion === 'sermon-target-language-release-package-v2'
     && release.pageId === page.id && release.targetLocale === locale
     && release.contentLocale === locale && release.audioLocale === locale
-    && release.sourceLocale === 'en' && release.interfaceLocale === locale
-    && release.status === 'candidate' && release.contentStatus === 'human_reviewed'
+    && release.sourceLocale === 'en' && ['zh-Hans', locale].includes(release.interfaceLocale)
+    && release.status === 'candidate' && ['human_reviewed', 'machine_reviewed'].includes(release.contentStatus)
     && release.audioStatus === 'human_reviewed'
     && HASH.test(release.targetLanguageCandidateJsonSha256)
     && HASH.test(release.spokenTargetLanguageCandidateJsonSha256)
@@ -154,10 +157,13 @@ export function validateDevPodcastCandidateRelease(release, page, locale) {
 
 // Catalog admission is distinct from this audio player's capabilities. A valid
 // text-only target stays valid, but must never trigger an audio-release request.
-export function validatePublishedTarget(target, page, locale) {
+export function validatePublishedTarget(target, page, locale, allowDevCandidates = false) {
   const capabilities = target?.capabilities;
+  const devMachineCandidate = allowDevCandidates && page?.mediaType === 'podcast'
+    && target?.contentStatus === 'machine_reviewed';
   required(target && target.releasePackageUrl === `/releases-v2/${page.id}/${locale}.json`
-    && HASH.test(target.releasePackageJsonSha256) && target.contentStatus === 'human_reviewed'
+    && HASH.test(target.releasePackageJsonSha256)
+    && (target.contentStatus === 'human_reviewed' || devMachineCandidate)
     && ['unavailable', 'human_reviewed'].includes(target.audioStatus)
     && Array.isArray(capabilities) && capabilities.includes('text')
     && capabilities.every(value => ['text', 'captions', 'audio', 'download', 'alignment'].includes(value))
@@ -213,12 +219,16 @@ export function validatePublishedPage(page) {
 }
 
 async function loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal, allowDevCandidates) {
-  const target = validatePublishedTarget(page.targets[locale], page, locale);
-  required(target?.contentStatus === 'human_reviewed' && target.audioStatus === 'human_reviewed'
+  const target = validatePublishedTarget(page.targets[locale], page, locale, allowDevCandidates);
+  required((target?.contentStatus === 'human_reviewed'
+      || (allowDevCandidates && page.mediaType === 'podcast' && target?.contentStatus === 'machine_reviewed'))
+    && target.audioStatus === 'human_reviewed'
     && ['text', 'captions', 'audio'].every(capability => target.capabilities?.includes(capability)), 'Target is not ready for playback');
   const release = await readJson(fetchImpl, target.releasePackageUrl, target.releasePackageJsonSha256, timeoutMs, false, pageSignal);
   const devPodcastCandidate = release.status === 'candidate';
   if (devPodcastCandidate && (!allowDevCandidates || page.mediaType !== 'podcast')) return null;
+  required(target.contentStatus !== 'machine_reviewed'
+    || (devPodcastCandidate && allowDevCandidates), 'Machine-reviewed text is only available as a Dev podcast candidate');
   const assets = devPodcastCandidate
     ? validateDevPodcastCandidateRelease(release, page, locale)
     : validatePublishedRelease(release, page, locale);
@@ -226,11 +236,13 @@ async function loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal, allow
     readJson(fetchImpl, assets.content.path, assets.content.sha256, timeoutMs, false, pageSignal),
     readJson(fetchImpl, assets.captions.path, assets.captions.sha256, timeoutMs, false, pageSignal),
   ]);
-  const podcastCandidate = devPodcastCandidate && content.schemaVersion === 'sermon-formal-dev-content-v1';
+  const podcastCandidate = devPodcastCandidate && [
+    'sermon-formal-dev-content-v1', 'sermon-dev-podcast-candidate-content-v2',
+  ].includes(content.schemaVersion);
   required((podcastCandidate || content.schemaVersion === 'sermon-full-video-text-content-v1')
     && content.pageId === page.id && (podcastCandidate ? content.locale === locale : content.targetLocale === locale)
     && content.sourceLocale === 'en'
-    && (podcastCandidate ? content.contentStatus === 'human_reviewed' && content.audioStatus === 'human_reviewed'
+    && (podcastCandidate ? content.contentStatus === release.contentStatus && content.audioStatus === 'human_reviewed'
       : content.status === 'human_reviewed')
     && content.englishSourcePackageJsonSha256 === page.sourceIdentitySha256
     && content.targetLanguageCandidateJsonSha256 === release.targetLanguageCandidateJsonSha256
@@ -254,20 +266,25 @@ async function loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal, allow
       id: `${page.id}-${locale}-${assets.audio.sha256.slice(0, 12)}`,
       audioUrl: assets.audio.path, sha256: assets.audio.sha256,
       durationSeconds: content.durationSeconds, cues, scope: 'full_reviewed',
-      label: '中文播客配音', voiceLabel: content.speaker, targetLocale: locale,
+      label: LABELS[locale].podcastAudio, voiceLabel: LABELS[locale].voice, targetLocale: locale,
       subtitleTiming: 'target_audio_clock',
     };
+    const contentWaived = content.contentStatus === 'machine_reviewed';
     return {
       id: page.id, date: content.date, number: '', targetLocale: locale, defaultTargetLocale: locale,
       title: content.title, series: content.series, speaker: content.speaker, scripture: content.scripture,
       sourceUrl: page.sourceUrl, sourceLabel: '播客原片', sourceRoute: 'podcast',
-      releaseLabel: 'DEV 候选', devCandidate: true, humanContentReview: 'approved', audioStatus: 'full_reviewed',
-      audioNotice: '中文双讲员配音 · 字幕按中文音轨时间显示；本播客没有视频同步。',
-      contentReview: '中文文稿与整篇音轨已人工审核；当前为 Firebase Dev 候选。',
+      releaseLabel: contentWaived ? 'DEV 候选 · 文稿审核豁免' : 'DEV 候选', devCandidate: true,
+      humanContentReview: contentWaived ? 'waived' : 'approved', audioStatus: 'full_reviewed',
+      audioNotice: `${LABELS[locale].podcastAudio} · 字幕按目标音轨时间显示；本播客没有视频同步。`,
+      contentReview: contentWaived
+        ? '译文机器审核通过；人工全文审核按用户指示豁免。音轨已人工听审；此项仅为 Firebase Dev 候选。'
+        : '目标语言文稿与整篇音轨已人工审核；当前为 Firebase Dev 候选。',
       productionStages: [
         { label: '英文来源与锚点', status: 'pass', detail: '来源窗口、文本边界和讲员映射已审核。' },
-        { label: '中文译文', status: 'pass', detail: '839 组中文译文已审核批准。' },
-        { label: '双讲员配音', status: 'pass', detail: '整篇音轨已听审；字幕跟随中文音轨时间。' },
+        { label: '目标语言译文', status: contentWaived ? 'review' : 'pass',
+          detail: contentWaived ? '机器审核通过；人工全文审核按用户指示豁免，未标记为人工批准。' : '全文已人工审核批准。' },
+        { label: '双讲员配音', status: 'pass', detail: '整篇音轨已听审；字幕按目标音轨时间显示，无视频同步。' },
         { label: 'App 页面', status: 'review', detail: 'Dev 可试听；设备与生产验收仍未完成。' },
       ],
       centralMessage: content.summary, summary: content.summary,

@@ -56,6 +56,9 @@
         }
       ]
     },
+    "audioHumanReviewReceiptJsonSha256": {
+      "$ref": "#/$defs/sha256"
+    },
     "status": {
       "enum": [
         "candidate",

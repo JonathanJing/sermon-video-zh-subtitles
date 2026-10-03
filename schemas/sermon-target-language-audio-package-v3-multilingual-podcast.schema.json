@@ -56,10 +56,11 @@
     "schedule": { "$ref": "#/$defs/jsonArtifact" },
     "machineScreening": {
       "type": "object", "additionalProperties": false,
-      "required": ["status", "model", "coverage"],
+      "required": ["status", "model", "modelRevision", "coverage"],
       "properties": {
         "status": { "enum": ["not_run", "pass", "requires_review", "fail"] },
         "model": { "type": ["string", "null"] },
+        "modelRevision": { "type": ["string", "null"] },
         "coverage": { "type": "number", "minimum": 0, "maximum": 1 }
       }
     },
@@ -78,6 +79,7 @@
       }
     },
     "issues": { "type": "array" },
+    "humanReviewReceiptJsonSha256": { "$ref": "#/$defs/sha256" },
     "downstreamInvalidationKey": { "$ref": "#/$defs/sha256" }
   },
   "$defs": {

@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-podcast-audio-human-review-receipt-v2-multilingual.schema.json",
+  "title": "Human audio review and ASR adjudication for an ES/KO podcast candidate",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "targetLocale", "englishSourcePackageJsonSha256", "targetLanguageCandidateJsonSha256", "targetLanguageSpeechJobJsonSha256", "machineScreenedAudioPackageJsonSha256", "trackSha256", "screeningReceiptFileSha256", "decision", "reviewedBy", "reviewedAt", "userDecision", "fullPlayback", "audioTimelineReview", "videoSync", "reviewedUnitIds", "asrAdjudications", "issues"],
+  "properties": {
+    "schemaVersion": { "const": "sermon-podcast-audio-human-review-receipt-v2-multilingual" },
+    "targetLocale": { "enum": ["es", "ko"] },
+    "englishSourcePackageJsonSha256": { "$ref": "#/$defs/sha256" },
+    "targetLanguageCandidateJsonSha256": { "$ref": "#/$defs/sha256" },
+    "targetLanguageSpeechJobJsonSha256": { "$ref": "#/$defs/sha256" },
+    "machineScreenedAudioPackageJsonSha256": { "$ref": "#/$defs/sha256" },
+    "trackSha256": { "$ref": "#/$defs/sha256" },
+    "screeningReceiptFileSha256": { "$ref": "#/$defs/sha256" },
+    "decision": { "const": "approved" },
+    "reviewedBy": { "type": "string", "minLength": 1 },
+    "reviewedAt": { "type": "string", "format": "date-time" },
+    "userDecision": {
+      "type": "object", "additionalProperties": false,
+      "required": ["windowId", "itemId", "text"],
+      "properties": {
+        "windowId": { "type": "string", "minLength": 1 },
+        "itemId": { "type": "string", "minLength": 1 },
+        "text": { "const": "听审完成，发布" }
+      }
+    },
+    "fullPlayback": { "const": "approved" },
+    "audioTimelineReview": { "const": "approved" },
+    "videoSync": { "const": "not_applicable_audio_only" },
+    "reviewedUnitIds": { "type": "array", "minItems": 839, "maxItems": 839, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+    "asrAdjudications": {
+      "type": "array", "uniqueItems": true,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["textGroupId", "targetTextSha256", "audioSha256", "recognizedTextSha256", "decision", "evidence"],
+        "properties": {
+          "textGroupId": { "type": "string", "minLength": 1 },
+          "targetTextSha256": { "$ref": "#/$defs/sha256" },
+          "audioSha256": { "$ref": "#/$defs/sha256" },
+          "recognizedTextSha256": { "$ref": "#/$defs/sha256" },
+          "decision": { "const": "approved" },
+          "evidence": { "const": "按用户‘听审完成，发布’指示，整轨听审通过并裁决该 ASR 疑点。" }
+        }
+      }
+    },
+    "issues": { "type": "array", "maxItems": 0 }
+  },
+  "$defs": { "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" } }
+}

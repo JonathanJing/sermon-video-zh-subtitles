@@ -122,8 +122,10 @@ function renderWeekLabels() {
   $("audio-notice").textContent = diagnosticNotice() || view.audioNotice;
   $("review").textContent = t("app.content.disclosure");
   $("edition-label").textContent = activeView === "tab-voices" ? t("app.release.preview") : isFormalPlayback(week) ? t("app.release.formal") : t("app.release.preview");
-  $("week-status").textContent = diagnosticPresentation(week) ? t(diagnosticPresentation(week).statusKey) : isFormalPlayback(week) ? t("app.week.published") : week.humanContentReview === "approved" || week.audioStatus === "full_reviewed" ? t("app.week.ready") : week.audioStatus === "full_candidate" ? t("app.week.review") : week.tracks.length ? t("app.week.sample") : t("app.week.outline");
-  $("audio-scope").textContent = isFormalPlayback(week) && track ? t("app.release.formal") : week.humanContentReview === "approved" && track ? t("app.release.full") : track?.scope === "full_candidate" ? t("app.release.review") : track?.scope === "full_reviewed" ? t("app.release.full") : track ? t("app.release.sample") : t("app.release.pending");
+  $("week-status").textContent = diagnosticPresentation(week) ? t(diagnosticPresentation(week).statusKey) : isFormalPlayback(week) ? t("app.week.published") : week.devCandidate && week.humanContentReview === "waived" ? "DEV 候选 · 文稿审核豁免" : week.humanContentReview === "approved" || week.audioStatus === "full_reviewed" ? t("app.week.ready") : week.audioStatus === "full_candidate" ? t("app.week.review") : week.tracks.length ? t("app.week.sample") : t("app.week.outline");
+  $("audio-scope").textContent = week.devCandidate
+    ? week.humanContentReview === "waived" ? "DEV 候选 · 文稿审核豁免 · 整篇配音" : "DEV 候选 · 整篇配音"
+    : isFormalPlayback(week) && track ? t("app.release.formal") : week.humanContentReview === "approved" && track ? t("app.release.full") : track?.scope === "full_candidate" ? t("app.release.review") : track?.scope === "full_reviewed" ? t("app.release.full") : track ? t("app.release.sample") : t("app.release.pending");
   $("voice").textContent = track ? t("app.voice.active", { speaker: week.speaker }) : t("app.voice.pending");
   setButtonLabel($("source-link"), view.sourceLabel ? t("app.source.link", { label: view.sourceLabel }) : t("app.source.open"));
   for (const button of $("variants").children) button.textContent = isFormalPlayback(week) ? t("app.release.formal") : getLocale() !== "zh" ? t("app.voice.active", { speaker: week.speaker }) : week.tracks.find(item => item.id === button.dataset.id)?.label || "";
@@ -421,7 +423,9 @@ function selectTrack(id) {
   $("jump-message").textContent = "";
   $("download").hidden = !track;
   $("feedback-quick").disabled = !track;
-  $("audio-scope").textContent = isFormalPlayback(week) && track ? t("app.release.formal") : week.humanContentReview === "approved" && track ? t("app.release.full") : track?.scope === "full_candidate" ? t("app.release.review") : track?.scope === "full_reviewed" ? t("app.release.full") : track ? t("app.release.sample") : t("app.release.pending");
+  $("audio-scope").textContent = week.devCandidate
+    ? week.humanContentReview === "waived" ? "DEV 候选 · 文稿审核豁免 · 整篇配音" : "DEV 候选 · 整篇配音"
+    : isFormalPlayback(week) && track ? t("app.release.formal") : week.humanContentReview === "approved" && track ? t("app.release.full") : track?.scope === "full_candidate" ? t("app.release.review") : track?.scope === "full_reviewed" ? t("app.release.full") : track ? t("app.release.sample") : t("app.release.pending");
   $("voice").textContent = track ? t("app.voice.active", { speaker: week.speaker }) : t("app.voice.pending");
   renderTranscript();
   for (const button of $("variants").children) button.setAttribute("aria-pressed", String(button.dataset.id === track?.id));
@@ -568,7 +572,7 @@ function selectWeek(id) {
   $("cover-number").textContent = week.number;
   $("date").textContent = week.date.replaceAll("-", ".");
   $("edition-label").textContent = isFormalPlayback(week) ? t("app.release.formal") : t("app.release.preview");
-  $("week-status").textContent = diagnosticPresentation(week) ? t(diagnosticPresentation(week).statusKey) : isFormalPlayback(week) ? t("app.week.published") : week.humanContentReview === "approved" ? t("app.week.ready") : week.audioStatus === "full_candidate" ? t("app.week.review") : week.audioStatus === "full_reviewed" ? t("app.week.ready") : week.tracks.length ? t("app.week.sample") : t("app.week.outline");
+  $("week-status").textContent = diagnosticPresentation(week) ? t(diagnosticPresentation(week).statusKey) : isFormalPlayback(week) ? t("app.week.published") : week.devCandidate && week.humanContentReview === "waived" ? "DEV 候选 · 文稿审核豁免" : week.humanContentReview === "approved" ? t("app.week.ready") : week.audioStatus === "full_candidate" ? t("app.week.review") : week.audioStatus === "full_reviewed" ? t("app.week.ready") : week.tracks.length ? t("app.week.sample") : t("app.week.outline");
   $("central-message").textContent = week.centralMessage;
   $("audio-notice").textContent = diagnosticNotice() || week.audioNotice;
   $("source-link").href = week.sourceUrl;
