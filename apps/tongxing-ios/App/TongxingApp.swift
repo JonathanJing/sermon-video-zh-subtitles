@@ -41,7 +41,7 @@ struct TongxingApp: App {
                 #if os(iOS)
                 .onChange(of: notifications.pending) { _, _ in notifications.openPending(in: model) }
                 .onChange(of: model.multilingualCatalog) { _, _ in notifications.openPending(in: model) }
-                .alert(localization.text("Beta 通知"), isPresented: Binding(get: { notifications.landingMessage != nil },
+                .alert(localization.text("Beta 通知测试"), isPresented: Binding(get: { notifications.landingMessage != nil },
                                                       set: { if !$0 { notifications.landingMessage = nil } })) {
                     Button(localization.text("完成")) { notifications.landingMessage = nil }
                 } message: { Text(localization.text(notifications.landingMessage ?? "")) }
