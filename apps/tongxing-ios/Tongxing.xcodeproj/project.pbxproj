@@ -21,6 +21,7 @@
 		318C506CF300A57522C9F2F9 /* PlaybackDock.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAE586AE0AE5D2F197DC5483 /* PlaybackDock.swift */; };
 		32B58C5985220B581D4CF45B /* ListeningActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60D53F716EC96280DEAF16C4 /* ListeningActivityAttributes.swift */; };
 		35529B2801237F81F67785E8 /* TongxingCore in Frameworks */ = {isa = PBXBuildFile; productRef = 46FC649E9CD7E0BF9CEF7E49 /* TongxingCore */; };
+		40CC996E1E39A5B6F34BA38F /* ListeningActivityDismissalTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E0A6DA6C0A30670D209835C /* ListeningActivityDismissalTests.swift */; };
 		4ABE01FD69729C4F7F3EC0BD /* ListeningActivityExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 4AE35BDEC7081304D75711B2 /* ListeningActivityExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		6C29EA8473280EA03BE25CF6 /* ListeningActivityWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70BEE8330224D04ACF54EE70 /* ListeningActivityWidget.swift */; };
 		6ED24D1A41D86A3FD506381B /* BetaNotificationUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 584EEEF8EAD4278FE9B4381A /* BetaNotificationUITests.swift */; };
@@ -111,6 +112,7 @@
 		6FEF8605856DB0FE84A04EC2 /* EnglishLocateSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnglishLocateSheet.swift; sourceTree = "<group>"; };
 		70BEE8330224D04ACF54EE70 /* ListeningActivityWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningActivityWidget.swift; sourceTree = "<group>"; };
 		72F704FFC13274A549628FF2 /* Core */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Core; path = Core; sourceTree = SOURCE_ROOT; };
+		7E0A6DA6C0A30670D209835C /* ListeningActivityDismissalTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningActivityDismissalTests.swift; sourceTree = "<group>"; };
 		81423A9849E5E7BDFBDA1423 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
 		8D941F809567228C8BDF94B2 /* AppStoreScreenshotUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStoreScreenshotUITests.swift; sourceTree = "<group>"; };
 		98A292DFC6FBB07302A4DE77 /* AudioAlignmentController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioAlignmentController.swift; sourceTree = "<group>"; };
@@ -246,6 +248,7 @@
 			children = (
 				502E58B32BA9CB649A03DB11 /* AppIdentityTests.swift */,
 				9BF531D6B8AD0E94016F0BC3 /* AudioAlignmentControllerTests.swift */,
+				7E0A6DA6C0A30670D209835C /* ListeningActivityDismissalTests.swift */,
 				DE351B05886BDF3AF8AB9ECE /* ListeningActivityStateTests.swift */,
 				EE58D0C358A74F0BDE595617 /* PlaybackControllerTests.swift */,
 				6163F70382A5001D532DC114 /* SwiftUIPreviewTests.swift */,
@@ -447,6 +450,7 @@
 			files = (
 				9A00442EA947A8B5939AB68B /* AppIdentityTests.swift in Sources */,
 				C2AF9808AFFEED2AD7D2DF2A /* AudioAlignmentControllerTests.swift in Sources */,
+				40CC996E1E39A5B6F34BA38F /* ListeningActivityDismissalTests.swift in Sources */,
 				07BD5A2684273F556EB2A486 /* ListeningActivityStateTests.swift in Sources */,
 				17719995BCE43C60385DB306 /* PlaybackControllerTests.swift in Sources */,
 				A442F0B6EE2D16D0DAE46A00 /* SwiftUIPreviewTests.swift in Sources */,

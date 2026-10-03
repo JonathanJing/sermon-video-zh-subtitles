@@ -22,6 +22,9 @@ final class ListeningLiveActivityCoordinator {
 
     private let enabled: Bool
     private var activity: ListeningActivity?
+    // end(.after) ends the session but leaves its Lock Screen card visible.
+    // Retain it separately so a replacement can dismiss that card first.
+    private var endingActivity: ListeningActivity?
     private var pending: Snapshot?
     private var lastPublished: Snapshot?
     private var revision: UInt64 = 0
@@ -39,12 +42,13 @@ final class ListeningLiveActivityCoordinator {
     private let logger = Logger(subsystem: "Tongxing", category: "LiveActivity")
     #endif
 
-    init(enabled: Bool = true) {
+    init(enabled: Bool = true, allowSystemActivitiesInTests: Bool = false) {
         #if os(iOS) && canImport(ActivityKit)
         // Automated player tests must not create system activities as a side effect.
         var isTest = ProcessInfo.processInfo.environment["TONGXING_TEST_HOST"] == "1"
             || ProcessInfo.processInfo.arguments.contains("--ui-testing")
         #if DEBUG
+        if allowSystemActivitiesInTests { isTest = false }
         if ProcessInfo.processInfo.arguments.contains("--ui-testing-live-activity") { isTest = false }
         #endif
         self.enabled = enabled && !isTest
@@ -83,17 +87,25 @@ final class ListeningLiveActivityCoordinator {
         suppressedSourceKey = nil
         lastRequestSourceKey = nil
         lastRequestAttempt = .distantPast
-        guard pending != nil || activity != nil || !cleanedPreviousLaunch else { return }
+        guard pending != nil || activity != nil || endingActivity != nil || !cleanedPreviousLaunch else { return }
         enqueue(nil)
         #endif
     }
 
     #if os(iOS) && canImport(ActivityKit)
+    #if DEBUG
+    var endingActivityIDForTesting: String? { endingActivity?.id }
+    var isReconcilingForTesting: Bool { worker != nil }
+    #endif
+
     deinit {
         worker?.cancel()
         stateObserver?.cancel()
         if let alignmentActivity {
             Task { await alignmentActivity.end(nil, dismissalPolicy: .immediate) }
+        }
+        if let endingActivity {
+            Task { await endingActivity.end(nil, dismissalPolicy: .immediate) }
         }
         if let activity {
             var stopped = activity.content.state
@@ -149,6 +161,13 @@ final class ListeningLiveActivityCoordinator {
             return
         }
 
+        if let endingActivity,
+           endingActivity.attributes.sourceKey != snapshot.sourceKey
+            || snapshot.state.isPlaying || snapshot.state.alignmentPhase?.isActive == true {
+            await dismissEndingActivity()
+        }
+        guard token == revision, !Task.isCancelled else { return }
+
         if let activity, activity.attributes.sourceKey != snapshot.sourceKey {
             await endCurrent()
             lastPublished = nil
@@ -191,6 +210,7 @@ final class ListeningLiveActivityCoordinator {
         if startedForAlignment && snapshot.state.alignmentPhase?.isActive != true && !snapshot.state.isPlaying {
             // A paused alignment-only session has ended; retain its final result
             // briefly on the Lock Screen, with no active microphone/timer symbol.
+            endingActivity = activity
             self.activity = nil
             stateObserver?.cancel()
             stateObserver = nil
@@ -287,9 +307,17 @@ final class ListeningLiveActivityCoordinator {
     private func endCurrent() async {
         stateObserver?.cancel()
         stateObserver = nil
+        await dismissEndingActivity()
         guard let previous = activity else { return }
         activity = nil
         await finish(previous)
+    }
+
+    private func dismissEndingActivity() async {
+        guard let previous = endingActivity else { return }
+        endingActivity = nil
+        // Preserve the final content while removing the old card immediately.
+        await previous.end(nil, dismissalPolicy: .immediate)
     }
 
     private func finish(_ previous: ListeningActivity) async {

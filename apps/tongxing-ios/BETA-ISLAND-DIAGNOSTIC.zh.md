@@ -47,3 +47,11 @@ TONGXING_LIVE_ACTIVITY_SMOKE=1 TEST_RUNNER_TONGXING_LIVE_ACTIVITY_SMOKE=1 \
 私有证据在本工作树 `artifacts/tongxing-ios/2026-10-03/`：`island-smoke-failed/manifest.json`、`island-alert-failed/manifest.json`、`island-final-failed/manifest.json` 与已读取的原始 PNG；CLI `20261003T103846-test-e81d5f9e`、`20261003T104148-test-f08200cc`、`20261003T104722-test-09ce2228` 为系统呈现失败 run，`20261003T104324-test-9dc6f443` 为 54 项回归 run，`20261003T104912-test-3be09505` 为 iOS 17.5 兼容性通过 run；`20261003T105019-build-91ec2677` 为 BetaRelease 构建。候选仍有普通活动状态被隐藏的降级风险：当前无法从 active 状态判断 transient 是否真正显示；App 内状态保留，但不能宣称系统展示降级已完成。
 
 前台可见问题仍未解决，新 Beta 上传暂缓、版本号未递增，正式晋升不执行。按 iOS AGENTS 的两轮定向修复边界保留候选及失败证据，下一步需要不同系统或真机的实际呈现证据定位剩余抑制条件。
+
+## PR #232 评论与合并修复
+
+后续评审指出 iOS 17 普通活动的 `end(.after(8))` 仍保留锁屏卡，但 coordinator 丢失引用。现单独保留结束活动；立即重试、播放、换源、清空或销毁先立即移除旧卡，串行等待结束并检查 revision 后才能请求替代活动。重复暂停终态仍保留原延迟，不把 App 主动结束视作用户移除。
+
+合入最新 `dev` 时保留 Beta 通知和 Dev 候选的全部翻译；目录校验按 `dev` 完整逻辑合并，去掉自动合并产生的重复变量声明。Core 83 项通过；iOS 17.5 显式开启真实 ActivityKit 的重试／播放／清空三项生命周期回归通过，其他对齐／活动状态 24 项通过、1 项冻结 Dev 资料未提供而跳过。iOS 27 同组 24 项通过、1 跳过。两系统成功回归的 runtime warnings 为 0。
+
+新回归须设置 `TONGXING_ACTIVITY_DISMISSAL_SMOKE=1` 和 `TEST_RUNNER_TONGXING_ACTIVITY_DISMISSAL_SMOKE=1`，通过 `ios.sh test --scheme TongxingBeta --configuration BetaDebug --only-testing TongxingTests/ListeningActivityDismissalTests` 在已有 iOS 17 模拟器执行。普通测试默认不创建系统活动；这些检查验证结束引用与替代流程，**不代表真机锁屏卡视觉或前台灵动岛已验收**。此轮不递增版本、不归档、不上传，仍等待合并到 `dev` 后统一构建新 Beta。
