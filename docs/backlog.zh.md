@@ -997,7 +997,21 @@ CI环境还暴露工具下载占用原job期限：18ae2f0的root-0已通过1609 
 
 ## 明天（10/4）
 
-完整定义移到[明天 backlog](https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/codex/docs-backlog-tomorrow-20261004/docs/backlog-2026-10-04.zh.md) 的独立依赖 [PR #230](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/230)；当前仅保留索引，不承诺缺前提工作当天完成。
+以下稳定任务定义由本主 backlog 保留。独立依赖 [PR #230](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/230) 的日期文档展开候选文本、实验矩阵及操作清单；其延迟、关闭或分支删除不移除这些任务的状态和验收标准。没有前提的工作不承诺当天完成。
+
+| ID | 优先级／状态 | 交付与验收 | 依赖／待决定 |
+| --- | --- | --- | --- |
+| `DEV-STE-001` | P1 / `pending` | 分阅读稿、元数据和口播明确 references_only 与经文短引用规则；冻结完整候选文本、来源 SHA、插入／替换位置和新 prompt／policy 身份。预注册全文／口播分层的 paired A/B，验忠实度、未授权新增引用；未批准候选不得改生产提示词。 | `DEV-L2-001`；引用范围签字、获批样本、费用上限及执行窗口 |
+| `DEV-STE-002` | P1 / `pending` | 保留 Sol reviewer-editor 职责；修复一个 issue 不得清除其余 concern，未解决项保留 issues／uncertainty 并 fail。覆盖部分修复、疑点与全部修复的离线门禁和真实 paired 评估，验漏报率与文本质量，模型评估不代替人审。 | `DEV-L2-001`；候选批准、新版本／独立缓存及回归预算 |
+| `DEV-STE-006` | P2 / `waiting_decision` | 仅实际 prompt 行为变化做 A/B；A 冻结原提示词和请求拼接，B 未批准时只存文档。固定模型、参数、获批来源、语言与全文／口播分层、独立缓存和盲评裁决；预注册忠实度、漏报、通过率、质量、延迟及 token／费用阈值，记录回滚与 unknown reconciliation。离线通过不声明真实 API 验收。 | `DEV-STE-001/002`；样本、费用硬上限、阈值及窗口待签字；未决 B 不执行 |
+| `DEV-L2-002` | P1 / `waiting_evidence` | 将 ES／KO 待定模板补为可批准的 source-bound 语言策略，冻结模型、机器筛查、术语、经文、register 及全文／口播规则；逐项绑定实际 run、决策与责任。豁免依据／范围和批准状态独立保存。付费前拒绝模板、缺字段、错误来源及未批准输入；旧片段或 fixture 不替代真实全文批准。 | `DEV-L2-001`；实际 run／截图身份、策略与独立豁免／批准 |
+| `DEV-L3-003` | P1 / `waiting_evidence` | 先确认 ES／KO 配音范围，再明确 locale、声音选择、跨语言用途授权、参考音频、adapter／checkpoint／policy 与获批口播／speech job 的身份绑定。核验语言能力与音质并独立批准；未知或不匹配仅阻断受影响 locale。中文声音授权不外推其他语言，不自动选声或用生成替代批准。 | `DEV-L2-002`、`DEV-L3-001`；语言覆盖、声音及真实测试授权 |
+| `DEV-L3-004` | P1 / `waiting_evidence` | 冻结获批输入和受控运行环境，核对资源门禁、双副本实际路由与各自声音／checkpoint；在明确样本与预算后验证完整链路、缓存恢复、失败和 unknown 处理。截图中 batch／API／GPU 状态只属于当时观察，不证明双副本或跨语言运行已通过，不自动启动服务。 | `DEV-L3-003`；运行范围、授权、资源及 checkpoint 绑定 |
+| `DEV-COST-002` | P1 / `waiting_decision` | 获批后配置真实 dev／prod Project、用途专属 key、最小权限、secrets 与 hard limit；先验离线路由、脱敏、逐重试／unknown 和日费用对账，再独立验 Dev 真实账单归因、429 传播和恢复，不误伤生产。未知旧归因不补造，限额／权限／实际费用分别取证。 | `DEV-COST-001`、`DEV-STE-006`；云端环境、安全授权、额度数值和窗口 |
+| `DEV-NOTIFY-001` | P1 / `pending` | 按订阅内容语言生成文案、对应语言海报和落地内容，绑定 page／locale／版本／hash；Beta／Dev 候选人工批准、正式 iOS／Firebase 双端验证后才发正式通知。验订阅／退订、去重、环境隔离及图片失败纯文字回退；单设备分别记录 sender accepted、设备收到和点击正确内容，不默认扩大收件人。 | `DEV-L4-006`、`DEV-IOS-001`、海报流程；APNs／FCM、sender／安全配置、单设备身份与权限 |
+| `DEV-IOS-003` | P1 / `pending` | 现场自动对齐期间在 Dynamic Island 显示真实监听／对齐状态，暂停、停止、权限拒绝和系统中断及时更新，结束不残留假活跃。核验版本／机型、后台／锁屏、ActivityKit 支持及无灵动岛替代呈现，再做 Beta 真机人工验收；内容 HTTP 或模拟测试不代替设备验收。 | `DEV-IOS-001/002`、live_session 录音授权／状态机、`DEV-L4-006`；能力与架构核验 |
+
+日期文档展开范围：
 
 - DEV-STE-001 / 002 / 006：提示词行为修复及有预算、有阈值的 A/B。
 - DEV-L2-002：ES/KO 策略模板补齐、独立豁免/批准与输入绑定。
