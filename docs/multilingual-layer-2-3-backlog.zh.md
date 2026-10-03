@@ -412,3 +412,19 @@ Layer 2 的 P0 全部通过后才能开始正式 Layer 3 韩语合成。Layer 3 
 `run_target_language_models.save_new` 保留 exclusive-create 和已有请求/cache identity，现在在返回前 flush/fsync 文件并同步完整同文件系统目录祖先链，复用 durable jobs 的工具。模型 responder 只能在 started intent 持久化后调用；raw response 与 validated result 同样落盘后才移除 uncertainty marker。任何 fsync 失败向上传播，不把未知结果当可自动重试。已有正确缓存仍直接读取，不为此更换模型、prompt 或 paid-cache identity。
 
 合成回归覆盖新目录、marker 文件/目录 sync 失败、响应已返回但 raw 持久化失败、从 durable raw 恢复 result、进程在 responder 入口退出、同 identity 并发和已有缓存复用。旧实现的持久化次序/失败注入有 5 个 assertion failure，修复后通过。该证据是 OS fsync 调用顺序与故障注入，不是实际断电硬件实验；不关闭完整 E4、真实模型跑批、人工审核或后续阶段 sign-off。
+
+
+<a id="es-ko-pending-voice-20261003"></a>
+
+## 2026-10-03 es/ko 待定项与语音绑定（等待证据核对）
+
+顶层归属 `DEV-L2-002` / `DEV-L3-003`，状态与优先级只在 [统一 backlog](backlog.zh.md) 维护。用户报告“流程实际跑发现，西语和韩语有很多地方还是待定，语音也要绑定”。这是待梳理需求；截图的具体字段、页面日期与对应 run 尚待核对，不能推断已批准声音失效或任意某字段已有实现缺陷。此前 9 月 20 日片段的审批只证明其绑定版本，不外推整篇周产。
+
+- [ ] 将截图逐项对应到当前 run、source/candidate/policy SHA、locale 与实际收据；每项记录原显示、真实状态、待决原因及证据，区分 UI 显示问题与真实配置/批准缺失。没有证据的根因保持 unknown。
+- [ ] 分别列 es/ko 的经文版本/引用规则、术语与 register、全文/口播范围、审核插件/提示词版本和批准者。此清单是核对范围，不表示这些字段全部缺失；未使用 pending 术语沿用现有 source-scope 规则，不扩大阻断。
+- [ ] 为每语言列 voice identity、参考音频及文本哈希、授权与用途、语言能力审核、adapter/registry/checkpoint/policy 身份和必要合成参数；明确它们与已批准 candidate、speech job、unit 指令、缓存及输出收据的绑定。用户决定声音，文本批准不能代替声音授权或语言能力听审。
+- [ ] 只在现有合同要求的必需输入缺失、未决或哈希失配时阻断受影响 locale 的正式合成，保留原因与原缓存；不静默默认其他语言声音、不自动修批准、不生成来规避门禁。跨语言发行是否 join 沿用 release plan。
+- [ ] 离线验收覆盖正确绑定、错 locale、旧 candidate/job、替换 voice/reference/checkpoint、缺授权或能力审核及未决状态；确认拒绝发生在付费派发前，恢复不污染旧产物。
+- [ ] 后续获批真实运行分别保留 es/ko 完整音频、解码、回转写筛查/疑点裁决、自然语速排程、全文及原视频 1×同步听审收据；可播放、fixture 通过或旧片段通过均不等于本次正式 Audio Package 通过。
+
+现在仅记录，未选择声音、批准语言策略或启动西语/韩语生成。截图证据到齐后再冻结具体修复范围和验收样本；与 STE 提示词 A/B 的预算和决策分别签字。

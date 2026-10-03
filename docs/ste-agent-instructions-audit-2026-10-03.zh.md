@@ -42,7 +42,7 @@
 
 位置：`docs/formal-layer3-renderer.zh.md:9,11`；实现 `scripts/render_formal_target_language_speech.py:49,249–328,494–535`。
 
-原说明强调新 renderer SHA 必须与缓存相符。代码的 `rendererSha256` 使用固定 `RENDERER_SOUND_IDENTITY_SHA256`，另对 batch>1 绑定实现文件身份，并对明确列出的旧声音身份进行兼容判断。笼统说“任何代码变化均不可复用”不能准确解释当前行为。
+原句：`新 renderer SHA 仍须与缓存相符，旧产物不能因为 batch=1 而忽略代码身份变化。`代码的 `rendererSha256` 使用固定 `RENDERER_SOUND_IDENTITY_SHA256`，另对 batch>1 绑定实现文件身份，并对明确列出的旧声音身份进行兼容判断。笼统说“任何代码变化均不可复用”不能准确解释当前行为。
 
 建议中文：“缓存必须通过当前 producer 的完整身份核验。声音身份使用 rendererSha256；批处理实现身份另行绑定。仅可按代码明确列出的兼容规则复用旧身份；不得忽略、手改或跳过哈希检查。”保留 job、文字、voice、checkpoint、policy 与 WAV/commit 的全部约束。
 
@@ -52,7 +52,7 @@
 
 位置：`scripts/render_formal_target_language_speech.py:1148–1159`、`docs/formal-layer3-renderer.zh.md:5`；实际输入契约 `361–396,732`。
 
-help 仅称 source-bound per-unit pronunciation and pause instructions；文档解释了全局 --instruct，但未说明如何构造 --unit-instructions。真实 JSON 必须是 `sermon-unit-delivery-instructions-v1`，绑定 targetLocale 与 speechJobJsonSha256；每行需已存在且不重复的 translationGroupId、approvedTextSha256、非空 instruction 与 operatorEvidence。可选 spokenText 只支持 zh-Hans，并只允许代码确认的标点及启示录 3:16 表达等价处理，不能任意改词。单元 instruction 覆盖该单元全局 --instruct。
+help 原句为 `Source-bound per-unit pronunciation and pause instructions`；文档解释了全局 --instruct，但未说明如何构造 --unit-instructions。真实 JSON 必须是 `sermon-unit-delivery-instructions-v1`，绑定 targetLocale 与 speechJobJsonSha256；每行需已存在且不重复的 translationGroupId、approvedTextSha256、非空 instruction 与 operatorEvidence。可选 spokenText 只支持 zh-Hans，并只允许代码确认的标点及启示录 3:16 表达等价处理，不能任意改词。单元 instruction 覆盖该单元全局 --instruct。
 
 建议 help：`JSON instructions bound to the job, locale, and approved text. See the input schema and override rules.` 文档补完整现有字段与拒绝条件，保留 instruction 变化应使用新 job 目录的要求。此项可作说明修订；不要扩展 spokenText 等价范围或更改缓存键。
 
@@ -131,3 +131,5 @@ Reviewer-issues 比较固定同一个 Astra 草稿，减少 translator 差异干
 离线门禁先检查提示词拼接、身份与策略绑定、schema、问题非空则 fail、语义缓存隔离和未知请求禁止重试。第 3 项仅核对容量说明；第 4 项覆盖明确兼容接受、不兼容拒绝和 WAV/commit 哈希；第 5 项覆盖字段绑定、重复 group、缺 operatorEvidence、非法 locale/spokenText。离线通过不证明模型遵守内容规则。
 
 真实 API 验收须在签字样本/预算/窗口后执行，完整保留响应、usage 与失败证据。通过 A/B 也不自动晋级生产：另行审查版本迁移、旧缓存失效范围和审批影响，再提交行为变更 PR。回滚保持旧生产 A 不动，实验 B 可停用；保留实验和未知请求证据，不删除目录来绕过 reconciliation。
+
+新增用户报告的 es/ko 待定项与语音绑定需求，统一归属 [Dev backlog](backlog.zh.md) 的 DEV-L2-002 / DEV-L3-003，细节见 [L2/L3 backlog](multilingual-layer-2-3-backlog.zh.md#es-ko-pending-voice-20261003)。这不是模型 A/B 已完成或声音已批准的证据。
