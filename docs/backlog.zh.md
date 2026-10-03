@@ -930,7 +930,7 @@ CI环境还暴露工具下载占用原job期限：18ae2f0的root-0已通过1609 
 
 | ID | 优先级／状态 | 待交付与验收条件 | 依赖 |
 |---|---|---|---|
-| `DEV-L4-006` | P1 / `in_progress` | 已实现四项产物、来源/locale/revision/hash、人审、双测试端客户端能力与查看批准的只读检查及 PDF 独立状态；新 `app_delivery_readiness` scope 不要求 PDF，旧 `dual_pdf` scope 保留。详见[入口](pr229-local-development.zh.md)。待合并、producer/客户端/通知显式迁移及真实双端可见、人审和正式交付；软件夹具通过不关闭完整验收。 | `DEV-L4-001/003/004/005`、`DEV-E2E-001`；语言及声音决策分别归 `DEV-L2-002` / `DEV-L3-003` |
+| `DEV-L4-006` | P1 / `in_progress` | 新增四产物准入及显式 App 交付包 producer，接入 Supervisor、end_to_end 和 local production 的独立 completion scope；无 PDF、失败／恢复、重启去重、旧批准拒绝、活／未知 owner 和自包含包消费通过离线集成。完成仅 prepared_not_published，默认 dual_pdf 保留。详见[入口](pr229-local-development.zh.md)及[producer](app-delivery-workflow.zh.md)。模型生成、双端 publisher／回退、通知及真实双端批准／设备验收仍待完成；软件测试不关闭实际交付。 | `DEV-L4-001/003/004/005`、`DEV-E2E-001`；语言及声音决策分别归 `DEV-L2-002` / `DEV-L3-003` |
 
 用户已确定产品目标和 PDF 按需定位；语言覆盖、跨语言声音授权和实际执行窗口仍按运行计划确认。后续本地实现新增独立 schema／检查入口和客户端能力门禁，保留旧协议／历史收据；没有改正式发布器、PDF 生产配置或新增客户端产品功能，没有启动生成／部署。
 
@@ -946,7 +946,7 @@ CI环境还暴露工具下载占用原job期限：18ae2f0的root-0已通过1609 
 
 | ID | 优先级／状态 | 已知证据及待交付与验收 | 依赖 |
 |---|---|---|---|
-| `DEV-L4-007` | P1 / `in_progress` | Web 已按正式／旧期次、开发诊断、开发演练分组；同名不同 ID 显示完整稳定 ID，重复 ID 拒绝，Production 隐藏开发项并处理默认／深链回退，保持 locale／音频路由。7 项新定向测试及全部 Web 458 项通过；本地合成 catalog 浏览器选择同名项、诊断受阻状态通过。待合并及真实环境目录验收，未部署或改 iOS。 | `DEV-L4-006`、`DEV-L4-005`；实际 catalog/run 身份待核对 |
+| `DEV-L4-007` | P1 / `in_progress` | Web 已分组并区分同名 ID；修复冻结真实三语 Dev 候选的 Web／Swift reader 与 Beta 选择。明确 Beta＋Dev origin 才接纳候选并标机器审核；Production cold／cache／offline 只保留 hash 核验后的已发布人审语言，超时不丢已通过 sibling。Web 464、Core 71 通过／6 跳过、Infrastructure 42 通过／5 跳过、AppModel 真实 JSON 2 项及未签名 Beta build 通过。待合并和实际部署／设备验收；未改线上目录。 | `DEV-L4-006`、`DEV-L4-005`；实际 catalog/run 身份待核对 |
 
 原截图只证明 Dev 下拉混展示，不证明正式生产目录如此。菜单遮挡正文，不能据此判断四项产物缺失或质量差。图中没有 v2/v3/PDF；术语与 PDF 定位变更依据明确用户决策。后续 Web 分区／过滤实现的本地验证与原截图、远程环境验收分别记录。
 
@@ -977,7 +977,7 @@ CI环境还暴露工具下载占用原job期限：18ae2f0的root-0已通过1609 
 
 | ID | 优先级／状态 | 待交付与验收 | 依赖／待决定 |
 |---|---|---|---|
-| `DEV-COST-001` | P1 / `in_progress` | 已实现本地归一化 JSON 的 dev/prod 与三用途别名隔离、逐 attempt／unknown、缓存 token、分页／nullable 归因与逐日 Decimal 估算差异检查；[入口](pr229-local-development.zh.md)。未接 provider 原生 API 或 producer。待合并及与 `DEV-STE-006` 的预算接线；真实配置及归因另属 `DEV-COST-002`。 | 既有日志合同与 `DEV-STE-006`；真实 Project 映射、最小权限、secrets、hard limits 数值及执行窗口待单独安全授权 |
+| `DEV-COST-001` | P1 / `in_progress` | 已实现离线 dev/prod／用途隔离、逐 attempt／unknown、缓存 token、分页／nullable 归因和 Decimal 对账；新增原生 Costs 导出的离线解析，拒绝重复分区／断链／缺日／错误类型／极限日期，固定 pending 结算，40 项相关回归及独立审核通过。[入口](pr229-local-development.zh.md)。未调用真实 Costs API 或接入 producer 归因；预算接线及真实配置／账单另行验收，实际配置归 DEV-COST-002。 | 既有日志合同与 `DEV-STE-006`；真实 Project 映射、最小权限、secrets、hard limits 数值及执行窗口待单独安全授权 |
 
 只在实际 ASR provider=OpenAI 时配置 OpenAI transcription key；其他 provider 独立账本，按实际计量，不强制换 provider。纯阶段归因不必每 stage 拆 Project；只有需要各阶段独立 hard budget、权限或模型/速率政策时，再决定 workload Projects。
 
@@ -1007,3 +1007,5 @@ CI环境还暴露工具下载占用原job期限：18ae2f0的root-0已通过1609 
 - DEV-IOS-003：现场对齐灵动岛新能力及真机验收。
 
 依赖本 PR 的今天合同；先合并今天文档，再将明天 PR base 改为 dev。PR #228 保持独立。
+
+2026-10-03 后续修复及联合检查：用户明确合并 #228–#231；候选隔离／Beta 入口、App 准备包 durable 接线与费用导入已修复并独立审核，证据见[修复回执](reports/20261003-pr231-fixes-and-stack-review.zh.md)。实际内容生成、双端批准、发布、通知与设备／现场状态继续独立记录。

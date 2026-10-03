@@ -9,7 +9,6 @@ on:
     branches:
       - dev
       - main
-      - codex/pr229-development
 
 permissions:
   contents: read
@@ -95,6 +94,7 @@ jobs:
           experiments/sermon-dubbing-poc/web/shared-release-contracts.test.mjs
           experiments/sermon-dubbing-poc/web/shared-text-only-releases.test.mjs
           experiments/sermon-dubbing-poc/web/shared-video-delivery.test.mjs
+          experiments/sermon-dubbing-poc/web/dev-candidate-reader.test.mjs
           experiments/sermon-dubbing-poc/web/fingerprint-baseline.test.mjs
 
   test_group:

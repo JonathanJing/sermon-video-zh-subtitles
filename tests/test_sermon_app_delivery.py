@@ -466,7 +466,8 @@ class AppDeliveryTests(unittest.TestCase):
 
     def test_json_duplicate_fields_and_nonfinite_numbers_rejected_everywhere(self):
         for raw in ('{"private-key":1,"private-key":2}', '{"value":NaN}',
-                    '{"value":Infinity}', '{"value":-Infinity}'):
+                    '{"value":Infinity}', '{"value":-Infinity}',
+                    '{"value":1e999}', '{"value":-1e999}'):
             with self.subTest(raw=raw):
                 path = self.root / "invalid.json"
                 path.write_text(raw)

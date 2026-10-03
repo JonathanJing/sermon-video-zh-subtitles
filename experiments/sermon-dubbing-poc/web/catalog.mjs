@@ -54,7 +54,9 @@ export function validateCatalog(catalog) {
     ids.add(week.id);
     validateTranscript(week);
     for (const track of week.tracks) {
-      if (!/^\/media\/(?:[a-zA-Z0-9_-]+\/)*[a-zA-Z0-9_.-]+\.mp3$/.test(track.audioUrl) || !(track.durationSeconds > 0) || !track.cues?.length) throw new Error("Invalid track");
+      const path = /^\/media\/(?:[a-zA-Z0-9_-]+\/)*[a-zA-Z0-9_.-]+\.(mp3|wav|m4a)$/.exec(track.audioUrl);
+      const devAudio = week.devCandidate === true && week.diagnosticOnly === true;
+      if (!path || (path[1] !== "mp3" && !devAudio) || !(track.durationSeconds > 0) || !track.cues?.length) throw new Error("Invalid track");
       let previous = 0;
       for (const cue of track.cues) {
         if (!(previous <= cue.start && cue.start < cue.end && cue.end <= track.durationSeconds + 0.001) || !cue.text?.trim()) throw new Error("Invalid cues");
@@ -105,7 +107,9 @@ export function downloadFilename(week, track) {
   } else if (track.scope !== "full_reviewed") {
     parts.push("样片", track.label);
   }
-  return `${parts.map(clean).filter(Boolean).join("_")}.mp3`;
+  const extension = week.devCandidate === true && week.diagnosticOnly === true
+    ? /\.(mp3|wav|m4a)$/.exec(track.audioUrl)?.[1] || "mp3" : "mp3";
+  return `${parts.map(clean).filter(Boolean).join("_")}.${extension}`;
 }
 
 

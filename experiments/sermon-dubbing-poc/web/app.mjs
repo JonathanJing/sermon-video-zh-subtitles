@@ -803,7 +803,7 @@ try {
   const response = await fetch("/weekly.json");
   if (!response.ok) throw new Error("Catalog unavailable");
   catalog = validateCatalog(await response.json());
-  const published = await loadPublishedWeeks();
+  const published = await loadPublishedWeeks(undefined, { allowDevCandidates: navigationEnvironment === "development" });
   if (published.weeks.length) {
     const ids = new Set(published.weeks.map(item => item.id));
     catalog = validateCatalog({ ...catalog,

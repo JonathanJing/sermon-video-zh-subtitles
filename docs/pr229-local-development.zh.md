@@ -1,6 +1,6 @@
 # PR #229 本地开发入口
 
-本分支基于 PR #229，交付 STE 澄清、Dev 期次导航、App 产物的只读准入检查及费用离线对账。后两项消费已有产物和收据，不生成内容、人审、客户端证据或发布。真实账号配置、模型实验及其他明天事项仍属独立 PR #230。
+本分支基于 PR #229，交付 STE 澄清、Dev 期次导航及候选读取兼容、App 产物准入检查与显式交付包 producer、费用导入及离线对账。App producer 消费已有产物和收据，生成 hash 绑定的本地复制包；不生成内容、人审、客户端证据或正式发布。真实账号配置、模型实验及其他明天事项仍属独立 PR #230。
 
 ## App 产物与 PDF
 
@@ -28,25 +28,36 @@ python -m scripts.sermon_app_delivery inspect --plan /path/to/frozen-inputs/plan
 
 `pdfAdHoc` 不参与 App 候选 hash 或提升阻断：没有 PDF、按需 PDF 失败，均不阻止其他已获批 App 产物通过检查。声明 available 的 PDF 仍单独核验文件与批准，证据缺失转为 PDF failed，不伪报成功。
 
-这是新的 `app_delivery_readiness` scope。旧 Supervisor、`sermon_end_to_end.py` 的 `dual_pdf` completion latch，以及 `weekly_dubbing.py` 的 `deferred_until_release` 历史任务保留原 PDF 门禁。后者只是延后 PDF，不能当成已解耦。迁移 producer／客户端／通知时须显式接入新 scope，并保存旧收据；本次没有自动改路由或将旧任务标为 App 发布完成。
+这是新的 `app_delivery_readiness` scope。[显式 App 交付包 producer](app-delivery-workflow.zh.md) 已接入 Supervisor、`sermon_end_to_end.py` 与 local production 入口；仅传入 `--app-delivery-config` 时消费已批准输入、复制依赖并写入 durable completion。完成状态为 `prepared_not_published`，重启验证同一包后复用，旧／未知尝试不自动重发，双端批准失效则拒绝准备。PDF 与正式端观察不进入 App 包身份。
+
+默认旧 `dual_pdf` completion latch 和 `weekly_dubbing.py` 的 `deferred_until_release` 历史任务保留原 PDF 门禁。后者只是延后 PDF，不能当成已解耦。新 scope 未接四项内容的模型生成、双端正式 publisher／回退或通知；旧收据保存，不将准备完成当作 App 发布完成。
 
 ## Dev 期次目录
 
 Web 根据显式环境和 catalog 的 `diagnosticOnly`／`simulationOnly` 标记分组；正式与旧期次、开发诊断、开发演练各用一组。同名不同 ID 保留全部条目，标签附完整稳定 ID；重复 ID 仍拒绝。Production 隐藏开发条目，默认项和深链被过滤后回退到可见期次。ID、locale、音频与来源路由保留。
 
-本地验证使用合成 catalog，覆盖诊断受阻状态和同名条目选择；不是远程部署或 iOS 验收。真实发布后的环境核对仍需按实际 catalog、客户端与页面版本另记收据。
+后续使用冻结真实 Dev 三语 catalog／release／页面／字幕 JSON 验证候选读取。Web 仅在明确 Dev 上下文接纳候选；原生还要求 Beta bundle 与精确 HTTPS Dev origin，候选保留机器审核及未正式发布状态。Production 根据 hash 核验后的已发布人审包投影可见语言，冷加载、缓存及离线均不能使候选进入入口，同页已通过的语言独立保留。兼容旧目录所需的包查询使用有界并发和截止时间；未做代表性性能测量。
+
+本地 Swift reader、AppModel 选择及未签名 Beta simulator 编译分别验证；没有安装／启动实体设备或部署当前代码。真实发布后的环境核对仍需按实际 catalog、客户端与页面版本另记收据。
 
 ## 费用隔离与离线对账
 
 ```bash
 python -m scripts.sermon_cost_isolation validate-config --config /path/to/routes.json
+python -m scripts.import_openai_costs \
+  --config /path/to/routes.json \
+  --export /path/to/captured-costs-export.json > /path/to/normalized-daily-costs.json
 python -m scripts.sermon_cost_isolation reconcile \
   --config /path/to/routes.json \
   --attempts /path/to/attempts.json \
   --daily-costs /path/to/normalized-daily-costs.json
 ```
 
-[sermon-cost-isolation-v1.schema.json](../schemas/sermon-cost-isolation-v1.schema.json) 定义 `config`、`config_validation`、`attempts`、`daily_costs` 和 `reconciliation`。这里只接收本地归一化 JSON，不是 provider 原生 Costs API adapter；不读取环境变量、key 原值或调用 provider。配置必须含不同 dev／prod Project ID 和全局不重复的 transcription／translation／reviewer 安全别名。非 OpenAI ASR 独立记录，不需要 OpenAI transcription 别名。
+[sermon-cost-isolation-v1.schema.json](../schemas/sermon-cost-isolation-v1.schema.json) 定义 `config`、`config_validation`、`attempts`、`daily_costs` 和 `reconciliation`。对账器接收本地归一化 JSON；新增离线导入器消费原生 Costs 导出，二者都不读取环境变量、key 原值或调用 provider。配置必须含不同 dev／prod Project ID 和全局不重复的 transcription／translation／reviewer 安全别名。非 OpenAI ASR 独立记录，不需要 OpenAI transcription 别名。
+
+原生导出使用新的 [sermon-openai-costs-export-v1.schema.json](../schemas/sermon-openai-costs-export-v1.schema.json) envelope，不迁移或覆盖既有归一化证据。`queryWindow` 绑定完整 UTC 日查询，`groupBy` 必须含 `project_id`，可加 `api_key_id` 和 `line_item`；只接收无 key／line-item 过滤的导出。`pages` 按序保存 `requestCursor`（首项 null）与原始 `response`，下一请求必须对应上一响应的 `next_page`。导入器拒绝重复日、重复分区、分页断链、缺日、范围外数据和 Project／key 维度重叠；`line_item` 子分区用 Decimal 合并一次。未知项目／key 不推断，空 results 不补零；游标只以 hash 输出。
+
+原生字段依据 [OpenAI 官方 SDK 的 Costs 查询合同](https://github.com/openai/openai-python/blob/main/src/openai/types/admin/organization/usage_costs_params.py)及[响应合同](https://github.com/openai/openai-python/blob/main/src/openai/types/admin/organization/usage_costs_response.py)。捕获的响应不含结算证明，因此导入结果固定 `settlementStatus=pending`，即使分页完整也不能据此声明账单完整或真实结算。真实查询、账号用途映射、producer 请求归因和结算证据仍分别待接入与验收。
 
 两个证据输入必须使用相同 `queryWindow`（UTC 日、起点包含、终点不包含）。每次 attempt 独立保留日期、状态、观察到的项目／key ID、usage 与估算；估算必须带 `pricingVersion`。未知 token、金额或结果保留 null／unknown，不记零。缓存输入是输入子集，不重复相加；非 OpenAI 费用不并入 OpenAI 估算。
 
@@ -57,7 +68,7 @@ python -m scripts.sermon_cost_isolation reconcile \
 ## 验证与交接
 
 ```bash
-python -m unittest tests.test_sermon_app_delivery tests.test_sermon_cost_isolation
+python -m unittest tests.test_sermon_app_delivery tests.test_sermon_cost_isolation tests.test_import_openai_costs
 python -m unittest tests.test_sermon_end_to_end tests.test_run_codex_local_sermon_production tests.test_stage_formal_multilingual_dev
 node --test experiments/sermon-dubbing-poc/web/*.test.mjs
 git diff --check
@@ -70,3 +81,5 @@ git diff --check
 软件验证与真实内容生成、双端人工批准、生产发布、设备和现场验收分别记录。相关 backlog 在合并和完整验收前保留 `in_progress`，不以本地通过关闭生产任务。
 
 后续真实产物、Dev 目录、Core decoder、恢复与费用证据的并行检查，以及完整远程 CI 结果见 [PR #231 并行检查回执](reports/20261003-pr231-parallel-checks.zh.md)。检查确认新 App producer 接线、候选协议兼容、默想／双端证据和真实费用归因仍有缺口。
+
+随后候选兼容／隔离、Beta 选择、App 准备包 producer／completion scope 和原生费用导入的修复与独立审核见[联合修复回执](reports/20261003-pr231-fixes-and-stack-review.zh.md)。旧回执保留其当时观察；新的软件接线不补造缺失的真实默想／双端批准、账单或正式发布证据。

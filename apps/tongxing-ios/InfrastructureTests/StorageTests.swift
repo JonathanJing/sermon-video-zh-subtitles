@@ -106,8 +106,11 @@ final class StorageTests {
     @Test func damagedPreferredCatalogCacheFallsBackAndPreservesNetworkError() async throws {
         let legacy = try multilingualFixture()
         StubURLProtocol.install(host: baseURL.host!) { request in
-            request.url?.path == "/multilingual-v2.json"
-                ? .init(chunks: [legacy.catalog]) : .init(status: 404, chunks: [])
+            switch request.url?.path {
+            case "/multilingual-v2.json": return .init(chunks: [legacy.catalog])
+            case "/releases/page-1/ko.json": return .init(chunks: [legacy.release])
+            default: return .init(status: 404, chunks: [])
+            }
         }
         let cache = directory.appendingPathComponent("multilingual-cache-fallback")
         let repository = MultilingualCatalogRepository(origin: baseURL, cacheDirectory: cache, session: session)
@@ -253,8 +256,11 @@ final class StorageTests {
         #expect(try await repository.loadAudio(for: selected, page: loaded.catalog.defaultPage).sha256 == audioHash)
 
         StubURLProtocol.install(host: baseURL.host!) { request in
-            request.url?.path == "/multilingual-v2.json"
-                ? .init(chunks: [legacy.catalog]) : .init(status: 404, chunks: [Data("missing".utf8)])
+            switch request.url?.path {
+            case "/multilingual-v2.json": return .init(chunks: [legacy.catalog])
+            case "/releases/page-1/ko.json": return .init(chunks: [legacy.release])
+            default: return .init(status: 404, chunks: [Data("missing".utf8)])
+            }
         }
         let fallback = try await repository.loadCatalog()
         #expect(fallback.catalog.schemaVersion == MultilingualCatalog.supportedSchemaVersion)

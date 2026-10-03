@@ -8,6 +8,7 @@ Input and receipt shapes live in sermon-app-delivery-v1.schema.json ($defs).
 from __future__ import annotations
 
 import argparse
+from contextvars import ContextVar
 from datetime import datetime
 import hashlib
 import json
@@ -28,6 +29,7 @@ except ImportError:
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA = ROOT / "schemas/sermon-app-delivery-v1.schema.json"
+_ARTIFACT_REBASE = ContextVar("app_artifact_rebase", default=None)
 FORMATS = FormatChecker()
 
 
@@ -68,7 +70,12 @@ def json_value(data):
         return result
     def finite_constant(value):
         raise ValueError("nonfinite_json_number")
-    return json.loads(data, object_pairs_hook=unique_object, parse_constant=finite_constant)
+    def finite_float(value):
+        number = float(value)
+        require(math.isfinite(number), "nonfinite_json_number")
+        return number
+    return json.loads(data, object_pairs_hook=unique_object,
+                      parse_constant=finite_constant, parse_float=finite_float)
 
 
 def read(path):
@@ -96,6 +103,11 @@ def local_file(root, base, path):
     require(isinstance(path, str) and path.strip() and "\\" not in path
             and ".." not in raw.parts and "://" not in path, "unsafe_artifact_path")
     target = raw if raw.is_absolute() else base / raw
+    rebase = _ARTIFACT_REBASE.get()
+    if raw.is_absolute() and rebase is not None:
+        original, copied = rebase
+        require(raw.is_relative_to(original), "artifact_outside_original_root")
+        target = copied / raw.relative_to(original)
     require(target.resolve().is_relative_to(root), "artifact_outside_root")
     cursor = target
     while cursor != root and cursor != cursor.parent:
@@ -178,6 +190,10 @@ def source_package(root, plan):
     checked, _ = source_builder._review_payload(review_path,
         aligned_sha256=source["transcript"]["artifact"]["sha256"],
         anchor_json_sha256=source["anchors"]["artifact"]["jsonSha256"], source_unit_ids=ids)
+    if _ARTIFACT_REBASE.get() is not None:
+        # Path relocation does not rewrite the approved package. Actual bytes
+        # and JSON identity were checked above in the copied artifact root.
+        checked["evidence"]["path"] = source["review"]["evidence"]["path"]
     require(checked == source["review"], "source_human_review_binding_mismatch")
     return source
 
@@ -361,7 +377,22 @@ def pdf_status(root, plan):
     return dict(value)
 
 
-def inspect(plan_path):
+def inspect(plan_path, *, rebase_source_root=None):
+    """Validate original inputs or exact copied evidence under a bundle root.
+
+    Relocation maps only original absolute artifacts into this plan's directory;
+    it cannot read original/outside files or change canonical package bytes.
+    """
+    target = Path(plan_path).absolute().parent.resolve()
+    token = _ARTIFACT_REBASE.set((Path(rebase_source_root).resolve(), target)
+                               if rebase_source_root is not None else None)
+    try:
+        return _inspect(plan_path)
+    finally:
+        _ARTIFACT_REBASE.reset(token)
+
+
+def _inspect(plan_path):
     path = Path(plan_path).absolute()
     require(not path.is_symlink(), "symlink_plan")
     root = path.parent.resolve()

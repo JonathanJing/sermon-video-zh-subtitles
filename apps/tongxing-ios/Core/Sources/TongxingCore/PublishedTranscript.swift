@@ -18,14 +18,17 @@ public struct VerifiedPublishedTranscript: Sendable, Equatable {
     public let series: String?
     public let speaker: String?
     public let durationSeconds: Double
+    public let contentStatus: String
+    public let releaseStatus: String
     public let fullText: [PublishedTranscriptCue]
     public let captions: [PublishedTranscriptCue]
 
     /// Call after verifying the two asset byte hashes against the catalog-bound
     /// release. Optional English failures leave the verified target text usable.
     public static func decode(content: Data, captions: Data, englishReference: Data? = nil,
-                              package: TargetLanguageReleasePackage, page: MultilingualPage) throws -> Self {
-        try package.validate()
+                              package: TargetLanguageReleasePackage, page: MultilingualPage,
+                              allowDevCandidate: Bool = false) throws -> Self {
+        try package.validate(allowDevCandidate: allowDevCandidate)
         guard package.schemaVersion == TargetLanguageReleasePackage.dualScriptSchemaVersion,
               package.pageId == page.id, let target = page.targets[package.targetLocale],
               package.contentStatus == target.contentStatus, package.audioStatus == target.audioStatus else {
@@ -33,15 +36,32 @@ public struct VerifiedPublishedTranscript: Sendable, Equatable {
         }
         let source = try JSONDecoder().decode(FullContent.self, from: content)
         let spoken = try JSONDecoder().decode(CaptionContent.self, from: captions)
-        guard source.schemaVersion == "sermon-full-video-text-content-v1",
-              source.pageId == page.id, source.sourceLocale == "en", source.targetLocale == package.targetLocale,
-              source.status == "human_reviewed", source.englishSourcePackageJsonSha256 == page.sourceIdentitySha256,
+        let candidate = allowDevCandidate && package.status == "candidate"
+        let validContentSchema = candidate
+            ? (source.schemaVersion == "sermon-formal-dev-content-v1" ||
+               (package.contentStatus == "machine_reviewed" && source.schemaVersion == "sermon-dev-podcast-candidate-content-v2"))
+            : source.schemaVersion == "sermon-full-video-text-content-v1"
+        guard validContentSchema,
+              source.pageId == page.id, source.sourceLocale == "en",
+              (candidate ? source.locale : source.targetLocale) == package.targetLocale,
+              (candidate ? source.contentStatus == package.contentStatus && source.audioStatus == package.audioStatus &&
+                  source.targetLanguageAudioPackageJsonSha256 == package.targetLanguageAudioPackageJsonSha256 &&
+                  source.date == page.date : source.status == "human_reviewed"),
+              source.englishSourcePackageJsonSha256 == page.sourceIdentitySha256,
               source.targetLanguageCandidateJsonSha256 == package.targetLanguageCandidateJsonSha256,
-              Validation.sha256(source.sourceMediaSha256),
-              page.sourceMediaSha256.map({ $0 == source.sourceMediaSha256 }) ?? true,
+              (candidate ? true : source.sourceMediaSha256.map(Validation.sha256) == true),
+              (candidate ? true : page.sourceMediaSha256.map({ $0 == source.sourceMediaSha256 }) ?? true),
               source.durationSeconds.isFinite, source.durationSeconds > 0,
               source.durationSeconds <= 24 * 60 * 60, !source.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             throw CatalogError.invalid("完整文稿来源绑定无效")
+        }
+        if candidate {
+            guard spoken.schemaVersion == "sermon-target-language-captions-v1", spoken.pageId == page.id,
+                  spoken.locale == package.targetLocale,
+                  spoken.audioPackageJsonSha256 == package.targetLanguageAudioPackageJsonSha256,
+                  spoken.timingBasis == "concatenated target audio; natural unit durations; no source-video synchronization" else {
+                throw CatalogError.invalid("Dev 候选字幕音轨绑定无效")
+            }
         }
         try validateCues(source.cues, duration: source.durationSeconds, requiresSourceUnits: true)
         try validateCues(spoken.cues, duration: source.durationSeconds, requiresSourceUnits: false)
@@ -49,7 +69,7 @@ public struct VerifiedPublishedTranscript: Sendable, Equatable {
               Set(source.cues.map(\.textGroupId)) == Set(spoken.cues.map(\.textGroupId)) else {
             throw CatalogError.invalid("口播字幕与全文组不符")
         }
-        let english = englishReference.flatMap {
+        let english = (candidate ? nil : englishReference).flatMap {
             try? EnglishReference.validated($0, source: source, package: package, page: page)
         } ?? [:]
         func convert(_ cue: RawCue) -> PublishedTranscriptCue {
@@ -59,7 +79,8 @@ public struct VerifiedPublishedTranscript: Sendable, Equatable {
         return .init(pageID: page.id, locale: package.targetLocale,
                      sourceIdentitySha256: page.sourceIdentitySha256, title: source.title,
                      series: source.series, speaker: source.speaker,
-                     durationSeconds: source.durationSeconds, fullText: source.cues.map(convert),
+                     durationSeconds: source.durationSeconds, contentStatus: package.contentStatus,
+                     releaseStatus: package.status, fullText: source.cues.map(convert),
                      captions: spoken.cues.map(convert))
     }
 }
@@ -76,11 +97,16 @@ private struct FullContent: Decodable {
     let schemaVersion: String
     let pageId: String
     let sourceLocale: String
-    let targetLocale: String
-    let status: String
+    let targetLocale: String?
+    let locale: String?
+    let status: String?
+    let contentStatus: String?
+    let audioStatus: String?
+    let date: String?
+    let targetLanguageAudioPackageJsonSha256: String?
     let englishSourcePackageJsonSha256: String
     let targetLanguageCandidateJsonSha256: String
-    let sourceMediaSha256: String
+    let sourceMediaSha256: String?
     let durationSeconds: Double
     let title: String
     let series: String?
@@ -88,7 +114,14 @@ private struct FullContent: Decodable {
     let cues: [RawCue]
 }
 
-private struct CaptionContent: Decodable { let cues: [RawCue] }
+private struct CaptionContent: Decodable {
+    let schemaVersion: String?
+    let pageId: String?
+    let locale: String?
+    let audioPackageJsonSha256: String?
+    let timingBasis: String?
+    let cues: [RawCue]
+}
 
 private func validateCues(_ cues: [RawCue], duration: Double, requiresSourceUnits: Bool) throws {
     guard !cues.isEmpty, cues.count <= 10_000 else { throw CatalogError.invalid("字幕数量无效") }
