@@ -2,6 +2,7 @@ import SwiftUI
 
 @main
 struct TongxingApp: App {
+    @ObservedObject private var localization = AppLocalization.shared
     #if os(iOS)
     @UIApplicationDelegateAdaptor(BetaNotificationAppDelegate.self) private var notificationDelegate
     @ObservedObject private var notifications = BetaNotificationController.shared
@@ -40,10 +41,10 @@ struct TongxingApp: App {
                 #if os(iOS)
                 .onChange(of: notifications.pending) { _, _ in notifications.openPending(in: model) }
                 .onChange(of: model.multilingualCatalog) { _, _ in notifications.openPending(in: model) }
-                .alert("Beta 通知", isPresented: Binding(get: { notifications.landingMessage != nil },
+                .alert(localization.text("Beta 通知"), isPresented: Binding(get: { notifications.landingMessage != nil },
                                                       set: { if !$0 { notifications.landingMessage = nil } })) {
-                    Button("完成") { notifications.landingMessage = nil }
-                } message: { Text(notifications.landingMessage ?? "") }
+                    Button(localization.text("完成")) { notifications.landingMessage = nil }
+                } message: { Text(localization.text(notifications.landingMessage ?? "")) }
                 #endif
                 #if os(macOS)
                 .modifier(DevelopmentPreviewAppearance())

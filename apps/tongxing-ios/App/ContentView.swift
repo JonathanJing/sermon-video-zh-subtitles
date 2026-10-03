@@ -1346,7 +1346,7 @@ private struct AboutSheet: View {
                     #if os(iOS)
                     if BetaNotificationController.isBeta {
                         NavigationLink { BetaNotificationSettingsView(model: model) } label: {
-                            Label("Beta 通知测试", systemImage: "bell.badge")
+                            Label(localization.text("Beta 通知测试"), systemImage: "bell.badge")
                         }.accessibilityIdentifier("beta-notification-settings")
                     }
                     #endif

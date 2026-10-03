@@ -26,7 +26,8 @@ final class BetaNotificationController: NSObject, ObservableObject, UNUserNotifi
     private var preferenceRevision = UUID()
     @Published private(set) var enabled: Bool
     @Published private(set) var locale: String
-    @Published private(set) var status = "尚未申请系统通知权限。"
+    @Published private(set) var permissionStatus = "尚未申请系统通知权限。"
+    @Published private(set) var status = ""
     @Published private(set) var pending: BetaNotification?
     @Published private(set) var lastOpened: String?
     @Published var landingMessage: String?
@@ -83,11 +84,11 @@ final class BetaNotificationController: NSObject, ObservableObject, UNUserNotifi
     func refreshPermission() async {
         let settings = await center.notificationSettings()
         switch settings.authorizationStatus {
-        case .authorized: status = "系统通知已允许；仍需开启本机测试开关。"
-        case .denied: status = "系统通知已拒绝；请到系统设置更改。"
-        case .notDetermined: status = "尚未申请系统通知权限。"
-        case .provisional, .ephemeral: status = "系统仅允许临时或静默通知。"
-        @unknown default: status = "系统通知权限状态未知。"
+        case .authorized: permissionStatus = "系统通知已允许。"
+        case .denied: permissionStatus = "系统通知已拒绝；请到系统设置更改。"
+        case .notDetermined: permissionStatus = "尚未申请系统通知权限。"
+        case .provisional, .ephemeral: permissionStatus = "系统仅允许临时或静默通知。"
+        @unknown default: permissionStatus = "系统通知权限状态未知。"
         }
     }
 
@@ -135,7 +136,7 @@ final class BetaNotificationController: NSObject, ObservableObject, UNUserNotifi
             }
             scheduled.append(key)
             defaults.set(Array(scheduled.suffix(200)), forKey: "betaNotificationScheduled")
-            status = "已安排 5 秒后的本机测试。系统接收安排不等于通知已显示。"
+            status = "已安排本机测试通知，最早约 5 秒后触发；实际显示时间由系统决定。"
         } catch BetaNotificationError.alreadyScheduled {
             status = "此内容版本和语言已测试；可先清除本机测试记录再重试。"
         } catch { status = "无法安排测试：内容版本或语言不可用。" }
@@ -213,6 +214,7 @@ final class BetaNotificationAppDelegate: NSObject, UIApplicationDelegate {
 
 struct BetaNotificationSettingsView: View {
     @ObservedObject var model: AppModel
+    @ObservedObject private var localization = AppLocalization.shared
     @ObservedObject private var controller = BetaNotificationController.shared
     @Environment(\.scenePhase) private var scenePhase
     @State private var pageID = ""
@@ -220,44 +222,50 @@ struct BetaNotificationSettingsView: View {
         guard model.multilingualCatalog?.schemaVersion == MultilingualCatalog.dualScriptSchemaVersion else { return [] }
         return model.independentPages.filter { $0.targets[controller.locale]?.contentStatus == "human_reviewed" }
     }
-    private var page: MultilingualPage? { pages.first { $0.id == pageID } ?? pages.first }
+    private var page: MultilingualPage? { pages.first { $0.id == pageID } }
+    private func normalizeSelection() {
+        if !pages.contains(where: { $0.id == pageID }) { pageID = pages.first?.id ?? "" }
+    }
 
     var body: some View {
         Form {
             Section {
-                Toggle("开启本机通知测试", isOn: Binding(get: { controller.enabled }, set: { controller.setEnabled($0) }))
+                Toggle(localization.text("开启本机通知测试"), isOn: Binding(get: { controller.enabled }, set: { controller.setEnabled($0) }))
                     .accessibilityIdentifier("beta-notification-opt-in")
-                Text("默认关闭。只在本机安排通知，不会向其他设备发送。")
+                Text(localization.text("默认关闭。只在本机安排通知，不会向其他设备发送。"))
                     .font(.footnote).foregroundStyle(.secondary)
-                Picker("订阅内容语言", selection: Binding(get: { controller.locale }, set: { controller.setLocale($0) })) {
+                Picker(localization.text("订阅内容语言"), selection: Binding(get: { controller.locale }, set: { controller.setLocale($0); normalizeSelection() })) {
                     Text("中文").tag("zh-Hans")
                     Text("English").tag("en")
                     Text("한국어").tag("ko")
                     Text("Español").tag("es")
                     Text("Tiếng Việt").tag("vi")
                 }.accessibilityIdentifier("beta-notification-language")
-                Text("通知语言独立于 App 界面语言；仅测试当前 Dev 目录中已有的语言版本。")
+                Text(localization.text("通知内容语言与 App 界面语言分别选择。"))
                     .font(.footnote).foregroundStyle(.secondary)
             }
-            Section("系统通知权限") {
-                Text(controller.status).accessibilityIdentifier("beta-notification-status")
+            Section(localization.text("系统通知权限")) {
+                Text(localization.text(controller.permissionStatus)).accessibilityIdentifier("beta-notification-permission-status")
                 if let opened = controller.lastOpened {
                     Text(opened).font(.caption).accessibilityIdentifier("beta-notification-last-opened")
                 }
-                Button("允许系统通知") { Task { await controller.requestPermission() } }
+                Button(localization.text("允许系统通知")) { Task { await controller.requestPermission() } }
                     .disabled(!controller.enabled || controller.busy)
                     .accessibilityIdentifier("beta-notification-permission")
-                Link("打开系统通知设置", destination: URL(string: UIApplication.openSettingsURLString)!)
+                Link(localization.text("打开系统通知设置"), destination: URL(string: UIApplication.openSettingsURLString)!)
             }
-            Section("本机预览") {
+            Section(localization.text("本机预览")) {
+                if !controller.status.isEmpty {
+                    Text(localization.text(controller.status)).accessibilityIdentifier("beta-notification-status")
+                }
                 if let page, let target = page.targets[controller.locale] {
-                    Picker("测试内容", selection: $pageID) {
+                    Picker(localization.text("测试内容"), selection: $pageID) {
                         ForEach(pages) { Text($0.title ?? $0.id).tag($0.id) }
                     }
                     let notice = BetaNotification(pageID: page.id, locale: controller.locale, releaseSHA256: target.releasePackageJsonSha256)
                     Text(notice.title).font(.headline)
                     Text(notice.body(date: page.date, audioAvailable: target.audioStatus == "human_reviewed"))
-                    Button("5 秒后显示本机测试通知") {
+                    Button(localization.text("安排本机测试通知（约 5 秒后）")) {
                         if let catalog = model.multilingualCatalog,
                            BetaNotificationController.allowedOrigin(model.mediaOrigin) {
                             Task { await controller.preview(page: page, catalog: catalog) }
@@ -265,17 +273,18 @@ struct BetaNotificationSettingsView: View {
                     }.disabled(!controller.enabled || controller.busy)
                         .accessibilityIdentifier("beta-notification-preview")
                 } else {
-                    Text("当前 Dev 目录没有此语言可测试的独立双稿页面，请刷新目录或选择其他语言。")
+                    Text(localization.text("此语言暂没有可测试内容，请刷新或选择其他语言。"))
                         .accessibilityIdentifier("beta-notification-unavailable")
                 }
-                Button("清除本机测试记录") { controller.clearTestHistory() }
+                Button(localization.text("清除本机测试记录")) { controller.clearTestHistory() }
                     .accessibilityIdentifier("beta-notification-clear")
-                Text("远端 APNs 推送尚未接通；本机通知不能证明远端发送、真机收件或海报附件成功。")
+                Text(localization.text("当前仅支持本机测试，远端推送和海报附件将在后续 Beta 中验证。"))
                     .font(.footnote).foregroundStyle(.secondary)
             }
         }
-        .navigationTitle("Beta 通知测试")
-        .task { await controller.refreshPermission(); pageID = page?.id ?? "" }
+        .navigationTitle(localization.text("Beta 通知测试"))
+        .task { normalizeSelection(); await controller.refreshPermission() }
+        .onChange(of: pages.map(\.id)) { _, _ in normalizeSelection() }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { Task { await controller.refreshPermission() } }
         }

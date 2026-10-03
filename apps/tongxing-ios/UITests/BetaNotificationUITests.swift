@@ -5,6 +5,7 @@ final class BetaNotificationUITests: XCTestCase {
     func testBetaSettingsRequireExplicitOptInWithoutRequestingSystemPermission() throws {
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing"]
+        app.launchArguments += ["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
         app.launchEnvironment["TONGXING_UI_TEST_RUN_ID"] = UUID().uuidString
         app.launch()
         XCTAssertTrue(app.buttons["more-options"].waitForExistence(timeout: 10))
@@ -33,11 +34,37 @@ final class BetaNotificationUITests: XCTestCase {
         add(shot)
     }
 
+    func testEnglishInterfaceKeepsChineseNotificationContentIndependent() throws {
+        try XCTSkipUnless(ProcessInfo.processInfo.environment["TONGXING_EXPECTED_CHANNEL"] == "beta",
+                          "Notification settings are a Beta-only experiment")
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing", "--ui-testing-notification", "-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+        app.launchEnvironment["TONGXING_UI_TEST_RUN_ID"] = UUID().uuidString
+        app.launch()
+        XCTAssertTrue(app.buttons["more-options"].waitForExistence(timeout: 10))
+        app.buttons["more-options"].tap()
+        let link = app.buttons["beta-notification-settings"]
+        XCTAssertTrue(link.waitForExistence(timeout: 5))
+        XCTAssertTrue(link.label.contains("Beta notification test"))
+        link.tap()
+        let toggle = app.switches["beta-notification-opt-in"]
+        XCTAssertTrue(toggle.waitForExistence(timeout: 5))
+        XCTAssertTrue(toggle.label.contains("Enable local notification test"))
+        XCTAssertEqual(toggle.value as? String, "0")
+        XCTAssertTrue(app.staticTexts["[Beta 测试] 新内容已上架"].exists,
+                      "English UI must preserve independently selected Chinese notification content")
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "beta-notifications-english-chinese-content"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+    }
+
     func testLocalNotificationDisplaysAndRoutesVerifiedFixture() throws {
         try XCTSkipUnless(ProcessInfo.processInfo.environment["TONGXING_EXPECTED_CHANNEL"] == "beta",
                           "Local notification delivery is a Beta-only experiment")
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing", "--ui-testing-notification"]
+        app.launchArguments += ["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
         app.launchEnvironment["TONGXING_UI_TEST_RUN_ID"] = UUID().uuidString
         app.launch()
         XCTAssertTrue(app.buttons["more-options"].waitForExistence(timeout: 10))
@@ -50,15 +77,16 @@ final class BetaNotificationUITests: XCTestCase {
         app.buttons["beta-notification-permission"].tap()
         let allow = springboard.buttons["允许"].exists ? springboard.buttons["允许"] : springboard.buttons["Allow"]
         if allow.waitForExistence(timeout: 3) { allow.tap() }
-        let status = app.staticTexts["beta-notification-status"]
+        let permissionStatus = app.staticTexts["beta-notification-permission-status"]
         let authorized = NSPredicate(format: "label CONTAINS %@", "系统通知已允许")
-        expectation(for: authorized, evaluatedWith: status)
+        expectation(for: authorized, evaluatedWith: permissionStatus)
         waitForExpectations(timeout: 8)
         let preview = app.buttons["beta-notification-preview"]
         XCTAssertTrue(preview.waitForExistence(timeout: 5))
         if !preview.isHittable { app.swipeUp() }
         preview.tap()
-        expectation(for: NSPredicate(format: "label CONTAINS %@", "已安排 5 秒"), evaluatedWith: status)
+        let status = app.staticTexts["beta-notification-status"]
+        expectation(for: NSPredicate(format: "label CONTAINS %@", "已安排本机测试通知"), evaluatedWith: status)
         waitForExpectations(timeout: 5)
         XCUIDevice.shared.press(.home)
         let notice = springboard.staticTexts["[Beta 测试] 新内容已上架"].firstMatch
@@ -69,6 +97,8 @@ final class BetaNotificationUITests: XCTestCase {
             XCTFail("必须实际看到系统通知，不能只检查 schedule 返回值")
             return
         }
+        // Let the system banner finish its entry animation before capturing.
+        Thread.sleep(forTimeInterval: 1)
         let screenshot = XCTAttachment(screenshot: springboard.screenshot())
         screenshot.name = "beta-local-notification-visible"
         screenshot.lifetime = .keepAlways
@@ -81,6 +111,10 @@ final class BetaNotificationUITests: XCTestCase {
         // marker exposed by the controller instead of a mutable status label.
         XCTAssertTrue(app.staticTexts["beta-notification-last-opened"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.staticTexts["beta-notification-last-opened"].label, "ui-test-full-video · zh-Hans")
+        let landing = XCTAttachment(screenshot: app.screenshot())
+        landing.name = "beta-notification-verified-landing"
+        landing.lifetime = .keepAlways
+        add(landing)
         let cleanupToggle = app.switches["beta-notification-opt-in"]
         cleanupToggle.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
     }
