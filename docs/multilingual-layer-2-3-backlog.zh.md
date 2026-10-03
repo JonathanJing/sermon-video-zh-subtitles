@@ -412,3 +412,10 @@ Layer 2 的 P0 全部通过后才能开始正式 Layer 3 韩语合成。Layer 3 
 `run_target_language_models.save_new` 保留 exclusive-create 和已有请求/cache identity，现在在返回前 flush/fsync 文件并同步完整同文件系统目录祖先链，复用 durable jobs 的工具。模型 responder 只能在 started intent 持久化后调用；raw response 与 validated result 同样落盘后才移除 uncertainty marker。任何 fsync 失败向上传播，不把未知结果当可自动重试。已有正确缓存仍直接读取，不为此更换模型、prompt 或 paid-cache identity。
 
 合成回归覆盖新目录、marker 文件/目录 sync 失败、响应已返回但 raw 持久化失败、从 durable raw 恢复 result、进程在 responder 入口退出、同 identity 并发和已有缓存复用。旧实现的持久化次序/失败注入有 5 个 assertion failure，修复后通过。该证据是 OS fsync 调用顺序与故障注入，不是实际断电硬件实验；不关闭完整 E4、真实模型跑批、人工审核或后续阶段 sign-off。
+
+
+<a id="es-ko-pending-voice-20261003"></a>
+
+## 明天（10/4）
+
+DEV-L2-002 / DEV-L3-003 / DEV-L3-004 的稳定任务状态与验收标准由[主 backlog](backlog.zh.md)维护。截图边界、本轮决策与详细清单见[日期 backlog](https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/codex/docs-backlog-tomorrow-20261004/docs/backlog-2026-10-04.zh.md#es-ko-pending-voice-20261003)；日期文档不替代主任务定义，既有旧项目不变。
