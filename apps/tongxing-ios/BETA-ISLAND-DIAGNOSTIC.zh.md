@@ -13,6 +13,7 @@
 - 用户收起当前活动后同事务不强制重建；结果更新后等待原有 8 秒清理，而非立即 end。后台、换源、手动操作与销毁清理沿用播放器链路。
 - 展开布局突出定位状态，紧凑布局显示监听／匹配／结果；定位 relevanceScore 为 100，普通播放为 50，避免普通播放优先占用。
 - 请求错误与活动禁用有系统日志；日志不记录音频、媒体路径或用户内容。
+- 兼容性测试发现 SDK 的 `.transient` 枚举缺少正确的旧系统符号边界：首次 iOS 17.5 启动发生 dyld missing symbol。App 对 ActivityKit 使用 weak framework 链接，并保留 iOS 18 运行时判断；重新实际启动测试后 23 项通过，`nm` 确认 transient 符号为 weak external。
 
 上述公开 API 是 Apple 文档指定的前台临时活动路径，但不代表当前系统已实际展示。
 
@@ -20,11 +21,13 @@
 
 | 验证 | 结果 |
 | --- | --- |
-| BetaDebug 构建 | 通过 |
+| BetaDebug / BetaRelease 未签名模拟器构建 | 通过 |
 | Core | 76 通过 |
 | iOS 27 对齐事务／活动 payload／播放器回归 | 54 通过，0 跳过，runtime warnings 0 |
 | 显式启用真实 ActivityKit，iPhone 18 Pro / iOS 27.0 模拟器前台系统展示 | **失败：创建与更新成功，但系统截图没有定位提示** |
 | 诊断性 alertConfiguration 的第二轮系统展示 | **失败：仍未显示**；该诊断已移除，不增加提示音 |
+| 加入活动优先级后的最终前台系统复核 | **失败：仍未显示**，不继续改公开展示路径或使用私有 API |
+| iOS 17.5 对齐与活动状态兼容性回归，修复 weak linking 后 | 23 通过，0 跳过；首次 dyld 崩溃 run 保留、不计通过 |
 | 真机新候选、真实麦克风与现场定位 | 未运行 |
 
 普通测试仍禁用系统活动；本次新增 `ListeningActivityUITests` 必须显式 opt-in，失败不以创建成功替代。首次工程未重新生成导致 0 项测试的 run 不计通过。系统日志记录 `isMomentary:true`、`Should Show System Aperture:false`、自身 App 前台及 alert suppression；这些是观察，不足以判定 Apple 系统缺陷。
@@ -41,4 +44,6 @@ TONGXING_LIVE_ACTIVITY_SMOKE=1 TEST_RUNNER_TONGXING_LIVE_ACTIVITY_SMOKE=1 \
 
 使用明确的 DEBUG 合成事务及静音媒体，不访问麦克风；系统提示由真实 ActivityKit／Springboard 渲染。不能代替真机现场验收。成功条件是实际观察前台监听→匹配→结果、新事务重开和清理；不能只看返回的 activity ID。
 
-私有证据在本工作树 `artifacts/tongxing-ios/2026-10-03/`：`island-smoke-failed/manifest.json` 与已读取的原始 PNG；CLI `20261003T103846-test-e81d5f9e`、`20261003T104148-test-f08200cc` 为失败 run，`20261003T104324-test-9dc6f443` 为 54 项回归 run。前台可见问题仍未解决，新 Beta 上传暂缓、版本号未递增，正式晋升不执行。按 iOS AGENTS 的两轮定向修复边界保留候选及失败证据，下一步需要不同系统或真机的实际呈现证据定位剩余抑制条件。
+私有证据在本工作树 `artifacts/tongxing-ios/2026-10-03/`：`island-smoke-failed/manifest.json`、`island-alert-failed/manifest.json`、`island-final-failed/manifest.json` 与已读取的原始 PNG；CLI `20261003T103846-test-e81d5f9e`、`20261003T104148-test-f08200cc`、`20261003T104722-test-09ce2228` 为系统呈现失败 run，`20261003T104324-test-9dc6f443` 为 54 项回归 run，`20261003T104912-test-3be09505` 为 iOS 17.5 兼容性通过 run；`20261003T105019-build-91ec2677` 为 BetaRelease 构建。候选仍有普通活动状态被隐藏的降级风险：当前无法从 active 状态判断 transient 是否真正显示；App 内状态保留，但不能宣称系统展示降级已完成。
+
+前台可见问题仍未解决，新 Beta 上传暂缓、版本号未递增，正式晋升不执行。按 iOS AGENTS 的两轮定向修复边界保留候选及失败证据，下一步需要不同系统或真机的实际呈现证据定位剩余抑制条件。
