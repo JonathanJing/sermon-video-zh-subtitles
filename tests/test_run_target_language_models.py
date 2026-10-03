@@ -280,7 +280,7 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
         policy = copy.deepcopy(self.fixture.policy)
         policy["batching"]["workers"] = 25
         policy["componentSha256"]["batching"] = policy_tools.canonical_sha256(policy["batching"])
-        with self.assertRaisesRegex(ValueError, "workers=1..16"):
+        with self.assertRaisesRegex(ValueError, "maximum of 16"):
             subject.run(self.fixture.source, self.fixture.anchor, policy,
                         self.out, "fixture-key", self.fake_call)
         self.assertEqual([], self.calls)

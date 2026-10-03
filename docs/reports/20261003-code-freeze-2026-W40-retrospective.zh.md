@@ -6,7 +6,7 @@
 
 | 设置 | W40 请求 | 冻结版本观察 | 修正后状态 |
 | --- | --- | --- | --- |
-| Layer 2 API 并发 | zh-Hans、ko、es 合计最多 24 个请求在途 | 旧 runner 每种语言仅允许 1–3 个 group worker；历史 24 并发收据来自串行 locale 运行 | 新模板每种语言最多 16 个 worker；canonical controller 可同时启动三种语言；共享 `jobRoot` 文件锁信号量将同一 run 的 API 请求总数限制为 24 |
+| Layer 2 API 并发 | zh-Hans、ko、es 合计最多 24 个请求在途 | 旧 runner 每种语言仅允许 1–3 个 group worker；历史 24 并发收据来自串行 locale 运行 | 每个冻结 run-specific policy 可配置每种语言最多 16 个 worker（初始模板保持 `workers=1`）；canonical controller 可同时启动三种语言；共享 `jobRoot` 文件锁信号量将同一 run 的 API 请求总数限制为 24 |
 | Locale 进度 | 每种语言在自己的当前层满足依赖和审核门禁后独立前进 | canonical controller 仅派发 Layer 2，原实现每个 run 同时只有一个 locale job；没有跨层 dispatcher | 可并行准备三语 Layer 2。Layer 3 仍需 translation review 与 voice authorization；本修正没有建立自动音频派发器 |
 | Spark TTS | 新单讲员任务使用 8 副本 × batch 8 | 正式 renderer 支持此入口；模型加载就绪有 barrier | 保持不变。正式路径没有专门的 dummy inference warmup |
 

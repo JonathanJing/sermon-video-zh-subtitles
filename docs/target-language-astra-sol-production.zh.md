@@ -12,7 +12,7 @@
 
 1. 使用状态为 `ready_for_translation`、`translationEligible=true` 的 `English Source Package`，并提供与其 hash 相符的 anchor manifest。来源范围与英文单元必须已有完整人工审核。
 2. 为该来源与 locale 冻结 `sermon-target-language-policy-v2`。术语来源、专名、经文版本／引用政策、语言插件实现 hash 和 source scope 必须已解决。`config/target-language-policies/` 是初始模板，其中未决项不能直接用于付费生产调用。
-3. 新 policy 的 translator 固定为 `gpt-6-astra`，reviewer 固定为 `gpt-6-sol`；两个 prompt version 和 request ID 必须分开。执行器要求 `batchSize=1`，新冻结的 policy 可选择 `workers=1..16`；多语言执行由生产 run 共享的信号量限制在最多 24 个 API 请求同时在途。同组仍先 Astra 后 Sol；不同组可有界并行，调用量仍约为组数的两倍，结果按原组顺序合并。各语言采用相同角色分工，语言规则由各自 policy 与插件决定。
+3. 新 policy 的 translator 固定为 `gpt-6-astra`，reviewer 固定为 `gpt-6-sol`；两个 prompt version 和 request ID 必须分开。执行器要求 `batchSize=1`，新冻结的 run-specific policy 可选择 `workers=1..16`；初始模板维持 `workers=1`。多语言执行由生产 run 共享的信号量限制在最多 24 个 API 请求同时在途。同组仍先 Astra 后 Sol；不同组可有界并行，调用量仍约为组数的两倍，结果按原组顺序合并。各语言采用相同角色分工，语言规则由各自 policy 与插件决定。
 4. 输出目录应放在忽略的 `artifacts/` 下。记录来源、policy 和代码版本；不要把 API key 或原始模型文本提交到 Git。
 
 ## 执行
