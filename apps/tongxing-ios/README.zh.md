@@ -56,7 +56,7 @@ xcodegen generate
 
 ## 数据与模块
 
-Release build 读取 `https://ai-for-god-sermon-audio.web.app/weekly.json` 与同源 `/media/*.mp3`；Debug build 使用隔离的 `https://ai-for-god-sermon-audio-dev.web.app`。legacy 契约为 `sermon-weekly-catalog-v1`。正式站多语言目录现读取 `/multilingual-v3.json` 和 immutable `/releases-v2/<page>/<locale>.json`；Dev POC 继续读取 v2 目录及 v1 发布包。正式来源只接受 `published_http_verified` 的静态页面包；Firebase Dev 的不可变 `candidate` 包仅在明确的 Dev 来源开放，校验其内容 JSON 哈希后生成无脚本的 App 阅读页。客户端选择内容语言时先校验发布包与页面 SHA-256，再在 App 内显示已验证页面；离线缓存每次打开都重新校验。页面预览限制脚本、外部资源和导航，避免显示未验证的网络内容。原生中文播放器与现场对齐保持正式版实现，不重生成、不重新审核文字与音频。
+Release build 读取 `https://ai-for-god-sermon-audio.web.app/weekly.json` 与同源 `/media/*.mp3`；Debug build 使用隔离的 `https://ai-for-god-sermon-audio-dev.web.app`。legacy 契约为 `sermon-weekly-catalog-v1`。正式站多语言目录现读取 `/multilingual-v3.json` 和 immutable `/releases-v2/<page>/<locale>.json`。Firebase Dev 可在同一 v3 目录中承载 v2 发布包 `candidate`，Beta/Dev 显式开放后校验同源内容 JSON 与资产 SHA，再生成无脚本的 App 阅读页；该候选仅限 Dev 来源。Dev 候选双稿包可引用同页同语言的 WAV、MP3 或 M4A；已发布包仍要求 MP3。正式来源只接受 `published_http_verified`，且不会启用候选读取。离线缓存每次打开都重新校验；页面预览限制脚本、外部资源和导航。原生中文播放器与现场对齐保持正式版实现，不重生成、不重新审核文字与音频。
 
 | 路径 | 职责 |
 |---|---|

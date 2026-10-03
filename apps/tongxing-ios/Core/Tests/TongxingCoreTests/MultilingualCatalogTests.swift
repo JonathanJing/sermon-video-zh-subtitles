@@ -296,4 +296,39 @@ struct MultilingualCatalogTests {
             try TargetLanguageReleasePackage.decode(JSONSerialization.data(withJSONObject: value))
         }
     }
+
+    @Test func devDualScriptPodcastCandidateAllowsWavOnlyWithExplicitOptIn() throws {
+        var value = try #require(JSONSerialization.jsonObject(
+            with: releaseData(locale: "ko", audioAvailable: true)) as? [String: Any])
+        value["schemaVersion"] = TargetLanguageReleasePackage.dualScriptSchemaVersion
+        value["spokenTargetLanguageCandidateJsonSha256"] = hashB
+        value["status"] = "candidate"
+        value["httpVerification"] = ["status": "not_run", "evidenceSha256": NSNull()]
+        value["deviceAcceptance"] = ["status": "not_run", "evidenceSha256": NSNull()]
+        value["venueAcceptance"] = ["status": "not_run", "evidenceSha256": NSNull()]
+        value["assets"] = [
+            ["role": "page", "path": "/pages/page-1/ko/index.html", "sha256": hashA],
+            ["role": "content", "path": "/content/page-1/ko.json", "sha256": hashA],
+            ["role": "captions", "path": "/captions/page-1/ko.json", "sha256": hashB],
+            ["role": "audio", "path": "/media/page-1/ko.wav", "sha256": hashB],
+        ]
+        let data = try JSONSerialization.data(withJSONObject: value)
+        #expect(throws: (any Error).self) { try TargetLanguageReleasePackage.decode(data) }
+        let candidate = try TargetLanguageReleasePackage.decode(data, allowDevCandidate: true)
+        #expect(candidate.status == "candidate")
+        var production = value
+        production["status"] = "published_http_verified"
+        production["httpVerification"] = ["status": "pass", "evidenceSha256": hashA]
+        #expect(throws: (any Error).self) {
+            try TargetLanguageReleasePackage.decode(JSONSerialization.data(withJSONObject: production))
+        }
+        value["assets"] = (value["assets"] as! [[String: Any]]).map { asset in
+            var changed = asset
+            if (changed["role"] as? String) == "audio" { changed["path"] = "/media/page-1/es.wav" }
+            return changed
+        }
+        #expect(throws: (any Error).self) {
+            try TargetLanguageReleasePackage.decode(JSONSerialization.data(withJSONObject: value), allowDevCandidate: true)
+        }
+    }
 }

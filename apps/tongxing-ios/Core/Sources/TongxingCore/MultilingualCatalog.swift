@@ -141,6 +141,9 @@ public struct TargetLanguageReleasePackage: Codable, Sendable, Equatable {
               contentLocale == targetLocale, issues.isEmpty,
               !assets.isEmpty
         else { throw CatalogError.invalid("目标语言发布包状态或绑定无效") }
+        let published = status == "published_http_verified" && httpVerification.status == "pass"
+        let devCandidate = allowDevCandidate
+            && status == "candidate" && httpVerification.status == "not_run"
         if schemaVersion == Self.dualScriptSchemaVersion {
             guard spokenTargetLanguageCandidateJsonSha256.map(Validation.sha256) == true else {
                 throw CatalogError.invalid("双稿发布包缺少短口播候选绑定")
@@ -156,16 +159,18 @@ public struct TargetLanguageReleasePackage: Codable, Sendable, Equatable {
                 }
             }
             if audioStatus == "human_reviewed" {
-                guard assets.filter({ $0.role == .audio }).map(\.path) == ["/media/\(pageId)/\(targetLocale).mp3"] else {
+                let audioPaths = assets.filter { $0.role == .audio }.map(\.path)
+                let acceptedExtensions = devCandidate ? ["mp3", "wav", "m4a"] : ["mp3"]
+                let acceptedAudioPaths = acceptedExtensions.map {
+                    "/media/\(pageId)/\(targetLocale).\($0)"
+                }
+                guard audioPaths.count == 1, acceptedAudioPaths.contains(audioPaths[0]) else {
                     throw CatalogError.invalid("双稿音轨路径与语言不符")
                 }
             }
         } else if spokenTargetLanguageCandidateJsonSha256 != nil {
             throw CatalogError.invalid("单稿发布包包含短口播绑定")
         }
-        let published = status == "published_http_verified" && httpVerification.status == "pass"
-        let devCandidate = allowDevCandidate && schemaVersion == Self.supportedSchemaVersion
-            && status == "candidate" && httpVerification.status == "not_run"
         guard published || devCandidate else { throw CatalogError.invalid("目标语言发布包尚未通过所需发布状态") }
         for acceptance in [httpVerification, deviceAcceptance, venueAcceptance] {
             try acceptance.validate()
