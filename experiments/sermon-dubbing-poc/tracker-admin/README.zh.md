@@ -62,6 +62,20 @@ node publish.mjs --project YOUR_PROJECT --database sermon-tracker \
   --watch-config watch-config.json --watch --execute
 ```
 
+也可用本地控制器在后台启动、查看和停止发布器。它启动的仍是同一个只读本地输入、脱敏后写入 Firestore 的 watch 流程；浏览器继续通过 Firestore 实时订阅更新。状态文件和合并日志放在配置文件旁边，建议把配置与这些运行文件放在被 Git 忽略的 `artifacts/` 目录。状态文件每 15 秒记录心跳、最近成功检查／发布、目标 `pageId` 和最近错误；检查周期可调整，但至少 5 秒。`status` 会分别报告运行、降级（最近一次发布错误）、停止和心跳过期状态；心跳超过 60 秒（或三个检查周期，取较大值）会视为异常。
+
+```bash
+node publisher-control.mjs start --project YOUR_PROJECT --database sermon-tracker \
+  --watch-config watch-config.json
+node publisher-control.mjs status --project YOUR_PROJECT --database sermon-tracker \
+  --watch-config watch-config.json
+node publisher-control.mjs stop --project YOUR_PROJECT --database sermon-tracker \
+  --watch-config watch-config.json
+tail -f watch-config.json.publisher.log
+```
+
+`start` 不会部署网页，也不会启动模型或修改账本；它只启动本地发布器。`stop` 发送优雅停止信号，状态可在随后一次 `status` 中确认。发布器通过 Application Default Credentials 写入指定的独立 Firestore 数据库，凭据不会放入浏览器、配置或快照。电脑休眠／登出期间进程不能继续检查本地文件；云端保留最后一份成功快照，页面按快照新鲜度提示过期。
+
 `--watch` 默认每 15 秒重建；状态变化或有可计时的进行中／待审步骤时写入，网页收到 Firestore 更新后刷新。它不会启动模型、下载视频或部署网页。发布器的 ADC 身份需要相应数据库的写入 IAM 权限，凭据不能放进网页或公开快照。发布器默认 dry run，并要求明确 `--execute`。
 
 ### 本机定时发布状态（2026-09-24 核对）
