@@ -418,4 +418,4 @@ Layer 2 的 P0 全部通过后才能开始正式 Layer 3 韩语合成。Layer 3 
 
 ## 明天（10/4）
 
-DEV-L2-002 / DEV-L3-003 / DEV-L3-004 的唯一完整定义和截图证据已移到[明天 backlog](https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/codex/docs-backlog-tomorrow-20261004/docs/backlog-2026-10-04.zh.md)；此处仅索引，既有旧项目不变。
+DEV-L2-002 / DEV-L3-003 / DEV-L3-004 的稳定任务状态与验收标准由[主 backlog](backlog.zh.md)维护。截图边界、本轮决策与详细清单见[日期 backlog](https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/codex/docs-backlog-tomorrow-20261004/docs/backlog-2026-10-04.zh.md#es-ko-pending-voice-20261003)；日期文档不替代主任务定义，既有旧项目不变。

@@ -67,12 +67,14 @@ help 原句为 `Source-bound per-unit pronunciation and pause instructions`；�
 
 ## 本次未执行与边界
 
-原审核只读检查源文档和代码；本 PR 仅将审核与实验计划记录入库。未修改仓库文档、代码、prompts、memories 或生产状态；未 commit、push、创建新 PR、合并或部署。未运行任何生产 CLI、模型、TTS、ASR、生成任务、音频解码、网络发布验收或功能测试，未停止运行中的任务/模型。没有执行第三方安装钩子、npm 脚本或未审查 linter。静态建议未通过模型行为回归，也未证明当前成品存在上述错误；需要用户决定的项目不能视为新增需求或执行授权。
+原审核调查阶段只读检查源文档和代码，当时未修改文档、代码、prompts、memories 或生产状态，也未 commit、push、创建 PR、合并或部署。随后为记录调查与实验计划，本 PR 新增本报告、修改相关 backlog／说明文档，并提交、推送及创建文档 PR；这些记录动作与只读调查分开计述。
+
+上述调查和文档记录均未修改运行代码或生产提示词，未运行生产 CLI、模型、TTS、ASR、生成任务、音频解码、网络发布验收或功能测试，未停止运行中的任务／模型。没有执行第三方安装钩子、npm 脚本或未审查 linter。静态建议未通过模型行为回归，也未证明当前成品存在上述错误；需要用户决定的项目不能视为新增需求或执行授权。后续独立授权的软件实施和验证归 PR #231 的回执，不倒写为原调查阶段的执行。
 
 
 ## 与页面流程 PR 的关系
 
-本记录独立于 [PR #228](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/228)。创建本记录前核实 #228 为 OPEN、Draft，head `a4e700030bd738a51f9954d4ddd6dbe87d026143`。该 PR 修订页面发行说明；本 PR 记录五项 Agent 指令发现及后续实验计划，不修改生产提示词、缓存、配置或既有说明。没有运行 A/B，也没有将建议标成实施完成。
+本记录独立于 [PR #228](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/228)。创建本记录前核实 #228 为 OPEN、Draft，head `a4e700030bd738a51f9954d4ddd6dbe87d026143`。该 PR 修订页面发行说明；本 PR 记录五项 Agent 指令发现及后续实验计划，不修改生产提示词、缓存或运行配置。没有运行 A/B，也没有将建议标成实施完成。
 
 ## 明天（10/4）
 
