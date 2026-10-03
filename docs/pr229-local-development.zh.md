@@ -68,3 +68,5 @@ git diff --check
 2026-10-03 本批验证：新增 App 24 项／费用 29 项合计 53 项通过；旧端到端、local completion 和正式 Dev staging 44 项通过；恢复 renderer 后 3 项缓存定向回归通过；Web 458 项通过。两份新增 JSON Schema 通过 `check_schema`，两个 CLI help 退出 0，158 个相对文档链接目标存在。旧流程回归使用项目已有完整 venv；仅安装 jsonschema 的临时环境缺 requests，不能运行旧 Supervisor 的导入链，未为此改项目代码。
 
 软件验证与真实内容生成、双端人工批准、生产发布、设备和现场验收分别记录。相关 backlog 在合并和完整验收前保留 `in_progress`，不以本地通过关闭生产任务。
+
+后续真实产物、Dev 目录、Core decoder、恢复与费用证据的并行检查，以及完整远程 CI 结果见 [PR #231 并行检查回执](reports/20261003-pr231-parallel-checks.zh.md)。检查确认新 App producer 接线、候选协议兼容、默想／双端证据和真实费用归因仍有缺口。
