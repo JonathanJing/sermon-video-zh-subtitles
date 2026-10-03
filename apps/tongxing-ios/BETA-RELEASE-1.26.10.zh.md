@@ -7,6 +7,7 @@
 | 项目 | 实际结果 |
 |---|---|
 | 源码分支／commit | `dev` / `35c39e3a916ab5d29ca7b3524d8312b244795b05` |
+| iOS module tree | `d001a5604b0c970bf6b68c221a8c06cef33bf35a` |
 | iOS Beta | `TongxingBeta` / `BetaRelease` |
 | 版本／Build | `1.26.10 (51)` |
 | App bundle ID | `com.jonathanjing.tongxing.beta` |
