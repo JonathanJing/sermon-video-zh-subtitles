@@ -456,12 +456,17 @@ def _inspect(plan_path):
         reference = plan["productionRuns"].get(environment)
         production[environment] = {"publication": "not_run", "deviceAcceptance": "not_run"}
         if reference is not None:
-            _, receipt = artifact(root, root, reference)
-            validate(receipt, "productionObservation")
-            require(receipt["environment"] == environment
-                    and receipt["client"] == plan["productionEnvironments"][environment]
-                    and receipt["candidateJsonSha256"] == candidate_sha, "production_observation_binding_mismatch")
-            artifact(root, root, receipt["evidence"], object_required=False)
+            try:
+                _, receipt = artifact(root, root, reference)
+                validate(receipt, "productionObservation")
+                require(receipt["environment"] == environment
+                        and receipt["client"] == plan["productionEnvironments"][environment]
+                        and receipt["candidateJsonSha256"] == candidate_sha, "production_observation_binding_mismatch")
+                artifact(root, root, receipt["evidence"], object_required=False)
+            except (ValueError, OSError, KeyError, TypeError):
+                # Optional later observations cannot revoke independent App
+                # readiness. Unverified publication/device claims stay not_run.
+                continue
             production[environment] = receipt
     try:
         pdf = pdf_status(root, plan)

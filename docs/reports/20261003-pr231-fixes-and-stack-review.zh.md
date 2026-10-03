@@ -10,10 +10,12 @@
 | 原生 Production 隔离 | 根据包的 hash 与 published/human 状态按 locale 投影可选内容，重选默认值；冷读取、候选负缓存、离线缓存均不能暴露候选。最多 4 路并发、30 秒截止；短 deadline 保留已通过 sibling。 | 兼容旧 wire 目录需额外查询发布包；没有代表性性能实测。 |
 | Beta UI 选择 | Beta bundle＋精确 HTTPS Dev origin 才启用机器候选；AppModel 的真实三语选择／读取 2 项 XCTest 通过，显示 Dev／机器审核及未正式验收提示。播客不构造视频入口。未签名 Beta simulator build 通过。 | 未安装／启动实体设备或 TestFlight。编译与逻辑探针不等于设备视觉／播放验收。 |
 | App durable producer | 显式配置接入 Supervisor、end_to_end 和 local production；消费已批准产物／双端收据，复制依赖并原子写 prepared_not_published 包。原目录不可用后仍能真实 CLI 消费复制包。 | 不生成四项内容，不代写人审，不执行双端正式 publisher／回退或通知；默认 dual_pdf 保留。 |
-| App 恢复／独立状态 | 18 项新 workflow＋24 项准入通过；独立 reviewer 跑 127 项新旧 scope 套件通过。覆盖 PDF 独立失败／恢复、重启复用、旧批准拒绝、来源漂移、活／未知 owner、失败收据保留、目录祖先 fsync、固定配置路由及 JSON 非有限溢出拒绝。 | 127 包含新 workflow／准入，不能重复相加；夹具批准均为 synthetic，未运行真实新 App plan。正式端 pass/fail 观察不触发发布或虚报完成。 |
+| App 恢复／独立状态 | 22 项 workflow＋25 项准入通过；此前独立 reviewer 跑 127 项新旧 scope 套件通过。覆盖 PDF 独立失败／恢复、重启复用、旧批准拒绝、来源漂移、活／未知 owner、失败收据保留、目录祖先 fsync、固定配置路由及 JSON 非有限溢出拒绝。 | 127 包含新 workflow／准入，不能重复相加；夹具批准均为 synthetic，未运行真实新 App plan。正式端 pass/fail 观察不触发发布或虚报完成。 |
 | 原生费用导入 | 新离线 envelope 消费原生 Costs 响应并输出既有归一化 v1；Decimal 合并 line-item 分区，拒绝重复／断链／缺日／错误类型／极限日期，未知归因不猜、空结果不补零。40 项相关测试及独立复核通过。 | 不调用 Costs API、读 key 或配置账号。原生响应不证明结算，输出固定 pending；实际映射、producer 归因与真实账单未验收。 |
 
 独立审核关闭了目录祖先持久化、JSON 浮点溢出、截止时间丢失成功 sibling、候选／UI 状态、原生账单输入类型和日期溢出等问题；受审源码 hash 和详细日志在 ignored artifacts 中保存。新增共享 fixture 的 Web 测试已纳入 native CI 路由，24 项 CI 路由／文档／iOS 路由测试通过。原 renderer 与 #229 基线的字节仍一致，不扩大缓存兼容名单。
+
+远程审核随后发现无扩展名 JSON 包漏复制及可选生产观察异常阻塞独立准备。旧实现的扩展名问题已复现；修复后来源／音频包／能力证据不依赖文件扩展名递归复制，移走原目录后真实 `inspect-bundle` 通过。未声明 JSON 的无扩展名 opaque 证据遇到 NaN、浮点溢出或重复键仍按原字节保存，声明 JSON 与原 `.json` 门禁保持严格。本轮独立 reviewer 复跑 47 项准备包／准入测试全部通过，四个代码及测试文件的前后 hash 一致，不与此前 127 项重叠套件相加。缺失、损坏或过期的可选生产收据按端回退 `not_run`，保留另一端有效观察、候选身份与已验证准备包复用。
 
 操作入口：[App producer](../app-delivery-workflow.zh.md)、[本地开发说明](../pr229-local-development.zh.md)。机器回执位于 ignored `artifacts/pr231-checks-20261003/` 的 `catalog-client/fix-summary.json`、`integration-recovery/app-workflow-summary.json`，以及 `artifacts/pr231-fixes-20261003/` 的 `final-code-review`、`cost-review`、`pr-stack-review`；不将原内容、私人审核信息或原日志复制进 Git。
 

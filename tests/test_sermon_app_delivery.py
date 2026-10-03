@@ -437,8 +437,44 @@ class AppDeliveryTests(unittest.TestCase):
         self.assertEqual(result["promotion"]["status"], "eligible_not_published")
         observation["client"]["environmentId"] = "wrong-production"
         self.plan["productionRuns"]["firebase_prod"] = self.write("firebase-prod-failure.json", observation)
-        with self.assertRaisesRegex(ValueError, "production_observation_binding_mismatch"):
-            self.inspect()
+        result = self.inspect()
+        self.assertEqual(result["production"]["firebase_prod"],
+                         {"publication": "not_run", "deviceAcceptance": "not_run"})
+        self.assertEqual(result["promotion"]["status"], "eligible_not_published")
+
+    def test_invalid_optional_production_evidence_preserves_readiness_and_valid_sibling(self):
+        self.client_proof(); self.approve()
+        identity = app.candidate_identity(self.plan)
+        evidence = self.write("production-evidence.json", {"note": "Synthetic observation"})
+        valid = {"schemaVersion": "sermon-app-production-observation-v1", "environment": "ios_prod",
+                 "client": dict(self.plan["productionEnvironments"]["ios_prod"]),
+                 "candidateJsonSha256": identity, "publication": "fail", "deviceAcceptance": "not_run",
+                 "observer": "Synthetic observer", "observedAt": "2026-10-03T13:00:00Z", "evidence": evidence}
+        self.plan["productionRuns"]["ios_prod"] = self.write("valid-production.json", valid)
+        other = dict(valid, environment="firebase_prod",
+                     client=dict(self.plan["productionEnvironments"]["firebase_prod"]))
+        malformed = self.root / "private-observation"
+        malformed.write_text("private-canary invalid json")
+        missing_evidence = dict(other, evidence={"path": "private-absent-evidence", "sha256": "0" * 64})
+        cases = {
+            "missing": {"path": "private-absent-observation", "sha256": "0" * 64},
+            "stale_hash": dict(self.write("stale-production.json", other), sha256="0" * 64),
+            "malformed_json": self.reference(malformed, is_json=False),
+            "bad_schema": self.write("bad-production.json", {"private-canary": True}),
+            "stale_candidate": self.write("old-production.json", dict(other, candidateJsonSha256="0" * 64)),
+            "wrong_environment": self.write("wrong-production.json", valid),
+            "missing_evidence": self.write("missing-evidence-production.json", missing_evidence),
+        }
+        for name, reference in cases.items():
+            with self.subTest(name=name):
+                self.plan["productionRuns"]["firebase_prod"] = reference
+                result = self.inspect()
+                self.assertEqual(result["candidateJsonSha256"], identity)
+                self.assertEqual(result["promotion"]["status"], "eligible_not_published")
+                self.assertEqual(result["production"]["ios_prod"], valid)
+                self.assertEqual(result["production"]["firebase_prod"],
+                                 {"publication": "not_run", "deviceAcceptance": "not_run"})
+                self.assertNotIn("private", json.dumps(result["production"]))
 
     def test_cli_inspect_outputs_readiness_and_redacts_invalid_input(self):
         self.write("plan.json", self.plan)

@@ -110,7 +110,7 @@ def _asset_closure(config, plan):
     def visit(value, base):
         if isinstance(value, dict):
             if {'path', 'sha256'} <= set(value):
-                path, _ = app.package_artifact(root, base, value, object_required=False)
+                path, content = app.package_artifact(root, base, value, object_required=False)
                 relative = str(path.relative_to(root))
                 row = {'path': relative, 'sha256': value['sha256']}
                 if relative in found:
@@ -118,10 +118,22 @@ def _asset_closure(config, plan):
                 found[relative] = row
                 if relative not in traversed:
                     traversed.add(relative)
-                    # Schema-declared JSON evidence may also contain artifacts.
-                    # Other binary formats are copied as bytes, never executed.
-                    if path.suffix.lower() == '.json':
-                        visit(app.json_value(path.read_bytes()), path.parent)
+                    # jsonSha256 declares JSON independently of the filename.
+                    # SHA-only references also permit JSON packages, so inspect
+                    # their content with the same strict parser. Binary/non-JSON
+                    # assets remain opaque bytes; no content is ever executed.
+                    if content is None:
+                        try:
+                            content = app.json_value(path.read_bytes())
+                        except ValueError:
+                            # A SHA-only opaque evidence blob need not satisfy
+                            # JSON rules. Declared/required JSON was validated
+                            # by package_artifact/inspect before this probe.
+                            if path.suffix.lower() == '.json':
+                                raise  # Preserve the existing JSON-file gate.
+                            content = None
+                    if isinstance(content, (dict, list)):
+                        visit(content, path.parent)
                 return
             for child in value.values():
                 visit(child, base)

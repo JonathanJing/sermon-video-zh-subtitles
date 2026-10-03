@@ -47,6 +47,8 @@ worker 是异步 durable job。用 `inspect` 观察退出后的状态，或再�
 
 每个 job ID 对应一个包，包含 `prepare-intent.json`、`assets/frozen-app-plan.json`、仅计划及其证据实际引用的资产，以及最后写入的 `bundle-manifest.json`。所有资产按原字节复制，文件和新增目录链均同步到磁盘；完成标记只在再次核验来源、候选、批准和文件 hash 后写入。原始包和审核证据保持原字节。
 
+JSON 依赖按声明的 JSON hash 或严格解析的内容递归收集，不依赖 `.json` 扩展名；无扩展名的有效来源、音频包和能力证据仍包含其嵌套依赖。非 JSON／二进制资产按原字节复制。
+
 独立消费已复制包：
 
 ```sh
@@ -71,6 +73,8 @@ python -m scripts.sermon_app_delivery_workflow recover \
 ## 独立状态与尚未接入的路径
 
 `pdfAdHoc` 和 `productionRuns` 保留为当前观察字段，不进入冻结 App 包的身份。无 PDF、按需 PDF 失败或后来修复，不会重新生成 App 包；正式端观察更新也不重新生成。顶层 `publication` 始终为 `not_run`。输入中另行提供的 `production.ios_prod`／`firebase_prod` pass 或 fail 仅是已绑定收据的观察，不能使本 producer 宣称发布。
+
+可选生产收据或其证据缺失、损坏、hash 过期或绑定不匹配时，该端返回 `publication: not_run`、`deviceAcceptance: not_run`。有效的另一端观察保留；这些异常不阻塞独立 App 准备或已验证包的复用。核心产品、能力和人工批准仍执行原严格准入。
 
 现有离线测试使用明确标为 synthetic 的产品和审核收据，实际启动本地 durable worker／并发 CLI、解码音频、复制包并从原目录不可用的状态独立消费。测试覆盖原批准失效、输入中途变更、失败恢复、活 owner、未知占位、目录持久化顺序、PDF 独立及重启去重。它们证明接线和恢复规则，不是实际人工批准或双端发布验收。
 

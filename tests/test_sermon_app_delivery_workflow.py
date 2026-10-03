@@ -313,6 +313,46 @@ class AppDeliveryWorkflowTests(unittest.TestCase):
         self.assertEqual(report['finalSnapshot']['bundle']['jobId'], key)
         self.assertEqual(self.snapshot_files(self.config.output/key), saved)
 
+    def test_missing_or_stale_optional_publication_does_not_block_prepare_or_reuse(self):
+        initial = workflow.snapshot(self.path)
+        evidence = self.fixture.write('publication-fixture.json',
+            {'note':'Synthetic optional observation; no publication was executed'})
+        valid = {'schemaVersion':'sermon-app-production-observation-v1',
+            'environment':'firebase_prod', 'client':dict(self.fixture.plan['productionEnvironments']['firebase_prod']),
+            'candidateJsonSha256':app.candidate_identity(self.fixture.plan), 'publication':'pass',
+            'deviceAcceptance':'not_run', 'observer':'Synthetic observer',
+            'observedAt':'2026-10-03T13:00:00Z', 'evidence':evidence}
+        self.fixture.plan['productionRuns']['firebase_prod'] = self.fixture.write('valid-publication.json', valid)
+        stale = {**valid, 'environment':'ios_prod',
+                 'client':dict(self.fixture.plan['productionEnvironments']['ios_prod']),
+                 'candidateJsonSha256':'0'*64}
+        invalid_references = ({'path':'missing-observation', 'sha256':'0'*64},
+                              self.fixture.write('stale-publication.json', stale))
+        for reference in invalid_references:
+            self.fixture.plan['productionRuns']['ios_prod'] = reference
+            self.fixture.write('plan.json', self.fixture.plan)
+            before = workflow.snapshot(self.path)
+            self.assertEqual(before['jobIdentity'], initial['jobIdentity'])
+            self.assertEqual(before['recommendedAction']['action'], workflow.ACTION)
+            self.assertEqual(before['production']['ios_prod']['publication'], 'not_run')
+            self.assertEqual(before['production']['firebase_prod']['publication'], 'pass')
+        key = self.launch()
+        saved = self.snapshot_files(self.config.output/key)
+        for reference in invalid_references:
+            with self.subTest(reference=reference['path']):
+                self.fixture.plan['productionRuns']['ios_prod'] = reference
+                self.fixture.write('plan.json', self.fixture.plan)
+                with patch.object(jobs, 'start_job') as spawn:
+                    report = workflow.run(self.path, mode='execute')
+                spawn.assert_not_called()
+                self.assertTrue(report['workflowComplete'])
+                self.assertEqual(report['finalSnapshot']['jobIdentity'], initial['jobIdentity'])
+                self.assertEqual(report['finalSnapshot']['bundle']['jobId'], key)
+                self.assertEqual(report['publication'], 'not_run')
+                self.assertEqual(report['finalSnapshot']['production']['ios_prod']['publication'], 'not_run')
+                self.assertEqual(report['finalSnapshot']['production']['firebase_prod']['publication'], 'pass')
+                self.assertEqual(self.snapshot_files(self.config.output/key), saved)
+
     def test_recovery_refuses_active_owner_or_changed_source_and_preserves_legacy_scopes(self):
         _, _, _, identity = workflow.observe(self.config)
         key = jobs._digest(identity)
@@ -364,6 +404,91 @@ class AppDeliveryWorkflowTests(unittest.TestCase):
             self.assertEqual(json.loads(process.stdout)['status'], 'prepared_not_published')
         finally:
             hidden.rename(original)
+
+    def test_extensionless_source_dependency_closure_with_optional_json_hash(self):
+        original = self.fixture.root / self.fixture.plan['source']['path']
+        target = original.with_name('english-source-package')
+        original.rename(target)
+        for include_json_hash in (True, False):
+            reference = self.fixture.reference(target, is_json=include_json_hash)
+            self.fixture.plan['source'] = reference
+            self.fixture.approve(); self.fixture.write('plan.json', self.fixture.plan)
+            with self.subTest(include_json_hash=include_json_hash):
+                inspection, _, inventory, _ = workflow.observe(self.config)
+                self.assertEqual(inspection['promotion']['status'], 'eligible_not_published')
+                paths = {row['path'] for row in inventory}
+                self.assertIn('english-source-package', paths)
+                for nested in (self.fixture.source['anchors']['artifact'],
+                               self.fixture.source['transcript']['artifact'],
+                               self.fixture.source['review']['evidence'],
+                               self.fixture.source['evidence']['pipelineSummary']):
+                    self.assertIn(str(Path(nested['path']).relative_to(self.fixture.root)), paths)
+
+    def test_extensionless_sha_only_packages_remain_self_contained_without_original_inputs(self):
+        # A file suffix and jsonSha256 are not required by the artifact contract.
+        source = self.fixture.root / self.fixture.plan['source']['path']
+        source.rename(self.fixture.root/'english-source-package')
+        self.fixture.plan['source'] = self.fixture.reference(self.fixture.root/'english-source-package', is_json=False)
+        audio_ref = self.fixture.plan['products']['ko']['audio']['artifact']
+        (self.fixture.root/audio_ref['path']).rename(self.fixture.root/'ko-audio-package')
+        self.fixture.plan['products']['ko']['audio']['artifact'] = self.fixture.reference(
+            self.fixture.root/'ko-audio-package', is_json=False)
+        self.fixture.client_proof()
+        for environment in app.TEST_ENVIRONMENTS:
+            reference = self.fixture.plan['clientCapabilities']['ko'][environment]
+            original = self.fixture.root/reference['path']
+            target = original.with_suffix('')
+            original.rename(target)
+            self.fixture.plan['clientCapabilities']['ko'][environment] = self.fixture.reference(target, is_json=False)
+        self.fixture.approve(); self.fixture.write('plan.json', self.fixture.plan)
+        before = self.snapshot_files(self.fixture.root)
+        key = self.launch()
+        bundle = self.config.output/key
+        inventory = app.read(bundle/'bundle-manifest.json')['inventory']
+        self.assertIn('tone.wav', {row['path'] for row in inventory})
+        self.assertIn('client-proof.json', {row['path'] for row in inventory})
+        for row in inventory:
+            self.assertEqual(app.stage.file_sha(bundle/'assets'/row['path']), before[row['path']])
+        self.assertEqual(self.snapshot_files(self.fixture.root), before)
+        original = self.fixture.root
+        hidden = original.with_name(original.name+'-offline')
+        original.rename(hidden)
+        try:
+            process = subprocess.run([sys.executable, '-m', 'scripts.sermon_app_delivery_workflow',
+                'inspect-bundle', '--bundle', str(bundle)], cwd=workflow.ROOT,
+                capture_output=True, text=True, timeout=20)
+            self.assertEqual(process.returncode, 0, process.stderr)
+            self.assertEqual(json.loads(process.stdout)['status'], 'prepared_not_published')
+        finally:
+            hidden.rename(original)
+
+    def test_opaque_sha_only_evidence_is_not_required_to_be_strict_json(self):
+        opaque = self.fixture.root/'opaque-client-evidence'
+        examples = (b'NaN', b'1e999', b'{"key":1,"key":2}')
+        for raw in examples:
+            with self.subTest(raw=raw):
+                opaque.write_bytes(raw)
+                reference = self.fixture.reference(opaque, is_json=False)
+                for kind in ('opaque', 'declared', 'json_suffix', 'opaque'):
+                    if kind == 'json_suffix':
+                        json_path = opaque.with_suffix('.json')
+                        json_path.write_bytes(raw)
+                        evidence = self.fixture.reference(json_path, is_json=False)
+                    else:
+                        evidence = {**reference, **({'jsonSha256':'0'*64} if kind == 'declared' else {})}
+                    for environment in app.TEST_ENVIRONMENTS:
+                        self.fixture.modify_reference(self.fixture.plan['clientCapabilities']['ko'][environment],
+                            lambda receipt: receipt.update(evidence=evidence))
+                    self.fixture.approve(); self.fixture.write('plan.json', self.fixture.plan)
+                    if kind != 'opaque':
+                        with self.assertRaisesRegex(ValueError, 'nonfinite_json_number|duplicate_json_field'):
+                            workflow.observe(self.config)
+                    else:
+                        inspection, _, inventory, _ = workflow.observe(self.config)
+                        self.assertEqual(inspection['promotion']['status'], 'eligible_not_published')
+                        self.assertIn(reference, inventory)
+        key = self.launch()
+        self.assertEqual((self.config.output/key/'assets'/opaque.name).read_bytes(), examples[-1])
 
     def test_recovery_never_treats_available_lock_as_authority_for_live_or_queued_owner(self):
         with self.fail_worker_spawn(OSError('offline spawn failure')):
