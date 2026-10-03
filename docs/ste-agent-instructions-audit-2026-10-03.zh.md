@@ -133,3 +133,5 @@ Reviewer-issues 比较固定同一个 Astra 草稿，减少 translator 差异干
 真实 API 验收须在签字样本/预算/窗口后执行，完整保留响应、usage 与失败证据。通过 A/B 也不自动晋级生产：另行审查版本迁移、旧缓存失效范围和审批影响，再提交行为变更 PR。回滚保持旧生产 A 不动，实验 B 可停用；保留实验和未知请求证据，不删除目录来绕过 reconciliation。
 
 新增用户报告的 es/ko 待定项与语音绑定需求，统一归属 [Dev backlog](backlog.zh.md) 的 DEV-L2-002 / DEV-L3-003，细节见 [L2/L3 backlog](multilingual-layer-2-3-backlog.zh.md#es-ko-pending-voice-20261003)。这不是模型 A/B 已完成或声音已批准的证据。
+
+最终 App 交付合同、生产术语映射及 PDF 按需解耦见 [DEV-L4-006](backlog.zh.md#app-final-delivery-contract-20261003)。明确产品目标与未决语言/声音授权分开记录；截图运行前置与双副本链路归 DEV-L3-004。

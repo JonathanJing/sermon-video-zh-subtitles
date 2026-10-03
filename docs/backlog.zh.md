@@ -1,6 +1,6 @@
 # Dev 统一 Backlog
 
-更新：2026-10-01。本页是项目 **Dev 开发工作的唯一顶层 backlog**，统一管理四层生产、Firebase Dev、Web／iOS、现场对齐、审核后台、Tracker、CI/CD 和独立 `live_session` 的优先级与依赖。新增开发事项先在这里取得稳定 ID；专项文档只展开接口、实现和验收，不再各自形成互相竞争的顶层排期。
+更新：2026-10-03。本页是项目 **Dev 开发工作的唯一顶层 backlog**，统一管理四层生产、Firebase Dev、Web／iOS、现场对齐、审核后台、Tracker、CI/CD 和独立 `live_session` 的优先级与依赖。新增开发事项先在这里取得稳定 ID；专项文档只展开接口、实现和验收，不再各自形成互相竞争的顶层排期。
 
 English index: [backlog.md](./backlog.md)
 
@@ -363,8 +363,9 @@ D1 合同实现可以开工；真实 A/B 前仍须冻结实际样本、工具/�
 | `DEV-L2-001` | Layer 2 每周多语言文字 | `in_progress` | `zh-Hans`、`ko`、`es` 从同一正式 Layer 1 独立运行 Astra→Sol→语言插件→人工批准；逐组失败可恢复且不污染其他语言 | [Layer 2/3 backlog](multilingual-layer-2-3-backlog.zh.md#3-layer-2目标语言文字-backlog) |
 | `DEV-L3-001` | Layer 3 正式整篇音频包 | `in_progress` | 同语言正式 Candidate 经授权音色、自然语速合成、完整解码、回转写、滚动排程、字幕、全文听审与 1 倍速同步形成可移植 Audio Package | [Layer 2/3 backlog](multilingual-layer-2-3-backlog.zh.md#4-layer-3目标语言音频与同步-backlog) |
 | `DEV-L3-002` | 英文声学停顿驱动的自然表达 | `in_progress` | 目标语言完整自然句只在已审英文声学锚点处排程；局部 overrun 返回翻译／句界修订，不以词组拼接或拉伸掩盖 | [多语言 Prosody POC](multilingual-prosody-poc.zh.md) |
-| `DEV-L2-002` | 西语/韩语待定配置与术语逐项收敛 | `waiting_evidence` | 用户 2026-10-03 报告流程实跑中 es/ko 多处待定；截图/当前 run 逐项核对后列决策与责任，不把未知当已证实缺陷或套用旧片段审批 | [范围与验收](multilingual-layer-2-3-backlog.zh.md#es-ko-pending-voice-20261003)；依赖 `DEV-L2-001` |
+| `DEV-L2-002` | 西语/韩语待定配置与术语逐项收敛 | `waiting_evidence` | 用户 2026-10-03 报告流程实跑中 es/ko 多处待定；截图确认待定模板、豁免与未批准独立；与当前 run 逐项绑定后列决策与责任，不把未知当已证实缺陷或套用旧片段审批 | [范围与验收](multilingual-layer-2-3-backlog.zh.md#es-ko-pending-voice-20261003)；依赖 `DEV-L2-001` |
 | `DEV-L3-003` | 西语/韩语显式语音绑定 | `waiting_evidence` | 绑定 locale、声音授权/能力、adapter/checkpoint/policy 与获批文本和 speech job；未决或身份不匹配阻断受影响 locale 的正式合成，不自动选声、不生成来替代审批 | [范围与验收](multilingual-layer-2-3-backlog.zh.md#es-ko-pending-voice-20261003)；依赖 `DEV-L2-002`、`DEV-L3-001` |
+| `DEV-L3-004` | es/ko 运行前置门禁与双副本链路 | `waiting_evidence` | 截图仅证明双副本 renderer 接受已批准 zh-Hans、提及 batch8；Spark API 未运行/GPU N/A 为时刻状态。先确认范围/授权/绑定，再核查受控通道与链路，不自动启动服务或直接跨语言运行 | [截图范围与验收](multilingual-layer-2-3-backlog.zh.md#es-ko-pending-voice-20261003)；依赖 `DEV-L3-003` |
 | `DEV-WEEK-001` | 周产交付定义与时长预检 | `pending` | 在正式合成前锁定完整视频、App 内入口、三种语言的页面／音轨／英文对照、二维码落点及 Web／iOS 验收矩阵；对已审全文先测自然语速时长，超出窗口时先形成另审的短口播稿 | 本节复盘输入；[四层接口合同](multilingual-production-interfaces.zh.md) |
 | `DEV-L4-001` | 可重复的 Firebase Dev 周更新 | `in_progress` | `build-update → preflight → deploy → verify` 从完整线上 Dev 基线追加新周，保留所有仍被 catalog 引用的旧资产，并生成逐文件 HTTP／SHA／Range 收据 | [Dev 预演](evidence/2026-09-23-production-readiness/DEV-PREVIEW.zh.md#后续-dev-周次) |
 | `DEV-L4-005` | 正式制作前的 v3 Dev 页面预演 | `in_progress` | #108 的 `preview_only` 页面生成器及已审旧样本 Dev HTTP／浏览器预演已完成；下一步接入真实新周的通用 v3 追加构建器。Dev 先包含最新 App 功能，验证语言、播放、字幕及定位；未审 fixture 不进正式目录 | [页面预演](firebase-dev-weekly-dry-run.zh.md)、[版本对照](reports/20260929-dev-release-backlog-audit.zh.md) |
@@ -918,3 +919,16 @@ PR #198 首轮CI进一步发现旧CLI夹具缺runtime/checkpoint声明，补齐�
 最新CI还发现两处旧测试兼容：POC父修订测试误取时钟workload，现精确选render_output；历史actual-trace测试逐项验新增clock/telemetry缺测字段后完整比较旧合同。生产指标、收据守卫和历史报告未变；全POC346项、报告/时钟90项及最终15资产快照20项定向回归通过，原失败保留。
 
 CI环境还暴露工具下载占用原job期限：18ae2f0的root-0已通过1609 tests/8可选skip；Prefect安装阶段被10分钟上限取消，root-1安装后测试被20分钟上限取消，均保留日志且不冒充完整测试终态。仅将CI job上限改为30/40分钟，测试和业务provider预算/期限/守卫不变；归入既有诊断验证接线，最终远程结果以最新head检查为准。
+
+
+<a id="app-final-delivery-contract-20261003"></a>
+
+## 2026-10-03 最终 App 交付合同与 PDF 按需解耦
+
+用户反馈当前最终页面与预期有出入；尚未凭截图定位具体 App UI 缺陷。明确的产品目标是 **App 内讲道页面及配套翻译、配音、大纲、默想**，不是仅 HTML 网页或 PDF 生成。本项只记录待实现合同，不擅自新增客户端功能、批准每语言配音或发布。
+
+| ID | 优先级／状态 | 待交付与验收条件 | 依赖 |
+|---|---|---|---|
+| `DEV-L4-006` | P1 / `pending` | 冻结最终 App 页面与翻译/配音/大纲/默想的产物清单；逐产物写输入输出、source/locale/版本/hash 绑定、质量及人工门禁、可用/缺失/失败状态和 App 实机可见验收。明确哪些 locale、哪些可选项与 text-only 例外；HTTP/HTML/PDF 成功不能代替 App 验收。生产人/agent 术语改用产物名称和步骤，避免含混 v2/v3；建立机器 schemaVersion、历史版本和旧客户端的映射、兼容及迁移测试，不直接删除底层版本。PDF 降为 ad hoc 按需生成，从默认必需产物/发布阻断链路解耦；检查旧 Supervisor、completion latch、通知与验收 scope，证明无 PDF 时仍能完成获批 App 交付、按需 PDF 可独立失败/恢复且不误报。 | `DEV-L4-001/003/004/005`、`DEV-E2E-001`；语言及声音决策分别归 `DEV-L2-002` / `DEV-L3-003` |
+
+用户已确定产品目标和 PDF 按需定位；语言覆盖、跨语言声音授权、各产物细节和执行窗口仍待确认。现有运行流程没有被本记录改变，旧协议/历史收据保留。本次不改 schema、客户端、发布器或 PDF 生产配置，也不启动生成/测试/部署。
