@@ -10,7 +10,7 @@ Dev Debug 与正式版沿用同一原生收听界面、播放器、下载、字�
 
 “更多选项 → 多语种音色试听 · Demo”与 Firebase 共用 `speaker-clips-v2/catalog.json`：六位讲员各有一段英文原声、相同区间的视频、英文机器转写参考及中／韩／西三语合成音频和译文。每次只显示所选语言的一条合成音频，文稿可展开对照；音频按钮切换播放／暂停且续播不归零。Beta 与正式共用同片段契约，分别读取各自配置的同源目录；缺失、无效或跨环境重定向时显示不可用并提供重试，不再回退到旧版独立样音。正式晋升前须在正式来源发布人工核对过的同一份 V2 目录与媒体包；本轮仅开发 Beta 候选，不部署正式内容。播放前核对同源、字节数与 SHA-256；新样片仍待人工听审，不改变正式 Layer 3 审核状态。内容准备、双端候选及验收见 [同片段试听](VOICE-DEMO.zh.md)。
 
-2026-10-03 的独立 Beta 开发候选新增[现场对齐灵动岛状态](BETA-ALIGNMENT.zh.md)及[单设备本机通知实验](BETA-NOTIFICATIONS.zh.md)。对齐状态仅在 Beta channel 显示；通知默认关闭、与界面语言分开订阅，并校验点击的内容版本。本轮不连接 APNs sender、不更新正式 App；模拟器与真机验收分别记录。设计检查与修复见 [Beta 50 设计检查](BETA-DESIGN-REVIEW.zh.md)。
+2026-10-03 的独立 Beta 开发候选新增[现场对齐灵动岛状态](BETA-ALIGNMENT.zh.md)及[单设备本机通知实验](BETA-NOTIFICATIONS.zh.md)。对齐状态仅在 Beta channel 显示；通知默认关闭、与界面语言分开订阅，并校验点击的内容版本。本轮不连接 APNs sender、不更新正式 App；模拟器与真机验收分别记录。设计检查与修复见 [Beta 50 设计检查](BETA-DESIGN-REVIEW.zh.md)，签名／TestFlight 状态见 [1.26.9 (50) 分发记录](BETA-RELEASE-1.26.9.zh.md)。
 
 界面按用户选定的 **iOS 27 设计语言** 实施：系统导航与 Sheet、26 pt 起的动态字幕、单层 Liquid Glass 悬浮播放栏、深色语义配色，以及窄屏、横屏和大字布局。具体规则与 Apple 官方来源见 [设计约定](DESIGN.zh.md)。
 

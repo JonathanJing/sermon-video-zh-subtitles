@@ -30,3 +30,7 @@
 通知测试用明确的静态 v3 合成夹具和模拟器系统 UserNotifications；没有 APNs、现场声音、真机或真人听审。此前混合 UI run 的通知开关失败、后续通知可见性超时与清理按钮未露出已分别修正测试并定向重跑，不能把失败 run 整体标成通过。成功定向 run 的 xcresult 无 runtime warnings；Xcode 控制台的系统版本解析／诊断工具查找提示不充作设备验收。
 
 本地证据保存在忽略目录 `artifacts/tongxing-ios/2026-10-03/`：CLI 的唯一 `status.json`、日志和 `.xcresult`；`scoped-test-summary.json` 按 run 区分通过／失败／跳过；`ui-review/` 的 Demo 截图；`notification-final/` 的通知截图与摘要。Core 完整日志在 `core-full.log`。这些路径是本次工作目录的实测产物，不假设其他 checkout 存在。真机验收与 TestFlight 上传均未执行，远端 CI 以 PR 实际检查为准。
+
+## 后续设计检查与 Beta 分发
+
+上述初版记录保持其实际测试范围。用户后续授权设计检查和 TestFlight 上传；最终 Beta `1.26.9 (50)` 的源码复审、补充测试、签名与 Apple 分发状态见 [发行记录](BETA-RELEASE-1.26.9.zh.md)，视觉检查见 [设计检查](BETA-DESIGN-REVIEW.zh.md)。真机／灵动岛／现场验收仍单独记录。
