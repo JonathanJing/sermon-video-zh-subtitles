@@ -363,9 +363,6 @@ D1 合同实现可以开工；真实 A/B 前仍须冻结实际样本、工具/�
 | `DEV-L2-001` | Layer 2 每周多语言文字 | `in_progress` | `zh-Hans`、`ko`、`es` 从同一正式 Layer 1 独立运行 Astra→Sol→语言插件→人工批准；逐组失败可恢复且不污染其他语言 | [Layer 2/3 backlog](multilingual-layer-2-3-backlog.zh.md#3-layer-2目标语言文字-backlog) |
 | `DEV-L3-001` | Layer 3 正式整篇音频包 | `in_progress` | 同语言正式 Candidate 经授权音色、自然语速合成、完整解码、回转写、滚动排程、字幕、全文听审与 1 倍速同步形成可移植 Audio Package | [Layer 2/3 backlog](multilingual-layer-2-3-backlog.zh.md#4-layer-3目标语言音频与同步-backlog) |
 | `DEV-L3-002` | 英文声学停顿驱动的自然表达 | `in_progress` | 目标语言完整自然句只在已审英文声学锚点处排程；局部 overrun 返回翻译／句界修订，不以词组拼接或拉伸掩盖 | [多语言 Prosody POC](multilingual-prosody-poc.zh.md) |
-| `DEV-L2-002` | 西语/韩语待定配置与术语逐项收敛 | `waiting_evidence` | 用户 2026-10-03 报告流程实跑中 es/ko 多处待定；截图确认待定模板、豁免与未批准独立；与当前 run 逐项绑定后列决策与责任，不把未知当已证实缺陷或套用旧片段审批 | [范围与验收](multilingual-layer-2-3-backlog.zh.md#es-ko-pending-voice-20261003)；依赖 `DEV-L2-001` |
-| `DEV-L3-003` | 西语/韩语显式语音绑定 | `waiting_evidence` | 绑定 locale、声音授权/能力、adapter/checkpoint/policy 与获批文本和 speech job；未决或身份不匹配阻断受影响 locale 的正式合成，不自动选声、不生成来替代审批 | [范围与验收](multilingual-layer-2-3-backlog.zh.md#es-ko-pending-voice-20261003)；依赖 `DEV-L2-002`、`DEV-L3-001` |
-| `DEV-L3-004` | es/ko 运行前置门禁与双副本链路 | `waiting_evidence` | 截图仅证明双副本 renderer 接受已批准 zh-Hans、提及 batch8；Spark API 未运行/GPU N/A 为时刻状态。先确认范围/授权/绑定，再核查受控通道与链路，不自动启动服务或直接跨语言运行 | [截图范围与验收](multilingual-layer-2-3-backlog.zh.md#es-ko-pending-voice-20261003)；依赖 `DEV-L3-003` |
 | `DEV-WEEK-001` | 周产交付定义与时长预检 | `pending` | 在正式合成前锁定完整视频、App 内入口、三种语言的页面／音轨／英文对照、二维码落点及 Web／iOS 验收矩阵；对已审全文先测自然语速时长，超出窗口时先形成另审的短口播稿 | 本节复盘输入；[四层接口合同](multilingual-production-interfaces.zh.md) |
 | `DEV-L4-001` | 可重复的 Firebase Dev 周更新 | `in_progress` | `build-update → preflight → deploy → verify` 从完整线上 Dev 基线追加新周，保留所有仍被 catalog 引用的旧资产，并生成逐文件 HTTP／SHA／Range 收据 | [Dev 预演](evidence/2026-09-23-production-readiness/DEV-PREVIEW.zh.md#后续-dev-周次) |
 | `DEV-L4-005` | 正式制作前的 v3 Dev 页面预演 | `in_progress` | #108 的 `preview_only` 页面生成器及已审旧样本 Dev HTTP／浏览器预演已完成；下一步接入真实新周的通用 v3 追加构建器。Dev 先包含最新 App 功能，验证语言、播放、字幕及定位；未审 fixture 不进正式目录 | [页面预演](firebase-dev-weekly-dry-run.zh.md)、[版本对照](reports/20260929-dev-release-backlog-audit.zh.md) |
@@ -921,6 +918,10 @@ PR #198 首轮CI进一步发现旧CLI夹具缺runtime/checkpoint声明，补齐�
 CI环境还暴露工具下载占用原job期限：18ae2f0的root-0已通过1609 tests/8可选skip；Prefect安装阶段被10分钟上限取消，root-1安装后测试被20分钟上限取消，均保留日志且不冒充完整测试终态。仅将CI job上限改为30/40分钟，测试和业务provider预算/期限/守卫不变；归入既有诊断验证接线，最终远程结果以最新head检查为准。
 
 
+## 今天（10/3）
+
+本节是规划目标；文档已写不表示实现已完成。生产完成是任何实现、模型/设备实验、通知、新build或部署的前置；今天仅授权文档与只读计划收尾。云端实现环境尚未配置，不能转到 Mini 本地实施。
+
 <a id="app-final-delivery-contract-20261003"></a>
 
 ## 2026-10-03 最终 App 交付合同与 PDF 按需解耦
@@ -949,28 +950,16 @@ CI环境还暴露工具下载占用原job期限：18ae2f0的root-0已通过1609 
 
 截图只证明 Dev 下拉混展示，不证明正式生产目录如此。菜单遮挡正文，只可见语言选择和音频区域；不能据此判断翻译/配音/大纲/默想缺失或质量差。图中没有 v2/v3/PDF；生产术语与 PDF 定位变更依据明确用户决策，不归因于截图。具体分区/过滤交互需后续设计，不在此预定新客户端实现。
 
+
 <a id="ste-instructions-ab-backlog-20261003"></a>
 
-## STE 五项修复与 A/B 跟进
+### STE 文档澄清准备
 
 | ID | 优先级／状态 | 待交付与验收 | 依赖／待决定 |
 |---|---|---|---|
-| `DEV-STE-001` | P1 / `pending` | references_only 与短口播引用规则分阅读稿/元数据/口播明确；候选文本、source SHA、证据及 paired A/B 见[审核与计划](ste-agent-instructions-audit-2026-10-03.zh.md)。预注册分层样本，验忠实度/未授权新增引用；不得直接改生产 prompt | 用户签字引用范围；`DEV-L2-001`；新 prompt/policy 身份与独立缓存 |
-| `DEV-STE-002` | P1 / `pending` | 澄清 Sol 修一个 issue 不清掉其他未解决 concern，保留 reviewer-editor。离线门禁及真实 paired 评估覆盖部分修复/疑点/全部修复，验漏报率和文本质量 | `DEV-L2-001`；批准候选、新版本及回归预算 |
 | `DEV-STE-003` | P1 / `pending` | 文档区分 locale 审批依赖独立与单 active job 容量/uncertain 占位；静态核对 controller 和 release-plan 条件，不无谓模型调用 | 确认保留容量限制；并发实现若需要另立范围 |
 | `DEV-STE-004` | P1 / `pending` | 文档区分 renderer 声音身份、batch 实现身份与受控兼容规则，保留全部 hash。离线验证明确兼容/不兼容/WAV-commit 篡改，不扩大名单 | `DEV-L3-001`；确认仅澄清现有边界 |
 | `DEV-STE-005` | P1 / `pending` | unit-instructions 文档写现有完整 schema、job/locale/group/text hash、operatorEvidence、override 与 zh-Hans spokenText 限制；静态与离线拒绝例验证，不扩展文本修改权 | `DEV-L3-001`；现有输入契约不变 |
-| `DEV-STE-006` | P2 / `waiting_decision` | 仅实际 prompt 行为变化做 A/B，A 原 prompt、B 文本只存文档；固定模型/参数/获批输入、paired 语言及全文/口播分层、独立缓存、盲评裁决、忠实度/漏报/通过率/文本质量/延迟/token 成本、回滚与 unknown reconciliation。预先阈值，离线通过不宣称 API 验收 | `DEV-STE-001/002`；样本/费用硬上限/验收阈值/窗口待签字；未决 B 不执行 |
-
-以上全部是待修复/验收事项，没有自封实现完成。原审核缓存恢复、人工审批和专用 Dev staging 的通过范围仅为静态核对，见审核报告；不作为本 backlog 的真实运行验收收据。
-
-### 本轮覆盖索引
-
-- 五项 STE 与 A/B：`DEV-STE-001`—`006`，候选、行号与版本风险在关联审核计划中。
-- ES/KO policy 模板及独立豁免/批准：`DEV-L2-002`；声音逐语言授权/绑定/adapter：`DEV-L3-003`；资源门禁与双副本：`DEV-L3-004`。具体 run 身份及每语言覆盖仍待确认，未授权跨语言选声。
-- App 页面及翻译/配音/大纲/默想、生产术语映射兼容、PDF ad hoc：`DEV-L4-006`，依赖与验收见对应表；细节需冻结，底层协议不删除。
-- Dev 诊断/演练与正式入口、稳定 ID/命名：`DEV-L4-007`，实际目录身份待核对，不将重复标签认作重复数据。
-- 同一候选 iOS Beta + Firebase Dev → 人工批准 → iOS 正式 + Firebase 正式，双端可用及部分失败/回退一致性：`DEV-L4-006` 的内容发布顺序章节。范围已确定；实际候选、批准收据与执行窗口未取得，本轮不发布。
 
 <a id="provider-cost-isolation-20261003"></a>
 
@@ -991,47 +980,20 @@ CI环境还暴露工具下载占用原job期限：18ae2f0的root-0已通过1609 
 - [ ] 无付费 offline fixtures 验证 dev/prod 和用途别名路由、错误映射拒绝、非 OpenAI ASR 不取 OpenAI key、日志脱敏及无密钥原文。
 - [ ] 离线覆盖每 attempt、未知结果、缓存 token、nullable/unattributed、日聚合延迟/分页和估算对账差异，不伪造精确阶段费用。
 - [ ] 将 A/B 成本预算和独立缓存接入 `DEV-STE-006`；应用有界派发预算与 provider hard limit 分别验收，429/unknown 不自动重发。
-- [ ] 后续单独授权真实 Project/key/service-account/权限/限额配置及实际账单归因测试；以隔离 Dev 范围验证限额传播、429 与恢复，禁止为测试限额中断生产。
+实际 Project/key/service-account/权限/限额配置和真实归因测试移交明天 DEV-COST-002；DEV-COST-001 今天只冻结方案、字段与离线验收设计，不配置账号。
 
 本轮仅记录，不创建 Project、key 或 service account，不改额度/权限、不读秘密、不调用模型。未配置云环境不授权转成本地实现。
 
-<a id="ios-live-alignment-dynamic-island-20261003"></a>
 
-## iOS 麦克风现场自动对齐的灵动岛状态
+## 明天（10/4）
 
-| ID | 优先级／状态 | 待交付与验收 | 依赖／待决定 |
-|---|---|---|---|
-| `DEV-IOS-003` | P1 / `pending` | 麦克风现场自动对齐期间在 Dynamic Island 显示真实监听/对齐状态，暂停/停止/权限拒绝/系统中断及时更新，结束不残留假活跃；支持范围与替代呈现核验后做 iOS Beta 真机人工验收 | `DEV-IOS-001/002`、既有 live_session 录音授权与状态机、`DEV-L4-006` 发布门禁；ActivityKit/Live Activities、版本/机型、后台与锁屏限制、无灵动岛替代 UI 待官方资料及架构核验 |
+完整定义移到[明天 backlog](https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/codex/docs-backlog-tomorrow-20261004/docs/backlog-2026-10-04.zh.md) 的独立依赖 PR；当前仅保留索引，不承诺缺前提工作当天完成。
 
-用户明确要显示现场自动对齐状态；技术选型仍待验证。麦克风采集不自动产生可定制 Dynamic Island。应用状态展示与系统隐私麦克风指示分别遵守系统规则，不绕过隐私指示，不承诺无限后台录音。只沿用既有采集授权，不新增上传或音频保存策略。
+- DEV-STE-001 / 002 / 006：提示词行为修复及有预算、有阈值的 A/B。
+- DEV-L2-002：ES/KO 策略模板补齐、独立豁免/批准与输入绑定。
+- DEV-L3-003 / 004：跨语言声音授权绑定、资源门禁及双副本真实链路。
+- DEV-COST-002：实际账号/key/额度配置，需安全授权和云端环境。
+- DEV-NOTIFY-001：多语言通知/海报实现、单设备 Beta 验收。
+- DEV-IOS-003：现场对齐灵动岛新能力及真机验收。
 
-- [ ] 核对 ActivityKit/Live Activities 与现场对齐状态机、系统麦克风指示的关系，冻结支持 iOS/机型、后台/锁屏行为和无灵动岛替代呈现，不虚构所有设备可用。
-- [ ] iOS Beta 真机覆盖开始/正在监听/对齐、暂停/恢复、停止、首次权限拒绝及后续权限变更、系统中断、切后台/锁屏及结束；按系统允许的可观测更新机制和预定时限核验状态，无残留活动或假监听。
-- [ ] 保存 App/OS/机型与状态事件证据，人工确认后再晋级正式 iOS。关联 Beta/Dev→人工→正式双端内容流程，但这是 iOS 特有 UI，不强造 Firebase 同样灵动岛；若需二进制变化另走 TestFlight/App Review。
-
-现在不实现、不改权限、不发布、不启动现场录音。
-
-<a id="multilingual-new-content-notifications-20261003"></a>
-
-## 每周多语言新内容通知与海报预览
-
-| ID | 优先级／状态 | 待交付与验收 | 依赖／待决定 |
-|---|---|---|---|
-| `DEV-NOTIFY-001` | P1 / `pending` | 新内容按订阅内容语言生成文案、对应语言海报和落地页；iOS Beta/Firebase Dev 候选人工批准、正式 iOS/Firebase 双端内容验证后才发正式通知。订阅开关、去重、目标环境隔离及图片失败纯文字回退须通过单设备验收 | `DEV-L4-006`、`DEV-IOS-001`、现有海报流程；APNs直发/FCM选型、订阅语言/默认值、sender与凭据安全配置、单设备身份及权限待核验；不得默认新增发送群体 |
-
-订阅内容语言与设备 UI 语言分离；通知和海报/落地内容绑定 page/content/locale/hash，不能给用户订阅语言发送另一语言版本。明确默认订阅、退出、语言更改、失败重试、去重键（环境+内容版本+语言+收件实例）及用户偏好更新；去重窗口/更正通知规则待决定。正式收件群体需独立授权，不向 topic 或全体 Beta 用户试发。
-
-富媒体候选用 Notification Service Extension；按 [Apple 修改通知内容](https://developer.apple.com/documentation/usernotifications/modifying-content-in-newly-delivered-notifications) 核验 payload、时限与附件规则，图片下载/解码/超时失败回退原纯文字，不能把图像成功当通知必需条件。若采用 FCM，按 [Firebase Apple client 指南](https://firebase.google.com/docs/cloud-messaging/ios/get-started) 核验 APNs身份、登记和用户授权。Beta 不等于 sandbox；APNs环境以实际签名 entitlement/分发类型及 provider 路由为据，Beta可能使用 production APNs，但必须与正式内容/收件人隔离。
-
-- [ ] 离线验证动态多语言文案、海报/落地同语言同版本、去重/退订/错误环境/图片失败回退及未正式双端验收不发送。
-- [ ] 先核实本人单台 Beta 设备的登记、通知权限、token/provider环境与安装版本，再明确测试内容；不获取或输出 key，不将设备 token 写公共仓库，安全配置另行授权。
-- [ ] 单设备真实验收分别记录 sender accepted、设备可见、点击打开正确 Beta/Dev 内容、语言/音频状态；accepted不等于设备收到。失败/permission denied明确保留，不自动扩大收件范围。
-- [ ] 若需注册代码、sender、Service Extension 或新签名能力，先提出明确实现范围，再走 Beta build/人工验收；正式双端内容门禁和二进制 App Review 仍各自独立。
-
-### 当前只读核查与执行时序
-
-2026-10-03：仓库 Beta bundle `com.jonathanjing.tongxing.beta`，BetaDebug/BetaRelease 指向 Firebase Dev（project.yml:56–69）。已检查源码及包配置未找到 APNs/FCM 注册、设备登记或 sender，Beta测试说明:207 明示未增加 APNs。不能据此证明外部服务绝不存在，但现有仓库链路不足以发送。本人设备通知许可、token及实际签名 entitlement 未核实，不读凭据或私有设备登记来猜目标。
-
-公开 Dev /multilingual-v3.json 当前可验证播客候选：id `if-i-had-more-time-jesus-is-worthy`，2026-10-02，标题“如果我有更多时间 · 耶稣配得”，zh-Hans，发布包 `/releases-v2/if-i-had-more-time-jesus-is-worthy/zh-Hans.json`。这仅是公开目录证据，未证明是用户所指“新的播客”、设备点击路由或最终播放验收。拟测试文案：“[Beta 测试] 新播客已上架”；正文“如果我有更多时间 · 耶稣配得。打开同行 Beta 查看并试听。”内容ID/语言/设备确定后才能冻结测试请求；未确认 deep link不构造假URL。
-
-用户15:17 UTC明确：**当前证道生产完成后才开始代码开发、推送发送/测试、新 build 或部署**。不得推断当前生产完成。10/3可完成文档、覆盖清单和计划；生产完成且范围/目标明确后，才考虑当天有限离线准备。10/4建议安排授权与配置核验、离线门禁及可行的单设备Beta验收；没有现成推送链路时先评估实现/安全配置/新build，不保证一天完成。该安排是建议，不是自动化或未来发送授权。本轮未发送通知、申请权限、部署或干预生产任务。
+依赖本 PR 的今天合同；先合并今天文档，再将明天 PR base 改为 dev。PR #228 保持独立。

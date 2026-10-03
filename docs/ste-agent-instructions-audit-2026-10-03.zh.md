@@ -74,64 +74,6 @@ help 原句为 `Source-bound per-unit pronunciation and pause instructions`；�
 
 本记录独立于 [PR #228](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/228)。创建本记录前核实 #228 为 OPEN、Draft，head `a4e700030bd738a51f9954d4ddd6dbe87d026143`。该 PR 修订页面发行说明；本 PR 记录五项 Agent 指令发现及后续实验计划，不修改生产提示词、缓存、配置或既有说明。没有运行 A/B，也没有将建议标成实施完成。
 
-## 后续 A/B 实验计划（未运行）
+## 明天（10/4）
 
-### 实验范围及候选文本
-
-只对第 1、2 项实际提示词行为变化设计模型 A/B。第 3–5 项使用文档静态检查及后续适用离线契约测试，不为文档澄清调用模型。A 冻结审核 SHA 中的原提示词及实际请求拼接逻辑；B 候选文本仅保存于本文件，不替换 scripts 中的运行源。
-
-B-issues 候选完整追加规则：
-
-> Describe corrected issues in evidence. Keep every unresolved concern in uncertainty or issues. Leave issues empty only when no issue remains. Mark status fail if any concern remains unresolved.
-
-B-scripture 口播候选（未签字，不得执行）：
-
-> Keep only the Bible references that the speaker said. Do not add a book name, chapter, or verse.
-
-完整阅读稿及元数据如何处理已知但未说出的引用，尚无获批 B 文本。签字时必须明确 B 的拼接位置及删除/替换范围，不能把候选简单追加在矛盾旧句后。保持 exact-quotation 分支的来源绑定、禁止臆造及原 must/should/may 强度。B-issues 保留 Sol reviewer-editor 的修订职责，不引入第三轮裁判。
-
-先分别比较 A 与 B-issues、A 与已获批 B-scripture；两项独立通过后才预注册组合 B，避免无法区分变化来源。未决 B 分支保持 blocked，不用实验结果反向补需求。
-
-### 运行前签字清单
-
-以下全部明确并冻结后，另行确认执行窗口；本 PR 不授权立即付费运行。
-
-| 待定项 | 必须记录的内容 |
-|---|---|
-| 内容规则 | 第 1 项阅读稿/元数据/口播规则，获批 B 全文、替换位置及批准者 |
-| 样本 | 已批准且哈希固定的来源、目标语言列表、全文/口播分层、每层样本数、排除规则及留出集 |
-| 请求身份 | A/B promptVersion、policyVersion、完整 payload SHA、实验 revision、模型确切标识与固定采样参数 |
-| 预算 | 总费用硬上限、每臂调用/输出 token 上限、重复次数、最大运行时间，以及超限停止规则 |
-| 验收 | 各指标阈值、非劣界值、统计/不确定性方法及人工裁决规则，运行前确定 |
-| 执行 | 独立实验目录、时间窗口、负责人、未知请求 reconciliation 方法及可回滚策略 |
-
-不得猜测当前模型价格。运行前核实适用价格并以保守最大 token 预算计算两臂成本；签字预算不足时减少预注册样本或停止，不临时扩大费用。使用同一获批输入和相同模型/采样参数做 paired 比较；不声称随机种子保证远端模型确定性。
-
-### 样本与评估设计
-
-按语言和完整阅读稿/短口播交叉分层。至少覆盖：讲员明确说出引用；已知经文但讲员省略引用；直接引文与释义；多个问题仅修正部分；全部修好；仍有未解决疑点。样本清单及抽样规则在看结果前冻结；记录全部成功、失败和排除，不挑好结果，留出集不参与调词。
-
-Reviewer-issues 比较固定同一个 Astra 草稿，减少 translator 差异干扰。引用规则分别评 translator 与固定草稿的 reviewer，再评端到端组合；端到端结果不可单独归因为 reviewer。机器证据不能代替来源、翻译及音频人工批准。
-
-| 指标 | 评估方法及预注册要求 |
-|---|---|
-| 忠实度 | 对照已批准 English units，检查事实、否定、数字、名字、神学与修辞保留；预先定义严重错误与非劣界值 |
-| 未授权新增引用 | 以讲员实际说出的引用及获批输出范围为基准，逐项标注；阈值运行前签字 |
-| 未解决问题漏报 | 对固定草稿的预标问题逐项比较 issues/uncertainty 与最终文本；区分已修正与遗漏 |
-| 通过率 | 同时报模型 status、确定性 schema/checks 门禁和人工内容裁决；高通过率本身不代表质量提升 |
-| 修复文本质量 | 人工评价修正正确性、自然度、口播约束及是否新增错误，提前固定量表 |
-| 延迟与成本 | 保存真实请求时长、输入/输出/缓存 token 和已知费用；unknown 保留 unknown，不计为零 |
-
-两臂输出随机编码，人工盲评者看不到 A/B 标签。预先确定评审人数、分歧处理和最终裁决者；揭盲后保存逐对差异及不确定性。不得在同一评估集反复调 B 后挑最高结果发布。任何严重错误/预算超限/身份不匹配/未知远端结果触发预定停止及复核，不自动付费重试。
-
-### 缓存隔离、门禁与回滚
-
-独立命名空间示意：`artifacts/ste-ab/<experiment-id>/<arm>/<revision>/`，仅为未执行计划。A、B、每个候选及重复必须有独立请求身份和缓存；不导入生产输出作新请求结果，不覆盖现有缓存、产物、审批或 active job。已有明确授权缓存只能作为离线基线证据，不能冒充新 API 调用。
-
-离线门禁先检查提示词拼接、身份与策略绑定、schema、问题非空则 fail、语义缓存隔离和未知请求禁止重试。第 3 项仅核对容量说明；第 4 项覆盖明确兼容接受、不兼容拒绝和 WAV/commit 哈希；第 5 项覆盖字段绑定、重复 group、缺 operatorEvidence、非法 locale/spokenText。离线通过不证明模型遵守内容规则。
-
-真实 API 验收须在签字样本/预算/窗口后执行，完整保留响应、usage 与失败证据。通过 A/B 也不自动晋级生产：另行审查版本迁移、旧缓存失效范围和审批影响，再提交行为变更 PR。回滚保持旧生产 A 不动，实验 B 可停用；保留实验和未知请求证据，不删除目录来绕过 reconciliation。
-
-新增用户报告的 es/ko 待定项与语音绑定需求，统一归属 [Dev backlog](backlog.zh.md) 的 DEV-L2-002 / DEV-L3-003，细节见 [L2/L3 backlog](multilingual-layer-2-3-backlog.zh.md#es-ko-pending-voice-20261003)。这不是模型 A/B 已完成或声音已批准的证据。
-
-最终 App 交付合同、生产术语映射及 PDF 按需解耦见 [DEV-L4-006](backlog.zh.md#app-final-delivery-contract-20261003)。明确产品目标与未决语言/声音授权分开记录；截图运行前置与双副本链路归 DEV-L3-004。
+A/B 候选全文与实验计划移至[明天 backlog](https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/codex/docs-backlog-tomorrow-20261004/docs/backlog-2026-10-04.zh.md)。本页保留五项静态审核发现，不把建议标为已实现。
