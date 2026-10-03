@@ -1,0 +1,946 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "sermon-cost-isolation-v1.schema.json",
+  "title": "Offline project routing and normalized daily cost evidence v1",
+  "description": "Local normalized inputs only; not a provider API client. Null project means unattributed, never all-project aggregate. Each daily bucket is a non-overlapping day/project/API-key partition. Runtime adds cross-record route, pagination, decimal and duplicate checks. Both inputs bind the same explicit startDay/endDayExclusive. Attempt day is required; estimated cost requires pricingVersion at runtime. Complete comparison requires the declared complete OpenAI project attempt scope, matching observed daily costs, settled complete pagination, and no unknown or unattributed evidence. Known-subtotal differences remain partial otherwise. Pricing labels are supplied evidence, not verified prices.",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/config"
+    },
+    {
+      "$ref": "#/$defs/attempts"
+    },
+    {
+      "$ref": "#/$defs/daily_costs"
+    },
+    {
+      "$ref": "#/$defs/reconciliation"
+    },
+    {
+      "$ref": "#/$defs/config_validation"
+    }
+  ],
+  "$defs": {
+    "config": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schemaVersion": {
+          "const": "sermon-cost-isolation-v1"
+        },
+        "kind": {
+          "const": "config"
+        },
+        "environments": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "dev": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "projectId": {
+                  "$ref": "#/$defs/identifier"
+                },
+                "keyAliases": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "transcription": {
+                      "$ref": "#/$defs/nullableIdentifier"
+                    },
+                    "translation": {
+                      "$ref": "#/$defs/identifier"
+                    },
+                    "reviewer": {
+                      "$ref": "#/$defs/identifier"
+                    }
+                  },
+                  "required": [
+                    "transcription",
+                    "translation",
+                    "reviewer"
+                  ]
+                }
+              },
+              "required": [
+                "projectId",
+                "keyAliases"
+              ]
+            },
+            "prod": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "projectId": {
+                  "$ref": "#/$defs/identifier"
+                },
+                "keyAliases": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "transcription": {
+                      "$ref": "#/$defs/nullableIdentifier"
+                    },
+                    "translation": {
+                      "$ref": "#/$defs/identifier"
+                    },
+                    "reviewer": {
+                      "$ref": "#/$defs/identifier"
+                    }
+                  },
+                  "required": [
+                    "transcription",
+                    "translation",
+                    "reviewer"
+                  ]
+                }
+              },
+              "required": [
+                "projectId",
+                "keyAliases"
+              ]
+            }
+          },
+          "required": [
+            "dev",
+            "prod"
+          ]
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "kind",
+        "environments"
+      ]
+    },
+    "attempt": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "attemptId": {
+          "$ref": "#/$defs/identifier"
+        },
+        "environment": {
+          "enum": [
+            "dev",
+            "prod"
+          ]
+        },
+        "workload": {
+          "enum": [
+            "transcription",
+            "translation",
+            "reviewer"
+          ]
+        },
+        "provider": {
+          "enum": [
+            "openai",
+            "local",
+            "non_openai"
+          ]
+        },
+        "status": {
+          "enum": [
+            "completed",
+            "failed",
+            "unknown_outcome",
+            "not_dispatched"
+          ]
+        },
+        "projectId": {
+          "$ref": "#/$defs/nullableIdentifier"
+        },
+        "apiKeyId": {
+          "$ref": "#/$defs/nullableIdentifier"
+        },
+        "keyAlias": {
+          "$ref": "#/$defs/nullableIdentifier"
+        },
+        "usage": {
+          "$ref": "#/$defs/usage"
+        },
+        "cost": {
+          "$ref": "#/$defs/cost"
+        },
+        "day": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+          "format": "date"
+        },
+        "pricingVersion": {
+          "$ref": "#/$defs/nullableIdentifier"
+        },
+        "model": {
+          "$ref": "#/$defs/nullableIdentifier"
+        },
+        "jobId": {
+          "$ref": "#/$defs/nullableIdentifier"
+        },
+        "stage": {
+          "$ref": "#/$defs/nullableIdentifier"
+        },
+        "providerRequestId": {
+          "$ref": "#/$defs/nullableIdentifier"
+        }
+      },
+      "required": [
+        "attemptId",
+        "environment",
+        "workload",
+        "provider",
+        "status",
+        "projectId",
+        "apiKeyId",
+        "keyAlias",
+        "usage",
+        "cost",
+        "day"
+      ]
+    },
+    "attempts": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schemaVersion": {
+          "const": "sermon-cost-isolation-v1"
+        },
+        "kind": {
+          "const": "attempts"
+        },
+        "attempts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/attempt"
+          }
+        },
+        "scope": {
+          "enum": [
+            "complete_openai_project_attempts",
+            "partial_attempts"
+          ]
+        },
+        "queryWindow": {
+          "$ref": "#/$defs/queryWindow"
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "kind",
+        "attempts",
+        "scope",
+        "queryWindow"
+      ]
+    },
+    "bucket": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "bucketId": {
+          "$ref": "#/$defs/identifier"
+        },
+        "day": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+          "format": "date"
+        },
+        "projectId": {
+          "$ref": "#/$defs/nullableIdentifier"
+        },
+        "apiKeyId": {
+          "$ref": "#/$defs/nullableIdentifier"
+        },
+        "amountUsd": {
+          "$ref": "#/$defs/decimalAmount"
+        },
+        "currency": {
+          "const": "USD"
+        }
+      },
+      "required": [
+        "bucketId",
+        "day",
+        "projectId",
+        "apiKeyId",
+        "amountUsd",
+        "currency"
+      ]
+    },
+    "daily_costs": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schemaVersion": {
+          "const": "sermon-cost-isolation-v1"
+        },
+        "kind": {
+          "const": "daily_costs"
+        },
+        "paginationComplete": {
+          "type": "boolean"
+        },
+        "settlementStatus": {
+          "enum": [
+            "pending",
+            "settled"
+          ]
+        },
+        "pages": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "pageId": {
+                "$ref": "#/$defs/identifier"
+              },
+              "nextPageId": {
+                "$ref": "#/$defs/nullableIdentifier"
+              },
+              "buckets": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/bucket"
+                }
+              }
+            },
+            "required": [
+              "pageId",
+              "nextPageId",
+              "buckets"
+            ]
+          }
+        },
+        "scope": {
+          "const": "project_api_key_partitions"
+        },
+        "queryWindow": {
+          "$ref": "#/$defs/queryWindow"
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "kind",
+        "paginationComplete",
+        "settlementStatus",
+        "pages",
+        "scope",
+        "queryWindow"
+      ]
+    },
+    "reconciliation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schemaVersion": {
+          "const": "sermon-cost-isolation-v1"
+        },
+        "kind": {
+          "const": "reconciliation"
+        },
+        "providerDispatch": {
+          "const": false
+        },
+        "credentialValuesRead": {
+          "const": false
+        },
+        "attempts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "attemptId": {
+                "$ref": "#/$defs/identifier"
+              },
+              "environment": {
+                "enum": [
+                  "dev",
+                  "prod"
+                ]
+              },
+              "workload": {
+                "enum": [
+                  "transcription",
+                  "translation",
+                  "reviewer"
+                ]
+              },
+              "provider": {
+                "enum": [
+                  "openai",
+                  "local",
+                  "non_openai"
+                ]
+              },
+              "status": {
+                "enum": [
+                  "completed",
+                  "failed",
+                  "unknown_outcome",
+                  "not_dispatched"
+                ]
+              },
+              "projectId": {
+                "$ref": "#/$defs/nullableIdentifier"
+              },
+              "apiKeyId": {
+                "$ref": "#/$defs/nullableIdentifier"
+              },
+              "keyAlias": {
+                "$ref": "#/$defs/nullableIdentifier"
+              },
+              "usage": {
+                "$ref": "#/$defs/usage"
+              },
+              "cost": {
+                "$ref": "#/$defs/cost"
+              },
+              "attributionStatus": {
+                "enum": [
+                  "observed_project",
+                  "unattributed"
+                ]
+              },
+              "nonCachedInputTokens": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "day": {
+                "type": "string",
+                "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                "format": "date"
+              },
+              "pricingVersion": {
+                "$ref": "#/$defs/nullableIdentifier"
+              },
+              "model": {
+                "$ref": "#/$defs/nullableIdentifier"
+              },
+              "jobId": {
+                "$ref": "#/$defs/nullableIdentifier"
+              },
+              "stage": {
+                "$ref": "#/$defs/nullableIdentifier"
+              },
+              "providerRequestId": {
+                "$ref": "#/$defs/nullableIdentifier"
+              }
+            },
+            "required": [
+              "attemptId",
+              "environment",
+              "workload",
+              "provider",
+              "status",
+              "projectId",
+              "apiKeyId",
+              "keyAlias",
+              "usage",
+              "cost",
+              "attributionStatus",
+              "nonCachedInputTokens",
+              "day",
+              "pricingVersion",
+              "model",
+              "jobId",
+              "stage",
+              "providerRequestId"
+            ]
+          }
+        },
+        "dailyActualBuckets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "bucketId": {
+                "$ref": "#/$defs/identifier"
+              },
+              "day": {
+                "type": "string",
+                "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                "format": "date"
+              },
+              "projectId": {
+                "$ref": "#/$defs/nullableIdentifier"
+              },
+              "apiKeyId": {
+                "$ref": "#/$defs/nullableIdentifier"
+              },
+              "amountUsd": {
+                "$ref": "#/$defs/decimalAmount"
+              },
+              "currency": {
+                "const": "USD"
+              },
+              "environment": {
+                "enum": [
+                  "dev",
+                  "prod",
+                  null
+                ]
+              },
+              "attributionStatus": {
+                "enum": [
+                  "observed_project",
+                  "unattributed"
+                ]
+              }
+            },
+            "required": [
+              "bucketId",
+              "day",
+              "projectId",
+              "apiKeyId",
+              "amountUsd",
+              "currency",
+              "environment",
+              "attributionStatus"
+            ]
+          }
+        },
+        "environments": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "dev": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "attemptCount": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "unknownCostAttempts": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "unknownOutcomeAttempts": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "unattributedAttempts": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "actualBucketCount": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "knownEstimatedUsd": {
+                  "$ref": "#/$defs/decimalAmount"
+                },
+                "observedDailyActualUsd": {
+                  "$ref": "#/$defs/nullableDecimalAmount"
+                }
+              },
+              "required": [
+                "attemptCount",
+                "unknownCostAttempts",
+                "unknownOutcomeAttempts",
+                "unattributedAttempts",
+                "actualBucketCount",
+                "knownEstimatedUsd",
+                "observedDailyActualUsd"
+              ]
+            },
+            "prod": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "attemptCount": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "unknownCostAttempts": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "unknownOutcomeAttempts": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "unattributedAttempts": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "actualBucketCount": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "knownEstimatedUsd": {
+                  "$ref": "#/$defs/decimalAmount"
+                },
+                "observedDailyActualUsd": {
+                  "$ref": "#/$defs/nullableDecimalAmount"
+                }
+              },
+              "required": [
+                "attemptCount",
+                "unknownCostAttempts",
+                "unknownOutcomeAttempts",
+                "unattributedAttempts",
+                "actualBucketCount",
+                "knownEstimatedUsd",
+                "observedDailyActualUsd"
+              ]
+            }
+          },
+          "required": [
+            "dev",
+            "prod"
+          ]
+        },
+        "unattributedActualUsd": {
+          "$ref": "#/$defs/decimalAmount"
+        },
+        "actualCoverage": {
+          "enum": [
+            "complete",
+            "partial"
+          ]
+        },
+        "paginationComplete": {
+          "type": "boolean"
+        },
+        "settlementStatus": {
+          "enum": [
+            "pending",
+            "settled"
+          ]
+        },
+        "actualGranularity": {
+          "const": "daily_project_api_key"
+        },
+        "requestActualCostsAvailable": {
+          "const": false
+        },
+        "invoiceVerified": {
+          "const": false
+        },
+        "queryWindow": {
+          "$ref": "#/$defs/queryWindow"
+        },
+        "attemptScope": {
+          "enum": [
+            "complete_openai_project_attempts",
+            "partial_attempts"
+          ]
+        },
+        "costScope": {
+          "const": "project_api_key_partitions"
+        },
+        "dailyComparisons": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "day": {
+                "type": "string",
+                "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                "format": "date"
+              },
+              "environment": {
+                "enum": [
+                  "dev",
+                  "prod"
+                ]
+              },
+              "attemptCount": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "actualBucketCount": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "unknownCostAttempts": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "unknownOutcomeAttempts": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "unattributedAttempts": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "unattributedActualBucketCount": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "knownEstimatedUsd": {
+                "$ref": "#/$defs/nullableDecimalAmount"
+              },
+              "observedActualUsd": {
+                "$ref": "#/$defs/nullableDecimalAmount"
+              },
+              "estimateActualDifferenceUsd": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "pattern": "^-?[0-9]+(?:\\.[0-9]+)?$"
+              },
+              "differenceDefinition": {
+                "const": "known_estimate_minus_observed_daily_actual"
+              },
+              "comparisonCompleteness": {
+                "enum": [
+                  "complete",
+                  "partial"
+                ]
+              },
+              "nonOpenaiAttempts": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "keyCoverageMatches": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "day",
+              "environment",
+              "attemptCount",
+              "actualBucketCount",
+              "unknownCostAttempts",
+              "unknownOutcomeAttempts",
+              "unattributedAttempts",
+              "unattributedActualBucketCount",
+              "knownEstimatedUsd",
+              "observedActualUsd",
+              "estimateActualDifferenceUsd",
+              "differenceDefinition",
+              "comparisonCompleteness",
+              "nonOpenaiAttempts",
+              "keyCoverageMatches"
+            ]
+          }
+        },
+        "estimateScope": {
+          "const": "openai_attempts"
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "kind",
+        "providerDispatch",
+        "credentialValuesRead",
+        "attempts",
+        "dailyActualBuckets",
+        "environments",
+        "unattributedActualUsd",
+        "actualCoverage",
+        "paginationComplete",
+        "settlementStatus",
+        "actualGranularity",
+        "requestActualCostsAvailable",
+        "invoiceVerified",
+        "queryWindow",
+        "attemptScope",
+        "costScope",
+        "dailyComparisons",
+        "estimateScope"
+      ]
+    },
+    "identifier": {
+      "type": "string",
+      "pattern": "^(?!.*[sS][kK]-)[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+    },
+    "nullableIdentifier": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/identifier"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "decimalAmount": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[0-9]+(?:\\.[0-9]+)?$"
+        },
+        {
+          "type": "number",
+          "minimum": 0
+        }
+      ]
+    },
+    "nullableDecimalAmount": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/decimalAmount"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "usage": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "inputTokens": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "outputTokens": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "cachedInputTokens": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "cacheWriteTokens": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "reasoningTokens": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        }
+      },
+      "required": []
+    },
+    "cost": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": [
+            "estimated",
+            "unknown",
+            "not_incurred"
+          ]
+        },
+        "estimatedUsd": {
+          "$ref": "#/$defs/nullableDecimalAmount"
+        },
+        "currency": {
+          "const": "USD"
+        }
+      },
+      "required": [
+        "status",
+        "estimatedUsd",
+        "currency"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "unknown"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "estimatedUsd": {
+                "type": "null"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "estimatedUsd": {
+                "$ref": "#/$defs/decimalAmount"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "queryWindow": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "startDay": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+          "format": "date"
+        },
+        "endDayExclusive": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+          "format": "date"
+        }
+      },
+      "required": [
+        "startDay",
+        "endDayExclusive"
+      ]
+    },
+    "config_validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schemaVersion": {
+          "const": "sermon-cost-isolation-v1"
+        },
+        "kind": {
+          "const": "config_validation"
+        },
+        "valid": {
+          "const": true
+        },
+        "environments": {
+          "const": [
+            "dev",
+            "prod"
+          ]
+        },
+        "workloads": {
+          "const": [
+            "transcription",
+            "translation",
+            "reviewer"
+          ]
+        },
+        "credentialValuesRead": {
+          "const": false
+        },
+        "providerDispatch": {
+          "const": false
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "kind",
+        "valid",
+        "environments",
+        "workloads",
+        "credentialValuesRead",
+        "providerDispatch"
+      ]
+    }
+  }
+}

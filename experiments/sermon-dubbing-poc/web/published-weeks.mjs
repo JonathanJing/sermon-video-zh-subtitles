@@ -119,18 +119,50 @@ export function validatePublishedRelease(release, page, locale) {
   return assets;
 }
 
+// Candidate admission is explicit and keeps every review/acceptance state intact.
+// A machine-reviewed manuscript is never accepted by the published-release path.
+export function validateDevCandidateRelease(release, page, locale) {
+  required(release.schemaVersion === 'sermon-target-language-release-package-v2'
+    && text(release.packageId) && release.pageId === page.id && release.sourceLocale === 'en'
+    && release.targetLocale === locale && release.contentLocale === locale && release.audioLocale === locale
+    && (release.interfaceLocale === locale || (release.contentStatus === 'machine_reviewed' && release.interfaceLocale === 'zh-Hans'))
+    && release.status === 'candidate' && ['human_reviewed', 'machine_reviewed'].includes(release.contentStatus)
+    && release.audioStatus === 'human_reviewed'
+    && HASH.test(release.targetLanguageCandidateJsonSha256) && HASH.test(release.spokenTargetLanguageCandidateJsonSha256)
+    && HASH.test(release.targetLanguageAudioPackageJsonSha256)
+    && (release.contentStatus !== 'machine_reviewed' || HASH.test(release.audioHumanReviewReceiptJsonSha256))
+    && Array.isArray(release.issues) && release.issues.length === 0, 'Invalid Dev candidate identity or status');
+  for (const name of ['httpVerification', 'deviceAcceptance', 'venueAcceptance']) {
+    required(release[name]?.status === 'not_run' && release[name].evidenceSha256 === null,
+      'Dev candidate cannot claim publication, device, or venue acceptance');
+  }
+  const assets = {};
+  for (const role of ['page', 'content', 'captions', 'audio']) {
+    const matches = release.assets?.filter(asset => asset.role === role) || [];
+    required(matches.length === 1 && HASH.test(matches[0].sha256), `Invalid ${role} candidate asset`);
+    assets[role] = { ...matches[0], path: assetPath(matches[0].path) };
+    const accepted = role === 'audio' ? ['mp3', 'wav', 'm4a'].map(extension => `/media/${page.id}/${locale}.${extension}`)
+      : [role === 'page' ? `/pages/${page.id}/${locale}/index.html` : `/${role}/${page.id}/${locale}.json`];
+    required(accepted.includes(assets[role].path), 'Dev candidate asset identity mismatch');
+  }
+  return assets;
+}
+
 // Catalog admission is distinct from this audio player's capabilities. A valid
 // text-only target stays valid, but must never trigger an audio-release request.
-export function validatePublishedTarget(target, page, locale) {
+export function validatePublishedTarget(target, page, locale, allowDevCandidates = false) {
   const capabilities = target?.capabilities;
   required(target && target.releasePackageUrl === `/releases-v2/${page.id}/${locale}.json`
-    && HASH.test(target.releasePackageJsonSha256) && target.contentStatus === 'human_reviewed'
+    && HASH.test(target.releasePackageJsonSha256)
+    && (target.contentStatus === 'human_reviewed' || (allowDevCandidates && target.contentStatus === 'machine_reviewed'))
     && ['unavailable', 'human_reviewed'].includes(target.audioStatus)
     && Array.isArray(capabilities) && capabilities.includes('text')
     && capabilities.every(value => ['text', 'captions', 'audio', 'download', 'alignment'].includes(value))
     && new Set(capabilities).size === capabilities.length
     && (target.audioStatus === 'human_reviewed') === capabilities.includes('audio')
-    && (target.audioFingerprint != null) === capabilities.includes('alignment'),
+    && (target.audioFingerprint != null) === capabilities.includes('alignment')
+    && ['diagnosticOnly', 'simulationOnly'].every(key => target[key] === undefined || typeof target[key] === 'boolean')
+    && (allowDevCandidates || (target.diagnosticOnly !== true && target.simulationOnly !== true)),
   'Invalid published catalog target');
   const binding = target.audioFingerprint;
   if (binding != null) {
@@ -171,27 +203,36 @@ export function validatePublishedPage(page) {
     && page.targets && typeof page.targets === 'object' && !Array.isArray(page.targets)
     && Object.keys(page.targets).length > 0 && Object.keys(page.targets).length <= 16
     && Object.keys(page.targets).every(locale => LOCALE.test(locale))
-    && Object.hasOwn(page.targets, page.defaultTargetLocale), 'Invalid published page');
+    && Object.hasOwn(page.targets, page.defaultTargetLocale)
+    && ['diagnosticOnly', 'simulationOnly'].every(key => page[key] === undefined || typeof page[key] === 'boolean')
+    && (page.mediaType === undefined || ['video', 'podcast'].includes(page.mediaType)), 'Invalid published page');
   return page;
 }
 
-async function loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal) {
-  const target = validatePublishedTarget(page.targets[locale], page, locale);
-  required(target?.contentStatus === 'human_reviewed' && target.audioStatus === 'human_reviewed'
+async function loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal, allowDevCandidates) {
+  const target = validatePublishedTarget(page.targets[locale], page, locale, allowDevCandidates);
+  required(target.audioStatus === 'human_reviewed'
     && ['text', 'captions', 'audio'].every(capability => target.capabilities?.includes(capability)), 'Target is not ready for playback');
   const release = await readJson(fetchImpl, target.releasePackageUrl, target.releasePackageJsonSha256, timeoutMs, false, pageSignal);
-  const assets = validatePublishedRelease(release, page, locale);
+  const candidate = release.status === 'candidate';
+  required(!candidate || allowDevCandidates, 'Dev candidate requires explicit development context');
+  const assets = candidate ? validateDevCandidateRelease(release, page, locale) : validatePublishedRelease(release, page, locale);
+  required(release.contentStatus === target.contentStatus && release.audioStatus === target.audioStatus,
+    'Release status does not match catalog target');
   const [content, captions] = await Promise.all([
     readJson(fetchImpl, assets.content.path, assets.content.sha256, timeoutMs, false, pageSignal),
     readJson(fetchImpl, assets.captions.path, assets.captions.sha256, timeoutMs, false, pageSignal),
   ]);
-  required(content.schemaVersion === 'sermon-full-video-text-content-v1'
-    && content.pageId === page.id && content.targetLocale === locale && content.sourceLocale === 'en'
-    && content.status === 'human_reviewed' && content.englishSourcePackageJsonSha256 === page.sourceIdentitySha256
+  required((candidate ? ['sermon-formal-dev-content-v1', 'sermon-dev-podcast-candidate-content-v2'].includes(content.schemaVersion)
+    : content.schemaVersion === 'sermon-full-video-text-content-v1')
+    && content.pageId === page.id && (candidate ? content.locale === locale : content.targetLocale === locale) && content.sourceLocale === 'en'
+    && (candidate ? content.contentStatus === release.contentStatus && content.audioStatus === release.audioStatus
+      && content.targetLanguageAudioPackageJsonSha256 === release.targetLanguageAudioPackageJsonSha256 && content.date === page.date
+      : content.status === 'human_reviewed') && content.englishSourcePackageJsonSha256 === page.sourceIdentitySha256
     && content.targetLanguageCandidateJsonSha256 === release.targetLanguageCandidateJsonSha256
     && HASH.test(release.targetLanguageCandidateJsonSha256), 'Published content identity mismatch');
   required(['title', 'speaker', 'series', 'scripture', 'summary'].every(key => text(content[key]))
-    && Array.isArray(content.outline) && content.outline.every(text)
+    && Array.isArray(content.outline) && content.outline.every(item => candidate ? text(item?.title) && text(item?.body) : text(item))
     && Number.isFinite(content.durationSeconds) && content.durationSeconds > 0, 'Invalid published content metadata');
   const cues = validatedCues(captions.cues, content.durationSeconds);
   const fullTranscript = validatedCues(content.cues, content.durationSeconds);
@@ -199,6 +240,40 @@ async function loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal) {
   const fullIds = new Set(fullTranscript.map(cue => cue.textGroupId));
   required(cues.length === fullTranscript.length && cues.every(cue => fullIds.has(cue.textGroupId)), 'Spoken captions do not match full-text groups');
   const labels = LABELS[locale];
+  if (candidate) {
+    required(page.mediaType === 'podcast' && typeof page.sourceUrl === 'string'
+      && /^https:\/\//.test(page.sourceUrl) && !new URL(page.sourceUrl).username && !new URL(page.sourceUrl).password,
+      'Invalid candidate podcast source');
+    required(captions.schemaVersion === 'sermon-target-language-captions-v1'
+      && captions.pageId === page.id && captions.locale === locale
+      && captions.audioPackageJsonSha256 === release.targetLanguageAudioPackageJsonSha256
+      && captions.timingBasis === 'concatenated target audio; natural unit durations; no source-video synchronization',
+      'Invalid candidate caption identity');
+    const reviewed = release.contentStatus === 'human_reviewed';
+    return {
+      id: page.id, date: page.date, number: '', title: content.title, targetLocale: locale, defaultTargetLocale: locale,
+      series: content.series, speaker: content.speaker, scripture: content.scripture,
+      sourceUrl: page.sourceUrl, sourceLabel: '播客原片', sourceRoute: 'podcast',
+      sourceSha256: page.sourceMediaSha256, diagnosticOnly: true, devCandidate: true,
+      contentStatus: release.contentStatus, releaseStatus: release.status,
+      releaseLabel: 'DEV 候选', humanContentReview: reviewed ? 'approved' : 'pending', audioStatus: 'full_reviewed',
+      audioNotice: 'Dev 候选音轨；字幕采用目标音轨时间，不代表视频同步或设备验收。',
+      contentReview: reviewed ? '文稿人工审核状态已记录；当前仍是 Dev 候选。' : '译文仅机器审核；人工全文审核未批准。当前仍是 Dev 候选。',
+      productionStages: [
+        { label: '文稿审核', detail: release.contentStatus, status: reviewed ? 'pass' : 'review' },
+        { label: '音轨审核', detail: release.audioStatus, status: 'pass' },
+        { label: '发布与验收', detail: 'candidate · HTTP / device / venue: not_run', status: 'review' },
+      ],
+      summary: content.summary, centralMessage: content.summary,
+      outline: content.outline.map(item => ({ title: item.title, points: [item.body] })), questions: [], scriptureRefs: [content.scripture],
+      tracks: [{ id: `${page.id}-${locale}-${assets.audio.sha256.slice(0, 12)}`,
+        audioUrl: assets.audio.path, sha256: assets.audio.sha256, durationSeconds: content.durationSeconds,
+        cues, scope: 'full_candidate', label: labels.audio, voiceLabel: `${content.speaker} · AI`,
+        targetLocale: locale, subtitleTiming: 'target_audio_clock' }], fullTranscript,
+      contentSha256: assets.content.sha256, captionsSha256: assets.captions.sha256,
+      releasePackageJsonSha256: target.releasePackageJsonSha256,
+    };
+  }
   const track = {
     id: `${page.id}-${locale}-${assets.audio.sha256.slice(0, 12)}`,
     audioUrl: assets.audio.path, sha256: assets.audio.sha256,
@@ -212,6 +287,8 @@ async function loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal) {
     sourceUrl: assetPath(content.sourceVideoUrl), sourceLabel: labels.source,
     sourceRoute: 'full_video', sourceSha256: content.sourceMediaSha256, sourceStartSeconds: 0, sourceEndSeconds: content.durationSeconds, sourceDurationSeconds: content.durationSeconds,
     releaseLabel: '正式播放版', humanContentReview: 'approved', audioStatus: 'full_reviewed',
+    ...(page.diagnosticOnly === true || target.diagnosticOnly === true ? { diagnosticOnly: true } : {}),
+    ...(page.simulationOnly === true || target.simulationOnly === true ? { simulationOnly: true } : {}),
     audioNotice: labels.notice, contentReview: labels.review,
     productionStages: labels.stages.map(([label, detail]) => ({ label, detail, status: 'pass' })),
     centralMessage: content.summary, summary: content.summary,
@@ -222,10 +299,10 @@ async function loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal) {
   };
 }
 
-async function loadPage(fetchImpl, page, timeoutMs, pageSignal) {
+async function loadPage(fetchImpl, page, timeoutMs, pageSignal, allowDevCandidates) {
   const errors = [];
   const variants = await Promise.all(LOCALES.filter(locale => page.targets[locale]).map(async locale => {
-    try { return [locale, await loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal)]; }
+    try { return [locale, await loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal, allowDevCandidates)]; }
     catch (error) { errors.push(`${page.id}/${locale}: ${error.message}`); return null; }
   }));
   const contentVariants = Object.fromEntries(variants.filter(Boolean));
@@ -298,7 +375,7 @@ async function loadPage(fetchImpl, page, timeoutMs, pageSignal) {
  * spoken cues and fullTranscript. An unavailable optional catalog leaves legacy
  * weeks usable; a rejected locale is reported in errors and is never selectable.
  */
-export async function loadPublishedWeeks(fetchImpl = globalThis.fetch, { requestTimeoutMs = 10000, pageLoadTimeoutMs = 30000 } = {}) {
+export async function loadPublishedWeeks(fetchImpl = globalThis.fetch, { requestTimeoutMs = 10000, pageLoadTimeoutMs = 30000, allowDevCandidates = false } = {}) {
   const timeoutMs = Number.isFinite(requestTimeoutMs) && requestTimeoutMs > 0 ? Math.min(requestTimeoutMs, 30000) : 10000;
   const loadTimeoutMs = Number.isFinite(pageLoadTimeoutMs) && pageLoadTimeoutMs > 0 ? Math.min(pageLoadTimeoutMs, 30000) : 30000;
   const empty = { weeks: [], defaultWeekId: null, errors: [] };
@@ -311,7 +388,14 @@ export async function loadPublishedWeeks(fetchImpl = globalThis.fetch, { request
   const errors = [];
   const pages = [];
   for (const page of catalog.pages) {
-    try { pages.push(validatePublishedPage(page)); }
+    try {
+      validatePublishedPage(page);
+      if (!allowDevCandidates && (page.diagnosticOnly === true || page.simulationOnly === true)) continue;
+      // Remove only machine locales; independently reviewed locales remain usable.
+      const targets = Object.fromEntries(Object.entries(page.targets).filter(([, target]) => allowDevCandidates || (target.contentStatus !== 'machine_reviewed' && target.diagnosticOnly !== true && target.simulationOnly !== true)));
+      if (!Object.keys(targets).length) continue;
+      pages.push({ ...page, targets, defaultTargetLocale: targets[page.defaultTargetLocale] ? page.defaultTargetLocale : Object.keys(targets).sort()[0] });
+    }
     catch (error) { errors.push(error.message); }
   }
   pages.sort((a, b) => (b.id === catalog.defaultPageId) - (a.id === catalog.defaultPageId) || b.date.localeCompare(a.date));
@@ -323,13 +407,13 @@ export async function loadPublishedWeeks(fetchImpl = globalThis.fetch, { request
     // Issue current-page requests first, then let the archive make progress even
     // if a current-page asset or optional sidecar stalls.
     const currentPage = pages.length
-      ? loadPage(fetchImpl, pages[0], timeoutMs, pageController.signal).then(result => { results[0] = result; })
+      ? loadPage(fetchImpl, pages[0], timeoutMs, pageController.signal, allowDevCandidates).then(result => { results[0] = result; })
       : Promise.resolve();
     // Historical pages are independent; cap simultaneous pages and the total wait.
     const worker = async () => {
       while (!pageController.signal.aborted && next < pages.length - 1) {
         const index = ++next;
-        results[index] = await loadPage(fetchImpl, pages[index], timeoutMs, pageController.signal);
+        results[index] = await loadPage(fetchImpl, pages[index], timeoutMs, pageController.signal, allowDevCandidates);
       }
     };
     await Promise.all([currentPage, ...Array.from({ length: Math.min(12, pages.length - 1) }, worker)]);

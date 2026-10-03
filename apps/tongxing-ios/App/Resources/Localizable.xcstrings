@@ -7178,6 +7178,146 @@
           }
         }
       }
+    },
+    "Dev 候选 · 仅机器审核，人工全文审核未批准。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dev candidate · Machine review only; human manuscript approval is pending."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dev 후보 · 기계 검토만 완료되었으며 원고의 사람 승인은 대기 중입니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Candidato Dev · Solo revisión automática; la aprobación humana del texto está pendiente."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bản thử Dev · Chỉ được máy kiểm tra; chưa có phê duyệt nội dung của con người."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dev 候选 · 仅机器审核，人工全文审核未批准。"
+          }
+        }
+      }
+    },
+    "Dev 候选 · 发布与设备验收尚未完成。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dev candidate · Publication and device acceptance are pending."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dev 후보 · 게시 및 기기 검증은 아직 완료되지 않았습니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Candidato Dev · La publicación y la validación en dispositivos están pendientes."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bản thử Dev · Chưa hoàn tất xuất bản và nghiệm thu thiết bị."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dev 候选 · 发布与设备验收尚未完成。"
+          }
+        }
+      }
+    },
+    "Dev 候选 · 仅机器审核": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dev candidate · Machine review only"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dev 후보 · 기계 검토만 완료"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Candidato Dev · Solo revisión automática"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bản thử Dev · Chỉ được máy kiểm tra"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dev 候选 · 仅机器审核"
+          }
+        }
+      }
+    },
+    "Dev 内容": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dev content"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dev 콘텐츠"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contenido Dev"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nội dung Dev"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dev 内容"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
