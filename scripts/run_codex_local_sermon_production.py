@@ -72,6 +72,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--notify-sender-secret", default=DEFAULT_SENDER_SECRET)
     parser.add_argument("--model", default="gpt-6-sol")
     parser.add_argument("--release-workflow-config", type=Path)
+    parser.add_argument("--app-delivery-config", type=Path,
+                        help="Opt into deterministic approved App bundle preparation; no source refresh or model turn")
     parser.add_argument("--agent-backend", choices=("agents-api", "sdk"), default="agents-api")
     parser.add_argument("--agent-run-dir", type=Path)
     parser.add_argument("--resume-agent-session", action="store_true")
@@ -128,6 +130,7 @@ def make_agent_args(args: argparse.Namespace) -> argparse.Namespace:
         model=args.model,
         agent_backend=getattr(args, "agent_backend", "agents-api"),
         release_workflow_config=getattr(args, "release_workflow_config", None),
+        app_delivery_config=getattr(args, "app_delivery_config", None),
         agent_run_dir=getattr(args, "agent_run_dir", None),
         resume_agent_session=getattr(args, "resume_agent_session", False),
         agent_timeout_seconds=getattr(args, "agent_timeout_seconds", 21600),
@@ -250,7 +253,8 @@ def completed_production_report(
     gcs_reader: Callable[[str], bytes] = read_gcs_bytes,
 ) -> dict[str, Any] | None:
     """Return a terminal report before refresh/secrets/agent work when this Sunday is done."""
-    if getattr(args, "force_after_complete", False) or getattr(args, "release_workflow_config", None):
+    if (getattr(args, "force_after_complete", False) or getattr(args, "release_workflow_config", None)
+            or getattr(args, "app_delivery_config", None)):
         return None
     snapshot = local_completed_snapshot(
         args.out,
@@ -474,6 +478,14 @@ def write_report(path: Path, report: dict[str, Any]) -> None:
 
 
 def run_local_production(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
+    if getattr(args, "app_delivery_config", None) is not None:
+        if (getattr(args, "resume_failed_generation", False) or getattr(args, "force_after_complete", False)
+                or getattr(args, "approve_window", False)):
+            raise ValueError("Legacy PDF repair/approval flags do not apply to App delivery preparation")
+        report = asyncio.run(run_sermon_production_supervisor_agent.run_agent(args))
+        report['sourceRefresh'] = {'status': 'skipped', 'reason': 'explicit_app_delivery_scope'}
+        write_report(args.out, report)
+        return (0 if report['status'] in {'observed', 'advanced', 'complete'} else 2), report
     if args.resume_failed_generation and getattr(args, "release_workflow_config", None):
         raise ValueError("Resume PDF generation separately, then re-inspect the full release workflow")
     if args.resume_failed_generation:
