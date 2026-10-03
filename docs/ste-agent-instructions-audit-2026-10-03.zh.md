@@ -67,13 +67,23 @@ help 原句为 `Source-bound per-unit pronunciation and pause instructions`；�
 
 ## 本次未执行与边界
 
-原审核只读检查源文档和代码；本 PR 仅将审核与实验计划记录入库。未修改仓库文档、代码、prompts、memories 或生产状态；未 commit、push、创建新 PR、合并或部署。未运行任何生产 CLI、模型、TTS、ASR、生成任务、音频解码、网络发布验收或功能测试，未停止运行中的任务/模型。没有执行第三方安装钩子、npm 脚本或未审查 linter。静态建议未通过模型行为回归，也未证明当前成品存在上述错误；需要用户决定的项目不能视为新增需求或执行授权。
+原审核调查阶段只读检查源文档和代码，当时未修改文档、代码、prompts、memories 或生产状态，也未 commit、push、创建 PR、合并或部署。随后为记录调查与实验计划，本 PR 新增本报告、修改相关 backlog／说明文档，并提交、推送及创建文档 PR；这些记录动作与只读调查分开计述。
+
+上述调查和文档记录均未修改运行代码或生产提示词，未运行生产 CLI、模型、TTS、ASR、生成任务、音频解码、网络发布验收或功能测试，未停止运行中的任务／模型。没有执行第三方安装钩子、npm 脚本或未审查 linter。静态建议未通过模型行为回归，也未证明当前成品存在上述错误；需要用户决定的项目不能视为新增需求或执行授权。后续独立授权的软件实施和验证归 PR #231 的回执，不倒写为原调查阶段的执行。
 
 
 ## 与页面流程 PR 的关系
 
-本记录独立于 [PR #228](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/228)。创建本记录前核实 #228 为 OPEN、Draft，head `a4e700030bd738a51f9954d4ddd6dbe87d026143`。该 PR 修订页面发行说明；本 PR 记录五项 Agent 指令发现及后续实验计划，不修改生产提示词、缓存、配置或既有说明。没有运行 A/B，也没有将建议标成实施完成。
+本记录独立于 [PR #228](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/228)。创建本记录前核实 #228 为 OPEN、Draft，head `a4e700030bd738a51f9954d4ddd6dbe87d026143`。该 PR 修订页面发行说明；本 PR 记录五项 Agent 指令发现及后续实验计划，不修改生产提示词、缓存或运行配置。没有运行 A/B，也没有将建议标成实施完成。
 
 ## 明天（10/4）
 
 A/B 候选全文与实验计划移至[明天 backlog](https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/codex/docs-backlog-tomorrow-20261004/docs/backlog-2026-10-04.zh.md)。本页保留五项静态审核发现，不把建议标为已实现。
+
+## 本地首批实施（2026-10-03）
+
+用户在后续任务明确授权本地开发后，基于 PR #229 建立 `codex/pr229-development`，实施第 3–5 项的现有容量、renderer 身份及 unit-instructions 文档／CLI 澄清。69 项定向离线测试、CLI help 和输入／兼容拒绝例通过；未扩大兼容名单或修改运行中任务。具体范围与验证记录见 [顶层 backlog](backlog.zh.md#ste-instructions-ab-backlog-20261003)。本批待合并，不标顶层 complete；第 1–2 项提示词行为修复及 A/B 仍在 PR #230 的独立定义中，未据本批改写生产提示词或运行真实实验。
+
+## 后续独立审核与修复（2026-10-03）
+
+审核 `4899885` 相对 #229 基线的改动，发现一项缓存兼容回归：仅更改 help 也改变 `batchImplementationSha256`，旧 batch>1 缓存在原目录续跑会被拒绝，绑定旧文件 SHA 的 preview 会重新合成。离线夹具复现后恢复 renderer 原文件字节，SHA-256 与基线均为 `085f8d21ab1263b96a32a0361582470dc8a1a6bab71b22383796fe90180d32b2`；batch 与 preview 复用路径均无需新合成。说明留在文档，现有 CLI 参数不变，不扩大兼容名单或修改原缓存。四层合同另修正 Layer 3 段落中残留的“各 locale 的 Layer 2 并行”表述，使其同样遵守当前 controller 容量。

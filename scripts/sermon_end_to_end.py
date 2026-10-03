@@ -78,6 +78,8 @@ def _outstanding_jobs(root, *, read_only=False):
 
 def snapshot(config, *, read_only=False):
     upstream = production.production_snapshot(config)
+    if getattr(config, 'app_delivery_config', None) is not None:
+        return upstream
     path = configuration(config)
     if path is None:
         return upstream
@@ -141,6 +143,17 @@ def state_revision(observed):
 
 def start_action(config, action, *, timeout_seconds=21600, expected_config_sha=None,
                  expected_state_revision=None):
+    if getattr(config, 'app_delivery_config', None) is not None:
+        from scripts import sermon_app_delivery_workflow as app_workflow
+        if action != app_workflow.ACTION:
+            return {'status': 'blocked'}
+        current = snapshot(config, read_only=True)
+        if expected_config_sha is not None and current['configurationSha256'] != expected_config_sha:
+            return {'status': 'blocked'}
+        if expected_state_revision is not None and state_revision(current) != expected_state_revision:
+            return {'status': 'blocked'}
+        return app_workflow.start(config.app_delivery_config, sunday=config.sunday,
+                                  expected_revision=app_workflow.app.digest(current))
     if type(timeout_seconds) is not int or not 1 <= timeout_seconds <= 21600:
         raise ValueError("Invalid release action timeout")
     path = configuration(config)

@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "sermon-openai-costs-export-v1.schema.json",
+  "title": "Offline captured OpenAI Costs export",
+  "description": "New import envelope; no migration of existing normalized cost evidence. Bind an unfiltered UTC daily query and project grouping. Runtime validates cursor chain, complete daily window, native dimensions, Decimal values and attribution. Native response alone never proves settlement; normalized output remains pending. No credentials, request headers, key values or network calls.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "queryWindow", "groupBy", "pages"],
+  "properties": {
+    "schemaVersion": {"const": "sermon-openai-costs-export-v1"},
+    "queryWindow": {"$ref": "#/$defs/queryWindow"},
+    "groupBy": {"type": "array", "minItems": 1, "uniqueItems": true, "contains": {"const": "project_id"}, "items": {"enum": ["project_id", "api_key_id", "line_item"]}},
+    "pages": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/capture"}}
+  },
+  "$defs": {
+    "queryWindow": {
+      "type": "object", "additionalProperties": false, "required": ["startDay", "endDayExclusive"],
+      "properties": {"startDay": {"type": "string", "format": "date", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"}, "endDayExclusive": {"type": "string", "format": "date", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"}}
+    },
+    "nullableIdentifier": {"type": ["string", "null"], "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"},
+    "cursor": {"type": ["string", "null"], "minLength": 1, "maxLength": 2048},
+    "capture": {
+      "type": "object", "additionalProperties": false, "required": ["requestCursor", "response"],
+      "properties": {"requestCursor": {"$ref": "#/$defs/cursor"}, "response": {"$ref": "#/$defs/page"}}
+    },
+    "page": {
+      "type": "object", "additionalProperties": false, "required": ["object", "data", "has_more"],
+      "properties": {
+        "object": {"const": "page"}, "has_more": {"type": "boolean"}, "next_page": {"$ref": "#/$defs/cursor"},
+        "data": {"type": "array", "items": {"$ref": "#/$defs/bucket"}}
+      }
+    },
+    "bucket": {
+      "type": "object", "additionalProperties": false, "required": ["object", "start_time", "end_time", "results"],
+      "properties": {
+        "object": {"const": "bucket"}, "start_time": {"type": "integer", "minimum": 0}, "end_time": {"type": "integer", "minimum": 0},
+        "results": {"type": "array", "items": {"$ref": "#/$defs/result"}}
+      }
+    },
+    "result": {
+      "type": "object", "additionalProperties": false, "required": ["object", "amount"],
+      "properties": {
+        "object": {"const": "organization.costs.result"},
+        "project_id": {"$ref": "#/$defs/nullableIdentifier"},
+        "api_key_id": {"$ref": "#/$defs/nullableIdentifier"},
+        "line_item": {"type": ["string", "null"], "minLength": 1, "maxLength": 512},
+        "quantity": {"type": ["number", "null"]}, "quantity_unit": {"type": ["string", "null"]},
+        "amount": {
+          "type": "object", "additionalProperties": false, "required": ["value", "currency"],
+          "properties": {"currency": {"const": "usd"}, "value": {"type": "number", "minimum": 0}}
+        }
+      }
+    }
+  }
+}

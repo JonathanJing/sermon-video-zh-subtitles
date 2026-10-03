@@ -56,6 +56,7 @@ class SupervisorConfig:
     source_text_review: Path | None = None
     reading_review_manifest: Path | None = None
     release_workflow_config: Path | None = None
+    app_delivery_config: Path | None = None
     lease_ttl_seconds: int = 14_400
 
 
@@ -68,11 +69,16 @@ def validate_config(config: SupervisorConfig) -> None:
         raise ValueError("state_file is required")
     if not str(config.work_root):
         raise ValueError("work_root is required")
+    if config.app_delivery_config and config.release_workflow_config:
+        raise ValueError("App preparation and legacy page-release scopes must be configured separately")
 
 
 def production_snapshot(config: SupervisorConfig) -> dict[str, Any]:
     """Read durable workflow evidence and return a sanitized supervisor snapshot."""
     validate_config(config)
+    if config.app_delivery_config is not None:
+        from scripts import sermon_app_delivery_workflow
+        return sermon_app_delivery_workflow.snapshot(config.app_delivery_config, sunday=config.sunday)
     state = read_supervisor_state(config.state_file)
     source = run_post_live_subtitle_generation.selected_source_from_state(state)
     live_url = run_post_live_subtitle_generation.live_url_from_state(state, source)

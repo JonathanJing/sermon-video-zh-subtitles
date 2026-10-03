@@ -18,6 +18,8 @@
 
 这一清单优先于下文仅适用于 `weekly.json` 的 legacy 命令。当前仓库的 `assemble_multilingual_hosting.py`、`deploy_multilingual_hosting.py`、`verify_multilingual_hosting.py` 仍只处理 v2 Catalog／v1 Release；在 v3 入口实现并通过定向测试前，不得用这些命令部署新周后宣称两端已经刷新可用。
 
+[9/27 专用 L4 adapter](sep27-full-video-app-layer4.zh.md#命令与输出) 的 `seal` 只生成单页 catalog，不能直接覆盖完整旧目录。它的 `published_http_verified` 包只绑定 12 项资产 GET／SHA 收据；最终包和合并后 catalog 的第二次部署核验、音频 Range 与 App 验收仍须分别完成。该专用输出不能替代下列完整周更 stage 合同。
+
 ### 正式三语周更文件数合同
 
 已发行的 Hosting 视频周次沿用 `three_locale_full_video_v1`：**21 个新周 Hosting 资源 + 1 个更新的 `/multilingual-v3.json` = 22 个 Hosting 文件**。新的 bucket 视频周次使用 `three_locale_bucket_video_v2`：**20 个新周 Hosting 资源 + 1 个更新的 catalog = 21 个 Hosting 文件，另有 1 个不可变 Cloud Storage 视频对象**；合计处理 22 个 Firebase 资源，但不可把它写成 22 个 Hosting 文件。两个配置都只约束单周增量，既有完整站点、客户端代码、海报和 Dev dry run 分别计数。
