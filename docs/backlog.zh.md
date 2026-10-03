@@ -1010,3 +1010,28 @@ CI环境还暴露工具下载占用原job期限：18ae2f0的root-0已通过1609 
 - [ ] 保存 App/OS/机型与状态事件证据，人工确认后再晋级正式 iOS。关联 Beta/Dev→人工→正式双端内容流程，但这是 iOS 特有 UI，不强造 Firebase 同样灵动岛；若需二进制变化另走 TestFlight/App Review。
 
 现在不实现、不改权限、不发布、不启动现场录音。
+
+<a id="multilingual-new-content-notifications-20261003"></a>
+
+## 每周多语言新内容通知与海报预览
+
+| ID | 优先级／状态 | 待交付与验收 | 依赖／待决定 |
+|---|---|---|---|
+| `DEV-NOTIFY-001` | P1 / `pending` | 新内容按订阅内容语言生成文案、对应语言海报和落地页；iOS Beta/Firebase Dev 候选人工批准、正式 iOS/Firebase 双端内容验证后才发正式通知。订阅开关、去重、目标环境隔离及图片失败纯文字回退须通过单设备验收 | `DEV-L4-006`、`DEV-IOS-001`、现有海报流程；APNs直发/FCM选型、订阅语言/默认值、sender与凭据安全配置、单设备身份及权限待核验；不得默认新增发送群体 |
+
+订阅内容语言与设备 UI 语言分离；通知和海报/落地内容绑定 page/content/locale/hash，不能给用户订阅语言发送另一语言版本。明确默认订阅、退出、语言更改、失败重试、去重键（环境+内容版本+语言+收件实例）及用户偏好更新；去重窗口/更正通知规则待决定。正式收件群体需独立授权，不向 topic 或全体 Beta 用户试发。
+
+富媒体候选用 Notification Service Extension；按 [Apple 修改通知内容](https://developer.apple.com/documentation/usernotifications/modifying-content-in-newly-delivered-notifications) 核验 payload、时限与附件规则，图片下载/解码/超时失败回退原纯文字，不能把图像成功当通知必需条件。若采用 FCM，按 [Firebase Apple client 指南](https://firebase.google.com/docs/cloud-messaging/ios/get-started) 核验 APNs身份、登记和用户授权。Beta 不等于 sandbox；APNs环境以实际签名 entitlement/分发类型及 provider 路由为据，Beta可能使用 production APNs，但必须与正式内容/收件人隔离。
+
+- [ ] 离线验证动态多语言文案、海报/落地同语言同版本、去重/退订/错误环境/图片失败回退及未正式双端验收不发送。
+- [ ] 先核实本人单台 Beta 设备的登记、通知权限、token/provider环境与安装版本，再明确测试内容；不获取或输出 key，不将设备 token 写公共仓库，安全配置另行授权。
+- [ ] 单设备真实验收分别记录 sender accepted、设备可见、点击打开正确 Beta/Dev 内容、语言/音频状态；accepted不等于设备收到。失败/permission denied明确保留，不自动扩大收件范围。
+- [ ] 若需注册代码、sender、Service Extension 或新签名能力，先提出明确实现范围，再走 Beta build/人工验收；正式双端内容门禁和二进制 App Review 仍各自独立。
+
+### 当前只读核查与执行时序
+
+2026-10-03：仓库 Beta bundle `com.jonathanjing.tongxing.beta`，BetaDebug/BetaRelease 指向 Firebase Dev（project.yml:56–69）。已检查源码及包配置未找到 APNs/FCM 注册、设备登记或 sender，Beta测试说明:207 明示未增加 APNs。不能据此证明外部服务绝不存在，但现有仓库链路不足以发送。本人设备通知许可、token及实际签名 entitlement 未核实，不读凭据或私有设备登记来猜目标。
+
+公开 Dev /multilingual-v3.json 当前可验证播客候选：id `if-i-had-more-time-jesus-is-worthy`，2026-10-02，标题“如果我有更多时间 · 耶稣配得”，zh-Hans，发布包 `/releases-v2/if-i-had-more-time-jesus-is-worthy/zh-Hans.json`。这仅是公开目录证据，未证明是用户所指“新的播客”、设备点击路由或最终播放验收。拟测试文案：“[Beta 测试] 新播客已上架”；正文“如果我有更多时间 · 耶稣配得。打开同行 Beta 查看并试听。”内容ID/语言/设备确定后才能冻结测试请求；未确认 deep link不构造假URL。
+
+用户15:17 UTC明确：**当前证道生产完成后才开始代码开发、推送发送/测试、新 build 或部署**。不得推断当前生产完成。10/3可完成文档、覆盖清单和计划；生产完成且范围/目标明确后，才考虑当天有限离线准备。10/4建议安排授权与配置核验、离线门禁及可行的单设备Beta验收；没有现成推送链路时先评估实现/安全配置/新build，不保证一天完成。该安排是建议，不是自动化或未来发送授权。本轮未发送通知、申请权限、部署或干预生产任务。
