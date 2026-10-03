@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import argparse
 import copy
+from contextlib import ExitStack
+import fcntl
 import hashlib
 import json
 import math
@@ -32,6 +34,8 @@ try:
     from scripts import validate_target_language_audio_unit as integrity
     from scripts import dev_audio_test_profile as dev_profile
     from scripts import dev_audio_test_receipts as dev_receipts
+    from scripts import spark_tts_replica_pool as replica_pool
+    from scripts.spark_tts_window_scheduler import ParallelBatchEngine
 except ImportError:
     import build_target_language_audio_package as package
     import four_layer_measure as measure
@@ -41,6 +45,8 @@ except ImportError:
     import validate_target_language_audio_unit as integrity
     import dev_audio_test_profile as dev_profile
     import dev_audio_test_receipts as dev_receipts
+    import spark_tts_replica_pool as replica_pool
+    from spark_tts_window_scheduler import ParallelBatchEngine
 
 
 VERSION = "sermon-formal-target-speech-render-v1"
@@ -55,7 +61,9 @@ BATCH_CACHED_UNIT_POLICY = "replay_full_bound_window_when_units_are_missing_v1"
 LEGACY_BATCH_SEED_POLICY = "base_plus_fixed_window_start_ordered_missing_units_v1"
 LEGACY_BATCH_CACHED_UNIT_POLICY = "exclude_committed_or_admitted_reuse"
 COMPATIBLE_BATCH_REPAIR_IMPLEMENTATION_SHA256 = {
-    "a86c470ed8f2efb7b94f62cc5451e0f3e6af9a15d13110d86086489daeedd58c"
+    "a86c470ed8f2efb7b94f62cc5451e0f3e6af9a15d13110d86086489daeedd58c",
+    # Direct dev parent: serial full-window inputs and sampling are unchanged.
+    "085f8d21ab1263b96a32a0361582470dc8a1a6bab71b22383796fe90180d32b2"
 }
 
 
@@ -246,10 +254,28 @@ class QwenSynthesizer:
                 for row, wav in zip(requests, wavs)]
 
 
+class SparkQwenSynthesizer(QwenSynthesizer):
+    """Match the measured Spark worker's CPU settings and completed GPU timing."""
+    def __init__(self, *args, **kwargs):
+        os.environ["OMP_NUM_THREADS"] = "4"
+        os.environ["MKL_NUM_THREADS"] = "4"
+        import torch
+        torch.set_num_threads(4)
+        torch.set_num_interop_threads(1)
+        super().__init__(*args, **kwargs)
+        torch.cuda.synchronize()
+
+    def batch(self, requests, *, seed):
+        values = super().batch(requests, seed=seed)
+        self.torch.cuda.synchronize()
+        return values
+
+
 def _intent(context: dict[str, Any], paths: dict[str, Path], index: int, *, seed: int,
             dtype: str, attention: str | None, instruct: str | None,
             spoken_text: str | None = None, batch_size: int = 1,
-            device: str = "cuda:0", batch_window_sha256: str | None = None) -> dict[str, Any]:
+            device: str = "cuda:0", batch_window_sha256: str | None = None,
+            replicas: int = 1) -> dict[str, Any]:
     job, adapter = context["job"], context["adapter"]
     unit = job["units"][index]
     result = {
@@ -290,6 +316,13 @@ def _intent(context: dict[str, Any], paths: dict[str, Path], index: int, *, seed
                       batchWindowStart=start,
                       batchWindowUnitIndices=list(range(start, min(start + batch_size, len(job["units"])))),
                       batchCachedUnitPolicy=BATCH_CACHED_UNIT_POLICY)
+    if replicas != 1:
+        result.update(schemaVersion="sermon-formal-target-speech-render-v2",
+                      replicaCount=replicas,
+                      replicaPolicy="spark_single_speaker_fixed_windows_v1",
+                      replicaImplementationSha256=identity.json_sha256({
+                          "pool": identity.sha256(Path(replica_pool.__file__)),
+                          "scheduler": identity.sha256(Path(__file__).with_name("spark_tts_window_scheduler.py"))}))
     return result
 
 
@@ -557,7 +590,7 @@ def write_pcm16(path: Path, samples: Any, rate: int) -> None:
 
 def _batch_admission(context, paths, root, *, seed, dtype, attention, instruct, device,
                      instructions_by_group, batch_size, reuse_from, speculative_from,
-                     window_hashes):
+                     window_hashes, replicas=1):
     """Freeze/check every unit before a batched call can synthesize future units."""
     job, adapter = context["job"], context["adapter"]
     require(identity.json_sha256(package.read_object(paths["job"])) == identity.json_sha256(job),
@@ -579,7 +612,7 @@ def _batch_admission(context, paths, root, *, seed, dtype, attention, instruct, 
         expected = _intent(context, paths, index, seed=seed, dtype=dtype,
                            attention=attention, instruct=instruction, spoken_text=spoken,
                            batch_size=batch_size, device=device,
-                           batch_window_sha256=window_hashes[index // batch_size * batch_size])
+                           batch_window_sha256=window_hashes[index // batch_size * batch_size], replicas=replicas)
         request = {"identity": expected, "text": spoken or unit["text"],
                    "language": adapter["languageParameter"],
                    "speaker": adapter["speakerKey"], "instruct": instruction}
@@ -678,18 +711,26 @@ class _BatchedUnitSynthesizer:
         return value["wave"], value["sampleRate"]
 
 
-def render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
+def _render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
                  checkpoint_map_path: Path, *, seed: int = 42, device: str = "cuda:0",
                  dtype: str = "bfloat16", attention: str | None = "sdpa",
                  instruct: str | None = None,
                  instructions_by_group: dict[str, dict[str, str]] | None = None,
                  reuse_from: Path | None = None,
                  speculative_from: Path | None = None,
-                 batch_size: int = 1,
+                 batch_size: int = 1, replicas: int = 1,
+                 model_resources: ExitStack,
                  synth_factory: Callable[..., Any] = QwenSynthesizer,
                  predecessor_spans: tuple[str, ...] = (),
                  completion_spans: list[str] | None = None) -> list[dict[str, Any]]:
     job, adapter = context["job"], context["adapter"]
+    require(type(replicas) is int and replicas in (1, 8), "TTS replicas must be 1 or 8")
+    if replicas == 8:
+        require(batch_size == 8 and device == "cuda:0" and dtype == "bfloat16"
+                and attention == "sdpa", "Spark production requires 8 replicas, batch8, CUDA:0/BF16/SDPA")
+        require(all(u.get("speakerId", adapter["speakerId"]) == adapter["speakerId"]
+                    for u in job["units"]),
+                "Spark replica production requires a single speaker")
     require(type(batch_size) is int and batch_size in BATCH_SIZES,
             "TTS batch size must be 1, 2, 4 or 8")
     if reuse_from is not None:
@@ -716,10 +757,38 @@ def render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
             context, paths, root, seed=seed, dtype=dtype, attention=attention,
             instruct=instruct, device=device, instructions_by_group=instructions_by_group,
             batch_size=batch_size, reuse_from=reuse_from, speculative_from=speculative_from,
-            window_hashes=window_hashes)
+            window_hashes=window_hashes, replicas=replicas)
         original_factory = synth_factory
         def synth_factory(*args, **kwargs):
-            return _BatchedUnitSynthesizer(original_factory(*args, **kwargs), requests,
+            if replicas == 1:
+                engine = original_factory(*args, **kwargs)
+            else:
+                frozen = identity.sha256(paths["job"])
+                def frozen_check():
+                    require(identity.sha256(paths["job"]) == frozen,
+                            "Frozen TTS batch job changed before/during synthesis")
+                starts = sorted({index // batch_size * batch_size for index in requests})
+                windows = {start: [window_requests[i] for i in range(start,
+                    min(start + batch_size, len(job["units"])))] for start in starts}
+                runtime_path = root / "replica-runtime.json"
+                runtime = {"schemaVersion": "sermon-spark-tts-replica-runtime-v1",
+                    "status": "running", "replicas": replicas, "batchSize": batch_size,
+                    "jobSha256": frozen, "reserveGiB": 24,
+                    "rendererSha256": identity.sha256(Path(__file__)),
+                    "poolSha256": identity.sha256(Path(replica_pool.__file__)), "events": []}
+                def event(row):
+                    runtime["events"].append(row)
+                    write_json_atomic(runtime_path, runtime)
+                def finish_runtime():
+                    runtime["status"] = "closed"
+                    write_json_atomic(runtime_path, runtime)
+                model_resources.callback(finish_runtime)
+                worker_factory = SparkQwenSynthesizer if original_factory is QwenSynthesizer else original_factory
+                pool = replica_pool.ReplicaPool(args[0], factory=worker_factory,
+                    engine_kwargs=kwargs, replicas=replicas, telemetry=event)
+                model_resources.callback(pool.close)
+                engine = ParallelBatchEngine(pool, windows, seed=seed, frozen_check=frozen_check)
+            return _BatchedUnitSynthesizer(engine, requests,
                 window_requests=window_requests, seed=seed, batch_size=batch_size,
                 job_path=paths["job"])
     model = None
@@ -748,7 +817,7 @@ def render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
                 expected = _intent(context, paths, index, seed=seed, dtype=dtype,
                                    attention=attention, instruct=unit_instruct,
                                    spoken_text=spoken_text, batch_size=batch_size, device=device,
-                                   batch_window_sha256=window_hashes.get(index // batch_size * batch_size))
+                                   batch_window_sha256=window_hashes.get(index // batch_size * batch_size), replicas=replicas)
                 if intent_path.exists():
                     stored_intent = package.read_object(intent_path)
                     require(stored_intent == expected
@@ -850,14 +919,26 @@ def render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
                              "receipt": artifact(root, receipt_path, json_artifact=True)})
             unit_metrics["audioSeconds"] = receipt["durationSeconds"]
             accounting.record_workload(stage_name, unit_metrics)
-        # The existing renderer executes units serially. Record that real
-        # resource ordering only after the prior unit's receipt is durable.
+        # Parent admission/validation/commits remain ordered. Replica compute
+        # overlaps and is recorded separately in replica-runtime.json.
         previous_receipts = [receipt_span]
     if completion_spans is not None:
         completion_spans.extend(previous_receipts)
     require(len(rows) == len(job["units"]) and (batch_size == 1 or model is None
             or (not model.remaining and not model.outputs)), "TTS batch unit coverage is incomplete")
     return rows
+
+
+def render_units(context, paths, root, checkpoint_map_path, **kwargs):
+    """A single writer owns the artifact root, even on failure or cached replay."""
+    root.mkdir(parents=True, exist_ok=True)
+    with (root / ".formal-render.lock").open("a") as lock, ExitStack() as resources:
+        try:
+            fcntl.flock(lock.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError as exc:
+            raise ValueError("Formal render root is already in use") from exc
+        return _render_units(context, paths, root, checkpoint_map_path,
+                             model_resources=resources, **kwargs)
 
 
 def schedule(context: dict[str, Any], rows: list[dict[str, Any]],
@@ -1069,18 +1150,19 @@ def assemble(context: dict[str, Any], paths: dict[str, Path], root: Path,
     return manifest
 
 
-def render(paths: dict[str, Path], checkpoint_map_path: Path,
+def _render(paths: dict[str, Path], checkpoint_map_path: Path,
            operation_policies_path: Path, *, path_map_path: Path | None = None,
            reuse_from: Path | None = None,
            speculative_from: Path | None = None,
-           seed: int = 42, batch_size: int = 1,
+           seed: int = 42, batch_size: int = 1, replicas: int = 1,
            device: str = "cuda:0", dtype: str = "bfloat16",
            attention: str | None = "sdpa", instruct: str | None = None,
            unit_instructions_path: Path | None = None,
            policy: dict[str, float] | None = None, track_format: str = "wav",
            synth_factory: Callable[..., Any] = QwenSynthesizer,
            progress_ledger: Path | None = None,
-           strict_rubric: dict[str, Any] | None = None) -> dict[str, Any]:
+           strict_rubric: dict[str, Any] | None = None,
+           model_resources: ExitStack) -> dict[str, Any]:
     dependencies = []
     if path_map_path is not None:
         with accounting.stage("layer3.materialize_inputs", depends_on=[],
@@ -1095,17 +1177,29 @@ def render(paths: dict[str, Path], checkpoint_map_path: Path,
         root = paths["job"].parent.resolve()
     completed_units = []
     with accounting.stage("layer3.render_units"):
-        rows = render_units(context, paths, root, checkpoint_map_path, seed=seed,
+        rows = _render_units(context, paths, root, checkpoint_map_path, seed=seed,
+                            model_resources=model_resources,
                             device=device, dtype=dtype, attention=attention, instruct=instruct,
                             instructions_by_group=instructions_by_group,
                             reuse_from=reuse_from,
                             speculative_from=speculative_from,
-                            batch_size=batch_size,
+                            batch_size=batch_size, replicas=replicas,
                             synth_factory=synth_factory, predecessor_spans=(validation_span,),
                             completion_spans=completed_units)
     with accounting.stage("layer3.assemble"):
         return assemble(context, paths, root, rows, policy=policy, track_format=track_format,
                         predecessor_spans=tuple(completed_units))
+
+
+def render(paths, checkpoint_map_path, operation_policies_path, **kwargs):
+    root = paths["job"].parent.resolve()
+    with (root / ".formal-render.lock").open("a") as lock, ExitStack() as resources:
+        try:
+            fcntl.flock(lock.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError as exc:
+            raise ValueError("Formal render root is already in use") from exc
+        return _render(paths, checkpoint_map_path, operation_policies_path,
+                       model_resources=resources, **kwargs)
 
 
 def render_accounted(paths: dict[str, Path], checkpoint_map_path: Path,
@@ -1144,6 +1238,10 @@ def main(argv=None) -> None:
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--batch-size", type=int, choices=BATCH_SIZES, default=None,
                         help="Production default1; Dev profile default2. Use a new render root when changing it")
+    parser.add_argument("--spark-production", action="store_true",
+                        help="New single-speaker Spark jobs: 8 resident replicas x batch8")
+    parser.add_argument("--replicas", type=int, choices=(1, 8), default=None,
+                        help="Default1 for existing jobs; Spark production uses8")
     dev_profile.add_arguments(parser)
     parser.add_argument("--instruct", help="Frozen natural delivery instruction; never edits approved text")
     parser.add_argument("--unit-instructions", type=Path,
@@ -1160,6 +1258,16 @@ def main(argv=None) -> None:
     parser.add_argument("--progress-ledger", type=Path,
                         help="Bind render and per-unit timing to this week's four-layer ledger")
     args = parser.parse_args(argv)
+    if args.spark_production:
+        require(not args.dev_test and args.dev_test_profile is None,
+                "Spark production cannot use a Dev test profile")
+        require(args.batch_size in (None, 8) and args.replicas in (None, 8),
+                "Spark production requires replicas8 and batch8")
+        args.batch_size, args.replicas = 8, 8
+    else:
+        args.replicas = 1 if args.replicas is None else args.replicas
+    require(not args.dev_test or args.replicas == 1,
+            "Dev test profile does not admit replica production")
     dev_settings = dev_profile.resolve("tts", enabled=args.dev_test,
         profile_path=args.dev_test_profile, batch_size=args.batch_size)
     args.batch_size = dev_settings["batchSize"]
@@ -1184,7 +1292,7 @@ def main(argv=None) -> None:
         progress_ledger=args.progress_ledger,
         path_map_path=args.path_map, reuse_from=args.reuse_from,
         speculative_from=args.speculative_from,
-        seed=args.seed, batch_size=args.batch_size, device=args.device,
+        seed=args.seed, batch_size=args.batch_size, replicas=args.replicas, device=args.device,
         dtype=args.dtype, attention=args.attention, instruct=args.instruct,
         unit_instructions_path=args.unit_instructions,
         policy=policy, track_format=args.track_format,

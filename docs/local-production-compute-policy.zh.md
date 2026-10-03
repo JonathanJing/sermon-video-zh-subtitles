@@ -17,7 +17,7 @@
 | reading MFA | `mfa_backend.py` 选择 Spark 优先、本机备用，保留显式选择与关闭 Spark 的兼容选项；见 [MFA 说明](mfa-production.zh.md) |
 | legacy weekly TTS | `run_weekly_dubbing.py` 新任务先用 Spark CUDA；恢复已存在的 render 时沿用原后端；见 [语音运行合同](../experiments/sermon-dubbing-poc/SPEECH-RUNTIME.zh.md) |
 | legacy Qwen ASR/ForcedAligner | `SERMON_SPEECH_BACKEND=auto` 先用 Spark，受限故障时回到 MacBook MLX；`spark`/`macbook` 可强制指定 |
-| canonical 多语言 TTS | [正式 renderer](formal-layer3-renderer.zh.md) 已默认 `cuda:0`/BF16；按本策略在 Spark 运行。它仍需操作员指定模型路径、传输和任务目录，不具备完整跨机自动 dispatch |
+| canonical 多语言 TTS | [正式 renderer](formal-layer3-renderer.zh.md) 默认 `cuda:0`/BF16；新单讲员周日任务加 `--spark-production`，按 **8 副本 × batch8** 在 Spark 运行。它仍需操作员指定模型路径、传输和任务目录，不具备完整跨机自动 dispatch |
 | canonical 配音回转写 | CUDA worker 当前硬编码 CUDA；按本策略在 Spark 运行。完整 MacBook 自动 fallback adapter 尚未接入，不把 legacy 适配器代称为正式 producer |
 | 转写、翻译、复核 API | 继续当前周次的生产 policy；迁移机器只迁移调用与账本，不更换内容模型和人审要求 |
 | FFmpeg、打包、hash、发布 | 选靠近输入的 CPU worker，减少媒体搬运；发布目标及 HTTP、设备、现场证据保持各自边界 |
@@ -28,7 +28,7 @@
 
 [10 月 1 日分层 A/B](local-model-layer-latency-ab-20261001.zh.md)中，同 checkpoint 的 TTS 热推理按音频时长归一后，Spark CUDA/BF16 约为 MacBook MPS/FP32 的 4.5 倍。按 9 月 27 日三语工作量外推，纯 TTS 约 56 分钟与 249 分钟。不同运行时、精度、语言和正式 checkpoint 的边界见原报告，这些数值不是整篇实测或质量晋级。
 
-随后执行的[正式权重组件验收](local-production-performance-acceptance-20261001.zh.md)使用 `75d28…`、9/27 三语短长句与三次重复：同语言组件墙钟的 Mac/Spark 比为 1.71–3.26×，cold 模型加载 Spark 更慢。原 4.5×属于另一权重和样本的历史代理值；没有整周实测前不据新短样本重写总流程预算。正式 batch 默认仍为1，保留回转写待听审项。
+随后执行的[正式权重组件验收](local-production-performance-acceptance-20261001.zh.md)使用 `75d28…`、9/27 三语短长句与三次重复：同语言组件墙钟的 Mac/Spark 比为 1.71–3.26×，cold 模型加载 Spark 更慢。原 4.5×属于另一权重和样本的历史代理值；没有整周实测前不据新短样本重写总流程预算。该历史验收的正式 batch 基线为1，保留回转写待听审项。当前新单讲员周日 TTS 使用 [8×8 生产入口](formal-layer3-renderer.zh.md#周日单讲员spark-生产按-88)，原任务恢复保留原配置。
 
 Spark 上的全本地预算中，文字初译＋复核代理约 71 分钟，已经超过 TTS 的约 56 分钟；优化不能只盯配音。总体加速、云端资源和成本调研见 [生产时长与 GCP 评估](gcp-production-feasibility-20261001.zh.md)。
 
