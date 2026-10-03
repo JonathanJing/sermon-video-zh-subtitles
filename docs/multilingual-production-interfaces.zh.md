@@ -62,7 +62,7 @@ Target-Language Candidate + Target-Language Audio Package
 | 某 locale 的 Layer 3 整轨听审 | 其他 locale 的 Layer 3；本 locale 解码、ASR 筛查、排程及供听审的候选音轨 | 带正式音频的 Release Package 需 `human_reviewed` Audio Package 和全文／同步收据 |
 | Layer 4 发布后设备／现场验收 | HTTP 核验完成后独立安排设备及现场检查 | HTTP、设备、现场状态分别记录，不互相推断 |
 
-调度以 `sourceHash + targetLocale + policyHash + candidateHash` 为任务身份。某语言的审核未回只挂起该语言的后继正式任务，不阻塞其他语言；Layer 1 身份变化使所有语言失效，Layer 2/3 变化只使本语言下游失效。合同允许显式 `audio_unavailable` 的文字页，但现有 Production Web 桥接只支持 `zh-Hans`、`ko`、`es` 且要求正式音轨；纯文字页或新语言须先有两端客户端兼容证据，不能只改目录宣称可用。
+调度以 `sourceHash + targetLocale + policyHash + candidateHash` 为任务身份。某语言的审核未回只挂起该语言的后继正式任务，不为其他语言新增审批依赖；Layer 1 身份变化使所有语言失效，Layer 2/3 变化只使本语言下游失效。审批依赖独立不等于运行资源完全隔离：[当前 canonical Layer 2 controller](canonical-layer2-controller.zh.md) 同一 production run 至多有一个 active locale job，uncertain owner 在 reconciliation 前仍占用名额。表中的并行准备须遵守实际 producer 的容量；发布仍遵守该次 release plan 的多语言汇合条件。本项澄清保留现有容量限制，不提高跨 locale 并发。合同允许显式 `audio_unavailable` 的文字页，但现有 Production Web 桥接只支持 `zh-Hans`、`ko`、`es` 且要求正式音轨；纯文字页或新语言须先有两端客户端兼容证据，不能只改目录宣称可用。
 
 以上是**目前的整包门禁**，尚未实现“同一语言内某段已审即可独立进入下一层”。单段待改仍会挡住本 locale 的正式 speech job。第一阶段代码加入段级人审收据及旧音频单元的显式哈希复用，但正式聚合仍要求全部段获批，新整轨仍需完整排程与听审；见[四层内解耦设计与当前边界](multilingual-intralayer-review-decoupling.zh.md)。
 

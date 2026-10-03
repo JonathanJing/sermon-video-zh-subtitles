@@ -957,9 +957,17 @@ CI环境还暴露工具下载占用原job期限：18ae2f0的root-0已通过1609 
 
 | ID | 优先级／状态 | 待交付与验收 | 依赖／待决定 |
 |---|---|---|---|
-| `DEV-STE-003` | P1 / `pending` | 文档区分 locale 审批依赖独立与单 active job 容量/uncertain 占位；静态核对 controller 和 release-plan 条件，不无谓模型调用 | 确认保留容量限制；并发实现若需要另立范围 |
-| `DEV-STE-004` | P1 / `pending` | 文档区分 renderer 声音身份、batch 实现身份与受控兼容规则，保留全部 hash。离线验证明确兼容/不兼容/WAV-commit 篡改，不扩大名单 | `DEV-L3-001`；确认仅澄清现有边界 |
-| `DEV-STE-005` | P1 / `pending` | unit-instructions 文档写现有完整 schema、job/locale/group/text hash、operatorEvidence、override 与 zh-Hans spokenText 限制；静态与离线拒绝例验证，不扩展文本修改权 | `DEV-L3-001`；现有输入契约不变 |
+| `DEV-STE-003` | P1 / `in_progress` | 文档已区分 locale 审批依赖独立与单 active job 容量/uncertain 占位；controller 定向离线回归通过，release-plan 条件静态核对。待合并，不标 complete | 保留现有容量；跨 locale 并发另立范围 |
+| `DEV-STE-004` | P1 / `in_progress` | 文档已区分 renderer 声音身份、batch 实现身份与受控兼容分支；离线验证兼容/不兼容及 WAV/收据篡改拒绝，未扩大名单。待合并 | `DEV-L3-001`；仅澄清现有边界 |
+| `DEV-STE-005` | P1 / `in_progress` | 已补 unit-instructions 完整输入、job/locale/group/text hash、operatorEvidence、override 与 zh-Hans spokenText 限制，CLI help 已接说明。离线输入拒绝例通过，待合并 | `DEV-L3-001`；现有输入契约不变 |
+
+#### 2026-10-03 本地首批开发与验证
+
+用户在当前任务明确“在我们这开始开发”，本批在基于 PR #229 的 `codex/pr229-development` 独立 worktree 实施 `DEV-STE-003/004/005`。此前“今天仅文档计划／云端实现”的执行限制在这三项本地开发范围内由此授权更新；其他 App、费用配置、模型／设备实验、生产与发布事项仍按各自前置和授权处理。
+
+改动见 [Agent 指令](../AGENTS.md)、[四层合同](multilingual-production-interfaces.zh.md) 和 [renderer 说明](formal-layer3-renderer.zh.md)。未改变 controller 容量、输入校验、合成参数、声音身份或兼容名单。CLI help 改变实现文件 SHA，旧 batch>1 缓存仍须通过原有完整身份与兼容检查；本批不重标缓存或修改运行中生产代码。
+
+验证：临时隔离 Python 环境按 requirements 的 `jsonschema>=4.23,<5` 补齐依赖后，`python -m unittest tests.test_canonical_layer2_controller tests.test_render_formal_target_language_speech tests.test_formal_audio_batching` 共 69 项通过；renderer `--help` 退出 0。临时离线夹具另核验 unit-instructions 的 3 条接受路径、11 条拒绝路径，以及现有兼容谓词的 2 条接受／3 条拒绝路径。仅调用现有校验函数和模拟测试，不调用真实模型、不修改生产产物，不作为新音频或设备验收。
 
 <a id="provider-cost-isolation-20261003"></a>
 

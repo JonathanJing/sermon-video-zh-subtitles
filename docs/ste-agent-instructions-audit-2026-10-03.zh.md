@@ -77,3 +77,7 @@ help 原句为 `Source-bound per-unit pronunciation and pause instructions`；�
 ## 明天（10/4）
 
 A/B 候选全文与实验计划移至[明天 backlog](https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/codex/docs-backlog-tomorrow-20261004/docs/backlog-2026-10-04.zh.md)。本页保留五项静态审核发现，不把建议标为已实现。
+
+## 本地首批实施（2026-10-03）
+
+用户在后续任务明确授权本地开发后，基于 PR #229 建立 `codex/pr229-development`，实施第 3–5 项的现有容量、renderer 身份及 unit-instructions 文档／CLI 澄清。69 项定向离线测试、CLI help 和输入／兼容拒绝例通过；未扩大兼容名单或修改运行中任务。具体范围与验证记录见 [顶层 backlog](backlog.zh.md#ste-instructions-ab-backlog-20261003)。本批待合并，不标顶层 complete；第 1–2 项提示词行为修复及 A/B 仍在 PR #230 的独立定义中，未据本批改写生产提示词或运行真实实验。
