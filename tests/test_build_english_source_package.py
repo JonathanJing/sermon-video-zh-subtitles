@@ -180,6 +180,72 @@ class EnglishSourcePackageTests(unittest.TestCase):
             self.assertEqual(
                 self.schema_errors("sermon-english-source-package-v1.schema.json", approved), [],
             )
+
+    def test_versioned_human_override_opens_only_layer2_candidate_path(self):
+        self.manifest["issues"] = [{
+            "type": "clause_unit_exceeds_target_without_safe_boundary",
+            "sourceSentenceId": self.manifest["sourceUnits"][0]["sourceSentenceId"],
+            "durationSeconds": 1.9,
+            "maximumSeconds": 1.0,
+        }]
+        write_json(self.manifest_path, self.manifest)
+        judge_path = self.root / "rejected-judge.json"
+        judge = {
+            "status": "rejected_for_layer2_shadow",
+            "layer2DevelopmentEligible": False,
+            "productionTranslationEligible": False,
+            "alignedSegmentsSha256": subject.file_sha256(self.segments_path),
+            "anchorManifestJsonSha256": subject.json_sha256(self.manifest),
+            "sentences": [
+                {"sourceSentenceId": "0-s000", "verdict": "fail", "risk": "high"},
+                {"sourceSentenceId": "0-s001", "verdict": "pass", "risk": "low"},
+            ],
+        }
+        write_json(judge_path, judge)
+        judge_artifact = subject.artifact(judge_path, value=judge)
+        review_path = self.root / "review-v2.json"
+        review = {
+            "schemaVersion": subject.REVIEW_SCHEMA_V2,
+            "alignedSegmentsSha256": subject.file_sha256(self.segments_path),
+            "anchorManifestJsonSha256": subject.json_sha256(self.manifest),
+            "humanApproval": True,
+            "reviewedBy": "Fixture reviewer",
+            "reviewedAt": "2026-09-20T12:00:00Z",
+            "reviewedSourceUnitIds": [unit["sourceUnitId"] for unit in self.manifest["sourceUnits"]],
+            "checks": {name: "approved" for name in subject.APPROVED_CHECKS},
+            "layer2CandidateOverride": {
+                "decision": subject.LAYER2_CANDIDATE_OVERRIDE_DECISION,
+                "scope": "layer2_candidate_only",
+                "sourceId": "sermon-fixture",
+                "machineJudge": {key: judge_artifact[key] for key in ("path", "sha256", "jsonSha256")},
+                "acknowledgedFailureSentenceIds": ["0-s000"],
+                "acknowledgedHighRiskSentenceIds": ["0-s000"],
+                "acknowledgedAnchorIssueTypes": ["clause_unit_exceeds_target_without_safe_boundary"],
+                "targetLocales": ["es", "ko", "zh-Hans"],
+                "audioGeneration": False,
+                "publication": False,
+                "userInstructionItemId": "request-item",
+                "authorizationItemId": "authorization-item",
+                "userStatement": "Approve Layer 2 candidates only.",
+            },
+        }
+        write_json(review_path, review)
+        self.assertEqual(self.schema_errors("sermon-english-source-review-v2.schema.json", review), [])
+        with patch.object(subject, "_machine_judge_payload", return_value=(judge_artifact, False)):
+            package = self.build(review_path=review_path)
+        self.assertEqual(package["status"], "candidate_ready_for_translation")
+        self.assertTrue(package["candidateTranslationEligible"])
+        self.assertFalse(package["translationEligible"])
+        self.assertEqual(package["evidence"]["machineJudge"], judge_artifact)
+        self.assertEqual(len(package["issues"]), 1)
+        override = subject.validate_layer2_candidate_package(package, self.manifest)
+        self.assertEqual(override["targetLocales"], ["es", "ko", "zh-Hans"])
+        with self.assertRaises(ValueError):
+            subject.validate_ready_package(package)
+        changed = json.loads(json.dumps(package))
+        changed["review"]["evidence"]["path"] = str(self.root / "other-review.json")
+        with self.assertRaises(ValueError):
+            subject.validate_layer2_candidate_package(changed, self.manifest)
             self.manifest["issues"].append({"type": "alignment_word_duration_outlier"})
             write_json(self.manifest_path, self.manifest)
             changed_review = json.loads(review_path.read_text())

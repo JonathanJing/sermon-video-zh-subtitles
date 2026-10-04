@@ -93,7 +93,14 @@ def inspect_configuration(root, config):
         source = _read_package(root, config['source'], hashes, 'source')
         anchor = _read_package(root, config['anchor'], hashes, 'anchor')
         handoff._validate_schema(source, 'sermon-english-source-package-v1.schema.json', 'source package')
-        english.validate_ready_package(source)
+        candidate_only = source.get('status') == 'candidate_ready_for_translation'
+        if candidate_only:
+            english.validate_layer2_candidate_package(source, anchor)
+            if any({'humanReview', 'audio', 'release'} & set(lane)
+                   for lane in config['locales'].values()):
+                raise ValueError('candidate_only_audio_or_release_forbidden')
+        else:
+            english.validate_ready_package(source)
         producer.validate_source_for_translation(source, anchor)
         summary_evidence = source['evidence']['pipelineSummary']
         if summary_evidence is None:
@@ -113,7 +120,7 @@ def inspect_configuration(root, config):
             raise ValueError('source_window_summary_changed')
         window_evidence = window['evidence']
         window_receipt = _read_package(root, window_evidence['path'], hashes, 'sourceWindowReview')
-        if (source['issues'] or window['status'] != 'approved'
+        if ((source['issues'] and not candidate_only) or window['status'] != 'approved'
                 or window_receipt.get('status') != 'approved' or window_receipt.get('humanApproval') is not True
                 or english.file_sha256(_safe_path(root / window_evidence['path'])) != window_evidence['sha256']
                 or hashes['sourceWindowReview'] != window_evidence['jsonSha256']

@@ -6,6 +6,15 @@
 `machine_review_pass_human_review_pending`、`releaseEligible=false` 的候选；不会创建人工
 批准、启动 TTS、构建/发布页面、提交 App Store，或调用 bounded decision agent。
 
+正常路径仍要求 `ready_for_translation`。版本化人工审核收据可针对特定来源，在英文机审
+拒绝后授权 **仅生成 Layer 2 语言候选**；收据必须绑定精确转录、锚点、拒绝的机审产物，
+并列出已知失败/高风险句及锚点问题类型。结果保持 `candidate_ready_for_translation`、
+`candidateTranslationEligible=true`、`translationEligible=false`。覆盖不改写机审结果，
+也不能免除来源身份、讲道窗口或其他 Layer 1 问题。
+
+此路径只对收据列出的 locale 开放。inspection 配置必须省略人工翻译审核收据、音频和发布输入。
+Layer 3/4 仍要求通常的 production-ready 英文来源及各自审批。
+
 配置 `sermon-canonical-layer2-execution-v1` 只接受以下字段：
 
 ```json

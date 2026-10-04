@@ -80,9 +80,7 @@ def plugin_implementation_sha256(plugin_path: Path) -> str:
 
 def validate_source_for_translation(source: dict[str, Any], anchor: dict[str, Any]) -> str:
     """Reuse the production source/anchor gate without a locale policy or writes."""
-    _require(source.get("schemaVersion") == handoff.SOURCE_PACKAGE_SCHEMA
-             and source.get("status") == "ready_for_translation"
-             and source.get("translationEligible") is True,
+    _require(source.get("schemaVersion") == handoff.SOURCE_PACKAGE_SCHEMA,
              "Approved English Source Package required")
     _require(interpretation.is_supported_anchor_manifest(anchor),
              "Unsupported anchor manifest")
@@ -106,7 +104,16 @@ def validate_source_for_translation(source: dict[str, Any], anchor: dict[str, An
     # Status flags and human-review fields cannot make an incoherent package
     # ready. Reuse construction/read-side invariants before any paid request.
     handoff._validate_schema(source, "sermon-english-source-package-v1.schema.json", "source package")
-    english_source.validate_ready_package(source)
+    if source.get("status") == "candidate_ready_for_translation":
+        _require(source.get("candidateTranslationEligible") is True
+                 and source.get("translationEligible") is False,
+                 "Approved English Source Package required")
+        english_source.validate_layer2_candidate_package(source, anchor)
+    else:
+        _require(source.get("status") == "ready_for_translation"
+                 and source.get("translationEligible") is True,
+                 "Approved English Source Package required")
+        english_source.validate_ready_package(source)
     return anchor_hash
 
 
@@ -122,6 +129,10 @@ def prepare_request(source: dict[str, Any], anchor: dict[str, Any],
     if strict_rubric is None:
         identity = policy_tools.validate_policy(policy)
         policy_tools.validate_source_scope(policy, source, anchor)
+        if source.get("status") == "candidate_ready_for_translation":
+            override = english_source.validate_layer2_candidate_package(source, anchor)
+            _require(policy.get("targetLocale") in override["targetLocales"],
+                     "Locale is outside the human-authorized Layer 2 candidate scope")
     else:
         identity = policy_tools.validate_strict_policy(policy, strict_rubric)
         policy_tools.validate_strict_source_scope(policy, strict_rubric, source, anchor)

@@ -24,6 +24,8 @@ except ImportError:  # Direct execution via ``python scripts/...``.
 
 SCHEMA_VERSION = "sermon-english-source-package-v1"
 REVIEW_SCHEMA_VERSION = "sermon-english-source-review-v1"
+REVIEW_SCHEMA_V2 = "sermon-english-source-review-v2"
+LAYER2_CANDIDATE_OVERRIDE_DECISION = "approved_for_layer2_candidates_despite_machine_rejection"
 MACHINE_JUDGE_SCHEMA_VERSION = "sermon-english-source-machine-judge-v1"
 MACHINE_JUDGE_MODEL = "gpt-6-astra"
 MACHINE_JUDGE_REASONING_EFFORT = "medium"
@@ -190,6 +192,121 @@ def validate_ready_package(package):
         raise ValueError("Source derived identity differs from bound evidence")
 
 
+def _layer2_override_receipt(review_path: Path | None, *, aligned_sha256: str,
+                             anchor_json_sha256: str, source_unit_ids: list[str],
+                             source_id: str | None = None, anchor_issues: list[dict[str, Any]] | None = None):
+    """Validate the v2 human override without changing machine review evidence."""
+    if review_path is None:
+        return None
+    review_path = review_path.resolve()
+    review = read_object(review_path, "English source review")
+    if review.get("schemaVersion") != REVIEW_SCHEMA_V2:
+        return None
+    from jsonschema import Draft202012Validator, FormatChecker
+    schema_path = Path(__file__).resolve().parents[1] / "schemas" / "sermon-english-source-review-v2.schema.json"
+    schema = json.loads(schema_path.read_text(encoding="utf-8"))
+    errors = list(Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(review))
+    if errors:
+        raise ValueError(f"Invalid versioned Layer 2 override receipt: {errors[0].message}")
+    override = review.get("layer2CandidateOverride")
+    if not isinstance(override, dict) or override.get("decision") != LAYER2_CANDIDATE_OVERRIDE_DECISION:
+        raise ValueError("Layer 2 candidate override decision is missing")
+    if override.get("scope") != "layer2_candidate_only":
+        raise ValueError("Human override exceeds Layer 2 candidate scope")
+    if source_id is not None and override.get("sourceId") != source_id:
+        raise ValueError("Layer 2 override belongs to a different source")
+    if review.get("alignedSegmentsSha256") != aligned_sha256 or review.get("anchorManifestJsonSha256") != anchor_json_sha256:
+        raise ValueError("Layer 2 override belongs to different aligned English or anchors")
+    if override.get("targetLocales") != ["es", "ko", "zh-Hans"]:
+        raise ValueError("Layer 2 override locale scope is invalid")
+    if override.get("audioGeneration") is not False or override.get("publication") is not False:
+        raise ValueError("Layer 2 override cannot authorize audio or publication")
+    if not override.get("userInstructionItemId") or not override.get("authorizationItemId"):
+        raise ValueError("Layer 2 override must bind the user instruction and override authorization")
+    if review.get("reviewedSourceUnitIds") != source_unit_ids:
+        raise ValueError("Layer 2 override must cover every source unit in order")
+    machine_artifact = override.get("machineJudge")
+    if not isinstance(machine_artifact, dict) or set(machine_artifact) != {"path", "sha256", "jsonSha256"}:
+        raise ValueError("Layer 2 override must bind the rejected machine judge artifact")
+    machine_path = Path(machine_artifact["path"]).resolve()
+    machine_judge = read_object(machine_path, "bound English source machine judge")
+    if (file_sha256(machine_path) != machine_artifact["sha256"]
+            or json_sha256(machine_judge) != machine_artifact["jsonSha256"]
+            or machine_judge.get("status") != "rejected_for_layer2_shadow"
+            or machine_judge.get("layer2DevelopmentEligible") is not False
+            or machine_judge.get("productionTranslationEligible") is not False
+            or machine_judge.get("alignedSegmentsSha256") != aligned_sha256
+            or machine_judge.get("anchorManifestJsonSha256") != anchor_json_sha256):
+        raise ValueError("Layer 2 override does not bind the rejected machine review")
+    failures = [item.get("sourceSentenceId") for item in machine_judge.get("sentences", [])
+                if isinstance(item, dict) and item.get("verdict") == "fail"]
+    high_risk = [item.get("sourceSentenceId") for item in machine_judge.get("sentences", [])
+                 if isinstance(item, dict) and item.get("risk") == "high"]
+    if (override.get("acknowledgedFailureSentenceIds") != failures
+            or override.get("acknowledgedHighRiskSentenceIds") != high_risk):
+        raise ValueError("Layer 2 override must acknowledge the exact failed and high-risk sentences")
+    issue_types = sorted({str(item.get("type", "unknown_anchor_issue"))
+                          for item in (anchor_issues or []) if isinstance(item, dict)})
+    if override.get("acknowledgedAnchorIssueTypes") != issue_types:
+        raise ValueError("Layer 2 override must acknowledge the exact anchor issue types")
+    return {"reviewPath": review_path, "review": review, "override": override,
+            "machineJudge": machine_judge, "machineJudgeArtifact": machine_artifact}
+
+
+def validate_layer2_candidate_package(package, anchor):
+    """Validate only the explicitly overridden Layer 2 candidate path.
+
+    This never makes the English package production-ready. Audio and release
+    consumers continue to require validate_ready_package().
+    """
+    source = package.get("source", {})
+    window = source.get("approvedWindow", {})
+    if (package.get("schemaVersion") != SCHEMA_VERSION
+            or package.get("status") != "candidate_ready_for_translation"
+            or package.get("candidateTranslationEligible") is not True
+            or package.get("translationEligible") is not False):
+        raise ValueError("Explicit Layer 2 candidate override package required")
+    if source_gate_issues(source.get("media"), window.get("startSeconds"), window.get("endSeconds"),
+                          window.get("status") == "approved" and window.get("humanApproval") is True):
+        raise ValueError("Layer 2 override cannot waive source identity or sermon window gates")
+    anchor_hash = json_sha256(anchor)
+    aligned_sha = package.get("transcript", {}).get("artifact", {}).get("sha256")
+    if package.get("anchors", {}).get("artifact", {}).get("jsonSha256") != anchor_hash:
+        raise ValueError("Layer 2 candidate source and anchor differ")
+    unit_ids = [unit.get("sourceUnitId") for unit in anchor.get("sourceUnits", [])]
+    evidence = package.get("review", {}).get("evidence")
+    if not isinstance(evidence, dict) or not evidence.get("path"):
+        raise ValueError("Layer 2 candidate override evidence is missing")
+    receipt = _layer2_override_receipt(
+        Path(evidence["path"]), aligned_sha256=aligned_sha, anchor_json_sha256=anchor_hash,
+        source_unit_ids=unit_ids, source_id=source.get("sourceId"),
+        anchor_issues=anchor.get("issues", []),
+    )
+    if receipt is None:
+        raise ValueError("Versioned Layer 2 override receipt is required")
+    if artifact(receipt["reviewPath"], value=receipt["review"]) != evidence:
+        raise ValueError("Layer 2 override receipt artifact identity changed")
+    if package.get("evidence", {}).get("machineJudge") != receipt["machineJudgeArtifact"]:
+        raise ValueError("Layer 2 override does not match the package machine judge evidence")
+    if package.get("review", {}).get("humanApproval") is not True:
+        raise ValueError("Layer 2 override must remain a human decision")
+    if package.get("review", {}).get("reviewedSourceUnitIds") != unit_ids:
+        raise ValueError("Layer 2 override must cover all source units")
+    if any(package.get("review", {}).get("checks", {}).get(name) != "approved" for name in APPROVED_CHECKS):
+        raise ValueError("Layer 2 override source checks are incomplete")
+    allowed_issue_types = set(receipt["override"]["acknowledgedAnchorIssueTypes"])
+    if any(item.get("stage") != "anchors" or item.get("type") not in allowed_issue_types
+           for item in package.get("issues", [])):
+        raise ValueError("Layer 2 override cannot waive unrelated source package issues")
+    identity = source_identity(source, package["transcript"]["artifact"], package["anchors"]["artifact"],
+                               package["review"], package["evidence"].get("machineJudge"),
+                               package["implementation"])
+    if (package.get("downstreamInvalidationKey") != identity
+            or package.get("packageId") != f"english-source-{identity[:24]}"):
+        raise ValueError("Layer 2 candidate derived identity differs from bound evidence")
+    return receipt["override"]
+
+
 def _review_payload(
     review_path: Path | None,
     *,
@@ -209,7 +326,8 @@ def _review_payload(
         return pending, None
     review_path = review_path.resolve()
     review = read_object(review_path, "English source review")
-    if review.get("schemaVersion") != REVIEW_SCHEMA_VERSION:
+    review_schema = review.get("schemaVersion")
+    if review_schema not in {REVIEW_SCHEMA_VERSION, REVIEW_SCHEMA_V2}:
         raise ValueError("Unsupported English source review schema")
     if review.get("alignedSegmentsSha256") != aligned_sha256:
         raise ValueError("English source review belongs to different aligned segments")
@@ -401,6 +519,15 @@ def build_package(
         source_sentence_ids=source_sentence_ids,
         manifest_issues=[item for item in manifest_issues if isinstance(item, dict)],
     )
+    layer2_override = None
+    review_evidence = review.get("evidence")
+    if isinstance(review_evidence, dict) and review_evidence.get("path"):
+        layer2_override = _layer2_override_receipt(
+            Path(review_evidence["path"]), aligned_sha256=aligned_sha,
+            anchor_json_sha256=anchor_json_sha, source_unit_ids=source_unit_ids,
+            source_id=source_id, anchor_issues=manifest_issues)
+        if layer2_override is not None and machine_judge_artifact != layer2_override["machineJudgeArtifact"]:
+            raise ValueError("Layer 2 override must bind the package's exact machine judge evidence")
     media = _source_media(summary)
     # A long intact clause is a latency warning when both reviews explicitly
     # accept this exact manifest. Keep the warning in the bound anchor manifest.
@@ -417,7 +544,7 @@ def build_package(
             issues.append({"stage": "review", "type": f"{name}_review_pending"})
 
     production_ready = not issues
-    candidate_ready = production_ready or machine_judge_pass
+    candidate_ready = production_ready or machine_judge_pass or layer2_override is not None
     status = (
         "ready_for_translation" if production_ready
         else "candidate_ready_for_translation" if candidate_ready
@@ -441,7 +568,7 @@ def build_package(
     if runtime is None and isinstance(identity, dict):
         runtime = identity.get("mfa")
 
-    return {
+    package = {
         "schemaVersion": SCHEMA_VERSION,
         "packageId": f"english-source-{downstream_key[:24]}",
         "sourceLocale": "en",
@@ -487,6 +614,9 @@ def build_package(
             "machineJudge": machine_judge_artifact,
         },
     }
+    if layer2_override is not None:
+        validate_layer2_candidate_package(package, manifest)
+    return package
 
 
 def write_immutable(path: Path, payload: object) -> None:
