@@ -42,8 +42,8 @@ targets:
         TONGXING_DISPLAY_NAME: 同行
         TONGXING_URL_SCHEME: tongxing
         INFOPLIST_FILE: App/Info.plist
-        MARKETING_VERSION: "1.26.7"
-        CURRENT_PROJECT_VERSION: "50"
+        MARKETING_VERSION: "1.26.10"
+        CURRENT_PROJECT_VERSION: "51"
         # ActivityStyle.transient is absent on iOS 17 despite the current SDK's
         # enum availability. Its guarded use must not prevent app launch there.
         OTHER_LDFLAGS: "$(inherited) -weak_framework ActivityKit"
@@ -60,15 +60,15 @@ targets:
           PRODUCT_BUNDLE_IDENTIFIER: com.jonathanjing.tongxing.beta
           TONGXING_DISPLAY_NAME: 同行-beta
           TONGXING_URL_SCHEME: tongxing-beta
-          MARKETING_VERSION: "1.26.9"
-          CURRENT_PROJECT_VERSION: "50"
+          MARKETING_VERSION: "1.26.10"
+          CURRENT_PROJECT_VERSION: "51"
           TONGXING_CONTENT_ORIGIN: "https://ai-for-god-sermon-audio-dev.web.app"
         BetaRelease:
           PRODUCT_BUNDLE_IDENTIFIER: com.jonathanjing.tongxing.beta
           TONGXING_DISPLAY_NAME: 同行-beta
           TONGXING_URL_SCHEME: tongxing-beta
-          MARKETING_VERSION: "1.26.9"
-          CURRENT_PROJECT_VERSION: "50"
+          MARKETING_VERSION: "1.26.10"
+          CURRENT_PROJECT_VERSION: "51"
           TONGXING_CONTENT_ORIGIN: "https://ai-for-god-sermon-audio-dev.web.app"
     dependencies:
       - package: TongxingCore
@@ -96,8 +96,8 @@ targets:
         TONGXING_ACTIVITY_DISPLAY_NAME: 同行播放状态
         TONGXING_URL_SCHEME: tongxing
         INFOPLIST_FILE: ListeningActivityExtension/Info.plist
-        MARKETING_VERSION: "1.26.7"
-        CURRENT_PROJECT_VERSION: "50"
+        MARKETING_VERSION: "1.26.10"
+        CURRENT_PROJECT_VERSION: "51"
         GENERATE_INFOPLIST_FILE: NO
         APPLICATION_EXTENSION_API_ONLY: YES
         SKIP_INSTALL: YES
@@ -108,14 +108,14 @@ targets:
           PRODUCT_BUNDLE_IDENTIFIER: com.jonathanjing.tongxing.beta.listening-activity
           TONGXING_ACTIVITY_DISPLAY_NAME: 同行-beta播放状态
           TONGXING_URL_SCHEME: tongxing-beta
-          MARKETING_VERSION: "1.26.9"
-          CURRENT_PROJECT_VERSION: "50"
+          MARKETING_VERSION: "1.26.10"
+          CURRENT_PROJECT_VERSION: "51"
         BetaRelease:
           PRODUCT_BUNDLE_IDENTIFIER: com.jonathanjing.tongxing.beta.listening-activity
           TONGXING_ACTIVITY_DISPLAY_NAME: 同行-beta播放状态
           TONGXING_URL_SCHEME: tongxing-beta
-          MARKETING_VERSION: "1.26.9"
-          CURRENT_PROJECT_VERSION: "50"
+          MARKETING_VERSION: "1.26.10"
+          CURRENT_PROJECT_VERSION: "51"
     dependencies:
       - package: TongxingCore
   TongxingTests:
