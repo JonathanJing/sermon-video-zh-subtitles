@@ -48,6 +48,7 @@ COMPATIBLE_RUNNER_IDENTITIES = {
 MODEL_ROLES = {"translator": "gpt-6-astra", "reviewer": "gpt-6-sol"}
 SEMANTIC_CHECKS = ("completeMeaning", "negationsNumbersNames", "quotationAttribution", "noAddedMeaning")
 REVISION_BRIEF_SCHEMA = "sermon-target-language-group-revision-brief-v1"
+MAX_STANDALONE_GROUP_WORKERS = 3
 
 
 def revision_boundary_instruction(target_locale: str, *, revising: bool) -> str:
@@ -500,6 +501,13 @@ def ordered_group_results(items: list, worker, workers: int) -> list:
     return [results[index] for index in range(len(items))]
 
 
+def validate_standalone_worker_budget(policy: dict) -> None:
+    workers = policy["batching"].get("workers")
+    require(policy["batching"].get("batchSize") == 1
+            and type(workers) is int and 1 <= workers <= MAX_STANDALONE_GROUP_WORKERS,
+            "Standalone production runner requires batchSize=1 and workers=1..3")
+
+
 def require_reconciled_requests(*directories: Path | None) -> None:
     """Block the whole dispatch before any group can replay an unknown call.
 
@@ -943,6 +951,7 @@ def main() -> None:
                               (args.english_source_package, args.anchor, args.policy))
     # Validate all policy/source/plan conditions before requiring a secret or making a paid call.
     request = producer.prepare_request(source, anchor, policy)
+    validate_standalone_worker_budget(policy)
     plan = group_plan(request, anchor, json.loads(args.group_plan.read_text(encoding="utf-8"))
                       if args.group_plan else None)
     require_plugin_identity(args.plugin, policy["languageReview"]["pluginImplementationSha256"])

@@ -64,6 +64,16 @@ class Layer2ConcurrencyTests(unittest.TestCase):
             with self.subTest(budget=budget), self.assertRaisesRegex(ValueError, "1..16"):
                 runner.ordered_group_results([], lambda _: self.fail("invalid budget started work"), budget)
 
+    def test_standalone_runner_keeps_legacy_three_worker_ceiling(self):
+        policy = copy.deepcopy(self.policy)
+        for workers in (1, 3):
+            policy["batching"]["workers"] = workers
+            runner.validate_standalone_worker_budget(policy)
+        for workers in (4, 16):
+            policy["batching"]["workers"] = workers
+            with self.subTest(workers=workers), self.assertRaisesRegex(ValueError, "workers=1..3"):
+                runner.validate_standalone_worker_budget(policy)
+
     def test_shared_api_slots_cap_run_requests_without_polluting_durable_job_tree(self):
         active = peak = 0
         lock = threading.Lock()

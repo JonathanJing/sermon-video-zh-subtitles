@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import subprocess
 import sys
+import threading
 import time
 import unittest
 from unittest.mock import patch
@@ -278,7 +279,7 @@ class CanonicalLayer2ControllerTests(unittest.TestCase):
         self.config_data['locales']['zh-Hans']['outputDirectory'] = '.'; self.save_config()
         with self.assertRaises(ValueError): subject.load_configuration(self.path)
 
-    def test_running_job_leaves_capacity_for_an_independent_locale(self):
+    def test_running_job_applies_one_locale_capacity_without_new_dispatch(self):
         with self.active() as (config, _, _, _):
             controller = subject.Controller(self.path, mode='deterministic_execute')
             with patch.object(jobs, 'start_job') as start:
@@ -286,10 +287,49 @@ class CanonicalLayer2ControllerTests(unittest.TestCase):
             self.assertFalse(result['dispatched'])
             start.assert_not_called()
             view = subject.snapshot(config)
-            # A running locale does not block an independent ready locale.
+            # A running locale reserves the single controller slot.
             view['nodes']['text.ko'] = {'status': 'ready'}
             controller.config.lanes['ko'] = {}
-            self.assertEqual(controller._choose(view), 'ko')
+            self.assertIsNone(controller._choose(view))
+
+    def test_binding_is_rechecked_after_waiting_for_api_slot(self):
+        entered = threading.Event()
+        release = threading.Event()
+        calls = []
+        errors = []
+
+        @contextmanager
+        def held_slot(_job_root):
+            entered.set()
+            if not release.wait(timeout=10):
+                raise TimeoutError('test did not release API slot')
+            yield
+
+        def caller(key, payload):
+            calls.append(payload)
+            return self.fake_call(key, payload)
+
+        with self.active() as (config, code, key, _):
+            with patch.object(subject.api_concurrency, 'request_slot', held_slot):
+                def execute():
+                    try:
+                        self.execute(config, code, key, caller=caller)
+                    except BaseException as exc:
+                        errors.append(exc)
+
+                worker = threading.Thread(target=execute)
+                worker.start()
+                try:
+                    self.assertTrue(entered.wait(timeout=5))
+                    self.config_data['productionRunId'] = 'b' * 64
+                    self.save_config()
+                finally:
+                    release.set()
+                worker.join(timeout=5)
+                self.assertFalse(worker.is_alive())
+        self.assertEqual(calls, [])
+        self.assertEqual(len(errors), 1)
+        self.assertIn('worker_configuration_or_code_changed_during_models', str(errors[0]))
 
     def test_actual_worker_cli_without_key_stops_before_any_model_cache(self):
         with self.active() as (config, code, key, _):
@@ -353,11 +393,7 @@ class CanonicalLayer2ControllerTests(unittest.TestCase):
             pass
         controller = subject.Controller(self.path)
         view = subject.snapshot(controller.config)
-        # Uncertain jobs conservatively consume locale slots. One uncertain
-        # owner leaves the other locales able to proceed; three fill capacity.
-        for locale in ('ko', 'es'):
-            view['durableJobInspection']['jobs'].append({
-                'workUnitId': 'text.' + locale, 'status': 'uncertain'})
+        # An uncertain owner conservatively retains the single locale slot.
         self.assertTrue(controller._capacity_full(view))
         self.assertIsNone(controller._choose(view))
 
@@ -389,7 +425,7 @@ class CanonicalLayer2ControllerTests(unittest.TestCase):
             self.assertEqual(subject.Controller(self.path).tick()['proposedWorkUnit'], 'text.' + locale)
             with self.active(locale=locale) as (config, code, key, folder):
                 held = subject.Controller(self.path).tick()
-                self.assertEqual(held['reasonCode'], 'shadow_only')
+                self.assertEqual(held['reasonCode'], 'layer2_capacity_reached')
                 self.execute(config, code, key, locale=locale)
                 jobs._write_state(folder, key, 'succeeded')
             candidate = json.loads((self.root / 'outputs' / locale / 'candidate.json').read_text())
