@@ -918,6 +918,24 @@ PR #198 首轮CI进一步发现旧CLI夹具缺runtime/checkpoint声明，补齐�
 CI环境还暴露工具下载占用原job期限：18ae2f0的root-0已通过1609 tests/8可选skip；Prefect安装阶段被10分钟上限取消，root-1安装后测试被20分钟上限取消，均保留日志且不冒充完整测试终态。仅将CI job上限改为30/40分钟，测试和业务provider预算/期限/守卫不变；归入既有诊断验证接线，最终远程结果以最新head检查为准。
 
 
+<a id="podcast-log-audit-followup-20261003"></a>
+
+## 2026-10-03 播客逐轮日志审计：证据与验收补充
+
+依据[Layer 1–4 复盘的逐轮审计](reports/20261003-podcast-layer1-4-retrospective.zh.md#2026-10-03-逐轮日志审计补充)。本轮读取 20 个 accounting JSONL、235042 条事件、22 次运行；业务账本 11707 次 API attempts，另有 234 条已保留但未接入账本的请求/回复收据，已知业务请求下限为 11941。早期中文 r1–r4、部分 speaker-hypothesis batch 及其他子 Agent 遥测缺口保持 unknown。本节沿既有 ID 补充，不新增 Epic；只回写证据和待验收要求，不关闭任务或改变生产、审核、设备/现场资格。
+
+| 复盘证据 / 优先级 | 既有任务及待交付 | 可核验关闭条件与限制 |
+| --- | --- | --- |
+| F01 / P1：执行分支成功，dev 缺 producer | `DEV-L3-001/004`、`DEV-DIAG-017`：将实际双讲员 renderer/audio builder/schema 整理为正式入口可消费的版本化实现，落实 R05/R06；保存原分支及产物恢复路径。准备基线 `dev@d31cdc2` 缺三个文件，代码在 `codex/stage2-activation-packet@e8218e7`。 | 提供合并 SHA、schema/迁移及正式入口端到端消费收据；校验 speaker/checkpoint/text/audio hash、不同单元数、完整解码及 reader 兼容；中断恢复只复用匹配完整 batch。既有 branch 产物/文档合并不自动满足正式 worker 验收，也不默认重新生成三语全文。 |
+| DAG / P1：局部边不代表全层接管 | `DEV-DIAG-008/017`、`DEV-SPD-002/006`：沿既有 typed completion leaf 和真实调度主验收，将当前 canonical source/revision 与各 locale 的 L2→L3→L4 输入、调度决策及产物关联。 | 本播客 60808 条边全部 producer-local、跨 run/workflow/file 为 0、decisionId 无值；该基线不关闭完整 DAG。旧 approved 包即使内部一致也在新付费请求前拒绝；改变源/locale revision 时正确失效受影响下游，留下真实 decision 与完成叶/产物依赖，未知 critical path 保持 partial。其他运行/mock 的跨进程边不外推本播客。 |
+| F02 / P1：语义上下文夹具 | `DEV-L1-001`、`DEV-L2-001`：沿 R04 保留 ES And Him / Let's，补 KO them 的 referent uncertainty 和前后 unit 上下文；repair brief 绑定检查项及证据。 | 对照真实失败与修复译文，覆盖独立完整意义、指代、禁止新增含义与有限受影响组恢复；保留未解决疑点。目标语失败不自动修改已批准源边界；若需源裁定，按音频及 source revision 合同执行。And Him / Let's 已登记，不再称新增遗漏。 |
+| F03 / P1：中断/诊断保真 | `RQC-04`、`SPD6-LOG-05`：以中文 r11 KeyboardInterrupt 和中文 r8/ES 换源 r3 的缺 message 异常为真实夹具；分列 execution/review/admission、actor/reason 与安全异常摘要。 | 1204 个 completed 请求保留，取消不伪装质量失败或 provider 失败；actor/reason 缺测时 unknown。恢复核对 602 组缓存只派发剩余工作；require 拒绝保留安全 code/原因且不泄露文本/凭据。保留原 failed/异常事件，以新解释/修订关联，不重写历史。 |
+| F04 / P1：234 条账本外收据 | `DEV-TRACK-001`、`SPD6-LOG-03`：接入 source judge 224、术语 POC 6、diarize 3、Whisper 1 的 provider/role/run/attempt/response/usage 身份，统一跨 adapter 去重和覆盖检查。 | 固定保留收据离线重建 11707 + 234 = 11941 的已知下限；缓存/重复响应不双加，历史消耗与本轮复用分开；早期轮次缺口显式列出，未观测请求/时间/账单不补零。日志回放/修复为 0 新模型请求，实际计费仍独立对账。 |
+| F05 / P1：Luna/Agents 计时与分母 | `SPD6-LOG-04`、`DEV-SPD-005`，沿 `SPD6-ARCH-04`：记录 native response 与工程/生产用途、request-start/first-token/生成结束及工具等待；Agents HTTP POST/GET、model response、tool operation 分别计数并绑定 session/turn/call/attempt。 | 本轮 Luna 2862 响应、1401366 output / 63694 秒 = 22.00 窗口平均输出率仅为混合窗口基线；缺 request/first-token 时纯 TPS、TTFT、纯调度耗时 unknown。验证 reasoning 是 output 子集、cached 是 input 子集，SDK/direct 覆盖不双加；没有绑定 HTTP 收据时次数 unknown，不以模型响应数或“没找到”冒充 HTTP 总数/0。真实 Agents API 试点仍遵守既有独立预算/授权。 |
+| F06 / P2：batch/ASR/部署去重计时 | `DEV-TRACK-001`、`SPD6-LOG-02/05`：落实 R10 batch 生成/写入、worker/job wall、ASR/组装/发布 span，落实 R07 当前部署/reader 收据绑定；区分生产 batch=8 与未执行的 batch=2 实验。 | 同 batch 各 unit 从调用前到 WAV 写入/hash 后的累计值不逐项相加；并行 worker 累计不冒充 job wall。验证 315 个生产 batch 和 ASR 各 839 单元；缺计时保持 unknown。v2 收据复制到 v3/v4 不增加发布次数；当前部署另绑 version/hash/locale，device/venue not_run 不被 HTTP 或浏览器结果提升。已有 R10 要求不重复称新增遗漏。 |
+
+建议先落实 F01 与 canonical source/DAG 准入，再补 F03/F04/F05 的保真及计量，F02/F06 随对应 producer/日志修改定向回归。实施交付绑定 code SHA、固定夹具和真实路径证据；本次文档记录及核对不是这些实现验收。
+
 ## 今天（10/3）
 
 本节最初只授权文档与只读计划；文档已写不表示实现完成。用户随后在本任务明确“在我们这开始开发”，并要求“审核，继续开发完”，本地软件实施范围已更新，见[本地开发入口](pr229-local-development.zh.md)。模型／设备实验、通知、新 build、部署和真实账号配置仍须各自前置及授权。
