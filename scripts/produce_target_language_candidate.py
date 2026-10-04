@@ -246,7 +246,10 @@ def run_language_plugin(source: dict[str, Any], anchor: dict[str, Any],
         _require(evidence.get(key) == expected[key], f"Layer 2 evidence identity changed: {key}")
     _require(plugin_path.is_file(), "Language plugin implementation is missing")
     implementation_sha = plugin_implementation_sha256(plugin_path)
-    _require(policy["schemaVersion"] == (policy_tools.POLICY_V3 if strict_rubric is not None else policy_tools.POLICY_V2)
+    expected_policy_version = (policy_tools.POLICY_V3 if strict_rubric is not None else
+                               policy.get("schemaVersion") if policy.get("schemaVersion") in {
+                                   policy_tools.POLICY_V2, policy_tools.POLICY_V4} else None)
+    _require(policy["schemaVersion"] == expected_policy_version
              and policy["languageReview"]["pluginImplementationSha256"] == expected_plugin_sha256
              and expected_plugin_sha256 == implementation_sha,
              "Language plugin implementation hash differs from frozen policy or file")

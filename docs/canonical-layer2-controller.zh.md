@@ -37,7 +37,7 @@ python scripts/canonical_layer2_controller.py tick \
 ```
 
 一个 tick 至多派发一个固定 worker 然后返回。第一版同一 production run 至多一个 active
-locale job；uncertain owner 继续占用该名额直到 reconciliation。组内仍使用冻结 policy 的 1–3 workers；不是跨 run 的全局 API/TTS 资源调度器。
+locale job；uncertain owner 继续占用该名额直到 reconciliation。组内可使用冻结 policy 的 1–16 workers；共享 API semaphore 总上限为 24，且不是跨 run 的全局 API/TTS 资源调度器。
 默认顺序是排序后的可准入 locale，没有循环轮询或无限 Agent 对话。工作中可重复调用 tick
 检查，但 active/failed/unknown durable receipt 不会产生第二个相同工作。
 

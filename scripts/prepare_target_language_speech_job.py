@@ -164,7 +164,7 @@ def validate_policy_binding(candidate: dict[str, Any], policy: dict[str, Any], *
               policy_tools.validate_strict_policy(policy, strict_rubric))
     _require(policy["targetLocale"] == candidate["targetLocale"],
              "Target-Language Policy locale differs from candidate")
-    if policy["schemaVersion"] in {policy_tools.POLICY_V2, policy_tools.POLICY_V3}:
+    if policy["schemaVersion"] in {policy_tools.POLICY_V2, policy_tools.POLICY_V3, policy_tools.POLICY_V4}:
         _require(policy["sourceScope"]["englishSourcePackageJsonSha256"]
                  == candidate["englishSourcePackageJsonSha256"]
                  and policy["sourceScope"]["anchorManifestSha256"]
