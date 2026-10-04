@@ -52,6 +52,7 @@ struct ContentView: View {
     @ScaledMetric(relativeTo: .title2) private var readingSize: CGFloat = 26
     @ViewState private var sheet: ListeningSheet?
     @ViewState private var returnToCurrent = UUID()
+    @ViewState private var followsTranscriptPlayback = true
     @ViewState private var locateConfirmation: Double?
     @ViewState private var showingPlaybackMore = false
     @ViewState private var showingAlignmentFailure = false
@@ -237,26 +238,53 @@ struct ContentView: View {
                     .frame(maxWidth: .infinity)
                 }
                 .accessibilityIdentifier("listening-scroll")
+                .simultaneousGesture(DragGesture(minimumDistance: 12).onChanged { value in
+                    if model.display == .transcript,
+                       abs(value.translation.height) > abs(value.translation.width) {
+                        followsTranscriptPlayback = false
+                    }
+                })
                 .refreshable { await model.refresh() }
                 .onChange(of: model.display) { _, display in
-                    guard display == .transcript, playback.isPlaying,
-                          let track = model.selectedTrack else { return }
+                    followsTranscriptPlayback = true
+                    guard display == .transcript, playback.isPlaying else { return }
+                    let selection = transcriptSelectionIdentity
                     // Let the transcript enter the layout before resolving its row.
-                    // This runs only when opening it, so reading never follows playback.
                     DispatchQueue.main.async {
                         guard model.display == .transcript, playback.isPlaying,
-                              model.selectedTrack?.id == track.id,
-                              !track.cues.isEmpty else { return }
-                        let index = track.cues.firstIndex {
-                            $0.start <= playback.position && playback.position < $0.end
-                        } ?? track.cues.lastIndex { $0.start <= playback.position } ?? 0
+                              transcriptSelectionIdentity == selection,
+                              followsTranscriptPlayback, let rowID = currentTranscriptRowID else { return }
                         withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) {
-                            proxy.scrollTo("cue-\(index)", anchor: .center)
+                            proxy.scrollTo(rowID, anchor: .center)
                         }
+                    }
+                }
+                .onChange(of: transcriptSelectionIdentity) { _, _ in
+                    followsTranscriptPlayback = true
+                }
+                .onChange(of: currentTranscriptRowID) { _, rowID in
+                    guard model.display == .transcript, playback.isPlaying,
+                          followsTranscriptPlayback, let rowID else { return }
+                    let selection = transcriptSelectionIdentity
+                    DispatchQueue.main.async {
+                        guard model.display == .transcript, playback.isPlaying,
+                              followsTranscriptPlayback, transcriptSelectionIdentity == selection,
+                              currentTranscriptRowID == rowID else { return }
+                        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) {
+                            proxy.scrollTo(rowID, anchor: .center)
+                        }
+                    }
+                }
+                .onChange(of: playback.isPlaying) { _, playing in
+                    guard playing, model.display == .transcript,
+                          followsTranscriptPlayback, let rowID = currentTranscriptRowID else { return }
+                    withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) {
+                        proxy.scrollTo(rowID, anchor: .center)
                     }
                 }
                 .onChange(of: returnToCurrent) { _, _ in
                     if model.display == .transcript {
+                        followsTranscriptPlayback = true
                         if let rowID = currentTranscriptRowID {
                             withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) {
                                 proxy.scrollTo(rowID, anchor: .center)
@@ -300,10 +328,13 @@ struct ContentView: View {
                 if model.display == .transcript {
                     ToolbarItem(placement: .primaryAction) {
                         Button { returnToCurrent = UUID() } label: {
-                            Label(localization.text("当前句"), systemImage: "text.bubble")
+                            Label(localization.text("当前句"), systemImage: followsTranscriptPlayback ? "text.bubble.fill" : "text.bubble")
                         }
                         .labelStyle(.titleAndIcon)
-                        .accessibilityLabel(localization.text("回到当前句"))
+                        .accessibilityLabel(localization.text("回到当前句") + "，" + localization.text(followsTranscriptPlayback ? "跟随播放" : "自由阅读"))
+                        .accessibilityAddTraits(followsTranscriptPlayback ? .isSelected : [])
+                        .accessibilityHint(localization.text(followsTranscriptPlayback ? "跟随播放" : "自由阅读"))
+                        .foregroundStyle(followsTranscriptPlayback ? Brand.accent : .secondary)
                         .accessibilityIdentifier("transcript-return-current")
                         .disabled(currentTranscriptRowID == nil)
                     }
@@ -369,6 +400,11 @@ struct ContentView: View {
         }
     }
 
+    private var transcriptSelectionIdentity: [String?] {
+        [model.selectedWeek?.id, model.selectedTrack?.id,
+         model.publishedTranscriptSelectionKey, model.selectedAudioLocale]
+    }
+
     /// Resolve the reading anchor from the active audio timeline, including gaps.
     /// Recentring never seeks or changes the transport or reading mode.
     private var currentTranscriptRowID: String? {
@@ -406,6 +442,7 @@ struct ContentView: View {
             locate: { sheet = .locate },
             precision: model.selectedTrack == nil ? nil : { sheet = .precision },
             current: currentTranscriptRowID == nil ? nil : { returnToCurrent = UUID() },
+            onTimeTap: model.display == .transcript && currentTranscriptRowID != nil ? { returnToCurrent = UUID() } : nil,
             placement: placement,
             inSystemBar: inSystemBar,
             onMoreTap: {

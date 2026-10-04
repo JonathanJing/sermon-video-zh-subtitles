@@ -19,6 +19,7 @@ struct PlaybackDock: View {
     var locate: (() -> Void)? = nil
     var precision: (() -> Void)? = nil
     var current: (() -> Void)? = nil
+    var onTimeTap: (() -> Void)? = nil
     var placement: PlaybackDockPlacement = .bottom
     var inSystemBar = false
     var onMoreTap: (() -> Void)? = nil
@@ -108,7 +109,19 @@ struct PlaybackDock: View {
         }
     }
 
-    private var timeAndStatus: some View {
+    @ViewBuilder private var timeAndStatus: some View {
+        if let onTimeTap {
+            Button(action: onTimeTap) {
+                progressText.frame(minWidth: 44, minHeight: 44).contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint(localization.text("回到当前句"))
+        } else {
+            progressText
+        }
+    }
+
+    private var progressText: some View {
         HStack(spacing: 1) {
             Text(PlaybackTime.format(playback.position))
                 .fontWeight(.semibold)

@@ -458,14 +458,52 @@ final class ListeningFlowUITests: XCTestCase {
         XCTAssertFalse(app.staticTexts["published-caption-text-g2"].isHittable,
                        "The current row must leave the viewport before testing recentering")
         XCTAssertTrue(current.isHittable, "Return action must remain reachable after reading elsewhere")
+        XCTAssertTrue(current.label.hasSuffix("自由阅读"))
         screenshot("full-transcript-scrolled-away", app: app)
-        current.tap()
+        progress.tap()
         try waitFor(app.staticTexts["published-caption-text-g2"], "hittable == true")
         XCTAssertTrue(app.buttons["published-caption-time-g2"].isSelected)
         XCTAssertEqual(app.segmentedControls["listening-display"].buttons["字幕全文"].isSelected, true)
         try waitFor(progress, "value BEGINSWITH '00:12'")
         XCTAssertEqual(app.buttons["playback-toggle"].label, "开始播放")
+        XCTAssertTrue(current.label.hasSuffix("跟随播放"))
         screenshot("full-transcript-return-current-paused12", app: app)
+    }
+
+    func testTranscriptAutomaticallyFollowsNextCaption() throws {
+        let app = launchFixture(largeText: true, locateFlow: true)
+        try locateSecondEnglishSegment(in: app, fromDock: false)
+        app.segmentedControls["listening-display"].buttons["字幕全文"].tap()
+        app.buttons["playback-toggle"].tap()
+        try waitFor(app.staticTexts["published-caption-text-g2"], "hittable == true")
+        try waitFor(app.buttons["published-caption-time-g3"], "selected == true AND hittable == true", timeout: 20)
+        XCTAssertTrue(app.staticTexts["published-caption-text-g3"].isHittable)
+        XCTAssertTrue(app.buttons["transcript-return-current"].label.hasSuffix("跟随播放"))
+        screenshot("transcript-automatically-followed-next-caption", app: app)
+        app.buttons["playback-toggle"].tap()
+    }
+
+    func testTranscriptFollowsPlaybackUntilDraggedAndTimeTapRestoresFollowing() throws {
+        let app = launchFixture(largeText: true, locateFlow: true)
+        try locateSecondEnglishSegment(in: app, fromDock: false)
+        app.segmentedControls["listening-display"].buttons["字幕全文"].tap()
+        let follow = app.buttons["transcript-return-current"]
+        let progress = element("playback-progress", in: app)
+        app.buttons["playback-toggle"].tap()
+        try waitFor(app.staticTexts["published-caption-text-g2"], "hittable == true")
+        let scroll = app.scrollViews["listening-scroll"]
+        for _ in 0..<3 { scroll.swipeDown() }
+        XCTAssertTrue(follow.label.hasSuffix("自由阅读"))
+        try waitFor(progress, "value MATCHES '^00:(2[4-9]|3[0-5]).*'", timeout: 20)
+        XCTAssertFalse(app.staticTexts["published-caption-text-g3"].isHittable,
+                       "Playback must not take over a manual reading position")
+        screenshot("transcript-free-reading-during-playback", app: app)
+        progress.tap()
+        try waitFor(app.staticTexts["published-caption-text-g3"], "hittable == true")
+        XCTAssertTrue(follow.label.hasSuffix("跟随播放"))
+        XCTAssertEqual(app.buttons["playback-toggle"].label, "暂停播放")
+        screenshot("transcript-time-tap-restores-following", app: app)
+        app.buttons["playback-toggle"].tap()
     }
 
     func testEnglishLocateFromDockAndFullTranscriptLanguageChangesKeepPosition() throws {
