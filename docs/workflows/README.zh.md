@@ -224,3 +224,5 @@ Supervisor 调度默认使用 `gpt-6-sol` Medium，SDK 回退也使用同一 Sol
 - [稳定 post-live PDF 工作流](../stable-post-live-reading-pdf-workflow.zh.md)
 - [本地周末生产 runbook](../codex-local-production-runbook.zh.md)
 - [完整文档索引](../README.zh.md)
+
+统一入口草稿的进一步证据核查见[跨层接线追加审核](../reports/20261004-unified-cli-cross-layer-findings.zh.md)：保留完整交付目标，补 App 依赖闭包、可信发布收据、内容日期映射和多 run 日志验收；全部是待实施要求。
