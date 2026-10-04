@@ -1,0 +1,1508 @@
+{
+  "schemaVersion": "production-retrospective-summary-v1",
+  "sourceId": "resi-20261004-69ba7a66",
+  "limitations": [
+    "Historical offline audit, not current HTTP or playback verification.",
+    "Usage missing is unknown, not zero.",
+    "No acoustic diagnosis of the missing initial 61-second WAV.",
+    "Heuristic operation classes are not per-category token attribution."
+  ],
+  "versions": {
+    "runs": 34,
+    "reasonTotals": {
+      "plugin_numeric_spelling_repair": {
+        "attempts": 4,
+        "knownInputTokens": 12732,
+        "knownOutputTokens": 878,
+        "usageMissing": 0
+      },
+      "spoken_timing_forecast_repair": {
+        "attempts": 10,
+        "knownInputTokens": 27506,
+        "knownOutputTokens": 1889,
+        "usageMissing": 0
+      },
+      "spoken_candidate_revision": {
+        "attempts": 1296,
+        "knownInputTokens": 3956456,
+        "knownOutputTokens": 279448,
+        "usageMissing": 0
+      },
+      "spoken_followup_targeted_revision": {
+        "attempts": 4,
+        "knownInputTokens": 18008,
+        "knownOutputTokens": 775,
+        "usageMissing": 0
+      },
+      "measured_audio_timing_revision": {
+        "attempts": 662,
+        "knownInputTokens": 2469646,
+        "knownOutputTokens": 134502,
+        "usageMissing": 16
+      },
+      "timing_followup_plugin_repair": {
+        "attempts": 10,
+        "knownInputTokens": 36541,
+        "knownOutputTokens": 2223,
+        "usageMissing": 0
+      },
+      "source_receipt_and_context_policy_rebinding": {
+        "attempts": 480,
+        "knownInputTokens": 1114329,
+        "knownOutputTokens": 112760,
+        "usageMissing": 0
+      },
+      "model_policy_remove_unspoken_citations": {
+        "attempts": 948,
+        "knownInputTokens": 2141679,
+        "knownOutputTokens": 235752,
+        "usageMissing": 0
+      },
+      "model_policy_quote_map_was_missing": {
+        "attempts": 948,
+        "knownInputTokens": 3885932,
+        "knownOutputTokens": 209731,
+        "usageMissing": 0
+      },
+      "prior_result_missing_continuation": {
+        "attempts": 1730,
+        "knownInputTokens": 3887118,
+        "knownOutputTokens": 411674,
+        "usageMissing": 0
+      },
+      "source_context_targeted_repair": {
+        "attempts": 8,
+        "knownInputTokens": 18530,
+        "knownOutputTokens": 1935,
+        "usageMissing": 0
+      },
+      "source_bound_content_targeted_repair": {
+        "attempts": 14,
+        "knownInputTokens": 35776,
+        "knownOutputTokens": 4167,
+        "usageMissing": 0
+      },
+      "initial_selected_scope_prior_trigger_unknown": {
+        "attempts": 1104,
+        "knownInputTokens": 1970665,
+        "knownOutputTokens": 344040,
+        "usageMissing": 0
+      },
+      "human_confirmed_policy_revision": {
+        "attempts": 948,
+        "knownInputTokens": 1661609,
+        "knownOutputTokens": 300661,
+        "usageMissing": 0
+      }
+    },
+    "exactPayloadDuplicateSummary": {
+      "hashesWithMultipleAttempts": 16,
+      "extraSuccessfulUsageBearingCalls": 0,
+      "extraKnownTokens": 0
+    },
+    "sourceInputs": [
+      {
+        "path": "canonical-spoken-v5/es/accounting/events.jsonl",
+        "sha256": "c174439ccfb4da2ebe3fc29841f5a68da491477e1a9811a1a1c82f52bb4c94d0"
+      },
+      {
+        "path": "canonical-spoken-v5/ko/accounting/events.jsonl",
+        "sha256": "7be4de8c7fd67e486d7eff2f49042f74a406e07b37c7783cc6f9975772fe7bcb"
+      },
+      {
+        "path": "canonical-spoken-v2/zh-Hans/accounting/events.jsonl",
+        "sha256": "a337196a4afd69aea547bc5a8e1141b10f663cb85ad402fe436400d1d1eb18da"
+      },
+      {
+        "path": "canonical-spoken-v3/zh-Hans/accounting/events.jsonl",
+        "sha256": "c24fcae921153f4b6315b81326230583ddc69d022d9d856725a76b21fb92cbe0"
+      },
+      {
+        "path": "canonical-spoken-v4/es/accounting/events.jsonl",
+        "sha256": "0ef8619ba0c8ec693563d295ae13e5a45f2460ddb8bdfee07eb8c9f8ffdeb7ee"
+      },
+      {
+        "path": "canonical-spoken-v4/zh-Hans/accounting/events.jsonl",
+        "sha256": "13759b045b007f086343845ec3808d7efe77e6c9717cd8241d8aa55446698e62"
+      },
+      {
+        "path": "ko-publication-v1/audio-render-tar-v2/accounting/events.jsonl",
+        "sha256": "c87ac6c7d6e248d77178f974f90f37d57a03b184591629b0b8985161542d6b99"
+      },
+      {
+        "path": "ko-publication-v1/audio-render/accounting/events.jsonl",
+        "sha256": "c87ac6c7d6e248d77178f974f90f37d57a03b184591629b0b8985161542d6b99"
+      },
+      {
+        "path": "formal-layer2-timing-revision-v1/runs/ko-attempt1/accounting/events.jsonl",
+        "sha256": "37cfbf15b907b71dc772736e4feb7ae68c63f09e53709c5fe1bb8da65e1a66fe"
+      },
+      {
+        "path": "formal-layer2-timing-revision-v1/runs/zh-Hans-attempt2/accounting/events.jsonl",
+        "sha256": "bee3ca2ccbad19f20d23588490556bdb5b8e2b660f4d8a6aa9c3e9fd9335d61e"
+      },
+      {
+        "path": "formal-layer2-timing-revision-v1/runs/zh-Hans-attempt3/accounting/events.jsonl",
+        "sha256": "2a99868c2463cc5eb58dec7600e0664542bdadbe8ba0ea9c2d84133725fd9023"
+      },
+      {
+        "path": "formal-layer2-timing-revision-v1/runs/es-attempt1/accounting/events.jsonl",
+        "sha256": "0d21f4e3134f0cfbc46d6b8aff48c3caf40a70c28aed766f7c86c5d47791923b"
+      },
+      {
+        "path": "formal-layer2-timing-revision-v1/runs/ko-attempt2/accounting/events.jsonl",
+        "sha256": "199867e513674b6857b8cffe678ea5ebb101ecfe3ad25a541c26a68bfa0b42c8"
+      },
+      {
+        "path": "formal-layer2-timing-revision-v1/runs/es-attempt2/accounting/events.jsonl",
+        "sha256": "633899ac6076f137191600dab213dde5d7994141b5c71ef69f03d8d1bb16b244"
+      },
+      {
+        "path": "formal-layer2-timing-revision-v1/runs/zh-Hans/accounting/events.jsonl",
+        "sha256": "4357de0c5927f2b5572b69dd94a0e8d532d45502228b5b0009a6c63909de4d79"
+      },
+      {
+        "path": "formal-layer3-execution-v2/es-publication-v1/collected-es-render-v1/accounting/events.jsonl",
+        "sha256": "6ebe339b54faf0551618c77bb94b7973c3167d389ec25b19b65ce1ad3a1c4fc7"
+      },
+      {
+        "path": "source-preparation/cache-migration-v2-review/regression-ko-v1/accounting/events.jsonl",
+        "sha256": "6a066eb1ed1a41d08021f8aea522915356083474a8ec5c701428562e2b537b57"
+      },
+      {
+        "path": "source-preparation/cache-migration-v2-review/regression-zh-Hans-v1/accounting/events.jsonl",
+        "sha256": "8d709b7d95842b37846e0951aabceeb28adfe3052de837ee61286f3dad7e3431"
+      },
+      {
+        "path": "english-source-judge-v6/accounting/events.jsonl",
+        "sha256": "d1949c1555d811bd537742203cb4bc29eb3283d61d16554f7caaf843cae3683c"
+      },
+      {
+        "path": "english-source-judge-v1/accounting/events.jsonl",
+        "sha256": "56403d47cfcdab78af29ab5ea5ee0637db39cd3cc95ae96d8111e66f87e297fb"
+      },
+      {
+        "path": "canonical-production-v8/plugin-revision-v2/es/accounting/events.jsonl",
+        "sha256": "bccea4b06b0ea65a87f75b5dcf0cdc3cddc7348217f8cf7a5524ae0866bf55e5"
+      },
+      {
+        "path": "canonical-production-v8/plugin-revision-v2/ko/accounting/events.jsonl",
+        "sha256": "32cca605616847db722f550ddb8f0ea34e396eb10485957c32b7b12050ea72db"
+      },
+      {
+        "path": "canonical-production-v8/text/ko/accounting/events.jsonl",
+        "sha256": "7be6da9879aafdefb8e8cdfd78d568b0b784c9203e335176ad1d523053cb32fa"
+      },
+      {
+        "path": "canonical-production-v8/text/zh-Hans/accounting/events.jsonl",
+        "sha256": "96f1e56f8107031aa39f063ca954a4e98b358112f0eaefb55de564332dac0ad5"
+      },
+      {
+        "path": "canonical-production-v8/plugin-revision-v1/zh-Hans/accounting/events.jsonl",
+        "sha256": "0ed1d0c17e442f69823d4bfad469ca26cd78d8c95f929d57abe09a98365bb962"
+      },
+      {
+        "path": "canonical-production-v8/revision-2/text/es/accounting/events.jsonl",
+        "sha256": "4dc212eecb8c0c28021c47690b9f9b72cffba425c9a3b2efea9979020c1ea3d1"
+      },
+      {
+        "path": "canonical-production-v8/revision-2/text/ko/accounting/events.jsonl",
+        "sha256": "1d4857b5c1acf5ae8d58a5366c48f732ec94563beb4093024b83bfc30acbb91d"
+      },
+      {
+        "path": "canonical-production-v8/revision-2/text/zh-Hans/accounting/events.jsonl",
+        "sha256": "f2c59195b2ad3e34614677e0a9857d31cdb4c28043dcbee4b173c9d4f1ed5fa6"
+      },
+      {
+        "path": "canonical-production-v8/revision-3/text/es/accounting/events.jsonl",
+        "sha256": "b45e2e453475e128d09ff2ae2f3ce1df3c0030b66b99ce869c8c844e2dbe1fd0"
+      },
+      {
+        "path": "canonical-production-v8/revision-3/text/ko/accounting/events.jsonl",
+        "sha256": "018f26341338afdfc42e32b69e846596f88ba0e4e891779c1c6a82946728e8c8"
+      },
+      {
+        "path": "canonical-production-v8/revision-4/text/es/accounting/events.jsonl",
+        "sha256": "60bf01ed86e42a76501b4c474f6c220d6147ef274b943ec69d761e355c7b5e5a"
+      },
+      {
+        "path": "canonical-spoken-v1/zh-Hans/accounting/events.jsonl",
+        "sha256": "741866ebd525143d7a605f588963a4404daadb51162b90d61d009ad500ae7ea2"
+      },
+      {
+        "path": "canonical-spoken-v6/ko/accounting/events.jsonl",
+        "sha256": "90281a19242809b4b22d9b9f19e71437b4431180558e92420084ceb3aa5d0d8a"
+      },
+      {
+        "path": "pipeline-pcm-v1/accounting/events.jsonl",
+        "sha256": "42a0de4b8b2a2e8fe2becb27c2db7d047d4714e99188fabdfcc22336deee3919"
+      },
+      {
+        "path": "zh-publication-v1/audio-render/accounting/events.jsonl",
+        "sha256": "e5dd7c1a3e529d8c768a9c7d711cd0e55cd3196fa95f09f40152db287dacd55c"
+      },
+      {
+        "path": "canonical-layer2-v6-override/text/es-repair-v1/accounting/events.jsonl",
+        "sha256": "768d95f58d86b22ad5fe87d0da9d5372a24f2aa46bba5ef6fefbd059077c9392"
+      },
+      {
+        "path": "canonical-layer2-v6-override/text/es/accounting/events.jsonl",
+        "sha256": "934877f92e5d3b9ac1c88fa7f51c81032c9af50b5eefa1f93a208f6a7796e32b"
+      },
+      {
+        "path": "canonical-layer2-v6-override/text/ko/accounting/events.jsonl",
+        "sha256": "db1295a8e674066419139a5b1ac5c0ba3fe2489d047ef07063b9e8c8260ce648"
+      },
+      {
+        "path": "canonical-layer2-v6-override/text/zh-Hans-repair-v1/accounting/events.jsonl",
+        "sha256": "9232eb8f04e0a94a47e071c214d43810e09c245ece5bd36e0e9cf8a2ef4e64db"
+      },
+      {
+        "path": "canonical-layer2-v6-override/text/zh-Hans/accounting/events.jsonl",
+        "sha256": "2b6ed994ac25555946bfbeb78f467e91095423fac31682d4908fc68760df2629"
+      },
+      {
+        "path": "english-source-judge-v2/accounting/events.jsonl",
+        "sha256": "f721f2ead6e7dcc05c27be11342462a5a4b350ead0068ce3a41bfb7fa3308018"
+      },
+      {
+        "path": "pipeline/accounting/events.jsonl",
+        "sha256": "f2cf05864b8f3dc5a5d6fcaa80592938a963aac08684075b9e0cdc53ffd95716"
+      },
+      {
+        "path": "canonical-layer2-v7-user-confirmed/text/ko-v7-repair-v1/accounting/events.jsonl",
+        "sha256": "f72b966af2a963179ee747ad5a358e5cea6a0c18c6719124e1c5ea626f49509a"
+      },
+      {
+        "path": "canonical-layer2-v7-user-confirmed/text/ko-v7/accounting/events.jsonl",
+        "sha256": "e070fc4c21dfb2e1d5430649ef14f441a4ca6708bec957a2f944b2d9f676353b"
+      },
+      {
+        "path": "english-source-judge-v4/accounting/events.jsonl",
+        "sha256": "b1d2a76ab5b5aef8d63327f43b98b49e2e3b568edc272e812a9b5fe16f9f74d2"
+      },
+      {
+        "path": "english-source-judge-v3/accounting/events.jsonl",
+        "sha256": "44a03a59d9033705c3467c5421d1c23d21f48ac5eaf28625a015e696c983653b"
+      }
+    ],
+    "runsSummary": [
+      {
+        "path": "canonical-layer2-v6-override/text/es",
+        "apiAttempts": 0,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cacheObservations": {}
+      },
+      {
+        "path": "canonical-layer2-v6-override/text/es",
+        "apiAttempts": 74,
+        "inputTokens": 127929,
+        "outputTokens": 16591,
+        "cacheObservations": {}
+      },
+      {
+        "path": "canonical-layer2-v6-override/text/ko",
+        "apiAttempts": 948,
+        "inputTokens": 1694621,
+        "outputTokens": 305267,
+        "cacheObservations": {}
+      },
+      {
+        "path": "canonical-layer2-v6-override/text/zh-Hans",
+        "apiAttempts": 82,
+        "inputTokens": 148115,
+        "outputTokens": 22182,
+        "cacheObservations": {}
+      },
+      {
+        "path": "canonical-layer2-v6-override/text/es-repair-v1",
+        "apiAttempts": 876,
+        "inputTokens": 1517536,
+        "outputTokens": 228083,
+        "cacheObservations": {
+          "validated_cache": 72
+        }
+      },
+      {
+        "path": "canonical-layer2-v6-override/text/zh-Hans-repair-v1",
+        "apiAttempts": 84,
+        "inputTokens": 153365,
+        "outputTokens": 24393,
+        "cacheObservations": {
+          "validated_cache": 78
+        }
+      },
+      {
+        "path": "canonical-layer2-v7-user-confirmed/text/ko-v7",
+        "apiAttempts": 948,
+        "inputTokens": 1661609,
+        "outputTokens": 300661,
+        "cacheObservations": {}
+      },
+      {
+        "path": "canonical-layer2-v7-user-confirmed/text/ko-v7-repair-v1",
+        "apiAttempts": 2,
+        "inputTokens": 4114,
+        "outputTokens": 804,
+        "cacheObservations": {
+          "carried_forward_group": 946
+        }
+      },
+      {
+        "path": "canonical-production-v8/text/zh-Hans",
+        "apiAttempts": 172,
+        "inputTokens": 349724,
+        "outputTokens": 41066,
+        "cacheObservations": {}
+      },
+      {
+        "path": "canonical-production-v8/text/ko",
+        "apiAttempts": 136,
+        "inputTokens": 269272,
+        "outputTokens": 35422,
+        "cacheObservations": {}
+      },
+      {
+        "path": "canonical-production-v8/revision-2/text/zh-Hans",
+        "apiAttempts": 948,
+        "inputTokens": 3885932,
+        "outputTokens": 209731,
+        "cacheObservations": {}
+      },
+      {
+        "path": "canonical-production-v8/revision-2/text/ko",
+        "apiAttempts": 948,
+        "inputTokens": 2141679,
+        "outputTokens": 235752,
+        "cacheObservations": {}
+      },
+      {
+        "path": "canonical-production-v8/revision-2/text/es",
+        "apiAttempts": 172,
+        "inputTokens": 495333,
+        "outputTokens": 36272,
+        "cacheObservations": {}
+      },
+      {
+        "path": "canonical-production-v8/plugin-revision-v1/zh-Hans",
+        "apiAttempts": 0,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cacheObservations": {
+          "validated_cache": 948
+        }
+      },
+      {
+        "path": "canonical-production-v8/revision-3/text/es",
+        "apiAttempts": 778,
+        "inputTokens": 2234747,
+        "outputTokens": 161133,
+        "cacheObservations": {
+          "validated_cache": 170
+        }
+      },
+      {
+        "path": "canonical-production-v8/plugin-revision-v2/ko",
+        "apiAttempts": 0,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cacheObservations": {
+          "validated_cache": 948
+        }
+      },
+      {
+        "path": "canonical-production-v8/revision-3/text/ko",
+        "apiAttempts": 6,
+        "inputTokens": 15026,
+        "outputTokens": 2185,
+        "cacheObservations": {
+          "carried_forward_group": 942
+        }
+      },
+      {
+        "path": "canonical-production-v8/plugin-revision-v2/es",
+        "apiAttempts": 0,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cacheObservations": {
+          "validated_cache": 948
+        }
+      },
+      {
+        "path": "canonical-production-v8/revision-4/text/es",
+        "apiAttempts": 2,
+        "inputTokens": 6596,
+        "outputTokens": 456,
+        "cacheObservations": {
+          "carried_forward_group": 946
+        }
+      },
+      {
+        "path": "canonical-spoken-v1/zh-Hans",
+        "apiAttempts": 160,
+        "inputTokens": 712794,
+        "outputTokens": 34409,
+        "cacheObservations": {
+          "carried_forward_group": 788
+        }
+      },
+      {
+        "path": "canonical-spoken-v2/zh-Hans",
+        "apiAttempts": 2,
+        "inputTokens": 9001,
+        "outputTokens": 390,
+        "cacheObservations": {
+          "carried_forward_group": 946
+        }
+      },
+      {
+        "path": "canonical-spoken-v3/zh-Hans",
+        "apiAttempts": 2,
+        "inputTokens": 9007,
+        "outputTokens": 385,
+        "cacheObservations": {
+          "carried_forward_group": 946
+        }
+      },
+      {
+        "path": "canonical-spoken-v4/zh-Hans",
+        "apiAttempts": 16,
+        "inputTokens": 70850,
+        "outputTokens": 2605,
+        "cacheObservations": {
+          "carried_forward_group": 932
+        }
+      },
+      {
+        "path": "canonical-spoken-v4/es",
+        "apiAttempts": 262,
+        "inputTokens": 845246,
+        "outputTokens": 53165,
+        "cacheObservations": {
+          "carried_forward_group": 686
+        }
+      },
+      {
+        "path": "canonical-spoken-v5/es",
+        "apiAttempts": 8,
+        "inputTokens": 25002,
+        "outputTokens": 1504,
+        "cacheObservations": {
+          "carried_forward_group": 940
+        }
+      },
+      {
+        "path": "canonical-spoken-v5/ko",
+        "apiAttempts": 858,
+        "inputTokens": 2327566,
+        "outputTokens": 189269,
+        "cacheObservations": {
+          "carried_forward_group": 90
+        }
+      },
+      {
+        "path": "canonical-spoken-v6/ko",
+        "apiAttempts": 10,
+        "inputTokens": 25276,
+        "outputTokens": 1985,
+        "cacheObservations": {
+          "carried_forward_group": 938
+        }
+      },
+      {
+        "path": "formal-layer2-timing-revision-v1/runs/zh-Hans",
+        "apiAttempts": 16,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cacheObservations": {
+          "carried_forward_group": 342
+        }
+      },
+      {
+        "path": "formal-layer2-timing-revision-v1/runs/zh-Hans-attempt2",
+        "apiAttempts": 396,
+        "inputTokens": 1759358,
+        "outputTokens": 77739,
+        "cacheObservations": {
+          "carried_forward_group": 552
+        }
+      },
+      {
+        "path": "formal-layer2-timing-revision-v1/runs/ko-attempt1",
+        "apiAttempts": 188,
+        "inputTokens": 511038,
+        "outputTokens": 46325,
+        "cacheObservations": {
+          "carried_forward_group": 760
+        }
+      },
+      {
+        "path": "formal-layer2-timing-revision-v1/runs/es-attempt1",
+        "apiAttempts": 62,
+        "inputTokens": 199250,
+        "outputTokens": 10438,
+        "cacheObservations": {
+          "carried_forward_group": 886
+        }
+      },
+      {
+        "path": "formal-layer2-timing-revision-v1/runs/zh-Hans-attempt3",
+        "apiAttempts": 4,
+        "inputTokens": 18070,
+        "outputTokens": 902,
+        "cacheObservations": {
+          "carried_forward_group": 944
+        }
+      },
+      {
+        "path": "formal-layer2-timing-revision-v1/runs/ko-attempt2",
+        "apiAttempts": 2,
+        "inputTokens": 5450,
+        "outputTokens": 373,
+        "cacheObservations": {
+          "carried_forward_group": 946
+        }
+      },
+      {
+        "path": "formal-layer2-timing-revision-v1/runs/es-attempt2",
+        "apiAttempts": 4,
+        "inputTokens": 13021,
+        "outputTokens": 948,
+        "cacheObservations": {
+          "carried_forward_group": 944
+        }
+      }
+    ]
+  },
+  "audio": {
+    "locales": {
+      "zh-Hans": {
+        "units": 474,
+        "over8Seconds": 167,
+        "over62Seconds": 0,
+        "removedLeadingSeconds": 0,
+        "scheduleStatus": "pass",
+        "schedulePolicy": {
+          "reactionLagSeconds": 0.05,
+          "interUtteranceGapSeconds": 0.05,
+          "maxEndLagSeconds": 62.0
+        },
+        "maxLagSeconds": 30.510004000000038,
+        "asr": {
+          "results": 474,
+          "flagged": 33,
+          "falsePositiveRate": null
+        }
+      },
+      "ko": {
+        "units": 474,
+        "over8Seconds": 137,
+        "over62Seconds": 0,
+        "removedLeadingSeconds": 150.96,
+        "scheduleStatus": "pass",
+        "schedulePolicy": {
+          "reactionLagSeconds": 0.05,
+          "interUtteranceGapSeconds": 0.05,
+          "maxEndLagSeconds": 62.0
+        },
+        "maxLagSeconds": 18.320103000000017,
+        "asr": {
+          "results": 474,
+          "flagged": 45,
+          "falsePositiveRate": null
+        }
+      },
+      "es": {
+        "units": 474,
+        "over8Seconds": 200,
+        "over62Seconds": 0,
+        "removedLeadingSeconds": 144.38,
+        "scheduleStatus": "pass",
+        "schedulePolicy": {
+          "reactionLagSeconds": 0.05,
+          "interUtteranceGapSeconds": 0.05,
+          "maxEndLagSeconds": 62.0
+        },
+        "maxLagSeconds": 24.569985000000088,
+        "asr": {
+          "results": 474,
+          "flagged": 38,
+          "falsePositiveRate": null
+        }
+      }
+    },
+    "u172Discontinuity": {
+      "zh-Hans": {
+        "initialCompactedWindow": [
+          {
+            "textGroupId": "translation-0-u170",
+            "sourceStart": 730.01001,
+            "sourceEnd": 731.929993,
+            "sourceDurationSeconds": 1.919983000000002,
+            "audioDurationSeconds": 1.5600000000000591,
+            "priorEndLagSeconds": 0.6099629999999934,
+            "endLagSeconds": 0.2499800000000505,
+            "lagJumpSeconds": -0.3599829999999429
+          },
+          {
+            "textGroupId": "translation-0-u171",
+            "sourceStart": 731.97998,
+            "sourceEnd": 734.049988,
+            "sourceDurationSeconds": 2.07000800000003,
+            "audioDurationSeconds": 2.1499999999999773,
+            "priorEndLagSeconds": 0.2499800000000505,
+            "endLagSeconds": 0.2799850000000106,
+            "lagJumpSeconds": 0.03000499999996009
+          },
+          {
+            "textGroupId": "translation-0-u172",
+            "sourceStart": 734.25,
+            "sourceEnd": 737.210022,
+            "sourceDurationSeconds": 2.960021999999981,
+            "audioDurationSeconds": 61.360000000000014,
+            "priorEndLagSeconds": 0.2799850000000106,
+            "endLagSeconds": 58.47995100000003,
+            "lagJumpSeconds": 58.19996600000002
+          },
+          {
+            "textGroupId": "translation-0-u173",
+            "sourceStart": 737.51001,
+            "sourceEnd": 743.830017,
+            "sourceDurationSeconds": 6.320007000000032,
+            "audioDurationSeconds": 5.0499999999999545,
+            "priorEndLagSeconds": 58.47995100000003,
+            "endLagSeconds": 56.909955999999966,
+            "lagJumpSeconds": -1.5699950000000626
+          },
+          {
+            "textGroupId": "translation-0-u174",
+            "sourceStart": 744.01001,
+            "sourceEnd": 750.73999,
+            "sourceDurationSeconds": 6.729980000000069,
+            "audioDurationSeconds": 6.190000000000055,
+            "priorEndLagSeconds": 56.909955999999966,
+            "endLagSeconds": 56.189982999999984,
+            "lagJumpSeconds": -0.7199729999999818
+          }
+        ],
+        "finalWindow": [
+          {
+            "unitIndex": 169,
+            "textGroupId": "translation-0-u170",
+            "sourceStart": 730.01001,
+            "sourceEnd": 731.929993,
+            "sourceSeconds": 1.919983000000002,
+            "englishChars": 31,
+            "englishWordCount": 4,
+            "targetChars": 9,
+            "targetWhitespaceWords": 1,
+            "audioSeconds": 2.24,
+            "rawAudioSeconds": 2.24,
+            "removedLeadingSeconds": 0,
+            "plannedStart": 745.22,
+            "plannedEnd": 747.46,
+            "endLagSeconds": 15.530007000000069
+          },
+          {
+            "unitIndex": 170,
+            "textGroupId": "translation-0-u171",
+            "sourceStart": 731.97998,
+            "sourceEnd": 734.049988,
+            "sourceSeconds": 2.07000800000003,
+            "englishChars": 28,
+            "englishWordCount": 5,
+            "targetChars": 13,
+            "targetWhitespaceWords": 1,
+            "audioSeconds": 2.24,
+            "rawAudioSeconds": 2.24,
+            "removedLeadingSeconds": 0,
+            "plannedStart": 747.51,
+            "plannedEnd": 749.75,
+            "endLagSeconds": 15.700012000000015
+          },
+          {
+            "unitIndex": 171,
+            "textGroupId": "translation-0-u172",
+            "sourceStart": 734.25,
+            "sourceEnd": 737.210022,
+            "sourceSeconds": 2.960021999999981,
+            "englishChars": 38,
+            "englishWordCount": 7,
+            "targetChars": 17,
+            "targetWhitespaceWords": 1,
+            "audioSeconds": 3.04,
+            "rawAudioSeconds": 3.04,
+            "removedLeadingSeconds": 0,
+            "plannedStart": 749.8,
+            "plannedEnd": 752.84,
+            "endLagSeconds": 15.629978000000051
+          },
+          {
+            "unitIndex": 172,
+            "textGroupId": "translation-0-u173",
+            "sourceStart": 737.51001,
+            "sourceEnd": 743.830017,
+            "sourceSeconds": 6.320007000000032,
+            "englishChars": 115,
+            "englishWordCount": 21,
+            "targetChars": 29,
+            "targetWhitespaceWords": 1,
+            "audioSeconds": 6.24,
+            "rawAudioSeconds": 6.24,
+            "removedLeadingSeconds": 0,
+            "plannedStart": 752.89,
+            "plannedEnd": 759.13,
+            "endLagSeconds": 15.299982999999997
+          },
+          {
+            "unitIndex": 173,
+            "textGroupId": "translation-0-u174",
+            "sourceStart": 744.01001,
+            "sourceEnd": 750.73999,
+            "sourceSeconds": 6.729980000000069,
+            "englishChars": 92,
+            "englishWordCount": 17,
+            "targetChars": 25,
+            "targetWhitespaceWords": 1,
+            "audioSeconds": 4.96,
+            "rawAudioSeconds": 4.96,
+            "removedLeadingSeconds": 0,
+            "plannedStart": 759.18,
+            "plannedEnd": 764.14,
+            "endLagSeconds": 13.400009999999952
+          }
+        ],
+        "inference": "Near-zero prior lag jumps by about 58 seconds at a 61-second unit against a 2.960022-second source span; following units propagate and reduce that backlog. Final unit duration recovers, but no acoustic cause is adjudicated."
+      },
+      "ko": {
+        "initialCompactedWindow": [
+          {
+            "textGroupId": "translation-0-u170",
+            "sourceStart": 730.01001,
+            "sourceEnd": 731.929993,
+            "sourceDurationSeconds": 1.919983000000002,
+            "audioDurationSeconds": 1.5900000000000318,
+            "priorEndLagSeconds": -0.3100369999999657,
+            "endLagSeconds": -0.32998299999997016,
+            "lagJumpSeconds": -0.01994600000000446
+          },
+          {
+            "textGroupId": "translation-0-u171",
+            "sourceStart": 731.97998,
+            "sourceEnd": 734.049988,
+            "sourceDurationSeconds": 2.07000800000003,
+            "audioDurationSeconds": 2.990000000000009,
+            "priorEndLagSeconds": -0.32998299999997016,
+            "endLagSeconds": 0.9199919999999793,
+            "lagJumpSeconds": 1.2499749999999494
+          },
+          {
+            "textGroupId": "translation-0-u172",
+            "sourceStart": 734.25,
+            "sourceEnd": 737.210022,
+            "sourceDurationSeconds": 2.960021999999981,
+            "audioDurationSeconds": 61.110000000000014,
+            "priorEndLagSeconds": 0.9199919999999793,
+            "endLagSeconds": 58.869958,
+            "lagJumpSeconds": 57.94996600000002
+          },
+          {
+            "textGroupId": "translation-0-u173",
+            "sourceStart": 737.51001,
+            "sourceEnd": 743.830017,
+            "sourceDurationSeconds": 6.320007000000032,
+            "audioDurationSeconds": 4.639999999999986,
+            "priorEndLagSeconds": 58.869958,
+            "endLagSeconds": 56.889962999999966,
+            "lagJumpSeconds": -1.9799950000000308
+          },
+          {
+            "textGroupId": "translation-0-u174",
+            "sourceStart": 744.01001,
+            "sourceEnd": 750.73999,
+            "sourceDurationSeconds": 6.729980000000069,
+            "audioDurationSeconds": 3.6399999999999864,
+            "priorEndLagSeconds": 56.889962999999966,
+            "endLagSeconds": 53.619989999999916,
+            "lagJumpSeconds": -3.26997300000005
+          }
+        ],
+        "finalWindow": [
+          {
+            "unitIndex": 169,
+            "textGroupId": "translation-0-u170",
+            "sourceStart": 730.01001,
+            "sourceEnd": 731.929993,
+            "sourceSeconds": 1.919983000000002,
+            "englishChars": 31,
+            "englishWordCount": 4,
+            "targetChars": 13,
+            "targetWhitespaceWords": 4,
+            "audioSeconds": 1.5,
+            "rawAudioSeconds": 1.92,
+            "removedLeadingSeconds": 0.42,
+            "plannedStart": 730.560027,
+            "plannedEnd": 732.060027,
+            "endLagSeconds": 0.1300340000000233
+          },
+          {
+            "unitIndex": 170,
+            "textGroupId": "translation-0-u171",
+            "sourceStart": 731.97998,
+            "sourceEnd": 734.049988,
+            "sourceSeconds": 2.07000800000003,
+            "englishChars": 28,
+            "englishWordCount": 5,
+            "targetChars": 21,
+            "targetWhitespaceWords": 4,
+            "audioSeconds": 2.88,
+            "rawAudioSeconds": 3.28,
+            "removedLeadingSeconds": 0.4,
+            "plannedStart": 732.110027,
+            "plannedEnd": 734.990027,
+            "endLagSeconds": 0.9400390000000698
+          },
+          {
+            "unitIndex": 171,
+            "textGroupId": "translation-0-u172",
+            "sourceStart": 734.25,
+            "sourceEnd": 737.210022,
+            "sourceSeconds": 2.960021999999981,
+            "englishChars": 38,
+            "englishWordCount": 7,
+            "targetChars": 26,
+            "targetWhitespaceWords": 4,
+            "audioSeconds": 3.97,
+            "rawAudioSeconds": 4.08,
+            "removedLeadingSeconds": 0.11,
+            "plannedStart": 735.040027,
+            "plannedEnd": 739.010027,
+            "endLagSeconds": 1.8000050000000556
+          },
+          {
+            "unitIndex": 172,
+            "textGroupId": "translation-0-u173",
+            "sourceStart": 737.51001,
+            "sourceEnd": 743.830017,
+            "sourceSeconds": 6.320007000000032,
+            "englishChars": 115,
+            "englishWordCount": 21,
+            "targetChars": 40,
+            "targetWhitespaceWords": 9,
+            "audioSeconds": 4.96,
+            "rawAudioSeconds": 5.36,
+            "removedLeadingSeconds": 0.4,
+            "plannedStart": 739.060027,
+            "plannedEnd": 744.020027,
+            "endLagSeconds": 0.19001000000002932
+          },
+          {
+            "unitIndex": 173,
+            "textGroupId": "translation-0-u174",
+            "sourceStart": 744.01001,
+            "sourceEnd": 750.73999,
+            "sourceSeconds": 6.729980000000069,
+            "englishChars": 92,
+            "englishWordCount": 17,
+            "targetChars": 30,
+            "targetWhitespaceWords": 7,
+            "audioSeconds": 4.07,
+            "rawAudioSeconds": 4.08,
+            "removedLeadingSeconds": 0.01,
+            "plannedStart": 744.070027,
+            "plannedEnd": 748.140027,
+            "endLagSeconds": -2.5999630000000025
+          }
+        ],
+        "inference": "Near-zero prior lag jumps by about 58 seconds at a 61-second unit against a 2.960022-second source span; following units propagate and reduce that backlog. Final unit duration recovers, but no acoustic cause is adjudicated."
+      }
+    },
+    "historicalStderrEvidence": [
+      {
+        "timestamp": "2026-10-04T14:20:10.269Z",
+        "line": 3680,
+        "decodedToolOutputSha256": "ead8c14b36b8f3237822b6ab94eeb9f1bb98e72b121a52f5041b91a064f70d89",
+        "error": "scripts.spark_tts_replica_pool.ReplicaPoolError: MemAvailable is below the TTS replica reserve",
+        "errorNumericAvailableBytes": null
+      },
+      {
+        "timestamp": "2026-10-04T14:25:30.683Z",
+        "line": 3851,
+        "decodedToolOutputSha256": "1dbc5857c9a563df946b7ee1dd3a406b2d9dabc9ca1d37356175a72d383ba506",
+        "error": "scripts.spark_tts_replica_pool.ReplicaPoolError: MemAvailable is below the TTS replica reserve",
+        "errorNumericAvailableBytes": null
+      }
+    ],
+    "evidenceSha256": {
+      "pipeline-source-correction-v6h/sentence-interpretation-v6h/f8f91d3097131dd2e8b8e8d8936895f928e8636c1b446268eac7180cbd89797e/anchor-manifest.json": "fa20fe88efa4a9ef722f9f4f07342ffa2b6dfc6e232769be6dfe4dc23a466a32",
+      "zh-publication-v1/audio-render/job.json": "1491cea2d3068ae1ee28728649263f6e9970a5e30f773ad868cb8e62dac61a73",
+      "zh-publication-v1/audio-render/render-manifest.json": "8b8d0846ba4cd3d6c5eececaac5d666c4728a2f0171d184db6d16d6671136200",
+      "zh-publication-v1/audio-render/languages/zh-Hans/synchronization/schedule.json": "e5272f7fc65cb2a40d2cce372e1644277319680bc219fff5e16ada22791c7f07",
+      "zh-publication-v1/audio-render/asr-screening-receipt-v1.json": "0e09478fd0df599844875c60817f28ae928942a9af1bf34d78bd884d5cc38f75",
+      "ko-publication-v1/audio-render/job.json": "09d6cc55ffbe4e8dd175faeeacdf744a612ad1455dd29ee21e53dbd17c0db5d7",
+      "ko-publication-v1/canonical-leading60-v1/render-manifest.json": "be328ff9066e945153e0fdb672c612957f53df9eb56179f44d86fabd1418ea69",
+      "ko-publication-v1/canonical-leading60-v1/languages/ko/synchronization/schedule.json": "3606f878981f7197e5476b78a49dba1196ccece59945b1068a2a0c4d7c412112",
+      "ko-publication-v1/canonical-leading60-v1/review/leading-silence-trim.json": "5abc8eac9c9abfae1fd943778d146bde37c1f2353c23ce6b525e07152f0e9644",
+      "ko-publication-v1/canonical-leading60-v1/asr-screening-receipt-v1.json": "15b0dd809fe0da7b4c2f42b8be90d8029e277ff40a437fef593393edb9899b65",
+      "formal-layer3-execution-v2/es-publication-v1/collected-es-render-v1/job.json": "bd8370a191bb9acd87bcceaa96bebe2251492ee1a8185dc534bfa94bcaa6bbd0",
+      "formal-layer3-execution-v2/es-publication-v1/canonical-leading60-v1/render-manifest.json": "1a6df4fd80a1e0480fbe08d5ec34502fbd083c0228871e8aa31e9494d65d2fef",
+      "formal-layer3-execution-v2/es-publication-v1/canonical-leading60-v1/languages/es/synchronization/schedule.json": "367df3b32022a39272258a5c778c7b212f572ace2f1447e80c3b5f0c26134666",
+      "formal-layer3-execution-v2/es-publication-v1/canonical-leading60-v1/review/leading-silence-trim.json": "42e70c855ec98d2aab78ef4c3ab9996a31ba62a6e9cf12a310867d1d4b8270db",
+      "formal-layer3-execution-v2/es-publication-v1/canonical-leading60-v1/asr-screening-receipt-v1.json": "4d25f2124a1be058ccf74bef5c1065e7f620c665a651c9f96c865476ce596888",
+      "formal-layer3-execution-driver-v1/snapshot-122126.json": "7958a3e1c6720c11034ac9d8a5de90c1f5cb5851f8097b691c72ab23701404de",
+      "formal-layer3-postprocess-execution-v1/plan-preparation/zh-Hans-measurement.json": "dd02acb97cc1bf804ddee22b0813cdb8fec13f38f9a7c72e6bd03787f8d1168c",
+      "formal-layer3-postprocess-execution-v1/plan-preparation/ko-measurement.json": "ecd4f48ba84f055f98ffb7c7ee77b7172fce22cc38394c5c2f5b07364c0a48b4",
+      "RUN/formal-layer3-approved-v1/spoken/zh-Hans/candidate.json": "0ea68152893eea8b325884ff3a44e29210e224c34dcd63cca517ec2e54661d1b",
+      "formal-layer3-execution-v1/zh-Hans/raw/job.json": "ff5043195558b20984c396d27bfdb21044af916ba7611ab8e13bc8a259164900",
+      "RUN/formal-layer3-approved-v1/spoken/ko/candidate.json": "be1a9c7c9dbe1fb87ad97dcf8a3509c3d7481509c6a9360aa934727e7c32e23c",
+      "formal-layer3-execution-v1/ko/raw/job.json": "e240b1560c532c3a99dbeba0ca321ace1c148f5e82eee87e539574d62e5f8ddb",
+      "RUN/formal-layer3-approved-v1/spoken/es/candidate.json": "0c19bc8cea8d1b222920d132b320f46f6e86920675f386b70dfb20c83b782113",
+      "formal-layer3-execution-v1/es/raw/job.json": "b75dcf053a697a10e131efef4c6b0e7fad4d69822fc7580a811721cd06457227",
+      "zh-publication-v1/audio-render/accounting/events.jsonl": "e5dd7c1a3e529d8c768a9c7d711cd0e55cd3196fa95f09f40152db287dacd55c",
+      "ko-publication-v1/audio-render/accounting/events.jsonl": "c87ac6c7d6e248d77178f974f90f37d57a03b184591629b0b8985161542d6b99",
+      "formal-layer3-execution-v2/es-publication-v1/collected-es-render-v1/accounting/events.jsonl": "6ebe339b54faf0551618c77bb94b7973c3167d389ec25b19b65ce1ad3a1c4fc7",
+      "formal-layer3-execution-v2/reports-v1/layer3-8x8-execution-report-v1.json": "6e2de095521ffa7cc01969cc95294c87ae7079f98b0944f17b86bfb498371cdc",
+      "formal-layer3-execution-v2/es-publication-v1/collected-es-render-v1/replica-runtime.json": "55328981e2b5166af065df093a8652a78b29d50782963cbec2ae3f04cef72b02",
+      "ko-publication-v1/human-approved-leading60-v1/evidence/asr-adjudications-v1.json": "e95315e07cee5d7ab6683b7030bc60857adb96106983eeb102725e00edc464ad",
+      "formal-layer3-execution-v2/es-publication-v1/human-approved-leading60-v1/audio-review-worksheet.approved-v1.json": "9596df31edd146f70495f3442392fb3c1f2aa24603c9cf7bd70c13712eda4247"
+    }
+  },
+  "handoffs": {
+    "initialCoverage": {
+      "candidates": 6,
+      "hashBoundApproved": 6,
+      "readyEvents": 5,
+      "spokenLaunchBound": 3
+    },
+    "receiptCoverage": {
+      "controlReceipts": 56,
+      "withTimestamp": 15,
+      "httpReceipts": 27,
+      "httpWithTimestamp": 5,
+      "deploymentReceipts": 11,
+      "deploymentWithTimestamp": 9,
+      "deploymentCandidateDirectoryMismatch": 4,
+      "deploymentVersionPresent": 0
+    },
+    "initialApprovalHandoffs": [
+      {
+        "locale": "zh-Hans",
+        "variant": "full",
+        "ready": null,
+        "approvedAt": "2026-10-04T10:13:53.301601Z",
+        "approvalReceipt": "RUN/formal-layer3-approved-v1/full/zh-Hans/human-review-receipt.json",
+        "approvedCandidateSha256": "2e1e1d6c9a0c7ea69da9125927accc64d4abaadf0c6d17b5b1f9550524c3bb01",
+        "readyToApprovalSeconds": null
+      },
+      {
+        "locale": "zh-Hans",
+        "variant": "spoken",
+        "ready": {
+          "at": "2026-10-04T08:57:33.131392+00:00",
+          "identityEventId": "29988c1966a14d1c8cb5b39d963e85ef",
+          "completedEventId": "1e59263659124ed9b2982130f366eb40",
+          "ledger": "canonical-spoken-v4/zh-Hans/accounting/events.jsonl",
+          "candidateCanonicalSha256": "ed68576253c0deec111769186811eb2d6a0abd65c583e8e2f4cb5059ab5ca78e"
+        },
+        "approvedAt": "2026-10-04T10:13:53.301601Z",
+        "approvalReceipt": "RUN/formal-layer3-approved-v1/spoken/zh-Hans/human-review-receipt.json",
+        "approvedCandidateSha256": "00aaa7ec9cfaf94ab7f82086dd60282f0c59f97cc0902512e18f1c39c8fff3f6",
+        "readyToApprovalSeconds": 4580.170209,
+        "launchAt": "2026-10-04T10:29:13.936924+00:00",
+        "approvalToLocaleLaunchSeconds": 920.635323,
+        "approvalToQueueStartSeconds": 920.6059,
+        "queueWaitBeforeLocaleSeconds": 0.000165,
+        "launchMeaning": "renderer invocation, includes native checks/loading; not GPU first token"
+      },
+      {
+        "locale": "ko",
+        "variant": "full",
+        "ready": {
+          "at": "2026-10-04T07:28:11.750347+00:00",
+          "identityEventId": "47b6efb3c3d74f46bf0ca472310463dd",
+          "completedEventId": "abf15481e7aa40de9453505a4fd78d2a",
+          "ledger": "canonical-production-v8/revision-3/text/ko/accounting/events.jsonl",
+          "candidateCanonicalSha256": "cfdc5cbce3e6681fa5b70a499e42d0ede8f7832b86d5ac0c11b570618e3a6c75"
+        },
+        "approvedAt": "2026-10-04T10:13:53.301601Z",
+        "approvalReceipt": "RUN/formal-layer3-approved-v1/full/ko/human-review-receipt.json",
+        "approvedCandidateSha256": "e3cfc10cdc6cef232b4d0ca0828a54e0f97e826a9fcf04c54661ddb61577b1a4",
+        "readyToApprovalSeconds": 9941.551254
+      },
+      {
+        "locale": "ko",
+        "variant": "spoken",
+        "ready": {
+          "at": "2026-10-04T09:44:12.461630+00:00",
+          "identityEventId": "9db110cb42b54982bc60f341dfb00ca0",
+          "completedEventId": "81b10eec39304977b642f4557c70f841",
+          "ledger": "canonical-spoken-v6/ko/accounting/events.jsonl",
+          "candidateCanonicalSha256": "aba369d977ac83fa9cde158fd99d0d74c34452bcbecb6628739e93d7b3a03ad4"
+        },
+        "approvedAt": "2026-10-04T10:13:53.301601Z",
+        "approvalReceipt": "RUN/formal-layer3-approved-v1/spoken/ko/human-review-receipt.json",
+        "approvedCandidateSha256": "8c69a7511596101eb7493a6cd2193a15e3799b0f5b76991782ec4d682f7cc7a9",
+        "readyToApprovalSeconds": 1780.839971,
+        "launchAt": "2026-10-04T10:51:23.340595+00:00",
+        "approvalToLocaleLaunchSeconds": 2250.038994,
+        "approvalToQueueStartSeconds": 920.6059,
+        "queueWaitBeforeLocaleSeconds": 1329.403836,
+        "launchMeaning": "renderer invocation, includes native checks/loading; not GPU first token"
+      },
+      {
+        "locale": "es",
+        "variant": "full",
+        "ready": {
+          "at": "2026-10-04T07:37:08.413290+00:00",
+          "identityEventId": "27bdca94c8ae446ab4eb8bec0be84907",
+          "completedEventId": "249bc0afda0a4836b5557e58add769f8",
+          "ledger": "canonical-production-v8/revision-4/text/es/accounting/events.jsonl",
+          "candidateCanonicalSha256": "2ed8913edc0e7885b2da6d5a9e0ebbc9037898ae879cee7535ca98167d56b9c2"
+        },
+        "approvedAt": "2026-10-04T10:13:53.301601Z",
+        "approvalReceipt": "RUN/formal-layer3-approved-v1/full/es/human-review-receipt.json",
+        "approvedCandidateSha256": "f3d04841af5d929ebd8a6915936586eb4f4a7f5739d1bf279cf75ef610b4bc30",
+        "readyToApprovalSeconds": 9404.888311
+      },
+      {
+        "locale": "es",
+        "variant": "spoken",
+        "ready": {
+          "at": "2026-10-04T09:31:42.467664+00:00",
+          "identityEventId": "ca456709f894430bbc612ecb0d203a25",
+          "completedEventId": "f3d5a0d1926d4285bf8f5ae59d92e8c8",
+          "ledger": "canonical-spoken-v5/es/accounting/events.jsonl",
+          "candidateCanonicalSha256": "8e9f72eecdbeab88bd69f26a2fa61d84453a4b76be2e8734d19d435e73bd7198"
+        },
+        "approvedAt": "2026-10-04T10:13:53.301601Z",
+        "approvalReceipt": "RUN/formal-layer3-approved-v1/spoken/es/human-review-receipt.json",
+        "approvedCandidateSha256": "6b04b84247611b16d208d60d8397f2ea7326d226998e066fd582fcf4f04916de",
+        "readyToApprovalSeconds": 2530.833937,
+        "launchAt": "2026-10-04T11:13:40.109943+00:00",
+        "approvalToLocaleLaunchSeconds": 3586.808342,
+        "approvalToQueueStartSeconds": 920.6059,
+        "queueWaitBeforeLocaleSeconds": 2666.173184,
+        "launchMeaning": "renderer invocation, includes native checks/loading; not GPU first token"
+      }
+    ],
+    "inheritedHttpCatalogMismatch": [
+      {
+        "path": "multilingual-publication-v2/catalog-ko-es-v1/dev-es-v3/final-http-receipt.json",
+        "recordedCatalogSha256": "3673a1647f45ef42cb23f275d4578233c64637dff2dee45a9ad1cc6ac02cbac4",
+        "adjacentSnapshotCatalogSha256": "9d8c6286d3b94fb7f0819b14e24e19ff3ef17fe05ab5986136c461f687660b69",
+        "meaning": "Inherited receipt does not verify this candidate snapshot."
+      },
+      {
+        "path": "multilingual-publication-v2/catalog-ko-es-v1/dev-ko/final-http-receipt.json",
+        "recordedCatalogSha256": "3673a1647f45ef42cb23f275d4578233c64637dff2dee45a9ad1cc6ac02cbac4",
+        "adjacentSnapshotCatalogSha256": "1112834819a21540f9a464b1208881395616f90fb340287303123ecf28422f19",
+        "meaning": "Inherited receipt does not verify this candidate snapshot."
+      },
+      {
+        "path": "multilingual-publication-v2/catalog-ko-es-v1/dev-ko-v2/final-http-receipt.json",
+        "recordedCatalogSha256": "3673a1647f45ef42cb23f275d4578233c64637dff2dee45a9ad1cc6ac02cbac4",
+        "adjacentSnapshotCatalogSha256": "1112834819a21540f9a464b1208881395616f90fb340287303123ecf28422f19",
+        "meaning": "Inherited receipt does not verify this candidate snapshot."
+      },
+      {
+        "path": "multilingual-publication-v2/catalog-ko-es-v1/dev-ko-v3/final-http-receipt.json",
+        "recordedCatalogSha256": "3673a1647f45ef42cb23f275d4578233c64637dff2dee45a9ad1cc6ac02cbac4",
+        "adjacentSnapshotCatalogSha256": "1112834819a21540f9a464b1208881395616f90fb340287303123ecf28422f19",
+        "meaning": "Inherited receipt does not verify this candidate snapshot."
+      },
+      {
+        "path": "multilingual-publication-v2/catalog-ko-es-v1/prod-es/final-http-receipt.json",
+        "recordedCatalogSha256": "df67ab60aa99f06c197e9f02a8f7cea770bfb56404e8f51feb3f38f353d1ae0d",
+        "adjacentSnapshotCatalogSha256": "7946b7754076f39f5d37010a71b53958b4417e4b30b71b27ac4f931cb9119abe",
+        "meaning": "Inherited receipt does not verify this candidate snapshot."
+      },
+      {
+        "path": "multilingual-publication-v2/catalog-ko-es-v1/prod-ko/final-http-receipt.json",
+        "recordedCatalogSha256": "df67ab60aa99f06c197e9f02a8f7cea770bfb56404e8f51feb3f38f353d1ae0d",
+        "adjacentSnapshotCatalogSha256": "f944db760a5da0bc9ec061ca43c38132c32d29ba648c4f2adaf31c407944cf32",
+        "meaning": "Inherited receipt does not verify this candidate snapshot."
+      }
+    ],
+    "evidence": {
+      "RUN/formal-layer3-approved-v1/approval-manifest.json": "ec5fb84680fede5c18748f393bec70a70c408eabc38b3c98b1d4a44c03b70db8",
+      "formal-layer3-execution-v1/native-job-preparation.json": "62f6cd44a756ef28b045133d5fd5705a7838b3805bab6d8acfec85ae7f93eac4",
+      "formal-layer3-execution-driver-v1/queue.json": "641150db2013c5f7996c59010e06e11fd951f129c50f35c4ff0d4e24988afb81",
+      "formal-layer3-execution-driver-v1/snapshot-122126.json": "7958a3e1c6720c11034ac9d8a5de90c1f5cb5851f8097b691c72ab23701404de",
+      "formal-layer3-execution-driver-v1/launch-receipt.json": "132f4b97bf65a9ba075b8895f81ac0ae89c24f3a3f21e55178d4ba2433a1899d",
+      "canonical-production-v8/plugin-revision-v1/zh-Hans/candidate.json": "4bfa75079825523ce0905d760ed88f3ed98f67cf64c483b1c48afa6d5189b476",
+      "RUN/formal-layer3-approved-v1/full/zh-Hans/candidate.json": "581837f470fd5c82736dea438284941253ccbf5fc1f9cacf4dcfb1733c1fbe8c",
+      "RUN/formal-layer3-approved-v1/full/zh-Hans/human-review-receipt.json": "b11b0a966eced681d4986c29207b0ecd3e0ffc8ba183fd76819de9cca3bb7c61",
+      "canonical-production-v8/plugin-revision-v1/zh-Hans/accounting/events.jsonl": "0ed1d0c17e442f69823d4bfad469ca26cd78d8c95f929d57abe09a98365bb962",
+      "canonical-spoken-v4/zh-Hans/candidate.json": "91680019df272ec1bf6ec544245d61f4db62a223150fe6f85b856cceed421e82",
+      "RUN/formal-layer3-approved-v1/spoken/zh-Hans/candidate.json": "0ea68152893eea8b325884ff3a44e29210e224c34dcd63cca517ec2e54661d1b",
+      "RUN/formal-layer3-approved-v1/spoken/zh-Hans/human-review-receipt.json": "85ea050a9ffcc3b5e227381624735a985a2174b6f8ad527cc855939cc6fe72da",
+      "canonical-spoken-v4/zh-Hans/accounting/events.jsonl": "13759b045b007f086343845ec3808d7efe77e6c9717cd8241d8aa55446698e62",
+      "formal-layer3-prep-v1/stage-preparation-v1/approved-runtime-stage-v2/build-5b2c1ac/selected-zh-Hans.json": "3bc29d24b7652a9d6e32f6cbd4032ea2d424a0d5f62122c5af1d827b4653e39a",
+      "canonical-production-v8/revision-3/text/ko/candidate.json": "15a82bd569282194027e50d631498c1e7efe96d964665a3675741730cf8960ad",
+      "RUN/formal-layer3-approved-v1/full/ko/candidate.json": "3e110c94f338a29a78f961511550b94ebc1e6a8bce01c0702bd3dbb780855b41",
+      "RUN/formal-layer3-approved-v1/full/ko/human-review-receipt.json": "49980223cedc2ead50d54c50c0dad712922b27f5bb1d6e416419bd008ba09e94",
+      "canonical-production-v8/revision-3/text/ko/accounting/events.jsonl": "018f26341338afdfc42e32b69e846596f88ba0e4e891779c1c6a82946728e8c8",
+      "canonical-spoken-v6/ko/candidate.json": "62a1e57d00aaef4893f8f9df8a5f294cd8a7f4681908c72ba4b65bf1e3dc35c1",
+      "RUN/formal-layer3-approved-v1/spoken/ko/candidate.json": "be1a9c7c9dbe1fb87ad97dcf8a3509c3d7481509c6a9360aa934727e7c32e23c",
+      "RUN/formal-layer3-approved-v1/spoken/ko/human-review-receipt.json": "386b81ae803c8bc8755d398cff67f89750a7a14ff87701fe3d30870ccb6a2475",
+      "canonical-spoken-v6/ko/accounting/events.jsonl": "90281a19242809b4b22d9b9f19e71437b4431180558e92420084ceb3aa5d0d8a",
+      "formal-layer3-prep-v1/stage-preparation-v1/approved-runtime-stage-v2/build-5b2c1ac/selected-ko.json": "1e4b5c3a4cc52172038034571c02c2f2e26e0a985fec2706832c2bdbdf87cdd7",
+      "canonical-production-v8/revision-4/text/es/candidate.json": "1421a82502bc6dca187b074ae434524a8b813efeae1a23259427d94efebdbfc9",
+      "RUN/formal-layer3-approved-v1/full/es/candidate.json": "4ee6eb00e4dc9cc1202334a083cc17fdd0751ada6ce3092ab81017bb809c86f8",
+      "RUN/formal-layer3-approved-v1/full/es/human-review-receipt.json": "09381ef52d1b5d20f23863ad9d0930bbd6cbaa54be681106ca57fc6a1a83c08d",
+      "canonical-production-v8/revision-4/text/es/accounting/events.jsonl": "60bf01ed86e42a76501b4c474f6c220d6147ef274b943ec69d761e355c7b5e5a",
+      "canonical-spoken-v5/es/candidate.json": "65f7aabd086153db818d1215f99f045d1931bf90c2eec14c3326488c13c34804",
+      "RUN/formal-layer3-approved-v1/spoken/es/candidate.json": "0c19bc8cea8d1b222920d132b320f46f6e86920675f386b70dfb20c83b782113",
+      "RUN/formal-layer3-approved-v1/spoken/es/human-review-receipt.json": "48ea715bc3463341f567a2bf17fa106e73ff83b0c3e807c56b33a94565991384",
+      "canonical-spoken-v5/es/accounting/events.jsonl": "c174439ccfb4da2ebe3fc29841f5a68da491477e1a9811a1a1c82f52bb4c94d0",
+      "formal-layer3-prep-v1/stage-preparation-v1/approved-runtime-stage-v2/build-5b2c1ac/selected-es.json": "c94640a20634727c539769bb746f839a344b54d4e554e54312335158bc6a7cca",
+      "zh-publication-v1/anchor-exception-receipt.json": "60a179a3d5d9f4204a827ba81ff62a31def86010dfa41bfe514728060912b994",
+      "zh-publication-v1/asset-client-candidate-v2/deployment-command-receipt.json": "6913ed11cadebcdcad0099dacadccf8e56ccfa12eff3b08530d52d3d0f51802d",
+      "zh-publication-v1/asset-client-window-candidate-v4/deployment-command-receipt.json": "a80f7e55651b67fa4ff2b7774780c54ff2625a4a3371c03728035b84c4132e1b",
+      "zh-publication-v1/asset-first-candidate-v1/deployment-command-receipt.json": "0924553bf3d16b7f9b9fb9d5b311c2634e2e6444fba47224bba577f943135267",
+      "zh-publication-v1/production-candidate-v1/deployment-command-receipt.json": "c041b096089791b66582e0575f9a8d1b9ee3603e54010b0363739410a60cee05",
+      "zh-publication-v1/production-client-window-candidate-v4/deployment-command-receipt.json": "dd66b4c033de608e5227fa3e133835ce9ec39bfb86744f5abaea361944fe8038",
+      "zh-publication-v1/publication-http-final-v4.json": "91d9af54213c907f465f475715958cf44f7321d50615a05d1a8e7d2c6c2a9ae9",
+      "metadata-title-fix-v1/dev/assets-http-receipt.json": "3532347229e60ce95f5169fdb09a2d124818cb4f55b4493d51449893a5746e1e",
+      "metadata-title-fix-v1/dev/final-http-receipt.json": "1cb1e07606acbad3c076c9eff0330ce47200e668718643bae47632b696f10816",
+      "metadata-title-fix-v1/dev/metadata-revision-receipt.json": "3eeab7cc4d42ba9b1cc22aab638181d0b4791c361c4f0ab16f653baa3a158a81",
+      "metadata-title-fix-v1/prod/assets-http-receipt.json": "e32f133deede292e9d97c5d4f3e81d6d98728b5404d1c91af40e2bd9d268ab34",
+      "metadata-title-fix-v1/prod/deployment-command-receipt.json": "dd66b4c033de608e5227fa3e133835ce9ec39bfb86744f5abaea361944fe8038",
+      "metadata-title-fix-v1/prod/final-http-receipt.json": "0850de21aea8b86f7b7f0839158bd7284cf52af559b5d7e46bc9022b8681cd0e",
+      "metadata-title-fix-v1/prod/metadata-revision-receipt.json": "25f4d7f1812a058867f28d27ad11d8f0aab24aba28970e48d4475a498a4805d8",
+      "multilingual-publication-v2/asset-first-ko-es-v1/dev/asset-first-receipt.json": "6838249142ebd315d69b620155e2b29efaa56a2b2203e1ca781cbf4e40cff471",
+      "multilingual-publication-v2/asset-first-ko-es-v1/dev/assets-http-receipt.json": "3532347229e60ce95f5169fdb09a2d124818cb4f55b4493d51449893a5746e1e",
+      "multilingual-publication-v2/asset-first-ko-es-v1/dev/final-http-receipt.json": "1cb1e07606acbad3c076c9eff0330ce47200e668718643bae47632b696f10816",
+      "multilingual-publication-v2/asset-first-ko-es-v1/dev/metadata-revision-receipt.json": "3eeab7cc4d42ba9b1cc22aab638181d0b4791c361c4f0ab16f653baa3a158a81",
+      "multilingual-publication-v2/asset-first-ko-es-v1/prod/asset-first-receipt.json": "ff24a389c6f3069a000683cb1d59ab261fcd6fe60491d15c36bddda4dbe739ab",
+      "multilingual-publication-v2/asset-first-ko-es-v1/prod/assets-http-receipt.json": "e32f133deede292e9d97c5d4f3e81d6d98728b5404d1c91af40e2bd9d268ab34",
+      "multilingual-publication-v2/asset-first-ko-es-v1/prod/deployment-command-receipt.json": "dd66b4c033de608e5227fa3e133835ce9ec39bfb86744f5abaea361944fe8038",
+      "multilingual-publication-v2/asset-first-ko-es-v1/prod/final-http-receipt.json": "0850de21aea8b86f7b7f0839158bd7284cf52af559b5d7e46bc9022b8681cd0e",
+      "multilingual-publication-v2/asset-first-ko-es-v1/prod/metadata-revision-receipt.json": "25f4d7f1812a058867f28d27ad11d8f0aab24aba28970e48d4475a498a4805d8",
+      "multilingual-publication-v2/catalog-ko-es-v1/dev-es-v3/assets-http-receipt.json": "3532347229e60ce95f5169fdb09a2d124818cb4f55b4493d51449893a5746e1e",
+      "multilingual-publication-v2/catalog-ko-es-v1/dev-es-v3/catalog-deploy-receipt.json": "0fe30b9806686c378fe7a5ed212f52ed0262ade501644832a5d97160dbe2e6f3",
+      "multilingual-publication-v2/catalog-ko-es-v1/dev-es-v3/final-http-ko-es-receipt-v1.json": "003e499c61d0a02ed7cfe5ff9a752ebcb6f0ffea8c5219e70a8c17ac1ef3a601",
+      "multilingual-publication-v2/catalog-ko-es-v1/dev-es-v3/final-http-receipt.json": "1cb1e07606acbad3c076c9eff0330ce47200e668718643bae47632b696f10816",
+      "multilingual-publication-v2/catalog-ko-es-v1/dev-es-v3/locale-overlay-receipt.json": "139d1f709b3d6fa86577ababdb593e4f39b9ae1d63e98b1cb6e7347026bc1c3c",
+      "multilingual-publication-v2/catalog-ko-es-v1/dev-es-v3/metadata-revision-receipt.json": "3eeab7cc4d42ba9b1cc22aab638181d0b4791c361c4f0ab16f653baa3a158a81",
+      "multilingual-publication-v2/catalog-ko-es-v1/dev-ko/assets-http-receipt.json": "3532347229e60ce95f5169fdb09a2d124818cb4f55b4493d51449893a5746e1e",
+      "multilingual-publication-v2/catalog-ko-es-v1/dev-ko/final-http-receipt.json": "1cb1e07606acbad3c076c9eff0330ce47200e668718643bae47632b696f10816",
+      "multilingual-publication-v2/catalog-ko-es-v1/dev-ko/metadata-revision-receipt.json": "3eeab7cc4d42ba9b1cc22aab638181d0b4791c361c4f0ab16f653baa3a158a81",
+      "multilingual-publication-v2/catalog-ko-es-v1/dev-ko-v2/assets-http-receipt.json": "3532347229e60ce95f5169fdb09a2d124818cb4f55b4493d51449893a5746e1e",
+      "multilingual-publication-v2/catalog-ko-es-v1/dev-ko-v2/final-http-receipt.json": "1cb1e07606acbad3c076c9eff0330ce47200e668718643bae47632b696f10816",
+      "multilingual-publication-v2/catalog-ko-es-v1/dev-ko-v2/metadata-revision-receipt.json": "3eeab7cc4d42ba9b1cc22aab638181d0b4791c361c4f0ab16f653baa3a158a81",
+      "multilingual-publication-v2/catalog-ko-es-v1/dev-ko-v3/assets-http-receipt.json": "3532347229e60ce95f5169fdb09a2d124818cb4f55b4493d51449893a5746e1e",
+      "multilingual-publication-v2/catalog-ko-es-v1/dev-ko-v3/final-http-receipt.json": "1cb1e07606acbad3c076c9eff0330ce47200e668718643bae47632b696f10816",
+      "multilingual-publication-v2/catalog-ko-es-v1/dev-ko-v3/locale-overlay-receipt.json": "a9c6a5e2c56419b8dd97cf044171ce32eceade000f365d87c9d9959c7f639da1",
+      "multilingual-publication-v2/catalog-ko-es-v1/dev-ko-v3/metadata-revision-receipt.json": "3eeab7cc4d42ba9b1cc22aab638181d0b4791c361c4f0ab16f653baa3a158a81",
+      "multilingual-publication-v2/catalog-ko-es-v1/prod-es/assets-http-receipt.json": "e32f133deede292e9d97c5d4f3e81d6d98728b5404d1c91af40e2bd9d268ab34",
+      "multilingual-publication-v2/catalog-ko-es-v1/prod-es/catalog-deploy-receipt.json": "9f28adc714a77428813147111408409dba4104a31b89686dabc39ee443d15ddd",
+      "multilingual-publication-v2/catalog-ko-es-v1/prod-es/deployment-command-receipt.json": "dd66b4c033de608e5227fa3e133835ce9ec39bfb86744f5abaea361944fe8038",
+      "multilingual-publication-v2/catalog-ko-es-v1/prod-es/final-http-ko-es-receipt-v1.json": "edca40a09691b30ee2db8a6d83a6717c5b7abd75eb9a753f552b5beb22067712",
+      "multilingual-publication-v2/catalog-ko-es-v1/prod-es/final-http-receipt.json": "0850de21aea8b86f7b7f0839158bd7284cf52af559b5d7e46bc9022b8681cd0e",
+      "multilingual-publication-v2/catalog-ko-es-v1/prod-es/locale-overlay-receipt.json": "dece975982d69769102323639d009b895dd3b4a2e09cc070e4da9b02ea7c0020",
+      "multilingual-publication-v2/catalog-ko-es-v1/prod-es/metadata-revision-receipt.json": "25f4d7f1812a058867f28d27ad11d8f0aab24aba28970e48d4475a498a4805d8",
+      "multilingual-publication-v2/catalog-ko-es-v1/prod-ko/assets-http-receipt.json": "e32f133deede292e9d97c5d4f3e81d6d98728b5404d1c91af40e2bd9d268ab34",
+      "multilingual-publication-v2/catalog-ko-es-v1/prod-ko/deployment-command-receipt.json": "dd66b4c033de608e5227fa3e133835ce9ec39bfb86744f5abaea361944fe8038",
+      "multilingual-publication-v2/catalog-ko-es-v1/prod-ko/final-http-receipt.json": "0850de21aea8b86f7b7f0839158bd7284cf52af559b5d7e46bc9022b8681cd0e",
+      "multilingual-publication-v2/catalog-ko-es-v1/prod-ko/locale-overlay-receipt.json": "518f60ddae38387aae90d144ed8dfd73294a4a948e9777f0bb0b4869fac9faa3",
+      "multilingual-publication-v2/catalog-ko-es-v1/prod-ko/metadata-revision-receipt.json": "25f4d7f1812a058867f28d27ad11d8f0aab24aba28970e48d4475a498a4805d8",
+      "multilingual-publication-v2/http-assets-ko-es-v1/dev-es.json": "b0aea37c940be3581fec4bbb21b7e65428efb30583cefda86fdfce8f3132fdef",
+      "multilingual-publication-v2/http-assets-ko-es-v1/dev-ko.json": "5f5399d454326e0e2d9821c508f884a968459133657bdbf9fed94056cfd53fe2",
+      "multilingual-publication-v2/http-assets-ko-es-v1/prod-es.json": "cf82f0157cd47a7ef3a845b9a0260dfbeb45df04a4d471a2277f950444438f99",
+      "multilingual-publication-v2/http-assets-ko-es-v1/prod-ko.json": "5614abe7c3521a6ed34bc02a76723c866ec7c60dcab091bf1345e3174f587347",
+      "multilingual-publication-v2/source-landmarks-derivation-receipt-v1.json": "a4d5e76d26e9fc82a10366995b43a6a6a418bd92a840ba2a11ab831945449354",
+      "multilingual-publication-v2/catalog-ko-es-v1/prod-es/public/multilingual-v3.json": "7946b7754076f39f5d37010a71b53958b4417e4b30b71b27ac4f931cb9119abe",
+      "multilingual-publication-v2/catalog-ko-es-v1/prod-es/public/releases-v2/resi-20261004-69ba7a66/ko.json": "4a3712ae8ac69d37f84f9798a1c94a8e2c1efc51b39272677410ede7a50341c9",
+      "multilingual-publication-v2/catalog-ko-es-v1/prod-es/public/releases-v2/resi-20261004-69ba7a66/es.json": "55988ec5bd280f6980485d261c4bb5930aeccb6305373818bf4d5794ba2aaff6",
+      "multilingual-publication-v2/catalog-ko-es-v1/dev-es-v3/public/multilingual-v3.json": "9d8c6286d3b94fb7f0819b14e24e19ff3ef17fe05ab5986136c461f687660b69",
+      "multilingual-publication-v2/catalog-ko-es-v1/dev-es-v3/public/releases-v2/resi-20261004-69ba7a66/ko.json": "5eb3c49741cf8489d27d76785378aa6d08f966484a5d0ec8398db78ef31ba2a7",
+      "multilingual-publication-v2/catalog-ko-es-v1/dev-es-v3/public/releases-v2/resi-20261004-69ba7a66/es.json": "54af77001ec1d303a7f2bc9e8a21472693ab30c6f454e2d90b7e3e5ff6a91357",
+      "zh-publication-v1/audio-human-approved-v1/audio-human-review-receipt.json": "655a7717d1c0ba0dbfd92b0e6c3c6589d91bb1a9b50c5e2e3c201d40a238afe2",
+      "ko-publication-v1/human-approved-leading60-v1/human-reviewed-output-v1/audio-human-review-receipt.json": "3d6a7031af45de99dc19d3ba42ad13dc41c2db6138bbb2d769d001781cd1e71f",
+      "formal-layer3-execution-v2/es-publication-v1/human-approved-leading60-v1/audio-review-approved-v1/audio-human-review-receipt.json": "0b2db9cb01b0ab6761922c45b94f7c933ce782485f408ff94c3e3062c2595715",
+      "formal-layer2-timing-revision-v1/human-translation-approval-request-v2.json": "6f8ff4f04958cf436ed40197ea1a9b8771a6eb217603a88182c1869b979395d0",
+      "formal-layer2-timing-revision-v1/runs/zh-Hans-attempt3/candidate.json": "a0150b4a0e580f5199e1bdf278601bcbbf32450cb76196fe31ec9ac9c8f29f31",
+      "formal-layer2-timing-revision-v1/runs/zh-Hans-human-approved-v1/human-review-receipt.json": "506b405201c1337658df33da242623c988a3dd85c6750ae5097aa62836625046",
+      "formal-layer2-timing-revision-v1/runs/zh-Hans-human-approved-v1/candidate.approved.json": "37a696323ea3699157f8e77b49d54dcc7d0df529ebb977679bc59a48d6cf2679",
+      "formal-layer3-execution-v2/launch-manifests-v1/zh-Hans.json": "c12c055cbf93e87657450dc04f63a9c65b6b1f44ea7a6c8c3f1d50b8a6ed93c0",
+      "formal-layer2-timing-revision-v1/runs/zh-Hans-attempt3/accounting/events.jsonl": "2a99868c2463cc5eb58dec7600e0664542bdadbe8ba0ea9c2d84133725fd9023",
+      "formal-layer2-timing-revision-v1/runs/ko-attempt2/candidate.json": "0ca7e6eefc59c595ce29e11ed6a6e9f6526de4fcb8b1a1a2960da38f1095d8da",
+      "formal-layer2-timing-revision-v1/runs/ko-human-approved-v1/human-review-receipt.json": "139baa979975da40b623f1c552ca9f139ce958db59194f66211a038fbd3bd0a2",
+      "formal-layer2-timing-revision-v1/runs/ko-human-approved-v1/candidate.approved.json": "97935d5a9f311f31ba8449a39a086e8ecd9ff20cd415f7d7dd4301ffb2eab687",
+      "formal-layer3-execution-v2/launch-manifests-v1/ko.json": "982e4ef3324db97b19246a1336b2030b7977a2765829384986e191d7d96d2ac6",
+      "formal-layer2-timing-revision-v1/runs/ko-attempt2/accounting/events.jsonl": "199867e513674b6857b8cffe678ea5ebb101ecfe3ad25a541c26a68bfa0b42c8",
+      "formal-layer2-timing-revision-v1/runs/es-attempt2/candidate.json": "325f6e593911eae9001e237418a1760210a4e3981998708f483895df9dc653c2",
+      "formal-layer2-timing-revision-v1/runs/es-human-approved-v1/human-review-receipt.json": "07e9e6abd4e827d453cd0e5c859e998cb01b3f44f70332880321ccde626e4050",
+      "formal-layer2-timing-revision-v1/runs/es-human-approved-v1/candidate.approved.json": "d1b913257f10e850e9826e0cf349af8dab9f868b55666926ac6952d8fa5d540a",
+      "formal-layer3-execution-v2/launch-manifests-v1/es.json": "009c4472a1d2f8fbb89d70134e9fd71f306f42b91467ea44829ab453f581b382",
+      "formal-layer2-timing-revision-v1/runs/es-attempt2/accounting/events.jsonl": "633899ac6076f137191600dab213dde5d7994141b5c71ef69f03d8d1bb16b244",
+      "multilingual-publication-v2/browser-readback-three-locales-v1.json": "4df9465a2b90664f7d78e8acb0ada5622dca7536688f99104c0e5cd36e61d79a"
+    },
+    "finalHttp": [
+      {
+        "environment": "prod",
+        "files": 15,
+        "matchedSnapshotFiles": 15,
+        "ranges": 3,
+        "range206": 3,
+        "hasTimestamp": false,
+        "hasDeploymentVersion": false,
+        "catalogSha256": "7946b7754076f39f5d37010a71b53958b4417e4b30b71b27ac4f931cb9119abe",
+        "deviceAcceptance": "not_run",
+        "venueAcceptance": "not_run"
+      },
+      {
+        "environment": "dev",
+        "files": 15,
+        "matchedSnapshotFiles": 15,
+        "ranges": 3,
+        "range206": 3,
+        "hasTimestamp": false,
+        "hasDeploymentVersion": false,
+        "catalogSha256": "9d8c6286d3b94fb7f0819b14e24e19ff3ef17fe05ab5986136c461f687660b69",
+        "deviceAcceptance": "not_run",
+        "venueAcceptance": "not_run"
+      }
+    ],
+    "finalReleaseBindings": [
+      {
+        "environment": "prod",
+        "locale": "ko",
+        "httpEvidenceHashMatchesRawReceipt": true,
+        "assetHashesMatchBothHttpReceipts": 4,
+        "assetCount": 4,
+        "catalogReleaseShaMatches": true
+      },
+      {
+        "environment": "prod",
+        "locale": "es",
+        "httpEvidenceHashMatchesRawReceipt": true,
+        "assetHashesMatchBothHttpReceipts": 4,
+        "assetCount": 4,
+        "catalogReleaseShaMatches": true
+      },
+      {
+        "environment": "dev",
+        "locale": "ko",
+        "httpEvidenceHashMatchesRawReceipt": true,
+        "assetHashesMatchBothHttpReceipts": 4,
+        "assetCount": 4,
+        "catalogReleaseShaMatches": true
+      },
+      {
+        "environment": "dev",
+        "locale": "es",
+        "httpEvidenceHashMatchesRawReceipt": true,
+        "assetHashesMatchBothHttpReceipts": 4,
+        "assetCount": 4,
+        "catalogReleaseShaMatches": true
+      }
+    ]
+  },
+  "operations": {
+    "start": "2026-10-04T01:46:31.026Z",
+    "end": "2026-10-04T19:00:55.959Z",
+    "scopes": {
+      "main": {
+        "outerToolCalls": 3801,
+        "functionCalls": 1025,
+        "customToolCalls": 2776,
+        "categories": {
+          "orchestration": 2776,
+          "agent_coordination": 363,
+          "user_question": 39,
+          "ui_operation_or_inspection": 80,
+          "context_or_other_support": 251,
+          "wait_or_status": 292
+        },
+        "commandClasses": {
+          "local_inspection_or_query": 1461,
+          "local_write_or_mixed": 278,
+          "unclassified_command": 170,
+          "status_query": 100,
+          "remote_operation_or_query": 356,
+          "git_or_publication": 72,
+          "tests": 70,
+          "unparsed_or_dynamic": 2,
+          "producer_or_release_cli": 275
+        },
+        "literalCommandCount": 2782,
+        "uniqueLiteralCommands": 2549,
+        "exactRepeatedCommandOccurrences": 233,
+        "spawnForkSettings": {
+          "all": 9,
+          "all-default": 1
+        },
+        "sleepRequestedSeconds": 9004.001,
+        "progressQuerySamples": [
+          {
+            "commandSha256": "25f742779d3e174701390d79d0e342610e258ad590ac923841156002914940dd",
+            "observations": 17,
+            "distinctStates": 16,
+            "first": [
+              "2026-10-04T13:23:25.540Z",
+              {
+                "renders": 94,
+                "wavs": 94,
+                "container": "running"
+              }
+            ],
+            "last": [
+              "2026-10-04T13:38:09.483Z",
+              {
+                "renders": 412,
+                "wavs": 412,
+                "container": "running"
+              }
+            ]
+          },
+          {
+            "commandSha256": "a61391d612af7d0b2e488861ca7f29d28b2893e03c4c7285f583f7fe8677800e",
+            "observations": 23,
+            "distinctStates": 22,
+            "first": [
+              "2026-10-04T13:43:05.525Z",
+              {
+                "renders": 21,
+                "wavs": 21,
+                "container": "running"
+              }
+            ],
+            "last": [
+              "2026-10-04T14:01:04.125Z",
+              {
+                "renders": 415,
+                "wavs": 415,
+                "container": "running"
+              }
+            ]
+          },
+          {
+            "commandSha256": "fc484485436ea8a469e1e5e04b360210a1e99202831bbf9dc39c58e7151a2c02",
+            "observations": 19,
+            "distinctStates": 18,
+            "first": [
+              "2026-10-04T14:05:16.130Z",
+              {
+                "renders": 8,
+                "wavs": 8,
+                "container": "running"
+              }
+            ],
+            "last": [
+              "2026-10-04T14:20:07.203Z",
+              {
+                "renders": 320,
+                "wavs": 320
+              }
+            ]
+          }
+        ]
+      },
+      "all_linked": {
+        "outerToolCalls": 7131,
+        "functionCalls": 1746,
+        "customToolCalls": 5385,
+        "categories": {
+          "orchestration": 5385,
+          "agent_coordination": 771,
+          "user_question": 39,
+          "ui_operation_or_inspection": 118,
+          "context_or_other_support": 431,
+          "wait_or_status": 387
+        },
+        "commandClasses": {
+          "local_inspection_or_query": 2832,
+          "local_write_or_mixed": 589,
+          "unclassified_command": 268,
+          "status_query": 113,
+          "remote_operation_or_query": 470,
+          "git_or_publication": 72,
+          "tests": 228,
+          "unparsed_or_dynamic": 13,
+          "producer_or_release_cli": 625
+        },
+        "literalCommandCount": 5197,
+        "uniqueLiteralCommands": 4918,
+        "exactRepeatedCommandOccurrences": 279,
+        "spawnForkSettings": {
+          "all": 9,
+          "all-default": 1
+        },
+        "sleepRequestedSeconds": 9909.002,
+        "progressQuerySamples": [
+          {
+            "commandSha256": "25f742779d3e174701390d79d0e342610e258ad590ac923841156002914940dd",
+            "observations": 17,
+            "distinctStates": 16,
+            "first": [
+              "2026-10-04T13:23:25.540Z",
+              {
+                "renders": 94,
+                "wavs": 94,
+                "container": "running"
+              }
+            ],
+            "last": [
+              "2026-10-04T13:38:09.483Z",
+              {
+                "renders": 412,
+                "wavs": 412,
+                "container": "running"
+              }
+            ]
+          },
+          {
+            "commandSha256": "a61391d612af7d0b2e488861ca7f29d28b2893e03c4c7285f583f7fe8677800e",
+            "observations": 23,
+            "distinctStates": 22,
+            "first": [
+              "2026-10-04T13:43:05.525Z",
+              {
+                "renders": 21,
+                "wavs": 21,
+                "container": "running"
+              }
+            ],
+            "last": [
+              "2026-10-04T14:01:04.125Z",
+              {
+                "renders": 415,
+                "wavs": 415,
+                "container": "running"
+              }
+            ]
+          },
+          {
+            "commandSha256": "fc484485436ea8a469e1e5e04b360210a1e99202831bbf9dc39c58e7151a2c02",
+            "observations": 19,
+            "distinctStates": 18,
+            "first": [
+              "2026-10-04T14:05:16.130Z",
+              {
+                "renders": 8,
+                "wavs": 8,
+                "container": "running"
+              }
+            ],
+            "last": [
+              "2026-10-04T14:20:07.203Z",
+              {
+                "renders": 320,
+                "wavs": 320
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "auditOutputSha256": {
+    "versions": "81f11ec21c4f95e3da39457c3ea54d9143d279332a56dab2b68c523d79b883e3",
+    "audio": "f3fd442b5d11d71b4e7bd149c62864c23fec5b34a2300dff348fb14e9b436ad3",
+    "handoffs": "42fbd476de49eb1fb3d47aa6cf8bcf54addbf37a8028ae06ba19aa52a291615b",
+    "operations": "308001554f2ff75d7fbc3c26de6b7a72d12a477eed38e4879a5ef7ae9069f258"
+  }
+}

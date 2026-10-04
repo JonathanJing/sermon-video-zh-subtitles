@@ -127,3 +127,5 @@
 ## 可复核产物
 
 本地 `timing-token-audit-v1/accounting-audit.json` 保留唯一事件/attempt 统计、每次根 stage、模型分组及 46 份输入 SHA-256；`attempts.csv` 为逐 run 表。原始账本和媒体继续留在 ignored artifacts。报告中只提交汇总，不提交提示词、译文响应或私人数据。
+
+后续 [完整复盘](20261004-full-production-retrospective.zh.md) 已将L2费用按版本／策略／续跑原因拆分，并补齐首轮队列、缓存重组及发布收据身份检查。它沿用本报告账本，不构成另一笔费用。
