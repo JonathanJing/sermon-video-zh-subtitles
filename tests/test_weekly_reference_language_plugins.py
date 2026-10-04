@@ -50,6 +50,22 @@ class WeeklyReferenceLanguagePluginTests(unittest.TestCase):
         self.assertEqual(checks[2]["status"], "fail")
         self.assertEqual(checks[4]["status"], "fail")
 
+    def test_proper_names_require_whole_term_matches(self):
+        policy = self.policy("es", es_weekly_reference)
+        policy["terminology"]["properNames"].extend([
+            {"source": "K", "target": "K", "reviewStatus": "human_reviewed"},
+            {"source": "ALS", "target": "ELA", "reviewStatus": "human_reviewed"},
+        ])
+        units = [{"sourceUnitId": "s-u001", "english": "God seals them. K spoke."}]
+        checks = es_weekly_reference.review_group(
+            policy, units, self.group("Dios los sella. K habló."))
+        self.assertEqual(checks[2]["status"], "pass")
+
+        units[0]["english"] = "God seals them."
+        checks = es_weekly_reference.review_group(
+            policy, units, self.group("Dios los sella."))
+        self.assertEqual(checks[2]["status"], "pass")
+
     def test_policy_and_plugin_checks_must_match(self):
         policy = self.policy("ko", ko_weekly_reference)
         policy["languageReview"]["requiredChecks"] = ["natural_korean"]

@@ -18,6 +18,13 @@ except ImportError:
     )
 
 
+def _contains_english_term(text: str, term: str) -> bool:
+    """Match reviewed names as whole terms, not incidental substrings."""
+    return re.search(
+        rf"(?<!\w){re.escape(term)}(?!\w)", text, flags=re.IGNORECASE
+    ) is not None
+
+
 def review_reference_only_group(
     policy: dict, english_units: list[dict], group: dict, *,
     locale: str, required: list[str], script_pattern: str,
@@ -51,7 +58,7 @@ def review_reference_only_group(
     register_screen = not re.search(forbidden_register, text, re.I)
     missing_names = [
         term["source"] for term in policy["terminology"]["properNames"]
-        if term["source"].casefold() in english.casefold()
+        if _contains_english_term(english, term["source"])
         and (term["reviewStatus"] == "pending" or not term["target"]
              or term["target"].casefold() not in text.casefold())
     ]
