@@ -20,6 +20,14 @@ AAC 文件的 container/stream 时长可能包含 packetization padding。v3 固
 
 当前 `source_clip.m4a` 实测：窗口 2015.321–3957.444（1942.123 秒）；AAC 解码为 85,647,625 samples，即 1942.123016 秒；format 时长为 1942.200023 秒，rounded container/decoded 差值 3396 samples，低于 4096 sample 预算。`clipDurationSeconds` 记录解码时长，`approvedWindowSeconds` 独立记录 1942.123。
 
+## 跨主机解码器核验
+
+同一媒体哈希不代表所有解码器都会报告相同的末帧采样数。本次 `source_clip.m4a` 在 FFmpeg 6.1.1 中实际输出 85,648,384 个 PCM samples；FFmpeg 9.0.1 输出 85,647,625 个，后者与不可变 map 一致。差值是 AAC 末包的 759 个 discard-padding samples（约 17.21 ms）。两边末包 duration 都为 265，但旧版本输出整帧 1024 samples；这不是 container 时长的浮点舍入差异。
+
+遇到这种差异时，保留旧失败记录、原媒体、批准窗口、map 和 ±1 sample 门槛。固定兼容解码器后，同时复核 `ffprobe` 帧采样总数和真实单声道 PCM 解码字节数；16-bit PCM 的 samples 数等于字节数除以 2。只有二者相等，并且符合原窗口门槛，才通过该主机的时间线检查。不能减去一个经验常数或修改 map 来迁就旧解码器。
+
+本次在独立目录使用 [FFmpeg 官方源码及发布验签流程](https://ffmpeg.org/download.html) 构建了 ARM Linux 9.0.1，保存源码、签名校验、配置和二进制 SHA。正式容器只将独立的 `ffprobe` 目录放入 PATH；最小诊断 `ffmpeg` 仅通过绝对路径作 PCM 核验，未替换生产工具。若采用这种拆分，正式渲染仍须核验其实际 `ffmpeg` 支持所需编码器（本任务使用 `libmp3lame`）。源包／时间线预检通过仅证明这两个输入，不能替代真实 candidate、人工收据、voice authorization 和 speech job 的完整 `checked_context`。
+
 ## 准备 v3 map
 
 向原 CLI 增加两个参数会选择 v3；需要一并提供真实完整源媒体和 `clip_and_normalize` receipt：
