@@ -446,7 +446,7 @@ final class ListeningFlowUITests: XCTestCase {
     }
 
     func testFullTranscriptReturnToCurrentKeepsPausePositionAndReadingMode() throws {
-        let app = launchFixture(locateFlow: true)
+        let app = launchFixture(largeText: true, locateFlow: true)
         try locateSecondEnglishSegment(in: app, fromDock: false)
         let progress = element("playback-progress", in: app)
         try waitFor(progress, "value BEGINSWITH '00:12'")

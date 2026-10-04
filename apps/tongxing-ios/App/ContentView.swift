@@ -9,6 +9,12 @@ import WebKit
 // export a State macro whose plugin is absent from Command Line Tools.
 private typealias ViewState<Value> = SwiftUI.State<Value>
 
+/// Lazy lists must expose the same data identity that ScrollViewReader requests.
+private struct TranscriptScrollRow<Value>: Identifiable {
+    let id: String
+    let value: Value
+}
+
 private struct ToolbarVerticalEdgeReader<Content: View>: View {
     let content: (HorizontalEdge?) -> Content
 
@@ -749,7 +755,8 @@ struct ContentView: View {
 
     private func publishedRows(_ rows: [PublishedTranscriptCue], prefix: String) -> some View {
         LazyVStack(alignment: .leading, spacing: 20) {
-            ForEach(rows, id: \.id) { cue in
+            ForEach(rows.map { TranscriptScrollRow(id: "\(prefix)-\($0.id)", value: $0) }) { row in
+                let cue = row.value
                 let audioCue = model.publishedCaptionsByID[cue.id]
                 VStack(alignment: .leading, spacing: 10) {
                     TranscriptTimeButton(title: PlaybackTime.format(audioCue?.start ?? cue.start)) {
@@ -821,7 +828,8 @@ struct ContentView: View {
                     .font(.footnote).foregroundStyle(.secondary)
                     .accessibilityIdentifier("transcript-missing-english")
             }
-            ForEach(rows) { row in
+            ForEach(rows.map { TranscriptScrollRow(id: "cue-\($0.index)", value: $0) }) { scrollRow in
+                let row = scrollRow.value
                 let cue = row.cue
                 VStack(alignment: .leading, spacing: 8) {
                     TranscriptTimeButton(title: PlaybackTime.format(cue.start)) { playback.jump(to: cue.start) }
