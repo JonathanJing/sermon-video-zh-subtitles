@@ -211,25 +211,6 @@
           "maxLength": 180,
           "pattern": "\\S"
         },
-        "displayMetadata": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "schemaVersion",
-            "edition"
-          ],
-          "properties": {
-            "schemaVersion": {
-              "const": "sermon-page-display-metadata-v1"
-            },
-            "edition": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 80,
-              "pattern": "\\S"
-            }
-          }
-        },
         "videoDelivery": {
           "type": "object",
           "additionalProperties": false,
