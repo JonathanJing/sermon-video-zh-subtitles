@@ -9,7 +9,10 @@ from __future__ import annotations
 
 import argparse
 from collections import OrderedDict
+from concurrent.futures import ThreadPoolExecutor
+from contextvars import copy_context
 from datetime import datetime, timezone
+import fcntl
 import json
 from pathlib import Path
 import sys
@@ -22,7 +25,7 @@ if str(ROOT) not in sys.path:
 
 from scripts import build_english_source_package as layer1  # noqa: E402
 from scripts import sermon_sentence_interpretation as anchors  # noqa: E402
-from scripts.run_sentence_interpretation_models import cached_call  # noqa: E402
+from scripts.english_source_judge_cache import cached_call  # noqa: E402
 from scripts.sermon_pipeline import chat_json  # noqa: E402
 
 
@@ -73,14 +76,15 @@ def _load(path: Path, label: str) -> Any:
 
 
 def _write_immutable(path: Path, payload: object) -> None:
-    if path.exists():
-        if _load(path, "existing machine judge receipt") != payload:
-            raise ValueError(f"Existing machine judge receipt changed: {path}")
-        return
+    from scripts.english_source_judge_cache import _atomic
     path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(path.suffix + ".tmp")
-    temporary.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    temporary.replace(path)
+    with path.with_suffix(path.suffix + ".lock").open("a") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        if path.exists():
+            if _load(path, "existing machine judge receipt") != payload:
+                raise ValueError(f"Existing machine judge receipt changed: {path}")
+            return
+        _atomic(path, payload)
 
 
 def _batches(items: list[dict[str, Any]], size: int) -> list[list[dict[str, Any]]]:
@@ -257,7 +261,7 @@ def _payload(batch: list[dict[str, Any]], *, manifest_hash: str,
             "maximumUnresolvedIssues": 0,
         },
     }
-    return {
+    payload = {
         "model": model,
         "reasoning_effort": effort,
         "response_format": {
@@ -273,6 +277,9 @@ def _payload(batch: list[dict[str, Any]], *, manifest_hash: str,
             {"role": "user", "content": json.dumps(user, ensure_ascii=False)},
         ],
     }
+
+    from scripts.sermon_source_budget import bound_judge_payload
+    return bound_judge_payload(payload)
 
 
 def _checked_batch(result: dict[str, Any], expected: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -297,9 +304,13 @@ def _checked_batch(result: dict[str, Any], expected: list[dict[str, Any]]) -> li
 
 def run(*, aligned_path: Path, manifest_path: Path, out: Path, model: str = "gpt-6-astra",
         effort: str = "medium", batch_size: int = 15, api_key: str,
+        cache_root: Path | None = None, workers: int = 1, prewarm: bool = False,
         caller: Callable[..., dict[str, Any]] = chat_json) -> dict[str, Any]:
+    if type(workers) is not int or not 1 <= workers <= 8:
+        raise ValueError("L1 judge workers must be an integer between 1 and 8")
     aligned_path = aligned_path.resolve()
     manifest_path = manifest_path.resolve()
+    cache_root = (cache_root or manifest_path.parent).resolve()
     manifest = _load(manifest_path, "anchor manifest")
     if not isinstance(manifest, dict) or manifest.get("schemaVersion") != anchors.ANCHOR_SCHEMA_V2:
         raise ValueError("Machine judge requires a clause-stable v2 anchor manifest")
@@ -323,9 +334,10 @@ def run(*, aligned_path: Path, manifest_path: Path, out: Path, model: str = "gpt
     request_ids: list[str] = []
     created_times: list[int] = []
     if deterministic["status"] == "pass":
-        for index, batch in enumerate(_batches(sentences, batch_size)):
+        def review_batch(indexed_batch):
+            index, batch = indexed_batch
             result, receipt = cached_call(
-                out=out.parent,
+                out=cache_root,
                 stage=f"english-source-judge-{index:03d}",
                 payload=_payload(
                     batch,
@@ -338,7 +350,15 @@ def run(*, aligned_path: Path, manifest_path: Path, out: Path, model: str = "gpt
                 requested_model=model,
                 caller=caller,
             )
-            reviewed.extend(_checked_batch(result, batch))
+            return _checked_batch(result, batch), receipt
+
+        # map preserves source order regardless of completion order.
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            pending = [pool.submit(copy_context().run, review_batch, item)
+                       for item in enumerate(_batches(sentences, batch_size))]
+            batches_reviewed = [future.result() for future in pending]
+        for rows, receipt in batches_reviewed:
+            reviewed.extend(rows)
             request_receipts.append(receipt)
             if isinstance(receipt.get("responseId"), str) and receipt["responseId"]:
                 request_ids.append(receipt["responseId"])
@@ -425,7 +445,8 @@ def run(*, aligned_path: Path, manifest_path: Path, out: Path, model: str = "gpt
         "unresolvedIssues": unresolved,
         "requestReceipts": request_receipts,
     }
-    _write_immutable(out, receipt)
+    if not prewarm:
+        _write_immutable(out, receipt)
     return receipt
 
 
@@ -437,6 +458,9 @@ def main() -> int:
     parser.add_argument("--model", default="gpt-6-astra")
     parser.add_argument("--reasoning-effort", default="medium")
     parser.add_argument("--batch-size", type=int, default=15)
+    parser.add_argument("--cache-root", type=Path, help="Canonical request cache root; defaults to anchor manifest directory")
+    parser.add_argument("--workers", type=int, default=1)
+    parser.add_argument("--prewarm", action="store_true", help="Populate the same cache without writing final judge receipt")
     parser.add_argument("--api-key-secret")
     args = parser.parse_args()
     if args.api_key_secret:
@@ -454,6 +478,7 @@ def main() -> int:
         model=args.model,
         effort=args.reasoning_effort,
         batch_size=args.batch_size,
+        cache_root=args.cache_root, workers=args.workers, prewarm=args.prewarm,
         api_key=api_key,
     )
     print(json.dumps({

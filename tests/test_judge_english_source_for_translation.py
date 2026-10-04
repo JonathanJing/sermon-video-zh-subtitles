@@ -75,6 +75,21 @@ class EnglishSourceMachineJudgeTests(unittest.TestCase):
             }],
         }
 
+    def test_prewarm_and_final_share_canonical_cache_across_output_directories(self):
+        calls = []
+        def caller(key, payload):
+            calls.append(payload)
+            return self.fake_caller(key, payload)
+        warm_out = self.root / "warm" / "judge.json"
+        warm = subject.run(aligned_path=self.aligned_path, manifest_path=self.manifest_path,
+                           out=warm_out, api_key="", caller=caller, workers=3, prewarm=True)
+        self.assertFalse(warm_out.exists())
+        final = subject.run(aligned_path=self.aligned_path, manifest_path=self.manifest_path,
+                            out=self.root / "final" / "judge.json", api_key="", caller=caller)
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(warm, final)
+        self.assertFalse(final["humanApproval"])
+
     def test_deterministic_review_rebuilds_explicit_boundary_override(self):
         words = ["Alpha", "bravo", "charlie", "delta,", "echo", "foxtrot,",
                  "golf", "hotel", "india", "juliet."]

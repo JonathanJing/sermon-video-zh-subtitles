@@ -77,7 +77,7 @@ def load_config(path):
     result = {"schemaVersion": SCHEMA, "configPath": str(path), "configSha256": digest(path), "weeks": {}}
     for week, original in config["weeks"].items():
         _week(week)
-        if not isinstance(original, dict) or set(original) - set(PATHS) - {"project", "site", "origin", "replacePages", "series"}:
+        if not isinstance(original, dict) or set(original) - set(PATHS) - {"project", "site", "origin", "replacePages", "series", "environment", "baselineVersion"}:
             raise ValueError("Unknown weekly configuration fields")
         row = dict(original)
         for key in PATHS:
@@ -132,6 +132,10 @@ def _command(settings, sunday, action):
         "record_published": ["weekly_release.py", "record-published", "--registry", registry, "--release", release, "--verification", str(Path(release) / "http-verification.json")],
     }
     command = commands[action]
+    if action == "deploy_release":
+        if not settings.get("baselineVersion") or settings.get("environment") not in {"dev", "production"}:
+            raise ValueError("Deployment requires configured baselineVersion and environment")
+        command += ["--baseline-version", settings["baselineVersion"], "--environment", settings["environment"]]
     if action == "build_page" and settings.get("series"):
         command += ["--series", settings["series"]]
     if action == "prepare_release":

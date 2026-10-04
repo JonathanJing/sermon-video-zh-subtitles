@@ -115,6 +115,22 @@ def _validate_reviewed_at(value: object) -> None:
         raise ValueError("English source review time must include a timezone")
 
 
+def approval_url_matches(approval: dict[str, Any], source_url_hash: str | None,
+                         *, source_url: str | None = None) -> bool:
+    """Bind original Supervisor short URL hash without rewriting its approval.
+
+    The formal package retains a full SHA-256; a legacy 16-character receipt
+    is accepted only with the actual URL whose full hash matches that package.
+    """
+    observed = approval.get("sourceUrlHash")
+    if observed in (None, source_url_hash):
+        return True
+    if not isinstance(source_url, str) or not source_url:
+        return False
+    full = hashlib.sha256(source_url.encode("utf-8")).hexdigest()
+    return full == source_url_hash and observed == full[:16]
+
+
 def _alignment_provider(summary: dict[str, Any]) -> str:
     identity = summary.get("pipelineInputIdentity")
     selected = summary.get("readingAligner")
@@ -360,7 +376,7 @@ def build_package(
         approval_evidence_path = approval_evidence_path.resolve()
         approval = read_object(approval_evidence_path, "operator window approval")
         approval_artifact = artifact(approval_evidence_path, value=approval)
-        if source_url_hash and approval.get("sourceUrlHash") not in (None, source_url_hash):
+        if source_url_hash and not approval_url_matches(approval, source_url_hash, source_url=summary.get("sourceUrl")):
             raise ValueError("Operator approval belongs to a different source URL")
         identity = summary.get("pipelineInputIdentity")
         pipeline_window = identity.get("sermonWindow") if isinstance(identity, dict) else None

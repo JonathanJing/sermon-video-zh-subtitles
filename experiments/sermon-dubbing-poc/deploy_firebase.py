@@ -6,6 +6,9 @@ from pathlib import Path
 import re
 import shutil
 import subprocess
+import hashlib
+from uuid import uuid4
+from datetime import datetime, timezone
 from urllib.error import HTTPError
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
@@ -250,6 +253,8 @@ def main():
     parser.add_argument("--release", type=Path, required=True)
     parser.add_argument("--project", required=True)
     parser.add_argument("--site", required=True)
+    parser.add_argument("--baseline-version", help="Verified current Firebase Hosting version")
+    parser.add_argument("--environment", choices=("dev", "production"))
     parser.add_argument("--execute", action="store_true")
     parser.add_argument("--allow-multilingual-rollback", action="store_true",
                         help="Explicitly replace a multilingual Production site with this legacy snapshot")
@@ -272,12 +277,40 @@ def main():
     receipt = {"projectId": args.project, "siteId": args.site, "url": f"https://{args.site}.web.app", "files": len(report["files"]), "bytes": report["totalBytes"],
         "buildReportSha256": sha256(release / "build-report.json"), "only": "hosting:sermonDubbing", "status": "validated_not_deployed"}
     if args.execute:
+        if not args.baseline_version or not args.environment:
+            raise ValueError("Actual deployment requires explicit environment and verified baseline version")
+        receipt.update(schemaVersion="sermon-legacy-deployment-attempt-v2", attemptId=str(uuid4()),
+                       environment=args.environment, baselineVersion=args.baseline_version, newVersion=None,
+                       startedAt=datetime.now(timezone.utc).isoformat(), completedAt=None,
+                       catalogSha256=sha256(release / "public/weekly.json"),
+                       assetsSha256=hashlib.sha256(json.dumps(report["files"], sort_keys=True, separators=(",", ":")).encode()).hexdigest(),
+                       status="deployment_outcome_unknown")
+        write_json(release / "deployment-receipt.json", receipt)
         guard_multilingual_home(args.project, args.site,
                                 allow_rollback=args.allow_multilingual_rollback)
-        command = ["npx", "--yes", "firebase-tools@15.29.0", "deploy", "--only", "hosting:sermonDubbing", "--project", args.project, "--non-interactive", "--message", "Weekly Chinese sermon listening app"]
+        command = ["npx", "--yes", "firebase-tools@15.29.0", "deploy", "--only", "hosting:sermonDubbing", "--project", args.project, "--non-interactive", "--json", "--message", "Weekly Chinese sermon listening app"]
         with (release / "deploy.log").open("w") as log:
             subprocess.run(command, cwd=release, stdout=log, stderr=subprocess.STDOUT, check=True)
-        receipt["status"] = "deployed_http_verification_pending"
+        receipt["completedAt"] = datetime.now(timezone.utc).isoformat()
+        # Firebase JSON return shapes vary by CLI; only explicit version names count.
+        output = json.loads((release / "deploy.log").read_text())
+        def versions(value):
+            if isinstance(value, dict):
+                for key, child in value.items():
+                    if key in {"version", "versionName", "name"} and isinstance(child, str) and re.fullmatch(r"sites/" + re.escape(args.site) + r"/versions/[^/]+", child):
+                        yield child
+                    else:
+                        yield from versions(child)
+            elif isinstance(value, list):
+                for child in value:
+                    yield from versions(child)
+        observed = set(versions(output))
+        if output.get("status") == "success" and len(observed) == 1:
+            receipt["newVersion"] = observed.pop()
+            receipt["status"] = "deployed_http_verification_pending"
+        write_json(release / "deployment-receipt.json", receipt)
+        if receipt["newVersion"] is None:
+            raise ValueError("Deployment returned without a unique Hosting version; reconcile remote outcome before retry")
     write_json(release / "deployment-receipt.json", receipt)
     print(json.dumps(receipt), flush=True)
 

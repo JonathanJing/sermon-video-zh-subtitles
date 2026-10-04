@@ -53,7 +53,7 @@
 - [受限并发](parallel-production.zh.md)与[配音／PDF 汇合合同](parallel-dubbing-contract.zh.md)
 - [质量回归 Harness](saturday-quality-harness.zh.md)
 - [流程记账](workflow-accounting.zh.md)、[Trace 导出](sermon-trace-export.zh.md)与[Temporal 编排](sermon-temporal.zh.md)
-- [统一 CLI 与持久化执行](unified-cli-pipeline.zh.md) 与 [协议](unified-cli-protocol.zh.md)：拟议的单一入口、流程、产物和命令合同；命令尚未实现
+- [统一 CLI 与持久化执行设计](unified-cli-pipeline.zh.md)、[协议](unified-cli-protocol.zh.md)与[v2运行说明](unified-cli-runtime.zh.md)：可执行入口、单owner、审核、恢复及可选Temporal；[实现与验收](reports/20261004-pr242-implementation-and-acceptance.zh.md)分别记录软件和真实生产证据
 
 ### 同行页面、音频与客户端
 

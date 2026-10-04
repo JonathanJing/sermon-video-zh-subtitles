@@ -26,10 +26,12 @@ try:
     from scripts import stage_formal_multilingual_dev as stage
     from scripts import build_formal_dev_release_assets as formal_assets
     from scripts.release_asset_io import copy_bound_asset
+    from scripts import delivery_contract, study_artifacts
 except ImportError:
     import stage_formal_multilingual_dev as stage
     import build_formal_dev_release_assets as formal_assets
     from release_asset_io import copy_bound_asset
+    import delivery_contract, study_artifacts
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -154,6 +156,13 @@ def prepare(args: argparse.Namespace) -> dict:
         require(args.metadata_approval and args.metadata_proposal, "Approved metadata is required")
         metadata = formal_assets.checked_metadata(args.metadata_approval, args.metadata_proposal,
                                                   args.page_id, args.date, locales)
+    if getattr(args, "release_intent", None):
+        delivery_contract.validate_intent(read(args.release_intent), read(args.routes))
+        for fields in metadata["locales"].values():
+            delivery_contract.validate_metadata(fields)
+    study_maps = {name: assignment_map(getattr(args, name, []), locales) if getattr(args, name, []) else {}
+                  for name in ("outline", "outline_review", "meditation", "meditation_review")}
+    require_study = getattr(args, "require_study", False)
     maps = {name: assignment_map(getattr(args, name), locales)
             for name in ("full_candidate", "full_review_receipt", "spoken_candidate",
                          "spoken_review_receipt", "audio_package", "audio_review_receipt",
@@ -210,6 +219,8 @@ def prepare(args: argparse.Namespace) -> dict:
             content_bytes = content_source.read_bytes()
             content_sha = hashlib.sha256(content_bytes).hexdigest()
             content = json.loads(content_bytes)
+            if getattr(args, "release_intent", None):
+                delivery_contract.validate_metadata(content, measured_duration=stage.decode_audio(track, f"{locale} display duration"))
             require(content.get("schemaVersion") == "sermon-full-video-text-content-v1"
                     and content.get("status") == "human_reviewed"
                     and content.get("pageId") == args.page_id
@@ -264,11 +275,31 @@ def prepare(args: argparse.Namespace) -> dict:
             validate(release, "sermon-target-language-release-package-v2.schema.json")
             release_path = public / f"releases-v2/{args.page_id}/{locale}.json"
             write(release_path, release)
+            if require_study:
+                required_study = ("outline", "outline_review", "meditation", "meditation_review")
+                require(all(locale in study_maps[name] for name in required_study),
+                        f"{locale}: independent outline and meditation approvals required")
+                study = {name: read(study_maps[name][locale]) for name in required_study}
+                for kind in ("outline", "meditation"):
+                    require(study[kind]["pageId"] == args.page_id and study[kind]["locale"] == locale,
+                            "Study page/locale differs")
+                    known_units = {unit for group in full["groups"] for unit in group["sourceUnitIds"]}
+                    require(all(set(section["sourceUnitIds"]) <= known_units for section in study[kind]["sections"]),
+                            "Study references unknown source units")
+                joined = study_artifacts.join_artifacts(source_sha=source_sha, text_sha=full_sha,
+                                                         audio_sha=audio_sha, **study)
+                require(joined["status"] == "complete", "Four-product join incomplete")
+                write(scratch / "study" / locale / "join.json", joined)
+                for name, value in study.items():
+                    write(scratch / "study" / locale / (name + ".json"), value)
             releases[locale] = {"releasePath": "/" + str(release_path.relative_to(public)),
                                 "releaseSha256": digest(release_path),
                                 "fullCandidateSha256": full_sha,
                                 "spokenCandidateSha256": spoken_sha,
                                 "audioPackageSha256": audio_sha}
+            if require_study:
+                releases[locale]["studyJoinSha256"] = digest(scratch / "study" / locale / "join.json")
+                releases[locale]["appCandidateSha256"] = delivery_contract.sha({"products": joined["candidateSha256"], "metadataApproval": stage.canonical_sha(metadata), "contentSha256": content_sha})
         display_locale = "zh-Hans" if "zh-Hans" in locales else locales[0]
         manifest = {"schemaVersion": "sermon-dual-script-app-preparation-v1",
                     "status": "candidate_not_deployed", "pageId": args.page_id,
@@ -302,6 +333,15 @@ def verified_assets(prepared: Path) -> tuple[dict, list[dict]]:
         require(path.is_file() and digest(path) == row["sha256"],
                 f"Prepared asset changed: {row['path']}")
     for locale, item in manifest["releases"].items():
+        if "studyJoinSha256" in item:
+            study_root = prepared / "study" / locale
+            require(digest(study_root / "join.json") == item["studyJoinSha256"], "Study join changed")
+            study = {name: read(study_root / (name + ".json")) for name in ("outline", "outline_review", "meditation", "meditation_review")}
+            joined = study_artifacts.join_artifacts(source_sha=manifest["englishSourcePackageJsonSha256"],
+                                                    text_sha=item["fullCandidateSha256"], audio_sha=item["audioPackageSha256"], **study)
+            content_asset = next(row for row in assets if row["role"] == "content" and row["path"].endswith("/" + locale + ".json"))
+            app_identity = delivery_contract.sha({"products": joined["candidateSha256"], "metadataApproval": manifest["metadataApprovalJsonSha256"], "contentSha256": content_asset["sha256"]})
+            require(joined == read(study_root / "join.json") and app_identity == item["appCandidateSha256"], "Study approval changed")
         path = public / item["releasePath"].lstrip("/")
         require(digest(path) == item["releaseSha256"], f"Candidate release changed: {locale}")
         release = read(path)
@@ -360,6 +400,8 @@ def seal(args: argparse.Namespace) -> dict:
     try:
         public = scratch / "public"
         shutil.copytree(args.prepared / "public", public)
+        if (args.prepared / "study").exists():
+            shutil.copytree(args.prepared / "study", scratch / "study")
         receipt_sha = digest(args.http_verification)
         targets = {}
         for locale in locales:
@@ -384,6 +426,40 @@ def seal(args: argparse.Namespace) -> dict:
                               "sourceIdentitySha256": manifest["englishSourcePackageJsonSha256"],
                               "defaultTargetLocale": "zh-Hans" if "zh-Hans" in targets else next(locale for locale in LOCALES if locale in targets),
                               "targets": targets}]}
+        if getattr(args, "baseline", None):
+            require(getattr(args, "release_plan", None), "Incremental release requires a bound plan")
+            baseline = delivery_contract.validate_catalog_snapshot(args.baseline)
+            plan = read(args.release_plan)
+            catalog = delivery_contract.merge_catalog(baseline, catalog, plan)
+            protected_paths = set()
+            for old_page in baseline["pages"]:
+                for old_locale, old_target in old_page["targets"].items():
+                    if old_page["id"] == plan["pageId"] and old_locale in plan["locales"]:
+                        continue
+                    old_release_path = old_target["releasePackageUrl"].lstrip("/")
+                    protected_paths.add(old_release_path)
+                    old_release = read(args.baseline / "public" / old_release_path)
+                    protected_paths.update(item["path"].lstrip("/") for item in old_release["assets"])
+            replacement_paths = {item["path"].lstrip("/") for item in assets}
+            replacement_paths.update(item["releasePath"].lstrip("/") for item in manifest["releases"].values())
+            # Preserve the entire verified live snapshot, including older pages and locale assets.
+            baseline_report = read(args.baseline / "seal-report.json")
+            require(baseline_report["catalogSha256"] == digest(args.baseline / "public/multilingual-v3.json"),
+                    "Baseline catalog hash differs")
+            for row in baseline_report["files"]:
+                relative = Path(row["path"].lstrip("/"))
+                require(not relative.is_absolute() and ".." not in relative.parts, "Unsafe baseline path")
+                old = args.baseline / "public" / relative
+                require(not old.is_symlink() and old.resolve().is_relative_to((args.baseline / "public").resolve()), "Unsafe baseline asset")
+                require(digest(old) == row["sha256"] and old.stat().st_size == row["bytes"], "Baseline asset changed")
+                target = public / relative
+                if not target.exists():
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copyfile(old, target)
+                elif relative.as_posix() != "multilingual-v3.json":
+                    require(digest(target) == row["sha256"] or
+                            (relative.as_posix() in replacement_paths and relative.as_posix() not in protected_paths),
+                            "Asset collision would damage sibling locale")
         validate(catalog, "sermon-multilingual-catalog-v3.schema.json")
         write(public / "multilingual-v3.json", catalog)
         report = {"schemaVersion": "sermon-dual-script-app-seal-v1",
@@ -391,6 +467,7 @@ def seal(args: argparse.Namespace) -> dict:
                   "pageId": manifest["pageId"], "origin": receipt["origin"],
                   "httpAssetReceiptSha256": receipt_sha,
                   "catalogSha256": digest(public / "multilingual-v3.json"),
+                  "appCandidateSha256s": {locale: manifest["releases"][locale].get("appCandidateSha256") for locale in locales},
                   "releaseSha256s": {locale: targets[locale]["releasePackageJsonSha256"]
                                     for locale in locales},
                   "files": [{"path": "/" + str(path.relative_to(public)), "sha256": digest(path),
@@ -408,6 +485,11 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
     prepare_parser = commands.add_parser("prepare")
+    prepare_parser.add_argument("--release-intent", type=Path)
+    prepare_parser.add_argument("--routes", type=Path)
+    prepare_parser.add_argument("--require-study", action="store_true")
+    for name in ("outline", "outline-review", "meditation", "meditation-review"):
+        prepare_parser.add_argument("--" + name, action="append", default=[], metavar="LOCALE=PATH")
     prepare_parser.add_argument("--source", type=Path, required=True)
     prepare_parser.add_argument("--metadata-approval", type=Path)
     prepare_parser.add_argument("--metadata-proposal", type=Path)
@@ -425,6 +507,8 @@ def main() -> None:
     verify_parser.add_argument("--origin", required=True)
     verify_parser.add_argument("--out", type=Path, required=True)
     seal_parser = commands.add_parser("seal")
+    seal_parser.add_argument("--baseline", type=Path, help="Complete sealed live snapshot")
+    seal_parser.add_argument("--release-plan", type=Path)
     seal_parser.add_argument("--prepared", type=Path, required=True)
     seal_parser.add_argument("--http-verification", type=Path, required=True)
     seal_parser.add_argument("--out", type=Path, required=True)

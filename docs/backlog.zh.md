@@ -24,7 +24,7 @@ English index: [backlog.md](./backlog.md)
 
 ## 2026-10-04：PR #242 剩余工作与执行顺序
 
-本节将 [PR #242](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/242) 的设计、完整复盘、运行演进及周对比转成待执行子任务，沿用本页顶层归属。`DEV-R242-*` 是可单独交付的稳定子任务 ID，不建立第二套顶层 backlog。状态截至本次文档整理：`pending` 表示该剩余范围未交付，`waiting_evidence` 表示还需实际验收；不表示已有组件从未实现。旧章节的日期快照和其他 PR 的状态保留，未逐项实时审计的历史项目不据此关闭或重开。
+本节将 [PR #242](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/242) 的设计、完整复盘、运行演进及周对比转成待执行子任务，沿用本页顶层归属。`DEV-R242-*` 是可单独交付的稳定子任务 ID，不建立第二套顶层 backlog。状态已更新到本次实现：001—024的软件入口及对应验证见[实现与验收](reports/20261004-pr242-implementation-and-acceptance.zh.md)。`in_progress`保留PR合并或该行实际验收，`waiting_evidence`明确等待真实执行/人审；不把工作分支代码当作已合并完成。旧章节的日期快照和其他 PR 的状态保留，未逐项实时审计的历史项目不据此关闭或重开。
 
 **目标**：正常窗口为 America/Los_Angeles 周六19:00至周日10:00。完整范围仍包括译文、配音、大纲、默想，以及 Beta／Dev 审核后的 iOS 正式与 Firebase 正式内容发布和读回。三语 Web 按时可用、原8秒同步目标及三语实际播放／字幕验证，是应恢复的已有交付水平，不能替代完整双端范围。62秒仅是本次绑定版本的例外，不成为下周默认质量目标。设备、现场、PDF和海报各自记状态。
 
@@ -33,23 +33,23 @@ English index: [backlog.md](./backlog.md)
 - 已有局部修复、spoken revision、plugin-only迁移和音频缓存恢复能力；本次三次插件迁移各复用948角色结果、0新API。尚缺统一入口与跨阶段闭环。
 - 正式TTS已有8×8运行证据；L2初始已有16组worker及共享根24槽策略。新增任务是准入、计量和验证，不是把参数改大。
 - PR已有locale子集、源窗口offset及相关消费者补丁；尚缺可重复的通用增量发布和运行时全消费者验收。
-- 统一CLI的四份schema与fixture已入库并有定向测试；生产命令与owner尚未接通。协议完成不等于可运行。
+- 统一CLI的四份schema与fixture已入库并有定向测试；本次已接通v2生产命令与owner，原v1协议/fixture保留；真实内容验收另记。
 - 本周人审批准按原绑定有效；HTTP收据仅证明其已核验环境与版本，旧绑定缺口仍按007修复。本节不要求重审未变化产物；新增实际验收不得回填历史时间或把旧失败改成成功。
 
 ### P0：下一次完整周产前优先完成
 
 | 子任务 / 顶层归属 | 状态 | 剩余交付与验收 | 依赖 |
 |---|---|---|---|
-| `DEV-R242-001` 全消费者预检与运行时冻结；`DEV-WEEK-001`、`DEV-L1-001`、`DEV-DIAG-016/017` | `pending` | 在付费前验证Source→L2→L3→发布全部消费者；覆盖非零窗口、声音授权、locale子集、人审例外版本、双环境和decoder/encoder能力。固定PCM采样、工具/runtime/代码闭包；错源、旧批准、不兼容schema均0新请求拒绝。fixture与真实输入admission分别留证 | 已有四层合同；不靠放宽±1 sample门槛解阻 |
-| `DEV-R242-002` L1唯一缓存与有界并行入口；`DEV-L1-001`、`DEV-SPD-004` | `pending` | 合并prewarm与正式judge的cache root/request key；single-flight或锁阻止同payload重复成功付费。串／并行准入一致；并发竞争、崩溃恢复及unknown先对账通过；保留已知16组重复调用的回归夹具 | 001执行身份；已有request cache |
-| `DEV-R242-003` L3收据上下文复用；`DEV-L3-001`、`DEV-DIAG-015` | `pending` | attempt严格admission后冻结可验证输入快照，安全传入已有预验证job上下文；保留逐WAV完整解码和text/locale/job/receipt校验。相同474句cache前后测量；坏音频、错收据及运行中依赖变更仍拒绝。记录实际节省，不把91%–92%热点占比当提速承诺 | 001；输入快照不变量 |
-| `DEV-R242-004` 单句异常隔离与同步恢复；`DEV-L3-001/002`、`DEV-SPD-004` | `pending` | 保存异常旧WAV，输出duration/source比、局部lag跳升和后续传播；生成早期检测高风险连续段，预测与实测分开。先判断TTS单句修复或L2修订，再独立重算排程；验证未变单元0重合成和原8秒目标。不得自动扩大容差；u172旧WAV缺失保留根因未知 | 001；复用既有单元恢复 |
-| `DEV-R242-005` 模型实际输入政策预览；`DEV-L2-001/002`、`DEV-STE-001/002` | `pending` | 预览并冻结模型实际消费的术语、完整经文、引用及口播规则与payload hash；模型和插件同版。区分内容修改、批准重绑定、plugin-only迁移，给出changed set；只修依赖闭包，失败/unknown不迁成成功。已有人工整句边界保持；真实prompt行为实验归023 | 001；既有partial repair与迁移 |
-| `DEV-R242-006` 元数据与双环境路由门禁；`DEV-WEEK-001`、`DEV-L4-004/007` | `pending` | 发布前拒绝占位标题、缺系列/讲员/经文及显示时长不符；release intent绑定channel/environment/project/site/origin。分别读回catalog、content与Beta/正式客户端可见值；元数据修复不重生成音频 | 001；现有Dev/prod路由 |
-| `DEV-R242-007` 发布收据版本闭合；`DEV-CICD-001`、`DEV-L4-003` | `pending` | 每次发布新建attempt、环境、live/new version、时间、catalog SHA与资产绑定；4份旧部署副本和6份旧HTTP绑定作为拒绝用例。HTTP失败不可写pass，旧收据不可晋升当前；缺历史时间保持unknown | 006；真实publisher返回值 |
-| `DEV-R242-008` 统一CLI计划、查询与审核入口；`DEV-SPD-006`、`DEV-DIAG-017` | `pending` | 实现设计A/B：manifest admission及命令/JSON/退出码，plan/status/result/events只读零写入，wait超时不取消；review ingest拒绝裸approved和错hash。schema/fixture已有，需真实命令消费并验证 | 001；[协议](unified-cli-protocol.zh.md) |
-| `DEV-R242-009` 单owner持久化调度；`DEV-SPD-006`、`DEV-SPD-001` | `pending` | 实现设计C：pump、CAS、lease、drain；CLI/聊天退出任务继续，双owner仅一方派发，取消与在途返回分开；正常路径不依赖Codex轮询，重启不重复成功阶段 | 008 |
-| `DEV-R242-010` 事务恢复与付费对账；`DEV-SPD-004/006`、`DEV-DIAG-006/013` | `pending` | 实现设计D：派发前intent/reservation，返回后原子持久化，reconcile未知结果；测试返回未落盘、进程死亡、期限续期、重复response与预算不足。unknown不自动重试/退款，新旧入口共用幂等账本 | 009；既有保守账本 |
+| `DEV-R242-001` 全消费者预检与运行时冻结；`DEV-WEEK-001`、`DEV-L1-001`、`DEV-DIAG-016/017` | `in_progress` | 在付费前验证Source→L2→L3→发布全部消费者；覆盖非零窗口、声音授权、locale子集、人审例外版本、双环境和decoder/encoder能力。固定PCM采样、工具/runtime/代码闭包；错源、旧批准、不兼容schema均0新请求拒绝。fixture与真实输入admission分别留证 | 已有四层合同；不靠放宽±1 sample门槛解阻 |
+| `DEV-R242-002` L1唯一缓存与有界并行入口；`DEV-L1-001`、`DEV-SPD-004` | `in_progress` | 合并prewarm与正式judge的cache root/request key；single-flight或锁阻止同payload重复成功付费。串／并行准入一致；并发竞争、崩溃恢复及unknown先对账通过；保留已知16组重复调用的回归夹具 | 001执行身份；已有request cache |
+| `DEV-R242-003` L3收据上下文复用；`DEV-L3-001`、`DEV-DIAG-015` | `in_progress` | attempt严格admission后冻结可验证输入快照，安全传入已有预验证job上下文；保留逐WAV完整解码和text/locale/job/receipt校验。相同474句cache前后测量；坏音频、错收据及运行中依赖变更仍拒绝。记录实际节省，不把91%–92%热点占比当提速承诺 | 001；输入快照不变量 |
+| `DEV-R242-004` 单句异常隔离与同步恢复；`DEV-L3-001/002`、`DEV-SPD-004` | `in_progress` | 保存异常旧WAV，输出duration/source比、局部lag跳升和后续传播；生成早期检测高风险连续段，预测与实测分开。先判断TTS单句修复或L2修订，再独立重算排程；验证未变单元0重合成和原8秒目标。不得自动扩大容差；u172旧WAV缺失保留根因未知 | 001；复用既有单元恢复 |
+| `DEV-R242-005` 模型实际输入政策预览；`DEV-L2-001/002`、`DEV-STE-001/002` | `in_progress` | 预览并冻结模型实际消费的术语、完整经文、引用及口播规则与payload hash；模型和插件同版。区分内容修改、批准重绑定、plugin-only迁移，给出changed set；只修依赖闭包，失败/unknown不迁成成功。已有人工整句边界保持；真实prompt行为实验归023 | 001；既有partial repair与迁移 |
+| `DEV-R242-006` 元数据与双环境路由门禁；`DEV-WEEK-001`、`DEV-L4-004/007` | `in_progress` | 发布前拒绝占位标题、缺系列/讲员/经文及显示时长不符；release intent绑定channel/environment/project/site/origin。分别读回catalog、content与Beta/正式客户端可见值；元数据修复不重生成音频 | 001；现有Dev/prod路由 |
+| `DEV-R242-007` 发布收据版本闭合；`DEV-CICD-001`、`DEV-L4-003` | `in_progress` | 每次发布新建attempt、环境、live/new version、时间、catalog SHA与资产绑定；4份旧部署副本和6份旧HTTP绑定作为拒绝用例。HTTP失败不可写pass，旧收据不可晋升当前；缺历史时间保持unknown | 006；真实publisher返回值 |
+| `DEV-R242-008` 统一CLI计划、查询与审核入口；`DEV-SPD-006`、`DEV-DIAG-017` | `in_progress` | 实现设计A/B：manifest admission及命令/JSON/退出码，plan/status/result/events只读零写入，wait超时不取消；review ingest拒绝裸approved和错hash。schema/fixture已有，需真实命令消费并验证 | 001；[协议](unified-cli-protocol.zh.md) |
+| `DEV-R242-009` 单owner持久化调度；`DEV-SPD-006`、`DEV-SPD-001` | `in_progress` | 实现设计C：pump、CAS、lease、drain；CLI/聊天退出任务继续，双owner仅一方派发，取消与在途返回分开；正常路径不依赖Codex轮询，重启不重复成功阶段 | 008 |
+| `DEV-R242-010` 事务恢复与付费对账；`DEV-SPD-004/006`、`DEV-DIAG-006/013` | `in_progress` | 实现设计D：派发前intent/reservation，返回后原子持久化，reconcile未知结果；测试返回未落盘、进程死亡、期限续期、重复response与预算不足。unknown不自动重试/退款，新旧入口共用幂等账本 | 009；既有保守账本 |
 
 P0内部可并行准备：001/005/006与002/003/004；008→009→010是运行框架依赖链。所有行只关闭自身验收范围；正式完整闭环还需下列P1交付，不能以P0完成宣称下一周必然达标。
 
@@ -57,25 +57,25 @@ P0内部可并行准备：001/005/006与002/003/004；008→009→010是运行�
 
 | 子任务 / 顶层归属 | 状态 | 剩余交付与验收 | 依赖 |
 |---|---|---|---|
-| `DEV-R242-011` L2正式入口与并发所有权；`DEV-L2-001`、`DEV-SPD-001/004` | `pending` | 实现设计E：统一controller/runner修订和局部修复；记录每次请求槽根、占用和实际峰值，防止旁路。保留当前每run单active locale及unknown占位，语言审批独立不冒充语言执行并行；更改容量另行验证 | 005、009、010 |
-| `DEV-R242-012` L1/L3 adapter与阶段恢复；`DEV-L1-001`、`DEV-L3-001`、`DEV-DIAG-018` | `pending` | 实现设计F：正式包接owner，源→音频到人审边界；拆合成/校验/排程/拼接/ASR/打包，按输入hash恢复。通用assembly-only须全cache hit，需合成即拒绝CPU路径；resume接受有效稀疏项而非固定320前缀。保持batch/seed/声音身份；远端unknown先对账 | 003、004、010、011 |
-| `DEV-R242-013` 大纲／默想独立审核与四产物汇合；`DEV-L4-006`、`DEV-REVIEW-001` | `pending` | 实现设计G学习产物部分：独立producer、版本化批准schema及review ingest；不能用要求音轨hash的旧outline收据代替独立大纲或默想批准。四产物缺任一项保持partial；PDF不进入App候选hash | 008、011；批准schema落地前保持rejected |
-| `DEV-R242-014` 通用locale增量发布与回滚；`DEV-L4-001/002/004`、`DEV-DIAG-019` | `pending` | 将7份RUN桥接收敛为正式接口：按release plan支持单locale先发布及同page追加，其它计划保留join要求（本周中文→韩西作为验收样例）；覆盖完整live基线、旧资产保留、源offset及Dev/prod。baseline版本/lease或可用条件写入保护；竞争发布拒绝或重建；逐locale回滚不损坏siblings | 006、007、012；实际发布授权与目标绑定 |
+| `DEV-R242-011` L2正式入口与并发所有权；`DEV-L2-001`、`DEV-SPD-001/004` | `in_progress` | 实现设计E：统一controller/runner修订和局部修复；记录每次请求槽根、占用和实际峰值，防止旁路。保留当前每run单active locale及unknown占位，语言审批独立不冒充语言执行并行；更改容量另行验证 | 005、009、010 |
+| `DEV-R242-012` L1/L3 adapter与阶段恢复；`DEV-L1-001`、`DEV-L3-001`、`DEV-DIAG-018` | `in_progress` | 实现设计F：正式包接owner，源→音频到人审边界；拆合成/校验/排程/拼接/ASR/打包，按输入hash恢复。通用assembly-only须全cache hit，需合成即拒绝CPU路径；resume接受有效稀疏项而非固定320前缀。保持batch/seed/声音身份；远端unknown先对账 | 003、004、010、011 |
+| `DEV-R242-013` 大纲／默想独立审核与四产物汇合；`DEV-L4-006`、`DEV-REVIEW-001` | `in_progress` | 实现设计G学习产物部分：独立producer、版本化批准schema及review ingest；不能用要求音轨hash的旧outline收据代替独立大纲或默想批准。四产物缺任一项保持partial；PDF不进入App候选hash | 008、011；批准schema落地前保持rejected |
+| `DEV-R242-014` 通用locale增量发布与回滚；`DEV-L4-001/002/004`、`DEV-DIAG-019` | `in_progress` | 将7份RUN桥接收敛为正式接口：按release plan支持单locale先发布及同page追加，其它计划保留join要求（本周中文→韩西作为验收样例）；覆盖完整live基线、旧资产保留、源offset及Dev/prod。baseline版本/lease或可用条件写入保护；竞争发布拒绝或重建；逐locale回滚不损坏siblings | 006、007、012；实际发布授权与目标绑定 |
 | `DEV-R242-015` 双端晋级与最终播放验收；`DEV-L4-006`、`DEV-IOS-001`、`DEV-CICD-003/004` | `waiting_evidence` | Beta＋Firebase Dev分别人工查看，再iOS正式＋Firebase正式内容发布/读回；三语实际播放、字幕、原视频静音和1×同步各记证据。媒体ready不能代替播放；设备/现场单列。需实现的publisher/reader接线与真实验收分别提交证据，缺端保持partial | 007、013、014；当前候选批准与可用设备 |
-| `DEV-R242-016` 因果日志、交接与15小时看板；`DEV-TRACK-001`、`DEV-DIAG-008/020`、`DEV-SPD-002` | `pending` | 实现设计H并从001起接入：ready/approved/enqueued/started/finished分列，UTC与monotonic、真实provider叶/跨进程边、run/revision/attempt齐全；增量事件与安全公共状态代替重复全文读取。关键路径缺边为incomplete；按冻结scope显示剩余项/ETA范围/截止余量，缺测不补零 | 从001起贯穿008–015，不等最后才埋点 |
-| `DEV-R242-017` 代码闭包、资源与缓存账本；`DEV-TRACK-001`、`DEV-SPD-002` | `pending` | 每attempt绑定完整加载代码/镜像/工具/argv及政策变更原因；区分缓存验证、新合成、ASR、拼接。reserve失败瞬间记录MemAvailable/worker RSS/未消费波形字节/队列；GPU峰值缺测为unknown。生产API、Codex及账单分账、响应去重，历史缺测不伪造 | 001、016；保持reserve24GiB |
-| `DEV-R242-018` 审核疑点与精确证据复用；`DEV-REVIEW-001`、`DEV-L3-001` | `pending` | 疑点绑定当前unit WAV/track/text；可选记录误识别、可接受读法、修音频、修文字、未裁定及正确转写。机器筛查、人审、同步例外独立；哈希变化才重算受影响门禁。既有整体批准不强制重审；只用逐项真值计算误报率 | 004、008、012 |
-| `DEV-R242-019` 三分钟fixture与故障演练；`DEV-E2E-001`、`DEV-SPD-003` | `pending` | 实现后运行协议mockup：0新付费、0运行时Codex turn；错源/旧批准/代码漂移/缺fixture/双owner/取消/重启均覆盖。至少100次具备前置的程序转移，交接p95≤2秒（不含人审/计算）。既有fixture形状测试不是命令实跑 | 008–012、016；未实现命令不改走旧DAG冒充 |
+| `DEV-R242-016` 因果日志、交接与15小时看板；`DEV-TRACK-001`、`DEV-DIAG-008/020`、`DEV-SPD-002` | `in_progress` | 实现设计H并从001起接入：ready/approved/enqueued/started/finished分列，UTC与monotonic、真实provider叶/跨进程边、run/revision/attempt齐全；增量事件与安全公共状态代替重复全文读取。关键路径缺边为incomplete；按冻结scope显示剩余项/ETA范围/截止余量，缺测不补零 | 从001起贯穿008–015，不等最后才埋点 |
+| `DEV-R242-017` 代码闭包、资源与缓存账本；`DEV-TRACK-001`、`DEV-SPD-002` | `in_progress` | 每attempt绑定完整加载代码/镜像/工具/argv及政策变更原因；区分缓存验证、新合成、ASR、拼接。reserve失败瞬间记录MemAvailable/worker RSS/未消费波形字节/队列；GPU峰值缺测为unknown。生产API、Codex及账单分账、响应去重，历史缺测不伪造 | 001、016；保持reserve24GiB |
+| `DEV-R242-018` 审核疑点与精确证据复用；`DEV-REVIEW-001`、`DEV-L3-001` | `in_progress` | 疑点绑定当前unit WAV/track/text；可选记录误识别、可接受读法、修音频、修文字、未裁定及正确转写。机器筛查、人审、同步例外独立；哈希变化才重算受影响门禁。既有整体批准不强制重审；只用逐项真值计算误报率 | 004、008、012 |
+| `DEV-R242-019` 三分钟fixture与故障演练；`DEV-E2E-001`、`DEV-SPD-003` | `in_progress` | 实现后运行协议mockup：0新付费、0运行时Codex turn；错源/旧批准/代码漂移/缺fixture/双owner/取消/重启均覆盖。至少100次具备前置的程序转移，交接p95≤2秒（不含人审/计算）。既有fixture形状测试不是命令实跑 | 008–012、016；未实现命令不改走旧DAG冒充 |
 | `DEV-R242-020` 短片canary与整周验收；`DEV-TRK-002`、`DEV-SPD-003`、`DEV-WEEK-001` | `waiting_evidence` | 先完成既有SPD-OPT待决TTS样本听审，再按获批短片scope冷/热→10分钟→完整篇幅与重复运行验收；记录同质量下总耗时、人工等待、成本及截止前完整scope完成情况。质量、三语Web播放、双端读回分别验；缩语言或豁免质量不算性能提升 | 013–019；source/locale/voice/预算/硬件/窗口及审核人明确后执行 |
 
 ### P2：基线稳定之后的实验与扩展
 
 | 子任务 / 顶层归属 | 状态 | 剩余交付与验收 | 依赖 |
 |---|---|---|---|
-| `DEV-R242-021` 容量与跨层重叠实验；`DEV-SPD-001`、`DEV-L3-004` | `pending` | 实现设计I：固定输入/声音/质量下比较replicas、batch、worker、共享准入与模型驻留；记录队列、内存、长尾及总交付时间，冷热分别统计。8×8现状先保留；不削弱reserve或把62秒容差当提速 | 017、020；独立预算与容量授权 |
-| `DEV-R242-022` 同口径成本和Agent上下文实验；`DEV-SPD-005/006`、`DEV-COST-001` | `pending` | 同源/政策/质量比较持久化工作流、bounded state packet与原流程；分别计生产API、非缓存/缓存输入、输出、GPU与全链wall，保留unknown；短上下文Agent只接最小证据，不默认继承全文。真实费用对账沿用DEV-COST-001/002，不凭token推账单 | 016、017、020；真实账户配置仍按既有授权范围 |
-| `DEV-R242-023` 提示词与筛查质量实验；`DEV-STE-001/002/006` | `pending` | 沿用既有paired A/B计划，明确阅读稿/元数据/口播引用范围及未解决issue保留；冻结候选、样本、预算、盲评和非劣标准，批准前不改生产prompt。逐项裁定样本后才能评ASR误报，不以疑点数断言音质变差 | 005、018；既有STE候选审批和实验预算 |
-| `DEV-R242-024` Temporal接入；`DEV-SPD-006` | `pending` | 实现设计J：复用同一adapter，迁移时canonical pump停止该run派发；跨重启与故障只保留一个owner、沿用原账本，回退不重复付费。不将单机SQLite称为高可用 | 009–022稳定后，按设计C–I完成情况准入 |
+| `DEV-R242-021` 容量与跨层重叠实验；`DEV-SPD-001`、`DEV-L3-004` | `in_progress` | 实现设计I：固定输入/声音/质量下比较replicas、batch、worker、共享准入与模型驻留；记录队列、内存、长尾及总交付时间，冷热分别统计。8×8现状先保留；不削弱reserve或把62秒容差当提速 | 017、020；独立预算与容量授权 |
+| `DEV-R242-022` 同口径成本和Agent上下文实验；`DEV-SPD-005/006`、`DEV-COST-001` | `in_progress` | 同源/政策/质量比较持久化工作流、bounded state packet与原流程；分别计生产API、非缓存/缓存输入、输出、GPU与全链wall，保留unknown；短上下文Agent只接最小证据，不默认继承全文。真实费用对账沿用DEV-COST-001/002，不凭token推账单 | 016、017、020；真实账户配置仍按既有授权范围 |
+| `DEV-R242-023` 提示词与筛查质量实验；`DEV-STE-001/002/006` | `in_progress` | 沿用既有paired A/B计划，明确阅读稿/元数据/口播引用范围及未解决issue保留；冻结候选、样本、预算、盲评和非劣标准，批准前不改生产prompt。逐项裁定样本后才能评ASR误报，不以疑点数断言音质变差 | 005、018；既有STE候选审批和实验预算 |
+| `DEV-R242-024` Temporal接入；`DEV-SPD-006` | `in_progress` | 实现设计J：复用同一adapter，迁移时canonical pump停止该run派发；跨重启与故障只保留一个owner、沿用原账本，回退不重复付费。不将单机SQLite称为高可用 | 009–022稳定后，按设计C–I完成情况准入 |
 
 ### 历史剩余事项保留在原ID
 
@@ -97,7 +97,7 @@ P0内部可并行准备：001/005/006与002/003/004；008→009→010是运行�
 | [周对比](reports/20261004-week-over-week-retrospective.zh.md) | 004、006–007、015、020；恢复8秒同步、实际播放与按时交付 |
 | [生产日志复盘](reports/20261004-production-log-retrospective.zh.md)、[生产计量](reports/20261004-production-time-tokens.zh.md)、[Codex计量](reports/20261004-codex-dialogue-usage.zh.md) | 004–007、016–018、022 |
 
-每个子任务关闭时附实现PR/合并commit、定向验证及对应真实证据；只完成软件部分时保留实际验收待办。本节的优先级和依赖为后续实施安排，当前只整理backlog，没有执行模型、修改生产参数、部署或补做听审。
+每个子任务关闭时附实现PR/合并commit、定向验证及对应真实证据；只完成软件部分时保留实际验收待办。本次已实现软件与离线/真实媒体测试，但未启动本视频付费模型、修改生产参数、部署或补做听审；逐项实现和未完成实际证据见上述报告。
 
 <a id="dev-180s-diagnostic-followup"></a>
 
