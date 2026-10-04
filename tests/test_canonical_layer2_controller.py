@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import subprocess
 import sys
+import threading
 import time
 import unittest
 from unittest.mock import patch
@@ -286,11 +287,49 @@ class CanonicalLayer2ControllerTests(unittest.TestCase):
             self.assertFalse(result['dispatched'])
             start.assert_not_called()
             view = subject.snapshot(config)
-            # Even a separate ready lane cannot exceed this adapter's initial
-            # per-production-run locale capacity.
+            # A running locale reserves the single controller slot.
             view['nodes']['text.ko'] = {'status': 'ready'}
             controller.config.lanes['ko'] = {}
             self.assertIsNone(controller._choose(view))
+
+    def test_binding_is_rechecked_after_waiting_for_api_slot(self):
+        entered = threading.Event()
+        release = threading.Event()
+        calls = []
+        errors = []
+
+        @contextmanager
+        def held_slot(_job_root):
+            entered.set()
+            if not release.wait(timeout=10):
+                raise TimeoutError('test did not release API slot')
+            yield
+
+        def caller(key, payload):
+            calls.append(payload)
+            return self.fake_call(key, payload)
+
+        with self.active() as (config, code, key, _):
+            with patch.object(subject.api_concurrency, 'request_slot', held_slot):
+                def execute():
+                    try:
+                        self.execute(config, code, key, caller=caller)
+                    except BaseException as exc:
+                        errors.append(exc)
+
+                worker = threading.Thread(target=execute)
+                worker.start()
+                try:
+                    self.assertTrue(entered.wait(timeout=5))
+                    self.config_data['productionRunId'] = 'b' * 64
+                    self.save_config()
+                finally:
+                    release.set()
+                worker.join(timeout=5)
+                self.assertFalse(worker.is_alive())
+        self.assertEqual(calls, [])
+        self.assertEqual(len(errors), 1)
+        self.assertIn('worker_configuration_or_code_changed_during_models', str(errors[0]))
 
     def test_actual_worker_cli_without_key_stops_before_any_model_cache(self):
         with self.active() as (config, code, key, _):
@@ -354,8 +393,7 @@ class CanonicalLayer2ControllerTests(unittest.TestCase):
             pass
         controller = subject.Controller(self.path)
         view = subject.snapshot(controller.config)
-        view['nodes']['text.ko'] = {'status': 'ready'}
-        controller.config.lanes['ko'] = {}
+        # An uncertain owner conservatively retains the single locale slot.
         self.assertTrue(controller._capacity_full(view))
         self.assertIsNone(controller._choose(view))
 

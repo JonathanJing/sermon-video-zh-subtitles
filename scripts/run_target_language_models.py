@@ -48,6 +48,7 @@ COMPATIBLE_RUNNER_IDENTITIES = {
 MODEL_ROLES = {"translator": "gpt-6-astra", "reviewer": "gpt-6-sol"}
 SEMANTIC_CHECKS = ("completeMeaning", "negationsNumbersNames", "quotationAttribution", "noAddedMeaning")
 REVISION_BRIEF_SCHEMA = "sermon-target-language-group-revision-brief-v1"
+MAX_STANDALONE_GROUP_WORKERS = 3
 
 
 def revision_boundary_instruction(target_locale: str, *, revising: bool) -> str:
@@ -470,7 +471,7 @@ def carry_forward_group(prior_run: Path, out: Path, index: int,
 
 def ordered_group_results(items: list, worker, workers: int) -> list:
     """Keep only a bounded set of paid groups in flight and merge in source order."""
-    require(type(workers) is int and 1 <= workers <= 3, "Group workers must be 1..3")
+    require(type(workers) is int and 1 <= workers <= 16, "Group workers must be 1..16")
     if workers == 1 or len(items) < 2:
         return [worker(item) for item in items]
     results = {}
@@ -498,6 +499,13 @@ def ordered_group_results(items: list, worker, workers: int) -> list:
                     next_index, item = next_item
                     pending[pool.submit(copy_context().run, worker, item)] = next_index
     return [results[index] for index in range(len(items))]
+
+
+def validate_standalone_worker_budget(policy: dict) -> None:
+    workers = policy["batching"].get("workers")
+    require(policy["batching"].get("batchSize") == 1
+            and type(workers) is int and 1 <= workers <= MAX_STANDALONE_GROUP_WORKERS,
+            "Standalone production runner requires batchSize=1 and workers=1..3")
 
 
 def require_reconciled_requests(*directories: Path | None) -> None:
@@ -575,8 +583,8 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                     f"Production {role} model must be {expected}; freeze a new policy")
         workers = policy["batching"].get("workers")
         require(policy["batching"].get("batchSize") == 1
-                and type(workers) is int and 1 <= workers <= 3,
-                "Per-group production runner requires batchSize=1 and workers=1..3")
+                and type(workers) is int and 1 <= workers <= 16,
+                "Per-group production runner requires batchSize=1 and workers=1..16")
         if plugin_path is not None:
             require_plugin_identity(plugin_path, policy["languageReview"]["pluginImplementationSha256"])
         plan = group_plan(request, anchor, custom_plan)
@@ -943,6 +951,7 @@ def main() -> None:
                               (args.english_source_package, args.anchor, args.policy))
     # Validate all policy/source/plan conditions before requiring a secret or making a paid call.
     request = producer.prepare_request(source, anchor, policy)
+    validate_standalone_worker_budget(policy)
     plan = group_plan(request, anchor, json.loads(args.group_plan.read_text(encoding="utf-8"))
                       if args.group_plan else None)
     require_plugin_identity(args.plugin, policy["languageReview"]["pluginImplementationSha256"])
