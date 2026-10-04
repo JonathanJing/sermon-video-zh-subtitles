@@ -22,6 +22,7 @@ from jsonschema import Draft202012Validator, FormatChecker
 
 try:
     from scripts import sermon_accounting as accounting
+    from scripts import build_english_source_package as english_source
     from scripts import prepare_target_language_speech_job as speech
     from scripts import sermon_sentence_interpretation as interpretation
     from scripts import clip_timeline_map as timeline_map
@@ -29,6 +30,7 @@ try:
     from scripts import screen_target_language_audio_units as audio_screen
 except ImportError:
     import sermon_accounting as accounting
+    import build_english_source_package as english_source
     import prepare_target_language_speech_job as speech
     import sermon_sentence_interpretation as interpretation
     import clip_timeline_map as timeline_map
@@ -134,9 +136,9 @@ def validate_job(source: dict[str, Any], anchor: dict[str, Any], candidate: dict
                 "sourceIdentity", "transcriptCompleteness", "wordAlignment",
                 "sentenceAndPauseBoundaries"))
             and window.get("status") == "approved"
-            and window.get("humanApproval") is True
-            and source.get("anchors", {}).get("issueCount") == 0,
+            and window.get("humanApproval") is True,
             "English Source Package lacks source/window/anchor human gates")
+    english_source.validate_ready_package(source)
     speech.validate_policy_binding(candidate, policy, strict_rubric=strict_rubric)
     speech.validate_human_review_receipt(source, anchor, candidate, human_receipt)
     speech.validate_adapter(adapter, candidate["targetLocale"], registry,

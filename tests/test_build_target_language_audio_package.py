@@ -8,6 +8,7 @@ import wave
 from unittest import mock
 
 from scripts import build_target_language_audio_package as subject
+from scripts import build_english_source_package as english_source
 from scripts import prepare_clip_voice_authorization as clip_voice
 from scripts import prepare_clip_voice_capability as clip_capability
 from scripts import clip_timeline_map as timeline_map
@@ -278,11 +279,104 @@ class AudioPackageTests(unittest.TestCase):
         self.manifest_path = self.root / "render-manifest.json"
         write_json(self.manifest_path, self.manifest)
 
-    @staticmethod
-    def complete_source_fixture(source):
-        """Allow integration fixtures to supply a fully built Layer 1 package."""
-        source["source"].setdefault("sourceId", "synthetic:audio-package")
-        return source
+    def complete_source_fixture(self, source):
+        """Build a canonical Layer 1 fixture with one resolved retained warning."""
+        # These small aligned segments are synthetic test data, but the
+        # resulting source package goes through the production Layer 1 builder.
+        aligned = self.root / "complete-aligned.json"
+        segments = [{"id": index, "text": unit["english"],
+                     "start": unit["start"], "end": unit["end"]}
+                    for index, unit in enumerate(self.anchor["sourceUnits"])]
+        write_json(aligned, segments)
+        self.anchor["input"] = {
+            "mfaSegmentsSha256": english_source.file_sha256(aligned),
+            "timingKind": "mfa_forced_alignment_estimate",
+        }
+        self.anchor["counts"] = {"sourceWords": 9, "sourceSentences": 2}
+        self.anchor["policy"] = {"unitPolicy": interpretation.UNIT_POLICY_V2}
+        for index, unit in enumerate(self.anchor["sourceUnits"]):
+            unit["sourceSentenceId"] = f"sentence-{index}"
+        issue = {
+            "type": "clause_unit_exceeds_target_without_safe_boundary",
+            "sourceSentenceId": self.anchor["sourceUnits"][0]["sourceSentenceId"],
+            "durationSeconds": 0.1,
+            "maximumSeconds": 0.05,
+        }
+        self.anchor["issues"] = [issue]
+        anchor_path = self.root / "complete-anchor.json"
+        write_json(anchor_path, self.anchor)
+
+        source_window = source["source"]["approvedWindow"]
+        summary = self.root / "source-summary.json"
+        write_json(summary, {
+            "sourceDurationSeconds": 0.7,
+            "sermonStartSeconds": 0.0,
+            "sermonEndSeconds": 0.7,
+            "readingAligner": "mfa",
+            "pipelineInputIdentity": {"sourceAudio": {
+                "sha256": source["source"]["media"]["sha256"],
+                "sizeBytes": self.clip_media_path.stat().st_size,
+            }},
+        })
+        review = {
+            "schemaVersion": english_source.REVIEW_SCHEMA_VERSION,
+            "alignedSegmentsSha256": english_source.file_sha256(aligned),
+            "anchorManifestJsonSha256": english_source.json_sha256(self.anchor),
+            "humanApproval": True,
+            "reviewedBy": "Synthetic fixture reviewer",
+            "reviewedAt": "2026-09-30T00:00:00Z",
+            "reviewedSourceUnitIds": [unit["sourceUnitId"] for unit in self.anchor["sourceUnits"]],
+            "checks": {name: "approved" for name in english_source.APPROVED_CHECKS},
+        }
+        review_path = self.root / "source-review.json"
+        write_json(review_path, review)
+
+        sentence_ids = list(dict.fromkeys(
+            unit["sourceSentenceId"] for unit in self.anchor["sourceUnits"]))
+        machine_judge = {
+            "schemaVersion": english_source.MACHINE_JUDGE_SCHEMA_VERSION,
+            "reviewType": "model", "humanApproval": False,
+            "status": "approved_for_layer2_shadow",
+            "layer2DevelopmentEligible": True, "productionTranslationEligible": False,
+            "alignedSegmentsSha256": english_source.file_sha256(aligned),
+            "anchorManifestJsonSha256": english_source.json_sha256(self.anchor),
+            "downstreamInvalidationKey": "3" * 64,
+            "implementationSha256": english_source.file_sha256(
+                Path(english_source.__file__).with_name("judge_english_source_for_translation.py")),
+            "model": english_source.MACHINE_JUDGE_MODEL,
+            "reasoningEffort": english_source.MACHINE_JUDGE_REASONING_EFFORT,
+            "promptVersion": english_source.MACHINE_JUDGE_SCHEMA_VERSION,
+            "requestIds": ["fixture-request"], "responseModels": [english_source.MACHINE_JUDGE_MODEL],
+            "reviewedAt": "2026-09-30T00:00:00Z",
+            "thresholds": english_source.MACHINE_JUDGE_THRESHOLDS,
+            "deterministicReview": {"status": "pass", "checks": [{
+                "checkId": "fixture-check", "status": "pass", "evidence": "Synthetic fixture evidence."}],
+                "issues": []},
+            "reviewedSourceSentenceIds": sentence_ids,
+            "reviewedManifestIssueJsonSha256s": [english_source.json_sha256(issue)],
+            "sentences": [{
+                "sourceSentenceId": sentence_id,
+                "sourceUnitIds": [unit["sourceUnitId"] for unit in self.anchor["sourceUnits"]
+                                 if unit["sourceSentenceId"] == sentence_id],
+                "verdict": "pass", "risk": "low",
+                "checks": {name: "pass" for name in english_source.MACHINE_JUDGE_CHECKS},
+                "evidence": "Synthetic fixture evidence.", "unresolvedIssues": [],
+            } for sentence_id in sentence_ids],
+            "counts": {"sourceSentences": len(sentence_ids),
+                       "sourceUnits": len(self.anchor["sourceUnits"]),
+                       "manifestIssues": 1, "sentencePass": len(sentence_ids),
+                       "sentenceFail": 0, "highRiskSentences": 0},
+            "unresolvedIssues": [], "requestReceipts": [],
+        }
+        judge_path = self.root / "source-machine-judge.json"
+        write_json(judge_path, machine_judge)
+        return english_source.build_package(
+            aligned, anchor_path, summary_path=summary,
+            approval_evidence_path=Path(source_window["evidence"]["path"]),
+            review_path=review_path, machine_judge_path=judge_path,
+            source_id="synthetic:audio-package", source_url_hash="2" * 64,
+            service_date="2026-09-30",
+        )
 
     @staticmethod
     def group(group_id: str, source_id: str, text: str) -> dict:
@@ -325,6 +419,46 @@ class AudioPackageTests(unittest.TestCase):
         self.assertFalse(package["humanReview"]["humanApproval"])
         self.assertEqual([unit["textGroupId"] for unit in package["units"]], ["g1", "g2"])
         self.assertEqual(len(package["downstreamInvalidationKey"]), 64)
+
+    def test_canonical_ready_source_accepts_retained_resolved_anchor_warning(self):
+        self.assertEqual(self.source["status"], "ready_for_translation")
+        self.assertEqual(self.source["anchors"]["issueCount"], 1)
+        self.assertEqual(self.source["issues"], [])
+        english_source.validate_ready_package(self.source)
+        subject.validate_job(self.source, self.anchor, self.candidate,
+                             self.job, self.adapter, self.policy,
+                             self.human_receipt, self.registry, self.clip_auth,
+                             self.clip_cap, self.clip_timeline, self.paths)
+
+    def test_canonical_source_gate_rejects_nonready_unresolved_and_tampered_identity(self):
+        blocked = copy.deepcopy(self.source)
+        blocked["status"] = "blocked"
+        with self.assertRaisesRegex(ValueError, "production readiness"):
+            english_source.validate_ready_package(blocked)
+
+        unresolved = copy.deepcopy(self.source)
+        unresolved["issues"].append({"stage": "anchors", "type": "unresolved"})
+        with self.assertRaisesRegex(ValueError, "production readiness"):
+            english_source.validate_ready_package(unresolved)
+        unresolved_candidate = copy.deepcopy(self.candidate)
+        unresolved_candidate["englishSourcePackageJsonSha256"] = subject.json_sha256(unresolved)
+        with self.assertRaisesRegex(ValueError, "production readiness"):
+            subject.validate_job(unresolved, self.anchor, unresolved_candidate,
+                                 self.job, self.adapter, self.policy,
+                                 self.human_receipt, self.registry, self.clip_auth,
+                                 self.clip_cap, self.clip_timeline, self.paths)
+
+        tampered = copy.deepcopy(self.source)
+        tampered["downstreamInvalidationKey"] = "0" * 64
+        with self.assertRaisesRegex(ValueError, "derived identity"):
+            english_source.validate_ready_package(tampered)
+        tampered_candidate = copy.deepcopy(self.candidate)
+        tampered_candidate["englishSourcePackageJsonSha256"] = subject.json_sha256(tampered)
+        with self.assertRaisesRegex(ValueError, "derived identity"):
+            subject.validate_job(tampered, self.anchor, tampered_candidate,
+                                 self.job, self.adapter, self.policy,
+                                 self.human_receipt, self.registry, self.clip_auth,
+                                 self.clip_cap, self.clip_timeline, self.paths)
 
     def test_full_source_media_is_checked_per_batch_not_per_unit(self):
         original = interpretation.sha256
