@@ -22,6 +22,7 @@ import time
 import urllib.request
 
 from scripts import sermon_accounting as accounting
+from scripts import sermon_completion as completion
 from scripts import sermon_pipeline as pipeline
 from scripts import sermon_provider_error as errors
 from scripts import sermon_log_profile as profile
@@ -378,6 +379,12 @@ class DiagnosticProvider:
                     jobs._sync_directory_ancestry(folder)
             row.update(state=status, receiptSha256=c.bytes_sha256(raw))
             self._save(root, state)
+            if status == 'returned':
+                accounting.record_workload('diagnostic.provider_receipt', {
+                    'providerReceiptSha256':row['receiptSha256'],
+                    'requestPayloadSha256':row['requestSha256'],
+                    'modelCallIdSha256':c.canonical_sha256(call_id),
+                    'runConfigSha256':c.canonical_sha256(self.config)})
             if status == 'outcome_unknown':
                 accounting.record_workload('diagnostic.provider_reconciliation', {
                     'modelCallIdSha256':c.canonical_sha256(call_id),
@@ -444,7 +451,8 @@ class DiagnosticProvider:
     def __call__(self, api_key, payload, *, response_observer):
         return self.chat(api_key, payload, response_observer=response_observer)
 
-    def chat(self, api_key, payload, *, response_observer=None, request_limits=None, operation_id=None):
+    def chat(self, api_key, payload, *, response_observer=None, request_limits=None, operation_id=None,
+             depends_on=None, completion_result=False):
         """Source-check and strict L2 calls share the identical global guard.
 
         Payload MUST already contain frozen limits, never silently injected here.
@@ -458,10 +466,11 @@ class DiagnosticProvider:
             c.require(payload == self.source_check_payload(), 'provider_source_check_payload_changed')
             operation_id = strict.label(operation_id or 'source.'+c.canonical_sha256(payload))
             recovered = self._cached_source(operation_id, payload)
-            if recovered is not None:return recovered
+            if recovered is not None:
+                return self._recovered_completion(recovered, operation_id, payload, depends_on) if completion_result else recovered
         else:
             c.require(c.canonical_sha256(payload) in self._scoped_payloads, 'provider_unscoped_strict_payload')
-            c.require(operation_id is None, 'strict_provider_operation_is_budget_bound')
+            c.require(operation_id is None and not completion_result and depends_on is None, 'strict_provider_operation_is_budget_bound')
         headers = {'Authorization': 'Bearer '+api_key, 'Content-Type': 'application/json'}
         for name, key in (('OpenAI-Project','projectId'),('OpenAI-Organization','organizationId')):
             if self.config[key] is not None:headers[name] = self.config[key]
@@ -509,16 +518,19 @@ class DiagnosticProvider:
         # adapters supply their own model span together with the observer;
         # standalone source review must always create its own measured child.
         span = (nullcontext() if response_observer is not None else
-                accounting.stage('diagnostic.source_model', billing='api', executor_type='production_model'))
+                accounting.stage('diagnostic.source_model', billing='api', executor_type='production_model',
+                    depends_on=depends_on, work_unit_id=operation_id))
         context = profile.current()
         c.require(context is not None, 'diagnostic_requires_accounting_profile')
-        with profile.context(logicalCallId=context.get('logicalCallId') or
+        with profile.context(productionRunId=self.config['runId'], logicalCallId=context.get('logicalCallId') or
                 'diagnostic.'+c.canonical_sha256(payload),
                 providerScopeKey=c.canonical_sha256({k:self.config[k] for k in
-                    ('credentialReferenceSha256','projectId','organizationId')})), span:
-            return pipeline.request_json(req,retries=1,response_observer=returned,request_executor=execute)
+                    ('credentialReferenceSha256','projectId','organizationId')})), span as span_id:
+            response = pipeline.request_json(req,retries=1,response_observer=returned,request_executor=execute)
+        return self._completion_result(response, operation_id, span_id) if completion_result else response
 
-    def transcribe(self, api_key, wav_bytes, *, operation_id='transcription.initial'):
+    def transcribe(self, api_key, wav_bytes, *, operation_id='transcription.initial',
+                   depends_on=None, completion_result=False):
         """Fresh gpt-transcribe only. PCM duration/hash fixes the charged input.
 
         Explicit subsequent attempt requires a distinct stable operation ID;
@@ -529,7 +541,8 @@ class DiagnosticProvider:
         prepared=audio.build_request(wav_bytes,self.config['sourceAudioSha256'])
         payload=prepared['identity'];operation_id=strict.label(operation_id)
         recovered=self._cached_source(operation_id,payload)
-        if recovered is not None:return recovered
+        if recovered is not None:
+            return self._recovered_completion(recovered, operation_id, payload, depends_on) if completion_result else recovered
         c.require(type(api_key) is str and 1<=len(api_key)<=1024 and '\n' not in api_key and '\r' not in api_key,
                   'provider_credential_required')
         headers={'Authorization':'Bearer '+api_key,'Content-Type':prepared['contentType']}
@@ -566,11 +579,35 @@ class DiagnosticProvider:
             _require_before_dispatch(remaining>0,'provider_attempt_deadline_reached')
             return self.executor(req,remaining,deadline=state['deadline'])
         c.require(profile.current() is not None,'diagnostic_requires_accounting_profile')
-        with profile.context(logicalCallId=operation_id,
+        with profile.context(productionRunId=self.config['runId'], logicalCallId=operation_id,
                 providerScopeKey=c.canonical_sha256({k:self.config[k] for k in
                     ('credentialReferenceSha256','projectId','organizationId')})), \
-                accounting.stage('diagnostic.transcription',billing='api',executor_type='production_model'):
-            return pipeline.request_json(request,retries=1,response_observer=returned,request_executor=execute)
+                accounting.stage('diagnostic.transcription',billing='api',executor_type='production_model',
+                    depends_on=depends_on,work_unit_id=operation_id) as span_id:
+            response = pipeline.request_json(request,retries=1,response_observer=returned,request_executor=execute)
+        return self._completion_result(response, operation_id, span_id) if completion_result else response
+
+    def _completion_result(self, response, operation_id, span_id, *, mode='current_execution'):
+        with self._locked() as (root, state):
+            rows = [(call, row) for call, row in state['requests'].items() if row['operationId'] == operation_id]
+            c.require(len(rows) == 1 and rows[0][1]['state'] == 'returned', 'completion_provider_receipt_required')
+            call, row = rows[0]
+            receipt, raw = c.read_snapshot(root/(call+'.json'))
+            c.require(c.bytes_sha256(raw) == row['receiptSha256'] and receipt['response'] == response,
+                'completion_provider_receipt_changed')
+            artifact = row['receiptSha256']
+        return {'response': response, 'completion': completion.capture(span_id,
+            production_run_id=self.config['runId'], artifact_sha256=artifact,
+            artifact_kind='provider_receipt', execution_mode=mode)}
+
+    def _recovered_completion(self, response, operation_id, payload, depends_on):
+        # This is a current receipt-validation leaf, never a reconstructed model
+        # execution. Historical logs and provider usage are left unchanged.
+        stage = 'diagnostic.transcription_reuse' if payload.get('model') == 'gpt-transcribe' else 'diagnostic.source_model_reuse'
+        with profile.context(productionRunId=self.config['runId']), accounting.stage(stage, depends_on=depends_on, work_unit_id=operation_id,
+                executor_type='deterministic_program', cache_hit=True) as span_id:
+            c.require(self._cached_source(operation_id, payload) == response, 'completion_provider_receipt_changed')
+        return self._completion_result(response, operation_id, span_id, mode='cache_replay')
 
     @staticmethod
     def usage_resolver(observation):

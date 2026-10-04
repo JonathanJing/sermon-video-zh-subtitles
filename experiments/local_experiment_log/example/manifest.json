@@ -1,0 +1,18 @@
+{
+  "schema_version": "local.experiment.manifest.v1",
+  "experiment_id": "synthetic-only-example",
+  "evidence_kind": "synthetic",
+  "duration_mode": "fixed_sample",
+  "duration_seconds": 180,
+  "layer_component_mapping": {
+    "example-client": "L3",
+    "example-admission": "L3",
+    "example-dispatch": "L3",
+    "example-worker": "L3"
+  },
+  "required_layers": [
+    "L3"
+  ],
+  "admission_design_reference": "synthetic-only-not-an-admission",
+  "artifact_return_reference": "synthetic-only-not-a-transfer"
+}

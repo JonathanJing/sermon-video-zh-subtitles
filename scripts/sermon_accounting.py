@@ -11,6 +11,7 @@ import csv
 import fcntl
 import hashlib
 import json
+import marshal
 import os
 import platform
 import re
@@ -371,6 +372,56 @@ def subprocess_environment():
 def stage(name, *, cache_hit=False, billing="local", executor_type=None,
           depends_on=None, blocked_by=None, work_unit_id=None, attempt_id=None,
           dependency_ready_at=None, queued_at=None, decision_id=None):
+    """Legacy auto-completing stage; yield its string span identity."""
+    with _stage_context(name, cache_hit=cache_hit, billing=billing, executor_type=executor_type,
+            depends_on=depends_on, blocked_by=blocked_by, work_unit_id=work_unit_id,
+            attempt_id=attempt_id, dependency_ready_at=dependency_ready_at,
+            queued_at=queued_at, decision_id=decision_id) as result:
+        yield result.span_id
+
+
+class StageOutcome:
+    """An explicit observation endpoint, captured before logging may block.
+
+    A terminal is emitted once on context exit. Capturing an outcome does not
+    permit changing an already durable terminal or reopening an old attempt.
+    """
+    def __init__(self, span_id):
+        self.span_id = span_id
+        self._outcome = None
+        self._artifact_sha256 = None
+
+    def finish(self, status, *, error=None, artifact_sha256=None):
+        if not isinstance(status, str) or status not in {'completed', 'failed', 'outcome_unknown', 'cancelled'}:
+            raise ValueError('invalid_stage_outcome')
+        if error is not None and (not isinstance(error, BaseException) or status == 'completed'):
+            raise ValueError('invalid_stage_outcome_error')
+        if self._outcome is not None:
+            raise ValueError('stage_outcome_already_captured')
+        if artifact_sha256 is not None and (status != 'completed' or not isinstance(artifact_sha256, str)
+                or re.fullmatch(r'[a-f0-9]{64}', artifact_sha256) is None):
+            raise ValueError('invalid_stage_artifact_hash')
+        self._artifact_sha256 = artifact_sha256
+        self._outcome = (status, error, time.monotonic_ns(), now())
+        return self.span_id
+
+
+@contextmanager
+def stage_outcome(name, **kwargs):
+    """Yield an explicit outcome writer; omitted finish fails closed.
+
+    Call ``outcome.finish(status)`` at the observed endpoint. A later exception
+    wins over an uncommitted success; the original exception is propagated.
+    Observing a worker timeout must use its own attempt, not the worker attempt.
+    """
+    with _stage_context(name, explicit_outcome=True, **kwargs) as result:
+        yield result
+
+
+@contextmanager
+def _stage_context(name, *, cache_hit=False, billing="local", executor_type=None,
+          depends_on=None, blocked_by=None, work_unit_id=None, attempt_id=None,
+          dependency_ready_at=None, queued_at=None, decision_id=None, explicit_outcome=False):
     """Record one stage attempt with dependency-aware v3 trace identity.
 
     Callers provide stable stage/work-unit identities; ``spanId`` remains unique
@@ -420,27 +471,38 @@ def stage(name, *, cache_hit=False, billing="local", executor_type=None,
     main_thread = threading.current_thread() is threading.main_thread()
     if main_thread:
         os.environ.update(SERMON_ACCOUNTING_STAGE=name, SERMON_ACCOUNTING_SPAN=span_id)
-    outcome = "completed"
+    result = StageOutcome(span_id)
     error = None
     try:
         if automatic_dispatch:
             _emit({'event': 'workload', 'stage': 'timing.inline_dispatch_v1', 'metrics': {
                 'dispatchObserved': True, 'dependencyReadyObserved': dependency_ready_at is not None,
                 'resourceQueueObserved': False}})
-        yield span_id
+        yield result
+        if result._outcome is None:
+            if explicit_outcome:
+                result.finish('outcome_unknown')
+                raise ValueError('stage_outcome_required')
+            result.finish('completed')
     except BaseException as exc:
-        outcome, error = "failed", exc
+        error = exc
+        if result._outcome is None or result._outcome[0] == 'completed':
+            # This candidate has not yet been written; never amend a ledger fact.
+            result._outcome = ('failed', exc, time.monotonic_ns(), now())
+            result._artifact_sha256 = None
         raise
     finally:
         try:
-            finished_ns = time.monotonic_ns()
+            outcome, outcome_error, finished_ns, completed_at = result._outcome
             def finish_event():
                 _emit({**base, "event": "stage_finished", "status": outcome,
+                    "completedAt": completed_at,
                     "monotonicEndNs": str(finished_ns),
-                    "level": "ERROR" if error else "INFO",
+                    "level": "ERROR" if outcome == 'failed' else "INFO",
                     "elapsedSeconds": round((finished_ns-started_ns)/1_000_000_000, 6),
-                    "errorType": _label(type(error).__name__) if error else None,
-                    "error": error_location(error) if error else None})
+                    "errorType": _label(type(outcome_error).__name__) if outcome_error else None,
+                    "error": error_location(outcome_error) if outcome_error else None,
+                    **({'artifactSha256': result._artifact_sha256} if result._artifact_sha256 else {})})
                 dispatch_observation.finished(dispatch_identity, span_id)
             _finalize(finish_event, error)
         finally:
@@ -620,11 +682,44 @@ def sdk_invocation(model, *, backend="sdk"):
 
 
 def summarize(directory):
+    return _with_summary_snapshot(directory, lambda events, damaged, digest, replay, summary: summary)
+
+
+def _with_report_snapshot(directory, project):
+    """One private, operation-local read; never accept reusable caller authority.
+
+    Rows belong only to this call. The callback is an internal pure projector,
+    not an API for accepting externally prevalidated rows. Exact typed bytes
+    guard accidental mutation; current schema identity must remain unchanged
+    for the operation. Later calls always reread/revalidate the actual ledger.
+    """
+    events, damaged, digest = read_event_snapshot(directory)
+    contract = log_profile.contract
+    has_profile = any('contractVersion' in row for row in events)
+    with contract._schema_snapshot_lock:
+        schema = (contract.VERSION, contract._schema_snapshot()[0]) if has_profile else None
+        replay = profile_integrity(events)
+        frozen = marshal.dumps((events, damaged), 2)
+        result = project(events, damaged, digest, replay)
+        if marshal.dumps((events, damaged), 2) != frozen:
+            raise ValueError('report_snapshot_mutated')
+        if has_profile and (contract.VERSION, contract._schema_snapshot()[0]) != schema:
+            raise ValueError('report_schema_changed')
+    return result
+
+
+def _with_summary_snapshot(directory, project):
+    """Preserve summarize's serialized output writes while sharing its read."""
     directory = Path(directory)
-    # Serialize snapshot + both outputs, preventing an old snapshot replacing a new one.
-    with open(directory / ".summary.lock", "a", opener=_private_open) as lock:
+    with open(directory / '.summary.lock', 'a', opener=_private_open) as lock:
         fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
-        return _summarize_locked(directory)
+        def build(events, damaged, digest, replay):
+            summary, projected = _summarize_events(events, damaged, digest, replay)
+            result = project(events, damaged, digest, replay, summary)
+            return result, summary, projected
+        result, summary, projected = _with_report_snapshot(directory, build)
+        _write_summary(directory, summary, projected)
+        return result
 
 
 def _percentile(values, fraction):
@@ -861,8 +956,13 @@ def receipt_integrity(events, *, event_integrity=None):
 
 
 def _summarize_locked(directory):
-    events, damaged, ledger_hash = read_event_snapshot(directory)
-    replay = profile_integrity(events)
+    # Retained private compatibility entry for callers already holding the lock.
+    result, events = _with_report_snapshot(directory, _summarize_events)
+    _write_summary(Path(directory), result, events)
+    return result
+
+
+def _summarize_events(events, damaged, ledger_hash, replay):
     # Reconcile all raw receipts below, but aggregate one representative of
     # every equivalent profile fact, including stage/review/start events.
     projected = [e for e in events if 'contractVersion' not in e or id(e) in replay['_selected']]
@@ -1065,6 +1165,11 @@ def _summarize_locked(directory):
                          "cacheHit": finish["cacheHit"] if finish else start.get("cacheHit"),
                          "billing": finish["billing"] if finish else start.get("billing")})
     result["stageAttempts"] = attempts
+    return result, events
+
+
+def _write_summary(directory, result, events):
+    attempts = result['stageAttempts']
     temp = directory / (".summary-" + uuid.uuid4().hex + ".json")
     with open(temp, "w", opener=_private_open) as stream:
         stream.write(json.dumps(result, ensure_ascii=False, indent=2) + "\n")

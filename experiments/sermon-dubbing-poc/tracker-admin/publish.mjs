@@ -16,6 +16,7 @@ const ARG_MAP = {
   sourcePageUrl: '--source-page-url', serviceDate: '--service-date',
   catalog: '--catalog', publicRoot: '--public-root', httpReceipt: '--http-receipt',
   siteUrl: '--site-url', sourceState: '--source-state',
+  dagAccountingDir: '--dag-accounting-dir', dagRunId: '--dag-run-id', dagProgressInputs: '--dag-progress-inputs',
 };
 
 export function parseArgs(argv) {
@@ -55,7 +56,7 @@ export function validateSnapshot(snapshot) {
   return sanitizeSnapshot(snapshot);
 }
 
-function buildFromConfig(path) {
+export function buildFromConfig(path) {
   const config = JSON.parse(readFileSync(path, 'utf8'));
   if (!config.ledger || !config.out) throw new Error('watch config requires ledger and out');
   const args = [];
@@ -85,9 +86,14 @@ function writeHealth(path, state) {
   renameSync(temporary, target);
 }
 
-function semanticHash(snapshot) {
+export function semanticHash(snapshot) {
   const copy = { ...snapshot };
   delete copy.generatedAt;
+  if (copy.dag) {
+    copy.dag = { ...copy.dag, freshness: { ...copy.dag.freshness } };
+    delete copy.dag.generatedAt;
+    delete copy.dag.freshness.ageSeconds;
+  }
   return createHash('sha256').update(JSON.stringify(copy)).digest('hex');
 }
 

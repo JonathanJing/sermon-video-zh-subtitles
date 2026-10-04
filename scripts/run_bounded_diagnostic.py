@@ -79,18 +79,18 @@ class BoundedRun:
         self.source_clip = verify_source_clip(source_clip, subject.config['sourceClipSha256'])
         self.provider.domain()  # Resolve boot identity before subprocess guard.
 
-    def transcribe(self, wav_bytes):
+    def transcribe(self, wav_bytes, *, depends_on=None, completion_result=False):
         verify_source_clip(self.source_clip, self.provider.config['sourceClipSha256'])
         with bounded_network_only():
-            return self.provider.transcribe(self.key, wav_bytes)
+            return self.provider.transcribe(self.key, wav_bytes, depends_on=depends_on, completion_result=completion_result)
 
-    def source_check(self, *, operation_id):
+    def source_check(self, *, operation_id, depends_on=None, completion_result=False):
         verify_source_clip(self.source_clip, self.provider.config['sourceClipSha256'])
         selected = limits.MAX_REQUEST_LIMITS
         payload = self.provider.source_check_payload()
         with bounded_network_only():
             return self.provider.chat(self.key, payload, request_limits=selected,
-                                      operation_id=operation_id)
+                                      operation_id=operation_id, depends_on=depends_on, completion_result=completion_result)
 
     def run_locale(self, source_bytes, anchor_bytes, policy_bytes, rubric_bytes, *,
                    graph, plugin_path, plugin_sha256, group_plan=None, diagnostic_context=None,

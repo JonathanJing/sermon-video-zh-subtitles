@@ -1,0 +1,365 @@
+{
+  "schemaVersion": "sermon-public-tracker-dag-v1",
+  "scope": "accounting_run",
+  "generatedAt": "2026-09-30T00:00:10+00:00",
+  "executionAuthority": "none",
+  "acceptance": "not_evaluated",
+  "evidenceMode": "synthetic",
+  "freshness": {
+    "status": "fresh",
+    "sourceObservedAt": "2026-09-30T00:00:08+00:00",
+    "ageSeconds": 2.0
+  },
+  "quality": {
+    "status": "projected",
+    "reasonCodes": [],
+    "damagedRowCount": 0,
+    "duplicateEventsIgnored": 0,
+    "omittedNodeCount": 0
+  },
+  "summary": {
+    "observedNodeCount": 4,
+    "completedSpanCount": 4,
+    "unfinishedSpanCount": 0,
+    "failedSpanCount": 0,
+    "retryCount": 0,
+    "measuredSpanSeconds": 11,
+    "endToEndWallSeconds": 8.0
+  },
+  "nodes": [
+    {
+      "id": "n1",
+      "kind": "observed",
+      "code": "source",
+      "layer": null,
+      "locale": "unknown",
+      "executorType": "deterministic_program",
+      "modelCodes": [],
+      "modelStatus": "not_observed",
+      "dependsOn": [],
+      "dependencyStatus": "recorded",
+      "unresolvedDependencyCount": 0,
+      "status": "completed",
+      "evidenceMode": "synthetic",
+      "attemptNumber": 1,
+      "retryCount": 0,
+      "timing": {
+        "status": "measured",
+        "startSeconds": 0.0,
+        "endSeconds": 2.0,
+        "elapsedSeconds": 2,
+        "activeElapsedSeconds": null
+      },
+      "io": {
+        "inputArtifactCount": null,
+        "outputArtifactCount": null,
+        "status": "not_observed"
+      }
+    },
+    {
+      "id": "n2",
+      "kind": "observed",
+      "code": "unknown",
+      "layer": null,
+      "locale": "unknown",
+      "executorType": "production_model",
+      "modelCodes": [],
+      "modelStatus": "not_observed",
+      "dependsOn": [
+        "n1"
+      ],
+      "dependencyStatus": "recorded",
+      "unresolvedDependencyCount": 0,
+      "status": "completed",
+      "evidenceMode": "synthetic",
+      "attemptNumber": 1,
+      "retryCount": 0,
+      "timing": {
+        "status": "measured",
+        "startSeconds": 2.0,
+        "endSeconds": 5.0,
+        "elapsedSeconds": 3,
+        "activeElapsedSeconds": null
+      },
+      "io": {
+        "inputArtifactCount": null,
+        "outputArtifactCount": null,
+        "status": "not_observed"
+      }
+    },
+    {
+      "id": "n3",
+      "kind": "observed",
+      "code": "unknown",
+      "layer": null,
+      "locale": "unknown",
+      "executorType": "production_model",
+      "modelCodes": [],
+      "modelStatus": "not_observed",
+      "dependsOn": [
+        "n1"
+      ],
+      "dependencyStatus": "recorded",
+      "unresolvedDependencyCount": 0,
+      "status": "completed",
+      "evidenceMode": "synthetic",
+      "attemptNumber": 1,
+      "retryCount": 0,
+      "timing": {
+        "status": "measured",
+        "startSeconds": 2.0,
+        "endSeconds": 7.0,
+        "elapsedSeconds": 5,
+        "activeElapsedSeconds": null
+      },
+      "io": {
+        "inputArtifactCount": null,
+        "outputArtifactCount": null,
+        "status": "not_observed"
+      }
+    },
+    {
+      "id": "n4",
+      "kind": "observed",
+      "code": "unknown",
+      "layer": null,
+      "locale": "unknown",
+      "executorType": "deterministic_program",
+      "modelCodes": [],
+      "modelStatus": "not_observed",
+      "dependsOn": [
+        "n3",
+        "n2"
+      ],
+      "dependencyStatus": "recorded",
+      "unresolvedDependencyCount": 0,
+      "status": "completed",
+      "evidenceMode": "synthetic",
+      "attemptNumber": 1,
+      "retryCount": 0,
+      "timing": {
+        "status": "measured",
+        "startSeconds": 7.0,
+        "endSeconds": 8.0,
+        "elapsedSeconds": 1,
+        "activeElapsedSeconds": null
+      },
+      "io": {
+        "inputArtifactCount": null,
+        "outputArtifactCount": null,
+        "status": "not_observed"
+      }
+    }
+  ],
+  "criticalPath": {
+    "status": "measured",
+    "activeSeconds": 8,
+    "nodeIds": [
+      "n1",
+      "n3",
+      "n4"
+    ],
+    "durationBasis": "verified_monotonic_dag"
+  },
+  "io": {
+    "status": "not_observed",
+    "beforeArtifactCount": null,
+    "afterArtifactCount": null,
+    "categories": [],
+    "scope": "observed_file_snapshots_not_execution_proof"
+  },
+  "logs": {
+    "schemaVersions": [
+      "sermon-workflow-accounting-v3"
+    ],
+    "contractVersions": [
+      "sermon-accounting-log-contract-v1"
+    ],
+    "eventCount": 10,
+    "profileEventCount": 10,
+    "legacyEventCount": 0,
+    "damagedRowCount": 0
+  },
+  "progress": {
+    "status": "consistent",
+    "planVersion": 1,
+    "denominator": "3",
+    "plannedProcessedPercent": 33.333333,
+    "knownProcessedPercentLowerBound": 33.333333,
+    "gateCompletionPercent": null,
+    "complete": false,
+    "counts": {
+      "done": 0,
+      "total": 3,
+      "processed": 1,
+      "executionSucceeded": 1,
+      "contentReviewPassed": 0,
+      "realHumanApproved": 0,
+      "simulatedHumanApproved": 0,
+      "admitted": 0
+    },
+    "extraWork": {
+      "retryAttempts": 1,
+      "reworkAttempts": 1,
+      "includedInDenominator": false
+    },
+    "nodes": [
+      {
+        "id": "p1",
+        "kind": "planned",
+        "code": "translation",
+        "layer": null,
+        "locale": "ko",
+        "executorType": "unknown",
+        "modelCodes": [
+          "gpt-6-sol"
+        ],
+        "modelStatus": "allowlisted",
+        "dependsOn": [],
+        "dependencyStatus": "recorded",
+        "unresolvedDependencyCount": 0,
+        "status": "complete",
+        "evidenceMode": "synthetic",
+        "attemptNumber": null,
+        "retryCount": 1,
+        "timing": {
+          "status": "not_observed",
+          "startSeconds": null,
+          "endSeconds": null,
+          "elapsedSeconds": null,
+          "activeElapsedSeconds": null
+        },
+        "io": {
+          "inputArtifactCount": null,
+          "outputArtifactCount": null,
+          "status": "not_observed"
+        },
+        "evidence": {
+          "processed": true,
+          "executionSucceeded": true,
+          "contentReviewPassed": false,
+          "realHumanApproved": false,
+          "simulatedHumanApproved": false,
+          "admitted": false
+        },
+        "requiredEvidence": [
+          "executionSucceeded"
+        ],
+        "complete": false,
+        "processedKnown": true,
+        "unknownOutcome": true,
+        "heartbeatStatus": "unknown"
+      },
+      {
+        "id": "p2",
+        "kind": "planned",
+        "code": "translation",
+        "layer": null,
+        "locale": "ko",
+        "executorType": "unknown",
+        "modelCodes": [
+          "gpt-6-sol"
+        ],
+        "modelStatus": "allowlisted",
+        "dependsOn": [],
+        "dependencyStatus": "recorded",
+        "unresolvedDependencyCount": 0,
+        "status": "pending",
+        "evidenceMode": "synthetic",
+        "attemptNumber": null,
+        "retryCount": 0,
+        "timing": {
+          "status": "not_observed",
+          "startSeconds": null,
+          "endSeconds": null,
+          "elapsedSeconds": null,
+          "activeElapsedSeconds": null
+        },
+        "io": {
+          "inputArtifactCount": null,
+          "outputArtifactCount": null,
+          "status": "not_observed"
+        },
+        "evidence": {
+          "processed": false,
+          "executionSucceeded": false,
+          "contentReviewPassed": false,
+          "realHumanApproved": false,
+          "simulatedHumanApproved": false,
+          "admitted": false
+        },
+        "requiredEvidence": [
+          "executionSucceeded"
+        ],
+        "complete": false,
+        "processedKnown": true,
+        "unknownOutcome": false,
+        "heartbeatStatus": "unknown"
+      },
+      {
+        "id": "p3",
+        "kind": "planned",
+        "code": "translation",
+        "layer": null,
+        "locale": "ko",
+        "executorType": "unknown",
+        "modelCodes": [
+          "gpt-6-sol"
+        ],
+        "modelStatus": "allowlisted",
+        "dependsOn": [
+          "p1",
+          "p2"
+        ],
+        "dependencyStatus": "recorded",
+        "unresolvedDependencyCount": 0,
+        "status": "pending",
+        "evidenceMode": "synthetic",
+        "attemptNumber": null,
+        "retryCount": 0,
+        "timing": {
+          "status": "not_observed",
+          "startSeconds": null,
+          "endSeconds": null,
+          "elapsedSeconds": null,
+          "activeElapsedSeconds": null
+        },
+        "io": {
+          "inputArtifactCount": null,
+          "outputArtifactCount": null,
+          "status": "not_observed"
+        },
+        "evidence": {
+          "processed": false,
+          "executionSucceeded": false,
+          "contentReviewPassed": false,
+          "realHumanApproved": false,
+          "simulatedHumanApproved": false,
+          "admitted": false
+        },
+        "requiredEvidence": [
+          "executionSucceeded"
+        ],
+        "complete": false,
+        "processedKnown": true,
+        "unknownOutcome": false,
+        "heartbeatStatus": "unknown"
+      }
+    ]
+  },
+  "eta": {
+    "status": "unknown",
+    "lowerSeconds": null,
+    "upperSeconds": null,
+    "remainingSerialSeconds": null,
+    "criticalPathSeconds": null,
+    "sampleCount": 1,
+    "confidence": "unknown",
+    "reasonCodes": [
+      "synthetic_evidence_not_production_approval",
+      "unknown_attempt_outcome",
+      "unresolved_post_execution_gate"
+    ],
+    "estimatorVersion": "remaining-dag-resource-slots-v1"
+  }
+}

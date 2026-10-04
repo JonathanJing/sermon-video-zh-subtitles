@@ -1,6 +1,6 @@
 # Dev 统一 Backlog
 
-更新：2026-10-01。本页是项目 **Dev 开发工作的唯一顶层 backlog**，统一管理四层生产、Firebase Dev、Web／iOS、现场对齐、审核后台、Tracker、CI/CD 和独立 `live_session` 的优先级与依赖。新增开发事项先在这里取得稳定 ID；专项文档只展开接口、实现和验收，不再各自形成互相竞争的顶层排期。
+更新：2026-10-03。本页是项目 **Dev 开发工作的唯一顶层 backlog**，统一管理四层生产、Firebase Dev、Web／iOS、现场对齐、审核后台、Tracker、CI/CD 和独立 `live_session` 的优先级与依赖。新增开发事项先在这里取得稳定 ID；专项文档只展开接口、实现和验收，不再各自形成互相竞争的顶层排期。
 
 English index: [backlog.md](./backlog.md)
 
@@ -65,8 +65,8 @@ H01（测试脚本插件哈希）、H03（首次 deploy 选错 Dev project，CLI
 
 | ID | 优先级／状态 | 既有归属／真实问题 | 待交付与验收条件 | 依赖 |
 |---|---|---|---|---|
-| `DEV-DIAG-016` | P0 / `pending` | `DEV-DIAG-005/010/013`、`DEV-L1-001`；新MFA runtime整体比较拒绝当前冻结adapter及新executionHost | 分离稳定依赖身份、当前冻结producer和本次execution provenance；付费前校验recipe/consumer兼容。新MFA与cache路径均验证；篡改依赖/未知runtime/非冻结adapter仍拒绝，逐文件健康核验保留；不可删除守卫或回填旧失败；字段与机制验收见[日志清单](#log-contract-followup-20261001) | 最新重跑MFA失败与当前plan |
-| `DEV-DIAG-017` | P1 / `pending` | `DEV-DIAG-005/006/010`、`DEV-E2E-001`、`DEV-L1-001`；全程仍依赖私有driver/bootstrap/input/observer/browser桥接 | 提供规范化可重复入口：链接或明确本地clip来源绑定、预检/冻结/预算/真正fresh执行/断点/闭父/Dev核验/Agent与浏览器验收。提前核实124requests/5400s等当前hard cap、runtime/checkpoint/Source consumer；default-pass scope独立，旧有效素材/模型可复用、要重测的Source/L2/audio不复用；不依赖私有prompt补丁；下一轮[隔离 mock TTS worker 流程控制验收](#log-contract-followup-20261001)见日志清单 | `016`、`008`；保留durable receipts与未知结果 |
+| `DEV-DIAG-016` | P0 / `in_progress` | `DEV-DIAG-005/010/013`、`DEV-L1-001`；新MFA runtime整体比较拒绝当前冻结adapter及新executionHost | 分离稳定依赖身份、当前冻结producer和本次execution provenance；付费前校验recipe/consumer兼容。新MFA与cache路径均验证；篡改依赖/未知runtime/非冻结adapter仍拒绝，逐文件健康核验保留；不可删除守卫或回填旧失败；字段与机制验收见[日志清单](#log-contract-followup-20261001) | 最新重跑MFA失败与当前plan |
+| `DEV-DIAG-017` | P1 / `in_progress` | `DEV-DIAG-005/006/010`、`DEV-E2E-001`、`DEV-L1-001`；全程仍依赖私有driver/bootstrap/input/observer/browser桥接 | 提供规范化可重复入口：链接或明确本地clip来源绑定、预检/冻结/预算/真正fresh执行/断点/闭父/Dev核验/Agent与浏览器验收。提前核实124requests/5400s等当前hard cap、runtime/checkpoint/Source consumer；default-pass scope独立，旧有效素材/模型可复用、要重测的Source/L2/audio不复用；不依赖私有prompt补丁；下一轮[隔离 mock TTS worker 流程控制验收](#log-contract-followup-20261001)见日志清单 | `016`、`008`；保留durable receipts与未知结果 |
 | `DEV-DIAG-018` | P1 / `pending` | `DEV-SPD-003`、`DEV-L3-001`、`DEV-DIAG-007/014`；Spark可用但诊断runtime固定Mac/Python3.13且无远程adapter | 版本化Linux/NGC/Python runtime与远程host adapter、受控命令、依赖/进程/跨时钟收据；真实测默认Spark路径与profile。诊断scalar和正式TTS2/back-ASR4分别验收；正式/测试门禁须真实合同，不伪造批准，fixture不当性能证据；下一轮[Spark往返与batch验收](#log-contract-followup-20261001)含路由实测/fallback边界 | `DEV-DIAG-007/010`；实际模型/资源/授权 |
 | `DEV-DIAG-019` | P1 / `pending` | `DEV-L4-001/005`、`DEV-CICD-001`；旧301快照遗漏近期资产，需私有完整线上基线重构；发布前GET非原子 | 规范发布器核验完整live版本文件map/配置/管理资源并追加新周，旧媒体与catalog保留；明确stale检测及并发目标lease或可用服务端条件机制，验证另一发布插入时拒绝/重建/恢复。Firebase管理路径使用独立合同，不把动态HTTP响应当存储gzip；不得先声称CAS已支持 | `DEV-DIAG-017`；完整baseline及独立发布/HTTP收据 |
 | `DEV-DIAG-020` | P1 / `pending` | `DEV-TRACK-001`、`DEV-L4-005`；页面没有展示真实delivery.readonly blocked原因 | 公共安全状态绑定当前run/版本，整体incomplete及具体安全原因与音轨ready/HTTP成功/人审pending分别展示；stale/cross-run/失败或缺测fixture验证，不把可播提升成全流程完成；字段与机制验收见[日志清单](#log-contract-followup-20261001) | `016`、`DEV-DIAG-013`；当前final/public snapshot合同 |
@@ -78,6 +78,8 @@ H01（测试脚本插件哈希）、H03（首次 deploy 选错 Dev project，CLI
 
 
 <a id="log-contract-followup-20261001"></a>
+
+云端实施补充（2026-10-02）：`016/008` 的第一批代码与离线验收见 [Fresh Source 合同修复](reports/20261002-cloud-fresh-source-contracts.zh.md)。本次不改写最新重跑的失败、预算及真实验收状态；待 PR 合入与新真实路径证据分别核验。
 
 ### 日志字段、生成机制与可核验验收清单（2026-10-01，仅文档）
 
@@ -156,6 +158,38 @@ H01（测试脚本插件哈希）、H03（首次 deploy 选错 Dev project，CLI
 
 交付分别列 mock batch、真实 remote roundtrip、真实模型 batch、fallback 和真实 scheduler 的实现 SHA／测试结果／收据／未测项；某一通过不提升其余资格。原 `018` 与 `007`、`DEV-TRACK-001` 等状态不变，本次不实现、不跑模型／远端任务、不部署。
 
+##### 2026-10-02：统一日志已合入，Stage2 真实 preload／batch 仍被前置条件阻塞
+
+统一日志 [PR #213](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/213) 已正常合入 Dev，merge SHA `8a645e9f2572baaf98e22aaf0efc149be60e9958`。Stage1 已将该 merged source 构建的日志 release `9741a72b544567d0` 安装到 Mac mini／Spark；Hub 实际 source 为 `10392408e046e9daa5aad8a44375b3b6f0201efd`，Spark 为 `d455e4e39dd966140ebd92dffcac89f8a33bde5c`。这些 stack merge／部署结果不等于全部源码已进入各仓库 main，也不证明语音性能。已完成 Hub 278 项测试及 Spark 原部署 venv 的 199 项 CPU 测试；真实 GPU trial 为 0，未在线演练回滚。云端 `016/008` 与 mock DAG 工作保持独立。
+
+2026-10-02 13:44 UTC 的只读核验：Hub 健康，outstanding=0、running=null、queue=0，Spark 可用内存约39.45 GiB、GPU utilization=0，既有三个 resident compute PID 保持。`cpu_smoke.available=true`、`tts_experiment.available=false`；guardian／controller／native proxy service 和 socket 均未安装、未启用。全局写入保持关闭，CPU gate 不扩张。
+
+已冻结源窗0..180秒的41个完整语音单元／1171字符，末单元上下文显式延长至182.600006秒；本地私有样本 byte SHA `cbeae5eb16228ea264606d152a241bbb2a93d63df87f1b9fec99108b596c9b68`，selection SHA `e23ca743106e4c291f43563221f94fc42549e9053d113db351b56be69a34f9d4`。原7份输入的完整 byte hash 均匹配；checkpoint 13文件／4,520,218,514 bytes、venv site 4,924文件／166,214,042 bytes 已完整只读核验。样本正文、模型及私人 runtime 清单不进入 Git 或统一日志。
+
+**真实输入与控制边界尚有代码阻塞，先修复并重新审查／CI，不能据已有 CPU PASS 请求启用：**
+
+- 真实 sourceUnitIds 是字符串（例如 `0-u001`），而已部署 `tts_experiment_contract.validate_sample` 只接受非负整数。保持原 source identity 和 selection hash 的样本被实际验证器拒绝（`source unit identity required`）。需要版本化合同修复及真实形状的脱敏 fixture；不得改写原 ID、伪造 selection hash 或更换未授权样本来通过。
+- guardian 的 `InstalledVerifier.job` 调用 `admitted_bundle`，后者会以 guardian 身份查询 admission live window；`GuardianDispatch.get_lease` 的 admission allowlist 仅接受 Spark API／agent cgroup。CPU 边界复现证实 guardian 被拒绝，Docker launch 前无法通过。需要分离私有 bundle 校验与 guardian 自有 ledger／epoch／lease 验证，保留 API／worker 的真实 peer 检查；不能简单放宽公共 admission 身份。已有测试 mock 掉了该调用，因此199 CPU PASS 未覆盖此启动边界。
+- kernel/systemd 具备 namespace 编译支持，但 `apparmor_restrict_unprivileged_userns=1` 且既有 journal 有 namespace capability 拒绝。实际 llama 仍 `PrivateNetwork=no`；未创建 namespace 或 transient unit，未证明 user-systemd `PrivateNetwork`／`JoinsNamespaceOf` 可用。先准备独立 CPU 可行性探针和精确隔离方案，再单独授权执行；不得禁用全局 AppArmor 或扩大持续访问来绕过。
+
+固定离线镜像已存在；镜像与宿主解释器均为 Python3.12.3。venv 的宿主 `bin/python` 链接失效，但设计使用镜像解释器＋venv site overlay，不能仅凭该链接宣布 runtime 不可用或修改 live venv。依赖 metadata 核对不等于 CUDA／模型 ABI／实际加载通过。
+
+后续审批包仍需具体冻结：四生产者 source/hooks 与只读 SDK mounts、实际 container/PID identity、namespace drop-in、三项新常驻 service＋一项 socket、matching flags／manifest／UTC expiry、必要维护重启及可能 container recreate／模型重载、private settings 和 source locks、故障影响与回滚。保持 Hub3456／Spark7070／ImageLab7862／Comfy8188；native guarded ingress 仍宿主loopback8000，backend18000只在私有 namespace，不新增宿主18000入口。准入窗口最多2小时；unknown cleanup 会继续保持 intake hold，不能承诺到时自动恢复生产。
+
+首轮矩阵保持 cold batch1/2/4各3次（9个新进程）＋warm三个 session 的顺序124／241／412（每session加载一次，共9个trial），合计18trial／12顺序session；冻结bf16、sdpa、temperature0.7、repetition_penalty1.05、max_new_tokens768、seed42+offset，关闭输出缓存和 dummy warmup。先验证 preload／batch 参数，不训练 checkpoint。没有正式 warm/preload 公共 API；唯一 task 参数是 manifest SHA，batch 由冻结矩阵确定，runtime 按 batch 切单元后将文本列表真正传给模型。
+
+job.v1 仍只返回 artifact manifest，没有音频字节 HTTP endpoint。必须先实现并 CPU 验证固定 job／attempt／session／trial 的有界产物 collector：真实终态、owned CID 退出证据、41单元逐trial的 WAV bytes／SHA／大小／24kHz mono PCM16／frame count／重复缺失与路径逃逸拒绝、传输后本地重新验收及 unified-log receipt。SSH/SCP 仅能作为受控内部字节回传，不能作为绕过 admission 的 inference dispatch。独立截断／完整性／试听验收仍待执行；CPU smoke／健康检查／非空 WAV 均不能提升为 speech 或 release acceptance。MacBook 平台访问仍未开放，不宣称该客户端已贯通。
+
+##### 2026-10-02 14:26 UTC：代码阻塞关闭，部署／真实语音验收仍待前置条件
+
+以上13:44观察保留为历史。backlog [PR #219](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/219) 已正常合入 Dev（`c4035e05dfaeffe58e80a964437c8cb73c93b2f3`）；Spark [PR #11](https://github.com/JonathanJing/spark-agent/pull/11) 的 exact head `10f01cdc87765393ba76d00fdf0e7a78a6aa5727` 通过独立复审及全部 CI，正常 merge SHA `abf9531287ace338711b76261a1fdbaf7491ff64`，目标为既有 `codex/bounded-tts-on-cpu-candidate` stack branch，不能写成已入 main 或已部署。
+
+- **源码合同修复完成：** manifest／sample v2 保留 opaque sourceUnitIds 原身份、顺序及 selection hash；41单元真实私有样本已通过新验证器，没有强制转整数。guardian 使用严格私有 bundle 验证及自身当前 ledger／lease／epoch／digest／expiry 绑定；外部 API／worker 的 live peer admission 不放宽。
+- **collector 代码／CPU 验收完成：** 默认关闭、operator 内部入口，读取固定 shared Job DB；只有 exact succeeded job／attempt1 和12个已完成、退出已确认的 owned session 才可导出。固定819个注册文件含738个 WAV，双端核验 artifact ID／job／hash／大小、完整24kHz mono PCM16帧、矩阵／单元身份和文件／总字节上限；拒绝未知状态、链接、越界、重复、缺失和覆盖。接收端最终原子发布字节收据，传输／校验失败不触发 inference retry；原执行日志保留，独立接收观察经冻结统一日志 bridge 验证。没有新增 HTTP／MCP binary endpoint。
+- **验证边界：** exact-head CI 为226项 CPU＋2项 schema；Mac mini 测试 venv 与 Spark 既有 Python3.12.3 venv 均228项通过、无跳过。Spark 测试源码仅放隔离 `/tmp`，无线上 release／状态／配置变更。历史 profiles、Stage1 基线、generation／checkpoint／resource policy 和新增 source locks 检查通过。完整往返使用 synthetic PCM，不能当作真实模型 ABI、音频内容、截断或性能验收。
+
+**仍阻塞启用：**三项常驻 service＋socket、native隔离／producer hooks／mounts 的具体部署包及必要维护影响；matching source／manifest／caller context／真实 CID／PID／UTC 窗口；线上 `/proc` 身份证明所需的最小权限方案；MacBook 的授权接入和完整 artifact transport。全局 writes 关闭、CPU gate 和 TTS unavailable 保持。真实 GPU trial仍0，正式 speech／release acceptance不提升；collector收据继续 `speech_acceptance=not_evaluated`、`release_eligible=false`。user-systemd `PrivateNetwork` 已证明会在缺权限时退回宿主网络。同一已有镜像的 `docker run --network=none` 得到了不同网络命名空间、无外部网卡且无路由，详见[2026-10-02 namespace 探针](reports/20261002-stage2-namespace-probe.zh.md)。当前账号不能无密码 sudo，故不能安装 system unit 或迁移宿主 llama。checkpoint 的 13 文件与授权权重／config 哈希已于同日重核；venv site 文件数已与 13:44 清单不同，样本 JSON 本次未重新定位。启用对象、影响和回退见[启用包](reports/20261002-stage2-activation-packet.zh.md)。第一份准入必须是另一份单 trial manifest；提交本段的 18-trial SHA 会跑完整个矩阵，不能当作先做一个 trial 的闸门。不得为此关闭 AppArmor 或改用 legacy SSH 启动 18-trial 矩阵。云端016／008与mock DAG保持独立，本项及完整 `DEV-SPD-006` 不关闭。
+
 #### 云端／MacBook 共用 Mac mini 接口与稳定性（既有 `018/017`、`DEV-SPD-006`）
 
 用户要求两类客户端都经同一 Mac mini 接口，并考虑稳定性与后续通用性。**这是目标设计和待实现验收，不是现有部署事实。** 以用户指定的既有外部 Hub/job contract 为接入与调度合同承载；本仓库尚未提供该统一接入的 contract 名称／版本及 speech 映射证据，标为 waiting_evidence，实施前须冻结其版本／支持任务类型及 adapter 映射，复用本项目 durable job/receipt 机制；不新建第二条绕过鉴权、队列、日志或门禁的客户端 speech launch 接口。云端与 MacBook 都提交任务、按 jobId 查询／对账并取结果，SSH 仅作为内部 transport；legacy direct/relay 客户端在迁移时保留独立版本边界，不能声称已切换。
@@ -181,6 +215,44 @@ SSH／Tailscale 可作为受授权的传输／网络路径，本身不提供 sch
 5. **交付与裁决**：交付冻结 plan、实现 SHA／engine version、实际各阶段收据、故障注入点／恢复窗口、完整依赖／状态轨迹、artifact 核验、join/gate/final 投影、新增请求和重复 dispatch 数、缺测清单。分别裁决 real control plane + mock compute、真实 remote roundtrip、真实模型、scheduler 接管及正式资格；任一必需监管环节缺证据，则本主验收未通过，不按 span 闭合或“图非空”补通过。
 
 实现缺口须沿原 ID 回写：`008` producer typed completion leaf 与 recipe 必需边的语义验证；`017` 规范入口／冻结计划到真实 engine 的绑定、durable 状态／恢复和全消费者一致性；`018` 同合同 mini 接入／Spark worker、结果 bytes/hash 返回、batch partial recovery、未知对账与受限 fallback；`DEV-SPD-006` 真实 scheduler adapter、依赖驱动 dispatch／joins 与重启证据。现有 schema、outbox、账本／job primitives 可复用，不表示上述端到端接线已有；不得再建第二条顶层 backlog 或用日志修复重新推理。
+
+**2026-10-02 云端实施进展**：PR #210 已通过独立复核及 exact-head CI 后合入 dev（`84e9d71`），补齐 `016/008` 的 MFA 分项身份比较、实际 Source completion leaves 与下游重新核验；旧真实重跑失败记录仍保留。`017/DEV-SPD-006` 的 durable mock worker / canonical log / real Prefect continuation 接线已进入实现与分项验收，详见[云端生命周期记录](reports/20261002-cloud-mock-dag-lifecycle.zh.md)。新增 controller crash-window 回归编写遇到工具安全筛查阻断，保留为明确覆盖缺口；不得据普通组件通过关闭完整引擎、Fresh takeover、真实计算或正式资格。
+- 后续独立 review / CI 揭示 generic completion 接受 synthetic v2，以及 active worker terminal receipt publication 的普通读序竞争；前者修为显式 v1/v2 入口，后者先看 physical job active 状态，保留全部严格检查与原期限。PR #217/#218 修正 head 重新验收前继续 hold；旧绿色结果不替代新验收。详见生命周期记录的后续修复节。
+- mock v1 的已验证准入暂限 2 units；39/128-unit 实际规模验收继续 open。schema snapshot 优化不能消除全量 ledger 扫描的 O(N²) 累计成本；后续须验证完整字节/冲突/序号不减弱的有界或增量校验，不能把 admission 上限或更长 timeout 当成性能通过。
+- `017 / DEV-SPD-006` 的下一小批性能修复保留全部 write-time 字节核验：将 exact event/schema/version success cache 改为原 16 MiB payload ceiling + 8,192-entry 双上界，修正 39-job 日志 working set 未满 byte budget 却在 2,048 entries 抖动的问题。原 full-union authority、record/hash/scope/conflict/sequence 和 cap 2 均不变；pure reconciliation index 单独评估未见足够收益，不随本修复合入。配对字节、内存边界、负例与 timing 证据见[保留完整性保证的 cache 修复](reports/20261002-preserved-log-cache-scaling.zh.md)。这项 CPU 修复、PR #217/#218 已合并、完整 39/128-job 资格三者分别记录，规模 P1 不关闭。
+- 单一 Fresh→strict text→mock audio→readonly final 的实现与验证合同见 [2026-10-02 Fresh full-DAG](reports/20261002-fresh-full-dag.zh.md)。本地测量 `5048daa` 的真实 Prefect 3/3（六次 invocation / 114 tasks）已通过；保留 two-unit 实验资格、layer-map 与原 canonical 日志。该测量当时的 GitHub exact-head CI 及 PR #217 合并门另计。PR #217/#224 随后已合入 dev，`58b46767` 本机回执见[合并回执](reports/20261002-merged-dev-mock-dag-receipt.zh.md)。39/128-unit 规模与被阻断的 controller 故障窗口仍 open。
+- 后续有界 Source-engine 切片见 [2026-10-02 Fresh Source 六任务接管](reports/20261002-fresh-source-engine.zh.md)：五个 Source stages + locale.freeze 的固定 recipe / typed prefix / canonical stream；不得与 source.existing continuation 相加宣称完整 fresh 全流程接管，真实 SDK 以精确 PR head 验收为准。
+
+- **2026-10-02 合并后 dev 本机失败实测**（`8c64502404f9ae7110ee49aa990bcaeb2f8cd24d`）：正常SDK场景60.804秒后失败，Source/text完成、2个submit intent均unknown、0 job/0 TTS WAV，后续重放/重试/timeout未运行。macOS framework Python自动注入`__CF_USER_TEXT_ENCODING`与mock worker环境白名单冲突已由无任务探针复现；原launcher退出详情未留存，须补脱敏失败诊断而不放宽unknown重派。206条账本事件一致，但logs inspector仍报no_detected_error，须区分完整性与业务未决状态；证据副本未覆盖全部兄弟目录输入，不能标为完整恢复包。mini的实时job.v1能力表无mock TTS task，真实tts_experiment不可用，018跨机adapter/byte回收仍未接通，不以cpu_smoke替代。修复、独立部署权限与重新验收继续开放，详见[实验报告](reports/20261002-experiment1-merged-dev-result.zh.md)。
+- **2026-10-02 本机修复候选已验证**（`ab98774b4674d44a976d0e3999120e4ee8d2062a`）：收窄兼容macOS解释器注入字段、增加脱敏launcher错误、修正unknown/blocked日志诊断，并归档7份固定fixture输入。21项定向+37项集成通过；真实SDK三场景（6次invocation / 114 tasks）通过，正常重复无派发、确认失败仅重试1单元、timeout沿原job对账且无派发。独立审计7份WAV（6成功+1预设失败）、typed handles与1001个文件SHA均通过。原失败证据保留；该候选不能代替合并后 SHA。018跨机实现与部署按用户本轮范围推迟，规模及crash-window缺口不关闭。详见[修复报告](reports/20261002-macos-mock-worker-local-fix.zh.md)。
+- **2026-10-02 合并后 dev 本机复测已记录**（`58b46767aea3cfad04fd89c75a27f490369d2045`，tree `77df394cc0f43a994fd231db3fb34e43d9534b09`）：既有本机三场景在该精确 SHA 上通过，工作树干净。happy／failure／timeout 场景 wall 为 230.610／209.910／185.427 秒；6 次 invocation、114 个互异 taskRunId。正常重复 2→0 mock 派发，失败恢复只新增 1 个 job，超时沿原 job 对账且新派发为 0。历史 failure／timeout 错误仍保留。真实模型调用为 0。这只补上两单元 mock 的合并 SHA 回执，不关闭 018、真实 Spark batch、39/128-unit 或 crash-window。详见[合并回执](reports/20261002-merged-dev-mock-dag-receipt.zh.md)。
+
+
+**第1条实验复盘落实（PR #224；沿用 `017 / DEV-SPD-006 / 018`）**：
+
+| 改进 | 状态 | 本批交付与验收条件 |
+|---|---|---|
+| macOS隔离环境兼容、启动脱敏诊断 | 候选已验证 | 保留严格环境边界与unknown不重派；原失败账本不可改写 |
+| 实验前自动启动预检 | 候选已验证 | 在fixture/provider/job之前用真实隔离解释器检查worker环境；失败立即停止，日志不得泄露stderr/环境 |
+| 引擎、业务、历史错误、恢复状态分开 | 候选已验证 | 只读摘要独立呈现，不凭engine Completed或最终成功推断所有历史错误都恢复 |
+| 长测试进度和耗时 | 候选已验证 | 固定两单元SDK入口，输出场景/执行开始结束与wall time、保存完整log，失败停止后续；已有证据不覆盖 |
+| 输入归档完整性 | 候选已验证 | 固定7份输入SHA/大小验证及audit-only标记；可执行恢复包仍未实现，不以归档代替恢复资格 |
+| 测量与性能分析 | 分项归因及两项优化已验证 | 保存首次执行/凭证复用/重试/对账的独立耗时；随后定位验证、日志读取和SDK开销，成对测量后才作性能结论；不放宽cap2或校验 |
+| 进度沟通 | 执行约定 | 优先汇报新证据、阶段结果和阻塞；运行中使用结构化进度，避免反复人工轮询文件 |
+| 合并后dev正式复测 | 已记录 | `58b46767` 本机三场景通过；候选 SHA 与该回执分开 |
+| 跨机、39/128-unit规模、controller故障窗口 | 独立待办 | 本批保持原范围，跨机部署/服务变更另行按明确目标执行，不关闭018或规模资格 |
+
+本批落实于`8ff42bc740824640f0116cb759bf21d590a951b9`：17项新增测试+6项归档回归通过，新统一入口三场景通过（243.074/228.484/206.142秒），并完成进度/版本/状态摘要与WAV证据审计。通过[复盘验证结果](reports/20261002-macos-mock-worker-local-fix.zh.md#复盘改进的验证结果)复核。合并后 dev `58b46767` 的本机复测已记入[合并回执](reports/20261002-merged-dev-mock-dag-receipt.zh.md)。性能归因之后的进一步优化、可执行恢复包、跨机及规模项仍开放。
+
+**验证/日志开销分项归因（优化前基线）**：三场景270次操作级测量、3个代表操作cProfile及90次临时文件追加。happy warm完整读取99.479ms、57个完成凭证校验2.753s、durable只读precheck141.275ms；缓存444条/592,732bytes，warm无miss。profile确认57个handle触发114次整账本回放，10条不缓存事件被重复校验1,140次。临时文件低层追加+os.fsync约0.047ms；非整个durable事务，不据此排除其他IO等待。详见[独立归因报告](reports/20261002-mock-log-validation-cost.zh.md)。后续仍沿`017 / DEV-SPD-006`：
+
+- [x] 同一操作内批量验证completion，保留全局冲突、单handle绑定及新调用重新验证。V1/V2入口分离、负例与三场景配对输出等价通过，详见[批量凭证与共享快照](reports/20261002-completion-report-snapshots.zh.md)。
+- [ ] 为批处理减少重复schema类型指纹；RQC policy语义与超限事件保护不能直接绕过，任何schema-only缓存须有独立版本/变更反例。
+- [x] 最终layer/accounting/summary/inspect共享同一操作快照，账本读取5→1；三场景返回值和四份摘要文件等价，追加/损坏/冲突仍检出。优化候选、操作级性能及完整SDK三场景通过，合并后dev状态见[验证报告](reports/20261002-completion-report-snapshots.zh.md)。
+- [ ] 完整DAG内记录调用次数/CPU/写入与锁等待，确认分项优化对真实路径的收益；当前微基准不能给出143秒重复执行的耗时占比，也不关闭规模资格。
+
+
+
 
 #### 离开本地 Wi‑Fi 的 Tailscale 接入实施计划（既有 `017/018`）
 
@@ -844,3 +916,110 @@ PR #198 首轮CI进一步发现旧CLI夹具缺runtime/checkpoint声明，补齐�
 最新CI还发现两处旧测试兼容：POC父修订测试误取时钟workload，现精确选render_output；历史actual-trace测试逐项验新增clock/telemetry缺测字段后完整比较旧合同。生产指标、收据守卫和历史报告未变；全POC346项、报告/时钟90项及最终15资产快照20项定向回归通过，原失败保留。
 
 CI环境还暴露工具下载占用原job期限：18ae2f0的root-0已通过1609 tests/8可选skip；Prefect安装阶段被10分钟上限取消，root-1安装后测试被20分钟上限取消，均保留日志且不冒充完整测试终态。仅将CI job上限改为30/40分钟，测试和业务provider预算/期限/守卫不变；归入既有诊断验证接线，最终远程结果以最新head检查为准。
+
+
+## 今天（10/3）
+
+本节最初只授权文档与只读计划；文档已写不表示实现完成。用户随后在本任务明确“在我们这开始开发”，并要求“审核，继续开发完”，本地软件实施范围已更新，见[本地开发入口](pr229-local-development.zh.md)。模型／设备实验、通知、新 build、部署和真实账号配置仍须各自前置及授权。
+
+<a id="app-final-delivery-contract-20261003"></a>
+
+## 2026-10-03 最终 App 交付合同与 PDF 按需解耦
+
+用户反馈当前最终页面与预期有出入；尚未凭截图定位具体 App UI 缺陷。明确的产品目标是 **App 内讲道页面及配套翻译、配音、大纲、默想**。初稿记录待实现合同；后续本地实现新增只读产物与证据检查，实际客户端功能、每语言配音批准和发布仍按完整交付范围处理。
+
+| ID | 优先级／状态 | 待交付与验收条件 | 依赖 |
+|---|---|---|---|
+| `DEV-L4-006` | P1 / `in_progress` | 新增四产物准入及显式 App 交付包 producer，接入 Supervisor、end_to_end 和 local production 的独立 completion scope；无 PDF、失败／恢复、重启去重、旧批准拒绝、活／未知 owner 和自包含包消费通过离线集成。完成仅 prepared_not_published，默认 dual_pdf 保留。详见[入口](pr229-local-development.zh.md)及[producer](app-delivery-workflow.zh.md)。模型生成、双端 publisher／回退、通知及真实双端批准／设备验收仍待完成；软件测试不关闭实际交付。 | `DEV-L4-001/003/004/005`、`DEV-E2E-001`；语言及声音决策分别归 `DEV-L2-002` / `DEV-L3-003` |
+
+用户已确定产品目标和 PDF 按需定位；语言覆盖、跨语言声音授权和实际执行窗口仍按运行计划确认。后续本地实现新增独立 schema／检查入口和客户端能力门禁，保留旧协议／历史收据；没有改正式发布器、PDF 生产配置或新增客户端产品功能，没有启动生成／部署。
+
+
+### 内容页面必需发布顺序（用户 2026-10-03 决策）
+
+`DEV-L4-006` 的正式内容发布门禁：冻结同一内容候选 → iOS Beta 与 Firebase Dev 都可见 → 人工查看并保存明确批准收据 → 提升至 iOS 正式内容源与 Firebase 正式 App。两端校验相同来源、内容版本及翻译/配音/大纲/默想的对应产物 hash；记录环境身份、App/协议版本、审核范围、批准者与时间。受影响内容或绑定变化后，相关查看/批准失效并重做；机器 pass、HTTP 成功或一端可见不能替代两端人工批准。
+
+这是内容页面发布路径，不要求每周重打 iOS 包。若代码/协议变更确需新版 iOS，另走 TestFlight/App Review，核对仓库 Beta/Production 各自身份和配置；不承诺同一二进制直接晋级。用户 14:26 UTC 明确正式 App 指 iOS 和 Firebase 两个正式版 App，两端分别验收可见、可用。生产双端发布须记录各自版本与产物 hash、部分失败及回退一致性；一端成功不得宣布整体发布完成。本地检查覆盖同源双端、错误环境/版本、变更后旧批准拒绝及未批准不提升，不发布任何 Beta、Dev 或正式内容。
+
+
+### Dev 期次目录可辨识与正式入口范围
+
+| ID | 优先级／状态 | 已知证据及待交付与验收 | 依赖 |
+|---|---|---|---|
+| `DEV-L4-007` | P1 / `in_progress` | Web 已分组并区分同名 ID；修复冻结真实三语 Dev 候选的 Web／Swift reader 与 Beta 选择。明确 Beta＋Dev origin 才接纳候选并标机器审核；Production cold／cache／offline 只保留 hash 核验后的已发布人审语言，超时不丢已通过 sibling。Web 464、Core 71 通过／6 跳过、Infrastructure 42 通过／5 跳过、AppModel 真实 JSON 2 项及未签名 Beta build 通过。待合并和实际部署／设备验收；未改线上目录。 | `DEV-L4-006`、`DEV-L4-005`；实际 catalog/run 身份待核对 |
+
+原截图只证明 Dev 下拉混展示，不证明正式生产目录如此。菜单遮挡正文，不能据此判断四项产物缺失或质量差。图中没有 v2/v3/PDF；术语与 PDF 定位变更依据明确用户决策。后续 Web 分区／过滤实现的本地验证与原截图、远程环境验收分别记录。
+
+
+<a id="ste-instructions-ab-backlog-20261003"></a>
+
+### STE 文档澄清准备
+
+| ID | 优先级／状态 | 待交付与验收 | 依赖／待决定 |
+|---|---|---|---|
+| `DEV-STE-003` | P1 / `in_progress` | 文档已区分 locale 审批依赖独立与单 active job 容量/uncertain 占位；controller 定向离线回归通过，release-plan 条件静态核对。待合并，不标 complete | 保留现有容量；跨 locale 并发另立范围 |
+| `DEV-STE-004` | P1 / `in_progress` | 文档已区分 renderer 声音身份、batch 实现身份与受控兼容分支；离线验证兼容/不兼容及 WAV/收据篡改拒绝，未扩大名单。待合并 | `DEV-L3-001`；仅澄清现有边界 |
+| `DEV-STE-005` | P1 / `in_progress` | 已补 unit-instructions 完整输入、job/locale/group/text hash、operatorEvidence、override 与 zh-Hans spokenText 限制。审核后恢复 renderer 原字节，现有 CLI 参数用新增文档交接，避免说明改动使音频缓存失效。离线输入拒绝例通过，待合并 | `DEV-L3-001`；现有输入契约不变 |
+
+#### 2026-10-03 本地首批开发与验证
+
+用户在当前任务明确“在我们这开始开发”，本批在基于 PR #229 的 `codex/pr229-development` 独立 worktree 实施 `DEV-STE-003/004/005`。此前“今天仅文档计划／云端实现”的执行限制在这三项本地开发范围内由此授权更新；其他 App、费用配置、模型／设备实验、生产与发布事项仍按各自前置和授权处理。
+
+后续“审核，继续开发完”将本地软件范围扩至 `DEV-L4-006/007` 和 `DEV-COST-001` 的离线部分，交付在 [PR #231](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/231)。真实客户端／账号／生产结果仍独立验收；完整范围与迁移边界见[本地开发入口](pr229-local-development.zh.md)。
+
+改动见 [Agent 指令](../AGENTS.md)、[四层合同](multilingual-production-interfaces.zh.md) 和 [renderer 说明](formal-layer3-renderer.zh.md)。首批 `4899885` 未改变 controller 容量、输入校验、合成参数、声音身份或兼容名单，但 CLI help 改变实现文件 SHA。后续独立审核复现旧 batch>1 缓存续跑拒绝及 preview 重新合成，现已恢复 renderer 与 #229 基线完全相同的文件字节；原 cache 身份、兼容名单和生产产物不变。
+
+验证：临时隔离 Python 环境按 requirements 的 `jsonschema>=4.23,<5` 补齐依赖后，`python -m unittest tests.test_canonical_layer2_controller tests.test_render_formal_target_language_speech tests.test_formal_audio_batching` 共 69 项通过；renderer `--help` 退出 0。临时离线夹具另核验 unit-instructions 的 3 条接受路径、11 条拒绝路径，以及现有兼容谓词的 2 条接受／3 条拒绝路径。仅调用现有校验函数和模拟测试，不调用真实模型、不修改生产产物，不作为新音频或设备验收。
+
+<a id="provider-cost-isolation-20261003"></a>
+
+## OpenAI 环境隔离、用途归因与费用对账
+
+| ID | 优先级／状态 | 待交付与验收 | 依赖／待决定 |
+|---|---|---|---|
+| `DEV-COST-001` | P1 / `in_progress` | 已实现离线 dev/prod／用途隔离、逐 attempt／unknown、缓存 token、分页／nullable 归因和 Decimal 对账；新增原生 Costs 导出的离线解析，拒绝重复分区／断链／缺日／错误类型／极限日期，固定 pending 结算，40 项相关回归及独立审核通过。[入口](pr229-local-development.zh.md)。未调用真实 Costs API 或接入 producer 归因；预算接线及真实配置／账单另行验收，实际配置归 DEV-COST-002。 | 既有日志合同与 `DEV-STE-006`；真实 Project 映射、最小权限、secrets、hard limits 数值及执行窗口待单独安全授权 |
+
+只在实际 ASR provider=OpenAI 时配置 OpenAI transcription key；其他 provider 独立账本，按实际计量，不强制换 provider。纯阶段归因不必每 stage 拆 Project；只有需要各阶段独立 hard budget、权限或模型/速率政策时，再决定 workload Projects。
+
+截至 2026-10-03 核实：[Costs API](https://developers.openai.com/api/reference/resources/admin/subresources/organization/subresources/usage/methods/costs) 支持 api_key_id 分组及 api_key_ids 筛选，成本按日聚合，归因字段可为 null。保留 unattributed，不强行分摊。组织/Project 的 [hard spend limit](https://developers.openai.com/api/docs/guides/spend-limits) 达限会拒绝受影响请求（429）；传播并非即时，金额可能略超。Spend alert 仅通知而不中断，不能把所有 budget 写成 soft，也不能承诺绝对实时零超额。环境隔离参照 [production best practices](https://developers.openai.com/api/docs/guides/production-best-practices)。
+
+应用账本建议字段：environment、provider、project_id、credential_alias 或 api_key_id、job_id、stage、experiment_arm、model、provider_request_id、attempt_id、usage、estimated_cost、pricing_version、status。仅记安全别名/ID，不记 key 原值；最小权限和 Secret Manager 配置步骤需独立授权。不得将个人充值金额、卡号或付款资料写入仓库。
+
+每次重试独立计账，unknown 不记零；估算与 provider cost 每日对账，保留时间桶、归因缺口及差异，不能把 aggregate 当逐请求账单。输入、输出、缓存 token 分开保存，缓存 token 与输入总量的包含关系按 provider 定义，避免重复相加；ASR 按实际 provider 计量。历史充值不等于 usage 或阶段费用；新分 key 不能追溯恢复缺失旧日志。
+
+- [x] 无付费 offline fixtures 验证 dev/prod 和用途别名路由、错误映射拒绝、非 OpenAI ASR 不取 OpenAI key、日志脱敏及无密钥原文。
+- [x] 离线覆盖每 attempt、未知结果、缓存 token、nullable/unattributed、日聚合延迟/分页和估算对账差异，不伪造精确阶段费用。
+- [ ] 将 A/B 成本预算和独立缓存接入 `DEV-STE-006`；应用有界派发预算与 provider hard limit 分别验收，429/unknown 不自动重发。
+实际 Project/key/service-account/权限/限额配置和真实归因测试移交明天 DEV-COST-002；DEV-COST-001 后续已按本地授权实现离线检查，不配置账号。
+
+本地软件实现不创建 Project、key 或 service account，不改额度／权限、不读秘密、不调用模型。新代码是离线证据检查，不证明真实配置、限额生效或账单验证。
+
+
+## 明天（10/4）
+
+以下稳定任务定义由本主 backlog 保留。独立依赖 [PR #230](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/230) 的日期文档展开候选文本、实验矩阵及操作清单；其延迟、关闭或分支删除不移除这些任务的状态和验收标准。没有前提的工作不承诺当天完成。
+
+| ID | 优先级／状态 | 交付与验收 | 依赖／待决定 |
+| --- | --- | --- | --- |
+| `DEV-STE-001` | P1 / `pending` | 分阅读稿、元数据和口播明确 references_only 与经文短引用规则；冻结完整候选文本、来源 SHA、插入／替换位置和新 prompt／policy 身份。预注册全文／口播分层的 paired A/B，验忠实度、未授权新增引用；未批准候选不得改生产提示词。 | `DEV-L2-001`；引用范围签字、获批样本、费用上限及执行窗口 |
+| `DEV-STE-002` | P1 / `pending` | 保留 Sol reviewer-editor 职责；修复一个 issue 不得清除其余 concern，未解决项保留 issues／uncertainty 并 fail。覆盖部分修复、疑点与全部修复的离线门禁和真实 paired 评估，验漏报率与文本质量，模型评估不代替人审。 | `DEV-L2-001`；候选批准、新版本／独立缓存及回归预算 |
+| `DEV-STE-006` | P2 / `waiting_decision` | 仅实际 prompt 行为变化做 A/B；A 冻结原提示词和请求拼接，B 未批准时只存文档。固定模型、参数、获批来源、语言与全文／口播分层、独立缓存和盲评裁决；预注册忠实度、漏报、通过率、质量、延迟及 token／费用阈值，记录回滚与 unknown reconciliation。离线通过不声明真实 API 验收。 | `DEV-STE-001/002`；样本、费用硬上限、阈值及窗口待签字；未决 B 不执行 |
+| `DEV-L2-002` | P1 / `waiting_evidence` | 将 ES／KO 待定模板补为可批准的 source-bound 语言策略，冻结模型、机器筛查、术语、经文、register 及全文／口播规则；逐项绑定实际 run、决策与责任。豁免依据／范围和批准状态独立保存。付费前拒绝模板、缺字段、错误来源及未批准输入；旧片段或 fixture 不替代真实全文批准。 | `DEV-L2-001`；实际 run／截图身份、策略与独立豁免／批准 |
+| `DEV-L3-003` | P1 / `waiting_evidence` | 先确认 ES／KO 配音范围，再明确 locale、声音选择、跨语言用途授权、参考音频、adapter／checkpoint／policy 与获批口播／speech job 的身份绑定。核验语言能力与音质并独立批准；未知或不匹配仅阻断受影响 locale。中文声音授权不外推其他语言，不自动选声或用生成替代批准。 | `DEV-L2-002`、`DEV-L3-001`；语言覆盖、声音及真实测试授权 |
+| `DEV-L3-004` | P1 / `waiting_evidence` | 冻结获批输入和受控运行环境，核对资源门禁、双副本实际路由与各自声音／checkpoint；在明确样本与预算后验证完整链路、缓存恢复、失败和 unknown 处理。截图中 batch／API／GPU 状态只属于当时观察，不证明双副本或跨语言运行已通过，不自动启动服务。 | `DEV-L3-003`；运行范围、授权、资源及 checkpoint 绑定 |
+| `DEV-COST-002` | P1 / `waiting_decision` | 获批后配置真实 dev／prod Project、用途专属 key、最小权限、secrets 与 hard limit；先验离线路由、脱敏、逐重试／unknown 和日费用对账，再独立验 Dev 真实账单归因、429 传播和恢复，不误伤生产。未知旧归因不补造，限额／权限／实际费用分别取证。 | `DEV-COST-001`、`DEV-STE-006`；云端环境、安全授权、额度数值和窗口 |
+| `DEV-NOTIFY-001` | P1 / `pending` | 按订阅内容语言生成文案、对应语言海报和落地内容，绑定 page／locale／版本／hash；Beta／Dev 候选人工批准、正式 iOS／Firebase 双端验证后才发正式通知。验订阅／退订、去重、环境隔离及图片失败纯文字回退；单设备分别记录 sender accepted、设备收到和点击正确内容，不默认扩大收件人。 | `DEV-L4-006`、`DEV-IOS-001`、海报流程；APNs／FCM、sender／安全配置、单设备身份与权限 |
+| `DEV-IOS-003` | P1 / `pending` | 现场自动对齐期间在 Dynamic Island 显示真实监听／对齐状态，暂停、停止、权限拒绝和系统中断及时更新，结束不残留假活跃。核验版本／机型、后台／锁屏、ActivityKit 支持及无灵动岛替代呈现，再做 Beta 真机人工验收；内容 HTTP 或模拟测试不代替设备验收。 | `DEV-IOS-001/002`、live_session 录音授权／状态机、`DEV-L4-006`；能力与架构核验 |
+
+日期文档展开范围：
+
+- DEV-STE-001 / 002 / 006：提示词行为修复及有预算、有阈值的 A/B。
+- DEV-L2-002：ES/KO 策略模板补齐、独立豁免/批准与输入绑定。
+- DEV-L3-003 / 004：跨语言声音授权绑定、资源门禁及双副本真实链路。
+- DEV-COST-002：实际账号/key/额度配置，需安全授权和云端环境。
+- DEV-NOTIFY-001：多语言通知/海报实现、单设备 Beta 验收。
+- DEV-IOS-003：现场对齐灵动岛新能力及真机验收。
+
+依赖本 PR 的今天合同；先合并今天文档，再将明天 PR base 改为 dev。PR #228 保持独立。
+
+2026-10-03 后续修复及联合检查：用户明确合并 #228–#231；候选隔离／Beta 入口、App 准备包 durable 接线与费用导入已修复并独立审核，证据见[修复回执](reports/20261003-pr231-fixes-and-stack-review.zh.md)。实际内容生成、双端批准、发布、通知与设备／现场状态继续独立记录。

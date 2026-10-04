@@ -1,0 +1,152 @@
+{
+  "schemaVersion": "mock-snapshot-independent-audit-v1",
+  "status": "passed",
+  "candidateSha": "988102d4df5c1a523943a1c414582087635cb94f",
+  "observedAt": "2026-10-02T16:30:25.580564+00:00",
+  "scope": "read_only_saved_two_unit_synthetic_sdk_evidence",
+  "productionAcceptance": false,
+  "crossMachineAcceptance": false,
+  "totals": {
+    "invocations": 6,
+    "uniqueEngineTasks": 114,
+    "successfulWavsDecodedAndShaVerified": 6,
+    "workerJobs": 7,
+    "completionHandlesValidated": 160
+  },
+  "prefixQualification": "First invocation ledger hashes match reconstructed complete-line prefixes of the final saved ledger. No independently frozen first-invocation ledger snapshot is claimed.",
+  "fingerprintMethod": "SHA256 of UTF-8 json.dumps(relative-path to file-SHA256 map,sort_keys=True,separators=(comma,colon)); no file timestamps used.",
+  "scenarios": {
+    "happy": {
+      "savedPath": "artifacts/mock-snapshot-sdk-validation/evidence/happy/05794d1e8d30224416baac9e143ba6e9c586ad18313ad7b5868eb4ed0fb61a64",
+      "engineFlows": 2,
+      "uniqueEngineTasks": 38,
+      "eventCount": 454,
+      "completionHandlesValidated": 57,
+      "workerJobs": 2,
+      "successfulWavsDecodedAndShaVerified": 2,
+      "syntheticProviderDispatches": [
+        6,
+        0
+      ],
+      "newMockDispatches": [
+        2,
+        0
+      ],
+      "statuses": [
+        "synthetic_complete",
+        "synthetic_complete"
+      ],
+      "historicalInspectionStatus": "no_detected_error",
+      "originalNeighborJobRetained": true,
+      "recoveryIdentityChecked": true,
+      "layerProjectionAndDiagnosticsMatch": true,
+      "progressMatchesSavedResults": true,
+      "evidenceBytesUnchangedDuringAudit": true,
+      "firstInvocationReconstructedPrefix": {
+        "lineCount": 292,
+        "sha256": "047f5f5caa3934ed510dd5f6bf603b7d09aa63d69669b2c4060bf37855891ef8",
+        "independentlyFrozenSnapshot": false
+      },
+      "finalLedgerSha256": "2926a759bfe33e4f2d97e34fbbd4b8bfa0158f8d3bce47cfe117d0b26c71d12a",
+      "resultFileSha256": {
+        "sdk-result-1.json": "e55773574656af65171e4668be76a5983ab4360c128810fde8bb36d842ad3f4f",
+        "sdk-result-2.json": "6cce4635acc9064dfcc4530faf6825ca86238acc7d24d0f72191b34cc80bcc4c"
+      },
+      "renderedWavFileSha256": {
+        "fresh-full-dag/05794d1e8d30224416baac9e143ba6e9c586ad18313ad7b5868eb4ed0fb61a64/mock-control/requests/18b2722007647afb33584338da5d91ce05d8c541430f8e22298771ae8e3f02ea/worker/fixture.wav": "642a53e40db399566ff3db611a30db0ee8b754f704780e38add29a03c1e32258",
+        "fresh-full-dag/05794d1e8d30224416baac9e143ba6e9c586ad18313ad7b5868eb4ed0fb61a64/mock-control/requests/c6e97e58c82ff1e13aab632e9d1d8466a0b172036601d4a1a5b28c8a7c81e6db/worker/fixture.wav": "6af5d1eb523ad97679cf9473baa97d666900ba14dbfee0310313fa3275a9eb7d"
+      },
+      "fingerprintFileCount": 324,
+      "fileFingerprintManifestSha256": "5ba832cad572377b2f44c59a83a901c50e2e30f9c88ff751a8e1112620efe8d4"
+    },
+    "failure": {
+      "savedPath": "artifacts/mock-snapshot-sdk-validation/evidence/failure/2f7fa0ffaff6f66fd5faf1296d95a314fa2957178ad9ab3b5d75047b97b9b2b8",
+      "engineFlows": 2,
+      "uniqueEngineTasks": 38,
+      "eventCount": 468,
+      "completionHandlesValidated": 54,
+      "workerJobs": 3,
+      "successfulWavsDecodedAndShaVerified": 2,
+      "syntheticProviderDispatches": [
+        6,
+        0
+      ],
+      "newMockDispatches": [
+        2,
+        1
+      ],
+      "statuses": [
+        "incomplete",
+        "synthetic_complete"
+      ],
+      "historicalInspectionStatus": "needs_attention",
+      "originalNeighborJobRetained": true,
+      "recoveryIdentityChecked": true,
+      "layerProjectionAndDiagnosticsMatch": true,
+      "progressMatchesSavedResults": true,
+      "evidenceBytesUnchangedDuringAudit": true,
+      "firstInvocationReconstructedPrefix": {
+        "lineCount": 264,
+        "sha256": "e19f48714dea546b1b1118c9c73939132c5220c9720f978137fede0d3fe5bad1",
+        "independentlyFrozenSnapshot": false
+      },
+      "finalLedgerSha256": "4c3e693559b2e4c5c03daa07eebcc2bbe7f6b58a12fd14cfb39a5184f8265cc1",
+      "resultFileSha256": {
+        "sdk-result-1.json": "6d069694481de63e916ee7df2d1c0c83fda4d223886d7eacdd16c210f1645ad0",
+        "sdk-result-2.json": "4f1ad158e50bba1713a63a8c1074596ca0392712902158839df509527272afa4"
+      },
+      "renderedWavFileSha256": {
+        "fresh-full-dag/2f7fa0ffaff6f66fd5faf1296d95a314fa2957178ad9ab3b5d75047b97b9b2b8/mock-control/requests/4c7574ba04e5ea7e66e1ee66922688fc3e9dc1a50119101e87f81eba754a37dd/worker/fixture.wav": "24d19501dde2145f8f2b45fc0355e23d4b49bec6353e78364f92e32096b252e9",
+        "fresh-full-dag/2f7fa0ffaff6f66fd5faf1296d95a314fa2957178ad9ab3b5d75047b97b9b2b8/mock-control/requests/f2421fce2795d3627b72c40e501cb4548236dc15fe79807e8bd447b4f7152ff3/worker/fixture.wav": "7feb63bc65f70fa57061f8ef0c15f4d410374d2c8c949d0eb487b6f30359209f",
+        "fresh-full-dag/2f7fa0ffaff6f66fd5faf1296d95a314fa2957178ad9ab3b5d75047b97b9b2b8/mock-control/requests/0f37c508e5095d7aa28850014b4c9efcd61cd99b750cfc65388ffe5adefd28d3/worker/fixture.wav": "24d19501dde2145f8f2b45fc0355e23d4b49bec6353e78364f92e32096b252e9"
+      },
+      "fingerprintFileCount": 347,
+      "fileFingerprintManifestSha256": "1c2689a886394474d09642134bea8a67d314d9ecc56adc44cde57714ed699d0c"
+    },
+    "timeout": {
+      "savedPath": "artifacts/mock-snapshot-sdk-validation/evidence/timeout/e3186a8ecb16784c83872a8f4ccda22aa80c2f9ada275948d500b4e95b4a89a1",
+      "engineFlows": 2,
+      "uniqueEngineTasks": 38,
+      "eventCount": 424,
+      "completionHandlesValidated": 49,
+      "workerJobs": 2,
+      "successfulWavsDecodedAndShaVerified": 2,
+      "syntheticProviderDispatches": [
+        6,
+        0
+      ],
+      "newMockDispatches": [
+        2,
+        0
+      ],
+      "statuses": [
+        "incomplete",
+        "synthetic_complete"
+      ],
+      "historicalInspectionStatus": "needs_attention",
+      "originalNeighborJobRetained": true,
+      "recoveryIdentityChecked": true,
+      "layerProjectionAndDiagnosticsMatch": true,
+      "progressMatchesSavedResults": true,
+      "evidenceBytesUnchangedDuringAudit": true,
+      "firstInvocationReconstructedPrefix": {
+        "lineCount": 244,
+        "sha256": "b6ca3e1335c92a4384b180bbbc570a162b43bce718aa0b033eaeb746f4f38978",
+        "independentlyFrozenSnapshot": false
+      },
+      "finalLedgerSha256": "7e13e533ea6c537da9e2af05906b2470a9b50f7c2b6ea013cce019c96b8ec675",
+      "resultFileSha256": {
+        "sdk-result-1.json": "18e3c5d9cfff9bfc8414d77c16627c13a4adec015872391e59580bda5dd7ce75",
+        "sdk-result-2.json": "b4edaed915341373ec6ba025958dcbc0c6167de6a332233b09e9bc31b4667483"
+      },
+      "renderedWavFileSha256": {
+        "fresh-full-dag/e3186a8ecb16784c83872a8f4ccda22aa80c2f9ada275948d500b4e95b4a89a1/mock-control/requests/9e934c4b935ed30055cb6c0ff46bea82983590f8fe438b3b40650fb9a0930a12/worker/fixture.wav": "3d06f04b262308825b03e7214c6aa6299c8cae8ba3be74db49e404c83a4ebea8",
+        "fresh-full-dag/e3186a8ecb16784c83872a8f4ccda22aa80c2f9ada275948d500b4e95b4a89a1/mock-control/requests/3a6006c32044319f407fb63d677d735cf59829f5676939e40c462d0e6dfc3dec/worker/fixture.wav": "4b146df04bc2f4b3b20e7342a57aec7fe3389b13b2bef910d6fa12e97d91983f"
+      },
+      "fingerprintFileCount": 330,
+      "fileFingerprintManifestSha256": "29704ad9706e545b608fc90b01c4f1fec78de141b972ecd5b93fe269ad9c280f"
+    }
+  },
+  "runnerSummarySha256": "9fe1729fa7c4bc4f20c1f5cc6be6839145705ed77f2a8543fc8773fc99f3418a",
+  "progressSha256": "358726745dc890a98b4b9414cc256b93946b3d6ef1c1f68ff85009ce3fa3fb94"
+}

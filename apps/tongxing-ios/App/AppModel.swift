@@ -16,10 +16,31 @@ final class AppModel: ObservableObject {
         return url
     }
 
+    static func permitsDevCandidates(origin: URL, bundleIdentifier: String?) -> Bool {
+        bundleIdentifier == "com.jonathanjing.tongxing.beta" && origin.scheme == "https"
+            && origin.host == "ai-for-god-sermon-audio-dev.web.app"
+            && (origin.port == nil || origin.port == 443) && origin.user == nil && origin.password == nil
+            && origin.query == nil && origin.fragment == nil
+    }
+
+    static func selectableTargets(in page: MultilingualPage, allowDevCandidates: Bool) -> [(locale: String, target: PageTarget)] {
+        guard allowDevCandidates || (page.diagnosticOnly != true && page.simulationOnly != true) else { return [] }
+        return page.targets.filter { _, target in
+            (target.contentStatus == "human_reviewed" || (allowDevCandidates && target.contentStatus == "machine_reviewed"))
+                && (allowDevCandidates || (target.diagnosticOnly != true && target.simulationOnly != true))
+        }.sorted { $0.key.localizedStandardCompare($1.key) == .orderedAscending }
+            .map { (locale: $0.key, target: $0.value) }
+    }
+
+    let allowsDevCandidates: Bool
     let playback: PlaybackController
     @Published private(set) var catalog: WeeklyCatalog?
-    @Published private(set) var selectedWeek: SermonWeek?
-    @Published private(set) var selectedTrack: SermonTrack?
+    @Published private(set) var selectedWeek: SermonWeek? {
+        didSet { rebuildBilingualRows() }
+    }
+    @Published private(set) var selectedTrack: SermonTrack? {
+        didSet { rebuildBilingualRows() }
+    }
     @Published private(set) var isLoading = false
     @Published private(set) var isPreparing = false
     @Published private(set) var errorMessage: String?
@@ -36,7 +57,24 @@ final class AppModel: ObservableObject {
     @Published private(set) var publishedAudioSha256: String?
     @Published private(set) var isPreparingPublishedAudio = false
     @Published private(set) var publishedAudioError: String?
-    @Published private(set) var publishedTranscript: VerifiedPublishedTranscript?
+    @Published private(set) var publishedTranscript: VerifiedPublishedTranscript? {
+        didSet {
+            publishedCaptionsByID = Dictionary(uniqueKeysWithValues:
+                (publishedTranscript?.captions ?? []).map { ($0.id, $0) })
+            transcriptRowsRevision = UUID()
+        }
+    }
+    @Published private(set) var publishedCaptionsByID: [String: PublishedTranscriptCue] = [:]
+    @Published private(set) var bilingualRows: BilingualTranscriptRows?
+
+    // A scalar invalidation token keeps view observation independent of cue count.
+    @Published private(set) var transcriptRowsRevision = UUID()
+
+    // Selection changes invalidate derived text; player ticks never rebuild it.
+    private func rebuildBilingualRows() {
+        bilingualRows = selectedTrack.flatMap { selectedWeek?.bilingualCueRows(for: $0) }
+        transcriptRowsRevision = UUID()
+    }
     @Published private(set) var isLoadingPublishedTranscript = false
     @Published private(set) var publishedTranscriptError: String?
     @Published private var publishedHeadings: [String: SermonHeading] = [:]
@@ -142,11 +180,13 @@ final class AppModel: ObservableObject {
     }
 
     init(supportDirectory: URL? = nil, contentOrigin: URL? = nil, session: URLSession = .shared, statisticsDefaults: UserDefaults = .standard,
-         alignmentCapture: (any MicrophoneCapturing)? = nil) {
+         alignmentCapture: (any MicrophoneCapturing)? = nil,
+         applicationBundleIdentifier: String? = Bundle.main.bundleIdentifier) {
         let support = supportDirectory ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
             .appendingPathComponent("Tongxing", isDirectory: true)
         mediaOrigin = contentOrigin ?? Self.contentOrigin
         mediaSession = session
+        allowsDevCandidates = Self.permitsDevCandidates(origin: mediaOrigin, bundleIdentifier: applicationBundleIdentifier)
         languagePreferenceURL = support.appendingPathComponent("tongxing-language-preferences-v2.json")
         let savedPreferences = try? JSONDecoder().decode(ContentLanguagePreferences.self,
             from: Data(contentsOf: languagePreferenceURL))
@@ -163,7 +203,7 @@ final class AppModel: ObservableObject {
             origin: mediaOrigin,
             cacheDirectory: support.appendingPathComponent("MultilingualCatalog", isDirectory: true),
             session: session,
-            allowDevCandidate: mediaOrigin.host == "ai-for-god-sermon-audio-dev.web.app"
+            allowDevCandidate: allowsDevCandidates
         )
         offlineLibrary = OfflineLibrary(
                 directory: support.appendingPathComponent("Audio", isDirectory: true),
@@ -207,7 +247,8 @@ final class AppModel: ObservableObject {
             onState: { [weak self] status, busy, position in
                 self?.updateAlignmentState(status: status, busy: busy, position: position)
             },
-            onFailure: { [weak self] message in self?.alignmentFailure = AlignmentFailure(message: message) }
+            onFailure: { [weak self] message in self?.alignmentFailure = AlignmentFailure(message: message) },
+            onPhase: { [weak self] phase in self?.playback.setAlignmentPhase(phase) }
         )
         playback.onManualInteraction = { [weak self] in self?.alignmentController.cancel() }
 
@@ -216,7 +257,7 @@ final class AppModel: ObservableObject {
     var weeks: [SermonWeek] { catalog?.weeks ?? [] }
     var independentPages: [MultilingualPage] {
         let legacyIDs = Set(weeks.map(\.id))
-        return multilingualCatalog?.pages.filter { !legacyIDs.contains($0.id) && !$0.publishedTargets.isEmpty } ?? []
+        return multilingualCatalog?.pages.filter { !legacyIDs.contains($0.id) && !Self.selectableTargets(in: $0, allowDevCandidates: allowsDevCandidates).isEmpty } ?? []
     }
     var selectedMultilingualPage: MultilingualPage? {
         guard let multilingualCatalog else { return nil }
@@ -225,12 +266,24 @@ final class AppModel: ObservableObject {
         return multilingualCatalog.defaultPage
     }
     var availableContentLanguages: [(locale: String, target: PageTarget)] {
-        selectedMultilingualPage?.publishedTargets ?? []
+        selectedMultilingualPage.map { Self.selectableTargets(in: $0, allowDevCandidates: allowsDevCandidates) } ?? []
+    }
+    private func canSelectContent(_ locale: String, in page: MultilingualPage) -> Bool {
+        Self.selectableTargets(in: page, allowDevCandidates: allowsDevCandidates).contains { $0.locale == locale }
+    }
+    var selectedContentReviewNotice: String? {
+        if selectedContentTarget?.contentStatus == "machine_reviewed" {
+            return "Dev 候选 · 仅机器审核，人工全文审核未批准。"
+        }
+        if publishedTranscript?.releaseStatus == "candidate" {
+            return "Dev 候选 · 发布与设备验收尚未完成。"
+        }
+        return nil
     }
     var selectedContentTarget: PageTarget? { selectedMultilingualPage?.targets[selectedContentLocale] }
     var fullVideoURL: URL? {
         guard multilingualCatalog?.schemaVersion == MultilingualCatalog.dualScriptSchemaVersion,
-              let page = selectedMultilingualPage else { return nil }
+              let page = selectedMultilingualPage, page.mediaType != "podcast" else { return nil }
         return mediaOrigin.appendingPathComponent("pages/\(page.id)/full-video-browser.mp4")
     }
     var usesNativePublishedReader: Bool {
@@ -261,7 +314,7 @@ final class AppModel: ObservableObject {
         let key = publishedHeadingKey(page)
         guard publishedHeadings[key] == nil,
               multilingualCatalog?.schemaVersion == MultilingualCatalog.dualScriptSchemaVersion,
-              page.targets[page.defaultTargetLocale]?.contentStatus == "human_reviewed",
+              canSelectContent(page.defaultTargetLocale, in: page),
               let multilingualRepository else { return }
         do {
             let package = try await multilingualRepository.loadRelease(page: page, locale: page.defaultTargetLocale)
@@ -306,7 +359,7 @@ final class AppModel: ObservableObject {
 
     func selectPublishedContentLanguage(_ locale: String) {
         guard usesNativePublishedReader, let page = selectedMultilingualPage,
-              page.targets[locale]?.contentStatus == "human_reviewed" else { return }
+              canSelectContent(locale, in: page) else { return }
         guard locale != selectedContentLocale else { return }
         publishedSelectionRevision = UUID()
         cancelPublishedAudioPreparation()
@@ -418,7 +471,7 @@ final class AppModel: ObservableObject {
 
     func selectContentLanguage(_ locale: String) async -> VerifiedLanguagePage? {
         guard !isSelectingLanguage, let page = selectedMultilingualPage,
-              page.targets[locale]?.contentStatus == "human_reviewed", let multilingualRepository else { return nil }
+              canSelectContent(locale, in: page), let multilingualRepository else { return nil }
         let request = UUID()
         let selectionRevision = publishedSelectionRevision
         languageSelectionRequest = request
@@ -471,8 +524,8 @@ final class AppModel: ObservableObject {
         }
         let candidates = [languagePreferences.pageSelections[page.id], languagePreferences.preferredContentLocale,
                           page.defaultTargetLocale].compactMap { $0 }
-        selectedContentLocale = candidates.first(where: { page.targets[$0]?.contentStatus == "human_reviewed" })
-            ?? page.publishedTargets.first?.locale ?? "zh-Hans"
+        selectedContentLocale = candidates.first(where: { canSelectContent($0, in: page) })
+            ?? Self.selectableTargets(in: page, allowDevCandidates: allowsDevCandidates).first?.locale ?? "zh-Hans"
     }
 
     private func persistLanguagePreferences() {

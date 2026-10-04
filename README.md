@@ -64,6 +64,7 @@ This homepage introduces the purpose and user experience. Implementation details
 - [Project technical overview](docs/project-technical-overview.md): migrated implementation notes, diagrams and experiment records, including the [four-layer diagram](docs/project-technical-overview.md#four-layer-production-architecture-shared-english-source-to-multilingual-playback).
 - [Workflow overview (Chinese)](docs/workflows/README.zh.md): scope and deliverables for the three paths.
 - [Four-layer production contract (Chinese)](docs/multilingual-production-interfaces.zh.md): dependencies and review requirements from source to text, audio and page.
+- [Local experiment logging (Chinese)](experiments/local_experiment_log/README.zh.md): hash-bound accounting measurements and the [three-minute preload/batch protocol](docs/local-preload-batch-experiment.zh.md).
 - [App design](docs/app-system-design.zh.md) · [Backend design](docs/backend-workflow-system-design.zh-en.md) · [Experiment directions](docs/experiment-directions.zh.md).
 - [Full documentation index](docs/README.md): operations, development and historical evidence.
 

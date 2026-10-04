@@ -1,0 +1,756 @@
+{
+  "schemaVersion": "mock-snapshot-optimization-profile-v1",
+  "status": "passed",
+  "startedAtUnix": 1790957944.91453,
+  "python": "3.12.8 (v3.12.8:2dc476bcb91, Dec  3 2024, 14:43:19) [Clang 13.0.0 (clang-1300.0.29.30)]",
+  "platform": "macOS-27.0-arm64-arm-64bit",
+  "jsonschemaVersion": "4.26.0",
+  "analysisCommit": "7eb153b6017d65fb49eb0b2d9f402dd3ec343242",
+  "codeSha256": {
+    "scripts/sermon_accounting.py": "f3e2c4bbcb9486fa84e13304a27a760caef88d39568d78ca89e07044224b6ac0",
+    "scripts/sermon_completion.py": "2a6e9831df170a3d6600c9c5e4a06b9f19d953a759176b71ec41cc0dc544bafa",
+    "scripts/sermon_fresh_full_dag.py": "55c26f82ac15e00fe24ecf2e50a133e3c5b842716ef21f733c9b7f4e9d9fd02f",
+    "scripts/sermon_fresh_source_causality.py": "4ec746bb834dbf016106438d691fdc39af4cad73c3223f916ccf4b259c0810a5",
+    "scripts/sermon_logs.py": "ba521963c07858dd3d94d10d4db320b14a28b7461fbcc41a376d058c07216714",
+    "scripts/sermon_mock_tts_control.py": "9da73de603ae22b498ed37bca35995ed5bf60a422d1aa7cef725d21763a319a5",
+    "scripts/sermon_mock_tts_dag.py": "04cddd5d3d2466982231a3842c8a01c981d38bc230609e2624e5898a00e2180b",
+    "tests/profile_mock_snapshot_optimization.py": "62da9c7f440b5d622dda2481a60fa04a5448dbb2fd582656681d0e9983c73805",
+    "tests/profile_mock_dag_logs.py": "bfd0e82f2907d44243971672fc2a5db2abfaa92b135c31925b9bc5f93e377c78"
+  },
+  "inputManifestSha256": "ba88231dc80d22f32979d97e7570ee66824c30d9fe115bc89993fc5cfb0d7a49",
+  "scope": "saved_synthetic_read_only_operations_not_live_dag_speedup",
+  "coldMeaning": "fresh_python_process_and_validation_cache_not_cold_disk",
+  "baselineCommit": "7eb153b6017d65fb49eb0b2d9f402dd3ec343242",
+  "baselineMeaning": "original_completion_accounting_logs_dag_modules_with_unchanged_shared_dependencies",
+  "results": {
+    "happy": {
+      "completion_v1": {
+        "resultEquality": true,
+        "resultSha256": "89e5ed37101a9cd977d58d3d0676428fc03434b864f77adbe63b56732a828cfe",
+        "metadata": {
+          "eventCount": 454,
+          "ledgerBytes": 641503,
+          "ledgerSha256": "eb9d9b1b1ff7207b79b54f6d8c7ad7d8d3340ea4e462cbdcc89e998ecad4975a",
+          "baselineCompletionSourceSha256": "53113586904fe5d283fbbc19f580ff051af7a2430355cd33996aefc4910013c5",
+          "completionV1Count": 5,
+          "completionV2Count": 52,
+          "completionInputsSha256": "2862d72eb3dc0537207001a962fed2f49015264feb7f435b4df5cd6cfd073b11"
+        },
+        "phases": {
+          "cold": {
+            "baseline": {
+              "sampleCount": 1,
+              "wallSeconds": {
+                "median": 0.859246958,
+                "min": 0.859246958,
+                "max": 0.859246958
+              },
+              "cpuSeconds": {
+                "median": 0.85394,
+                "min": 0.85394,
+                "max": 0.85394
+              }
+            },
+            "optimized": {
+              "sampleCount": 1,
+              "wallSeconds": {
+                "median": 0.668821125,
+                "min": 0.668821125,
+                "max": 0.668821125
+              },
+              "cpuSeconds": {
+                "median": 0.662361,
+                "min": 0.662361,
+                "max": 0.662361
+              }
+            },
+            "wallRatioBaselineOverOptimized": 1.2847186278692975
+          },
+          "warm": {
+            "baseline": {
+              "sampleCount": 3,
+              "wallSeconds": {
+                "median": 0.236783958,
+                "min": 0.236719875,
+                "max": 0.236822375
+              },
+              "cpuSeconds": {
+                "median": 0.235387,
+                "min": 0.235363,
+                "max": 0.235562
+              }
+            },
+            "optimized": {
+              "sampleCount": 3,
+              "wallSeconds": {
+                "median": 0.054321875,
+                "min": 0.053282792,
+                "max": 0.0546875
+              },
+              "cpuSeconds": {
+                "median": 0.053977,
+                "min": 0.052986,
+                "max": 0.054437
+              }
+            },
+            "wallRatioBaselineOverOptimized": 4.358906204912846
+          }
+        }
+      },
+      "completion_v2": {
+        "resultEquality": true,
+        "resultSha256": "2c53a396eb136553be91ba9aaa2337bf3aed50932ae3ca5df6d18a28271dc144",
+        "metadata": {
+          "eventCount": 454,
+          "ledgerBytes": 641503,
+          "ledgerSha256": "eb9d9b1b1ff7207b79b54f6d8c7ad7d8d3340ea4e462cbdcc89e998ecad4975a",
+          "baselineCompletionSourceSha256": "53113586904fe5d283fbbc19f580ff051af7a2430355cd33996aefc4910013c5",
+          "completionV1Count": 5,
+          "completionV2Count": 52,
+          "completionInputsSha256": "2862d72eb3dc0537207001a962fed2f49015264feb7f435b4df5cd6cfd073b11"
+        },
+        "phases": {
+          "cold": {
+            "baseline": {
+              "sampleCount": 1,
+              "wallSeconds": {
+                "median": 3.107705583,
+                "min": 3.107705583,
+                "max": 3.107705583
+              },
+              "cpuSeconds": {
+                "median": 3.087918,
+                "min": 3.087918,
+                "max": 3.087918
+              }
+            },
+            "optimized": {
+              "sampleCount": 1,
+              "wallSeconds": {
+                "median": 0.7784945,
+                "min": 0.7784945,
+                "max": 0.7784945
+              },
+              "cpuSeconds": {
+                "median": 0.692057,
+                "min": 0.692057,
+                "max": 0.692057
+              }
+            },
+            "wallRatioBaselineOverOptimized": 3.991942888485404
+          },
+          "warm": {
+            "baseline": {
+              "sampleCount": 3,
+              "wallSeconds": {
+                "median": 2.517638042,
+                "min": 2.49833,
+                "max": 2.568623917
+              },
+              "cpuSeconds": {
+                "median": 2.495252,
+                "min": 2.483492,
+                "max": 2.514748
+              }
+            },
+            "optimized": {
+              "sampleCount": 3,
+              "wallSeconds": {
+                "median": 0.06157625,
+                "min": 0.061178667,
+                "max": 0.061690667
+              },
+              "cpuSeconds": {
+                "median": 0.06123,
+                "min": 0.060827,
+                "max": 0.061395
+              }
+            },
+            "wallRatioBaselineOverOptimized": 40.88651130914923
+          }
+        }
+      },
+      "reports": {
+        "resultEquality": true,
+        "resultSha256": "524e9e4f0c0c6eb3ba65288cfbf4623b62bd640228b09d9b1a1de1324ee005e5",
+        "metadata": {
+          "eventCount": 454,
+          "ledgerBytes": 641503,
+          "ledgerSha256": "eb9d9b1b1ff7207b79b54f6d8c7ad7d8d3340ea4e462cbdcc89e998ecad4975a",
+          "baselineCompletionSourceSha256": "53113586904fe5d283fbbc19f580ff051af7a2430355cd33996aefc4910013c5",
+          "baselineReportSourceSha256": {
+            "sermon_accounting": "1e185efe4e9063e34fd61fdcda4fa65be12472e9e675de6d1da10bdd99724607",
+            "sermon_logs": "f5772f595af914c0e6c7d880c9882574b6d76a49be54aded3040e8bcb7487440",
+            "sermon_fresh_full_dag": "9fb158587e8479b9bb8e0fe40c87bcbf231daa9f1e952d7470c4694cf2d02966"
+          },
+          "reportScope": "original_public_report_composition_vs_current_bundle_on_temporary_accounting_copy",
+          "reportWrites": "summary_outputs_and_lock_in_temporary_copy_only",
+          "completionV1Count": 5,
+          "completionV2Count": 52,
+          "completionInputsSha256": "2862d72eb3dc0537207001a962fed2f49015264feb7f435b4df5cd6cfd073b11"
+        },
+        "phases": {
+          "cold": {
+            "baseline": {
+              "sampleCount": 1,
+              "wallSeconds": {
+                "median": 1.356186041,
+                "min": 1.356186041,
+                "max": 1.356186041
+              },
+              "cpuSeconds": {
+                "median": 1.293601,
+                "min": 1.293601,
+                "max": 1.293601
+              }
+            },
+            "optimized": {
+              "sampleCount": 1,
+              "wallSeconds": {
+                "median": 0.788727209,
+                "min": 0.788727209,
+                "max": 0.788727209
+              },
+              "cpuSeconds": {
+                "median": 0.781276,
+                "min": 0.781276,
+                "max": 0.781276
+              }
+            },
+            "wallRatioBaselineOverOptimized": 1.7194614633866396
+          },
+          "warm": {
+            "baseline": {
+              "sampleCount": 3,
+              "wallSeconds": {
+                "median": 0.68259175,
+                "min": 0.650209958,
+                "max": 0.715235958
+              },
+              "cpuSeconds": {
+                "median": 0.669613,
+                "min": 0.645092,
+                "max": 0.676825
+              }
+            },
+            "optimized": {
+              "sampleCount": 3,
+              "wallSeconds": {
+                "median": 0.152554583,
+                "min": 0.152236666,
+                "max": 0.156956667
+              },
+              "cpuSeconds": {
+                "median": 0.151536,
+                "min": 0.151153,
+                "max": 0.155673
+              }
+            },
+            "wallRatioBaselineOverOptimized": 4.4744099887185955
+          }
+        }
+      }
+    },
+    "failure": {
+      "completion_v1": {
+        "resultEquality": true,
+        "resultSha256": "78b1b64f41daa5e9d3165f311a8b5fde0581cf3844c308c9ff2e22e8c249a034",
+        "metadata": {
+          "eventCount": 468,
+          "ledgerBytes": 665044,
+          "ledgerSha256": "260e51a39c1fbed4b676269323caf0ad992ca7b9d7c9270455be397a0d18df72",
+          "baselineCompletionSourceSha256": "53113586904fe5d283fbbc19f580ff051af7a2430355cd33996aefc4910013c5",
+          "completionV1Count": 5,
+          "completionV2Count": 49,
+          "completionInputsSha256": "a0f0c4484da2c183f0b21763adb61c300d0bc00516c96a7517fc89631dcb1aa4"
+        },
+        "phases": {
+          "cold": {
+            "baseline": {
+              "sampleCount": 1,
+              "wallSeconds": {
+                "median": 0.865322791,
+                "min": 0.865322791,
+                "max": 0.865322791
+              },
+              "cpuSeconds": {
+                "median": 0.859895,
+                "min": 0.859895,
+                "max": 0.859895
+              }
+            },
+            "optimized": {
+              "sampleCount": 1,
+              "wallSeconds": {
+                "median": 0.682067541,
+                "min": 0.682067541,
+                "max": 0.682067541
+              },
+              "cpuSeconds": {
+                "median": 0.678341,
+                "min": 0.678341,
+                "max": 0.678341
+              }
+            },
+            "wallRatioBaselineOverOptimized": 1.2686761046146895
+          },
+          "warm": {
+            "baseline": {
+              "sampleCount": 3,
+              "wallSeconds": {
+                "median": 0.244144125,
+                "min": 0.242705292,
+                "max": 0.245645709
+              },
+              "cpuSeconds": {
+                "median": 0.242898,
+                "min": 0.241315,
+                "max": 0.244487
+              }
+            },
+            "optimized": {
+              "sampleCount": 3,
+              "wallSeconds": {
+                "median": 0.055955541,
+                "min": 0.055666459,
+                "max": 0.056038958
+              },
+              "cpuSeconds": {
+                "median": 0.055678,
+                "min": 0.055289,
+                "max": 0.055695
+              }
+            },
+            "wallRatioBaselineOverOptimized": 4.363180493599374
+          }
+        }
+      },
+      "completion_v2": {
+        "resultEquality": true,
+        "resultSha256": "65e0e43097d5b0251755f9bbe8a007523e5220b1f8977abb944923adeb300888",
+        "metadata": {
+          "eventCount": 468,
+          "ledgerBytes": 665044,
+          "ledgerSha256": "260e51a39c1fbed4b676269323caf0ad992ca7b9d7c9270455be397a0d18df72",
+          "baselineCompletionSourceSha256": "53113586904fe5d283fbbc19f580ff051af7a2430355cd33996aefc4910013c5",
+          "completionV1Count": 5,
+          "completionV2Count": 49,
+          "completionInputsSha256": "a0f0c4484da2c183f0b21763adb61c300d0bc00516c96a7517fc89631dcb1aa4"
+        },
+        "phases": {
+          "cold": {
+            "baseline": {
+              "sampleCount": 1,
+              "wallSeconds": {
+                "median": 3.107589542,
+                "min": 3.107589542,
+                "max": 3.107589542
+              },
+              "cpuSeconds": {
+                "median": 3.053553,
+                "min": 3.053553,
+                "max": 3.053553
+              }
+            },
+            "optimized": {
+              "sampleCount": 1,
+              "wallSeconds": {
+                "median": 0.691897583,
+                "min": 0.691897583,
+                "max": 0.691897583
+              },
+              "cpuSeconds": {
+                "median": 0.685378,
+                "min": 0.685378,
+                "max": 0.685378
+              }
+            },
+            "wallRatioBaselineOverOptimized": 4.491401066218206
+          },
+          "warm": {
+            "baseline": {
+              "sampleCount": 3,
+              "wallSeconds": {
+                "median": 2.396735833,
+                "min": 2.396234625,
+                "max": 2.42035425
+              },
+              "cpuSeconds": {
+                "median": 2.382548,
+                "min": 2.379798,
+                "max": 2.402781
+              }
+            },
+            "optimized": {
+              "sampleCount": 3,
+              "wallSeconds": {
+                "median": 0.062696042,
+                "min": 0.062371334,
+                "max": 0.063864708
+              },
+              "cpuSeconds": {
+                "median": 0.062413,
+                "min": 0.062086,
+                "max": 0.063551
+              }
+            },
+            "wallRatioBaselineOverOptimized": 38.22786505406514
+          }
+        }
+      },
+      "reports": {
+        "resultEquality": true,
+        "resultSha256": "66c6fb62786f15689ef2de3f18388d908a2f76002bbc2c70d9fdbd29685af7fc",
+        "metadata": {
+          "eventCount": 468,
+          "ledgerBytes": 665044,
+          "ledgerSha256": "260e51a39c1fbed4b676269323caf0ad992ca7b9d7c9270455be397a0d18df72",
+          "baselineCompletionSourceSha256": "53113586904fe5d283fbbc19f580ff051af7a2430355cd33996aefc4910013c5",
+          "baselineReportSourceSha256": {
+            "sermon_accounting": "1e185efe4e9063e34fd61fdcda4fa65be12472e9e675de6d1da10bdd99724607",
+            "sermon_logs": "f5772f595af914c0e6c7d880c9882574b6d76a49be54aded3040e8bcb7487440",
+            "sermon_fresh_full_dag": "9fb158587e8479b9bb8e0fe40c87bcbf231daa9f1e952d7470c4694cf2d02966"
+          },
+          "reportScope": "original_public_report_composition_vs_current_bundle_on_temporary_accounting_copy",
+          "reportWrites": "summary_outputs_and_lock_in_temporary_copy_only",
+          "completionV1Count": 5,
+          "completionV2Count": 49,
+          "completionInputsSha256": "a0f0c4484da2c183f0b21763adb61c300d0bc00516c96a7517fc89631dcb1aa4"
+        },
+        "phases": {
+          "cold": {
+            "baseline": {
+              "sampleCount": 1,
+              "wallSeconds": {
+                "median": 1.317197083,
+                "min": 1.317197083,
+                "max": 1.317197083
+              },
+              "cpuSeconds": {
+                "median": 1.309803,
+                "min": 1.309803,
+                "max": 1.309803
+              }
+            },
+            "optimized": {
+              "sampleCount": 1,
+              "wallSeconds": {
+                "median": 0.824063125,
+                "min": 0.824063125,
+                "max": 0.824063125
+              },
+              "cpuSeconds": {
+                "median": 0.805137,
+                "min": 0.805137,
+                "max": 0.805137
+              }
+            },
+            "wallRatioBaselineOverOptimized": 1.5984176976733426
+          },
+          "warm": {
+            "baseline": {
+              "sampleCount": 3,
+              "wallSeconds": {
+                "median": 0.662837875,
+                "min": 0.655439042,
+                "max": 0.72088075
+              },
+              "cpuSeconds": {
+                "median": 0.659216,
+                "min": 0.651898,
+                "max": 0.678214
+              }
+            },
+            "optimized": {
+              "sampleCount": 3,
+              "wallSeconds": {
+                "median": 0.155694542,
+                "min": 0.154911958,
+                "max": 0.158616959
+              },
+              "cpuSeconds": {
+                "median": 0.155231,
+                "min": 0.154392,
+                "max": 0.157312
+              }
+            },
+            "wallRatioBaselineOverOptimized": 4.25729679721207
+          }
+        }
+      }
+    },
+    "timeout": {
+      "completion_v1": {
+        "resultEquality": true,
+        "resultSha256": "e115eff730bbbbe3bc4bd694d917e1d4c9c59540cb6ba24aa2d2f85c12c3f6ac",
+        "metadata": {
+          "eventCount": 424,
+          "ledgerBytes": 599826,
+          "ledgerSha256": "a72c4c373f65adedc735e5056ea5a03627ba79455aff0b7bdc16874edf39955a",
+          "baselineCompletionSourceSha256": "53113586904fe5d283fbbc19f580ff051af7a2430355cd33996aefc4910013c5",
+          "completionV1Count": 5,
+          "completionV2Count": 44,
+          "completionInputsSha256": "b88a84f06c5ea023c557bad24fa14f6fa615fb599abfdf18fa7a3b2990eabb6b"
+        },
+        "phases": {
+          "cold": {
+            "baseline": {
+              "sampleCount": 1,
+              "wallSeconds": {
+                "median": 0.810211542,
+                "min": 0.810211542,
+                "max": 0.810211542
+              },
+              "cpuSeconds": {
+                "median": 0.806654,
+                "min": 0.806654,
+                "max": 0.806654
+              }
+            },
+            "optimized": {
+              "sampleCount": 1,
+              "wallSeconds": {
+                "median": 0.641170125,
+                "min": 0.641170125,
+                "max": 0.641170125
+              },
+              "cpuSeconds": {
+                "median": 0.630073,
+                "min": 0.630073,
+                "max": 0.630073
+              }
+            },
+            "wallRatioBaselineOverOptimized": 1.2636451862132534
+          },
+          "warm": {
+            "baseline": {
+              "sampleCount": 3,
+              "wallSeconds": {
+                "median": 0.230613709,
+                "min": 0.228509,
+                "max": 0.230857083
+              },
+              "cpuSeconds": {
+                "median": 0.229839,
+                "min": 0.227789,
+                "max": 0.229849
+              }
+            },
+            "optimized": {
+              "sampleCount": 3,
+              "wallSeconds": {
+                "median": 0.051811792,
+                "min": 0.051586709,
+                "max": 0.053488708
+              },
+              "cpuSeconds": {
+                "median": 0.051658,
+                "min": 0.051439,
+                "max": 0.053145
+              }
+            },
+            "wallRatioBaselineOverOptimized": 4.450988859833298
+          }
+        }
+      },
+      "completion_v2": {
+        "resultEquality": true,
+        "resultSha256": "4f5cdfd46a624b57f46c1fd1609ddcc8c7d34a8b8a1278748979d11e541ff308",
+        "metadata": {
+          "eventCount": 424,
+          "ledgerBytes": 599826,
+          "ledgerSha256": "a72c4c373f65adedc735e5056ea5a03627ba79455aff0b7bdc16874edf39955a",
+          "baselineCompletionSourceSha256": "53113586904fe5d283fbbc19f580ff051af7a2430355cd33996aefc4910013c5",
+          "completionV1Count": 5,
+          "completionV2Count": 44,
+          "completionInputsSha256": "b88a84f06c5ea023c557bad24fa14f6fa615fb599abfdf18fa7a3b2990eabb6b"
+        },
+        "phases": {
+          "cold": {
+            "baseline": {
+              "sampleCount": 1,
+              "wallSeconds": {
+                "median": 2.809921791,
+                "min": 2.809921791,
+                "max": 2.809921791
+              },
+              "cpuSeconds": {
+                "median": 2.699401,
+                "min": 2.699401,
+                "max": 2.699401
+              }
+            },
+            "optimized": {
+              "sampleCount": 1,
+              "wallSeconds": {
+                "median": 0.647057166,
+                "min": 0.647057166,
+                "max": 0.647057166
+              },
+              "cpuSeconds": {
+                "median": 0.644361,
+                "min": 0.644361,
+                "max": 0.644361
+              }
+            },
+            "wallRatioBaselineOverOptimized": 4.3426175284797015
+          },
+          "warm": {
+            "baseline": {
+              "sampleCount": 3,
+              "wallSeconds": {
+                "median": 2.052014833,
+                "min": 2.031454083,
+                "max": 2.062230833
+              },
+              "cpuSeconds": {
+                "median": 2.034617,
+                "min": 2.021942,
+                "max": 2.044935
+              }
+            },
+            "optimized": {
+              "sampleCount": 3,
+              "wallSeconds": {
+                "median": 0.057998583,
+                "min": 0.0578385,
+                "max": 0.065783791
+              },
+              "cpuSeconds": {
+                "median": 0.057699,
+                "min": 0.05754,
+                "max": 0.061273
+              }
+            },
+            "wallRatioBaselineOverOptimized": 35.380430466723645
+          }
+        }
+      },
+      "reports": {
+        "resultEquality": true,
+        "resultSha256": "dd07b61b28f721863998bdab019900944bcca254ab70396de6fea6f07fa07441",
+        "metadata": {
+          "eventCount": 424,
+          "ledgerBytes": 599826,
+          "ledgerSha256": "a72c4c373f65adedc735e5056ea5a03627ba79455aff0b7bdc16874edf39955a",
+          "baselineCompletionSourceSha256": "53113586904fe5d283fbbc19f580ff051af7a2430355cd33996aefc4910013c5",
+          "baselineReportSourceSha256": {
+            "sermon_accounting": "1e185efe4e9063e34fd61fdcda4fa65be12472e9e675de6d1da10bdd99724607",
+            "sermon_logs": "f5772f595af914c0e6c7d880c9882574b6d76a49be54aded3040e8bcb7487440",
+            "sermon_fresh_full_dag": "9fb158587e8479b9bb8e0fe40c87bcbf231daa9f1e952d7470c4694cf2d02966"
+          },
+          "reportScope": "original_public_report_composition_vs_current_bundle_on_temporary_accounting_copy",
+          "reportWrites": "summary_outputs_and_lock_in_temporary_copy_only",
+          "completionV1Count": 5,
+          "completionV2Count": 44,
+          "completionInputsSha256": "b88a84f06c5ea023c557bad24fa14f6fa615fb599abfdf18fa7a3b2990eabb6b"
+        },
+        "phases": {
+          "cold": {
+            "baseline": {
+              "sampleCount": 1,
+              "wallSeconds": {
+                "median": 1.194779292,
+                "min": 1.194779292,
+                "max": 1.194779292
+              },
+              "cpuSeconds": {
+                "median": 1.18648,
+                "min": 1.18648,
+                "max": 1.18648
+              }
+            },
+            "optimized": {
+              "sampleCount": 1,
+              "wallSeconds": {
+                "median": 0.879190416,
+                "min": 0.879190416,
+                "max": 0.879190416
+              },
+              "cpuSeconds": {
+                "median": 0.773721,
+                "min": 0.773721,
+                "max": 0.773721
+              }
+            },
+            "wallRatioBaselineOverOptimized": 1.3589539538383684
+          },
+          "warm": {
+            "baseline": {
+              "sampleCount": 3,
+              "wallSeconds": {
+                "median": 0.61874625,
+                "min": 0.604588125,
+                "max": 0.634508459
+              },
+              "cpuSeconds": {
+                "median": 0.615423,
+                "min": 0.601018,
+                "max": 0.621639
+              }
+            },
+            "optimized": {
+              "sampleCount": 3,
+              "wallSeconds": {
+                "median": 0.1477655,
+                "min": 0.144146417,
+                "max": 0.173167125
+              },
+              "cpuSeconds": {
+                "median": 0.147107,
+                "min": 0.143324,
+                "max": 0.15242
+              }
+            },
+            "wallRatioBaselineOverOptimized": 4.1873525958359705
+          }
+        }
+      }
+    }
+  },
+  "inputFilesUnchanged": true,
+  "codeFilesUnchanged": true,
+  "endedAtUnix": 1790958002.446475,
+  "rawSummarySha256": "d4fda8b24d2586544e2b60205111a82579b7567bb204882d780fa511977f2fda",
+  "publishedCodeFingerprintScope": "changed production modules and benchmark dependencies; raw summary covers all scripts",
+  "summaryOutputEquivalence": {
+    "happy": {
+      "returnedSummaryEqual": true,
+      "fourOutputBytesEqual": true,
+      "outputSha256": {
+        "summary.json": "8205d8481d63883c2c8e10513cf8f8d7d5ec3f375d9a7edd798c7336488ccab0",
+        "stages.csv": "8ab8112cb63acbe5befb303d2b26dc96d8d2abc964c0e3b803c4d5e480a7adad",
+        "stage-attempts.csv": "a6f4026380242feb18455aa292c66a29082077062b47f34d603e0fc8bc7359c6",
+        "operations.log": "6c7932f13319c4bba0fec776fdd0a8a28de2eaad67dc72bf64a73d75ad0d3407"
+      }
+    },
+    "failure": {
+      "returnedSummaryEqual": true,
+      "fourOutputBytesEqual": true,
+      "outputSha256": {
+        "summary.json": "629dad16886771271327c27d44067ef74b03f72892833c37449e0e9da3934ddb",
+        "stages.csv": "8f0665eec3028858e01113b18d79f7b9004ee5cbdc830400432ef577e0fc8535",
+        "stage-attempts.csv": "bd3262de28dfe0b7f9a14dd700e44218c8eab1acb478a3e84dad4f85ce851f09",
+        "operations.log": "19e2bb69807e6aae52b33b2cce4e258218acb6543edad5e0de5906427ef4bc41"
+      }
+    },
+    "timeout": {
+      "returnedSummaryEqual": true,
+      "fourOutputBytesEqual": true,
+      "outputSha256": {
+        "summary.json": "42e282b7c7a671355500c769dc0daec497221102be00da533699605bb8dcf2c7",
+        "stages.csv": "8f4efa9331d828ff8e2454c339b5b03ff9aaab95b21c1102aa4403be2685d847",
+        "stage-attempts.csv": "7b5b157921afe409c9a6431d242d5223a13b93166050de55c48a87bebb030721",
+        "operations.log": "79f659b10cb841be89fff52f03371655859adcf1ffa8cba88322aa043872e1d0"
+      }
+    }
+  },
+  "summaryOutputEquivalenceClock": "2026-10-02T00:00:00Z",
+  "reportSnapshotReads": {
+    "baseline": 5,
+    "optimized": 1,
+    "allMeasurementsEqual": true
+  },
+  "implementationCommit": "988102d4df5c1a523943a1c414582087635cb94f",
+  "implementationFingerprintsMatch": true
+}

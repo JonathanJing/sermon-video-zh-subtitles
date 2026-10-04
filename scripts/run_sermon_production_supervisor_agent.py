@@ -198,6 +198,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--gcs-prefix", default=sermon_production_supervisor.DEFAULT_GCS_PREFIX)
     parser.add_argument("--api-key-secret")
     parser.add_argument("--release-workflow-config", type=Path, help="Opt into guarded page-release workflow (Agents API only).")
+    parser.add_argument("--app-delivery-config", type=Path,
+                        help="Opt into deterministic App bundle preparation; no Agents API or SDK model call")
     parser.add_argument("--youtube-api-key-secret")
     parser.add_argument("--youtube-cookies-secret")
     parser.add_argument("--youtube-cookies", type=Path)
@@ -235,6 +237,7 @@ def make_config(args: argparse.Namespace) -> sermon_production_supervisor.Superv
         gcs_prefix=args.gcs_prefix,
         api_key_secret=args.api_key_secret,
         release_workflow_config=getattr(args, "release_workflow_config", None),
+        app_delivery_config=getattr(args, "app_delivery_config", None),
         youtube_api_key_secret=args.youtube_api_key_secret,
         youtube_cookies_secret=args.youtube_cookies_secret,
         youtube_cookies_file=args.youtube_cookies,
@@ -249,6 +252,13 @@ def make_config(args: argparse.Namespace) -> sermon_production_supervisor.Superv
 
 async def run_agent(args: argparse.Namespace) -> dict[str, Any]:
     config = make_config(args)
+    sermon_production_supervisor.validate_config(config)
+    if config.app_delivery_config is not None:
+        if getattr(args, 'approve_window', False):
+            raise ValueError('App scope consumes existing reviews; it cannot create window approval')
+        from scripts import sermon_app_delivery_workflow
+        return sermon_app_delivery_workflow.run(config.app_delivery_config,
+            mode=args.mode, sunday=config.sunday)
     if config.release_workflow_config and getattr(args, "agent_backend", "agents-api") != "agents-api":
         raise ValueError("Full page-release workflow requires the Agents API backend")
     if args.approve_window:

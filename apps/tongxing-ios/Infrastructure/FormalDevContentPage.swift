@@ -34,12 +34,14 @@ struct FormalDevContentPage: Decodable {
 
     static func decode(_ data: Data, package: TargetLanguageReleasePackage) throws -> Self {
         let value = try JSONDecoder().decode(Self.self, from: data)
-        guard value.schemaVersion == "sermon-formal-dev-content-v1",
+        guard (value.schemaVersion == "sermon-formal-dev-content-v1" ||
+                (package.schemaVersion == TargetLanguageReleasePackage.dualScriptSchemaVersion &&
+                 package.contentStatus == "machine_reviewed" && value.schemaVersion == "sermon-dev-podcast-candidate-content-v2")),
               value.pageId == package.pageId, value.sourceLocale == "en",
               value.locale == package.targetLocale,
               value.targetLanguageCandidateJsonSha256 == package.targetLanguageCandidateJsonSha256,
               value.targetLanguageAudioPackageJsonSha256 == package.targetLanguageAudioPackageJsonSha256,
-              value.contentStatus == "human_reviewed", value.audioStatus == package.audioStatus,
+              value.contentStatus == package.contentStatus, value.audioStatus == package.audioStatus,
               !value.title.isEmpty, !value.series.isEmpty, !value.date.isEmpty,
               value.durationSeconds.isFinite, (7...14_400).contains(value.durationSeconds),
               !value.cues.isEmpty, value.cues.count <= 1_000,
@@ -69,7 +71,7 @@ struct FormalDevContentPage: Decodable {
         <h1>\(Self.escape(title))</h1><p>\(Self.escape(speaker)) · \(Self.escape(scripture))</p></header>
         <section><p>\(Self.escape(summary))</p><ol>\(outlineHTML)</ol></section>
         <section><h2>\(locale == "zh-Hans" ? "逐句内容" : locale == "ko" ? "자막" : "Subtítulos")</h2><ol>\(cueHTML)</ol></section>
-        <footer>AI generated audio · Human reviewed content · Dev POC</footer></body></html>
+        <footer>AI generated audio · \(contentStatus == "human_reviewed" ? "Human reviewed content" : "Machine reviewed content; human review pending") · Dev POC</footer></body></html>
         """
     }
 

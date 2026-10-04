@@ -1,0 +1,297 @@
+{
+  "scope": "frozen_public_dev_metadata_not_production_or_human_approval",
+  "origin": "https://ai-for-god-sermon-audio-dev.web.app",
+  "catalog": {
+    "defaultPageId": "2026-09-27-weekend-sermon-drive-530",
+    "generatedAt": "2026-10-03T15:39:44Z",
+    "pages": [
+      {
+        "date": "2026-09-27",
+        "defaultTargetLocale": "zh-Hans",
+        "id": "2026-09-27-weekend-sermon-drive-530",
+        "sourceIdentitySha256": "a0cf67203bae17bff080b2d1af41f88bdef786345a435021c2739d14f15394ac",
+        "sourceLocale": "en",
+        "sourceMediaSha256": "374662dc7c00993820360b2095e277ecd7ebf17bc4d873ccf7e2b76a6c7c7930",
+        "targets": {
+          "es": {
+            "audioFingerprint": {
+              "algorithmVersion": "spectral-landmarks-v1",
+              "captureSeconds": 10,
+              "indexSha256": "fd64741693dc955bf6169fa2d29b7156230c0e1163e7bf6532031e06eeddd8e5",
+              "indexUrl": "/fingerprints/fd64741693dc955b-landmarks.json",
+              "pageId": "2026-09-27-weekend-sermon-drive-530",
+              "schemaVersion": "sermon-audio-fingerprint-binding-v1",
+              "sourceEndSeconds": 1891.677333,
+              "sourceSha256": "374662dc7c00993820360b2095e277ecd7ebf17bc4d873ccf7e2b76a6c7c7930",
+              "sourceStartSeconds": 0,
+              "trackSha256": "17990aaa6369922a2a7b2ad2d8bf9f4486b5a0d7a282deb2ae2fe6569b876496"
+            },
+            "audioStatus": "human_reviewed",
+            "capabilities": [
+              "text",
+              "captions",
+              "audio",
+              "alignment"
+            ],
+            "contentStatus": "human_reviewed",
+            "releasePackageJsonSha256": "89bd0ae679a4c4af3b83d753128a1b729d4a89a80269a2d575855a87eb7508d8",
+            "releasePackageUrl": "/releases-v2/2026-09-27-weekend-sermon-drive-530/es.json"
+          },
+          "ko": {
+            "audioFingerprint": {
+              "algorithmVersion": "spectral-landmarks-v1",
+              "captureSeconds": 10,
+              "indexSha256": "faee5bf40f4e1816f3280cf4a083c5415c36032811f0aea49f5d438952b6d10e",
+              "indexUrl": "/fingerprints/faee5bf40f4e1816-landmarks.json",
+              "pageId": "2026-09-27-weekend-sermon-drive-530",
+              "schemaVersion": "sermon-audio-fingerprint-binding-v1",
+              "sourceEndSeconds": 1891.677333,
+              "sourceSha256": "374662dc7c00993820360b2095e277ecd7ebf17bc4d873ccf7e2b76a6c7c7930",
+              "sourceStartSeconds": 0,
+              "trackSha256": "b6317fa0589ef7ae2805e73862f75f6b9b81b8b81cfb97310e0f33b6539ade46"
+            },
+            "audioStatus": "human_reviewed",
+            "capabilities": [
+              "text",
+              "captions",
+              "audio",
+              "alignment"
+            ],
+            "contentStatus": "human_reviewed",
+            "releasePackageJsonSha256": "c7bafcd623bf7bd3658f9c0012ce73a4fcd3aca7e1a766e728874d7e3978b9f7",
+            "releasePackageUrl": "/releases-v2/2026-09-27-weekend-sermon-drive-530/ko.json"
+          },
+          "zh-Hans": {
+            "audioFingerprint": {
+              "algorithmVersion": "spectral-landmarks-v1",
+              "captureSeconds": 10,
+              "indexSha256": "4cda22a17d0511002c228cc161f94ce3c2cd05fb2403ba8ef0a159375452b057",
+              "indexUrl": "/fingerprints/4cda22a17d051100-landmarks.json",
+              "pageId": "2026-09-27-weekend-sermon-drive-530",
+              "schemaVersion": "sermon-audio-fingerprint-binding-v1",
+              "sourceEndSeconds": 1891.677333,
+              "sourceSha256": "374662dc7c00993820360b2095e277ecd7ebf17bc4d873ccf7e2b76a6c7c7930",
+              "sourceStartSeconds": 0,
+              "trackSha256": "5ef201d0fd4d726d2927301fcd776415652fc1251c52971213e2665ad0f3faeb"
+            },
+            "audioStatus": "human_reviewed",
+            "capabilities": [
+              "text",
+              "captions",
+              "audio",
+              "alignment"
+            ],
+            "contentStatus": "human_reviewed",
+            "releasePackageJsonSha256": "32755dff59bd449c3199e760d6e280407d56bbd286fafd235ccf4adc94f8b675",
+            "releasePackageUrl": "/releases-v2/2026-09-27-weekend-sermon-drive-530/zh-Hans.json"
+          }
+        },
+        "title": "启示录：耶稣带来的安慰与盼望 · 耶稣配得"
+      },
+      {
+        "date": "2026-10-02",
+        "defaultTargetLocale": "zh-Hans",
+        "id": "if-i-had-more-time-jesus-is-worthy",
+        "mediaType": "podcast",
+        "sourceIdentitySha256": "de074b675fcbea73b4ebaeb3f7a78f56e955d4cf94c863f0d679a86a2bff30e3",
+        "sourceLocale": "en",
+        "sourceMediaSha256": "2fa59aac3361420ce0d9518cb28016cac6192b7804fd8b5b5a232274bfa299ca",
+        "sourceUrl": "https://www.youtube.com/watch?v=N-y3EqlUtdU",
+        "targets": {
+          "es": {
+            "audioStatus": "human_reviewed",
+            "capabilities": [
+              "text",
+              "captions",
+              "audio"
+            ],
+            "contentStatus": "machine_reviewed",
+            "releasePackageJsonSha256": "15e3504e173cab3a38e892d6cc4298cac1f0e30571d74f37465c2b5c03aad033",
+            "releasePackageUrl": "/releases-v2/if-i-had-more-time-jesus-is-worthy/es.json"
+          },
+          "ko": {
+            "audioStatus": "human_reviewed",
+            "capabilities": [
+              "text",
+              "captions",
+              "audio"
+            ],
+            "contentStatus": "machine_reviewed",
+            "releasePackageJsonSha256": "8b9a3d05d1eaf2e16ec877e3549a283893f44105f39d46608419710b47f5dfd1",
+            "releasePackageUrl": "/releases-v2/if-i-had-more-time-jesus-is-worthy/ko.json"
+          },
+          "zh-Hans": {
+            "audioStatus": "human_reviewed",
+            "capabilities": [
+              "text",
+              "captions",
+              "audio"
+            ],
+            "contentStatus": "human_reviewed",
+            "releasePackageJsonSha256": "0db717775b78d835b1648ad99546149a8355ca52a218959bae10187f66d0a4e1",
+            "releasePackageUrl": "/releases-v2/if-i-had-more-time-jesus-is-worthy/zh-Hans.json"
+          }
+        },
+        "title": "如果我有更多时间 · 耶稣配得"
+      }
+    ],
+    "schemaVersion": "sermon-multilingual-catalog-v3"
+  },
+  "releases": {
+    "zh-Hans": {
+      "assets": [
+        {
+          "path": "/pages/if-i-had-more-time-jesus-is-worthy/zh-Hans/index.html",
+          "role": "page",
+          "sha256": "1687554d4c20e6bb294f9301dd79ea4f410df03c6d085c47a187649f95c70ff0"
+        },
+        {
+          "path": "/content/if-i-had-more-time-jesus-is-worthy/zh-Hans.json",
+          "role": "content",
+          "sha256": "0e9cb02f42fcd49ee41ef442ba1ebfeaa94685379f9027142b299b60a0a6c8d8"
+        },
+        {
+          "path": "/media/if-i-had-more-time-jesus-is-worthy/zh-Hans.wav",
+          "role": "audio",
+          "sha256": "d1967bbb01fb11b722594c21ac359c00430a5650ab4f008d4cc65e70bffe0bf2"
+        },
+        {
+          "path": "/captions/if-i-had-more-time-jesus-is-worthy/zh-Hans.json",
+          "role": "captions",
+          "sha256": "cf40e69e05d83283e6d89e8d748cdd3c51e6be0c010fd090529fb4ba744de840"
+        }
+      ],
+      "audioLocale": "zh-Hans",
+      "audioStatus": "human_reviewed",
+      "contentLocale": "zh-Hans",
+      "contentStatus": "human_reviewed",
+      "deviceAcceptance": {
+        "evidenceSha256": null,
+        "status": "not_run"
+      },
+      "httpVerification": {
+        "evidenceSha256": null,
+        "status": "not_run"
+      },
+      "interfaceLocale": "zh-Hans",
+      "issues": [],
+      "packageId": "if-i-had-more-time-jesus-is-worthy-zh-Hans-dev-candidate-v2",
+      "pageId": "if-i-had-more-time-jesus-is-worthy",
+      "schemaVersion": "sermon-target-language-release-package-v2",
+      "sourceLocale": "en",
+      "spokenTargetLanguageCandidateJsonSha256": "7f43840d7c88ebfaf6c144fbf39ed0e3f898dbe3c578bbdcff3cf02b4975ab47",
+      "status": "candidate",
+      "targetLanguageAudioPackageJsonSha256": "1894481ddc5b0bb7f54f5ae7b6e95e7d4d91177315a7943543a96ae1d845d30a",
+      "targetLanguageCandidateJsonSha256": "7f43840d7c88ebfaf6c144fbf39ed0e3f898dbe3c578bbdcff3cf02b4975ab47",
+      "targetLocale": "zh-Hans",
+      "venueAcceptance": {
+        "evidenceSha256": null,
+        "status": "not_run"
+      }
+    },
+    "ko": {
+      "schemaVersion": "sermon-target-language-release-package-v2",
+      "packageId": "if-i-had-more-time-jesus-is-worthy-ko-dev-candidate-v1",
+      "pageId": "if-i-had-more-time-jesus-is-worthy",
+      "sourceLocale": "en",
+      "targetLocale": "ko",
+      "targetLanguageCandidateJsonSha256": "a7da6dc61340ac94cad9e11c09b3043c0d88541937991c6a2b24242ab7eea1b4",
+      "spokenTargetLanguageCandidateJsonSha256": "a7da6dc61340ac94cad9e11c09b3043c0d88541937991c6a2b24242ab7eea1b4",
+      "targetLanguageAudioPackageJsonSha256": "a93cb09eb92a2b655bd606530a85061febb10f95007332d2922bb0eb4ddf68aa",
+      "audioHumanReviewReceiptJsonSha256": "7328f25b82fa81fab7c19fb5799aa7ab36588b5cdf0718280115ffd620a2a214",
+      "status": "candidate",
+      "contentStatus": "machine_reviewed",
+      "audioStatus": "human_reviewed",
+      "interfaceLocale": "zh-Hans",
+      "contentLocale": "ko",
+      "audioLocale": "ko",
+      "assets": [
+        {
+          "role": "page",
+          "path": "/pages/if-i-had-more-time-jesus-is-worthy/ko/index.html",
+          "sha256": "09090fde5c04edbfec0d0078e35a2a55b126b80ab7ae07dc0560a69c9fd49a29"
+        },
+        {
+          "role": "content",
+          "path": "/content/if-i-had-more-time-jesus-is-worthy/ko.json",
+          "sha256": "592f0ef911eaaa5b56334a529011eab3b2e16860c588e47a1c73eb4ffa7f02d8"
+        },
+        {
+          "role": "audio",
+          "path": "/media/if-i-had-more-time-jesus-is-worthy/ko.wav",
+          "sha256": "abe519b96c316391ba855ac4e90f66dfd5f80aef3183573588deb3d3bf822616"
+        },
+        {
+          "role": "captions",
+          "path": "/captions/if-i-had-more-time-jesus-is-worthy/ko.json",
+          "sha256": "5da206f6d288151643f0f6fd408abbf7b4de86c4a9f49af87277715880319a47"
+        }
+      ],
+      "httpVerification": {
+        "status": "not_run",
+        "evidenceSha256": null
+      },
+      "deviceAcceptance": {
+        "status": "not_run",
+        "evidenceSha256": null
+      },
+      "venueAcceptance": {
+        "status": "not_run",
+        "evidenceSha256": null
+      },
+      "issues": []
+    },
+    "es": {
+      "schemaVersion": "sermon-target-language-release-package-v2",
+      "packageId": "if-i-had-more-time-jesus-is-worthy-es-dev-candidate-v1",
+      "pageId": "if-i-had-more-time-jesus-is-worthy",
+      "sourceLocale": "en",
+      "targetLocale": "es",
+      "targetLanguageCandidateJsonSha256": "4006bc06a865771764f5ca8508bd992dbd4b3ec6fc09d47be74fcb9e4596be1e",
+      "spokenTargetLanguageCandidateJsonSha256": "4006bc06a865771764f5ca8508bd992dbd4b3ec6fc09d47be74fcb9e4596be1e",
+      "targetLanguageAudioPackageJsonSha256": "8b89cd77e87aa0ab029d09a19e6f1930124f396eacc7a800a838bfc0b5f4f11b",
+      "audioHumanReviewReceiptJsonSha256": "e6b62c8fda6b4803c9f3a590805370d7ce0d446d16e184f36890895a3163915a",
+      "status": "candidate",
+      "contentStatus": "machine_reviewed",
+      "audioStatus": "human_reviewed",
+      "interfaceLocale": "zh-Hans",
+      "contentLocale": "es",
+      "audioLocale": "es",
+      "assets": [
+        {
+          "role": "page",
+          "path": "/pages/if-i-had-more-time-jesus-is-worthy/es/index.html",
+          "sha256": "823f7b9f25f553cefeaa0c45f0b74e79494337cafa6a5e47989c8f374256d69b"
+        },
+        {
+          "role": "content",
+          "path": "/content/if-i-had-more-time-jesus-is-worthy/es.json",
+          "sha256": "0c67d14600e7ddfd5738ca29b42035fd54a8f0dbfe2a593c843cd325d3ec0ef8"
+        },
+        {
+          "role": "audio",
+          "path": "/media/if-i-had-more-time-jesus-is-worthy/es.wav",
+          "sha256": "7568e181cf65222b4b249ee507303d8f27b80d05294b33a35a5b23ff9270d727"
+        },
+        {
+          "role": "captions",
+          "path": "/captions/if-i-had-more-time-jesus-is-worthy/es.json",
+          "sha256": "a5d1ef29a39eb82a49dd5cab37425e13924a9927f151c7e8f0582b77e1dee202"
+        }
+      ],
+      "httpVerification": {
+        "status": "not_run",
+        "evidenceSha256": null
+      },
+      "deviceAcceptance": {
+        "status": "not_run",
+        "evidenceSha256": null
+      },
+      "venueAcceptance": {
+        "status": "not_run",
+        "evidenceSha256": null
+      },
+      "issues": []
+    }
+  }
+}
