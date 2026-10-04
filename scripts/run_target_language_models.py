@@ -26,6 +26,7 @@ try:
     from scripts import sermon_pipeline
     from scripts import target_language_policy as policy_tools
     from scripts import target_language_policy_preview as policy_preview
+    from scripts.migrate_target_language_model_cache import migration_cache
     from scripts import sermon_workflow_jobs as jobs
 except ImportError:
     import four_layer_measure as measure
@@ -35,6 +36,7 @@ except ImportError:
     import sermon_pipeline
     import target_language_policy as policy_tools
     import target_language_policy_preview as policy_preview
+    from migrate_target_language_model_cache import migration_cache
     import sermon_workflow_jobs as jobs
 
 
@@ -194,7 +196,6 @@ def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
     policy_preview.freeze_payload_preview(
         role, payload, policy, output.with_suffix(".policy-preview.json"))
     fingerprint = policy_tools.canonical_sha256(payload)
-    from scripts.migrate_target_language_model_cache import migration_cache
     migrated_from = migration_cache(role, payload)
     if migrated_from is not None:
         require(cache_only and reuse_from is None, "Explicit migration must be cache-only and isolated")

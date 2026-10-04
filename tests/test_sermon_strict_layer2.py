@@ -19,7 +19,7 @@ from tests.test_sermon_review_contracts import load
 
 class StrictAdapterTests(unittest.TestCase):
     def setUp(self):
-        f=legacy_fixtures.ProduceTargetLanguageCandidateTests();f.setUp();self.addCleanup(f.doCleanups);self.f=f
+        f=legacy_fixtures.ProduceTargetLanguageCandidateTests();self.addCleanup(f.doCleanups); f.setUp();self.f=f
         tmp=tempfile.TemporaryDirectory();self.addCleanup(tmp.cleanup);self.root=Path(tmp.name);self.calls=[]
         draft=copy.deepcopy(f.policy);draft.pop('componentSha256');draft['schemaVersion']=policies.POLICY_V3
         draft['reviewMode']='strict_verifier';draft['translator']['promptVersion']='astra-strict-generator-v1';draft['reviewer']['promptVersion']='sol-strict-verifier-v1'
@@ -233,7 +233,7 @@ class StrictAdapterTests(unittest.TestCase):
 
     def test_structural_sidecar_write_failure_keeps_budget_pending_and_recovers_without_call(self):
         from tests import test_sermon_strict_budget_adapter as fixtures
-        runtime=fixtures.StrictBudgetTests();runtime.setUp();self.addCleanup(runtime.doCleanups)
+        runtime=fixtures.StrictBudgetTests();self.addCleanup(runtime.doCleanups); runtime.setUp()
         original=s.save_once
         def broken(path,value):
             if str(path).endswith('.structural-diagnostic.json'):raise OSError('synthetic write failure')
@@ -254,7 +254,7 @@ class StrictAdapterTests(unittest.TestCase):
         from scripts import sermon_pipeline as pipeline
         from scripts import sermon_strict_budget_adapter as adapter
         from tests import test_sermon_strict_budget_adapter as fixtures
-        runtime=fixtures.StrictBudgetTests();runtime.setUp();self.addCleanup(runtime.doCleanups)
+        runtime=fixtures.StrictBudgetTests();self.addCleanup(runtime.doCleanups); runtime.setUp()
         executor=Mock(side_effect=AssertionError('closed run must not dispatch'))
         def closed(key,payload,*,response_observer):
             request=pipeline.urllib.request.Request(pipeline.CHAT_URL)

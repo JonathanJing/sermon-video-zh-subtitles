@@ -42,8 +42,8 @@ class ProviderTests(unittest.TestCase):
             fixture.summary_path.write_text(json.dumps(summary))
             return original(fixture, **kwargs)
         self.f=fixtures.StrictAdapterTests()
-        with patch.object(EnglishSourcePackageTests,'build',scoped_build):self.f.setUp()
         self.addCleanup(self.f.doCleanups)
+        with patch.object(EnglishSourcePackageTests,'build',scoped_build):self.f.setUp()
         self.root=self.f.root/'revision';self.store=budget.BudgetStore(self.f.root/'budget',authority())
         self.clock=100.;self.calls=[];self.selected=deepcopy(limits.DEFAULT_REQUEST_LIMITS)
         self.prepared=strict.prepare(*self.f.args,self.f.group,request_limits=self.selected)
@@ -485,7 +485,7 @@ class BoundedAdmissionTests(unittest.TestCase):
 
     def test_locale_entry_passes_caps_through_controller_and_bridge(self):
         from tests.test_sermon_strict_locale import LocaleTests
-        fixture=LocaleTests();fixture.setUp();self.addCleanup(fixture.doCleanups)
+        fixture=LocaleTests();self.addCleanup(fixture.doCleanups); fixture.setUp()
         with fixture.f.session():
             result=fixture.run_locale(request_limits=limits.DEFAULT_REQUEST_LIMITS)
             self.assertEqual(result['status'],'waiting_human')

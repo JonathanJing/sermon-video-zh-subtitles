@@ -25,8 +25,8 @@ NOW = '2026-09-30T00:00:00Z'
 class AdmissionTests(unittest.TestCase):
     def setUp(self):
         fixture = fixtures.StrictAdapterTests()
-        fixture.setUp()
         self.addCleanup(fixture.doCleanups)
+        fixture.setUp()
         self.f = SimpleNamespace(f=fixture, groups=copy.deepcopy(fixture.f.evidence['groups']), revisions=[])
         self.f.compile = lambda: bridge.compile_candidate(*fixture.args, self.f.revisions,
             plugin_path=fixture.f.plugin_path, expected_plugin_sha256=fixture.f.plugin_sha)
@@ -48,6 +48,19 @@ class AdmissionTests(unittest.TestCase):
             **paths, public_candidate=self.root / 'public.json', human_receipt=self.root / 'human.json',
             plugin=self.f.f.f.plugin_path, plugin_sha256=self.f.f.f.plugin_sha)
         self.boundary = admission.AdmissionBoundary(self.config, self.store)
+
+    def test_policy_preview_tampering_cannot_enter_admission(self):
+        root = self.f.revisions[0][0]
+        path = root / 'generator.policy-preview.json'
+        original = c.read_snapshot(path)[0]
+        for changes in ({'humanApproval': True}, {'status': 'approved'},
+                        {'payload': {'changed': True}, 'payloadSha256': c.canonical_sha256({'changed': True})}):
+            with self.subTest(changes=changes):
+                path.write_bytes(c.canonical_bytes({**original, **changes}))
+                with self.assertRaisesRegex(c.ContractError, 'admission_policy_preview_changed'):
+                    self.boundary.snapshot()
+                path.write_bytes(c.canonical_bytes(original))
+        self.boundary.snapshot()
 
     def approve(self, evidence="Synthetic test only, not actual human acceptance"):
         pending = self.f.compile()['candidate']
@@ -311,8 +324,8 @@ class FailedReviewInventoryTests(unittest.TestCase):
 
         for second_kind in ('invalid_json', 'rejection'):
             with self.subTest(second_kind=second_kind):
-                runtime=budget_fixtures.StrictBudgetTests();runtime.setUp()
-                self.addCleanup(runtime.doCleanups)
+                runtime=budget_fixtures.StrictBudgetTests();self.addCleanup(runtime.doCleanups)
+                runtime.setUp()
                 fixture=runtime.f;root=fixture.root
                 paths={}
                 for name,raw in zip(('source','anchor','policy','rubric'),fixture.args):
