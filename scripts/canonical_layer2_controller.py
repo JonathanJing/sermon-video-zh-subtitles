@@ -26,6 +26,7 @@ from scripts import run_target_language_models as models
 from scripts import sermon_accounting as accounting
 from scripts import sermon_workflow_jobs as jobs
 from scripts import sermon_job_liveness as liveness
+from scripts import layer2_api_concurrency as api_concurrency
 from scripts.sermon_execution_harness import work_lock
 from scripts.sermon_release_workflow import _safe_path
 
@@ -160,10 +161,11 @@ def _inputs(config, locale, view):
     policy = values['policy.' + locale]
     require(producer.plugin_implementation_sha256(lane['plugin']) == policy['languageReview']['pluginImplementationSha256'],
             'plugin_does_not_match_frozen_policy')
-    # Existing fixed model/worker limits remain production admission gates.
+    # Fixed production models and the canonical runner's worker budget bound paid work.
     require(all(policy[role]['model'] == model for role, model in models.MODEL_ROLES.items()), 'production_model_policy_changed')
     require(policy['batching']['batchSize'] == 1 and type(policy['batching']['workers']) is int
-            and 1 <= policy['batching']['workers'] <= 3, 'invalid_production_worker_budget')
+            and 1 <= policy['batching']['workers'] <= api_concurrency.MAX_GROUP_WORKERS_PER_LOCALE,
+            'invalid_production_worker_budget')
     producer.prepare_request(values['source'], values['anchor'], policy)
     return values['source'], values['anchor'], policy
 
@@ -187,6 +189,7 @@ class Controller:
                 'productionRunId': self.config.run_id, 'configurationSha256': self.config.sha256,
                 'codeIdentitySha256': self.code_sha, 'status': status, 'reasonCode': reason,
                 'maxConcurrentLocaleJobs': MAX_ACTIVE_LAYER2_JOBS,
+                'maxInFlightApiCalls': api_concurrency.MAX_IN_FLIGHT_API_CALLS,
                 'runtimeCodexTurns': 0, 'contentAcceptance': 'not_evaluated',
                 'deviceAcceptance': 'not_run', **fields}
 
@@ -196,8 +199,8 @@ class Controller:
         return current, snapshot(current)
 
     def _capacity_full(self, view):
-        # Initial fixed adapter permits one locale job at a time within this
-        # production run. Existing policy still bounds its group workers 1..3.
+        # The canonical contract reserves one locale slot until completion or
+        # reconciliation of an uncertain owner.
         active = [row for row in view['durableJobInspection']['jobs']
                   if row['workUnitId'].startswith('text.') and row['status'] in jobs.ACTIVE | {'uncertain'}]
         return len(active) >= MAX_ACTIVE_LAYER2_JOBS
@@ -288,8 +291,10 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                 return fresh_config
             def bound_call(key, payload):
                 current_binding()
-                progress.progress('model_request')
-                return caller(key, payload)
+                with api_concurrency.request_slot(config.job_root):
+                    current_binding()
+                    progress.progress('model_request')
+                    return caller(key, payload)
             model_completion = []
             evidence = models.run_accounted(source, anchor, policy, lane['output'], api_key,
                                              bound_call, None, lane['plugin'], None, None,
