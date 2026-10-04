@@ -72,10 +72,10 @@ Layer 2 accounting 中可核对的运行片段如下。累计是列出的各轮 
 | r5 | 3 | 240.156 秒 | 176 | failed；尚未产出全量候选 |
 | r6 | 3 | 985.194 秒 | 742 | failed |
 | r7 | 3 | 15.072 秒 | 2 | failed；定向修订 |
-| r8 | 3 | 2.129 秒 | 0 | failed；缓存身份预检拒绝，没有新 API 请求 |
+| r8 | 3 | 2.129 秒 | 0 | failed；缓存回放在 require 校验阶段拒绝，具体 message 缺失，没有新 API 请求 |
 | r9 | 3 | 893.192 秒 | 702 | failed |
 | r10 | 3 | 2079.681 秒 | 1678 | 模型阶段 completed；之后插件 26 组拒绝 |
-| r11 | 3 | 1523.869 秒 | 1204 | failed/未完成；保留 602 组结果 |
+| r11 | 3 | 1523.869 秒 | 1204 | failed/未完成；KeyboardInterrupt，保留 602 组结果；中断主体/原因未记录 |
 | r12 | 24 | 79.150 秒 | 474 | completed；复用 602 组，补齐 237 组 |
 
 这八轮 runner 记录合计 **5818.443 秒（约 96 分 58 秒）**、**4978 次 API attempts**。其中包含旧源、政策修订、失败与重跑，不能称为一个固定源/固定政策的生产基准。r12 的持久化跨运行复用没有反映在 accounting `cacheHits` 字段（该字段为 0）；602 组复用须依据分组结果和剩余请求记录确认。
@@ -99,6 +99,64 @@ Layer 3 的逐单元 render receipt 有 `renderSeconds`，同一 batch 各单元
 | ko | 1014.90 秒 | 587.40 秒 | 1602.30 秒 | 同上 |
 
 每语种均为 105 批（104 个八单元批次、1 个七单元尾批）。表中含模型生成、音频写入和哈希计算，**不是纯模型推理时长**。两个 worker 并发，累计值有重叠，**也不是整个运行的墙钟耗时**；未包含模型启动、镜像构建、传输、拼接和 ASR。ASR runtime/receipt 没有起止或 elapsed 字段；听审 `reviewedAt` 只有决策时间。现有证据无法精确补出这些阶段的执行或审听时长，不能用文件修改时间推算。
+
+## 2026-10-03 逐轮日志审计补充
+
+### 覆盖范围与每轮失败原因
+
+本次读取 20 个 accounting JSONL、235,042 条事件，按 event/attempt/response 身份去重；22 次运行包含 19 次 Layer 2 与 3 次 pipeline。再核对账本之外的源句模型响应、术语 POC、diarization、逐单元 TTS/ASR 和部署收据。汇总保存在忽略目录 `log-audit-20261003/audit-summary.json`。早期中文 r1–r4 缺少完整运行及原始响应账本；42 个 speaker-hypothesis batch 也没有可核对的响应 ID，不能从后续缓存推算其真实请求数、时间或费用。
+
+中文逐轮原因补充：r5 在 `0-u083` 的专名/引语源文不确定；r6 的 `1-u076`/`1-u077` 及 r7 的缓存组因经文逐字文案未获准而阻断；r9 的 `2-u131` 同属经文政策问题。r10 的 1678 次请求完成，独立语言插件另有 26/839 拒绝，不能归为 API 失败。r11 在 `accounting/operations.log:13258` 留下 `KeyboardInterrupt`，中断主体及原因未知。r8 只有缓存校验异常 stack，缺具体异常 message，不能认定为缓存身份、网络或模型质量问题。
+
+| ES/KO 运行 | wallSeconds | 新 API attempts | 逐轮结果与证据边界 |
+| --- | ---: | ---: | --- |
+| ES 旧源 r1 | 241.429 | 1678 | runner completed，但 source/anchor 不是最终 canonical identity |
+| KO 旧源 r1 | 251.573 | 1532 | `2-u157` 的 them 指代不清，Sol 语义审核拒绝 |
+| KO 旧源 r2 | 32.647 | 112 | 同组修订仍有 referent uncertainty，失败 |
+| KO 旧源 r3 | 17.510 | 38 | runner completed，仍绑定旧源 |
+| KO 旧源 r4 | 10.480 | 2 | 单组修订 completed，仍绑定旧源 |
+| ES 换源 r1 | 99.742 | 642 | `0-u276` 的 And Him 缺独立完整意义，Sol 拒绝 |
+| ES 换源 r2 | 121.228 | 774 | `2-u087` 的 Let's 悬空；译文增加含义，Sol 拒绝 |
+| ES 换源 r3 | 1.876 | 0 | 缓存组在 require 校验失败；异常 message 缺失，具体原因 unknown |
+| ES 换源 r4 | 46.682 | 268 | 有界修订 completed |
+| KO 换源 r1 | 274.865 | 1678 | 839 组 completed |
+| KO 换源 r2 | 7.584 | 2 | 最后单组修订 completed |
+
+三次 pipeline 依次 failed 196.525 秒/3 次 transcribe 请求、failed 14.990 秒/0 新请求、completed 58.099 秒/0 新请求；前两次异常在 alignment 路径。19 次 Layer 2 的 wallSeconds 累计为 **6924.057 秒**，不是跨层关键路径，也不含修改和人工等待。上述已记账 API attempt 全部为 completed；内容/插件准入失败、中断与 provider 请求失败须分列。
+
+### DAG 的实际作用与缺口
+
+本轮有 66,296 个 stage、60,808 条依赖边，未解析引用为 0；但跨 run、跨 workflow、跨文件边均为 **0**，非空 `decisionId` 为 **0**。这些证明 producer 局部依赖记录可解析，配合实际缓存恢复及 Layer 3 输入/输出 hash 校验，提供了局部恢复证据；不证明统一 Layer 1–4 scheduler 已接管或完整关键路径可计算。ES/KO 旧源五轮 3362 次调用后才人工换源，说明当前 canonical revision 的跨层准入仍需 R01 与既有 DAG 任务落实。既有其他运行的跨进程/mock DAG 证据保留，但不能外推到本播客。
+
+Layer 3 三语共 2517 单元、315 个生产 batch，各语种 ASR 覆盖 839/839，核对未发现 text/audio hash 不匹配；这些是本轮产物绑定证据。`renderSeconds` 从 batch 模型调用前累积到各 unit WAV 写入及 hash 完成后；每 batch 取最大值只能避免重复相加，不能作为纯推理或整个 job wall time。ASR 起止/elapsed 仍缺测。Layer 4 的 v2 部署收据被复制到 v3/v4 目录，复制不增加部署次数；资源 HTTP、真实 App-reader 行为、设备/现场验收仍分别记录。
+
+### Luna usage、TPS 与 API 次数
+
+主 Codex 会话原生 usage 按 response ID 去重，范围为 `2026-10-02 22:06:03Z` 至 `2026-10-03 15:47:37Z`，配置模型为 `gpt-6-luna`；18 个有 usage 的 root turn、2862 个模型响应。usage 小计与该窗口末累计计数一致。此口径含工程及人工调度，不含全部子 Agent 遥测；它与业务账本的 response ID 交集为 0。这里只提交脱敏汇总，不提交原始会话、用户消息或工具正文。
+
+| 指标 | 实测值及限制 |
+| --- | --- |
+| Luna input tokens | 393969205；其中 cached input 387880704（98.45%），non-cached input 6088501；上下文重复计入各请求，不是独立文本规模 |
+| Luna output tokens | 1401366；reasoning 764835 已包含在输出中，不重复相加 |
+| Luna 窗口平均输出率 | 1401366 / 63694 秒 = 22.00 token/s；包含工程、工具、人工及生产等待，不能称纯推理或纯调度 TPS |
+| 纯生成 TPS / TTFT / 纯调度耗时 | unknown：缺 request-start/first-token/生成结束和工程/生产用途关联；不以相邻日志时间代替请求时长 |
+| 业务账本 attempts | 11707 = Astra 5852 + Sol 5852 + gpt-transcribe 3；含各失败修订轮次，实际账单未核对 |
+| 账本外额外保留收据 | 234 = source judge 224（四轮各 56）+ terminology POC 6 + diarize 3 + Whisper 1 |
+| 已知业务请求下限 | 11941；不含无法核对的早期轮次或其他作用域；账本范围早于上述 Luna 窗口，不使用该窗口计算业务 TPS |
+| 本播客 Agents API HTTP POST/GET | unknown：未找到绑定本播客的 session/HTTP 收据；未找到不等于 0；2862 个 native 模型响应不等于 HTTP 操作次数 |
+
+### Findings 与既有 backlog 的关系
+
+下列 F01–F06 仅为本报告证据编号，沿现有工程 ID 补充，不新建 Epic。三项新增集成/计量证据与一个真实中断夹具，与已写过的修复要求分别标识；[backlog 验收补充](../backlog.zh.md#podcast-log-audit-followup-20261003)记录待交付及关闭条件。
+
+| Finding | 事实、影响与本轮证据 | 与既有要求的关系 |
+| --- | --- | --- |
+| F01 / P1 | 审计快照 `dev@1dfa9dd004f445471c7d5d97ece7ece83e03a6fe` 及 PR 准备基线 `dev@d31cdc2aac87c5358a80b40e55cf908af4279302` 均没有 `scripts/render_podcast_dual_worker.py`、`scripts/build_podcast_audio_package.py`、`schemas/sermon-podcast-audio-package-v2.schema.json`；实际执行代码仍在 `codex/stage2-activation-packet@e8218e7`。仅合并复盘不建立正式 producer 能力。 | 新集成事实；补 `DEV-L3-001/004`、`DEV-DIAG-017` 的合并/迁移/正式入口验收，落实 R05/R06 |
+| F02 / P1 | ES 正确源 And Him / Let's，以及 KO 旧源 them 的具体 `semanticReview` 失败；目标语失败本身不能断言 Layer 1 切分错误。 | And Him / Let's 已在 R04；补 them、上下文受影响范围与错误译文对照到 `DEV-L1-001`/`DEV-L2-001`，不重复称为完全遗漏 |
+| F03 / P1 | 中文 r11 `KeyboardInterrupt` 在 1204 个已完成请求后被总状态记为 failed；不能算 provider/content/schema 失败，也不能推定取消主体。ES 换源 r3、中文 r8 的 require 异常 message 未保留。 | 既有 `RQC-04`/`SPD6-LOG-05` 的真实中断及缺失诊断夹具补充；要求 execution/review/admission 分列并保留安全异常原因 |
+| F04 / P1 | 234 条已保留调用收据不在 business accounting；账本 11707 不能冒充完整制作调用总数。 | 新覆盖证据；补 `DEV-TRACK-001`/`SPD6-LOG-03` 的调用类别接线、去重与缺测口径；估算不当账单 |
+| F05 / P1 | native Luna 2862 个响应与 22.00 窗口平均输出率可核对，但 request-start/first-token、用途及 HTTP 操作分母缺失。 | `SPD6-ARCH-04` 已要求工程/生产分离；新增真实计数及计时/分母验收细节归 `SPD6-LOG-04`/`DEV-SPD-005` |
+| F06 / P2 | ASR 全覆盖/hash 一致不补足时间；batch unit 累计计时不等于推理或 job wall；旧部署收据复制不能增加部署计数。 | TTS/ASR span 已在 R10，App 收据已在 R07；补真实计数/复制夹具到 `DEV-TRACK-001`/`SPD6-LOG-02/05`，属于待落实要求 |
 
 ## 修复意见与实施顺序
 
