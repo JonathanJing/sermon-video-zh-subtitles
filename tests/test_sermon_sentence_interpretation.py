@@ -171,6 +171,55 @@ class SentenceInterpretationTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             subject.build_anchor_manifest(source, **args, boundary_overrides={"missing": decision})
 
+    def test_multiple_splits_preserve_words_and_validate_every_boundary(self):
+        words = ["Who", "will", "stand?’", "They", "say", "come!\"", "We", "are", "ready."]
+        source = [segment(" ".join(words), words)]
+        self.source.write_text(json.dumps(source))
+        ids = [f"block-00-w{i:04}" for i in range(1, 10)]
+        decision = {"action": "split_after_words", "sourceWordIds": ids,
+                    "afterWordIds": [ids[2], ids[5]], "reason": "Preserve reporting clauses",
+                    "evidenceRef": "review.json#s001"}
+        args = dict(source_path=self.source, unit_policy=subject.UNIT_POLICY_V2,
+                    max_unit_seconds=1.5, min_unit_seconds=1.0)
+        result = subject.build_anchor_manifest(source, **args,
+                    boundary_overrides={"block-00-s001": decision})
+        self.assertEqual([u["sourceWordIds"] for u in result["sourceUnits"]],
+                         [ids[:3], ids[3:6], ids[6:]])
+        self.assertEqual([w["text"] for u in result["sourceUnits"] for w in u["words"]], words)
+        self.assertEqual([(w["start"], w["end"]) for u in result["sourceUnits"] for w in u["words"]],
+                         [(w["start"], w["end"]) for w in source[0]["wordTimes"]])
+        self.assertEqual(result["issues"], [])
+        self.assertFalse(result["releaseEligible"])
+        self.assertTrue(all(u["boundary"]["humanReview"] == "pending" for u in result["sourceUnits"]))
+        for changes in ({"afterWordIds": []}, {"afterWordIds": [ids[5], ids[2]]},
+                        {"afterWordIds": [ids[2], ids[2]]}, {"afterWordIds": [ids[2], ids[-1]]},
+                        {"afterWordIds": [ids[2], "missing"]}, {"afterWordIds": [ids[1], ids[5]]},
+                        {"afterWordIds": [ids[2]]}, {"afterWordId": ids[2]},
+                        {"humanApproval": True}):
+            with self.subTest(changes=changes), self.assertRaises(ValueError):
+                subject.build_anchor_manifest(source, **args,
+                    boundary_overrides={"block-00-s001": {**decision, **changes}})
+        # The second boundary must be checked too, including grammatical dependencies.
+        for replacement in ("word!inside", "go,to", "be"):
+            changed = copy.deepcopy(source)
+            changed[0]["wordTimes"][5]["text"] = replacement
+            changed[0]["text"] = " ".join(w["text"] for w in changed[0]["wordTimes"])
+            if replacement == "be":
+                for w in changed[0]["wordTimes"][6:]:
+                    w["start"] += 0.5
+                    w["end"] += 0.5
+                changed[0]["end"] += 0.5
+            self.source.write_text(json.dumps(changed))
+            with self.subTest(replacement=replacement), self.assertRaises(ValueError):
+                subject.build_anchor_manifest(changed, **args,
+                    boundary_overrides={"block-00-s001": decision})
+
+    def test_boundary_punctuation_only_matches_at_word_end(self):
+        for word in ("stand?’", 'come!”', 'stop!"', "done?')]"):
+            self.assertIsNotNone(subject.BREAK_PUNCTUATION.search(word))
+        for word in ("isn't", "word!inside", "what?ever", "word,more", "well-known"):
+            self.assertIsNone(subject.BREAK_PUNCTUATION.search(word))
+
     def test_long_sentence_splits_only_at_pause_and_keeps_word_ids(self):
         long = segment(
             "One two three, four five six seven.",

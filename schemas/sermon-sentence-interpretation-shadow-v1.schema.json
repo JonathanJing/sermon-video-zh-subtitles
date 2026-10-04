@@ -168,6 +168,52 @@
               "pattern": "\\S"
             }
           }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "action",
+            "sourceWordIds",
+            "reason",
+            "evidenceRef",
+            "afterWordIds"
+          ],
+          "properties": {
+            "action": {
+              "const": "split_after_words"
+            },
+            "sourceWordIds": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              }
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "evidenceRef": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "afterWordIds": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              }
+            }
+          }
         }
       ]
     },

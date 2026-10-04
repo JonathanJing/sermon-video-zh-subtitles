@@ -43,8 +43,8 @@ CHECKS = (
     "spokenChinese",
 )
 RATE_POLICY = "natural_no_time_stretch"
-BREAK_PUNCTUATION = re.compile(r"[,;:\u2014-][\"')\]]*$")
-BREAK_PUNCTUATION_CAPTURE = re.compile(r"([,;:\u2014-])[\"')\]]*$")
+BREAK_PUNCTUATION = re.compile(r"[,;:?!\u2014-][\"'\u2019\u201d)\]]*$")
+BREAK_PUNCTUATION_CAPTURE = re.compile(r"([,;:?!\u2014-])[\"'\u2019\u201d)\]]*$")
 
 
 TRANSLATION_SYSTEM_PROMPT = """You are preparing natural Simplified Chinese for sentence-anchored
@@ -301,6 +301,7 @@ def _dependent_clause_boundary(words: list[dict[str, Any]], index: int) -> bool:
 def _split_clause_stable(words: list[dict[str, Any]], *, max_seconds: float,
                          min_unit_seconds: float, pause_seconds: float,
                          forced_after_word_id: str | None = None,
+                         forced_after_word_ids: list[str] | None = None,
                          retain_sentence: bool = False,
                          ) -> tuple[list[tuple[list[dict[str, Any]], dict[str, Any]]], bool]:
     """Build v2 subunits without inventing a word-level boundary.
@@ -312,39 +313,53 @@ def _split_clause_stable(words: list[dict[str, Any]], *, max_seconds: float,
     boundary while retaining explicit evidence when a unit exceeds the target.
     """
     if retain_sentence:
-        _require(forced_after_word_id is None, "Cannot retain and split the same sentence")
+        _require(forced_after_word_id is None and forced_after_word_ids is None,
+                 "Cannot retain and split the same sentence")
         duration = float(words[-1]["end"]) - float(words[0]["start"])
         return [(words, {
             "kind": "source_sentence_end", "afterWordId": words[-1]["wordId"],
             "pauseSeconds": 0.0, "punctuation": None,
             "withinTargetSeconds": duration <= max_seconds,
         })], duration > max_seconds + 0.5
-    if forced_after_word_id is not None:
+    if forced_after_word_id is not None or forced_after_word_ids is not None:
+        _require(forced_after_word_id is None or forced_after_word_ids is None,
+                 "Cannot combine single and multiple split decisions")
+        split_ids = [forced_after_word_id] if forced_after_word_id is not None else forced_after_word_ids
+        _require(isinstance(split_ids, list) and bool(split_ids)
+                 and all(isinstance(item, str) for item in split_ids), "Invalid split word IDs")
+        _require(len(set(split_ids)) == len(split_ids), "Duplicate split word IDs")
         if float(words[-1]["end"]) - float(words[0]["start"]) <= max_seconds + 0.5:
             raise ValueError("Boundary override is unnecessary for a sentence within the duration target")
-        matches = [index for index, word in enumerate(words[:-1])
-                   if word["wordId"] == forced_after_word_id]
-        if len(matches) != 1:
-            raise ValueError(f"Boundary override word is missing or terminal: {forced_after_word_id}")
-        index = matches[0]
-        first_duration = float(words[index]["end"]) - float(words[0]["start"])
-        second_duration = float(words[-1]["end"]) - float(words[index + 1]["start"])
-        gap = float(words[index + 1]["start"]) - float(words[index]["end"])
-        if (first_duration < min_unit_seconds or second_duration < min_unit_seconds
-                or max(first_duration, second_duration) > max_seconds + 0.5
-                or not (gap >= pause_seconds or BREAK_PUNCTUATION.search(str(words[index]["text"])))
-                or _dependent_clause_boundary(words, index)):
-            raise ValueError(f"Boundary override lacks a safe clause split: {forced_after_word_id}")
-        return [
-            (words[:index + 1], _clause_boundary_evidence(words, index, pause_seconds, max_seconds)),
-            (words[index + 1:], {
-                "kind": "source_sentence_end",
-                "afterWordId": words[-1]["wordId"],
-                "pauseSeconds": 0.0,
-                "punctuation": None,
-                "withinTargetSeconds": second_duration <= max_seconds,
-            }),
-        ], False
+        indices = []
+        for split_id in split_ids:
+            matches = [index for index, word in enumerate(words[:-1]) if word["wordId"] == split_id]
+            _require(len(matches) == 1, f"Boundary override word is missing or terminal: {split_id}")
+            indices.append(matches[0])
+        _require(indices == sorted(indices), "Split word IDs must follow source order")
+        parts = []
+        cursor = 0
+        for index in indices + [len(words) - 1]:
+            part = words[cursor:index + 1]
+            duration = float(part[-1]["end"]) - float(part[0]["start"])
+            _require(min_unit_seconds <= duration <= max_seconds + 0.5,
+                     f"Boundary override unit duration is unsafe: {part[-1]['wordId']}")
+            if index < len(words) - 1:
+                gap = float(words[index + 1]["start"]) - float(words[index]["end"])
+                _require((gap >= pause_seconds or BREAK_PUNCTUATION.search(str(words[index]["text"])))
+                         and not _dependent_clause_boundary(words, index),
+                         f"Boundary override lacks a safe clause split: {words[index]['wordId']}")
+                evidence = _clause_boundary_evidence(words[cursor:], index - cursor, pause_seconds, max_seconds)
+            else:
+                evidence = {
+                    "kind": "source_sentence_end",
+                    "afterWordId": words[-1]["wordId"],
+                    "pauseSeconds": 0.0,
+                    "punctuation": None,
+                    "withinTargetSeconds": duration <= max_seconds,
+                }
+            parts.append((part, evidence))
+            cursor = index + 1
+        return parts, False
 
     parts: list[tuple[list[dict[str, Any]], dict[str, Any]]] = []
     cursor = 0
@@ -408,11 +423,13 @@ def validate_boundary_overrides(overrides: dict[str, Any], *, typed_only: bool =
             continue
         _require(isinstance(decision, dict), "Invalid boundary decision")
         action = decision.get("action")
-        _require(isinstance(action, str) and action in {"retain_sentence", "split_after_word"},
+        _require(isinstance(action, str) and action in {"retain_sentence", "split_after_word", "split_after_words"},
                  "Unknown boundary action")
         keys = {"action", "sourceWordIds", "reason", "evidenceRef"}
         if action == "split_after_word":
             keys.add("afterWordId")
+        elif action == "split_after_words":
+            keys.add("afterWordIds")
         _require(set(decision) == keys, "Unexpected or missing boundary decision fields")
         for key in ("reason", "evidenceRef"):
             _require(isinstance(decision[key], str) and bool(decision[key].strip()),
@@ -425,6 +442,14 @@ def validate_boundary_overrides(overrides: dict[str, Any], *, typed_only: bool =
         if action == "split_after_word":
             _require(isinstance(decision["afterWordId"], str)
                      and decision["afterWordId"] in ids[:-1], "Invalid split word ID")
+        elif action == "split_after_words":
+            cuts = decision["afterWordIds"]
+            _require(isinstance(cuts, list) and bool(cuts)
+                     and all(isinstance(item, str) and item in ids[:-1] for item in cuts),
+                     "Invalid split word IDs")
+            _require(len(set(cuts)) == len(cuts), "Duplicate split word IDs")
+            _require([ids.index(item) for item in cuts] == sorted(ids.index(item) for item in cuts),
+                     "Split word IDs must follow source order")
 
 
 def build_anchor_manifest(segments: list[dict[str, Any]], *, source_path: Path,
@@ -508,10 +533,12 @@ def build_anchor_manifest(segments: list[dict[str, Any]], *, source_path: Path,
                     })
             decision = overrides.pop(sentence_id, None)
             retain_sentence = False
+            split_ids = None
             if isinstance(decision, dict):
                 _require(decision["sourceWordIds"] == [word["wordId"] for word in words],
                          f"Boundary decision does not bind complete ordered sentence words: {sentence_id}")
                 retain_sentence = decision["action"] == "retain_sentence"
+                split_ids = decision.get("afterWordIds")
                 decision = decision.get("afterWordId")
             clause_parts, unresolved = _split_clause_stable(
                 words,
@@ -519,6 +546,7 @@ def build_anchor_manifest(segments: list[dict[str, Any]], *, source_path: Path,
                 min_unit_seconds=min_unit_seconds,
                 pause_seconds=internal_pause_seconds,
                 forced_after_word_id=decision,
+                forced_after_word_ids=split_ids,
                 retain_sentence=retain_sentence,
             )
             parts_with_evidence = clause_parts
