@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /** Start, stop, and inspect one local Firebase Tracker publisher. */
-import { closeSync, existsSync, openSync, readFileSync } from 'node:fs';
+import { closeSync, existsSync, openSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
 import { spawn, spawnSync } from 'node:child_process';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -26,6 +26,8 @@ export function parseControlArgs(argv) {
   if (!Number.isFinite(options.intervalSeconds) || options.intervalSeconds < 5) throw new Error('interval must be at least 5 seconds');
   options.watchConfig = resolve(options.watchConfig);
   options.healthFile = `${options.watchConfig}.publisher-health.json`;
+  options.runtimeFile = `${options.watchConfig}.publisher-runtime.json`;
+  options.lockFile = `${options.watchConfig}.publisher-start.lock`;
   options.logFile = `${options.watchConfig}.publisher.log`;
   return options;
 }
@@ -40,26 +42,42 @@ function processCommand(pid) {
   return result.status === 0 ? result.stdout.trim() : '';
 }
 
-function isPublisher(pid, options) {
+function isPublisher(pid, options, checkTarget = true) {
   if (!Number.isSafeInteger(pid) || pid <= 1) return false;
   const command = processCommand(pid);
-  return command.includes(PUBLISHER) && command.includes('--watch-config')
-    && command.includes(options.watchConfig) && command.includes('--health-file')
-    && command.includes(options.healthFile) && command.includes('--watch') && command.includes('--execute');
+  const hasArgument = (flag, value) => (` ${command} `).includes(` ${flag} ${value} `);
+  return (!checkTarget || (hasArgument('--project', options.project) && hasArgument('--database', options.database)))
+    && command.includes(PUBLISHER) && hasArgument('--watch-config', options.watchConfig)
+    && hasArgument('--health-file', options.healthFile)
+    && (` ${command} `).includes(' --watch ') && (` ${command} `).includes(' --execute ');
+}
+
+function readRuntime(options) {
+  const runtime = readHealth(options.runtimeFile);
+  const health = readHealth(options.healthFile);
+  // A directly launched publisher may have replaced a stopped controller-managed run.
+  if (runtime?.pid && isPublisher(runtime.pid, options, false)) return runtime;
+  return health || runtime;
 }
 
 function report(options) {
-  const health = readHealth(options.healthFile);
-  const alive = health?.pid && isPublisher(health.pid, options);
+  const runtime = readRuntime(options);
+  const targetMatches = runtime && (!runtime.project || runtime.project === options.project)
+    && (!runtime.database || runtime.database === options.database);
+  const alive = targetMatches && runtime?.pid && isPublisher(runtime.pid, options);
+  const recordedHealth = readHealth(options.healthFile);
+  const health = targetMatches && recordedHealth?.pid === runtime.pid
+    && (alive || (runtime.project === options.project && runtime.database === options.database))
+    ? recordedHealth : null;
   const heartbeatAt = health?.heartbeatAt ? Date.parse(health.heartbeatAt) : NaN;
   const heartbeatAgeSeconds = Number.isFinite(heartbeatAt)
     ? Math.max(0, Math.floor((Date.now() - heartbeatAt) / 1000)) : null;
   const staleAfterSeconds = Math.max(60, options.intervalSeconds * 3);
-  const status = !alive ? (health ? 'stopped' : 'not_started')
-    : health.status === 'stopping' ? 'stopping'
+  const status = !alive ? (runtime ? 'stopped' : 'not_started')
+    : health?.status === 'stopping' ? 'stopping'
       : heartbeatAgeSeconds === null || heartbeatAgeSeconds > staleAfterSeconds ? 'unhealthy'
-        : health.lastError ? 'degraded' : 'running';
-  return { status, pid: alive ? health.pid : null, heartbeatAgeSeconds,
+        : health?.lastError ? 'degraded' : 'running';
+  return { status, pid: alive ? runtime.pid : null, project: options.project, database: options.database, heartbeatAgeSeconds,
     lastAttemptAt: health?.lastAttemptAt || null,
     lastCheckSucceededAt: health?.lastCheckSucceededAt || null,
     lastPublishAt: health?.lastPublishAt || null,
@@ -84,22 +102,44 @@ async function main(options) {
     print({ ...current, status: 'stopping' });
     return;
   }
-  if (!existsSync(options.watchConfig)) throw new Error(`watch config not found: ${options.watchConfig}`);
-  const config = JSON.parse(readFileSync(options.watchConfig, 'utf8'));
-  if (!config.ledger || !config.out) throw new Error('watch config requires ledger and out');
-  const current = report(options);
-  if (current.status === 'running' || current.status === 'stopping' || current.status === 'unhealthy' || current.status === 'degraded') {
-    throw new Error(`publisher already has a live process (${current.status}, pid ${current.pid}); inspect status before starting another`);
+  let lockFd;
+  try { lockFd = openSync(options.lockFile, 'wx', 0o600); }
+  catch (error) {
+    if (error.code === 'EEXIST') throw new Error(`publisher start locked: ${options.lockFile}; inspect the controller before removing a stale lock`);
+    throw error;
   }
-  const logFd = openSync(options.logFile, 'a', 0o600);
-  const child = spawn(process.execPath, [PUBLISHER, '--project', options.project, '--database', options.database,
-    '--watch-config', options.watchConfig, '--watch', '--execute', '--interval-seconds', String(options.intervalSeconds),
-    '--health-file', options.healthFile], { cwd: resolve(HERE, '../../..'), detached: true,
-    stdio: ['ignore', logFd, logFd] });
-  closeSync(logFd);
-  child.unref();
-  print({ status: 'starting', pid: child.pid, intervalSeconds: options.intervalSeconds,
-    healthFile: options.healthFile, logFile: options.logFile });
+  try {
+    if (!existsSync(options.watchConfig)) throw new Error(`watch config not found: ${options.watchConfig}`);
+    const config = JSON.parse(readFileSync(options.watchConfig, 'utf8'));
+    if (!config.ledger || !config.out) throw new Error('watch config requires ledger and out');
+    const runtime = readRuntime(options);
+    if (runtime?.pid && isPublisher(runtime.pid, options, false) && !isPublisher(runtime.pid, options)) {
+      throw new Error('watch config already has a live publisher for another Firebase target; stop it using its original target first');
+    }
+    const current = report(options);
+    if (current.status === 'running' || current.status === 'stopping' || current.status === 'unhealthy' || current.status === 'degraded') {
+      throw new Error(`publisher already has a live process (${current.status}, pid ${current.pid}); inspect status before starting another`);
+    }
+    const logFd = openSync(options.logFile, 'a', 0o600);
+    const child = spawn(process.execPath, [PUBLISHER, '--project', options.project, '--database', options.database,
+      '--watch-config', options.watchConfig, '--watch', '--execute', '--interval-seconds', String(options.intervalSeconds),
+      '--health-file', options.healthFile], { cwd: resolve(HERE, '../../..'), detached: true,
+      stdio: ['ignore', logFd, logFd] });
+    closeSync(logFd);
+    await new Promise((resolve, reject) => { child.once('spawn', resolve); child.once('error', reject); });
+    const temporary = `${options.runtimeFile}.${process.pid}.tmp`;
+    try {
+      writeFileSync(temporary, `${JSON.stringify({ pid: child.pid, project: options.project, database: options.database })}\n`, { mode: 0o600 });
+      renameSync(temporary, options.runtimeFile);
+    } catch (error) {
+      // Do not leave an unrecorded detached publisher if reservation fails.
+      child.kill('SIGTERM');
+      throw error;
+    }
+    child.unref();
+    print({ status: 'starting', pid: child.pid, intervalSeconds: options.intervalSeconds,
+      healthFile: options.healthFile, logFile: options.logFile });
+  } finally { closeSync(lockFd); unlinkSync(options.lockFile); }
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

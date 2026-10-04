@@ -103,7 +103,7 @@ async function run(options) {
     writeHealth(options.healthFile, health);
     stopController.abort();
   };
-  const health = { status: 'running', startedAt: new Date().toISOString(), heartbeatAt: null,
+  const health = { project: options.project, database: options.database, status: 'running', startedAt: new Date().toISOString(), heartbeatAt: null,
     lastAttemptAt: null, lastCheckSucceededAt: null, lastPublishAt: null,
     lastPublishedPageId: null, lastError: null };
   process.once('SIGTERM', stop);
