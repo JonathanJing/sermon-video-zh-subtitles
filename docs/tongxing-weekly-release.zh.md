@@ -251,3 +251,9 @@ python3 -m unittest discover -s experiments/sermon-dubbing-poc -p 'test_build_we
 Agents API turn usage 为 best-effort，可为 null，且不单列 cache-write count；费用报告必须保留 unknown 并与 Platform 账单核对，不能把未知记为零。实测会话既出现已知 token 计数，也出现 null；最终费用须对账。
 
 来源：[Agents API 计费](https://developers.openai.com/api/docs/guides/agents-api/overview)、[用量口径与限制](https://developers.openai.com/api/docs/guides/agents-api/observability)、[Astra 价格](https://developers.openai.com/api/docs/models/gpt-6-astra)、[Codex 计费](https://learn.chatgpt.com/docs/pricing)。
+
+### 单中文周次（v4 stage manifest）
+
+用户明确只发布中文时，可使用 `sermon-multilingual-v3-stage-manifest-v4`：`single_zh_bucket_video_v1` 包含 8 个新增 Hosting 资产、1 个 catalog 更新及 1 个不可变视频对象；`single_zh_full_video_v1` 包含 9 个新增 Hosting 资产及 1 个 catalog 更新。同语言候选和正式音频包仍须人审，全文、字幕、音轨、Release、听音定位指纹、英文对照与对齐索引均须精确绑定。完整正式站基线合并保留旧周和旧语言，不将单中文 manifest 用于三语周次。旧 manifest 不原地迁移；从已有已审包重新生成 v4 清单。
+
+`build_full_video_app_release.py prepare --locales zh-Hans` 支持单中文准备；`--source-date-label` 可使用中性的日期标题，不替尚未核实的篇名和讲员生成批准。`verify` 与 `seal` 按准备包的实际语言数量验证，设备和现场验收继续保持独立字段。`assemble_multilingual_v3_update.py` 消费 v4 清单并核验所有新增资产及历史字节保留；后续仍需实际部署与 HTTP/Range 回读。

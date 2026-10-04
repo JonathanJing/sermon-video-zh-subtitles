@@ -1,0 +1,182 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-target-language-audio-human-review-receipt-v3.schema.json",
+  "title": "Full audio approval with explicit publication exception for unrun video synchronization",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "targetLocale",
+    "englishSourcePackageJsonSha256",
+    "targetLanguageCandidateJsonSha256",
+    "targetLanguageAudioPackageJsonSha256",
+    "trackSha256",
+    "machineScreeningStatus",
+    "machineScreeningReceiptJsonSha256",
+    "asrAdjudications",
+    "decision",
+    "reviewedBy",
+    "reviewedAt",
+    "fullPlayback",
+    "videoSync1x",
+    "reviewedUnitIds",
+    "checks",
+    "issues",
+    "publicationException"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "sermon-target-language-audio-human-review-receipt-v3"
+    },
+    "targetLocale": {
+      "const": "zh-Hans"
+    },
+    "englishSourcePackageJsonSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "targetLanguageCandidateJsonSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "targetLanguageAudioPackageJsonSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "trackSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "machineScreeningStatus": {
+      "enum": [
+        "pass",
+        "requires_review"
+      ]
+    },
+    "machineScreeningReceiptJsonSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "asrAdjudications": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "textGroupId",
+          "decision",
+          "evidence"
+        ],
+        "properties": {
+          "textGroupId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "decision": {
+            "const": "approved"
+          },
+          "evidence": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "decision": {
+      "const": "approved"
+    },
+    "reviewedBy": {
+      "type": "string",
+      "minLength": 1
+    },
+    "reviewedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "fullPlayback": {
+      "const": "approved"
+    },
+    "videoSync1x": {
+      "const": "not_run"
+    },
+    "reviewedUnitIds": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "checks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "pronunciation",
+        "naturalness",
+        "completeness",
+        "scripture",
+        "voiceIdentity",
+        "synchronization"
+      ],
+      "properties": {
+        "pronunciation": {
+          "const": "approved"
+        },
+        "naturalness": {
+          "const": "approved"
+        },
+        "completeness": {
+          "const": "approved"
+        },
+        "scripture": {
+          "const": "approved"
+        },
+        "voiceIdentity": {
+          "const": "approved"
+        },
+        "synchronization": {
+          "const": "not_run"
+        }
+      }
+    },
+    "issues": {
+      "type": "array",
+      "maxItems": 0
+    },
+    "publicationException": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "scope",
+        "humanApproval",
+        "userDecision",
+        "recordedAt",
+        "trackSha256"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": "sermon-video-sync-publication-exception-v1"
+        },
+        "scope": {
+          "const": "publish_reviewed_chinese_audio_with_video_sync_not_run"
+        },
+        "humanApproval": {
+          "const": true
+        },
+        "userDecision": {
+          "const": "接受，先发布并如实保留未验收状态"
+        },
+        "recordedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "trackSha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    }
+  }
+}

@@ -96,20 +96,32 @@ def prepare(package: dict, screening: dict) -> dict:
     }
 
 
-def approve(package: dict, screening: dict, worksheet: dict) -> tuple[dict, dict]:
+def approve(package: dict, screening: dict, worksheet: dict, *, publication_exception: dict | None = None) -> tuple[dict, dict]:
     expected = prepare(package, screening)
     for key in ("schemaVersion", "audioPackageJsonSha256",
                 "machineScreeningReceiptJsonSha256", "targetLocale",
                 "trackSha256", "reviewedUnitIds", "asrReviewQueue"):
         require(worksheet.get(key) == expected[key], f"Audio worksheet identity changed: {key}")
+    expected_checks = {name: "approved" for name in CHECKS}
+    sync_status = "approved"
+    if publication_exception is not None:
+        require(package["targetLocale"] == "zh-Hans"
+                and publication_exception.get("schemaVersion") == "sermon-video-sync-publication-exception-v1"
+                and publication_exception.get("scope") == "publish_reviewed_chinese_audio_with_video_sync_not_run"
+                and publication_exception.get("humanApproval") is True
+                and publication_exception.get("userDecision") == "接受，先发布并如实保留未验收状态"
+                and publication_exception.get("trackSha256") == package["track"]["sha256"],
+                "Publication exception requires exact Chinese track and explicit user acceptance")
+        sync_status = "not_run"
+        expected_checks["synchronization"] = "not_run"
     require(worksheet.get("decision") == "approved"
             and worksheet.get("fullPlayback") == "approved"
-            and worksheet.get("videoSync1x") == "approved"
+            and worksheet.get("videoSync1x") == sync_status
             and isinstance(worksheet.get("reviewedBy"), str)
             and worksheet["reviewedBy"].strip()
             and isinstance(worksheet.get("reviewedAt"), str)
             and datetime.fromisoformat(worksheet["reviewedAt"].replace("Z", "+00:00")).tzinfo is not None
-            and worksheet.get("checks") == {name: "approved" for name in CHECKS}
+            and worksheet.get("checks") == expected_checks
             and worksheet.get("issues") == [],
             "Full playback, 1x video sync, all checks, reviewer and time must be approved")
     adjudications = worksheet.get("asrAdjudications")
@@ -144,12 +156,17 @@ def approve(package: dict, screening: dict, worksheet: dict) -> tuple[dict, dict
         "reviewedBy": worksheet["reviewedBy"].strip(),
         "reviewedAt": worksheet["reviewedAt"],
         "fullPlayback": "approved",
-        "videoSync1x": "approved",
+        "videoSync1x": sync_status,
         "reviewedUnitIds": expected["reviewedUnitIds"],
         "checks": worksheet["checks"],
         "issues": [],
     }
-    validate(receipt, "sermon-target-language-audio-human-review-receipt-v2.schema.json")
+    receipt_schema = "sermon-target-language-audio-human-review-receipt-v2"
+    if publication_exception is not None:
+        receipt_schema = "sermon-target-language-audio-human-review-receipt-v3"
+        receipt["schemaVersion"] = receipt_schema
+        receipt["publicationException"] = publication_exception
+    validate(receipt, receipt_schema + ".schema.json")
     return reviewed, receipt
 
 
@@ -159,6 +176,7 @@ def main() -> None:
     parser.add_argument("--audio-package", type=Path, required=True)
     parser.add_argument("--screening-receipt", type=Path, required=True)
     parser.add_argument("--worksheet", type=Path)
+    parser.add_argument("--publication-exception", type=Path)
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
     require(not args.out.exists(), "Review output is immutable")
@@ -168,7 +186,7 @@ def main() -> None:
         identity.write_json(args.out, prepare(package, screening))
     else:
         require(args.worksheet is not None, "Approve requires a completed worksheet")
-        reviewed, receipt = approve(package, screening, load(args.worksheet))
+        reviewed, receipt = approve(package, screening, load(args.worksheet), publication_exception=load(args.publication_exception) if args.publication_exception else None)
         args.out.mkdir(parents=True)
         identity.write_json(args.out / "audio-package.human-reviewed.json", reviewed)
         identity.write_json(args.out / "audio-human-review-receipt.json", receipt)

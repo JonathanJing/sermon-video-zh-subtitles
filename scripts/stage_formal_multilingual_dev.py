@@ -85,6 +85,14 @@ def reviewed_candidate(candidate: dict) -> bool:
 
 def validate_audio_screening_review(audio: dict, receipt: dict,
                                     screening: dict | None) -> None:
+    if receipt.get("schemaVersion") == "sermon-target-language-audio-human-review-receipt-v3":
+        schema = json.loads((ROOT / "schemas/sermon-target-language-audio-human-review-receipt-v3.schema.json").read_text())
+        if (list(Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(receipt))
+                or audio["targetLocale"] != "zh-Hans"
+                or receipt["publicationException"]["trackSha256"] != audio["track"]["sha256"]):
+            raise StageError("Invalid exact-track Chinese publication exception")
+    elif receipt.get("schemaVersion") not in {"sermon-target-language-audio-human-review-receipt-v1", "sermon-target-language-audio-human-review-receipt-v2"}:
+        raise StageError("Unsupported audio human review receipt")
     status = audio["machineScreening"]["status"]
     if receipt["schemaVersion"] == "sermon-target-language-audio-human-review-receipt-v1":
         if status != "pass":

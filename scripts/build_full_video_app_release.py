@@ -120,15 +120,35 @@ def asset(public: Path, role: str, path: str) -> dict:
     return {"role": role, "path": path, "sha256": digest(local)}
 
 
+def assignment_map(values, locales):
+    result = {}
+    for value in values:
+        locale, separator, path = value.partition("=")
+        require(separator and locale in locales and locale not in result and path, "Invalid locale assignment")
+        result[locale] = Path(path)
+    require(set(result) == set(locales), "Input locale assignments differ from release scope")
+    return result
+
+
 def prepare(args: argparse.Namespace) -> dict:
     require(PAGE_ID.fullmatch(args.page_id) is not None, "Unsafe page ID")
     require(not args.out.exists(), "Output already exists")
     source = stage.read_package(args.source, "sermon-english-source-package-v1.schema.json")
     require(source["status"] == "ready_for_translation", "English source is not approved")
     source_sha = stage.canonical_sha(source)
-    metadata = formal_assets.checked_metadata(args.metadata_approval, args.metadata_proposal,
-                                              args.page_id, args.date)
-    maps = {name: stage.assignment_map(getattr(args, name), f"--{name.replace('_', '-')}")
+    locales = tuple(getattr(args, "locales", None) or LOCALES)
+    require(locales in (LOCALES, ("zh-Hans",)), "Only existing three locales or Chinese are supported")
+    if getattr(args, "source_date_label", False):
+        require(locales == ("zh-Hans",), "Date-only metadata is Chinese-only")
+        metadata = {"schemaVersion": "sermon-source-date-label-v1", "date": args.date,
+                    "pageId": args.page_id, "locales": {"zh-Hans": {
+                        "series": "", "title": args.date + " 证道", "speaker": "",
+                        "scripture": "", "summary": "", "outline": []}}}
+    else:
+        require(args.metadata_approval and args.metadata_proposal, "Approved metadata is required")
+        metadata = formal_assets.checked_metadata(args.metadata_approval, args.metadata_proposal,
+                                                  args.page_id, args.date)
+    maps = {name: assignment_map(getattr(args, name), locales)
             for name in ("full_candidate", "full_review_receipt", "spoken_candidate",
                          "spoken_review_receipt", "audio_package", "audio_review_receipt",
                          "audio_screening_receipt", "full_content")}
@@ -137,7 +157,7 @@ def prepare(args: argparse.Namespace) -> dict:
     try:
         public = scratch / "public"
         releases = {}
-        for locale in LOCALES:
+        for locale in locales:
             full, full_sha = reviewed_candidate(maps["full_candidate"][locale], source_sha, locale)
             spoken, spoken_sha = reviewed_candidate(maps["spoken_candidate"][locale], source_sha, locale)
             checked_review(maps["full_review_receipt"][locale], full, full_sha, locale)
@@ -242,7 +262,7 @@ def prepare(args: argparse.Namespace) -> dict:
                     "metadataApprovalJsonSha256": stage.canonical_sha(metadata),
                     "title": read(maps["full_content"]["zh-Hans"])["title"],
                     "releases": releases,
-                    "assets": sorted([asset for locale in LOCALES
+                    "assets": sorted([asset for locale in locales
                                       for asset in read(public / releases[locale]["releasePath"].lstrip("/"))["assets"]],
                                      key=lambda row: row["path"])}
         write(scratch / "preparation-manifest.json", manifest)
@@ -257,10 +277,10 @@ def verified_assets(prepared: Path) -> tuple[dict, list[dict]]:
     manifest = read(prepared / "preparation-manifest.json")
     require(manifest.get("schemaVersion") == "sermon-dual-script-app-preparation-v1"
             and manifest.get("status") == "candidate_not_deployed"
-            and set(manifest["releases"]) == set(LOCALES), "Invalid preparation manifest")
+            and set(manifest["releases"]) in ({"zh-Hans"}, set(LOCALES)), "Invalid preparation manifest")
     public = prepared / "public"
     assets = manifest["assets"]
-    require(len(assets) == 12 and len({a["path"] for a in assets}) == 12,
+    require(len(assets) == 4 * len(manifest["releases"]) and len({a["path"] for a in assets}) == len(assets),
             "Expected twelve distinct page/content/audio/caption assets")
     for row in assets:
         path = public / row["path"].lstrip("/")
@@ -309,6 +329,7 @@ def verify(args: argparse.Namespace) -> dict:
 
 def seal(args: argparse.Namespace) -> dict:
     manifest, assets = verified_assets(args.prepared)
+    locales = tuple(manifest["releases"])
     receipt = read(args.http_verification)
     require(receipt.get("schemaVersion") == "sermon-app-assets-http-verification-v1"
             and receipt.get("status") == "pass"
@@ -326,7 +347,7 @@ def seal(args: argparse.Namespace) -> dict:
         shutil.copytree(args.prepared / "public", public)
         receipt_sha = digest(args.http_verification)
         targets = {}
-        for locale in LOCALES:
+        for locale in locales:
             url = manifest["releases"][locale]["releasePath"]
             path = public / url.lstrip("/")
             release = read(path)
@@ -355,7 +376,7 @@ def seal(args: argparse.Namespace) -> dict:
                   "httpAssetReceiptSha256": receipt_sha,
                   "catalogSha256": digest(public / "multilingual-v3.json"),
                   "releaseSha256s": {locale: targets[locale]["releasePackageJsonSha256"]
-                                    for locale in LOCALES},
+                                    for locale in locales},
                   "files": [{"path": "/" + str(path.relative_to(public)), "sha256": digest(path),
                              "bytes": path.stat().st_size}
                             for path in sorted(public.rglob("*")) if path.is_file()]}
@@ -372,8 +393,10 @@ def main() -> None:
     commands = parser.add_subparsers(dest="command", required=True)
     prepare_parser = commands.add_parser("prepare")
     prepare_parser.add_argument("--source", type=Path, required=True)
-    prepare_parser.add_argument("--metadata-approval", type=Path, required=True)
-    prepare_parser.add_argument("--metadata-proposal", type=Path, required=True)
+    prepare_parser.add_argument("--metadata-approval", type=Path)
+    prepare_parser.add_argument("--metadata-proposal", type=Path)
+    prepare_parser.add_argument("--locales", nargs="+", choices=LOCALES)
+    prepare_parser.add_argument("--source-date-label", action="store_true", help="Use only source date as neutral Chinese display metadata")
     for option in ("full-candidate", "full-review-receipt", "spoken-candidate",
                    "spoken-review-receipt", "audio-package", "audio-review-receipt",
                    "audio-screening-receipt", "full-content"):

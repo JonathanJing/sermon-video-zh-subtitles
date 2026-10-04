@@ -164,7 +164,7 @@ def validate_policy_binding(candidate: dict[str, Any], policy: dict[str, Any], *
               policy_tools.validate_strict_policy(policy, strict_rubric))
     _require(policy["targetLocale"] == candidate["targetLocale"],
              "Target-Language Policy locale differs from candidate")
-    if policy["schemaVersion"] in {policy_tools.POLICY_V2, policy_tools.POLICY_V3}:
+    if policy["schemaVersion"] in {policy_tools.POLICY_V2, policy_tools.POLICY_V3, policy_tools.POLICY_V4}:
         _require(policy["sourceScope"]["englishSourcePackageJsonSha256"]
                  == candidate["englishSourcePackageJsonSha256"]
                  and policy["sourceScope"]["anchorManifestSha256"]
@@ -263,24 +263,47 @@ def validate_clip_voice_authorization(receipt: dict[str, Any], source_package: d
 def validate_source_voice_authorization(receipt: dict[str, Any], source_package: dict[str, Any],
                                         candidate: dict[str, Any], adapter: dict[str, Any]) -> None:
     """Allow formal use only for the user's approved complete source media."""
-    _validate_schema(receipt, "sermon-source-voice-authorization-v1.schema.json",
+    _validate_schema(receipt, ("sermon-source-voice-authorization-v2.schema.json"
+                              if receipt.get("schemaVersion") == "sermon-source-voice-authorization-v2"
+                              else "sermon-source-voice-authorization-v1.schema.json"),
                      "source voice authorization")
     attestation = _bound_evidence(receipt["userRightsAttestation"], json_artifact=True)
-    _validate_schema(attestation, "sermon-source-user-voice-attestation-v1.schema.json",
+    _validate_schema(attestation, ("sermon-source-user-voice-attestation-v2.schema.json"
+                                  if receipt.get("schemaVersion") == "sermon-source-voice-authorization-v2"
+                                  else "sermon-source-user-voice-attestation-v1.schema.json"),
                      "source voice user attestation")
     source = source_package.get("source", {})
     media = source.get("media", {})
     window = source.get("approvedWindow", {})
+    duration = media.get("durationSeconds")
+    authorized_window = attestation["approvedWindow"]
+    modern = "mediaDurationSeconds" in receipt
     _require(source_package.get("status") == "ready_for_translation"
              and source_package.get("translationEligible") is True
              and source.get("sourceId") == attestation["sourceId"]
              and media.get("sha256") == attestation["sourceMediaSha256"]
-             and media.get("durationSeconds") == attestation["approvedWindow"]["endSeconds"]
-             and window.get("startSeconds") == attestation["approvedWindow"]["startSeconds"]
-             and window.get("endSeconds") == attestation["approvedWindow"]["endSeconds"]
+             and window.get("startSeconds") == authorized_window["startSeconds"]
+             and window.get("endSeconds") == authorized_window["endSeconds"]
              and window.get("status") == "approved"
              and window.get("humanApproval") is True,
-             "Source voice permission requires the approved complete source media")
+             ("Source voice permission requires the exact approved source window" if modern else
+              "Source voice permission requires the approved complete source media"))
+    if modern:
+        _require(isinstance(duration, (int, float))
+                 and 0 <= authorized_window["startSeconds"] < authorized_window["endSeconds"] <= duration
+                 and attestation.get("mediaDurationSeconds") == duration
+                 and receipt["mediaDurationSeconds"] == duration
+                 and receipt["sourceId"] == source.get("sourceId")
+                 and receipt["sourceMediaSha256"] == media.get("sha256")
+                 and receipt["approvedWindow"] == authorized_window
+                 and receipt["authorizedUses"] == attestation["authorizedUses"]
+                 and "formal_audio_generation" in receipt["authorizedUses"],
+                 "Source voice permission differs from approved media, window, or authorized use")
+    else:
+        _require("mediaDurationSeconds" not in attestation
+                 and authorized_window["startSeconds"] == 0
+                 and authorized_window["endSeconds"] == duration,
+                 "Legacy source voice permission requires the complete source media")
     _require(receipt["englishSourcePackageJsonSha256"] == interpretation.json_sha256(source_package)
              and receipt["targetLanguageCandidateJsonSha256"] == interpretation.json_sha256(candidate)
              and candidate.get("englishSourcePackageJsonSha256") == receipt["englishSourcePackageJsonSha256"]

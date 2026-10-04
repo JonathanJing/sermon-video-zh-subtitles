@@ -117,6 +117,38 @@ def near(actual: float, expected: object, label: str) -> None:
             f"{label} differs from measured audio")
 
 
+def validate_anchor_exception(source: dict[str, Any], anchor: dict[str, Any],
+                              candidate: dict[str, Any], paths: dict[str, Path]) -> bool:
+    """Accept only the separately recorded, hash-bound single scripture exception."""
+    path = paths.get("anchor_exception_receipt")
+    if path is None:
+        return False
+    receipt = read_object(path)
+    schema = read_object(Path(__file__).parents[1] / "schemas" /
+                         "sermon-human-anchor-exception-receipt-v1.schema.json")
+    errors = list(Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(receipt))
+    require(not errors, f"Anchor exception receipt schema error: {errors[0].message if errors else ''}")
+    require(candidate.get("targetLocale") == "zh-Hans", "Anchor exception is limited to this Chinese release")
+    for key, name, value in (("englishSourcePackage", "source", source),
+                             ("anchorManifest", "anchor", anchor)):
+        require(receipt[key]["sha256"] == file_sha256(paths[name])
+                and receipt[key]["jsonSha256"] == json_sha256(value),
+                f"Anchor exception binding mismatch: {key}")
+    issues = anchor.get("issues")
+    require(source.get("anchors", {}).get("issueCount") == 1
+            and isinstance(issues, list) and len(issues) == 1,
+            "Anchor exception requires exactly one unresolved anchor issue")
+    issue = issues[0]
+    require(issue == receipt["acceptedIssue"]
+            and issue.get("type") == "clause_unit_exceeds_target_without_safe_boundary"
+            and issue.get("sourceSentenceId") == "0-s202"
+            and issue.get("maximumSeconds") == 8.0
+            and issue.get("durationSeconds") == 9.199951
+            and issue.get("english") == "‘Don’t harm the earth or the sea or the trees until we seal the servants of our God on their foreheads.’",
+            "Anchor exception differs from the authorized complete scripture sentence")
+    return True
+
+
 def validate_job(source: dict[str, Any], anchor: dict[str, Any], candidate: dict[str, Any],
                  job: dict[str, Any], adapter: dict[str, Any], policy: dict[str, Any],
                  human_receipt: dict[str, Any], registry: dict[str, Any],
@@ -127,6 +159,7 @@ def validate_job(source: dict[str, Any], anchor: dict[str, Any], candidate: dict
                  source_voice_authorization: dict[str, Any] | None = None,
                  strict_rubric: dict[str, Any] | None = None) -> None:
     speech.validate_target_candidate(source, anchor, candidate)
+    anchor_exception = validate_anchor_exception(source, anchor, candidate, paths)
     review = source.get("review", {})
     window = source.get("source", {}).get("approvedWindow", {})
     require(review.get("humanApproval") is True
@@ -135,7 +168,7 @@ def validate_job(source: dict[str, Any], anchor: dict[str, Any], candidate: dict
                 "sentenceAndPauseBoundaries"))
             and window.get("status") == "approved"
             and window.get("humanApproval") is True
-            and source.get("anchors", {}).get("issueCount") == 0,
+            and (source.get("anchors", {}).get("issueCount") == 0 or anchor_exception),
             "English Source Package lacks source/window/anchor human gates")
     speech.validate_policy_binding(candidate, policy, strict_rubric=strict_rubric)
     speech.validate_human_review_receipt(source, anchor, candidate, human_receipt)
@@ -336,10 +369,12 @@ def build_package(paths: dict[str, Path], render_manifest_path: Path, artifact_r
         raise ValueError("Voice authorization approval time is invalid") from exc
     if source_auth is not None:
         speech._validate_schema(authorization,
-                                "sermon-source-user-voice-attestation-v1.schema.json",
+                                authorization["schemaVersion"] + ".schema.json",
                                 "source voice user attestation")
         require(authorization["sourceId"] == source["source"]["sourceId"]
                 and authorization["sourceMediaSha256"] == source["source"]["media"]["sha256"]
+                and authorization["approvedWindow"]["startSeconds"]
+                == source["source"]["approvedWindow"]["startSeconds"]
                 and authorization["approvedWindow"]["endSeconds"]
                 == source["source"]["approvedWindow"]["endSeconds"]
                 and locale in authorization["targetLocales"]
@@ -550,6 +585,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("source", "anchor", "candidate", "job", "adapter", "policy"):
         parser.add_argument(f"--{name}", type=Path, required=True)
+    parser.add_argument("--anchor-exception-receipt", type=Path,
+                        help="Hash-bound human acceptance of the single complete scripture anchor")
     parser.add_argument("--strict-rubric", type=Path, help="Explicit frozen rubric for strict-v3 policy validation")
     parser.add_argument("--human-review-receipt", dest="human_receipt", type=Path, required=True)
     parser.add_argument("--speaker-registry", dest="registry", type=Path, required=True)
@@ -566,6 +603,8 @@ def main() -> None:
     require(not args.out.exists(), "Audio Package output is immutable; choose a new path")
     paths = {name: getattr(args, name) for name in ("source", "anchor", "candidate", "job",
                                                   "adapter", "policy", "human_receipt", "registry")}
+    if args.anchor_exception_receipt:
+        paths["anchor_exception_receipt"] = args.anchor_exception_receipt
     if args.clip_voice_authorization:
         paths["clip_voice_authorization"] = args.clip_voice_authorization
     if args.source_voice_authorization:
@@ -575,8 +614,18 @@ def main() -> None:
     paths["clip_timeline_map"] = args.clip_timeline_map
     package = build_package(paths, args.render_manifest, args.artifact_root,
                             strict_rubric=read_object(args.strict_rubric) if args.strict_rubric else None)
+    sidecar = args.out.with_name(args.out.name + ".anchor-exception.json")
+    if args.anchor_exception_receipt:
+        require(not sidecar.exists(), "Anchor exception sidecar is immutable")
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(package, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    if args.anchor_exception_receipt:
+        evidence = {"schemaVersion": "sermon-audio-anchor-exception-evidence-v1",
+                    "audioPackageJsonSha256": json_sha256(package),
+                    "receiptPath": str(args.anchor_exception_receipt.resolve()),
+                    "receiptSha256": file_sha256(args.anchor_exception_receipt),
+                    "receipt": read_object(args.anchor_exception_receipt)}
+        sidecar.write_text(json.dumps(evidence, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({"status": package["status"], "targetLocale": package["targetLocale"],
                       "package": str(args.out)}, ensure_ascii=False))
 

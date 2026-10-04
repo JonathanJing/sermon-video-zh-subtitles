@@ -70,6 +70,34 @@ class AudioReviewTests(unittest.TestCase):
         with self.assertRaisesRegex(stage.StageError, "ASR receipt"):
             stage.validate_audio_screening_review(reviewed, receipt, altered)
 
+    def test_publication_exception_keeps_video_sync_unrun_and_exact_track(self):
+        package, screening = fixture()
+        worksheet = subject.prepare(package, screening)
+        checks = {name: "approved" for name in subject.CHECKS}
+        checks["synchronization"] = "not_run"
+        worksheet.update(decision="approved", reviewedBy="user",
+                         reviewedAt="2026-10-04T16:00:00Z", fullPlayback="approved",
+                         videoSync1x="not_run", checks=checks)
+        worksheet["asrAdjudications"][0].update(decision="approved", evidence="Explicit human audio approval.")
+        exception = {"schemaVersion": "sermon-video-sync-publication-exception-v1",
+                     "scope": "publish_reviewed_chinese_audio_with_video_sync_not_run",
+                     "humanApproval": True, "userDecision": "接受，先发布并如实保留未验收状态",
+                     "recordedAt": "2026-10-04T16:00:00Z", "trackSha256": TRACK}
+        with self.assertRaises(ValueError):
+            subject.approve(package, screening, worksheet)
+        reviewed, receipt = subject.approve(package, screening, worksheet, publication_exception=exception)
+        self.assertEqual(receipt["videoSync1x"], "not_run")
+        self.assertEqual(receipt["checks"]["synchronization"], "not_run")
+        self.assertEqual(reviewed["machineScreening"]["status"], "requires_review")
+        stage.validate_audio_screening_review(reviewed, receipt, screening)
+        altered = copy.deepcopy(receipt)
+        altered["publicationException"]["trackSha256"] = SHA
+        with self.assertRaises(stage.StageError):
+            stage.validate_audio_screening_review(reviewed, altered, screening)
+        exception["humanApproval"] = False
+        with self.assertRaises(ValueError):
+            subject.approve(package, screening, worksheet, publication_exception=exception)
+
     def test_legacy_receipt_cannot_clear_asr_review_queue(self):
         package, _ = fixture()
         with self.assertRaisesRegex(stage.StageError, "v2 human adjudication"):
