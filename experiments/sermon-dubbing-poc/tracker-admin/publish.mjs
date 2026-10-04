@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /** Publish one bounded snapshot, or watch local evidence and refresh it on change. */
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -27,7 +27,7 @@ export function parseArgs(argv) {
       result[key.slice(2)] = true;
       continue;
     }
-    if (!['--project', '--database', '--snapshot', '--watch-config', '--interval-seconds'].includes(key)) {
+    if (!['--project', '--database', '--snapshot', '--watch-config', '--interval-seconds', '--health-file'].includes(key)) {
       throw new Error(`unsupported argument: ${key}`);
     }
     if (!argv[index + 1]) throw new Error(`missing value for ${key}`);
@@ -43,6 +43,7 @@ export function parseArgs(argv) {
   if (result.watch && (!result.execute || !result.watchConfig)) {
     throw new Error('--watch requires --execute and --watch-config');
   }
+  if (result.healthFile && !result.watch) throw new Error('--health-file requires --watch');
   if (!result.snapshot && !result.watchConfig) throw new Error('--snapshot or --watch-config required');
   result.intervalSeconds = Number(result.intervalSeconds);
   if (!Number.isFinite(result.intervalSeconds) || result.intervalSeconds < 5) {
@@ -75,6 +76,16 @@ function readSnapshot(path) {
   return validateSnapshot(JSON.parse(readFileSync(path, 'utf8')));
 }
 
+function writeHealth(path, state) {
+  if (!path) return;
+  const target = resolve(path);
+  mkdirSync(dirname(target), { recursive: true });
+  const temporary = `${target}.${process.pid}.tmp`;
+  writeFileSync(temporary, `${JSON.stringify({ schemaVersion: 'tracker-publisher-health-v1',
+    pid: process.pid, ...state }, null, 2)}\n`, { mode: 0o600 });
+  renameSync(temporary, target);
+}
+
 export function semanticHash(snapshot) {
   const copy = { ...snapshot };
   delete copy.generatedAt;
@@ -89,12 +100,37 @@ export function semanticHash(snapshot) {
 async function run(options) {
   let db = null;
   let previous = null;
-  while (true) {
+  let stopping = false;
+  const stopController = new AbortController();
+  const stop = () => {
+    stopping = true;
+    health.status = 'stopping';
+    health.heartbeatAt = new Date().toISOString();
+    writeHealth(options.healthFile, health);
+    stopController.abort();
+  };
+  const health = { project: options.project, database: options.database, status: 'running', startedAt: new Date().toISOString(), heartbeatAt: null,
+    lastAttemptAt: null, lastCheckSucceededAt: null, lastPublishAt: null,
+    lastPublishedPageId: null, lastError: null };
+  process.once('SIGTERM', stop);
+  process.once('SIGINT', stop);
+  writeHealth(options.healthFile, health);
+  const heartbeatTimer = options.healthFile ? setInterval(() => {
+    health.heartbeatAt = new Date().toISOString();
+    writeHealth(options.healthFile, health);
+  }, Math.min(options.intervalSeconds, 15) * 1000) : null;
+  heartbeatTimer?.unref();
+  while (!stopping) {
+    health.heartbeatAt = new Date().toISOString();
+    health.lastAttemptAt = health.heartbeatAt;
+    writeHealth(options.healthFile, health);
     try {
       const path = options.watchConfig ? buildFromConfig(resolve(options.watchConfig))
         : resolve(options.snapshot);
       const snapshot = readSnapshot(path);
       const hash = semanticHash(snapshot);
+      health.lastCheckSucceededAt = new Date().toISOString();
+      health.lastError = null;
       if (hash !== previous) {
         if (options.execute) {
           if (!db) {
@@ -111,6 +147,8 @@ async function run(options) {
             updatedAt: snapshot.generatedAt,
             snapshot,
           });
+          health.lastPublishAt = new Date().toISOString();
+          health.lastPublishedPageId = snapshot.pageId;
         }
         previous = hash;
         console.log(JSON.stringify({ pageId: snapshot.pageId, target: snapshot.target,
@@ -119,11 +157,22 @@ async function run(options) {
       }
     } catch (error) {
       console.error(JSON.stringify({ status: 'error', reason: error.message }));
+      health.lastError = { name: error.name || 'Error', message: String(error.message || error).slice(0, 500),
+        occurredAt: new Date().toISOString() };
       if (!options.watch) process.exitCode = 1;
     }
+    writeHealth(options.healthFile, health);
     if (!options.watch) return;
-    await delay(options.intervalSeconds * 1000);
+    try { await delay(options.intervalSeconds * 1000, undefined, { signal: stopController.signal }); }
+    catch (error) { if (error.name !== 'AbortError') throw error; }
   }
+  health.status = 'stopped';
+  health.stoppedAt = new Date().toISOString();
+  health.heartbeatAt = health.stoppedAt;
+  writeHealth(options.healthFile, health);
+  if (heartbeatTimer) clearInterval(heartbeatTimer);
+  process.removeListener('SIGTERM', stop);
+  process.removeListener('SIGINT', stop);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

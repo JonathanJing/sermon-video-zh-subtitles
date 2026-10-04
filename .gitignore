@@ -30,3 +30,10 @@ artifacts/
 output/pdf/
 tmp/
 web/playback-simulation.generated.js
+
+# Local tracker publisher lifecycle state
+*.publisher-health.json
+*.publisher-health.json.*.tmp
+*.publisher-runtime.json
+*.publisher-runtime.json.*.tmp
+*.publisher-start.lock
