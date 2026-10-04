@@ -250,10 +250,11 @@ struct ContentView: View {
                     }
                 }
                 .onChange(of: returnToCurrent) { _, _ in
-                    if model.display == .transcript,
-                       let index = model.selectedTrack?.cues.firstIndex(where: { $0.start <= playback.position && playback.position < $0.end }) {
-                        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) {
-                            proxy.scrollTo("cue-\(index)", anchor: .center)
+                    if model.display == .transcript {
+                        if let rowID = currentTranscriptRowID {
+                            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) {
+                                proxy.scrollTo(rowID, anchor: .center)
+                            }
                         }
                     } else {
                         model.display = .current
@@ -290,6 +291,17 @@ struct ContentView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .principal) { BrandTitle() }
+                if model.display == .transcript {
+                    ToolbarItem(placement: .primaryAction) {
+                        Button { returnToCurrent = UUID() } label: {
+                            Label(localization.text("当前句"), systemImage: "text.bubble")
+                        }
+                        .labelStyle(.titleAndIcon)
+                        .accessibilityLabel(localization.text("回到当前句"))
+                        .accessibilityIdentifier("transcript-return-current")
+                        .disabled(currentTranscriptRowID == nil)
+                    }
+                }
                 if !usesTrailingDock || usesSystemVerticalBar {
                     ToolbarItemGroup(placement: .primaryAction) {
                         Button(localization.text("选择证道周次"), systemImage: "calendar") { sheet = .weeks }
@@ -351,6 +363,21 @@ struct ContentView: View {
         }
     }
 
+    /// Resolve the reading anchor from the active audio timeline, including gaps.
+    /// Recentring never seeks or changes the transport or reading mode.
+    private var currentTranscriptRowID: String? {
+        if let track = model.selectedTrack, !track.cues.isEmpty {
+            let index = track.cues.firstIndex { $0.start <= playback.position && playback.position < $0.end }
+                ?? track.cues.lastIndex { $0.start <= playback.position } ?? 0
+            return "cue-\(index)"
+        }
+        guard model.usesNativePublishedReader, let captions = model.publishedTranscript?.captions,
+              !captions.isEmpty else { return nil }
+        let cue = captions.first { $0.start <= playback.position && playback.position < $0.end }
+            ?? captions.last { $0.start <= playback.position } ?? captions[0]
+        return "published-caption-\(cue.id)"
+    }
+
     private var playbackStatusDetail: some View {
         Text(localization.text(model.isPreparing || model.isPreparingPublishedAudio
                                ? "正在准备音频…" : playback.message))
@@ -372,7 +399,7 @@ struct ContentView: View {
             alignmentModel: model,
             locate: { sheet = .locate },
             precision: model.selectedTrack == nil ? nil : { sheet = .precision },
-            current: model.selectedTrack == nil ? nil : { returnToCurrent = UUID() },
+            current: currentTranscriptRowID == nil ? nil : { returnToCurrent = UUID() },
             placement: placement,
             inSystemBar: inSystemBar,
             onMoreTap: {
@@ -391,7 +418,7 @@ struct ContentView: View {
             alignmentModel: model,
             locate: { sheet = .locate },
             precision: model.selectedTrack == nil ? nil : { sheet = .precision },
-            current: model.selectedTrack == nil ? nil : { returnToCurrent = UUID() },
+            current: currentTranscriptRowID == nil ? nil : { returnToCurrent = UUID() },
             onClose: { showingPlaybackMore = false },
             width: width
         )

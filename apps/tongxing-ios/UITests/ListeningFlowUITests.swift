@@ -445,6 +445,29 @@ final class ListeningFlowUITests: XCTestCase {
         screenshot("english-locate-undo-original-position", app: app)
     }
 
+    func testFullTranscriptReturnToCurrentKeepsPausePositionAndReadingMode() throws {
+        let app = launchFixture(locateFlow: true)
+        try locateSecondEnglishSegment(in: app, fromDock: false)
+        let progress = element("playback-progress", in: app)
+        try waitFor(progress, "value BEGINSWITH '00:12'")
+        app.segmentedControls["listening-display"].buttons["字幕全文"].tap()
+        let current = app.buttons["transcript-return-current"]
+        XCTAssertTrue(current.waitForExistence(timeout: 5))
+        let scroll = app.scrollViews["listening-scroll"]
+        for _ in 0..<3 { scroll.swipeDown() }
+        XCTAssertFalse(app.staticTexts["published-caption-text-g2"].isHittable,
+                       "The current row must leave the viewport before testing recentering")
+        XCTAssertTrue(current.isHittable, "Return action must remain reachable after reading elsewhere")
+        screenshot("full-transcript-scrolled-away", app: app)
+        current.tap()
+        try waitFor(app.staticTexts["published-caption-text-g2"], "hittable == true")
+        XCTAssertTrue(app.buttons["published-caption-time-g2"].isSelected)
+        XCTAssertEqual(app.segmentedControls["listening-display"].buttons["字幕全文"].isSelected, true)
+        try waitFor(progress, "value BEGINSWITH '00:12'")
+        XCTAssertEqual(app.buttons["playback-toggle"].label, "开始播放")
+        screenshot("full-transcript-return-current-paused12", app: app)
+    }
+
     func testEnglishLocateFromDockAndFullTranscriptLanguageChangesKeepPosition() throws {
         let app = launchFixture(locateFlow: true)
         try locateSecondEnglishSegment(in: app, fromDock: true)
