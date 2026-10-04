@@ -8,6 +8,8 @@
 
 缓存输入已经包含在输入 token 中，reasoning 输出已经包含在 output 中，不再次相加。字段定义参见 [官方用量文档](https://developers.openai.com/api/docs/guides/agents-api/observability)。
 
+用户后续确认实际制作窗口为当地周六19:00至周日10:00（本次02:00–17:00 UTC）。本报告观察窗口更宽，所列时长和token不能直接代表15小时制作窗口；截止分析见 [完整复盘](20261004-full-production-retrospective.zh.md)。
+
 ## 用量
 
 | 范围 | 响应记录 | 输入 | 其中缓存输入 | 非缓存输入 | 输出 | 其中 reasoning | 合计 |
