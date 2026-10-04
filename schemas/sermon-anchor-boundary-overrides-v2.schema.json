@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-anchor-boundary-overrides-v2.schema.json",
+  "title": "Source-bound boundary decisions, not human approval",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "alignedSegmentsSha256",
+    "overrides"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "sermon-anchor-boundary-overrides-v2"
+    },
+    "alignedSegmentsSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "overrides": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "\\S"
+      },
+      "additionalProperties": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "action",
+              "sourceWordIds",
+              "reason",
+              "evidenceRef"
+            ],
+            "properties": {
+              "action": {
+                "const": "retain_sentence"
+              },
+              "sourceWordIds": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "\\S"
+                }
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "evidenceRef": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "action",
+              "sourceWordIds",
+              "reason",
+              "evidenceRef",
+              "afterWordId"
+            ],
+            "properties": {
+              "action": {
+                "const": "split_after_word"
+              },
+              "sourceWordIds": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "\\S"
+                }
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "evidenceRef": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "afterWordId": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

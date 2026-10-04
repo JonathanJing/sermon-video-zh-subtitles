@@ -114,6 +114,24 @@ class SentenceInterpretationTests(unittest.TestCase):
         self.assertEqual(manifest["counts"]["sourceWords"], len(words))
         self.assertEqual(manifest["issues"], [])
 
+        typed_decision = {
+            "action": "split_after_word", "afterWordId": "block-00-w0004",
+            "sourceWordIds": [wid for unit in manifest["sourceUnits"] for wid in unit["sourceWordIds"]],
+            "reason": "Split at the existing safe punctuation", "evidenceRef": "review.json#s001",
+        }
+        typed = subject.build_anchor_manifest(
+            source, source_path=self.source, unit_policy=subject.UNIT_POLICY_V2,
+            max_unit_seconds=3.0, boundary_overrides={"block-00-s001": typed_decision},
+        )
+        self.assertEqual(typed["sourceUnits"], manifest["sourceUnits"])
+        self.assertEqual(typed["policy"]["boundaryOverrides"]["block-00-s001"], typed_decision)
+        with self.assertRaises(ValueError):
+            subject.build_anchor_manifest(
+                source, source_path=self.source, unit_policy=subject.UNIT_POLICY_V2,
+                max_unit_seconds=3.0,
+                boundary_overrides={"block-00-s001": {**typed_decision, "afterWordId": "block-00-w0003"}},
+            )
+
         for invalid in ({"block-00-s001": "block-00-w0003"},
                         {"block-00-s001": "block-00-w9999"},
                         {"block-00-s999": "block-00-w0004"}):
@@ -122,6 +140,36 @@ class SentenceInterpretationTests(unittest.TestCase):
                     source, source_path=self.source, unit_policy=subject.UNIT_POLICY_V2,
                     max_unit_seconds=3.0, boundary_overrides=invalid,
                 )
+
+    def test_typed_retain_sentence_preserves_words_and_overlong_warning(self):
+        words = ["Scholars", "disagree", "about", "these", "seals."]
+        source = [segment(" ".join(words), words, gaps=[0.8, 0.1, 0.1, 0.1]),
+                  segment("Keep this unchanged.", ["Keep", "this", "unchanged."], start=5, segment_id=1)]
+        self.source.write_text(json.dumps(source))
+        args = dict(source_path=self.source, unit_policy=subject.UNIT_POLICY_V2,
+                    max_unit_seconds=2.0, min_unit_seconds=0.3)
+        old = subject.build_anchor_manifest(source, **args)
+        first = [u for u in old["sourceUnits"] if u["sourceSentenceId"] == "block-00-s001"]
+        ids = [wid for u in first for wid in u["sourceWordIds"]]
+        decision = {"action": "retain_sentence", "sourceWordIds": ids,
+                    "reason": "Subject and predicate must stay together", "evidenceRef": "machine-review.json#s001"}
+        new = subject.build_anchor_manifest(source, **args, boundary_overrides={"block-00-s001": decision})
+        self.assertGreater(len(first), 1)
+        self.assertEqual(new["sourceUnits"][0]["words"], [w for u in first for w in u["words"]])
+        self.assertEqual(new["sourceUnits"][0]["english"], " ".join(words))
+        self.assertFalse(new["sourceUnits"][0]["boundary"]["splitEvidence"]["withinTargetSeconds"])
+        self.assertEqual(new["issues"][0]["type"], "clause_unit_exceeds_target_without_safe_boundary")
+        self.assertEqual(new["sourceUnits"][-1]["words"], old["sourceUnits"][-1]["words"])
+        self.assertEqual(new["sourceUnits"][0]["boundary"]["humanReview"], "pending")
+        for mutation in ({"sourceWordIds": ids[::-1]}, {"sourceWordIds": ids[:-1]},
+                         {"sourceWordIds": ids + ids[:1]}, {"action": "approve"},
+                         {"reason": " "}, {"evidenceRef": ""}, {"humanApproval": True},
+                         {"afterWordId": ids[0]}):
+            with self.subTest(mutation=mutation), self.assertRaises(ValueError):
+                subject.build_anchor_manifest(source, **args,
+                    boundary_overrides={"block-00-s001": {**decision, **mutation}})
+        with self.assertRaises(ValueError):
+            subject.build_anchor_manifest(source, **args, boundary_overrides={"missing": decision})
 
     def test_long_sentence_splits_only_at_pause_and_keeps_word_ids(self):
         long = segment(
