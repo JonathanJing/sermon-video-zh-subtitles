@@ -75,7 +75,7 @@
 
 可选的[统一检查与执行入口](../saturday-harness.zh.md)按顺序连接原 PDF Supervisor 和配音桥接器，分开报告 PDF、候选、听审、同步与发布。[执行保护](../sermon-execution-harness.zh.md)连接 [Promptfoo 真实固定回归集](../saturday-quality-harness.zh.md)、[本机持久化追踪与自动观察](../sermon-trace-export.zh.md)及 [Temporal 持久工作流](../sermon-temporal.zh.md)。各自的实际集成证据和运行命令见专题文档；不表示真实生产或现场已通过，也未自动替换定时任务。
 
-统一入口与持久化推进的完整设计草稿见[统一 CLI 与持久化执行设计](../unified-cli-pipeline-design.zh.md)：8 类、41 个实施步骤，基线 dev `ecbc92151587c187ebe25cc78a221591cc042842`。原稿 SHA-256 `1cea7a50f3bdd83dd76c356a9b9bc89aabf3136d564026746591e9ddab5288fc`；新增命令、owner 服务及验收目标均为拟议能力，不代表正式生产已经打通或提速已经实测。对该草稿的审核见[统一 CLI 设计审核](../reports/20261004-unified-cli-design-review.zh.md)，从整体命令到每一步的改法见[分步改进](../reports/20261004-unified-cli-step-improvements.zh.md)。
+统一入口与持久化推进的开发说明见[统一 CLI 与持久化执行](../unified-cli-pipeline.zh.md)。命令、owner 服务和验收目标仍是拟议能力，不代表正式生产已经打通或提速已经实测。
 
 **Layer 2 新生产模型流程：** 已审核的 `ready_for_translation` 英文包按[目标语言 Astra→Sol 操作说明](../target-language-astra-sol-production.zh.md)执行：Astra 初译、Sol 逐组独立复核，之后运行冻结语言插件并逐组人工审核。旧运行保持其原 policy／收据身份；双 PDF 路径和 Layer 1 shadow 不会自动升级为 Layer 2 完成。
 
@@ -224,5 +224,3 @@ Supervisor 调度默认使用 `gpt-6-sol` Medium，SDK 回退也使用同一 Sol
 - [稳定 post-live PDF 工作流](../stable-post-live-reading-pdf-workflow.zh.md)
 - [本地周末生产 runbook](../codex-local-production-runbook.zh.md)
 - [完整文档索引](../README.zh.md)
-
-统一入口草稿的进一步证据核查见[跨层接线追加审核](../reports/20261004-unified-cli-cross-layer-findings.zh.md)：保留完整交付目标，补 App 依赖闭包、可信发布收据、内容日期映射和多 run 日志验收；全部是待实施要求。
