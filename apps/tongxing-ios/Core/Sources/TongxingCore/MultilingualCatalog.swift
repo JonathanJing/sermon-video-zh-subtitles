@@ -29,7 +29,8 @@ public struct MultilingualCatalog: Codable, Sendable, Equatable {
             return MultilingualPage(id: page.id, title: page.title, date: page.date,
                 sourceLocale: page.sourceLocale, sourceIdentitySha256: page.sourceIdentitySha256,
                 sourceMediaSha256: page.sourceMediaSha256, mediaType: page.mediaType, defaultTargetLocale: locale, targets: targets,
-                diagnosticOnly: page.diagnosticOnly, simulationOnly: page.simulationOnly)
+                diagnosticOnly: page.diagnosticOnly, simulationOnly: page.simulationOnly,
+                displayMetadata: page.displayMetadata)
         }
         let projected = Self(schemaVersion: value.schemaVersion, generatedAt: value.generatedAt,
             defaultPageId: pages.contains { $0.id == value.defaultPageId } ? value.defaultPageId : (pages.first?.id ?? ""),
@@ -52,7 +53,8 @@ public struct MultilingualCatalog: Codable, Sendable, Equatable {
             return MultilingualPage(id: page.id, title: page.title, date: page.date,
                 sourceLocale: page.sourceLocale, sourceIdentitySha256: page.sourceIdentitySha256,
                 sourceMediaSha256: page.sourceMediaSha256, mediaType: page.mediaType, defaultTargetLocale: locale, targets: targets,
-                diagnosticOnly: page.diagnosticOnly, simulationOnly: page.simulationOnly)
+                diagnosticOnly: page.diagnosticOnly, simulationOnly: page.simulationOnly,
+                displayMetadata: page.displayMetadata)
         }
         let result = Self(schemaVersion: schemaVersion, generatedAt: generatedAt,
             defaultPageId: selected.contains { $0.id == defaultPageId } ? defaultPageId : (selected.first?.id ?? ""), pages: selected)
@@ -83,6 +85,7 @@ public struct MultilingualPage: Codable, Sendable, Equatable, Identifiable {
     public let targets: [String: PageTarget]
     public let diagnosticOnly: Bool?
     public let simulationOnly: Bool?
+    public let displayMetadata: PageDisplayMetadata?
 
     public func validate(catalogSchemaVersion: String = MultilingualCatalog.supportedSchemaVersion,
                          allowDevCandidates: Bool = false) throws {
@@ -94,12 +97,16 @@ public struct MultilingualPage: Codable, Sendable, Equatable, Identifiable {
               sourceMediaSha256.map(Validation.sha256) ?? true,
               mediaType.map({ ["podcast", "video"].contains($0) }) ?? true,
               title.map({ !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) ?? true,
+              displayMetadata.map({ $0.schemaVersion == PageDisplayMetadata.supportedSchemaVersion
+                  && !$0.edition.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                  && $0.edition.count <= 80 }) ?? true,
               !targets.isEmpty, targets.count <= 16, targets[defaultTargetLocale] != nil
         else { throw CatalogError.invalid("多语言页面来源、日期或默认语言无效") }
         if catalogSchemaVersion == MultilingualCatalog.dualScriptSchemaVersion {
             guard let title, !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
                   title.count <= 180 else { throw CatalogError.invalid("双稿页面缺少有效标题") }
         }
+        try displayMetadata?.validate()
         for (locale, target) in targets {
             guard Validation.locale(locale) else { throw CatalogError.invalid("目标语言代码无效") }
             try target.validate(pageID: id, locale: locale, catalogSchemaVersion: catalogSchemaVersion,
@@ -116,6 +123,20 @@ public struct MultilingualPage: Codable, Sendable, Equatable, Identifiable {
         targets.filter { $0.value.contentStatus == "human_reviewed" }
             .sorted { $0.key.localizedStandardCompare($1.key) == .orderedAscending }
             .map { (locale: $0.key, target: $0.value) }
+    }
+}
+
+/// Optional Layer 4 presentation metadata. It leaves the immutable transcript
+/// and Release Package identities unchanged.
+public struct PageDisplayMetadata: Codable, Sendable, Equatable {
+    public static let supportedSchemaVersion = "sermon-page-display-metadata-v1"
+    public let schemaVersion: String
+    public let edition: String
+
+    public func validate() throws {
+        guard schemaVersion == Self.supportedSchemaVersion,
+              !edition.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              edition.count <= 80 else { throw CatalogError.invalid("页面显示元数据无效") }
     }
 }
 

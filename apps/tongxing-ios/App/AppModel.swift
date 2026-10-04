@@ -303,9 +303,11 @@ final class AppModel: ObservableObject {
         if let transcript = publishedTranscript, transcript.pageID == page.id,
            transcript.sourceIdentitySha256 == page.sourceIdentitySha256 {
             return SermonHeading(title: transcript.title ?? page.title ?? page.id,
-                                 series: transcript.series, speaker: transcript.speaker)
+                                 series: transcript.series, speaker: transcript.speaker,
+                                 displayEdition: page.displayMetadata?.edition)
         }
-        return publishedHeadings[publishedHeadingKey(page)] ?? SermonHeading(title: page.title ?? page.id)
+        return publishedHeadings[publishedHeadingKey(page)]
+            ?? SermonHeading(title: page.title ?? page.id, displayEdition: page.displayMetadata?.edition)
     }
 
     /// Only visible picker rows request metadata, through the existing verified
@@ -322,7 +324,8 @@ final class AppModel: ObservableObject {
             try Task.checkCancellation()
             guard independentPages.contains(where: { publishedHeadingKey($0) == key }) else { return }
             publishedHeadings[key] = SermonHeading(title: transcript.title ?? page.title ?? page.id,
-                                                  series: transcript.series, speaker: transcript.speaker)
+                                                  series: transcript.series, speaker: transcript.speaker,
+                                                  displayEdition: page.displayMetadata?.edition)
         } catch {
             // Metadata failure keeps the catalog title/date available, with no invented speaker.
         }
@@ -347,7 +350,8 @@ final class AppModel: ObservableObject {
             publishedTranscript = transcript
             if locale == page.defaultTargetLocale {
                 publishedHeadings[publishedHeadingKey(page)] = SermonHeading(
-                    title: transcript.title ?? page.title ?? page.id, series: transcript.series, speaker: transcript.speaker)
+                    title: transcript.title ?? page.title ?? page.id, series: transcript.series, speaker: transcript.speaker,
+                    displayEdition: page.displayMetadata?.edition)
             }
         } catch is CancellationError {
             return
