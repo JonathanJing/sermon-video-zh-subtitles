@@ -124,16 +124,27 @@ def validate_anchor_exception(source: dict[str, Any], anchor: dict[str, Any],
     if path is None:
         return False
     receipt = read_object(path)
-    schema = read_object(Path(__file__).parents[1] / "schemas" /
-                         "sermon-human-anchor-exception-receipt-v1.schema.json")
+    version = receipt.get("schemaVersion")
+    schema_name = {"sermon-human-anchor-exception-receipt-v1": "sermon-human-anchor-exception-receipt-v1.schema.json",
+                   "sermon-human-anchor-exception-receipt-v2": "sermon-human-anchor-exception-receipt-v2.schema.json"}.get(version)
+    require(schema_name is not None, "Unsupported anchor exception receipt")
+    schema = read_object(Path(__file__).parents[1] / "schemas" / schema_name)
     errors = list(Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(receipt))
     require(not errors, f"Anchor exception receipt schema error: {errors[0].message if errors else ''}")
-    require(candidate.get("targetLocale") == "zh-Hans", "Anchor exception is limited to this Chinese release")
+    locale = candidate.get("targetLocale")
+    require(locale in {"zh-Hans", "ko", "es"}, "Anchor exception locale is unsupported")
+    require((version == "sermon-human-anchor-exception-receipt-v1" and locale == "zh-Hans")
+            or (version == "sermon-human-anchor-exception-receipt-v2" and receipt.get("targetLocale") == locale),
+            "Anchor exception is not bound to this locale")
     for key, name, value in (("englishSourcePackage", "source", source),
                              ("anchorManifest", "anchor", anchor)):
         require(receipt[key]["sha256"] == file_sha256(paths[name])
                 and receipt[key]["jsonSha256"] == json_sha256(value),
                 f"Anchor exception binding mismatch: {key}")
+    if version == "sermon-human-anchor-exception-receipt-v2":
+        require(receipt["candidate"]["sha256"] == file_sha256(paths["candidate"])
+                and receipt["candidate"]["jsonSha256"] == json_sha256(candidate),
+                "Anchor exception binding mismatch: candidate")
     issues = anchor.get("issues")
     require(source.get("anchors", {}).get("issueCount") == 1
             and isinstance(issues, list) and len(issues) == 1,

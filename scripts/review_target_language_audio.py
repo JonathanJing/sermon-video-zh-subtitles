@@ -98,20 +98,49 @@ def prepare(package: dict, screening: dict) -> dict:
 
 def approve(package: dict, screening: dict, worksheet: dict, *, publication_exception: dict | None = None) -> tuple[dict, dict]:
     expected = prepare(package, screening)
+    reviewed = copy.deepcopy(package)
+    reviewed["status"] = "human_reviewed"
+    reviewed["humanReview"] = {
+        "status": "approved", "humanApproval": True,
+        "reviewedBy": worksheet.get("reviewedBy", "").strip() if isinstance(worksheet.get("reviewedBy"), str) else "",
+        "reviewedAt": worksheet.get("reviewedAt"),
+        "fullPlayback": "approved",
+    }
+    reviewed.pop("downstreamInvalidationKey")
+    reviewed["downstreamInvalidationKey"] = identity.json_sha256(reviewed)
     for key in ("schemaVersion", "audioPackageJsonSha256",
                 "machineScreeningReceiptJsonSha256", "targetLocale",
                 "trackSha256", "reviewedUnitIds", "asrReviewQueue"):
         require(worksheet.get(key) == expected[key], f"Audio worksheet identity changed: {key}")
     expected_checks = {name: "approved" for name in CHECKS}
     sync_status = "approved"
+    receipt_schema = "sermon-target-language-audio-human-review-receipt-v2"
     if publication_exception is not None:
-        require(package["targetLocale"] == "zh-Hans"
-                and publication_exception.get("schemaVersion") == "sermon-video-sync-publication-exception-v1"
-                and publication_exception.get("scope") == "publish_reviewed_chinese_audio_with_video_sync_not_run"
-                and publication_exception.get("humanApproval") is True
-                and publication_exception.get("userDecision") == "接受，先发布并如实保留未验收状态"
-                and publication_exception.get("trackSha256") == package["track"]["sha256"],
-                "Publication exception requires exact Chinese track and explicit user acceptance")
+        if publication_exception.get("schemaVersion") == "sermon-video-sync-publication-exception-v1":
+            require(package["targetLocale"] == "zh-Hans"
+                    and publication_exception.get("scope") == "publish_reviewed_chinese_audio_with_video_sync_not_run"
+                    and publication_exception.get("humanApproval") is True
+                    and publication_exception.get("userDecision") == "接受，先发布并如实保留未验收状态"
+                    and publication_exception.get("trackSha256") == package["track"]["sha256"],
+                    "Publication exception v1 requires the exact Chinese track and explicit acceptance")
+            receipt_schema = "sermon-target-language-audio-human-review-receipt-v3"
+        elif publication_exception.get("schemaVersion") == "sermon-video-sync-publication-exception-v2":
+            identities = {
+                "targetLocale": package["targetLocale"],
+                "englishSourcePackageJsonSha256": package["englishSourcePackageJsonSha256"],
+                "targetLanguageCandidateJsonSha256": package["targetLanguageCandidateJsonSha256"],
+                "targetLanguageAudioPackageJsonSha256": identity.json_sha256(reviewed),
+                "trackSha256": package["track"]["sha256"],
+            }
+            require(package["targetLocale"] in {"zh-Hans", "ko", "es"}
+                    and publication_exception.get("scope") == "publish_reviewed_audio_with_video_sync_not_run"
+                    and publication_exception.get("humanApproval") is True
+                    and publication_exception.get("userDecision") == "接受，先发布并如实保留未验收状态"
+                    and all(publication_exception.get(key) == value for key, value in identities.items()),
+                    "Publication exception v2 is not bound to this locale and reviewed audio package")
+            receipt_schema = "sermon-target-language-audio-human-review-receipt-v4"
+        else:
+            raise ValueError("Unsupported publication exception")
         sync_status = "not_run"
         expected_checks["synchronization"] = "not_run"
     require(worksheet.get("decision") == "approved"
@@ -131,16 +160,6 @@ def approve(package: dict, screening: dict, worksheet: dict, *, publication_exce
                     and isinstance(row.get("evidence"), str) and row["evidence"].strip()
                     for row in adjudications),
             "Every ASR uncertainty needs explicit human adjudication")
-    reviewed = copy.deepcopy(package)
-    reviewed["status"] = "human_reviewed"
-    reviewed["humanReview"] = {
-        "status": "approved", "humanApproval": True,
-        "reviewedBy": worksheet["reviewedBy"].strip(),
-        "reviewedAt": worksheet["reviewedAt"],
-        "fullPlayback": "approved",
-    }
-    reviewed.pop("downstreamInvalidationKey")
-    reviewed["downstreamInvalidationKey"] = identity.json_sha256(reviewed)
     validate(reviewed, "sermon-target-language-audio-package-v1.schema.json")
     receipt = {
         "schemaVersion": "sermon-target-language-audio-human-review-receipt-v2",
@@ -161,9 +180,7 @@ def approve(package: dict, screening: dict, worksheet: dict, *, publication_exce
         "checks": worksheet["checks"],
         "issues": [],
     }
-    receipt_schema = "sermon-target-language-audio-human-review-receipt-v2"
     if publication_exception is not None:
-        receipt_schema = "sermon-target-language-audio-human-review-receipt-v3"
         receipt["schemaVersion"] = receipt_schema
         receipt["publicationException"] = publication_exception
     validate(receipt, receipt_schema + ".schema.json")

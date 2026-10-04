@@ -3,6 +3,7 @@ import unittest
 
 from scripts import review_target_language_audio as subject
 from scripts import stage_formal_multilingual_dev as stage
+from scripts import sermon_sentence_interpretation as identity
 
 
 SHA = "a" * 64
@@ -97,6 +98,40 @@ class AudioReviewTests(unittest.TestCase):
         exception["humanApproval"] = False
         with self.assertRaises(ValueError):
             subject.approve(package, screening, worksheet, publication_exception=exception)
+
+    def test_v4_exception_binds_independent_locale_source_candidate_package_and_track(self):
+        package, screening = fixture()
+        package["targetLocale"] = screening["targetLocale"] = "es"
+        worksheet = subject.prepare(package, screening)
+        checks = {name: "approved" for name in subject.CHECKS}
+        checks["synchronization"] = "not_run"
+        worksheet.update(decision="approved", reviewedBy="user",
+                         reviewedAt="2026-10-04T16:00:00Z", fullPlayback="approved",
+                         videoSync1x="not_run", checks=checks)
+        worksheet["asrAdjudications"][0].update(decision="approved", evidence="Full audio review completed.")
+        expected_audio = copy.deepcopy(package)
+        expected_audio["status"] = "human_reviewed"
+        expected_audio["humanReview"] = {"status": "approved", "humanApproval": True,
+            "reviewedBy": "user", "reviewedAt": worksheet["reviewedAt"], "fullPlayback": "approved"}
+        expected_audio.pop("downstreamInvalidationKey")
+        expected_audio["downstreamInvalidationKey"] = identity.json_sha256(expected_audio)
+        reviewed_hash = identity.json_sha256(expected_audio)
+        exception = {"schemaVersion": "sermon-video-sync-publication-exception-v2",
+                     "scope": "publish_reviewed_audio_with_video_sync_not_run", "targetLocale": "es",
+                     "humanApproval": True, "userDecision": "接受，先发布并如实保留未验收状态",
+                     "recordedAt": "2026-10-04T16:00:00Z",
+                     "englishSourcePackageJsonSha256": SHA,
+                     "targetLanguageCandidateJsonSha256": SHA,
+                     "targetLanguageAudioPackageJsonSha256": reviewed_hash,
+                     "trackSha256": TRACK}
+        reviewed, receipt = subject.approve(package, screening, worksheet, publication_exception=exception)
+        self.assertEqual(receipt["schemaVersion"], "sermon-target-language-audio-human-review-receipt-v4")
+        self.assertEqual(receipt["videoSync1x"], "not_run")
+        stage.validate_audio_screening_review(reviewed, receipt, screening)
+        altered = copy.deepcopy(receipt)
+        altered["publicationException"]["targetLocale"] = "ko"
+        with self.assertRaisesRegex(stage.StageError, "locale-bound"):
+            stage.validate_audio_screening_review(reviewed, altered, screening)
 
     def test_legacy_receipt_cannot_clear_asr_review_queue(self):
         package, _ = fixture()

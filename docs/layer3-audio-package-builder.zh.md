@@ -30,4 +30,6 @@
 
 `--anchor-exception-receipt` 接收独立的 `sermon-human-anchor-exception-receipt-v1`。它仅允许本次中文、唯一 `0-s202` 的完整经文 9.199951 秒锚点，在源文件和锚点 hashes 均未改变且用户明确授权时继续构包。原问题、上游包及其 hashes 保留；输出包旁的 `.anchor-exception.json` 绑定最终音频包与人工例外，不将问题改写为机器通过。
 
-`review_target_language_audio.py approve --publication-exception <receipt>` 的音频人审 v3 路径只接受独立、精确音轨绑定的中文发布例外。用户须明确接受先发布且视频同步尚未单独验收；输出 `videoSync1x=not_run`、`checks.synchronization=not_run`，保留全部 ASR 复核项的人工决定。未传例外时仍按原 v2 合同要求 1 倍速视频同步批准。发布例外不证明设备、视频同步或现场验收。
+`review_target_language_audio.py approve --publication-exception <receipt>` 保留 v3 中文例外合同，并新增 v4 多语言例外合同。v3 仍只接受精确绑定的中文音轨；v4 每张收据只绑定一个 `zh-Hans`、`ko` 或 `es` locale，以及该 locale 的源包、候选译文、审核音频包和音轨 hash。两者都要求用户明确接受先发布且视频同步尚未单独验收，输出 `videoSync1x=not_run`、`checks.synchronization=not_run`，保留完整播放、人审及全部 ASR 复核项决定。没有例外收据时仍按 v2 合同要求 1 倍速视频同步批准。发布例外不证明设备、视频同步或现场验收。
+
+完整经文锚点例外 v1 保持中文专用。新增 v2 只覆盖同一个 `0-s202` 完整经文句及其单一 `clause_unit_exceeds_target_without_safe_boundary` 问题；按 locale 分别绑定英语源包、锚点清单和候选译文的文件及规范 JSON hash。它不替其他锚点问题或其他 locale 生成批准，也不改变 ASR 和完整音频审核门槛。

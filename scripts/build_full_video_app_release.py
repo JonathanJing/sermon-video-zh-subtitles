@@ -89,6 +89,11 @@ def checked_review(path: Path, candidate: dict, candidate_sha: str, locale: str)
 
 def static_page(content: dict, locale: str, page_id: str) -> str:
     esc = html.escape
+    total_seconds = int(content["durationSeconds"])
+    hours, remainder = divmod(total_seconds, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    duration = (f"{hours}:{minutes:02d}:{seconds:02d}" if hours
+                else f"{minutes}:{seconds:02d}")
     outlines = "".join(
         f"<li>{esc(item if isinstance(item, str) else item['title'] + ': ' + item['body'])}</li>"
         for item in content["outline"])
@@ -106,7 +111,7 @@ def static_page(content: dict, locale: str, page_id: str) -> str:
             "small{color:#52606d}</style></head><body>"
             f"<header><small>{esc(content['series'])} · {esc(content['speaker'])}</small>"
             f"<h1>{esc(content['title'])}</h1><p>{esc(content['scripture'])}</p>"
-            "<p>对应完整 31:31 讲道视频；此处为已批准完整阅读稿。</p></header>"
+            f"<p>对应完整 {duration} 讲道视频；此处为已批准完整阅读稿。</p></header>"
             f"<aside><p>{esc(content['summary'])}</p><ol>{outlines}</ol></aside>"
             f"<main aria-label=\"已批准完整文稿\">{paragraphs}</main>"
             "<footer><small>根据讲道视频制作的已审核译文；配音另使用已审核短口播稿。"
@@ -137,7 +142,8 @@ def prepare(args: argparse.Namespace) -> dict:
     require(source["status"] == "ready_for_translation", "English source is not approved")
     source_sha = stage.canonical_sha(source)
     locales = tuple(getattr(args, "locales", None) or LOCALES)
-    require(locales in (LOCALES, ("zh-Hans",)), "Only existing three locales or Chinese are supported")
+    require(bool(locales) and len(locales) == len(set(locales))
+            and set(locales) <= set(LOCALES), "Release locales must be a nonempty unique supported subset")
     if getattr(args, "source_date_label", False):
         require(locales == ("zh-Hans",), "Date-only metadata is Chinese-only")
         metadata = {"schemaVersion": "sermon-source-date-label-v1", "date": args.date,
@@ -147,7 +153,7 @@ def prepare(args: argparse.Namespace) -> dict:
     else:
         require(args.metadata_approval and args.metadata_proposal, "Approved metadata is required")
         metadata = formal_assets.checked_metadata(args.metadata_approval, args.metadata_proposal,
-                                                  args.page_id, args.date)
+                                                  args.page_id, args.date, locales)
     maps = {name: assignment_map(getattr(args, name), locales)
             for name in ("full_candidate", "full_review_receipt", "spoken_candidate",
                          "spoken_review_receipt", "audio_package", "audio_review_receipt",
@@ -263,11 +269,12 @@ def prepare(args: argparse.Namespace) -> dict:
                                 "fullCandidateSha256": full_sha,
                                 "spokenCandidateSha256": spoken_sha,
                                 "audioPackageSha256": audio_sha}
+        display_locale = "zh-Hans" if "zh-Hans" in locales else locales[0]
         manifest = {"schemaVersion": "sermon-dual-script-app-preparation-v1",
                     "status": "candidate_not_deployed", "pageId": args.page_id,
                     "date": args.date, "englishSourcePackageJsonSha256": source_sha,
                     "metadataApprovalJsonSha256": stage.canonical_sha(metadata),
-                    "title": read(maps["full_content"]["zh-Hans"])["title"],
+                    "title": read(maps["full_content"][display_locale])["title"],
                     "releases": releases,
                     "assets": sorted([asset for locale in locales
                                       for asset in read(public / releases[locale]["releasePath"].lstrip("/"))["assets"]],
@@ -284,11 +291,12 @@ def verified_assets(prepared: Path) -> tuple[dict, list[dict]]:
     manifest = read(prepared / "preparation-manifest.json")
     require(manifest.get("schemaVersion") == "sermon-dual-script-app-preparation-v1"
             and manifest.get("status") == "candidate_not_deployed"
-            and set(manifest["releases"]) in ({"zh-Hans"}, set(LOCALES)), "Invalid preparation manifest")
+            and bool(manifest["releases"])
+            and set(manifest["releases"]) <= set(LOCALES), "Invalid preparation manifest")
     public = prepared / "public"
     assets = manifest["assets"]
     require(len(assets) == 4 * len(manifest["releases"]) and len({a["path"] for a in assets}) == len(assets),
-            "Expected twelve distinct page/content/audio/caption assets")
+            "Expected four distinct page/content/audio/caption assets per locale")
     for row in assets:
         path = public / row["path"].lstrip("/")
         require(path.is_file() and digest(path) == row["sha256"],
@@ -346,7 +354,7 @@ def seal(args: argparse.Namespace) -> dict:
                  if row.get("status") == "pass"}
                 == {(row["path"], row["sha256"]) for row in assets}
             and len(receipt["assets"]) == len(assets),
-            "HTTP receipt does not verify exactly the twelve published assets")
+            "HTTP receipt does not verify exactly the prepared published assets")
     require(not args.out.exists(), "Sealed output already exists")
     scratch = Path(tempfile.mkdtemp(prefix=f".{args.out.name}-", dir=args.out.parent))
     try:
@@ -374,7 +382,8 @@ def seal(args: argparse.Namespace) -> dict:
                               "title": manifest["title"],
                               "sourceLocale": "en",
                               "sourceIdentitySha256": manifest["englishSourcePackageJsonSha256"],
-                              "defaultTargetLocale": "zh-Hans", "targets": targets}]}
+                              "defaultTargetLocale": "zh-Hans" if "zh-Hans" in targets else next(locale for locale in LOCALES if locale in targets),
+                              "targets": targets}]}
         validate(catalog, "sermon-multilingual-catalog-v3.schema.json")
         write(public / "multilingual-v3.json", catalog)
         report = {"schemaVersion": "sermon-dual-script-app-seal-v1",

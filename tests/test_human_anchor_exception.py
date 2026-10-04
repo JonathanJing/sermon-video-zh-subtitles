@@ -38,8 +38,10 @@ class AnchorExceptionTests(unittest.TestCase):
         self.paths["anchor_exception_receipt"].write_text(json.dumps(self.receipt))
 
     def validate(self, locale="zh-Hans"):
-        return subject.validate_anchor_exception(self.source, self.anchor,
-                                                  {"targetLocale": locale}, self.paths)
+        candidate = {"targetLocale": locale, "groups": []}
+        self.paths["candidate"] = Path(self.tmp.name) / "candidate.json"
+        self.paths["candidate"].write_text(json.dumps(candidate))
+        return subject.validate_anchor_exception(self.source, self.anchor, candidate, self.paths)
 
     def test_accepts_bound_authorization_without_mutating_inputs(self):
         before = copy.deepcopy((self.source, self.anchor))
@@ -71,3 +73,22 @@ class AnchorExceptionTests(unittest.TestCase):
         self.anchor["issues"].append(copy.deepcopy(self.issue))
         with self.assertRaises(ValueError):
             self.validate()
+
+    def test_v2_binds_locale_and_exact_candidate_hashes(self):
+        candidate = {"targetLocale": "ko", "groups": [{"id": "g"}]}
+        candidate_path = Path(self.tmp.name) / "candidate.json"
+        candidate_path.write_text(json.dumps(candidate))
+        self.paths["candidate"] = candidate_path
+        self.receipt.update(schemaVersion="sermon-human-anchor-exception-receipt-v2",
+                            userDecision="授权本次例外，立即发布该语言", targetLocale="ko",
+                            candidate={"sha256": subject.file_sha256(candidate_path),
+                                       "jsonSha256": subject.json_sha256(candidate)})
+        self.write_receipt()
+        self.assertTrue(subject.validate_anchor_exception(self.source, self.anchor, candidate, self.paths))
+        with self.assertRaises(ValueError):
+            subject.validate_anchor_exception(self.source, self.anchor,
+                                              {**candidate, "targetLocale": "es"}, self.paths)
+        self.receipt["candidate"]["sha256"] = "0" * 64
+        self.write_receipt()
+        with self.assertRaises(ValueError):
+            subject.validate_anchor_exception(self.source, self.anchor, candidate, self.paths)
