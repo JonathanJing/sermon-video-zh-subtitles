@@ -152,6 +152,50 @@ class SentenceInterpretationShadowTests(unittest.TestCase):
                 with self.subTest(invalid=invalid), self.assertRaises(ValueError):
                     subject.prepare_shadow(source, root / "invalid", **kwargs)
 
+    def test_v2_multiple_splits_schema_binding_and_immutable_replay(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "segments.json"
+            write_segments(source, long_without_boundary=True)
+            segments = json.loads(source.read_text())
+            segments[0]["wordTimes"][2]["text"] = "three?’"
+            segments[0]["wordTimes"][5]["text"] = "six!\""
+            segments[0]["text"] = " ".join(w["text"] for w in segments[0]["wordTimes"])
+            source.write_text(json.dumps(segments))
+            original = source.read_bytes()
+            ids = [f"block-00-w{i:04}" for i in range(1, 10)]
+            decision = {"action": "split_after_words", "sourceWordIds": ids,
+                        "afterWordIds": [ids[2], ids[5]], "reason": "Keep each clause intact",
+                        "evidenceRef": "judge.json#sentence-1"}
+            payload = {"schemaVersion": "sermon-anchor-boundary-overrides-v2",
+                       "alignedSegmentsSha256": hashlib.sha256(original).hexdigest(),
+                       "overrides": {"block-00-s001": decision}}
+            evidence = root / "overrides.json"
+            evidence.write_text(json.dumps(payload))
+            kwargs = dict(max_unit_seconds=3.0, boundary_overrides_path=evidence)
+            result = subject.prepare_shadow(source, root / "shadow", **kwargs)
+            self.assertEqual(result, subject.prepare_shadow(source, root / "shadow", **kwargs))
+            self.assertEqual(source.read_bytes(), original)
+            self.assertFalse(result["productionTranslationEligible"])
+            self.assertEqual(result["humanReview"], "pending")
+            manifest = json.loads(Path(result["artifacts"]["anchorManifest"]["path"]).read_text())
+            self.assertEqual(len(manifest["sourceUnits"]), 3)
+            for value, name in ((payload, "sermon-anchor-boundary-overrides-v2"),
+                                (manifest, "sermon-sentence-anchor-manifest-v2"),
+                                (result, "sermon-sentence-interpretation-shadow-v1")):
+                schema = json.loads((Path(__file__).parents[1] / "schemas" / f"{name}.schema.json").read_text())
+                self.assertEqual(list(Draft202012Validator(schema).iter_errors(value)), [])
+            schema = json.loads((Path(__file__).parents[1] / "schemas" /
+                                 "sermon-anchor-boundary-overrides-v2.schema.json").read_text())
+            for changes in ({"afterWordIds": []}, {"afterWordIds": [ids[2], ids[2]]},
+                            {"afterWordId": ids[2]}, {"humanApproval": True}):
+                invalid = {**payload, "overrides": {"block-00-s001": {**decision, **changes}}}
+                self.assertTrue(list(Draft202012Validator(schema).iter_errors(invalid)))
+            decision["sourceWordIds"] = ids[::-1]
+            evidence.write_text(json.dumps(payload))
+            with self.assertRaises(ValueError):
+                subject.prepare_shadow(source, root / "invalid", **kwargs)
+
     def test_changed_source_uses_new_identity_directory(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
