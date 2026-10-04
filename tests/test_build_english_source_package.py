@@ -311,7 +311,9 @@ class EnglishSourcePackageTests(unittest.TestCase):
         self.assertEqual(package["anchors"]["issueCount"], 1)
         self.assertEqual(package["evidence"]["machineJudge"], judge_artifact)
         self.assertEqual(without_human_review["status"], "blocked")
-        self.assertEqual(len(without_human_review["issues"]), 1)
+        self.assertTrue(any(item.get("stage") == "anchors"
+                            and item.get("detail") == self.manifest["issues"][0]
+                            for item in without_human_review["issues"]))
 
     def test_bound_long_clause_remains_blocked_when_selected_sentence_fails(self):
         review_path, judge_artifact = self.prepare_individual_long_clause_review(
