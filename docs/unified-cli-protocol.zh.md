@@ -166,3 +166,79 @@ schema 允许、实现必须拒绝：
 - `study_product` 的人工收据还没有独立 schema 时，ingest 仍按第 2 节拒绝。
 
 通过的示例在 `tests/fixtures/unified-cli/`。对应测试是 `tests/test_unified_cli_protocol_fixtures.py`。
+
+- `transport` 缺省时退出码 4，`code=transport_required`，新增付费为 0。
+- `transport=fixture` 且没有 `fixtureSetId` 时退出码 4，`code=fixture_set_required`。
+- `transport=provider` 不因本文获得付费或发布授权。
+
+<a id="mockup-180s-20261005"></a>
+
+## 7. 下周的三分钟 mockup
+
+2026-10-05 这一周用已经核验过的三分钟片段，演练第 2 至第 5 节的命令、流程、产物和日志。样本仍是 2026-10-01 诊断里的同一媒体，不重新下载，也不换成整篇证道。
+
+| 项 | 值 |
+|---|---|
+| 媒体 SHA-256 | `79bada8f2e960adb470a146f183449db433308b53c20d03ea9c7e2e0a66e906b` |
+| 测得时长 | 180.013167 秒。当天以 `ffprobe` 复核；对不上就停 |
+| 窗口 | 原素材 60–240 秒，`timeBase=source_media` |
+| 来源日期 | `2026-09-27`。`weeklyScheduleDate` 为空，不改成下一周的周日 |
+| 类别 | `diagnostic_clip` |
+| 语言 | `zh-Hans`、`ko`、`es` |
+| 机器形状 | 39 个英文单元，每语 13 组。这是上次诊断的记录，不是新的通过线 |
+| 旧 run | `1a4c7ad2b6cb87617bc8d61384fbd754cdf179fb573ea13b1eb5a8c6362df160` 只作对照，不复用为本次 `productionRunId` |
+| 页面 | 新的 `mockup-20261005-dev-180s`，不覆盖 `dryrun-20261001-dev-full-180s` |
+| 传输 | `transport=fixture`，`fixtureSetId=dev-180s-20261001` |
+| 范围 | `canaryScope` 与 `activeScope` 都是 `layer2_machine_candidate`。`finalScope` 仍是 `dual_production_verified`。听审和发布没有在上次诊断里通过，本次也不把范围写成已经听审 |
+
+来源链接哈希上次为空。本次不得把链接写成已核验。政策、提示词、插件和代码闭包的哈希在演练当天从冻结文件计算。[mockup-180s-manifest.json](../tests/fixtures/unified-cli/mockup-180s-manifest.json) 只证明字段形状，里面的政策哈希和闭包哈希是占位，不是这次的 planHash。预算上限写 0，因为 fixture 回放不新增付费。
+
+`sermon` 命令还没有实现。命令不存在时，本次 mockup 不开始，也不改走旧 DAG 或 Prefect。fixture 目录里缺了该媒体哈希的响应时，退出码 4，`code=fixture_response_missing`，新增付费为 0，不改读密钥、不调用模型。
+
+### 预检
+
+`sermon run plan --manifest run.json --json` 使用窗口批准为空的清单。期望退出码 4，`plan.newPaidRequests=0`，`plan.planHash=null`，blocker 为 `window_approval_required`。不建 job，不写冻结清单。
+
+这是必须出现的结果。补上一个布尔值或自由文本不能让它变成 0。
+
+### 流程演练
+
+同一媒体哈希，fixture 提供机器响应。窗口、英文、译文和听审收据都保持未人工批准。`review` 停在 `human_pending` 或 `machine_pending`，`productionEligible` 保持 false。
+
+| 顺序 | 命令 | 走到的 stage | 期望 |
+|---|---|---|---|
+| 1 | `run submit` | 冻结清单 | 退出码 0，`submit.frozen=true`，返回 `jobId`。`planHash` 与当天重算一致，否则退出码 7 |
+| 2 | `job status` | `media_verify` | `artifact=verified`，引用上面的媒体哈希。`publication=not_started`，`device=not_checked` |
+| 3 | `job wait` 然后 `job status` | `window_review`、`asr`、`english_source` | 机器包是 `sermon-english-source-package-v1`。没有绑定当前哈希的人审收据时，`translationEligible` 不得为 true |
+| 4 | `layer submit --layer 2` | `layer2_admit`、`layer2_group` | 三语读到同一英文包哈希。每语 13 个 group job。组内记录 Astra 响应，然后 Sol 响应，然后插件收据 |
+| 5 | `job status` | `translation_review` | 候选是 `sermon-target-language-candidate-v2`。`runSummary.outcome=blocked`，`translation_review_required`。job 的机器 scope 可以成功 |
+| 6 | `layer submit --layer 3` | `layer3_prepare` | 没有绑定当前候选哈希的译文人审收据。退出码 4，不写 v2 speech job，不合成 |
+| 7 | `job status` | `listen_review` | 上次留下的预览音频若仍在，只能记为 `present_unverified`，`packageStatus=preview_only`。没有筛查收据就不得进入 `audio_screened`。`review` 保持 `human_pending` |
+| 8 | `review ingest` | `study_product` | `decision=rejected`，`reason=study_review_schema_required`，不写收据 |
+| 9 | `layer submit --layer 4` | `publish_endpoint` | 人审和读回都缺时退出码 4。`publication` 保持 `not_started`。传入一份写着 pass 的 observation 也不提升 |
+
+`job status` 在第 5 步的形状与 [result-job-status.json](../tests/fixtures/unified-cli/result-job-status.json) 相同：一个 group job 可以成功，整次 run 仍然 blocked。
+
+### 日志
+
+每次获准尝试有自己的 `traceId` 和 `attemptId`。事件都要过 `sermon-unified-production-event-v1`。查询带上本次 `productionRunId`、`runRevision` 和其中一个 `traceId`。
+
+fixture 回放的 `paid.newPaidRequests=0`，`cacheHit=false`，`freshApiAttempts=0`。回放不是缓存命中，也不是新的付费请求。`causedBy` 指向 fixture 响应的标识。缺了因果边，关键路径记 incomplete，不用上次诊断的 2469 条事件补成一条路径。
+
+再写入第二条 `traceId` 不同、`productionRunId` 相同的事件。按 run id 汇总必须仍是两次尝试。不得把文件首尾拼成一个 span。
+
+### 必须失败
+
+| 改动 | 期望 |
+|---|---|
+| 媒体哈希改 1 位后再 `layer submit --layer 2` | `layer2_admit` 拒绝，新增付费 0 |
+| 只改 `provenance.hostname` | planHash 不变，已有 fixture job 仍有效 |
+| 只改 `executionAdmission.closureSha256` | 不派发。退出码 7，或 `blocked` 且新增付费 0 |
+| 一个组的 fixture 标为需要返工 | 只有该组新修订。其余组 `freshApiAttempts=0` |
+| `review ingest` 只提交 `{"approved": true}` | 退出码 2 或 4。`humanApproval` 仍为 false |
+| `job wait --timeout 30` 到期 | 退出码 3。job 不取消 |
+| `job cancel` 时已有 fixture 响应 | `process=cancel_requested` 或 `cancelled` 分开记录。不把未知响应当成没执行 |
+
+### 本次不算完成
+
+`dual_production_verified`、iOS 正式、Firebase 正式、真机、现场、PDF、商店二进制，以及任何提速结论。Chrome 或本地播放如果另做，只记在自己的字段里，不改变上面的 blocked。预算数字只是清单上限，不是账单，也不是花费授权。

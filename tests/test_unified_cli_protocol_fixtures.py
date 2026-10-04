@@ -26,6 +26,7 @@ class UnifiedCliProtocolFixtureTests(unittest.TestCase):
     def test_examples_match_their_schemas(self):
         cases = [
             ("sermon-unified-run-manifest-v1.schema.json", "run-manifest.json"),
+            ("sermon-unified-run-manifest-v1.schema.json", "mockup-180s-manifest.json"),
             ("sermon-unified-job-v1.schema.json", "job.json"),
             ("sermon-cli-result-v1.schema.json", "result-job-status.json"),
             ("sermon-cli-result-v1.schema.json", "result-plan.json"),
@@ -60,6 +61,21 @@ class UnifiedCliProtocolFixtureTests(unittest.TestCase):
         document["layer"] = "layer1"
         errors = list(_validator("sermon-unified-job-v1.schema.json").iter_errors(document))
         self.assertTrue(errors)
+
+    def test_mockup_keeps_the_known_180s_clip_and_fixture_transport(self):
+        document = _load("mockup-180s-manifest.json")
+        self.assertEqual(
+            document["source"]["mediaSha256"],
+            "79bada8f2e960adb470a146f183449db433308b53c20d03ea9c7e2e0a66e906b",
+        )
+        self.assertEqual(document["source"]["window"]["startSeconds"], 60)
+        self.assertEqual(document["source"]["window"]["endSeconds"], 240)
+        self.assertIsNone(document["source"]["window"]["approvalReceiptSha256"])
+        self.assertEqual(document["locales"], ["zh-Hans", "ko", "es"])
+        self.assertEqual(document["transport"], "fixture")
+        self.assertEqual(document["activeScope"], "layer2_machine_candidate")
+        self.assertEqual(document["finalScope"], "dual_production_verified")
+        self.assertEqual(document["budget"]["limitMicroUsd"], 0)
 
     def test_final_scope_cannot_shrink(self):
         document = _load("run-manifest.json")

@@ -43,6 +43,8 @@
     },
     "budget": { "$ref": "#/$defs/budget" },
     "executionAdmission": { "$ref": "#/$defs/executionAdmission" },
+    "transport": { "enum": ["fixture", "provider"] },
+    "fixtureSetId": { "type": "string", "minLength": 1 },
     "provenance": { "$ref": "#/$defs/provenance" },
     "planHash": { "$ref": "#/$defs/sha256" },
     "manifestSha256": { "$ref": "#/$defs/sha256" }
