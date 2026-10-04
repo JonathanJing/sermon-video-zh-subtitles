@@ -1,6 +1,7 @@
 """Fixed L2 orchestration over actual validators/producers; all model replies are synthetic."""
 from contextlib import contextmanager
 import copy
+import hashlib
 import json
 from pathlib import Path
 import subprocess
@@ -12,6 +13,8 @@ from unittest.mock import patch
 
 from scripts import canonical_layer2_controller as subject
 from scripts import canonical_durable_jobs as durable
+from scripts import produce_target_language_candidate as producer
+from scripts import run_target_language_models as models
 from scripts import sermon_accounting as accounting
 from scripts import weekly_pipeline_report as weekly
 from scripts import sermon_workflow_jobs as jobs
@@ -278,6 +281,95 @@ class CanonicalLayer2ControllerTests(unittest.TestCase):
         self.config_data = copy.deepcopy(base)
         self.config_data['locales']['zh-Hans']['outputDirectory'] = '.'; self.save_config()
         with self.assertRaises(ValueError): subject.load_configuration(self.path)
+
+    def test_partial_repair_is_source_bound_and_reuses_completed_groups(self):
+        source, anchor, policy = (self.fixture.fixture.source,
+                                  self.fixture.fixture.anchor,
+                                  self.fixture.fixture.policy)
+        request = producer.prepare_request(source, anchor, policy)
+        plan = models.group_plan(request, anchor)
+        prior = self.root / 'outputs' / 'prior-incomplete'
+        prior.mkdir(parents=True)
+        models.save_new(prior / 'request.json', request)
+        old_groups = self.fixture.fixture.evidence['groups']
+        self.assertEqual(len(plan), len(old_groups))
+        prior_evidence = copy.deepcopy(self.fixture.fixture.evidence)
+        prior_evidence.update({key: value for key, value in request.items()
+                               if key not in {'groups', 'generation'}})
+        prior_evidence['generation'] = copy.deepcopy(self.fixture.fixture.evidence['generation'])
+        prior_evidence['groups'] = copy.deepcopy(old_groups)
+        failed = old_groups[0]
+        for index, group in enumerate(old_groups, 1):
+            group_id, source_unit_ids = (plan[index - 1]['translationGroupId'],
+                                         plan[index - 1]['sourceUnitIds'])
+            prior_row = prior_evidence['groups'][index - 1]
+            prior_row['translationGroupId'] = group_id
+            prior_row['sourceUnitIds'] = source_unit_ids
+            prior_row['coverage'][0]['sourceUnitId'] = source_unit_ids[0]
+            if index == 1:
+                prior_row['semanticReview']['status'] = 'fail'
+                prior_row['semanticReview']['issues'] = ['fixture failure']
+                prior_row['semanticReview']['uncertainty'] = ['fixture uncertainty']
+            for role, suffix, request_field in (
+                    ('translator', 'astra', 'translatorRequestId'),
+                    ('reviewer', 'sol', 'reviewerRequestId')):
+                result = {key: copy.deepcopy(group[key]) for key in
+                          ('translationGroupId', 'sourceUnitIds', 'targetUtterances', 'coverage')}
+                result['translationGroupId'] = group_id
+                result['sourceUnitIds'] = source_unit_ids
+                for coverage in result['coverage']:
+                    coverage['sourceUnitId'] = source_unit_ids[0]
+                if role == 'reviewer':
+                    result['semanticReview'] = copy.deepcopy(group['semanticReview'])
+                cache = {'payloadSha256': 'a'*64, 'requestId': group[request_field],
+                         'model': 'gpt-6-astra' if role == 'translator' else 'gpt-6-sol',
+                         'result': result}
+                if role == 'reviewer' and index == 1:
+                    cache['result']['semanticReview']['status'] = 'fail'
+                    cache['result']['semanticReview']['issues'] = ['fixture failure']
+                    cache['result']['semanticReview']['uncertainty'] = ['fixture uncertainty']
+                models.save_new(prior / f'group-{index:04d}-{suffix}.json', cache)
+        models.save_new(prior / 'evidence.json', prior_evidence)
+        failed_cache = prior / 'group-0001-sol.json'
+        brief_path = self.root / 'partial-repair.json'
+        brief = {
+            'schemaVersion': models.PARTIAL_REPAIR_SCHEMA,
+            'targetLocale': request['targetLocale'],
+            'englishSourcePackageJsonSha256': request['englishSourcePackageJsonSha256'],
+            'anchorManifestSha256': request['anchorManifestSha256'],
+            'translationPolicySha256': request['translationPolicySha256'],
+            'groups': [{
+                'translationGroupId': plan[0]['translationGroupId'],
+                'sourceUnitIds': plan[0]['sourceUnitIds'],
+                'failedRole': 'reviewer',
+                'failedCacheSha256': hashlib.sha256(failed_cache.read_bytes()).hexdigest(),
+                'failureReason': 'fixture failure',
+                'instruction': 'Resolve the source-bound ambiguity using the exact contextual evidence.',
+            }],
+        }
+        models.save_new(brief_path, brief)
+        self.config_data['locales']['zh-Hans']['partialRepair'] = {
+            'reuseFrom': 'outputs/prior-incomplete', 'brief': 'partial-repair.json'}
+        self.save_config()
+        config = subject.load_configuration(self.path)
+        self.assertIsNotNone(config.lanes['zh-Hans']['partialRepair'])
+        original_config_sha = config.sha256
+        original_brief = copy.deepcopy(brief)
+        brief['groups'][0]['instruction'] += ' Keep the verse reference as spoken.'
+        brief_path.write_text(json.dumps(brief))
+        self.assertNotEqual(subject.load_configuration(self.path).sha256, original_config_sha)
+
+        # Rebuild the brief bytes and matching cache binding before dispatch.
+        brief_path.write_text(json.dumps(original_brief))
+        with self.active() as (config, code, key, folder):
+            result = self.execute(config, code, key)
+            candidate = producer._load(self.output / 'candidate.json')
+            self.assertEqual(candidate['status'], 'machine_review_pass_human_review_pending')
+            self.assertEqual(len(self.calls), 2)
+            self.assertTrue((self.output / 'group-0002-astra.json').is_file())
+            self.assertTrue((self.output / 'group-0002-sol.json').is_file())
+            self.assertEqual(result['candidateJsonSha256'], jobs._digest(candidate))
+            jobs._write_state(folder, key, 'succeeded')
 
     def test_running_job_applies_one_locale_capacity_without_new_dispatch(self):
         with self.active() as (config, _, _, _):

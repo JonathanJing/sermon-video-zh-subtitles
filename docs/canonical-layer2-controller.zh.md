@@ -36,6 +36,15 @@ inspectionConfig 使用现有 v1 Source/Text inspection 合同，已批准 Sourc
 inspectionConfig 而不列入本批执行 lanes。每个 lane 输出、输入及 job root 不得互相覆盖。
 配置不能给任意 argv、model、secret 或 approval override。
 
+失败组可在新 lane 输出目录启用受绑定的 partial repair：在 lane 增加
+`"partialRepair": {"reuseFrom": "prior-incomplete-locale-run", "brief": "failed-groups.json"}`。
+旧 run 的 `request.json` 和 brief 内容都进入 execution configuration identity；repair brief
+还必须逐组绑定 locale、source/anchor/policy hashes、失败角色、失败缓存 SHA 与修订指令。
+worker 重跑被标记组的 Astra → Sol 请求，从完整旧 evidence/cache 带入未变更且通过的组，之后
+重跑语言插件与 candidate admission。输出必须是独立新目录；源 run、失败缓存和原始失败 job
+receipt 保持不变。未知模型请求仍需先 reconciliation；partial repair 不允许复用未完成或不确定
+的请求。
+
 ```sh
 # 默认只读：不建 job/lock/output，不读取 API key。
 python scripts/canonical_layer2_controller.py tick --config /absolute/execution.json
@@ -65,17 +74,17 @@ job evidence。正式 CLI 只在实际生产 gate 后读取既有 `OPENAI_API_KE
 付费金额、翻译内容质量或现场验收结论。候选 admission 的独立 deterministic 计时 run
 消费已完成模型 evidence，不伪造跨进程四层关键路径。
 
-仍未完成：Layer 1 生产 dispatch、Layer 3/4 adapters、显式 unknown-outcome reconciliation/
-版本迁移、局部失败 repair 接线、完整跨进程 DAG/usage、全局资源与 stage heartbeat、
+仍未完成：Layer 1 生产 dispatch、Layer 3/4 adapters、通用版本迁移、完整跨进程 DAG/usage、
+全局资源与 stage heartbeat、
 生产 bounded responder、完整 Stage 0 及按顺序的真实片段/10分钟/整篇/第二周和人工签字。
 一般 canonical planner 仍 `dispatchEnabled=false`；只有该显式 opt-in 固定 L2 adapter 获得
 上述有限执行路径。三层架构与所有质量/批准 gate 不变。
 
 ## 已有候选的显式恢复
 
-若 owner 已退出但当前候选完整且通过原 validator，可用 [固定 L2 产物对账](canonical-layer2-reconciliation.zh.md) 显式绑定当前 stateRevision。它保留命令原始失败/未知状态并新增独立不可变收据，不自动重试，不消除缺失产物或未知付费调用的门槛。没有有效候选的失败仍阻塞；跨版本与 group repair 继续未完成。
+若 owner 已退出但当前候选完整且通过原 validator，可用 [固定 L2 产物对账](canonical-layer2-reconciliation.zh.md) 显式绑定当前 stateRevision。它保留命令原始失败/未知状态并新增独立不可变收据，不自动重试，不消除缺失产物或未知付费调用的门槛。没有有效候选的失败仍阻塞；跨 Layer 1 来源/版本的候选迁移仍未接通。
 
-若候选缺失但原执行的所有模型响应均完整返回，可先用[cache-only 本地恢复](canonical-layer2-cache-recovery.zh.md)重建证据与候选，再独立对账。任何未返回调用继续阻塞；不会扩大重试预算。
+若候选缺失但原执行的所有模型响应均完整返回，可先用[cache-only 本地恢复](canonical-layer2-cache-recovery.zh.md)重建证据与候选，再独立对账。任何未返回调用继续阻塞；不会扩大重试预算。若 Sol 明确标记失败或不确定，使用上述新 revision 的 partial repair brief；不可把失败响应改写成 pass。
 
 ## 运行心跳边界
 

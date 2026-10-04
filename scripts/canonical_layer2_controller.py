@@ -92,9 +92,22 @@ def load_configuration(path):
                    _path(root, inspection.get('anchor'))]
     lanes, plugin_hashes = {}, {}
     for locale, lane in sorted(value['locales'].items()):
-        require(isinstance(lane, dict) and set(lane) == {'outputDirectory', 'plugin'}, 'invalid_execution_lane')
+        require(isinstance(lane, dict) and set(lane) in (
+                    {'outputDirectory', 'plugin'},
+                    {'outputDirectory', 'plugin', 'partialRepair'}), 'invalid_execution_lane')
         output, plugin = (_path(path.parent, lane[key]) for key in ('outputDirectory', 'plugin'))
         require(plugin.is_file() and not _overlap(output, job_root), 'invalid_execution_paths')
+        partial_repair = None
+        if 'partialRepair' in lane:
+            repair = lane['partialRepair']
+            require(isinstance(repair, dict) and set(repair) == {'reuseFrom', 'brief'},
+                    'invalid_partial_repair_configuration')
+            reuse_from, brief = (_path(path.parent, repair[key]) for key in ('reuseFrom', 'brief'))
+            require(reuse_from.is_dir() and (reuse_from / 'request.json').is_file()
+                    and brief.is_file() and not _overlap(output, reuse_from)
+                    and not _overlap(output, brief), 'invalid_partial_repair_paths')
+            partial_repair = {'reuseFrom': reuse_from, 'brief': brief}
+            input_paths.extend((reuse_from / 'request.json', brief))
         inspect_lane = inspection['locales'][locale]
         require(isinstance(inspect_lane, dict), 'invalid_inspection_lane')
         policy = _path(root, inspect_lane.get('policy'))
@@ -102,8 +115,14 @@ def load_configuration(path):
         if 'candidate' in inspect_lane:
             require(_path(root, inspect_lane['candidate']) == candidate, 'candidate_output_path_changed')
         # No execution field can inject an argv/model/secret/approval override.
-        lanes[locale] = {'output': output, 'plugin': plugin, 'policy': policy, 'candidate': candidate}
+        lanes[locale] = {'output': output, 'plugin': plugin, 'policy': policy,
+                         'candidate': candidate, 'partialRepair': partial_repair}
         plugin_hashes[locale] = producer.plugin_implementation_sha256(plugin)
+        if partial_repair:
+            plugin_hashes[locale + '.partialRepair'] = jobs._digest({
+                'reuseRequest': jobs._read(partial_repair['reuseFrom'] / 'request.json'),
+                'brief': jobs._read(partial_repair['brief']),
+            })
         input_paths.extend((plugin, policy))
     outputs = [lane['output'] for lane in lanes.values()]
     require(not any(_overlap(output, path) for output in outputs for path in input_paths)
@@ -296,8 +315,12 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                     progress.progress('model_request')
                     return caller(key, payload)
             model_completion = []
+            repair = lane['partialRepair']
             evidence = models.run_accounted(source, anchor, policy, lane['output'], api_key,
-                                             bound_call, None, lane['plugin'], None, None,
+                                             bound_call, None, lane['plugin'], None,
+                                             repair['reuseFrom'] if repair else None,
+                                             partial_repair_brief=(
+                                                 jobs._read(repair['brief']) if repair else None),
                                              progress_callback=progress.progress, predecessor_spans=[admission_span],
                                              completion_spans=model_completion)
             # Paid results remain recoverable if approval/source/config/code drifted
