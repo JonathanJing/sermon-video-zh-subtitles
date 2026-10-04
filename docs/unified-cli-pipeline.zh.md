@@ -1,6 +1,6 @@
 # 统一 CLI 与持久化执行
 
-本文是每周多语言内容生产的开发说明。实现和验收以本文为准。2026-10-04 的设计草稿原文在提交 `f16007a53932eb5cce9673b1bad084ac76201f7d`，SHA-256 `1cea7a50f3bdd83dd76c356a9b9bc89aabf3136d564026746591e9ddab5288fc`。代码基线为 dev `ecbc92151587c187ebe25cc78a221591cc042842`。
+本文是每周多语言内容生产的开发说明。实现和验收以本文为准。流程、产物和命令的字段合同见 [统一 CLI 协议](unified-cli-protocol.zh.md)。2026-10-04 的设计草稿原文在提交 `f16007a53932eb5cce9673b1bad084ac76201f7d`，SHA-256 `1cea7a50f3bdd83dd76c356a9b9bc89aabf3136d564026746591e9ddab5288fc`。代码基线为 dev `ecbc92151587c187ebe25cc78a221591cc042842`。
 
 本文里的 `sermon` 命令、schema 和 owner 服务都还没有实现。现有脚本、canonical DAG 和 Prefect 诊断不表示这条生产路径已经接通。本文不授予生产执行、付费、声音使用或发布权限，也不宣布已经提速。
 
@@ -72,13 +72,17 @@ stdout 只输出结果对象或约定事件流，诊断走 stderr。所有命令
 
 结果至少分开五个维度：`process`、`artifact`、`review`、`publication`、`device`。job 成功只证明该 scope。locale 汇总本语言的正式门禁。run 只在 manifest 列出的语言、产品和双端目标都满足时完成。unknown 不能被其他成功节点盖掉。
 
+字段和示例以协议里的 `sermon-cli-result-v1` 为准。job 已成功而整次运行仍等人审时，结果像这样：
+
 ```json
 {
   "schemaVersion": "sermon-cli-result-v1",
   "command": "job.status",
+  "requestId": "req-example-001",
+  "subject": {"kind": "job", "id": "job-example-zh-l2"},
   "runId": "run-example-001",
   "runRevision": 3,
-  "stage": "layer2",
+  "stage": "layer2_group",
   "locale": "zh-Hans",
   "outcome": "succeeded",
   "completionScope": "layer2_machine_candidate",
@@ -92,9 +96,10 @@ stdout 只输出结果对象或约定事件流，诊断走 stderr。所有命令
   "runSummary": {
     "outcome": "blocked",
     "completionScope": "dual_production_verified",
-    "blockers": [{"code": "translation_review_required", "locale": "zh-Hans"}]
+    "blockers": [{"code": "translation_review_required", "locale": "zh-Hans", "artifactId": "candidate-example-003"}]
   },
-  "nextActions": ["review.ingest"]
+  "nextActions": ["review.ingest"],
+  "error": null
 }
 ```
 
