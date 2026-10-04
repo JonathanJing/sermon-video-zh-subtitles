@@ -27,7 +27,7 @@
 
 西语插件修订迁移后仍要求 u368 对“六”的前文指向明确，继而定向两次调用。另有 canonical-spoken-v5 的两组数字拼写：brief 明示 Sol pass，但 frozen plugin 拒绝 quince / treinta，选择改回字面数字。该子集新增 **13,610 token / 4 调用**，有直接原因证据；报告不把整轮 26,506 token 都算成误拒成本。正式时长返工后的 38,764 token 标作 plugin repair，缺少充分材料把它全部认定为误拒。
 
-## 相同请求是否重复产生已知费用
+## L2相同请求是否重复产生已知费用
 
 16 个 requestPayloadSha256 在不同 attempt 重复，全部是 formal-layer2-timing 中文首轮失败与后续成功的同一 translator 请求。重复 hash 的“第二次及以后成功且有完整 usage”计数为 **0**；未发现相同 payload 两次成功并分别记录用量。失败尝试 URLError 的费用未知，不能声称未付费；也不能据此给出全供应商账单的重复收费结论。重复响应与重复账本行已通过既有去重口径排除。
 
@@ -111,3 +111,5 @@
 - formal-layer3-prep-v1/spoken-l2-execution-plan-v6/ko.partial-repair-brief.json
 
 当前 scripts/run_target_language_models.py 的 reusable_cache / carry_forward_group 分清未完成请求与完整结果；现行代码只能解释机制，历史执行以账本的 executionIdentity / 保存收据为准。审计没有重放真实模型或擅自重绑生产包。范围外 L1 及对话用量由独立审计处理。
+
+后续 [运行演进专项](../20261004-runtime-evolution-retrospective.zh.md) 对L1原始cache核实了16组重复成功；本报告L2结论不覆盖L1。
