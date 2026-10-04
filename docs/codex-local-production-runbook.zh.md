@@ -66,6 +66,21 @@ shadow receipt 的 `ready_for_model_translation` 只表示自动锚点结构干�
 
 ## 人工范围流程（2026-09-19 代码更新）
 
+### 局部锚点决定的 v2 输入迁移
+
+`prepare_sentence_interpretation_shadow.py --boundary-overrides` 继续接受 v1 的
+`sentenceId: afterWordId`。新的 [v2 输入](../schemas/sermon-anchor-boundary-overrides-v2.schema.json)
+用 `alignedSegmentsSha256` 绑定冻结英文/MFA 文件；每项包含 `action`、完整有序
+`sourceWordIds`、非空 `reason` 和 `evidenceRef`。`split_after_word` 还要求
+`afterWordId`，沿用既有安全切点检查；`retain_sentence` 保留整个父句，不能跨句合并、
+改词或改时间。新决定可来自机器审核，不包含人工批准字段，也不授予人工批准。
+
+v2 决定及证据文件哈希进入新运行 identity；原运行和 v1 文件不原地改写。
+anchor v2 / shadow v1 的 `boundaryOverrides` 增加严格对象分支并继续接受原字符串分支，
+旧产物仍可校验。整句超过既有时长容差时仍保留超长 warning；机器裁判和真实英文人审
+必须按现有门禁共同接纳。合并子单元会使后续编号变化，须重新绑定机审、引文映射与下游包，
+不能沿用旧编号或旧批准。
+
 完整礼拜不再调用模型识别证道起止位置。当前顺序为：下载完整媒体 → ffprobe/完整性核验 → 操作员提供绝对起止时间 → 持久化审批 → 英文转写、中文翻译与双 PDF。纯证道来源沿用独立同视频入口；在归档入口也可人工确认 `0 → 完整片长`。`gpt-transcribe` 仅在后续内容转写等独立阶段使用。
 
 新媒体准备报告使用 `schemaVersion=2`、`stage=source_media_verified`、`boundaryMethod=operator_supplied`，记录实测 `durationSeconds`、`audioSha256`、`audioSizeBytes`，`modelsUsed=[]`，不产生建议范围。审批写入及恢复校验均检查范围未超出实测时长，并继续绑定来源、周次和报告哈希。媒体子报告存为 `timeline/source-media-report.json`。

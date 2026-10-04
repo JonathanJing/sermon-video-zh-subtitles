@@ -62,16 +62,23 @@ def prepare_shadow(
     segments = json.loads(source_path.read_text(encoding="utf-8"))
     if not isinstance(segments, list) or not segments:
         raise ValueError("Frozen MFA-aligned English segments must be a nonempty JSON list")
-    boundary_overrides: dict[str, str] = {}
+    boundary_overrides: dict[str, Any] = {}
     if boundary_overrides_path is not None:
         boundary_overrides_path = boundary_overrides_path.resolve()
         evidence = json.loads(boundary_overrides_path.read_text(encoding="utf-8"))
         if (not isinstance(evidence, dict)
-                or evidence.get("schemaVersion") != "sermon-anchor-boundary-overrides-v1"
+                or evidence.get("schemaVersion") not in {"sermon-anchor-boundary-overrides-v1",
+                                                         "sermon-anchor-boundary-overrides-v2"}
                 or evidence.get("alignedSegmentsSha256") != contract.sha256(source_path)
                 or not isinstance(evidence.get("overrides"), dict)
                 or not evidence["overrides"]):
             raise ValueError("Boundary overrides must bind this aligned English source")
+        if evidence["schemaVersion"] == "sermon-anchor-boundary-overrides-v2":
+            if set(evidence) != {"schemaVersion", "alignedSegmentsSha256", "overrides"}:
+                raise ValueError("Unexpected or missing v2 boundary evidence fields")
+            contract.validate_boundary_overrides(evidence["overrides"], typed_only=True)
+        elif not all(isinstance(value, str) for value in evidence["overrides"].values()):
+            raise ValueError("v1 boundary evidence requires split word IDs")
         boundary_overrides = evidence["overrides"]
 
     identity = {
