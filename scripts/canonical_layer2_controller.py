@@ -27,11 +27,13 @@ from scripts import sermon_accounting as accounting
 from scripts import sermon_workflow_jobs as jobs
 from scripts import sermon_job_liveness as liveness
 from scripts import layer2_api_concurrency as api_concurrency
+from scripts import canonical_spoken_revision as spoken
 from scripts.sermon_execution_harness import work_lock
 from scripts.sermon_release_workflow import _safe_path
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA = 'sermon-canonical-layer2-execution-v1'
+SCHEMA_V2 = 'sermon-canonical-layer2-execution-v2'
 MODES = ('deterministic_shadow', 'deterministic_execute')
 ADMISSION_LOCK = jobs._digest({'purpose': 'canonical-layer2-admission-v1'})
 MAX_CONFIG_BYTES = 1024 * 1024
@@ -78,7 +80,7 @@ def load_configuration(path):
     path = _safe_path(Path(path).absolute())
     value = _json(path)
     require(set(value) == {'schemaVersion', 'productionRunId', 'inspectionConfig', 'jobRoot', 'locales'}
-            and value['schemaVersion'] == SCHEMA and pipeline._sha(value['productionRunId'])
+            and value['schemaVersion'] in (SCHEMA, SCHEMA_V2) and pipeline._sha(value['productionRunId'])
             and isinstance(value['locales'], dict) and bool(value['locales'])
             and set(value['locales']) <= set(pipeline.LOCALES), 'invalid_execution_configuration')
     inspection_path = _path(path.parent, value['inspectionConfig'])
@@ -92,9 +94,11 @@ def load_configuration(path):
                    _path(root, inspection.get('anchor'))]
     lanes, plugin_hashes = {}, {}
     for locale, lane in sorted(value['locales'].items()):
-        require(isinstance(lane, dict) and set(lane) in (
-                    {'outputDirectory', 'plugin'},
-                    {'outputDirectory', 'plugin', 'partialRepair'}), 'invalid_execution_lane')
+        allowed = [{'outputDirectory', 'plugin'},
+                   {'outputDirectory', 'plugin', 'partialRepair'}]
+        if value['schemaVersion'] == SCHEMA_V2:
+            allowed.append({'outputDirectory', 'plugin', 'spokenRevision'})
+        require(isinstance(lane, dict) and set(lane) in allowed, 'invalid_execution_lane')
         output, plugin = (_path(path.parent, lane[key]) for key in ('outputDirectory', 'plugin'))
         require(plugin.is_file() and not _overlap(output, job_root), 'invalid_execution_paths')
         partial_repair = None
@@ -108,6 +112,20 @@ def load_configuration(path):
                     and not _overlap(output, brief), 'invalid_partial_repair_paths')
             partial_repair = {'reuseFrom': reuse_from, 'brief': brief}
             input_paths.extend((reuse_from / 'request.json', brief))
+        spoken_revision = None
+        if 'spokenRevision' in lane:
+            revision = lane['spokenRevision']
+            require(isinstance(revision, dict) and set(revision) ==
+                    {'reuseFrom', 'brief', 'cacheManifest'}, 'invalid_spoken_revision_configuration')
+            spoken_revision = {key: _path(path.parent, revision[key]) for key in revision}
+            prior = spoken_revision['reuseFrom']
+            require(prior.is_dir() and all(spoken_revision[key].is_file() for key in
+                    ('brief', 'cacheManifest')) and not _overlap(output, prior)
+                    and not _overlap(prior, job_root), 'invalid_spoken_revision_paths')
+            input_paths.extend((prior, spoken_revision['brief'], spoken_revision['cacheManifest']))
+            manifest = spoken.read_manifest(spoken_revision['cacheManifest'])
+            plugin_hashes[locale + '.spokenRevision'] = jobs._digest({
+                'brief': jobs._read(spoken_revision['brief']), 'cacheManifest': manifest})
         inspect_lane = inspection['locales'][locale]
         require(isinstance(inspect_lane, dict), 'invalid_inspection_lane')
         policy = _path(root, inspect_lane.get('policy'))
@@ -116,7 +134,8 @@ def load_configuration(path):
             require(_path(root, inspect_lane['candidate']) == candidate, 'candidate_output_path_changed')
         # No execution field can inject an argv/model/secret/approval override.
         lanes[locale] = {'output': output, 'plugin': plugin, 'policy': policy,
-                         'candidate': candidate, 'partialRepair': partial_repair}
+                         'candidate': candidate, 'partialRepair': partial_repair,
+                         'spokenRevision': spoken_revision}
         plugin_hashes[locale] = producer.plugin_implementation_sha256(plugin)
         if partial_repair:
             plugin_hashes[locale + '.partialRepair'] = jobs._digest({
@@ -185,7 +204,9 @@ def _inputs(config, locale, view):
     require(policy['batching']['batchSize'] == 1 and type(policy['batching']['workers']) is int
             and 1 <= policy['batching']['workers'] <= api_concurrency.MAX_GROUP_WORKERS_PER_LOCALE,
             'invalid_production_worker_budget')
-    producer.prepare_request(values['source'], values['anchor'], policy)
+    request = producer.prepare_request(values['source'], values['anchor'], policy)
+    if lane['spokenRevision']:
+        spoken.validate_context(lane['spokenRevision'], request, values['anchor'], policy)
     return values['source'], values['anchor'], policy
 
 
@@ -294,6 +315,9 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                     and jobs.peek_job(config.job_root, expected_job)['status'] == 'running',
                     'worker_requires_active_bound_durable_job')
             source, anchor, policy = _inputs(config, locale, current)
+            spoken_manifest = spoken.read_manifest(lane['spokenRevision']['cacheManifest']) if lane['spokenRevision'] else None
+            spoken_cache = spoken.snapshot_cache(lane['spokenRevision'],
+                request_path.parent / 'spoken-reuse', spoken_manifest) if lane['spokenRevision'] else None
         with liveness.report(request_path.parent, request) as progress:
             if caller is None:
                 api_key = os.environ.get('OPENAI_API_KEY')
@@ -317,8 +341,9 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
             model_completion = []
             repair = lane['partialRepair']
             evidence = models.run_accounted(source, anchor, policy, lane['output'], api_key,
-                                             bound_call, None, lane['plugin'], None,
-                                             repair['reuseFrom'] if repair else None,
+                                             bound_call, None, lane['plugin'],
+                                             jobs._read(lane['spokenRevision']['brief']) if spoken_cache else None,
+                                             spoken_cache if spoken_cache else (repair['reuseFrom'] if repair else None),
                                              partial_repair_brief=(
                                                  jobs._read(repair['brief']) if repair else None),
                                              progress_callback=progress.progress, predecessor_spans=[admission_span],
@@ -329,6 +354,8 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                     executor_type='deterministic_program', work_unit_id='l2.' + locale + '.post_model_binding') as binding_span:
                 progress.progress('models_validated')
                 fresh_config = current_binding()
+                if spoken_cache:
+                    spoken.verify_cache(spoken_cache, spoken_manifest)
             with accounting.stage('layer2.language_and_candidate.' + locale, depends_on=[binding_span],
                     executor_type='deterministic_program', work_unit_id='l2.' + locale + '.candidate_admission') as candidate_span:
                 original_request = producer._load(lane['output'] / 'request.json')
@@ -355,6 +382,9 @@ def main():
     tick = commands.add_parser('tick')
     tick.add_argument('--config', required=True, type=Path)
     tick.add_argument('--mode', choices=MODES, default='deterministic_shadow')
+    freeze = commands.add_parser('prepare-spoken-cache')
+    freeze.add_argument('--reuse-from', required=True, type=Path)
+    freeze.add_argument('--out', required=True, type=Path)
     worker = commands.add_parser('worker')
     worker.add_argument('--config', required=True, type=Path)
     worker.add_argument('--locale', required=True, choices=pipeline.LOCALES)
@@ -362,7 +392,12 @@ def main():
     worker.add_argument('--expected-code', required=True)
     worker.add_argument('--expected-job', required=True)
     args = parser.parse_args()
-    if args.command == 'tick':
+    if args.command == 'prepare-spoken-cache':
+        result = spoken.prepare_manifest(args.reuse_from)
+        models.save_new(args.out, result)
+        result = {'schemaVersion': spoken.SCHEMA, 'status': 'frozen',
+                  'files': len(result['files']), 'manifestSha256': jobs._digest(result)}
+    elif args.command == 'tick':
         result = Controller(args.config, mode=args.mode).tick()
     else:
         result = execute(args.config, args.locale, args.expected_configuration, args.expected_code, args.expected_job)

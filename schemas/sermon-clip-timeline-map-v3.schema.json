@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-clip-timeline-map-v3.schema.json",
+  "title": "Approved-window derived clip English anchor timebase v3",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "timebase", "englishSourcePackageJsonSha256",
+    "anchorManifestJsonSha256", "sourceMedia", "approvedWindow",
+    "approvedWindowSeconds", "windowApproval", "extractionReceipt",
+    "clipMedia", "clipMediaProbe", "clipDurationSeconds", "anchorOrigin",
+    "anchorOffsetSeconds", "anchorFirstStartSeconds", "anchorLastEndSeconds"
+  ],
+  "properties": {
+    "schemaVersion": {"const": "sermon-clip-timeline-map-v3"},
+    "timebase": {"const": "anchor_clip_relative_to_derived_window_audio"},
+    "englishSourcePackageJsonSha256": {"$ref": "#/$defs/sha256"},
+    "anchorManifestJsonSha256": {"$ref": "#/$defs/sha256"},
+    "sourceMedia": {"$ref": "#/$defs/sourceMedia"},
+    "approvedWindow": {"$ref": "#/$defs/approvedWindow"},
+    "approvedWindowSeconds": {"type": "number", "exclusiveMinimum": 0},
+    "windowApproval": {"$ref": "#/$defs/jsonArtifact"},
+    "extractionReceipt": {"$ref": "#/$defs/jsonArtifact"},
+    "clipMedia": {"$ref": "#/$defs/clipMedia"},
+    "clipMediaProbe": {"$ref": "#/$defs/clipMediaProbe"},
+    "clipDurationSeconds": {"type": "number", "exclusiveMinimum": 0},
+    "anchorOrigin": {"$ref": "#/$defs/anchorOrigin"},
+    "anchorOffsetSeconds": {"const": 0},
+    "anchorFirstStartSeconds": {"type": "number", "minimum": 0},
+    "anchorLastEndSeconds": {"type": "number", "exclusiveMinimum": 0}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "artifact": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "jsonArtifact": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "sha256", "jsonSha256"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "jsonSha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "sourceMedia": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "sha256", "sizeBytes", "durationSeconds"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "sizeBytes": {"type": "integer", "minimum": 1},
+        "durationSeconds": {"type": "number", "exclusiveMinimum": 0}
+      }
+    },
+    "approvedWindow": {
+      "type": "object", "additionalProperties": false,
+      "required": ["startSeconds", "endSeconds"],
+      "properties": {
+        "startSeconds": {"type": "number", "minimum": 0},
+        "endSeconds": {"type": "number", "exclusiveMinimum": 0}
+      }
+    },
+    "clipMedia": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "sha256", "sizeBytes"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "sizeBytes": {"type": "integer", "minimum": 1}
+      }
+    },
+    "clipMediaProbe": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "codec", "sampleRate", "channels", "formatDurationSeconds",
+        "streamStartTimeSeconds", "streamDurationSeconds", "decodedAudioSamples",
+        "decodedAudioDurationSeconds", "containerPaddingSamples", "paddingBudgetSamples"
+      ],
+      "properties": {
+        "codec": {"const": "aac"},
+        "sampleRate": {"const": 44100},
+        "channels": {"const": 1},
+        "formatDurationSeconds": {"type": "number", "exclusiveMinimum": 0},
+        "streamStartTimeSeconds": {"type": "number", "minimum": 0},
+        "streamDurationSeconds": {"type": "number", "exclusiveMinimum": 0},
+        "decodedAudioSamples": {"type": "integer", "minimum": 1},
+        "decodedAudioDurationSeconds": {"type": "number", "exclusiveMinimum": 0},
+        "containerPaddingSamples": {"type": "integer", "minimum": 0, "maximum": 4096},
+        "paddingBudgetSamples": {"const": 4096}
+      }
+    },
+    "anchorOrigin": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "absoluteSourceStartSeconds"],
+      "properties": {
+        "kind": {"const": "derived_clip_zero_equals_approved_window_start"},
+        "absoluteSourceStartSeconds": {"type": "number", "minimum": 0}
+      }
+    }
+  }
+}
