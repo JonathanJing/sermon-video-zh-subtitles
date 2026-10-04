@@ -450,3 +450,9 @@ test('bad page metadata does not hide a different valid page or request bad-page
   assert.deepEqual(result.errors, ['Invalid published page']);
   assert.ok(!f.requests.some(path => path.includes(pageId)));
 });
+
+test('original source window metadata cannot replace playback clip duration or hash', async () => {
+ const good=fixture(({content})=>{content.sourceWindow={schemaVersion:'sermon-original-recording-window-v1',startSeconds:2015.321,endSeconds:2025.321,mediaSha256:content.sourceMediaSha256};});
+ const result=await loadPublishedWeeks(good.fetchImpl);assert.equal(result.weeks.length,1);assert.equal(result.weeks[0].sourceStartSeconds,0);assert.equal(result.weeks[0].sourceFingerprintWindow.startSeconds,2015.321);
+ for(const mutate of [w=>w.mediaSha256='e'.repeat(64),w=>w.endSeconds=2026.321]){const f=fixture(({content})=>{content.sourceWindow={schemaVersion:'sermon-original-recording-window-v1',startSeconds:2015.321,endSeconds:2025.321,mediaSha256:content.sourceMediaSha256};mutate(content.sourceWindow);});assert.equal((await loadPublishedWeeks(f.fetchImpl)).weeks.length,0);}
+});

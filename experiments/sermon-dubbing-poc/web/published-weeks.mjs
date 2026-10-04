@@ -234,6 +234,13 @@ async function loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal, allow
   required(['title', 'speaker', 'series', 'scripture', 'summary'].every(key => text(content[key]))
     && Array.isArray(content.outline) && content.outline.every(item => candidate ? text(item?.title) && text(item?.body) : text(item))
     && Number.isFinite(content.durationSeconds) && content.durationSeconds > 0, 'Invalid published content metadata');
+  const sourceWindow = content.sourceWindow;
+  required(sourceWindow === undefined || (sourceWindow?.schemaVersion === 'sermon-original-recording-window-v1' && Number.isFinite(sourceWindow?.startSeconds)
+    && sourceWindow.startSeconds >= 0 && Number.isFinite(sourceWindow.endSeconds)
+    && sourceWindow.endSeconds > sourceWindow.startSeconds
+    && sourceWindow.mediaSha256 === content.sourceMediaSha256 && HASH.test(sourceWindow.mediaSha256)
+    && Math.abs(sourceWindow.endSeconds - sourceWindow.startSeconds - content.durationSeconds) < .001),
+  'Invalid original-source fingerprint window');
   const cues = validatedCues(captions.cues, content.durationSeconds);
   const fullTranscript = validatedCues(content.cues, content.durationSeconds);
   // Full reading text and shorter spoken captions remain separate, explicitly linked by group ID.
@@ -285,7 +292,7 @@ async function loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal, allow
     id: page.id, date: page.date, number: '', targetLocale: locale, defaultTargetLocale: locale, title: content.title,
     series: content.series, speaker: content.speaker, scripture: content.scripture,
     sourceUrl: assetPath(content.sourceVideoUrl), sourceLabel: labels.source,
-    sourceRoute: 'full_video', sourceSha256: content.sourceMediaSha256, sourceStartSeconds: 0, sourceEndSeconds: content.durationSeconds, sourceDurationSeconds: content.durationSeconds,
+    sourceRoute: 'full_video', sourceSha256: content.sourceMediaSha256, ...(sourceWindow ? { sourceFingerprintWindow: { ...sourceWindow } } : {}), sourceStartSeconds: 0, sourceEndSeconds: content.durationSeconds, sourceDurationSeconds: content.durationSeconds,
     releaseLabel: '正式播放版', humanContentReview: 'approved', audioStatus: 'full_reviewed',
     ...(page.diagnosticOnly === true || target.diagnosticOnly === true ? { diagnosticOnly: true } : {}),
     ...(page.simulationOnly === true || target.simulationOnly === true ? { simulationOnly: true } : {}),
@@ -322,7 +329,8 @@ async function loadPage(fetchImpl, page, timeoutMs, pageSignal, allowDevCandidat
             && m.algorithmVersion === 'spectral-landmarks-v1' && m.pageId === page.id
             && HASH.test(m.sourceSha256) && m.sourceSha256 === variant.sourceSha256
             && m.trackSha256 === variant.tracks[0].sha256 && HASH.test(m.indexSha256)
-            && m.sourceStartSeconds === 0 && m.sourceEndSeconds === variant.sourceDurationSeconds
+            && m.sourceStartSeconds === (variant.sourceFingerprintWindow?.startSeconds ?? 0)
+              && m.sourceEndSeconds === (variant.sourceFingerprintWindow?.endSeconds ?? variant.sourceDurationSeconds)
             && m.captureSeconds === 10
             && m.indexUrl === `/fingerprints/${m.indexSha256.slice(0, 16)}-landmarks.json`,
           'Invalid alignment track/source binding');

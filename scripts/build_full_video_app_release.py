@@ -142,8 +142,8 @@ def prepare(args: argparse.Namespace) -> dict:
         require(locales == ("zh-Hans",), "Date-only metadata is Chinese-only")
         metadata = {"schemaVersion": "sermon-source-date-label-v1", "date": args.date,
                     "pageId": args.page_id, "locales": {"zh-Hans": {
-                        "series": "", "title": args.date + " 证道", "speaker": "",
-                        "scripture": "", "summary": "", "outline": []}}}
+                        "series": "每周证道", "title": args.date + " 证道", "speaker": "讲员信息待补充",
+                        "scripture": "经文见全文", "summary": "中文文稿及配音已审核；视频同步未单独验收。", "outline": []}}}
     else:
         require(args.metadata_approval and args.metadata_proposal, "Approved metadata is required")
         metadata = formal_assets.checked_metadata(args.metadata_approval, args.metadata_proposal,
@@ -216,6 +216,13 @@ def prepare(args: argparse.Namespace) -> dict:
                             and cue["text"] == group["targetText"]
                             for cue, group in zip(content["cues"], full["groups"])),
                     f"{locale}: full reading content differs from approved full text")
+            if "sourceWindow" in content:
+                original = content["sourceWindow"]
+                require(original.get("schemaVersion") == "sermon-original-recording-window-v1"
+                        and original.get("mediaSha256") == source["source"]["media"]["sha256"]
+                        and original.get("startSeconds") == source["source"]["approvedWindow"]["startSeconds"]
+                        and original.get("endSeconds") == source["source"]["approvedWindow"]["endSeconds"],
+                        f"{locale}: original recording window differs from approved source")
             require(all(content.get(field) == metadata["locales"][locale][field]
                         for field in ("series", "title", "speaker", "scripture", "summary", "outline")),
                     f"{locale}: display fields differ from approved page metadata")

@@ -257,3 +257,5 @@ Agents API turn usage 为 best-effort，可为 null，且不单列 cache-write c
 用户明确只发布中文时，可使用 `sermon-multilingual-v3-stage-manifest-v4`：`single_zh_bucket_video_v1` 包含 8 个新增 Hosting 资产、1 个 catalog 更新及 1 个不可变视频对象；`single_zh_full_video_v1` 包含 9 个新增 Hosting 资产及 1 个 catalog 更新。同语言候选和正式音频包仍须人审，全文、字幕、音轨、Release、听音定位指纹、英文对照与对齐索引均须精确绑定。完整正式站基线合并保留旧周和旧语言，不将单中文 manifest 用于三语周次。旧 manifest 不原地迁移；从已有已审包重新生成 v4 清单。
 
 `build_full_video_app_release.py prepare --locales zh-Hans` 支持单中文准备；`--source-date-label` 可使用中性的日期标题，不替尚未核实的篇名和讲员生成批准。`verify` 与 `seal` 按准备包的实际语言数量验证，设备和现场验收继续保持独立字段。`assemble_multilingual_v3_update.py` 消费 v4 清单并核验所有新增资产及历史字节保留；后续仍需实际部署与 HTTP/Range 回读。
+
+单周播放片段与母版原声指纹使用不同的时间原点时，全文可附加版本化 `sourceWindow`（`schemaVersion=sermon-original-recording-window-v1`、母版 `mediaSha256`、批准的 `startSeconds/endSeconds`）。构建器将它与源包窗口逐项比较；Web App 将它保存为 `sourceFingerprintWindow`，仅用于指纹来源绑定，播放与字幕仍从片段零点开始。历史内容未带此块时保持原有零点校验。页面元数据暂未确认时，日期标签使用明确的待补充说明，以兼容已有客户端必填字段，不猜测讲员或篇名。
