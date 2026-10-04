@@ -82,6 +82,125 @@ class EnglishSourcePackageTests(unittest.TestCase):
             service_date="2026-09-20",
         )
 
+    def prepare_individual_long_clause_review(self, *, selected_failure=False,
+                                              mismatched_units=False,
+                                              deterministic_failure=False,
+                                              malformed_sentences=False):
+        self.segments.append({
+            "id": 1,
+            "referenceChunkId": "block-00",
+            "text": "Keep this unchanged.",
+            "start": 3.0,
+            "end": 4.9,
+            "sentenceBoundarySource": "frozen_reference_punctuation",
+            "wordTimes": [
+                {"text": "Keep", "start": 3.0, "end": 3.3},
+                {"text": "this", "start": 3.5, "end": 3.8},
+                {"text": "unchanged.", "start": 4.0, "end": 4.9},
+            ],
+        })
+        write_json(self.segments_path, self.segments)
+        self.manifest = anchors.build_anchor_manifest(
+            self.segments,
+            source_path=self.segments_path,
+            unit_policy=anchors.UNIT_POLICY_V2,
+        )
+        selected_sentence_id = self.manifest["sourceUnits"][0]["sourceSentenceId"]
+        issue = {
+            "type": "clause_unit_exceeds_target_without_safe_boundary",
+            "sourceSentenceId": selected_sentence_id,
+            "durationSeconds": 1.9,
+            "maximumSeconds": 1.0,
+        }
+        self.manifest["issues"] = [issue]
+        write_json(self.manifest_path, self.manifest)
+
+        source_sentence_ids = list(dict.fromkeys(
+            unit["sourceSentenceId"] for unit in self.manifest["sourceUnits"]
+        ))
+        sentences = []
+        for sentence_id in source_sentence_ids:
+            unit_ids = [unit["sourceUnitId"] for unit in self.manifest["sourceUnits"]
+                        if unit["sourceSentenceId"] == sentence_id]
+            is_selected = sentence_id == selected_sentence_id
+            checks = {name: "pass" for name in subject.MACHINE_JUDGE_CHECKS}
+            verdict = "pass" if is_selected else "fail"
+            if is_selected and selected_failure:
+                checks["meaningPreserved"] = "fail"
+                verdict = "fail"
+            if is_selected and mismatched_units:
+                unit_ids = unit_ids + ["unexpected-unit"]
+            sentences.append({
+                "sourceSentenceId": sentence_id,
+                "sourceUnitIds": unit_ids,
+                "verdict": verdict,
+                "risk": "low",
+                "checks": checks,
+                "evidence": "Fixture sentence review evidence.",
+                "unresolvedIssues": [],
+            })
+        deterministic_checks = [{"checkId": "fixture-check", "status": "pass",
+                                 "evidence": "Fixture deterministic evidence."}]
+        if deterministic_failure:
+            deterministic_checks[0]["status"] = "fail"
+        judge = {
+            "schemaVersion": subject.MACHINE_JUDGE_SCHEMA_VERSION,
+            "reviewType": "model",
+            "humanApproval": False,
+            "status": "rejected_for_layer2_shadow",
+            "layer2DevelopmentEligible": False,
+            "productionTranslationEligible": False,
+            "alignedSegmentsSha256": subject.file_sha256(self.segments_path),
+            "anchorManifestJsonSha256": subject.json_sha256(self.manifest),
+            "downstreamInvalidationKey": "3" * 64,
+            "implementationSha256": subject.file_sha256(
+                Path(subject.__file__).with_name("judge_english_source_for_translation.py")),
+            "model": subject.MACHINE_JUDGE_MODEL,
+            "reasoningEffort": subject.MACHINE_JUDGE_REASONING_EFFORT,
+            "promptVersion": subject.MACHINE_JUDGE_SCHEMA_VERSION,
+            "requestIds": ["fixture-request"],
+            "responseModels": [subject.MACHINE_JUDGE_MODEL],
+            "reviewedAt": "2026-09-20T12:00:00Z",
+            "thresholds": subject.MACHINE_JUDGE_THRESHOLDS,
+            "deterministicReview": {
+                "status": "fail" if deterministic_failure else "pass",
+                "checks": deterministic_checks,
+                "issues": [],
+            },
+            "reviewedSourceSentenceIds": source_sentence_ids,
+            "reviewedManifestIssueJsonSha256s": [subject.json_sha256(item)
+                                                 for item in self.manifest["issues"]],
+            "sentences": sentences,
+            "counts": {
+                "sourceSentences": len(source_sentence_ids),
+                "sourceUnits": len(self.manifest["sourceUnits"]),
+                "manifestIssues": 1,
+                "sentencePass": sum(item["verdict"] == "pass" for item in sentences),
+                "sentenceFail": sum(item["verdict"] == "fail" for item in sentences),
+                "highRiskSentences": 0,
+            },
+            "unresolvedIssues": [],
+            "requestReceipts": [],
+        }
+        if malformed_sentences:
+            judge["sentences"] = None
+        judge_path = self.root / "rejected-machine-judge.json"
+        write_json(judge_path, judge)
+        judge_artifact = subject.artifact(judge_path, value=judge)
+
+        review_path = self.root / "human-review.json"
+        write_json(review_path, {
+            "schemaVersion": subject.REVIEW_SCHEMA_VERSION,
+            "alignedSegmentsSha256": subject.file_sha256(self.segments_path),
+            "anchorManifestJsonSha256": subject.json_sha256(self.manifest),
+            "humanApproval": True,
+            "reviewedBy": "Fixture reviewer",
+            "reviewedAt": "2026-09-20T12:00:00Z",
+            "reviewedSourceUnitIds": [unit["sourceUnitId"] for unit in self.manifest["sourceUnits"]],
+            "checks": {name: "approved" for name in subject.APPROVED_CHECKS},
+        })
+        return review_path, judge_artifact
+
     def test_package_waits_for_machine_judge_and_is_target_language_neutral(self):
         package = self.build()
         self.assertEqual(package["status"], "blocked")
@@ -180,6 +299,43 @@ class EnglishSourcePackageTests(unittest.TestCase):
             self.assertEqual(
                 self.schema_errors("sermon-english-source-package-v1.schema.json", approved), [],
             )
+
+    def test_bound_passing_sentence_clears_long_clause_when_another_sentence_fails(self):
+        review_path, judge_artifact = self.prepare_individual_long_clause_review()
+        with patch.object(subject, "_machine_judge_payload", return_value=(judge_artifact, False)):
+            package = self.build(review_path=review_path)
+            without_human_review = self.build()
+        self.assertEqual(package["status"], "ready_for_translation")
+        self.assertTrue(package["translationEligible"])
+        self.assertEqual(package["issues"], [])
+        self.assertEqual(package["anchors"]["issueCount"], 1)
+        self.assertEqual(package["evidence"]["machineJudge"], judge_artifact)
+        self.assertEqual(without_human_review["status"], "blocked")
+        self.assertEqual(len(without_human_review["issues"]), 1)
+
+    def test_bound_long_clause_remains_blocked_when_selected_sentence_fails(self):
+        review_path, judge_artifact = self.prepare_individual_long_clause_review(
+            selected_failure=True,
+        )
+        with patch.object(subject, "_machine_judge_payload", return_value=(judge_artifact, False)):
+            package = self.build(review_path=review_path)
+        self.assertEqual(package["status"], "blocked")
+        self.assertFalse(package["translationEligible"])
+        self.assertEqual(len(package["issues"]), 1)
+        self.assertEqual(package["issues"][0]["detail"], self.manifest["issues"][0])
+        self.assertEqual(package["evidence"]["machineJudge"], judge_artifact)
+
+    def test_bound_long_clause_requires_exact_units_and_passing_deterministic_review(self):
+        for kwargs in ({"mismatched_units": True}, {"deterministic_failure": True},
+                       {"malformed_sentences": True}):
+            with self.subTest(kwargs=kwargs):
+                review_path, judge_artifact = self.prepare_individual_long_clause_review(**kwargs)
+                with patch.object(subject, "_machine_judge_payload",
+                                  return_value=(judge_artifact, False)):
+                    package = self.build(review_path=review_path)
+                self.assertEqual(package["status"], "blocked")
+                self.assertFalse(package["translationEligible"])
+                self.assertEqual(len(package["issues"]), 1)
 
     def test_versioned_human_override_opens_only_layer2_candidate_path(self):
         self.manifest["issues"] = [{

@@ -426,6 +426,75 @@ def _machine_judge_payload(
     return artifact(machine_judge_path, value=judge), pass_state
 
 
+def _machine_judge_accepts_anchor_issue(
+    machine_judge_artifact: dict[str, Any] | None,
+    issue: dict[str, Any],
+    *,
+    source_units: list[dict[str, Any]],
+    manifest_issues: list[dict[str, Any]],
+) -> bool:
+    """Check whether a bound receipt clears one whitelisted sentence warning."""
+    if (not isinstance(machine_judge_artifact, dict)
+            or issue.get("type") not in MACHINE_AND_HUMAN_REVIEWABLE_ANCHOR_ISSUES
+            or not isinstance(issue.get("sourceSentenceId"), str)):
+        return False
+    path_value = machine_judge_artifact.get("path")
+    if not isinstance(path_value, str):
+        return False
+    machine_path = Path(path_value)
+    try:
+        judge = read_object(machine_path, "bound English source machine judge")
+    except ValueError:
+        return False
+    if (file_sha256(machine_path) != machine_judge_artifact.get("sha256")
+            or json_sha256(judge) != machine_judge_artifact.get("jsonSha256")):
+        return False
+
+    reviewed_issue_hashes = judge.get("reviewedManifestIssueJsonSha256s")
+    expected_issue_hashes = [json_sha256(item) for item in manifest_issues]
+    if (not isinstance(reviewed_issue_hashes, list)
+            or reviewed_issue_hashes != expected_issue_hashes
+            or json_sha256(issue) not in reviewed_issue_hashes):
+        return False
+
+    deterministic = judge.get("deterministicReview")
+    deterministic_checks = deterministic.get("checks") if isinstance(deterministic, dict) else None
+    if (not isinstance(deterministic, dict)
+            or deterministic.get("status") != "pass"
+            or deterministic.get("issues") != []
+            or not isinstance(deterministic_checks, list)
+            or not deterministic_checks
+            or any(not isinstance(check, dict) or check.get("status") != "pass"
+                   for check in deterministic_checks)):
+        return False
+
+    sentence_id = issue["sourceSentenceId"]
+    expected_units = [
+        unit.get("sourceUnitId") for unit in source_units
+        if unit.get("sourceSentenceId") == sentence_id
+    ]
+    judge_sentences = judge.get("sentences")
+    if not isinstance(judge_sentences, list):
+        return False
+    matching_sentences = [
+        item for item in judge_sentences
+        if isinstance(item, dict) and item.get("sourceSentenceId") == sentence_id
+    ]
+    if len(matching_sentences) != 1 or not expected_units:
+        return False
+    sentence = matching_sentences[0]
+    checks = sentence.get("checks")
+    return bool(
+        sentence.get("sourceUnitIds") == expected_units
+        and sentence.get("verdict") == "pass"
+        and sentence.get("risk") in {"low", "medium"}
+        and isinstance(checks, dict)
+        and set(checks) == MACHINE_JUDGE_CHECKS
+        and all(checks.get(name) == "pass" for name in MACHINE_JUDGE_CHECKS)
+        and sentence.get("unresolvedIssues") == []
+    )
+
+
 def build_package(
     aligned_segments_path: Path,
     anchor_manifest_path: Path,
@@ -529,14 +598,26 @@ def build_package(
         if layer2_override is not None and machine_judge_artifact != layer2_override["machineJudgeArtifact"]:
             raise ValueError("Layer 2 override must bind the package's exact machine judge evidence")
     media = _source_media(summary)
-    # A long intact clause is a latency warning when both reviews explicitly
-    # accept this exact manifest. Keep the warning in the bound anchor manifest.
-    accepted_anchor_warnings = machine_judge_pass and review["humanApproval"]
+    # The full judge pass retains its established behavior. A globally rejected
+    # receipt can clear only an individually passing long clause, and only
+    # alongside the bound human approval. Keep every warning in the manifest.
+    def accepted_anchor_warning(issue: dict[str, Any]) -> bool:
+        if (not review["humanApproval"]
+                or issue.get("type") not in MACHINE_AND_HUMAN_REVIEWABLE_ANCHOR_ISSUES):
+            return False
+        if machine_judge_pass:
+            return True
+        return _machine_judge_accepts_anchor_issue(
+            machine_judge_artifact,
+            issue,
+            source_units=source_units,
+            manifest_issues=[item for item in manifest_issues if isinstance(item, dict)],
+        )
+
     issues: list[dict[str, Any]] = [
         {"stage": "anchors", "type": str(item.get("type", "unknown_anchor_issue")), "detail": item}
         for item in manifest_issues if isinstance(item, dict)
-        and not (accepted_anchor_warnings
-                 and item.get("type") in MACHINE_AND_HUMAN_REVIEWABLE_ANCHOR_ISSUES)
+        and not accepted_anchor_warning(item)
     ]
     issues.extend(source_gate_issues(media, start, end, approval_pass))
     for name, value in review["checks"].items():
