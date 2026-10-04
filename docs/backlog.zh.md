@@ -413,7 +413,7 @@ Firebase Hosting 只发布静态运行时和指纹索引；采集、特征和匹
 |---|---|---|---|---|
 | `DEV-VOICE-001` | Speaker Voice Registry 授权与可移植恢复 | `in_progress` | 每语言 checkpoint 的授权范围、能力、hash、媒体恢复位置和归档验证可在干净环境重建，不依赖原工作站绝对路径 | [Speaker Voice Registry](multilingual-speaker-voice-registry.zh.md) |
 | `DEV-L4-002` | 原子 catalog、单语言回滚与旧资产保护 | `in_progress` | 新语言／周次更新不删除其他 locale 或旧周资产；catalog 最后发布；单 locale 可回滚 | [Layer 4 backlog](multilingual-layer-4-delivery-app-backlog.zh.md#6-layer-4-与-app-改进-backlog) |
-| `DEV-IOS-002` | iOS WebView／CI 偶发空白与系统表面 | `in_progress` | 相同 CI 系统和真机稳定显示正文；Now Playing、锁屏、耳机／中断、Live Activity、无障碍分别验收 | [iOS backlog](../apps/tongxing-ios/BACKLOG.zh.md) |
+| `DEV-IOS-002` | iOS WebView／CI 偶发空白与系统表面 | `in_progress` | 相同 CI 系统和真机稳定显示正文；跟踪 2026-10-04 报告的大纲／默想缺失、每周显示名称、锁屏双语字幕、系统播放暂停和灵动岛状态设计；Now Playing、锁屏、耳机／中断、Live Activity、无障碍分别验收 | [iOS backlog](../apps/tongxing-ios/BACKLOG.zh.md) |
 | `DEV-CICD-002` | 四类代码改动的 CI 测试路由 | `in_progress` | #52 的 iOS 路由／固定 native-client 与 #114 的后端 dry-run CI 已实现；继续按四类改动和失败矩阵验收，跨端合同变更同时验证 Web 与 iOS，文档快路径不跳过固定 required checks，失败定位到具体改动和测试 | [CI/CD backlog](ci-cd-backlog.zh.md)、[版本对照](reports/20260929-dev-release-backlog-audit.zh.md) |
 | `DEV-CICD-003` | Firebase 页面与后端功能的 Dev→Production 交付 | `pending` | Dev 功能候选在隔离项目／服务完成页面、API、权限和真实读回 smoke；Production 只使用已核对代码版本与当前基线，按实际服务分别部署并保存 HTTP／API 收据及回退目标，不由 `main` push 自动发布 | [CI/CD backlog](ci-cd-backlog.zh.md) |
 | `DEV-CICD-004` | iOS 安装包与 TestFlight 交付链 | `in_progress` | 9 月 27 日报告已有 build 42 签名归档、上传及当时 TestFlight 状态，不能继续笼统写未上传；仍须绑定本次目标源码 SHA、版本／build、签名产物和上传结果，再分别记录实际安装、真机、App Store 审核／上线。历史构建不替代当前 Dev 分发；内容周更不强制重发 App | [CI/CD backlog](ci-cd-backlog.zh.md)、[build 42 历史证据](sermon-language-listening-statistics.zh.md) |
