@@ -209,7 +209,8 @@ def inspect_configuration(root, config):
             release_sha = release_inspector.inspect(
                 root, lane['release'], page_id=config['pageId'], locale=locale,
                 source=source, candidate=candidate, audio_path=root / lane['audio']['package'],
-                audio_sha256=checked['outputSha256'], read_package=_read_package, hashes=hashes)
+                audio_sha256=checked['outputSha256'], read_package=_read_package, hashes=hashes,
+                speech_job_path=root / lane['audio']['job'])
             observations[page] = {'identity': page_id, 'status': 'validated', 'outputSha256': release_sha}
         except (ValueError, TypeError, KeyError, OSError):
             diagnostics['page.' + locale] = 'release_candidate_not_validated'

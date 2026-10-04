@@ -75,6 +75,7 @@ def build(args: argparse.Namespace) -> dict:
     metadata = checked_metadata(args.metadata, args.metadata_proposal, args.page_id, args.date)
     candidate_paths = stage.assignment_map(args.candidate, "--candidate")
     audio_paths = stage.assignment_map(args.audio_package, "--audio-package")
+    speech_jobs = stage.assignment_map(getattr(args, "speech_job", []), "--speech-job")
     rows: dict[str, tuple[dict, dict, dict, Path, Path, Path]] = {}
     for locale in stage.LOCALES:
         candidate = stage.read_package(candidate_paths[locale],
@@ -95,6 +96,8 @@ def build(args: argparse.Namespace) -> dict:
                 and audio["schedule"] is not None
                 and audio["captions"] is not None,
                 f"{locale}: upstream text or audio has not passed human review")
+        stage.validate_audio_page_authorization(audio, source, candidate, speech_jobs[locale],
+                                                allow_dev_clip=True)
         track = stage.local_artifact(audio_paths[locale], audio["track"], f"{locale} track")
         require(track.suffix in {".wav", ".mp3"}, f"{locale}: unsupported release track format")
         schedule = stage.local_artifact(audio_paths[locale], audio["schedule"], f"{locale} schedule")
@@ -194,6 +197,7 @@ def main() -> None:
     parser.add_argument("--source", type=Path, required=True)
     parser.add_argument("--candidate", action="append", default=[], metavar="LOCALE=PATH")
     parser.add_argument("--audio-package", action="append", default=[], metavar="LOCALE=PATH")
+    parser.add_argument("--speech-job", action="append", default=[], metavar="LOCALE=PATH")
     parser.add_argument("--metadata", type=Path, required=True)
     parser.add_argument("--metadata-proposal", type=Path, required=True)
     parser.add_argument("--page-id", required=True)

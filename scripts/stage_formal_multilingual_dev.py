@@ -136,6 +136,60 @@ def local_artifact(package_path: Path, artifact: dict, label: str) -> Path:
     return path
 
 
+def validate_audio_page_authorization(audio: dict, source: dict, candidate: dict,
+                                      speech_job_path: Path | None, *,
+                                      allow_dev_clip: bool = False) -> None:
+    """Read the original audio-bound job; audio-only consent cannot authorize a page.
+
+    Existing Dev clip permission is accepted only by an explicitly Dev caller.
+    This does not upgrade it into source-wide or production page permission.
+    """
+    try:
+        from scripts import prepare_target_language_speech_job as speech
+    except ImportError:
+        import prepare_target_language_speech_job as speech
+    if speech_job_path is None:
+        raise StageError("Page preparation requires the original --speech-job permission chain")
+    job = read_package(speech_job_path, "sermon-target-language-speech-job-v2.schema.json")
+    locale = candidate["targetLocale"]
+    if (canonical_sha(job) != audio.get("targetLanguageSpeechJobJsonSha256")
+            or job["targetLocale"] != locale or audio.get("targetLocale") != locale
+            or audio.get("englishSourcePackageJsonSha256") != canonical_sha(source)
+            or audio.get("targetLanguageCandidateJsonSha256") != canonical_sha(candidate)
+            or job.get("synthesisEligible") is not True
+            or job.get("status") != "prepared_for_target_language_speech"):
+        raise StageError("Audio package is not bound to this formal speech job/source/candidate")
+    inputs = job["inputs"]
+    bound = {key: speech._bound_evidence(inputs[key], json_artifact=True) for key in
+             ("englishSourcePackage", "anchorManifest", "targetLanguageCandidate",
+              "humanReviewReceipt", "speakerRegistry", "targetLanguagePolicy")}
+    if bound["englishSourcePackage"] != source or bound["targetLanguageCandidate"] != candidate:
+        raise StageError("Speech job upstream source or candidate differs from this page")
+    speech.validate_target_candidate(source, bound["anchorManifest"], candidate)
+    speech.validate_policy_binding(candidate, bound["targetLanguagePolicy"])
+    speech.validate_human_review_receipt(source, bound["anchorManifest"], candidate,
+                                       bound["humanReviewReceipt"])
+    names = [name for name in ("sourceVoiceAuthorization", "clipVoiceAuthorization") if name in inputs]
+    if len(names) != 1:
+        raise StageError("Page speech job needs exactly one source-bound voice authorization")
+    name = names[0]
+    authorization = speech._bound_evidence(inputs[name], json_artifact=True)
+    capability = (speech._bound_evidence(inputs["clipVoiceCapability"], json_artifact=True)
+                  if "clipVoiceCapability" in inputs else None)
+    adapter = {key: value for key, value in job["adapter"].items() if key != "configSha256"}
+    adapter.update(schemaVersion=speech.ADAPTER_SCHEMA, targetLocale=locale)
+    speech.validate_adapter(
+        adapter, locale, bound["speakerRegistry"], source_package=source, candidate=candidate,
+        source_voice_authorization=authorization if name == "sourceVoiceAuthorization" else None,
+        clip_voice_authorization=authorization if name == "clipVoiceAuthorization" else None,
+        clip_voice_capability=capability)
+    if name == "sourceVoiceAuthorization":
+        speech.validate_source_voice_authorization(authorization, source, candidate, adapter,
+                                                   required_use="formal_page_publication")
+    elif not allow_dev_clip:
+        raise StageError("Dev clip voice authorization cannot authorize formal page publication")
+
+
 def decode_audio(path: Path, label: str) -> float:
     probe = subprocess.run(
         ["ffprobe", "-v", "error", "-select_streams", "a", "-show_entries",
@@ -172,7 +226,8 @@ def asset_source(root: Path, path: str) -> Path:
 
 def validate_release_assets(*, page_id: str, locale: str, asset_root: Path,
                             source: dict, candidate: dict, audio: dict, audio_path: Path,
-                            release: dict, content_review_path: Path) -> tuple[dict, float]:
+                            release: dict, content_review_path: Path,
+                            speech_job_path: Path | None = None) -> tuple[dict, float]:
     """Read-only candidate assets gate, shared with canonical shadow inspection.
 
     Source/Text/Audio package and independent approval validators must run first.
@@ -180,6 +235,7 @@ def validate_release_assets(*, page_id: str, locale: str, asset_root: Path,
     """
     if not PAGE_ID.fullmatch(page_id) or locale not in LOCALES:
         raise StageError("invalid page or locale identity")
+    validate_audio_page_authorization(audio, source, candidate, speech_job_path, allow_dev_clip=True)
     source_hash, candidate_hash, audio_hash = map(canonical_sha, (source, candidate, audio))
     group_ids = [group["translationGroupId"] for group in candidate["groups"]]
     files = {}
@@ -319,6 +375,7 @@ def preflight(args: argparse.Namespace) -> tuple[dict, dict[str, tuple[Path, str
     review_paths = assignment_map(args.human_review_receipt, "--human-review-receipt")
     content_review_paths = assignment_map(args.content_review_receipt, "--content-review-receipt")
     audio_paths = assignment_map(args.audio_package, "--audio-package")
+    speech_jobs = assignment_map(getattr(args, "speech_job", []), "--speech-job")
     audio_review_paths = assignment_map(args.audio_human_review_receipt, "--audio-human-review-receipt")
     screening_values = getattr(args, "audio_screening_receipt", [])
     screening_paths = (assignment_map(screening_values, "--audio-screening-receipt")
@@ -395,7 +452,8 @@ def preflight(args: argparse.Namespace) -> tuple[dict, dict[str, tuple[Path, str
         lane_files, track_duration = validate_release_assets(
             page_id=args.page_id, locale=locale, asset_root=args.asset_root,
             source=source, candidate=candidate, audio=audio, audio_path=audio_paths[locale],
-            release=release, content_review_path=content_review_paths[locale])
+            release=release, content_review_path=content_review_paths[locale],
+            speech_job_path=speech_jobs[locale])
         for asset_path, binding in lane_files.items():
             if asset_path in files and files[asset_path] != binding:
                 raise StageError(f"asset path shared with a different source: {asset_path}")
@@ -501,6 +559,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--human-review-receipt", action="append", default=[], metavar="LOCALE=PATH")
     parser.add_argument("--content-review-receipt", action="append", default=[], metavar="LOCALE=PATH")
     parser.add_argument("--audio-package", action="append", default=[], metavar="LOCALE=PATH")
+    parser.add_argument("--speech-job", action="append", default=[], metavar="LOCALE=PATH")
     parser.add_argument("--audio-human-review-receipt", action="append", default=[], metavar="LOCALE=PATH")
     parser.add_argument("--audio-screening-receipt", action="append", default=[], metavar="LOCALE=PATH")
     parser.add_argument("--release", action="append", default=[], metavar="LOCALE=PATH")

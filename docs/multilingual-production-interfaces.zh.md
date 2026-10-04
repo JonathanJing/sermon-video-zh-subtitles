@@ -101,6 +101,8 @@ Target-Language Candidate + Target-Language Audio Package
 
 输入：一个 `human_translation_approved` Target-Language Candidate、绑定其完整 hash 和每组决定的[独立人审收据](../schemas/sermon-target-language-human-review-receipt-v1.schema.json)、支持相同 `targetLocale` 的授权 voice/checkpoint、同一个 English Source Package 锚点以及自然语速策略。准备阶段使用 [Target-Language Speech Job v2](../schemas/sermon-target-language-speech-job-v2.schema.json) 锁定人审收据、注册表、adapter 和输出目录；v1 仅保留为旧 shadow 合同，不授予新合成资格。
 
+来源声音授权支持完整媒体 v1 与精确人工批准窗口 v2；v2 可仅授权音频，L4 页面必须另具对应页面用途。Speech Job v2 和 Audio Package v1 保持不变，实际 consumer 按授权版本校验。新 L4 准备/暂存命令必须提供音频包原 job 路径及其许可链，详见[窗口授权 v2 迁移](source-window-voice-authorization-v2.zh.md)。
+
 长期讲员 checkpoint、授权范围与各语言能力由 [Speaker Voice Registry](multilingual-speaker-voice-registry.zh.md) 独立管理；训练不算第五层，也不随每周内容自动重跑。Layer 1 完成后，各 locale 的 Layer 2 审批依赖独立，实际派发遵守 producer 容量（当前 canonical controller 同一 production run 只有一个 active locale 名额）；某 locale 通过文字门禁后即可独立进入本 locale 的 Layer 3，不等待其他语言。
 
 处理：以目标语言的完整自然句子或已审核的完整分句为 TTS 单元，每个单元一次自然语速合成，不在词组内部拼接，不为匹配英文总时长强制变速／拉伸；然后完整解码、回转写筛查、实测时长、确定性滚动排程、字幕 cue、人耳全文听审和同视频 1 倍速检查。Layer 1 的英文词级停顿是源语证据，不自动成为目标语言的合成切点；如果目标语言与源时间轴不合，记录局部偏差并回到译文、自然句界或候选语音审核，不靠句内碎片补静音掩盖。ASR 筛查不等于人工听审，听感通过也不等于同步通过。

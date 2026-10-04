@@ -12,7 +12,7 @@ def validate_configuration(config):
 
 
 def inspect(root, config, *, page_id, locale, source, candidate, audio_path,
-            audio_sha256, read_package, hashes):
+            audio_sha256, read_package, hashes, speech_job_path):
     validate_configuration(config)
     prefix = 'release.' + locale + '.'
     release = read_package(root, config['package'], hashes, prefix + 'package')
@@ -25,7 +25,8 @@ def inspect(root, config, *, page_id, locale, source, candidate, audio_path,
     files, _ = stage.validate_release_assets(
         page_id=page_id, locale=locale, asset_root=assets, source=source, candidate=candidate,
         audio=audio, audio_path=_safe_path(audio_path), release=release,
-        content_review_path=_safe_path(root / config['contentReview']))
+        content_review_path=_safe_path(root / config['contentReview']),
+        speech_job_path=_safe_path(speech_job_path))
     # All asset bytes are checked against the declared hashes by the shared gate.
     hashes[prefix + 'assets'] = _digest({url: sha for url, (_, sha) in files.items()})
     for field in ('package', 'contentReview'):

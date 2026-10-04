@@ -1,0 +1,165 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-source-voice-authorization-v2.schema.json",
+  "title": "Source approved-window voice voice-authorization v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "scope",
+    "englishSourcePackageJsonSha256",
+    "targetLanguageCandidateJsonSha256",
+    "targetLocale",
+    "speakerId",
+    "voiceCheckpointSha256",
+    "userRightsAttestation",
+    "sourceId",
+    "sourceMediaSha256",
+    "mediaDurationSeconds",
+    "approvedWindow",
+    "authorizedUses"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "sermon-source-voice-authorization-v2"
+    },
+    "scope": {
+      "enum": [
+        "source_approved_window_formal_audio_only",
+        "source_approved_window_formal_audio_and_page_only"
+      ]
+    },
+    "englishSourcePackageJsonSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "targetLanguageCandidateJsonSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "targetLocale": {
+      "type": "string",
+      "pattern": "^(?!en(?:-|$))[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$"
+    },
+    "speakerId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "voiceCheckpointSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "userRightsAttestation": {
+      "$ref": "#/$defs/jsonArtifact"
+    },
+    "sourceId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sourceMediaSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "mediaDurationSeconds": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "approvedWindow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "startSeconds",
+        "endSeconds"
+      ],
+      "properties": {
+        "startSeconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "endSeconds": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      }
+    },
+    "authorizedUses": {
+      "enum": [
+        [
+          "formal_audio_generation"
+        ],
+        [
+          "formal_audio_generation",
+          "formal_page_publication"
+        ]
+      ]
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "jsonArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256",
+        "jsonSha256"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "jsonSha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "scope": {
+            "const": "source_approved_window_formal_audio_only"
+          }
+        },
+        "required": [
+          "scope"
+        ]
+      },
+      "then": {
+        "properties": {
+          "authorizedUses": {
+            "const": [
+              "formal_audio_generation"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "scope": {
+            "const": "source_approved_window_formal_audio_and_page_only"
+          }
+        },
+        "required": [
+          "scope"
+        ]
+      },
+      "then": {
+        "properties": {
+          "authorizedUses": {
+            "const": [
+              "formal_audio_generation",
+              "formal_page_publication"
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

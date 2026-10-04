@@ -281,6 +281,7 @@ class AudioPackageTests(unittest.TestCase):
     @staticmethod
     def complete_source_fixture(source):
         """Allow integration fixtures to supply a fully built Layer 1 package."""
+        source["source"].setdefault("sourceId", "synthetic:audio-package")
         return source
 
     @staticmethod
@@ -436,6 +437,68 @@ class AudioPackageTests(unittest.TestCase):
                 subject.unit_integrity, "validate_receipt"):
             with self.assertRaisesRegex(ValueError, "complete source media"):
                 self.build()
+
+    def test_existing_dev_clip_permission_cannot_be_promoted_to_formal_page(self):
+        from scripts import stage_formal_multilingual_dev as stage
+        package = self.build()
+        stage.validate_audio_page_authorization(package, self.source, self.candidate,
+                                                self.paths["job"], allow_dev_clip=True)
+        with self.assertRaisesRegex(ValueError, "Dev clip voice authorization"):
+            stage.validate_audio_page_authorization(package, self.source, self.candidate,
+                                                    self.paths["job"])
+
+    def test_v2_audio_only_authorization_builds_package_with_scoped_demo_capability(self):
+        # Exercise the complete real job + audio builder chain, including the
+        # existing human probe capability; do not promote the registry locale.
+        authorization_path = self.asset_root / "review/voice-authorization.json"
+        attestation = {
+            "schemaVersion": "sermon-source-user-voice-attestation-v2",
+            "scope": "source_approved_window_formal_audio_only",
+            "sourceId": self.source["source"]["sourceId"],
+            "sourceMediaSha256": self.source["source"]["media"]["sha256"],
+            "mediaDurationSeconds": self.source["source"]["media"]["durationSeconds"],
+            "approvedWindow": {key: self.source["source"]["approvedWindow"][key]
+                               for key in ("startSeconds", "endSeconds")},
+            "targetLocales": ["ko"], "speakerId": self.adapter["speakerId"],
+            "voiceCheckpointSha256": self.adapter["conditioningSha256"],
+            "authorizedUses": ["formal_audio_generation"], "permissionClaimed": True,
+            "userStatement": "Synthetic fixture: audio only, no page publication.",
+            "recordedAt": "2026-10-04T00:00:00Z"}
+        write_json(authorization_path, attestation)
+        self.paths.pop("clip_voice_authorization")
+        self.paths["source_voice_authorization"] = self.root / "source-window-authorization.json"
+        speech.prepare_source_voice_authorization(
+            self.paths["source"], self.paths["candidate"], self.paths["adapter"],
+            authorization_path, self.paths["source_voice_authorization"])
+        self.job = speech.prepare_job(
+            self.paths["source"], self.paths["anchor"], self.paths["candidate"],
+            self.paths["policy"], self.paths["human_receipt"], self.paths["adapter"],
+            self.paths["registry"], self.asset_root,
+            source_voice_authorization_path=self.paths["source_voice_authorization"],
+            clip_voice_capability_path=self.paths["clip_voice_capability"],
+            clip_timeline_map_path=self.paths["clip_timeline_map"], build_only=True)
+        write_json(self.paths["job"], self.job)
+        self.manifest["targetLanguageSpeechJobJsonSha256"] = subject.json_sha256(self.job)
+        self.manifest["voiceAuthorization"] = self.artifact("review/voice-authorization.json", json_artifact=True)
+        for index, row in enumerate(self.manifest["units"]):
+            receipt = unit_integrity.build_receipt(
+                self.paths["job"], index, self.asset_root / row["audio"]["path"])
+            relative = row["receipt"]["path"]
+            write_json(self.asset_root / relative, receipt)
+            row["receipt"] = self.artifact(relative, json_artifact=True)
+        self.screening["targetLanguageSpeechJobJsonSha256"] = subject.json_sha256(self.job)
+        write_json(self.asset_root / "review/machine-screening.json", self.screening)
+        self.manifest["machineScreeningReceipt"] = self.artifact("review/machine-screening.json", json_artifact=True)
+        package = self.build()
+        self.assertEqual(package["status"], "machine_screened")
+        self.assertFalse(package["humanReview"]["humanApproval"])
+        capability = next(row for row in self.registry["speakers"][0]["localeCapabilities"]
+                          if row["targetLocale"] == "ko")
+        self.assertEqual(capability["status"], "unverified_poc")
+        from scripts import stage_formal_multilingual_dev as stage
+        with self.assertRaisesRegex(ValueError, "formal_page_publication"):
+            stage.validate_audio_page_authorization(package, self.source, self.candidate,
+                                                   self.paths["job"], allow_dev_clip=True)
 
     def test_changed_candidate_rejected(self):
         self.candidate["groups"][0]["targetText"] = "다른 말"

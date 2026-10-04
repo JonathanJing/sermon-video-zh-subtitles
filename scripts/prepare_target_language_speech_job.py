@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 from datetime import datetime, timezone
 import json
+import math
 from pathlib import Path
 import re
 from typing import Any
@@ -260,27 +261,59 @@ def validate_clip_voice_authorization(receipt: dict[str, Any], source_package: d
              "User attestation does not authorize this Dev clip voice")
 
 
-def validate_source_voice_authorization(receipt: dict[str, Any], source_package: dict[str, Any],
-                                        candidate: dict[str, Any], adapter: dict[str, Any]) -> None:
-    """Allow formal use only for the user's approved complete source media."""
-    _validate_schema(receipt, "sermon-source-voice-authorization-v1.schema.json",
-                     "source voice authorization")
-    attestation = _bound_evidence(receipt["userRightsAttestation"], json_artifact=True)
-    _validate_schema(attestation, "sermon-source-user-voice-attestation-v1.schema.json",
-                     "source voice user attestation")
+def validate_source_voice_attestation(attestation: dict[str, Any],
+                                      source_package: dict[str, Any], *,
+                                      expected_version: str | None = None) -> None:
+    """Keep v1 complete-media semantics; v2 binds an approved media window."""
+    version = attestation.get("schemaVersion")
+    _require(version in {"sermon-source-user-voice-attestation-v1",
+                         "sermon-source-user-voice-attestation-v2"}
+             and (expected_version is None or version == expected_version),
+             "Unsupported or mismatched source voice attestation version")
+    _validate_schema(attestation, version + ".schema.json", "source voice user attestation")
     source = source_package.get("source", {})
     media = source.get("media", {})
     window = source.get("approvedWindow", {})
-    _require(source_package.get("status") == "ready_for_translation"
-             and source_package.get("translationEligible") is True
-             and source.get("sourceId") == attestation["sourceId"]
-             and media.get("sha256") == attestation["sourceMediaSha256"]
-             and media.get("durationSeconds") == attestation["approvedWindow"]["endSeconds"]
-             and window.get("startSeconds") == attestation["approvedWindow"]["startSeconds"]
-             and window.get("endSeconds") == attestation["approvedWindow"]["endSeconds"]
-             and window.get("status") == "approved"
-             and window.get("humanApproval") is True,
-             "Source voice permission requires the approved complete source media")
+    start, end = (attestation["approvedWindow"][key] for key in ("startSeconds", "endSeconds"))
+    duration = media.get("durationSeconds")
+    common = (source_package.get("status") == "ready_for_translation"
+              and source_package.get("translationEligible") is True
+              and source.get("sourceId") == attestation["sourceId"]
+              and media.get("sha256") == attestation["sourceMediaSha256"]
+              and window.get("startSeconds") == start and window.get("endSeconds") == end
+              and window.get("status") == "approved" and window.get("humanApproval") is True)
+    if version.endswith("-v1"):
+        _require(common and duration == end,
+                 "Source voice permission requires the approved complete source media")
+    else:
+        _require(common and all(type(value) in (int, float) and math.isfinite(value)
+                                for value in (start, end, duration))
+                 and 0 <= start < end <= duration
+                 and attestation["mediaDurationSeconds"] == duration,
+                 "Source voice permission requires the exact approved source media window and duration")
+    _require(_reviewed_at(attestation["recordedAt"]) and attestation["userStatement"].strip(),
+             "Source voice permission lacks a recorded user statement")
+
+
+def validate_source_voice_authorization(receipt: dict[str, Any], source_package: dict[str, Any],
+                                        candidate: dict[str, Any], adapter: dict[str, Any], *,
+                                        required_use: str = "formal_audio_generation") -> None:
+    """Validate a same-version, candidate-bound source permission without broadening it."""
+    version = receipt.get("schemaVersion")
+    versions = {"sermon-source-voice-authorization-v1": "sermon-source-user-voice-attestation-v1",
+                "sermon-source-voice-authorization-v2": "sermon-source-user-voice-attestation-v2"}
+    _require(version in versions, "Unsupported source voice authorization version")
+    _validate_schema(receipt, version + ".schema.json", "source voice authorization")
+    attestation = _bound_evidence(receipt["userRightsAttestation"], json_artifact=True)
+    validate_source_voice_attestation(attestation, source_package, expected_version=versions[version])
+    if version.endswith("-v2"):
+        _require(all(receipt[key] == attestation[key] for key in
+                     ("scope", "sourceId", "sourceMediaSha256", "mediaDurationSeconds",
+                      "approvedWindow", "authorizedUses")),
+                 "Source voice authorization scope or media window differs from attestation")
+    _require(required_use in {"formal_audio_generation", "formal_page_publication"}
+             and required_use in attestation["authorizedUses"],
+             "Source voice permission lacks required use: " + required_use)
     _require(receipt["englishSourcePackageJsonSha256"] == interpretation.json_sha256(source_package)
              and receipt["targetLanguageCandidateJsonSha256"] == interpretation.json_sha256(candidate)
              and candidate.get("englishSourcePackageJsonSha256") == receipt["englishSourcePackageJsonSha256"]
@@ -288,9 +321,7 @@ def validate_source_voice_authorization(receipt: dict[str, Any], source_package:
              and receipt["targetLocale"] in attestation["targetLocales"]
              and receipt["speakerId"] == adapter["speakerId"] == attestation["speakerId"]
              and receipt["voiceCheckpointSha256"] == adapter["conditioningSha256"]
-             == attestation["voiceCheckpointSha256"]
-             and _reviewed_at(attestation["recordedAt"])
-             and attestation["userStatement"].strip(),
+             == attestation["voiceCheckpointSha256"],
              "Source voice permission differs from candidate, locale, speaker or checkpoint")
 
 
@@ -303,9 +334,12 @@ def prepare_source_voice_authorization(source_path: Path, candidate_path: Path,
         _require(path.is_file(), f"Missing source voice authorization input: {path}")
     source, candidate, adapter = (_load(path) for path in (source_path, candidate_path,
                                                           adapter_path))
+    attestation = _load(attestation_path)
+    validate_source_voice_attestation(attestation, source)
+    is_window = attestation["schemaVersion"] == "sermon-source-user-voice-attestation-v2"
     receipt = {
-        "schemaVersion": "sermon-source-voice-authorization-v1",
-        "scope": "source_bound_formal_audio_and_page_only",
+        "schemaVersion": "sermon-source-voice-authorization-v2" if is_window else "sermon-source-voice-authorization-v1",
+        "scope": attestation["scope"],
         "englishSourcePackageJsonSha256": interpretation.json_sha256(source),
         "targetLanguageCandidateJsonSha256": interpretation.json_sha256(candidate),
         "targetLocale": candidate["targetLocale"],
@@ -317,6 +351,10 @@ def prepare_source_voice_authorization(source_path: Path, candidate_path: Path,
             "jsonSha256": interpretation.json_sha256(_load(attestation_path)),
         },
     }
+    if is_window:
+        receipt.update({key: attestation[key] for key in
+                        ("sourceId", "sourceMediaSha256", "mediaDurationSeconds",
+                         "approvedWindow", "authorizedUses")})
     validate_source_voice_authorization(receipt, source, candidate, adapter)
     out.parent.mkdir(parents=True, exist_ok=True)
     interpretation.write_json(out, receipt)

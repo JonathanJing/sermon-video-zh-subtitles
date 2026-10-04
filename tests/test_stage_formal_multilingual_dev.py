@@ -21,6 +21,13 @@ SPEC.loader.exec_module(MODULE)
 class FormalDevStageTests(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
+        # These existing asset tests use minimal source/audio fixture stubs.
+        # The real job/permission chain is covered without mocks in
+        # test_source_window_voice_authorization and canonical inspection tests.
+        for module in (MODULE, assets_builder.stage):
+            gate = patch.object(module, "validate_audio_page_authorization")
+            gate.start()
+            self.addCleanup(gate.stop)
         self.root = Path(self.temporary.name)
         self.assets = self.root / "assets"
         self.source_path = self.root / "source.json"
@@ -199,6 +206,8 @@ class FormalDevStageTests(unittest.TestCase):
                                         for locale in MODULE.LOCALES), []),
                                   *sum((["--human-review-receipt", f"{locale}={self.paths['receipt'][locale]}"]
                                         for locale in MODULE.LOCALES), []),
+                                  *sum((["--speech-job", f"{locale}={self.root / (locale + '-job.json')}"]
+                                        for locale in MODULE.LOCALES), []),
                                   *sum((["--audio-package", f"{locale}={self.paths['audio'][locale]}"]
                                         for locale in MODULE.LOCALES), []),
                                   *sum((["--audio-human-review-receipt", f"{locale}={self.paths['audio_receipt'][locale]}"]
@@ -213,6 +222,13 @@ class FormalDevStageTests(unittest.TestCase):
         with patch.object(MODULE, "read_package", side_effect=lambda path, schema:
                           self.source if path == self.source_path else real(path, schema)):
             return MODULE.stage(args)
+
+    def test_new_page_preflight_requires_explicit_job_paths(self):
+        args = self.args()
+        args.speech_job = []
+        with self.assertRaisesRegex(ValueError, "--speech-job"):
+            self.stage_with_fixture_source(args)
+        self.assertFalse(args.out.exists())
 
     def test_stages_three_locale_catalog_with_no_poc_or_publication_upgrade(self):
         receipt = self.stage_with_fixture_source(self.args())
@@ -461,7 +477,8 @@ class FormalDevStageTests(unittest.TestCase):
             source=self.source_path, metadata=metadata_path, metadata_proposal=proposal,
             page_id=self.page_id, date="2026-09-20", out=prepared,
             candidate=[f"{locale}={self.paths['candidate'][locale]}" for locale in MODULE.LOCALES],
-            audio_package=[f"{locale}={self.paths['audio'][locale]}" for locale in MODULE.LOCALES])
+            audio_package=[f"{locale}={self.paths['audio'][locale]}" for locale in MODULE.LOCALES],
+            speech_job=[f"{locale}={self.root / (locale + '-job.json')}" for locale in MODULE.LOCALES])
         real = assets_builder.stage.read_package
         with patch.object(assets_builder.stage, "read_package", side_effect=lambda path, schema:
                           self.source if path == self.source_path else real(path, schema)):

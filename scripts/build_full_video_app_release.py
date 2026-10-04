@@ -128,10 +128,10 @@ def prepare(args: argparse.Namespace) -> dict:
     source_sha = stage.canonical_sha(source)
     metadata = formal_assets.checked_metadata(args.metadata_approval, args.metadata_proposal,
                                               args.page_id, args.date)
-    maps = {name: stage.assignment_map(getattr(args, name), f"--{name.replace('_', '-')}")
+    maps = {name: stage.assignment_map(getattr(args, name, []), f"--{name.replace('_', '-')}")
             for name in ("full_candidate", "full_review_receipt", "spoken_candidate",
                          "spoken_review_receipt", "audio_package", "audio_review_receipt",
-                         "audio_screening_receipt", "full_content")}
+                         "audio_screening_receipt", "full_content", "speech_job")}
     args.out.parent.mkdir(parents=True, exist_ok=True)
     scratch = Path(tempfile.mkdtemp(prefix=f".{args.out.name}-", dir=args.out.parent))
     try:
@@ -171,6 +171,7 @@ def prepare(args: argparse.Namespace) -> dict:
                                 group["targetText"].encode("utf-8")).hexdigest()
                             for unit, group in zip(audio["units"], spoken["groups"])),
                     f"{locale}: full-listen approval does not bind track")
+            stage.validate_audio_page_authorization(audio, source, spoken, maps["speech_job"][locale])
             track = stage.local_artifact(audio_path, audio["track"], f"{locale} track")
             captions = stage.local_artifact(audio_path, audio["captions"], f"{locale} captions")
             caption_data = read(captions)
@@ -376,7 +377,7 @@ def main() -> None:
     prepare_parser.add_argument("--metadata-proposal", type=Path, required=True)
     for option in ("full-candidate", "full-review-receipt", "spoken-candidate",
                    "spoken-review-receipt", "audio-package", "audio-review-receipt",
-                   "audio-screening-receipt", "full-content"):
+                   "audio-screening-receipt", "full-content", "speech-job"):
         prepare_parser.add_argument("--" + option, action="append", default=[], metavar="LOCALE=PATH")
     prepare_parser.add_argument("--page-id", required=True)
     prepare_parser.add_argument("--date", required=True)

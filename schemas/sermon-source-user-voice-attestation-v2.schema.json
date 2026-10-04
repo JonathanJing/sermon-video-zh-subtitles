@@ -1,0 +1,154 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-source-user-voice-attestation-v2.schema.json",
+  "title": "Source approved-window voice user-voice-attestation v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "scope",
+    "sourceId",
+    "sourceMediaSha256",
+    "approvedWindow",
+    "targetLocales",
+    "speakerId",
+    "voiceCheckpointSha256",
+    "authorizedUses",
+    "permissionClaimed",
+    "userStatement",
+    "recordedAt",
+    "mediaDurationSeconds"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "sermon-source-user-voice-attestation-v2"
+    },
+    "scope": {
+      "enum": [
+        "source_approved_window_formal_audio_only",
+        "source_approved_window_formal_audio_and_page_only"
+      ]
+    },
+    "sourceId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sourceMediaSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "approvedWindow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "startSeconds",
+        "endSeconds"
+      ],
+      "properties": {
+        "startSeconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "endSeconds": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      }
+    },
+    "targetLocales": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/targetLocale"
+      }
+    },
+    "speakerId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "voiceCheckpointSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "authorizedUses": {
+      "enum": [
+        [
+          "formal_audio_generation"
+        ],
+        [
+          "formal_audio_generation",
+          "formal_page_publication"
+        ]
+      ]
+    },
+    "permissionClaimed": {
+      "const": true
+    },
+    "userStatement": {
+      "type": "string",
+      "minLength": 1
+    },
+    "recordedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "mediaDurationSeconds": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "targetLocale": {
+      "type": "string",
+      "pattern": "^(?!en(?:-|$))[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "scope": {
+            "const": "source_approved_window_formal_audio_only"
+          }
+        },
+        "required": [
+          "scope"
+        ]
+      },
+      "then": {
+        "properties": {
+          "authorizedUses": {
+            "const": [
+              "formal_audio_generation"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "scope": {
+            "const": "source_approved_window_formal_audio_and_page_only"
+          }
+        },
+        "required": [
+          "scope"
+        ]
+      },
+      "then": {
+        "properties": {
+          "authorizedUses": {
+            "const": [
+              "formal_audio_generation",
+              "formal_page_publication"
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

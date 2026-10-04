@@ -335,16 +335,10 @@ def build_package(paths: dict[str, Path], render_manifest_path: Path, artifact_r
     except (AttributeError, ValueError) as exc:
         raise ValueError("Voice authorization approval time is invalid") from exc
     if source_auth is not None:
-        speech._validate_schema(authorization,
-                                "sermon-source-user-voice-attestation-v1.schema.json",
-                                "source voice user attestation")
-        require(authorization["sourceId"] == source["source"]["sourceId"]
-                and authorization["sourceMediaSha256"] == source["source"]["media"]["sha256"]
-                and authorization["approvedWindow"]["endSeconds"]
-                == source["source"]["approvedWindow"]["endSeconds"]
-                and locale in authorization["targetLocales"]
+        speech.validate_source_voice_attestation(authorization, source)
+        require(locale in authorization["targetLocales"]
                 and parsed_approval_time.tzinfo is not None,
-                "Voice authorization is not bound to this complete source media and locale")
+                "Voice authorization is not bound to this source media and locale")
     else:
         require(authorization.get("schemaVersion") == "sermon-clip-user-rights-attestation-v1"
                 and isinstance(authorization.get("scope"), str)
