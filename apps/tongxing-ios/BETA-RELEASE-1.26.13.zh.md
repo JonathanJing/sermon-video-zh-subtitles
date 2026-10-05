@@ -20,8 +20,10 @@
 
 ## Apple 与测试组
 
-二进制上传命令成功；Apple 处理与 Rooted 内部组读回待补充。
+二进制上传、Apple 处理和 Rooted 内部组分发均成功。2026-10-05 21:21:40 UTC 读回：唯一构建 `c61f48c8-8b2a-4c20-ac05-4e326834dfa4` 为 `1.26.13 (54)`，`processingState=VALID`、`internalBuildState=IN_BETA_TESTING`、未过期；Rooted 的 buildIDs 包含该构建。What to Test 已按内容读回一致，文件 SHA-256 为 `a73492fdbe3b4d9bab389ed20f4c306b17c479e77c87f4335a6644429a63ba7d`。
 
 What to Test 说明采音 8／10 秒、快速匹配可直接显示互斥终态、结果约 8 秒、权限弹窗与后台／收起边界，以及真机待检查项。未新建测试组或测试者，未提交外部 Beta Review，未晋升正式 App；`device=not_run`、`venue=not_run`。
 
 私有归档、IPA、测试说明与原始冻结记录位于 `artifacts/tongxing-ios/beta-1.26.13-build54/`；上传成功 receipt 位于 `artifacts/tongxing-ios/testflight/20261005T210952Z-1ffd9a53/`。原归档记录保持不变，以追加分发记录引用 Apple 状态。账户与签名材料留在仓库外。
+
+Apple 处理 receipt：`artifacts/tongxing-ios/testflight/20261005T211125Z-cb364990/`；分发及读回 receipt：`artifacts/tongxing-ios/testflight/20261005T212135Z-5843d65c/`；追加记录：`artifacts/tongxing-ios/beta-1.26.13-build54/distribution-record.json`。以上证明内部 TestFlight 可测试，尚不证明设备安装或现场验收。
