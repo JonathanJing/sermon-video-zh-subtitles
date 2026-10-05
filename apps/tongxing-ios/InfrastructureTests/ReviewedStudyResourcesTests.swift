@@ -104,6 +104,30 @@ struct ReviewedStudyResourcesTests {
         let studyAsset = try #require(package.assets.first { $0.role == .meditation })
         try Data("{}".utf8).write(to: cache.appendingPathComponent("Study/\(studyAsset.sha256).json"))
         await #expect(throws: (any Error).self) { try await repository.loadPage(for: package) }
+        // The real builder's pre-publication v3 candidate uses full-video JSON,
+        // never the legacy candidate locale/timing schema.
+        let releasePath = try #require(page.targets["ko"]?.releasePackageUrl)
+        var candidateJSON = try JSONSerialization.jsonObject(with: try #require(files[releasePath])) as! [String: Any]
+        candidateJSON["status"] = "candidate"
+        candidateJSON["httpVerification"] = ["status": "not_run", "evidenceSha256": NSNull()]
+        let candidateBytes = try bytes(candidateJSON)
+        files[releasePath] = candidateBytes
+        var catalogJSON = try JSONSerialization.jsonObject(with: try #require(files["/multilingual-v3.json"])) as! [String: Any]
+        var pages = catalogJSON["pages"] as! [[String: Any]], targets = pages[0]["targets"] as! [String: [String: Any]]
+        targets["ko"]!["releasePackageJsonSha256"] = SHA256.hash(data: candidateBytes).map { String(format: "%02x", $0) }.joined()
+        pages[0]["targets"] = targets; catalogJSON["pages"] = pages
+        files["/multilingual-v3.json"] = try bytes(catalogJSON)
+        FourProductFixtureProtocol.files = files
+        let candidateReader = MultilingualCatalogRepository(origin: URL(string: "https://ai-for-god-sermon-audio-dev.web.app")!,
+            cacheDirectory: cache.appendingPathComponent("Candidate"), session: session, allowDevCandidate: true)
+        let candidatePage = try await candidateReader.loadCatalog().catalog.defaultPage
+        let candidatePackage = try await candidateReader.loadRelease(page: candidatePage, locale: "ko")
+        let candidateTranscript = try await candidateReader.loadPublishedTranscript(for: candidatePackage, page: candidatePage)
+        #expect(candidateTranscript.releaseStatus == "candidate")
+        #expect(!candidateTranscript.fullText.isEmpty)
+        #expect(try await candidateReader.loadStudies(for: candidatePackage) != nil)
+        #expect(try await candidateReader.loadPage(for: candidatePackage).html.contains("id=\"study-meditation\""))
+
     }
 
 }

@@ -121,3 +121,5 @@
 详见 [continuation](../unified-continuation.zh.md)、[Study v2](../unified-study-generation.zh.md)、[四产物公开交付](../layer4-four-product-public-delivery.zh.md)。consumer capabilities v2 指向 release v3；旧 v1/v2 包保留其原范围，不赋予四产物资格。代码身份或输入已改变时需新 revision/绑定，不能直接沿用旧执行的成功声明。
 
 本视频仍只保留已验证完整媒体的实际收据。没有新增付费 ASR/TTS、Hosting 发布、TestFlight 上传或真人听审。新来源的窗口决定、API 硬预算和五人声音方案仍是实际生产输入；不能从旧证据或离线合成批准继承。
+
+最终精确 revision `b71ab07` 的原生独立只读审核发现 v3 candidate 仍进入 legacy 字段门禁。随后将 legacy candidate 分支限定为非 v3，并补充真实 Python 产物 candidate → 原生文稿/学习资源/HTML 读取回归。`/private/tmp/pr242-v3-candidate-final.log`：实际执行 5 项通过、1 项既有真实网络 fixture 测试跳过；跳过未计入通过。页面/语言切换清空、异步身份检查、缺损拒绝和完整正文显示的定向审核未发现其他问题。

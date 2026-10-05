@@ -36,8 +36,9 @@ public struct VerifiedPublishedTranscript: Sendable, Equatable {
         }
         let source = try JSONDecoder().decode(FullContent.self, from: content)
         let spoken = try JSONDecoder().decode(CaptionContent.self, from: captions)
-        let candidate = allowDevCandidate && package.status == "candidate"
-        let validContentSchema = candidate && package.schemaVersion != TargetLanguageReleasePackage.fourProductSchemaVersion
+        let candidate = allowDevCandidate && package.status == "candidate" &&
+            package.schemaVersion != TargetLanguageReleasePackage.fourProductSchemaVersion
+        let validContentSchema = candidate
             ? (source.schemaVersion == "sermon-formal-dev-content-v1" ||
                (package.contentStatus == "machine_reviewed" && source.schemaVersion == "sermon-dev-podcast-candidate-content-v2"))
             : source.schemaVersion == "sermon-full-video-text-content-v1"
