@@ -92,6 +92,7 @@ def preload_execution_modules(plugin_paths=()):
                  'sermon_strict_budget_adapter','sermon_strict_locale','prepare_target_language_speech_job',
                  'render_formal_target_language_speech','render_multilingual_voice_demos',
                  'validate_target_language_audio_unit','sermon_local_model_observation',
+                 'sermon_model_call_report','sermon_model_call_observation','sermon_openai_runtime',
                  'sermon_trace_artifacts','sermon_review_diagnostics','sermon_preview_checkpoint_manifest',
                  'sermon_fresh_source_evidence','sermon_historical_layer2','sermon_historical_native_seed','sermon_historical_identity','sermon_source_producer_compatibility','sermon_source_failure'):
         importlib.import_module('scripts.'+name)
