@@ -168,6 +168,32 @@ final class ListeningActivityDismissalTests: XCTestCase {
         try await eventually { ListeningActivity.activities.contains { $0.content.state.title == title } }
     }
 
+    func testExistingPlaybackActivityPublishesBackgroundSubtitleAndGap() async throws {
+        try requireOptIn()
+        let coordinator = ListeningLiveActivityCoordinator(allowSystemActivitiesInTests: true)
+        defer { coordinator.end() }
+        let title = "Synthetic subtitle \(UUID().uuidString)", source = UUID().uuidString
+        coordinator.update(title: title, speaker: "Fixture", position: 0, duration: 300,
+                           isPlaying: true, sourceKey: source, subtitleID: "first",
+                           chineseSubtitle: "第一句", englishSubtitle: "First")
+        try await eventually { ListeningActivity.activities.contains { $0.content.state.title == title } }
+        let activity = try XCTUnwrap(ListeningActivity.activities.first { $0.content.state.title == title })
+        // Coordinator background decision only; this is not a locked-device render test.
+        coordinator.setApplicationStateForTesting(.background)
+        coordinator.update(title: title, speaker: "Fixture", position: 3, duration: 300,
+                           isPlaying: true, sourceKey: source)
+        try await eventually { activity.content.state.subtitleID == nil }
+        XCTAssertNil(activity.content.state.chineseSubtitle)
+        XCTAssertNil(activity.content.state.englishSubtitle)
+        coordinator.update(title: title, speaker: "Fixture", position: 5, duration: 300,
+                           isPlaying: true, sourceKey: source, subtitleID: "second",
+                           chineseSubtitle: "第二句", englishSubtitle: "Second")
+        try await eventually { activity.content.state.subtitleID == "second" }
+        XCTAssertEqual(activity.content.state.chineseSubtitle, "第二句")
+        XCTAssertEqual(activity.content.state.englishSubtitle, "Second")
+        XCTAssertEqual(ListeningActivity.activities.filter { $0.content.state.title == title }.count, 1)
+    }
+
     private func requireOptIn() throws {
         try XCTSkipUnless(ProcessInfo.processInfo.environment["TONGXING_ACTIVITY_DISMISSAL_SMOKE"] == "1",
                           "Explicit opt-in required for real ActivityKit")

@@ -12,6 +12,29 @@ import XCTest
 /// not represent a real phone call, headphone route, lock-screen or venue test.
 @MainActor
 final class PlaybackControllerTests: XCTestCase {
+    func testContinuousPlaybackAdvancesMappedSystemSubtitleWithoutSeek() async throws {
+        let fixture = try Fixture()
+        defer { fixture.dispose() }
+        let audio = fixture.publishedAudio(locale: "zh-Hans")
+        fixture.player.loadPublishedAudio(audio)
+        try await eventually("published ready") { fixture.player.isReady }
+        fixture.player.updateSystemMetadata(
+            identity: TrackIdentity(weekID: audio.pageID, trackID: "published_zh-Hans", audioSHA256: audio.sha256),
+            sourceID: audio.sourceIdentitySha256, title: "Synthetic", speaker: "Fixture", subtitles: [
+                PlaybackSystemSubtitle(id: "first", start: 0, end: 1, chinese: "第一句", english: "First"),
+                PlaybackSystemSubtitle(id: "second", start: 2, end: 12, chinese: "第二句", english: "Second")
+            ])
+        XCTAssertEqual(fixture.player.currentSystemSubtitle?.id, "first")
+        fixture.player.play()
+        try await eventually("gap while playing") {
+            fixture.player.position >= 1 && fixture.player.position < 2 && fixture.player.currentSystemSubtitle == nil
+        }
+        try await eventually("second while playing") { fixture.player.currentSystemSubtitle?.id == "second" }
+        XCTAssertTrue(fixture.player.isPlaying)
+        XCTAssertEqual(fixture.player.currentSystemSubtitle?.chinese, "第二句")
+        XCTAssertEqual(fixture.player.currentSystemSubtitle?.english, "Second")
+    }
+
     func testSystemMetadataAndMappedSubtitleAreBoundToLoadedAudio() async throws {
         let fixture = try Fixture()
         defer { fixture.dispose() }

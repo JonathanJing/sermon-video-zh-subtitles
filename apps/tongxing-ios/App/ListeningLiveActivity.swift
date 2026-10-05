@@ -246,7 +246,16 @@ final class ListeningLiveActivityCoordinator {
             return
         }
         guard shouldPublish(snapshot) else { return }
+        let subtitleChanged = lastPublished?.state.subtitleID != snapshot.state.subtitleID
+            || lastPublished?.state.chineseSubtitle != snapshot.state.chineseSubtitle
+            || lastPublished?.state.englishSubtitle != snapshot.state.englishSubtitle
+        if subtitleChanged {
+            logger.notice("Playback subtitle submit: activity=\(activity.id, privacy: .public), cue=\(Self.subtitleDiagnosticKey(snapshot.state.subtitleID), privacy: .public), position=\(snapshot.state.position, privacy: .public), appState=\(self.applicationState.rawValue, privacy: .public)")
+        }
         await activity.update(content(for: snapshot.state))
+        if subtitleChanged {
+            logger.notice("Playback subtitle update returned: activity=\(activity.id, privacy: .public), cue=\(Self.subtitleDiagnosticKey(activity.content.state.subtitleID), privacy: .public)")
+        }
         lastPublished = snapshot
     }
 
@@ -329,6 +338,12 @@ final class ListeningLiveActivityCoordinator {
                 }
             }
         }
+    }
+
+    // Correlate changes without putting captions, content identity or URLs in logs.
+    private static func subtitleDiagnosticKey(_ id: String?) -> String {
+        guard let id else { return "none" }
+        return SHA256.hash(data: Data(id.utf8)).prefix(6).map { String(format: "%02x", $0) }.joined()
     }
 
     private func shouldPublish(_ snapshot: Snapshot) -> Bool {

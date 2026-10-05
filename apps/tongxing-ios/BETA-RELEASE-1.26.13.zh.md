@@ -33,3 +33,7 @@ Apple 处理 receipt：`artifacts/tongxing-ios/testflight/20261005T211125Z-cb364
 用户在 iPhone 17 Pro / iOS 27.0.1 提供采音截图，只有系统麦克风橙点，没有定位活动内容。设备查询确认安装 `1.26.13 (54)`。用户在麦克风已获授权后重试，Console 观察到同一 transient Activity 创建、更新并约 18 秒后结束，但未得到动态岛可见证据。系统 descriptor 的 `isMomentary=true`，呈现选项含 `Should Show System Aperture: false`；这不是 App 可公开设置的参数，不能据此武断归因于权限或 Widget 缺配置。该版本的前台灵动岛实机验收记为 `failed`，不能用 TestFlight 可用或模拟器生命周期测试替代。
 
 另发现首次麦克风授权回调早于 App active 的独立竞态，修复候选需分别验证；它不能解释这次已成功创建活动的重试。独立诊断 App 使用同一 Widget 组件，不覆盖已安装 Beta；实机无录音 transient 与提示更新均未呈现，ordinary 活动离开 App 后显示麦克风。清理旧活动后 transient 仍未显示。完整结果见 [实机排查报告](../../docs/reports/20261005-ios-island-device-diagnosis.zh.md)。
+
+## 实机反馈：锁屏双语字幕未更新
+
+用户进一步报告系统媒体卡片下方黑色 Live Activity 的中英字幕没有随播放更新。此项记为用户报告验收失败，不能继续当作已交付的实时字幕功能。已完成应用更新链路只读排查，新增跨句／后台决策测试和候选诊断日志，但尚未确认根因或恢复实际显示，详见 [锁屏字幕排查报告](../../docs/reports/20261005-ios-lockscreen-subtitle-diagnosis.zh.md)。
