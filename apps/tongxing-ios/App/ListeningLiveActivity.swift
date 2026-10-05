@@ -34,7 +34,6 @@ final class ListeningLiveActivityCoordinator {
     private var suppressedSourceKey: String?
     private var lastRequestAttempt = Date.distantPast
     private var lastRequestSourceKey: String?
-    private var startedForAlignment = false
     private var alignmentActivity: ListeningActivity?
     private var alignmentSourceKey: String?
     private var alignmentSessionID: UUID?
@@ -148,6 +147,10 @@ final class ListeningLiveActivityCoordinator {
         if #available(iOS 18.0, *) {
             await reconcileForegroundAlignment(requested, token: token)
             guard token == revision, !Task.isCancelled else { return }
+        }
+        // Alignment feedback belongs only to a foreground transient activity.
+        // Older systems keep the in-app feedback instead of a Lock Screen fallback.
+        do {
             // A separate transient presentation owns foreground alignment.
             // Keep the ordinary playback activity independent of its dismissal.
             if let requested {
@@ -165,7 +168,7 @@ final class ListeningLiveActivityCoordinator {
 
         if let endingActivity,
            endingActivity.attributes.sourceKey != snapshot.sourceKey
-            || snapshot.state.isPlaying || snapshot.state.alignmentPhase?.isActive == true {
+            || snapshot.state.isPlaying {
             await dismissEndingActivity()
         }
         guard token == revision, !Task.isCancelled else { return }
@@ -186,7 +189,7 @@ final class ListeningLiveActivityCoordinator {
         }
 
         guard let activity else {
-            guard snapshot.state.isPlaying || snapshot.state.alignmentPhase?.isActive == true, suppressedSourceKey != snapshot.sourceKey,
+            guard snapshot.state.isPlaying, suppressedSourceKey != snapshot.sourceKey,
                   ActivityAuthorizationInfo().areActivitiesEnabled,
                   UIApplication.shared.applicationState == .active,
                   lastRequestSourceKey != snapshot.sourceKey || Date().timeIntervalSince(lastRequestAttempt) >= 30 else { return }
@@ -198,7 +201,6 @@ final class ListeningLiveActivityCoordinator {
                     content: content(for: snapshot.state), pushType: nil
                 )
                 self.activity = created
-                startedForAlignment = !snapshot.state.isPlaying
                 lastPublished = snapshot
                 observeState(of: created)
             } catch {
@@ -206,20 +208,6 @@ final class ListeningLiveActivityCoordinator {
                 // replace the player's real error/status or interrupt playback.
                 logger.error("Playback Live Activity request failed: \(String(describing: error), privacy: .public)")
             }
-            return
-        }
-        if snapshot.state.isPlaying { startedForAlignment = false }
-        if startedForAlignment && snapshot.state.alignmentPhase?.isActive != true && !snapshot.state.isPlaying {
-            // A paused alignment-only session has ended; retain its final result
-            // briefly on the Lock Screen, with no active microphone/timer symbol.
-            endingActivity = activity
-            self.activity = nil
-            stateObserver?.cancel()
-            stateObserver = nil
-            await activity.end(content(for: snapshot.state), dismissalPolicy: .after(Date().addingTimeInterval(8)))
-            lastPublished = nil
-            lastRequestSourceKey = nil
-            lastRequestAttempt = .distantPast
             return
         }
         guard shouldPublish(snapshot) else { return }
@@ -242,6 +230,19 @@ final class ListeningLiveActivityCoordinator {
         }
         guard token == revision, !Task.isCancelled else { return }
         guard let snapshot, let phase else { return }
+        guard snapshot.alignmentSessionID != nil else { return }
+        let applicationState = UIApplication.shared.applicationState
+        guard applicationState == .active else {
+            if let current = alignmentActivity {
+                alignmentActivity = nil
+                await current.end(nil, dismissalPolicy: .immediate)
+            }
+            // Do not reopen this task when the user returns to the app.
+            if Self.suppressesAlignmentAfterLeaving(phase: phase, isBackground: applicationState == .background) {
+                alignmentDismissed = true
+            }
+            return
+        }
         if let current = alignmentActivity,
            current.activityState == .dismissed || current.activityState == .ended {
             alignmentActivity = nil
@@ -329,6 +330,13 @@ final class ListeningLiveActivityCoordinator {
         stopped.isWaiting = false
         stopped.alignmentPhase = nil
         await previous.end(ActivityContent(state: stopped, staleDate: nil), dismissalPolicy: .immediate)
+    }
+
+    // A permission alert during preparation is transient inactivity, not a
+    // dismissal of a listening task that has already started.
+    nonisolated static func suppressesAlignmentAfterLeaving(phase: ListeningAlignmentPhase,
+                                                           isBackground: Bool) -> Bool {
+        isBackground || phase != .preparing
     }
 
     /// Pure payload preparation shared with tests. Count the JSON representation,

@@ -100,6 +100,7 @@ final class AudioAlignmentControllerTests: XCTestCase {
         XCTAssertTrue(f.player.isPlaying)
         XCTAssertEqual(f.status, "未找到可靠匹配，播放位置未改变。")
         XCTAssertEqual(f.failures, [f.status])
+        XCTAssertEqual(f.phases, [.preparing, .listening, .matching, .unmatched])
     }
 
     func testManualSeekCancelsLateMatcherWithoutOverwritingUserPosition() async throws {

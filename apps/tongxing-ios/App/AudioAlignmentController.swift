@@ -214,6 +214,7 @@ final class AudioAlignmentController {
         var status = "听声对齐未完成，请重试或手动调整。"
         var confirmedPosition: Double?
         var failed = true
+        var unmatched = false
         var capturedStart = now()
         defer {
             if requestID == token {
@@ -223,7 +224,7 @@ final class AudioAlignmentController {
                 capture.cancel()
                 capture.onCaptureStarted = nil
                 if sameSelection && wasPlaying && !resumed && mayResume { playback.resumeAfterAlignment() }
-                onPhase(failed ? .failed : confirmedPosition != nil ? .aligned : .cancelled)
+                onPhase(unmatched ? .unmatched : failed ? .failed : confirmedPosition != nil ? .aligned : .cancelled)
                 onState(status, false, confirmedPosition)
                 if failed && sameSelection { onFailure(status) }
             }
@@ -267,8 +268,11 @@ final class AudioAlignmentController {
                 result = try await match(recording, index)
             }
             guard current(token) else { return }
-            guard result.matched,
-                  let target = AlignmentTarget.position(offset: result.offsetSeconds, startedAt: capturedStart,
+            guard result.matched else {
+                unmatched = true
+                status = "未找到可靠匹配，播放位置未改变。"; return
+            }
+            guard let target = AlignmentTarget.position(offset: result.offsetSeconds, startedAt: capturedStart,
                                                         now: now(), duration: selected.durationSeconds) else {
                 status = "未找到可靠匹配，播放位置未改变。"; return
             }

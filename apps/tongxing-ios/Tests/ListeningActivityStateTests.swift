@@ -100,6 +100,21 @@ final class ListeningActivityStateTests: XCTestCase {
         XCTAssertEqual(state.statusText(isStale: false), "已暂停")
     }
 
+    func testPermissionInactivityDoesNotSuppressInitialListeningButLeavingDoes() {
+        XCTAssertFalse(ListeningLiveActivityCoordinator.suppressesAlignmentAfterLeaving(phase: .preparing, isBackground: false))
+        XCTAssertTrue(ListeningLiveActivityCoordinator.suppressesAlignmentAfterLeaving(phase: .preparing, isBackground: true))
+        for phase in [ListeningAlignmentPhase.listening, .matching, .aligned, .unmatched, .failed] {
+            XCTAssertTrue(ListeningLiveActivityCoordinator.suppressesAlignmentAfterLeaving(phase: phase, isBackground: false))
+            XCTAssertTrue(ListeningLiveActivityCoordinator.suppressesAlignmentAfterLeaving(phase: phase, isBackground: true))
+        }
+    }
+
+    func testNoMatchIsDistinctFromTechnicalFailure() {
+        XCTAssertEqual(ListeningAlignmentPhase.unmatched.symbolName, "questionmark.circle")
+        XCTAssertEqual(ListeningAlignmentPhase.failed.symbolName, "exclamationmark.triangle")
+        XCTAssertEqual(ListeningAlignmentPhase.unmatched.statusText(english: false), "未找到匹配 · 请重试")
+    }
+
     func testOlderPlaybackPayloadStillDecodesAndTerminalPhasesAreInactive() throws {
         let state = ListeningActivityAttributes.ContentState(
             title: "Sermon", speaker: "Speaker", position: 0, duration: 300,
@@ -115,7 +130,7 @@ final class ListeningActivityStateTests: XCTestCase {
         XCTAssertNil(decoded.chineseSubtitle)
         XCTAssertNil(decoded.englishSubtitle)
         XCTAssertEqual(decoded.statusText(isStale: false), "Playing")
-        for phase in [ListeningAlignmentPhase.aligned, .cancelled, .failed] {
+        for phase in [ListeningAlignmentPhase.aligned, .unmatched, .cancelled, .failed] {
             XCTAssertFalse(phase.isActive)
             XCTAssertNotEqual(phase.symbolName, "mic.fill")
         }

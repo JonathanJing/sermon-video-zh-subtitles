@@ -6,6 +6,20 @@ import XCTest
 /// The explicit live Dev Demo smoke below uses real Hosting assets when opted in.
 @MainActor
 final class ListeningFlowUITests: XCTestCase {
+    func testForegroundAlignmentIslandSyntheticFeedbackScreenshots() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing", "--ui-testing-live-activity", "-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
+        app.launch()
+        XCTAssertTrue(app.staticTexts["sermon-title"].waitForExistence(timeout: 10))
+        Thread.sleep(forTimeInterval: 4)
+        screenshot("foreground-alignment-listening", app: app)
+        Thread.sleep(forTimeInterval: 12)
+        screenshot("foreground-alignment-aligned", app: app)
+        Thread.sleep(forTimeInterval: 22)
+        screenshot("foreground-alignment-unmatched", app: app)
+        app.terminate()
+    }
+
     func testLargeTextStudyRemainsReadableAndCloseDoesNotStartPlayback() {
         let app = launchFixture(largeText: true)
         let entry = app.buttons["open-sermon-study"]

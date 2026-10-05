@@ -49,6 +49,10 @@ enum UITestLaunch {
             model.playback.setAlignmentPhase(.preparing)
             model.playback.setAlignmentPhase(.listening)
             try await Task.sleep(for: .seconds(6))
+            model.playback.setAlignmentPhase(.matching)
+            try await Task.sleep(for: .seconds(6))
+            model.playback.setAlignmentPhase(.unmatched)
+            try await Task.sleep(for: .seconds(6))
             model.playback.setAlignmentPhase(nil)
         } catch { model.playback.setAlignmentPhase(nil) }
     }
