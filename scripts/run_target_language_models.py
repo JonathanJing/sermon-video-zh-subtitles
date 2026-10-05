@@ -26,6 +26,7 @@ try:
     from scripts import sermon_pipeline
     from scripts import target_language_policy as policy_tools
     from scripts import target_language_policy_preview as policy_preview
+    from scripts import target_language_rule_preflight as rule_preflight
     from scripts.migrate_target_language_model_cache import migration_cache
     from scripts import sermon_workflow_jobs as jobs
 except ImportError:
@@ -36,6 +37,7 @@ except ImportError:
     import sermon_pipeline
     import target_language_policy as policy_tools
     import target_language_policy_preview as policy_preview
+    import target_language_rule_preflight as rule_preflight
     from migrate_target_language_model_cache import migration_cache
     import sermon_workflow_jobs as jobs
 
@@ -65,11 +67,12 @@ def revision_boundary_instruction(target_locale: str, *, revising: bool) -> str:
 PARTIAL_REPAIR_SCHEMA = "sermon-target-language-partial-repair-brief-v1"
 
 
-def scripture_prompt_instruction(policy: dict[str, Any]) -> str:
+def scripture_prompt_instruction(policy: dict[str, Any], *, frozen_rules=False) -> str:
     """Put the frozen scripture rule at system priority for both model roles."""
     scripture = policy["scripture"]
     if scripture["quoteCheckPolicy"] == "references_only":
-        return ("For Bible passages, cite the book, chapter, and verse when known, "
+        return (("For Bible passages, preserve only the references actually spoken, "
+                 if frozen_rules else "For Bible passages, cite the book, chapter, and verse when known, ") +
                 "and paraphrase the speaker's meaning in the target language. "
                 "Do not present the text as an exact quotation from any Bible edition. ")
     if scripture["quoteCheckPolicy"] == "source_bound_exact_quote":
@@ -191,7 +194,9 @@ def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
                 output: Path, api_key: str,
                 caller: Callable[[str, dict[str, Any]], dict[str, Any]],
                 reuse_from: Path | None = None, *, cache_only: bool = False,
-                response_observer=None, request_limits=None) -> dict[str, Any]:
+                response_observer=None, request_limits=None, rule_receipt=None) -> dict[str, Any]:
+    if rule_receipt is not None:
+        rule_preflight.verify_model_prompt(role, prompt, rule_receipt, policy)
     model = policy[role]["model"]
     save_options = {"private": True} if response_observer is not None or getattr(caller, "execution_identity", None) is not None else {}
     payload = model_payload(role, prompt, policy, request_limits)
@@ -490,6 +495,14 @@ def carry_forward_group(prior_run: Path, out: Path, index: int,
                         f"Carried-forward raw response changed: {target_raw}")
             else:
                 shutil.copyfile(raw, target_raw)
+        preview = source.with_suffix(".policy-preview.json")
+        if preview.is_file():
+            target_preview = out / preview.name
+            if target_preview.exists():
+                require(target_preview.read_bytes() == preview.read_bytes(),
+                        f"Carried-forward model preview changed: {target_preview}")
+            else:
+                shutil.copyfile(preview, target_preview)
         cache_observation.record(role, cached, target, mode="carried_forward_group", origin=source)
     return copy.deepcopy(prior_row)
 
@@ -632,6 +645,20 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
         if plugin_path is not None:
             require_plugin_identity(plugin_path, policy["languageReview"]["pluginImplementationSha256"])
         plan = group_plan(request, anchor, custom_plan)
+        rule_receipt = (rule_preflight.preflight(request, policy, plugin_path, plan)
+                        if plugin_path is not None else None)
+        accounting.record_workload("layer2.rule_preflight", {
+            "status": "inputs_frozen_not_execution_evidence" if rule_receipt else
+                      "not_run_legacy_simulation" if simulation_only else "not_run_plugin_not_supplied",
+            "ruleBundleSha256": rule_receipt["ruleBundleSha256"] if rule_receipt else None,
+            "inspectionScope": rule_receipt["inspectionScope"] if rule_receipt else None,
+            "humanApproval": False})
+        if rule_receipt is not None:
+            for prior_directory in (reuse_from, resume_cache_from):
+                if prior_directory is not None:
+                    rule_preflight.verify_prior_model_inputs(
+                        prior_directory, request, policy, plan, rule_receipt,
+                        transport_identity=getattr(caller, "execution_identity", None))
         require(revision_brief is None or partial_repair_brief is None,
                 "Use one changed-group revision mechanism at a time")
         prior_evidence = (producer._load(reuse_from / "evidence.json")
@@ -661,6 +688,8 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                     "Resume cache must be a separate attempt for this source and policy")
         identity = {"request": request, "groupPlan": plan,
                     "runnerImplementationSha256": RUNNER_PRODUCTION_IDENTITY_SHA256}
+        if rule_receipt is not None:
+            identity["rulePreflightSha256"] = policy_tools.canonical_sha256(rule_receipt)
         transport_identity = getattr(caller, "execution_identity", None)
         if transport_identity is not None:
             identity["modelTransportIdentity"] = transport_identity
@@ -693,6 +722,12 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             save_new(request_path, request)
         else:
             require(producer._load(request_path) == request, "Cached request changed")
+        if rule_receipt is not None:
+            receipt_path = out / "rule-preflight.json"
+            if receipt_path.exists():
+                require(producer._load(receipt_path) == rule_receipt, "Frozen rule preflight changed")
+            else:
+                save_new(receipt_path, rule_receipt, private=True)
         require_reconciled_requests(out, reuse_from, resume_cache_from)
         accounting.record_workload("layer2.concurrency", {
             "workers": workers, "maxInFlightGroups": workers,
@@ -720,6 +755,8 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                       "context": context, "targetLocale": request["targetLocale"],
                       "terminology": policy["terminology"], "scripture": policy["scripture"],
                       "formatting": policy["formatting"]}
+            if rule_receipt is not None:
+                common["modelRules"] = rule_preflight.group_rules(rule_receipt, group["sourceUnitIds"])
             if brief is not None:
                 common["revisionBrief"] = {
                     "instruction": ("This is a shorter spoken adaptation for a fixed video cue. "
@@ -771,7 +808,8 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                                 "Translate the English sermon group into the target locale. Preserve every "
                                 "meaning, negation, number, name, quotation and theological distinction. ") +
                                 korean_boundary +
-                                scripture_prompt_instruction(policy) +
+                                (rule_preflight.INSTRUCTION if rule_receipt else "") +
+                                scripture_prompt_instruction(policy, frozen_rules=rule_receipt is not None) +
                                 register_prompt_instruction(policy) +
                                 repair_instruction +
                                 "Resolve pronouns and elliptical repetitions using the surrounding "
@@ -798,7 +836,8 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                                          reusable_cache(resume_cache_from, stem, "astra")
                                          if resume_cache_from is not None else
                                          reusable_cache(reuse_from, stem, "astra")
-                                         if brief is None and repair is None else None, cache_only=cache_only)
+                                         if brief is None and repair is None else None, cache_only=cache_only,
+                                         rule_receipt=rule_receipt)
                 if progress_callback is not None:
                     progress_callback('translator_response_saved')
         with accounting.stage(f"layer2.draft_validation.{request['targetLocale']}.{stem}",
@@ -829,7 +868,8 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                                    "clause and do not duplicate its completion in this group. "
                                    if brief is not None else "")
                                 + korean_boundary
-                                + scripture_prompt_instruction(policy) +
+                                + (rule_preflight.INSTRUCTION if rule_receipt else "")
+                                + scripture_prompt_instruction(policy, frozen_rules=rule_receipt is not None) +
                                 register_prompt_instruction(policy) +
                                 repair_instruction +
                                 "Check that pronouns and elliptical repetitions retain the intended "
@@ -861,7 +901,8 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                                                 reusable_cache(resume_cache_from, stem, "sol")
                                                 if resume_cache_from is not None else
                                                 reusable_cache(reuse_from, stem, "sol")
-                                                if brief is None and repair is None else None, cache_only=cache_only)
+                                                if brief is None and repair is None else None, cache_only=cache_only,
+                                                rule_receipt=rule_receipt)
                 if progress_callback is not None:
                     progress_callback('reviewer_response_saved')
         with accounting.stage(f"layer2.review_validation.{request['targetLocale']}.{stem}",
@@ -1004,6 +1045,7 @@ def main() -> None:
     plan = group_plan(request, anchor, json.loads(args.group_plan.read_text(encoding="utf-8"))
                       if args.group_plan else None)
     require_plugin_identity(args.plugin, policy["languageReview"]["pluginImplementationSha256"])
+    rule_preflight.preflight(request, policy, args.plugin, plan)
     api_key = os.environ.get("OPENAI_API_KEY")
     require(bool(api_key), "OPENAI_API_KEY is not configured")
     evidence = run_accounted(

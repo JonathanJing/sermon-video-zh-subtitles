@@ -2,12 +2,15 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 from pathlib import Path
 try:
     from scripts import sermon_sentence_interpretation as identity
+    from scripts import target_audio_anomaly as anomaly
 except ImportError:
     import sermon_sentence_interpretation as identity
+    import target_audio_anomaly as anomaly
 
 
 def diagnose(context, rows, plan):
@@ -48,11 +51,15 @@ def quarantine_unit(root: Path, job, index: int, *, reason: str):
     Unit identity/seed remain unchanged; a text or sound change requires a new
     approved job/root. Quarantining never decides whether text or TTS was wrong.
     """
+    root = Path(root).resolve()
     if not isinstance(reason, str) or not reason.strip() or type(index) is not int or not 0 <= index < len(job['units']):
         raise ValueError('Quarantine requires a valid unit and explicit reason')
     wav = root / job['units'][index]['outputRelativePath']
     if not wav.is_file() or not wav.resolve().is_relative_to(root.resolve()):
         raise ValueError('Quarantine WAV missing or outside render root')
+    # Versioned supplementary evidence is durable before reopening the unit.
+    # Keep the v1 quarantine receipt contract and never infer a repair decision.
+    anomaly.preserve(root, job, index, reason=reason)
     digest = identity.sha256(wav)
     destination = root / 'quarantine' / f'unit-{index:04d}-{digest}'
     if destination.is_symlink() or not destination.resolve().is_relative_to(root.resolve()):
@@ -75,8 +82,9 @@ def quarantine_unit(root: Path, job, index: int, *, reason: str):
     paths = list(dict.fromkeys(paths))
     saved = []
     for path in paths:
+        path = anomaly.bound_path(root, path)
         if not path.exists(): continue
-        target = destination / path.name
+        target = anomaly.bound_path(root, destination / path.name)
         if target.exists() and identity.sha256(target) != identity.sha256(path):
             raise ValueError('Quarantine destination conflict')
         if not target.exists(): shutil.copy2(path, target)
@@ -86,7 +94,18 @@ def quarantine_unit(root: Path, job, index: int, *, reason: str):
     receipt = {'schemaVersion': 'sermon-audio-quarantine-v1', 'unitIndex': index,
                'audioSha256': digest, 'jobJsonSha256': identity.json_sha256(job), 'reason': reason,
                'saved': [{'path': str(target.resolve()), 'sha256': identity.sha256(target)} for _, target in saved]}
-    (destination / 'quarantine.json').write_text(json.dumps(receipt, indent=2) + '\n')
+    receipt_path = destination / 'quarantine.json'
+    receipt_path = anomaly.bound_path(root, receipt_path)
+    with receipt_path.open('w') as handle:
+        handle.write(json.dumps(receipt, indent=2) + '\n'); handle.flush(); os.fsync(handle.fileno())
+    for source, target in saved:
+        if identity.sha256(source) != identity.sha256(target):
+            raise ValueError('Quarantine source changed before deletion')
+        with target.open('rb') as handle:
+            os.fsync(handle.fileno())
+    anomaly._sync_directory(destination)
+    anomaly._sync_directory(destination.parent)
+    anomaly._sync_directory(root)
     for path, _ in saved: path.unlink()
     return receipt
 

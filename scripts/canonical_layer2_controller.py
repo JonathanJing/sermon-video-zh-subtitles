@@ -23,6 +23,7 @@ from scripts import inspect_canonical_packages as packages
 from scripts import canonical_pipeline_definition as pipeline
 from scripts import produce_target_language_candidate as producer
 from scripts import run_target_language_models as models
+from scripts import target_language_rule_preflight as rule_preflight
 from scripts import sermon_accounting as accounting
 from scripts import sermon_workflow_jobs as jobs
 from scripts import sermon_job_liveness as liveness
@@ -144,8 +145,9 @@ def snapshot(config):
         if view['nodes'].get(unit, {}).get('status') == 'ready':
             try:
                 _inputs(config, locale, view)
-            except (ValueError, OSError, KeyError, TypeError):
-                view['nodes'][unit].update(status='blocked', reasonCode='fixed_layer2_admission_invalid')
+            except (ValueError, OSError, KeyError, TypeError) as error:
+                reason = 'layer2_rule_preflight_failed' if str(error).startswith('Layer 2 rule preflight:') else 'fixed_layer2_admission_invalid'
+                view['nodes'][unit].update(status='blocked', reasonCode=reason)
                 rejected.append(unit)
     view['stateRevision'] = jobs._digest({'packageAndJobs': view['stateRevision'],
                                         'configuration': config.sha256, 'rejectedLanes': sorted(rejected)})
@@ -168,7 +170,9 @@ def _inputs(config, locale, view):
     require(policy['batching']['batchSize'] == 1 and type(policy['batching']['workers']) is int
             and 1 <= policy['batching']['workers'] <= api_concurrency.MAX_GROUP_WORKERS_PER_LOCALE,
             'invalid_production_worker_budget')
-    producer.prepare_request(values['source'], values['anchor'], policy)
+    request = producer.prepare_request(values['source'], values['anchor'], policy)
+    plan = models.group_plan(request, values['anchor'])
+    rule_preflight.preflight(request, policy, lane['plugin'], plan)
     return values['source'], values['anchor'], policy
 
 
@@ -240,6 +244,7 @@ class Controller:
         with jobs._lock(config.job_root, ADMISSION_LOCK) as (_, _, held):
             if not held:
                 return self._result('waiting', 'admission_busy', dispatched=False)
+            dispatch_attempted = False
             try:
                 config, fresh = self._fresh()
                 require(fresh['stateRevision'] == observed['stateRevision'], 'stale_state_revision')
@@ -250,12 +255,14 @@ class Controller:
                 _inputs(config, locale, fresh)
                 ident = durable.identity(fresh, config.run_id, 'text.' + locale)
                 key = jobs._digest(ident)
+                dispatch_attempted = True
                 outcome = jobs.start_job(config.job_root, ident, _worker_command(config, locale, key, self.code_sha, self.budget_authorization),
                                          timeout_seconds=21600, liveness_policy=LIVENESS_POLICY)
             except (ValueError, OSError, KeyError, TypeError):
                 # Any persisted job intent remains discoverable; never retry an
                 # uncertain start merely because this controller got an error.
-                return self._result('blocked', 'admission_or_dispatch_requires_inspection', dispatched=None)
+                return self._result('blocked', 'admission_or_dispatch_requires_inspection',
+                                    dispatched=None if dispatch_attempted else False)
             return self._result('waiting', 'verify_durable_job_and_candidate_evidence',
                                 workUnitId='text.' + locale, job=outcome, dispatched=True)
 
@@ -329,9 +336,12 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
             with accounting.stage('layer2.language_and_candidate.' + locale, depends_on=[binding_span],
                     executor_type='deterministic_program', work_unit_id='l2.' + locale + '.candidate_admission') as candidate_span:
                 original_request = producer._load(lane['output'] / 'request.json')
+                rule_receipt = producer._load(lane['output'] / 'rule-preflight.json')
                 plugin_sha = policy['languageReview']['pluginImplementationSha256']
-                receipt = producer.run_language_plugin(source, anchor, policy, original_request, evidence, lane['plugin'], plugin_sha)
-                candidate = producer.admit_evidence(source, anchor, policy, original_request, evidence, receipt, lane['plugin'], plugin_sha)
+                receipt = producer.run_language_plugin(source, anchor, policy, original_request, evidence,
+                    lane['plugin'], plugin_sha, rule_preflight_receipt=rule_receipt)
+                candidate = producer.admit_evidence(source, anchor, policy, original_request, evidence,
+                    receipt, lane['plugin'], plugin_sha, rule_preflight_receipt=rule_receipt)
                 current_binding()
                 progress.progress('candidate_validated')
                 models.save_new(lane['output'] / 'language-review.json', receipt)

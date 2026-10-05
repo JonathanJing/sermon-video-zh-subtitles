@@ -2,6 +2,8 @@
 
 依据[周日真实分层返工审计](20261005-sunday-layer-rework-analysis.zh.md)和[修复后三分钟复测](20261005-sol61-high-fast-fixed-180s-retest.zh.md)，下一轮先减少不必要返工，再缩短验证和加载开销，最后增加并发。本文件定义工作顺序与验收，不将设计记作已经实现。
 
+执行进展：第一批三项 P0 的实现、定向验证和边界见[开发验收报告](20261005-production-recovery-p0-development.zh.md)。后续迁移、receipt 快路径、驻留和 DAG 仍按下文验收推进；这份进展不代表完整实际规模的 production run 已通过。
+
 ## 第一阶段：可解释的局部恢复
 
 | 优先级／工作项 | 证据与拟议实现 | 验收标准 |

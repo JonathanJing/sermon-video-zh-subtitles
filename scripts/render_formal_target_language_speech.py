@@ -34,6 +34,7 @@ try:
     from scripts import validate_target_language_audio_unit as integrity
     from scripts import dev_audio_test_profile as dev_profile
     from scripts import target_audio_recovery as recovery
+    from scripts import target_audio_anomaly as anomaly
     from scripts import dev_audio_test_receipts as dev_receipts
     from scripts import spark_tts_replica_pool as replica_pool
     from scripts.spark_tts_window_scheduler import ParallelBatchEngine
@@ -46,6 +47,7 @@ except ImportError:
     import validate_target_language_audio_unit as integrity
     import dev_audio_test_profile as dev_profile
     import target_audio_recovery as recovery
+    import target_audio_anomaly as anomaly
     import dev_audio_test_receipts as dev_receipts
     import spark_tts_replica_pool as replica_pool
     from spark_tts_window_scheduler import ParallelBatchEngine
@@ -67,7 +69,10 @@ COMPATIBLE_BATCH_REPAIR_IMPLEMENTATION_SHA256 = {
     "948b3174bad368e8f80381beaca0d519299d16a927e50add934cb2111a90ebb2",
     "a86c470ed8f2efb7b94f62cc5451e0f3e6af9a15d13110d86086489daeedd58c",
     # Direct dev parent: serial full-window inputs and sampling are unchanged.
-    "085f8d21ab1263b96a32a0361582470dc8a1a6bab71b22383796fe90180d32b2"
+    "085f8d21ab1263b96a32a0361582470dc8a1a6bab71b22383796fe90180d32b2",
+    # Direct parent: lossless diagnostic snapshots do not change model inputs,
+    # sampling, ordered full-window replay, or sound identity.
+    "bf7fee0c5f9f4abcc24dfc5334fe0d95d9aba60db0a0de0a08b3d8a00d5d0a42"
 }
 
 
@@ -897,6 +902,9 @@ def _render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
                             strict_rubric=context.get("strict_rubric"))
                         unit_metrics["reusedPreview"] = previous is not None
             if not has_commit:
+                if partial.exists():
+                    anomaly.preserve(root, job, index, reason="uncommitted_partial_before_replacement",
+                                     audio_relative_path=str(partial.relative_to(root)))
                 if previous is not None:
                     with accounting.stage(f"layer3.reuse.{job['targetLocale']}.{index:04d}", work_unit_id=work_unit + ".reuse",
                                           cache_hit=True, depends_on=[admission_span]) as audio_span:
@@ -928,7 +936,13 @@ def _render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
                 with measure.producer_substage("audio_validation", billing="local"):
                     with accounting.stage(f"layer3.validation.{job['targetLocale']}.{index:04d}", work_unit_id=work_unit + ".validation",
                                           depends_on=[audio_span] if audio_span else None) as validation_span:
-                        decoded = integrity.probe_full_decode(partial)
+                        try:
+                            decoded = integrity.probe_full_decode(partial)
+                        except Exception as error:
+                            anomaly.preserve(root, job, index,
+                                reason=f"full_decode_failed:{type(error).__name__}",
+                                audio_relative_path=str(partial.relative_to(root)))
+                            raise
                     measure.record_substage_metrics({"audioSeconds": decoded["durationSeconds"]})
                 with accounting.stage(f"layer3.commit.{job['targetLocale']}.{index:04d}",
                                       work_unit_id=work_unit + ".commit", depends_on=[validation_span]) as commit_span:
@@ -966,6 +980,7 @@ def _render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
             # The original eight-second target is retained even when assembly
             # later consumes a separately authorized publication exception.
             prefix_plan = schedule(context, rows, DEFAULT_POLICY)
+            anomaly.preserve_timing_risk(root, context, rows, prefix_plan, indices=[len(rows) - 1])
             prefix_diagnostics = recovery.diagnose(context, rows, prefix_plan)
             prefix_diagnostics["coverageUnits"] = len(rows)
             prefix_diagnostics["totalUnits"] = len(job["units"])
@@ -1092,6 +1107,7 @@ def assemble(context: dict[str, Any], paths: dict[str, Path], root: Path,
         with accounting.stage("layer3.schedule", depends_on=[admission_span],
                               work_unit_id=f"l3.{locale}.schedule") as schedule_span:
             plan = schedule(context, rows, policy)
+            anomaly.preserve_timing_risk(root, context, rows, plan)
             write_json_atomic(root / "unit-timing-diagnostics.json", recovery.diagnose(context, rows, plan))
         measure.record_substage_metrics({
             "overLimitUnits": len(plan["issues"]),
