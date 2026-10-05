@@ -33,3 +33,5 @@ CLI 版本、入口及二进制 SHA、适配器 SHA、输出 schema、速度档�
 账本使用 provider=codex、backend=agent_session、role=production；阶段名区分 translator/reviewer。`billing=local` 在这里表示非 API 调用，不能解读为离线模型或零成本。接收 CLI host telemetry 的 input、cached input、output、reasoning token；elapsed 是真实进程区间，包含启动、认证、排队及等待。输出 token/elapsed 是会话吞吐，未取得 generationSeconds 时生成 TPS 为 null，缺 usage 也保持未知。Fast 的实际额度扣减和服务端档位均需独立回执，不能仅凭配置推算。
 
 恢复验收应确认：13 组按源顺序汇总，26 个唯一 role/session ID，源单元各覆盖一次；全部机器语义检查通过。随后同参数恢复，确认 `_cli_calls` 数量及返回哈希不变，没有新模型调用。语言插件、canonical candidate admission、人工审核、正式生产 dispatch、音频和发布保持 not_run。
+
+后续 [1–24 路并发实测](reports/20261005-codex-cli-concurrency-24.zh.md) 验证了独立 CLI 调用的容量；不改变本入口 workers=1、正式 controller 的语言／组预算或 GPU／发布锁。
