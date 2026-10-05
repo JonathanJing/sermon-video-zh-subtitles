@@ -4,7 +4,7 @@
 
 ## 本机配置
 
-2026-10-04 本机已安装 Homebrew fastlane `2.240.1`。新机器执行 `brew install fastlane`；不使用 macOS 系统 Ruby 安装 gem，不修改全局 `xcode-select`。运行时记录实际 fastlane 版本。升级后先核对下列定向检查与只读 API 查询。
+2026-10-04 本机已安装 Homebrew fastlane `2.240.1`。新机器执行 `brew install fastlane`；不使用 macOS 系统 Ruby 安装 gem，不修改全局 `xcode-select`。运行时记录实际 fastlane 版本。上传通过进程级 `DEVELOPER_DIR` 使用完整 Xcode，默认 `/Applications/Xcode.app`；可用 `--developer-dir` 覆盖，避免 Command Line Tools 被误当成 Xcode。升级后先核对下列定向检查与只读 API 查询。
 
 在 App Store Connect → Users and Access → Integrations 创建 API Key，供 TestFlight 构建信息与分发使用的角色为 App Manager；仅上传的 Developer 角色不满足完整分发权限。使用 Team Key 时需要 `.p8`、Key ID 和 Issuer ID。密钥创建与权限授予由账户持有人处理；不要把私钥内容粘贴到聊天或提交 Git。依据：[fastlane 认证](https://docs.fastlane.tools/getting-started/ios/authentication/)、[TestFlight 权限](https://docs.fastlane.tools/actions/upload_to_testflight/)、[Apple API Key](https://developer.apple.com/help/app-store-connect/get-started/app-store-connect-api/)。
 
@@ -47,6 +47,6 @@ python3 apps/tongxing-ios/scripts/testflight.py distribute \
 
 ## 本轮配置验证
 
-2026-10-04：fastlane 2.240.1 已安装；9 项离线发行守卫测试通过，覆盖归档被改写、生产渠道误用、IPA 扩展身份／版本不匹配、私钥权限、配置不覆盖，以及未知上传的重复阻止。实际 Key 和 Apple 连通性待账户持有人配置。
+2026-10-04：fastlane 2.240.1 已安装；9 项离线发行守卫测试通过，覆盖归档被改写、生产渠道误用、IPA 扩展身份／版本不匹配、私钥权限、配置不覆盖，以及未知上传的重复阻止。账户持有人已提供本机 Key；2026-10-04 实际 API 认证与 Beta 构建／Rooted 内部组查询成功。私钥未进入 Git。
 
-Python／Ruby 语法、CLI `--help`、`status --dry-run`、fastlane lanes 加载及离线发行守卫测试通过后，才提交配置。API Key 尚未提供时，真实认证、最新 Build 查询、IPA 上传和 Rooted 分发均为 `not_run`；不能据此声称 Beta 已可用。
+Python／Ruby 语法、CLI `--help`、`status --dry-run`、fastlane lanes 加载及离线发行守卫测试通过后，才提交配置。新机器尚未提供 API Key 时，真实认证、最新 Build 查询、IPA 上传和 Rooted 分发均为 `not_run`；不能据此声称 Beta 已可用。本机真实归档、签名、上传及分发结果按该候选的独立发行记录保存。App Manager API Key 的 TestFlight 权限与云托管分发签名权限不同；本轮 API Key 导出遇到云签名权限错误，既有 Xcode 账户完成同一个 Archive 的导出，IPA 上传仍使用 API Key。

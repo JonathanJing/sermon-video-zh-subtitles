@@ -113,7 +113,10 @@ class TestFlightReleaseAdmissionTests(unittest.TestCase):
         tool.write_text('#!' + sys.executable + '\nfrom pathlib import Path\np = Path(' + repr(str(counter)) +
                         ')\np.write_text(p.read_text() + "x" if p.exists() else "x")\nraise SystemExit(83)\n')
         tool.chmod(0o700)
-        command = [sys.executable, str(SCRIPT), 'upload', '--config', str(config),
+        developer = self.root / 'Xcode.app/Contents/Developer'
+        (developer / 'usr/bin').mkdir(parents=True)
+        (developer / 'usr/bin/xcodebuild').touch()
+        command = [sys.executable, str(SCRIPT), 'upload', '--developer-dir', str(developer), '--config', str(config),
                    '--record', str(self.record_path), '--ipa', str(self.ipa())]
         env = dict(os.environ, PATH=str(tool_dir) + os.pathsep + os.environ['PATH'])
         first = subprocess.run(command, env=env, capture_output=True, text=True)

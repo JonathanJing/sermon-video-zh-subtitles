@@ -12,6 +12,8 @@ Dev Debug 与正式版沿用同一原生收听界面、播放器、下载、字�
 
 2026-10-03 的独立 Beta 开发候选新增[现场对齐灵动岛状态](BETA-ALIGNMENT.zh.md)及[单设备本机通知实验](BETA-NOTIFICATIONS.zh.md)。对齐状态仅在 Beta channel 显示；通知默认关闭、与界面语言分开订阅，并校验点击的内容版本。本轮不连接 APNs sender、不更新正式 App；模拟器与真机验收分别记录。设计检查见 [Beta 50 设计检查](BETA-DESIGN-REVIEW.zh.md)，本轮实际归档、TestFlight 状态与真机验收缺口见 [Beta 1.26.10 (51) 分发记录](BETA-RELEASE-1.26.10.zh.md)；上一版记录为 [1.26.9 (50)](BETA-RELEASE-1.26.9.zh.md)。
 
+2026-10-04，全文定位与自动跟随候选已作为独立 Beta `1.26.11 (52)` 上传并在 Rooted 内部组确认可用；API Key 认证和分发已验证，真机安装／验收仍待核对。准确源码、签名路径、重试与 Apple 读回见 [Beta 1.26.11 分发记录](BETA-RELEASE-1.26.11.zh.md)。
+
 界面按用户选定的 **iOS 27 设计语言** 实施：系统导航与 Sheet、26 pt 起的动态字幕、单层 Liquid Glass 悬浮播放栏、深色语义配色，以及窄屏、横屏和大字布局。具体规则与 Apple 官方来源见 [设计约定](DESIGN.zh.md)。
 
 当前候选使用的功能符号、状态分支与品牌资源见 [图标清单](ICON-INVENTORY.zh.md)，用于逐组讨论图标优化。

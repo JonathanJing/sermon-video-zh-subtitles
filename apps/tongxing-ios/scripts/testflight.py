@@ -39,6 +39,18 @@ def private_file(path):
     return path
 
 
+def developer_directory(requested=None):
+    explicit = requested or os.environ.get('DEVELOPER_DIR')
+    candidates = [Path(explicit)] if explicit else [Path('/Applications/Xcode.app')]
+    for candidate in candidates:
+        candidate = candidate.expanduser()
+        if candidate.suffix == '.app':
+            candidate = candidate / 'Contents/Developer'
+        if (candidate / 'usr/bin/xcodebuild').is_file():
+            return str(candidate.resolve())
+    raise ValueError('Upload requires full Xcode; set --developer-dir or DEVELOPER_DIR')
+
+
 def archive_digest(archive):
     entries = []
     for path in sorted(archive.rglob('*')):
@@ -102,6 +114,7 @@ def main():
     parser.add_argument('--ipa', type=Path)
     parser.add_argument('--notes', type=Path)
     parser.add_argument('--group', default='Rooted')
+    parser.add_argument('--developer-dir', help='Full Xcode .app or Contents/Developer; never changes xcode-select')
     parser.add_argument('--retry-upload', action='store_true', help='Only after explicitly reconciling a prior unknown upload with Apple')
     parser.add_argument('--wait-seconds', type=int, default=900)
     parser.add_argument('--dry-run', action='store_true')
@@ -161,6 +174,8 @@ def main():
         value = getattr(args, option)
         if value:
             env[variable] = str(value.resolve())
+    if args.action == 'upload':
+        env['DEVELOPER_DIR'] = developer_directory(args.developer_dir)
     env['TONGXING_BETA_GROUP'] = args.group
     env['TONGXING_WAIT_SECONDS'] = str(args.wait_seconds)
     ipa_sha = None
