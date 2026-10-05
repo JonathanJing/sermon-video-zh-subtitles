@@ -11,13 +11,19 @@ import wave
 from scripts.sermon_unified import contracts as c
 
 
-def verify(root):
+def verify(root, *, with_resource_policy=False):
     root=Path(root).resolve();root.mkdir(parents=True,exist_ok=False)
     media=root/'source.wav'
     with wave.open(str(media),'wb') as f:
         f.setparams((1,2,16000,0,'NONE','not compressed'));f.writeframes(b'\0\0'*1600)
     sha=c.file_sha(media);now=datetime.now(timezone.utc);modules=c.required_modules()
     bindings={'media':{'path':str(media),'sha256':sha}}
+    if with_resource_policy:
+        policy=root/'resource-policy.json'
+        policy.write_text(json.dumps({'schemaVersion':'sermon-unified-resource-policy-v1',
+            'brokerRoot':str(root/'broker'),'capacities':{'cpu':1,'online_api':0,
+            'codex_cli':0,'spark_tts':0,'publisher':0}}))
+        bindings['resourcePolicy']={'path':str(policy),'sha256':c.file_sha(policy)}
     steps=[{'id':'media','stageId':'media_verify','adapter':'media.verify','dependsOn':[],'scope':'media_verified'}]
     for n in range(1,100):
         p=root/f'fixed-{n}.json';p.write_text(json.dumps({'fixtureOnly':True,'fixtureSetId':'unified-cli-v2',
@@ -55,10 +61,28 @@ def verify(root):
             'transitions':100,'wallSeconds':time.monotonic()-start,'handoff':progress['handoff'],
             'newPaidRequests':0,'runtimeCodexTurns':0,'productionEligible':False,
             'scope':'offline_real_cli_and_detached_owner','planHash':plan['plan']['planHash']}
+    if with_resource_policy:
+        from scripts.sermon_unified import resources
+        # Run success is persisted before the owner's terminal resource cleanup.
+        # Verify cleanup separately instead of racing job.wait's success receipt.
+        deadline=time.monotonic()+15
+        while True:
+            ledger=c.read(root/'broker'/resources.BROKER_LOCK_ID/'resources.json')
+            if all(row['status']=='released' for row in ledger['reservations'].values()):
+                break
+            if time.monotonic()>=deadline:
+                raise AssertionError('resource cleanup did not complete')
+            time.sleep(.05)
+        assert len(ledger['reservations'])==100
+        assert all(row['status']=='released' for row in ledger['reservations'].values())
+        report['resourceReservations']=100
+        report['heldAtCompletion']=0
     (root/'acceptance.json').write_text(json.dumps(report,indent=2)+'\n')
     return report
 
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser();parser.add_argument('--out',type=Path,required=True)
-    print(json.dumps(verify(parser.parse_args().out),indent=2))
+    parser.add_argument('--with-resource-policy',action='store_true')
+    args=parser.parse_args()
+    print(json.dumps(verify(args.out,with_resource_policy=args.with_resource_policy),indent=2))

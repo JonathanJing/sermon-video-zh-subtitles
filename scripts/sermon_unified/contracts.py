@@ -186,6 +186,12 @@ def admit(m, base):
             binding(m, base, name)
         except (OSError, ValueError):
             fail('binding_changed')
+    if 'resourcePolicy' in m['bindings']:
+        try:
+            from scripts.sermon_unified import resources
+            resources.validate_policy(read(binding(m, base, 'resourcePolicy')))
+        except (OSError, ValueError, KeyError, TypeError):
+            fail('resource_policy_invalid')
     if 'media' not in m['bindings'] or m['bindings'].get('media', {}).get('sha256') != m['source']['mediaSha256']:
         fail('source_media_binding_required')
     if w.get('approvalReceiptSha256'):

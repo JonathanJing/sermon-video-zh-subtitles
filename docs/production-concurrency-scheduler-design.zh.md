@@ -12,6 +12,8 @@
 
 ## 2. 基线与需要补齐的能力
 
+开发核查补充（2026-10-05）：仓库已存在可执行统一CLI、detached owner和审核后continuation，不能重新建设。首轮在现有runtime上加入[持久资源准入](unified-resource-admission.zh.md)；它实现跨run预算与资源忙自动重验，尚未完成同run多worker、leaf调用池及完整跨层DAG。下表记录的是设计时基线，后续实现以该增量说明及实际收据为准。
+
 | 部分 | 当前实现 | 本设计目标 |
 |---|---|---|
 | owner | canonical L2固定adapter、legacy page controller有限接入；统一常驻pump未完成 | 同一run一个owner，跨层ready推进，不重复派发 |
