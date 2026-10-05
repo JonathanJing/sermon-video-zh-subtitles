@@ -60,15 +60,15 @@ targets:
           PRODUCT_BUNDLE_IDENTIFIER: com.jonathanjing.tongxing.beta
           TONGXING_DISPLAY_NAME: 同行-beta
           TONGXING_URL_SCHEME: tongxing-beta
-          MARKETING_VERSION: "1.26.10"
-          CURRENT_PROJECT_VERSION: "51"
+          MARKETING_VERSION: "1.26.11"
+          CURRENT_PROJECT_VERSION: "52"
           TONGXING_CONTENT_ORIGIN: "https://ai-for-god-sermon-audio-dev.web.app"
         BetaRelease:
           PRODUCT_BUNDLE_IDENTIFIER: com.jonathanjing.tongxing.beta
           TONGXING_DISPLAY_NAME: 同行-beta
           TONGXING_URL_SCHEME: tongxing-beta
-          MARKETING_VERSION: "1.26.10"
-          CURRENT_PROJECT_VERSION: "51"
+          MARKETING_VERSION: "1.26.11"
+          CURRENT_PROJECT_VERSION: "52"
           TONGXING_CONTENT_ORIGIN: "https://ai-for-god-sermon-audio-dev.web.app"
     dependencies:
       - package: TongxingCore
@@ -108,14 +108,14 @@ targets:
           PRODUCT_BUNDLE_IDENTIFIER: com.jonathanjing.tongxing.beta.listening-activity
           TONGXING_ACTIVITY_DISPLAY_NAME: 同行-beta播放状态
           TONGXING_URL_SCHEME: tongxing-beta
-          MARKETING_VERSION: "1.26.10"
-          CURRENT_PROJECT_VERSION: "51"
+          MARKETING_VERSION: "1.26.11"
+          CURRENT_PROJECT_VERSION: "52"
         BetaRelease:
           PRODUCT_BUNDLE_IDENTIFIER: com.jonathanjing.tongxing.beta.listening-activity
           TONGXING_ACTIVITY_DISPLAY_NAME: 同行-beta播放状态
           TONGXING_URL_SCHEME: tongxing-beta
-          MARKETING_VERSION: "1.26.10"
-          CURRENT_PROJECT_VERSION: "51"
+          MARKETING_VERSION: "1.26.11"
+          CURRENT_PROJECT_VERSION: "52"
     dependencies:
       - package: TongxingCore
   TongxingTests:
