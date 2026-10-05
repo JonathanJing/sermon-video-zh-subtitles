@@ -262,7 +262,7 @@ def execute(config_path, *, api_key=None, api_transport=None, aligner=None, mfa_
     value = _configuration(Path(config_path).resolve())
     session = _spark_session(spark_session_id, spark_session_owner)
     session.require_ready()
-    hold = session.start_job('diagnostic-source:' + jobs._digest(value), pid=os.getpid())
+    hold = session.start_job('diagnostic-source.' + jobs._digest(value)[:32], pid=os.getpid())
     result = _execute_admitted(config_path, api_key=api_key, api_transport=api_transport, aligner=aligner,
         mfa_preflight=mfa_preflight, cli_call=cli_call, session=session)
     session.end_job(hold, process_exited=True, outcome='known_terminal')

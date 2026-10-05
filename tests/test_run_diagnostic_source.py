@@ -107,6 +107,8 @@ class DiagnosticSourceTests(unittest.TestCase):
         options = dict(api_key='', api_transport=api, aligner=self.align,
                        mfa_preflight=lambda **k: {'fixture': True}, cli_call=cli)
         result = subject.execute(prepared['configPath'], **options)
+        from scripts.spark_exclusive_session import IDENTIFIER
+        self.assertRegex(self.session.start_job.call_args.args[0], IDENTIFIER)
         self.assertEqual(counts, {'api': 4, 'cli': 8})
         self.assertFalse(result['productionEligible'])
         self.assertTrue(result['requiresHumanSourceReview'])

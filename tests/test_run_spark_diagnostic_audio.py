@@ -32,6 +32,12 @@ class SparkAudioWrapperTests(unittest.TestCase):
             'sourceMediaSha256': subject.inputs.sha(self.args.media), 'sourceWindow': {'startSeconds': 0, 'endSeconds': 1},
             'groups': 1, 'sourceUnits': 1, 'checkpointSha256': 'a' * 64}
 
+    def test_session_job_purpose_is_identifier_safe_and_opaque(self):
+        from scripts.spark_exclusive_session import IDENTIFIER
+        purpose = subject._session_job_purpose(self.args.out)
+        self.assertRegex(purpose, IDENTIFIER)
+        self.assertNotIn(str(self.args.out), purpose)
+
     def test_docker_argv_preserves_mac_path_shared_broker_gpu1_and_actual_profile(self):
         tts, asr = subject.docker_commands(self.args)
         self.assertIn(str(self.args.remote_stage) + ':' + str(subject.ROOT), tts)

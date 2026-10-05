@@ -47,6 +47,10 @@ def relative(path):
     return str(path.relative_to(ROOT))
 
 
+def _session_job_purpose(out_dir):
+    return 'diagnostic-audio.' + inputs.digest(str(Path(out_dir).resolve()))[:32]
+
+
 def inventory(directory):
     return {str(path.relative_to(directory)): inputs.sha(path)
             for path in sorted(directory.rglob('*')) if path.is_file()}
@@ -284,7 +288,7 @@ def execute(args):
         require(not (args.out / 'dispatch.started.json').exists(), 'unknown_spark_dispatch_requires_reconciliation')
         session = _spark_session(getattr(args, 'spark_session_id', None), getattr(args, 'spark_session_owner', None))
         session.require_ready()
-        hold = session.start_job('diagnostic-audio:' + str(args.out.resolve()), pid=os.getpid())
+        hold = session.start_job(_session_job_purpose(args.out), pid=os.getpid())
         stage = str(args.remote_stage)
         # Existing staged files are never overwritten. Verify complete content
         # after rsync, so changed old evidence fails before Docker/model load.
