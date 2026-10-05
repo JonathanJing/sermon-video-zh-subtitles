@@ -186,6 +186,13 @@ class DiagnosticCommandDAGTests(unittest.TestCase):
         self.session.end_job.assert_called_once_with({'jobId': 'fixture-job'}, process_exited=True,
                                                    outcome='known_terminal')
 
+    def test_root_hold_purpose_uses_session_identifier_charset(self):
+        self.prepare([self.node('source', kind='source')])
+        subject.run(self.out, execute=True, executor=self.executor)
+        purpose = self.session.start_job.call_args.args[0]
+        from scripts.spark_exclusive_session import IDENTIFIER
+        self.assertRegex(purpose, IDENTIFIER)
+
     def test_unknown_child_keeps_root_host_hold(self):
         self.prepare([self.node('source', kind='source')])
         subject.run(self.out, execute=True, executor=MagicMock(side_effect=TimeoutError('fixture unknown')))

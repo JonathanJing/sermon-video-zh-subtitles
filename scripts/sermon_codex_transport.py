@@ -234,11 +234,13 @@ def _call_unlocked(prompt, *, model, reasoning='medium', service_tier='fast', ou
 
 
 def call_json(prompt, *, model, reasoning='medium', service_tier='fast', output_schema=None,
-              output_dir=None, timeout_seconds=180, resource_policy=None, concurrency_profile=None):
+              output_dir=None, timeout_seconds=180, resource_policy=None, concurrency_profile=None,
+              resource_class=None):
     response = _call(prompt + '\nReturn only valid JSON.', model=model, reasoning=reasoning,
                      service_tier=service_tier, output_schema=output_schema,
                      output_dir=output_dir, timeout_seconds=timeout_seconds,
-                     resource_policy=resource_policy, concurrency_profile=concurrency_profile)
+                     resource_policy=resource_policy, concurrency_profile=concurrency_profile,
+                     resource_class=resource_class)
     return json.loads(response['content'])
 
 

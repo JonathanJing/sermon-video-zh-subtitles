@@ -267,7 +267,7 @@ def run(out_dir, *, execute=False, executor=None, spark_session_id=None, spark_s
             return _run_owned(out, plan, executor or _executor, None)
         session = _spark_session(spark_session_id, spark_session_owner)
         session.require_ready()
-        hold = session.start_job('diagnostic-command-dag:' + jobs._digest(plan), pid=os.getpid())
+        hold = session.start_job('diagnostic-command-dag.' + jobs._digest(plan)[:32], pid=os.getpid())
         # An exception or a child with uncertain outcome keeps the host-level
         # hold. Closing the whole development session is an explicit action.
         result = _run_owned(out, plan, executor or _executor, session)

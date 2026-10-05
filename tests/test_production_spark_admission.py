@@ -38,6 +38,16 @@ class ProductionSessionCallTests(unittest.TestCase):
                 admission.SessionBoundCaller(real)()
         real.assert_not_called();client.end_job.assert_not_called()
 
+    def test_invalid_callable_signature_fails_before_durable_hold(self):
+        def real(prompt, *, model):
+            raise AssertionError('callable body must not execute')
+        client = self.client()
+        with patch.object(sessions.Client, 'from_environment', return_value=client):
+            with self.assertRaisesRegex(sessions.SessionError, 'arguments_invalid_before_dispatch'):
+                admission.SessionBoundCaller(real)("prompt", model="gpt-6-luna", resource_class="supervisor")
+        client.start_job.assert_not_called()
+        client.end_job.assert_not_called()
+
     def test_unknown_preserves_original_exception_and_hold(self):
         client = self.client();client.end_job.side_effect = sessions.SessionError('job_requires_reconciliation')
         real = Mock(side_effect=TimeoutError('real call unknown'))

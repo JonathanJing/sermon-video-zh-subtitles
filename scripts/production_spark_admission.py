@@ -5,6 +5,7 @@ the CLI never supplies that seam. Completed cache replay remains independent
 of the live session, while every real adapter call checks current admission.
 """
 from __future__ import annotations
+import inspect
 import os
 from pathlib import Path
 import socket
@@ -83,6 +84,13 @@ class SessionBoundCaller:
         return admit(payload) if admit is not None else None
 
     def __call__(self, *args, **kwargs):
+        # Reject invalid adapter calls before reserving a durable dispatcher
+        # hold. Python performs this same binding before entering the callable.
+        try:
+            inspect.signature(self.caller).bind(*args, **kwargs)
+        except (TypeError, ValueError) as exc:
+            from scripts.spark_exclusive_session import SessionError
+            raise SessionError("model_caller_arguments_invalid_before_dispatch") from exc
         if self.verifier is not None:
             require_session(verifier=self.verifier)
             return self.caller(*args, **kwargs)

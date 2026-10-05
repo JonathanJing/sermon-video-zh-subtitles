@@ -93,6 +93,13 @@ class ProductionCodexTransportTests(unittest.TestCase):
         self.version.assert_not_called()
         self.run.assert_not_called()
 
+    def test_call_json_forwards_supervisor_resource_class(self):
+        with patch.object(mod, '_call', return_value={'content':'{"ok":true}'}) as call:
+            self.assertEqual(mod.call_json('prompt', model='gpt-6-luna', output_schema={'type':'object'},
+                resource_policy={'fixture': True}, concurrency_profile={'fixture': True},
+                resource_class='supervisor'), {'ok': True})
+        self.assertEqual(call.call_args.kwargs['resource_class'], 'supervisor')
+
     def test_tool_execution_is_rejected_and_replay_blocked(self):
         self.tool = True
         with self.assertRaisesRegex(RuntimeError, 'tool_failure'):
