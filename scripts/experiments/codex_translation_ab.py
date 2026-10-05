@@ -40,16 +40,16 @@ def save_or_check(path, value):
         save(path, value)
 
 
-def validate_cached(job, prompt, source, schema):
+def validate_cached(job, prompt, source, schema, effort="high"):
     assert json.loads((job / 'schema.json').read_text()) == schema, 'Cached schema changed'
     command = json.loads((job / 'command.json').read_text())
     assert command == [str(Path.home() / '.local/bin/codex'), 'exec', '--ignore-user-config', '--ephemeral',
-                       '-m', 'gpt-6.1-sol', '-c', 'model_reasoning_effort="high"',
+                       '-m', 'gpt-6.1-sol', '-c', f'model_reasoning_effort="{effort}"',
                        '-c', 'service_tier="default"', '--json', '-s', 'read-only',
                        '--skip-git-repo-check', '--output-schema', str(job / 'schema.json'),
                        '-o', str(job / 'result.json'), '-'], 'Cached execution configuration changed'
     receipt = json.loads((job / 'receipt.json').read_text())
-    assert receipt['requestedModel'] == 'gpt-6.1-sol' and receipt['reasoningEffort'] == 'high'
+    assert receipt['requestedModel'] == 'gpt-6.1-sol' and receipt['reasoningEffort'] == effort
     assert receipt['exitCode'] == 0 and receipt['toolCalls'] == 0
     assert receipt['resultSha256'] == sha(job / 'result.json'), 'Cached result changed'
     assert (job / 'prompt.txt').read_text() == prompt, 'Cached prompt changed'
@@ -83,7 +83,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--baseline', type=Path, required=True)
     parser.add_argument('--out', type=Path, required=True)
+    parser.add_argument('--effort', choices=['low', 'high'], default='high')
     args = parser.parse_args()
+    effort = args.effort
     baseline, out = args.baseline.resolve(), args.out.resolve()
     previews = sorted(baseline.glob('group-*-astra.policy-preview.json'))
     assert previews, 'Missing baseline prompts'
@@ -100,7 +102,7 @@ def main():
                 'baselineHashes': {p.name: sha(p) for preview in previews
                                    for p in (preview, preview.with_name(preview.name.replace('.policy-preview', '.raw')))},
                 'astra': {'model': 'gpt-6-astra', 'effort': 'medium', 'reused': True},
-                'sol': {'model': 'gpt-6.1-sol', 'effort': 'high', 'serviceTier': 'default'},
+                'sol': {'model': 'gpt-6.1-sol', 'effort': effort, 'serviceTier': 'default'},
                 'cliVersion': version, 'cliSha256': sha(cli.resolve()),
                 'binarySha256': sha(binary if binary.is_file() else cli.resolve()),
                 'baselineContextSha256': sha(baseline / 'test-context.json'),
@@ -133,7 +135,7 @@ def main():
                   'Return only JSON conforming to the provided schema.\n'
                   + payload['messages'][0]['content'] + '\nINPUT:\n' + payload['messages'][1]['content'])
         if (job / 'receipt.json').exists():
-            sol, result = validate_cached(job, prompt, source, schema)
+            sol, result = validate_cached(job, prompt, source, schema, effort)
         else:
             assert not (job / 'started.json').exists(), 'Unknown outcome; reconcile saved events before retry'
             save(job / 'started.json', {'startedAt': datetime.now(timezone.utc).isoformat(),
@@ -141,7 +143,7 @@ def main():
             (job / 'prompt.txt').write_text(prompt)
             save(job / 'schema.json', schema)
             command = [str(cli), 'exec', '--ignore-user-config', '--ephemeral',
-                       '-m', 'gpt-6.1-sol', '-c', 'model_reasoning_effort="high"',
+                       '-m', 'gpt-6.1-sol', '-c', f'model_reasoning_effort="{effort}"',
                        '-c', 'service_tier="default"', '--json', '-s', 'read-only',
                        '--skip-git-repo-check', '--output-schema', str(job / 'schema.json'),
                        '-o', str(job / 'result.json'), '-']
@@ -165,7 +167,7 @@ def main():
             finals = [r['item']['text'] for r in rows if r.get('type') == 'item.completed'
                       and r.get('item', {}).get('type') == 'agent_message']
             assert json.loads(finals[-1]) == result
-            sol = {'requestedModel': 'gpt-6.1-sol', 'serverModel': None, 'reasoningEffort': 'high',
+            sol = {'requestedModel': 'gpt-6.1-sol', 'serverModel': None, 'reasoningEffort': effort,
                    'requestedServiceTier': 'default',
                    'elapsedSeconds': elapsed, 'usage': completions[0]['usage'], 'threadId': threads[0],
                    'toolCalls': 0, 'exitCode': process.returncode, 'resultSha256': sha(job / 'result.json')}
