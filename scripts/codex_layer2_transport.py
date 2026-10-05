@@ -21,6 +21,14 @@ from scripts import sermon_workflow_jobs as jobs
 
 SCHEMA = 'codex-cli-layer2-response-v1'
 MODELS = {'translator': 'gpt-6-astra', 'reviewer': 'gpt-6-sol'}
+TEST_CONFIGURATION = {'schemaVersion': 'codex-layer2-simulation-models-v1',
+    'simulationOnly': True, 'translator': {'model': 'gpt-6.1-sol', 'reasoningEffort': 'high', 'serviceTier': 'fast'},
+    'reviewer': {'model': 'gpt-6-sol', 'reasoningEffort': 'medium', 'serviceTier': 'fast'}}
+
+def validate_test_configuration(configuration):
+    if configuration != TEST_CONFIGURATION:
+        raise ValueError('unsupported_codex_simulation_model_configuration')
+    return json.loads(json.dumps(configuration))
 
 
 def output_schema(role):
@@ -80,13 +88,21 @@ class CodexLayer2Transport:
     billing = 'local'  # non-API subscription observation; not a dollar price
 
     def __init__(self, cli_path=Path.home() / '.local/bin/codex', *, reviewer_tier='fast',
-                 timeout_seconds=180, receipts_dir=None, resource_policy=None):
+                 timeout_seconds=180, receipts_dir=None, resource_policy=None, simulation_model_configuration=None):
         if reviewer_tier not in {'default', 'fast'} or timeout_seconds <= 0:
             raise ValueError('invalid_codex_language_configuration')
         self.cli_path = Path(cli_path).absolute()
         self.timeout_seconds = timeout_seconds
         self.receipts_dir = Path(receipts_dir) if receipts_dir is not None else None
         self.tiers = {'translator': 'default', 'reviewer': reviewer_tier}
+        self.models = dict(MODELS)
+        self.simulation_model_configuration = None
+        if simulation_model_configuration is not None:
+            self.simulation_model_configuration = validate_test_configuration(simulation_model_configuration)
+            if reviewer_tier != 'fast':
+                raise ValueError('simulation_model_configuration_requires_fast_reviewer')
+            self.models = {role: simulation_model_configuration[role]['model'] for role in MODELS}
+            self.tiers = {role: simulation_model_configuration[role]['serviceTier'] for role in MODELS}
         self._resource_local = threading.local()
         self.resource_policy = None
         if resource_policy is not None:
@@ -114,6 +130,8 @@ class CodexLayer2Transport:
             'timeoutSeconds': timeout_seconds, 'promptAdapterVersion': 'language-no-tools-v1',
             'outputSchemaSha256': {role: _hash(output_schema(role)) for role in MODELS},
         }
+        if self.simulation_model_configuration is not None:
+            self.execution_identity['simulationModelConfiguration'] = self.simulation_model_configuration
         if self.resource_policy is not None:
             self.execution_identity.update(
                 resourcePolicySha256=resource_admission.policy_identity(self.resource_policy),
@@ -127,7 +145,7 @@ class CodexLayer2Transport:
         """
         if getattr(self, 'resource_policy', None) is None:
             return None
-        role = next((name for name, model in MODELS.items() if payload.get('model') == model), None)
+        role = next((name for name, model in getattr(self, 'models', MODELS).items() if payload.get('model') == model), None)
         if role is None:
             raise ValueError('unsupported_codex_language_model')
         key = _hash(payload)
@@ -151,9 +169,15 @@ class CodexLayer2Transport:
     def __call__(self, api_key, payload):
         if api_key:
             raise ValueError('codex_language_must_not_receive_api_key')
-        role = next((name for name, model in MODELS.items() if payload.get('model') == model), None)
+        role = next((name for name, model in getattr(self, 'models', MODELS).items() if payload.get('model') == model), None)
         if role is None:
             raise ValueError('unsupported_codex_language_model')
+        configuration = getattr(self, 'simulation_model_configuration', None)
+        if configuration is not None:
+            settings = configuration[role]
+            if (payload.get('reasoning_effort') != settings['reasoningEffort']
+                    or payload.get('service_tier') != settings['serviceTier']):
+                raise ValueError('codex_simulation_payload_configuration_changed')
         messages = payload['messages']
         if len(messages) != 2 or [row['role'] for row in messages] != ['system', 'user']:
             raise ValueError('invalid_codex_language_prompt')
@@ -226,7 +250,7 @@ class CodexLayer2Transport:
                         raise RuntimeError('codex_language_final_message_file_mismatch')
                     response = {'schemaVersion': SCHEMA, 'id': 'codex:' + started_threads[0],
                                 'threadId': started_threads[0], 'requestedModel': payload['model'],
-                                'serverModel': None, 'requestedServiceTier': tier, 'serverServiceTier': None,
+                                'serverModel': None, 'requestedReasoningEffort': payload['reasoning_effort'], 'requestedServiceTier': tier, 'serverServiceTier': None,
                                 'completed': True, 'exitCode': process.returncode,
                                 'content': content, 'usage': receipt['usage'],
                                 'elapsedSeconds': elapsed, 'toolCalls': 0}
@@ -241,7 +265,8 @@ class CodexLayer2Transport:
     @staticmethod
     def completed_content(response, model, role):
         if not isinstance(response, dict) or response.get('schemaVersion') != SCHEMA \
-                or response.get('requestedModel') != model or MODELS.get(role) != model \
+                or response.get('requestedModel') != model \
+                or model not in ({MODELS.get(role), 'gpt-6.1-sol'} if role == 'translator' else {MODELS.get(role)}) \
                 or response.get('completed') is not True or response.get('exitCode') != 0 \
                 or not isinstance(response.get('threadId'), str) or not response['threadId'] \
                 or response.get('id') != 'codex:' + response['threadId'] \

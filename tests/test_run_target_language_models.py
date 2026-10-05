@@ -70,6 +70,58 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
         return {"id": f"response-{len(self.calls)}", "model": payload["model"],
                 "choices": [{"finish_reason": "stop", "message": {"content": json.dumps(result)}}]}
 
+    def simulation_configuration_fixture(self):
+        from scripts.codex_layer2_transport import TEST_CONFIGURATION
+        policy = copy.deepcopy(self.fixture.policy)
+        policy['simulationModelConfiguration'] = copy.deepcopy(TEST_CONFIGURATION)
+        for role in subject.MODEL_ROLES:
+            settings = TEST_CONFIGURATION[role]
+            policy[role].update(model=settings['model'], reasoningEffort=settings['reasoningEffort'])
+            policy['componentSha256'][role] = policy_tools.canonical_sha256(policy[role])
+        request = copy.deepcopy(self.fixture.request)
+        request.update(schemaVersion='sermon-dry-run-layer2-request-v1', simulationOnly=True,
+                       simulationModelConfiguration=copy.deepcopy(TEST_CONFIGURATION),
+                       translationPolicySha256=policy_tools.canonical_sha256(policy))
+        test = self
+        class Caller:
+            execution_identity = {'backend': 'codex_cli', 'simulationModelConfiguration': copy.deepcopy(TEST_CONFIGURATION)}
+            def __call__(inner, key, payload):
+                test.assertEqual(key, '')
+                test.calls.append(payload)
+                group = test.fixture.evidence['groups'][(len(test.calls) - 1) // 2]
+                result = copy.deepcopy(group)
+                result['translationGroupId'] = json.loads(payload['messages'][1]['content'])['translationGroupId']
+                return {'id': 'test-' + str(len(test.calls)), 'model': payload['model'],
+                        'choices': [{'finish_reason': 'stop', 'message': {'content': json.dumps(result)}}]}
+        return policy, request, Caller()
+
+    def test_sol61_override_isolated_calls_and_cache_bind_actual_configuration(self):
+        policy, request, caller = self.simulation_configuration_fixture()
+        evidence = subject._run_prepared_groups(request, self.fixture.anchor, policy, self.out, '', caller,
+                                                simulation_only=True)
+        self.assertEqual([p['model'] for p in self.calls], ['gpt-6.1-sol', 'gpt-6-sol'] * 2)
+        self.assertEqual([p['reasoning_effort'] for p in self.calls], ['high', 'medium'] * 2)
+        self.assertEqual([p['service_tier'] for p in self.calls], ['fast'] * 4)
+        self.assertEqual(evidence['generation']['translator']['model'], 'gpt-6.1-sol')
+        self.assertEqual(json.loads((self.out / 'group-0001-astra.json').read_text())['model'], 'gpt-6.1-sol')
+        subject._run_prepared_groups(request, self.fixture.anchor, policy, self.out, '', caller, simulation_only=True)
+        self.assertEqual(len(self.calls), 4)
+        caller.execution_identity = {**caller.execution_identity, 'runtime': 'changed'}
+        with self.assertRaisesRegex(ValueError, 'another source, policy, or group plan'):
+            subject._run_prepared_groups(request, self.fixture.anchor, policy, self.out, '', caller, simulation_only=True)
+        self.assertEqual(len(self.calls), 4)
+
+    def test_simulation_model_override_rejected_in_formal_and_unbound_paths(self):
+        policy, request, caller = self.simulation_configuration_fixture()
+        formal = {key: value for key, value in request.items() if key != 'simulationOnly'}
+        with self.assertRaisesRegex(ValueError, 'cannot enter formal production'):
+            subject._run_prepared_groups(formal, self.fixture.anchor, policy, self.out, '', caller)
+        del request['simulationModelConfiguration']
+        with self.assertRaisesRegex(ValueError, 'matching request and CLI transport identity'):
+            subject._run_prepared_groups(request, self.fixture.anchor, policy, self.out, '', caller, simulation_only=True)
+        self.assertFalse(self.out.exists())
+        self.assertEqual(self.calls, [])
+
     def test_resource_capacity_busy_does_not_write_unknown_call_marker(self):
         from scripts.sermon_unified.contracts import ContractError
         class Caller:

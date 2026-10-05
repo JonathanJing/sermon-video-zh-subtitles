@@ -75,3 +75,11 @@ python scripts/experiments/assess_fixed_clip_local_models.py \
 Python producer 的 `render_tts`／`back_asr` 新增可选 `model_session` 与 `runtime_identity_sha256`，供隔离实验复用 [`LocalModelSession`](../scripts/experiments/local_model_session.py)。调用者须冻结实际容器／依赖运行时身份 SHA，使用显式 session 生命周期；同一权重、checkpoint、设备、dtype、attention、运行时和实现才复用。只允许一个缓存模型和一个活动借用，切换先释放旧模型；加载、清理或借用期间失败即禁止后续复用。该实验接口尚未部署常驻服务，不能与每 job GPU 策略同时启用：跨 job 驻留必须先实现覆盖整个 session 的 GPU 许可。fake factory 测试证明复用机制，真实冷暖速度尚未测量。
 
 评估输出升级为 `fixed-clip-local-model-assessment-v2`，保留旧 v1 文件作为历史证据，用新输出路径运行。新增只读[时间修复计划](../scripts/target_audio_timing_plan.py)，复用未修改的正式 scheduler：源句超长是警告，累计延迟和片尾溢出分别判断。计划不修改文本／音频，也不授予批准。详见[本次开发复盘](reports/20261005-fixed-180s-followup-development.zh.md)。
+
+## 隔离测试的 Sol 6.1 翻译配置
+
+用户选择的新三分钟测试可添加 `--translator-model gpt-6.1-sol`，明确固定翻译为 high/fast，审核保持 `gpt-6-sol` medium/fast、workers=1。原 baseline policy 先按现有合同验证，然后测试入口创建带 `simulationModelConfiguration` 的隔离有效配置，绑定 request、policy、transport、payload、cache 与 pre-dispatch context。正式路径拒绝该配置；未传参数仍使用原 Astra 配置。请求模型如实记录为 Sol 6.1；历史 `astra` 文件后缀和 `astraDraft` wire 字段只为兼容原循环，不代表实际使用 Astra。
+
+该参数不能与历史 mock responses 同用：旧 Astra 请求与新模型请求不相同。默认精确 fixture 回放和新配置的 fake transport 测试分别验证；真实调用须使用新目录及 ChatGPT 登录，无 API fallback。更改模型、effort、tier 或实现后不能沿用旧运行身份。当前 override 仅用于固定片段实验，不改变正式生产策略或扩大批准范围。
+
+2026-10-05 已实际完成该配置的 26 次 CLI 调用和 Spark TTS/ASR，并验证零新调用恢复与资源释放：[复测报告](reports/20261005-sol61-high-fast-fixed-180s-retest.zh.md)、[机器汇总收据](reports/20261005-sol61-high-fast-fixed-180s-retest-receipt.json)。同步仍有 4 组 lag 失败和片尾溢出，不具备发布资格。

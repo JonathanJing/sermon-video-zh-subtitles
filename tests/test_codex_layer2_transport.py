@@ -149,6 +149,39 @@ class CodexRuntimeBoundaryTests(unittest.TestCase):
         self.assertEqual(run.call_args.kwargs["env"], self.transport.env)
         self.assertEqual(len(list(self.transport.receipts_dir.glob("*/response.json"))), 1)
 
+    def test_sol61_high_fast_configuration_requests_and_records_exact_model(self):
+        from scripts.codex_layer2_transport import TEST_CONFIGURATION
+        self.transport.models = {role: TEST_CONFIGURATION[role]['model'] for role in ('translator', 'reviewer')}
+        self.transport.tiers = {'translator': 'fast', 'reviewer': 'fast'}
+        self.transport.simulation_model_configuration = TEST_CONFIGURATION
+        self.payload.update(model='gpt-6.1-sol', reasoning_effort='high', service_tier='fast')
+        with patch('scripts.codex_layer2_transport.subprocess.run', side_effect=self.process()) as run:
+            response = self.transport('', self.payload)
+        command = run.call_args.args[0]
+        self.assertEqual(command[command.index('-m') + 1], 'gpt-6.1-sol')
+        self.assertIn('model_reasoning_effort="high"', command)
+        self.assertIn('service_tier="fast"', command)
+        self.assertIn('fast_mode', command)
+        self.assertEqual(response['requestedModel'], 'gpt-6.1-sol')
+        self.assertEqual(response['requestedReasoningEffort'], 'high')
+        self.assertEqual(response['requestedServiceTier'], 'fast')
+        self.assertIsNone(response['serverModel'])
+        self.assertEqual(CodexLayer2Transport.completed_content(response, 'gpt-6.1-sol', 'translator'), response['content'])
+        with self.assertRaises(ValueError):
+            CodexLayer2Transport.completed_content(response, 'gpt-6.1-sol', 'reviewer')
+        self.payload['reasoning_effort'] = 'medium'
+        with patch('scripts.codex_layer2_transport.subprocess.run') as blocked:
+            with self.assertRaisesRegex(ValueError, 'configuration_changed'):
+                self.transport('', self.payload)
+            blocked.assert_not_called()
+
+    def test_default_transport_cannot_dispatch_new_translator_model(self):
+        self.payload['model'] = 'gpt-6.1-sol'
+        with patch('scripts.codex_layer2_transport.subprocess.run') as blocked:
+            with self.assertRaisesRegex(ValueError, 'unsupported_codex_language_model'):
+                self.transport('', self.payload)
+            blocked.assert_not_called()
+
     def test_runtime_rejects_incomplete_tool_or_failed_process(self):
         cases = {"missing-completion": {"completed": False}, "tool": {"tool": True},
                  "nonzero-exit": {"exit_code": 2}}

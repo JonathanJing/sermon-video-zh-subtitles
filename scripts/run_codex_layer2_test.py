@@ -5,6 +5,7 @@ Only test evidence: simulated Layer 1 receipts cannot produce a formal candidate
 """
 from __future__ import annotations
 import argparse
+import copy
 import hashlib
 import json
 from pathlib import Path
@@ -13,7 +14,7 @@ if __package__ in (None, ''):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts import run_target_language_models as runner, sermon_accounting as accounting
 from scripts import target_language_policy as policy_tools
-from scripts.codex_layer2_transport import CodexLayer2Transport
+from scripts.codex_layer2_transport import CodexLayer2Transport, TEST_CONFIGURATION, validate_test_configuration
 
 
 def bind_context(out_dir, context):
@@ -92,7 +93,7 @@ class FixtureLayer2Transport:
         return response['content']
 
 
-def run_test(fixture_dir, policy_path, out_dir, *, cli_path, reviewer_tier='fast', timeout_seconds=180, mock_responses_dir=None, resource_policy_path=None):
+def run_test(fixture_dir, policy_path, out_dir, *, cli_path, reviewer_tier='fast', timeout_seconds=180, mock_responses_dir=None, resource_policy_path=None, translator_model=None):
     fixture_dir, out_dir = Path(fixture_dir).resolve(), Path(out_dir).resolve()
     root = Path(__file__).resolve().parents[1]
     if not out_dir.is_relative_to(root / 'artifacts') or out_dir == root / 'artifacts':
@@ -119,6 +120,18 @@ def run_test(fixture_dir, policy_path, out_dir, *, cli_path, reviewer_tier='fast
             for row in groups]
     if len(plan) != 13:
         raise ValueError('Fixed fixture requires thirteen original groups')
+    simulation_configuration = None
+    baseline_policy_sha256 = policy_tools.canonical_sha256(policy)
+    if translator_model is not None:
+        if translator_model != 'gpt-6.1-sol' or mock_responses_dir is not None:
+            raise ValueError('Explicit Sol 6.1 configuration requires a fresh live isolated test')
+        policy_tools.validate_policy(policy)
+        simulation_configuration = validate_test_configuration(TEST_CONFIGURATION)
+        policy = copy.deepcopy(policy)
+        for role in ('translator', 'reviewer'):
+            policy[role].update({key: value for key, value in simulation_configuration[role].items() if key != 'serviceTier'})
+            policy['componentSha256'][role] = policy_tools.canonical_sha256(policy[role])
+        policy['simulationModelConfiguration'] = simulation_configuration
     request = {'schemaVersion': 'sermon-dry-run-layer2-request-v1',
                'simulationOnly': True, 'sourceLocale': 'en', 'targetLocale': 'zh-Hans',
                'englishSourcePackageJsonSha256': policy_tools.canonical_sha256(source),
@@ -126,6 +139,9 @@ def run_test(fixture_dir, policy_path, out_dir, *, cli_path, reviewer_tier='fast
                'translationPolicySha256': policy_tools.canonical_sha256(policy),
                'sourceUnits': [{'sourceUnitId': u['sourceUnitId'], 'english': u['english']} for u in units],
                'generation': None, 'groups': None}
+    if simulation_configuration is not None:
+        request['simulationModelConfiguration'] = simulation_configuration
+        request['baselineTranslationPolicySha256'] = baseline_policy_sha256
     runner.group_plan(request, anchor, plan)
     if mock_responses_dir is not None and resource_policy_path is not None:
         raise ValueError('Fixture replay cannot claim real CLI resource admission')
@@ -134,6 +150,8 @@ def run_test(fixture_dir, policy_path, out_dir, *, cli_path, reviewer_tier='fast
         from scripts.sermon_unified import resources
         resource_options['resource_policy'] = resources.validate_policy(
             json.loads(Path(resource_policy_path).read_text()))
+    if simulation_configuration is not None:
+        resource_options['simulation_model_configuration'] = simulation_configuration
     transport = (FixtureLayer2Transport(mock_responses_dir) if mock_responses_dir is not None
                  else CodexLayer2Transport(cli_path, reviewer_tier=reviewer_tier,
                                     timeout_seconds=timeout_seconds, receipts_dir=out_dir / '_cli_calls', **resource_options))
@@ -146,6 +164,10 @@ def run_test(fixture_dir, policy_path, out_dir, *, cli_path, reviewer_tier='fast
                'commandImplementationSha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
                'runnerImplementationSha256': hashlib.sha256(Path(runner.__file__).read_bytes()).hexdigest(),
                'languagePlugin': 'not_run', 'canonicalCandidateAdmission': 'not_run'}
+    if simulation_configuration is not None:
+        context['simulationModelConfiguration'] = simulation_configuration
+        context['baselineTranslationPolicySha256'] = baseline_policy_sha256
+        context['effectiveTranslationPolicySha256'] = policy_tools.canonical_sha256(policy)
     context_path = out_dir / 'test-context.json'
     if context_path.exists() and json.loads(context_path.read_text()) != context:
         raise ValueError('CLI test implementation or context changed; use a new output identity')
@@ -178,13 +200,14 @@ def main():
     parser.add_argument('--out-dir', type=Path, required=True)
     parser.add_argument('--codex-cli', type=Path, default=Path.home() / '.local/bin/codex')
     parser.add_argument('--mock-responses-dir', type=Path, help='Replay 26 bound historical raw receipts; no CLI or API calls')
+    parser.add_argument('--translator-model', choices=['gpt-6.1-sol'], help='Isolated test override: GPT-6.1 Sol high fast; production defaults unchanged')
     parser.add_argument('--reviewer-tier', choices=['default', 'fast'], default='fast')
     parser.add_argument('--timeout-seconds', type=int, default=180)
     parser.add_argument('--resource-policy', type=Path, help='Explicit shared host-local CLI admission policy')
     args = parser.parse_args()
     run_test(args.fixture_dir, args.policy, args.out_dir, cli_path=args.codex_cli,
              reviewer_tier=args.reviewer_tier, timeout_seconds=args.timeout_seconds,
-             mock_responses_dir=args.mock_responses_dir, resource_policy_path=args.resource_policy)
+             mock_responses_dir=args.mock_responses_dir, resource_policy_path=args.resource_policy, translator_model=args.translator_model)
 
 
 if __name__ == '__main__':

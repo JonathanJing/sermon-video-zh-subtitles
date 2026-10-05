@@ -179,6 +179,8 @@ def model_payload(role, prompt, policy, request_limits=None):
                "messages": [{"role": "system", "content": prompt["instruction"]},
                             {"role": "user", "content": json.dumps(prompt["input"], ensure_ascii=False)}],
                "response_format": {"type": "json_object"}}
+    if policy.get("simulationModelConfiguration") is not None:
+        payload["service_tier"] = policy["simulationModelConfiguration"][role]["serviceTier"]
     if request_limits is not None:
         from scripts.sermon_provider_limits import bounded_payload
         payload = bounded_payload(payload, request_limits)
@@ -600,7 +602,27 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
         else:
             require("simulationOnly" not in request,
                     "Formal group loop cannot consume a simulated request")
-        for role, expected in MODEL_ROLES.items():
+        expected_models = MODEL_ROLES
+        simulation_configuration = policy.get("simulationModelConfiguration")
+        if simulation_configuration is not None:
+            from scripts.codex_layer2_transport import validate_test_configuration
+            require(simulation_only and not api_key,
+                    "Simulation model configuration cannot enter formal production")
+            validate_test_configuration(simulation_configuration)
+            require(request.get("simulationModelConfiguration") == simulation_configuration
+                    and request.get("translationPolicySha256") == policy_tools.canonical_sha256(policy)
+                    and getattr(caller, "execution_identity", {}).get("simulationModelConfiguration") == simulation_configuration,
+                    "Simulation model configuration requires matching request and CLI transport identity")
+            for role in MODEL_ROLES:
+                require(policy[role]["model"] == simulation_configuration[role]["model"]
+                        and policy[role]["reasoningEffort"] == simulation_configuration[role]["reasoningEffort"]
+                        and policy["componentSha256"][role] == policy_tools.canonical_sha256(policy[role]),
+                        "Simulation role configuration changed")
+            expected_models = {role: simulation_configuration[role]["model"] for role in MODEL_ROLES}
+        else:
+            require("simulationModelConfiguration" not in request,
+                    "Simulation request configuration lacks a bound effective policy")
+        for role, expected in expected_models.items():
             require(policy[role]["model"] == expected,
                     f"Production {role} model must be {expected}; freeze a new policy")
         workers = policy["batching"].get("workers")
