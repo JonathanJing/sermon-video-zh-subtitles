@@ -35,7 +35,64 @@ def bind_context(out_dir, context):
         runner.save_new(marker, context, private=True)
 
 
-def run_test(fixture_dir, policy_path, out_dir, *, cli_path, reviewer_tier='fast', timeout_seconds=180):
+
+class FixtureLayer2Transport:
+    """Replay complete, bound raw CLI receipts without any live transport."""
+    billing = 'local'
+
+    def __init__(self, responses_dir):
+        self.root = Path(responses_dir).resolve()
+        self.responses = {}
+        inventory = {}
+        origin = self.root / 'test-context.json'
+        origin_identity = json.loads(origin.read_text())['modelTransportIdentity']
+        inventory[origin.name] = hashlib.sha256(origin.read_bytes()).hexdigest()
+        for index in range(1, 14):
+            for suffix, role in [('astra', 'translator'), ('sol', 'reviewer')]:
+                stem = f'group-{index:04d}-{suffix}'
+                raw_path = self.root / (stem + '.raw.json')
+                preview_path = self.root / (stem + '.policy-preview.json')
+                raw = json.loads(raw_path.read_text())
+                payload = json.loads(preview_path.read_text())['payload']
+                expected = policy_tools.canonical_sha256({'payload': payload,
+                    'modelTransportIdentity': origin_identity})
+                if raw.get('payloadSha256') != expected:
+                    raise ValueError('Fixture original payload binding differs: ' + stem)
+                content = CodexLayer2Transport.completed_content(raw['response'], payload['model'], role)
+                key = policy_tools.canonical_sha256(payload)
+                if key in self.responses:
+                    raise ValueError('Duplicate fixture request payload')
+                self.responses[key] = {'schemaVersion': 'fixture-layer2-response-v1',
+                    'id': 'fixture:' + hashlib.sha256(raw_path.read_bytes()).hexdigest(),
+                    'content': content, 'requestedModel': payload['model'], 'role': role,
+                    'completed': True, 'realModelCalls': False, 'historicalResponseId': raw['response']['id']}
+                for path in (raw_path, preview_path):
+                    inventory[path.name] = hashlib.sha256(path.read_bytes()).hexdigest()
+        self.execution_identity = {'schemaVersion': 'fixture-layer2-transport-identity-v1',
+            'backend': 'fixture_replay', 'realModelCalls': False,
+            'responsesSha256': policy_tools.canonical_sha256(inventory), 'files': inventory}
+
+    def __call__(self, api_key, payload):
+        if api_key:
+            raise ValueError('Fixture replay must not receive an API key')
+        for name, expected in self.execution_identity['files'].items():
+            if hashlib.sha256((self.root / name).read_bytes()).hexdigest() != expected:
+                raise ValueError('Fixture receipt changed after binding: ' + name)
+        key = policy_tools.canonical_sha256(payload)
+        if key not in self.responses:
+            raise ValueError('Fixture replay has no exactly matching frozen payload')
+        return dict(self.responses[key])
+
+    @staticmethod
+    def completed_content(response, model, role):
+        if (response.get('schemaVersion') != 'fixture-layer2-response-v1'
+                or response.get('requestedModel') != model or response.get('role') != role
+                or response.get('realModelCalls') is not False or response.get('completed') is not True):
+            raise ValueError('Invalid fixture terminal response')
+        return response['content']
+
+
+def run_test(fixture_dir, policy_path, out_dir, *, cli_path, reviewer_tier='fast', timeout_seconds=180, mock_responses_dir=None):
     fixture_dir, out_dir = Path(fixture_dir).resolve(), Path(out_dir).resolve()
     root = Path(__file__).resolve().parents[1]
     if not out_dir.is_relative_to(root / 'artifacts') or out_dir == root / 'artifacts':
@@ -70,10 +127,11 @@ def run_test(fixture_dir, policy_path, out_dir, *, cli_path, reviewer_tier='fast
                'sourceUnits': [{'sourceUnitId': u['sourceUnitId'], 'english': u['english']} for u in units],
                'generation': None, 'groups': None}
     runner.group_plan(request, anchor, plan)
-    transport = CodexLayer2Transport(cli_path, reviewer_tier=reviewer_tier,
-                                    timeout_seconds=timeout_seconds, receipts_dir=out_dir / '_cli_calls')
+    transport = (FixtureLayer2Transport(mock_responses_dir) if mock_responses_dir is not None
+                 else CodexLayer2Transport(cli_path, reviewer_tier=reviewer_tier,
+                                    timeout_seconds=timeout_seconds, receipts_dir=out_dir / '_cli_calls'))
     context = {'schemaVersion': 'codex-layer2-test-run-v1', 'simulationOnly': True,
-               'realModelCalls': True, 'productionEligible': False, 'humanApproval': False,
+               'realModelCalls': mock_responses_dir is None, 'productionEligible': False, 'humanApproval': False,
                'fixtureDir': str(fixture_dir), 'sourceMediaSha256': media_sha,
                'sourceDurationSeconds': source['source']['media']['durationSeconds'],
                'modelTransportIdentity': transport.execution_identity,
@@ -94,7 +152,8 @@ def run_test(fixture_dir, policy_path, out_dir, *, cli_path, reviewer_tier='fast
         finally:
             if (out_dir / 'run-identity.json').exists():
                 runner.save_new(context_path, context) if not context_path.exists() else None
-    report = {**context, 'status': 'machine_review_pass_test_only', 'sourceUnits': len(units),
+    report = {**context, 'status': ('fixture_replay_pass_test_only' if mock_responses_dir is not None
+              else 'machine_review_pass_test_only'), 'sourceUnits': len(units),
               'groups': len(evidence['groups']), 'evidenceSha256': policy_tools.canonical_sha256(evidence)}
     report_path = out_dir / 'test-report.json'
     if not report_path.exists():
@@ -111,11 +170,13 @@ def main():
     parser.add_argument('--policy', type=Path, default=Path('config/target-language-policies/zh-Hans.json'))
     parser.add_argument('--out-dir', type=Path, required=True)
     parser.add_argument('--codex-cli', type=Path, default=Path.home() / '.local/bin/codex')
+    parser.add_argument('--mock-responses-dir', type=Path, help='Replay 26 bound historical raw receipts; no CLI or API calls')
     parser.add_argument('--reviewer-tier', choices=['default', 'fast'], default='fast')
     parser.add_argument('--timeout-seconds', type=int, default=180)
     args = parser.parse_args()
     run_test(args.fixture_dir, args.policy, args.out_dir, cli_path=args.codex_cli,
-             reviewer_tier=args.reviewer_tier, timeout_seconds=args.timeout_seconds)
+             reviewer_tier=args.reviewer_tier, timeout_seconds=args.timeout_seconds,
+             mock_responses_dir=args.mock_responses_dir)
 
 
 if __name__ == '__main__':

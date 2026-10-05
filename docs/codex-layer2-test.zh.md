@@ -16,6 +16,12 @@ Astra 翻译使用普通速度；Sol 审核可选 `default` 或 `fast`，推理�
 
 [`run_codex_layer2_test.py`](../scripts/run_codex_layer2_test.py) 验证固定 fixture 的 simulation scope、媒体身份、39 单元、13 组和单 worker。只读取旧候选的 group membership，不读取其译文；真实翻译和审核由 [`codex_layer2_transport.py`](../scripts/codex_layer2_transport.py) 注入 [`run_target_language_models.py`](../scripts/run_target_language_models.py) 的共享循环。正式入口的 Layer 1/策略/plugin 门禁和默认 API 调用没有改动；本测试不能替代 canonical controller 端到端 dispatch 验收。
 
+## 先跑 Mockup
+
+在新的输出目录添加 `--mock-responses-dir artifacts/codex-cli-layer2-180s-20261005` 可通过同一分组循环回放历史完整响应。该模式不构造 Codex transport，不读取登录文件、不启动 CLI（包括 `--version`），也不调用 API。历史 payload、raw 响应和原 transport context 共 53 个文件进入 fixture 身份；请求必须精确匹配，每次回放重新核对文件哈希。输入、策略或响应变化即拒绝。
+
+结果为 `fixture_replay_pass_test_only`，`realModelCalls=false`；历史 usage 不计入本轮真实调用或速度。回放通过只证明循环、覆盖、持久化及恢复路径。随后去掉该参数，以另一新目录运行真实 CLI，才能取得新的调用回执。
+
 ## 认证、终态与缓存
 
 仅接受 ChatGPT 登录；从 CLI 子进程移除 `OPENAI_*` 和 `CODEX_API_KEY`，忽略用户配置，使用独立临时 cwd、ephemeral 会话和 read-only sandbox。指令禁止工具调用，适配器另检查实际 JSONL；任何工具事件、失败、缺完成事件或 final file/message 不一致均拒绝。没有 API fallback、自动重试或密钥加载。
@@ -35,3 +41,25 @@ CLI 版本、入口及二进制 SHA、适配器 SHA、输出 schema、速度档�
 恢复验收应确认：13 组按源顺序汇总，26 个唯一 role/session ID，源单元各覆盖一次；全部机器语义检查通过。随后同参数恢复，确认 `_cli_calls` 数量及返回哈希不变，没有新模型调用。语言插件、canonical candidate admission、人工审核、正式生产 dispatch、音频和发布保持 not_run。
 
 后续 [1–24 路并发实测](reports/20261005-codex-cli-concurrency-24.zh.md) 验证了独立 CLI 调用的容量；不改变本入口 workers=1、正式 controller 的语言／组预算或 GPU／发布锁。
+
+## 接本地模型诊断
+
+[固定片段本地 worker](../scripts/experiments/replay_fixed_clip_local_models.py) 消费本轮新的 `evidence.json` 和同一源视频，运行真实 TTS batch=2、回听 ASR batch=4。它复用注册 voice/checkpoint 的验证与现有 QwenSynthesizer，始终 `diagnosticOnly=true`、`humanApproval=false`、`formalEligible=false`；不创建正式 speech job、同步轨或发布包。checkpoint map 使用该执行容器内的本地权重路径，留在 ignored artifacts。
+
+```sh
+python scripts/experiments/replay_fixed_clip_local_models.py tts \
+  --evidence NEW-RUN/cli/evidence.json --media FIXED-SOURCE.mp4 \
+  --registry config/speaker-voice-registry.json \
+  --checkpoint-map LOCAL-CHECKPOINT-MAP.json --out NEW-RUN/tts
+python scripts/experiments/replay_fixed_clip_local_models.py asr \
+  --tts-manifest NEW-RUN/tts/manifest.json \
+  --model-path LOCAL-ASR-SNAPSHOT --out NEW-RUN/asr
+python scripts/experiments/assess_fixed_clip_local_models.py \
+  --tts-dir NEW-RUN/tts --asr-dir NEW-RUN/asr \
+  --anchor FIXTURE/anchor.json --media FIXED-SOURCE.mp4 \
+  --out NEW-RUN/assessment.json
+```
+
+在具备 GPU/本地权重的隔离容器执行前两个命令，关闭网络；最后的评估只需 Python、ffmpeg/ffprobe，可在 Mac 执行。路径占位符替换为本轮独立目录。完整完成回执可同参数恢复，不加载模型或重新推理；unknown 批次先对账，不通过删 started marker 重发。评估检查全量解码、时长、源窗口和 ASR 绑定，即使全部相似度通过也不赋予发布资格。首轮与恢复计量分别保留。
+
+见 [Mockup、真实 CLI 和本地模型本轮复盘](reports/20261005-fixed-180s-mock-codex-local-rerun.zh.md)：真实链完成，但 185.92 秒配音超过 180.013 秒源视频，8 组超源窗口，保持发布阻塞。
