@@ -9,14 +9,25 @@ final class ListeningFlowUITests: XCTestCase {
     func testForegroundAlignmentIslandSyntheticFeedbackScreenshots() {
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing", "--ui-testing-live-activity", "-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
+        app.launchEnvironment["TONGXING_UI_TEST_RUN_ID"] = UUID().uuidString
+        app.launchEnvironment["TONGXING_TEST_HOST"] = "0"
         app.launch()
         XCTAssertTrue(app.staticTexts["sermon-title"].waitForExistence(timeout: 10))
         Thread.sleep(forTimeInterval: 4)
-        screenshot("foreground-alignment-listening", app: app)
+        let listening = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        listening.name = "foreground-alignment-listening"
+        listening.lifetime = .keepAlways
+        add(listening)
         Thread.sleep(forTimeInterval: 12)
-        screenshot("foreground-alignment-aligned", app: app)
+        let aligned = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        aligned.name = "foreground-alignment-aligned"
+        aligned.lifetime = .keepAlways
+        add(aligned)
         Thread.sleep(forTimeInterval: 22)
-        screenshot("foreground-alignment-unmatched", app: app)
+        let unmatched = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        unmatched.name = "foreground-alignment-unmatched"
+        unmatched.lifetime = .keepAlways
+        add(unmatched)
         app.terminate()
     }
 
