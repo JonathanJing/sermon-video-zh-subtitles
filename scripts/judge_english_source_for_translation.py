@@ -302,8 +302,8 @@ def _checked_batch(result: dict[str, Any], expected: list[dict[str, Any]]) -> li
     return rows
 
 
-def run(*, aligned_path: Path, manifest_path: Path, out: Path, model: str = "gpt-6-astra",
-        effort: str = "medium", batch_size: int = 15, api_key: str,
+def run(*, aligned_path: Path, manifest_path: Path, out: Path, model: str = "gpt-6.1-sol",
+        effort: str = "high", batch_size: int = 15, api_key: str,
         cache_root: Path | None = None, workers: int = 1, prewarm: bool = False,
         caller: Callable[..., dict[str, Any]] = chat_json) -> dict[str, Any]:
     if type(workers) is not int or not 1 <= workers <= 8:
@@ -455,8 +455,8 @@ def main() -> int:
     parser.add_argument("--aligned-segments", type=Path, required=True)
     parser.add_argument("--anchor-manifest", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
-    parser.add_argument("--model", default="gpt-6-astra")
-    parser.add_argument("--reasoning-effort", default="medium")
+    parser.add_argument("--model", default="gpt-6.1-sol")
+    parser.add_argument("--reasoning-effort", default="high")
     parser.add_argument("--batch-size", type=int, default=15)
     parser.add_argument("--cache-root", type=Path, help="Canonical request cache root; defaults to anchor manifest directory")
     parser.add_argument("--workers", type=int, default=1)
@@ -464,14 +464,17 @@ def main() -> int:
     parser.add_argument("--api-key-secret")
     args = parser.parse_args()
     from scripts.sermon_openai_runtime import reject_secret_override
-    reject_secret_override(args.api_key_secret)
-    if args.api_key_secret:
+    if args.model != "gpt-6.1-sol":
+        reject_secret_override(args.api_key_secret)
+    if args.model == "gpt-6.1-sol":
+        api_key = ""
+    elif args.api_key_secret:
         from backend.cloud import access_secret
         api_key = access_secret(args.api_key_secret)
     else:
         import os
         api_key = os.environ.get("OPENAI_API_KEY", "").strip()
-    if not api_key:
+    if not api_key and args.model != "gpt-6.1-sol":
         raise SystemExit("OPENAI_API_KEY is not set and --api-key-secret was not provided")
     result = run(
         aligned_path=args.aligned_segments,

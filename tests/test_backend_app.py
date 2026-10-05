@@ -306,7 +306,10 @@ class BackendAppTest(unittest.TestCase):
         self.assertNotIn("--start-time", command)
         self.assertNotIn("--end-time", command)
         default_command = ApiHandler.production_supervisor_command(handler, {"mode": "execute"}, "2026-08-02")
-        self.assertEqual(default_command[default_command.index("--model") + 1], "gpt-6-sol")
+        self.assertEqual(default_command[default_command.index("--model") + 1], "gpt-6-luna")
+        self.assertEqual(default_command[default_command.index("--agent-backend") + 1], "codex-cli")
+        self.assertEqual(default_command[default_command.index("--reasoning-effort") + 1], "medium")
+        self.assertEqual(default_command[default_command.index("--service-tier") + 1], "fast")
 
     def test_production_supervisor_endpoint_plans_cloud_run_job_command(self):
         class FakeService:

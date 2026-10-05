@@ -197,7 +197,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--gcs-bucket", default=sermon_production_supervisor.DEFAULT_BUCKET)
     parser.add_argument("--gcs-prefix", default=sermon_production_supervisor.DEFAULT_GCS_PREFIX)
     parser.add_argument("--api-key-secret")
-    parser.add_argument("--release-workflow-config", type=Path, help="Opt into guarded page-release workflow (Agents API only).")
+    parser.add_argument("--release-workflow-config", type=Path, help="Opt into guarded page-release workflow (Codex CLI or legacy Agents API).")
     parser.add_argument("--app-delivery-config", type=Path,
                         help="Opt into deterministic App bundle preparation; no Agents API or SDK model call")
     parser.add_argument("--youtube-api-key-secret")
@@ -209,8 +209,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--notify-sendgrid-secret")
     parser.add_argument("--notify-recipients-secret")
     parser.add_argument("--notify-sender-secret")
-    parser.add_argument("--model", default="gpt-6-sol")
-    parser.add_argument("--agent-backend", choices=("agents-api", "sdk"), default="agents-api")
+    parser.add_argument("--model", default="gpt-6-luna")
+    parser.add_argument("--reasoning-effort", choices=("low", "medium", "high"), default="medium")
+    parser.add_argument("--service-tier", choices=("default", "fast"), default="fast")
+    parser.add_argument("--agent-backend", choices=("codex-cli", "agents-api", "sdk"), default="codex-cli")
     parser.add_argument("--agent-run-dir", type=Path, help="Use a fresh explicit Agents API session directory.")
     parser.add_argument("--resume-agent-session", action="store_true", help="Resume the session in --agent-run-dir without replaying completed tools.")
     parser.add_argument("--agent-timeout-seconds", type=float, default=21600, help="Session budget; checked between guarded production operations.")
@@ -259,8 +261,12 @@ async def run_agent(args: argparse.Namespace) -> dict[str, Any]:
         from scripts import sermon_app_delivery_workflow
         return sermon_app_delivery_workflow.run(config.app_delivery_config,
             mode=args.mode, sunday=config.sunday)
-    if config.release_workflow_config and getattr(args, "agent_backend", "agents-api") != "agents-api":
-        raise ValueError("Full page-release workflow requires the Agents API backend")
+    if getattr(args, "agent_backend", "codex-cli") in {"agents-api", "sdk"} and not getattr(args, "resume_agent_session", False):
+        raise ValueError("New supervisor runs require Codex CLI; legacy backend requires explicit existing-session resume")
+    if getattr(args, "agent_backend", "codex-cli") == "sdk" and getattr(args, "resume_agent_session", False):
+        raise ValueError("SDK has no durable session resume adapter; reconcile its prior outcome before starting a new CLI run")
+    if config.release_workflow_config and getattr(args, "agent_backend", "codex-cli") not in {"codex-cli", "agents-api"}:
+        raise ValueError("Full page-release workflow requires Codex CLI or legacy Agents API")
     if args.approve_window:
         if args.mode != "execute":
             raise SystemExit("--approve-window requires --mode execute")
@@ -288,6 +294,12 @@ async def run_agent(args: argparse.Namespace) -> dict[str, Any]:
         approval = None
 
     execute = args.mode == "execute"
+    if getattr(args, "agent_backend", "codex-cli") == "codex-cli":
+        from scripts.sermon_codex_supervisor import session_report
+        instructions = supervisor_instructions("agents-api", page_release=config.release_workflow_config is not None)
+        report = session_report(args, config, instructions, SupervisorDecision, verify_decision)
+        report["approvalWritten"] = approval
+        return report
     if config.api_key_secret and not os.getenv("OPENAI_API_KEY"):
         os.environ["OPENAI_API_KEY"] = access_secret(config.api_key_secret)
     if getattr(args, "agent_backend", "agents-api") == "agents-api":

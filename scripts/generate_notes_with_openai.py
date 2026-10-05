@@ -33,7 +33,7 @@ SECRET_RESOURCE_RE = re.compile(
 NOTE_SLICE_TARGET_MS = 5 * 60 * 1000
 NOTE_SLICE_MAX_CHARS = 900
 NOTE_SLICE_MIN_CHARS = 120
-DEFAULT_MODEL = "gpt-5.6"
+DEFAULT_MODEL = "gpt-6.1-sol"
 DEFAULT_REASONING_EFFORT = "high"
 SRT_TIMESTAMP_RE = re.compile(
     r"^\s*(?P<start>\d{1,2}:\d{2}:\d{2}[,.]\d{3})\s*-->\s*(?P<end>\d{1,2}:\d{2}:\d{2}[,.]\d{3})"
@@ -60,14 +60,14 @@ def _main(args: argparse.Namespace) -> int:
     if not slices:
         raise SystemExit("No caption text available for note generation.")
 
-    api_key = resolve_api_key(args.api_key_secret)
+    api_key = "" if args.model == "gpt-6.1-sol" else resolve_api_key(args.api_key_secret)
     request_payload = build_openai_request(
         slices=slices,
         simulation=simulation,
         model=args.model,
         reasoning_effort=args.reasoning_effort,
     )
-    with stage("notes.generate", billing="api"):
+    with stage("notes.generate", billing="codex" if args.model == "gpt-6.1-sol" else "api"):
         raw_response = request_openai_notes(
             request_payload,
             api_key=api_key,
@@ -594,6 +594,17 @@ def request_openai_notes(
     api_key: str,
     timeout_seconds: int = 120,
 ) -> dict[str, Any]:
+    if payload.get("model") == "gpt-6.1-sol":
+        from scripts.sermon_codex_transport import chat_json as codex_chat_json
+        messages = []
+        for item in payload["input"]:
+            content = "\n".join(part["text"] for part in item["content"] if part.get("type") == "input_text")
+            messages.append({"role": item["role"], "content": content})
+        result = codex_chat_json("", {"model": payload["model"],
+            "reasoning_effort": payload["reasoning"]["effort"],
+            "response_format": {"type": "json_object"}, "messages": messages}, retries=1)
+        return {**result, "output": [{"type": "message", "content": [{"type": "output_text",
+            "text": result["choices"][0]["message"]["content"]}]}]}
     started = time.perf_counter()
     model = str(payload.get("model") or DEFAULT_MODEL)
     attempt_id = record_api_started(model, request_metadata(payload))

@@ -59,7 +59,7 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
         index = (len(self.calls) + 1) // 2
         group = self.fixture.evidence["groups"][index - 1]
         input_group = json.loads(payload["messages"][1]["content"])
-        if payload["model"] == "gpt-6-astra":
+        if payload["reasoning_effort"] == "high":
             result = {key: copy.deepcopy(group[key]) for key in
                       ("translationGroupId", "sourceUnitIds", "targetUtterances", "coverage")}
         else:
@@ -99,7 +99,7 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
         policy, request, caller = self.simulation_configuration_fixture()
         evidence = subject._run_prepared_groups(request, self.fixture.anchor, policy, self.out, '', caller,
                                                 simulation_only=True)
-        self.assertEqual([p['model'] for p in self.calls], ['gpt-6.1-sol', 'gpt-6-sol'] * 2)
+        self.assertEqual([p['model'] for p in self.calls], ['gpt-6.1-sol', 'gpt-6.1-sol'] * 2)
         self.assertEqual([p['reasoning_effort'] for p in self.calls], ['high', 'medium'] * 2)
         self.assertEqual([p['service_tier'] for p in self.calls], ['fast'] * 4)
         self.assertEqual(evidence['generation']['translator']['model'], 'gpt-6.1-sol')
@@ -142,9 +142,9 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
         evidence = subject.run(f.source, f.anchor, f.policy, self.out,
                                "fixture-key", self.fake_call)
         self.assertEqual([call["model"] for call in self.calls],
-                         ["gpt-6-astra", "gpt-6-sol"] * 2)
+                         ["gpt-6.1-sol", "gpt-6.1-sol"] * 2)
         self.assertEqual([call["reasoning_effort"] for call in self.calls],
-                         ["medium"] * 4)
+                         ["high", "medium"] * 2)
         self.assertTrue(all("never invent it" in call["messages"][0]["content"]
                             for call in self.calls))
         self.assertTrue(all("elliptical repetitions" in call["messages"][0]["content"]
@@ -305,7 +305,7 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
         def concurrent_call(api_key, payload):
             data = json.loads(payload["messages"][1]["content"])
             group_id = data["translationGroupId"]
-            role = "translator" if payload["model"] == "gpt-6-astra" else "reviewer"
+            role = "translator" if payload["reasoning_effort"] == "high" else "reviewer"
             if role == "translator":
                 barrier.wait(timeout=3)
             else:
@@ -403,7 +403,7 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
         f = self.fixture
         def failing(api_key, payload):
             response = self.fake_call(api_key, payload)
-            if payload["model"] == "gpt-6-sol":
+            if payload["reasoning_effort"] == "medium":
                 import json
                 result = json.loads(response["choices"][0]["message"]["content"])
                 result["semanticReview"]["status"] = "fail"
@@ -420,7 +420,7 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
         f = self.fixture
         def boolean_checks(api_key, payload):
             response = self.fake_call(api_key, payload)
-            if payload["model"] == "gpt-6-sol":
+            if payload["reasoning_effort"] == "medium":
                 result = json.loads(response["choices"][0]["message"]["content"])
                 semantic = result["semanticReview"]
                 semantic["checks"] = {key: True for key in semantic["checks"]}
@@ -439,7 +439,7 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
         f = self.fixture
         def uncertain(api_key, payload):
             response = self.fake_call(api_key, payload)
-            if payload["model"] == "gpt-6-sol":
+            if payload["reasoning_effort"] == "medium":
                 result = json.loads(response["choices"][0]["message"]["content"])
                 result["semanticReview"]["uncertainty"] = True
                 response["choices"][0]["message"]["content"] = json.dumps(result)
@@ -544,11 +544,11 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
             self.assertIn("parenthetical verse citations", instruction)
             self.assertIn("unspoken book or chapter", instruction)
             self.assertIn("unfinished", instruction)
-            if payload["model"] == "gpt-6-astra":
+            if payload["reasoning_effort"] == "high":
                 self.assertIn("proposal's length", instruction)
             else:
                 self.assertIn("proposedTargetText", instruction)
-            if payload["model"] == "gpt-6-astra":
+            if payload["reasoning_effort"] == "high":
                 fields = ("translationGroupId", "sourceUnitIds", "targetUtterances", "coverage")
             else:
                 fields = ("translationGroupId", "sourceUnitIds", "targetUtterances", "coverage",
@@ -562,7 +562,7 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
                               "fixture-key", revised_call,
                               revision_brief=brief, reuse_from=previous)
         self.assertEqual([call["model"] for call in self.calls],
-                         ["gpt-6-astra", "gpt-6-sol"])
+                         ["gpt-6.1-sol", "gpt-6.1-sol"])
         self.assertEqual(updated["groups"][0], old["groups"][0])
         for role in ("astra", "sol"):
             self.assertEqual((self.out / f"group-0001-{role}.json").read_bytes(),
@@ -617,7 +617,7 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
         def failing(api_key, payload):
             response = self.fake_call(api_key, payload)
             group_id = json.loads(payload["messages"][1]["content"])["translationGroupId"]
-            if payload["model"] == "gpt-6-sol" and group_id == failed_id:
+            if payload["reasoning_effort"] == "medium" and group_id == failed_id:
                 result = json.loads(response["choices"][0]["message"]["content"])
                 result["semanticReview"]["status"] = "fail"
                 result["semanticReview"]["checks"]["quotationAttribution"] = "fail"
@@ -657,7 +657,7 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
             self.assertIn("speaker's paraphrase", payload["messages"][0]["content"])
             group = f.evidence["groups"][1]
             keys = ["translationGroupId", "sourceUnitIds", "targetUtterances", "coverage"]
-            if payload["model"] == "gpt-6-sol":
+            if payload["reasoning_effort"] == "medium":
                 keys.append("semanticReview")
             result = {key: copy.deepcopy(group[key]) for key in keys}
             result["translationGroupId"] = failed_id
@@ -669,7 +669,7 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
                                "fixture-key", repaired,
                                reuse_from=previous, partial_repair_brief=brief)
         self.assertEqual([call["model"] for call in calls],
-                         ["gpt-6-astra", "gpt-6-sol"])
+                         ["gpt-6.1-sol", "gpt-6.1-sol"])
         self.assertEqual((previous / "group-0002-sol.json").read_bytes(), old_failed_bytes)
         for role in ("astra", "sol"):
             self.assertEqual((self.out / f"group-0001-{role}.json").read_bytes(),
@@ -734,7 +734,7 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
                              "fixture-key", self.fake_call,
                              reuse_from=previous, partial_repair_brief=brief)
         self.assertEqual([call["model"] for call in self.calls],
-                         ["gpt-6-astra", "gpt-6-sol"] * 2)
+                         ["gpt-6.1-sol", "gpt-6.1-sol"] * 2)
         self.assertEqual(len(result["groups"]), 2)
         self.assertTrue((self.out / "evidence.json").exists())
 
@@ -764,7 +764,7 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
             group = next(row for row in f.evidence["groups"]
                          if row["sourceUnitIds"] == model_input["sourceUnitIds"])
             keys = ["translationGroupId", "sourceUnitIds", "targetUtterances", "coverage"]
-            if payload["model"] == "gpt-6-sol":
+            if payload["reasoning_effort"] == "medium":
                 keys.append("semanticReview")
             result = {key: copy.deepcopy(group[key]) for key in keys}
             result["translationGroupId"] = model_input["translationGroupId"]
@@ -810,7 +810,7 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
 
     def _first_group_fail(self, api_key, payload):
         response = self.fake_call(api_key, payload)
-        if payload["model"] == "gpt-6-sol":
+        if payload["reasoning_effort"] == "medium":
             result = json.loads(response["choices"][0]["message"]["content"])
             result["semanticReview"]["status"] = "fail"
             result["semanticReview"]["issues"] = ["Unresolved concern"]

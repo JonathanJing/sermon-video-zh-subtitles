@@ -13,9 +13,13 @@ from scripts import run_codex_local_sermon_production as mod
 
 
 class RunCodexLocalSermonProductionTest(unittest.TestCase):
-    def test_default_supervisor_model_is_sol(self):
+    def test_default_supervisor_model_is_luna_cli(self):
         with mock.patch.object(sys, "argv", ["run_codex_local_sermon_production.py"]):
-            self.assertEqual(mod.parse_args().model, "gpt-6-sol")
+            args = mod.parse_args()
+            self.assertEqual(args.model, "gpt-6-luna")
+            self.assertEqual(args.agent_backend, "codex-cli")
+            self.assertEqual(args.reasoning_effort, "medium")
+            self.assertEqual(args.service_tier, "fast")
 
     def automation_args(self, root: Path) -> argparse.Namespace:
         return argparse.Namespace(

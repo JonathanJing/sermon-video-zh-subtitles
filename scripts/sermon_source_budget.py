@@ -42,6 +42,7 @@ def bound_judge_payload(payload):
     limits = JUDGE_LIMITS.get()
     if limits is None:
         return payload
+    require(payload['model'] != 'gpt-6.1-sol', 'codex_cli_provider_output_cap_unsupported')
     from scripts import judge_english_source_for_translation as judge
     text_limits.validate_request_limits(limits)
     require(payload['model'] == 'gpt-6-astra'

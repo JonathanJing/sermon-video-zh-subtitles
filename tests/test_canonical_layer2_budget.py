@@ -38,7 +38,12 @@ class CanonicalLayer2BudgetTests(unittest.TestCase):
             'approvalReceipt': 'approval.json'}))
         self.auth = budget.load_authorization(self.config, self.auth_path, self.code)
         f = self.fixture.fixture.fixture
-        self.source, self.anchor, self.policy = f.source, f.anchor, f.policy
+        self.source, self.anchor = f.source, f.anchor
+        # Unit tests retain the frozen historical API budget contract. The
+        # migrated production policy is tested separately for zero dispatch.
+        self.policy = json.loads(json.dumps(f.policy))
+        self.policy["translator"].update(model="gpt-6-astra", reasoningEffort="medium")
+        self.policy["reviewer"].update(model="gpt-6-sol", reasoningEffort="medium")
         self.payload = budget.limits.bounded_payload({'model': 'gpt-6-astra', 'reasoning_effort': 'medium',
             'messages': [{'role': 'user', 'content': 'A full sentence.'}],
             'response_format': {'type': 'json_object'}}, self.limits)
@@ -94,7 +99,7 @@ class CanonicalLayer2BudgetTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'budget_approval_not_bound'):
             budget.load_authorization(self.config, self.auth_path, self.code)
 
-    def test_bound_worker_runs_real_runner_plugin_and_keeps_human_gate(self):
+    def test_new_cli_policy_blocks_api_budget_before_model_dispatch(self):
         from scripts import canonical_durable_jobs as durable
         view = controller.package_view(self.config)
         ident = durable.identity(view, self.config.run_id, 'text.zh-Hans')
@@ -103,25 +108,16 @@ class CanonicalLayer2BudgetTests(unittest.TestCase):
         request = {'schemaVersion': jobs.SCHEMA, 'jobId': key, 'identity': ident,
                    'command': command, 'commandSha256': jobs._digest(command),
                    'timeoutSeconds': 21600.0, 'livenessPolicy': controller.LIVENESS_POLICY}
-        calls = []
-        def transport(secret, payload):
-            self.assertEqual(payload['max_completion_tokens'], self.limits['maxCompletionTokens'])
-            self.assertEqual(payload['service_tier'], 'default')
-            calls.append(payload)
-            response = self.fixture.fake_call(secret, payload)
-            response['usage'] = {'prompt_tokens': 100, 'completion_tokens': 40}
-            return response
         with jobs._lock(self.config.job_root, key) as (folder, _, held):
             self.assertTrue(held)
             folder.mkdir()
             jobs._persist(folder / 'request.json', request)
             jobs._persist(folder / 'state.json', {'schemaVersion': jobs.SCHEMA, 'jobId': key,
                 'status': 'running', 'requestSha256': jobs._digest(request)})
-            result = controller.execute(self.config.path, 'zh-Hans', self.config.sha256,
-                self.code, key, caller=transport, api_key='fixture-key',
-                budget_authorization=self.auth_path, expected_budget=self.auth['sha256'])
-        self.assertEqual(len(calls), 4)
-        self.assertFalse(result['releaseEligible'])
-        data = jobs._read(self.auth['root'] / ledger.STORE_ID / 'state.json')
-        self.assertEqual(len(data['reservations']), 4)
-        self.assertTrue(all(row['phase'] == 'result' for row in data['reservations'].values()))
+            with patch('scripts.codex_layer2_transport.CodexLayer2Transport', side_effect=AssertionError('CLI dispatch forbidden')) as cli:
+                with self.assertRaisesRegex(ValueError, 'codex_cli_provider_output_cap_unsupported'):
+                    controller.execute(self.config.path, 'zh-Hans', self.config.sha256,
+                        self.code, key, budget_authorization=self.auth_path, expected_budget=self.auth['sha256'])
+                cli.assert_not_called()
+        self.assertFalse(self.auth['root'].exists())
+        self.assertFalse(list(self.config.lanes['zh-Hans']['output'].glob('*-astra.started.json')))

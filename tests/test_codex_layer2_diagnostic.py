@@ -77,7 +77,7 @@ class DiagnosticChainTests(unittest.TestCase):
         group = next(row for row in self.data.evidence['groups'] if row['sourceUnitIds'] == task['sourceUnitIds'])
         result = {key: copy.deepcopy(group[key]) for key in ('translationGroupId', 'sourceUnitIds', 'targetUtterances', 'coverage')}
         result['translationGroupId'] = task['translationGroupId']
-        if model == 'gpt-6-sol':
+        if 'model_reasoning_effort="medium"' in argv:
             result['semanticReview'] = copy.deepcopy(group['semanticReview'])
             self.assertEqual(task['astraDraft']['targetUtterances'], result['targetUtterances'])
         content = json.dumps(result)

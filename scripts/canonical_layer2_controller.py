@@ -166,7 +166,7 @@ def _inputs(config, locale, view):
     require(producer.plugin_implementation_sha256(lane['plugin']) == policy['languageReview']['pluginImplementationSha256'],
             'plugin_does_not_match_frozen_policy')
     # Fixed production models and the canonical runner's worker budget bound paid work.
-    require(all(policy[role]['model'] == model for role, model in models.MODEL_ROLES.items()), 'production_model_policy_changed')
+    require(all(policy[role]['model'] == model and policy[role]['reasoningEffort'] == models.MODEL_EFFORTS[role] for role, model in models.MODEL_ROLES.items()), 'production_model_policy_changed')
     require(policy['batching']['batchSize'] == 1 and type(policy['batching']['workers']) is int
             and 1 <= policy['batching']['workers'] <= api_concurrency.MAX_GROUP_WORKERS_PER_LOCALE,
             'invalid_production_worker_budget')
@@ -300,10 +300,10 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
             source, anchor, policy = _inputs(config, locale, current)
         with liveness.report(request_path.parent, request) as progress:
             if caller is None:
-                api_key = os.environ.get('OPENAI_API_KEY')
-                require(bool(api_key), 'OPENAI_API_KEY_is_not_configured')
-                if budget_binding is None:
-                    caller = lambda key, payload: models.sermon_pipeline.chat_json(key, payload, retries=1)
+                require(budget_binding is None, 'codex_cli_provider_output_cap_unsupported')
+                from scripts.codex_layer2_transport import CodexLayer2Transport
+                api_key = ''
+                caller = CodexLayer2Transport(receipts_dir=lane['output'] / '_cli_calls')
             if budget_binding is not None:
                 caller = budget_tools.BudgetedCaller(budget_binding, config, source, anchor, policy, transport=caller)
             def current_binding():
@@ -321,6 +321,11 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                     current_binding()
                     progress.progress('model_request')
                     return caller(key, payload)
+            # Preserve terminal decoding and transport identity through the
+            # state-binding wrapper. A CLI envelope is not an API response.
+            for attribute in ('execution_identity', 'completed_content', 'admit_resource', 'billing'):
+                if hasattr(caller, attribute):
+                    setattr(bound_call, attribute, getattr(caller, attribute))
             model_completion = []
             with (budget_tools.request_limits(budget_binding['limits']) if budget_binding else nullcontext()):
                 evidence = models.run_accounted(source, anchor, policy, lane['output'], api_key,

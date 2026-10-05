@@ -180,8 +180,8 @@ def run_test(fixture_dir, policy_path, out_dir, *, cli_path, reviewer_tier='fast
         raise ValueError('Fixed fixture requires thirteen original groups')
     simulation_configuration = None
     baseline_policy_sha256 = policy_tools.canonical_sha256(policy)
-    if translator_model is not None:
-        if translator_model != 'gpt-6.1-sol' or mock_responses_dir is not None:
+    if translator_model is not None or mock_responses_dir is None:
+        if translator_model not in (None, 'gpt-6.1-sol') or mock_responses_dir is not None:
             raise ValueError('Explicit Sol 6.1 configuration requires a fresh live isolated test')
         policy_tools.validate_policy(policy)
         simulation_configuration = validate_test_configuration(TEST_CONFIGURATION)
@@ -259,7 +259,7 @@ def main():
     parser.add_argument('--out-dir', type=Path, required=True)
     parser.add_argument('--codex-cli', type=Path, default=Path.home() / '.local/bin/codex')
     parser.add_argument('--mock-responses-dir', type=Path, help='Replay 26 bound historical raw receipts; no CLI or API calls')
-    parser.add_argument('--translator-model', choices=['gpt-6.1-sol'], help='Isolated test override: GPT-6.1 Sol high fast; production defaults unchanged')
+    parser.add_argument('--translator-model', choices=['gpt-6.1-sol'], help='Isolated test override: GPT-6.1 Sol high fast; production CLI defaults')
     parser.add_argument('--reviewer-tier', choices=['default', 'fast'], default='fast')
     parser.add_argument('--timeout-seconds', type=int, default=180)
     parser.add_argument('--resource-policy', type=Path, help='Explicit shared host-local CLI admission policy')

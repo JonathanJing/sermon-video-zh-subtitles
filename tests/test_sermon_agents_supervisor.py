@@ -274,19 +274,16 @@ class SupervisorBoundaryTests(unittest.TestCase):
         self.timeline.assert_not_called()
         self.generation.assert_not_called()
 
-    def test_sdk_premature_final_is_blocked_by_host_verification(self):
-        with patch("sys.argv", ["supervisor", "--sunday", self.config.sunday,
-                                "--state-file", self.config.state_file, "--work-root", str(self.config.work_root),
-                                "--gcs-bucket", "", "--mode", "execute", "--agent-backend", "sdk"]):
-            args = entry.parse_args()
-        with patch.object(entry.Runner, "run", new_callable=AsyncMock,
-                          return_value=Mock(final_output=decision("run_timeline_probe", "observed"),
-                                            context_wrapper=None)):
-            report = asyncio.run(entry.run_agent(args))
-        self.assertEqual(report["status"], "blocked")
-        self.assertFalse(report["decision"]["modelDecisionAccepted"])
-        self.assertFalse(report["decision"]["human_action_required"])
-        self.assertIn("unattempted_executable_stage", report["decision"]["evidence"])
+    def test_new_legacy_backend_runs_are_blocked_before_model_or_mutation(self):
+        for backend in ('sdk', 'agents-api'):
+            with patch('sys.argv', ['supervisor', '--sunday', self.config.sunday,
+                      '--state-file', self.config.state_file, '--work-root', str(self.config.work_root),
+                      '--gcs-bucket', '', '--agent-backend', backend]):
+                args = entry.parse_args()
+            with patch.object(entry.Runner, 'run', new_callable=AsyncMock) as sdk:
+                with self.assertRaisesRegex(ValueError, 'New supervisor runs require Codex CLI'):
+                    asyncio.run(entry.run_agent(args))
+                sdk.assert_not_called()
         self.timeline.assert_not_called()
 
     def test_stage_attempt_is_persisted_before_operation_raises(self):
@@ -687,35 +684,28 @@ class SupervisorBoundaryTests(unittest.TestCase):
         self.assertEqual(report["status"], "failed")
         sdk.assert_not_called()
 
-    def test_entry_dispatches_only_the_explicitly_selected_backend(self):
-        self.current = snapshot("complete")
-        for backend in ("agents-api", "sdk"):
-            with self.subTest(backend=backend), patch("sys.argv", [
-                    "supervisor", "--sunday", self.config.sunday, "--state-file", self.config.state_file,
-                    "--work-root", str(self.config.work_root), "--gcs-bucket", "", "--mode", "shadow",
-                    "--agent-backend", backend]):
-                args = entry.parse_args()
-            with patch.object(mod, "session_report", return_value={"status": "observed"}) as remote, \
-                    patch.object(entry.Runner, "run", new_callable=AsyncMock,
-                                 return_value=Mock(final_output=decision(), context_wrapper=None)) as sdk:
-                asyncio.run(entry.run_agent(args))
-            if backend == "agents-api":
-                remote.assert_called_once()
-                sdk.assert_not_called()
-            else:
-                remote.assert_not_called()
-                sdk.assert_awaited_once()
+    def test_existing_api_resume_keeps_explicit_backend_without_cli_fallback(self):
+        with patch('sys.argv', ['supervisor', '--sunday', self.config.sunday,
+                   '--state-file', self.config.state_file, '--work-root', str(self.config.work_root),
+                   '--gcs-bucket', '', '--mode', 'shadow', '--agent-backend', 'agents-api',
+                   '--resume-agent-session', '--agent-run-dir', str(self.root / 'old')]):
+            args = entry.parse_args()
+        with patch.object(mod, 'session_report', return_value={'status': 'observed'}) as remote, \
+             patch.object(entry.Runner, 'run', new_callable=AsyncMock) as sdk:
+            asyncio.run(entry.run_agent(args))
+        remote.assert_called_once()
+        sdk.assert_not_called()
 
 
 class BackendCLISelectionTests(unittest.TestCase):
-    def test_both_entrypoints_default_to_agents_api_and_allow_explicit_sdk(self):
+    def test_both_entrypoints_default_to_cli_and_parse_legacy_resume_backend(self):
         for module, required in ((entry, ["--sunday", "2026-09-13", "--state-file", "state.json"]),
                                  (local_entry, [])):
             with self.subTest(module=module.__name__):
                 with patch("sys.argv", ["supervisor", *required]):
                     args = module.parse_args()
-                    self.assertEqual(args.agent_backend, "agents-api")
-                    self.assertEqual(args.model, "gpt-6-sol")
+                    self.assertEqual(args.agent_backend, "codex-cli")
+                    self.assertEqual(args.model, "gpt-6-luna")
                 with patch("sys.argv", ["supervisor", *required, "--agent-backend", "sdk"]):
                     self.assertEqual(module.parse_args().agent_backend, "sdk")
 

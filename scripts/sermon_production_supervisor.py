@@ -51,7 +51,7 @@ class SupervisorConfig:
     notify_sender_secret: str | None = None
     python_executable: str = sys.executable
     reference_model: str = "gpt-transcribe"
-    reading_model: str = "gpt-6-astra"
+    reading_model: str = "gpt-6.1-sol"
     glossary: Path | None = None
     source_text_review: Path | None = None
     reading_review_manifest: Path | None = None
@@ -808,17 +808,17 @@ def build_generation_command(
         "--en-correction-model",
         config.reading_model,
         "--reasoning-effort",
-        "medium",
+        "high",
         "--interpretation-model",
         config.reading_model,
         "--interpretation-reasoning-effort",
-        "medium",
+        "high",
         "--reading-edition-provider",
-        "openai",
+        "codex",
         "--reading-edition-model",
         config.reading_model,
         "--reading-edition-reasoning-effort",
-        "medium",
+        "high",
     ]
     if approval.get("contentScope"):
         command.extend(["--content-scope", str(approval["contentScope"])])

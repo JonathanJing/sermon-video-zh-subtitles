@@ -21,13 +21,17 @@ from scripts import sermon_workflow_jobs as jobs
 
 SCHEMA = 'codex-cli-layer2-response-v2'
 LEGACY_SCHEMA = 'codex-cli-layer2-response-v1'
-MODELS = {'translator': 'gpt-6-astra', 'reviewer': 'gpt-6-sol'}
+MODELS = {'translator': 'gpt-6.1-sol', 'reviewer': 'gpt-6.1-sol'}
+EFFORTS = {'translator': 'high', 'reviewer': 'medium'}
 TEST_CONFIGURATION = {'schemaVersion': 'codex-layer2-simulation-models-v1',
     'simulationOnly': True, 'translator': {'model': 'gpt-6.1-sol', 'reasoningEffort': 'high', 'serviceTier': 'fast'},
-    'reviewer': {'model': 'gpt-6-sol', 'reasoningEffort': 'medium', 'serviceTier': 'fast'}}
+    'reviewer': {'model': 'gpt-6.1-sol', 'reasoningEffort': 'medium', 'serviceTier': 'fast'}}
+
+HISTORICAL_TEST_CONFIGURATION = json.loads(json.dumps(TEST_CONFIGURATION))
+HISTORICAL_TEST_CONFIGURATION['reviewer']['model'] = 'gpt-6-sol'
 
 def validate_test_configuration(configuration):
-    if configuration != TEST_CONFIGURATION:
+    if configuration not in (TEST_CONFIGURATION, HISTORICAL_TEST_CONFIGURATION):
         raise ValueError('unsupported_codex_simulation_model_configuration')
     return json.loads(json.dumps(configuration))
 
@@ -95,11 +99,15 @@ class CodexLayer2Transport:
         self.cli_path = Path(cli_path).absolute()
         self.timeout_seconds = timeout_seconds
         self.receipts_dir = Path(receipts_dir) if receipts_dir is not None else None
-        self.tiers = {'translator': 'default', 'reviewer': reviewer_tier}
+        if reviewer_tier != 'fast':
+            raise ValueError('new_codex_language_calls_require_fast')
+        self.tiers = {'translator': 'fast', 'reviewer': 'fast'}
         self.models = dict(MODELS)
         self.simulation_model_configuration = None
         if simulation_model_configuration is not None:
             self.simulation_model_configuration = validate_test_configuration(simulation_model_configuration)
+            if simulation_model_configuration != TEST_CONFIGURATION:
+                raise ValueError('historical_codex_configuration_is_replay_only')
             if reviewer_tier != 'fast':
                 raise ValueError('simulation_model_configuration_requires_fast_reviewer')
             self.models = {role: simulation_model_configuration[role]['model'] for role in MODELS}
@@ -138,15 +146,28 @@ class CodexLayer2Transport:
                 resourcePolicySha256=resource_admission.policy_identity(self.resource_policy),
                 resourceAdapterSha256=hashlib.sha256(Path(resource_admission.__file__).read_bytes()).hexdigest())
 
+    def payload_role(self, payload):
+        configuration = getattr(self, 'simulation_model_configuration', None) or TEST_CONFIGURATION
+        return next((role for role in MODELS
+                     if payload.get('model') == configuration[role]['model']
+                     and payload.get('reasoning_effort') == configuration[role]['reasoningEffort']), None)
+
     def admit_resource(self, payload):
         """Pre-dispatch hook: reserve before the runner writes its started marker.
 
         Same thread/payload consumes this permit once. Cache/fixture callers must
         bypass the transport entirely. A repeated durable call is never a retry.
         """
+        if any(name in payload for name in ('max_tokens', 'max_completion_tokens', 'max_output_tokens')):
+            raise ValueError('codex_cli_provider_output_cap_unsupported')
+        role = self.payload_role(payload)
+        if role is None:
+            raise ValueError('unsupported_codex_language_model')
+        if payload.get('service_tier') != 'fast':
+            raise ValueError('new_codex_language_calls_require_fast')
         if getattr(self, 'resource_policy', None) is None:
             return None
-        role = next((name for name, model in getattr(self, 'models', MODELS).items() if payload.get('model') == model), None)
+        role = self.payload_role(payload)
         if role is None:
             raise ValueError('unsupported_codex_language_model')
         key = _hash(payload)
@@ -170,7 +191,7 @@ class CodexLayer2Transport:
     def __call__(self, api_key, payload):
         if api_key:
             raise ValueError('codex_language_must_not_receive_api_key')
-        role = next((name for name, model in getattr(self, 'models', MODELS).items() if payload.get('model') == model), None)
+        role = self.payload_role(payload)
         if role is None:
             raise ValueError('unsupported_codex_language_model')
         configuration = getattr(self, 'simulation_model_configuration', None)
@@ -179,6 +200,10 @@ class CodexLayer2Transport:
             if (payload.get('reasoning_effort') != settings['reasoningEffort']
                     or payload.get('service_tier') != settings['serviceTier']):
                 raise ValueError('codex_simulation_payload_configuration_changed')
+        if any(name in payload for name in ('max_tokens', 'max_completion_tokens', 'max_output_tokens')):
+            raise ValueError('codex_cli_provider_output_cap_unsupported')
+        if payload.get('service_tier') != 'fast':
+            raise ValueError('new_codex_language_calls_require_fast')
         messages = payload['messages']
         if len(messages) != 2 or [row['role'] for row in messages] != ['system', 'user']:
             raise ValueError('invalid_codex_language_prompt')
@@ -271,12 +296,14 @@ class CodexLayer2Transport:
     def completed_content(response, model, role):
         if not isinstance(response, dict) or response.get('schemaVersion') not in {SCHEMA, LEGACY_SCHEMA} \
                 or response.get('requestedModel') != model \
-                or model not in ({MODELS.get(role), 'gpt-6.1-sol'} if role == 'translator' else {MODELS.get(role)}) \
+                or model not in ({'gpt-6-astra', 'gpt-6.1-sol'} if role == 'translator' else {'gpt-6-sol', 'gpt-6.1-sol'}) \
                 or response.get('completed') is not True or response.get('exitCode') != 0 \
                 or not isinstance(response.get('threadId'), str) or not response['threadId'] \
                 or response.get('id') != 'codex:' + response['threadId'] \
                 or not isinstance(response.get('content'), str):
             raise ValueError('invalid_codex_language_terminal_response')
+        if model == 'gpt-6.1-sol' and response.get('requestedReasoningEffort') != EFFORTS.get(role):
+            raise ValueError('invalid_codex_language_response_role_effort')
         if response['schemaVersion'] == SCHEMA:
             from scripts.codex_credit_usage import safe_credit_usage
             safe_credit_usage(response.get('creditUsage'), model, observation.normalize_usage(response.get('usage')),

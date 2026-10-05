@@ -1,5 +1,7 @@
 # Codex 本地周末生产 Runbook
 
+当前新 dev／正式任务以[2026-10-05 模型与 CLI 策略](production-model-runtime-policy.zh.md)为准：文字生产 Sol 6.1 high fast、独立复核 Sol 6.1 medium fast、Supervisor Luna medium fast，全部使用 Codex CLI。下文旧 Agents API／Astra／Sol 参数只适用于历史证据与原身份对账，不用于新任务。
+
 真实Dev音频测试按[已接入的参数入口](local-production-next-dev-test-parameters.zh.md#已接入的音频入口)运行`python -m scripts.run_dev_local_audio_test tts|back-asr`：自动读取profile选配音batch2、回转写batch4，显式batch1作基线、回转写8作对照。此入口保留正式producer门禁与独立回执；合并dev和CI不会自动运行GPU或付费模型。
 
 每周正式制作前先运行 `python scripts/evaluate_backend_four_layer_dry_run.py --out <忽略目录内的评估收据>`，再按[后端四层快速 Dry Run](backend-four-layer-dry-run.zh.md)生成 Firebase Dev 独立测试页。该评估模拟拿到链接，走 Layer 1–4 的短夹具交接，并测试四处失败阻断及无效故障点；CI 也在非文档 PR 上执行。模拟通过只说明这条测试链路工作；正式周次仍从真实来源、审核和音频证据继续。本 runbook 下文的 Supervisor 仍只覆盖 `dual_pdf` 范围。
@@ -8,11 +10,11 @@
 
 ## 生产边界
 
-2026-09-11 起，本地生产入口默认使用 Agents API，继续采用 local-first hybrid；当前 Supervisor 调度默认模型为 Sol Medium，内容模型仍按各阶段配置：
+新本地生产入口默认使用 Codex CLI，采用 local-first hybrid；Supervisor 为 Luna medium fast，内容参数见模型策略：
 
 - GCP Cloud Scheduler：只发现直播源并写入 GCS state
 - GCS：保存 source、lease、run-status、timeline、审批、QA 和最终 PDF
-- Codex 本地 automation：唤醒本机入口；Agents API 管理 Supervisor 会话，本机执行确定性工具
+- Codex 本地 automation：唤醒本机入口；Codex CLI 返回结构化监管操作，本机校验并执行确定性工具
 - Cloud Run Web：继续提供网页和公开交付入口
 
 不再让 Cloud Run Job 负责 YouTube 下载和 post-live 重处理。
@@ -96,7 +98,7 @@ shadow receipt 的 `ready_for_model_translation` 只表示自动锚点结构干�
 
 ```bash
 .venv/bin/python scripts/run_codex_local_sermon_production.py \
-  --mode execute --agent-backend agents-api \
+  --mode execute --agent-backend codex-cli --model gpt-6-luna --reasoning-effort medium --service-tier fast \
   --notify-sendgrid-secret '' --notify-recipients-secret '' --notify-sender-secret ''
 ```
 
@@ -109,7 +111,7 @@ shadow receipt 的 `ready_for_model_translation` 只表示自动锚点结构干�
 - artifact bucket：`sermon-zh-artifacts-ai-for-god`
 - OpenAI 与 YouTube Data API：通过 Secret Manager resource reference 读取
 - 本任务通知：命令中禁用 SendGrid，仅在 Codex 内报告；CLI 保留兼容配置，单独启用须有收件通知授权
-- Supervisor 调度：`gpt-6-sol` / `medium`，默认 `--agent-backend agents-api`；显式 `sdk` 为人工选择的回退，不在 API 失败后自动切换。旧 Astra 会话需按原模型恢复，切换默认值不能跳过未决会话或工具。
+- Supervisor 调度：`gpt-6-luna` / `medium` / `fast`，默认 `--agent-backend codex-cli`。旧 Agents API 仅可明确续跑原会话；新 SDK 会话禁用，未决工具先对账。
 
 ## Agents API 会话与生产工具
 
@@ -123,11 +125,11 @@ shadow receipt 的 `ready_for_model_translation` 只表示自动锚点结构干�
 
 ## 每周模型与交付策略（2026-09-06 起）
 
-未来每周使用 `gpt-6-astra`、`medium`：中文初译、阅读稿两轮编辑/审核及中文证道同行生成。现有 OpenAI provider 与 Secret Manager 配置继续使用；ASR 保持 `gpt-transcribe`。模型审核只标记机器审核，不等于人工 Gold 或周日双语提示词批准。
+新 dev 与正式任务使用 `gpt-6.1-sol`、`high`、`fast` 经 Codex CLI 完成中文初译、阅读稿编辑／审核及中文证道同行；原 Sol 独立复核使用同模型 `medium`、`fast`。ASR 保持 `gpt-transcribe` 及所属 API 环境。模型审核只标记机器审核，不等于人工 Gold 或周日双语提示词批准。
 
 后续同行制作默认使用和合本（CUV）。英文来源冻结后、交付与配音前，按[和合本经文锁定与证道重译](sermon-cuv-production.zh.md)执行 `scripts/sermon_cuv_translation.py run`：识别直接经文、从固定库精确取文、锁定引用，再完成全篇翻译和独立审校。字幕、阅读 PDF、TTS 及大纲中的经文引用须采用同一份通过审校的锁定中文；大纲仍可概括讲解，不能作为配音稿。解释、玩笑和讲员错引保留为讲员话，不强改成经文；机器审核不授予人工批准。现有 Supervisor 不会自动调用此新步骤，须核对实际执行收据；重译后更新关联产物，并用新音频重新测量时长。
 
-Supervisor 的 generation 命令固定传入上述参数及 `--export-sunday-context`。手动调用 `run_post_live_subtitle_generation.py` 时，翻译/阅读审核/证道同行也默认 Astra Medium；需要周日产物时显式加 `--export-sunday-context`。
+Supervisor 的 generation 命令固定传入上述参数及 `--export-sunday-context`。手动调用 `run_post_live_subtitle_generation.py` 时，翻译/阅读审核/证道同行也默认 Sol 6.1 high fast / Codex CLI；需要周日产物时显式加 `--export-sunday-context`。
 
 双 PDF QA 通过后，在同一 run 的 `pipeline/sunday-context/` 导出：
 

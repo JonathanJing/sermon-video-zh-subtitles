@@ -51,7 +51,9 @@ COMPATIBLE_RUNNER_IDENTITIES = {
 }
 
 
-MODEL_ROLES = {"translator": "gpt-6-astra", "reviewer": "gpt-6-sol"}
+MODEL_ROLES = {"translator": "gpt-6.1-sol", "reviewer": "gpt-6.1-sol"}
+MODEL_EFFORTS = {"translator": "high", "reviewer": "medium"}
+HISTORICAL_MODEL_ROLES = {"translator": "gpt-6-astra", "reviewer": "gpt-6-sol"}
 SEMANTIC_CHECKS = ("completeMeaning", "negationsNumbersNames", "quotationAttribution", "noAddedMeaning")
 REVISION_BRIEF_SCHEMA = "sermon-target-language-group-revision-brief-v1"
 MAX_STANDALONE_GROUP_WORKERS = 3
@@ -182,6 +184,8 @@ def model_payload(role, prompt, policy, request_limits=None):
                "messages": [{"role": "system", "content": prompt["instruction"]},
                             {"role": "user", "content": json.dumps(prompt["input"], ensure_ascii=False)}],
                "response_format": {"type": "json_object"}}
+    if model == "gpt-6.1-sol":
+        payload["service_tier"] = "fast"
     if policy.get("simulationModelConfiguration") is not None:
         payload["service_tier"] = policy["simulationModelConfiguration"][role]["serviceTier"]
     if request_limits is not None:
@@ -628,7 +632,11 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
         else:
             require("simulationOnly" not in request,
                     "Formal group loop cannot consume a simulated request")
-        expected_models = MODEL_ROLES
+        historical_replay = cache_only or getattr(caller, "execution_identity", {}).get("backend") == "fixture_replay"
+        expected_models = ({role: policy[role]["model"] for role in MODEL_ROLES}
+                           if historical_replay else MODEL_ROLES)
+        if historical_replay:
+            require(all(policy[role]["model"] in {MODEL_ROLES[role], HISTORICAL_MODEL_ROLES[role]} for role in MODEL_ROLES), "unsupported_historical_model_policy")
         simulation_configuration = policy.get("simulationModelConfiguration")
         if simulation_configuration is not None:
             from scripts.codex_layer2_transport import validate_test_configuration
@@ -649,6 +657,8 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             require("simulationModelConfiguration" not in request,
                     "Simulation request configuration lacks a bound effective policy")
         for role, expected in expected_models.items():
+            if expected == "gpt-6.1-sol":
+                require(policy[role]["reasoningEffort"] == MODEL_EFFORTS[role], "production_role_effort_changed")
             require(policy[role]["model"] == expected,
                     f"Production {role} model must be {expected}; freeze a new policy")
         workers = policy["batching"].get("workers")
@@ -840,9 +850,9 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             translator_cached = (astra_path.exists() or astra_path.with_suffix(".raw.json").exists()
                                  or (prior_cache_root is not None and (prior_cache_root / f"{stem}-astra.json").is_file()))
         with measure.producer_substage("initial_translation",
-                                       billing="local" if simulation_only or cache_only else "api"):
+                                       billing="local" if getattr(caller, "billing", None) == "local" or simulation_only or cache_only else "api"):
             with accounting.stage(f"layer2.translator.{request['targetLocale']}.{stem}",
-                                  cache_hit=translator_cached, billing="local" if simulation_only or cache_only or translator_cached else "api",
+                                  cache_hit=translator_cached, billing="local" if getattr(caller, "billing", None) == "local" or simulation_only or cache_only or translator_cached else "api",
                                   work_unit_id=f"l2.{request['targetLocale']}.{stem}.translator",
                                   depends_on=[prepare_span],
                                   executor_type="deterministic_program" if simulation_only or cache_only or translator_cached else "production_model") as translator_span:
@@ -905,9 +915,9 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             reviewer_cached = (sol_path.exists() or sol_path.with_suffix(".raw.json").exists()
                                or (prior_cache_root is not None and (prior_cache_root / f"{stem}-sol.json").is_file()))
         with measure.producer_substage("independent_review",
-                                       billing="local" if simulation_only or cache_only else "api"):
+                                       billing="local" if getattr(caller, "billing", None) == "local" or simulation_only or cache_only else "api"):
             with accounting.stage(f"layer2.reviewer.{request['targetLocale']}.{stem}",
-                                  cache_hit=reviewer_cached, billing="local" if simulation_only or cache_only or reviewer_cached else "api",
+                                  cache_hit=reviewer_cached, billing="local" if getattr(caller, "billing", None) == "local" or simulation_only or cache_only or reviewer_cached else "api",
                                   work_unit_id=f"l2.{request['targetLocale']}.{stem}.reviewer",
                                   depends_on=[draft_span],
                                   executor_type="deterministic_program" if simulation_only or cache_only or reviewer_cached else "production_model") as reviewer_span:
@@ -1061,11 +1071,12 @@ def main() -> None:
                       if args.group_plan else None)
     require_plugin_identity(args.plugin, policy["languageReview"]["pluginImplementationSha256"])
     rule_preflight.preflight(request, policy, args.plugin, plan)
-    api_key = os.environ.get("OPENAI_API_KEY")
-    require(bool(api_key), "OPENAI_API_KEY is not configured")
+    from scripts.codex_layer2_transport import CodexLayer2Transport
+    api_key = ""
+    caller = CodexLayer2Transport(receipts_dir=args.out_dir / "_cli_calls")
     evidence = run_accounted(
         source, anchor, policy, args.out_dir, api_key,
-        lambda key, payload: sermon_pipeline.chat_json(key, payload, retries=1),
+        caller,
         plan, args.plugin,
         producer._load(args.revision_brief) if args.revision_brief else None,
         args.reuse_from,

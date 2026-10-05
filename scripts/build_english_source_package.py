@@ -25,8 +25,9 @@ except ImportError:  # Direct execution via ``python scripts/...``.
 SCHEMA_VERSION = "sermon-english-source-package-v1"
 REVIEW_SCHEMA_VERSION = "sermon-english-source-review-v1"
 MACHINE_JUDGE_SCHEMA_VERSION = "sermon-english-source-machine-judge-v1"
-MACHINE_JUDGE_MODEL = "gpt-6-astra"
-MACHINE_JUDGE_REASONING_EFFORT = "medium"
+MACHINE_JUDGE_MODEL = "gpt-6.1-sol"
+MACHINE_JUDGE_IDENTITIES = {("gpt-6-astra", "medium"), (MACHINE_JUDGE_MODEL, "high")}
+MACHINE_JUDGE_REASONING_EFFORT = "high"
 MACHINE_JUDGE_CHECKS = frozenset({
     "meaningPreserved",
     "negationsNumbersNames",
@@ -272,8 +273,7 @@ def _machine_judge_payload(
         raise ValueError("English source machine judge must retain model-only provenance")
     judge_script = Path(__file__).resolve().with_name("judge_english_source_for_translation.py")
     if (judge.get("implementationSha256") != file_sha256(judge_script)
-            or judge.get("model") != MACHINE_JUDGE_MODEL
-            or judge.get("reasoningEffort") != MACHINE_JUDGE_REASONING_EFFORT
+            or (judge.get("model"), judge.get("reasoningEffort")) not in MACHINE_JUDGE_IDENTITIES
             or judge.get("promptVersion") != MACHINE_JUDGE_SCHEMA_VERSION
             or judge.get("thresholds") != MACHINE_JUDGE_THRESHOLDS):
         raise ValueError("English source machine judge implementation or policy is not current")

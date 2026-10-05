@@ -70,11 +70,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--notify-sendgrid-secret", default=DEFAULT_SENDGRID_SECRET)
     parser.add_argument("--notify-recipients-secret", default=DEFAULT_RECIPIENTS_SECRET)
     parser.add_argument("--notify-sender-secret", default=DEFAULT_SENDER_SECRET)
-    parser.add_argument("--model", default="gpt-6-sol")
+    parser.add_argument("--model", default="gpt-6-luna")
+    parser.add_argument("--reasoning-effort", choices=("low", "medium", "high"), default="medium")
+    parser.add_argument("--service-tier", choices=("default", "fast"), default="fast")
     parser.add_argument("--release-workflow-config", type=Path)
     parser.add_argument("--app-delivery-config", type=Path,
                         help="Opt into deterministic approved App bundle preparation; no source refresh or model turn")
-    parser.add_argument("--agent-backend", choices=("agents-api", "sdk"), default="agents-api")
+    parser.add_argument("--agent-backend", choices=("codex-cli", "agents-api", "sdk"), default="codex-cli")
     parser.add_argument("--agent-run-dir", type=Path)
     parser.add_argument("--resume-agent-session", action="store_true")
     parser.add_argument("--agent-timeout-seconds", type=float, default=21600)
@@ -128,7 +130,9 @@ def make_agent_args(args: argparse.Namespace) -> argparse.Namespace:
         notify_recipients_secret=args.notify_recipients_secret,
         notify_sender_secret=args.notify_sender_secret,
         model=args.model,
-        agent_backend=getattr(args, "agent_backend", "agents-api"),
+        agent_backend=getattr(args, "agent_backend", "codex-cli"),
+        reasoning_effort=getattr(args, "reasoning_effort", "medium"),
+        service_tier=getattr(args, "service_tier", "fast"),
         release_workflow_config=getattr(args, "release_workflow_config", None),
         app_delivery_config=getattr(args, "app_delivery_config", None),
         agent_run_dir=getattr(args, "agent_run_dir", None),

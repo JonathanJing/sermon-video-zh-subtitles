@@ -130,7 +130,7 @@ def load_configuration(path):
             and (policy['boundaryOverrides'] is None or isinstance(policy['boundaryOverrides'], dict)),
             'invalid_source_anchor_policy')
     require(isinstance(value['judge'], dict) and set(value['judge']) == {'model', 'reasoningEffort', 'batchSize', 'workers'}
-            and value['judge']['model'] == 'gpt-6-astra'
+            and value['judge']['model'] in ('gpt-6-astra', 'gpt-6.1-sol')
             and value['judge']['reasoningEffort'] in budget.text_limits.SUPPORTED_REASONING_EFFORTS
             and type(value['judge']['batchSize']) is int and 1 <= value['judge']['batchSize'] <= 15
             and type(value['judge']['workers']) is int and value['judge']['workers'] == 1,
@@ -295,6 +295,8 @@ def execute(config_path, *, api_key=None, transport=None, aligner=None, mfa_pref
 
 def _execute(config, fresh, *, api_key, transport, aligner, mfa_preflight):
     out, value = config.output, config.value
+    # Reject the incompatible text budget before spending on source ASR.
+    require(value['judge']['model'] != 'gpt-6.1-sol', 'codex_cli_provider_output_cap_unsupported')
     _freeze(out / 'source-run.json', {'configurationSha256': config.identity,
                                      'codeIdentitySha256': config.code_identity,
                                      'authorizationSha256': config.authorization_hash})

@@ -991,6 +991,9 @@ def chunk_text_for_window(chunks, start, end):
 
 
 def chat_json(api_key, payload, retries=3):
+    if payload.get("model") == "gpt-6.1-sol":
+        from scripts.sermon_codex_transport import chat_json as codex_chat_json
+        return codex_chat_json(api_key, payload, retries=1)
     last_error = None
     for attempt in range(retries):
         try:
@@ -1455,8 +1458,8 @@ def main():
         "--english-transcript-only", action="store_true",
         help="Freeze English ASR before alignment when the MFA runtime is unavailable; do not translate.",
     )
-    parser.add_argument("--en-correction-model", default="gpt-5.6")
-    parser.add_argument("--zh-model", default="gpt-5.6")
+    parser.add_argument("--en-correction-model", default="gpt-6.1-sol")
+    parser.add_argument("--zh-model", default="gpt-6.1-sol")
     parser.add_argument(
         "--reasoning-effort",
         choices=["low", "medium", "high"],
@@ -1663,7 +1666,8 @@ def produce_pipeline(args, api_key, source_duration, start, end, outdir):
         raise RuntimeError(f"{args.reference_model} returned no usable sermon transcript")
     write_json(outdir / "segments_timed_en_raw.json", raw_segments)
 
-    with stage("pipeline.source_review", billing="api"):
+    with stage("pipeline.source_review", billing="local" if args.english_source_only else
+               "codex" if getattr(args, 'en_correction_model', 'gpt-6.1-sol') == "gpt-6.1-sol" else "api"):
         if args.output_mode == "reading":
             corrected = raw_segments
         else:
@@ -1721,7 +1725,7 @@ def produce_pipeline(args, api_key, source_duration, start, end, outdir):
         print(json.dumps(summary, ensure_ascii=False, indent=2))
         return
 
-    with stage("pipeline.translate", billing="api"):
+    with stage("pipeline.translate", billing="codex" if args.zh_model == "gpt-6.1-sol" else "api"):
         translated = translate_chinese(
             api_key,
             shaped_en,

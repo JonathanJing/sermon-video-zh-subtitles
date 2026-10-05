@@ -111,9 +111,9 @@ class CodexRuntimeBoundaryTests(unittest.TestCase):
         self.transport.timeout_seconds = 10
         self.transport.receipts_dir = self.root / "receipts"
         self.transport.env = {"PATH": "/fixture/bin"}
-        self.transport.tiers = {"translator": "default", "reviewer": "fast"}
+        self.transport.tiers = {"translator": "fast", "reviewer": "fast"}
         self.transport.execution_identity = {"backend": "codex_cli", "version": "fixture-runtime"}
-        self.payload = {"model": "gpt-6-astra", "reasoning_effort": "medium", "messages": [
+        self.payload = {"model": "gpt-6.1-sol", "reasoning_effort": "high", "service_tier": "fast", "messages": [
             {"role": "system", "content": "Translate only the frozen units."},
             {"role": "user", "content": '{"english":"Hello."}'}]}
         self.result = {"translationGroupId": "g1", "sourceUnitIds": ["u1"],
@@ -140,6 +140,19 @@ class CodexRuntimeBoundaryTests(unittest.TestCase):
                 stdout="\n".join(json.dumps(row) for row in rows), stderr="fixture stderr")
         return fake_run
 
+    def test_provider_output_cap_rejected_before_cli_dispatch(self):
+        self.payload['max_completion_tokens'] = 128
+        with patch('scripts.codex_layer2_transport.subprocess.run') as blocked:
+            with self.assertRaisesRegex(ValueError, 'provider_output_cap_unsupported'):
+                self.transport('', self.payload)
+            blocked.assert_not_called()
+
+    def test_same_model_roles_selected_by_effort(self):
+        self.assertEqual(self.transport.payload_role(self.payload), 'translator')
+        reviewer = {**self.payload, 'reasoning_effort': 'medium'}
+        self.assertEqual(self.transport.payload_role(reviewer), 'reviewer')
+        self.assertIsNone(self.transport.payload_role({**self.payload, 'reasoning_effort': 'low'}))
+
     def test_failed_terminal_keeps_reported_credit_subtotal(self):
         import copy
         from scripts import sermon_model_call_observation as observation
@@ -151,7 +164,7 @@ class CodexRuntimeBoundaryTests(unittest.TestCase):
                     self.transport('', self.payload)
         terminal = events[-1]['fields']
         self.assertEqual(terminal['status'], 'failed')
-        self.assertEqual(terminal['creditUsage']['estimatedCredits'], 0.03875)
+        self.assertEqual(terminal['creditUsage']['estimatedCredits'], 0.01525)
         self.assertEqual(terminal['creditUsage']['reason'], 'reported_failed_usage_subtotal')
         self.assertIsNone(terminal['creditUsage']['actualCredits'])
 
@@ -159,10 +172,10 @@ class CodexRuntimeBoundaryTests(unittest.TestCase):
         with patch("scripts.codex_layer2_transport.subprocess.run", side_effect=self.process()) as run:
             response = self.transport("", self.payload)
         self.assertEqual(response["id"], "codex:runtime-thread")
-        self.assertEqual(response["requestedModel"], "gpt-6-astra")
+        self.assertEqual(response["requestedModel"], "gpt-6.1-sol")
         self.assertIsNone(response["serverModel"])
         self.assertEqual(json.loads(CodexLayer2Transport.completed_content(
-            response, "gpt-6-astra", "translator")), self.result)
+            response, "gpt-6.1-sol", "translator")), self.result)
         self.assertEqual(response["usage"]["output_tokens"], 20)
         self.assertEqual(run.call_args.kwargs["env"], self.transport.env)
         self.assertEqual(len(list(self.transport.receipts_dir.glob("*/response.json"))), 1)
@@ -189,14 +202,14 @@ class CodexRuntimeBoundaryTests(unittest.TestCase):
         self.assertEqual(CodexLayer2Transport.completed_content(response, 'gpt-6.1-sol', 'translator'), response['content'])
         with self.assertRaises(ValueError):
             CodexLayer2Transport.completed_content(response, 'gpt-6.1-sol', 'reviewer')
-        self.payload['reasoning_effort'] = 'medium'
+        self.payload['reasoning_effort'] = 'low'
         with patch('scripts.codex_layer2_transport.subprocess.run') as blocked:
-            with self.assertRaisesRegex(ValueError, 'configuration_changed'):
+            with self.assertRaisesRegex(ValueError, 'unsupported_codex_language_model'):
                 self.transport('', self.payload)
             blocked.assert_not_called()
 
     def test_default_transport_cannot_dispatch_new_translator_model(self):
-        self.payload['model'] = 'gpt-6.1-sol'
+        self.payload['model'] = 'gpt-6-astra'
         with patch('scripts.codex_layer2_transport.subprocess.run') as blocked:
             with self.assertRaisesRegex(ValueError, 'unsupported_codex_language_model'):
                 self.transport('', self.payload)
@@ -219,7 +232,8 @@ class CodexRuntimeBoundaryTests(unittest.TestCase):
                 self.transport("", self.payload)
 
     def test_fast_reviewer_runtime_requests_fast_without_api_key(self):
-        self.payload["model"] = "gpt-6-sol"
+        self.payload["model"] = "gpt-6.1-sol"
+        self.payload["reasoning_effort"] = "medium"
         self.result["semanticReview"] = {"status": "pass", "checks": {
             key: "pass" for key in runner.SEMANTIC_CHECKS}, "evidence": "Meaning preserved.",
             "uncertainty": [], "issues": []}
@@ -236,7 +250,7 @@ class CodexRuntimeBoundaryTests(unittest.TestCase):
 
     def test_runtime_timeout_preserves_receipt_and_runner_unknown_marker(self):
         output = self.root / "group-astra.json"
-        policy = {"translator": {"model": "gpt-6-astra", "reasoningEffort": "medium"}}
+        policy = {"translator": {"model": "gpt-6.1-sol", "reasoningEffort": "high"}}
         prompt = {"instruction": "Translate.", "input": {"english": "Hello."}}
         error = subprocess.TimeoutExpired("fake-codex", 10, output=b"partial events", stderr=b"partial error")
         with patch("scripts.codex_layer2_transport.subprocess.run", side_effect=error) as run:

@@ -162,13 +162,13 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source-pipeline", type=Path, required=True)
     parser.add_argument("--outdir", type=Path, required=True)
-    parser.add_argument("--model", default="gpt-5.6-sol")
+    parser.add_argument("--model", default="gpt-6.1-sol")
     parser.add_argument("--reasoning-effort", choices=("low", "medium", "high"), default="high")
-    parser.add_argument("--provider", choices=("openai", "codex"), default="openai")
+    parser.add_argument("--provider", choices=("openai", "codex"), default="codex")
     parser.add_argument(
         "--codex-cli",
         type=Path,
-        default=Path("/Applications/ChatGPT.app/Contents/Resources/codex"),
+        default=Path.home() / '.local/bin/codex',
     )
     parser.add_argument("--batch-size", type=int, default=3)
     parser.add_argument("--workers", type=int, default=2)
@@ -552,6 +552,16 @@ def codex_json(
     schema_path: Path,
     output_path: Path,
 ) -> dict[str, Any]:
+    if model == "gpt-6.1-sol":
+        from scripts.sermon_codex_transport import chat_json as codex_chat_json
+        cli_payload = {**payload, "response_format": {"type": "json_schema",
+            "json_schema": {"name": "reading_edit", "strict": True,
+                            "schema": json.loads(schema_path.read_text())}}}
+        response = codex_chat_json("", cli_payload, retries=1, cli_path=codex_cli)
+        result = parse_json_message(response["choices"][0]["message"]["content"])
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        write_json(output_path, result)
+        return result
     messages = payload["messages"]
     prompt = (
         "Do not use tools or inspect files. Follow the editing task below and return only the JSON "
@@ -576,6 +586,8 @@ def codex_json(
         model,
         "-c",
         f'model_reasoning_effort="{reasoning_effort}"',
+        "-c",
+        'service_tier="fast"',
         "--output-schema",
         str(schema_path),
         "--output-last-message",
@@ -888,10 +900,10 @@ def _main(args: argparse.Namespace) -> int:
     if args.repair_existing and not args.review_manifest:
         raise SystemExit("--repair-existing requires --review-manifest")
     api_key = ""
-    if args.provider == "openai" and not args.repair_existing:
+    if args.provider == "openai" and args.model != "gpt-6.1-sol" and not args.repair_existing:
         load_env(REPO_ROOT / ".env")
         api_key = os.environ.get("OPENAI_API_KEY", "")
-    if args.provider == "openai" and not args.repair_existing and not api_key:
+    if args.provider == "openai" and args.model != "gpt-6.1-sol" and not args.repair_existing and not api_key:
         raise SystemExit("OPENAI_API_KEY is not set")
     if args.provider == "codex" and not args.repair_existing and not args.codex_cli.exists():
         raise SystemExit(f"Codex CLI not found: {args.codex_cli}")

@@ -84,7 +84,11 @@ class BudgetedCaller:
         capped = limits.bounded_payload(payload, self.auth['limits'])
         require(capped == payload, 'model_payload_must_be_bounded_before_cache_identity')
         fingerprint = jobs._digest(payload)
-        role = 'translator' if payload['model'] == self.policy['translator']['model'] else 'reviewer'
+        roles = [name for name in ('translator', 'reviewer')
+                 if payload['model'] == self.policy[name]['model']
+                 and payload['reasoning_effort'] == self.policy[name]['reasoningEffort']]
+        require(len(roles) == 1, 'budgeted_model_role_ambiguous')
+        role = roles[0]
         # Separate immutable request chains prevent content revisions from
         # resetting one shared global ledger. Each exact payload is one operation.
         identity = budget.chain_identity({

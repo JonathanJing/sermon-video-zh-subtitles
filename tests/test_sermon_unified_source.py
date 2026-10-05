@@ -150,6 +150,15 @@ class UnifiedSourceTests(unittest.TestCase):
         self.assertEqual(len(calls), 2)
         self.assertFalse((self.root / 'source/english-source-candidate.json').exists())
 
+    def test_new_cli_judge_budget_rejects_before_asr_or_artifact_write(self):
+        from types import SimpleNamespace
+        config = SimpleNamespace(output=self.root / 'never-started', value={'judge': {'model': 'gpt-6.1-sol'}})
+        with patch.object(subject, '_freeze') as freeze, patch.object(subject, '_probe') as probe:
+            with self.assertRaisesRegex(ValueError, 'codex_cli_provider_output_cap_unsupported'):
+                subject._execute(config, lambda: None, api_key='', transport=None, aligner=None, mfa_preflight=None)
+            freeze.assert_not_called()
+            probe.assert_not_called()
+
     def test_mfa_preflight_failure_makes_zero_provider_calls(self):
         def failed(**kwargs):
             raise RuntimeError('No MFA runtime')
