@@ -52,3 +52,33 @@ CLI stderr 中有历史 state DB / rollout 查找警告；两次均终止成功�
 本次证明该账号和新版 CLI 可以完成所选片段的实际翻译与独立审核。后续仍需生产入口适配、语言插件和 candidate admission、失败／超时／额度耗尽／恢复的定向验证，再扩大样本。不能据这次孤立试验将所有线上生产切换为 CLI。
 
 关联：[API 转 CLI 复盘与接入方案](20261005-openai-api-to-codex-cli-retrospective.zh.md)。
+
+## 追加：同一候选译文的 Fast 审核
+
+按操作者要求，只重跑 GPT-6 Sol 审核；复用原英文、Astra 初译和审核提示词，不重新翻译，不用普通模式的审核稿作为输入。提示词和 schema SHA 与普通模式相同，medium 推理、CLI 版本、ChatGPT 登录及无工具要求保持一致。唯一有意改变的调用配置为 `service_tier="fast"`，并用 `--enable fast_mode` 开启功能；没有修改全局配置。官方 [速度说明](https://learn.chatgpt.com/docs/agent-configuration/speed) 给出这一配置方式，[配置参考](https://learn.chatgpt.com/docs/config-file/config-reference) 说明 fast 映射为请求值 priority。本机 GPT-6 Sol 模型目录也声明 Fast 档，但这些不是服务端实际执行档位的回执。
+
+| GPT-6 Sol / medium | 普通模式 | Fast 请求 |
+|---|---:|---:|
+| 进程耗时（秒） | 43.588 | 15.680 |
+| turn 耗时（秒） | 43.063 | 15.109 |
+| 输入 token | 16,518 | 16,522 |
+| 缓存输入 token | 0 | 0 |
+| 输出 token | 1,076 | 1,050 |
+| reasoning token | 516 | 516 |
+| 进程输出 token/s | 24.69 | 66.96 |
+| turn 输出 token/s | 24.99 | 69.49 |
+| 机器审核 | pass | pass |
+
+Fast 请求调用 UTC 2026-10-05T14:00:17.352712+00:00 至 2026-10-05T14:00:33.033160+00:00，退出 0；新会话、无工具调用，JSON/schema、单元身份及覆盖通过。进程耗时少 64.03%，会话输出吞吐约 2.71 倍。只有普通、Fast 各一次且输出长度不同，无法排除排队和运行波动，不应宣称固定加速倍数；纯生成耗时/TPS仍为 null。CLI 未返回独立的服务端模型或 service tier，记录 `requestedServiceTier=fast`、`serverServiceTier=null`，不把配置或测得更快当作执行档位确认。未独立核验额度扣减，不以 token 数或本次耗时推算 Fast 额度倍率。
+
+快速审核也把 oversees 译为“统管”，另外补回第035、038单元的“我们有”，并保留 AI 的否定判断和第四章。最终机器稿：
+
+> 不过，我有个非常好的消息要告诉大家，因为我们正在研读《启示录》。
+> 我可以很有把握地说，人工智能不会导致世界末日。
+> 我们有一位坐在宝座上的，祂掌管一切。祂统管着一切。
+> 人类的任何发明，都不能真正决定任何事情如何发展，因为我们有那位统管一切的。
+> 所以，接下来我们要看《启示录》第四章。
+
+这次机器判定仍为四项 pass、无未解决问题。普通审核没有补回“我们有”，显示两次模型输出存在差异，不能仅凭双方 pass 认定审核完全等价或质量无损；仍需人工内容判断及更多样本。没有语言插件、canonical candidate admission、人工批准或发布。
+
+新证据单独保存在 ignored 的 `artifacts/codex-cli-review-fast-20261005/`，含 `run.py`、原输入身份、相同 prompt/schema、新 result/metrics、events JSONL、stderr、accounting 和比较摘要。原普通模式回执未覆盖。本轮仅一次新 Codex 在线审核调用，无项目 API key 调用。
