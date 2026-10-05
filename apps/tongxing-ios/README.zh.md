@@ -20,6 +20,8 @@ Dev Debug 与正式版沿用同一原生收听界面、播放器、下载、字�
 
 全文里的时间按钮点击时请求一次系统轻触反馈；重复点同一时间也有效，自动滚动不振动，定位继续保留播放／暂停状态。实现和真机验收边界见 [时间按钮触觉反馈](TIMESTAMP-HAPTICS.zh.md)。
 
+Beta 的 App Store Connect API Key 本机配置及 fastlane 上传／内部组分发见 [TestFlight 自动分发](TESTFLIGHT-AUTOMATION.zh.md)。
+
 ## 打开与运行
 
 后续 App 版本统一用点分隔的 `1.26.N`，本次正式候选由用户指定为 `1.26.7`，下一新候选从 `1.26.8` 开始；Beta 验收后转正式保留同一数字版本，后台 Build 独立递增。跨年、重试与实际归档要求见 [版本号约定](VERSIONING.zh.md)。

@@ -27,6 +27,8 @@ TestFlight 上传、Apple 处理、测试组可用、实机验收和 App Store �
 
 Beta 48 已包含的麦克风失败反馈修复见 [修复记录](ALIGNMENT-FEEDBACK.zh.md)。该记录与已分发 Beta 47 分开，未改变旧包的源码或归档哈希；本次 48 的新归档与实际测试另行记录。
 
+API Key 与 fastlane 的只读查询、上传及现有内部组分发见 [TestFlight 自动分发](TESTFLIGHT-AUTOMATION.zh.md)。它复用下述归档，不改变源码冻结或版本规则。
+
 ## 冻结源码并归档
 
 先提交已验证的 iOS 候选，记录完整 commit，再运行 [archive-channel.sh](scripts/archive-channel.sh)。脚本拒绝 tracked iOS 文件的未提交差异，要求 `--expected-commit` 完全匹配 HEAD；仓库其他模块的未提交变化不会无故阻塞归档。输出必须在 Git 忽略目录，并且使用新目录保留旧证据。私有签名配置、帐号、Team、设备唯一标识、Archive 和上传日志都不提交 Git。

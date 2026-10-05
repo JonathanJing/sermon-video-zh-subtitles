@@ -8,3 +8,8 @@ xcuserdata/
 Config/Local.xcconfig
 *.ipa
 *.xcarchive/
+
+# Release credentials and fastlane generated reports
+*.p8
+fastlane/report.xml
+fastlane/README.md

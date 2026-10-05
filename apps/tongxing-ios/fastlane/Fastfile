@@ -1,0 +1,141 @@
+require 'json'
+require 'time'
+require 'spaceship'
+
+# Authentication has no Apple ID/session fallback. All credentials stay outside Git.
+def beta_auth
+  config = JSON.parse(File.read(ENV.fetch('TONGXING_ASC_CONFIG')))
+  api_key = app_store_connect_api_key(
+    key_id: config.fetch('key_id'), issuer_id: config.fetch('issuer_id'),
+    key_filepath: config.fetch('key_filepath'), duration: 1200, in_house: false
+  )
+  app = Spaceship::ConnectAPI::App.find('com.jonathanjing.tongxing.beta')
+  UI.user_error!('Beta app not accessible with this API key') unless app
+  [api_key, app]
+end
+
+def beta_builds(app, record = nil)
+  Spaceship::ConnectAPI::Build.all(
+    app_id: app.id, version: record && record.fetch('version'),
+    build_number: record && record.fetch('build'), platform: 'IOS',
+    includes: 'app,buildBetaDetail,preReleaseVersion', limit: 200
+  )
+end
+
+def beta_snapshot(app)
+  builds = beta_builds(app)
+  groups = app.get_beta_groups
+  data = {
+    checkedAt: Time.now.utc.iso8601, fastlaneVersion: Fastlane::VERSION, bundleID: app.bundle_id,
+    builds: builds.map { |b| {id: b.id, version: b.app_version, build: b.version,
+      processingState: b.processing_state, expired: b.expired,
+      internalBuildState: b.build_beta_detail&.internal_build_state} },
+    groups: groups.select(&:is_internal_group).map { |g| {
+      id: g.id, name: g.name, buildIDs: g.fetch_builds.map(&:id)
+    } }
+  }
+  File.write(ENV.fetch('TONGXING_ASC_SNAPSHOT'), JSON.pretty_generate(data) + "\n")
+  data
+end
+
+def candidate_record
+  JSON.parse(File.read(ENV.fetch('TONGXING_RELEASE_RECORD')))
+end
+
+def candidate_build(app, record)
+  matches = beta_builds(app, record)
+  UI.user_error!('Expected exactly one matching Apple build') unless matches.size == 1
+  matches.first
+end
+
+lane :beta_status do
+  _, app = beta_auth
+  beta_snapshot(app)
+end
+
+def upload_phase(phase)
+  path = ENV.fetch('TONGXING_UPLOAD_INTENT')
+  intent = JSON.parse(File.read(path))
+  intent['phase'] = phase
+  intent['checkedAt'] = Time.now.utc.iso8601
+  File.write(path + '.tmp', JSON.pretty_generate(intent) + "\n")
+  File.chmod(0600, path + '.tmp')
+  File.rename(path + '.tmp', path)
+  File.write(File.join(intent.fetch('evidenceDir'), 'upload-intent.json'), JSON.pretty_generate(intent) + "\n")
+end
+
+lane :beta_upload do
+  api_key, app = beta_auth
+  record = candidate_record
+  matches = beta_builds(app, record)
+  UI.user_error!('Multiple matching Apple builds') if matches.size > 1
+  if matches.empty?
+    upload_phase('upload_started')
+    upload_to_testflight(api_key: api_key,
+      app_identifier: 'com.jonathanjing.tongxing.beta', ipa: ENV.fetch('TONGXING_BETA_IPA'),
+      skip_submission: true, skip_waiting_for_build_processing: true)
+    upload_phase('upload_returned')
+  else
+    upload_phase('apple_build_observed')
+    UI.important('Apple already has this version/build; skipping binary upload. Check beta_status before distributing.')
+  end
+  beta_snapshot(app)
+end
+
+lane :beta_wait do
+  _, app = beta_auth
+  record = candidate_record
+  deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + Integer(ENV.fetch('TONGXING_WAIT_SECONDS'))
+  loop do
+    matches = beta_builds(app, record)
+    UI.user_error!('Multiple matching Apple builds') if matches.size > 1
+    build = matches.first
+    state = build&.build_beta_detail&.internal_build_state
+    if build && build.processing_state == 'VALID' && !build.expired &&
+       ['READY_FOR_BETA_TESTING', 'IN_BETA_TESTING'].include?(state)
+      beta_snapshot(app)
+      break
+    end
+    if build && (build.expired || ['FAILED', 'INVALID'].include?(build.processing_state))
+      beta_snapshot(app)
+      UI.user_error!('Apple rejected or expired the build')
+    end
+    if ['PROCESSING_EXCEPTION', 'MISSING_EXPORT_COMPLIANCE', 'IN_EXPORT_COMPLIANCE_REVIEW'].include?(state)
+      beta_snapshot(app)
+      UI.user_error!("Apple internal testing blocked: #{state}")
+    end
+    if Process.clock_gettime(Process::CLOCK_MONOTONIC) >= deadline
+      beta_snapshot(app)
+      UI.user_error!('Timed out; reconcile Apple state before any upload retry')
+    end
+    sleep 30
+  end
+end
+
+lane :beta_distribute do
+  _, app = beta_auth
+  record = candidate_record
+  build = candidate_build(app, record)
+  state = build.build_beta_detail&.internal_build_state
+  UI.user_error!('Build is not ready for internal testing') unless
+    build.processing_state == 'VALID' && !build.expired &&
+    ['READY_FOR_BETA_TESTING', 'IN_BETA_TESTING'].include?(state)
+  groups = app.get_beta_groups.select { |g|
+    g.is_internal_group && g.name == ENV.fetch('TONGXING_BETA_GROUP')
+  }
+  UI.user_error!('Expected exactly one existing internal group') unless groups.size == 1
+  notes = File.read(ENV.fetch('TONGXING_BETA_NOTES')).strip
+  UI.user_error!('What to Test is empty') if notes.empty?
+  localizations = build.get_beta_build_localizations
+  if localizations.empty?
+    Spaceship::ConnectAPI.post_beta_build_localizations(build_id: build.id, attributes: {locale: 'en-US', whatsNew: notes})
+  else
+    localizations.each { |l| Spaceship::ConnectAPI.patch_beta_build_localizations(localization_id: l.id, attributes: {whatsNew: notes}) }
+  end
+  fresh_notes = build.get_beta_build_localizations
+  UI.user_error!('What to Test readback failed') if fresh_notes.empty? || !fresh_notes.all? { |l| l.whats_new == notes }
+  build.add_beta_groups(beta_groups: groups) unless groups.first.fetch_builds.any? { |b| b.id == build.id }
+  snapshot = beta_snapshot(app)
+  verified = snapshot[:groups].any? { |g| g[:id] == groups.first.id && g[:buildIDs].include?(build.id) }
+  UI.user_error!('Group membership readback failed') unless verified
+end
