@@ -40,16 +40,20 @@ def save_or_check(path, value):
         save(path, value)
 
 
-def validate_cached(job, prompt, source, schema, effort="high"):
+def validate_cached(job, prompt, source, schema, effort="high", tier="default"):
     assert json.loads((job / 'schema.json').read_text()) == schema, 'Cached schema changed'
     command = json.loads((job / 'command.json').read_text())
-    assert command == [str(Path.home() / '.local/bin/codex'), 'exec', '--ignore-user-config', '--ephemeral',
+    expected_command = [str(Path.home() / '.local/bin/codex'), 'exec', '--ignore-user-config', '--ephemeral',
                        '-m', 'gpt-6.1-sol', '-c', f'model_reasoning_effort="{effort}"',
-                       '-c', 'service_tier="default"', '--json', '-s', 'read-only',
+                       '-c', f'service_tier="{tier}"', '--json', '-s', 'read-only',
                        '--skip-git-repo-check', '--output-schema', str(job / 'schema.json'),
-                       '-o', str(job / 'result.json'), '-'], 'Cached execution configuration changed'
+                       '-o', str(job / 'result.json'), '-']
+    if tier == 'fast':
+        expected_command += ['--enable', 'fast_mode']
+    assert command == expected_command, 'Cached execution configuration changed'
     receipt = json.loads((job / 'receipt.json').read_text())
     assert receipt['requestedModel'] == 'gpt-6.1-sol' and receipt['reasoningEffort'] == effort
+    assert receipt.get('requestedServiceTier', 'default') == tier
     assert receipt['exitCode'] == 0 and receipt['toolCalls'] == 0
     assert receipt['resultSha256'] == sha(job / 'result.json'), 'Cached result changed'
     assert (job / 'prompt.txt').read_text() == prompt, 'Cached prompt changed'
@@ -84,8 +88,10 @@ def main():
     parser.add_argument('--baseline', type=Path, required=True)
     parser.add_argument('--out', type=Path, required=True)
     parser.add_argument('--effort', choices=['low', 'high'], default='high')
+    parser.add_argument('--tier', choices=['default', 'fast'], default='default')
     args = parser.parse_args()
     effort = args.effort
+    tier = args.tier
     baseline, out = args.baseline.resolve(), args.out.resolve()
     previews = sorted(baseline.glob('group-*-astra.policy-preview.json'))
     assert previews, 'Missing baseline prompts'
@@ -102,7 +108,7 @@ def main():
                 'baselineHashes': {p.name: sha(p) for preview in previews
                                    for p in (preview, preview.with_name(preview.name.replace('.policy-preview', '.raw')))},
                 'astra': {'model': 'gpt-6-astra', 'effort': 'medium', 'reused': True},
-                'sol': {'model': 'gpt-6.1-sol', 'effort': effort, 'serviceTier': 'default'},
+                'sol': {'model': 'gpt-6.1-sol', 'effort': effort, 'serviceTier': tier},
                 'cliVersion': version, 'cliSha256': sha(cli.resolve()),
                 'binarySha256': sha(binary if binary.is_file() else cli.resolve()),
                 'baselineContextSha256': sha(baseline / 'test-context.json'),
@@ -135,7 +141,7 @@ def main():
                   'Return only JSON conforming to the provided schema.\n'
                   + payload['messages'][0]['content'] + '\nINPUT:\n' + payload['messages'][1]['content'])
         if (job / 'receipt.json').exists():
-            sol, result = validate_cached(job, prompt, source, schema, effort)
+            sol, result = validate_cached(job, prompt, source, schema, effort, tier)
         else:
             assert not (job / 'started.json').exists(), 'Unknown outcome; reconcile saved events before retry'
             save(job / 'started.json', {'startedAt': datetime.now(timezone.utc).isoformat(),
@@ -144,9 +150,11 @@ def main():
             save(job / 'schema.json', schema)
             command = [str(cli), 'exec', '--ignore-user-config', '--ephemeral',
                        '-m', 'gpt-6.1-sol', '-c', f'model_reasoning_effort="{effort}"',
-                       '-c', 'service_tier="default"', '--json', '-s', 'read-only',
+                       '-c', f'service_tier="{tier}"', '--json', '-s', 'read-only',
                        '--skip-git-repo-check', '--output-schema', str(job / 'schema.json'),
                        '-o', str(job / 'result.json'), '-']
+            if tier == 'fast':
+                command += ['--enable', 'fast_mode']
             save(job / 'command.json', command)
             fresh_calls += 1
             started = time.monotonic()
@@ -168,7 +176,7 @@ def main():
                       and r.get('item', {}).get('type') == 'agent_message']
             assert json.loads(finals[-1]) == result
             sol = {'requestedModel': 'gpt-6.1-sol', 'serverModel': None, 'reasoningEffort': effort,
-                   'requestedServiceTier': 'default',
+                   'requestedServiceTier': tier,
                    'elapsedSeconds': elapsed, 'usage': completions[0]['usage'], 'threadId': threads[0],
                    'toolCalls': 0, 'exitCode': process.returncode, 'resultSha256': sha(job / 'result.json')}
             save(job / 'receipt.json', sol)
