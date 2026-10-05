@@ -1,6 +1,6 @@
 # 固定三分钟 Dev 页面测试工具
 
-这组工具复用既有缓存，测试正常页面 prepare、校验、封存、guarded Hosting 发布和 reader；不调用模型 API。模拟审核仅用于用户明确授权的 Dev 测试，不代表正式内容批准。当前双端读取存在已记录的时间轴失败，见 [本轮复盘](reports/20261004-dev-180s-page-generation-retrospective.zh.md)。
+这组工具复用既有缓存，测试正常页面 prepare、校验、封存、guarded Hosting 发布和 reader；不调用模型 API。模拟审核仅用于用户明确授权的 Dev 测试，不代表正式内容批准。初次线上测试发现的时间轴问题已在 PR #245 的后续代码中修复并完成本地双端读回；没有重新部署或更新 TestFlight，见 [本轮复盘](reports/20261004-dev-180s-page-generation-retrospective.zh.md)。
 
 ## 生成与发布
 
@@ -19,6 +19,8 @@
 - 新 schema `sermon-dev-simulated-metadata-v1` 与正式 metadata schema 分开。精确绑定 Dev project、site、origin、channel、environment；生产 intent、缺失 intent、缺少模拟标题/摘要均拒绝。正式调用不接受该 schema。
 - `sermon-multilingual-catalog-v3.schema.json` 标记 `x-contractRevision: 2`，补上 page/target 的可选 boolean `simulationOnly`、`diagnosticOnly` 和兼容线上既有顶层 `defaultTargetLocale`。wire `schemaVersion` 保持 v3，因为客户端已识别这些可选 flags；旧目录无需转换。新增标记后须重新封存、绑定 hash；默认 production reader 隐藏模拟页。page 内默认语言继续是权威值。
 - prepared snapshot 从三个 Web 模块扩展为递归导入闭包。旧 preparation 的 runtimeAssets 不能充当新版闭包的完整证据，需重新 prepare/verify/seal。复盘里的运行时补丁有独立部署与 HTTP 回执。
-- `content.durationSeconds` 继续代表源窗口；本轮没有新增配音时钟字段。长于视频的自然语速音轨可以通过 producer，但当前 Web/Beta reader 会失败；这是待修复的契约缺口。
+- 新内容采用 `sermon-full-video-text-content-v2`：`durationSeconds` 继续代表源窗口，必需的 `audioDurationSeconds` 来自绑定音轨的 ffprobe 与完整解码，producer 要求与实际音轨相差不超过 0.05 秒。必需的 `reviewMode` 为 `formal` 或 `simulation`；后者只允许精确 Dev intent 和 page/target 的两种隔离 flags。全文/source cues 校验源时钟，口播 captions 和 Web track 使用音频时钟。
+- v1 读取保留兼容性：缺少音频字段时回退原源时长；显式字段不可为 null、错误类型、非正、非有限或超过 24 小时。v2 缺少字段必须拒绝，不能从最后一条字幕猜时长。迁移时先测量原音轨、保留源窗口/全文坐标和音频/字幕字节，重新生成 content、HTML 与绑定它们的 products/release/catalog hashes，再走 prepare/verify/seal/publish。新旧契约的物理设备验收仍独立。
+- 静态模板根据显式 `reviewMode` 输出审核声明；模拟 metadata 必须绑定模拟 v2 content，正式 metadata 拒绝模拟 content。模拟页不显示“已批准完整文稿”或“已审核译文”。
 
 媒体、环境、缓存、模拟包及部署回执留在 ignored artifacts。Git 只保存工具、schema、相关回归与复盘。

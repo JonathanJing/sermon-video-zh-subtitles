@@ -99,6 +99,16 @@ class FullVideoAppReleaseTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             release.validate(catalog, "sermon-multilingual-catalog-v3.schema.json")
 
+    def test_simulated_static_page_does_not_claim_formal_approval(self):
+        content = {'title': '[模拟审核测试] Title', 'series': 'Test', 'speaker': 'Test',
+                   'scripture': 'Test', 'summary': 'simulation test only', 'outline': [],
+                   'durationSeconds': 180, 'reviewMode': 'simulation',
+                   'cues': [{'start': 0, 'text': 'Test text'}]}
+        page = release.static_page(content, 'zh-Hans', self.page_id)
+        self.assertIn('非正式内容批准', page)
+        for claim in ('已批准完整', '已审核译文', '已审核短口播稿'):
+            self.assertNotIn(claim, page)
+
     def test_single_chinese_seal_preserves_unrun_device_acceptance(self):
         prepared, receipt = self.fixture(("zh-Hans",))
         sealed = self.root / "sealed-zh"

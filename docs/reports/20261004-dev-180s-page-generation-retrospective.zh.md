@@ -58,3 +58,16 @@
 - 新统一 CLI 的 fixture transport 不能准入 `app.delivery`；本轮正常 delivery adapter 消费独立模拟 packages。不能据此声称新 CLI 已从零完整执行 L1–L4。
 
 复盘结论：重复利用缓存消除了新增模型计费，真实发布和远端读回揭露了 producer 与两个 reader 的时钟契约不一致。下一次验收应先修复共享时钟契约和静态审核文案，再使用同一 SHA 的片段复测；无需重跑已验证的译文或音频生成。
+
+## PR #245 后续代码修复与本地复测
+
+用户随后要求根据复盘写代码到 PR #245。该修订修复上述 P1/P2，历史发布结果保持原样，不把本地通过写成线上通过。
+
+- 内容契约升级为 `sermon-full-video-text-content-v2`，增加必需的实测 `audioDurationSeconds` 和 `reviewMode`。producer 对音轨完整解码、验证声明时长；源窗口、全文、caption 字节均保留各自原有坐标。
+- Web 与原生分别验证两个时钟。v1 缺字段保留兼容回退，v2 缺字段和非法数值拒绝；全文越过源窗口、caption 越过音轨仍拒绝。Web 的 track 时长与字幕时钟改用音频字段。
+- 模拟 metadata 必须使用模拟 v2 content，正式 metadata 不接受模拟 content；v2 reader 要求模拟 page/target 都有 simulationOnly 和 diagnosticOnly，原生还要求显式 Dev context。静态页不再含“已批准完整文稿”等审核声明。
+- 同一 SHA 的固定片段重新走正常 prepare，新增模型 API 调用仍为 0；三个音轨与字幕没有重生成。新候选的 Web 读取三语言均通过，原生 repository 通过本地 HTTP 映射逐个验证资源 hash、全文与字幕，三个 transcriptLoad 均通过。该本地测试目录沿用原有三页和默认页的目录对象，但只提供新页的候选资源；没有把它当成完整 Hosting 基线或新发布回执。
+- 相关 Python：25 passed；Web 三个相关测试文件：79 passed；Core：82 执行通过、7 明确跳过。新增负例覆盖声明音频时长与绑定媒体不符、缺字段/非法字段、两类字幕越界，以及模拟审核准入。静态页测试验证没有正式批准文案。
+- 证据：`pr245-fix-inputs/prepare-result.json`、`pr245-fix-inputs/web-readback.json`、`pr245-fix-inputs/native-readback.json`、`pr245-fix-inputs/web-tests.log`、`native/pr245-core-tests.log`（均相对本报告产物根）。原生回执的 `transport=local_http_test_origin_mapping` 与 `actualHTTPOrigin` 明确区分真实 HTTPS 发布。
+
+本次只更新 PR 代码与复盘；最终 Hosting 版本仍是初次测试的 `36fbf0ccbb987fb4`。修复后线上读回、新 Beta 二进制和设备播放尚未执行，不能称为 Beta 发行或真机验收通过。

@@ -195,10 +195,11 @@ def build(out):
             'summary': '[模拟审核测试] simulation test only；沿用历史译文和音轨；真实内容、听审与同步未批准。',
             'outline': ['[模拟审核测试] 技术许诺与人的问题']}
         metadata['locales'][locale] = display
-        content = dict(display, schemaVersion='sermon-full-video-text-content-v1', pageId=PAGE,
+        content = dict(display, schemaVersion='sermon-full-video-text-content-v2', pageId=PAGE,
             targetLocale=locale, sourceLocale='en', status='human_reviewed',
             englishSourcePackageJsonSha256=source_sha, targetLanguageCandidateJsonSha256=candidate_sha,
             sourceMediaSha256=sha(media), durationSeconds=media_duration,
+            audioDurationSeconds=release.stage.decode_audio(track, locale + ' measured audio clock'), reviewMode='simulation',
             sourceVideoUrl='/media/' + PAGE + '/source.mp4', cues=cues,
             sourceWindow={'schemaVersion': 'sermon-original-recording-window-v1', 'mediaSha256': sha(media),
                 'startSeconds': 0, 'endSeconds': media_duration})

@@ -64,7 +64,7 @@ def prepared(tmp_path, request):
         proposal.write_text(' '.join(str(v) for v in fields.values()))
         metadata={'schemaVersion':'sermon-formal-dev-metadata-approval-v2','pageId':page,'date':'2026-09-20','proposalFileSha256':builder.digest(proposal),
             'approvedLocales':[locale],'decision':'approved_selected_locales','approvalText':'所列语言页面信息已批准','reviewer':'user','recordedAt':'2026-10-04T20:00:00Z','locales':{locale:fields}}
-        content={'schemaVersion':'sermon-full-video-text-content-v1','pageId':page,'targetLocale':locale,'sourceLocale':'en','status':'human_reviewed',
+        content={'schemaVersion':'sermon-full-video-text-content-v2','reviewMode':'formal','audioDurationSeconds':builder.stage.decode_audio(track, 'fixture duration'),'pageId':page,'targetLocale':locale,'sourceLocale':'en','status':'human_reviewed',
             'englishSourcePackageJsonSha256':d.sha(source),'targetLanguageCandidateJsonSha256':d.sha(candidate),'sourceMediaSha256':source['source']['media']['sha256'],
             'durationSeconds':source['source']['approvedWindow']['endSeconds']-source['source']['approvedWindow']['startSeconds'],'sourceVideoUrl':f'/pages/{page}/full-video-browser.mp4',**fields,
             'cues':[{**cue,'sourceUnitIds':g['sourceUnitIds']} for cue,g in zip(captions['cues'],candidate['groups'])]}
@@ -215,6 +215,7 @@ def test_video_duration_is_independent_of_natural_dubbed_track(prepared):
     content = f['documents']['full_content']
     track = Path(f['documents']['audio_package']['track']['path'])
     assert content['durationSeconds'] == 10
+    assert content['audioDurationSeconds'] > 12
     assert builder.stage.decode_audio(track, 'natural-length fixture') > 12
     assert f['result']['status'] == 'succeeded'
     # A video duration changed to match the dubbed track is still refused.
@@ -228,4 +229,19 @@ def test_video_duration_is_independent_of_natural_dubbed_track(prepared):
     frozen = f['root'] / 'wrong-video-frozen.json'
     state = delivery.freeze(draft, frozen)
     with pytest.raises(ValueError, match='Displayed duration differs from media'):
+        delivery.execute(frozen, state['planHash'])
+
+
+def test_declared_audio_duration_must_match_bound_media(prepared):
+    f = prepared
+    changed = copy.deepcopy(f['documents']['full_content'])
+    changed['audioDurationSeconds'] = 99
+    path = save(f['root'], 'wrong-audio-duration.json', changed)
+    config = copy.deepcopy(f['config'])
+    config['inputs']['full_content'][f['locale']] = binding(path)
+    config['workRoot'] = str(f['root'] / 'wrong-audio-work')
+    draft = save(f['root'], 'wrong-audio-config.json', config)
+    frozen = f['root'] / 'wrong-audio-frozen.json'
+    state = delivery.freeze(draft, frozen)
+    with pytest.raises(ValueError, match='declared audio duration differs'):
         delivery.execute(frozen, state['planHash'])
