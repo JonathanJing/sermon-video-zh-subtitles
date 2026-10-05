@@ -191,11 +191,14 @@ def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
                 reuse_from: Path | None = None, *, cache_only: bool = False,
                 response_observer=None, request_limits=None) -> dict[str, Any]:
     model = policy[role]["model"]
-    save_options = {"private": True} if response_observer is not None else {}
+    save_options = {"private": True} if response_observer is not None or getattr(caller, "execution_identity", None) is not None else {}
     payload = model_payload(role, prompt, policy, request_limits)
     policy_preview.freeze_payload_preview(
         role, payload, policy, output.with_suffix(".policy-preview.json"))
-    fingerprint = policy_tools.canonical_sha256(payload)
+    transport_identity = getattr(caller, "execution_identity", None)
+    fingerprint = policy_tools.canonical_sha256(
+        {"payload": payload, "modelTransportIdentity": transport_identity}
+        if transport_identity is not None else payload)
     migrated_from = migration_cache(role, payload)
     if migrated_from is not None:
         require(cache_only and reuse_from is None, "Explicit migration must be cache-only and isolated")
@@ -252,8 +255,9 @@ def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
             require(observed.get("payloadSha256") == fingerprint and observed.get("response") == response,
                     "Strict persisted response differs from transport return")
         else:
-            save_new(raw_path, {"payloadSha256": fingerprint, "response": response})
-    content = completed_response_content(response, model, role)
+            save_new(raw_path, {"payloadSha256": fingerprint, "response": response}, **save_options)
+    decoder = getattr(caller, "completed_content", completed_response_content)
+    content = decoder(response, model, role)
     if response_observer is not None:
         from scripts.sermon_review_contracts import decode_json
         parsed = decode_json(content.encode("utf-8"))
@@ -630,6 +634,11 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                     "Resume cache must be a separate attempt for this source and policy")
         identity = {"request": request, "groupPlan": plan,
                     "runnerImplementationSha256": RUNNER_PRODUCTION_IDENTITY_SHA256}
+        transport_identity = getattr(caller, "execution_identity", None)
+        if transport_identity is not None:
+            identity["modelTransportIdentity"] = transport_identity
+            require(reuse_from is None and resume_cache_from is None,
+                    "CLI transport supports same-run resume only; cross-run cache reuse is not enabled")
         if revision_brief is not None:
             identity["revisionBriefSha256"] = policy_tools.canonical_sha256(revision_brief)
         if partial_repair_brief is not None:

@@ -4,6 +4,8 @@
 
 后续追加验证：[26.55 秒单片段 CLI 翻译与独立审核实测](20261005-codex-cli-fragment-translation-review.zh.md) 已由 Astra → Sol 完成真实调用，机器审核通过，保留 token／耗时／速度和译文。本报告下文的“未验证”是方案编写时状态；该追加实验仍不等于生产入口适配或完整 Layer 2 准入。
 
+再追加：[固定三分钟现有分组流程测试](20261005-codex-cli-layer2-180s.zh.md) 接入 CLI transport 和隔离测试入口，实际完成 13 组／26 次调用及不重复调用的恢复验证。正式生产入口、controller dispatch 和 candidate admission 尚未切换；本报告的原方案状态不冒充这些验收。
+
 ## 当前实现与目标
 
 Codex CLI 仍调用 OpenAI 在线模型；变化是调用客户端、认证和额度归属，不是改用本地模型。ChatGPT 登录的 Codex 会话使用账号的 Codex 额度；项目 API 调用仍使用对应 Project 的 key 和 API 账单。不能把 CLI token 当作 API 费用，也不能将订阅调用记作免费或无限额度。
