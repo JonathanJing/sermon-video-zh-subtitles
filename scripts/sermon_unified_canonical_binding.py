@@ -41,6 +41,8 @@ def inspect_bound(manifest, base, configuration_path, step):
     if (actual.get('sourceId') != expected['sourceId']
             or actual.get('media', {}).get('sha256') != expected['mediaSha256']
             or actual.get('sourceUrlHash') != expected['sourceUrlHash']
+            or actual.get('media', {}).get('durationSeconds') != expected.get('durationSeconds')
+            or (window.get('evidence') or {}).get('sha256') != expected['window'].get('approvalReceiptSha256')
             or any(window.get(key) != expected['window'][key] for key in ('startSeconds', 'endSeconds'))):
         raise c.ContractError('canonical_source_identity_changed')
     locale = step.get('locale')
@@ -51,9 +53,38 @@ def inspect_bound(manifest, base, configuration_path, step):
         policy_path = config_path.parent / config['locales'][locale]['policy']
         if policy is None or c.file_sha(policy_path) != policy['policySha256']:
             raise c.ContractError('canonical_policy_changed')
+    if step['stageId']!='english_source':
+        validate_selected_source(manifest,base,c.digest(source))
     result = packages.inspect(config_path)
     if result.get('packageIdentities', {}).get('source') != c.digest(source):
         raise c.ContractError('canonical_source_changed_during_inspection')
     for name in names:
         c.binding(manifest, base, name)
     return result
+
+
+def validate_selected_source(manifest, base, actual_sha):
+    """Bind consumers to the selected English package, including its text.
+
+    Same recording/window does not authorize substituting a different English
+    revision. Component helpers without a run DAG retain their legacy scope.
+    """
+    selected = []
+    for step in manifest.get('steps', []):
+        if step['adapter'] != 'canonical.inspect' or step['stageId'] != 'english_source':
+            continue
+        config_path = c.binding(manifest, base, step['configuration'])
+        config = c.read(config_path)
+        path = (config_path.parent / config['source']).resolve()
+        names = [name for name, ref in manifest['bindings'].items()
+                 if (Path(base) / ref['path']).resolve() == path]
+        if not names:
+            raise c.ContractError('selected_source_binding_required')
+        for name in names:
+            c.binding(manifest, base, name)
+        selected.append(c.digest(c.read(path)))
+    if not selected and manifest.get('schemaVersion') == 'sermon-unified-run-manifest-v2':
+        raise c.ContractError('selected_english_source_required')
+    if selected and (len(set(selected)) != 1 or actual_sha != selected[0]):
+        raise c.ContractError('selected_english_source_changed')
+    return actual_sha

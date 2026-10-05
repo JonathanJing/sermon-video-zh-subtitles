@@ -52,7 +52,8 @@ def test_nested_input_snapshot_rejects_replaced_artifact(tmp_path):
     package.write_text(json.dumps({'track': {'path': nested.name, 'sha256': app.file_sha(nested)}}))
     value = {'inputs': {'source': {'path': package.name, 'sha256': app.file_sha(package)}}}
     first = app._input_snapshot(value, tmp_path, {})
-    assert set(first['dependencies']) == {str(package), str(nested)}
+    assert set(first['dependencies']) == {str(package), str(nested)} | {
+        str(app.builder.RUNTIME_WEB_ROOT / name) for name in app.builder.RUNTIME_WEB_FILES}
     nested.write_bytes(b'replaced media')
     with pytest.raises(ValueError, match='Nested delivery input changed'):
         app._input_snapshot(value, tmp_path, {})

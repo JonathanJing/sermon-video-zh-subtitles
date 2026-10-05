@@ -169,6 +169,10 @@ def inspect(config_path):
             'configurationSha256': config.identity, 'codeIdentitySha256': config.code_identity,
             'sourceMediaSha256': config.value['mediaSha256'], 'mediaSha256': config.value['mediaSha256'],
             'sourceId': config.value['sourceId'], 'window': config.value['window'],
+            'sourceUrlHash': config.value['sourceUrlHash'],
+            'sourceIdentity': {key: config.value[key] for key in
+                ('productionRunId', 'sourceId', 'sourceUrlHash', 'mediaSha256',
+                 'sourceDurationSeconds', 'window', 'windowApprovalSha256')},
             'sourceDurationSeconds': config.value['sourceDurationSeconds'],
             'windowApprovalSha256': config.value['windowApprovalSha256'],
             'policy': {'anchorPolicy': config.value['anchorPolicy'], 'judge': config.value['judge'], 'mfa': config.value['mfa']},

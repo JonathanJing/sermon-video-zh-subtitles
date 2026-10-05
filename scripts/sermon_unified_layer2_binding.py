@@ -56,6 +56,8 @@ def inspect_bound(manifest, base, step, config_path):
     if (actual.get('sourceId') != expected['sourceId']
             or actual.get('sourceUrlHash') != expected['sourceUrlHash']
             or actual.get('media', {}).get('sha256') != expected['mediaSha256']
+            or actual.get('media', {}).get('durationSeconds') != expected.get('durationSeconds')
+            or (actual.get('approvedWindow', {}).get('evidence') or {}).get('sha256') != expected['window'].get('approvalReceiptSha256')
             or any(actual.get('approvedWindow', {}).get(k) != expected['window'][k]
                    for k in ('startSeconds', 'endSeconds'))):
         raise c.ContractError('controller_source_mismatch')

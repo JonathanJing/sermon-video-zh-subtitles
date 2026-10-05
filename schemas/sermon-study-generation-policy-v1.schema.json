@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "model",
+    "reasoningEffort",
+    "promptVersion",
+    "batchGroups",
+    "requestLimits"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "sermon-study-generation-policy-v1"
+    },
+    "model": {
+      "enum": [
+        "gpt-6-astra",
+        "gpt-6-sol"
+      ]
+    },
+    "reasoningEffort": {
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max"
+      ]
+    },
+    "promptVersion": {
+      "const": "grounded-study-v1"
+    },
+    "batchGroups": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 12
+    },
+    "requestLimits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "maxInputTokens",
+        "maxCompletionTokens",
+        "wallTimeMs",
+        "serviceTier"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": "sermon-openai-chat-request-limits-v1"
+        },
+        "maxInputTokens": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16384
+        },
+        "maxCompletionTokens": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 8192
+        },
+        "wallTimeMs": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 300000
+        },
+        "serviceTier": {
+          "const": "default"
+        }
+      }
+    }
+  }
+}

@@ -142,6 +142,12 @@ def run(args):
         state=r.finish(args.state_root,args.run_id,step['id'],path,args.expected_revision)
         state=r.continue_owner(args.state_root,args.run_id)
         return state_result(command,state,args.job_id),0
+    if command=='review.ingest' and args.binding:
+        state,sha=r.ingest_continuation_evidence(args.state_root,args.run_id,args.binding,args.receipt,args.expected_revision)
+        r.continue_owner(args.state_root,args.run_id)
+        result=state_result(command,r.load(args.state_root,args.run_id))
+        result['reviewIngest']={'decision':'accepted','receiptSha256':sha,'reason':None}
+        return result,0
     if command=='review.ingest':
         result=envelope(command,state['manifest'],state['runKey'])
         result['reviewIngest']={'decision':'rejected','receiptSha256':None,'reason':'bound_review_validator_required'}
@@ -179,7 +185,9 @@ def parser():
             if group=='run' and action=='events':
                 q.add_argument('--after-event');q.add_argument('--trace-id');q.add_argument('--attempt-id')
             if group=='layer':q.add_argument('--layer',type=int,choices=[1,2,3,4],required=True);q.add_argument('--locale')
-            if group=='review':q.add_argument('--receipt',required=True)
+            if group=='review':
+                q.add_argument('--receipt',required=True)
+                q.add_argument('--binding',help='已冻结续跑配方中的证据槽位')
             if group=='worker' and action=='transfer':q.add_argument('--scheduler',choices=['canonical','temporal'],required=True)
     return p
 

@@ -27,7 +27,7 @@ v2额外冻结以下内容：
 
 付费/source/audio/delivery阶段要求manifest的`consumerCapabilities` binding指向[冻结能力配置](unified-consumer-capabilities.zh.md)，与原source、locale和政策逐项匹配。媒体阶段允许locale/policy留空，不代表完整交付减少语言。
 
-未来产物尚不存在时，先冻结当期可执行阶段与全消费者能力配置；产物产生后用新revision加入下一层具体输入。不能用虚构的未来文件SHA通过准入，也不能把能力检查称为产物有效。
+未来产物尚不存在时，先冻结当期可执行阶段、全消费者能力配置和受限 [continuation recipe](unified-continuation.zh.md)；owner 从不可变输出与已验证证据物化下一 revision 的具体输入，并在同一账本下 CAS 切换。缺证据时等待，不需要在聊天中手改未来 manifest。不能用虚构的未来文件SHA通过准入，也不能把能力检查称为产物有效。
 
 ## Producer与审核
 
@@ -38,10 +38,12 @@ v2额外冻结以下内容：
 | `canonical.inspect` | 原四层验证器，并核对manifest原媒体、URL、窗口、locale与政策身份 |
 | `canonical.layer2` | 原durable controller的固定locale入口；共享预算账本、每run一个active locale，unknown继续占位 |
 | `canonical.audio` | 冻结嵌套输入、固定合成配方、稀疏缓存复用、assembly-only、正式音频候选和输出闭包；待机器筛查/人听审 |
-| `study.produce` | 冻结显式提供的独立大纲/默想文本，验证source unit IDs；零模型调用，不生成批准 |
-| `app.delivery` | 四产物汇合、元数据/路由、增量候选、授权发布及端点读回；缺端保持partial |
-| `review.gate` | 仅消费当前hash/source/locale绑定的人审收据 |
+| `study.produce` | v1 冻结显式提供文本；[v2 独立模型生成](unified-study-generation.zh.md)按完整翻译组生成大纲/默想，带独立预算、缓存、未知结果阻断；仍须人审 |
+| `app.delivery` | [四产物公开资源](layer4-four-product-public-delivery.zh.md)、Web/原生读取、元数据/路由、授权发布及端点读回；缺端保持partial |
+| `review.gate` | 仅消费当前 hash/source/locale 及所选英文修订包绑定的人审收据 |
 | `fixture.replay` | 固定离线返回；不能创建批准或生产资格 |
+
+consumer capabilities v2 使用 release-package-v3；v1 仍可检查旧消费者，但不能给新四产物发布授予能力资格。下游生成、审核和 canonical inspection 均比较所选英文源包的 JSON SHA；同媒体、同窗口的另一文本修订不能替代。
 
 Source、音频与交付的配置参见[Source adapter](unified-source-preparation.zh.md)、[音频 adapter](unified-audio-adapter.zh.md)。L2预算和零API迁移参见[预算与迁移](canonical-layer2-budget-and-migration.zh.md)。
 
@@ -52,6 +54,16 @@ Source、音频与交付的配置参见[Source adapter](unified-source-preparati
   --job-id <stage-job-id> --receipt /absolute/review.json \
   --expected-revision <stateRevision> --json
 ```
+
+续跑配方中的证据槽通过同一审核入口导入；此动作只存入证据，不将已有审核 gate 标为批准：
+
+```bash
+.venv/bin/python scripts/sermon.py review ingest --run-id <run-key> \
+  --binding <frozen-recipe-slot> --receipt /absolute/evidence.json \
+  --expected-revision <stateRevision> --json
+```
+
+预算授权、审后包与内容收据分别验证；内容审核 gate 仍用 `--job-id`。recipe 的 `activeScope` 必须保持当前 manifest 已授权的 canary/final 范围，最终范围不完整时不会报告成功。
 
 大纲和默想使用独立`sermon-study-review-v1`，不借用音轨收据。翻译、听审和学习产物批准互不替代。机器通过、整体听审、逐项疑点裁定、同步例外分别保留。状态完成要求每个locale覆盖其应有端点，中文读回不能覆盖韩文和西文。
 

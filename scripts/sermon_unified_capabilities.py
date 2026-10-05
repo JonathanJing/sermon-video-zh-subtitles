@@ -13,7 +13,8 @@ from scripts import target_language_policy as policies
 from scripts import prepare_target_language_speech_job as speech
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = 'sermon-unified-consumer-capabilities-v1'
+VERSION = 'sermon-unified-consumer-capabilities-v2'
+LEGACY_VERSION = 'sermon-unified-consumer-capabilities-v1'
 SCHEMAS = {
     'source': 'sermon-english-source-package-v1',
     'candidate': 'sermon-target-language-candidate-v2',
@@ -21,7 +22,7 @@ SCHEMAS = {
     'audio': 'sermon-target-language-audio-package-v1',
     'study': 'sermon-study-artifact-v1',
     'catalog': 'sermon-multilingual-catalog-v3',
-    'release': 'sermon-target-language-release-package-v2',
+    'release': 'sermon-target-language-release-package-v3',
 }
 
 
@@ -79,7 +80,10 @@ def inspect(config_path):
     value = json.loads(config_bytes)
     required = {'schemaVersion', 'source', 'bindings', 'locales', 'terminology', 'releaseIntents', 'routes', 'targetSchemaVersions'}
     d.require(set(value) in (required, required | {'inputSnapshotSha256'}), 'consumer_configuration_fields_invalid')
-    d.require(value['schemaVersion'] == VERSION, 'consumer_configuration_version_invalid')
+    d.require(value['schemaVersion'] in (VERSION,LEGACY_VERSION), 'consumer_configuration_version_invalid')
+    schemas = dict(SCHEMAS)
+    if value['schemaVersion']==LEGACY_VERSION:
+        schemas['release']='sermon-target-language-release-package-v2'
     base = path.parent
     inputs = {}
     def capture(name, ref, *, json_value=True):
@@ -113,8 +117,8 @@ def inspect(config_path):
         d.require(intent.get('environment') == environment, 'consumer_environment_changed')
         d.validate_intent(intent, value['routes'])
     d.require(value['releaseIntents']['dev']['site'] != value['releaseIntents']['production']['site'], 'consumer_environments_share_site')
-    d.require(value['targetSchemaVersions'] == SCHEMAS, 'consumer_target_schema_versions_unsupported')
-    for key, version in SCHEMAS.items():
+    d.require(value['targetSchemaVersions'] == schemas, 'consumer_target_schema_versions_unsupported')
+    for key, version in schemas.items():
         capture('schema:' + key, str(ROOT / 'schemas' / (version + '.schema.json')))
     codec = pcm_roundtrip()
     inputs['encoderDecoder'] = {'path': codec['executable'], 'sha256': codec['executableSha256']}
@@ -124,7 +128,7 @@ def inspect(config_path):
     if 'inputSnapshotSha256' in value:
         d.require(snapshot == value['inputSnapshotSha256'], 'consumer_input_snapshot_changed')
     d.require(path.read_bytes() == config_bytes and all(file_sha(row['path']) == row['sha256'] for row in inputs.values()), 'consumer_input_changed_during_inspection')
-    return {'schemaVersion': VERSION, 'status': 'capabilities_verified', 'snapshotBound': 'inputSnapshotSha256' in value,
+    return {'schemaVersion': value['schemaVersion'], 'targetSchemaVersions':schemas, 'status': 'capabilities_verified', 'snapshotBound': 'inputSnapshotSha256' in value,
             'inputSnapshotSha256': snapshot, 'inputHashes': inputs, 'configSha256': hashlib.sha256(config_bytes).hexdigest(),
             'sourceIdentity': source, 'locales': locale_results, 'codec': codec,
             'futureArtifactsValidated': False, 'modelCalls': 0,

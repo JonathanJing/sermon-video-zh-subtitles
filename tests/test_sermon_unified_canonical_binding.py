@@ -46,3 +46,21 @@ def test_candidate_consumer_cannot_change_under_frozen_config(tmp_path, monkeypa
     candidate.write_text('{"changed":true}')
     with pytest.raises(c.ContractError,match='binding_changed'):
         adapter.inspect_bound(manifest,tmp_path,config,{'stageId':'english_source'})
+
+
+def test_downstream_requires_exact_selected_english_text_revision(tmp_path):
+    source, manifest, config = setup(tmp_path)
+    manifest['steps'] = [{'adapter': 'canonical.inspect', 'stageId': 'english_source', 'configuration': 'inspection'}]
+    manifest['bindings']['inspection'] = {'path': str(config), 'sha256': c.file_sha(config)}
+    assert adapter.validate_selected_source(manifest, tmp_path, c.digest(source)) == c.digest(source)
+    substituted = copy.deepcopy(source)
+    substituted['englishText'] = 'Different words on the same recording and approved window'
+    with pytest.raises(c.ContractError, match='selected_english_source_changed'):
+        adapter.validate_selected_source(manifest, tmp_path, c.digest(substituted))
+
+
+def test_real_consumer_cannot_omit_english_package_selection(tmp_path):
+    _, manifest, _ = setup(tmp_path)
+    manifest.update(schemaVersion='sermon-unified-run-manifest-v2', steps=[])
+    with pytest.raises(c.ContractError, match='selected_english_source_required'):
+        adapter.validate_selected_source(manifest, tmp_path, 'a' * 64)

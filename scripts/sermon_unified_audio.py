@@ -1,4 +1,13 @@
-"""Closed formal Layer 3 adapter. Configuration selects data, never executable code."""
+"""Closed formal Layer 3 adapter. Configuration selects data, never executable code.
+
+Migration: v1 configuration files remain readable; freeze(old, new) writes v2
+with the same synthesis settings and dependency snapshot. Plans/results are v2
+because source/configuration identities now participate in their binding. Old
+v1 results are deliberately rejected. Re-admit the migrated plan and execute
+assembly-only against its complete committed cache to write a new result; this
+rechecks WAVs and the artifact closure without generating audio. Never relabel
+an old result or alter sound settings just to migrate a receipt.
+"""
 from __future__ import annotations
 import json
 from pathlib import Path
@@ -7,7 +16,8 @@ from scripts import validate_target_language_audio_unit as integrity
 from scripts import sermon_sentence_interpretation as identity
 from scripts import review_target_language_audio as audio_review
 
-SCHEMA = 'sermon-unified-audio-job-v1'
+SCHEMA = 'sermon-unified-audio-job-v2'
+LEGACY_SCHEMA = 'sermon-unified-audio-job-v1'
 PATH_KEYS = {'source', 'anchor', 'candidate', 'job', 'adapter', 'policy', 'human_receipt',
              'registry', 'clip_timeline_map', 'clip_voice_authorization',
              'source_voice_authorization', 'clip_voice_capability'}
@@ -20,10 +30,12 @@ def _load(job_path):
     job_path = Path(job_path).resolve()
     config = json.loads(job_path.read_text())
     if set(config) - {'schemaVersion', 'paths', 'checkpointMap', 'audioOperationPolicies',
-                      'settings', 'unitInstructions', 'strictRubric', 'reuseFrom', 'inputSnapshotSha256'}:
+                      'settings', 'unitInstructions', 'strictRubric', 'reuseFrom', 'inputSnapshotSha256', 'pageId'}:
         raise ValueError('Unknown audio adapter configuration field')
-    if config.get('schemaVersion') != SCHEMA or not isinstance(config.get('paths'), dict):
+    if config.get('schemaVersion') not in (SCHEMA, LEGACY_SCHEMA) or not isinstance(config.get('paths'), dict):
         raise ValueError('Invalid fixed audio adapter configuration')
+    if 'pageId' in config and (not isinstance(config['pageId'], str) or not config['pageId'].strip()):
+        raise ValueError('Invalid audio page identity')
     if set(config['paths']) - PATH_KEYS:
         raise ValueError('Unknown formal audio input')
     def resolve(value):
@@ -52,6 +64,40 @@ def _load(job_path):
     if not {'checkpointMap', 'audioOperationPolicies'} <= extra.keys():
         raise ValueError('Checkpoint map and operation policies required')
     return job_path, config, paths, settings, extra
+
+
+def source_identity(package):
+    source = package['source']
+    window = source['approvedWindow']
+    evidence = window.get('evidence') or {}
+    return {'sourceId': source['sourceId'], 'sourceUrlHash': source.get('sourceUrlHash'),
+            'mediaSha256': source['media']['sha256'],
+            'durationSeconds': source['media'].get('durationSeconds'),
+            'window': {'startSeconds': window['startSeconds'], 'endSeconds': window['endSeconds'],
+                       'timeBase': 'source_media', 'approvalReceiptSha256': evidence.get('sha256')}}
+
+
+def validate_manifest_binding(plan, manifest, locale):
+    """Compare an independently valid audio job with its actual owning run.
+
+    Missing optional legacy manifest fields mean null, never an ignored check.
+    The owner must independently bind the configuration bytes before calling.
+    """
+    expected = manifest['source']
+    actual = plan['sourceIdentity']
+    if (any(actual.get(key) != expected.get(key) for key in
+            ('sourceId', 'sourceUrlHash', 'mediaSha256', 'durationSeconds'))
+            or any(actual['window'].get(key) != expected['window'].get(key) for key in
+                   ('startSeconds', 'endSeconds', 'timeBase', 'approvalReceiptSha256'))):
+        raise ValueError('Audio source identity differs from manifest')
+    if plan['targetLocale'] != locale:
+        raise ValueError('Audio locale differs from manifest')
+    policies = [p for p in manifest['policies'] if p['locale'] == locale]
+    if len(policies) != 1 or policies[0]['policySha256'] != plan['policySha256']:
+        raise ValueError('Audio policy differs from manifest')
+    if plan.get('pageId') is not None and plan['pageId'] != manifest.get('content', {}).get('pageId'):
+        raise ValueError('Audio page differs from manifest')
+    return True
 
 
 def inspect(job_path, output_path=None):
@@ -91,7 +137,12 @@ def inspect(job_path, output_path=None):
         raise ValueError('Audio input snapshot changed; create a new bound configuration')
     cache = {'committedUnits': committed, 'missingUnits': missing, 'plannedGeneratedUnits': generated_units,
              'soundIdentityAdmission': 'renderer_required'}
-    plan = {'schemaVersion': 'sermon-unified-audio-plan-v1', 'adapter': 'canonical.audio',
+    plan = {'schemaVersion': 'sermon-unified-audio-plan-v2', 'adapter': 'canonical.audio',
+            'sourceIdentity': source_identity(context['source']),
+            'sourcePackage': {'sha256': identity.sha256(paths['source']),
+                              'jsonSha256': identity.json_sha256(context['source'])},
+            'configurationSha256': identity.sha256(config_path),
+            'pageId': config.get('pageId'),
             'targetLocale': context['job']['targetLocale'],
             'sourceMediaSha256': context['source']['source']['media']['sha256'],
             'policySha256': identity.sha256(paths['policy']), 'speechJobSha256': identity.sha256(paths['job']),
@@ -121,6 +172,7 @@ def freeze(job_path, output_path):
     if Path(output_path).resolve() == config_path:
         raise ValueError('Freeze requires a new configuration path')
     plan = inspect(config_path)
+    config['schemaVersion'] = SCHEMA
     config['paths'] = {key: str(path) for key, path in paths.items()}
     config.update({key: str(path) for key, path in extra.items()})
     config['inputSnapshotSha256'] = plan['inputsSha256']
@@ -170,10 +222,13 @@ def verify_result(config_path, result):
     No synthesizer, ASR, paid request or human-approval writer is invoked.
     """
     plan = inspect(config_path)
-    if (not plan['snapshotBound'] or result.get('schemaVersion') != 'sermon-unified-audio-result-v1'
+    if (not plan['snapshotBound'] or result.get('schemaVersion') != 'sermon-unified-audio-result-v2'
             or result.get('planHash') != plan['planHash'] or result.get('status') != 'succeeded'
             or result.get('targetLocale') != plan['targetLocale']):
         raise ValueError('Audio result input/plan identity differs')
+    for key in ('sourceIdentity', 'sourcePackage', 'configurationSha256', 'pageId'):
+        if result.get(key) != plan[key]:
+            raise ValueError('Audio result source/configuration identity differs')
     _, _, paths, _, extra = _load(config_path)
     manifest = paths['job'].parent.resolve() / 'render-manifest.json'
     ref = result.get('renderManifest', {})
@@ -222,7 +277,8 @@ def execute(job_path, output_path, *, expected_plan_hash, allow_synthesis=False)
     package, closure = _validated_output(paths, extra)
     package_path = Path(output_path).with_suffix('.audio-package.json').resolve()
     _write_once(package_path, package)
-    receipt = {'schemaVersion': 'sermon-unified-audio-result-v1', 'status': 'succeeded',
+    receipt = {'schemaVersion': 'sermon-unified-audio-result-v2', 'status': 'succeeded',
+               **{key: plan[key] for key in ('sourceIdentity', 'sourcePackage', 'configurationSha256', 'pageId')},
                'planHash': plan['planHash'], 'artifact': 'verified', 'targetLocale': result['targetLocale'],
                'renderManifest': {'path': str(manifest_path), 'sha256': identity.sha256(manifest_path)},
                'audioPackage': {'path':str(package_path), 'sha256':identity.sha256(package_path),

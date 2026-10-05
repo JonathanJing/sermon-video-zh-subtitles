@@ -187,6 +187,10 @@ jobs:
           tests/test_sermon_unified_capabilities.py
           tests/test_sermon_unified_canonical_binding.py
           tests/test_sermon_unified_final_audit.py
+          tests/test_public_study_delivery.py
+          tests/test_sermon_study_generation.py
+          tests/test_sermon_unified_continuation.py
+          tests/test_sermon_unified_continuation_owner.py
 
       - name: Run dubbing workflow and review contract tests
         if: matrix.shard_index == 1

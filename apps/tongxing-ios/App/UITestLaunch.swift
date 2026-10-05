@@ -464,7 +464,7 @@ private enum UITestContent {
                                              "contentStatus": "human_reviewed", "audioStatus": "human_reviewed",
                                              "capabilities": ["text", "captions", "audio"]]]]],
         ]
-        return [
+        let files: [String: Data] = [
             "/multilingual-v3.json": try! JSONSerialization.data(withJSONObject: catalog, options: [.sortedKeys]),
             "/releases-v2/\(pageID)/\(locale).json": releaseData,
             "/pages/\(pageID)/\(locale)/index.html": html,
@@ -473,7 +473,58 @@ private enum UITestContent {
             "/english-reference/\(pageID).json": english,
             "/media/\(pageID)/\(locale).mp3": audio,
         ]
+        return ProcessInfo.processInfo.arguments.contains("--ui-testing-study-products") ? withStudyProducts(files, pageID: pageID, locale: locale) : files
     }
+    private static func withStudyProducts(_ original: [String: Data], pageID: String, locale: String) -> [String: Data] {
+        func encode(_ object: Any) -> Data { try! JSONSerialization.data(withJSONObject: object, options: [.sortedKeys, .withoutEscapingSlashes]) }
+        func hash(_ bytes: Data) -> String { SHA256.hash(data: bytes).map { String(format: "%02x", $0) }.joined() }
+        var files = original
+        let releasePath = "/releases-v2/\(pageID)/\(locale).json"
+        var release = try! JSONSerialization.jsonObject(with: files[releasePath]!) as! [String: Any]
+        let source = String(repeating: "a", count: 64)
+        let text = release["targetLanguageCandidateJsonSha256"] as! String
+        let audio = release["targetLanguageAudioPackageJsonSha256"] as! String
+        let content = hash(files["/content/\(pageID)/\(locale).json"]!)
+        func artifact(_ kind: String, title: String, body: String) -> [String: Any] {
+            ["schemaVersion": "sermon-study-artifact-v1", "kind": kind, "pageId": pageID, "locale": locale,
+             "sourcePackageSha256": source, "textCandidateSha256": text, "producerIdentity": "offline-ui-fixture",
+             "sections": [["title": title, "body": body, "sourceUnitIds": ["u1"]]]]
+        }
+        let outline = artifact("outline", title: "검토된 개요", body: "본문 전체가 표시됩니다.")
+        let meditation = artifact("meditation", title: "검토된 묵상", body: "예수님의 말씀을 묵상합니다.")
+        let outlineHash = hash(encode(outline)), meditationHash = hash(encode(meditation))
+        let identity: [String: Any] = ["sourceId": "offline-ui-fixture", "sourceUrlHash": source, "mediaSha256": source,
+            "durationSeconds": 20, "window": ["startSeconds": 0, "endSeconds": 20, "approvalReceiptSha256": source]]
+        let joined: [String: Any] = ["source": source, "products": ["text": text, "audio": audio,
+            "outline": ["status": "human_reviewed", "artifactSha256": outlineHash, "reviewSha256": source],
+            "meditation": ["status": "human_reviewed", "artifactSha256": meditationHash, "reviewSha256": source]]]
+        let products: [String: Any] = ["sourcePackageSha256": source, "textCandidateSha256": text, "audioPackageSha256": audio,
+            "outlineArtifactSha256": outlineHash, "meditationArtifactSha256": meditationHash,
+            "outlineReviewSha256": source, "meditationReviewSha256": source, "metadataApprovalSha256": source,
+            "contentSha256": content, "candidateSha256": hash(encode(["products": hash(encode(joined)), "metadataApproval": source, "contentSha256": content]))]
+        let manifest: [String: Any] = ["schemaVersion": "sermon-public-app-products-v1", "pageId": pageID, "locale": locale,
+                                      "sourceIdentity": identity, "fourProducts": products]
+        let pagePath = "/pages/\(pageID)/\(locale)/index.html"
+        let existingHTML = String(data: files[pagePath]!, encoding: .utf8)!
+        let studyHTML = "<section id=\"study-outline\"><h2>설교 개요</h2><strong>검토된 개요</strong><p>본문 전체가 표시됩니다.</p></section><section id=\"study-meditation\"><h2>묵상</h2><strong>검토된 묵상</strong><p>예수님의 말씀을 묵상합니다.</p></section>"
+        files[pagePath] = Data(existingHTML.replacingOccurrences(of: "</body>", with: studyHTML + "</body>").utf8)
+        var assets = release["assets"] as! [[String: Any]]
+        assets[0]["sha256"] = hash(files[pagePath]!)
+        for (role, name, value) in [("outline", "outline", outline), ("meditation", "meditation", meditation), ("product_manifest", "products", manifest)] {
+            let path = "/study/\(pageID)/\(locale)/\(name).json"
+            files[path] = encode(value); assets.append(["role": role, "path": path, "sha256": hash(files[path]!)])
+        }
+        release["schemaVersion"] = "sermon-target-language-release-package-v3"
+        release["englishSourcePackageJsonSha256"] = source; release["sourceIdentity"] = identity
+        release["fourProducts"] = products; release["assets"] = assets; files[releasePath] = encode(release)
+        var catalog = try! JSONSerialization.jsonObject(with: files["/multilingual-v3.json"]!) as! [String: Any]
+        var pages = catalog["pages"] as! [[String: Any]], targets = pages[0]["targets"] as! [String: [String: Any]]
+        pages[0]["sourceMediaSha256"] = source
+        targets[locale]!["releasePackageJsonSha256"] = hash(files[releasePath]!)
+        pages[0]["targets"] = targets; catalog["pages"] = pages; files["/multilingual-v3.json"] = encode(catalog)
+        return files
+    }
+
 }
 
 /// This transport belongs only to the explicitly constructed fixture session.

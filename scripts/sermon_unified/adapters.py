@@ -34,6 +34,11 @@ def inspect_step(m, base, step, *, ready=True):
             or plan['sourceMediaSha256']!=m['source']['mediaSha256']
             or any(plan['window'][k]!=m['source']['window'][k] for k in ('startSeconds','endSeconds'))):
             raise c.ContractError('source_preparation_identity_changed')
+        identity={'sourceId':plan['sourceId'],'sourceUrlHash':plan['sourceUrlHash'],
+                  'mediaSha256':plan['sourceMediaSha256'],'durationSeconds':plan['sourceDurationSeconds'],
+                  'window':dict(plan['window'],timeBase='source_media',approvalReceiptSha256=plan['windowApprovalSha256'])}
+        if identity != m['source'] or plan['sourceIdentity']['productionRunId']!=m['productionRunId']:
+            raise c.ContractError('source_preparation_full_identity_changed')
         authority=c.binding(m,base,step.get('budgetAuthorization',''))
         if c.file_sha(authority)!=plan['inputsSha256']['budgetAuthorization']:
             raise c.ContractError('source_budget_authority_changed')
@@ -42,9 +47,11 @@ def inspect_step(m, base, step, *, ready=True):
             raise c.ContractError('source_budget_exceeds_manifest')
     elif step['adapter'] == 'canonical.layer2':
         from scripts.sermon_unified_layer2_binding import inspect_bound
-        inspect_bound(m,base,step,config_path(m,base,step))
+        binding_plan=inspect_bound(m,base,step,config_path(m,base,step))
         from scripts import canonical_layer2_controller as ctl
         config = ctl.load_configuration(config_path(m, base, step))
+        from scripts.sermon_unified_canonical_binding import validate_selected_source
+        validate_selected_source(m,base,c.digest(c.read(config.inspection_root/config.inspection['source'])))
         if step.get('locale') not in config.lanes:
             raise c.ContractError('controller_locale_mismatch')
         from scripts import canonical_layer2_budget as budget
@@ -66,6 +73,9 @@ def inspect_step(m, base, step, *, ready=True):
         plan=audio.inspect(config_path(m,base,step))
         if not plan['snapshotBound']:
             raise c.ContractError('audio_input_snapshot_required')
+        audio.validate_manifest_binding(plan,m,step.get('locale'))
+        from scripts.sermon_unified_canonical_binding import validate_selected_source
+        validate_selected_source(m,base,plan['sourcePackage']['jsonSha256'])
         if plan['sourceMediaSha256']!=m['source']['mediaSha256'] or plan['targetLocale']!=step.get('locale'):
             raise c.ContractError('audio_source_or_locale_changed')
         policy=next(x for x in m['policies'] if x['locale']==step['locale'])
@@ -73,12 +83,28 @@ def inspect_step(m, base, step, *, ready=True):
             raise c.ContractError('audio_policy_changed')
     elif step['adapter'] == 'study.produce':
         from scripts import sermon_unified_study as study
-        study.inspect(m,base,config_path(m,base,step),step)
+        plan=study.inspect(m,base,config_path(m,base,step),step)
+        config=c.read(config_path(m,base,step))
+        from scripts.sermon_unified_canonical_binding import validate_selected_source
+        validate_selected_source(m,base,c.digest(c.read(c.binding(m,base,config['inputs']['source']))))
+        if plan.get('schemaVersion')=='sermon-study-generation-inspection-v1':
+            config=c.read(config_path(m,base,step))
+            name=config['inputs']['budgetAuthorization']
+            if step.get('budgetAuthorization')!=name:
+                raise c.ContractError('study_step_budget_binding_required')
+            cap=plan['globalBounds']['costMicrousd']
+            if cap>m['budget']['limitMicroUsd'] or cap>step.get('maxCostMicroUsd',0):
+                raise c.ContractError('study_budget_exceeds_manifest')
     elif step['adapter'] == 'app.delivery':
         from scripts import sermon_unified_delivery as delivery
         plan=delivery.inspect(config_path(m,base,step))
         if not plan['snapshotBound']:
             raise c.ContractError('delivery_input_snapshot_required')
+        from scripts.sermon_unified_canonical_binding import validate_selected_source
+        validate_selected_source(m,base,plan['sourcePackageSha256'])
+        identity=dict(plan['sourceIdentity']);identity['window']=dict(identity['window'],timeBase='source_media')
+        if identity!=m['source'] or plan['pageId']!=m['content']['pageId']:
+            raise c.ContractError('delivery_full_identity_changed')
         if plan['sourceId']!=m['source']['sourceId'] or plan['mediaSha256']!=m['source']['mediaSha256'] or not set(plan['locales'])<=set(m['locales']):
             raise c.ContractError('delivery_source_or_locale_changed')
     elif step['adapter'] == 'canonical.inspect':
@@ -93,6 +119,9 @@ def inspect_step(m, base, step, *, ready=True):
             raise c.ContractError('review_configuration_invalid')
         for name in config['inputs'].values():
             c.binding(m,base,name)
+        if step.get('reviewKind')!='english':
+            from scripts.sermon_unified_canonical_binding import validate_selected_source
+            validate_selected_source(m,base,c.digest(c.read(c.binding(m,base,config['inputs']['source']))))
     elif step['adapter'] == 'fixture.replay':
         obj = c.read(config_path(m, base, step))
         if (m['transport'] != 'fixture' or obj.get('fixtureSetId') != m.get('fixtureSetId')
@@ -211,9 +240,7 @@ def verify_result(m,base,step,result):
             raise c.ContractError('retained_source_candidate_changed')
     elif adapter=='study.produce':
         from scripts import sermon_unified_study as study
-        artifact=study.inspect(m,base,config_path(m,base,step),step)
-        if c.digest(artifact)!=result['jsonSha256'] or c.file_sha(result['path'])!=result['sha256'] or c.read(result['path'])!=artifact:
-            raise c.ContractError('retained_study_changed')
+        study.verify_result(m,base,config_path(m,base,step),step,result)
     elif adapter=='app.delivery':
         from scripts import sermon_unified_delivery as delivery
         plan=delivery.inspect(config_path(m,base,step))

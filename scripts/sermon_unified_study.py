@@ -7,6 +7,9 @@ from scripts.sermon_execution_harness import atomic_json
 
 def inspect(manifest,base,configuration_path,step):
     config=c.read(configuration_path)
+    if config.get('schemaVersion')=='sermon-unified-study-inputs-v2':
+        from scripts import sermon_study_generation as generation
+        return generation.inspect(manifest,base,configuration_path,step)
     if (set(config)!={'schemaVersion','kind','producerIdentity','inputs'}
         or config['schemaVersion']!='sermon-unified-study-inputs-v1'
         or config['kind'] not in ('outline','meditation')
@@ -26,7 +29,10 @@ def inspect(manifest,base,configuration_path,step):
     return artifact
 
 
-def execute(manifest,base,configuration_path,step,output):
+def execute(manifest,base,configuration_path,step,output,*,api_key=None,transport=None):
+    if c.read(configuration_path).get('schemaVersion')=='sermon-unified-study-inputs-v2':
+        from scripts import sermon_study_generation as generation
+        return generation.execute(manifest,base,configuration_path,step,output,api_key=api_key,transport=transport)
     artifact=inspect(manifest,base,configuration_path,step)
     target=output.parent/(step['id']+'-study.json')
     if target.exists():
@@ -37,3 +43,13 @@ def execute(manifest,base,configuration_path,step,output):
     return {'status':'succeeded','kind':'study_candidate','artifact':'verified','review':'human_pending',
             'productionEligible':False,'path':str(target),'sha256':c.file_sha(target),
             'jsonSha256':c.digest(artifact),'freshApiAttempts':0}
+
+
+def verify_result(manifest,base,configuration_path,step,result):
+    if c.read(configuration_path).get('schemaVersion')=='sermon-unified-study-inputs-v2':
+        from scripts import sermon_study_generation as generation
+        return generation.verify_result(manifest,base,configuration_path,step,result)
+    artifact=inspect(manifest,base,configuration_path,step)
+    if c.digest(artifact)!=result['jsonSha256'] or c.file_sha(result['path'])!=result['sha256'] or c.read(result['path'])!=artifact:
+        raise c.ContractError('retained_study_changed')
+    return artifact

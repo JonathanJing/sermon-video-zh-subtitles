@@ -18,6 +18,78 @@ def require(ok, message):
         raise ValueError(message)
 
 
+def source_identity(package):
+    """Public immutable source binding, without local paths or reviewer details."""
+    source = package['source']
+    window = source['approvedWindow']
+    require(window['status'] == 'approved' and window['humanApproval'] is True
+            and isinstance(window.get('evidence'), dict), 'Approved source window evidence required')
+    identity = {'sourceId': source['sourceId'], 'sourceUrlHash': source['sourceUrlHash'],
+                'mediaSha256': source['media']['sha256'], 'durationSeconds': source['media']['durationSeconds'],
+                'window': {key: window[key] for key in ('startSeconds', 'endSeconds')}}
+    identity['window']['approvalReceiptSha256'] = window['evidence']['sha256']
+    require(0 <= window['startSeconds'] < window['endSeconds'] <= identity['durationSeconds'], 'Source window exceeds media')
+    require(all(isinstance(value, str) and re.fullmatch(r'[a-f0-9]{64}', value) for value in
+                (identity['sourceUrlHash'], identity['mediaSha256'], identity['window']['approvalReceiptSha256'])),
+            'Full source URL/media/window approval hashes required')
+    return identity
+
+
+def validate_release_schema(release):
+    from jsonschema import Draft202012Validator, FormatChecker
+    version = release.get('schemaVersion')
+    require(version in ('sermon-target-language-release-package-v2', 'sermon-target-language-release-package-v3'), 'Unsupported release version')
+    schema = json.loads((Path(__file__).resolve().parents[1] / 'schemas' / (version + '.schema.json')).read_text())
+    Draft202012Validator(schema, format_checker=FormatChecker()).validate(release)
+
+
+def validate_public_study(release, *, reader):
+    """Validate public study bytes and all four immutable product identities.
+
+    reader accepts a release-relative path and returns bytes, locally or over HTTP.
+    Legacy v2 is not an implicit study approval.
+    """
+    validate_release_schema(release)
+    require(release['schemaVersion'] == 'sermon-target-language-release-package-v3', 'Four-product delivery requires release v3')
+    products = release['fourProducts']
+    source = release['sourceIdentity']
+    require(0 <= source['window']['startSeconds'] < source['window']['endSeconds'] <= source['durationSeconds'], 'Public source window exceeds media')
+    require(products['sourcePackageSha256'] == release['englishSourcePackageJsonSha256']
+            and products['textCandidateSha256'] == release['targetLanguageCandidateJsonSha256']
+            and products['audioPackageSha256'] == release['targetLanguageAudioPackageJsonSha256'], 'Public product identity differs')
+    values = {}
+    for role, filename in (('outline', 'outline'), ('meditation', 'meditation'), ('product_manifest', 'products')):
+        rows = [row for row in release['assets'] if row['role'] == role]
+        require(len(rows) == 1, 'Missing or duplicate public study asset: ' + role)
+        row = rows[0]
+        require(row['path'] == f"/study/{release['pageId']}/{release['targetLocale']}/{filename}.json", 'Public study path differs')
+        payload = reader(row['path'])
+        require(hashlib.sha256(payload).hexdigest() == row['sha256'], 'Public study bytes changed: ' + role)
+        values[role] = json.loads(payload)
+    manifest = values['product_manifest']
+    require(manifest == {'schemaVersion': 'sermon-public-app-products-v1', 'pageId': release['pageId'],
+                         'locale': release['targetLocale'], 'sourceIdentity': release['sourceIdentity'],
+                         'fourProducts': products}, 'Public product manifest differs')
+    from scripts import study_artifacts
+    for kind in ('outline', 'meditation'):
+        artifact = values[kind]
+        study_artifacts.validate(artifact, 'sermon-study-artifact-v1.schema.json')
+        require(artifact['kind'] == kind and artifact['pageId'] == release['pageId']
+                and artifact['locale'] == release['targetLocale']
+                and artifact['sourcePackageSha256'] == products['sourcePackageSha256']
+                and artifact['textCandidateSha256'] == products['textCandidateSha256']
+                and sha(artifact) == products[kind + 'ArtifactSha256'], 'Public study artifact identity differs')
+    join = {'source': products['sourcePackageSha256'], 'products': {
+        'text': products['textCandidateSha256'], 'audio': products['audioPackageSha256'],
+        **{kind: {'status': 'human_reviewed', 'artifactSha256': products[kind + 'ArtifactSha256'],
+                  'reviewSha256': products[kind + 'ReviewSha256']} for kind in ('outline', 'meditation')}}}
+    require(products['candidateSha256'] == sha({'products': sha(join), 'metadataApproval': products['metadataApprovalSha256'],
+                                               'contentSha256': products['contentSha256']}), 'Public App candidate hash differs')
+    contents = [row for row in release['assets'] if row['role'] == 'content']
+    require(len(contents) == 1 and contents[0]['sha256'] == products['contentSha256'], 'Public content hash differs')
+    return values
+
+
 def timestamp(value):
     require(isinstance(value, str), 'Missing evidence time')
     parsed = datetime.fromisoformat(value.replace('Z', '+00:00'))
@@ -141,7 +213,9 @@ def playback_acceptance(receipts, *, candidate_sha, locales, channels=('beta', '
 def validate_readback(receipt, *, expected_intent, candidate_sha, reader):
     """Re-fetch exact catalog/content/asset URLs; reader returns HTTP status and bytes."""
     from jsonschema import Draft202012Validator, FormatChecker
-    schema = json.loads((Path(__file__).resolve().parents[1] / 'schemas/sermon-client-readback-v1.schema.json').read_text())
+    version = receipt.get('schemaVersion')
+    require(version in ('sermon-client-readback-v1', 'sermon-client-readback-v2'), 'Unsupported client readback version')
+    schema = json.loads((Path(__file__).resolve().parents[1] / 'schemas' / (version + '.schema.json')).read_text())
     Draft202012Validator(schema, format_checker=FormatChecker()).validate(receipt)
     require(receipt['intent'] == expected_intent and receipt['candidateSha256'] == candidate_sha, 'Readback identity differs')
     observed = []
@@ -155,7 +229,7 @@ def validate_readback(receipt, *, expected_intent, candidate_sha, reader):
     return {'status': 'pass', 'readbackSha256': sha(receipt), 'candidateSha256': candidate_sha}
 
 
-def verify_client_acceptance(receipt, *, expected_intent, candidate_sha, reader, evidence_root):
+def verify_client_acceptance(receipt, *, expected_intent, candidate_sha, reader, evidence_root, study_requirements=None):
     """Validate actual playback telemetry plus independent human signoff and fresh readback.
 
     Native device and venue acceptance remain explicit separate fields. Browser
@@ -187,6 +261,12 @@ def verify_client_acceptance(receipt, *, expected_intent, candidate_sha, reader,
                 and telemetry.get('captionText') and telemetry.get('captionLocale') == row.get('locale'), 'Playback/caption controls failed')
         require(isinstance(telemetry.get('syncErrorSeconds'), (int, float))
                 and abs(telemetry['syncErrorSeconds']) <= 8, 'Playback synchronization exceeds policy')
+        if study_requirements is not None:
+            expected_study = study_requirements.get(row.get('locale'))
+            require(expected_study and telemetry.get('studyArtifacts') == expected_study
+                    and telemetry.get('studyDisplayed') is True
+                    and all(row.get('checks', {}).get(kind) == 'pass' for kind in ('outline', 'meditation')),
+                    'Endpoint did not display both current approved study artifacts')
     accepted = playback_acceptance(rows, candidate_sha=candidate_sha,
                                    locales=receipt['locales'], channels=(expected_intent['channel'],))
     return {**accepted, 'readback': readback}
@@ -214,6 +294,10 @@ def validate_catalog_snapshot(snapshot):
             name = target['releasePackageUrl'].lstrip('/')
             require(name in files and files[name]['sha256'] == target['releasePackageJsonSha256'], 'Missing baseline release')
             release = json.loads((public / name).read_text())
+            if release.get('schemaVersion') == 'sermon-target-language-release-package-v3':
+                require(release['pageId'] == page['id'] and release['englishSourcePackageJsonSha256'] == page['sourceIdentitySha256'],
+                        'Baseline release source/page differs')
+                validate_public_study(release, reader=lambda url: (public / url.lstrip('/')).read_bytes())
             for asset in release['assets']:
                 name = asset['path'].lstrip('/')
                 require(name in files and files[name]['sha256'] == asset['sha256'], 'Missing baseline release asset')

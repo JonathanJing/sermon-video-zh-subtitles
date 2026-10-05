@@ -196,7 +196,10 @@ public actor MultilingualCatalogRepository {
               package.audioStatus == target.audioStatus else { return false }
         let expected = target.releasePackageUrl.hasPrefix("/releases-v2/")
             ? TargetLanguageReleasePackage.dualScriptSchemaVersion : TargetLanguageReleasePackage.supportedSchemaVersion
-        return package.schemaVersion == expected
+        return (package.schemaVersion == expected ||
+            (expected == TargetLanguageReleasePackage.dualScriptSchemaVersion && package.schemaVersion == TargetLanguageReleasePackage.fourProductSchemaVersion)) &&
+            (package.fourProducts == nil || (package.englishSourcePackageJsonSha256 == page.sourceIdentitySha256 &&
+                package.sourceIdentity?.mediaSha256 == page.sourceMediaSha256))
     }
 
     public func loadRelease(page: MultilingualPage, locale: String) async throws -> TargetLanguageReleasePackage {
@@ -245,7 +248,9 @@ public actor MultilingualCatalogRepository {
         try package.validate(allowDevCandidate: allowDevCandidate)
         if package.status == "candidate" {
             guard allowDevCandidate else { throw ContentStorageError.invalidDownloadReference }
-            return try await loadDevContentPage(for: package)
+            if package.schemaVersion != TargetLanguageReleasePackage.fourProductSchemaVersion {
+                return try await loadDevContentPage(for: package)
+            }
         }
         guard let asset = package.assets.first(where: { $0.role == .page }) else {
             throw ContentStorageError.invalidDownloadReference
@@ -271,10 +276,15 @@ public actor MultilingualCatalogRepository {
             data = cached
         }
         guard let html = String(data: data, encoding: .utf8) else { throw ContentStorageError.invalidResponse }
-        if package.schemaVersion == TargetLanguageReleasePackage.dualScriptSchemaVersion {
+        if [TargetLanguageReleasePackage.dualScriptSchemaVersion, TargetLanguageReleasePackage.fourProductSchemaVersion].contains(package.schemaVersion) {
             let lower = html.lowercased()
             guard lower.contains("<html"), lower.contains("<body"),
                   !["<script", "<link", "<iframe", "<video", "<audio"].contains(where: lower.contains) else {
+                throw ContentStorageError.invalidResponse
+            }
+        }
+        if let studies = try await loadStudies(for: package) {
+            guard studies.outline.isDisplayed(in: html), studies.meditation.isDisplayed(in: html) else {
                 throw ContentStorageError.invalidResponse
             }
         }
@@ -306,8 +316,46 @@ public actor MultilingualCatalogRepository {
             }
             data = cached
         }
-        return VerifiedLanguagePage(html: try FormalDevContentPage.decode(data, package: package).html,
+        let studies = try await loadStudies(for: package)
+        return VerifiedLanguagePage(html: try FormalDevContentPage.decode(data, package: package).renderedHTML(studies: studies),
                                     baseURL: url)
+    }
+
+    public func loadStudies(for package: TargetLanguageReleasePackage) async throws -> ReviewedStudyResources? {
+        try package.validate(allowDevCandidate: allowDevCandidate)
+        guard package.schemaVersion == TargetLanguageReleasePackage.fourProductSchemaVersion else { return nil }
+        var resources: [ReleaseAsset.Role: Data] = [:]
+        for role in [ReleaseAsset.Role.outline, .meditation, .productManifest] {
+            guard let asset = package.assets.first(where: { $0.role == role }),
+                  let url = URL(string: asset.path, relativeTo: origin)?.absoluteURL,
+                  ContentOrigin.isSame(origin, url) else { throw ContentStorageError.invalidDownloadReference }
+            let cache = cacheDirectory.appendingPathComponent("Study", isDirectory: true)
+                .appendingPathComponent("\(asset.sha256).json")
+            let data: Data
+            do {
+                let (downloaded, hash) = try await download(url: url, maximumBytes: maximumPageBytes)
+                guard hash == asset.sha256 else { throw ContentStorageError.checksumMismatch }
+                data = downloaded
+            } catch {
+                if Task.isCancelled || error is CancellationError { throw CancellationError() }
+                guard FileManager.default.fileExists(atPath: cache.path) else { throw error }
+                data = try readBounded(cache, maximumBytes: maximumPageBytes)
+                guard SHA256.hash(data: data).map({ String(format: "%02x", $0) }).joined() == asset.sha256 else {
+                    throw ContentStorageError.checksumMismatch
+                }
+            }
+            // Validate semantic identity before admitting bytes to the offline cache.
+            if role == .productManifest { try ReviewedStudyResources.validateManifest(data, package: package) }
+            else { _ = try ReviewedStudyArtifact.decode(data, kind: role.rawValue, package: package) }
+            try FileManager.default.createDirectory(at: cache.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try data.write(to: cache, options: .atomic)
+            resources[role] = data
+        }
+        guard let outline = resources[.outline], let meditation = resources[.meditation] else {
+            throw ContentStorageError.invalidResponse
+        }
+        return ReviewedStudyResources(outline: try ReviewedStudyArtifact.decode(outline, kind: "outline", package: package),
+            meditation: try ReviewedStudyArtifact.decode(meditation, kind: "meditation", package: package))
     }
 
     /// Download only the reviewed, same-locale audio declared by this page's
@@ -367,7 +415,7 @@ public actor MultilingualCatalogRepository {
     public func loadPublishedTranscript(for package: TargetLanguageReleasePackage,
                                         page: MultilingualPage) async throws -> VerifiedPublishedTranscript {
         let verified = try await loadRelease(page: page, locale: package.targetLocale)
-        guard verified == package, package.schemaVersion == TargetLanguageReleasePackage.dualScriptSchemaVersion,
+        guard verified == package, [TargetLanguageReleasePackage.dualScriptSchemaVersion, TargetLanguageReleasePackage.fourProductSchemaVersion].contains(package.schemaVersion),
               let content = package.assets.first(where: { $0.role == .content }),
               let captions = package.assets.first(where: { $0.role == .captions }) else {
             throw ContentStorageError.invalidDownloadReference
@@ -471,7 +519,17 @@ public actor MultilingualCatalogRepository {
         else { throw ContentStorageError.invalidDownloadReference }
         let expectedSchema = target.releasePackageUrl.hasPrefix("/releases-v2/")
             ? TargetLanguageReleasePackage.dualScriptSchemaVersion : TargetLanguageReleasePackage.supportedSchemaVersion
-        guard package.schemaVersion == expectedSchema else { throw ContentStorageError.invalidDownloadReference }
+        guard package.schemaVersion == expectedSchema ||
+                (expectedSchema == TargetLanguageReleasePackage.dualScriptSchemaVersion &&
+                 package.schemaVersion == TargetLanguageReleasePackage.fourProductSchemaVersion) else {
+            throw ContentStorageError.invalidDownloadReference
+        }
+        if package.fourProducts != nil {
+            guard package.englishSourcePackageJsonSha256 == page.sourceIdentitySha256,
+                  package.sourceIdentity?.mediaSha256 == page.sourceMediaSha256 else {
+                throw ContentStorageError.invalidDownloadReference
+            }
+        }
         let pageURL = try package.status == "candidate"
             ? package.contentURL(relativeTo: origin) : package.pageURL(relativeTo: origin)
         guard ContentOrigin.isSame(origin, pageURL) else { throw ContentStorageError.invalidURL }

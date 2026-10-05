@@ -93,3 +93,31 @@
 ## 关闭规则
 
 上述工作在本PR接受审阅、合并后，代码交付可记录对应合并commit。涉及真实模型、发布、设备、容量和质量实验的条目继续保留其实际验收状态；不把软件通过改写成这些实际证据。
+
+## 逐层审计后的补齐（2026-10-04）
+
+先前软件入口验收未覆盖从空输出物化后续配置、实际学习产物生成和原生阅读页。逐层审计明确了这些缺口；本次补齐不把旧组件测试当成完整四层实际生产验收。
+
+| 缺口 | 本次修复 | 本轮证据边界 |
+|---|---|---|
+| 后续配置依赖尚不存在的文件 | 冻结受限 continuation recipe、typed output ports、原始审核证据槽；owner 在同一账本中 CAS 追加 revision，并同时保存物化收据 | 从不存在的 source 输出开始，离线 ASR/judge → 审核配置 → 独立人审包 → canonical source inspection；owner CAS、预算/原 owner 保留及证据导入另有回归。完整真实四层仍需正式 producer 输入与人工决定 |
+| 大纲和默想只有 supplied sections | Study v2 独立模型生成、完整翻译组分批、术语/policy/prompt/code 身份、独立请求预算、原始响应缓存、unknown 阻断及保留结果重建 | 注入离线 provider；实际 API 调用未运行，机器产物仍为 human_pending |
+| 四产物只汇合在私有目录 | release v3 公开 outline、meditation、products；静态 HTML 完整正文、随版本封存的 Web reader、HTTP/端点资源核验 | 真实本地 builder → seal → Web Node loader；合成上游审核证据，不是 Hosting 发布或真人内容批准 |
+| 原生客户端未消费学习产物 | iOS v3 验证来源/候选/资源 hash；实际 SwiftUI 文稿区显示大纲与默想，切换清除旧资源；独立 HTML 阅读及离线缓存均重验 | Python 真实 builder 产物 → Swift 原生文稿/学习资源/HTML → 离线 → 缓存篡改拒绝；iPhone 模拟器完成正文与语言选择交互、保存前后截图。不是新视频真机验收 |
+| 跨配置来源身份只绑定媒体 | Source 绑定 run/URL/duration/window approval；Audio/Delivery 全来源与 page 绑定；下游生成、canonical inspection、审核导入及审核复用均核对所选英文修订包 SHA | 同媒体同窗口的另一文本修订拒绝；保留原源码/媒体/cache，不在下游修源 |
+
+### 验证记录
+
+- Python 集成批次：`/private/tmp/pr242-final-complete-targeted.log`，167 passed、2 skipped、17 subtests；新增 Unicode/单引号 fixture 后一项 Web 对照仍写着旧正文，修正为完整 fixture 正文后，`/private/tmp/pr242-public-encoding-final.log` 的 5 项复验通过。其他测试未因这项失败被跳过。
+- 新 review/所选源包/owner/capability 定向：`/private/tmp/pr242-review-binding-final.log`，54 passed、5 subtests。与上述批次有重叠，不累计为独立数量。
+- Web 三个相关测试文件：`/private/tmp/pr242-web-final-tests.log`，33 passed。
+- iOS 实际 Python 产物互操作、完整正文及篡改拒绝：`/private/tmp/pr242-study-real-builder-ios.log`，3 项通过。fixture 含单引号、韩文、斜线和多行正文。
+- Core 旧目录兼容：`/private/tmp/pr242-core-compatibility-final.log`，15 项通过。
+- 原生 UI：`artifacts/tongxing-ios/2026-10-04/cli/20261004T165424-test-77d00deb/test.xcresult`，1 项通过；同设备、同韩文样本的前后截图在 `artifacts/pr242-four-product-repair/native-ui-attachments/manifest.json`。中途失败揭示实际 SwiftUI 阅读分支未接资源，已修复并复验。
+- 上一提交 b744 的远程 root-0 CI 因 strict Layer 3 测试缺少新增 checkpoint 夹具失败；本次补齐真实 map/operation policy，并让负例明确匹配 rubric 错误。41 项相关测试、3 subtests 通过。新提交的 CI 需另行核对，不用该局部结果冒称远程全部通过。
+
+### 版本与接续
+
+详见 [continuation](../unified-continuation.zh.md)、[Study v2](../unified-study-generation.zh.md)、[四产物公开交付](../layer4-four-product-public-delivery.zh.md)。consumer capabilities v2 指向 release v3；旧 v1/v2 包保留其原范围，不赋予四产物资格。代码身份或输入已改变时需新 revision/绑定，不能直接沿用旧执行的成功声明。
+
+本视频仍只保留已验证完整媒体的实际收据。没有新增付费 ASR/TTS、Hosting 发布、TestFlight 上传或真人听审。新来源的窗口决定、API 硬预算和五人声音方案仍是实际生产输入；不能从旧证据或离线合成批准继承。

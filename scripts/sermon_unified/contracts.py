@@ -166,6 +166,8 @@ def admit(m, base):
         try:
             from scripts.sermon_unified_capabilities import inspect as inspect_capabilities
             capabilities=inspect_capabilities(binding(m,base,'consumerCapabilities'))
+            if any(step['adapter']=='app.delivery' for step in m['steps']) and capabilities['targetSchemaVersions']['release']!='sermon-target-language-release-package-v3':
+                fail('consumer_four_product_release_schema_required')
             if (not capabilities['snapshotBound'] or capabilities['sourceIdentity']!=m['source']
                 or set(capabilities['locales'])!=set(m['locales'])
                 or any(capabilities['locales'][p['locale']]['policyFileSha256']!=p['policySha256'] for p in m['policies'])):

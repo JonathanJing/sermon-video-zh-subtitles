@@ -15,6 +15,8 @@ from scripts import sermon_workflow_jobs as jobs
 from scripts.sermon_unified import contracts as c
 from scripts.sermon_unified import adapters
 
+_OWNER_TOKEN = object()
+
 DEFAULT_ROOT = c.ROOT / 'artifacts' / 'unified-production'
 
 
@@ -83,7 +85,7 @@ def event(m,state,step,event_type, *, predecessor=None):
     return eid
 
 
-def submit(m,base,root,expected_hash,expected_revision=None):
+def submit(m,base,root,expected_hash,expected_revision=None,*,_owner_token=None,_continuation_receipt=None):
     blockers=c.admit(m,base)
     if blockers:
         raise c.ContractError(blockers[0])
@@ -101,9 +103,9 @@ def submit(m,base,root,expected_hash,expected_revision=None):
                 return current
             if expected_revision!=current['stateRevision'] or m['runRevision']!=current['manifest']['runRevision']+1:
                 raise c.ContractError('revision_cas_required',7)
-            if current['admission']!='closed' or any(x['process'] in ('running','waiting_reconciliation') for x in current['steps'].values()):
+            if (current['admission']!='closed' and _owner_token is not _OWNER_TOKEN) or any(x['process'] in ('running','waiting_reconciliation') for x in current['steps'].values()):
                 raise c.ContractError('drain_and_reconcile_required',6)
-            if current.get('ownerJobId') and jobs.peek_job(Path(root)/'owners',current['ownerJobId'])['status'] in jobs.ACTIVE:
+            if _owner_token is not _OWNER_TOKEN and current.get('ownerJobId') and jobs.peek_job(Path(root)/'owners',current['ownerJobId'])['status'] in jobs.ACTIVE:
                 raise c.ContractError('durable_owner_still_active',7)
         target.mkdir(parents=True,exist_ok=True)
         # Freeze absolute locators, while planHash excludes local paths.
@@ -146,7 +148,12 @@ def submit(m,base,root,expected_hash,expected_revision=None):
             state['reviews']={k:v for k,v in current['reviews'].items() if k in reused}
             state['historicalReservedMicroUsd']=current.get('historicalReservedMicroUsd',0)+sum(row.get('reservedMicroUsd',0) for sid,row in current['steps'].items() if sid not in reused)
             state['historicalBudgetAuthorities']=sorted(set(current.get('historicalBudgetAuthorities',[])) | {row['budgetAuthoritySha256'] for row in current['steps'].values() if row.get('budgetAuthoritySha256')})
+            state['continuationEvidence']=current.get('continuationEvidence',{})
+            if _owner_token is _OWNER_TOKEN:
+                state['ownerJobId']=current.get('ownerJobId');state['ownerEpoch']=current['ownerEpoch']
             state['revisionReuse']={'reused':reused,'changed':[s['id'] for s in m['steps'] if s['id'] not in reused]}
+        if _owner_token is _OWNER_TOKEN:
+            state['continuationReceipt']=_continuation_receipt
         jobs._persist(target/'unified-state.json',state)
         return state
 
@@ -162,6 +169,7 @@ def reusable_evidence(root,key,state,step):
             from scripts.sermon_unified_reviews import validate_review
             config=c.read(adapters.config_path(m,'/',step))
             inputs={name:c.binding(m,'/',reference) for name,reference in config['inputs'].items()}
+            adapters.inspect_step(m,'/',step)
             validate_review('meditation' if step['reviewKind']=='reflection' else step['reviewKind'],path,
                 inputs=inputs,expected_source=m['source'],expected_locale=step.get('locale'))
         else:
@@ -356,6 +364,36 @@ def start_owner(root,key):
 
 
 def run_owner(root,key):
+    """One owner lease covers dispatch and all recipe-driven revisions."""
+    with jobs._lock(Path(root), c.digest({'unifiedOwnerLease':key})) as (_, _, held):
+        if not held:
+            raise c.ContractError('owner_lease_busy',7)
+        return _run_owner(root,key)
+
+
+def _advance_continuation(root,key,state):
+    if 'continuationRecipe' not in state['manifest']['bindings']:
+        return state,False
+    from scripts import sermon_unified_continuation as continuation
+    recipe=c.binding(state['manifest'],'/','continuationRecipe')
+    prepared=continuation.prepare_next_revision(state,recipe,root)
+    if prepared['status']=='ready':
+        # Re-materialization rechecks retained upstream receipts and frozen bytes.
+        # submit takes the state lock and checks this exact revision again.
+        next_state=submit(prepared['manifest'],'/',root,prepared['planHash'],
+                          prepared['expectedStateRevision'],_owner_token=_OWNER_TOKEN,
+                          _continuation_receipt={'path':prepared['receiptPath'],'sha256':prepared['receiptSha256']})
+        return next_state,True
+    if prepared['reason']=='no_continuation_stage':
+        return state,False
+    view={k:v for k,v in prepared.items() if k!='manifest'}
+    if state.get('continuation')!=view:
+        state['continuation']=view
+        state=save(root,key,state,state['stateRevision'])
+    return state,True
+
+
+def _run_owner(root,key):
     """Keep the detached program alive across review waits, without chat polling."""
     while True:
         try:
@@ -365,10 +403,22 @@ def run_owner(root,key):
                 raise
             time.sleep(.05)
             continue
+        prior_plan=state['planHash']
+        has_continuation=False
+        if not state.get('cancelRequested') and not any(row['process'] in ('running','waiting_reconciliation','failed') for row in state['steps'].values()):
+            try:
+                state,has_continuation=_advance_continuation(root,key,state)
+            except c.ContractError as exc:
+                if exc.code not in ('state_revision_conflict','state_busy','revision_cas_required'):
+                    raise
+                time.sleep(.05)
+                continue
+            if state['planHash']!=prior_plan:
+                continue
         outcome,_=_project(state)
-        if (outcome in ('succeeded','cancelled','failed','unknown') or state['admission']=='closed'
+        if ((outcome=='succeeded' and not has_continuation) or outcome in ('cancelled','failed','unknown') or state['admission']=='closed'
             or state.get('scheduler','canonical')!='canonical'
-            or all(state['steps'][step['id']]['process']=='succeeded' for step in active_steps(state['manifest']))):
+            or (not has_continuation and all(state['steps'][step['id']]['process']=='succeeded' for step in active_steps(state['manifest'])))):
             return state
         revision=state['stateRevision']
         deadline=datetime.fromisoformat(state['manifest']['executionWindow']['deadlineAt'])
@@ -534,6 +584,7 @@ def ingest_review(root,key,job_id,receipt_path,expected):
     if m['transport']=='fixture':
         raise c.ContractError('fixture_cannot_grant_human_approval')
     from scripts.sermon_unified_reviews import validate_review,validate_window
+    adapters.inspect_step(m,'/',step)
     original_sha=c.file_sha(receipt_path)
     config=c.read(adapters.config_path(m,'/',step))
     if set(config)!={'schemaVersion','inputs'} or config['schemaVersion']!='sermon-unified-review-inputs-v1':
@@ -553,7 +604,7 @@ def ingest_review(root,key,job_id,receipt_path,expected):
     dst=folder(root,key)/('review-'+original_sha+'.json')
     jobs._persist(dst,doc)
     # This is a new review observation; it cannot alter prior machine evidence.
-    state['reviews'][step['id']]={'originalSha256':original_sha,'storedSha256':c.file_sha(dst),
+    state['reviews'][step['id']]={'originalSha256':original_sha,'originalPath':str(Path(receipt_path).resolve()),'storedSha256':c.file_sha(dst),
                                   'kind':kind,'validatedAt':now()}
     state['steps'][step['id']].update(process='succeeded',artifact='verified',review='approved',
                                     completedAt=now(),approvedAt=now(),reason='bound_review_accepted')
@@ -578,3 +629,20 @@ def mutate(root,key,operation,expected):
             if row['process']=='blocked' and not row.get('intentSha256'):
                 row.update(process='not_started')
     return save(root,key,state,expected)
+
+
+def ingest_continuation_evidence(root,key,binding_name,path,expected):
+    state=load(root,key)
+    if expected!=state['stateRevision']:
+        raise c.ContractError('state_revision_conflict',7)
+    if state['manifest']['transport']=='fixture':
+        raise c.ContractError('fixture_cannot_grant_human_approval')
+    from scripts import sermon_unified_continuation as continuation
+    recipe=c.binding(state['manifest'],'/','continuationRecipe')
+    ref=continuation.validate_evidence(state,recipe,root,binding_name,path)
+    prior=state.get('continuationEvidence',{}).get(binding_name)
+    if prior and prior!=ref:
+        raise c.ContractError('continuation_evidence_overwrite_forbidden',7)
+    state.setdefault('continuationEvidence',{})[binding_name]=ref
+    state.pop('continuation',None)
+    return save(root,key,state,expected),ref['sha256']
