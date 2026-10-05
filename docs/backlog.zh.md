@@ -20,6 +20,75 @@ English index: [backlog.md](./backlog.md)
 
 状态枚举：`verified_baseline`、`in_progress`、`pending`、`waiting_evidence`、`blocked`、`complete`。`verified_baseline` 只说明列出的基线已验证，不代表该项所有未来周次完成；只有满足本页第 2 条维护规则和该项验收定义后才能标记 `complete`。
 
+<a id="prompt-library-review-iteration"></a>
+
+## 2026-10-05：各环节 Prompt Library、Review 与 Iteration
+
+用户要求将每个模型环节的 prompt 纳入提示词库，并设立 prompt review／iteration 环节，优先覆盖翻译与审核。本节是新增开发要求及当前源码入口清单；**提示词库、review 工作流和迭代接线仍待实现，本轮没有修改生产 prompt 或执行新模型评估。** 顶层排期仍在本页，沿用 `DEV-R242-005/023`、`DEV-STE-001/002/006` 的实际输入冻结与实验归属，新增以下稳定交付 ID，不重复关闭旧任务。
+
+| ID | 优先级／状态 | 交付与验收 | 依赖 |
+|---|---|---|---|
+| `DEV-PROMPT-001` 全环节提示词库 | P1 / `pending` | 建立有稳定 prompt ID、角色和版本的 registry；先覆盖 canonical 初译／审核，再补下面全部环节及修订分支。登记原始模板全文、代码 builder、参数、动态规则、输入／输出 schema、适用 producer 与实际消费者。每个受管模型调用都能映射库条目；不支持／无 prompt／待接入明确标记。离线提取须保持原请求字节与身份，不通过复制一份文本制造双源 | `DEV-R242-005`；当前模型策略与代码调用清单 |
+| `DEV-PROMPT-002` 实际请求预览与版本绑定 | P1 / `pending` | 从真正 dispatch 使用的 builder 导出完整渲染请求：system／user、JSON 指令、规则、CLI wrapper、schema／图片或音频输入引用；记录 template、rendered input、policy／terminology、schema、adapter 与参数 hashes。plan／export 零模型调用；实际派发收据引用相同快照。覆盖初译、修订、审核、strict／legacy差异、条目缺失和漂移拒绝，缓存不能只依赖人工版本名 | `DEV-PROMPT-001`、`DEV-R242-005/017`；既有 policy preview 与 cache 身份 |
+| `DEV-PROMPT-003` Prompt Review 环节 | P1 / `pending` | 增加可评审包和 review 记录：明确角色职责、证据优先级、source/context 边界、规则冲突、输出合同、完整经文、术语、口播、注入风险及未解决事项。初译与审核模板分别评审，并成对检查；审核可改写与只读 verifier 分开。记录 reviewed prompt/hash、reviewer、日期、问题／严重度、处置及决定；生产晋级依赖当前有效记录，不能用机器建议或原版本通过代替新版本批准 | `DEV-PROMPT-001/002`；`DEV-STE-001/002`、语言策略与人工批准边界 |
+| `DEV-PROMPT-004` 有界迭代与评估晋级 | P1 / `pending` | 以冻结 baseline→问题→候选 diff→prompt review→离线回归→有预算 paired A/B／盲评→接受或退回→新版本晋级／回滚形成闭环。保留候选与失败证据，预注册质量／审核准确率／速度／token／费用阈值及最大轮次；无阈值或预算不发模型。dev 验收版本和正式新 run 使用同一已晋级快照；不原地改旧运行、复写旧缓存或自动无限优化 | `DEV-PROMPT-003`；`DEV-STE-006`、`DEV-R242-023`、`DEV-COST-001`；源样本与实验预算 |
+
+### 当前入口清单：库必须覆盖的模型环节
+
+以下来源按当前源码核对，是库实现的起始索引，不声称已经覆盖所有历史实验／临时脚本。`DEV-PROMPT-001` 完成前须对真正调用点做覆盖审计，新增调用没有库映射时在 dispatch 前拒绝；暂不纳管的历史入口单列，不能宣称受此门禁保护。
+
+新文字角色参数以[模型策略](production-model-runtime-policy.zh.md)为准：初译等原 Astra 角色 Sol 6.1 high fast，独立 Sol 复核角色 Sol 6.1 medium fast，Supervisor Luna medium fast，文字均走 Codex CLI。库同时记录 declared 与 observed 配置；源码旧默认、POC 分支与历史模板版本名不可冒充当前实际参数，不在本次登记中静默改动。
+
+| 环节／库条目范围 | 当前模板及真实拼接入口 | Prompt review 重点 |
+|---|---|---|
+| L1 来源 Transcribe | [sermon_pipeline.py](../scripts/sermon_pipeline.py)：`reference_transcription_prompt`、`reference_transcription_keywords`、`transcription_request_fields` | 音频与术语提示的关系，保留原话／不补听不清内容；记录实际发送的 prompt／keywords 与媒体身份，ASR 仍使用 API |
+| L1 英文纠错 | [review_prompts.py](../scripts/review_prompts.py)：`ENGLISH_CORRECTION_SYSTEM_PROMPT`；[sermon_pipeline.py](../scripts/sermon_pipeline.py)：`correct_english` | 最小证据修正、ID／时间分段不变、reference 限 matching window，不润色或猜词；原 ASR 保留 |
+| L1 冻结英文源机器审核 | [judge_english_source_for_translation.py](../scripts/judge_english_source_for_translation.py)：`SYSTEM_PROMPT`、`_payload`、`_response_schema` | 当前 scope 是 text/timing metadata，不能声称模型听过音频；anchor policy、required checks、疑点和准入一致 |
+| L1 对话式来源纠正证据 | [sermon_source_text_review.py](../scripts/sermon_source_text_review.py)：`apply_review` 只消费已有 review | 当前模块不生成 prompt 或听音频；把上游真实对话任务／证据来源列为待接入，缺失 prompt 标 unknown，不从纠正收据反推 |
+| **L2 canonical 多语初译** | [run_target_language_models.py](../scripts/run_target_language_models.py)：`_run_prepared_groups` 构造 translator、`model_payload`；三语 [zh-Hans](../config/target-language-policies/zh-Hans.json)／[ko](../config/target-language-policies/ko.json)／[es](../config/target-language-policies/es.json) policy | 同冻结英文 units；术语、经文／register、邻近上下文、coverage、口播完整含义，禁止为时长删意义；区分初译和 revision／partial repair |
+| **L2 canonical 独立复核及编辑** | [run_target_language_models.py](../scripts/run_target_language_models.py)：`_run_prepared_groups` 构造 reviewer、`normalize_semantic_review`、`model_payload` | 实际允许修正最终 `targetUtterances/coverage`，同时产生 `semanticReview`；保留未解决 issues／uncertainty，不能把此角色写成只读审核；评估修改后文本的验收及是否仍需独立验证 |
+| **L2 strict 初译／修订与只读 verifier** | [sermon_strict_layer2.py](../scripts/sermon_strict_layer2.py)：`prompt`、`generation_prompt`、`response_contract`、`_payload` | verifier 禁止改写；修复走新 revision。与 canonical 分条登记，不把实验／strict 支持状态冒充正式能力 |
+| L2 中文逐句口播译审 | [sermon_sentence_interpretation.py](../scripts/sermon_sentence_interpretation.py)：`TRANSLATION_SYSTEM_PROMPT`／`REVIEW_SYSTEM_PROMPT`；[run_sentence_interpretation_models.py](../scripts/run_sentence_interpretation_models.py)：`_translation_payload`／`_review_payload` | sourceUnit coverage、中文子串证据、否定／数字／引语归属；复核含修订职责，不能以机器 pass 代替人审或实测 timing fit |
+| Legacy 中文字幕翻译及最终双语审核 | [review_prompts.py](../scripts/review_prompts.py)：`CHINESE_TRANSLATION_SYSTEM_PROMPT`；[sermon_pipeline.py](../scripts/sermon_pipeline.py)：`translate_chinese`；[review_sermon_subtitles_with_openai.py](../scripts/review_sermon_subtitles_with_openai.py)：`SYSTEM_PROMPT`、`batch_payload` | 单段与完整句 producer 的边界不同；当前最终字幕审核脚本默认仍为旧模型，需配置审计。完整模板／系列规则／wrapper 变化必须进入缓存身份，不能只看 promptVersion |
+| 经文发现／选句／翻译／独立引用审计／修复 | [sermon_cuv_translation.py](../scripts/sermon_cuv_translation.py)：`SYSTEM`、`DISCOVER`、`SELECT`、`AUDIT_QUOTES` 与各阶段 instruction／payload | 分别登记每个阶段；原音／经文版次／引用权威、完整句与引用 offsets、不可凭模型补经文或扩大引用；timing repair 不删原义 |
+| 阅读稿编辑与 QA | [build_sermon_reading_edition_with_openai.py](../scripts/build_sermon_reading_edition_with_openai.py)：`READING_SYSTEM_PROMPT`、`QA_SYSTEM_PROMPT`、`request_payload` | 书面稿与口播规则分离，整块覆盖／禁省略／神学与引语忠实；QA 实际返回修订后的段落，应单列 reviewer-editor |
+| 大纲／讲道解读／引用／学习产物 | [review_prompts.py](../scripts/review_prompts.py)：`NOTES_SYSTEM_PROMPT`；[generate_notes_with_openai.py](../scripts/generate_notes_with_openai.py)：`build_openai_request` | 每项有 sourceSliceIndexes，引用必须逐字；当前 notes prompt 明确不生成讨论／默想问题，不能据此宣称已覆盖独立默想 producer。缺失的独立大纲／默想审核条目按 `DEV-R242-013` 登记待实现 |
+| L3 Qwen TTS 及单元口播修复 | [render_formal_target_language_speech.py](../scripts/render_formal_target_language_speech.py)：`QwenSynthesizer`、`unit_instructions`、`build_expected_intents` | `text/spokenText`、`instruct`、语言／speaker／seed 是不同输入；默认与 per-unit override 均绑定身份；声音指令不能偷改译文或合并说话人 |
+| L3 回转写 ASR 与质量筛查 | [benchmark_back_asr.py](../scripts/experiments/benchmark_back_asr.py)、[screen_target_language_audio_units.py](../scripts/screen_target_language_audio_units.py)、[review_target_language_audio.py](../scripts/review_target_language_audio.py) | 已核对的 benchmark 调用为 audio＋language，无自由文本 prompt；正式 adapter 仍须逐入口核对。预期译文不是 ASR 提示词真值，避免把送入 expected text 后的回转写当独立检查；确定性筛查无 LLM prompt |
+| Supervisor 结构化决定 | [run_sermon_production_supervisor_agent.py](../scripts/run_sermon_production_supervisor_agent.py)：`supervisor_instructions`；[sermon_codex_supervisor.py](../scripts/sermon_codex_supervisor.py)：`session_report` | instructions＋最小状态＋tools schema＋attemptedStages＋CLI 包装；host 已 inspect 与旧工具式 instructions 是否一致；不能创造批准、越权发付费任务或重试 unknown |
+| 通用 CLI 包装和 L2 transport | [sermon_codex_transport.py](../scripts/sermon_codex_transport.py)：`chat_json`、`call_json`、`_call_unlocked`；[codex_layer2_transport.py](../scripts/codex_layer2_transport.py) | role 转文本、JSON-only、禁工具、source-as-data 前后缀与实际 stdin／schema 一同 review；API fallback 若实现也绑定其真实 adapter，不能只审 system 常量 |
+| 共用术语／动态规则 | [series_terminology.py](../scripts/series_terminology.py)、[target_language_rule_preflight.py](../scripts/target_language_rule_preflight.py)、[target_language_policy.py](../scripts/target_language_policy.py)、[target_language_policy_preview.py](../scripts/target_language_policy_preview.py) | 术语表、完整经文、语言策略与 modelRules 必须同版；审查最终注入顺序和冲突，库登记不证明真实 producer 已消费 |
+
+独立 live_session、POC／benchmark 的额外 prompt，以及周海报 ImageGen 分别标记作用域并补库映射；例如 [fragment POC](../scripts/generate_multilingual_fragment_poc.py) 的译审版本不能成为 canonical 生产模板。MFA／同步排程／语言插件／打包发布／HTTP 校验若没有生成模型 prompt，标 `not_applicable`，不凭“每环节”要求额外添加模型调用。
+
+可复用能力与首批缺口：
+
+- [benchmark_layer2_bounded.py](../scripts/experiments/benchmark_layer2_bounded.py) 的 `capture_prompts` 已能从真实 group closure 捕获译审请求并在调用前停止；`target_language_policy_preview.freeze_payload_preview` 已保存 payload／policy hashes。002 扩展这些入口到完整 CLI 输入和全环节，避免重建第二套 prompt builder。
+- canonical 的 modelRules 前检依赖实际传入 plugin；strict 目前没有同一条 modelRules／formatting 消费链。库和 review 须分别展示 `consumed/not_run/unsupported` 及原因，补冻结规则一致性审查，不因模板指向同一 policy 就认定行为相同。
+- canonical `partialRepair.instruction` 会拼入 system；strict 的 issue evidence 则按解释数据处理。优先审查自由文本修订指令的信任边界、来源和允许范围，禁止来源／模型证据越权覆盖冻结政策。
+- legacy 分段缓存缺完整 system literal、系列规则与 wrapper／schema 身份；先补漂移检测及兼容迁移设计，迭代不能只改常量而继续复用旧结果。现有请求已带的 hash 和 version 应复用，历史缓存不删除或改写。
+
+### 库条目与 Prompt Review 的交付形态
+
+库条目至少包含 `promptId`、语义版本、stage／role／producer／locale、owner、purpose、适用 source scope、原始 system／user 模板、动态输入合同、规则引用、输出 schema、源码 builder／调用点、requested model／reasoning／tier、template／rendered／rules／schema／wrapper hashes、baseline／candidate 状态及 review／评估／晋级记录。模板版本与模型版本分开；`gpt56` 等历史版本名不等于当前请求模型。缺真实 prompt、权限或模型返回值时保留 unknown。
+
+Git 保存非敏感模板、registry、最小合成 fixture 与评审记录；完整讲道／音频／真实渲染请求在 ignored artifacts 留存，以受控引用和 hash 绑定。库需要单一代码来源或经验证的生成导出；禁止维护与 runtime 不同步的手抄“标准 prompt”。提取／重构和行为迭代分开：纯整理先证明原请求等价，任何 wrapper、JSON 指令、规则顺序或 schema 变化也视为行为候选。
+
+**Prompt Review 是开发和版本发布环节，内容审核是生产运行环节。** 每个新 prompt 版本需完成前者；冻结版本的每组译文仍按已有 translator→reviewer→plugin→candidate 链执行，不为每组加一轮常驻 Astra／Gemini“prompt 审核”。同版本 review 可按绑定复用；模型／role、有效 prompt／schema／规则或 wrapper 改变时评估其 changed set，不能照搬旧批准。
+
+翻译／审核 review 优先检查：完整含义及整句经文、否定／数字／专名／神学／引语归属、上下文不串入目标、术语与多语 register、subtitle／reading／spokenText 职责分离、覆盖顺序和 JSON 合同、剩余 issues／uncertainty、不虚构人审或时长通过。审核 prompt 还需明确可以修订什么、修订证据、最终判定对象、问题是否真正解决；独立复核不继承译者自评／推理作为通过依据。发现角色冲突时先记录并提出候选，不擅自改变当前 reviewer-editor／verifier 合同。
+
+### Iteration 顺序与关闭标准
+
+1. **冻结 baseline**：保存当前真实 builder 渲染结果、模型／参数、源码／规则 hashes 和已有有效收据；prompt-only 对比保持模型和 transport 相同。旧模型对比不能同时当新 prompt 的因果证据。
+2. **问题与候选**：每项有具体失败单元、预期行为、严重度和候选 diff，说明译者／审核员分别改什么。修一项不删其他未决问题；不在生产途中改模板。
+3. **Prompt Review＋离线回归**：检查上述合同；用合成正／负例验证完整覆盖、经文与上下文、schema 枚举、遗漏／新增、部分修复／残留疑点、role 边界、prompt 注入及缓存漂移。静态通过只准入实验，不宣称翻译质量提升。
+4. **冻结评估协议**：沿 `DEV-STE-006` 固定授权 source、语言／全文和口播分层、A/B hashes、预算、盲评身份与阈值。复用已有 180 秒样本；补直接经文、术语歧义、说话人、长上下文和 ko/es。605 秒含经文样本须先解决已知 preflight／版次绑定问题，不能绕过拒绝直接付费。保留独立 holdout，避免只对少数已知例子调词。
+5. **真实 paired A/B 与裁决**：在同输入同模型下比较忠实度、完整性、自然度、术语／经文、输出合同通过率；分别记录原 draft 和审核修订后的质量。审核另测有人工逐项裁定的漏报／误报、修订质量和 unresolved issue 保留。记录整体／逐 locale 差异、token、会话耗时／长尾、费用估算及 unknown；不以通过率高、输出短或重试少替代质量，也不把墙钟 token/s 称纯生成速度。
+6. **有限迭代与晋级**：按预注册最大轮次和费用边界停止，保留 rejected／needs_revision 及原因；达到质量非劣与改进目标后绑定 review／评估收据、晋级版本和 rollback 目标。dev／正式的新 run 消费相同晋级 snapshot；已有冻结运行继续原身份，新版本改变的源／文本／音频依赖按四层合同失效，不自动重跑已完成阶段或重新索要未变批准。
+
+关闭分别取证：001 要全受管调用覆盖清单及已合并库代码；002 要真实 builder 与 dispatch 输入一致、零调用 preview 和缓存漂移回归；003 要评审记录实际被版本准入消费；004 要预算／停止条件／晋级回滚代码及独立质量评估收据。只完成文档、抽取、mock 或一次机器评分均不标 `complete`。正式四层发布、听审、设备和现场验收继续按各自任务记录。
+
 <a id="pr248-test-audit"></a>
 
 ## 2026-10-05：PR #248 测试证据与剩余验收
