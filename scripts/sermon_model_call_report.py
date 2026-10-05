@@ -44,6 +44,7 @@ def _fact(event):
 
 def _row(start, finish, *, call_id, backend, role, provider='not_recorded',
          scope='request_including_transport', conflict=False):
+    from scripts.sermon_openai_runtime import safe_route
     evidence = finish or start or {}
     fields = evidence.get('fields', {})
     data = fields if evidence.get('code') == 'model_call_observation' else evidence
@@ -55,6 +56,7 @@ def _row(start, finish, *, call_id, backend, role, provider='not_recorded',
     declared = tuple(k for k in TOKEN_FIELDS if k != 'cacheWriteTokens') if fields else ('inputTokens', 'outputTokens', 'totalTokens') if backend == 'agent_session' else TOKEN_FIELDS
     known = sum(usage[k] is not None for k in declared)
     return {'runId': _label(evidence.get('runId')), 'callId': _label(call_id),
+            'openaiRoute': None if conflict else safe_route(evidence.get('openaiRoute') or (start or {}).get('openaiRoute')),
             'backend': _label(backend), 'role': _label(role), 'provider': _label(provider),
             'requestedModel': _label(data.get('requestedModel') or ((start or {}).get('fields', {}).get('model') if fields else None) or (start or {}).get('requestedModel') or (start or {}).get('model')),
             'model': _label(data.get('model')) if finish else None, 'stage': _label(evidence.get('stage')), 'spanId': _label(evidence.get('spanId')),
@@ -113,6 +115,8 @@ def report(events):
         f = evidence.get('fields', {}) if kind == 'generic' else evidence
         executor = stages.get((run, evidence.get('spanId')), set())
         conflict = len(starts) > 1 or len(ends) > 1 or len(executor) > 1
+        if start and end and start.get('openaiRoute') != end.get('openaiRoute'):
+            conflict = True
         if kind == 'generic':
             if start and end:
                 first = start.get('fields', {})

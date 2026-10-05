@@ -1056,6 +1056,67 @@
     },
     "traceId": {
       "$ref": "#/$defs/eventId"
+    },
+    "openaiRoute": {
+      "type": "object",
+      "required": [
+        "schemaVersion",
+        "environment",
+        "projectId",
+        "credentialAlias",
+        "identitySource"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": "sermon-openai-runtime-route-v1"
+        },
+        "environment": {
+          "enum": [
+            "dev",
+            "prod"
+          ]
+        },
+        "projectId": {
+          "type": "string",
+          "pattern": "^proj_[A-Za-z0-9_-]+$",
+          "maxLength": 128
+        },
+        "credentialAlias": {
+          "enum": [
+            "tongxing-dev-runtime",
+            "tongxing-prod-runtime"
+          ]
+        },
+        "identitySource": {
+          "const": "configured_runtime"
+        }
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "environment": {
+                "const": "dev"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "credentialAlias": {
+                "const": "tongxing-dev-runtime"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "credentialAlias": {
+                "const": "tongxing-prod-runtime"
+              }
+            }
+          }
+        }
+      ]
     }
   },
   "required": [

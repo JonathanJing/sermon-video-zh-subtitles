@@ -321,6 +321,11 @@ def _write_event(event):
     directory, run_id = _identity.get() or tuple(os.environ.get(k) for k in ENV_KEYS[:2])
     if not directory or not run_id:
         return
+    if event.get('event') in {'api_attempt_started', 'api_attempt', 'sdk_call_started', 'sdk_call_finished'}:
+        from scripts.sermon_openai_runtime import selected_route
+        route = selected_route()
+        if route is not None:
+            event = {**event, 'openaiRoute': route}
     path = Path(directory) / "events.jsonl"
     if log_profile.current() is None:
         path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)

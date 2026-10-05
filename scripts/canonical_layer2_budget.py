@@ -77,6 +77,8 @@ class BudgetedCaller:
         self.transport = transport
 
     def __call__(self, key, payload):
+        from scripts.sermon_openai_runtime import project_headers
+        selected_headers = project_headers(key)
         load_authorization(self.config, self.auth['path'],
                            self.auth['value']['codeIdentitySha256'], self.auth['sha256'])
         capped = limits.bounded_payload(payload, self.auth['limits'])
@@ -113,7 +115,8 @@ class BudgetedCaller:
         if self.transport is None:
             request = urllib.request.Request('https://api.openai.com/v1/chat/completions',
                 data=json.dumps(payload).encode(), method='POST',
-                headers={'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json'})
+                headers={'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json',
+                         **selected_headers})
             request.accounting_model = payload['model']
             request.accounting_settings = pipeline.request_metadata(payload)
             response = pipeline.request_json(request, retries=1, response_observer=preserve,

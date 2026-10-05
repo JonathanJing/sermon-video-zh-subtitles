@@ -228,6 +228,8 @@ def _http_error_diagnostic(error):
 
 
 def request_json(req, retries=3, *, response_observer=None, request_executor=None):
+    from scripts.sermon_openai_runtime import bind_request
+    bind_request(req)
     # Strict recovery is explicitly authorized by D5, never an HTTP retry loop.
     if response_observer is not None or request_executor is not None:
         retries = 1
@@ -311,6 +313,7 @@ def request_json(req, retries=3, *, response_observer=None, request_executor=Non
 
 
 def multipart_request(url, api_key, fields, file_field, file_path, retries=3):
+    from scripts.sermon_openai_runtime import project_headers
     boundary = "----codex-" + uuid.uuid4().hex
     body = bytearray()
 
@@ -346,6 +349,7 @@ def multipart_request(url, api_key, fields, file_field, file_path, retries=3):
         headers={
             "Authorization": f"Bearer {api_key}",
             "Content-Type": f"multipart/form-data; boundary={boundary}",
+            **project_headers(api_key),
         },
         method="POST",
     )
@@ -355,12 +359,14 @@ def multipart_request(url, api_key, fields, file_field, file_path, retries=3):
 
 
 def json_request(url, api_key, payload, retries=3, *, response_observer=None):
+    from scripts.sermon_openai_runtime import project_headers
     req = urllib.request.Request(
         url,
         data=json.dumps(payload).encode(),
         headers={
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
+            **project_headers(api_key),
         },
         method="POST",
     )

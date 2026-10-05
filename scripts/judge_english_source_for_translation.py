@@ -463,6 +463,8 @@ def main() -> int:
     parser.add_argument("--prewarm", action="store_true", help="Populate the same cache without writing final judge receipt")
     parser.add_argument("--api-key-secret")
     args = parser.parse_args()
+    from scripts.sermon_openai_runtime import reject_secret_override
+    reject_secret_override(args.api_key_secret)
     if args.api_key_secret:
         from backend.cloud import access_secret
         api_key = access_secret(args.api_key_secret)
