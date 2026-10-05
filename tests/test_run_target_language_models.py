@@ -70,6 +70,21 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
         return {"id": f"response-{len(self.calls)}", "model": payload["model"],
                 "choices": [{"finish_reason": "stop", "message": {"content": json.dumps(result)}}]}
 
+    def test_resource_capacity_busy_does_not_write_unknown_call_marker(self):
+        from scripts.sermon_unified.contracts import ContractError
+        class Caller:
+            def admit_resource(inner,payload):raise ContractError('resource_capacity_busy')
+            def __call__(inner,*args):raise AssertionError('busy must not dispatch')
+        with self.assertRaisesRegex(ContractError,'resource_capacity_busy'):
+            subject.run(self.fixture.source,self.fixture.anchor,self.fixture.policy,
+                        self.out,'fixture-key',Caller())
+        self.assertFalse(any(self.out.glob('group-*.started.json')))
+        self.assertEqual(self.calls,[])
+        evidence=subject.run(self.fixture.source,self.fixture.anchor,self.fixture.policy,
+                             self.out,'fixture-key',self.fake_call)
+        self.assertEqual(len(evidence['groups']),2)
+        self.assertEqual(len(self.calls),4)
+
     def test_astra_then_sol_each_group_and_admit_human_pending(self):
         f = self.fixture
         evidence = subject.run(f.source, f.anchor, f.policy, self.out,

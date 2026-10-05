@@ -92,7 +92,7 @@ class FixtureLayer2Transport:
         return response['content']
 
 
-def run_test(fixture_dir, policy_path, out_dir, *, cli_path, reviewer_tier='fast', timeout_seconds=180, mock_responses_dir=None):
+def run_test(fixture_dir, policy_path, out_dir, *, cli_path, reviewer_tier='fast', timeout_seconds=180, mock_responses_dir=None, resource_policy_path=None):
     fixture_dir, out_dir = Path(fixture_dir).resolve(), Path(out_dir).resolve()
     root = Path(__file__).resolve().parents[1]
     if not out_dir.is_relative_to(root / 'artifacts') or out_dir == root / 'artifacts':
@@ -127,9 +127,16 @@ def run_test(fixture_dir, policy_path, out_dir, *, cli_path, reviewer_tier='fast
                'sourceUnits': [{'sourceUnitId': u['sourceUnitId'], 'english': u['english']} for u in units],
                'generation': None, 'groups': None}
     runner.group_plan(request, anchor, plan)
+    if mock_responses_dir is not None and resource_policy_path is not None:
+        raise ValueError('Fixture replay cannot claim real CLI resource admission')
+    resource_options = {}
+    if resource_policy_path is not None:
+        from scripts.sermon_unified import resources
+        resource_options['resource_policy'] = resources.validate_policy(
+            json.loads(Path(resource_policy_path).read_text()))
     transport = (FixtureLayer2Transport(mock_responses_dir) if mock_responses_dir is not None
                  else CodexLayer2Transport(cli_path, reviewer_tier=reviewer_tier,
-                                    timeout_seconds=timeout_seconds, receipts_dir=out_dir / '_cli_calls'))
+                                    timeout_seconds=timeout_seconds, receipts_dir=out_dir / '_cli_calls', **resource_options))
     context = {'schemaVersion': 'codex-layer2-test-run-v1', 'simulationOnly': True,
                'realModelCalls': mock_responses_dir is None, 'productionEligible': False, 'humanApproval': False,
                'fixtureDir': str(fixture_dir), 'sourceMediaSha256': media_sha,
@@ -173,10 +180,11 @@ def main():
     parser.add_argument('--mock-responses-dir', type=Path, help='Replay 26 bound historical raw receipts; no CLI or API calls')
     parser.add_argument('--reviewer-tier', choices=['default', 'fast'], default='fast')
     parser.add_argument('--timeout-seconds', type=int, default=180)
+    parser.add_argument('--resource-policy', type=Path, help='Explicit shared host-local CLI admission policy')
     args = parser.parse_args()
     run_test(args.fixture_dir, args.policy, args.out_dir, cli_path=args.codex_cli,
              reviewer_tier=args.reviewer_tier, timeout_seconds=args.timeout_seconds,
-             mock_responses_dir=args.mock_responses_dir)
+             mock_responses_dir=args.mock_responses_dir, resource_policy_path=args.resource_policy)
 
 
 if __name__ == '__main__':

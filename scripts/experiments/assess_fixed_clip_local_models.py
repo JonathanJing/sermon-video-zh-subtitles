@@ -14,6 +14,7 @@ if __package__ in (None, ''):
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from scripts.experiments import replay_fixed_clip_local_models as worker
 from scripts.screen_target_language_audio_units import tokens
+from scripts import target_audio_timing_plan
 
 
 def assess_rows(groups, recognized, anchors, source_seconds, *, min_similarity=.88):
@@ -34,18 +35,23 @@ def assess_rows(groups, recognized, anchors, source_seconds, *, min_similarity=.
             'exceedsSpanSeconds':max(0,audio['audioSeconds']-span),'similarity':similarity,
             'requiresReview':similarity<min_similarity,'expected':audio['text'],
             'recognized':readback['recognizedText']})
+    timing=target_audio_timing_plan.plan(source_seconds,[{
+        'gid':r['groupId'],'sourceStart':r['sourceStart'],'sourceEnd':r['sourceEnd'],
+        'audioSeconds':r['audioSeconds']} for r in rows],locale='zh-Hans')
     total=sum(r['audioSeconds'] for r in rows)
     overlong=[r['groupId'] for r in rows if r['exceedsSpanSeconds']>.05]
     readback_issues=[r['groupId'] for r in rows if r['requiresReview']]
     blockers=['human_content_approval_missing','canonical_audio_and_sync_not_run']
     if total>source_seconds+.05: blockers.append('diagnostic_audio_exceeds_source_duration')
-    if overlong: blockers.append('diagnostic_groups_exceed_source_windows')
+    if timing['maxLagViolations']: blockers.append('diagnostic_formal_max_lag_exceeded')
+    if timing['clipTailOverflows']: blockers.append('diagnostic_formal_clip_tail_overflow')
     if readback_issues: blockers.append('diagnostic_asr_requires_review')
-    return {'schemaVersion':'fixed-clip-local-model-assessment-v1',**worker.FLAGS,
+    return {'schemaVersion':'fixed-clip-local-model-assessment-v2',**worker.FLAGS,
         'status':'diagnostic_only_requires_review','publicationEligible':False,
         'publicationBlockers':blockers,'sourceSeconds':source_seconds,'audioSeconds':total,
         'exceedsSourceSeconds':max(0,total-source_seconds),'minSimilarity':min_similarity,
-        'overlongGroups':overlong,'asrBelowThreshold':readback_issues,'groups':rows}
+        'overlongGroups':overlong,'ownSpanExcessIsWarningOnly':True,
+        'asrBelowThreshold':readback_issues,'groups':rows,'synchronizationPlan':timing}
 
 
 def assess(tts_dir, asr_dir, anchor_path, media, out):
@@ -70,6 +76,13 @@ def assess(tts_dir, asr_dir, anchor_path, media, out):
         worker.require(abs(duration(path)-audio['audioSeconds'])<.002,'audio_duration_receipt_changed')
         subprocess.run(['ffmpeg','-v','error','-xerror','-i',str(path),'-f','null','-'],
                        check=True,capture_output=True,timeout=120)
+    report['synchronizationPlan']=target_audio_timing_plan.plan(source_seconds,[{
+        'gid':r['groupId'],'sourceStart':row['sourceStart'],'sourceEnd':row['sourceEnd'],
+        'audioSeconds':r['audioSeconds'],'audioSha256':r['audioSha256']}
+        for r,row in zip(tts['groups'],report['groups'])],identities={
+            'ttsManifest':worker.sha(tts_path),'asrManifest':worker.sha(asr_path),
+            'anchor':worker.sha(anchor_path),'media':worker.sha(media)},locale='zh-Hans')
+    report['synchronizationPlan']['measurementsIndependentlyVerified']=True
     report.update(fullDecodeGroups=len(tts['groups']),ttsManifestSha256=worker.sha(tts_path),
                   asrManifestSha256=worker.sha(asr_path),anchorSha256=worker.sha(anchor_path))
     worker.require(not out.exists(),'assessment_already_exists_use_new_output')
@@ -81,5 +94,5 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     for name in ('tts-dir','asr-dir','anchor','media','out'):p.add_argument('--'+name,type=Path,required=True)
     a=p.parse_args();r=assess(a.tts_dir,a.asr_dir,a.anchor,a.media,a.out)
-    print(json.dumps({k:v for k,v in r.items() if k!='groups'},ensure_ascii=False,indent=2))
+    print(json.dumps({k:v for k,v in r.items() if k not in ('groups','synchronizationPlan')},ensure_ascii=False,indent=2))
 if __name__=='__main__':main()

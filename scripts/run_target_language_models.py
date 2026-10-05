@@ -241,6 +241,11 @@ def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
     else:
         require(not cache_only, f"Cache-only recovery has no returned {role} response: {output}")
         require(not marker.exists(), f"Uncertain paid {role} call; inspect before retry: {marker}")
+        # Capacity denial is a proven no-dispatch outcome. Reserve before the
+        # unknown-call marker; once reserved, a crash remains held in the broker.
+        resource_admission = getattr(caller, "admit_resource", None)
+        if resource_admission is not None:
+            resource_admission(payload)
         save_new(marker, {"role": role, "payloadSha256": fingerprint,
                           "status": "started_response_unconfirmed"}, **save_options)
         if response_observer is None:

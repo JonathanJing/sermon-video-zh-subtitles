@@ -62,4 +62,16 @@ python scripts/experiments/assess_fixed_clip_local_models.py \
 
 在具备 GPU/本地权重的隔离容器执行前两个命令，关闭网络；最后的评估只需 Python、ffmpeg/ffprobe，可在 Mac 执行。路径占位符替换为本轮独立目录。完整完成回执可同参数恢复，不加载模型或重新推理；unknown 批次先对账，不通过删 started marker 重发。评估检查全量解码、时长、源窗口和 ASR 绑定，即使全部相似度通过也不赋予发布资格。首轮与恢复计量分别保留。
 
-见 [Mockup、真实 CLI 和本地模型本轮复盘](reports/20261005-fixed-180s-mock-codex-local-rerun.zh.md)：真实链完成，但 185.92 秒配音超过 180.013 秒源视频，8 组超源窗口，保持发布阻塞。
+见 [Mockup、真实 CLI 和本地模型本轮复盘](reports/20261005-fixed-180s-mock-codex-local-rerun.zh.md)：真实链完成，但 185.92 秒配音超过 180.013 秒源视频，8 组超源窗口；该指标在 v2 中仅作警告，实际同步仍有延迟和片尾溢出，保持发布阻塞。
+
+## 复盘后的资源与驻留增量
+
+真实 CLI 测试可显式添加 `--resource-policy /absolute/path/policy.json`，使用[统一资源策略](unified-resource-admission.zh.md)中的 `codex_cli` 池，每次调用占一个槽。该入口仍是单 worker；上限是准入容量，不是自动创建并发任务。策略和适配器进入运行身份，使用新目录。Mockup 不能同时配置资源策略；已验证的 cache/raw 恢复不占模型槽。
+
+共享循环先准入、再保存 started、最后调用模型。容量忙时零 dispatch、无 started 标记，容量释放后可重试；本测试命令没有自动等待队列。成功或明确失败的 CLI 终态事件、response 和资源 outcome 先私有原子写入并 fsync，再释放。超时、损坏／缺失终态或写入失败保留 held，不自动回收，也不绕过 unknown 重发。
+
+独立本地 `tts`／`asr` 命令也接受 `--resource-policy`，两者保守共用 `spark_tts=1`，覆盖整个 job。完成批次、模型释放和 GPU 清理收据、最终 manifest、outcome 持久化之后才释放。清理失败或结果未知保持占槽。必须在同一协调主机共用 brokerRoot；这不是 Mac 与 Spark 间的跨主机调度。canonical.audio 已占 GPU 时不要再嵌套这份许可。
+
+Python producer 的 `render_tts`／`back_asr` 新增可选 `model_session` 与 `runtime_identity_sha256`，供隔离实验复用 [`LocalModelSession`](../scripts/experiments/local_model_session.py)。调用者须冻结实际容器／依赖运行时身份 SHA，使用显式 session 生命周期；同一权重、checkpoint、设备、dtype、attention、运行时和实现才复用。只允许一个缓存模型和一个活动借用，切换先释放旧模型；加载、清理或借用期间失败即禁止后续复用。该实验接口尚未部署常驻服务，不能与每 job GPU 策略同时启用：跨 job 驻留必须先实现覆盖整个 session 的 GPU 许可。fake factory 测试证明复用机制，真实冷暖速度尚未测量。
+
+评估输出升级为 `fixed-clip-local-model-assessment-v2`，保留旧 v1 文件作为历史证据，用新输出路径运行。新增只读[时间修复计划](../scripts/target_audio_timing_plan.py)，复用未修改的正式 scheduler：源句超长是警告，累计延迟和片尾溢出分别判断。计划不修改文本／音频，也不授予批准。详见[本次开发复盘](reports/20261005-fixed-180s-followup-development.zh.md)。

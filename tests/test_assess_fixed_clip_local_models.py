@@ -26,13 +26,22 @@ class AssessmentTests(unittest.TestCase):
         self.assertEqual(r['exceedsSourceSeconds'],15)
         self.assertEqual(len(r['overlongGroups']),13)
         self.assertIn('diagnostic_audio_exceeds_source_duration',r['publicationBlockers'])
-        self.assertIn('diagnostic_groups_exceed_source_windows',r['publicationBlockers'])
+        self.assertIn('diagnostic_formal_max_lag_exceeded',r['publicationBlockers'])
 
     def test_asr_difference_is_review_evidence_not_auto_approval(self):
         self.asr[0]['recognizedText']='完全不同的内容'
         r=assess_rows(self.audio,self.asr,self.units,180)
         self.assertEqual(r['asrBelowThreshold'],['fresh-g001'])
         self.assertIn('diagnostic_asr_requires_review',r['publicationBlockers'])
+
+    def test_own_span_excess_can_borrow_slack_without_formal_violation(self):
+        self.audio[0]['audioSeconds']=11
+        r=assess_rows(self.audio,self.asr,self.units,180)
+        self.assertEqual(r['overlongGroups'],['fresh-g001'])
+        self.assertEqual(r['synchronizationPlan']['maxLagViolations'],[])
+        self.assertEqual(r['synchronizationPlan']['clipTailOverflows'],[])
+        self.assertNotIn('diagnostic_formal_max_lag_exceeded',r['publicationBlockers'])
+        self.assertFalse(r['publicationEligible'])
 
     def test_missing_reordered_or_changed_readback_is_rejected(self):
         for rows in (self.asr[:-1],list(reversed(self.asr))):

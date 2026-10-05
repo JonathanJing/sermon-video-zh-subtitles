@@ -182,3 +182,7 @@ handoff目标沿用统一设计：100次已具备前置条件的确定性转移�
 本次交付为设计：未增加schema字段、owner服务、CLI正式producer、线上槽位或GPU并发。实现PR应逐阶段列明代码、fixture、真实模型／媒体收据、运行部署及人工批准状态。全四层可自动推进、24路长期吞吐、preview8×8复用、逐单元ASR均须各自验收后才能写已完成。
 
 参考：[四层门禁](multilingual-production-interfaces.zh.md)、[统一backlog](backlog.zh.md#pr242-remaining-backlog)、[L2 controller](canonical-layer2-controller.zh.md)、[层内解耦](multilingual-intralayer-review-decoupling.zh.md)、[compute policy](local-production-compute-policy.zh.md)、[正式TTS](formal-layer3-renderer.zh.md)。
+
+## 固定片段复盘后的实现进度
+
+[后续开发记录](reports/20261005-fixed-180s-followup-development.zh.md)补入测试 transport 的逐调用 CLI 准入、独立 TTS／ASR job GPU 准入、单模型驻留实验接口，以及复用正式 scheduler 的只读修复计划。它们均显式启用，尚未更改生产配置。S1 的正式 leaf API／CLI 接线、同 run 多 worker、公平 DAG，S2 的正式 CLI → plugin → candidate 链，以及驻留 session 级 GPU 许可仍未完成；fake 复用测试不计为真实速度提升。

@@ -128,6 +128,68 @@ class FixedClipReplayTests(unittest.TestCase):
         self.assertEqual(worker.sha(self.tts_args.out / 'manifest.json'), manifest_sha)
         factory.assert_not_called()
 
+    def test_resident_model_reuses_exact_key_across_two_tts_jobs(self):
+        from scripts.experiments.local_model_session import LocalModelSession
+        model=FakeTTS();factory=Mock(return_value=model)
+        with LocalModelSession(cleanup=lambda:None) as session:
+            first=worker.render_tts(self.tts_args,factory=factory,writer=fake_writer,
+                model_session=session,runtime_identity_sha256='a'*64)
+            self.tts_args.out=self.root/'tts-second'
+            second=worker.render_tts(self.tts_args,factory=factory,writer=fake_writer,
+                model_session=session,runtime_identity_sha256='a'*64)
+            self.assertEqual(session.stats()['loadCount'],1)
+            self.assertEqual(session.stats()['reuseCount'],1)
+            self.assertEqual(first['modelSessionKey'],second['modelSessionKey'])
+            self.assertEqual(len(model.calls),14)
+            self.assertEqual(session.stats()['maximumCachedModels'],1)
+        factory.assert_called_once()
+
+    def test_resource_busy_has_no_model_and_can_resume_when_capacity_is_free(self):
+        from scripts.sermon_unified import resources, contracts
+        policy={'schemaVersion':resources.POLICY_VERSION,'brokerRoot':str(self.root/'broker'),
+                'capacities':{'cpu':1,'online_api':0,'codex_cli':1,'spark_tts':1,'publisher':0}}
+        p=self.root/'resource-policy.json';self.write(p,policy);self.tts_args.resource_policy=p
+        resources.reserve(policy,operation_id='other-gpu-job',owner='other',resource='spark_tts')
+        factory=Mock(side_effect=AssertionError('busy GPU must not load'))
+        with self.assertRaisesRegex(contracts.ContractError,'resource_capacity_busy'):
+            worker.render_tts(self.tts_args,factory=factory,writer=fake_writer)
+        factory.assert_not_called()
+        self.assertFalse(any(self.tts_args.out.glob('batch-*.started.json')))
+        resources.release(policy,operation_id='other-gpu-job',owner='other')
+        result,model,_=self.tts()
+        self.assertEqual(len(result['groups']),13)
+        ledger=worker.read(self.root/'broker'/resources.BROKER_LOCK_ID/'resources.json')
+        self.assertTrue(all(row['status']=='released' for row in ledger['reservations'].values()))
+        self.assertEqual(len(model.calls),7)
+
+    def test_gpu_cleanup_failure_retains_slot_and_cached_batches_cannot_release(self):
+        from scripts.sermon_unified import resources, contracts
+        policy={'schemaVersion':resources.POLICY_VERSION,'brokerRoot':str(self.root/'broker'),
+                'capacities':{'cpu':1,'online_api':0,'codex_cli':1,'spark_tts':1,'publisher':0}}
+        p=self.root/'resource-policy.json';self.write(p,policy);self.tts_args.resource_policy=p
+        with patch('scripts.experiments.local_model_session.cleanup_loaded_gpu',
+                   side_effect=RuntimeError('cleanup failed')):
+            with self.assertRaisesRegex(RuntimeError,'cleanup failed'):self.tts()
+        self.assertFalse((self.tts_args.out/'manifest.json').exists())
+        self.assertFalse((self.tts_args.out/'gpu-cleanup.json').exists())
+        factory=Mock(side_effect=AssertionError('completed batches must not rerun'))
+        with self.assertRaisesRegex(contracts.ContractError,'gpu_cleanup_unconfirmed'):
+            worker.render_tts(self.tts_args,factory=factory,writer=fake_writer)
+        factory.assert_not_called()
+        ledger=worker.read(self.root/'broker'/resources.BROKER_LOCK_ID/'resources.json')
+        self.assertEqual([r['status'] for r in ledger['reservations'].values()],['held'])
+
+    def test_resident_and_per_job_resource_admission_cannot_be_combined(self):
+        from scripts.experiments.local_model_session import LocalModelSession
+        from scripts.sermon_unified import resources
+        policy={'schemaVersion':resources.POLICY_VERSION,'brokerRoot':str(self.root/'broker'),
+                'capacities':{'cpu':1,'online_api':0,'codex_cli':1,'spark_tts':1,'publisher':0}}
+        p=self.root/'resource-policy.json';self.write(p,policy);self.tts_args.resource_policy=p
+        with LocalModelSession(cleanup=lambda:None) as session:
+            with self.assertRaisesRegex(ValueError,'whole_session_gpu_admission'):
+                worker.render_tts(self.tts_args,model_session=session,runtime_identity_sha256='a'*64)
+        self.assertFalse((self.tts_args.out/'run.json').exists())
+
     def test_unknown_batch_refuses_replay_before_model_loading(self):
         failed = FakeTTS(fail_batch=3)
         with self.assertRaisesRegex(RuntimeError, 'injected failure'):

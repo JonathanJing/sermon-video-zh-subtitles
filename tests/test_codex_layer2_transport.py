@@ -355,3 +355,120 @@ class CodexCacheIsolationTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CodexResourceBoundaryTests(unittest.TestCase):
+    process = CodexRuntimeBoundaryTests.process
+
+    def setUp(self):
+        CodexRuntimeBoundaryTests.setUp(self)
+        self.policy = {'schemaVersion': 'sermon-unified-resource-policy-v1',
+            'brokerRoot': str(self.root / 'broker'),
+            'capacities': {'cpu': 1, 'online_api': 1, 'codex_cli': 1, 'spark_tts': 1, 'publisher': 1}}
+        self.transport.resource_policy = self.policy
+
+    def ledger(self):
+        from scripts.sermon_unified import resources
+        path = self.root / 'broker' / resources.BROKER_LOCK_ID / 'resources.json'
+        return list(json.loads(path.read_text())['reservations'].values())
+
+    def test_busy_pre_dispatch_and_direct_calls_spawn_zero_cli(self):
+        from scripts.sermon_unified import resources, contracts
+        resources.reserve(self.policy, operation_id='occupied', owner='fixture-owner', resource='codex_cli')
+        with patch('scripts.codex_layer2_transport.subprocess.run') as run:
+            with self.assertRaisesRegex(contracts.ContractError, 'resource_broker_busy'):
+                self.transport.admit_resource(self.payload)
+            with self.assertRaisesRegex(contracts.ContractError, 'resource_broker_busy'):
+                self.transport('', self.payload)
+            run.assert_not_called()
+        self.assertEqual([row['status'] for row in self.ledger()], ['held'])
+
+    def test_hook_permit_consumed_once_terminal_durable_before_release(self):
+        from scripts.sermon_unified import resources, contracts
+        permit = self.transport.admit_resource(self.payload)
+        self.assertIs(permit, self.transport.admit_resource(self.payload))
+        self.assertEqual([row['status'] for row in self.ledger()], ['held'])
+        real_release = resources.release
+        def checked_release(*args, **kwargs):
+            evidence = json.loads((permit.directory / 'resource-outcome.json').read_text())
+            self.assertEqual(evidence['status'], 'terminal')
+            self.assertIsNotNone(evidence['responseSha256'])
+            self.assertTrue((permit.directory / 'response.json').is_file())
+            return real_release(*args, **kwargs)
+        with patch('scripts.codex_layer2_transport.subprocess.run', side_effect=self.process()) as run, \
+             patch.object(resources, 'release', side_effect=checked_release):
+            self.transport('', self.payload)
+            self.assertEqual(run.call_count, 1)
+        self.assertEqual([row['status'] for row in self.ledger()], ['released'])
+        with patch('scripts.codex_layer2_transport.subprocess.run') as run:
+            with self.assertRaisesRegex(contracts.ContractError, 'resource_operation_already_reserved'):
+                self.transport('', self.payload)
+            run.assert_not_called()
+
+    def test_timeout_and_incomplete_hold_capacity_no_reconstruction_retry(self):
+        from scripts.sermon_unified import contracts
+        for name, behavior in [('timeout', subprocess.TimeoutExpired('fixture', 10)),
+                               ('incomplete', self.process(completed=False))]:
+            with self.subTest(name=name):
+                self.transport.resource_policy = {**self.policy, 'brokerRoot': str(self.root / name)}
+                self.transport.receipts_dir = self.root / (name + '-receipts')
+                with patch('scripts.codex_layer2_transport.subprocess.run', side_effect=behavior) as run:
+                    with self.assertRaises((subprocess.TimeoutExpired, RuntimeError)):
+                        self.transport('', self.payload)
+                    self.assertEqual(run.call_count, 1)
+                outcome = json.loads(next(self.transport.receipts_dir.glob('*/resource-outcome.json')).read_text())
+                self.assertEqual(outcome['status'], 'unknown_outcome')
+                # Reconstruct transport state, retaining bound run receipt root.
+                if hasattr(self.transport, '_resource_local'): del self.transport._resource_local
+                with patch('scripts.codex_layer2_transport.subprocess.run') as run:
+                    with self.assertRaisesRegex(contracts.ContractError, 'resource_operation_already_reserved'):
+                        self.transport('', self.payload)
+                    run.assert_not_called()
+
+    def test_terminal_tool_rejection_releases_and_durable_write_failure_holds(self):
+        with patch('scripts.codex_layer2_transport.subprocess.run', side_effect=self.process(tool=True)):
+            with self.assertRaisesRegex(RuntimeError, 'terminal_or_tool_failure'):
+                self.transport('', self.payload)
+        self.assertEqual([r['status'] for r in self.ledger()], ['released'])
+        self.payload['messages'][1]['content'] = 'different fixture'
+        with patch('scripts.codex_layer2_transport.subprocess.run', side_effect=self.process()), \
+             patch('scripts.codex_layer2_resources.atomic_json', side_effect=OSError('fixture private detail')):
+            with self.assertRaises(OSError): self.transport('', self.payload)
+        self.assertEqual(sorted(r['status'] for r in self.ledger()), ['held', 'released'])
+
+    def test_payload_identity_policy_change_rejected_and_secret_not_bound(self):
+        from scripts.sermon_unified import contracts
+        permit = self.transport.admit_resource(self.payload)
+        binding = (permit.directory / 'resource-binding.json').read_text()
+        self.assertNotIn('Hello', binding)
+        self.assertNotIn('messages', binding)
+        self.assertNotIn('PATH', binding)
+        del self.transport._resource_local
+        self.transport.execution_identity = {'backend': 'codex_cli', 'version': 'changed'}
+        with patch('scripts.codex_layer2_transport.subprocess.run') as run:
+            with self.assertRaisesRegex(contracts.ContractError, 'resource_call_identity_changed'):
+                self.transport('', self.payload)
+            run.assert_not_called()
+
+    def test_confirmed_spawn_failure_records_terminal_before_release(self):
+        with patch('scripts.codex_layer2_transport.subprocess.run', side_effect=FileNotFoundError('private')):
+            with self.assertRaises(FileNotFoundError): self.transport('', self.payload)
+        self.assertEqual([r['status'] for r in self.ledger()], ['released'])
+        outcome = json.loads(next(self.transport.receipts_dir.glob('*/resource-outcome.json')).read_text())
+        self.assertEqual(outcome['status'], 'terminal')
+        self.assertEqual(outcome['errorType'], 'FileNotFoundError')
+
+    def test_constructor_requires_receipts_and_binds_policy_without_environment_secrets(self):
+        cli = self.root / 'codex-wrapper'
+        cli.write_text('fixture wrapper')
+        auth_root = self.root / 'auth-home'
+        auth_root.mkdir()
+        (auth_root / 'auth.json').write_text(json.dumps({'auth_mode': 'chatgpt'}))
+        with patch.dict(os.environ, {'CODEX_HOME': str(auth_root), 'OPENAI_API_KEY': 'fixture-secret'}), \
+             patch('scripts.codex_layer2_transport.subprocess.check_output', return_value='codex fixture-v1'):
+            with self.assertRaisesRegex(ValueError, 'resource_policy_requires_receipts_directory'):
+                CodexLayer2Transport(cli, resource_policy=self.policy)
+            transport = CodexLayer2Transport(cli, resource_policy=self.policy, receipts_dir=self.root / 'durable')
+        self.assertEqual(len(transport.execution_identity['resourcePolicySha256']), 64)
+        self.assertEqual(len(transport.execution_identity['resourceAdapterSha256']), 64)
+        self.assertNotIn('fixture-secret', json.dumps(transport.execution_identity))

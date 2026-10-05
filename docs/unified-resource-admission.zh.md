@@ -65,3 +65,9 @@ owner接线顺序为：adapter预检与预算检查→broker reservation→保�
 相关测试入口：`tests.test_sermon_unified_resources`、`tests.test_sermon_unified_resource_runtime`及原CLI／owner／continuation回归。本轮没有新增模型调用或改生产配置。后续按[调度设计](production-concurrency-scheduler-design.zh.md)推进leaf预算、同run异步worker、正式CLI L2及跨层交错。
 
 本轮实际收据：82项定向回归通过；ignored `artifacts/unified-resource-owner-20261005-final/acceptance.json`记录真实CLI／detached owner完成100步、墙钟48.9695秒、99次handoff的p95为0.410504秒、100个reservation全部released、held=0、newPaidRequests=0、runtimeCodexTurns=0、productionEligible=false。首轮验证观察到了“成功已保存、最后一个release尚在执行”的窗口，验收程序改为单独等待并核验资源清理；最终收据来自补强后的冻结实现，没有用旧运行冒称新代码验证。
+
+## 逐调用和独立 GPU worker 接入补充
+
+复盘后新增可选消费者：固定片段 Codex transport 按每个真实调用预留 `codex_cli=1`；独立诊断 TTS／ASR 按整个 job 共用 `spark_tts=1`。调用前准入，终态和释放证据持久化后归还；GPU job 另要求成功清理模型内存的身份绑定收据。容量忙不启动模型，未知结果不重试。详见[测试入口与边界](codex-layer2-test.zh.md#复盘后的资源与驻留增量)。
+
+这完成了测试入口的 leaf CLI 接线，尚未接入正式 canonical Layer 2 或改变 owner 的同 run 顺序执行。生产参数未自动应用；未配置策略的脚本不受 broker 限制。单进程模型驻留实验与每 job GPU 许可互斥，整个驻留 session 的持久许可、跨主机统一协调、正式插件／candidate 链和冷暖性能验收仍待实现。

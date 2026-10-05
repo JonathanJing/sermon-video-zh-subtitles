@@ -61,3 +61,7 @@ Spark GB10 使用现有注册 Eric checkpoint（权重 SHA `75d28ce6022b3df3a72d
 Ignored 证据：`artifacts/codex-cli-layer2-180s-mock-replay-20261005/`、`artifacts/fixed-180s-resource-mock-20261005{,-stable}/`、`artifacts/fixed-180s-preflight-mock-20261005{,-stable}/`、`artifacts/fixed-180s-codex-local-real-20261005/`。原始媒体、文本、模型返回、私有调用日志、权重和本地 checkpoint map 不入 Git。
 
 本轮不把独立诊断链称为 canonical controller 全四层 dispatch：语言插件、正式 candidate admission、人审、源时间轴同步、Beta／Dev 发布和设备验收需各自收据。已有真实 Layer 2 入口仍 workers=1；本次不据此宣称吞吐提升或 24 路生产调度已上线。CLI 使用 ChatGPT 登录，不加载项目 API key；Spark 模型容器网络关闭。订阅额度扣减和纯生成 TPS 未独立取得，本地模型 token 缺失保持 null。
+
+## 后续诊断口径修订
+
+[复盘后开发](20261005-fixed-180s-followup-development.zh.md)保留本轮 v1 assessment，不覆盖历史文件。v2 复用正式 scheduler 后明确：8 组音频长于自身源窗只是警告，允许借用后续余量；实际有 6 组超过 8 秒 end lag，最后一组片尾溢出 9.716834 秒。总音频仍为 185.92 秒；包含间隔与最早起点的串行下限为 186.57 秒，至少需回收 6.556833 秒，但这一必要下限不能保证满足源锚点。音频、文字、人审状态未改，正式发布仍未通过。

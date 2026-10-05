@@ -7,7 +7,7 @@ without a verified completion require reconciliation, never automatic replay.
 from __future__ import annotations
 
 import argparse
-from contextlib import contextmanager
+from contextlib import contextmanager, ExitStack
 from datetime import datetime, timezone
 import fcntl
 import hashlib
@@ -238,8 +238,10 @@ def synchronize(model):
         torch.cuda.synchronize()
 
 
-def render_tts(args, *, factory=None, writer=audio_output):
+def render_tts(args, *, factory=None, writer=audio_output, model_session=None, runtime_identity_sha256=None):
     process_started = time.perf_counter()
+    from scripts import local_audio_resource_admission as gpu
+    resource_policy=gpu.policy_from_path(getattr(args, 'resource_policy', None))
     evidence = read(args.evidence)
     groups = fixed_groups(evidence, args.media)
     checkpoint, voice = speaker_context(args.registry, args.checkpoint_map)
@@ -252,8 +254,26 @@ def render_tts(args, *, factory=None, writer=audio_output):
                 'checkpointValidatorImplementationSha256': sha(Path(__file__).resolve().parents[1] / 'render_multilingual_voice_demos.py'),
                 'settings': {'seed': args.seed, 'device': args.device, 'dtype': 'bfloat16',
                              'attention': args.attention}, 'workerSha256': sha(__file__)}
+    if resource_policy is not None:
+        identity['resourcePolicySha256']=digest(resource_policy)
+        identity['resourceAdmissionImplementationSha256']=sha(gpu.__file__)
+        identity['gpuCleanupRequired']=True
+    session_key=None
+    if model_session is not None:
+        require(resource_policy is None, 'resident_session_requires_whole_session_gpu_admission')
+        from scripts.experiments import local_model_session as resident
+        session_key=resident.ModelKey(
+            stage='tts' if 'voice' in identity else 'asr',
+            model_tree_sha256=identity['voice']['checkpointTreeSha256'] if 'voice' in identity else identity['modelTreeSha256'],
+            checkpoint_sha256=identity['voice']['checkpointSha256'] if 'voice' in identity else None,
+            device=args.device,dtype='bfloat16',attention=getattr(args,'attention',None),
+            runtime_identity_sha256=runtime_identity_sha256,
+            implementation_sha256=identity.get('synthesizerImplementationSha256',identity['workerSha256']))
+        from dataclasses import asdict
+        identity['modelSessionKey']=asdict(session_key)
+        identity['modelSessionImplementationSha256']=sha(resident.__file__)
     root = args.out.resolve()
-    with output_lock(root):
+    with output_lock(root), ExitStack() as borrowed:
         bind_run(root, identity)
         receipts, model, load_seconds = [], None, None
         # Check every existing batch before even loading a model.
@@ -271,7 +291,10 @@ def render_tts(args, *, factory=None, writer=audio_output):
             require(all(final.get(k) == v for k, v in identity.items()) and
                     final.get('groups') == [row for r in receipts for row in r['outputs']],
                     'completed_manifest_changed')
+            gpu.finish(root, identity, resource_policy, final)
             return final
+        if not all(receipts):
+            gpu.admit(root, identity, resource_policy)
         for index, start in enumerate(range(0, len(groups), 2)):
             if receipts[index] is not None:
                 continue
@@ -280,7 +303,8 @@ def render_tts(args, *, factory=None, writer=audio_output):
                     from scripts.render_formal_target_language_speech import QwenSynthesizer
                     factory = QwenSynthesizer
                 began = time.perf_counter()
-                model = factory(checkpoint, device=args.device, dtype='bfloat16', attention=args.attention)
+                load=lambda: factory(checkpoint, device=args.device, dtype='bfloat16', attention=args.attention)
+                model=load() if model_session is None else borrowed.enter_context(model_session.borrow(session_key,load))
                 synchronize(model)
                 load_seconds = time.perf_counter() - began
             selected = groups[start:start + 2]
@@ -316,7 +340,17 @@ def render_tts(args, *, factory=None, writer=audio_output):
                     'usage': dict(UNKNOWN_USAGE), 'groups': [row for r in receipts for row in r['outputs']],
                     'batchReceipts': [{'path': batch_paths(root, i)[1].name,
                                        'sha256': sha(batch_paths(root, i)[1])} for i in range(len(receipts))]}
+        if resource_policy is not None:
+            if model is not None:
+                from scripts.experiments.local_model_session import dispose_model, cleanup_loaded_gpu
+                import gc
+                dispose_model(model); model=None
+                gc.collect(); cleanup_loaded_gpu()
+                gpu.record_cleanup(root, identity)
+            else:
+                gpu.require_cleanup(root, identity)
         save(root / 'manifest.json', manifest)
+        gpu.finish(root, identity, resource_policy, manifest)
         return manifest
 
 
@@ -340,8 +374,10 @@ class LocalASR:
         return result
 
 
-def back_asr(args, *, factory=LocalASR):
+def back_asr(args, *, factory=LocalASR, model_session=None, runtime_identity_sha256=None):
     process_started = time.perf_counter()
+    from scripts import local_audio_resource_admission as gpu
+    resource_policy=gpu.policy_from_path(getattr(args, 'resource_policy', None))
     source = read(args.tts_manifest)
     require(source.get('schemaVersion') == 'fixed-clip-local-tts-run-v1' and
             source.get('status') == 'completed_diagnostic' and
@@ -367,8 +403,26 @@ def back_asr(args, *, factory=LocalASR):
                 'mediaSha256': MEDIA_SHA, 'sourceUnitCount': 39, 'groupCount': 13,
                 'ttsManifestSha256': sha(args.tts_manifest), 'modelTreeSha256': tree['sha256'],
                 'batchSize': 4, 'backend': 'local', 'model': 'Qwen/Qwen3-ASR-0.6B', 'device': args.device, 'workerSha256': sha(__file__)}
+    if resource_policy is not None:
+        identity['resourcePolicySha256']=digest(resource_policy)
+        identity['resourceAdmissionImplementationSha256']=sha(gpu.__file__)
+        identity['gpuCleanupRequired']=True
+    session_key=None
+    if model_session is not None:
+        require(resource_policy is None, 'resident_session_requires_whole_session_gpu_admission')
+        from scripts.experiments import local_model_session as resident
+        session_key=resident.ModelKey(
+            stage='tts' if 'voice' in identity else 'asr',
+            model_tree_sha256=identity['voice']['checkpointTreeSha256'] if 'voice' in identity else identity['modelTreeSha256'],
+            checkpoint_sha256=identity['voice']['checkpointSha256'] if 'voice' in identity else None,
+            device=args.device,dtype='bfloat16',attention=getattr(args,'attention',None),
+            runtime_identity_sha256=runtime_identity_sha256,
+            implementation_sha256=identity.get('synthesizerImplementationSha256',identity['workerSha256']))
+        from dataclasses import asdict
+        identity['modelSessionKey']=asdict(session_key)
+        identity['modelSessionImplementationSha256']=sha(resident.__file__)
     root = args.out.resolve()
-    with output_lock(root):
+    with output_lock(root), ExitStack() as borrowed:
         bind_run(root, identity)
         receipts, model, load_seconds = [], None, None
         for index, start in enumerate(range(0, len(groups), 4)):
@@ -387,13 +441,17 @@ def back_asr(args, *, factory=LocalASR):
             require(all(final.get(k) == v for k, v in identity.items()) and
                     final.get('groups') == [row for r in receipts for row in r['outputs']],
                     'completed_manifest_changed')
+            gpu.finish(root, identity, resource_policy, final)
             return final
+        if not all(receipts):
+            gpu.admit(root, identity, resource_policy)
         for index, start in enumerate(range(0, len(groups), 4)):
             if receipts[index] is not None:
                 continue
             if model is None:
                 began = time.perf_counter()
-                model = factory(args.model_path.resolve(), device=args.device)
+                load=lambda: factory(args.model_path.resolve(), device=args.device)
+                model=load() if model_session is None else borrowed.enter_context(model_session.borrow(session_key,load))
                 synchronize(model); load_seconds = time.perf_counter() - began
             selected = groups[start:start + 4]
             paths = [safe_audio(args.tts_manifest.parent, row) for row in selected]
@@ -431,7 +489,17 @@ def back_asr(args, *, factory=LocalASR):
                   'usage': dict(UNKNOWN_USAGE), 'groups': [row for r in receipts for row in r['outputs']],
                   'batchReceipts': [{'path': batch_paths(root, i)[1].name,
                                      'sha256': sha(batch_paths(root, i)[1])} for i in range(len(receipts))]}
+        if resource_policy is not None:
+            if model is not None:
+                from scripts.experiments.local_model_session import dispose_model, cleanup_loaded_gpu
+                import gc
+                dispose_model(model); model=None
+                gc.collect(); cleanup_loaded_gpu()
+                gpu.record_cleanup(root, identity)
+            else:
+                gpu.require_cleanup(root, identity)
         save(root / 'manifest.json', report)
+        gpu.finish(root, identity, resource_policy, report)
         return report
 
 
@@ -449,6 +517,7 @@ def main():
     for command in (tts, asr):
         command.add_argument('--out', type=Path, required=True)
         command.add_argument('--device', default='cuda:0')
+        command.add_argument('--resource-policy', type=Path, help='Explicit shared host-local GPU admission policy')
     args = parser.parse_args()
     result = render_tts(args) if args.stage == 'tts' else back_asr(args)
     print(json.dumps({'status': result['status'], 'groups': len(result['groups']), **FLAGS}))
