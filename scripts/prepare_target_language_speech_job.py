@@ -160,7 +160,8 @@ def validate_target_candidate(source_package: dict[str, Any], anchor: dict[str, 
 
 
 def validate_policy_binding(candidate: dict[str, Any], policy: dict[str, Any], *, strict_rubric=None, diagnostic_context=None) -> None:
-    result = (policy_tools.validate_policy(policy) if strict_rubric is None else
+    result = ((policy_tools.validate_policy(policy) if diagnostic_context is None else
+               policy_tools.validate_diagnostic_policy(policy, diagnostic_context)) if strict_rubric is None else
               policy_tools.validate_strict_policy(policy, strict_rubric))
     _require(policy["targetLocale"] == candidate["targetLocale"],
              "Target-Language Policy locale differs from candidate")

@@ -68,3 +68,7 @@ benchmark 的对比侧补同一 pinned plugin，保持 translator/reviewer 完�
 5. 通过短片后做 10 分钟、实际整篇、重复恢复和完整四层交付。最终比较同质量完整 scope 的耗时/credit/人工等待/按时交付，HTTP、设备与现场各留独立证据。
 
 本次未重跑收费阶段，也未变更正式模型策略、资源容量、质量容差或发布状态。既有 `.env.openai` dev/prod launcher 和两 project/key 配置继续沿用，不因 CLI credit 日志创建新 key；CLI ChatGPT 登录用量与 worker API project 费用分别记账。
+
+## 后续执行补记：T01／T04 与扩大样本
+
+[新规则与扩大样本复测](20261005-cli-rule-chain-expanded-sample-retest.zh.md)记录本审计之后的修复和新执行，不能倒写上文审计时点。T01已接隔离真实CLI→modelRules→plugin→当前候选准入；26次CLI完成，但plugin拦截1组pending书名表面不匹配，候选没有生成，恢复0新调用。T04当前producer只读exporter已实现，真实474导出与planner成功，全部revalidate且owner未对账仍blocked，0推理、原1910文件不变。完整句605.5秒/136单元/46组样本含直接经文，结构plugin在调用前拒绝；实际10分钟线上比较仍待source-bound引用adapter。保留首轮拒绝后，新版策略明确保留原英文书名并冻结pending表面约定，26次新CLI/plugin13组/诊断候选通过，0调用恢复、216文件hash不变；不是正式链或发布验收。

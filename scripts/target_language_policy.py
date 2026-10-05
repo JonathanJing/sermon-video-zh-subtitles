@@ -150,6 +150,27 @@ def validate_policy(policy: dict[str, Any], *, series_table: Path = SERIES_TABLE
     }
 
 
+def validate_diagnostic_policy(policy, context, *, series_table=SERIES_TABLE):
+    """Explicit isolated model configuration; ordinary policy validation rejects it."""
+    from scripts.sermon_diagnostic_context import validate_context
+    validate_context(context)
+    configuration = policy.get('simulationModelConfiguration')
+    if configuration is None:
+        return validate_policy(policy, series_table=series_table)
+    from scripts.codex_layer2_transport import validate_test_configuration
+    validate_test_configuration(configuration)
+    view = copy.deepcopy(policy)
+    view.pop('simulationModelConfiguration')
+    for role in ('translator', 'reviewer'):
+        settings = configuration[role]
+        if (view[role]['model'] != settings['model']
+                or view[role]['reasoningEffort'] != settings['reasoningEffort']):
+            raise ValueError('Diagnostic role configuration changed')
+    result = validate_policy(view, series_table=series_table)
+    return {**result, 'translationPolicySha256': canonical_sha256(policy),
+            'productionEligible': False, 'humanApproval': False}
+
+
 def _strict_legacy_validation_view(policy):
     """Validation-only view. Never pass this view to a producer or cache writer."""
     view = copy.deepcopy(policy)

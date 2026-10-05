@@ -65,6 +65,9 @@ BATCH_CACHED_UNIT_POLICY = "replay_full_bound_window_when_units_are_missing_v1"
 LEGACY_BATCH_SEED_POLICY = "base_plus_fixed_window_start_ordered_missing_units_v1"
 LEGACY_BATCH_CACHED_UNIT_POLICY = "exclude_committed_or_admitted_reuse"
 COMPATIBLE_BATCH_REPAIR_IMPLEMENTATION_SHA256 = {
+    # Direct parent: factoring the unchanged full-window identity builder and
+    # adding a read-only exporter do not change synthesis inputs or sampling.
+    "12d6f6af892fd16f721e973de5347b2e5f444b6ce3702e296eb414da2a5ebdcc",
     # Strict receipt snapshots, diagnostics and recovery do not change sampling.
     "948b3174bad368e8f80381beaca0d519299d16a927e50add934cb2111a90ebb2",
     "a86c470ed8f2efb7b94f62cc5451e0f3e6af9a15d13110d86086489daeedd58c",
@@ -353,6 +356,90 @@ def _intent(context: dict[str, Any], paths: dict[str, Path], index: int, *, seed
                       replicaImplementationSha256=identity.json_sha256({
                           "pool": identity.sha256(Path(replica_pool.__file__)),
                           "scheduler": identity.sha256(Path(__file__).with_name("spark_tts_window_scheduler.py"))}))
+    return result
+
+
+RECOVERY_SETTINGS_VERSION = "sermon-l3-recovery-render-settings-v1"
+RECOVERY_SETTINGS_FIELDS = {"schemaVersion", "seed", "batchSize", "replicas", "device", "dtype",
+                            "attention", "instruct", "reactionLagSeconds", "interUtteranceGapSeconds",
+                            "maxEndLagSeconds", "trackFormat", "unitInstructions"}
+
+
+def recovery_render_settings(value: dict[str, Any]) -> dict[str, Any]:
+    """Require explicit complete settings; never infer them from old cache files."""
+    require(isinstance(value, dict) and set(value) == RECOVERY_SETTINGS_FIELDS
+            and value["schemaVersion"] == RECOVERY_SETTINGS_VERSION,
+            "Complete explicit recovery render settings required")
+    require(type(value["seed"]) is int and value["seed"] >= 0
+            and type(value["batchSize"]) is int and value["batchSize"] in BATCH_SIZES
+            and type(value["replicas"]) is int and value["replicas"] in (1, 8),
+            "Invalid recovery seed/batch/replica settings")
+    require(value["device"] in ("cpu", "cuda:0", "mps")
+            and value["dtype"] in ("bfloat16", "float32")
+            and value["attention"] in (None, "sdpa", "flash_attention_2", "eager")
+            and value["trackFormat"] in ("wav", "mp3"), "Invalid recovery rendering settings")
+    require(value["instruct"] is None or (isinstance(value["instruct"], str) and value["instruct"].strip()),
+            "Invalid recovery instruction")
+    require(value["unitInstructions"] is None or (isinstance(value["unitInstructions"], str)
+            and Path(value["unitInstructions"]).is_absolute()), "Explicit unit instruction path required")
+    require(all(type(value[key]) in (int, float) and math.isfinite(value[key]) and value[key] >= 0
+                for key in DEFAULT_POLICY), "Invalid recovery scheduling policy")
+    if value["replicas"] == 8:
+        require(value["batchSize"] == 8 and value["device"] == "cuda:0"
+                and value["dtype"] == "bfloat16" and value["attention"] == "sdpa",
+                "Spark production requires batch8 CUDA:0/BF16/SDPA")
+    return copy.deepcopy(value)
+
+
+def _batch_window_input_hashes(context, instructions_by_group, *, batch_size, instruct):
+    """Shared by synthesis admission and the read-only expected-intent exporter."""
+    job, adapter = context["job"], context["adapter"]
+    window_hashes = {}
+    if batch_size != 1:
+        for start in range(0, len(job["units"]), batch_size):
+            inputs = []
+            for index in range(start, min(start + batch_size, len(job["units"]))):
+                unit = job["units"][index]
+                overrides = (instructions_by_group or {}).get(unit["translationGroupId"], {})
+                inputs.append({"unitIndex": index, "groupId": unit["translationGroupId"],
+                    "sourceUnitIds": unit["sourceUnitIds"], "text": unit["text"],
+                    "spokenText": overrides.get("spokenText"),
+                    "instruction": overrides.get("instruction", instruct),
+                    "language": adapter["languageParameter"], "speaker": adapter["speakerKey"]})
+            window_hashes[start] = identity.json_sha256(inputs)
+    return window_hashes
+
+
+def build_expected_intents(context, paths, settings, *, instructions_by_group=None):
+    """Build every current producer identity without reading cache or loading a model.
+
+    Caller validates/freeze-checks canonical inputs under the formal render lock.
+    Contexts are not accepted as formal approval or model dispatch authority.
+    """
+    settings = recovery_render_settings(settings)
+    job = context["job"]
+    require((settings["unitInstructions"] is None and not instructions_by_group)
+            or (settings["unitInstructions"] is not None and instructions_by_group is not None),
+            "Recovery unit instructions must be explicitly bound and validated")
+    require(len(job["units"]) == len(context["candidate"]["groups"]), "Recovery input coverage differs")
+    require(all(unit["unitIndex"] == index
+                and unit["translationGroupId"] == group["translationGroupId"]
+                and unit["sourceUnitIds"] == group["sourceUnitIds"]
+                for index, (unit, group) in enumerate(zip(job["units"], context["candidate"]["groups"]))),
+            "Recovery input unit/group mapping differs")
+    if settings["replicas"] == 8:
+        require(all(u.get("speakerId", context["adapter"]["speakerId"]) == context["adapter"]["speakerId"]
+                    for u in job["units"]), "Spark replica production requires a single speaker")
+    batch_size = settings["batchSize"]
+    windows = _batch_window_input_hashes(context, instructions_by_group,
+        batch_size=batch_size, instruct=settings["instruct"])
+    result = []
+    for index, unit in enumerate(job["units"]):
+        overrides = (instructions_by_group or {}).get(unit["translationGroupId"], {})
+        result.append(_intent(context, paths, index, seed=settings["seed"], dtype=settings["dtype"],
+            attention=settings["attention"], instruct=overrides.get("instruction", settings["instruct"]),
+            spoken_text=overrides.get("spokenText"), batch_size=batch_size, device=settings["device"],
+            batch_window_sha256=windows.get(index // batch_size * batch_size), replicas=settings["replicas"]))
     return result
 
 
@@ -788,19 +875,9 @@ def _render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
         require(speculative_from.is_dir() and speculative_from.resolve() != root.resolve(),
                 "Speculative render root must be a distinct existing directory")
     reusable_batches = None
-    window_hashes = {}
+    window_hashes = _batch_window_input_hashes(context, instructions_by_group,
+        batch_size=batch_size, instruct=instruct)
     if batch_size != 1:
-        for start in range(0, len(job["units"]), batch_size):
-            inputs = []
-            for index in range(start, min(start + batch_size, len(job["units"]))):
-                unit = job["units"][index]
-                overrides = (instructions_by_group or {}).get(unit["translationGroupId"], {})
-                inputs.append({"unitIndex": index, "groupId": unit["translationGroupId"],
-                    "sourceUnitIds": unit["sourceUnitIds"], "text": unit["text"],
-                    "spokenText": overrides.get("spokenText"),
-                    "instruction": overrides.get("instruction", instruct),
-                    "language": adapter["languageParameter"], "speaker": adapter["speakerKey"]})
-            window_hashes[start] = identity.json_sha256(inputs)
         requests, reusable_batches, window_requests = _batch_admission(
             context, paths, root, seed=seed, dtype=dtype, attention=attention,
             instruct=instruct, device=device, instructions_by_group=instructions_by_group,

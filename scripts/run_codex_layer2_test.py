@@ -41,14 +41,14 @@ class FixtureLayer2Transport:
     """Replay complete, bound raw CLI receipts without any live transport."""
     billing = 'local'
 
-    def __init__(self, responses_dir):
+    def __init__(self, responses_dir, *, group_count=13):
         self.root = Path(responses_dir).resolve()
         self.responses = {}
         inventory = {}
         origin = self.root / 'test-context.json'
         origin_identity = json.loads(origin.read_text())['modelTransportIdentity']
         inventory[origin.name] = hashlib.sha256(origin.read_bytes()).hexdigest()
-        for index in range(1, 14):
+        for index in range(1, group_count + 1):
             for suffix, role in [('astra', 'translator'), ('sol', 'reviewer')]:
                 stem = f'group-{index:04d}-{suffix}'
                 raw_path = self.root / (stem + '.raw.json')
@@ -72,6 +72,8 @@ class FixtureLayer2Transport:
         self.execution_identity = {'schemaVersion': 'fixture-layer2-transport-identity-v1',
             'backend': 'fixture_replay', 'realModelCalls': False,
             'responsesSha256': policy_tools.canonical_sha256(inventory), 'files': inventory}
+        if 'simulationModelConfiguration' in origin_identity:
+            self.execution_identity['simulationModelConfiguration'] = copy.deepcopy(origin_identity['simulationModelConfiguration'])
 
     def __call__(self, api_key, payload):
         if api_key:
@@ -93,7 +95,63 @@ class FixtureLayer2Transport:
         return response['content']
 
 
-def run_test(fixture_dir, policy_path, out_dir, *, cli_path, reviewer_tier='fast', timeout_seconds=180, mock_responses_dir=None, resource_policy_path=None, translator_model=None):
+def run_diagnostic_test(fixture_dir, out_dir, *, cli_path, reviewer_tier='fast', timeout_seconds=180,
+                        mock_responses_dir=None, resource_policy_path=None, translator_model=None):
+    from scripts import codex_layer2_diagnostic as diagnostic
+    inputs = diagnostic.load_fixture(fixture_dir)  # All gates before constructing a CLI transport.
+    source, anchor, policy, plan, plugin, request, receipt, scope, manifest = inputs
+    out_dir = diagnostic.artifact_directory(out_dir)
+    configuration = policy.get('simulationModelConfiguration')
+    if translator_model is not None and (configuration is None or policy['translator']['model'] != translator_model):
+        raise ValueError('Diagnostic model configuration must be frozen in the fixture')
+    if mock_responses_dir is not None and resource_policy_path is not None:
+        raise ValueError('Fixture replay cannot claim real CLI resource admission')
+    options = {}
+    if configuration is not None:
+        options['simulation_model_configuration'] = configuration
+    if resource_policy_path is not None:
+        from scripts.sermon_unified import resources
+        options['resource_policy'] = resources.validate_policy(json.loads(Path(resource_policy_path).read_text()))
+    transport = (FixtureLayer2Transport(mock_responses_dir, group_count=len(plan)) if mock_responses_dir is not None
+                 else CodexLayer2Transport(cli_path, reviewer_tier=reviewer_tier, timeout_seconds=timeout_seconds,
+                                          receipts_dir=out_dir / '_cli_calls', **options))
+    structural = plugin.name == 'diagnostic_structural.py'
+    context = {'schemaVersion': 'codex-layer2-diagnostic-test-run-v1', 'simulationOnly': True,
+               'realModelCalls': mock_responses_dir is None, 'productionEligible': False, 'humanApproval': False,
+               'fixtureDir': str(Path(fixture_dir).resolve()), 'fixtureManifestSha256': policy_tools.canonical_sha256(manifest),
+               'diagnosticContextSha256': policy_tools.canonical_sha256(scope),
+               'sourceMediaSha256': manifest['sourceMediaSha256'], 'sourceWindow': manifest['sourceWindow'],
+               'modelTransportIdentity': transport.execution_identity, 'groupPlanSha256': policy_tools.canonical_sha256(plan),
+               'rulePreflightSha256': policy_tools.canonical_sha256(receipt), 'ruleBundleSha256': receipt['ruleBundleSha256'],
+               'pluginPath': str(plugin), 'pluginImplementationSha256': manifest['pluginImplementationSha256'],
+               'qualityScope': 'structural_only_no_direct_scripture_acceptance' if structural else 'pinned_plugin_checks_only',
+               'implementationSha256': {name: policy_tools.file_sha256(Path(module.__file__)) for name, module in
+                   [('command', sys.modules[__name__]), ('diagnostic', diagnostic), ('runner', runner),
+                    ('producer', runner.producer), ('policy', policy_tools), ('candidate_validator', runner.producer.handoff)]}}
+    bind_context(out_dir, context)
+    with accounting.accounting_session(out_dir / 'accounting', 'codex_layer2_diagnostic_test',
+                                       {'targetLocale': policy['targetLocale']}, evidence_directory=out_dir):
+        try:
+            evidence, language, envelope = diagnostic.run_chain(inputs, out_dir, transport)
+        finally:
+            if (out_dir / 'run-identity.json').exists():
+                diagnostic.save(out_dir / 'test-context.json', context)
+    report = {**context, 'status': 'diagnostic_candidate_admitted_human_pending',
+              'sourceUnits': len(anchor['sourceUnits']), 'groups': len(plan),
+              'languagePlugin': 'executed_pass', 'canonicalCandidateAdmission': 'executed_diagnostic_only',
+              'evidenceSha256': policy_tools.canonical_sha256(evidence),
+              'languageReviewSha256': policy_tools.canonical_sha256(language),
+              'diagnosticCandidateSha256': policy_tools.canonical_sha256(envelope)}
+    diagnostic.save(out_dir / 'test-report.json', report)
+    print(json.dumps(report, ensure_ascii=False))
+    return report
+
+
+def run_test(fixture_dir, policy_path, out_dir, *, cli_path, reviewer_tier='fast', timeout_seconds=180, mock_responses_dir=None, resource_policy_path=None, translator_model=None, diagnostic_fixture=False):
+    if diagnostic_fixture:
+        return run_diagnostic_test(fixture_dir, out_dir, cli_path=cli_path, reviewer_tier=reviewer_tier,
+            timeout_seconds=timeout_seconds, mock_responses_dir=mock_responses_dir,
+            resource_policy_path=resource_policy_path, translator_model=translator_model)
     fixture_dir, out_dir = Path(fixture_dir).resolve(), Path(out_dir).resolve()
     root = Path(__file__).resolve().parents[1]
     if not out_dir.is_relative_to(root / 'artifacts') or out_dir == root / 'artifacts':
@@ -196,6 +254,7 @@ def run_test(fixture_dir, policy_path, out_dir, *, cli_path, reviewer_tier='fast
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--fixture-dir', type=Path, required=True)
+    parser.add_argument('--diagnostic-fixture', action='store_true', help='Frozen unapproved-source CLI/plugin/candidate diagnostic chain; arbitrary complete group count')
     parser.add_argument('--policy', type=Path, default=Path('config/target-language-policies/zh-Hans.json'))
     parser.add_argument('--out-dir', type=Path, required=True)
     parser.add_argument('--codex-cli', type=Path, default=Path.home() / '.local/bin/codex')
@@ -207,7 +266,8 @@ def main():
     args = parser.parse_args()
     run_test(args.fixture_dir, args.policy, args.out_dir, cli_path=args.codex_cli,
              reviewer_tier=args.reviewer_tier, timeout_seconds=args.timeout_seconds,
-             mock_responses_dir=args.mock_responses_dir, resource_policy_path=args.resource_policy, translator_model=args.translator_model)
+             mock_responses_dir=args.mock_responses_dir, resource_policy_path=args.resource_policy, translator_model=args.translator_model,
+             diagnostic_fixture=args.diagnostic_fixture)
 
 
 if __name__ == '__main__':

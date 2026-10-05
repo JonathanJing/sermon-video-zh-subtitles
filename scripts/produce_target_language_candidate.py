@@ -120,7 +120,8 @@ def prepare_request(source: dict[str, Any], anchor: dict[str, Any],
         anchor_hash = validate_source(source, anchor, diagnostic_context)
     units = anchor["sourceUnits"]
     if strict_rubric is None:
-        identity = policy_tools.validate_policy(policy)
+        identity = (policy_tools.validate_policy(policy) if diagnostic_context is None else
+                    policy_tools.validate_diagnostic_policy(policy, diagnostic_context))
         policy_tools.validate_source_scope(policy, source, anchor)
     else:
         identity = policy_tools.validate_strict_policy(policy, strict_rubric)
@@ -148,9 +149,10 @@ def prepare_request(source: dict[str, Any], anchor: dict[str, Any],
 def admit_evidence(source: dict[str, Any], anchor: dict[str, Any],
                    policy: dict[str, Any], request: dict[str, Any],
                    evidence: dict[str, Any], language_receipt: dict[str, Any],
-                   plugin_path: Path, expected_plugin_sha256: str, *, rule_preflight_receipt=None) -> dict[str, Any]:
+                   plugin_path: Path, expected_plugin_sha256: str, *, rule_preflight_receipt=None,
+                   diagnostic_context=None) -> dict[str, Any]:
     """Validate externally produced evidence; preserve human review as pending."""
-    expected = prepare_request(source, anchor, policy)
+    expected = prepare_request(source, anchor, policy, diagnostic_context=diagnostic_context)
     _require(request == expected, "Layer 2 request was changed or belongs to another source/policy")
     if rule_preflight_receipt is not None:
         try:
@@ -201,7 +203,8 @@ def admit_evidence(source: dict[str, Any], anchor: dict[str, Any],
              "Model request IDs do not bind separate translator and reviewer calls")
     actual_receipt = run_language_plugin(source, anchor, policy, request,
                                          evidence, plugin_path, expected_plugin_sha256,
-                                         rule_preflight_receipt=rule_preflight_receipt)
+                                         rule_preflight_receipt=rule_preflight_receipt,
+                                         diagnostic_context=diagnostic_context)
     _require(language_receipt == actual_receipt,
              "Language plugin receipt is missing, stale, or differs from a fresh plugin run")
     for group, result in zip(candidate_groups, actual_receipt["groupReviews"]):
@@ -229,8 +232,9 @@ def admit_evidence(source: dict[str, Any], anchor: dict[str, Any],
     }
     handoff._validate_schema(candidate, "sermon-target-language-candidate-v2.schema.json",
                              "target candidate")
-    handoff.validate_target_candidate(source, anchor, candidate, require_human_approval=False)
-    handoff.validate_policy_binding(candidate, policy)
+    handoff.validate_target_candidate(source, anchor, candidate, require_human_approval=False,
+                                     diagnostic_context=diagnostic_context)
+    handoff.validate_policy_binding(candidate, policy, diagnostic_context=diagnostic_context)
     return candidate
 
 
@@ -322,7 +326,8 @@ def run_language_plugin(source: dict[str, Any], anchor: dict[str, Any],
     _require([row["translationGroupId"] for row in group_reviews]
              == [group["translationGroupId"] for group in groups],
              "Language plugin receipt group order changed")
-    identity = (policy_tools.validate_policy(policy) if strict_rubric is None else
+    identity = ((policy_tools.validate_policy(policy) if diagnostic_context is None else
+                 policy_tools.validate_diagnostic_policy(policy, diagnostic_context)) if strict_rubric is None else
                 policy_tools.validate_strict_policy(policy, strict_rubric))
     return {
         "schemaVersion": LANGUAGE_RECEIPT_SCHEMA,

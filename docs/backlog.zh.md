@@ -28,15 +28,15 @@ English index: [backlog.md](./backlog.md)
 
 | 既有 ID | 本次确认的实现／证据 | 下一项仍缺的验收 |
 |---|---|---|
-| R242-001/005/011 | canonical 前检、实际 prompt 与 plugin/candidate receipt 的 fake 回归；CLI 真实组件已测 | fresh 新规则 CLI→实际 plugin→candidate；正式/strict adapter 尚需接线 |
+| R242-001/005/011 | 新冻结诊断链已接实际CLI/plugin/候选准入；首轮26调用plugin拦截1个pending书名不匹配；新策略保留原书名后26调用/plugin13组/诊断候选通过，0调用恢复 | 正式术语人审与正式/strict adapter；逐组plugin早停和局部修订接线仍待验收 |
 | R242-003/017 | receipt `ValidatedJobContext` 已接 formal renderer；小样本正确性已有 | 同真实 474 job 零推理旧/快路径 CPU/I/O/墙钟与保护 hash 对照；不是从零开发快路径 |
-| R242-004/010/012/018 | 异常 WAV 持久化、恢复计划已实现；13 旧 WAV 复算未改原件 | producer 完整 intent/settings 快照与实际计划对账；同步仍 fail，需局部裁定/修复及下游重建 |
+| R242-004/010/012/018 | 异常留存、恢复计划及producer只读intent/settings exporter已实现；真实474导出16.573s/规划42.150s，revalidate474、0推理，原1910文件不变 | owner与实际恢复批次仍缺；planner未比较assembly设置；同步仍fail，需局部裁定/修复及下游重建 |
 | R242-009/019/021 | 100 步真实进程＋mock provider；24 路短 CLI；419 单元离线规模回归由 CI 执行 | 新译→审核长队列、跨主机 broker/DAG、session GPU 许可/真冷暖、当前代码真实 8×8 压力 |
 | R242-016/017/022；DEV-COST-001/002 | token/时间/credit 估算日志、历史投影和同价卡比较 | fresh writer 对账、交互监督完整计量、实际 debit、credit 预算单位与长期日志索引 |
 | R242-005/018/023；DEV-STE-001/002/006 | 中文固定样本机器 A/B、只读最终稿对照 | 直接/部分经文、ko/es、长上下文的具名盲评、Gold/阈值与音频听审 |
 | R242-006/007/013–015/020 | 历史 Dev 页面 HTTP/native repository 读回；近期译审/TTS 组件成功 | 同一新身份的完整四层收据；同步、独立人审、Dev/Beta/正式晋级和真机播放分别留证 |
 
-下一步先修 CI 兼容遗漏和做零推理规模对账，再补新规则在线片段及同步裁定；迁移/session/正式 CLI 前置合同完成后才放大到 10 分钟/整篇。审计未调用模型或部署，原正式模型策略、8 秒同步门槛、已绑定批准及 unknown 占槽规则保持原范围。旧日期章节按其历史证据解释，不据旧“pending”文字重复开发已存在模块。
+后续[新规则与扩大样本复测](reports/20261005-cli-rule-chain-expanded-sample-retest.zh.md)已完成本轮接线：同源605.500007秒、136单元/46组样本完成直接经文负例前检，0调用拒绝；31分32秒420单元整篇源和32分22秒474单元旧缓存可用。诊断pending书名约定已同版冻结，下一步补逐组plugin早停、直接经文版次/分组adapter，再做10分钟实际线上对比，并独立处理同步、owner和正式CLI。原审计未调用模型或部署；本轮52次CLI未发布，原正式模型策略、8 秒同步门槛、已绑定批准及 unknown 占槽规则保持原范围。旧日期章节按其历史证据解释，不据旧“pending”文字重复开发已存在模块。
 
 <a id="pr242-remaining-backlog"></a>
 

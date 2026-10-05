@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "sermon-l3-recovery-render-settings-v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "attention",
+    "batchSize",
+    "device",
+    "dtype",
+    "instruct",
+    "interUtteranceGapSeconds",
+    "maxEndLagSeconds",
+    "reactionLagSeconds",
+    "replicas",
+    "schemaVersion",
+    "seed",
+    "trackFormat",
+    "unitInstructions"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "sermon-l3-recovery-render-settings-v1"
+    },
+    "seed": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "batchSize": {
+      "enum": [
+        1,
+        2,
+        4,
+        8
+      ]
+    },
+    "replicas": {
+      "enum": [
+        1,
+        8
+      ]
+    },
+    "device": {
+      "enum": [
+        "cpu",
+        "cuda:0",
+        "mps"
+      ]
+    },
+    "dtype": {
+      "enum": [
+        "bfloat16",
+        "float32"
+      ]
+    },
+    "attention": {
+      "enum": [
+        null,
+        "sdpa",
+        "flash_attention_2",
+        "eager"
+      ]
+    },
+    "instruct": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1
+    },
+    "trackFormat": {
+      "enum": [
+        "wav",
+        "mp3"
+      ]
+    },
+    "unitInstructions": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^/"
+    },
+    "reactionLagSeconds": {
+      "type": "number",
+      "minimum": 0
+    },
+    "interUtteranceGapSeconds": {
+      "type": "number",
+      "minimum": 0
+    },
+    "maxEndLagSeconds": {
+      "type": "number",
+      "minimum": 0
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "replicas": {
+            "const": 8
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "batchSize": {
+            "const": 8
+          },
+          "device": {
+            "const": "cuda:0"
+          },
+          "dtype": {
+            "const": "bfloat16"
+          },
+          "attention": {
+            "const": "sdpa"
+          }
+        }
+      }
+    }
+  ]
+}

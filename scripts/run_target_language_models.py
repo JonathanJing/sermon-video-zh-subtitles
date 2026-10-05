@@ -595,7 +595,8 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                          *, simulation_only: bool = False, cache_only: bool = False,
                          progress_callback=None,
                          source_admission_span: str | None = None,
-                         completion_spans: list[str] | None = None) -> dict[str, Any]:
+                         completion_spans: list[str] | None = None,
+                         diagnostic_context=None) -> dict[str, Any]:
     """Shared group loop; the formal entry above still enforces Layer 1 approval.
 
     Simulated requests carry an extra marker that prevents formal candidate
@@ -605,7 +606,19 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                           depends_on=[source_admission_span] if source_admission_span else [],
                           executor_type="deterministic_program",
                           work_unit_id=f"l2.{request['targetLocale']}.run_admission") as admission_span:
-        if simulation_only:
+        if diagnostic_context is not None:
+            from scripts.sermon_diagnostic_context import validate_context
+            context = validate_context(diagnostic_context)
+            require(simulation_only and not api_key and reuse_from is None and resume_cache_from is None
+                    and revision_brief is None and partial_repair_brief is None and plugin_path is not None
+                    and request.get('schemaVersion') == producer.REQUEST_SCHEMA
+                    and 'simulationOnly' not in request
+                    and request['englishSourcePackageJsonSha256'] == context['sourceCanonicalSha256']
+                    and request['anchorManifestSha256'] == context['anchorCanonicalSha256']
+                    and context['anchorCanonicalSha256'] == policy_tools.canonical_sha256(anchor),
+                    'Diagnostic group loop requires isolated source-bound inputs')
+            policy_tools.validate_diagnostic_policy(policy, context)
+        elif simulation_only:
             require(request.get("simulationOnly") is True
                     and request.get("schemaVersion") == "sermon-dry-run-layer2-request-v1"
                     and reuse_from is None and resume_cache_from is None
@@ -622,7 +635,7 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             require(simulation_only and not api_key,
                     "Simulation model configuration cannot enter formal production")
             validate_test_configuration(simulation_configuration)
-            require(request.get("simulationModelConfiguration") == simulation_configuration
+            require((diagnostic_context is not None or request.get("simulationModelConfiguration") == simulation_configuration)
                     and request.get("translationPolicySha256") == policy_tools.canonical_sha256(policy)
                     and getattr(caller, "execution_identity", {}).get("simulationModelConfiguration") == simulation_configuration,
                     "Simulation model configuration requires matching request and CLI transport identity")
@@ -688,6 +701,8 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                     "Resume cache must be a separate attempt for this source and policy")
         identity = {"request": request, "groupPlan": plan,
                     "runnerImplementationSha256": RUNNER_PRODUCTION_IDENTITY_SHA256}
+        if diagnostic_context is not None:
+            identity['diagnosticContextSha256'] = policy_tools.canonical_sha256(diagnostic_context)
         if rule_receipt is not None:
             identity["rulePreflightSha256"] = policy_tools.canonical_sha256(rule_receipt)
         transport_identity = getattr(caller, "execution_identity", None)

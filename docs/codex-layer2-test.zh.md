@@ -1,6 +1,6 @@
 # Codex CLI 三分钟翻译／复核流程测试
 
-该入口使用真实 Codex 在线调用，复用现有 Layer 2 的逐组提示词、覆盖检查、Sol 独立复核和 evidence 汇总。固定三分钟样本的人工收据是模拟的，因此只运行明确隔离的测试请求，不能生成正式 Target-Language Candidate 或人工批准。当前支持中文、39 个 source units、13 个原分组，一个 group/locale 顺序执行。不会重跑 ASR、TTS 或发布。
+该入口使用真实 Codex 在线调用，复用现有 Layer 2 的逐组提示词、覆盖检查、Sol 独立复核和 evidence 汇总。固定三分钟样本的人工收据是模拟的，因此旧入口只运行明确隔离的测试请求，不能生成正式 Target-Language Candidate 或人工批准。另有下文的新冻结诊断入口，可执行实际 plugin 和候选准入，候选始终包在诊断 envelope 内、人工批准 pending、不可发布。旧入口支持中文、39 个 source units、13 个原分组；新入口不硬编码组数，一个 group/locale 顺序执行。不会重跑 ASR、TTS 或发布。
 
 ## 调用
 
@@ -83,3 +83,28 @@ Python producer 的 `render_tts`／`back_asr` 新增可选 `model_session` 与 `
 该参数不能与历史 mock responses 同用：旧 Astra 请求与新模型请求不相同。默认精确 fixture 回放和新配置的 fake transport 测试分别验证；真实调用须使用新目录及 ChatGPT 登录，无 API fallback。更改模型、effort、tier 或实现后不能沿用旧运行身份。当前 override 仅用于固定片段实验，不改变正式生产策略或扩大批准范围。
 
 2026-10-05 已实际完成该配置的 26 次 CLI 调用和 Spark TTS/ASR，并验证零新调用恢复与资源释放：[复测报告](reports/20261005-sol61-high-fast-fixed-180s-retest.zh.md)、[机器汇总收据](reports/20261005-sol61-high-fast-fixed-180s-retest-receipt.json)。同步仍有 4 组 lag 失败和片尾溢出，不具备发布资格。
+
+## 新规则冻结与实际 plugin／候选诊断链
+
+[`codex_layer2_diagnostic.py`](../scripts/codex_layer2_diagnostic.py) 接收真实未批准的 English Source Package，不把历史批准包重新标为未批准，也不制造人审收据。冻结 source、clip-relative anchor、source-scoped v2 policy、完整分组、plugin 实现、授权引用 hash、代码 commit 与父媒体绝对窗口。首个 CLI transport 建立前完成源、边界、覆盖、术语和 modelRules 前检。
+
+```sh
+.venv/bin/python -m scripts.codex_layer2_diagnostic \
+  --source SOURCE.json --anchor ANCHOR.json --policy SCOPED-V2-POLICY.json \
+  --group-plan GROUP-PLAN.json \
+  --plugin scripts/language_review_plugins/diagnostic_structural.py \
+  --out artifacts/NEW-FIXTURE --authorization-ref '本次隔离测试授权引用' \
+  --code-commit FULL-COMMIT-SHA --translator-model gpt-6.1-sol \
+  --scripture-classification no_direct_quotations
+.venv/bin/python scripts/run_codex_layer2_test.py \
+  --diagnostic-fixture --fixture-dir artifacts/NEW-FIXTURE \
+  --out-dir artifacts/NEW-RUN --reviewer-tier fast --timeout-seconds 240
+```
+
+路径与 commit 占位符替换为实际输入；policy 必须绑定这份 source/anchor 与当前 plugin，不能直接用未绑定的默认策略。翻译 high/fast、审核 medium/fast 固定在 fixture；正式政策仍拒绝隔离 override。可添加既有 `--resource-policy`，保持 workers=1。mock 可回放该新链自己的精确响应，不能借旧 legacy payload 证明新规则已经被消费。
+
+新链将同一冻结 modelRules 送入 translator/reviewer，核验实际 payload，再运行 pinned plugin 并由真实候选准入函数独立重跑 plugin 读回。输出 `diagnostic-language-review.json` 和 `diagnostic-candidate.json`；后者 `actualHumanApproval=false`、`productionEligible=false`、`releaseEligible=false`，候选人审保持 pending。CLI/规则/plugin 任一失败均留证并停止；同身份恢复复用返回，不因 plugin 失败重新翻译；unknown 不重发。此入口使用现有编辑式 reviewer，尚未完成正式 controller 或 strict/RQC reviewer adapter。
+
+`diagnostic_structural` 只验证文字结构、冻结术语、数字表面与引用范围，不能验收直接经文。冻结时必须提供 `--scripture-classification`，直接引文可用重复的 `--source-quotation-unit` 记录实际风险单元；未检查或直接引用样本在结构 plugin 下拒绝。声明无引文也不能绕过引用检测。较长片段保留整句；父媒体窗口与相对 anchor 分开绑定，不能用片段时长替代父媒体身份。
+
+2026-10-05 新链真实复测先拦截1组pending书名表面不匹配；保留失败包，另建策略明确保留有源证据的原英文书名后，26次新CLI、13组plugin与诊断候选准入通过，同身份恢复0新调用。详见[扩大样本复盘](reports/20261005-cli-rule-chain-expanded-sample-retest.zh.md)；10分钟直接经文片段当前仍在调用前拒绝，474旧缓存只读规划与实际恢复资格分开。
