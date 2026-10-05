@@ -16,6 +16,8 @@ import subprocess
 import sys
 import tempfile
 import wave
+from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
+from contextvars import copy_context
 
 if __package__ in {None, ''}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -33,6 +35,7 @@ from scripts.sermon_execution_harness import work_lock
 from scripts.sermon_release_workflow import _safe_path
 
 SCHEMA = 'sermon-unified-source-preparation-v1'
+SCHEMA_V2 = 'sermon-unified-source-preparation-v2'
 FIELDS = {'schemaVersion', 'productionRunId', 'sourceId', 'sourceUrlHash', 'serviceDate',
           'media', 'mediaSha256', 'sourceDurationSeconds', 'window', 'windowApproval', 'windowApprovalSha256',
           'timelineReport', 'timelineReportSha256', 'sourceDescriptor', 'sourceDescriptorSha256',
@@ -67,6 +70,42 @@ def _positive(value):
     return type(value) in (int, float) and math.isfinite(value) and value >= 0
 
 
+def ordered_bounded_map(items, worker, workers):
+    """Bound dispatch and preserve input order; a failure stops new admission.
+
+    Already running leaves finish their immutable receipts before returning the
+    exception. No automatic retries or loss of successful sibling work.
+    """
+    require(type(workers) is int and 1 <= workers <= 8, 'invalid_source_concurrency')
+    items = list(items)
+    if workers == 1:
+        return [worker(item) for item in items]
+    results = {}
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        source = iter(enumerate(items))
+        pending = {}
+        for _ in range(min(workers, len(items))):
+            index, item = next(source)
+            pending[pool.submit(copy_context().run, worker, item)] = index
+        while pending:
+            done, _ = wait(pending, return_when=FIRST_COMPLETED)
+            count = len(done)
+            for future in sorted(done, key=lambda f: pending[f]):
+                index = pending.pop(future)
+                try:
+                    results[index] = future.result()
+                except BaseException:
+                    for remaining in pending:
+                        remaining.cancel()
+                    raise
+            for _ in range(count):
+                item = next(source, None)
+                if item is not None:
+                    index, value = item
+                    pending[pool.submit(copy_context().run, worker, value)] = index
+    return [results[index] for index in range(len(items))]
+
+
 @dataclass(frozen=True)
 class Configuration:
     path: Path
@@ -86,8 +125,12 @@ class Configuration:
 def load_configuration(path):
     path = _safe_path(Path(path).absolute())
     value = _load(path)
-    require(isinstance(value, dict) and set(value) == FIELDS and value['schemaVersion'] == SCHEMA,
+    require(isinstance(value, dict) and value.get('schemaVersion') in (SCHEMA, SCHEMA_V2)
+            and set(value) == (FIELDS if value['schemaVersion'] == SCHEMA else FIELDS | {'asrWorkers'}),
             'invalid_source_preparation_configuration')
+    if value['schemaVersion'] == SCHEMA_V2:
+        require(type(value['asrWorkers']) is int and 1 <= value['asrWorkers'] <= 4,
+                'invalid_source_asr_concurrency')
     require(all(isinstance(value[k], str) and english.SHA256.fullmatch(value[k]) for k in
                 ('productionRunId', 'sourceUrlHash', 'mediaSha256', 'windowApprovalSha256',
                  'timelineReportSha256', 'sourceDescriptorSha256')),
@@ -133,7 +176,8 @@ def load_configuration(path):
             and value['judge']['model'] in ('gpt-6-astra', 'gpt-6.1-sol')
             and value['judge']['reasoningEffort'] in budget.text_limits.SUPPORTED_REASONING_EFFORTS
             and type(value['judge']['batchSize']) is int and 1 <= value['judge']['batchSize'] <= 15
-            and type(value['judge']['workers']) is int and value['judge']['workers'] == 1,
+            and type(value['judge']['workers']) is int
+            and 1 <= value['judge']['workers'] <= (1 if value['schemaVersion'] == SCHEMA else 8),
             'invalid_source_judge_configuration')
     identity = jobs._digest({k: v for k, v in value.items() if k != 'budgetAuthorization'})
     code_identity = code.code_identity()
@@ -146,7 +190,8 @@ def load_configuration(path):
                 'codeIdentitySha256': code_identity, 'budgetRoot': str(budget_root)}
     require(auth['binding'] == expected, 'source_budget_execution_binding_changed')
     authority = auth['authority']
-    budget.SourceBudget(budget_root, authority, verify=lambda: None)
+    budget.SourceBudget(budget_root, authority, verify=lambda: None,
+        max_concurrent=max(value.get('asrWorkers', 1), value['judge']['workers']))
     approval_path = _safe_path(auth_path.parent / auth['approvalReceipt'])
     approval = _load(approval_path)
     require(_sha(approval_path) == authority['approvalSha256']
@@ -311,13 +356,13 @@ def _execute(config, fresh, *, api_key, transport, aligner, mfa_preflight):
         runtime = mfa_preflight(**_mfa_options(config))
         _freeze(out / 'mfa-preflight.json', runtime)
     clip = _audio(config, out / 'source-clip.wav', window['startSeconds'], duration)
-    caller = budget.SourceBudget(config.budget_root, config.authority, verify=fresh, transport=transport)
-    references, finals = [], []
-    for index in range(math.ceil(duration / 180)):
+    caller = budget.SourceBudget(config.budget_root, config.authority, verify=fresh, transport=transport,
+        max_concurrent=max(value.get('asrWorkers', 1), value['judge']['workers']))
+    if api_key is None:
+        api_key = os.environ.get('OPENAI_API_KEY', '')
+    def transcribe_chunk(index):
         start, end = index * 180, min((index + 1) * 180, duration)
         audio = _audio(config, out / 'chunks' / f'{index:04d}.wav', window['startSeconds'] + start, end - start)
-        if api_key is None:
-            api_key = os.environ.get('OPENAI_API_KEY', '')
         # Cached complete chunks remain usable without a key; a production miss
         # cannot reach the network without a nonempty key.
         if transport is None and not api_key:
@@ -331,8 +376,10 @@ def _execute(config, fresh, *, api_key, transport, aligner, mfa_preflight):
                  'clipStartSeconds': start, 'clipEndSeconds': end, 'audioSha256': _sha(audio),
                  'model': 'gpt-transcribe', 'response': response}
         _freeze(out / 'chunks' / f'{index:04d}.asr-final.json', final)
-        finals.append(final)
-        references.extend(_reference_rows(response, index, start, end))
+        return final, _reference_rows(response, index, start, end)
+    chunks = ordered_bounded_map(range(math.ceil(duration / 180)), transcribe_chunk, value.get('asrWorkers', 1))
+    finals = [final for final, _ in chunks]
+    references = [reference for _, rows in chunks for reference in rows]
     _freeze(out / 'asr_reference_chunks.json', references)
     _freeze(out / 'asr_reference.json', {'text': '\n'.join(row['response']['text'] for row in finals),
                                          'chunksSha256': jobs._digest(finals), 'immutableAsrFinal': True})

@@ -35,6 +35,7 @@ from scripts.sermon_release_workflow import _safe_path
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA = 'sermon-canonical-layer2-execution-v1'
+CONCURRENT_SCHEMA = 'sermon-canonical-layer2-execution-v2'
 MODES = ('deterministic_shadow', 'deterministic_execute')
 ADMISSION_LOCK = jobs._digest({'purpose': 'canonical-layer2-admission-v1'})
 MAX_CONFIG_BYTES = 1024 * 1024
@@ -75,13 +76,18 @@ class Configuration:
     run_id: str
     lanes: dict
     sha256: str
+    concurrency_profile: dict | None = None
+    resource_policy: dict | None = None
 
 
 def load_configuration(path):
     path = _safe_path(Path(path).absolute())
     value = _json(path)
-    require(set(value) == {'schemaVersion', 'productionRunId', 'inspectionConfig', 'jobRoot', 'locales'}
-            and value['schemaVersion'] == SCHEMA and pipeline._sha(value['productionRunId'])
+    required_keys = {'schemaVersion', 'productionRunId', 'inspectionConfig', 'jobRoot', 'locales'}
+    require(((set(value) == required_keys and value['schemaVersion'] == SCHEMA)
+             or (set(value) == required_keys | {'concurrencyProfile', 'resourcePolicy'}
+                 and value['schemaVersion'] == CONCURRENT_SCHEMA))
+            and pipeline._sha(value['productionRunId'])
             and isinstance(value['locales'], dict) and bool(value['locales'])
             and set(value['locales']) <= set(pipeline.LOCALES), 'invalid_execution_configuration')
     inspection_path = _path(path.parent, value['inspectionConfig'])
@@ -93,6 +99,17 @@ def load_configuration(path):
     job_root = _path(path.parent, value['jobRoot'])
     input_paths = [path, inspection_path, _path(root, inspection.get('source')),
                    _path(root, inspection.get('anchor'))]
+    concurrency_profile = resource_policy = None
+    if 'concurrencyProfile' in value:
+        from scripts.production_concurrency_profile import load_profile
+        from scripts.sermon_unified import resources
+        profile_path = _path(path.parent, value['concurrencyProfile'])
+        resource_path = _path(path.parent, value['resourcePolicy'])
+        concurrency_profile = load_profile(profile_path)
+        resource_policy = resources.validate_policy(_json(resource_path))
+        require(resource_policy['capacities']['codex_cli'] == concurrency_profile['totalCodexSlots'],
+                'concurrency_profile_requires_shared_24_slot_broker')
+        input_paths.extend((profile_path, resource_path))
     lanes, plugin_hashes = {}, {}
     for locale, lane in sorted(value['locales'].items()):
         require(isinstance(lane, dict) and set(lane) == {'outputDirectory', 'plugin'}, 'invalid_execution_lane')
@@ -112,8 +129,12 @@ def load_configuration(path):
     require(not any(_overlap(output, path) for output in outputs for path in input_paths)
             and not any(_overlap(a, b) for i, a in enumerate(outputs) for b in outputs[i + 1:]),
             'execution_paths_overlap')
-    sha = jobs._digest({'execution': value, 'inspection': inspection, 'plugins': plugin_hashes})
-    return Configuration(path, root, inspection, job_root, value['productionRunId'], lanes, sha)
+    binding = {'execution': value, 'inspection': inspection, 'plugins': plugin_hashes}
+    if concurrency_profile is not None:
+        binding.update(concurrencyProfile=concurrency_profile, resourcePolicy=resource_policy)
+    sha = jobs._digest(binding)
+    return Configuration(path, root, inspection, job_root, value['productionRunId'], lanes, sha,
+                         concurrency_profile, resource_policy)
 
 
 def code_identity():
@@ -200,7 +221,8 @@ class Controller:
                 'mode': self.mode, 'scope': 'four_layer_release_layer2_preparation',
                 'productionRunId': self.config.run_id, 'configurationSha256': self.config.sha256,
                 'codeIdentitySha256': self.code_sha, 'status': status, 'reasonCode': reason,
-                'maxConcurrentLocaleJobs': MAX_ACTIVE_LAYER2_JOBS,
+                'maxConcurrentLocaleJobs': (self.config.concurrency_profile['maxActiveLocales']
+                                           if self.config.concurrency_profile else MAX_ACTIVE_LAYER2_JOBS),
                 'maxInFlightApiCalls': api_concurrency.MAX_IN_FLIGHT_API_CALLS,
                 'runtimeCodexTurns': 0, 'contentAcceptance': 'not_evaluated',
                 'deviceAcceptance': 'not_run', **fields}
@@ -218,7 +240,10 @@ class Controller:
         # reconciliation of an uncertain owner.
         active = [row for row in view['durableJobInspection']['jobs']
                   if row['workUnitId'].startswith('text.') and row['status'] in jobs.ACTIVE | {'uncertain'}]
-        return len(active) >= MAX_ACTIVE_LAYER2_JOBS
+        if any(row['status'] == 'uncertain' for row in active):
+            return True  # preserve the existing run-wide unknown reconciliation barrier
+        limit = self.config.concurrency_profile['maxActiveLocales'] if self.config.concurrency_profile else MAX_ACTIVE_LAYER2_JOBS
+        return len(active) >= limit
 
     def _choose(self, view, requested_locale=None):
         if self._capacity_full(view):
@@ -303,7 +328,8 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                 require(budget_binding is None, 'codex_cli_provider_output_cap_unsupported')
                 from scripts.codex_layer2_transport import CodexLayer2Transport
                 api_key = ''
-                caller = CodexLayer2Transport(receipts_dir=lane['output'] / '_cli_calls')
+                caller = CodexLayer2Transport(receipts_dir=lane['output'] / '_cli_calls',
+                    resource_policy=config.resource_policy, concurrency_profile=config.concurrency_profile)
             if budget_binding is not None:
                 caller = budget_tools.BudgetedCaller(budget_binding, config, source, anchor, policy, transport=caller)
             def current_binding():

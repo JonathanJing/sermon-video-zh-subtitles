@@ -55,6 +55,13 @@ def plugin_implementation_sources(plugin_path: Path) -> list[Path]:
     """Hash the reviewed built-in plugin and its executable shared rules."""
     path = plugin_path.resolve()
     builtins = (Path(__file__).resolve().parent / "language_review_plugins").resolve()
+    import ast
+    facts = ast.parse(path.read_text(encoding='utf-8'))
+    if any(isinstance(node, ast.Assign) and len(node.targets) == 1
+           and isinstance(node.targets[0], ast.Name) and node.targets[0].id == 'DIAGNOSTIC_PINNED_QUOTES'
+           and isinstance(node.value, ast.Constant) and node.value.value is True for node in facts.body):
+        return [path, builtins / 'diagnostic_pinned_quotes.py', builtins / 'diagnostic_structural.py',
+                builtins / 'common.py', builtins.parent / 'sermon_diagnostic_context.py']
     if path.parent == builtins and path.name in BUILTIN_PLUGIN_NAMES:
         return [path, builtins / "common.py"]
     if path.parent == builtins and path.name in LAODICEA_PLUGIN_NAMES:

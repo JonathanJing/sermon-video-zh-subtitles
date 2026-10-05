@@ -93,7 +93,8 @@ class CodexLayer2Transport:
     billing = 'local'  # non-API subscription observation; not a dollar price
 
     def __init__(self, cli_path=Path.home() / '.local/bin/codex', *, reviewer_tier='fast',
-                 timeout_seconds=180, receipts_dir=None, resource_policy=None, simulation_model_configuration=None):
+                 timeout_seconds=180, receipts_dir=None, resource_policy=None, simulation_model_configuration=None,
+                 concurrency_profile=None):
         if reviewer_tier not in {'default', 'fast'} or timeout_seconds <= 0:
             raise ValueError('invalid_codex_language_configuration')
         self.cli_path = Path(cli_path).absolute()
@@ -114,6 +115,12 @@ class CodexLayer2Transport:
             self.tiers = {role: simulation_model_configuration[role]['serviceTier'] for role in MODELS}
         self._resource_local = threading.local()
         self.resource_policy = None
+        self.concurrency_profile = None
+        if concurrency_profile is not None:
+            from scripts.production_concurrency_profile import validate_profile
+            self.concurrency_profile = validate_profile(concurrency_profile)
+            if resource_policy is None:
+                raise ValueError('concurrency_profile_requires_shared_resource_policy')
         if resource_policy is not None:
             if self.receipts_dir is None:
                 raise ValueError('codex_resource_policy_requires_receipts_directory')
@@ -145,6 +152,10 @@ class CodexLayer2Transport:
             self.execution_identity.update(
                 resourcePolicySha256=resource_admission.policy_identity(self.resource_policy),
                 resourceAdapterSha256=hashlib.sha256(Path(resource_admission.__file__).read_bytes()).hexdigest())
+        if self.concurrency_profile is not None:
+            if self.resource_policy['capacities']['codex_cli'] != self.concurrency_profile['totalCodexSlots']:
+                raise ValueError('concurrency_profile_requires_total_24')
+            self.execution_identity['concurrencyProfile'] = self.concurrency_profile
 
     def payload_role(self, payload):
         configuration = getattr(self, 'simulation_model_configuration', None) or TEST_CONFIGURATION
@@ -183,7 +194,8 @@ class CodexLayer2Transport:
         call_id = _hash({'receiptDirectory': str(directory.resolve()),
                          'transportIdentity': self.execution_identity, 'payloadSha256': key})
         admission = resource_admission.Admission(self.resource_policy, call_id=call_id,
-            identity=self.execution_identity, receipt_directory=directory)
+            identity=self.execution_identity, receipt_directory=directory,
+            concurrency_profile=getattr(self, 'concurrency_profile', None))
         admission.reserve()
         permits[key] = admission
         return admission

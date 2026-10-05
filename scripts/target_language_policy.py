@@ -156,17 +156,23 @@ def validate_diagnostic_policy(policy, context, *, series_table=SERIES_TABLE):
     validate_context(context)
     configuration = policy.get('simulationModelConfiguration')
     if configuration is None:
-        return validate_policy(policy, series_table=series_table)
-    from scripts.codex_layer2_transport import validate_test_configuration
-    validate_test_configuration(configuration)
-    view = copy.deepcopy(policy)
-    view.pop('simulationModelConfiguration')
-    for role in ('translator', 'reviewer'):
-        settings = configuration[role]
-        if (view[role]['model'] != settings['model']
-                or view[role]['reasoningEffort'] != settings['reasoningEffort']):
-            raise ValueError('Diagnostic role configuration changed')
-    result = validate_policy(view, series_table=series_table)
+        result = validate_policy(policy, series_table=series_table)
+    else:
+        from scripts.codex_layer2_transport import validate_test_configuration
+        validate_test_configuration(configuration)
+        view = copy.deepcopy(policy)
+        view.pop('simulationModelConfiguration')
+        for role in ('translator', 'reviewer'):
+            settings = configuration[role]
+            if (view[role]['model'] != settings['model']
+                    or view[role]['reasoningEffort'] != settings['reasoningEffort']):
+                raise ValueError('Diagnostic role configuration changed')
+        result = validate_policy(view, series_table=series_table)
+    from scripts.language_review_plugins.diagnostic_pinned_quotes import is_policy
+    if is_policy(policy):
+        # Only explicit diagnostic context accepts pending citation permission;
+        # production validation continues to report scripture_policy_pending.
+        result = {**result, 'diagnosticPinnedQuotePolicy': True}
     return {**result, 'translationPolicySha256': canonical_sha256(policy),
             'productionEligible': False, 'humanApproval': False}
 

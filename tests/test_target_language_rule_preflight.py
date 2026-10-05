@@ -146,7 +146,8 @@ class TargetLanguageRulePreflightTests(unittest.TestCase):
 
     def test_changed_translator_configuration_is_not_plugin_only(self):
         before = self.receipt()
-        self.policy["translator"]["reasoningEffort"] = "high"
+        self.policy["translator"]["reasoningEffort"] = (
+            "medium" if self.policy["translator"]["reasoningEffort"] == "high" else "high")
         self.policy["componentSha256"]["translator"] = policy_tools.canonical_sha256(self.policy["translator"])
         self.request["translationPolicySha256"] = policy_tools.canonical_sha256(self.policy)
         self.assertTrue(subject.change_plan(before, self.receipt())["requiresModelRecompute"])

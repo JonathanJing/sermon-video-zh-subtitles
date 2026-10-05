@@ -6,7 +6,7 @@
 `machine_review_pass_human_review_pending`、`releaseEligible=false` 的候选；不会创建人工
 批准、启动 TTS、构建/发布页面、提交 App Store，或调用 bounded decision agent。
 
-配置 `sermon-canonical-layer2-execution-v1` 只接受以下字段：
+默认配置 `sermon-canonical-layer2-execution-v1` 只接受以下字段：
 
 ```json
 {
@@ -38,6 +38,8 @@ python scripts/canonical_layer2_controller.py tick \
 
 一个 tick 至多派发一个固定 worker 然后返回。第一版同一 production run 至多一个 active
 locale job；uncertain owner 继续占用该名额直到 reconciliation。当前 controller 代码允许冻结 policy 的 1–16 个组 workers，共享 job-root 对应的 API 槽位最多 24 个；独立 `run_target_language_models.py` CLI 仍限制 1–3 workers。API 槽位不等于 Codex CLI 账号并发额度，也不是跨所有 job-root 的全局 API/TTS 资源调度器。见 [并发实现](../scripts/layer2_api_concurrency.py) 与 [controller 准入](../scripts/canonical_layer2_controller.py)。
+显式并发配置使用新的 `sermon-canonical-layer2-execution-v2`，在 v1 字段上增加 `concurrencyProfile` 和 `resourcePolicy` 两个文件路径；v1 不接受这两个新字段，也不会自动升档。迁移时创建新配置与运行身份，绑定文件内容 hash，勿修改旧 job 的容量／凭据／输出目录。当前 profile v1 将最多活动 locale 升到 3，CLI 业务池 23、监督专槽 1；uncertain 仍阻止整个 run 的新派发。正式预算／批准仍须各自通过，详见[本轮诊断准备](reports/20261005-next-concurrency-test-preparation.zh.md)。
+
 默认顺序是排序后的可准入 locale，没有循环轮询或无限 Agent 对话。工作中可重复调用 tick
 检查，但 active/failed/unknown durable receipt 不会产生第二个相同工作。
 

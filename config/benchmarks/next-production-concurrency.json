@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "sermon-production-concurrency-profile-v1",
+  "totalCodexSlots": 24,
+  "businessCodexSlots": 23,
+  "supervisorSlots": 1,
+  "maxBranches": 4,
+  "sourceASRWorkers": 4,
+  "sourceJudgeWorkers": 8,
+  "maxActiveLocales": 3,
+  "studyBranches": 2,
+  "backASRBatchSize": 8,
+  "cpuWorkers": 4,
+  "layer2GroupWorkers": 23,
+  "busyWaitSeconds": 180
+}

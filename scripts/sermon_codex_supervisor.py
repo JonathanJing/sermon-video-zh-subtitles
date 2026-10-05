@@ -27,6 +27,21 @@ def session_report(args, config, instructions, decision_type, verify_decision, *
                 'serviceTier': getattr(args, 'service_tier', 'fast'),
                 'instructions': instructions, 'mode': args.mode,
                 'config': guarded.bound_configuration(config)}
+    resource_options={}
+    profile_path=getattr(args,'concurrency_profile',None)
+    policy_path=getattr(args,'resource_policy',None)
+    if (profile_path is None)!=(policy_path is None):
+        raise AgentsAPIError('supervisor_profile_and_resource_policy_required')
+    if profile_path is not None:
+        from scripts.production_concurrency_profile import load_profile
+        from scripts.sermon_unified import resources, contracts
+        profile=load_profile(profile_path)
+        policy=resources.validate_policy(contracts.read(policy_path))
+        if policy['capacities']['codex_cli']!=profile['totalCodexSlots']:
+            raise AgentsAPIError('supervisor_profile_capacity_mismatch')
+        resource_options={'concurrency_profile':profile,'resource_policy':policy}
+        identity.update(concurrencyProfileSha256=contracts.digest(profile),
+                        resourcePolicySha256=resources._identity(policy))
     binding = guarded.fingerprint(identity)
     root = Path(args.out).parent / 'agents-api-runs'
     if root.is_symlink():
@@ -34,6 +49,7 @@ def session_report(args, config, instructions, decision_type, verify_decision, *
     root.mkdir(parents=True, exist_ok=True)
     lock = os.open(root / 'supervisor.lock', os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
     directory = None
+    capacity_busy = False
     try:
         try:
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -86,11 +102,30 @@ def session_report(args, config, instructions, decision_type, verify_decision, *
                 'state': snapshot, 'tools': definitions, 'attemptedStages': tools.state['attemptedStages'],
                 'mode': args.mode}, ensure_ascii=False)
             state.update(pending=True, turns=state['turns'] + 1)
+            state['dispatchAttempts'] = state.get('dispatchAttempts', state['turns'] - 1) + 1
             _write_json(directory / 'codex-state.json', state)
             turn_dir = directory / ('turn-%03d' % state['turns'])
-            result = call_json(prompt, model=args.model, reasoning=identity['reasoning'],
-                               service_tier=identity['serviceTier'], output_schema=schema,
-                               output_dir=turn_dir, timeout_seconds=max(0.001, timeout - (time.monotonic() - started)))
+            if state['dispatchAttempts'] > state['turns']:
+                turn_dir = directory / (turn_dir.name + '-attempt-%03d' % state['dispatchAttempts'])
+            try:
+                result = call_json(prompt, model=args.model, reasoning=identity['reasoning'],
+                                   service_tier=identity['serviceTier'], output_schema=schema,
+                                   output_dir=turn_dir, timeout_seconds=max(0.001, timeout - (time.monotonic() - started)),
+                                   **resource_options)
+            except Exception as exc:
+                from scripts.sermon_codex_transport import CodexResourceBusy
+                outcome_path = turn_dir / 'outcome.json'
+                identity_path = turn_dir / 'identity.json'
+                if (isinstance(exc, CodexResourceBusy) and not (turn_dir / 'started.json').exists()
+                        and outcome_path.is_file() and identity_path.is_file()):
+                    outcome = guarded.read_object(outcome_path)
+                    from scripts.sermon_codex_transport import _hash
+                    if (outcome.get('status') == 'not_dispatched_resource_busy'
+                            and outcome.get('identitySha256') == _hash(guarded.read_object(identity_path))):
+                        state.update(pending=False, turns=state['turns'] - 1)
+                        _write_json(directory / 'codex-state.json', state)
+                        capacity_busy = True
+                raise
             if not isinstance(result, dict) or set(result) != {'tool', 'arguments'} or result['tool'] not in allowed:
                 raise AgentsAPIError('invalid_codex_supervisor_operation')
             _write_json(directory / 'last-operation.json', result)
@@ -116,8 +151,10 @@ def session_report(args, config, instructions, decision_type, verify_decision, *
         snapshot = workflow.snapshot(config)
         return {'schemaVersion': 1, 'status': 'failed', 'sunday': args.sunday, 'mode': args.mode,
                 'model': args.model, 'agentBackend': 'codex-cli', 'finalSnapshot': snapshot,
-                'decision': {'status': 'blocked', 'action': 'inspect_codex_cli_session',
-                             'summary_zh': 'Codex CLI 监管未通过完成检查；保留调用与工具状态，不能自动重试。',
+                'decision': {'status': 'blocked',
+                             'action': 'wait_for_shared_codex_capacity' if capacity_busy else 'inspect_codex_cli_session',
+                             'summary_zh': ('共享 Codex 槽暂时繁忙，本轮未调用模型；容量恢复后可续跑。' if capacity_busy else
+                                            'Codex CLI 监管未通过完成检查；保留调用与工具状态，不能自动重试。'),
                              'human_action_required': False, 'modelDecisionAccepted': False,
                              'evidence': [getattr(exc, 'code', type(exc).__name__)]},
                 'agentSession': {'runDirectory': str(directory) if directory else None, 'costStatus': 'unknown'},

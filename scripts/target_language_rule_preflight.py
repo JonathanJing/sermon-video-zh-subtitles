@@ -92,6 +92,20 @@ def _literals(path):
 def _quoted_rules(facts, request, policy, plan):
     rows = {row["sourceUnitId"]: row["english"] for row in request["sourceUnits"]}
     quotes = []
+    if 'DIAGNOSTIC_QUOTE_BINDINGS' in facts:
+        from scripts.language_review_plugins.diagnostic_pinned_quotes import validate_bindings
+        require(facts.get('DIAGNOSTIC_ONLY') is True and facts.get('DIAGNOSTIC_PINNED_QUOTES') is True,
+                'pinned diagnostic quote plugin must remain diagnostic-only')
+        bindings = facts['DIAGNOSTIC_QUOTE_BINDINGS']
+        for quote in validate_bindings(bindings, request, policy, plan):
+            for part in quote['parts']:
+                quotes.append({'sourceUnitIds': [part['sourceUnitId']],
+                    'translationGroupId': quote['translationGroupId'],
+                    'englishStartOffset': part['englishStartOffset'], 'englishEndOffset': part['englishEndOffset'],
+                    'english': part['englishExcerpt'], 'targetText': part['targetText'],
+                    'targetTextSha256': part['targetTextSha256'], 'reference': quote['reference'],
+                    'classification': 'diagnostic_pinned_excerpt', 'citationUseStatus': 'pending',
+                    'provenance': copy.deepcopy(bindings['provenance'])})
     if "SOURCE_SHA256" in facts:
         require(facts["SOURCE_SHA256"] == request["englishSourcePackageJsonSha256"],
                 "plugin source differs from request")
@@ -234,6 +248,14 @@ candidate execution. Callers can validate independently collected bindings.
               "pluginNumberForms": copy.deepcopy(facts.get("NUMBERS", facts.get("ENGLISH_NUMBERS", {}))),
               "pluginNameForms": copy.deepcopy(plugin_names),
               "exactQuotes": quotes}
+    if facts.get('DIAGNOSTIC_PINNED_QUOTES') is True:
+        bundle['quotationRule'] = 'preserve_complete_diagnostic_pinned_fragments_pending_provenance'
+        bundle['modelInstruction'] = (
+            'This is an isolated diagnostic baseline, not an approved Bible edition. '
+            'Preserve every frozen target fragment exactly and in source order within its full bound group, '
+            'including surrounding speaker commentary. Do not reproduce it in another group or speak '
+            'its reference metadata. Target provenance and citation permission remain pending. '
+            'Do not claim NKRV, RVR60, CUV, edition verification or human approval. ' + INSTRUCTION)
     # Literal plugin tuples must have the same JSON types after durable readback.
     bundle = json.loads(json.dumps(bundle, ensure_ascii=False))
     rule_hash = policy_tools.canonical_sha256(bundle)

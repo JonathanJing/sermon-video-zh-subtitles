@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import copy
 from contextlib import ExitStack
+from concurrent.futures import Future
 import fcntl
 import hashlib
 import json
@@ -38,6 +39,7 @@ try:
     from scripts import dev_audio_test_receipts as dev_receipts
     from scripts import spark_tts_replica_pool as replica_pool
     from scripts.spark_tts_window_scheduler import ParallelBatchEngine
+    from scripts.bounded_audio_cpu import BoundedAudioCPU
 except ImportError:
     import build_target_language_audio_package as package
     import four_layer_measure as measure
@@ -51,6 +53,7 @@ except ImportError:
     import dev_audio_test_receipts as dev_receipts
     import spark_tts_replica_pool as replica_pool
     from spark_tts_window_scheduler import ParallelBatchEngine
+    from bounded_audio_cpu import BoundedAudioCPU
 
 
 VERSION = "sermon-formal-target-speech-render-v1"
@@ -65,6 +68,9 @@ BATCH_CACHED_UNIT_POLICY = "replay_full_bound_window_when_units_are_missing_v1"
 LEGACY_BATCH_SEED_POLICY = "base_plus_fixed_window_start_ordered_missing_units_v1"
 LEGACY_BATCH_CACHED_UNIT_POLICY = "exclude_committed_or_admitted_reuse"
 COMPATIBLE_BATCH_REPAIR_IMPLEMENTATION_SHA256 = {
+    # Direct parent: CPU-only PCM/decode/hash scheduling retains exact model
+    # requests, full-window replay, sampling, ordered commits and PCM bytes.
+    "4232cfeee91c4cac5142ec7f1035aed04f79ca4c5da77f79bad9149680090076",
     # Direct parent: factoring the unchanged full-window identity builder and
     # adding a read-only exporter do not change synthesis inputs or sampling.
     "12d6f6af892fd16f721e973de5347b2e5f444b6ce3702e296eb414da2a5ebdcc",
@@ -708,6 +714,26 @@ def write_pcm16(path: Path, samples: Any, rate: int) -> None:
         handle.writeframes(pcm)
 
 
+def _cpu_audio_input(samples):
+    """Transfer GPU ownership on the model thread, never in a CPU worker."""
+    if hasattr(samples, "detach"):
+        return samples.detach().cpu().reshape(-1).tolist()
+    if hasattr(samples, "reshape"):
+        return samples.reshape(-1).tolist()
+    return list(samples)
+
+
+def _prepare_cpu_audio(path, samples, rate):
+    write_pcm16(path, samples, rate)
+    with path.open("rb") as stream:
+        os.fsync(stream.fileno())
+    decoded = integrity.probe_full_decode(path)
+    hashed = identity.sha256(path)
+    stat = path.stat()
+    return {"decoded": decoded, "audioSha256": hashed,
+            "fileStamp": (stat.st_dev, stat.st_ino, stat.st_size, stat.st_mtime_ns, stat.st_ctime_ns)}
+
+
 def _batch_admission(context, paths, root, *, seed, dtype, attention, instruct, device,
                      instructions_by_group, batch_size, reuse_from, speculative_from,
                      window_hashes, replicas=1):
@@ -726,6 +752,9 @@ def _batch_admission(context, paths, root, *, seed, dtype, attention, instruct, 
         outputs.add(unit["outputRelativePath"])
         wav = root / unit["outputRelativePath"]
         require(wav.resolve().is_relative_to(root.resolve()), "TTS batch unit escapes render root")
+        partial = wav.with_suffix(".partial.wav")
+        require(not partial.is_symlink() and partial.resolve().is_relative_to(root.resolve()),
+                "Partial audio escapes render root")
         overrides = (instructions_by_group or {}).get(group, {})
         instruction = overrides.get("instruction", instruct)
         spoken = overrides.get("spokenText")
@@ -782,7 +811,8 @@ def _batch_admission(context, paths, root, *, seed, dtype, attention, instruct, 
 
 class _BatchedUnitSynthesizer:
     """Replay each complete bound window, then return only missing waveforms."""
-    def __init__(self, engine, requests, *, window_requests, seed, batch_size, job_path):
+    def __init__(self, engine, requests, *, window_requests, seed, batch_size, job_path,
+                 prepare_output=None):
         require(callable(getattr(engine, "batch", None)), "TTS engine has no batch method")
         self.engine, self.requests = engine, requests
         self.window_requests = window_requests
@@ -793,6 +823,7 @@ class _BatchedUnitSynthesizer:
         self.last_generation = None
         self.last_generation_trigger_index = None
         self.instruct = None
+        self.prepare_output = prepare_output
 
     def __call__(self, text, language, speaker, *, seed):
         require(self.remaining, "TTS batch received an extra unit call")
@@ -826,9 +857,12 @@ class _BatchedUnitSynthesizer:
             self.last_generation_trigger_index = index
             self.outputs = {i: (row, generation) for i, row in zip(indices, values)
                             if i in self.requests}
+            if self.prepare_output is not None:
+                for i, (row, _) in self.outputs.items():
+                    row["preparedAudio"] = self.prepare_output(i, row)
         value, self.last_generation = self.outputs.pop(index)
         self.remaining.pop(0)
-        return value["wave"], value["sampleRate"]
+        return value.get("preparedAudio", value["wave"]), value["sampleRate"]
 
 
 def _render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
@@ -839,12 +873,30 @@ def _render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
                  reuse_from: Path | None = None,
                  speculative_from: Path | None = None,
                  batch_size: int = 1, replicas: int = 1,
+                 cpu_workers: int = 0, cpu_queue_units: int = 16,
                  assembly_only: bool = False, max_synthesis_units: int | None = None,
                  model_resources: ExitStack,
                  synth_factory: Callable[..., Any] = QwenSynthesizer,
                  predecessor_spans: tuple[str, ...] = (),
                  completion_spans: list[str] | None = None) -> list[dict[str, Any]]:
     job, adapter = context["job"], context["adapter"]
+    cpu = BoundedAudioCPU(cpu_workers, cpu_queue_units)
+    prepared_indices = set()
+    def finish_cpu():
+        cpu.close()
+        if cpu_workers:
+            write_json_atomic(root / "cpu-runtime.json", cpu.report())
+    model_resources.callback(finish_cpu)
+    def prepare_output(index, row):
+        partial = (root / job["units"][index]["outputRelativePath"]).with_suffix(".partial.wav")
+        require(not partial.is_symlink() and partial.resolve().is_relative_to(root.resolve()),
+                "CPU partial audio escapes render root")
+        partial.parent.mkdir(parents=True, exist_ok=True)
+        if partial.exists():
+            anomaly.preserve(root, job, index, reason="uncommitted_partial_before_replacement",
+                             audio_relative_path=str(partial.relative_to(root)))
+        prepared_indices.add(index)
+        return cpu.submit(_prepare_cpu_audio, partial, _cpu_audio_input(row["wave"]), row["sampleRate"])
     validated = context.get("receiptContext")
     if validated is not None:
         require(validated.job == job, "Cached render identity differs: prevalidated job")
@@ -915,7 +967,7 @@ def _render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
                 engine = ParallelBatchEngine(pool, windows, seed=seed, frozen_check=frozen_check)
             return _BatchedUnitSynthesizer(engine, requests,
                 window_requests=window_requests, seed=seed, batch_size=batch_size,
-                job_path=paths["job"])
+                job_path=paths["job"], prepare_output=prepare_output if cpu_workers else None)
     model = None
     model_load_span = None
     previous_receipts = accounting.bounded_dependencies(
@@ -970,6 +1022,8 @@ def _render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
                     require(not wav_path.exists(), f"Uncommitted audio cannot be reused: {wav_path}")
                     wav_path.parent.mkdir(parents=True, exist_ok=True)
                     partial = wav_path.with_suffix(".partial.wav")
+                    require(not partial.is_symlink() and partial.resolve().is_relative_to(root.resolve()),
+                            "Partial audio escapes render root")
                     previous = (reusable_batches[index] if reusable_batches is not None else
                                 _reusable_audio(reuse_from, unit, index, expected)
                                 if reuse_from is not None else None)
@@ -979,7 +1033,8 @@ def _render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
                             strict_rubric=context.get("strict_rubric"))
                         unit_metrics["reusedPreview"] = previous is not None
             if not has_commit:
-                if partial.exists():
+                prepared = None
+                if partial.exists() and index not in prepared_indices:
                     anomaly.preserve(root, job, index, reason="uncommitted_partial_before_replacement",
                                      audio_relative_path=str(partial.relative_to(root)))
                 if previous is not None:
@@ -1009,12 +1064,18 @@ def _render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
                                 unit_metrics["batchInvocationUnitIndices"] = (
                                     model.last_generation["unitIndices"])
                             # A partial belongs to this same intent and is safe to replace on resume.
-                            write_pcm16(partial, wavs, int(rate))
+                            if isinstance(wavs, Future):
+                                prepared = wavs
+                            elif cpu_workers:
+                                prepared = cpu.submit(_prepare_cpu_audio, partial, _cpu_audio_input(wavs), int(rate))
+                            else:
+                                write_pcm16(partial, wavs, int(rate))
                 with measure.producer_substage("audio_validation", billing="local"):
                     with accounting.stage(f"layer3.validation.{job['targetLocale']}.{index:04d}", work_unit_id=work_unit + ".validation",
                                           depends_on=[audio_span] if audio_span else None) as validation_span:
                         try:
-                            decoded = integrity.probe_full_decode(partial)
+                            prepared_result = prepared.result() if prepared is not None else None
+                            decoded = prepared_result["decoded"] if prepared_result is not None else integrity.probe_full_decode(partial)
                         except Exception as error:
                             anomaly.preserve(root, job, index,
                                 reason=f"full_decode_failed:{type(error).__name__}",
@@ -1023,7 +1084,12 @@ def _render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
                     measure.record_substage_metrics({"audioSeconds": decoded["durationSeconds"]})
                 with accounting.stage(f"layer3.commit.{job['targetLocale']}.{index:04d}",
                                       work_unit_id=work_unit + ".commit", depends_on=[validation_span]) as commit_span:
-                    commit = {"identity": render_identity, "audioSha256": identity.sha256(partial)}
+                    if prepared_result is not None:
+                        stamp = partial.stat()
+                        require(prepared_result["fileStamp"] == (stamp.st_dev, stamp.st_ino, stamp.st_size,
+                                stamp.st_mtime_ns, stamp.st_ctime_ns), "Prepared audio changed before commit")
+                    commit = {"identity": render_identity, "audioSha256": prepared_result["audioSha256"]
+                              if prepared_result is not None else identity.sha256(partial)}
                     if batch_size != 1 and unit_metrics["synthesized"]:
                         commit["generationBatch"] = model.last_generation
                     elif batch_size != 1 and unit_metrics["reusedPrior"]:
@@ -1307,6 +1373,7 @@ def _render(paths: dict[str, Path], checkpoint_map_path: Path,
            assembly_only: bool = False, max_synthesis_units: int | None = None,
            expected_dependency_hashes: dict[str, str] | None = None,
            seed: int = 42, batch_size: int = 1, replicas: int = 1,
+           cpu_workers: int = 0, cpu_queue_units: int = 16,
            device: str = "cuda:0", dtype: str = "bfloat16",
            attention: str | None = "sdpa", instruct: str | None = None,
            unit_instructions_path: Path | None = None,
@@ -1361,6 +1428,7 @@ def _render(paths: dict[str, Path], checkpoint_map_path: Path,
                             reuse_from=reuse_from,
                             speculative_from=speculative_from,
                             batch_size=batch_size, replicas=replicas,
+                            cpu_workers=cpu_workers, cpu_queue_units=cpu_queue_units,
                             synth_factory=synth_factory, predecessor_spans=(validation_span,),
                             completion_spans=completed_units)
     with accounting.stage("layer3.assemble"):
@@ -1419,6 +1487,9 @@ def main(argv=None) -> None:
                         help="New single-speaker Spark jobs: 8 resident replicas x batch8")
     parser.add_argument("--replicas", type=int, choices=(1, 8), default=None,
                         help="Default1 for existing jobs; Spark production uses8")
+    parser.add_argument("--cpu-workers", type=int, choices=(0, 1, 2, 4), default=0,
+                        help="Bounded WAV save/decode/hash workers; parent commits remain ordered")
+    parser.add_argument("--cpu-queue-units", type=int, choices=range(1, 17), default=16)
     dev_profile.add_arguments(parser)
     parser.add_argument("--instruct", help="Frozen natural delivery instruction; never edits approved text")
     parser.add_argument("--unit-instructions", type=Path,
@@ -1478,6 +1549,7 @@ def main(argv=None) -> None:
         speculative_from=args.speculative_from,
         quarantine_units=tuple(args.quarantine_unit), quarantine_reason=args.quarantine_reason,
         assembly_only=args.assembly_only, max_synthesis_units=args.max_synthesis_units, seed=args.seed, batch_size=args.batch_size, replicas=args.replicas, device=args.device,
+        cpu_workers=args.cpu_workers, cpu_queue_units=args.cpu_queue_units,
         dtype=args.dtype, attention=args.attention, instruct=args.instruct,
         unit_instructions_path=args.unit_instructions,
         policy=policy, track_format=args.track_format,

@@ -9,8 +9,6 @@ from __future__ import annotations
 
 import argparse
 from collections import OrderedDict
-from concurrent.futures import ThreadPoolExecutor
-from contextvars import copy_context
 from datetime import datetime, timezone
 import fcntl
 import json
@@ -352,11 +350,11 @@ def run(*, aligned_path: Path, manifest_path: Path, out: Path, model: str = "gpt
             )
             return _checked_batch(result, batch), receipt
 
-        # map preserves source order regardless of completion order.
-        with ThreadPoolExecutor(max_workers=workers) as pool:
-            pending = [pool.submit(copy_context().run, review_batch, item)
-                       for item in enumerate(_batches(sentences, batch_size))]
-            batches_reviewed = [future.result() for future in pending]
+        # Bounded dispatch preserves source order and stops admitting later
+        # groups after a failed/unknown sibling. Context-bound request caps are
+        # copied into each worker rather than silently lost across threads.
+        from scripts.sermon_unified_source import ordered_bounded_map
+        batches_reviewed = ordered_bounded_map(enumerate(_batches(sentences, batch_size)), review_batch, workers)
         for rows, receipt in batches_reviewed:
             reviewed.extend(rows)
             request_receipts.append(receipt)

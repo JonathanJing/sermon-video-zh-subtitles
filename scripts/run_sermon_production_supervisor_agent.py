@@ -190,6 +190,10 @@ def build_agent(*, model: str, execute: bool) -> Agent[SupervisorRuntime]:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--concurrency-profile', type=Path,
+                        help='Explicit shared CLI profile; requires --resource-policy')
+    parser.add_argument('--resource-policy', type=Path,
+                        help='Shared profile broker; reserves one Supervisor slot')
     parser.add_argument("--sunday", required=True, help="Sunday slice date, YYYY-MM-DD.")
     parser.add_argument("--state-file", required=True, help="Live-source state path or gs:// URI.")
     parser.add_argument("--work-root", type=Path, default=sermon_production_supervisor.DEFAULT_WORK_ROOT)

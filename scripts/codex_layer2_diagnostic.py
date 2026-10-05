@@ -36,7 +36,8 @@ def artifact_directory(path):
 
 
 def freeze_fixture(source, anchor, policy, plan, plugin, out, *, authorization_ref, code_commit,
-                   translator_model=None, scripture_classification='not_reviewed', source_quotation_units=()):
+                   translator_model=None, scripture_classification='not_reviewed', source_quotation_units=(),
+                   concurrency_profile=None):
     """Freeze supplied unapproved Layer 1 bytes, never manufacture review receipts."""
     out, plugin = artifact_directory(out), Path(plugin).resolve()
     require(not out.exists(), 'Diagnostic fixture requires a new directory')
@@ -67,6 +68,9 @@ def freeze_fixture(source, anchor, policy, plan, plugin, out, *, authorization_r
                 'sourceWindow': {k: source['source']['approvedWindow'][k] for k in ('startSeconds', 'endSeconds')},
                 'anchorTimeline': 'relative_to_frozen_window_start',
                 'sourceUnits': len(anchor['sourceUnits']), 'groups': len(plan)}
+    if concurrency_profile is not None:
+        from scripts.production_concurrency_profile import validate_profile
+        manifest['concurrencyProfile'] = validate_profile(concurrency_profile)
     config_hash = policies.canonical_sha256(manifest)
     context = {'schemaVersion': diagnostic.SCHEMA, 'runId': config_hash,
                'runConfigSha256': config_hash, 'storeSha256': config_hash,
@@ -107,6 +111,13 @@ def _check_plugin_scope(policy, anchor, plugin, manifest):
     ids = [unit['sourceUnitId'] for unit in anchor['sourceUnits']]
     require(isinstance(quotation_units, list) and len(set(quotation_units)) == len(quotation_units)
             and all(unit in ids for unit in quotation_units), 'Diagnostic source quotation unit binding changed')
+    facts = runner.rule_preflight._literals(plugin)
+    if facts.get('DIAGNOSTIC_PINNED_QUOTES') is True:
+        bindings = facts.get('DIAGNOSTIC_QUOTE_BINDINGS', {})
+        bound_units = {part['sourceUnitId'] for quote in bindings.get('quotes', []) for part in quote['parts']}
+        require(manifest['scriptureClassification'] == 'contains_direct_quotations'
+                and set(quotation_units) == bound_units,
+                'Diagnostic quotation annotation differs from pinned spans')
     if plugin.resolve() == (ROOT / 'scripts/language_review_plugins/diagnostic_structural.py').resolve():
         from scripts.language_review_plugins import diagnostic_structural
         english = ' '.join(unit['english'] for unit in anchor['sourceUnits'])
@@ -145,7 +156,11 @@ def load_fixture(directory):
             'Diagnostic fixture source/window/coverage changed')
     request = producer.prepare_request(source, anchor, policy, diagnostic_context=context)
     runner.validate_standalone_worker_budget(policy)
-    require(policy['batching']['workers'] == 1, 'CLI diagnostic runs one group and locale at a time')
+    if manifest.get('concurrencyProfile') is not None:
+        from scripts.production_concurrency_profile import validate_profile
+        validate_profile(manifest['concurrencyProfile'])
+    else:
+        require(policy['batching']['workers'] == 1, 'CLI diagnostic runs one group and locale at a time')
     runner.group_plan(request, anchor, plan)
     _check_boundaries(source, anchor)
     _check_plugin_scope(policy, anchor, plugin, manifest)
@@ -156,6 +171,8 @@ def load_fixture(directory):
 def run_chain(inputs, out, caller):
     source, anchor, policy, plan, plugin, request, receipt, context, manifest = inputs
     out = artifact_directory(out)
+    require(getattr(caller, 'execution_identity', {}).get('concurrencyProfile') == manifest.get('concurrencyProfile'),
+            'Diagnostic concurrency capability differs from frozen fixture')
     with work_lock(out):
         evidence = runner._run_prepared_groups(request, anchor, policy, out, '', caller, plan, plugin,
             simulation_only=True, diagnostic_context=context)
@@ -185,14 +202,18 @@ def main():
     parser.add_argument('--authorization-ref', required=True)
     parser.add_argument('--code-commit', required=True)
     parser.add_argument('--translator-model', choices=['gpt-6.1-sol'])
+    parser.add_argument('--concurrency-profile', type=Path, help='Explicit versioned capability; legacy fixtures remain serial')
     parser.add_argument('--scripture-classification', choices=['no_direct_quotations', 'contains_direct_quotations', 'not_reviewed'], default='not_reviewed')
     parser.add_argument('--source-quotation-unit', action='append', default=[], help='Bound source risk annotation, not quotation approval')
     args = parser.parse_args()
+    from scripts.production_concurrency_profile import load_profile
+    concurrency_profile = load_profile(args.concurrency_profile) if args.concurrency_profile else None
     values = [json.loads(path.read_text()) for path in (args.source, args.anchor, args.policy, args.group_plan)]
     print(json.dumps(freeze_fixture(*values, args.plugin, args.out, authorization_ref=args.authorization_ref,
                                    code_commit=args.code_commit, translator_model=args.translator_model,
                                    scripture_classification=args.scripture_classification,
-                                   source_quotation_units=args.source_quotation_unit), ensure_ascii=False))
+                                   source_quotation_units=args.source_quotation_unit,
+                                   concurrency_profile=concurrency_profile), ensure_ascii=False))
 
 
 if __name__ == '__main__':

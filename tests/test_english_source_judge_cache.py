@@ -51,6 +51,28 @@ class JudgeSingleFlightTests(unittest.TestCase):
             self.call()
         self.assertEqual(self.calls, [])
 
+    def test_admission_busy_precedes_started_and_cache_hits_skip_admission(self):
+        test = self
+        class Caller:
+            admissions = 0
+            busy = True
+            def admit_resource(self, payload):
+                self.admissions += 1
+                if self.busy:
+                    raise ValueError('resource_capacity_busy')
+            def __call__(self, key, payload):
+                return test.provider(key, payload)
+        caller = Caller()
+        with self.assertRaisesRegex(ValueError, 'resource_capacity_busy'):
+            self.call(caller=caller)
+        self.assertEqual(list((self.root / 'cache').glob('*.started.json')), [])
+        self.assertEqual(self.calls, [])
+        caller.busy = False
+        first = self.call(caller=caller)
+        self.assertEqual(self.call(caller=caller), first)
+        self.assertEqual(caller.admissions, 2)
+        self.assertEqual(self.calls, [0])
+
     def test_invalid_returned_response_is_preserved_and_never_repaid(self):
         def invalid(*args):
             self.calls.append(0)

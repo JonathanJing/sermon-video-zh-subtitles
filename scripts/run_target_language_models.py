@@ -510,9 +510,10 @@ def carry_forward_group(prior_run: Path, out: Path, index: int,
         cache_observation.record(role, cached, target, mode="carried_forward_group", origin=source)
     return copy.deepcopy(prior_row)
 
-def ordered_group_results(items: list, worker, workers: int) -> list:
+def ordered_group_results(items: list, worker, workers: int, *, maximum_workers=16) -> list:
     """Keep only a bounded set of paid groups in flight and merge in source order."""
-    require(type(workers) is int and 1 <= workers <= 16, "Group workers must be 1..16")
+    require(maximum_workers in (16, 23) and type(workers) is int and 1 <= workers <= maximum_workers,
+            "Group workers exceed versioned capacity")
     if workers == 1 or len(items) < 2:
         return [worker(item) for item in items]
     results = {}
@@ -662,8 +663,15 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             require(policy[role]["model"] == expected,
                     f"Production {role} model must be {expected}; freeze a new policy")
         workers = policy["batching"].get("workers")
+        capacity_profile = getattr(caller, 'execution_identity', {}).get('concurrencyProfile')
+        maximum_workers = 16
+        if capacity_profile is not None:
+            from scripts.production_concurrency_profile import validate_profile
+            capacity_profile = validate_profile(capacity_profile)
+            maximum_workers = capacity_profile['layer2GroupWorkers']
+            workers = maximum_workers  # explicit runtime capability; frozen legacy policy schema stays intact
         require(policy["batching"].get("batchSize") == 1
-                and type(workers) is int and 1 <= workers <= 16,
+                and type(workers) is int and 1 <= workers <= maximum_workers,
                 "Per-group production runner requires batchSize=1 and workers=1..16")
         if plugin_path is not None:
             require_plugin_identity(plugin_path, policy["languageReview"]["pluginImplementationSha256"])
@@ -968,7 +976,9 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
         with accounting.stage(f"layer2.group.{request['targetLocale']}.{index:04d}",
                               billing="orchestrator"):
             return _process_group(item)
-    results = ordered_group_results(list(enumerate(plan, 1)), process_group, workers)
+    results = (ordered_group_results(list(enumerate(plan, 1)), process_group, workers,
+                                    maximum_workers=maximum_workers) if maximum_workers != 16 else
+               ordered_group_results(list(enumerate(plan, 1)), process_group, workers))
     dependencies = accounting.bounded_dependencies(
         f"layer2.evidence_join.{request['targetLocale']}", [span for _, span in results],
         work_unit_id=f"l2.{request['targetLocale']}.evidence_join")

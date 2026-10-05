@@ -22,7 +22,10 @@ class StrictAdapterTests(unittest.TestCase):
         f=legacy_fixtures.ProduceTargetLanguageCandidateTests();self.addCleanup(f.doCleanups); f.setUp();self.f=f
         tmp=tempfile.TemporaryDirectory();self.addCleanup(tmp.cleanup);self.root=Path(tmp.name);self.calls=[]
         draft=copy.deepcopy(f.policy);draft.pop('componentSha256');draft['schemaVersion']=policies.POLICY_V3
-        draft['reviewMode']='strict_verifier';draft['translator']['promptVersion']='astra-strict-generator-v1';draft['reviewer']['promptVersion']='sol-strict-verifier-v1'
+        draft['reviewMode']='strict_verifier'
+        # Preserved API contract; new CLI defaults cannot replace its fixture models.
+        draft['translator'].update(model='gpt-6-astra',reasoningEffort='medium',promptVersion='astra-strict-generator-v1')
+        draft['reviewer'].update(model='gpt-6-sol',reasoningEffort='medium',promptVersion='sol-strict-verifier-v1')
         rubric=load('rubric');rubric['requiredLanguagePluginChecks']=draft['languageReview']['requiredChecks']
         draft['reviewContract']=dict(rubricCanonicalJsonSha256=c.canonical_sha256(rubric),reviewReceiptSchemaVersion='sermon-review-receipt-v1',candidateRevisionSchemaVersion='sermon-candidate-revision-v1',inputManifestSchemaVersion='sermon-review-input-manifest-v1',revisionGranularity='translation_group')
         policy=policies.freeze_strict_policy(draft,rubric)

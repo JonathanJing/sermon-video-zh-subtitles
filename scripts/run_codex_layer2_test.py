@@ -107,6 +107,10 @@ def run_diagnostic_test(fixture_dir, out_dir, *, cli_path, reviewer_tier='fast',
     if mock_responses_dir is not None and resource_policy_path is not None:
         raise ValueError('Fixture replay cannot claim real CLI resource admission')
     options = {}
+    if manifest.get('concurrencyProfile') is not None:
+        options['concurrency_profile'] = manifest['concurrencyProfile']
+        if resource_policy_path is None and mock_responses_dir is None:
+            raise ValueError('Concurrent CLI diagnostics require the shared resource policy')
     if configuration is not None:
         options['simulation_model_configuration'] = configuration
     if resource_policy_path is not None:

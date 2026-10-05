@@ -87,7 +87,7 @@ class DiagnosticChainTests(unittest.TestCase):
                 {'type': 'turn.completed', 'usage': {'input_tokens': 100, 'cached_input_tokens': 10, 'output_tokens': 20}}]
         return subprocess.CompletedProcess(argv, 0, stdout='\n'.join(json.dumps(row) for row in rows), stderr='')
 
-    def invoke(self, *, transport=None, process=None):
+    def invoke(self, *, transport=None, process=None, resource_policy_path=None):
         real_run = subprocess.run
         cli_process = process or self.process
         def dispatch(argv, **kwargs):
@@ -97,7 +97,7 @@ class DiagnosticChainTests(unittest.TestCase):
         with patch.object(command, 'CodexLayer2Transport', return_value=transport or self.transport()), \
              patch('scripts.codex_layer2_transport.subprocess.run', side_effect=dispatch), \
              patch.object(runner.sermon_pipeline, 'chat_json', side_effect=AssertionError('API forbidden')), patch('builtins.print'):
-            return command.run_test(self.fixture, None, self.out, cli_path=self.root / 'unused', diagnostic_fixture=True)
+            return command.run_test(self.fixture, None, self.out, cli_path=self.root / 'unused', diagnostic_fixture=True, resource_policy_path=resource_policy_path)
 
     def test_fake_cli_plugin_candidate_share_rules_and_same_run_resume_without_calls(self):
         self.freeze()
