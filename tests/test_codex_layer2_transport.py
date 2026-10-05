@@ -120,7 +120,7 @@ class CodexRuntimeBoundaryTests(unittest.TestCase):
                        "targetUtterances": ["你好。"],
                        "coverage": [{"sourceUnitId": "u1", "targetText": "你好。"}]}
 
-    def process(self, *, completed=True, tool=False, exit_code=0, mismatch=False):
+    def process(self, *, completed=True, tool=False, exit_code=0, mismatch=False, failed=False):
         def fake_run(command, **kwargs):
             content = json.dumps(self.result, ensure_ascii=False)
             (Path(kwargs["cwd"]) / "result.json").write_text(content + "\n")
@@ -133,9 +133,27 @@ class CodexRuntimeBoundaryTests(unittest.TestCase):
             if completed:
                 rows.append({"type": "turn.completed", "usage": {
                     "input_tokens": 100, "cached_input_tokens": 50, "output_tokens": 20}})
+            if failed:
+                rows.append({"type": "turn.failed", "usage": {
+                    "input_tokens": 100, "cached_input_tokens": 50, "output_tokens": 20}})
             return subprocess.CompletedProcess(command, exit_code,
                 stdout="\n".join(json.dumps(row) for row in rows), stderr="fixture stderr")
         return fake_run
+
+    def test_failed_terminal_keeps_reported_credit_subtotal(self):
+        import copy
+        from scripts import sermon_model_call_observation as observation
+        events = []
+        with patch.object(observation.accounting, '_emit', side_effect=lambda row: events.append(copy.deepcopy(row))):
+            with patch('scripts.codex_layer2_transport.subprocess.run',
+                       side_effect=self.process(completed=False, failed=True, exit_code=1)):
+                with self.assertRaises(RuntimeError):
+                    self.transport('', self.payload)
+        terminal = events[-1]['fields']
+        self.assertEqual(terminal['status'], 'failed')
+        self.assertEqual(terminal['creditUsage']['estimatedCredits'], 0.03875)
+        self.assertEqual(terminal['creditUsage']['reason'], 'reported_failed_usage_subtotal')
+        self.assertIsNone(terminal['creditUsage']['actualCredits'])
 
     def test_runtime_success_has_own_envelope_and_matching_output(self):
         with patch("scripts.codex_layer2_transport.subprocess.run", side_effect=self.process()) as run:
@@ -165,6 +183,8 @@ class CodexRuntimeBoundaryTests(unittest.TestCase):
         self.assertEqual(response['requestedModel'], 'gpt-6.1-sol')
         self.assertEqual(response['requestedReasoningEffort'], 'high')
         self.assertEqual(response['requestedServiceTier'], 'fast')
+        self.assertEqual(response['creditUsage']['estimatedCredits'], 0.01525)
+        self.assertIsNone(response['creditUsage']['actualQuotaUsage'])
         self.assertIsNone(response['serverModel'])
         self.assertEqual(CodexLayer2Transport.completed_content(response, 'gpt-6.1-sol', 'translator'), response['content'])
         with self.assertRaises(ValueError):

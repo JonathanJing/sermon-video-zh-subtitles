@@ -26,7 +26,7 @@ Astra 翻译使用普通速度；Sol 审核可选 `default` 或 `fast`，推理�
 
 仅接受 ChatGPT 登录；从 CLI 子进程移除 `OPENAI_*` 和 `CODEX_API_KEY`，忽略用户配置，使用独立临时 cwd、ephemeral 会话和 read-only sandbox。指令禁止工具调用，适配器另检查实际 JSONL；任何工具事件、失败、缺完成事件或 final file/message 不一致均拒绝。没有 API fallback、自动重试或密钥加载。
 
-CLI 返回使用独立 `codex-cli-layer2-response-v1` envelope，不伪造 OpenAI Chat Completions 返回。requestId 为本地 `codex:<threadId>`，模型与速度档位是请求配置，未返回的服务端身份保持 null。每组两个独立进程／会话；输出 JSON schema 校验之后仍经过现有语义检查。机器审核失败保留返回并停止，不静默放行。
+CLI 新返回使用独立 `codex-cli-layer2-response-v2` envelope，含版本化 `creditUsage` 估算，reader 继续接受历史 v1；不伪造 OpenAI Chat Completions 返回。requestId 为本地 `codex:<threadId>`，模型与速度档位是请求配置，未返回的服务端身份保持 null。每组两个独立进程／会话；输出 JSON schema 校验之后仍经过现有语义检查。机器审核失败保留返回并停止，不静默放行。详见[credit 日志与迁移](model-call-logging.zh.md#codex-cli-credit-估算)；历史 v1 缺少估价设置时保持未知，不新增模型调用补测。
 
 CLI 版本、入口及二进制 SHA、适配器 SHA、输出 schema、速度档位和超时一起进入 `codex-layer2-transport-identity-v1` 执行身份及调用 fingerprint。API 原缓存 fingerprint 保持不变；API 与 CLI 缓存不能混用。仅支持同一 run 内的验证后缓存／raw 恢复，不开放跨 run carry-forward 或迁移。
 

@@ -19,7 +19,8 @@ from scripts import sermon_model_call_observation as observation
 from scripts import codex_layer2_resources as resource_admission
 from scripts import sermon_workflow_jobs as jobs
 
-SCHEMA = 'codex-cli-layer2-response-v1'
+SCHEMA = 'codex-cli-layer2-response-v2'
+LEGACY_SCHEMA = 'codex-cli-layer2-response-v1'
 MODELS = {'translator': 'gpt-6-astra', 'reviewer': 'gpt-6-sol'}
 TEST_CONFIGURATION = {'schemaVersion': 'codex-layer2-simulation-models-v1',
     'simulationOnly': True, 'translator': {'model': 'gpt-6.1-sol', 'reasoningEffort': 'high', 'serviceTier': 'fast'},
@@ -206,7 +207,7 @@ class CodexLayer2Transport:
             with admission.dispatch() if admission is not None else nullcontext():
                 with observation.invocation(payload['model'], backend='agent_session', provider='codex',
                                             role='production', timing_scope='agent_session_including_tools',
-                                            usage_source='host_telemetry', call_id=call_id) as receipt:
+                                            usage_source='host_telemetry', call_id=call_id, service_tier=tier) as receipt:
                     started = time.monotonic()
                     try:
                         process = subprocess.run(command, input=prompt, env=self.env, cwd=work,
@@ -234,8 +235,9 @@ class CodexLayer2Transport:
                     tools = [row.get('item', {}).get('type') for row in rows
                              if row.get('type', '').startswith('item.')
                              and row.get('item', {}).get('type') not in {None, 'agent_message', 'reasoning'}]
-                    if len(completions) == 1:
-                        receipt['usage'] = completions[0].get('usage')
+                    terminals = [row for row in rows if row.get('type') in {'turn.completed', 'turn.failed'}]
+                    if len(terminals) == 1:
+                        receipt['usage'] = terminals[0].get('usage')
                     if process.returncode or len(started_threads) != 1 or len(completions) != 1 \
                             or any(row.get('type') in {'turn.failed', 'error'} for row in rows) or tools:
                         raise RuntimeError('codex_language_terminal_or_tool_failure_inspect_receipt')
@@ -248,23 +250,26 @@ class CodexLayer2Transport:
                     content = result_path.read_text()
                     if not final_messages or final_messages[-1] != content.strip():
                         raise RuntimeError('codex_language_final_message_file_mismatch')
+                    from scripts.codex_credit_usage import estimate_credit_usage
+                    credits = estimate_credit_usage(payload['model'], observation.normalize_usage(receipt['usage']),
+                                                    requested_service_tier=tier)
                     response = {'schemaVersion': SCHEMA, 'id': 'codex:' + started_threads[0],
                                 'threadId': started_threads[0], 'requestedModel': payload['model'],
                                 'serverModel': None, 'requestedReasoningEffort': payload['reasoning_effort'], 'requestedServiceTier': tier, 'serverServiceTier': None,
                                 'completed': True, 'exitCode': process.returncode,
                                 'content': content, 'usage': receipt['usage'],
-                                'elapsedSeconds': elapsed, 'toolCalls': 0}
+                                'elapsedSeconds': elapsed, 'toolCalls': 0, 'creditUsage': credits}
                     if call_directory is not None:
                         _write(call_directory / 'response.json', response)
                         if admission is not None:
                             admission.response_sha256 = _hash(response)
                     print(json.dumps({'role': role, 'model': payload['model'], 'tier': tier,
-                                      'elapsedSeconds': round(elapsed, 3), 'usage': receipt['usage']}), flush=True)
+                                      'elapsedSeconds': round(elapsed, 3), 'usage': receipt['usage'], 'creditUsage': credits}), flush=True)
                     return response
 
     @staticmethod
     def completed_content(response, model, role):
-        if not isinstance(response, dict) or response.get('schemaVersion') != SCHEMA \
+        if not isinstance(response, dict) or response.get('schemaVersion') not in {SCHEMA, LEGACY_SCHEMA} \
                 or response.get('requestedModel') != model \
                 or model not in ({MODELS.get(role), 'gpt-6.1-sol'} if role == 'translator' else {MODELS.get(role)}) \
                 or response.get('completed') is not True or response.get('exitCode') != 0 \
@@ -272,5 +277,9 @@ class CodexLayer2Transport:
                 or response.get('id') != 'codex:' + response['threadId'] \
                 or not isinstance(response.get('content'), str):
             raise ValueError('invalid_codex_language_terminal_response')
+        if response['schemaVersion'] == SCHEMA:
+            from scripts.codex_credit_usage import safe_credit_usage
+            safe_credit_usage(response.get('creditUsage'), model, observation.normalize_usage(response.get('usage')),
+                              status='completed')
         jsonschema.validate(json.loads(response['content']), output_schema(role))
         return response['content']

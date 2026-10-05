@@ -43,6 +43,22 @@ def test_interrupted_codex_turn_retains_failed_attempt_and_unknown_usage(tmp_pat
     assert call['sessionOutputTokensPerSecond'] is None
 
 
+def test_codex_fast_credits_reach_json_csv_without_polluting_api_cost(tmp_path):
+    with profile.context(workKind='control', evidenceMode='synthetic', executorType='decision_agent'):
+        with accounting.accounting_session(tmp_path, 'credit_capture'):
+            capture.capture_codex(['{"type":"turn.started"}',
+                '{"type":"turn.completed","usage":{"input_tokens":100,"cached_input_tokens":90,"output_tokens":10}}'],
+                'gpt-6-luna', service_tier='fast')
+    summary = accounting.summarize(tmp_path)
+    assert not summary['ledgerIntegrity']['damagedEvents']
+    call = summary['modelCallReport']['calls'][0]
+    assert call['creditUsage']['estimatedCredits'] == 0.000345
+    assert summary['modelCallReport']['creditUsage']['estimatedCreditsKnownSubtotal'] == 0.000345
+    assert call['creditUsage']['actualCredits'] is None
+    assert 'creditUsage' in (tmp_path/'model-calls.csv').read_text()
+    assert all(run['apiAttempts'] == 0 and run['knownEstimatedUsd'] == 0 for run in summary['runs'])
+
+
 def test_capture_rejects_finish_without_observed_start(tmp_path):
     with accounting.accounting_session(tmp_path, 'capture_test'):
         with pytest.raises(ValueError, match='start_not_observed'):

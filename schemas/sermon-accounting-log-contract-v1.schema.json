@@ -4754,7 +4754,10 @@
       ],
       "properties": {
         "schemaVersion": {
-          "const": "sermon-model-call-observation-v1"
+          "enum": [
+            "sermon-model-call-observation-v1",
+            "sermon-model-call-observation-v2"
+          ]
         },
         "callId": {
           "type": "string",
@@ -4978,6 +4981,180 @@
               "maximum": 1000000000000
             }
           }
+        },
+        "creditUsage": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schemaVersion",
+            "status",
+            "estimatedCredits",
+            "actualCredits",
+            "actualQuotaUsage",
+            "basis",
+            "model",
+            "modelSource",
+            "requestedServiceTier",
+            "appliedServiceTier",
+            "tierSource",
+            "rateCardVersion",
+            "rateCardSha256",
+            "verifiedAt",
+            "sources",
+            "ratesPerMillionTokens",
+            "speedMultiplier",
+            "reason"
+          ],
+          "properties": {
+            "schemaVersion": {
+              "const": "codex-credit-usage-v1"
+            },
+            "status": {
+              "enum": [
+                "estimated",
+                "unknown",
+                "cache_reuse"
+              ]
+            },
+            "estimatedCredits": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "actualCredits": {
+              "type": "null"
+            },
+            "actualQuotaUsage": {
+              "type": "null"
+            },
+            "basis": {
+              "const": "purchased_credit_equivalent"
+            },
+            "model": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:/-]{0,159}$",
+              "maxLength": 160
+            },
+            "modelSource": {
+              "enum": [
+                "requested",
+                "server"
+              ]
+            },
+            "requestedServiceTier": {
+              "enum": [
+                null,
+                "default",
+                "fast",
+                "ultrafast"
+              ]
+            },
+            "appliedServiceTier": {
+              "enum": [
+                null,
+                "default",
+                "fast",
+                "ultrafast"
+              ]
+            },
+            "tierSource": {
+              "enum": [
+                "requested",
+                "server",
+                "unavailable"
+              ]
+            },
+            "rateCardVersion": {
+              "const": "codex-credits-2026-10-05"
+            },
+            "rateCardSha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "verifiedAt": {
+              "const": "2026-10-05"
+            },
+            "sources": {
+              "const": [
+                "https://learn.chatgpt.com/docs/pricing",
+                "https://learn.chatgpt.com/docs/agent-configuration/speed"
+              ]
+            },
+            "ratesPerMillionTokens": {
+              "anyOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "input",
+                    "cachedInput",
+                    "output"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "input": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "cachedInput": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "output": {
+                      "type": "number",
+                      "minimum": 0
+                    }
+                  }
+                }
+              ]
+            },
+            "speedMultiplier": {
+              "enum": [
+                null,
+                1,
+                2,
+                6
+              ]
+            },
+            "reason": {
+              "type": "string",
+              "pattern": "^[a-z_]+$",
+              "maxLength": 80
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "status": {
+                    "const": "unknown"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "estimatedCredits": {
+                    "type": "null"
+                  }
+                }
+              },
+              "else": {
+                "properties": {
+                  "estimatedCredits": {
+                    "type": "number",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          ]
         }
       },
       "allOf": [
@@ -5169,9 +5346,38 @@
               }
             }
           }
+        },
+        {
+          "if": {
+            "properties": {
+              "schemaVersion": {
+                "const": "sermon-model-call-observation-v2"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "creditUsage"
+            ],
+            "properties": {
+              "provider": {
+                "const": "codex"
+              },
+              "backend": {
+                "const": "agent_session"
+              }
+            }
+          },
+          "else": {
+            "not": {
+              "required": [
+                "creditUsage"
+              ]
+            }
+          }
         }
       ]
     }
   },
-  "x-model-call-observation-revision": 1
+  "x-model-call-observation-revision": 2
 }
