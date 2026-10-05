@@ -27,22 +27,7 @@ struct ListeningActivityWidget: Widget {
                         .font(.headline.monospacedDigit())
                 }
                 DynamicIslandExpandedRegion(.bottom) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        if context.state.alignmentPhase != nil {
-                            Text(verbatim: context.state.statusText(isStale: context.isStale))
-                                .font(.headline).foregroundStyle(.green)
-                        }
-                        Text(verbatim: context.state.title)
-                            .font(context.state.alignmentPhase == nil ? .headline : .caption).lineLimit(2)
-                        HStack {
-                            Text(verbatim: context.state.speaker).lineLimit(1)
-                            Spacer(minLength: 8)
-                            Text(verbatim: context.state.statusText(isStale: context.isStale))
-                        }
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    }
-                    .padding(.top, 4)
+                    ListeningActivityIslandDetails(state: context.state, isStale: context.isStale)
                 }
             } compactLeading: {
                 ListeningActivitySymbol(state: context.state, isStale: context.isStale)
@@ -119,30 +104,4 @@ private struct ListeningActivityCard: View {
 
 }
 
-private struct ListeningActivitySymbol: View {
-    let state: ListeningActivityAttributes.ContentState
-    let isStale: Bool
-
-    var body: some View {
-        Image(systemName: isStale ? "arrow.clockwise" : state.alignmentPhase?.symbolName ?? (state.isWaiting ? "hourglass" : state.isPlaying ? "headphones" : "pause.fill"))
-            .foregroundStyle(.green)
-            .accessibilityLabel(state.statusText(isStale: isStale))
-    }
-}
-
-private struct ListeningActivityElapsed: View {
-    let state: ListeningActivityAttributes.ContentState
-    let isStale: Bool
-
-    var body: some View {
-        if state.isPlaying && !state.isWaiting && !isStale {
-            Text(timerInterval: state.timerInterval, countsDown: false)
-                .monospacedDigit()
-                .multilineTextAlignment(.trailing)
-        } else {
-            Text(verbatim: ListeningActivityAttributes.ContentState.timeLabel(state.position))
-                .monospacedDigit()
-        }
-    }
-}
 #endif
