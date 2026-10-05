@@ -14,12 +14,12 @@ class FullVideoAppReleaseTests(unittest.TestCase):
         self.root = Path(self.temp.name)
         self.page_id = "2026-09-27-weekend-sermon-drive-530"
 
-    def fixture(self):
+    def fixture(self, locales=None):
         prepared = self.root / "prepared"
         public = prepared / "public"
         rows = []
         packages = {}
-        for locale in release.LOCALES:
+        for locale in (locales or release.LOCALES):
             assets = []
             for role, path in (
                 ("page", f"/pages/{self.page_id}/{locale}/index.html"),
@@ -68,12 +68,18 @@ class FullVideoAppReleaseTests(unittest.TestCase):
     def test_static_page_contains_complete_text_and_escapes_html(self):
         content = {"title": "耶稣 <配得>", "series": "启示录", "speaker": "Eric Geiger",
                    "scripture": "启示录 4–5", "summary": "摘要", "outline": ["要点"],
+                   "durationSeconds": 1860,
                    "cues": [{"start": 0, "text": "完整正文 & 保留"}]}
         page = release.static_page(content, "zh-Hans", self.page_id)
         self.assertIn("耶稣 &lt;配得&gt;", page)
         self.assertIn("完整正文 &amp; 保留", page)
         self.assertNotIn("<script", page)
         self.assertNotIn("<a ", page)
+        self.assertIn("31:00 讲道视频", page)
+        content["durationSeconds"] = 1942.123
+        self.assertIn("32:22 讲道视频", release.static_page(content, "zh-Hans", self.page_id))
+        content["durationSeconds"] = 3661.9
+        self.assertIn("1:01:01 讲道视频", release.static_page(content, "zh-Hans", self.page_id))
 
     def test_v2_requires_spoken_candidate_and_v3_requires_title(self):
         prepared, receipt = self.fixture()
@@ -92,6 +98,45 @@ class FullVideoAppReleaseTests(unittest.TestCase):
         del catalog["pages"][0]["title"]
         with self.assertRaises(ValueError):
             release.validate(catalog, "sermon-multilingual-catalog-v3.schema.json")
+
+    def test_single_chinese_seal_preserves_unrun_device_acceptance(self):
+        prepared, receipt = self.fixture(("zh-Hans",))
+        sealed = self.root / "sealed-zh"
+        release.seal(argparse.Namespace(prepared=prepared, http_verification=receipt, out=sealed))
+        catalog = release.read(sealed / "public/multilingual-v3.json")
+        self.assertEqual(set(catalog["pages"][0]["targets"]), {"zh-Hans"})
+        package = release.read(sealed / f"public/releases-v2/{self.page_id}/zh-Hans.json")
+        self.assertEqual(package["status"], "published_http_verified")
+        self.assertEqual(package["deviceAcceptance"], release.ACCEPT_NOT_RUN)
+        self.assertEqual(package["venueAcceptance"], release.ACCEPT_NOT_RUN)
+
+    def test_non_chinese_locale_subset_seals_with_locale_default(self):
+        prepared, receipt = self.fixture(("ko", "es"))
+        sealed = self.root / "sealed-ko-es"
+        release.seal(argparse.Namespace(prepared=prepared, http_verification=receipt, out=sealed))
+        catalog = release.read(sealed / "public/multilingual-v3.json")
+        self.assertEqual(set(catalog["pages"][0]["targets"]), {"ko", "es"})
+        self.assertEqual(catalog["pages"][0]["defaultTargetLocale"], "ko")
+
+    def test_metadata_v2_is_bound_to_exact_approved_locale_subset(self):
+        proposal = self.root / "proposal.md"
+        proposal.write_text("Series. Korean title. Speaker. Scripture. Summary. Outline.")
+        fields = {"series": "Series", "title": "Korean title", "speaker": "Speaker",
+                  "scripture": "Scripture", "summary": "Summary", "outline": ["Outline."]}
+        approval = {"schemaVersion": "sermon-formal-dev-metadata-approval-v2",
+                    "pageId": self.page_id, "date": "2026-09-27",
+                    "proposalFileSha256": release.formal_assets.stage.file_sha(proposal),
+                    "decision": "approved_selected_locales", "approvalText": "所列语言页面信息已批准",
+                    "reviewer": "user", "recordedAt": "2026-10-04T16:00:00Z",
+                    "approvedLocales": ["ko"], "locales": {"ko": fields}}
+        path = self.root / "approval.json"
+        release.write(path, approval)
+        checked = release.formal_assets.checked_metadata(path, proposal, self.page_id,
+                                                         "2026-09-27", ("ko",))
+        self.assertEqual(set(checked["locales"]), {"ko"})
+        with self.assertRaisesRegex(ValueError, "exactly match"):
+            release.formal_assets.checked_metadata(path, proposal, self.page_id,
+                                                   "2026-09-27", ("ko", "es"))
 
     def test_seal_rejects_incomplete_http_receipt(self):
         prepared, receipt = self.fixture()

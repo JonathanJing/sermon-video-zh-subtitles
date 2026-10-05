@@ -15,6 +15,8 @@ import tempfile
 from datetime import datetime
 from pathlib import Path
 
+from jsonschema import Draft202012Validator, FormatChecker
+
 try:
     from scripts import stage_formal_multilingual_dev as stage
     from scripts.release_asset_io import copy_bound_asset
@@ -37,17 +39,39 @@ def write_json(path: Path, value: dict) -> None:
                     encoding="utf-8")
 
 
-def checked_metadata(path: Path, proposal: Path, page_id: str, date: str) -> dict:
+def checked_metadata(path: Path, proposal: Path, page_id: str, date: str,
+                     locales=None) -> dict:
     metadata = json.loads(path.read_text(encoding="utf-8"))
-    require(metadata.get("schemaVersion") == "sermon-formal-dev-metadata-approval-v1"
-            and metadata.get("pageId") == page_id
+    expected_locales = set(locales or stage.LOCALES)
+    version = metadata.get("schemaVersion")
+    common = (metadata.get("pageId") == page_id
             and metadata.get("date") == date
-            and metadata.get("decision") == "approved_all_three_locales"
-            and metadata.get("approvalText") in {"三语全部批准", "三语页面信息全部批准"}
             and metadata.get("reviewer") == "user"
-            and metadata.get("proposalFileSha256") == stage.file_sha(proposal)
-            and set(metadata.get("locales", {})) == set(stage.LOCALES),
-            "Display metadata approval or proposal binding differs")
+            and metadata.get("proposalFileSha256") == stage.file_sha(proposal))
+    if version == "sermon-formal-dev-metadata-approval-v1":
+        require(common
+                and expected_locales == set(stage.LOCALES)
+                and metadata.get("decision") == "approved_all_three_locales"
+                and metadata.get("approvalText") in {"三语全部批准", "三语页面信息全部批准"}
+                and set(metadata.get("locales", {})) == set(stage.LOCALES),
+                "Metadata v1 remains bound to approval of all three locales")
+    elif version == "sermon-formal-dev-metadata-approval-v2":
+        approved = metadata.get("approvedLocales")
+        require(common
+                and isinstance(approved, list)
+                and len(approved) == len(set(approved))
+                and set(approved) == expected_locales
+                and expected_locales
+                and expected_locales <= set(stage.LOCALES)
+                and metadata.get("decision") == "approved_selected_locales"
+                and metadata.get("approvalText") == "所列语言页面信息已批准"
+                and set(metadata.get("locales", {})) == expected_locales,
+                "Metadata v2 approval locales do not exactly match this release")
+        schema = json.loads((stage.ROOT / "schemas/sermon-formal-dev-metadata-approval-v2.schema.json").read_text())
+        errors = list(Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(metadata))
+        require(not errors, f"Metadata v2 schema error: {errors[0].message if errors else ''}")
+    else:
+        require(False, "Unsupported metadata approval version")
     recorded_at = metadata.get("recordedAt")
     require(isinstance(recorded_at, str)
             and datetime.fromisoformat(recorded_at.replace("Z", "+00:00")).tzinfo is not None,

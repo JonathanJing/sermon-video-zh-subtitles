@@ -1,0 +1,704 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-cli-result-v2.schema.json",
+  "title": "Unified CLI result envelope",
+  "description": "Executable CLI result including a CAS state revision and explicit timing/fixture facts.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "command",
+    "requestId",
+    "subject",
+    "runId",
+    "runRevision",
+    "outcome",
+    "completionScope",
+    "nextActions",
+    "error"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "sermon-cli-result-v2"
+    },
+    "command": {
+      "$ref": "#/$defs/command"
+    },
+    "requestId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "id"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "run",
+            "job",
+            "worker"
+          ]
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "runId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "runRevision": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "stage": {
+      "$ref": "#/$defs/stageId"
+    },
+    "locale": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/targetLocale"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "outcome": {
+      "enum": [
+        "pending",
+        "running",
+        "succeeded",
+        "blocked",
+        "failed",
+        "unknown",
+        "cancelled",
+        "partial"
+      ]
+    },
+    "completionScope": {
+      "$ref": "#/$defs/completionScope"
+    },
+    "jobState": {
+      "$ref": "#/$defs/dimensions"
+    },
+    "runSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "outcome",
+        "completionScope",
+        "blockers"
+      ],
+      "properties": {
+        "outcome": {
+          "enum": [
+            "pending",
+            "running",
+            "succeeded",
+            "blocked",
+            "failed",
+            "unknown",
+            "cancelled",
+            "partial"
+          ]
+        },
+        "completionScope": {
+          "$ref": "#/$defs/completionScope"
+        },
+        "blockers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/blocker"
+          }
+        }
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/artifactRef"
+      }
+    },
+    "nextActions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/command"
+      }
+    },
+    "retry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "safe",
+        "reason"
+      ],
+      "properties": {
+        "safe": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "cost": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "currency",
+        "actualMicroUsd",
+        "reservedMicroUsd"
+      ],
+      "properties": {
+        "currency": {
+          "const": "USD"
+        },
+        "actualMicroUsd": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reservedMicroUsd": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "error": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "code",
+            "message"
+          ],
+          "properties": {
+            "code": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]*$"
+            },
+            "message": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      ]
+    },
+    "plan": {
+      "$ref": "#/$defs/plan"
+    },
+    "submit": {
+      "$ref": "#/$defs/submit"
+    },
+    "reviewIngest": {
+      "$ref": "#/$defs/reviewIngest"
+    },
+    "drain": {
+      "$ref": "#/$defs/drain"
+    },
+    "stateRevision": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1
+    },
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "transport",
+        "productionEligible",
+        "deadlineStatus",
+        "remainingSteps"
+      ],
+      "properties": {
+        "transport": {
+          "enum": [
+            "fixture",
+            "provider"
+          ]
+        },
+        "productionEligible": {
+          "type": "boolean"
+        },
+        "deadlineStatus": {
+          "enum": [
+            "not_started",
+            "within_window",
+            "expired",
+            "completed_in_window",
+            "completed_late"
+          ]
+        },
+        "remainingSteps": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "runtimeCodexTurns": {
+          "const": 0
+        }
+      }
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "progress": {
+      "type": "object"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "command": {
+            "const": "run.plan"
+          }
+        },
+        "required": [
+          "command"
+        ]
+      },
+      "then": {
+        "required": [
+          "plan"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "command": {
+            "const": "run.submit"
+          }
+        },
+        "required": [
+          "command"
+        ]
+      },
+      "then": {
+        "required": [
+          "plan",
+          "submit"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "command": {
+            "enum": [
+              "layer.submit",
+              "job.status",
+              "job.result",
+              "job.wait",
+              "job.resume",
+              "job.reconcile",
+              "job.cache_recover",
+              "job.cancel"
+            ]
+          }
+        },
+        "required": [
+          "command"
+        ]
+      },
+      "then": {
+        "required": [
+          "jobState"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "command": {
+            "const": "review.ingest"
+          }
+        },
+        "required": [
+          "command"
+        ]
+      },
+      "then": {
+        "required": [
+          "reviewIngest"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "command": {
+            "const": "worker.drain"
+          }
+        },
+        "required": [
+          "command"
+        ]
+      },
+      "then": {
+        "required": [
+          "drain"
+        ]
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "targetLocale": {
+      "type": "string",
+      "pattern": "^(?!en(?:-|$))[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$"
+    },
+    "command": {
+      "enum": [
+        "run.plan",
+        "run.submit",
+        "layer.submit",
+        "job.status",
+        "job.result",
+        "job.wait",
+        "review.ingest",
+        "job.resume",
+        "job.reconcile",
+        "job.cache_recover",
+        "worker.drain",
+        "job.cancel",
+        "run.events",
+        "worker.transfer"
+      ]
+    },
+    "stageId": {
+      "enum": [
+        "media_verify",
+        "window_review",
+        "asr",
+        "english_source",
+        "layer2_admit",
+        "layer2_group",
+        "translation_review",
+        "layer3_prepare",
+        "layer3_unit",
+        "layer3_screen",
+        "listen_review",
+        "study_product",
+        "publish_endpoint"
+      ]
+    },
+    "completionScope": {
+      "enum": [
+        "media_verified",
+        "english_ready_for_translation",
+        "layer2_machine_candidate",
+        "translation_approved",
+        "audio_screened",
+        "listen_approved",
+        "study_approved",
+        "dev_reader_verified",
+        "dual_test_end_approved",
+        "dual_production_verified"
+      ]
+    },
+    "dimensions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "process",
+        "artifact",
+        "review",
+        "publication",
+        "device"
+      ],
+      "properties": {
+        "process": {
+          "enum": [
+            "not_started",
+            "running",
+            "succeeded",
+            "failed",
+            "blocked",
+            "waiting_reconciliation",
+            "cancel_requested",
+            "cancelled"
+          ]
+        },
+        "artifact": {
+          "enum": [
+            "not_started",
+            "present_unverified",
+            "verified",
+            "missing",
+            "incompatible"
+          ]
+        },
+        "review": {
+          "enum": [
+            "not_required",
+            "machine_pending",
+            "human_pending",
+            "approved",
+            "rejected",
+            "waived"
+          ]
+        },
+        "publication": {
+          "enum": [
+            "not_applicable",
+            "not_started",
+            "assets_deployed",
+            "http_verified",
+            "partial",
+            "failed"
+          ]
+        },
+        "device": {
+          "enum": [
+            "not_checked",
+            "not_run",
+            "passed",
+            "failed"
+          ]
+        }
+      }
+    },
+    "artifactKind": {
+      "enum": [
+        "media_identity",
+        "english_source_package",
+        "english_source_review",
+        "target_language_candidate",
+        "target_language_group_review",
+        "target_language_human_review",
+        "speech_job",
+        "target_language_audio_package",
+        "target_language_audio_screening",
+        "target_language_audio_human_review",
+        "study_product",
+        "release_package",
+        "release_receipt",
+        "catalog"
+      ]
+    },
+    "artifactRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "schemaVersion",
+        "sha256"
+      ],
+      "properties": {
+        "artifactId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "$ref": "#/$defs/artifactKind"
+        },
+        "schemaVersion": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "locale": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/targetLocale"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "packageStatus": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "blocker": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "locale": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/targetLocale"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "artifactId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "planHash",
+        "newPaidRequests",
+        "blockers"
+      ],
+      "properties": {
+        "planHash": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "newPaidRequests": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "blockers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/blocker"
+          }
+        }
+      }
+    },
+    "submit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "frozen",
+        "manifestSha256",
+        "jobId"
+      ],
+      "properties": {
+        "frozen": {
+          "type": "boolean"
+        },
+        "manifestSha256": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "jobId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "reviewIngest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "decision",
+        "receiptSha256",
+        "reason"
+      ],
+      "properties": {
+        "decision": {
+          "enum": [
+            "accepted",
+            "rejected"
+          ]
+        },
+        "receiptSha256": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "drain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ownerId",
+        "admission",
+        "inFlight",
+        "waitingReconciliation"
+      ],
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "admission": {
+          "const": "closed"
+        },
+        "inFlight": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "waitingReconciliation": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}

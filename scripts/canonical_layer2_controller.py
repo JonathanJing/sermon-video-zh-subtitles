@@ -27,6 +27,8 @@ from scripts import sermon_accounting as accounting
 from scripts import sermon_workflow_jobs as jobs
 from scripts import sermon_job_liveness as liveness
 from scripts import layer2_api_concurrency as api_concurrency
+from scripts import canonical_layer2_budget as budget_tools
+from contextlib import nullcontext
 from scripts.sermon_execution_harness import work_lock
 from scripts.sermon_release_workflow import _safe_path
 
@@ -170,18 +172,24 @@ def _inputs(config, locale, view):
     return values['source'], values['anchor'], policy
 
 
-def _worker_command(config, locale, job_id, code_sha):
-    return [sys.executable, str(Path(__file__).resolve()), 'worker', '--config', str(config.path),
+def _worker_command(config, locale, job_id, code_sha, budget_authorization=None):
+    command = [sys.executable, str(Path(__file__).resolve()), 'worker', '--config', str(config.path),
             '--locale', locale, '--expected-configuration', config.sha256,
             '--expected-code', code_sha, '--expected-job', job_id]
+    if budget_authorization is not None:
+        command += ['--budget-authorization', str(budget_authorization['path']),
+                    '--expected-budget', budget_authorization['sha256']]
+    return command
 
 
 class Controller:
-    def __init__(self, config_path, *, mode='deterministic_shadow'):
+    def __init__(self, config_path, *, mode='deterministic_shadow', budget_authorization=None):
         require(mode in MODES, 'invalid_controller_mode')
         self.config = load_configuration(config_path)
         self.code_sha = code_identity()
         self.mode = mode
+        self.budget_authorization = (budget_tools.load_authorization(
+            self.config, budget_authorization, self.code_sha) if budget_authorization is not None else None)
 
     def _result(self, status, reason, **fields):
         return {'schemaVersion': 'sermon-canonical-layer2-controller-result-v1',
@@ -196,6 +204,9 @@ class Controller:
     def _fresh(self):
         current = load_configuration(self.config.path)
         require(current.sha256 == self.config.sha256 and code_identity() == self.code_sha, 'configuration_or_code_changed')
+        if self.budget_authorization is not None:
+            budget_tools.load_authorization(current, self.budget_authorization['path'], self.code_sha,
+                                            self.budget_authorization['sha256'])
         return current, snapshot(current)
 
     def _capacity_full(self, view):
@@ -205,20 +216,22 @@ class Controller:
                   if row['workUnitId'].startswith('text.') and row['status'] in jobs.ACTIVE | {'uncertain'}]
         return len(active) >= MAX_ACTIVE_LAYER2_JOBS
 
-    def _choose(self, view):
+    def _choose(self, view, requested_locale=None):
         if self._capacity_full(view):
             return None
-        for locale in sorted(self.config.lanes):
+        if requested_locale is not None:
+            require(requested_locale in self.config.lanes, 'locale_not_registered')
+        for locale in ([requested_locale] if requested_locale else sorted(self.config.lanes)):
             if view['nodes'].get('text.' + locale, {}).get('status') == 'ready':
                 return locale
         return None
 
-    def tick(self):
+    def tick(self, *, requested_locale=None):
         try:
             config, observed = self._fresh()
         except (ValueError, OSError, KeyError, TypeError):
             return self._result('blocked', 'configuration_code_or_evidence_invalid', dispatched=False)
-        locale = self._choose(observed)
+        locale = self._choose(observed, requested_locale)
         if self.mode == 'deterministic_shadow':
             return self._result('ready' if locale else 'waiting',
                                 'layer2_capacity_reached' if self._capacity_full(observed) else 'shadow_only',
@@ -230,14 +243,14 @@ class Controller:
             try:
                 config, fresh = self._fresh()
                 require(fresh['stateRevision'] == observed['stateRevision'], 'stale_state_revision')
-                locale = self._choose(fresh)
+                locale = self._choose(fresh, requested_locale)
                 if locale is None:
                     reason = 'layer2_capacity_reached' if self._capacity_full(fresh) else 'no_admitted_layer2_work'
                     return self._result('waiting', reason, nodes=fresh['nodes'], dispatched=False)
                 _inputs(config, locale, fresh)
                 ident = durable.identity(fresh, config.run_id, 'text.' + locale)
                 key = jobs._digest(ident)
-                outcome = jobs.start_job(config.job_root, ident, _worker_command(config, locale, key, self.code_sha),
+                outcome = jobs.start_job(config.job_root, ident, _worker_command(config, locale, key, self.code_sha, self.budget_authorization),
                                          timeout_seconds=21600, liveness_policy=LIVENESS_POLICY)
             except (ValueError, OSError, KeyError, TypeError):
                 # Any persisted job intent remains discoverable; never retry an
@@ -247,11 +260,14 @@ class Controller:
                                 workUnitId='text.' + locale, job=outcome, dispatched=True)
 
 
-def execute(config_path, locale, expected_configuration, expected_code, expected_job, *, caller=None, api_key=None):
+def execute(config_path, locale, expected_configuration, expected_code, expected_job, *, caller=None, api_key=None, budget_authorization=None, expected_budget=None):
     """Fixed worker body. Injected transport is for local tests; CLI uses policy API."""
     config = load_configuration(config_path)
     require(locale in config.lanes and config.sha256 == expected_configuration
             and code_identity() == expected_code, 'worker_configuration_or_code_changed')
+    budget_binding = (budget_tools.load_authorization(config, budget_authorization, expected_code, expected_budget)
+                      if budget_authorization is not None else None)
+    require((budget_authorization is None) == (expected_budget is None), 'budget_worker_binding_required')
     lane = config.lanes[locale]
     with work_lock(lane['output']), accounting.accounting_session(
             lane['output'] / 'accounting', 'canonical_layer2_worker',
@@ -270,7 +286,7 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
             request_path = config.job_root / expected_job / 'request.json'
             request = jobs._read(request_path)
             require(jobs._request_valid(request, expected_job) and request['identity'] == ident
-                    and request['command'] == _worker_command(config, locale, expected_job, expected_code)
+                    and request['command'] == _worker_command(config, locale, expected_job, expected_code, budget_binding)
                     and request.get('livenessPolicy') == LIVENESS_POLICY
                     and jobs.peek_job(config.job_root, expected_job)['status'] == 'running',
                     'worker_requires_active_bound_durable_job')
@@ -279,7 +295,10 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
             if caller is None:
                 api_key = os.environ.get('OPENAI_API_KEY')
                 require(bool(api_key), 'OPENAI_API_KEY_is_not_configured')
-                caller = lambda key, payload: models.sermon_pipeline.chat_json(key, payload, retries=1)
+                if budget_binding is None:
+                    caller = lambda key, payload: models.sermon_pipeline.chat_json(key, payload, retries=1)
+            if budget_binding is not None:
+                caller = budget_tools.BudgetedCaller(budget_binding, config, source, anchor, policy, transport=caller)
             def current_binding():
                 fresh_config = load_configuration(config.path)
                 require(fresh_config.sha256 == expected_configuration and code_identity() == expected_code,
@@ -296,7 +315,8 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                     progress.progress('model_request')
                     return caller(key, payload)
             model_completion = []
-            evidence = models.run_accounted(source, anchor, policy, lane['output'], api_key,
+            with (budget_tools.request_limits(budget_binding['limits']) if budget_binding else nullcontext()):
+                evidence = models.run_accounted(source, anchor, policy, lane['output'], api_key,
                                              bound_call, None, lane['plugin'], None, None,
                                              progress_callback=progress.progress, predecessor_spans=[admission_span],
                                              completion_spans=model_completion)
@@ -326,6 +346,31 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                     'candidateJsonSha256': jobs._digest(candidate), 'releaseEligible': False}
 
 
+def drive(config_path, locale, *, budget_authorization=None):
+    """One restart-safe unified tick; explicit bound budget is mandatory.
+
+    Returns waiting for a durable owner, never calls execute directly. A later
+    tick independently validates the candidate and durable outcome. Unknown
+    original jobs require explicit reconciliation, never a fresh paid attempt.
+    """
+    if budget_authorization is None:
+        return {'status': 'blocked', 'reason': 'bound_budget_authorization_required', 'dispatched': False}
+    controller = Controller(config_path, mode='deterministic_execute', budget_authorization=budget_authorization)
+    config = controller.config
+    require(locale in config.lanes, 'locale_not_registered')
+    view = snapshot(config)
+    node = view['nodes']['text.' + locale]
+    if node['status'] == 'validated':
+        return {'status': 'succeeded', 'artifact': 'verified', 'review': 'human_pending',
+                'productionEligible': False, 'dispatched': False,
+                'candidateJsonSha256': view['packageIdentities']['candidate.' + locale]}
+    if node['status'] in {'blocked', 'reconciliation_required'}:
+        return {'status': 'blocked', 'reason': node.get('reasonCode', 'reconciliation_required'), 'dispatched': False}
+    result = controller.tick(requested_locale=locale)
+    return {'status': 'waiting' if result.get('status') != 'blocked' else 'blocked',
+            'reason': result['reasonCode'], 'dispatched': result.get('dispatched'), 'evidence': result}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest='command', required=True)
@@ -338,11 +383,14 @@ def main():
     worker.add_argument('--expected-configuration', required=True)
     worker.add_argument('--expected-code', required=True)
     worker.add_argument('--expected-job', required=True)
+    worker.add_argument('--budget-authorization', type=Path)
+    worker.add_argument('--expected-budget')
     args = parser.parse_args()
     if args.command == 'tick':
         result = Controller(args.config, mode=args.mode).tick()
     else:
-        result = execute(args.config, args.locale, args.expected_configuration, args.expected_code, args.expected_job)
+        result = execute(args.config, args.locale, args.expected_configuration, args.expected_code, args.expected_job,
+                         budget_authorization=args.budget_authorization, expected_budget=args.expected_budget)
     print(json.dumps(result, sort_keys=True))
 
 

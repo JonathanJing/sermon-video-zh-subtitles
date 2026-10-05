@@ -102,12 +102,44 @@ class SparkTTSReplicaPool(AbstractContextManager):
         if self.telemetry is not None:
             self.telemetry(event)
 
+    def _resource_snapshot(self, available):
+        workers = []
+        for process in self.processes:
+            rss = None
+            try:
+                for line in Path(f"/proc/{process.pid}/status").read_text().splitlines():
+                    if line.startswith("VmRSS:"):
+                        rss = int(line.split()[1]) * 1024
+            except (OSError, ValueError):
+                pass
+            workers.append({"pid": process.pid, "rssBytes": rss})
+        sizes = []
+        for rows in self._outputs.values():
+            for row in rows:
+                wave = row.get("wave") if isinstance(row, dict) else None
+                size = getattr(wave, "nbytes", None)
+                if size is None and hasattr(wave, "numel") and hasattr(wave, "element_size"):
+                    size = wave.numel() * wave.element_size()
+                sizes.append(size)
+        return {"kind": "reserve_failure", "timestamp": time.time(),
+                "memAvailableBytes": available if type(available) is int else None,
+                "reserveBytes": self.reserve_bytes, "workers": workers,
+                "receivedUnconsumedWaveBytes": sum(sizes) if all(type(n) is int for n in sizes) else None,
+                "pendingWindows": sorted(self._pending), "receivedWindows": sorted(self._outputs),
+                "busyWorkers": dict(self._busy), "gpuPeakBytes": None,
+                "gpuPeakStatus": "unknown", "inFlightWaveBytes": None}
+
     def _guard(self):
-        available = self.memory_reader()
+        try:
+            available = self.memory_reader()
+        except Exception as exc:
+            self._event(self._resource_snapshot(None) | {"memoryReadError": type(exc).__name__})
+            raise
         if type(available) is int:
             self.min_available_bytes = (available if self.min_available_bytes is None
                                         else min(available, self.min_available_bytes))
         if type(available) is not int or available < self.reserve_bytes:
+            self._event(self._resource_snapshot(available))
             raise ReplicaPoolError("MemAvailable is below the TTS replica reserve")
         return available
 

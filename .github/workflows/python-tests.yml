@@ -120,7 +120,7 @@ jobs:
           cache: pip
 
       - name: Install dependencies
-        run: python -m pip install -r requirements.txt
+        run: python -m pip install -r requirements-test.txt
 
       - name: Install audio verification tools
         run: |
@@ -175,6 +175,22 @@ jobs:
           name: unittest-timings-root-${{ matrix.shard_index }}
           path: ${{ runner.temp }}/unittest-root-${{ matrix.shard_index }}.json
           if-no-files-found: warn
+
+      - name: Run unified delivery and consumer contract tests
+        if: matrix.shard_index == 1
+        run: >-
+          python -m pytest -q
+          tests/test_delivery_contract.py
+          tests/test_guarded_hosting_publish.py
+          tests/test_sermon_unified_delivery.py
+          tests/test_sermon_unified_reviews.py
+          tests/test_sermon_unified_capabilities.py
+          tests/test_sermon_unified_canonical_binding.py
+          tests/test_sermon_unified_final_audit.py
+          tests/test_public_study_delivery.py
+          tests/test_sermon_study_generation.py
+          tests/test_sermon_unified_continuation.py
+          tests/test_sermon_unified_continuation_owner.py
 
       - name: Run dubbing workflow and review contract tests
         if: matrix.shard_index == 1

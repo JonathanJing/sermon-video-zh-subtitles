@@ -25,6 +25,8 @@ try:
     from scripts import sermon_cache_observation as cache_observation
     from scripts import sermon_pipeline
     from scripts import target_language_policy as policy_tools
+    from scripts import target_language_policy_preview as policy_preview
+    from scripts.migrate_target_language_model_cache import migration_cache
     from scripts import sermon_workflow_jobs as jobs
 except ImportError:
     import four_layer_measure as measure
@@ -33,6 +35,8 @@ except ImportError:
     import sermon_cache_observation as cache_observation
     import sermon_pipeline
     import target_language_policy as policy_tools
+    import target_language_policy_preview as policy_preview
+    from migrate_target_language_model_cache import migration_cache
     import sermon_workflow_jobs as jobs
 
 
@@ -167,6 +171,9 @@ def completed_response_content(response, model, role):
 
 
 def model_payload(role, prompt, policy, request_limits=None):
+    if request_limits is None:
+        from scripts.canonical_layer2_budget import CURRENT_LIMITS
+        request_limits = CURRENT_LIMITS.get()
     model = policy[role]["model"]
     payload = {"model": model, "reasoning_effort": policy[role]["reasoningEffort"],
                "messages": [{"role": "system", "content": prompt["instruction"]},
@@ -186,7 +193,13 @@ def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
     model = policy[role]["model"]
     save_options = {"private": True} if response_observer is not None else {}
     payload = model_payload(role, prompt, policy, request_limits)
+    policy_preview.freeze_payload_preview(
+        role, payload, policy, output.with_suffix(".policy-preview.json"))
     fingerprint = policy_tools.canonical_sha256(payload)
+    migrated_from = migration_cache(role, payload)
+    if migrated_from is not None:
+        require(cache_only and reuse_from is None, "Explicit migration must be cache-only and isolated")
+        reuse_from = migrated_from
     if reuse_from is not None and not output.exists():
         require(reuse_from.is_file(), f"Missing reusable {role} cache: {reuse_from}")
         cached = producer._load(reuse_from)

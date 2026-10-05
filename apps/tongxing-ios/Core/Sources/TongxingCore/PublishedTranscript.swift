@@ -29,14 +29,15 @@ public struct VerifiedPublishedTranscript: Sendable, Equatable {
                               package: TargetLanguageReleasePackage, page: MultilingualPage,
                               allowDevCandidate: Bool = false) throws -> Self {
         try package.validate(allowDevCandidate: allowDevCandidate)
-        guard package.schemaVersion == TargetLanguageReleasePackage.dualScriptSchemaVersion,
+        guard [TargetLanguageReleasePackage.dualScriptSchemaVersion, TargetLanguageReleasePackage.fourProductSchemaVersion].contains(package.schemaVersion),
               package.pageId == page.id, let target = page.targets[package.targetLocale],
               package.contentStatus == target.contentStatus, package.audioStatus == target.audioStatus else {
             throw CatalogError.invalid("文稿与发布语言不符")
         }
         let source = try JSONDecoder().decode(FullContent.self, from: content)
         let spoken = try JSONDecoder().decode(CaptionContent.self, from: captions)
-        let candidate = allowDevCandidate && package.status == "candidate"
+        let candidate = allowDevCandidate && package.status == "candidate" &&
+            package.schemaVersion != TargetLanguageReleasePackage.fourProductSchemaVersion
         let validContentSchema = candidate
             ? (source.schemaVersion == "sermon-formal-dev-content-v1" ||
                (package.contentStatus == "machine_reviewed" && source.schemaVersion == "sermon-dev-podcast-candidate-content-v2"))

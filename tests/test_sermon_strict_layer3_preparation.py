@@ -12,9 +12,9 @@ from tests import test_prepare_target_language_speech_job as voices
 
 class PreparationTests(unittest.TestCase):
     def setUp(self):
-        self.f=gates.AdmissionTests();self.f.setUp();self.addCleanup(self.f.doCleanups)
+        self.f=gates.AdmissionTests();self.addCleanup(self.f.doCleanups); self.f.setUp()
         self.intent=self.f.admit()['intent']['intentId']
-        fixture=voices.TargetLanguageSpeechJobTests();fixture.setUp();self.addCleanup(fixture.doCleanups)
+        fixture=voices.TargetLanguageSpeechJobTests();self.addCleanup(fixture.doCleanups); fixture.setUp()
         self.registry=fixture.registry;self.adapter=fixture.adapter
         capability=next(row for row in self.registry['speakers'][0]['localeCapabilities'] if row['targetLocale']=='zh-Hans')
         capability.pop('adapterOverride',None)

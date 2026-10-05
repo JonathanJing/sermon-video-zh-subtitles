@@ -1,0 +1,190 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "binding",
+    "authority",
+    "approvalReceipt",
+    "approvalReceiptSha256"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "sermon-study-budget-authorization-v1"
+    },
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "productionRunId",
+        "executionSha256",
+        "codeIdentitySha256",
+        "budgetRoot",
+        "globalBounds",
+        "requestLimits"
+      ],
+      "properties": {
+        "productionRunId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "executionSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "codeIdentitySha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "budgetRoot": {
+          "type": "string",
+          "minLength": 1
+        },
+        "globalBounds": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "requests",
+            "wallTimeMs",
+            "costMicrousd"
+          ],
+          "properties": {
+            "requests": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000000000000
+            },
+            "wallTimeMs": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000000000000
+            },
+            "costMicrousd": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000000000000
+            }
+          }
+        },
+        "requestLimits": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schemaVersion",
+            "maxInputTokens",
+            "maxCompletionTokens",
+            "wallTimeMs",
+            "serviceTier"
+          ],
+          "properties": {
+            "schemaVersion": {
+              "const": "sermon-openai-chat-request-limits-v1"
+            },
+            "maxInputTokens": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 16384
+            },
+            "maxCompletionTokens": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 8192
+            },
+            "wallTimeMs": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 300000
+            },
+            "serviceTier": {
+              "const": "default"
+            }
+          }
+        }
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "approvalSha256",
+        "globalBounds",
+        "requestLimits"
+      ],
+      "properties": {
+        "approvalSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "globalBounds": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "requests",
+            "wallTimeMs",
+            "costMicrousd"
+          ],
+          "properties": {
+            "requests": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000000000000
+            },
+            "wallTimeMs": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000000000000
+            },
+            "costMicrousd": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000000000000
+            }
+          }
+        },
+        "requestLimits": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schemaVersion",
+            "maxInputTokens",
+            "maxCompletionTokens",
+            "wallTimeMs",
+            "serviceTier"
+          ],
+          "properties": {
+            "schemaVersion": {
+              "const": "sermon-openai-chat-request-limits-v1"
+            },
+            "maxInputTokens": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 16384
+            },
+            "maxCompletionTokens": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 8192
+            },
+            "wallTimeMs": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 300000
+            },
+            "serviceTier": {
+              "const": "default"
+            }
+          }
+        }
+      }
+    },
+    "approvalReceipt": {
+      "type": "string",
+      "minLength": 1
+    },
+    "approvalReceiptSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    }
+  }
+}

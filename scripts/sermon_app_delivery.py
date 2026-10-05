@@ -245,7 +245,9 @@ def audio(root, row, source, locale, candidate):
         return
     _, receipt = artifact(root, root, row["review"])
     schemas = {"sermon-target-language-audio-human-review-receipt-v1",
-               "sermon-target-language-audio-human-review-receipt-v2"}
+               "sermon-target-language-audio-human-review-receipt-v2",
+               "sermon-target-language-audio-human-review-receipt-v3",
+               "sermon-target-language-audio-human-review-receipt-v4"}
     require(receipt.get("schemaVersion") in schemas, "unsupported_audio_review_schema")
     existing_schema(receipt, receipt["schemaVersion"] + ".schema.json")
     screening = None

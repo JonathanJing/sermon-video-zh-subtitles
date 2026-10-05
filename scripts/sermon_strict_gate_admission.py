@@ -154,7 +154,7 @@ class AdmissionBoundary:
                      'parent-revision.json', 'parent-candidate.json', 'repair-plan.json', 'trigger-review.json',
                      'repair-input.json', 'repair-sidecars.json', 'repair-history.json'}
             c.require(all(name in fixed or re.fullmatch(
-                r'(?:generator|reviewer(?:-2)?)\.(?:json|raw\.json|call\.json|started\.json|failure\.json|rejection\.json|budget-binding\.json|budget-call\.json|budget-result\.json)|reviewer(?:-2)?\.(?:structural-diagnostic|rejection-diagnostic)\.json|review-receipt(?:-2)?\.json', name)
+                r'(?:generator|reviewer(?:-2)?)\.(?:json|raw\.json|call\.json|started\.json|failure\.json|rejection\.json|budget-binding\.json|budget-call\.json|budget-result\.json|policy-preview\.json)|reviewer(?:-2)?\.(?:structural-diagnostic|rejection-diagnostic)\.json|review-receipt(?:-2)?\.json', name)
                 for name in names), 'unrecognized_revision_evidence')
             data = {}
             for name in names:
@@ -165,6 +165,27 @@ class AdmissionBoundary:
             prepared = strict.prepare(*(files[k] for k in ('source', 'anchor', 'policy', 'rubric')),
                 {k: candidate[k] for k in ('translationGroupId', 'sourceUnitIds')},
                 request_limits=c.decode_json(data['request-limits.json']) if 'request-limits.json' in data else None)
+            for name in names:
+                if not name.endswith('.policy-preview.json'):
+                    continue
+                preview = c.decode_json(data[name])
+                stem = name.removesuffix('.policy-preview.json')
+                role = 'translator' if stem == 'generator' else 'reviewer'
+                request = (strict.generation_prompt(prepared, strict.load_repair(root) if manifest['revisionNumber'] > 1 else None)
+                           if role == 'translator' else strict.prompt(prepared, 'reviewer', candidate=candidate,
+                               input_manifest=c.decode_json(data['review-input.json'])))
+                expected_payload = strict._payload(prepared, role, request)
+                expected_role = 'translator' if stem == 'generator' else 'reviewer'
+                c.require(set(preview) == {'schemaVersion', 'role', 'payload', 'payloadSha256',
+                          'policy', 'policySha256', 'humanApproval', 'status'}
+                    and preview['schemaVersion'] == 'sermon-target-language-consumed-policy-v1'
+                    and preview['role'] == expected_role and preview['policy'] == values['policy']
+                    and preview['policySha256'] == c.canonical_sha256(values['policy'])
+                    and preview['payloadSha256'] == c.canonical_sha256(preview['payload'])
+                    and preview['payload'] == expected_payload
+                    and preview['humanApproval'] is False
+                    and preview['status'] == 'input_frozen_not_execution_evidence',
+                    'admission_policy_preview_changed')
             identity = {key: manifest[key] for key in budget.IDENTITY_FIELDS if key not in ('workUnitId', 'rubricSha256')}
             identity['workUnitId'] = prepared['workUnitId']
             identity['rubricSha256'] = c.canonical_sha256(values['rubric'])
@@ -230,7 +251,7 @@ class AdmissionBoundary:
                       'incomplete_review_inventory')
             for name in data:
                 if name.startswith('reviewer'):
-                    match = re.fullmatch(r'reviewer(?:-([2]))?\.(?:json|raw\.json|call\.json|started\.json|failure\.json|rejection\.json|structural-diagnostic\.json|rejection-diagnostic\.json|budget-binding\.json|budget-call\.json|budget-result\.json)', name)
+                    match = re.fullmatch(r'reviewer(?:-([2]))?\.(?:json|raw\.json|call\.json|started\.json|failure\.json|rejection\.json|structural-diagnostic\.json|rejection-diagnostic\.json|budget-binding\.json|budget-call\.json|budget-result\.json|policy-preview\.json)', name)
                     c.require(match is not None, 'unrecognized_reviewer_evidence')
                     if int(match[1] or 1) not in attempts: pending = True
             hashes = [c.canonical_sha256(c.decode_json(raw)) for _, raw in receipts]

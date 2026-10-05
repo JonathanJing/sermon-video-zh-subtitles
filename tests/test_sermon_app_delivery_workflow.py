@@ -33,9 +33,9 @@ class AppDeliveryWorkflowTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name).resolve()
         self.fixture = fixtures.AppDeliveryTests('test_actual_source_arrays_audio_metadata_and_read_only_without_pdf')
+        self.addCleanup(self.fixture.doCleanups)
         with patch('tempfile.tempdir', str(self.root)):
             self.fixture.setUp()
-        self.addCleanup(self.fixture.doCleanups)
         self.fixture.client_proof(); self.fixture.approve()
         self.fixture.write('plan.json', self.fixture.plan)
         self.path = self.root / 'app-workflow.json'

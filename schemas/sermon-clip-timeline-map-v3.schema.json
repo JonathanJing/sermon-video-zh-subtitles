@@ -1,0 +1,249 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "timebase",
+    "englishSourcePackageJsonSha256",
+    "anchorManifestJsonSha256",
+    "sourceMedia",
+    "approvedWindow",
+    "approvedWindowSeconds",
+    "windowApproval",
+    "extractionReceipt",
+    "clipMedia",
+    "clipMediaProbe",
+    "clipDurationSeconds",
+    "anchorOrigin",
+    "anchorOffsetSeconds",
+    "anchorFirstStartSeconds",
+    "anchorLastEndSeconds"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "sermon-clip-timeline-map-v3"
+    },
+    "timebase": {
+      "const": "anchor_clip_relative_to_derived_window_audio"
+    },
+    "englishSourcePackageJsonSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "anchorManifestJsonSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "sourceMedia": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256",
+        "sizeBytes",
+        "durationSeconds"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "sizeBytes": {
+          "type": "number",
+          "minimum": 0
+        },
+        "durationSeconds": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "approvedWindow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "startSeconds",
+        "endSeconds"
+      ],
+      "properties": {
+        "startSeconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "endSeconds": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "approvedWindowSeconds": {
+      "type": "number",
+      "minimum": 0
+    },
+    "windowApproval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256",
+        "jsonSha256"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "jsonSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    },
+    "extractionReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256",
+        "jsonSha256"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "jsonSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    },
+    "clipMedia": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256",
+        "sizeBytes"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "sizeBytes": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "clipMediaProbe": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "codec",
+        "sampleRate",
+        "channels",
+        "formatDurationSeconds",
+        "streamStartTimeSeconds",
+        "streamDurationSeconds",
+        "decodedAudioSamples",
+        "decodedAudioDurationSeconds",
+        "containerPaddingSamples",
+        "paddingBudgetSamples"
+      ],
+      "properties": {
+        "codec": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sampleRate": {
+          "type": "number",
+          "minimum": 0
+        },
+        "channels": {
+          "type": "number",
+          "minimum": 0
+        },
+        "formatDurationSeconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "streamStartTimeSeconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "streamDurationSeconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "decodedAudioSamples": {
+          "type": "number",
+          "minimum": 0
+        },
+        "decodedAudioDurationSeconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "containerPaddingSamples": {
+          "type": "number",
+          "minimum": 0
+        },
+        "paddingBudgetSamples": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "clipDurationSeconds": {
+      "type": "number",
+      "minimum": 0
+    },
+    "anchorOrigin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "absoluteSourceStartSeconds"
+      ],
+      "properties": {
+        "kind": {
+          "const": "derived_clip_zero_equals_approved_window_start"
+        },
+        "absoluteSourceStartSeconds": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "anchorOffsetSeconds": {
+      "type": "number",
+      "minimum": 0
+    },
+    "anchorFirstStartSeconds": {
+      "type": "number",
+      "minimum": 0
+    },
+    "anchorLastEndSeconds": {
+      "type": "number",
+      "minimum": 0
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

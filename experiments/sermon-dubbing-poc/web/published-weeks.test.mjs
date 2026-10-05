@@ -450,3 +450,73 @@ test('bad page metadata does not hide a different valid page or request bad-page
   assert.deepEqual(result.errors, ['Invalid published page']);
   assert.ok(!f.requests.some(path => path.includes(pageId)));
 });
+
+test('original source window metadata cannot replace playback clip duration or hash', async () => {
+ const good=fixture(({content})=>{content.sourceWindow={schemaVersion:'sermon-original-recording-window-v1',startSeconds:2015.321,endSeconds:2025.321,mediaSha256:content.sourceMediaSha256};});
+ const result=await loadPublishedWeeks(good.fetchImpl);assert.equal(result.weeks.length,1);assert.equal(result.weeks[0].sourceStartSeconds,0);assert.equal(result.weeks[0].sourceFingerprintWindow.startSeconds,2015.321);
+ for(const mutate of [w=>w.mediaSha256='e'.repeat(64),w=>w.endSeconds=2026.321]){const f=fixture(({content})=>{content.sourceWindow={schemaVersion:'sermon-original-recording-window-v1',startSeconds:2015.321,endSeconds:2025.321,mediaSha256:content.sourceMediaSha256};mutate(content.sourceWindow);});assert.equal((await loadPublishedWeeks(f.fetchImpl)).weeks.length,0);}
+});
+
+function studyFixture() {
+  const f = fixture();
+  const stable = value => Array.isArray(value) ? value.map(stable)
+    : value && typeof value === 'object' ? Object.fromEntries(Object.keys(value).sort().map(key => [key,stable(value[key])])) : value;
+  const canonicalHash = value => hash(JSON.stringify(stable(value)));
+  const catalog = JSON.parse(f.files.get('/multilingual-v3.json'));
+  const page = catalog.pages[0];
+  for (const locale of ['zh-Hans','ko','es']) {
+    const path = page.targets[locale].releasePackageUrl;
+    const release = JSON.parse(f.files.get(path));
+    release.schemaVersion = 'sermon-target-language-release-package-v3';
+    release.englishSourcePackageJsonSha256 = page.sourceIdentitySha256;
+    release.sourceIdentity = {sourceId:'synthetic-source',sourceUrlHash:'9'.repeat(64),mediaSha256:'d'.repeat(64),durationSeconds:10,
+      window:{startSeconds:0,endSeconds:10,approvalReceiptSha256:'8'.repeat(64)}};
+    const products = {sourcePackageSha256:page.sourceIdentitySha256,textCandidateSha256:release.targetLanguageCandidateJsonSha256,
+      audioPackageSha256:release.targetLanguageAudioPackageJsonSha256,outlineReviewSha256:'3'.repeat(64),meditationReviewSha256:'4'.repeat(64),
+      metadataApprovalSha256:'5'.repeat(64),contentSha256:release.assets.find(row=>row.role==='content').sha256};
+    for (const kind of ['outline','meditation']) {
+      const artifact = {schemaVersion:'sermon-study-artifact-v1',kind,pageId,locale,sourcePackageSha256:products.sourcePackageSha256,
+        textCandidateSha256:products.textCandidateSha256,producerIdentity:'synthetic-study-v1',
+        sections:[{title:`Reviewed ${kind} ${locale}`,body:`Complete ${kind} sentence.\nLast sentence ${locale}.`,sourceUnitIds:['u1']}]};
+      const asset = {role:kind,path:`/study/${pageId}/${locale}/${kind}.json`,sha256:hash(JSON.stringify(artifact))};
+      f.files.set(asset.path,JSON.stringify(artifact));release.assets.push(asset);products[kind+'ArtifactSha256']=canonicalHash(artifact);
+    }
+    const joined = canonicalHash({source:products.sourcePackageSha256,products:{text:products.textCandidateSha256,audio:products.audioPackageSha256,
+      outline:{status:'human_reviewed',artifactSha256:products.outlineArtifactSha256,reviewSha256:products.outlineReviewSha256},
+      meditation:{status:'human_reviewed',artifactSha256:products.meditationArtifactSha256,reviewSha256:products.meditationReviewSha256}}});
+    products.candidateSha256=canonicalHash({products:joined,metadataApproval:products.metadataApprovalSha256,contentSha256:products.contentSha256});
+    release.fourProducts=products;
+    const manifest={schemaVersion:'sermon-public-app-products-v1',pageId,locale,sourceIdentity:release.sourceIdentity,fourProducts:products};
+    const manifestPath=`/study/${pageId}/${locale}/products.json`;
+    f.files.set(manifestPath,JSON.stringify(manifest));release.assets.push({role:'product_manifest',path:manifestPath,sha256:hash(JSON.stringify(manifest))});
+    f.files.set(path,JSON.stringify(release));page.targets[locale].releasePackageJsonSha256=hash(JSON.stringify(release));
+  }
+  f.files.set('/multilingual-v3.json',JSON.stringify(catalog));
+  return f;
+}
+
+test('v3 three-language release loads full independent study and never substitutes legacy metadata outline', async () => {
+  const f=studyFixture();const result=await loadPublishedWeeks(f.fetchImpl);
+  assert.equal(result.weeks.length,1);assert.deepEqual(result.errors,[]);
+  for(const locale of ['zh-Hans','ko','es']) {
+    const view=result.weeks[0].contentVariants[locale];
+    assert.equal(view.outline[0].title,`Reviewed outline ${locale}`);
+    assert.deepEqual(view.outline[0].points,[`Complete outline sentence.\nLast sentence ${locale}.`]);
+    assert.equal(view.meditation[0].body,`Complete meditation sentence.\nLast sentence ${locale}.`);
+    assert.equal(view.studyStatus,'human_reviewed');
+    assert.ok(view.studyArtifacts.outline && view.studyArtifacts.meditation);
+  }
+});
+
+test('changed or missing study bytes isolate the affected locale and legacy v2 never gains study status', async () => {
+  for (const change of ['tamper','missing']) {
+    const f=studyFixture();const path=`/study/${pageId}/ko/meditation.json`;
+    if(change==='tamper')f.files.set(path,'{}');else f.files.delete(path);
+    const result=await loadPublishedWeeks(f.fetchImpl);
+    assert.deepEqual(Object.keys(result.weeks[0].contentVariants).sort(),['es','zh-Hans']);
+    assert.ok(result.errors.some(error=>error.includes('/ko:')));
+  }
+  const old=await loadPublishedWeeks(fixture().fetchImpl);
+  assert.equal(old.weeks[0].studyStatus,'unavailable');
+  assert.deepEqual(old.weeks[0].meditation,[]);
+});

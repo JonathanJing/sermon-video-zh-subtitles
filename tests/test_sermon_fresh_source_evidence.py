@@ -27,7 +27,7 @@ def existing_bytes(*roots):
 
 class CurrentFreshEvidenceTests(unittest.TestCase):
     def setUp(self):
-        f = fresh_fixtures.FreshSourceTests(); f.setUp(); self.addCleanup(f.doCleanups)
+        f = fresh_fixtures.FreshSourceTests(); self.addCleanup(f.doCleanups); f.setUp()
         self.f = f; self.prepared = freeze_current(f)
         self.calls = len(f.f.transport.observations)
 
@@ -154,8 +154,18 @@ class MigratedCachedFreshEvidenceTests(unittest.TestCase):
     def migration_fixture(self, *, approved_identity=False):
         from scripts import sermon_source_producer_compatibility as compatibility
         from scripts import sermon_diagnostic_attempts as attempts, sermon_diagnostic_provider as provider
-        f = fresh_fixtures.FreshSourceTests(); f.setUp(); self.addCleanup(f.doCleanups)
-        prepared = freeze_current(f)
+        f = fresh_fixtures.FreshSourceTests(); self.addCleanup(f.doCleanups); f.setUp()
+        # Build the synthetic historical package with its historical producer
+        # identities from the outset. Updating only the plan after generating a
+        # current package would create an internally inconsistent old receipt.
+        from scripts import build_english_source_package as source_builder
+        original_sha = source_builder.file_sha256
+        repository = Path(source_builder.__file__).resolve().parents[1]
+        historical = {repository / path: sha for path, sha in compatibility.HISTORICAL_SOURCE_SHA256.items()}
+        def historical_builder_sha(path):
+            return historical.get(Path(path).resolve()) or original_sha(path)
+        with patch.object(source_builder, 'file_sha256', side_effect=historical_builder_sha):
+            prepared = freeze_current(f)
         current_identity = deepcopy(f.plan['executionIdentity'])
         if approved_identity:
             current_identity['loadedProjectCodeSha256'].update(compatibility.CURRENT_SOURCE_SHA256)
@@ -247,7 +257,7 @@ class MigratedCachedFreshEvidenceTests(unittest.TestCase):
 class CurrentMFAEvidenceTests(unittest.TestCase):
     def test_actual_builders_over_synthetic_mfa_receipt_replay_no_alignment_and_runtime_drift_rejected(self):
         from scripts import sermon_log_profile as profile, sermon_fresh_diagnostic_source as adapter
-        f = fresh_fixtures.FreshSourceTests(); f.setUp(); self.addCleanup(f.doCleanups)
+        f = fresh_fixtures.FreshSourceTests(); self.addCleanup(f.doCleanups); f.setUp()
         folder = f.root/'budget'/budget.STORE_ID/'provider-run'
         state, _ = public.read_snapshot(folder/'state.json')
         call = next(key for key, row in state['requests'].items() if row['operationId'] == 'transcription.initial')

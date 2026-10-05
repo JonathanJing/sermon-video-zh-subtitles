@@ -4,6 +4,8 @@
 >
 > The English sections below are the preserved 2026-06-22 live-caption snapshot. They are not the current top-level plan; active work is mapped in the canonical backlog.
 
+Latest remaining-work plan: [PR #242 backlog](./backlog.zh.md#pr242-remaining-backlog), with 24 implementation and acceptance tasks mapped to existing parent IDs. Historical checkpoints below retain their original evidence scope.
+
 Latest real-run follow-up: [180-second diagnostic issues and acceptance criteria](./backlog.zh.md#dev-180s-diagnostic-followup), tracked as `DEV-DIAG-001`–`014` under existing engineering items. With the authorized allowance increase, 39 groups passed Astra→Sol→language-plugin admission and an independent preview renderer produced 39 fresh, fully decoded WAVs. The 298-file Dev deployment and short browser playback in all three languages passed. [Continuation evidence](./reports/20260930-dev-180s-continuation.zh.md) preserves the native TTS worker import failures, partial critical-path evidence and missing live Agent diagnosis; this remains a diagnostic preview, not a formal four-layer release.
 
 The [2026-10-01 retrospective coverage audit](./backlog.zh.md#dev-180s-first-implementation-batch) maps all ten flow stages to existing IDs and explicitly adds back-transcription, full listening/synchronization and unified delivery acceptance. The first implementation batch addresses `DEV-DIAG-011/012/013` and the pre-dispatch API terminal gap in `008` on `codex/dev-diagnostic-contract-fixes-20261001`; these remain `in_progress` until merge and required real-path evidence.

@@ -160,6 +160,7 @@ public struct PageTarget: Codable, Sendable, Equatable {
 public struct TargetLanguageReleasePackage: Codable, Sendable, Equatable {
     public static let supportedSchemaVersion = "sermon-target-language-release-package-v1"
     public static let dualScriptSchemaVersion = "sermon-target-language-release-package-v2"
+    public static let fourProductSchemaVersion = "sermon-target-language-release-package-v3"
     public static let productionSchemaVersion = dualScriptSchemaVersion
     public let schemaVersion: String
     public let packageId: String
@@ -170,6 +171,9 @@ public struct TargetLanguageReleasePackage: Codable, Sendable, Equatable {
     public let spokenTargetLanguageCandidateJsonSha256: String?
     public let targetLanguageAudioPackageJsonSha256: String?
     public let audioHumanReviewReceiptJsonSha256: String?
+    public let englishSourcePackageJsonSha256: String?
+    public let sourceIdentity: ReviewedReleaseSourceIdentity?
+    public let fourProducts: ReviewedAppProducts?
     public let status: String
     public let contentStatus: String
     public let audioStatus: String
@@ -192,7 +196,7 @@ public struct TargetLanguageReleasePackage: Codable, Sendable, Equatable {
         let published = status == "published_http_verified" && httpVerification.status == "pass"
         let devCandidate = allowDevCandidate && status == "candidate" && httpVerification.status == "not_run"
         let machineCandidate = devCandidate && schemaVersion == Self.dualScriptSchemaVersion && contentStatus == "machine_reviewed"
-        guard [Self.supportedSchemaVersion, Self.dualScriptSchemaVersion].contains(schemaVersion),
+        guard [Self.supportedSchemaVersion, Self.dualScriptSchemaVersion, Self.fourProductSchemaVersion].contains(schemaVersion),
               !packageId.isEmpty, // Opaque schema ID; producer suffix can exceed the page ID limit.
               Validation.identifier(pageId), sourceLocale == "en", Validation.locale(targetLocale),
               Validation.sha256(targetLanguageCandidateJsonSha256),
@@ -202,7 +206,7 @@ public struct TargetLanguageReleasePackage: Codable, Sendable, Equatable {
               contentLocale == targetLocale, issues.isEmpty,
               !assets.isEmpty
         else { throw CatalogError.invalid("目标语言发布包状态或绑定无效") }
-        if schemaVersion == Self.dualScriptSchemaVersion {
+        if schemaVersion == Self.dualScriptSchemaVersion || schemaVersion == Self.fourProductSchemaVersion {
             guard spokenTargetLanguageCandidateJsonSha256.map(Validation.sha256) == true else {
                 throw CatalogError.invalid("双稿发布包缺少短口播候选绑定")
             }
@@ -226,6 +230,24 @@ public struct TargetLanguageReleasePackage: Codable, Sendable, Equatable {
             }
         } else if spokenTargetLanguageCandidateJsonSha256 != nil {
             throw CatalogError.invalid("单稿发布包包含短口播绑定")
+        }
+        if schemaVersion == Self.fourProductSchemaVersion {
+            guard let sourceIdentity, let fourProducts,
+                  englishSourcePackageJsonSha256 == fourProducts.sourcePackageSha256,
+                  targetLanguageCandidateJsonSha256 == fourProducts.textCandidateSha256,
+                  targetLanguageAudioPackageJsonSha256 == fourProducts.audioPackageSha256,
+                  contentStatus == "human_reviewed"
+            else { throw CatalogError.invalid("四产物发布缺少来源或文字音频绑定") }
+            try sourceIdentity.validate()
+            try fourProducts.validate()
+            for (role, name) in [(ReleaseAsset.Role.outline, "outline"), (.meditation, "meditation"), (.productManifest, "products")] {
+                guard assets.filter({ $0.role == role }).map(\.path) == ["/study/\(pageId)/\(targetLocale)/\(name).json"] else {
+                    throw CatalogError.invalid("四产物学习资源缺失或路径错误")
+                }
+            }
+        } else if fourProducts != nil || sourceIdentity != nil || englishSourcePackageJsonSha256 != nil ||
+                    assets.contains(where: { [.outline, .meditation, .productManifest].contains($0.role) }) {
+            throw CatalogError.invalid("旧版本发布包不能声明四产物资格")
         }
         guard published || devCandidate else { throw CatalogError.invalid("目标语言发布包尚未通过所需发布状态") }
         for acceptance in [httpVerification, deviceAcceptance, venueAcceptance] {
@@ -272,7 +294,10 @@ public struct TargetLanguageReleasePackage: Codable, Sendable, Equatable {
 }
 
 public struct ReleaseAsset: Codable, Sendable, Equatable {
-    public enum Role: String, Codable, Sendable { case catalog, content, audio, captions, download, page, other }
+    public enum Role: String, Codable, Sendable {
+        case catalog, content, audio, captions, download, page, other, outline, meditation
+        case productManifest = "product_manifest"
+    }
     public let role: Role
     public let path: String
     public let sha256: String

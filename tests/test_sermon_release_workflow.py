@@ -17,7 +17,7 @@ class ReleaseWorkflowTests(unittest.TestCase):
         self.week = '2026-09-20'
         self.path = self.root / 'config.json'
         self.row = {key: str(self.root / key) for key in flow.PATHS}
-        self.row.update(project='sermon-project', site='sermon-listening', origin='https://sermon-listening.web.app')
+        self.row.update(project='sermon-project', site='sermon-listening', origin='https://sermon-listening.web.app', environment='dev', baselineVersion='sites/sermon-listening/versions/old')
         self.write(self.row['bridgeConfig'], {'schemaVersion': 'test-bridge'})
         self.save()
         self.plan = {'work': Path(self.row['work']), 'run': self.root / 'source', 'sourceId': 'source123'}
@@ -192,7 +192,7 @@ class ReleaseWorkflowTests(unittest.TestCase):
             self.write(receipt_path, preflight)
             # Exercise execution admission and the real post-command state check.
             def deploy(*args, **kwargs):
-                self.write(receipt_path, {**preflight, 'status': 'deployed_http_verification_pending'})
+                self.write(receipt_path, {**preflight, 'schemaVersion': 'sermon-legacy-deployment-attempt-v2', 'attemptId': 'test-attempt', 'startedAt': '2026-09-20T00:00:00Z', 'completedAt': '2026-09-20T00:00:01Z', 'newVersion': 'sites/sermon-listening/versions/new', 'status': 'deployed_http_verification_pending'})
             with patch.object(flow, 'bounded_process', side_effect=deploy) as runner:
                 outcome = flow.execute(self.path, self.week, 'deploy_release')
                 self.assertTrue(outcome['executed'])
@@ -201,6 +201,7 @@ class ReleaseWorkflowTests(unittest.TestCase):
             self.assertEqual(flow.snapshot(self.path, self.week)['status'], 'verify_release')
             verified = fixture.verification(release)
             verified['origin'] = self.row['origin']
+            verified.update(startedAt='2026-09-20T00:00:02Z', completedAt='2026-09-20T00:00:03Z', deploymentAttemptId='test-attempt', deploymentVersion='sites/sermon-listening/versions/new', deploymentReceiptSha256=flow.digest(receipt_path))
             self.write(release / 'http-verification.json', verified)
             self.assertEqual(flow.snapshot(self.path, self.week)['status'], 'record_published')
             releases.record_published(Path(self.row['registry']), release, verified)

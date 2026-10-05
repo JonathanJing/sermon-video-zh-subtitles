@@ -117,7 +117,8 @@ def inspect_configuration(root, config):
                 or window_receipt.get('status') != 'approved' or window_receipt.get('humanApproval') is not True
                 or english.file_sha256(_safe_path(root / window_evidence['path'])) != window_evidence['sha256']
                 or hashes['sourceWindowReview'] != window_evidence['jsonSha256']
-                or window_receipt.get('sourceUrlHash') not in (None, source['source']['sourceUrlHash'])):
+                or not english.approval_url_matches(window_receipt, source['source']['sourceUrlHash'],
+                                                    source_url=summary.get('sourceUrl'))):
             raise ValueError('source_window_approval_changed')
         # The source's independent human receipt and aligned transcript remain
         # immutable evidence; do not accept a copied approval flag alone.

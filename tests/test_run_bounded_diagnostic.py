@@ -27,7 +27,7 @@ from tests.test_sermon_transcription_request import wav, riff_size
 
 class BoundedRunTests(unittest.TestCase):
     def setUp(self):
-        self.fixture=provider_fixtures.ProviderTests();self.fixture.setUp();self.addCleanup(self.fixture.doCleanups)
+        self.fixture=provider_fixtures.ProviderTests();self.addCleanup(self.fixture.doCleanups); self.fixture.setUp()
         self.f=self.fixture.f
         self.raw=wav(frames=16000*180)
         self.calls=[]
