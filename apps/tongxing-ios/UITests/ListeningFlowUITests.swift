@@ -470,6 +470,33 @@ final class ListeningFlowUITests: XCTestCase {
         screenshot("full-transcript-return-current-paused12", app: app)
     }
 
+    func testNormalTextTranscriptTimeTapAndAutomaticFollowing() throws {
+        let app = launchFixture(locateFlow: true)
+        try locateSecondEnglishSegment(in: app, fromDock: false)
+        let mode = app.segmentedControls["listening-display"].buttons["字幕全文"]
+        try reveal(mode, in: app, direction: .down)
+        mode.tap()
+        let progress = element("playback-progress", in: app)
+        let follow = app.buttons["transcript-return-current"]
+        let scroll = app.scrollViews["listening-scroll"]
+        for _ in 0..<3 { scroll.swipeDown() }
+        XCTAssertTrue(follow.label.hasSuffix("自由阅读"))
+        XCTAssertTrue(progress.isHittable)
+        progress.tap()
+        try waitFor(app.staticTexts["published-caption-text-g2"], "hittable == true")
+        XCTAssertTrue(app.buttons["published-caption-time-g2"].isSelected)
+        try waitFor(progress, "value BEGINSWITH '00:12'")
+        XCTAssertEqual(app.buttons["playback-toggle"].label, "开始播放")
+        XCTAssertTrue(follow.label.hasSuffix("跟随播放"))
+        screenshot("normal-text-transcript-current-paused12", app: app)
+        app.buttons["playback-toggle"].tap()
+        try waitFor(app.buttons["published-caption-time-g3"], "selected == true AND hittable == true", timeout: 20)
+        XCTAssertTrue(app.staticTexts["published-caption-text-g3"].isHittable)
+        XCTAssertTrue(follow.label.hasSuffix("跟随播放"))
+        screenshot("normal-text-transcript-auto-follow24", app: app)
+        app.buttons["playback-toggle"].tap()
+    }
+
     func testTranscriptAutomaticallyFollowsNextCaption() throws {
         let app = launchFixture(largeText: true, locateFlow: true)
         try locateSecondEnglishSegment(in: app, fromDock: false)
