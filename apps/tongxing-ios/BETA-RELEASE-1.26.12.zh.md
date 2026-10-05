@@ -20,8 +20,14 @@
 
 ## TestFlight 实际结果
 
-fastlane 于 2026-10-04 23:20:18（America/Los_Angeles）确认二进制上传成功。Apple 处理与测试组状态待后续读回记录。
+fastlane 于 2026-10-04 23:20:18（America/Los_Angeles）确认二进制上传成功。
+
+- Apple build ID：`de8bfa06-5799-4468-966f-4027581fc790`。
+- `2026-10-05T06:29:41Z` 实际读回 `processingState=VALID`、`internalBuildState=IN_BETA_TESTING`、未过期。
+- Rooted 内部组的 build ID 清单包含该构建，测试组可用已核验。
+- What to Test 已保存，fastlane 重新读取全部 build localization 并确认文本一致。notes SHA-256：`7de9144561a6331ec83a56594adac936b4f6d809fca000e98ca921f5c9e01001`。
+- 未新建测试者或组，未提交外部 Beta Review，未晋升正式 App。
 
 What to Test 说明全部本轮功能、线上缺失学习内容的现状，以及真机待检查项。客户端测试、归档、上传、Apple 处理、内部组可用与设备验收分别记录；`device=not_run`、`venue=not_run`。
 
-私有冻结记录、Archive、IPA 与 What to Test 位于 `artifacts/tongxing-ios/beta-1.26.12-build53/`；上传成功 receipt 位于 `artifacts/tongxing-ios/testflight/20261005T061918Z-aad5ce13/`。原归档记录保持不变，以追加分发 receipt 记录实际状态，凭据留在仓库外。
+私有冻结记录、Archive、IPA、What to Test 与追加的 `distribution-record.json` 位于 `artifacts/tongxing-ios/beta-1.26.12-build53/`；上传成功 receipt 位于 `artifacts/tongxing-ios/testflight/20261005T061918Z-aad5ce13/`，Apple 处理记录位于 `20261005T062055Z-0b95e6e7/`，组关联、说明核验与最终 Apple snapshot 位于 `20261005T062936Z-f86722f0/`。原归档记录保持不变，以追加分发 receipt 记录实际状态，凭据留在仓库外。
