@@ -1,0 +1,235 @@
+{
+  "schemaVersion": "sermon-backlog-status-audit-v1",
+  "auditDate": "2026-10-05",
+  "codeBaseline": "2373bfff382f27c1dff68ca57a2a2faab5b77514",
+  "scope": {
+    "coreTopLevelItems": 38,
+    "r242OriginalItems": 24,
+    "promptItems": 4,
+    "historicalAllRunsRevalidated": false
+  },
+  "coreStatusCounts": {
+    "verified_baseline": 1,
+    "in_progress": 29,
+    "pending": 6,
+    "blocked": 1,
+    "waiting_evidence": 1
+  },
+  "statusChanges": [
+    {
+      "id": "DEV-R242-003",
+      "previousStatus": "in_progress",
+      "currentStatus": "waiting_evidence"
+    },
+    {
+      "id": "DEV-R242-008",
+      "previousStatus": "in_progress",
+      "currentStatus": "waiting_evidence"
+    },
+    {
+      "id": "DEV-R242-019",
+      "previousStatus": "in_progress",
+      "currentStatus": "waiting_evidence"
+    },
+    {
+      "id": "DEV-R242-024",
+      "previousStatus": "in_progress",
+      "currentStatus": "waiting_evidence"
+    },
+    {
+      "id": "DEV-DIAG-018",
+      "previousStatus": "pending",
+      "currentStatus": "in_progress"
+    },
+    {
+      "id": "DEV-DIAG-019",
+      "previousStatus": "pending",
+      "currentStatus": "in_progress"
+    },
+    {
+      "id": "DEV-WEEK-001",
+      "previousStatus": "pending",
+      "currentStatus": "in_progress"
+    },
+    {
+      "id": "DEV-CICD-001",
+      "previousStatus": "pending",
+      "currentStatus": "in_progress"
+    },
+    {
+      "id": "DEV-CICD-003",
+      "previousStatus": "pending",
+      "currentStatus": "in_progress"
+    },
+    {
+      "id": "DEV-STE-006",
+      "previousStatus": "waiting_decision",
+      "currentStatus": "in_progress"
+    },
+    {
+      "id": "DEV-COST-002",
+      "previousStatus": "waiting_decision",
+      "currentStatus": "in_progress"
+    },
+    {
+      "id": "DEV-NOTIFY-001",
+      "previousStatus": "pending",
+      "currentStatus": "in_progress"
+    },
+    {
+      "id": "DEV-IOS-003",
+      "previousStatus": "pending",
+      "currentStatus": "in_progress"
+    }
+  ],
+  "addedTasks": [
+    {
+      "id": "DEV-R242-025",
+      "status": "in_progress"
+    },
+    {
+      "id": "DEV-R242-026",
+      "status": "blocked"
+    },
+    {
+      "id": "DEV-R242-027",
+      "status": "pending"
+    },
+    {
+      "id": "DEV-R242-028",
+      "status": "in_progress"
+    }
+  ],
+  "rewordedExistingTasks": [
+    "DEV-R242-002",
+    "DEV-R242-003",
+    "DEV-R242-005",
+    "DEV-R242-006",
+    "DEV-R242-007",
+    "DEV-R242-008",
+    "DEV-R242-009",
+    "DEV-R242-010",
+    "DEV-R242-011",
+    "DEV-R242-012",
+    "DEV-R242-013",
+    "DEV-R242-014",
+    "DEV-R242-015",
+    "DEV-R242-017",
+    "DEV-R242-018",
+    "DEV-R242-019",
+    "DEV-R242-021",
+    "DEV-R242-023",
+    "DEV-R242-024",
+    "DEV-DIAG-018",
+    "DEV-DIAG-019",
+    "DEV-L2-001",
+    "DEV-WEEK-001",
+    "DEV-L4-005",
+    "DEV-E2E-001",
+    "DEV-CICD-001",
+    "DEV-CICD-002",
+    "DEV-CICD-003",
+    "DEV-CICD-004",
+    "DEV-L4-007",
+    "DEV-STE-003",
+    "DEV-STE-004",
+    "DEV-STE-005",
+    "DEV-COST-001",
+    "DEV-STE-001",
+    "DEV-STE-002",
+    "DEV-STE-006",
+    "DEV-COST-002",
+    "DEV-NOTIFY-001",
+    "DEV-IOS-003"
+  ],
+  "currentCoreStatuses": {
+    "DEV-GOV-001": "verified_baseline",
+    "DEV-L1-001": "in_progress",
+    "DEV-L2-001": "in_progress",
+    "DEV-L3-001": "in_progress",
+    "DEV-L3-002": "in_progress",
+    "DEV-WEEK-001": "in_progress",
+    "DEV-L4-001": "in_progress",
+    "DEV-L4-005": "in_progress",
+    "DEV-E2E-001": "in_progress",
+    "DEV-CICD-001": "in_progress",
+    "DEV-L4-003": "in_progress",
+    "DEV-L4-004": "in_progress",
+    "DEV-IOS-001": "in_progress",
+    "DEV-FIELD-001": "in_progress",
+    "DEV-TRACK-001": "in_progress",
+    "DEV-REVIEW-001": "pending",
+    "DEV-LIVE-001": "in_progress",
+    "DEV-PROD-001": "blocked",
+    "DEV-VOICE-001": "in_progress",
+    "DEV-L4-002": "in_progress",
+    "DEV-IOS-002": "in_progress",
+    "DEV-CICD-002": "in_progress",
+    "DEV-CICD-003": "in_progress",
+    "DEV-CICD-004": "in_progress",
+    "DEV-TRK-002": "pending",
+    "DEV-SPD-001": "in_progress",
+    "DEV-SPD-002": "in_progress",
+    "DEV-SPD-003": "in_progress",
+    "DEV-SPD-004": "in_progress",
+    "DEV-SPD-005": "in_progress",
+    "DEV-SPD-006": "in_progress",
+    "DEV-LOCALE-001": "in_progress",
+    "DEV-USAGE-001": "waiting_evidence",
+    "DEV-EXP-001": "in_progress",
+    "DEV-EXP-002": "pending",
+    "DEV-EXP-003": "pending",
+    "DEV-EXP-004": "pending",
+    "DEV-CICD-005": "pending"
+  },
+  "originalReceipts": [
+    {
+      "path": "artifacts/pr242-layer3-validation/receipt-benchmark.json",
+      "sha256": "e21d48b1d6988221d10b77768ceba5c2173376bcab550935cefee75e96a53aae",
+      "readInThisAudit": true,
+      "rerunInThisAudit": false
+    },
+    {
+      "path": "artifacts/pr242-unified-cli-acceptance-closed-runtime/acceptance.json",
+      "sha256": "2ce299851edcc58826f8dec0823634b68a60ac3eb728bec52a1ba712a2925769",
+      "readInThisAudit": true,
+      "rerunInThisAudit": false
+    },
+    {
+      "path": "artifacts/pr242-temporal-unified-acceptance-1/acceptance.json",
+      "sha256": "03eae6d6d26b8472777deb3e6c071d1ce055abe92965bd83f144c920562ca7b6",
+      "readInThisAudit": true,
+      "rerunInThisAudit": false
+    }
+  ],
+  "github": {
+    "pr248State": "OPEN",
+    "pr248AuditedHead": "2373bfff382f27c1dff68ca57a2a2faab5b77514",
+    "mergedPrs": [
+      231,
+      232,
+      235,
+      237,
+      239,
+      242,
+      245
+    ],
+    "ci": {
+      "runId": 37377440317,
+      "root1": "FAILURE",
+      "root0": "IN_PROGRESS",
+      "asOfUtc": "2026-10-05T21:56:57Z",
+      "logSha256": "e34361f7873a5a3b1e7ab588c882e9a2095147f0959592fe632354dea0d25774",
+      "newDocumentationHeadRequiresSeparateCi": true
+    }
+  },
+  "otherTaskUncommittedSparkWork": "in_progress_not_submitted_or_accepted",
+  "newModelCalls": 0,
+  "newGpuJobs": 0,
+  "newSoftwareTestRuns": 0,
+  "remoteMutations": 0,
+  "historicalValidationNotCountedAsNew": true,
+  "productionPublication": false,
+  "deviceAcceptance": "not_run",
+  "report": "20261005-backlog-status-audit.zh.md"
+}
