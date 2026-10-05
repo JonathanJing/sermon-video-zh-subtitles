@@ -25,7 +25,7 @@ def binding(path):
 
 
 @pytest.fixture
-def prepared(tmp_path):
+def prepared(tmp_path, request):
     from tests import test_produce_target_language_candidate as source_fixtures
     from tests import test_prepare_target_language_speech_job as speech_fixtures
     from tests import test_review_target_language_audio as audio_fixtures
@@ -43,7 +43,7 @@ def prepared(tmp_path):
         human=copy.deepcopy(tf.human_review_receipt)
         human.update(englishSourcePackageJsonSha256=d.sha(source),anchorManifestJsonSha256=d.sha(sf.anchor),candidateJsonSha256=d.sha(candidate))
         track=tmp_path/'tone.mp3'
-        subprocess.run(['ffmpeg','-nostdin','-v','error','-f','lavfi','-i','sine=frequency=440:duration=10','-y',str(track)],check=True)
+        subprocess.run(['ffmpeg','-nostdin','-v','error','-f','lavfi','-i',f'sine=frequency=440:duration={getattr(request, "param", 10)}','-y',str(track)],check=True)
         captions={'cues':[{'textGroupId':g['translationGroupId'],'start':i*5,'end':(i+1)*5,'text':g['targetText']} for i,g in enumerate(candidate['groups'])]}
         cap_path=save(tmp_path,'captions.json',captions)
         package, screening=audio_fixtures.fixture()
@@ -64,9 +64,9 @@ def prepared(tmp_path):
         proposal.write_text(' '.join(str(v) for v in fields.values()))
         metadata={'schemaVersion':'sermon-formal-dev-metadata-approval-v2','pageId':page,'date':'2026-09-20','proposalFileSha256':builder.digest(proposal),
             'approvedLocales':[locale],'decision':'approved_selected_locales','approvalText':'所列语言页面信息已批准','reviewer':'user','recordedAt':'2026-10-04T20:00:00Z','locales':{locale:fields}}
-        content={'schemaVersion':'sermon-full-video-text-content-v1','pageId':page,'targetLocale':locale,'sourceLocale':'en','status':'human_reviewed',
+        content={'schemaVersion':'sermon-full-video-text-content-v2','reviewMode':'formal','audioDurationSeconds':builder.stage.decode_audio(track, 'fixture duration'),'pageId':page,'targetLocale':locale,'sourceLocale':'en','status':'human_reviewed',
             'englishSourcePackageJsonSha256':d.sha(source),'targetLanguageCandidateJsonSha256':d.sha(candidate),'sourceMediaSha256':source['source']['media']['sha256'],
-            'durationSeconds':builder.stage.decode_audio(track,'fixture'),'sourceVideoUrl':f'/pages/{page}/full-video-browser.mp4',**fields,
+            'durationSeconds':source['source']['approvedWindow']['endSeconds']-source['source']['approvedWindow']['startSeconds'],'sourceVideoUrl':f'/pages/{page}/full-video-browser.mp4',**fields,
             'cues':[{**cue,'sourceUnitIds':g['sourceUnitIds']} for cue,g in zip(captions['cues'],candidate['groups'])]}
         documents={'source':source,'metadata_approval':metadata,'full_candidate':candidate,'spoken_candidate':candidate,'full_review_receipt':human,'spoken_review_receipt':human,
             'audio_package':audio,'audio_review_receipt':audio_receipt,'audio_screening_receipt':screening,'full_content':content}
@@ -207,3 +207,41 @@ def test_inspect_refuses_full_content_from_another_page_before_prepare(prepared)
     config['inputs']['full_content'][f['locale']]=binding(path)
     raw=save(f['root'],'wrong-page-config.json',config)
     with pytest.raises(ValueError,match='source/page identity differs'):delivery.inspect(raw)
+
+
+@pytest.mark.parametrize('prepared', [12.5], indirect=True)
+def test_video_duration_is_independent_of_natural_dubbed_track(prepared):
+    f = prepared
+    content = f['documents']['full_content']
+    track = Path(f['documents']['audio_package']['track']['path'])
+    assert content['durationSeconds'] == 10
+    assert content['audioDurationSeconds'] > 12
+    assert builder.stage.decode_audio(track, 'natural-length fixture') > 12
+    assert f['result']['status'] == 'succeeded'
+    # A video duration changed to match the dubbed track is still refused.
+    changed = copy.deepcopy(content)
+    changed['durationSeconds'] = 12.5
+    path = save(f['root'], 'wrong-video-duration.json', changed)
+    config = copy.deepcopy(f['config'])
+    config['inputs']['full_content'][f['locale']] = binding(path)
+    config['workRoot'] = str(f['root'] / 'wrong-video-work')
+    draft = save(f['root'], 'wrong-video-config.json', config)
+    frozen = f['root'] / 'wrong-video-frozen.json'
+    state = delivery.freeze(draft, frozen)
+    with pytest.raises(ValueError, match='Displayed duration differs from media'):
+        delivery.execute(frozen, state['planHash'])
+
+
+def test_declared_audio_duration_must_match_bound_media(prepared):
+    f = prepared
+    changed = copy.deepcopy(f['documents']['full_content'])
+    changed['audioDurationSeconds'] = 99
+    path = save(f['root'], 'wrong-audio-duration.json', changed)
+    config = copy.deepcopy(f['config'])
+    config['inputs']['full_content'][f['locale']] = binding(path)
+    config['workRoot'] = str(f['root'] / 'wrong-audio-work')
+    draft = save(f['root'], 'wrong-audio-config.json', config)
+    frozen = f['root'] / 'wrong-audio-frozen.json'
+    state = delivery.freeze(draft, frozen)
+    with pytest.raises(ValueError, match='declared audio duration differs'):
+        delivery.execute(frozen, state['planHash'])

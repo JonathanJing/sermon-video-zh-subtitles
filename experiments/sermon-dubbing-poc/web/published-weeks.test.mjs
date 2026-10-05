@@ -520,3 +520,61 @@ test('changed or missing study bytes isolate the affected locale and legacy v2 n
   assert.equal(old.weeks[0].studyStatus,'unavailable');
   assert.deepEqual(old.weeks[0].meditation,[]);
 });
+
+test('simulated review page is excluded from production and visibly labelled in Dev', async () => {
+  const f = fixture();
+  const catalog = JSON.parse(f.files.get('/multilingual-v3.json'));
+  catalog.pages[0].simulationOnly = true;
+  for (const target of Object.values(catalog.pages[0].targets)) target.simulationOnly = true;
+  f.files.set('/multilingual-v3.json', JSON.stringify(catalog));
+  const production = await loadPublishedWeeks(f.fetchImpl);
+  assert.equal(production.weeks.length, 0);
+  const dev = await loadPublishedWeeks(f.fetchImpl, {allowDevCandidates:true});
+  assert.equal(dev.weeks.length, 1);
+  for (const variant of Object.values(dev.weeks[0].contentVariants)) {
+    assert.equal(variant.releaseLabel, '模拟审核测试');
+    assert.equal(variant.humanContentReview, 'simulated');
+    assert.equal(variant.simulationOnly, true);
+    assert.equal(variant.productionStages[0].status, 'review');
+  }
+});
+
+test('v2 keeps longer spoken audio separate from source reading clock', async () => {
+  const f = fixture(({content, captions}) => {
+    content.schemaVersion = 'sermon-full-video-text-content-v2';
+    content.reviewMode = 'formal'; content.audioDurationSeconds = 15;
+    captions.cues[0].end = 14;
+  });
+  const result = await loadPublishedWeeks(f.fetchImpl);
+  assert.deepEqual(result.errors, []);
+  const variant = result.weeks[0].contentVariants['zh-Hans'];
+  assert.equal(variant.sourceDurationSeconds, 10);
+  assert.equal(variant.tracks[0].durationSeconds, 15);
+  assert.equal(variant.tracks[0].subtitleTiming, 'target_audio_clock');
+  assert.equal(variant.fullTranscript[0].end, 8);
+});
+for (const value of [undefined, null, 0, -1, '15']) {
+  test(`v2 rejects missing/invalid audio duration ${value}`, async () => {
+    const f = fixture(({content}) => {
+      content.schemaVersion = 'sermon-full-video-text-content-v2'; content.reviewMode = 'formal';
+      content.audioDurationSeconds = value;
+    });
+    const result = await loadPublishedWeeks(f.fetchImpl);
+    assert.equal(result.weeks.length, 0);
+    assert.equal(result.errors.length, 3);
+  });
+}
+test('v2 cannot use the audio clock to admit full text past the source', async () => {
+  const f = fixture(({content}) => {
+    content.schemaVersion = 'sermon-full-video-text-content-v2'; content.reviewMode = 'formal';
+    content.audioDurationSeconds = 15; content.cues[0].end = 14;
+  });
+  assert.equal((await loadPublishedWeeks(f.fetchImpl)).weeks.length, 0);
+});
+test('simulation review mode requires isolated page and target flags', async () => {
+  const f = fixture(({content}) => {
+    content.schemaVersion = 'sermon-full-video-text-content-v2'; content.reviewMode = 'simulation';
+    content.audioDurationSeconds = 10;
+  });
+  assert.equal((await loadPublishedWeeks(f.fetchImpl, {allowDevCandidates:true})).weeks.length, 0);
+});

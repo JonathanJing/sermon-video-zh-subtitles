@@ -28,6 +28,10 @@
       "items": {
         "$ref": "#/$defs/page"
       }
+    },
+    "defaultTargetLocale": {
+      "$ref": "#/$defs/locale",
+      "description": "Optional legacy catalog hint preserved on incremental publication; per-page defaults remain authoritative."
     }
   },
   "$defs": {
@@ -143,6 +147,14 @@
         },
         "audioFingerprint": {
           "$ref": "#/$defs/fingerprintBinding"
+        },
+        "simulationOnly": {
+          "type": "boolean",
+          "description": "Dev-only test content; production readers exclude true."
+        },
+        "diagnosticOnly": {
+          "type": "boolean",
+          "description": "Dev-only test content; production readers exclude true."
         }
       }
     },
@@ -241,8 +253,17 @@
               "minimum": 1
             }
           }
+        },
+        "simulationOnly": {
+          "type": "boolean",
+          "description": "Dev-only test content; production readers exclude true."
+        },
+        "diagnosticOnly": {
+          "type": "boolean",
+          "description": "Dev-only test content; production readers exclude true."
         }
       }
     }
-  }
+  },
+  "x-contractRevision": 2
 }

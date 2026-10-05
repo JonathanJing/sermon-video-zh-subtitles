@@ -12,6 +12,7 @@ import argparse
 import hashlib
 import html
 import json
+import math
 import os
 import re
 import shutil
@@ -21,6 +22,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from jsonschema import Draft202012Validator, FormatChecker
+
+# Nested v3 validators import the scripts package, including direct CLI runs.
+if __package__ in (None, ''):
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 try:
     from scripts import stage_formal_multilingual_dev as stage
@@ -38,8 +44,33 @@ ROOT = Path(__file__).resolve().parents[1]
 LOCALES = ("zh-Hans", "ko", "es")
 ACCEPT_NOT_RUN = {"status": "not_run", "evidenceSha256": None}
 PAGE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,159}$")
-RUNTIME_WEB_FILES = ('app.mjs', 'published-weeks.mjs', 'content-locales.mjs')
 RUNTIME_WEB_ROOT = ROOT / 'experiments/sermon-dubbing-poc/web'
+
+
+def runtime_web_files(root=RUNTIME_WEB_ROOT):
+    """Freeze the reader's complete local ES-module import closure."""
+    pending = ['app.mjs', 'published-weeks.mjs', 'content-locales.mjs']
+    found = set()
+    imports = re.compile(r"(?:\bfrom\s*|\bimport\s*(?:\(\s*)?)[\"']([./][^\"']+\.mjs)[\"']")
+    root = Path(root).resolve()
+    while pending:
+        name = pending.pop()
+        if name in found:
+            continue
+        path = (root / name).resolve()
+        if not path.is_relative_to(root) or path.suffix != '.mjs' or not path.is_file():
+            raise ValueError('Reader module dependency is missing or outside the Web root: ' + name)
+        found.add(name)
+        for specifier in imports.findall(path.read_text()):
+            dependency = (root / specifier.lstrip('/')) if specifier.startswith('/') else path.parent / specifier
+            dependency = dependency.resolve()
+            if not dependency.is_relative_to(root):
+                raise ValueError('Reader dependency escapes Web root')
+            pending.append(dependency.relative_to(root).as_posix())
+    return tuple(sorted(found))
+
+
+RUNTIME_WEB_FILES = runtime_web_files()
 
 
 def require(condition: bool, message: str) -> None:
@@ -93,6 +124,11 @@ def checked_review(path: Path, candidate: dict, candidate_sha: str, locale: str)
 
 def static_page(content: dict, locale: str, page_id: str, studies=None) -> str:
     esc = html.escape
+    simulated = content.get('reviewMode') == 'simulation'
+    reading_label = '模拟审核测试文稿；非正式内容批准' if simulated else '已批准完整文稿'
+    reading_notice = '模拟审核测试文稿；不代表正式内容批准。' if simulated else '此处为已批准完整阅读稿。'
+    footer_notice = ('模拟审核收据仅用于测试；译文、音轨、大纲与默想未获正式批准。' if simulated
+                     else '根据讲道视频制作的已审核译文；配音另使用已审核短口播稿。')
     total_seconds = int(content["durationSeconds"])
     hours, remainder = divmod(total_seconds, 3600)
     minutes, seconds = divmod(remainder, 60)
@@ -125,11 +161,11 @@ def static_page(content: dict, locale: str, page_id: str, studies=None) -> str:
             "small{color:#52606d}</style></head><body>"
             f"<header><small>{esc(content['series'])} · {esc(content['speaker'])}</small>"
             f"<h1>{esc(content['title'])}</h1><p>{esc(content['scripture'])}</p>"
-            f"<p>对应完整 {duration} 讲道视频；此处为已批准完整阅读稿。</p></header>"
+            f"<p>对应完整 {duration} 讲道视频；{reading_notice}</p></header>"
             f"<aside><p>{esc(content['summary'])}</p><ol>{outlines}</ol></aside>"
-            f"<main aria-label=\"已批准完整文稿\">{paragraphs}</main>"
+            f"<main aria-label=\"{reading_label}\">{paragraphs}</main>"
             + study_html +
-            "<footer><small>根据讲道视频制作的已审核译文；配音另使用已审核短口播稿。"
+            f"<footer><small>{footer_notice}"
             "来源：Mariners Church 视频；本项目与该教会无隶属关系。</small></footer>"
             "</body></html>\n")
 
@@ -168,7 +204,8 @@ def prepare(args: argparse.Namespace) -> dict:
     else:
         require(args.metadata_approval and args.metadata_proposal, "Approved metadata is required")
         metadata = formal_assets.checked_metadata(args.metadata_approval, args.metadata_proposal,
-                                                  args.page_id, args.date, locales)
+                                                  args.page_id, args.date, locales,
+                                                  release_intent=read(args.release_intent) if getattr(args, "release_intent", None) else None)
     if getattr(args, "release_intent", None):
         delivery_contract.validate_intent(read(args.release_intent), read(args.routes))
         for fields in metadata["locales"].values():
@@ -232,9 +269,30 @@ def prepare(args: argparse.Namespace) -> dict:
             content_bytes = content_source.read_bytes()
             content_sha = hashlib.sha256(content_bytes).hexdigest()
             content = json.loads(content_bytes)
+            audio_duration = None
+            if content.get('schemaVersion') == 'sermon-full-video-text-content-v2':
+                validate(content, 'sermon-full-video-text-content-v2.schema.json')
+            if content.get('schemaVersion') == 'sermon-full-video-text-content-v2' or 'audioDurationSeconds' in content:
+                declared = content.get('audioDurationSeconds')
+                require(isinstance(declared, (int, float)) and not isinstance(declared, bool)
+                        and math.isfinite(declared) and 0 < declared <= 86400, 'Invalid declared audio duration')
+                audio_duration = stage.decode_audio(track, f'{locale} measured audio clock')
+                require(abs(content['audioDurationSeconds'] - audio_duration) <= .05,
+                        f'{locale}: declared audio duration differs from measured track')
+            if metadata.get('schemaVersion') == 'sermon-dev-simulated-metadata-v1':
+                require(content.get('schemaVersion') == 'sermon-full-video-text-content-v2'
+                        and content.get('reviewMode') == 'simulation', 'Simulated metadata requires simulated v2 content review mode')
+            else:
+                require(content.get('reviewMode', 'formal') == 'formal', 'Formal metadata cannot bind simulated content')
             if getattr(args, "release_intent", None):
-                delivery_contract.validate_metadata(content, measured_duration=stage.decode_audio(track, f"{locale} display duration"))
-            require(content.get("schemaVersion") == "sermon-full-video-text-content-v1"
+                # The page and reading cues use source-video time. A natural
+                # dubbed track has its own independently decoded duration.
+                if audio_duration is None:
+                    stage.decode_audio(track, f"{locale} audio integrity")
+                window = source["source"]["approvedWindow"]
+                delivery_contract.validate_metadata(content, measured_duration=
+                    window["endSeconds"] - window["startSeconds"])
+            require(content.get("schemaVersion") in ("sermon-full-video-text-content-v1", "sermon-full-video-text-content-v2")
                     and content.get("status") == "human_reviewed"
                     and content.get("pageId") == args.page_id
                     and content.get("targetLocale") == locale

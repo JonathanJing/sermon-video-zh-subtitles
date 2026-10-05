@@ -304,6 +304,48 @@ class CostIsolationTests(unittest.TestCase):
         self.assertRejected("duplicate_api_key_partition", isolation.reconcile, config(), attempts(),
                             daily(bucket(apiKeyId="key-1"), bucket("b2", projectId=None, apiKeyId="key-1")))
 
+    def test_v2_shared_credentials_preserve_workload_and_key_partition(self):
+        source = config()
+        source["schemaVersion"] = isolation.SHARED_VERSION
+        for env in isolation.ENVIRONMENTS:
+            source["environments"][env]["keyAliases"] = dict.fromkeys(isolation.WORKLOADS, env + "_runtime")
+        one = attempt(keyAlias="dev_runtime")
+        two = attempt("review", workload="reviewer", keyAlias=None)
+        evidence = attempts(one, two)  # Existing v1 evidence remains readable.
+        evidence["scope"] = "complete_openai_project_attempts"
+        result = isolation.reconcile(source, evidence, daily(bucket(apiKeyId="key_id_dev")))
+        self.assertEqual(result["schemaVersion"], isolation.SHARED_VERSION)
+        self.assertEqual(result["dailyComparisons"][0]["comparisonCompleteness"], "complete")
+        self.assertEqual(result["environments"]["dev"]["knownEstimatedUsd"], "0.2")
+        self.assertEqual([a["workload"] for a in result["attempts"]], ["translation", "reviewer"])
+        schema = json.loads(Path("schemas/sermon-cost-isolation-v2.schema.json").read_text())
+        jsonschema.Draft202012Validator.check_schema(schema)
+        for value in (source, isolation.validate_config(source), result):
+            jsonschema.validate(value, schema)
+        evidence["schemaVersion"] = isolation.SHARED_VERSION
+        costs = daily(bucket(apiKeyId="key_id_dev"))
+        costs["schemaVersion"] = isolation.SHARED_VERSION
+        for value in (evidence, costs):
+            jsonschema.validate(value, schema)
+        self.assertEqual(isolation.reconcile(source, evidence, costs)["schemaVersion"], isolation.SHARED_VERSION)
+        # Sharing never weakens environment/project/observed-key checks.
+        wrong = attempt("prod", "prod", keyAlias="prod_runtime", apiKeyId="key_id_dev")
+        self.assertRejected("reused_api_key_id", isolation.reconcile, source, attempts(one, wrong), daily())
+        self.assertRejected("cost_api_key_environment_mismatch", isolation.reconcile, source, attempts(one),
+                            daily(bucket(projectId="proj_prod", apiKeyId="key_id_dev")))
+        source["environments"]["prod"]["keyAliases"]["translation"] = "dev_runtime"
+        self.assertRejected("reused_key_alias", isolation.validate_config, source)
+
+    def test_v2_distinct_aliases_still_cannot_claim_same_key_id(self):
+        source = config()
+        source["schemaVersion"] = isolation.SHARED_VERSION
+        self.assertRejected("reused_api_key_id", isolation.reconcile, source,
+                            attempts(attempt(), attempt("review", workload="reviewer", keyAlias=None)), daily())
+        # A legacy config cannot acquire shared-key behavior by changing evidence versions.
+        source["schemaVersion"] = isolation.VERSION
+        source["environments"]["dev"]["keyAliases"]["reviewer"] = "dev_translation"
+        self.assertRejected("reused_key_alias", isolation.validate_config, source)
+
     def test_schema_accepts_fixtures_and_safe_result(self):
         path = Path(__file__).resolve().parents[1] / "schemas/sermon-cost-isolation-v1.schema.json"
         schema = json.loads(path.read_text())

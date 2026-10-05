@@ -289,7 +289,7 @@ async function loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal, allow
   ]);
   const legacyCandidate = candidate && release.schemaVersion === 'sermon-target-language-release-package-v2';
   required((legacyCandidate ? ['sermon-formal-dev-content-v1', 'sermon-dev-podcast-candidate-content-v2'].includes(content.schemaVersion)
-    : content.schemaVersion === 'sermon-full-video-text-content-v1')
+    : ['sermon-full-video-text-content-v1', 'sermon-full-video-text-content-v2'].includes(content.schemaVersion))
     && content.pageId === page.id && (legacyCandidate ? content.locale === locale : content.targetLocale === locale) && content.sourceLocale === 'en'
     && (legacyCandidate ? content.contentStatus === release.contentStatus && content.audioStatus === release.audioStatus
       && content.targetLanguageAudioPackageJsonSha256 === release.targetLanguageAudioPackageJsonSha256 && content.date === page.date
@@ -306,7 +306,15 @@ async function loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal, allow
     && sourceWindow.mediaSha256 === content.sourceMediaSha256 && HASH.test(sourceWindow.mediaSha256)
     && Math.abs(sourceWindow.endSeconds - sourceWindow.startSeconds - content.durationSeconds) < .001),
   'Invalid original-source fingerprint window');
-  const cues = validatedCues(captions.cues, content.durationSeconds);
+  const separateAudioClock = content.schemaVersion === 'sermon-full-video-text-content-v2' || Object.hasOwn(content, 'audioDurationSeconds');
+  if (content.schemaVersion === 'sermon-full-video-text-content-v2') {
+    required(['formal', 'simulation'].includes(content.reviewMode), 'Invalid published review mode');
+    required(content.reviewMode !== 'simulation' || (page.simulationOnly === true && target.simulationOnly === true && page.diagnosticOnly === true && target.diagnosticOnly === true), 'Simulation content requires isolated catalog flags');
+    required(content.reviewMode !== 'formal' || (page.simulationOnly !== true && target.simulationOnly !== true), 'Simulation catalog cannot declare formal content');
+  }
+  const audioDuration = separateAudioClock ? content.audioDurationSeconds : content.durationSeconds;
+  required(Number.isFinite(audioDuration) && audioDuration > 0 && audioDuration <= 86400, 'Invalid published audio duration');
+  const cues = validatedCues(captions.cues, audioDuration);
   const fullTranscript = validatedCues(content.cues, content.durationSeconds);
   // Full reading text and shorter spoken captions remain separate, explicitly linked by group ID.
   const fullIds = new Set(fullTranscript.map(cue => cue.textGroupId));
@@ -339,7 +347,7 @@ async function loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal, allow
       summary: content.summary, centralMessage: content.summary,
       outline: content.outline.map(item => ({ title: item.title, points: [item.body] })), questions: [], scriptureRefs: [content.scripture],
       tracks: [{ id: `${page.id}-${locale}-${assets.audio.sha256.slice(0, 12)}`,
-        audioUrl: assets.audio.path, sha256: assets.audio.sha256, durationSeconds: content.durationSeconds,
+        audioUrl: assets.audio.path, sha256: assets.audio.sha256, durationSeconds: audioDuration,
         cues, scope: 'full_candidate', label: labels.audio, voiceLabel: `${content.speaker} · AI`,
         targetLocale: locale, subtitleTiming: 'target_audio_clock' }], fullTranscript,
       contentSha256: assets.content.sha256, captionsSha256: assets.captions.sha256,
@@ -350,9 +358,9 @@ async function loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal, allow
   const track = {
     id: `${page.id}-${locale}-${assets.audio.sha256.slice(0, 12)}`,
     audioUrl: assets.audio.path, sha256: assets.audio.sha256,
-    durationSeconds: content.durationSeconds, cues, scope: 'full_reviewed',
+    durationSeconds: audioDuration, cues, scope: 'full_reviewed',
     label: labels.audio, voiceLabel: labels.voice, targetLocale: locale,
-    subtitleTiming: 'source_video_aligned',
+    subtitleTiming: separateAudioClock ? 'target_audio_clock' : 'source_video_aligned',
   };
   return {
     id: page.id, date: page.date, number: '', targetLocale: locale, defaultTargetLocale: locale, title: content.title,
@@ -369,6 +377,12 @@ async function loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal, allow
     meditation: study?.meditation.sections || [], studyArtifacts: study ? {outline:release.fourProducts.outlineArtifactSha256,meditation:release.fourProducts.meditationArtifactSha256} : null,
     fourProducts: study ? release.fourProducts : null, studyStatus: study ? 'human_reviewed' : 'unavailable',
     ...(candidate ? {devCandidate:true,releaseStatus:'candidate',contentReview:'人工审核候选；尚未发布验收。',productionStages:[{label:'发布与验收',detail:'candidate · not_run',status:'review'}]} : {}),
+    ...(page.simulationOnly === true || target.simulationOnly === true ? {
+      releaseLabel: '模拟审核测试', humanContentReview: 'simulated', studyStatus: study ? 'simulated' : 'unavailable',
+      audioNotice: '测试音轨；模拟审核不构成真人听审或同步批准。',
+      contentReview: '模拟审核测试；不构成正式内容批准。',
+      productionStages: [{label:'测试交付', detail:'simulationOnly · 非正式内容批准', status:'review'}],
+    } : {}),
     questions: [], scriptureRefs: [content.scripture], tracks: [track], fullTranscript,
     contentSha256: assets.content.sha256, captionsSha256: assets.captions.sha256,
     releasePackageJsonSha256: target.releasePackageJsonSha256,

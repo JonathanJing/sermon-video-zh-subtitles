@@ -40,15 +40,27 @@ def write_json(path: Path, value: dict) -> None:
 
 
 def checked_metadata(path: Path, proposal: Path, page_id: str, date: str,
-                     locales=None) -> dict:
+                     locales=None, *, release_intent=None) -> dict:
     metadata = json.loads(path.read_text(encoding="utf-8"))
     expected_locales = set(locales or stage.LOCALES)
     version = metadata.get("schemaVersion")
+    simulated = version == "sermon-dev-simulated-metadata-v1"
     common = (metadata.get("pageId") == page_id
             and metadata.get("date") == date
-            and metadata.get("reviewer") == "user"
+            and metadata.get("reviewer") == ("simulation-test-only" if simulated else "user")
             and metadata.get("proposalFileSha256") == stage.file_sha(proposal))
-    if version == "sermon-formal-dev-metadata-approval-v1":
+    if simulated:
+        schema = json.loads((stage.ROOT / "schemas/sermon-dev-simulated-metadata-v1.schema.json").read_text())
+        Draft202012Validator(schema, format_checker=FormatChecker()).validate(metadata)
+        require(common and release_intent == metadata["releaseIntent"],
+                "Simulated metadata requires the exact isolated Dev release intent")
+        require(set(metadata["approvedLocales"]) == expected_locales
+                and set(metadata["locales"]) == expected_locales,
+                "Simulated metadata locale coverage differs")
+        require(all("[模拟审核测试]" in row["title"] and "simulation test only" in row["summary"]
+                    for row in metadata["locales"].values()),
+                "Simulated metadata must visibly disclose its test scope")
+    elif version == "sermon-formal-dev-metadata-approval-v1":
         require(common
                 and expected_locales == set(stage.LOCALES)
                 and metadata.get("decision") == "approved_all_three_locales"

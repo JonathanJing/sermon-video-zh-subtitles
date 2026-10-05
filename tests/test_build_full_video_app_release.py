@@ -99,6 +99,16 @@ class FullVideoAppReleaseTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             release.validate(catalog, "sermon-multilingual-catalog-v3.schema.json")
 
+    def test_simulated_static_page_does_not_claim_formal_approval(self):
+        content = {'title': '[模拟审核测试] Title', 'series': 'Test', 'speaker': 'Test',
+                   'scripture': 'Test', 'summary': 'simulation test only', 'outline': [],
+                   'durationSeconds': 180, 'reviewMode': 'simulation',
+                   'cues': [{'start': 0, 'text': 'Test text'}]}
+        page = release.static_page(content, 'zh-Hans', self.page_id)
+        self.assertIn('非正式内容批准', page)
+        for claim in ('已批准完整', '已审核译文', '已审核短口播稿'):
+            self.assertNotIn(claim, page)
+
     def test_single_chinese_seal_preserves_unrun_device_acceptance(self):
         prepared, receipt = self.fixture(("zh-Hans",))
         sealed = self.root / "sealed-zh"
@@ -150,3 +160,71 @@ class FullVideoAppReleaseTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SimulatedMetadataIsolationTests(unittest.TestCase):
+    def test_simulated_metadata_requires_exact_dev_route_and_visible_notice(self):
+        from scripts import build_formal_dev_release_assets as metadata
+        from jsonschema import ValidationError
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            schema = release.read(release.ROOT / 'schemas/sermon-dev-simulated-metadata-v1.schema.json')
+            intent = schema['properties']['releaseIntent']['const']
+            fields = {'series': 'Series', 'title': '[模拟审核测试] Title', 'speaker': 'Speaker',
+                      'scripture': 'Revelation', 'summary': 'simulation test only', 'outline': ['Point']}
+            proposal = root / 'proposal.txt'
+            proposal.write_text('\n'.join([value for value in fields.values() if isinstance(value, str)] + fields['outline']))
+            value = {'schemaVersion': 'sermon-dev-simulated-metadata-v1', 'pageId': 'mockup-test',
+                     'date': '2026-09-27', 'proposalFileSha256': release.digest(proposal),
+                     'decision': 'simulated_test_only', 'approvalText': 'simulation test only - not a real human approval',
+                     'reviewer': 'simulation-test-only', 'recordedAt': '2026-10-05T03:00:00Z',
+                     'approvedLocales': ['ko'], 'locales': {'ko': fields}, 'releaseIntent': intent}
+            path = root / 'metadata.json'
+            release.write(path, value)
+            self.assertEqual(metadata.checked_metadata(path, proposal, 'mockup-test', '2026-09-27', ['ko'], release_intent=intent)['decision'], 'simulated_test_only')
+            for route in (None, {**intent, 'environment': 'production'}, {**intent, 'site': 'other'}):
+                with self.assertRaisesRegex(ValueError, 'exact isolated Dev'):
+                    metadata.checked_metadata(path, proposal, 'mockup-test', '2026-09-27', ['ko'], release_intent=route)
+            value['releaseIntent'] = {**intent, 'site': 'production'}
+            release.write(path, value)
+            with self.assertRaises(ValidationError):
+                metadata.checked_metadata(path, proposal, 'mockup-test', '2026-09-27', ['ko'], release_intent=value['releaseIntent'])
+
+    def test_catalog_test_flags_are_boolean_and_old_catalog_stays_valid(self):
+        from jsonschema import Draft202012Validator, ValidationError
+        schema = release.read(release.ROOT / 'schemas/sermon-multilingual-catalog-v3.schema.json')
+        validator = Draft202012Validator(schema)
+        target = {'releasePackageUrl': '/releases-v2/p/ko.json', 'releasePackageJsonSha256': 'a' * 64,
+                  'contentStatus': 'human_reviewed', 'audioStatus': 'human_reviewed', 'capabilities': ['text', 'captions', 'audio']}
+        page = {'id': 'p', 'date': '2026-09-27', 'title': 'Test', 'sourceLocale': 'en',
+                'sourceIdentitySha256': 'b' * 64, 'defaultTargetLocale': 'ko', 'targets': {'ko': target}}
+        catalog = {'schemaVersion': 'sermon-multilingual-catalog-v3', 'generatedAt': '2026-10-05T03:00:00Z', 'defaultPageId': 'p', 'pages': [page]}
+        validator.validate(catalog)
+        catalog['defaultTargetLocale'] = 'zh-Hans'
+        validator.validate(catalog)
+        page.update(simulationOnly=True, diagnosticOnly=True)
+        target.update(simulationOnly=True, diagnosticOnly=True)
+        validator.validate(catalog)
+        target['simulationOnly'] = 'true'
+        with self.assertRaises(ValidationError):
+            validator.validate(catalog)
+
+
+class ReaderClosureTests(unittest.TestCase):
+    def test_nested_root_and_relative_browser_imports_are_all_sealed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'app.mjs').write_text("import {x} from '/catalog.mjs';")
+            (root / 'catalog.mjs').write_text("export {x} from './nested.mjs';")
+            (root / 'nested.mjs').write_text('export const x=1;')
+            (root / 'published-weeks.mjs').write_text('')
+            (root / 'content-locales.mjs').write_text('')
+            self.assertEqual(set(release.runtime_web_files(root)), {'app.mjs', 'catalog.mjs', 'nested.mjs', 'published-weeks.mjs', 'content-locales.mjs'})
+            (root / 'nested.mjs').unlink()
+            with self.assertRaisesRegex(ValueError, 'dependency is missing'):
+                release.runtime_web_files(root)
+
+    def test_actual_reader_contains_catalog_navigation_dependency(self):
+        self.assertIn('catalog.mjs', release.RUNTIME_WEB_FILES)
+        self.assertIn('fingerprint-capture.mjs', release.RUNTIME_WEB_FILES)
+        self.assertIn('locales-ko.mjs', release.RUNTIME_WEB_FILES)

@@ -1056,6 +1056,67 @@
     },
     "traceId": {
       "$ref": "#/$defs/eventId"
+    },
+    "openaiRoute": {
+      "type": "object",
+      "required": [
+        "schemaVersion",
+        "environment",
+        "projectId",
+        "credentialAlias",
+        "identitySource"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": "sermon-openai-runtime-route-v1"
+        },
+        "environment": {
+          "enum": [
+            "dev",
+            "prod"
+          ]
+        },
+        "projectId": {
+          "type": "string",
+          "pattern": "^proj_[A-Za-z0-9_-]+$",
+          "maxLength": 128
+        },
+        "credentialAlias": {
+          "enum": [
+            "tongxing-dev-runtime",
+            "tongxing-prod-runtime"
+          ]
+        },
+        "identitySource": {
+          "const": "configured_runtime"
+        }
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "environment": {
+                "const": "dev"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "credentialAlias": {
+                "const": "tongxing-dev-runtime"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "credentialAlias": {
+                "const": "tongxing-prod-runtime"
+              }
+            }
+          }
+        }
+      ]
     }
   },
   "required": [
@@ -3045,6 +3106,28 @@
           ]
         }
       }
+    },
+    {
+      "if": {
+        "required": [
+          "code"
+        ],
+        "properties": {
+          "event": {
+            "const": "log"
+          },
+          "code": {
+            "const": "model_call_observation"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "fields": {
+            "$ref": "#/$defs/modelCallObservation"
+          }
+        }
+      }
     }
   ],
   "$defs": {
@@ -4246,6 +4329,9 @@
             "timings"
           ],
           "additionalProperties": false
+        },
+        {
+          "$ref": "#/$defs/modelCallObservation"
         }
       ]
     },
@@ -4638,6 +4724,454 @@
         "checks"
       ],
       "additionalProperties": false
+    },
+    "modelCallObservation": {
+      "title": "Content-free model call observation (not an invoice or billing receipt)",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "callId",
+        "parentCallId",
+        "phase",
+        "status",
+        "model",
+        "backend",
+        "provider",
+        "role",
+        "timingScope",
+        "usageSource",
+        "usageStatus",
+        "startedAt",
+        "finishedAt",
+        "elapsedSeconds",
+        "generationSeconds",
+        "firstTokenSeconds",
+        "cacheHit",
+        "errorType",
+        "usage",
+        "rates"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": "sermon-model-call-observation-v1"
+        },
+        "callId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:/-]{0,159}$",
+          "maxLength": 160
+        },
+        "parentCallId": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:/-]{0,159}$",
+              "maxLength": 160
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "phase": {
+          "enum": [
+            "started",
+            "finished"
+          ]
+        },
+        "status": {
+          "enum": [
+            "started",
+            "completed",
+            "failed"
+          ]
+        },
+        "model": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:/-]{0,159}$",
+          "maxLength": 160
+        },
+        "backend": {
+          "enum": [
+            "api",
+            "local",
+            "agent_session"
+          ]
+        },
+        "provider": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:/-]{0,159}$",
+          "maxLength": 160
+        },
+        "role": {
+          "enum": [
+            "production",
+            "supervisor",
+            "engineering"
+          ]
+        },
+        "timingScope": {
+          "enum": [
+            "request",
+            "generation",
+            "agent_session_including_tools"
+          ]
+        },
+        "usageSource": {
+          "enum": [
+            "provider",
+            "local_tokenizer",
+            "host_telemetry",
+            "not_reported"
+          ]
+        },
+        "usageStatus": {
+          "enum": [
+            "unknown",
+            "partial",
+            "reported"
+          ]
+        },
+        "startedAt": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$",
+          "format": "date-time"
+        },
+        "finishedAt": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "elapsedSeconds": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1000000000000
+        },
+        "generationSeconds": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1000000000000
+        },
+        "firstTokenSeconds": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1000000000000
+        },
+        "cacheHit": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "errorType": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:/-]{0,159}$",
+              "maxLength": 160
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "usage": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "inputTokens",
+            "outputTokens",
+            "cachedInputTokens",
+            "reasoningTokens",
+            "totalTokens"
+          ],
+          "properties": {
+            "inputTokens": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0,
+              "maximum": 1000000000000000
+            },
+            "outputTokens": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0,
+              "maximum": 1000000000000000
+            },
+            "cachedInputTokens": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0,
+              "maximum": 1000000000000000
+            },
+            "reasoningTokens": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0,
+              "maximum": 1000000000000000
+            },
+            "totalTokens": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0,
+              "maximum": 1000000000000000
+            }
+          }
+        },
+        "rates": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "requestOutputTokensPerSecond",
+            "generationOutputTokensPerSecond",
+            "sessionOutputTokensPerSecond"
+          ],
+          "properties": {
+            "requestOutputTokensPerSecond": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0,
+              "maximum": 1000000000000
+            },
+            "generationOutputTokensPerSecond": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0,
+              "maximum": 1000000000000
+            },
+            "sessionOutputTokensPerSecond": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0,
+              "maximum": 1000000000000
+            }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "phase": {
+                "const": "started"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "status": {
+                "const": "started"
+              },
+              "usageStatus": {
+                "const": "unknown"
+              },
+              "finishedAt": {
+                "type": "null"
+              },
+              "elapsedSeconds": {
+                "type": "null"
+              },
+              "generationSeconds": {
+                "type": "null"
+              },
+              "firstTokenSeconds": {
+                "type": "null"
+              },
+              "cacheHit": {
+                "type": "null"
+              },
+              "errorType": {
+                "type": "null"
+              },
+              "usage": {
+                "properties": {
+                  "inputTokens": {
+                    "type": "null"
+                  },
+                  "outputTokens": {
+                    "type": "null"
+                  },
+                  "cachedInputTokens": {
+                    "type": "null"
+                  },
+                  "reasoningTokens": {
+                    "type": "null"
+                  },
+                  "totalTokens": {
+                    "type": "null"
+                  }
+                }
+              },
+              "rates": {
+                "properties": {
+                  "requestOutputTokensPerSecond": {
+                    "type": "null"
+                  },
+                  "generationOutputTokensPerSecond": {
+                    "type": "null"
+                  },
+                  "sessionOutputTokensPerSecond": {
+                    "type": "null"
+                  }
+                }
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "status": {
+                "enum": [
+                  "completed",
+                  "failed"
+                ]
+              },
+              "finishedAt": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$",
+                "format": "date-time"
+              },
+              "elapsedSeconds": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1000000000000
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "failed"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "errorType": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:/-]{0,159}$",
+                "maxLength": 160
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "errorType": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "usageSource": {
+                "const": "not_reported"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "usageStatus": {
+                "const": "unknown"
+              },
+              "usage": {
+                "properties": {
+                  "inputTokens": {
+                    "type": "null"
+                  },
+                  "outputTokens": {
+                    "type": "null"
+                  },
+                  "cachedInputTokens": {
+                    "type": "null"
+                  },
+                  "reasoningTokens": {
+                    "type": "null"
+                  },
+                  "totalTokens": {
+                    "type": "null"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "timingScope": {
+                "const": "request"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "rates": {
+                "properties": {
+                  "requestOutputTokensPerSecond": {
+                    "type": "null"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "timingScope": {
+                "const": "agent_session_including_tools"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "rates": {
+                "properties": {
+                  "sessionOutputTokensPerSecond": {
+                    "type": "null"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
     }
-  }
+  },
+  "x-model-call-observation-revision": 1
 }

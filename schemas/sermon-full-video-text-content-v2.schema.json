@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Full reading content with independent source and audio clocks",
+  "type": "object",
+  "required": ["schemaVersion", "pageId", "targetLocale", "sourceLocale", "status", "durationSeconds", "audioDurationSeconds", "reviewMode", "cues"],
+  "properties": {
+    "schemaVersion": {"const": "sermon-full-video-text-content-v2"},
+    "pageId": {"type": "string", "minLength": 1},
+    "targetLocale": {"type": "string", "minLength": 1},
+    "sourceLocale": {"const": "en"},
+    "status": {"const": "human_reviewed"},
+    "durationSeconds": {"type": "number", "exclusiveMinimum": 0, "maximum": 86400, "description": "Approved source window, used only by full reading cues/source anchors."},
+    "audioDurationSeconds": {"type": "number", "exclusiveMinimum": 0, "maximum": 86400, "description": "Measured bound track duration, used by spoken captions and playback."},
+    "reviewMode": {"enum": ["formal", "simulation"]},
+    "cues": {"type": "array", "minItems": 1}
+  },
+  "description": "Existing content identity, metadata, group and asset binding checks remain mandatory in the producer and readers. Additive migration requires measured audio duration and explicit review mode; never infer duration from the last caption."
+}
