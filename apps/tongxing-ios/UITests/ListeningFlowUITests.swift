@@ -13,11 +13,30 @@ final class ListeningFlowUITests: XCTestCase {
         XCTAssertTrue(entry.isHittable)
         entry.tap()
         let question = app.staticTexts["1. 这是用于测试的默想问题。"]
-        for _ in 0..<4 where !question.isHittable { app.scrollViews["sermon-study-scroll"].swipeUp() }
+        let dockTop = app.buttons["playback-toggle"].firstMatch.frame.minY
+        for _ in 0..<4 {
+            if question.exists && question.frame.maxY < dockTop - 12 { break }
+            // The sheet scroll view's AX bounds extend under the dock. Start
+            // above controls and require the entire question in the viewport.
+            let start = app.coordinate(withNormalizedOffset: .zero)
+                .withOffset(CGVector(dx: 60, dy: dockTop - 40))
+            let end = app.coordinate(withNormalizedOffset: .zero)
+                .withOffset(CGVector(dx: 60, dy: app.navigationBars.firstMatch.frame.maxY + 100))
+            start.press(forDuration: 0.1, thenDragTo: end)
+        }
         XCTAssertTrue(question.isHittable)
+        XCTAssertLessThan(question.frame.maxY, dockTop - 12)
         screenshot("study-large-text-reflection", app: app)
-        XCTAssertTrue(app.buttons["close-sermon-study"].isHittable)
-        app.buttons["close-sermon-study"].tap()
+        let close = app.buttons["close-sermon-study-bottom"]
+        if !close.isHittable || close.frame.maxY >= dockTop - 12 {
+            let start = app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: 60, dy: dockTop - 40))
+            let end = app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: 60, dy: 180))
+            start.press(forDuration: 0.1, thenDragTo: end)
+        }
+        XCTAssertTrue(close.isHittable)
+        XCTAssertLessThan(close.frame.maxY, dockTop - 12)
+        screenshot("study-large-text-completion", app: app)
+        close.tap()
         XCTAssertEqual(app.buttons["playback-toggle"].label, "开始播放")
     }
 

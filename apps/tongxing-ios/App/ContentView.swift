@@ -1448,6 +1448,9 @@ private struct OutlineSheet: View {
                             }
                         }
                         Text(review).font(.caption).foregroundStyle(.secondary)
+                        Button(localization.text("完成")) { dismiss() }
+                            .buttonStyle(.bordered).frame(minHeight: 44)
+                            .accessibilityIdentifier("close-sermon-study-bottom")
                     }
                 }.padding(22).frame(maxWidth: 680, alignment: .leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
