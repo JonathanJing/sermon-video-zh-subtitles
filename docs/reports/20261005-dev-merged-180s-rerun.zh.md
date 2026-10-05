@@ -39,3 +39,9 @@ Luna 在本轮是 Codex CLI 监督模型，确定性执行器负责生产工具�
 本轮 ignored 产物根为 `artifacts/dev-180s-page-test-20261004/dev-merged-rerun-20261005/`。关键回执：`run-context.json`、`verification/`、`inputs/simulation-scope-report.json`、`baseline/baseline-receipt.json`、`workflow/run-report-first.json`、`workflow/workflow-state.json`、`workflow/final-overlay/deployment-attempt-v2.json`、`web-readback.json`、`native-readback.json`、`credential-routing-check.json`、`monitor-accounting/summary.json`、`monitor-accounting/model-calls.csv`、`luna-review.txt` 和 `test-complete.json`。秘密和媒体未写入 Git。
 
 构建及执行命令见 [固定片段工具](../dev-180s-page-test.zh.md) 和 [诊断执行器](../dev-diagnostic-delivery-runner.zh.md)；本轮原参数恢复只能复用其原始输入及实现身份，后续代码变化需建立新 run，不能绕过哈希准入。
+
+## 后续核实：GPT-6 Luna 失败是旧 CLI 调用路径问题
+
+本轮调用的 `/Users/jonathan_jing/.local/bin/codex` 指向独立安装，版本 `0.153.4`；该版本出现 Unknown model 与 ChatGPT 渠道拒绝。桌面应用自带 `/Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/codex` 为 `0.159.0-alpha.12.1`，其模型目录包含 `gpt-6-luna`。使用同一 ChatGPT 登录、移除 API key、普通速度配置，在新版 CLI 做最小测试，退出 0 并返回 `OK`。这说明账号可以通过新版 CLI 使用 GPT-6 Luna，不能把旧版错误泛化为 ChatGPT 登录整体不支持。
+
+最小测试只验证模型可调用，不改变本轮已经由 GPT-5.6 Luna 完成的监督结果与速度计量。下一轮监督应明确使用已验证的新 CLI 路径和 `-m gpt-6-luna`；全局 CLI 符号链接和凭据没有改动。证据保存在本轮 `gpt6-luna-compatibility/result.json` 与 `new-cli.jsonl`。官方 [模型说明](https://learn.chatgpt.com/docs/models) 也列出 GPT-6 Luna 的 Codex CLI／ChatGPT 额度支持，并说明可用性依赖客户端与登录渠道。
