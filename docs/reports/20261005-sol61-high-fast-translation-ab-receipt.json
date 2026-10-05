@@ -497,5 +497,42 @@
     "four-arm-key-first.json": "843e64e0553e839c4408a871bc71a1b81b207a92008e2b977b1cb8948cb08a50",
     "four-arm-blind-first.json": "9dbdc039a78a479ebcf4ac33575f825599df4b14b4c2b0fa9d281ba61200c756",
     "four-arm-summary.json": "6aae6c2d4895d909d11b8ed2b59b8b3c1247d8007393551c2dfef912bfd99ddf"
+  },
+  "throughputEstimate": {
+    "scope": "sum reported token counts divided by sum CLI process seconds",
+    "includesCliStartupQueueAndReasoning": true,
+    "nonReasoningIncludesJsonAndRepeatedCoverage": true,
+    "metrics": {
+      "astra_medium": {
+        "sessionOutputTokensPerSecond": 20.228246019829644,
+        "nonReasoningOutputTokensPerSecond": 20.228246019829644,
+        "pureGenerationTokensPerSecond": null
+      },
+      "sol_high": {
+        "sessionOutputTokensPerSecond": 22.745642544374775,
+        "nonReasoningOutputTokensPerSecond": 9.133826858087385,
+        "pureGenerationTokensPerSecond": null
+      },
+      "sol_low": {
+        "sessionOutputTokensPerSecond": 17.960373298044154,
+        "nonReasoningOutputTokensPerSecond": 17.960373298044154,
+        "pureGenerationTokensPerSecond": null
+      },
+      "sol_high_fast": {
+        "sessionOutputTokensPerSecond": 40.24022522407149,
+        "nonReasoningOutputTokensPerSecond": 15.962837017594861,
+        "pureGenerationTokensPerSecond": null
+      }
+    }
+  },
+  "nextExperimentTranslatorBaseline": {
+    "decisionSource": "explicit_user_instruction_2026-10-05",
+    "model": "gpt-6.1-sol",
+    "reasoningEffort": "high",
+    "requestedServiceTier": "fast",
+    "fastMode": true,
+    "scope": "next_experiment_only",
+    "productionPolicyChanged": false,
+    "reviewerChanged": false
   }
 }
