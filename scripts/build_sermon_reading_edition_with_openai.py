@@ -551,7 +551,15 @@ def codex_json(
     reasoning_effort: str,
     schema_path: Path,
     output_path: Path,
+    session_verifier=None,
 ) -> dict[str, Any]:
+    from scripts.production_spark_admission import SessionBoundCaller
+    return SessionBoundCaller(_codex_json, verifier=session_verifier, purpose="production-reading-edition")(
+        payload, codex_cli=codex_cli, model=model, reasoning_effort=reasoning_effort,
+        schema_path=schema_path, output_path=output_path)
+
+
+def _codex_json(payload, *, codex_cli, model, reasoning_effort, schema_path, output_path):
     if model == "gpt-6.1-sol":
         from scripts.sermon_codex_transport import chat_json as codex_chat_json
         cli_payload = {**payload, "response_format": {"type": "json_schema",

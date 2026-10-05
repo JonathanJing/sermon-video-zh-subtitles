@@ -16,6 +16,7 @@ import urllib.request
 import uuid
 
 from scripts import sermon_workflow_jobs as jobs
+from scripts import production_spark_admission as spark_admission
 from scripts import sermon_provider_http as http
 from scripts import sermon_provider_limits as text_limits
 from scripts import sermon_pipeline as pipeline
@@ -229,6 +230,8 @@ class SourceBudget:
             used = {key: sum(row['bounds'][key] for row in ledger['requests'].values()) for key in METRICS}
             require(all(used[key] + bounds[key] <= self.authority['globalBounds'][key] for key in METRICS),
                     'source_budget_exhausted')
+            if self.transport is None:
+                spark_admission.require_session()
             row = {'identitySha256': fingerprint, 'bounds': bounds,
                    'status': 'live_started', 'dispatchOwner': owner}
             if self.resource_policy is not None:
@@ -264,7 +267,8 @@ class SourceBudget:
         req.accounting_model = identity['model']
         req.accounting_settings = {'requestPayloadSha256': fingerprint}
         return pipeline.request_json(req, retries=1, response_observer=returned,
-            request_executor=lambda r: http.execute(r, bounds['wallTimeMs'] / 1000))
+            request_executor=spark_admission.SessionBoundCaller(
+                lambda r: http.execute(r, bounds['wallTimeMs'] / 1000), purpose='source-audio-api'))
 
     def reconcile_returned(self, operation, expected_identity_sha256):
         """Explicit local reconciliation after raw return persisted but ledger did not.

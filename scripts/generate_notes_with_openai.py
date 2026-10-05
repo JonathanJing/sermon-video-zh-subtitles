@@ -593,7 +593,14 @@ def request_openai_notes(
     payload: dict[str, Any],
     api_key: str,
     timeout_seconds: int = 120,
+    *, session_verifier=None,
 ) -> dict[str, Any]:
+    from scripts.production_spark_admission import SessionBoundCaller
+    return SessionBoundCaller(_request_openai_notes, verifier=session_verifier,
+        purpose="production-study-notes")(payload, api_key, timeout_seconds)
+
+
+def _request_openai_notes(payload, api_key, timeout_seconds):
     if payload.get("model") == "gpt-6.1-sol":
         from scripts.sermon_codex_transport import chat_json as codex_chat_json
         messages = []

@@ -1081,9 +1081,11 @@ def main() -> None:
                       if args.group_plan else None)
     require_plugin_identity(args.plugin, policy["languageReview"]["pluginImplementationSha256"])
     rule_preflight.preflight(request, policy, args.plugin, plan)
+    from scripts import production_spark_admission as spark_admission
+    spark_admission.require_session()
     from scripts.codex_layer2_transport import CodexLayer2Transport
     api_key = ""
-    caller = CodexLayer2Transport(receipts_dir=args.out_dir / "_cli_calls")
+    caller = spark_admission.SessionBoundCaller(CodexLayer2Transport(receipts_dir=args.out_dir / "_cli_calls"))
     evidence = run_accounted(
         source, anchor, policy, args.out_dir, api_key,
         caller,

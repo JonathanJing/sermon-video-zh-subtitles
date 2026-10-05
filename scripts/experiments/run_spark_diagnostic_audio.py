@@ -9,9 +9,15 @@ from __future__ import annotations
 import argparse
 import fcntl
 import json
+import os
 from pathlib import Path
 import shlex
 import subprocess
+import socket
+import stat
+import socketserver
+import struct
+import threading
 import sys
 import uuid
 
@@ -71,6 +77,7 @@ def preflight(args):
             'checkpointSha256': speaker['checkpoint']['checkpointSha256'],
             'speakerCapabilityStatus': cap['status'], 'modelLanguage': cap['modelLanguage'],
             'ttsReplicas': 8, 'ttsBatchSize': 8, 'cpuWorkers': 4, 'backAsrReplicas': 1, 'backAsrBatchSize': 8,
+            'sparkSessionRequiredForExecution': True,
             'realModelCalls': 0, 'productionEligible': False, 'humanApproval': False, 'releaseEligible': False}
 
 
@@ -83,7 +90,81 @@ def run(argv, **kwargs):
     return subprocess.run(argv, check=True, **kwargs)
 
 
-def docker_commands(args):
+def _spark_session(session_id=None, owner=None):
+    from scripts.spark_exclusive_session import Client
+    return Client.from_environment(session_id=session_id, owner=owner)
+
+
+class AdmissionGateway:
+    """Private, read-only host admission socket for offline GPU containers."""
+    @staticmethod
+    def peer_uid(connection):
+        if hasattr(socket, 'SO_PEERCRED'):
+            _, uid, _ = struct.unpack('3i', connection.getsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, 12))
+            return uid
+        if hasattr(connection, 'getpeereid'):
+            return connection.getpeereid()[0]
+        raise ValueError('gateway_peer_identity_unavailable')
+
+    def __init__(self, directory, session, hold, *, runner_pid=None):
+        self.directory, self.session = Path(directory), session
+        require(type(hold) is dict and isinstance(hold.get('jobId'), str) and hold['jobId'], 'gateway_job_required')
+        self.job_id, self.runner_pid = hold['jobId'], runner_pid or os.getpid()
+        parent = self.directory.parent
+        parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+        identity = parent.lstat()
+        require(not parent.is_symlink() and identity.st_uid == os.getuid()
+                and stat.S_IMODE(identity.st_mode) == 0o700, 'gateway_parent_identity_rejected')
+        self.directory.mkdir(mode=0o700, exist_ok=False)
+        self.path = self.directory / 'admission.sock'
+        gateway = self
+        class Handler(socketserver.StreamRequestHandler):
+            def handle(self):
+                try:
+                    self.connection.settimeout(30)
+                    uid = gateway.peer_uid(self.connection)
+                    require(uid == os.getuid(), 'gateway_peer_uid_rejected')
+                    line = self.rfile.readline(16385)
+                    require(len(line) <= 16384 and line.endswith(b'\n'), 'gateway_request_too_large')
+                    request = json.loads(line)
+                    require(type(request) is dict and set(request) == {'action', 'session_id', 'owner'}
+                            and request['action'] == 'require'
+                            and request['session_id'] == gateway.session.environment['SPARK_EXCLUSIVE_SESSION_ID']
+                            and request['owner'] == gateway.session.environment['SPARK_EXCLUSIVE_SESSION_OWNER'],
+                            'gateway_readonly_identity_required')
+                    snapshot = gateway.session.request('status')
+                    job = snapshot['session']['jobs'].get(gateway.job_id)
+                    process = next((row for row in snapshot['inventory']['processes']
+                                    if row.get('pid') == gateway.runner_pid), None)
+                    require(job is not None and job['status'] == 'active'
+                            and job['sessionId'] == request['session_id'] and job['owner'] == request['owner']
+                            and process is not None and not process.get('unreadable')
+                            and {'pid': gateway.runner_pid, 'startTicks': process['startTicks']} in job['processes'],
+                            'gateway_bound_runner_not_active')
+                    response = {'result': {**gateway.session.require_ready(), 'jobId': gateway.job_id}}
+                except Exception as exc:
+                    # No command arguments, credentials or arbitrary exception
+                    # messages are returned across the container boundary.
+                    response = {'error': 'gateway_admission_rejected:' + type(exc).__name__}
+                wire = json.dumps(response).encode() + b'\n'
+                if len(wire) > 65536:
+                    wire = b'{"error":"gateway_response_too_large"}\n'
+                self.wfile.write(wire)
+        class Server(socketserver.ThreadingUnixStreamServer):
+            daemon_threads = True
+            allow_reuse_address = False
+        self.server = Server(str(self.path), Handler)
+        os.chmod(self.path, 0o600)
+        self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
+        self.thread.start()
+
+    def close(self):
+        self.server.shutdown(); self.server.server_close(); self.thread.join(timeout=5)
+        self.path.unlink(missing_ok=True)
+        self.directory.rmdir()
+
+
+def docker_commands(args, session=None, hold=None):
     local_out = ROOT / relative(args.out)
     remote_stage = str(args.remote_stage)
     require(remote_stage.startswith('/home/achillesjing/dgx-spark-benchmark/results/next-concurrency-')
@@ -100,6 +181,14 @@ def docker_commands(args):
               '-v', remote_stage + ':' + str(ROOT), '-v', CHECKPOINT + ':/checkpoint:ro',
               '-v', ASR + ':/asr-model:ro', '-v', MEDIA_TOOLS + ':/media-tools:ro',
               '-v', BROKER + ':/shared-gpu', '-w', str(ROOT), '--entrypoint', '/usr/bin/python']
+    if session is not None:
+        common[2:2] = ['--label', 'tongxing.spark.session=' + session.environment['SPARK_EXCLUSIVE_SESSION_ID'],
+            '--label', 'tongxing.spark.owner=' + session.environment['SPARK_EXCLUSIVE_SESSION_OWNER'],
+            '--label', 'tongxing.spark.job=' + hold['jobId'],
+            '-e', 'SPARK_EXCLUSIVE_SESSION_ID=' + session.environment['SPARK_EXCLUSIVE_SESSION_ID'],
+            '-e', 'SPARK_EXCLUSIVE_SESSION_OWNER=' + session.environment['SPARK_EXCLUSIVE_SESSION_OWNER'],
+            '-e', 'SPARK_EXCLUSIVE_SOCKET=/spark-session-gateway/admission.sock',
+            '-v', str(Path('/tmp/tongxing-spark-gateway') / hold['jobId']) + ':/spark-session-gateway:ro']
     worker = 'scripts/experiments/replay_fixed_clip_local_models.py'
     tts = common + [IMAGES['tts'], worker, 'tts', '--diagnostic-fixture', str(args.fixture.resolve()),
         '--diagnostic-candidate', str((args.layer2_out / 'diagnostic-candidate.json').resolve()),
@@ -149,8 +238,13 @@ def verify_outputs(root, proof):
         worker.safe_audio(root / 'tts', row)
 
 
-REMOTE_RUNNER = '''import fcntl,json,pathlib,subprocess,sys,time
-c=json.loads(sys.argv[1]);broker=pathlib.Path(c['broker']);broker.mkdir(parents=True,exist_ok=True)
+REMOTE_RUNNER = '''import fcntl,json,pathlib,subprocess,sys,time,os
+c=json.loads(sys.argv[1]);sys.path.insert(0,c['codeRoot'])
+os.environ.update(c['sessionEnvironment']);os.environ['SPARK_EXCLUSIVE_REMOTE_LOCAL']='1'
+from scripts.spark_exclusive_session import Client
+from scripts.experiments.run_spark_diagnostic_audio import AdmissionGateway
+session=Client.from_environment();session.require_ready();session.bind_job(c['sparkHold'],pid=os.getpid())
+broker=pathlib.Path(c['broker']);broker.mkdir(parents=True,exist_ok=True)
 out=pathlib.Path(c['out']);out.mkdir(parents=True,exist_ok=True)
 with (broker/'whole-audio-dispatch.lock').open('a') as lock:
  deadline=time.monotonic()+180
@@ -159,10 +253,14 @@ with (broker/'whole-audio-dispatch.lock').open('a') as lock:
   except BlockingIOError:
    if time.monotonic()>=deadline:sys.exit(75)
    time.sleep(.5)
- for stage,argv in zip(('tts','asr'),c['commands']):
-  with (out/(stage+'.log')).open('ab') as log:
-   result=subprocess.run(argv,stdout=log,stderr=subprocess.STDOUT)
-  if result.returncode:sys.exit(result.returncode)
+ gateway=AdmissionGateway(c['gatewayDirectory'],session,c['sparkHold'],runner_pid=os.getpid())
+ try:
+  for stage,argv in zip(('tts','asr'),c['commands']):
+   session.require_ready()
+   with (out/(stage+'.log')).open('ab') as log:
+    result=subprocess.run(argv,stdout=log,stderr=subprocess.STDOUT)
+   if result.returncode:sys.exit(result.returncode)
+ finally:gateway.close()
 '''
 
 
@@ -184,6 +282,9 @@ def execute(args):
             verify_outputs(args.out / 'outputs', proof)
             return receipt
         require(not (args.out / 'dispatch.started.json').exists(), 'unknown_spark_dispatch_requires_reconciliation')
+        session = _spark_session(getattr(args, 'spark_session_id', None), getattr(args, 'spark_session_owner', None))
+        session.require_ready()
+        hold = session.start_job('diagnostic-audio:' + str(args.out.resolve()), pid=os.getpid())
         stage = str(args.remote_stage)
         # Existing staged files are never overwritten. Verify complete content
         # after rsync, so changed old evidence fails before Docker/model load.
@@ -218,7 +319,9 @@ def execute(args):
         run(['rsync', '-a', '--ignore-existing', str(args.media), HOST + ':' + shlex.quote(remote_media)])
         verify = 'import json,pathlib,hashlib,sys;root=pathlib.Path(sys.argv[1]);files=json.loads(sys.argv[2]);assert all(hashlib.sha256((root/p).read_bytes()).hexdigest()==h for p,h in files.items())'
         run(remote_command(['/usr/bin/python3', '-c', verify, stage, json.dumps(files)]))
-        commands = docker_commands(args)
+        session.require_ready()
+        args.gateway_directory = Path('/tmp/tongxing-spark-gateway') / hold['jobId']
+        commands = docker_commands(args, session, hold)
         save(args.out / 'dispatch.started.json', {'status': 'started_unknown_until_complete_readback',
             'callId': uuid.uuid4().hex, 'preflight': proof, 'remoteStage': stage, 'stagedInputHashes': files,
             'commandsSha256': inputs.digest(commands), 'productionEligible': False})
@@ -226,13 +329,15 @@ def execute(args):
         # The wrapper never releases or retries an uncertain remote GPU owner.
         remote_out = stage + '/' + relative(args.out) + '/outputs'
         run(remote_command(['/usr/bin/python3', '-c', REMOTE_RUNNER, json.dumps(
-            {'broker': BROKER, 'out': remote_out, 'commands': commands})]))
+            {'broker': BROKER, 'out': remote_out, 'commands': commands, 'codeRoot': stage,
+             'sessionEnvironment': session.environment, 'sparkHold': hold, 'gatewayDirectory': str(args.gateway_directory)})]))
         run(['rsync', '-a', HOST + ':' + shlex.quote(remote_out + '/'), str(args.out / 'outputs') + '/'])
         verify_outputs(args.out / 'outputs', proof)
         receipt = {'schemaVersion': 'spark-diagnostic-audio-result-v1', 'status': 'completed_diagnostic',
             'preflight': proof, 'remoteStage': stage, 'stagedInputHashes': files,
             'outputs': inventory(args.out / 'outputs'), 'productionEligible': False,
             'humanApproval': False, 'releaseEligible': False, 'apiCalls': 0}
+        session.end_job(hold, process_exited=True, outcome='known_terminal')
         save(completed, receipt)
         return receipt
 
@@ -246,6 +351,8 @@ def main(argv=None):
     parser.add_argument('--registry', type=Path, default=ROOT / 'config/speaker-voice-registry.json')
     parser.add_argument('--out', type=Path)
     parser.add_argument('--remote-stage', type=Path)
+    parser.add_argument('--spark-session-id')
+    parser.add_argument('--spark-session-owner')
     args = parser.parse_args(argv)
     require(args.mode != 'execute' or (args.out is not None and args.remote_stage is not None),
             'execute_requires_out_and_frozen_remote_stage')

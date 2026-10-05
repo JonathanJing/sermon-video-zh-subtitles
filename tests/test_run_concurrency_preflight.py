@@ -4,7 +4,7 @@ import threading
 import time
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 from scripts.experiments import run_concurrency_preflight as subject
 from scripts.production_concurrency_profile import profile_v1
@@ -13,6 +13,12 @@ from scripts.sermon_unified import resources
 
 class DiagnosticCommandDAGTests(unittest.TestCase):
     def setUp(self):
+        self.session = MagicMock()
+        self.session.environment = {'SPARK_EXCLUSIVE_SESSION_ID': 'fixture-session',
+                                    'SPARK_EXCLUSIVE_SESSION_OWNER': 'fixture-owner'}
+        self.session.start_job.return_value = {'jobId': 'fixture-job'}
+        session_patch = patch.object(subject, '_spark_session', return_value=self.session)
+        session_patch.start(); self.addCleanup(session_patch.stop)
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name).resolve()
@@ -156,3 +162,32 @@ class DiagnosticCommandDAGTests(unittest.TestCase):
         source.write_text('frozen'); self.script.write_text('changed implementation')
         with self.assertRaisesRegex(ValueError, 'command_identity_changed'):
             subject.preflight(self.out)
+
+    def test_session_rejection_precedes_any_child_started_or_subprocess(self):
+        self.prepare([self.node('source', kind='source')])
+        self.session.require_ready.side_effect = ValueError('spark_exclusive_session_required')
+        executor = MagicMock()
+        with self.assertRaisesRegex(ValueError, 'spark_exclusive_session_required'):
+            subject.run(self.out, execute=True, executor=executor)
+        executor.assert_not_called()
+        self.session.start_job.assert_not_called()
+        self.assertFalse((self.out / 'nodes').exists())
+
+    def test_session_token_forwarded_root_hold_released_only_known_terminal(self):
+        self.prepare([self.node('source', kind='source')])
+        seen = []
+        def executor(command, **kwargs):
+            seen.append(kwargs['env'])
+            self.session.end_job.assert_not_called()
+            return self.executor(command, **kwargs)
+        subject.run(self.out, execute=True, executor=executor)
+        self.assertEqual(seen[0]['SPARK_EXCLUSIVE_SESSION_ID'], 'fixture-session')
+        self.assertEqual(seen[0]['SPARK_EXCLUSIVE_SESSION_OWNER'], 'fixture-owner')
+        self.session.end_job.assert_called_once_with({'jobId': 'fixture-job'}, process_exited=True,
+                                                   outcome='known_terminal')
+
+    def test_unknown_child_keeps_root_host_hold(self):
+        self.prepare([self.node('source', kind='source')])
+        subject.run(self.out, execute=True, executor=MagicMock(side_effect=TimeoutError('fixture unknown')))
+        self.session.start_job.assert_called_once()
+        self.session.end_job.assert_not_called()

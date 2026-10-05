@@ -459,7 +459,9 @@ def render_tts(args, *, factory=None, writer=audio_output, model_session=None, r
 
 
 class LocalASR:
-    def __init__(self, path, *, device, batch_size=4, language='Chinese'):
+    def __init__(self, path, *, device, batch_size=4, language='Chinese', session_verifier=None):
+        from scripts.production_spark_admission import require_bound_model_session
+        require_bound_model_session(verifier=session_verifier)
         import torch
         from qwen_asr import Qwen3ASRModel
         self.torch = torch

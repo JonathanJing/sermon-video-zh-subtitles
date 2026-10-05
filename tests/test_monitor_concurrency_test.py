@@ -36,7 +36,7 @@ class DiagnosticMonitorTests(unittest.TestCase):
         def call(prompt,**kwargs):
             calls.append(kwargs)
             return {'assessment':'complete','findings':[]}
-        result=monitor.monitor(self.helper.out,execute=True,caller=call,sleep=lambda _:self.fail('finished wait'))
+        result=monitor.monitor(self.helper.out,execute=True,caller=call,session_verifier=lambda: {'status':'offline_test'},sleep=lambda _:self.fail('finished wait'))
         self.assertEqual(result['status'],'complete')
         self.assertEqual(calls[0]['model'],'gpt-6-luna')
         self.assertEqual(calls[0]['resource_class'],'supervisor')

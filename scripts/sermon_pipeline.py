@@ -23,6 +23,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from scripts import review_prompts  # noqa: E402
+from scripts import production_spark_admission as spark_admission  # noqa: E402
 from scripts.sermon_accounting import AccountingWriteError, _finalize, accounting_session, stage, record_api_attempt, record_api_started, request_metadata, record_workload
 
 
@@ -671,8 +672,10 @@ def transcribe_openai_audio(
     keywords=None,
     languages=None,
     response_format="json",
+    session_verifier=None,
 ):
-    return multipart_request(
+    return spark_admission.SessionBoundCaller(multipart_request, verifier=session_verifier,
+        purpose="source-audio-api")(
         TRANSCRIBE_URL,
         api_key,
         transcription_request_fields(
@@ -990,7 +993,12 @@ def chunk_text_for_window(chunks, start, end):
     return "\n".join(parts)
 
 
-def chat_json(api_key, payload, retries=3):
+def chat_json(api_key, payload, retries=3, *, session_verifier=None):
+    return spark_admission.SessionBoundCaller(_chat_json, verifier=session_verifier,
+        purpose="production-text-call")(api_key, payload, retries=retries)
+
+
+def _chat_json(api_key, payload, retries=3):
     if payload.get("model") == "gpt-6.1-sol":
         from scripts.sermon_codex_transport import chat_json as codex_chat_json
         return codex_chat_json(api_key, payload, retries=1)

@@ -14,9 +14,10 @@ from scripts.experiments import diagnostic_audio_inputs as admission
 from scripts.sermon_execution_harness import work_lock
 from scripts.sermon_unified import resources
 from scripts.production_concurrency_profile import load_profile
+from scripts import production_spark_admission as spark_admission
 
 
-def execute(*,fixture,candidate,evidence,media,out_dir,kind,profile,resource_policy,cli_path=None,caller=None):
+def execute(*,fixture,candidate,evidence,media,out_dir,kind,profile,resource_policy,cli_path=None,caller=None,session_verifier=None):
     diagnostic.require(kind in ('outline','meditation'),'diagnostic study kind')
     out=diagnostic.artifact_directory(out_dir)
     args=SimpleNamespace(diagnostic_fixture=fixture,diagnostic_candidate=candidate,evidence=evidence,media=media)
@@ -31,7 +32,8 @@ def execute(*,fixture,candidate,evidence,media,out_dir,kind,profile,resource_pol
               'implementationSha256':admission.sha(__file__),'generatorSha256':admission.sha(generation.__file__),
               'transportSha256':admission.sha(codex.__file__),'batchGroups':12,
               'productionEligible':False,'humanApproval':False,'simulationOnly':True}
-    call=caller or codex.call_json
+    spark_admission.require_session(verifier=session_verifier)
+    call=spark_admission.SessionBoundCaller(caller or codex.call_json, verifier=session_verifier)
     schema={'type':'object','additionalProperties':False,'required':['sections'],'properties':{'sections':{
         'type':'array','minItems':1,'maxItems':32,'items':{'type':'object','additionalProperties':False,
         'required':['title','body','sourceUnitIds'],'properties':{'title':{'type':'string','minLength':1,'maxLength':512},

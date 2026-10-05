@@ -4,7 +4,7 @@ import threading
 import unittest
 import wave
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 from scripts.experiments import run_diagnostic_source as subject
 from scripts.production_concurrency_profile import profile_v1
@@ -16,6 +16,12 @@ from scripts.sermon_unified import resources
 
 class DiagnosticSourceTests(unittest.TestCase):
     def setUp(self):
+        self.session = MagicMock()
+        self.session.environment = {'SPARK_EXCLUSIVE_SESSION_ID': 'fixture-session',
+                                    'SPARK_EXCLUSIVE_SESSION_OWNER': 'fixture-owner'}
+        self.session.start_job.return_value = {'jobId': 'fixture-job'}
+        session_patch = patch.object(subject, '_spark_session', return_value=self.session)
+        session_patch.start(); self.addCleanup(session_patch.stop)
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name).resolve()
@@ -186,3 +192,20 @@ class DiagnosticSourceTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, 'no MFA'):
             subject.execute(prepared['configPath'], api_transport=lambda *a: self.fail('Provider must not run'), mfa_preflight=fail)
         self.assertFalse((self.root / 'broker').exists())
+
+    def test_session_rejection_precedes_asr_cli_and_mfa_dispatch(self):
+        prepared = self.prepare()
+        self.session.require_ready.side_effect = ValueError('spark_competition_not_released')
+        api, cli, mfa = MagicMock(), MagicMock(), MagicMock()
+        with self.assertRaisesRegex(ValueError, 'spark_competition_not_released'):
+            subject.execute(prepared['configPath'], api_transport=api, cli_call=cli, aligner=mfa)
+        api.assert_not_called(); cli.assert_not_called(); mfa.assert_not_called()
+        self.session.start_job.assert_not_called()
+        self.assertFalse((self.out / 'chunks').exists())
+
+    def test_failed_source_preserves_host_hold(self):
+        prepared = self.prepare()
+        with self.assertRaisesRegex(RuntimeError, 'fixture preflight'):
+            subject.execute(prepared['configPath'], mfa_preflight=MagicMock(side_effect=RuntimeError('fixture preflight')))
+        self.session.start_job.assert_called_once()
+        self.session.end_job.assert_not_called()

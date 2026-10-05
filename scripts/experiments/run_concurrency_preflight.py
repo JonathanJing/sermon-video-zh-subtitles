@@ -236,16 +236,22 @@ def preflight(out_dir):
     blocked = any(row['status'] in {'prepared_manual', 'failed', 'unknown_outcome'} for row in statuses.values())
     return {'schemaVersion': 'diagnostic-command-preflight-v1', 'status': 'blocked' if blocked else 'ready',
         'diagnosticOnly': True, 'productionEligible': False, 'humanApproval': False, 'modelCalls': 0,
+        'sparkSessionRequiredForExecution': True,
         'planSha256': jobs._digest(plan), 'maxBranches': plan['profile']['maxBranches'],
         'studyBranches': plan['profile']['studyBranches'], 'nodes': statuses}
 
 
-def _executor(command, *, cwd, timeout):
-    process = subprocess.run(command, cwd=cwd, capture_output=True, text=True, timeout=timeout, shell=False)
+def _spark_session(session_id=None, owner=None):
+    from scripts.spark_exclusive_session import Client
+    return Client.from_environment(session_id=session_id, owner=owner)
+
+
+def _executor(command, *, cwd, timeout, env=None):
+    process = subprocess.run(command, cwd=cwd, capture_output=True, text=True, timeout=timeout, shell=False, env=env)
     return {'returncode': process.returncode, 'stdout': process.stdout, 'stderr': process.stderr}
 
 
-def run(out_dir, *, execute=False, executor=None):
+def run(out_dir, *, execute=False, executor=None, spark_session_id=None, spark_session_owner=None):
     if execute is not True:
         return preflight(out_dir)
     out, plan = _load(out_dir)
@@ -255,10 +261,22 @@ def run(out_dir, *, execute=False, executor=None):
             fcntl.flock(owner_lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
             raise ValueError('diagnostic_batch_already_running') from None
-        return _run_owned(out, plan, executor or _executor)
+        snapshot = preflight(out)
+        statuses = [row['status'] for row in snapshot['nodes'].values()]
+        if not any(status == 'ready' for status in statuses) or any(status in {'unknown_outcome', 'failed'} for status in statuses):
+            return _run_owned(out, plan, executor or _executor, None)
+        session = _spark_session(spark_session_id, spark_session_owner)
+        session.require_ready()
+        hold = session.start_job('diagnostic-command-dag:' + jobs._digest(plan), pid=os.getpid())
+        # An exception or a child with uncertain outcome keeps the host-level
+        # hold. Closing the whole development session is an explicit action.
+        result = _run_owned(out, plan, executor or _executor, session)
+        if not any(row['status'] == 'unknown_outcome' for row in result['nodes'].values()):
+            session.end_job(hold, process_exited=True, outcome='known_terminal')
+        return result
 
 
-def _run_owned(out, plan, executor):
+def _run_owned(out, plan, executor, session):
     snapshot = preflight(out)
     statuses = {name: row['status'] for name, row in snapshot['nodes'].items()}
     # An unknown owner blocks ALL further dispatch before any sibling call.
@@ -282,6 +300,7 @@ def _run_owned(out, plan, executor):
                 require(parent['status'] == 'completed' and parent['outputs'][path] == current,
                         'diagnostic_dependency_output_changed')
             input_hashes[path] = current
+        session.require_ready()
         started = {'schemaVersion': 'diagnostic-node-started-v1', 'planSha256': plan_sha,
             'nodeId': node['id'], 'owner': owner, 'commandIdentity': node['commandIdentity'],
             'inputs': input_hashes, 'status': 'started_response_unconfirmed', 'startedAtUnix': time.time()}
@@ -289,7 +308,8 @@ def _run_owned(out, plan, executor):
         _write(started_path, started)
         begin = time.monotonic()
         try:
-            response = executor(node['command'], cwd=str(ROOT), timeout=node['timeoutSeconds'])
+            response = executor(node['command'], cwd=str(ROOT), timeout=node['timeoutSeconds'],
+                env={**os.environ, **session.environment})
             require(type(response) is dict and type(response.get('returncode')) is int
                 and isinstance(response.get('stdout', ''), str) and isinstance(response.get('stderr', ''), str),
                 'diagnostic_executor_response_invalid')
@@ -359,6 +379,8 @@ def main():
     parser.add_argument('command', choices=('prepare', 'preflight', 'run'))
     parser.add_argument('--plan', type=Path)
     parser.add_argument('--out-dir', type=Path, required=True)
+    parser.add_argument('--spark-session-id')
+    parser.add_argument('--spark-session-owner')
     parser.add_argument('--execute', action='store_true', help='Explicitly execute approved diagnostic commands')
     args = parser.parse_args()
     if args.command == 'prepare':
@@ -367,7 +389,8 @@ def main():
     elif args.command == 'preflight':
         result = preflight(args.out_dir)
     else:
-        result = run(args.out_dir, execute=args.execute)
+        result = run(args.out_dir, execute=args.execute, spark_session_id=args.spark_session_id,
+            spark_session_owner=args.spark_session_owner)
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0 if result['status'] in ('ready', 'completed') else 2
 

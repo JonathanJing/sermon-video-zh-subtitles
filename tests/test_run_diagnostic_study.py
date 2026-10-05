@@ -32,7 +32,7 @@ class DiagnosticStudyTests(unittest.TestCase):
                 with lock:return chain.process(*a,**kw)
             chain.invoke(transport=transport,process=serial_fixture_process)
         self.chain=chain
-        self.options=dict(fixture=chain.fixture,candidate=chain.out/'diagnostic-candidate.json',
+        self.options=dict(session_verifier=lambda: {'status':'offline_test'}, fixture=chain.fixture,candidate=chain.out/'diagnostic-candidate.json',
             evidence=chain.out/'evidence.json',media=audio.args.media,out_dir=chain.root/'study',kind='outline',
             profile=self.profile,resource_policy={'schemaVersion':'sermon-unified-resource-policy-v1',
             'brokerRoot':str(chain.root/'broker'),'capacities':{'cpu':4,'online_api':4,'codex_cli':24,'spark_tts':1,'publisher':1}})

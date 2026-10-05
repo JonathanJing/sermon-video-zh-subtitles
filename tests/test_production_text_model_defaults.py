@@ -30,7 +30,7 @@ class TextRoleDefaultTests(unittest.TestCase):
         adapter = types.SimpleNamespace(chat_json=caller)
         payload = {'model': 'gpt-6.1-sol', 'reasoning_effort': 'high', 'messages': []}
         with patch.dict(sys.modules, {'scripts.sermon_codex_transport': adapter}), patch.object(sermon_pipeline, 'json_request') as api:
-            result = sermon_pipeline.chat_json('unrelated-asr-key', payload)
+            result = sermon_pipeline.chat_json('unrelated-asr-key', payload, session_verifier=lambda: {'status':'offline_test'})
         api.assert_not_called()
         caller.assert_called_once_with('unrelated-asr-key', payload, retries=1)
         self.assertEqual(result['choices'][0]['message']['content'], '{}')
@@ -40,7 +40,7 @@ class TextRoleDefaultTests(unittest.TestCase):
         caller = Mock(return_value=envelope)
         payload = {'model': 'gpt-6.1-sol', 'reasoning': {'effort': 'high'}, 'input': [{'role': 'user', 'content': [{'type': 'input_text', 'text': 'source'}]}]}
         with patch.dict(sys.modules, {'scripts.sermon_codex_transport': types.SimpleNamespace(chat_json=caller)}), patch.object(notes.requests, 'post') as api:
-            result = notes.request_openai_notes(payload, '')
+            result = notes.request_openai_notes(payload, '', session_verifier=lambda: {'status':'offline_test'})
         api.assert_not_called()
         self.assertEqual(json.loads(notes.extract_response_text(result)), {'summaryZh': 'sample'})
         self.assertEqual(caller.call_args.args[1]['reasoning_effort'], 'high')

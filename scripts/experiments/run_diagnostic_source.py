@@ -144,7 +144,12 @@ def _configuration(path):
     return value
 
 
-def _execute_frozen(value, fresh, cli_call):
+def _spark_session(session_id=None, owner=None):
+    from scripts.spark_exclusive_session import Client
+    return Client.from_environment(session_id=session_id, owner=owner)
+
+
+def _execute_frozen(value, fresh, cli_call, session):
     """Judge the exact existing anchors; explicitly zero fresh source ASR/MFA."""
     out = Path(value['outDir'])
     aligned_path, anchor_path = out / 'aligned-segments.json', out / 'anchor.json'
@@ -165,7 +170,7 @@ def _execute_frozen(value, fresh, cli_call):
                 os.fsync(handle.fileno())
             jobs._sync_directory(path.parent)
     judged = judge.run(aligned_path=aligned_path, manifest_path=anchor_path, out=out / 'machine-judge.json',
-        api_key='', caller=DiagnosticJudgeCaller(value, cli_call=cli_call), cache_root=out / 'judge-requests',
+        api_key='', caller=DiagnosticJudgeCaller(value, cli_call=cli_call, session=session), cache_root=out / 'judge-requests',
         model='gpt-6.1-sol', effort='high', batch_size=15, workers=value['profile']['sourceJudgeWorkers'])
     old = source._load(value['frozenInputs']['source']['path'])
     package = english.build_package(aligned_path, anchor_path, summary_path=out / 'summary.json',
@@ -190,8 +195,9 @@ def _execute_frozen(value, fresh, cli_call):
 
 class DiagnosticJudgeCaller:
     """Known terminal CLI results release business slots; unknowns keep them."""
-    def __init__(self, value, *, cli_call=None):
+    def __init__(self, value, *, cli_call=None, session=None):
         self.value = value
+        self.session = session
         self.cli_call = cli_call or codex._call
         self.local = threading.local()
 
@@ -207,6 +213,7 @@ class DiagnosticJudgeCaller:
         # CLI permit. Exact binding is checked again by __call__ before use.
         if (folder / 'diagnostic-response.json').exists():
             return None
+        (self.session or _spark_session()).require_ready()
         identity = {'payloadSha256': key, 'configurationSha256': jobs._digest(self.value)}
         admission = cli_resources.Admission(self.value['resourcePolicy'], call_id=jobs._digest(identity),
             identity=identity, receipt_directory=folder, concurrency_profile=self.value['profile'])
@@ -226,6 +233,7 @@ class DiagnosticJudgeCaller:
                 'diagnostic_judge_response_changed')
             return saved['response']
         admission = self.admit_resource(payload)
+        (self.session or _spark_session()).require_ready()
         prompt = '\n\n'.join(message['role'].upper() + ':\n' + message['content'] for message in payload['messages'])
         with admission.dispatch():
             result = self.cli_call(prompt + '\nReturn only valid JSON.', model='gpt-6.1-sol', reasoning='high',
@@ -247,12 +255,28 @@ class DiagnosticJudgeCaller:
             return response
 
 
-def execute(config_path, *, api_key=None, api_transport=None, aligner=None, mfa_preflight=None, cli_call=None):
+def execute(config_path, *, api_key=None, api_transport=None, aligner=None, mfa_preflight=None, cli_call=None,
+            spark_session_id=None, spark_session_owner=None):
+    # Validate local frozen identity before claiming host resources. Preparation
+    # remains read-only; actual API/CLI/MFA dispatch always requires this gate.
+    value = _configuration(Path(config_path).resolve())
+    session = _spark_session(spark_session_id, spark_session_owner)
+    session.require_ready()
+    hold = session.start_job('diagnostic-source:' + jobs._digest(value), pid=os.getpid())
+    result = _execute_admitted(config_path, api_key=api_key, api_transport=api_transport, aligner=aligner,
+        mfa_preflight=mfa_preflight, cli_call=cli_call, session=session)
+    session.end_job(hold, process_exited=True, outcome='known_terminal')
+    return result
+
+
+def _execute_admitted(config_path, *, api_key=None, api_transport=None, aligner=None, mfa_preflight=None,
+                      cli_call=None, session):
     config_path = Path(config_path).resolve()
     value = _configuration(config_path)
     out, window = Path(value['outDir']), value['window']
     def fresh():
         source.require(_configuration(config_path) == value, 'diagnostic_source_configuration_changed')
+        session.require_ready()
     config = SimpleNamespace(media=Path(value['media']), value=value)
     aligner = aligner or mfa_backend.align_reference_chunks
     mfa_preflight = mfa_preflight or mfa_backend.preflight
@@ -260,7 +284,7 @@ def execute(config_path, *, api_key=None, api_transport=None, aligner=None, mfa_
         with accounting.accounting_session(out / 'accounting', 'diagnostic_source_asr4_judge8',
                 {'simulationOnly': True, 'productionEligible': False}, evidence_directory=out):
             if value.get('mode') == 'frozen_source_judge8':
-                return _execute_frozen(value, fresh, cli_call)
+                return _execute_frozen(value, fresh, cli_call, session)
             duration = window['endSeconds'] - window['startSeconds']
             source.require(abs(source._probe(config.media) - value['sourceDurationSeconds']) <= .002,
                            'source_duration_identity_changed')
@@ -303,7 +327,7 @@ def execute(config_path, *, api_key=None, api_transport=None, aligner=None, mfa_
             manifest = anchors.build_anchor_manifest(aligned, source_path=aligned_path, unit_policy=anchors.UNIT_POLICY_V2,
                 max_unit_seconds=8, boundary_overrides=None)
             source._freeze(anchor_path, manifest)
-            judge_caller = DiagnosticJudgeCaller(value, cli_call=cli_call)
+            judge_caller = DiagnosticJudgeCaller(value, cli_call=cli_call, session=session)
             judged = judge.run(aligned_path=aligned_path, manifest_path=anchor_path, out=out / 'machine-judge.json',
                 api_key='', caller=judge_caller, cache_root=out / 'judge-requests', model='gpt-6.1-sol', effort='high',
                 batch_size=value['judge']['batchSize'], workers=value['profile']['sourceJudgeWorkers'])
@@ -341,11 +365,13 @@ def main():
     parser.add_argument('--resource-policy', type=Path)
     parser.add_argument('--mfa-config', type=Path)
     parser.add_argument('--codex-cli', type=Path)
+    parser.add_argument('--spark-session-id')
+    parser.add_argument('--spark-session-owner')
     parser.add_argument('--frozen-sample-dir', type=Path, help='Exact existing source/anchors: zero new source ASR or MFA')
     args = parser.parse_args()
     if args.command == 'execute':
         source.require(args.config is not None, 'diagnostic_source_config_required')
-        result = execute(args.config)
+        result = execute(args.config, spark_session_id=args.spark_session_id, spark_session_owner=args.spark_session_owner)
     else:
         source.require(all(p is not None for p in (args.provenance, args.out_dir, args.profile, args.resource_policy, args.mfa_config)),
             'diagnostic_source_prepare_inputs_required')

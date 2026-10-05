@@ -361,7 +361,7 @@ class CanonicalLayer2ControllerTests(unittest.TestCase):
             result = subprocess.run(subject._worker_command(config, 'zh-Hans', key, code),
                 cwd=subject.ROOT, env={'OPENAI_API_KEY': '', 'CODEX_HOME': str(self.root / 'invalid-auth')}, capture_output=True, text=True, timeout=10)
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn('codex_language_requires_chatgpt_auth', result.stderr)
+        self.assertIn('spark_exclusive_session_required', result.stderr)
         self.assertEqual({p.name for p in self.output.iterdir()}, {'accounting'})
         events, damaged = accounting.read_events(self.output / 'accounting')
         self.assertFalse(damaged)

@@ -151,7 +151,7 @@ class SourceBoundAudioTests(unittest.TestCase):
         loader = Mock()
         with patch.dict(sys.modules, {'torch': SimpleNamespace(bfloat16='fake-bf16'),
                                      'qwen_asr': SimpleNamespace(Qwen3ASRModel=loader)}):
-            worker.LocalASR(self.voice.model_path, device='cuda:0', batch_size=8)
+            worker.LocalASR(self.voice.model_path, device='cuda:0', batch_size=8, session_verifier=lambda: {'status':'offline_test'})
         self.assertEqual(loader.from_pretrained.call_args.kwargs['max_inference_batch_size'], 8)
 
     def test_explicit_frozen_profile_requires_actual_cpu4_and_asr8_consumption(self):

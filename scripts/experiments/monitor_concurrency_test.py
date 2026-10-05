@@ -11,6 +11,7 @@ if __package__ in (None,''):
 from scripts.experiments import run_concurrency_preflight as batch
 from scripts import sermon_codex_transport as codex, sermon_accounting as accounting
 from scripts.sermon_execution_harness import work_lock
+from scripts import production_spark_admission as spark_admission
 
 
 def snapshot(out_dir):
@@ -35,12 +36,12 @@ def snapshot(out_dir):
     return value
 
 
-def monitor(out_dir,*,execute=False,max_turns=12,interval_seconds=30,caller=None,sleep=time.sleep):
+def monitor(out_dir,*,execute=False,max_turns=12,interval_seconds=30,caller=None,sleep=time.sleep,session_verifier=None):
     root,plan=batch._load(out_dir)
     if not execute:return batch.preflight(root)
     batch.require(type(max_turns) is int and 1<=max_turns<=24 and type(interval_seconds) is int
                   and 10<=interval_seconds<=300,'invalid_diagnostic_supervision_budget')
-    directory=root/'supervision';call=caller or codex.call_json
+    directory=root/'supervision';call=spark_admission.SessionBoundCaller(caller or codex.call_json, verifier=session_verifier)
     schema={'type':'object','additionalProperties':False,'required':['assessment','findings'],
         'properties':{'assessment':{'type':'string','enum':['running','complete','attention_required']},
         'findings':{'type':'array','items':{'type':'string'},'maxItems':12}}}

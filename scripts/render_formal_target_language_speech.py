@@ -254,7 +254,9 @@ def checked_context(paths: dict[str, Path], checkpoint_map_path: Path,
 
 class QwenSynthesizer:
     def __init__(self, checkpoint: Path, *, device: str, dtype: str,
-                 attention: str | None, instruct: str | None = None):
+                 attention: str | None, instruct: str | None = None, session_verifier=None):
+        from scripts.production_spark_admission import require_bound_model_session
+        require_bound_model_session(verifier=session_verifier)
         import torch
         from qwen_tts import Qwen3TTSModel
         self.torch = torch
@@ -296,6 +298,8 @@ class QwenSynthesizer:
 class SparkQwenSynthesizer(QwenSynthesizer):
     """Match the measured Spark worker's CPU settings and completed GPU timing."""
     def __init__(self, *args, **kwargs):
+        from scripts.production_spark_admission import require_bound_model_session
+        require_bound_model_session(verifier=kwargs.get("session_verifier"))
         os.environ["OMP_NUM_THREADS"] = "4"
         os.environ["MKL_NUM_THREADS"] = "4"
         import torch

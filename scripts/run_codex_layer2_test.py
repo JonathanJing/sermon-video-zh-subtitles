@@ -14,6 +14,7 @@ if __package__ in (None, ''):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts import run_target_language_models as runner, sermon_accounting as accounting
 from scripts import target_language_policy as policy_tools
+from scripts import production_spark_admission as spark_admission
 from scripts.codex_layer2_transport import CodexLayer2Transport, TEST_CONFIGURATION, validate_test_configuration
 
 
@@ -96,7 +97,7 @@ class FixtureLayer2Transport:
 
 
 def run_diagnostic_test(fixture_dir, out_dir, *, cli_path, reviewer_tier='fast', timeout_seconds=180,
-                        mock_responses_dir=None, resource_policy_path=None, translator_model=None):
+                        mock_responses_dir=None, resource_policy_path=None, translator_model=None, session_verifier=None):
     from scripts import codex_layer2_diagnostic as diagnostic
     inputs = diagnostic.load_fixture(fixture_dir)  # All gates before constructing a CLI transport.
     source, anchor, policy, plan, plugin, request, receipt, scope, manifest = inputs
@@ -116,9 +117,13 @@ def run_diagnostic_test(fixture_dir, out_dir, *, cli_path, reviewer_tier='fast',
     if resource_policy_path is not None:
         from scripts.sermon_unified import resources
         options['resource_policy'] = resources.validate_policy(json.loads(Path(resource_policy_path).read_text()))
+    if mock_responses_dir is None:
+        spark_admission.require_session(verifier=session_verifier)
     transport = (FixtureLayer2Transport(mock_responses_dir, group_count=len(plan)) if mock_responses_dir is not None
                  else CodexLayer2Transport(cli_path, reviewer_tier=reviewer_tier, timeout_seconds=timeout_seconds,
                                           receipts_dir=out_dir / '_cli_calls', **options))
+    if mock_responses_dir is None:
+        transport = spark_admission.SessionBoundCaller(transport, verifier=session_verifier)
     structural = plugin.name == 'diagnostic_structural.py'
     context = {'schemaVersion': 'codex-layer2-diagnostic-test-run-v1', 'simulationOnly': True,
                'realModelCalls': mock_responses_dir is None, 'productionEligible': False, 'humanApproval': False,
@@ -151,11 +156,11 @@ def run_diagnostic_test(fixture_dir, out_dir, *, cli_path, reviewer_tier='fast',
     return report
 
 
-def run_test(fixture_dir, policy_path, out_dir, *, cli_path, reviewer_tier='fast', timeout_seconds=180, mock_responses_dir=None, resource_policy_path=None, translator_model=None, diagnostic_fixture=False):
+def run_test(fixture_dir, policy_path, out_dir, *, cli_path, reviewer_tier='fast', timeout_seconds=180, mock_responses_dir=None, resource_policy_path=None, translator_model=None, diagnostic_fixture=False, session_verifier=None):
     if diagnostic_fixture:
         return run_diagnostic_test(fixture_dir, out_dir, cli_path=cli_path, reviewer_tier=reviewer_tier,
             timeout_seconds=timeout_seconds, mock_responses_dir=mock_responses_dir,
-            resource_policy_path=resource_policy_path, translator_model=translator_model)
+            resource_policy_path=resource_policy_path, translator_model=translator_model, session_verifier=session_verifier)
     fixture_dir, out_dir = Path(fixture_dir).resolve(), Path(out_dir).resolve()
     root = Path(__file__).resolve().parents[1]
     if not out_dir.is_relative_to(root / 'artifacts') or out_dir == root / 'artifacts':
@@ -214,9 +219,13 @@ def run_test(fixture_dir, policy_path, out_dir, *, cli_path, reviewer_tier='fast
             json.loads(Path(resource_policy_path).read_text()))
     if simulation_configuration is not None:
         resource_options['simulation_model_configuration'] = simulation_configuration
+    if mock_responses_dir is None:
+        spark_admission.require_session(verifier=session_verifier)
     transport = (FixtureLayer2Transport(mock_responses_dir) if mock_responses_dir is not None
                  else CodexLayer2Transport(cli_path, reviewer_tier=reviewer_tier,
                                     timeout_seconds=timeout_seconds, receipts_dir=out_dir / '_cli_calls', **resource_options))
+    if mock_responses_dir is None:
+        transport = spark_admission.SessionBoundCaller(transport, verifier=session_verifier)
     context = {'schemaVersion': 'codex-layer2-test-run-v1', 'simulationOnly': True,
                'realModelCalls': mock_responses_dir is None, 'productionEligible': False, 'humanApproval': False,
                'fixtureDir': str(fixture_dir), 'sourceMediaSha256': media_sha,

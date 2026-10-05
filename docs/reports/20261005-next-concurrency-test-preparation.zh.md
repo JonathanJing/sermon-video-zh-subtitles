@@ -2,7 +2,7 @@
 
 本轮交付代码、离线验证和真实运行前的冻结夹具；准备期间实际模型调用为 **0**，没有调用计费 API、Codex 推理或 GPU 模型。当前 PR 为 #248，目标分支 dev。本轮可开始诊断测试，不能据此判定正式发布或性能提升。
 
-后续新增要求：真实测试／制作前须释放 Spark 竞争负载，整轮开发结束后恢复原服务。见[独占会话设计](../spark-exclusive-development-session.zh.md)。本报告的 ready 仅覆盖既有夹具及依赖预检；新增独占控制尚未实现，采用该要求后的实际开跑需先补齐 exclusive_ready，不能直接据本报告启动。
+后续新增要求：真实测试／制作前须释放 Spark 竞争负载，整轮开发结束后恢复原服务。[独占会话控制](../spark-exclusive-development-session.zh.md)现已实现并通过[实机验收](20261005-spark-exclusive-control-verification.zh.md)。最新入口为 `artifacts/next-concurrency-605s-20261005-r6-final/validated-command-preparation.json`，远端 579 项哈希及三语言 CPU 加载通过。本报告下述 r3 命令和收据保留为历史准备记录，实际开跑应采用新入口并先建立新的 exclusive_ready 会话。
 
 | 项目 | 已接入的配置与边界 |
 |---|---|

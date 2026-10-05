@@ -303,7 +303,7 @@ def _checked_batch(result: dict[str, Any], expected: list[dict[str, Any]]) -> li
 def run(*, aligned_path: Path, manifest_path: Path, out: Path, model: str = "gpt-6.1-sol",
         effort: str = "high", batch_size: int = 15, api_key: str,
         cache_root: Path | None = None, workers: int = 1, prewarm: bool = False,
-        caller: Callable[..., dict[str, Any]] = chat_json) -> dict[str, Any]:
+        caller: Callable[..., dict[str, Any]] | None = None) -> dict[str, Any]:
     if type(workers) is not int or not 1 <= workers <= 8:
         raise ValueError("L1 judge workers must be an integer between 1 and 8")
     aligned_path = aligned_path.resolve()
@@ -324,6 +324,9 @@ def run(*, aligned_path: Path, manifest_path: Path, out: Path, model: str = "gpt
             raise ValueError("Existing machine judge receipt belongs to changed judge configuration")
         return existing
 
+    if caller is None:
+        from scripts.production_spark_admission import SessionBoundCaller
+        caller = SessionBoundCaller(chat_json, purpose="english-machine-review")
     deterministic = deterministic_review(aligned_path, manifest)
     sentences = _sentence_inputs(manifest)
     reviewed: list[dict[str, Any]] = []

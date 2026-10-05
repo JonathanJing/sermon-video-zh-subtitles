@@ -19,6 +19,7 @@ if __package__ in {None, ''}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from scripts import canonical_durable_jobs as durable
+from scripts import production_spark_admission as spark_admission
 from scripts import inspect_canonical_packages as packages
 from scripts import canonical_pipeline_definition as pipeline
 from scripts import produce_target_language_candidate as producer
@@ -326,10 +327,12 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
         with liveness.report(request_path.parent, request) as progress:
             if caller is None:
                 require(budget_binding is None, 'codex_cli_provider_output_cap_unsupported')
+                spark_admission.require_session()
                 from scripts.codex_layer2_transport import CodexLayer2Transport
                 api_key = ''
                 caller = CodexLayer2Transport(receipts_dir=lane['output'] / '_cli_calls',
                     resource_policy=config.resource_policy, concurrency_profile=config.concurrency_profile)
+                caller = spark_admission.SessionBoundCaller(caller)
             if budget_binding is not None:
                 caller = budget_tools.BudgetedCaller(budget_binding, config, source, anchor, policy, transport=caller)
             def current_binding():

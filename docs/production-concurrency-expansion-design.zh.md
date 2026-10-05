@@ -10,7 +10,7 @@
 
 最新[模型策略](production-model-runtime-policy.zh.md)固定 Sol 6.1 high fast 初译／原 Astra 文字角色、Sol 6.1 medium fast 独立复核、Luna medium fast CLI 监督；容量试验不同时改变模型、reasoning、tier 或文字分组。
 
-真实测试及页面制作还需[整轮 Spark 独占会话](spark-exclusive-development-session.zh.md)：开始前排空竞争负载，整个开发窗口保持独占，结束后恢复原服务。该新增控制目前为设计，不能从音频 job 锁或夹具 ready 推导主机已独占。
+真实测试及页面制作还需[整轮 Spark 独占会话](spark-exclusive-development-session.zh.md)：开始前排空竞争负载，整个开发窗口保持独占，结束后恢复原服务。该控制已实现并通过[两轮实机无推理验收](reports/20261005-spark-exclusive-control-verification.zh.md)；每次实际开跑仍需建立新的 exclusive_ready 会话，音频 job 锁或夹具 ready 不代替主机准入。
 
 ## 2. 可增加数量的步骤及候选边界
 
