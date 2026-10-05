@@ -24,7 +24,7 @@ CLI 子进程过滤 OpenAI API 环境变量；ChatGPT 认证缺失、CLI 不可�
 
 新任务的 OpenAI API key 仅用于 Transcribe 来源转录；文字、独立复核和监管的默认调用不读取 API Secret、不要求 API key，CLI 子进程不继承 API key。保留既有安全存储中的转录凭据，不删除 `.env.openai` 或 Secret Manager 中 ASR 仍需使用的 key。
 
-文字 API fallback 当前关闭。未来若保留此能力，必须由操作员明确选择独立的新调用身份，并先确认原 CLI 调用尚未发送或已确认终止且没有未决返回／工具。不得因 CLI 超时、限额、unknown outcome 或内容失败自动走 API。fallback 的模型、reasoning、项目／key、计费口径和收据需单独冻结；旧 API 缓存不是新 CLI 的调用证据。当前旧 Agents API 的原会话对账／明确续跑不属于新任务的自动 fallback。
+文字 API fallback 当前关闭。用户已确认[额度耗尽后的备用设计](codex-quota-api-fallback-design.zh.md)：未来仅在明确额度拒绝、原调用无未决结果、入口能力验收和绑定预算授权均通过后，才允许以独立 attempt 使用 API 认证 Codex CLI；dev/prod 保持相同模型参数及各自项目。本次设计批准不是具体付费预算批准，当前代码仍拒绝 API 认证。不得因 CLI 超时、普通限流、unknown outcome、认证错误或内容失败切换。备用调用的身份、费用 reservation 与收据独立保留；旧 API 缓存不是新 CLI 的调用证据。当前旧 Agents API 的原会话对账／明确续跑不属于新任务的自动 fallback。
 
 ## 当前接线范围与限制
 
