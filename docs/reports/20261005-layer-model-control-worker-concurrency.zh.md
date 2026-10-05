@@ -106,3 +106,5 @@ L1、L3 back-ASR、传输与L4缺少本轮匹配的完整耗时，不能把“L2
 5. **最后才调整正式配置**：CLI24调用成功、组循环能力、controller多worker准入、全层生产联跑各自需要证据。不要只把policy从1改24；当前validator会拒绝，且不会获得公平调度、恢复或资源隔离。
 
 相关实测：[完整三分钟翻译→复核](20261005-codex-cli-layer2-180s.zh.md)、[独立CLI调用至24路](20261005-codex-cli-concurrency-24.zh.md)。本次未执行稳态复测，也未验证后台live容量。
+
+进一步的整篇关键路径、独立分支、CLI自动接续与当前preview／ASR瓶颈见[本地与线上模型流水并发分析](20261005-production-pipeline-concurrency-analysis.zh.md)。
