@@ -193,6 +193,14 @@ class DiagnosticCommandDAGTests(unittest.TestCase):
         from scripts.spark_exclusive_session import IDENTIFIER
         self.assertRegex(purpose, IDENTIFIER)
 
+    def test_command_preserves_virtual_environment_entrypoint(self):
+        venv_python = self.root / '.venv/bin/python'
+        venv_python.parent.mkdir(parents=True)
+        venv_python.symlink_to(Path(subject.sys.executable).resolve())
+        command, identity = subject._command([str(venv_python), str(self.script), 'source'])
+        self.assertEqual(command[0], str(venv_python))
+        self.assertEqual(identity['interpreterSha256'], subject._file_hash(Path(subject.sys.executable)))
+
     def test_unknown_child_keeps_root_host_hold(self):
         self.prepare([self.node('source', kind='source')])
         subject.run(self.out, execute=True, executor=MagicMock(side_effect=TimeoutError('fixture unknown')))

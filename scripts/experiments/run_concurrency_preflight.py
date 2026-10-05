@@ -70,9 +70,10 @@ def _write(path, value):
 def _command(command):
     require(type(command) is list and len(command) >= 2 and all(type(a) is str and a and '\x00' not in a for a in command),
             'diagnostic_command_requires_argv')
-    interpreter = Path(command[0]).absolute().resolve()
+    interpreter = Path(command[0]).absolute()
+    resolved_interpreter = interpreter.resolve()
     allowed_python = {Path(sys.executable).resolve(), (ROOT / '.venv/bin/python').resolve()}
-    require(interpreter in allowed_python and interpreter.is_file(), 'diagnostic_python_interpreter_not_allowed')
+    require(resolved_interpreter in allowed_python and interpreter.is_file(), 'diagnostic_python_interpreter_not_allowed')
     raw_script = Path(command[1])
     script = (raw_script if raw_script.is_absolute() else ROOT / raw_script).resolve()
     require(script.is_relative_to(ROOT / 'scripts') and script.suffix == '.py' and script.is_file()
@@ -81,7 +82,7 @@ def _command(command):
              or script == ROOT / 'scripts/run_codex_layer2_test.py')
         and script != Path(__file__).resolve(), 'diagnostic_script_not_allowed')
     return [str(interpreter), str(script), *command[2:]], {
-        'interpreterSha256': hashlib.sha256(interpreter.read_bytes()).hexdigest(),
+        'interpreterSha256': hashlib.sha256(resolved_interpreter.read_bytes()).hexdigest(),
         'scriptSha256': hashlib.sha256(script.read_bytes()).hexdigest()}
 
 
