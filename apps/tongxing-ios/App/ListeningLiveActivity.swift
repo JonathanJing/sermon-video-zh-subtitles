@@ -38,6 +38,18 @@ final class ListeningLiveActivityCoordinator {
     private var alignmentSourceKey: String?
     private var alignmentSessionID: UUID?
     private var alignmentDismissed = false
+    private var capturedAlignment: (sessionID: UUID, sourceKey: String)?
+    private var suppressedAlignment: (sessionID: UUID, sourceKey: String)?
+    #if DEBUG
+    private var applicationStateOverride: UIApplication.State?
+    func setApplicationStateForTesting(_ state: UIApplication.State?) { applicationStateOverride = state }
+    #endif
+    private var applicationState: UIApplication.State {
+        #if DEBUG
+        if let applicationStateOverride { return applicationStateOverride }
+        #endif
+        return UIApplication.shared.applicationState
+    }
     private let logger = Logger(subsystem: "Tongxing", category: "LiveActivity")
     #endif
 
@@ -77,6 +89,25 @@ final class ListeningLiveActivityCoordinator {
             languageCode: languageCode.hasPrefix("en") ? "en" : "zh", alignmentPhase: alignmentPhase,
             subtitleID: subtitleID, chineseSubtitle: chineseSubtitle, englishSubtitle: englishSubtitle
         )) else { end(); return }
+        if suppressedAlignment?.sessionID != alignmentSessionID || suppressedAlignment?.sourceKey != key {
+            suppressedAlignment = nil
+        }
+        if let alignmentSessionID, let alignmentPhase, applicationState != .active,
+           Self.suppressesAlignmentAfterLeaving(phase: alignmentPhase, isBackground: applicationState == .background) {
+            // Retain a departure even when a background snapshot is coalesced.
+            suppressedAlignment = (alignmentSessionID, key)
+            capturedAlignment = nil
+        }
+        // Observe real capture synchronously before coalescing ActivityKit writes.
+        // A fast matcher may replace listening/matching with its result before
+        // the worker runs; that result must still be eligible for presentation.
+        if alignmentPhase == nil || alignmentPhase == .preparing || capturedAlignment?.sourceKey != key {
+            capturedAlignment = nil
+        }
+        if applicationState == .active, suppressedAlignment == nil,
+           (alignmentPhase == .listening || alignmentPhase == .matching), let alignmentSessionID {
+            capturedAlignment = (alignmentSessionID, key)
+        }
         enqueue(Snapshot(sourceKey: key, state: state, alignmentSessionID: alignmentSessionID))
         #endif
     }
@@ -85,6 +116,8 @@ final class ListeningLiveActivityCoordinator {
     func end() {
         #if os(iOS) && canImport(ActivityKit)
         guard enabled else { return }
+        capturedAlignment = nil
+        suppressedAlignment = nil
         suppressedSourceKey = nil
         lastRequestSourceKey = nil
         lastRequestAttempt = .distantPast
@@ -231,14 +264,16 @@ final class ListeningLiveActivityCoordinator {
         guard token == revision, !Task.isCancelled else { return }
         guard let snapshot, let phase else { return }
         guard snapshot.alignmentSessionID != nil else { return }
-        let applicationState = UIApplication.shared.applicationState
-        guard applicationState == .active else {
+        let applicationState = self.applicationState
+        let departed = suppressedAlignment?.sessionID == snapshot.alignmentSessionID
+            && suppressedAlignment?.sourceKey == snapshot.sourceKey
+        guard applicationState == .active && !departed else {
             if let current = alignmentActivity {
                 alignmentActivity = nil
                 await current.end(nil, dismissalPolicy: .immediate)
             }
             // Do not reopen this task when the user returns to the app.
-            if Self.suppressesAlignmentAfterLeaving(phase: phase, isBackground: applicationState == .background) {
+            if departed || Self.suppressesAlignmentAfterLeaving(phase: phase, isBackground: applicationState == .background) {
                 alignmentDismissed = true
             }
             return
@@ -256,7 +291,11 @@ final class ListeningLiveActivityCoordinator {
         }
         // Wait for real capture-start, after the permission dialog has closed.
         // Tapping that dialog can dismiss a transient created during preparing.
-        guard phase == .listening || phase == .matching, !alignmentDismissed else { return }
+        let observedCapture = capturedAlignment?.sessionID == snapshot.alignmentSessionID
+            && capturedAlignment?.sourceKey == snapshot.sourceKey
+        let resultAfterCapture = observedCapture && (phase == .aligned || phase == .unmatched || phase == .failed)
+        guard phase == .listening || phase == .matching || resultAfterCapture,
+              !alignmentDismissed else { return }
         guard ActivityAuthorizationInfo().areActivitiesEnabled else {
             alignmentDismissed = true
             logger.notice("Foreground alignment activity unavailable: activities disabled")
