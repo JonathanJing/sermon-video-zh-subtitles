@@ -14,6 +14,14 @@ Apple [官方说明](https://developer.apple.com/documentation/activitykit/displ
 
 Xcode 定向结果：iOS 27.0 共 16 项执行通过、0 跳过（cli 20261005T143447-test-599ada5f）；iOS 17.5 共 12 项执行通过、4 项临时 API 专属跳过（cli 20261005T143533-test-3881a3d3）。独立只读审查修正旧任务污染后无剩余阻断；git diff --check 通过。未改变 Widget 布局、匹配算法或采音时长，网页 not_applicable。
 
-## 真机对照待完成
+## 真机对照结果
 
-忽略目录 artifacts/tongxing-ios/device-island-probe/ 保存独立诊断项目，直接使用同一 Widget／共享视图／attributes，仅创建静态活动，不录音、不播放，不覆盖 TestFlight Beta。Xcode 真机 build 成功；首轮安装远端连接关闭，重试安装成功。启动被系统明确拒绝，原因为设备锁屏，用户已收到解锁请求。待解锁后先检查无录音 transient 实际截图，再根据结果检查 alert update／standard 对照。当前系统呈现根因未确定，未上传新的 Beta，原 Beta 54 实机功能验收仍为 failed。
+忽略目录 artifacts/tongxing-ios/device-island-probe/ 保存独立诊断项目，直接使用同一 Widget／共享视图／attributes，仅创建静态活动，不录音、不播放，不覆盖 TestFlight Beta。Xcode 真机 build 成功；首轮安装远端连接关闭，重试安装成功。启动被系统明确拒绝，原因为设备锁屏，用户已收到解锁请求。用户解锁后完成真实设备截图对照：
+
+- `transient-no-mic.png`：无播放、无录音，request 返回 active／areActivitiesEnabled=true，前台没有诊断麦克风活动（另一个 Beta 的普通暂停活动可见）。
+- `transient-alert.png`：同一请求后显式 update(alertConfiguration:)，仍没有前台临时活动显示。
+- `standard-foreground.png`：普通诊断活动 active，自身前台不显示该诊断内容。
+- `standard-outside.png`：离开诊断 App 后，该普通活动以绿色麦克风 minimal 呈现，证明同一 Widget 与 alignmentPhase 数据可以在目标设备渲染。该截图包含设置页私人信息，仅本地保留，不附到 PR。
+- `transient-clean.png`：冷启动 Beta 清除其旧活动，诊断 App 启动时清除其自身旧活动；仅创建新的 transient，active／areActivitiesEnabled=true，但前台仍没有呈现。排除本轮遗留活动竞争这一解释。
+
+以上截图位于忽略目录 `artifacts/tongxing-ios/device-island-probe/`。诊断结束返回已安装的 Beta。现有证据将问题收束到目标系统的 transient 前台呈现路径，但尚不能确定具体系统原因，不能笼统宣称 Apple 已确认系统 bug，也不能承诺更新系统后会解决。没有更换系统、重置设置、使用私有 API 或上传未经实机显示验证的新 Beta；Beta 54 前台灵动岛验收仍为 failed。
