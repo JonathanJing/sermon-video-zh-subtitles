@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 import gzip
 import hashlib
 import json
+import re
 from pathlib import Path
 import shutil
 from urllib.parse import quote
@@ -187,14 +188,65 @@ def publication_config(base, out):
     attempt = base / 'deployment-attempt-v2.json'
     if attempt.exists():
         deployed = read(attempt)
-        contract.require(deployed['status'] == 'deployed' and deployed['intent']['site'] == SITE,
-                         'Prior publication remains uncertain')
+        prior_config = base / 'publish-config.json'
+        expected_version = read(prior_config)['baseline_version'] if prior_config.exists() else version
+        contract.require(deployed.get('status') == 'deployed' and deployed.get('newVersion')
+                         and all(deployed.get('intent', {}).get(k) == v for k, v in
+                                 {'site': SITE, 'project': PROJECT, 'origin': ORIGIN, 'environment': 'dev', 'channel': 'dev'}.items())
+                         and deployed.get('baselineVersion') == expected_version
+                         and deployed.get('catalogSha256') == digest(base / 'public/multilingual-v3.json'),
+                         'Prior publication remains uncertain or differs from baseline')
         version = deployed['newVersion']
     intent = {'schemaVersion': 'sermon-release-intent-v1', 'environment': 'dev', 'channel': 'dev', 'project': PROJECT, 'site': SITE, 'origin': ORIGIN}
     routes = {'dev': {'project': PROJECT, 'site': SITE, 'origin': ORIGIN, 'channels': ['dev', 'beta']}}
     return {'snapshot': str(out), 'intent': intent, 'routes': routes,
             'baseline_version': version, 'baseline_catalog_sha': digest(base / 'public/multilingual-v3.json'),
             'lease_bucket': LEASE_BUCKET}
+
+
+def bound_release_plan(baseline_path, prepared_path):
+    """Build the seal/merge contract from verified bytes, not raw JSON hashes."""
+    from scripts import build_full_video_app_release as builder
+    base, prepared = Path(baseline_path).resolve(), Path(prepared_path).resolve()
+    catalog = contract.validate_catalog_snapshot(base)
+    manifest, _ = builder.verified_assets(prepared)
+    receipt = read(base / 'baseline-receipt.json')
+    contract.require(receipt.get('status') == 'complete_verified_not_deployed'
+                     and all(receipt.get(k) == v for k, v in
+                             {'project': PROJECT, 'site': SITE, 'origin': ORIGIN}.items())
+                     and receipt.get('catalogSha256') == digest(base / 'public/multilingual-v3.json'),
+                     'Verified Dev baseline receipt required')
+    page_id = manifest['pageId']
+    contract.require(isinstance(page_id, str) and re.fullmatch(r'(?:mockup|dryrun|dev)-[A-Za-z0-9][A-Za-z0-9_-]{0,139}', page_id), 'Isolated test page required')
+    contract.require(page_id not in {page['id'] for page in catalog['pages']}, 'Simulation page ID already exists; use a new run ID')
+    locales = sorted(manifest['releases'])
+    contract.require(set(locales) == {'zh-Hans', 'ko', 'es'}, 'Three locale test coverage required')
+    config = publication_config(base, base)
+    plan = {'schemaVersion': 'sermon-locale-release-plan-v1',
+            'baselineCatalogSha256': contract.sha(catalog),
+            'baselineVersion': config['baseline_version'], 'pageId': page_id,
+            'locales': locales, 'requiredLocales': locales, 'mode': 'joined'}
+    # Exercise the same contract used by seal before handing a plan to it.
+    candidate = {'schemaVersion': catalog['schemaVersion'], 'generatedAt': catalog['generatedAt'],
+                 'defaultPageId': page_id, 'pages': [{
+                     'id': page_id, 'date': manifest['date'], 'title': manifest['title'],
+                     'sourceLocale': 'en', 'sourceIdentitySha256': manifest['englishSourcePackageJsonSha256'],
+                     'defaultTargetLocale': 'zh-Hans', 'targets': {
+                         locale: {'releasePackageUrl': item['releasePath'],
+                                  'releasePackageJsonSha256': item['releaseSha256']}
+                         for locale, item in manifest['releases'].items()}}]}
+    merged = contract.merge_catalog(catalog, candidate, plan)
+    contract.require(merged['defaultPageId'] == catalog['defaultPageId']
+                     and merged['pages'][:-1] == catalog['pages'], 'Release plan changed default or siblings')
+    return plan
+
+
+def release_plan(baseline_path, prepared_path, out):
+    out = Path(out).resolve()
+    contract.require(not out.exists(), 'Release plan output already exists')
+    plan = bound_release_plan(baseline_path, prepared_path)
+    write(out, plan)
+    return {'status': 'prepared_not_deployed', 'releasePlan': str(out), **plan}
 
 
 def asset_first(baseline_path, prepared, out, source_video=None):
@@ -347,6 +399,10 @@ def main():
     o.add_argument('--overlay-public', required=True, type=Path)
     o.add_argument('--catalog', required=True, type=Path)
     o.add_argument('--out', required=True, type=Path)
+    plan = commands.add_parser('release-plan')
+    plan.add_argument('--baseline', required=True, type=Path)
+    plan.add_argument('--prepared', required=True, type=Path)
+    plan.add_argument('--out', required=True, type=Path)
     repair = commands.add_parser('runtime-repair')
     repair.add_argument('--baseline', required=True, type=Path)
     repair.add_argument('--out', required=True, type=Path)
@@ -355,6 +411,8 @@ def main():
         result = baseline(args.out, cache_public=args.cache_public, cache_receipt=args.cache_receipt)
     elif args.action == 'asset-first':
         result = asset_first(args.baseline, args.prepared, args.out, args.source_video)
+    elif args.action == 'release-plan':
+        result = release_plan(args.baseline, args.prepared, args.out)
     elif args.action == 'runtime-repair':
         result = runtime_repair(args.baseline, args.out)
     else:

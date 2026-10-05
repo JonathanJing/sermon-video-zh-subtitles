@@ -8,6 +8,9 @@ import argparse
 import copy
 import hashlib
 import json
+import re
+from datetime import datetime, timezone
+from uuid import uuid4
 import subprocess
 from pathlib import Path
 # Support both python -m scripts.<name> and direct script invocation.
@@ -26,7 +29,8 @@ ROOT = Path(__file__).resolve().parents[1]
 SIM = 'simulation test only - not a real human approval'
 STAMP = '2026-10-05T00:00:00Z'
 LOCALES = ['zh-Hans', 'ko', 'es']
-PAGE = 'mockup-20261005-dev-180s'
+LEGACY_PAGE_ID = 'mockup-20261005-dev-180s'
+TEST_ROOT = ROOT / 'artifacts/dev-180s-page-test-20261004'
 
 
 def read(path):
@@ -56,17 +60,35 @@ def duration(path):
         'format=duration', '-of', 'default=nw=1:nk=1', str(path)], text=True))
 
 
-def build(out):
+def fixture_identity(run_id=None, page_id=None):
+    """Fresh runs get immutable paths; explicit legacy IDs remain available."""
+    if run_id is None:
+        run_id = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ') + '-' + uuid4().hex[:12]
+    contract.require(isinstance(run_id, str) and re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_-]{0,79}', run_id), 'Unsafe run ID')
+    if page_id is None:
+        page_id = 'mockup-dev-180s-' + run_id
+    contract.require(isinstance(page_id, str) and re.fullmatch(r'(?:mockup|dryrun|dev)-[A-Za-z0-9][A-Za-z0-9_-]{0,139}', page_id), 'Unsafe simulation page ID')
+    return run_id, page_id
+
+
+def fixture_output(out, run_id):
+    out = Path(out if out is not None else TEST_ROOT / run_id / 'simulated-inputs').resolve()
+    contract.require(out.is_relative_to(TEST_ROOT.resolve()) and out != TEST_ROOT.resolve(),
+                     'Simulated inputs must remain inside the dedicated ignored test root')
+    contract.require(not out.exists(), 'Use a new simulated input output directory')
+    return out
+
+
+def build(out=None, *, run_id=None, page_id=None):
+    run_id, page_id = fixture_identity(run_id, page_id)
+    out = fixture_output(out, run_id)
+    out.mkdir(parents=True, exist_ok=False)
     old = ROOT / 'artifacts/dev-full-rerun-20261001'
     template = ROOT / 'artifacts/unified-cli-acceptance/native-four-product-fixture-v2'
     media_root = old / 'dev-candidate/hosting/public/media/dryrun-20261001-dev-full-180s'
     media = media_root / 'source.mp4'
     media_duration = duration(media)
     assert sha(media) == '79bada8f2e960adb470a146f183449db433308b53c20d03ea9c7e2e0a66e906b'
-    out = out.resolve()
-    allowed = ROOT / 'artifacts/dev-180s-page-test-20261004'
-    if not out.is_relative_to(allowed):
-        raise ValueError('Simulated inputs must remain inside the dedicated ignored test root')
     segments = read(old / 'aligned-segments.json')
     aligned = save(out / 'aligned-segments.json', segments)
     anchor = read(old / 'anchor-manifest.json')
@@ -115,7 +137,7 @@ def build(out):
     source_path = save(out / 'source.json', source)
     source_sha = contract.sha(source)
     config = copy.deepcopy(read(template / 'config.json'))
-    config.update(pageId=PAGE, date='2026-09-27', locales=LOCALES, requiredEndpoints=['dev', 'beta', 'production_ios', 'production_web'],
+    config.update(pageId=page_id, date='2026-09-27', locales=LOCALES, requiredEndpoints=['dev', 'beta', 'production_ios', 'production_web'],
         workRoot=str(out / 'work'), action='prepare')
     route = {'channel': 'dev', 'project': 'ai-for-god-sermon-audio-dev', 'site': 'ai-for-god-sermon-audio-dev',
              'origin': 'https://ai-for-god-sermon-audio-dev.web.app'}
@@ -125,7 +147,7 @@ def build(out):
     for name in delivery.MAPS:
         config['inputs'][name] = {}
     metadata = read(template / 'metadata_approval.json')
-    metadata.update(pageId=PAGE, date='2026-09-27', approvedLocales=LOCALES,
+    metadata.update(pageId=page_id, date='2026-09-27', approvedLocales=LOCALES,
         schemaVersion='sermon-dev-simulated-metadata-v1', decision='simulated_test_only',
         releaseIntent=config['intent'], approvalText=SIM, reviewer='simulation-test-only', recordedAt=STAMP, locales={})
     for locale in LOCALES:
@@ -151,7 +173,7 @@ def build(out):
             inputs={'source': source_path, 'anchor': anchor_path, 'candidate': candidate_path})
         audio = read(template / 'audio_package.json')
         track = next(media_root.glob(locale + '-*.mp3'))
-        audio.update(packageId=PAGE + '-' + locale, targetLocale=locale,
+        audio.update(packageId=page_id + '-' + locale, targetLocale=locale,
             englishSourcePackageJsonSha256=source_sha, targetLanguageCandidateJsonSha256=candidate_sha,
             track=ref(track), units=[])
         audio['humanReview'].update(reviewedBy=SIM, reviewedAt=STAMP)
@@ -195,12 +217,12 @@ def build(out):
             'summary': '[模拟审核测试] simulation test only；沿用历史译文和音轨；真实内容、听审与同步未批准。',
             'outline': ['[模拟审核测试] 技术许诺与人的问题']}
         metadata['locales'][locale] = display
-        content = dict(display, schemaVersion='sermon-full-video-text-content-v2', pageId=PAGE,
+        content = dict(display, schemaVersion='sermon-full-video-text-content-v2', pageId=page_id,
             targetLocale=locale, sourceLocale='en', status='human_reviewed',
             englishSourcePackageJsonSha256=source_sha, targetLanguageCandidateJsonSha256=candidate_sha,
             sourceMediaSha256=sha(media), durationSeconds=media_duration,
             audioDurationSeconds=release.stage.decode_audio(track, locale + ' measured audio clock'), reviewMode='simulation',
-            sourceVideoUrl='/media/' + PAGE + '/source.mp4', cues=cues,
+            sourceVideoUrl='/media/' + page_id + '/source.mp4', cues=cues,
             sourceWindow={'schemaVersion': 'sermon-original-recording-window-v1', 'mediaSha256': sha(media),
                 'startSeconds': 0, 'endSeconds': media_duration})
         content_path = save(loc / 'full-content.json', content)
@@ -216,11 +238,11 @@ def build(out):
                     'es': 'Pregunta para meditar: ¿Cómo influye este texto en mi comprensión de la tecnología y la esperanza?\n'
                 }[locale] + group['targetText'], 'sourceUnitIds': group['sourceUnitIds']}
                 for i, group in enumerate(candidate['groups'])]
-            artifact = study_artifacts.produce(kind, sections, page_id=PAGE, locale=locale,
+            artifact = study_artifacts.produce(kind, sections, page_id=page_id, locale=locale,
                 source_sha=source_sha, text_sha=candidate_sha, producer_identity=SIM)
             artifact_path = save(loc / (kind + '.json'), artifact)
             review = read(template / 'outline_review.json')
-            review.update(kind=kind, pageId=PAGE, locale=locale, sourcePackageSha256=source_sha,
+            review.update(kind=kind, pageId=page_id, locale=locale, sourcePackageSha256=source_sha,
                 textCandidateSha256=candidate_sha, artifactSha256=contract.sha(artifact),
                 reviewedBy=SIM, reviewedAt=STAMP)
             study_artifacts.ingest_review(artifact, review)
@@ -241,19 +263,22 @@ def build(out):
     # The normal builder does not copy original video URLs; add a separate bound
     # media artifact for the caller to include in test deployment, never replace.
     report = {'simulationOnly': True, 'productionEligible': False, 'actualHumanApproval': False,
-        'notice': SIM, 'newApiCalls': 0, 'sourceUrlVerified': False,
-        'sourceMedia': ref(media), 'sourceMediaPublicPath': '/media/' + PAGE + '/source.mp4',
+        'notice': SIM, 'runId': run_id, 'pageId': page_id, 'newApiCalls': 0, 'sourceUrlVerified': False,
+        'sourceMedia': ref(media), 'sourceMediaPublicPath': '/media/' + page_id + '/source.mp4',
         'originalSourceWindowSeconds': [60, 240], 'testMediaWindowSeconds': [0, media_duration],
         'originalAnchorIssues': anchor['issues'], 'sourceUnitCount': 39, 'groupsPerLocale': 13,
         'audioDurations': {loc: duration(next(media_root.glob(loc + '-*.mp3'))) for loc in LOCALES},
         'result': result, 'frozenConfig': ref(frozen_path)}
     save(out / 'simulation-scope-report.json', report)
     print(json.dumps({'config': str(frozen_path), 'status': result['status'],
-        'pageId': PAGE, 'fourProducts': result['fourProducts'], 'productionEligible': False,
+        'runId': run_id, 'pageId': page_id, 'fourProducts': result['fourProducts'], 'productionEligible': False,
         'scopeReport': str(out / 'simulation-scope-report.json')}, ensure_ascii=False))
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--out', type=Path, default=ROOT / 'artifacts/dev-180s-page-test-20261004/simulated-inputs')
-    build(parser.parse_args().out)
+    parser.add_argument('--out', type=Path)
+    parser.add_argument('--run-id')
+    parser.add_argument('--page-id')
+    args = parser.parse_args()
+    build(args.out, run_id=args.run_id, page_id=args.page_id)

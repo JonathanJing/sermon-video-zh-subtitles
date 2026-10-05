@@ -8,6 +8,12 @@ version is checked again before and after deployment.
 from __future__ import annotations
 import argparse
 import hashlib
+import fcntl
+import os
+import socket
+import threading
+import time
+from contextlib import contextmanager
 import json
 import subprocess
 from pathlib import Path
@@ -24,6 +30,58 @@ try:
 except ImportError:
     import delivery_contract as contract
     from sermon_execution_harness import atomic_json
+
+
+@contextmanager
+def publisher_lock(snapshot):
+    """Local process lock complements the remote lease; crashes release only this lock."""
+    with (Path(snapshot) / 'hosting-publisher.lock').open('a') as lock:
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            raise ValueError('Publisher is still running; wait for completion before reconciliation') from None
+        try:
+            yield
+        finally:
+            fcntl.flock(lock, fcntl.LOCK_UN)
+
+
+class PublisherProgress:
+    """Operational progress only; never substitutes for the deployment receipt."""
+    def __init__(self, snapshot, attempt_id):
+        self.path = Path(snapshot) / 'hosting-publisher-progress.json'
+        self.started = time.monotonic()
+        self.state = {'schemaVersion': 'sermon-hosting-publisher-progress-v1',
+                      'attemptId': attempt_id, 'pid': os.getpid(), 'hostname': socket.gethostname(),
+                      'startedAt': datetime.now(timezone.utc).isoformat()}
+        self.lock = threading.Lock()
+
+    def update(self, phase, **fields):
+        with self.lock:
+            self.state.update(phase=phase, heartbeatAt=datetime.now(timezone.utc).isoformat(),
+                              elapsedSeconds=round(time.monotonic() - self.started, 3), **fields)
+            atomic_json(self.path, self.state)
+
+    @contextmanager
+    def heartbeat(self, interval):
+        stop = threading.Event()
+        errors = []
+        def beat():
+            while not stop.wait(interval):
+                try:
+                    self.update('deploying')
+                except BaseException as exc:
+                    errors.append(exc)
+                    return
+        worker = threading.Thread(target=beat, daemon=True)
+        worker.start()
+        try:
+            yield
+        finally:
+            stop.set()
+            worker.join()
+        if errors:
+            raise errors[0]
 
 
 def authenticated_transport():
@@ -78,7 +136,16 @@ def public_catalog(reader, origin):
 
 
 def publish(snapshot, *, intent, routes, baseline_version, baseline_catalog_sha,
-            lease_bucket, request, reader, run=subprocess.run):
+            lease_bucket, request, reader, run=subprocess.run, heartbeat_interval=5):
+    contract.require(heartbeat_interval > 0, 'Heartbeat interval must be positive')
+    with publisher_lock(snapshot):
+        return _publish(snapshot, intent=intent, routes=routes, baseline_version=baseline_version,
+                        baseline_catalog_sha=baseline_catalog_sha, lease_bucket=lease_bucket,
+                        request=request, reader=reader, run=run, heartbeat_interval=heartbeat_interval)
+
+
+def _publish(snapshot, *, intent, routes, baseline_version, baseline_catalog_sha,
+             lease_bucket, request, reader, run, heartbeat_interval):
     snapshot = Path(snapshot)
     contract.validate_intent(intent, routes)
     contract.validate_catalog_snapshot(snapshot)
@@ -92,7 +159,9 @@ def publish(snapshot, *, intent, routes, baseline_version, baseline_catalog_sha,
     attempt['leaseBucket'] = lease_bucket
     atomic_json(receipt_path, attempt)
     deploying = False
+    progress = PublisherProgress(snapshot, attempt['attemptId'])
     try:
+        progress.update('checking_baseline')
         contract.require(live_version(request, intent['site']) == baseline_version, 'Live version changed; rebuild against current snapshot')
         contract.require(public_catalog(reader, intent['origin']) == baseline_catalog_sha, 'Live catalog changed; rebuild against current snapshot')
         # Preserve the candidate hosting headers/rewrites, bind its public root and exact site.
@@ -107,10 +176,12 @@ def publish(snapshot, *, intent, routes, baseline_version, baseline_catalog_sha,
         contract.require(live_version(request, intent['site']) == baseline_version, 'Concurrent publication detected')
         attempt['status'] = 'outcome_unknown'
         atomic_json(receipt_path, attempt)
+        progress.update('deploying')
         deploying = True
-        with (snapshot / 'hosting-publish.log').open('w') as log:
+        with progress.heartbeat(heartbeat_interval), (snapshot / 'hosting-publish.log').open('w') as log:
             run(['firebase', 'deploy', '--only', 'hosting', '--project', intent['project'], '--config', str(bound_config.resolve()), '--non-interactive', '--json'],
                 cwd=snapshot, check=True, stdout=log, stderr=subprocess.STDOUT, timeout=3600)
+        progress.update('verifying_readback')
         lease.check()
         version = live_version(request, intent['site'])
         contract.require(version != baseline_version, 'No new Hosting version observed')
@@ -118,18 +189,29 @@ def publish(snapshot, *, intent, routes, baseline_version, baseline_catalog_sha,
         attempt.update(newVersion=version, completedAt=datetime.now(timezone.utc).isoformat(), status='deployed')
         atomic_json(receipt_path, attempt)
         lease.release()
+        progress.update('completed', outcome=attempt['status'])
         return attempt
-    except BaseException:
+    except BaseException as exc:
         if not deploying:
             attempt.update(status='rebuild_required', completedAt=datetime.now(timezone.utc).isoformat())
             atomic_json(receipt_path, attempt)
             lease.release()
+        # Failure details stay in the existing CLI log, not the public progress record.
+        try:
+            progress.update('failed', outcome=attempt['status'], errorType=type(exc).__name__)
+        except Exception:
+            pass  # Progress failure must not replace the original deployment error.
         # Once deployment may have started, retain the remote lease and unknown receipt.
         raise
 
 
 def reconcile(snapshot, *, request, reader, confirmed_version):
     """Explicitly reconcile an uncertain attempt; never starts another deployment."""
+    with publisher_lock(snapshot):
+        return _reconcile(snapshot, request=request, reader=reader, confirmed_version=confirmed_version)
+
+
+def _reconcile(snapshot, *, request, reader, confirmed_version):
     path = Path(snapshot) / 'deployment-attempt-v2.json'
     attempt = json.loads(path.read_text())
     contract.require(attempt['status'] == 'outcome_unknown', 'Only unknown attempts need reconciliation')
