@@ -873,6 +873,8 @@ final class PlaybackController: ObservableObject {
         remoteTargets.forEach { $0.0.isEnabled = isReady }
     }
 
+    func refreshLiveActivityPresentation() { publishLiveActivity() }
+
     private func publishLiveActivity() {
         guard let identity, isReady else { liveActivity.end(); return }
         liveActivity.update(title: title, speaker: speaker, position: position, duration: duration,

@@ -129,13 +129,43 @@ final class ListeningActivityDismissalTests: XCTestCase {
         coordinator.setApplicationStateForTesting(.inactive)
         coordinator.update(title: title, speaker: "Fixture", position: 42, duration: 300,
                            isPlaying: false, sourceKey: source, alignmentPhase: .preparing, alignmentSessionID: transaction)
-        coordinator.setApplicationStateForTesting(.active)
+        // Permission continuation starts capture before UIKit becomes active.
         for phase in [ListeningAlignmentPhase.listening, .aligned] {
             coordinator.update(title: title, speaker: "Fixture", position: 42, duration: 300,
                                isPlaying: false, sourceKey: source, alignmentPhase: phase, alignmentSessionID: transaction)
         }
+        try await eventually { !coordinator.isReconcilingForTesting }
+        XCTAssertFalse(ListeningActivity.activities.contains { $0.content.state.title == title })
+        coordinator.setApplicationStateForTesting(.active)
+        // The app scene republishes the current phase on activation.
+        coordinator.update(title: title, speaker: "Fixture", position: 42, duration: 300,
+                           isPlaying: false, sourceKey: source, alignmentPhase: .aligned, alignmentSessionID: transaction)
         try await eventually { ListeningActivity.activities.contains { $0.content.state.title == title } }
         XCTAssertEqual(ListeningActivity.activities.first { $0.content.state.title == title }?.content.state.alignmentPhase, .aligned)
+    }
+
+    func testNewPermissionCaptureDoesNotInheritPreviousPresentation() async throws {
+        try requireOptIn()
+        guard #available(iOS 18.0, *) else { throw XCTSkip("Transient presentation requires iOS 18") }
+        let coordinator = ListeningLiveActivityCoordinator(allowSystemActivitiesInTests: true)
+        defer { coordinator.end() }
+        let source = UUID().uuidString
+        let oldTitle = "Synthetic old \(UUID().uuidString)"
+        coordinator.setApplicationStateForTesting(.active)
+        coordinator.update(title: oldTitle, speaker: "Fixture", position: 42, duration: 300,
+                           isPlaying: false, sourceKey: source, alignmentPhase: .listening, alignmentSessionID: UUID())
+        try await eventually { ListeningActivity.activities.contains { $0.content.state.title == oldTitle } }
+        let transaction = UUID(), title = "Synthetic new \(UUID().uuidString)"
+        coordinator.setApplicationStateForTesting(.inactive)
+        for phase in [ListeningAlignmentPhase.preparing, .listening] {
+            coordinator.update(title: title, speaker: "Fixture", position: 42, duration: 300,
+                               isPlaying: false, sourceKey: source, alignmentPhase: phase, alignmentSessionID: transaction)
+        }
+        try await eventually { !coordinator.isReconcilingForTesting }
+        coordinator.setApplicationStateForTesting(.active)
+        coordinator.update(title: title, speaker: "Fixture", position: 42, duration: 300,
+                           isPlaying: false, sourceKey: source, alignmentPhase: .aligned, alignmentSessionID: transaction)
+        try await eventually { ListeningActivity.activities.contains { $0.content.state.title == title } }
     }
 
     private func requireOptIn() throws {

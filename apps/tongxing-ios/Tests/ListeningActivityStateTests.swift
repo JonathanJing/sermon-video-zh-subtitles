@@ -104,7 +104,8 @@ final class ListeningActivityStateTests: XCTestCase {
         XCTAssertFalse(ListeningLiveActivityCoordinator.suppressesAlignmentAfterLeaving(phase: .preparing, isBackground: false))
         XCTAssertTrue(ListeningLiveActivityCoordinator.suppressesAlignmentAfterLeaving(phase: .preparing, isBackground: true))
         for phase in [ListeningAlignmentPhase.listening, .matching, .aligned, .unmatched, .failed] {
-            XCTAssertTrue(ListeningLiveActivityCoordinator.suppressesAlignmentAfterLeaving(phase: phase, isBackground: false))
+            XCTAssertFalse(ListeningLiveActivityCoordinator.suppressesAlignmentAfterLeaving(phase: phase, isBackground: false))
+            XCTAssertTrue(ListeningLiveActivityCoordinator.suppressesAlignmentAfterLeaving(phase: phase, isBackground: false, hasPresented: true))
             XCTAssertTrue(ListeningLiveActivityCoordinator.suppressesAlignmentAfterLeaving(phase: phase, isBackground: true))
         }
     }

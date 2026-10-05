@@ -92,8 +92,10 @@ final class ListeningLiveActivityCoordinator {
         if suppressedAlignment?.sessionID != alignmentSessionID || suppressedAlignment?.sourceKey != key {
             suppressedAlignment = nil
         }
+        let currentTaskPresented = self.alignmentSessionID == alignmentSessionID
+            && alignmentSourceKey == key && (alignmentActivity != nil || alignmentDismissed)
         if let alignmentSessionID, let alignmentPhase, applicationState != .active,
-           Self.suppressesAlignmentAfterLeaving(phase: alignmentPhase, isBackground: applicationState == .background) {
+           Self.suppressesAlignmentAfterLeaving(phase: alignmentPhase, isBackground: applicationState == .background, hasPresented: currentTaskPresented) {
             // Retain a departure even when a background snapshot is coalesced.
             suppressedAlignment = (alignmentSessionID, key)
             capturedAlignment = nil
@@ -104,7 +106,7 @@ final class ListeningLiveActivityCoordinator {
         if alignmentPhase == nil || alignmentPhase == .preparing || capturedAlignment?.sourceKey != key {
             capturedAlignment = nil
         }
-        if applicationState == .active, suppressedAlignment == nil,
+        if applicationState != .background, suppressedAlignment == nil,
            (alignmentPhase == .listening || alignmentPhase == .matching), let alignmentSessionID {
             capturedAlignment = (alignmentSessionID, key)
         }
@@ -265,6 +267,7 @@ final class ListeningLiveActivityCoordinator {
         guard let snapshot, let phase else { return }
         guard snapshot.alignmentSessionID != nil else { return }
         let applicationState = self.applicationState
+        let hasPresented = alignmentActivity != nil || alignmentDismissed
         let departed = suppressedAlignment?.sessionID == snapshot.alignmentSessionID
             && suppressedAlignment?.sourceKey == snapshot.sourceKey
         guard applicationState == .active && !departed else {
@@ -273,7 +276,7 @@ final class ListeningLiveActivityCoordinator {
                 await current.end(nil, dismissalPolicy: .immediate)
             }
             // Do not reopen this task when the user returns to the app.
-            if departed || Self.suppressesAlignmentAfterLeaving(phase: phase, isBackground: applicationState == .background) {
+            if departed || Self.suppressesAlignmentAfterLeaving(phase: phase, isBackground: applicationState == .background, hasPresented: hasPresented) {
                 alignmentDismissed = true
             }
             return
@@ -303,9 +306,11 @@ final class ListeningLiveActivityCoordinator {
         }
         guard UIApplication.shared.applicationState == .active else { return }
         do {
-            alignmentActivity = try ListeningActivity.request(
+            let created = try ListeningActivity.request(
                 attributes: ListeningActivityAttributes(sourceKey: snapshot.sourceKey),
                 content: content(for: snapshot.state), pushType: nil, style: .transient)
+            alignmentActivity = created
+            logger.notice("Foreground alignment activity created: \(created.id, privacy: .public), phase=\(String(describing: phase), privacy: .public), state=\(String(describing: created.activityState), privacy: .public)")
         } catch {
             alignmentDismissed = true
             logger.error("Foreground alignment activity request failed: \(String(describing: error), privacy: .public)")
@@ -371,11 +376,11 @@ final class ListeningLiveActivityCoordinator {
         await previous.end(ActivityContent(state: stopped, staleDate: nil), dismissalPolicy: .immediate)
     }
 
-    // A permission alert during preparation is transient inactivity, not a
-    // dismissal of a listening task that has already started.
+    // Permission completion can report capture before didBecomeActive. Until
+    // presentation, inactivity must wait; actual background always suppresses.
     nonisolated static func suppressesAlignmentAfterLeaving(phase: ListeningAlignmentPhase,
-                                                           isBackground: Bool) -> Bool {
-        isBackground || phase != .preparing
+                                                           isBackground: Bool, hasPresented: Bool = false) -> Bool {
+        isBackground || (hasPresented && phase != .preparing)
     }
 
     /// Pure payload preparation shared with tests. Count the JSON representation,

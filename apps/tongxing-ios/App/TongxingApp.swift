@@ -21,6 +21,7 @@ struct TongxingApp: App {
                 .tint(Brand.accent)
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .background { model.suspendAlignment() }
+                    if phase == .active { model.playback.refreshLiveActivityPresentation() }
                     model.playback.setStatisticsForeground(phase == .active)
                 }
                 #if DEBUG

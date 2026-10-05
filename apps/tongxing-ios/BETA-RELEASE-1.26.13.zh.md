@@ -27,3 +27,9 @@ What to Test 说明采音 8／10 秒、快速匹配可直接显示互斥终态�
 私有归档、IPA、测试说明与原始冻结记录位于 `artifacts/tongxing-ios/beta-1.26.13-build54/`；上传成功 receipt 位于 `artifacts/tongxing-ios/testflight/20261005T210952Z-1ffd9a53/`。原归档记录保持不变，以追加分发记录引用 Apple 状态。账户与签名材料留在仓库外。
 
 Apple 处理 receipt：`artifacts/tongxing-ios/testflight/20261005T211125Z-cb364990/`；分发及读回 receipt：`artifacts/tongxing-ios/testflight/20261005T212135Z-5843d65c/`；追加记录：`artifacts/tongxing-ios/beta-1.26.13-build54/distribution-record.json`。以上证明内部 TestFlight 可测试，尚不证明设备安装或现场验收。
+
+## 实机反馈：灵动岛验收失败（分发后）
+
+用户在 iPhone 17 Pro / iOS 27.0.1 提供采音截图，只有系统麦克风橙点，没有定位活动内容。设备查询确认安装 `1.26.13 (54)`。用户在麦克风已获授权后重试，Console 观察到同一 transient Activity 创建、更新并约 18 秒后结束，但未得到动态岛可见证据。系统 descriptor 的 `isMomentary=true`，呈现选项含 `Should Show System Aperture: false`；这不是 App 可公开设置的参数，不能据此武断归因于权限或 Widget 缺配置。该版本的前台灵动岛实机验收记为 `failed`，不能用 TestFlight 可用或模拟器生命周期测试替代。
+
+另发现首次麦克风授权回调早于 App active 的独立竞态，修复候选需分别验证；它不能解释这次已成功创建活动的重试。独立诊断 App 使用同一 Widget 组件，不覆盖已安装 Beta，待解锁进行无录音呈现对照。
