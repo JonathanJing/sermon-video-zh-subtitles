@@ -51,7 +51,7 @@ struct ListeningActivityWidget: Widget {
                     if let phase = context.state.alignmentPhase, !context.isStale {
                         Text(verbatim: phase.compactText(english: context.state.usesEnglish))
                     } else {
-                        ListeningActivityElapsed(state: context.state, isStale: context.isStale)
+                        Text(verbatim: context.isStale ? "—" : context.state.compactStatusText)
                     }
                 }
                     .font(.caption.monospacedDigit())
@@ -88,7 +88,17 @@ private struct ListeningActivityCard: View {
                     .foregroundStyle(.secondary)
             }
             .font(.subheadline.monospacedDigit())
-            if state.isPlaying && !isStale {
+            // The system media card owns playback controls. This activity's
+            // distinct Lock Screen content is the verified current subtitle.
+            if state.alignmentPhase == nil && !isStale {
+                if let chinese = state.chineseSubtitle, !chinese.isEmpty {
+                    subtitle(chinese, label: "中文")
+                }
+                if let english = state.englishSubtitle, !english.isEmpty {
+                    subtitle(english, label: "EN")
+                }
+            }
+            if state.isPlaying && !state.isWaiting && !isStale {
                 ProgressView(timerInterval: state.timerInterval, countsDown: false)
                     .labelsHidden()
             } else {
@@ -98,6 +108,15 @@ private struct ListeningActivityCard: View {
         .tint(.green)
         .foregroundStyle(.white)
     }
+
+    private func subtitle(_ text: String, label: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Text(verbatim: label).font(.caption2.bold()).foregroundStyle(.secondary)
+            Text(verbatim: text).font(.subheadline).lineLimit(2)
+        }
+        .accessibilityElement(children: .combine)
+    }
+
 }
 
 private struct ListeningActivitySymbol: View {
@@ -116,7 +135,7 @@ private struct ListeningActivityElapsed: View {
     let isStale: Bool
 
     var body: some View {
-        if state.isPlaying && !isStale {
+        if state.isPlaying && !state.isWaiting && !isStale {
             Text(timerInterval: state.timerInterval, countsDown: false)
                 .monospacedDigit()
                 .multilineTextAlignment(.trailing)

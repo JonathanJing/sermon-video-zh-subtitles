@@ -128,6 +128,9 @@ private enum UITestContent {
                 speaker: "静音夹具", scripture: "自动化验证",
                 tracks: [track(id: "fixture-first", label: "甲音轨", data: firstAudio, duration: 36),
                          track(id: "fixture-second", label: "乙音轨", data: secondAudio, duration: 48.024)],
+                summary: "合成测试说明，用于验证大纲与默想页面。",
+                outline: [OutlineSection(title: "测试大纲", points: ["测试要点"])],
+                questions: ["这是用于测试的默想问题。"],
                 contentReview: "合成测试数据，无真实证道内容或审核声明。",
                 audioNotice: "仅用于界面自动化的本地静音夹具，不是证道内容。",
                 transcript: BilingualTranscript(blocks: [

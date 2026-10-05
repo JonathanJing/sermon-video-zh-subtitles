@@ -2,6 +2,13 @@ import Testing
 @testable import TongxingCore
 
 struct SermonHeadingTests {
+    @Test func identifiersNeverBecomeDisplayTitles() {
+        for title in [nil, "", "resi-20261004-69ba7a66", "audio.mp3", "6B564139-08A5-4FF2-A218-29C247DD7B87"] {
+            #expect(SermonHeading.displayTitle(title, pageID: "resi-20261004-69ba7a66", date: "2026-10-04", fallback: "证道") == "2026-10-04 · 证道")
+        }
+        #expect(SermonHeading.displayTitle("耶稣保守我们", pageID: "page", date: "2026-10-04", fallback: "证道") == "耶稣保守我们")
+        #expect(SermonHeading.displayTitle(nil, pageID: "page", date: "2026-10-04", fallback: "Sermon") == "2026-10-04 · Sermon")
+    }
     @Test func removesOnlyDeclaredSeriesAndRecognizedEdition() {
         let series = "启示录：耶稣带来的安慰与盼望"
         let formal = SermonHeading(title: "耶稣的应许 · \(series)｜正式播放版", series: series, speaker: "Eric Geiger")

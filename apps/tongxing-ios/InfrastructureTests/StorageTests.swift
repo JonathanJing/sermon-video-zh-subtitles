@@ -452,7 +452,77 @@ final class StorageTests {
         #expect(offline.captions[0].text == result.captions[0].text)
         #expect(offline.series == result.series)
         #expect(offline.speaker == result.speaker)
-        #expect(offline.fullText[0].english == nil)
+        #expect(offline.fullText[0].english == "Approved English.")
+        #expect(offline.captions[0].english == "Approved English.")
+    }
+
+    @Test func corruptEnglishCacheFallsBackWithoutHidingTargetText() async throws {
+        let fixture = try publishedTranscriptFixture()
+        installTranscriptFixture(fixture)
+        let repository = MultilingualCatalogRepository(origin: baseURL, cacheDirectory: directory, session: session)
+        _ = try await repository.loadPublishedTranscript(for: fixture.package, page: fixture.page)
+        let files = try FileManager.default.contentsOfDirectory(at: directory.appendingPathComponent("EnglishReferences"), includingPropertiesForKeys: nil)
+        #expect(files.count == 1)
+        var record = try #require(JSONSerialization.jsonObject(with: Data(contentsOf: files[0])) as? [String: Any])
+        // Even structurally valid tampered English must fail the stored byte hash.
+        var reference = try #require(JSONSerialization.jsonObject(with: fixture.english) as? [String: Any])
+        reference["reviewState"] = "withdrawn"
+        record["referenceData"] = try JSONSerialization.data(withJSONObject: reference).base64EncodedString()
+        try JSONSerialization.data(withJSONObject: record).write(to: files[0])
+        stub(.init(chunks: [], error: URLError(.notConnectedToInternet)))
+        let result = try await repository.loadPublishedTranscript(for: fixture.package, page: fixture.page)
+        #expect(result.fullText[0].english == nil)
+        #expect(result.captions[0].english == nil)
+        #expect(result.fullText[0].text == "전체 원고")
+    }
+
+    @Test func invalidNetworkEnglishIsNotSavedOrResurrectedOffline() async throws {
+        let fixture = try publishedTranscriptFixture()
+        installTranscriptFixture(fixture)
+        let repository = MultilingualCatalogRepository(origin: baseURL, cacheDirectory: directory, session: session)
+        _ = try await repository.loadPublishedTranscript(for: fixture.package, page: fixture.page)
+        installTranscriptFixture(fixture, alteredEnglish: Data("broken".utf8))
+        #expect(try await repository.loadPublishedTranscript(for: fixture.package, page: fixture.page).captions[0].english == nil)
+        stub(.init(chunks: [], error: URLError(.notConnectedToInternet)))
+        #expect(try await repository.loadPublishedTranscript(for: fixture.package, page: fixture.page).captions[0].english == nil)
+        #expect(try FileManager.default.contentsOfDirectory(atPath: directory.appendingPathComponent("EnglishReferences").path).isEmpty)
+    }
+
+    @Test func english404UsesOnlyExactBindingCache() async throws {
+        let fixture = try publishedTranscriptFixture()
+        installTranscriptFixture(fixture)
+        let repository = MultilingualCatalogRepository(origin: baseURL, cacheDirectory: directory, session: session)
+        _ = try await repository.loadPublishedTranscript(for: fixture.package, page: fixture.page)
+        StubURLProtocol.install(host: baseURL.host!) { request in
+            switch request.url?.path {
+            case "/releases-v2/page-1/ko.json": return .init(chunks: [fixture.release])
+            case "/content/page-1/ko.json": return .init(chunks: [fixture.content])
+            case "/captions/page-1/ko.json": return .init(chunks: [fixture.captions])
+            default: return .init(status: 404, chunks: [])
+            }
+        }
+        #expect(try await repository.loadPublishedTranscript(for: fixture.package, page: fixture.page).captions[0].english == "Approved English.")
+        // A newly published release for the same page cannot reuse the previous
+        // release's approved English, even with identical target script bytes.
+        var releaseValue = try #require(JSONSerialization.jsonObject(with: fixture.release) as? [String: Any])
+        releaseValue["packageId"] = "page-1-ko-revision"
+        let release = try JSONSerialization.data(withJSONObject: releaseValue, options: [.sortedKeys])
+        let releaseHash = SHA256.hash(data: release).map { String(format: "%02x", $0) }.joined()
+        var pageValue = try #require(JSONSerialization.jsonObject(with: JSONEncoder().encode(fixture.page)) as? [String: Any])
+        var targets = pageValue["targets"] as! [String: [String: Any]]
+        targets["ko"]!["releasePackageJsonSha256"] = releaseHash
+        pageValue["targets"] = targets
+        let page = try JSONDecoder().decode(MultilingualPage.self, from: JSONSerialization.data(withJSONObject: pageValue))
+        let package = try TargetLanguageReleasePackage.decode(release)
+        StubURLProtocol.install(host: baseURL.host!) { request in
+            switch request.url?.path {
+            case "/releases-v2/page-1/ko.json": return .init(chunks: [release])
+            case "/content/page-1/ko.json": return .init(chunks: [fixture.content])
+            case "/captions/page-1/ko.json": return .init(chunks: [fixture.captions])
+            default: return .init(status: 404, chunks: [])
+            }
+        }
+        #expect(try await repository.loadPublishedTranscript(for: package, page: page).captions[0].english == nil)
     }
 
     @Test func publishedTranscriptRejectsTamperedNetworkAndOfflineBytes() async throws {

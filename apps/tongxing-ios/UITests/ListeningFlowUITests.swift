@@ -6,6 +6,51 @@ import XCTest
 /// The explicit live Dev Demo smoke below uses real Hosting assets when opted in.
 @MainActor
 final class ListeningFlowUITests: XCTestCase {
+    func testLargeTextStudyRemainsReadableAndCloseDoesNotStartPlayback() {
+        let app = launchFixture(largeText: true)
+        let entry = app.buttons["open-sermon-study"]
+        if !entry.isHittable { app.scrollViews["listening-scroll"].swipeUp() }
+        XCTAssertTrue(entry.isHittable)
+        entry.tap()
+        let question = app.staticTexts["1. 这是用于测试的默想问题。"]
+        for _ in 0..<4 where !question.isHittable { app.scrollViews["sermon-study-scroll"].swipeUp() }
+        XCTAssertTrue(question.isHittable)
+        screenshot("study-large-text-reflection", app: app)
+        XCTAssertTrue(app.buttons["close-sermon-study"].isHittable)
+        app.buttons["close-sermon-study"].tap()
+        XCTAssertEqual(app.buttons["playback-toggle"].label, "开始播放")
+    }
+
+    func testStudyShowsOutlineAndReflectionWithoutChangingPlayback() {
+        let app = launchFixture()
+        let progress = element("playback-progress", in: app)
+        let before = (progress.value as? String)?.components(separatedBy: "，").first
+        let entry = app.buttons["open-sermon-study"]
+        XCTAssertTrue(entry.waitForExistence(timeout: 5))
+        entry.tap()
+        XCTAssertTrue(app.staticTexts["测试大纲"].waitForExistence(timeout: 5))
+        let scroll = app.scrollViews["sermon-study-scroll"]
+        scroll.swipeUp()
+        XCTAssertTrue(app.staticTexts["1. 这是用于测试的默想问题。"].exists)
+        screenshot("study-outline-reflection", app: app)
+        app.buttons["close-sermon-study"].tap()
+        XCTAssertEqual((progress.value as? String)?.components(separatedBy: "，").first, before)
+        XCTAssertEqual(app.buttons["playback-toggle"].label, "开始播放")
+    }
+
+    func testPublishedStudyMissingFieldsHasExplicitEmptyStates() {
+        let app = launchFixture(locateFlow: true)
+        let entry = app.buttons["open-sermon-study"]
+        XCTAssertTrue(entry.waitForExistence(timeout: 5))
+        entry.tap()
+        XCTAssertTrue(app.staticTexts["sermon-study-outline-unavailable"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["sermon-study-questions-unavailable"].exists)
+        screenshot("study-published-missing", app: app)
+        app.buttons["close-sermon-study"].tap()
+        XCTAssertTrue(app.staticTexts["published-page-title"].exists)
+        XCTAssertEqual(app.buttons["playback-toggle"].label, "开始播放")
+    }
+
     func testPlaybackStatusAndMoreLabelAreVisibleAtRegularTextSize() {
         let app = launchFixture()
         let status = app.staticTexts["playback-status-detail"]
