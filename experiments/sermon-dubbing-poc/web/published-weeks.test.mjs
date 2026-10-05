@@ -520,3 +520,21 @@ test('changed or missing study bytes isolate the affected locale and legacy v2 n
   assert.equal(old.weeks[0].studyStatus,'unavailable');
   assert.deepEqual(old.weeks[0].meditation,[]);
 });
+
+test('simulated review page is excluded from production and visibly labelled in Dev', async () => {
+  const f = fixture();
+  const catalog = JSON.parse(f.files.get('/multilingual-v3.json'));
+  catalog.pages[0].simulationOnly = true;
+  for (const target of Object.values(catalog.pages[0].targets)) target.simulationOnly = true;
+  f.files.set('/multilingual-v3.json', JSON.stringify(catalog));
+  const production = await loadPublishedWeeks(f.fetchImpl);
+  assert.equal(production.weeks.length, 0);
+  const dev = await loadPublishedWeeks(f.fetchImpl, {allowDevCandidates:true});
+  assert.equal(dev.weeks.length, 1);
+  for (const variant of Object.values(dev.weeks[0].contentVariants)) {
+    assert.equal(variant.releaseLabel, '模拟审核测试');
+    assert.equal(variant.humanContentReview, 'simulated');
+    assert.equal(variant.simulationOnly, true);
+    assert.equal(variant.productionStages[0].status, 'review');
+  }
+});

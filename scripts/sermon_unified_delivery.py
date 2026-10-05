@@ -87,7 +87,7 @@ def _products(value, args):
     source = builder.stage.read_package(args.source, 'sermon-english-source-package-v1.schema.json')
     d.require(source['status'] == 'ready_for_translation', 'English source is not approved')
     source_sha = builder.stage.canonical_sha(source)
-    metadata = builder.formal_assets.checked_metadata(args.metadata_approval, args.metadata_proposal, args.page_id, args.date, args.locales)
+    metadata = builder.formal_assets.checked_metadata(args.metadata_approval, args.metadata_proposal, args.page_id, args.date, args.locales, release_intent=value["intent"])
     maps = {name: builder.assignment_map(getattr(args, name), args.locales) for name in MAPS}
     joins = {}
     for locale in args.locales:

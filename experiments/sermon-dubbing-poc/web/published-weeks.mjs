@@ -369,6 +369,12 @@ async function loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal, allow
     meditation: study?.meditation.sections || [], studyArtifacts: study ? {outline:release.fourProducts.outlineArtifactSha256,meditation:release.fourProducts.meditationArtifactSha256} : null,
     fourProducts: study ? release.fourProducts : null, studyStatus: study ? 'human_reviewed' : 'unavailable',
     ...(candidate ? {devCandidate:true,releaseStatus:'candidate',contentReview:'人工审核候选；尚未发布验收。',productionStages:[{label:'发布与验收',detail:'candidate · not_run',status:'review'}]} : {}),
+    ...(page.simulationOnly === true || target.simulationOnly === true ? {
+      releaseLabel: '模拟审核测试', humanContentReview: 'simulated', studyStatus: study ? 'simulated' : 'unavailable',
+      audioNotice: '测试音轨；模拟审核不构成真人听审或同步批准。',
+      contentReview: '模拟审核测试；不构成正式内容批准。',
+      productionStages: [{label:'测试交付', detail:'simulationOnly · 非正式内容批准', status:'review'}],
+    } : {}),
     questions: [], scriptureRefs: [content.scripture], tracks: [track], fullTranscript,
     contentSha256: assets.content.sha256, captionsSha256: assets.captions.sha256,
     releasePackageJsonSha256: target.releasePackageJsonSha256,

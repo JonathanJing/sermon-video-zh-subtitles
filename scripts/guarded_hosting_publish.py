@@ -13,6 +13,11 @@ import subprocess
 from pathlib import Path
 from urllib.parse import quote
 from datetime import datetime, timezone
+# Nested v3 validators import the scripts package, including direct CLI runs.
+if __package__ in (None, ''):
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 try:
     from scripts import delivery_contract as contract
     from scripts.sermon_execution_harness import atomic_json

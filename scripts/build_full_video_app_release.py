@@ -22,6 +22,11 @@ from pathlib import Path
 
 from jsonschema import Draft202012Validator, FormatChecker
 
+# Nested v3 validators import the scripts package, including direct CLI runs.
+if __package__ in (None, ''):
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 try:
     from scripts import stage_formal_multilingual_dev as stage
     from scripts import build_formal_dev_release_assets as formal_assets
@@ -38,8 +43,33 @@ ROOT = Path(__file__).resolve().parents[1]
 LOCALES = ("zh-Hans", "ko", "es")
 ACCEPT_NOT_RUN = {"status": "not_run", "evidenceSha256": None}
 PAGE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,159}$")
-RUNTIME_WEB_FILES = ('app.mjs', 'published-weeks.mjs', 'content-locales.mjs')
 RUNTIME_WEB_ROOT = ROOT / 'experiments/sermon-dubbing-poc/web'
+
+
+def runtime_web_files(root=RUNTIME_WEB_ROOT):
+    """Freeze the reader's complete local ES-module import closure."""
+    pending = ['app.mjs', 'published-weeks.mjs', 'content-locales.mjs']
+    found = set()
+    imports = re.compile(r"(?:\bfrom\s*|\bimport\s*(?:\(\s*)?)[\"']([./][^\"']+\.mjs)[\"']")
+    root = Path(root).resolve()
+    while pending:
+        name = pending.pop()
+        if name in found:
+            continue
+        path = (root / name).resolve()
+        if not path.is_relative_to(root) or path.suffix != '.mjs' or not path.is_file():
+            raise ValueError('Reader module dependency is missing or outside the Web root: ' + name)
+        found.add(name)
+        for specifier in imports.findall(path.read_text()):
+            dependency = (root / specifier.lstrip('/')) if specifier.startswith('/') else path.parent / specifier
+            dependency = dependency.resolve()
+            if not dependency.is_relative_to(root):
+                raise ValueError('Reader dependency escapes Web root')
+            pending.append(dependency.relative_to(root).as_posix())
+    return tuple(sorted(found))
+
+
+RUNTIME_WEB_FILES = runtime_web_files()
 
 
 def require(condition: bool, message: str) -> None:
@@ -168,7 +198,8 @@ def prepare(args: argparse.Namespace) -> dict:
     else:
         require(args.metadata_approval and args.metadata_proposal, "Approved metadata is required")
         metadata = formal_assets.checked_metadata(args.metadata_approval, args.metadata_proposal,
-                                                  args.page_id, args.date, locales)
+                                                  args.page_id, args.date, locales,
+                                                  release_intent=read(args.release_intent) if getattr(args, "release_intent", None) else None)
     if getattr(args, "release_intent", None):
         delivery_contract.validate_intent(read(args.release_intent), read(args.routes))
         for fields in metadata["locales"].values():
@@ -233,7 +264,12 @@ def prepare(args: argparse.Namespace) -> dict:
             content_sha = hashlib.sha256(content_bytes).hexdigest()
             content = json.loads(content_bytes)
             if getattr(args, "release_intent", None):
-                delivery_contract.validate_metadata(content, measured_duration=stage.decode_audio(track, f"{locale} display duration"))
+                # The page and reading cues use source-video time. A natural
+                # dubbed track has its own independently decoded duration.
+                stage.decode_audio(track, f"{locale} audio integrity")
+                window = source["source"]["approvedWindow"]
+                delivery_contract.validate_metadata(content, measured_duration=
+                    window["endSeconds"] - window["startSeconds"])
             require(content.get("schemaVersion") == "sermon-full-video-text-content-v1"
                     and content.get("status") == "human_reviewed"
                     and content.get("pageId") == args.page_id
