@@ -239,6 +239,12 @@ def _validate_event_uncached(row, checker):
     if kind.startswith('sdk_call_'):
         if (row['coveredResponseIds'] is None) != (row['coverageStatus'] == 'unknown'):
             raise ContractError('sdk_coverage_conflict')
+    if row.get('code') == 'model_call_observation':
+        from scripts.sermon_model_call_observation import safe_observation
+        try:
+            safe_observation(row['fields'])
+        except (ValueError, KeyError, TypeError) as exc:
+            raise ContractError('invalid_model_call_observation') from exc
     if row.get('code') == 'decision_observation':
         f = row['fields']
         if ((f['phase'] == 'commit') != f['status'].startswith('commit_') or

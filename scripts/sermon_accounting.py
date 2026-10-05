@@ -758,6 +758,12 @@ def _valid_event(value):
     }.get(value["event"])
     if required is None or any(not isinstance(value.get(k), kind) for k, kind in required.items()):
         return False
+    if value.get('code') == 'model_call_observation':
+        from scripts.sermon_model_call_observation import safe_observation
+        try:
+            safe_observation(value['fields'])
+        except (ValueError, KeyError, TypeError):
+            return False
     for key in ("workflowId", "spanId", "attemptId", "responseId", "invocationId"):
         if value.get(key) is not None and not isinstance(value[key], str):
             return False
@@ -1150,6 +1156,8 @@ def _summarize_events(events, damaged, ledger_hash, replay):
                         "Known USD is an API list-price estimate, not an invoice or complete project cost.",
                         "Local compute, storage, network and in-conversation Codex costs are not allocated.",
                         "Missing usage/cost remains unknown; caches do not re-bill old responses."]}
+    from scripts.sermon_model_call_report import report as model_call_report
+    result['modelCallReport'] = model_call_report(events)
     # One row per attempt, including a killed process with no finish event. The
     # grouped stages.csv intentionally remains an aggregate for old consumers.
     attempts = []
@@ -1187,6 +1195,17 @@ def _write_summary(directory, result, events):
             "cacheHit", "billing"))
         writer.writeheader(); writer.writerows(attempts)
     attempts_temp.replace(directory / "stage-attempts.csv")
+    calls_temp = directory / ('.model-calls-' + uuid.uuid4().hex + '.csv')
+    calls = result['modelCallReport']['calls']
+    with open(calls_temp, 'w', newline='', encoding='utf-8-sig', opener=_private_open) as stream:
+        if calls:
+            # Nested numeric usage/rates retain their fields as JSON cells.
+            keys = sorted({key for call in calls for key in call})
+            writer = csv.DictWriter(stream, fieldnames=keys)
+            writer.writeheader()
+            writer.writerows({key: json.dumps(value, sort_keys=True) if isinstance(value, (dict, list)) else value
+                             for key, value in call.items()} for call in calls)
+    calls_temp.replace(directory / 'model-calls.csv')
     log_temp = directory / (".operations-" + uuid.uuid4().hex + ".log")
     with open(log_temp, "w", opener=_private_open) as stream:
         for event in events:
