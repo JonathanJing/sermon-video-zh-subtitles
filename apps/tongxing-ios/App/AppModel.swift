@@ -86,6 +86,26 @@ final class AppModel: ObservableObject {
     @Published private(set) var alignmentStatus = "请播放同一录音的原声，再点击听声对齐。"
     @Published private(set) var alignmentBusy = false
     @Published private(set) var alignmentPosition: Double?
+    @Published private(set) var foregroundAlignmentPhase: ListeningAlignmentPhase?
+    private var alignmentPhaseObservation: AnyCancellable?
+    private var alignmentFeedbackForeground = true
+    private var foregroundAlignmentTransaction = false
+
+    // Observe the controller's transaction, including its existing eight-second
+    // result lifetime. Returning from background must not replay an old result.
+    func updateForegroundAlignmentPhase(_ phase: ListeningAlignmentPhase?) {
+        if phase == .preparing { foregroundAlignmentTransaction = alignmentFeedbackForeground }
+        if phase == nil { foregroundAlignmentTransaction = false }
+        foregroundAlignmentPhase = alignmentFeedbackForeground && foregroundAlignmentTransaction ? phase : nil
+    }
+
+    func setAlignmentFeedbackForeground(_ foreground: Bool) {
+        alignmentFeedbackForeground = foreground
+        if !foreground {
+            foregroundAlignmentTransaction = false
+            foregroundAlignmentPhase = nil
+        }
+    }
     private var alignmentController: AudioAlignmentController!
     private(set) var hasAlignmentFeedback = false
     struct AlignmentFailure: Identifiable {
@@ -143,6 +163,7 @@ final class AppModel: ObservableObject {
 
     func cancelAlignment() { alignmentController.cancel(resume: true) }
     func suspendAlignment() {
+        setAlignmentFeedbackForeground(false)
         alignmentController.cancel(message: "App 已进入后台，听声对齐已停止。", resume: true)
     }
 
@@ -194,6 +215,9 @@ final class AppModel: ObservableObject {
         languagePreferences = savedPreferences?.schemaVersion == "tongxing-language-preferences-v2"
             ? savedPreferences! : .empty
         playback = PlaybackController(historyURL: support.appendingPathComponent("playback-history-v1.json"))
+        alignmentPhaseObservation = playback.$alignmentPhase.sink { [weak self] phase in
+            self?.updateForegroundAlignmentPhase(phase)
+        }
         playback.configureStatistics(origin: mediaOrigin, defaults: statisticsDefaults, session: contentOrigin == nil ? nil : session)
         repository = CatalogRepository(
                 catalogURL: mediaOrigin.appendingPathComponent("weekly.json"),

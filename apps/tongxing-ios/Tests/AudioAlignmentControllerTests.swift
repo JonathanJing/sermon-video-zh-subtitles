@@ -5,6 +5,55 @@ import XCTest
 
 @MainActor
 final class AudioAlignmentControllerTests: XCTestCase {
+    func testForegroundAlignmentFeedbackObservesPlaybackAndExistingResultExpiry() async throws {
+        guard Bundle.main.object(forInfoDictionaryKey: "TongxingURLScheme") as? String == "tongxing-beta" else {
+            throw XCTSkip("Foreground alignment is enabled only in the Beta identity")
+        }
+        let model = AppModel(supportDirectory: FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString), contentOrigin: URL(string: "https://example.invalid")!)
+        model.playback.setAlignmentPhase(.preparing)
+        model.playback.setAlignmentPhase(.listening)
+        model.playback.setAlignmentPhase(.aligned)
+        XCTAssertEqual(model.foregroundAlignmentPhase, .aligned)
+        try await Task.sleep(for: .milliseconds(8_300))
+        XCTAssertNil(model.playback.alignmentPhase)
+        XCTAssertNil(model.foregroundAlignmentPhase)
+    }
+
+    func testForegroundAlignmentFeedbackFollowsFastTransactionAndClearsWithController() {
+        let model = AppModel(supportDirectory: FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString), contentOrigin: URL(string: "https://example.invalid")!)
+        XCTAssertNil(model.foregroundAlignmentPhase)
+        // A terminal phase without an explicit transaction is not a popup.
+        model.updateForegroundAlignmentPhase(.aligned)
+        XCTAssertNil(model.foregroundAlignmentPhase)
+        for result in [ListeningAlignmentPhase.aligned, .unmatched, .failed] {
+            model.updateForegroundAlignmentPhase(.preparing)
+            model.updateForegroundAlignmentPhase(.listening)
+            model.updateForegroundAlignmentPhase(.matching)
+            model.updateForegroundAlignmentPhase(result)
+            XCTAssertEqual(model.foregroundAlignmentPhase, result)
+            model.updateForegroundAlignmentPhase(nil)
+            XCTAssertNil(model.foregroundAlignmentPhase)
+        }
+    }
+
+    func testForegroundAlignmentFeedbackDoesNotReplayAfterBackground() {
+        let model = AppModel(supportDirectory: FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString), contentOrigin: URL(string: "https://example.invalid")!)
+        model.updateForegroundAlignmentPhase(.preparing)
+        model.updateForegroundAlignmentPhase(.listening)
+        model.setAlignmentFeedbackForeground(false)
+        XCTAssertNil(model.foregroundAlignmentPhase)
+        model.updateForegroundAlignmentPhase(.failed)
+        model.setAlignmentFeedbackForeground(true)
+        model.updateForegroundAlignmentPhase(.failed)
+        XCTAssertNil(model.foregroundAlignmentPhase)
+        model.updateForegroundAlignmentPhase(.preparing)
+        model.updateForegroundAlignmentPhase(.listening)
+        XCTAssertEqual(model.foregroundAlignmentPhase, .listening)
+    }
+
     func testDevCandidateSelectionRequiresBetaIdentityAndExactOrigin() throws {
         let origin = URL(string: "https://ai-for-god-sermon-audio-dev.web.app")!
         XCTAssertTrue(AppModel.permitsDevCandidates(origin: origin, bundleIdentifier: "com.jonathanjing.tongxing.beta"))

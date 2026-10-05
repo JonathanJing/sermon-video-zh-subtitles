@@ -104,6 +104,33 @@ final class SwiftUIPreviewTests: XCTestCase {
         }
     }
 
+    func testRenderLockScreenSubtitleSnapshots() async throws {
+        guard ProcessInfo.processInfo.environment["TONGXING_SUBTITLE_SNAPSHOT_PREVIEW"] == "1" else {
+            throw XCTSkip("Opt-in shared lock-screen content preview")
+        }
+        for english in [false, true] {
+            for stale in [false, true] {
+                let state = ListeningActivityAttributes.ContentState(title: "耶稣审判并保守", speaker: "Eric Geiger",
+                    position: 126, duration: 1962, isPlaying: true, isWaiting: false,
+                    sampledAt: Date(timeIntervalSince1970: 1791235680), languageCode: english ? "en" : "zh",
+                    subtitleID: "fixture", chineseSubtitle: "人生还有比那严峻得多的时刻。",
+                    englishSubtitle: "And there are much more serious moments in life.")
+                let view = VStack(spacing: 12) {
+                    ListeningActivityCard(state: state, isStale: stale)
+                        .padding(16).foregroundStyle(.white).background(.black, in: RoundedRectangle(cornerRadius: 28))
+                    Text("共享 SwiftUI 内容预览 · 非系统锁屏截图").font(.caption).foregroundStyle(.secondary)
+                }.padding(20).frame(width: 402).background(Color(uiColor: .systemGroupedBackground))
+                let renderer = ImageRenderer(content: view.environment(\.colorScheme, .dark)
+                    .environment(\.dynamicTypeSize, .large))
+                renderer.scale = 3
+                let attachment = XCTAttachment(image: try XCTUnwrap(renderer.uiImage))
+                attachment.name = "subtitle-snapshot-\(english ? "en" : "zh")-\(stale ? "stale" : "fresh").png"
+                attachment.lifetime = .keepAlways
+                add(attachment)
+            }
+        }
+    }
+
     func testRenderRequestedViews() async throws {
         guard let encoded = ProcessInfo.processInfo.environment["TONGXING_PREVIEW_REQUEST"],
               !encoded.isEmpty, !encoded.hasPrefix("$(") else {

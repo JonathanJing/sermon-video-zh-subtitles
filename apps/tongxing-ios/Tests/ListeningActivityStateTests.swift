@@ -110,6 +110,16 @@ final class ListeningActivityStateTests: XCTestCase {
         }
     }
 
+    func testSubtitleSnapshotLabelsExplainFreshnessInBothLanguages() {
+        var state = ListeningActivityAttributes.ContentState(title: "Fixture", speaker: "", position: 0,
+            duration: 300, isPlaying: true, isWaiting: false, sampledAt: Date(), languageCode: "zh")
+        XCTAssertEqual(state.subtitleSnapshotLabel, "最近同步字幕")
+        XCTAssertEqual(state.subtitleStaleMessage, "字幕尚未刷新，打开同行查看实时字幕。")
+        state.languageCode = "en"
+        XCTAssertEqual(state.subtitleSnapshotLabel, "Last synced captions")
+        XCTAssertEqual(state.subtitleStaleMessage, "Captions haven't refreshed. Open Tongxing for live captions.")
+    }
+
     func testNoMatchIsDistinctFromTechnicalFailure() {
         XCTAssertEqual(ListeningAlignmentPhase.unmatched.symbolName, "questionmark.circle")
         XCTAssertEqual(ListeningAlignmentPhase.failed.symbolName, "exclamationmark.triangle")

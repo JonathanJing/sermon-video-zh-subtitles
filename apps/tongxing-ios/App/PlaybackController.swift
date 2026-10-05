@@ -60,7 +60,7 @@ final class PlaybackController: ObservableObject {
     }
 
     private let liveActivity = ListeningLiveActivityCoordinator()
-    private var alignmentPhase: ListeningAlignmentPhase?
+    @Published private(set) var alignmentPhase: ListeningAlignmentPhase?
     private var alignmentSessionID: UUID?
     private var alignmentFeedbackTask: Task<Void, Never>?
 

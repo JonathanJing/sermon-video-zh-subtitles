@@ -30,7 +30,9 @@
 		7EC13E455FCB8AD28F90271C /* AudioAlignmentController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98A292DFC6FBB07302A4DE77 /* AudioAlignmentController.swift */; };
 		82DAE4DBC18C3F1A4BD05687 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 02EF54CEB76892C25F99A6FB /* Localizable.xcstrings */; };
 		8B8A2624687249CFAB61DAFB /* ListeningFlowUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 239227789D17BF0B1B0A1614 /* ListeningFlowUITests.swift */; };
+		929F88DB6567F7C0CF7A5B91 /* ListeningActivityCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31BF35CC679A65F678EA91AF /* ListeningActivityCard.swift */; };
 		94B466A5A536CBD9995786DE /* EnglishLocateSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FEF8605856DB0FE84A04EC2 /* EnglishLocateSheet.swift */; };
+		97DAC43194A8678823249118 /* ListeningActivityCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31BF35CC679A65F678EA91AF /* ListeningActivityCard.swift */; };
 		9A00442EA947A8B5939AB68B /* AppIdentityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 502E58B32BA9CB649A03DB11 /* AppIdentityTests.swift */; };
 		9D37A5E9084A59C6C69B0EEA /* ListeningLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD504056359930D928DD8069 /* ListeningLiveActivity.swift */; };
 		A442F0B6EE2D16D0DAE46A00 /* SwiftUIPreviewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6163F70382A5001D532DC114 /* SwiftUIPreviewTests.swift */; };
@@ -98,6 +100,7 @@
 		1EB48128E58E88F812DC4214 /* MicrophoneCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MicrophoneCapture.swift; sourceTree = "<group>"; };
 		239227789D17BF0B1B0A1614 /* ListeningFlowUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningFlowUITests.swift; sourceTree = "<group>"; };
 		270C99CB4AFCBD470C0E1B75 /* VoiceDemoSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceDemoSection.swift; sourceTree = "<group>"; };
+		31BF35CC679A65F678EA91AF /* ListeningActivityCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningActivityCard.swift; sourceTree = "<group>"; };
 		3258F6BBF467D18B238176B8 /* Tongxing.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Tongxing.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		34B67E7FE8944242C03C8904 /* PlaybackController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackController.swift; sourceTree = "<group>"; };
 		3A757BEABA30910DC76E26BE /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -179,6 +182,7 @@
 			isa = PBXGroup;
 			children = (
 				60D53F716EC96280DEAF16C4 /* ListeningActivityAttributes.swift */,
+				31BF35CC679A65F678EA91AF /* ListeningActivityCard.swift */,
 				5E3111940D7C3B3B498040BE /* ListeningActivityIslandContent.swift */,
 			);
 			path = Shared;
@@ -467,6 +471,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				CAB48F9F80542B5845FEF4B7 /* ListeningActivityAttributes.swift in Sources */,
+				929F88DB6567F7C0CF7A5B91 /* ListeningActivityCard.swift in Sources */,
 				5D5BA27D9E3CADE01803472C /* ListeningActivityIslandContent.swift in Sources */,
 				6C29EA8473280EA03BE25CF6 /* ListeningActivityWidget.swift in Sources */,
 			);
@@ -483,6 +488,7 @@
 				C7430BCC556F70CBE78D8CDB /* DesignSystem.swift in Sources */,
 				94B466A5A536CBD9995786DE /* EnglishLocateSheet.swift in Sources */,
 				32B58C5985220B581D4CF45B /* ListeningActivityAttributes.swift in Sources */,
+				97DAC43194A8678823249118 /* ListeningActivityCard.swift in Sources */,
 				2DD4B90788915C7E33D9F618 /* ListeningActivityIslandContent.swift in Sources */,
 				9D37A5E9084A59C6C69B0EEA /* ListeningLiveActivity.swift in Sources */,
 				1F287CC791B5CA1037903C80 /* Localization.swift in Sources */,
@@ -535,7 +541,7 @@
 			baseConfigurationReference = 58CF4F36B9265709AAF09A1C /* Signing.xcconfig */;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
-				CURRENT_PROJECT_VERSION = 54;
+				CURRENT_PROJECT_VERSION = 55;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ListeningActivityExtension/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -543,7 +549,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.26.13;
+				MARKETING_VERSION = 1.26.14;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.jonathanjing.tongxing.beta.listening-activity";
 				PRODUCT_NAME = ListeningActivityExtension;
 				SDKROOT = iphoneos;
@@ -860,14 +866,14 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 54;
+				CURRENT_PROJECT_VERSION = 55;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = App/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.26.13;
+				MARKETING_VERSION = 1.26.14;
 				OTHER_LDFLAGS = "$(inherited) -weak_framework ActivityKit";
 				PRODUCT_BUNDLE_IDENTIFIER = com.jonathanjing.tongxing.beta;
 				PRODUCT_NAME = Tongxing;
@@ -887,14 +893,14 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 54;
+				CURRENT_PROJECT_VERSION = 55;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = App/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.26.13;
+				MARKETING_VERSION = 1.26.14;
 				OTHER_LDFLAGS = "$(inherited) -weak_framework ActivityKit";
 				PRODUCT_BUNDLE_IDENTIFIER = com.jonathanjing.tongxing.beta;
 				PRODUCT_NAME = Tongxing;
@@ -931,7 +937,7 @@
 			baseConfigurationReference = 58CF4F36B9265709AAF09A1C /* Signing.xcconfig */;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
-				CURRENT_PROJECT_VERSION = 54;
+				CURRENT_PROJECT_VERSION = 55;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ListeningActivityExtension/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -939,7 +945,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.26.13;
+				MARKETING_VERSION = 1.26.14;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.jonathanjing.tongxing.beta.listening-activity";
 				PRODUCT_NAME = ListeningActivityExtension;
 				SDKROOT = iphoneos;

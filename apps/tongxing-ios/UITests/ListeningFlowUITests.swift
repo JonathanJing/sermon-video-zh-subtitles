@@ -13,21 +13,20 @@ final class ListeningFlowUITests: XCTestCase {
         app.launchEnvironment["TONGXING_TEST_HOST"] = "0"
         app.launch()
         XCTAssertTrue(app.staticTexts["sermon-title"].waitForExistence(timeout: 10))
-        Thread.sleep(forTimeInterval: 4)
-        let listening = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
-        listening.name = "foreground-alignment-listening"
-        listening.lifetime = .keepAlways
-        add(listening)
-        Thread.sleep(forTimeInterval: 12)
-        let aligned = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
-        aligned.name = "foreground-alignment-aligned"
-        aligned.lifetime = .keepAlways
-        add(aligned)
-        Thread.sleep(forTimeInterval: 22)
-        let unmatched = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
-        unmatched.name = "foreground-alignment-unmatched"
-        unmatched.lifetime = .keepAlways
-        add(unmatched)
+        // Await actual phases instead of wall-clock sleeps: launch and accessibility
+        // snapshots can take long enough to miss the short result lifetime.
+        for (phase, timeout) in [("listening", 10.0), ("matching", 10.0),
+                                 ("aligned", 10.0), ("unmatched", 25.0)] {
+            let feedback = app.descendants(matching: .any)["foreground-alignment-feedback-\(phase)"]
+            XCTAssertTrue(feedback.waitForExistence(timeout: timeout))
+            let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+            attachment.name = "foreground-alignment-\(phase)"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+        }
+        let unmatched = app.descendants(matching: .any)["foreground-alignment-feedback-unmatched"]
+        let cleared = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: unmatched)
+        XCTAssertEqual(XCTWaiter.wait(for: [cleared], timeout: 10), .completed)
         app.terminate()
     }
 

@@ -74,6 +74,11 @@ struct ContentView: View {
             )
             .overlay { playbackMoreOverlay }
         }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if let phase = model.foregroundAlignmentPhase {
+                alignmentFeedbackBar(phase)
+            }
+        }
         .environment(\.locale, localization.locale)
         #if os(iOS)
         .onReceive(NotificationCenter.default.publisher(for: .betaNotificationOpened)) { _ in
@@ -111,10 +116,31 @@ struct ContentView: View {
         .onChange(of: model.selectedPageID) { _, _ in locateConfirmation = nil }
         .onChange(of: localization.language) { _, _ in model.refreshSystemPresentation() }
         .onChange(of: scenePhase) { _, phase in
+            if phase == .background { model.setAlignmentFeedbackForeground(false) }
+            if phase == .active { model.setAlignmentFeedbackForeground(true) }
             if phase != .active { playback.saveProgress() }
             else { localization.refreshSystemLanguage() }
             updateAlignmentFailurePresentation()
         }
+    }
+
+    private func alignmentFeedbackBar(_ phase: ListeningAlignmentPhase) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: phase.symbolName)
+                .font(.title3)
+                .foregroundStyle(phase == .failed ? Color.orange : Brand.accent)
+                .accessibilityHidden(true)
+            Text(phase == .failed ? localization.text("听音对齐未完成")
+                 : phase.statusText(english: localization.language != .simplifiedChinese))
+                .font(.subheadline.weight(.semibold))
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(.background)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("foreground-alignment-feedback-\(phase.rawValue)")
     }
 
     private func updateAlignmentFailurePresentation() {
