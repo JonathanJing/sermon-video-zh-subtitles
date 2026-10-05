@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 import fcntl
 import json
 from pathlib import Path
+import re
 import sys
 from typing import Any, Callable
 
@@ -147,6 +148,28 @@ def deterministic_review(aligned_path: Path, manifest: dict[str, Any]) -> dict[s
     rebuild_matches = False
     if valid_input and hash_matches and manifest.get("schemaVersion") == anchors.ANCHOR_SCHEMA_V2:
         policy = manifest.get("policy", {})
+        identity_offsets = {}
+        for unit in manifest.get("sourceUnits", []):
+            chunk = unit.get("referenceChunkId")
+            if chunk in identity_offsets:
+                continue
+            unit_match = re.fullmatch(r".+-u(\d+)", str(unit.get("sourceUnitId", "")))
+            sentence_match = re.fullmatch(r".+-s(\d+)", str(unit.get("sourceSentenceId", "")))
+            words = unit.get("words") if isinstance(unit.get("words"), list) else []
+            word_match = re.fullmatch(r".+-w(\d+)", str(words[0].get("wordId", ""))) if words else None
+            if not (isinstance(chunk, str) and unit_match and sentence_match and word_match
+                    and unit.get("partIndex") == 1):
+                identity_offsets = {}
+                break
+            identity_offsets[chunk] = {
+                "sentence": int(sentence_match.group(1)) - 1,
+                "word": int(word_match.group(1)) - 1,
+                "unit": int(unit_match.group(1)) - 1,
+            }
+        offsets_valid = set(identity_offsets) == {
+            str(segment.get("referenceChunkId", "")).strip() for segment in aligned
+            if str(segment.get("referenceChunkId", "")).strip()
+        }
         rebuilt = anchors.build_anchor_manifest(
             aligned,
             source_path=aligned_path,
@@ -159,6 +182,8 @@ def deterministic_review(aligned_path: Path, manifest: dict[str, Any]) -> dict[s
             max_end_lag_seconds=policy.get("maxEndLagSeconds", 8.0),
             word_duration_outlier_seconds=policy.get("wordDurationOutlierSeconds", 2.5),
             boundary_overrides=policy.get("boundaryOverrides"),
+            identity_offsets=identity_offsets if offsets_valid else None,
+            allow_out_of_scope_overrides=offsets_valid,
         )
         rebuilt["input"]["mfaSegments"] = manifest.get("input", {}).get("mfaSegments")
         rebuild_matches = rebuilt == manifest
