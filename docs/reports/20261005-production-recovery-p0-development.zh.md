@@ -32,6 +32,6 @@
 
 ## 下一阶段
 
-先以完整 job/settings 生产者快照把恢复清单接到实际周日 run，核对计划次数与真实新增调用／hash；当前 helper 不自动生成该快照，也不替代完整生产准入。随后再开发跨 job 复用／ASR cache 迁移和 receipt 快路径，用实际 474 单元 manifest 比较墙钟与 I/O；本轮未测得这些优化的节省。
+先以完整 job/settings 生产者快照把恢复清单接到实际周日 run，核对计划次数与真实新增调用／hash；当前 helper 不自动生成该快照，也不替代完整生产准入。随后开发跨 job 复用／ASR cache 迁移，并验收已有 receipt 快路径：当前 formal renderer 已接 `ValidatedJobContext`，待用实际 474 单元 manifest 比较墙钟与 I/O，再按结果优化；本轮未测得这些优化的节省。当前实现/真实/fake 缺项完整对照见[PR #248 测试审计](20261005-pr248-test-coverage-backlog-audit.zh.md)。
 
 同步修复按分组听审和原 anchor 校对推进，优先检查 g003/g004；如确需改口播则回 L2 新 revision，保留完整经文与语义。模型驻留、跨主机容量 broker 和有界 DAG 仍是后续阶段，未在这批代码中放开并发或占槽限制。

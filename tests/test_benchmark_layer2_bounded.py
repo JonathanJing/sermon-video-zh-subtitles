@@ -60,13 +60,22 @@ class BoundedLayer2BenchmarkTests(unittest.TestCase):
             answer = self.fixture.fake_call(key, payload)
             actual.append(payload)
             return answer
-        subject.production.run(self.f.source, self.f.anchor, self.f.policy, self.out / 'formal-fixture', 'fixture-key', call)
+        # Compare the same pinned-plugin production path that capture_prompts
+        # uses; omitting the plugin deliberately selects the legacy prompt.
+        formal_out = self.out / 'formal-fixture'
+        subject.production.run(self.f.source, self.f.anchor, self.f.policy,
+            formal_out, 'fixture-key', call, plugin_path=self.f.plugin_path)
+        receipt = subject.read(formal_out / 'rule-preflight.json')
         for index, row in enumerate(self.selected):
             translate = subject.production.model_payload('translator', row['prompts']['translator'], self.f.policy)
             self.assertEqual(translate, actual[index * 2])
+            self.assertIn('modelRules', row['prompts']['translator']['input'])
+            subject.production.rule_preflight.verify_model_prompt(
+                'translator', row['prompts']['translator'], receipt, self.f.policy)
             reviewed = copy.deepcopy(row['prompts']['reviewer'])
             reviewed['input']['astraDraft'] = json.loads(actual[index * 2 + 1]['messages'][1]['content'])['astraDraft']
             self.assertEqual(subject.production.model_payload('reviewer', reviewed, self.f.policy), actual[index * 2 + 1])
+            subject.production.rule_preflight.verify_model_prompt('reviewer', reviewed, receipt, self.f.policy)
         partial = subject.capture_prompts(self.f.source, self.f.anchor, self.f.policy,
             self.plan, [0], self.out / 'partial-capture', self.f.plugin_path)
         self.assertEqual(partial[0]['prompts']['translator']['input']['context']['after'], self.request['sourceUnits'][1:])

@@ -1,6 +1,6 @@
 # Dev 统一 Backlog
 
-更新：2026-10-04。本页是项目 **Dev 开发工作的唯一顶层 backlog**，统一管理四层生产、Firebase Dev、Web／iOS、现场对齐、审核后台、Tracker、CI/CD 和独立 `live_session` 的优先级与依赖。新增开发事项先在这里取得稳定 ID；专项文档只展开接口、实现和验收，不再各自形成互相竞争的顶层排期。
+更新：2026-10-05。本页是项目 **Dev 开发工作的唯一顶层 backlog**，统一管理四层生产、Firebase Dev、Web／iOS、现场对齐、审核后台、Tracker、CI/CD 和独立 `live_session` 的优先级与依赖。新增开发事项先在这里取得稳定 ID；专项文档只展开接口、实现和验收，不再各自形成互相竞争的顶层排期。
 
 English index: [backlog.md](./backlog.md)
 
@@ -19,6 +19,24 @@ English index: [backlog.md](./backlog.md)
 5. 每周内容运行不在这里逐组打勾；使用 Tracker 的 `L1-01`—`L4-04`。这里管理让这些检查点可重复完成的工程能力。
 
 状态枚举：`verified_baseline`、`in_progress`、`pending`、`waiting_evidence`、`blocked`、`complete`。`verified_baseline` 只说明列出的基线已验证，不代表该项所有未来周次完成；只有满足本页第 2 条维护规则和该项验收定义后才能标记 `complete`。
+
+<a id="pr248-test-audit"></a>
+
+## 2026-10-05：PR #248 测试证据与剩余验收
+
+[多轮测试对照审计](reports/20261005-pr248-test-coverage-backlog-audit.zh.md)核对 `b8549928`、实际运行收据和远端 CI。最近 P0 的异常留存、逐组 recovery plan、canonical modelRules 前检已实现并通过 230 项离线回归；不是新一次在线全流程。下表复用已有 ID，保留 `in_progress` / `waiting_evidence`，不因未合并代码或 mock 提前关闭条目。
+
+| 既有 ID | 本次确认的实现／证据 | 下一项仍缺的验收 |
+|---|---|---|
+| R242-001/005/011 | canonical 前检、实际 prompt 与 plugin/candidate receipt 的 fake 回归；CLI 真实组件已测 | fresh 新规则 CLI→实际 plugin→candidate；正式/strict adapter 尚需接线 |
+| R242-003/017 | receipt `ValidatedJobContext` 已接 formal renderer；小样本正确性已有 | 同真实 474 job 零推理旧/快路径 CPU/I/O/墙钟与保护 hash 对照；不是从零开发快路径 |
+| R242-004/010/012/018 | 异常 WAV 持久化、恢复计划已实现；13 旧 WAV 复算未改原件 | producer 完整 intent/settings 快照与实际计划对账；同步仍 fail，需局部裁定/修复及下游重建 |
+| R242-009/019/021 | 100 步真实进程＋mock provider；24 路短 CLI；419 单元离线规模回归由 CI 执行 | 新译→审核长队列、跨主机 broker/DAG、session GPU 许可/真冷暖、当前代码真实 8×8 压力 |
+| R242-016/017/022；DEV-COST-001/002 | token/时间/credit 估算日志、历史投影和同价卡比较 | fresh writer 对账、交互监督完整计量、实际 debit、credit 预算单位与长期日志索引 |
+| R242-005/018/023；DEV-STE-001/002/006 | 中文固定样本机器 A/B、只读最终稿对照 | 直接/部分经文、ko/es、长上下文的具名盲评、Gold/阈值与音频听审 |
+| R242-006/007/013–015/020 | 历史 Dev 页面 HTTP/native repository 读回；近期译审/TTS 组件成功 | 同一新身份的完整四层收据；同步、独立人审、Dev/Beta/正式晋级和真机播放分别留证 |
+
+下一步先修 CI 兼容遗漏和做零推理规模对账，再补新规则在线片段及同步裁定；迁移/session/正式 CLI 前置合同完成后才放大到 10 分钟/整篇。审计未调用模型或部署，原正式模型策略、8 秒同步门槛、已绑定批准及 unknown 占槽规则保持原范围。旧日期章节按其历史证据解释，不据旧“pending”文字重复开发已存在模块。
 
 <a id="pr242-remaining-backlog"></a>
 

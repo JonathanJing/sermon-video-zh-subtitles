@@ -62,14 +62,26 @@ def migrate(*, old_source, source, anchor, old_policy, policy, old_run: Path,
     require(producer._load(old_run / 'request.json') == old_request, 'Migration prior run request changed')
     require(not list(old_run.glob('*.started.json')), 'Unknown prior request requires reconciliation before migration')
     old_evidence = producer._load(old_run / 'evidence.json')
+    plan = models.group_plan(new_request, anchor)
+    old_rule_path = old_run / 'rule-preflight.json'
+    require(old_rule_path.is_file(), 'Migration prior cache lacks frozen rule receipt')
+    old_rules = producer._load(old_rule_path)
+    models.rule_preflight.verify_consumer_receipt(old_request, old_policy, old_plugin, old_evidence, old_rules)
+    # This adapter admits only the original unwrapped API payload identity.
+    # Omitting transport_identity intentionally rejects CLI cross-run caches.
+    models.rule_preflight.verify_prior_model_inputs(old_run, old_request, old_policy, plan, old_rules)
+    new_rules = models.rule_preflight.preflight(new_request, policy, plugin, plan)
+    require(old_rules['modelRules'] == new_rules['modelRules']
+            and old_rules['modelConfiguration'] == new_rules['modelConfiguration'],
+            'Migration payload changed; new content requires a separate authorized revision')
     old_sha = old_policy['languageReview']['pluginImplementationSha256']
     old_receipt = producer.run_language_plugin(old_source, anchor, old_policy, old_request,
-                                               old_evidence, old_plugin, old_sha)
+                                               old_evidence, old_plugin, old_sha,
+                                               rule_preflight_receipt=old_rules)
     # Revalidate original semantic results and plugin output, not just presence
     # of JSON response files. A prior failure can only enter the repair workflow.
     producer.admit_evidence(old_source, anchor, old_policy, old_request, old_evidence,
-                            old_receipt, old_plugin, old_sha)
-    plan = models.group_plan(new_request, anchor)
+                            old_receipt, old_plugin, old_sha, rule_preflight_receipt=old_rules)
     require([(g['translationGroupId'], g['sourceUnitIds']) for g in old_evidence['groups']] ==
             [(g['translationGroupId'], g['sourceUnitIds']) for g in plan], 'Migration group boundaries changed')
     active, hashes = {}, {}
@@ -87,12 +99,13 @@ def migrate(*, old_source, source, anchor, old_policy, policy, old_run: Path,
             require(json.loads(text) == cached.get('result')
                     and response.get('id') == cached.get('requestId') == group[role + 'RequestId']
                     and cached.get('model') == old_policy[role]['model'], 'Migration parsed/raw/evidence response differs')
-            files = {p: policy_tools.file_sha256(p) for p in (parsed, raw_path)}
+            preview = parsed.with_suffix('.policy-preview.json')
+            files = {p: policy_tools.file_sha256(p) for p in (parsed, raw_path, preview)}
             hashes.update(files)
             key = (role, fingerprint)
             require(key not in active, 'Migration contains duplicate request identity')
             active[key] = {'parsed': parsed, 'files': files}
-    for name in ('request.json', 'evidence.json', 'run-identity.json'):
+    for name in ('request.json', 'evidence.json', 'run-identity.json', 'rule-preflight.json'):
         path = old_run / name
         hashes[path] = policy_tools.file_sha256(path)
 
@@ -112,17 +125,23 @@ def migrate(*, old_source, source, anchor, old_policy, policy, old_run: Path,
         finally:
             CACHE_MIGRATION.reset(token)
         unchanged()
+        require(producer._load(out / 'rule-preflight.json') == new_rules,
+                'Migration new frozen rule receipt changed')
         plugin_sha = policy['languageReview']['pluginImplementationSha256']
         receipt = producer.run_language_plugin(source, anchor, policy, new_request,
-                                               evidence, plugin, plugin_sha)
+                                               evidence, plugin, plugin_sha,
+                                               rule_preflight_receipt=new_rules)
         candidate = producer.admit_evidence(source, anchor, policy, new_request,
-                                             evidence, receipt, plugin, plugin_sha)
+                                             evidence, receipt, plugin, plugin_sha,
+                                             rule_preflight_receipt=new_rules)
         unchanged()
         result = {'schemaVersion': 'sermon-target-language-cache-migration-v1',
                   'status': 'machine_review_pass_human_review_pending', 'modelCalls': 0,
                   'reusedModelResponses': len(active), 'humanApprovalCreated': False, 'releaseEligible': False,
                   'oldPolicySha256': policy_tools.canonical_sha256(old_policy),
                   'newPolicySha256': policy_tools.canonical_sha256(policy),
+                  'oldRulePreflightSha256': policy_tools.canonical_sha256(old_rules),
+                  'newRulePreflightSha256': policy_tools.canonical_sha256(new_rules),
                   'oldEvidenceSha256': policy_tools.canonical_sha256(old_evidence),
                   'newEvidenceSha256': policy_tools.canonical_sha256(evidence),
                   'candidateSha256': policy_tools.canonical_sha256(candidate),

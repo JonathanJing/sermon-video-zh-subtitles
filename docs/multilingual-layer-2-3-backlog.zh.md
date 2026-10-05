@@ -95,6 +95,8 @@
 
 #### L2-004 建立语言审核插件接口
 
+2026-10-05 核查：下列接口任务是原规划快照；当前 producer 已有 plugin pin/调用、必需检查及 candidate admission 重核。新 modelRules 的在线链、各 locale 经文/语义质量仍待真实验收，见[PR #248 对照审计](reports/20261005-pr248-test-coverage-backlog-audit.zh.md)。保留条目，不以代码或 fake 结果自动关闭语言验收。
+
 - [ ] 定义 `languageReview.pluginId + policySha256 + checks[]` 的注册和调用方式。
 - [ ] `zh-Hans` 插件接入中文口语、CUV、数字/专名读法及现有审校规则。
 - [ ] `ko` 插件检查韩语自然度、敬语一致性、专名转写、经文版本、数字读法和 TTS 友好断句。

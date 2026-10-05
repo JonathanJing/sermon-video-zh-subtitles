@@ -2,7 +2,7 @@
 
 依据[周日真实分层返工审计](20261005-sunday-layer-rework-analysis.zh.md)和[修复后三分钟复测](20261005-sol61-high-fast-fixed-180s-retest.zh.md)，下一轮先减少不必要返工，再缩短验证和加载开销，最后增加并发。本文件定义工作顺序与验收，不将设计记作已经实现。
 
-执行进展：第一批三项 P0 的实现、定向验证和边界见[开发验收报告](20261005-production-recovery-p0-development.zh.md)。后续迁移、receipt 快路径、驻留和 DAG 仍按下文验收推进；这份进展不代表完整实际规模的 production run 已通过。
+执行进展：第一批三项 P0 的实现、定向验证和边界见[开发验收报告](20261005-production-recovery-p0-development.zh.md)。[PR #248 对照审计](20261005-pr248-test-coverage-backlog-audit.zh.md)确认 receipt 的 `ValidatedJobContext` 快路径已接 formal renderer，剩余是实际 474 单元性能/完整性对照及按结果继续优化；不再把它整体写作待开发。后续迁移、驻留和 DAG 仍按下文验收推进；这份进展不代表完整实际规模的 production run 已通过。
 
 ## 第一阶段：可解释的局部恢复
 
@@ -22,7 +22,7 @@
 |---|---|---|
 | L1 入口覆盖 | 已有统一 cache namespace、single-flight、started/unknown 保护。审计生产 CLI/controller/prewarm 是否共同消费，取消剩余手写旁路 | 两入口相同 payload 同时运行只有一次模型 dispatch；结果未知不重发；namespace 与迁移证明可对账 |
 | L1/ASR 逐组迁移 | L1 全局 anchor hash、ASR 整 speechJob hash 导致跨版本未变片段不能直接命中。新增版本化迁移证明，精确核对内容、上下文、音频、speaker、规则和 runtime；不能只忽略总 hash | 修改单句，依赖外模型结果经迁移验证后复用；上下文改变、音频 hash 不符、伪造 receipt、实现不兼容均拒绝；批准不随缓存复制 |
-| 已冻结上下文的 receipt 快路径 | 周日中／韩 cache 重建约 21 分钟、91%–92% 耗于 receipt。冻结并一次验证 job interface，通过身份绑定复用一致结果；安全校验仍保留 | 用同一个真实 474 单元 manifest 比较原路径／快路径：全部产物一致、新模型调用 0；分别记录校验 CPU/I/O、墙钟。身份或产物改变必须回完整验证。三分钟本地恢复 11 秒不能代表此优化已完成 |
+| 已冻结上下文的 receipt 快路径 | 周日中／韩 cache 重建约 21 分钟、91%–92% 耗于 receipt。当前 formal renderer 已有冻结 `ValidatedJobContext`、逐句复用和末尾完整核验；小样本正确性有测试，实际规模性能未测 | 用同一个真实 474 单元 manifest 比较原路径／快路径：全部产物一致、新模型调用 0；分别记录校验 CPU/I/O、墙钟及新增留存 I/O。身份或产物改变必须回完整验证。三分钟本地恢复 11 秒不能代表该规模性能验收完成 |
 | L4 环境／attempt 收据 | 资产复制曾携带旧部署／HTTP 收据。部署、环境、commit、release/asset/catalog hash 和读回 attempt 单独绑定 | 复制资产不能继承“已部署／当前已验”；仅修改 metadata/environment 时上游模型调用 0；HTTP 与真机验收分别报告 |
 
 迁移 schema 需版本化，保留历史收据和拒绝原因。formal package 身份变化仍按合同重验与匹配审核；局部计算复用不自动沿用旧批准。

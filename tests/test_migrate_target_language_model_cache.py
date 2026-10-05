@@ -17,7 +17,8 @@ class CacheMigrationTests(unittest.TestCase):
         f = self.fixture.fixture
         self.f = f
         self.old = self.fixture.out
-        models.run(f.source, f.anchor, f.policy, self.old, 'fixture-key', self.fixture.fake_call)
+        models.run(f.source, f.anchor, f.policy, self.old, 'fixture-key', self.fixture.fake_call,
+                   plugin_path=f.plugin_path)
         self.fixture.calls.clear()
         self.new = self.old.parent / 'migrated'
 
@@ -32,6 +33,7 @@ class CacheMigrationTests(unittest.TestCase):
             result = self.run_migration()
         self.assertEqual(result['modelCalls'], 0)
         self.assertEqual(result['reusedModelResponses'], 4)
+        self.assertEqual(result['oldRulePreflightSha256'], result['newRulePreflightSha256'])
         self.assertEqual(result['requestIds']['translator'], ['response-1', 'response-3'])
         self.assertEqual(self.fixture.calls, [])
         self.assertEqual(before, {p.name: p.read_bytes() for p in self.old.glob('*') if p.is_file()})
@@ -50,6 +52,76 @@ class CacheMigrationTests(unittest.TestCase):
         self.assertNotEqual(result['oldPolicySha256'], result['newPolicySha256'])
         self.assertEqual(result['modelCalls'], 0)
         self.assertEqual(result['reusedModelResponses'], 4)
+        old_rules = json.loads((self.old / 'rule-preflight.json').read_text())
+        new_rules = json.loads((self.new / 'rule-preflight.json').read_text())
+        self.assertEqual(old_rules['modelRules'], new_rules['modelRules'])
+        self.assertNotEqual(result['oldRulePreflightSha256'], result['newRulePreflightSha256'])
+
+    def test_legacy_run_without_rule_proof_is_rejected_before_new_run(self):
+        self.old = self.old.parent / 'legacy'
+        models.run(self.f.source, self.f.anchor, self.f.policy, self.old,
+                   'fixture-key', self.fixture.fake_call)
+        self.fixture.calls.clear()
+        with patch.object(models.sermon_pipeline, 'chat_json', side_effect=AssertionError('network')):
+            with self.assertRaisesRegex(ValueError, 'lacks frozen rule receipt'):
+                self.run_migration()
+        self.assertFalse(self.new.exists())
+        self.assertEqual(self.fixture.calls, [])
+
+    def test_missing_actual_payload_proof_is_rejected_before_new_run(self):
+        (self.old / 'group-0001-astra.policy-preview.json').unlink()
+        with self.assertRaisesRegex(ValueError, 'lacks frozen model payload'):
+            self.run_migration()
+        self.assertFalse(self.new.exists())
+        self.assertEqual(self.fixture.calls, [])
+
+    def test_plugin_model_rules_change_has_no_paid_fallback(self):
+        plugin = self.old.parent / 'changed-rules-plugin.py'
+        plugin.write_text(self.f.plugin_path.read_text() + '\nNUMBERS = {"five": "五"}\n')
+        policy = copy.deepcopy(self.f.policy)
+        policy['languageReview']['pluginImplementationSha256'] = models.producer.plugin_implementation_sha256(plugin)
+        policy['componentSha256']['languageReview'] = policies.canonical_sha256(policy['languageReview'])
+        with self.assertRaisesRegex(ValueError, 'Migration payload changed'):
+            self.run_migration(policy, plugin)
+        self.assertFalse(self.new.exists())
+        self.assertEqual(self.fixture.calls, [])
+
+    def test_rehashed_old_cache_without_actual_rule_consumption_is_rejected(self):
+        parsed = self.old / 'group-0001-astra.json'
+        path = parsed.with_suffix('.policy-preview.json')
+        preview = json.loads(path.read_text())
+        payload = preview['payload']
+        actual = json.loads(payload['messages'][1]['content'])
+        actual.pop('modelRules')
+        payload['messages'][1]['content'] = json.dumps(actual, ensure_ascii=False)
+        fingerprint = policies.canonical_sha256(payload)
+        preview['payloadSha256'] = fingerprint
+        path.write_text(json.dumps(preview))
+        for cache in (parsed, parsed.with_suffix('.raw.json')):
+            value = json.loads(cache.read_text())
+            value['payloadSha256'] = fingerprint
+            cache.write_text(json.dumps(value))
+        with self.assertRaisesRegex(ValueError, 'actual model rule input differs'):
+            self.run_migration()
+        self.assertFalse(self.new.exists())
+        self.assertEqual(self.fixture.calls, [])
+
+    def test_cli_wrapped_cache_identity_cannot_migrate_across_runs(self):
+        identity = {'backend': 'codex_cli', 'fixture': True}
+        for suffix in ('astra', 'sol'):
+            for index in (1, 2):
+                parsed = self.old / f'group-{index:04d}-{suffix}.json'
+                preview = json.loads(parsed.with_suffix('.policy-preview.json').read_text())
+                fingerprint = policies.canonical_sha256({'payload': preview['payload'],
+                                                         'modelTransportIdentity': identity})
+                for path in (parsed, parsed.with_suffix('.raw.json')):
+                    value = json.loads(path.read_text())
+                    value['payloadSha256'] = fingerprint
+                    path.write_text(json.dumps(value))
+        with self.assertRaisesRegex(ValueError, 'prior model payload does not match cached response'):
+            self.run_migration()
+        self.assertFalse(self.new.exists())
+        self.assertEqual(self.fixture.calls, [])
 
     def test_unknown_original_request_is_rejected_before_new_run(self):
         (self.old / 'group-0001-astra.started.json').write_text('{}')
