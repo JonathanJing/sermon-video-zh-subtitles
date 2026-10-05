@@ -123,7 +123,7 @@ def normalize(config, export):
     end_day = window[1] if expected_cursor is None else (max(seen_days) + dt.timedelta(days=1) if seen_days else window[0])
     if len(seen_days) != (end_day - window[0]).days or any(not window[0] <= day < end_day for day in seen_days):
         costs._fail("incomplete_native_daily_window")
-    result = {"schemaVersion": costs.VERSION, "kind": "daily_costs", "scope": "project_api_key_partitions",
+    result = {"schemaVersion": config["schemaVersion"], "kind": "daily_costs", "scope": "project_api_key_partitions",
               "queryWindow": dict(export["queryWindow"]), "paginationComplete": expected_cursor is None,
               "settlementStatus": "pending", "pages": pages}
     costs._daily(config, result)  # Existing attribution/overlap checks remain authoritative.
