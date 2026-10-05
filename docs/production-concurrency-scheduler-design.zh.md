@@ -186,3 +186,5 @@ handoff目标沿用统一设计：100次已具备前置条件的确定性转移�
 ## 固定片段复盘后的实现进度
 
 [后续开发记录](reports/20261005-fixed-180s-followup-development.zh.md)补入测试 transport 的逐调用 CLI 准入、独立 TTS／ASR job GPU 准入、单模型驻留实验接口，以及复用正式 scheduler 的只读修复计划。它们均显式启用，尚未更改生产配置。S1 的正式 leaf API／CLI 接线、同 run 多 worker、公平 DAG，S2 的正式 CLI → plugin → candidate 链，以及驻留 session 级 GPU 许可仍未完成；fake 复用测试不计为真实速度提升。
+
+截至 `17f7d026`，[模型策略](production-model-runtime-policy.zh.md)已改为 Sol 6.1 high/fast 初译、Sol 6.1 medium/fast 独立复核、Luna medium/fast CLI 监督，正式非预算 L2 worker 已接 CLI；上述旧进度不代表这些接线仍未完成。完整 strict 预算适配、共享准入及多 worker DAG 仍需各自验收。[605.5 秒／46 组并发方案](reports/20261005-605s-new-model-concurrency-plan.zh.md)核对了当前入口限制、每层资源边界与 1/4/8/16/23 或 24 档同工作量设计；它是未执行的实验计划，不是新模型的速度结果。
