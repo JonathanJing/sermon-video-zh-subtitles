@@ -397,7 +397,9 @@ def build_anchor_manifest(segments: list[dict[str, Any]], *, source_path: Path,
                           max_end_lag_seconds: float = 8.0,
                           unit_policy: str = UNIT_POLICY_V1,
                           word_duration_outlier_seconds: float = 2.5,
-                          boundary_overrides: dict[str, str] | None = None) -> dict[str, Any]:
+                          boundary_overrides: dict[str, str] | None = None,
+                          identity_offsets: dict[str, dict[str, int]] | None = None,
+                          allow_out_of_scope_overrides: bool = False) -> dict[str, Any]:
     _require(segments, "MFA segments must be a nonempty list")
     _require(source_path.is_file(), "MFA segment source file is missing")
     _require(json.loads(source_path.read_text(encoding="utf-8")) == segments,
@@ -418,6 +420,13 @@ def build_anchor_manifest(segments: list[dict[str, Any]], *, source_path: Path,
     _require(max_unit_seconds > min_unit_seconds > 0, "Unit duration limits are invalid")
     _require(word_duration_outlier_seconds > 0, "Word duration outlier limit must be positive")
     overrides = dict(boundary_overrides or {})
+    offsets = dict(identity_offsets or {})
+    _require(all(isinstance(chunk, str) and isinstance(values, dict)
+                 and set(values) == {"sentence", "word", "unit"}
+                 and all(type(value) is int and value >= 0 for value in values.values())
+                 for chunk, values in offsets.items()), "Invalid stable identity offsets")
+    _require(not allow_out_of_scope_overrides or identity_offsets is not None,
+             "Out-of-scope boundary overrides require stable identity offsets")
     _require(unit_policy == UNIT_POLICY_V2 or not overrides,
              "Boundary overrides require clause_stable_v2")
     _require(all(isinstance(key, str) and key and isinstance(value, str) and value
@@ -428,15 +437,17 @@ def build_anchor_manifest(segments: list[dict[str, Any]], *, source_path: Path,
     issues: list[dict[str, Any]] = []
     chunk_word_counts: dict[str, int] = {}
     source_sentence_number: dict[str, int] = {}
+    chunk_unit_counts: dict[str, int] = {}
     previous_word_end: float | None = None
     for segment in ordered:
         chunk_id = str(segment.get("referenceChunkId", "")).strip()
         if not chunk_id:
             issues.append({"type": "missing_reference_chunk_id", "segmentId": segment.get("id")})
             continue
-        source_sentence_number[chunk_id] = source_sentence_number.get(chunk_id, 0) + 1
+        source_sentence_number[chunk_id] = source_sentence_number.get(
+            chunk_id, offsets.get(chunk_id, {}).get("sentence", 0)) + 1
         sentence_id = f"{chunk_id}-s{source_sentence_number[chunk_id]:03d}"
-        first_word = chunk_word_counts.get(chunk_id, 0) + 1
+        first_word = chunk_word_counts.get(chunk_id, offsets.get(chunk_id, {}).get("word", 0)) + 1
         words, word_issues = _normal_words(
             segment,
             chunk_id,
@@ -444,7 +455,8 @@ def build_anchor_manifest(segments: list[dict[str, Any]], *, source_path: Path,
             internal_pause_seconds=internal_pause_seconds,
         )
         issues.extend(word_issues)
-        chunk_word_counts[chunk_id] = chunk_word_counts.get(chunk_id, 0) + len(segment.get("wordTimes") or [])
+        chunk_word_counts[chunk_id] = chunk_word_counts.get(
+            chunk_id, offsets.get(chunk_id, {}).get("word", 0)) + len(segment.get("wordTimes") or [])
         if not words:
             continue
         if _presentation_text(str(segment.get("text", ""))) != _word_text(words):
@@ -488,7 +500,9 @@ def build_anchor_manifest(segments: list[dict[str, Any]], *, source_path: Path,
         for part_index, (part, split_evidence) in enumerate(parts_with_evidence, start=1):
             basis = ("frozen_reference_punctuation" if len(parts_with_evidence) == 1
                      else "long_sentence_pause_clause")
-            unit_id = f"{chunk_id}-u{len([u for u in units if u['referenceChunkId'] == chunk_id]) + 1:03d}"
+            chunk_unit_counts[chunk_id] = chunk_unit_counts.get(
+                chunk_id, offsets.get(chunk_id, {}).get("unit", 0)) + 1
+            unit_id = f"{chunk_id}-u{chunk_unit_counts[chunk_id]:03d}"
             boundary = {
                 "basis": basis,
                 "humanReview": "pending",
@@ -529,6 +543,19 @@ def build_anchor_manifest(segments: list[dict[str, Any]], *, source_path: Path,
                 })
             issues.append(issue)
 
+    if overrides and allow_out_of_scope_overrides:
+        in_scope = {}
+        for key, value in overrides.items():
+            match = re.fullmatch(r"(.+)-s(\d+)", key)
+            if not match or match.group(1) not in source_sentence_number:
+                in_scope[key] = value
+                continue
+            number = int(match.group(2))
+            first = offsets.get(match.group(1), {}).get("sentence", 0) + 1
+            last = source_sentence_number[match.group(1)]
+            if first <= number <= last:
+                in_scope[key] = value
+        overrides = in_scope
     _require(not overrides, f"Boundary overrides reference missing sentences: {sorted(overrides)}")
 
     for index, unit in enumerate(units):

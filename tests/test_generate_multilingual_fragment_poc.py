@@ -59,7 +59,7 @@ class GenerateMultilingualFragmentPocTests(unittest.TestCase):
                 return {
                     "id": "machine-judge-fixture",
                     "created": 1790000000,
-                    "model": "gpt-6-astra-2026-09-01",
+                    "model": payload["model"],
                     "choices": [{"finish_reason": "stop", "message": {"content": json.dumps({
                         "schemaVersion": machine_judge.BATCH_SCHEMA,
                         "sentences": sentences,

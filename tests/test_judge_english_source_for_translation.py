@@ -65,7 +65,7 @@ class EnglishSourceMachineJudgeTests(unittest.TestCase):
         return {
             "id": "judge-response-1",
             "created": 1790000000,
-            "model": "gpt-6-astra-2026-09-01",
+            "model": payload["model"],
             "choices": [{
                 "finish_reason": "stop",
                 "message": {"content": json.dumps({
@@ -111,6 +111,16 @@ class EnglishSourceMachineJudgeTests(unittest.TestCase):
         changed = json.loads(json.dumps(manifest))
         changed["sourceUnits"][0]["english"] = "tampered"
         self.assertEqual(subject.deterministic_review(self.aligned_path, changed)["status"], "fail")
+
+    def test_deterministic_rebuild_accepts_stable_ids_from_a_cropped_source(self):
+        manifest = anchors.build_anchor_manifest(
+            self.segments, source_path=self.aligned_path, unit_policy=anchors.UNIT_POLICY_V2,
+            max_unit_seconds=4.0,
+            identity_offsets={"block-00": {"sentence": 11, "word": 209, "unit": 14}},
+        )
+        result = subject.deterministic_review(self.aligned_path, manifest)
+        check = next(row for row in result["checks"] if row["checkId"] == "manifestDeterministicRebuild")
+        self.assertEqual(check["status"], "pass")
 
     def test_machine_judge_passes_reviewable_anchor_issue_for_layer2_shadow_only(self):
         receipt_path = self.root / "judge" / "receipt.json"

@@ -1,0 +1,307 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "sermon-l3-recovery-intent-snapshot-v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "jobJsonSha256",
+    "jobFileSha256",
+    "renderRoot",
+    "settings",
+    "settingsFileSha256",
+    "producerFileSha256",
+    "inputBindings",
+    "validation",
+    "intents"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "sermon-l3-recovery-intent-snapshot-v1"
+    },
+    "jobJsonSha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "jobFileSha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "settingsFileSha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "producerFileSha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "renderRoot": {
+      "type": "string",
+      "pattern": "^/"
+    },
+    "settings": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "sermon-l3-recovery-render-settings-v1",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "attention",
+        "batchSize",
+        "device",
+        "dtype",
+        "instruct",
+        "interUtteranceGapSeconds",
+        "maxEndLagSeconds",
+        "reactionLagSeconds",
+        "replicas",
+        "schemaVersion",
+        "seed",
+        "trackFormat",
+        "unitInstructions"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": "sermon-l3-recovery-render-settings-v1"
+        },
+        "seed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "batchSize": {
+          "enum": [
+            1,
+            2,
+            4,
+            8
+          ]
+        },
+        "replicas": {
+          "enum": [
+            1,
+            8
+          ]
+        },
+        "device": {
+          "enum": [
+            "cpu",
+            "cuda:0",
+            "mps"
+          ]
+        },
+        "dtype": {
+          "enum": [
+            "bfloat16",
+            "float32"
+          ]
+        },
+        "attention": {
+          "enum": [
+            null,
+            "sdpa",
+            "flash_attention_2",
+            "eager"
+          ]
+        },
+        "instruct": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "trackFormat": {
+          "enum": [
+            "wav",
+            "mp3"
+          ]
+        },
+        "unitInstructions": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^/"
+        },
+        "reactionLagSeconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "interUtteranceGapSeconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "maxEndLagSeconds": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "replicas": {
+                "const": 8
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "batchSize": {
+                "const": 8
+              },
+              "device": {
+                "const": "cuda:0"
+              },
+              "dtype": {
+                "const": "bfloat16"
+              },
+              "attention": {
+                "const": "sdpa"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "inputBindings": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "sha256"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "pattern": "^/"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      }
+    },
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "canonicalInputsValidated",
+        "checkpointDeclaredIdentityValidated",
+        "checkpointWeightsVerified",
+        "formalLock",
+        "completeCoverage",
+        "unitCount",
+        "modelCalls",
+        "cacheWrites",
+        "storedIntentsConsumed",
+        "dispatchAuthorized",
+        "ownerReconciled",
+        "resourceReleaseAuthorized",
+        "crossVersionMigrationImplemented"
+      ],
+      "properties": {
+        "mode": {
+          "const": "cache_inspection"
+        },
+        "canonicalInputsValidated": {
+          "const": true
+        },
+        "checkpointDeclaredIdentityValidated": {
+          "const": true
+        },
+        "checkpointWeightsVerified": {
+          "const": false
+        },
+        "formalLock": {
+          "const": "existing_shared_lock"
+        },
+        "completeCoverage": {
+          "const": true
+        },
+        "unitCount": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "modelCalls": {
+          "const": 0
+        },
+        "cacheWrites": {
+          "const": 0
+        },
+        "storedIntentsConsumed": {
+          "const": false
+        },
+        "dispatchAuthorized": {
+          "const": false
+        },
+        "ownerReconciled": {
+          "const": false
+        },
+        "resourceReleaseAuthorized": {
+          "const": false
+        },
+        "crossVersionMigrationImplemented": {
+          "const": false
+        }
+      }
+    },
+    "intents": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "adapterFileSha256",
+          "adapterId",
+          "anchorJsonSha256",
+          "attention",
+          "candidateJsonSha256",
+          "checkpointMapFileSha256",
+          "checkpointSha256",
+          "conditioningRef",
+          "deliveryInstruction",
+          "dtype",
+          "groupId",
+          "jobFileSha256",
+          "jobJsonSha256",
+          "languageParameter",
+          "maxNewTokens",
+          "model",
+          "modelRevision",
+          "operationPoliciesFileSha256",
+          "ratePolicy",
+          "rendererSha256",
+          "repetitionPenalty",
+          "schemaVersion",
+          "seed",
+          "sourceJsonSha256",
+          "sourceUnitIds",
+          "speakerId",
+          "speakerKey",
+          "targetLocale",
+          "temperature",
+          "textSha256",
+          "translationPolicySha256",
+          "unitIndex"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "enum": [
+              "sermon-formal-target-speech-render-v1",
+              "sermon-formal-target-speech-render-v2"
+            ]
+          },
+          "unitIndex": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    }
+  }
+}

@@ -55,6 +55,13 @@ def plugin_implementation_sources(plugin_path: Path) -> list[Path]:
     """Hash the reviewed built-in plugin and its executable shared rules."""
     path = plugin_path.resolve()
     builtins = (Path(__file__).resolve().parent / "language_review_plugins").resolve()
+    import ast
+    facts = ast.parse(path.read_text(encoding='utf-8'))
+    if any(isinstance(node, ast.Assign) and len(node.targets) == 1
+           and isinstance(node.targets[0], ast.Name) and node.targets[0].id == 'DIAGNOSTIC_PINNED_QUOTES'
+           and isinstance(node.value, ast.Constant) and node.value.value is True for node in facts.body):
+        return [path, builtins / 'diagnostic_pinned_quotes.py', builtins / 'diagnostic_structural.py',
+                builtins / 'common.py', builtins.parent / 'sermon_diagnostic_context.py']
     if path.parent == builtins and path.name in BUILTIN_PLUGIN_NAMES:
         return [path, builtins / "common.py"]
     if path.parent == builtins and path.name in LAODICEA_PLUGIN_NAMES:
@@ -120,7 +127,8 @@ def prepare_request(source: dict[str, Any], anchor: dict[str, Any],
         anchor_hash = validate_source(source, anchor, diagnostic_context)
     units = anchor["sourceUnits"]
     if strict_rubric is None:
-        identity = policy_tools.validate_policy(policy)
+        identity = (policy_tools.validate_policy(policy) if diagnostic_context is None else
+                    policy_tools.validate_diagnostic_policy(policy, diagnostic_context))
         policy_tools.validate_source_scope(policy, source, anchor)
     else:
         identity = policy_tools.validate_strict_policy(policy, strict_rubric)
@@ -148,10 +156,17 @@ def prepare_request(source: dict[str, Any], anchor: dict[str, Any],
 def admit_evidence(source: dict[str, Any], anchor: dict[str, Any],
                    policy: dict[str, Any], request: dict[str, Any],
                    evidence: dict[str, Any], language_receipt: dict[str, Any],
-                   plugin_path: Path, expected_plugin_sha256: str) -> dict[str, Any]:
+                   plugin_path: Path, expected_plugin_sha256: str, *, rule_preflight_receipt=None,
+                   diagnostic_context=None) -> dict[str, Any]:
     """Validate externally produced evidence; preserve human review as pending."""
-    expected = prepare_request(source, anchor, policy)
+    expected = prepare_request(source, anchor, policy, diagnostic_context=diagnostic_context)
     _require(request == expected, "Layer 2 request was changed or belongs to another source/policy")
+    if rule_preflight_receipt is not None:
+        try:
+            from scripts.target_language_rule_preflight import verify_consumer_receipt
+        except ImportError:
+            from target_language_rule_preflight import verify_consumer_receipt
+        verify_consumer_receipt(request, policy, plugin_path, evidence, rule_preflight_receipt)
     for key in ("schemaVersion", "sourceLocale", "targetLocale",
                 "englishSourcePackageJsonSha256", "anchorManifestSha256",
                 "translationPolicySha256", "sourceUnits"):
@@ -194,7 +209,9 @@ def admit_evidence(source: dict[str, Any], anchor: dict[str, Any],
              and not set(translator_ids).intersection(reviewer_ids),
              "Model request IDs do not bind separate translator and reviewer calls")
     actual_receipt = run_language_plugin(source, anchor, policy, request,
-                                         evidence, plugin_path, expected_plugin_sha256)
+                                         evidence, plugin_path, expected_plugin_sha256,
+                                         rule_preflight_receipt=rule_preflight_receipt,
+                                         diagnostic_context=diagnostic_context)
     _require(language_receipt == actual_receipt,
              "Language plugin receipt is missing, stale, or differs from a fresh plugin run")
     for group, result in zip(candidate_groups, actual_receipt["groupReviews"]):
@@ -222,15 +239,17 @@ def admit_evidence(source: dict[str, Any], anchor: dict[str, Any],
     }
     handoff._validate_schema(candidate, "sermon-target-language-candidate-v2.schema.json",
                              "target candidate")
-    handoff.validate_target_candidate(source, anchor, candidate, require_human_approval=False)
-    handoff.validate_policy_binding(candidate, policy)
+    handoff.validate_target_candidate(source, anchor, candidate, require_human_approval=False,
+                                     diagnostic_context=diagnostic_context)
+    handoff.validate_policy_binding(candidate, policy, diagnostic_context=diagnostic_context)
     return candidate
 
 
 def run_language_plugin(source: dict[str, Any], anchor: dict[str, Any],
                         policy: dict[str, Any], request: dict[str, Any],
                         evidence: dict[str, Any], plugin_path: Path,
-                        expected_plugin_sha256: str, *, strict_rubric=None, diagnostic_context=None) -> dict[str, Any]:
+                        expected_plugin_sha256: str, *, strict_rubric=None, diagnostic_context=None,
+                        rule_preflight_receipt=None) -> dict[str, Any]:
     """Run a pinned locale plugin and return a source/text-bound receipt.
 
     The plugin is a reviewed Python module exposing PLUGIN_ID, PLUGIN_VERSION,
@@ -240,6 +259,12 @@ def run_language_plugin(source: dict[str, Any], anchor: dict[str, Any],
     """
     expected = prepare_request(source, anchor, policy, strict_rubric=strict_rubric, diagnostic_context=diagnostic_context)
     _require(request == expected, "Layer 2 request was changed or belongs to another source/policy")
+    if rule_preflight_receipt is not None:
+        try:
+            from scripts.target_language_rule_preflight import verify_consumer_receipt
+        except ImportError:
+            from target_language_rule_preflight import verify_consumer_receipt
+        verify_consumer_receipt(request, policy, plugin_path, evidence, rule_preflight_receipt)
     for key in ("schemaVersion", "sourceLocale", "targetLocale",
                 "englishSourcePackageJsonSha256", "anchorManifestSha256",
                 "translationPolicySha256", "sourceUnits"):
@@ -308,7 +333,8 @@ def run_language_plugin(source: dict[str, Any], anchor: dict[str, Any],
     _require([row["translationGroupId"] for row in group_reviews]
              == [group["translationGroupId"] for group in groups],
              "Language plugin receipt group order changed")
-    identity = (policy_tools.validate_policy(policy) if strict_rubric is None else
+    identity = ((policy_tools.validate_policy(policy) if diagnostic_context is None else
+                 policy_tools.validate_diagnostic_policy(policy, diagnostic_context)) if strict_rubric is None else
                 policy_tools.validate_strict_policy(policy, strict_rubric))
     return {
         "schemaVersion": LANGUAGE_RECEIPT_SCHEMA,
@@ -336,6 +362,8 @@ def main() -> None:
     parser.add_argument("--language-receipt", type=Path)
     parser.add_argument("--plugin", type=Path)
     parser.add_argument("--plugin-sha256")
+    parser.add_argument("--rule-preflight", type=Path,
+                        help="Validate frozen model/plugin/candidate rules before language review or admission")
     parser.add_argument("--progress-ledger", type=Path,
                         help="Record producer timing in this four-layer run ledger")
     parser.add_argument("--out", required=True, type=Path)
@@ -373,14 +401,18 @@ def main() -> None:
                          "review-language creates, not consumes, a plugin receipt")
                 result = run_language_plugin(source, anchor, policy,
                                              _load(args.request), evidence,
-                                             args.plugin, args.plugin_sha256)
+                                             args.plugin, args.plugin_sha256,
+                                             rule_preflight_receipt=_load(args.rule_preflight)
+                                             if args.rule_preflight else None)
             else:
                 _require(args.language_receipt is not None,
                          "admit requires a separate language plugin receipt")
                 result = admit_evidence(source, anchor, policy,
                                         _load(args.request), evidence,
                                         _load(args.language_receipt), args.plugin,
-                                        args.plugin_sha256)
+                                        args.plugin_sha256,
+                                        rule_preflight_receipt=_load(args.rule_preflight)
+                                        if args.rule_preflight else None)
         interpretation.write_json(args.out, result)
     status = {"prepare": "source_bound_request", "review-language": "language_plugin_reviewed",
               "admit": "machine_review_pass_human_review_pending"}[args.command]

@@ -70,11 +70,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--notify-sendgrid-secret", default=DEFAULT_SENDGRID_SECRET)
     parser.add_argument("--notify-recipients-secret", default=DEFAULT_RECIPIENTS_SECRET)
     parser.add_argument("--notify-sender-secret", default=DEFAULT_SENDER_SECRET)
-    parser.add_argument("--model", default="gpt-6-sol")
+    parser.add_argument("--model", default="gpt-6-luna")
+    parser.add_argument("--reasoning-effort", choices=("low", "medium", "high"), default="medium")
+    parser.add_argument("--service-tier", choices=("default", "fast"), default="fast")
     parser.add_argument("--release-workflow-config", type=Path)
     parser.add_argument("--app-delivery-config", type=Path,
                         help="Opt into deterministic approved App bundle preparation; no source refresh or model turn")
-    parser.add_argument("--agent-backend", choices=("agents-api", "sdk"), default="agents-api")
+    parser.add_argument("--agent-backend", choices=("codex-cli", "agents-api", "sdk"), default="agents-api")
     parser.add_argument("--agent-run-dir", type=Path)
     parser.add_argument("--resume-agent-session", action="store_true")
     parser.add_argument("--agent-timeout-seconds", type=float, default=21600)
@@ -98,6 +100,10 @@ def parse_args() -> argparse.Namespace:
 
 
 def make_agent_args(args: argparse.Namespace) -> argparse.Namespace:
+    from scripts.sermon_openai_runtime import selected_route
+    route = selected_route()
+    if route is not None and args.api_key_secret not in (None, "", DEFAULT_OPENAI_SECRET):
+        raise ValueError("selected_openai_secret_override")
     sunday = args.sunday or upcoming_sunday().isoformat()
     out = args.out or (
         REPO_ROOT
@@ -117,7 +123,7 @@ def make_agent_args(args: argparse.Namespace) -> argparse.Namespace:
         out=out,
         gcs_bucket=args.gcs_bucket,
         gcs_prefix=args.gcs_prefix,
-        api_key_secret=args.api_key_secret,
+        api_key_secret=None if route is not None else args.api_key_secret,
         youtube_api_key_secret=args.youtube_api_key_secret,
         youtube_cookies_secret=args.youtube_cookies_secret,
         youtube_cookies=args.youtube_cookies,
@@ -129,6 +135,8 @@ def make_agent_args(args: argparse.Namespace) -> argparse.Namespace:
         notify_sender_secret=args.notify_sender_secret,
         model=args.model,
         agent_backend=getattr(args, "agent_backend", "agents-api"),
+        reasoning_effort=getattr(args, "reasoning_effort", "medium"),
+        service_tier=getattr(args, "service_tier", "fast"),
         release_workflow_config=getattr(args, "release_workflow_config", None),
         app_delivery_config=getattr(args, "app_delivery_config", None),
         agent_run_dir=getattr(args, "agent_run_dir", None),
@@ -518,6 +526,10 @@ def run_local_production(args: argparse.Namespace) -> tuple[int, dict[str, Any]]
     if completed is not None:
         write_report(args.out, completed)
         return 0, completed
+    if getattr(args, "agent_backend", "agents-api") == "agents-api":
+        from scripts.sermon_openai_runtime import selected_route
+        if selected_route() is None:
+            raise ValueError("local_supervisor_requires_explicit_dev_or_prod_launcher")
     if args.skip_source_refresh or args.mode == "shadow":
         source_refresh = {"status": "skipped", "reason": "shadow_mode" if args.mode == "shadow" else "explicit_skip"}
     else:

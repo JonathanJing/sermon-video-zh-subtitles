@@ -14,6 +14,7 @@ import uuid
 from scripts import sermon_accounting as accounting
 
 SCHEMA = 'sermon-model-call-observation-v1'
+CREDIT_SCHEMA = 'sermon-model-call-observation-v2'
 CODE = 'model_call_observation'
 TOKEN_FIELDS = frozenset({'inputTokens', 'outputTokens', 'cachedInputTokens', 'reasoningTokens', 'totalTokens'})
 RATE_FIELDS = frozenset({'requestOutputTokensPerSecond', 'generationOutputTokensPerSecond', 'sessionOutputTokensPerSecond'})
@@ -112,7 +113,9 @@ def _rate(tokens, seconds):
 
 def safe_observation(fields):
     """Validate and copy the exact content-free envelope on writing or reading."""
-    if not isinstance(fields, dict) or set(fields) != FIELDS or fields['schemaVersion'] != SCHEMA:
+    credit_version = isinstance(fields, dict) and fields.get('schemaVersion') == CREDIT_SCHEMA
+    allowed = FIELDS | {'creditUsage'} if credit_version else FIELDS
+    if not isinstance(fields, dict) or set(fields) != allowed or fields['schemaVersion'] not in {SCHEMA, CREDIT_SCHEMA}:
         raise ValueError('invalid_model_observation')
     for key in ('model', 'provider', 'callId'):
         if not isinstance(fields[key], str) or LABEL.fullmatch(fields[key]) is None:
@@ -158,7 +161,13 @@ def safe_observation(fields):
     }
     if rates != expected_rates:
         raise ValueError('invalid_model_observation_rates')
-    return {**fields, 'usage': dict(usage), 'rates': dict(rates)}
+    if credit_version:
+        from scripts.codex_credit_usage import safe_credit_usage
+        if fields['backend'] != 'agent_session' or fields['provider'] != 'codex':
+            raise ValueError('codex_credit_requires_codex_session')
+        credit = safe_credit_usage(fields['creditUsage'], fields['model'], usage,
+                                   status=fields['status'], cache_hit=fields['cacheHit'])
+    return {**fields, 'usage': dict(usage), 'rates': dict(rates), **({'creditUsage': credit} if credit_version else {})}
 
 
 def _emit(fields):
@@ -166,13 +175,18 @@ def _emit(fields):
 
 
 @contextmanager
-def invocation(model, *, backend, provider, role, call_id=None, timing_scope='request', usage_source='not_reported', parent_call_id=None):
+def invocation(model, *, backend, provider, role, call_id=None, timing_scope='request', usage_source='not_reported', parent_call_id=None, service_tier=None):
     """Yield a receipt to populate; preserve original model exceptions on failure."""
     fields = dict(schemaVersion=SCHEMA, callId=call_id or uuid.uuid4().hex, parentCallId=parent_call_id,
         phase='started', status='started', model=model, backend=backend, provider=provider, role=role,
         timingScope=timing_scope, usageSource=usage_source, usageStatus='unknown', startedAt=_utc(),
         finishedAt=None, elapsedSeconds=None, generationSeconds=None, firstTokenSeconds=None, cacheHit=None,
         usage={k: None for k in TOKEN_FIELDS}, rates={k: None for k in RATE_FIELDS}, errorType=None)
+    codex_credit = backend == 'agent_session' and provider == 'codex'
+    if codex_credit:
+        from scripts.codex_credit_usage import estimate_credit_usage
+        fields.update(schemaVersion=CREDIT_SCHEMA, creditUsage=estimate_credit_usage(
+            model, fields['usage'], requested_service_tier=service_tier, status='started'))
     _emit(fields)
     began = time.monotonic()
     receipt = dict(usage=None, generationSeconds=None, firstTokenSeconds=None, cacheHit=None)
@@ -198,5 +212,11 @@ def invocation(model, *, backend, provider, role, call_id=None, timing_scope='re
                 requestOutputTokensPerSecond=_rate(usage['outputTokens'], fields['elapsedSeconds']) if timing_scope == 'request' else None,
                 generationOutputTokensPerSecond=_rate(usage['outputTokens'], duration),
                 sessionOutputTokensPerSecond=_rate(usage['outputTokens'], fields['elapsedSeconds']) if timing_scope == 'agent_session_including_tools' else None)
+            if codex_credit:
+                fields['creditUsage'] = estimate_credit_usage(model, usage,
+                    requested_service_tier=service_tier, server_model=receipt.get('serverModel'),
+                    server_service_tier=receipt.get('serverServiceTier'),
+                    status=fields['status'], cache_hit=fields['cacheHit'])
+                receipt['creditUsage'] = fields['creditUsage']
             _emit(fields)
         accounting._finalize(finish, error)

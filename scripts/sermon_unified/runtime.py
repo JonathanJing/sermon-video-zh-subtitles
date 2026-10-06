@@ -309,7 +309,7 @@ def _project(state):
         outcome='pending'
     for step in active_steps(m):
         sid=step['id'];row=state['steps'][sid]
-        if row['process'] in ('blocked','waiting_reconciliation','failed'):
+        if row['process'] in ('blocked','waiting_reconciliation','failed') or row.get('reason')=='resource_capacity_busy':
             blockers.append({'code':row.get('reason','stage_incomplete'),'artifactId':sid})
     return outcome,blockers
 
@@ -422,6 +422,7 @@ def _run_owner(root,key):
             return state
         revision=state['stateRevision']
         deadline=datetime.fromisoformat(state['manifest']['executionWindow']['deadlineAt'])
+        resource_retry=time.monotonic()+1
         while True:
             if datetime.now(timezone.utc)>=deadline:
                 return state
@@ -429,6 +430,136 @@ def _run_owner(root,key):
             state=load(root,key)
             if state['stateRevision']!=revision:
                 break
+            if time.monotonic()>=resource_retry and any(
+                    row.get('reason')=='resource_capacity_busy' and row['process']=='not_started'
+                    for row in state['steps'].values()):
+                # Other runs release shared capacity without mutating this run.
+                break
+
+
+def resource_policy(manifest):
+    if 'resourcePolicy' not in manifest['bindings']:
+        return None
+    from scripts.sermon_unified import resources
+    return resources.validate_policy(c.read(c.binding(manifest,'/','resourcePolicy')))
+
+
+def resource_claim(policy, step):
+    """Conservative whole-adapter leases until model leaf slots are connected."""
+    adapter=step['adapter']
+    if adapter in ('source.prepare','canonical.layer2','study.produce'):
+        resource='online_api'
+        # A Layer 2 adapter can issue many simultaneous requests internally.
+        # Reserve the whole lane, never pretend one adapter is one API call.
+        units=policy['capacities'][resource]
+    elif adapter=='canonical.audio':
+        resource,units='spark_tts',1
+    elif adapter=='app.delivery':
+        resource,units='publisher',1
+    else:
+        resource,units='cpu',1
+    return resource,max(1,units)
+
+
+def release_completed_resources(state):
+    from scripts.sermon_unified import resources
+    for sid,row in state['steps'].items():
+        claim=row.get('resourceReservation')
+        if not claim or row['process'] not in ('succeeded','blocked','failed') or not row.get('responseSha256'):
+            continue
+        # Reused successful rows retain their origin broker, even if a later
+        # revision changes/removes the resource policy for new work.
+        policy=resources.validate_policy(claim['policy'])
+        if c.digest(policy)!=claim['policySha256']:
+            raise c.ContractError('resource_reservation_policy_changed',7)
+        identity=claim['identity']
+        if claim['operationId']!=c.digest(identity) or claim['owner']['runKey']!=state['runKey']:
+            raise c.ContractError('resource_reservation_identity_changed',7)
+        path=folder(claim['stateRoot'],state['runKey'])/('response-'+c.digest(identity)+'.json')
+        response=c.read(path)
+        if (c.file_sha(path)!=row['responseSha256'] or response.get('identity')!=identity
+                or response.get('result',{}).get('status')!=row['process']):
+            raise c.ContractError('resource_terminal_receipt_changed',7)
+        resources.release(policy,operation_id=claim['operationId'],owner=claim['owner'])
+
+
+def _prepare_dispatch(root,key,state,step):
+    m=state['manifest']
+    sid=step['id'];row=state['steps'][sid]
+    try:
+        adapters.inspect_step(m,'/',step)
+    except (OSError,ValueError,KeyError,TypeError) as exc:
+        row.update(process='blocked',reason=exc.code if isinstance(exc,c.ContractError) else 'adapter_preflight_failed')
+        return save(root,key,state,state['stateRevision']),None
+    row['readyAt']=max((state['steps'][d].get('completedAt',state['createdAt']) for d in step['dependsOn']),default=state['createdAt'])
+    row.setdefault('enqueuedAt',now())
+    # Intent and conservative bound survive any crash before the result.
+    reserved=state.get('historicalReservedMicroUsd',0)+sum(r.get('reservedMicroUsd',0) for r in state['steps'].values())
+    bound=step.get('maxCostMicroUsd',0)
+    authority=step.get('budgetAuthorization')
+    if authority:
+        authority_sha=m['bindings'][authority]['sha256']
+        if authority_sha in state.get('historicalBudgetAuthorities',[]) or any(x.get('budgetAuthoritySha256')==authority_sha for x in state['steps'].values()):
+            bound=0
+        row['budgetAuthoritySha256']=authority_sha
+    if reserved+bound>m['budget']['limitMicroUsd']:
+        row.pop('intentSha256',None)
+        row.update(process='blocked',reason='budget_exhausted')
+        return save(root,key,state,state['stateRevision']),None
+    if step['adapter']=='canonical.layer2' and step.get('maxCostMicroUsd',0)<=0:
+        row.pop('intentSha256',None)
+        row.update(process='blocked',reason='paid_request_bound_required')
+        return save(root,key,state,state['stateRevision']),None
+    row['reservedMicroUsd']=bound
+    policy=resource_policy(m)
+    if policy is not None:
+        from scripts.sermon_unified import resources
+        operation=c.digest(c.job_identity(m,step))
+        owner={'runKey':key,'attemptId':state['attemptId']}
+        resource,units=resource_claim(policy,step)
+        claim={'operationId':operation,'owner':owner,'resource':resource,
+               'units':units,'identity':c.job_identity(m,step),
+               'policy':policy,'policySha256':c.digest(policy),
+               'stateRoot':str(Path(root).absolute())}
+        try:
+            admitted=resources.reserve(policy,operation_id=operation,owner=owner,
+                                       resource=resource,units=units)
+        except c.ContractError:
+            # A durable reservation can precede our state intent in a
+            # crash. Never interpret its existence as permission to retry.
+            row.update(process='waiting_reconciliation',reason='resource_reservation_unknown',
+                       resourceReservation=claim)
+            return save(root,key,state,state['stateRevision']),None
+        if not admitted:
+            # No dispatch or budget consumption has occurred.
+            row.pop('reservedMicroUsd',None)
+            row.pop('budgetAuthoritySha256',None)
+            if row.get('reason')!='resource_capacity_busy':
+                row['reason']='resource_capacity_busy'
+                return save(root,key,state,state['stateRevision']),None
+            return state,None
+        row['resourceReservation']=claim
+    row.pop('reason',None)
+    row.update(process='running',startedAt=now(),monotonicStart=time.monotonic(),processId=os.getpid(),
+               intentSha256=c.digest(c.job_identity(m,step)))
+    deps=[state['steps'][d].get('completionEventId') for d in step['dependsOn']]
+    row['dependsOnEvents']=deps
+    row['dispatchEventId']=event(m,state,step,'dispatch.started',predecessor=deps[-1] if deps else None)
+    state=save(root,key,state,state['stateRevision'])
+    output=folder(root,key)/('response-'+c.digest(c.job_identity(m,step))+'.json')
+    return state,output
+
+
+def _execute_dispatch(executor,m,step,output,state,row):
+    if m['transport']=='provider' and step['adapter'] in ('source.prepare','canonical.layer2','canonical.audio','app.delivery','study.produce'):
+        from scripts.sermon_unified_accounting import execute as execute_observed
+        result=execute_observed(executor,m,step,output,state,row)
+    else:
+        result=executor(m,'/',step,output)
+    if not isinstance(result,dict) or result.get('status') not in ('succeeded','blocked','failed'):
+        raise c.ContractError('invalid_adapter_result')
+    jobs._persist(output,{'identity':c.job_identity(m,step),'result':result})
+    return output
 
 
 def pump(root,key, *, executor=None, scheduler="canonical"):
@@ -437,6 +568,10 @@ def pump(root,key, *, executor=None, scheduler="canonical"):
         if not held:
             raise c.ContractError('owner_busy',7)
         recovered=load(root,key)
+        if 'concurrencyProfile' in recovered['manifest']['bindings']:
+            from scripts.sermon_unified_parallel import pump_locked
+            return pump_locked(root,key,executor=executor,scheduler=scheduler)
+        release_completed_resources(recovered)
         abandoned=[sid for sid,row in recovered['steps'].items() if row['process']=='running']
         if abandoned:
             for sid in abandoned:
@@ -465,48 +600,12 @@ def pump(root,key, *, executor=None, scheduler="canonical"):
                        and all(state['steps'][d]['process']=='succeeded' for d in s['dependsOn'])),None)
             if step is None:
                 return state
+            state,output=_prepare_dispatch(root,key,state,step)
+            if output is None:
+                return state
             sid=step['id'];row=state['steps'][sid]
             try:
-                adapters.inspect_step(m,'/',step)
-            except (OSError,ValueError,KeyError,TypeError) as exc:
-                row.update(process='blocked',reason=exc.code if isinstance(exc,c.ContractError) else 'adapter_preflight_failed')
-                return save(root,key,state,state['stateRevision'])
-            row['readyAt']=max((state['steps'][d].get('completedAt',state['createdAt']) for d in step['dependsOn']),default=state['createdAt'])
-            row['enqueuedAt']=now()
-            row.update(process='running',startedAt=now(),monotonicStart=time.monotonic(),processId=os.getpid(),
-                       intentSha256=c.digest(c.job_identity(m,step)))
-            deps=[state['steps'][d].get('completionEventId') for d in step['dependsOn']]
-            row['dependsOnEvents']=deps
-            row['dispatchEventId']=event(m,state,step,'dispatch.started',predecessor=deps[-1] if deps else None)
-            # Intent and conservative bound survive any crash before the result.
-            reserved=state.get('historicalReservedMicroUsd',0)+sum(r.get('reservedMicroUsd',0) for r in state['steps'].values())
-            bound=step.get('maxCostMicroUsd',0)
-            authority=step.get('budgetAuthorization')
-            if authority:
-                authority_sha=m['bindings'][authority]['sha256']
-                if authority_sha in state.get('historicalBudgetAuthorities',[]) or any(x.get('budgetAuthoritySha256')==authority_sha for x in state['steps'].values()):
-                    bound=0
-                row['budgetAuthoritySha256']=authority_sha
-            if reserved+bound>m['budget']['limitMicroUsd']:
-                row.pop('intentSha256',None)
-                row.update(process='blocked',reason='budget_exhausted')
-                return save(root,key,state,state['stateRevision'])
-            if step['adapter']=='canonical.layer2' and step.get('maxCostMicroUsd',0)<=0:
-                row.pop('intentSha256',None)
-                row.update(process='blocked',reason='paid_request_bound_required')
-                return save(root,key,state,state['stateRevision'])
-            row['reservedMicroUsd']=bound
-            save(root,key,state,state['stateRevision'])
-            output=folder(root,key)/('response-'+c.digest(c.job_identity(m,step))+'.json')
-            try:
-                if m['transport']=='provider' and step['adapter'] in ('source.prepare','canonical.layer2','canonical.audio','app.delivery','study.produce'):
-                    from scripts.sermon_unified_accounting import execute as execute_observed
-                    result=execute_observed(executor,m,step,output,state,row)
-                else:
-                    result=executor(m,'/',step,output)
-                if not isinstance(result,dict) or result.get('status') not in ('succeeded','blocked','failed'):
-                    raise c.ContractError('invalid_adapter_result')
-                jobs._persist(output,{'identity':c.job_identity(m,step),'result':result})
+                _execute_dispatch(executor,m,step,output,state,row)
             except BaseException as exc:
                 # Known validation rejection is a block. Other outcomes may have
                 # dispatched; keep the reservation and never automatically retry.
@@ -539,6 +638,7 @@ def _finish_once(root,key,sid,response_path,expected_revision=None):
     if row['process']=='succeeded':
         if row.get('responseSha256') != c.file_sha(response_path):
             raise c.ContractError('completed_response_changed',7)
+        release_completed_resources(state)
         return state
     if row['process'] not in ('running','waiting_reconciliation') or not row.get('intentSha256'):
         raise c.ContractError('dispatch_intent_required',7)
@@ -561,7 +661,9 @@ def _finish_once(root,key,sid,response_path,expected_revision=None):
         row['validatedLocales']=result.get('locales',[])
         row['publication']=result.get('publication','not_started')
     row['completionEventId']=event(m,state,step,'dispatch.'+result['status'],predecessor=row.get('dispatchEventId'))
-    return save(root,key,state,state['stateRevision'])
+    saved=save(root,key,state,state['stateRevision'])
+    release_completed_resources(saved)
+    return saved
 
 
 def block(root,key,state,reason):

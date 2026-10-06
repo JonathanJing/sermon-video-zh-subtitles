@@ -186,6 +186,22 @@ def admit(m, base):
             binding(m, base, name)
         except (OSError, ValueError):
             fail('binding_changed')
+    if 'resourcePolicy' in m['bindings']:
+        try:
+            from scripts.sermon_unified import resources
+            resources.validate_policy(read(binding(m, base, 'resourcePolicy')))
+        except (OSError, ValueError, KeyError, TypeError):
+            fail('resource_policy_invalid')
+    if 'concurrencyProfile' in m['bindings']:
+        try:
+            from scripts.sermon_unified_parallel import profile
+            # Paths may still be relative during initial plan/submit admission.
+            profile_manifest=copy.deepcopy(m)
+            for ref in profile_manifest['bindings'].values():
+                ref['path']=str((Path(base)/ref['path']).absolute())
+            profile(profile_manifest)
+        except (OSError,ValueError,KeyError,TypeError):
+            fail('concurrency_profile_invalid')
     if 'media' not in m['bindings'] or m['bindings'].get('media', {}).get('sha256') != m['source']['mediaSha256']:
         fail('source_media_binding_required')
     if w.get('approvalReceiptSha256'):

@@ -9,12 +9,11 @@ from __future__ import annotations
 
 import argparse
 from collections import OrderedDict
-from concurrent.futures import ThreadPoolExecutor
-from contextvars import copy_context
 from datetime import datetime, timezone
 import fcntl
 import json
 from pathlib import Path
+import re
 import sys
 from typing import Any, Callable
 
@@ -149,6 +148,28 @@ def deterministic_review(aligned_path: Path, manifest: dict[str, Any]) -> dict[s
     rebuild_matches = False
     if valid_input and hash_matches and manifest.get("schemaVersion") == anchors.ANCHOR_SCHEMA_V2:
         policy = manifest.get("policy", {})
+        identity_offsets = {}
+        for unit in manifest.get("sourceUnits", []):
+            chunk = unit.get("referenceChunkId")
+            if chunk in identity_offsets:
+                continue
+            unit_match = re.fullmatch(r".+-u(\d+)", str(unit.get("sourceUnitId", "")))
+            sentence_match = re.fullmatch(r".+-s(\d+)", str(unit.get("sourceSentenceId", "")))
+            words = unit.get("words") if isinstance(unit.get("words"), list) else []
+            word_match = re.fullmatch(r".+-w(\d+)", str(words[0].get("wordId", ""))) if words else None
+            if not (isinstance(chunk, str) and unit_match and sentence_match and word_match
+                    and unit.get("partIndex") == 1):
+                identity_offsets = {}
+                break
+            identity_offsets[chunk] = {
+                "sentence": int(sentence_match.group(1)) - 1,
+                "word": int(word_match.group(1)) - 1,
+                "unit": int(unit_match.group(1)) - 1,
+            }
+        offsets_valid = set(identity_offsets) == {
+            str(segment.get("referenceChunkId", "")).strip() for segment in aligned
+            if str(segment.get("referenceChunkId", "")).strip()
+        }
         rebuilt = anchors.build_anchor_manifest(
             aligned,
             source_path=aligned_path,
@@ -161,6 +182,8 @@ def deterministic_review(aligned_path: Path, manifest: dict[str, Any]) -> dict[s
             max_end_lag_seconds=policy.get("maxEndLagSeconds", 8.0),
             word_duration_outlier_seconds=policy.get("wordDurationOutlierSeconds", 2.5),
             boundary_overrides=policy.get("boundaryOverrides"),
+            identity_offsets=identity_offsets if offsets_valid else None,
+            allow_out_of_scope_overrides=offsets_valid,
         )
         rebuilt["input"]["mfaSegments"] = manifest.get("input", {}).get("mfaSegments")
         rebuild_matches = rebuilt == manifest
@@ -302,10 +325,10 @@ def _checked_batch(result: dict[str, Any], expected: list[dict[str, Any]]) -> li
     return rows
 
 
-def run(*, aligned_path: Path, manifest_path: Path, out: Path, model: str = "gpt-6-astra",
-        effort: str = "medium", batch_size: int = 15, api_key: str,
+def run(*, aligned_path: Path, manifest_path: Path, out: Path, model: str = "gpt-6.1-sol",
+        effort: str = "high", batch_size: int = 15, api_key: str,
         cache_root: Path | None = None, workers: int = 1, prewarm: bool = False,
-        caller: Callable[..., dict[str, Any]] = chat_json) -> dict[str, Any]:
+        caller: Callable[..., dict[str, Any]] | None = None) -> dict[str, Any]:
     if type(workers) is not int or not 1 <= workers <= 8:
         raise ValueError("L1 judge workers must be an integer between 1 and 8")
     aligned_path = aligned_path.resolve()
@@ -326,6 +349,9 @@ def run(*, aligned_path: Path, manifest_path: Path, out: Path, model: str = "gpt
             raise ValueError("Existing machine judge receipt belongs to changed judge configuration")
         return existing
 
+    if caller is None:
+        from scripts.production_spark_admission import SessionBoundCaller
+        caller = SessionBoundCaller(chat_json, purpose="english-machine-review")
     deterministic = deterministic_review(aligned_path, manifest)
     sentences = _sentence_inputs(manifest)
     reviewed: list[dict[str, Any]] = []
@@ -352,11 +378,11 @@ def run(*, aligned_path: Path, manifest_path: Path, out: Path, model: str = "gpt
             )
             return _checked_batch(result, batch), receipt
 
-        # map preserves source order regardless of completion order.
-        with ThreadPoolExecutor(max_workers=workers) as pool:
-            pending = [pool.submit(copy_context().run, review_batch, item)
-                       for item in enumerate(_batches(sentences, batch_size))]
-            batches_reviewed = [future.result() for future in pending]
+        # Bounded dispatch preserves source order and stops admitting later
+        # groups after a failed/unknown sibling. Context-bound request caps are
+        # copied into each worker rather than silently lost across threads.
+        from scripts.sermon_unified_source import ordered_bounded_map
+        batches_reviewed = ordered_bounded_map(enumerate(_batches(sentences, batch_size)), review_batch, workers)
         for rows, receipt in batches_reviewed:
             reviewed.extend(rows)
             request_receipts.append(receipt)
@@ -455,8 +481,8 @@ def main() -> int:
     parser.add_argument("--aligned-segments", type=Path, required=True)
     parser.add_argument("--anchor-manifest", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
-    parser.add_argument("--model", default="gpt-6-astra")
-    parser.add_argument("--reasoning-effort", default="medium")
+    parser.add_argument("--model", default="gpt-6.1-sol")
+    parser.add_argument("--reasoning-effort", default="high")
     parser.add_argument("--batch-size", type=int, default=15)
     parser.add_argument("--cache-root", type=Path, help="Canonical request cache root; defaults to anchor manifest directory")
     parser.add_argument("--workers", type=int, default=1)

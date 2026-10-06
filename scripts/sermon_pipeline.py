@@ -23,6 +23,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from scripts import review_prompts  # noqa: E402
+from scripts import production_spark_admission as spark_admission  # noqa: E402
 from scripts.sermon_accounting import AccountingWriteError, _finalize, accounting_session, stage, record_api_attempt, record_api_started, request_metadata, record_workload
 
 
@@ -671,8 +672,10 @@ def transcribe_openai_audio(
     keywords=None,
     languages=None,
     response_format="json",
+    session_verifier=None,
 ):
-    return multipart_request(
+    return spark_admission.SessionBoundCaller(multipart_request, verifier=session_verifier,
+        purpose="source-audio-api")(
         TRANSCRIBE_URL,
         api_key,
         transcription_request_fields(
@@ -990,7 +993,12 @@ def chunk_text_for_window(chunks, start, end):
     return "\n".join(parts)
 
 
-def chat_json(api_key, payload, retries=3):
+def chat_json(api_key, payload, retries=1, *, session_verifier=None):
+    return spark_admission.SessionBoundCaller(_chat_json, verifier=session_verifier,
+        purpose="production-text-call")(api_key, payload, retries=retries)
+
+
+def _chat_json(api_key, payload, retries=1):
     last_error = None
     for attempt in range(retries):
         try:
@@ -1455,8 +1463,8 @@ def main():
         "--english-transcript-only", action="store_true",
         help="Freeze English ASR before alignment when the MFA runtime is unavailable; do not translate.",
     )
-    parser.add_argument("--en-correction-model", default="gpt-5.6")
-    parser.add_argument("--zh-model", default="gpt-5.6")
+    parser.add_argument("--en-correction-model", default="gpt-6.1-sol")
+    parser.add_argument("--zh-model", default="gpt-6.1-sol")
     parser.add_argument(
         "--reasoning-effort",
         choices=["low", "medium", "high"],
@@ -1663,7 +1671,8 @@ def produce_pipeline(args, api_key, source_duration, start, end, outdir):
         raise RuntimeError(f"{args.reference_model} returned no usable sermon transcript")
     write_json(outdir / "segments_timed_en_raw.json", raw_segments)
 
-    with stage("pipeline.source_review", billing="api"):
+    with stage("pipeline.source_review", billing="local" if args.english_source_only else
+               "api"):
         if args.output_mode == "reading":
             corrected = raw_segments
         else:

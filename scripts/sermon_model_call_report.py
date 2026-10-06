@@ -4,6 +4,7 @@ Request throughput includes transport and prefill. Generation throughput require
 an explicit generation duration. SDK session throughput includes tool execution.
 """
 from collections import defaultdict
+from copy import deepcopy
 import json
 import math
 import re
@@ -40,6 +41,43 @@ def _fact(event):
     ignored = {'eventId', 'recordedAt', 'runId', 'workflowId', 'stage', 'spanId',
                'producerId', 'sequence', 'traceId', 'pid', 'threadId'}
     return {k: v for k, v in event.items() if k not in ignored}
+
+
+def _codex_call(row):
+    return row['backend'] == 'agent_session' and (
+        row['provider'] == 'codex' or row.get('agentBackend') == 'codex')
+
+
+def _credit_usage(data, row):
+    """Keep the logged estimate; never reprice an existing billing snapshot."""
+    from scripts.codex_credit_usage import estimate_credit_usage, safe_credit_usage
+    recorded = data.get('creditUsage')
+    if row['status'] != 'conflict' and isinstance(recorded, dict):
+        try:
+            return safe_credit_usage(deepcopy(recorded), row['requestedModel'] or row['model'],
+                                     row['usage'], status=row['status'], cache_hit=data.get('cacheHit'))
+        except ValueError:
+            # A bad price snapshot cannot contribute a numeric estimate.
+            unknown = estimate_credit_usage(row['requestedModel'] or row['model'], _usage(None), status='conflict')
+            unknown['reason'] = 'malformed_recorded_credit_evidence'
+            return unknown
+    # Legacy observations did not record a tier. In particular fast is not
+    # inferred from the current CLI configuration or a model's default.
+    return estimate_credit_usage(
+        row['requestedModel'] or row['model'], row['usage'],
+        status=row['status'], cache_hit=None if row['status'] == 'conflict' else data.get('cacheHit'),
+    )
+
+
+def _credit_totals(rows):
+    eligible = [r for r in rows if _codex_call(r)]
+    if not eligible:
+        return None
+    known = [r for r in eligible if r['creditUsage'].get('status') in {'estimated', 'cache_reuse'} and _number(r['creditUsage'].get('estimatedCredits')) is not None]
+    return {'estimatedCreditsKnownSubtotal': math.fsum(r['creditUsage']['estimatedCredits'] for r in known),
+            'estimatedCallCount': len(known), 'unknownCallCount': len(eligible) - len(known),
+            'cacheReuseCallCount': sum(r['creditUsage'].get('status') == 'cache_reuse' for r in eligible),
+            'complete': len(known) == len(eligible), 'actualCredits': None, 'actualQuotaUsage': None}
 
 
 def _row(start, finish, *, call_id, backend, role, provider='not_recorded',
@@ -122,6 +160,9 @@ def report(events):
                 first = start.get('fields', {})
                 if any(first.get(k) != f.get(k) for k in ('model', 'backend', 'provider', 'role', 'timingScope', 'startedAt')):
                     conflict = True
+                initial_credit, final_credit = first.get('creditUsage'), f.get('creditUsage')
+                if isinstance(initial_credit, dict) and isinstance(final_credit, dict) and initial_credit.get('requestedServiceTier') != final_credit.get('requestedServiceTier'):
+                    conflict = True
             # A mirrored legacy attempt is correlation evidence, not another call.
             for legacy in groups.get(('api', run, call_id), []) if f.get('backend') == 'api' else []:
                 if legacy['event'] != 'api_attempt':
@@ -142,6 +183,8 @@ def report(events):
             call['agentBackend'] = _label(evidence.get('agentBackend'))
             call['generationTokensPerSecond'] = None
             call['generationSeconds'] = None
+        if _codex_call(call):
+            call['creditUsage'] = _credit_usage(f, call)
         calls.append(call)
     # Local v1 has no invocation identity: only an unambiguous span/model pair
     # can be joined. Repeated calls in one span remain separate observations.
@@ -181,6 +224,28 @@ def report(events):
             duplicates += len(rows) - 1
         removed.update(id(r) for r in rows[1:])
     calls = [r for r in calls if id(r) not in removed]
+    # A Codex generic observation has an invocation UUID rather than an API
+    # response ID. An imported receipt retains that UUID and its start time.
+    # Do not join older SDK rows lacking provider identity with generic rows.
+    codex_receipts = defaultdict(list)
+    for call in calls:
+        if call['provider'] == 'codex' and call['backend'] == 'agent_session' and call['callId'] and call['startedAt']:
+            codex_receipts[(call['callId'], call['startedAt'])].append(call)
+    removed = set()
+    for rows in codex_receipts.values():
+        if len(rows) < 2:
+            continue
+        comparable = lambda r: {k: r.get(k) for k in ('model', 'requestedModel', 'role', 'status', 'usage', 'elapsedSeconds', 'generationSeconds', 'timingScope', 'creditUsage')}
+        keeper = rows[0]
+        if len({_fingerprint(comparable(r)) for r in rows}) > 1:
+            keeper.update(status='conflict', usageStatus='conflict', usage=_usage(None), elapsedSeconds=None,
+                          generationSeconds=None, effectiveRequestTokensPerSecond=None,
+                          generationTokensPerSecond=None, sessionOutputTokensPerSecond=None)
+            keeper['creditUsage'] = _credit_usage({}, keeper)
+        else:
+            duplicates += len(rows) - 1
+        removed.update(id(r) for r in rows[1:])
+    calls = [r for r in calls if id(r) not in removed]
     for row in calls:
         row['requestOutputTokensPerSecond'] = row['effectiveRequestTokensPerSecond']
         row['generationOutputTokensPerSecond'] = row['generationTokensPerSecond']
@@ -196,6 +261,11 @@ def report(events):
             tokens = sum(r['usage']['outputTokens'] for r in matched)
             seconds = sum(r[duration] for r in matched)
             rates[rate] = {'value': _rate(tokens, seconds), 'matchedCallCount': len(matched), 'missingCallCount': len(rows) - len(matched), 'matchedOutputTokens': tokens, 'matchedSeconds': seconds}
-        aggregated.append({'backend': backend, 'role': role, 'model': model, 'callCount': len(rows), 'usage': coverage, 'rates': rates})
-    return {'schemaVersion': 'sermon-model-call-report-v1', 'calls': calls, 'totals': aggregated, 'groups': aggregated, 'equivalentDuplicatesIgnored': duplicates,
+        group = {'backend': backend, 'role': role, 'model': model, 'callCount': len(rows), 'usage': coverage, 'rates': rates}
+        credits = _credit_totals(rows)
+        if credits is not None:
+            group['creditUsage'] = credits
+        aggregated.append(group)
+    return {'schemaVersion': 'sermon-model-call-report-v2', 'calls': calls, 'totals': aggregated, 'groups': aggregated,
+            'creditUsage': _credit_totals(calls), 'equivalentDuplicatesIgnored': duplicates,
             'coverage': {'callCount': len(calls), 'conflictCallCount': sum(c['status'] == 'conflict' for c in calls), 'missingOutputTokenCalls': sum(c['usage']['outputTokens'] is None for c in calls)}}

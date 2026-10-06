@@ -22,6 +22,8 @@ class StrictLayer3Tests(unittest.TestCase):
         self.rubric['requiredLanguagePluginChecks']=f.policy['languageReview']['requiredChecks']
         draft=copy.deepcopy(f.policy);draft.pop('componentSha256')
         draft.update(schemaVersion=policies.POLICY_V3,reviewMode='strict_verifier')
+        draft['translator'].update(model='gpt-6-astra', reasoningEffort='medium')
+        draft['reviewer'].update(model='gpt-6-sol', reasoningEffort='medium')
         draft['translator']['promptVersion']='astra-strict-generator-v1'
         draft['reviewer']['promptVersion']='sol-strict-verifier-v1'
         draft['reviewContract']=dict(rubricCanonicalJsonSha256=contracts.canonical_sha256(self.rubric),
@@ -31,6 +33,7 @@ class StrictLayer3Tests(unittest.TestCase):
         f.policy=policies.freeze_strict_policy(draft,self.rubric)
         f.candidate['translationPolicySha256']=policies.validate_strict_policy(f.policy,self.rubric)['translationPolicySha256']
         for role in ('translator','reviewer'):
+            f.candidate['generation'][role]['model']=f.policy[role]['model']
             f.candidate['generation'][role]['promptVersion']=f.policy[role]['promptVersion']
         f.human_receipt['translationPolicySha256']=f.candidate['translationPolicySha256']
         f.human_receipt['candidateJsonSha256']=package.json_sha256(f.candidate)

@@ -19,10 +19,12 @@ if __package__ in {None, ''}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from scripts import canonical_durable_jobs as durable
+from scripts import production_spark_admission as spark_admission
 from scripts import inspect_canonical_packages as packages
 from scripts import canonical_pipeline_definition as pipeline
 from scripts import produce_target_language_candidate as producer
 from scripts import run_target_language_models as models
+from scripts import target_language_rule_preflight as rule_preflight
 from scripts import sermon_accounting as accounting
 from scripts import sermon_workflow_jobs as jobs
 from scripts import sermon_job_liveness as liveness
@@ -34,6 +36,7 @@ from scripts.sermon_release_workflow import _safe_path
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA = 'sermon-canonical-layer2-execution-v1'
+CONCURRENT_SCHEMA = 'sermon-canonical-layer2-execution-v2'
 MODES = ('deterministic_shadow', 'deterministic_execute')
 ADMISSION_LOCK = jobs._digest({'purpose': 'canonical-layer2-admission-v1'})
 MAX_CONFIG_BYTES = 1024 * 1024
@@ -74,13 +77,18 @@ class Configuration:
     run_id: str
     lanes: dict
     sha256: str
+    concurrency_profile: dict | None = None
+    resource_policy: dict | None = None
 
 
 def load_configuration(path):
     path = _safe_path(Path(path).absolute())
     value = _json(path)
-    require(set(value) == {'schemaVersion', 'productionRunId', 'inspectionConfig', 'jobRoot', 'locales'}
-            and value['schemaVersion'] == SCHEMA and pipeline._sha(value['productionRunId'])
+    required_keys = {'schemaVersion', 'productionRunId', 'inspectionConfig', 'jobRoot', 'locales'}
+    require(((set(value) == required_keys and value['schemaVersion'] == SCHEMA)
+             or (set(value) == required_keys | {'concurrencyProfile', 'resourcePolicy'}
+                 and value['schemaVersion'] == CONCURRENT_SCHEMA))
+            and pipeline._sha(value['productionRunId'])
             and isinstance(value['locales'], dict) and bool(value['locales'])
             and set(value['locales']) <= set(pipeline.LOCALES), 'invalid_execution_configuration')
     inspection_path = _path(path.parent, value['inspectionConfig'])
@@ -92,6 +100,17 @@ def load_configuration(path):
     job_root = _path(path.parent, value['jobRoot'])
     input_paths = [path, inspection_path, _path(root, inspection.get('source')),
                    _path(root, inspection.get('anchor'))]
+    concurrency_profile = resource_policy = None
+    if 'concurrencyProfile' in value:
+        from scripts.production_concurrency_profile import load_profile
+        from scripts.sermon_unified import resources
+        profile_path = _path(path.parent, value['concurrencyProfile'])
+        resource_path = _path(path.parent, value['resourcePolicy'])
+        concurrency_profile = load_profile(profile_path)
+        resource_policy = resources.validate_policy(_json(resource_path))
+        require(resource_policy['capacities']['codex_cli'] == concurrency_profile['totalCodexSlots'],
+                'concurrency_profile_requires_shared_24_slot_broker')
+        input_paths.extend((profile_path, resource_path))
     lanes, plugin_hashes = {}, {}
     for locale, lane in sorted(value['locales'].items()):
         require(isinstance(lane, dict) and set(lane) == {'outputDirectory', 'plugin'}, 'invalid_execution_lane')
@@ -111,8 +130,12 @@ def load_configuration(path):
     require(not any(_overlap(output, path) for output in outputs for path in input_paths)
             and not any(_overlap(a, b) for i, a in enumerate(outputs) for b in outputs[i + 1:]),
             'execution_paths_overlap')
-    sha = jobs._digest({'execution': value, 'inspection': inspection, 'plugins': plugin_hashes})
-    return Configuration(path, root, inspection, job_root, value['productionRunId'], lanes, sha)
+    binding = {'execution': value, 'inspection': inspection, 'plugins': plugin_hashes}
+    if concurrency_profile is not None:
+        binding.update(concurrencyProfile=concurrency_profile, resourcePolicy=resource_policy)
+    sha = jobs._digest(binding)
+    return Configuration(path, root, inspection, job_root, value['productionRunId'], lanes, sha,
+                         concurrency_profile, resource_policy)
 
 
 def code_identity():
@@ -144,8 +167,9 @@ def snapshot(config):
         if view['nodes'].get(unit, {}).get('status') == 'ready':
             try:
                 _inputs(config, locale, view)
-            except (ValueError, OSError, KeyError, TypeError):
-                view['nodes'][unit].update(status='blocked', reasonCode='fixed_layer2_admission_invalid')
+            except (ValueError, OSError, KeyError, TypeError) as error:
+                reason = 'layer2_rule_preflight_failed' if str(error).startswith('Layer 2 rule preflight:') else 'fixed_layer2_admission_invalid'
+                view['nodes'][unit].update(status='blocked', reasonCode=reason)
                 rejected.append(unit)
     view['stateRevision'] = jobs._digest({'packageAndJobs': view['stateRevision'],
                                         'configuration': config.sha256, 'rejectedLanes': sorted(rejected)})
@@ -164,11 +188,13 @@ def _inputs(config, locale, view):
     require(producer.plugin_implementation_sha256(lane['plugin']) == policy['languageReview']['pluginImplementationSha256'],
             'plugin_does_not_match_frozen_policy')
     # Fixed production models and the canonical runner's worker budget bound paid work.
-    require(all(policy[role]['model'] == model for role, model in models.MODEL_ROLES.items()), 'production_model_policy_changed')
+    require(all(policy[role]['model'] == model and policy[role]['reasoningEffort'] == models.MODEL_EFFORTS[role] for role, model in models.MODEL_ROLES.items()), 'production_model_policy_changed')
     require(policy['batching']['batchSize'] == 1 and type(policy['batching']['workers']) is int
             and 1 <= policy['batching']['workers'] <= api_concurrency.MAX_GROUP_WORKERS_PER_LOCALE,
             'invalid_production_worker_budget')
-    producer.prepare_request(values['source'], values['anchor'], policy)
+    request = producer.prepare_request(values['source'], values['anchor'], policy)
+    plan = models.group_plan(request, values['anchor'])
+    rule_preflight.preflight(request, policy, lane['plugin'], plan)
     return values['source'], values['anchor'], policy
 
 
@@ -196,7 +222,8 @@ class Controller:
                 'mode': self.mode, 'scope': 'four_layer_release_layer2_preparation',
                 'productionRunId': self.config.run_id, 'configurationSha256': self.config.sha256,
                 'codeIdentitySha256': self.code_sha, 'status': status, 'reasonCode': reason,
-                'maxConcurrentLocaleJobs': MAX_ACTIVE_LAYER2_JOBS,
+                'maxConcurrentLocaleJobs': (self.config.concurrency_profile['maxActiveLocales']
+                                           if self.config.concurrency_profile else MAX_ACTIVE_LAYER2_JOBS),
                 'maxInFlightApiCalls': api_concurrency.MAX_IN_FLIGHT_API_CALLS,
                 'runtimeCodexTurns': 0, 'contentAcceptance': 'not_evaluated',
                 'deviceAcceptance': 'not_run', **fields}
@@ -214,7 +241,10 @@ class Controller:
         # reconciliation of an uncertain owner.
         active = [row for row in view['durableJobInspection']['jobs']
                   if row['workUnitId'].startswith('text.') and row['status'] in jobs.ACTIVE | {'uncertain'}]
-        return len(active) >= MAX_ACTIVE_LAYER2_JOBS
+        if any(row['status'] == 'uncertain' for row in active):
+            return True  # preserve the existing run-wide unknown reconciliation barrier
+        limit = self.config.concurrency_profile['maxActiveLocales'] if self.config.concurrency_profile else MAX_ACTIVE_LAYER2_JOBS
+        return len(active) >= limit
 
     def _choose(self, view, requested_locale=None):
         if self._capacity_full(view):
@@ -240,6 +270,7 @@ class Controller:
         with jobs._lock(config.job_root, ADMISSION_LOCK) as (_, _, held):
             if not held:
                 return self._result('waiting', 'admission_busy', dispatched=False)
+            dispatch_attempted = False
             try:
                 config, fresh = self._fresh()
                 require(fresh['stateRevision'] == observed['stateRevision'], 'stale_state_revision')
@@ -250,18 +281,20 @@ class Controller:
                 _inputs(config, locale, fresh)
                 ident = durable.identity(fresh, config.run_id, 'text.' + locale)
                 key = jobs._digest(ident)
+                dispatch_attempted = True
                 outcome = jobs.start_job(config.job_root, ident, _worker_command(config, locale, key, self.code_sha, self.budget_authorization),
                                          timeout_seconds=21600, liveness_policy=LIVENESS_POLICY)
             except (ValueError, OSError, KeyError, TypeError):
                 # Any persisted job intent remains discoverable; never retry an
                 # uncertain start merely because this controller got an error.
-                return self._result('blocked', 'admission_or_dispatch_requires_inspection', dispatched=None)
+                return self._result('blocked', 'admission_or_dispatch_requires_inspection',
+                                    dispatched=None if dispatch_attempted else False)
             return self._result('waiting', 'verify_durable_job_and_candidate_evidence',
                                 workUnitId='text.' + locale, job=outcome, dispatched=True)
 
 
 def execute(config_path, locale, expected_configuration, expected_code, expected_job, *, caller=None, api_key=None, budget_authorization=None, expected_budget=None):
-    """Fixed worker body. Injected transport is for local tests; CLI uses policy API."""
+    """Fixed worker body. New jobs use the bound project API budget transport."""
     config = load_configuration(config_path)
     require(locale in config.lanes and config.sha256 == expected_configuration
             and code_identity() == expected_code, 'worker_configuration_or_code_changed')
@@ -293,11 +326,19 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
             source, anchor, policy = _inputs(config, locale, current)
         with liveness.report(request_path.parent, request) as progress:
             if caller is None:
-                api_key = os.environ.get('OPENAI_API_KEY')
-                require(bool(api_key), 'OPENAI_API_KEY_is_not_configured')
-                if budget_binding is None:
-                    caller = lambda key, payload: models.sermon_pipeline.chat_json(key, payload, retries=1)
-            if budget_binding is not None:
+                require(budget_binding is not None, 'bound_budget_authorization_required')
+                spark_admission.require_session()
+                from scripts.sermon_openai_runtime import selected_route
+                route = selected_route()
+                require(route is not None, 'openai_layer2_requires_explicit_dev_or_prod_launcher')
+                api_key = os.environ['OPENAI_API_KEY']
+                caller = budget_tools.BudgetedCaller(budget_binding, config, source, anchor, policy)
+                caller.execution_identity = {
+                    'schemaVersion': 'openai-layer2-budget-transport-identity-v1',
+                    'backend': 'openai_api', 'route': route,
+                    'budgetAuthorizationSha256': budget_binding['sha256']}
+                caller = spark_admission.SessionBoundCaller(caller)
+            elif budget_binding is not None:
                 caller = budget_tools.BudgetedCaller(budget_binding, config, source, anchor, policy, transport=caller)
             def current_binding():
                 fresh_config = load_configuration(config.path)
@@ -314,6 +355,11 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                     current_binding()
                     progress.progress('model_request')
                     return caller(key, payload)
+            # Preserve terminal decoding and transport identity through the
+            # state-binding wrapper. A CLI envelope is not an API response.
+            for attribute in ('execution_identity', 'completed_content', 'admit_resource', 'billing'):
+                if hasattr(caller, attribute):
+                    setattr(bound_call, attribute, getattr(caller, attribute))
             model_completion = []
             with (budget_tools.request_limits(budget_binding['limits']) if budget_binding else nullcontext()):
                 evidence = models.run_accounted(source, anchor, policy, lane['output'], api_key,
@@ -329,9 +375,12 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
             with accounting.stage('layer2.language_and_candidate.' + locale, depends_on=[binding_span],
                     executor_type='deterministic_program', work_unit_id='l2.' + locale + '.candidate_admission') as candidate_span:
                 original_request = producer._load(lane['output'] / 'request.json')
+                rule_receipt = producer._load(lane['output'] / 'rule-preflight.json')
                 plugin_sha = policy['languageReview']['pluginImplementationSha256']
-                receipt = producer.run_language_plugin(source, anchor, policy, original_request, evidence, lane['plugin'], plugin_sha)
-                candidate = producer.admit_evidence(source, anchor, policy, original_request, evidence, receipt, lane['plugin'], plugin_sha)
+                receipt = producer.run_language_plugin(source, anchor, policy, original_request, evidence,
+                    lane['plugin'], plugin_sha, rule_preflight_receipt=rule_receipt)
+                candidate = producer.admit_evidence(source, anchor, policy, original_request, evidence,
+                    receipt, lane['plugin'], plugin_sha, rule_preflight_receipt=rule_receipt)
                 current_binding()
                 progress.progress('candidate_validated')
                 models.save_new(lane['output'] / 'language-review.json', receipt)

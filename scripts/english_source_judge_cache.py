@@ -52,6 +52,9 @@ def cached_call(*, out: Path, stage: str, payload: dict[str, Any], api_key: str,
         else:
             if marker.exists():
                 raise ValueError(f'Unknown L1 request outcome; reconcile original response before retry: {marker}')
+            admission = getattr(caller, 'admit_resource', None)
+            if admission is not None:
+                admission(payload)
             _atomic(marker, {'requestSha256': request_hash, 'request': request,
                              'status': 'started_response_unconfirmed'})
             response = caller(api_key, payload)

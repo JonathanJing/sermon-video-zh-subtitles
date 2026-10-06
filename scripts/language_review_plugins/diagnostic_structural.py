@@ -122,7 +122,8 @@ def _reference_only(policy, english, target):
 def review_group(policy, english_units, group, *, diagnostic_context):
     """Return real structural check results; preserve every input unchanged."""
     context = diagnostic.validate_context(diagnostic_context)
-    _require(type(policy) is dict and policy.get('schemaVersion') == 'sermon-target-language-policy-v3'
+    _require(type(policy) is dict and policy.get('schemaVersion') in
+             ('sermon-target-language-policy-v2', 'sermon-target-language-policy-v3')
              and policy.get('targetLocale') in LOCALES, 'diagnostic_plugin_policy_invalid')
     locale = policy['targetLocale']
     review = policy.get('languageReview', {})

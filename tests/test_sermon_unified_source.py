@@ -117,6 +117,35 @@ class UnifiedSourceTests(unittest.TestCase):
         self.assertEqual(before, {p: p.read_bytes() for p in self.root.rglob('*') if p.is_file()})
         self.assertFalse((self.root / '.jobs.source-budget').exists())
 
+    def test_versioned_parallel_source_configuration_binds_four_asr_and_eight_judges(self):
+        self.config.update(schemaVersion=subject.SCHEMA_V2, asrWorkers=4)
+        self.config['judge']['workers'] = 8
+        self.path.write_text(json.dumps(self.config))
+        authorization_path = self.root / 'budget.json'
+        authorization = json.loads(authorization_path.read_text())
+        authorization['binding']['configurationSha256'] = jobs._digest(
+            {k: v for k, v in self.config.items() if k != 'budgetAuthorization'})
+        approval_path = self.root / 'budget-approval.json'
+        approval = json.loads(approval_path.read_text())
+        approval['binding'].update(authorization['binding'])
+        approval_path.write_text(json.dumps(approval))
+        authorization['authority']['approvalSha256'] = subject._sha(approval_path)
+        authorization_path.write_text(json.dumps(authorization))
+        config = subject.load_configuration(self.path)
+        self.assertEqual(config.value['asrWorkers'], 4)
+        self.assertEqual(config.value['judge']['workers'], 8)
+        result = self.execute()
+        self.assertFalse(result['productionEligible'])
+        self.assertEqual(len(self.calls), 3)
+        self.assertEqual(jobs._read(config.budget_root / 'source-budget.json')['maxConcurrent'], 8)
+
+    def test_legacy_source_configuration_cannot_silently_expand_judge_concurrency(self):
+        self.config['judge']['workers'] = 8
+        self.path.write_text(json.dumps(self.config))
+        with self.assertRaisesRegex(ValueError, 'invalid_source_judge_configuration'):
+            subject.load_configuration(self.path)
+        self.assertEqual(self.calls, [])
+
     def test_actual_producers_create_only_human_pending_source_and_resume_without_api(self):
         result = self.execute()
         self.assertEqual(result['reason'], 'human_source_review_required')
@@ -149,6 +178,18 @@ class UnifiedSourceTests(unittest.TestCase):
             self.execute(fail_second)
         self.assertEqual(len(calls), 2)
         self.assertFalse((self.root / 'source/english-source-candidate.json').exists())
+
+    def test_sol_source_judge_budget_is_bounded_for_api(self):
+        from scripts import sermon_source_budget as budget
+        from scripts import sermon_provider_limits as limits
+        from scripts import judge_english_source_for_translation as judge
+        request = {'model': 'gpt-6.1-sol', 'reasoning_effort': 'high',
+            'messages': [{'role': 'user', 'content': 'synthetic source'}],
+            'response_format': {'type': 'json_schema', 'json_schema': {'schema': judge._response_schema()}}}
+        with budget.judge_limits(limits.DEFAULT_REQUEST_LIMITS):
+            bounded = budget.bound_judge_payload(request)
+        self.assertEqual(bounded['max_completion_tokens'], 4096)
+        self.assertEqual(bounded['service_tier'], 'default')
 
     def test_mfa_preflight_failure_makes_zero_provider_calls(self):
         def failed(**kwargs):

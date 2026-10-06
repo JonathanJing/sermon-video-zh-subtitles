@@ -181,6 +181,8 @@ iOS Beta 与 Firebase Dev 分开记录。一端通过不代替另一端。正式
 
 ## 10. 缓存与并发
 
+各层依赖、线上／本地资源预算、自动接续、监督职责及分阶段实施详见[制作并发与自动接续设计](production-concurrency-scheduler-design.zh.md)。这是待实现增补，不改变本节MVP容量或已有执行范围。
+
 副作用身份由业务范围、固定输入、版本和操作类型派生。路径变化、worker 重启和 CLI 别名不改变这个身份。调用前原子保存 intent 和预算预留，返回后保存响应，验真后提交产物。unknown 不自动重试。
 
 `reused_groups` 和 `fresh_api_attempts` 按真实响应计数。命中标记只在命中了该组响应时为真。只传了复用目录、组上没有命中响应时，标记为假。缓存 token 不计作新文本。缺价格或 usage 时金额为 null。

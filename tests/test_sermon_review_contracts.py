@@ -206,12 +206,15 @@ class StrictPolicyTests(unittest.TestCase):
         strict,rubric=self.strict();strict['reviewContract']['rubricCanonicalJsonSha256']='0'*64
         with self.assertRaises(c.ContractError):policy.validate_strict_policy(strict,rubric)
 
-    def test_legacy_policy_bytes_and_hashes_remain_frozen(self):
+    def test_legacy_fixture_hash_remains_frozen_and_current_policies_validate(self):
         golden=load('legacy-golden-sha256')
-        for name,digest in golden.items():
-            if name.endswith('.json'):
-                data=(ROOT/'config/target-language-policies'/name).read_bytes();self.assertEqual(c.bytes_sha256(data),digest)
-                parsed=json.loads(data);before=c.canonical_bytes(parsed);policy.validate_policy(parsed);self.assertEqual(before,c.canonical_bytes(parsed))
+        for name in ('es.json', 'ko.json', 'zh-Hans.json'):
+            data=(ROOT/'config/target-language-policies'/name).read_bytes()
+            parsed=json.loads(data);before=c.canonical_bytes(parsed)
+            policy.validate_policy(parsed)
+            self.assertEqual(parsed['translator']['model'], 'gpt-6.1-sol')
+            self.assertEqual(parsed['reviewer']['model'], 'gpt-6.1-sol')
+            self.assertEqual(before,c.canonical_bytes(parsed))
         row=load('legacy-policy-v2');self.assertEqual(policy.validate_policy(row)['translationPolicySha256'],golden['fixtureV2CanonicalJsonSha256'])
 
 

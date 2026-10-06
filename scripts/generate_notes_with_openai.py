@@ -33,7 +33,7 @@ SECRET_RESOURCE_RE = re.compile(
 NOTE_SLICE_TARGET_MS = 5 * 60 * 1000
 NOTE_SLICE_MAX_CHARS = 900
 NOTE_SLICE_MIN_CHARS = 120
-DEFAULT_MODEL = "gpt-5.6"
+DEFAULT_MODEL = "gpt-6.1-sol"
 DEFAULT_REASONING_EFFORT = "high"
 SRT_TIMESTAMP_RE = re.compile(
     r"^\s*(?P<start>\d{1,2}:\d{2}:\d{2}[,.]\d{3})\s*-->\s*(?P<end>\d{1,2}:\d{2}:\d{2}[,.]\d{3})"
@@ -53,6 +53,10 @@ def main() -> int:
 
 
 def _main(args: argparse.Namespace) -> int:
+    from scripts.sermon_openai_runtime import reject_secret_override, selected_route
+    reject_secret_override(args.api_key_secret)
+    if not args.api_key_secret and selected_route() is None:
+        raise ValueError("local_notes_require_explicit_dev_or_prod_launcher")
     if args.api_key_secret:
         validate_secret_resource_name(args.api_key_secret)
     simulation = read_note_source(args)
@@ -593,7 +597,15 @@ def request_openai_notes(
     payload: dict[str, Any],
     api_key: str,
     timeout_seconds: int = 120,
+    *, session_verifier=None,
 ) -> dict[str, Any]:
+    from scripts.production_spark_admission import SessionBoundCaller
+    return SessionBoundCaller(_request_openai_notes, verifier=session_verifier,
+        purpose="production-study-notes")(payload, api_key, timeout_seconds)
+
+
+def _request_openai_notes(payload, api_key, timeout_seconds):
+    from scripts.sermon_openai_runtime import project_headers
     started = time.perf_counter()
     model = str(payload.get("model") or DEFAULT_MODEL)
     attempt_id = record_api_started(model, request_metadata(payload))
@@ -603,6 +615,7 @@ def request_openai_notes(
             headers={
                 "Authorization": f"Bearer {api_key}",
                 "Content-Type": "application/json",
+                **project_headers(api_key),
             },
             json=payload,
             timeout=timeout_seconds,

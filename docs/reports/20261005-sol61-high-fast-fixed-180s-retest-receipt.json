@@ -1,0 +1,306 @@
+{
+  "schemaVersion": "fixed-180s-sol61-high-fast-retest-result-v1",
+  "diagnosticOnly": true,
+  "productionEligible": false,
+  "humanApproval": false,
+  "sourceMediaSha256": "79bada8f2e960adb470a146f183449db433308b53c20d03ea9c7e2e0a66e906b",
+  "cliWallSeconds": 348.3736440419452,
+  "cli": {
+    "translator": {
+      "calls": 13,
+      "processSeconds": 174.70935425104108,
+      "input_tokens": 211476,
+      "cached_input_tokens": 111744,
+      "output_tokens": 7580,
+      "reasoning_output_tokens": 4693,
+      "outputTokensPerProcessSecond": 43.386343178329454,
+      "nonReasoningOutputTokensPerProcessSecond": 16.52458743480701,
+      "generationTokensPerSecond": null
+    },
+    "reviewer": {
+      "calls": 13,
+      "processSeconds": 172.64585041592363,
+      "input_tokens": 210722,
+      "cached_input_tokens": 156416,
+      "output_tokens": 9447,
+      "reasoning_output_tokens": 4469,
+      "outputTokensPerProcessSecond": 54.718951988947865,
+      "nonReasoningOutputTokensPerProcessSecond": 28.833591934051285,
+      "generationTokensPerSecond": null
+    }
+  },
+  "cliResourceReservations": 27,
+  "cliHeld": 0,
+  "local": {
+    "tts": {
+      "groups": 13,
+      "modelLoadSeconds": 35.4065140876919,
+      "inferenceSeconds": 82.52279688417912,
+      "processWallSeconds": 126.64440358709544,
+      "batchCount": 7,
+      "cleanupConfirmed": true,
+      "model": "Qwen/Qwen3-TTS-12Hz-1.7B-speaker-checkpoint",
+      "usage": {
+        "inputTokens": null,
+        "outputTokens": null,
+        "totalTokens": null,
+        "usageStatus": "unavailable",
+        "generationTokensPerSecond": null
+      }
+    },
+    "asr": {
+      "groups": 13,
+      "modelLoadSeconds": 18.718241813592613,
+      "inferenceSeconds": 10.416358860209584,
+      "processWallSeconds": 31.508541327901185,
+      "batchCount": 4,
+      "cleanupConfirmed": true,
+      "model": "Qwen/Qwen3-ASR-0.6B",
+      "usage": {
+        "inputTokens": null,
+        "outputTokens": null,
+        "totalTokens": null,
+        "usageStatus": "unavailable",
+        "generationTokensPerSecond": null
+      }
+    }
+  },
+  "dispatch": [
+    {
+      "stage": "prepare",
+      "wallSeconds": 0.5952658749883994,
+      "exitCode": 0
+    },
+    {
+      "stage": "upload",
+      "wallSeconds": 3.043020708952099,
+      "exitCode": 0
+    },
+    {
+      "stage": "extract",
+      "wallSeconds": 0.3135714160744101,
+      "exitCode": 0
+    },
+    {
+      "stage": "upload_evidence",
+      "wallSeconds": 0.7114759590476751,
+      "exitCode": 0
+    },
+    {
+      "stage": "tts",
+      "wallSeconds": 128.8133645830676,
+      "exitCode": 0
+    },
+    {
+      "stage": "asr",
+      "wallSeconds": 34.297621500096284,
+      "exitCode": 0
+    },
+    {
+      "stage": "download",
+      "wallSeconds": 2.0335442080395296,
+      "exitCode": 0
+    },
+    {
+      "stage": "upload_evidence-resume",
+      "wallSeconds": 0.6286125839687884,
+      "exitCode": 0
+    },
+    {
+      "stage": "tts-resume",
+      "wallSeconds": 5.366671708994545,
+      "exitCode": 0
+    },
+    {
+      "stage": "asr-resume",
+      "wallSeconds": 2.345960957929492,
+      "exitCode": 0
+    },
+    {
+      "stage": "download-resume",
+      "wallSeconds": 2.5348711669212207,
+      "exitCode": 0
+    }
+  ],
+  "handoff": {
+    "upstreamCompletedAt": "2026-10-05T17:27:35.189018+00:00",
+    "localDispatchAt": "2026-10-05T17:27:35.700345+00:00",
+    "handoffSeconds": 0.511327,
+    "basis": "CLI exit zero and durable 13-group test report"
+  },
+  "assessment": {
+    "schemaVersion": "fixed-clip-local-model-assessment-v2",
+    "diagnosticOnly": true,
+    "humanApproval": false,
+    "formalEligible": false,
+    "status": "diagnostic_only_requires_review",
+    "publicationEligible": false,
+    "publicationBlockers": [
+      "human_content_approval_missing",
+      "canonical_audio_and_sync_not_run",
+      "diagnostic_audio_exceeds_source_duration",
+      "diagnostic_formal_max_lag_exceeded",
+      "diagnostic_formal_clip_tail_overflow"
+    ],
+    "sourceSeconds": 180.013167,
+    "audioSeconds": 180.88,
+    "exceedsSourceSeconds": 0.8668329999999855,
+    "minSimilarity": 0.88,
+    "overlongGroups": [
+      "fresh-g003",
+      "fresh-g004",
+      "fresh-g005",
+      "fresh-g006",
+      "fresh-g007",
+      "fresh-g008",
+      "fresh-g011",
+      "fresh-g013"
+    ],
+    "ownSpanExcessIsWarningOnly": true,
+    "asrBelowThreshold": [],
+    "fullDecodeGroups": 13,
+    "ttsManifestSha256": "1a3ac4976c0cf136df6e5d0f64431e1aeaa073579e1a0c9395bcede287cd654a",
+    "asrManifestSha256": "6b069df34870899a243e9b186c30ff158c1bc7ed93aac0668c54c1c632969dae",
+    "anchorSha256": "c07ea277aa240aec459f970f8cd85f217ac807952bc0818ce2eedc7880453817",
+    "observedMinimumSimilarity": 0.9523809523809523,
+    "observedMaximumSimilarity": 1.0
+  },
+  "timing": {
+    "audioSeconds": 180.88,
+    "minimumDurationRecoverySeconds": 1.516833,
+    "scheduledTailRecoverySeconds": 5.796834,
+    "ownSpanExcessWarnings": [
+      "fresh-g003",
+      "fresh-g004",
+      "fresh-g005",
+      "fresh-g006",
+      "fresh-g007",
+      "fresh-g008",
+      "fresh-g011",
+      "fresh-g013"
+    ],
+    "maxLagViolations": [
+      "fresh-g005",
+      "fresh-g006",
+      "fresh-g007",
+      "fresh-g008"
+    ],
+    "clipTailOverflows": [
+      "fresh-g013"
+    ]
+  },
+  "newApiCalls": 0,
+  "newCodexWorkerCalls": 26,
+  "subscriptionQuotaDebit": null,
+  "supervisorTokenCount": null,
+  "gpuResourceReservations": 3,
+  "gpuHeld": 0,
+  "gpuTtsReleasedBeforeAsrReserved": true,
+  "codeSnapshot": {
+    "schemaVersion": "fixed-180s-executed-code-snapshot-v1",
+    "frozenArchiveSha256": "2d23d3781ffa6ce95002dca2a287870a9994b11a2f1a6db7044b4b895d80096a",
+    "projectModules": {
+      "scripts/codex_layer2_transport.py": "9e1a7b8c2ab381062cab50c52e4d4aa27b4115ac7c52702f96ec641236698525",
+      "scripts/run_codex_layer2_test.py": "1da2c0ac274b1bfdba93ead0f21482b1a3cb4c783a3e30c920b03a26c1826ba1",
+      "scripts/run_target_language_models.py": "263923550df0e5035752b09822a9478706c6bfe24dd348034875b47f41d21e74",
+      "scripts/experiments/replay_fixed_clip_local_models.py": "4d25236cdcb4e08194246931127f89bde6f7df68e97f1aacfe55fb6ff4eb0784",
+      "scripts/local_audio_resource_admission.py": "e9ff7f367b7a8b7eb73c685e4aa4bb7072b155504aa657a720f0d1f37db58905"
+    },
+    "baselineGitHead": "304cca79e7ad363591eaa7d040b8a38522c105c3",
+    "trackedChangesExpected": true,
+    "cliVersion": "codex-cli 0.159.0-alpha.12.1",
+    "simulationModelConfiguration": {
+      "schemaVersion": "codex-layer2-simulation-models-v1",
+      "simulationOnly": true,
+      "translator": {
+        "model": "gpt-6.1-sol",
+        "reasoningEffort": "high",
+        "serviceTier": "fast"
+      },
+      "reviewer": {
+        "model": "gpt-6-sol",
+        "reasoningEffort": "medium",
+        "serviceTier": "fast"
+      }
+    }
+  },
+  "unitTests": {
+    "schemaVersion": "fixed-180s-retest-unit-receipt-v1",
+    "existingRepairTests": 126,
+    "configurationTests": 67,
+    "allPassed": true,
+    "newRealModelCalls": 0,
+    "scope": "mocked_or_deterministic_unit_tests"
+  },
+  "cliResume": {
+    "exitCode": 0,
+    "wallSeconds": 0.5715446250978857,
+    "protectedFiles": 213,
+    "changedFiles": [],
+    "addedFiles": [],
+    "modelCallsBefore": 26,
+    "modelCallsAfter": 26,
+    "newModelCalls": 0
+  },
+  "localResume": {
+    "wallSeconds": 11.053512374986894,
+    "protectedFiles": 47,
+    "changedFiles": [],
+    "addedFiles": [],
+    "newInferenceBatches": 0
+  },
+  "cliBusyProbe": {
+    "exitCode": 1,
+    "capacityDenied": true,
+    "startedMarkers": 0,
+    "modelEventFiles": 0,
+    "newModelCalls": 0
+  },
+  "gpuBusyProbe": {
+    "capacityDenied": true,
+    "modelFactoryCalls": 0,
+    "startedMarkers": 0,
+    "newLocalModelCalls": 0
+  },
+  "ownerMock": {
+    "schemaVersion": "sermon-unified-cli-acceptance-v1",
+    "status": "passed",
+    "runKey": "f583f3ee6eb01adcbfc7f63d2ea8e2e3748270340586088b59b8d42536dea55e",
+    "sourceMediaSha256": "79bada8f2e960adb470a146f183449db433308b53c20d03ea9c7e2e0a66e906b",
+    "sourceDurationSeconds": 180.013167,
+    "transitions": 100,
+    "wallSeconds": 66.91643145796843,
+    "handoff": {
+      "count": 99,
+      "p95Seconds": 0.528208
+    },
+    "newPaidRequests": 0,
+    "runtimeCodexTurns": 0,
+    "productionEligible": false,
+    "scope": "offline_real_cli_and_detached_owner",
+    "planHash": "b5db41fd84f362ebe18f8866a2e3cb6d9e8d2c935a8009ee82a227e01e1d02a2",
+    "resourceReservations": 100,
+    "heldAtCompletion": 0
+  },
+  "evidenceRoot": "artifacts/fixed-180s-sol61-high-fast-retest-20261005",
+  "evidenceSha256": {
+    "cli-wall.json": "5cc8c0792f788500b605ffa8fda34eb4e8b043f2f1337d5ef1ae401d787bd9f5",
+    "cli/test-report.json": "a755d218c04759e64e6efdccdcb427770a76d622a87b056157155176ba352358",
+    "cli/test-context.json": "72844167dd25afd0a8597ec182e6dafcdf80495b9947109a0024be66a1e1a59f",
+    "cli/evidence.json": "9c9b213a0016333fce2260b3d956362d39e4108bb5649e40368fc6f65d9469ba",
+    "assessment.json": "3d6ef6447ea12034a7b7f2a88a1f6918fc041f1dba18c575b00f3b1b44232126",
+    "cli-resume.json": "5c827725c66bd84053711c5d7562dabb8b81dfefc7dec36a4dae94051838f3bf",
+    "local-resume.json": "c04d55dce385f715139fec644239d0348c8756c47c870de8477e3f23b34eb5b4",
+    "cli-busy-probe.json": "9a2d01eeb2b61cc3ae56fbc0fbbdb15c885b6edc89cb2cd69a3ec001bfff1239",
+    "gpu-busy-probe.json": "ab0a56f4927d5af3e3abecd039a4388e6349a27f4bf83a48fe86537dd1579f86",
+    "owner-mock/acceptance.json": "30026113d847afe12ee23aa792ccd26bb6b54261fb001d407f55bff41a797ed0",
+    "tts/manifest.json": "1a3ac4976c0cf136df6e5d0f64431e1aeaa073579e1a0c9395bcede287cd654a",
+    "tts/gpu-cleanup.json": "4de2ef81213eafe355071720d044a7989dc42fb8fd75b36916a00dd57f5ac259",
+    "tts/resource-outcome.json": "431d506354155be4fbfaa935ee05a05ab54c4eee9af459626ede04d78dd4fbc4",
+    "asr/manifest.json": "6b069df34870899a243e9b186c30ff158c1bc7ed93aac0668c54c1c632969dae",
+    "asr/gpu-cleanup.json": "e15a955125a37170374a9b84952ae3159eed69f284daa64996a615c373f7520e",
+    "asr/resource-outcome.json": "b5e972122f833cda8c3f96a17321666b7d8fabe7ef7aa322a2fb14d0a4b3cd26",
+    "spark-resource-broker/d30fd7b780a5ea9970142dddc7ee69be6b7e341c2799f27027addcb239275139/resources.json": "a60bf999d662d4aa9084a2f0c4303ee88e7bf9f0e3a0e29133d3936ee7d9c888",
+    "cli-resource-broker/d30fd7b780a5ea9970142dddc7ee69be6b7e341c2799f27027addcb239275139/resources.json": "7d0114d2d36bc89f73bb123413abdc720d3429d3049f76995344d1f542a676dd"
+  }
+}

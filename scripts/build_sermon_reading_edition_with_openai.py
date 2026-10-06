@@ -18,7 +18,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from scripts.sermon_pipeline import chat_json, clean_text, load_env, read_json, write_json
+from scripts.sermon_pipeline import chat_json, clean_text, read_json, write_json
 from scripts import series_terminology
 from scripts.sermon_accounting import accounting_session, stage, record_workload
 
@@ -162,13 +162,13 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source-pipeline", type=Path, required=True)
     parser.add_argument("--outdir", type=Path, required=True)
-    parser.add_argument("--model", default="gpt-5.6-sol")
+    parser.add_argument("--model", default="gpt-6.1-sol")
     parser.add_argument("--reasoning-effort", choices=("low", "medium", "high"), default="high")
     parser.add_argument("--provider", choices=("openai", "codex"), default="openai")
     parser.add_argument(
         "--codex-cli",
         type=Path,
-        default=Path("/Applications/ChatGPT.app/Contents/Resources/codex"),
+        default=Path.home() / '.local/bin/codex',
     )
     parser.add_argument("--batch-size", type=int, default=3)
     parser.add_argument("--workers", type=int, default=2)
@@ -551,7 +551,25 @@ def codex_json(
     reasoning_effort: str,
     schema_path: Path,
     output_path: Path,
+    session_verifier=None,
 ) -> dict[str, Any]:
+    from scripts.production_spark_admission import SessionBoundCaller
+    return SessionBoundCaller(_codex_json, verifier=session_verifier, purpose="production-reading-edition")(
+        payload, codex_cli=codex_cli, model=model, reasoning_effort=reasoning_effort,
+        schema_path=schema_path, output_path=output_path)
+
+
+def _codex_json(payload, *, codex_cli, model, reasoning_effort, schema_path, output_path):
+    if model == "gpt-6.1-sol":
+        from scripts.sermon_codex_transport import chat_json as codex_chat_json
+        cli_payload = {**payload, "response_format": {"type": "json_schema",
+            "json_schema": {"name": "reading_edit", "strict": True,
+                            "schema": json.loads(schema_path.read_text())}}}
+        response = codex_chat_json("", cli_payload, retries=1, cli_path=codex_cli)
+        result = parse_json_message(response["choices"][0]["message"]["content"])
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        write_json(output_path, result)
+        return result
     messages = payload["messages"]
     prompt = (
         "Do not use tools or inspect files. Follow the editing task below and return only the JSON "
@@ -576,6 +594,8 @@ def codex_json(
         model,
         "-c",
         f'model_reasoning_effort="{reasoning_effort}"',
+        "-c",
+        'service_tier="fast"',
         "--output-schema",
         str(schema_path),
         "--output-last-message",
@@ -889,7 +909,9 @@ def _main(args: argparse.Namespace) -> int:
         raise SystemExit("--repair-existing requires --review-manifest")
     api_key = ""
     if args.provider == "openai" and not args.repair_existing:
-        load_env(REPO_ROOT / ".env")
+        from scripts.sermon_openai_runtime import selected_route
+        if selected_route() is None:
+            raise ValueError("reading_edition_requires_explicit_dev_or_prod_launcher")
         api_key = os.environ.get("OPENAI_API_KEY", "")
     if args.provider == "openai" and not args.repair_existing and not api_key:
         raise SystemExit("OPENAI_API_KEY is not set")

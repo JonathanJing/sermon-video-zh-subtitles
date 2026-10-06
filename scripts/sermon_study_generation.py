@@ -143,9 +143,10 @@ def execute(manifest,base,config_path,step,output,*,api_key=None,transport=None)
         payload=request['payload'];fingerprint=c.digest(payload)
         bounds=limits.request_bounds(payload,p['limits'])
         bounds={k:bounds[k] for k in budget.METRICS}
-        saved=p['root']/'responses'/(fingerprint+'.json')
+        operation='judge.'+fingerprint
+        saved=store._response_path(operation,fingerprint)
         was_cached=saved.exists()
-        response=store.call(operation='judge.'+fingerprint,identity=payload,bounds=bounds,
+        response=store.call(operation=operation,identity=payload,bounds=bounds,
             request=json.dumps(payload,ensure_ascii=False).encode(),api_key=api_key,content_type='application/json',
             endpoint='https://api.openai.com/v1/chat/completions')
         fresh+=not was_cached
@@ -177,8 +178,9 @@ def verify_result(manifest,base,config_path,step,result):
     artifacts.validate(artifact,'sermon-study-artifact-v1.schema.json')
     require(len(receipt['calls'])==len(p['requests']),'retained_study_calls_changed')
     sections=[]
+    store=budget.SourceBudget(p['root'],p['authority'],verify=lambda:None)
     for request,call in zip(p['requests'],receipt['calls']):
-        fingerprint=c.digest(request['payload']);raw_path=p['root']/'responses'/(fingerprint+'.json')
+        fingerprint=c.digest(request['payload']);raw_path=store._response_path('judge.'+fingerprint,fingerprint)
         raw=c.read(raw_path)
         require(call['requestSha256']==fingerprint and c.file_sha(raw_path)==call['rawResponseSha256']
             and raw['identitySha256']==fingerprint and c.digest(raw['requestIdentity'])==fingerprint,

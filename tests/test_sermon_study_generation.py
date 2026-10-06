@@ -52,6 +52,25 @@ class GenerationTests(unittest.TestCase):
         self.assertEqual(result['review'],'human_pending');self.assertFalse(result['productionEligible'])
         again=self.run_generation();self.assertEqual(again['freshApiAttempts'],0);self.assertEqual(len(self.calls),1)
         owner.verify_result(self.manifest,self.root,self.config,self.step,again)
+    def test_new_operation_receipts_and_legacy_readback_reuse_without_new_call(self):
+        result=self.run_generation()
+        prepared=g.prepare(self.manifest,self.root,self.config,self.step)
+        receipt=c.read(result['generationReceiptPath'])
+        fingerprint=receipt['calls'][0]['requestSha256']
+        store=g.budget.SourceBudget(prepared['root'],prepared['authority'],verify=lambda:None)
+        current=store._response_path('judge.'+fingerprint,fingerprint)
+        legacy=prepared['root']/'responses'/(fingerprint+'.json')
+        self.assertTrue(current.is_file())
+        self.assertNotEqual(current,legacy)
+        self.assertEqual(c.file_sha(current),receipt['calls'][0]['rawResponseSha256'])
+        owner.verify_result(self.manifest,self.root,self.config,self.step,result)
+        # Existing v1 response bytes remain valid under the budget's resolver.
+        current.rename(legacy)
+        resumed=self.run_generation(lambda *args:self.fail('legacy cache dispatched provider'))
+        self.assertEqual(resumed['freshApiAttempts'],0)
+        self.assertEqual(len(self.calls),1)
+        owner.verify_result(self.manifest,self.root,self.config,self.step,resumed)
+
     def test_invalid_grounding_retained_no_paid_retry(self):
         def bad(*args):
             result=self.provider(*args);result['choices'][0]['message']['content']=json.dumps({'sections':[{'title':'a','body':'b','sourceUnitIds':['other']}]});return result
@@ -86,7 +105,10 @@ class GenerationTests(unittest.TestCase):
     def test_retained_raw_response_tamper_rejected(self):
         result=self.run_generation()
         receipt=c.read(result['generationReceiptPath'])
-        raw=self.root/'.jobs.study-budget'/'responses'/(receipt['calls'][0]['requestSha256']+'.json')
+        prepared=g.prepare(self.manifest,self.root,self.config,self.step)
+        store=g.budget.SourceBudget(prepared['root'],prepared['authority'],verify=lambda:None)
+        fingerprint=receipt['calls'][0]['requestSha256']
+        raw=store._response_path('judge.'+fingerprint,fingerprint)
         raw.write_text('{}')
         with self.assertRaisesRegex(ValueError,'retained_study_response_changed'):
             owner.verify_result(self.manifest,self.root,self.config,self.step,result)

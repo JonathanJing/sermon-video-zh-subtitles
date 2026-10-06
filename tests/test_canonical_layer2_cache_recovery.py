@@ -216,7 +216,7 @@ class CanonicalLayer2CacheRecoveryTests(unittest.TestCase):
     def test_cli_with_empty_key_restores_candidate_without_dispatch(self):
         command = [sys.executable, str(Path(subject.__file__).resolve()), '--config', str(self.path),
                    '--locale', 'zh-Hans', '--expected-state-revision', self.revision()]
-        result = subprocess.run(command, env={**os.environ, 'OPENAI_API_KEY': ''}, capture_output=True, timeout=25)
+        result = subprocess.run(command, env={**os.environ, 'OPENAI_API_KEY': '', 'CODEX_HOME': '/nonexistent/tongxing-test-no-auth'}, capture_output=True, timeout=25)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(json.loads(result.stdout)['modelCalls'], 0)
         self.assertEqual((self.output / 'candidate.json').read_bytes(), self.original_candidate)

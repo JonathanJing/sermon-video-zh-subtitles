@@ -30,6 +30,22 @@ def local(status, ident):
         elapsedSeconds=2 if status != 'started' else None, providerTokens=None))
 
 
+def codex(**overrides):
+    from scripts.codex_credit_usage import estimate_credit_usage
+    usage = dict(inputTokens=1000, cachedInputTokens=400, outputTokens=200,
+                 totalTokens=1200, reasoningTokens=75)
+    fields = dict(schemaVersion='sermon-model-call-observation-v2', model='gpt-6.1-sol',
+                  backend='agent_session', provider='codex', role='production',
+                  timingScope='agent_session_including_tools', usage=usage,
+                  cacheHit=None, generationSeconds=None)
+    fields.update(overrides)
+    if 'creditUsage' not in overrides:
+        fields['creditUsage'] = estimate_credit_usage(
+            fields['model'], fields['usage'], requested_service_tier='fast',
+            status=fields.get('status', 'completed'), cache_hit=fields.get('cacheHit'))
+    return generic(**fields)
+
+
 class ModelCallReportTests(unittest.TestCase):
     def test_api_requested_actual_timing_and_unknown_provider(self):
         start = event('api_attempt_started', attemptId='a', model='model-alias')
@@ -169,6 +185,129 @@ class ModelCallReportTests(unittest.TestCase):
         self.assertEqual(rows, saved)
         row = api(); row['model'] = 'https://host?api_key=secret'
         self.assertIsNone(report([row])['calls'][0]['model'])
+
+    def test_codex_credit_snapshot_preserved_and_aggregated(self):
+        receipt = codex(); saved = copy.deepcopy(receipt)
+        result = report([receipt]); row = result['calls'][0]
+        self.assertEqual(result['schemaVersion'], 'sermon-model-call-report-v2')
+        self.assertEqual(row['creditUsage'], receipt['fields']['creditUsage'])
+        self.assertEqual(receipt, saved)
+        self.assertIsNot(row['creditUsage'], receipt['fields']['creditUsage'])
+        self.assertEqual(result['creditUsage']['estimatedCreditsKnownSubtotal'], row['creditUsage']['estimatedCredits'])
+        self.assertEqual(result['creditUsage']['estimatedCallCount'], 1)
+        self.assertEqual(result['creditUsage']['unknownCallCount'], 0)
+        self.assertTrue(result['creditUsage']['complete'])
+        self.assertIsNone(result['creditUsage']['actualCredits'])
+        self.assertIsNone(result['creditUsage']['actualQuotaUsage'])
+        self.assertEqual(result['groups'][0]['creditUsage'], result['creditUsage'])
+
+    def test_codex_historical_tier_unknown_is_not_backfilled(self):
+        result = report([codex(schemaVersion='sermon-model-call-observation-v1', creditUsage=None)])
+        credit = result['calls'][0]['creditUsage']
+        self.assertEqual(credit['status'], 'unknown')
+        self.assertIsNone(credit['estimatedCredits'])
+        self.assertIsNone(credit['requestedServiceTier'])
+        self.assertFalse(result['creditUsage']['complete'])
+        self.assertEqual(result['creditUsage']['estimatedCreditsKnownSubtotal'], 0)
+        self.assertEqual(result['creditUsage']['unknownCallCount'], 1)
+
+    def test_codex_sdk_supervisor_unknown_credit_identity(self):
+        end = event('sdk_call_finished', invocationId='i', model='gpt-6.1-sol', agentBackend='codex',
+                    status='completed', elapsedSeconds=10, usage={'input_tokens': 1000, 'output_tokens': 200})
+        result = report([end])
+        self.assertEqual(result['calls'][0]['provider'], 'not_recorded')
+        self.assertEqual(result['calls'][0]['creditUsage']['status'], 'unknown')
+        self.assertEqual(result['creditUsage']['unknownCallCount'], 1)
+
+    def test_api_and_local_never_contribute_codex_credits(self):
+        injected = codex()['fields']['creditUsage']
+        result = report([api(creditUsage=injected), generic(creditUsage=injected)])
+        self.assertIsNone(result['creditUsage'])
+        self.assertTrue(all('creditUsage' not in row for row in result['calls']))
+        self.assertTrue(all('creditUsage' not in row for row in result['groups']))
+
+    def test_cached_input_discount_is_not_cache_reuse(self):
+        result = report([codex()])
+        self.assertGreater(result['creditUsage']['estimatedCreditsKnownSubtotal'], 0)
+        self.assertEqual(result['creditUsage']['cacheReuseCallCount'], 0)
+
+    def test_explicit_cache_reuse_records_zero_estimate(self):
+        result = report([codex(cacheHit=True, usage={})])
+        self.assertEqual(result['calls'][0]['creditUsage']['status'], 'cache_reuse')
+        self.assertEqual(result['creditUsage']['estimatedCreditsKnownSubtotal'], 0)
+        self.assertEqual(result['creditUsage']['cacheReuseCallCount'], 1)
+        self.assertTrue(result['creditUsage']['complete'])
+        self.assertIsNone(result['creditUsage']['actualCredits'])
+
+    def test_failed_call_with_reported_usage_is_not_free(self):
+        result = report([codex(status='failed')])
+        self.assertGreater(result['creditUsage']['estimatedCreditsKnownSubtotal'], 0)
+        self.assertEqual(result['calls'][0]['creditUsage']['reason'], 'reported_failed_usage_subtotal')
+
+    def test_credit_conflict_suppresses_numeric_evidence(self):
+        first = codex(); second = copy.deepcopy(first)
+        second['fields']['creditUsage']['estimatedCredits'] += 1
+        result = report([first, second])
+        self.assertEqual(result['calls'][0]['status'], 'conflict')
+        self.assertIsNone(result['calls'][0]['creditUsage']['estimatedCredits'])
+        self.assertEqual(result['creditUsage']['estimatedCreditsKnownSubtotal'], 0)
+        self.assertEqual(result['creditUsage']['unknownCallCount'], 1)
+
+    def test_codex_requested_tier_changed_mid_call_is_conflict(self):
+        from scripts.codex_credit_usage import estimate_credit_usage
+        finished = codex(); started = generic(**{
+            **finished['fields'], 'phase': 'started', 'status': 'started', 'usage': {},
+            'elapsedSeconds': None, 'finishedAt': None, 'creditUsage': estimate_credit_usage(
+                'gpt-6.1-sol', {}, requested_service_tier='default', status='started')})
+        result = report([started, finished])
+        self.assertEqual(result['calls'][0]['status'], 'conflict')
+        self.assertIsNone(result['calls'][0]['creditUsage']['estimatedCredits'])
+
+    def test_invalid_recorded_credit_snapshot_is_unknown(self):
+        receipt = codex(); receipt['fields']['creditUsage']['estimatedCredits'] += 1
+        result = report([receipt])
+        self.assertIsNone(result['calls'][0]['creditUsage']['estimatedCredits'])
+        self.assertEqual(result['calls'][0]['creditUsage']['reason'], 'malformed_recorded_credit_evidence')
+        self.assertEqual(result['creditUsage']['unknownCallCount'], 1)
+
+    def test_same_codex_receipt_imported_across_runs_counts_once(self):
+        receipt = codex(); imported = copy.deepcopy(receipt)
+        imported.update(runId='other', eventId='imported', recordedAt='2026-10-06T00:00:00Z')
+        result = report([receipt, imported])
+        self.assertEqual(len(result['calls']), 1)
+        self.assertEqual(result['equivalentDuplicatesIgnored'], 1)
+        self.assertEqual(result['creditUsage']['estimatedCallCount'], 1)
+
+    def test_codex_import_conflict_is_unknown(self):
+        receipt = codex(); imported = copy.deepcopy(receipt)
+        imported['runId'] = 'other'
+        imported['fields']['usage']['outputTokens'] += 1
+        result = report([receipt, imported])
+        self.assertEqual(len(result['calls']), 1)
+        self.assertEqual(result['calls'][0]['status'], 'conflict')
+        self.assertIsNone(result['calls'][0]['creditUsage']['estimatedCredits'])
+
+    def test_codex_same_call_id_different_start_is_separate(self):
+        receipt = codex(); other = copy.deepcopy(receipt)
+        other['runId'] = 'other'
+        other['fields']['startedAt'] = '2026-10-06T00:00:00Z'
+        result = report([receipt, other])
+        self.assertEqual(len(result['calls']), 2)
+        self.assertEqual(result['creditUsage']['estimatedCallCount'], 2)
+
+    def test_codex_missing_start_does_not_cross_run_deduplicate(self):
+        receipt = codex(startedAt=None); imported = copy.deepcopy(receipt)
+        imported['runId'] = 'other'
+        result = report([receipt, imported])
+        self.assertEqual(len(result['calls']), 2)
+
+    def test_mixed_codex_credit_coverage_never_conflates_unknown_with_zero(self):
+        known = codex(); unknown = codex(callId='b', creditUsage=None)
+        result = report([known, unknown, api()])
+        self.assertEqual(result['creditUsage']['estimatedCallCount'], 1)
+        self.assertEqual(result['creditUsage']['unknownCallCount'], 1)
+        self.assertFalse(result['creditUsage']['complete'])
+        self.assertGreater(result['creditUsage']['estimatedCreditsKnownSubtotal'], 0)
 
 
 if __name__ == '__main__':

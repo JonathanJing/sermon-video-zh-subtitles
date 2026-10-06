@@ -18,7 +18,7 @@ from scripts import sermon_accounting as accounting
 from scripts import sermon_model_call_observation as observations
 
 
-def capture_codex(lines, model):
+def capture_codex(lines, model, *, service_tier=None):
     """Receiver-observed turn intervals; requires a live stream, not file replay."""
     stack, receipt = None, None
     completed, failed = 0, 0
@@ -37,7 +37,7 @@ def capture_codex(lines, model):
                 stack = ExitStack()
                 receipt = stack.enter_context(observations.invocation(model, backend='agent_session',
                     provider='codex', role='supervisor', timing_scope='agent_session_including_tools',
-                    usage_source='host_telemetry'))
+                    usage_source='host_telemetry', service_tier=service_tier))
             elif kind in {'turn.completed', 'turn.failed'}:
                 if stack is None:
                     raise ValueError('monitor_turn_start_not_observed')
@@ -80,12 +80,14 @@ def main():
     parser.add_argument('--accounting-dir', required=True, type=Path)
     parser.add_argument('--format', choices=('codex-exec-live', 'observations'), required=True)
     parser.add_argument('--model', help='Configured Codex model identity (host may not report actual model)')
+    parser.add_argument('--service-tier', choices=('default', 'fast', 'ultrafast'),
+                        help='Explicit configured Codex tier for credit estimates; omitted remains unknown')
     parser.add_argument('--live', action='store_true', help='Assert stdin is a live model stream; never use on a saved file')
     args = parser.parse_args()
     if args.format == 'codex-exec-live' and (not args.live or not args.model):
         parser.error('Codex capture requires --live and --model; saved logs need original timestamp observations')
     with accounting.accounting_session(args.accounting_dir, 'supervisor_usage_capture'):
-        result = capture_codex(sys.stdin, args.model) if args.format == 'codex-exec-live' else import_observations(sys.stdin)
+        result = capture_codex(sys.stdin, args.model, service_tier=args.service_tier) if args.format == 'codex-exec-live' else import_observations(sys.stdin)
     print(json.dumps(result))
     return 1 if result['status'] == 'needs_attention' else 0
 
