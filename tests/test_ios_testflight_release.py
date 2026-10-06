@@ -110,17 +110,18 @@ class TestFlightReleaseAdmissionTests(unittest.TestCase):
         tool_dir.mkdir()
         counter = self.root / 'calls'
         tool = tool_dir / 'fastlane'
-        tool.write_text('#!' + sys.executable + '\nfrom pathlib import Path\np = Path(' + repr(str(counter)) +
-                        ')\np.write_text(p.read_text() + "x" if p.exists() else "x")\nraise SystemExit(83)\n')
+        tool.write_text('#!' + sys.executable + '\nimport os\nfrom pathlib import Path\np = Path(' + repr(str(counter)) +
+                        ')\np.write_text(p.read_text() + "x" if p.exists() else "x")\np.with_suffix(".flag").write_text(str(os.environ.get("TONGXING_RECONCILE_UPLOAD")))\nraise SystemExit(83)\n')
         tool.chmod(0o700)
         developer = self.root / 'Xcode.app/Contents/Developer'
         (developer / 'usr/bin').mkdir(parents=True)
         (developer / 'usr/bin/xcodebuild').touch()
         command = [sys.executable, str(SCRIPT), 'upload', '--developer-dir', str(developer), '--config', str(config),
                    '--record', str(self.record_path), '--ipa', str(self.ipa())]
-        env = dict(os.environ, PATH=str(tool_dir) + os.pathsep + os.environ['PATH'])
+        env = dict(os.environ, PATH=str(tool_dir) + os.pathsep + os.environ['PATH'], TONGXING_RECONCILE_UPLOAD='1')
         first = subprocess.run(command, env=env, capture_output=True, text=True)
         self.assertEqual(first.returncode, 83, first.stderr)
+        self.assertEqual(counter.with_suffix('.flag').read_text(), 'None')
         intent = json.loads(next((self.root / 'upload-intents').glob('*.json')).read_text())
         evidence = Path(intent['evidenceDir'])
         self.addCleanup(__import__('shutil').rmtree, evidence)
@@ -132,16 +133,67 @@ class TestFlightReleaseAdmissionTests(unittest.TestCase):
         self.assertNotEqual(second.returncode, 0)
         self.assertIn('Prior upload attempt', second.stderr)
         self.assertEqual(counter.read_text(), 'x')
+        intent['phase'] = 'upload_started'
+        intent_path = next((self.root / 'upload-intents').glob('*.json'))
+        intent_path.write_text(json.dumps(intent))
+        retry = subprocess.run(command + ['--retry-upload'], env=env, capture_output=True, text=True)
+        self.assertEqual(retry.returncode, 83, retry.stderr)
+        self.assertEqual(counter.with_suffix('.flag').read_text(), '1')
+        self.assertEqual(counter.read_text(), 'xx')
+        retry_evidence = Path(json.loads(intent_path.read_text())['evidenceDir'])
+        self.addCleanup(__import__('shutil').rmtree, retry_evidence)
         with zipfile.ZipFile(self.root / 'fixture.ipa', 'a') as ipa:
             ipa.writestr('Payload/Tongxing.app/changed.txt', 'different binary package')
         different = subprocess.run(command + ['--retry-upload'], env=env, capture_output=True, text=True)
         self.assertNotEqual(different.returncode, 0)
         self.assertIn('different IPA', different.stderr)
-        self.assertEqual(counter.read_text(), 'x')
+        self.assertEqual(counter.read_text(), 'xx')
 
     def test_repository_credential_path_rejected(self):
         with self.assertRaisesRegex(ValueError, 'outside this repository'):
             release.private_file(SCRIPT)
+
+    def test_reconciliation_requires_bound_attempt_not_fresh_preflight(self):
+        prior = dict(self.record, ipaSHA256='b' * 64, phase='upload_returned')
+        release.matching_upload_intent(prior, self.record, 'b' * 64)
+        for key, value in [('phase', 'preflight_started'), ('sourceCommit', 'c' * 40),
+                           ('archiveManifestSHA256', 'd' * 64), ('ipaSHA256', 'e' * 64),
+                           ('build', '99')]:
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                release.matching_upload_intent(dict(prior, **{key: value}), self.record, 'b' * 64)
+
+    def test_fastlane_existing_build_rejected_unless_reconciling(self):
+        # Execute the actual upload lane with an existing-build fake. No gem,
+        # API key, Apple request or uploader is loaded by this harness.
+        fastfile = SCRIPT.parents[1] / 'fastlane/Fastfile'
+        harness = r'''
+module UI
+  def self.user_error!(message); raise message; end
+  def self.important(message); end
+end
+$lanes = {}
+def lane(name, &block); $lanes[name] = block; end
+source = File.read(ARGV[0]).lines.reject { |line| line.start_with?("require ") }.join
+eval(source, TOPLEVEL_BINDING, ARGV[0])
+def beta_auth; [nil, Object.new]; end
+def candidate_record; {}; end
+def beta_builds(*args); [Object.new]; end
+def beta_snapshot(*args); end
+def upload_phase(phase); ($phases ||= []) << phase; end
+ENV.delete('TONGXING_RECONCILE_UPLOAD')
+begin
+  $lanes[:beta_upload].call
+  raise 'collision was accepted'
+rescue => error
+  raise unless error.message.include?('Version/build collision')
+end
+raise 'collision mutated intent' if $phases
+ENV['TONGXING_RECONCILE_UPLOAD'] = '1'
+$lanes[:beta_upload].call
+raise 'reconciliation failed' unless $phases == ['apple_build_observed']
+'''
+        result = subprocess.run(['ruby', '-e', harness, str(fastfile)], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
 
 
 if __name__ == '__main__':

@@ -76,6 +76,8 @@ lane :beta_upload do
       skip_submission: true, skip_waiting_for_build_processing: true)
     upload_phase('upload_returned')
   else
+    UI.user_error!('Version/build collision: no matching prior upload attempt; do not distribute this build') unless
+      ENV['TONGXING_RECONCILE_UPLOAD'] == '1'
     upload_phase('apple_build_observed')
     UI.important('Apple already has this version/build; skipping binary upload. Check beta_status before distributing.')
   end

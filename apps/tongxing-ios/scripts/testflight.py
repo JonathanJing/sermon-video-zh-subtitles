@@ -103,6 +103,16 @@ def validate_candidate(record_path, ipa=None):
     return record
 
 
+def matching_upload_intent(prior, record, ipa_sha=None):
+    keys = ['bundleID', 'version', 'build', 'sourceCommit', 'archiveManifestSHA256']
+    if any(prior.get(k) != record[k] for k in keys):
+        raise ValueError('Prior upload intent uses a different candidate identity or archive')
+    if not prior.get('ipaSHA256') or (ipa_sha and prior['ipaSHA256'] != ipa_sha):
+        raise ValueError('Prior upload intent uses a different IPA or has no IPA identity')
+    if prior.get('phase') not in {'upload_started', 'upload_returned', 'apple_build_observed'}:
+        raise ValueError('No matching prior upload attempt; preflight alone cannot identify an Apple build')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action', choices=['configure', 'status', 'upload', 'wait', 'distribute'])
@@ -170,6 +180,7 @@ def main():
                FASTLANE_SKIP_DOCS='1', FASTLANE_OPT_OUT_USAGE='1',
                TONGXING_ASC_CONFIG=str(config_path),
                TONGXING_ASC_SNAPSHOT=str(run_dir / 'apple-state.json'))
+    env.pop('TONGXING_RECONCILE_UPLOAD', None)
     for option, variable in [('record', 'TONGXING_RELEASE_RECORD'), ('ipa', 'TONGXING_BETA_IPA'), ('notes', 'TONGXING_BETA_NOTES')]:
         value = getattr(args, option)
         if value:
@@ -188,6 +199,11 @@ def main():
     # A shared lock coordinates mutations across worktrees using this credential config.
     with config_path.with_suffix('.lock').open('a') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        if args.action in {'wait', 'distribute'}:
+            intent_path = config_path.parent / 'upload-intents' / f'{BUNDLE}-{record["version"]}-{record["build"]}.json'
+            if not intent_path.exists():
+                raise ValueError('No matching prior upload attempt; reconcile candidate identity before waiting or distributing')
+            matching_upload_intent(json.loads(intent_path.read_text()), record, ipa_sha)
         if args.action == 'upload':
             intent_path = config_path.parent / 'upload-intents' / f'{BUNDLE}-{record["version"]}-{record["build"]}.json'
             intent_path.parent.mkdir(exist_ok=True, mode=0o700)
@@ -195,8 +211,15 @@ def main():
                 prior = json.loads(intent_path.read_text())
                 if prior['ipaSHA256'] != ipa_sha or prior['archiveManifestSHA256'] != record['archiveManifestSHA256']:
                     raise ValueError('Prior upload intent uses a different IPA or archive; do not reuse this version/build')
+                if any(prior.get(k) != record[k] for k in ['bundleID', 'version', 'build', 'sourceCommit']):
+                    raise ValueError('Prior upload intent uses a different candidate identity')
                 if not args.retry_upload:
                     raise ValueError('Prior upload attempt exists. Use status/wait to reconcile Apple; --retry-upload requires an explicit confirmed retry decision')
+                # Preserve proof of a bound attempt before replacing the intent.
+                # A freshly written preflight intent cannot prove Apple's IPA.
+                if prior.get('phase') in {'upload_started', 'upload_returned', 'apple_build_observed'}:
+                    matching_upload_intent(prior, record, ipa_sha)
+                    env['TONGXING_RECONCILE_UPLOAD'] = '1'
             intent = {k: record[k] for k in ['bundleID', 'version', 'build', 'sourceCommit', 'archiveManifestSHA256']}
             intent.update(phase='preflight_started', ipaSHA256=ipa_sha, evidenceDir=str(run_dir))
             (run_dir / 'upload-intent.json').write_text(json.dumps(intent, indent=2) + '\n')
