@@ -34,6 +34,16 @@ Manifest 记录请求、Git revision 与 dirty 状态、所选源文件 SHA-256�
 
 ## Worktree 与设备
 
+听音定位的五种灵动岛状态内容可单独渲染：
+
+```sh
+TEST_RUNNER_TONGXING_ISLAND_STATE_PREVIEW=1 apps/tongxing-ios/scripts/ios.sh test \
+  --scheme TongxingBeta --configuration BetaDebug --simulator "$TONGXING_SIMULATOR_UDID" \
+  --only-testing TongxingTests/SwiftUIPreviewTests/testRenderAlignmentIslandStates
+```
+
+该测试使用 iOS `ImageRenderer` 直接复用系统 Widget 的共享图标、时间及展开内容，导出 `listening`、`matching`、`aligned`、`unmatched`、`failed` 五张 XCTest PNG 附件。黑色圆角区域是预览容器，图上明确标记“非系统／真机截图”；不证明系统区域布局或实际灵动岛已显示。使用本轮 `.xcresult` 与 `xcresulttool export attachments` 导出，不以旧截图代替当前源码。
+
 默认 DerivedData 位于当前 worktree 的 `artifacts/tongxing-ios/preview/DerivedData`，可增量复用；各 worktree 的输出目录独立。需要选择工具链、设备或复用其他构建目录时：
 
 ```sh

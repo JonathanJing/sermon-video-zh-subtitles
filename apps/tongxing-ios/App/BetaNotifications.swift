@@ -102,7 +102,7 @@ final class BetaNotificationController: NSObject, ObservableObject, UNUserNotifi
         } catch { status = "通知权限申请失败，请重试或检查系统设置。" }
     }
 
-    func preview(page: MultilingualPage, catalog: MultilingualCatalog) async {
+    func preview(page: MultilingualPage, catalog: MultilingualCatalog, displayTitle: String) async {
         guard Self.isBeta, enabled, !busy, let target = page.targets[locale] else { return }
         busy = true
         defer { busy = false }
@@ -120,7 +120,8 @@ final class BetaNotificationController: NSObject, ObservableObject, UNUserNotifi
             var scheduled = defaults.stringArray(forKey: "betaNotificationScheduled") ?? []
             guard !scheduled.contains(key) else { throw BetaNotificationError.alreadyScheduled }
             let content = UNMutableNotificationContent()
-            content.title = notice.title
+            content.title = SermonHeading.displayTitle(displayTitle, pageID: page.id, date: page.date,
+                                                       fallback: AppLocalization.shared.text("证道"))
             content.body = notice.body(date: page.date, audioAvailable: target.audioStatus == "human_reviewed")
             content.sound = settings.soundSetting == .enabled ? .default : nil
             content.userInfo = ["tongxing": try JSONSerialization.jsonObject(with: JSONEncoder().encode(notice))]
@@ -260,15 +261,15 @@ struct BetaNotificationSettingsView: View {
                 }
                 if let page, let target = page.targets[controller.locale] {
                     Picker(localization.text("测试内容"), selection: $pageID) {
-                        ForEach(pages) { Text($0.title ?? $0.id).tag($0.id) }
+                        ForEach(pages) { Text(model.heading(for: $0).title).tag($0.id) }
                     }
                     let notice = BetaNotification(pageID: page.id, locale: controller.locale, releaseSHA256: target.releasePackageJsonSha256)
-                    Text(notice.title).font(.headline)
+                    Text(model.heading(for: page).title).font(.headline)
                     Text(notice.body(date: page.date, audioAvailable: target.audioStatus == "human_reviewed"))
                     Button(localization.text("安排本机测试通知（约 5 秒后）")) {
                         if let catalog = model.multilingualCatalog,
                            BetaNotificationController.allowedOrigin(model.mediaOrigin) {
-                            Task { await controller.preview(page: page, catalog: catalog) }
+                            Task { await controller.preview(page: page, catalog: catalog, displayTitle: model.heading(for: page).title) }
                         }
                     }.disabled(!controller.enabled || controller.busy)
                         .accessibilityIdentifier("beta-notification-preview")

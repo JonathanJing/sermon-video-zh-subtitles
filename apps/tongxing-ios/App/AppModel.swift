@@ -78,6 +78,7 @@ final class AppModel: ObservableObject {
         transcriptRowsRevision = UUID()
     }
     @Published private(set) var isLoadingPublishedTranscript = false
+    private var verifiedTranscriptSelectionKey: String?
     @Published private(set) var publishedTranscriptError: String?
     @Published private var publishedHeadings: [String: SermonHeading] = [:]
     private var transcriptRequest = UUID()
@@ -87,6 +88,26 @@ final class AppModel: ObservableObject {
     @Published private(set) var alignmentStatus = "请播放同一录音的原声，再点击听声对齐。"
     @Published private(set) var alignmentBusy = false
     @Published private(set) var alignmentPosition: Double?
+    @Published private(set) var foregroundAlignmentPhase: ListeningAlignmentPhase?
+    private var alignmentPhaseObservation: AnyCancellable?
+    private var alignmentFeedbackForeground = true
+    private var foregroundAlignmentTransaction = false
+
+    // Observe the controller's transaction, including its existing eight-second
+    // result lifetime. Returning from background must not replay an old result.
+    func updateForegroundAlignmentPhase(_ phase: ListeningAlignmentPhase?) {
+        if phase == .preparing { foregroundAlignmentTransaction = alignmentFeedbackForeground }
+        if phase == nil { foregroundAlignmentTransaction = false }
+        foregroundAlignmentPhase = alignmentFeedbackForeground && foregroundAlignmentTransaction ? phase : nil
+    }
+
+    func setAlignmentFeedbackForeground(_ foreground: Bool) {
+        alignmentFeedbackForeground = foreground
+        if !foreground {
+            foregroundAlignmentTransaction = false
+            foregroundAlignmentPhase = nil
+        }
+    }
     private var alignmentController: AudioAlignmentController!
     private(set) var hasAlignmentFeedback = false
     struct AlignmentFailure: Identifiable {
@@ -144,6 +165,7 @@ final class AppModel: ObservableObject {
 
     func cancelAlignment() { alignmentController.cancel(resume: true) }
     func suspendAlignment() {
+        setAlignmentFeedbackForeground(false)
         alignmentController.cancel(message: "App 已进入后台，听声对齐已停止。", resume: true)
     }
 
@@ -195,6 +217,9 @@ final class AppModel: ObservableObject {
         languagePreferences = savedPreferences?.schemaVersion == "tongxing-language-preferences-v2"
             ? savedPreferences! : .empty
         playback = PlaybackController(historyURL: support.appendingPathComponent("playback-history-v1.json"))
+        alignmentPhaseObservation = playback.$alignmentPhase.sink { [weak self] phase in
+            self?.updateForegroundAlignmentPhase(phase)
+        }
         playback.configureStatistics(origin: mediaOrigin, defaults: statisticsDefaults, session: contentOrigin == nil ? nil : session)
         repository = CatalogRepository(
                 catalogURL: mediaOrigin.appendingPathComponent("weekly.json"),
@@ -297,8 +322,22 @@ final class AppModel: ObservableObject {
         return "\(page.id):\(selectedContentLocale):\(target.releasePackageJsonSha256)"
     }
 
+    var currentPublishedTranscript: VerifiedPublishedTranscript? {
+        guard let transcript = publishedTranscript, let page = selectedMultilingualPage,
+              selectedWeek == nil, verifiedTranscriptSelectionKey == publishedTranscriptSelectionKey,
+              transcript.pageID == page.id, transcript.locale == selectedContentLocale,
+              transcript.sourceIdentitySha256 == page.sourceIdentitySha256 else { return nil }
+        return transcript
+    }
+
     func publishedHeadingKey(_ page: MultilingualPage) -> String {
         "\(page.id):\(page.sourceIdentitySha256):\(page.targets[page.defaultTargetLocale]?.releasePackageJsonSha256 ?? "")"
+    }
+
+    func heading(for week: SermonWeek) -> SermonHeading {
+        SermonHeading(title: SermonHeading.displayTitle(week.title, pageID: week.id, date: week.date,
+                                                       fallback: AppLocalization.shared.text("证道")),
+                      series: week.series, speaker: week.speaker)
     }
 
     private func displayEdition(for page: MultilingualPage) -> String? {
@@ -306,14 +345,44 @@ final class AppModel: ObservableObject {
     }
 
     func heading(for page: MultilingualPage) -> SermonHeading {
-        if let transcript = publishedTranscript, transcript.pageID == page.id,
+        if let transcript = currentPublishedTranscript, transcript.pageID == page.id,
            transcript.sourceIdentitySha256 == page.sourceIdentitySha256 {
-            return SermonHeading(title: transcript.title ?? page.title ?? page.id,
+            return SermonHeading(title: displayTitle(transcript.title ?? page.title, for: page),
                                  series: transcript.series, speaker: transcript.speaker,
                                  displayEdition: displayEdition(for: page))
         }
-        return publishedHeadings[publishedHeadingKey(page)]
-            ?? SermonHeading(title: page.title ?? page.id, displayEdition: displayEdition(for: page))
+        return publishedHeadings[publishedHeadingKey(page)] ?? SermonHeading(title: displayTitle(page.title, for: page), displayEdition: displayEdition(for: page))
+    }
+
+    private func displayTitle(_ title: String?, for page: MultilingualPage) -> String {
+        SermonHeading.displayTitle(title, pageID: page.id, date: page.date,
+                                   fallback: AppLocalization.shared.text("证道"))
+    }
+
+    /// Apply only metadata for the currently loaded, verified audio identity.
+    func refreshSystemPresentation() {
+        if let week = selectedWeek, let track = selectedTrack {
+            let title = SermonHeading.displayTitle(week.title, pageID: week.id, date: week.date,
+                                                   fallback: AppLocalization.shared.text("证道"))
+            let rows = week.bilingualCueRows(for: track).rows
+            playback.updateSystemMetadata(identity: track.identity(weekID: week.id), sourceID: week.sourceId,
+                title: SermonHeading(title: title, series: week.series).title, speaker: week.speaker,
+                subtitles: rows.map { PlaybackSystemSubtitle(id: "cue-\($0.index)", start: $0.cue.start,
+                    end: $0.cue.end, chinese: $0.cue.text, english: $0.english) })
+        } else if let page = selectedMultilingualPage, let locale = selectedAudioLocale,
+                  let hash = publishedAudioSha256 {
+            let heading = heading(for: page)
+            let transcript = currentPublishedTranscript.flatMap {
+                $0.pageID == page.id && $0.locale == locale && $0.sourceIdentitySha256 == page.sourceIdentitySha256 ? $0 : nil
+            }
+            playback.updateSystemMetadata(identity: TrackIdentity(weekID: page.id, trackID: "published_\(locale)", audioSHA256: hash),
+                sourceID: page.sourceIdentitySha256, title: heading.title, speaker: heading.speaker ?? "",
+                subtitles: (transcript?.captions ?? []).map {
+                    PlaybackSystemSubtitle(id: $0.id, start: $0.start, end: $0.end,
+                        chinese: locale == "zh-Hans" ? $0.text : nil,
+                        english: locale == "en" ? $0.text : $0.english)
+                })
+        }
     }
 
     /// Only visible picker rows request metadata, through the existing verified
@@ -329,7 +398,7 @@ final class AppModel: ObservableObject {
             let transcript = try await multilingualRepository.loadPublishedTranscript(for: package, page: page)
             try Task.checkCancellation()
             guard independentPages.contains(where: { publishedHeadingKey($0) == key }) else { return }
-            publishedHeadings[key] = SermonHeading(title: transcript.title ?? page.title ?? page.id,
+            publishedHeadings[key] = SermonHeading(title: displayTitle(transcript.title ?? page.title, for: page),
                                                   series: transcript.series, speaker: transcript.speaker,
                                                   displayEdition: displayEdition(for: page))
         } catch {
@@ -340,6 +409,7 @@ final class AppModel: ObservableObject {
     func loadSelectedPublishedTranscript() async {
         let request = UUID()
         transcriptRequest = request
+        verifiedTranscriptSelectionKey = nil
         publishedStudies = nil
         publishedTranscript = nil
         publishedTranscriptError = nil
@@ -355,13 +425,15 @@ final class AppModel: ObservableObject {
             let studies = try await multilingualRepository.loadStudies(for: package)
             try Task.checkCancellation()
             guard transcriptRequest == request, publishedTranscriptSelectionKey == key else { return }
+            verifiedTranscriptSelectionKey = key
             publishedTranscript = transcript
             publishedStudies = studies
             if locale == page.defaultTargetLocale {
                 publishedHeadings[publishedHeadingKey(page)] = SermonHeading(
-                    title: transcript.title ?? page.title ?? page.id, series: transcript.series, speaker: transcript.speaker,
+                    title: displayTitle(transcript.title ?? page.title, for: page), series: transcript.series, speaker: transcript.speaker,
                     displayEdition: displayEdition(for: page))
             }
+            refreshSystemPresentation()
         } catch is CancellationError {
             return
         } catch {
@@ -618,6 +690,7 @@ final class AppModel: ObservableObject {
             playback.loadPublishedAudio(audio)
             selectedAudioLocale = locale
             publishedAudioSha256 = audio.sha256
+            refreshSystemPresentation()
             resetAlignmentState()
         } catch is CancellationError {
             return
@@ -683,6 +756,7 @@ final class AppModel: ObservableObject {
             resolveContentLanguage(pageID: week.id)
             if capabilityChanged { resetAlignmentState() }
             if let nextTrack { playback.updateMetadata(week: week, track: nextTrack) }
+            refreshSystemPresentation()
             return
         }
         playback.clear()
@@ -713,6 +787,7 @@ final class AppModel: ObservableObject {
             let url = try local ?? track.mediaURL(relativeTo: mediaOrigin)
             usingOfflineAudio = local != nil
             playback.load(week: week, track: track, url: url)
+            refreshSystemPresentation()
         } catch { errorMessage = "这条音频的地址无效，未开始播放。" }
     }
 
@@ -736,6 +811,11 @@ final class AppModel: ObservableObject {
         guard downloadTasks[key] == nil else { return }
         downloadStates[key] = .downloading
         downloadTasks[key] = Task { [weak self] in
+            let assertion = DownloadBackgroundAssertion.system()
+            assertion.start { [weak self] in
+                self?.downloadTasks[key]?.cancel()
+            }
+            defer { assertion.finish() }
             do {
                 _ = try await library.download(track: track)
                 try Task.checkCancellation()
@@ -750,7 +830,8 @@ final class AppModel: ObservableObject {
                     await self.select(week: currentWeek, track: currentTrack, force: true)
                 }
             } catch is CancellationError {
-                self?.downloadStates[key] = .absent
+                self?.downloadStates[key] = assertion.didExpire
+                    ? .failed("后台下载时间已到，请回到 App 重试。") : .absent
                 self?.downloadTasks[key] = nil
             } catch {
                 self?.downloadStates[key] = .failed(error.localizedDescription)

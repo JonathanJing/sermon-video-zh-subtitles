@@ -34,11 +34,22 @@ final class ListeningLiveActivityCoordinator {
     private var suppressedSourceKey: String?
     private var lastRequestAttempt = Date.distantPast
     private var lastRequestSourceKey: String?
-    private var startedForAlignment = false
     private var alignmentActivity: ListeningActivity?
     private var alignmentSourceKey: String?
     private var alignmentSessionID: UUID?
     private var alignmentDismissed = false
+    private var capturedAlignment: (sessionID: UUID, sourceKey: String)?
+    private var suppressedAlignment: (sessionID: UUID, sourceKey: String)?
+    #if DEBUG
+    private var applicationStateOverride: UIApplication.State?
+    func setApplicationStateForTesting(_ state: UIApplication.State?) { applicationStateOverride = state }
+    #endif
+    private var applicationState: UIApplication.State {
+        #if DEBUG
+        if let applicationStateOverride { return applicationStateOverride }
+        #endif
+        return UIApplication.shared.applicationState
+    }
     private let logger = Logger(subsystem: "Tongxing", category: "LiveActivity")
     #endif
 
@@ -62,7 +73,8 @@ final class ListeningLiveActivityCoordinator {
     func update(title: String, speaker: String, position: Double, duration: Double,
                 isPlaying: Bool, sourceKey: String, languageCode: String = "zh",
                 isWaiting: Bool = false, alignmentPhase: ListeningAlignmentPhase? = nil,
-                alignmentSessionID: UUID? = nil) {
+                alignmentSessionID: UUID? = nil, subtitleID: String? = nil,
+                chineseSubtitle: String? = nil, englishSubtitle: String? = nil) {
         #if os(iOS) && canImport(ActivityKit)
         guard enabled else { return }
         guard position.isFinite, duration.isFinite, duration > 0, duration <= 24 * 3600,
@@ -71,11 +83,33 @@ final class ListeningLiveActivityCoordinator {
             return
         }
         let key = SHA256.hash(data: Data(sourceKey.utf8)).map { String(format: "%02x", $0) }.joined()
-        let state = ListeningActivityAttributes.ContentState(
-            title: boundedText(title, maximumBytes: 800), speaker: boundedText(speaker, maximumBytes: 400),
-            position: max(0, position), duration: duration, isPlaying: isPlaying,
-            isWaiting: isWaiting, sampledAt: Date(), languageCode: languageCode.hasPrefix("en") ? "en" : "zh", alignmentPhase: alignmentPhase
-        )
+        guard let state = Self.boundedState(ListeningActivityAttributes.ContentState(
+            title: title, speaker: speaker, position: max(0, position), duration: duration,
+            isPlaying: isPlaying, isWaiting: isWaiting, sampledAt: Date(),
+            languageCode: languageCode.hasPrefix("en") ? "en" : "zh", alignmentPhase: alignmentPhase,
+            subtitleID: subtitleID, chineseSubtitle: chineseSubtitle, englishSubtitle: englishSubtitle
+        )) else { end(); return }
+        if suppressedAlignment?.sessionID != alignmentSessionID || suppressedAlignment?.sourceKey != key {
+            suppressedAlignment = nil
+        }
+        let currentTaskPresented = self.alignmentSessionID == alignmentSessionID
+            && alignmentSourceKey == key && (alignmentActivity != nil || alignmentDismissed)
+        if let alignmentSessionID, let alignmentPhase, applicationState != .active,
+           Self.suppressesAlignmentAfterLeaving(phase: alignmentPhase, isBackground: applicationState == .background, hasPresented: currentTaskPresented) {
+            // Retain a departure even when a background snapshot is coalesced.
+            suppressedAlignment = (alignmentSessionID, key)
+            capturedAlignment = nil
+        }
+        // Observe real capture synchronously before coalescing ActivityKit writes.
+        // A fast matcher may replace listening/matching with its result before
+        // the worker runs; that result must still be eligible for presentation.
+        if alignmentPhase == nil || alignmentPhase == .preparing || capturedAlignment?.sourceKey != key {
+            capturedAlignment = nil
+        }
+        if applicationState != .background, suppressedAlignment == nil,
+           (alignmentPhase == .listening || alignmentPhase == .matching), let alignmentSessionID {
+            capturedAlignment = (alignmentSessionID, key)
+        }
         enqueue(Snapshot(sourceKey: key, state: state, alignmentSessionID: alignmentSessionID))
         #endif
     }
@@ -84,6 +118,8 @@ final class ListeningLiveActivityCoordinator {
     func end() {
         #if os(iOS) && canImport(ActivityKit)
         guard enabled else { return }
+        capturedAlignment = nil
+        suppressedAlignment = nil
         suppressedSourceKey = nil
         lastRequestSourceKey = nil
         lastRequestAttempt = .distantPast
@@ -146,6 +182,10 @@ final class ListeningLiveActivityCoordinator {
         if #available(iOS 18.0, *) {
             await reconcileForegroundAlignment(requested, token: token)
             guard token == revision, !Task.isCancelled else { return }
+        }
+        // Alignment feedback belongs only to a foreground transient activity.
+        // Older systems keep the in-app feedback instead of a Lock Screen fallback.
+        do {
             // A separate transient presentation owns foreground alignment.
             // Keep the ordinary playback activity independent of its dismissal.
             if let requested {
@@ -163,7 +203,7 @@ final class ListeningLiveActivityCoordinator {
 
         if let endingActivity,
            endingActivity.attributes.sourceKey != snapshot.sourceKey
-            || snapshot.state.isPlaying || snapshot.state.alignmentPhase?.isActive == true {
+            || snapshot.state.isPlaying {
             await dismissEndingActivity()
         }
         guard token == revision, !Task.isCancelled else { return }
@@ -184,7 +224,7 @@ final class ListeningLiveActivityCoordinator {
         }
 
         guard let activity else {
-            guard snapshot.state.isPlaying || snapshot.state.alignmentPhase?.isActive == true, suppressedSourceKey != snapshot.sourceKey,
+            guard snapshot.state.isPlaying, suppressedSourceKey != snapshot.sourceKey,
                   ActivityAuthorizationInfo().areActivitiesEnabled,
                   UIApplication.shared.applicationState == .active,
                   lastRequestSourceKey != snapshot.sourceKey || Date().timeIntervalSince(lastRequestAttempt) >= 30 else { return }
@@ -196,7 +236,6 @@ final class ListeningLiveActivityCoordinator {
                     content: content(for: snapshot.state), pushType: nil
                 )
                 self.activity = created
-                startedForAlignment = !snapshot.state.isPlaying
                 lastPublished = snapshot
                 observeState(of: created)
             } catch {
@@ -206,22 +245,17 @@ final class ListeningLiveActivityCoordinator {
             }
             return
         }
-        if snapshot.state.isPlaying { startedForAlignment = false }
-        if startedForAlignment && snapshot.state.alignmentPhase?.isActive != true && !snapshot.state.isPlaying {
-            // A paused alignment-only session has ended; retain its final result
-            // briefly on the Lock Screen, with no active microphone/timer symbol.
-            endingActivity = activity
-            self.activity = nil
-            stateObserver?.cancel()
-            stateObserver = nil
-            await activity.end(content(for: snapshot.state), dismissalPolicy: .after(Date().addingTimeInterval(8)))
-            lastPublished = nil
-            lastRequestSourceKey = nil
-            lastRequestAttempt = .distantPast
-            return
-        }
         guard shouldPublish(snapshot) else { return }
+        let subtitleChanged = lastPublished?.state.subtitleID != snapshot.state.subtitleID
+            || lastPublished?.state.chineseSubtitle != snapshot.state.chineseSubtitle
+            || lastPublished?.state.englishSubtitle != snapshot.state.englishSubtitle
+        if subtitleChanged {
+            logger.notice("Playback subtitle submit: activity=\(activity.id, privacy: .public), cue=\(Self.subtitleDiagnosticKey(snapshot.state.subtitleID), privacy: .public), position=\(snapshot.state.position, privacy: .public), appState=\(self.applicationState.rawValue, privacy: .public)")
+        }
         await activity.update(content(for: snapshot.state))
+        if subtitleChanged {
+            logger.notice("Playback subtitle update returned: activity=\(activity.id, privacy: .public), cue=\(Self.subtitleDiagnosticKey(activity.content.state.subtitleID), privacy: .public)")
+        }
         lastPublished = snapshot
     }
 
@@ -240,6 +274,22 @@ final class ListeningLiveActivityCoordinator {
         }
         guard token == revision, !Task.isCancelled else { return }
         guard let snapshot, let phase else { return }
+        guard snapshot.alignmentSessionID != nil else { return }
+        let applicationState = self.applicationState
+        let hasPresented = alignmentActivity != nil || alignmentDismissed
+        let departed = suppressedAlignment?.sessionID == snapshot.alignmentSessionID
+            && suppressedAlignment?.sourceKey == snapshot.sourceKey
+        guard applicationState == .active && !departed else {
+            if let current = alignmentActivity {
+                alignmentActivity = nil
+                await current.end(nil, dismissalPolicy: .immediate)
+            }
+            // Do not reopen this task when the user returns to the app.
+            if departed || Self.suppressesAlignmentAfterLeaving(phase: phase, isBackground: applicationState == .background, hasPresented: hasPresented) {
+                alignmentDismissed = true
+            }
+            return
+        }
         if let current = alignmentActivity,
            current.activityState == .dismissed || current.activityState == .ended {
             alignmentActivity = nil
@@ -253,7 +303,11 @@ final class ListeningLiveActivityCoordinator {
         }
         // Wait for real capture-start, after the permission dialog has closed.
         // Tapping that dialog can dismiss a transient created during preparing.
-        guard phase == .listening || phase == .matching, !alignmentDismissed else { return }
+        let observedCapture = capturedAlignment?.sessionID == snapshot.alignmentSessionID
+            && capturedAlignment?.sourceKey == snapshot.sourceKey
+        let resultAfterCapture = observedCapture && (phase == .aligned || phase == .unmatched || phase == .failed)
+        guard phase == .listening || phase == .matching || resultAfterCapture,
+              !alignmentDismissed else { return }
         guard ActivityAuthorizationInfo().areActivitiesEnabled else {
             alignmentDismissed = true
             logger.notice("Foreground alignment activity unavailable: activities disabled")
@@ -261,9 +315,11 @@ final class ListeningLiveActivityCoordinator {
         }
         guard UIApplication.shared.applicationState == .active else { return }
         do {
-            alignmentActivity = try ListeningActivity.request(
+            let created = try ListeningActivity.request(
                 attributes: ListeningActivityAttributes(sourceKey: snapshot.sourceKey),
                 content: content(for: snapshot.state), pushType: nil, style: .transient)
+            alignmentActivity = created
+            logger.notice("Foreground alignment activity created: \(created.id, privacy: .public), phase=\(String(describing: phase), privacy: .public), state=\(String(describing: created.activityState), privacy: .public)")
         } catch {
             alignmentDismissed = true
             logger.error("Foreground alignment activity request failed: \(String(describing: error), privacy: .public)")
@@ -284,12 +340,19 @@ final class ListeningLiveActivityCoordinator {
         }
     }
 
+    // Correlate changes without putting captions, content identity or URLs in logs.
+    private static func subtitleDiagnosticKey(_ id: String?) -> String {
+        guard let id else { return "none" }
+        return SHA256.hash(data: Data(id.utf8)).prefix(6).map { String(format: "%02x", $0) }.joined()
+    }
+
     private func shouldPublish(_ snapshot: Snapshot) -> Bool {
         guard let previous = lastPublished, previous.sourceKey == snapshot.sourceKey else { return true }
         let old = previous.state, new = snapshot.state
         let elapsed = new.sampledAt.timeIntervalSince(old.sampledAt)
         let expectedPosition = old.position + (old.isPlaying ? max(0, elapsed) : 0)
         return old.title != new.title || old.speaker != new.speaker || old.languageCode != new.languageCode
+            || old.subtitleID != new.subtitleID || old.chineseSubtitle != new.chineseSubtitle || old.englishSubtitle != new.englishSubtitle
             || old.alignmentPhase != new.alignmentPhase
             || old.isPlaying != new.isPlaying || old.isWaiting != new.isWaiting
             || abs(old.duration - new.duration) > 0.2 || abs(expectedPosition - new.position) > 0.2
@@ -299,7 +362,7 @@ final class ListeningLiveActivityCoordinator {
     private func content(for state: ListeningActivityAttributes.ContentState) -> ActivityContent<ListeningActivityAttributes.ContentState> {
         // If the app stops reporting while playing, show a stale message instead
         // of indefinitely projecting progress from the last reported position.
-        ActivityContent(state: state, staleDate: state.alignmentPhase?.isActive == true ? state.sampledAt.addingTimeInterval(15)
+        ActivityContent(state: state, staleDate: state.alignmentPhase?.isActive == true || state.isWaiting ? state.sampledAt.addingTimeInterval(15)
                         : state.isPlaying ? state.sampledAt.addingTimeInterval(45) : nil,
                         relevanceScore: state.alignmentPhase == nil ? 50 : 100)
     }
@@ -328,15 +391,40 @@ final class ListeningLiveActivityCoordinator {
         await previous.end(ActivityContent(state: stopped, staleDate: nil), dismissalPolicy: .immediate)
     }
 
-    private func boundedText(_ value: String, maximumBytes: Int) -> String {
-        var result = "", count = 0
-        for character in value {
-            let bytes = String(character).utf8.count
-            guard count + bytes <= maximumBytes else { break }
-            result.append(character)
-            count += bytes
+    // Permission completion can report capture before didBecomeActive. Until
+    // presentation, inactivity must wait; actual background always suppresses.
+    nonisolated static func suppressesAlignmentAfterLeaving(phase: ListeningAlignmentPhase,
+                                                           isBackground: Bool, hasPresented: Bool = false) -> Bool {
+        isBackground || (hasPresented && phase != .preparing)
+    }
+
+    /// Pure payload preparation shared with tests. Count the JSON representation,
+    /// including escaping, rather than raw UTF-8 (control scalars can expand 6x).
+    /// The final 3500-byte ceiling leaves room for the hashed source attributes.
+    nonisolated static func boundedState(_ input: ListeningActivityAttributes.ContentState)
+        -> ListeningActivityAttributes.ContentState? {
+        let encoder = JSONEncoder()
+        func text(_ value: String, budget: Int) -> String {
+            if let data = try? encoder.encode(value), data.count <= budget { return value }
+            let characters = Array(value)
+            var lower = 0, upper = characters.count
+            while lower < upper {
+                let mid = lower + (upper - lower + 1) / 2
+                let candidate = String(characters.prefix(mid))
+                if let data = try? encoder.encode(candidate), data.count <= budget { lower = mid }
+                else { upper = mid - 1 }
+            }
+            return String(characters.prefix(lower))
         }
-        return result
+        var state = input
+        state.title = text(input.title, budget: 450)
+        state.speaker = text(input.speaker, budget: 200)
+        state.subtitleID = input.subtitleID.map { text($0, budget: 160) }
+        state.chineseSubtitle = input.chineseSubtitle.map { text($0, budget: 950) }
+        state.englishSubtitle = input.englishSubtitle.map { text($0, budget: 950) }
+        state.languageCode = text(input.languageCode, budget: 40)
+        guard let encoded = try? encoder.encode(state), encoded.count <= 3500 else { return nil }
+        return state
     }
     #endif
 }
