@@ -255,6 +255,54 @@ class TargetLanguageRulePreflightTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "complete direct quote was split or shortened"):
             self.receipt()
 
+    def test_complete_quote_spans_one_group_and_a_split_plan_sends_nothing(self):
+        from scripts.cuv_scripture import CuvLibrary
+        library = CuvLibrary.from_path()
+        verse = library.lookup("REV 2:4")
+        units = self.request["sourceUnits"]
+        self.assertGreaterEqual(len(units), 2)
+        cut = verse["text"].index("，") + 1
+        excerpts = (verse["text"][:cut], verse["text"][cut:])
+        self.assertTrue(all(verse["text"].count(excerpt) == 1 and excerpt for excerpt in excerpts))
+        parts = []
+        for unit, excerpt in zip(units[:2], excerpts):
+            selected = library.lookup("REV 2:4", excerpt=excerpt)
+            parts.append({"sourceUnitId": unit["sourceUnitId"], "englishStartOffset": 0,
+                "englishEndOffset": len(unit["english"]),
+                "englishExcerptSha256": subject._sha_text(unit["english"]),
+                "reference": "REV 2:4", "cuvExcerpt": excerpt,
+                "cuvExcerptSha256": selected["textSha256"]})
+        approval = {"humanApproval": True, "decision": "approved",
+                    "englishSourcePackageJsonSha256": self.request["englishSourcePackageJsonSha256"],
+                    "anchorManifestJsonSha256": self.request["anchorManifestSha256"],
+                    "decisions": [{"candidateId": "fixture-quote", "classification": "direct_quote",
+                                   "parts": parts, "paraphraseUnitIds": []}]}
+        additions = {"CUV_EDITION_ID": "cmn-cu89s",
+                     "CANDIDATE_VERSES": {"fixture-quote": {"REV 2:4"}},
+                     "CANDIDATE_QUOTE_UNITS": {"fixture-quote": {part["sourceUnitId"] for part in parts}},
+                     "APPROVED_BOUNDARY_REVIEW": approval}
+        self.plugin.write_text(self.plugin.read_text() + "\n" + "\n".join(
+            key + " = " + repr(value) for key, value in additions.items()))
+        self.policy["scripture"]["editionId"] = "cmn-cu89s"
+        self.policy["scripture"]["quoteCheckPolicy"] = "source_bound_exact_quote"
+        self.policy["componentSha256"]["scripture"] = policy_tools.canonical_sha256(self.policy["scripture"])
+        self.repin()
+        joined = [{"translationGroupId": "quote-group",
+                   "sourceUnitIds": [part["sourceUnitId"] for part in parts]}]
+        receipt = subject.preflight(self.request, self.policy, self.plugin, joined)
+        self.assertEqual([part["cuvExcerpt"] for part in parts],
+                         [quote["targetText"] for quote in receipt["modelRules"]["exactQuotes"]])
+        self.assertEqual(0, receipt["modelCalls"])
+        split = [{"translationGroupId": "group-" + part["sourceUnitId"],
+                  "sourceUnitIds": [part["sourceUnitId"]]} for part in parts]
+        with self.assertRaisesRegex(ValueError, "split across groups or omitted"):
+            subject.preflight(self.request, self.policy, self.plugin, split)
+        self.worker.calls.clear()
+        with self.assertRaisesRegex(ValueError, "split across groups or omitted"):
+            runner.run(self.fixture.source, self.fixture.anchor, self.policy, self.worker.out,
+                       "fixture-key", self.worker.fake_call, split, self.plugin)
+        self.assertEqual([], self.worker.calls)
+
     def test_plugin_name_form_conflict_is_rejected_before_dispatch(self):
         self.policy["terminology"]["properNames"] = [{"source": "Jesus", "target": "耶稣", "reviewStatus": "project_established"}]
         self.policy["componentSha256"]["terminology"] = policy_tools.canonical_sha256(self.policy["terminology"])

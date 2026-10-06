@@ -125,7 +125,7 @@ Git 保存非敏感模板、registry、最小合成 fixture 与评审记录；�
 
 | 既有 ID | 本次确认的实现／证据 | 下一项仍缺的验收 |
 |---|---|---|
-| R242-001/005/011 | 新冻结诊断链已接实际CLI/plugin/候选准入；首轮26调用plugin拦截1个pending书名不匹配；新策略保留原书名后26调用/plugin13组/诊断候选通过，0调用恢复。runner 在单组复核后执行同版 plugin，失败则不再派发后续组 | 正式术语人审与正式/strict adapter；局部修订接线仍待验收。已在途的并行组不中止 |
+| R242-001/005/011 | 新冻结诊断链已接实际CLI/plugin/候选准入；首轮26调用plugin拦截1个pending书名不匹配；新策略保留原书名后26调用/plugin13组/诊断候选通过，0调用恢复。runner 在单组复核后执行同版 plugin，失败则不再派发后续组。完整直引绑定同一翻译组和版次全文 | 正式术语人审与正式/strict adapter；局部修订接线仍待验收。已在途的并行组不中止 |
 | R242-003/017 | receipt快照复用已合并；474句完整解码800.787065→48.098803秒已实测 | 新并行修订的保护不变量与新生产验证；不重做原474基线 |
 | R242-004/010/012/018 | 异常留存、恢复计划及producer只读intent/settings exporter已实现；真实474导出16.573s/规划42.150s，revalidate474、0推理，原1910文件不变；owner软件已合并 | owner执行实际恢复批次仍缺；planner未比较assembly设置；同步仍fail，需局部裁定/修复及下游重建 |
 | R242-009/019/021 | 100 步真实进程＋mock provider；24 路短 CLI；419 单元离线规模回归由 CI 执行 | 新译→审核长队列、跨主机 broker/DAG、session GPU 许可/真冷暖、当前代码真实 8×8 压力 |
@@ -159,7 +159,7 @@ Git 保存非敏感模板、registry、最小合成 fixture 与评审记录；�
 | `DEV-R242-002` L1唯一缓存与有界并行入口；`DEV-L1-001`、`DEV-SPD-004` | `in_progress` | L1 judge 共用不可变 cache、single-flight、started/unknown 与1–8 workers 已由#242合并；ae7a7fef新增source4/judge8及共享业务池。剩新来源真实执行、所有正式入口覆盖及跨修订精确迁移；不重新开发已有锁/cache | 001执行身份；已有request cache |
 | `DEV-R242-003` L3收据上下文复用；`DEV-L3-001`、`DEV-DIAG-015` | `waiting_evidence` | receipt上下文复用及依赖漂移拒绝已合并；同474句真实cache完整解码对照已完成800.787065→48.098803秒（仅校验阶段）。下一项是新并行修订的保护不变量及新生产验证，planner/assembly比较仍独立归004 | 001；输入快照不变量 |
 | `DEV-R242-004` 单句异常隔离与同步恢复；`DEV-L3-001/002`、`DEV-SPD-004` | `in_progress` | 保存异常旧WAV，输出duration/source比、局部lag跳升和后续传播；生成早期检测高风险连续段，预测与实测分开。先判断TTS单句修复或L2修订，再独立重算排程；验证未变单元0重合成和原8秒目标。不得自动扩大容差；u172旧WAV缺失保留根因未知 | 001；复用既有单元恢复 |
-| `DEV-R242-005` 模型实际输入政策预览；`DEV-L2-001/002`、`DEV-STE-001/002` | `in_progress` | payload/policy预览、changed set、精确零调用迁移和canonical modelRules前检已实现。strict locale 消费同一份 rule preflight。带 plugin 的 runner 在单组复核失败后停止后续派发，恢复不重发已完成组。正式经文版次/group adapter、局部修订及全生产入口覆盖仍缺；prompt-only实验归023/PROMPT | 001；既有partial repair与迁移 |
+| `DEV-R242-005` 模型实际输入政策预览；`DEV-L2-001/002`、`DEV-STE-001/002` | `in_progress` | payload/policy预览、changed set、精确零调用迁移、canonical/strict 规则消费和逐组 plugin 早停已实现。完整直引可以跨同一翻译组内的连续英文单元，拼接后必须等于版次全文；拆组或缩短在派发前拒绝。局部修订及全生产入口覆盖仍缺；prompt-only实验归023/PROMPT | 001；既有partial repair与迁移 |
 | `DEV-R242-006` 元数据与双环境路由门禁；`DEV-WEEK-001`、`DEV-L4-004/007` | `in_progress` | 元数据/环境路由/来源与page绑定代码已由#242合并；已存在占位和错版本拒绝。剩新身份Hosting发布后的catalog/content、Beta/正式双端读回；元数据修复不重生成音频 | 001；现有Dev/prod路由 |
 | `DEV-R242-007` 发布收据版本闭合；`DEV-CICD-001`、`DEV-L4-003` | `in_progress` | 发布attempt、live版本、资产/HTTP及上游绑定软件已由#242合并；旧副本和错误绑定负例已有。剩当前授权目标真实部署、失败HTTP及回退收据，缺历史时间仍unknown | 006；真实publisher返回值 |
 | `DEV-R242-008` 统一CLI计划、查询与审核入口；`DEV-SPD-006`、`DEV-DIAG-017` | `waiting_evidence` | v2 CLI计划/只读查询/review ingest及CAS continuation已合并，真实CLI/后台owner离线验收通过；不是只有schema/fixture。剩新模型新身份正式整链和当前并行路径的实际运行证据 | 001；[协议](unified-cli-protocol.zh.md) |

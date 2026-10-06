@@ -6,7 +6,7 @@
 
 已识别的内建规则包括：
 
-- 中文固定引文映射和逐单元 exact group；周更 CUV 的来源与 anchor、批准 span、candidate 覆盖、版本库原文和完整 direct quote。
+- 中文固定引文映射和逐单元 exact group；周更 CUV 的来源与 anchor、批准 span、candidate 覆盖和版本库原文。完整 direct quote 可以跨同一翻译组内的连续英文单元，拼接后必须等于版次全文；拆组、缩短，或把完整引文组扩进旁白单元，在派发前拒绝。部分引文仍须落在同一组内。
 - 韩／西固定完整经文组，防止把两单元完整引文拆成新 group；内建版次、数字和名字形式进入 modelRules。
 - reference-only 的提示仅保留英文实际口述的引用。不因为上下文知道书章，就把未口述书章／括号编号增补到口播中；保留数字及其上下文。
 
