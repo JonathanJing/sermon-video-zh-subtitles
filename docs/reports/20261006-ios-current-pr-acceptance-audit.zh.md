@@ -57,3 +57,5 @@ push前核对工作分支远端仍为本任务head `19e6ba532cbfb5e63cf4ae9e6133
 209e的Beta原生日志与xcresult已保存：116项App单元测试中15skip、1个本地WAV准备10秒超时；新增反馈过期/重复前台回归实际通过；新学习资料sheet UI回归通过。旧UI假设暴露紧凑/AX dock无可见clock、匿名页面安全标题及审核证道通知标题变化，修正测试读取现有Play可访问性时间值、使用当前句返回操作、按播放按钮边界限制阅读区域，标题期望改为现有安全标题。通知用例仍要求实际系统展示与verified landing，不把schedule视为通过。WAV准备上限与已有fixture一致改30秒；完整Beta套件超过原35分钟job边界，改45分钟，默认测试集和skip门禁未缩减。
 
 真实209e模拟器附件（非真机、非最终head）：[大字紧凑dock](20261006-ios-current-pr-evidence/large-text-compact-dock-209e.png)证明可见clock省略而控件保留；[学习资料sheet](20261006-ios-current-pr-evidence/reviewed-study-sheet-209e.png)展示审核大纲/默想全文。由同一xcresult解压提取、未修改像素；原run取消终态与其中失败保留，后续验证绑定新head。
+
+6b精确head的Python完整workflow成功：2032/2316两分片共4348项、22skip，原CI调用遗漏已关闭。Beta原生Core 97/Storage 53报告成功；App单元116项、15skip、0fail；Beta通知3项全通过并实际观察系统展示与verified landing。UI58项、8skip、6fail：两处收起断言误用了进度值回退查询，已改回直接检查可见clock元素；另外四处实际AX层级仅暴露工具栏“当前句”，外层accessibilityLabel的跟随/自由阅读状态被toolbar桥接丢失。把状态写入Button自身标题，按既有图标工具栏模式呈现，保留原状态UI断言；实体VoiceOver仍待验收。旧6b失败与实际层级证据保留，下一head重新核对。
