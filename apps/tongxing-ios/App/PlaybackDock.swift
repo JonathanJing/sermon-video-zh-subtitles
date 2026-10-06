@@ -13,7 +13,6 @@ struct PlaybackDock: View {
     @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isCollapsed = false
-    @State private var showingMore = false
     var isPreparing = false
     var alignmentModel: AppModel? = nil
     var locate: (() -> Void)? = nil
@@ -38,8 +37,11 @@ struct PlaybackDock: View {
     private var dockSurface: some View {
         Group {
             if isCollapsed {
-                if inSystemBar { playButton }
-                else { playButton.padding(6).listeningGlassSurface() }
+                HStack(spacing: 2) {
+                    if inSystemBar { playButton }
+                    else { playButton.padding(6).listeningGlassSurface() }
+                    collapseToggleButton
+                }
             } else if placement == .trailing {
                 if inSystemBar { verticalControls }
                 else { verticalControls.padding(6).listeningGlassSurface() }
@@ -62,6 +64,7 @@ struct PlaybackDock: View {
             playButton
             nudgeButton(1)
             if hasMoreControls { moreButton }
+            collapseToggleButton
         }
         .buttonStyle(.plain)
     }
@@ -73,6 +76,7 @@ struct PlaybackDock: View {
             playButton
             nudgeButton(1)
             if hasMoreControls { moreButton }
+            collapseToggleButton
         }
         .buttonStyle(.plain)
     }
@@ -81,10 +85,15 @@ struct PlaybackDock: View {
         alignmentModel != nil || precision != nil || current != nil || playback.undoPosition != nil
     }
 
+    /// The dock never presents the more panel itself. It reports the tap and
+    /// the button frame; the host (ContentView or a sheet) presents the single
+    /// shared `PlaybackMorePanelOverlay`. This replaced an older split where
+    /// the dock fell back to a system popover when no onMoreTap was given —
+    /// the popover path is gone so reserved-region avoidance and styling
+    /// cannot diverge between hosts.
     private var moreButton: some View {
         Button {
-            if let onMoreTap { onMoreTap() }
-            else { showingMore = true }
+            onMoreTap?()
         } label: {
             Image(systemName: "magnifyingglass")
                 .font(.title3.weight(.medium))
@@ -93,12 +102,6 @@ struct PlaybackDock: View {
         }
         .accessibilityLabel(localization.text("定位"))
         .accessibilityIdentifier("playback-more")
-        .popover(isPresented: $showingMore, arrowEdge: placement == .trailing ? .trailing : .bottom) {
-            PlaybackMoreControls(playback: playback, isPreparing: isPreparing,
-                                 alignmentModel: alignmentModel, locate: locate, precision: precision,
-                                 current: current, onClose: { showingMore = false })
-                .presentationCompactAdaptation(.popover)
-        }
         .onGeometryChange(for: CGRect.self, of: { $0.frame(in: .global) }) { frame in
             onMoreFrameChange?(frame)
         }
@@ -160,7 +163,7 @@ struct PlaybackDock: View {
         .accessibilityLabel(playLabel)
         .accessibilityValue(statusLabel)
         .accessibilityIdentifier("playback-toggle")
-        .accessibilityHint(localization.text(isCollapsed ? "向上轻扫展开播放栏" : "向下轻扫收起播放栏"))
+        .accessibilityHint(localization.text(isCollapsed ? "点按展开按钮或向上轻扫展开播放栏" : "点按收起按钮或向下轻扫收起播放栏"))
         .accessibilityAction(named: Text(localization.text(isCollapsed ? "展开播放栏" : "收起播放栏"))) {
             setCollapsed(!isCollapsed)
         }
@@ -172,10 +175,33 @@ struct PlaybackDock: View {
         }
     }
 
+    /// Visible collapse/expand affordance. The swipe gesture alone is
+    /// undiscoverable, so the dock carries its own chevron button; the
+    /// gesture, accessibility action, and context menu remain as alternatives.
+    private var collapseToggleButton: some View {
+        Button { setCollapsed(!isCollapsed) } label: {
+            Image(systemName: isCollapsed ? "chevron.up" : "chevron.down")
+                .font(.footnote.weight(.semibold))
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
+        }
+        .accessibilityLabel(localization.text(isCollapsed ? "展开播放栏" : "收起播放栏"))
+        .accessibilityIdentifier("playback-dock-collapse-toggle")
+    }
+
     private var dockGesture: some Gesture {
         DragGesture(minimumDistance: 16)
             .onEnded { value in
                 let movement = value.translation
+                if placement == .trailing,
+                   abs(movement.width) > 32,
+                   abs(movement.width) > abs(movement.height) * 1.5 {
+                    // A side column is narrow: accept a horizontal swipe too
+                    // (right to collapse, left to expand). The bottom bar keeps
+                    // vertical-only so it never fights horizontal scrolling.
+                    setCollapsed(movement.width > 0)
+                    return
+                }
                 guard abs(movement.height) > 32,
                       abs(movement.height) > abs(movement.width) * 1.5 else { return }
                 setCollapsed(movement.height > 0)
@@ -186,7 +212,6 @@ struct PlaybackDock: View {
         withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
             isCollapsed = collapsed
             if collapsed {
-                showingMore = false
                 onMoreDismiss?()
             }
         }
@@ -196,6 +221,80 @@ struct PlaybackDock: View {
     private var playLabel: String {
         if playback.isPlaying || playback.isWaiting { return localization.text("暂停播放") }
         return localization.text(playback.resumePosition == nil ? "开始播放" : "继续收听")
+    }
+}
+
+/// Shared "more" panel overlay, presented near the dock's more button.
+///
+/// ContentView and the sheets (precision, outline) all present this one
+/// component; the dock only reports taps/frames. Panel positioning clamps to
+/// the host bounds and nudges out of active reserved regions (fold division,
+/// camera occlusions) — system popovers do that automatically, but this panel
+/// is hand-placed so it performs its own avoidance. The host supplies the
+/// panel content with the width this overlay measures.
+struct PlaybackMorePanelOverlay<Panel: View>: View {
+    @Binding var isPresented: Bool
+    /// The more button's frame in global coordinates (.null when unknown).
+    var buttonFrame: CGRect
+    var placement: PlaybackDockPlacement
+    @ViewBuilder var panel: (CGFloat) -> Panel
+
+    @State private var panelSize = CGSize(width: 320, height: 176)
+
+    var body: some View {
+        if isPresented && !buttonFrame.isNull {
+            GeometryReader { proxy in
+                Color.clear
+                    .contentShape(Rectangle())
+                    .onTapGesture { isPresented = false }
+                    .accessibilityHidden(true)
+                let width = min(320, max(0, proxy.size.width - 24))
+                panel(width)
+                    .listeningGlassSurface()
+                    .onGeometryChange(for: CGSize.self, of: { $0.size }) { panelSize = $0 }
+                    .position(panelPosition(width: width, in: proxy))
+            }
+        }
+    }
+
+    private func panelPosition(width: CGFloat, in proxy: GeometryProxy) -> CGPoint {
+        let root = proxy.frame(in: .global)
+        let button = buttonFrame.offsetBy(dx: -root.minX, dy: -root.minY)
+        let height = panelSize.height
+        let proposedX = placement == .trailing
+            ? button.minX - width - 10 : button.midX - width / 2
+        let proposedY = placement == .trailing
+            ? button.midY - height / 2 : button.minY - height - 8
+        let x = min(max(proposedX, 12), max(12, proxy.size.width - width - 12))
+        let y = min(max(proposedY, 12), max(12, proxy.size.height - height - 12))
+        let placed = avoidingReservedRegions(
+            CGRect(x: x, y: y, width: width, height: height), in: proxy)
+        return CGPoint(x: placed.midX, y: placed.midY)
+    }
+
+    private func avoidingReservedRegions(_ panel: CGRect, in proxy: GeometryProxy) -> CGRect {
+        #if os(iOS) && canImport(SwiftUI, _version: 8.0.85)
+        if #available(iOS 27.1, macOS 27.1, *) {
+            var panel = panel
+            let regions = proxy.reservedRegions(kind: .division).filter(\.isActive).map(\.frame)
+                + proxy.reservedRegions(kind: .occlusion).filter(\.isActive).map(\.frame)
+            for region in regions where panel.intersects(region) {
+                let dx = panel.midX - region.midX
+                let dy = panel.midY - region.midY
+                if abs(dx) >= abs(dy) {
+                    panel.origin.x = dx >= 0 ? region.maxX + 8 : region.minX - 8 - panel.width
+                } else {
+                    panel.origin.y = dy >= 0 ? region.maxY + 8 : region.minY - 8 - panel.height
+                }
+                panel.origin.x = min(max(panel.minX, 12),
+                                     max(12, proxy.size.width - panel.width - 12))
+                panel.origin.y = min(max(panel.minY, 12),
+                                     max(12, proxy.size.height - panel.height - 12))
+            }
+            return panel
+        }
+        #endif
+        return panel
     }
 }
 

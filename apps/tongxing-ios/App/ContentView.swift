@@ -73,7 +73,6 @@ struct ContentView: View {
     @ViewState private var showingPlaybackMore = false
     @ViewState private var showingAlignmentFailure = false
     @ViewState private var playbackMoreButtonFrame: CGRect = .null
-    @ViewState private var playbackMorePanelSize = CGSize(width: 320, height: 176)
     @ViewState private var playbackMorePlacement: PlaybackDockPlacement = .bottom
 
     init(model: AppModel) {
@@ -411,67 +410,14 @@ struct ContentView: View {
         )
     }
 
-    @ViewBuilder private var playbackMoreOverlay: some View {
-        if showingPlaybackMore && !playbackMoreButtonFrame.isNull {
-            GeometryReader { proxy in
-                Color.clear
-                    .contentShape(Rectangle())
-                    .onTapGesture { showingPlaybackMore = false }
-                    .accessibilityHidden(true)
-                playbackMoreControls(width: min(320, max(0, proxy.size.width - 24)))
-                    .listeningGlassSurface()
-                    .onGeometryChange(for: CGSize.self, of: { $0.size }) { size in
-                        playbackMorePanelSize = size
-                    }
-                    .position(playbackMorePosition(in: proxy))
-            }
+    private var playbackMoreOverlay: some View {
+        PlaybackMorePanelOverlay(
+            isPresented: $showingPlaybackMore,
+            buttonFrame: playbackMoreButtonFrame,
+            placement: playbackMorePlacement
+        ) { width in
+            playbackMoreControls(width: width)
         }
-    }
-
-    private func playbackMorePosition(in proxy: GeometryProxy) -> CGPoint {
-        let root = proxy.frame(in: .global)
-        let button = playbackMoreButtonFrame.offsetBy(dx: -root.minX, dy: -root.minY)
-        let width = min(320, max(0, proxy.size.width - 24))
-        let height = playbackMorePanelSize.height
-        let proposedX = playbackMorePlacement == .trailing
-            ? button.minX - width - 10 : button.midX - width / 2
-        let proposedY = playbackMorePlacement == .trailing
-            ? button.midY - height / 2 : button.minY - height - 8
-        let x = min(max(proposedX, 12), max(12, proxy.size.width - width - 12))
-        let y = min(max(proposedY, 12), max(12, proxy.size.height - height - 12))
-        let panel = avoidingReservedRegions(
-            CGRect(x: x, y: y, width: width, height: height), in: proxy)
-        return CGPoint(x: panel.midX, y: panel.midY)
-    }
-
-    /// Nudges a hand-placed panel out of active reserved regions (the fold's
-    /// division region, camera occlusions). System sheets and popovers do
-    /// this automatically; this overlay is positioned by hand next to the
-    /// "more" button, so it performs its own avoidance. Scrolling content is
-    /// intentionally left alone — only this interactive panel moves.
-    private func avoidingReservedRegions(_ panel: CGRect, in proxy: GeometryProxy) -> CGRect {
-        #if os(iOS) && canImport(SwiftUI, _version: 8.0.85)
-        if #available(iOS 27.1, macOS 27.1, *) {
-            var panel = panel
-            let regions = proxy.reservedRegions(kind: .division).filter(\.isActive).map(\.frame)
-                + proxy.reservedRegions(kind: .occlusion).filter(\.isActive).map(\.frame)
-            for region in regions where panel.intersects(region) {
-                let dx = panel.midX - region.midX
-                let dy = panel.midY - region.midY
-                if abs(dx) >= abs(dy) {
-                    panel.origin.x = dx >= 0 ? region.maxX + 8 : region.minX - 8 - panel.width
-                } else {
-                    panel.origin.y = dy >= 0 ? region.maxY + 8 : region.minY - 8 - panel.height
-                }
-                panel.origin.x = min(max(panel.minX, 12),
-                                     max(12, proxy.size.width - panel.width - 12))
-                panel.origin.y = min(max(panel.minY, 12),
-                                     max(12, proxy.size.height - panel.height - 12))
-            }
-            return panel
-        }
-        #endif
-        return panel
     }
 
     private var trailingNavigationActions: some View {
@@ -1274,6 +1220,8 @@ private struct PrecisionSheet: View {
     @ViewState private var validation: String?
     @ViewState private var slider = 0.0
     @ViewState private var dragging = false
+    @ViewState private var showingMore = false
+    @ViewState private var moreButtonFrame: CGRect = .null
 
     init(model: AppModel) {
         self.model = model
@@ -1322,7 +1270,27 @@ private struct PrecisionSheet: View {
             .formStyle(.grouped)
             .navigationTitle(localization.text("定位 / 精调"))
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button(localization.text("完成")) { dismiss() } } }
-            .listeningBottomBar { PlaybackDock(playback: playback) }
+            .listeningBottomBar {
+                PlaybackDock(
+                    playback: playback,
+                    onMoreTap: { showingMore = true },
+                    onMoreDismiss: { showingMore = false },
+                    onMoreFrameChange: { moreButtonFrame = $0 }
+                )
+            }
+            .overlay {
+                PlaybackMorePanelOverlay(
+                    isPresented: $showingMore,
+                    buttonFrame: moreButtonFrame,
+                    placement: .bottom
+                ) { width in
+                    PlaybackMoreControls(
+                        playback: playback,
+                        onClose: { showingMore = false },
+                        width: width
+                    )
+                }
+            }
         }
         .environment(\.locale, localization.locale)
         .onAppear { slider = playback.position }
@@ -1349,6 +1317,8 @@ private struct OutlineSheet: View {
     let week: SermonWeek?
     @ObservedObject var playback: PlaybackController
     @Environment(\.dismiss) private var dismiss
+    @ViewState private var showingMore = false
+    @ViewState private var moreButtonFrame: CGRect = .null
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -1367,7 +1337,27 @@ private struct OutlineSheet: View {
                 }.padding(22).frame(maxWidth: 680)
             }.navigationTitle(localization.text("证道大纲"))
                 .toolbar { ToolbarItem(placement: .confirmationAction) { Button(localization.text("完成")) { dismiss() } } }
-                .listeningBottomBar { PlaybackDock(playback: playback) }
+                .listeningBottomBar {
+                    PlaybackDock(
+                        playback: playback,
+                        onMoreTap: { showingMore = true },
+                        onMoreDismiss: { showingMore = false },
+                        onMoreFrameChange: { moreButtonFrame = $0 }
+                    )
+                }
+                .overlay {
+                    PlaybackMorePanelOverlay(
+                        isPresented: $showingMore,
+                        buttonFrame: moreButtonFrame,
+                        placement: .bottom
+                    ) { width in
+                        PlaybackMoreControls(
+                            playback: playback,
+                            onClose: { showingMore = false },
+                            width: width
+                        )
+                    }
+                }
         }
         .environment(\.locale, localization.locale)
         #if os(macOS)
