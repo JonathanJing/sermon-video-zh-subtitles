@@ -601,7 +601,8 @@ class Engine:
             state['status'] = 'closed'; self.save(state, 'closed')
             return state
 
-    def reconcile(self, session_id, owner, *, job_id=None, resume_frozen_launcher=None):
+    def reconcile(self, session_id, owner, *, job_id=None, resume_frozen_launcher=None,
+                  dispatcher_terminal_receipt=None):
         """Readback only; never arbitrary release, never issue start/stop commands."""
         with self.locked():
             state = self.load(); inventory = self.backend.inventory(); self.authenticate(state, session_id, owner, inventory)
@@ -629,12 +630,31 @@ class Engine:
                 operation['status'] = 'verified'; self.save(state, 'effect_reconciled', operation=key)
             if job_id:
                 job = state['jobs'].get(job_id)
-                if not job or not job['processes'] and not job['containerIds']: raise SessionError('unbound_job_needs_dispatcher_terminal_receipt')
+                if not job: raise SessionError('job_unknown')
+                if not job['processes'] and not job['containerIds']:
+                    receipt = dispatcher_terminal_receipt
+                    if (not isinstance(receipt, dict)
+                            or receipt.get('schemaVersion') != 'spark-dispatcher-terminal-observation-v1'
+                            or receipt.get('jobId') != job_id
+                            or receipt.get('dispatcher') != job['dispatcher']
+                            or receipt.get('dispatcherProcessExited') is not True
+                            or receipt.get('modelChildProcessesExited') is not True
+                            or receipt.get('evidenceScope') != 'local_process_census'
+                            or not isinstance(receipt.get('observedAt'), str)
+                            or not isinstance(receipt.get('processCensusSha256'), str)
+                            or not re.fullmatch('[0-9a-f]{64}', receipt['processCensusSha256'])):
+                        raise SessionError('unbound_job_needs_dispatcher_terminal_receipt')
                 if self.descendants(inventory['processes'], [(p['pid'], p['startTicks']) for p in job['processes']]): raise SessionError('job_process_still_alive')
                 if any(c['running'] and (c['id'] in job['containerIds'] or c.get('job') == job_id) for c in inventory['containers']): raise SessionError('job_container_still_alive')
                 self.resource_check(state, inventory)
-                job['status'] = 'terminal'; job['endedAt'] = now(); self.save(state, 'job_exit_reconciled', jobId=job_id)
+                job['status'] = 'terminal'; job['endedAt'] = now()
+                if dispatcher_terminal_receipt is not None: job['dispatcherTerminalReceipt'] = dispatcher_terminal_receipt
+                self.save(state, 'job_exit_reconciled', jobId=job_id)
             if any(j['status'] == 'unknown' for j in state['jobs'].values()): return state
+            if any(j['status'] == 'active' for j in state['jobs'].values()):
+                if state['status'] != 'running':
+                    state['status'] = 'running'; self.save(state, 'active_jobs_restored_after_reconciliation')
+                return state
             if state['status'] in {'restoring', 'restoring_failed'}: return state
             if state['status'] in {'draining', 'reconcile_required', 'planning'}:
                 # begin continuation is explicit after effects confirmed, with fresh idle/resource checks.
@@ -764,6 +784,7 @@ def main():
         if action == 'reconcile':
             command.add_argument('--job-id')
             command.add_argument('--resume-frozen-launcher', choices=LAUNCHERS)
+            command.add_argument('--confirm-dispatcher-terminal', action='store_true')
         if action == 'job-bind':
             command.add_argument('--pid', type=int); command.add_argument('--container-id')
         if action == 'job-end':
@@ -779,7 +800,29 @@ def main():
             session_id, owner = args.pop('session_id', 'inspection'), args.pop('owner', 'inspection')
             client = Client(session_id, owner, host)
             if action == 'inspect': result = client.request('inspect')
-            else: result = client.request(action, **args)
+            else:
+                confirm = args.pop('confirm_dispatcher_terminal', False)
+                if confirm:
+                    if action != 'reconcile' or not args.get('job_id'): raise SessionError('dispatcher_terminal_job_id_required')
+                    current = client.request('status')['session']['jobs'].get(args['job_id'])
+                    if not current or current['status'] != 'unknown' or current['purpose'] != 'production-model-call':
+                        raise SessionError('dispatcher_terminal_job_not_eligible')
+                    dispatcher = current['dispatcher']
+                    if dispatcher.get('host') != socket.gethostname() or type(dispatcher.get('pid')) is not int:
+                        raise SessionError('dispatcher_host_identity_mismatch')
+                    try: os.kill(dispatcher['pid'], 0)
+                    except ProcessLookupError: pass
+                    else: raise SessionError('dispatcher_process_still_alive')
+                    census = subprocess.run(['ps', '-axo', 'command='], capture_output=True, text=True, check=True).stdout
+                    if any('codex exec' in row and 'codex exec-server' not in row for row in census.splitlines()):
+                        raise SessionError('model_child_process_still_alive')
+                    args['dispatcher_terminal_receipt'] = {
+                        'schemaVersion': 'spark-dispatcher-terminal-observation-v1',
+                        'jobId': args['job_id'], 'dispatcher': dispatcher,
+                        'dispatcherProcessExited': True, 'modelChildProcessesExited': True,
+                        'evidenceScope': 'local_process_census', 'observedAt': now(),
+                        'processCensusSha256': hashlib.sha256(census.encode()).hexdigest()}
+                result = client.request(action, **args)
         print(json.dumps(result, sort_keys=True))
         return 0
     except SessionError as exc:

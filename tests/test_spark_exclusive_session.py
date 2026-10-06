@@ -236,6 +236,38 @@ def test_unknown_unbound_dispatcher_hold_cannot_release_on_flag(engine):
     assert engine.load()['jobs'][job['jobId']]['status'] == 'unknown'
 
 
+def test_unknown_unbound_dispatcher_hold_accepts_bound_terminal_observation(engine):
+    begin(engine); job = engine.job_start('session', 'owner', 'production-model-call',
+        dispatcher={'host': 'MacBookPro.localdomain', 'pid': 9363})
+    with pytest.raises(SessionError, match='reconciliation'):
+        engine.job_end('session', 'owner', job['jobId'], 'unknown', False)
+    receipt = {'schemaVersion':'spark-dispatcher-terminal-observation-v1',
+        'jobId':job['jobId'],'dispatcher':job['dispatcher'],
+        'dispatcherProcessExited':True,'modelChildProcessesExited':True,
+        'evidenceScope':'local_process_census','observedAt':'2026-10-05T00:00:00Z',
+        'processCensusSha256':'a'*64}
+    result=engine.reconcile('session','owner',job_id=job['jobId'],dispatcher_terminal_receipt=receipt)
+    assert result['jobs'][job['jobId']]['status']=='terminal'
+    assert result['jobs'][job['jobId']]['dispatcherTerminalReceipt']==receipt
+
+
+def test_reconciling_unknown_job_keeps_other_active_job_running(engine):
+    begin(engine)
+    unknown = engine.job_start('session', 'owner', 'production-model-call',
+        dispatcher={'host': 'mac', 'pid': 12345})
+    engine.job_start('session', 'owner', 'diagnostic-dag')
+    with pytest.raises(SessionError, match='reconciliation'):
+        engine.job_end('session', 'owner', unknown['jobId'], 'unknown', False)
+    receipt = {'schemaVersion': 'spark-dispatcher-terminal-observation-v1',
+        'jobId': unknown['jobId'], 'dispatcher': unknown['dispatcher'],
+        'dispatcherProcessExited': True, 'modelChildProcessesExited': True,
+        'evidenceScope': 'local_process_census', 'observedAt': '2026-10-05T00:00:00Z',
+        'processCensusSha256': 'a' * 64}
+    state = engine.reconcile('session', 'owner', job_id=unknown['jobId'],
+                             dispatcher_terminal_receipt=receipt)
+    assert state['status'] == 'running'
+
+
 def test_pid_reuse_does_not_claim_new_worker(engine):
     begin(engine); job = engine.job_start('session', 'owner', 'tts')
     engine.backend.value['processes'].append({'pid': 500, 'ppid': 1, 'startTicks': 100})

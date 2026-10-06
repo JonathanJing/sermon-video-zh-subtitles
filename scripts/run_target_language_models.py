@@ -291,7 +291,12 @@ def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
     return saved
 
 
-def _utterances(value: object) -> list[str]:
+def _utterances(value: object, source_unit_ids: list[str] | None = None) -> list[str]:
+    if source_unit_ids is not None and isinstance(value, list) and len(value) == len(source_unit_ids) \
+            and all(isinstance(row, dict) and row.get('sourceUnitIds') == [unit_id]
+                    and isinstance(row.get('targetText'), str) and row['targetText'].strip()
+                    for row, unit_id in zip(value, source_unit_ids)):
+        value = [row['targetText'] for row in value]
     require(isinstance(value, list) and bool(value)
             and all(isinstance(item, str) and item.strip() for item in value),
             "Model must return nonempty targetUtterances")
@@ -319,6 +324,9 @@ def normalize_semantic_review(value: object) -> object:
             name: ("pass" if result is True else "fail" if result is False else result)
             for name, result in checks.items()
         }
+    evidence = semantic.get("evidence")
+    if isinstance(evidence, list) and evidence and all(isinstance(item, str) and item.strip() for item in evidence):
+        semantic["evidence"] = "\n".join(item.strip() for item in evidence)
     for field in ("uncertainty", "issues"):
         item = semantic.get(field)
         if item is None or item is False or item == "":
@@ -880,7 +888,7 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             require(draft.get("translationGroupId") == group["translationGroupId"]
                     and draft.get("sourceUnitIds") == group["sourceUnitIds"],
                     f"Astra group identity changed: {stem}")
-            draft_text = "".join(_utterances(draft.get("targetUtterances")))
+            draft_text = "".join(_utterances(draft.get("targetUtterances"), group["sourceUnitIds"]))
             require(isinstance(draft.get("coverage"), list)
                     and [row.get("sourceUnitId") for row in draft["coverage"]] == group["sourceUnitIds"]
                     and all(isinstance(row.get("targetText"), str)
@@ -945,7 +953,7 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             require(result.get("translationGroupId") == group["translationGroupId"]
                     and result.get("sourceUnitIds") == group["sourceUnitIds"],
                     f"Sol group identity changed: {stem}")
-            utterances = _utterances(result.get("targetUtterances"))
+            utterances = _utterances(result.get("targetUtterances"), group["sourceUnitIds"])
             final_text = "".join(utterances)
             coverage = result.get("coverage")
             require(isinstance(coverage, list)

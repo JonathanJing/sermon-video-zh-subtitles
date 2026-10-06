@@ -44,3 +44,17 @@ class DiagnosticMonitorTests(unittest.TestCase):
         self.assertFalse(result['productionEligible'])
         resumed=monitor.monitor(self.helper.out,execute=True,caller=lambda *a,**kw:self.fail('completed monitor call'))
         self.assertEqual(resumed['status'],'complete')
+
+    def test_gemini_uses_separate_session_and_online_api_transport(self):
+        monitor.batch.run(self.helper.out,execute=True,executor=self.helper.executor)
+        calls=[]
+        def call(prompt,**kwargs):
+            calls.append(kwargs)
+            return {'assessment':'complete','findings':[]}
+        result=monitor.monitor(self.helper.out,execute=True,provider='gemini',caller=call,
+            session_verifier=lambda: {'status':'offline_test'},sleep=lambda _:self.fail('finished wait'))
+        self.assertEqual(result['status'],'complete')
+        self.assertEqual(calls[0]['model'],'gemini-3.8-flash')
+        self.assertEqual(calls[0]['service_tier'],None)
+        self.assertEqual(calls[0]['resource_class'],'supervisor')
+        self.assertTrue((self.helper.out/'supervision-gemini'/'turn-000.json').is_file())

@@ -97,7 +97,8 @@ class FixtureLayer2Transport:
 
 
 def run_diagnostic_test(fixture_dir, out_dir, *, cli_path, reviewer_tier='fast', timeout_seconds=180,
-                        mock_responses_dir=None, resource_policy_path=None, translator_model=None, session_verifier=None):
+                        mock_responses_dir=None, resource_policy_path=None, translator_model=None,
+                        session_verifier=None, backend='codex', reuse_api_receipts=None):
     from scripts import codex_layer2_diagnostic as diagnostic
     inputs = diagnostic.load_fixture(fixture_dir)  # All gates before constructing a CLI transport.
     source, anchor, policy, plan, plugin, request, receipt, scope, manifest = inputs
@@ -107,6 +108,10 @@ def run_diagnostic_test(fixture_dir, out_dir, *, cli_path, reviewer_tier='fast',
         raise ValueError('Diagnostic model configuration must be frozen in the fixture')
     if mock_responses_dir is not None and resource_policy_path is not None:
         raise ValueError('Fixture replay cannot claim real CLI resource admission')
+    if backend not in ('codex','openai_api') or (backend=='openai_api' and mock_responses_dir is not None):
+        raise ValueError('unsupported_diagnostic_model_backend')
+    if reuse_api_receipts is not None and backend != 'openai_api':
+        raise ValueError('diagnostic_api_receipt_reuse_requires_openai_backend')
     options = {}
     if manifest.get('concurrencyProfile') is not None:
         options['concurrency_profile'] = manifest['concurrencyProfile']
@@ -119,10 +124,18 @@ def run_diagnostic_test(fixture_dir, out_dir, *, cli_path, reviewer_tier='fast',
         options['resource_policy'] = resources.validate_policy(json.loads(Path(resource_policy_path).read_text()))
     if mock_responses_dir is None:
         spark_admission.require_session(verifier=session_verifier)
-    transport = (FixtureLayer2Transport(mock_responses_dir, group_count=len(plan)) if mock_responses_dir is not None
-                 else CodexLayer2Transport(cli_path, reviewer_tier=reviewer_tier, timeout_seconds=timeout_seconds,
-                                          receipts_dir=out_dir / '_cli_calls', **options))
-    if mock_responses_dir is None:
+    if backend=='openai_api':
+        from scripts.openai_layer2_diagnostic_transport import OpenAILayer2DiagnosticTransport
+        if resource_policy_path is None or manifest.get('concurrencyProfile') is None:
+            raise ValueError('openai_diagnostic_shared_resource_policy_required')
+        transport=OpenAILayer2DiagnosticTransport(receipts_dir=out_dir/'_api_calls',
+            resource_policy=options['resource_policy'],concurrency_profile=manifest['concurrencyProfile'],
+            timeout_seconds=timeout_seconds,reuse_receipts_dir=reuse_api_receipts)
+    else:
+        transport = (FixtureLayer2Transport(mock_responses_dir, group_count=len(plan)) if mock_responses_dir is not None
+                     else CodexLayer2Transport(cli_path, reviewer_tier=reviewer_tier, timeout_seconds=timeout_seconds,
+                                              receipts_dir=out_dir / '_cli_calls', **options))
+    if mock_responses_dir is None and backend=='codex':
         transport = spark_admission.SessionBoundCaller(transport, verifier=session_verifier)
     structural = plugin.name == 'diagnostic_structural.py'
     context = {'schemaVersion': 'codex-layer2-diagnostic-test-run-v1', 'simulationOnly': True,

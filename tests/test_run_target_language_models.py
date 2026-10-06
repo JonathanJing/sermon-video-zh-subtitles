@@ -453,6 +453,20 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
                                                             "issues": None}),
                          {"uncertainty": [], "issues": []})
 
+    def test_sol_evidence_lines_normalize_without_changing_raw_response(self):
+        self.assertEqual(subject.normalize_semantic_review({"evidence": [" first ", "second"],
+                                                            "issues": []})["evidence"],
+                         "first\nsecond")
+        self.assertEqual(subject.normalize_semantic_review({"evidence": ["", "second"]})["evidence"],
+                         ["", "second"])
+
+    def test_structured_utterances_require_matching_source_ids(self):
+        rows = [{'sourceUnitIds': ['u1'], 'targetText': '第一句', 'reviewStatus': 'pending'},
+                {'sourceUnitIds': ['u2'], 'targetText': '第二句'}]
+        self.assertEqual(subject._utterances(rows, ['u1', 'u2']), ['第一句', '第二句'])
+        with self.assertRaisesRegex(ValueError, 'nonempty targetUtterances'):
+            subject._utterances(rows, ['u2', 'u1'])
+
     def test_unconfirmed_request_blocks_automatic_paid_retry(self):
         f = self.fixture
         def interrupted(api_key, payload):
