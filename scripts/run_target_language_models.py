@@ -487,7 +487,7 @@ def partial_repair_brief_for_plugin_stop(reuse_from: Path, request: dict[str, An
     index, _group = plan_by_id[group_id]
     cache = reuse_from / f"group-{index:04d}-sol.json"
     require(cache.is_file(), "plugin group stop lacks the rejected reviewer cache")
-    _require_rejected_reviewer_text(cache, review["targetTextSha256"])
+    _require_rejected_reviewer_text(cache, review["targetTextSha256"], stop["sourceUnitIds"])
     return {"schemaVersion": PARTIAL_REPAIR_SCHEMA,
             "targetLocale": request["targetLocale"],
             "englishSourcePackageJsonSha256": request["englishSourcePackageJsonSha256"],
@@ -501,12 +501,12 @@ def partial_repair_brief_for_plugin_stop(reuse_from: Path, request: dict[str, An
                         "instruction": instruction.strip()}]}
 
 
-def _require_rejected_reviewer_text(cache: Path, expected_sha256: str) -> None:
+def _require_rejected_reviewer_text(cache: Path, expected_sha256: str,
+                                    source_unit_ids: list[str]) -> None:
     saved = producer._load(cache)
     result = saved.get("result") if isinstance(saved, dict) else None
     utterances = result.get("targetUtterances") if isinstance(result, dict) else None
-    require(isinstance(utterances, list) and utterances and all(isinstance(text, str) for text in utterances),
-            "plugin group stop reviewer cache lacks target text")
+    utterances = _utterances(utterances, source_unit_ids)
     actual = hashlib.sha256("".join(utterances).encode("utf-8")).hexdigest()
     require(actual == expected_sha256, "plugin group stop does not match the rejected reviewer text")
 
@@ -531,7 +531,7 @@ def require_plugin_stop_repair(reuse_from: Path | None, repairs: dict[str, dict[
     matched = [path for path in sorted(reuse_from.glob("group-*-sol.json"))
                if hashlib.sha256(path.read_bytes()).hexdigest() == repair.get("failedCacheSha256")]
     require(len(matched) == 1, "plugin group stop lacks the rejected reviewer cache")
-    _require_rejected_reviewer_text(matched[0], expected)
+    _require_rejected_reviewer_text(matched[0], expected, stop["sourceUnitIds"])
 
 
 def reusable_cache(prior_run: Path | None, stem: str, role: str) -> Path | None:

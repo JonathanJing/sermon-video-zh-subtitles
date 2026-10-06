@@ -242,6 +242,15 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
         self.assertEqual(len(self.calls), 2)
 
     def test_plugin_stop_repair_reruns_only_the_blocked_group(self):
+        self._assert_plugin_stop_repair("plain")
+
+    def test_structured_plugin_stop_repair_preserves_cache_and_neighbor(self):
+        self._assert_plugin_stop_repair("structured")
+
+    def test_whitespace_plugin_stop_repair_preserves_cache_and_neighbor(self):
+        self._assert_plugin_stop_repair("whitespace")
+
+    def _assert_plugin_stop_repair(self, utterance_form):
         f = self.fixture
         previous = self.out.parent / "stopped"
         blocked = subject.group_plan(f.request, f.anchor)[1]
@@ -253,6 +262,13 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
                 body = json.loads(response["choices"][0]["message"]["content"])
                 body["targetUtterances"] = [text + "禁" for text in body["targetUtterances"]]
                 body["coverage"] = [{**row, "targetText": row["targetText"] + "禁"} for row in body["coverage"]]
+                if payload["reasoning_effort"] == "medium":
+                    if utterance_form == "structured":
+                        body["targetUtterances"] = [
+                            {"sourceUnitIds": [unit_id], "targetText": "  " + text + "\n"}
+                            for unit_id, text in zip(body["sourceUnitIds"], body["targetUtterances"])]
+                    elif utterance_form == "whitespace":
+                        body["targetUtterances"] = ["  " + text + "\n" for text in body["targetUtterances"]]
                 response["choices"][0]["message"]["content"] = json.dumps(body)
             return response
 
