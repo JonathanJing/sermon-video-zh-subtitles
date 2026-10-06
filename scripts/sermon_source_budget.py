@@ -47,13 +47,23 @@ def bound_judge_payload(payload):
     limits = JUDGE_LIMITS.get()
     if limits is None:
         return payload
+    return bounded_source_judge_payload(payload, limits)
+
+
+def bounded_source_judge_payload(payload, limits):
+    """Validate the source judge's pinned schema without widening Layer 2."""
     from scripts import judge_english_source_for_translation as judge
     text_limits.validate_request_limits(limits)
-    require(payload['model'] in ('gpt-6-astra', 'gpt-6.1-sol')
-            and payload['response_format']['json_schema']['schema'] == judge._response_schema(),
+    expected_format = {'type': 'json_schema', 'json_schema': {
+        'name': 'english_source_machine_judge', 'strict': True, 'schema': judge._response_schema()}}
+    require(type(payload) is dict and payload.get('model') in ('gpt-6-astra', 'gpt-6.1-sol')
+            and payload.get('response_format') == expected_format,
             'unsupported_source_judge_payload')
+    # Reuse the shared text/message/model/cap validator with its own supported
+    # format, then account for the actual schema bytes in the input bound below.
+    bounded = text_limits.bounded_payload(dict(payload, response_format={'type': 'json_object'}), limits)
     require(text_limits._input_upper_bound(payload) <= limits['maxInputTokens'], 'source_judge_input_bound_exceeded')
-    return dict(payload, max_completion_tokens=limits['maxCompletionTokens'], service_tier=limits['serviceTier'])
+    return dict(bounded, response_format=payload['response_format'])
 
 
 class SourceBudget:
@@ -303,10 +313,7 @@ class SourceBudget:
                          endpoint='https://api.openai.com/v1/audio/transcriptions')
 
     def judge(self, api_key, payload):
-        from scripts.strict_budget_capability import require_bounded_api_payload
-        require_bounded_api_payload(payload, self.authority['requestLimits'], surface='source_judge_api')
-        expected = bound_judge_payload({key: value for key, value in payload.items()
-                                       if key not in {'max_completion_tokens', 'service_tier'}})
+        expected = bounded_source_judge_payload(payload, self.authority['requestLimits'])
         require(payload == expected and 'max_completion_tokens' in payload, 'source_judge_not_bounded')
         limits = self.authority['requestLimits']
         inputs = text_limits._input_upper_bound(payload)

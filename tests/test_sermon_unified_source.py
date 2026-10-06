@@ -185,7 +185,8 @@ class UnifiedSourceTests(unittest.TestCase):
         from scripts import judge_english_source_for_translation as judge
         request = {'model': 'gpt-6.1-sol', 'reasoning_effort': 'high',
             'messages': [{'role': 'user', 'content': 'synthetic source'}],
-            'response_format': {'type': 'json_schema', 'json_schema': {'schema': judge._response_schema()}}}
+            'response_format': {'type': 'json_schema', 'json_schema': {
+                'name': 'english_source_machine_judge', 'strict': True, 'schema': judge._response_schema()}}}
         with budget.judge_limits(limits.DEFAULT_REQUEST_LIMITS):
             bounded = budget.bound_judge_payload(request)
         self.assertEqual(bounded['max_completion_tokens'], 4096)

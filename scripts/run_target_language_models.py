@@ -889,7 +889,13 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             else:
                 save_new(receipt_path, rule_receipt, private=True)
         require_reconciled_requests(out, reuse_from, resume_cache_from)
+        requested_workers = workers
+        # A plugin stop receipt promises no later dispatch. Serialize the full
+        # translate/review/plugin chain so that promise reflects actual work.
+        if plugin_path is not None and not simulation_only:
+            workers = 1
         accounting.record_workload("layer2.concurrency", {
+            "requestedWorkers": requested_workers,
             "workers": workers, "maxInFlightGroups": workers,
             "translationGroups": len(plan), "aggregationOrder": "source"})
         units = {row["sourceUnitId"]: row["english"] for row in request["sourceUnits"]}
@@ -1196,8 +1202,14 @@ def main() -> None:
                         help="Record checkpoint and per-group substage timing in the four-layer ledger")
     parser.add_argument("--model-backend", choices=("codex-cli", "openai-api"), default="openai-api",
                         help="New translation/review runs use OpenAI API; CLI requires explicit selection")
+    parser.add_argument("--budget-config", type=Path,
+                        help="Dispatch the registered locale through its canonical execution configuration")
+    parser.add_argument("--budget-authorization", type=Path,
+                        help="Existing human-approved canonical budget authorization; requires --budget-config")
     parser.add_argument("--out-dir", type=Path, required=True)
     args = parser.parse_args()
+    require((args.budget_config is None) == (args.budget_authorization is None),
+            "--budget-config and --budget-authorization must be supplied together")
     require(args.revision_brief is None or args.reuse_from is not None,
             "--revision-brief requires --reuse-from")
     require(args.partial_repair_brief is None or args.reuse_from is not None,
@@ -1217,6 +1229,26 @@ def main() -> None:
     rule_preflight.preflight(request, policy, args.plugin, plan)
     from scripts import production_spark_admission as spark_admission
     spark_admission.require_session()
+    if args.budget_config is not None:
+        require(args.model_backend == "openai-api" and args.group_plan is None
+                and args.revision_brief is None and args.reuse_from is None
+                and args.partial_repair_brief is None and args.resume_cache_from is None
+                and args.progress_ledger is None,
+                "Bound canonical dispatch does not accept standalone execution overrides")
+        from scripts import canonical_layer2_controller as controller
+        config = controller.load_configuration(args.budget_config)
+        locale = policy["targetLocale"]
+        require(locale in config.lanes, "locale_not_registered")
+        lane = config.lanes[locale]
+        for supplied, registered in (
+                (args.english_source_package, config.inspection_root / config.inspection["source"]),
+                (args.anchor, config.inspection_root / config.inspection["anchor"]),
+                (args.policy, lane["policy"]), (args.plugin, lane["plugin"]),
+                (args.out_dir, lane["output"])):
+            require(supplied.resolve() == registered.resolve(), "standalone_budget_inputs_not_registered")
+        print(json.dumps(controller.drive(config.path, locale,
+                         budget_authorization=args.budget_authorization), sort_keys=True))
+        return
     if args.model_backend == "openai-api":
         from scripts.openai_layer2_transport import OpenAILayer2Transport
         transport = OpenAILayer2Transport()

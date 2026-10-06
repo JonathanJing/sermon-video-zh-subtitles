@@ -27,13 +27,18 @@ class OpenAILayer2Transport:
             "adapterSha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         }
 
-    def __call__(self, api_key, payload):
-        if api_key != self.key:
-            raise ValueError("selected_openai_credential_override")
+    def admit_resource(self, payload):
+        """Reject unsupported calls before the runner records an unknown dispatch."""
         from scripts.strict_budget_capability import admit
         decision = admit("standalone_api", payload=payload)
         if decision["decision"] != "reserved":
             raise ValueError(decision["reason"])
+        return decision
+
+    def __call__(self, api_key, payload):
+        if api_key != self.key:
+            raise ValueError("selected_openai_credential_override")
+        self.admit_resource(payload)
         return sermon_pipeline.json_request(sermon_pipeline.CHAT_URL, api_key, payload, retries=1)
 
     @staticmethod

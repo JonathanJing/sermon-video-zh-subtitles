@@ -4,8 +4,8 @@
 
 | 角色 | 模型 | Reasoning | Service tier | 调用方式 |
 |---|---|---|---|---|
-| Layer 2 初译 | `gpt-6.1-sol` | `high` | `fast`（standalone）；批准的 tier（canonical） | OpenAI API |
-| Layer 2 独立审核 | `gpt-6.1-sol` | `medium` | `fast`（standalone）；批准的 tier（canonical） | OpenAI API |
+| Layer 2 初译 | `gpt-6.1-sol` | `high` | 批准的 tier（目前 `default`）；无授权 standalone `fast` 发送前拒绝 | OpenAI API |
+| Layer 2 独立审核 | `gpt-6.1-sol` | `medium` | 批准的 tier（目前 `default`）；无授权 standalone `fast` 发送前拒绝 | OpenAI API |
 | dev 与正式生产 Supervisor | `gpt-6-luna` | `medium` | `fast` | ChatGPT-authenticated Codex CLI |
 
 来源 ASR、OpenAI 音频、MFA、Spark Qwen TTS／回转写 ASR、ImageGen 继续使用各自入口。其他文字入口保留其实际接线范围；本次修复不证明所有旧 producer 已消费此策略。
@@ -14,7 +14,9 @@
 
 CLI 隔离 API 凭据，记录 requested model／effort／tier、CLI 身份、原始响应和 token／耗时收据。服务端未提供实际 model／tier 时记为 unknown。模型返回内容或结构化操作，本地程序保留审批、lease、插件、候选准入和发布校验。未知结果不得自动重发或切换后端。
 
-Standalone Layer 2 默认 `openai-api`，翻译与独立审核使用同一个选中 transport；显式 `--model-backend codex-cli` 保留 CLI 实验和历史运行入口。Canonical worker 默认使用绑定 Project 与预算授权的 OpenAI API transport，未绑定预算或 dev/prod 启动器时在发送前阻断。Standalone 请求 fast；canonical 严格预算合同继续使用已批准的 requestLimits.serviceTier（目前 default），不以默认后端变化授权额外支出。CLI 不能消费 API 的输出 token cap；严格预算遇到显式 CLI transport 时返回 unsupported_budget_capability，不自动切换后端。
+Standalone Layer 2 默认 `openai-api`；无预算绑定的 fast 请求因缺少最坏情况支出授权，在写入未决调用标记前拒绝，不产生付费调用未知状态。可运行的授权路径同时传入 `--budget-config` 和 `--budget-authorization`：入口核对 source、anchor、policy、plugin、输出目录与该配置注册的 locale 完全一致，然后通过 canonical controller 的 durable dispatch 执行，复用原有人工预算批准、全局账本和 locale 容量限制。该路径不接受独立 group plan、revision、reuse 或 progress 覆盖选项；返回 canonical waiting／succeeded 收据，后续调用按同一绑定对账，不重复发送。
+
+Canonical worker 使用绑定 Project 与预算授权的 OpenAI API transport，未绑定预算或 dev/prod 启动器时在发送前阻断，严格预算继续使用已批准的 `requestLimits.serviceTier`（目前 `default`），不以默认后端变化授权额外支出。显式 `--model-backend codex-cli` 保留 CLI 实验和历史运行入口。CLI 不能消费 API 的输出 token cap；严格预算遇到显式 CLI transport 时返回 `unsupported_budget_capability`，不自动切换后端。
 
 Supervisor 默认与后端生成命令均选择 `codex-cli`。旧 Agents API 会话使用显式 `--agent-backend agents-api` 按原身份恢复；未决工具先对账，SDK 新会话继续禁用。模型或 reasoning 变化需新的冻结 policy、payload 和运行身份，不重标旧批准候选或缓存。
 

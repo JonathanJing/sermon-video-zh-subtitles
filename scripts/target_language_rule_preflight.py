@@ -180,13 +180,14 @@ def _bind_quote_group(plan, rows, decision, parts, library):
     quoted_ids = [part["sourceUnitId"] for part in parts]
     require(len(quoted_ids) == len(set(quoted_ids)), "quote units repeat inside one decision")
     indexes = [order.index(unit_id) for unit_id in quoted_ids]
-    require(indexes == list(range(indexes[0], indexes[-1] + 1)),
-            "quote units are not contiguous in the source")
+    require(indexes == sorted(indexes), "quote units were reordered in the source")
+    if decision["classification"] == "direct_quote":
+        require(indexes == list(range(indexes[0], indexes[-1] + 1)),
+                "quote units are not contiguous in the source")
     matches = [group for group in plan if set(quoted_ids) <= set(group["sourceUnitIds"])]
     require(len(matches) == 1, "quote units were split across groups or omitted")
     group_ids = matches[0]["sourceUnitIds"]
-    start = group_ids.index(quoted_ids[0])
-    require(group_ids[start:start + len(quoted_ids)] == quoted_ids,
+    require([unit_id for unit_id in group_ids if unit_id in quoted_ids] == quoted_ids,
             "quote units were reordered inside the translation group")
     if decision["classification"] != "direct_quote":
         return

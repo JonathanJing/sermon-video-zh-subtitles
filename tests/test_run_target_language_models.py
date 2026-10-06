@@ -219,8 +219,11 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
                 response["choices"][0]["message"]["content"] = json.dumps(body)
             return response
         f = self.fixture
+        policy = copy.deepcopy(f.policy)
+        policy["batching"]["workers"] = 2
+        policy["componentSha256"]["batching"] = policy_tools.canonical_sha256(policy["batching"])
         with self.assertRaisesRegex(ValueError, "language_plugin_group_blocked"):
-            self.production_run(f.source, f.anchor, f.policy, self.out, "fixture-key", caller,
+            self.production_run(f.source, f.anchor, policy, self.out, "fixture-key", caller,
                         plugin_path=f.plugin_path)
         self.assertEqual(len(self.calls), 2)
         self.assertFalse((self.out / "evidence.json").exists())
@@ -229,9 +232,12 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
         self.assertEqual(stop["reasonCode"], "language_plugin_group_blocked")
         self.assertEqual(stop["groupReview"]["status"], "fail")
         self.assertTrue(stop["stopsLaterDispatch"])
+        self.assertEqual(stop["completedBefore"], [])
+        self.assertEqual(stop["notDispatchedAfter"],
+                         [row["translationGroupId"] for row in subject.group_plan(f.request, f.anchor)[1:]])
         self.assertFalse(stop["humanApproval"])
         with self.assertRaisesRegex(ValueError, "language_plugin_group_blocked"):
-            self.production_run(f.source, f.anchor, f.policy, self.out, "fixture-key", caller,
+            self.production_run(f.source, f.anchor, policy, self.out, "fixture-key", caller,
                         plugin_path=f.plugin_path)
         self.assertEqual(len(self.calls), 2)
 
@@ -447,7 +453,20 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
         self.assertTrue(any(event["event"] == "stage_finished"
                             and event["stage"].startswith("layer2.group.") for event in events))
 
-    def test_two_workers_overlap_groups_but_review_each_after_its_draft(self):
+    def test_formal_plugin_chain_serializes_requested_parallel_workers(self):
+        f = self.fixture
+        policy = copy.deepcopy(f.policy)
+        policy["batching"]["workers"] = 2
+        policy["componentSha256"]["batching"] = policy_tools.canonical_sha256(policy["batching"])
+        evidence = self.production_run(f.source, f.anchor, policy, self.out,
+                                       "fixture-key", self.fake_call)
+        expected = [(row["translationGroupId"], role)
+                    for row in evidence["groups"] for role in ("high", "medium")]
+        observed = [(json.loads(payload["messages"][1]["content"])["translationGroupId"],
+                     payload["reasoning_effort"]) for payload in self.calls]
+        self.assertEqual(observed, expected)
+
+    def test_legacy_two_workers_overlap_groups_but_review_each_after_its_draft(self):
         f = self.fixture
         policy = copy.deepcopy(f.policy)
         policy["batching"]["workers"] = 2
@@ -477,8 +496,9 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
             return {"id": group_id + "-" + role, "model": payload["model"],
                     "choices": [{"finish_reason": "stop",
                                  "message": {"content": json.dumps(result)}}]}
-        evidence = self.production_run(f.source, f.anchor, policy, self.out,
-                               "fixture-key", concurrent_call)
+        evidence = subject._run_prepared_groups(
+            producer.prepare_request(f.source, f.anchor, policy), f.anchor, policy,
+            self.out, "fixture-key", concurrent_call)
         self.assertEqual(group_ids, [row["translationGroupId"] for row in evidence["groups"]])
         self.assertEqual([group_id + "-translator" for group_id in group_ids],
                          evidence["generation"]["translator"]["requestIds"])
@@ -495,8 +515,9 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
             producer.prepare_request(f.source, f.anchor, policy),
             evidence, receipt, f.plugin_path, f.plugin_sha)
         self.assertEqual("machine_review_pass_human_review_pending", candidate["status"])
-        self.production_run(f.source, f.anchor, policy, self.out, "fixture-key",
-                    lambda *_: self.fail("completed requests must be reused"))
+        subject._run_prepared_groups(
+            producer.prepare_request(f.source, f.anchor, policy), f.anchor, policy,
+            self.out, "fixture-key", lambda *_: self.fail("completed requests must be reused"))
 
     def test_worker_limit_is_checked_before_paid_calls(self):
         policy = copy.deepcopy(self.fixture.policy)

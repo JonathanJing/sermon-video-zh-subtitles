@@ -304,6 +304,26 @@ class TargetLanguageRulePreflightTests(unittest.TestCase):
                        "fixture-key", self.worker.fake_call, split, self.plugin)
         self.assertEqual([], self.worker.calls)
 
+    def test_checked_in_partial_quote_allows_commentary_gap_but_still_binds_order_and_group(self):
+        from scripts.language_review_plugins import zh_hans_weekly_cuv as plugin
+        decision = next(row for row in plugin.APPROVED_BOUNDARY_REVIEW['decisions']
+                        if row['candidateId'] == 'rev-5-1-4')
+        parts = decision['parts']
+        ids = ['0-u161', '0-u162', '0-u163', '0-u164', '0-u165']
+        rows = dict.fromkeys(ids, 'fixture source')
+        plan = [{'sourceUnitIds': ids}]
+        subject._bind_quote_group(plan, rows, decision, parts, None)
+        with self.assertRaisesRegex(ValueError, 'reordered inside'):
+            subject._bind_quote_group([{'sourceUnitIds': ids[::-1]}], rows, decision, parts, None)
+        with self.assertRaisesRegex(ValueError, 'split across groups'):
+            subject._bind_quote_group([{'sourceUnitIds': ids[:3]}, {'sourceUnitIds': ids[3:]}],
+                                      rows, decision, parts, None)
+        with self.assertRaisesRegex(ValueError, 'reordered in the source'):
+            subject._bind_quote_group(plan, rows, decision, parts[::-1], None)
+        complete = dict(decision, classification='direct_quote')
+        with self.assertRaisesRegex(ValueError, 'not contiguous'):
+            subject._bind_quote_group(plan, rows, complete, parts, None)
+
     def test_plugin_name_form_conflict_is_rejected_before_dispatch(self):
         self.policy["terminology"]["properNames"] = [{"source": "Jesus", "target": "耶稣", "reviewStatus": "project_established"}]
         self.policy["componentSha256"]["terminology"] = policy_tools.canonical_sha256(self.policy["terminology"])
