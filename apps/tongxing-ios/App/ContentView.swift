@@ -4,6 +4,9 @@ import SwiftUI
 import TongxingCore
 import TongxingInfrastructure
 import WebKit
+#if os(iOS)
+import UIKit
+#endif
 
 // Explicitly select the iOS 17-compatible property wrapper; newer SDKs also
 // export a State macro whose plugin is absent from Command Line Tools.
@@ -94,7 +97,19 @@ struct ContentView: View {
             await model.loadSelectedPublishedTranscript()
         }
         .task(id: locateConfirmation) {
-            guard locateConfirmation != nil else { return }
+            guard let position = locateConfirmation else { return }
+            #if os(iOS)
+            if UIAccessibility.isVoiceOverRunning {
+                // VoiceOver users may not finish reading in 4 seconds: announce
+                // once and keep the confirmation until they undo it or navigate
+                // away, instead of timing out.
+                UIAccessibility.post(
+                    notification: .announcement,
+                    argument: localization.text("已定位 {time}", ["time": PlaybackTime.format(position)])
+                )
+                return
+            }
+            #endif
             try? await Task.sleep(for: .seconds(4))
             guard !Task.isCancelled else { return }
             locateConfirmation = nil
