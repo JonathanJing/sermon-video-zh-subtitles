@@ -30,6 +30,10 @@ class OpenAILayer2Transport:
     def __call__(self, api_key, payload):
         if api_key != self.key:
             raise ValueError("selected_openai_credential_override")
+        from scripts.strict_budget_capability import admit
+        decision = admit("standalone_api", payload=payload)
+        if decision["decision"] != "reserved":
+            raise ValueError(decision["reason"])
         return sermon_pipeline.json_request(sermon_pipeline.CHAT_URL, api_key, payload, retries=1)
 
     @staticmethod

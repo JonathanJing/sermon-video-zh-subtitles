@@ -9,20 +9,17 @@ from scripts import deploy_multilingual_hosting as deploy
 from scripts import production_content_release_admission as gate
 
 
-def piece(status, page='page-a', **extra):
-    value = {'status': status, 'pageId': page}
+def piece(key, page='page-a', **extra):
+    status, digest_key = gate.REQUIRED[key]
+    value = {'status': status, 'pageId': page, digest_key: 'ab' * 32}
     value.update(extra)
     return value
 
 
 def ready():
-    return {
-        'weeklyProduction': piece('complete'),
-        'devHttp': piece('published_http_verified'),
-        'rollbackBaseline': piece('captured'),
-        'productionAuthorization': piece('approved', humanApproval=True),
-        'preDeployVerification': piece('pass'),
-    }
+    evidence = {key: piece(key) for key in gate.REQUIRED}
+    evidence['productionAuthorization']['humanApproval'] = True
+    return evidence
 
 
 class ProductionContentReleaseAdmissionTests(unittest.TestCase):
@@ -36,8 +33,8 @@ class ProductionContentReleaseAdmissionTests(unittest.TestCase):
 
     def test_code_promotion_and_device_evidence_do_not_authorize_content(self):
         evidence = {'codePromotion': {'status': 'promoted', 'pullRequest': 116},
-                    'deviceAcceptance': piece('pass'),
-                    'venueAcceptance': piece('pass')}
+                    'deviceAcceptance': {'status': 'pass', 'pageId': 'page-a'},
+                    'venueAcceptance': {'status': 'pass', 'pageId': 'page-a'}}
         decision = gate.admit(evidence)
         self.assertEqual(decision['decision'], 'blocked')
         self.assertFalse(decision['contentDeploy'])
@@ -47,14 +44,14 @@ class ProductionContentReleaseAdmissionTests(unittest.TestCase):
 
     def test_http_success_without_human_authorization_stays_blocked(self):
         evidence = ready()
-        evidence['productionAuthorization'] = piece('approved', humanApproval=False)
+        evidence['productionAuthorization'] = piece('productionAuthorization', humanApproval=False)
         decision = gate.admit(evidence)
         self.assertEqual(decision['decision'], 'blocked')
         self.assertIn('productionAuthorization', decision['missing'])
 
     def test_crossed_page_identity_is_blocked(self):
         evidence = ready()
-        evidence['devHttp'] = piece('published_http_verified', page='page-b')
+        evidence['devHttp'] = piece('devHttp', page='page-b')
         decision = gate.admit(evidence)
         self.assertEqual(decision['missing'], ['page_id_mismatch'])
         self.assertFalse(decision['contentDeploy'])
@@ -74,6 +71,35 @@ class ProductionContentReleaseAdmissionTests(unittest.TestCase):
                         self.assertRaisesRegex(ValueError, 'production_content_release_blocked'):
                     deploy.main()
             self.assertFalse(out.exists())
+
+    def test_status_without_hash_and_invalid_json_do_not_authorize(self):
+        evidence = ready()
+        evidence['weeklyProduction'].pop('packageSha256')
+        decision = gate.admit(evidence)
+        self.assertEqual(decision['decision'], 'blocked')
+        self.assertIn('weeklyProduction', decision['missing'])
+        with TemporaryDirectory() as tmp:
+            path = Path(tmp) / 'broken.json'
+            path.write_text('{', encoding='utf-8')
+            with self.assertRaisesRegex(ValueError, 'content_release_evidence_invalid'):
+                gate.load(path)
+
+    def test_execute_records_deploy_only_after_the_command_returns(self):
+        with TemporaryDirectory() as tmp:
+            out = Path(tmp) / 'deployment.json'
+            admission = Path(tmp) / 'admission.json'
+            admission.write_text(json.dumps(ready()), encoding='utf-8')
+            argv = ['deploy', '--candidate', tmp, '--preflight', tmp, '--out', str(out),
+                    '--execute', '--content-release-admission', str(admission)]
+            with patch.object(deploy, 'prepare', return_value={
+                    'pageId': 'page-a', 'status': 'validated_not_deployed', 'siteId': 'site', 'files': 1}), \
+                    patch.object(deploy.subprocess, 'run', return_value=None) as command, \
+                    patch('sys.argv', argv):
+                deploy.main()
+            command.assert_called_once()
+            written = json.loads(out.read_text(encoding='utf-8'))
+            self.assertTrue(written['contentReleaseAdmission']['deployPerformed'])
+            self.assertEqual(written['status'], 'deployed_http_verification_pending')
 
 
 if __name__ == '__main__':

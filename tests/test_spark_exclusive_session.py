@@ -56,6 +56,17 @@ def engine(tmp_path):
 
 def begin(engine, **kwargs): return engine.begin('session', 'owner', 90, **kwargs)
 
+def test_closed_ledger_ignores_migration_snapshot_and_rejects_new_work(engine):
+    begin(engine)
+    assert engine.finish('session', 'owner')['status'] == 'closed'
+    (engine.root / 'session.before-controller-migration-stale.json').write_text(
+        json.dumps({'status': 'reconcile_required', 'sessionId': 'stale'}), encoding='utf-8')
+    assert engine.load()['status'] == 'closed'
+    assert engine.load()['sessionId'] == 'session'
+    with pytest.raises(SessionError, match='session_not_ready'):
+        engine.job_start('session', 'owner', 'next-run')
+
+
 def test_full_lifecycle_restores_original_only(engine):
     inactive = 'llama-performance-collector.service'
     engine.backend.value['units'][inactive].update(active='inactive', mainPid=0)

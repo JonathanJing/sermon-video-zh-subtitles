@@ -11,7 +11,7 @@ from __future__ import annotations
 from scripts import sermon_provider_limits as limits
 
 SCHEMA = 'strict-budget-capability-v1'
-RESERVING = ('canonical_api', 'study_api', 'source_judge_api')
+RESERVING = ('canonical_api', 'study_api', 'source_judge_api', 'legacy_text_api')
 REFUSED = {
     'codex_cli': 'unsupported_budget_capability',
     'standalone_api': 'fast_tier_lacks_worst_case_authorization',
@@ -48,6 +48,7 @@ def admit(surface, *, payload=None, request_limits=None, substitutes=None):
         return _refused(surface, REFUSED[surface], ignored)
     _require(surface in RESERVING, 'unknown_strict_budget_surface')
     selected = limits.DEFAULT_REQUEST_LIMITS if request_limits is None else request_limits
+    limits.validate_request_limits(selected)
     try:
         bounded = limits.bounded_payload(payload, selected)
     except ValueError as exc:

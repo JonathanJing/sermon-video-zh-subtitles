@@ -8,6 +8,8 @@
     "DEV-R242-026": {
       "status": "waiting_evidence",
       "strictCliRequests": 0,
+      "uncappedStandaloneAndLegacyChatRefused": true,
+      "notesResponsesApiUngated": true,
       "invoiceVerified": false
     },
     "DEV-R242-028": {
@@ -17,12 +19,15 @@
       "activeSessionStatus": "closed",
       "unknownJobs": 0,
       "modelId": "Qwen3.8-27B-UD-Q4_K_XL-Unsloth",
-      "exclusiveReadyForNextRun": false
+      "exclusiveReadyForNextRun": false,
+      "migrationSnapshotIgnored": true
     },
     "DEV-PROD-001": {
       "status": "blocked",
       "decision": "blocked",
       "contentDeploy": false,
+      "sectionHashRequired": true,
+      "deployPerformedOnlyAfterCommand": true,
       "missing": [
         "weeklyProduction",
         "devHttp",

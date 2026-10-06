@@ -91,13 +91,14 @@ def main() -> None:
     if args.execute:
         if args.content_release_admission is None:
             raise ValueError("production_content_release_admission_required")
-        from scripts.production_content_release_admission import admit
-        decision = admit(json.loads(args.content_release_admission.read_text(encoding="utf-8")))
+        from scripts.production_content_release_admission import load
+        decision = load(args.content_release_admission)
         if decision["decision"] != "admitted" or decision["pageId"] != receipt["pageId"]:
             raise ValueError("production_content_release_blocked")
         receipt["contentReleaseAdmission"] = {
             "decision": decision["decision"], "pageId": decision["pageId"], "deployPerformed": False}
         subprocess.run(COMMAND, cwd=args.candidate, check=True)
+        receipt["contentReleaseAdmission"]["deployPerformed"] = True
         receipt["status"] = "deployed_http_verification_pending"
         receipt["deployedAt"] = datetime.now(timezone.utc).isoformat()
     args.out.parent.mkdir(parents=True, exist_ok=True)

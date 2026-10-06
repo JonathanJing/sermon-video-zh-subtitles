@@ -21,9 +21,9 @@ class OpenAILayer2TransportTests(unittest.TestCase):
             self.assertEqual(caller.execution_identity['route']['projectId'], 'proj_testdev')
             with self.assertRaisesRegex(ValueError, 'selected_openai_credential_override'):
                 caller('different', {'model': 'gpt-6.1-sol'})
-            self.assertEqual(caller('synthetic-test-key', {'model': 'gpt-6.1-sol'}), {'id': 'response'})
-            request.assert_called_once_with(sermon_pipeline.CHAT_URL, 'synthetic-test-key',
-                                            {'model': 'gpt-6.1-sol'}, retries=1)
+            with self.assertRaisesRegex(ValueError, 'fast_tier_lacks_worst_case_authorization'):
+                caller('synthetic-test-key', {'model': 'gpt-6.1-sol', 'service_tier': 'fast'})
+            request.assert_not_called()
 
     def test_unbound_environment_blocks_before_request(self):
         with patch.dict(os.environ, {}, clear=True), \
@@ -32,11 +32,12 @@ class OpenAILayer2TransportTests(unittest.TestCase):
                 transport.OpenAILayer2Transport()
             request.assert_not_called()
 
-    def test_shared_text_call_uses_api_once_for_sol(self):
-        payload = {'model': 'gpt-6.1-sol'}
-        with patch.object(sermon_pipeline, 'json_request', return_value={'id': 'response'}) as request:
-            self.assertEqual(sermon_pipeline._chat_json('synthetic-test-key', payload), {'id': 'response'})
-            request.assert_called_once_with(sermon_pipeline.CHAT_URL, 'synthetic-test-key', payload, retries=1)
+    def test_shared_text_call_refuses_uncapped_sol_before_request(self):
+        payload = {'model': 'gpt-6.1-sol', 'reasoning_effort': 'high', 'service_tier': 'fast'}
+        with patch.object(sermon_pipeline, 'json_request', side_effect=AssertionError('dispatched')) as request:
+            with self.assertRaisesRegex(ValueError, 'unsupported_budget_capability'):
+                sermon_pipeline._chat_json('synthetic-test-key', payload)
+            request.assert_not_called()
 
 
 if __name__ == '__main__':
