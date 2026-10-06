@@ -7,6 +7,7 @@ import { playAlignmentAudio as realPlayAlignmentAudio } from './fingerprint-ui.m
 import * as timing from './timing.mjs';
 import * as catalogHelpers from './catalog.mjs';
 import { PlaybackMemory } from './playback-memory.mjs';
+import { renderMeditation } from './published-weeks.mjs';
 import { messages as appMessages } from './locales-app.mjs';
 import { messages as koreanMessages } from './locales-ko.mjs';
 import { messages as spanishMessages } from './locales-es.mjs';
@@ -143,7 +144,7 @@ function setup({ bookmark = false, bootstrapFetch, alignmentPlay } = {}) {
     onLocaleChange: listener => localeListeners.push(listener), localizeDOM() {},
     localizeWeek: value => value, translateContent: value => value, appMessages,
   };
-  const context = vm.createContext({ setIcon, setButtonLabel,
+  const context = vm.createContext({ setIcon, setButtonLabel, renderMeditation,
     ...i18n,
     ...timing, ...catalogHelpers, PlaybackMemory, document, window: new Element(),
     localStorage: storage, location: { href: 'https://example.test/', search: '' }, history: { replaceState() {} },

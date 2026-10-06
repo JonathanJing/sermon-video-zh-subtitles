@@ -117,8 +117,76 @@ def _complete_media_window(start: float, end: float, duration: float) -> bool:
     return abs(start) <= EPSILON and abs(end - duration) <= EPSILON
 
 
+def validate_derived_window(value: dict[str, Any], source: dict[str, Any], anchor: dict[str, Any]) -> float:
+    schema = read_object(Path(__file__).parents[1] / "schemas/sermon-clip-timeline-map-v3.schema.json")
+    errors = list(Draft202012Validator(schema).iter_errors(value))
+    require(not errors, f"Derived timeline schema error: {errors[0].message if errors else ''}")
+    require(value["englishSourcePackageJsonSha256"] == interpretation.json_sha256(source)
+            and value["anchorManifestJsonSha256"] == interpretation.json_sha256(anchor)
+            and source.get("anchors", {}).get("artifact", {}).get("jsonSha256") == interpretation.json_sha256(anchor),
+            "Derived timeline source/anchor mismatch")
+    media = source["source"]["media"]
+    source_media = value["sourceMedia"]
+    source_path = Path(source_media["path"])
+    require(source_path.is_file() and interpretation.sha256(source_path) == source_media["sha256"] == media["sha256"]
+            and source_path.stat().st_size == source_media["sizeBytes"]
+            and abs(media_duration(source_path) - source_media["durationSeconds"]) <= EPSILON
+            and source_media["durationSeconds"] == media["durationSeconds"], "Derived timeline source media mismatch")
+    window = source["source"]["approvedWindow"]
+    start, end = value["approvedWindow"]["startSeconds"], value["approvedWindow"]["endSeconds"]
+    require(window.get("status") == "approved" and window.get("humanApproval") is True
+            and start == window["startSeconds"] and end == window["endSeconds"]
+            and 0 <= start < end <= source_media["durationSeconds"]
+            and abs(end - start - value["approvedWindowSeconds"]) <= EPSILON,
+            "Derived timeline approved window mismatch")
+    evidence = window["evidence"]
+    for key in ("windowApproval", "extractionReceipt"):
+        bound = value[key]; path = Path(bound["path"])
+        require(path.is_file() and interpretation.sha256(path) == bound["sha256"], f"Derived timeline {key} hash mismatch")
+        obj = read_object(path)
+        require(interpretation.json_sha256(obj) == bound["jsonSha256"], f"Derived timeline {key} JSON hash mismatch")
+        if key == "windowApproval":
+            require(bound["sha256"] == evidence["sha256"] and bound["jsonSha256"] == evidence["jsonSha256"]
+                    and obj.get("humanApproval") is True and obj.get("status") == "approved"
+                    and obj.get("sourceMediaSha256") == media["sha256"]
+                    and abs(seconds(obj["startTime"]) - start) <= EPSILON
+                    and abs(seconds(obj["endTime"]) - end) <= EPSILON, "Derived timeline approval identity mismatch")
+        else:
+            require(obj.get("operation") == "clip_and_normalize" and obj.get("source", {}).get("sha256") == media["sha256"]
+                    and obj.get("source", {}).get("sizeBytes") == source_media["sizeBytes"]
+                    and obj.get("startSeconds") == start and obj.get("endSeconds") == end,
+                    "Derived timeline extraction source/window mismatch")
+    clip = value["clipMedia"]; path = Path(clip["path"]); probe = value["clipMediaProbe"]
+    require(path.is_file() and interpretation.sha256(path) == clip["sha256"] and path.stat().st_size == clip["sizeBytes"],
+            "Derived timeline clip hash mismatch")
+    actual = media_duration(path)
+    rate = probe["sampleRate"]
+    require(abs(actual - probe["formatDurationSeconds"]) <= EPSILON
+            and probe["streamStartTimeSeconds"] == 0
+            and abs(probe["streamDurationSeconds"] - actual) <= EPSILON
+            and abs(probe["decodedAudioSamples"] / rate - value["clipDurationSeconds"]) <= 1 / rate
+            and abs(probe["decodedAudioDurationSeconds"] - value["clipDurationSeconds"]) <= 1 / rate
+            and abs(value["clipDurationSeconds"] - (end - start)) <= 1 / rate
+            and abs((actual - value["clipDurationSeconds"]) * rate - probe["containerPaddingSamples"]) <= 1
+            and 0 <= probe["containerPaddingSamples"] <= probe["paddingBudgetSamples"] <= 4096,
+            "Derived timeline decoded duration or container padding mismatch")
+    require(value["anchorOrigin"]["absoluteSourceStartSeconds"] == start and value["anchorOffsetSeconds"] == 0,
+            "Derived timeline origin mismatch")
+    units = anchor.get("sourceUnits", [])
+    require(bool(units) and abs(units[0]["start"] - value["anchorFirstStartSeconds"]) <= EPSILON
+            and abs(units[-1]["end"] - value["anchorLastEndSeconds"]) <= EPSILON, "Derived timeline anchor endpoints mismatch")
+    previous = 0
+    for unit in units:
+        require(0 <= unit["start"] < unit["end"] <= value["clipDurationSeconds"] + EPSILON
+                and unit["start"] + EPSILON >= previous, "Derived timeline source units outside approved clip")
+        previous = unit["end"]
+    return 0.0
+
+
 def validate(value: dict[str, Any], source: dict[str, Any], anchor: dict[str, Any]) -> float:
     version = value.get("schemaVersion")
+    if version == "sermon-clip-timeline-map-v3":
+        return validate_derived_window(value, source, anchor)
     require(version in {CLIP_SCHEMA, COMPLETE_MEDIA_SCHEMA},
             "Unsupported clip timeline map schema")
     schema = read_object(Path(__file__).parents[1] / "schemas" /

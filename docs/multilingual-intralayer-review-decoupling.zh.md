@@ -4,6 +4,8 @@
 
 ## 先区分三个状态
 
+当前复用能力补充（2026-10-05代码核查）：正式 renderer 的 `_reusable_speculative_audio` 仅接受 batch1 且无 spokenText 覆盖；`--spark-production` 的 batch8 会跳过该复用分支。因此本页的 preview 复用不能解释为已接通正式8×8。预生成入口还要求完整机器通过的 candidate，`--group-id` 只在该完整候选内选择组，不是单组模型返回即可流式合成。提速方案和所需窗口身份适配见[流水并发分析](reports/20261005-production-pipeline-concurrency-analysis.zh.md)。
+
 | 状态 | 含义 | 能否复用或继续 |
 | --- | --- | --- |
 | 单元已审 | 某个稳定 source/translation/audio 单元的内容及其明确上下文已获人审收据 | 可准备此单元的下一步候选；不代表整篇已审 |

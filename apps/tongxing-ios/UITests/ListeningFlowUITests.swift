@@ -488,6 +488,39 @@ final class ListeningFlowUITests: XCTestCase {
         XCTAssertFalse(app.buttons["content-language-es"].exists)
     }
 
+    func testReviewedStudyProductsShowCompleteOutlineAndMeditation() throws {
+        for withStudy in [false, true] {
+            let app = XCUIApplication()
+            app.launchArguments = ["--ui-testing", "--ui-testing-dual-script"]
+                + (withStudy ? ["--ui-testing-study-products"] : [])
+                + ["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
+            app.launchEnvironment["TONGXING_UI_TEST_RUN_ID"] = UUID().uuidString
+            app.launch()
+            XCTAssertTrue(app.buttons["choose-content-language"].waitForExistence(timeout: 15))
+            app.buttons["choose-content-language"].tap()
+            XCTAssertTrue(app.buttons["content-language-ko"].waitForExistence(timeout: 5))
+            app.buttons["content-language-ko"].tap()
+            XCTAssertTrue(app.staticTexts["published-page-title"].waitForExistence(timeout: 10))
+            if withStudy {
+                let outline = app.staticTexts["본문 전체가 표시됩니다."]
+                for _ in 0..<6 where !outline.isHittable { app.swipeUp() }
+                XCTAssertTrue(outline.waitForExistence(timeout: 10))
+                XCTAssertEqual(outline.label, "본문 전체가 표시됩니다.")
+                let meditation = app.staticTexts["예수님의 말씀을 묵상합니다."]
+                for _ in 0..<6 where !meditation.isHittable { app.swipeUp() }
+                XCTAssertTrue(meditation.exists)
+                XCTAssertEqual(meditation.label, "예수님의 말씀을 묵상합니다.")
+            } else {
+                XCTAssertFalse(app.staticTexts["예수님의 말씀을 묵상합니다."].exists)
+            }
+            screenshot(withStudy ? "reviewed-study-after" : "reviewed-study-before", app: app)
+            app.buttons["choose-content-language"].tap()
+            XCTAssertTrue(app.buttons["content-language-ko"].waitForExistence(timeout: 5))
+            app.buttons["完成"].tap()
+            app.terminate()
+        }
+    }
+
     func testSermonHeadingAndPickerUseTitleSeriesDateSpeakerWithoutSeeking() throws {
         try verifySermonHeading(largeText: false)
     }

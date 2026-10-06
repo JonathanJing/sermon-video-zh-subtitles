@@ -694,13 +694,12 @@ class CuvTranslationTests(unittest.TestCase):
         first = json.loads(call.call_args_list[0].args[1]["messages"][1]["content"])
         self.assertEqual([b["en"] for b in self.blocks], [b["en"] for b in first["blocks"]])
 
-    def test_missing_key_fails_before_api_and_can_resume(self):
-        with mock.patch.dict(mod.os.environ, {}, clear=True), mock.patch.object(mod, "chat_json") as call:
-            with self.assertRaisesRegex(ValueError, "OPENAI_API_KEY"):
-                mod.run(self.parent, self.out, reference_map_path=self.map)
-            call.assert_not_called()
-        self.assertFalse((self.out / "spoken-review.json").exists())
-        self.execute()
+    def test_codex_model_does_not_require_api_key(self):
+        with mock.patch.dict(mod.os.environ, {}, clear=True), mock.patch.object(mod, "chat_json", side_effect=self.fake_chat) as call:
+            mod.run(self.parent, self.out, reference_map_path=self.map)
+        self.assertTrue(call.called)
+        self.assertTrue(all(item.args[0] == "" for item in call.call_args_list))
+        self.assertTrue((self.out / "spoken-review.json").exists())
 
     def test_parent_hash_changes_rejected(self):
         self.execute()

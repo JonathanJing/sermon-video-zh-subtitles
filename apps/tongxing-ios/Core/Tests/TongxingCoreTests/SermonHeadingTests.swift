@@ -2,6 +2,12 @@ import Testing
 @testable import TongxingCore
 
 struct SermonHeadingTests {
+    @Test func identifierFallbackKeepsExplicitFormalEdition() {
+        let title = SermonHeading.displayTitle("resi-source-id", pageID: "page", date: "2026-09-27", fallback: "证道")
+        let heading = SermonHeading(title: title, displayEdition: "正式播放版")
+        #expect(heading.title == "2026-09-27 · 证道")
+        #expect(heading.edition == "正式播放版")
+    }
     @Test func identifiersNeverBecomeDisplayTitles() {
         for title in [nil, "", "resi-20261004-69ba7a66", "audio.mp3", "6B564139-08A5-4FF2-A218-29C247DD7B87"] {
             #expect(SermonHeading.displayTitle(title, pageID: "resi-20261004-69ba7a66", date: "2026-10-04", fallback: "证道") == "2026-10-04 · 证道")

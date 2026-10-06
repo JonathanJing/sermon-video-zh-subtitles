@@ -76,12 +76,22 @@ class PaidModelCacheDurabilityTests(unittest.TestCase):
         self.assertIn(('directory', self.output.parent), events[result:removed])
 
     def test_marker_sync_failure_never_calls_responder(self):
+        fsync = os.fsync
+
+        def fail_marker_sync(fd):
+            # The policy preview is persisted before the request marker. Fail
+            # this boundary specifically, rather than its earlier safe write.
+            if self.marker.exists() and os.fstat(fd).st_ino == self.marker.stat().st_ino:
+                raise OSError('synthetic marker sync failure')
+            return fsync(fd)
+
         for boundary in ('file', 'directory'):
             with self.subTest(boundary=boundary):
                 self.output = self.root / boundary / 'group.json'
                 self.marker = self.output.with_suffix('.started.json')
                 target, name = (os, 'fsync') if boundary == 'file' else (jobs, '_sync_directory_ancestry')
-                with patch.object(target, name, side_effect=OSError('synthetic sync failure')):
+                failure = fail_marker_sync if boundary == 'file' else OSError('synthetic sync failure')
+                with patch.object(target, name, side_effect=failure):
                     with self.assertRaises(OSError):
                         self.call()
                 self.assertEqual(self.calls, 0)
@@ -89,6 +99,14 @@ class PaidModelCacheDurabilityTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, 'Uncertain paid'):
                     self.call()
                 self.assertEqual(self.calls, 0)
+
+    def test_policy_preview_sync_failure_precedes_request_intent(self):
+        with patch.object(os, 'fsync', side_effect=OSError('synthetic preview sync failure')):
+            with self.assertRaises(OSError):
+                self.call()
+        self.assertEqual(self.calls, 0)
+        self.assertFalse(self.marker.exists())
+        self.assertFalse(self.raw.exists())
 
     def test_response_sync_failure_keeps_unknown_outcome_blocked_if_unsynced_file_is_lost(self):
         fsync = os.fsync

@@ -15,6 +15,7 @@ import tarfile
 import tempfile
 
 from scripts.mfa_alignment import _sha, _write, _spoken_forms
+from scripts import production_spark_admission as spark_admission
 
 DEFAULT_ROOT = '/home/achillesjing/sermon-mfa-runtime'
 
@@ -110,7 +111,7 @@ print(json.dumps(result, ensure_ascii=False))
 
 
 def _call(action, *, chunks=None, clip_path=None, host, proxy_jump='', relay_host='', relay_host_key_alias='', python, root,
-          mfa_executable, dictionary_path, acoustic_model, g2p_model=None, spoken_forms_path=None):
+          mfa_executable, dictionary_path, acoustic_model, g2p_model=None, spoken_forms_path=None, session_verifier=None):
     if not re.fullmatch(r'[A-Za-z0-9_.@:-]+', host) or host.startswith('-'):
         raise ValueError('Invalid Spark SSH host')
     for label, value in [('relay host', relay_host), ('relay host key alias', relay_host_key_alias)]:
@@ -133,6 +134,7 @@ def _call(action, *, chunks=None, clip_path=None, host, proxy_jump='', relay_hos
                            'acoustic_model': str(acoustic_model), 'g2p_model': str(g2p_model) if g2p_model else None,
                            'spoken_forms_path': None}}
     if action == 'align':
+        spark_admission.require_session(verifier=session_verifier)
         request.update(chunks=chunks, audioSha256=_sha(clip_path))
     command = ['ssh', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=15']
     if proxy_jump:
@@ -156,7 +158,9 @@ def _call(action, *, chunks=None, clip_path=None, host, proxy_jump='', relay_hos
                 bundle.add(Path(clip_path).resolve(strict=True), arcname='audio')
         payload.seek(0)
         try:
-            completed = subprocess.run(command, stdin=payload, capture_output=True, check=True,
+            execute = (spark_admission.SessionBoundCaller(subprocess.run, verifier=session_verifier,
+                       purpose="source-mfa-alignment") if action == "align" else subprocess.run)
+            completed = execute(command, stdin=payload, capture_output=True, check=True,
                                        timeout=14460 if action == 'align' else 180)
         except subprocess.CalledProcessError as exc:
             detail = exc.stderr.decode(errors='replace')[-2000:]

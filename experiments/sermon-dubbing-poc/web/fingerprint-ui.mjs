@@ -5,8 +5,15 @@ import { diagnosticSummary, matchReason } from './fingerprint-diagnostics.mjs';
 const HASH = /^[a-f0-9]{64}$/;
 export function fingerprintBinding(context) {
   const { week, track, generation } = context || {}, m = week?.audioFingerprint;
-  if (!m || !track || m.schemaVersion !== 'sermon-audio-fingerprint-binding-v1' || m.algorithmVersion !== 'spectral-landmarks-v1' || m.pageId !== week.id || !HASH.test(m.sourceSha256) || !HASH.test(m.trackSha256) || !HASH.test(m.indexSha256) || m.trackSha256 !== track.sha256 || m.sourceStartSeconds !== week.sourceStartSeconds || !Number.isFinite(m.sourceStartSeconds) || !Number.isFinite(m.sourceEndSeconds) || m.sourceEndSeconds <= m.sourceStartSeconds || Math.abs(track.durationSeconds - (m.sourceEndSeconds - m.sourceStartSeconds)) > .1 || m.captureSeconds !== 10 || !/^\/fingerprints\/[a-zA-Z0-9_.-]+\.json$/.test(m.indexUrl)) return null;
-  if (week.sourceEndSeconds !== undefined && week.sourceEndSeconds !== m.sourceEndSeconds) return null;
+  const window = week?.sourceFingerprintWindow;
+  if (window && (window.schemaVersion !== 'sermon-original-recording-window-v1' || window.mediaSha256 !== week.sourceSha256 || window.mediaSha256 !== m?.sourceSha256
+    || !Number.isFinite(window.startSeconds) || !Number.isFinite(window.endSeconds)
+    || window.startSeconds < 0 || window.endSeconds <= window.startSeconds
+    || Math.abs(window.endSeconds - window.startSeconds - track?.durationSeconds) > .1)) return null;
+  const sourceStart = window?.startSeconds ?? week?.sourceStartSeconds;
+  const sourceEnd = window?.endSeconds ?? week?.sourceEndSeconds;
+  if (!m || !track || m.schemaVersion !== 'sermon-audio-fingerprint-binding-v1' || m.algorithmVersion !== 'spectral-landmarks-v1' || m.pageId !== week.id || !HASH.test(m.sourceSha256) || !HASH.test(m.trackSha256) || !HASH.test(m.indexSha256) || m.trackSha256 !== track.sha256 || m.sourceStartSeconds !== sourceStart || !Number.isFinite(m.sourceStartSeconds) || !Number.isFinite(m.sourceEndSeconds) || m.sourceEndSeconds <= m.sourceStartSeconds || Math.abs(track.durationSeconds - (m.sourceEndSeconds - m.sourceStartSeconds)) > .1 || m.captureSeconds !== 10 || !/^\/fingerprints\/[a-zA-Z0-9_.-]+\.json$/.test(m.indexUrl)) return null;
+  if (sourceEnd !== undefined && sourceEnd !== m.sourceEndSeconds) return null;
   return { weekId: week.id, sourceSha256: m.sourceSha256, trackSha256: track.sha256, trackId: track.id, generation, metadata: { ...m } };
 }
 const key = value => value && JSON.stringify([value.weekId, value.sourceSha256, value.trackSha256, value.trackId, value.generation, value.metadata]);

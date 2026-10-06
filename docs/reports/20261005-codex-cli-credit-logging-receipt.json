@@ -1,0 +1,1245 @@
+{
+  "schemaVersion": "codex-credit-projection-v1",
+  "diagnosticOnly": true,
+  "sourceLedgerSha256": "fa06eb64f367b52c5d543fa3d15ce7fd8e7cddccadcdd0a8b9416befd887822b",
+  "sourceEvidenceSha256": {
+    "events.jsonl": "fa06eb64f367b52c5d543fa3d15ce7fd8e7cddccadcdd0a8b9416befd887822b",
+    "reviewer-0bb2dfeb71ded6920ab3b6a25568dd1935457baf3beb62a4bbdb27c86a59632b/resource-binding.json": "167d4c4ee98cb377dc61e9f1638a1b16ee4e5be5a070bca0312424f3f2d6f5ca",
+    "reviewer-0bb2dfeb71ded6920ab3b6a25568dd1935457baf3beb62a4bbdb27c86a59632b/resource-outcome.json": "336e2d8292d028c33b7954cc93faed462ecdfca39dc7920a95e7c9ae65ce415b",
+    "reviewer-0bb2dfeb71ded6920ab3b6a25568dd1935457baf3beb62a4bbdb27c86a59632b/response.json": "b22c5fc52acba1990764cc5db7bd297f13b8d103b916f15d077c4dbd701d8d62",
+    "reviewer-2e6084035b45f33138da02359ae5ee6696e90ae474a990f87de51b70e80a18f0/resource-binding.json": "cde04d4bf38fe3914aa580ca45517605dd25b7a3b7c64e728e317c07a06a94f4",
+    "reviewer-2e6084035b45f33138da02359ae5ee6696e90ae474a990f87de51b70e80a18f0/resource-outcome.json": "6a5888bec440fec38f79372262454c76182199e535fdf7a275b086b6daafb4ef",
+    "reviewer-2e6084035b45f33138da02359ae5ee6696e90ae474a990f87de51b70e80a18f0/response.json": "20ec667211a9db080e6adfcd40f9a3b29c25f290141d7f1eee79e2db18c0ad6b",
+    "reviewer-372addfb7c123088cd2c7d5e1137ca7ba66ac061015c93cc5b5075d9e94f554e/resource-binding.json": "da7cf6ec58e62d59129cb8df160e41d8374754d2ba9509a9dfbcebc3e10471ba",
+    "reviewer-372addfb7c123088cd2c7d5e1137ca7ba66ac061015c93cc5b5075d9e94f554e/resource-outcome.json": "3ad275a68d6c80011493f78c10a17383c1e8d5ba45f421f4ef8a95cd40e79b15",
+    "reviewer-372addfb7c123088cd2c7d5e1137ca7ba66ac061015c93cc5b5075d9e94f554e/response.json": "45a295c9ca85bc2ddfc6721745b2d91b09b071a348238d84da1d018c3604a54b",
+    "reviewer-6922cae31fd1cada736c3105d76995c28faf382144919ebe629bf1d891c2f781/resource-binding.json": "b4f1ba6ddcc72861b04100006daa6ed84d750534e70d61d8879221413b6ecc4a",
+    "reviewer-6922cae31fd1cada736c3105d76995c28faf382144919ebe629bf1d891c2f781/resource-outcome.json": "11554f9b8d50f1264c00e9ecb4a8237f5432b164732ac889a05e5037f543e7f6",
+    "reviewer-6922cae31fd1cada736c3105d76995c28faf382144919ebe629bf1d891c2f781/response.json": "1a137b2b62a8788f1d352c8e22df2c93491f17b73b5d078b5cc75038c561e7e9",
+    "reviewer-6bc546cb8922c37fe02ceaeb35a7de91cedde18a372207c00bbe853e73f06a77/resource-binding.json": "63d4571624c62bc44f7e53580faf2bb9a93ea4978efe013b31a75dd6f0ebc659",
+    "reviewer-6bc546cb8922c37fe02ceaeb35a7de91cedde18a372207c00bbe853e73f06a77/resource-outcome.json": "774b240d745cb7a2fbdd8f98ad7d14a05680a567a79cc2b1e66808ecea243680",
+    "reviewer-6bc546cb8922c37fe02ceaeb35a7de91cedde18a372207c00bbe853e73f06a77/response.json": "5b31bbd1ea8cb1013381ff255b72afae8e38ca81aca6dd033b7fda3acdf01945",
+    "reviewer-7c984356599fe5a108fb56b297d9ecf71d28b58684b39f997c9f97af4b9234ee/resource-binding.json": "dded2686fbfac0a001860692ed569ae409dc4a27e44d79e59eb8b07698b50009",
+    "reviewer-7c984356599fe5a108fb56b297d9ecf71d28b58684b39f997c9f97af4b9234ee/resource-outcome.json": "5e5d8fbe7401bfc96f75b120b09def55a6efadc05cb474f9710ec66cdfa8c7c0",
+    "reviewer-7c984356599fe5a108fb56b297d9ecf71d28b58684b39f997c9f97af4b9234ee/response.json": "0ba2a381fb26bfe20b440fa2ebab02ebbc6f154f1b1e421780765bfeb96c256e",
+    "reviewer-931048140cfccdf96c481a8a41d19e579ac779a438f5f5414a825ebce4200e95/resource-binding.json": "04d2756995872d5430e70a93459996ec757821718188103b15526d44bf233887",
+    "reviewer-931048140cfccdf96c481a8a41d19e579ac779a438f5f5414a825ebce4200e95/resource-outcome.json": "8effaaa21569b9d3e646bb0108ab35ad6b3c8c751ade7ea41e54975387768e61",
+    "reviewer-931048140cfccdf96c481a8a41d19e579ac779a438f5f5414a825ebce4200e95/response.json": "c8c57cf6c22fe016214d6d6cbc7a5c8ecdfed4bad5978a7a04db6d3e3317efde",
+    "reviewer-a5598539b76597af31a3b747be67685dda7001775fd2acbabfd5a0329911a238/resource-binding.json": "57830b84f70ff27bc2d1bf44d0b00ebbd82f36b5badcfd337d3c58b7cd3481f1",
+    "reviewer-a5598539b76597af31a3b747be67685dda7001775fd2acbabfd5a0329911a238/resource-outcome.json": "5ddf47ef39d80073ca3585d684240780cf1dea4304624fe280715116c7657da2",
+    "reviewer-a5598539b76597af31a3b747be67685dda7001775fd2acbabfd5a0329911a238/response.json": "1acfdf0be93d2eb79f72c87687d86baa5faaa11a30e45fe9c5109cacd565f557",
+    "reviewer-db9bf5d7bd97694009e9503d108a32e7a9b36741d85828746ec2b265bc95e5b4/resource-binding.json": "bd1c44a87e99b175ece2568e139d01d846d64383ed1f34fa66fb0fc89f6c9605",
+    "reviewer-db9bf5d7bd97694009e9503d108a32e7a9b36741d85828746ec2b265bc95e5b4/resource-outcome.json": "9efa6ff2deab67882519bb69bc6b567f00244b6fc04e2f0cf3f78337e6dde07a",
+    "reviewer-db9bf5d7bd97694009e9503d108a32e7a9b36741d85828746ec2b265bc95e5b4/response.json": "a3caf618cf1ed0eac811f3d8a1b9f53eced35c5095c0b4ecf2b99bd298271671",
+    "reviewer-f13d762d2dfa690ee464705676ce8fbb3631c675bd678363b300a9f631967223/resource-binding.json": "5b537b8650a890d1186fc2a96d3164b7f38a7642ae5ff051978eebee0e5b3809",
+    "reviewer-f13d762d2dfa690ee464705676ce8fbb3631c675bd678363b300a9f631967223/resource-outcome.json": "a644fe9d9d21c466d62c6ecec5cb73ce3f16c0d875a5e489efbc65cf65b306b5",
+    "reviewer-f13d762d2dfa690ee464705676ce8fbb3631c675bd678363b300a9f631967223/response.json": "07139d37cfcc7cc5178e40c09fe8fe5caf95c70e10d5f3950d352bc5a19db682",
+    "reviewer-f400be61d0893fd672ac9f548f1e5ba80e77b2a9c9916a456182845526d96649/resource-binding.json": "1567588acedc24f17abf5342fcdb40af50df59c607814d80c8dcdf0dbb2c6184",
+    "reviewer-f400be61d0893fd672ac9f548f1e5ba80e77b2a9c9916a456182845526d96649/resource-outcome.json": "e4c98bfb4852d206f39374b7e12447f21ef2f8a34492c4ff9300d2e28ee4d978",
+    "reviewer-f400be61d0893fd672ac9f548f1e5ba80e77b2a9c9916a456182845526d96649/response.json": "acadecaa35a4769db2061cf0c03527366878efaea1dcbfa0ff96f17b6a39c20c",
+    "reviewer-fcd8df2e8b23db4b93a2706a69446a4202f9853032d1f527a077e2e057736253/resource-binding.json": "3695569b5dda24e8310de0fece25ef97f63514222f9c8ac9350ad47957229dcf",
+    "reviewer-fcd8df2e8b23db4b93a2706a69446a4202f9853032d1f527a077e2e057736253/resource-outcome.json": "8664d6464be0e981a9247e50f7c10874679a6953a6367a70fb23e8e01d208c5a",
+    "reviewer-fcd8df2e8b23db4b93a2706a69446a4202f9853032d1f527a077e2e057736253/response.json": "63c46161fc939609caed9fe88a29407dc3678fe106c1af5b6c36745e09e3c7ab",
+    "reviewer-fd5e0e1871fcea0b6aa0797f2690435b17d77071a6d2433b7a826cdf76d30f59/resource-binding.json": "56a92f6929e5cea34c876bd15b1b83266925e8ad7b0e913bf8517d2b723cf0a1",
+    "reviewer-fd5e0e1871fcea0b6aa0797f2690435b17d77071a6d2433b7a826cdf76d30f59/resource-outcome.json": "defbedf5e3c70cf56400c58b19322ce32152f2830fb4be8f430aa5f30efbf636",
+    "reviewer-fd5e0e1871fcea0b6aa0797f2690435b17d77071a6d2433b7a826cdf76d30f59/response.json": "785d913eb4a2eda5354dbf4c039e6050664d30ab1265865e65a537de4134b0aa",
+    "translator-05d4bc96b4a4f6264d00beee3c8fa8cd198a21b6ccd70efee6082d79df5943f6/resource-binding.json": "05c7fe2c153e1520ebba6582af3b7df41639763681af53276d565acf75f2d020",
+    "translator-05d4bc96b4a4f6264d00beee3c8fa8cd198a21b6ccd70efee6082d79df5943f6/resource-outcome.json": "f21ac77ea165fd713cda4275d18c746cf860d889c90d839285de6c14298ef16d",
+    "translator-05d4bc96b4a4f6264d00beee3c8fa8cd198a21b6ccd70efee6082d79df5943f6/response.json": "91d40a17bb21b8003eb2896196b677ccef2f6893f46593053c5fabc4be61a318",
+    "translator-0b8ecfd15f657b672f2b5d0c13374b4ae81f16c1071f427a0d08843fb34ac8e9/resource-binding.json": "e471a2489dc9e495ddc597c2a53f32cd9520dbbb03a4f6a2934a9113121b749d",
+    "translator-0b8ecfd15f657b672f2b5d0c13374b4ae81f16c1071f427a0d08843fb34ac8e9/resource-outcome.json": "f042f984f2cf486fb08d02e63308cbab3fbefa0e16e40b335bdb0c221d555ecb",
+    "translator-0b8ecfd15f657b672f2b5d0c13374b4ae81f16c1071f427a0d08843fb34ac8e9/response.json": "9d383613540c1770e1eb08767885a039e54eabc472906e6b2531450163e548d1",
+    "translator-2a8908198b247960b4086a159554d45a9879d86964bc4b01b82a5f2f5ca15887/resource-binding.json": "c7d2d3d1bd1f6ed5b4cce0677735c1a6d56413aee962d0d6771348b3a3035808",
+    "translator-2a8908198b247960b4086a159554d45a9879d86964bc4b01b82a5f2f5ca15887/resource-outcome.json": "9402e026a6be4f10288ce64b70d24dd367099c3048b27404d90c3db2e25aaaa7",
+    "translator-2a8908198b247960b4086a159554d45a9879d86964bc4b01b82a5f2f5ca15887/response.json": "e139d127441de1c675e133f7017d7d8bcbdb9762aed63bb3d1d721d5fea77d04",
+    "translator-48c54499c0cc3a5ac2669d330549282a65ee718047c8fa20c8b68d9f40c5a1f6/resource-binding.json": "63a3f258ecb3265aa6cdb112995eda486dc1679ac8ad94fcabc93f0bfaad8d92",
+    "translator-48c54499c0cc3a5ac2669d330549282a65ee718047c8fa20c8b68d9f40c5a1f6/resource-outcome.json": "67e9be7118948f2c7256897bcc5f3849f4029dc913c332a24c0aa32bad9f10e3",
+    "translator-48c54499c0cc3a5ac2669d330549282a65ee718047c8fa20c8b68d9f40c5a1f6/response.json": "57aba1ea0a1d4544ce8b6b23f0cf5ae771431706abd2f5721b241e16d1a9de92",
+    "translator-4c51d0806c9892a0fbbf15f4561ef7abfd154717172295f308b17f8a450b7120/resource-binding.json": "d1e889f0379794d4f002dd2b54154c72c38e5f9d8ee6c9b55ed21b0772341b38",
+    "translator-4c51d0806c9892a0fbbf15f4561ef7abfd154717172295f308b17f8a450b7120/resource-outcome.json": "aea70c2fc5278fb2ff5f115275486bbf01d922c224228b3e84eab03910bb4b8d",
+    "translator-4c51d0806c9892a0fbbf15f4561ef7abfd154717172295f308b17f8a450b7120/response.json": "367ce7f095f794c880e5eaa40b92ceb3e02ad6e6825a96de2cabadc543ba98d3",
+    "translator-58a34b82f12dac948aebcea03185118dde798920aab1808a14d05366193fd112/resource-binding.json": "77bb9ac638c9b5abae3b62c4709b3cccf468b0eb66f28919a5ce70093a6c5320",
+    "translator-58a34b82f12dac948aebcea03185118dde798920aab1808a14d05366193fd112/resource-outcome.json": "a3dc4f72414643a99496f0b721424a0347552e87d698e08d8c38cf53729b47f0",
+    "translator-58a34b82f12dac948aebcea03185118dde798920aab1808a14d05366193fd112/response.json": "0bca8bda0f8cb204817cefc96f604012b79c8c5a5fcdd8d6c379ed4c49cb0081",
+    "translator-6a736b3efa537639e9fed681eb936d5d0148cea5da314f10345bce379334bc69/resource-binding.json": "4b8d20daf109121425e313ec1d87fe36809d0c7f496219e958a082414171d5cf",
+    "translator-6a736b3efa537639e9fed681eb936d5d0148cea5da314f10345bce379334bc69/resource-outcome.json": "153d32cf8a38190ca425fb161ce8bc73470cd417ee9311581d295d219f31fadb",
+    "translator-6a736b3efa537639e9fed681eb936d5d0148cea5da314f10345bce379334bc69/response.json": "142064381b1f3897e3b170916353d44caa20d50bcfca0dcd2eef75889fe9165a",
+    "translator-7d2586a68590c44afb6045f15e0bf0a27b34effa889886c5913f12e487acf70a/resource-binding.json": "c6cd58cc1208f812908770f90a08f565f7330c84aa1688b6c1272b07662e0951",
+    "translator-7d2586a68590c44afb6045f15e0bf0a27b34effa889886c5913f12e487acf70a/resource-outcome.json": "b84000dbd7e0f80152d08627d5ea2554a29c7a2ea9dc48a2b2f52d717a7ff976",
+    "translator-7d2586a68590c44afb6045f15e0bf0a27b34effa889886c5913f12e487acf70a/response.json": "fc75f447fe5c570f75456024049351b5c7aa5151a95957f9c17b05ab75e93898",
+    "translator-a6963b5af42091bef9790b503a690cfb3ad5280138047bae0e3af23e2b59bae8/resource-binding.json": "a37f186e11a54ab6a58f40d5c8d45dee25199fb66604605d2280d43679353a92",
+    "translator-a6963b5af42091bef9790b503a690cfb3ad5280138047bae0e3af23e2b59bae8/resource-outcome.json": "2e22d31dd96e1df7b10d38bf800cf5c151b7ae15bdc56d6e877e04d47b2b504b",
+    "translator-a6963b5af42091bef9790b503a690cfb3ad5280138047bae0e3af23e2b59bae8/response.json": "fcf0686be3d0b38ec7c78443eba4a36f3eb132b2642d2951011b322793480bf0",
+    "translator-b0681e41434790ab649ec501692bc2903290b4c97d086a50e3e1b15dd7698d94/resource-binding.json": "29e76a83fb2161bd3d1fc2943e2239f0e8e49e4792ad961458d61984f5e2b9e3",
+    "translator-b0681e41434790ab649ec501692bc2903290b4c97d086a50e3e1b15dd7698d94/resource-outcome.json": "0e33dbeb5de8fa0e87ac65096eb501bf17fab699a9a5f1ebca35d3793c540023",
+    "translator-b0681e41434790ab649ec501692bc2903290b4c97d086a50e3e1b15dd7698d94/response.json": "ce1cc0e80f3151c12ba29301a696777055e12ebca428f2197a3d48a80fadda7f",
+    "translator-ba50338b25c5e3d208dbb3f09ced4518cc559a31fc4e1e6a19bb564e53b525dd/resource-binding.json": "a9c74d4acb60e837a6db0c07bca9e30dcf099aa6fef67ebfa97b633f2627dd85",
+    "translator-ba50338b25c5e3d208dbb3f09ced4518cc559a31fc4e1e6a19bb564e53b525dd/resource-outcome.json": "0e291705a3b3581e2d65f6b2860c4d71374835cf77f0629710088797a91c8315",
+    "translator-ba50338b25c5e3d208dbb3f09ced4518cc559a31fc4e1e6a19bb564e53b525dd/response.json": "fa34cec39e3fc5bc5b1ceb0bb6d4580c013e006e4c73f4527f49772e238b51fc",
+    "translator-dad9f352dce6aa7a3da6fb84ea01afb1ab71f5ffcdac43505c36bb2d55fb5eaf/resource-binding.json": "b5006ea33e97cf4742db689cdec1c5fde7609c8afd5081c55ac0abc0a22ee61c",
+    "translator-dad9f352dce6aa7a3da6fb84ea01afb1ab71f5ffcdac43505c36bb2d55fb5eaf/resource-outcome.json": "75472d8f69d58877a4a98af25c202f31a9c8e7d2794a44d324add5edbed91324",
+    "translator-dad9f352dce6aa7a3da6fb84ea01afb1ab71f5ffcdac43505c36bb2d55fb5eaf/response.json": "4106ed205276bd7502142f975cccda695d08ea145c571d51fd397ef6d7b3c816",
+    "translator-e4a747fb46cd4ca538ded26fa2fcd50f1410416da9b73d991bd61f648d8e0251/resource-binding.json": "72df5dcb27df3b6f9a0502d19f0674d42a259acb01fc26ddb69b0d21e1533cf8",
+    "translator-e4a747fb46cd4ca538ded26fa2fcd50f1410416da9b73d991bd61f648d8e0251/resource-outcome.json": "5f97f9159c81f1372d49d7407ef809933082ab223ba662abc9263fac93c5647f",
+    "translator-e4a747fb46cd4ca538ded26fa2fcd50f1410416da9b73d991bd61f648d8e0251/response.json": "13270583a6d8c58e37e7af382387ddd7a908e7909b755408f1ee38180a035eea"
+  },
+  "derivedLedgerSha256": "030288f7be880041966996d165a49de8b2e935aa751f7226714ee1f28fecf95b",
+  "convertedObservationEvents": 52,
+  "matchedCalls": 26,
+  "newModelCalls": 0,
+  "originalLedgerUnchanged": true,
+  "rateCard": {
+    "schemaVersion": "codex-credit-rate-card-v1",
+    "version": "codex-credits-2026-10-05",
+    "verifiedAt": "2026-10-05",
+    "basis": "purchased_credit_equivalent",
+    "sources": [
+      "https://learn.chatgpt.com/docs/pricing",
+      "https://learn.chatgpt.com/docs/agent-configuration/speed"
+    ],
+    "ratesPerMillionTokens": {
+      "gpt-6-astra": {
+        "input": 250,
+        "cachedInput": 25,
+        "output": 1250
+      },
+      "gpt-6.1-sol": {
+        "input": 50,
+        "cachedInput": 2.5,
+        "output": 250
+      },
+      "gpt-6-sol": {
+        "input": 50,
+        "cachedInput": 5,
+        "output": 250
+      },
+      "gpt-6-luna": {
+        "input": 2.5,
+        "cachedInput": 0.25,
+        "output": 12.5
+      }
+    },
+    "purchasedCreditMultipliers": {
+      "default": 1,
+      "fast": 2,
+      "ultrafast": 6
+    },
+    "ultrafastModels": [
+      "gpt-6-astra"
+    ],
+    "includedSubscriptionMultipliers": {
+      "default": 1,
+      "fast": 2.5,
+      "ultrafast": 8
+    }
+  },
+  "rateCardSha256": "557d283646a6dd8ed49cc32a88e8459a165b72066339be99233ea75146c21edf",
+  "creditUsage": {
+    "estimatedCreditsKnownSubtotal": 26.04018,
+    "estimatedCallCount": 26,
+    "unknownCallCount": 0,
+    "cacheReuseCallCount": 0,
+    "complete": true,
+    "actualCredits": null,
+    "actualQuotaUsage": null
+  },
+  "byModel": [
+    {
+      "model": "gpt-6-sol",
+      "role": "production",
+      "callCount": 13,
+      "creditUsage": {
+        "estimatedCreditsKnownSubtotal": 11.71826,
+        "estimatedCallCount": 13,
+        "unknownCallCount": 0,
+        "cacheReuseCallCount": 0,
+        "complete": true,
+        "actualCredits": null,
+        "actualQuotaUsage": null
+      }
+    },
+    {
+      "model": "gpt-6.1-sol",
+      "role": "production",
+      "callCount": 13,
+      "creditUsage": {
+        "estimatedCreditsKnownSubtotal": 14.32192,
+        "estimatedCallCount": 13,
+        "unknownCallCount": 0,
+        "cacheReuseCallCount": 0,
+        "complete": true,
+        "actualCredits": null,
+        "actualQuotaUsage": null
+      }
+    }
+  ],
+  "calls": [
+    {
+      "callId": "039bb5fd142c1fb5427b37d43e62750911fd5b381edba8e612ae6628a00b78b0",
+      "model": "gpt-6.1-sol",
+      "role": "production",
+      "usage": {
+        "inputTokens": 16284,
+        "outputTokens": 502,
+        "totalTokens": null,
+        "cachedInputTokens": 12416,
+        "cacheWriteTokens": null,
+        "reasoningTokens": 303
+      },
+      "elapsedSeconds": 12.292778041912243,
+      "creditUsage": {
+        "schemaVersion": "codex-credit-usage-v1",
+        "status": "estimated",
+        "estimatedCredits": 0.69988,
+        "actualCredits": null,
+        "actualQuotaUsage": null,
+        "basis": "purchased_credit_equivalent",
+        "model": "gpt-6.1-sol",
+        "modelSource": "requested",
+        "requestedServiceTier": "fast",
+        "appliedServiceTier": "fast",
+        "tierSource": "requested",
+        "rateCardVersion": "codex-credits-2026-10-05",
+        "rateCardSha256": "557d283646a6dd8ed49cc32a88e8459a165b72066339be99233ea75146c21edf",
+        "verifiedAt": "2026-10-05",
+        "sources": [
+          "https://learn.chatgpt.com/docs/pricing",
+          "https://learn.chatgpt.com/docs/agent-configuration/speed"
+        ],
+        "ratesPerMillionTokens": {
+          "input": 50,
+          "cachedInput": 2.5,
+          "output": 250
+        },
+        "speedMultiplier": 2,
+        "reason": "requested_identity_assumption"
+      }
+    },
+    {
+      "callId": "0eb01c79937d263db9ce79f0593a5b684e6a542e75f333de0afdee3cd870606a",
+      "model": "gpt-6.1-sol",
+      "role": "production",
+      "usage": {
+        "inputTokens": 16301,
+        "outputTokens": 559,
+        "totalTokens": null,
+        "cachedInputTokens": 12416,
+        "cacheWriteTokens": null,
+        "reasoningTokens": 276
+      },
+      "elapsedSeconds": 12.302243874990381,
+      "creditUsage": {
+        "schemaVersion": "codex-credit-usage-v1",
+        "status": "estimated",
+        "estimatedCredits": 0.73008,
+        "actualCredits": null,
+        "actualQuotaUsage": null,
+        "basis": "purchased_credit_equivalent",
+        "model": "gpt-6.1-sol",
+        "modelSource": "requested",
+        "requestedServiceTier": "fast",
+        "appliedServiceTier": "fast",
+        "tierSource": "requested",
+        "rateCardVersion": "codex-credits-2026-10-05",
+        "rateCardSha256": "557d283646a6dd8ed49cc32a88e8459a165b72066339be99233ea75146c21edf",
+        "verifiedAt": "2026-10-05",
+        "sources": [
+          "https://learn.chatgpt.com/docs/pricing",
+          "https://learn.chatgpt.com/docs/agent-configuration/speed"
+        ],
+        "ratesPerMillionTokens": {
+          "input": 50,
+          "cachedInput": 2.5,
+          "output": 250
+        },
+        "speedMultiplier": 2,
+        "reason": "requested_identity_assumption"
+      }
+    },
+    {
+      "callId": "13a29028e6f3b141decace7a9e0e5ca385d72e03650e7fa5bf2f9e3037d2181a",
+      "model": "gpt-6-sol",
+      "role": "production",
+      "usage": {
+        "inputTokens": 16265,
+        "outputTokens": 538,
+        "totalTokens": null,
+        "cachedInputTokens": 12032,
+        "cacheWriteTokens": null,
+        "reasoningTokens": 152
+      },
+      "elapsedSeconds": 9.342765750014223,
+      "creditUsage": {
+        "schemaVersion": "codex-credit-usage-v1",
+        "status": "estimated",
+        "estimatedCredits": 0.81262,
+        "actualCredits": null,
+        "actualQuotaUsage": null,
+        "basis": "purchased_credit_equivalent",
+        "model": "gpt-6-sol",
+        "modelSource": "requested",
+        "requestedServiceTier": "fast",
+        "appliedServiceTier": "fast",
+        "tierSource": "requested",
+        "rateCardVersion": "codex-credits-2026-10-05",
+        "rateCardSha256": "557d283646a6dd8ed49cc32a88e8459a165b72066339be99233ea75146c21edf",
+        "verifiedAt": "2026-10-05",
+        "sources": [
+          "https://learn.chatgpt.com/docs/pricing",
+          "https://learn.chatgpt.com/docs/agent-configuration/speed"
+        ],
+        "ratesPerMillionTokens": {
+          "input": 50,
+          "cachedInput": 5,
+          "output": 250
+        },
+        "speedMultiplier": 2,
+        "reason": "requested_identity_assumption"
+      }
+    },
+    {
+      "callId": "18c4c72d1d2bb866d7ec9ad156d2f202a05737ed9033de358552cb4b6e16154b",
+      "model": "gpt-6-sol",
+      "role": "production",
+      "usage": {
+        "inputTokens": 16093,
+        "outputTokens": 549,
+        "totalTokens": null,
+        "cachedInputTokens": 12032,
+        "cacheWriteTokens": null,
+        "reasoningTokens": 230
+      },
+      "elapsedSeconds": 9.60167070897296,
+      "creditUsage": {
+        "schemaVersion": "codex-credit-usage-v1",
+        "status": "estimated",
+        "estimatedCredits": 0.80092,
+        "actualCredits": null,
+        "actualQuotaUsage": null,
+        "basis": "purchased_credit_equivalent",
+        "model": "gpt-6-sol",
+        "modelSource": "requested",
+        "requestedServiceTier": "fast",
+        "appliedServiceTier": "fast",
+        "tierSource": "requested",
+        "rateCardVersion": "codex-credits-2026-10-05",
+        "rateCardSha256": "557d283646a6dd8ed49cc32a88e8459a165b72066339be99233ea75146c21edf",
+        "verifiedAt": "2026-10-05",
+        "sources": [
+          "https://learn.chatgpt.com/docs/pricing",
+          "https://learn.chatgpt.com/docs/agent-configuration/speed"
+        ],
+        "ratesPerMillionTokens": {
+          "input": 50,
+          "cachedInput": 5,
+          "output": 250
+        },
+        "speedMultiplier": 2,
+        "reason": "requested_identity_assumption"
+      }
+    },
+    {
+      "callId": "2edef78bc710a2becb591d48c2789ebcb0d47690739fa417a62b36a134ff6606",
+      "model": "gpt-6.1-sol",
+      "role": "production",
+      "usage": {
+        "inputTokens": 16189,
+        "outputTokens": 552,
+        "totalTokens": null,
+        "cachedInputTokens": 12416,
+        "cacheWriteTokens": null,
+        "reasoningTokens": 371
+      },
+      "elapsedSeconds": 11.829432624974288,
+      "creditUsage": {
+        "schemaVersion": "codex-credit-usage-v1",
+        "status": "estimated",
+        "estimatedCredits": 0.71538,
+        "actualCredits": null,
+        "actualQuotaUsage": null,
+        "basis": "purchased_credit_equivalent",
+        "model": "gpt-6.1-sol",
+        "modelSource": "requested",
+        "requestedServiceTier": "fast",
+        "appliedServiceTier": "fast",
+        "tierSource": "requested",
+        "rateCardVersion": "codex-credits-2026-10-05",
+        "rateCardSha256": "557d283646a6dd8ed49cc32a88e8459a165b72066339be99233ea75146c21edf",
+        "verifiedAt": "2026-10-05",
+        "sources": [
+          "https://learn.chatgpt.com/docs/pricing",
+          "https://learn.chatgpt.com/docs/agent-configuration/speed"
+        ],
+        "ratesPerMillionTokens": {
+          "input": 50,
+          "cachedInput": 2.5,
+          "output": 250
+        },
+        "speedMultiplier": 2,
+        "reason": "requested_identity_assumption"
+      }
+    },
+    {
+      "callId": "31e80c0607ca932fc009fc4b9e898bdcd8d0c5dba183a5ded87e57cc00a7bd16",
+      "model": "gpt-6-sol",
+      "role": "production",
+      "usage": {
+        "inputTokens": 16206,
+        "outputTokens": 616,
+        "totalTokens": null,
+        "cachedInputTokens": 12032,
+        "cacheWriteTokens": null,
+        "reasoningTokens": 277
+      },
+      "elapsedSeconds": 10.073722125031054,
+      "creditUsage": {
+        "schemaVersion": "codex-credit-usage-v1",
+        "status": "estimated",
+        "estimatedCredits": 0.84572,
+        "actualCredits": null,
+        "actualQuotaUsage": null,
+        "basis": "purchased_credit_equivalent",
+        "model": "gpt-6-sol",
+        "modelSource": "requested",
+        "requestedServiceTier": "fast",
+        "appliedServiceTier": "fast",
+        "tierSource": "requested",
+        "rateCardVersion": "codex-credits-2026-10-05",
+        "rateCardSha256": "557d283646a6dd8ed49cc32a88e8459a165b72066339be99233ea75146c21edf",
+        "verifiedAt": "2026-10-05",
+        "sources": [
+          "https://learn.chatgpt.com/docs/pricing",
+          "https://learn.chatgpt.com/docs/agent-configuration/speed"
+        ],
+        "ratesPerMillionTokens": {
+          "input": 50,
+          "cachedInput": 5,
+          "output": 250
+        },
+        "speedMultiplier": 2,
+        "reason": "requested_identity_assumption"
+      }
+    },
+    {
+      "callId": "35c4b90424f3913e41eefcbc77584588f01ee3b6db383e45d32dfa7d5d190ebd",
+      "model": "gpt-6.1-sol",
+      "role": "production",
+      "usage": {
+        "inputTokens": 16323,
+        "outputTokens": 1230,
+        "totalTokens": null,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": null,
+        "reasoningTokens": 1003
+      },
+      "elapsedSeconds": 24.823427209048532,
+      "creditUsage": {
+        "schemaVersion": "codex-credit-usage-v1",
+        "status": "estimated",
+        "estimatedCredits": 2.2473,
+        "actualCredits": null,
+        "actualQuotaUsage": null,
+        "basis": "purchased_credit_equivalent",
+        "model": "gpt-6.1-sol",
+        "modelSource": "requested",
+        "requestedServiceTier": "fast",
+        "appliedServiceTier": "fast",
+        "tierSource": "requested",
+        "rateCardVersion": "codex-credits-2026-10-05",
+        "rateCardSha256": "557d283646a6dd8ed49cc32a88e8459a165b72066339be99233ea75146c21edf",
+        "verifiedAt": "2026-10-05",
+        "sources": [
+          "https://learn.chatgpt.com/docs/pricing",
+          "https://learn.chatgpt.com/docs/agent-configuration/speed"
+        ],
+        "ratesPerMillionTokens": {
+          "input": 50,
+          "cachedInput": 2.5,
+          "output": 250
+        },
+        "speedMultiplier": 2,
+        "reason": "requested_identity_assumption"
+      }
+    },
+    {
+      "callId": "5b52d1ec374b18d544956276045ac508e31e2ef898e78ba52ef26b19d01f4f11",
+      "model": "gpt-6-sol",
+      "role": "production",
+      "usage": {
+        "inputTokens": 16246,
+        "outputTokens": 758,
+        "totalTokens": null,
+        "cachedInputTokens": 12032,
+        "cacheWriteTokens": null,
+        "reasoningTokens": 358
+      },
+      "elapsedSeconds": 12.589788375073113,
+      "creditUsage": {
+        "schemaVersion": "codex-credit-usage-v1",
+        "status": "estimated",
+        "estimatedCredits": 0.92072,
+        "actualCredits": null,
+        "actualQuotaUsage": null,
+        "basis": "purchased_credit_equivalent",
+        "model": "gpt-6-sol",
+        "modelSource": "requested",
+        "requestedServiceTier": "fast",
+        "appliedServiceTier": "fast",
+        "tierSource": "requested",
+        "rateCardVersion": "codex-credits-2026-10-05",
+        "rateCardSha256": "557d283646a6dd8ed49cc32a88e8459a165b72066339be99233ea75146c21edf",
+        "verifiedAt": "2026-10-05",
+        "sources": [
+          "https://learn.chatgpt.com/docs/pricing",
+          "https://learn.chatgpt.com/docs/agent-configuration/speed"
+        ],
+        "ratesPerMillionTokens": {
+          "input": 50,
+          "cachedInput": 5,
+          "output": 250
+        },
+        "speedMultiplier": 2,
+        "reason": "requested_identity_assumption"
+      }
+    },
+    {
+      "callId": "5e8eebce4656635cb50525b6266fbc94e5a58f09f3317386000671fb42c8d2b0",
+      "model": "gpt-6-sol",
+      "role": "production",
+      "usage": {
+        "inputTokens": 16267,
+        "outputTokens": 893,
+        "totalTokens": null,
+        "cachedInputTokens": 12032,
+        "cacheWriteTokens": null,
+        "reasoningTokens": 448
+      },
+      "elapsedSeconds": 14.21153112500906,
+      "creditUsage": {
+        "schemaVersion": "codex-credit-usage-v1",
+        "status": "estimated",
+        "estimatedCredits": 0.99032,
+        "actualCredits": null,
+        "actualQuotaUsage": null,
+        "basis": "purchased_credit_equivalent",
+        "model": "gpt-6-sol",
+        "modelSource": "requested",
+        "requestedServiceTier": "fast",
+        "appliedServiceTier": "fast",
+        "tierSource": "requested",
+        "rateCardVersion": "codex-credits-2026-10-05",
+        "rateCardSha256": "557d283646a6dd8ed49cc32a88e8459a165b72066339be99233ea75146c21edf",
+        "verifiedAt": "2026-10-05",
+        "sources": [
+          "https://learn.chatgpt.com/docs/pricing",
+          "https://learn.chatgpt.com/docs/agent-configuration/speed"
+        ],
+        "ratesPerMillionTokens": {
+          "input": 50,
+          "cachedInput": 5,
+          "output": 250
+        },
+        "speedMultiplier": 2,
+        "reason": "requested_identity_assumption"
+      }
+    },
+    {
+      "callId": "5f3da6d84af2d011e36d88c5e13b6ecafb9fc84e0246a819a54e4b066cf2d1c0",
+      "model": "gpt-6.1-sol",
+      "role": "production",
+      "usage": {
+        "inputTokens": 16263,
+        "outputTokens": 598,
+        "totalTokens": null,
+        "cachedInputTokens": 12416,
+        "cacheWriteTokens": null,
+        "reasoningTokens": 415
+      },
+      "elapsedSeconds": 14.663822541944683,
+      "creditUsage": {
+        "schemaVersion": "codex-credit-usage-v1",
+        "status": "estimated",
+        "estimatedCredits": 0.74578,
+        "actualCredits": null,
+        "actualQuotaUsage": null,
+        "basis": "purchased_credit_equivalent",
+        "model": "gpt-6.1-sol",
+        "modelSource": "requested",
+        "requestedServiceTier": "fast",
+        "appliedServiceTier": "fast",
+        "tierSource": "requested",
+        "rateCardVersion": "codex-credits-2026-10-05",
+        "rateCardSha256": "557d283646a6dd8ed49cc32a88e8459a165b72066339be99233ea75146c21edf",
+        "verifiedAt": "2026-10-05",
+        "sources": [
+          "https://learn.chatgpt.com/docs/pricing",
+          "https://learn.chatgpt.com/docs/agent-configuration/speed"
+        ],
+        "ratesPerMillionTokens": {
+          "input": 50,
+          "cachedInput": 2.5,
+          "output": 250
+        },
+        "speedMultiplier": 2,
+        "reason": "requested_identity_assumption"
+      }
+    },
+    {
+      "callId": "6df73df4b74ef90371337471a10a719a03fccdd1adbadcab0c2b9ab4198871c2",
+      "model": "gpt-6.1-sol",
+      "role": "production",
+      "usage": {
+        "inputTokens": 16252,
+        "outputTokens": 307,
+        "totalTokens": null,
+        "cachedInputTokens": 12416,
+        "cacheWriteTokens": null,
+        "reasoningTokens": 142
+      },
+      "elapsedSeconds": 7.578966249944642,
+      "creditUsage": {
+        "schemaVersion": "codex-credit-usage-v1",
+        "status": "estimated",
+        "estimatedCredits": 0.59918,
+        "actualCredits": null,
+        "actualQuotaUsage": null,
+        "basis": "purchased_credit_equivalent",
+        "model": "gpt-6.1-sol",
+        "modelSource": "requested",
+        "requestedServiceTier": "fast",
+        "appliedServiceTier": "fast",
+        "tierSource": "requested",
+        "rateCardVersion": "codex-credits-2026-10-05",
+        "rateCardSha256": "557d283646a6dd8ed49cc32a88e8459a165b72066339be99233ea75146c21edf",
+        "verifiedAt": "2026-10-05",
+        "sources": [
+          "https://learn.chatgpt.com/docs/pricing",
+          "https://learn.chatgpt.com/docs/agent-configuration/speed"
+        ],
+        "ratesPerMillionTokens": {
+          "input": 50,
+          "cachedInput": 2.5,
+          "output": 250
+        },
+        "speedMultiplier": 2,
+        "reason": "requested_identity_assumption"
+      }
+    },
+    {
+      "callId": "7194a0f4deb056ab4d7f23b3e7adcddc88a3263965b03ff4b1663d132671e760",
+      "model": "gpt-6.1-sol",
+      "role": "production",
+      "usage": {
+        "inputTokens": 16264,
+        "outputTokens": 668,
+        "totalTokens": null,
+        "cachedInputTokens": 12416,
+        "cacheWriteTokens": null,
+        "reasoningTokens": 403
+      },
+      "elapsedSeconds": 14.541393292020075,
+      "creditUsage": {
+        "schemaVersion": "codex-credit-usage-v1",
+        "status": "estimated",
+        "estimatedCredits": 0.78088,
+        "actualCredits": null,
+        "actualQuotaUsage": null,
+        "basis": "purchased_credit_equivalent",
+        "model": "gpt-6.1-sol",
+        "modelSource": "requested",
+        "requestedServiceTier": "fast",
+        "appliedServiceTier": "fast",
+        "tierSource": "requested",
+        "rateCardVersion": "codex-credits-2026-10-05",
+        "rateCardSha256": "557d283646a6dd8ed49cc32a88e8459a165b72066339be99233ea75146c21edf",
+        "verifiedAt": "2026-10-05",
+        "sources": [
+          "https://learn.chatgpt.com/docs/pricing",
+          "https://learn.chatgpt.com/docs/agent-configuration/speed"
+        ],
+        "ratesPerMillionTokens": {
+          "input": 50,
+          "cachedInput": 2.5,
+          "output": 250
+        },
+        "speedMultiplier": 2,
+        "reason": "requested_identity_assumption"
+      }
+    },
+    {
+      "callId": "816b5f0c86c776ae4730366e1e10058855c38662a1469f359330cad5de896101",
+      "model": "gpt-6-sol",
+      "role": "production",
+      "usage": {
+        "inputTokens": 16136,
+        "outputTokens": 583,
+        "totalTokens": null,
+        "cachedInputTokens": 12032,
+        "cacheWriteTokens": null,
+        "reasoningTokens": 310
+      },
+      "elapsedSeconds": 9.935166875016876,
+      "creditUsage": {
+        "schemaVersion": "codex-credit-usage-v1",
+        "status": "estimated",
+        "estimatedCredits": 0.82222,
+        "actualCredits": null,
+        "actualQuotaUsage": null,
+        "basis": "purchased_credit_equivalent",
+        "model": "gpt-6-sol",
+        "modelSource": "requested",
+        "requestedServiceTier": "fast",
+        "appliedServiceTier": "fast",
+        "tierSource": "requested",
+        "rateCardVersion": "codex-credits-2026-10-05",
+        "rateCardSha256": "557d283646a6dd8ed49cc32a88e8459a165b72066339be99233ea75146c21edf",
+        "verifiedAt": "2026-10-05",
+        "sources": [
+          "https://learn.chatgpt.com/docs/pricing",
+          "https://learn.chatgpt.com/docs/agent-configuration/speed"
+        ],
+        "ratesPerMillionTokens": {
+          "input": 50,
+          "cachedInput": 5,
+          "output": 250
+        },
+        "speedMultiplier": 2,
+        "reason": "requested_identity_assumption"
+      }
+    },
+    {
+      "callId": "a0749aac0966d7d6d7c2362bad76ed91f4058798855896f8631e9fa54b4f2a9a",
+      "model": "gpt-6-sol",
+      "role": "production",
+      "usage": {
+        "inputTokens": 16167,
+        "outputTokens": 785,
+        "totalTokens": null,
+        "cachedInputTokens": 12032,
+        "cacheWriteTokens": null,
+        "reasoningTokens": 490
+      },
+      "elapsedSeconds": 12.81807883293368,
+      "creditUsage": {
+        "schemaVersion": "codex-credit-usage-v1",
+        "status": "estimated",
+        "estimatedCredits": 0.92632,
+        "actualCredits": null,
+        "actualQuotaUsage": null,
+        "basis": "purchased_credit_equivalent",
+        "model": "gpt-6-sol",
+        "modelSource": "requested",
+        "requestedServiceTier": "fast",
+        "appliedServiceTier": "fast",
+        "tierSource": "requested",
+        "rateCardVersion": "codex-credits-2026-10-05",
+        "rateCardSha256": "557d283646a6dd8ed49cc32a88e8459a165b72066339be99233ea75146c21edf",
+        "verifiedAt": "2026-10-05",
+        "sources": [
+          "https://learn.chatgpt.com/docs/pricing",
+          "https://learn.chatgpt.com/docs/agent-configuration/speed"
+        ],
+        "ratesPerMillionTokens": {
+          "input": 50,
+          "cachedInput": 5,
+          "output": 250
+        },
+        "speedMultiplier": 2,
+        "reason": "requested_identity_assumption"
+      }
+    },
+    {
+      "callId": "abe7253b618b8cdb53c7958fa5b333e883c55c703bf445d3cff10de24a73cb58",
+      "model": "gpt-6.1-sol",
+      "role": "production",
+      "usage": {
+        "inputTokens": 16220,
+        "outputTokens": 655,
+        "totalTokens": null,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": null,
+        "reasoningTokens": 384
+      },
+      "elapsedSeconds": 14.545589333050884,
+      "creditUsage": {
+        "schemaVersion": "codex-credit-usage-v1",
+        "status": "estimated",
+        "estimatedCredits": 1.9495,
+        "actualCredits": null,
+        "actualQuotaUsage": null,
+        "basis": "purchased_credit_equivalent",
+        "model": "gpt-6.1-sol",
+        "modelSource": "requested",
+        "requestedServiceTier": "fast",
+        "appliedServiceTier": "fast",
+        "tierSource": "requested",
+        "rateCardVersion": "codex-credits-2026-10-05",
+        "rateCardSha256": "557d283646a6dd8ed49cc32a88e8459a165b72066339be99233ea75146c21edf",
+        "verifiedAt": "2026-10-05",
+        "sources": [
+          "https://learn.chatgpt.com/docs/pricing",
+          "https://learn.chatgpt.com/docs/agent-configuration/speed"
+        ],
+        "ratesPerMillionTokens": {
+          "input": 50,
+          "cachedInput": 2.5,
+          "output": 250
+        },
+        "speedMultiplier": 2,
+        "reason": "requested_identity_assumption"
+      }
+    },
+    {
+      "callId": "ad220d80d50234141f7dcccb09b3a6f4568e2198d189c477b3dbe42c6d950d76",
+      "model": "gpt-6.1-sol",
+      "role": "production",
+      "usage": {
+        "inputTokens": 16215,
+        "outputTokens": 278,
+        "totalTokens": null,
+        "cachedInputTokens": 12416,
+        "cacheWriteTokens": null,
+        "reasoningTokens": 127
+      },
+      "elapsedSeconds": 8.038986916071735,
+      "creditUsage": {
+        "schemaVersion": "codex-credit-usage-v1",
+        "status": "estimated",
+        "estimatedCredits": 0.58098,
+        "actualCredits": null,
+        "actualQuotaUsage": null,
+        "basis": "purchased_credit_equivalent",
+        "model": "gpt-6.1-sol",
+        "modelSource": "requested",
+        "requestedServiceTier": "fast",
+        "appliedServiceTier": "fast",
+        "tierSource": "requested",
+        "rateCardVersion": "codex-credits-2026-10-05",
+        "rateCardSha256": "557d283646a6dd8ed49cc32a88e8459a165b72066339be99233ea75146c21edf",
+        "verifiedAt": "2026-10-05",
+        "sources": [
+          "https://learn.chatgpt.com/docs/pricing",
+          "https://learn.chatgpt.com/docs/agent-configuration/speed"
+        ],
+        "ratesPerMillionTokens": {
+          "input": 50,
+          "cachedInput": 2.5,
+          "output": 250
+        },
+        "speedMultiplier": 2,
+        "reason": "requested_identity_assumption"
+      }
+    },
+    {
+      "callId": "bda1f839d867db2ab811f5554daf82dd00616f97a59f9dde7f9627f53d5466b9",
+      "model": "gpt-6-sol",
+      "role": "production",
+      "usage": {
+        "inputTokens": 16086,
+        "outputTokens": 760,
+        "totalTokens": null,
+        "cachedInputTokens": 12032,
+        "cacheWriteTokens": null,
+        "reasoningTokens": 373
+      },
+      "elapsedSeconds": 27.26180470804684,
+      "creditUsage": {
+        "schemaVersion": "codex-credit-usage-v1",
+        "status": "estimated",
+        "estimatedCredits": 0.90572,
+        "actualCredits": null,
+        "actualQuotaUsage": null,
+        "basis": "purchased_credit_equivalent",
+        "model": "gpt-6-sol",
+        "modelSource": "requested",
+        "requestedServiceTier": "fast",
+        "appliedServiceTier": "fast",
+        "tierSource": "requested",
+        "rateCardVersion": "codex-credits-2026-10-05",
+        "rateCardSha256": "557d283646a6dd8ed49cc32a88e8459a165b72066339be99233ea75146c21edf",
+        "verifiedAt": "2026-10-05",
+        "sources": [
+          "https://learn.chatgpt.com/docs/pricing",
+          "https://learn.chatgpt.com/docs/agent-configuration/speed"
+        ],
+        "ratesPerMillionTokens": {
+          "input": 50,
+          "cachedInput": 5,
+          "output": 250
+        },
+        "speedMultiplier": 2,
+        "reason": "requested_identity_assumption"
+      }
+    },
+    {
+      "callId": "c83ce192415f2e5f80ac6bf60112af6042048da8c4ef9f081dcdcaf05afaa96b",
+      "model": "gpt-6.1-sol",
+      "role": "production",
+      "usage": {
+        "inputTokens": 16301,
+        "outputTokens": 427,
+        "totalTokens": null,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": null,
+        "reasoningTokens": 184
+      },
+      "elapsedSeconds": 10.491604957962409,
+      "creditUsage": {
+        "schemaVersion": "codex-credit-usage-v1",
+        "status": "estimated",
+        "estimatedCredits": 1.8436,
+        "actualCredits": null,
+        "actualQuotaUsage": null,
+        "basis": "purchased_credit_equivalent",
+        "model": "gpt-6.1-sol",
+        "modelSource": "requested",
+        "requestedServiceTier": "fast",
+        "appliedServiceTier": "fast",
+        "tierSource": "requested",
+        "rateCardVersion": "codex-credits-2026-10-05",
+        "rateCardSha256": "557d283646a6dd8ed49cc32a88e8459a165b72066339be99233ea75146c21edf",
+        "verifiedAt": "2026-10-05",
+        "sources": [
+          "https://learn.chatgpt.com/docs/pricing",
+          "https://learn.chatgpt.com/docs/agent-configuration/speed"
+        ],
+        "ratesPerMillionTokens": {
+          "input": 50,
+          "cachedInput": 2.5,
+          "output": 250
+        },
+        "speedMultiplier": 2,
+        "reason": "requested_identity_assumption"
+      }
+    },
+    {
+      "callId": "ca4f8b3af694b9d9f7d59fe946c9604eca76af6267d6decbbac103379a4d17fa",
+      "model": "gpt-6.1-sol",
+      "role": "production",
+      "usage": {
+        "inputTokens": 16301,
+        "outputTokens": 725,
+        "totalTokens": null,
+        "cachedInputTokens": 12416,
+        "cacheWriteTokens": null,
+        "reasoningTokens": 492
+      },
+      "elapsedSeconds": 18.573528124950826,
+      "creditUsage": {
+        "schemaVersion": "codex-credit-usage-v1",
+        "status": "estimated",
+        "estimatedCredits": 0.81308,
+        "actualCredits": null,
+        "actualQuotaUsage": null,
+        "basis": "purchased_credit_equivalent",
+        "model": "gpt-6.1-sol",
+        "modelSource": "requested",
+        "requestedServiceTier": "fast",
+        "appliedServiceTier": "fast",
+        "tierSource": "requested",
+        "rateCardVersion": "codex-credits-2026-10-05",
+        "rateCardSha256": "557d283646a6dd8ed49cc32a88e8459a165b72066339be99233ea75146c21edf",
+        "verifiedAt": "2026-10-05",
+        "sources": [
+          "https://learn.chatgpt.com/docs/pricing",
+          "https://learn.chatgpt.com/docs/agent-configuration/speed"
+        ],
+        "ratesPerMillionTokens": {
+          "input": 50,
+          "cachedInput": 2.5,
+          "output": 250
+        },
+        "speedMultiplier": 2,
+        "reason": "requested_identity_assumption"
+      }
+    },
+    {
+      "callId": "cd7513f45dde70541024c8105d2bdd675e40029b60d7ecebafb16830f7db1d5b",
+      "model": "gpt-6-sol",
+      "role": "production",
+      "usage": {
+        "inputTokens": 16253,
+        "outputTokens": 626,
+        "totalTokens": null,
+        "cachedInputTokens": 12032,
+        "cacheWriteTokens": null,
+        "reasoningTokens": 282
+      },
+      "elapsedSeconds": 10.8066295000026,
+      "creditUsage": {
+        "schemaVersion": "codex-credit-usage-v1",
+        "status": "estimated",
+        "estimatedCredits": 0.85542,
+        "actualCredits": null,
+        "actualQuotaUsage": null,
+        "basis": "purchased_credit_equivalent",
+        "model": "gpt-6-sol",
+        "modelSource": "requested",
+        "requestedServiceTier": "fast",
+        "appliedServiceTier": "fast",
+        "tierSource": "requested",
+        "rateCardVersion": "codex-credits-2026-10-05",
+        "rateCardSha256": "557d283646a6dd8ed49cc32a88e8459a165b72066339be99233ea75146c21edf",
+        "verifiedAt": "2026-10-05",
+        "sources": [
+          "https://learn.chatgpt.com/docs/pricing",
+          "https://learn.chatgpt.com/docs/agent-configuration/speed"
+        ],
+        "ratesPerMillionTokens": {
+          "input": 50,
+          "cachedInput": 5,
+          "output": 250
+        },
+        "speedMultiplier": 2,
+        "reason": "requested_identity_assumption"
+      }
+    },
+    {
+      "callId": "d8c984700867d1d2b57b58b3c91802c554f3247eb905b770c1bec80eafbacc1a",
+      "model": "gpt-6-sol",
+      "role": "production",
+      "usage": {
+        "inputTokens": 16246,
+        "outputTokens": 796,
+        "totalTokens": null,
+        "cachedInputTokens": 12032,
+        "cacheWriteTokens": null,
+        "reasoningTokens": 324
+      },
+      "elapsedSeconds": 12.87552775000222,
+      "creditUsage": {
+        "schemaVersion": "codex-credit-usage-v1",
+        "status": "estimated",
+        "estimatedCredits": 0.93972,
+        "actualCredits": null,
+        "actualQuotaUsage": null,
+        "basis": "purchased_credit_equivalent",
+        "model": "gpt-6-sol",
+        "modelSource": "requested",
+        "requestedServiceTier": "fast",
+        "appliedServiceTier": "fast",
+        "tierSource": "requested",
+        "rateCardVersion": "codex-credits-2026-10-05",
+        "rateCardSha256": "557d283646a6dd8ed49cc32a88e8459a165b72066339be99233ea75146c21edf",
+        "verifiedAt": "2026-10-05",
+        "sources": [
+          "https://learn.chatgpt.com/docs/pricing",
+          "https://learn.chatgpt.com/docs/agent-configuration/speed"
+        ],
+        "ratesPerMillionTokens": {
+          "input": 50,
+          "cachedInput": 5,
+          "output": 250
+        },
+        "speedMultiplier": 2,
+        "reason": "requested_identity_assumption"
+      }
+    },
+    {
+      "callId": "e8a4a02fb078a90202f3c5a9f27262b67289705ff18c333900af20beb6d0f843",
+      "model": "gpt-6.1-sol",
+      "role": "production",
+      "usage": {
+        "inputTokens": 16293,
+        "outputTokens": 645,
+        "totalTokens": null,
+        "cachedInputTokens": 12416,
+        "cacheWriteTokens": null,
+        "reasoningTokens": 412
+      },
+      "elapsedSeconds": 13.851350166951306,
+      "creditUsage": {
+        "schemaVersion": "codex-credit-usage-v1",
+        "status": "estimated",
+        "estimatedCredits": 0.77228,
+        "actualCredits": null,
+        "actualQuotaUsage": null,
+        "basis": "purchased_credit_equivalent",
+        "model": "gpt-6.1-sol",
+        "modelSource": "requested",
+        "requestedServiceTier": "fast",
+        "appliedServiceTier": "fast",
+        "tierSource": "requested",
+        "rateCardVersion": "codex-credits-2026-10-05",
+        "rateCardSha256": "557d283646a6dd8ed49cc32a88e8459a165b72066339be99233ea75146c21edf",
+        "verifiedAt": "2026-10-05",
+        "sources": [
+          "https://learn.chatgpt.com/docs/pricing",
+          "https://learn.chatgpt.com/docs/agent-configuration/speed"
+        ],
+        "ratesPerMillionTokens": {
+          "input": 50,
+          "cachedInput": 2.5,
+          "output": 250
+        },
+        "speedMultiplier": 2,
+        "reason": "requested_identity_assumption"
+      }
+    },
+    {
+      "callId": "ed93c222311bb77f24f83088e8540a2d7a2a3444964ae79d8793758e47649c8d",
+      "model": "gpt-6-sol",
+      "role": "production",
+      "usage": {
+        "inputTokens": 16299,
+        "outputTokens": 992,
+        "totalTokens": null,
+        "cachedInputTokens": 12032,
+        "cacheWriteTokens": null,
+        "reasoningTokens": 516
+      },
+      "elapsedSeconds": 17.75374308298342,
+      "creditUsage": {
+        "schemaVersion": "codex-credit-usage-v1",
+        "status": "estimated",
+        "estimatedCredits": 1.04302,
+        "actualCredits": null,
+        "actualQuotaUsage": null,
+        "basis": "purchased_credit_equivalent",
+        "model": "gpt-6-sol",
+        "modelSource": "requested",
+        "requestedServiceTier": "fast",
+        "appliedServiceTier": "fast",
+        "tierSource": "requested",
+        "rateCardVersion": "codex-credits-2026-10-05",
+        "rateCardSha256": "557d283646a6dd8ed49cc32a88e8459a165b72066339be99233ea75146c21edf",
+        "verifiedAt": "2026-10-05",
+        "sources": [
+          "https://learn.chatgpt.com/docs/pricing",
+          "https://learn.chatgpt.com/docs/agent-configuration/speed"
+        ],
+        "ratesPerMillionTokens": {
+          "input": 50,
+          "cachedInput": 5,
+          "output": 250
+        },
+        "speedMultiplier": 2,
+        "reason": "requested_identity_assumption"
+      }
+    },
+    {
+      "callId": "eed264a12d8726343c4bc8782f9e136d8a5b19d2572cedea80786307cc81989b",
+      "model": "gpt-6-sol",
+      "role": "production",
+      "usage": {
+        "inputTokens": 16246,
+        "outputTokens": 885,
+        "totalTokens": null,
+        "cachedInputTokens": 12032,
+        "cacheWriteTokens": null,
+        "reasoningTokens": 446
+      },
+      "elapsedSeconds": 14.59750412509311,
+      "creditUsage": {
+        "schemaVersion": "codex-credit-usage-v1",
+        "status": "estimated",
+        "estimatedCredits": 0.98422,
+        "actualCredits": null,
+        "actualQuotaUsage": null,
+        "basis": "purchased_credit_equivalent",
+        "model": "gpt-6-sol",
+        "modelSource": "requested",
+        "requestedServiceTier": "fast",
+        "appliedServiceTier": "fast",
+        "tierSource": "requested",
+        "rateCardVersion": "codex-credits-2026-10-05",
+        "rateCardSha256": "557d283646a6dd8ed49cc32a88e8459a165b72066339be99233ea75146c21edf",
+        "verifiedAt": "2026-10-05",
+        "sources": [
+          "https://learn.chatgpt.com/docs/pricing",
+          "https://learn.chatgpt.com/docs/agent-configuration/speed"
+        ],
+        "ratesPerMillionTokens": {
+          "input": 50,
+          "cachedInput": 5,
+          "output": 250
+        },
+        "speedMultiplier": 2,
+        "reason": "requested_identity_assumption"
+      }
+    },
+    {
+      "callId": "f550ddee3d958048481e1cb3f6405e0a770465dc53c33532b224bd7bbc9a7e5b",
+      "model": "gpt-6.1-sol",
+      "role": "production",
+      "usage": {
+        "inputTokens": 16270,
+        "outputTokens": 434,
+        "totalTokens": null,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": null,
+        "reasoningTokens": 181
+      },
+      "elapsedSeconds": 11.207495792070404,
+      "creditUsage": {
+        "schemaVersion": "codex-credit-usage-v1",
+        "status": "estimated",
+        "estimatedCredits": 1.844,
+        "actualCredits": null,
+        "actualQuotaUsage": null,
+        "basis": "purchased_credit_equivalent",
+        "model": "gpt-6.1-sol",
+        "modelSource": "requested",
+        "requestedServiceTier": "fast",
+        "appliedServiceTier": "fast",
+        "tierSource": "requested",
+        "rateCardVersion": "codex-credits-2026-10-05",
+        "rateCardSha256": "557d283646a6dd8ed49cc32a88e8459a165b72066339be99233ea75146c21edf",
+        "verifiedAt": "2026-10-05",
+        "sources": [
+          "https://learn.chatgpt.com/docs/pricing",
+          "https://learn.chatgpt.com/docs/agent-configuration/speed"
+        ],
+        "ratesPerMillionTokens": {
+          "input": 50,
+          "cachedInput": 2.5,
+          "output": 250
+        },
+        "speedMultiplier": 2,
+        "reason": "requested_identity_assumption"
+      }
+    },
+    {
+      "callId": "f756eb65fcf5b8985c11d14637fb4702be769c9d449a69db1038c001ed568f8b",
+      "model": "gpt-6-sol",
+      "role": "production",
+      "usage": {
+        "inputTokens": 16212,
+        "outputTokens": 666,
+        "totalTokens": null,
+        "cachedInputTokens": 12032,
+        "cacheWriteTokens": null,
+        "reasoningTokens": 263
+      },
+      "elapsedSeconds": 10.806125291972421,
+      "creditUsage": {
+        "schemaVersion": "codex-credit-usage-v1",
+        "status": "estimated",
+        "estimatedCredits": 0.87132,
+        "actualCredits": null,
+        "actualQuotaUsage": null,
+        "basis": "purchased_credit_equivalent",
+        "model": "gpt-6-sol",
+        "modelSource": "requested",
+        "requestedServiceTier": "fast",
+        "appliedServiceTier": "fast",
+        "tierSource": "requested",
+        "rateCardVersion": "codex-credits-2026-10-05",
+        "rateCardSha256": "557d283646a6dd8ed49cc32a88e8459a165b72066339be99233ea75146c21edf",
+        "verifiedAt": "2026-10-05",
+        "sources": [
+          "https://learn.chatgpt.com/docs/pricing",
+          "https://learn.chatgpt.com/docs/agent-configuration/speed"
+        ],
+        "ratesPerMillionTokens": {
+          "input": 50,
+          "cachedInput": 5,
+          "output": 250
+        },
+        "speedMultiplier": 2,
+        "reason": "requested_identity_assumption"
+      }
+    }
+  ],
+  "projectionArtifact": "artifacts/fixed-180s-sol61-high-fast-retest-20261005/credit-projection-20261005"
+}

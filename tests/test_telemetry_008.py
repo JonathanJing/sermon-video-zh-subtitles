@@ -52,6 +52,8 @@ from scripts import sermon_fresh_diagnostic as entry,sermon_accounting as accoun
 entry.preload_execution_modules()
 before=accounting.execution_identity()
 assert 'scripts/sermon_dispatch_observation.py' in before['loadedProjectCodeSha256']
+for module in ('sermon_model_call_report', 'sermon_model_call_observation', 'sermon_openai_runtime'):
+    assert 'scripts/'+module+'.py' in before['loadedProjectCodeSha256'], module+' not preloaded'
 with profile.session(Path(sys.argv[1])/'actual-profile','cold.zero.call',work_kind='production',evidence_mode='synthetic'):
     with accounting.stage('cold.actual.leaf',depends_on=[]):sum(range(100))
 after=accounting.execution_identity()

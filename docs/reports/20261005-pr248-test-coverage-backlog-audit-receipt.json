@@ -1,0 +1,407 @@
+{
+  "schemaVersion": "pr248-test-backlog-audit-v1",
+  "auditedCodeCommit": "b854992858a0adae7ede326c004eb31f205eb954",
+  "pullRequest": "https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/248",
+  "ciSnapshotCheckedAt": "2026-10-05T19:08:33Z",
+  "newWorkerCliCalls": 0,
+  "newWorkerApiCalls": 0,
+  "newLocalInferenceBatches": 0,
+  "interactiveSupervisorUsageIncluded": false,
+  "humanApprovalCreated": false,
+  "publicationPerformed": false,
+  "p0ImplementationHashesChecked": {
+    "scripts/target_audio_anomaly.py": "0a05b6f1024a5000463558a1f276c13f60c9d1273b4299dd6bc1c4208f05ecbe",
+    "scripts/target_audio_recovery.py": "600853d74764e75a28765b7330af05b37ac06b6aed91212c46d4fb3cd29c158d",
+    "scripts/render_formal_target_language_speech.py": "12d6f6af892fd16f721e973de5347b2e5f444b6ce3702e296eb414da2a5ebdcc",
+    "scripts/production_recovery_plan.py": "6fafc3df5527c996751c50c29b4bf9328d64b36dae33501641e1940cc06a7fa8",
+    "scripts/target_language_rule_preflight.py": "4a97e1964fa2dab8be328848e61e6a455e575c383c10b28bc1f84e04a0f601ea",
+    "scripts/run_target_language_models.py": "1e26f9b581b8db357adeb46c6e40f28f830e91aed69b868915b6542b7646d381",
+    "scripts/produce_target_language_candidate.py": "ff8ad28eaeebd8ba3956ee505e82a4168d1702a263ee22c883271894155d094d",
+    "scripts/canonical_layer2_controller.py": "80430176ebdf721394994da75d3e798d21ff27bc9c2152e0f3281956cc7662ea"
+  },
+  "p0HashMismatches": [],
+  "ciChecks": [
+    {
+      "name": "local-mock",
+      "status": "COMPLETED",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/37357997480/job/111925207052",
+      "startedAt": "2026-10-05T18:42:44Z",
+      "completedAt": "2026-10-05T18:51:39Z"
+    },
+    {
+      "name": "changes",
+      "status": "COMPLETED",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/37357997551/job/111925415752",
+      "startedAt": "2026-10-05T18:43:14Z",
+      "completedAt": "2026-10-05T18:43:24Z"
+    },
+    {
+      "name": "changes",
+      "status": "COMPLETED",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/37357997371/job/111925205191",
+      "startedAt": "2026-10-05T18:42:44Z",
+      "completedAt": "2026-10-05T18:42:52Z"
+    },
+    {
+      "name": "Native and shared client contracts",
+      "status": "COMPLETED",
+      "conclusion": "SKIPPED",
+      "detailsUrl": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/37357997551/job/111925509846",
+      "startedAt": "2026-10-05T18:43:25Z",
+      "completedAt": "2026-10-05T18:43:24Z"
+    },
+    {
+      "name": "fresh-source-mock",
+      "status": "COMPLETED",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/37357997480/job/111925207351",
+      "startedAt": "2026-10-05T18:42:44Z",
+      "completedAt": "2026-10-05T18:45:10Z"
+    },
+    {
+      "name": "contract-validation",
+      "status": "COMPLETED",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/37357997371/job/111925273450",
+      "startedAt": "2026-10-05T18:42:57Z",
+      "completedAt": "2026-10-05T18:44:11Z"
+    },
+    {
+      "name": "test-group (root-0)",
+      "status": "COMPLETED",
+      "conclusion": "FAILURE",
+      "detailsUrl": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/37357997551/job/111925507837",
+      "startedAt": "2026-10-05T18:43:26Z",
+      "completedAt": "2026-10-05T19:02:38Z"
+    },
+    {
+      "name": "ios-validation",
+      "status": "COMPLETED",
+      "conclusion": "SKIPPED",
+      "detailsUrl": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/37357997371/job/111925275807",
+      "startedAt": "2026-10-05T18:42:52Z",
+      "completedAt": "2026-10-05T18:42:52Z"
+    },
+    {
+      "name": "fresh-full-mock (test_actual_full_graph_then_clean_process_receipt_only_repeat)",
+      "status": "COMPLETED",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/37357997480/job/111925207499",
+      "startedAt": "2026-10-05T18:42:44Z",
+      "completedAt": "2026-10-05T18:49:19Z"
+    },
+    {
+      "name": "test-group (root-1)",
+      "status": "COMPLETED",
+      "conclusion": "FAILURE",
+      "detailsUrl": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/37357997551/job/111925507652",
+      "startedAt": "2026-10-05T18:43:27Z",
+      "completedAt": "2026-10-05T19:06:28Z"
+    },
+    {
+      "name": "fresh-full-mock (test_actual_confirmed_failure_explicit_retry_keeps_successful_neighbor)",
+      "status": "COMPLETED",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/37357997480/job/111925207384",
+      "startedAt": "2026-10-05T18:42:45Z",
+      "completedAt": "2026-10-05T18:48:59Z"
+    },
+    {
+      "name": "fresh-full-mock (test_actual_ordinary_timeout_then_original_receipt_reconciliation)",
+      "status": "COMPLETED",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/37357997480/job/111925207496",
+      "startedAt": "2026-10-05T18:42:45Z",
+      "completedAt": "2026-10-05T18:48:40Z"
+    },
+    {
+      "name": "unittest",
+      "status": "COMPLETED",
+      "conclusion": "FAILURE",
+      "detailsUrl": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/37357997551/job/111935239653",
+      "startedAt": "2026-10-05T19:06:46Z",
+      "completedAt": "2026-10-05T19:06:49Z"
+    },
+    {
+      "name": "native-client",
+      "status": "COMPLETED",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/37357997371/job/111925839690",
+      "startedAt": "2026-10-05T18:44:14Z",
+      "completedAt": "2026-10-05T18:44:18Z"
+    }
+  ],
+  "ciFailureScope": {
+    "root0": {
+      "testCount": 2023,
+      "failures": 1,
+      "skipped": 10,
+      "failureTest": "test_captured_prompts_match_actual_production_and_keep_full_context"
+    },
+    "root1": {
+      "testCount": 2136,
+      "errors": 2,
+      "skipped": 12,
+      "errorTests": [
+        "test_new_run_reuses_exact_payloads_with_zero_api_calls",
+        "test_plugin_only_revision_revalidates_plugin_without_new_api"
+      ]
+    }
+  },
+  "p0LocalUniqueTests": 230,
+  "testCountAcrossHistoricalRoundsAdditive": false,
+  "creditComparison": {
+    "rateCardVersion": "codex-credits-2026-10-05",
+    "rateCardSha256": "557d283646a6dd8ed49cc32a88e8459a165b72066339be99233ea75146c21edf",
+    "basis": "purchased_credit_equivalent",
+    "runs": [
+      {
+        "run": "fixed-180s-codex-local-real-20261005",
+        "estimatedCredits": {
+          "reviewer": 12.80174,
+          "translator": 39.6737
+        },
+        "totalCredits": 52.47544,
+        "modelCallCount": 26,
+        "reviewedGroups": 13
+      },
+      {
+        "run": "fixed-180s-sol61-high-fast-retest-20261005",
+        "estimatedCredits": {
+          "reviewer": 11.71826,
+          "translator": 14.32192
+        },
+        "totalCredits": 26.04018,
+        "modelCallCount": 26,
+        "reviewedGroups": 13
+      }
+    ],
+    "creditsSaved": 26.43526,
+    "creditsSavedPercent": 50.37644277017973,
+    "actualCredits": null,
+    "actualQuotaUsage": null,
+    "originalComparisonPath": "artifacts/credit-quality-run-comparison-20261005/summary.json",
+    "originalComparisonSha256": "d6958127326ab63d65da17556abb1b2931545303ecf8490b320f71684270e89b",
+    "checkedSourceFiles": 80,
+    "checkedResponses": 52,
+    "sourceHashes": {
+      "artifacts/fixed-180s-codex-local-real-20261005/cli/_cli_calls/reviewer-12b34e3b79734514a9294eb3edb13b46/response.json": "f442cf393b6d077bd799778c82473d2d91cdd232fc36bec48cde564d4e5ae3ed",
+      "artifacts/fixed-180s-codex-local-real-20261005/cli/_cli_calls/reviewer-253a9ae646224d8ebc4a832b63c40619/response.json": "84fad202f36ba42741bb2fd6526ce20b101c471707e90e1d81a5d0b716fb21c7",
+      "artifacts/fixed-180s-codex-local-real-20261005/cli/_cli_calls/reviewer-297207b0f9fe4b10a506019bcb317716/response.json": "5960d1ea130c035c04bc0b581fb16132ade0b736932a50fe7449391cc05131e9",
+      "artifacts/fixed-180s-codex-local-real-20261005/cli/_cli_calls/reviewer-5541b539f302448c99ba9e29f4673224/response.json": "256d60c7e2b3f1e8a4a59c3152570d96d00eb60ad860ebfd70bb0feeb24a6693",
+      "artifacts/fixed-180s-codex-local-real-20261005/cli/_cli_calls/reviewer-57245dcfc38f4e0cbaddcd39dc2fdcec/response.json": "08eabcc50f1f902fdc01ba74867734e491eeb71d84889020c8c5bef817d283b0",
+      "artifacts/fixed-180s-codex-local-real-20261005/cli/_cli_calls/reviewer-8417e3fc7290412ca0c6f7e1f99a2a97/response.json": "ca4e04d1f5330d08b8ebcdcb4925a013daa431e9adaa4ed4b785f692dd720c1c",
+      "artifacts/fixed-180s-codex-local-real-20261005/cli/_cli_calls/reviewer-8c1db689665843ba9914183a738cfb41/response.json": "294c11cbad1cbd87301de1066a658b21839ea3a5049643e518affbd03cd7ac10",
+      "artifacts/fixed-180s-codex-local-real-20261005/cli/_cli_calls/reviewer-acc6b1c1901945cdb7dd435e174d694f/response.json": "f1dd2a6ae2ac14f545f4e09fb88123fe9751ed0de8d81a9c039d971b60f92266",
+      "artifacts/fixed-180s-codex-local-real-20261005/cli/_cli_calls/reviewer-c1657b212748455386133db383a13bfd/response.json": "7fb0d1bf667461de5c6ce18564a1ee89c6d2ae330e90ec94d80c7947ee2b85d0",
+      "artifacts/fixed-180s-codex-local-real-20261005/cli/_cli_calls/reviewer-c3404e3e86344d39ace33bde4d80cc64/response.json": "638c833ed52f8f0e5c79874a67cef48bb3bd6999909893d1c597f8c5a074c621",
+      "artifacts/fixed-180s-codex-local-real-20261005/cli/_cli_calls/reviewer-cee85bbf0c5049b7a68c3228945fa1a0/response.json": "6d7a2589338d3ee90c8f13e6c84ac9b2fd6a01f4732f2915ea0bdc8d2f3625fa",
+      "artifacts/fixed-180s-codex-local-real-20261005/cli/_cli_calls/reviewer-e6a183c8fffc429c93725b32c7071264/response.json": "3f2c63c02835c41f71264ff389ca104baa55356ab65a99e93d5465c1c6fc35e7",
+      "artifacts/fixed-180s-codex-local-real-20261005/cli/_cli_calls/reviewer-ee274c7673b3410cbb36d72124cf7138/response.json": "2cd056fb4197405df02b870528d03c6c03a93300b03bbea15bfa0a52c151c815",
+      "artifacts/fixed-180s-codex-local-real-20261005/cli/_cli_calls/translator-03057889dbbf45aea7b5fd0d6c632524/response.json": "ad3252e8b6e3171b79c542b58630c5dae03d51813c2a23ac7a3faaed150e6d46",
+      "artifacts/fixed-180s-codex-local-real-20261005/cli/_cli_calls/translator-2856e668ff4b420eac4f35c340311522/response.json": "14b68bff9606af8914ff9c2b866cde49fa26989cc00c321e48092aa92fbd8b7e",
+      "artifacts/fixed-180s-codex-local-real-20261005/cli/_cli_calls/translator-4757af7a0ae2410f9e37ef2b6d27669a/response.json": "b731c757b29983a9bedffe0412f846c033b594012a0c19e26ded03f8918b52d5",
+      "artifacts/fixed-180s-codex-local-real-20261005/cli/_cli_calls/translator-47a11c60c1fd4fb49c47764240fc17df/response.json": "802290fa7ff99249abf0044f5ea56c2e40e4f6fcb980e1e155e59aa90335d9b1",
+      "artifacts/fixed-180s-codex-local-real-20261005/cli/_cli_calls/translator-48a75d5697fc4170bd995a87c2a882e8/response.json": "85803c3e3171bd784dca0e58aa69de6e3c8539dbd6b32942ad84ca6e8991fa62",
+      "artifacts/fixed-180s-codex-local-real-20261005/cli/_cli_calls/translator-9f978bbe705440f084dbe4add4f8b489/response.json": "9beeb13421d97a8bb1f6f7d3783098496e9ff291b39b618f35de26ff5bd97914",
+      "artifacts/fixed-180s-codex-local-real-20261005/cli/_cli_calls/translator-ab4976078f2744d491bf41a0af7a6c50/response.json": "efe32bee7520d6558ea0df7016c6d0a94998de69865d1a128d0ce695efb2243a",
+      "artifacts/fixed-180s-codex-local-real-20261005/cli/_cli_calls/translator-b32735d5728642f9ad59339f4baa38c3/response.json": "967484d3d05d4dd98e5112133bfa3ef59b1c52d5cb4706e267f6ec4ea2bc9c55",
+      "artifacts/fixed-180s-codex-local-real-20261005/cli/_cli_calls/translator-bac145831a9b482bb34e83a3f81cccf4/response.json": "ef34756ab28272a7faf92bf323b931f1bafb1bdf443529c4c1a78394457aa11c",
+      "artifacts/fixed-180s-codex-local-real-20261005/cli/_cli_calls/translator-d523c183ea4d48aeb34505a9d96d2fe8/response.json": "600f75c088bef9787c7652ec1e9b2e606b1b6ef4275fdf66feb80537de3b4d00",
+      "artifacts/fixed-180s-codex-local-real-20261005/cli/_cli_calls/translator-d8bc0fb4f6bd4ddc976bcd877392422a/response.json": "0b04ba26c094ae037a5dc4112cd62013c1aed6e055b0e2a30611cda7143ad7a9",
+      "artifacts/fixed-180s-codex-local-real-20261005/cli/_cli_calls/translator-ddf4234df36c45d0b30580a87baf4370/response.json": "5973c142f826a5c88d715e44d241ad1a3ca0330d755ebfa5b381c4b93fee2903",
+      "artifacts/fixed-180s-codex-local-real-20261005/cli/_cli_calls/translator-fec2d06171154e44902d15852e60dea3/response.json": "545f243328b8632bd11b31aa13a7c4a18b674f6728a107758a46226021183fdd",
+      "artifacts/fixed-180s-codex-local-real-20261005/cli/group-0001-astra.json": "1d3814e3b77c1a29f11ce32524ea8aec74be6f425431872b866e2510edda9cfb",
+      "artifacts/fixed-180s-codex-local-real-20261005/cli/group-0002-astra.json": "bbd4b19bef732d564257bb158f36428de82c24a7471fe047d86f33c8118c3d6b",
+      "artifacts/fixed-180s-codex-local-real-20261005/cli/group-0003-astra.json": "6fa2f023c75a2c3f220fe7dbb9cefcabc41826958f8082c7fa0e496e6fd52cf7",
+      "artifacts/fixed-180s-codex-local-real-20261005/cli/group-0004-astra.json": "b1ddbbd29465d222817d76ca0451b6cc8b8e19b508a7c32fd1feb44b68142914",
+      "artifacts/fixed-180s-codex-local-real-20261005/cli/group-0005-astra.json": "370cbd77b07daefb4ca3b6c3f93921592cbc521282d9c7270e25b90185110f1b",
+      "artifacts/fixed-180s-codex-local-real-20261005/cli/group-0006-astra.json": "18b0dc2c143a51103ee3e17ec06fabc4d9d825641ad5b420a1914baa9d4497af",
+      "artifacts/fixed-180s-codex-local-real-20261005/cli/group-0007-astra.json": "6d94f3914d170f244679c4d4eae9fe4bae0d6fd1083d4da4407551202c7753e4",
+      "artifacts/fixed-180s-codex-local-real-20261005/cli/group-0008-astra.json": "5b11af5c49286ae10f2012d9829680400dd4110678e05da7ce38931a893c93a9",
+      "artifacts/fixed-180s-codex-local-real-20261005/cli/group-0009-astra.json": "0d4901aa697a74a5d5fdad1faf0f056d2bdb884efe954e3de6e13013e634a53b",
+      "artifacts/fixed-180s-codex-local-real-20261005/cli/group-0010-astra.json": "aafa6a13977ad256385e0eaba5d30c9ebb9bca26285778aa2cef234a63130217",
+      "artifacts/fixed-180s-codex-local-real-20261005/cli/group-0011-astra.json": "2279b809da6ef6c303230a5ffede525df565da13c1943b579cd8874b4f973c02",
+      "artifacts/fixed-180s-codex-local-real-20261005/cli/group-0012-astra.json": "cbe0504912d6dacde82c670a768099fa4caecdfe7971b54addd3193ca62b2ed8",
+      "artifacts/fixed-180s-codex-local-real-20261005/cli/group-0013-astra.json": "3e140ce9cff7d7728ac273c261c36b00cb849bf3665c4810a20d7c5a1d15a1a2",
+      "artifacts/fixed-180s-codex-local-real-20261005/cli/evidence.json": "9a8a57b76508c1512f9e728537b0dd258b4d94d3fc03ca597f543ef42a62bc8a",
+      "artifacts/fixed-180s-sol61-high-fast-retest-20261005/cli/_cli_calls/reviewer-0bb2dfeb71ded6920ab3b6a25568dd1935457baf3beb62a4bbdb27c86a59632b/response.json": "b22c5fc52acba1990764cc5db7bd297f13b8d103b916f15d077c4dbd701d8d62",
+      "artifacts/fixed-180s-sol61-high-fast-retest-20261005/cli/_cli_calls/reviewer-2e6084035b45f33138da02359ae5ee6696e90ae474a990f87de51b70e80a18f0/response.json": "20ec667211a9db080e6adfcd40f9a3b29c25f290141d7f1eee79e2db18c0ad6b",
+      "artifacts/fixed-180s-sol61-high-fast-retest-20261005/cli/_cli_calls/reviewer-372addfb7c123088cd2c7d5e1137ca7ba66ac061015c93cc5b5075d9e94f554e/response.json": "45a295c9ca85bc2ddfc6721745b2d91b09b071a348238d84da1d018c3604a54b",
+      "artifacts/fixed-180s-sol61-high-fast-retest-20261005/cli/_cli_calls/reviewer-6922cae31fd1cada736c3105d76995c28faf382144919ebe629bf1d891c2f781/response.json": "1a137b2b62a8788f1d352c8e22df2c93491f17b73b5d078b5cc75038c561e7e9",
+      "artifacts/fixed-180s-sol61-high-fast-retest-20261005/cli/_cli_calls/reviewer-6bc546cb8922c37fe02ceaeb35a7de91cedde18a372207c00bbe853e73f06a77/response.json": "5b31bbd1ea8cb1013381ff255b72afae8e38ca81aca6dd033b7fda3acdf01945",
+      "artifacts/fixed-180s-sol61-high-fast-retest-20261005/cli/_cli_calls/reviewer-7c984356599fe5a108fb56b297d9ecf71d28b58684b39f997c9f97af4b9234ee/response.json": "0ba2a381fb26bfe20b440fa2ebab02ebbc6f154f1b1e421780765bfeb96c256e",
+      "artifacts/fixed-180s-sol61-high-fast-retest-20261005/cli/_cli_calls/reviewer-931048140cfccdf96c481a8a41d19e579ac779a438f5f5414a825ebce4200e95/response.json": "c8c57cf6c22fe016214d6d6cbc7a5c8ecdfed4bad5978a7a04db6d3e3317efde",
+      "artifacts/fixed-180s-sol61-high-fast-retest-20261005/cli/_cli_calls/reviewer-a5598539b76597af31a3b747be67685dda7001775fd2acbabfd5a0329911a238/response.json": "1acfdf0be93d2eb79f72c87687d86baa5faaa11a30e45fe9c5109cacd565f557",
+      "artifacts/fixed-180s-sol61-high-fast-retest-20261005/cli/_cli_calls/reviewer-db9bf5d7bd97694009e9503d108a32e7a9b36741d85828746ec2b265bc95e5b4/response.json": "a3caf618cf1ed0eac811f3d8a1b9f53eced35c5095c0b4ecf2b99bd298271671",
+      "artifacts/fixed-180s-sol61-high-fast-retest-20261005/cli/_cli_calls/reviewer-f13d762d2dfa690ee464705676ce8fbb3631c675bd678363b300a9f631967223/response.json": "07139d37cfcc7cc5178e40c09fe8fe5caf95c70e10d5f3950d352bc5a19db682",
+      "artifacts/fixed-180s-sol61-high-fast-retest-20261005/cli/_cli_calls/reviewer-f400be61d0893fd672ac9f548f1e5ba80e77b2a9c9916a456182845526d96649/response.json": "acadecaa35a4769db2061cf0c03527366878efaea1dcbfa0ff96f17b6a39c20c",
+      "artifacts/fixed-180s-sol61-high-fast-retest-20261005/cli/_cli_calls/reviewer-fcd8df2e8b23db4b93a2706a69446a4202f9853032d1f527a077e2e057736253/response.json": "63c46161fc939609caed9fe88a29407dc3678fe106c1af5b6c36745e09e3c7ab",
+      "artifacts/fixed-180s-sol61-high-fast-retest-20261005/cli/_cli_calls/reviewer-fd5e0e1871fcea0b6aa0797f2690435b17d77071a6d2433b7a826cdf76d30f59/response.json": "785d913eb4a2eda5354dbf4c039e6050664d30ab1265865e65a537de4134b0aa",
+      "artifacts/fixed-180s-sol61-high-fast-retest-20261005/cli/_cli_calls/translator-05d4bc96b4a4f6264d00beee3c8fa8cd198a21b6ccd70efee6082d79df5943f6/response.json": "91d40a17bb21b8003eb2896196b677ccef2f6893f46593053c5fabc4be61a318",
+      "artifacts/fixed-180s-sol61-high-fast-retest-20261005/cli/_cli_calls/translator-0b8ecfd15f657b672f2b5d0c13374b4ae81f16c1071f427a0d08843fb34ac8e9/response.json": "9d383613540c1770e1eb08767885a039e54eabc472906e6b2531450163e548d1",
+      "artifacts/fixed-180s-sol61-high-fast-retest-20261005/cli/_cli_calls/translator-2a8908198b247960b4086a159554d45a9879d86964bc4b01b82a5f2f5ca15887/response.json": "e139d127441de1c675e133f7017d7d8bcbdb9762aed63bb3d1d721d5fea77d04",
+      "artifacts/fixed-180s-sol61-high-fast-retest-20261005/cli/_cli_calls/translator-48c54499c0cc3a5ac2669d330549282a65ee718047c8fa20c8b68d9f40c5a1f6/response.json": "57aba1ea0a1d4544ce8b6b23f0cf5ae771431706abd2f5721b241e16d1a9de92",
+      "artifacts/fixed-180s-sol61-high-fast-retest-20261005/cli/_cli_calls/translator-4c51d0806c9892a0fbbf15f4561ef7abfd154717172295f308b17f8a450b7120/response.json": "367ce7f095f794c880e5eaa40b92ceb3e02ad6e6825a96de2cabadc543ba98d3",
+      "artifacts/fixed-180s-sol61-high-fast-retest-20261005/cli/_cli_calls/translator-58a34b82f12dac948aebcea03185118dde798920aab1808a14d05366193fd112/response.json": "0bca8bda0f8cb204817cefc96f604012b79c8c5a5fcdd8d6c379ed4c49cb0081",
+      "artifacts/fixed-180s-sol61-high-fast-retest-20261005/cli/_cli_calls/translator-6a736b3efa537639e9fed681eb936d5d0148cea5da314f10345bce379334bc69/response.json": "142064381b1f3897e3b170916353d44caa20d50bcfca0dcd2eef75889fe9165a",
+      "artifacts/fixed-180s-sol61-high-fast-retest-20261005/cli/_cli_calls/translator-7d2586a68590c44afb6045f15e0bf0a27b34effa889886c5913f12e487acf70a/response.json": "fc75f447fe5c570f75456024049351b5c7aa5151a95957f9c17b05ab75e93898",
+      "artifacts/fixed-180s-sol61-high-fast-retest-20261005/cli/_cli_calls/translator-a6963b5af42091bef9790b503a690cfb3ad5280138047bae0e3af23e2b59bae8/response.json": "fcf0686be3d0b38ec7c78443eba4a36f3eb132b2642d2951011b322793480bf0",
+      "artifacts/fixed-180s-sol61-high-fast-retest-20261005/cli/_cli_calls/translator-b0681e41434790ab649ec501692bc2903290b4c97d086a50e3e1b15dd7698d94/response.json": "ce1cc0e80f3151c12ba29301a696777055e12ebca428f2197a3d48a80fadda7f",
+      "artifacts/fixed-180s-sol61-high-fast-retest-20261005/cli/_cli_calls/translator-ba50338b25c5e3d208dbb3f09ced4518cc559a31fc4e1e6a19bb564e53b525dd/response.json": "fa34cec39e3fc5bc5b1ceb0bb6d4580c013e006e4c73f4527f49772e238b51fc",
+      "artifacts/fixed-180s-sol61-high-fast-retest-20261005/cli/_cli_calls/translator-dad9f352dce6aa7a3da6fb84ea01afb1ab71f5ffcdac43505c36bb2d55fb5eaf/response.json": "4106ed205276bd7502142f975cccda695d08ea145c571d51fd397ef6d7b3c816",
+      "artifacts/fixed-180s-sol61-high-fast-retest-20261005/cli/_cli_calls/translator-e4a747fb46cd4ca538ded26fa2fcd50f1410416da9b73d991bd61f648d8e0251/response.json": "13270583a6d8c58e37e7af382387ddd7a908e7909b755408f1ee38180a035eea",
+      "artifacts/fixed-180s-sol61-high-fast-retest-20261005/cli/group-0001-astra.json": "d4e2e64674e0d1802ff6a43f36988fe8e71ab734fb5320fbdf4e8429e87cf8ca",
+      "artifacts/fixed-180s-sol61-high-fast-retest-20261005/cli/group-0002-astra.json": "e7c7b88cc8640a12d427e8b66507caf2dcbe6066b5f3104fec216289cfc06125",
+      "artifacts/fixed-180s-sol61-high-fast-retest-20261005/cli/group-0003-astra.json": "22fddfee64d0e952c5ec4a38ec83993216408466b4613d60d46666588cd63d62",
+      "artifacts/fixed-180s-sol61-high-fast-retest-20261005/cli/group-0004-astra.json": "491a204507d81e06a3a5ec92594f848c4f1be8d2a31bf51dd5adf5e135d51f2b",
+      "artifacts/fixed-180s-sol61-high-fast-retest-20261005/cli/group-0005-astra.json": "788a3c85da92d80fb984e6b56cf3ce142ce756d8a39976016af1e71b5200368f",
+      "artifacts/fixed-180s-sol61-high-fast-retest-20261005/cli/group-0006-astra.json": "d856f28968c3c27d7540dc80cdf715bdb11d59745fdbd320eb5a63273ab90528",
+      "artifacts/fixed-180s-sol61-high-fast-retest-20261005/cli/group-0007-astra.json": "5b54a488b86aefdd1b4dd72f0f89a47d76f941a40f6945fa32a029d195abb1fa",
+      "artifacts/fixed-180s-sol61-high-fast-retest-20261005/cli/group-0008-astra.json": "fde178d261c4ef847f120a9ebf9e6841f1fdab855df21e35051f25776d98d38d",
+      "artifacts/fixed-180s-sol61-high-fast-retest-20261005/cli/group-0009-astra.json": "3880fbbc9108de132b3966bd1180e8c68ee0742242ea0e27078615beb0608221",
+      "artifacts/fixed-180s-sol61-high-fast-retest-20261005/cli/group-0010-astra.json": "d359afb0d37dea922f10e8f9516acbe260b6aef4f72fefc0539107acc8442144",
+      "artifacts/fixed-180s-sol61-high-fast-retest-20261005/cli/group-0011-astra.json": "fceb0e8f008c98df1f5cc042c729d301b7d5e35acbcb433993d2517f1fd208da",
+      "artifacts/fixed-180s-sol61-high-fast-retest-20261005/cli/group-0012-astra.json": "f52c9d2e2aeff6780b52fe4136767deb4c31dde3cb82462bbd572da4da29496e",
+      "artifacts/fixed-180s-sol61-high-fast-retest-20261005/cli/group-0013-astra.json": "8717af87aaef6255c025399b36fb4206322f8429a3bd0a974fe734d59ad5e480",
+      "artifacts/fixed-180s-sol61-high-fast-retest-20261005/cli/evidence.json": "9c9b213a0016333fce2260b3d956362d39e4108bb5649e40368fc6f65d9469ba"
+    }
+  },
+  "qualityAssessment": {
+    "scope": "current_assistant_readonly_comparison_of_13_final_groups_against_same_frozen_39_English_units",
+    "blind": false,
+    "independentFreshBlindJudge": false,
+    "overall": "similar_no_clear_major_new_error_identified",
+    "finalG012": "both_final_versions_use_governance_wording",
+    "clearLatestOverallSuperiorityEstablished": false,
+    "sampleHasDirectScriptureQuotation": false,
+    "audioListeningPerformed": false,
+    "timingStillFailed": true
+  },
+  "remainingTestMatrix": [
+    {
+      "test": "T01 新规则在线链",
+      "existingEvidence": "canonical runner/controller/plugin 的 fake 回归；旧片段 simulation 明记 `not_run_legacy_simulation`",
+      "remainingAndPrerequisites": "隔离、版本化入口运行 fresh CLI→同份 modelRules→实际 plugin→candidate；保存 payload/规则/角色/receipt，恢复 0 请求。目前测试入口无 plugin，先接线",
+      "backlogAndPriority": "P0；R242-001/005/011",
+      "acceptance": "not_completed"
+    },
+    {
+      "test": "T02 同步局部修复",
+      "existingEvidence": "留存、声学测量和 recovery planner 已实现；当前 WAV 仍 fail",
+      "remainingAndPrerequisites": "听审/校对 g003/g004 等早期延迟；先判断 L3 或 L2。只修受影响依赖/批窗，成功邻句不覆盖；整轨重新排程、cue、听审，保持原 8 s 门槛",
+      "backlogAndPriority": "P0；R242-004/012/018",
+      "acceptance": "not_completed"
+    },
+    {
+      "test": "T03 474 句 receipt 快路径",
+      "existingEvidence": "`ValidatedJobContext` 已接 formal renderer；小 fake 验证及旧 474 真实缓存存在",
+      "remainingAndPrerequisites": "隔离同 job 旧/快路径，新增推理 0；比较 CPU/I/O/墙钟和所有保护 hash，单列 admission、解码、留存 fsync、组装；坏音频/错 receipt/漂移仍拒绝",
+      "backlogAndPriority": "P0 性能验收；R242-003/017/020",
+      "acceptance": "not_completed"
+    },
+    {
+      "test": "T04 实际 recovery plan 对账",
+      "existingEvidence": "21 项 planner tests，完整批窗求值与缺项提交分列",
+      "remainingAndPrerequisites": "producer 尚未输出 planner 所需完整 expected-intents/settings 快照；先接快照/owner，才可计划→实际批次对账；unknown 不重发/释槽",
+      "backlogAndPriority": "P0；R242-004/010/012",
+      "acceptance": "not_completed"
+    },
+    {
+      "test": "T05 经文／多语质量",
+      "existingEvidence": "中文 13 组 CLI/机器 A/B；当前无直接经文",
+      "remainingAndPrerequisites": "新增 source-bound 完整/部分引文、释义、未口述编号、数字否定、跨组语境；zh/ko/es 具名盲评与固定 rubric/非劣阈值。缺政策/Gold 保持待决",
+      "backlogAndPriority": "P0 周产质量；R242-005/018/023；STE-001/002/006",
+      "acceptance": "not_completed"
+    },
+    {
+      "test": "T06 正式 CLI 及 strict/RQC",
+      "existingEvidence": "默认正式 Astra→Sol API，Sol 6.1 是 simulation override；strict D1–D5 已有显式模块",
+      "remainingAndPrerequisites": "canonical wrapper 保留 CLI 身份/resource/decoder；strict prompt、`response_observer`、只读 reviewer schema 需适配。做无 API fallback、unknown/预算、D6/D7 真实分级及人审，再 rollout",
+      "backlogAndPriority": "P0 正式切换前；R242-011/020；SPD-006",
+      "acceptance": "not_completed"
+    },
+    {
+      "test": "T07 8×8 与故障规模",
+      "existingEvidence": "周日旧 474 生产采用 8×8；本轮真片段 batch2；CI root-0 执行 7 项 Spark fake tests，包括 419 单元",
+      "remainingAndPrerequisites": "当前新增 anomaly 留存 I/O 下实际 8×8 大规模、已确认失败后 full-window replay、成功邻句 hash、24 GiB guard 瞬时内存与 plan 对账；不能用 batch2 代替",
+      "backlogAndPriority": "P1 放大前；R242-012/017/021；SPD-OPT-03",
+      "acceptance": "not_completed"
+    },
+    {
+      "test": "T08 驻留与冷暖",
+      "existingEvidence": "fake session load1/reuse1；真实片段未启 session",
+      "remainingAndPrerequisites": "session 生命周期 GPU permit 未实现，且代码拒绝与 per-job permit 同开；先补许可，再测冷暖/切模型/cleanup/unknown/显存与听审",
+      "backlogAndPriority": "P1；R242-017/021；SPD-OPT-01",
+      "acceptance": "not_completed"
+    },
+    {
+      "test": "T09 跨版本缓存",
+      "existingEvidence": "同 job 真实 CLI/TTS/ASR 恢复 0 调用；部分迁移接口已有",
+      "remainingAndPrerequisites": "CLI 跨 run 仍禁用；L1/ASR 总 hash 变更的精确迁移证明、坏证据负例和实际修改单句对照未完成。ASR cache 仍绑整 speechJob hash",
+      "backlogAndPriority": "P1；R242-002/010/012",
+      "acceptance": "not_completed"
+    },
+    {
+      "test": "T10 长队列／跨主机 DAG",
+      "existingEvidence": "24 路短独立任务成功；host-local broker；100 步真实进程＋mock provider",
+      "remainingAndPrerequisites": "共享 CLI 账号容量/跨主机 lease、公平队列与分区对账未接完；再比较同工作量 16/24 路新译→复核、尾延迟/限流/unknown/质量和总交付。保留单 run 单 locale owner",
+      "backlogAndPriority": "P1，合同先行；R242-009/011/021",
+      "acceptance": "not_completed"
+    },
+    {
+      "test": "T11 计量完整性",
+      "existingEvidence": "逐调用 token/时间/估算 credit 日志与历史投影已实现；实际用量缺失保留 null",
+      "remainingAndPrerequisites": "fresh v2 response→ledger→CSV 对账；接监督原始时间/usage，区分等待与生成；真实 debit 另证。美元 BudgetStore 不能直接当 credit 准入；归档 `/tmp` 测试日志、生成 run 索引",
+      "backlogAndPriority": "P1；R242-016/017/022；COST-001/002",
+      "acceptance": "not_completed"
+    },
+    {
+      "test": "T12 四层与交付",
+      "existingEvidence": "早期 Dev 页面读回，近期组件生成；不是同一 canonical chain",
+      "remainingAndPrerequisites": "新 L2/音频 package、独立文字/听审/大纲/默想收据、release plan join、L4 环境/attempt/资产闭合；再 Dev/Beta HTTP、Web/真机播放/字幕、正式晋级与设备/现场分列",
+      "backlogAndPriority": "P0 完整周产；R242-006/007/013/014/015/020",
+      "acceptance": "not_completed"
+    }
+  ],
+  "sourceEvidenceSha256": {
+    "docs/reports/20261005-dev-merged-180s-rerun.zh.md": "3cfdfe7c5964f5e33e2fc8c0e88ac216ae9493296fab0b4d199b9289838f0cb6",
+    "docs/reports/20261005-codex-cli-layer2-180s.zh.md": "1a378fcd09aa097b5bc9db0198aff6450ca14f766ceae86fb68520c904926b05",
+    "docs/reports/20261005-codex-cli-concurrency-24.zh.md": "7cdffe7ff395064510a9f95c5327318e0914c405f878c8b7958f92c232784227",
+    "docs/reports/20261005-fixed-180s-mock-codex-local-rerun.zh.md": "39f207bc65853a6202d57796a6184a3bc79508b1d747757a14b2ed3998c81199",
+    "docs/reports/20261005-sol61-high-fast-fixed-180s-retest-receipt.json": "69d1c03a76a0980f8d1cd2dd3013563d9d16ffe52dde644110968026ee193b75",
+    "docs/reports/20261005-codex-cli-credit-logging-receipt.json": "358eae2e701f207a7d293b872efa731d3908f1ead0ef527351ff8151921b6d6c",
+    "docs/reports/20261005-production-recovery-p0-development-receipt.json": "17c52cc4db0ce0da51de85cf3eea70d9d1641868daadbe2a2b4f5d1c9752b378",
+    "docs/reports/20261005-sol61-high-fast-translation-ab-receipt.json": "ad366d9298955e1413b6faea28c785e2e476f604932fe58e86b2d8304387087a",
+    "docs/reports/20261005-sunday-layer-rework-analysis.zh.md": "dd23249b45c2b1ab988fd51c3c2181d8e610f4fa63f1e1c5fa91391f594192c8",
+    "config/codex-credit-rates-2026-10-05.json": "557d283646a6dd8ed49cc32a88e8459a165b72066339be99233ea75146c21edf"
+  },
+  "auditRepairVerification": {
+    "status": "pass",
+    "tests": 88,
+    "wallSeconds": 4.492,
+    "modules": {
+      "test_benchmark_layer2_bounded": 12,
+      "test_migrate_target_language_model_cache": 10,
+      "test_target_language_rule_preflight": 25,
+      "test_run_target_language_models": 32,
+      "test_produce_target_language_candidate": 9
+    },
+    "newMigrationNegativeTests": 5,
+    "scope": "fake_provider_and_local_files",
+    "log": "artifacts/pr248-test-audit-20261005/l2-cache-migration.log",
+    "logSha256": "65c3bf07e38691beedaea08e8812464c806e0ded068a7e8c597a5e8a65c43d2f",
+    "newRemoteCiResult": "pending_after_push",
+    "implementationSha256": {
+      "scripts/migrate_target_language_model_cache.py": "2fd38dd78433a564cdc72b9d3b9cf7379cc04558dd3670aaec92775849fb16b2",
+      "tests/test_migrate_target_language_model_cache.py": "c1e90b7e1eac03f75687df3e969a08f93dd886e4d5cdda183e7b92754ddcb606",
+      "tests/test_benchmark_layer2_bounded.py": "415d1ea83a6c765d9141add0b79cfd30531027c52638eaffac95fbbaa62a2c25"
+    },
+    "diffCheck": "pass",
+    "localDocumentationLinksChecked": 195,
+    "missingLocalLinks": []
+  }
+}

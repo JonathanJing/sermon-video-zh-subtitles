@@ -1,0 +1,60 @@
+{
+  "schemaVersion": "sermon-unified-run-manifest-v1",
+  "productionRunId": "mockup-20261005-dev-180s",
+  "runRevision": 1,
+  "jobRoot": "jobroot-mockup-20261005-dev-180s",
+  "content": {
+    "contentId": "content-20260927-180s",
+    "pageId": "mockup-20261005-dev-180s",
+    "category": "diagnostic_clip",
+    "sourceDate": "2026-09-27",
+    "weeklyScheduleDate": null
+  },
+  "source": {
+    "sourceId": "source-20260927-180s",
+    "sourceUrlHash": null,
+    "mediaSha256": "79bada8f2e960adb470a146f183449db433308b53c20d03ea9c7e2e0a66e906b",
+    "durationSeconds": 180.013167,
+    "window": {
+      "startSeconds": 60,
+      "endSeconds": 240,
+      "timeBase": "source_media",
+      "approvalReceiptSha256": null
+    }
+  },
+  "locales": ["zh-Hans", "ko", "es"],
+  "canaryScope": "layer2_machine_candidate",
+  "finalScope": "dual_production_verified",
+  "activeScope": "layer2_machine_candidate",
+  "policies": [
+    {
+      "locale": "zh-Hans",
+      "policySha256": "4444444444444444444444444444444444444444444444444444444444444444",
+      "promptSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+      "pluginSha256": "6666666666666666666666666666666666666666666666666666666666666666"
+    },
+    {
+      "locale": "ko",
+      "policySha256": "4444444444444444444444444444444444444444444444444444444444444444",
+      "promptSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+      "pluginSha256": "7777777777777777777777777777777777777777777777777777777777777777"
+    },
+    {
+      "locale": "es",
+      "policySha256": "4444444444444444444444444444444444444444444444444444444444444444",
+      "promptSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+      "pluginSha256": "8888888888888888888888888888888888888888888888888888888888888888"
+    }
+  ],
+  "budget": {
+    "currency": "USD",
+    "limitMicroUsd": 0,
+    "reservationId": null
+  },
+  "executionAdmission": {
+    "closureSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+    "modules": ["scripts/canonical_layer2_controller.py"]
+  },
+  "transport": "fixture",
+  "fixtureSetId": "dev-180s-20261001"
+}

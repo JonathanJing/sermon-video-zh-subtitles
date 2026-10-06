@@ -8,6 +8,7 @@ import UIKit
 
 @MainActor
 final class AppModel: ObservableObject {
+    private static let formalPlaybackPageID = "2026-09-27-weekend-sermon-drive-530"
     static let productionContentOrigin = URL(string: "https://ai-for-god-sermon-audio.web.app")!
     static var contentOrigin: URL {
         guard let value = Bundle.main.object(forInfoDictionaryKey: "TongxingContentOrigin") as? String,
@@ -65,6 +66,7 @@ final class AppModel: ObservableObject {
         }
     }
     @Published private(set) var publishedCaptionsByID: [String: PublishedTranscriptCue] = [:]
+    @Published private(set) var publishedStudies: ReviewedStudyResources?
     @Published private(set) var bilingualRows: BilingualTranscriptRows?
 
     // A scalar invalidation token keeps view observation independent of cue count.
@@ -338,13 +340,18 @@ final class AppModel: ObservableObject {
                       series: week.series, speaker: week.speaker)
     }
 
+    private func displayEdition(for page: MultilingualPage) -> String? {
+        page.id == Self.formalPlaybackPageID ? "正式播放版" : nil
+    }
+
     func heading(for page: MultilingualPage) -> SermonHeading {
         if let transcript = currentPublishedTranscript, transcript.pageID == page.id,
            transcript.sourceIdentitySha256 == page.sourceIdentitySha256 {
             return SermonHeading(title: displayTitle(transcript.title ?? page.title, for: page),
-                                 series: transcript.series, speaker: transcript.speaker)
+                                 series: transcript.series, speaker: transcript.speaker,
+                                 displayEdition: displayEdition(for: page))
         }
-        return publishedHeadings[publishedHeadingKey(page)] ?? SermonHeading(title: displayTitle(page.title, for: page))
+        return publishedHeadings[publishedHeadingKey(page)] ?? SermonHeading(title: displayTitle(page.title, for: page), displayEdition: displayEdition(for: page))
     }
 
     private func displayTitle(_ title: String?, for page: MultilingualPage) -> String {
@@ -392,7 +399,8 @@ final class AppModel: ObservableObject {
             try Task.checkCancellation()
             guard independentPages.contains(where: { publishedHeadingKey($0) == key }) else { return }
             publishedHeadings[key] = SermonHeading(title: displayTitle(transcript.title ?? page.title, for: page),
-                                                  series: transcript.series, speaker: transcript.speaker)
+                                                  series: transcript.series, speaker: transcript.speaker,
+                                                  displayEdition: displayEdition(for: page))
         } catch {
             // Metadata failure keeps the catalog title/date available, with no invented speaker.
         }
@@ -402,6 +410,7 @@ final class AppModel: ObservableObject {
         let request = UUID()
         transcriptRequest = request
         verifiedTranscriptSelectionKey = nil
+        publishedStudies = nil
         publishedTranscript = nil
         publishedTranscriptError = nil
         isLoadingPublishedTranscript = false
@@ -413,13 +422,16 @@ final class AppModel: ObservableObject {
         do {
             let package = try await multilingualRepository.loadRelease(page: page, locale: locale)
             let transcript = try await multilingualRepository.loadPublishedTranscript(for: package, page: page)
+            let studies = try await multilingualRepository.loadStudies(for: package)
             try Task.checkCancellation()
             guard transcriptRequest == request, publishedTranscriptSelectionKey == key else { return }
             verifiedTranscriptSelectionKey = key
             publishedTranscript = transcript
+            publishedStudies = studies
             if locale == page.defaultTargetLocale {
                 publishedHeadings[publishedHeadingKey(page)] = SermonHeading(
-                    title: displayTitle(transcript.title ?? page.title, for: page), series: transcript.series, speaker: transcript.speaker)
+                    title: displayTitle(transcript.title ?? page.title, for: page), series: transcript.series, speaker: transcript.speaker,
+                    displayEdition: displayEdition(for: page))
             }
             refreshSystemPresentation()
         } catch is CancellationError {
@@ -441,6 +453,7 @@ final class AppModel: ObservableObject {
         selectedAudioLocale = nil
         publishedAudioSha256 = nil
         publishedAudioError = nil
+        publishedStudies = nil
         publishedTranscript = nil
         publishedTranscriptError = nil
         transcriptRequest = UUID()
@@ -621,6 +634,7 @@ final class AppModel: ObservableObject {
         selectedWeek = nil
         selectedTrack = nil
         selectedPageID = page.id
+        publishedStudies = nil
         publishedTranscript = nil
         publishedTranscriptError = nil
         transcriptRequest = UUID()
@@ -714,6 +728,7 @@ final class AppModel: ObservableObject {
         selectedAudioLocale = nil
         publishedAudioSha256 = nil
         publishedAudioError = nil
+        publishedStudies = nil
         publishedTranscript = nil
         transcriptRequest = UUID()
         let nextTrack = track ?? week.tracks.first

@@ -35,13 +35,19 @@ class FormalTTSBatchTests(unittest.TestCase):
 
     def setup_units(self, count=5):
         original = self.context['job']['units'][0]
+        original_group = self.context['candidate']['groups'][0]
         self.context['job']['units'] = []
+        self.context['candidate']['groups'] = []
         for index in range(count):
             unit = copy.deepcopy(original)
             unit['translationGroupId'] = f'batch-{index}'
             unit['outputRelativePath'] = f'languages/ko/audio/unit-{index:04d}.wav'
             self.context['job']['units'].append(unit)
+            group = copy.deepcopy(original_group)
+            group['translationGroupId'] = unit['translationGroupId']
+            self.context['candidate']['groups'].append(group)
         self.paths['job'].write_text(json.dumps(self.context['job']))
+        self.paths['candidate'].write_text(json.dumps(self.context['candidate']))
         BatchEngine.loads, BatchEngine.calls, BatchEngine.failure = 0, [], None
         build = patch.object(tts.integrity, 'build_receipt', return_value={'durationSeconds': .08})
         validate = patch.object(tts.integrity, 'validate_receipt')

@@ -14,7 +14,9 @@ from pathlib import Path
 import re
 import sys
 
-VERSION = "sermon-cost-isolation-v1"
+VERSION = "sermon-cost-isolation-v1"  # Legacy strict per-workload credentials.
+SHARED_VERSION = "sermon-cost-isolation-v2"
+SUPPORTED_VERSIONS = (VERSION, SHARED_VERSION)
 ENVIRONMENTS = ("dev", "prod")
 WORKLOADS = ("transcription", "translation", "reviewer")
 TOKEN_FIELDS = ("inputTokens", "outputTokens", "cachedInputTokens", "cacheWriteTokens", "reasoningTokens")
@@ -109,12 +111,12 @@ def _in_window(day, window):
 
 
 def validate_config(config):
-    """Validate both environments and globally distinct aliases, without keys."""
+    """Validate isolated environments; v2 permits shared workload aliases within one."""
     _object(config, ("schemaVersion", "kind", "environments"))
-    if config["schemaVersion"] != VERSION or config["kind"] != "config":
+    if config["schemaVersion"] not in SUPPORTED_VERSIONS or config["kind"] != "config":
         _fail("unsupported_schema")
     _object(config["environments"], ENVIRONMENTS)
-    projects, aliases = set(), set()
+    projects, aliases = set(), {}
     for environment in ENVIRONMENTS:
         item = config["environments"][environment]
         _object(item, ("projectId", "keyAliases"))
@@ -127,10 +129,10 @@ def validate_config(config):
             alias = _label(item["keyAliases"][workload], nullable=workload == "transcription")
             if alias is None:
                 continue
-            if alias in aliases:
+            if alias in aliases and (config["schemaVersion"] == VERSION or aliases[alias] != environment):
                 _fail("reused_key_alias")
-            aliases.add(alias)
-    return {"schemaVersion": VERSION, "kind": "config_validation", "valid": True,
+            aliases[alias] = environment
+    return {"schemaVersion": config["schemaVersion"], "kind": "config_validation", "valid": True,
             "environments": list(ENVIRONMENTS), "workloads": list(WORKLOADS),
             "credentialValuesRead": False, "providerDispatch": False}
 
@@ -200,7 +202,7 @@ def _attempt(config, value):
 
 def _daily(config, evidence):
     _object(evidence, ("schemaVersion", "kind", "scope", "queryWindow", "paginationComplete", "settlementStatus", "pages"))
-    if evidence["schemaVersion"] != VERSION or evidence["kind"] != "daily_costs":
+    if evidence["schemaVersion"] not in SUPPORTED_VERSIONS or evidence["kind"] != "daily_costs":
         _fail("unsupported_schema")
     if type(evidence["paginationComplete"]) is not bool or not isinstance(evidence["pages"], list):
         _fail("invalid_pagination")
@@ -260,7 +262,7 @@ def _daily(config, evidence):
 def reconcile(config, attempt_evidence, daily_evidence):
     validate_config(config)
     _object(attempt_evidence, ("schemaVersion", "kind", "scope", "queryWindow", "attempts"))
-    if attempt_evidence["schemaVersion"] != VERSION or attempt_evidence["kind"] != "attempts":
+    if attempt_evidence["schemaVersion"] not in SUPPORTED_VERSIONS or attempt_evidence["kind"] != "attempts":
         _fail("unsupported_schema")
     if not isinstance(attempt_evidence["attempts"], list):
         _fail("invalid_attempts")
@@ -283,13 +285,16 @@ def reconcile(config, attempt_evidence, daily_evidence):
             if request_id in request_ids:
                 _fail("duplicate_provider_request")
             request_ids.add(request_id)
-    # An observed API key ID must never be reused across environments or roles.
+    # Observed key IDs bind to an environment and credential route. v2 permits
+    # roles sharing the same configured alias, even when observed alias is null.
     bindings = {}
     for attempt in attempts:
         key = attempt["apiKeyId"]
         if key is None:
             continue
-        binding = (attempt["environment"], attempt["workload"])
+        credential_route = (config["environments"][attempt["environment"]]["keyAliases"][attempt["workload"]]
+                            if config["schemaVersion"] == SHARED_VERSION else attempt["workload"])
+        binding = (attempt["environment"], credential_route)
         if key in bindings and bindings[key] != binding:
             _fail("reused_api_key_id")
         bindings[key] = binding
@@ -349,7 +354,7 @@ def reconcile(config, attempt_evidence, daily_evidence):
                                 "unattributedAttempts": unattributed, "unattributedActualBucketCount": unattributed_actual,
                                 "keyCoverageMatches": key_coverage_matches,
                                 "comparisonCompleteness": "complete" if complete else "partial"})
-    return {"schemaVersion": VERSION, "kind": "reconciliation", "providerDispatch": False,
+    return {"schemaVersion": config["schemaVersion"], "kind": "reconciliation", "providerDispatch": False,
             "credentialValuesRead": False, "attempts": attempts, "dailyActualBuckets": buckets,
             "queryWindow": dict(attempt_evidence["queryWindow"]), "attemptScope": attempt_evidence["scope"],
             "costScope": daily_evidence["scope"], "estimateScope": "openai_attempts", "dailyComparisons": comparisons,

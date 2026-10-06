@@ -23,7 +23,10 @@ public struct VerifiedPublishedTranscript: Sendable, Equatable {
     public let summary: String?
     public let outline: [OutlineSection]
     public let questions: [String]
+    /// Duration of the source-video timeline used by the full reading text.
     public let durationSeconds: Double
+    /// Duration of the target-language audio timeline used by spoken captions.
+    public let audioDurationSeconds: Double
     public let contentStatus: String
     public let releaseStatus: String
     public let fullText: [PublishedTranscriptCue]
@@ -35,18 +38,19 @@ public struct VerifiedPublishedTranscript: Sendable, Equatable {
                               package: TargetLanguageReleasePackage, page: MultilingualPage,
                               allowDevCandidate: Bool = false) throws -> Self {
         try package.validate(allowDevCandidate: allowDevCandidate)
-        guard package.schemaVersion == TargetLanguageReleasePackage.dualScriptSchemaVersion,
+        guard [TargetLanguageReleasePackage.dualScriptSchemaVersion, TargetLanguageReleasePackage.fourProductSchemaVersion].contains(package.schemaVersion),
               package.pageId == page.id, let target = page.targets[package.targetLocale],
               package.contentStatus == target.contentStatus, package.audioStatus == target.audioStatus else {
             throw CatalogError.invalid("文稿与发布语言不符")
         }
         let source = try JSONDecoder().decode(FullContent.self, from: content)
         let spoken = try JSONDecoder().decode(CaptionContent.self, from: captions)
-        let candidate = allowDevCandidate && package.status == "candidate"
+        let candidate = allowDevCandidate && package.status == "candidate" &&
+            package.schemaVersion != TargetLanguageReleasePackage.fourProductSchemaVersion
         let validContentSchema = candidate
             ? (source.schemaVersion == "sermon-formal-dev-content-v1" ||
                (package.contentStatus == "machine_reviewed" && source.schemaVersion == "sermon-dev-podcast-candidate-content-v2"))
-            : source.schemaVersion == "sermon-full-video-text-content-v1"
+            : ["sermon-full-video-text-content-v1", "sermon-full-video-text-content-v2"].contains(source.schemaVersion)
         guard validContentSchema,
               source.pageId == page.id, source.sourceLocale == "en",
               (candidate ? source.locale : source.targetLocale) == package.targetLocale,
@@ -61,6 +65,28 @@ public struct VerifiedPublishedTranscript: Sendable, Equatable {
               source.durationSeconds <= 24 * 60 * 60, !source.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             throw CatalogError.invalid("完整文稿来源绑定无效")
         }
+        guard source.schemaVersion != "sermon-full-video-text-content-v2" || source.audioDurationSeconds != nil else {
+            throw CatalogError.invalid("新版文稿缺少音轨时长")
+        }
+        if source.schemaVersion == "sermon-full-video-text-content-v2" {
+            guard source.reviewMode == "formal" || source.reviewMode == "simulation" else {
+                throw CatalogError.invalid("新版文稿审核模式无效")
+            }
+            if source.reviewMode == "simulation" {
+                guard allowDevCandidate, page.simulationOnly == true, page.diagnosticOnly == true,
+                      target.simulationOnly == true, target.diagnosticOnly == true else {
+                    throw CatalogError.invalid("模拟审核文稿仅允许显式开发测试页面")
+                }
+            } else {
+                guard page.simulationOnly != true, target.simulationOnly != true else {
+                    throw CatalogError.invalid("模拟测试页面不能声明正式审核文稿")
+                }
+            }
+        }
+        let audioDuration = source.audioDurationSeconds ?? source.durationSeconds
+        guard audioDuration.isFinite, audioDuration > 0, audioDuration <= 24 * 60 * 60 else {
+            throw CatalogError.invalid("音轨时长无效")
+        }
         if candidate {
             guard spoken.schemaVersion == "sermon-target-language-captions-v1", spoken.pageId == page.id,
                   spoken.locale == package.targetLocale,
@@ -70,7 +96,7 @@ public struct VerifiedPublishedTranscript: Sendable, Equatable {
             }
         }
         try validateCues(source.cues, duration: source.durationSeconds, requiresSourceUnits: true)
-        try validateCues(spoken.cues, duration: source.durationSeconds, requiresSourceUnits: false)
+        try validateCues(spoken.cues, duration: audioDuration, requiresSourceUnits: false)
         guard source.cues.count == spoken.cues.count,
               Set(source.cues.map(\.textGroupId)) == Set(spoken.cues.map(\.textGroupId)) else {
             throw CatalogError.invalid("口播字幕与全文组不符")
@@ -98,7 +124,7 @@ public struct VerifiedPublishedTranscript: Sendable, Equatable {
                      scripture: source.scripture,
                      summary: reviewed ? nonempty(source.summary) : nil, outline: outline,
                      questions: reviewed ? (source.questions ?? []).filter { nonempty($0) != nil } : [],
-                     durationSeconds: source.durationSeconds, contentStatus: package.contentStatus,
+                     durationSeconds: source.durationSeconds, audioDurationSeconds: audioDuration, contentStatus: package.contentStatus,
                      releaseStatus: package.status, fullText: source.cues.map(convert),
                      captions: spoken.cues.map(convert))
     }
@@ -127,6 +153,8 @@ private struct FullContent: Decodable {
     let targetLanguageCandidateJsonSha256: String
     let sourceMediaSha256: String?
     let durationSeconds: Double
+    let audioDurationSeconds: Double?
+    let reviewMode: String?
     let title: String
     let series: String?
     let speaker: String?
@@ -135,6 +163,44 @@ private struct FullContent: Decodable {
     let outline: [PublishedStudyOutline]?
     let questions: [String]?
     let cues: [RawCue]
+
+    private enum CodingKeys: String, CodingKey {
+        case schemaVersion, pageId, sourceLocale, targetLocale, locale, status, contentStatus, audioStatus, date
+        case targetLanguageAudioPackageJsonSha256, englishSourcePackageJsonSha256, targetLanguageCandidateJsonSha256
+        case sourceMediaSha256, durationSeconds, audioDurationSeconds, reviewMode, title, series, speaker, cues
+        case scripture, summary, outline, questions
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        schemaVersion = try c.decode(String.self, forKey: .schemaVersion)
+        pageId = try c.decode(String.self, forKey: .pageId)
+        sourceLocale = try c.decode(String.self, forKey: .sourceLocale)
+        targetLocale = try c.decodeIfPresent(String.self, forKey: .targetLocale)
+        locale = try c.decodeIfPresent(String.self, forKey: .locale)
+        status = try c.decodeIfPresent(String.self, forKey: .status)
+        contentStatus = try c.decodeIfPresent(String.self, forKey: .contentStatus)
+        audioStatus = try c.decodeIfPresent(String.self, forKey: .audioStatus)
+        date = try c.decodeIfPresent(String.self, forKey: .date)
+        targetLanguageAudioPackageJsonSha256 = try c.decodeIfPresent(String.self, forKey: .targetLanguageAudioPackageJsonSha256)
+        englishSourcePackageJsonSha256 = try c.decode(String.self, forKey: .englishSourcePackageJsonSha256)
+        targetLanguageCandidateJsonSha256 = try c.decode(String.self, forKey: .targetLanguageCandidateJsonSha256)
+        sourceMediaSha256 = try c.decodeIfPresent(String.self, forKey: .sourceMediaSha256)
+        durationSeconds = try c.decode(Double.self, forKey: .durationSeconds)
+        // Only an absent legacy field may fall back. Explicit null or a wrong
+        // type must not silently remove a declared audio clock.
+        audioDurationSeconds = c.contains(.audioDurationSeconds)
+            ? try c.decode(Double.self, forKey: .audioDurationSeconds) : nil
+        reviewMode = try c.decodeIfPresent(String.self, forKey: .reviewMode)
+        title = try c.decode(String.self, forKey: .title)
+        series = try c.decodeIfPresent(String.self, forKey: .series)
+        speaker = try c.decodeIfPresent(String.self, forKey: .speaker)
+        scripture = try c.decodeIfPresent(String.self, forKey: .scripture)
+        summary = try c.decodeIfPresent(String.self, forKey: .summary)
+        outline = try c.decodeIfPresent([PublishedStudyOutline].self, forKey: .outline)
+        questions = try c.decodeIfPresent([String].self, forKey: .questions)
+        cues = try c.decode([RawCue].self, forKey: .cues)
+    }
 }
 
 /// Published full-video outlines use strings; Dev uses title/body objects and

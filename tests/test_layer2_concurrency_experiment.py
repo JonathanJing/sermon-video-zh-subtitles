@@ -36,11 +36,12 @@ class Layer2ConcurrencyTests(unittest.TestCase):
             self.calls.append((data["translationGroupId"], payload["model"]))
         group = next(g for g in self.f.evidence["groups"] if g["sourceUnitIds"] == data["sourceUnitIds"])
         keys = ["sourceUnitIds", "targetUtterances", "coverage"]
-        if payload["model"] == "gpt-6-sol":
+        role = 'reviewer' if payload['reasoning_effort'] == self.policy['reviewer']['reasoningEffort'] else 'translator'
+        if role == 'reviewer':
             keys.append("semanticReview")
         result = {k: copy.deepcopy(group[k]) for k in keys}
         result["translationGroupId"] = data["translationGroupId"]
-        return {"id": data["translationGroupId"] + payload["model"], "model": payload["model"],
+        return {"id": data["translationGroupId"] + role, "model": payload["model"],
                 "choices": [{"finish_reason": "stop", "message": {"content": json.dumps(result)}}]}
 
     def test_three_worker_bound_reverse_completion_and_invalid_budgets(self):
@@ -61,7 +62,7 @@ class Layer2ConcurrencyTests(unittest.TestCase):
         self.assertEqual(list(range(9)), runner.ordered_group_results(list(range(9)), worker, 3))
         self.assertEqual(peak, 3)
         for budget in (0, -1, 25, True, 1.5):
-            with self.subTest(budget=budget), self.assertRaisesRegex(ValueError, "1..16"):
+            with self.subTest(budget=budget), self.assertRaisesRegex(ValueError, "Group workers exceed versioned capacity"):
                 runner.ordered_group_results([], lambda _: self.fail("invalid budget started work"), budget)
 
     def test_standalone_runner_keeps_legacy_three_worker_ceiling(self):
@@ -106,7 +107,7 @@ class Layer2ConcurrencyTests(unittest.TestCase):
         failed_id = plan[0]["translationGroupId"]
         def fail_review(key, payload):
             answer = self.response(key, payload)
-            if payload["model"] == "gpt-6-sol" and json.loads(payload["messages"][1]["content"])["translationGroupId"] == failed_id:
+            if payload['reasoning_effort'] == self.policy['reviewer']['reasoningEffort'] and json.loads(payload["messages"][1]["content"])["translationGroupId"] == failed_id:
                 deadline = time.monotonic() + 5
                 while not (self.out / "group-0002-sol.json").exists() and time.monotonic() < deadline:
                     time.sleep(.005)
@@ -130,7 +131,7 @@ class Layer2ConcurrencyTests(unittest.TestCase):
         repaired = self.out.parent / "repaired"
         evidence = runner.run(self.f.source, self.f.anchor, self.policy, repaired,
             "fixture-key", self.response, reuse_from=self.out, partial_repair_brief=brief)
-        self.assertEqual(self.calls, [(failed_id, "gpt-6-astra"), (failed_id, "gpt-6-sol")])
+        self.assertEqual(self.calls, [(failed_id, self.policy['translator']['model']), (failed_id, self.policy['reviewer']['model'])])
         self.assertEqual([g["translationGroupId"] for g in evidence["groups"]], [g["translationGroupId"] for g in plan])
         for role, data in successful.items():
             self.assertEqual((repaired / f"group-0002-{role}.json").read_bytes(), data)
@@ -168,7 +169,7 @@ class Layer2ConcurrencyTests(unittest.TestCase):
     def test_parallel_accounting_keeps_group_dependencies_and_source_order(self):
         barrier = threading.Barrier(2)
         def overlap(key, payload):
-            if payload["model"] == "gpt-6-astra":
+            if payload['reasoning_effort'] == self.policy['translator']['reasoningEffort']:
                 barrier.wait(timeout=3)
             return self.response(key, payload)
         with accounting.accounting_session(self.out / "accounting", "layer2_models"):

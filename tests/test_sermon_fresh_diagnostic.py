@@ -160,6 +160,8 @@ class FreshPreloadTests(unittest.TestCase):
                 frozen = entry.preload_execution_modules([
                     repository / 'scripts/language_review_plugins/diagnostic_structural.py'])
                 assert 'scripts/sermon_workflow_evidence.py' in frozen['loadedProjectCodeSha256']
+                for module in ('sermon_model_call_report', 'sermon_model_call_observation', 'sermon_openai_runtime'):
+                    assert 'scripts/' + module + '.py' in frozen['loadedProjectCodeSha256'], module + ' not preloaded'
                 with profile.session(directory, 'fresh-preload-regression',
                                      work_kind='engineering', evidence_mode='synthetic'):
                     assert accounting.execution_identity() == frozen, 'identity changed at session start'

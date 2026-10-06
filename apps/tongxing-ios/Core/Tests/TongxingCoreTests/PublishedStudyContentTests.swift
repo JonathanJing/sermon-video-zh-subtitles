@@ -49,6 +49,17 @@ struct PublishedStudyContentTests {
         #expect(old.outline.isEmpty && old.questions.isEmpty)
     }
 
+    @Test func reviewedStudyFieldsKeepIndependentSourceAndAudioClocks() throws {
+        let result = try decode(fields: ["audioDurationSeconds": 12,
+            "summary": "Reviewed summary", "outline": ["Reviewed point"],
+            "questions": ["Reviewed question"]])
+        #expect(result.durationSeconds == 10)
+        #expect(result.audioDurationSeconds == 12)
+        #expect(result.summary == "Reviewed summary")
+        #expect(result.outline == [.init(title: "Reviewed point", points: [])])
+        #expect(result.questions == ["Reviewed question"])
+    }
+
     @Test func machineReviewedCandidateDoesNotExposeStudyMaterialAsReviewed() throws {
         let result = try decode(locale: "ko", fields: ["summary": "Unreviewed foreign language summary", "outline": ["Unreviewed point"], "questions": ["Unreviewed question"]])
         #expect(result.contentStatus == "machine_reviewed")

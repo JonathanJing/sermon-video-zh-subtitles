@@ -801,6 +801,10 @@ struct ContentView: View {
             DisclosureGroup(localization.text("完整文稿 · 英文对照")) {
                 publishedRows(transcript.fullText, prefix: "published-full")
             }.accessibilityIdentifier("published-full-transcript")
+            if let studies = model.publishedStudies {
+                reviewedStudySection(studies.outline, title: model.selectedContentLocale == "ko" ? "설교 개요" : model.selectedContentLocale == "es" ? "Bosquejo" : "讲道大纲", kind: "outline")
+                reviewedStudySection(studies.meditation, title: model.selectedContentLocale == "ko" ? "묵상" : model.selectedContentLocale == "es" ? "Meditación" : "默想", kind: "meditation")
+            }
             englishLocateEntry
             if model.alignmentAvailable || model.alignmentBusy || model.hasAlignmentFeedback {
                 Text(localization.text(model.alignmentDisplayStatus, ["time": model.alignmentPosition.map(PlaybackTime.format) ?? ""]))
@@ -808,6 +812,23 @@ struct ContentView: View {
                     .accessibilityIdentifier("alignment-status")
             }
         }
+    }
+
+    private func reviewedStudySection(_ artifact: ReviewedStudyArtifact, title: String, kind: String) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            sourceText(title, language: model.selectedContentLocale).font(.headline)
+            ForEach(Array(artifact.sections.enumerated()), id: \.offset) { index, section in
+                VStack(alignment: .leading, spacing: 8) {
+                    sourceText(section.title, language: model.selectedContentLocale).font(.headline)
+                    sourceText(section.body, language: model.selectedContentLocale)
+                        .font(.system(size: readingSize)).lineSpacing(6)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("published-study-\(kind)-body-\(index)")
+                }
+            }
+        }.frame(maxWidth: .infinity, alignment: .leading)
+            .padding(16).background(Brand.surface, in: RoundedRectangle(cornerRadius: 24))
+            .accessibilityIdentifier("published-study-\(kind)")
     }
 
     @ViewBuilder private var locateConfirmationView: some View {

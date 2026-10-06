@@ -56,6 +56,18 @@ class NativeCostImportTests(unittest.TestCase):
         self.assertFalse(result["invoiceVerified"])
         self.assertFalse(result["providerDispatch"])
 
+    def test_v2_config_import_and_reconciliation_preserve_version(self):
+        source = config()
+        source["schemaVersion"] = costs.SHARED_VERSION
+        for env in costs.ENVIRONMENTS:
+            source["environments"][env]["keyAliases"] = dict.fromkeys(costs.WORKLOADS, env + "_runtime")
+        normalized = importer.normalize(source, export(page(day(0, row(key="key_id_dev")), day(1))))
+        self.assertEqual(normalized["schemaVersion"], costs.SHARED_VERSION)
+        result = costs.reconcile(source, attempts(attempt(keyAlias="dev_runtime")), normalized)
+        schema = json.loads(Path("schemas/sermon-cost-isolation-v2.schema.json").read_text())
+        for value in (normalized, result):
+            Draft202012Validator(schema).validate(value)
+
     def test_two_pages_and_partial_chain(self):
         value = export(page(day(0, row()), next_cursor="opaque+/=cursor"),
                        page(day(1, row()), cursor="opaque+/=cursor"))

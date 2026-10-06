@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-formal-dev-metadata-approval-v2.schema.json",
+  "title": "Human approval of display metadata for an explicit locale subset",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "pageId", "date", "proposalFileSha256", "decision", "approvalText", "reviewer", "recordedAt", "approvedLocales", "locales"],
+  "properties": {
+    "schemaVersion": {"const": "sermon-formal-dev-metadata-approval-v2"},
+    "pageId": {"type": "string", "minLength": 1},
+    "date": {"type": "string", "format": "date"},
+    "proposalFileSha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "decision": {"const": "approved_selected_locales"},
+    "approvalText": {"const": "所列语言页面信息已批准"},
+    "reviewer": {"const": "user"},
+    "recordedAt": {"type": "string", "format": "date-time"},
+    "approvedLocales": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["zh-Hans", "ko", "es"]}},
+    "locales": {"type": "object", "minProperties": 1, "propertyNames": {"enum": ["zh-Hans", "ko", "es"]}, "additionalProperties": {"$ref": "#/$defs/fields"}}
+  },
+  "$defs": {
+    "fields": {"type": "object", "additionalProperties": false, "required": ["series", "title", "speaker", "scripture", "summary", "outline"], "properties": {"series": {"type": "string", "minLength": 1}, "title": {"type": "string", "minLength": 1}, "speaker": {"type": "string", "minLength": 1}, "scripture": {"type": "string", "minLength": 1}, "summary": {"type": "string", "minLength": 1}, "outline": {"type": "array", "items": {"type": "string", "minLength": 1}}}}
+  }
+}

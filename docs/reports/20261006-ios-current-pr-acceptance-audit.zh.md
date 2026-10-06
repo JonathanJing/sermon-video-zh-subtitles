@@ -30,10 +30,20 @@ GitHub reviewThreads新鲜读取：246存在上述未解决thread；247、249、
 - 修复246遗留分发身份碰撞：首次upload遇到Apple已有同版本/Build必须失败；只有同IPA、归档哈希、源码与App身份的既有upload attempt才允许显式retry对账。清除继承的绕过环境变量；wait/distribute也校验既有绑定attempt，单纯preflight不算上传证据。已分发Beta56不变；新守卫属于源码工具修复，不在已冻结IPA中。
 - 补齐255新加的定位忙碌状态及展开/收起操作提示的en/ko/es/vi翻译，避免非中文VoiceOver回退中文；3个key×4语种及占位符一致性检查通过。该资源修复尚未进入已分发Beta56；真实播报与焦点仍待验收。
 - 本机离线单元验证：`python3 -m unittest tests.test_ios_testflight_release tests.test_xcode_cloud_archive_admission`：27通过、0跳过；覆盖真实Ruby lane的已占号拒绝/合法对账、不同IPA/归档/源码拒绝，以及wrapper环境变量清理/绑定重试。`ruby -c apps/tongxing-ios/fastlane/Fastfile`、Python语法与`git diff --check`通过。所有Apple/fastlane动作由fake替代，未调用外部上传。
-- 本机没有完整Xcode；CommandLineTools的Swift/SDK版本不匹配，Core manifest编译失败，未执行Core测试，不计通过。本轮未运行模拟器或Accessibility Inspector。保留本地日志 `../evidence/core.log`，不能用旧Xcode receipt声称本轮构建成功。
+- 本机没有完整Xcode。默认CLT执行先因缓存目录权限失败并伴随SDK诊断；改用任务内隔离module cache后Core源码可编译，`swift build --disable-sandbox --package-path apps/tongxing-ios/Core`通过。完整Core测试编译仍因CLT缺少TestingMacros插件失败，未执行测试，不计通过；日志保留于 `../evidence/merged-core-build.log` / `merged-core-final.log`。AppModel仅本机语法parse通过，不冒充iOS类型检查。本轮没有本机模拟器或Accessibility Inspector证据。
 
 ## CI实际执行边界
 
 已读取job和step，而非只看绿色汇总。251/252/253对应Tongxing iOS runs [37418025990](https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/37418025990)、[37424537468](https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/37424537468)、[37425922394](https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/37425922394) 的 `contract-validation` 和 `ios-validation` 全部 skipped；只有变化检测及required汇总执行。246/247/249/254/255当前无status checks，堆叠分支目标不在workflow触发范围。244的contract-validation运行，但ios-validation跳过。绿色native-client不等于构建、播放器或UI测试通过。
 
 集成PR为Draft，现行workflow会跳过原生检查；为本次精确head另行dispatch现有Tongxing iOS workflow，用job/step终态报告结果。CI结果与最终remoteSHA记录在PR，若托管工具链/权限阻塞，明确保留阻塞；不改workflow规则、不把skip算通过。现场和真机所有未执行项保持not_run。
+
+## dev冲突补修（同日后续）
+
+push前核对工作分支远端仍为本任务head `19e6ba532cbfb5e63cf4ae9e6133a30f62cc610b`，无新增并行写入；dev仍为上述 `1e0959bd`。按主会话明确授权将dev合入本工作分支，未把PR合入dev。仅AppModel与PublishedTranscript有文本冲突，逐段保留两侧语义：
+
+- AppModel：保留当前验证的transcript selection key、同一音轨系统字幕/标题、前台反馈、后台assertion；加入dev的独立审核study加载/切篇清理与正式播放版edition。标题fallback与edition同时生效，异步结果仍通过request和selection key守卫。
+- PublishedTranscript：保留reviewed summary/outline/questions与独立source/audio时钟、reviewMode与v3合同；custom decoder补齐可选学习字段CodingKeys/初始化，避免自动合并遗漏导致不能编译。
+- 新增两条Core回归：reviewed study与独立音频时钟并存、来源ID标题fallback仍保留正式edition；现有study格式/错误身份、时钟合同、标题、Storage、播放器及UI回归由最终head检查覆盖。
+
+合入dev带来既有祖先提交，未在本任务改写生产模型/成本/权限实现；最终PR相对dev的改动限定于iOS和对应测试/文档。Beta56分发源码仍是原冻结8c71c02，本次后续源码候选（分发身份守卫、四语文案、dev语义合并）未打包或上传；不能用Beta56真机结果证明后续源码候选已验收。原head的CI分别保留，最终SHA与终态在PR回填。

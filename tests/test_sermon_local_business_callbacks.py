@@ -73,7 +73,7 @@ class SpeechTests(ScopeFixture):
     def setUp(self):
         super().setUp()
         self.f = speech_fixtures.PreparationTests()
-        self.f.setUp(); self.addCleanup(self.f.doCleanups)
+        self.addCleanup(self.f.doCleanups); self.f.setUp()
 
     def prepare(self):
         return subject.prepare_speech(self.f.f.boundary, self.f.intent,
@@ -133,7 +133,7 @@ class PreflightTests(ScopeFixture):
     def setUp(self):
         super().setUp()
         self.f = delivery_fixtures.StrictDeliveryBindingTests()
-        self.f.setUp(); self.addCleanup(self.f.doCleanups)
+        self.addCleanup(self.f.doCleanups); self.f.setUp()
 
     def preflight(self, **kwargs):
         return subject.delivery_preflight(self.f.manifest, self.f.plan,
@@ -177,7 +177,7 @@ class RenderTests(ScopeFixture):
             fixture.adapter_path.write_text(json.dumps(fixture.adapter))
         with patch.object(voice_fixtures.TargetLanguageSpeechJobTests, 'setUp', fixture_setup):
             self.f = render_fixtures.FormalRenderTests()
-            self.f.setUp(); self.addCleanup(self.f.doCleanups)
+            self.addCleanup(self.f.doCleanups); self.f.setUp()
         checkpoint = self.f.root / 'fixture-model'
         (checkpoint / 'model.safetensors').write_bytes(weights)
         adapter = self.f.context['adapter']
@@ -336,7 +336,7 @@ class LocalDeliveryTests(ScopeFixture):
     def setUp(self):
         super().setUp()
         self.f = delivery_fixtures.FormalStrictDeliveryTests()
-        self.f.setUp(); self.addCleanup(self.f.doCleanups)
+        self.addCleanup(self.f.doCleanups); self.f.setUp()
 
     def prepare(self, **kwargs):
         return subject.prepare_delivery(self.f.manifest, root=self.f.formal.root,

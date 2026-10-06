@@ -17,7 +17,7 @@ public struct SermonHeading: Sendable, Equatable {
     public let speaker: String?
     public let edition: String?
 
-    public init(title: String, series: String? = nil, speaker: String? = nil) {
+    public init(title: String, series: String? = nil, speaker: String? = nil, displayEdition: String? = nil) {
         func nonempty(_ value: String?) -> String? {
             guard let text = value?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty else { return nil }
             return text
@@ -41,7 +41,7 @@ public struct SermonHeading: Sendable, Equatable {
         self.title = nonempty(displayed) ?? title
         self.series = series
         self.speaker = nonempty(speaker)
-        self.edition = edition
+        self.edition = nonempty(displayEdition) ?? edition
     }
 
     public func details(date: String) -> String {
