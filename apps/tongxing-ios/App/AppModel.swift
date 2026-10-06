@@ -667,6 +667,13 @@ final class AppModel: ObservableObject {
         guard downloadTasks[key] == nil else { return }
         downloadStates[key] = .downloading
         downloadTasks[key] = Task { [weak self] in
+            // URLSession.shared has no background mode: without this the
+            // download dies as soon as the app is backgrounded. The assertion
+            // buys tens of seconds for brief interruptions (phone call, quick
+            // app switch); longer backgrounding still fails into the existing
+            // retry path.
+            let backgroundTask = UIApplication.shared.beginBackgroundTask(withName: "tongxing-download")
+            defer { UIApplication.shared.endBackgroundTask(backgroundTask) }
             do {
                 _ = try await library.download(track: track)
                 try Task.checkCancellation()
