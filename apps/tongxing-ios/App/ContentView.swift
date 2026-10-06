@@ -35,6 +35,29 @@ private struct CurrentToolbarVerticalEdge<Content: View>: View {
 }
 #endif
 
+/// Trailing-dock placement decision for Duo and other wide containers.
+///
+/// The trailing control column is for wide-and-short containers (Duo inner
+/// landscape, phone landscape). This intentionally stays a container-geometry
+/// decision rather than a size-class one: Duo inner landscape reports
+/// regular/regular while phone landscape reports compact/compact, so no
+/// single size-class combination selects both without branching on device or
+/// pose — and Apple's guidance frames the choice as "size classes *and*
+/// container size". Because it derives from the live control region (which
+/// already excludes the active fold), half-fold and Split View re-flow
+/// without extra code.
+private enum DockLayout {
+    /// Width threshold for the trailing column, near the regular-width
+    /// boundary. Height must also be below it: the column is only for
+    /// wide-and-short areas, not for tall regular-width layouts.
+    static let trailingDockThreshold: CGFloat = 700
+
+    static func usesTrailingDock(for controlRegion: CGRect) -> Bool {
+        controlRegion.width >= trailingDockThreshold
+            && controlRegion.height < trailingDockThreshold
+    }
+}
+
 struct ContentView: View {
     @ObservedObject private var localization = AppLocalization.shared
     @ObservedObject var model: AppModel
@@ -63,7 +86,7 @@ struct ContentView: View {
             let controlRegion = dockControlRegion(in: geometry)
             listeningNavigation(
                 controlRegion: controlRegion,
-                usesTrailingDock: controlRegion.width >= 700 && controlRegion.height < 700
+                usesTrailingDock: DockLayout.usesTrailingDock(for: controlRegion)
             )
             .overlay { playbackMoreOverlay }
         }
@@ -416,7 +439,39 @@ struct ContentView: View {
             ? button.midY - height / 2 : button.minY - height - 8
         let x = min(max(proposedX, 12), max(12, proxy.size.width - width - 12))
         let y = min(max(proposedY, 12), max(12, proxy.size.height - height - 12))
-        return CGPoint(x: x + width / 2, y: y + height / 2)
+        let panel = avoidingReservedRegions(
+            CGRect(x: x, y: y, width: width, height: height), in: proxy)
+        return CGPoint(x: panel.midX, y: panel.midY)
+    }
+
+    /// Nudges a hand-placed panel out of active reserved regions (the fold's
+    /// division region, camera occlusions). System sheets and popovers do
+    /// this automatically; this overlay is positioned by hand next to the
+    /// "more" button, so it performs its own avoidance. Scrolling content is
+    /// intentionally left alone — only this interactive panel moves.
+    private func avoidingReservedRegions(_ panel: CGRect, in proxy: GeometryProxy) -> CGRect {
+        #if os(iOS) && canImport(SwiftUI, _version: 8.0.85)
+        if #available(iOS 27.1, macOS 27.1, *) {
+            var panel = panel
+            let regions = proxy.reservedRegions(kind: .division).filter(\.isActive).map(\.frame)
+                + proxy.reservedRegions(kind: .occlusion).filter(\.isActive).map(\.frame)
+            for region in regions where panel.intersects(region) {
+                let dx = panel.midX - region.midX
+                let dy = panel.midY - region.midY
+                if abs(dx) >= abs(dy) {
+                    panel.origin.x = dx >= 0 ? region.maxX + 8 : region.minX - 8 - panel.width
+                } else {
+                    panel.origin.y = dy >= 0 ? region.maxY + 8 : region.minY - 8 - panel.height
+                }
+                panel.origin.x = min(max(panel.minX, 12),
+                                     max(12, proxy.size.width - panel.width - 12))
+                panel.origin.y = min(max(panel.minY, 12),
+                                     max(12, proxy.size.height - panel.height - 12))
+            }
+            return panel
+        }
+        #endif
+        return panel
     }
 
     private var trailingNavigationActions: some View {
