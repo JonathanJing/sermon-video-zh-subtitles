@@ -1489,6 +1489,22 @@ private struct OutlineSheet: View {
         return localization.text("以当前发布内容为准")
     }
 
+    private var reviewedStudies: ReviewedStudyResources? {
+        guard model.selectedWeek == nil, model.currentPublishedTranscript != nil else { return nil }
+        return model.publishedStudies
+    }
+
+    private func reviewedSections(_ artifact: ReviewedStudyArtifact, kind: String) -> some View {
+        ForEach(Array(artifact.sections.enumerated()), id: \.offset) { index, section in
+            VStack(alignment: .leading, spacing: 10) {
+                Text(section.title).font(.headline)
+                Text(section.body).font(.body).lineSpacing(6)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("sermon-study-reviewed-\(kind)-body-\(index)")
+            }
+        }
+    }
+
     @ViewState private var showingMore = false
     @ViewState private var moreButtonFrame: CGRect = .null
     var body: some View {
@@ -1506,6 +1522,10 @@ private struct OutlineSheet: View {
                         Text(localization.text(error)).foregroundStyle(.secondary)
                         Button(localization.text("重新加载")) { Task { await model.loadSelectedPublishedTranscript() } }
                     } else {
+                        if let studies = reviewedStudies {
+                            reviewedSections(studies.outline, kind: "outline")
+                            reviewedSections(studies.meditation, kind: "meditation")
+                        } else {
                         if let summary, !summary.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                             VStack(alignment: .leading, spacing: 10) {
                                 Text(localization.text("内容说明")).font(.headline)
@@ -1538,6 +1558,7 @@ private struct OutlineSheet: View {
                                     Text("\(index + 1). \(question)").font(.body).lineSpacing(6)
                                 }
                             }
+                        }
                         }
                         Text(review).font(.caption).foregroundStyle(.secondary)
                         Button(localization.text("完成")) { dismiss() }

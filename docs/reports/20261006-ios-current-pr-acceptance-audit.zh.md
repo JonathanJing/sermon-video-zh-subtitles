@@ -47,3 +47,5 @@ push前核对工作分支远端仍为本任务head `19e6ba532cbfb5e63cf4ae9e6133
 - 新增两条Core回归：reviewed study与独立音频时钟并存、来源ID标题fallback仍保留正式edition；现有study格式/错误身份、时钟合同、标题、Storage、播放器及UI回归由最终head检查覆盖。
 
 合入dev带来既有祖先提交，未在本任务改写生产模型/成本/权限实现；最终PR相对dev的改动限定于iOS和对应测试/文档。Beta56分发源码仍是原冻结8c71c02，本次后续源码候选（分发身份守卫、四语文案、dev语义合并）未打包或上传；不能用Beta56真机结果证明后续源码候选已验收。原head的CI分别保留，最终SHA与终态在PR回填。
+
+独立study资源合并后还补齐原“大纲与默想”入口：仅在当前transcript验证绑定成立时读取同一publishedStudies，展示原section标题/全文，不把默想正文冒充问题、不再错误显示旧字段缺项。现有四产品UI回归增加sheet与正文一致、缺项提示消失断言及截图附件；后续UI证据绑定新head，仍非Beta56已分发包证据。

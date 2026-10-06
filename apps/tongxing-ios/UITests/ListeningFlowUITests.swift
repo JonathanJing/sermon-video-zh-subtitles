@@ -502,6 +502,18 @@ final class ListeningFlowUITests: XCTestCase {
             app.buttons["content-language-ko"].tap()
             XCTAssertTrue(app.staticTexts["published-page-title"].waitForExistence(timeout: 10))
             if withStudy {
+                app.buttons["open-sermon-study"].tap()
+                let sheetOutline = app.staticTexts["sermon-study-reviewed-outline-body-0"]
+                XCTAssertTrue(sheetOutline.waitForExistence(timeout: 10))
+                XCTAssertEqual(sheetOutline.label, "본문 전체가 표시됩니다.")
+                let sheetMeditation = app.staticTexts["sermon-study-reviewed-meditation-body-0"]
+                XCTAssertTrue(sheetMeditation.exists)
+                XCTAssertEqual(sheetMeditation.label, "예수님의 말씀을 묵상합니다.")
+                XCTAssertFalse(app.staticTexts["sermon-study-outline-unavailable"].exists)
+                XCTAssertFalse(app.staticTexts["sermon-study-questions-unavailable"].exists)
+                screenshot("reviewed-study-sheet-after", app: app)
+                app.buttons["close-sermon-study"].tap()
+
                 let outline = app.staticTexts["본문 전체가 표시됩니다."]
                 for _ in 0..<6 where !outline.isHittable { app.swipeUp() }
                 XCTAssertTrue(outline.waitForExistence(timeout: 10))
