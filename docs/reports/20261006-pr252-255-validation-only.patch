@@ -1,0 +1,85 @@
+diff --git a/apps/tongxing-ios/App/ContentView.swift b/apps/tongxing-ios/App/ContentView.swift
+index 062b4c4d..3df65deb 100644
+--- a/apps/tongxing-ios/App/ContentView.swift
++++ b/apps/tongxing-ios/App/ContentView.swift
+@@ -1302,6 +1302,7 @@ private struct PrecisionSheet: View {
+                 ) { width in
+                     PlaybackMoreControls(
+                         playback: playback,
++                        isPreparing: false,
+                         onClose: { showingMore = false },
+                         width: width
+                     )
+@@ -1369,6 +1370,7 @@ private struct OutlineSheet: View {
+                     ) { width in
+                         PlaybackMoreControls(
+                             playback: playback,
++                            isPreparing: false,
+                             onClose: { showingMore = false },
+                             width: width
+                         )
+diff --git a/apps/tongxing-ios/App/DesignSystem.swift b/apps/tongxing-ios/App/DesignSystem.swift
+index 625f42db..04ea891d 100644
+--- a/apps/tongxing-ios/App/DesignSystem.swift
++++ b/apps/tongxing-ios/App/DesignSystem.swift
+@@ -94,7 +94,7 @@ extension View {
+     }
+ }
+ 
+-private struct ListeningGlassSurface<S: Shape>: ViewModifier {
++private struct ListeningGlassSurface<S: InsettableShape>: ViewModifier {
+     let shape: S
+     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+     @Environment(\.colorSchemeContrast) private var contrast
+diff --git a/apps/tongxing-ios/App/PlaybackDock.swift b/apps/tongxing-ios/App/PlaybackDock.swift
+index 93a52eba..d0bae5b3 100644
+--- a/apps/tongxing-ios/App/PlaybackDock.swift
++++ b/apps/tongxing-ios/App/PlaybackDock.swift
+@@ -14,7 +14,7 @@ struct PlaybackDock: View {
+     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+     @State private var isCollapsed = false
+     var isPreparing = false
+-    @ObservedObject var alignmentModel: AppModel? = nil
++    var alignmentModel: AppModel? = nil // Validation-only shim: PR255 Optional ObservedObject cannot compile.
+     var locate: (() -> Void)? = nil
+     var precision: (() -> Void)? = nil
+     var current: (() -> Void)? = nil
+diff --git a/apps/tongxing-ios/UITests/ListeningFlowUITests.swift b/apps/tongxing-ios/UITests/ListeningFlowUITests.swift
+index 3206fafa..dc3a2eab 100644
+--- a/apps/tongxing-ios/UITests/ListeningFlowUITests.swift
++++ b/apps/tongxing-ios/UITests/ListeningFlowUITests.swift
+@@ -6,6 +6,34 @@ import XCTest
+ /// The explicit live Dev Demo smoke below uses real Hosting assets when opted in.
+ @MainActor
+ final class ListeningFlowUITests: XCTestCase {
++    // Validation-only scenario for PR252-255 integration; generated silent fixture.
++    func testPR252To255VisibleCollapseAndPrecisionScreenshots() throws {
++        let app = launchFixture()
++        try downloadSelection(in: app)
++        let toggle = app.buttons["playback-dock-collapse-toggle"]
++        XCTAssertTrue(toggle.isHittable)
++        XCTAssertGreaterThanOrEqual(toggle.frame.width, 44)
++        XCTAssertGreaterThanOrEqual(toggle.frame.height, 44)
++        screenshot("pr252-255-expanded", app: app)
++        toggle.tap()
++        try waitFor(element("playback-progress", in: app), "exists == false")
++        screenshot("pr252-255-collapsed-round-glass", app: app)
++        toggle.tap()
++        try waitFor(element("playback-progress", in: app), "exists == true")
++        app.buttons["playback-more"].tap()
++        XCTAssertTrue(app.buttons["playback-more-close"].waitForExistence(timeout: 5))
++        screenshot("pr252-255-main-more", app: app)
++        app.buttons["precision-controls"].tap()
++        XCTAssertTrue(app.navigationBars["定位 / 精调"].waitForExistence(timeout: 5))
++        screenshot("pr254-precision-sheet", app: app)
++        let more = app.buttons["playback-more"]
++        XCTAssertTrue(more.isHittable)
++        more.tap()
++        XCTAssertTrue(app.buttons["playback-more-close"].waitForExistence(timeout: 5))
++        screenshot("pr254-precision-shared-more", app: app)
++        app.buttons["playback-more-close"].tap()
++    }
++
+     func testPlaybackStatusAndMoreLabelAreVisibleAtRegularTextSize() {
+         let app = launchFixture()
+         let status = app.staticTexts["playback-status-detail"]
