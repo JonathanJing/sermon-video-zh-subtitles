@@ -28,6 +28,7 @@ GitHub reviewThreads新鲜读取：246存在上述未解决thread；247、249、
 
 - 新增 [19项真机验收表](../../apps/tongxing-ios/DEVICE-ACCEPTANCE-1.26.15.zh.md)，含每项步骤、通过标准、待验收结果及证据栏；补版本/设备/内容/网络/辅助功能记录，保留系统锁屏快照和Book活动折痕边界；从Beta说明链接该表。
 - 修复246遗留分发身份碰撞：首次upload遇到Apple已有同版本/Build必须失败；只有同IPA、归档哈希、源码与App身份的既有upload attempt才允许显式retry对账。清除继承的绕过环境变量；wait/distribute也校验既有绑定attempt，单纯preflight不算上传证据。已分发Beta56不变；新守卫属于源码工具修复，不在已冻结IPA中。
+- 补齐255新加的定位忙碌状态及展开/收起操作提示的en/ko/es/vi翻译，避免非中文VoiceOver回退中文；3个key×4语种及占位符一致性检查通过。该资源修复尚未进入已分发Beta56；真实播报与焦点仍待验收。
 - 本机离线单元验证：`python3 -m unittest tests.test_ios_testflight_release tests.test_xcode_cloud_archive_admission`：27通过、0跳过；覆盖真实Ruby lane的已占号拒绝/合法对账、不同IPA/归档/源码拒绝，以及wrapper环境变量清理/绑定重试。`ruby -c apps/tongxing-ios/fastlane/Fastfile`、Python语法与`git diff --check`通过。所有Apple/fastlane动作由fake替代，未调用外部上传。
 - 本机没有完整Xcode；CommandLineTools的Swift/SDK版本不匹配，Core manifest编译失败，未执行Core测试，不计通过。本轮未运行模拟器或Accessibility Inspector。保留本地日志 `../evidence/core.log`，不能用旧Xcode receipt声称本轮构建成功。
 
