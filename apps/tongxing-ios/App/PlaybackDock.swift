@@ -40,7 +40,7 @@ struct PlaybackDock: View {
         Group {
             if isCollapsed {
                 if inSystemBar { playButton }
-                else { playButton.padding(6).listeningGlassSurface() }
+                else { playButton.padding(6).listeningCircularGlassSurface() }
             } else if placement == .trailing {
                 if inSystemBar { verticalControls }
                 else { verticalControls.padding(6).listeningGlassSurface() }
@@ -57,12 +57,23 @@ struct PlaybackDock: View {
     }
 
     private var horizontalControls: some View {
-        HStack(spacing: 3) {
-            timeAndStatus
-            nudgeButton(-1)
-            playButton
-            nudgeButton(1)
-            if hasMoreControls { moreButton }
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 3) {
+                timeAndStatus
+                nudgeButton(-1)
+                playButton
+                nudgeButton(1)
+                if hasMoreControls { moreButton }
+            }
+            // Narrow widths (split view, compact windows): keep the essential
+            // transport controls. Time/status stays available to VoiceOver via
+            // the play button's accessibility value.
+            HStack(spacing: 6) {
+                nudgeButton(-1)
+                playButton
+                nudgeButton(1)
+                if hasMoreControls { moreButton }
+            }
         }
         .buttonStyle(.plain)
     }
