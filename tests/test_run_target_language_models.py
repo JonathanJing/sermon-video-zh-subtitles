@@ -176,6 +176,32 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
                                      "fixture-key", self.fake_call), evidence)
         self.assertEqual(self.calls, [])
 
+    def test_plugin_failure_does_not_dispatch_later_groups_and_resume_sends_nothing(self):
+        def caller(api_key, payload):
+            response = self.fake_call(api_key, payload)
+            if len(self.calls) <= 2:
+                body = json.loads(response["choices"][0]["message"]["content"])
+                body["targetUtterances"] = [text + "禁" for text in body["targetUtterances"]]
+                body["coverage"] = [{**row, "targetText": row["targetText"] + "禁"} for row in body["coverage"]]
+                response["choices"][0]["message"]["content"] = json.dumps(body)
+            return response
+        f = self.fixture
+        with self.assertRaisesRegex(ValueError, "language_plugin_group_blocked"):
+            subject.run(f.source, f.anchor, f.policy, self.out, "fixture-key", caller,
+                        plugin_path=f.plugin_path)
+        self.assertEqual(len(self.calls), 2)
+        self.assertFalse((self.out / "evidence.json").exists())
+        self.assertFalse((self.out / "group-0002-astra.json").exists())
+        stop = json.loads((self.out / "plugin-group-stop.json").read_text())
+        self.assertEqual(stop["reasonCode"], "language_plugin_group_blocked")
+        self.assertEqual(stop["groupReview"]["status"], "fail")
+        self.assertTrue(stop["stopsLaterDispatch"])
+        self.assertFalse(stop["humanApproval"])
+        with self.assertRaisesRegex(ValueError, "language_plugin_group_blocked"):
+            subject.run(f.source, f.anchor, f.policy, self.out, "fixture-key", caller,
+                        plugin_path=f.plugin_path)
+        self.assertEqual(len(self.calls), 2)
+
     def test_incoherent_ready_source_never_reaches_model_or_creates_paid_cache(self):
         mutations = {
             "missing-media": lambda s: s["source"].update(media=None),

@@ -577,6 +577,36 @@ def require_reconciled_requests(*directories: Path | None) -> None:
                     f"Uncertain paid {role} call; inspect before retry or dispatch: {marker}")
 
 
+def _stop_after_plugin_group_failure(policy, request, plugin_path, reviewed_row, plan, index, out, *, diagnostic_context=None):
+    """After this group's review, block later dispatch when the pinned plugin fails.
+
+    Groups already submitted stay on disk. This check itself makes no model call.
+    """
+    evaluated = producer.evaluate_plugin_groups(
+        policy, request, plugin_path, policy["languageReview"]["pluginImplementationSha256"],
+        [reviewed_row], diagnostic_context=diagnostic_context)
+    review = evaluated["groupReviews"][0]
+    if review["status"] == "pass":
+        return
+    stop = {"schemaVersion": "sermon-layer2-plugin-group-stop-v1", "status": "blocked",
+            "reasonCode": "language_plugin_group_blocked",
+            "translationGroupId": reviewed_row["translationGroupId"],
+            "sourceUnitIds": reviewed_row["sourceUnitIds"],
+            "groupReview": review,
+            "completedBefore": [row["translationGroupId"] for row in plan[:index - 1]],
+            "notDispatchedAfter": [row["translationGroupId"] for row in plan[index:]],
+            "stopsLaterDispatch": True, "humanApproval": False}
+    path = out / "plugin-group-stop.json"
+    if path.exists():
+        require(producer._load(path) == stop, "plugin group stop changed")
+    else:
+        try:
+            save_new(path, stop, private=True)
+        except FileExistsError:
+            require(producer._load(path) == stop, "plugin group stop changed")
+    raise ValueError("language_plugin_group_blocked")
+
+
 def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
         out: Path, api_key: str,
         caller: Callable[[str, dict[str, Any]], dict[str, Any]],
@@ -978,6 +1008,9 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             if semantic["status"] != "pass" or any(value != "pass" for value in semantic["checks"].values()) \
                     or semantic["uncertainty"] or semantic["issues"]:
                 raise ValueError(f"Sol flagged group {stem}; inspect saved response before admission")
+            if plugin_path is not None and not simulation_only:
+                _stop_after_plugin_group_failure(policy, request, plugin_path, reviewed_row, plan, index, out,
+                                                 diagnostic_context=diagnostic_context)
             return reviewed_row, validation_span
     def process_group(item):
         index, _ = item
