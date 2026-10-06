@@ -1222,7 +1222,8 @@ def main() -> None:
                               (args.english_source_package, args.anchor, args.policy))
     # Validate all policy/source/plan conditions before requiring a secret or making a paid call.
     request = producer.prepare_request(source, anchor, policy)
-    validate_standalone_worker_budget(policy)
+    if args.budget_config is None:
+        validate_standalone_worker_budget(policy)
     plan = group_plan(request, anchor, json.loads(args.group_plan.read_text(encoding="utf-8"))
                       if args.group_plan else None)
     require_plugin_identity(args.plugin, policy["languageReview"]["pluginImplementationSha256"])

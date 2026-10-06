@@ -18,8 +18,6 @@ from scripts import sermon_public_snapshot as public
 from scripts import sermon_review_budget as budget
 from scripts import sermon_review_contracts as c
 from scripts import sermon_strict_layer2 as strict
-from scripts import produce_target_language_candidate as producer
-from scripts import run_target_language_models as models
 from scripts.sermon_diagnostic_source_evidence import validate_prior_source_evidence
 from scripts.sermon_release_workflow import _safe_path
 
@@ -79,16 +77,11 @@ def preflight_locale_inputs(subject, context, spec):
     c.require(type(spec) is dict and set(spec) == {'source', 'anchor', 'policy', 'rubric', 'graph',
         'pluginPath', 'pluginSha256', 'groupPlan'}, 'invalid_diagnostic_locale_spec')
     artifacts = [public.read_snapshot(Path(spec[name]))[1] for name in ('source', 'anchor', 'policy', 'rubric')]
-    source, anchor, policy, rubric = map(c.decode_json, artifacts)
-    diagnostic.validate_source(source, anchor, context)
-    request = producer.prepare_request(source, anchor, policy, strict_rubric=rubric, diagnostic_context=context)
-    plan = models.group_plan(request, anchor, spec['groupPlan'])
-    prepared = [strict.prepare(*artifacts, group, request_limits=subject.limits,
-                              diagnostic_context=context) for group in plan]
+    from scripts.sermon_strict_locale import prepare_locale_inputs
+    _, _, _, plan, prepared = prepare_locale_inputs(*artifacts,
+        plugin_path=Path(spec['pluginPath']), expected_plugin_sha256=spec['pluginSha256'],
+        group_plan=spec['groupPlan'], request_limits=subject.limits, diagnostic_context=context)
     subject.preflight_locale(prepared)
-    models.require_plugin_identity(Path(spec['pluginPath']), spec['pluginSha256'])
-    c.require(policy['languageReview']['pluginImplementationSha256'] == spec['pluginSha256'],
-              'strict_locale_plugin_policy_changed')
     return artifacts, plan
 
 
@@ -99,6 +92,8 @@ def main(argv=None):
     parser.add_argument('--phase', choices=('preflight', 'locale'), required=True)
     parser.add_argument('--input', type=Path)
     parser.add_argument('--key-fd', type=int)
+    parser.add_argument('--resume-legacy-locale', action='store_true',
+        help='Explicitly inspect/resume immutable v1 locale inputs; unproven old rules block new calls')
     parser.add_argument('--request-limits', type=Path, help='Initial request limits; resumes reuse the frozen snapshot')
     args = parser.parse_args(argv)
     plan, _ = c.read_snapshot(args.plan)
@@ -131,7 +126,7 @@ def main(argv=None):
             'simulatedHumanApproval': True, 'realHumanAcceptancePending': True,
             'productionEligible': False, 'continuationSha256': c.canonical_sha256(continuation),
             'sourceMediaSha256': subject.config['sourceMediaSha256'], **source_evidence})
-        result = runner.run_locale(*artifacts, graph=spec['graph'], plugin_path=Path(spec['pluginPath']),
+        result = runner.run_locale(*artifacts, resume_legacy=args.resume_legacy_locale, graph=spec['graph'], plugin_path=Path(spec['pluginPath']),
             plugin_sha256=spec['pluginSha256'], group_plan=spec['groupPlan'], diagnostic_context=context)
         wrapped = {'schemaVersion': 'sermon-isolated-diagnostic-result-v1',
                    'humanAcceptance': 'pending', 'productionEligible': False,

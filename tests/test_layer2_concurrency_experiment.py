@@ -33,6 +33,12 @@ class Layer2ConcurrencyTests(unittest.TestCase):
         return runner.run(self.f.source, self.f.anchor, self.policy, out, "fixture-key", caller,
                           plugin_path=self.f.plugin_path, **options)
 
+    def legacy_parallel_run(self, out, caller, **options):
+        """Exercise the historical scheduler; formal plugin stopping is serial."""
+        request = runner.producer.prepare_request(self.f.source, self.f.anchor, self.policy)
+        return runner._run_prepared_groups(request, self.f.anchor, self.policy, out,
+                                           "fixture-key", caller, **options)
+
     def response(self, key, payload):
         self.assertEqual(key, "fixture-key")
         data = json.loads(payload["messages"][1]["content"])
@@ -122,7 +128,7 @@ class Layer2ConcurrencyTests(unittest.TestCase):
                 answer["choices"][0]["message"]["content"] = json.dumps(result)
             return answer
         with self.assertRaisesRegex(ValueError, "Sol flagged group"):
-            self.production_run(self.out, fail_review)
+            self.legacy_parallel_run(self.out, fail_review)
         self.assertFalse((self.out / "evidence.json").exists())
         successful = {role: (self.out / f"group-0002-{role}.json").read_bytes() for role in ("astra", "sol")}
         request = runner.producer._load(self.out / "request.json")
@@ -133,7 +139,7 @@ class Layer2ConcurrencyTests(unittest.TestCase):
                      "failureReason": "Synthetic review issue", "instruction": "Resolve the source-bound issue."}]}
         self.calls.clear()
         repaired = self.out.parent / "repaired"
-        evidence = self.production_run(repaired, self.response, reuse_from=self.out,
+        evidence = self.legacy_parallel_run(repaired, self.response, reuse_from=self.out,
                                        partial_repair_brief=brief)
         self.assertEqual(self.calls, [(failed_id, self.policy['translator']['model']), (failed_id, self.policy['reviewer']['model'])])
         self.assertEqual([g["translationGroupId"] for g in evidence["groups"]], [g["translationGroupId"] for g in plan])
@@ -175,7 +181,7 @@ class Layer2ConcurrencyTests(unittest.TestCase):
                 barrier.wait(timeout=3)
             return self.response(key, payload)
         with accounting.accounting_session(self.out / "accounting", "layer2_models"):
-            self.production_run(self.out, overlap)
+            self.legacy_parallel_run(self.out, overlap)
         events, damaged = accounting.read_events(self.out / "accounting")
         self.assertFalse(damaged)
         starts = {e["spanId"]: e for e in events if e["event"] == "stage_started"}

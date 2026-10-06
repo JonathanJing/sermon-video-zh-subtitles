@@ -51,7 +51,7 @@ def _save(path, value):
 def _groups(session, diagnostic_config):
     result = {}
     for locale, lane in sorted(diagnostic_config['locales'].items()):
-        _, groups = continuation.preflight_locale_inputs(session.subject, session.context, lane['localeSpec'])
+        _, groups = continuation.preflight_locale_inputs(session.subject, session.locale_context, lane['localeSpec'])
         for group in groups:
             unit = locale + '.' + group['translationGroupId']
             c.require(contract.label(unit) and len(unit) <= 80 and unit not in result,
@@ -116,13 +116,19 @@ def policy_and_faults(units, config):
 
 class MockTTSDAG:
     """Frozen closed graph; Prefect schedules, original ledgers decide business state."""
-    def __init__(self, session, config, *, recovery=None):
+    def __init__(self, session, config, *, recovery=None, resume_plan=None):
         c.require(type(session) is DiagnosticSession and session.offline_fixture
             and session.evidence_mode == 'synthetic', 'mock_dag_offline_continuation_required')
         c.require(type(config) is dict and set(config) == {'schemaVersion', 'diagnostic', 'mockPolicy', 'faults'}
             and config['schemaVersion'] == SCHEMA and c._strict_json(config), 'mock_dag_config_invalid')
         self.session = session
-        self.diagnostic = diagnostic.DiagnosticDAG(session, config['diagnostic'])
+        old = public.read_snapshot(diagnostic._path(str(resume_plan)))[0] if resume_plan else None
+        if old is not None:
+            c.require(Path(resume_plan) == session.root/'mock-tts-dag'/c.canonical_sha256(old)/'plan.json',
+                      'mock_dag_resume_plan_path_invalid')
+        self.diagnostic = diagnostic.DiagnosticDAG(session, config['diagnostic'],
+            resume_binding=old['diagnosticBinding'] if old is not None else None,
+            resume_binding_source=resume_plan, defer_limits=True)
         self.units = _groups(session, self.diagnostic.config)
         self.policy, self.faults = policy_and_faults(self.units, config)
         self.nodes = _graph(self.units)
@@ -141,6 +147,27 @@ class MockTTSDAG:
                 'retryFaultChange': 'mode_only_to_none', 'bounds': 'frozen_mock_policy',
                 'normalResume': 'latest_submitted_original_attempt_receipt_revalidation'},
             'batchSemantics': 'one_mock_job_per_frozen_translation_group', **QUALIFICATIONS}
+        self._migration = None
+        if old is not None:
+            old_sha = c.canonical_sha256(old)
+            c.require(Path(resume_plan) == session.root/'mock-tts-dag'/old_sha/'plan.json',
+                      'mock_dag_resume_plan_path_invalid')
+            c.require(type(old.get('codeFiles')) is dict and set(old['codeFiles']) == set(self.binding['codeFiles'])
+                      and all(contract.sha(value) for value in old['codeFiles'].values())
+                      and contract.sha(old.get('mockImplementationSha256')), 'mock_dag_migration_code_invalid')
+            excluded = {'diagnosticBinding','codeFiles','mockImplementationSha256'}
+            c.require(set(old) == set(self.binding) and
+                      {k:v for k,v in old.items() if k not in excluded} ==
+                      {k:v for k,v in self.binding.items() if k not in excluded},
+                      'mock_dag_migration_inputs_changed')
+            self._migration = {'schemaVersion':'sermon-mock-tts-session-migration-v1',
+                'originalPlanSha256':old_sha, 'executionBinding':deepcopy(self.binding),
+                'diagnosticMigration':deepcopy(self.diagnostic._migration),
+                'providerRetry':False, **QUALIFICATIONS}
+            self.binding = old
+        session.freeze_limits()
+        self._migration_sha256 = c.canonical_sha256(self._migration) if self._migration else None
+        self._migration_frozen = False
         self.plan_sha256 = c.canonical_sha256(self.binding)
         self.root = _safe_path(session.root/'mock-tts-dag'/self.plan_sha256, recursive=True)
         self.invocation = uuid.uuid4().hex
@@ -160,28 +187,40 @@ class MockTTSDAG:
         c.require(self.recovery == self.invocation_binding['recoveryRequests']
             and self.invocation_binding['planSha256'] == self.plan_sha256
             and self.invocation_binding['invocationId'] == self.invocation, 'mock_dag_invocation_changed')
+        execution = self._migration['executionBinding'] if self._migration else self.binding
         c.require(c.canonical_sha256(self.binding) == self.plan_sha256
             and self.nodes == self.binding['nodes'] == _graph(self.units)
             and self.units == self.binding['units'] == _groups(self.session, self.diagnostic.config)
             and self.policy == self.binding['mockPolicy']
             and self.faults == self.binding['faults']
             and self.binding['permissions'] == PERMISSIONS
-            and self.binding['mockImplementationSha256'] == contract.implementation_sha256(),
+            and execution['mockImplementationSha256'] == contract.implementation_sha256(),
             'mock_dag_frozen_plan_changed')
         c.require(all(diagnostic._hash_file(diagnostic.pilot.REPO/name) == digest
-            for name, digest in self.binding['codeFiles'].items()), 'mock_dag_code_identity_changed')
+            for name, digest in execution['codeFiles'].items()), 'mock_dag_code_identity_changed')
         c.require(self.root == _safe_path(self.session.root/'mock-tts-dag'/self.plan_sha256, recursive=True),
             'mock_dag_scope_changed')
         _safe_path(self.root.parent/'.harness-locks', recursive=True)
         if (self.root/'plan.json').exists():
             c.require(public.read_snapshot(self.root/'plan.json')[0] == self.binding, 'mock_dag_saved_plan_changed')
+        if self._migration is not None:
+            c.require(c.canonical_sha256(self._migration) == self._migration_sha256,
+                      'mock_dag_migration_changed')
+            migration_path = self.root/'session-binding-migration.json'
+            c.require(not self._migration_frozen or migration_path.exists(), 'mock_dag_migration_missing')
+            if migration_path.exists():
+                c.require(public.read_snapshot(migration_path)[0] == self._migration, 'mock_dag_migration_changed')
         invocation_path = self.root/'invocations'/(self.invocation+'.json')
         if invocation_path.exists():
             c.require(public.read_snapshot(invocation_path)[0] == self.invocation_binding, 'mock_dag_saved_invocation_changed')
 
     def freeze(self):
         self._check()
+        self.diagnostic.freeze()
         _save(self.root/'plan.json', self.binding)
+        if self._migration is not None:
+            _save(self.root/'session-binding-migration.json', self._migration)
+            self._migration_frozen = True
         _save(self.root/'invocations'/(self.invocation+'.json'), self.invocation_binding)
         self.stream = durable.open_stream(self.root/'accounting', scope_id='mock-tts-dag',
             plan_sha256=self.plan_sha256, production_run_id=self._production_run_id(),
@@ -249,12 +288,12 @@ class MockTTSDAG:
         self._validate_callback('locale', locale, result)
         candidate = public.read_snapshot(Path(result['output'])/'candidate.json')[0]
         spec = self._locale_spec(locale)
-        raw, _ = continuation.preflight_locale_inputs(self.session.subject, self.session.context, spec)
+        raw, _ = continuation.preflight_locale_inputs(self.session.subject, self.session.locale_context, spec)
         revisions = [(self.session._path(row['root']), row['reviewAttempt']) for row in result['revisions']]
         # Re-run the strict receipt, plugin and public-candidate validators from
         # original artifacts; dictionary shape alone never admits target text.
         checked = bridge.compile_candidate(*raw, revisions, plugin_path=Path(spec['pluginPath']),
-            expected_plugin_sha256=spec['pluginSha256'], diagnostic_context=self.session.context)
+            expected_plugin_sha256=spec['pluginSha256'], diagnostic_context=self.session.locale_context)
         c.require(checked['candidate'] == candidate, 'mock_dag_candidate_revalidation_changed')
         expected = [row for row in self.units.values() if row['targetLocale'] == locale]
         actual = candidate['groups']
@@ -527,9 +566,9 @@ def timing_coverage():
             'resourceQueueSeconds': 'not_observed', 'providerQueueSeconds': 'not_applicable_no_real_provider'}}
 
 
-def run(session, config, *, recovery=None):
+def run(session, config, *, recovery=None, resume_plan=None):
     """One clean SDK process and one real flow; durable receipts survive invocations."""
-    dag = MockTTSDAG(session, config, recovery=recovery)
+    dag = MockTTSDAG(session, config, recovery=recovery, resume_plan=resume_plan)
     with work_lock(dag.root):
         dag.freeze()
         home, database = diagnostic.pilot.isolated_prefect_environment(dag.root)
@@ -615,13 +654,19 @@ def main(argv=None):
     parser.add_argument('--offline-fixture', action='store_true', required=True)
     parser.add_argument('--recovery-manifest', type=Path)
     parser.add_argument('--request-limits', type=Path, help='Initial request limits; resumes reuse the frozen snapshot')
+    parser.add_argument('--resume-plan', type=Path, help='Original v1 mock plan.json to migrate in place')
+    parser.add_argument('--legacy-continuation', type=Path, help='Original authorization for a cross-code migration')
     args = parser.parse_args(argv)
     read = lambda path: public.read_snapshot(diagnostic._path(str(path)))[0]
+    old = read(args.resume_plan) if args.resume_plan else None
+    c.require(args.resume_plan is not None or args.legacy_continuation is None, 'mock_dag_resume_plan_required')
     session = DiagnosticSession(read(args.plan), read(args.continuation),
         offline_transport=diagnostic.fixture_transport(args.fixture_responses),
-        request_limits=read(args.request_limits) if args.request_limits else None)
+        request_limits=read(args.request_limits) if args.request_limits else None,
+        resume_binding=old['diagnosticBinding']['sessionBinding'] if old is not None else None,
+        legacy_continuation=read(args.legacy_continuation) if args.legacy_continuation else None)
     print(json.dumps(run(session, read(args.spec),
-        recovery=read(args.recovery_manifest) if args.recovery_manifest else None), sort_keys=True))
+        recovery=read(args.recovery_manifest) if args.recovery_manifest else None, resume_plan=args.resume_plan), sort_keys=True))
 
 
 if __name__ == '__main__':
