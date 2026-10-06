@@ -1,11 +1,11 @@
 # Dev 与正式生产的模型及调用策略
 
-当前新 dev 与正式 Layer 2／Supervisor 运行遵循 `AGENTS.md`：使用 ChatGPT 登录的 Codex CLI，API fallback 禁用。已有运行和未决调用保留冻结的后端、模型、凭据、预算和收据身份；默认值变化不授权迁移或重发历史调用。
+2026-10-06 用户明确更正：新 dev 与正式 Layer 2 的翻译和独立审核默认使用 OpenAI API。Supervisor 仍使用 ChatGPT 登录的 Codex CLI；自动后端 fallback 禁用。已有运行和未决调用保留冻结的后端、模型、凭据、预算和收据身份；默认值变化不授权迁移或重发历史调用。
 
 | 角色 | 模型 | Reasoning | Service tier | 调用方式 |
 |---|---|---|---|---|
-| Layer 2 初译 | `gpt-6.1-sol` | `high` | `fast` | ChatGPT-authenticated Codex CLI |
-| Layer 2 独立审核 | `gpt-6.1-sol` | `medium` | `fast` | ChatGPT-authenticated Codex CLI |
+| Layer 2 初译 | `gpt-6.1-sol` | `high` | `fast`（standalone）；批准的 tier（canonical） | OpenAI API |
+| Layer 2 独立审核 | `gpt-6.1-sol` | `medium` | `fast`（standalone）；批准的 tier（canonical） | OpenAI API |
 | dev 与正式生产 Supervisor | `gpt-6-luna` | `medium` | `fast` | ChatGPT-authenticated Codex CLI |
 
 来源 ASR、OpenAI 音频、MFA、Spark Qwen TTS／回转写 ASR、ImageGen 继续使用各自入口。其他文字入口保留其实际接线范围；本次修复不证明所有旧 producer 已消费此策略。
@@ -14,7 +14,7 @@
 
 CLI 隔离 API 凭据，记录 requested model／effort／tier、CLI 身份、原始响应和 token／耗时收据。服务端未提供实际 model／tier 时记为 unknown。模型返回内容或结构化操作，本地程序保留审批、lease、插件、候选准入和发布校验。未知结果不得自动重发或切换后端。
 
-Standalone Layer 2 默认 `codex-cli`；显式 `--model-backend openai-api` 仅保留历史 API 运行身份及原有准入限制，不构成 fallback 或新的支出授权。Canonical worker 默认 Codex CLI；显式注入的历史 API caller 保留原预算合同。现有严格 API 预算要求单次输出 token 的最坏情况上限，不能以 timeout、历史均值或 credit 估算替代；CLI 无此能力时返回 `unsupported_budget_capability`，不转发 API。要求此严格预算的统一 `drive` 路径仍保留原授权关口。
+Standalone Layer 2 默认 `openai-api`，翻译与独立审核使用同一个选中 transport；显式 `--model-backend codex-cli` 保留 CLI 实验和历史运行入口。Canonical worker 默认使用绑定 Project 与预算授权的 OpenAI API transport，未绑定预算或 dev/prod 启动器时在发送前阻断。Standalone 请求 fast；canonical 严格预算合同继续使用已批准的 requestLimits.serviceTier（目前 default），不以默认后端变化授权额外支出。CLI 不能消费 API 的输出 token cap；严格预算遇到显式 CLI transport 时返回 unsupported_budget_capability，不自动切换后端。
 
 Supervisor 默认与后端生成命令均选择 `codex-cli`。旧 Agents API 会话使用显式 `--agent-backend agents-api` 按原身份恢复；未决工具先对账，SDK 新会话继续禁用。模型或 reasoning 变化需新的冻结 policy、payload 和运行身份，不重标旧批准候选或缓存。
 

@@ -64,7 +64,7 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
         self.out = Path(temp.name) / "run"
         self.calls = []
 
-    def test_standalone_defaults_cli_and_explicit_api_retains_key(self):
+    def test_standalone_defaults_api_and_explicit_cli_isolates_key(self):
         from unittest.mock import Mock, patch
         import sys
         argv = ['layer2', '--english-source-package', 'source.json', '--anchor', 'anchor.json',
@@ -74,7 +74,7 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
             cli = Mock(execution_identity={'backend': 'codex_cli'}, billing='local')
             api = Mock(key='historical-key', execution_identity={'backend': 'openai_api'})
             with self.subTest(backend=backend), patch.object(sys, 'argv',
-                    argv if backend == 'codex-cli' else argv + ['--model-backend', backend]), patch.object(
+                    argv if backend == 'openai-api' else argv + ['--model-backend', backend]), patch.object(
                     subject.producer, '_load', side_effect=[self.fixture.source, self.fixture.anchor, self.fixture.policy]), patch(
                     'scripts.production_spark_admission.require_session'), patch(
                     'scripts.codex_layer2_transport.CodexLayer2Transport', return_value=cli) as cli_factory, patch(

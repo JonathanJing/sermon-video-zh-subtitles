@@ -1194,8 +1194,8 @@ def main() -> None:
                         help="Reuse verified paid responses from an incomplete attempt of this revision")
     parser.add_argument("--progress-ledger", type=Path,
                         help="Record checkpoint and per-group substage timing in the four-layer ledger")
-    parser.add_argument("--model-backend", choices=("codex-cli", "openai-api"), default="codex-cli",
-                        help="New runs use Codex CLI; explicitly retain historical API identity")
+    parser.add_argument("--model-backend", choices=("codex-cli", "openai-api"), default="openai-api",
+                        help="New translation/review runs use OpenAI API; CLI requires explicit selection")
     parser.add_argument("--out-dir", type=Path, required=True)
     args = parser.parse_args()
     require(args.revision_brief is None or args.reuse_from is not None,
