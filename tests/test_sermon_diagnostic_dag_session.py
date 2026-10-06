@@ -48,6 +48,120 @@ class DiagnosticSessionTests(unittest.TestCase):
         self.assertEqual(candidate['humanReview']['translation'], 'pending')
         self.assertFalse(candidate['releaseEligible'])
 
+    def migration_config(self):
+        from scripts import sermon_diagnostic_prefect_flow as flow
+        return {'schemaVersion': flow.SCHEMA, 'locales': {locale: {
+            'localeSpec': self.f.locale_specs[locale],
+            'previewSpec': self.f.preview_specs[locale]} for locale in self.f.locale_specs}}
+
+    def legacy_plan(self, current, *, with_limits, change=None):
+        from scripts import sermon_diagnostic_prefect_flow as flow
+        binding = deepcopy(flow.DiagnosticDAG(current, self.migration_config()).binding)
+        binding['sessionBinding']['schemaVersion'] = 'sermon-diagnostic-dag-session-v1'
+        binding['sessionBinding']['implementationSha256'] = 'a' * 64
+        binding['codeSha256'] = 'b' * 64
+        if not with_limits:
+            del binding['sessionBinding']['requestLimits']
+        if change is not None:
+            change(binding)
+        root = self.f.root / 'diagnostic-prefect' / c.canonical_sha256(binding)
+        from scripts import sermon_public_snapshot as public
+        root.mkdir(parents=True, exist_ok=True)
+        public.save_once(root / 'plan.json', binding)
+        return root / 'plan.json'
+
+    def test_v1_migration_keeps_original_plan_directory_and_receipts(self):
+        from scripts import sermon_diagnostic_prefect_flow as flow
+        current = self.make()
+        self.assertEqual(current.binding['schemaVersion'], 'sermon-diagnostic-dag-session-v2')
+        with self.f.session():
+            candidate_result = current.run_locale('zh-Hans', self.f.locale_specs['zh-Hans'])
+        candidate_path = Path(candidate_result['output']) / 'candidate.json'
+        candidate_before = candidate_path.read_bytes()
+        for with_limits in (False, True):
+            with self.subTest(with_limits=with_limits):
+                path = self.legacy_plan(current, with_limits=with_limits)
+                before = path.read_bytes()
+                receipt = path.parent / 'observations' / 'original.json'
+                receipt.parent.mkdir(exist_ok=True)
+                receipt.write_bytes(b'{"original":"immutable"}\n')
+                receipt_before = receipt.read_bytes()
+                calls = len(self.f.transport.observations)
+                dag = flow.DiagnosticDAG(current, self.migration_config(), resume_plan=path)
+                dag.freeze()
+                self.assertEqual(dag.root, path.parent)
+                self.assertEqual(dag.plan_sha256, path.parent.name)
+                migration = c.read_snapshot(dag.root/'session-binding-migration.json')[0]
+                self.assertEqual(migration['executionBinding']['sessionBinding'], current.binding)
+                self.assertFalse(migration['providerRetry'])
+                with self.f.session():
+                    self.assertTrue(dag.execute('source.existing')['readyForDownstream'])
+                    self.assertTrue(dag.execute('text.zh-Hans')['readyForDownstream'])
+                again = flow.DiagnosticDAG(self.make(), self.migration_config(), resume_plan=path)
+                again.freeze()
+                self.assertEqual(path.read_bytes(), before)
+                self.assertEqual(receipt.read_bytes(), receipt_before)
+                self.assertEqual(candidate_path.read_bytes(), candidate_before)
+                self.assertEqual(len(self.f.transport.observations), calls)
+
+    def test_v1_migration_rejects_semantic_inputs_and_limits_changes(self):
+        from scripts import sermon_diagnostic_prefect_flow as flow
+        current = self.make()
+        changes = [lambda x: x['sessionBinding'].__setitem__('originalPlanSha256', 'c'*64),
+                   lambda x: x['sessionBinding'].__setitem__('deadlineMonotonic', 1),
+                   lambda x: x['sessionBinding'].__setitem__('sourceEvidence', {}),
+                   lambda x: x['sessionBinding'].__setitem__('storeSha256', 'c'*64),
+                   lambda x: x['sessionBinding']['requestLimits'].__setitem__('maxInputTokens', 8192),
+                   lambda x: x.__setitem__('inputFiles', {}),
+                   lambda x: x.__setitem__('maxWorkers', 2)]
+        before = self.f.subject.snapshot()
+        for change in changes:
+            with self.subTest(change=change), self.assertRaisesRegex(ValueError, 'migration_.*changed'):
+                flow.DiagnosticDAG(current, self.migration_config(),
+                    resume_plan=self.legacy_plan(current, with_limits=True, change=change))
+        self.assertEqual(self.f.subject.snapshot(), before)
+
+    def test_resume_plan_requires_legacy_version_and_original_hashed_path(self):
+        from scripts import sermon_diagnostic_prefect_flow as flow
+        current = self.make()
+        normal = flow.DiagnosticDAG(current, self.migration_config())
+        normal.freeze()
+        self.assertIsNone(normal._migration)
+        self.assertFalse((normal.root/'session-binding-migration.json').exists())
+        with self.assertRaisesRegex(ValueError, 'migration_version_invalid'):
+            flow.DiagnosticDAG(current, self.migration_config(), resume_plan=normal.root/'plan.json')
+        old = self.legacy_plan(current, with_limits=False)
+        misplaced, _ = self.f.write('misplaced-plan.json', c.read_snapshot(old)[0])
+        with self.assertRaisesRegex(ValueError, 'resume_plan_path_invalid'):
+            flow.DiagnosticDAG(current, self.migration_config(), resume_plan=misplaced)
+        malformed, _ = self.f.write('malformed-plan.json', [])
+        with self.assertRaisesRegex(ValueError, 'resume_plan_invalid'):
+            flow.DiagnosticDAG(current, self.migration_config(), resume_plan=malformed)
+
+    def test_v1_migration_is_frozen_and_does_not_weaken_code_guard(self):
+        from scripts import sermon_diagnostic_prefect_flow as flow
+        current = self.make()
+        path = self.legacy_plan(current, with_limits=False)
+        dag = flow.DiagnosticDAG(current, self.migration_config(), resume_plan=path)
+        current.binding['requestLimits']['maxInputTokens'] = 8192
+        with self.assertRaisesRegex(ValueError, 'migration_changed'):
+            dag.freeze()
+        current = self.make()
+        dag = flow.DiagnosticDAG(current, self.migration_config(), resume_plan=path)
+        dag.freeze()
+        with self.f.session(), patch.object(accounting, 'execution_identity', return_value={}):
+            with self.assertRaisesRegex(ValueError, 'continuation_code_changed'):
+                current.inspect_source()
+        migration = path.parent / 'session-binding-migration.json'
+        migration_bytes = migration.read_bytes()
+        migration.unlink()
+        with self.assertRaisesRegex(ValueError, 'migration_missing'):
+            dag._check()
+        migration.write_bytes(migration_bytes)
+        path.unlink()
+        with self.assertRaisesRegex(ValueError, 'resume_plan_missing'):
+            dag.freeze()
+
     def test_omitted_limits_resume_original_expanded_reviewer_bound(self):
         current = self.make()
         resumed = session.DiagnosticSession(self.f.plan, self.f.continuation,
@@ -78,6 +192,25 @@ class DiagnosticSessionTests(unittest.TestCase):
             session.DiagnosticSession(self.f.plan, self.f.continuation,
                 offline_transport=self.f.transport)
         self.assertEqual(self.f.subject.snapshot(), before)
+        self.assertEqual(len(self.f.transport.observations), 2)
+
+    def test_prefect_cli_forwards_explicit_resume_plan(self):
+        from scripts import sermon_diagnostic_prefect_flow as flow
+        current = self.make()
+        old = self.legacy_plan(current, with_limits=False)
+        plan, _ = self.f.write('cli-plan.json', self.f.plan)
+        spec, _ = self.f.write('cli-spec.json', self.migration_config())
+        captured = []
+        def inspect_only(active, config, *, resume_plan):
+            captured.append(flow.DiagnosticDAG(active, config, resume_plan=resume_plan))
+            captured[-1].freeze()
+            return {'status': 'migration_bound_without_dispatch'}
+        with patch.object(flow, 'fixture_transport', return_value=self.f.transport), \
+                patch.object(flow, 'run', side_effect=inspect_only), patch('builtins.print'):
+            flow.main(['--plan', str(plan), '--continuation', str(self.f.root/'continuation.json'),
+                       '--spec', str(spec), '--fixture-responses', str(self.f.root/'unused.json'),
+                       '--offline-fixture', '--resume-plan', str(old)])
+        self.assertEqual(captured[0].root, old.parent)
         self.assertEqual(len(self.f.transport.observations), 2)
 
     def test_both_cli_resumes_load_limits_without_an_option(self):

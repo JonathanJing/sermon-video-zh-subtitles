@@ -56,7 +56,7 @@ class DiagnosticSession:
         self.transport, self.marker = self.subject.executor, marker
         self.runner = bounded.BoundedRun(self.subject, offline.OFFLINE_KEY if self.offline_fixture else key, self.root,
                                         source_clip=self.plan['sourceClipPath'])
-        self.binding = {'schemaVersion': 'sermon-diagnostic-dag-session-v1',
+        self.binding = {'schemaVersion': 'sermon-diagnostic-dag-session-v2',
             'originalPlanSha256': c.canonical_sha256(plan),
             'continuationSha256': c.canonical_sha256(continuation),
             'diagnosticContextSha256': c.canonical_sha256(self.context),

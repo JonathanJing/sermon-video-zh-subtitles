@@ -31,6 +31,33 @@ python -m scripts.sermon_diagnostic_prefect_flow \
   --offline-fixture --fixture-responses /absolute/fixture/responses.json
 ```
 
+New sessions use `sermon-diagnostic-dag-session-v2`; v2 explicitly freezes
+`requestLimits`. Do not edit an existing v1 `plan.json` or move its Prefect
+state into a newly computed directory. To resume an existing v1 Prefect DAG,
+add `--resume-plan /absolute/run/diagnostic-prefect/<original-plan-hash>/plan.json`
+to the continuation command. Both legacy v1 shapes (with and without the
+previously unversioned limits field) are supported. If a legacy binding has no
+limits, the original limits must come from an existing frozen continuation
+snapshot or an explicit `--request-limits` file; limits are never inferred.
+
+The explicit migration retains the original plan bytes, directory, node
+observations and business receipts. It freezes
+`session-binding-migration.json` beside the original plan, mapping the active
+v2 execution binding to that original hash. It permits only the session schema,
+new limits field and session/flow implementation hashes to change; existing
+limits, source evidence, continuation, store, deadline, configuration and all
+input hashes must still match. Repeating the migration must match that same
+receipt. It neither retries provider calls nor extends a budget or clock.
+Normal v2 plans remain immutable and do not use this compatibility path.
+
+Binding migration does not authorize changed code or continuation identity:
+the existing clean-code/execution-identity, source, ledger and outcome guards
+still apply before model execution. A legacy continuation failing those guards
+requires its existing explicit recovery process; `--resume-plan` cannot bypass
+it. This option migrates the diagnostic Prefect plan only. The separate mock
+TTS wrapper retains its own strict outer code identity and has no wrapper
+migration via this option.
+
 Use the optional environment from `requirements-prefect.txt`. Prefect runs with
 local SQLite, isolated settings and telemetry disabled. Tasks are serial in
 this process because the network guards affect process-global functions;

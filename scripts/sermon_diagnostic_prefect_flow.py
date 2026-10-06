@@ -157,7 +157,7 @@ def _config(config, session):
 
 
 class DiagnosticDAG:
-    def __init__(self, session, config):
+    def __init__(self, session, config, *, resume_plan=None):
         from scripts.sermon_fresh_diagnostic import FreshDiagnosticSession
         c.require(type(session) in (_session_class(), FreshDiagnosticSession) and
                   (not session.offline_fixture or type(session.subject.executor) is offline.OfflineHTTPTransport),
@@ -171,6 +171,51 @@ class DiagnosticDAG:
             'codeSha256': _hash_file(Path(__file__).resolve()),
             'maxWorkers': 1, 'retries': 0, 'prefectCache': False,
             'evidenceMode': session.evidence_mode, 'humanAcceptance': 'pending', 'productionEligible': False}
+        self._migration = None
+        if resume_plan is not None:
+            resume_plan = _path(str(resume_plan))
+            old, _ = public.read_snapshot(resume_plan)
+            c.require(type(old) is dict and type(old.get('sessionBinding')) is dict,
+                      'diagnostic_flow_resume_plan_invalid')
+            old_sha256 = c.canonical_sha256(old)
+            c.require(resume_plan.name == 'plan.json' and resume_plan.parent ==
+                      self.fixture_root / 'diagnostic-prefect' / old_sha256,
+                      'diagnostic_flow_resume_plan_path_invalid')
+            previous = old.get('sessionBinding', {})
+            current = self.binding['sessionBinding']
+            c.require(previous.get('schemaVersion') == 'sermon-diagnostic-dag-session-v1'
+                      and current.get('schemaVersion') == 'sermon-diagnostic-dag-session-v2',
+                      'diagnostic_flow_session_migration_version_invalid')
+            # Only the version, newly explicit limits and implementation hashes
+            # can change. All business identities and input bytes stay frozen.
+            ignored = {'schemaVersion', 'requestLimits', 'implementationSha256'}
+            c.require({k: v for k, v in previous.items() if k not in ignored} ==
+                      {k: v for k, v in current.items() if k not in ignored}
+                      and set(previous) in (set(current), set(current) - {'requestLimits'})
+                      and ('requestLimits' not in previous or
+                           previous['requestLimits'] == current['requestLimits'])
+                      and all(type(previous.get(k)) is str and
+                              len(previous[k]) == 64 and
+                              all(ch in '0123456789abcdef' for ch in previous[k])
+                              for k in ('implementationSha256',)),
+                      'diagnostic_flow_session_migration_identity_changed')
+            excluded = {'sessionBinding', 'codeSha256'}
+            c.require({k: v for k, v in old.items() if k not in excluded} ==
+                      {k: v for k, v in self.binding.items() if k not in excluded}
+                      and set(old) == set(self.binding) and
+                      type(old.get('codeSha256')) is str and len(old['codeSha256']) == 64
+                      and all(ch in '0123456789abcdef' for ch in old['codeSha256']),
+                      'diagnostic_flow_session_migration_inputs_changed')
+            self._migration = {
+                'schemaVersion': 'sermon-diagnostic-dag-session-migration-v1',
+                'originalPlanSha256': old_sha256,
+                'executionBinding': self.binding,
+                'requestLimitsOrigin': 'legacy_binding' if 'requestLimits' in previous
+                                       else 'explicit_or_frozen_continuation_snapshot',
+                'providerRetry': False, 'productionEligible': False}
+            self.binding = old
+        self._migration_sha256 = c.canonical_sha256(self._migration) if self._migration is not None else None
+        self._migration_frozen = False
         self.plan_sha256 = c.canonical_sha256(self.binding)
         _safe_path(self.fixture_root / 'diagnostic-prefect', recursive=True)
         self.root = _safe_path(self.fixture_root / 'diagnostic-prefect' / self.plan_sha256, recursive=True)
@@ -188,6 +233,9 @@ class DiagnosticDAG:
         self.root.mkdir(parents=True, exist_ok=True, mode=0o700)
         _safe_path(self.root, recursive=True)
         public.save_once(self.root / 'plan.json', self.binding)
+        if self._migration is not None:
+            public.save_once(self.root / 'session-binding-migration.json', self._migration)
+            self._migration_frozen = True
 
     def _check(self):
         c.require(_safe_path(self.session.root) == self.fixture_root and
@@ -195,11 +243,25 @@ class DiagnosticDAG:
                   'diagnostic_flow_root_changed')
         _safe_path(self.root.parent / '.harness-locks', recursive=True)
         c.require(c.canonical_sha256(self.binding) == self.plan_sha256 and
-                  self.session.binding == self.binding['sessionBinding'] and
+                  self.session.binding == (self._migration['executionBinding']['sessionBinding']
+                      if self._migration is not None else self.binding['sessionBinding']) and
                   _inventory(self.config, self.session) == self.binding['inputFiles'], 'diagnostic_flow_frozen_inputs_changed')
         path = self.root / 'plan.json'
+        c.require(self._migration is None or path.exists(),
+                  'diagnostic_flow_resume_plan_missing')
         if path.exists():
             c.require(public.read_snapshot(path)[0] == self.binding, 'diagnostic_flow_plan_changed')
+        if self._migration is not None:
+            c.require(c.canonical_sha256(self._migration) == self._migration_sha256,
+                      'diagnostic_flow_session_migration_changed')
+            c.require(self._migration['executionBinding']['codeSha256'] ==
+                      _hash_file(Path(__file__).resolve()), 'diagnostic_flow_migration_code_changed')
+            migration_path = self.root / 'session-binding-migration.json'
+            c.require(not self._migration_frozen or migration_path.exists(),
+                      'diagnostic_flow_session_migration_missing')
+            if migration_path.exists():
+                c.require(public.read_snapshot(migration_path)[0] == self._migration,
+                          'diagnostic_flow_session_migration_changed')
 
     def _validate(self, operation, locale, result):
         c.require(type(result) is dict, 'diagnostic_flow_result_required')
@@ -302,9 +364,9 @@ class DiagnosticDAG:
             return observation
 
 
-def run(session, config):
+def run(session, config, *, resume_plan=None):
     """One fresh SDK process; no engine retries/caches replace business ledgers."""
-    dag = DiagnosticDAG(session, config)
+    dag = DiagnosticDAG(session, config, resume_plan=resume_plan)
     with work_lock(dag.root):
         dag.freeze()
         home, database = pilot.isolated_prefect_environment(dag.root)
@@ -400,6 +462,7 @@ def main(argv=None):
     parser.add_argument('--fixture-responses', type=Path)
     parser.add_argument('--key-fd', type=int)
     parser.add_argument('--request-limits', type=Path, help='Initial request limits; resumes reuse the frozen snapshot')
+    parser.add_argument('--resume-plan', type=Path, help='Explicit v1 plan.json to migrate in place without changing its directory')
     args = parser.parse_args(argv)
     plan = public.read_snapshot(_path(str(args.plan)))[0]
     continuation = public.read_snapshot(_path(str(args.continuation)))[0]
@@ -414,7 +477,7 @@ def main(argv=None):
                   'diagnostic_flow_explicit_private_key_fd_required')
         config = preflight_live(plan, continuation, config, request_limits=request_limits)
         session = _session_class()(plan, continuation, key=_read_key_fd(args.key_fd), execute=True, request_limits=request_limits)
-    print(json.dumps(run(session, config), sort_keys=True))
+    print(json.dumps(run(session, config, **({'resume_plan': args.resume_plan} if args.resume_plan else {})), sort_keys=True))
 
 
 if __name__ == '__main__':
