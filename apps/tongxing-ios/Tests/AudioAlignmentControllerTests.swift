@@ -169,12 +169,12 @@ final class AudioAlignmentControllerTests: XCTestCase {
         XCTAssertEqual(f.capture.calls, 0)
     }
 
-    func testPublishedCapabilityCapturesTenSecondsAndSilenceNeverSeeks() async throws {
+    func testPublishedCapabilityStreamsWithinBudgetAndSilenceNeverSeeks() async throws {
         let f = try Fixture(published: true)
         XCTAssertTrue(f.controller.available)
         f.controller.start()
         try await eventually { !f.controller.busy }
-        XCTAssertEqual(f.capture.requestedSeconds, [10])
+        XCTAssertEqual(f.capture.requestedMaxSeconds, [15])
         XCTAssertEqual(f.player.seeks, [])
         XCTAssertEqual(f.status, "未找到可靠匹配，播放位置未改变。")
         XCTAssertGreaterThan(f.capture.stops, 0)
@@ -227,7 +227,7 @@ final class AudioAlignmentControllerTests: XCTestCase {
         controller.start()
         try await eventually { !controller.busy }
         XCTAssertEqual(loaded, 1)
-        XCTAssertEqual(capture.requestedSeconds, [10])
+        XCTAssertEqual(capture.requestedMaxSeconds, [15])
         XCTAssertTrue(player.seeks.isEmpty)
         selected = nil
         XCTAssertFalse(controller.available)
@@ -246,7 +246,7 @@ final class AudioAlignmentControllerTests: XCTestCase {
         XCTAssertTrue(f.controller.available)
         f.controller.start()
         try await eventually { !f.controller.busy }
-        XCTAssertEqual(f.capture.requestedSeconds, [10])
+        XCTAssertEqual(f.capture.requestedMaxSeconds, [15])
         XCTAssertEqual(f.player.seeks, [])
         XCTAssertEqual(f.status, "未找到可靠匹配，播放位置未改变。")
     }
@@ -378,6 +378,63 @@ final class AudioAlignmentControllerTests: XCTestCase {
         XCTAssertEqual(model.alignmentDisplayStatus, "本篇尚未提供现场对齐资料，请刷新目录或手动定位。")
     }
 
+    func testEarlyStopAtFirstCheckpointSeeksOnceAndStopsMic() async throws {
+        let counter = CallCounter()
+        let f = try Fixture(matcher: { _, _ in counter.increment(); return Self.match })
+        f.controller.start()
+        try await eventually { !f.controller.busy }
+        XCTAssertEqual(f.player.seeks, [108])
+        XCTAssertEqual(counter.count, 1)
+        XCTAssertEqual(f.capture.requestedMaxSeconds, [15])
+        XCTAssertEqual(f.capture.session?.cancels, 1)
+        XCTAssertEqual(f.status, "已对齐至 {time}。")
+        XCTAssertEqual(f.resultPosition, 108)
+        XCTAssertTrue(f.failures.isEmpty)
+    }
+
+    func testMissThenHitContinuesInSameSession() async throws {
+        let counter = CallCounter()
+        let f = try Fixture(matcher: { _, _ in
+            counter.increment()
+            return counter.count == 1 ? Self.noMatch : Self.match
+        })
+        f.controller.start()
+        try await eventually { !f.controller.busy }
+        XCTAssertEqual(f.player.seeks, [108])
+        XCTAssertEqual(counter.count, 2)
+        XCTAssertEqual(f.capture.requestedMaxSeconds, [15])
+        XCTAssertEqual(f.status, "已对齐至 {time}。")
+        XCTAssertTrue(f.failures.isEmpty)
+    }
+
+    func testAllCheckpointsMissNeverSeeks() async throws {
+        let counter = CallCounter()
+        let f = try Fixture(matcher: { _, _ in counter.increment(); return Self.noMatch })
+        f.controller.start()
+        try await eventually { !f.controller.busy }
+        XCTAssertEqual(f.player.seeks, [])
+        XCTAssertEqual(counter.count, 4)
+        XCTAssertEqual(f.capture.requestedMaxSeconds, [15])
+        XCTAssertEqual(f.status, "未找到可靠匹配，播放位置未改变。")
+        XCTAssertEqual(f.failures, [f.status])
+    }
+
+    func testSlowCheckpointMatchTimesOutAndLaterCheckpointHits() async throws {
+        let gate = ResultGate()
+        let counter = CallCounter()
+        let f = try Fixture(matchBudget: .milliseconds(60), matcher: { _, _ in
+            counter.increment()
+            if counter.count == 1 { return await gate.result() }
+            return Self.match
+        })
+        f.controller.start()
+        try await eventually { !f.controller.busy }
+        XCTAssertEqual(f.player.seeks, [108])
+        XCTAssertEqual(counter.count, 2)
+        XCTAssertEqual(f.status, "已对齐至 {time}。")
+        await gate.finish(Self.noMatch)
+    }
+
     private func withoutAlignment(_ track: SermonTrack) -> SermonTrack {
         SermonTrack(id: track.id, label: track.label, voiceLabel: track.voiceLabel,
             audioUrl: track.audioUrl, file: track.file, sha256: track.sha256,
@@ -411,7 +468,8 @@ final class AudioAlignmentControllerTests: XCTestCase {
         var controller: AudioAlignmentController!
 
         init(playing: Bool = false, result: FingerprintMatchResult = AudioAlignmentControllerTests.match,
-             deadline: Duration = .seconds(20), matcher: AudioAlignmentController.Matcher? = nil,
+             deadline: Duration = .seconds(20), matchBudget: Duration = .seconds(3),
+             matcher: AudioAlignmentController.Matcher? = nil,
              published: Bool = false, publishedLoadGate: ResultGate? = nil) throws {
             let hash = String(repeating: "a", count: 64)
             let alignment = SermonAudioAlignment(fingerprintUrl: "/alignment/\(hash)-fingerprint.json", fingerprintSha256: hash,
@@ -465,7 +523,7 @@ final class AudioAlignmentControllerTests: XCTestCase {
             controller = AudioAlignmentController(playback: player, capture: capture, getSelection: { [weak self] in self?.selection },
                 loadIndex: { _ in index }, loadPublishedIndex: publishedLoader, match: matcher ?? { _, _ in result }, now: { [weak self] in
                     self!.start.advanced(by: .seconds(self!.elapsed))
-                }, deadline: deadline, onState: { [weak self] status, _, position in self?.status = status; self?.resultPosition = position },
+                }, deadline: deadline, matchBudget: matchBudget, onState: { [weak self] status, _, position in self?.status = status; self?.resultPosition = position },
                 onFailure: { [weak self] message in self?.failures.append(message) })
         }
     }
@@ -489,18 +547,66 @@ final class AudioAlignmentControllerTests: XCTestCase {
     }
 
     @MainActor
+    private final class FakeSession: ContinuousCaptureSessionProtocol {
+        var startedAt = ContinuousClock.now
+        var samples: [Float] = []
+        var waitError: Error?
+        var maxWaitedSeconds: Double = 0
+        var cancels = 0
+        weak var capture: FakeCapture?
+
+        var accumulatedSeconds: Double { Double(samples.count) / 8000 }
+        var isFinished: Bool { false }
+
+        func waitUntil(seconds: Double) async throws {
+            maxWaitedSeconds = max(maxWaitedSeconds, seconds)
+            if let waitError { throw waitError }
+        }
+
+        func snapshot() -> CapturedAudio? {
+            CapturedAudio(samples: samples, sampleRate: 8000, startedAt: startedAt)
+        }
+
+        func cancel() {
+            cancels += 1
+            capture?.stops += 1
+        }
+    }
+
+    /// Sendable call counter for @Sendable matcher stubs.
+    private final class CallCounter: Sendable {
+        private let lock = NSLock()
+        private var _count = 0
+        var count: Int { lock.lock(); defer { lock.unlock() }; return _count }
+        func increment() { lock.lock(); defer { lock.unlock() }; _count += 1 }
+    }
+
+    @MainActor
     private final class FakeCapture: MicrophoneCapturing {
         var start = ContinuousClock.now
         var failure: Error?
         var calls = 0
         var stops = 0
         var requestedSeconds: [Double] = []
+        var requestedMaxSeconds: [Double] = []
         var samples: [Float] = []
+        var session: FakeSession?
         func capture(seconds: Double) async throws -> CapturedAudio {
             calls += 1
             requestedSeconds.append(seconds)
             if let failure { throw failure }
             return CapturedAudio(samples: samples, sampleRate: 8000, startedAt: start)
+        }
+        func beginContinuousCapture(maxSeconds: Double) async throws -> any ContinuousCaptureSessionProtocol {
+            calls += 1
+            requestedMaxSeconds.append(maxSeconds)
+            if let failure { throw failure }
+            let s = FakeSession()
+            s.startedAt = start
+            s.samples = samples
+            s.capture = self
+            session = s
+            return s
         }
         func cancel() { stops += 1 }
     }

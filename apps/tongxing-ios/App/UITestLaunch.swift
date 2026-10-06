@@ -52,6 +52,12 @@ private final class UITestFailedCapture: MicrophoneCapturing {
         }
         throw AudioAlignmentError.invalidCapture
     }
+    func beginContinuousCapture(maxSeconds: Double) async throws -> any ContinuousCaptureSessionProtocol {
+        if !ProcessInfo.processInfo.arguments.contains("--ui-testing-alignment-failure-immediate") {
+            try await Task.sleep(for: .milliseconds(250))
+        }
+        throw AudioAlignmentError.invalidCapture
+    }
     func cancel() {}
 }
 
