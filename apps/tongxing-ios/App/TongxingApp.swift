@@ -8,6 +8,11 @@ struct TongxingApp: App {
     @ObservedObject private var notifications = BetaNotificationController.shared
     #endif
     @Environment(\.scenePhase) private var scenePhase
+    // App-scoped on purpose: Tongxing owns a single audio session, so every
+    // window (including Duo inner-display multi-window) mirrors the same
+    // playback state. Do not move this into the WindowGroup content —
+    // per-window models would create competing PlaybackControllers over one
+    // audio session.
     @StateObject private var model: AppModel = {
         #if DEBUG
         if let fixtureModel = UITestLaunch.makeModel() { return fixtureModel }
