@@ -34,7 +34,7 @@ class MockTTSDAGComponents(unittest.TestCase):
         self.enterContext(patch.object(dag, 'version', return_value='component-only-no-sdk'))
 
     def make(self, config=None, *, recovery=None):
-        session = DiagnosticSession(self.f.plan, self.f.continuation, offline_transport=self.f.transport)
+        session = DiagnosticSession(self.f.plan, self.f.continuation, offline_transport=self.f.transport, request_limits=self.f.request_limits)
         return dag.MockTTSDAG(session, config or self.f.dag_config(), recovery=recovery)
 
     def execute_components(self, current):

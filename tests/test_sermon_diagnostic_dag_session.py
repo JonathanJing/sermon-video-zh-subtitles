@@ -25,7 +25,7 @@ class DiagnosticSessionTests(unittest.TestCase):
 
     def make(self, transport=None, **kwargs):
         return session.DiagnosticSession(self.f.plan, self.f.continuation,
-            offline_transport=transport or self.f.transport, **kwargs)
+            offline_transport=transport or self.f.transport, request_limits=self.f.request_limits, **kwargs)
 
     def test_full_existing_source_locale_replay_keeps_original_calls_and_pending_gates(self):
         current = self.make()
@@ -47,6 +47,19 @@ class DiagnosticSessionTests(unittest.TestCase):
         candidate = c.read_snapshot(Path(result['output'])/'candidate.json')[0]
         self.assertEqual(candidate['humanReview']['translation'], 'pending')
         self.assertFalse(candidate['releaseEligible'])
+
+    def test_explicit_limits_are_frozen_across_continuation_restart(self):
+        current = self.make()
+        lower = {**self.f.request_limits, 'maxInputTokens': 8192}
+        with self.assertRaisesRegex(ValueError, 'immutable_strict_artifact_changed'):
+            session.DiagnosticSession(self.f.plan, self.f.continuation,
+                offline_transport=self.f.transport, request_limits=lower)
+        self.assertEqual(current.binding['requestLimits'], self.f.request_limits)
+        self.assertEqual(len(self.f.transport.observations), 2)
+        current.subject.limits = lower
+        with self.f.session(), self.assertRaisesRegex(ValueError, 'diagnostic_dag_binding_changed'):
+            current.inspect_source()
+        self.assertEqual(len(self.f.transport.observations), 2)
 
     def test_real_credentials_or_missing_offline_marker_cannot_adopt_existing_run(self):
         state = self.f.root/'budget'/budget.STORE_ID/'provider-run/state.json'

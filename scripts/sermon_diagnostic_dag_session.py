@@ -24,7 +24,7 @@ from scripts.sermon_release_workflow import _safe_path
 
 class DiagnosticSession:
     """Trusted fixed callbacks; optional injected key never enters evidence."""
-    def __init__(self, plan, continuation, *, key=None, offline_transport=None, execute=False):
+    def __init__(self, plan, continuation, *, key=None, offline_transport=None, execute=False, request_limits=None):
         self.offline_fixture = offline_transport is not None
         c.require(type(execute) is bool and (
             (self.offline_fixture and key is None and execute is False and
@@ -50,6 +50,10 @@ class DiagnosticSession:
         self.plan, self.continuation = deepcopy(plan), deepcopy(continuation)
         self.root, self.subject, self.context, self.deadline, evidence = entry.prepare_continuation(
             self.plan, self.continuation)
+        if request_limits is not None:
+            from scripts import sermon_diagnostic_provider as provider
+            self.subject = provider.DiagnosticProvider(self.subject.store, self.subject.config, request_limits)
+        strict.save_once(self.root / 'continuation-request-limits.json', self.subject.limits)
         if self.offline_fixture:
             self.subject.executor = offline_transport
         self.transport, self.marker = self.subject.executor, marker
@@ -60,6 +64,7 @@ class DiagnosticSession:
             'continuationSha256': c.canonical_sha256(continuation),
             'diagnosticContextSha256': c.canonical_sha256(self.context),
             'sourceEvidence': evidence,
+            'requestLimits': deepcopy(self.subject.limits),
             'fixtureId': self.transport.fixture_id if self.offline_fixture else None,
             'runId': self.context['runId'], 'storeSha256': self.subject.store.store_sha256,
             'deadlineMonotonic': self.deadline, 'evidenceMode': self.evidence_mode,
@@ -95,6 +100,8 @@ class DiagnosticSession:
         c.require((not self.offline_fixture or
                   c.read_snapshot(self.root / 'offline-business-scope.json')[0] == self.marker)
                   and c.read_snapshot(self.root / 'run-plan.json')[0] == self.plan
+                  and c.read_snapshot(self.root / 'continuation-request-limits.json')[0]
+                      == self.subject.limits == self.binding['requestLimits']
                   and self.subject.executor is self.transport
                   and self.subject.config == self.plan['providerConfig']
                   and self.subject.store.store_sha256 == self.context['storeSha256'],
