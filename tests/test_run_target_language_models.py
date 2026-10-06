@@ -1,5 +1,6 @@
 import copy
 import hashlib
+import shutil
 
 from contextvars import ContextVar
 import json
@@ -253,6 +254,19 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "blocked group"):
             self.production_run(f.source, f.anchor, f.policy, self.out, "fixture-key", self.fake_call,
                         plugin_path=f.plugin_path, reuse_from=previous)
+        self.assertEqual(self.calls, [])
+        self.assertFalse(self.out.exists())
+        tampered = self.out.parent / "tampered-stop"
+        shutil.copytree(previous, tampered)
+        changed = json.loads((tampered / "plugin-group-stop.json").read_text())
+        changed["groupReview"]["targetTextSha256"] = "ab" * 32
+        (tampered / "plugin-group-stop.json").write_text(json.dumps(changed))
+        with self.assertRaisesRegex(ValueError, "rejected reviewer text"):
+            subject.partial_repair_brief_for_plugin_stop(
+                tampered, f.request, plan, "Remove the blocked wording and follow the English source.")
+        with self.assertRaisesRegex(ValueError, "rejected reviewer text"):
+            subject.run(f.source, f.anchor, f.policy, self.out, "fixture-key", self.fake_call,
+                        plugin_path=f.plugin_path, reuse_from=tampered, partial_repair_brief=brief)
         self.assertEqual(self.calls, [])
         self.assertFalse(self.out.exists())
 

@@ -335,6 +335,10 @@ def _transport_rejection(output,payload_sha256):
 
 def call_model(prepared,role,request,output,api_key,caller,*,attempt_number=1,cache_only=False):
     """Shared cache path; the transport must save response before logging finish."""
+    # Diagnostic runs and cache-only historical reads keep their original prompt.
+    # A new non-diagnostic call must already carry the frozen rule receipt.
+    if prepared.get('rulePreflight') is None and prepared.get('diagnosticContext') is None and not cache_only:
+        raise c.ContractError('strict_rule_preflight_required')
     payload_sha256=policies.canonical_sha256(_payload(prepared,role,request))
     rejection=_transport_rejection(output,payload_sha256)
     if rejection is not None:

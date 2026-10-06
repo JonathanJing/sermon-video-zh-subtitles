@@ -31,7 +31,13 @@ class StrictAdapterTests(unittest.TestCase):
         policy=policies.freeze_strict_policy(draft,rubric)
         self.args=[s.material_bytes(v) for v in (f.source,f.anchor,policy,rubric)]
         self.group={k:f.evidence['groups'][0][k] for k in ('translationGroupId','sourceUnitIds')}
-        self.prepared=s.prepare(*self.args,self.group)
+        from scripts import produce_target_language_candidate as producer
+        from scripts import run_target_language_models as models
+        from scripts import target_language_rule_preflight as rule_preflight
+        request = producer.prepare_request(f.source, f.anchor, policy, strict_rubric=rubric)
+        self.rule_preflight = rule_preflight.preflight(
+            request, policy, f.plugin_path, models.group_plan(request, f.anchor))
+        self.prepared=s.prepare(*self.args,self.group,rule_preflight=self.rule_preflight)
         self.mode='pass'
 
     def transport(self,key,payload,*,response_observer):
@@ -75,6 +81,16 @@ class StrictAdapterTests(unittest.TestCase):
     def session(self):return profile.session(self.root/'logs','strict-test',work_kind='production',evidence_mode='synthetic')
     def generate(self):return s.generate(self.prepared,self.root/'revision','candidate','r1','fixture',self.transport)
     def review(self):return s.review(self.prepared,self.root/'revision','candidate','r1','fixture',self.transport)
+
+    def test_live_call_without_frozen_rules_sends_nothing(self):
+        bare = s.prepare(*self.args, self.group)
+        sent = []
+        with self.session(), self.assertRaisesRegex(ValueError, 'strict_rule_preflight_required'):
+            s.call_model(bare, 'translator', s.prompt(bare, 'translator'), self.root / 'bare.json',
+                         'fixture', lambda *args, **kwargs: sent.append(args))
+        self.assertEqual(sent, [])
+        self.assertEqual(self.calls, [])
+        self.assertFalse((self.root / 'bare.json').exists())
 
     def test_json_mode_prompt_contract_covers_generator_and_verifier_shapes(self):
         original = self.transport
@@ -378,7 +394,7 @@ class StrictAdapterTests(unittest.TestCase):
             prepared['units'][0]['english']='changed'
             with self.assertRaisesRegex(c.ContractError,'strict_prepared_inputs_changed'):
                 s.review(prepared,self.root/'revision','candidate','r1','fixture',self.transport)
-            changed=s.prepare(self.args[0]+b' ',*self.args[1:],self.group)
+            changed=s.prepare(self.args[0]+b' ',*self.args[1:],self.group,rule_preflight=self.rule_preflight)
             with self.assertRaisesRegex(c.ContractError,'review_source_bytes_changed'):
                 s.review(changed,self.root/'revision','candidate','r1','fixture',self.transport)
             self.assertEqual(len(self.calls),1)
@@ -565,7 +581,7 @@ class StrictAdapterTests(unittest.TestCase):
     def test_target_unit_id_boundary_is_validated_before_transport(self):
         prefix='l2.zh-Hans.'
         valid=dict(self.group,translationGroupId='g'*(85-len(prefix)))
-        prepared=s.prepare(*self.args,valid)
+        prepared=s.prepare(*self.args,valid,rule_preflight=self.rule_preflight)
         self.assertEqual(len(prepared['workUnitId']),85)
         self.f.evidence['groups'][0]['translationGroupId']=valid['translationGroupId']
         with self.session():

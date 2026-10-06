@@ -469,7 +469,9 @@ def partial_repair_brief_for_plugin_stop(reuse_from: Path, request: dict[str, An
             "plugin group stop is not a blocked machine review")
     review = stop.get("groupReview")
     require(isinstance(review, dict) and review.get("status") == "fail"
-            and isinstance(review.get("checks"), list),
+            and isinstance(review.get("checks"), list)
+            and isinstance(review.get("targetTextSha256"), str)
+            and re.fullmatch(r"[a-f0-9]{64}", review["targetTextSha256"]) is not None,
             "plugin group stop has no failing review")
     failed = [check for check in review["checks"]
               if isinstance(check, dict) and check.get("status") == "fail"
@@ -485,6 +487,7 @@ def partial_repair_brief_for_plugin_stop(reuse_from: Path, request: dict[str, An
     index, _group = plan_by_id[group_id]
     cache = reuse_from / f"group-{index:04d}-sol.json"
     require(cache.is_file(), "plugin group stop lacks the rejected reviewer cache")
+    _require_rejected_reviewer_text(cache, review["targetTextSha256"])
     return {"schemaVersion": PARTIAL_REPAIR_SCHEMA,
             "targetLocale": request["targetLocale"],
             "englishSourcePackageJsonSha256": request["englishSourcePackageJsonSha256"],
@@ -496,6 +499,16 @@ def partial_repair_brief_for_plugin_stop(reuse_from: Path, request: dict[str, An
                         "failedCacheSha256": hashlib.sha256(cache.read_bytes()).hexdigest(),
                         "failureReason": reason,
                         "instruction": instruction.strip()}]}
+
+
+def _require_rejected_reviewer_text(cache: Path, expected_sha256: str) -> None:
+    saved = producer._load(cache)
+    result = saved.get("result") if isinstance(saved, dict) else None
+    utterances = result.get("targetUtterances") if isinstance(result, dict) else None
+    require(isinstance(utterances, list) and utterances and all(isinstance(text, str) for text in utterances),
+            "plugin group stop reviewer cache lacks target text")
+    actual = hashlib.sha256("".join(utterances).encode("utf-8")).hexdigest()
+    require(actual == expected_sha256, "plugin group stop does not match the rejected reviewer text")
 
 
 def require_plugin_stop_repair(reuse_from: Path | None, repairs: dict[str, dict[str, Any]],
@@ -511,6 +524,14 @@ def require_plugin_stop_repair(reuse_from: Path | None, repairs: dict[str, dict[
             and repair.get("sourceUnitIds") == stop.get("sourceUnitIds")
             and repair.get("failedRole") == "reviewer",
             "plugin group stop requires a reviewer partial repair of the blocked group")
+    review = stop.get("groupReview") if isinstance(stop.get("groupReview"), dict) else {}
+    expected = review.get("targetTextSha256")
+    require(isinstance(expected, str) and re.fullmatch(r"[a-f0-9]{64}", expected) is not None,
+            "plugin group stop lacks the rejected target text")
+    matched = [path for path in sorted(reuse_from.glob("group-*-sol.json"))
+               if hashlib.sha256(path.read_bytes()).hexdigest() == repair.get("failedCacheSha256")]
+    require(len(matched) == 1, "plugin group stop lacks the rejected reviewer cache")
+    _require_rejected_reviewer_text(matched[0], expected)
 
 
 def reusable_cache(prior_run: Path | None, stem: str, role: str) -> Path | None:

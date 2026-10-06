@@ -46,9 +46,15 @@ class ProviderTests(unittest.TestCase):
         with patch.object(EnglishSourcePackageTests,'build',scoped_build):self.f.setUp()
         self.root=self.f.root/'revision';self.store=budget.BudgetStore(self.f.root/'budget',authority())
         self.clock=100.;self.calls=[];self.selected=deepcopy(limits.DEFAULT_REQUEST_LIMITS)
-        self.prepared=strict.prepare(*self.f.args,self.f.group,request_limits=self.selected)
+        # Frozen rule text makes the reviewer prompt exceed the 8192 default input cap.
+        self.selected['maxInputTokens']=limits.MAX_REQUEST_LIMITS['maxInputTokens']
+        self.prepared=strict.prepare(*self.f.args,self.f.group,request_limits=self.selected,
+                                     rule_preflight=self.f.rule_preflight)
         self.provider=self.provider_for()
-        self.bound=dict(requests=1,inputTokens=8192,outputTokens=4096,wallTimeMs=300000,costMicrousd=307200)
+        self.bound=dict(requests=1,inputTokens=self.selected['maxInputTokens'],outputTokens=4096,
+                        wallTimeMs=300000,
+                        costMicrousd=limits._cost('gpt-6-astra',self.selected['maxInputTokens'],
+                                                  self.selected['maxCompletionTokens']))
         self.subject=adapter.StrictBudgetAdapter(self.store)
 
     def provider_for(self,**kw):
@@ -102,14 +108,16 @@ class ProviderTests(unittest.TestCase):
     def test_changed_cap_cannot_reset_existing_operation(self):
         with self.f.session():
             self.generate();self.selected['maxCompletionTokens']=2048
-            self.prepared=strict.prepare(*self.f.args,self.f.group,request_limits=self.selected)
+            self.prepared=strict.prepare(*self.f.args,self.f.group,request_limits=self.selected,
+                                     rule_preflight=self.f.rule_preflight)
             self.provider=self.provider_for()
             with self.assertRaisesRegex(ValueError,'idempotency_conflict'):self.generate()
         self.assertEqual(len(self.calls),1)
 
     def test_input_bound_rejects_before_any_reservation_or_transport(self):
         self.selected['maxInputTokens']=1
-        self.prepared=strict.prepare(*self.f.args,self.f.group,request_limits=self.selected)
+        self.prepared=strict.prepare(*self.f.args,self.f.group,request_limits=self.selected,
+                                     rule_preflight=self.f.rule_preflight)
         self.provider=self.provider_for()
         with self.f.session(),self.assertRaisesRegex(ValueError,'input_bound_exceeded'):self.generate()
         self.assertEqual(self.calls,[]);self.assertFalse(self.store.root.exists())
@@ -117,7 +125,7 @@ class ProviderTests(unittest.TestCase):
     def test_initial_group_count_and_input_bounds_are_preflighted_without_calls(self):
         with self.assertRaisesRegex(ValueError,'diagnostic_locale_group_limit'):
             self.provider.preflight_locale([self.prepared]*19)
-        changed=deepcopy(self.prepared);changed['units'][0]['english']='x'*9000
+        changed=deepcopy(self.prepared);changed['units'][0]['english']='x'*20000
         with self.assertRaisesRegex(ValueError,'input_bound_exceeded'):
             self.provider.preflight_locale([self.prepared,changed])
         self.assertEqual(self.calls,[])
@@ -473,8 +481,10 @@ class BoundedAdmissionTests(unittest.TestCase):
         from tests.test_sermon_strict_gate_admission import AdmissionTests
         fixture=AdmissionTests();self.addCleanup(fixture.doCleanups)
         original=strict.prepare
+        wide=dict(limits.DEFAULT_REQUEST_LIMITS,maxInputTokens=limits.MAX_REQUEST_LIMITS['maxInputTokens'])
         def prepare(*args,**kwargs):
-            return original(*args,request_limits=kwargs.get('request_limits') or limits.DEFAULT_REQUEST_LIMITS)
+            kwargs['request_limits']=kwargs.get('request_limits') or wide
+            return original(*args,**kwargs)
         with patch.object(strict,'prepare',side_effect=prepare):fixture.setUp()
         result=fixture.admit();self.assertEqual(result['status'],'committed')
         self.assertEqual(fixture.admit()['status'],'existing')
@@ -486,10 +496,11 @@ class BoundedAdmissionTests(unittest.TestCase):
     def test_locale_entry_passes_caps_through_controller_and_bridge(self):
         from tests.test_sermon_strict_locale import LocaleTests
         fixture=LocaleTests();self.addCleanup(fixture.doCleanups); fixture.setUp()
+        wide=dict(limits.DEFAULT_REQUEST_LIMITS,maxInputTokens=limits.MAX_REQUEST_LIMITS['maxInputTokens'])
         with fixture.f.session():
-            result=fixture.run_locale(request_limits=limits.DEFAULT_REQUEST_LIMITS)
+            result=fixture.run_locale(request_limits=wide)
             self.assertEqual(result['status'],'waiting_human')
-            repeated=fixture.run_locale(request_limits=limits.DEFAULT_REQUEST_LIMITS)
+            repeated=fixture.run_locale(request_limits=wide)
             self.assertEqual(repeated['candidateSha256'],result['candidateSha256'])
         self.assertEqual(len(fixture.f.calls),4)
         self.assertTrue(all(call['max_completion_tokens']==4096 for call in fixture.f.calls))
