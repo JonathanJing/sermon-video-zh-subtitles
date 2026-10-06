@@ -64,6 +64,27 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
         self.out = Path(temp.name) / "run"
         self.calls = []
 
+    def test_standalone_defaults_cli_and_explicit_api_retains_key(self):
+        from unittest.mock import Mock, patch
+        import sys
+        argv = ['layer2', '--english-source-package', 'source.json', '--anchor', 'anchor.json',
+                '--policy', 'policy.json', '--plugin', str(self.fixture.plugin_path),
+                '--out-dir', str(self.out)]
+        for backend in ('codex-cli', 'openai-api'):
+            cli = Mock(execution_identity={'backend': 'codex_cli'}, billing='local')
+            api = Mock(key='historical-key', execution_identity={'backend': 'openai_api'})
+            with self.subTest(backend=backend), patch.object(sys, 'argv',
+                    argv if backend == 'codex-cli' else argv + ['--model-backend', backend]), patch.object(
+                    subject.producer, '_load', side_effect=[self.fixture.source, self.fixture.anchor, self.fixture.policy]), patch(
+                    'scripts.production_spark_admission.require_session'), patch(
+                    'scripts.codex_layer2_transport.CodexLayer2Transport', return_value=cli) as cli_factory, patch(
+                    'scripts.openai_layer2_transport.OpenAILayer2Transport', return_value=api) as api_factory, patch.object(
+                    subject, 'run_accounted', return_value={'groups': []}) as run:
+                subject.main()
+            self.assertEqual(run.call_args.args[4], '' if backend == 'codex-cli' else 'historical-key')
+            self.assertEqual(cli_factory.call_count, int(backend == 'codex-cli'))
+            self.assertEqual(api_factory.call_count, int(backend == 'openai-api'))
+
     def production_run(self, *args, **kwargs):
         kwargs.setdefault("plugin_path", self.fixture.plugin_path)
         return subject.run(*args, **kwargs)

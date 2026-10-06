@@ -49,6 +49,10 @@ enum UITestLaunch {
             model.playback.setAlignmentPhase(.preparing)
             model.playback.setAlignmentPhase(.listening)
             try await Task.sleep(for: .seconds(6))
+            model.playback.setAlignmentPhase(.matching)
+            try await Task.sleep(for: .seconds(6))
+            model.playback.setAlignmentPhase(.unmatched)
+            try await Task.sleep(for: .seconds(6))
             model.playback.setAlignmentPhase(nil)
         } catch { model.playback.setAlignmentPhase(nil) }
     }
@@ -73,6 +77,12 @@ enum UITestLaunch {
 @MainActor
 private final class UITestFailedCapture: MicrophoneCapturing {
     func capture(seconds: Double) async throws -> CapturedAudio {
+        if !ProcessInfo.processInfo.arguments.contains("--ui-testing-alignment-failure-immediate") {
+            try await Task.sleep(for: .milliseconds(250))
+        }
+        throw AudioAlignmentError.invalidCapture
+    }
+    func beginContinuousCapture(maxSeconds: Double) async throws -> any ContinuousCaptureSessionProtocol {
         if !ProcessInfo.processInfo.arguments.contains("--ui-testing-alignment-failure-immediate") {
             try await Task.sleep(for: .milliseconds(250))
         }
@@ -128,6 +138,9 @@ private enum UITestContent {
                 speaker: "静音夹具", scripture: "自动化验证",
                 tracks: [track(id: "fixture-first", label: "甲音轨", data: firstAudio, duration: 36),
                          track(id: "fixture-second", label: "乙音轨", data: secondAudio, duration: 48.024)],
+                summary: "合成测试说明，用于验证大纲与默想页面。",
+                outline: [OutlineSection(title: "测试大纲", points: ["测试要点"])],
+                questions: ["这是用于测试的默想问题。"],
                 contentReview: "合成测试数据，无真实证道内容或审核声明。",
                 audioNotice: "仅用于界面自动化的本地静音夹具，不是证道内容。",
                 transcript: BilingualTranscript(blocks: [

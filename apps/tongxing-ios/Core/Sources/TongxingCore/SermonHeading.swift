@@ -2,6 +2,16 @@ import Foundation
 
 /// Display metadata only. Source titles and release identities remain unchanged.
 public struct SermonHeading: Sendable, Equatable {
+    /// Display fallback only; stable identifiers remain available for addressing.
+    public static func displayTitle(_ title: String?, pageID: String, date: String, fallback: String) -> String {
+        let value = title?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !value.isEmpty, value != pageID, UUID(uuidString: value) == nil,
+              !value.hasPrefix("resi-"), !value.hasPrefix("https://"),
+              ![".mp3", ".m4a", ".wav"].contains(where: { value.lowercased().hasSuffix($0) }) else {
+            return date.isEmpty ? fallback : "\(date) · \(fallback)"
+        }
+        return value
+    }
     public let title: String
     public let series: String?
     public let speaker: String?

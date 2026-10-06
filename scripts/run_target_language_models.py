@@ -1194,6 +1194,8 @@ def main() -> None:
                         help="Reuse verified paid responses from an incomplete attempt of this revision")
     parser.add_argument("--progress-ledger", type=Path,
                         help="Record checkpoint and per-group substage timing in the four-layer ledger")
+    parser.add_argument("--model-backend", choices=("codex-cli", "openai-api"), default="codex-cli",
+                        help="New runs use Codex CLI; explicitly retain historical API identity")
     parser.add_argument("--out-dir", type=Path, required=True)
     args = parser.parse_args()
     require(args.revision_brief is None or args.reuse_from is not None,
@@ -1215,9 +1217,15 @@ def main() -> None:
     rule_preflight.preflight(request, policy, args.plugin, plan)
     from scripts import production_spark_admission as spark_admission
     spark_admission.require_session()
-    from scripts.openai_layer2_transport import OpenAILayer2Transport
-    caller = spark_admission.SessionBoundCaller(OpenAILayer2Transport())
-    api_key = caller.key
+    if args.model_backend == "openai-api":
+        from scripts.openai_layer2_transport import OpenAILayer2Transport
+        transport = OpenAILayer2Transport()
+        api_key = transport.key
+    else:
+        from scripts.codex_layer2_transport import CodexLayer2Transport
+        transport = CodexLayer2Transport(receipts_dir=args.out_dir / "_cli_calls")
+        api_key = ""
+    caller = spark_admission.SessionBoundCaller(transport)
     evidence = run_accounted(
         source, anchor, policy, args.out_dir, api_key,
         caller,

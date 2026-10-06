@@ -31,6 +31,14 @@ class TextRoleDefaultTests(unittest.TestCase):
                 sermon_pipeline.chat_json('unrelated-asr-key', payload, session_verifier=lambda: {'status': 'offline_test'})
             api.assert_not_called()
 
+    def test_supervisor_defaults_cli_and_preserves_explicit_historical_api(self):
+        from scripts import run_sermon_production_supervisor_agent as agent
+        argv = ['supervisor', '--sunday', '2026-10-04', '--state-file', 'unused.json']
+        with patch.object(sys, 'argv', argv):
+            self.assertEqual(agent.parse_args().agent_backend, 'codex-cli')
+        with patch.object(sys, 'argv', argv + ['--agent-backend', 'agents-api']):
+            self.assertEqual(agent.parse_args().agent_backend, 'agents-api')
+
     def test_notes_api_preserves_response_shape(self):
         envelope = {'model': 'gpt-6.1-sol', 'output_text': '{"summaryZh":"sample"}', 'usage': {'total_tokens': 12}}
         response = Mock(status_code=200)

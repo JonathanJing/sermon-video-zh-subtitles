@@ -92,7 +92,9 @@ def main() -> None:
         if args.content_release_admission is None:
             raise ValueError("production_content_release_admission_required")
         from scripts.production_content_release_admission import load
-        decision = load(args.content_release_admission)
+        decision = load(args.content_release_admission,
+                        candidate_sha256=receipt["buildReportSha256"],
+                        preflight_sha256=receipt["preflightSha256"])
         if decision["decision"] != "admitted" or decision["pageId"] != receipt["pageId"]:
             raise ValueError("production_content_release_blocked")
         receipt["contentReleaseAdmission"] = {

@@ -356,12 +356,26 @@ class CanonicalLayer2ControllerTests(unittest.TestCase):
         self.assertEqual(len(errors), 1)
         self.assertIn('worker_configuration_or_code_changed_during_models', str(errors[0]))
 
-    def test_actual_worker_api_without_budget_stops_before_any_model_cache(self):
+    def test_default_worker_selects_cli_without_api_key(self):
+        from unittest.mock import Mock
+        cli = Mock(execution_identity={'backend': 'codex_cli'}, billing='local')
+        with self.active() as (config, code, key, _), patch.object(
+                subject.spark_admission, 'require_session'), patch(
+                'scripts.codex_layer2_transport.CodexLayer2Transport', return_value=cli) as factory, patch.object(
+                subject.models, 'run_accounted', side_effect=RuntimeError('synthetic stop')) as run:
+            with self.assertRaisesRegex(RuntimeError, 'synthetic stop'):
+                subject.execute(self.path, 'zh-Hans', config.sha256, code, key)
+        factory.assert_called_once_with(receipts_dir=self.output.resolve() / '_cli_calls',
+                                       resource_policy=None, concurrency_profile=None)
+        self.assertEqual(run.call_args.args[4], '')
+        self.assertEqual(run.call_args.args[5].execution_identity['backend'], 'codex_cli')
+
+    def test_actual_worker_cli_requires_spark_session_before_any_model_cache(self):
         with self.active() as (config, code, key, _):
             result = subprocess.run(subject._worker_command(config, 'zh-Hans', key, code),
                 cwd=subject.ROOT, env={'OPENAI_API_KEY': '', 'CODEX_HOME': str(self.root / 'invalid-auth')}, capture_output=True, text=True, timeout=10)
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn('bound_budget_authorization_required', result.stderr)
+        self.assertIn('spark_exclusive_session_required', result.stderr)
         self.assertEqual({p.name for p in self.output.iterdir()}, {'accounting'})
         events, damaged = accounting.read_events(self.output / 'accounting')
         self.assertFalse(damaged)

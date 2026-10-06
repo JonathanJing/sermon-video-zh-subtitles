@@ -17,6 +17,12 @@ public struct VerifiedPublishedTranscript: Sendable, Equatable {
     public let title: String?
     public let series: String?
     public let speaker: String?
+    /// Optional study fields come from the same verified content bytes. They are
+    /// exposed only for human-reviewed content; no legacy week is joined by date.
+    public let scripture: String?
+    public let summary: String?
+    public let outline: [OutlineSection]
+    public let questions: [String]
     /// Duration of the source-video timeline used by the full reading text.
     public let durationSeconds: Double
     /// Duration of the target-language audio timeline used by spoken captions.
@@ -102,9 +108,22 @@ public struct VerifiedPublishedTranscript: Sendable, Equatable {
             .init(id: cue.textGroupId, text: cue.text, start: cue.start, end: cue.end,
                   english: english[cue.textGroupId])
         }
+        let reviewed = package.contentStatus == "human_reviewed"
+        func nonempty(_ value: String?) -> String? {
+            guard let value, !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
+            return value
+        }
+        let outline = reviewed ? (source.outline ?? []).compactMap { item -> OutlineSection? in
+            let points = item.points.filter { nonempty($0) != nil }
+            guard let title = nonempty(item.title) else { return nil }
+            return OutlineSection(title: title, points: points)
+        } : []
         return .init(pageID: page.id, locale: package.targetLocale,
                      sourceIdentitySha256: page.sourceIdentitySha256, title: source.title,
                      series: source.series, speaker: source.speaker,
+                     scripture: source.scripture,
+                     summary: reviewed ? nonempty(source.summary) : nil, outline: outline,
+                     questions: reviewed ? (source.questions ?? []).filter { nonempty($0) != nil } : [],
                      durationSeconds: source.durationSeconds, audioDurationSeconds: audioDuration, contentStatus: package.contentStatus,
                      releaseStatus: package.status, fullText: source.cues.map(convert),
                      captions: spoken.cues.map(convert))
@@ -139,12 +158,17 @@ private struct FullContent: Decodable {
     let title: String
     let series: String?
     let speaker: String?
+    let scripture: String?
+    let summary: String?
+    let outline: [PublishedStudyOutline]?
+    let questions: [String]?
     let cues: [RawCue]
 
     private enum CodingKeys: String, CodingKey {
         case schemaVersion, pageId, sourceLocale, targetLocale, locale, status, contentStatus, audioStatus, date
         case targetLanguageAudioPackageJsonSha256, englishSourcePackageJsonSha256, targetLanguageCandidateJsonSha256
         case sourceMediaSha256, durationSeconds, audioDurationSeconds, reviewMode, title, series, speaker, cues
+        case scripture, summary, outline, questions
     }
 
     init(from decoder: Decoder) throws {
@@ -171,7 +195,33 @@ private struct FullContent: Decodable {
         title = try c.decode(String.self, forKey: .title)
         series = try c.decodeIfPresent(String.self, forKey: .series)
         speaker = try c.decodeIfPresent(String.self, forKey: .speaker)
+        scripture = try c.decodeIfPresent(String.self, forKey: .scripture)
+        summary = try c.decodeIfPresent(String.self, forKey: .summary)
+        outline = try c.decodeIfPresent([PublishedStudyOutline].self, forKey: .outline)
+        questions = try c.decodeIfPresent([String].self, forKey: .questions)
         cues = try c.decode([RawCue].self, forKey: .cues)
+    }
+}
+
+/// Published full-video outlines use strings; Dev uses title/body objects and
+/// legacy-compatible optional additions may use title/points objects.
+private struct PublishedStudyOutline: Decodable {
+    let title: String
+    let points: [String]
+    private enum CodingKeys: String, CodingKey { case title, body, points }
+    init(from decoder: Decoder) throws {
+        if let line = try? decoder.singleValueContainer().decode(String.self) {
+            title = line; points = []
+        } else {
+            let values = try decoder.container(keyedBy: CodingKeys.self)
+            title = try values.decode(String.self, forKey: .title)
+            if let body = try values.decodeIfPresent(String.self, forKey: .body) { points = [body] }
+            else { points = try values.decode([String].self, forKey: .points) }
+        }
+        guard title.count <= 8_000, points.count <= 100,
+              points.allSatisfy({ $0.count <= 50_000 }) else {
+            throw CatalogError.invalid("大纲内容范围无效")
+        }
     }
 }
 

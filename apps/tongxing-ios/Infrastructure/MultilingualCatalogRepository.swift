@@ -423,16 +423,52 @@ public actor MultilingualCatalogRepository {
         let contentData = try await loadTranscriptAsset(content)
         let captionData = try await loadTranscriptAsset(captions)
         let referenceURL = origin.appendingPathComponent("english-reference/\(page.id).json")
+        // The sidecar has no catalog asset hash. Store it only after Core joins
+        // every approved block, and keep the entire release/source binding in
+        // the cache identity. Offline reads repeat both byte and Core checks.
+        let binding = [origin.absoluteString, page.id, package.targetLocale,
+                       page.sourceIdentitySha256, page.sourceMediaSha256 ?? "",
+                       page.targets[package.targetLocale]?.releasePackageJsonSha256 ?? "",
+                       content.sha256, captions.sha256]
+            .map { "\($0.utf8.count):\($0)" }.joined()
+        let key = SHA256.hash(data: Data(binding.utf8)).map { String(format: "%02x", $0) }.joined()
+        let referenceCache = cacheDirectory.appendingPathComponent("EnglishReferences", isDirectory: true)
+            .appendingPathComponent("\(key).json")
         var englishData: Data?
+        var fromNetwork = false
         do {
             englishData = try await download(url: referenceURL, maximumBytes: maximumPageBytes).0
+            fromNetwork = true
         } catch {
             if Task.isCancelled || error is CancellationError { throw CancellationError() }
-            // This supplementary reference has no catalog hash, so do not trust
-            // an offline cache as approved English. Base approved scripts work.
+            if let bytes = try? readBounded(referenceCache, maximumBytes: maximumPageBytes * 2),
+               let cached = try? JSONDecoder().decode(CachedEnglishReference.self, from: bytes),
+               cached.referenceData.count <= maximumPageBytes,
+               cached.sha256 == SHA256.hash(data: cached.referenceData).map({ String(format: "%02x", $0) }).joined() {
+                englishData = cached.referenceData
+            }
         }
-        return try VerifiedPublishedTranscript.decode(content: contentData, captions: captionData,
+        let result = try VerifiedPublishedTranscript.decode(content: contentData, captions: captionData,
             englishReference: englishData, package: package, page: page, allowDevCandidate: allowDevCandidate)
+        let approvedEnglish = result.fullText.allSatisfy { $0.english != nil }
+            && result.captions.allSatisfy { $0.english != nil }
+        if fromNetwork, approvedEnglish, let englishData {
+            let cached = CachedEnglishReference(referenceData: englishData,
+                sha256: SHA256.hash(data: englishData).map { String(format: "%02x", $0) }.joined())
+            // A supplementary cache write must not hide usable approved text.
+            try? FileManager.default.createDirectory(at: referenceCache.deletingLastPathComponent(), withIntermediateDirectories: true)
+            if let bytes = try? JSONEncoder().encode(cached) { try? bytes.write(to: referenceCache, options: .atomic) }
+        } else if !approvedEnglish {
+            // A withdrawn/malformed response cannot leave an old approved label
+            // ready to reappear on the next offline launch.
+            try? FileManager.default.removeItem(at: referenceCache)
+        }
+        return result
+    }
+
+    private struct CachedEnglishReference: Codable {
+        let referenceData: Data
+        let sha256: String
     }
 
     private func loadTranscriptAsset(_ asset: ReleaseAsset) async throws -> Data {
