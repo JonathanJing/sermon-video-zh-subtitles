@@ -38,7 +38,7 @@ CLI 子进程过滤 OpenAI API 环境变量；ChatGPT 认证缺失、CLI 不可�
 |---|---|---|
 | Sol 6.1 high fast 初译 | 最新13组 CLI 174.709秒；输出43.39 token/s，扣推理16.52 token/s；前轮40.24／15.96 | 会话吞吐，含启动／输入处理／等待；不是纯生成速度 |
 | Sol 6.1 medium fast 独立审核 | 尚无匹配实测 | 原 Sol medium fast 的54.72 token/s不能改名充作新模型数据 |
-| Luna medium fast CLI Supervisor | 尚无匹配实测 | 历史Luna medium Agents API p50 79.12秒／p95 82.40秒只作历史参照 |
+| Luna medium fast CLI Supervisor | 605.5秒诊断的一次只读快照：4.031秒、81输出token、会话输出20.09 token/s | 单次请求、实际服务端tier未知；历史Luna medium Agents API p50 79.12秒／p95 82.40秒只作历史参照。不同监督模型与任务口径见[速度参考列表](supervisor-model-speed-reference.zh.md) |
 | Qwen TTS正式中文8驻留副本×batch8 | 热样本5.04×实时，冷加载54.65秒 | 64段／286.4秒音频；不外推为韩／西已实测 |
 | Qwen TTS测试batch2 | 推理2.19×实时；含加载等进程开销1.43×实时 | 最新180.88秒音频 |
 | Qwen ASR测试batch4 | 推理17.37×实时；含加载等进程开销5.74×实时 | 正式batch1无匹配实测 |
