@@ -449,6 +449,70 @@ def validate_partial_repair_brief(brief: dict[str, Any] | None,
     return result
 
 
+def partial_repair_brief_for_plugin_stop(reuse_from: Path, request: dict[str, Any],
+                                         plan: list[dict[str, Any]],
+                                         instruction: str) -> dict[str, Any]:
+    """Bind a new revision to the reviewer cache a language plugin rejected.
+
+    The instruction is supplied by the caller. This does not dispatch a model
+    or rewrite the stopped run.
+    """
+    stop = producer._load(reuse_from / "plugin-group-stop.json")
+    require(isinstance(stop, dict)
+            and stop.get("schemaVersion") == "sermon-layer2-plugin-group-stop-v1"
+            and stop.get("status") == "blocked"
+            and stop.get("reasonCode") == "language_plugin_group_blocked"
+            and stop.get("stopsLaterDispatch") is True
+            and stop.get("humanApproval") is False
+            and isinstance(stop.get("translationGroupId"), str)
+            and isinstance(stop.get("sourceUnitIds"), list),
+            "plugin group stop is not a blocked machine review")
+    review = stop.get("groupReview")
+    require(isinstance(review, dict) and review.get("status") == "fail"
+            and isinstance(review.get("checks"), list),
+            "plugin group stop has no failing review")
+    failed = [check for check in review["checks"]
+              if isinstance(check, dict) and check.get("status") == "fail"
+              and isinstance(check.get("checkId"), str) and isinstance(check.get("evidence"), str)]
+    require(failed, "plugin group stop has no failing check")
+    reason = (failed[0]["checkId"] + ": " + failed[0]["evidence"].strip())[:500]
+    require(isinstance(instruction, str) and instruction.strip() and len(instruction.strip()) <= 2000,
+            "plugin group stop repair needs a source-bound instruction")
+    group_id = stop["translationGroupId"]
+    plan_by_id = {row["translationGroupId"]: (index, row) for index, row in enumerate(plan, 1)}
+    require(group_id in plan_by_id and plan_by_id[group_id][1]["sourceUnitIds"] == stop["sourceUnitIds"],
+            "plugin group stop does not match this group plan")
+    index, _group = plan_by_id[group_id]
+    cache = reuse_from / f"group-{index:04d}-sol.json"
+    require(cache.is_file(), "plugin group stop lacks the rejected reviewer cache")
+    return {"schemaVersion": PARTIAL_REPAIR_SCHEMA,
+            "targetLocale": request["targetLocale"],
+            "englishSourcePackageJsonSha256": request["englishSourcePackageJsonSha256"],
+            "anchorManifestSha256": request["anchorManifestSha256"],
+            "translationPolicySha256": request["translationPolicySha256"],
+            "groups": [{"translationGroupId": group_id,
+                        "sourceUnitIds": stop["sourceUnitIds"],
+                        "failedRole": "reviewer",
+                        "failedCacheSha256": hashlib.sha256(cache.read_bytes()).hexdigest(),
+                        "failureReason": reason,
+                        "instruction": instruction.strip()}]}
+
+
+def require_plugin_stop_repair(reuse_from: Path | None, repairs: dict[str, dict[str, Any]],
+                               plugin_path: Path | None) -> None:
+    """A stopped run cannot be reused until its blocked group is repaired."""
+    if reuse_from is None or not (reuse_from / "plugin-group-stop.json").is_file():
+        return
+    stop = producer._load(reuse_from / "plugin-group-stop.json")
+    require(isinstance(stop, dict) and stop.get("reasonCode") == "language_plugin_group_blocked",
+            "plugin group stop is not a blocked machine review")
+    repair = repairs.get(stop.get("translationGroupId"))
+    require(plugin_path is not None and repair is not None
+            and repair.get("sourceUnitIds") == stop.get("sourceUnitIds")
+            and repair.get("failedRole") == "reviewer",
+            "plugin group stop requires a reviewer partial repair of the blocked group")
+
+
 def reusable_cache(prior_run: Path | None, stem: str, role: str) -> Path | None:
     """Return a complete old cache, but never retry an uncertain old request."""
     if prior_run is None:
@@ -747,6 +811,8 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
         briefs = validate_revision_brief(revision_brief, request, plan, prior_evidence)
         repairs = validate_partial_repair_brief(partial_repair_brief, request, plan,
                                                  reuse_from)
+        require_plugin_stop_repair(reuse_from, repairs, plugin_path)
+        require_plugin_stop_repair(resume_cache_from, repairs, plugin_path)
         if reuse_from is not None:
             require(reuse_from.resolve() != out.resolve(), "Reuse source and output must differ")
         if resume_cache_from is not None:

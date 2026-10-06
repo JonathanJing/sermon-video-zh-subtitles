@@ -202,6 +202,77 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
                         plugin_path=f.plugin_path)
         self.assertEqual(len(self.calls), 2)
 
+    def test_plugin_stop_repair_reruns_only_the_blocked_group(self):
+        f = self.fixture
+        previous = self.out.parent / "stopped"
+        blocked = subject.group_plan(f.request, f.anchor)[1]
+
+        def caller(api_key, payload):
+            response = self.fake_call(api_key, payload)
+            group_id = json.loads(payload["messages"][1]["content"])["translationGroupId"]
+            if group_id == blocked["translationGroupId"]:
+                body = json.loads(response["choices"][0]["message"]["content"])
+                body["targetUtterances"] = [text + "禁" for text in body["targetUtterances"]]
+                body["coverage"] = [{**row, "targetText": row["targetText"] + "禁"} for row in body["coverage"]]
+                response["choices"][0]["message"]["content"] = json.dumps(body)
+            return response
+
+        with self.assertRaisesRegex(ValueError, "language_plugin_group_blocked"):
+            subject.run(f.source, f.anchor, f.policy, previous, "fixture-key", caller,
+                        plugin_path=f.plugin_path)
+        self.assertEqual(len(self.calls), 4)
+        self.assertFalse((previous / "evidence.json").exists())
+        stop_bytes = (previous / "plugin-group-stop.json").read_bytes()
+        kept_bytes = (previous / "group-0001-astra.json").read_bytes()
+        rejected_bytes = (previous / "group-0002-sol.json").read_bytes()
+        plan = subject.group_plan(f.request, f.anchor)
+        brief = subject.partial_repair_brief_for_plugin_stop(
+            previous, f.request, plan, "Remove the blocked wording and follow the English source.")
+        self.assertEqual(brief["groups"][0]["translationGroupId"], blocked["translationGroupId"])
+        self.assertEqual(brief["groups"][0]["failedRole"], "reviewer")
+        wrong = copy.deepcopy(brief)
+        wrong["groups"][0]["translationGroupId"] = plan[0]["translationGroupId"]
+        wrong["groups"][0]["sourceUnitIds"] = plan[0]["sourceUnitIds"]
+        wrong["groups"][0]["failedCacheSha256"] = hashlib.sha256(
+            (previous / "group-0001-sol.json").read_bytes()).hexdigest()
+        self.calls.clear()
+        with self.assertRaisesRegex(ValueError, "blocked group"):
+            subject.run(f.source, f.anchor, f.policy, self.out, "fixture-key", self.fake_call,
+                        plugin_path=f.plugin_path, reuse_from=previous, partial_repair_brief=wrong)
+        with self.assertRaisesRegex(ValueError, "blocked group"):
+            subject.run(f.source, f.anchor, f.policy, self.out, "fixture-key", self.fake_call,
+                        plugin_path=f.plugin_path, reuse_from=previous)
+        self.assertEqual(self.calls, [])
+        self.assertFalse(self.out.exists())
+
+        def repaired(api_key, payload):
+            self.assertEqual(api_key, "fixture-key")
+            self.calls.append(payload)
+            data = json.loads(payload["messages"][1]["content"])
+            self.assertEqual(data["translationGroupId"], blocked["translationGroupId"])
+            self.assertIn("blocked wording", data["partialRepair"]["instruction"])
+            self.assertIn("blocked wording", payload["messages"][0]["content"])
+            group = f.evidence["groups"][1]
+            keys = ["translationGroupId", "sourceUnitIds", "targetUtterances", "coverage"]
+            if payload["reasoning_effort"] == "medium":
+                keys.append("semanticReview")
+            result = {key: copy.deepcopy(group[key]) for key in keys}
+            result["translationGroupId"] = blocked["translationGroupId"]
+            return {"id": f"repaired-{len(self.calls)}", "model": payload["model"],
+                    "choices": [{"finish_reason": "stop",
+                                 "message": {"content": json.dumps(result)}}]}
+
+        evidence = subject.run(f.source, f.anchor, f.policy, self.out, "fixture-key", repaired,
+                               plugin_path=f.plugin_path, reuse_from=previous,
+                               partial_repair_brief=brief)
+        self.assertEqual(len(self.calls), 2)
+        self.assertEqual((previous / "plugin-group-stop.json").read_bytes(), stop_bytes)
+        self.assertEqual((previous / "group-0002-sol.json").read_bytes(), rejected_bytes)
+        self.assertEqual((self.out / "group-0001-astra.json").read_bytes(), kept_bytes)
+        self.assertFalse((self.out / "plugin-group-stop.json").exists())
+        self.assertEqual(len(evidence["groups"]), 2)
+        self.assertTrue((self.out / "evidence.json").exists())
+
     def test_incoherent_ready_source_never_reaches_model_or_creates_paid_cache(self):
         mutations = {
             "missing-media": lambda s: s["source"].update(media=None),
