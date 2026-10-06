@@ -36,8 +36,9 @@ class StrictAdapterTests(unittest.TestCase):
         from scripts import target_language_rule_preflight as rule_preflight
         request = producer.prepare_request(f.source, f.anchor, policy, strict_rubric=rubric)
         self.rule_preflight = rule_preflight.preflight(
-            request, policy, f.plugin_path, models.group_plan(request, f.anchor))
-        self.prepared=s.prepare(*self.args,self.group,rule_preflight=self.rule_preflight)
+            request, policy, f.plugin_path, [{k: row[k] for k in ('translationGroupId', 'sourceUnitIds')} for row in f.evidence['groups']])
+        self.rule_context = {'pluginPath': str(f.plugin_path), 'groupPlan': [{k: row[k] for k in ('translationGroupId', 'sourceUnitIds')} for row in f.evidence['groups']]}
+        self.prepared=s.prepare(*self.args,self.group,rule_preflight=self.rule_preflight,rule_context=self.rule_context)
         self.mode='pass'
 
     def transport(self,key,payload,*,response_observer):
@@ -394,7 +395,7 @@ class StrictAdapterTests(unittest.TestCase):
             prepared['units'][0]['english']='changed'
             with self.assertRaisesRegex(c.ContractError,'strict_prepared_inputs_changed'):
                 s.review(prepared,self.root/'revision','candidate','r1','fixture',self.transport)
-            changed=s.prepare(self.args[0]+b' ',*self.args[1:],self.group,rule_preflight=self.rule_preflight)
+            changed=s.prepare(self.args[0]+b' ',*self.args[1:],self.group,rule_preflight=self.rule_preflight,rule_context=self.rule_context)
             with self.assertRaisesRegex(c.ContractError,'review_source_bytes_changed'):
                 s.review(changed,self.root/'revision','candidate','r1','fixture',self.transport)
             self.assertEqual(len(self.calls),1)
@@ -578,10 +579,48 @@ class StrictAdapterTests(unittest.TestCase):
                 self.assertEqual(receipt['executionStatus'],'outcome_unknown')
             self.assertEqual(transport.call_count,1)
 
+    def test_complete_rule_receipt_drift_blocks_prepare_and_direct_dispatch(self):
+        changes = [
+            lambda r: r.update(englishSourcePackageJsonSha256='0'*64),
+            lambda r: r.update(anchorManifestSha256='0'*64),
+            lambda r: r.update(pluginId='stale-plugin'),
+            lambda r: r.update(pluginImplementationSha256='0'*64),
+            lambda r: r['consumerBindings']['translator'].update(ruleBundleSha256='0'*64),
+            lambda r: r['modelRules'].pop('exactQuotes'),
+            lambda r: r['modelRules'].update(citationRule='caller-modified'),
+        ]
+        for index, change in enumerate(changes):
+            with self.subTest(index=index):
+                receipt=copy.deepcopy(self.rule_preflight)
+                change(receipt)
+                receipt['ruleBundleSha256']=policies.canonical_sha256(receipt['modelRules'])
+                with self.assertRaisesRegex(c.ContractError, 'strict_rule_preflight_invalid'):
+                    s.prepare(*self.args,self.group,rule_preflight=receipt,rule_context=self.rule_context)
+                changed=copy.deepcopy(self.prepared);changed['rulePreflight']=receipt
+                request=s.prompt(changed,'translator') if 'exactQuotes' in receipt['modelRules'] else s.prompt(self.prepared,'translator')
+                output=self.root/('tampered-'+str(index)+'.json')
+                with self.session(), self.assertRaisesRegex(c.ContractError, 'strict_rule_preflight_invalid'):
+                    s.call_model(changed,'translator',request,output,'fixture',self.transport)
+                self.assertFalse(output.with_suffix('.started.json').exists())
+        self.assertEqual(self.calls,[])
+
+    def test_rule_receipt_requires_complete_plan_and_pinned_plugin_context(self):
+        with self.assertRaisesRegex(c.ContractError,'strict_rule_verification_context_required'):
+            s.prepare(*self.args,self.group,rule_preflight=self.rule_preflight)
+        context=copy.deepcopy(self.rule_context);context['groupPlan']=[context['groupPlan'][0]]
+        with self.assertRaises(ValueError):
+            s.prepare(*self.args,self.group,rule_preflight=self.rule_preflight,rule_context=context)
+        changed_plugin=self.root/'changed-plugin.py'
+        changed_plugin.write_bytes(self.f.plugin_path.read_bytes()+b'\n# drift\n')
+        context=copy.deepcopy(self.rule_context);context['pluginPath']=str(changed_plugin)
+        with self.assertRaises(ValueError):
+            s.prepare(*self.args,self.group,rule_preflight=self.rule_preflight,rule_context=context)
+
     def test_target_unit_id_boundary_is_validated_before_transport(self):
         prefix='l2.zh-Hans.'
         valid=dict(self.group,translationGroupId='g'*(85-len(prefix)))
-        prepared=s.prepare(*self.args,valid,rule_preflight=self.rule_preflight)
+        context=copy.deepcopy(self.rule_context);context['groupPlan'][0]=valid
+        prepared=s.prepare(*self.args,valid,rule_preflight=self.rule_preflight,rule_context=context)
         self.assertEqual(len(prepared['workUnitId']),85)
         self.f.evidence['groups'][0]['translationGroupId']=valid['translationGroupId']
         with self.session():

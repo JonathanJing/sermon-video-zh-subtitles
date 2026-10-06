@@ -49,10 +49,7 @@ class DiagnosticSession:
                       'diagnostic_dag_fixture_cannot_become_live')
         self.plan, self.continuation = deepcopy(plan), deepcopy(continuation)
         self.root, self.subject, self.context, self.deadline, evidence = entry.prepare_continuation(
-            self.plan, self.continuation)
-        if request_limits is not None:
-            from scripts import sermon_diagnostic_provider as provider
-            self.subject = provider.DiagnosticProvider(self.subject.store, self.subject.config, request_limits)
+            self.plan, self.continuation, request_limits=request_limits)
         strict.save_once(self.root / 'continuation-request-limits.json', self.subject.limits)
         if self.offline_fixture:
             self.subject.executor = offline_transport

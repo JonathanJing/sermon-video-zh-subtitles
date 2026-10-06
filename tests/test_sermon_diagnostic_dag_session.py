@@ -48,6 +48,78 @@ class DiagnosticSessionTests(unittest.TestCase):
         self.assertEqual(candidate['humanReview']['translation'], 'pending')
         self.assertFalse(candidate['releaseEligible'])
 
+    def test_omitted_limits_resume_original_expanded_reviewer_bound(self):
+        current = self.make()
+        resumed = session.DiagnosticSession(self.f.plan, self.f.continuation,
+            offline_transport=self.f.transport)
+        self.assertEqual(resumed.binding['requestLimits'], self.f.request_limits)
+        self.assertEqual(resumed.subject.limits['maxInputTokens'], 16384)
+        with self.f.session():
+            result = resumed.run_locale('zh-Hans', self.f.locale_specs['zh-Hans'])
+        self.assertEqual(result['status'], 'waiting_human')
+        self.assertEqual(len(self.f.transport.observations), 6)
+        self.assertEqual(current.binding['requestLimits'], resumed.binding['requestLimits'])
+
+    def test_initial_omitted_limits_require_explicit_binding_without_dispatch(self):
+        before = self.f.subject.snapshot()
+        with self.assertRaisesRegex(ValueError, 'continuation_request_limits_required'):
+            session.DiagnosticSession(self.f.plan, self.f.continuation,
+                offline_transport=self.f.transport)
+        self.assertEqual(self.f.subject.snapshot(), before)
+        self.assertFalse((self.f.root/'continuation-request-limits.json').exists())
+        self.assertEqual(len(self.f.transport.observations), 2)
+
+    def test_invalid_saved_limits_do_not_fall_back_to_defaults(self):
+        self.make()
+        path = self.f.root/'continuation-request-limits.json'
+        path.write_bytes(c.canonical_bytes({}))
+        before = self.f.subject.snapshot()
+        with self.assertRaises(ValueError):
+            session.DiagnosticSession(self.f.plan, self.f.continuation,
+                offline_transport=self.f.transport)
+        self.assertEqual(self.f.subject.snapshot(), before)
+        self.assertEqual(len(self.f.transport.observations), 2)
+
+    def test_both_cli_resumes_load_limits_without_an_option(self):
+        from scripts import sermon_diagnostic_prefect_flow as flow
+        from scripts import sermon_mock_tts_dag as mock_tts
+        self.make()
+        plan_path, _ = self.f.write('cli-plan.json', self.f.plan)
+        spec_path, _ = self.f.write('cli-spec.json', {})
+        for cli in (flow, mock_tts):
+            captured = []
+            def capture(current, config, **kwargs):
+                captured.append(current.binding['requestLimits'])
+                return {'status': 'bound_only'}
+            with self.subTest(cli=cli.__name__), \
+                    patch.object(flow, 'fixture_transport', return_value=self.f.transport), \
+                    patch.object(cli, 'run', side_effect=capture), \
+                    patch('builtins.print'):
+                cli.main(['--plan', str(plan_path), '--continuation', str(self.f.root/'continuation.json'),
+                          '--spec', str(spec_path), '--fixture-responses', str(self.f.root/'unused.json'),
+                          '--offline-fixture'])
+            self.assertEqual(captured, [self.f.request_limits])
+        self.assertEqual(len(self.f.transport.observations), 2)
+
+    def test_both_cli_initial_limits_option_freezes_the_selected_bound(self):
+        from scripts import sermon_diagnostic_prefect_flow as flow
+        from scripts import sermon_mock_tts_dag as mock_tts
+        plan_path, _ = self.f.write('cli-plan.json', self.f.plan)
+        spec_path, _ = self.f.write('cli-spec.json', {})
+        limits_path, _ = self.f.write('cli-limits.json', self.f.request_limits)
+        for cli in (flow, mock_tts):
+            (self.f.root/'continuation-request-limits.json').unlink(missing_ok=True)
+            with self.subTest(cli=cli.__name__), \
+                    patch.object(flow, 'fixture_transport', return_value=self.f.transport), \
+                    patch.object(cli, 'run', return_value={'status': 'bound_only'}), \
+                    patch('builtins.print'):
+                cli.main(['--plan', str(plan_path), '--continuation', str(self.f.root/'continuation.json'),
+                          '--spec', str(spec_path), '--fixture-responses', str(self.f.root/'unused.json'),
+                          '--offline-fixture', '--request-limits', str(limits_path)])
+            saved, _ = c.read_snapshot(self.f.root/'continuation-request-limits.json')
+            self.assertEqual(saved, self.f.request_limits)
+        self.assertEqual(len(self.f.transport.observations), 2)
+
     def test_explicit_limits_are_frozen_across_continuation_restart(self):
         current = self.make()
         lower = {**self.f.request_limits, 'maxInputTokens': 8192}

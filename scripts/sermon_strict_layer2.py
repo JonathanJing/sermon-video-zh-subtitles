@@ -51,20 +51,20 @@ def save_once(path,value):
 def material_bytes(value):return c.canonical_bytes(value)+b'\n'
 
 
-def _validate_rule_preflight(policy, receipt):
-    from scripts.target_language_rule_preflight import BUNDLE_SCHEMA, SCHEMA
-    c.require(type(receipt) is dict and receipt.get('schemaVersion') == SCHEMA
-        and receipt.get('humanApproval') is False and receipt.get('modelCalls') == 0
-        and receipt.get('modelConfiguration') == {role: policy[role] for role in ('translator', 'reviewer')}
-        and type(receipt.get('modelRules')) is dict
-        and receipt['modelRules'].get('schemaVersion') == BUNDLE_SCHEMA
-        and receipt.get('ruleBundleSha256') == policies.canonical_sha256(receipt['modelRules'])
-        and all(receipt['modelRules'].get(key) == policy[key] for key in ('terminology', 'scripture', 'formatting')),
-        'strict_rule_preflight_invalid')
-    return copy.deepcopy(receipt)
+def _validate_rule_preflight(source, anchor, policy, rubric, receipt, context, diagnostic_context=None):
+    from scripts import target_language_rule_preflight as rules
+    c.require(type(context) is dict and set(context) == {'pluginPath', 'groupPlan'},
+              'strict_rule_verification_context_required')
+    plugin = _safe_path(Path(context['pluginPath']))
+    request = producer.prepare_request(source, anchor, policy, strict_rubric=rubric,
+                                       diagnostic_context=diagnostic_context)
+    plan = shared.group_plan(request, anchor, context['groupPlan'])
+    expected = rules.preflight(request, policy, plugin, plan)
+    c.require(receipt == expected, 'strict_rule_preflight_invalid')
+    return copy.deepcopy(expected)
 
 
-def prepare(source_bytes,anchor_bytes,policy_bytes,rubric_bytes,group,*,request_limits=None,diagnostic_context=None,rule_preflight=None):
+def prepare(source_bytes,anchor_bytes,policy_bytes,rubric_bytes,group,*,request_limits=None,diagnostic_context=None,rule_preflight=None,rule_context=None):
     source,anchor,policy,rubric=[c.decode_json(b) for b in (source_bytes,anchor_bytes,policy_bytes,rubric_bytes)]
     if diagnostic_context is None:
         producer.validate_source_for_translation(source,anchor)
@@ -100,7 +100,9 @@ def prepare(source_bytes,anchor_bytes,policy_bytes,rubric_bytes,group,*,request_
         from scripts.sermon_diagnostic_context import validate_context
         result['diagnosticContext'] = validate_context(diagnostic_context)
     if rule_preflight is not None:
-        result['rulePreflight'] = _validate_rule_preflight(policy, rule_preflight)
+        result['rulePreflight'] = _validate_rule_preflight(source, anchor, policy, rubric, rule_preflight, rule_context, diagnostic_context)
+        c.require(group in rule_context['groupPlan'], 'strict_rule_group_not_bound')
+        result['ruleContext'] = copy.deepcopy(rule_context)
     return result
 
 
@@ -108,7 +110,7 @@ def prepare(source_bytes,anchor_bytes,policy_bytes,rubric_bytes,group,*,request_
 def unit_lock(root,prepared,candidate_id,revision_id):
     c.require(profile.current() is not None,'strict_requires_accounting_profile')
     label(candidate_id);label(revision_id)
-    expected=prepare(*(prepared['bytes'][k] for k in ('englishSource','anchor','policy','rubric')),prepared['group'],request_limits=prepared.get('requestLimits'),diagnostic_context=prepared.get('diagnosticContext'),rule_preflight=prepared.get('rulePreflight'))
+    expected=prepare(*(prepared['bytes'][k] for k in ('englishSource','anchor','policy','rubric')),prepared['group'],request_limits=prepared.get('requestLimits'),diagnostic_context=prepared.get('diagnosticContext'),rule_preflight=prepared.get('rulePreflight'),rule_context=prepared.get('ruleContext'))
     c.require(prepared==expected,'strict_prepared_inputs_changed')
     root=_safe_path(root)
     root.mkdir(parents=True,exist_ok=True,mode=0o700)
@@ -128,8 +130,10 @@ def unit_lock(root,prepared,candidate_id,revision_id):
             c.require(not (root/'diagnostic-context.json').exists(),'strict_diagnostic_context_changed')
         if 'rulePreflight' in prepared:
             save_once(root/'rule-preflight.json',prepared['rulePreflight'])
+            save_once(root/'rule-context.json',prepared['ruleContext'])
         else:
-            c.require(not (root/'rule-preflight.json').exists(),'strict_rule_preflight_changed')
+            c.require(not (root/'rule-preflight.json').exists() and not (root/'rule-context.json').exists(),
+                      'strict_rule_preflight_changed')
         yield root
 
 
@@ -339,6 +343,12 @@ def call_model(prepared,role,request,output,api_key,caller,*,attempt_number=1,ca
     # A new non-diagnostic call must already carry the frozen rule receipt.
     if prepared.get('rulePreflight') is None and prepared.get('diagnosticContext') is None and not cache_only:
         raise c.ContractError('strict_rule_preflight_required')
+    if prepared.get('rulePreflight') is not None:
+        expected = prepare(*(prepared['bytes'][k] for k in ('englishSource','anchor','policy','rubric')),
+            prepared['group'], request_limits=prepared.get('requestLimits'),
+            diagnostic_context=prepared.get('diagnosticContext'), rule_preflight=prepared['rulePreflight'],
+            rule_context=prepared.get('ruleContext'))
+        c.require(prepared == expected, 'strict_prepared_inputs_changed')
     payload_sha256=policies.canonical_sha256(_payload(prepared,role,request))
     rejection=_transport_rejection(output,payload_sha256)
     if rejection is not None:

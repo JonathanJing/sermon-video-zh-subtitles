@@ -15,6 +15,14 @@ already match the existing provider/store. Live execution is a separate explicit
 descriptor after original-ledger and input preflight. Neither mode initializes
 a fresh provider ledger or extends its clock.
 
+Continuation request limits are frozen in `continuation-request-limits.json`.
+All continuation CLI entries reuse this snapshot when `--request-limits` is
+omitted; an explicitly supplied limits file must match it exactly. For an
+initial continuation without this snapshot, pass `--request-limits` with the
+intended bound limits JSON; the entry does not guess a default. A changed limit
+is rejected before dispatch and cannot silently reset an existing run to the
+default input bound. The command below assumes the snapshot already exists.
+
 ```sh
 python -m scripts.sermon_diagnostic_prefect_flow \
   --plan /absolute/fixture/run-plan.json \

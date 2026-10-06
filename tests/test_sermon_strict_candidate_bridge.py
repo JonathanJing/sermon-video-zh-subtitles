@@ -24,7 +24,7 @@ class StrictBridgeTests(unittest.TestCase):
             for group in self.groups:
                 self.f.f.evidence['groups'][0] = group
                 prepared = strict.prepare(*self.f.args, {k: group[k] for k in ('translationGroupId', 'sourceUnitIds')},
-                                          rule_preflight=self.f.rule_preflight)
+                                          rule_preflight=self.f.rule_preflight, rule_context=self.f.rule_context)
                 root = self.f.root / group['translationGroupId']
                 strict.generate(prepared, root, 'candidate', 'r1', 'fixture', self.f.transport)
                 strict.review(prepared, root, 'candidate', 'r1', 'fixture', self.f.transport)

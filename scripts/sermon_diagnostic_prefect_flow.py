@@ -361,14 +361,14 @@ def fixture_transport(path):
     return offline.OfflineHTTPTransport(responder, fixture_id=value['fixtureId'])
 
 
-def preflight_live(plan, continuation, config):
+def preflight_live(plan, continuation, config, *, request_limits=None):
     """Check original state and all locale bounds before a credential FD read.
 
     This read-only scope has no executor and cannot enter run(). The real
     constructor repeats original state/code/source checks after key injection.
     """
     from scripts import run_bounded_diagnostic_continuation as entry
-    root, subject, context, _, _ = entry.prepare_continuation(plan, continuation)
+    root, subject, context, _, _ = entry.prepare_continuation(plan, continuation, request_limits=request_limits)
     c.require(not (root / 'offline-business-scope.json').exists(),
               'diagnostic_dag_fixture_cannot_become_live')
     scope = SimpleNamespace(root=root, offline_fixture=False, binding={},
@@ -399,19 +399,21 @@ def main(argv=None):
     mode.add_argument('--execute', action='store_true')
     parser.add_argument('--fixture-responses', type=Path)
     parser.add_argument('--key-fd', type=int)
+    parser.add_argument('--request-limits', type=Path, help='Initial request limits; resumes reuse the frozen snapshot')
     args = parser.parse_args(argv)
     plan = public.read_snapshot(_path(str(args.plan)))[0]
     continuation = public.read_snapshot(_path(str(args.continuation)))[0]
     config = public.read_snapshot(_path(str(args.spec)))[0]
+    request_limits = public.read_snapshot(_path(str(args.request_limits)))[0] if args.request_limits else None
     if args.offline_fixture:
         c.require(args.fixture_responses is not None and args.key_fd is None,
                   'diagnostic_flow_offline_inputs_required')
-        session = _session_class()(plan, continuation, offline_transport=fixture_transport(args.fixture_responses))
+        session = _session_class()(plan, continuation, offline_transport=fixture_transport(args.fixture_responses), request_limits=request_limits)
     else:
         c.require(args.fixture_responses is None and args.key_fd is not None and args.key_fd >= 3,
                   'diagnostic_flow_explicit_private_key_fd_required')
-        config = preflight_live(plan, continuation, config)
-        session = _session_class()(plan, continuation, key=_read_key_fd(args.key_fd), execute=True)
+        config = preflight_live(plan, continuation, config, request_limits=request_limits)
+        session = _session_class()(plan, continuation, key=_read_key_fd(args.key_fd), execute=True, request_limits=request_limits)
     print(json.dumps(run(session, config), sort_keys=True))
 
 

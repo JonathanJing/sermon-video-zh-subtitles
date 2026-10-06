@@ -104,7 +104,7 @@ class LocaleTests(unittest.TestCase):
             self.assertEqual(body['modelRules']['ruleBundleSha256'], receipt['ruleBundleSha256'])
             self.assertEqual(body['formatting'], receipt['modelRules']['formatting'])
             self.assertIn('Do not add editorial', payload['messages'][0]['content'])
-        prepared = strict.prepare(*self.f.args, self.plan[0], rule_preflight=receipt)
+        prepared = strict.prepare(*self.f.args, self.plan[0], rule_preflight=receipt, rule_context=self.f.rule_context)
         request = strict.prompt(prepared, 'translator')
         request['input']['modelRules']['citationRule'] = 'changed'
         sent = []

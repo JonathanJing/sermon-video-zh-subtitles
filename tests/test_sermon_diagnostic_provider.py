@@ -49,7 +49,7 @@ class ProviderTests(unittest.TestCase):
         # Frozen rule text makes the reviewer prompt exceed the 8192 default input cap.
         self.selected['maxInputTokens']=limits.MAX_REQUEST_LIMITS['maxInputTokens']
         self.prepared=strict.prepare(*self.f.args,self.f.group,request_limits=self.selected,
-                                     rule_preflight=self.f.rule_preflight)
+                                     rule_preflight=self.f.rule_preflight, rule_context=self.f.rule_context)
         self.provider=self.provider_for()
         self.bound=dict(requests=1,inputTokens=self.selected['maxInputTokens'],outputTokens=4096,
                         wallTimeMs=300000,
@@ -109,7 +109,7 @@ class ProviderTests(unittest.TestCase):
         with self.f.session():
             self.generate();self.selected['maxCompletionTokens']=2048
             self.prepared=strict.prepare(*self.f.args,self.f.group,request_limits=self.selected,
-                                     rule_preflight=self.f.rule_preflight)
+                                     rule_preflight=self.f.rule_preflight, rule_context=self.f.rule_context)
             self.provider=self.provider_for()
             with self.assertRaisesRegex(ValueError,'idempotency_conflict'):self.generate()
         self.assertEqual(len(self.calls),1)
@@ -117,7 +117,7 @@ class ProviderTests(unittest.TestCase):
     def test_input_bound_rejects_before_any_reservation_or_transport(self):
         self.selected['maxInputTokens']=1
         self.prepared=strict.prepare(*self.f.args,self.f.group,request_limits=self.selected,
-                                     rule_preflight=self.f.rule_preflight)
+                                     rule_preflight=self.f.rule_preflight, rule_context=self.f.rule_context)
         self.provider=self.provider_for()
         with self.f.session(),self.assertRaisesRegex(ValueError,'input_bound_exceeded'):self.generate()
         self.assertEqual(self.calls,[]);self.assertFalse(self.store.root.exists())

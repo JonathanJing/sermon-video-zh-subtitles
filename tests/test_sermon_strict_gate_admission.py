@@ -82,7 +82,7 @@ class AdmissionTests(unittest.TestCase):
                 if root.exists(): shutil.rmtree(root)
                 self.f.f.f.evidence['groups'][0] = group
                 prepared = strict.prepare(*self.f.f.args, {k: group[k] for k in ('translationGroupId', 'sourceUnitIds')},
-                                          rule_preflight=self.f.f.rule_preflight)
+                                          rule_preflight=self.f.f.rule_preflight, rule_context=self.f.f.rule_context)
                 self.subject.generate(prepared, root, 'candidate', 'r1', 'fixture', self.f.f.transport,
                     bounds=budget_fixtures.bounds(), usage_resolver=budget_fixtures.measured)
                 self.f.f.mode = first_mode if index == 0 else 'pass'
@@ -156,7 +156,7 @@ class AdmissionTests(unittest.TestCase):
         root = self.f.revisions[0][0]
         group = self.f.groups[0]
         prepared = strict.prepare(*self.f.f.args, {k: group[k] for k in ('translationGroupId', 'sourceUnitIds')},
-                                  rule_preflight=self.f.f.rule_preflight)
+                                  rule_preflight=self.f.f.rule_preflight, rule_context=self.f.f.rule_context)
         self.assertEqual(c.read_snapshot(root / 'review-receipt.json')[0]['executionStatus'], 'failed')
         self.f.f.mode = 'pass'
         with self.f.f.session():
@@ -276,7 +276,7 @@ class AdmissionTests(unittest.TestCase):
         # A fresh, real failing second attempt remains in the full inventory.
         group = self.f.groups[1]
         prepared = strict.prepare(*self.f.f.args, {k: group[k] for k in ('translationGroupId', 'sourceUnitIds')},
-                                  rule_preflight=self.f.f.rule_preflight)
+                                  rule_preflight=self.f.f.rule_preflight, rule_context=self.f.f.rule_context)
         self.f.f.mode = 'fail'
         with self.f.f.session():
             strict.review(prepared, root, 'candidate', 'r1', 'fixture', self.f.f.transport, attempt_number=2)

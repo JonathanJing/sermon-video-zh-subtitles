@@ -614,10 +614,12 @@ def main(argv=None):
     parser.add_argument('--fixture-responses', type=Path, required=True)
     parser.add_argument('--offline-fixture', action='store_true', required=True)
     parser.add_argument('--recovery-manifest', type=Path)
+    parser.add_argument('--request-limits', type=Path, help='Initial request limits; resumes reuse the frozen snapshot')
     args = parser.parse_args(argv)
     read = lambda path: public.read_snapshot(diagnostic._path(str(path)))[0]
     session = DiagnosticSession(read(args.plan), read(args.continuation),
-        offline_transport=diagnostic.fixture_transport(args.fixture_responses))
+        offline_transport=diagnostic.fixture_transport(args.fixture_responses),
+        request_limits=read(args.request_limits) if args.request_limits else None)
     print(json.dumps(run(session, read(args.spec),
         recovery=read(args.recovery_manifest) if args.recovery_manifest else None), sort_keys=True))
 

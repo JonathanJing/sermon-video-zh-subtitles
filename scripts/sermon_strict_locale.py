@@ -50,7 +50,7 @@ def run_locale(source_bytes, anchor_bytes, policy_bytes, rubric_bytes, *, root,
     c.require(policy['languageReview']['pluginImplementationSha256'] == expected_plugin_sha256,
               'strict_locale_plugin_policy_changed')
     rule_receipt = rule_preflight.preflight(request, policy, checked_plugin, plan)
-    prepared = [strict.prepare(*raw, group, request_limits=request_limits, diagnostic_context=diagnostic_context, rule_preflight=rule_receipt) for group in plan]
+    prepared = [strict.prepare(*raw, group, request_limits=request_limits, diagnostic_context=diagnostic_context, rule_preflight=rule_receipt, rule_context={'pluginPath': str(checked_plugin), 'groupPlan': plan}) for group in plan]
     if historical_reuse is not None:
         from scripts.sermon_historical_layer2 import HistoricalLayer2Reuse
         c.require(type(historical_reuse) is HistoricalLayer2Reuse,'trusted_historical_layer2_required')
@@ -80,6 +80,7 @@ def run_locale(source_bytes, anchor_bytes, policy_bytes, rubric_bytes, *, root,
         'groups': plan, 'graph': graph, 'pluginSha256': expected_plugin_sha256,
         'storeSha256': store.store_sha256, 'authoritySha256': store.authority_sha256,
         'bounds': bounds, 'rulePreflight': prepared[0]['rulePreflight'],
+        'ruleContext': prepared[0]['ruleContext'],
         **({'requestLimits': prepared[0]['requestLimits']} if request_limits is not None else {}),
         **({'diagnosticContext': diagnostic_context} if diagnostic_context is not None else {}),
         **({'historicalReuseSha256':c.canonical_sha256(historical_reuse.spec)} if historical_reuse is not None else {})}

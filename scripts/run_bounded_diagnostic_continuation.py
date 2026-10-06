@@ -24,7 +24,7 @@ from scripts.sermon_diagnostic_source_evidence import validate_prior_source_evid
 from scripts.sermon_release_workflow import _safe_path
 
 
-def prepare_continuation(plan, continuation):
+def prepare_continuation(plan, continuation, *, request_limits=None):
     c.require(type(continuation) is dict and set(continuation) == {
         'schemaVersion', 'originalPlanSha256', 'executionIdentity', 'diagnosticContext'} and
         continuation['schemaVersion'] == 'sermon-diagnostic-continuation-v1',
@@ -55,7 +55,17 @@ def prepare_continuation(plan, continuation):
     # No fresh store is permitted: preserve the already started clock/quota.
     c.require((store.root / budget.STORE_ID / 'provider-run' / 'state.json').is_file(),
               'diagnostic_existing_provider_required')
-    subject = provider.DiagnosticProvider(store, config)
+    # The continuation limit snapshot is execution identity, not a CLI default.
+    # Validate an explicit replacement before constructing any dispatch surface.
+    limits_path = root / 'continuation-request-limits.json'
+    if limits_path.exists():
+        saved_limits, _ = c.read_snapshot(limits_path)
+        if request_limits is not None:
+            c.require(request_limits == saved_limits, 'immutable_strict_artifact_changed')
+        request_limits = saved_limits
+    c.require(request_limits is not None, 'diagnostic_continuation_request_limits_required')
+    selected_limits = provider.limits.validate_request_limits(request_limits)
+    subject = provider.DiagnosticProvider(store, config, selected_limits)
     with subject._locked() as (_, state):
         subject._remaining(state)
         c.require(state['requests'] and all(row['state'] in ('returned', 'rejected')
@@ -89,10 +99,12 @@ def main(argv=None):
     parser.add_argument('--phase', choices=('preflight', 'locale'), required=True)
     parser.add_argument('--input', type=Path)
     parser.add_argument('--key-fd', type=int)
+    parser.add_argument('--request-limits', type=Path, help='Initial request limits; resumes reuse the frozen snapshot')
     args = parser.parse_args(argv)
     plan, _ = c.read_snapshot(args.plan)
     continuation, _ = c.read_snapshot(args.continuation)
-    root, subject, context, deadline, source_evidence = prepare_continuation(plan, continuation)
+    root, subject, context, deadline, source_evidence = prepare_continuation(plan, continuation,
+        request_limits=c.read_snapshot(args.request_limits)[0] if args.request_limits else None)
     spec = None
     if args.input is not None:
         spec, _ = c.read_snapshot(args.input)
@@ -105,6 +117,7 @@ def main(argv=None):
         return
     c.require(args.input is not None and args.key_fd is not None and args.key_fd >= 3,
               'diagnostic_private_input_and_key_fd_required')
+    strict.save_once(root / 'continuation-request-limits.json', subject.limits)
     with os.fdopen(args.key_fd, 'rb') as stream:
         key_bytes = stream.read(1025)
     c.require(0 < len(key_bytes) <= 1024, 'invalid_diagnostic_credential_length')

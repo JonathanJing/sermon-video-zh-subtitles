@@ -696,7 +696,7 @@ from scripts.sermon_review_budget import BudgetStore
 from scripts.sermon_strict_budget_adapter import StrictBudgetAdapter
 from tests.test_sermon_strict_budget_adapter import authority,bounds
 value=json.load(sys.stdin)
-prepared=strict.prepare(*[text.encode() for text in value['args']],value['group'],rule_preflight=value['rulePreflight'])
+prepared=strict.prepare(*[text.encode() for text in value['args']],value['group'],rule_preflight=value['rulePreflight'],rule_context=value['ruleContext'])
 def lost(key,payload,*,response_observer):
     aid=accounting.record_api_started(payload['model'])
     response_observer.request_started(aid)
@@ -706,7 +706,7 @@ with profile.session(Path(sys.argv[1])/'child-logs','child-budget',work_kind='pr
 '''
         completed = subprocess.run([sys.executable, '-c', code, str(self.f.root), str(self.store.root)],
             input=json.dumps({'args': [value.decode() for value in self.f.args], 'group': self.f.group,
-                              'rulePreflight': self.f.rule_preflight}),
+                              'rulePreflight': self.f.rule_preflight, 'ruleContext': self.f.rule_context}),
             text=True, capture_output=True)
         self.assertEqual(completed.returncode, 73, completed.stderr)
         caller = Mock(wraps=self.f.transport)

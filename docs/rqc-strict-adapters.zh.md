@@ -7,12 +7,16 @@
 `sermon_strict_layer2.prepare(source_bytes, anchor_bytes, policy_bytes, rubric_bytes, group)` 使用真实 Layer 1 就绪验证与显式 v3 strict policy，冻结实际 canonical/byte identities。传入的 group 必须连续覆盖指定英语单元。`generate(...)` 仅生成首版；`review(...)` 读取既有冻结候选，不能调用 Generator。
 
 ```
-prepared = prepare(source_bytes, anchor_bytes, policy_bytes, rubric_bytes, group)
+prepared = prepare(source_bytes, anchor_bytes, policy_bytes, rubric_bytes, group,
+                   rule_preflight=receipt,
+                   rule_context={'pluginPath': str(plugin_path), 'groupPlan': full_group_plan})
 generate(prepared, revision_root, candidate_id, revision_id, api_key, caller,
          cache_only=False, depends_on=None, completion_spans=None)
 review(prepared, revision_root, candidate_id, revision_id, api_key, caller,
        cache_only=False, attempt_number=1, depends_on=None, completion_spans=None)
 ```
+
+正式调用必须提供按当前 source/anchor、strict policy/rubric、固定插件和完整 group plan 生成的规则预检收据。`prepare`、预算/门禁/bridge 重建及实际发送前均重新生成并完整比较收据；revision 内不可变保存 `rule-context.json`。缺少该验证上下文的历史正式收据不能直接恢复，需要显式迁移，不能只重新计算 bundle hash。无收据的旧 diagnostic/cache-only 路径保留原范围。
 
 调用者必须提供已开启 D2 profile 的 context。没有记录的依赖保留 None，不能默认为并行根；同一执行的 dispatcher 可传真实 completion span IDs。第二次审核只是显式低层参数（最多 2）；adapter 不自行授权/调度，实际 dispatcher 必须先取得 D5 reservation。任意路径/新目录不是新的已批准额度。
 

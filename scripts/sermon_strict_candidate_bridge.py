@@ -70,7 +70,11 @@ def compile_candidate(source_bytes, anchor_bytes, policy_bytes, rubric_bytes,
         rules = read('rule-preflight.json')[0] if (root / 'rule-preflight.json').exists() else None
         if rules is not None:
             rule_receipts.append(rules)
-        prepared = strict.prepare(source_bytes, anchor_bytes, policy_bytes, rubric_bytes, group, request_limits=limits, diagnostic_context=diagnostic_context, rule_preflight=rules)
+            context = read('rule-context.json')[0]
+            c.require(_safe_path(Path(context['pluginPath'])) == _safe_path(Path(plugin_path)),
+                      'strict_bridge_rule_plugin_changed')
+        prepared = strict.prepare(source_bytes, anchor_bytes, policy_bytes, rubric_bytes, group, request_limits=limits, diagnostic_context=diagnostic_context, rule_preflight=rules,
+            rule_context=read('rule-context.json')[0] if rules is not None else None)
         dispatch_proofs={}
         if repair is not None:strict.validate_repair(prepared,manifest['candidateId'],manifest['revisionId'],repair)
         if repair is not None and 'languagePluginRepair' in repair:
@@ -158,6 +162,10 @@ def compile_candidate(source_bytes, anchor_bytes, policy_bytes, rubric_bytes,
     c.require(len(rule_receipts) in (0, len(revisions))
         and len({c.canonical_sha256(item) for item in rule_receipts}) <= 1,
         'strict_bridge_rule_preflight_changed')
+    actual_plan = [{k: row[k] for k in ('translationGroupId', 'sourceUnitIds')} for row in groups]
+    c.require(all(c.decode_json(captured['rule-context.json'])['groupPlan'] == actual_plan
+                  for _, captured in snapshots if 'rule-context.json' in captured),
+              'strict_bridge_rule_group_plan_changed')
     rule_receipt = rule_receipts[0] if rule_receipts else None
     plugin = producer.run_language_plugin(source, anchor, policy, request, evidence,
         Path(plugin_path), expected_plugin_sha256, strict_rubric=rubric, diagnostic_context=diagnostic_context,
