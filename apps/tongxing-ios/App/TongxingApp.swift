@@ -25,8 +25,13 @@ struct TongxingApp: App {
             ContentView(model: model)
                 .tint(Brand.accent)
                 .onChange(of: scenePhase) { _, phase in
+                    // App-level phase aggregates every window. A background
+                    // window must not hide feedback in another active window.
                     if phase == .background { model.suspendAlignment() }
-                    if phase == .active { model.playback.refreshLiveActivityPresentation() }
+                    if phase == .active {
+                        model.setAlignmentFeedbackForeground(true)
+                        model.playback.refreshLiveActivityPresentation()
+                    }
                     model.playback.setStatisticsForeground(phase == .active)
                 }
                 #if DEBUG

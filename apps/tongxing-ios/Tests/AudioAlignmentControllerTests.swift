@@ -55,6 +55,18 @@ final class AudioAlignmentControllerTests: XCTestCase {
         XCTAssertEqual(model.foregroundAlignmentPhase, .listening)
     }
 
+    func testRepeatedAppForegroundNotificationsKeepCurrentFeedback() {
+        let model = AppModel(supportDirectory: FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString), contentOrigin: URL(string: "https://example.invalid")!)
+        model.updateForegroundAlignmentPhase(.preparing)
+        model.updateForegroundAlignmentPhase(.listening)
+        model.setAlignmentFeedbackForeground(true)
+        model.setAlignmentFeedbackForeground(true)
+        XCTAssertEqual(model.foregroundAlignmentPhase, .listening)
+        model.suspendAlignment()
+        XCTAssertNil(model.foregroundAlignmentPhase)
+    }
+
     func testDevCandidateSelectionRequiresBetaIdentityAndExactOrigin() throws {
         let origin = URL(string: "https://ai-for-god-sermon-audio-dev.web.app")!
         XCTAssertTrue(AppModel.permitsDevCandidates(origin: origin, bundleIdentifier: "com.jonathanjing.tongxing.beta"))

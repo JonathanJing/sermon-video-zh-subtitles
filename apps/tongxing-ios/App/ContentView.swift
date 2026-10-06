@@ -153,8 +153,6 @@ struct ContentView: View {
         .onChange(of: model.selectedPageID) { _, _ in locateConfirmation = nil }
         .onChange(of: localization.language) { _, _ in model.refreshSystemPresentation() }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .background { model.setAlignmentFeedbackForeground(false) }
-            if phase == .active { model.setAlignmentFeedbackForeground(true) }
             if phase != .active { playback.saveProgress() }
             else { localization.refreshSystemLanguage() }
             updateAlignmentFailurePresentation()
