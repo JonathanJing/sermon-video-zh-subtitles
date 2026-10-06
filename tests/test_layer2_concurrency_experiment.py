@@ -29,6 +29,10 @@ class Layer2ConcurrencyTests(unittest.TestCase):
         self.calls = []
         self.lock = threading.Lock()
 
+    def production_run(self, out, caller, **options):
+        return runner.run(self.f.source, self.f.anchor, self.policy, out, "fixture-key", caller,
+                          plugin_path=self.f.plugin_path, **options)
+
     def response(self, key, payload):
         self.assertEqual(key, "fixture-key")
         data = json.loads(payload["messages"][1]["content"])
@@ -118,7 +122,7 @@ class Layer2ConcurrencyTests(unittest.TestCase):
                 answer["choices"][0]["message"]["content"] = json.dumps(result)
             return answer
         with self.assertRaisesRegex(ValueError, "Sol flagged group"):
-            runner.run(self.f.source, self.f.anchor, self.policy, self.out, "fixture-key", fail_review)
+            self.production_run(self.out, fail_review)
         self.assertFalse((self.out / "evidence.json").exists())
         successful = {role: (self.out / f"group-0002-{role}.json").read_bytes() for role in ("astra", "sol")}
         request = runner.producer._load(self.out / "request.json")
@@ -129,15 +133,15 @@ class Layer2ConcurrencyTests(unittest.TestCase):
                      "failureReason": "Synthetic review issue", "instruction": "Resolve the source-bound issue."}]}
         self.calls.clear()
         repaired = self.out.parent / "repaired"
-        evidence = runner.run(self.f.source, self.f.anchor, self.policy, repaired,
-            "fixture-key", self.response, reuse_from=self.out, partial_repair_brief=brief)
+        evidence = self.production_run(repaired, self.response, reuse_from=self.out,
+                                       partial_repair_brief=brief)
         self.assertEqual(self.calls, [(failed_id, self.policy['translator']['model']), (failed_id, self.policy['reviewer']['model'])])
         self.assertEqual([g["translationGroupId"] for g in evidence["groups"]], [g["translationGroupId"] for g in plan])
         for role, data in successful.items():
             self.assertEqual((repaired / f"group-0002-{role}.json").read_bytes(), data)
 
     def test_unknown_later_group_blocks_entire_resume_before_new_calls(self):
-        runner.run(self.f.source, self.f.anchor, self.policy, self.out, "fixture-key", self.response)
+        self.production_run(self.out, self.response)
         # Simulate a durable identity with earlier work not yet requested and a
         # later transport outcome unknown. The original marker is never retired.
         (self.out / "evidence.json").unlink()
@@ -148,8 +152,7 @@ class Layer2ConcurrencyTests(unittest.TestCase):
         runner.save_new(marker, {"status": "started_response_unconfirmed"})
         original = marker.read_bytes()
         with self.assertRaisesRegex(ValueError, "Uncertain paid translator call"), accounting.accounting_session(self.out / "accounting", "layer2_models"):
-            runner.run(self.f.source, self.f.anchor, self.policy, self.out, "fixture-key",
-                       lambda *_: self.fail("another group dispatched before unknown reconciliation"))
+            self.production_run(self.out, lambda *_: self.fail("another group dispatched before unknown reconciliation"))
         self.assertEqual(marker.read_bytes(), original)
         events, damaged = accounting.read_events(self.out / "accounting")
         self.assertFalse(damaged)
@@ -158,12 +161,11 @@ class Layer2ConcurrencyTests(unittest.TestCase):
             runner.require_reconciled_requests(None, self.out)
 
     def test_returned_raw_under_started_marker_remains_recoverable(self):
-        runner.run(self.f.source, self.f.anchor, self.policy, self.out, "fixture-key", self.response)
+        self.production_run(self.out, self.response)
         expected = runner.producer._load(self.out / "evidence.json")
         (self.out / "group-0002-sol.json").unlink()
         runner.save_new(self.out / "group-0002-sol.started.json", {"status": "started_response_unconfirmed"})
-        self.assertEqual(runner.run(self.f.source, self.f.anchor, self.policy, self.out, "fixture-key",
-                         lambda *_: self.fail("returned raw response must not be paid twice")), expected)
+        self.assertEqual(self.production_run(self.out, lambda *_: self.fail("returned raw response must not be paid twice")), expected)
         self.assertFalse((self.out / "group-0002-sol.started.json").exists())
 
     def test_parallel_accounting_keeps_group_dependencies_and_source_order(self):
@@ -173,7 +175,7 @@ class Layer2ConcurrencyTests(unittest.TestCase):
                 barrier.wait(timeout=3)
             return self.response(key, payload)
         with accounting.accounting_session(self.out / "accounting", "layer2_models"):
-            runner.run(self.f.source, self.f.anchor, self.policy, self.out, "fixture-key", overlap)
+            self.production_run(self.out, overlap)
         events, damaged = accounting.read_events(self.out / "accounting")
         self.assertFalse(damaged)
         starts = {e["spanId"]: e for e in events if e["event"] == "stage_started"}

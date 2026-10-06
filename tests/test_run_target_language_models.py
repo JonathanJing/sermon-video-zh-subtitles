@@ -63,6 +63,17 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
         self.out = Path(temp.name) / "run"
         self.calls = []
 
+    def production_run(self, *args, **kwargs):
+        kwargs.setdefault("plugin_path", self.fixture.plugin_path)
+        return subject.run(*args, **kwargs)
+
+    def test_formal_run_without_plugin_sends_nothing(self):
+        f = self.fixture
+        with self.assertRaisesRegex(ValueError, "frozen language plugin"):
+            subject.run(f.source, f.anchor, f.policy, self.out, "fixture-key", self.fake_call)
+        self.assertEqual(self.calls, [])
+        self.assertFalse(self.out.exists())
+
     def fake_call(self, api_key, payload):
         self.assertEqual(api_key, "fixture-key")
         self.calls.append(payload)
@@ -138,18 +149,18 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
             def admit_resource(inner,payload):raise ContractError('resource_capacity_busy')
             def __call__(inner,*args):raise AssertionError('busy must not dispatch')
         with self.assertRaisesRegex(ContractError,'resource_capacity_busy'):
-            subject.run(self.fixture.source,self.fixture.anchor,self.fixture.policy,
+            self.production_run(self.fixture.source,self.fixture.anchor,self.fixture.policy,
                         self.out,'fixture-key',Caller())
         self.assertFalse(any(self.out.glob('group-*.started.json')))
         self.assertEqual(self.calls,[])
-        evidence=subject.run(self.fixture.source,self.fixture.anchor,self.fixture.policy,
+        evidence=self.production_run(self.fixture.source,self.fixture.anchor,self.fixture.policy,
                              self.out,'fixture-key',self.fake_call)
         self.assertEqual(len(evidence['groups']),2)
         self.assertEqual(len(self.calls),4)
 
     def test_astra_then_sol_each_group_and_admit_human_pending(self):
         f = self.fixture
-        evidence = subject.run(f.source, f.anchor, f.policy, self.out,
+        evidence = self.production_run(f.source, f.anchor, f.policy, self.out,
                                "fixture-key", self.fake_call)
         self.assertEqual([call["model"] for call in self.calls],
                          ["gpt-6.1-sol", "gpt-6.1-sol"] * 2)
@@ -172,7 +183,7 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
         self.assertFalse(candidate["releaseEligible"])
         self.assertEqual(candidate["humanReview"]["translation"], "pending")
         self.calls.clear()
-        self.assertEqual(subject.run(f.source, f.anchor, f.policy, self.out,
+        self.assertEqual(self.production_run(f.source, f.anchor, f.policy, self.out,
                                      "fixture-key", self.fake_call), evidence)
         self.assertEqual(self.calls, [])
 
@@ -187,7 +198,7 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
             return response
         f = self.fixture
         with self.assertRaisesRegex(ValueError, "language_plugin_group_blocked"):
-            subject.run(f.source, f.anchor, f.policy, self.out, "fixture-key", caller,
+            self.production_run(f.source, f.anchor, f.policy, self.out, "fixture-key", caller,
                         plugin_path=f.plugin_path)
         self.assertEqual(len(self.calls), 2)
         self.assertFalse((self.out / "evidence.json").exists())
@@ -198,7 +209,7 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
         self.assertTrue(stop["stopsLaterDispatch"])
         self.assertFalse(stop["humanApproval"])
         with self.assertRaisesRegex(ValueError, "language_plugin_group_blocked"):
-            subject.run(f.source, f.anchor, f.policy, self.out, "fixture-key", caller,
+            self.production_run(f.source, f.anchor, f.policy, self.out, "fixture-key", caller,
                         plugin_path=f.plugin_path)
         self.assertEqual(len(self.calls), 2)
 
@@ -218,7 +229,7 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
             return response
 
         with self.assertRaisesRegex(ValueError, "language_plugin_group_blocked"):
-            subject.run(f.source, f.anchor, f.policy, previous, "fixture-key", caller,
+            self.production_run(f.source, f.anchor, f.policy, previous, "fixture-key", caller,
                         plugin_path=f.plugin_path)
         self.assertEqual(len(self.calls), 4)
         self.assertFalse((previous / "evidence.json").exists())
@@ -237,10 +248,10 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
             (previous / "group-0001-sol.json").read_bytes()).hexdigest()
         self.calls.clear()
         with self.assertRaisesRegex(ValueError, "blocked group"):
-            subject.run(f.source, f.anchor, f.policy, self.out, "fixture-key", self.fake_call,
+            self.production_run(f.source, f.anchor, f.policy, self.out, "fixture-key", self.fake_call,
                         plugin_path=f.plugin_path, reuse_from=previous, partial_repair_brief=wrong)
         with self.assertRaisesRegex(ValueError, "blocked group"):
-            subject.run(f.source, f.anchor, f.policy, self.out, "fixture-key", self.fake_call,
+            self.production_run(f.source, f.anchor, f.policy, self.out, "fixture-key", self.fake_call,
                         plugin_path=f.plugin_path, reuse_from=previous)
         self.assertEqual(self.calls, [])
         self.assertFalse(self.out.exists())
@@ -262,7 +273,7 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
                     "choices": [{"finish_reason": "stop",
                                  "message": {"content": json.dumps(result)}}]}
 
-        evidence = subject.run(f.source, f.anchor, f.policy, self.out, "fixture-key", repaired,
+        evidence = self.production_run(f.source, f.anchor, f.policy, self.out, "fixture-key", repaired,
                                plugin_path=f.plugin_path, reuse_from=previous,
                                partial_repair_brief=brief)
         self.assertEqual(len(self.calls), 2)
@@ -296,7 +307,7 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
                 policy["sourceScope"]["englishSourcePackageJsonSha256"] = producer.interpretation.json_sha256(source)
                 policy = policy_tools.freeze_policy(policy)
                 with self.assertRaises(ValueError):
-                    subject.run(source, f.anchor, policy, self.out, "fixture-key", self.fake_call)
+                    self.production_run(source, f.anchor, policy, self.out, "fixture-key", self.fake_call)
                 self.assertEqual(self.calls, [])
                 self.assertFalse(self.out.exists())
 
@@ -304,22 +315,24 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
         f = self.fixture
         parent_hash = "1922f23b881363ac4f1a32a99de7184fecd1ae445befde5f2282d400bd762e40"
         self.assertEqual(subject.RUNNER_PRODUCTION_IDENTITY_SHA256, parent_hash)
-        evidence = subject.run(f.source, f.anchor, f.policy, self.out,
+        evidence = self.production_run(f.source, f.anchor, f.policy, self.out,
                                "fixture-key", self.fake_call)
         request = producer.prepare_request(f.source, f.anchor, f.policy)
         plan = subject.group_plan(request, f.anchor)
+        receipt = producer._load(self.out / "rule-preflight.json")
         manifest = self.out / "run-identity.json"
         for implementation_hash in (parent_hash, *subject.COMPATIBLE_RUNNER_IDENTITIES):
             digest = policy_tools.canonical_sha256({
                 "request": request, "groupPlan": plan,
-                "runnerImplementationSha256": implementation_hash})
+                "runnerImplementationSha256": implementation_hash,
+                "rulePreflightSha256": policy_tools.canonical_sha256(receipt)})
             manifest.write_text(json.dumps({"sha256": digest}))
-            self.assertEqual(subject.run(
+            self.assertEqual(self.production_run(
                 f.source, f.anchor, f.policy, self.out, "fixture-key",
                 lambda *_: self.fail("verified paid calls must be reused")), evidence)
         manifest.write_text(json.dumps({"sha256": "0" * 64}))
         with self.assertRaisesRegex(ValueError, "Output directory belongs"):
-            subject.run(f.source, f.anchor, f.policy, self.out, "fixture-key",
+            self.production_run(f.source, f.anchor, f.policy, self.out, "fixture-key",
                         lambda *_: self.fail("unknown identity must fail before paid calls"))
 
     def test_progress_ledger_tracks_translation_and_review_groups_separately(self):
@@ -333,7 +346,7 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
         with measure.producer_step(ledger_path, step, locale="ko"):
             plan = subject.group_plan(producer.prepare_request(f.source, f.anchor, f.policy), f.anchor)
             accounting.record_workload(measure.stage_name(step), {"translationGroups": len(plan)})
-            subject.run(f.source, f.anchor, f.policy, self.out,
+            self.production_run(f.source, f.anchor, f.policy, self.out,
                         "fixture-key", self.fake_call)
         events, damaged = accounting.read_events(ledger_path.parent / "accounting")
         self.assertFalse(damaged)
@@ -347,9 +360,9 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
         f = self.fixture
         with accounting.accounting_session(self.out / "accounting", "layer2_models",
                                            {"targetLocale": f.policy["targetLocale"]}):
-            subject.run(f.source, f.anchor, f.policy, self.out,
+            self.production_run(f.source, f.anchor, f.policy, self.out,
                         "fixture-key", self.fake_call)
-            subject.run(f.source, f.anchor, f.policy, self.out,
+            self.production_run(f.source, f.anchor, f.policy, self.out,
                         "fixture-key", lambda *_: self.fail("must reuse"))
         attempts = accounting.summarize(self.out / "accounting")["stageAttempts"]
         unit_attempts = [row for row in attempts if row["stage"].startswith("layer2.")]
@@ -429,7 +442,7 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
             return {"id": group_id + "-" + role, "model": payload["model"],
                     "choices": [{"finish_reason": "stop",
                                  "message": {"content": json.dumps(result)}}]}
-        evidence = subject.run(f.source, f.anchor, policy, self.out,
+        evidence = self.production_run(f.source, f.anchor, policy, self.out,
                                "fixture-key", concurrent_call)
         self.assertEqual(group_ids, [row["translationGroupId"] for row in evidence["groups"]])
         self.assertEqual([group_id + "-translator" for group_id in group_ids],
@@ -447,7 +460,7 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
             producer.prepare_request(f.source, f.anchor, policy),
             evidence, receipt, f.plugin_path, f.plugin_sha)
         self.assertEqual("machine_review_pass_human_review_pending", candidate["status"])
-        subject.run(f.source, f.anchor, policy, self.out, "fixture-key",
+        self.production_run(f.source, f.anchor, policy, self.out, "fixture-key",
                     lambda *_: self.fail("completed requests must be reused"))
 
     def test_worker_limit_is_checked_before_paid_calls(self):
@@ -455,7 +468,7 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
         policy["batching"]["workers"] = 25
         policy["componentSha256"]["batching"] = policy_tools.canonical_sha256(policy["batching"])
         with self.assertRaisesRegex(ValueError, "maximum of 16"):
-            subject.run(self.fixture.source, self.fixture.anchor, policy,
+            self.production_run(self.fixture.source, self.fixture.anchor, policy,
                         self.out, "fixture-key", self.fake_call)
         self.assertEqual([], self.calls)
 
@@ -493,16 +506,16 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
         wrong["reviewer"]["model"] = "gpt-6-astra"
         wrong["componentSha256"]["reviewer"] = policy_tools.canonical_sha256(wrong["reviewer"])
         with self.assertRaisesRegex(ValueError, "Production reviewer model"):
-            subject.run(f.source, f.anchor, wrong, self.out, "fixture-key", self.fake_call)
+            self.production_run(f.source, f.anchor, wrong, self.out, "fixture-key", self.fake_call)
         wrong_batch = copy.deepcopy(f.policy)
         wrong_batch["batching"]["batchSize"] = 15
         wrong_batch["componentSha256"]["batching"] = policy_tools.canonical_sha256(
             wrong_batch["batching"])
         with self.assertRaisesRegex(ValueError, "batchSize=1"):
-            subject.run(f.source, f.anchor, wrong_batch, self.out,
+            self.production_run(f.source, f.anchor, wrong_batch, self.out,
                         "fixture-key", self.fake_call)
         with self.assertRaisesRegex(ValueError, "cover source units"):
-            subject.run(f.source, f.anchor, f.policy, self.out, "fixture-key", self.fake_call,
+            self.production_run(f.source, f.anchor, f.policy, self.out, "fixture-key", self.fake_call,
                         [{"translationGroupId": "partial", "sourceUnitIds": ["block-1-u001"]}])
         self.assertFalse(self.calls)
 
@@ -518,7 +531,7 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
                 response["choices"][0]["message"]["content"] = json.dumps(result)
             return response
         with self.assertRaisesRegex(ValueError, "Sol flagged group"):
-            subject.run(f.source, f.anchor, f.policy, self.out, "fixture-key", failing)
+            self.production_run(f.source, f.anchor, f.policy, self.out, "fixture-key", failing)
         self.assertTrue((self.out / "group-0001-sol.json").exists())
         self.assertFalse((self.out / "evidence.json").exists())
         self.assertEqual(len(self.calls), 2)
@@ -534,7 +547,7 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
                 semantic["uncertainty"] = False
                 response["choices"][0]["message"]["content"] = json.dumps(result)
             return response
-        evidence = subject.run(f.source, f.anchor, f.policy, self.out,
+        evidence = self.production_run(f.source, f.anchor, f.policy, self.out,
                                "fixture-key", boolean_checks)
         self.assertEqual(set(evidence["groups"][0]["semanticReview"]["checks"].values()),
                          {"pass"})
@@ -552,7 +565,7 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
                 response["choices"][0]["message"]["content"] = json.dumps(result)
             return response
         with self.assertRaisesRegex(ValueError, "Sol flagged group"):
-            subject.run(f.source, f.anchor, f.policy, self.out,
+            self.production_run(f.source, f.anchor, f.policy, self.out,
                         "fixture-key", uncertain)
 
     def test_sol_null_empty_fields_normalize_to_empty_lists(self):
@@ -579,10 +592,10 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
         def interrupted(api_key, payload):
             raise TimeoutError("Response status unknown")
         with self.assertRaises(TimeoutError):
-            subject.run(f.source, f.anchor, f.policy, self.out, "fixture-key", interrupted)
+            self.production_run(f.source, f.anchor, f.policy, self.out, "fixture-key", interrupted)
         self.assertTrue((self.out / "group-0001-astra.started.json").exists())
         with self.assertRaisesRegex(ValueError, "Uncertain paid translator call"):
-            subject.run(f.source, f.anchor, f.policy, self.out,
+            self.production_run(f.source, f.anchor, f.policy, self.out,
                         "fixture-key", self.fake_call)
         self.assertFalse(self.calls)
 
@@ -593,33 +606,33 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
             response["model"] = "unexpected-model"
             return response
         with self.assertRaisesRegex(ValueError, "exact model"):
-            subject.run(f.source, f.anchor, f.policy, self.out,
+            self.production_run(f.source, f.anchor, f.policy, self.out,
                         "fixture-key", malformed)
         raw_path = self.out / "group-0001-astra.raw.json"
         self.assertTrue(raw_path.exists())
         self.assertEqual(json.loads(raw_path.read_text())["response"]["id"], "response-1")
         self.calls.clear()
         with self.assertRaisesRegex(ValueError, "exact model"):
-            subject.run(f.source, f.anchor, f.policy, self.out,
+            self.production_run(f.source, f.anchor, f.policy, self.out,
                         "fixture-key", self.fake_call)
         self.assertFalse(self.calls)
 
     def test_saved_raw_response_can_rebuild_validated_cache_without_api(self):
         f = self.fixture
-        subject.run(f.source, f.anchor, f.policy, self.out, "fixture-key", self.fake_call)
+        self.production_run(f.source, f.anchor, f.policy, self.out, "fixture-key", self.fake_call)
         (self.out / "group-0001-astra.json").unlink()
         self.calls.clear()
-        subject.run(f.source, f.anchor, f.policy, self.out, "fixture-key", self.fake_call)
+        self.production_run(f.source, f.anchor, f.policy, self.out, "fixture-key", self.fake_call)
         self.assertFalse(self.calls)
         self.assertTrue((self.out / "group-0001-astra.json").exists())
 
     def test_stale_group_cache_and_source_change_fail_closed(self):
         f = self.fixture
-        subject.run(f.source, f.anchor, f.policy, self.out, "fixture-key", self.fake_call)
+        self.production_run(f.source, f.anchor, f.policy, self.out, "fixture-key", self.fake_call)
         changed = copy.deepcopy(f.anchor)
         changed["sourceUnits"][0]["english"] = "Different source."
         with self.assertRaises(ValueError):
-            subject.run(f.source, changed, f.policy, self.out,
+            self.production_run(f.source, changed, f.policy, self.out,
                         "fixture-key", self.fake_call)
         cache = self.out / "group-0001-astra.json"
         saved = json.loads(cache.read_text())
@@ -627,14 +640,14 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
         cache.write_text(json.dumps(saved))
         self.calls.clear()
         with self.assertRaisesRegex(ValueError, "Cached translator response"):
-            subject.run(f.source, f.anchor, f.policy, self.out,
+            self.production_run(f.source, f.anchor, f.policy, self.out,
                         "fixture-key", self.fake_call)
         self.assertFalse(self.calls)
 
     def test_group_revision_reuses_unchanged_calls_and_invalidates_changed_payloads(self):
         f = self.fixture
         previous = self.out.parent / "previous"
-        old = subject.run(f.source, f.anchor, f.policy, previous,
+        old = self.production_run(f.source, f.anchor, f.policy, previous,
                           "fixture-key", self.fake_call)
         self.calls.clear()
         changed = old["groups"][1]
@@ -679,7 +692,7 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
                     "choices": [{"finish_reason": "stop",
                                  "message": {"content": json.dumps(result)}}]}
 
-        updated = subject.run(f.source, f.anchor, f.policy, self.out,
+        updated = self.production_run(f.source, f.anchor, f.policy, self.out,
                               "fixture-key", revised_call,
                               revision_brief=brief, reuse_from=previous)
         self.assertEqual([call["model"] for call in self.calls],
@@ -695,7 +708,7 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
     def test_group_revision_rejects_changed_source_group_and_prior_text_before_calls(self):
         f = self.fixture
         previous = self.out.parent / "previous"
-        old = subject.run(f.source, f.anchor, f.policy, previous,
+        old = self.production_run(f.source, f.anchor, f.policy, previous,
                           "fixture-key", self.fake_call)
         self.calls.clear()
         changed = old["groups"][1]
@@ -711,20 +724,20 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
                         "proposedTargetText": "A shorter translation."}],
         }
         with self.assertRaisesRegex(ValueError, "prior target text"):
-            subject.run(f.source, f.anchor, f.policy, self.out,
+            self.production_run(f.source, f.anchor, f.policy, self.out,
                         "fixture-key", self.fake_call,
                         revision_brief=brief, reuse_from=previous)
         brief["groups"][0]["priorTargetTextSha256"] = hashlib.sha256(
             "".join(changed["targetUtterances"]).encode()).hexdigest()
         brief["groups"][0]["sourceUnitIds"] = ["wrong-unit"]
         with self.assertRaisesRegex(ValueError, "revision group"):
-            subject.run(f.source, f.anchor, f.policy, self.out,
+            self.production_run(f.source, f.anchor, f.policy, self.out,
                         "fixture-key", self.fake_call,
                         revision_brief=brief, reuse_from=previous)
         brief["groups"][0]["sourceUnitIds"] = changed["sourceUnitIds"]
         brief["englishSourcePackageJsonSha256"] = "0" * 64
         with self.assertRaisesRegex(ValueError, "source or policy changed"):
-            subject.run(f.source, f.anchor, f.policy, self.out,
+            self.production_run(f.source, f.anchor, f.policy, self.out,
                         "fixture-key", self.fake_call,
                         revision_brief=brief, reuse_from=previous)
         self.assertFalse(self.calls)
@@ -747,7 +760,7 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
             return response
 
         with self.assertRaisesRegex(ValueError, "Sol flagged group"):
-            subject.run(f.source, f.anchor, f.policy, previous,
+            self.production_run(f.source, f.anchor, f.policy, previous,
                         "fixture-key", failing)
         self.assertFalse((previous / "evidence.json").exists())
         old_failed_bytes = (previous / "group-0002-sol.json").read_bytes()
@@ -786,7 +799,7 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
                     "choices": [{"finish_reason": "stop",
                                  "message": {"content": json.dumps(result)}}]}
 
-        evidence = subject.run(f.source, f.anchor, f.policy, self.out,
+        evidence = self.production_run(f.source, f.anchor, f.policy, self.out,
                                "fixture-key", repaired,
                                reuse_from=previous, partial_repair_brief=brief)
         self.assertEqual([call["model"] for call in calls],
@@ -805,7 +818,7 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
         f = self.fixture
         previous = self.out.parent / "incomplete"
         with self.assertRaisesRegex(ValueError, "Sol flagged group"):
-            subject.run(f.source, f.anchor, f.policy, previous,
+            self.production_run(f.source, f.anchor, f.policy, previous,
                         "fixture-key", lambda key, payload: self._first_group_fail(key, payload))
         self.calls.clear()
         first = subject.group_plan(f.request, f.anchor)[0]
@@ -822,7 +835,7 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
                         "instruction": "Review the English source again."}],
         }
         with self.assertRaisesRegex(ValueError, "failed cache is missing or changed"):
-            subject.run(f.source, f.anchor, f.policy, self.out,
+            self.production_run(f.source, f.anchor, f.policy, self.out,
                         "fixture-key", self.fake_call,
                         reuse_from=previous, partial_repair_brief=brief)
         self.assertFalse(self.calls)
@@ -832,7 +845,7 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
         f = self.fixture
         previous = self.out.parent / "incomplete"
         with self.assertRaisesRegex(ValueError, "Sol flagged group"):
-            subject.run(f.source, f.anchor, f.policy, previous,
+            self.production_run(f.source, f.anchor, f.policy, previous,
                         "fixture-key", self._first_group_fail)
         self.assertFalse((previous / "group-0002-astra.json").exists())
         failed = previous / "group-0001-sol.json"
@@ -851,7 +864,7 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
                         "instruction": "Review the English source again."}],
         }
         self.calls.clear()
-        result = subject.run(f.source, f.anchor, f.policy, self.out,
+        result = self.production_run(f.source, f.anchor, f.policy, self.out,
                              "fixture-key", self.fake_call,
                              reuse_from=previous, partial_repair_brief=brief)
         self.assertEqual([call["model"] for call in self.calls],
@@ -862,7 +875,7 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
     def test_partial_repair_carries_previous_revision_and_resumes_paid_attempt(self):
         f = self.fixture
         base = self.out.parent / "base"
-        first = subject.run(f.source, f.anchor, f.policy, base,
+        first = self.production_run(f.source, f.anchor, f.policy, base,
                             "fixture-key", self.fake_call)
         first_group = first["groups"][0]
         revision = {
@@ -894,7 +907,7 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
                                  "message": {"content": json.dumps(result)}}]}
 
         prior = self.out.parent / "prior-revised"
-        subject.run(f.source, f.anchor, f.policy, prior,
+        self.production_run(f.source, f.anchor, f.policy, prior,
                     "fixture-key", by_input, revision_brief=revision, reuse_from=base)
         self.assertEqual(len(calls), 2)
         second_group = first["groups"][1]
@@ -913,11 +926,11 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
                         "instruction": "Keep the source number as digits."}],
         }
         attempt = self.out.parent / "paid-attempt"
-        subject.run(f.source, f.anchor, f.policy, attempt,
+        self.production_run(f.source, f.anchor, f.policy, attempt,
                     "fixture-key", by_input,
                     reuse_from=prior, partial_repair_brief=repair)
         self.assertEqual(len(calls), 4)
-        recovered = subject.run(
+        recovered = self.production_run(
             f.source, f.anchor, f.policy, self.out, "fixture-key",
             lambda *_: self.fail("completed paid responses must be reused"),
             reuse_from=prior, partial_repair_brief=repair,

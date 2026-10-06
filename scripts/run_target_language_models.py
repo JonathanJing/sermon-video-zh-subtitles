@@ -680,6 +680,8 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
         reuse_from: Path | None = None,
         partial_repair_brief: dict[str, Any] | None = None,
         resume_cache_from: Path | None = None) -> dict[str, Any]:
+    require(plugin_path is not None,
+            "Formal Layer 2 requires the frozen language plugin before dispatch")
     with accounting.stage(f"layer2.source_admission.{policy['targetLocale']}",
                           depends_on=[], executor_type="deterministic_program",
                           work_unit_id=f"l2.{policy['targetLocale']}.source_admission") as source_span:
@@ -1126,6 +1128,8 @@ def run_accounted(source: dict, anchor: dict, policy: dict, out_dir: Path,
                   progress_ledger: Path | None = None,
                   cache_only: bool = False, progress_callback=None,
                   predecessor_spans=(), completion_spans: list[str] | None = None) -> dict:
+    require(plugin is not None,
+            "Formal Layer 2 requires the frozen language plugin before dispatch")
     locale = policy["targetLocale"]
     with measure.producer_step(progress_ledger, f"L2-02@{locale}", locale=locale) as metrics:
         with accounting.accounting_session(out_dir / "accounting", "layer2_models",

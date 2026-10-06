@@ -2,7 +2,7 @@
 
 周日生产里，中文引文只在 plugin、韩文未口述编号规则迟加，使机器译审重新执行。[复盘](reports/20261005-sunday-layer-rework-analysis.zh.md)记录了实际成本。这次增加首模型调用前的静态前检和实际 prompt 核验；没有改变正式 Astra 翻译 → Sol 独立复核策略，Sol 6.1 仍只在隔离测试入口。
 
-已有 policy 组件 SHA、术语表 SHA、plugin implementation SHA 和逐调用 payload preview 保留。新增 `scripts/target_language_rule_preflight.py` 把实际术语、经文策略、口播引用、数字上下文、register、已识别 plugin 的完整引文／部分引文映射冻结为 modelRules。runner 在带 `plugin_path` 的正式路径，先核验 plugin ID/version/checks/source/edition、引文原文和精确 group；再保存 `rule-preflight.json`，把同一规则输入传给 translator 与 reviewer。每次实际 prompt 在 payload preview 和 `.started.json` 之前再核验，规则输入发生变化时不会沿用旧调用身份。
+已有 policy 组件 SHA、术语表 SHA、plugin implementation SHA 和逐调用 payload preview 保留。新增 `scripts/target_language_rule_preflight.py` 把实际术语、经文策略、口播引用、数字上下文、register、已识别 plugin 的完整引文／部分引文映射冻结为 modelRules。正式 `run()` 与 `run_accounted()` 必须带冻结语言插件，先核验 plugin ID/version/checks/source/edition、引文原文和精确 group；再保存 `rule-preflight.json`，把同一规则输入传给 translator 与 reviewer。省略插件的内部调用只保留给模拟和旧缓存复现。每次实际 prompt 在 payload preview 和 `.started.json` 之前再核验，规则输入发生变化时不会沿用旧调用身份。
 
 已识别的内建规则包括：
 

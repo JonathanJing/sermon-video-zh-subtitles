@@ -177,7 +177,8 @@ class TargetLanguageRulePreflightTests(unittest.TestCase):
     def test_unproven_historical_carry_forward_requires_migration_without_new_calls(self):
         f = self.fixture
         legacy = self.worker.out.parent / "legacy"
-        runner.run(f.source, f.anchor, f.policy, legacy, "fixture-key", self.worker.fake_call)
+        request = runner.producer.prepare_request(f.source, f.anchor, f.policy)
+        runner._run_prepared_groups(request, f.anchor, f.policy, legacy, "fixture-key", self.worker.fake_call)
         self.worker.calls.clear()
         with self.assertRaisesRegex(ValueError, "prior cache lacks matching frozen rule receipt"):
             runner.run(f.source, f.anchor, f.policy, self.worker.out, "fixture-key", self.worker.fake_call,
