@@ -228,18 +228,27 @@ final class AudioAlignmentController {
     /// cannot consume the microphone budget (FIELD-03). Returns nil on timeout;
     /// the session keeps capturing and the next checkpoint retries.
     private func matchWithBudget(_ prefix: CapturedAudio,
-                                 _ matchFn: @Sendable (CapturedAudio) async throws -> FingerprintMatchResult
+                                 _ matchFn: @escaping @Sendable (CapturedAudio) async throws -> FingerprintMatchResult
     ) async throws -> FingerprintMatchResult? {
-        let budget = matchBudget
-        return try await withThrowingTaskGroup(of: FingerprintMatchResult?.self) { group in
-            group.addTask { try await matchFn(prefix) }
-            group.addTask {
-                try await Task.sleep(for: budget)
-                return nil
+        let race = CheckpointMatchRace()
+        let stopAt = ContinuousClock.now.advanced(by: matchBudget)
+        return try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                race.install(continuation)
+                let work = Task.detached(priority: .userInitiated) {
+                    do { race.resolve(.success(try await matchFn(prefix))) }
+                    catch { race.resolve(.failure(error)) }
+                }
+                let timer = Task.detached {
+                    do {
+                        try await ContinuousClock().sleep(until: stopAt)
+                        race.resolve(.success(nil))
+                    } catch {}
+                }
+                race.installTasks([work, timer])
             }
-            guard let first = try await group.next() else { return nil }
-            group.cancelAll()
-            return first
+        } onCancel: {
+            race.resolve(.failure(CancellationError()))
         }
     }
 
@@ -298,6 +307,10 @@ final class AudioAlignmentController {
                 onPhase(.matching)
                 onState("正在本机匹配播放位置…", true, nil)
                 let attempt = try await matchWithBudget(prefix, matchFn)
+                guard current(token) else { return }
+                // Recording can be interrupted while a prefix is matching.
+                // Check its terminal error before accepting a result or retrying.
+                try await session.waitUntil(seconds: 0)
                 guard current(token) else { return }
                 if let attempt, attempt.matched {
                     hit = (attempt, prefix)
@@ -358,5 +371,38 @@ final class AudioAlignmentController {
         } catch {
             status = "无法读取或校验对齐指纹，请联网重试。"
         }
+    }
+}
+
+/// Resolves a checkpoint once without waiting for an uncooperative matcher.
+/// Late results cannot resume the continuation or seek. Workers still receive
+/// cancellation; both production matchers check it inside their compute loops.
+private final class CheckpointMatchRace: @unchecked Sendable {
+    private let lock = NSLock()
+    private var continuation: CheckedContinuation<FingerprintMatchResult?, Error>?
+    private var result: Result<FingerprintMatchResult?, Error>?
+    private var tasks: [Task<Void, Never>] = []
+
+    func install(_ continuation: CheckedContinuation<FingerprintMatchResult?, Error>) {
+        lock.lock()
+        if let result { lock.unlock(); continuation.resume(with: result) }
+        else { self.continuation = continuation; lock.unlock() }
+    }
+
+    func installTasks(_ tasks: [Task<Void, Never>]) {
+        lock.lock()
+        if result != nil { lock.unlock(); tasks.forEach { $0.cancel() } }
+        else { self.tasks = tasks; lock.unlock() }
+    }
+
+    func resolve(_ result: Result<FingerprintMatchResult?, Error>) {
+        lock.lock()
+        guard self.result == nil else { lock.unlock(); return }
+        self.result = result
+        let waiting = continuation; continuation = nil
+        let workers = tasks; tasks = []
+        lock.unlock()
+        workers.forEach { $0.cancel() }
+        waiting?.resume(with: result)
     }
 }

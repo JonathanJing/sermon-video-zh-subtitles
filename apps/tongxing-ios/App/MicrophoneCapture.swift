@@ -29,6 +29,7 @@ protocol MicrophoneCapturing: AnyObject {
     /// Throws like capture(seconds:) on permission denial or setup failure.
     func beginContinuousCapture(maxSeconds: Double) async throws -> any ContinuousCaptureSessionProtocol
     func cancel()
+    var onCaptureStarted: (() -> Void)? { get set }
 }
 
 /// One continuous microphone session (FIELD-03): the engine starts once and the
@@ -50,7 +51,6 @@ protocol ContinuousCaptureSessionProtocol: AnyObject {
     func snapshot() -> CapturedAudio?
     /// Stops the engine and releases the microphone. Idempotent.
     func cancel()
-    var onCaptureStarted: (() -> Void)? { get set }
 }
 
 extension MicrophoneCapturing {
@@ -149,16 +149,21 @@ final class MicrophoneCapture: MicrophoneCapturing {
             try Task.checkCancellation()
             guard requestID == token else { throw CancellationError() }
             let session = ContinuousCaptureSession(owner: self, token: token)
+            activeStream = session // Own setup before it can fail or be cancelled.
             try session.startEngine(maxSeconds: maxSeconds)
             try Task.checkCancellation()
-            guard requestID == token else {
-                session.cancel()
-                throw CancellationError()
-            }
-            activeStream = session
+            guard requestID == token else { throw CancellationError() }
+            onCaptureStarted?()
             return session
         } catch {
-            if requestID == token { requestID = nil }
+            if requestID == token {
+                if let session = activeStream { session.cancel() }
+                else { finish(.failure(error), token: token) }
+            }
+            // A cancellation while prepareRecording was suspended can clear our
+            // request before its category change returns. Token binding prevents
+            // this late restoration from affecting a newer recording owner.
+            SystemAudioSessionActivator.shared.restorePlaybackCategory(token: token)
             throw error
         }
     }
@@ -173,7 +178,8 @@ final class MicrophoneCapture: MicrophoneCapturing {
     }
 
     fileprivate func streamingDidFinish(_ session: ContinuousCaptureSession) {
-        if activeStream === session { activeStream = nil }
+        guard activeStream === session else { return }
+        activeStream = nil
         requestID = nil
     }
 
@@ -216,10 +222,17 @@ final class ContinuousCaptureSession: ContinuousCaptureSessionProtocol {
     private var hasTap = false
     private var terminalError: Error?
     private var finished = false
+    private var budgetTask: Task<Void, Never>?
+    private let engineSetup: (() throws -> Void)?
+    private let restorePlayback: @MainActor (UUID) -> Void
 
-    fileprivate init(owner: MicrophoneCapture, token: UUID) {
+    init(owner: MicrophoneCapture?, token: UUID,
+         engineSetup: (() throws -> Void)? = nil,
+         restorePlayback: @escaping @MainActor (UUID) -> Void = { SystemAudioSessionActivator.shared.restorePlaybackCategory(token: $0) }) {
         self.owner = owner
         self.token = token
+        self.engineSetup = engineSetup
+        self.restorePlayback = restorePlayback
     }
 
     var accumulatedSeconds: Double { accumulator?.accumulatedSeconds ?? 0 }
@@ -238,7 +251,28 @@ final class ContinuousCaptureSession: ContinuousCaptureSessionProtocol {
 
     func cancel() { finish(.failure(CancellationError())) }
 
-    fileprivate func startEngine(maxSeconds: Double) throws {
+    func startEngine(maxSeconds: Double) throws {
+        // Freeze the monotonic deadline before synchronous engine setup.
+        let stopAt = ContinuousClock.now.advanced(by: .seconds(maxSeconds))
+        budgetTask = Task { [weak self] in
+            do {
+                try await ContinuousClock().sleep(until: stopAt)
+                guard let self else { return }
+                if let final = self.snapshot(), self.accumulatedSeconds >= 7 {
+                    self.finish(.success(final))
+                } else { self.finish(.failure(AudioAlignmentError.invalidCapture)) }
+            } catch {}
+        }
+        do {
+            if let engineSetup { try engineSetup() }
+            else { try configureEngine(maxSeconds: maxSeconds) }
+        } catch {
+            finish(.failure(error))
+            throw error
+        }
+    }
+
+    private func configureEngine(maxSeconds: Double) throws {
         let engine = AVAudioEngine()
         self.engine = engine
         let input = engine.inputNode
@@ -248,9 +282,9 @@ final class ContinuousCaptureSession: ContinuousCaptureSessionProtocol {
         else { throw AudioAlignmentError.invalidCapture }
         let accumulator = CaptureAccumulator(sampleRate: format.sampleRate, seconds: maxSeconds)
         self.accumulator = accumulator
-        input.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self] buffer, _ in
+        input.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self] buffer, audioTime in
             // Real-time thread: only copy PCM here. Terminal events hop to MainActor.
-            guard let result = accumulator.append(buffer) else { return }
+            guard let result = accumulator.append(buffer, at: audioTime) else { return }
             Task { @MainActor [weak self] in self?.finish(result) }
         }
         hasTap = true
@@ -277,6 +311,7 @@ final class ContinuousCaptureSession: ContinuousCaptureSessionProtocol {
     }
 
     private func teardown() {
+        budgetTask?.cancel(); budgetTask = nil
         engine?.stop()
         if hasTap { engine?.inputNode.removeTap(onBus: 0) }
         hasTap = false
@@ -284,7 +319,7 @@ final class ContinuousCaptureSession: ContinuousCaptureSessionProtocol {
         // Keep the accumulator: snapshot() must still serve the final prefix.
         observers.forEach(NotificationCenter.default.removeObserver)
         observers.removeAll()
-        SystemAudioSessionActivator.shared.restorePlaybackCategory(token: token)
+        restorePlayback(token)
     }
 }
 #endif
@@ -292,12 +327,13 @@ final class ContinuousCaptureSession: ContinuousCaptureSessionProtocol {
 #if os(iOS)
 /// Only this small accumulator is shared with the audio render callback. The lock
 /// protects completion and bounds; no actor hops or file I/O occur while copying PCM.
-private final class CaptureAccumulator: @unchecked Sendable {
+final class CaptureAccumulator: @unchecked Sendable {
     private let lock = NSLock()
     private let sampleRate: Double
     private let maximumFrames: Int
     private var samples: [Float] = []
     private var startedAt: ContinuousClock.Instant?
+    private var nextSampleTime: AVAudioFramePosition?
     private var finished = false
 
     init(sampleRate: Double, seconds: Double) {
@@ -306,13 +342,20 @@ private final class CaptureAccumulator: @unchecked Sendable {
         samples.reserveCapacity(maximumFrames)
     }
 
-    func append(_ buffer: AVAudioPCMBuffer) -> Result<CapturedAudio, Error>? {
+    func append(_ buffer: AVAudioPCMBuffer, at audioTime: AVAudioTime? = nil) -> Result<CapturedAudio, Error>? {
         lock.lock(); defer { lock.unlock() }
         guard !finished else { return nil }
         guard buffer.format.sampleRate == sampleRate, let channels = buffer.floatChannelData,
               buffer.format.channelCount > 0, buffer.frameLength > 0 else {
             finished = true
             return .failure(AudioAlignmentError.invalidCapture)
+        }
+        if let audioTime, audioTime.isSampleTimeValid {
+            if let expected = nextSampleTime, audioTime.sampleTime != expected {
+                finished = true
+                return .failure(AudioAlignmentError.interrupted)
+            }
+            nextSampleTime = audioTime.sampleTime + AVAudioFramePosition(buffer.frameLength)
         }
         let count = min(Int(buffer.frameLength), maximumFrames - samples.count)
         if startedAt == nil {

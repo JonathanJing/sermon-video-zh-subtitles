@@ -6,6 +6,52 @@ import XCTest
 /// The explicit live Dev Demo smoke below uses real Hosting assets when opted in.
 @MainActor
 final class ListeningFlowUITests: XCTestCase {
+    func testDuoPosturePlaybackAndPanelsScreenshots() throws {
+        let app = launchFixture()
+        try downloadSelection(in: app)
+        let play = app.buttons["playback-toggle"]
+        let more = app.buttons["playback-more"]
+        let collapse = app.buttons["playback-dock-collapse-toggle"]
+        XCTAssertTrue(play.isHittable)
+        XCTAssertTrue(collapse.isHittable)
+        XCTAssertTrue(app.frame.contains(play.frame))
+        screenshot("duo-posture-ready", app: app)
+        play.tap()
+        try waitFor(play, "label == '暂停播放'")
+        try waitFor(element("playback-progress", in: app), "NOT (value BEGINSWITH '00:00，')")
+        screenshot("duo-posture-playing", app: app)
+        more.tap()
+        XCTAssertTrue(app.buttons["playback-more-close"].waitForExistence(timeout: 5))
+        screenshot("duo-posture-playing-more", app: app)
+        app.buttons["playback-more-close"].tap()
+        collapse.tap()
+        try waitFor(element("playback-progress", in: app), "exists == false")
+        XCTAssertEqual(play.label, "暂停播放")
+        XCTAssertTrue(app.frame.contains(collapse.frame))
+        screenshot("duo-posture-collapsed-playing", app: app)
+        collapse.tap()
+        try waitFor(element("playback-progress", in: app), "exists == true")
+        play.tap()
+        more.tap()
+        app.buttons["precision-controls"].tap()
+        XCTAssertTrue(app.navigationBars["定位 / 精调"].waitForExistence(timeout: 5))
+        try hittableButton("playback-more", in: app).tap()
+        XCTAssertTrue(app.buttons["playback-more-close"].waitForExistence(timeout: 5))
+        screenshot("duo-posture-precision-more", app: app)
+        app.buttons["playback-more-close"].tap()
+        app.buttons["完成"].tap()
+        let study = app.buttons["open-sermon-study"]
+        try reveal(study, in: app, direction: .down)
+        study.tap()
+        XCTAssertTrue(app.buttons["close-sermon-study"].waitForExistence(timeout: 5))
+        try hittableButton("playback-more", in: app).tap()
+        XCTAssertTrue(app.buttons["playback-more-close"].waitForExistence(timeout: 5))
+        screenshot("duo-posture-study-more", app: app)
+        app.buttons["playback-more-close"].tap()
+        app.buttons["close-sermon-study"].tap()
+        XCTAssertEqual(app.buttons["playback-toggle"].label, "开始播放")
+    }
+
     func testForegroundAlignmentIslandSyntheticFeedbackScreenshots() {
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing", "--ui-testing-live-activity", "-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
@@ -37,25 +83,18 @@ final class ListeningFlowUITests: XCTestCase {
         XCTAssertTrue(entry.isHittable)
         entry.tap()
         let question = app.staticTexts["1. 这是用于测试的默想问题。"]
-        let dockTop = app.buttons["playback-toggle"].firstMatch.frame.minY
+        let dockTop = app.buttons.matching(identifier: "playback-toggle").allElementsBoundByIndex.last!.frame.minY
+        let scroll = app.scrollViews["sermon-study-scroll"]
         for _ in 0..<4 {
             if question.exists && question.frame.maxY < dockTop - 12 { break }
-            // The sheet scroll view's AX bounds extend under the dock. Start
-            // above controls and require the entire question in the viewport.
-            let start = app.coordinate(withNormalizedOffset: .zero)
-                .withOffset(CGVector(dx: 60, dy: dockTop - 40))
-            let end = app.coordinate(withNormalizedOffset: .zero)
-                .withOffset(CGVector(dx: 60, dy: app.navigationBars.firstMatch.frame.maxY + 100))
-            start.press(forDuration: 0.1, thenDragTo: end)
+            scroll.swipeUp(velocity: .slow)
         }
         XCTAssertTrue(question.isHittable)
         XCTAssertLessThan(question.frame.maxY, dockTop - 12)
         screenshot("study-large-text-reflection", app: app)
         let close = app.buttons["close-sermon-study-bottom"]
         if !close.isHittable || close.frame.maxY >= dockTop - 12 {
-            let start = app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: 60, dy: dockTop - 40))
-            let end = app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: 60, dy: 180))
-            start.press(forDuration: 0.1, thenDragTo: end)
+            scroll.swipeUp(velocity: .slow)
         }
         XCTAssertTrue(close.isHittable)
         XCTAssertLessThan(close.frame.maxY, dockTop - 12)
@@ -993,25 +1032,31 @@ final class ListeningFlowUITests: XCTestCase {
         play.tap()
         try waitFor(play, "label == '开始播放'")
         screenshot("collapsed-player-paused", app: app)
+        screenshot("duo-large-text-collapsed", app: app)
         expandDock(in: app)
         try waitFor(element("playback-progress", in: app), "exists == true")
         try assertAlignmentAvailableInMore(in: app)
+        screenshot("duo-large-text-more", app: app)
         XCTAssertEqual(play.label, "开始播放", "展开操作不能改变暂停状态")
         screenshot("expanded-player-restored", app: app)
     }
 
     func testAccessibilityTextDockCanCollapseAndExpand() throws {
         let app = launchFixture(largeText: true)
-        collapseDock(in: app)
-        try waitFor(element("playback-progress", in: app), "exists == false")
+        let collapse = app.buttons["playback-dock-collapse-toggle"]
+        XCTAssertTrue(collapse.isHittable)
+        collapse.tap()
+        try waitFor(collapse, "label == '展开播放栏'")
         let play = app.buttons["playback-toggle"]
         XCTAssertTrue(play.isHittable)
         XCTAssertGreaterThanOrEqual(play.frame.width, 44)
         XCTAssertGreaterThanOrEqual(play.frame.height, 44)
         XCTAssertTrue(app.frame.contains(play.frame))
-        expandDock(in: app)
-        try waitFor(element("playback-progress", in: app), "exists == true")
+        screenshot("duo-large-text-collapsed", app: app)
+        collapse.tap()
+        try waitFor(collapse, "label == '收起播放栏'")
         try assertAlignmentAvailableInMore(in: app)
+        screenshot("duo-large-text-more", app: app)
     }
 
     private func collapseDock(in app: XCUIApplication) {
@@ -1450,11 +1495,30 @@ final class ListeningFlowUITests: XCTestCase {
         }
     }
 
+    private func hittableButton(_ identifier: String, in app: XCUIApplication) throws -> XCUIElement {
+        // A presented sheet and its covered main view share component IDs.
+        // Resolve the actual interactive instance rather than the first match.
+        let query = app.buttons.matching(identifier: identifier)
+        let ready = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            query.allElementsBoundByIndex.filter { $0.isHittable }.count == 1
+        }, object: app)
+        guard XCTWaiter.wait(for: [ready], timeout: 5) == .completed,
+              let button = query.allElementsBoundByIndex.first(where: { $0.isHittable }) else {
+            XCTFail("找不到唯一可操作按钮：\(identifier)")
+            throw FlowFailure.unreachable
+        }
+        return button
+    }
+
     private func screenshot(_ name: String, app: XCUIApplication) {
-        let attachment = XCTAttachment(screenshot: app.screenshot())
+        let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         attachment.name = name
         attachment.lifetime = .keepAlways
         add(attachment)
+        // Device Hub's Duo can return an outer-display black image through
+        // XCTest after a posture change. Hold only screenshot fixture states
+        // briefly so the host can capture the real display through simctl.
+        if name.hasPrefix("duo-") || name.hasPrefix("study-large-") { Thread.sleep(forTimeInterval: 2) }
     }
 
     private enum FlowFailure: Error { case unreachable, timeout }

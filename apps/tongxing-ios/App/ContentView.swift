@@ -1408,6 +1408,7 @@ private struct PrecisionSheet: View {
             .listeningBottomBar {
                 PlaybackDock(
                     playback: playback,
+                    alignmentModel: model,
                     onMoreTap: { showingMore = true },
                     onMoreDismiss: { showingMore = false },
                     onMoreFrameChange: { moreButtonFrame = $0 }
@@ -1421,6 +1422,8 @@ private struct PrecisionSheet: View {
                 ) { width in
                     PlaybackMoreControls(
                         playback: playback,
+                        isPreparing: false,
+                        alignmentModel: model,
                         onClose: { showingMore = false },
                         width: width
                     )
@@ -1452,6 +1455,7 @@ private struct OutlineSheet: View {
     @ObservedObject var model: AppModel
     @ObservedObject var playback: PlaybackController
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     private var summary: String? { model.selectedWeek?.summary ?? model.currentPublishedTranscript?.summary }
     private var outline: [OutlineSection] { model.selectedWeek?.outline ?? model.currentPublishedTranscript?.outline ?? [] }
@@ -1519,7 +1523,9 @@ private struct OutlineSheet: View {
                             .buttonStyle(.bordered).frame(minHeight: 44)
                             .accessibilityIdentifier("close-sermon-study-bottom")
                     }
-                }.padding(22).frame(maxWidth: 680, alignment: .leading)
+                }
+                .padding(.bottom, typeSize.isAccessibilitySize ? 96 : 0)
+                .padding(22).frame(maxWidth: 680, alignment: .leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }.accessibilityIdentifier("sermon-study-scroll")
                 .navigationTitle(localization.text("大纲与默想"))
@@ -1529,24 +1535,29 @@ private struct OutlineSheet: View {
                 .listeningBottomBar {
                     PlaybackDock(
                         playback: playback,
+                        alignmentModel: model,
                         onMoreTap: { showingMore = true },
                         onMoreDismiss: { showingMore = false },
                         onMoreFrameChange: { moreButtonFrame = $0 }
                     )
                 }
-                .overlay {
-                    PlaybackMorePanelOverlay(
-                        isPresented: $showingMore,
-                        buttonFrame: moreButtonFrame,
-                        placement: .bottom
-                    ) { width in
-                        PlaybackMoreControls(
-                            playback: playback,
-                            onClose: { showingMore = false },
-                            width: width
-                        )
-                    }
-                }
+        }
+        // The panel belongs to the entire sheet, above both scrolling content
+        // and the safe-area playback bar, using one stable host coordinate space.
+        .overlay {
+            PlaybackMorePanelOverlay(
+                isPresented: $showingMore,
+                buttonFrame: moreButtonFrame,
+                placement: .bottom
+            ) { width in
+                PlaybackMoreControls(
+                    playback: playback,
+                    isPreparing: false,
+                    alignmentModel: model,
+                    onClose: { showingMore = false },
+                    width: width
+                )
+            }
         }
         .environment(\.locale, localization.locale)
         #if os(macOS)

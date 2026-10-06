@@ -1,4 +1,5 @@
 import Foundation
+import AVFoundation
 import TongxingCore
 import XCTest
 @testable import Tongxing
@@ -149,7 +150,7 @@ final class AudioAlignmentControllerTests: XCTestCase {
         XCTAssertTrue(f.player.isPlaying)
         XCTAssertEqual(f.status, "未找到可靠匹配，播放位置未改变。")
         XCTAssertEqual(f.failures, [f.status])
-        XCTAssertEqual(f.phases, [.preparing, .listening, .matching, .unmatched])
+        XCTAssertEqual(f.phases, [.preparing, .listening, .matching, .listening, .matching, .listening, .matching, .listening, .matching, .unmatched])
     }
 
     func testManualSeekCancelsLateMatcherWithoutOverwritingUserPosition() async throws {
@@ -287,7 +288,7 @@ final class AudioAlignmentControllerTests: XCTestCase {
         let f = try Fixture(published: true)
         XCTAssertTrue(f.controller.available)
         f.controller.start()
-        try await eventually { !f.controller.busy }
+        try await eventually(timeout: .seconds(15)) { !f.controller.busy }
         XCTAssertEqual(f.capture.requestedMaxSeconds, [15])
         XCTAssertEqual(f.player.seeks, [])
         XCTAssertEqual(f.status, "未找到可靠匹配，播放位置未改变。")
@@ -339,7 +340,7 @@ final class AudioAlignmentControllerTests: XCTestCase {
             }, onState: { _, _, _ in })
         XCTAssertTrue(controller.available)
         controller.start()
-        try await eventually { !controller.busy }
+        try await eventually(timeout: .seconds(15)) { !controller.busy }
         XCTAssertEqual(loaded, 1)
         XCTAssertEqual(capture.requestedMaxSeconds, [15])
         XCTAssertTrue(player.seeks.isEmpty)
@@ -359,7 +360,7 @@ final class AudioAlignmentControllerTests: XCTestCase {
         f.selection = .init(week: reviewed, track: reviewed.tracks[0])
         XCTAssertTrue(f.controller.available)
         f.controller.start()
-        try await eventually { !f.controller.busy }
+        try await eventually(timeout: .seconds(15)) { !f.controller.busy }
         XCTAssertEqual(f.capture.requestedMaxSeconds, [15])
         XCTAssertEqual(f.player.seeks, [])
         XCTAssertEqual(f.status, "未找到可靠匹配，播放位置未改变。")
@@ -495,7 +496,11 @@ final class AudioAlignmentControllerTests: XCTestCase {
 
     func testEarlyStopAtFirstCheckpointSeeksOnceAndStopsMic() async throws {
         let counter = CallCounter()
-        let f = try Fixture(matcher: { _, _ in counter.increment(); return Self.match })
+        let f = try Fixture(matcher: { prefix, _ in
+            counter.increment()
+            XCTAssertEqual(prefix.samples.count, 56_000, "First checkpoint must contain seven seconds")
+            return Self.match
+        })
         f.controller.start()
         try await eventually { !f.controller.busy }
         XCTAssertEqual(f.player.seeks, [108])
@@ -509,8 +514,9 @@ final class AudioAlignmentControllerTests: XCTestCase {
 
     func testMissThenHitContinuesInSameSession() async throws {
         let counter = CallCounter()
-        let f = try Fixture(matcher: { _, _ in
+        let f = try Fixture(matcher: { prefix, _ in
             counter.increment()
+            XCTAssertEqual(prefix.samples.count, counter.count == 1 ? 56_000 : 80_000)
             return counter.count == 1 ? Self.noMatch : Self.match
         })
         f.controller.start()
@@ -550,6 +556,99 @@ final class AudioAlignmentControllerTests: XCTestCase {
         await gate.finish(Self.noMatch)
     }
 
+    func testTimedOutCheckpointLateHitCannotReplaceLaterMatch() async throws {
+        let gate = ResultGate()
+        let counter = CallCounter()
+        let f = try Fixture(matchBudget: .milliseconds(30), matcher: { _, _ in
+            counter.increment()
+            if counter.count == 1 { return await gate.result() }
+            return Self.match
+        })
+        f.controller.start()
+        try await eventually { !f.controller.busy }
+        XCTAssertEqual(f.player.seeks, [108])
+        XCTAssertEqual(counter.count, 2)
+        XCTAssertEqual(f.capture.session?.maxWaitedSeconds, 10)
+        await gate.finish(FingerprintMatchResult(matched: true, offsetSeconds: 200,
+            confidence: 1, diagnostics: .init(reason: "late")))
+        try await Task.sleep(for: .milliseconds(30))
+        XCTAssertEqual(f.player.seeks, [108])
+    }
+
+    func testInterruptionWhileMatchingDiscardsHitAndDoesNotResume() async throws {
+        let f = try Fixture(playing: true)
+        f.capture.terminalAfterMatch = AudioAlignmentError.interrupted
+        f.controller.start()
+        try await eventually { !f.controller.busy }
+        XCTAssertTrue(f.player.seeks.isEmpty)
+        XCTAssertEqual(f.player.resumes, 0)
+        XCTAssertEqual(f.status, AudioAlignmentError.interrupted.localizedDescription)
+        XCTAssertEqual(f.phases.last, .failed)
+    }
+
+    func testCancelWhileWaitingForCheckpointNeverMatchesOrSeeks() async throws {
+        let gate = ResultGate()
+        let counter = CallCounter()
+        let f = try Fixture(matcher: { _, _ in counter.increment(); return Self.match })
+        f.capture.checkpointWait = { _ = await gate.result() }
+        f.controller.start()
+        try await gate.waitUntilStarted()
+        f.controller.cancel()
+        XCTAssertFalse(f.controller.busy)
+        XCTAssertEqual(f.capture.session?.cancels, 1)
+        await gate.finish(Self.noMatch)
+        try await Task.sleep(for: .milliseconds(20))
+        XCTAssertEqual(counter.count, 0)
+        XCTAssertTrue(f.player.seeks.isEmpty)
+        XCTAssertTrue(f.failures.isEmpty)
+        XCTAssertEqual(f.phases.last, .cancelled)
+    }
+
+    func testContinuousSessionWithoutBuffersStopsAtWallBudget() async throws {
+        var restores = 0
+        let session = ContinuousCaptureSession(owner: nil, token: UUID(),
+            engineSetup: {}, restorePlayback: { _ in restores += 1 })
+        let start = ContinuousClock.now
+        try session.startEngine(maxSeconds: 0.03)
+        do { try await session.waitUntil(seconds: 7); XCTFail("No-buffer capture must fail") }
+        catch { XCTAssertEqual(error as? AudioAlignmentError, .invalidCapture) }
+        XCTAssertTrue(session.isFinished)
+        XCTAssertLessThan(start.duration(to: .now), .seconds(1))
+        XCTAssertEqual(restores, 1)
+        session.cancel()
+        XCTAssertEqual(restores, 1, "Cleanup must run once")
+    }
+
+    func testContinuousSessionStartupFailureRestoresOnce() throws {
+        var restores = 0
+        let session = ContinuousCaptureSession(owner: nil, token: UUID(),
+            engineSetup: { throw AudioAlignmentError.invalidCapture },
+            restorePlayback: { _ in restores += 1 })
+        XCTAssertThrowsError(try session.startEngine(maxSeconds: 15))
+        XCTAssertTrue(session.isFinished)
+        XCTAssertEqual(restores, 1)
+        session.cancel()
+        XCTAssertEqual(restores, 1)
+    }
+
+    func testContinuousAccumulatorRejectsFrameGapAndKeepsOneStartClock() throws {
+        let format = try XCTUnwrap(AVAudioFormat(standardFormatWithSampleRate: 8000, channels: 1))
+        let buffer = try XCTUnwrap(AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 800))
+        buffer.frameLength = 800
+        for i in 0..<800 { buffer.floatChannelData![0][i] = 0.1 }
+        let accumulator = CaptureAccumulator(sampleRate: 8000, seconds: 15)
+        XCTAssertNil(accumulator.append(buffer, at: AVAudioTime(sampleTime: 0, atRate: 8000)))
+        let first = try XCTUnwrap(accumulator.snapshot())
+        XCTAssertNil(accumulator.append(buffer, at: AVAudioTime(sampleTime: 800, atRate: 8000)))
+        XCTAssertEqual(accumulator.snapshot()?.startedAt, first.startedAt)
+        XCTAssertEqual(accumulator.accumulatedSeconds, 0.2, accuracy: 0.0001)
+        guard case .failure(let error) = accumulator.append(buffer, at: AVAudioTime(sampleTime: 2400, atRate: 8000)) else {
+            return XCTFail("A missing buffer must not be spliced into continuous PCM")
+        }
+        XCTAssertEqual(error as? AudioAlignmentError, .interrupted)
+        XCTAssertEqual(accumulator.accumulatedSeconds, 0.2, accuracy: 0.0001)
+    }
+
     private func withoutAlignment(_ track: SermonTrack) -> SermonTrack {
         SermonTrack(id: track.id, label: track.label, voiceLabel: track.voiceLabel,
             audioUrl: track.audioUrl, file: track.file, sha256: track.sha256,
@@ -562,8 +661,8 @@ final class AudioAlignmentControllerTests: XCTestCase {
     private static let noMatch = FingerprintMatchResult(matched: false, offsetSeconds: nil, confidence: 0,
                                                         diagnostics: .init(reason: "no-match"))
 
-    private func eventually(_ predicate: @MainActor () -> Bool) async throws {
-        let deadline = ContinuousClock.now.advanced(by: .seconds(3))
+    private func eventually(timeout: Duration = .seconds(3), _ predicate: @MainActor () -> Bool) async throws {
+        let deadline = ContinuousClock.now.advanced(by: timeout)
         while !predicate() {
             guard ContinuousClock.now < deadline else { XCTFail("Timed out waiting for alignment state"); return }
             try await Task.sleep(for: .milliseconds(10))
@@ -668,8 +767,10 @@ final class AudioAlignmentControllerTests: XCTestCase {
         var startedAt = ContinuousClock.now
         var samples: [Float] = []
         var waitError: Error?
+        var terminalAfterMatch: Error?
         var maxWaitedSeconds: Double = 0
         var cancels = 0
+        var waitHook: (() async throws -> Void)?
         weak var capture: FakeCapture?
 
         var accumulatedSeconds: Double { Double(samples.count) / 8000 }
@@ -677,14 +778,19 @@ final class AudioAlignmentControllerTests: XCTestCase {
 
         func waitUntil(seconds: Double) async throws {
             maxWaitedSeconds = max(maxWaitedSeconds, seconds)
+            if seconds == 0, let terminalAfterMatch { throw terminalAfterMatch }
+            try await waitHook?()
             if let waitError { throw waitError }
         }
 
         func snapshot() -> CapturedAudio? {
-            CapturedAudio(samples: samples, sampleRate: 8000, startedAt: startedAt)
+            let count = Int(maxWaitedSeconds * 8000)
+            let prefix = Array(samples.prefix(count)) + [Float](repeating: 0, count: max(0, count - samples.count))
+            return CapturedAudio(samples: prefix, sampleRate: 8000, startedAt: startedAt)
         }
 
         func cancel() {
+            guard cancels == 0 else { return }
             cancels += 1
             capture?.stops += 1
         }
@@ -709,6 +815,8 @@ final class AudioAlignmentControllerTests: XCTestCase {
         var requestedMaxSeconds: [Double] = []
         var samples: [Float] = []
         var session: FakeSession?
+        var checkpointWait: (() async throws -> Void)?
+        var terminalAfterMatch: Error?
         func capture(seconds: Double) async throws -> CapturedAudio {
             calls += 1
             requestedSeconds.append(seconds)
@@ -724,10 +832,13 @@ final class AudioAlignmentControllerTests: XCTestCase {
             s.startedAt = start
             s.samples = samples
             s.capture = self
+            s.waitHook = checkpointWait
+            s.terminalAfterMatch = terminalAfterMatch
             session = s
+            onCaptureStarted?()
             return s
         }
-        func cancel() { stops += 1 }
+        func cancel() { stops += 1; session?.cancel() }
     }
 
     private actor ResultGate {

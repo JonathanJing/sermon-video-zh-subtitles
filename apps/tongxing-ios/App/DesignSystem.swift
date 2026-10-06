@@ -94,7 +94,7 @@ extension View {
     }
 }
 
-private struct ListeningGlassSurface<S: Shape>: ViewModifier {
+private struct ListeningGlassSurface<S: InsettableShape>: ViewModifier {
     let shape: S
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorSchemeContrast) private var contrast

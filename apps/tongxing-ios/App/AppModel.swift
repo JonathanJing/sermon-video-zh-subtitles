@@ -796,13 +796,11 @@ final class AppModel: ObservableObject {
         guard downloadTasks[key] == nil else { return }
         downloadStates[key] = .downloading
         downloadTasks[key] = Task { [weak self] in
-            // URLSession.shared has no background mode: without this the
-            // download dies as soon as the app is backgrounded. The assertion
-            // buys tens of seconds for brief interruptions (phone call, quick
-            // app switch); longer backgrounding still fails into the existing
-            // retry path.
-            let backgroundTask = UIApplication.shared.beginBackgroundTask(withName: "tongxing-download")
-            defer { UIApplication.shared.endBackgroundTask(backgroundTask) }
+            let assertion = DownloadBackgroundAssertion.system()
+            assertion.start { [weak self] in
+                self?.downloadTasks[key]?.cancel()
+            }
+            defer { assertion.finish() }
             do {
                 _ = try await library.download(track: track)
                 try Task.checkCancellation()
@@ -817,7 +815,8 @@ final class AppModel: ObservableObject {
                     await self.select(week: currentWeek, track: currentTrack, force: true)
                 }
             } catch is CancellationError {
-                self?.downloadStates[key] = .absent
+                self?.downloadStates[key] = assertion.didExpire
+                    ? .failed("后台下载时间已到，请回到 App 重试。") : .absent
                 self?.downloadTasks[key] = nil
             } catch {
                 self?.downloadStates[key] = .failed(error.localizedDescription)
