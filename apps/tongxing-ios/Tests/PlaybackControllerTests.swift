@@ -340,7 +340,7 @@ final class PlaybackControllerTests: XCTestCase {
         let originalPreference = localization.preference
         defer { localization.setPreference(originalPreference) }
         fixture.player.loadPublishedAudio(fixture.publishedAudio(locale: "zh-Hans"))
-        try await eventually("published fixture ready") { fixture.player.isReady }
+        try await eventually("published fixture ready", timeout: 30) { fixture.player.isReady }
         fixture.player.jump(to: 5)
         localization.setPreference(.english)
         localization.setPreference(.korean)

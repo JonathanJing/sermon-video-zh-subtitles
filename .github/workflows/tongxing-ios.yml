@@ -131,7 +131,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.scope == 'native' && (github.event_name == 'workflow_dispatch' || (github.base_ref == 'main' && !github.event.pull_request.draft))
     runs-on: macos-15
-    timeout-minutes: 35
+    timeout-minutes: 45
     env:
       TONGXING_VALIDATION_SCHEME: ${{ inputs.scheme || 'Tongxing' }}
     defaults:

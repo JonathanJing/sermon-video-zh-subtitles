@@ -53,3 +53,7 @@ push前核对工作分支远端仍为本任务head `19e6ba532cbfb5e63cf4ae9e6133
 多窗口代码复核确认单窗口scenePhase会错误清除共享定位反馈：已将前台标记交给App聚合scenePhase，保留所有窗口后台时suspendAlignment清除路径；新增重复前台通知保留当前反馈回归。实体双窗口监听仍待验收。手动native workflow新增受限scheme选项，默认正式身份不变，本候选使用TongxingBeta运行Beta专属反馈用例，逐项记录实际skip。Ruby YAML解析、Swift语法解析通过；本机仍缺完整Xcode/TestingMacros，native执行由精确head云端CI提供。
 
 精确head209e的root-0 CI执行2032项（11skip）出现唯一失败：新增TestFlight测试依赖iOS，但Python native_contracts快速路线未列入。已补tests.test_ios_testflight_release调用；CI scope、iOS route、docs gate、TestFlight和archive admission共51项本地测试全部通过。root-1同head2316项（11skip）成功，另有统一交付合约67项/5子测试通过。旧失败保留；最终head结果在PR正文回填。
+
+209e的Beta原生日志与xcresult已保存：116项App单元测试中15skip、1个本地WAV准备10秒超时；新增反馈过期/重复前台回归实际通过；新学习资料sheet UI回归通过。旧UI假设暴露紧凑/AX dock无可见clock、匿名页面安全标题及审核证道通知标题变化，修正测试读取现有Play可访问性时间值、使用当前句返回操作、按播放按钮边界限制阅读区域，标题期望改为现有安全标题。通知用例仍要求实际系统展示与verified landing，不把schedule视为通过。WAV准备上限与已有fixture一致改30秒；完整Beta套件超过原35分钟job边界，改45分钟，默认测试集和skip门禁未缩减。
+
+真实209e模拟器附件（非真机、非最终head）：[大字紧凑dock](20261006-ios-current-pr-evidence/large-text-compact-dock-209e.png)证明可见clock省略而控件保留；[学习资料sheet](20261006-ios-current-pr-evidence/reviewed-study-sheet-209e.png)展示审核大纲/默想全文。由同一xcresult解压提取、未修改像素；原run取消终态与其中失败保留，后续验证绑定新head。
