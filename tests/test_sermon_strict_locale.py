@@ -91,6 +91,30 @@ class LocaleTests(unittest.TestCase):
             self.assertEqual(again['output'], result['output'])
             self.assertEqual(len(self.f.calls), 4)
 
+    def test_locale_prompts_consume_frozen_rules_and_drift_sends_nothing(self):
+        with self.f.session():
+            self.run_locale()
+        receipt = c.read_snapshot(self.kw['root'] / 'rule-preflight.json')[0]
+        self.assertEqual(receipt['status'], 'inputs_frozen_not_execution_evidence')
+        self.assertFalse(receipt['humanApproval'])
+        self.assertEqual(receipt['modelCalls'], 0)
+        self.assertEqual(len(self.f.calls), 4)
+        for payload in self.f.calls:
+            body = json.loads(payload['messages'][1]['content'])
+            self.assertEqual(body['modelRules']['ruleBundleSha256'], receipt['ruleBundleSha256'])
+            self.assertEqual(body['formatting'], receipt['modelRules']['formatting'])
+            self.assertIn('Do not add editorial', payload['messages'][0]['content'])
+        prepared = strict.prepare(*self.f.args, self.plan[0], rule_preflight=receipt)
+        request = strict.prompt(prepared, 'translator')
+        request['input']['modelRules']['citationRule'] = 'changed'
+        sent = []
+        with self.f.session(), self.assertRaises(ValueError):
+            strict.call_model(prepared, 'translator', request, self.f.root / 'drifted.json',
+                              'synthetic', lambda *args, **kwargs: sent.append(args))
+        self.assertEqual(sent, [])
+        self.assertFalse((self.f.root / 'drifted.json').exists())
+        self.assertEqual(len(self.f.calls), 4)
+
     def test_invalid_late_group_and_plugin_fail_before_any_transport(self):
         changed = deepcopy(self.plan); changed[-1]['translationGroupId'] = 'x'*90
         with self.f.session():

@@ -92,7 +92,7 @@ English index: [backlog.md](./backlog.md)
 可复用能力与首批缺口：
 
 - [benchmark_layer2_bounded.py](../scripts/experiments/benchmark_layer2_bounded.py) 的 `capture_prompts` 已能从真实 group closure 捕获译审请求并在调用前停止；`target_language_policy_preview.freeze_payload_preview` 已保存 payload／policy hashes。002 扩展这些入口到完整 CLI 输入和全环节，避免重建第二套 prompt builder。
-- canonical 的 modelRules 前检依赖实际传入 plugin；strict 目前没有同一条 modelRules／formatting 消费链。库和 review 须分别展示 `consumed/not_run/unsupported` 及原因，补冻结规则一致性审查，不因模板指向同一 policy 就认定行为相同。
+- canonical 的 modelRules 前检依赖实际传入 plugin。strict locale 现在在派发前消费同一份冻结收据；没有 `rulePreflight` 的直接组调用仍保持旧 prompt，不能把它们写成已经消费规则。库和 review 须分别展示 `consumed/not_run/unsupported` 及原因。
 - canonical `partialRepair.instruction` 会拼入 system；strict 的 issue evidence 则按解释数据处理。优先审查自由文本修订指令的信任边界、来源和允许范围，禁止来源／模型证据越权覆盖冻结政策。
 - legacy 分段缓存缺完整 system literal、系列规则与 wrapper／schema 身份；先补漂移检测及兼容迁移设计，迭代不能只改常量而继续复用旧结果。现有请求已带的 hash 和 version 应复用，历史缓存不删除或改写。
 
@@ -159,7 +159,7 @@ Git 保存非敏感模板、registry、最小合成 fixture 与评审记录；�
 | `DEV-R242-002` L1唯一缓存与有界并行入口；`DEV-L1-001`、`DEV-SPD-004` | `in_progress` | L1 judge 共用不可变 cache、single-flight、started/unknown 与1–8 workers 已由#242合并；ae7a7fef新增source4/judge8及共享业务池。剩新来源真实执行、所有正式入口覆盖及跨修订精确迁移；不重新开发已有锁/cache | 001执行身份；已有request cache |
 | `DEV-R242-003` L3收据上下文复用；`DEV-L3-001`、`DEV-DIAG-015` | `waiting_evidence` | receipt上下文复用及依赖漂移拒绝已合并；同474句真实cache完整解码对照已完成800.787065→48.098803秒（仅校验阶段）。下一项是新并行修订的保护不变量及新生产验证，planner/assembly比较仍独立归004 | 001；输入快照不变量 |
 | `DEV-R242-004` 单句异常隔离与同步恢复；`DEV-L3-001/002`、`DEV-SPD-004` | `in_progress` | 保存异常旧WAV，输出duration/source比、局部lag跳升和后续传播；生成早期检测高风险连续段，预测与实测分开。先判断TTS单句修复或L2修订，再独立重算排程；验证未变单元0重合成和原8秒目标。不得自动扩大容差；u172旧WAV缺失保留根因未知 | 001；复用既有单元恢复 |
-| `DEV-R242-005` 模型实际输入政策预览；`DEV-L2-001/002`、`DEV-STE-001/002` | `in_progress` | payload/policy预览、changed set、精确零调用迁移和canonical modelRules前检已实现；CLI/plugin/诊断候选链已有真实证据。剩strict同版规则消费、正式经文版次/group adapter及全生产入口覆盖；prompt-only实验归023/PROMPT | 001；既有partial repair与迁移 |
+| `DEV-R242-005` 模型实际输入政策预览；`DEV-L2-001/002`、`DEV-STE-001/002` | `in_progress` | payload/policy预览、changed set、精确零调用迁移和canonical modelRules前检已实现。strict locale 现在在派发前冻结同一份 rule preflight，译审 prompt、plugin 和 candidate 都核验它；规则漂移在 caller 之前拒绝。正式经文版次/group adapter及全生产入口覆盖仍缺；prompt-only实验归023/PROMPT | 001；既有partial repair与迁移 |
 | `DEV-R242-006` 元数据与双环境路由门禁；`DEV-WEEK-001`、`DEV-L4-004/007` | `in_progress` | 元数据/环境路由/来源与page绑定代码已由#242合并；已存在占位和错版本拒绝。剩新身份Hosting发布后的catalog/content、Beta/正式双端读回；元数据修复不重生成音频 | 001；现有Dev/prod路由 |
 | `DEV-R242-007` 发布收据版本闭合；`DEV-CICD-001`、`DEV-L4-003` | `in_progress` | 发布attempt、live版本、资产/HTTP及上游绑定软件已由#242合并；旧副本和错误绑定负例已有。剩当前授权目标真实部署、失败HTTP及回退收据，缺历史时间仍unknown | 006；真实publisher返回值 |
 | `DEV-R242-008` 统一CLI计划、查询与审核入口；`DEV-SPD-006`、`DEV-DIAG-017` | `waiting_evidence` | v2 CLI计划/只读查询/review ingest及CAS continuation已合并，真实CLI/后台owner离线验收通过；不是只有schema/fixture。剩新模型新身份正式整链和当前并行路径的实际运行证据 | 001；[协议](unified-cli-protocol.zh.md) |

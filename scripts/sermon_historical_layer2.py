@@ -185,12 +185,13 @@ class HistoricalLayer2Reuse:
             return self._inspect_v2(prepared)
         locale_root, locale, raw, language = self._inventory()
         c.require([c.bytes_sha256(prepared['bytes'][k]) for k in ('englishSource', 'anchor', 'policy', 'rubric')] ==
-                  [c.bytes_sha256(b) for b in raw] and prepared.get('requestLimits') == locale.get('requestLimits'),
+                  [c.bytes_sha256(b) for b in raw] and prepared.get('requestLimits') == locale.get('requestLimits')
+                  and prepared.get('rulePreflight') == locale.get('rulePreflight'),
                   'historical_current_materials_changed')
         c.require(prepared['group'] in locale['groups'], 'historical_group_not_in_parent')
         root = locale_root/'groups'/c.canonical_sha256(prepared['group'])/'revisions/initial'
         old = strict.prepare(*raw, prepared['group'], request_limits=locale.get('requestLimits'),
-                             diagnostic_context=locale.get('diagnosticContext'))
+                             diagnostic_context=locale.get('diagnosticContext'), rule_preflight=locale.get('rulePreflight'))
         manifest, _ = c.read_snapshot(root/'revision.json')
         candidate, candidate_bytes = c.read_snapshot(root/'candidate.json')
         inputs, _ = c.read_snapshot(root/'review-input.json')
@@ -234,13 +235,14 @@ class HistoricalLayer2Reuse:
     def _inspect_v2(self, prepared):
         locale_root, locale, raw, language = self._inventory()
         c.require([c.bytes_sha256(prepared['bytes'][k]) for k in ('englishSource','anchor','policy','rubric')] ==
-            [c.bytes_sha256(b) for b in raw] and prepared.get('requestLimits') == locale.get('requestLimits'),
+            [c.bytes_sha256(b) for b in raw] and prepared.get('requestLimits') == locale.get('requestLimits')
+            and prepared.get('rulePreflight') == locale.get('rulePreflight'),
             'historical_current_materials_changed')
         c.require(prepared['group'] in locale['groups'], 'historical_group_not_in_parent')
         bindings,_=c.read_snapshot(Path(self.spec['parentLanguageRoot'])/'revision-bindings.json')
         index=locale['groups'].index(prepared['group'])
         old=strict.prepare(*raw,prepared['group'],request_limits=locale.get('requestLimits'),
-            diagnostic_context=locale.get('diagnosticContext'))
+            diagnostic_context=locale.get('diagnosticContext'), rule_preflight=locale.get('rulePreflight'))
         result=inspect_final_origin(old,locale_root,bindings['groups'][index],
             self.parent/'budget'/budget.STORE_ID/'provider-run',self.parent_plan['providerConfig'], current=prepared)
         groups=[g for g in language['groupReviews'] if g['translationGroupId']==prepared['group']['translationGroupId']]
@@ -496,6 +498,7 @@ def inspect_final_origin(prepared, locale_root, binding, provider_root, provider
     """
     current=prepared if current is None else current
     c.require(prepared['bytes']==current['bytes'] and prepared.get('requestLimits')==current.get('requestLimits') and
+        prepared.get('rulePreflight')==current.get('rulePreflight') and
         prepared['group']==current['group'],'historical_current_materials_changed')
     root,attempt=final_root(locale_root,prepared['group'],binding)
     provider_root=_safe_path(Path(provider_root))
@@ -582,7 +585,7 @@ def inspect_final_origin(prepared, locale_root, binding, provider_root, provider
     c.require(len(set(call_ids))==len(call_ids),'historical_duplicate_paid_call')
     for name,snapshot in binding.get('artifacts',{}).items():
         c.require(name in {Path(row['path']).name for row in references if Path(row['path']).parent==root} or
-            name in ('request-limits.json','diagnostic-context.json'),'historical_final_artifact_not_supported')
+            name in ('request-limits.json','diagnostic-context.json','rule-preflight.json'),'historical_final_artifact_not_supported')
         path=_safe_path(root/name);data=c.read_snapshot(path)[1]
         c.require(snapshot==strict.reference(name,data),'historical_final_binding_changed');references.append(ref(path))
     final_result.update(parentRoot=root,reviewAttempt=attempt,archivedRepair=archived,

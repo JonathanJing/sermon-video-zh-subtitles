@@ -57,7 +57,7 @@ def safe_failure_reason(error, fallback='current_evidence_not_validated'):
 
 def chain_identity(prepared):
     expected = strict.prepare(*(prepared['bytes'][key] for key in
-        ('englishSource', 'anchor', 'policy', 'rubric')), prepared['group'], request_limits=prepared.get('requestLimits'), diagnostic_context=prepared.get('diagnosticContext'))
+        ('englishSource', 'anchor', 'policy', 'rubric')), prepared['group'], request_limits=prepared.get('requestLimits'), diagnostic_context=prepared.get('diagnosticContext'), rule_preflight=prepared.get('rulePreflight'))
     c.require(prepared == expected, 'strict_prepared_inputs_changed')
     return budget.chain_identity({
         'sourceIdentitySha256': prepared['source']['downstreamInvalidationKey'],
