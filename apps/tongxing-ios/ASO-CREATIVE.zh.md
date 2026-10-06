@@ -86,6 +86,18 @@
 - [ ] 建 CPP-A/B/C 并关联关键词
 - [ ] Creative Asset 单独送审，通过后替换线上
 - [ ] 4 周后看搜索点进率，决定是否加 CPP-D（教会/小组场景）
+- [ ] API 4.5.1 文档更新后确认 Creative Assets 相关 endpoint，评估是否接入自动化脚本（fastlane / asc CLI）
+
+## 8. App Store Connect API 4.5.1（2026-10-06）与自动化
+
+- Apple 于 2026-10-06 发布 App Store Connect API 4.5.1（[release](https://developer.apple.com/news/releases/?id=10062026a)）。
+- 按 Apple"网页端先上、API 跟上"的惯例，预计补齐 Creative Assets / Asset Library 的程序化接口：
+  批量上传素材、查询送审状态、替换线上素材。具体 endpoint 待官方文档更新后确认
+  （⚠️ 本节为基于发布时间点的推断，以 Apple 正式文档为准）。
+- 意义：截图与素材迭代可以脚本化（上传→送审→替换全链路），不再依赖手工点 Connect；
+  与第 4 节"素材迭代不占用发版窗口"叠加后，创意运营完全解耦。
+- 4.5 系列其他已知变化（与本计划无关，记录备查）：app-tag `territories` 相关接口废弃；
+  "最后兼容版本"的 `downloadable` 属性转正为公开 API。
 
 ---
 *设计稿版本 2026-10-06；实现（拍摄+提交）由 Jonathan 在真机与 App Store Connect 完成。*
