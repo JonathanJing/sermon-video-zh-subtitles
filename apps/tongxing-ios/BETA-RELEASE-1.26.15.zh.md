@@ -23,4 +23,8 @@
 
 ## 构建与分发证据
 
-候选仍在验证／归档准备中；上传、Apple 处理、Rooted 分组关联与说明读回将在实际完成后记录。
+Xcode27.1 BetaDebug及BetaRelease签名归档／IPA导出通过。iOS27采音整类35实际通过、1缺冻结Dev资产跳过；面板、下载assertion、Activity状态和连续AVPlayer字幕18通过。iOS17采音34通过、1同类跳过，最后中断补丁5项定向回归通过（与整类重复用例不相加）；几何／后台assertion8通过。StorageTests25通过。Duo Closed／Open／请求Book相关UI复验通过，并保留26张逐张核验原图及SHA；测试为合成静音内容，Book活动折痕未回读。详见 [整合验证报告](../../docs/reports/20261006-ios-pr251-255-beta56.zh.md)。
+
+冻结源码 `8c71c02cc983cb7aea9e2a9bcd9d5bc8ff603f08` 已推送。IPA SHA-256 `04ea74cef32c5706f12927acdf8a779c38245424e25b846b679a358b00b6a4d7`。上传成功：`artifacts/tongxing-ios/testflight/20261006T161334Z-55bbaa15/`；Apple处理：`…/20261006T161518Z-931cdbc0/`；分发：`…/20261006T161801Z-e364f941/`。Apple于2026-10-06 16:18:05 UTC读回构建 `76364c01-2091-4bf4-a8fa-dd4cf65ab255` 为 `VALID`、`IN_BETA_TESTING`、未过期；Rooted的buildIDs包含该构建，What to Test新鲜读取与提交文字一致。内部 TestFlight 已可测试。私有追加记录 `artifacts/tongxing-ios/beta-1.26.15-build56/distribution-record.json`；冻结归档记录未修改。
+
+五个原PR的GitHub合并状态未改变，本次功能整合与Beta交付不等于已合并原PR。真机安装、声学定位、VoiceOver、系统锁屏及现场验收仍须上述实机步骤。
