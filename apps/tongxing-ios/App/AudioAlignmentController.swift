@@ -56,10 +56,22 @@ final class AudioAlignmentController {
             }
         }
     }
+    /// Index bound to one alignment attempt. Legacy and published indexes use
+    /// different quantization and must never be mixed.
+    private enum MatchEngine: Sendable {
+        case legacy(FingerprintIndex)
+        case published(PublishedFingerprintIndex)
+    }
     typealias IndexLoader = (Selection) async throws -> FingerprintIndex
     typealias PublishedIndexLoader = (Selection) async throws -> PublishedFingerprintIndex
     typealias PageIndexLoader = (PublishedSelection) async throws -> PublishedFingerprintIndex
     typealias Matcher = @Sendable (CapturedAudio, FingerprintIndex) async throws -> FingerprintMatchResult
+
+    /// FIELD-03: checkpoints within one continuous capture session (seconds).
+    /// 7s is the minimum viable query for both matchers; 15s is the single
+    /// microphone budget shared with the Web batch's budget.
+    private static let checkpoints: [Double] = [7, 10, 12, 15]
+    private static let maxCaptureSeconds: Double = 15
 
     private let playback: any AlignmentPlayback
     private let capture: any MicrophoneCapturing
@@ -74,6 +86,7 @@ final class AudioAlignmentController {
     private let onPhase: (ListeningAlignmentPhase) -> Void
     private let now: () -> ContinuousClock.Instant
     private let deadline: Duration
+    private let matchBudget: Duration
     private var requestID: UUID?
     private var selectionKey: String?
     private var capability: SermonAudioAlignment?
@@ -94,6 +107,7 @@ final class AudioAlignmentController {
              }
              return try await withTaskCancellationHandler { try await work.value } onCancel: { work.cancel() }
          }, now: @escaping () -> ContinuousClock.Instant = { ContinuousClock.now }, deadline: Duration = .seconds(20),
+         matchBudget: Duration = .seconds(3),
          onState: @escaping (String, Bool, Double?) -> Void,
          onFailure: @escaping (String) -> Void = { _ in },
          onPhase: @escaping (ListeningAlignmentPhase) -> Void = { _ in }) {
@@ -101,7 +115,7 @@ final class AudioAlignmentController {
         self.loadIndex = loadIndex; self.match = match; self.onState = onState
         self.onFailure = onFailure
         self.onPhase = onPhase
-        self.now = now; self.deadline = deadline
+        self.now = now; self.deadline = deadline; self.matchBudget = matchBudget
         self.loadPublishedIndex = loadPublishedIndex
         self.getPublishedSelection = getPublishedSelection
         self.loadPageIndex = loadPageIndex
@@ -199,14 +213,34 @@ final class AudioAlignmentController {
         if reportFailure && sameSelection { onFailure(message) }
     }
 
-    private func captureAudio(seconds: Double, token: UUID) async throws -> CapturedAudio {
-        capture.onCaptureStarted = { [weak self] in
-            guard let self, self.current(token) else { return }
-            self.onPhase(.listening)
-            self.onState(seconds == 10 ? "正在听原声，约 10 秒；请保持 App 前台。"
-                         : "正在听原声，约 8 秒；请保持 App 前台。", true, nil)
+    private func loadMatchEngine(_ selected: ActiveSelection) async throws -> MatchEngine {
+        if case .published(let page) = selected, let loadPageIndex {
+            return .published(try await loadPageIndex(page))
         }
-        return try await capture.capture(seconds: seconds)
+        if case .legacy(let legacy) = selected, legacy.track.alignment == nil, let loadPublishedIndex {
+            return .published(try await loadPublishedIndex(legacy))
+        }
+        guard case .legacy(let legacy) = selected else { throw AudioAlignmentError.unavailable }
+        return .legacy(try await loadIndex(legacy))
+    }
+
+    /// Runs one checkpoint match with a bounded compute budget so a slow match
+    /// cannot consume the microphone budget (FIELD-03). Returns nil on timeout;
+    /// the session keeps capturing and the next checkpoint retries.
+    private func matchWithBudget(_ prefix: CapturedAudio,
+                                 _ matchFn: @Sendable (CapturedAudio) async throws -> FingerprintMatchResult
+    ) async throws -> FingerprintMatchResult? {
+        let budget = matchBudget
+        return try await withThrowingTaskGroup(of: FingerprintMatchResult?.self) { group in
+            group.addTask { try await matchFn(prefix) }
+            group.addTask {
+                try await Task.sleep(for: budget)
+                return nil
+            }
+            guard let first = try await group.next() else { return nil }
+            group.cancelAll()
+            return first
+        }
     }
 
     private func run(_ selected: ActiveSelection, token: UUID) async {
@@ -230,51 +264,63 @@ final class AudioAlignmentController {
             }
         }
         do {
-            let result: FingerprintMatchResult
-            if case .published(let page) = selected, let loadPageIndex {
-                let index = try await loadPageIndex(page)
-                guard current(token) else { return }
-                let recording = try await captureAudio(seconds: 10, token: token)
-                guard current(token) else { return }
-                capturedStart = recording.startedAt
-                onPhase(.matching)
-                onState("正在本机匹配播放位置…", true, nil)
-                let worker = Task.detached(priority: .userInitiated) {
-                    try PublishedFingerprintMatcher.match(samples: recording.samples, sampleRate: recording.sampleRate, index: index)
-                }
-                result = try await withTaskCancellationHandler { try await worker.value } onCancel: { worker.cancel() }
-            } else if case .legacy(let legacy) = selected, legacy.track.alignment == nil,
-                      let loadPublishedIndex {
-                let index = try await loadPublishedIndex(legacy)
-                guard current(token) else { return }
-                let recording = try await captureAudio(seconds: 10, token: token)
-                guard current(token) else { return }
-                capturedStart = recording.startedAt
-                onPhase(.matching)
-                onState("正在本机匹配播放位置…", true, nil)
-                let worker = Task.detached(priority: .userInitiated) {
-                    try PublishedFingerprintMatcher.match(samples: recording.samples, sampleRate: recording.sampleRate, index: index)
-                }
-                result = try await withTaskCancellationHandler { try await worker.value } onCancel: { worker.cancel() }
-            } else {
-                guard case .legacy(let legacy) = selected else { throw AudioAlignmentError.unavailable }
-                let index = try await loadIndex(legacy)
-                guard current(token) else { return }
-                let recording = try await captureAudio(seconds: 8, token: token)
-                guard current(token) else { return }
-                capturedStart = recording.startedAt
-                onPhase(.matching)
-                onState("正在本机匹配播放位置…", true, nil)
-                result = try await match(recording, index)
-            }
+            let engine = try await loadMatchEngine(selected)
             guard current(token) else { return }
-            guard result.matched else {
-                unmatched = true
-                status = "未找到可靠匹配，播放位置未改变。"; return
+            // Bind the loaded index to a Sendable prefix matcher. The legacy
+            // branch keeps the injected `match` closure so tests can stub it.
+            let matchFn: @Sendable (CapturedAudio) async throws -> FingerprintMatchResult
+            switch engine {
+            case .legacy(let index):
+                let injected = match
+                matchFn = { prefix in try await injected(prefix, index) }
+            case .published(let index):
+                matchFn = { prefix in
+                    let worker = Task.detached(priority: .userInitiated) {
+                        try PublishedFingerprintMatcher.match(samples: prefix.samples, sampleRate: prefix.sampleRate, index: index)
+                    }
+                    return try await withTaskCancellationHandler { try await worker.value } onCancel: { worker.cancel() }
+                }
             }
-            guard let target = AlignmentTarget.position(offset: result.offsetSeconds, startedAt: capturedStart,
+            capture.onCaptureStarted = { [weak self] in
+                guard let self, self.current(token) else { return }
+                self.onPhase(.listening)
+                self.onState("正在听原声，请保持 App 前台。", true, nil)
+            }
+            // FIELD-03: one continuous session; checkpoints share the same PCM.
+            // A reliable hit at any checkpoint stops the mic early; otherwise
+            // the session continues to the next checkpoint within the budget.
+            let session = try await capture.beginContinuousCapture(maxSeconds: Self.maxCaptureSeconds)
+            var hit: (result: FingerprintMatchResult, prefix: CapturedAudio)?
+            for (i, checkpoint) in Self.checkpoints.enumerated() {
+                try await session.waitUntil(seconds: checkpoint)
+                guard current(token) else { return }
+                guard let prefix = session.snapshot() else { break }
+                onPhase(.matching)
+                onState("正在本机匹配播放位置…", true, nil)
+                let attempt = try await matchWithBudget(prefix, matchFn)
+                guard current(token) else { return }
+                if let attempt, attempt.matched {
+                    hit = (attempt, prefix)
+                    break // early stop: same thresholds as before (FIELD-07)
+                }
+                if i < Self.checkpoints.count - 1 {
+                    onPhase(.listening)
+                    onState("已采集约\(Int(checkpoint))秒，证据不足，继续听取…", true, nil)
+                }
+            }
+            // The microphone is no longer needed once the checkpoint loop ends.
+            session.cancel()
+            guard current(token) else { return }
+            guard let hit else {
+                unmatched = true
+                status = "未找到可靠匹配，播放位置未改变。"
+                return
+            }
+            capturedStart = hit.prefix.startedAt
+            guard let target = AlignmentTarget.position(offset: hit.result.offsetSeconds, startedAt: capturedStart,
                                                         now: now(), duration: selected.durationSeconds) else {
-                status = "未找到可靠匹配，播放位置未改变。"; return
+                status = "未找到可靠匹配，播放位置未改变。"
+                return
             }
             let applied = await playback.applyAlignedPosition(target)
             guard current(token) else { return }
@@ -294,7 +340,7 @@ final class AudioAlignmentController {
                     try await Task.sleep(for: .milliseconds(50))
                 }
                 guard current(token) else { return }
-                if let final = AlignmentTarget.position(offset: result.offsetSeconds, startedAt: capturedStart,
+                if let final = AlignmentTarget.position(offset: hit.result.offsetSeconds, startedAt: capturedStart,
                                                        now: now(), duration: selected.durationSeconds),
                    abs(final - playback.position) > 0.15 {
                     let corrected = await playback.applyAlignedPosition(final)
