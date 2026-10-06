@@ -274,14 +274,14 @@ class SupervisorBoundaryTests(unittest.TestCase):
         self.timeline.assert_not_called()
         self.generation.assert_not_called()
 
-    def test_new_legacy_backend_runs_are_blocked_before_model_or_mutation(self):
-        for backend in ('sdk', 'agents-api'):
+    def test_new_sdk_backend_runs_are_blocked_before_model_or_mutation(self):
+        for backend in ('sdk',):
             with patch('sys.argv', ['supervisor', '--sunday', self.config.sunday,
                       '--state-file', self.config.state_file, '--work-root', str(self.config.work_root),
                       '--gcs-bucket', '', '--agent-backend', backend]):
                 args = entry.parse_args()
             with patch.object(entry.Runner, 'run', new_callable=AsyncMock) as sdk:
-                with self.assertRaisesRegex(ValueError, 'New supervisor runs require Codex CLI'):
+                with self.assertRaisesRegex(ValueError, 'SDK has no durable session resume adapter'):
                     asyncio.run(entry.run_agent(args))
                 sdk.assert_not_called()
         self.timeline.assert_not_called()
@@ -696,15 +696,26 @@ class SupervisorBoundaryTests(unittest.TestCase):
         remote.assert_called_once()
         sdk.assert_not_called()
 
+    def test_new_default_supervisor_dispatches_agents_api(self):
+        with patch('sys.argv', ['supervisor', '--sunday', self.config.sunday,
+                   '--state-file', self.config.state_file, '--work-root', str(self.config.work_root),
+                   '--gcs-bucket', '', '--mode', 'shadow']):
+            args = entry.parse_args()
+        with patch.dict('os.environ', {'OPENAI_API_KEY': 'synthetic-test-key'}), \
+             patch.object(mod, 'session_report', return_value={'status': 'observed'}) as remote, \
+             patch('scripts.sermon_codex_supervisor.session_report', side_effect=AssertionError('CLI forbidden')):
+            asyncio.run(entry.run_agent(args))
+        remote.assert_called_once()
+
 
 class BackendCLISelectionTests(unittest.TestCase):
-    def test_both_entrypoints_default_to_cli_and_parse_legacy_resume_backend(self):
+    def test_both_entrypoints_default_to_api_and_parse_legacy_resume_backend(self):
         for module, required in ((entry, ["--sunday", "2026-09-13", "--state-file", "state.json"]),
                                  (local_entry, [])):
             with self.subTest(module=module.__name__):
                 with patch("sys.argv", ["supervisor", *required]):
                     args = module.parse_args()
-                    self.assertEqual(args.agent_backend, "codex-cli")
+                    self.assertEqual(args.agent_backend, "agents-api")
                     self.assertEqual(args.model, "gpt-6-luna")
                 with patch("sys.argv", ["supervisor", *required, "--agent-backend", "sdk"]):
                     self.assertEqual(module.parse_args().agent_backend, "sdk")

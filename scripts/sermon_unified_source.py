@@ -340,8 +340,6 @@ def execute(config_path, *, api_key=None, transport=None, aligner=None, mfa_pref
 
 def _execute(config, fresh, *, api_key, transport, aligner, mfa_preflight):
     out, value = config.output, config.value
-    # Reject the incompatible text budget before spending on source ASR.
-    require(value['judge']['model'] != 'gpt-6.1-sol', 'codex_cli_provider_output_cap_unsupported')
     _freeze(out / 'source-run.json', {'configurationSha256': config.identity,
                                      'codeIdentitySha256': config.code_identity,
                                      'authorizationSha256': config.authorization_hash})

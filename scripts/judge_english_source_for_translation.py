@@ -490,17 +490,14 @@ def main() -> int:
     parser.add_argument("--api-key-secret")
     args = parser.parse_args()
     from scripts.sermon_openai_runtime import reject_secret_override
-    if args.model != "gpt-6.1-sol":
-        reject_secret_override(args.api_key_secret)
-    if args.model == "gpt-6.1-sol":
-        api_key = ""
-    elif args.api_key_secret:
+    reject_secret_override(args.api_key_secret)
+    if args.api_key_secret:
         from backend.cloud import access_secret
         api_key = access_secret(args.api_key_secret)
     else:
         import os
         api_key = os.environ.get("OPENAI_API_KEY", "").strip()
-    if not api_key and args.model != "gpt-6.1-sol":
+    if not api_key:
         raise SystemExit("OPENAI_API_KEY is not set and --api-key-secret was not provided")
     result = run(
         aligned_path=args.aligned_segments,

@@ -53,6 +53,10 @@ def main() -> int:
 
 
 def _main(args: argparse.Namespace) -> int:
+    from scripts.sermon_openai_runtime import reject_secret_override, selected_route
+    reject_secret_override(args.api_key_secret)
+    if not args.api_key_secret and selected_route() is None:
+        raise ValueError("local_notes_require_explicit_dev_or_prod_launcher")
     if args.api_key_secret:
         validate_secret_resource_name(args.api_key_secret)
     simulation = read_note_source(args)
@@ -60,14 +64,14 @@ def _main(args: argparse.Namespace) -> int:
     if not slices:
         raise SystemExit("No caption text available for note generation.")
 
-    api_key = "" if args.model == "gpt-6.1-sol" else resolve_api_key(args.api_key_secret)
+    api_key = resolve_api_key(args.api_key_secret)
     request_payload = build_openai_request(
         slices=slices,
         simulation=simulation,
         model=args.model,
         reasoning_effort=args.reasoning_effort,
     )
-    with stage("notes.generate", billing="codex" if args.model == "gpt-6.1-sol" else "api"):
+    with stage("notes.generate", billing="api"):
         raw_response = request_openai_notes(
             request_payload,
             api_key=api_key,
@@ -601,17 +605,7 @@ def request_openai_notes(
 
 
 def _request_openai_notes(payload, api_key, timeout_seconds):
-    if payload.get("model") == "gpt-6.1-sol":
-        from scripts.sermon_codex_transport import chat_json as codex_chat_json
-        messages = []
-        for item in payload["input"]:
-            content = "\n".join(part["text"] for part in item["content"] if part.get("type") == "input_text")
-            messages.append({"role": item["role"], "content": content})
-        result = codex_chat_json("", {"model": payload["model"],
-            "reasoning_effort": payload["reasoning"]["effort"],
-            "response_format": {"type": "json_object"}, "messages": messages}, retries=1)
-        return {**result, "output": [{"type": "message", "content": [{"type": "output_text",
-            "text": result["choices"][0]["message"]["content"]}]}]}
+    from scripts.sermon_openai_runtime import project_headers
     started = time.perf_counter()
     model = str(payload.get("model") or DEFAULT_MODEL)
     attempt_id = record_api_started(model, request_metadata(payload))
@@ -621,6 +615,7 @@ def _request_openai_notes(payload, api_key, timeout_seconds):
             headers={
                 "Authorization": f"Bearer {api_key}",
                 "Content-Type": "application/json",
+                **project_headers(api_key),
             },
             json=payload,
             timeout=timeout_seconds,

@@ -24,23 +24,26 @@ DEFAULT_REQUEST_LIMITS = {'schemaVersion': SCHEMA, 'maxInputTokens': 8192,
 MAX_REQUEST_LIMITS = {**DEFAULT_REQUEST_LIMITS, 'maxInputTokens': 16384, 'maxCompletionTokens': 8192}
 RUN_TARGET_MICROUSD = 25_000_000
 RUN_HARD_CAP_MICROUSD = 40_000_000
-SUPPORTED_MODELS = ('gpt-6-astra', 'gpt-6-sol')
+SUPPORTED_MODELS = ('gpt-6-astra', 'gpt-6-sol', 'gpt-6.1-sol')
 SUPPORTED_REASONING_EFFORTS = ('low', 'medium', 'high', 'xhigh', 'max')
 MODEL_REASONING_EFFORTS = {
     'gpt-6-astra': SUPPORTED_REASONING_EFFORTS,
     'gpt-6-sol': ('low', 'medium', 'high', 'xhigh', 'max'),
+    'gpt-6.1-sol': ('low', 'medium', 'high', 'xhigh', 'max'),
 }
-PRICE_VERIFIED_AT = '2026-09-30'
+PRICE_VERIFIED_AT = '2026-10-05'
 PRICE_SOURCES = {
     'gpt-6-astra': 'https://developers.openai.com/api/docs/pricing?tab=suite',
     'gpt-6-sol': 'https://developers.openai.com/api/docs/models/gpt-6-sol',
+    'gpt-6.1-sol': 'https://developers.openai.com/api/docs/models/gpt-6.1-sol',
 }
-PRICE_ASSUMPTION_VERSION = 'strict-chat-worst-case-2026-09-30-v1'
+PRICE_ASSUMPTION_VERSION = 'strict-chat-worst-case-2026-10-05-v2'
 # USD per million tokens equals micro-USD per token. Exact decimal strings avoid
 # float under-reservation; these rates cannot be supplied by a model/caller.
 PRICES_USD_PER_MILLION = {
     'gpt-6-astra': {'inputWorstCase': '12.5', 'output': '50'},
     'gpt-6-sol': {'inputWorstCase': '2.5', 'output': '10'},
+    'gpt-6.1-sol': {'inputWorstCase': '2.5', 'output': '10'},
 }
 MAX_METRIC = 10**15
 MAX_MESSAGES = 16

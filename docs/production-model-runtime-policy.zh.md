@@ -1,36 +1,37 @@
 # Dev 与正式生产的模型及调用策略
 
-生效决定：2026-10-05，用户直接指定；适用于 PR #248 合入后的新 dev、测试与正式本地生产任务。环境不改变模型、reasoning 或 fast 参数。
+生效决定：2026-10-05，用户在 CLI 高并发复盘后指定：后续 dev、Beta 测试与正式内容生成先走 OpenAI API。此决策只适用于新任务；已有运行及未决调用保留原后端、凭据、预算和收据身份。模型和 reasoning 不因环境而改变；正式严格预算入口受已批准的请求 tier 约束。
 
 | 角色 | 模型 | Reasoning | Service tier | 调用方式 |
 |---|---|---|---|---|
-| 原 Astra medium 的所有文字角色：英文纠错、源稿复核、解释、初译、阅读稿编辑／审核、大纲及反思 | `gpt-6.1-sol` | `high` | `fast` | ChatGPT 认证 Codex CLI |
-| 原 Sol medium 的独立文字复核 | `gpt-6.1-sol` | `medium` | `fast` | ChatGPT 认证 Codex CLI |
-| 正式及 dev 生产 Supervisor | `gpt-6-luna` | `medium` | `fast` | ChatGPT 认证 Codex CLI |
+| 原 Astra medium 的所有文字角色：英文纠错、源稿复核、解释、初译、阅读稿编辑／审核、大纲及反思 | `gpt-6.1-sol` | `high` | `fast` | OpenAI API，按环境绑定 Project |
+| 原 Sol medium 的独立文字复核 | `gpt-6.1-sol` | `medium` | `fast` | OpenAI API，按环境绑定 Project |
+| 正式及 dev 生产 Supervisor | `gpt-6-luna` | `medium` | `fast` 为目标，实际 tier 待验 | OpenAI Agents API，按环境绑定 Project |
 
-这里的 CLI 统一适用于上述文字和监管角色。来源 ASR `gpt-transcribe`、MFA、Spark Qwen TTS／回转写 ASR、ImageGen 使用各自的音频／图像入口。Codex CLI 不替代音频转录或本地模型执行。
+来源 ASR `gpt-transcribe`、MFA、Spark Qwen TTS／回转写 ASR、ImageGen 继续使用各自入口。明确指定的 Codex CLI 实验仍可独立执行，但不能作为新正式任务的隐式 fallback。
 
 ## 执行与证据
 
-每次新文字／监管调用显式传 `-m <model>`、`-c model_reasoning_effort="<effort>"`、`-c service_tier="fast"`、`--enable fast_mode`，不依赖个人 Codex 默认配置。使用 `--ignore-user-config`、`--ephemeral` 和只读环境；模型只返回内容或结构化操作，本地程序保留审批、lease、插件、候选准入、发布与完成校验。无自动 API fallback，也不因超时重发。
+启动整个本地 supervisor／controller 时使用[双 Project 环境启动器](openai-minimal-project-setup.zh.md)，dev／Beta／实验选 `dev`，正式内容生成选 `prod`。文字请求显式记录 model、reasoning 和请求 tier；请求的 fast 不等于已证明服务端实际 tier。模型只返回内容或结构化操作，本地程序保留审批、lease、插件、候选准入、发布与完成校验。未知结果不得自动重发或切换后端。
 
-CLI 子进程过滤 OpenAI API 环境变量；ChatGPT 认证缺失、CLI 不可用或结果未知时阻断。ASR 仍可通过既有 dev/prod 环境 launcher 使用所属 API key，不把该 key 传入文字 CLI。
+选中环境的运行 key 供文字、监督和 ASR 共用，`OPENAI_PROJECT_ID` 与安全别名进入调用身份；原值不入日志。环境未绑定或 key 缺失时，新本地 API 入口在发送前阻断。CLI 实验仍隔离 API 凭据；云端 Secret Manager 配置须按服务另行迁移与验证，不能把本地切换当作已部署。
 
-保存 requested model／effort／tier、CLI 身份、原始事件、返回内容、token 与耗时收据。服务器未提供实际 model／tier 时为 unknown；不能把 requested fast 当成服务端已兑现，也不能把 purchased-credit equivalent 当作实际订阅额度扣减或 API 美元费用。
+保存 requested model／effort／tier、API Project 路由、提供方响应、token 与耗时收据。服务器未提供实际 model／tier 时为 unknown；不能把配置归因或成本估算当成提供方账单。API 的 RPM／TPM、项目费用上限和实际准入需按 Project 独立核验。
 
-模型和 reasoning 改变会改变冻结 policy、payload 与运行身份。已完成的旧证据保持原身份；既有运行任务不就地改模型、删除未知 marker 或改写缓存。新模型结果不能冒充旧批准的候选。未决旧 Supervisor 会话／工具必须先按原身份对账；旧 Agents API 只保留明确的原会话续跑，新 SDK 会话已停用。
+模型和 reasoning 改变会改变冻结 policy、payload 与运行身份。已完成的旧证据保持原身份；既有运行任务不就地改模型、删除未知 marker 或改写缓存。新模型结果不能冒充旧批准的候选。未决旧 Supervisor 会话／工具必须先按原身份对账；Agents API 新会话使用持久化锁和恢复收据，旧 CLI 会话仍按原身份对账；SDK 新会话继续禁用。
 
 ## API key 与 fallback
 
-新任务的 OpenAI API key 仅用于 Transcribe 来源转录；文字、独立复核和监管的默认调用不读取 API Secret、不要求 API key，CLI 子进程不继承 API key。保留既有安全存储中的转录凭据，不删除 `.env.openai` 或 Secret Manager 中 ASR 仍需使用的 key。
+新任务的 OpenAI API key 用于来源转录、文字、独立复核和监管。开发、Beta、诊断使用 `tongxing-dev-runtime`；正式内容使用 `tongxing-prod-runtime`。本地值只保存在忽略的 `.env.openai`，由启动器选中；云端沿用各服务现有 Secret Manager 配置直至专门迁移。
 
-文字 API fallback 当前关闭。用户已确认[额度耗尽后的备用设计](codex-quota-api-fallback-design.zh.md)：未来仅在明确额度拒绝、原调用无未决结果、入口能力验收和绑定预算授权均通过后，才允许以独立 attempt 使用 API 认证 Codex CLI；dev/prod 保持相同模型参数及各自项目。本次设计批准不是具体付费预算批准，当前代码仍拒绝 API 认证。不得因 CLI 超时、普通限流、unknown outcome、认证错误或内容失败切换。备用调用的身份、费用 reservation 与收据独立保留；旧 API 缓存不是新 CLI 的调用证据。当前旧 Agents API 的原会话对账／明确续跑不属于新任务的自动 fallback。
+[旧 CLI 额度耗尽后 API fallback 设计](codex-quota-api-fallback-design.zh.md)属于此前 CLI 优先阶段的历史方案，已被本决定取代；不能据其自动回切 CLI。正式 L2 仍须有绑定的 API 预算授权，严格单次请求、保留未知结果的 reservation 与原始响应；API 的异常不触发 CLI 重试。旧 CLI／Agents API 会话只按其原身份对账续跑。
 
 ## 当前接线范围与限制
 
-- 三语默认 L2 policy、新 CLI 测试入口、正式非预算 L2 worker、新文字生产默认值与本地 Supervisor 已接入上述参数。
-- 原 API bounded strict L1/L2 预算契约依赖 provider 输出 token 硬上限及美元 reservation。CLI 尚无该硬上限适配；这些入口必须在发送前明确阻断，不降低预算门禁、假装支持或回退 API。这是待补的 CLI 预算适配，不能将其称作已通过正式完整生产验收。
-- 本 PR 提交代码与策略，不证明远端安装、Cloud Run／定时任务部署或新模型的完整四层交付已完成。
+- 三语 L2 policy 保留原模型配置；新 standalone L2 默认 API，正式 canonical L2 使用原有 API 预算 transport，新诊断默认 API，本地 Supervisor 默认 Agents API；英文机审、笔记和阅读稿的 Sol 默认分支也改为 API。显式 CLI 诊断入口与旧收据保留。
+- Standalone L2 请求 `fast`；canonical L2 的现有严格预算合同只允许 `default`，按已批准的 `requestLimits.serviceTier` 发出请求。不得将 fast 的测速或费用外推到 canonical 路径；若要使用 fast，须另行扩展费率及预算授权后新建运行。
+- 旧 CLI 生产入口与未决会话不能因默认值变更被重标为 API 已完成。两项目模型元数据 GET 已返回 Sol 6.1／Luna 200，但这不证明实际推理、Agents API 会话、fast tier、费用上限或完整 L1–L4 路径通过；这些仍需单独实跑。
+- 本 PR 提交代码与策略，不证明 Cloud Run／定时任务已部署、Secret Manager 已迁移或四层正式交付已完成。
 
 ## 速度基线
 
@@ -50,4 +51,4 @@ CLI 子进程过滤 OpenAI API 环境变量；ChatGPT 认证缺失、CLI 不可�
 
 证据：[最新固定样本](reports/20261005-sol61-high-fast-fixed-180s-retest.zh.md)、[四臂翻译](reports/20261005-sol61-high-fast-translation-ab.zh.md)、[生产账本](reports/20261004-production-time-tokens.zh.md)、[Supervisor历史影子实验](reports/20260928-model-production-ab-results.zh.md)、[TTS 8×8](reports/20261003-spark-production-8x8.zh.md)。历史报告保留当时参数，不追改历史数据。
 
-实施与验证：[迁移记录](reports/20261005-cli-model-defaults-migration.zh.md)、[结构化收据](reports/20261005-cli-model-defaults-migration-receipt.json)。CLI 参数参考 [OpenAI Docs 配置](https://learn.chatgpt.com/docs/config-file/config-reference)与[结构化非交互调用](https://learn.chatgpt.com/docs/non-interactive-mode)。
+实施与验证：[本次 API 优先切换](reports/20261005-api-first-runtime-switch.zh.md)。此前的 [CLI 模型迁移记录](reports/20261005-cli-model-defaults-migration.zh.md)及[结构化收据](reports/20261005-cli-model-defaults-migration-receipt.json)仅作历史证据。

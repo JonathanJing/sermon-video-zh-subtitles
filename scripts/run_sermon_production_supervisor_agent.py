@@ -216,7 +216,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--model", default="gpt-6-luna")
     parser.add_argument("--reasoning-effort", choices=("low", "medium", "high"), default="medium")
     parser.add_argument("--service-tier", choices=("default", "fast"), default="fast")
-    parser.add_argument("--agent-backend", choices=("codex-cli", "agents-api", "sdk"), default="codex-cli")
+    parser.add_argument("--agent-backend", choices=("codex-cli", "agents-api", "sdk"), default="agents-api")
     parser.add_argument("--agent-run-dir", type=Path, help="Use a fresh explicit Agents API session directory.")
     parser.add_argument("--resume-agent-session", action="store_true", help="Resume the session in --agent-run-dir without replaying completed tools.")
     parser.add_argument("--agent-timeout-seconds", type=float, default=21600, help="Session budget; checked between guarded production operations.")
@@ -265,11 +265,9 @@ async def run_agent(args: argparse.Namespace) -> dict[str, Any]:
         from scripts import sermon_app_delivery_workflow
         return sermon_app_delivery_workflow.run(config.app_delivery_config,
             mode=args.mode, sunday=config.sunday)
-    if getattr(args, "agent_backend", "codex-cli") in {"agents-api", "sdk"} and not getattr(args, "resume_agent_session", False):
-        raise ValueError("New supervisor runs require Codex CLI; legacy backend requires explicit existing-session resume")
-    if getattr(args, "agent_backend", "codex-cli") == "sdk" and getattr(args, "resume_agent_session", False):
+    if getattr(args, "agent_backend", "agents-api") == "sdk":
         raise ValueError("SDK has no durable session resume adapter; reconcile its prior outcome before starting a new CLI run")
-    if config.release_workflow_config and getattr(args, "agent_backend", "codex-cli") not in {"codex-cli", "agents-api"}:
+    if config.release_workflow_config and getattr(args, "agent_backend", "agents-api") not in {"codex-cli", "agents-api"}:
         raise ValueError("Full page-release workflow requires Codex CLI or legacy Agents API")
     if args.approve_window:
         if args.mode != "execute":
@@ -298,7 +296,7 @@ async def run_agent(args: argparse.Namespace) -> dict[str, Any]:
         approval = None
 
     execute = args.mode == "execute"
-    if getattr(args, "agent_backend", "codex-cli") == "codex-cli":
+    if getattr(args, "agent_backend", "agents-api") == "codex-cli":
         from scripts.sermon_codex_supervisor import session_report
         instructions = supervisor_instructions("agents-api", page_release=config.release_workflow_config is not None)
         report = session_report(args, config, instructions, SupervisorDecision, verify_decision)

@@ -993,15 +993,12 @@ def chunk_text_for_window(chunks, start, end):
     return "\n".join(parts)
 
 
-def chat_json(api_key, payload, retries=3, *, session_verifier=None):
+def chat_json(api_key, payload, retries=1, *, session_verifier=None):
     return spark_admission.SessionBoundCaller(_chat_json, verifier=session_verifier,
         purpose="production-text-call")(api_key, payload, retries=retries)
 
 
-def _chat_json(api_key, payload, retries=3):
-    if payload.get("model") == "gpt-6.1-sol":
-        from scripts.sermon_codex_transport import chat_json as codex_chat_json
-        return codex_chat_json(api_key, payload, retries=1)
+def _chat_json(api_key, payload, retries=1):
     last_error = None
     for attempt in range(retries):
         try:
@@ -1675,7 +1672,7 @@ def produce_pipeline(args, api_key, source_duration, start, end, outdir):
     write_json(outdir / "segments_timed_en_raw.json", raw_segments)
 
     with stage("pipeline.source_review", billing="local" if args.english_source_only else
-               "codex" if getattr(args, 'en_correction_model', 'gpt-6.1-sol') == "gpt-6.1-sol" else "api"):
+               "api"):
         if args.output_mode == "reading":
             corrected = raw_segments
         else:
@@ -1733,7 +1730,7 @@ def produce_pipeline(args, api_key, source_duration, start, end, outdir):
         print(json.dumps(summary, ensure_ascii=False, indent=2))
         return
 
-    with stage("pipeline.translate", billing="codex" if args.zh_model == "gpt-6.1-sol" else "api"):
+    with stage("pipeline.translate", billing="api"):
         translated = translate_chinese(
             api_key,
             shaped_en,

@@ -19,6 +19,16 @@ from tests import test_produce_target_language_candidate as fixture_module
 
 
 class RunTargetLanguageModelsTests(unittest.TestCase):
+    def test_strict_budget_uses_approved_default_tier_for_sol(self):
+        from scripts import sermon_provider_limits as limits
+        policy = {'translator': {'model': 'gpt-6.1-sol', 'reasoningEffort': 'high'}}
+        prompt = {'instruction': 'Return JSON.', 'input': {'sample': 'synthetic'}}
+        standalone = subject.model_payload('translator', prompt, policy)
+        strict = subject.model_payload('translator', prompt, policy, limits.DEFAULT_REQUEST_LIMITS)
+        self.assertEqual(standalone['service_tier'], 'fast')
+        self.assertEqual(strict['service_tier'], 'default')
+        self.assertEqual(strict['max_completion_tokens'], 4096)
+
     def test_korean_spoken_revision_can_close_a_complete_clause(self):
         instruction = subject.revision_boundary_instruction("ko", revising=True)
         self.assertIn("complete polite predicate", instruction)

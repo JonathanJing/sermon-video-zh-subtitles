@@ -149,7 +149,7 @@ def parse_args() -> argparse.Namespace:
         default="reading",
         help="Reading mode skips Whisper and produces the reviewed reading PDF only.",
     )
-    parser.add_argument("--reading-edition-provider", choices=("openai", "codex"), default="codex")
+    parser.add_argument("--reading-edition-provider", choices=("openai", "codex"), default="openai")
     parser.add_argument("--reading-edition-model", default="gpt-6.1-sol")
     parser.add_argument("--reading-edition-reasoning-effort", choices=("low", "medium", "high"), default="high")
     parser.add_argument("--reading-review-manifest", type=Path, help="Standard reviewed corrections for the reading builder; existing edit caches are preserved.")

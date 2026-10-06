@@ -294,7 +294,7 @@ class Controller:
 
 
 def execute(config_path, locale, expected_configuration, expected_code, expected_job, *, caller=None, api_key=None, budget_authorization=None, expected_budget=None):
-    """Fixed worker body. Injected transport is for local tests; CLI uses policy API."""
+    """Fixed worker body. New jobs use the bound project API budget transport."""
     config = load_configuration(config_path)
     require(locale in config.lanes and config.sha256 == expected_configuration
             and code_identity() == expected_code, 'worker_configuration_or_code_changed')
@@ -326,14 +326,19 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
             source, anchor, policy = _inputs(config, locale, current)
         with liveness.report(request_path.parent, request) as progress:
             if caller is None:
-                require(budget_binding is None, 'codex_cli_provider_output_cap_unsupported')
+                require(budget_binding is not None, 'bound_budget_authorization_required')
                 spark_admission.require_session()
-                from scripts.codex_layer2_transport import CodexLayer2Transport
-                api_key = ''
-                caller = CodexLayer2Transport(receipts_dir=lane['output'] / '_cli_calls',
-                    resource_policy=config.resource_policy, concurrency_profile=config.concurrency_profile)
+                from scripts.sermon_openai_runtime import selected_route
+                route = selected_route()
+                require(route is not None, 'openai_layer2_requires_explicit_dev_or_prod_launcher')
+                api_key = os.environ['OPENAI_API_KEY']
+                caller = budget_tools.BudgetedCaller(budget_binding, config, source, anchor, policy)
+                caller.execution_identity = {
+                    'schemaVersion': 'openai-layer2-budget-transport-identity-v1',
+                    'backend': 'openai_api', 'route': route,
+                    'budgetAuthorizationSha256': budget_binding['sha256']}
                 caller = spark_admission.SessionBoundCaller(caller)
-            if budget_binding is not None:
+            elif budget_binding is not None:
                 caller = budget_tools.BudgetedCaller(budget_binding, config, source, anchor, policy, transport=caller)
             def current_binding():
                 fresh_config = load_configuration(config.path)

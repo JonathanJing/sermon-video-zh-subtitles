@@ -184,7 +184,7 @@ def model_payload(role, prompt, policy, request_limits=None):
                "messages": [{"role": "system", "content": prompt["instruction"]},
                             {"role": "user", "content": json.dumps(prompt["input"], ensure_ascii=False)}],
                "response_format": {"type": "json_object"}}
-    if model == "gpt-6.1-sol":
+    if model == "gpt-6.1-sol" and request_limits is None:
         payload["service_tier"] = "fast"
     if policy.get("simulationModelConfiguration") is not None:
         payload["service_tier"] = policy["simulationModelConfiguration"][role]["serviceTier"]
@@ -1091,9 +1091,9 @@ def main() -> None:
     rule_preflight.preflight(request, policy, args.plugin, plan)
     from scripts import production_spark_admission as spark_admission
     spark_admission.require_session()
-    from scripts.codex_layer2_transport import CodexLayer2Transport
-    api_key = ""
-    caller = spark_admission.SessionBoundCaller(CodexLayer2Transport(receipts_dir=args.out_dir / "_cli_calls"))
+    from scripts.openai_layer2_transport import OpenAILayer2Transport
+    caller = spark_admission.SessionBoundCaller(OpenAILayer2Transport())
+    api_key = caller.key
     evidence = run_accounted(
         source, anchor, policy, args.out_dir, api_key,
         caller,

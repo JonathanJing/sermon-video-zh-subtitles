@@ -8,7 +8,7 @@
 
 扩大任务数量与缩短关键路径分别验收：同一总池下同时翻译三种语言主要改善公平性与首次交付时间，不自动提高总吞吐；GPU 正在做中文时继续韩语 L2，才可能直接消掉机器阶段空等。人审阻塞自己的分支，不占推理槽，也不让无关已就绪分支全部停下。
 
-最新[模型策略](production-model-runtime-policy.zh.md)固定 Sol 6.1 high fast 初译／原 Astra 文字角色、Sol 6.1 medium fast 独立复核、Luna medium fast CLI 监督；容量试验不同时改变模型、reasoning、tier 或文字分组。
+最新[模型策略](production-model-runtime-policy.zh.md)固定 Sol 6.1 high fast 初译／原 Astra 文字角色、Sol 6.1 medium fast 独立复核、Luna medium fast API 监督；新开发和生产先使用 OpenAI API。以下 CLI 容量数字是历史试验目标，不能作为新 API Project 的 RPM／TPM 或并发预算；容量试验不同时改变模型、reasoning、tier 或文字分组。
 
 真实测试及页面制作还需[整轮 Spark 独占会话](spark-exclusive-development-session.zh.md)：开始前排空竞争负载，整个开发窗口保持独占，结束后恢复原服务。该控制已实现并通过[两轮实机无推理验收](reports/20261005-spark-exclusive-control-verification.zh.md)；每次实际开跑仍需建立新的 exclusive_ready 会话，音频 job 锁或夹具 ready 不代替主机准入。
 

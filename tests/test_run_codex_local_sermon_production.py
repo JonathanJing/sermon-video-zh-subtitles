@@ -1,6 +1,7 @@
 import argparse
 import hashlib
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -13,11 +14,34 @@ from scripts import run_codex_local_sermon_production as mod
 
 
 class RunCodexLocalSermonProductionTest(unittest.TestCase):
-    def test_default_supervisor_model_is_luna_cli(self):
+    def test_selected_api_route_drops_legacy_default_secret(self):
+        args = self.automation_args(Path('/tmp'))
+        args.api_key_secret = mod.DEFAULT_OPENAI_SECRET
+        route = {'SERMON_OPENAI_ENVIRONMENT': 'dev', 'OPENAI_PROJECT_ID': 'proj_synthetic',
+                 'SERMON_OPENAI_CREDENTIAL_ALIAS': 'tongxing-dev-runtime', 'OPENAI_API_KEY': 'synthetic-key'}
+        with mock.patch.dict(os.environ, route):
+            built = mod.make_agent_args(args)
+        self.assertIsNone(built.api_key_secret)
+        args.api_key_secret = 'projects/other/secrets/override'
+        with mock.patch.dict(os.environ, route), self.assertRaisesRegex(ValueError, 'selected_openai_secret_override'):
+            mod.make_agent_args(args)
+
+    def test_new_local_api_supervisor_requires_project_launcher_before_dispatch(self):
+        args = argparse.Namespace(app_delivery_config=None, resume_failed_generation=False,
+                                  release_workflow_config=None, agent_backend='agents-api',
+                                  out=Path('/tmp/unused-supervisor-report.json'))
+        with mock.patch.dict(os.environ, {}, clear=True), \
+             mock.patch.object(mod, 'completed_production_report', return_value=None), \
+             mock.patch.object(mod.run_sermon_production_supervisor_agent, 'run_agent',
+                               side_effect=AssertionError('no model dispatch')):
+            with self.assertRaisesRegex(ValueError, 'local_supervisor_requires_explicit_dev_or_prod_launcher'):
+                mod.run_local_production(args)
+
+    def test_default_supervisor_model_is_luna_api(self):
         with mock.patch.object(sys, "argv", ["run_codex_local_sermon_production.py"]):
             args = mod.parse_args()
             self.assertEqual(args.model, "gpt-6-luna")
-            self.assertEqual(args.agent_backend, "codex-cli")
+            self.assertEqual(args.agent_backend, "agents-api")
             self.assertEqual(args.reasoning_effort, "medium")
             self.assertEqual(args.service_tier, "fast")
 

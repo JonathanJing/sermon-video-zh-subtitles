@@ -669,7 +669,7 @@ class ApiHandler(BaseHTTPRequestHandler):
             mode,
             "--model",
             str(payload.get("model") or payload.get("agentModel") or "gpt-6-luna"),
-            "--agent-backend", "codex-cli",
+            "--agent-backend", "agents-api",
             "--reasoning-effort", "medium", "--service-tier", "fast",
             "--max-turns",
             str(payload.get("maxTurns") or payload.get("max_turns") or 8),

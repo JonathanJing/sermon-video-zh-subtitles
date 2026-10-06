@@ -47,10 +47,9 @@ def bound_judge_payload(payload):
     limits = JUDGE_LIMITS.get()
     if limits is None:
         return payload
-    require(payload['model'] != 'gpt-6.1-sol', 'codex_cli_provider_output_cap_unsupported')
     from scripts import judge_english_source_for_translation as judge
     text_limits.validate_request_limits(limits)
-    require(payload['model'] == 'gpt-6-astra'
+    require(payload['model'] in ('gpt-6-astra', 'gpt-6.1-sol')
             and payload['response_format']['json_schema']['schema'] == judge._response_schema(),
             'unsupported_source_judge_payload')
     require(text_limits._input_upper_bound(payload) <= limits['maxInputTokens'], 'source_judge_input_bound_exceeded')

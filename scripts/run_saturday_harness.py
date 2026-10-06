@@ -41,7 +41,7 @@ def parse_args(argv=None):
     parser.add_argument("--youtube-cookies", type=Path)
     parser.add_argument("--glossary", type=Path)
     parser.add_argument("--model", default="gpt-6-luna", help="PDF Supervisor model; generation models remain owned by its contract.")
-    parser.add_argument("--agent-backend", choices=("codex-cli", "agents-api", "sdk"), default="codex-cli")
+    parser.add_argument("--agent-backend", choices=("codex-cli", "agents-api", "sdk"), default="agents-api")
     parser.add_argument("--max-turns", type=int, default=8)
     parser.add_argument("--skip-source-refresh", action="store_true")
     parser.add_argument("--pdf-timeout", type=float, default=21600, help="PDF child deadline in seconds.")
@@ -98,7 +98,7 @@ def commands(args):
         "--gcs-bucket", args.gcs_bucket, "--gcs-prefix", args.gcs_prefix,
         "--api-key-secret", args.api_key_secret, "--youtube-api-key-secret", args.youtube_api_key_secret,
         "--notify-sendgrid-secret", "", "--notify-recipients-secret", "", "--notify-sender-secret", "",
-        "--model", args.model, "--agent-backend", getattr(args, "agent_backend", "codex-cli"),
+        "--model", args.model, "--agent-backend", getattr(args, "agent_backend", "agents-api"),
         "--reasoning-effort", "medium", "--service-tier", "fast",
         "--max-turns", str(args.max_turns)]
     if args.skip_source_refresh:

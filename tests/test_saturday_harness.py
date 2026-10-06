@@ -34,12 +34,12 @@ class SaturdayHarnessTests(unittest.TestCase):
                 "live_archive": {"sourceId": "archive-source", "status": "waiting_conversation_review",
                     "candidateEvidence": {"timingReportSha256": "abc"}}}, "nextActions": []}
 
-    def test_default_supervisor_model_is_luna_medium_fast_cli(self):
+    def test_default_supervisor_model_is_luna_medium_fast_api(self):
         args = harness.parse_args(self.argv)
         self.assertEqual(args.model, "gpt-6-luna")
         command = harness.commands(args)[0]
         self.assertEqual(command[command.index("--model") + 1], "gpt-6-luna")
-        self.assertEqual(command[command.index("--agent-backend") + 1], "codex-cli")
+        self.assertEqual(command[command.index("--agent-backend") + 1], "agents-api")
         self.assertEqual(command[command.index("--reasoning-effort") + 1], "medium")
         self.assertEqual(command[command.index("--service-tier") + 1], "fast")
 

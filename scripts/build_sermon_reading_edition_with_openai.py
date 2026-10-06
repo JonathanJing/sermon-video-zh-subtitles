@@ -18,7 +18,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from scripts.sermon_pipeline import chat_json, clean_text, load_env, read_json, write_json
+from scripts.sermon_pipeline import chat_json, clean_text, read_json, write_json
 from scripts import series_terminology
 from scripts.sermon_accounting import accounting_session, stage, record_workload
 
@@ -164,7 +164,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--outdir", type=Path, required=True)
     parser.add_argument("--model", default="gpt-6.1-sol")
     parser.add_argument("--reasoning-effort", choices=("low", "medium", "high"), default="high")
-    parser.add_argument("--provider", choices=("openai", "codex"), default="codex")
+    parser.add_argument("--provider", choices=("openai", "codex"), default="openai")
     parser.add_argument(
         "--codex-cli",
         type=Path,
@@ -908,10 +908,12 @@ def _main(args: argparse.Namespace) -> int:
     if args.repair_existing and not args.review_manifest:
         raise SystemExit("--repair-existing requires --review-manifest")
     api_key = ""
-    if args.provider == "openai" and args.model != "gpt-6.1-sol" and not args.repair_existing:
-        load_env(REPO_ROOT / ".env")
+    if args.provider == "openai" and not args.repair_existing:
+        from scripts.sermon_openai_runtime import selected_route
+        if selected_route() is None:
+            raise ValueError("reading_edition_requires_explicit_dev_or_prod_launcher")
         api_key = os.environ.get("OPENAI_API_KEY", "")
-    if args.provider == "openai" and args.model != "gpt-6.1-sol" and not args.repair_existing and not api_key:
+    if args.provider == "openai" and not args.repair_existing and not api_key:
         raise SystemExit("OPENAI_API_KEY is not set")
     if args.provider == "codex" and not args.repair_existing and not args.codex_cli.exists():
         raise SystemExit(f"Codex CLI not found: {args.codex_cli}")

@@ -11,11 +11,11 @@ from scripts import sermon_production_supervisor
 
 
 class RunSermonProductionSupervisorAgentTest(unittest.TestCase):
-    def test_default_supervisor_model_is_luna_cli(self):
+    def test_default_supervisor_model_is_luna_api(self):
         with patch.object(sys, "argv", ["run_sermon_production_supervisor_agent.py", "--sunday", "2026-09-20", "--state-file", "state.json"]):
             args = mod.parse_args()
             self.assertEqual(args.model, "gpt-6-luna")
-            self.assertEqual(args.agent_backend, "codex-cli")
+            self.assertEqual(args.agent_backend, "agents-api")
             self.assertEqual(args.reasoning_effort, "medium")
             self.assertEqual(args.service_tier, "fast")
 

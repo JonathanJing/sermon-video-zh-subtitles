@@ -179,14 +179,17 @@ class UnifiedSourceTests(unittest.TestCase):
         self.assertEqual(len(calls), 2)
         self.assertFalse((self.root / 'source/english-source-candidate.json').exists())
 
-    def test_new_cli_judge_budget_rejects_before_asr_or_artifact_write(self):
-        from types import SimpleNamespace
-        config = SimpleNamespace(output=self.root / 'never-started', value={'judge': {'model': 'gpt-6.1-sol'}})
-        with patch.object(subject, '_freeze') as freeze, patch.object(subject, '_probe') as probe:
-            with self.assertRaisesRegex(ValueError, 'codex_cli_provider_output_cap_unsupported'):
-                subject._execute(config, lambda: None, api_key='', transport=None, aligner=None, mfa_preflight=None)
-            freeze.assert_not_called()
-            probe.assert_not_called()
+    def test_sol_source_judge_budget_is_bounded_for_api(self):
+        from scripts import sermon_source_budget as budget
+        from scripts import sermon_provider_limits as limits
+        from scripts import judge_english_source_for_translation as judge
+        request = {'model': 'gpt-6.1-sol', 'reasoning_effort': 'high',
+            'messages': [{'role': 'user', 'content': 'synthetic source'}],
+            'response_format': {'type': 'json_schema', 'json_schema': {'schema': judge._response_schema()}}}
+        with budget.judge_limits(limits.DEFAULT_REQUEST_LIMITS):
+            bounded = budget.bound_judge_payload(request)
+        self.assertEqual(bounded['max_completion_tokens'], 4096)
+        self.assertEqual(bounded['service_tier'], 'default')
 
     def test_mfa_preflight_failure_makes_zero_provider_calls(self):
         def failed(**kwargs):

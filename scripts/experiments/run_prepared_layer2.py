@@ -17,7 +17,7 @@ def _sha(path):
 
 
 def run(fixture,source_result,out_dir,resource_policy,*,cli_path=None,runner=run_diagnostic_test,
-        test_adjudication=None,backend='codex',reuse_api_receipts=None):
+        test_adjudication=None,backend='openai_api',reuse_api_receipts=None):
     source,anchor,*_=diagnostic.load_fixture(fixture)
     result=json.loads(Path(source_result).read_text())
     source_valid=(result.get('mode')=='frozen_source_judge8'
@@ -52,7 +52,7 @@ def main():
         p.add_argument('--'+key,type=Path,required=True)
     p.add_argument('--codex-cli',type=Path)
     p.add_argument('--test-adjudication',type=Path)
-    p.add_argument('--backend',choices=('codex','openai_api'),default='codex')
+    p.add_argument('--backend',choices=('codex','openai_api'),default='openai_api')
     p.add_argument('--reuse-api-receipts',type=Path)
     a=p.parse_args();run(a.fixture,a.source_result,a.out_dir,a.resource_policy,
         cli_path=a.codex_cli,test_adjudication=a.test_adjudication,backend=a.backend,

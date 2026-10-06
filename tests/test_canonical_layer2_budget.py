@@ -99,7 +99,7 @@ class CanonicalLayer2BudgetTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'budget_approval_not_bound'):
             budget.load_authorization(self.config, self.auth_path, self.code)
 
-    def test_new_cli_policy_blocks_api_budget_before_model_dispatch(self):
+    def test_new_api_policy_blocks_without_spark_before_model_dispatch(self):
         from scripts import canonical_durable_jobs as durable
         view = controller.package_view(self.config)
         ident = durable.identity(view, self.config.run_id, 'text.zh-Hans')
@@ -115,7 +115,7 @@ class CanonicalLayer2BudgetTests(unittest.TestCase):
             jobs._persist(folder / 'state.json', {'schemaVersion': jobs.SCHEMA, 'jobId': key,
                 'status': 'running', 'requestSha256': jobs._digest(request)})
             with patch('scripts.codex_layer2_transport.CodexLayer2Transport', side_effect=AssertionError('CLI dispatch forbidden')) as cli:
-                with self.assertRaisesRegex(ValueError, 'codex_cli_provider_output_cap_unsupported'):
+                with self.assertRaisesRegex(Exception, 'spark_exclusive_session_required'):
                     controller.execute(self.config.path, 'zh-Hans', self.config.sha256,
                         self.code, key, budget_authorization=self.auth_path, expected_budget=self.auth['sha256'])
                 cli.assert_not_called()
