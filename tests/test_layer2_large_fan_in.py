@@ -55,10 +55,11 @@ class LargeLayer2FanInTests(unittest.TestCase):
             ids=data['sourceUnitIds']
             answer={'translationGroupId':data['translationGroupId'],'sourceUnitIds':ids,
                     'targetUtterances':['不要害怕。'], 'coverage':[{'sourceUnitId':i,'targetText':'不要害怕。'} for i in ids]}
-            if payload['model']=='gpt-6-sol':
+            if payload['reasoning_effort']==f.policy['reviewer']['reasoningEffort']:
                 answer['semanticReview']={'status':'pass','checks':{k:'pass' for k in models.SEMANTIC_CHECKS},
                                           'evidence':'Synthetic independent review','uncertainty':[],'issues':[]}
-            return {'id':payload['model']+'-'+data['translationGroupId'],'model':payload['model'],
+            role = 'reviewer' if payload['reasoning_effort']==f.policy['reviewer']['reasoningEffort'] else 'translator'
+            return {'id':role+'-'+data['translationGroupId'],'model':payload['model'],
                     'choices':[{'finish_reason':'stop','message':{'content':json.dumps(answer)}}]}
         return c, f, calls, caller
 

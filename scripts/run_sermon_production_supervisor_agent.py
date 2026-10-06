@@ -256,6 +256,10 @@ def make_config(args: argparse.Namespace) -> sermon_production_supervisor.Superv
     )
 
 
+def require_sdk_resume_adapter() -> None:
+    raise ValueError("SDK has no durable session resume adapter; reconcile its prior outcome before starting a new CLI run")
+
+
 async def run_agent(args: argparse.Namespace) -> dict[str, Any]:
     config = make_config(args)
     sermon_production_supervisor.validate_config(config)
@@ -266,7 +270,7 @@ async def run_agent(args: argparse.Namespace) -> dict[str, Any]:
         return sermon_app_delivery_workflow.run(config.app_delivery_config,
             mode=args.mode, sunday=config.sunday)
     if getattr(args, "agent_backend", "agents-api") == "sdk":
-        raise ValueError("SDK has no durable session resume adapter; reconcile its prior outcome before starting a new CLI run")
+        require_sdk_resume_adapter()
     if config.release_workflow_config and getattr(args, "agent_backend", "agents-api") not in {"codex-cli", "agents-api"}:
         raise ValueError("Full page-release workflow requires Codex CLI or legacy Agents API")
     if args.approve_window:

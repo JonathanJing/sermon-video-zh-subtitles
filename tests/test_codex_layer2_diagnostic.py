@@ -21,6 +21,7 @@ class DiagnosticChainTests(unittest.TestCase):
         self.f = fixtures.RunTargetLanguageModelsTests()
         self.f.setUp(); self.addCleanup(self.f.doCleanups)
         self.data = self.f.fixture
+        (subject.ROOT / 'artifacts').mkdir(parents=True, exist_ok=True)
         temporary = tempfile.TemporaryDirectory(dir=subject.ROOT / 'artifacts', prefix='test-cli-diagnostic-')
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)

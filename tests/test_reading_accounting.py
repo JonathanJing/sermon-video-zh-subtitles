@@ -108,6 +108,7 @@ class NotesAttemptAccountingTests(unittest.TestCase):
                 stack.enter_context(mock.patch.object(notes, "read_note_source", return_value={"segments": []}))
                 stack.enter_context(mock.patch.object(notes, "build_note_slices", return_value=[{"text": "source"}]))
                 stack.enter_context(mock.patch.object(notes, "resolve_api_key", return_value="private"))
+                stack.enter_context(mock.patch('scripts.sermon_openai_runtime.selected_route', return_value={'environment': 'dev'}))
                 stack.enter_context(mock.patch.object(notes, "build_openai_request", return_value={"model": "test"}))
                 stack.enter_context(mock.patch.object(notes, "request_openai_notes", return_value={"output_text": "{}"}))
                 stack.enter_context(mock.patch.object(notes, "normalize_insights", return_value={}))

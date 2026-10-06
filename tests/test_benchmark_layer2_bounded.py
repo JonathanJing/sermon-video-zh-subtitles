@@ -17,6 +17,13 @@ class BoundedLayer2BenchmarkTests(unittest.TestCase):
         fixture = fixtures.RunTargetLanguageModelsTests('test_astra_then_sol_each_group_and_admit_human_pending')
         fixture.setUp(); self.addCleanup(fixture.doCleanups)
         self.fixture, self.f, self.out = fixture, fixture.fixture, fixture.out
+        # Keep the original bounded Astra/Sol experiment independent of the
+        # newer Sol high/medium production policy.
+        policy = copy.deepcopy(self.f.policy)
+        policy.pop('componentSha256')
+        policy['translator'].update(model='gpt-6-astra', reasoningEffort='medium')
+        policy['reviewer'].update(model='gpt-6-sol', reasoningEffort='medium')
+        self.f.policy = subject.policy_tools.freeze_policy(policy)
         self.request = subject.producer.prepare_request(self.f.source, self.f.anchor, self.f.policy)
         self.plan = subject.production.group_plan(self.request, self.f.anchor)
         self.selected = subject.capture_prompts(self.f.source, self.f.anchor, self.f.policy,
@@ -60,6 +67,7 @@ class BoundedLayer2BenchmarkTests(unittest.TestCase):
             answer = self.fixture.fake_call(key, payload)
             actual.append(payload)
             return answer
+        call.execution_identity = {'backend': 'fixture_replay'}
         # Compare the same pinned-plugin production path that capture_prompts
         # uses; omitting the plugin deliberately selects the legacy prompt.
         formal_out = self.out / 'formal-fixture'

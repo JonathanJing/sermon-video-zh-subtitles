@@ -20,6 +20,7 @@ class SparkAudioWrapperTests(unittest.TestCase):
         self.session.start_job.return_value = {'jobId': 'fixture-job'}
         session_patch = patch.object(subject, '_spark_session', return_value=self.session)
         session_patch.start(); self.addCleanup(session_patch.stop)
+        (subject.ROOT / 'artifacts').mkdir(parents=True, exist_ok=True)
         temp = tempfile.TemporaryDirectory(dir=subject.ROOT / 'artifacts', prefix='test-spark-wrapper-')
         self.addCleanup(temp.cleanup)
         self.root = Path(temp.name)

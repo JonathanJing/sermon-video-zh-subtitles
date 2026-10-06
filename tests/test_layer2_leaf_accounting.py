@@ -87,7 +87,7 @@ class Layer2LeafAccountingTests(unittest.TestCase):
         caller = self.fixture.fake_call
         def failed(key, payload):
             answer = caller(key, payload)
-            if payload['model'] == 'gpt-6-sol':
+            if payload['reasoning_effort'] == self.f.policy['reviewer']['reasoningEffort']:
                 # Keep the paid response shape; change only its semantic result.
                 import json
                 content = json.loads(answer['choices'][0]['message']['content'])
