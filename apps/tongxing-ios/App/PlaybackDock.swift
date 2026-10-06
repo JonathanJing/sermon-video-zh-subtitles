@@ -14,7 +14,7 @@ struct PlaybackDock: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isCollapsed = false
     var isPreparing = false
-    var alignmentModel: AppModel? = nil
+    @ObservedObject var alignmentModel: AppModel? = nil
     var locate: (() -> Void)? = nil
     var precision: (() -> Void)? = nil
     var current: (() -> Void)? = nil
@@ -150,18 +150,29 @@ struct PlaybackDock: View {
         Button {
             if playback.isReady && !isPreparing { playback.toggle() }
         } label: {
-            Image(systemName: playback.isPlaying || playback.isWaiting ? "pause.fill" : "play.fill")
-                .font(.title3.weight(.semibold))
-                .contentTransition(.identity)
-                .frame(width: inSystemBar ? 44 : 56, height: inSystemBar ? 44 : 56)
-                .foregroundStyle(Brand.prominentLabel(scheme))
-                .background(Brand.accent, in: Circle())
-                .opacity(playback.isReady && !isPreparing ? 1 : 0.5)
+            ZStack(alignment: .topTrailing) {
+                Image(systemName: playback.isPlaying || playback.isWaiting ? "pause.fill" : "play.fill")
+                    .font(.title3.weight(.semibold))
+                    .contentTransition(.identity)
+                    .frame(width: inSystemBar ? 44 : 56, height: inSystemBar ? 44 : 56)
+                    .foregroundStyle(Brand.prominentLabel(scheme))
+                    .background(Brand.accent, in: Circle())
+                    .opacity(playback.isReady && !isPreparing ? 1 : 0.5)
+                if isAligning {
+                    ProgressView()
+                        .controlSize(.mini)
+                        .padding(5)
+                        .background(.ultraThinMaterial, in: Circle())
+                        .accessibilityHidden(true)
+                }
+            }
         }
         .buttonStyle(.plain)
         .disabled(!playback.isReady || isPreparing)
         .accessibilityLabel(playLabel)
-        .accessibilityValue(statusLabel)
+        .accessibilityValue(isAligning
+            ? localization.text("正在对齐。{status}", ["status": statusLabel])
+            : statusLabel)
         .accessibilityIdentifier("playback-toggle")
         .accessibilityHint(localization.text(isCollapsed ? "点按展开按钮或向上轻扫展开播放栏" : "点按收起按钮或向下轻扫收起播放栏"))
         .accessibilityAction(named: Text(localization.text(isCollapsed ? "展开播放栏" : "收起播放栏"))) {
@@ -218,6 +229,11 @@ struct PlaybackDock: View {
     }
 
     private var statusLabel: String { localization.text(isPreparing ? "正在准备音频…" : playback.message) }
+
+    /// True while live alignment is running. The button lives in every dock
+    /// state (expanded, collapsed, trailing, system bar), so this one badge
+    /// is the global "alignment in progress" indicator.
+    private var isAligning: Bool { alignmentModel?.alignmentBusy == true }
     private var playLabel: String {
         if playback.isPlaying || playback.isWaiting { return localization.text("暂停播放") }
         return localization.text(playback.resumePosition == nil ? "开始播放" : "继续收听")
