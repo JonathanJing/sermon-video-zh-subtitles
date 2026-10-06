@@ -59,3 +59,5 @@ push前核对工作分支远端仍为本任务head `19e6ba532cbfb5e63cf4ae9e6133
 真实209e模拟器附件（非真机、非最终head）：[大字紧凑dock](20261006-ios-current-pr-evidence/large-text-compact-dock-209e.png)证明可见clock省略而控件保留；[学习资料sheet](20261006-ios-current-pr-evidence/reviewed-study-sheet-209e.png)展示审核大纲/默想全文。由同一xcresult解压提取、未修改像素；原run取消终态与其中失败保留，后续验证绑定新head。
 
 6b精确head的Python完整workflow成功：2032/2316两分片共4348项、22skip，原CI调用遗漏已关闭。Beta原生Core 97/Storage 53报告成功；App单元116项、15skip、0fail；Beta通知3项全通过并实际观察系统展示与verified landing。UI58项、8skip、6fail：两处收起断言误用了进度值回退查询，已改回直接检查可见clock元素；另外四处实际AX层级仅暴露工具栏“当前句”，外层accessibilityLabel的跟随/自由阅读状态被toolbar桥接丢失。把状态写入Button自身标题，按既有图标工具栏模式呈现，保留原状态UI断言；实体VoiceOver仍待验收。旧6b失败与实际层级证据保留，下一head重新核对。
+
+完整原生suite改为三个fail-fast=false分片：App单元与全部非ListeningFlow UI类；6个字幕/收起回归；其余46个ListeningFlow方法。workflow从源码发现全部4个UI测试类及52个ListeningFlow方法，校验回归子集存在、6/46互斥且并集等于全部方法；未减少默认测试、未改变opt-in/skip验收门禁、未再加时。每组独立artifact，native-client依赖整个matrix成功。YAML/内嵌Python解析、只读分片计划验证及51项本地路由/守卫测试通过；分片计划不算实际模拟器执行。
