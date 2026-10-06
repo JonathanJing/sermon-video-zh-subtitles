@@ -42,9 +42,9 @@ English index: [backlog.md](./backlog.md)
 | 子任务／归属 | 优先级／状态 | 已有工作与下一验收 | 依赖 |
 |---|---|---|---|
 | `DEV-R242-025` 新模型及CLI迁移验收；`DEV-L1-001/L2-001/SPD-006` | P1 / `in_progress` | 17f7d026已接主要文字入口Sol6.1 high/medium fast与Luna medium fast、ChatGPT CLI/ASR key隔离；487项/214subtests为历史收据。Study v2仍为旧模型/default tier的bounded direct API，schema/参数/CLI adapter迁移未做，归013/025。剩#248合并、远端/定时入口安装与参数回读、新身份完整四层、medium复核和Luna CLI匹配测速；旧模型数字不重标 | [模型策略](production-model-runtime-policy.zh.md)、R242-013/020/022；现有凭据和旧run身份 |
-| `DEV-R242-026` CLI严格预算能力；`R242-011/012/022`、`DEV-COST-001` | P0 / `blocked` | L1/L2 CLI已在发送前拒绝不兼容的API输出cap；CLI无已验证输出token/单次最坏费用边界适配。待覆盖L1/L2及尚未迁移的Study、未dispatch的STE、未实现的fallback；保守reservation与unknown对账，不能以timeout/平均费用/credit估算解锁；能力或独立风险契约未解决前不启动新严格CLI请求 | [严格预算](canonical-layer2-budget-and-migration.zh.md)、[fallback设计](codex-quota-api-fallback-design.zh.md)；不削弱原门禁 |
+| `DEV-R242-026` CLI严格预算能力；`R242-011/012/022`、`DEV-COST-001` | P0 / `waiting_evidence` | 2026-10-05验收：canonical／Study／来源机审必须先带default档完成token上限，否则发送前拒绝；Codex CLI不能充当带预算worker；standalone fast、STE、quota fallback请求数为0。超时、平均费用和credit估算不解锁。预留不是账单，fast档预算授权和真实debit仍缺，不标complete | [验收](reports/20261005-p0-gate-acceptance.zh.md)、[严格预算](canonical-layer2-budget-and-migration.zh.md) |
 | `DEV-R242-027` Quota-gated API认证CLI fallback；`DEV-SPD-006`、`DEV-COST-001/002` | P1 / `pending` | f7afa0a5仅交付设计。剩真实额度拒绝分类、共享route/run准入、claim/fencing、授权费用/ASR预留、隔离认证、混合身份接续、额度恢复及小额真实验收；默认关闭，设计批准不授予金额 | 026和明确预算授权；[设计验收矩阵](codex-quota-api-fallback-design.zh.md#实现顺序与验收) |
-| `DEV-R242-028` Spark整轮独占及服务恢复；`R242-012/017/021`、`DEV-DIAG-018` | P0 / `in_progress` | 2373bfff只提交设计；工作树已有spark_exclusive_session/production_spark_admission和入口接线WIP，未提交/未实机验收。剩受管准入封闭、恢复快照、drain/begin、全部GPU/MFA/付费前session核验、双测试+返修不中途恢复、finish原服务健康及bootId/unknown/部分恢复故障验证 | [独占设计](spark-exclusive-development-session.zh.md)；exclusive_ready前不启动605秒真实测试，不擅自恢复未决job |
+| `DEV-R242-028` Spark整轮独占及服务恢复；`R242-012/017/021`、`DEV-DIAG-018` | P0 / `waiting_evidence` | 2026-10-05只读验收：活动session.json为closed，controller SHA与当前spark_exclusive_session.py一致，四unit active，原模型健康，job均terminal且unknown=0。离线49项通过。下一次真实模型测试仍须新建exclusive_ready；历史migration快照不是活动账本 | [验收](reports/20261005-p0-gate-acceptance.zh.md)、[独占设计](spark-exclusive-development-session.zh.md) |
 
 遗漏的公平/老化、180秒busy长队列、角色译审拆队列分别补入009/011/021；GPU乱序补窗、跨job热驻留、ASR迁移分别归012/021；replica generation/父等待/wall分账归017；新并行profile的Temporal native验收归024。不为这些已有父项再次创建竞争backlog。
 
@@ -569,7 +569,7 @@ D1 合同实现可以开工；真实 A/B 前仍须冻结实际样本、工具/�
 | `DEV-TRACK-001` | Producer 自动记账、状态与 ETA | `in_progress` | Layer 2 逐组／Layer 3 逐单元记账接线、子阶段和时间线投影已合入；下一次真实周产验证同一账本覆盖筛查、构建、部署、审核等待、失败与重试，并按效率计划汇总整周时间和 token；公开 Tracker 只投影脱敏状态，未测步骤保持未知；新增总体进度／ETA 投影为 pending，须当前单次 180 秒诊断完成后实现，见[进度与 ETA 待办](#progress-eta-followup) | [Tracker 接入项](four-layer-production-tracker.zh.md#tracker-接入-backlog)、[版本对照](reports/20260929-dev-release-backlog-audit.zh.md) |
 | `DEV-REVIEW-001` | 私有多语言人工审核后台 | `pending` | 两位不同语言审核者可并行审阅 Layer 2/3；权限、hash、版本、移交、修订失效和不可变收据均 fail closed | [审核后台设计](four-layer-production-tracker.zh.md#多语言人工审核后台-backlog) |
 | `DEV-LIVE-001` | 独立 Sunday `live_session` | `in_progress` | 现场 ASR final 保持事实源；翻译、术语、延迟、发布和 fallback 有独立真实回放／现场证据，不借用四层预制完成状态 | [工作流总览](workflows/README.zh.md)及本页历史附录 |
-| `DEV-PROD-001` | Dev 代码晋升与后续内容发布 | `blocked`（后续内容部署门禁） | W40 代码已由 #116 晋升 main，并由 #118 回同步 Dev；此处不再表示代码未合并。后续内容部署仍须逐次具备完整周产、Dev HTTP、回滚基线、Production 发布授权及部署前核验；设备／现场另记，不因已有代码晋升而放行 | [Production 合并检查](multilingual-production-premerge-2026-09-23.zh.md)、[版本对照](reports/20260929-dev-release-backlog-audit.zh.md) |
+| `DEV-PROD-001` | Dev 代码晋升与后续内容发布 | `blocked`（后续内容部署门禁） | W40 代码晋升记录保持有效。2026-10-05验收：`--execute` 在调用 Firebase 前要求内容准入；当前证据缺少周产、Dev HTTP、回滚基线、人工发布授权和部署前核验，结果为 blocked，未部署。代码晋升、设备和现场不能代替这五项 | [验收](reports/20261005-p0-gate-acceptance.zh.md)、[Production 合并检查](multilingual-production-premerge-2026-09-23.zh.md) |
 
 ### `DEV-FIELD-001`：远场声音对齐
 

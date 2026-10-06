@@ -339,6 +339,8 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                     'budgetAuthorizationSha256': budget_binding['sha256']}
                 caller = spark_admission.SessionBoundCaller(caller)
             elif budget_binding is not None:
+                from scripts.strict_budget_capability import reject_codex_cli_transport
+                reject_codex_cli_transport(caller)
                 caller = budget_tools.BudgetedCaller(budget_binding, config, source, anchor, policy, transport=caller)
             def current_binding():
                 fresh_config = load_configuration(config.path)

@@ -303,6 +303,8 @@ class SourceBudget:
                          endpoint='https://api.openai.com/v1/audio/transcriptions')
 
     def judge(self, api_key, payload):
+        from scripts.strict_budget_capability import require_bounded_api_payload
+        require_bounded_api_payload(payload, self.authority['requestLimits'], surface='source_judge_api')
         expected = bound_judge_payload({key: value for key, value in payload.items()
                                        if key not in {'max_completion_tokens', 'service_tier'}})
         require(payload == expected and 'max_completion_tokens' in payload, 'source_judge_not_bounded')

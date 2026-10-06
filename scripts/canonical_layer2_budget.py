@@ -81,6 +81,8 @@ class BudgetedCaller:
         selected_headers = project_headers(key)
         load_authorization(self.config, self.auth['path'],
                            self.auth['value']['codeIdentitySha256'], self.auth['sha256'])
+        from scripts.strict_budget_capability import require_bounded_api_payload
+        require_bounded_api_payload(payload, self.auth['limits'], surface='canonical_api')
         capped = limits.bounded_payload(payload, self.auth['limits'])
         require(capped == payload, 'model_payload_must_be_bounded_before_cache_identity')
         fingerprint = jobs._digest(payload)
