@@ -754,7 +754,8 @@ struct ContentView: View {
     private func currentSubtitle(_ track: SermonTrack) -> some View {
         let cue = track.cue(at: playback.position) ?? (playback.position < (track.cues.first?.start ?? 0) ? track.cues.first : nil)
         let next = track.cues.first { $0.start > max(playback.position, cue?.start ?? -1) }
-        return VStack(alignment: .leading, spacing: 20) {
+        let compact = typeSize.isAccessibilitySize
+        return VStack(alignment: .leading, spacing: compact ? 12 : 20) {
             HStack {
                 Label(localization.text(playback.isPlaying ? "正在收听" : "当前字幕"), systemImage: "waveform")
                     .font(.subheadline.weight(.semibold)).foregroundStyle(Brand.accent)
@@ -778,7 +779,7 @@ struct ContentView: View {
                     .lineLimit(2).lineSpacing(4)
             }
             Text(localization.text("字幕随中文音频更新")).font(.caption2).foregroundStyle(.secondary)
-        }.padding(20).frame(maxWidth: .infinity, alignment: .leading)
+        }.padding(compact ? 12 : 20).frame(maxWidth: .infinity, alignment: .leading)
             .background(Brand.surface, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
     }
 

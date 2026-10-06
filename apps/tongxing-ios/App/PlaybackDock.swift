@@ -39,7 +39,7 @@ struct PlaybackDock: View {
             if isCollapsed {
                 HStack(spacing: 2) {
                     if inSystemBar { playButton }
-                    else { playButton.padding(6).listeningGlassSurface() }
+                    else { playButton.padding(6).listeningCircularGlassSurface() }
                     collapseToggleButton
                 }
             } else if placement == .trailing {
@@ -58,13 +58,22 @@ struct PlaybackDock: View {
     }
 
     private var horizontalControls: some View {
-        HStack(spacing: 3) {
-            timeAndStatus
-            nudgeButton(-1)
-            playButton
-            nudgeButton(1)
-            if hasMoreControls { moreButton }
-            collapseToggleButton
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 3) {
+                timeAndStatus
+                nudgeButton(-1)
+                playButton
+                nudgeButton(1)
+                if hasMoreControls { moreButton }
+                collapseToggleButton
+            }
+            HStack(spacing: 6) {
+                nudgeButton(-1)
+                playButton
+                nudgeButton(1)
+                if hasMoreControls { moreButton }
+                collapseToggleButton
+            }
         }
         .buttonStyle(.plain)
     }
