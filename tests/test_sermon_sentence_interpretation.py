@@ -97,6 +97,22 @@ class SentenceInterpretationTests(unittest.TestCase):
         self.assertEqual(self.manifest["translationRequests"][0]["contextAfter"], "I am with you.")
         self.assertFalse(self.manifest["releaseEligible"])
 
+    def test_cropped_source_preserves_global_sentence_word_and_unit_ids(self):
+        manifest = subject.build_anchor_manifest(
+            self.segments,
+            source_path=self.source,
+            unit_policy=subject.UNIT_POLICY_V2,
+            identity_offsets={"block-00": {"sentence": 11, "word": 209, "unit": 14}},
+            boundary_overrides={
+                "block-00-s011": "block-00-w0209",
+                "block-00-s140": "block-00-w0300",
+            },
+            allow_out_of_scope_overrides=True,
+        )
+        self.assertEqual(manifest["sourceUnits"][0]["sourceSentenceId"], "block-00-s012")
+        self.assertEqual(manifest["sourceUnits"][0]["sourceWordIds"][0], "block-00-w0210")
+        self.assertEqual(manifest["sourceUnits"][0]["sourceUnitId"], "block-00-u015")
+
     def test_explicit_boundary_override_uses_existing_safe_punctuation(self):
         words = ["Alpha", "bravo", "charlie", "delta,", "echo", "foxtrot,",
                  "golf", "hotel", "india", "juliet."]

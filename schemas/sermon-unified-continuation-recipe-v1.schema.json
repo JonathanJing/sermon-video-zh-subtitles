@@ -1,0 +1,207 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": "sermon-unified-continuation-recipe-v1"
+    },
+    "productionRunId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "jobRoot": {
+      "type": "string",
+      "minLength": 1
+    },
+    "stages": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,79}$"
+          },
+          "afterRunRevision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "requiredEvidence": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "binding": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,79}$"
+                },
+                "kind": {
+                  "enum": [
+                    "human_review",
+                    "budget_authorization",
+                    "approved_source",
+                    "approved_candidate"
+                  ]
+                },
+                "reviewKind": {
+                  "enum": [
+                    "english",
+                    "translation",
+                    "audio",
+                    "outline",
+                    "meditation"
+                  ]
+                },
+                "locale": {
+                  "type": "string"
+                },
+                "inputs": {
+                  "type": "object"
+                },
+                "receiptBinding": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,79}$"
+                }
+              },
+              "required": [
+                "binding",
+                "kind"
+              ],
+              "allOf": [
+                {
+                  "if": {
+                    "properties": {
+                      "kind": {
+                        "const": "human_review"
+                      }
+                    }
+                  },
+                  "then": {
+                    "required": [
+                      "reviewKind",
+                      "inputs"
+                    ]
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "kind": {
+                        "enum": [
+                          "approved_source",
+                          "approved_candidate"
+                        ]
+                      }
+                    }
+                  },
+                  "then": {
+                    "required": [
+                      "inputs",
+                      "receiptBinding"
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          "ports": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,79}$"
+            },
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "stepId": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,79}$"
+                },
+                "role": {
+                  "enum": [
+                    "source_candidate",
+                    "source_anchor",
+                    "source_transcript",
+                    "target_candidate",
+                    "audio_package",
+                    "render_manifest",
+                    "study_artifact",
+                    "original_review_receipt"
+                  ]
+                }
+              },
+              "required": [
+                "stepId",
+                "role"
+              ]
+            }
+          },
+          "configs": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,79}$"
+            },
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "adapter": {
+                  "enum": [
+                    "source.prepare",
+                    "canonical.layer2",
+                    "canonical.audio",
+                    "canonical.inspect",
+                    "review.gate",
+                    "study.produce",
+                    "app.delivery"
+                  ]
+                },
+                "template": {
+                  "type": "object"
+                }
+              },
+              "required": [
+                "adapter",
+                "template"
+              ]
+            }
+          },
+          "manifestTemplate": {
+            "type": "object",
+            "required": [
+              "steps"
+            ],
+            "properties": {
+              "steps": {
+                "type": "array",
+                "minItems": 1
+              }
+            }
+          }
+        },
+        "required": [
+          "id",
+          "afterRunRevision",
+          "requiredEvidence",
+          "ports",
+          "configs",
+          "manifestTemplate"
+        ]
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "productionRunId",
+    "jobRoot",
+    "stages"
+  ],
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-unified-continuation-recipe-v1.schema.json",
+  "description": "Data-only typed continuation templates. Runtime owner must CAS-admit each derived manifest; no dispatch or approval is implied."
+}

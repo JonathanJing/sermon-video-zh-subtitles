@@ -108,6 +108,8 @@ def require_policy_ready(identity, context=None):
         c.require(identity['productionPolicyReady'], 'Production policy has unresolved gates')
         return
     validate_context(context)
-    c.require(type(identity.get('unresolved')) is list and set(identity['unresolved']) <= {
-        'terminology_review_pending', 'proper_name_approval_evidence_pending'},
+    allowed = {'terminology_review_pending', 'proper_name_approval_evidence_pending'}
+    if identity.get('diagnosticPinnedQuotePolicy') is True and identity.get('productionEligible') is False:
+        allowed.add('scripture_policy_pending')
+    c.require(type(identity.get('unresolved')) is list and set(identity['unresolved']) <= allowed,
         'diagnostic_policy_blocker_not_permitted')

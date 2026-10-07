@@ -276,12 +276,12 @@ def _approved_parts(policy: dict, approval: dict | None) -> tuple[dict[str, list
                     or len(paraphrase_units) != len(set(paraphrase_units))
                     or not set(paraphrase_units) <= allowed_units):
                 raise ValueError("paraphrase units are invalid")
-            # The producer reviews one English unit at a time. It cannot
-            # prove a whole-verse quote assembled from several target groups.
-            if (kind == "direct_quote"
-                    and (len(parts) != 1 or _library().lookup(parts[0]["reference"])["text"]
-                         != parts[0]["cuvExcerpt"])):
-                raise ValueError("whole direct quote must fit one source unit")
+            if kind == "direct_quote":
+                references = {part["reference"] for part in parts}
+                combined = "".join(part["cuvExcerpt"] for part in parts)
+                if (len(references) != 1 or not parts
+                        or _library().lookup(next(iter(references)))["text"] != combined):
+                    raise ValueError("complete direct quote was split or shortened")
             allowed = CANDIDATE_VERSES[decision["candidateId"]]
             quoted_units: set[str] = set()
             for part in parts:
@@ -340,6 +340,15 @@ def _review_group(policy: dict, english_units: list[dict], group: dict,
                 and scripture.get("editionId") == CUV_EDITION_ID
                 and scripture.get("citationUseStatus") == "project_source_reviewed"
                 and scripture.get("quoteCheckPolicy") == "source_bound_exact_quote")
+    if quote_ok:
+        for decision in approval.get("decisions", []):
+            if decision.get("classification") != "direct_quote":
+                continue
+            quoted_ids = [part["sourceUnitId"] for part in decision.get("parts", [])]
+            if set(quoted_ids) & set(ids) and (set(quoted_ids) != set(ids) or ids != quoted_ids):
+                quote_ok = False
+                boundary_reason = "complete quotation group was split or extended"
+                break
     if quote_ok:
         for unit in english_units:
             uttered = unit["english"]

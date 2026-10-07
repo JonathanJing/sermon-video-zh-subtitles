@@ -1,5 +1,7 @@
 # 多语言生产四层接口
 
+当前新 dev／正式任务以[2026-10-05 模型与 CLI 策略](production-model-runtime-policy.zh.md)为准：文字生产 Sol 6.1 high fast、独立复核 Sol 6.1 medium fast、Supervisor Luna medium fast，全部使用 Codex CLI。下文旧 Agents API／Astra／Sol 参数只适用于历史证据与原身份对账，不用于新任务。
+
 状态：本文是今后所有预制多语言生产的规范合同。四层名称保持不变；版本号按各接口演进，不能把 v1 Schema 当作 Production 周更的现行格式。2026-09-27 整篇已在 Production 使用 v3 catalog 与逐语言 v2 Release Package，并有 HTTP 收据；客户端和现场验收分别记录。可复用的 v3 周更组装／部署工具仍待完成，不能把本周的一次性 staging 当作自动化发布器。
 
 现有双 PDF、中文配音和 `weekly.json` 发布工具在迁移期间作为 legacy adapter 保留。它们可以完成各自明确 scope，但只有四个正式包及其门禁均有证据时，才可报告 `workflowScope=four_layer_release`。周日实时字幕属于独立 `live_session`，不在现场强制生成这些预制包；若会后复用录音，应从 Layer 1 开始。

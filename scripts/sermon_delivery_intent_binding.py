@@ -177,7 +177,9 @@ def _audio(target, lane, source, candidate, evidence):
     review = evidence.read(lane['audioHumanReview'], prefix + 'audioHumanReview')
     version = review.get('schemaVersion')
     require(version in {'sermon-target-language-audio-human-review-receipt-v1',
-                        'sermon-target-language-audio-human-review-receipt-v2'}, 'unsupported_delivery_audio_review')
+                        'sermon-target-language-audio-human-review-receipt-v2',
+                        'sermon-target-language-audio-human-review-receipt-v3',
+                        'sermon-target-language-audio-human-review-receipt-v4'}, 'unsupported_delivery_audio_review')
     _schema(review, version + '.schema.json')
     screening = evidence.read(lane['screening'], prefix + 'screening') if 'screening' in lane else None
     if screening is not None: _schema(screening, 'sermon-target-language-audio-screening-v1.schema.json')

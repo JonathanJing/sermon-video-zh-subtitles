@@ -78,6 +78,14 @@ class SourceTextReviewTest(unittest.TestCase):
         corrected[0]["metadata"]["sourceIds"].append(1)
         self.assertEqual(self.segments, original)
 
+    def test_new_sol_review_preserves_actual_model_identity(self):
+        review = deepcopy(self.review)
+        review["model"] = "gpt-6.1-sol"
+        corrected, provenance = self.apply(review=review)
+        self.assertEqual(provenance["model"], "gpt-6.1-sol")
+        self.assertIs(provenance["humanApproval"], False)
+        self.assertEqual(corrected[0]["text"], "But I have committed to not shield you.")
+
     def test_stale_source_audio_is_rejected(self):
         self.audio.write_bytes(b"changed source")
         with self.assertRaisesRegex(ValueError, "stale sourceAudioSha256"):

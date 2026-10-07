@@ -35,6 +35,15 @@ async def execute(args):
             return {"status": "duplicate_rejected", "workflowId": request.workflow_id(), "newExecutionStarted": False}
         return {"status": "started", "workflowId": handle.id, "runId": handle.first_execution_run_id,
                 "profile": request.profile, "allowExecute": request.allow_execute}
+    if args.action == "unified-submit":
+        from .client import submit_unified
+        from .unified import UnifiedRequest
+        request = UnifiedRequest(str(args.state_root.resolve()), args.run_key, args.plan_hash)
+        try:
+            handle = await submit_unified(client, request)
+        except WorkflowAlreadyStartedError:
+            return {"status": "duplicate_rejected", "newExecutionStarted": False}
+        return {"status": "started", "workflowId": handle.id, "runId": handle.first_execution_run_id}
     handle = client.get_workflow_handle(args.workflow_id)
     if args.action == "status":
         description = await handle.describe()
@@ -79,6 +88,10 @@ def main(argv=None):
             command.add_argument("--recovery-epoch", type=int)
         if name == "result":
             command.add_argument("--timeout", type=float, default=10)
+    unified = commands.add_parser("unified-submit")
+    unified.add_argument("--state-root", type=Path, required=True)
+    unified.add_argument("--run-key", required=True)
+    unified.add_argument("--plan-hash", required=True)
     fixture = commands.add_parser("fixture-init")
     fixture.add_argument("--directory", type=Path, required=True)
     fixture.add_argument("--name", default="fixture-source")

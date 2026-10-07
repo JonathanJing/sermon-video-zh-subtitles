@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import TongxingCore
 import XCTest
 @testable import Tongxing
 
@@ -57,6 +58,77 @@ final class SwiftUIPreviewTests: XCTestCase {
         XCTAssertNotEqual(model.transcriptRowsRevision, clearedRevision)
         XCTAssertEqual(model.publishedTranscript?.locale, "zh-Hans")
         XCTAssertEqual(model.publishedCaptionsByID[transcript.captions[0].id], transcript.captions[0])
+    }
+
+    func testRenderAlignmentIslandStates() async throws {
+        guard ProcessInfo.processInfo.environment["TONGXING_ISLAND_STATE_PREVIEW"] == "1" else {
+            throw XCTSkip("Opt-in native island content previews")
+        }
+        let states: [(ListeningAlignmentPhase, String)] = [
+            (.listening, "正在监听"), (.matching, "正在匹配"), (.aligned, "定位成功"),
+            (.unmatched, "未找到匹配"), (.failed, "技术错误")
+        ]
+        for (phase, label) in states {
+            let state = ListeningActivityAttributes.ContentState(
+                title: "耶稣审判并保守", speaker: "Eric Geiger", position: 42, duration: 1962,
+                isPlaying: false, isWaiting: false, sampledAt: Date(), languageCode: "zh",
+                alignmentPhase: phase)
+            let view = AnyView(VStack(spacing: 20) {
+                Text(verbatim: label).font(.title3.bold()).foregroundStyle(.primary)
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        ListeningActivitySymbol(state: state, isStale: false).font(.title3)
+                        Spacer()
+                        ListeningActivityElapsed(state: state, isStale: false).font(.headline.monospacedDigit())
+                    }
+                    ListeningActivityIslandDetails(state: state, isStale: false)
+                }
+                .padding(20).frame(width: 362).foregroundStyle(.white)
+                .environment(\.colorScheme, .dark)
+                .background(.black, in: RoundedRectangle(cornerRadius: 36))
+                Text("SwiftUI 状态预览 · 非系统／真机截图")
+                    .font(.caption).foregroundStyle(.secondary)
+            }.frame(maxWidth: .infinity, maxHeight: .infinity)
+             .background(Color(uiColor: .systemGroupedBackground)).ignoresSafeArea())
+            let renderer = ImageRenderer(content: view
+                .environment(\.locale, Locale(identifier: "zh_CN"))
+                .environment(\.dynamicTypeSize, .large)
+                .preferredColorScheme(.light))
+            renderer.proposedSize = ProposedViewSize(width: 402, height: 310)
+            renderer.scale = 3
+            let image = try XCTUnwrap(renderer.uiImage, "Native state render failed")
+            let attachment = XCTAttachment(image: image)
+            attachment.name = "island-state-\(phase.rawValue).png"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+        }
+    }
+
+    func testRenderLockScreenSubtitleSnapshots() async throws {
+        guard ProcessInfo.processInfo.environment["TONGXING_SUBTITLE_SNAPSHOT_PREVIEW"] == "1" else {
+            throw XCTSkip("Opt-in shared lock-screen content preview")
+        }
+        for english in [false, true] {
+            for stale in [false, true] {
+                let state = ListeningActivityAttributes.ContentState(title: "耶稣审判并保守", speaker: "Eric Geiger",
+                    position: 126, duration: 1962, isPlaying: true, isWaiting: false,
+                    sampledAt: Date(timeIntervalSince1970: 1791235680), languageCode: english ? "en" : "zh",
+                    subtitleID: "fixture", chineseSubtitle: "人生还有比那严峻得多的时刻。",
+                    englishSubtitle: "And there are much more serious moments in life.")
+                let view = VStack(spacing: 12) {
+                    ListeningActivityCard(state: state, isStale: stale)
+                        .padding(16).foregroundStyle(.white).background(.black, in: RoundedRectangle(cornerRadius: 28))
+                    Text("共享 SwiftUI 内容预览 · 非系统锁屏截图").font(.caption).foregroundStyle(.secondary)
+                }.padding(20).frame(width: 402).background(Color(uiColor: .systemGroupedBackground))
+                let renderer = ImageRenderer(content: view.environment(\.colorScheme, .dark)
+                    .environment(\.dynamicTypeSize, .large))
+                renderer.scale = 3
+                let attachment = XCTAttachment(image: try XCTUnwrap(renderer.uiImage))
+                attachment.name = "subtitle-snapshot-\(english ? "en" : "zh")-\(stale ? "stale" : "fresh").png"
+                attachment.lifetime = .keepAlways
+                add(attachment)
+            }
+        }
     }
 
     func testRenderRequestedViews() async throws {

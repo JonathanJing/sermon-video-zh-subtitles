@@ -33,3 +33,24 @@ async def submit(client: Client, request: Request):
         memo={"profile": request.profile, "sunday": request.sunday, "source_key": request.source_key,
               "configuration_sha256": request.config_sha256, "approval_granted_by_temporal": False},
         static_summary="Saturday source-bound orchestration; existing approvals remain authoritative")
+
+
+async def submit_unified(client: Client, request):
+    """Submit only an explicitly transferred run; never create another ledger."""
+    from .unified import UnifiedRequest, project_call
+    from .contracts import QUEUE_PREFIX
+    if not isinstance(request, UnifiedRequest):
+        raise ValueError('UnifiedRequest required')
+    state = project_call("inspect", request)
+    from temporalio.exceptions import WorkflowAlreadyStartedError
+    workflow_id='unified-' + request.run_key + '-r' + str(state['runRevision'])
+    try:
+        return await client.start_workflow('SermonUnifiedV1', request,
+            id=workflow_id, task_queue=QUEUE_PREFIX + 'production',
+            id_reuse_policy=WorkflowIDReusePolicy.ALLOW_DUPLICATE_FAILED_ONLY,
+            id_conflict_policy=WorkflowIDConflictPolicy.FAIL,
+            memo={'plan_hash': request.plan_hash, 'approval_granted_by_temporal': False})
+    except WorkflowAlreadyStartedError:
+        handle=client.get_workflow_handle(workflow_id)
+        await handle.signal('evidence_changed')
+        return handle

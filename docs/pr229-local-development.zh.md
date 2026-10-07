@@ -53,7 +53,15 @@ python -m scripts.sermon_cost_isolation reconcile \
   --daily-costs /path/to/normalized-daily-costs.json
 ```
 
-[sermon-cost-isolation-v1.schema.json](../schemas/sermon-cost-isolation-v1.schema.json) 定义 `config`、`config_validation`、`attempts`、`daily_costs` 和 `reconciliation`。对账器接收本地归一化 JSON；新增离线导入器消费原生 Costs 导出，二者都不读取环境变量、key 原值或调用 provider。配置必须含不同 dev／prod Project ID 和全局不重复的 transcription／translation／reviewer 安全别名。非 OpenAI ASR 独立记录，不需要 OpenAI transcription 别名。
+[sermon-cost-isolation-v1.schema.json](../schemas/sermon-cost-isolation-v1.schema.json) 定义 `config`、`config_validation`、`attempts`、`daily_costs` 和 `reconciliation`。对账器接收本地归一化 JSON；新增离线导入器消费原生 Costs 导出，二者都不读取环境变量、key 原值或调用 provider。v1 配置必须含不同 dev／prod Project ID 和全局不重复的 transcription／translation／reviewer 安全别名。非 OpenAI ASR 独立记录，不需要 OpenAI transcription 别名。
+
+### 两个 Project／两把 key 的 v2 配置与迁移
+
+[sermon-cost-isolation-v2.schema.json](../schemas/sermon-cost-isolation-v2.schema.json) 保持字段不变，允许同一环境的多个 workload 使用相同安全别名。例如 dev 的三个 `keyAliases` 均为 `dev_runtime`，prod 均为 `prod_runtime`；不使用 OpenAI ASR 时 transcription 仍可为 null。dev／prod Project ID 与别名必须分离。观察到的同一 `apiKeyId` 只能对应同环境的同一配置别名，不允许不同环境或不同凭据别名借用同一 key ID。
+
+迁移时复制配置，将 `schemaVersion` 改为 `sermon-cost-isolation-v2`，按实际凭据把同环境 workload 映射到共同别名，再运行 `validate-config`。不修改既有 v1 证据：对账器可读取 v1／v2 attempts 与 daily_costs；输出和 Costs 导入器按配置版本生成。v1 配置继续执行原来的全局不重复别名与分角色 key ID 检查，没有静默放宽。别名不是 key 原值，也不证明真实凭据已配置。
+
+共享 key 的平台日费用只归到环境／凭据；每个 attempt 仍保留 workload、stage 与 token 计量，不能把单个共享 key 的总费用声称为某一阶段的实际账单。
 
 原生导出使用新的 [sermon-openai-costs-export-v1.schema.json](../schemas/sermon-openai-costs-export-v1.schema.json) envelope，不迁移或覆盖既有归一化证据。`queryWindow` 绑定完整 UTC 日查询，`groupBy` 必须含 `project_id`，可加 `api_key_id` 和 `line_item`；只接收无 key／line-item 过滤的导出。`pages` 按序保存 `requestCursor`（首项 null）与原始 `response`，下一请求必须对应上一响应的 `next_page`。导入器拒绝重复日、重复分区、分页断链、缺日、范围外数据和 Project／key 维度重叠；`line_item` 子分区用 Decimal 合并一次。未知项目／key 不推断，空 results 不补零；游标只以 hash 输出。
 

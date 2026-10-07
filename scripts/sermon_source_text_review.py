@@ -18,7 +18,8 @@ from typing import Any
 
 
 SCHEMA = "sermon-source-text-review-v1"
-MODEL = "gpt-6-astra"
+MODEL = "gpt-6.1-sol"
+SUPPORTED_MODELS = {MODEL, "gpt-6-astra"}
 STATUS = "approved_for_source_correction"
 AUTHORITY = "user_directed_conversation_review"
 PATCH_FIELDS = {
@@ -91,12 +92,12 @@ def apply_review(
     if not (
         review.get("schemaVersion") == SCHEMA
         and review.get("reviewType") == "model"
-        and review.get("model") == MODEL
+        and review.get("model") in SUPPORTED_MODELS
         and review.get("humanApproval") is False
         and review.get("status") == STATUS
         and review.get("authority") == AUTHORITY
     ):
-        raise ValueError("A conversational Astra source correction review with model identity is required")
+        raise ValueError("A conversational source correction review with model identity is required")
     reviewed_by = _require_text(review.get("reviewedBy"), "reviewedBy")
     reviewed_at = _require_text(review.get("reviewedAt"), "reviewedAt")
     try:
@@ -186,7 +187,7 @@ def apply_review(
     provenance = {
         "schemaVersion": SCHEMA,
         "reviewType": "model",
-        "model": MODEL,
+        "model": review["model"],
         "humanApproval": False,
         "status": STATUS,
         "authority": AUTHORITY,

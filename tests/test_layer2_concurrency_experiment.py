@@ -29,6 +29,16 @@ class Layer2ConcurrencyTests(unittest.TestCase):
         self.calls = []
         self.lock = threading.Lock()
 
+    def production_run(self, out, caller, **options):
+        return runner.run(self.f.source, self.f.anchor, self.policy, out, "fixture-key", caller,
+                          plugin_path=self.f.plugin_path, **options)
+
+    def legacy_parallel_run(self, out, caller, **options):
+        """Exercise the historical scheduler; formal plugin stopping is serial."""
+        request = runner.producer.prepare_request(self.f.source, self.f.anchor, self.policy)
+        return runner._run_prepared_groups(request, self.f.anchor, self.policy, out,
+                                           "fixture-key", caller, **options)
+
     def response(self, key, payload):
         self.assertEqual(key, "fixture-key")
         data = json.loads(payload["messages"][1]["content"])
@@ -36,11 +46,12 @@ class Layer2ConcurrencyTests(unittest.TestCase):
             self.calls.append((data["translationGroupId"], payload["model"]))
         group = next(g for g in self.f.evidence["groups"] if g["sourceUnitIds"] == data["sourceUnitIds"])
         keys = ["sourceUnitIds", "targetUtterances", "coverage"]
-        if payload["model"] == "gpt-6-sol":
+        role = 'reviewer' if payload['reasoning_effort'] == self.policy['reviewer']['reasoningEffort'] else 'translator'
+        if role == 'reviewer':
             keys.append("semanticReview")
         result = {k: copy.deepcopy(group[k]) for k in keys}
         result["translationGroupId"] = data["translationGroupId"]
-        return {"id": data["translationGroupId"] + payload["model"], "model": payload["model"],
+        return {"id": data["translationGroupId"] + role, "model": payload["model"],
                 "choices": [{"finish_reason": "stop", "message": {"content": json.dumps(result)}}]}
 
     def test_three_worker_bound_reverse_completion_and_invalid_budgets(self):
@@ -61,7 +72,7 @@ class Layer2ConcurrencyTests(unittest.TestCase):
         self.assertEqual(list(range(9)), runner.ordered_group_results(list(range(9)), worker, 3))
         self.assertEqual(peak, 3)
         for budget in (0, -1, 25, True, 1.5):
-            with self.subTest(budget=budget), self.assertRaisesRegex(ValueError, "1..16"):
+            with self.subTest(budget=budget), self.assertRaisesRegex(ValueError, "Group workers exceed versioned capacity"):
                 runner.ordered_group_results([], lambda _: self.fail("invalid budget started work"), budget)
 
     def test_standalone_runner_keeps_legacy_three_worker_ceiling(self):
@@ -106,7 +117,7 @@ class Layer2ConcurrencyTests(unittest.TestCase):
         failed_id = plan[0]["translationGroupId"]
         def fail_review(key, payload):
             answer = self.response(key, payload)
-            if payload["model"] == "gpt-6-sol" and json.loads(payload["messages"][1]["content"])["translationGroupId"] == failed_id:
+            if payload['reasoning_effort'] == self.policy['reviewer']['reasoningEffort'] and json.loads(payload["messages"][1]["content"])["translationGroupId"] == failed_id:
                 deadline = time.monotonic() + 5
                 while not (self.out / "group-0002-sol.json").exists() and time.monotonic() < deadline:
                     time.sleep(.005)
@@ -117,7 +128,7 @@ class Layer2ConcurrencyTests(unittest.TestCase):
                 answer["choices"][0]["message"]["content"] = json.dumps(result)
             return answer
         with self.assertRaisesRegex(ValueError, "Sol flagged group"):
-            runner.run(self.f.source, self.f.anchor, self.policy, self.out, "fixture-key", fail_review)
+            self.legacy_parallel_run(self.out, fail_review)
         self.assertFalse((self.out / "evidence.json").exists())
         successful = {role: (self.out / f"group-0002-{role}.json").read_bytes() for role in ("astra", "sol")}
         request = runner.producer._load(self.out / "request.json")
@@ -128,15 +139,15 @@ class Layer2ConcurrencyTests(unittest.TestCase):
                      "failureReason": "Synthetic review issue", "instruction": "Resolve the source-bound issue."}]}
         self.calls.clear()
         repaired = self.out.parent / "repaired"
-        evidence = runner.run(self.f.source, self.f.anchor, self.policy, repaired,
-            "fixture-key", self.response, reuse_from=self.out, partial_repair_brief=brief)
-        self.assertEqual(self.calls, [(failed_id, "gpt-6-astra"), (failed_id, "gpt-6-sol")])
+        evidence = self.legacy_parallel_run(repaired, self.response, reuse_from=self.out,
+                                       partial_repair_brief=brief)
+        self.assertEqual(self.calls, [(failed_id, self.policy['translator']['model']), (failed_id, self.policy['reviewer']['model'])])
         self.assertEqual([g["translationGroupId"] for g in evidence["groups"]], [g["translationGroupId"] for g in plan])
         for role, data in successful.items():
             self.assertEqual((repaired / f"group-0002-{role}.json").read_bytes(), data)
 
     def test_unknown_later_group_blocks_entire_resume_before_new_calls(self):
-        runner.run(self.f.source, self.f.anchor, self.policy, self.out, "fixture-key", self.response)
+        self.production_run(self.out, self.response)
         # Simulate a durable identity with earlier work not yet requested and a
         # later transport outcome unknown. The original marker is never retired.
         (self.out / "evidence.json").unlink()
@@ -147,8 +158,7 @@ class Layer2ConcurrencyTests(unittest.TestCase):
         runner.save_new(marker, {"status": "started_response_unconfirmed"})
         original = marker.read_bytes()
         with self.assertRaisesRegex(ValueError, "Uncertain paid translator call"), accounting.accounting_session(self.out / "accounting", "layer2_models"):
-            runner.run(self.f.source, self.f.anchor, self.policy, self.out, "fixture-key",
-                       lambda *_: self.fail("another group dispatched before unknown reconciliation"))
+            self.production_run(self.out, lambda *_: self.fail("another group dispatched before unknown reconciliation"))
         self.assertEqual(marker.read_bytes(), original)
         events, damaged = accounting.read_events(self.out / "accounting")
         self.assertFalse(damaged)
@@ -157,22 +167,21 @@ class Layer2ConcurrencyTests(unittest.TestCase):
             runner.require_reconciled_requests(None, self.out)
 
     def test_returned_raw_under_started_marker_remains_recoverable(self):
-        runner.run(self.f.source, self.f.anchor, self.policy, self.out, "fixture-key", self.response)
+        self.production_run(self.out, self.response)
         expected = runner.producer._load(self.out / "evidence.json")
         (self.out / "group-0002-sol.json").unlink()
         runner.save_new(self.out / "group-0002-sol.started.json", {"status": "started_response_unconfirmed"})
-        self.assertEqual(runner.run(self.f.source, self.f.anchor, self.policy, self.out, "fixture-key",
-                         lambda *_: self.fail("returned raw response must not be paid twice")), expected)
+        self.assertEqual(self.production_run(self.out, lambda *_: self.fail("returned raw response must not be paid twice")), expected)
         self.assertFalse((self.out / "group-0002-sol.started.json").exists())
 
     def test_parallel_accounting_keeps_group_dependencies_and_source_order(self):
         barrier = threading.Barrier(2)
         def overlap(key, payload):
-            if payload["model"] == "gpt-6-astra":
+            if payload['reasoning_effort'] == self.policy['translator']['reasoningEffort']:
                 barrier.wait(timeout=3)
             return self.response(key, payload)
         with accounting.accounting_session(self.out / "accounting", "layer2_models"):
-            runner.run(self.f.source, self.f.anchor, self.policy, self.out, "fixture-key", overlap)
+            self.legacy_parallel_run(self.out, overlap)
         events, damaged = accounting.read_events(self.out / "accounting")
         self.assertFalse(damaged)
         starts = {e["spanId"]: e for e in events if e["event"] == "stage_started"}

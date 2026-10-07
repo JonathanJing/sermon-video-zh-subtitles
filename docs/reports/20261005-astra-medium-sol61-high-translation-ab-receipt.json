@@ -1,0 +1,168 @@
+{
+  "schemaVersion": "codex-translation-ab-evidence-v1",
+  "date": "2026-10-05",
+  "scope": "experiment_only",
+  "baselineArtifactRoot": "artifacts/codex-cli-layer2-180s-20261005",
+  "artifactRoot": "artifacts/codex-astra-medium-sol61-high-ab-20261005",
+  "sourceMediaSha256": "79bada8f2e960adb470a146f183449db433308b53c20d03ea9c7e2e0a66e906b",
+  "timing": {
+    "groups": 13,
+    "units": 39,
+    "freshSolCalls": 13,
+    "freshAstraCalls": 0,
+    "humanApproval": false,
+    "validation": "schema, group/unit identity, coverage, independent sessions, no tools",
+    "speedLimit": "Historical sequential baseline versus fresh sequential calls; not simultaneous randomized latency trials",
+    "modelIdentityLimit": "Requested CLI model; server-returned model identity unavailable",
+    "astra": {
+      "sumSeconds": 144.1548613330815,
+      "medianSeconds": 11.116236082976684,
+      "minSeconds": 8.42126970901154,
+      "maxSeconds": 13.769550416967832,
+      "usage": {
+        "input_tokens": 210723,
+        "cached_input_tokens": 24576,
+        "output_tokens": 2916,
+        "reasoning_output_tokens": 0
+      }
+    },
+    "sol": {
+      "sumSeconds": 314.8734965841286,
+      "medianSeconds": 25.6600077500334,
+      "minSeconds": 15.390736624947749,
+      "maxSeconds": 29.118092791060917,
+      "usage": {
+        "input_tokens": 211499,
+        "cached_input_tokens": 24832,
+        "output_tokens": 7162,
+        "reasoning_output_tokens": 4286
+      }
+    },
+    "solFasterPairs": 0
+  },
+  "quality": {
+    "reviewType": "independent_agent_machine_blind_review",
+    "humanApproval": false,
+    "positionAssignment": "alternating X/Y per group",
+    "reviewerSawModelKey": false,
+    "groups": [
+      {
+        "group": "fresh-g001",
+        "anonymousWinner": "Y",
+        "modelWinner": "sol",
+        "evidence": "X adds surprise/escape tone to actually figured out; slight"
+      },
+      {
+        "group": "fresh-g002",
+        "anonymousWinner": "tie",
+        "modelWinner": "tie",
+        "evidence": "Both acceptable; development/研发 narrower in context"
+      },
+      {
+        "group": "fresh-g003",
+        "anonymousWinner": "tie",
+        "modelWinner": "tie",
+        "evidence": "Both preserve 18 months and never"
+      },
+      {
+        "group": "fresh-g004",
+        "anonymousWinner": "tie",
+        "modelWinner": "tie",
+        "evidence": "Both preserve future capability and 18 months"
+      },
+      {
+        "group": "fresh-g005",
+        "anonymousWinner": "tie",
+        "modelWinner": "tie",
+        "evidence": "Both acceptable"
+      },
+      {
+        "group": "fresh-g006",
+        "anonymousWinner": "Y",
+        "modelWinner": "astra",
+        "evidence": "Y more natural dystopian view phrasing; style"
+      },
+      {
+        "group": "fresh-g007",
+        "anonymousWinner": "Y",
+        "modelWinner": "sol",
+        "evidence": "X completes an unfinished everything phrase; slight addition"
+      },
+      {
+        "group": "fresh-g008",
+        "anonymousWinner": "tie",
+        "modelWinner": "tie",
+        "evidence": "Both preserve attributed expectation"
+      },
+      {
+        "group": "fresh-g009",
+        "anonymousWinner": "Y",
+        "modelWinner": "sol",
+        "evidence": "Y 王储 clearer and more natural; slight"
+      },
+      {
+        "group": "fresh-g010",
+        "anonymousWinner": "tie",
+        "modelWinner": "tie",
+        "evidence": "Both preserve some believe and negation"
+      },
+      {
+        "group": "fresh-g011",
+        "anonymousWinner": "tie",
+        "modelWinner": "tie",
+        "evidence": "Both correctly use Bible book Revelation"
+      },
+      {
+        "group": "fresh-g012",
+        "anonymousWinner": "X",
+        "modelWinner": "sol",
+        "evidence": "Y 看顾 shifts governance to care; moderate local semantic issue; X 统管 correct"
+      },
+      {
+        "group": "fresh-g013",
+        "anonymousWinner": "tie",
+        "modelWinner": "tie",
+        "evidence": "Both slightly strengthen future negation into ability; slight"
+      }
+    ],
+    "wins": {
+      "astra": 1,
+      "sol": 4,
+      "tie": 8
+    },
+    "moderateLocalSemanticIssues": {
+      "astra": 1,
+      "sol": 0
+    },
+    "majorIssues": {
+      "astra": 0,
+      "sol": 0
+    },
+    "limits": [
+      "Single machine reviewer, qualitative and subjective; not human approval or statistical quality proof",
+      "No direct scripture quotations; 180-second zh-Hans introduction only",
+      "Astra/Sol model names revealed only after anonymous review; observer is not an external independent judging service"
+    ]
+  },
+  "baselineBindingVerifiedGroups": 13,
+  "currentBinaryMatchesBaseline": true,
+  "runnerVerification": [
+    "13 real CLI Sol translations completed, no tools, independent sessions",
+    "13 baseline prompt+transport fingerprints verified",
+    "Hardened runner replayed 13 real caches with zero model invocations",
+    "Missing blind/summary repaired on cached resume",
+    "Modified cached result and conflicting summary rejected",
+    "13 current caches verified against exact CLI command and schema"
+  ],
+  "artifactHashes": {
+    "blind.json": "e70d762aff4a6a9a9716cd8b6c0998a8858485e5a864e691d80ff2891b1dd420",
+    "quality-review.json": "d087edbfdecec3677859ec1959d9c6f365d6e4d1fc9f5589c15aac4a032d247a",
+    "summary.json": "472cd4dde70663292c8940b7b2f4541c6e2bd9d878360c4ca8ea4dd2be2b2878",
+    "pairs.json": "7fe57df4c95bb66527c30fbd87ad364469f49124a06dcd69a216b5cefd33eebb",
+    "blind-key.json": "34e4c7f98da63988425dd147602ed9eb1ef913cbba00b5055dcf64b8a7282b6b",
+    "baseline-binding-verification.json": "0a3f73975d3462e06d70769bb9faa5100cacd5f912b89634ac25eca1e18b2b31",
+    "identity.json": "fd8f24ad8e3534f3f26f33a8d5d5913d4dab5f10ea0ba4c10ea87bcd703c7898"
+  },
+  "frozenExecutedRunnerSha256": "56c9b890de175351ca0660c6c139437107a16f1918856210f518bce883981716",
+  "currentHardenedRunnerSha256": "71c5a09db00544777b42c1a349fdda55f127566be0cfb2a3f37ef092e82f2103"
+}

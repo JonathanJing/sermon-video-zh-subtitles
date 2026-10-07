@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-unified-resource-policy-v1.schema.json",
+  "title": "Host-local managed resource broker policy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "brokerRoot", "capacities"],
+  "properties": {
+    "schemaVersion": {"const": "sermon-unified-resource-policy-v1"},
+    "brokerRoot": {"type": "string", "minLength": 2, "pattern": "^/"},
+    "capacities": {
+      "type": "object", "additionalProperties": false,
+      "required": ["cpu", "online_api", "codex_cli", "spark_tts", "publisher"],
+      "properties": {
+        "cpu": {"type": "integer", "minimum": 0, "maximum": 64},
+        "online_api": {"type": "integer", "minimum": 0, "maximum": 24},
+        "codex_cli": {"type": "integer", "minimum": 0, "maximum": 24},
+        "spark_tts": {"type": "integer", "minimum": 0, "maximum": 1},
+        "publisher": {"type": "integer", "minimum": 0, "maximum": 1}
+      }
+    }
+  }
+}

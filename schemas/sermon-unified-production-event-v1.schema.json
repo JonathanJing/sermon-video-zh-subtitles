@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-unified-production-event-v1.schema.json",
+  "title": "Unified production event",
+  "description": "One append-only log event. productionRunId is not an attempt identity. This schema is not loaded by a production command.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "eventId",
+    "eventType",
+    "time",
+    "productionRunId",
+    "runRevision",
+    "traceId",
+    "attemptId",
+    "locale",
+    "layer",
+    "stageId",
+    "jobId",
+    "operationId",
+    "parentEventId",
+    "causedBy",
+    "artifactId",
+    "receiptId",
+    "codeHash",
+    "hostId"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "sermon-unified-production-event-v1" },
+    "eventId": { "type": "string", "minLength": 1 },
+    "eventType": { "type": "string", "pattern": "^[a-z][a-z0-9_.]*$" },
+    "time": { "type": "string", "format": "date-time" },
+    "productionRunId": { "type": "string", "minLength": 1 },
+    "runRevision": { "type": "integer", "minimum": 1 },
+    "traceId": { "type": "string", "minLength": 1 },
+    "attemptId": { "type": "string", "minLength": 1 },
+    "locale": { "oneOf": [{ "$ref": "#/$defs/targetLocale" }, { "type": "null" }] },
+    "layer": { "enum": ["layer1", "layer2", "layer3", "layer4", "outline", "reflection"] },
+    "stageId": { "$ref": "#/$defs/stageId" },
+    "jobId": { "type": "string", "minLength": 1 },
+    "operationId": { "type": "string", "minLength": 1 },
+    "parentEventId": { "type": ["string", "null"] },
+    "causedBy": { "type": ["string", "null"] },
+    "artifactId": { "type": ["string", "null"] },
+    "receiptId": { "type": ["string", "null"] },
+    "codeHash": { "$ref": "#/$defs/sha256" },
+    "hostId": { "type": "string", "minLength": 1 },
+    "interval": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "startedAt", "endedAt"],
+          "properties": {
+            "kind": { "enum": ["queue", "compute", "write", "handoff", "human_wait", "engineering_repair"] },
+            "startedAt": { "oneOf": [{ "type": "string", "format": "date-time" }, { "type": "null" }] },
+            "endedAt": { "oneOf": [{ "type": "string", "format": "date-time" }, { "type": "null" }] }
+          }
+        }
+      ]
+    },
+    "paid": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["newPaidRequests", "cacheHit"],
+          "properties": {
+            "newPaidRequests": { "type": "integer", "minimum": 0 },
+            "cacheHit": { "type": "boolean" },
+            "reusedGroups": { "type": "integer", "minimum": 0 },
+            "freshApiAttempts": { "type": "integer", "minimum": 0 }
+          }
+        }
+      ]
+    }
+  },
+  "allOf": [
+    { "if": { "properties": { "stageId": { "enum": ["media_verify", "window_review", "asr", "english_source"] } }, "required": ["stageId"] }, "then": { "properties": { "layer": { "const": "layer1" } } } },
+    { "if": { "properties": { "stageId": { "enum": ["layer2_admit", "layer2_group", "translation_review"] } }, "required": ["stageId"] }, "then": { "properties": { "layer": { "const": "layer2" } } } },
+    { "if": { "properties": { "stageId": { "enum": ["layer3_prepare", "layer3_unit", "layer3_screen", "listen_review"] } }, "required": ["stageId"] }, "then": { "properties": { "layer": { "const": "layer3" } } } },
+    { "if": { "properties": { "stageId": { "const": "study_product" } }, "required": ["stageId"] }, "then": { "properties": { "layer": { "enum": ["outline", "reflection"] } } } },
+    { "if": { "properties": { "stageId": { "const": "publish_endpoint" } }, "required": ["stageId"] }, "then": { "properties": { "layer": { "const": "layer4" } } } }
+  ],
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "targetLocale": { "type": "string", "pattern": "^(?!en(?:-|$))[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$" },
+    "stageId": {
+      "enum": [
+        "media_verify",
+        "window_review",
+        "asr",
+        "english_source",
+        "layer2_admit",
+        "layer2_group",
+        "translation_review",
+        "layer3_prepare",
+        "layer3_unit",
+        "layer3_screen",
+        "listen_review",
+        "study_product",
+        "publish_endpoint"
+      ]
+    }
+  }
+}

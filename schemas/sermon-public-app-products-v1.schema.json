@@ -1,0 +1,139 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Public reviewed App product manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "pageId",
+    "locale",
+    "sourceIdentity",
+    "fourProducts"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "sermon-public-app-products-v1"
+    },
+    "pageId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "locale": {
+      "enum": [
+        "zh-Hans",
+        "ko",
+        "es"
+      ]
+    },
+    "sourceIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sourceId",
+        "sourceUrlHash",
+        "mediaSha256",
+        "durationSeconds",
+        "window"
+      ],
+      "properties": {
+        "sourceId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourceUrlHash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "mediaSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "durationSeconds": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "window": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "startSeconds",
+            "endSeconds",
+            "approvalReceiptSha256"
+          ],
+          "properties": {
+            "startSeconds": {
+              "type": "number",
+              "minimum": 0
+            },
+            "endSeconds": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "approvalReceiptSha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        }
+      }
+    },
+    "fourProducts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sourcePackageSha256",
+        "textCandidateSha256",
+        "audioPackageSha256",
+        "outlineArtifactSha256",
+        "meditationArtifactSha256",
+        "outlineReviewSha256",
+        "meditationReviewSha256",
+        "metadataApprovalSha256",
+        "contentSha256",
+        "candidateSha256"
+      ],
+      "properties": {
+        "sourcePackageSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "textCandidateSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "audioPackageSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "outlineArtifactSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "meditationArtifactSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "outlineReviewSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "meditationReviewSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "metadataApprovalSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "contentSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "candidateSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    }
+  }
+}

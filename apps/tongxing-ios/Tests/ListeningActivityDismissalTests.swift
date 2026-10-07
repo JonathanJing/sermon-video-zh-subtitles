@@ -1,64 +1,202 @@
 import ActivityKit
+import TongxingCore
 import XCTest
 @testable import Tongxing
 
 #if DEBUG
-/// Explicit opt-in uses real ActivityKit on the ordinary iOS 17 path.
-/// Activity ownership checks do not establish Lock Screen visual acceptance.
+/// Explicit opt-in verifies real ActivityKit ownership, not visual acceptance.
 @MainActor
 final class ListeningActivityDismissalTests: XCTestCase {
     private typealias ListeningActivity = Activity<ListeningActivityAttributes>
 
-    func testImmediateAlignmentRetryReleasesRetainedEndingActivity() async throws {
-        try await checkReplacement(isPlaying: false)
-    }
-
-    func testPlaybackReleasesRetainedEndingActivity() async throws {
-        try await checkReplacement(isPlaying: true)
-    }
-
-    func testClearReleasesRetainedEndingActivity() async throws {
-        let (coordinator, title, source) = try await pausedAlignmentResult()
+    func testAlignmentCannotStartOrdinaryActivityWithoutPlaybackOrTransaction() async throws {
+        try requireOptIn()
+        let title = "Synthetic activity \(UUID().uuidString)"
+        let coordinator = ListeningLiveActivityCoordinator(allowSystemActivitiesInTests: true)
         defer { coordinator.end() }
-        // An unchanged terminal snapshot must keep the delayed result owned.
         coordinator.update(title: title, speaker: "Synthetic fixture", position: 42,
-                           duration: 300, isPlaying: false, sourceKey: source, alignmentPhase: .failed)
+                           duration: 300, isPlaying: false, sourceKey: UUID().uuidString,
+                           alignmentPhase: .listening)
         try await eventually { !coordinator.isReconcilingForTesting }
-        XCTAssertNotNil(coordinator.endingActivityIDForTesting)
-        coordinator.end()
-        try await eventually { coordinator.endingActivityIDForTesting == nil }
+        XCTAssertFalse(ListeningActivity.activities.contains { $0.content.state.title == title })
     }
 
-    private func checkReplacement(isPlaying: Bool) async throws {
-        let (coordinator, title, source) = try await pausedAlignmentResult()
+    func testPlaybackActivityDoesNotCarryAlignmentFeedbackAndClearEndsIt() async throws {
+        try requireOptIn()
+        let title = "Synthetic activity \(UUID().uuidString)"
+        let coordinator = ListeningLiveActivityCoordinator(allowSystemActivitiesInTests: true)
         defer { coordinator.end() }
-        let previous = try XCTUnwrap(coordinator.endingActivityIDForTesting)
         coordinator.update(title: title, speaker: "Synthetic fixture", position: 42,
-                           duration: 300, isPlaying: isPlaying, sourceKey: source,
-                           alignmentPhase: isPlaying ? nil : .listening)
-        try await eventually {
-            ListeningActivity.activities.contains { $0.content.state.title == title && $0.id != previous }
-        }
-        XCTAssertNil(coordinator.endingActivityIDForTesting,
-                     "Replacement must dismiss and release the previous ended card first")
+                           duration: 300, isPlaying: true, sourceKey: UUID().uuidString,
+                           alignmentPhase: .unmatched)
+        try await eventually { ListeningActivity.activities.contains { $0.content.state.title == title } }
+        let activity = try XCTUnwrap(ListeningActivity.activities.first { $0.content.state.title == title })
+        XCTAssertNil(activity.content.state.alignmentPhase)
+        coordinator.end()
+        try await eventually { activity.activityState == .ended || activity.activityState == .dismissed }
     }
 
-    private func pausedAlignmentResult() async throws -> (ListeningLiveActivityCoordinator, String, String) {
+    func testExplicitForegroundTransactionUpdatesFromListeningToNoMatch() async throws {
+        try requireOptIn()
+        guard #available(iOS 18.0, *) else { throw XCTSkip("Transient presentation requires iOS 18") }
+        let title = "Synthetic foreground \(UUID().uuidString)"
+        let source = UUID().uuidString, transaction = UUID()
+        let coordinator = ListeningLiveActivityCoordinator(allowSystemActivitiesInTests: true)
+        defer { coordinator.end() }
+        coordinator.update(title: title, speaker: "Synthetic fixture", position: 42,
+                           duration: 300, isPlaying: false, sourceKey: source,
+                           alignmentPhase: .preparing, alignmentSessionID: transaction)
+        try await eventually { !coordinator.isReconcilingForTesting }
+        XCTAssertFalse(ListeningActivity.activities.contains { $0.content.state.title == title })
+        coordinator.update(title: title, speaker: "Synthetic fixture", position: 42,
+                           duration: 300, isPlaying: false, sourceKey: source,
+                           alignmentPhase: .listening, alignmentSessionID: transaction)
+        try await eventually { ListeningActivity.activities.contains { $0.content.state.title == title } }
+        let activity = try XCTUnwrap(ListeningActivity.activities.first { $0.content.state.title == title })
+        XCTAssertEqual(activity.content.state.alignmentPhase, .listening)
+        coordinator.update(title: title, speaker: "Synthetic fixture", position: 42,
+                           duration: 300, isPlaying: false, sourceKey: source,
+                           alignmentPhase: .unmatched, alignmentSessionID: transaction)
+        try await eventually { activity.content.state.alignmentPhase == .unmatched }
+        XCTAssertEqual(activity.content.state.alignmentPhase?.symbolName, "questionmark.circle")
+        coordinator.end()
+        try await eventually { activity.activityState == .ended || activity.activityState == .dismissed }
+    }
+
+    func testFastMatchCoalescesIntermediateStatesButKeepsOneResult() async throws {
+        try requireOptIn()
+        guard #available(iOS 18.0, *) else { throw XCTSkip("Transient presentation requires iOS 18") }
+        for result in [ListeningAlignmentPhase.aligned, .unmatched, .failed] {
+            let title = "Synthetic fast result \(UUID().uuidString)"
+            let source = UUID().uuidString, transaction = UUID()
+            let coordinator = ListeningLiveActivityCoordinator(allowSystemActivitiesInTests: true)
+            // Intentionally no suspension: capture and matching finish before
+            // ActivityKit's worker gets scheduled, just as a fast local match can.
+            for phase in [ListeningAlignmentPhase.preparing, .listening, .matching, result] {
+                coordinator.update(title: title, speaker: "Synthetic fixture", position: 42,
+                                   duration: 300, isPlaying: false, sourceKey: source,
+                                   alignmentPhase: phase, alignmentSessionID: transaction)
+            }
+            try await eventually { ListeningActivity.activities.contains { $0.content.state.title == title } }
+            let activities = ListeningActivity.activities.filter { $0.content.state.title == title }
+            XCTAssertEqual(activities.count, 1)
+            XCTAssertEqual(activities.first?.content.state.alignmentPhase, result)
+            coordinator.end()
+            try await eventually { activities.first?.activityState == .ended || activities.first?.activityState == .dismissed }
+        }
+    }
+
+    func testTerminalWithoutCaptureCannotCreateForegroundFeedback() async throws {
+        try requireOptIn()
+        let title = "Synthetic no capture \(UUID().uuidString)"
+        let coordinator = ListeningLiveActivityCoordinator(allowSystemActivitiesInTests: true)
+        defer { coordinator.end() }
+        coordinator.update(title: title, speaker: "Synthetic fixture", position: 42,
+                           duration: 300, isPlaying: false, sourceKey: UUID().uuidString,
+                           alignmentPhase: .failed, alignmentSessionID: UUID())
+        try await eventually { !coordinator.isReconcilingForTesting }
+        XCTAssertFalse(ListeningActivity.activities.contains { $0.content.state.title == title })
+    }
+
+    func testCoalescedBackgroundDepartureCannotReopenResult() async throws {
+        try requireOptIn()
+        let title = "Synthetic departure \(UUID().uuidString)"
+        let source = UUID().uuidString, transaction = UUID()
+        let coordinator = ListeningLiveActivityCoordinator(allowSystemActivitiesInTests: true)
+        defer { coordinator.end() }
+        coordinator.setApplicationStateForTesting(.active)
+        for phase in [ListeningAlignmentPhase.preparing, .listening] {
+            coordinator.update(title: title, speaker: "Fixture", position: 42, duration: 300,
+                               isPlaying: false, sourceKey: source, alignmentPhase: phase, alignmentSessionID: transaction)
+        }
+        coordinator.setApplicationStateForTesting(.background)
+        coordinator.update(title: title, speaker: "Fixture", position: 42, duration: 300,
+                           isPlaying: false, sourceKey: source, alignmentPhase: .matching, alignmentSessionID: transaction)
+        coordinator.setApplicationStateForTesting(.active)
+        coordinator.update(title: title, speaker: "Fixture", position: 42, duration: 300,
+                           isPlaying: false, sourceKey: source, alignmentPhase: .aligned, alignmentSessionID: transaction)
+        try await eventually { !coordinator.isReconcilingForTesting }
+        XCTAssertFalse(ListeningActivity.activities.contains { $0.content.state.title == title })
+    }
+
+    func testPermissionInactivityStillAllowsFirstCaptureResult() async throws {
+        try requireOptIn()
+        guard #available(iOS 18.0, *) else { throw XCTSkip("Transient presentation requires iOS 18") }
+        let title = "Synthetic permission \(UUID().uuidString)"
+        let source = UUID().uuidString, transaction = UUID()
+        let coordinator = ListeningLiveActivityCoordinator(allowSystemActivitiesInTests: true)
+        defer { coordinator.end() }
+        coordinator.setApplicationStateForTesting(.inactive)
+        coordinator.update(title: title, speaker: "Fixture", position: 42, duration: 300,
+                           isPlaying: false, sourceKey: source, alignmentPhase: .preparing, alignmentSessionID: transaction)
+        // Permission continuation starts capture before UIKit becomes active.
+        for phase in [ListeningAlignmentPhase.listening, .aligned] {
+            coordinator.update(title: title, speaker: "Fixture", position: 42, duration: 300,
+                               isPlaying: false, sourceKey: source, alignmentPhase: phase, alignmentSessionID: transaction)
+        }
+        try await eventually { !coordinator.isReconcilingForTesting }
+        XCTAssertFalse(ListeningActivity.activities.contains { $0.content.state.title == title })
+        coordinator.setApplicationStateForTesting(.active)
+        // The app scene republishes the current phase on activation.
+        coordinator.update(title: title, speaker: "Fixture", position: 42, duration: 300,
+                           isPlaying: false, sourceKey: source, alignmentPhase: .aligned, alignmentSessionID: transaction)
+        try await eventually { ListeningActivity.activities.contains { $0.content.state.title == title } }
+        XCTAssertEqual(ListeningActivity.activities.first { $0.content.state.title == title }?.content.state.alignmentPhase, .aligned)
+    }
+
+    func testNewPermissionCaptureDoesNotInheritPreviousPresentation() async throws {
+        try requireOptIn()
+        guard #available(iOS 18.0, *) else { throw XCTSkip("Transient presentation requires iOS 18") }
+        let coordinator = ListeningLiveActivityCoordinator(allowSystemActivitiesInTests: true)
+        defer { coordinator.end() }
+        let source = UUID().uuidString
+        let oldTitle = "Synthetic old \(UUID().uuidString)"
+        coordinator.setApplicationStateForTesting(.active)
+        coordinator.update(title: oldTitle, speaker: "Fixture", position: 42, duration: 300,
+                           isPlaying: false, sourceKey: source, alignmentPhase: .listening, alignmentSessionID: UUID())
+        try await eventually { ListeningActivity.activities.contains { $0.content.state.title == oldTitle } }
+        let transaction = UUID(), title = "Synthetic new \(UUID().uuidString)"
+        coordinator.setApplicationStateForTesting(.inactive)
+        for phase in [ListeningAlignmentPhase.preparing, .listening] {
+            coordinator.update(title: title, speaker: "Fixture", position: 42, duration: 300,
+                               isPlaying: false, sourceKey: source, alignmentPhase: phase, alignmentSessionID: transaction)
+        }
+        try await eventually { !coordinator.isReconcilingForTesting }
+        coordinator.setApplicationStateForTesting(.active)
+        coordinator.update(title: title, speaker: "Fixture", position: 42, duration: 300,
+                           isPlaying: false, sourceKey: source, alignmentPhase: .aligned, alignmentSessionID: transaction)
+        try await eventually { ListeningActivity.activities.contains { $0.content.state.title == title } }
+    }
+
+    func testExistingPlaybackActivityPublishesBackgroundSubtitleAndGap() async throws {
+        try requireOptIn()
+        let coordinator = ListeningLiveActivityCoordinator(allowSystemActivitiesInTests: true)
+        defer { coordinator.end() }
+        let title = "Synthetic subtitle \(UUID().uuidString)", source = UUID().uuidString
+        coordinator.update(title: title, speaker: "Fixture", position: 0, duration: 300,
+                           isPlaying: true, sourceKey: source, subtitleID: "first",
+                           chineseSubtitle: "第一句", englishSubtitle: "First")
+        try await eventually { ListeningActivity.activities.contains { $0.content.state.title == title } }
+        let activity = try XCTUnwrap(ListeningActivity.activities.first { $0.content.state.title == title })
+        // Coordinator background decision only; this is not a locked-device render test.
+        coordinator.setApplicationStateForTesting(.background)
+        coordinator.update(title: title, speaker: "Fixture", position: 3, duration: 300,
+                           isPlaying: true, sourceKey: source)
+        try await eventually { activity.content.state.subtitleID == nil }
+        XCTAssertNil(activity.content.state.chineseSubtitle)
+        XCTAssertNil(activity.content.state.englishSubtitle)
+        coordinator.update(title: title, speaker: "Fixture", position: 5, duration: 300,
+                           isPlaying: true, sourceKey: source, subtitleID: "second",
+                           chineseSubtitle: "第二句", englishSubtitle: "Second")
+        try await eventually { activity.content.state.subtitleID == "second" }
+        XCTAssertEqual(activity.content.state.chineseSubtitle, "第二句")
+        XCTAssertEqual(activity.content.state.englishSubtitle, "Second")
+        XCTAssertEqual(ListeningActivity.activities.filter { $0.content.state.title == title }.count, 1)
+    }
+
+    private func requireOptIn() throws {
         try XCTSkipUnless(ProcessInfo.processInfo.environment["TONGXING_ACTIVITY_DISMISSAL_SMOKE"] == "1",
                           "Explicit opt-in required for real ActivityKit")
-        if #available(iOS 18.0, *) { throw XCTSkip("Regression covers the ordinary iOS 17 alignment path") }
-        let title = "Synthetic activity \(UUID().uuidString)"
-        let source = UUID().uuidString
-        let coordinator = ListeningLiveActivityCoordinator(allowSystemActivitiesInTests: true)
-        coordinator.update(title: title, speaker: "Synthetic fixture", position: 42,
-                           duration: 300, isPlaying: false, sourceKey: source, alignmentPhase: .listening)
-        try await eventually { ListeningActivity.activities.contains { $0.content.state.title == title } }
-        coordinator.update(title: title, speaker: "Synthetic fixture", position: 42,
-                           duration: 300, isPlaying: false, sourceKey: source, alignmentPhase: .failed)
-        try await eventually {
-            coordinator.endingActivityIDForTesting != nil && !coordinator.isReconcilingForTesting
-        }
-        return (coordinator, title, source)
     }
 
     private func eventually(_ predicate: () -> Bool) async throws {

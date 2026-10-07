@@ -18,7 +18,7 @@ SPEC.loader.exec_module(mod)
 class ConfigureLiveSourceSchedulerTest(unittest.TestCase):
     def test_default_supervisor_model_is_sol(self):
         with patch.object(sys, "argv", [str(SCRIPT_PATH), "--project", "ai-for-god", "--service-url", "https://caption.example.test"]):
-            self.assertEqual(mod.parse_args().agent_model, "gpt-6-sol")
+            self.assertEqual(mod.parse_args().agent_model, "gpt-6-luna")
 
     def make_args(self, **overrides):
         values = {

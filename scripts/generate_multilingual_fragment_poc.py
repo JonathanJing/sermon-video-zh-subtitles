@@ -76,6 +76,13 @@ def response_text(data: dict[str, Any]) -> str:
 
 
 def request_json(api_key: str, model: str, system: str, user: object) -> tuple[str, dict[str, Any]]:
+    if model == 'gpt-6.1-sol':
+        from scripts.sermon_codex_transport import chat_json
+        response = chat_json('', {'model': model, 'reasoning_effort': 'high', 'service_tier': 'fast',
+            'response_format': {'type': 'json_object'}, 'messages': [
+                {'role': 'system', 'content': system},
+                {'role': 'user', 'content': json.dumps(user, ensure_ascii=False)}]})
+        return response['id'], json.loads(response['choices'][0]['message']['content'])
     response = requests.post(
         RESPONSES_URL,
         headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
@@ -166,7 +173,7 @@ def main() -> int:
     parser.add_argument("--target-locale", action="append", choices=tuple(LOCALES),
                         help="Target locale for this POC; repeat for multiple locales (default: all four)")
     parser.add_argument("--api-key-secret", required=True)
-    parser.add_argument("--model", default="gpt-6-astra")
+    parser.add_argument("--model", default="gpt-6.1-sol")
     parser.add_argument("--fragment-id", default="2026-09-20-lion-of-judah")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
@@ -200,7 +207,7 @@ def main() -> int:
         ],
     }
     translation_input = {"targetLocales": [{"targetLocale": key, "language": LOCALES[key]["name"]} for key in target_locales], "sourceUnits": selected}
-    api_key = cloud_access_secret(args.api_key_secret)
+    api_key = '' if args.model == 'gpt-6.1-sol' else cloud_access_secret(args.api_key_secret)
     translator_id, translation = request_json(
         api_key,
         args.model,

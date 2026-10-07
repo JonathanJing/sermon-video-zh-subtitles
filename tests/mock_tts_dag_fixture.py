@@ -57,7 +57,7 @@ def resume_in_clean_process(payload_path):
             'choices': [{'finish_reason': 'stop', 'message': {'content': json.dumps(body)}}],
             'usage': {'prompt_tokens': 100, 'completion_tokens': 20}}
     transport = offline.OfflineHTTPTransport(fixture_reply, fixture_id='diagnostic-dag-fixture')
-    session = DiagnosticSession(value['plan'], value['continuation'], offline_transport=transport)
+    session = DiagnosticSession(value['plan'], value['continuation'], offline_transport=transport, request_limits=DiagnosticDAGFixture.request_limits)
     result = dag.run(session, value['config'], recovery=value.get('recovery'))
     Path(value['resumeResultPath']).write_text(json.dumps(result))
     assert len(transport.observations) == (4 if value.get('allowNewFixtureResponses') else 0), transport.observations

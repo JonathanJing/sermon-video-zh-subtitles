@@ -6,6 +6,133 @@ import XCTest
 /// The explicit live Dev Demo smoke below uses real Hosting assets when opted in.
 @MainActor
 final class ListeningFlowUITests: XCTestCase {
+    func testDuoPosturePlaybackAndPanelsScreenshots() throws {
+        let app = launchFixture()
+        try downloadSelection(in: app)
+        let play = app.buttons["playback-toggle"]
+        let more = app.buttons["playback-more"]
+        let collapse = app.buttons["playback-dock-collapse-toggle"]
+        XCTAssertTrue(play.isHittable)
+        XCTAssertTrue(collapse.isHittable)
+        XCTAssertTrue(app.frame.contains(play.frame))
+        screenshot("duo-posture-ready", app: app)
+        play.tap()
+        try waitFor(play, "label == '暂停播放'")
+        try waitFor(playbackStatus(in: app), "NOT (value BEGINSWITH '00:00，')")
+        screenshot("duo-posture-playing", app: app)
+        more.tap()
+        XCTAssertTrue(app.buttons["playback-more-close"].waitForExistence(timeout: 5))
+        screenshot("duo-posture-playing-more", app: app)
+        app.buttons["playback-more-close"].tap()
+        collapse.tap()
+        try waitFor(playbackStatus(in: app), "exists == false")
+        XCTAssertEqual(play.label, "暂停播放")
+        XCTAssertTrue(app.frame.contains(collapse.frame))
+        screenshot("duo-posture-collapsed-playing", app: app)
+        collapse.tap()
+        try waitFor(playbackStatus(in: app), "exists == true")
+        play.tap()
+        more.tap()
+        app.buttons["precision-controls"].tap()
+        XCTAssertTrue(app.navigationBars["定位 / 精调"].waitForExistence(timeout: 5))
+        try hittableButton("playback-more", in: app).tap()
+        XCTAssertTrue(app.buttons["playback-more-close"].waitForExistence(timeout: 5))
+        screenshot("duo-posture-precision-more", app: app)
+        app.buttons["playback-more-close"].tap()
+        app.buttons["完成"].tap()
+        let study = app.buttons["open-sermon-study"]
+        try reveal(study, in: app, direction: .down)
+        study.tap()
+        XCTAssertTrue(app.buttons["close-sermon-study"].waitForExistence(timeout: 5))
+        try hittableButton("playback-more", in: app).tap()
+        XCTAssertTrue(app.buttons["playback-more-close"].waitForExistence(timeout: 5))
+        screenshot("duo-posture-study-more", app: app)
+        app.buttons["playback-more-close"].tap()
+        app.buttons["close-sermon-study"].tap()
+        XCTAssertEqual(app.buttons["playback-toggle"].label, "开始播放")
+    }
+
+    func testForegroundAlignmentIslandSyntheticFeedbackScreenshots() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing", "--ui-testing-live-activity", "-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
+        app.launchEnvironment["TONGXING_UI_TEST_RUN_ID"] = UUID().uuidString
+        app.launchEnvironment["TONGXING_TEST_HOST"] = "0"
+        app.launch()
+        XCTAssertTrue(app.staticTexts["sermon-title"].waitForExistence(timeout: 10))
+        // Await actual phases instead of wall-clock sleeps: launch and accessibility
+        // snapshots can take long enough to miss the short result lifetime.
+        for (phase, timeout) in [("listening", 10.0), ("matching", 10.0),
+                                 ("aligned", 10.0), ("unmatched", 25.0)] {
+            let feedback = app.descendants(matching: .any)["foreground-alignment-feedback-\(phase)"]
+            XCTAssertTrue(feedback.waitForExistence(timeout: timeout))
+            let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+            attachment.name = "foreground-alignment-\(phase)"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+        }
+        let unmatched = app.descendants(matching: .any)["foreground-alignment-feedback-unmatched"]
+        let cleared = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: unmatched)
+        XCTAssertEqual(XCTWaiter.wait(for: [cleared], timeout: 10), .completed)
+        app.terminate()
+    }
+
+    func testLargeTextStudyRemainsReadableAndCloseDoesNotStartPlayback() {
+        let app = launchFixture(largeText: true)
+        let entry = app.buttons["open-sermon-study"]
+        if !entry.isHittable { app.scrollViews["listening-scroll"].swipeUp() }
+        XCTAssertTrue(entry.isHittable)
+        entry.tap()
+        let question = app.staticTexts["1. 这是用于测试的默想问题。"]
+        let dockTop = app.buttons.matching(identifier: "playback-toggle").allElementsBoundByIndex.last!.frame.minY
+        let scroll = app.scrollViews["sermon-study-scroll"]
+        for _ in 0..<4 {
+            if question.exists && question.frame.maxY < dockTop - 12 { break }
+            scroll.swipeUp(velocity: .slow)
+        }
+        XCTAssertTrue(question.isHittable)
+        XCTAssertLessThan(question.frame.maxY, dockTop - 12)
+        screenshot("study-large-text-reflection", app: app)
+        let close = app.buttons["close-sermon-study-bottom"]
+        if !close.isHittable || close.frame.maxY >= dockTop - 12 {
+            scroll.swipeUp(velocity: .slow)
+        }
+        XCTAssertTrue(close.isHittable)
+        XCTAssertLessThan(close.frame.maxY, dockTop - 12)
+        screenshot("study-large-text-completion", app: app)
+        close.tap()
+        XCTAssertEqual(app.buttons["playback-toggle"].label, "开始播放")
+    }
+
+    func testStudyShowsOutlineAndReflectionWithoutChangingPlayback() {
+        let app = launchFixture()
+        let progress = playbackStatus(in: app)
+        let before = (progress.value as? String)?.components(separatedBy: "，").first
+        let entry = app.buttons["open-sermon-study"]
+        XCTAssertTrue(entry.waitForExistence(timeout: 5))
+        entry.tap()
+        XCTAssertTrue(app.staticTexts["测试大纲"].waitForExistence(timeout: 5))
+        let scroll = app.scrollViews["sermon-study-scroll"]
+        scroll.swipeUp()
+        XCTAssertTrue(app.staticTexts["1. 这是用于测试的默想问题。"].exists)
+        screenshot("study-outline-reflection", app: app)
+        app.buttons["close-sermon-study"].tap()
+        XCTAssertEqual((progress.value as? String)?.components(separatedBy: "，").first, before)
+        XCTAssertEqual(app.buttons["playback-toggle"].label, "开始播放")
+    }
+
+    func testPublishedStudyMissingFieldsHasExplicitEmptyStates() {
+        let app = launchFixture(locateFlow: true)
+        let entry = app.buttons["open-sermon-study"]
+        XCTAssertTrue(entry.waitForExistence(timeout: 5))
+        entry.tap()
+        XCTAssertTrue(app.staticTexts["sermon-study-outline-unavailable"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["sermon-study-questions-unavailable"].exists)
+        screenshot("study-published-missing", app: app)
+        app.buttons["close-sermon-study"].tap()
+        XCTAssertTrue(app.staticTexts["published-page-title"].exists)
+        XCTAssertEqual(app.buttons["playback-toggle"].label, "开始播放")
+    }
+
     func testPlaybackStatusAndMoreLabelAreVisibleAtRegularTextSize() {
         let app = launchFixture()
         let status = app.staticTexts["playback-status-detail"]
@@ -332,7 +459,7 @@ final class ListeningFlowUITests: XCTestCase {
         let independent = app.buttons["published-page-ui-test-clip"]
         XCTAssertTrue(independent.waitForExistence(timeout: 5))
         independent.tap()
-        XCTAssertEqual(app.staticTexts["published-page-title"].label, "ui-test-clip")
+        XCTAssertEqual(app.staticTexts["published-page-title"].label, "2026-09-24 · 证道")
         XCTAssertTrue(app.staticTexts["published-audio-locale"].waitForExistence(timeout: 10))
 
         app.buttons["choose-content-language"].tap()
@@ -349,7 +476,7 @@ final class ListeningFlowUITests: XCTestCase {
         try waitFor(play, "exists == true AND enabled == true AND hittable == true")
         play.tap()
         try waitFor(play, "label == '暂停播放'")
-        try waitFor(element("playback-progress", in: app), "NOT (value BEGINSWITH '00:00，')")
+        try waitFor(playbackStatus(in: app), "NOT (value BEGINSWITH '00:00，')")
 
         app.buttons["choose-sermon"].tap()
         app.buttons["legacy-week-ui-test-week"].tap()
@@ -359,6 +486,51 @@ final class ListeningFlowUITests: XCTestCase {
         app.buttons["choose-content-language"].tap()
         XCTAssertTrue(app.buttons["content-language-ko"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["content-language-es"].exists)
+    }
+
+    func testReviewedStudyProductsShowCompleteOutlineAndMeditation() throws {
+        for withStudy in [false, true] {
+            let app = XCUIApplication()
+            app.launchArguments = ["--ui-testing", "--ui-testing-dual-script"]
+                + (withStudy ? ["--ui-testing-study-products"] : [])
+                + ["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
+            app.launchEnvironment["TONGXING_UI_TEST_RUN_ID"] = UUID().uuidString
+            app.launch()
+            XCTAssertTrue(app.buttons["choose-content-language"].waitForExistence(timeout: 15))
+            app.buttons["choose-content-language"].tap()
+            XCTAssertTrue(app.buttons["content-language-ko"].waitForExistence(timeout: 5))
+            app.buttons["content-language-ko"].tap()
+            XCTAssertTrue(app.staticTexts["published-page-title"].waitForExistence(timeout: 10))
+            if withStudy {
+                app.buttons["open-sermon-study"].tap()
+                let sheetOutline = app.staticTexts["sermon-study-reviewed-outline-body-0"]
+                XCTAssertTrue(sheetOutline.waitForExistence(timeout: 10))
+                XCTAssertEqual(sheetOutline.label, "본문 전체가 표시됩니다.")
+                let sheetMeditation = app.staticTexts["sermon-study-reviewed-meditation-body-0"]
+                XCTAssertTrue(sheetMeditation.exists)
+                XCTAssertEqual(sheetMeditation.label, "예수님의 말씀을 묵상합니다.")
+                XCTAssertFalse(app.staticTexts["sermon-study-outline-unavailable"].exists)
+                XCTAssertFalse(app.staticTexts["sermon-study-questions-unavailable"].exists)
+                screenshot("reviewed-study-sheet-after", app: app)
+                app.buttons["close-sermon-study"].tap()
+
+                let outline = app.staticTexts["본문 전체가 표시됩니다."]
+                for _ in 0..<6 where !outline.isHittable { app.swipeUp() }
+                XCTAssertTrue(outline.waitForExistence(timeout: 10))
+                XCTAssertEqual(outline.label, "본문 전체가 표시됩니다.")
+                let meditation = app.staticTexts["예수님의 말씀을 묵상합니다."]
+                for _ in 0..<6 where !meditation.isHittable { app.swipeUp() }
+                XCTAssertTrue(meditation.exists)
+                XCTAssertEqual(meditation.label, "예수님의 말씀을 묵상합니다.")
+            } else {
+                XCTAssertFalse(app.staticTexts["예수님의 말씀을 묵상합니다."].exists)
+            }
+            screenshot(withStudy ? "reviewed-study-after" : "reviewed-study-before", app: app)
+            app.buttons["choose-content-language"].tap()
+            XCTAssertTrue(app.buttons["content-language-ko"].waitForExistence(timeout: 5))
+            app.buttons["完成"].tap()
+            app.terminate()
+        }
     }
 
     func testSermonHeadingAndPickerUseTitleSeriesDateSpeakerWithoutSeeking() throws {
@@ -382,10 +554,10 @@ final class ListeningFlowUITests: XCTestCase {
         let play = app.buttons["playback-toggle"]
         try waitFor(play, "exists == true AND enabled == true AND hittable == true")
         play.tap()
-        try waitFor(element("playback-progress", in: app), "NOT (value BEGINSWITH '00:00，')")
+        try waitFor(playbackStatus(in: app), "NOT (value BEGINSWITH '00:00，')")
         play.tap()
         try waitFor(play, "label == '开始播放'")
-        let position = element("playback-progress", in: app).value as? String
+        let position = playbackStatus(in: app).value as? String
         app.buttons["choose-sermon"].tap()
         let row = app.buttons["published-page-ui-test-full-video"]
         XCTAssertTrue(row.waitForExistence(timeout: 5))
@@ -399,7 +571,7 @@ final class ListeningFlowUITests: XCTestCase {
         }
         screenshot(largeText ? "sermon-picker-large" : "sermon-picker", app: app)
         app.buttons["完成"].tap()
-        XCTAssertEqual(element("playback-progress", in: app).value as? String, position)
+        XCTAssertEqual(playbackStatus(in: app).value as? String, position)
     }
 
     func testDualScriptCatalogOpensCurrentPageBeforeLegacyAndPreparesAudio() throws {
@@ -430,7 +602,7 @@ final class ListeningFlowUITests: XCTestCase {
     func testEnglishLocateFromHomeReturnsToCurrentSubtitleAndCanUndo() throws {
         let app = launchFixture(locateFlow: true)
         try locateSecondEnglishSegment(in: app, fromDock: false)
-        try waitFor(element("playback-progress", in: app), "value BEGINSWITH '00:12'")
+        try waitFor(playbackStatus(in: app), "value BEGINSWITH '00:12'")
         XCTAssertEqual(app.staticTexts["published-current-subtitle"].label, "中文第二句：灯塔在港口旁。")
         XCTAssertEqual(app.buttons["playback-toggle"].label, "开始播放", "手动定位必须保留暂停状态")
         XCTAssertFalse(element("english-locate-sheet", in: app).exists)
@@ -439,16 +611,104 @@ final class ListeningFlowUITests: XCTestCase {
         let undo = app.buttons["undo-seek"]
         try waitFor(undo, "exists == true AND hittable == true")
         undo.tap()
-        try waitFor(element("playback-progress", in: app), "value BEGINSWITH '00:00'")
+        try waitFor(playbackStatus(in: app), "value BEGINSWITH '00:00'")
         XCTAssertEqual(app.staticTexts["published-current-subtitle"].label, "中文第一句：开始收听。")
         XCTAssertEqual(app.buttons["playback-toggle"].label, "开始播放")
         screenshot("english-locate-undo-original-position", app: app)
     }
 
+    func testFullTranscriptReturnToCurrentKeepsPausePositionAndReadingMode() throws {
+        let app = launchFixture(largeText: true, locateFlow: true)
+        try locateSecondEnglishSegment(in: app, fromDock: false)
+        let progress = playbackStatus(in: app)
+        try waitFor(progress, "value BEGINSWITH '00:12'")
+        app.segmentedControls["listening-display"].buttons["字幕全文"].tap()
+        let current = app.buttons["transcript-return-current"]
+        XCTAssertTrue(current.waitForExistence(timeout: 5))
+        let scroll = app.scrollViews["listening-scroll"]
+        for _ in 0..<3 { scroll.swipeDown() }
+        XCTAssertFalse(app.staticTexts["published-caption-text-g2"].isHittable,
+                       "The current row must leave the viewport before testing recentering")
+        XCTAssertTrue(current.isHittable, "Return action must remain reachable after reading elsewhere")
+        XCTAssertTrue(current.label.hasSuffix("自由阅读"))
+        screenshot("full-transcript-scrolled-away", app: app)
+        returnToCurrent(in: app)
+        try waitFor(app.staticTexts["published-caption-text-g2"], "hittable == true")
+        XCTAssertTrue(app.buttons["published-caption-time-g2"].isSelected)
+        XCTAssertEqual(app.segmentedControls["listening-display"].buttons["字幕全文"].isSelected, true)
+        try waitFor(progress, "value BEGINSWITH '00:12'")
+        XCTAssertEqual(app.buttons["playback-toggle"].label, "开始播放")
+        XCTAssertTrue(current.label.hasSuffix("跟随播放"))
+        screenshot("full-transcript-return-current-paused12", app: app)
+    }
+
+    func testNormalTextTranscriptTimeTapAndAutomaticFollowing() throws {
+        let app = launchFixture(locateFlow: true)
+        try locateSecondEnglishSegment(in: app, fromDock: false)
+        let mode = app.segmentedControls["listening-display"].buttons["字幕全文"]
+        try reveal(mode, in: app, direction: .down)
+        mode.tap()
+        let progress = playbackStatus(in: app)
+        let follow = app.buttons["transcript-return-current"]
+        let scroll = app.scrollViews["listening-scroll"]
+        for _ in 0..<3 { scroll.swipeDown() }
+        XCTAssertTrue(follow.label.hasSuffix("自由阅读"))
+        XCTAssertTrue(progress.isHittable)
+        returnToCurrent(in: app)
+        try waitFor(app.staticTexts["published-caption-text-g2"], "hittable == true")
+        XCTAssertTrue(app.buttons["published-caption-time-g2"].isSelected)
+        try waitFor(progress, "value BEGINSWITH '00:12'")
+        XCTAssertEqual(app.buttons["playback-toggle"].label, "开始播放")
+        XCTAssertTrue(follow.label.hasSuffix("跟随播放"))
+        screenshot("normal-text-transcript-current-paused12", app: app)
+        app.buttons["playback-toggle"].tap()
+        try waitFor(app.buttons["published-caption-time-g3"], "selected == true AND hittable == true", timeout: 20)
+        XCTAssertTrue(app.staticTexts["published-caption-text-g3"].isHittable)
+        XCTAssertTrue(follow.label.hasSuffix("跟随播放"))
+        screenshot("normal-text-transcript-auto-follow24", app: app)
+        app.buttons["playback-toggle"].tap()
+    }
+
+    func testTranscriptAutomaticallyFollowsNextCaption() throws {
+        let app = launchFixture(largeText: true, locateFlow: true)
+        try locateSecondEnglishSegment(in: app, fromDock: false)
+        app.segmentedControls["listening-display"].buttons["字幕全文"].tap()
+        app.buttons["playback-toggle"].tap()
+        try waitFor(app.staticTexts["published-caption-text-g2"], "hittable == true")
+        try waitFor(app.buttons["published-caption-time-g3"], "selected == true AND hittable == true", timeout: 20)
+        XCTAssertTrue(app.staticTexts["published-caption-text-g3"].isHittable)
+        XCTAssertTrue(app.buttons["transcript-return-current"].label.hasSuffix("跟随播放"))
+        screenshot("transcript-automatically-followed-next-caption", app: app)
+        app.buttons["playback-toggle"].tap()
+    }
+
+    func testTranscriptFollowsPlaybackUntilDraggedAndTimeTapRestoresFollowing() throws {
+        let app = launchFixture(largeText: true, locateFlow: true)
+        try locateSecondEnglishSegment(in: app, fromDock: false)
+        app.segmentedControls["listening-display"].buttons["字幕全文"].tap()
+        let follow = app.buttons["transcript-return-current"]
+        let progress = playbackStatus(in: app)
+        app.buttons["playback-toggle"].tap()
+        try waitFor(app.staticTexts["published-caption-text-g2"], "hittable == true")
+        let scroll = app.scrollViews["listening-scroll"]
+        for _ in 0..<3 { scroll.swipeDown() }
+        XCTAssertTrue(follow.label.hasSuffix("自由阅读"))
+        try waitFor(progress, "value MATCHES '^00:(2[4-9]|3[0-5]).*'", timeout: 20)
+        XCTAssertFalse(app.staticTexts["published-caption-text-g3"].isHittable,
+                       "Playback must not take over a manual reading position")
+        screenshot("transcript-free-reading-during-playback", app: app)
+        returnToCurrent(in: app)
+        try waitFor(app.staticTexts["published-caption-text-g3"], "hittable == true")
+        XCTAssertTrue(follow.label.hasSuffix("跟随播放"))
+        XCTAssertEqual(app.buttons["playback-toggle"].label, "暂停播放")
+        screenshot("transcript-time-tap-restores-following", app: app)
+        app.buttons["playback-toggle"].tap()
+    }
+
     func testEnglishLocateFromDockAndFullTranscriptLanguageChangesKeepPosition() throws {
         let app = launchFixture(locateFlow: true)
         try locateSecondEnglishSegment(in: app, fromDock: true)
-        let progress = element("playback-progress", in: app)
+        let progress = playbackStatus(in: app)
         try waitFor(progress, "value BEGINSWITH '00:12'")
         app.segmentedControls["listening-display"].buttons["字幕全文"].tap()
         let secondChinese = app.staticTexts["published-caption-text-g2"]
@@ -501,7 +761,7 @@ final class ListeningFlowUITests: XCTestCase {
     func testEnglishLocateLateTranscriptArrivesNearRetainedCurrentPosition() throws {
         let app = launchFixture(locateFlow: true, delayedTranscript: true)
         try locateSecondEnglishSegment(in: app, fromDock: false)
-        let progress = element("playback-progress", in: app)
+        let progress = playbackStatus(in: app)
         try waitFor(progress, "value BEGINSWITH '00:12'")
         let chooser = app.buttons["choose-content-language"]
         try reveal(chooser, in: app, direction: .down)
@@ -546,7 +806,7 @@ final class ListeningFlowUITests: XCTestCase {
     func testEnglishLocateLargeTextKeepsSearchAndSeekReachable() throws {
         let app = launchFixture(largeText: true, locateFlow: true)
         try locateSecondEnglishSegment(in: app, fromDock: false)
-        try waitFor(element("playback-progress", in: app), "value BEGINSWITH '00:12'")
+        try waitFor(playbackStatus(in: app), "value BEGINSWITH '00:12'")
         XCTAssertEqual(app.buttons["playback-toggle"].label, "开始播放")
         screenshot("english-locate-large-text-current-at12", app: app)
     }
@@ -567,7 +827,7 @@ final class ListeningFlowUITests: XCTestCase {
         let app = launchFixture(largeText: largeText, locateFlow: true, alignmentFailure: true,
                                 immediateFailure: immediateFailure)
         try locateSecondEnglishSegment(in: app, fromDock: true)
-        try waitFor(element("playback-progress", in: app), "value BEGINSWITH '00:12'")
+        try waitFor(playbackStatus(in: app), "value BEGINSWITH '00:12'")
         app.buttons["playback-more"].tap()
         app.buttons["align-live-audio"].tap()
         let failure = app.alerts["听音对齐未完成"]
@@ -580,7 +840,7 @@ final class ListeningFlowUITests: XCTestCase {
         XCTAssertTrue(failure.waitForExistence(timeout: 5))
         failure.buttons["关闭"].tap()
         XCTAssertFalse(failure.exists)
-        try waitFor(element("playback-progress", in: app), "value BEGINSWITH '00:12'")
+        try waitFor(playbackStatus(in: app), "value BEGINSWITH '00:12'")
         XCTAssertEqual(app.buttons["playback-toggle"].label, "开始播放")
         app.buttons["playback-more"].tap()
         app.buttons["align-live-audio"].tap()
@@ -701,7 +961,7 @@ final class ListeningFlowUITests: XCTestCase {
             currentMode.tap()
             XCTAssertTrue(app.staticTexts["published-current-english"].waitForExistence(timeout: 10))
             app.buttons["playback-toggle"].tap()
-            try waitFor(element("playback-progress", in: app), "NOT (value BEGINSWITH '00:00，')")
+            try waitFor(playbackStatus(in: app), "NOT (value BEGINSWITH '00:00，')")
             screenshot("production-native-\(locale)-playing-english", app: app)
             app.buttons["playback-toggle"].tap()
             app.segmentedControls["listening-display"].buttons["字幕全文"].tap()
@@ -719,7 +979,7 @@ final class ListeningFlowUITests: XCTestCase {
     func testFreshLaunchOpensCurrentPublishedPageAndPreparesAudio() throws {
         let app = launchFixture(independentDefault: true)
         XCTAssertTrue(app.staticTexts["published-page-title"].waitForExistence(timeout: 10))
-        XCTAssertEqual(app.staticTexts["published-page-title"].label, "ui-test-clip")
+        XCTAssertEqual(app.staticTexts["published-page-title"].label, "2026-09-24 · 证道")
         XCTAssertTrue(app.staticTexts["published-audio-locale"].waitForExistence(timeout: 10))
         XCTAssertFalse(app.buttons["prepare-published-audio"].exists)
         XCTAssertTrue(app.buttons["playback-toggle"].exists)
@@ -771,7 +1031,7 @@ final class ListeningFlowUITests: XCTestCase {
         try waitFor(play, "exists == true AND enabled == true AND hittable == true")
         play.tap()
         try waitFor(play, "label == '暂停播放'")
-        try waitFor(element("playback-progress", in: app), "NOT (value BEGINSWITH '00:00，')")
+        try waitFor(playbackStatus(in: app), "NOT (value BEGINSWITH '00:00，')")
         screenshot("live-dev-second-clip-korean-playing", app: app)
     }
 
@@ -806,9 +1066,9 @@ final class ListeningFlowUITests: XCTestCase {
         let play = app.buttons["playback-toggle"]
         play.tap()
         try waitFor(play, "label == '暂停播放'")
-        try waitFor(element("playback-progress", in: app), "NOT (value BEGINSWITH '00:00，')")
+        try waitFor(playbackStatus(in: app), "NOT (value BEGINSWITH '00:00，')")
         collapseDock(in: app)
-        try waitFor(element("playback-progress", in: app), "exists == false")
+        try waitFor(playbackStatus(in: app), "exists == false")
         XCTAssertFalse(app.buttons["nudge-forward"].exists)
         XCTAssertFalse(app.buttons["align-live-audio"].exists)
         XCTAssertEqual(app.buttons.matching(identifier: "playback-toggle").count, 1)
@@ -817,29 +1077,35 @@ final class ListeningFlowUITests: XCTestCase {
         play.tap()
         try waitFor(play, "label == '开始播放'")
         screenshot("collapsed-player-paused", app: app)
+        screenshot("duo-large-text-collapsed", app: app)
         expandDock(in: app)
-        try waitFor(element("playback-progress", in: app), "exists == true")
+        try waitFor(playbackStatus(in: app), "exists == true")
         try assertAlignmentAvailableInMore(in: app)
+        screenshot("duo-large-text-more", app: app)
         XCTAssertEqual(play.label, "开始播放", "展开操作不能改变暂停状态")
         screenshot("expanded-player-restored", app: app)
     }
 
     func testAccessibilityTextDockCanCollapseAndExpand() throws {
         let app = launchFixture(largeText: true)
-        collapseDock(in: app)
-        try waitFor(element("playback-progress", in: app), "exists == false")
+        let collapse = app.buttons["playback-dock-collapse-toggle"]
+        XCTAssertTrue(collapse.isHittable)
+        collapse.tap()
+        try waitFor(collapse, "label == '展开播放栏'")
         let play = app.buttons["playback-toggle"]
         XCTAssertTrue(play.isHittable)
         XCTAssertGreaterThanOrEqual(play.frame.width, 44)
         XCTAssertGreaterThanOrEqual(play.frame.height, 44)
         XCTAssertTrue(app.frame.contains(play.frame))
-        expandDock(in: app)
-        try waitFor(element("playback-progress", in: app), "exists == true")
+        screenshot("duo-large-text-collapsed", app: app)
+        collapse.tap()
+        try waitFor(collapse, "label == '收起播放栏'")
         try assertAlignmentAvailableInMore(in: app)
+        screenshot("duo-large-text-more", app: app)
     }
 
     private func collapseDock(in app: XCUIApplication) {
-        let progress = element("playback-progress", in: app)
+        let progress = playbackStatus(in: app)
         let start = progress.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
         start.press(forDuration: 0.05, thenDragTo: start.withOffset(CGVector(dx: 0, dy: 70)))
     }
@@ -879,7 +1145,7 @@ final class ListeningFlowUITests: XCTestCase {
                                                     file: StaticString = #filePath, line: UInt = #line) {
         let choose = app.buttons["choose-sermon"]
         let options = app.buttons["more-options"]
-        let progress = element("playback-progress", in: app)
+        let progress = playbackStatus(in: app)
         XCTAssertTrue(choose.isHittable, file: file, line: line)
         XCTAssertTrue(options.isHittable, file: file, line: line)
         XCTAssertLessThan(choose.frame.maxY, options.frame.minY + 1, file: file, line: line)
@@ -907,7 +1173,7 @@ final class ListeningFlowUITests: XCTestCase {
         let timestamp = app.buttons["subtitle-cue-1"]
         let located = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
             let top = app.navigationBars.firstMatch.frame.maxY
-            let bottom = self.element("playback-progress", in: app).frame.minY - 36
+            let bottom = self.playbackStatus(in: app).frame.minY - 36
             return timestamp.exists && timestamp.isHittable
                 && timestamp.frame.minY >= top && timestamp.frame.maxY <= bottom
         }, object: nil)
@@ -943,7 +1209,7 @@ final class ListeningFlowUITests: XCTestCase {
         comparison.tap()
         try reveal(english, in: app, direction: .up)
         XCTAssertTrue(english.label.contains("Second synthetic source sentence"))
-        try waitFor(element("playback-progress", in: app), "value BEGINSWITH '00:12'")
+        try waitFor(playbackStatus(in: app), "value BEGINSWITH '00:12'")
         comparison.tap()
         XCTAssertFalse(english.exists)
         comparison.tap()
@@ -954,7 +1220,7 @@ final class ListeningFlowUITests: XCTestCase {
         app.buttons["English"].tap()
         app.buttons["Done"].tap()
         try waitFor(app.buttons["playback-toggle"], "label == 'Play'")
-        try waitFor(element("playback-progress", in: app), "value BEGINSWITH '00:12'")
+        try waitFor(playbackStatus(in: app), "value BEGINSWITH '00:12'")
         XCTAssertEqual(element("sermon-title", in: app).label, "界面测试证道")
         XCTAssertTrue(english.label.contains("Second synthetic source sentence"))
         screenshot("english-interface-source-bilingual-transcript", app: app)
@@ -980,7 +1246,7 @@ final class ListeningFlowUITests: XCTestCase {
             app.buttons[option].tap()
             XCTAssertEqual(menu.value as? String, code)
             try waitFor(app.buttons["playback-toggle"], "label == '\(playLabel)'")
-            try waitFor(element("playback-progress", in: app), "value BEGINSWITH '00:12'")
+            try waitFor(playbackStatus(in: app), "value BEGINSWITH '00:12'")
             XCTAssertEqual(element("sermon-title", in: app).label, "界面测试证道")
             expandCompactDockIfNeeded(in: app)
             XCTAssertTrue(app.buttons["align-live-audio"].exists)
@@ -1006,11 +1272,11 @@ final class ListeningFlowUITests: XCTestCase {
         let play = app.buttons["playback-toggle"]
         play.tap()
         try waitFor(play, "label == '暂停播放'")
-        try waitFor(element("playback-progress", in: app), "value CONTAINS '正在收听'")
-        try waitFor(element("playback-progress", in: app), "NOT (value BEGINSWITH '00:00，')")
+        try waitFor(playbackStatus(in: app), "value CONTAINS '正在收听'")
+        try waitFor(playbackStatus(in: app), "NOT (value BEGINSWITH '00:00，')")
         play.tap()
         try waitFor(play, "label == '开始播放'")
-        try waitFor(element("playback-progress", in: app), "value CONTAINS '已暂停'")
+        try waitFor(playbackStatus(in: app), "value CONTAINS '已暂停'")
 
         try seekToSecondSubtitle(in: app)
         expandCompactDockIfNeeded(in: app)
@@ -1049,15 +1315,15 @@ final class ListeningFlowUITests: XCTestCase {
         try reveal(restore, in: app, direction: .down)
         try waitFor(restore, "enabled == true")
         restore.tap()
-        try waitFor(element("playback-progress", in: app), "value BEGINSWITH '00:12，'")
+        try waitFor(playbackStatus(in: app), "value BEGINSWITH '00:12，'")
         try waitFor(element("current-subtitle", in: app), "value == '乙音轨：第二句，用于验证时间定位。'")
         XCTAssertFalse(saved.exists, "恢复后应关闭旧的位置卡片")
         let play = app.buttons["playback-toggle"]
         play.tap()
-        try waitFor(element("playback-progress", in: app), "value CONTAINS '正在收听'")
-        try waitFor(element("playback-progress", in: app), "NOT (value BEGINSWITH '00:12，')")
+        try waitFor(playbackStatus(in: app), "value CONTAINS '正在收听'")
+        try waitFor(playbackStatus(in: app), "NOT (value BEGINSWITH '00:12，')")
         play.tap()
-        try waitFor(element("playback-progress", in: app), "value CONTAINS '已暂停'")
+        try waitFor(playbackStatus(in: app), "value CONTAINS '已暂停'")
         screenshot("offline-catalog-downloaded-audio-and-restored-position", app: app)
     }
 
@@ -1075,13 +1341,13 @@ final class ListeningFlowUITests: XCTestCase {
             XCTAssertLessThanOrEqual(control.frame.maxY, app.frame.maxY)
         }
         forward.tap()
-        try waitFor(element("playback-progress", in: app), "value BEGINSWITH '00:01，'")
+        try waitFor(playbackStatus(in: app), "value BEGINSWITH '00:01，'")
         backward.tap()
-        try waitFor(element("playback-progress", in: app), "value BEGINSWITH '00:00，'")
+        try waitFor(playbackStatus(in: app), "value BEGINSWITH '00:00，'")
         play.tap()
-        try waitFor(element("playback-progress", in: app), "value CONTAINS '正在收听'")
+        try waitFor(playbackStatus(in: app), "value CONTAINS '正在收听'")
         play.tap()
-        try waitFor(element("playback-progress", in: app), "value CONTAINS '已暂停'")
+        try waitFor(playbackStatus(in: app), "value CONTAINS '已暂停'")
         screenshot("accessibility3-download-and-playback-controls", app: app)
     }
 
@@ -1095,6 +1361,19 @@ final class ListeningFlowUITests: XCTestCase {
         XCTAssertTrue(app.frame.contains(align.frame),
                       "无需滚动就应完整显示现场对齐按钮", file: file, line: line)
         app.buttons["playback-more-close"].tap()
+    }
+
+    /// Compact and accessibility docks expose the same clock/status on Play.
+    /// They intentionally omit the visible clock to retain reachable controls.
+    private func playbackStatus(in app: XCUIApplication) -> XCUIElement {
+        let clock = element("playback-progress", in: app)
+        return clock.exists ? clock : app.buttons["playback-toggle"]
+    }
+
+    private func returnToCurrent(in app: XCUIApplication) {
+        let clock = element("playback-progress", in: app)
+        if clock.exists && clock.isHittable { clock.tap() }
+        else { app.buttons["transcript-return-current"].tap() }
     }
 
     private func expandCompactDockIfNeeded(in app: XCUIApplication) {
@@ -1169,8 +1448,8 @@ final class ListeningFlowUITests: XCTestCase {
         try reveal(timestamp, in: app, direction: .up)
         XCTAssertTrue(timestamp.isEnabled)
         timestamp.tap()
-        try waitFor(element("playback-progress", in: app), "value BEGINSWITH '00:12，'")
-        try waitFor(element("playback-progress", in: app), "value CONTAINS '已定位 00:12'")
+        try waitFor(playbackStatus(in: app), "value BEGINSWITH '00:12，'")
+        try waitFor(playbackStatus(in: app), "value CONTAINS '已定位 00:12'")
     }
 
     private enum ScrollDirection { case up, down }
@@ -1189,7 +1468,7 @@ final class ListeningFlowUITests: XCTestCase {
             // Duo puts progress in a side rail: its Y must not truncate the
             // reading viewport as it does for a bottom playback dock.
             let bottom = usesTrailingRail ? visibleFrame.maxY - 16
-                : min(visibleFrame.maxY, element("playback-progress", in: app).frame.minY - 36)
+                : min(visibleFrame.maxY, playFrame.minY - 16)
             let readingWidth = usesTrailingRail
                 ? min(visibleFrame.maxX, playFrame.minX - 16) - visibleFrame.minX
                 : visibleFrame.width
@@ -1274,11 +1553,30 @@ final class ListeningFlowUITests: XCTestCase {
         }
     }
 
+    private func hittableButton(_ identifier: String, in app: XCUIApplication) throws -> XCUIElement {
+        // A presented sheet and its covered main view share component IDs.
+        // Resolve the actual interactive instance rather than the first match.
+        let query = app.buttons.matching(identifier: identifier)
+        let ready = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            query.allElementsBoundByIndex.filter { $0.isHittable }.count == 1
+        }, object: app)
+        guard XCTWaiter.wait(for: [ready], timeout: 5) == .completed,
+              let button = query.allElementsBoundByIndex.first(where: { $0.isHittable }) else {
+            XCTFail("找不到唯一可操作按钮：\(identifier)")
+            throw FlowFailure.unreachable
+        }
+        return button
+    }
+
     private func screenshot(_ name: String, app: XCUIApplication) {
-        let attachment = XCTAttachment(screenshot: app.screenshot())
+        let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         attachment.name = name
         attachment.lifetime = .keepAlways
         add(attachment)
+        // Device Hub's Duo can return an outer-display black image through
+        // XCTest after a posture change. Hold only screenshot fixture states
+        // briefly so the host can capture the real display through simctl.
+        if name.hasPrefix("duo-") || name.hasPrefix("study-large-") { Thread.sleep(forTimeInterval: 2) }
     }
 
     private enum FlowFailure: Error { case unreachable, timeout }

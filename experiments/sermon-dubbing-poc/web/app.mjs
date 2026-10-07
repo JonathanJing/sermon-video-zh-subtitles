@@ -8,7 +8,7 @@ import { createFeedback } from "/feedback.mjs";
 import { createUsage } from "/usage.mjs";
 import { mountFingerprintUI, playAlignmentAudio } from "/fingerprint-ui.mjs";
 import { PlaybackMemory } from "/playback-memory.mjs";
-import { loadPublishedWeeks } from "/published-weeks.mjs";
+import { loadPublishedWeeks, renderMeditation } from "/published-weeks.mjs";
 import { createMediaSession } from "/media-session.mjs";
 
 const $ = id => document.getElementById(id);
@@ -476,10 +476,17 @@ function renderOutline() {
     const h3 = document.createElement("h3");
     h3.textContent = item.title;
     const list = document.createElement("ul");
-    for (const point of item.points) { const li = document.createElement("li"); li.textContent = point; list.append(li); }
+    for (const point of item.points) { const li = document.createElement("li"); li.textContent = point; li.style.whiteSpace = 'pre-wrap'; list.append(li); }
     section.append(h3, list);
     $("outline-content").append(section);
   }
+  let meditation = $("study-meditation");
+  if (!meditation) {
+    meditation = document.createElement("section");
+    meditation.id = "study-meditation";
+    $("outline-content").after(meditation);
+  }
+  renderMeditation(meditation, content.meditation || [], content.targetLocale);
   $("reflection-questions").replaceChildren();
   for (const question of content.questions) { const li = document.createElement("li"); li.textContent = question; $("reflection-questions").append(li); }
   document.querySelector(".reflection").hidden = !content.questions.length;

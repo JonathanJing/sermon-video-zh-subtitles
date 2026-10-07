@@ -45,6 +45,8 @@
 
 重跑时按 job、源与候选、adapter、checkpoint map/权重、策略文件、文本、renderer SHA 与合成参数比较缓存身份；变化的单元文字或音色不得复用，新候选中的不变单元可按 `--reuse-from` 核验。一个单元在 WAV 写出后中断时，可凭已写的 SHA commit 记录恢复。`render-manifest.json` 的机器筛查为 `not_run`，人工听审仍待完成。
 
+2026-10-05 增加[异常留存与只读恢复清单](production-recovery-plan.zh.md)：保存 timing 风险、失败／待替换 partial 和显式 quarantine 的原字节及身份；保存失败不删除原件。低能量边缘只是测量，不自动裁剪或重合成。恢复计划解释 reuse/revalidate/recompute/unknown 与完整批窗重放、缺项提交数量，仍由原 producer 在锁内准入。
+
 2026-10-01 引入 `--batch-size 1|2|4|8`。未使用下述 8×8 生产入口的兼容路径仍默认 batch1，显式 Dev test profile 默认2；新建单讲员周日 Spark 任务使用下述 `--spark-production`。当前实现先校验整个 job，再按固定窗口处理缺失单元；窗口内有已提交或准入复用的邻组时，恢复合成仍重放完整绑定窗口，但只提交缺失单元，保留已有音频字节。每批一次驻留模型调用，短尾批完整校验映射与数量。intent 绑定 batch size、设备、窗口输入及 seed 策略，commit 记录实际生成索引；seed 为基础值加窗口起始索引。batch=1 保留原 intent/逐单元 seed 格式，其他 batch 使用批处理身份，不能混用缓存或绕过人审。恢复验证不等于随机采样结果与不中断运行逐字节相同。
 
 缓存必须通过当前 producer 的完整身份核验。`rendererSha256` 使用固定的 `RENDERER_SOUND_IDENTITY_SHA256` 表示声音身份；batch>1 另以 `batchImplementationSha256` 绑定 renderer 实现文件的字节 SHA。实际执行代码身份仍单独记录。声音身份相同不自动允许批处理代码复用：即使只改 CLI help，文件 SHA 也会改变，旧 batch 缓存必须通过完整身份或代码已有的明确兼容规则；不手改 hash、不跳过校验、不扩大兼容名单。

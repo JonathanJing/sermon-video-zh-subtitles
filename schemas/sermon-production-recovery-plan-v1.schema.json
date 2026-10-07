@@ -1,0 +1,335 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-production-recovery-plan-v1.schema.json",
+  "title": "Read-only canonical Layer 3 recovery plan; not dispatch or approval authority",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "layer",
+    "targetLocale",
+    "jobJsonSha256",
+    "jobFileSha256",
+    "ownerObservation",
+    "formalRenderLockObservation",
+    "counts",
+    "units",
+    "batchReplay",
+    "plannedModelUnitEvaluations",
+    "plannedMissingUnitCommits",
+    "blockedScope",
+    "evidenceSetSha256",
+    "planSha256",
+    "formalPackageIdentityChangedDoesNotImplyModelRecompute",
+    "producerAdmissionRequired",
+    "crossJobAsrCacheMigrationImplemented",
+    "formalAdmissionValidated",
+    "dispatchAuthorized",
+    "resourceReleaseAuthorized",
+    "humanApprovalCreated",
+    "existingArtifactsModified",
+    "modelCalls",
+    "namedJobDependencyProblems"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "sermon-production-recovery-plan-v1"
+    },
+    "layer": {
+      "const": "L3"
+    },
+    "targetLocale": {
+      "type": "string"
+    },
+    "jobJsonSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "jobFileSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "ownerObservation": {
+      "enum": [
+        "not_checked",
+        "terminal",
+        "active",
+        "unknown"
+      ]
+    },
+    "formalRenderLockObservation": {
+      "enum": [
+        "not_present",
+        "shared_read_lock_held",
+        "busy"
+      ]
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reuse",
+        "revalidate",
+        "recompute",
+        "unknown"
+      ],
+      "properties": {
+        "reuse": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "revalidate": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "recompute": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unknown": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "units": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "unitIndex",
+          "textGroupId",
+          "classification",
+          "reasons",
+          "changes",
+          "audioSha256",
+          "modelRequestChanged",
+          "modelRecomputeRequired",
+          "blocked",
+          "batchWindowUnitIndices",
+          "downstreamInvalidation",
+          "dispatchAuthorized"
+        ],
+        "properties": {
+          "unitIndex": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "textGroupId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "classification": {
+            "enum": [
+              "reuse",
+              "revalidate",
+              "recompute",
+              "unknown"
+            ]
+          },
+          "reasons": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string"
+            }
+          },
+          "changes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "field",
+                "category",
+                "storedValue",
+                "expectedValue"
+              ],
+              "properties": {
+                "field": {
+                  "type": "string"
+                },
+                "category": {
+                  "enum": [
+                    "package_binding",
+                    "context_dependency",
+                    "batch_window",
+                    "model_input_or_runtime"
+                  ]
+                },
+                "storedValue": {},
+                "expectedValue": {}
+              }
+            }
+          },
+          "audioSha256": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "modelRequestChanged": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "modelRecomputeRequired": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "blocked": {
+            "type": "boolean"
+          },
+          "batchWindowUnitIndices": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "downstreamInvalidation": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "dispatchAuthorized": {
+            "const": false
+          }
+        }
+      }
+    },
+    "batchReplay": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "unitIndices",
+          "submitMissingUnitIndices",
+          "preserveCommittedUnitIndices",
+          "blocked"
+        ],
+        "properties": {
+          "unitIndices": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "submitMissingUnitIndices": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "preserveCommittedUnitIndices": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "blocked": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "plannedModelUnitEvaluations": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "plannedMissingUnitCommits": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "blockedScope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "unitIndices",
+        "wholeLayerDispatchBlocked",
+        "manifestStatus"
+      ],
+      "properties": {
+        "unitIndices": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "wholeLayerDispatchBlocked": {
+          "type": "boolean"
+        },
+        "manifestStatus": {
+          "enum": [
+            "missing_requires_rebuild",
+            "requires_canonical_package_validation",
+            "job_binding_changed",
+            "asset_identity_changed_requires_reconciliation"
+          ]
+        }
+      }
+    },
+    "evidenceSetSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "planSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "formalPackageIdentityChangedDoesNotImplyModelRecompute": {
+      "const": true
+    },
+    "producerAdmissionRequired": {
+      "const": true
+    },
+    "crossJobAsrCacheMigrationImplemented": {
+      "const": false
+    },
+    "formalAdmissionValidated": {
+      "const": false
+    },
+    "dispatchAuthorized": {
+      "const": false
+    },
+    "resourceReleaseAuthorized": {
+      "const": false
+    },
+    "humanApprovalCreated": {
+      "const": false
+    },
+    "existingArtifactsModified": {
+      "const": false
+    },
+    "modelCalls": {
+      "const": 0
+    },
+    "namedJobDependencyProblems": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

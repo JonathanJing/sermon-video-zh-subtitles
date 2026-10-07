@@ -8,6 +8,11 @@ struct TongxingApp: App {
     @ObservedObject private var notifications = BetaNotificationController.shared
     #endif
     @Environment(\.scenePhase) private var scenePhase
+    // App-scoped on purpose: Tongxing owns a single audio session, so every
+    // window (including Duo inner-display multi-window) mirrors the same
+    // playback state. Do not move this into the WindowGroup content —
+    // per-window models would create competing PlaybackControllers over one
+    // audio session.
     @StateObject private var model: AppModel = {
         #if DEBUG
         if let fixtureModel = UITestLaunch.makeModel() { return fixtureModel }
@@ -20,7 +25,13 @@ struct TongxingApp: App {
             ContentView(model: model)
                 .tint(Brand.accent)
                 .onChange(of: scenePhase) { _, phase in
+                    // App-level phase aggregates every window. A background
+                    // window must not hide feedback in another active window.
                     if phase == .background { model.suspendAlignment() }
+                    if phase == .active {
+                        model.setAlignmentFeedbackForeground(true)
+                        model.playback.refreshLiveActivityPresentation()
+                    }
                     model.playback.setStatisticsForeground(phase == .active)
                 }
                 #if DEBUG

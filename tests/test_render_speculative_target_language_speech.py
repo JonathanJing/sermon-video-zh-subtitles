@@ -247,7 +247,14 @@ class FormalAdmissionTests(unittest.TestCase):
     def test_formal_entrypoint_still_rejects_pending_translation(self):
         pending = formal.package.read_object(self.spec_root / "candidate.json")
         formal.write_json_atomic(self.fixture.paths["candidate"], pending)
-        with self.assertRaises(ValueError):
+        formal.write_json_atomic(self.fixture.root / "checkpoint-map.json", {
+            "checkpoints": [{
+                "speakerId": self.fixture.context["job"]["adapter"]["speakerId"],
+                "path": str(self.fixture.context["checkpoint"]),
+            }],
+        })
+        formal.write_json_atomic(self.fixture.root / "operation-policies.json", {})
+        with self.assertRaisesRegex(ValueError, "Frozen dependency hash differs"):
             formal.render(self.fixture.paths,
                           self.fixture.root / "checkpoint-map.json",
                           self.fixture.root / "operation-policies.json",

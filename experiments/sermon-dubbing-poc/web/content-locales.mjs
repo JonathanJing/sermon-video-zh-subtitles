@@ -429,7 +429,8 @@ export function localizeWeek(week, locale = 'zh-CN') {
       result[key] = week[key].map((value, index) => translate(value, `${key}.${index}`, fields[key]?.[index]));
     }
   }
-  if (Array.isArray(week.outline)) {
+  // Independent reviewed study remains in its content locale, regardless of UI locale.
+  if (Array.isArray(week.outline) && !week.studyArtifacts) {
     result.outline = week.outline.map((section, index) => {
       if (!section || typeof section !== 'object') return section;
       const localized = { ...section };

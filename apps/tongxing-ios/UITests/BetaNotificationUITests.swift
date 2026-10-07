@@ -51,8 +51,8 @@ final class BetaNotificationUITests: XCTestCase {
         XCTAssertTrue(toggle.waitForExistence(timeout: 5))
         XCTAssertTrue(toggle.label.contains("Enable local notification test"))
         XCTAssertEqual(toggle.value as? String, "0")
-        XCTAssertTrue(app.staticTexts["[Beta 测试] 新内容已上架"].exists,
-                      "English UI must preserve independently selected Chinese notification content")
+        XCTAssertTrue(app.staticTexts["测试完整视频证道"].firstMatch.exists,
+                      "English UI must preserve the verified Chinese sermon title")
         let screenshot = XCTAttachment(screenshot: app.screenshot())
         screenshot.name = "beta-notifications-english-chinese-content"
         screenshot.lifetime = .keepAlways
@@ -89,7 +89,7 @@ final class BetaNotificationUITests: XCTestCase {
         expectation(for: NSPredicate(format: "label CONTAINS %@", "已安排本机测试通知"), evaluatedWith: status)
         waitForExpectations(timeout: 5)
         XCUIDevice.shared.press(.home)
-        let notice = springboard.staticTexts["[Beta 测试] 新内容已上架"].firstMatch
+        let notice = springboard.staticTexts["测试完整视频证道"].firstMatch
         // The simulator's first Springboard notification arrived about 15 s
         // after scheduling in the observed run; five seconds is the earliest
         // trigger time, not an OS display deadline.

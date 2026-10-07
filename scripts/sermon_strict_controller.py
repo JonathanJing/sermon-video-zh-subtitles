@@ -75,6 +75,7 @@ def run_group(prepared, *, root, store, job_root, production_run_id, graph,
         'graphSha256': closure['graphSha256'], 'candidateId': candidate_id,
         'initialRevisionId': initial_revision_id, 'bounds': dict(bounds),
         **({'requestLimits': prepared['requestLimits']} if 'requestLimits' in prepared else {}),
+        **({'ruleBundleSha256': prepared['rulePreflight']['ruleBundleSha256']} if 'rulePreflight' in prepared else {}),
         **({'diagnosticContext': prepared['diagnosticContext']} if 'diagnosticContext' in prepared else {})}
     # Identity excludes output/revision/issue names, so a second local caller
     # cannot run the same chain concurrently by choosing another output folder.

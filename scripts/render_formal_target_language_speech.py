@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import copy
 from contextlib import ExitStack
+from concurrent.futures import Future
 import fcntl
 import hashlib
 import json
@@ -33,9 +34,12 @@ try:
     from scripts import sermon_sentence_interpretation as identity
     from scripts import validate_target_language_audio_unit as integrity
     from scripts import dev_audio_test_profile as dev_profile
+    from scripts import target_audio_recovery as recovery
+    from scripts import target_audio_anomaly as anomaly
     from scripts import dev_audio_test_receipts as dev_receipts
     from scripts import spark_tts_replica_pool as replica_pool
     from scripts.spark_tts_window_scheduler import ParallelBatchEngine
+    from scripts.bounded_audio_cpu import BoundedAudioCPU
 except ImportError:
     import build_target_language_audio_package as package
     import four_layer_measure as measure
@@ -44,9 +48,12 @@ except ImportError:
     import sermon_sentence_interpretation as identity
     import validate_target_language_audio_unit as integrity
     import dev_audio_test_profile as dev_profile
+    import target_audio_recovery as recovery
+    import target_audio_anomaly as anomaly
     import dev_audio_test_receipts as dev_receipts
     import spark_tts_replica_pool as replica_pool
     from spark_tts_window_scheduler import ParallelBatchEngine
+    from bounded_audio_cpu import BoundedAudioCPU
 
 
 VERSION = "sermon-formal-target-speech-render-v1"
@@ -61,9 +68,20 @@ BATCH_CACHED_UNIT_POLICY = "replay_full_bound_window_when_units_are_missing_v1"
 LEGACY_BATCH_SEED_POLICY = "base_plus_fixed_window_start_ordered_missing_units_v1"
 LEGACY_BATCH_CACHED_UNIT_POLICY = "exclude_committed_or_admitted_reuse"
 COMPATIBLE_BATCH_REPAIR_IMPLEMENTATION_SHA256 = {
+    # Direct parent: CPU-only PCM/decode/hash scheduling retains exact model
+    # requests, full-window replay, sampling, ordered commits and PCM bytes.
+    "4232cfeee91c4cac5142ec7f1035aed04f79ca4c5da77f79bad9149680090076",
+    # Direct parent: factoring the unchanged full-window identity builder and
+    # adding a read-only exporter do not change synthesis inputs or sampling.
+    "12d6f6af892fd16f721e973de5347b2e5f444b6ce3702e296eb414da2a5ebdcc",
+    # Strict receipt snapshots, diagnostics and recovery do not change sampling.
+    "948b3174bad368e8f80381beaca0d519299d16a927e50add934cb2111a90ebb2",
     "a86c470ed8f2efb7b94f62cc5451e0f3e6af9a15d13110d86086489daeedd58c",
     # Direct dev parent: serial full-window inputs and sampling are unchanged.
-    "085f8d21ab1263b96a32a0361582470dc8a1a6bab71b22383796fe90180d32b2"
+    "085f8d21ab1263b96a32a0361582470dc8a1a6bab71b22383796fe90180d32b2",
+    # Direct parent: lossless diagnostic snapshots do not change model inputs,
+    # sampling, ordered full-window replay, or sound identity.
+    "bf7fee0c5f9f4abcc24dfc5334fe0d95d9aba60db0a0de0a08b3d8a00d5d0a42"
 }
 
 
@@ -166,9 +184,22 @@ def materialize_path_map(job_path: Path, path_map_path: Path) -> None:
         original.symlink_to(staged)
 
 
+def checkpoint_directories(job_path, checkpoint_map_path, *, assembly_only=False):
+    if assembly_only:
+        return []
+    job = package.read_object(job_path)
+    mapping = package.read_object(checkpoint_map_path)
+    choices = [row for row in mapping.get("checkpoints", [])
+               if row.get("speakerId") == job["adapter"]["speakerId"]]
+    require(len(choices) == 1 and isinstance(choices[0].get("path"), str),
+            "Checkpoint map must bind one model directory")
+    return [Path(choices[0]["path"]).absolute()]
+
+
 def checked_context(paths: dict[str, Path], checkpoint_map_path: Path,
                     operation_policies_path: Path, *,
-                    strict_rubric: dict[str, Any] | None = None) -> dict[str, Any]:
+                    strict_rubric: dict[str, Any] | None = None,
+                    assembly_only: bool = False) -> dict[str, Any]:
     required = ("source", "anchor", "candidate", "job", "adapter", "policy",
                 "human_receipt", "registry", "clip_timeline_map")
     require(all(name in paths and paths[name].is_file() for name in required),
@@ -204,9 +235,17 @@ def checked_context(paths: dict[str, Path], checkpoint_map_path: Path,
             "Checkpoint map/adapter/registry identity mismatch")
     task = {"checkpointPath": mapping.get("path"), "checkpointSha256": adapter["conditioningSha256"],
             "speakerKey": adapter["speakerKey"], "speakerId": adapter["speakerId"]}
-    checkpoint = demos.validate_checkpoint(task)
-    require(job["adapter"]["conditioningSha256"] == identity.sha256(checkpoint / "model.safetensors"),
-            "Live checkpoint weights differ from speech job")
+    if assembly_only:
+        # No model bytes are consumed on this path. All cached sound identities
+        # and WAV receipts still pass admission; a cache miss cannot load a model.
+        require(isinstance(mapping.get("path"), str) and mapping["path"], "Missing checkpoint locator")
+        checkpoint = Path(mapping["path"])
+        require(job["adapter"]["conditioningSha256"] == adapter["conditioningSha256"],
+                "Cached checkpoint identity differs from speech job")
+    else:
+        checkpoint = demos.validate_checkpoint(task)
+        require(job["adapter"]["conditioningSha256"] == identity.sha256(checkpoint / "model.safetensors"),
+                "Live checkpoint weights differ from speech job")
     data["checkpoint"] = checkpoint
     data["checkpointMapFileSha256"] = identity.sha256(checkpoint_map_path)
     data["operationPoliciesFileSha256"] = identity.sha256(operation_policies_path)
@@ -215,7 +254,9 @@ def checked_context(paths: dict[str, Path], checkpoint_map_path: Path,
 
 class QwenSynthesizer:
     def __init__(self, checkpoint: Path, *, device: str, dtype: str,
-                 attention: str | None, instruct: str | None = None):
+                 attention: str | None, instruct: str | None = None, session_verifier=None):
+        from scripts.production_spark_admission import require_bound_model_session
+        require_bound_model_session(verifier=session_verifier)
         import torch
         from qwen_tts import Qwen3TTSModel
         self.torch = torch
@@ -257,6 +298,8 @@ class QwenSynthesizer:
 class SparkQwenSynthesizer(QwenSynthesizer):
     """Match the measured Spark worker's CPU settings and completed GPU timing."""
     def __init__(self, *args, **kwargs):
+        from scripts.production_spark_admission import require_bound_model_session
+        require_bound_model_session(verifier=kwargs.get("session_verifier"))
         os.environ["OMP_NUM_THREADS"] = "4"
         os.environ["MKL_NUM_THREADS"] = "4"
         import torch
@@ -326,6 +369,90 @@ def _intent(context: dict[str, Any], paths: dict[str, Path], index: int, *, seed
     return result
 
 
+RECOVERY_SETTINGS_VERSION = "sermon-l3-recovery-render-settings-v1"
+RECOVERY_SETTINGS_FIELDS = {"schemaVersion", "seed", "batchSize", "replicas", "device", "dtype",
+                            "attention", "instruct", "reactionLagSeconds", "interUtteranceGapSeconds",
+                            "maxEndLagSeconds", "trackFormat", "unitInstructions"}
+
+
+def recovery_render_settings(value: dict[str, Any]) -> dict[str, Any]:
+    """Require explicit complete settings; never infer them from old cache files."""
+    require(isinstance(value, dict) and set(value) == RECOVERY_SETTINGS_FIELDS
+            and value["schemaVersion"] == RECOVERY_SETTINGS_VERSION,
+            "Complete explicit recovery render settings required")
+    require(type(value["seed"]) is int and value["seed"] >= 0
+            and type(value["batchSize"]) is int and value["batchSize"] in BATCH_SIZES
+            and type(value["replicas"]) is int and value["replicas"] in (1, 8),
+            "Invalid recovery seed/batch/replica settings")
+    require(value["device"] in ("cpu", "cuda:0", "mps")
+            and value["dtype"] in ("bfloat16", "float32")
+            and value["attention"] in (None, "sdpa", "flash_attention_2", "eager")
+            and value["trackFormat"] in ("wav", "mp3"), "Invalid recovery rendering settings")
+    require(value["instruct"] is None or (isinstance(value["instruct"], str) and value["instruct"].strip()),
+            "Invalid recovery instruction")
+    require(value["unitInstructions"] is None or (isinstance(value["unitInstructions"], str)
+            and Path(value["unitInstructions"]).is_absolute()), "Explicit unit instruction path required")
+    require(all(type(value[key]) in (int, float) and math.isfinite(value[key]) and value[key] >= 0
+                for key in DEFAULT_POLICY), "Invalid recovery scheduling policy")
+    if value["replicas"] == 8:
+        require(value["batchSize"] == 8 and value["device"] == "cuda:0"
+                and value["dtype"] == "bfloat16" and value["attention"] == "sdpa",
+                "Spark production requires batch8 CUDA:0/BF16/SDPA")
+    return copy.deepcopy(value)
+
+
+def _batch_window_input_hashes(context, instructions_by_group, *, batch_size, instruct):
+    """Shared by synthesis admission and the read-only expected-intent exporter."""
+    job, adapter = context["job"], context["adapter"]
+    window_hashes = {}
+    if batch_size != 1:
+        for start in range(0, len(job["units"]), batch_size):
+            inputs = []
+            for index in range(start, min(start + batch_size, len(job["units"]))):
+                unit = job["units"][index]
+                overrides = (instructions_by_group or {}).get(unit["translationGroupId"], {})
+                inputs.append({"unitIndex": index, "groupId": unit["translationGroupId"],
+                    "sourceUnitIds": unit["sourceUnitIds"], "text": unit["text"],
+                    "spokenText": overrides.get("spokenText"),
+                    "instruction": overrides.get("instruction", instruct),
+                    "language": adapter["languageParameter"], "speaker": adapter["speakerKey"]})
+            window_hashes[start] = identity.json_sha256(inputs)
+    return window_hashes
+
+
+def build_expected_intents(context, paths, settings, *, instructions_by_group=None):
+    """Build every current producer identity without reading cache or loading a model.
+
+    Caller validates/freeze-checks canonical inputs under the formal render lock.
+    Contexts are not accepted as formal approval or model dispatch authority.
+    """
+    settings = recovery_render_settings(settings)
+    job = context["job"]
+    require((settings["unitInstructions"] is None and not instructions_by_group)
+            or (settings["unitInstructions"] is not None and instructions_by_group is not None),
+            "Recovery unit instructions must be explicitly bound and validated")
+    require(len(job["units"]) == len(context["candidate"]["groups"]), "Recovery input coverage differs")
+    require(all(unit["unitIndex"] == index
+                and unit["translationGroupId"] == group["translationGroupId"]
+                and unit["sourceUnitIds"] == group["sourceUnitIds"]
+                for index, (unit, group) in enumerate(zip(job["units"], context["candidate"]["groups"]))),
+            "Recovery input unit/group mapping differs")
+    if settings["replicas"] == 8:
+        require(all(u.get("speakerId", context["adapter"]["speakerId"]) == context["adapter"]["speakerId"]
+                    for u in job["units"]), "Spark replica production requires a single speaker")
+    batch_size = settings["batchSize"]
+    windows = _batch_window_input_hashes(context, instructions_by_group,
+        batch_size=batch_size, instruct=settings["instruct"])
+    result = []
+    for index, unit in enumerate(job["units"]):
+        overrides = (instructions_by_group or {}).get(unit["translationGroupId"], {})
+        result.append(_intent(context, paths, index, seed=settings["seed"], dtype=settings["dtype"],
+            attention=settings["attention"], instruct=overrides.get("instruction", settings["instruct"]),
+            spoken_text=overrides.get("spokenText"), batch_size=batch_size, device=settings["device"],
+            batch_window_sha256=windows.get(index // batch_size * batch_size), replicas=settings["replicas"]))
+    return result
+
+
 SPECULATIVE_MATCH_FIELDS = (
     "unitIndex", "sourceJsonSha256", "anchorJsonSha256", "translationPolicySha256",
     "adapterId", "model", "modelRevision", "conditioningRef",
@@ -370,6 +497,9 @@ def _same_compatible_batch_repair_intent(actual: dict[str, Any],
     new = dict(expected)
     old.pop("batchImplementationSha256", None)
     new.pop("batchImplementationSha256", None)
+    # The prior pool differs only in reserve-failure telemetry.
+    if old.get("replicaImplementationSha256") == "fcbfe1c288a0d525e172edc47eff957305fbe0c65085d12617870bfa5b12fdfc":
+        old["replicaImplementationSha256"] = new.get("replicaImplementationSha256")
     if old.get("batchSeedPolicy") == LEGACY_BATCH_SEED_POLICY:
         old["batchSeedPolicy"] = new.get("batchSeedPolicy")
     if old.get("batchCachedUnitPolicy") == LEGACY_BATCH_CACHED_UNIT_POLICY:
@@ -588,6 +718,26 @@ def write_pcm16(path: Path, samples: Any, rate: int) -> None:
         handle.writeframes(pcm)
 
 
+def _cpu_audio_input(samples):
+    """Transfer GPU ownership on the model thread, never in a CPU worker."""
+    if hasattr(samples, "detach"):
+        return samples.detach().cpu().reshape(-1).tolist()
+    if hasattr(samples, "reshape"):
+        return samples.reshape(-1).tolist()
+    return list(samples)
+
+
+def _prepare_cpu_audio(path, samples, rate):
+    write_pcm16(path, samples, rate)
+    with path.open("rb") as stream:
+        os.fsync(stream.fileno())
+    decoded = integrity.probe_full_decode(path)
+    hashed = identity.sha256(path)
+    stat = path.stat()
+    return {"decoded": decoded, "audioSha256": hashed,
+            "fileStamp": (stat.st_dev, stat.st_ino, stat.st_size, stat.st_mtime_ns, stat.st_ctime_ns)}
+
+
 def _batch_admission(context, paths, root, *, seed, dtype, attention, instruct, device,
                      instructions_by_group, batch_size, reuse_from, speculative_from,
                      window_hashes, replicas=1):
@@ -606,6 +756,9 @@ def _batch_admission(context, paths, root, *, seed, dtype, attention, instruct, 
         outputs.add(unit["outputRelativePath"])
         wav = root / unit["outputRelativePath"]
         require(wav.resolve().is_relative_to(root.resolve()), "TTS batch unit escapes render root")
+        partial = wav.with_suffix(".partial.wav")
+        require(not partial.is_symlink() and partial.resolve().is_relative_to(root.resolve()),
+                "Partial audio escapes render root")
         overrides = (instructions_by_group or {}).get(group, {})
         instruction = overrides.get("instruction", instruct)
         spoken = overrides.get("spokenText")
@@ -662,7 +815,8 @@ def _batch_admission(context, paths, root, *, seed, dtype, attention, instruct, 
 
 class _BatchedUnitSynthesizer:
     """Replay each complete bound window, then return only missing waveforms."""
-    def __init__(self, engine, requests, *, window_requests, seed, batch_size, job_path):
+    def __init__(self, engine, requests, *, window_requests, seed, batch_size, job_path,
+                 prepare_output=None):
         require(callable(getattr(engine, "batch", None)), "TTS engine has no batch method")
         self.engine, self.requests = engine, requests
         self.window_requests = window_requests
@@ -673,6 +827,7 @@ class _BatchedUnitSynthesizer:
         self.last_generation = None
         self.last_generation_trigger_index = None
         self.instruct = None
+        self.prepare_output = prepare_output
 
     def __call__(self, text, language, speaker, *, seed):
         require(self.remaining, "TTS batch received an extra unit call")
@@ -706,9 +861,12 @@ class _BatchedUnitSynthesizer:
             self.last_generation_trigger_index = index
             self.outputs = {i: (row, generation) for i, row in zip(indices, values)
                             if i in self.requests}
+            if self.prepare_output is not None:
+                for i, (row, _) in self.outputs.items():
+                    row["preparedAudio"] = self.prepare_output(i, row)
         value, self.last_generation = self.outputs.pop(index)
         self.remaining.pop(0)
-        return value["wave"], value["sampleRate"]
+        return value.get("preparedAudio", value["wave"]), value["sampleRate"]
 
 
 def _render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
@@ -719,11 +877,44 @@ def _render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
                  reuse_from: Path | None = None,
                  speculative_from: Path | None = None,
                  batch_size: int = 1, replicas: int = 1,
+                 cpu_workers: int = 0, cpu_queue_units: int = 16,
+                 assembly_only: bool = False, max_synthesis_units: int | None = None,
                  model_resources: ExitStack,
                  synth_factory: Callable[..., Any] = QwenSynthesizer,
                  predecessor_spans: tuple[str, ...] = (),
                  completion_spans: list[str] | None = None) -> list[dict[str, Any]]:
     job, adapter = context["job"], context["adapter"]
+    cpu = BoundedAudioCPU(cpu_workers, cpu_queue_units)
+    prepared_indices = set()
+    def finish_cpu():
+        cpu.close()
+        if cpu_workers:
+            write_json_atomic(root / "cpu-runtime.json", cpu.report())
+    model_resources.callback(finish_cpu)
+    def prepare_output(index, row):
+        partial = (root / job["units"][index]["outputRelativePath"]).with_suffix(".partial.wav")
+        require(not partial.is_symlink() and partial.resolve().is_relative_to(root.resolve()),
+                "CPU partial audio escapes render root")
+        partial.parent.mkdir(parents=True, exist_ok=True)
+        if partial.exists():
+            anomaly.preserve(root, job, index, reason="uncommitted_partial_before_replacement",
+                             audio_relative_path=str(partial.relative_to(root)))
+        prepared_indices.add(index)
+        return cpu.submit(_prepare_cpu_audio, partial, _cpu_audio_input(row["wave"]), row["sampleRate"])
+    validated = context.get("receiptContext")
+    if validated is not None:
+        require(validated.job == job, "Cached render identity differs: prevalidated job")
+    missing = [i for i, unit in enumerate(job["units"])
+               if not (root / f"receipts/unit-{i:04d}.render.json").is_file()]
+    if assembly_only:
+        require(not missing, f"Assembly-only requires all committed units; missing: {missing}")
+    if max_synthesis_units is not None:
+        require(type(max_synthesis_units) is int and max_synthesis_units >= 0,
+                "Invalid synthesis unit budget")
+        require(type(batch_size) is int and batch_size in BATCH_SIZES, "Invalid batch size")
+        starts = {i // batch_size * batch_size for i in missing}
+        generated = sum(min(batch_size, len(job["units"]) - start) for start in starts)
+        require(generated <= max_synthesis_units, "Synthesis unit budget exceeded at locked admission")
     require(type(replicas) is int and replicas in (1, 8), "TTS replicas must be 1 or 8")
     if replicas == 8:
         require(batch_size == 8 and device == "cuda:0" and dtype == "bfloat16"
@@ -740,19 +931,9 @@ def _render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
         require(speculative_from.is_dir() and speculative_from.resolve() != root.resolve(),
                 "Speculative render root must be a distinct existing directory")
     reusable_batches = None
-    window_hashes = {}
+    window_hashes = _batch_window_input_hashes(context, instructions_by_group,
+        batch_size=batch_size, instruct=instruct)
     if batch_size != 1:
-        for start in range(0, len(job["units"]), batch_size):
-            inputs = []
-            for index in range(start, min(start + batch_size, len(job["units"]))):
-                unit = job["units"][index]
-                overrides = (instructions_by_group or {}).get(unit["translationGroupId"], {})
-                inputs.append({"unitIndex": index, "groupId": unit["translationGroupId"],
-                    "sourceUnitIds": unit["sourceUnitIds"], "text": unit["text"],
-                    "spokenText": overrides.get("spokenText"),
-                    "instruction": overrides.get("instruction", instruct),
-                    "language": adapter["languageParameter"], "speaker": adapter["speakerKey"]})
-            window_hashes[start] = identity.json_sha256(inputs)
         requests, reusable_batches, window_requests = _batch_admission(
             context, paths, root, seed=seed, dtype=dtype, attention=attention,
             instruct=instruct, device=device, instructions_by_group=instructions_by_group,
@@ -790,7 +971,7 @@ def _render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
                 engine = ParallelBatchEngine(pool, windows, seed=seed, frozen_check=frozen_check)
             return _BatchedUnitSynthesizer(engine, requests,
                 window_requests=window_requests, seed=seed, batch_size=batch_size,
-                job_path=paths["job"])
+                job_path=paths["job"], prepare_output=prepare_output if cpu_workers else None)
     model = None
     model_load_span = None
     previous_receipts = accounting.bounded_dependencies(
@@ -845,6 +1026,8 @@ def _render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
                     require(not wav_path.exists(), f"Uncommitted audio cannot be reused: {wav_path}")
                     wav_path.parent.mkdir(parents=True, exist_ok=True)
                     partial = wav_path.with_suffix(".partial.wav")
+                    require(not partial.is_symlink() and partial.resolve().is_relative_to(root.resolve()),
+                            "Partial audio escapes render root")
                     previous = (reusable_batches[index] if reusable_batches is not None else
                                 _reusable_audio(reuse_from, unit, index, expected)
                                 if reuse_from is not None else None)
@@ -854,6 +1037,10 @@ def _render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
                             strict_rubric=context.get("strict_rubric"))
                         unit_metrics["reusedPreview"] = previous is not None
             if not has_commit:
+                prepared = None
+                if partial.exists() and index not in prepared_indices:
+                    anomaly.preserve(root, job, index, reason="uncommitted_partial_before_replacement",
+                                     audio_relative_path=str(partial.relative_to(root)))
                 if previous is not None:
                     with accounting.stage(f"layer3.reuse.{job['targetLocale']}.{index:04d}", work_unit_id=work_unit + ".reuse",
                                           cache_hit=True, depends_on=[admission_span]) as audio_span:
@@ -881,15 +1068,32 @@ def _render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
                                 unit_metrics["batchInvocationUnitIndices"] = (
                                     model.last_generation["unitIndices"])
                             # A partial belongs to this same intent and is safe to replace on resume.
-                            write_pcm16(partial, wavs, int(rate))
+                            if isinstance(wavs, Future):
+                                prepared = wavs
+                            elif cpu_workers:
+                                prepared = cpu.submit(_prepare_cpu_audio, partial, _cpu_audio_input(wavs), int(rate))
+                            else:
+                                write_pcm16(partial, wavs, int(rate))
                 with measure.producer_substage("audio_validation", billing="local"):
                     with accounting.stage(f"layer3.validation.{job['targetLocale']}.{index:04d}", work_unit_id=work_unit + ".validation",
                                           depends_on=[audio_span] if audio_span else None) as validation_span:
-                        decoded = integrity.probe_full_decode(partial)
+                        try:
+                            prepared_result = prepared.result() if prepared is not None else None
+                            decoded = prepared_result["decoded"] if prepared_result is not None else integrity.probe_full_decode(partial)
+                        except Exception as error:
+                            anomaly.preserve(root, job, index,
+                                reason=f"full_decode_failed:{type(error).__name__}",
+                                audio_relative_path=str(partial.relative_to(root)))
+                            raise
                     measure.record_substage_metrics({"audioSeconds": decoded["durationSeconds"]})
                 with accounting.stage(f"layer3.commit.{job['targetLocale']}.{index:04d}",
                                       work_unit_id=work_unit + ".commit", depends_on=[validation_span]) as commit_span:
-                    commit = {"identity": render_identity, "audioSha256": identity.sha256(partial)}
+                    if prepared_result is not None:
+                        stamp = partial.stat()
+                        require(prepared_result["fileStamp"] == (stamp.st_dev, stamp.st_ino, stamp.st_size,
+                                stamp.st_mtime_ns, stamp.st_ctime_ns), "Prepared audio changed before commit")
+                    commit = {"identity": render_identity, "audioSha256": prepared_result["audioSha256"]
+                              if prepared_result is not None else identity.sha256(partial)}
                     if batch_size != 1 and unit_metrics["synthesized"]:
                         commit["generationBatch"] = model.last_generation
                     elif batch_size != 1 and unit_metrics["reusedPrior"]:
@@ -904,10 +1108,12 @@ def _render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
                 if receipt_path.exists():
                     integrity.validate_receipt(paths["job"], index, wav_path,
                                                package.read_object(receipt_path),
+                                               validated_context=validated,
                                                **({"strict_rubric": context["strict_rubric"]}
                                                   if context.get("strict_rubric") is not None else {}))
                 else:
                     receipt = integrity.build_receipt(paths["job"], index, wav_path,
+                        validated_context=validated,
                         **({"strict_rubric": context["strict_rubric"]}
                            if context.get("strict_rubric") is not None else {}))
                     write_json_atomic(receipt_path, receipt)
@@ -917,6 +1123,15 @@ def _render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
                              "audio": artifact(root, wav_path),
                              "durationSeconds": receipt["durationSeconds"],
                              "receipt": artifact(root, receipt_path, json_artifact=True)})
+            # Expose measured prefix risk while generation is still running.
+            # The original eight-second target is retained even when assembly
+            # later consumes a separately authorized publication exception.
+            prefix_plan = schedule(context, rows, DEFAULT_POLICY)
+            anomaly.preserve_timing_risk(root, context, rows, prefix_plan, indices=[len(rows) - 1])
+            prefix_diagnostics = recovery.diagnose(context, rows, prefix_plan)
+            prefix_diagnostics["coverageUnits"] = len(rows)
+            prefix_diagnostics["totalUnits"] = len(job["units"])
+            write_json_atomic(root / "early-unit-timing-diagnostics.json", prefix_diagnostics)
             unit_metrics["audioSeconds"] = receipt["durationSeconds"]
             accounting.record_workload(stage_name, unit_metrics)
         # Parent admission/validation/commits remain ordered. Replica compute
@@ -926,6 +1141,8 @@ def _render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
         completion_spans.extend(previous_receipts)
     require(len(rows) == len(job["units"]) and (batch_size == 1 or model is None
             or (not model.remaining and not model.outputs)), "TTS batch unit coverage is incomplete")
+    if validated is not None:
+        validated.check(full=True)
     return rows
 
 
@@ -1037,6 +1254,8 @@ def assemble(context: dict[str, Any], paths: dict[str, Path], root: Path,
         with accounting.stage("layer3.schedule", depends_on=[admission_span],
                               work_unit_id=f"l3.{locale}.schedule") as schedule_span:
             plan = schedule(context, rows, policy)
+            anomaly.preserve_timing_risk(root, context, rows, plan)
+            write_json_atomic(root / "unit-timing-diagnostics.json", recovery.diagnose(context, rows, plan))
         measure.record_substage_metrics({
             "overLimitUnits": len(plan["issues"]),
             "clipDurationSeconds": context["clip_timeline_map"]["clipDurationSeconds"],
@@ -1154,7 +1373,11 @@ def _render(paths: dict[str, Path], checkpoint_map_path: Path,
            operation_policies_path: Path, *, path_map_path: Path | None = None,
            reuse_from: Path | None = None,
            speculative_from: Path | None = None,
+           quarantine_units: tuple[int, ...] = (), quarantine_reason: str | None = None,
+           assembly_only: bool = False, max_synthesis_units: int | None = None,
+           expected_dependency_hashes: dict[str, str] | None = None,
            seed: int = 42, batch_size: int = 1, replicas: int = 1,
+           cpu_workers: int = 0, cpu_queue_units: int = 16,
            device: str = "cuda:0", dtype: str = "bfloat16",
            attention: str | None = "sdpa", instruct: str | None = None,
            unit_instructions_path: Path | None = None,
@@ -1171,19 +1394,45 @@ def _render(paths: dict[str, Path], checkpoint_map_path: Path,
         dependencies = [materialize_span]
     with accounting.stage("layer3.validate_inputs", depends_on=dependencies,
                           work_unit_id="l3.validate_inputs") as validation_span:
+        model_directories = checkpoint_directories(paths["job"], checkpoint_map_path, assembly_only=assembly_only)
+        receipt_context = integrity.ValidatedJobContext(paths["job"], strict_rubric=strict_rubric,
+            extra_directories=model_directories,
+            extra_paths=[*paths.values(), checkpoint_map_path, operation_policies_path,
+                         *([unit_instructions_path] if unit_instructions_path is not None else [])])
+        if expected_dependency_hashes is not None:
+            current = {str(path): digest for path, (_, digest) in receipt_context.files.items()}
+            require(set(current) <= set(expected_dependency_hashes)
+                    and all(expected_dependency_hashes[path] == digest for path, digest in current.items()),
+                    "Frozen adapter dependency closure changed before renderer admission")
+            require(all(Path(path).is_file() and identity.sha256(Path(path)) == digest
+                        for path, digest in expected_dependency_hashes.items()),
+                    "Frozen adapter dependency changed before renderer admission")
         context = checked_context(paths, checkpoint_map_path, operation_policies_path,
+            assembly_only=assembly_only,
             **({"strict_rubric": strict_rubric} if strict_rubric is not None else {}))
+        require(assembly_only or context["checkpoint"].resolve() in {p.resolve() for p in model_directories},
+                "Validated checkpoint differs from frozen model directory")
+        receipt_context.check()
+        context["receiptContext"] = receipt_context
         instructions_by_group = unit_instructions(context["job"], unit_instructions_path)
         root = paths["job"].parent.resolve()
+        require(not (assembly_only and quarantine_units), "Quarantine repair cannot use assembly-only")
+        require(len(set(quarantine_units)) == len(quarantine_units), "Duplicate quarantine units")
+        require(not quarantine_units or (isinstance(quarantine_reason, str) and quarantine_reason.strip()),
+                "Quarantine requires an explicit reason")
+        for index in quarantine_units:
+            recovery.quarantine_unit(root, context["job"], index, reason=quarantine_reason or "")
     completed_units = []
-    with accounting.stage("layer3.render_units"):
+    with accounting.stage("layer3.render_units"), ExitStack() as synthesis_resources:
         rows = _render_units(context, paths, root, checkpoint_map_path, seed=seed,
-                            model_resources=model_resources,
+                            model_resources=synthesis_resources, assembly_only=assembly_only,
+                            max_synthesis_units=max_synthesis_units,
                             device=device, dtype=dtype, attention=attention, instruct=instruct,
                             instructions_by_group=instructions_by_group,
                             reuse_from=reuse_from,
                             speculative_from=speculative_from,
                             batch_size=batch_size, replicas=replicas,
+                            cpu_workers=cpu_workers, cpu_queue_units=cpu_queue_units,
                             synth_factory=synth_factory, predecessor_spans=(validation_span,),
                             completion_spans=completed_units)
     with accounting.stage("layer3.assemble"):
@@ -1242,6 +1491,9 @@ def main(argv=None) -> None:
                         help="New single-speaker Spark jobs: 8 resident replicas x batch8")
     parser.add_argument("--replicas", type=int, choices=(1, 8), default=None,
                         help="Default1 for existing jobs; Spark production uses8")
+    parser.add_argument("--cpu-workers", type=int, choices=(0, 1, 2, 4), default=0,
+                        help="Bounded WAV save/decode/hash workers; parent commits remain ordered")
+    parser.add_argument("--cpu-queue-units", type=int, choices=range(1, 17), default=16)
     dev_profile.add_arguments(parser)
     parser.add_argument("--instruct", help="Frozen natural delivery instruction; never edits approved text")
     parser.add_argument("--unit-instructions", type=Path,
@@ -1251,6 +1503,13 @@ def main(argv=None) -> None:
     parser.add_argument("--max-end-lag-seconds", type=float, default=8.0)
     parser.add_argument("--track-format", choices=("wav", "mp3"), default="wav",
                         help="Use reviewed 64 kbps mono MP3 for a full-length web release")
+    parser.add_argument("--max-synthesis-units", type=int,
+                        help="Bound generated units including full-window batch replay")
+    parser.add_argument("--quarantine-unit", type=int, action="append", default=[],
+                        help="Preserve anomalous WAV/receipts before explicit unit repair")
+    parser.add_argument("--quarantine-reason")
+    parser.add_argument("--assembly-only", action="store_true",
+                        help="Require complete committed cache; never initialize a synthesizer")
     parser.add_argument("--reuse-from", type=Path,
                         help="Previously validated render directory for unchanged units")
     parser.add_argument("--speculative-from", type=Path,
@@ -1292,7 +1551,9 @@ def main(argv=None) -> None:
         progress_ledger=args.progress_ledger,
         path_map_path=args.path_map, reuse_from=args.reuse_from,
         speculative_from=args.speculative_from,
-        seed=args.seed, batch_size=args.batch_size, replicas=args.replicas, device=args.device,
+        quarantine_units=tuple(args.quarantine_unit), quarantine_reason=args.quarantine_reason,
+        assembly_only=args.assembly_only, max_synthesis_units=args.max_synthesis_units, seed=args.seed, batch_size=args.batch_size, replicas=args.replicas, device=args.device,
+        cpu_workers=args.cpu_workers, cpu_queue_units=args.cpu_queue_units,
         dtype=args.dtype, attention=args.attention, instruct=args.instruct,
         unit_instructions_path=args.unit_instructions,
         policy=policy, track_format=args.track_format,
