@@ -100,6 +100,9 @@ struct MultilingualCatalogTests {
         #expect(catalog.defaultPage.displayEdition(locale: "en-US") == "Special interview")
         #expect(catalog.defaultPage.displayEdition(locale: "ko-KR") == "특별 인터뷰")
         #expect(catalog.defaultPage.displayEdition(locale: "es") == "Special interview")
+        let singapore = PageDisplayCategory(schemaVersion: PageDisplayCategory.supportedSchemaVersion,
+                                            labels: ["en": "Fallback", "zh-SG": "新加坡类别"])
+        #expect(singapore.label(locale: "zh-CN") == "新加坡类别")
         // Refresh only presentation bytes; releases and source identities stay unchanged.
         let wire = try JSONDecoder().decode(MultilingualCatalog.self, from: data)
         let retained = try wire.retainingHumanLocales(["page-1": ["zh-Hans"]])

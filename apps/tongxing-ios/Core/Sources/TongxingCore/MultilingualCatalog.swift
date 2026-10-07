@@ -158,7 +158,7 @@ public struct PageDisplayCategory: Codable, Sendable, Equatable {
         let requested = locale.replacingOccurrences(of: "_", with: "-")
         if let exact = labels[requested] { return exact }
         if ["zh-CN", "zh-SG", "zh-Hans"].contains(requested) || requested.hasPrefix("zh-Hans-") {
-            for alias in ["zh-Hans", "zh-CN", "zh"] {
+            for alias in ["zh-Hans", "zh-CN", "zh-SG", "zh"] {
                 if let value = labels[alias] { return value }
             }
         }

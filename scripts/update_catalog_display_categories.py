@@ -52,7 +52,7 @@ def update_categories(catalog: dict, updates: dict) -> dict:
     return result
 
 
-def read_json(path: Path) -> dict:
+def parse_json(data: bytes) -> dict:
     def unique_pairs(pairs):
         result = {}
         for key, value in pairs:
@@ -60,7 +60,11 @@ def read_json(path: Path) -> dict:
                 raise ValueError(f"Duplicate JSON key: {key}")
             result[key] = value
         return result
-    return json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=unique_pairs)
+    return json.loads(data.decode("utf-8"), object_pairs_hook=unique_pairs)
+
+
+def read_json(path: Path) -> dict:
+    return parse_json(path.read_bytes())
 
 
 def write_new(path: Path, data: bytes) -> None:
@@ -91,7 +95,7 @@ def main() -> int:
             raise ValueError("Output must be distinct from both inputs")
         original = args.catalog.read_bytes()
         updates = read_json(args.updates)
-        result = update_categories(read_json(args.catalog), updates)
+        result = update_categories(parse_json(original), updates)
         encoded = (json.dumps(result, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
         write_new(args.output, encoded)
         print(json.dumps({"schemaVersion": "catalog-display-category-update-receipt-v1",
