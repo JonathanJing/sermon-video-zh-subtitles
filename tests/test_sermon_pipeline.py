@@ -19,6 +19,28 @@ SPEC.loader.exec_module(mod)
 
 
 class SermonPipelineTest(unittest.TestCase):
+    def test_chat_rejects_unknown_models_before_dispatch_or_retry(self):
+        from scripts.sermon_provider_limits import DEFAULT_REQUEST_LIMITS, bounded_payload
+        valid = bounded_payload({"model": "gpt-6.1-sol", "reasoning_effort": "high",
+            "messages": [{"role": "user", "content": "Return synthetic JSON."}],
+            "response_format": {"type": "json_object"}}, DEFAULT_REQUEST_LIMITS)
+        for model in ("gpt-4o", "gpt-6.1-slo", "", None):
+            for capped in (False, True):
+                payload = {**valid, "model": model}
+                if not capped:
+                    payload.pop("max_completion_tokens")
+                    payload.pop("service_tier")
+                with self.subTest(model=model, capped=capped), \
+                        mock.patch.object(mod, "json_request") as send, \
+                        mock.patch.object(mod.time, "sleep") as sleep:
+                    with self.assertRaisesRegex(ValueError, "unsupported_budget_capability"):
+                        mod._chat_json("fixture", payload, retries=3)
+                    send.assert_not_called()
+                    sleep.assert_not_called()
+        with mock.patch.object(mod, "json_request", return_value={"synthetic": True}) as send:
+            self.assertEqual(mod._chat_json("fixture", valid), {"synthetic": True})
+            send.assert_called_once_with(mod.CHAT_URL, "fixture", valid, retries=1)
+
     def test_alignment_preflight_failure_prevents_transcription(self):
         args = SimpleNamespace(output_mode="reading", reading_aligner="mfa", glossary=None,
                                english_transcript_only=False)

@@ -164,14 +164,38 @@ def _quoted_rules(facts, request, policy, plan):
                 require(part["reference"] in candidates[candidate_id], "quote reference differs from plugin")
                 selected = library.lookup(part["reference"], excerpt=part["cuvExcerpt"])
                 require(selected["textSha256"] == part["cuvExcerptSha256"], "pinned quote excerpt changed")
-                if decision["classification"] == "direct_quote":
-                    require(len(parts) == 1 and library.lookup(part["reference"])["text"] == part["cuvExcerpt"],
-                            "complete direct quote was split or shortened")
                 quotes.append({"sourceUnitIds": [unit_id], "englishStartOffset": start,
                                "englishEndOffset": end, "english": rows[unit_id][start:end],
                                "targetText": part["cuvExcerpt"], "targetTextSha256": part["cuvExcerptSha256"],
                                "reference": part["reference"], "classification": decision["classification"]})
+            _bind_quote_group(plan, rows, decision, parts, library)
     return quotes
+
+
+def _bind_quote_group(plan, rows, decision, parts, library):
+    """Keep one approved quotation inside one translation group."""
+    if not parts:
+        return
+    order = list(rows)
+    quoted_ids = [part["sourceUnitId"] for part in parts]
+    require(len(quoted_ids) == len(set(quoted_ids)), "quote units repeat inside one decision")
+    indexes = [order.index(unit_id) for unit_id in quoted_ids]
+    require(indexes == sorted(indexes), "quote units were reordered in the source")
+    if decision["classification"] == "direct_quote":
+        require(indexes == list(range(indexes[0], indexes[-1] + 1)),
+                "quote units are not contiguous in the source")
+    matches = [group for group in plan if set(quoted_ids) <= set(group["sourceUnitIds"])]
+    require(len(matches) == 1, "quote units were split across groups or omitted")
+    group_ids = matches[0]["sourceUnitIds"]
+    require([unit_id for unit_id in group_ids if unit_id in quoted_ids] == quoted_ids,
+            "quote units were reordered inside the translation group")
+    if decision["classification"] != "direct_quote":
+        return
+    references = [part["reference"] for part in parts]
+    combined = "".join(part["cuvExcerpt"] for part in parts)
+    require(len(set(references)) == 1 and library.lookup(references[0])["text"] == combined,
+            "complete direct quote was split or shortened")
+    require(group_ids == quoted_ids, "complete quotation group was split or extended")
 
 
 def preflight(request, policy, plugin_path: Path, plan, *, consumer_bindings=None):

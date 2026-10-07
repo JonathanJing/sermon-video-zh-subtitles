@@ -92,6 +92,13 @@ class BusinessFlowTests(unittest.TestCase):
         self.enterContext(patch.object(tempfile, 'tempdir', scope_directory))
         self.f, self.transport, self.callbacks, self.nodes = setup_business(self)
         self.root = self.f.f.root / 'orchestration'
+        # Freeze the in-scope plugin path before generation and retain that
+        # exact binding at admission instead of moving it after model calls.
+        plugin = self.f.f.root / self.f.f.f.plugin_path.name
+        plugin.write_bytes(self.f.f.f.plugin_path.read_bytes())
+        node = self.nodes[2]
+        self.nodes[2] = flow.Node(node.id, node.operation,
+            {**node.kwargs, 'plugin_path': plugin}, node.depends_on, (plugin,))
         with self.f.f.session():
             initial = flow.BusinessDAG(self.root, self.callbacks, self.nodes[:3])
             execute_all(initial)
@@ -108,8 +115,6 @@ class BusinessFlowTests(unittest.TestCase):
             paths[name] = root / (name + '.json'); paths[name].write_bytes(raw)
         (root / 'approved.json').write_bytes(c.canonical_bytes(approved))
         (root / 'human.json').write_bytes(c.canonical_bytes(receipt))
-        # Plugin is a frozen input in the dedicated offline fixture scope.
-        plugin = root / self.f.f.f.plugin_path.name; plugin.write_bytes(self.f.f.f.plugin_path.read_bytes())
         config = admission.Configuration(self.f.subject.config['runId'], 'zh-Hans', root / 'jobs',
             root / 'locales', tuple(Path(row['root']) for row in result['revisions']), **paths,
             public_candidate=root / 'approved.json', human_receipt=root / 'human.json',

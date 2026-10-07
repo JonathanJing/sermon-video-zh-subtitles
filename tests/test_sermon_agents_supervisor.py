@@ -696,29 +696,31 @@ class SupervisorBoundaryTests(unittest.TestCase):
         remote.assert_called_once()
         sdk.assert_not_called()
 
-    def test_new_default_supervisor_dispatches_agents_api(self):
+    def test_new_default_supervisor_dispatches_codex_cli(self):
         with patch('sys.argv', ['supervisor', '--sunday', self.config.sunday,
                    '--state-file', self.config.state_file, '--work-root', str(self.config.work_root),
                    '--gcs-bucket', '', '--mode', 'shadow']):
             args = entry.parse_args()
         with patch.dict('os.environ', {'OPENAI_API_KEY': 'synthetic-test-key'}), \
-             patch.object(mod, 'session_report', return_value={'status': 'observed'}) as remote, \
-             patch('scripts.sermon_codex_supervisor.session_report', side_effect=AssertionError('CLI forbidden')):
+             patch.object(mod, 'session_report', side_effect=AssertionError('API forbidden')) as remote, \
+             patch('scripts.sermon_codex_supervisor.session_report', return_value={'status': 'observed'}) as cli:
             asyncio.run(entry.run_agent(args))
-        remote.assert_called_once()
+        remote.assert_not_called()
+        cli.assert_called_once()
 
 
 class BackendCLISelectionTests(unittest.TestCase):
-    def test_both_entrypoints_default_to_api_and_parse_legacy_resume_backend(self):
-        for module, required in ((entry, ["--sunday", "2026-09-13", "--state-file", "state.json"]),
-                                 (local_entry, [])):
+    def test_entrypoint_defaults_and_explicit_legacy_backends(self):
+        for module, required, default in ((entry, ["--sunday", "2026-09-13", "--state-file", "state.json"], "codex-cli"),
+                                          (local_entry, [], "codex-cli")):
             with self.subTest(module=module.__name__):
                 with patch("sys.argv", ["supervisor", *required]):
                     args = module.parse_args()
-                    self.assertEqual(args.agent_backend, "agents-api")
+                    self.assertEqual(args.agent_backend, default)
                     self.assertEqual(args.model, "gpt-6-luna")
-                with patch("sys.argv", ["supervisor", *required, "--agent-backend", "sdk"]):
-                    self.assertEqual(module.parse_args().agent_backend, "sdk")
+                for backend in ("sdk", "agents-api", "codex-cli"):
+                    with patch("sys.argv", ["supervisor", *required, "--agent-backend", backend]):
+                        self.assertEqual(module.parse_args().agent_backend, backend)
 
     def test_sdk_rollback_keeps_medium_reasoning_default(self):
         agent = entry.build_agent(model="gpt-6-sol", execute=False)

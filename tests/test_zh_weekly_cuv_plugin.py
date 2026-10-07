@@ -101,6 +101,35 @@ class ChineseWeeklyCuvTests(unittest.TestCase):
             policy(), [UNIT], group(text))}, set(plugin.REQUIRED))
         self.assertEqual(plugin.review_group(policy(), [UNIT], group(text))[1]["status"], "fail")
 
+    def test_complete_verse_may_span_one_group_and_a_partial_group_fails(self):
+        library = CuvLibrary.from_path()
+        excerpts = (library.lookup("REV 4:2")["text"], library.lookup("REV 4:3")["text"])
+        units = [{"sourceUnitId": "0-u067", "english": "x" * 122},
+                 {"sourceUnitId": "0-u068", "english": "beta quote"}]
+        def piece(unit, excerpt, start):
+            selected = CuvLibrary.from_path().lookup("REV 4:2-3", excerpt=excerpt)
+            uttered = unit["english"][start:]
+            return {"sourceUnitId": unit["sourceUnitId"], "englishStartOffset": start,
+                    "englishEndOffset": len(unit["english"]),
+                    "englishExcerptSha256": sha256(uttered.encode()).hexdigest(),
+                    "reference": "REV 4:2-3", "cuvExcerpt": excerpt,
+                    "cuvExcerptSha256": selected["textSha256"]}
+        approval = simulated_review(excerpts[0], sha256(excerpts[0].encode()).hexdigest())
+        approval["decisions"][0] = {"candidateId": "rev-4-2-3", "classification": "direct_quote",
+                                    "paraphraseUnitIds": [],
+                                    "parts": [piece(units[0], excerpts[0], 26), piece(units[1], excerpts[1], 0)]}
+        _, valid, reason = plugin._approved_parts(policy(), approval)
+        self.assertTrue(valid, reason)
+        text = excerpts[0] + excerpts[1]
+        joined = {"englishSourcePackageJsonSha256": SOURCE_HASH,
+                  "sourceUnitIds": [unit["sourceUnitId"] for unit in units],
+                  "targetText": text, "targetUtterances": [text]}
+        reviewed = {row["checkId"]: row["status"] for row in plugin._review_group(policy(), units, joined, approval)}
+        self.assertEqual(reviewed["cuv_exact_quote"], "pass")
+        partial = {row["checkId"]: row["status"] for row in plugin._review_group(
+            policy(), [units[0]], group(excerpts[0]), approval)}
+        self.assertEqual(partial["cuv_exact_quote"], "fail")
+
     def test_pinned_cuv_name_form_wins_inside_approved_quote(self):
         approved = plugin.APPROVED_BOUNDARY_REVIEW
         source_a = "Day and night, they never stop saying, Holy, holy, holy, Lord God, the Almighty."

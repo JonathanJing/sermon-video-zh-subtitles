@@ -137,10 +137,12 @@ def execute(manifest,base,config_path,step,output,*,api_key=None,transport=None)
         now=prepare(manifest,base,config_path,step)
         require((now['identity'],now['codeIdentity'],now['authorizationSha256'],now['approvalSha256'])==
                 (p['identity'],p['codeIdentity'],p['authorizationSha256'],p['approvalSha256']),'study_execution_changed')
+    from scripts.strict_budget_capability import require_bounded_api_payload
     store=budget.SourceBudget(p['root'],p['authority'],verify=verify,transport=transport)
     sections=[];calls=[];fresh=0
     for request in p['requests']:
         payload=request['payload'];fingerprint=c.digest(payload)
+        require_bounded_api_payload(payload,p['limits'],surface='study_api')
         bounds=limits.request_bounds(payload,p['limits'])
         bounds={k:bounds[k] for k in budget.METRICS}
         operation='judge.'+fingerprint

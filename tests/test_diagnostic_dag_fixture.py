@@ -42,7 +42,7 @@ class DiagnosticDAGFixtureTests(unittest.TestCase):
         # Only the clean-code identity guard is substituted while developing
         # uncommitted fixture files. Source/provider/gate validators stay real.
         with patch.object(accounting, 'execution_identity', return_value=f.execution_identity):
-            session = session_module.DiagnosticSession(f.plan, f.continuation, offline_transport=f.transport)
+            session = session_module.DiagnosticSession(f.plan, f.continuation, offline_transport=f.transport, request_limits=f.request_limits)
             with f.session():
                 session.inspect_source()
                 result = session.run_locale('zh-Hans', f.locale_specs['zh-Hans'])
@@ -73,7 +73,7 @@ class DiagnosticDAGFixtureTests(unittest.TestCase):
             'localeSpec': f.locale_specs[locale], 'previewSpec': f.preview_specs[locale]}
             for locale in f.locale_specs}}
         with patch.object(accounting, 'execution_identity', return_value=f.execution_identity):
-            session = session_module.DiagnosticSession(f.plan, f.continuation, offline_transport=f.transport)
+            session = session_module.DiagnosticSession(f.plan, f.continuation, offline_transport=f.transport, request_limits=f.request_limits)
             dag = flow.DiagnosticDAG(session, config)
         self.assertTrue(dag.binding['inputFiles'])
         self.assertTrue(all(Path(path).is_relative_to(f.root) for path in dag.binding['inputFiles']))
