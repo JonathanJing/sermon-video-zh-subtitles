@@ -243,6 +243,21 @@ class TextWaiverTests(unittest.TestCase):
             with self.subTest(message=message), self.assertRaisesRegex(ValueError, message):
                 build(**kwargs)
 
+    def test_text_waiver_stores_the_rate_of_the_kinds_it_needs(self):
+        # Weak audio trials lower the aggregate, but a text waiver never needs them.
+        kinds = {**calibration()["kinds"],
+                 **{f"audio.{kind}": {"trials": 10, "detected": 0, "rate": 0.0} for kind in waiver.AUDIO_KINDS}}
+        base = calibration()
+        detected = base["detected"] - 10 * len(waiver.AUDIO_KINDS)
+        cal = calibration(kinds=kinds, detected=detected,
+                          overallDetectionRate=round(detected / base["trials"], 6))
+        self.assertLess(cal["overallDetectionRate"], waiver.CALIBRATION_MINIMUMS["overallDetectionRate"])
+        receipt = basis.build_text_waiver(self.source_package, self.anchor, self.candidate,
+                                          text_qc(self.candidate, self.anchor), cal,
+                                          created_at="2026-10-07T01:00:00+00:00")
+        self.assertEqual(receipt["calibration"]["overallDetectionRate"], 1.0)
+        basis.validate_text_waiver(receipt, candidate=self.candidate)
+
     def test_layer3_rejects_pending_candidate_without_any_basis(self):
         write_json(self.human_review_receipt_path, self.human_review_receipt)
         with self.assertRaisesRegex(ValueError, "Human translation approval is required"):

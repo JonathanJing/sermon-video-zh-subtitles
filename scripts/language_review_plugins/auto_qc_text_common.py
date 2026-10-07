@@ -29,9 +29,20 @@ _UNITS = {"zero": 0, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six"
 _TENS = {"twenty": 20, "thirty": 30, "forty": 40, "fifty": 50, "sixty": 60,
          "seventy": 70, "eighty": 80, "ninety": 90}
 _SCALES = {"hundred": 100, "thousand": 1000}
-# "one" and "zero" are idiomatic far more often than numeric in sermons
-# ("the one who", "no one"); a lone spelled form is not screened.
-_IDIOMATIC_ALONE = {0, 1}
+# A lone "one" is often a pronoun, not a count: "the one who", "no one",
+# "this one", "the Holy One", "one another", "one day", "one of them". Only those contexts
+# are exempt; "you only have one life" is still screened.
+_ONE_PRONOUN_BEFORE = {"no", "the", "this", "that", "which", "every", "any", "each", "some", "someone"}
+_ONE_PRONOUN_AFTER = {"another", "who", "whom", "whose", "day", "of"}
+
+
+def _idiomatic_one(tokens: list[str], index: int) -> bool:
+    before = tokens[index - 1] if index > 0 else None
+    before2 = tokens[index - 2] if index > 1 else None
+    after = tokens[index + 1] if index + 1 < len(tokens) else None
+    # "the Holy One", "the only one", "the loved one": an article two words back.
+    return (before in _ONE_PRONOUN_BEFORE or after in _ONE_PRONOUN_AFTER
+            or (before2 in {"the", "this", "that"} and before is not None and before.isalpha()))
 _ENGLISH_FUNCTION_WORDS = {"the", "and", "of", "that", "you", "is", "we", "to", "in", "it",
                            "this", "are", "was", "have", "with", "for", "not", "be", "they"}
 
@@ -96,6 +107,7 @@ def english_numbers(text: str) -> list[int | str]:
             found.append(year)
             index = end
             continue
+        start = index
         total, current, words = 0, 0, 0
         previous = None
         while index < len(tokens):
@@ -128,7 +140,7 @@ def english_numbers(text: str) -> list[int | str]:
             previous = word
             index += 1
         value = total + current
-        if not (words == 1 and value in _IDIOMATIC_ALONE):
+        if not (words == 1 and value == 1 and tokens[start] == "one" and _idiomatic_one(tokens, start)):
             found.append(value)
     return found
 
@@ -199,7 +211,7 @@ def korean_number_present(text: str, value: int | str) -> bool:
     digits = {str(value), f"{value:,}"}
     if any(re.search(r"(?<!\d)" + re.escape(form) + r"(?!\d)", text) for form in digits):
         return True
-    forms = (korean_sino(value), *korean_native(value))
+    forms = (korean_sino(value), *korean_native(value), *(("제로",) if value == 0 else ()))
     return any(re.search(_ko_pattern(form), text) for form in forms)
 
 

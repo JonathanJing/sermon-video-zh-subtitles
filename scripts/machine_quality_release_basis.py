@@ -89,9 +89,12 @@ def calibration_summary(calibration: dict, locale: str, implementation: str, *,
                 + ([f"audio.{kind}" for kind in waiver.AUDIO_KINDS] if require_audio else [])
                 + ([f"spoken.{kind}" for kind in waiver.SPOKEN_KINDS] if require_spoken else []))
     rates = [calibration["kinds"][kind]["rate"] for kind in expected]
+    # The admitted rate covers only the kinds this release needs, as admission does.
+    trials = sum(calibration["kinds"][kind]["trials"] for kind in expected)
+    detected = sum(calibration["kinds"][kind]["detected"] for kind in expected)
     return {"jsonSha256": json_sha256(calibration), "implementationSha256": implementation,
             "semanticChecksIncluded": True,
-            "overallDetectionRate": calibration["overallDetectionRate"],
+            "overallDetectionRate": round(detected / trials, 6),
             "minimumKindDetectionRate": min(rates),
             "cleanFalsePositiveRate": calibration["cleanFalsePositiveRate"],
             "runtimeIdentitySha256": waiver.runtime_identity_sha256(calibration)}

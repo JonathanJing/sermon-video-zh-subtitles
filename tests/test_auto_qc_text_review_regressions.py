@@ -45,6 +45,25 @@ class TextReviewRegressions(unittest.TestCase):
         self.assertEqual(rules.scripture_reference_problems(
             "Read 1 John 3.", "Primera de Juan capítulo tres", "es"), [])
 
+    def test_lone_one_is_a_count_unless_used_as_a_pronoun(self):
+        for english in ("You only have one life.", "There is one God.", "He healed one man."):
+            with self.subTest(english=english):
+                self.assertEqual(rules.english_numbers(english), [1])
+        for locale, bad, good in (("es", "Tienes dos vidas.", "Solo tienes una vida."),
+                                  ("ko", "인생은 두 번입니다.", "인생은 한 번뿐입니다."),
+                                  ("zh-Hans", "你有两次生命。", "你只有一次生命。")):
+            with self.subTest(locale=locale):
+                self.assertEqual(rules.number_problems("You only have one life.", bad, locale, set()),
+                                 ["missing number 1"])
+                self.assertEqual(rules.number_problems("You only have one life.", good, locale, set()), [])
+        for english in ("the one who believes", "No one is righteous.", "Love one another.",
+                        "One day he came.", "the Holy One of Israel", "Pick this one.",
+                        "He is the only one."):
+            with self.subTest(english=english):
+                self.assertEqual(rules.english_numbers(english), [])
+        self.assertEqual(rules.english_numbers("zero tolerance"), [0])
+        self.assertTrue(rules.korean_number_present("제로 상태", 0))
+
     def test_book_identity_survives_spoken_verse_notation(self):
         for english in ("John chapter three verse sixteen", "John 3:16"):
             for locale, good, bad in (
