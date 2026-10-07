@@ -95,6 +95,8 @@ def calibration_summary(calibration: dict, locale: str, implementation: str, *,
     expected = ([f"text.{kind}" for kind in waiver.TEXT_KINDS]
                 + ([f"audio.{kind}" for kind in waiver.AUDIO_KINDS] if require_audio else [])
                 + ([f"spoken.{kind}" for kind in waiver.SPOKEN_KINDS] if require_spoken else []))
+    expected = [kind for kind in expected
+                if not waiver.calibration_kind_not_applicable(kind, calibration["kinds"][kind])]
     rates = [calibration["kinds"][kind]["rate"] for kind in expected]
     # The admitted rate covers only the kinds this release needs, as admission does.
     trials = sum(calibration["kinds"][kind]["trials"] for kind in expected)
