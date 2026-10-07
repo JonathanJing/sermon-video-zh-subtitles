@@ -1,6 +1,6 @@
 # Codex 本地周末生产 Runbook
 
-当前新 dev／正式任务以[2026-10-05 模型与 CLI 策略](production-model-runtime-policy.zh.md)为准：文字生产 Sol 6.1 high fast、独立复核 Sol 6.1 medium fast、Supervisor Luna medium fast，全部使用 Codex CLI。下文旧 Agents API／Astra／Sol 参数只适用于历史证据与原身份对账，不用于新任务。
+当前新 dev／正式任务以[2026-10-06 模型及调用策略](production-model-runtime-policy.zh.md)为准：Layer 2 初译使用 Sol 6.1 high、独立复核使用 Sol 6.1 medium，默认走 OpenAI API 与已批准的请求 tier；Supervisor 使用 Luna medium fast，走 ChatGPT 登录的 Codex CLI。下文旧 Agents API／Astra／Sol 参数只适用于历史证据与原身份对账，不用于新任务。
 
 额度耗尽时的后续方向见[API fallback 设计](codex-quota-api-fallback-design.zh.md)：需要明确拒绝证据、独立调用身份、入口验收和绑定预算；目前没有实现或启用。不能通过更换环境变量、认证或删除 started marker 将未决调用转到 API。
 
@@ -127,11 +127,11 @@ shadow receipt 的 `ready_for_model_translation` 只表示自动锚点结构干�
 
 ## 每周模型与交付策略（2026-09-06 起）
 
-新 dev 与正式任务使用 `gpt-6.1-sol`、`high`、`fast` 经 Codex CLI 完成中文初译、阅读稿编辑／审核及中文证道同行；原 Sol 独立复核使用同模型 `medium`、`fast`。ASR 保持 `gpt-transcribe` 及所属 API 环境。模型审核只标记机器审核，不等于人工 Gold 或周日双语提示词批准。
+新 canonical Layer 2 的翻译／复核按[当前模型及调用策略](production-model-runtime-policy.zh.md)执行。legacy 双 PDF、阅读稿和证道同行仍以各入口实际参数与运行收据为准：`sermon_pipeline` 的文字请求走 OpenAI API，手动阅读稿入口默认 `--reading-edition-provider openai`，Supervisor 的 generation 命令显式指定阅读稿 provider 为 `codex`。这些入口不能统称为“全部 CLI”或视为已自动迁移到 canonical Layer 2。ASR 保持 `gpt-transcribe` 及所属 API 环境。模型审核只标记机器审核，不等于人工 Gold 或周日双语提示词批准。
 
 后续同行制作默认使用和合本（CUV）。英文来源冻结后、交付与配音前，按[和合本经文锁定与证道重译](sermon-cuv-production.zh.md)执行 `scripts/sermon_cuv_translation.py run`：识别直接经文、从固定库精确取文、锁定引用，再完成全篇翻译和独立审校。字幕、阅读 PDF、TTS 及大纲中的经文引用须采用同一份通过审校的锁定中文；大纲仍可概括讲解，不能作为配音稿。解释、玩笑和讲员错引保留为讲员话，不强改成经文；机器审核不授予人工批准。现有 Supervisor 不会自动调用此新步骤，须核对实际执行收据；重译后更新关联产物，并用新音频重新测量时长。
 
-Supervisor 的 generation 命令固定传入上述参数及 `--export-sunday-context`。手动调用 `run_post_live_subtitle_generation.py` 时，翻译/阅读审核/证道同行也默认 Sol 6.1 high fast / Codex CLI；需要周日产物时显式加 `--export-sunday-context`。
+Supervisor 的 generation 命令显式传入 Sol 6.1、high、阅读稿 provider `codex` 及 `--export-sunday-context`，不据此推断其他阶段的后端或实际 service tier。手动调用 `run_post_live_subtitle_generation.py` 时按其各项 provider/model 参数执行；需要周日产物时显式加 `--export-sunday-context`。
 
 双 PDF QA 通过后，在同一 run 的 `pipeline/sunday-context/` 导出：
 
