@@ -16,10 +16,10 @@ locale it:
 
 The back-translation transport is the local Codex CLI under ChatGPT login
 (``sermon_codex_transport``, Sol 6.1 medium); no API key is used. Every call is
-cached by request hash under ``--out``, so a rerun reuses finished calls, and
+cached by request and transport identity under the state dir, so a rerun reuses finished calls, and
 independent calls are prefetched in parallel. ``--text-backend fake`` replaces
-the model with an echo judge for plumbing tests only; its receipts name the
-fake backend and are never release evidence.
+the model with an echo judge for plumbing tests only: it builds the waiver in
+memory to prove the path, never saves one, and its receipts name the fake backend.
 
 Wall time per stage goes to ``timings.tsv``; ``summary.json`` records each
 locale's outcome. The run never publishes and never marks anything human approved.
@@ -27,6 +27,7 @@ locale's outcome. The run never publishes and never marks anything human approve
 from __future__ import annotations
 
 import argparse
+import hashlib
 from concurrent.futures import ThreadPoolExecutor
 import json
 import os
@@ -192,6 +193,20 @@ def resolve_locale(run_dir: Path, index: dict, locale: str, override: Path | Non
     return {"locale": locale, "paths": paths, "problems": problems}
 
 
+def binding_path(path: Path) -> Path:
+    return path.with_name(path.stem + ".inputs.json")
+
+
+def fresh(path: Path, binding: str) -> bool:
+    """A saved receipt made from exactly these inputs."""
+    marker = binding_path(path)
+    return path.exists() and marker.exists() and read(marker).get("inputsSha256") == binding
+
+
+def file_sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
 # ---------------------------------------------------------------- transports
 
 class CodexJudge:
@@ -200,12 +215,17 @@ class CodexJudge:
     def __init__(self, cache: Path, *, timeout_seconds: int = 300):
         from scripts import sermon_codex_transport as codex
         self.codex, self.cache, self.timeout = codex, cache, timeout_seconds
-        cli = os.environ.get("SERMON_CODEX_CLI", str(Path.home() / ".local/bin/codex"))
-        version = subprocess.check_output([cli, "--version"], text=True, timeout=15).strip()
+        cli = Path(os.environ.get("SERMON_CODEX_CLI", str(Path.home() / ".local/bin/codex"))).resolve()
+        version = subprocess.check_output([str(cli), "--version"], text=True, timeout=15).strip()
+        binary = cli.parent.parent / "CodexCLI.app/Contents/MacOS/codex"
+        # The same implementation hashes the transport records, so a changed CLI
+        # binary or adapter is a new identity and never reuses cached responses.
+        transport = {"cliSha256": file_sha256(cli), "binarySha256": file_sha256(binary if binary.is_file() else cli),
+                     "adapterSha256": file_sha256(Path(codex.__file__))}
         self.identity = {"backend": "codex_cli_chatgpt", "model": codex.TEXT_MODEL, "modelRevision": version,
                          "cacheNamespace": CACHE_NAMESPACE,
                          "settings": {"reasoningEffort": "medium", "serviceTier": "fast",
-                                      "promptFormat": "system-user-json-v1"}}
+                                      "promptFormat": "system-user-json-v1", "transport": transport}}
 
     def key(self, role, system, user, schema) -> str:
         return json_sha256({"role": role, "system": system, "user": user, "schema": schema,
@@ -223,7 +243,9 @@ class CodexJudge:
 
 
 class FakeJudge:
-    """Plumbing-only judge: back-translation is exact for the clean texts it was given."""
+    """Plumbing-only judge: back-translation is exact for the clean texts it was given.
+
+    Its runs never save a waiver: ``run_locale`` only proves one could be built."""
 
     def __init__(self, groups_by_locale: dict[str, list[dict]]):
         self.clean = {group["targetText"]: group["english"] for groups in groups_by_locale.values() for group in groups}
@@ -279,8 +301,12 @@ def run_locale(locale: str, paths: dict, out: Path, state: Path, judge, timings:
     ledger_root = state / "repair-ledger"
     qc_path = folder / "text-qc.json"
     entries = ledger.load(ledger_root, lineage)
-    if qc_path.exists() and not ledger.head_problems(lineage, entries, read(qc_path)):
-        qc = read(qc_path)  # Resume: this receipt is already the ledger head.
+    # Resume only receipts made from these exact inputs; a repaired candidate,
+    # policy, judge runtime or implementation is screened and calibrated again.
+    qc_binding = json_sha256({"groups": groups, "policy": policy, "identity": judge.identity,
+                              "implementation": basis.waiver.implementation_sha256()})
+    if (fresh(qc_path, qc_binding) and not ledger.head_problems(lineage, entries, read(qc_path))):
+        qc = read(qc_path)  # This receipt is already the ledger head.
     else:
         def screen(call):
             return text_qc.screen(groups, locale, policy=policy, call=call, identity=judge.identity,
@@ -288,10 +314,12 @@ def run_locale(locale: str, paths: dict, out: Path, state: Path, judge, timings:
         timings.run(f"{locale}.text-qc.prefetch", lambda: prefetch(judge, screen, workers=workers))
         qc = timings.run(f"{locale}.text-qc", lambda: screen(judge))
         save(qc_path, qc)
+        save(binding_path(qc_path), {"inputsSha256": qc_binding})
         ledger.append(ledger_root, lineage, qc)
     result = {"textQc": qc["status"], "failedGroups": [row["groupId"] for row in qc["results"] if row["status"] != "pass"]}
     calibration_path = folder / "calibration.json"
-    if calibration_path.exists():
+    calibration_binding = json_sha256({"qc": qc_binding, "candidate": candidate})
+    if fresh(calibration_path, calibration_binding):
         calibration = read(calibration_path)
     else:
         def calibrate(call):
@@ -300,6 +328,7 @@ def run_locale(locale: str, paths: dict, out: Path, state: Path, judge, timings:
         timings.run(f"{locale}.calibration.prefetch", lambda: prefetch(judge, calibrate, workers=workers))
         calibration = timings.run(f"{locale}.calibration", lambda: calibrate(judge))
         save(calibration_path, calibration)
+        save(binding_path(calibration_path), {"inputsSha256": calibration_binding})
     result["calibration"] = {key: calibration[key] for key in
                              ("overallDetectionRate", "cleanFalsePositiveRate", "trials", "detected")}
     result["calibrationMisses"] = {kind: row for kind, row in calibration["kinds"].items() if row["rate"] < 0.9}
@@ -308,6 +337,10 @@ def run_locale(locale: str, paths: dict, out: Path, state: Path, judge, timings:
             source, anchor, candidate, qc, calibration, repair_ledger=ledger.load(ledger_root, lineage)))
     except ValueError as error:
         result.update(status="waiver_refused", reason=str(error))
+        return result
+    if isinstance(judge, FakeJudge):
+        basis.validate_text_waiver(waiver, candidate=candidate)
+        result.update(status="fake_plumbing_pass", reason="fake judge: waiver built in memory, never saved")
         return result
     save(folder / "text-waiver.json", waiver)
     result.update(status="text_waiver_issued", textWaiver=str(folder / "text-waiver.json"))
@@ -366,7 +399,8 @@ def main(argv=None) -> int:
         save(out / "summary.json", summary)
     print(json.dumps({locale: {key: row.get(key) for key in ("status", "reason", "problems", "calibration")}
                       for locale, row in summary["locales"].items()}, ensure_ascii=False, indent=2))
-    return 0 if all(row.get("status") == "text_waiver_issued" for row in summary["locales"].values()) else 1
+    done = "fake_plumbing_pass" if args.text_backend == "fake" else "text_waiver_issued"
+    return 0 if all(row.get("status") == done for row in summary["locales"].values()) else 1
 
 
 if __name__ == "__main__":

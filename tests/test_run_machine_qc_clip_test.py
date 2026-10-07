@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from scripts import machine_quality_release_basis as basis
 from scripts import machine_repair_ledger as ledger
@@ -81,17 +82,24 @@ class MachineQcClipDriverTests(unittest.TestCase):
     def summary(self):
         return json.loads((self.root / "out/summary.json").read_text(encoding="utf-8"))["locales"][LOCALE]
 
-    def test_fake_backend_reaches_text_waiver_and_records_ledger(self):
+    def test_fake_backend_proves_the_path_but_never_saves_a_waiver(self):
         run = synthetic_run(self, self.root)
-        self.assertEqual(self.run_driver(run), 0)
+        built = []
+        original = basis.build_text_waiver
+
+        def spy(*args, **kwargs):
+            built.append(original(*args, **kwargs))
+            return built[-1]
+
+        with patch.object(basis, "build_text_waiver", side_effect=spy):
+            self.assertEqual(self.run_driver(run), 0)
         row = self.summary()
-        self.assertEqual(row["status"], "text_waiver_issued", row.get("reason"))
+        self.assertEqual(row["status"], "fake_plumbing_pass", row.get("reason"))
+        self.assertNotIn("textWaiver", row)
+        self.assertFalse((self.root / "out" / LOCALE / "text-waiver.json").exists())
         self.assertEqual(row["calibrationCoverage"]["untestableKinds"], [])
-        waiver = json.loads(Path(row["textWaiver"]).read_text(encoding="utf-8"))
-        self.assertFalse(waiver["humanApproval"])
-        self.assertEqual(waiver["reviewKind"], "machine_quality_waiver")
-        candidate = json.loads(Path(row["paths"]["candidate"]).read_text(encoding="utf-8"))
-        basis.validate_text_waiver(waiver, candidate=candidate)
+        self.assertFalse(built[0]["humanApproval"])
+        self.assertEqual(built[0]["reviewKind"], "machine_quality_waiver")
         timings = (self.root / "out/timings.tsv").read_text(encoding="utf-8")
         for stage in ("discover", "ko.text-qc", "ko.calibration", "ko.text-waiver"):
             self.assertIn(f"\n{stage}\tpass\t", timings)
@@ -104,6 +112,20 @@ class MachineQcClipDriverTests(unittest.TestCase):
         package = json.loads((run / "source-package.json").read_text(encoding="utf-8"))
         lineage = ledger.lineage("text", LOCALE, basis.json_sha256(package), basis.json_sha256(anchor))
         self.assertEqual(len(ledger.load(self.root / "out/state/repair-ledger", lineage)), 1)
+
+    def test_a_repaired_candidate_is_screened_again(self):
+        run = synthetic_run(self, self.root)
+        self.assertEqual(self.run_driver(run), 0)
+        path = run / "diagnostic-previews/ko/native-1/candidate.json"
+        candidate = json.loads(path.read_text(encoding="utf-8"))
+        candidate["groups"][0]["targetText"] = qc_fixtures.TARGET[LOCALE][0] + " "
+        path.write_text(json.dumps(candidate, ensure_ascii=False), encoding="utf-8")
+        self.run_driver(run)
+        anchor = json.loads((run / "anchor-manifest.json").read_text(encoding="utf-8"))
+        package = json.loads((run / "source-package.json").read_text(encoding="utf-8"))
+        lineage = ledger.lineage("text", LOCALE, basis.json_sha256(package), basis.json_sha256(anchor))
+        self.assertEqual(len(ledger.load(self.root / "out/state/repair-ledger", lineage)), 2)
+        self.assertEqual(self.summary()["status"], "fake_plumbing_pass", self.summary().get("reason"))
 
     def test_preflight_explains_a_human_approved_candidate(self):
         run = synthetic_run(self, self.root, human_approved=True)
@@ -150,9 +172,15 @@ class MachineQcClipDriverTests(unittest.TestCase):
             seen.append(options)
             return {"english": "x"}
 
-        with patch.object(driver.subprocess, "check_output", return_value="codex-cli 9.9.9\n"), \
+        cli = self.root / "bin/codex"
+        cli.parent.mkdir()
+        cli.write_bytes(b"cli one")
+        with patch.dict(driver.os.environ, {"SERMON_CODEX_CLI": str(cli)}), \
+                patch.object(driver.subprocess, "check_output", return_value="codex-cli 9.9.9\n"), \
                 patch.object(codex, "call_json", side_effect=fake_call):
             judge = driver.CodexJudge(self.root / "calls")
+            cli.write_bytes(b"cli two, same version string")
+            rebuilt = driver.CodexJudge(self.root / "calls")
             judge("back_translator", "sys", "본문", {"type": "object"})
             judge("back_translator", "sys", "다른 본문", {"type": "object"})
         self.assertEqual(judge.identity["model"], codex.TEXT_MODEL)
@@ -160,6 +188,10 @@ class MachineQcClipDriverTests(unittest.TestCase):
         self.assertEqual([(o["model"], o["reasoning"]) for o in seen], [(codex.TEXT_MODEL, "medium")] * 2)
         self.assertNotEqual(seen[0]["output_dir"], seen[1]["output_dir"])
         self.assertIsNone(judge.cached("back_translator", "sys", "본문", {"type": "object"}))
+        self.assertEqual(judge.identity["settings"]["transport"]["adapterSha256"],
+                         driver.file_sha256(Path(codex.__file__)))
+        self.assertNotEqual(judge.key("back_translator", "sys", "본문", {}),
+                            rebuilt.key("back_translator", "sys", "본문", {}))
 
 
 if __name__ == "__main__":

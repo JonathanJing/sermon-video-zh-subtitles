@@ -33,6 +33,7 @@ RUN_ID="e2e-$(date -u +%Y%m%dT%H%M%SZ)"
 OUT="$REPO/artifacts/dev-180s-page-test-20261004/$RUN_ID"
 SOURCE_RUN="$REPO/artifacts/dev-full-rerun-20261001"
 XCODE="${DEVELOPER_DIR:-/Applications/Xcode.app}"
+XCODE="${XCODE%/}"; XCODE="${XCODE%/Contents/Developer}"  # accept either form
 # --with-beta archives the TongxingBeta app's BetaRelease version/build as
 # committed in project.yml; bump them first to a number App Store Connect has
 # not used.
@@ -96,8 +97,18 @@ stage delivery-preflight "${DELIVERY[@]}"
 # 2. iOS: Apple state and archive dry run (only with --with-beta).
 if [[ $WITH_BETA -eq 1 ]]; then
 stage asc-status    python3 apps/tongxing-ios/scripts/testflight.py status
-if grep -q "\"$BUILD\"" "$OUT/asc-status.log" || grep -q "build.*$BUILD\b" "$OUT/asc-status.log"; then
-  echo "Build $BUILD may already exist on App Store Connect; check $OUT/asc-status.log before --execute"
+# testflight.py prints only its private evidence directory; the build list is in
+# that directory's apple-state.json. Stop before archiving on a used build number.
+SNAPSHOT="$(sed -n 's/.*private evidence: //p' "$OUT/asc-status.log" | tail -1)/apple-state.json"
+[[ -f "$SNAPSHOT" ]] || { echo "No Apple snapshot at $SNAPSHOT"; exit 1; }
+USED="$("$PY" - "$SNAPSHOT" "$BUILD" <<'CHECK'
+import json, sys
+builds = json.load(open(sys.argv[1], encoding="utf-8"))["builds"]
+print(" ".join(f"{b['version']}({b['build']})" for b in builds if str(b["build"]) == sys.argv[2]))
+CHECK
+)"
+if [[ -n "$USED" ]]; then
+  echo "Build $BUILD is already on App Store Connect as $USED; bump the TongxingBeta BetaRelease build first"; exit 1
 fi
 stage archive-dry   apps/tongxing-ios/scripts/archive-channel.sh --channel beta \
   --expected-commit "$COMMIT" --developer-dir "$XCODE" --output-dir "$IOS_OUT" --dry-run
