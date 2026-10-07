@@ -45,6 +45,7 @@
 - 校准时回译检查实际参与了（`semanticChecksIncluded=true`），且 `text.semantic_negation`、`text.added_number`（在英文不含数字的组里加一个用目标语言写出的人数）、`text.wrong_ordinal` 注错必须新增明确的回译问题；`text.dropped_half`（删掉半句）也只认回译问题，长度检查同时判失败不算，因为在长度范围内的小删减只有回译能发现（序数没有可靠的表面检查：first 常译成“起初/처음/en primer lugar”）；确定性规则发现的表面错误不能计为这一类的检出。
 - 本次 QC 用的回译运行身份 `semanticIdentity` 必须包含非空 `backend`、`model`、`modelRevision`、`cacheNamespace` 和非空 `settings` 对象（声明实际解码、推理等设置）。规范化 JSON 后绑定哈希，拒绝非有限数值。该身份、ASR 模型和两级 ASR 的设置哈希（校准记录为 `asrSettingsSha256`）必须与校准时一致；改变设置、缓存命名空间、模型修订或后端，必须重新校准。
 - 按本次交付所需注错类别的计数重算总检出率 ≥ 95%，每类 ≥ 90%。收据中每类及总体的计数与预存比率必须一致；布尔值、负计数或检出数大于试验数均拒绝。每一类注错都必须实际试过（`trials > 0`）；缺一类或某类零样本都算校准不足。要发配音时，校准还必须包含音频各类；只发文字时，音频类的结果不影响放行。QC 判过精简组时，校准还必须包含口播各类（`spokenIncluded=true`）。
+- 校准必须是在本次放行的成品上注错（校准收据 `sermon-auto-qc-calibration-v2` 的 `inputs`）：按组 ID、英文和译文哈希算出的组列表必须等于本次文字 QC 筛过的组（精简口播稿的 QC 对应 `spokenGroupsSha256`，完整译文对应 `textGroupsSha256`），翻译策略哈希必须等于 QC 用的策略；发配音时，按组 ID、音频和文本哈希算出的单元列表必须等于本次音频 QC 筛过的单元（`audioUnitsSha256`）。别的讲道、挑选过的样例或修订前的版本做的校准都不能签豁免；成品一改（修复出新 revision、重新合成配音），就要在新成品上重新校准。v1 校准收据没有 `inputs`，必须重新校准。
 - 干净样例误报率按 `cleanFalsePositives / cleanChecked` 重算并核对，必须 ≤ 10%，且实际检查至少一个干净样例。
 
 只做离线确定性检查时，“删掉半句”这类错误只能检出约 58% 到 75%（见测试样例）。这正是必须加入回译检查的原因。

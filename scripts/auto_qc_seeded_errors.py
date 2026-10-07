@@ -29,6 +29,7 @@ requires the QC receipts to name the same ones.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 import re
@@ -387,6 +388,26 @@ def calibrate_audio(units: list[dict], locale: str, *, asr=None, max_trials: int
             "asrSettingsSha256": {role: value[1] for role, value in runtime.items()} if calibrated else None}
 
 
+def calibration_inputs(groups: list[dict], units: list[dict] | None, spoken_groups: list[dict] | None,
+                       policy: dict | None) -> dict:
+    """What the calibration seeded, hashed as the QC receipts record it, so a waiver
+    can check that the calibration exercised the artifacts it releases."""
+    def text_rows(rows):
+        return [{"groupId": row["groupId"], "englishSha256": _text_sha(row["english"]),
+                 "targetTextSha256": _text_sha(row["targetText"])} for row in rows]
+
+    return {"textGroupsSha256": waiver.text_inputs_sha256(text_rows(groups)),
+            "spokenGroupsSha256": waiver.text_inputs_sha256(text_rows(spoken_groups)) if spoken_groups else None,
+            "audioUnitsSha256": None if not units else waiver.audio_inputs_sha256(
+                [{"groupId": unit["groupId"], "audioSha256": hashlib.sha256(unit["wav"]).hexdigest(),
+                  "textSha256": _text_sha(unit["text"])} for unit in units]),
+            "policyJsonSha256": None if policy is None else waiver.json_sha256(policy)}
+
+
+def _text_sha(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
 def calibrate(locale: str, groups: list[dict], units: list[dict] | None = None, *,
               policy: dict | None = None, call=None, identity: dict | None = None, asr=None,
               spoken_groups: list[dict] | None = None, max_trials: int = 30) -> dict:
@@ -396,6 +417,7 @@ def calibrate(locale: str, groups: list[dict], units: list[dict] | None = None, 
     if call is not None and identity is None:
         raise ValueError("A back-translation transport needs its semantic identity")
     bound = text_qc.semantic_identity(identity) if call is not None else None
+    inputs = calibration_inputs(groups, units, spoken_groups, policy)
     text = calibrate_text(groups, locale, policy=policy, call=call, max_trials=max_trials)
     audio = calibrate_audio(units, locale, asr=asr, max_trials=max_trials) if units else None
     spoken = (calibrate_spoken(spoken_groups, locale, policy=policy, call=call, max_trials=max_trials)
@@ -411,6 +433,7 @@ def calibrate(locale: str, groups: list[dict], units: list[dict] | None = None, 
     positives = text["cleanFalsePositives"] + sum(part["cleanFalsePositives"] for part in (audio, spoken) if part)
     return {"schemaVersion": waiver.CALIBRATION_SCHEMA, "locale": locale,
             "implementationSha256": waiver.implementation_sha256(),
+            "inputs": inputs,
             "semanticChecksIncluded": call is not None, "audioIncluded": audio is not None,
             "spokenIncluded": spoken is not None,
             "semanticIdentity": None if bound is None else bound["identity"],

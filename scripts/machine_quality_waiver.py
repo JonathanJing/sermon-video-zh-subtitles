@@ -20,6 +20,9 @@ A waiver also requires a current seeded-error calibration: the QC
 implementation must have caught planted errors of every kind at the configured
 rates with the same code that screened this candidate, including the
 back-translation check. Without it the locale is blocked rather than waived.
+The calibration must also have planted those errors in the very groups, policy
+and audio units the QC screened, so a calibration of another sermon or of
+chosen inputs cannot back this one.
 
 The waiver binds the exact candidate (and audio package) the QC receipts
 screened: every text result must match a candidate group's text hash and every
@@ -39,7 +42,7 @@ if __package__ in (None, ""):
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA = "sermon-machine-quality-waiver-v1"
-CALIBRATION_SCHEMA = "sermon-auto-qc-calibration-v1"
+CALIBRATION_SCHEMA = "sermon-auto-qc-calibration-v2"
 IMPLEMENTATION_FILES = (
     "scripts/language_review_plugins/common.py",
     "scripts/language_review_plugins/auto_qc_text_common.py",
@@ -201,6 +204,37 @@ def runtime_identity_problems(calibration: dict | None, *, text_qc: dict | None 
     return problems
 
 
+def text_inputs_sha256(rows: list[dict]) -> str:
+    """One hash of the groups a text QC or calibration screened, in order."""
+    return json_sha256([[row.get("groupId"), row.get("englishSha256"), row.get("targetTextSha256")]
+                        for row in rows])
+
+
+def audio_inputs_sha256(rows: list[dict]) -> str:
+    """One hash of the audio units an audio QC or calibration screened, in order."""
+    return json_sha256([[row.get("groupId"), row.get("audioSha256"), row.get("textSha256")] for row in rows])
+
+
+def input_problems(calibration: dict | None, *, text_qc: dict | None = None,
+                   audio_qc: dict | None = None) -> list[str]:
+    """The calibration must have planted its errors in the artifacts the QC receipts screened."""
+    if calibration is None:
+        return []
+    inputs = calibration.get("inputs")
+    inputs = inputs if isinstance(inputs, dict) else {}
+    problems = []
+    if text_qc is not None:
+        # A spoken candidate's QC screens its spoken groups, which the spoken calibration seeded.
+        key = "spokenGroupsSha256" if text_qc.get("condensedGroupIds") else "textGroupsSha256"
+        if inputs.get(key) != text_inputs_sha256(text_qc.get("results") or []):
+            problems.append("calibration did not seed errors into the screened text groups")
+        if inputs.get("policyJsonSha256") != text_qc.get("policyJsonSha256"):
+            problems.append("calibration used another translation policy")
+    if audio_qc is not None and inputs.get("audioUnitsSha256") != audio_inputs_sha256(audio_qc.get("results") or []):
+        problems.append("calibration did not seed errors into the screened audio units")
+    return problems
+
+
 def runtime_identity_sha256(calibration: dict) -> str:
     """One hash of the back-translation and ASR runtimes a calibration measured."""
     return json_sha256({"semanticIdentitySha256": calibration.get("semanticIdentitySha256"),
@@ -293,6 +327,7 @@ def waive(locale: str, candidate: dict, text_qc: dict, audio_qc: dict | None,
                                               require_audio=audio_qc is not None,
                                               require_spoken=bool(condensed))
     calibration_issues += runtime_identity_problems(calibration, text_qc=text_qc, audio_qc=audio_qc)
+    calibration_issues += input_problems(calibration, text_qc=text_qc, audio_qc=audio_qc)
     if pending:
         status, reasons = "repair_in_progress", [f"{len(pending)} groups still have repairs pending"]
     elif calibration_issues:

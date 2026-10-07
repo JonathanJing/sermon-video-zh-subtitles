@@ -83,7 +83,21 @@ def bound_ledger(kind, qc, locale, source_sha, anchor_sha, groups):
              "failedSourceUnitIds": [], "failedAttempts": {}}]
 
 
+def seeded_into(cal, *, text=None, audio=None):
+    """``cal`` as if its errors were seeded into what ``text``/``audio`` QC screened,
+    unless the test names its inputs."""
+    inputs = dict(cal.get("inputs") or {})
+    if text is not None:
+        key = "spokenGroupsSha256" if text.get("condensedGroupIds") else "textGroupsSha256"
+        inputs.setdefault(key, waiver.text_inputs_sha256(text.get("results") or []))
+        inputs.setdefault("policyJsonSha256", text.get("policyJsonSha256"))
+    if audio is not None:
+        inputs.setdefault("audioUnitsSha256", waiver.audio_inputs_sha256(audio.get("results") or []))
+    return {**cal, "inputs": inputs}
+
+
 def issue_text(source, anchor, candidate, qc, cal, **kwargs):
+    cal = seeded_into(cal, text=qc)
     kwargs.setdefault("repair_ledger", bound_ledger("text", qc, candidate.get("targetLocale"),
                                                     basis.json_sha256(source), basis.json_sha256(anchor),
                                                     candidate.get("groups") or []))
@@ -91,6 +105,7 @@ def issue_text(source, anchor, candidate, qc, cal, **kwargs):
 
 
 def issue_audio(package, screening, qc, text, cal, **kwargs):
+    cal = seeded_into(cal, audio=qc)
     kwargs.setdefault("repair_ledger", bound_ledger("audio", qc, package["targetLocale"],
                                                     package["englishSourcePackageJsonSha256"],
                                                     basis.json_sha256(kwargs["anchor"]), kwargs["candidate"]["groups"]))
@@ -219,7 +234,10 @@ class TextWaiverTests(unittest.TestCase):
         for cal, message in ((calibration(implementationSha256="0" * 64), "changed since calibration"),
                              (calibration(semanticChecksIncluded=False), "back-translation"),
                              (calibration(cleanFalsePositiveRate=0.2), "false-positive"),
-                             (calibration(semanticIdentitySha256="0" * 64), "runtime differs")):
+                             (calibration(semanticIdentitySha256="0" * 64), "runtime differs"),
+                             # A calibration seeded into another sermon's groups or policy.
+                             (calibration(inputs={"textGroupsSha256": "0" * 64}), "seed errors into the screened text"),
+                             (calibration(inputs={"policyJsonSha256": "0" * 64}), "another translation policy")):
             with self.assertRaisesRegex(ValueError, message):
                 issue_text(self.source_package, self.anchor, self.candidate,
                                         text_qc(self.candidate, self.anchor), cal)
@@ -595,6 +613,10 @@ class AudioWaiverTests(unittest.TestCase):
             issue_audio(package, screening, qc, text, text_only, track_check=track_check(package),
                                      anchor=audio_sources()[0], candidate=audio_sources()[1],
                                      created_at="2026-10-07T02:00:00+00:00")
+        with self.assertRaisesRegex(ValueError, "seed errors into the screened audio"):
+            issue_audio(package, screening, qc, text, calibration(inputs={"audioUnitsSha256": "0" * 64}),
+                        track_check=track_check(package), anchor=audio_sources()[0],
+                        candidate=audio_sources()[1], created_at="2026-10-07T02:00:00+00:00")
         # The same calibration is enough for the text waiver.
         self.assertTrue(basis.calibration_summary(text_only, "ko", IMPLEMENTATION)["semanticChecksIncluded"])
 

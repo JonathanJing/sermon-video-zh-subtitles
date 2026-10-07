@@ -8,6 +8,7 @@ import shutil
 import subprocess
 import tempfile
 import unittest
+from unittest import mock
 import wave
 
 from scripts import auto_qc_seeded_errors as seeded
@@ -528,7 +529,38 @@ class PredictedScheduleTests(unittest.TestCase):
         self.assertEqual(predicted.budget(10, groups, self.rate(), synthesis_identity=IDENTITY)["status"], "fits")
 
 
+class CalibrationInputTests(unittest.TestCase):
+    def test_calibration_must_have_seeded_the_artifacts_the_qc_screened(self):
+        locale, judge = "ko", fixtures.PerfectSemanticJudge("ko")
+        groups, units, policy = fixtures.groups(locale), fixtures.units(locale), fixtures.policy(locale)
+        calibration = seeded.calibrate(locale, groups, units, policy=policy, call=judge,
+                                       identity=fixtures.SEMANTIC_IDENTITY, asr=fixtures.FakeAsr(locale))
+        text = text_qc.screen(groups, locale, policy=policy, call=judge, identity=fixtures.SEMANTIC_IDENTITY)
+        audio = audio_qc.screen(units, locale)
+        self.assertEqual(waiver.input_problems(calibration, text_qc=text, audio_qc=audio), [])
+        # A calibration of other text, another policy or other audio does not cover this run.
+        other_groups = [{**group, "targetText": group["targetText"] + " "} for group in groups]
+        other_policy = {**policy, "targetLocale": "ko-KR"}
+        other_units = [{**unit, "wav": units[(index + 1) % len(units)]["wav"]} for index, unit in enumerate(units)]
+        for elsewhere, message in (
+                (seeded.calibrate(locale, other_groups, units, policy=policy), "screened text groups"),
+                (seeded.calibrate(locale, groups, units, policy=other_policy), "another translation policy"),
+                (seeded.calibrate(locale, groups, other_units, policy=policy), "screened audio units"),
+                (seeded.calibrate(locale, groups, None, policy=policy), "screened audio units")):
+            problems = waiver.input_problems(elsewhere, text_qc=text, audio_qc=audio)
+            self.assertTrue(any(message in problem for problem in problems), (message, problems))
+        legacy = {key: value for key, value in calibration.items() if key != "inputs"}
+        self.assertEqual(len(waiver.input_problems(legacy, text_qc=text, audio_qc=audio)), 3)
+
+
 class CalibrationAndWaiverTests(unittest.TestCase):
+    def setUp(self):
+        # These receipts are synthetic stand-ins for the 5% and binding rules, so the
+        # calibration cannot have seeded them; CalibrationInputTests checks that binding.
+        patcher = mock.patch.object(waiver, "input_problems", return_value=[])
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
     def calibration(self, locale, *, semantic=True, asr=True):
         call = fixtures.PerfectSemanticJudge(locale) if semantic else None
         return seeded.calibrate(locale, fixtures.groups(locale), fixtures.units(locale),
