@@ -631,8 +631,16 @@ export async function loadPublishedWeeks(fetchImpl = globalThis.fetch, { request
     catalog = await readJson(fetchImpl, '/multilingual-v4.json', undefined, timeoutMs, true);
     if (catalog !== null) {
       validatePublishedCatalogHeader(catalog, CATALOG_V4);
-      // A malformed v4 page would otherwise only be dropped, hiding a week v3 still lists.
-      for (const page of catalog.pages) validatePublishedPage(page);
+      // A malformed v4 page or target would otherwise only be dropped, hiding a week
+      // or locale v3 still lists. Dev-only targets are filtered below, not checked here.
+      for (const page of catalog.pages) {
+        validatePublishedPage(page);
+        for (const [locale, target] of Object.entries(page.targets)) {
+          if (allowDevCandidates || (target?.contentStatus !== 'machine_reviewed' && target?.diagnosticOnly !== true && target?.simulationOnly !== true)) {
+            validatePublishedTarget(target, page, locale, allowDevCandidates, CATALOG_V4);
+          }
+        }
+      }
     }
   } catch (error) { catalog = null; errors.push(`Catalog v4 unavailable, using v3: ${error.message}`); }
   if (catalog === null) {
