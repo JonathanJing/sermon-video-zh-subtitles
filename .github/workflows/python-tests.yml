@@ -110,7 +110,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard_index: [0, 1, 2, 3]
+        shard_index: [0, 1, 2, 3, 4, 5, 6, 7]
 
     steps:
       - name: Check out repository
@@ -167,7 +167,7 @@ jobs:
         run: >-
           python scripts/run_unittest_ci.py
           --weights .github/unittest-module-timings.json
-          --shard-count 4
+          --shard-count 8
           --shard-index ${{ matrix.shard_index }}
           --report "${RUNNER_TEMP}/unittest-root-${{ matrix.shard_index }}.json"
 
