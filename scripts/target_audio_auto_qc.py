@@ -41,6 +41,8 @@ THRESHOLDS = {
     "nearSilentRmsDbfs": -40.0,
     "maxSilenceRatio": 0.6,
     "maxInternalSilenceSeconds": 2.5,
+    "maxLeadingSilenceSeconds": 1.0,
+    "maxTrailingSilenceSeconds": 1.5,
     "maxClippingRatio": 0.002,
     "maxRatePerMedian": 2.5,
     "minRatePerMedian": 0.35,
@@ -145,6 +147,11 @@ def unit_issues(units: list[dict], locale: str, thresholds: dict = THRESHOLDS) -
             found.append(f"excess_silence: {metrics['silenceRatio']:.2f}")
         if metrics["longestInternalSilenceSeconds"] > thresholds["maxInternalSilenceSeconds"]:
             found.append(f"long_internal_pause: {metrics['longestInternalSilenceSeconds']:.2f}s")
+        # Edge silence adds lag without lowering the silence ratio much.
+        if metrics["leadingSilenceSeconds"] > thresholds["maxLeadingSilenceSeconds"]:
+            found.append(f"leading_silence: {metrics['leadingSilenceSeconds']:.2f}s")
+        if metrics["trailingSilenceSeconds"] > thresholds["maxTrailingSilenceSeconds"]:
+            found.append(f"trailing_silence: {metrics['trailingSilenceSeconds']:.2f}s")
         if metrics["clippingRatio"] > thresholds["maxClippingRatio"]:
             found.append(f"clipping: {metrics['clippingRatio']:.4f}")
         issues.append(found)
@@ -168,6 +175,35 @@ def asr_decision(primary: float, secondary: float | None, threshold: float = THR
     return "pass" if secondary >= threshold else "fail"
 
 
+def _sha256(value: bytes) -> str:
+    return hashlib.sha256(value).hexdigest()
+
+
+def asr_opinion(similarity: float, *, audio: bytes, text: str, model: str,
+                model_revision: str | None = None) -> dict:
+    """An ASR result bound to the exact audio bytes, expected text and model."""
+    return {"similarity": similarity, "audioSha256": _sha256(audio),
+            "textSha256": _sha256(text.encode("utf-8")), "model": model,
+            "modelRevision": model_revision}
+
+
+def _model(opinion: dict | None) -> dict | None:
+    return None if opinion is None else {"model": opinion["model"], "modelRevision": opinion.get("modelRevision")}
+
+
+def bound_opinion(opinion: dict | None, audio_sha: str | None, text_sha: str) -> tuple[dict | None, bool]:
+    """``(opinion, stale)``: an opinion about other audio or text counts as not run."""
+    if opinion is None:
+        return None, False
+    if (not isinstance(opinion, dict) or not isinstance(opinion.get("model"), str) or not opinion["model"]
+            or type(opinion.get("similarity")) not in (int, float)
+            or opinion.get("modelRevision") is not None and not isinstance(opinion["modelRevision"], str)):
+        raise ValueError("An ASR opinion needs similarity, audioSha256, textSha256 and model")
+    if opinion.get("audioSha256") != audio_sha or opinion.get("textSha256") != text_sha:
+        return None, True
+    return opinion, False
+
+
 def next_action(failed_attempts: int) -> str:
     """Next step for a sentence that has failed ``failed_attempts`` times."""
     if type(failed_attempts) is not int or failed_attempts < 0:
@@ -177,10 +213,13 @@ def next_action(failed_attempts: int) -> str:
 
 def screen(units: list[dict], locale: str, thresholds: dict = THRESHOLDS) -> dict:
     """Screen one render attempt. Each unit: ``{groupId, text, sourceSeconds,
-    wav (bytes) or metrics, asrPrimary, asrSecondary?, priorFailedAttempts?}``.
+    wav (bytes) or metrics + audioSha256, asr: {primary, secondary?}, priorFailedAttempts?}``,
+    where each ASR opinion comes from :func:`asr_opinion`.
 
-    A unit without a primary ASR score has had no content check, so it stays
-    ``pending_primary_asr`` instead of passing on acoustics alone."""
+    An opinion counts only for the exact audio bytes and text it names, so a
+    score kept from an earlier render is ignored. A unit without a current
+    primary opinion has had no content check and stays ``pending_primary_asr``
+    instead of passing on acoustics alone."""
     rows = []
     for unit in units:
         metrics = unit.get("metrics")
@@ -191,9 +230,19 @@ def screen(units: list[dict], locale: str, thresholds: dict = THRESHOLDS) -> dic
     results = []
     for row, issues in zip(rows, all_issues):
         issues = list(issues)
+        if "asrPrimary" in row or "asrSecondary" in row:
+            raise ValueError("Bare ASR scores are not accepted; pass asr opinions bound to the audio")
+        # The waiver binds these exact bytes and both ASR opinions.
+        audio_sha = _sha256(row["wav"]) if "wav" in row else row.get("audioSha256")
+        text_sha = _sha256(row["text"].encode("utf-8"))
+        primary, primary_stale = bound_opinion((row.get("asr") or {}).get("primary"), audio_sha, text_sha)
+        secondary, secondary_stale = bound_opinion((row.get("asr") or {}).get("secondary"), audio_sha, text_sha)
+        if primary and secondary and _model(primary) == _model(secondary):
+            raise ValueError("The secondary ASR must be a different model from the primary")
         asr = None
-        if row.get("asrPrimary") is not None:
-            asr = asr_decision(row["asrPrimary"], row.get("asrSecondary"), thresholds["asrMinSimilarity"])
+        if primary is not None:
+            asr = asr_decision(primary["similarity"], None if secondary is None else secondary["similarity"],
+                               thresholds["asrMinSimilarity"])
             if asr == "fail":
                 issues.append("asr_mismatch_confirmed")
         prior = int(row.get("priorFailedAttempts", 0))
@@ -205,11 +254,13 @@ def screen(units: list[dict], locale: str, thresholds: dict = THRESHOLDS) -> dic
             status, action = "pending_secondary_asr", "run_secondary_asr"
         else:
             status, action = "pass", "keep"
-        # The waiver binds these exact bytes and both ASR opinions.
-        audio_sha = hashlib.sha256(row["wav"]).hexdigest() if "wav" in row else row.get("audioSha256")
         results.append({"groupId": row["groupId"], "status": status, "issues": issues,
-                        "asrDecision": asr, "asrPrimary": row.get("asrPrimary"),
-                        "asrSecondary": row.get("asrSecondary"), "audioSha256": audio_sha,
+                        "asrDecision": asr, "asrPrimary": None if primary is None else primary["similarity"],
+                        "asrSecondary": None if secondary is None else secondary["similarity"],
+                        "asrPrimaryModel": _model(primary), "asrSecondaryModel": _model(secondary),
+                        "staleAsr": [name for name, stale in (("primary", primary_stale),
+                                                              ("secondary", secondary_stale)) if stale],
+                        "audioSha256": audio_sha, "textSha256": text_sha,
                         "failedAttempts": prior + (status == "fail"),
                         "nextAction": action, "metrics": row["metrics"]})
     return {"schemaVersion": SCHEMA, "locale": locale, "thresholds": thresholds,
@@ -223,8 +274,9 @@ def screen(units: list[dict], locale: str, thresholds: dict = THRESHOLDS) -> dic
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", required=True, type=Path,
-                        help="{locale, units:[{groupId, text, sourceSeconds, wavPath, asrPrimary, "
-                             "asrSecondary?, priorFailedAttempts?}]}")
+                        help="{locale, units:[{groupId, text, sourceSeconds, wavPath, asr:{primary, "
+                             "secondary?}, priorFailedAttempts?}]}; each ASR opinion is {similarity, "
+                             "audioSha256, textSha256, model, modelRevision?}")
     parser.add_argument("--out", required=True, type=Path)
     args = parser.parse_args()
     value = json.loads(args.input.read_text(encoding="utf-8"))

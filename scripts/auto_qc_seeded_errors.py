@@ -8,12 +8,20 @@ the same QC code, and records detection per error kind plus the false-positive
 rate on the clean material. ``machine_quality_waiver.py`` refuses a waiver
 unless a calibration for the current QC implementation meets its minimums.
 
-Text kinds: wrong_number, added_reference, english_leak, placeholder,
-dropped_name, dropped_half. Audio kinds: stretched (the 2026-10-04 u172 class),
-silent, clipped, truncated. Meaning errors without a surface signal (for
-example a flipped negation) are only reachable through back-translation, so a
-calibration without the back-translation transport is marked
-``semanticChecksIncluded=false`` and cannot enable a waiver.
+Text kinds: wrong_number, added_reference, wrong_book, english_leak,
+placeholder, dropped_name, dropped_half. Audio kinds: stretched (the 2026-10-04
+u172 class), silent, clipped, truncated, and wrong_sentence (another unit's
+audio under this unit's text, which only the ASR path can catch). Meaning
+errors without a surface signal (for example a flipped negation) are only
+reachable through back-translation, so a calibration without the
+back-translation transport is marked ``semanticChecksIncluded=false`` and
+cannot enable a waiver; without an ASR transport wrong_sentence has no trials.
+
+A seeded trial counts as detected only when the mutated item gains a problem
+its clean version did not have (for wrong_sentence: a confirmed ASR mismatch),
+so baseline false positives are never credited as detections. The calibration
+records the back-translation and ASR runtime identities it ran with; a waiver
+requires the QC receipts to name the same ones.
 """
 from __future__ import annotations
 
@@ -33,6 +41,8 @@ from scripts.language_review_plugins import auto_qc_text_common as rules
 TEXT_KINDS = waiver.TEXT_KINDS
 AUDIO_KINDS = waiver.AUDIO_KINDS
 ADDED_REFERENCE = {"zh-Hans": "（约翰福音3章16节）", "ko": " (요한복음 3장 16절)", "es": " (Juan 3:16)"}
+# The book a wrong_book mutation substitutes (Romans when the citation is already John).
+OTHER_BOOK = {"zh-Hans": ("约翰福音", "罗马书"), "ko": ("요한복음", "로마서"), "es": ("Juan", "Romanos")}
 
 
 def _number_forms(locale: str, value: int | str) -> list[str]:
@@ -68,6 +78,13 @@ def mutate_text(group: dict, kind: str, locale: str, policy: dict | None) -> str
     if kind == "added_reference":
         pairs, chapters = rules.english_references(english)
         return None if pairs or chapters else text + ADDED_REFERENCE[locale]
+    if kind == "wrong_book":
+        cited = {(c, v) for code, c, v in rules.english_book_citations(english) if code}
+        for code, chapter, verse, (start, end) in rules.book_citations(text, locale):
+            if (chapter, verse) in cited:
+                john, romans = OTHER_BOOK[locale]
+                return text[:start] + (romans if code == "JOH" else john) + text[end:]
+        return None
     if kind == "english_leak":
         return english if len(re.findall(r"[A-Za-z]+", english)) >= 6 else None
     if kind == "placeholder":
@@ -110,9 +127,10 @@ def _rate(detected: int, trials: int) -> float:
 def calibrate_text(groups: list[dict], locale: str, *, policy: dict | None = None, call=None,
                    max_trials: int = 30) -> dict:
     median = text_qc.candidate_length_median(groups)
-    kinds, false_positives, clean_checked = {}, 0, 0
+    kinds, false_positives, clean_checked, clean = {}, 0, 0, {}
     for group in groups:
         problems, _ = text_qc.group_problems(group, locale, policy=policy, median=median, call=call)
+        clean[group["groupId"]] = set(problems)
         clean_checked += 1
         false_positives += bool(problems)
     for kind in TEXT_KINDS:
@@ -127,7 +145,7 @@ def calibrate_text(groups: list[dict], locale: str, *, policy: dict | None = Non
             trials += 1
             problems, _ = text_qc.group_problems({**group, "targetText": mutated}, locale,
                                                  policy=policy, median=median, call=call)
-            if problems:
+            if set(problems) - clean[group["groupId"]]:
                 detected += 1
             elif len(misses) < 5:
                 misses.append(group["groupId"])
@@ -136,34 +154,76 @@ def calibrate_text(groups: list[dict], locale: str, *, policy: dict | None = Non
     return {"kinds": kinds, "cleanChecked": clean_checked, "cleanFalsePositives": false_positives}
 
 
-def calibrate_audio(units: list[dict], locale: str, *, max_trials: int = 30) -> dict:
+def _asr_row(unit: dict, wav: bytes, locale: str, asr, threshold: float) -> dict:
+    """A unit row whose ASR opinions are freshly computed for ``wav`` under the unit's text."""
+    primary = asr("primary", wav, unit["text"], locale)
+    opinions = {"primary": primary}
+    if primary["similarity"] < threshold:
+        opinions["secondary"] = asr("secondary", wav, unit["text"], locale)
+    return {**{k: v for k, v in unit.items() if k != "metrics"}, "wav": wav, "asr": opinions}
+
+
+def calibrate_audio(units: list[dict], locale: str, *, asr=None, max_trials: int = 30) -> dict:
+    """``asr(role, wav, text, locale) -> opinion`` (see ``target_audio_auto_qc.asr_opinion``)
+    is the production ASR transport; without it wrong_sentence has no trials."""
+    threshold = audio_qc.THRESHOLDS["asrMinSimilarity"]
+    if asr is not None:
+        units = [_asr_row(unit, unit["wav"], locale, asr, threshold) for unit in units]
     decoded = [audio_qc.decode_pcm16(unit["wav"]) for unit in units]
     base = [{**unit, "metrics": audio_qc.signal_metrics(*pcm)} for unit, pcm in zip(units, decoded)]
-    clean = audio_qc.screen(base, locale)
-    false_positives = sum(row["status"] == "fail" for row in clean["results"])
-    kinds = {}
+    clean = audio_qc.screen(base, locale)["results"]
+    false_positives = sum(row["status"] == "fail" for row in clean)
+    kinds, models = {}, {"primary": set(), "secondary": set()}
+    for row in clean:
+        for role, key in (("primary", "asrPrimaryModel"), ("secondary", "asrSecondaryModel")):
+            if row[key] is not None:
+                models[role].add(json.dumps(row[key], sort_keys=True))
     for kind in AUDIO_KINDS:
         trials = detected = 0
         misses = []
         for index, (samples, rate) in enumerate(decoded[:max_trials]):
-            mutated = audio_qc.signal_metrics(*mutate_audio(samples, rate, kind))
             rows = list(base)
-            rows[index] = {**base[index], "metrics": mutated}
+            if kind == "wrong_sentence":
+                # Another sentence's audio; identical bytes would not be a wrong sentence.
+                other = next((units[(index + j) % len(units)] for j in range(1, len(units))
+                              if units[(index + j) % len(units)]["text"] != units[index]["text"]
+                              and units[(index + j) % len(units)]["wav"] != units[index]["wav"]), None)
+                if asr is None or other is None:
+                    continue
+                wav = other["wav"]
+                rows[index] = _asr_row(units[index], wav, locale, asr, threshold)
+            else:
+                mutated = audio_qc.signal_metrics(*mutate_audio(samples, rate, kind))
+                rows[index] = {**base[index], "metrics": mutated}
             result = audio_qc.screen(rows, locale)["results"][index]
+            for role, key in (("primary", "asrPrimaryModel"), ("secondary", "asrSecondaryModel")):
+                if result[key] is not None:
+                    models[role].add(json.dumps(result[key], sort_keys=True))
             trials += 1
-            if result["status"] == "fail":
+            new = set(result["issues"]) - set(clean[index]["issues"])
+            hit = "asr_mismatch_confirmed" in new if kind == "wrong_sentence" else bool(new)
+            if result["status"] == "fail" and hit:
                 detected += 1
             elif len(misses) < 5:
                 misses.append(units[index]["groupId"])
         kinds[kind] = {"trials": trials, "detected": detected, "rate": _rate(detected, trials),
                        "missedGroupIds": misses}
-    return {"kinds": kinds, "cleanChecked": len(units), "cleanFalsePositives": false_positives}
+    if any(len(values) > 1 for values in models.values()):
+        raise ValueError("ASR transport reported more than one model per role during calibration")
+    identity = {role: json.loads(next(iter(values))) if values else None for role, values in models.items()}
+    return {"kinds": kinds, "cleanChecked": len(units), "cleanFalsePositives": false_positives,
+            "asrIdentity": identity if identity["primary"] else None}
 
 
 def calibrate(locale: str, groups: list[dict], units: list[dict] | None = None, *,
-              policy: dict | None = None, call=None, max_trials: int = 30) -> dict:
+              policy: dict | None = None, call=None, identity: dict | None = None, asr=None,
+              max_trials: int = 30) -> dict:
+    """``identity`` names the back-translation runtime behind ``call`` and is required with it."""
+    if call is not None and identity is None:
+        raise ValueError("A back-translation transport needs its semantic identity")
+    bound = text_qc.semantic_identity(identity) if call is not None else None
     text = calibrate_text(groups, locale, policy=policy, call=call, max_trials=max_trials)
-    audio = calibrate_audio(units, locale, max_trials=max_trials) if units else None
+    audio = calibrate_audio(units, locale, asr=asr, max_trials=max_trials) if units else None
     kinds = {f"text.{k}": v for k, v in text["kinds"].items()}
     if audio is not None:
         kinds.update({f"audio.{k}": v for k, v in audio["kinds"].items()})
@@ -174,6 +234,9 @@ def calibrate(locale: str, groups: list[dict], units: list[dict] | None = None, 
     return {"schemaVersion": waiver.CALIBRATION_SCHEMA, "locale": locale,
             "implementationSha256": waiver.implementation_sha256(),
             "semanticChecksIncluded": call is not None, "audioIncluded": audio is not None,
+            "semanticIdentity": None if bound is None else bound["identity"],
+            "semanticIdentitySha256": None if bound is None else bound["sha256"],
+            "asrIdentity": None if audio is None else audio["asrIdentity"],
             "kinds": kinds, "trials": trials, "detected": detected,
             "overallDetectionRate": _rate(detected, trials),
             "cleanChecked": clean, "cleanFalsePositives": positives,
@@ -184,7 +247,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", required=True, type=Path,
                         help="{locale, groups:[{groupId, english, targetText}], units?:[{groupId, text, "
-                             "sourceSeconds, wavPath}], policy?}")
+                             "sourceSeconds, wavPath, asr?}], policy?}")
     parser.add_argument("--out", required=True, type=Path)
     parser.add_argument("--max-trials", type=int, default=30)
     args = parser.parse_args()
@@ -193,8 +256,9 @@ def main() -> None:
     if value.get("units"):
         units = [{**{k: v for k, v in unit.items() if k != "wavPath"},
                   "wav": Path(unit["wavPath"]).read_bytes()} for unit in value["units"]]
-    # The back-translation transport is wired by the production owner; this
-    # offline entry records semanticChecksIncluded=false and cannot unlock a waiver.
+    # The back-translation and ASR transports are wired by the production owner;
+    # this offline entry records semanticChecksIncluded=false and no wrong_sentence
+    # trials, so it cannot unlock a waiver.
     receipt = calibrate(value["locale"], value["groups"], units, policy=value.get("policy"),
                         max_trials=args.max_trials)
     args.out.parent.mkdir(parents=True, exist_ok=True)

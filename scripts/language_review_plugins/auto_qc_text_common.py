@@ -41,6 +41,31 @@ def _fold(value: str) -> str:
     return "".join(char for char in text if not unicodedata.combining(char))
 
 
+def _spelled_two_digit(tokens: list[str], index: int) -> tuple[int | None, int]:
+    """10-99 spelled as one teen word, or a tens word with an optional unit."""
+    if index < len(tokens) and 10 <= _UNITS.get(tokens[index], -1) <= 19:
+        return _UNITS[tokens[index]], index + 1
+    if index < len(tokens) and tokens[index] in _TENS:
+        if index + 1 < len(tokens) and 1 <= _UNITS.get(tokens[index + 1], -1) <= 9:
+            return _TENS[tokens[index]] + _UNITS[tokens[index + 1]], index + 2
+        return _TENS[tokens[index]], index + 1
+    return None, index
+
+
+def _spoken_year(tokens: list[str], index: int) -> tuple[int | None, int]:
+    """A year said in two halves: "nineteen ninety-nine", "twenty twenty-four", "twenty oh five"."""
+    head, cursor = _spelled_two_digit(tokens, index)
+    if head is None or not 14 <= head <= 20:
+        return None, index
+    if cursor + 1 < len(tokens) and tokens[cursor] == "oh" and 1 <= _UNITS.get(tokens[cursor + 1], -1) <= 9:
+        tail, end = _UNITS[tokens[cursor + 1]], cursor + 2
+    else:
+        tail, end = _spelled_two_digit(tokens, cursor)
+    if tail is None or (end < len(tokens) and tokens[end] in _SCALES):
+        return None, index
+    return head * 100 + tail, end
+
+
 def english_numbers(text: str) -> list[int | str]:
     """Cardinal numbers said in English, as digits or words; order preserved.
 
@@ -62,6 +87,11 @@ def english_numbers(text: str) -> list[int | str]:
             continue
         if token not in _UNITS and token not in _TENS and token not in _SCALES:
             index += 1
+            continue
+        year, end = _spoken_year(tokens, index)
+        if year is not None:
+            found.append(year)
+            index = end
             continue
         total, current, words = 0, 0, 0
         while index < len(tokens):
@@ -303,16 +333,120 @@ def english_colon_pairs(text: str) -> set[tuple[int, int]]:
     return {(int(c), int(v)) for c, v in re.findall(_COLON_PAIR, text)}
 
 
-_BOOKS = (
-    "Genesis|Gen|Exodus|Exod|Ex|Leviticus|Lev|Numbers|Num|Deuteronomy|Deut|Joshua|Josh|Judges|Judg|"
-    "Ruth|Samuel|Sam|Kings|Kgs|Chronicles|Chron|Ezra|Nehemiah|Neh|Esther|Esth|Job|Psalms?|Psa?|"
-    "Proverbs|Prov|Ecclesiastes|Eccl|Songs?|Solomon|Isaiah|Isa|Jeremiah|Jer|Lamentations|Lam|"
-    "Ezekiel|Ezek|Daniel|Dan|Hosea|Hos|Joel|Amos|Obadiah|Obad|Jonah|Micah|Mic|Nahum|Nah|"
-    "Habakkuk|Hab|Zephaniah|Zeph|Haggai|Hag|Zechariah|Zech|Malachi|Mal|Matthew|Matt|Mt|Mark|Mk|"
-    "Luke|Lk|John|Jn|Acts|Romans|Rom|Corinthians|Cor|Galatians|Gal|Ephesians|Eph|Philippians|Phil|"
-    "Colossians|Col|Thessalonians|Thess|Timothy|Tim|Titus|Philemon|Phlm|Hebrews|Heb|James|Jas|"
-    "Peter|Pet|Jude|Revelations?|Rev")
+# Bible books: (code, number, English names, Korean, Spanish names folded, Simplified Chinese).
+# Codes follow scripts/build_scripture_index.py. A numbered book shares its
+# English and Spanish base name ("1 John", "1 Juan") and is told apart by the number.
+_BIBLE_BOOKS = (
+    ("GEN", None, "Genesis|Gen", "창세기", "genesis", "创世记"),
+    ("EXO", None, "Exodus|Exod|Ex", "출애굽기", "exodo", "出埃及记"),
+    ("LEV", None, "Leviticus|Lev", "레위기", "levitico", "利未记"),
+    ("NUM", None, "Numbers|Num", "민수기", "numeros", "民数记"),
+    ("DEU", None, "Deuteronomy|Deut", "신명기", "deuteronomio", "申命记"),
+    ("JOS", None, "Joshua|Josh", "여호수아", "josue", "约书亚记"),
+    ("JDG", None, "Judges|Judg", "사사기", "jueces", "士师记"),
+    ("RUT", None, "Ruth", "룻기", "rut", "路得记"),
+    ("1SA", 1, "Samuel|Sam", "사무엘상", "samuel", "撒母耳记上"),
+    ("2SA", 2, "Samuel|Sam", "사무엘하", "samuel", "撒母耳记下"),
+    ("1KI", 1, "Kings|Kgs", "열왕기상", "reyes", "列王纪上"),
+    ("2KI", 2, "Kings|Kgs", "열왕기하", "reyes", "列王纪下"),
+    ("1CH", 1, "Chronicles|Chron", "역대상", "cronicas", "历代志上"),
+    ("2CH", 2, "Chronicles|Chron", "역대하", "cronicas", "历代志下"),
+    ("EZR", None, "Ezra", "에스라", "esdras", "以斯拉记"),
+    ("NEH", None, "Nehemiah|Neh", "느헤미야", "nehemias", "尼希米记"),
+    ("EST", None, "Esther|Esth", "에스더", "ester", "以斯帖记"),
+    ("JOB", None, "Job", "욥기", "job", "约伯记"),
+    ("PSA", None, "Psalms|Psalm|Psa|Ps", "시편", "salmos|salmo", "诗篇"),
+    ("PRO", None, "Proverbs|Prov", "잠언", "proverbios", "箴言"),
+    ("ECC", None, "Ecclesiastes|Eccl", "전도서", "eclesiastes", "传道书"),
+    ("SOL", None, "Song of Solomon|Song of Songs|Songs|Song|Solomon", "아가", "cantar de los cantares|cantares", "雅歌"),
+    ("ISA", None, "Isaiah|Isa", "이사야", "isaias", "以赛亚书"),
+    ("JER", None, "Jeremiah|Jer", "예레미야", "jeremias", "耶利米书"),
+    ("LAM", None, "Lamentations|Lam", "예레미야애가|애가", "lamentaciones", "耶利米哀歌"),
+    ("EZE", None, "Ezekiel|Ezek", "에스겔", "ezequiel", "以西结书"),
+    ("DAN", None, "Daniel|Dan", "다니엘", "daniel", "但以理书"),
+    ("HOS", None, "Hosea|Hos", "호세아", "oseas", "何西阿书"),
+    ("JOE", None, "Joel", "요엘", "joel", "约珥书"),
+    ("AMO", None, "Amos", "아모스", "amos", "阿摩司书"),
+    ("OBA", None, "Obadiah|Obad", "오바댜", "abdias", "俄巴底亚书"),
+    ("JON", None, "Jonah", "요나", "jonas", "约拿书"),
+    ("MIC", None, "Micah|Mic", "미가", "miqueas", "弥迦书"),
+    ("NAH", None, "Nahum|Nah", "나훔", "nahum", "那鸿书"),
+    ("HAB", None, "Habakkuk|Hab", "하박국", "habacuc", "哈巴谷书"),
+    ("ZEP", None, "Zephaniah|Zeph", "스바냐", "sofonias", "西番雅书"),
+    ("HAG", None, "Haggai|Hag", "학개", "hageo", "哈该书"),
+    ("ZEC", None, "Zechariah|Zech", "스가랴", "zacarias", "撒迦利亚书"),
+    ("MAL", None, "Malachi|Mal", "말라기", "malaquias", "玛拉基书"),
+    ("MAT", None, "Matthew|Matt|Mt", "마태복음", "mateo", "马太福音"),
+    ("MAR", None, "Mark|Mk", "마가복음", "marcos", "马可福音"),
+    ("LUK", None, "Luke|Lk", "누가복음", "lucas", "路加福音"),
+    ("JOH", None, "John|Jn", "요한복음", "juan", "约翰福音"),
+    ("ACT", None, "Acts", "사도행전", "hechos", "使徒行传"),
+    ("ROM", None, "Romans|Rom", "로마서", "romanos", "罗马书"),
+    ("1CO", 1, "Corinthians|Cor", "고린도전서", "corintios", "哥林多前书"),
+    ("2CO", 2, "Corinthians|Cor", "고린도후서", "corintios", "哥林多后书"),
+    ("GAL", None, "Galatians|Gal", "갈라디아서", "galatas", "加拉太书"),
+    ("EPH", None, "Ephesians|Eph", "에베소서", "efesios", "以弗所书"),
+    ("PHI", None, "Philippians|Phil", "빌립보서", "filipenses", "腓立比书"),
+    ("COL", None, "Colossians|Col", "골로새서", "colosenses", "歌罗西书"),
+    ("1TH", 1, "Thessalonians|Thess", "데살로니가전서", "tesalonicenses", "帖撒罗尼迦前书"),
+    ("2TH", 2, "Thessalonians|Thess", "데살로니가후서", "tesalonicenses", "帖撒罗尼迦后书"),
+    ("1TI", 1, "Timothy|Tim", "디모데전서", "timoteo", "提摩太前书"),
+    ("2TI", 2, "Timothy|Tim", "디모데후서", "timoteo", "提摩太后书"),
+    ("TIT", None, "Titus", "디도서", "tito", "提多书"),
+    ("PHM", None, "Philemon|Phlm", "빌레몬서", "filemon", "腓利门书"),
+    ("HEB", None, "Hebrews|Heb", "히브리서", "hebreos", "希伯来书"),
+    ("JAM", None, "James|Jas", "야고보서", "santiago", "雅各书"),
+    ("1PE", 1, "Peter|Pet", "베드로전서", "pedro", "彼得前书"),
+    ("2PE", 2, "Peter|Pet", "베드로후서", "pedro", "彼得后书"),
+    ("1JO", 1, "John|Jn", "요한일서", "juan", "约翰一书"),
+    ("2JO", 2, "John|Jn", "요한이서", "juan", "约翰二书"),
+    ("3JO", 3, "John|Jn", "요한삼서", "juan", "约翰三书"),
+    ("JUD", None, "Jude", "유다서", "judas", "犹大书"),
+    ("REV", None, "Revelation|Revelations|Rev", "요한계시록|계시록", "apocalipsis", "启示录"),
+)
+
+
+def _alternation(names) -> str:
+    return "|".join(re.escape(name) for name in sorted(set(names), key=len, reverse=True))
+
+
+_EN_BOOK_CODES = {(number, name): code for code, number, english, *_ in _BIBLE_BOOKS
+                  for name in english.split("|")}
+_ES_BOOK_CODES = {(number, name): code for code, number, _, _, spanish, _ in _BIBLE_BOOKS
+                  for name in spanish.split("|")}
+_KO_BOOK_CODES = {name: code for code, _, _, korean, _, _ in _BIBLE_BOOKS for name in korean.split("|")}
+_ZH_BOOK_CODES = {chinese: code for code, *_, chinese in _BIBLE_BOOKS}
+# Book names are matched as written (capitalized), so "song 3:45" is not a citation.
+_BOOKS = _alternation(name for code, _, english, *_ in _BIBLE_BOOKS for name in english.split("|"))
 _ENGLISH_REFERENCE = re.compile(r"\b(?:" + _BOOKS + r")\.?\s+(\d{1,3}):(\d{1,3})(?![\d:])")
+_EN_ORDINAL = {"1": 1, "2": 2, "3": 3, "i": 1, "ii": 2, "iii": 3, "first": 1, "second": 2, "third": 3}
+_ENGLISH_CITATION = re.compile(r"(?:\b(?i:(1|2|3|iii|ii|i|first|second|third))\s*)?\b(" + _BOOKS
+                               + r")\.?\s+(\d{1,3}):(\d{1,3})(?![\d:])")
+
+
+def _book_code(codes: dict, number: int | None, name: str) -> str | None:
+    """Resolve a (number, base name) pair; an unnumbered base of numbered books is unknown."""
+    return codes.get((number, name)) or (codes.get((None, name)) if number is None else None)
+
+
+def english_book_chapters(text: str) -> set[int]:
+    """Chapters named right after a book without a verse ("Revelation 3", "Revelation three")."""
+    chapters = set()
+    for match in re.finditer(r"\b(?:" + _BOOKS + r")\.?\s+((?:\d{1,3}|[a-z]+)(?:[ -][a-z]+)?)", text):
+        values = english_numbers(match.group(1) + " x")
+        if values and isinstance(values[0], int) and values[0] > 0:
+            chapters.add(values[0])
+    return chapters
+
+
+def english_book_citations(text: str) -> list[tuple[str | None, int, int]]:
+    """``Book c:v`` citations in the English with their book code (None when ambiguous)."""
+    found = []
+    for match in _ENGLISH_CITATION.finditer(text):
+        ordinal, name, chapter, verse = match.groups()
+        number = _EN_ORDINAL.get(ordinal.casefold()) if ordinal else None
+        found.append((_book_code(_EN_BOOK_CODES, number, name), int(chapter), int(verse)))
+    return found
 
 
 def english_references(text: str) -> tuple[set[tuple[int, int]], set[int]]:
@@ -351,6 +485,56 @@ def _take_spanish_number(tokens: list[str], index: int) -> tuple[int | None, int
         if len(tokens[index:index + width]) == width and phrase in _ES_WORD_VALUES:
             return _ES_WORD_VALUES[phrase], index + width
     return None, index
+
+
+_KO_NUMERAL = r"(\d{1,3}|[영일이삼사오육칠팔구십백]+)"
+_ZH_NUMERAL = r"(\d{1,3}|[零一二三四五六七八九十百]+)"
+_ES_NUMERAL = r"(\d{1,3}|" + _alternation(_ES_WORD_VALUES) + r")"
+_KO_CITATION = re.compile(r"(?<![가-힣])(" + _alternation(_KO_BOOK_CODES) + r")\s*" + _KO_NUMERAL
+                          + r"\s*(?:장(?:\s*" + _KO_NUMERAL + r"\s*절)?|:\s*" + _KO_NUMERAL + r")")
+_ZH_CITATION = re.compile("(" + _alternation(_ZH_BOOK_CODES) + r")\s*(?:第\s*)?" + _ZH_NUMERAL
+                          + r"\s*(?:章(?:\s*(?:第\s*)?" + _ZH_NUMERAL + r"\s*节)?|[:：]\s*" + _ZH_NUMERAL + ")")
+# Spanish names are also given names (Juan, Pedro, Santiago), so a citation needs
+# "c:v" or "capítulo"; folded text keeps character offsets for Latin letters.
+_ES_ORDINAL = {"1": 1, "2": 2, "3": 3, "i": 1, "ii": 2, "iii": 3, "primera": 1, "primero": 1, "primer": 1,
+               "segunda": 2, "segundo": 2, "tercera": 3, "tercero": 3, "tercer": 3}
+_ES_CITATION = re.compile(r"(?:\b(" + _alternation(_ES_ORDINAL) + r")\s+(?:de\s+)?)?\b("
+                          + _alternation(name for _, name in _ES_BOOK_CODES) + r")\s+(?:"
+                          + r"(\d{1,3})\s*:\s*(\d{1,3})|capitulo\s+" + _ES_NUMERAL
+                          + r"(?:\s*,?\s*(?:y\s+|el\s+)?versiculos?\s+" + _ES_NUMERAL + r")?)")
+
+
+def book_citations(text: str, locale: str) -> list[tuple[str | None, int, int | None, tuple[int, int]]]:
+    """Target citations anchored to a book name: ``(code, chapter, verse, book name span)``."""
+    found = []
+    if locale == "ko":
+        for match in _KO_CITATION.finditer(text):
+            name, chapter, verse_a, verse_b = match.groups()
+            verse = verse_a or verse_b
+            values = (_number_token(chapter, "ko"), _number_token(verse, "ko") if verse else None)
+            if values[0] is not None:
+                found.append((_KO_BOOK_CODES[name], values[0], values[1], match.span(1)))
+    elif locale == "zh-Hans":
+        for match in _ZH_CITATION.finditer(text):
+            name, chapter, verse_a, verse_b = match.groups()
+            verse = verse_a or verse_b
+            values = (_number_token(chapter, "zh-Hans"), _number_token(verse, "zh-Hans") if verse else None)
+            if values[0] is not None:
+                found.append((_ZH_BOOK_CODES[name], values[0], values[1], match.span(1)))
+    elif locale == "es":
+        # Fold one character at a time so match offsets still index the original text.
+        folded = "".join(_fold(char)[:1] or " " for char in text)
+        for match in _ES_CITATION.finditer(folded):
+            ordinal, name, chapter, verse, word_chapter, word_verse = match.groups()
+            number = _ES_ORDINAL.get(ordinal) if ordinal else None
+            if chapter is not None:
+                values = (int(chapter), int(verse))
+            else:
+                values = (_ES_WORD_VALUES.get(word_chapter, _number_token(word_chapter, "es")),
+                          _ES_WORD_VALUES.get(word_verse, _number_token(word_verse, "es")) if word_verse else None)
+            if values[0] is not None:
+                found.append((_book_code(_ES_BOOK_CODES, number, name), values[0], values[1], match.span(2)))
+    return found
 
 
 def target_references(text: str, locale: str) -> tuple[set[tuple[int, int]], set[int]]:
@@ -408,23 +592,48 @@ def scripture_reference_problems(english: str, target: str, locale: str) -> list
     colon_pairs = english_colon_pairs(english)
     added_pairs = target_pairs - english_pairs - colon_pairs
     problems += [f"added reference {c}:{v}" for c, v in sorted(added_pairs)]
-    # A chapter-only citation the English never said ("요한복음 3장"). A number
-    # the English said for another reason (three sheets, chapter-like counters)
-    # is not treated as added.
+    # The book must survive translation: "Revelation 3:4" is not "Juan 3:4".
+    citations = book_citations(target, locale)
+    english_books: dict[tuple[int, int], set[str]] = {}
+    for code, chapter, verse in english_book_citations(english):
+        if code is not None:
+            english_books.setdefault((chapter, verse), set()).add(code)
+    problems += [f"book changed for {chapter}:{verse}" for code, chapter, verse, _ in citations
+                 if code is not None and (chapter, verse) in english_books
+                 and code not in english_books[(chapter, verse)]]
+    # A chapter-only citation the English never said ("요한복음 3장"). Without a
+    # book name, a number the English said for another reason ("three sheets",
+    # 종이 3장; "three chapters", 三章) is a counter, not a citation.
     said = {value for value in english_numbers(english) if isinstance(value, int)}
     said |= {value for pair in colon_pairs for value in pair}
-    problems += [f"added chapter {c}" for c in sorted(target_chapters - english_chapters - said
-                                                       - {c for c, _ in added_pairs})]
+    book_chapters = {chapter for _, chapter, _, _ in citations}
+    unsaid = (target_chapters - english_chapters - english_book_chapters(english)
+              - {c for c, _ in colon_pairs} - {c for c, _ in added_pairs})
+    problems += [f"added chapter {c}" for c in sorted(unsaid) if c in book_chapters or c not in said]
     return problems
 
 
 # --- Remaining screens ---------------------------------------------------------
+# Frequent Traditional-only characters: none occurs in the pinned Simplified CUV
+# (data/scripture/cmn-cu89s.json), which a test checks.
+_TRADITIONAL_ONLY = frozenset(
+    "們這個為說來會時國學與對過還從經發現關點開問間頭樣種實體讓應當認識禱聖榮愛義靈讀聽見長門東車書"
+    "馬魚鳥話語誰請謝證記該給錢錯難電頁題顏願風飛飯黨齊龍歲歷氣決處傳價優億兒內兩冊劃動務勝勞區協單"
+    "參雙變號嗎嚴圖園圓團壞壓夢奪婦寫寶將專尋導屬層島師帶幫幾廣張彈後復態戰戶歡歸殺漢準滿燈爭爾狀獨"
+    "環產畫異盡監確禮稱竊筆簡糧紀紅純紙級細終結統絕網線練總罰羅習聯聲職腦臉舊艱華萬葉藝蘇蟲術衛裝製"
+    "複規視親覺觀計訂訴診評試詩詳誠誤課調談論譯議貝負財貨貧責貴買費資賣質贏趕趙跡輕輸轉辦農進連運達"
+    "違遠選遺邊郵鄉醫釋針鐵銀鋼鏡閉閱陳陽隊階際隨險隱雖雜離雲靜響項順須預領類顯館驗髮鬥魯鮮麗黃麼沒"
+    "裡裏臺隻爺賜惡")
+
+
 def script_problems(text: str, locale: str) -> list[str]:
     letters = [char for char in text if char.isalpha()]
     if not letters:
         return ["no target-language letters"]
     hangul = sum("가" <= char <= "힣" or "ᄀ" <= char <= "ᇿ" for char in letters)
-    cjk = sum("一" <= char <= "鿿" or "぀" <= char <= "ヿ" for char in letters)
+    kana = sum("぀" <= char <= "ヿ" for char in letters)
+    han = sum("一" <= char <= "鿿" or "㐀" <= char <= "䶿" for char in letters)
+    cjk = han + kana
     problems = []
     if re.search(r"\b(?:TODO|TBD|PLACEHOLDER|FIXME)\b|\?\?\?", text, re.I):
         problems.append("placeholder marker")
@@ -436,8 +645,14 @@ def script_problems(text: str, locale: str) -> list[str]:
             problems.append("non-Latin CJK/Hangul characters in Spanish text")
         if latin / len(letters) < 0.6:
             problems.append(f"Latin share {latin / len(letters):.2f} < 0.60")
-    if locale == "zh-Hans" and cjk / len(letters) < 0.6:
-        problems.append(f"Han share {cjk / len(letters):.2f} < 0.60")
+    if locale == "zh-Hans":
+        if han / len(letters) < 0.6:
+            problems.append(f"Han share {han / len(letters):.2f} < 0.60")
+        if kana or hangul:
+            problems.append("Japanese kana or Hangul in Simplified Chinese text")
+        traditional = sum(char in _TRADITIONAL_ONLY for char in letters)
+        if traditional >= 2 or (traditional and traditional / max(han, 1) >= 0.1):
+            problems.append(f"{traditional} Traditional-only characters in Simplified Chinese text")
     return problems
 
 

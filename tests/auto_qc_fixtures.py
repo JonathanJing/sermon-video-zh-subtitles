@@ -94,14 +94,37 @@ def speech_wav(seconds: float, rate: int = 8000) -> bytes:
     return audio_qc.encode_pcm16(samples, rate)
 
 
+SEMANTIC_IDENTITY = {"backend": "fake-transport", "model": "fake-judge", "reasoningEffort": "medium"}
+PRIMARY_ASR = "small-asr"
+SECONDARY_ASR = "large-asr"
+
+
 def units(locale: str, seconds_per_unit: float = 0.17) -> list[dict]:
     rows = []
     for group in groups(locale):
         seconds = 0.2 + seconds_per_unit * speech_units(group["targetText"], locale)
+        wav = speech_wav(seconds)
         rows.append({"groupId": group["groupId"], "text": group["targetText"],
-                     "sourceSeconds": max(2.0, seconds * 0.9), "wav": speech_wav(seconds),
-                     "asrPrimary": 0.97})
+                     "sourceSeconds": max(2.0, seconds * 0.9), "wav": wav,
+                     "asr": {"primary": audio_qc.asr_opinion(0.97, audio=wav, text=group["targetText"],
+                                                             model=PRIMARY_ASR)}})
     return rows
+
+
+class FakeAsr:
+    """Fake ASR transport: high similarity only when the audio is this text's own clean render."""
+
+    def __init__(self, locale: str, *, primary_similarity_on_mismatch: float = 0.3,
+                 secondary_similarity_on_mismatch: float = 0.4):
+        self.own = {row["text"]: row["wav"] for row in units(locale)}
+        self.mismatch = {"primary": primary_similarity_on_mismatch, "secondary": secondary_similarity_on_mismatch}
+        self.calls = []
+
+    def __call__(self, role, wav, text, locale):
+        self.calls.append(role)
+        similarity = 0.97 if self.own.get(text) == wav else self.mismatch[role]
+        return audio_qc.asr_opinion(similarity, audio=wav, text=text,
+                                    model=PRIMARY_ASR if role == "primary" else SECONDARY_ASR)
 
 
 class PerfectSemanticJudge:

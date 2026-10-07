@@ -179,7 +179,8 @@
         "semanticChecksIncluded",
         "overallDetectionRate",
         "minimumKindDetectionRate",
-        "cleanFalsePositiveRate"
+        "cleanFalsePositiveRate",
+        "runtimeIdentitySha256"
       ],
       "properties": {
         "jsonSha256": {
@@ -205,6 +206,9 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1
+        },
+        "runtimeIdentitySha256": {
+          "$ref": "#/$defs/sha256"
         }
       }
     },

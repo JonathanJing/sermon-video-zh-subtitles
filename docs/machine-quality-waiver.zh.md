@@ -19,11 +19,11 @@
 
 | 环节 | 入口 | 作用 |
 |---|---|---|
-| L2 逐组确定性检查 | `language_review_plugins/ko_weekly_auto.py`、`es_weekly_auto.py`（共享 `auto_qc_text_common.py`） | 每周通用，不写死任何一篇讲道。检查目标文字脚本与占位符、未翻译的英文、语域、术语表人名、经文出处（英文说了就必须有，没说不能加）、数字（数字或目标语言读法） |
+| L2 逐组确定性检查 | `language_review_plugins/ko_weekly_auto.py`、`es_weekly_auto.py`（共享 `auto_qc_text_common.py`） | 每周通用，不写死任何一篇讲道。检查目标文字脚本与占位符（西语须以拉丁字母为主；中文须为简体，假名、谚文或繁体字都会失败）、未翻译的英文、语域（西语不得用 vosotros，包括省略主语的 decís、sois）、术语表人名、经文出处（英文说了就必须有，没说不能加；带书卷名的引用要对上同一卷书，66 卷的中韩西名称在 `_BIBLE_BOOKS`）、数字（数字或目标语言读法；含小数和 “nineteen ninety-nine” 这类年份读法） |
 | L2 整篇检查 | `scripts/target_text_auto_qc.py` | 长度离群：与本篇中位数比较。**回译比对**：第一次调用只给目标语言文字，翻回英文；第二次调用对比冻结英文和回译，判断有没有漏译、增译、否定、数字、人名、经文、意思偏移。模型调用由调用方注入，没有回译结果的组不能判为通过 |
-| L3 单句检查 | `scripts/target_audio_auto_qc.py` | TTS 之后马上检查：时长异常（与本篇语速中位数比较，以及与原声时长之比）、截断、近乎无声、静音过多、长停顿、削波。回转写两级：小 ASR 标出的疑点由强 ASR 复核，两边都不一致才判失败。没有主 ASR 分数的句子停在 `pending_primary_asr`，不能只凭声学指标通过 |
+| L3 单句检查 | `scripts/target_audio_auto_qc.py` | TTS 之后马上检查：时长异常（与本篇语速中位数比较，以及与原声时长之比）、截断、近乎无声、静音过多、长停顿、削波、句首句尾静音过长。回转写两级：小 ASR 标出的疑点由强 ASR 复核（必须是另一个模型），两边都不一致才判失败。每个 ASR 结果都绑定所听音频和预期文字的哈希以及模型；音频重合成后沿用旧分数无效，这一句停在 `pending_primary_asr`，不能只凭声学指标通过 |
 | 8 秒预算 | `scripts/target_audio_predicted_schedule.py` | 用已测音频拟合各语言语速，再用正式排程公式按**预测时长**排一次。超窗的组给出 `maxSpeechUnits`，供口播修订一次改到位。语速绑定 speech job 的合成身份（adapter、配置、模型版本、音色、说话人、conditioning、语言参数、文本规范化）和所测音频的哈希；身份不同就拒绝预算，需要重新拟合 |
-| 注错校准 | `scripts/auto_qc_seeded_errors.py` | 在干净成品里注入已知错误，统计每类检出率和干净样例的误报率 |
+| 注错校准 | `scripts/auto_qc_seeded_errors.py` | 在干净成品里注入已知错误，统计每类检出率和干净样例的误报率。只有出现干净版本没有的新问题才算检出（错句配音必须由 ASR 判出），不会把原有误报算成检出。文字类含换书卷（wrong_book），音频类含换成别句的配音（wrong_sentence，需要注入 ASR transport） |
 | 豁免收据 | `scripts/machine_quality_waiver.py` | 汇总最终 QC 结果，按上面的 5% 规则决定这个语言是自动发布、只发文字还是暂停。先核对 QC 收据确实检查的是这份候选（每组译文哈希）和这份音频包（候选哈希、每句音频哈希），对不上就报错 |
 | 门禁收据 | `scripts/machine_quality_release_basis.py` | 生成并校验两种绑定到具体产物的收据：**译文豁免**（`sermon-target-language-machine-text-waiver-v1`，绑定一个 L2 候选）和**试听豁免**（`sermon-target-language-machine-audio-waiver-v1`，绑定一个 L3 音频包、它的 ASR 筛查和口播稿的译文豁免） |
 
@@ -33,7 +33,8 @@
 
 - 校准收据的 `implementationSha256` 与当前 QC 代码一致。代码一改，必须重新校准。
 - 校准时回译检查实际参与了（`semanticChecksIncluded=true`）。
-- 总检出率 ≥ 95%，每类 ≥ 90%。每一类注错都必须实际试过（`trials > 0`）；缺一类或某类零样本都算校准不足。要发配音时，校准还必须包含音频各类。
+- 本次 QC 用的回译运行身份（`semanticIdentity`：后端、模型和设置）和 ASR 模型，必须与校准时一致。换成别的模型或后端，必须重新校准。
+- 总检出率 ≥ 95%，每类 ≥ 90%。每一类注错都必须实际试过（`trials > 0`）；缺一类或某类零样本都算校准不足。要发配音时，校准还必须包含音频各类；只发文字时，音频类的结果不影响放行。
 - 干净样例误报率 ≤ 10%。
 
 只做离线确定性检查时，“删掉半句”这类错误只能检出约 58% 到 75%（见测试样例）。这正是必须加入回译检查的原因。
@@ -45,9 +46,10 @@
 python scripts/target_audio_predicted_schedule.py fit --input rate-input.json --speech-job measured-job.json --out rate.json
 # TTS 前预测排程（groups: [{gid, sourceStart, sourceEnd, text}]，时间相对 clip；--speech-job 为本次要合成的 job）
 python scripts/target_audio_predicted_schedule.py budget --input groups.json --rate rate.json --speech-job job.json --out budget.json
-# 单句音频 QC（units: [{groupId, text, sourceSeconds, wavPath, asrPrimary, asrSecondary?, priorFailedAttempts?}]）
+# 单句音频 QC（units: [{groupId, text, sourceSeconds, wavPath, asr: {primary, secondary?}, priorFailedAttempts?}]，
+# 每个 ASR 结果为 {similarity, audioSha256, textSha256, model, modelRevision?}）
 python scripts/target_audio_auto_qc.py --input units.json --out audio-qc.json
-# 离线注错校准（不含回译，因此不能单独解锁豁免）
+# 离线注错校准（不含回译和 ASR transport，因此不能单独解锁豁免）
 python scripts/auto_qc_seeded_errors.py --input calibration-input.json --out calibration.json
 # 豁免决定
 python scripts/machine_quality_waiver.py --locale ko --candidate candidate.json \

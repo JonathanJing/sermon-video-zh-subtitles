@@ -62,6 +62,20 @@ def _sha(value) -> str:
                                      separators=(",", ":")).encode("utf-8")).hexdigest()
 
 
+def semantic_identity(identity: dict | None) -> dict | None:
+    """Validate the back-translation runtime identity (backend, model, settings).
+
+    A calibration only vouches for the runtime it ran with, so the same
+    identity is recorded in the calibration and in every text QC receipt.
+    """
+    if identity is None:
+        return None
+    if (not isinstance(identity, dict) or not all(isinstance(identity.get(key), str) and identity[key]
+                                                    for key in ("backend", "model"))):
+        raise ValueError("Semantic identity needs at least backend and model")
+    return {"identity": dict(identity), "sha256": _sha(identity)}
+
+
 def _length(text: str) -> int:
     return sum(1 for char in unicodedata.normalize("NFKC", text) if char.isalnum())
 
@@ -158,14 +172,18 @@ def group_problems(group: dict, locale: str, *, policy: dict | None, median: flo
 
 
 def screen(groups: list[dict], locale: str, *, policy: dict | None = None, call=None,
-           prior_failed_attempts: dict[str, int] | None = None) -> dict:
+           identity: dict | None = None, prior_failed_attempts: dict[str, int] | None = None) -> dict:
     """Screen a whole candidate. ``groups``: ``[{groupId, english, targetText}]``.
 
     Without ``call`` the back-translation result is ``not_run`` and the group
     cannot reach ``pass``: semantic evidence is required for a waiver.
+    ``identity`` names the runtime behind ``call`` and is required with it.
     """
     if locale not in LANGUAGE_NAMES:
         raise ValueError(f"Unsupported locale: {locale}")
+    if call is not None and identity is None:
+        raise ValueError("A back-translation transport needs its semantic identity")
+    bound = semantic_identity(identity) if call is not None else None
     prior = prior_failed_attempts or {}
     median = candidate_length_median(groups)
     results = []
@@ -184,6 +202,8 @@ def screen(groups: list[dict], locale: str, *, policy: dict | None = None, call=
                         "backTranslation": semantic, "failedAttempts": failed, "nextAction": action,
                         "targetTextSha256": hashlib.sha256(group["targetText"].encode("utf-8")).hexdigest()})
     return {"schemaVersion": SCHEMA, "locale": locale, "maxRepairAttempts": MAX_TEXT_REPAIR_ATTEMPTS,
+            "semanticIdentity": None if bound is None else bound["identity"],
+            "semanticIdentitySha256": None if bound is None else bound["sha256"],
             "lengthBounds": LENGTH_BOUNDS, "candidateLengthMedian": median,
             "status": "pass" if all(r["status"] == "pass" for r in results) else "requires_repair",
             "repairGroupIds": [r["groupId"] for r in results if r["nextAction"] == "revise_translation"],

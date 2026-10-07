@@ -1,5 +1,6 @@
 import copy
 import hashlib
+from pathlib import Path
 import random
 import unittest
 
@@ -14,6 +15,7 @@ from scripts.language_review_plugins import es_weekly_auto, ko_weekly_auto
 from tests import auto_qc_fixtures as fixtures
 
 LOCALES = ("zh-Hans", "ko", "es")
+ROOT = Path(__file__).resolve().parents[1]
 IDENTITY = {"targetLocale": "ko", "adapterId": "ko-tts", "adapterVersion": "1", "configSha256": "a" * 64,
             "provider": "local", "model": "tts", "modelRevision": "r1", "voice": "v1", "speakerId": "s1",
             "conditioningSha256": "b" * 64, "languageParameter": "ko", "normalizationPolicySha256": "c" * 64}
@@ -28,6 +30,12 @@ class TextRuleTests(unittest.TestCase):
         self.assertEqual(rules.english_numbers("the one who waited forty-four years, one of them, 1,990 people"),
                          [44, 1990])
         self.assertEqual(rules.english_numbers("two hundred and fifty"), [250])
+
+    def test_spoken_years_are_not_added_up(self):
+        self.assertEqual(rules.english_numbers("In twenty twenty-four and nineteen ninety-nine"), [2024, 1999])
+        self.assertEqual(rules.english_numbers("twenty oh five, fourteen ninety-two"), [2005, 1492])
+        self.assertEqual(rules.english_numbers("twenty five people, nineteen hundred"), [25, 1900])
+        self.assertEqual(rules.number_problems("In twenty twenty-four we moved.", "2024년에 이사했습니다.", "ko", set()), [])
 
     def test_target_number_forms(self):
         self.assertTrue(rules.korean_number_present("마흔네 살", 44))
@@ -73,13 +81,44 @@ class TextRuleTests(unittest.TestCase):
             self.assertEqual(rules.scripture_reference_problems(english, target, "ko"), [], target)
         self.assertIn("missing chapter 3", rules.scripture_reference_problems(english, "세상을 봅니다", "ko"))
 
+    def test_scripture_book_must_survive_translation(self):
+        english = "Turn to Revelation 3:4."
+        for locale, good, bad in (("es", "Vayan a Apocalipsis 3:4.", "Vayan a Juan 3:4."),
+                                  ("ko", "요한계시록 3장 4절을 보십시오.", "요한복음 3장 4절을 보십시오."),
+                                  ("zh-Hans", "请看启示录3章4节。", "请看约翰福音3章4节。")):
+            self.assertEqual(rules.scripture_reference_problems(english, good, locale), [], locale)
+            self.assertIn("book changed for 3:4", rules.scripture_reference_problems(english, bad, locale))
+            self.assertIn("book changed for 3:4", rules.scripture_reference_problems(
+                english, seeded.mutate_text({"english": english, "targetText": good}, "wrong_book", locale, None),
+                locale))
+        # Numbered books are told apart by their number.
+        self.assertIn("book changed for 4:8", rules.scripture_reference_problems(
+            "As 1 John 4:8 says", "Como dice Juan 4:8", "es"))
+        self.assertEqual(rules.scripture_reference_problems("As 1 John 4:8 says", "Como dice 1 Juan 4:8", "es"), [])
+        self.assertEqual(rules.scripture_reference_problems("As 1 John 4:8 says", "요한일서 4장 8절 말씀처럼", "ko"), [])
+
+    def test_bible_book_table_matches_the_scripture_index(self):
+        from scripts import build_scripture_index as index
+        table = {code: chinese for code, *_, chinese in rules._BIBLE_BOOKS}
+        self.assertEqual(table, {code: chinese for code, (_, chinese) in index.BOOKS.items()})
+
     def test_added_chapter_only_reference_is_rejected(self):
         english = "He said a few remain."
         self.assertIn("added chapter 3", rules.scripture_reference_problems(english, "몇 명이 남았습니다. 요한복음 3장", "ko"))
         self.assertIn("added chapter 3", rules.scripture_reference_problems(english, "Quedan unos pocos. Juan capítulo 3", "es"))
         self.assertIn("added chapter 3", rules.scripture_reference_problems(english, "还剩几个人。约翰福音3章", "zh-Hans"))
-        # A count the English said is not a citation.
+        # A count the English said is not a citation, unless a book name makes it one.
         self.assertEqual(rules.scripture_reference_problems("Take three sheets.", "종이 3장을 가져가세요.", "ko"), [])
+        self.assertEqual(rules.scripture_reference_problems("Read three chapters a day.", "每天读三章。", "zh-Hans"), [])
+        self.assertIn("added chapter 3", rules.scripture_reference_problems(
+            "Take three sheets.", "Toma tres hojas. Juan capítulo 3", "es"))
+        self.assertIn("added chapter 3", rules.scripture_reference_problems(
+            "Take three sheets.", "종이 3장을 가져가세요. 요한복음 3장", "ko"))
+        # "Revelation 3" names the chapter even without "chapter" or a verse.
+        self.assertEqual(rules.scripture_reference_problems(
+            "Turn to Revelation 3 tonight.", "오늘 밤 요한계시록 3장을 펴십시오.", "ko"), [])
+        self.assertEqual(rules.scripture_reference_problems(
+            "Turn to Revelation three.", "Abran Apocalipsis capítulo 3.", "es"), [])
 
     def test_plugins_pass_clean_and_reject_mechanical_errors(self):
         for locale, plugin in (("ko", ko_weekly_auto), ("es", es_weekly_auto)):
@@ -96,6 +135,20 @@ class TextRuleTests(unittest.TestCase):
                 policy, [{"english": group["english"]}], {"targetText": bad, "targetUtterances": [bad]})}
             self.assertEqual(checks["target_script"], "fail")
             self.assertEqual(checks["scripture_references"], "fail")
+
+    def test_chinese_must_be_simplified(self):
+        self.assertEqual(rules.script_problems("恩典不是我们赚来的，而是我们领受的礼物。", "zh-Hans"), [])
+        self.assertTrue(rules.script_problems("恩典不是我們賺來的，而是我們領受的禮物。", "zh-Hans"))
+        self.assertTrue(rules.script_problems("恵みは私たちが受け取る贈り物です", "zh-Hans"))
+        cuv = (ROOT / "data/scripture/cmn-cu89s.json").read_text(encoding="utf-8")
+        self.assertEqual(sorted(set(cuv) & rules._TRADITIONAL_ONLY), [])
+
+    def test_spanish_register_catches_pro_drop_vosotros(self):
+        import re
+        for text in ("Ya lo decís", "Si vivís así", "Sois la luz", "Vais a ver", "Vuestra fe", "Dios os ama"):
+            self.assertTrue(re.search(es_weekly_auto.FORBIDDEN_REGISTER, text, re.I), text)
+        for text in ("Nuestro país", "Vivimos en París", "Ustedes dicen", "Sí, así es", "Luís vino"):
+            self.assertFalse(re.search(es_weekly_auto.FORBIDDEN_REGISTER, text, re.I), text)
 
     def test_spanish_requires_latin_script(self):
         self.assertEqual(rules.script_problems("La gracia es un regalo que recibimos.", "es"), [])
@@ -121,20 +174,24 @@ class TextQcTests(unittest.TestCase):
             pending = text_qc.screen(groups, locale, policy=fixtures.policy(locale))
             self.assertTrue(all(r["status"] == "pending_back_translation" for r in pending["results"]))
             judged = text_qc.screen(groups, locale, policy=fixtures.policy(locale),
-                                    call=fixtures.PerfectSemanticJudge(locale))
+                                    call=fixtures.PerfectSemanticJudge(locale), identity=fixtures.SEMANTIC_IDENTITY)
             self.assertEqual(judged["status"], "pass", locale)
             self.assertFalse(judged["humanApproval"])
+            self.assertEqual(judged["semanticIdentity"], fixtures.SEMANTIC_IDENTITY)
+        with self.assertRaisesRegex(ValueError, "semantic identity"):
+            text_qc.screen(groups, locale, call=fixtures.PerfectSemanticJudge(locale))
 
     def test_back_translation_failure_follows_four_step_ladder(self):
         groups = fixtures.groups("ko")
         groups[3] = {**groups[3], "targetText": "은혜는 선물입니다."}
         judge = fixtures.PerfectSemanticJudge("ko")
-        first = text_qc.screen(groups, "ko", policy=fixtures.policy("ko"), call=judge)
+        first = text_qc.screen(groups, "ko", policy=fixtures.policy("ko"), call=judge,
+                               identity=fixtures.SEMANTIC_IDENTITY)
         row = first["results"][3]
         self.assertEqual((row["status"], row["nextAction"], row["failedAttempts"]),
                          ("fail", "revise_translation", 1))
         last = text_qc.screen(groups, "ko", policy=fixtures.policy("ko"), call=judge,
-                              prior_failed_attempts={"g004": 4})
+                              identity=fixtures.SEMANTIC_IDENTITY, prior_failed_attempts={"g004": 4})
         self.assertEqual(last["sourceTextFallbackGroupIds"], ["g004"])
 
     def test_judge_cannot_pass_a_major_issue(self):
@@ -178,12 +235,48 @@ class AudioQcTests(unittest.TestCase):
         self.assertEqual(audio_qc.asr_decision(0.6, 0.93), "pass")
         self.assertEqual(audio_qc.asr_decision(0.6, 0.7), "fail")
         units = fixtures.units("zh-Hans")
-        units[0] = {**units[0], "asrPrimary": 0.5}
+        low = audio_qc.asr_opinion(0.5, audio=units[0]["wav"], text=units[0]["text"], model=fixtures.PRIMARY_ASR)
+        units[0] = {**units[0], "asr": {"primary": low}}
         self.assertEqual(audio_qc.screen(units, "zh-Hans")["results"][0]["nextAction"], "run_secondary_asr")
+        strong = audio_qc.asr_opinion(0.95, audio=units[0]["wav"], text=units[0]["text"], model=fixtures.SECONDARY_ASR)
+        units[0] = {**units[0], "asr": {"primary": low, "secondary": strong}}
+        row = audio_qc.screen(units, "zh-Hans")["results"][0]
+        self.assertEqual((row["status"], row["asrSecondaryModel"]["model"]), ("pass", fixtures.SECONDARY_ASR))
+        same = audio_qc.asr_opinion(0.95, audio=units[0]["wav"], text=units[0]["text"], model=fixtures.PRIMARY_ASR)
+        units[0] = {**units[0], "asr": {"primary": low, "secondary": same}}
+        with self.assertRaisesRegex(ValueError, "different model"):
+            audio_qc.screen(units, "zh-Hans")
+
+    def test_asr_scores_bind_the_current_audio_and_text(self):
+        units = fixtures.units("ko")
+        # Resynthesized audio keeping the earlier render's opinion: the stale score does not count.
+        samples, rate = audio_qc.decode_pcm16(units[2]["wav"])
+        resynthesized = audio_qc.encode_pcm16(samples + samples[:400], rate)
+        units[2] = {**units[2], "wav": resynthesized}
+        row = audio_qc.screen(units, "ko")["results"][2]
+        self.assertEqual((row["status"], row["staleAsr"], row["asrPrimary"]),
+                         ("pending_primary_asr", ["primary"], None))
+        # An opinion about other text does not count either.
+        other = audio_qc.asr_opinion(0.99, audio=resynthesized, text="다른 문장입니다.", model=fixtures.PRIMARY_ASR)
+        units[2] = {**units[2], "asr": {"primary": other}}
+        self.assertEqual(audio_qc.screen(units, "ko")["results"][2]["status"], "pending_primary_asr")
+        with self.assertRaisesRegex(ValueError, "Bare ASR scores"):
+            audio_qc.screen([{**units[0], "asrPrimary": 0.97}], "ko")
+
+    def test_edge_silence_is_an_issue(self):
+        units = fixtures.units("es")
+        samples, rate = audio_qc.decode_pcm16(units[4]["wav"])
+        padded = audio_qc.encode_pcm16([0.0] * (2 * rate) + samples, rate)
+        text = units[4]["text"]
+        units[4] = {**units[4], "wav": padded, "asr": {"primary": audio_qc.asr_opinion(
+            0.97, audio=padded, text=text, model=fixtures.PRIMARY_ASR)}}
+        row = audio_qc.screen(units, "es")["results"][4]
+        self.assertEqual(row["status"], "fail")
+        self.assertTrue(any(issue.startswith("leading_silence") for issue in row["issues"]), row["issues"])
 
     def test_missing_primary_asr_never_passes(self):
         units = fixtures.units("ko")
-        units[1] = {key: value for key, value in units[1].items() if key != "asrPrimary"}
+        units[1] = {key: value for key, value in units[1].items() if key != "asr"}
         result = audio_qc.screen(units, "ko")
         row = result["results"][1]
         self.assertEqual((row["status"], row["nextAction"]), ("pending_primary_asr", "run_primary_asr"))
@@ -247,19 +340,42 @@ class PredictedScheduleTests(unittest.TestCase):
 
 
 class CalibrationAndWaiverTests(unittest.TestCase):
-    def calibration(self, locale, *, semantic=True):
+    def calibration(self, locale, *, semantic=True, asr=True):
         call = fixtures.PerfectSemanticJudge(locale) if semantic else None
         return seeded.calibrate(locale, fixtures.groups(locale), fixtures.units(locale),
-                                policy=fixtures.policy(locale), call=call)
+                                policy=fixtures.policy(locale), call=call,
+                                identity=fixtures.SEMANTIC_IDENTITY if semantic else None,
+                                asr=fixtures.FakeAsr(locale) if asr else None)
 
     def test_calibration_has_no_false_positives_on_clean_fixtures(self):
         for locale in LOCALES:
             result = self.calibration(locale, semantic=False)
             self.assertEqual(result["cleanFalsePositives"], 0, locale)
-            for kind in ("text.english_leak", "text.placeholder", "text.added_reference",
-                         "audio.stretched", "audio.silent", "audio.clipped", "audio.truncated"):
+            for kind in ("text.english_leak", "text.placeholder", "text.added_reference", "text.wrong_book",
+                         "audio.stretched", "audio.silent", "audio.clipped", "audio.truncated",
+                         "audio.wrong_sentence"):
                 self.assertEqual(result["kinds"][kind]["rate"], 1.0, (locale, kind))
             self.assertFalse(result["semanticChecksIncluded"])
+            self.assertEqual(result["asrIdentity"]["secondary"]["model"], fixtures.SECONDARY_ASR)
+
+    def test_wrong_sentence_needs_the_asr_path(self):
+        without = self.calibration("ko", asr=False)
+        self.assertEqual(without["kinds"]["audio.wrong_sentence"]["trials"], 0)
+        self.assertIn("calibration has no trials for ['audio.wrong_sentence']",
+                      waiver.calibration_problems(without, "ko", waiver.implementation_sha256(), require_audio=True))
+        # An ASR integration that always agrees catches nothing.
+        broken = seeded.calibrate("ko", fixtures.groups("ko"), fixtures.units("ko"), policy=fixtures.policy("ko"),
+                                  asr=fixtures.FakeAsr("ko", primary_similarity_on_mismatch=0.97))
+        self.assertEqual(broken["kinds"]["audio.wrong_sentence"]["rate"], 0.0)
+
+    def test_baseline_false_positives_are_not_credited(self):
+        groups = fixtures.groups("ko")
+        # A clean group that already fails (a stray placeholder) must not count as detecting other kinds.
+        groups[7] = {**groups[7], "targetText": groups[7]["targetText"] + " TODO"}
+        result = seeded.calibrate_text(groups, "ko", policy=fixtures.policy("ko"))
+        self.assertEqual(result["cleanFalsePositives"], 1)
+        self.assertEqual(result["kinds"]["placeholder"]["detected"], result["kinds"]["placeholder"]["trials"] - 1)
+        self.assertIn("g008", result["kinds"]["placeholder"]["missedGroupIds"])
 
     def final_receipts(self, locale, count=40, subtitle_only=0, fallback=0, sentences=None):
         """A candidate, its audio package and final QC receipts that screened exactly them."""
@@ -272,12 +388,15 @@ class CalibrationAndWaiverTests(unittest.TestCase):
                    "units": [{"textGroupId": group["translationGroupId"], "targetTextSha256": text_sha(group["targetText"]),
                               "audio": {"sha256": text_sha("audio " + group["translationGroupId"])}}
                              for group in groups]}
-        text = {"locale": locale, "sourceTextFallbackGroupIds": ids[:fallback], "results": [
-            {"groupId": gid, "nextAction": "source_text_fallback" if i < fallback else "keep",
-             "targetTextSha256": text_sha(groups[i]["targetText"])} for i, gid in enumerate(ids)]}
+        text = {"locale": locale, "sourceTextFallbackGroupIds": ids[:fallback],
+                "semanticIdentitySha256": text_qc.semantic_identity(fixtures.SEMANTIC_IDENTITY)["sha256"],
+                "results": [{"groupId": gid, "nextAction": "source_text_fallback" if i < fallback else "keep",
+                             "targetTextSha256": text_sha(groups[i]["targetText"])} for i, gid in enumerate(ids)]}
         audio = {"locale": locale, "subtitleOnlyGroupIds": ids[count - subtitle_only:], "results": [
             {"groupId": gid, "nextAction": "subtitle_only" if i >= count - subtitle_only else "keep",
-             "audioSha256": package["units"][i]["audio"]["sha256"]} for i, gid in enumerate(ids)]}
+             "audioSha256": package["units"][i]["audio"]["sha256"],
+             "asrPrimaryModel": {"model": fixtures.PRIMARY_ASR, "modelRevision": None}, "asrSecondaryModel": None}
+            for i, gid in enumerate(ids)]}
         return candidate, package, text, audio
 
     def waive(self, locale, receipts, calibration):
@@ -352,11 +471,33 @@ class CalibrationAndWaiverTests(unittest.TestCase):
         self.assertIn("calibration lacks seeded-error kinds ['audio.silent']",
                       self.waive("ko", receipts, missing)["reasons"])
         text_only = seeded.calibrate("ko", fixtures.groups("ko"), None, policy=fixtures.policy("ko"),
-                                     call=fixtures.PerfectSemanticJudge("ko"))
+                                     call=fixtures.PerfectSemanticJudge("ko"), identity=fixtures.SEMANTIC_IDENTITY)
         self.assertEqual(self.waive("ko", receipts, text_only)["status"], "blocked_calibration")
         candidate, _, text, _ = receipts
         self.assertEqual(waiver.waive("ko", candidate, text, None, text_only)["status"],
                          "machine_quality_waived_text_only")
+
+    def test_qc_runtimes_must_match_the_calibration(self):
+        calibration = self.calibration("ko")
+        receipts = self.final_receipts("ko")
+        weaker = copy.deepcopy(receipts)
+        weaker[2]["semanticIdentitySha256"] = text_qc.semantic_identity(
+            {**fixtures.SEMANTIC_IDENTITY, "model": "smaller-judge"})["sha256"]
+        result = self.waive("ko", weaker, calibration)
+        self.assertEqual(result["status"], "blocked_calibration")
+        self.assertIn("back-translation runtime differs from calibration", result["reasons"])
+        other_asr = copy.deepcopy(receipts)
+        other_asr[3]["results"][5]["asrPrimaryModel"] = {"model": "other-asr", "modelRevision": None}
+        self.assertIn("primary ASR model differs from calibration", self.waive("ko", other_asr, calibration)["reasons"])
+
+    def test_text_only_release_ignores_audio_calibration(self):
+        calibration = self.calibration("ko")
+        calibration["kinds"]["audio.clipped"].update(detected=0, rate=0.0)
+        candidate, package, text, audio = self.final_receipts("ko")
+        self.assertEqual(waiver.waive("ko", candidate, text, None, calibration)["status"],
+                         "machine_quality_waived_text_only")
+        self.assertEqual(waiver.waive("ko", candidate, text, audio, calibration, audio_package=package)["status"],
+                         "blocked_calibration")
 
     def test_pending_repairs_and_stale_calibration_block(self):
         calibration = self.calibration("zh-Hans")

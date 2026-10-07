@@ -82,13 +82,15 @@ def calibration_summary(calibration: dict, locale: str, implementation: str, *,
                         require_audio: bool = False) -> dict:
     problems = waiver.calibration_problems(calibration, locale, implementation, require_audio=require_audio)
     _require(not problems, "Calibration does not allow a waiver: " + "; ".join(problems))
-    rates = [row["rate"] for row in calibration["kinds"].values() if row.get("trials", 0)]
-    _require(bool(rates), "Calibration has no seeded-error trials")
+    expected = [f"text.{kind}" for kind in waiver.TEXT_KINDS] + (
+        [f"audio.{kind}" for kind in waiver.AUDIO_KINDS] if require_audio else [])
+    rates = [calibration["kinds"][kind]["rate"] for kind in expected]
     return {"jsonSha256": json_sha256(calibration), "implementationSha256": implementation,
             "semanticChecksIncluded": True,
             "overallDetectionRate": calibration["overallDetectionRate"],
             "minimumKindDetectionRate": min(rates),
-            "cleanFalsePositiveRate": calibration["cleanFalsePositiveRate"]}
+            "cleanFalsePositiveRate": calibration["cleanFalsePositiveRate"],
+            "runtimeIdentitySha256": waiver.runtime_identity_sha256(calibration)}
 
 
 def _validate_summary(receipt: dict) -> None:
@@ -148,6 +150,8 @@ def build_text_waiver(source: dict, anchor: dict, candidate: dict, text_qc: dict
     for row, group in zip(results, groups):
         _require(row.get("targetTextSha256") == _text_sha(group["targetText"]),
                  f"Text QC screened different text: {group['translationGroupId']}")
+    runtime = waiver.runtime_identity_problems(calibration, text_qc=text_qc)
+    _require(not runtime, "Text QC runtime differs from calibration: " + "; ".join(runtime))
     receipt = {
         "schemaVersion": TEXT_WAIVER_SCHEMA, "reviewKind": REVIEW_KIND, "humanApproval": False,
         "decision": "machine_quality_waived", "targetLocale": locale,
@@ -261,6 +265,8 @@ def build_audio_waiver(package: dict, screening: dict, audio_qc: dict, text_waiv
     _require(audio_qc.get("status") == "pass" and not audio_qc.get("subtitleOnlyGroupIds")
              and all(row.get("status") == "pass" and row.get("nextAction") == "keep" for row in results),
              "Every unit must pass audio QC; subtitle-only units are not wired yet")
+    runtime = waiver.runtime_identity_problems(calibration, audio_qc=audio_qc)
+    _require(not runtime, "Audio QC runtime differs from calibration: " + "; ".join(runtime))
     threshold = _asr_threshold()
     rows = []
     for row, unit in zip(results, package["units"]):
@@ -269,7 +275,8 @@ def build_audio_waiver(package: dict, screening: dict, audio_qc: dict, text_waiv
         secondary = row.get("asrSecondary")
         _require(row.get("audioSha256") == unit["audio"]["sha256"],
                  f"Audio QC screened different audio: {group_id}")
-        _require(row.get("asrPrimary") == primary,
+        _require(row.get("asrPrimary") == primary and row.get("asrPrimaryModel") == {
+                     "model": screening["model"], "modelRevision": screening.get("modelRevision")},
                  f"Audio QC primary ASR differs from the bound screening: {group_id}")
         if group_id in flagged:
             _require(secondary_asr_model and isinstance(secondary, (int, float)) and secondary >= threshold,

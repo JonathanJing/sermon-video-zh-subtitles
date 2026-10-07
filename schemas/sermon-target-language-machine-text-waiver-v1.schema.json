@@ -52,9 +52,11 @@
     "calibration": {
       "type": "object", "additionalProperties": false,
       "required": ["jsonSha256", "implementationSha256", "semanticChecksIncluded",
-                   "overallDetectionRate", "minimumKindDetectionRate", "cleanFalsePositiveRate"],
+                   "overallDetectionRate", "minimumKindDetectionRate", "cleanFalsePositiveRate",
+                   "runtimeIdentitySha256"],
       "properties": {
         "jsonSha256": { "$ref": "#/$defs/sha256" },
+        "runtimeIdentitySha256": { "$ref": "#/$defs/sha256" },
         "implementationSha256": { "$ref": "#/$defs/sha256" },
         "semanticChecksIncluded": { "const": true },
         "overallDetectionRate": { "type": "number", "minimum": 0, "maximum": 1 },

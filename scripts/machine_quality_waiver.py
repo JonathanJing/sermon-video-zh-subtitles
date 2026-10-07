@@ -52,8 +52,9 @@ MAX_SOURCE_FALLBACK_SHARE = 0.05
 CALIBRATION_MINIMUMS = {"overallDetectionRate": 0.95, "perKindDetectionRate": 0.9,
                         "maxCleanFalsePositiveRate": 0.1}
 # Every seeded error kind must be tried and caught; a kind with no trial was never tested.
-TEXT_KINDS = ("wrong_number", "added_reference", "english_leak", "placeholder", "dropped_name", "dropped_half")
-AUDIO_KINDS = ("stretched", "silent", "clipped", "truncated")
+TEXT_KINDS = ("wrong_number", "added_reference", "wrong_book", "english_leak", "placeholder",
+              "dropped_name", "dropped_half")
+AUDIO_KINDS = ("stretched", "silent", "clipped", "truncated", "wrong_sentence")
 DISCLOSURE = {
     "zh-Hans": "本语言内容经机器质检后自动发布，未经人工审核。",
     "ko": "이 언어 콘텐츠는 기계 품질 검사 후 자동으로 게시되었으며 사람의 검토를 거치지 않았습니다.",
@@ -97,8 +98,9 @@ def calibration_problems(calibration: dict | None, locale: str, implementation: 
     kinds = calibration.get("kinds", {})
     missing = [kind for kind in expected if kind not in kinds]
     untested = [kind for kind in expected if kind in kinds and not kinds[kind].get("trials", 0) > 0]
-    weak = [kind for kind, row in kinds.items()
-            if row.get("trials", 0) > 0 and row.get("rate", 0) < CALIBRATION_MINIMUMS["perKindDetectionRate"]]
+    # Only the kinds this release depends on: a weak audio kind does not block text-only.
+    weak = [kind for kind in expected if kinds.get(kind, {}).get("trials", 0) > 0
+            and kinds[kind].get("rate", 0) < CALIBRATION_MINIMUMS["perKindDetectionRate"]]
     if missing:
         problems.append(f"calibration lacks seeded-error kinds {missing}")
     if untested:
@@ -108,6 +110,31 @@ def calibration_problems(calibration: dict | None, locale: str, implementation: 
     if calibration.get("cleanFalsePositiveRate", 1) > CALIBRATION_MINIMUMS["maxCleanFalsePositiveRate"]:
         problems.append("clean false-positive rate above maximum")
     return problems
+
+
+def runtime_identity_problems(calibration: dict | None, *, text_qc: dict | None = None,
+                              audio_qc: dict | None = None) -> list[str]:
+    """The QC receipts must come from the back-translation and ASR runtimes the calibration measured."""
+    if calibration is None:
+        return []
+    problems = []
+    if text_qc is not None and text_qc.get("semanticIdentitySha256") != calibration.get("semanticIdentitySha256"):
+        problems.append("back-translation runtime differs from calibration")
+    if audio_qc is not None:
+        identity = calibration.get("asrIdentity") or {}
+        for role in ("primary", "secondary"):
+            score, model = "asr" + role.title(), "asr" + role.title() + "Model"
+            # Every ASR opinion that was used must come from the calibrated model.
+            if any((row.get(score) is not None or row.get(model) is not None)
+                   and row.get(model) != identity.get(role) for row in audio_qc["results"]):
+                problems.append(f"{role} ASR model differs from calibration")
+    return problems
+
+
+def runtime_identity_sha256(calibration: dict) -> str:
+    """One hash of the back-translation and ASR runtimes a calibration measured."""
+    return json_sha256({"semanticIdentitySha256": calibration.get("semanticIdentitySha256"),
+                        "asrIdentity": calibration.get("asrIdentity")})
 
 
 def _share(part: int, total: int) -> float:
@@ -181,6 +208,7 @@ def waive(locale: str, candidate: dict, text_qc: dict, audio_qc: dict | None,
     undubbed_sentences = sum(sentences[group_id] for group_id in undubbed)
     calibration_issues = calibration_problems(calibration, locale, implementation,
                                               require_audio=audio_qc is not None)
+    calibration_issues += runtime_identity_problems(calibration, text_qc=text_qc, audio_qc=audio_qc)
     if pending:
         status, reasons = "repair_in_progress", [f"{len(pending)} groups still have repairs pending"]
     elif calibration_issues:

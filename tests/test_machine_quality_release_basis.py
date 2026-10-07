@@ -17,6 +17,9 @@ from tests import test_prepare_target_language_speech_job as speech_fixture
 write_json = speech_fixture.write_json
 
 IMPLEMENTATION = waiver.implementation_sha256()
+SEMANTIC_SHA = "9" * 64
+PRIMARY_ASR = {"model": "qwen3-asr-0.6b", "modelRevision": "r1"}
+SECONDARY_ASR = {"model": "gpt-transcribe", "modelRevision": None}
 
 
 def sha(text: str) -> str:
@@ -27,6 +30,8 @@ def calibration(locale="ko", **overrides):
     value = {"schemaVersion": waiver.CALIBRATION_SCHEMA, "locale": locale,
              "implementationSha256": IMPLEMENTATION, "semanticChecksIncluded": True,
              "overallDetectionRate": 1.0, "cleanFalsePositiveRate": 0.0, "audioIncluded": True,
+             "semanticIdentitySha256": SEMANTIC_SHA,
+             "asrIdentity": {"primary": PRIMARY_ASR, "secondary": SECONDARY_ASR},
              "kinds": {f"{prefix}.{kind}": {"trials": 10, "detected": 10, "rate": 1.0}
                        for prefix, kinds in (("text", waiver.TEXT_KINDS), ("audio", waiver.AUDIO_KINDS))
                        for kind in kinds}}
@@ -37,7 +42,7 @@ def calibration(locale="ko", **overrides):
 def text_qc(candidate):
     return {"schemaVersion": "sermon-target-text-auto-qc-v1", "locale": candidate["targetLocale"],
             "status": "pass", "humanApproval": False, "mutatesText": False,
-            "repairGroupIds": [], "sourceTextFallbackGroupIds": [],
+            "repairGroupIds": [], "sourceTextFallbackGroupIds": [], "semanticIdentitySha256": SEMANTIC_SHA,
             "results": [{"groupId": group["translationGroupId"], "status": "pass", "problems": [],
                          "backTranslation": {"status": "pass", "issues": []}, "failedAttempts": 0,
                          "nextAction": "keep", "targetTextSha256": sha(group["targetText"])}
@@ -130,7 +135,8 @@ class TextWaiverTests(unittest.TestCase):
                 basis.build_text_waiver(self.source_package, self.anchor, self.candidate, qc, calibration())
         for cal, message in ((calibration(implementationSha256="0" * 64), "changed since calibration"),
                              (calibration(semanticChecksIncluded=False), "back-translation"),
-                             (calibration(cleanFalsePositiveRate=0.2), "false-positive")):
+                             (calibration(cleanFalsePositiveRate=0.2), "false-positive"),
+                             (calibration(semanticIdentitySha256="0" * 64), "runtime differs")):
             with self.assertRaisesRegex(ValueError, message):
                 basis.build_text_waiver(self.source_package, self.anchor, self.candidate,
                                         text_qc(self.candidate), cal)
@@ -181,6 +187,7 @@ def audio_fixture(flagged=False):
           "humanApproval": False, "mutatesAudio": False, "subtitleOnlyGroupIds": [], "repairGroupIds": [],
           "results": [{"groupId": unit["textGroupId"], "status": "pass", "issues": [], "asrDecision": "pass",
                        "asrPrimary": value, "asrSecondary": 0.96 if value < 0.88 else None,
+                       "asrPrimaryModel": PRIMARY_ASR, "asrSecondaryModel": SECONDARY_ASR if value < 0.88 else None,
                        "audioSha256": unit["audio"]["sha256"], "failedAttempts": 0, "nextAction": "keep",
                        "metrics": {}} for unit, value in zip(units, similarities)]}
     text = {"schemaVersion": basis.TEXT_WAIVER_SCHEMA, "reviewKind": "machine_quality_waiver",
@@ -260,6 +267,17 @@ class AudioWaiverTests(unittest.TestCase):
             self.build(package, screening, swapped, text)
         with self.assertRaisesRegex(ValueError, "screening"):
             basis.validate_audio_waiver(package, receipt, None)
+
+    def test_waiver_needs_the_calibrated_and_screened_asr_models(self):
+        package, screening, qc, text = audio_fixture(flagged=True)
+        other_secondary = copy.deepcopy(qc)
+        other_secondary["results"][1]["asrSecondaryModel"] = {"model": "tiny-asr", "modelRevision": None}
+        with self.assertRaisesRegex(ValueError, "secondary ASR model differs"):
+            self.build(package, screening, other_secondary, text, secondary_asr_model="gpt-transcribe")
+        unscreened_model = copy.deepcopy(qc)
+        unscreened_model["results"][0]["asrPrimaryModel"] = {"model": "qwen3-asr-0.6b", "modelRevision": "r0"}
+        with self.assertRaisesRegex(ValueError, "primary ASR model differs"):
+            self.build(package, screening, unscreened_model, text, secondary_asr_model="gpt-transcribe")
 
     def test_unified_audio_review_reports_machine_kind(self):
         import tempfile
