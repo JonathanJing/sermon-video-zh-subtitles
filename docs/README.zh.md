@@ -36,6 +36,7 @@
 ### 来源、文本与 PDF
 
 - [多语言生产四层接口](multilingual-production-interfaces.zh.md)：今后预制多语言生产的命名、包和失效规则唯一来源
+- [机器质检豁免与 TTS 前时长预算](machine-quality-waiver.zh.md)：三语机器质检自动发布、单句 4 次修复、5% 规则、注错校准与 8 秒预测排程
 - [Dev 统一 Backlog](backlog.zh.md)：跨 Layer 1–4、Firebase Dev、Web／iOS、现场对齐、CI 与审核工具的唯一顶层优先级
 - [四层制作 Tracker](four-layer-production-tracker.zh.md)：单次制作的每层检查点、状态记录和有条件 ETA
 - [Firebase 四层公开 Tracker](../experiments/sermon-dubbing-poc/tracker-admin/README.zh.md)：每周源视频、三语分层制作、页面／语音／声纹的脱敏实时只读视图
