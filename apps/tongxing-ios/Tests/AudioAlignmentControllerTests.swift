@@ -7,6 +7,25 @@ import XCTest
 
 @MainActor
 final class AudioAlignmentControllerTests: XCTestCase {
+    func testSyntheticLiveActivityRequiresBothExplicitUITestFlags() {
+        XCTAssertFalse(UITestLaunch.liveActivitySmokeEnabled(arguments: []))
+        XCTAssertFalse(UITestLaunch.liveActivitySmokeEnabled(arguments: ["--ui-testing"]))
+        XCTAssertFalse(UITestLaunch.liveActivitySmokeEnabled(arguments: ["--ui-testing-live-activity"]))
+        XCTAssertTrue(UITestLaunch.liveActivitySmokeEnabled(arguments: ["--ui-testing", "--ui-testing-live-activity"]))
+    }
+
+    func testNormalDebugIdentityDoesNotPublishBetaAlignmentPhases() throws {
+        guard Bundle.main.object(forInfoDictionaryKey: "TongxingURLScheme") as? String != "tongxing-beta" else {
+            throw XCTSkip("This boundary check requires the ordinary Debug identity")
+        }
+        XCTAssertFalse(UITestLaunch.liveActivitySmokeEnabled())
+        let playback = PlaybackController(historyURL: FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString).appendingPathComponent("history.json"))
+        playback.setAlignmentPhase(.preparing)
+        playback.setAlignmentPhase(.listening)
+        XCTAssertNil(playback.alignmentPhase)
+    }
+
     func testForegroundAlignmentFeedbackObservesPlaybackAndExistingResultExpiry() async throws {
         guard Bundle.main.object(forInfoDictionaryKey: "TongxingURLScheme") as? String == "tongxing-beta" else {
             throw XCTSkip("Foreground alignment is enabled only in the Beta identity")

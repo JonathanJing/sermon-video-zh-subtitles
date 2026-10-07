@@ -1,3 +1,4 @@
+import { messages as readerMessages } from './locales-reader.mjs';
 import { messages as interfaceMessages } from './locales-interface.mjs';
 import { messages as appMessages } from './locales-app.mjs';
 import { messages as feedbackMessages } from './locales-feedback.mjs';
@@ -8,7 +9,7 @@ import { messages as spanishMessages } from './locales-es.mjs';
 // Add a locale dictionary to the message modules to make it available here.
 export const LOCALE_STORAGE_KEY = 'sermon-audio-locale';
 const dictionaries = {};
-for (const source of [interfaceMessages, appMessages, feedbackMessages]) {
+for (const source of [interfaceMessages, appMessages, feedbackMessages, readerMessages]) {
   for (const [locale, messages] of Object.entries(source)) {
     dictionaries[locale] = { ...dictionaries[locale], ...messages };
   }
