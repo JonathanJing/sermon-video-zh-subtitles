@@ -167,8 +167,8 @@ def inspect_configuration(root, config):
             continue
         try:
             receipt = _read_package(root, lane['humanReview'], hashes, 'review.' + locale)
-            handoff.validate_target_candidate(source, anchor, candidate)
-            handoff.validate_human_review_receipt(source, anchor, candidate, receipt)
+            # A human receipt or a machine quality waiver satisfies this gate.
+            handoff.validate_released_candidate(source, anchor, candidate, receipt)
             audio_id = project()['nodes'][audio]['identity']
             approvals[audio] = {'translation_review': {'identity': audio_id, 'receiptSha256': hashes['review.' + locale]}}
         except (ValueError, TypeError, KeyError, OSError):

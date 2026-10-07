@@ -2,9 +2,11 @@
 """Validate a Layer 2 target-language candidate and prepare the Layer 3 handoff.
 
 This adapter intentionally performs no translation or synthesis. It binds one
-human-approved target-language candidate to the shared English anchor and a
+released target-language candidate to the shared English anchor and a
 locale-specific speech adapter, while keeping every output path inside that
-locale's directory.
+locale's directory. A candidate is released either by a human review receipt
+(speech job v2) or by a machine quality waiver (speech job v3), which never
+claims human approval.
 """
 from __future__ import annotations
 
@@ -19,11 +21,13 @@ from jsonschema import Draft202012Validator, FormatChecker
 
 try:
     from scripts import four_layer_measure as measure
+    from scripts import machine_quality_release_basis as machine_basis
     from scripts import sermon_sentence_interpretation as interpretation
     from scripts import target_language_policy as policy_tools
     from scripts import clip_timeline_map as timeline_map
 except ImportError:  # Direct execution via ``python scripts/...``.
     import four_layer_measure as measure
+    import machine_quality_release_basis as machine_basis
     import sermon_sentence_interpretation as interpretation
     import target_language_policy as policy_tools
     import clip_timeline_map as timeline_map
@@ -32,6 +36,10 @@ except ImportError:  # Direct execution via ``python scripts/...``.
 CANDIDATE_SCHEMA = "sermon-target-language-candidate-v2"
 SOURCE_PACKAGE_SCHEMA = "sermon-english-source-package-v1"
 SPEECH_JOB_SCHEMA = "sermon-target-language-speech-job-v2"
+MACHINE_SPEECH_JOB_SCHEMA = "sermon-target-language-speech-job-v3"
+SPEECH_JOB_SCHEMAS = (SPEECH_JOB_SCHEMA, MACHINE_SPEECH_JOB_SCHEMA)
+HUMAN_TEXT_POLICY = "exact_human_approved_target_text"
+MACHINE_TEXT_POLICY = "exact_machine_waived_target_text"
 REPO_ROOT = Path(__file__).resolve().parents[1]
 ADAPTER_SCHEMA = "sermon-target-language-speech-adapter-v1"
 HUMAN_REVIEW_RECEIPT_SCHEMA = "sermon-target-language-human-review-receipt-v1"
@@ -225,6 +233,43 @@ def validate_human_review_receipt(source_package: dict[str, Any], anchor: dict[s
              and [row["translationGroupId"] for row in receipt["groupReviews"]] == group_ids
              and all(row["decision"] == "approved" for row in receipt["groupReviews"]),
              "Human review receipt has missing, rejected, or mismatched group reviews")
+
+
+def validate_text_release_basis(source_package: dict[str, Any], anchor: dict[str, Any],
+                                candidate: dict[str, Any], receipt: dict[str, Any]) -> str:
+    """Validate the receipt that releases this exact candidate; return its text policy."""
+    if machine_basis.is_text_waiver(receipt):
+        machine_basis.validate_text_waiver(
+            receipt, candidate=candidate, source_sha=interpretation.json_sha256(source_package),
+            anchor_sha=interpretation.json_sha256(anchor))
+        return MACHINE_TEXT_POLICY
+    validate_human_review_receipt(source_package, anchor, candidate, receipt)
+    return HUMAN_TEXT_POLICY
+
+
+def validate_released_candidate(source_package: dict[str, Any], anchor: dict[str, Any],
+                                candidate: dict[str, Any], receipt: dict[str, Any]) -> dict[str, Any]:
+    """Candidate checks plus its release basis: human approval, or a machine waiver."""
+    machine = machine_basis.is_text_waiver(receipt)
+    identity = validate_target_candidate(source_package, anchor, candidate,
+                                         require_human_approval=not machine)
+    return identity | {"textPolicy": validate_text_release_basis(
+        source_package, anchor, candidate, receipt)}
+
+
+def validate_speech_job_schema(job: dict[str, Any], label: str = "speech job") -> None:
+    version = job.get("schemaVersion")
+    _require(version in SPEECH_JOB_SCHEMAS, f"Unsupported {label}")
+    _validate_schema(job, f"{version}.schema.json", label)
+
+
+def text_basis_input_key(job: dict[str, Any]) -> str:
+    """The job input that binds the candidate's release receipt."""
+    return "textReleaseBasis" if job.get("schemaVersion") == MACHINE_SPEECH_JOB_SCHEMA else "humanReviewReceipt"
+
+
+def expected_text_policy(job: dict[str, Any]) -> str:
+    return MACHINE_TEXT_POLICY if job.get("schemaVersion") == MACHINE_SPEECH_JOB_SCHEMA else HUMAN_TEXT_POLICY
 
 
 def validate_clip_voice_authorization(receipt: dict[str, Any], source_package: dict[str, Any],
@@ -554,10 +599,10 @@ def prepare_job(source_package_path: Path, anchor_path: Path, candidate_path: Pa
         _load(clip_voice_capability_path) if clip_voice_capability_path else None)
     clip_timeline = _load(clip_timeline_map_path) if clip_timeline_map_path else None
     _validate_schema(candidate, "sermon-target-language-candidate-v2.schema.json", "target candidate")
-    identity = validate_target_candidate(source_package, anchor, candidate)
+    identity = validate_released_candidate(source_package, anchor, candidate, human_review_receipt)
     locale = identity["targetLocale"]
+    machine = identity["textPolicy"] == MACHINE_TEXT_POLICY
     validate_policy_binding(candidate, policy, strict_rubric=strict_rubric)
-    validate_human_review_receipt(source_package, anchor, candidate, human_review_receipt)
     validate_adapter(adapter, locale, registry,
                      clip_voice_authorization=clip_voice_authorization,
                      source_voice_authorization=source_voice_authorization,
@@ -568,7 +613,7 @@ def prepare_job(source_package_path: Path, anchor_path: Path, candidate_path: Pa
     language_root = f"languages/{locale}"
     verified = adapter["capabilityStatus"] == "verified"
     job = {
-        "schemaVersion": SPEECH_JOB_SCHEMA,
+        "schemaVersion": MACHINE_SPEECH_JOB_SCHEMA if machine else SPEECH_JOB_SCHEMA,
         "createdAt": datetime.now(timezone.utc).isoformat(),
         "status": ("prepared_for_target_language_speech" if verified
                    else "prepared_adapter_validation_required"),
@@ -592,7 +637,9 @@ def prepare_job(source_package_path: Path, anchor_path: Path, candidate_path: Pa
                 "sha256": interpretation.sha256(candidate_path),
                 "jsonSha256": interpretation.json_sha256(candidate),
             },
-            "humanReviewReceipt": {
+            ("textReleaseBasis" if machine else "humanReviewReceipt"): {
+                **({"kind": machine_basis.REVIEW_KIND,
+                    "schemaVersion": machine_basis.TEXT_WAIVER_SCHEMA} if machine else {}),
                 "path": str(human_review_receipt_path.resolve()),
                 "sha256": interpretation.sha256(human_review_receipt_path),
                 "jsonSha256": interpretation.json_sha256(human_review_receipt),
@@ -618,7 +665,7 @@ def prepare_job(source_package_path: Path, anchor_path: Path, candidate_path: Pa
             )
         } | {"configSha256": interpretation.sha256(adapter_path)},
         "renderContract": {
-            "textPolicy": "exact_human_approved_target_text",
+            "textPolicy": identity["textPolicy"],
             "ratePolicy": interpretation.RATE_POLICY,
             "playbackRate": 1.0,
             "postProcessing": "none_before_measurement",
@@ -661,7 +708,7 @@ def prepare_job(source_package_path: Path, anchor_path: Path, candidate_path: Pa
             "sha256": interpretation.sha256(clip_timeline_map_path),
             "jsonSha256": interpretation.json_sha256(clip_timeline),
         }
-    _validate_schema(job, "sermon-target-language-speech-job-v2.schema.json", "speech job")
+    validate_speech_job_schema(job)
     if not build_only:
         out.mkdir(parents=True)
         interpretation.write_json(out / "job.json", job)
@@ -675,7 +722,9 @@ def main() -> None:
     parser.add_argument("--candidate", type=Path, required=True)
     parser.add_argument("--policy", type=Path, required=True)
     parser.add_argument("--strict-rubric", type=Path, help="Explicit frozen rubric for strict-v3 policy validation")
-    parser.add_argument("--human-review-receipt", type=Path, required=True)
+    parser.add_argument("--human-review-receipt", "--text-release-basis", dest="human_review_receipt",
+                        type=Path, required=True,
+                        help="Human review receipt, or a machine text waiver (writes speech job v3)")
     parser.add_argument("--adapter", type=Path, required=True)
     parser.add_argument("--speaker-registry", type=Path, required=True)
     parser.add_argument("--clip-voice-authorization", type=Path)

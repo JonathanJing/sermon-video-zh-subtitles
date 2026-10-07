@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-target-language-machine-text-waiver-v1.schema.json",
+  "title": "Machine quality waiver for one immutable target-language candidate",
+  "description": "A non-human text release basis. It never records a human approval; the page must show the disclosure.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "reviewKind", "humanApproval", "decision", "targetLocale",
+    "englishSourcePackageJsonSha256", "anchorManifestJsonSha256", "translationPolicySha256",
+    "candidateJsonSha256", "reviewedGroupIds", "groupResults", "textQcJsonSha256",
+    "calibration", "implementationSha256", "rules", "disclosure", "createdAt",
+    "postPublicationSpotCheck"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "sermon-target-language-machine-text-waiver-v1" },
+    "reviewKind": { "const": "machine_quality_waiver" },
+    "humanApproval": { "const": false },
+    "decision": { "const": "machine_quality_waived" },
+    "targetLocale": { "enum": ["zh-Hans", "ko", "es"] },
+    "englishSourcePackageJsonSha256": { "$ref": "#/$defs/sha256" },
+    "anchorManifestJsonSha256": { "$ref": "#/$defs/sha256" },
+    "translationPolicySha256": { "$ref": "#/$defs/sha256" },
+    "candidateJsonSha256": { "$ref": "#/$defs/sha256" },
+    "reviewedGroupIds": {
+      "type": "array", "minItems": 1, "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "groupResults": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["translationGroupId", "status", "targetTextSha256", "failedAttempts"],
+        "properties": {
+          "translationGroupId": { "type": "string", "minLength": 1 },
+          "status": { "const": "pass" },
+          "targetTextSha256": { "$ref": "#/$defs/sha256" },
+          "failedAttempts": { "type": "integer", "minimum": 0, "maximum": 4 }
+        }
+      }
+    },
+    "textQcJsonSha256": { "$ref": "#/$defs/sha256" },
+    "calibration": { "$ref": "#/$defs/calibration" },
+    "implementationSha256": { "$ref": "#/$defs/sha256" },
+    "rules": { "$ref": "#/$defs/rules" },
+    "disclosure": { "$ref": "#/$defs/disclosure" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "postPublicationSpotCheck": { "const": "owner_spot_check_after_release" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "calibration": {
+      "type": "object", "additionalProperties": false,
+      "required": ["jsonSha256", "implementationSha256", "semanticChecksIncluded",
+                   "overallDetectionRate", "minimumKindDetectionRate", "cleanFalsePositiveRate"],
+      "properties": {
+        "jsonSha256": { "$ref": "#/$defs/sha256" },
+        "implementationSha256": { "$ref": "#/$defs/sha256" },
+        "semanticChecksIncluded": { "const": true },
+        "overallDetectionRate": { "type": "number", "minimum": 0, "maximum": 1 },
+        "minimumKindDetectionRate": { "type": "number", "minimum": 0, "maximum": 1 },
+        "cleanFalsePositiveRate": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "rules": {
+      "type": "object", "additionalProperties": false,
+      "required": ["maxRepairAttemptsPerSentence", "calibration"],
+      "properties": {
+        "maxRepairAttemptsPerSentence": { "const": 4 },
+        "calibration": {
+          "type": "object", "additionalProperties": false,
+          "required": ["overallDetectionRate", "perKindDetectionRate", "maxCleanFalsePositiveRate"],
+          "properties": {
+            "overallDetectionRate": { "type": "number" },
+            "perKindDetectionRate": { "type": "number" },
+            "maxCleanFalsePositiveRate": { "type": "number" }
+          }
+        }
+      }
+    },
+    "disclosure": {
+      "type": "object", "additionalProperties": false,
+      "required": ["locale", "text", "english"],
+      "properties": {
+        "locale": { "enum": ["zh-Hans", "ko", "es"] },
+        "text": { "type": "string", "minLength": 1 },
+        "english": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

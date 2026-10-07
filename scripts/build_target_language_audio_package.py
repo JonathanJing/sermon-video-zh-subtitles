@@ -169,7 +169,8 @@ def validate_job(source: dict[str, Any], anchor: dict[str, Any], candidate: dict
                  paths: dict[str, Path], *,
                  source_voice_authorization: dict[str, Any] | None = None,
                  strict_rubric: dict[str, Any] | None = None) -> None:
-    speech.validate_target_candidate(source, anchor, candidate)
+    machine = speech.machine_basis.is_text_waiver(human_receipt)
+    speech.validate_target_candidate(source, anchor, candidate, require_human_approval=not machine)
     anchor_exception = validate_anchor_exception(source, anchor, candidate, paths)
     review = source.get("review", {})
     window = source.get("source", {}).get("approvedWindow", {})
@@ -182,15 +183,17 @@ def validate_job(source: dict[str, Any], anchor: dict[str, Any], candidate: dict
             and (source.get("anchors", {}).get("issueCount") == 0 or anchor_exception),
             "English Source Package lacks source/window/anchor human gates")
     speech.validate_policy_binding(candidate, policy, strict_rubric=strict_rubric)
-    speech.validate_human_review_receipt(source, anchor, candidate, human_receipt)
+    text_policy = speech.validate_text_release_basis(source, anchor, candidate, human_receipt)
     speech.validate_adapter(adapter, candidate["targetLocale"], registry,
                             clip_voice_authorization=clip_voice_authorization,
                             source_voice_authorization=source_voice_authorization,
                             clip_voice_capability=clip_voice_capability,
                             source_package=source, candidate=candidate)
     timeline_map.validate(clip_timeline, source, anchor)
-    speech._validate_schema(job, "sermon-target-language-speech-job-v2.schema.json", "speech job")
-    require(job.get("schemaVersion") == speech.SPEECH_JOB_SCHEMA
+    speech.validate_speech_job_schema(job)
+    require(speech.expected_text_policy(job) == text_policy,
+            "Speech job version differs from the candidate's release basis")
+    require(job.get("schemaVersion") in speech.SPEECH_JOB_SCHEMAS
             and job.get("targetLocale") == candidate["targetLocale"]
             and job.get("status") == "prepared_for_target_language_speech"
             and job.get("synthesisEligible") is True
@@ -208,7 +211,7 @@ def validate_job(source: dict[str, Any], anchor: dict[str, Any], candidate: dict
             "Speech job voice authorization input presence mismatch")
     bindings = (("englishSourcePackage", "source"), ("anchorManifest", "anchor"),
                       ("targetLanguageCandidate", "candidate"),
-                      ("humanReviewReceipt", "human_receipt"),
+                      (speech.text_basis_input_key(job), "human_receipt"),
                       ("targetLanguagePolicy", "policy"), ("speakerRegistry", "registry"),
                       authorization_key,
                       ("clipTimelineMap", "clip_timeline_map"))
@@ -237,7 +240,7 @@ def validate_job(source: dict[str, Any], anchor: dict[str, Any], candidate: dict
         require(bound_adapter.get(key) == adapter.get(key), f"Speech job adapter field mismatch: {key}")
     render = job.get("renderContract", {})
     require(render.get("ratePolicy") == "natural_no_time_stretch"
-            and render.get("textPolicy") == "exact_human_approved_target_text"
+            and render.get("textPolicy") == text_policy
             and render.get("playbackRate") == 1.0
             and render.get("postProcessing") == "none_before_measurement",
             "Speech job render contract mismatch")

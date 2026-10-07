@@ -91,7 +91,7 @@ def screen(job: dict, manifest: dict, artifact_root: Path,
     job_hash, manifest_hash = identity.json_sha256(job), identity.json_sha256(manifest)
     original_job, original_manifest = job, manifest
     job, manifest = copy.deepcopy(job), copy.deepcopy(manifest)
-    require(job.get("schemaVersion") == speech.SPEECH_JOB_SCHEMA
+    require(job.get("schemaVersion") in speech.SPEECH_JOB_SCHEMAS
             and job.get("status") == "prepared_for_target_language_speech"
             and job.get("synthesisEligible") is True,
             "Formal synthesis-eligible speech job required")

@@ -73,7 +73,7 @@ def prepare(boundary, intent_id, *, adapter_path, registry_path, out, **voice_pa
         target=out/'job.json'
         if target.exists():
             job,_=public.read_snapshot(target)
-            speech._validate_schema(job,'sermon-target-language-speech-job-v2.schema.json','speech job')
+            speech.validate_speech_job_schema(job)
             c.require({k:v for k,v in job.items() if k!='createdAt'}==
                 {k:v for k,v in expected.items() if k!='createdAt'},'speech_preparation_output_changed')
         else:

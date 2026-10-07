@@ -85,6 +85,14 @@ def reviewed_candidate(candidate: dict) -> bool:
 
 def validate_audio_screening_review(audio: dict, receipt: dict,
                                     screening: dict | None) -> None:
+    from scripts import machine_quality_release_basis as machine_basis
+    if machine_basis.is_audio_waiver(receipt):
+        # A machine listening waiver, never a human approval of the track.
+        try:
+            machine_basis.validate_audio_waiver(audio, receipt, screening)
+        except ValueError as error:
+            raise StageError(str(error)) from error
+        return
     if receipt.get("schemaVersion") == "sermon-target-language-audio-human-review-receipt-v3":
         schema = json.loads((ROOT / "schemas/sermon-target-language-audio-human-review-receipt-v3.schema.json").read_text())
         if (list(Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(receipt))

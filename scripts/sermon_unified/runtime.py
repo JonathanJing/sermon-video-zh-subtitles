@@ -228,13 +228,16 @@ def valid_success(step,result,m):
     return False
 
 
+RELEASE_REVIEWS=frozenset({'approved','waived'})
+
+
 def scope_satisfied(state):
     m=state['manifest'];scope=m['activeScope']
     def verified(stage,locale=None,review=False):
         matches=[s for s in m['steps'] if s['stageId']==stage and (locale is None or s.get('locale')==locale)]
         return bool(matches) and all(state['steps'][s['id']]['process']=='succeeded'
             and state['steps'][s['id']].get('artifact')=='verified'
-            and (not review or state['steps'][s['id']].get('review')=='approved') for s in matches)
+            and (not review or state['steps'][s['id']].get('review') in review) for s in matches)
     if not verified('media_verify'):
         return False
     if scope=='media_verified':
@@ -252,7 +255,9 @@ def scope_satisfied(state):
         return False
     if scope=='layer2_machine_candidate':
         return True
-    if not all(verified('translation_review',loc,True) for loc in m['locales']):
+    # Translation and listening gates accept a machine quality waiver (Jony,
+    # 2026-10-06); study products still require their human approvals.
+    if not all(verified('translation_review',loc,RELEASE_REVIEWS) for loc in m['locales']):
         return False
     if scope=='translation_approved':
         return True
@@ -260,7 +265,7 @@ def scope_satisfied(state):
         return False
     if scope=='audio_screened':
         return True
-    if not all(verified('listen_review',loc,True) for loc in m['locales']):
+    if not all(verified('listen_review',loc,RELEASE_REVIEWS) for loc in m['locales']):
         return False
     if scope=='listen_approved':
         return True
@@ -706,11 +711,17 @@ def ingest_review(root,key,job_id,receipt_path,expected):
     dst=folder(root,key)/('review-'+original_sha+'.json')
     jobs._persist(dst,doc)
     # This is a new review observation; it cannot alter prior machine evidence.
+    # A machine quality waiver satisfies the gate as 'waived', never 'approved'.
+    waived=validated.get('reviewKind')=='machine_quality_waiver'
     state['reviews'][step['id']]={'originalSha256':original_sha,'originalPath':str(Path(receipt_path).resolve()),'storedSha256':c.file_sha(dst),
-                                  'kind':kind,'validatedAt':now()}
-    state['steps'][step['id']].update(process='succeeded',artifact='verified',review='approved',
-                                    completedAt=now(),approvedAt=now(),reason='bound_review_accepted')
-    state['steps'][step['id']]['completionEventId']=event(m,state,step,'review.approved')
+                                  'kind':kind,'reviewKind':validated.get('reviewKind','human_review'),'validatedAt':now()}
+    if waived:
+        state['steps'][step['id']].update(process='succeeded',artifact='verified',review='waived',
+                                        completedAt=now(),reason='machine_quality_waiver_accepted')
+    else:
+        state['steps'][step['id']].update(process='succeeded',artifact='verified',review='approved',
+                                        completedAt=now(),approvedAt=now(),reason='bound_review_accepted')
+    state['steps'][step['id']]['completionEventId']=event(m,state,step,'review.waived' if waived else 'review.approved')
     return save(root,key,state,expected),original_sha
 
 

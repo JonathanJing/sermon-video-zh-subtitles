@@ -2,6 +2,8 @@
 
 The caller stores the validated receipt unchanged and binds its file hash. These
 functions never create an approval or change a candidate's human-review fields.
+A machine quality waiver is accepted for translation and audio and is reported
+with ``reviewKind = machine_quality_waiver``, never as a human approval.
 """
 from __future__ import annotations
 import hashlib
@@ -9,6 +11,7 @@ import json
 from pathlib import Path
 from jsonschema import Draft202012Validator, FormatChecker
 from scripts import delivery_contract as delivery
+from scripts import machine_quality_release_basis as machine_basis
 from scripts import study_artifacts
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -62,16 +65,17 @@ def validate_review(kind, receipt_path, *, inputs, expected_source=None, expecte
         _review_payload(receipt_path, aligned_sha256=hashlib.sha256(Path(inputs['aligned']).read_bytes()).hexdigest(),
                         anchor_json_sha256=delivery.sha(anchor), source_unit_ids=[row['sourceUnitId'] for row in anchor['sourceUnits']])
     elif kind == 'translation':
-        from scripts.prepare_target_language_speech_job import validate_human_review_receipt
+        from scripts.prepare_target_language_speech_job import validate_text_release_basis
         source, anchor, candidate = (read(inputs[name]) for name in ('source', 'anchor', 'candidate'))
         schema(source, 'sermon-english-source-package-v1.schema.json')
         schema(candidate, 'sermon-target-language-candidate-v2.schema.json')
-        validate_human_review_receipt(source, anchor, candidate, receipt)
+        validate_text_release_basis(source, anchor, candidate, receipt)
     elif kind == 'audio':
         from scripts.stage_formal_multilingual_dev import validate_audio_screening_review
         package = read(inputs['package'])
         version = receipt.get('schemaVersion')
-        delivery.require(version in {'sermon-target-language-audio-human-review-receipt-v' + str(n) for n in range(1, 5)}, 'Unsupported audio review')
+        delivery.require(version in {'sermon-target-language-audio-human-review-receipt-v' + str(n) for n in range(1, 5)}
+                         | {machine_basis.AUDIO_WAIVER_SCHEMA}, 'Unsupported audio review')
         schema(receipt, version + '.schema.json')
         schema(package, 'sermon-target-language-audio-package-v1.schema.json')
         if bound_source:
@@ -91,7 +95,9 @@ def validate_review(kind, receipt_path, *, inputs, expected_source=None, expecte
         study_artifacts.ingest_review(artifact, receipt)
     else:
         raise ValueError('Unsupported review kind')
-    return {'status': 'validated', 'kind': kind, 'receiptPath': str(receipt_path.resolve()),
+    return {'status': 'validated', 'kind': kind,
+            'reviewKind': receipt.get('reviewKind', 'human_review') if kind in ('translation', 'audio') else 'human_review',
+            'receiptPath': str(receipt_path.resolve()),
             'receiptSha256': hashlib.sha256(receipt_path.read_bytes()).hexdigest(),
             'receiptJsonSha256': delivery.sha(receipt), 'locale': observed_locale,
             'sourceIdentity': bound_source['source'] if bound_source else None}

@@ -169,7 +169,7 @@ def _plan_layer3(job_path: Path, *, render_root: Path | None = None,
     job_path = Path(job_path).absolute()
     job = snap.read(job_path)
     require(job is not None, 'canonical_job_required')
-    package.speech._validate_schema(job, 'sermon-target-language-speech-job-v2.schema.json', 'recovery job')
+    package.speech.validate_speech_job_schema(job, 'recovery job')
     require(job.get('status') == 'prepared_for_target_language_speech' and job.get('synthesisEligible') is True,
             'canonical_synthesis_eligible_job_required')
     root = Path(render_root or job_path.parent).absolute()
