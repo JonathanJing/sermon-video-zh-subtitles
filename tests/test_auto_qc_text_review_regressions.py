@@ -86,6 +86,18 @@ class TextReviewRegressions(unittest.TestCase):
         self.assertIn("missing reference 3:16",
                       rules.scripture_reference_problems("Turn to John 3 verse 16.", "Juan 3:17", "es"))
 
+    def test_a_repeated_number_must_be_kept_each_time(self):
+        english = "He took five loaves and five fish."
+        for locale, bad, good in (("zh-Hans", "五个饼和六条鱼", "五个饼和五条鱼"),
+                                  ("ko", "빵 다섯 개와 물고기 여섯 마리", "빵 다섯 개와 물고기 다섯 마리"),
+                                  ("es", "cinco panes y seis peces", "cinco panes y cinco peces")):
+            with self.subTest(locale=locale):
+                self.assertEqual(rules.number_problems(english, bad, locale, set()), ["missing number 5 (1 of 2)"])
+                self.assertEqual(rules.number_problems(english, good, locale, set()), [])
+        # A number inside a larger one is not another occurrence (十五, 열다섯).
+        self.assertEqual(rules.chinese_number_count("十五个饼和五条鱼", 5), 1)
+        self.assertEqual(rules.korean_number_count("열다섯 개와 다섯 마리", 5), 1)
+
     def test_digits_the_english_never_said_are_added_numbers(self):
         for locale, target in (("es", "Hay 5 personas."), ("ko", "5명이 있습니다."), ("zh-Hans", "有5个人。")):
             with self.subTest(locale=locale):

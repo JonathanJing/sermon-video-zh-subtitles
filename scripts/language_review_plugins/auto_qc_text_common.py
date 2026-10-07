@@ -203,16 +203,32 @@ def _decimal_present(text: str, forms: set[str]) -> bool:
     return any(re.search(r"(?<![\d.,])" + re.escape(form) + r"(?![\d])", text) for form in forms)
 
 
-def korean_number_present(text: str, value: int | str) -> bool:
+def _occurrences(text: str, patterns) -> int:
+    """Places where any pattern matches; overlapping matches of different forms count once."""
+    spans = sorted(match.span() for pattern in set(patterns) for match in re.finditer(pattern, text))
+    count, end = 0, -1
+    for start, stop in spans:
+        if start >= end:
+            count += 1
+        end = max(end, stop)
+    return count
+
+
+def _digit_patterns(forms) -> list[str]:
+    return [r"(?<!\d)" + re.escape(form) + r"(?!\d)" for form in forms]
+
+
+def korean_number_count(text: str, value: int | str) -> int:
     if isinstance(value, str):  # Decimal: "2.5" or "이 점 오".
         whole, fraction = value.split(".")
         spoken = korean_sino(int(whole)) + "점" + "".join(_KO_SINO_DIGITS[int(d)] for d in fraction)
-        return _decimal_present(text, {value}) or spoken in re.sub(r"\s+", "", text)
-    digits = {str(value), f"{value:,}"}
-    if any(re.search(r"(?<!\d)" + re.escape(form) + r"(?!\d)", text) for form in digits):
-        return True
+        return int(_decimal_present(text, {value}) or spoken in re.sub(r"\s+", "", text))
     forms = (korean_sino(value), *korean_native(value), *(("제로",) if value == 0 else ()))
-    return any(re.search(_ko_pattern(form), text) for form in forms)
+    return _occurrences(text, _digit_patterns({str(value), f"{value:,}"}) + [_ko_pattern(form) for form in forms])
+
+
+def korean_number_present(text: str, value: int | str) -> bool:
+    return korean_number_count(text, value) > 0
 
 
 # --- Spanish number forms ------------------------------------------------------
@@ -245,25 +261,27 @@ def spanish_words(value: int) -> str:
     return str(value)
 
 
-def spanish_number_present(text: str, value: int | str) -> bool:
+def spanish_number_count(text: str, value: int | str) -> int:
     if isinstance(value, str):  # Decimal: "2,5", "2.5" or "dos coma cinco".
         whole, fraction = value.split(".")
         folded = _fold(text)
         tail = " ".join(_ES_UNITS[int(d)] for d in fraction)
         spoken = {f"{spanish_words(int(whole))} {word} {tail}" for word in ("coma", "punto")}
-        return _decimal_present(text, _decimal_digit_forms(value, comma=True)) or any(
-            re.search(r"\b" + re.escape(form) + r"\b", folded) for form in spoken)
+        return int(_decimal_present(text, _decimal_digit_forms(value, comma=True)) or any(
+            re.search(r"\b" + re.escape(form) + r"\b", folded) for form in spoken))
     folded = _fold(text)
     digits = {str(value), f"{value:,}", f"{value:,}".replace(",", ".")}
-    if any(re.search(r"(?<!\d)" + re.escape(form) + r"(?!\d)", folded) for form in digits):
-        return True
     words = spanish_words(value)
     forms = {words}
     if words.endswith("uno"):
         forms |= {words[:-3] + "un", words[:-3] + "una"}
     if words.endswith("ientos"):
         forms.add(words[:-2] + "as")
-    return any(re.search(r"\b" + re.escape(form) + r"\b", folded) for form in forms)
+    return _occurrences(folded, _digit_patterns(digits) + [r"\b" + re.escape(form) + r"\b" for form in forms])
+
+
+def spanish_number_present(text: str, value: int | str) -> bool:
+    return spanish_number_count(text, value) > 0
 
 
 # --- Chinese number forms -----------------------------------------------------
@@ -293,15 +311,14 @@ def chinese_numeral(value: int) -> str:
     return "".join(parts)
 
 
-def chinese_number_present(text: str, value: int | str) -> bool:
+def chinese_number_count(text: str, value: int | str) -> int:
     if isinstance(value, str):  # Decimal: "2.5" or "二点五" / "两点五".
         whole, fraction = value.split(".")
         heads = {chinese_numeral(int(whole))} | ({"两"} if whole == "2" else set())
         tail = "".join(_ZH_DIGITS[int(d)] for d in fraction)
-        return _decimal_present(text, {value}) or bool(
-            {head + "点" + tail for head in heads} & set(_ZH_NUMBER_TOKEN.findall(text)))
-    if any(re.search(r"(?<!\d)" + re.escape(form) + r"(?!\d)", text) for form in {str(value), f"{value:,}"}):
-        return True
+        return int(_decimal_present(text, {value}) or bool(
+            {head + "点" + tail for head in heads} & set(_ZH_NUMBER_TOKEN.findall(text))))
+    digits = _occurrences(text, _digit_patterns({str(value), f"{value:,}"}))
     forms = {chinese_numeral(value)}
     if value == 2:
         forms.add("两")
@@ -311,7 +328,11 @@ def chinese_number_present(text: str, value: int | str) -> bool:
     standard = chinese_numeral(value)
     if standard[0] == "二" and len(standard) > 1 and standard[1] in "百千万":
         forms.add("两" + standard[1:])
-    return bool(forms & set(_ZH_NUMBER_TOKEN.findall(text)))
+    return digits + sum(token in forms for token in _ZH_NUMBER_TOKEN.findall(text))
+
+
+def chinese_number_present(text: str, value: int | str) -> bool:
+    return chinese_number_count(text, value) > 0
 
 
 # --- Scripture references -----------------------------------------------------
@@ -806,15 +827,22 @@ _ENGLISH_BOOK_ORDINAL = re.compile(r"\b([123])\s*(?:" + _alternation(
 
 
 def number_problems(english: str, text: str, locale: str, references: set[tuple[int, int]]) -> list[str]:
-    present = {"ko": korean_number_present, "es": spanish_number_present,
-               "zh-Hans": chinese_number_present}[locale]
+    count = {"ko": korean_number_count, "es": spanish_number_count, "zh-Hans": chinese_number_count}[locale]
     reference_numbers = {value for pair in references for value in pair}
     said = english_numbers(english)
     ordinals = [int(value) for value in _ENGLISH_BOOK_ORDINAL.findall(english)]
-    missing = [value for value in dict.fromkeys(said)
-               if value not in reference_numbers and said.count(value) > ordinals.count(value)
-               and not present(text, value)]
-    return [f"missing number {value}" for value in missing]
+    problems = []
+    for value in dict.fromkeys(said):
+        # A repeated quantity must be kept each time ("five loaves and five fish").
+        needed = said.count(value) - ordinals.count(value)
+        if value in reference_numbers or needed <= 0:
+            continue
+        found = count(text, value)
+        if not found:
+            problems.append(f"missing number {value}")
+        elif found < needed:
+            problems.append(f"missing number {value} ({found} of {needed})")
+    return problems
 
 
 _EN_ORDINALS = {"first": 1, "second": 2, "third": 3, "fourth": 4, "fifth": 5, "sixth": 6, "seventh": 7,

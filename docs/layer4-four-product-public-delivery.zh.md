@@ -55,7 +55,7 @@ PDF 不进入该身份。静态 HTML 包含 `study-outline` 和 `study-meditatio
 
 准备验证会同时检查私有批准、公开 bytes、候选 hash 与静态 HTML 完整显示。除逐语言七种资源外，准备 manifest 的 `runtimeAssets` 冻结并公开发布 app.mjs、published-weeks.mjs、content-locales.mjs，避免与旧 Web baseline 合并时留下不支持 v3 的 reader。这三份模块进入 input snapshot、HTTP 清单和 sealed snapshot。HTTP 准备 receipt 必须恰好覆盖全部逐语言资源与共享 runtime。封存清单与 live HTTP 验证包含学习资源及产品 manifest。原有多语言 overlay、baseline 和未知发布 lease 规则不变。
 
-有机器质检语言，或线上已有 v4 时，端点回读必须包含 `/multilingual-v4.json`；托管发布部署前比较线上 v4 与基线，部署后回读 v4 与封存 SHA。四产物端点使用 [client readback v2](../schemas/sermon-client-readback-v2.schema.json)，必须包含当前 catalog、release 及所有七种资源的 URL/bytes hash。Web 的 dev / production_web 端点还必须回读上述三份 reader runtime（role=reader_runtime）。每个 locale 的播放 telemetry 另需：
+封存站点带 v4 时（四层封存总会写出 v4），即使本次全是人工审核的语言，端点回读也必须包含 `/multilingual-v4.json`，因为当前网页和 iOS 先读 v4；只回读 v3 不能证明当前客户端的路径；托管发布部署前比较线上 v4 与基线，部署后回读 v4 与封存 SHA。四产物端点使用 [client readback v2](../schemas/sermon-client-readback-v2.schema.json)，必须包含当前 catalog、release 及所有七种资源的 URL/bytes hash。Web 的 dev / production_web 端点还必须回读上述三份 reader runtime（role=reader_runtime）。每个 locale 的播放 telemetry 另需：
 
 ```json
 {"studyArtifacts":{"outline":"<canonical artifact SHA-256>","meditation":"<canonical artifact SHA-256>"},"studyDisplayed":true}

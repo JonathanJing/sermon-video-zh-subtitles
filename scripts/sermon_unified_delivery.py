@@ -297,13 +297,12 @@ def _endpoints(value, base, sealed, state, reader):
         resources = receipt['readback']['resources']
         observed_paths = {row['url'].removeprefix(endpoint['intent']['origin']) for row in resources}
         # Current clients read v4 first; v3 is the human-only projection that older
-        # builds read. Only a v4 reader can show a machine-checked locale.
+        # builds read. When the site carries v4, the readback must show the v4 path
+        # current clients take, even for an all-human run.
         has_v4 = (sealed / 'public/multilingual-v4.json').exists()
         catalog = read(sealed / 'public' / ('multilingual-v4.json' if has_v4 else 'multilingual-v3.json'))
         page = next(page for page in catalog['pages'] if page['id'] == value['pageId'])
-        machine = any(d.machine_checked(page['targets'][locale]) for locale in value['locales'])
-        catalog_path = '/multilingual-v4.json' if machine or (has_v4 and '/multilingual-v4.json' in observed_paths) else '/multilingual-v3.json'
-        required_paths = {catalog_path}
+        required_paths = {'/multilingual-v4.json' if has_v4 else '/multilingual-v3.json'}
         if endpoint['name'] in ('dev', 'production_web'):
             required_paths.update('/' + name for name in builder.RUNTIME_WEB_FILES)
         audio_paths = {}

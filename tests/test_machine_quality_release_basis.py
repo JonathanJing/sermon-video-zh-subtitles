@@ -49,6 +49,7 @@ def text_qc(candidate, anchor):
     return {"schemaVersion": "sermon-target-text-auto-qc-v1", "locale": candidate["targetLocale"],
             "status": "pass", "humanApproval": False, "mutatesText": False,
             "repairGroupIds": [], "sourceTextFallbackGroupIds": [], "semanticIdentitySha256": SEMANTIC_SHA,
+            "policyJsonSha256": candidate["translationPolicySha256"],
             "implementationSha256": IMPLEMENTATION,
             "results": [{"groupId": group["translationGroupId"], "status": "pass", "problems": [],
                          "backTranslation": {"status": "pass", "issues": []}, "failedAttempts": 0,
@@ -168,7 +169,7 @@ class TextWaiverTests(unittest.TestCase):
             return {"english": "Do not be afraid."} if role == "back_translator" else {"status": "pass", "issues": []}
 
         def screen(values):
-            return text_screen.screen(values, "ko", call=call, identity=identity)
+            return text_screen.screen(values, "ko", policy=self.policy, call=call, identity=identity)
 
         clean = screen(groups)
         self.assertEqual(clean["status"], "pass")
@@ -182,6 +183,12 @@ class TextWaiverTests(unittest.TestCase):
             self.assertEqual(qc["status"], "pass")
             with self.assertRaisesRegex(ValueError, "different frozen English/source units"):
                 basis.build_text_waiver(self.source_package, self.anchor, self.candidate, qc, cal)
+        # QC without the candidate's policy skipped the terminology checks.
+        for policy in (None, {**self.policy, "terminology": {"properNames": [], "seriesNames": []}}):
+            unbound = text_screen.screen(groups, "ko", policy=policy, call=call, identity=identity)
+            self.assertEqual(unbound["status"], "pass")
+            with self.assertRaisesRegex(ValueError, "candidate's translation policy"):
+                basis.build_text_waiver(self.source_package, self.anchor, self.candidate, unbound, cal)
         for key in ("englishSha256", "sourceUnitIdsSha256"):
             missing = copy.deepcopy(clean)
             del missing["results"][0][key]

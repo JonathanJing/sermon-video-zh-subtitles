@@ -37,8 +37,12 @@ def sha(value):
                                      separators=(",", ":")).encode("utf-8")).hexdigest()
 
 
+UNIT_TIMES = {"u1": (10.0, 11.5), "u2": (12.0, 13.2), "u3": (13.3, 15.0), "u4": (24.0, 25.0)}  # Clip starts at 10 s.
+
+
 def anchor():
-    return {"sourceUnits": [{"sourceUnitId": unit_id, "english": english} for unit_id, english in UNITS]}
+    return {"sourceUnits": [{"sourceUnitId": unit_id, "english": english, "start": UNIT_TIMES[unit_id][0],
+                             "end": UNIT_TIMES[unit_id][1]} for unit_id, english in UNITS]}
 
 
 def candidate():
@@ -100,6 +104,28 @@ class RequestTests(unittest.TestCase):
         reordered["groups"].reverse()
         with self.assertRaisesRegex(ValueError, "groups differ"):
             condensation.requests(anchor(), candidate(), reordered)
+
+    def test_budget_must_follow_from_the_frozen_timing(self):
+        # A budget from another timeline (or with an edited decision) cannot choose what is condensed.
+        moved = anchor()
+        moved["sourceUnits"][3].update(start=17.0, end=18.0)
+        moved_candidate = candidate()
+        moved_candidate["anchorManifestSha256"] = sha(moved)
+        stale = budget()
+        stale["groups"][0]["sourceStart"] = 0.5
+        edited = budget()
+        edited["groups"][1]["maxSpeechUnits"] += 3
+        missing = anchor()
+        del missing["sourceUnits"][0]["start"]
+        missing_candidate = candidate()
+        missing_candidate["anchorManifestSha256"] = sha(missing)
+        for frozen, full, plan, message in (
+                (moved, moved_candidate, budget(), "different clip offsets"),
+                (anchor(), candidate(), stale, "source span differs"),
+                (anchor(), candidate(), edited, "differ from a recomputed budget"),
+                (missing, missing_candidate, budget(), "anchor lacks source timing")):
+            with self.subTest(message=message), self.assertRaisesRegex(ValueError, message):
+                condensation.requests(frozen, full, plan)
 
 
 class CondenseTests(unittest.TestCase):

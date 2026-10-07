@@ -177,6 +177,7 @@ def budget(source_seconds: float, groups: list[dict], rate: dict, policy: dict |
         rows.append({"gid": group["gid"], "sourceStart": start_source, "sourceEnd": end_source,
                      "audioSeconds": round(duration, 6)})
         planned.append({"gid": group["gid"], "action": action,
+                        "sourceStart": start_source, "sourceEnd": end_source,
                         "speechUnits": units, "predictedSeconds": round(predicted, 6),
                         "plannedStart": round(start, 6), "allowedSeconds": round(allowed, 6),
                         "maxSpeechUnits": max_units,
@@ -184,7 +185,8 @@ def budget(source_seconds: float, groups: list[dict], rate: dict, policy: dict |
     check = timing.plan(source_seconds, rows, policy, locale=locale)
     shorten = [row["gid"] for row in planned if row["action"] == "shorten"]
     impossible = [row["gid"] for row in planned if row["action"] == "cannot_fit"]
-    return {"schemaVersion": SCHEMA, "locale": locale, "policy": policy, "rate": rate,
+    return {"schemaVersion": SCHEMA, "locale": locale, "sourceSeconds": source_seconds,
+            "policy": policy, "rate": rate,
             "targetEndLagSeconds": target_end_lag_seconds,
             "status": "fits" if not shorten and not impossible else
                       ("requires_spoken_revision" if not impossible else "cannot_fit"),

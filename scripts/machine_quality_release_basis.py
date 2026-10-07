@@ -179,6 +179,9 @@ def build_text_waiver(source: dict, anchor: dict, candidate: dict, text_qc: dict
     _require(text_qc.get("schemaVersion") == "sermon-target-text-auto-qc-v1"
              and text_qc.get("locale") == locale and text_qc.get("humanApproval") is False,
              "Text QC belongs to another locale or schema")
+    # Without the candidate's own policy the name and terminology checks did not run.
+    _require(text_qc.get("policyJsonSha256") == candidate.get("translationPolicySha256"),
+             "Text QC did not screen with the candidate's translation policy")
     results = text_qc.get("results") or []
     _require([row.get("groupId") for row in results] == group_ids,
              "Text QC must cover every candidate group in order")

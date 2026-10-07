@@ -123,7 +123,7 @@ def test_real_prepare_seal_publish_inventory_contains_complete_reviewed_study(pr
     with pytest.raises(ValueError):d.validate_catalog_snapshot(sealed)
 
 
-def endpoint_fixture(f, sealed):
+def endpoint_fixture(f, sealed, catalog='/multilingual-v4.json'):
     release_path=f"/releases-v2/{f['page']}/{f['locale']}.json"
     release=builder.read(sealed/'public'/release_path.lstrip('/'))
     candidate=f['state']['candidateSha256'];locale=f['locale'];origin=f['config']['intent']['origin']
@@ -133,7 +133,7 @@ def endpoint_fixture(f, sealed):
         'paused':False,'ended':False,'currentTimeStart':0,'currentTimeEnd':3,'playbackRate':1,'sourceVideoMuted':True,
         'captionText':'current caption','captionLocale':locale,'syncErrorSeconds':0,'studyArtifacts':studies,'studyDisplayed':True}
     evidence=save(f['root'],'playback.json',telemetry)
-    rows=[{'role':'catalog','path':'/multilingual-v3.json'},{'role':'release','path':release_path}]+release['assets']
+    rows=[{'role':'catalog','path':catalog},{'role':'release','path':release_path}]+release['assets']
     rows += [{'role':'reader_runtime','path':'/' + name} for name in builder.RUNTIME_WEB_FILES]
     receipt={'locales':[locale],'readback':{'schemaVersion':'sermon-client-readback-v2','intent':f['config']['intent'],
         'candidateSha256':candidate,'observedAt':'2026-10-04T20:00:00Z','resources':[{'role':r['role'],'url':origin+r['path'],
@@ -152,6 +152,12 @@ def endpoint_fixture(f, sealed):
 def test_endpoint_requires_all_study_resources_and_human_display_evidence(prepared):
     f=prepared;sealed=seal_fixture(f);config,receipt,evidence,rp,reader=endpoint_fixture(f,sealed)
     assert delivery._endpoints(config,f['root'],sealed,f['state'],reader)==['dev']
+    # The seal carries v4, which current clients read first: a v3-only readback is not their path.
+    assert (sealed/'public/multilingual-v4.json').exists()
+    config,receipt,evidence,rp,reader=endpoint_fixture(f,sealed,catalog='/multilingual-v3.json')
+    with pytest.raises(ValueError,match='misses current locale resources'):
+        delivery._endpoints(config,f['root'],sealed,f['state'],reader)
+    config,receipt,evidence,rp,reader=endpoint_fixture(f,sealed)
     receipt['readback']['resources']=[r for r in receipt['readback']['resources'] if r['role']!='meditation']
     save(f['root'],rp.name,receipt);config['acceptance'][0]['receipt']=binding(rp)
     with pytest.raises(ValueError,match='misses current locale resources'):

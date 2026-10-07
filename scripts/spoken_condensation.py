@@ -118,7 +118,43 @@ def requests(anchor: dict, candidate: dict, budget: dict) -> dict:
                                      for unit_id in group["sourceUnitIds"]],
                     "fullTargetText": group["targetText"], "fullSpeechUnits": row["speechUnits"],
                     "maxSpeechUnits": row["maxSpeechUnits"], "allowedSeconds": row["allowedSeconds"]})
+    frozen = frozen_timing_problems(anchor, candidate, budget)
+    if frozen:
+        raise ValueError("Budget does not follow from the frozen source timing: " + "; ".join(frozen))
     return {"targetLocale": locale, "requests": out, "cannotFitGroupIds": cannot_fit}
+
+
+TIMING_TOLERANCE_SECONDS = 0.001
+
+
+def frozen_timing_problems(anchor: dict, candidate: dict, budget: dict) -> list[str]:
+    """The budget's clip-relative source times must be the anchor's, shifted by one
+    clip offset, and its actions and limits must follow from them and these texts."""
+    units = {unit["sourceUnitId"]: unit for unit in anchor["sourceUnits"]}
+    offsets = []
+    for group, row in zip(candidate["groups"], budget["groups"]):
+        first, last = units[group["sourceUnitIds"][0]], units[group["sourceUnitIds"][-1]]
+        if not all(isinstance(unit.get(key), (int, float)) for unit in (first, last) for key in ("start", "end")):
+            return [f"{group['translationGroupId']}: anchor lacks source timing"]
+        if not all(isinstance(row.get(key), (int, float)) for key in ("sourceStart", "sourceEnd")):
+            return [f"{group['translationGroupId']}: budget lacks source timing"]
+        offsets.append(float(first["start"]) - row["sourceStart"])
+        if abs((float(last["end"]) - float(first["start"])) - (row["sourceEnd"] - row["sourceStart"])) \
+                > TIMING_TOLERANCE_SECONDS:
+            return [f"{group['translationGroupId']}: source span differs from the anchor"]
+    if max(offsets) - min(offsets) > TIMING_TOLERANCE_SECONDS:
+        return ["groups are shifted by different clip offsets"]
+    try:
+        rebuilt = predicted.budget(
+            budget["sourceSeconds"],
+            [{"gid": group["translationGroupId"], "sourceStart": row["sourceStart"],
+              "sourceEnd": row["sourceEnd"], "text": group["targetText"]}
+             for group, row in zip(candidate["groups"], budget["groups"])],
+            budget["rate"], budget["policy"], synthesis_identity=budget["rate"]["synthesisIdentity"],
+            target_end_lag_seconds=budget["targetEndLagSeconds"])
+    except (KeyError, TypeError, ValueError) as error:
+        return [f"budget cannot be recomputed: {error}"]
+    return [] if rebuilt == budget else ["actions or limits differ from a recomputed budget"]
 
 
 def prompt(request: dict, locale: str, problems: list[str] | None = None) -> dict:

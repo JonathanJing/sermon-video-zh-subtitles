@@ -239,6 +239,8 @@ def screen(groups: list[dict], locale: str, *, policy: dict | None = None, call=
             "implementationSha256": waiver.implementation_sha256(),
             "semanticIdentity": None if bound is None else bound["identity"],
             "semanticIdentitySha256": None if bound is None else bound["sha256"],
+            # A waiver compares this with the candidate's policy: names are only checked against it.
+            "policyJsonSha256": None if policy is None else _sha(policy),
             "lengthBounds": LENGTH_BOUNDS, "candidateLengthMedian": median,
             "condensedGroupIds": [g["groupId"] for g in groups if g.get("condensation")],
             "status": "pass" if all(r["status"] == "pass" for r in results) else "requires_repair",
