@@ -1,5 +1,8 @@
 """Offline helper checks; no media build, model calls or Hosting operations."""
 import copy
+import gzip
+import hashlib
+import io
 import json
 
 import pytest
@@ -157,3 +160,49 @@ def test_catalog_report_adds_the_v4_hash_only_once_published(tmp_path):
     assert set(publication.catalog_report(tmp_path)) == {'catalogSha256'}
     (tmp_path / 'multilingual-v4.json').write_text('{"v": 4}')
     assert publication.catalog_report(tmp_path)['catalogV4Sha256'] == publication.digest(tmp_path / 'multilingual-v4.json')
+
+
+class _LiveResponse:
+    def __init__(self, body, headers):
+        self.status, self.headers, self._body = 200, headers, io.BytesIO(body)
+
+    def read(self, size=-1):
+        return self._body.read(size)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
+
+
+def _serve(monkeypatch, body, headers):
+    monkeypatch.setattr(publication, 'urlopen', lambda request, timeout: _LiveResponse(body, headers))
+
+
+def test_live_gzip_file_is_bound_by_its_bytes(tmp_path, monkeypatch):
+    raw = b'{"enabled": false}'
+    packed = gzip.compress(raw)
+    _serve(monkeypatch, packed, {'Content-Encoding': 'gzip', 'ETag': '"ignored"'})
+    target = tmp_path / 'a.json'
+    assert publication.fetch_live_file('a.json', hashlib.sha256(packed).hexdigest(), target) == 'live_get_version_hash_verified'
+    assert target.read_bytes() == raw
+    _serve(monkeypatch, packed, {'Content-Encoding': 'gzip', 'ETag': '"stale"'})
+    with pytest.raises(ValueError, match='no longer matches'):
+        publication.fetch_live_file('b.json', 'stale', tmp_path / 'b.json')
+
+
+def test_uncompressed_small_file_is_bound_by_version_etag(tmp_path, monkeypatch):
+    raw = b'{"enabled": false}'
+    version_hash = hashlib.sha256(gzip.compress(raw)).hexdigest()
+    _serve(monkeypatch, raw, {'ETag': '"' + version_hash + '"'})
+    target = tmp_path / 'engagement.json'
+    assert publication.fetch_live_file('engagement.json', version_hash, target) == 'live_get_identity_etag_verified'
+    assert target.read_bytes() == raw
+    for name, headers in (('c.json', {'ETag': '"other"'}), ('e.json', {})):
+        _serve(monkeypatch, raw, headers)
+        with pytest.raises(ValueError, match='no longer matches'):
+            publication.fetch_live_file(name, version_hash, tmp_path / name)
+    _serve(monkeypatch, raw, {'Content-Encoding': 'br', 'ETag': '"' + version_hash + '"'})
+    with pytest.raises(ValueError, match='Unsupported'):
+        publication.fetch_live_file('d.json', version_hash, tmp_path / 'd.json')

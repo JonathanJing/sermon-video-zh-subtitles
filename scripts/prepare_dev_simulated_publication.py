@@ -106,6 +106,35 @@ def files_report(public):
             for p in sorted(public.rglob('*')) if p.is_file()]
 
 
+def fetch_live_file(relative, version_hash, target):
+    """Download one live file and bind it to the frozen version's gzip hash.
+
+    Hosting records sha256(gzip(content)). A gzip response is checked byte for
+    byte; small files the CDN serves uncompressed can only be bound through the
+    ETag, which Hosting sets to that same version hash.
+    """
+    compressed = target.with_suffix(target.suffix + '.download')
+    h = hashlib.sha256()
+    with urlopen(Request(ORIGIN + '/' + quote(str(relative), safe='/'), headers={'Accept-Encoding': 'gzip', 'Cache-Control': 'no-cache'}), timeout=120) as response:
+        contract.require(response.status == 200, 'Live file GET failed')
+        encoding = response.headers.get('Content-Encoding')
+        etag = (response.headers.get('ETag') or '').strip('"')
+        with compressed.open('xb') as stream:
+            for chunk in iter(lambda: response.read(1024 * 1024), b''):
+                h.update(chunk)
+                stream.write(chunk)
+    if encoding == 'gzip':
+        contract.require(h.hexdigest() == version_hash, 'Live file no longer matches frozen version: /' + str(relative))
+        with gzip.open(compressed, 'rb') as source, target.open('xb') as dest:
+            shutil.copyfileobj(source, dest)
+        compressed.unlink()
+        return 'live_get_version_hash_verified'
+    contract.require(encoding in (None, 'identity'), 'Unsupported live content encoding')
+    contract.require(etag == version_hash, 'Live file no longer matches frozen version: /' + str(relative))
+    compressed.rename(target)
+    return 'live_get_identity_etag_verified'
+
+
 def baseline(out, *, cache_public=None, cache_receipt=None):
     out = Path(out).resolve()
     contract.require(not out.exists(), 'Use a new baseline output directory')
@@ -153,24 +182,7 @@ def baseline(out, *, cache_public=None, cache_receipt=None):
             mode = 'verified_cached_bytes_live_version_hash_join'
             raw_sha = prior['rawSha256']
         else:
-            compressed = target.with_suffix(target.suffix + '.download')
-            h = hashlib.sha256()
-            with urlopen(Request(ORIGIN + '/' + quote(str(relative), safe='/'), headers={'Accept-Encoding': 'gzip', 'Cache-Control': 'no-cache'}), timeout=120) as response:
-                contract.require(response.status == 200, 'Live file GET failed')
-                encoding = response.headers.get('Content-Encoding')
-                with compressed.open('xb') as stream:
-                    for chunk in iter(lambda: response.read(1024 * 1024), b''):
-                        h.update(chunk)
-                        stream.write(chunk)
-            contract.require(h.hexdigest() == row['hash'], 'Live file no longer matches frozen version: ' + row['path'])
-            if encoding == 'gzip':
-                with gzip.open(compressed, 'rb') as source, target.open('xb') as dest:
-                    shutil.copyfileobj(source, dest)
-                compressed.unlink()
-            else:
-                contract.require(encoding in (None, 'identity'), 'Unsupported live content encoding')
-                compressed.rename(target)
-            mode = 'live_get_version_hash_verified'
+            mode = fetch_live_file(relative, row['hash'], target)
             raw_sha = digest(target)
         return {'path': row['path'], 'rawSha256': raw_sha, 'rawBytes': target.stat().st_size,
                 'liveGzipSha256': row['hash'], 'sourceKind': mode, 'managed': managed}
