@@ -95,6 +95,57 @@ test('tampered caption bytes reject only that locale', async () => {
   assert.match(result.errors[0], /hash mismatch/);
 });
 
+function publishedPodcastFixture(mutate = () => {}, sourceUrl = 'https://www.youtube.com/watch?v=published-podcast') {
+  const f = fixture(args => {
+    Object.assign(args.content, {schemaVersion: 'sermon-full-video-text-content-v2', reviewMode: 'formal',
+      audioDurationSeconds: 9, speaker: 'Eric Geiger · Steve Bang Lee',
+      outline: [{title: 'A complete outline heading', body: 'A complete outline paragraph.'}]});
+    delete args.content.sourceVideoUrl;
+    mutate(args);
+  });
+  const catalog = JSON.parse(f.files.get('/multilingual-v3.json'));
+  Object.assign(catalog.pages[0], {mediaType: 'podcast', sourceUrl});
+  f.files.set('/multilingual-v3.json', JSON.stringify(catalog));
+  return f;
+}
+
+test('published reviewed podcast keeps structured outline and external source without inventing a video URL', async () => {
+  const f = publishedPodcastFixture();
+  const result = await loadPublishedWeeks(f.fetchImpl);
+  assert.deepEqual(result.errors, []);
+  assert.deepEqual(Object.keys(result.weeks[0].contentVariants), ['zh-Hans', 'ko', 'es']);
+  for (const [locale, variant] of Object.entries(result.weeks[0].contentVariants)) {
+    assert.equal(variant.sourceRoute, 'podcast');
+    assert.equal(variant.mediaType, 'podcast');
+    assert.equal(variant.sourceUrl, 'https://www.youtube.com/watch?v=published-podcast');
+    assert.notEqual(variant.sourceLabel, '完整视频');
+    assert.deepEqual(variant.outline, [{title: 'A complete outline heading', points: ['A complete outline paragraph.']}]);
+    assert.equal(variant.humanContentReview, 'approved');
+    assert.equal(variant.tracks[0].subtitleTiming, 'target_audio_clock');
+    assert.equal(variant.tracks[0].durationSeconds, 9);
+    assert.equal(variant.tracks[0].voiceLabel, 'Eric Geiger · Steve Bang Lee · AI');
+    assert.match(variant.tracks[0].label, /播客|팟캐스트|pódcast/i);
+    assert.equal(variant.targetLocale, locale);
+  }
+});
+
+test('podcast compatibility still rejects malformed outline bodies, unsafe sources and unreviewed identities', async () => {
+  for (const f of [
+    publishedPodcastFixture(({content}) => {content.outline[0].body = ''; }),
+    publishedPodcastFixture(({content}) => {content.status = 'candidate'; }),
+    publishedPodcastFixture(() => {}, 'http://example.com/podcast'),
+    publishedPodcastFixture(() => {}, 'https://user:password@example.com/podcast'),
+  ]) {
+    const result = await loadPublishedWeeks(f.fetchImpl);
+    assert.deepEqual(result.weeks, []);
+    assert.equal(result.errors.length, 3);
+  }
+  const video = fixture(({content}) => {content.outline = [{title: 'Heading', body: 'Body'}];});
+  const rejectedVideo = await loadPublishedWeeks(video.fetchImpl);
+  assert.deepEqual(rejectedVideo.weeks, []);
+  assert.equal(rejectedVideo.errors.length, 3);
+});
+
 test('release hashes are verified before their content is read', async () => {
   const f = fixture();
   f.files.set(`/releases-v2/${pageId}/es.json`, '{}');
@@ -577,4 +628,17 @@ test('simulation review mode requires isolated page and target flags', async () 
     content.audioDurationSeconds = 10;
   });
   assert.equal((await loadPublishedWeeks(f.fetchImpl, {allowDevCandidates:true})).weeks.length, 0);
+});
+
+test('optional display category survives every content locale without changing release status', async () => {
+  const category={schemaVersion:'sermon-page-display-category-v1',labels:{'zh-Hans':'研读材料',en:'Study material'}};
+  const f=fixture();
+  const catalog=JSON.parse(f.files.get('/multilingual-v3.json'));
+  catalog.pages[0].displayCategory=category; f.files.set('/multilingual-v3.json',JSON.stringify(catalog));
+  const result=await loadPublishedWeeks(f.fetchImpl);
+  assert.deepEqual(result.weeks[0].displayCategory,category);
+  for(const variant of Object.values(result.weeks[0].contentVariants)) {
+    assert.deepEqual(variant.displayCategory,category);
+    assert.equal(variant.releaseLabel,'正式播放版');
+  }
 });
