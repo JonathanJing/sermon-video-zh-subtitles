@@ -30,12 +30,14 @@ from scripts import target_audio_auto_qc as audio_qc
 from scripts import target_text_auto_qc as text_qc
 from scripts.language_review_plugins import auto_qc_text_common as rules
 
-TEXT_KINDS = ("wrong_number", "added_reference", "english_leak", "placeholder", "dropped_name", "dropped_half")
-AUDIO_KINDS = ("stretched", "silent", "clipped", "truncated")
+TEXT_KINDS = waiver.TEXT_KINDS
+AUDIO_KINDS = waiver.AUDIO_KINDS
 ADDED_REFERENCE = {"zh-Hans": "（约翰福音3章16节）", "ko": " (요한복음 3장 16절)", "es": " (Juan 3:16)"}
 
 
-def _number_forms(locale: str, value: int) -> list[str]:
+def _number_forms(locale: str, value: int | str) -> list[str]:
+    if isinstance(value, str):  # A digit decimal ("2.5"; Spanish may write "2,5").
+        return [value, value.replace(".", ",")] if locale == "es" else [value]
     forms = [str(value)]
     if locale == "ko":
         forms += [rules.korean_sino(value), *rules.korean_native(value)]
@@ -59,7 +61,9 @@ def mutate_text(group: dict, kind: str, locale: str, policy: dict | None) -> str
                 # Skip one-character word forms (세, 三): replacing them would
                 # usually corrupt an unrelated word instead of the number.
                 if form in text and (form.isdigit() or len(form) > 1):
-                    return text.replace(form, str(value + 7), 1)
+                    # A decimal loses its separator (2.5 -> 25); an integer shifts by 7.
+                    wrong = re.sub(r"[.,]", "", form) if isinstance(value, str) else str(value + 7)
+                    return text.replace(form, wrong, 1)
         return None
     if kind == "added_reference":
         pairs, chapters = rules.english_references(english)

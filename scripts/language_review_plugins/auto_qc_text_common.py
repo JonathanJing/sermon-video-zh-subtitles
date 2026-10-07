@@ -41,8 +41,12 @@ def _fold(value: str) -> str:
     return "".join(char for char in text if not unicodedata.combining(char))
 
 
-def english_numbers(text: str) -> list[int]:
-    """Cardinal numbers said in English, as digits or words; order preserved."""
+def english_numbers(text: str) -> list[int | str]:
+    """Cardinal numbers said in English, as digits or words; order preserved.
+
+    A decimal written with digits ("2.5") is kept as its digit string so a
+    changed decimal ("25") is still a missing number.
+    """
     tokens = re.findall(r"\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?|[a-z]+", text.casefold().replace("-", " "))
     found: list[int] = []
     index = 0
@@ -50,6 +54,10 @@ def english_numbers(text: str) -> list[int]:
         token = tokens[index]
         if re.fullmatch(r"\d{1,3}(?:,\d{3})+|\d+", token):
             found.append(int(token.replace(",", "")))
+            index += 1
+            continue
+        if re.fullmatch(r"\d+\.\d+", token):
+            found.append(token)
             index += 1
             continue
         if token not in _UNITS and token not in _TENS and token not in _SCALES:
@@ -128,7 +136,22 @@ def _ko_pattern(form: str) -> str:
     return left + re.escape(form)
 
 
-def korean_number_present(text: str, value: int) -> bool:
+def _decimal_digit_forms(value: str, *, comma: bool = False) -> set[str]:
+    forms = {value}
+    if comma:
+        forms.add(value.replace(".", ","))
+    return forms
+
+
+def _decimal_present(text: str, forms: set[str]) -> bool:
+    return any(re.search(r"(?<![\d.,])" + re.escape(form) + r"(?![\d])", text) for form in forms)
+
+
+def korean_number_present(text: str, value: int | str) -> bool:
+    if isinstance(value, str):  # Decimal: "2.5" or "이 점 오".
+        whole, fraction = value.split(".")
+        spoken = korean_sino(int(whole)) + "점" + "".join(_KO_SINO_DIGITS[int(d)] for d in fraction)
+        return _decimal_present(text, {value}) or spoken in re.sub(r"\s+", "", text)
     digits = {str(value), f"{value:,}"}
     if any(re.search(r"(?<!\d)" + re.escape(form) + r"(?!\d)", text) for form in digits):
         return True
@@ -166,7 +189,14 @@ def spanish_words(value: int) -> str:
     return str(value)
 
 
-def spanish_number_present(text: str, value: int) -> bool:
+def spanish_number_present(text: str, value: int | str) -> bool:
+    if isinstance(value, str):  # Decimal: "2,5", "2.5" or "dos coma cinco".
+        whole, fraction = value.split(".")
+        folded = _fold(text)
+        tail = " ".join(_ES_UNITS[int(d)] for d in fraction)
+        spoken = {f"{spanish_words(int(whole))} {word} {tail}" for word in ("coma", "punto")}
+        return _decimal_present(text, _decimal_digit_forms(value, comma=True)) or any(
+            re.search(r"\b" + re.escape(form) + r"\b", folded) for form in spoken)
     folded = _fold(text)
     digits = {str(value), f"{value:,}", f"{value:,}".replace(",", ".")}
     if any(re.search(r"(?<!\d)" + re.escape(form) + r"(?!\d)", folded) for form in digits):
@@ -206,7 +236,12 @@ def chinese_numeral(value: int) -> str:
     return "".join(parts)
 
 
-def chinese_number_present(text: str, value: int) -> bool:
+def chinese_number_present(text: str, value: int | str) -> bool:
+    if isinstance(value, str):  # Decimal: "2.5" or "二点五" / "两点五".
+        whole, fraction = value.split(".")
+        heads = {chinese_numeral(int(whole))} | ({"两"} if whole == "2" else set())
+        tail = "".join(_ZH_DIGITS[int(d)] for d in fraction)
+        return _decimal_present(text, {value}) or any(head + "点" + tail in text for head in heads)
     if any(re.search(r"(?<!\d)" + re.escape(form) + r"(?!\d)", text) for form in {str(value), f"{value:,}"}):
         return True
     forms = {chinese_numeral(value)}
@@ -268,11 +303,22 @@ def english_colon_pairs(text: str) -> set[tuple[int, int]]:
     return {(int(c), int(v)) for c, v in re.findall(_COLON_PAIR, text)}
 
 
+_BOOKS = (
+    "Genesis|Gen|Exodus|Exod|Ex|Leviticus|Lev|Numbers|Num|Deuteronomy|Deut|Joshua|Josh|Judges|Judg|"
+    "Ruth|Samuel|Sam|Kings|Kgs|Chronicles|Chron|Ezra|Nehemiah|Neh|Esther|Esth|Job|Psalms?|Psa?|"
+    "Proverbs|Prov|Ecclesiastes|Eccl|Songs?|Solomon|Isaiah|Isa|Jeremiah|Jer|Lamentations|Lam|"
+    "Ezekiel|Ezek|Daniel|Dan|Hosea|Hos|Joel|Amos|Obadiah|Obad|Jonah|Micah|Mic|Nahum|Nah|"
+    "Habakkuk|Hab|Zephaniah|Zeph|Haggai|Hag|Zechariah|Zech|Malachi|Mal|Matthew|Matt|Mt|Mark|Mk|"
+    "Luke|Lk|John|Jn|Acts|Romans|Rom|Corinthians|Cor|Galatians|Gal|Ephesians|Eph|Philippians|Phil|"
+    "Colossians|Col|Thessalonians|Thess|Timothy|Tim|Titus|Philemon|Phlm|Hebrews|Heb|James|Jas|"
+    "Peter|Pet|Jude|Revelations?|Rev")
+_ENGLISH_REFERENCE = re.compile(r"\b(?:" + _BOOKS + r")\.?\s+(\d{1,3}):(\d{1,3})(?![\d:])")
+
+
 def english_references(text: str) -> tuple[set[tuple[int, int]], set[int]]:
-    # A written reference follows a book name ("Revelation 3:4", "1 John 4:8");
-    # "at 10:30" is a clock time and is not required in the target.
-    pairs = {(int(c), int(v)) for c, v in re.findall(
-        r"[A-Z][a-z]+\.?\s+(\d{1,3}):(\d{1,3})(?![\d:])", text)}
+    # A written reference follows a recognized book name ("Revelation 3:4",
+    # "1 John 4:8"); "At 10:30" is a clock time and is not required in the target.
+    pairs = {(int(c), int(v)) for c, v in _ENGLISH_REFERENCE.findall(text)}
     chapters = set()
     tokens = re.findall(r"\d+|[a-z]+", text.casefold().replace("-", " "))
     for index, token in enumerate(tokens):
@@ -293,6 +339,8 @@ def english_references(text: str) -> tuple[set[tuple[int, int]], set[int]]:
 
 
 _ES_WORD_VALUES = {spanish_words(value): value for value in range(1, 200)}
+_KO_PARTICLES = ("(?:에서|에게|에는|에도|에|을|은|의|이|과|와|도|부터|까지|으로|만|입니다|이다|이며|이고|이라|처럼)"
+                 "(?![가-힣])|(?:에서|에|을|은|의|이|과|와|도|부터|까지|으로|만)(?=[가-힣])")
 
 
 def _take_spanish_number(tokens: list[str], index: int) -> tuple[int | None, int]:
@@ -313,7 +361,10 @@ def target_references(text: str, locale: str) -> tuple[set[tuple[int, int]], set
             c_value, v_value = _number_token(c, "ko"), _number_token(v, "ko")
             if c_value is not None and v_value is not None:
                 pairs.add((c_value, v_value))
-        for c in re.findall(r"(\d{1,3}|[영일이삼사오육칠팔구십백]+)\s*장(?![가-힣])", text):
+        # A particle usually follows: 3장에서, 3장을, 3장의, 3장입니다.
+        for c in re.findall(r"(\d{1,3}|[영일이삼사오육칠팔구십백]+)\s*장"
+                            r"(?![가-힣])|(\d{1,3}|[영일이삼사오육칠팔구십백]+)\s*장(?=" + _KO_PARTICLES + r")", text):
+            c = c[0] or c[1]
             value = _number_token(c, "ko")
             if value is not None:
                 chapters.add(value)
@@ -354,8 +405,16 @@ def scripture_reference_problems(english: str, target: str, locale: str) -> list
                  if not any(pair[0] == c for pair in english_pairs)]
     # The speaker's words decide which references exist; a reference the
     # English did not say is an editorial addition (the 2026-10-04 ko issue).
-    problems += [f"added reference {c}:{v}" for c, v in
-                 sorted(target_pairs - english_pairs - english_colon_pairs(english))]
+    colon_pairs = english_colon_pairs(english)
+    added_pairs = target_pairs - english_pairs - colon_pairs
+    problems += [f"added reference {c}:{v}" for c, v in sorted(added_pairs)]
+    # A chapter-only citation the English never said ("요한복음 3장"). A number
+    # the English said for another reason (three sheets, chapter-like counters)
+    # is not treated as added.
+    said = {value for value in english_numbers(english) if isinstance(value, int)}
+    said |= {value for pair in colon_pairs for value in pair}
+    problems += [f"added chapter {c}" for c in sorted(target_chapters - english_chapters - said
+                                                       - {c for c, _ in added_pairs})]
     return problems
 
 
@@ -371,8 +430,12 @@ def script_problems(text: str, locale: str) -> list[str]:
         problems.append("placeholder marker")
     if locale == "ko" and hangul / len(letters) < 0.6:
         problems.append(f"Hangul share {hangul / len(letters):.2f} < 0.60")
-    if locale == "es" and (hangul or cjk):
-        problems.append("non-Latin CJK/Hangul characters in Spanish text")
+    if locale == "es":
+        latin = sum(unicodedata.name(char, "").startswith("LATIN") for char in letters)
+        if hangul or cjk:
+            problems.append("non-Latin CJK/Hangul characters in Spanish text")
+        if latin / len(letters) < 0.6:
+            problems.append(f"Latin share {latin / len(letters):.2f} < 0.60")
     if locale == "zh-Hans" and cjk / len(letters) < 0.6:
         problems.append(f"Han share {cjk / len(letters):.2f} < 0.60")
     return problems

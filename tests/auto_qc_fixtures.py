@@ -99,7 +99,8 @@ def units(locale: str, seconds_per_unit: float = 0.17) -> list[dict]:
     for group in groups(locale):
         seconds = 0.2 + seconds_per_unit * speech_units(group["targetText"], locale)
         rows.append({"groupId": group["groupId"], "text": group["targetText"],
-                     "sourceSeconds": max(2.0, seconds * 0.9), "wav": speech_wav(seconds)})
+                     "sourceSeconds": max(2.0, seconds * 0.9), "wav": speech_wav(seconds),
+                     "asrPrimary": 0.97})
     return rows
 
 

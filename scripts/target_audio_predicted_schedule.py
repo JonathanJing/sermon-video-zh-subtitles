@@ -14,6 +14,7 @@ audio or approvals.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 from pathlib import Path
@@ -29,6 +30,29 @@ from scripts import target_audio_timing_plan as timing
 SCHEMA = "sermon-target-audio-predicted-schedule-v1"
 RATE_SCHEMA = "sermon-target-speech-rate-v1"
 EPSILON = 1e-6
+# Speech-job adapter fields that change how long the same text sounds. A rate
+# fitted under one identity is never used to budget another.
+SYNTHESIS_IDENTITY_FIELDS = (
+    "adapterId", "adapterVersion", "configSha256", "provider", "model", "modelRevision",
+    "voice", "speakerId", "conditioningSha256", "languageParameter", "normalizationPolicySha256",
+)
+
+
+def synthesis_identity(job: dict) -> dict:
+    """The synthesis identity of one speech job (targetLocale plus adapter fields)."""
+    adapter = job.get("adapter") or {}
+    missing = [field for field in SYNTHESIS_IDENTITY_FIELDS if not adapter.get(field)]
+    if not job.get("targetLocale") or missing:
+        raise ValueError(f"Speech job lacks synthesis identity fields: {missing or ['targetLocale']}")
+    return {"targetLocale": job["targetLocale"], **{field: adapter[field] for field in SYNTHESIS_IDENTITY_FIELDS}}
+
+
+def _check_identity(identity: dict, locale: str) -> None:
+    if (not isinstance(identity, dict) or set(identity) != {"targetLocale", *SYNTHESIS_IDENTITY_FIELDS}
+            or not all(isinstance(value, str) and value for value in identity.values())):
+        raise ValueError("Synthesis identity must carry exactly the speech-job identity fields")
+    if identity["targetLocale"] != locale:
+        raise ValueError("Synthesis identity belongs to another locale")
 
 
 def speech_units(text: str, locale: str) -> float:
@@ -50,19 +74,25 @@ def speech_units(text: str, locale: str) -> float:
     return float(base + 1.5 * digits + 2 * len(latin_words))
 
 
-def fit_rate(rows: list[dict], locale: str) -> dict:
+def fit_rate(rows: list[dict], locale: str, *, synthesis_identity: dict) -> dict:
     """Least-squares seconds = intercept + secondsPerUnit * units on inlier rows.
 
-    ``rows`` are measured units: ``{"text": str, "audioSeconds": float}``.
+    ``rows`` are units measured under ``synthesis_identity``:
+    ``{"text": str, "audioSeconds": float, "audioSha256": str}``. The rate
+    records that identity and a hash of the measurements it was fitted from.
     Rows whose per-unit rate is outside 0.5x-2x of the median are excluded so a
     61-second synthesis anomaly cannot skew the model. ``p90Factor`` is the 90th
     percentile of measured/predicted on inliers and makes budgets conservative.
     """
-    points = []
+    _check_identity(synthesis_identity, locale)
+    points, measurements = [], []
     for row in rows:
         units, seconds = speech_units(row.get("text"), locale), row.get("audioSeconds")
         if type(seconds) not in (int, float) or not math.isfinite(seconds) or seconds <= 0:
             raise ValueError("Measured audioSeconds must be positive")
+        if not re.fullmatch(r"[0-9a-f]{64}", str(row.get("audioSha256"))):
+            raise ValueError("Each measured unit needs the audioSha256 it was measured from")
+        measurements.append({"text": row["text"], "audioSeconds": seconds, "audioSha256": row["audioSha256"]})
         if units >= 3:
             points.append((units, float(seconds)))
     if len(points) < 20:
@@ -79,9 +109,13 @@ def fit_rate(rows: list[dict], locale: str) -> dict:
     intercept = max(0.0, intercept)
     factors = sorted(s / (intercept + slope * u) for u, s in inliers)
     p90 = factors[min(len(factors) - 1, math.ceil(0.9 * len(factors)) - 1)]
+    measurement_sha = hashlib.sha256(json.dumps(measurements, ensure_ascii=False, sort_keys=True,
+                                                separators=(",", ":")).encode("utf-8")).hexdigest()
     return {"schemaVersion": RATE_SCHEMA, "locale": locale, "secondsPerUnit": round(slope, 6),
             "interceptSeconds": round(intercept, 6), "p90Factor": round(max(1.0, p90), 6),
-            "fittedUnits": len(inliers), "excludedOutliers": len(points) - len(inliers)}
+            "fittedUnits": len(inliers), "excludedOutliers": len(points) - len(inliers),
+            "synthesisIdentity": dict(synthesis_identity), "measurementSha256": measurement_sha,
+            "measuredUnits": len(measurements)}
 
 
 def predict_seconds(text: str, rate: dict, *, conservative: bool = True) -> float:
@@ -95,7 +129,7 @@ def max_units_for(seconds: float, rate: dict) -> int:
 
 
 def budget(source_seconds: float, groups: list[dict], rate: dict, policy: dict | None = None,
-           *, target_end_lag_seconds: float = 4.0) -> dict:
+           *, synthesis_identity: dict, target_end_lag_seconds: float = 4.0) -> dict:
     """Greedy rolling schedule on predicted durations with per-group budgets.
 
     ``groups``: ordered ``{"gid", "sourceStart", "sourceEnd", "text"}`` with
@@ -106,7 +140,15 @@ def budget(source_seconds: float, groups: list[dict], rate: dict, policy: dict |
     A shortened group is budgeted to end ``target_end_lag_seconds`` after its
     source (never past the hard limit), leaving headroom for the next group
     instead of spending the whole 8-second allowance on one sentence.
+
+    ``synthesis_identity`` is the identity of the job being budgeted; a rate
+    fitted under any other identity is refused.
     """
+    if rate.get("schemaVersion") != RATE_SCHEMA:
+        raise ValueError("Unsupported speech-rate artifact")
+    _check_identity(synthesis_identity, rate.get("locale"))
+    if rate.get("synthesisIdentity") != synthesis_identity:
+        raise ValueError("Speech rate was fitted under another synthesis identity; refit it for this job")
     policy = dict(formal.DEFAULT_POLICY if policy is None else policy)
     if set(policy) != set(formal.DEFAULT_POLICY):
         raise ValueError("Invalid schedule policy fields")
@@ -157,19 +199,23 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("command", choices=("fit", "budget"))
     parser.add_argument("--input", required=True, type=Path,
-                        help="fit: {locale, rows:[{text, audioSeconds}]}; "
+                        help="fit: {locale, rows:[{text, audioSeconds, audioSha256}]}; "
                              "budget: {sourceSeconds, groups:[...], policy?}")
+    parser.add_argument("--speech-job", required=True, type=Path,
+                        help="fit: the job whose units were measured; budget: the job being budgeted")
     parser.add_argument("--rate", type=Path, help="Speech-rate JSON from the fit command")
     parser.add_argument("--out", required=True, type=Path)
     args = parser.parse_args()
     value = json.loads(args.input.read_text(encoding="utf-8"))
+    identity = synthesis_identity(json.loads(args.speech_job.read_text(encoding="utf-8")))
     if args.command == "fit":
-        result = fit_rate(value["rows"], value["locale"])
+        result = fit_rate(value["rows"], value["locale"], synthesis_identity=identity)
     else:
         if args.rate is None:
             parser.error("budget requires --rate")
         result = budget(value["sourceSeconds"], value["groups"],
-                        json.loads(args.rate.read_text(encoding="utf-8")), value.get("policy"))
+                        json.loads(args.rate.read_text(encoding="utf-8")), value.get("policy"),
+                        synthesis_identity=identity)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     with args.out.open("x", encoding="utf-8") as stream:
         json.dump(result, stream, ensure_ascii=False, indent=2, sort_keys=True)

@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import array
+import hashlib
 import io
 import json
 import math
@@ -176,7 +177,10 @@ def next_action(failed_attempts: int) -> str:
 
 def screen(units: list[dict], locale: str, thresholds: dict = THRESHOLDS) -> dict:
     """Screen one render attempt. Each unit: ``{groupId, text, sourceSeconds,
-    wav (bytes) or metrics, asrPrimary?, asrSecondary?, priorFailedAttempts?}``."""
+    wav (bytes) or metrics, asrPrimary, asrSecondary?, priorFailedAttempts?}``.
+
+    A unit without a primary ASR score has had no content check, so it stays
+    ``pending_primary_asr`` instead of passing on acoustics alone."""
     rows = []
     for unit in units:
         metrics = unit.get("metrics")
@@ -195,12 +199,18 @@ def screen(units: list[dict], locale: str, thresholds: dict = THRESHOLDS) -> dic
         prior = int(row.get("priorFailedAttempts", 0))
         if issues:
             status, action = "fail", next_action(prior)
+        elif asr is None:
+            status, action = "pending_primary_asr", "run_primary_asr"
         elif asr == "needs_secondary_asr":
             status, action = "pending_secondary_asr", "run_secondary_asr"
         else:
             status, action = "pass", "keep"
+        # The waiver binds these exact bytes and both ASR opinions.
+        audio_sha = hashlib.sha256(row["wav"]).hexdigest() if "wav" in row else row.get("audioSha256")
         results.append({"groupId": row["groupId"], "status": status, "issues": issues,
-                        "asrDecision": asr, "failedAttempts": prior + (status == "fail"),
+                        "asrDecision": asr, "asrPrimary": row.get("asrPrimary"),
+                        "asrSecondary": row.get("asrSecondary"), "audioSha256": audio_sha,
+                        "failedAttempts": prior + (status == "fail"),
                         "nextAction": action, "metrics": row["metrics"]})
     return {"schemaVersion": SCHEMA, "locale": locale, "thresholds": thresholds,
             "maxRepairAttempts": MAX_REPAIR_ATTEMPTS,
@@ -213,7 +223,7 @@ def screen(units: list[dict], locale: str, thresholds: dict = THRESHOLDS) -> dic
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", required=True, type=Path,
-                        help="{locale, units:[{groupId, text, sourceSeconds, wavPath, asrPrimary?, "
+                        help="{locale, units:[{groupId, text, sourceSeconds, wavPath, asrPrimary, "
                              "asrSecondary?, priorFailedAttempts?}]}")
     parser.add_argument("--out", required=True, type=Path)
     args = parser.parse_args()
