@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from contextlib import ExitStack
 from unittest.mock import patch
 
 from scripts import machine_quality_release_basis as basis
@@ -96,7 +97,7 @@ class MachineQcClipDriverTests(unittest.TestCase):
         row = self.summary()
         self.assertEqual(row["status"], "fake_plumbing_pass", row.get("reason"))
         self.assertNotIn("textWaiver", row)
-        self.assertFalse((self.root / "out/fake-plumbing" / LOCALE / "text-waiver.json").exists())
+        self.assertEqual(list((self.root / "out/fake-plumbing" / LOCALE).glob("text-waiver*")), [])
         self.assertEqual(row["calibrationCoverage"]["untestableKinds"], [])
         self.assertFalse(built[0]["humanApproval"])
         self.assertEqual(built[0]["reviewKind"], "machine_quality_waiver")
@@ -144,7 +145,7 @@ class MachineQcClipDriverTests(unittest.TestCase):
             self.run_driver(run)
         self.assertEqual(self.summary()["failedGroups"], ["g001"])
         self.assertEqual(self.summary()["status"], "requires_repair")
-        self.assertFalse((self.root / "out/fake-plumbing" / LOCALE / "calibration.json").exists())
+        self.assertEqual(list((self.root / "out/fake-plumbing" / LOCALE).glob("calibration*")), [])
         # Another runtime changes the inputs binding, but the failed text is unchanged.
         with patch.object(driver.basis.waiver, "implementation_sha256", return_value="other"):
             self.assertEqual(self.run_driver(run), 1)
@@ -160,30 +161,101 @@ class MachineQcClipDriverTests(unittest.TestCase):
         self.assertEqual(driver.main(["--run-dir", str(run), "--out", str(self.root / "out2"),
                                       "--locales", f"{LOCALE},es", "--preflight-only"]), 2)
 
-    def test_a_resumed_real_run_keeps_its_issued_waiver(self):
-        run = synthetic_run(self, self.root)
-        groups = qc_fixtures.groups(LOCALE)
+    def real_runs(self, run):
+        """Patch the Codex judge with an echo judge that the driver treats as real."""
+        def groups():  # The echo judge knows the candidate as it is when the run starts.
+            read = lambda name: json.loads((run / name).read_text(encoding="utf-8"))
+            return driver.qc_groups(read("diagnostic-previews/ko/native-1/candidate.json"), read("anchor-manifest.json"))
 
         class RealLooking(driver.FakeJudge):  # Stands in for the Codex judge.
             pass
 
-        with patch.object(driver, "CodexJudge", lambda cache: RealLooking({LOCALE: groups})), \
-                patch.object(driver, "FakeJudge", type("Unused", (), {})):
-            argv = ["--run-dir", str(run), "--out", str(self.root / "real"), "--locales", LOCALE,
-                    "--state-dir", str(self.root / "real-state")]
+        stack = ExitStack()
+        stack.enter_context(patch.object(driver, "CodexJudge", lambda cache: RealLooking({LOCALE: groups()})))
+        stack.enter_context(patch.object(driver, "FakeJudge", type("Unused", (), {})))
+        argv = ["--run-dir", str(run), "--out", str(self.root / "real"), "--locales", LOCALE,
+                "--state-dir", str(self.root / "real-state")]
+        return stack, argv
+
+    def real_row(self, locale=LOCALE):
+        return json.loads((self.root / "real/summary.json").read_text(encoding="utf-8"))["locales"][locale]
+
+    def test_a_resumed_real_run_keeps_its_issued_waiver(self):
+        run = synthetic_run(self, self.root)
+        stack, argv = self.real_runs(run)
+        with stack:
             self.assertEqual(driver.main(argv), 0)
-            path = self.root / "real" / LOCALE / "text-waiver.json"
+            path = Path(self.real_row()["textWaiver"])
             first = path.read_bytes()
             self.assertEqual(driver.main(argv), 0)
             self.assertEqual(path.read_bytes(), first)
-            row = json.loads((self.root / "real/summary.json").read_text(encoding="utf-8"))["locales"][LOCALE]
-            self.assertTrue(row["reused"])
+            self.assertTrue(self.real_row()["reused"])
+            receipts = sorted((self.root / "real-state/qc-receipts").rglob("entry-*[0-9].json"))
+            self.assertEqual([p.name for p in receipts], ["entry-000001.json"])
             waiver = json.loads(first)
             waiver["createdAt"] = "2000-01-01T00:00:00Z"
             path.write_text(json.dumps(waiver), encoding="utf-8")
             self.assertEqual(driver.main(argv), 1)
-        row = json.loads((self.root / "real/summary.json").read_text(encoding="utf-8"))["locales"][LOCALE]
-        self.assertIn("changed after it was issued", row["reason"])
+        self.assertIn("changed after it was written", self.real_row()["reason"])
+
+    def test_a_revision_adds_receipts_and_keeps_the_earlier_waiver(self):
+        run = synthetic_run(self, self.root)
+        stack, argv = self.real_runs(run)
+        with stack:
+            self.assertEqual(driver.main(argv), 0)
+            first_path = Path(self.real_row()["textWaiver"])
+            first = first_path.read_bytes()
+            path = run / "diagnostic-previews/ko/native-1/candidate.json"
+            candidate = json.loads(path.read_text(encoding="utf-8"))
+            candidate["groups"][0]["targetText"] = qc_fixtures.TARGET[LOCALE][0] + " "
+            path.write_text(json.dumps(candidate, ensure_ascii=False), encoding="utf-8")
+            self.assertEqual(driver.main(argv), 0)
+        second_path = Path(self.real_row()["textWaiver"])
+        self.assertNotEqual(second_path, first_path)
+        self.assertEqual(first_path.read_bytes(), first)
+        receipts = sorted((self.root / "real-state/qc-receipts").rglob("entry-*[0-9].json"))
+        self.assertEqual([p.name for p in receipts], ["entry-000001.json", "entry-000002.json"])
+
+    def test_a_new_out_on_the_same_state_dir_finds_the_failed_receipt(self):
+        run = synthetic_run(self, self.root)
+        path = run / "diagnostic-previews/ko/native-1/candidate.json"
+        candidate = json.loads(path.read_text(encoding="utf-8"))
+        candidate["groups"][0]["targetText"] = broken = candidate["groups"][0]["targetText"] + " 덧붙임"
+        path.write_text(json.dumps(candidate, ensure_ascii=False), encoding="utf-8")
+        echo = driver.FakeJudge
+        init = echo.__init__
+
+        def mistranslates(judge, groups):
+            init(judge, groups)
+            judge.clean.pop(broken, None)
+
+        stack, argv = self.real_runs(run)
+        with stack, patch.object(echo, "__init__", mistranslates):
+            self.assertEqual(driver.main(argv), 1)
+            self.assertEqual(self.real_row()["status"], "requires_repair")
+            other = [*argv[:argv.index("--out") + 1], str(self.root / "real-b"), *argv[argv.index("--out") + 2:]]
+            self.assertEqual(driver.main(other), 1)
+        row = json.loads((self.root / "real-b/summary.json").read_text(encoding="utf-8"))["locales"][LOCALE]
+        self.assertEqual((row["status"], row["failedGroups"]), ("blocked_prior_failure", ["g001"]), row.get("reason"))
+
+    def test_a_preserved_row_whose_waiver_changed_is_marked_stale(self):
+        run = synthetic_run(self, self.root)
+        stack, argv = self.real_runs(run)
+        with stack:
+            self.assertEqual(driver.main(argv), 0)
+        Path(self.real_row()["textWaiver"]).write_text("{}", encoding="utf-8")
+        driver.main(["--run-dir", str(run), "--out", str(self.root / "real"), "--locales", "es", "--preflight-only"])
+        self.assertEqual(self.real_row()["status"], "stale")
+        self.assertEqual(self.real_row()["previousStatus"], "text_waiver_issued")
+
+    def test_preflight_refuses_an_older_candidate_schema(self):
+        run = synthetic_run(self, self.root)
+        path = run / "diagnostic-previews/ko/native-1/candidate.json"
+        candidate = json.loads(path.read_text(encoding="utf-8"))
+        candidate["schemaVersion"] = "sermon-target-language-candidate-v1"
+        path.write_text(json.dumps(candidate, ensure_ascii=False), encoding="utf-8")
+        self.assertEqual(self.run_driver(run, "--preflight-only"), 2)
+        self.assertTrue(any("schemaVersion" in p for p in self.summary()["problems"]))
 
     def test_preflight_refuses_a_condensed_spoken_candidate(self):
         run = synthetic_run(self, self.root)
