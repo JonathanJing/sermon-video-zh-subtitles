@@ -33,8 +33,10 @@ RUN_ID="e2e-$(date -u +%Y%m%dT%H%M%SZ)"
 OUT="$REPO/artifacts/dev-180s-page-test-20261004/$RUN_ID"
 SOURCE_RUN="$REPO/artifacts/dev-full-rerun-20261001"
 XCODE="${DEVELOPER_DIR:-/Applications/Xcode.app}"
-VERSION="1.26.16"
-BUILD="57"
+# --with-beta reads the version/build already committed for TongxingBeta; bump
+# them in project.yml first to a number App Store Connect has not used.
+VERSION="$(sed -n 's/^ *MARKETING_VERSION: "\(1\.26\.[0-9]*\)"$/\1/p' apps/tongxing-ios/project.yml | sort -V | tail -1)"
+BUILD="$(sed -n 's/^ *CURRENT_PROJECT_VERSION: "\([0-9]*\)"$/\1/p' apps/tongxing-ios/project.yml | sort -n | tail -1)"
 IOS_OUT="$REPO/artifacts/tongxing-ios/beta-$VERSION-build$BUILD"
 mkdir -p "$OUT"
 printf 'stage\tstatus\tseconds\n' > "$OUT/timings.tsv"
