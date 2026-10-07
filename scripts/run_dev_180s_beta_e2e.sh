@@ -80,8 +80,10 @@ stage() {  # stage <name> <command...>
 SOURCE_VIDEO="$SOURCE_RUN/dev-candidate/hosting/public/media/dryrun-20261001-dev-full-180s/source.mp4"
 [[ -f "$SOURCE_VIDEO" ]] || { echo "Missing $SOURCE_VIDEO (10/1 rerun cache)"; exit 1; }
 [[ -d "$REPO/artifacts/unified-cli-acceptance/native-four-product-fixture-v2" ]] || { echo "Missing native four-product fixture"; exit 1; }
-if [[ $WITH_BETA -eq 1 ]]; then
-  git diff --quiet -- apps/tongxing-ios || { echo "Uncommitted iOS changes; archive would refuse"; exit 1; }
+# The recorded commit must be what builds and publishes the page (and the app).
+if [[ $EXECUTE -eq 1 || $WITH_BETA -eq 1 ]]; then
+  git diff --quiet HEAD -- scripts schemas experiments apps/tongxing-ios \
+    || { echo "Uncommitted changes to page, publish or app inputs; commit or stash them first"; exit 1; }
 fi
 COMMIT="$(git rev-parse HEAD)"
 echo "Commit $COMMIT  run $RUN_ID  out $OUT"

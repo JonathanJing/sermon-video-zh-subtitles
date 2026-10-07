@@ -333,6 +333,10 @@ def run_locale(locale: str, paths: dict, out: Path, state: Path, judge, timings:
         save(binding_path(qc_path), {"inputsSha256": qc_binding})
         ledger.append(ledger_root, lineage, qc)
     result = {"textQc": qc["status"], "failedGroups": [row["groupId"] for row in qc["results"] if row["status"] != "pass"]}
+    if qc["status"] != "pass":
+        # Calibration binds this candidate, which a repair replaces anyway.
+        result.update(status="requires_repair", reason="text QC failed; repair the failed groups in a new candidate revision")
+        return result
     calibration_path = folder / "calibration.json"
     calibration_binding = json_sha256({"qc": qc_binding, "candidate": candidate})
     if fresh(calibration_path, calibration_binding):
@@ -354,6 +358,10 @@ def run_locale(locale: str, paths: dict, out: Path, state: Path, judge, timings:
                                   "calibrationReceipt": json_sha256(calibration), "ledger": entries})
     if not isinstance(judge, FakeJudge) and fresh(waiver_path, waiver_binding):
         # An issued waiver is immutable: downstream packages bind its hash.
+        saved = read(waiver_path)
+        if json_sha256(saved) != read(binding_path(waiver_path)).get("waiverJsonSha256"):
+            raise ValueError(f"{waiver_path} changed after it was issued")
+        basis.validate_text_waiver(saved, candidate=candidate)
         result.update(status="text_waiver_issued", textWaiver=str(waiver_path), reused=True)
         return result
     try:
@@ -367,7 +375,7 @@ def run_locale(locale: str, paths: dict, out: Path, state: Path, judge, timings:
         result.update(status="fake_plumbing_pass", reason="fake judge: waiver built in memory, never saved")
         return result
     save(waiver_path, waiver)
-    save(binding_path(waiver_path), {"inputsSha256": waiver_binding})
+    save(binding_path(waiver_path), {"inputsSha256": waiver_binding, "waiverJsonSha256": json_sha256(waiver)})
     result.update(status="text_waiver_issued", textWaiver=str(waiver_path))
     return result
 

@@ -143,6 +143,8 @@ class MachineQcClipDriverTests(unittest.TestCase):
         with patch.object(driver.FakeJudge, "__init__", mistranslates):
             self.run_driver(run)
         self.assertEqual(self.summary()["failedGroups"], ["g001"])
+        self.assertEqual(self.summary()["status"], "requires_repair")
+        self.assertFalse((self.root / "out" / LOCALE / "calibration.json").exists())
         # Another runtime changes the inputs binding, but the failed text is unchanged.
         with patch.object(driver.basis.waiver, "implementation_sha256", return_value="other"):
             self.assertEqual(self.run_driver(run), 1)
@@ -172,9 +174,15 @@ class MachineQcClipDriverTests(unittest.TestCase):
             path = self.root / "real" / LOCALE / "text-waiver.json"
             first = path.read_bytes()
             self.assertEqual(driver.main(argv), 0)
-        self.assertEqual(path.read_bytes(), first)
+            self.assertEqual(path.read_bytes(), first)
+            row = json.loads((self.root / "real/summary.json").read_text(encoding="utf-8"))["locales"][LOCALE]
+            self.assertTrue(row["reused"])
+            waiver = json.loads(first)
+            waiver["createdAt"] = "2000-01-01T00:00:00Z"
+            path.write_text(json.dumps(waiver), encoding="utf-8")
+            self.assertEqual(driver.main(argv), 1)
         row = json.loads((self.root / "real/summary.json").read_text(encoding="utf-8"))["locales"][LOCALE]
-        self.assertTrue(row["reused"])
+        self.assertIn("changed after it was issued", row["reason"])
 
     def test_preflight_explains_a_human_approved_candidate(self):
         run = synthetic_run(self, self.root, human_approved=True)
