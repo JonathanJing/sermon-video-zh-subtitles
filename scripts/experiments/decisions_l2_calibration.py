@@ -38,6 +38,8 @@ PRICE_PER_MILLION_INPUT = 0.10
 QUESTION_SET_VERSION = "l2-text-gate-v1"
 THRESHOLDS = (0.2, 0.3, 0.5, 0.7, 0.85)
 MAX_ITEMS_DEFAULT = 400
+# Clean items at or above this risk are exported for judgment: are they false alarms or real issues?
+FLAGGED_CLEAN_THRESHOLD = 0.3
 
 RISK_PREDICATES = {
     "omission": "The target-language translation leaves out information, a clause, a qualifier, or an emphasis that the English source states. Ignore harmless restructuring and natural idiom.",
@@ -324,6 +326,17 @@ def report(results: list[dict[str, Any]], meta: dict[str, Any]) -> dict[str, Any
     }
 
 
+def flagged_clean(items: list[dict[str, Any]], results: list[dict[str, Any]], threshold: float) -> list[dict[str, Any]]:
+    """Clean items at or above threshold, highest risk first, for a person or Sol to judge."""
+    by_id = {item["itemId"]: item for item in items}
+    rows = [row for row in results if row["kind"] == "clean" and row["maxRisk"] is not None and row["maxRisk"] >= threshold]
+    return [{
+        "locale": row["locale"], "groupId": row["groupId"], "maxRisk": row["maxRisk"], "risks": row["risks"],
+        "issueType": row.get("issueType"), "english": by_id[row["itemId"]]["english"],
+        "target": by_id[row["itemId"]]["target"], "reference": by_id[row["itemId"]].get("reference"),
+    } for row in sorted(rows, key=lambda row: -row["maxRisk"])]
+
+
 def _issue_table(results: list[dict[str, Any]]) -> dict[str, dict[str, int]]:
     table: dict[str, dict[str, int]] = {}
     for row in results:
@@ -385,6 +398,10 @@ def markdown(summary: dict[str, Any]) -> str:
         if row["threshold"] == 0.5:
             for kind, cell in row["byKind"].items():
                 lines.append(f"| {kind} | {cell['detected']} / {cell['total']} |")
+    lines += ["", "## Clean items flagged, by locale", "", "| Locale | 0.3 | 0.5 | 0.7 | 0.85 |", "|---|---|---|---|---|"]
+    for locale, cell in summary.get("byLocale", {}).items():
+        values = {row["threshold"]: row["cleanFlagRate"] for row in cell["thresholds"]}
+        lines.append(f"| {locale} | " + " | ".join(str(values.get(t)) for t in (0.3, 0.5, 0.7, 0.85)) + " |")
     if summary.get("latencySeconds"):
         lines += ["", f"Latency p50 {summary['latencySeconds']['p50']}s, p95 {summary['latencySeconds']['p95']}s."]
     return "\n".join(lines) + "\n"
@@ -446,6 +463,7 @@ def main(argv: list[str] | None = None) -> int:
     summary = report(results, meta)
     (args.out / "report.json").write_text(json.dumps(summary, ensure_ascii=False, indent=1), encoding="utf-8")
     (args.out / "report.md").write_text(markdown(summary), encoding="utf-8")
+    (args.out / "flagged-clean.json").write_text(json.dumps(flagged_clean(items, results, FLAGGED_CLEAN_THRESHOLD), ensure_ascii=False, indent=1), encoding="utf-8")
     print(markdown(summary))
     return 0
 

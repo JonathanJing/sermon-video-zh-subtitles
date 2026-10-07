@@ -101,6 +101,12 @@ class DecisionsCalibrationTests(unittest.TestCase):
         self.assertEqual(at_half["cleanFlagRate"], 0.0)
         self.assertTrue(summary["inputTokensMeasured"])
         self.assertEqual(summary["inputTokens"], 500 * len(items))
+        self.assertIn("## Clean items flagged, by locale", subject.markdown({**summary, "generatedAt": "t", "questionSetVersion": "v"}))
+        self.assertEqual(subject.flagged_clean(items, results, 0.3), [])
+        noisy = [{**row, "maxRisk": 0.6} if row["kind"] == "clean" else row for row in results]
+        exported = subject.flagged_clean(items, noisy, 0.3)
+        self.assertEqual(len(exported), sum(row["kind"] == "clean" for row in results))
+        self.assertTrue(all(row["english"] and row["target"] for row in exported))
         again = subject.run(items, self.root / "out", None, 2, transport=mock.Mock(side_effect=AssertionError("cached")))
         self.assertEqual(again, results)
 
