@@ -185,12 +185,28 @@ def _sha256(value: bytes) -> str:
     return hashlib.sha256(value).hexdigest()
 
 
-def asr_opinion(similarity: float, *, audio: bytes, text: str, model: str,
+def asr_opinion(similarity: float, *, audio: bytes, text: str, model: str, settings: dict,
                 model_revision: str | None = None) -> dict:
-    """An ASR result bound to the exact audio bytes, expected text and model."""
+    """An ASR result bound to the exact audio bytes, expected text, model and runtime.
+
+    ``settings`` is the normalized ASR runtime behind the score: backend,
+    language and prompt options, decoding, cache namespace and similarity
+    scoring. Its hash joins the calibrated identity, so the same model run
+    another way does not reuse the calibration. For the primary role, use
+    :func:`screening_asr_settings` of the screening receipt the score came from.
+    """
+    if not isinstance(settings, dict) or not settings:
+        raise ValueError("An ASR opinion needs its runtime settings")
     return {"similarity": similarity, "audioSha256": _sha256(audio),
             "textSha256": _sha256(text.encode("utf-8")), "model": model,
-            "modelRevision": model_revision}
+            "modelRevision": model_revision, "settingsSha256": waiver.json_sha256(settings)}
+
+
+def screening_asr_settings(screening: dict) -> dict:
+    """The primary ASR runtime a full-package screening receipt records."""
+    return {"source": screening.get("schemaVersion"), "model": screening.get("model"),
+            "modelRevision": screening.get("modelRevision"), "minSimilarity": screening.get("minSimilarity"),
+            "transcriptionBatchSize": screening.get("transcriptionBatchSize", 1)}
 
 
 def _model(opinion: dict | None) -> dict | None:
@@ -203,8 +219,9 @@ def bound_opinion(opinion: dict | None, audio_sha: str | None, text_sha: str) ->
         return None, False
     if (not isinstance(opinion, dict) or not isinstance(opinion.get("model"), str) or not opinion["model"]
             or type(opinion.get("similarity")) not in (int, float)
-            or opinion.get("modelRevision") is not None and not isinstance(opinion["modelRevision"], str)):
-        raise ValueError("An ASR opinion needs similarity, audioSha256, textSha256 and model")
+            or opinion.get("modelRevision") is not None and not isinstance(opinion["modelRevision"], str)
+            or not isinstance(opinion.get("settingsSha256"), str) or len(opinion["settingsSha256"]) != 64):
+        raise ValueError("An ASR opinion needs similarity, audioSha256, textSha256, model and settingsSha256")
     if opinion.get("audioSha256") != audio_sha or opinion.get("textSha256") != text_sha:
         return None, True
     return opinion, False
@@ -269,6 +286,8 @@ def screen(units: list[dict], locale: str, thresholds: dict = THRESHOLDS) -> dic
                         "asrDecision": asr, "asrPrimary": None if primary is None else primary["similarity"],
                         "asrSecondary": None if secondary is None else secondary["similarity"],
                         "asrPrimaryModel": _model(primary), "asrSecondaryModel": _model(secondary),
+                        "asrPrimarySettingsSha256": None if primary is None else primary["settingsSha256"],
+                        "asrSecondarySettingsSha256": None if secondary is None else secondary["settingsSha256"],
                         "staleAsr": [name for name, stale in (("primary", primary_stale),
                                                               ("secondary", secondary_stale)) if stale],
                         "audioSha256": audio_sha, "textSha256": text_sha,

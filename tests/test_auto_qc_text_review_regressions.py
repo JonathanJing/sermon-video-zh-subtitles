@@ -14,8 +14,8 @@ class TextReviewRegressions(unittest.TestCase):
                                        ("ko", "두 명, 세 명, 네 명"),
                                        ("zh-Hans", "二、三、四")):
                     with self.subTest(locale=locale):
-                        self.assertEqual(rules.number_problems(english, target, locale, set()), [])
-                        self.assertTrue(rules.number_problems(english, "9", locale, set()))
+                        self.assertEqual(rules.number_problems(english, target, locale), [])
+                        self.assertTrue(rules.number_problems(english, "9", locale))
         for english, expected in (
             ("twenty-five", [25]), ("two hundred and thirty-four", [234]),
             ("one thousand two hundred and five", [1205]),
@@ -53,9 +53,9 @@ class TextReviewRegressions(unittest.TestCase):
                                   ("ko", "인생은 두 번입니다.", "인생은 한 번뿐입니다."),
                                   ("zh-Hans", "你有两次生命。", "你只有一次生命。")):
             with self.subTest(locale=locale):
-                self.assertEqual(rules.number_problems("You only have one life.", bad, locale, set()),
+                self.assertEqual(rules.number_problems("You only have one life.", bad, locale),
                                  ["missing number 1"])
-                self.assertEqual(rules.number_problems("You only have one life.", good, locale, set()), [])
+                self.assertEqual(rules.number_problems("You only have one life.", good, locale), [])
         for english in ("the one who believes", "No one is righteous.", "Love one another.",
                         "One day he came.", "the Holy One of Israel", "Pick this one.",
                         "He is the only one."):
@@ -81,8 +81,7 @@ class TextReviewRegressions(unittest.TestCase):
         for locale, target in (("es", "Juan 3:16"), ("ko", "요한복음 3장 16절"), ("zh-Hans", "约翰福音3章16节")):
             with self.subTest(locale=locale):
                 self.assertEqual(rules.scripture_reference_problems("Turn to John 3 verse 16.", target, locale), [])
-                self.assertEqual(rules.number_problems("Turn to John 3 verse 16.", target, locale,
-                                                       rules.english_references("John 3 verse 16")[0]), [])
+                self.assertEqual(rules.number_problems("Turn to John 3 verse 16.", target, locale), [])
         self.assertIn("missing reference 3:16",
                       rules.scripture_reference_problems("Turn to John 3 verse 16.", "Juan 3:17", "es"))
 
@@ -92,8 +91,8 @@ class TextReviewRegressions(unittest.TestCase):
                                   ("ko", "빵 다섯 개와 물고기 여섯 마리", "빵 다섯 개와 물고기 다섯 마리"),
                                   ("es", "cinco panes y seis peces", "cinco panes y cinco peces")):
             with self.subTest(locale=locale):
-                self.assertEqual(rules.number_problems(english, bad, locale, set()), ["missing number 5 (1 of 2)"])
-                self.assertEqual(rules.number_problems(english, good, locale, set()), [])
+                self.assertEqual(rules.number_problems(english, bad, locale), ["missing number 5 (1 of 2)"])
+                self.assertEqual(rules.number_problems(english, good, locale), [])
         # A number inside a larger one is not another occurrence (十五, 열다섯).
         self.assertEqual(rules.chinese_number_count("十五个饼和五条鱼", 5), 1)
         self.assertEqual(rules.korean_number_count("열다섯 개와 다섯 마리", 5), 1)
@@ -121,6 +120,28 @@ class TextReviewRegressions(unittest.TestCase):
             with self.subTest(english=english, target=target):
                 self.assertEqual(rules.added_number_problems(english, target, locale), [])
 
+    def test_numbers_beside_a_citation_must_survive(self):
+        english = "John 3:16 mentions three people."
+        for locale, bad, good in (
+                ("zh-Hans", "约翰福音3:16提到了人。", "约翰福音3章16节提到了三个人。"),
+                ("ko", "요한복음 3장 16절은 사람들을 말합니다.", "요한복음 3:16은 세 사람을 말합니다."),
+                ("es", "Juan 3:16 menciona a personas.",
+                 "Juan capítulo tres versículo dieciséis menciona a tres personas.")):
+            with self.subTest(locale=locale):
+                self.assertEqual(rules.number_problems(english, bad, locale), ["missing number 3"])
+                self.assertEqual(rules.number_problems(english, good, locale), [])
+        self.assertEqual(rules.number_problems("Chapter three, verse sixteen has three words.",
+                                               "第三章第十六节有字。", "zh-Hans"), ["missing number 3"])
+
+    def test_terminology_needs_the_complete_term(self):
+        policy = {"terminology": {"properNames": [{"source": "Anna", "target": "Ana"},
+                                                  {"source": "Paul", "target": "바울"}], "seriesNames": []}}
+        self.assertEqual(rules.name_problems(policy, "Anna prayed.", "Mañana oró."), ["Anna: expected Ana"])
+        self.assertEqual(rules.name_problems(policy, "Anna prayed.", "Ana oró."), [])
+        self.assertEqual(rules.name_problems(policy, "Anna prayed.", "Oró Ána."), [])
+        # Korean particles attach to the name.
+        self.assertEqual(rules.name_problems(policy, "Paul wrote.", "바울이 썼습니다."), [])
+
     def test_one_word_spanish_copies_are_untranslated(self):
         for english, target in (("Repent.", "Repent."), ("Listen!", "listen"), ("Believe.", "Believe.")):
             with self.subTest(target=target):
@@ -146,7 +167,7 @@ class TextReviewRegressions(unittest.TestCase):
                             (2026, "二〇二六年"), ("2.5", "两点五倍"), (5, "第五章")):
             with self.subTest(value=value, good=good):
                 self.assertTrue(rules.chinese_number_present(good, value))
-        self.assertEqual(rules.number_problems("five people", "十五个人", "zh-Hans", set()),
+        self.assertEqual(rules.number_problems("five people", "十五个人", "zh-Hans"),
                          ["missing number 5"])
 
     def test_translated_spoken_clocks_are_not_added_references(self):

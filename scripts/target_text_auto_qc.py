@@ -131,11 +131,10 @@ def length_problem(group: dict, median: float | None) -> str | None:
 
 def deterministic_problems(group: dict, locale: str, policy: dict | None) -> list[str]:
     english, text = group["english"], group["targetText"]
-    pairs, _ = rules.english_references(english)
     problems = rules.script_problems(text, locale) + rules.untranslated_problems(
         english, text, locale, rules.shared_terms(policy))
     problems += rules.scripture_reference_problems(english, text, locale)
-    problems += rules.number_problems(english, text, locale, pairs)
+    problems += rules.number_problems(english, text, locale)
     if policy is not None:
         problems += rules.name_problems(policy, english, text)
     return problems

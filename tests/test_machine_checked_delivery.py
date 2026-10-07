@@ -22,11 +22,17 @@ from tests.test_public_study_delivery import binding, prepared, save, seal_fixtu
 
 PAGE, LOCALE = 'synthetic-machine-page', 'ko'
 ASR = {'model': 'Qwen3-ASR', 'modelRevision': 'r1'}
+# The primary runtime recorded by the screening receipt this fixture binds.
+PRIMARY_SETTINGS = basis.json_sha256({'source': 'sermon-target-language-audio-screening-v1', 'model': ASR['model'],
+                                      'modelRevision': ASR['modelRevision'], 'minSimilarity': 0.88,
+                                      'transcriptionBatchSize': 1})
+ASR_SETTINGS = {'primary': PRIMARY_SETTINGS, 'secondary': basis.json_sha256({'backend': 'synthetic-secondary'})}
 
 
 def spoken_calibration():
     """A calibration that also seeded errors into condensed spoken groups."""
-    base = calibration(LOCALE, asrIdentity={'primary': ASR, 'secondary': SECONDARY_ASR})
+    base = calibration(LOCALE, asrIdentity={'primary': ASR, 'secondary': SECONDARY_ASR},
+                       asrSettingsSha256=ASR_SETTINGS)
     added = {f'spoken.{kind}': {'trials': 4, 'detected': 4, 'rate': 1.0} for kind in basis.waiver.SPOKEN_KINDS}
     return {**base, 'spokenIncluded': True, 'kinds': {**base['kinds'], **added},
             'trials': base['trials'] + 4 * len(added), 'detected': base['detected'] + 4 * len(added)}
@@ -70,7 +76,8 @@ def machine_inputs(root, *, human_full_text=None, condense=False):
         group['sourceUnitIds'] = [unit['sourceUnitId']]
         group['coverage'] = [{'sourceUnitId': unit['sourceUnitId'], 'targetText': group['targetText']}]
     cal = (spoken_calibration() if condense
-           else calibration(LOCALE, asrIdentity={'primary': ASR, 'secondary': SECONDARY_ASR}))
+           else calibration(LOCALE, asrIdentity={'primary': ASR, 'secondary': SECONDARY_ASR},
+                       asrSettingsSha256=ASR_SETTINGS))
     full_waiver = basis.build_text_waiver(source, sf.anchor, candidate, text_qc(candidate, sf.anchor), cal,
                                           created_at='2026-10-07T01:00:00+00:00')
     spoken, text_waiver, condensation = ((candidate, full_waiver, None) if not condense
@@ -103,6 +110,7 @@ def machine_inputs(root, *, human_full_text=None, condense=False):
                 'humanApproval': False, 'mutatesAudio': False, 'subtitleOnlyGroupIds': [], 'repairGroupIds': [],
                 'results': [{'groupId': u['textGroupId'], 'status': 'pass', 'issues': [], 'asrDecision': 'pass',
                              'asrPrimary': 1.0, 'asrSecondary': None, 'asrPrimaryModel': ASR, 'asrSecondaryModel': None,
+                             'asrPrimarySettingsSha256': PRIMARY_SETTINGS, 'asrSecondarySettingsSha256': None,
                              'audioSha256': u['audio']['sha256'], 'textSha256': u['targetTextSha256'],
                              'sourceSeconds': spans[g['sourceUnitIds'][0]], 'failedAttempts': 0, 'nextAction': 'keep',
                              'metrics': {}} for u, g in zip(package['units'], spoken['groups'])]}
@@ -274,6 +282,17 @@ def test_audio_waiver_must_bind_the_spoken_script_waiver(tmp_path):
     finally:
         for fixture in fixtures:
             fixture.doCleanups()
+
+
+def test_full_and_spoken_scripts_must_share_group_ids():
+    # Clients pair dub cues with the full text by group id; a renamed spoken script would not load.
+    full = {'groups': [{'translationGroupId': 'g1', 'targetText': 'A'}, {'translationGroupId': 'g2', 'targetText': 'B'}]}
+    spoken = copy.deepcopy(full)
+    assert builder.caption_text(full, 'f', spoken, 's', {}, None, LOCALE) == ('full_text', None)
+    for group in spoken['groups']:
+        group['translationGroupId'] += '-spoken'
+    with pytest.raises(ValueError, match='different group ids'):
+        builder.caption_text(full, 'f', spoken, 's', {}, None, LOCALE)
 
 
 def test_condensed_dub_binds_its_condensation_and_captions_show_the_full_text(tmp_path):

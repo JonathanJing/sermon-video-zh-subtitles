@@ -153,6 +153,10 @@ def caption_text(full: dict, full_sha: str, spoken: dict, spoken_sha: str, spoke
     condensation binding condensed from this exact full candidate. A spoken
     script shortened any other way keeps showing its own text.
     """
+    # Clients pair dub cues with the full text by group id and refuse any mismatch.
+    require([g["translationGroupId"] for g in full["groups"]]
+            == [g["translationGroupId"] for g in spoken["groups"]],
+            f"{locale}: full and spoken scripts use different group ids")
     differing = [spoken_group["translationGroupId"]
                  for full_group, spoken_group in zip(full["groups"], spoken["groups"])
                  if full_group["targetText"] != spoken_group["targetText"]]

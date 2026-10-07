@@ -403,6 +403,8 @@ def build_audio_waiver(package: dict, screening: dict, audio_qc: dict, text_waiv
     track = track_check_problems(package, track_check, implementation)
     _require(not track, "Assembled track is not verified: " + "; ".join(track))
     threshold = _asr_threshold()
+    from scripts.target_audio_auto_qc import screening_asr_settings  # Lazy, as in _asr_threshold.
+    primary_settings = json_sha256(screening_asr_settings(screening))
     secondary_identity = None
     rows = []
     for row, unit in zip(results, package["units"]):
@@ -416,6 +418,8 @@ def build_audio_waiver(package: dict, screening: dict, audio_qc: dict, text_waiv
         _require(row.get("asrPrimary") == primary and row.get("asrPrimaryModel") == {
                      "model": screening["model"], "modelRevision": screening.get("modelRevision")},
                  f"Audio QC primary ASR differs from the bound screening: {group_id}")
+        _require(row.get("asrPrimarySettingsSha256") == primary_settings,
+                 f"Audio QC primary ASR runtime differs from the bound screening: {group_id}")
         if group_id in flagged:
             identity = row.get("asrSecondaryModel")
             _require(isinstance(identity, dict) and set(identity) == {"model", "modelRevision"}

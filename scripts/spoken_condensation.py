@@ -65,6 +65,8 @@ SYSTEM = ("You are a simultaneous interpreter preparing the {language} dub of a 
           "List every dropped span exactly as it appears in the full translation, with its kind "
           "(repetition, filler, restatement, aside, example_detail). Return JSON matching the schema.")
 UNIT_NAMES = {"zh-Hans": "Han characters", "ko": "Hangul syllables", "es": "syllables"}
+# Rewording may shorten the kept text a little; beyond this the removal must be declared.
+UNDECLARED_SLACK_UNITS, UNDECLARED_SLACK_SHARE = 3, 0.1
 
 
 def _sha(value) -> str:
@@ -184,12 +186,23 @@ def spoken_problems(request: dict, spoken: str, omissions: list[dict] | None, lo
     else:
         if not omissions:
             problems.append("no omissions declared")
+        full, declared = request["fullTargetText"], 0.0
         for omission in omissions:
             span = omission.get("fullTextSpan") if isinstance(omission, dict) else None
-            if not (isinstance(span, str) and span.strip() and span in request["fullTargetText"]):
+            if not (isinstance(span, str) and span.strip() and span in full):
                 problems.append(f"omission is not a span of the full translation: {span!r}")
             elif omission.get("kind") not in OMISSION_KINDS:
                 problems.append(f"omission kind not allowed: {omission.get('kind')!r}")
+            elif spoken.count(span) >= full.count(span):
+                problems.append(f"declared omission is still in the spoken text: {span!r}")
+            else:
+                declared += predicted.speech_units(span, locale)
+        # The declared spans must account for what was removed; an undeclared cut
+        # (a call, an attribution) cannot hide behind an unrelated declared span.
+        removed = predicted.speech_units(full, locale) - units
+        slack = max(UNDECLARED_SLACK_UNITS, UNDECLARED_SLACK_SHARE * predicted.speech_units(full, locale))
+        if not problems and removed > declared + slack:
+            problems.append(f"{removed:g} speech units removed but only {declared:g} declared")
     group = {"english": " ".join(unit["english"] for unit in request["englishUnits"]), "targetText": spoken}
     problems += text_qc.deterministic_problems(group, locale, policy)
     return problems

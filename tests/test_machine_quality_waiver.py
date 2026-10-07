@@ -41,7 +41,7 @@ class TextRuleTests(unittest.TestCase):
         self.assertEqual(rules.english_numbers("In twenty twenty-four and nineteen ninety-nine"), [2024, 1999])
         self.assertEqual(rules.english_numbers("twenty oh five, fourteen ninety-two"), [2005, 1492])
         self.assertEqual(rules.english_numbers("twenty five people, nineteen hundred"), [25, 1900])
-        self.assertEqual(rules.number_problems("In twenty twenty-four we moved.", "2024년에 이사했습니다.", "ko", set()), [])
+        self.assertEqual(rules.number_problems("In twenty twenty-four we moved.", "2024년에 이사했습니다.", "ko"), [])
 
     def test_target_number_forms(self):
         self.assertTrue(rules.korean_number_present("마흔네 살", 44))
@@ -59,10 +59,10 @@ class TextRuleTests(unittest.TestCase):
         for locale, good, spoken in (("ko", "2026년에 2.5퍼센트 성장했습니다.", "2026년에 이점오 퍼센트"),
                                      ("es", "En 2026 creció un 2,5 por ciento.", "En 2026 creció dos coma cinco"),
                                      ("zh-Hans", "2026年增长了2.5%。", "2026年增长了两点五")):
-            self.assertEqual(rules.number_problems(english, good, locale, set()), [], locale)
-            self.assertEqual(rules.number_problems(english, spoken, locale, set()), [], locale)
+            self.assertEqual(rules.number_problems(english, good, locale), [], locale)
+            self.assertEqual(rules.number_problems(english, spoken, locale), [], locale)
             changed = good.replace("2.5", "25").replace("2,5", "25")
-            self.assertEqual(rules.number_problems(english, changed, locale, set()), ["missing number 2.5"])
+            self.assertEqual(rules.number_problems(english, changed, locale), ["missing number 2.5"])
             self.assertIsNotNone(seeded.mutate_text({"english": english, "targetText": good},
                                                     "wrong_number", locale, None))
 
@@ -120,21 +120,21 @@ class TextRuleTests(unittest.TestCase):
         for locale, target in (("ko", "요한일서 4장 8절 말씀처럼 하나님은 사랑이십니다."),
                                ("es", "Como dice Primera de Juan 4:8, Dios es amor."),
                                ("zh-Hans", "正如约翰一书4章8节说，神就是爱。")):
-            self.assertEqual(rules.number_problems(english, target, locale, {(4, 8)}), [], locale)
+            self.assertEqual(rules.number_problems(english, target, locale), [], locale)
         # A cardinal said beside the ordinal still has to survive.
         for locale, target in (("ko", "요한일서에서 그는 다시 말합니다."), ("es", "En Primera de Juan lo dice otra vez.")):
-            self.assertEqual(rules.number_problems("In 1 John he says it 1 more time.", target, locale, set()),
+            self.assertEqual(rules.number_problems("In 1 John he says it 1 more time.", target, locale),
                              ["missing number 1"], locale)
         self.assertEqual(rules.number_problems("In 2 Peter he says it 2 more times.", "在彼得后书里他又说了。",
-                                               "zh-Hans", set()), ["missing number 2"])
+                                               "zh-Hans"), ["missing number 2"])
 
     def test_dropped_chapter_after_a_book_is_a_missing_number(self):
         english = "Turn to Revelation 3."
         for locale, good, bad in (("ko", "요한계시록 3장을 펴십시오.", "요한계시록을 펴십시오."),
                                   ("es", "Vayan a Apocalipsis 3.", "Vayan a Apocalipsis."),
                                   ("zh-Hans", "请翻到启示录3章。", "请翻到启示录。")):
-            self.assertEqual(rules.number_problems(english, good, locale, set()), [], locale)
-            self.assertEqual(rules.number_problems(english, bad, locale, set()), ["missing number 3"], locale)
+            self.assertEqual(rules.number_problems(english, good, locale), [], locale)
+            self.assertEqual(rules.number_problems(english, bad, locale), ["missing number 3"], locale)
 
     def test_bible_book_table_matches_the_scripture_index(self):
         from scripts import build_scripture_index as index
@@ -274,14 +274,17 @@ class AudioQcTests(unittest.TestCase):
         self.assertEqual(audio_qc.asr_decision(0.6, 0.93), "pass")
         self.assertEqual(audio_qc.asr_decision(0.6, 0.7), "fail")
         units = fixtures.units("zh-Hans")
-        low = audio_qc.asr_opinion(0.5, audio=units[0]["wav"], text=units[0]["text"], model=fixtures.PRIMARY_ASR)
+        low = audio_qc.asr_opinion(0.5, audio=units[0]["wav"], text=units[0]["text"], model=fixtures.PRIMARY_ASR,
+            settings=fixtures.ASR_SETTINGS[fixtures.PRIMARY_ASR])
         units[0] = {**units[0], "asr": {"primary": low}}
         self.assertEqual(audio_qc.screen(units, "zh-Hans")["results"][0]["nextAction"], "run_secondary_asr")
-        strong = audio_qc.asr_opinion(0.95, audio=units[0]["wav"], text=units[0]["text"], model=fixtures.SECONDARY_ASR)
+        strong = audio_qc.asr_opinion(0.95, audio=units[0]["wav"], text=units[0]["text"], model=fixtures.SECONDARY_ASR,
+            settings=fixtures.ASR_SETTINGS[fixtures.SECONDARY_ASR])
         units[0] = {**units[0], "asr": {"primary": low, "secondary": strong}}
         row = audio_qc.screen(units, "zh-Hans")["results"][0]
         self.assertEqual((row["status"], row["asrSecondaryModel"]["model"]), ("pass", fixtures.SECONDARY_ASR))
-        same = audio_qc.asr_opinion(0.95, audio=units[0]["wav"], text=units[0]["text"], model=fixtures.PRIMARY_ASR)
+        same = audio_qc.asr_opinion(0.95, audio=units[0]["wav"], text=units[0]["text"], model=fixtures.PRIMARY_ASR,
+            settings=fixtures.ASR_SETTINGS[fixtures.PRIMARY_ASR])
         units[0] = {**units[0], "asr": {"primary": low, "secondary": same}}
         with self.assertRaisesRegex(ValueError, "different model"):
             audio_qc.screen(units, "zh-Hans")
@@ -296,7 +299,8 @@ class AudioQcTests(unittest.TestCase):
         self.assertEqual((row["status"], row["staleAsr"], row["asrPrimary"]),
                          ("pending_primary_asr", ["primary"], None))
         # An opinion about other text does not count either.
-        other = audio_qc.asr_opinion(0.99, audio=resynthesized, text="다른 문장입니다.", model=fixtures.PRIMARY_ASR)
+        other = audio_qc.asr_opinion(0.99, audio=resynthesized, text="다른 문장입니다.", model=fixtures.PRIMARY_ASR,
+            settings=fixtures.ASR_SETTINGS[fixtures.PRIMARY_ASR])
         units[2] = {**units[2], "asr": {"primary": other}}
         self.assertEqual(audio_qc.screen(units, "ko")["results"][2]["status"], "pending_primary_asr")
         with self.assertRaisesRegex(ValueError, "Bare ASR scores"):
@@ -315,7 +319,8 @@ class AudioQcTests(unittest.TestCase):
         padded = audio_qc.encode_pcm16([0.0] * (2 * rate) + samples, rate)
         text = units[4]["text"]
         units[4] = {**units[4], "wav": padded, "asr": {"primary": audio_qc.asr_opinion(
-            0.97, audio=padded, text=text, model=fixtures.PRIMARY_ASR)}}
+            0.97, audio=padded, text=text, model=fixtures.PRIMARY_ASR,
+            settings=fixtures.ASR_SETTINGS[fixtures.PRIMARY_ASR])}}
         row = audio_qc.screen(units, "es")["results"][4]
         self.assertEqual(row["status"], "fail")
         self.assertTrue(any(issue.startswith("leading_silence") for issue in row["issues"]), row["issues"])
@@ -545,7 +550,9 @@ class CalibrationAndWaiverTests(unittest.TestCase):
             {"groupId": gid, "nextAction": "subtitle_only" if i >= count - subtitle_only else "keep",
              "audioSha256": package["units"][i]["audio"]["sha256"],
              "textSha256": package["units"][i]["targetTextSha256"],
-             "asrPrimaryModel": {"model": fixtures.PRIMARY_ASR, "modelRevision": None}, "asrSecondaryModel": None}
+             "asrPrimaryModel": {"model": fixtures.PRIMARY_ASR, "modelRevision": None}, "asrSecondaryModel": None,
+             "asrPrimarySettingsSha256": waiver.json_sha256(fixtures.ASR_SETTINGS[fixtures.PRIMARY_ASR]),
+             "asrSecondarySettingsSha256": None}
             for i, gid in enumerate(ids)]}
         return candidate, package, text, audio
 
@@ -692,6 +699,14 @@ class CalibrationAndWaiverTests(unittest.TestCase):
         other_asr = copy.deepcopy(receipts)
         other_asr[3]["results"][5]["asrPrimaryModel"] = {"model": "other-asr", "modelRevision": None}
         self.assertIn("primary ASR model differs from calibration", self.waive("ko", other_asr, calibration)["reasons"])
+        # The same model run with other settings (language, decoding, scoring) is another runtime.
+        other_settings = copy.deepcopy(receipts)
+        other_settings[3]["results"][5]["asrPrimarySettingsSha256"] = waiver.json_sha256(
+            {**fixtures.ASR_SETTINGS[fixtures.PRIMARY_ASR], "language": "ko"})
+        self.assertIn("primary ASR runtime settings differ from calibration",
+                      self.waive("ko", other_settings, calibration)["reasons"])
+        self.assertEqual(calibration["asrSettingsSha256"]["secondary"],
+                         waiver.json_sha256(fixtures.ASR_SETTINGS[fixtures.SECONDARY_ASR]))
 
     def test_text_only_release_ignores_audio_calibration(self):
         calibration = self.calibration("ko")

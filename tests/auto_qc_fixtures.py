@@ -99,6 +99,8 @@ SEMANTIC_IDENTITY = {"backend": "fake-transport", "model": "fake-judge",
                      "settings": {"reasoningEffort": "medium", "temperature": 0}}
 PRIMARY_ASR = "small-asr"
 SECONDARY_ASR = "large-asr"
+ASR_SETTINGS = {PRIMARY_ASR: {"backend": "fake-asr", "language": "auto", "scoring": "token-ratio-v1"},
+                SECONDARY_ASR: {"backend": "fake-asr-api", "language": "auto", "scoring": "token-ratio-v1"}}
 
 
 def units(locale: str, seconds_per_unit: float = 0.17) -> list[dict]:
@@ -109,7 +111,8 @@ def units(locale: str, seconds_per_unit: float = 0.17) -> list[dict]:
         rows.append({"groupId": group["groupId"], "text": group["targetText"],
                      "sourceSeconds": max(2.0, seconds * 0.9), "wav": wav,
                      "asr": {"primary": audio_qc.asr_opinion(0.97, audio=wav, text=group["targetText"],
-                                                             model=PRIMARY_ASR)}})
+                                                             model=PRIMARY_ASR,
+                                                             settings=ASR_SETTINGS[PRIMARY_ASR])}})
     return rows
 
 
@@ -125,8 +128,8 @@ class FakeAsr:
     def __call__(self, role, wav, text, locale):
         self.calls.append(role)
         similarity = 0.97 if self.own.get(text) == wav else self.mismatch[role]
-        return audio_qc.asr_opinion(similarity, audio=wav, text=text,
-                                    model=PRIMARY_ASR if role == "primary" else SECONDARY_ASR)
+        model = PRIMARY_ASR if role == "primary" else SECONDARY_ASR
+        return audio_qc.asr_opinion(similarity, audio=wav, text=text, model=model, settings=ASR_SETTINGS[model])
 
 
 class PerfectSemanticJudge:

@@ -22,6 +22,11 @@ IMPLEMENTATION = waiver.implementation_sha256()
 SEMANTIC_SHA = "9" * 64
 PRIMARY_ASR = {"model": "qwen3-asr-0.6b", "modelRevision": "r1"}
 SECONDARY_ASR = {"model": "gpt-transcribe", "modelRevision": None}
+# The primary runtime is the one the bound screening receipt records.
+SCREENING_ASR_SETTINGS = basis.json_sha256({"source": "sermon-target-language-audio-screening-v1",
+                                            "model": "qwen3-asr-0.6b", "modelRevision": "r1",
+                                            "minSimilarity": 0.88, "transcriptionBatchSize": 1})
+SECONDARY_ASR_SETTINGS = basis.json_sha256({"backend": "openai", "language": "ko", "scoring": "token-ratio-v1"})
 
 
 def sha(text: str) -> str:
@@ -37,6 +42,7 @@ def calibration(locale="ko", **overrides):
              "overallDetectionRate": 1.0, "cleanFalsePositiveRate": 0.0, "audioIncluded": True,
              "semanticIdentitySha256": SEMANTIC_SHA,
              "asrIdentity": {"primary": PRIMARY_ASR, "secondary": SECONDARY_ASR},
+             "asrSettingsSha256": {"primary": SCREENING_ASR_SETTINGS, "secondary": SECONDARY_ASR_SETTINGS},
              "kinds": {f"{prefix}.{kind}": {"trials": 10, "detected": 10, "rate": 1.0}
                        for prefix, kinds in (("text", waiver.TEXT_KINDS), ("audio", waiver.AUDIO_KINDS))
                        for kind in kinds}}
@@ -335,6 +341,8 @@ def audio_fixture(flagged=False):
           "results": [{"groupId": unit["textGroupId"], "status": "pass", "issues": [], "asrDecision": "pass",
                        "asrPrimary": value, "asrSecondary": 0.96 if value < 0.88 else None,
                        "asrPrimaryModel": PRIMARY_ASR, "asrSecondaryModel": SECONDARY_ASR if value < 0.88 else None,
+                       "asrPrimarySettingsSha256": SCREENING_ASR_SETTINGS,
+                       "asrSecondarySettingsSha256": SECONDARY_ASR_SETTINGS if value < 0.88 else None,
                        "audioSha256": unit["audio"]["sha256"], "textSha256": unit["targetTextSha256"],
                        "sourceSeconds": span, "failedAttempts": 0, "nextAction": "keep",
                        "metrics": {}} for unit, value, span in zip(units, similarities, (2.0, 3.5))]}
@@ -405,6 +413,19 @@ class AudioWaiverTests(unittest.TestCase):
                                 "compressed-waveform evidence")):
             with self.assertRaisesRegex(ValueError, message):
                 self.build(package, screening, qc, text, track_check=check)
+
+    def test_asr_runtime_settings_must_match_screening_and_calibration(self):
+        package, screening, qc, text = audio_fixture(flagged=True)
+        self.build(package, screening, qc, text)
+        # A primary score the screening receipt produced under other settings.
+        other_screening = {**screening, "transcriptionBatchSize": 8}
+        with self.assertRaisesRegex(ValueError, "primary ASR runtime differs from the bound screening"):
+            self.build(package, other_screening, qc, text)
+        # A secondary ASR run another way than the calibration measured.
+        other = copy.deepcopy(qc)
+        other["results"][1]["asrSecondarySettingsSha256"] = "0" * 64
+        with self.assertRaisesRegex(ValueError, "secondary ASR runtime settings differ from calibration"):
+            self.build(package, screening, other, text)
 
     def test_audio_qc_source_spans_must_be_the_frozen_ones(self):
         # A zero, negative or inflated span would disable the source-ratio check.

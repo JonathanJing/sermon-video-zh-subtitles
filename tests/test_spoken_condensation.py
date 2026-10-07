@@ -174,6 +174,10 @@ class CondenseTests(unittest.TestCase):
             (answer(omissions=[]), "no omissions declared"),
             (answer(omissions=[{"fullTextSpan": "我从来没说过", "kind": "filler"}]), "not a span"),
             (answer(omissions=[{"fullTextSpan": "一刻也没有忘记你", "kind": "core_claim"}]), "kind not allowed"),
+            # A declared span must actually be gone, and the declared spans must explain the cut.
+            (answer(omissions=OMISSIONS + [{"fullTextSpan": "一刻也没有忘记你", "kind": "repetition"}]),
+             "still in the spoken text"),
+            (answer(text="耶稣没有忘记你。"), "declared"),
             ({"translationGroupId": "g2", "spokenText": SPOKEN}, "does not match the schema"),
         ]
         for output, message in cases:

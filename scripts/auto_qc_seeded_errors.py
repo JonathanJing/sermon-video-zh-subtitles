@@ -86,18 +86,18 @@ def mutate_text(group: dict, kind: str, locale: str, policy: dict | None) -> str
                 return text.replace(negative, positive, 1)
         return None
     if kind == "wrong_number":
-        pairs, _ = rules.english_references(english)
-        protected = {value for pair in pairs for value in pair}
-        for value in rules.english_numbers(english):
-            if value in protected:
-                continue
+        # Citations are the reference screen's; a quantity sharing a cited value is still one.
+        said, pairs = rules.english_without_citations(english)
+        masked = rules.target_without_citations(text, locale, pairs)
+        for value in rules.english_numbers(said):
             for form in _number_forms(locale, value):
                 # Skip one-character word forms (세, 三): replacing them would
                 # usually corrupt an unrelated word instead of the number.
-                if form in text and (form.isdigit() or len(form) > 1):
+                at = masked.find(form)
+                if at >= 0 and (form.isdigit() or len(form) > 1):
                     # A decimal loses its separator (2.5 -> 25); an integer shifts by 7.
                     wrong = re.sub(r"[.,]", "", form) if isinstance(value, str) else str(value + 7)
-                    return text.replace(form, wrong, 1)
+                    return text[:at] + wrong + text[at + len(form):]
         return None
     if kind == "added_number":
         return None if rules.english_number_values(english) else text + ADDED_NUMBER[locale]
@@ -269,10 +269,15 @@ def calibrate_audio(units: list[dict], locale: str, *, asr=None, max_trials: int
     clean = audio_qc.screen(base, locale)["results"]
     false_positives = sum(row["status"] == "fail" for row in clean)
     kinds, models = {}, {"primary": set(), "secondary": set()}
+
+    def note_runtime(row: dict) -> None:
+        for role in ("primary", "secondary"):
+            if row[f"asr{role.title()}Model"] is not None:
+                models[role].add(json.dumps([row[f"asr{role.title()}Model"], row[f"asr{role.title()}SettingsSha256"]],
+                                            sort_keys=True))
+
     for row in clean:
-        for role, key in (("primary", "asrPrimaryModel"), ("secondary", "asrSecondaryModel")):
-            if row[key] is not None:
-                models[role].add(json.dumps(row[key], sort_keys=True))
+        note_runtime(row)
     for kind in AUDIO_KINDS:
         trials = detected = 0
         misses = []
@@ -291,9 +296,7 @@ def calibrate_audio(units: list[dict], locale: str, *, asr=None, max_trials: int
                 # The screen decodes the mutated bytes, as it would a real faulty render.
                 rows[index] = {**base[index], "wav": audio_qc.encode_pcm16(*mutate_audio(samples, rate, kind))}
             result = audio_qc.screen(rows, locale)["results"][index]
-            for role, key in (("primary", "asrPrimaryModel"), ("secondary", "asrSecondaryModel")):
-                if result[key] is not None:
-                    models[role].add(json.dumps(result[key], sort_keys=True))
+            note_runtime(result)
             trials += 1
             new = set(result["issues"]) - set(clean[index]["issues"])
             hit = "asr_mismatch_confirmed" in new if kind == "wrong_sentence" else bool(new)
@@ -304,10 +307,12 @@ def calibrate_audio(units: list[dict], locale: str, *, asr=None, max_trials: int
         kinds[kind] = {"trials": trials, "detected": detected, "rate": _rate(detected, trials),
                        "missedGroupIds": misses}
     if any(len(values) > 1 for values in models.values()):
-        raise ValueError("ASR transport reported more than one model per role during calibration")
-    identity = {role: json.loads(next(iter(values))) if values else None for role, values in models.items()}
+        raise ValueError("ASR transport reported more than one model or runtime per role during calibration")
+    runtime = {role: json.loads(next(iter(values))) if values else [None, None] for role, values in models.items()}
+    calibrated = runtime["primary"][0] is not None
     return {"kinds": kinds, "cleanChecked": len(units), "cleanFalsePositives": false_positives,
-            "asrIdentity": identity if identity["primary"] else None}
+            "asrIdentity": {role: value[0] for role, value in runtime.items()} if calibrated else None,
+            "asrSettingsSha256": {role: value[1] for role, value in runtime.items()} if calibrated else None}
 
 
 def calibrate(locale: str, groups: list[dict], units: list[dict] | None = None, *,
@@ -339,6 +344,7 @@ def calibrate(locale: str, groups: list[dict], units: list[dict] | None = None, 
             "semanticIdentity": None if bound is None else bound["identity"],
             "semanticIdentitySha256": None if bound is None else bound["sha256"],
             "asrIdentity": None if audio is None else audio["asrIdentity"],
+            "asrSettingsSha256": None if audio is None else audio["asrSettingsSha256"],
             "kinds": kinds, "trials": trials, "detected": detected,
             "overallDetectionRate": _rate(detected, trials),
             "cleanChecked": clean, "cleanFalsePositives": positives,

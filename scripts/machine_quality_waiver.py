@@ -181,19 +181,24 @@ def runtime_identity_problems(calibration: dict | None, *, text_qc: dict | None 
         problems.append("back-translation runtime differs from calibration")
     if audio_qc is not None:
         identity = calibration.get("asrIdentity") or {}
+        settings = calibration.get("asrSettingsSha256") or {}
         for role in ("primary", "secondary"):
             score, model = "asr" + role.title(), "asr" + role.title() + "Model"
-            # Every ASR opinion that was used must come from the calibrated model.
-            if any((row.get(score) is not None or row.get(model) is not None)
-                   and row.get(model) != identity.get(role) for row in audio_qc["results"]):
+            used = [row for row in audio_qc["results"] if row.get(score) is not None or row.get(model) is not None]
+            # Every ASR opinion that was used must come from the calibrated model and runtime settings.
+            if any(row.get(model) != identity.get(role) for row in used):
                 problems.append(f"{role} ASR model differs from calibration")
+            if any(settings.get(role) is None or row.get(f"asr{role.title()}SettingsSha256") != settings[role]
+                   for row in used):
+                problems.append(f"{role} ASR runtime settings differ from calibration")
     return problems
 
 
 def runtime_identity_sha256(calibration: dict) -> str:
     """One hash of the back-translation and ASR runtimes a calibration measured."""
     return json_sha256({"semanticIdentitySha256": calibration.get("semanticIdentitySha256"),
-                        "asrIdentity": calibration.get("asrIdentity")})
+                        "asrIdentity": calibration.get("asrIdentity"),
+                        "asrSettingsSha256": calibration.get("asrSettingsSha256")})
 
 
 def _share(part: int, total: int) -> float:

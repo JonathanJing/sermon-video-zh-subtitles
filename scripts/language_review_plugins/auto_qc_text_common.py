@@ -815,7 +815,10 @@ def name_problems(policy: dict, english: str, text: str) -> list[str]:
                 continue
             if term.get("reviewStatus") == "pending" or not term.get("target"):
                 problems.append(f"{source}: terminology unresolved")
-            elif _fold(term["target"]) not in folded_text:
+            # A complete term: "Ana" inside "mañana" is not the name. Hangul and
+            # Han neighbours are allowed, since particles attach (바울이).
+            elif not re.search(r"(?<![a-z0-9])" + re.escape(_fold(term["target"])) + r"(?![a-z0-9])",
+                               folded_text):
                 problems.append(f"{source}: expected {term['target']}")
     return problems
 
@@ -826,16 +829,76 @@ _ENGLISH_BOOK_ORDINAL = re.compile(r"\b([123])\s*(?:" + _alternation(
     name for number, name in _EN_BOOK_CODES if number is not None) + r")\b")
 
 
-def number_problems(english: str, text: str, locale: str, references: set[tuple[int, int]]) -> list[str]:
+_EN_CHAPTER_VERSE = re.compile(r"\bchapter\s+(" + _EN_SPOKEN_NUMBER + r")\s*,?\s*(?:and\s+)?verses?\s+("
+                               + _EN_SPOKEN_NUMBER + r")\b", re.I)
+
+
+def _blank(text: str, spans: list[tuple[int, int]]) -> str:
+    """Replace each span with spaces, keeping every other offset."""
+    chars = list(text)
+    for start, end in spans:
+        chars[start:end] = " " * (end - start)
+    return "".join(chars)
+
+
+def english_without_citations(english: str) -> tuple[str, set[tuple[int, int]]]:
+    """The English with chapter:verse citations blanked, and the pairs they cite.
+
+    A citation's numbers (and a book ordinal inside it, "1 John 4:8") are the
+    scripture screen's to check; a quantity said beside one ("John 3:16
+    mentions three people") must still survive. A chapter-only citation
+    ("Revelation 3") stays, so a dropped chapter is still a missing number.
+    """
+    spans, pairs = [], set()
+    for match in _ENGLISH_CITATION.finditer(english):
+        _, _, chapter, colon_verse, spoken_verse = match.groups()
+        if colon_verse or spoken_verse:
+            values = (_number_token(chapter, "en"),
+                      int(colon_verse) if colon_verse else _number_token(spoken_verse, "en"))
+            if None not in values:
+                spans.append(match.span())
+                pairs.add(values)
+    for match in _EN_CHAPTER_VERSE.finditer(english):
+        values = (_number_token(match.group(1), "en"), _number_token(match.group(2), "en"))
+        if None not in values:
+            spans.append(match.span())
+            pairs.add(values)
+    return _blank(english, spans), pairs
+
+
+_TARGET_VERSE_CITATIONS = {
+    "ko": [re.compile(_KO_NUMERAL + r"\s*장\s*" + _KO_NUMERAL + r"\s*절")],
+    "zh-Hans": [re.compile(r"(?:第\s*)?" + _ZH_NUMERAL + r"\s*章\s*(?:第\s*)?" + _ZH_NUMERAL + r"\s*节")],
+    "es": [re.compile(r"capitulo\s+" + _ES_NUMERAL + r"\s*,?\s*(?:y\s+|el\s+)?versiculos?\s+" + _ES_NUMERAL)],
+}
+
+
+def target_without_citations(text: str, locale: str, pairs: set[tuple[int, int]]) -> str:
+    """The target with each citation of an English chapter:verse pair blanked."""
+    # Spanish matches on folded text, one character at a time so offsets still index the original.
+    searched = "".join(_fold(char)[:1] or " " for char in text) if locale == "es" else text
+    spans = []
+    for pattern in (re.compile(_COLON_PAIR), *_TARGET_VERSE_CITATIONS[locale]):
+        for match in pattern.finditer(searched):
+            chapter, verse = match.groups()
+            values = (_ES_WORD_VALUES.get(chapter, _number_token(chapter, locale)),
+                      _ES_WORD_VALUES.get(verse, _number_token(verse, locale)))
+            if values in pairs:
+                spans.append(match.span())
+    return _blank(text, spans)
+
+
+def number_problems(english: str, text: str, locale: str) -> list[str]:
     count = {"ko": korean_number_count, "es": spanish_number_count, "zh-Hans": chinese_number_count}[locale]
-    reference_numbers = {value for pair in references for value in pair}
+    english, pairs = english_without_citations(english)
+    text = target_without_citations(text, locale, pairs)
     said = english_numbers(english)
     ordinals = [int(value) for value in _ENGLISH_BOOK_ORDINAL.findall(english)]
     problems = []
     for value in dict.fromkeys(said):
         # A repeated quantity must be kept each time ("five loaves and five fish").
         needed = said.count(value) - ordinals.count(value)
-        if value in reference_numbers or needed <= 0:
+        if needed <= 0:
             continue
         found = count(text, value)
         if not found:
@@ -917,7 +980,6 @@ def review_auto_group(policy: dict, english_units: list[dict], group: dict, *,
         raise ValueError(f"{locale} machine-QC policy checks differ from plugin")
     text = group["targetText"]
     english = " ".join(unit["english"] for unit in english_units)
-    english_pairs, _ = english_references(english)
     checks = [
         ("target_script", script_problems(text, locale), "Target script share and placeholder screen"),
         ("untranslated_source", untranslated_problems(english, text, locale, shared_terms(policy)),
@@ -927,7 +989,7 @@ def review_auto_group(policy: dict, english_units: list[dict], group: dict, *,
         ("proper_names", name_problems(policy, english, text), "Policy terminology mentioned in English"),
         ("scripture_references", scripture_reference_problems(english, text, locale),
          "Chapter:verse references said vs written; additions fail"),
-        ("numbers", number_problems(english, text, locale, english_pairs)
+        ("numbers", number_problems(english, text, locale)
          + added_number_problems(english, text, locale),
          "English cardinals as digits or target-language words; target digits must be said"),
         ("tts_segmentation", ["unsafe utterance markup or length"]
