@@ -1,4 +1,4 @@
-"""Prepare a complete, live-bound Dev snapshot and isolated simulation overlay.
+"""Acquire a complete live-bound Hosting snapshot or isolated Dev overlay.
 
 No model API and no deployment are performed. A publish config is consumed only
 by guarded_hosting_publish, which acquires the shared generation-fenced lease.
@@ -15,6 +15,8 @@ import json
 import re
 from pathlib import Path
 import shutil
+import struct
+import zlib
 from urllib.parse import quote
 from urllib.request import Request, urlopen
 
@@ -32,6 +34,17 @@ except ImportError:
 PROJECT = SITE = 'ai-for-god-sermon-audio-dev'
 ORIGIN = 'https://' + SITE + '.web.app'
 LEASE_BUCKET = 'ai-for-god-sermon-media-dev'
+
+
+def hosting_target(environment):
+    """Fixed deployment identities; simulations continue to default to Dev."""
+    contract.require(environment in ('dev', 'production'), 'Unknown Hosting environment')
+    if environment == 'production':
+        return {'project': 'ai-for-god-caption-dev', 'site': 'ai-for-god-sermon-audio',
+                'origin': 'https://ai-for-god-sermon-audio.web.app',
+                'channel': 'production_web', 'lease_bucket': 'ai-for-god-sermon-media-prod'}
+    return {'project': PROJECT, 'site': SITE, 'origin': ORIGIN,
+            'channel': 'dev', 'lease_bucket': LEASE_BUCKET}
 
 
 def read(path):
@@ -60,11 +73,11 @@ def safe_relative(value):
     return path
 
 
-def firebase_config(config):
+def firebase_config(config, *, environment='dev'):
     """Lossless mapping of supported API VersionConfig to Firebase CLI keys."""
     allowed = {'headers', 'redirects', 'rewrites', 'cleanUrls', 'trailingSlashBehavior'}
     contract.require(set(config) <= allowed, 'Unsupported live Hosting config; preserve explicitly before proceeding')
-    hosting = {'site': SITE, 'public': 'public', 'ignore': ['firebase.json', '**/.*', '**/node_modules/**']}
+    hosting = {'site': hosting_target(environment)['site'], 'public': 'public', 'ignore': ['firebase.json', '**/.*', '**/node_modules/**']}
     if 'headers' in config:
         hosting['headers'] = [{'source': row['glob'], 'headers': [{'key': k, 'value': v} for k, v in row['headers'].items()]} for row in config['headers']]
     if 'redirects' in config:
@@ -75,8 +88,15 @@ def firebase_config(config):
     if 'rewrites' in config:
         hosting['rewrites'] = []
         for row in config['rewrites']:
-            contract.require(set(row) == {'glob', 'path'}, 'Unsupported live rewrite')
-            hosting['rewrites'].append({'source': row['glob'], 'destination': row['path']})
+            destinations = set(row) & {'path', 'run', 'function'}
+            contract.require(set(row) <= {'glob', 'path', 'run', 'function'}
+                             and 'glob' in row and len(destinations) == 1,
+                             'Unsupported live rewrite')
+            kind = next(iter(destinations))
+            contract.require(isinstance(row[kind], (str, dict)) and bool(row[kind]),
+                             'Invalid live rewrite destination')
+            hosting['rewrites'].append({'source': row['glob'],
+                                       'destination' if kind == 'path' else kind: row[kind]})
     if 'cleanUrls' in config:
         hosting['cleanUrls'] = config['cleanUrls']
     if 'trailingSlashBehavior' in config:
@@ -106,11 +126,38 @@ def files_report(public):
             for p in sorted(public.rglob('*')) if p.is_file()]
 
 
-def baseline(out, *, cache_public=None, cache_receipt=None):
+def firebase_cli_gzip_hashes(path):
+    """Join identity responses to exact deterministic CLI gzip version hashes.
+
+    zlib gzip's OS byte differs across CLI hosts. Every accepted value still
+    requires the complete compressed byte hash to match the frozen API row.
+    Streaming avoids loading large media into memory.
+    """
+    hashes = [hashlib.sha256(bytes.fromhex('1f8b08000000000002') + bytes([os_byte]))
+              for os_byte in (0, 3, 19, 255)]
+    compressor = zlib.compressobj(9, zlib.DEFLATED, -zlib.MAX_WBITS)
+    crc, size = 0, 0
+    with Path(path).open('rb') as source:
+        for chunk in iter(lambda: source.read(1024 * 1024), b''):
+            crc = zlib.crc32(chunk, crc)
+            size += len(chunk)
+            compressed = compressor.compress(chunk)
+            for value in hashes:
+                value.update(compressed)
+    trailer = compressor.flush() + struct.pack('<II', crc & 0xffffffff, size & 0xffffffff)
+    for value in hashes:
+        value.update(trailer)
+    return {value.hexdigest() for value in hashes}
+
+
+def baseline(out, *, cache_public=None, cache_receipt=None, environment='dev'):
     out = Path(out).resolve()
     contract.require(not out.exists(), 'Use a new baseline output directory')
+    deployment_target = hosting_target(environment)
+    site, origin = deployment_target['site'], deployment_target['origin']
     request = publisher.authenticated_transport()
-    version = publisher.live_version(request, SITE)
+    version = publisher.live_version(request, site)
+    contract.require(version.startswith('sites/' + site + '/versions/'), 'Live version target differs')
     detail = request('GET', 'https://firebasehosting.googleapis.com/v1beta1/' + version)
     contract.require(detail.get('status') == 'FINALIZED', 'Live version is not finalized')
     rows = []
@@ -125,7 +172,7 @@ def baseline(out, *, cache_public=None, cache_receipt=None):
         if not token:
             break
     contract.require(rows and len({r['path'] for r in rows}) == len(rows) and all(r.get('status') == 'ACTIVE' for r in rows), 'Invalid live file inventory')
-    config = firebase_config(detail.get('config', {}))
+    config = firebase_config(detail.get('config', {}), environment=environment)
     cached = {}
     if cache_receipt:
         contract.require(cache_public is not None, 'Cache public root is required')
@@ -155,44 +202,57 @@ def baseline(out, *, cache_public=None, cache_receipt=None):
         else:
             compressed = target.with_suffix(target.suffix + '.download')
             h = hashlib.sha256()
-            with urlopen(Request(ORIGIN + '/' + quote(str(relative), safe='/'), headers={'Accept-Encoding': 'gzip', 'Cache-Control': 'no-cache'}), timeout=120) as response:
+            with urlopen(Request(origin + '/' + quote(str(relative), safe='/'), headers={'Accept-Encoding': 'gzip', 'Cache-Control': 'no-cache'}), timeout=120) as response:
                 contract.require(response.status == 200, 'Live file GET failed')
                 encoding = response.headers.get('Content-Encoding')
+                etag = response.headers.get('Etag')
                 with compressed.open('xb') as stream:
                     for chunk in iter(lambda: response.read(1024 * 1024), b''):
                         h.update(chunk)
                         stream.write(chunk)
-            contract.require(h.hexdigest() == row['hash'], 'Live file no longer matches frozen version: ' + row['path'])
             if encoding == 'gzip':
+                contract.require(h.hexdigest() == row['hash'], 'Live file no longer matches frozen version: ' + row['path'])
                 with gzip.open(compressed, 'rb') as source, target.open('xb') as dest:
                     shutil.copyfileobj(source, dest)
                 compressed.unlink()
             else:
                 contract.require(encoding in (None, 'identity'), 'Unsupported live content encoding')
+                contract.require(etag == '"' + row['hash'] + '"'
+                                 and row['hash'] in firebase_cli_gzip_hashes(compressed),
+                                 'Identity response no longer matches frozen gzip version: ' + row['path'])
                 compressed.rename(target)
-            mode = 'live_get_version_hash_verified'
+            mode = ('live_get_version_hash_verified' if encoding == 'gzip'
+                    else 'live_get_identity_exact_gzip_version_hash_reconstructed')
             raw_sha = digest(target)
         return {'path': row['path'], 'rawSha256': raw_sha, 'rawBytes': target.stat().st_size,
                 'liveGzipSha256': row['hash'], 'sourceKind': mode, 'managed': managed}
 
     with ThreadPoolExecutor(max_workers=6) as pool:
         verified = list(pool.map(materialize, rows))
-    contract.require(publisher.live_version(request, SITE) == version, 'Live version changed during baseline acquisition')
+    contract.require(publisher.live_version(request, site) == version, 'Live version changed during baseline acquisition')
     report = {**catalog_report(public), 'files': files_report(public)}
     write(out / 'seal-report.json', report)
     contract.validate_catalog_snapshot(out)
-    receipt = {'schemaVersion': 'sermon-dev-simulated-baseline-v1', 'status': 'complete_verified_not_deployed',
-               'checkedAt': datetime.now(timezone.utc).isoformat(), 'project': PROJECT, 'site': SITE, 'origin': ORIGIN,
+    receipt = {'schemaVersion': ('sermon-dev-simulated-baseline-v1' if environment == 'dev'
+                                else 'sermon-production-live-baseline-v1'), 'status': 'complete_verified_not_deployed',
+               'checkedAt': datetime.now(timezone.utc).isoformat(),
+               **{key: deployment_target[key] for key in ('project', 'site', 'origin', 'channel')},
+               'environment': environment,
                'baselineVersion': version, 'catalogSha256': report['catalogSha256'], 'liveConfig': detail.get('config', {}),
-               'firebaseJsonSha256': digest(out / 'firebase.json'), 'configSemanticEqual': config_semantics(config) == config_semantics(firebase_config(detail.get('config', {}))), 'liveFileCount': len(rows),
+               'firebaseJsonSha256': digest(out / 'firebase.json'), 'configSemanticEqual': config_semantics(config) == config_semantics(firebase_config(detail.get('config', {}), environment=environment)), 'liveFileCount': len(rows),
                'publicFileCount': len(report['files']), 'managedFileCount': sum(r['managed'] for r in verified),
                'rows': verified, 'modelCalls': 0, 'deployment': 'not_started'}
     write(out / 'baseline-receipt.json', receipt)
     return {k: receipt[k] for k in ('status', 'baselineVersion', 'liveFileCount', 'publicFileCount', 'managedFileCount')}
 
 
-def publication_config(base, out):
+def publication_config(base, out, *, environment='dev'):
+    target = hosting_target(environment)
     receipt = read(base / 'baseline-receipt.json')
+    contract.require(all(receipt.get(k) == target[k] for k in ('project', 'site', 'origin')),
+                     'Baseline Hosting target differs')
+    expected_intent = {**{k: target[k] for k in ('project', 'site', 'origin', 'channel')},
+                       'environment': environment}
     version = receipt['baselineVersion']
     attempt = base / 'deployment-attempt-v2.json'
     if attempt.exists():
@@ -201,17 +261,18 @@ def publication_config(base, out):
         expected_version = read(prior_config)['baseline_version'] if prior_config.exists() else version
         contract.require(deployed.get('status') == 'deployed' and deployed.get('newVersion')
                          and all(deployed.get('intent', {}).get(k) == v for k, v in
-                                 {'site': SITE, 'project': PROJECT, 'origin': ORIGIN, 'environment': 'dev', 'channel': 'dev'}.items())
+                                 expected_intent.items())
                          and deployed.get('baselineVersion') == expected_version
                          and deployed.get('catalogSha256') == digest(base / 'public/multilingual-v3.json'),
                          'Prior publication remains uncertain or differs from baseline')
         version = deployed['newVersion']
-    intent = {'schemaVersion': 'sermon-release-intent-v1', 'environment': 'dev', 'channel': 'dev', 'project': PROJECT, 'site': SITE, 'origin': ORIGIN}
-    routes = {'dev': {'project': PROJECT, 'site': SITE, 'origin': ORIGIN, 'channels': ['dev', 'beta']}}
+    intent = {'schemaVersion': 'sermon-release-intent-v1', **expected_intent}
+    routes = {environment: {**{k: target[k] for k in ('project', 'site', 'origin')},
+                           'channels': ['dev', 'beta'] if environment == 'dev' else ['production_web']}}
     return {'snapshot': str(out), 'intent': intent, 'routes': routes,
             'baseline_version': version, 'baseline_catalog_sha': digest(base / 'public/multilingual-v3.json'),
             'baseline_catalog_v4_sha': catalog_report(base / 'public').get('catalogV4Sha256'),
-            'lease_bucket': LEASE_BUCKET}
+            'lease_bucket': target['lease_bucket']}
 
 
 def bound_release_plan(baseline_path, prepared_path):
@@ -419,6 +480,7 @@ def main():
     b.add_argument('--out', required=True, type=Path)
     b.add_argument('--cache-public', type=Path)
     b.add_argument('--cache-receipt', type=Path)
+    b.add_argument('--environment', choices=('dev', 'production'), default='dev')
     a = commands.add_parser('asset-first')
     a.add_argument('--baseline', required=True, type=Path)
     a.add_argument('--prepared', required=True, type=Path)
@@ -438,7 +500,8 @@ def main():
     repair.add_argument('--out', required=True, type=Path)
     args = parser.parse_args()
     if args.action == 'baseline':
-        result = baseline(args.out, cache_public=args.cache_public, cache_receipt=args.cache_receipt)
+        result = baseline(args.out, cache_public=args.cache_public, cache_receipt=args.cache_receipt,
+                          environment=args.environment)
     elif args.action == 'asset-first':
         result = asset_first(args.baseline, args.prepared, args.out, args.source_video)
     elif args.action == 'release-plan':

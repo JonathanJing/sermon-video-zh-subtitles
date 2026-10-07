@@ -95,6 +95,59 @@ test('tampered caption bytes reject only that locale', async () => {
   assert.match(result.errors[0], /hash mismatch/);
 });
 
+function publishedPodcastFixture(mutate = () => {}, sourceUrl = 'https://www.youtube.com/watch?v=published-podcast') {
+  const f = fixture(args => {
+    Object.assign(args.content, {schemaVersion: 'sermon-full-video-text-content-v2', reviewMode: 'formal',
+      audioDurationSeconds: 9, speaker: 'Eric Geiger · Steve Bang Lee',
+      outline: [{title: 'A complete outline heading', body: 'A complete outline paragraph.'}]});
+    delete args.content.sourceVideoUrl;
+    mutate(args);
+  });
+  const catalog = JSON.parse(f.files.get('/multilingual-v3.json'));
+  Object.assign(catalog.pages[0], {mediaType: 'podcast', sourceUrl});
+  f.files.set('/multilingual-v3.json', JSON.stringify(catalog));
+  return f;
+}
+
+test('published reviewed podcast keeps structured outline and external source without inventing a video URL', async () => {
+  const f = publishedPodcastFixture();
+  const result = await loadPublishedWeeks(f.fetchImpl);
+  assert.deepEqual(result.errors, []);
+  assert.deepEqual(Object.keys(result.weeks[0].contentVariants), ['zh-Hans', 'ko', 'es']);
+  for (const [locale, variant] of Object.entries(result.weeks[0].contentVariants)) {
+    assert.equal(variant.sourceRoute, 'podcast');
+    assert.equal(variant.mediaType, 'podcast');
+    assert.equal(variant.sourceUrl, 'https://www.youtube.com/watch?v=published-podcast');
+    assert.equal(Object.hasOwn(variant, 'sourceStartSeconds'), false,
+      'natural podcast dubbing has no unbound source-video clock');
+    assert.notEqual(variant.sourceLabel, '完整视频');
+    assert.deepEqual(variant.outline, [{title: 'A complete outline heading', points: ['A complete outline paragraph.']}]);
+    assert.equal(variant.humanContentReview, 'approved');
+    assert.equal(variant.tracks[0].subtitleTiming, 'target_audio_clock');
+    assert.equal(variant.tracks[0].durationSeconds, 9);
+    assert.equal(variant.tracks[0].voiceLabel, 'Eric Geiger · Steve Bang Lee · AI');
+    assert.match(variant.tracks[0].label, /播客|팟캐스트|pódcast/i);
+    assert.equal(variant.targetLocale, locale);
+  }
+});
+
+test('podcast compatibility still rejects malformed outline bodies, unsafe sources and unreviewed identities', async () => {
+  for (const f of [
+    publishedPodcastFixture(({content}) => {content.outline[0].body = ''; }),
+    publishedPodcastFixture(({content}) => {content.status = 'candidate'; }),
+    publishedPodcastFixture(() => {}, 'http://example.com/podcast'),
+    publishedPodcastFixture(() => {}, 'https://user:password@example.com/podcast'),
+  ]) {
+    const result = await loadPublishedWeeks(f.fetchImpl);
+    assert.deepEqual(result.weeks, []);
+    assert.equal(result.errors.length, 3);
+  }
+  const video = fixture(({content}) => {content.outline = [{title: 'Heading', body: 'Body'}];});
+  const rejectedVideo = await loadPublishedWeeks(video.fetchImpl);
+  assert.deepEqual(rejectedVideo.weeks, []);
+  assert.equal(rejectedVideo.errors.length, 3);
+});
+
 test('release hashes are verified before their content is read', async () => {
   const f = fixture();
   f.files.set(`/releases-v2/${pageId}/es.json`, '{}');
@@ -810,4 +863,42 @@ test('a condensed dub shows the full translation on the dub timing and says it w
     assert.deepEqual(Object.keys(loaded.weeks[0].contentVariants), ['zh-Hans', 'es'], name);
     assert.match(loaded.errors[0], /\/ko: (Invalid caption text or spoken condensation|Invalid machine-checked release|Condensed groups do not match)/, name);
   }
+});
+
+test('existing admitted media metadata supplies honest video and podcast labels without a catalog schema extension', async () => {
+  const video = await loadPublishedWeeks(fixture().fetchImpl);
+  const podcast = await loadPublishedWeeks(publishedPodcastFixture().fetchImpl);
+  assert.equal(video.weeks[0].sourceLabel, '完整视频');
+  assert.equal(podcast.weeks[0].sourceLabel, '播客');
+  for (const result of [video, podcast]) {
+    assert.deepEqual(result.errors, []);
+    assert.equal(Object.hasOwn(result.weeks[0], 'displayCategory'), false);
+    for (const variant of Object.values(result.weeks[0].contentVariants)) {
+      assert.equal(Object.hasOwn(variant, 'displayCategory'), false);
+      assert.equal(variant.releaseLabel, '正式播放版');
+    }
+  }
+});
+
+test('present catalog source media identity binds reviewed content for video and podcast locales', async () => {
+  const bindCatalogMedia = (f, sha256) => {
+    const catalog = JSON.parse(f.files.get('/multilingual-v3.json'));
+    catalog.pages[0].sourceMediaSha256 = sha256;
+    f.files.set('/multilingual-v3.json', JSON.stringify(catalog));
+    return f;
+  };
+  for (const make of [fixture, publishedPodcastFixture]) {
+    const good = await loadPublishedWeeks(bindCatalogMedia(make(), 'd'.repeat(64)).fetchImpl);
+    assert.deepEqual(good.errors, []);
+    const mismatch = await loadPublishedWeeks(bindCatalogMedia(make(), 'e'.repeat(64)).fetchImpl);
+    assert.deepEqual(mismatch.weeks, []);
+    assert.equal(mismatch.errors.length, 3);
+    assert.ok(mismatch.errors.every(error => error.includes('Published content identity mismatch')));
+  }
+  const partial = publishedPodcastFixture(({content, locale}) => {
+    if (locale === 'ko') content.sourceMediaSha256 = 'e'.repeat(64);
+  });
+  const result = await loadPublishedWeeks(bindCatalogMedia(partial, 'd'.repeat(64)).fetchImpl);
+  assert.deepEqual(Object.keys(result.weeks[0].contentVariants), ['zh-Hans', 'es']);
+  assert.equal(result.errors.length, 1);
 });
