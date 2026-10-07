@@ -162,7 +162,10 @@ class TextWaiverTests(unittest.TestCase):
                                "finalSpokenTextSha256": sha(group["targetText"])}]}
         kinds = {**calibration()["kinds"], **{f"spoken.{kind}": {"trials": 4, "detected": 4, "rate": 1.0}
                                               for kind in waiver.SPOKEN_KINDS}}
-        spoken = calibration(spokenIncluded=True, kinds=kinds)
+        base = calibration()
+        added = 4 * len(waiver.SPOKEN_KINDS)
+        spoken = calibration(spokenIncluded=True, kinds=kinds, trials=base["trials"] + added,
+                             detected=base["detected"] + added)
 
         def build(qc=qc, cal=spoken, binding=binding):
             return basis.build_text_waiver(self.source_package, self.anchor, self.candidate, qc, cal,

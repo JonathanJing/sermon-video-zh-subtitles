@@ -628,6 +628,8 @@ class CalibrationAndWaiverTests(unittest.TestCase):
         spoken["spokenIncluded"] = True
         spoken["kinds"].update({f"spoken.{kind}": {"trials": 4, "detected": 4, "rate": 1.0}
                                 for kind in waiver.SPOKEN_KINDS})
+        spoken["trials"] += 4 * len(waiver.SPOKEN_KINDS)
+        spoken["detected"] += 4 * len(waiver.SPOKEN_KINDS)
         self.assertEqual(waiver.waive("ko", candidate, text, audio, spoken, audio_package=package)["status"],
                          "machine_quality_waived")
 
