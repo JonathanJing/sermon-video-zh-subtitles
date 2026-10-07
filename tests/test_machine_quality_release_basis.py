@@ -8,7 +8,7 @@ from unittest.mock import patch
 from scripts import machine_quality_release_basis as basis
 from scripts import machine_quality_waiver as waiver
 from scripts import target_text_auto_qc as text_screen
-from scripts.target_audio_auto_qc import THRESHOLDS
+from scripts.target_audio_auto_qc import THRESHOLDS, TRACK_ENVELOPE
 from scripts import prepare_target_language_speech_job as speech
 from scripts import sermon_sentence_interpretation as interpretation
 from scripts import sermon_unified_reviews as reviews
@@ -317,7 +317,14 @@ def track_check(package, **overrides):
              "trackSha256": package["track"]["sha256"], "pcmMasterSha256": "e" * 64,
              "scheduleJsonSha256": package["schedule"]["jsonSha256"],
              "unitAudioSha256s": [unit["audio"]["sha256"] for unit in package["units"]],
-             "implementationSha256": IMPLEMENTATION}
+             "implementationSha256": IMPLEMENTATION, "settings": dict(TRACK_ENVELOPE)}
+    if Path(package["track"]["path"]).suffix.lower() == ".wav":
+        value.update(method={"pcm": "sample_exact_scheduled_placement", "compressed": None},
+                     envelope=None, waveform=None)
+    else:
+        value.update(method={"pcm": "sample_exact_scheduled_placement", "compressed": "decoded_waveform"},
+                     envelope={"windows": 200, "deviantWindows": 0, "maxDeltaDb": 0.5, "lengthDeltaSeconds": 0.0},
+                     waveform={"audibleWindows": 180, "deviantWindows": 0})
     value.update(overrides)
     return value
 
@@ -339,7 +346,17 @@ class AudioWaiverTests(unittest.TestCase):
                                 "status differs"),
                                (track_check(other), "trackSha256 differs"),
                                (track_check(package, unitAudioSha256s=["a" * 64, "b" * 64]), "unitAudioSha256s"),
-                               (track_check(package, implementationSha256="0" * 64), "implementationSha256")):
+                               (track_check(package, implementationSha256="0" * 64), "implementationSha256"),
+                               # A permissive comparison cannot authorize a waiver.
+                               (track_check(package, settings={**TRACK_ENVELOPE, "minWaveformCorrelation": 0.1}),
+                                "settings differ"),
+                               (track_check(package, settings=None), "settings differ"),
+                               (track_check(package, method={"pcm": "sample_exact_scheduled_placement",
+                                                             "compressed": None}), "method differs"),
+                               (track_check(package, waveform={"audibleWindows": 0, "deviantWindows": 0}),
+                                "compressed-waveform evidence"),
+                               (track_check(package, waveform={"audibleWindows": 180, "deviantWindows": 3}),
+                                "compressed-waveform evidence")):
             with self.assertRaisesRegex(ValueError, message):
                 self.build(package, screening, qc, text, track_check=check)
 

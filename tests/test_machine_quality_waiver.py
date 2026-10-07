@@ -385,6 +385,8 @@ class TrackCheckTests(unittest.TestCase):
         self.assertEqual(result["targetLanguageAudioPackageJsonSha256"], waiver.json_sha256(package))
         self.assertEqual(result["unitAudioSha256s"], [unit["audio"]["sha256"] for unit in package["units"]])
         self.assertEqual(result["implementationSha256"], waiver.implementation_sha256())
+        from scripts import machine_quality_release_basis as basis
+        self.assertEqual(basis.track_check_problems(package, result, waiver.implementation_sha256()), [])
 
     def test_omitted_or_reordered_units_fail(self):
         silent = audio_qc.encode_pcm16([0.0] * len(audio_qc.decode_pcm16(self.units[1]["wav"])[0]), self.rate)
@@ -410,8 +412,11 @@ class TrackCheckTests(unittest.TestCase):
             subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-y", "-i", str(target or source),
                             "-b:a", "64k", str(out)], check=True)
             return out.read_bytes()
-        result = audio_qc.check_track(self.package(mp3=encode))
+        package = self.package(mp3=encode)
+        result = audio_qc.check_track(package)
         self.assertEqual((result["status"], result["method"]["compressed"]), ("pass", "decoded_waveform"))
+        from scripts import machine_quality_release_basis as basis
+        self.assertEqual(basis.track_check_problems(package, result, waiver.implementation_sha256()), [])
         self.assertLessEqual(result["envelope"]["deviantWindows"], 0.02 * result["envelope"]["windows"])
         # An MP3 of silence beside a correct master is not what listeners should hear.
         silence = self.dir / "silence.wav"

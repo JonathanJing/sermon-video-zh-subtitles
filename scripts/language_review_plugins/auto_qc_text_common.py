@@ -653,14 +653,21 @@ def scripture_reference_problems(english: str, target: str, locale: str) -> list
     added_pairs = (target_pairs - english_pairs - colon_pairs) | (book_pairs - english_pairs)
     problems += [f"added reference {c}:{v}" for c, v in sorted(added_pairs)]
     # The book must survive translation: "Revelation 3:4" is not "Juan 3:4".
+    # When only one side spells the verse with the book ("John chapter three
+    # verse sixteen" vs "Romanos 3:16"), compare the books by chapter.
     english_books: dict[tuple[int, int | None], set[str]] = {}
+    english_chapter_books: dict[int, set[str]] = {}
     for code, chapter, verse in english_book_citations(english):
         if code is not None:
             english_books.setdefault((chapter, verse), set()).add(code)
+            english_chapter_books.setdefault(chapter, set()).add(code)
+
+    def book_changed(code: str, chapter: int, verse: int | None) -> bool:
+        books = english_books.get((chapter, verse)) or english_chapter_books.get(chapter)
+        return books is not None and code not in books
     problems += [f"book changed for {chapter}" + (f":{verse}" if verse is not None else "")
                  for code, chapter, verse, _ in citations
-                 if code is not None and (chapter, verse) in english_books
-                 and code not in english_books[(chapter, verse)]]
+                 if code is not None and book_changed(code, chapter, verse)]
     # A chapter-only citation the English never said ("요한복음 3장"). Without a
     # book name, a number the English said for another reason ("three sheets",
     # 종이 3장; "three chapters", 三章) is a counter, not a citation.
@@ -716,7 +723,13 @@ def script_problems(text: str, locale: str) -> list[str]:
     return problems
 
 
-def untranslated_problems(english: str, text: str, locale: str) -> list[str]:
+# One-word groups that legitimately read the same in Spanish and English.
+_SHARED_SINGLE_WORDS = frozenset({"no", "amen", "hallelujah", "hosanna", "selah", "maranatha", "shalom", "ok"})
+
+
+def untranslated_problems(english: str, text: str, locale: str,
+                          shared_terms: frozenset[str] = frozenset()) -> list[str]:
+    """``shared_terms``: folded glossary names that may stay as in English."""
     words = re.findall(r"[a-zA-Z']+", text)
     if locale in {"ko", "zh-Hans"}:
         latin_letters = sum(len(word) for word in words)
@@ -735,7 +748,23 @@ def untranslated_problems(english: str, text: str, locale: str) -> list[str]:
     if size >= 2 and not name_only and any(
             target_words[start:start + size] == english_words for start in range(len(target_words) - size + 1)):
         return ["English source text copied into target"]
+    # A one-word group copied as is ("Repent." -> "Repent."). A deliberate
+    # Spanish spelling (Amén, Jesús) differs before folding, so it is kept.
+    if (size == 1 and target_words == [_fold(english_words[0])]
+            and re.findall(r"[^\W\d_]+", text.casefold()) == [english_words[0]]
+            and english_words[0] not in _SHARED_SINGLE_WORDS | shared_terms):
+        return ["English source text copied into target"]
     return []
+
+
+def shared_terms(policy: dict | None) -> frozenset[str]:
+    """Glossary names whose source and target spellings may coincide."""
+    if not policy:
+        return frozenset()
+    return frozenset(_fold(word) for kind in ("properNames", "seriesNames")
+                     for term in policy.get("terminology", {}).get(kind, [])
+                     for value in (term.get("source"), term.get("target")) if value
+                     for word in re.findall(r"[a-zA-Z']+", _fold(value)))
 
 
 def name_problems(policy: dict, english: str, text: str) -> list[str]:
@@ -781,7 +810,8 @@ def review_auto_group(policy: dict, english_units: list[dict], group: dict, *,
     english_pairs, _ = english_references(english)
     checks = [
         ("target_script", script_problems(text, locale), "Target script share and placeholder screen"),
-        ("untranslated_source", untranslated_problems(english, text, locale), "Untranslated English screen"),
+        ("untranslated_source", untranslated_problems(english, text, locale, shared_terms(policy)),
+         "Untranslated English screen"),
         ("register", ["forbidden register form"] if re.search(forbidden_register, text, re.I) else [],
          "Forbidden register pattern screen"),
         ("proper_names", name_problems(policy, english, text), "Policy terminology mentioned in English"),

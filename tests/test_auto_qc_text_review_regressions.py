@@ -45,6 +45,33 @@ class TextReviewRegressions(unittest.TestCase):
         self.assertEqual(rules.scripture_reference_problems(
             "Read 1 John 3.", "Primera de Juan capítulo tres", "es"), [])
 
+    def test_book_identity_survives_spoken_verse_notation(self):
+        for english in ("John chapter three verse sixteen", "John 3:16"):
+            for locale, good, bad in (
+                ("es", "Juan 3:16", "Romanos 3:16"),
+                ("es", "Juan capítulo tres versículo dieciséis", "Romanos capítulo tres versículo dieciséis"),
+                ("ko", "요한복음 3:16", "로마서 3:16"),
+                ("zh-Hans", "约翰福音3:16", "罗马书3:16"),
+            ):
+                with self.subTest(english=english, locale=locale, bad=bad):
+                    self.assertNotIn("book changed for 3:16", rules.scripture_reference_problems(english, good, locale))
+                    self.assertIn("book changed for 3:16", rules.scripture_reference_problems(english, bad, locale))
+
+    def test_one_word_spanish_copies_are_untranslated(self):
+        for english, target in (("Repent.", "Repent."), ("Listen!", "listen"), ("Believe.", "Believe.")):
+            with self.subTest(target=target):
+                self.assertEqual(rules.untranslated_problems(english, target, "es"),
+                                 ["English source text copied into target"])
+        # Translations, deliberate Spanish spellings and shared liturgical words stay.
+        for english, target in (("Repent.", "Arrepiéntanse."), ("Amen.", "Amén."), ("Amen.", "Amen."),
+                                ("Jesus.", "Jesús."), ("Hallelujah!", "Hallelujah!")):
+            with self.subTest(target=target):
+                self.assertEqual(rules.untranslated_problems(english, target, "es"), [])
+        # A glossary name may read the same in both languages.
+        policy = {"terminology": {"properNames": [{"source": "David", "target": "David"}], "seriesNames": []}}
+        self.assertTrue(rules.untranslated_problems("David.", "David.", "es"))
+        self.assertEqual(rules.untranslated_problems("David.", "David.", "es", rules.shared_terms(policy)), [])
+
     def test_chinese_complete_numerals(self):
         for value, bad in ((5, "十五个人"), (12, "一百十二个人"), (2, "两百个人"),
                            (5, "五十个人"), (5, "五佰个人"), (2026, "二〇二六五年"), ("2.5", "十二点五个人"),

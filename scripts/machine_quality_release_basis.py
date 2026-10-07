@@ -305,7 +305,23 @@ def track_check_problems(package: dict, track_check: dict | None, implementation
                 "scheduleJsonSha256": (package.get("schedule") or {}).get("jsonSha256"),
                 "unitAudioSha256s": [row["audio"]["sha256"] for row in package["units"]],
                 "implementationSha256": implementation}
-    return [f"track check {key} differs" for key, value in expected.items() if track_check.get(key) != value]
+    problems = [f"track check {key} differs" for key, value in expected.items() if track_check.get(key) != value]
+    # The comparison must run under the release settings, by the method the track needs.
+    from scripts.target_audio_auto_qc import TRACK_ENVELOPE
+    if track_check.get("settings") != TRACK_ENVELOPE:
+        problems.append("track check settings differ from the release settings")
+    compressed = Path(package["track"]["path"]).suffix.lower() != ".wav"
+    if track_check.get("method") != {"pcm": "sample_exact_scheduled_placement",
+                                     "compressed": "decoded_waveform" if compressed else None}:
+        problems.append("track check method differs from the track format")
+    waveform, envelope = track_check.get("waveform"), track_check.get("envelope")
+    if compressed and not (isinstance(waveform, dict) and isinstance(envelope, dict)
+                           and isinstance(waveform.get("audibleWindows"), int) and waveform["audibleWindows"] > 0
+                           and waveform.get("deviantWindows") == 0):
+        problems.append("track check lacks passing compressed-waveform evidence")
+    if not compressed and (waveform is not None or envelope is not None):
+        problems.append("track check reports compressed evidence for a PCM track")
+    return problems
 
 
 def build_audio_waiver(package: dict, screening: dict, audio_qc: dict, text_waiver: dict,
