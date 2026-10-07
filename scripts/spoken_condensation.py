@@ -356,6 +356,8 @@ def qc_groups(binding: dict, anchor: dict, spoken: dict) -> list[dict]:
     they are judged by the core-meaning rubric."""
     if binding.get("schemaVersion") != BINDING_SCHEMA or binding.get("status") != "pass":
         raise ValueError("Spoken candidate binding did not pass")
+    if binding.get("implementationSha256") != waiver.implementation_sha256():
+        raise ValueError("Binding uses an obsolete QC implementation; rebind the candidate")
     if binding.get("spokenCandidateJsonSha256") != _sha(spoken):
         raise ValueError("Binding belongs to another spoken candidate")
     english = {unit["sourceUnitId"]: unit["english"] for unit in anchor["sourceUnits"]}

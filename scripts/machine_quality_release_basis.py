@@ -244,7 +244,10 @@ def build_text_waiver(source: dict, anchor: dict, candidate: dict, text_qc: dict
     summary = calibration_summary(calibration, locale, implementation, require_spoken=bool(condensed))
     runtime = waiver.runtime_identity_problems(calibration, text_qc=text_qc)
     _require(not runtime, "Text QC runtime differs from calibration: " + "; ".join(runtime))
-    inputs = waiver.input_problems(calibration, text_qc=text_qc)
+    inputs = waiver.input_problems(calibration, text_qc=text_qc, candidate=candidate)
+    full_sha = (condensation_binding or {}).get("fullCandidateJsonSha256")
+    if condensed and (not full_sha or (calibration.get("inputs") or {}).get("candidateJsonSha256") != full_sha):
+        inputs.append("calibration does not bind the condensation's full candidate; recalibrate")
     _require(not inputs, "Calibration does not cover this text: " + "; ".join(inputs))
     receipt = {
         "schemaVersion": TEXT_WAIVER_SCHEMA, "reviewKind": REVIEW_KIND, "humanApproval": False,
@@ -466,7 +469,8 @@ def build_audio_waiver(package: dict, screening: dict, audio_qc: dict, text_waiv
     summary = calibration_summary(calibration, locale, implementation, require_audio=True)
     runtime = waiver.runtime_identity_problems(calibration, audio_qc=audio_qc)
     _require(not runtime, "Audio QC runtime differs from calibration: " + "; ".join(runtime))
-    inputs = waiver.input_problems(calibration, audio_qc=audio_qc)
+    inputs = waiver.input_problems(calibration, audio_qc=audio_qc, candidate=candidate,
+                                   condensed=bool(text_waiver["condensedGroupIds"]))
     _require(not inputs, "Calibration does not cover this audio: " + "; ".join(inputs))
     # Unit checks say nothing about the track listeners hear.
     track = track_check_problems(package, track_check, implementation)

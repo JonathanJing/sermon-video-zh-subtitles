@@ -36,7 +36,7 @@ except ImportError:
 SCHEMA = "sermon-target-language-audio-screening-v2"
 # How a recognized text is scored against the expected text; part of the recorded runtime.
 SCORING = ("token-sequence-ratio-v2; short units (<4 tokens) must match exactly; "
-           "no negation or number may differ")
+           "no negation, number or protected name may differ")
 MODEL = "Qwen/Qwen3-ASR-0.6B"
 BATCH_SIZES = (1, 2, 4, 8)
 
@@ -84,7 +84,8 @@ def tokens(value: str, locale: str) -> list[str]:
 # A dub that drops or changes one of these reverses or alters its claim while
 # the token ratio stays high ("not" in 13 words still scores 0.96), so an ASR
 # difference that touches one never passes on the ratio alone.
-NEGATIONS = {"zh-Hans": ("不", "没", "沒", "别", "未", "非", "无", "勿", "否"),
+NEGATIONS = {"en": ("no", "not", "never", "neither", "nor", "without", "cannot"),
+             "zh-Hans": ("不", "没", "沒", "别", "未", "非", "无", "勿", "否"),
              "ko": ("아니", "않", "안", "못", "없"),
              "es": ("no", "ni", "nunca", "jamás", "jamas", "tampoco", "nadie", "nada", "ningún", "ningun",
                     "ninguno", "ninguna", "sin")}
@@ -105,7 +106,53 @@ def key_word(tokens: list[str], locale: str) -> bool:
     if locale in {"zh-Hans", "ko"}:
         return (any(marker in joined for marker in NEGATIONS.get(locale, ()))
                 or locale == "zh-Hans" and any(char in ZH_NUMERALS for char in joined))
-    return any(token in NEGATIONS.get(locale, ()) or token in ES_NUMBERS for token in tokens)
+    return any(token in NEGATIONS.get(locale, ()) or token in ES_NUMBERS
+               or locale == "es" and token.startswith("veinti") for token in tokens)
+
+
+def protected_text_agrees(expected: str, recognized: str, locale: str) -> bool:
+    """Check whole numeral forms and names that cannot be identified from a partial diff."""
+    from scripts.language_review_plugins import auto_qc_text_common as rules
+    left, right = (unicodedata.normalize("NFC", rules._fold(text)) for text in (expected, recognized))
+    if locale == "en" and len(re.findall(r"\b[a-z]+n['’]t\b", left)) != len(re.findall(r"\b[a-z]+n['’]t\b", right)):
+        return False
+    if locale in {"zh-Hans", "ko", "es"}:
+        def citations(text):
+            if locale == "ko":
+                # Keep raw Sino numeral groups: accent folding decomposes Hangul.
+                return [match.groups() for match in rules._KO_CITATION.finditer(text)]
+            return [(book, chapter, verse) for book, chapter, verse, _ in rules.book_citations(text, locale)]
+        if citations(expected) != citations(recognized):
+            return False
+    if locale == "en" and rules.english_numbers(expected) != rules.english_numbers(recognized):
+        return False
+    if locale == "ko":
+        counters = "|".join(rules._KO_COUNTERS)
+        pattern = r"(?<![가-힣])[영공일이삼사오육칠팔구십백천만억]+(?=\s*(?:" + counters + r")|\s|$)"
+        if re.findall(pattern, left) != re.findall(pattern, right):
+            return False
+        for number in range(1, 100):
+            for form in rules.korean_native(number):
+                pattern = rules._ko_pattern(form)
+                if len(re.findall(pattern, left)) != len(re.findall(pattern, right)):
+                    return False
+    books = (rules._EN_BOOK_CODES if locale == "en" else rules._ES_BOOK_CODES if locale == "es"
+             else rules._KO_BOOK_CODES if locale == "ko" else rules._ZH_BOOK_CODES)
+    names = {key[-1] if isinstance(key, tuple) else key for key in books}
+    names.update({"en": ("Jesus", "God"), "es": ("Jesús", "Dios"),
+                  "ko": ("예수", "하나님"), "zh-Hans": ("耶稣", "神")}.get(locale, ()))
+    if locale in {"en", "es"}:
+        # The approved script supplies names; ASR capitalization is irrelevant.
+        names.update(term for term in re.findall(r"\b[A-ZÁÉÍÓÚÜÑ][a-záéíóúüñ]+", expected)
+                     if term.casefold() not in {"the", "he", "she", "we", "you", "they", "it", "this", "that",
+                                                "some", "let", "in", "on", "for", "during", "when", "if",
+                                                "el", "la", "los", "las", "un", "una", "él", "ella", "hoy", "en"})
+    pattern = "|".join(re.escape(unicodedata.normalize("NFC", rules._fold(name)))
+                       for name in sorted(names, key=len, reverse=True))
+    if locale in {"en", "es"}:
+        pattern = r"(?<!\w)(?:" + pattern + r")(?!\w)"
+    # Order matters too: exchanging two names preserves counts but changes who did what.
+    return re.findall(pattern, left) == re.findall(pattern, right)
 
 
 def score(expected: str, recognized: str, locale: str, min_similarity: float) -> tuple[float, list[dict], bool]:
@@ -122,7 +169,8 @@ def score(expected: str, recognized: str, locale: str, min_similarity: float) ->
     # missing word, so require exact normalized ASR for them.
     passed = (similarity >= min_similarity and (len(expected_tokens) >= 4 or not differences)
               and not any(key_word(row["expected"], locale) or key_word(row["recognized"], locale)
-                          for row in differences))
+                          for row in differences)
+              and protected_text_agrees(expected, recognized, locale))
     return similarity, differences, passed
 
 

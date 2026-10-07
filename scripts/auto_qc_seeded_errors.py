@@ -420,19 +420,27 @@ def calibrate_audio(units: list[dict], locale: str, *, asr=None, max_trials: int
 
 
 def calibration_inputs(groups: list[dict], units: list[dict] | None, spoken_groups: list[dict] | None,
-                       policy: dict | None) -> dict:
+                       policy: dict | None, candidate: dict | None = None,
+                       spoken_candidate: dict | None = None) -> dict:
     """What the calibration seeded, hashed as the QC receipts record it, so a waiver
     can check that the calibration exercised the artifacts it releases."""
     def text_rows(rows):
         return [{"groupId": row["groupId"], "englishSha256": _text_sha(row["english"]),
-                 "targetTextSha256": _text_sha(row["targetText"])} for row in rows]
+                 "targetTextSha256": _text_sha(row["targetText"]),
+                 "sourceUnitIdsSha256": waiver.json_sha256(row.get("sourceUnitIds")),
+                 "mode": "spoken_condensed" if row.get("condensation") else "full"} for row in rows]
 
     return {"textGroupsSha256": waiver.text_inputs_sha256(text_rows(groups)),
             "spokenGroupsSha256": waiver.text_inputs_sha256(text_rows(spoken_groups)) if spoken_groups else None,
             "audioUnitsSha256": None if not units else waiver.audio_inputs_sha256(
                 [{"groupId": unit["groupId"], "audioSha256": hashlib.sha256(unit["wav"]).hexdigest(),
-                  "textSha256": _text_sha(unit["text"])} for unit in units]),
-            "policyJsonSha256": None if policy is None else waiver.json_sha256(policy)}
+                  "textSha256": _text_sha(unit["text"]),
+                  "sourceSeconds": float(unit["sourceSeconds"])} for unit in units]),
+            "policyJsonSha256": None if policy is None else waiver.json_sha256(policy),
+            "englishSourcePackageJsonSha256": (candidate or {}).get("englishSourcePackageJsonSha256"),
+            "anchorManifestJsonSha256": (candidate or {}).get("anchorManifestSha256"),
+            "candidateJsonSha256": None if candidate is None else waiver.json_sha256(candidate),
+            "spokenCandidateJsonSha256": None if spoken_candidate is None else waiver.json_sha256(spoken_candidate)}
 
 
 def _text_sha(text: str) -> str:
@@ -441,14 +449,15 @@ def _text_sha(text: str) -> str:
 
 def calibrate(locale: str, groups: list[dict], units: list[dict] | None = None, *,
               policy: dict | None = None, call=None, identity: dict | None = None, asr=None,
-              spoken_groups: list[dict] | None = None, max_trials: int = 30) -> dict:
+              spoken_groups: list[dict] | None = None, max_trials: int = 30,
+              candidate: dict | None = None, spoken_candidate: dict | None = None) -> dict:
     """``identity`` names the back-translation runtime behind ``call`` and is required with it.
     ``spoken_groups`` are the text QC groups of a clean spoken candidate with
     condensed groups; without them a calibration cannot back such a candidate."""
     if call is not None and identity is None:
         raise ValueError("A back-translation transport needs its semantic identity")
     bound = text_qc.semantic_identity(identity) if call is not None else None
-    inputs = calibration_inputs(groups, units, spoken_groups, policy)
+    inputs = calibration_inputs(groups, units, spoken_groups, policy, candidate, spoken_candidate)
     text = calibrate_text(groups, locale, policy=policy, call=call, max_trials=max_trials)
     audio = calibrate_audio(units, locale, asr=asr, max_trials=max_trials) if units else None
     spoken = (calibrate_spoken(spoken_groups, locale, policy=policy, call=call, max_trials=max_trials)
@@ -482,7 +491,7 @@ def main() -> None:
     parser.add_argument("--input", required=True, type=Path,
                         help="{locale, groups:[{groupId, english, targetText}], units?:[{groupId, text, "
                              "sourceSeconds, wavPath, asr?}], spokenGroups?:[spoken_condensation.py qc-groups "
-                             "output], policy?}")
+                             "output], policy?, candidate?, spokenCandidate?}")
     parser.add_argument("--out", required=True, type=Path)
     parser.add_argument("--max-trials", type=int, default=30)
     args = parser.parse_args()
@@ -495,7 +504,8 @@ def main() -> None:
     # this offline entry records semanticChecksIncluded=false and no wrong_sentence
     # trials, so it cannot unlock a waiver.
     receipt = calibrate(value["locale"], value["groups"], units, policy=value.get("policy"),
-                        spoken_groups=value.get("spokenGroups"), max_trials=args.max_trials)
+                        spoken_groups=value.get("spokenGroups"), max_trials=args.max_trials,
+                        candidate=value.get("candidate"), spoken_candidate=value.get("spokenCandidate"))
     args.out.parent.mkdir(parents=True, exist_ok=True)
     with args.out.open("x", encoding="utf-8") as stream:
         json.dump(receipt, stream, ensure_ascii=False, indent=2, sort_keys=True)

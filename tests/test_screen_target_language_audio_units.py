@@ -9,6 +9,44 @@ from scripts import sermon_sentence_interpretation as identity
 
 
 class FormalAudioScreenTests(unittest.TestCase):
+    def test_long_units_preserve_negations_numbers_and_names(self):
+        cases = [
+            ("en", "Jesus does not leave us alone when we are walking through difficult days.", "not "),
+            ("zh-Hans", "耶稣不会在我们失败的时候丢下我们，他始终与我们同行。", "不"),
+            ("ko", "예수님은 우리가 실패할 때 우리를 홀로 두지 않으십니다.", "않"),
+            ("es", "Jesús no nos deja solos cuando pasamos por los momentos difíciles de nuestra vida.", "no "),
+            ("en", "We saw twelve people waiting in the church after the service today.", "twelve "),
+            ("zh-Hans", "今天我们看见教会门口有十二个人一直在等待牧师走出来。", "二"),
+            ("es", "Hoy vimos doce personas esperando en la iglesia después del servicio de la mañana.", "doce "),
+            ("ko", "오늘 교회 앞에서 이십일 명이 예배가 끝나기를 기다리고 있었습니다.", "일"),
+            ("ko", "오늘 요한복음삼장사절에서 예수님께서 우리에게 하시는 말씀을 읽겠습니다.", "사"),
+            ("en", "We heard Jesus speaking to the church as they gathered together today.", "Jesus "),
+            ("en", "Paul spoke to all the people gathered in the church that morning.", "Paul "),
+            ("zh-Hans", "今天我们在教会里听见耶稣对我们每一个人所说的话。", "耶稣"),
+        ]
+        for locale, expected, omitted in cases:
+            with self.subTest(locale=locale, omitted=omitted):
+                similarity, _, passed = subject.score(expected, expected.replace(omitted, "", 1), locale, 0.88)
+                self.assertGreaterEqual(similarity, 0.88)
+                self.assertFalse(passed)
+
+    def test_punctuation_and_capitalization_remain_acceptable(self):
+        self.assertTrue(subject.score("Jesus saves us every day.", "jesus saves us every day", "en", 0.88)[2])
+
+    def test_contracted_negation_cannot_disappear_in_long_units(self):
+        for negative, positive in (("can't", "can"), ("doesn't", "does"), ("won’t", "will")):
+            expected = f"Jesus {negative} leave people alone in the church when they need help today."
+            similarity, _, passed = subject.score(expected, expected.replace(negative, positive), "en", 0.88)
+            self.assertGreaterEqual(similarity, 0.88)
+            self.assertFalse(passed)
+
+    def test_protected_names_cannot_swap_roles(self):
+        expected = "Pedro dijo que Juan estaba escuchando toda la enseñanza que el pastor explicó a la iglesia durante la mañana."
+        heard = expected.replace("Pedro", "Juan").replace("que Juan", "que Pedro")
+        similarity, _, passed = subject.score(expected, heard, "es", 0.88)
+        self.assertGreaterEqual(similarity, 0.88)
+        self.assertFalse(passed)
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)

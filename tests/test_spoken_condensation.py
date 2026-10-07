@@ -349,6 +349,10 @@ class SpokenQcTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "did not pass"):
             condensation.qc_groups({**self.binding, "status": "fail"}, anchor(), self.spoken)
 
+    def test_qc_groups_reject_obsolete_checker_binding(self):
+        with self.assertRaisesRegex(ValueError, "obsolete QC implementation"):
+            condensation.qc_groups({**self.binding, "implementationSha256": "0" * 64}, anchor(), self.spoken)
+
     def test_condensed_groups_skip_the_length_outlier_check(self):
         group = {"english": "x" * 100, "targetText": "短"}
         condensed = {**group, "condensation": self.groups[1]["condensation"]}

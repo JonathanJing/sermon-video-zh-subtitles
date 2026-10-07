@@ -208,17 +208,20 @@ def runtime_identity_problems(calibration: dict | None, *, text_qc: dict | None 
 
 def text_inputs_sha256(rows: list[dict]) -> str:
     """One hash of the groups a text QC or calibration screened, in order."""
-    return json_sha256([[row.get("groupId"), row.get("englishSha256"), row.get("targetTextSha256")]
+    return json_sha256([[row.get("groupId"), row.get("englishSha256"), row.get("targetTextSha256"),
+                            row.get("sourceUnitIdsSha256"), row.get("mode", "full")]
                         for row in rows])
 
 
 def audio_inputs_sha256(rows: list[dict]) -> str:
     """One hash of the audio units an audio QC or calibration screened, in order."""
-    return json_sha256([[row.get("groupId"), row.get("audioSha256"), row.get("textSha256")] for row in rows])
+    return json_sha256([[row.get("groupId"), row.get("audioSha256"), row.get("textSha256"),
+                            row.get("sourceSeconds")] for row in rows])
 
 
 def input_problems(calibration: dict | None, *, text_qc: dict | None = None,
-                   audio_qc: dict | None = None) -> list[str]:
+                   audio_qc: dict | None = None, candidate: dict | None = None,
+                   condensed: bool = False) -> list[str]:
     """The calibration must have planted its errors in the artifacts the QC receipts screened."""
     if calibration is None:
         return []
@@ -234,6 +237,20 @@ def input_problems(calibration: dict | None, *, text_qc: dict | None = None,
             problems.append("calibration used another translation policy")
     if audio_qc is not None and inputs.get("audioUnitsSha256") != audio_inputs_sha256(audio_qc.get("results") or []):
         problems.append("calibration did not seed errors into the screened audio units")
+    if candidate is not None:
+        is_spoken = condensed or bool((text_qc or {}).get("condensedGroupIds"))
+        expected = {"englishSourcePackageJsonSha256": candidate.get("englishSourcePackageJsonSha256"),
+                    "anchorManifestJsonSha256": candidate.get("anchorManifestSha256"),
+                    "policyJsonSha256": candidate.get("translationPolicySha256"),
+                    "spokenCandidateJsonSha256" if is_spoken else "candidateJsonSha256": json_sha256(candidate)}
+        for key, value in expected.items():
+            if not value or inputs.get(key) != value:
+                problems.append(f"calibration does not bind the current {key}; recalibrate")
+        if text_qc is not None:
+            for group, row in zip(candidate.get("groups") or [], text_qc.get("results") or []):
+                ids = group.get("sourceUnitIds")
+                if not ids or row.get("sourceUnitIdsSha256") != json_sha256(ids):
+                    problems.append("text QC and calibration do not bind the current source units")
     return problems
 
 
@@ -329,7 +346,7 @@ def waive(locale: str, candidate: dict, text_qc: dict, audio_qc: dict | None,
                                               require_audio=audio_qc is not None,
                                               require_spoken=bool(condensed))
     calibration_issues += runtime_identity_problems(calibration, text_qc=text_qc, audio_qc=audio_qc)
-    calibration_issues += input_problems(calibration, text_qc=text_qc, audio_qc=audio_qc)
+    calibration_issues += input_problems(calibration, text_qc=text_qc, audio_qc=audio_qc, candidate=candidate)
     if pending:
         status, reasons = "repair_in_progress", [f"{len(pending)} groups still have repairs pending"]
     elif calibration_issues:

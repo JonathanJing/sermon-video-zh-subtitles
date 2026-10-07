@@ -83,7 +83,7 @@ def bound_ledger(kind, qc, locale, source_sha, anchor_sha, groups):
              "failedSourceUnitIds": [], "failedAttempts": {}}]
 
 
-def seeded_into(cal, *, text=None, audio=None):
+def seeded_into(cal, *, text=None, audio=None, candidate=None, condensed=False, full_candidate_sha=None):
     """``cal`` as if its errors were seeded into what ``text``/``audio`` QC screened,
     unless the test names its inputs."""
     inputs = dict(cal.get("inputs") or {})
@@ -93,11 +93,19 @@ def seeded_into(cal, *, text=None, audio=None):
         inputs.setdefault("policyJsonSha256", text.get("policyJsonSha256"))
     if audio is not None:
         inputs.setdefault("audioUnitsSha256", waiver.audio_inputs_sha256(audio.get("results") or []))
+    if candidate is not None:
+        inputs.setdefault("englishSourcePackageJsonSha256", candidate.get("englishSourcePackageJsonSha256"))
+        inputs.setdefault("anchorManifestJsonSha256", candidate.get("anchorManifestSha256"))
+        inputs.setdefault("policyJsonSha256", candidate.get("translationPolicySha256"))
+        inputs.setdefault("spokenCandidateJsonSha256" if condensed else "candidateJsonSha256", basis.json_sha256(candidate))
+        if condensed:
+            inputs.setdefault("candidateJsonSha256", full_candidate_sha)
     return {**cal, "inputs": inputs}
 
 
 def issue_text(source, anchor, candidate, qc, cal, **kwargs):
-    cal = seeded_into(cal, text=qc)
+    cal = seeded_into(cal, text=qc, candidate=candidate, condensed=bool(qc.get("condensedGroupIds")),
+                      full_candidate_sha=(kwargs.get("condensation_binding") or {}).get("fullCandidateJsonSha256"))
     kwargs.setdefault("repair_ledger", bound_ledger("text", qc, candidate.get("targetLocale"),
                                                     basis.json_sha256(source), basis.json_sha256(anchor),
                                                     candidate.get("groups") or []))
@@ -105,7 +113,7 @@ def issue_text(source, anchor, candidate, qc, cal, **kwargs):
 
 
 def issue_audio(package, screening, qc, text, cal, **kwargs):
-    cal = seeded_into(cal, audio=qc)
+    cal = seeded_into(cal, audio=qc, candidate=kwargs["candidate"], condensed=bool(text["condensedGroupIds"]))
     kwargs.setdefault("repair_ledger", bound_ledger("audio", qc, package["targetLocale"],
                                                     package["englishSourcePackageJsonSha256"],
                                                     basis.json_sha256(kwargs["anchor"]), kwargs["candidate"]["groups"]))
@@ -133,6 +141,38 @@ class TextWaiverTests(unittest.TestCase):
         return speech.prepare_job(self.source_package_path, self.anchor_path, self.candidate_path,
                                   self.policy_path, receipt_path or self.waiver_path, self.adapter_path,
                                   self.registry_path, self.root / name)
+
+    def test_calibration_binds_current_source_anchor_and_candidate(self):
+        qc = text_qc(self.candidate, self.anchor)
+        cal = seeded_into(calibration(), text=qc, candidate=self.candidate)
+        for key in ("englishSourcePackageJsonSha256", "anchorManifestJsonSha256", "candidateJsonSha256"):
+            stale = copy.deepcopy(cal)
+            stale["inputs"][key] = "0" * 64
+            with self.subTest(key=key), self.assertRaisesRegex(ValueError, "calibration does not bind the current"):
+                issue_text(self.source_package, self.anchor, self.candidate, qc, stale)
+
+    def test_diagnostic_waiver_cannot_authorize_unbound_candidate_or_source_units(self):
+        qc = text_qc(self.candidate, self.anchor)
+        cal = seeded_into(calibration(), text=qc, candidate=self.candidate)
+        self.assertTrue(waiver.waive("ko", self.candidate, qc, None, cal)["releaseEligible"])
+        missing = copy.deepcopy(cal)
+        del missing["inputs"]["candidateJsonSha256"]
+        self.assertEqual(waiver.waive("ko", self.candidate, qc, None, missing)["status"], "blocked_calibration")
+        unjoined = copy.deepcopy(qc)
+        del unjoined["results"][0]["sourceUnitIdsSha256"]
+        matched = seeded_into(calibration(), text=unjoined, candidate=self.candidate)
+        self.assertEqual(waiver.waive("ko", self.candidate, unjoined, None, matched)["status"], "blocked_calibration")
+
+    def test_calibration_hashes_source_unit_joins_and_audio_spans(self):
+        from scripts import auto_qc_seeded_errors as seeded
+        groups = [{"groupId": "g1", "english": "Same English", "targetText": "相同译文", "sourceUnitIds": ["u1"]}]
+        units = [{"groupId": "g1", "wav": b"same bytes", "text": "相同译文", "sourceSeconds": 2}]
+        baseline = seeded.calibration_inputs(groups, units, None, self.policy, self.candidate)
+        joined = seeded.calibration_inputs([{**groups[0], "sourceUnitIds": ["u2"]}], units, None, self.policy, self.candidate)
+        stretched = seeded.calibration_inputs(groups, [{**units[0], "sourceSeconds": 3}], None, self.policy, self.candidate)
+        self.assertNotEqual(baseline["textGroupsSha256"], joined["textGroupsSha256"])
+        self.assertNotEqual(baseline["audioUnitsSha256"], stretched["audioUnitsSha256"])
+        self.assertEqual(baseline["candidateJsonSha256"], basis.json_sha256(self.candidate))
 
     def test_waiver_is_disclosed_and_never_human(self):
         self.assertFalse(self.waiver["humanApproval"])
@@ -313,6 +353,7 @@ class TextWaiverTests(unittest.TestCase):
         binding = {"schemaVersion": basis.CONDENSATION_BINDING_SCHEMA, "status": "pass", "issues": [],
                    "humanApproval": False, "targetLocale": "ko", "implementationSha256": IMPLEMENTATION,
                    "spokenCandidateJsonSha256": interpretation.json_sha256(self.candidate),
+                   "fullCandidateJsonSha256": interpretation.json_sha256(self.candidate),
                    "groups": [{"translationGroupId": group["translationGroupId"],
                                "finalSpokenTextSha256": sha(group["targetText"])}]}
         kinds = {**calibration()["kinds"], **{f"spoken.{kind}": {"trials": 4, "detected": 4, "rate": 1.0}
@@ -400,6 +441,8 @@ def audio_sources():
     candidate = {"groups": [{"translationGroupId": "g1", "sourceUnitIds": ["u1"], "targetText": AUDIO_TEXTS[0]},
                             {"translationGroupId": "g2", "sourceUnitIds": ["u2", "u3"],
                              "targetText": AUDIO_TEXTS[1]}]}
+    candidate.update(englishSourcePackageJsonSha256="1" * 64,
+                     anchorManifestSha256=basis.json_sha256(anchor), translationPolicySha256="2" * 64)
     return anchor, candidate
 
 

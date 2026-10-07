@@ -207,7 +207,10 @@ def _ko_pattern(form: str, *, sino: bool = False) -> str:
         return left + re.escape(form) + r"(?=\s*(?:" + "|".join(_KO_COUNTERS) + r")|\s)"
     # A complete form, not the head of a longer number.
     right = ("[" + _KO_SINO_CONTINUATIONS + "]") if sino else "|".join(_KO_NATIVE_CONTINUATIONS)
-    return left + re.escape(form) + r"(?!" + right + r")"
+    counters = "|".join(map(re.escape, _KO_COUNTERS))
+    particles = r"(?:은|는|이|가|을|를|의|에|에서|으로|로|부터|까지|도|만)(?![가-힣])"
+    return (left + re.escape(form) + r"(?!" + right + r")"
+            + r"(?=(?![가-힣])|(?:" + counters + r")|" + particles + r")")
 
 
 def _decimal_digit_forms(value: str, *, comma: bool = False) -> set[str]:
