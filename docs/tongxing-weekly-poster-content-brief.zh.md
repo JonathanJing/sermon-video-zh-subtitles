@@ -1,6 +1,6 @@
 # 每周证道主视觉 brief 与提示词 v1
 
-本流程承接 [已确认海报格式](tongxing-weekly-poster-format.zh.md)。版式固定，视觉概念由当周内容决定；不是根据标题随机搭配风景。它是制作规范，尚未接入自动生成器。
+本流程承接 [已确认海报格式](tongxing-weekly-poster-format.zh.md)。版式固定，视觉概念由当周内容决定；不是根据标题随机搭配风景。新模板已接入多语言 CLI，主视觉仍按本规范用内置 ImageGen 生成一次，再自动合成各语言图片；命令见 [每周发行流程](tongxing-weekly-release.zh.md#多语言已发布页面海报新模板默认入口)。
 
 ## 三语页面优先
 

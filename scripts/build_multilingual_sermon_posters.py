@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build source-bound Chinese, Korean and Spanish posters for the existing App."""
+"""Build source-bound dual-QR weekly posters, with optional English reference artwork."""
 import argparse
 import datetime
 import hashlib
@@ -12,7 +12,8 @@ import tempfile
 from urllib.parse import urlencode, urlsplit
 from urllib.request import Request, urlopen
 
-from build_sermon_poster import digest, read, write, verify_outputs
+from build_sermon_poster import digest, read, write
+from weekly_poster_template import apply_template, verify_outputs, prepare_badges, add_english_reference
 
 COPY = {
     'zh-Hans': dict(lang='zh', brand='同行', eyebrow='本周证道 · 中文',
@@ -87,7 +88,7 @@ def checked_json(path, expected=None):
     return read(path), value
 
 
-def load_sources(release, page_id, origin):
+def load_sources(release, page_id, origin, english_reference=None):
     public = release / 'public'
     # New clients read v4 first; v3 is its human-only projection and lacks machine-checked weeks.
     name, version = next((row for row in CATALOGS if (public / row[0]).is_file()), CATALOGS[-1])
@@ -131,6 +132,10 @@ def load_sources(release, page_id, origin):
         bundles[locale] = dict(brief=brief, source=dict(pageId=page_id, targetLocale=locale,
             sourceIdentitySha256=page['sourceIdentitySha256'], catalogSha256=catalog_sha,
             releasePackageSha256=package_sha, contentSha256=content_sha, brief=brief))
+    for bundle in bundles.values():
+        apply_template(bundle)
+    if english_reference is not None:
+        add_english_reference(bundles, english_reference)
     return bundles, checks
 
 
@@ -154,6 +159,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for key in ('release', 'page-id', 'origin', 'out'):
         parser.add_argument('--' + key, required=True)
+    parser.add_argument('--english-reference', help='Source-bound English title/series/scripture JSON; references Chinese content, not an English release')
     parser.add_argument('--art')
     parser.add_argument('--art-prompt')
     parser.add_argument('--visual-reviewed', action='store_true')
@@ -162,10 +168,15 @@ def main():
     if out.is_relative_to(release) or release.is_relative_to(out):
         raise ValueError('poster output must be separate from the release')
     origin = origin_url(args.origin)
-    bundles, checks = load_sources(release, args.page_id, origin)
+    bundles, checks = load_sources(release, args.page_id, origin, read(args.english_reference) if args.english_reference else None)
     if bool(args.art) != bool(args.art_prompt) or (args.visual_reviewed and not args.art):
         raise ValueError('render/review requires both --art and --art-prompt')
     out.mkdir(parents=True, exist_ok=True)
+    scope_path = out / 'poster-scope.json'
+    scope = dict(pageId=args.page_id, locales=list(bundles))
+    if scope_path.exists() and read(scope_path) != scope:
+        raise ValueError('poster language scope changed; use a fresh output directory')
+    write(scope_path, scope)
     for locale, bundle in bundles.items():
         folder = out / locale
         folder.mkdir(exist_ok=True)
@@ -184,9 +195,10 @@ def main():
         return
     public_receipt = verify_public(origin, checks)
     write(out / 'public-input-verification.json', public_receipt)
-    renderer = Path(__file__).with_name('render_sermon_poster.swift')
+    renderer = Path(__file__).with_name('render_weekly_poster.swift')
     art, prompt = Path(args.art).resolve(), Path(args.art_prompt).resolve()
-    provenance = dict(artSha256=digest(art), promptSha256=digest(prompt),
+    badges = prepare_badges(out, bundles)
+    provenance = dict(templateVersion='tongxing-dual-qr-v1', templateSha256=digest(Path(__file__).with_name('weekly_poster_template.py')), badgeHashes={loc:digest(path) for loc,path in badges.items()}, artSha256=digest(art), promptSha256=digest(prompt),
                       rendererSha256=digest(renderer), builderSha256=digest(__file__))
     swift = shutil.which('swift')
     if not swift:
@@ -198,7 +210,7 @@ def main():
         if receipt.get('provenance') and receipt['provenance'] != provenance:
             raise ValueError('render inputs changed; use a fresh output directory')
         if receipt.get('outputs'):
-            hashes = verify_outputs(folder, bundle['brief']['qrURL'])
+            hashes = verify_outputs(folder, bundle['brief'])
             if hashes != receipt['outputs'] or digest(folder / 'artwork.png') != provenance['artSha256'] or digest(folder / 'art-prompt-used.txt') != provenance['promptSha256']:
                 raise ValueError('saved outputs or inputs were modified')
         else:
@@ -208,8 +220,8 @@ def main():
             shutil.copyfile(prompt, folder / 'art-prompt-used.txt')
             with tempfile.TemporaryDirectory(prefix='render-', dir=folder) as temporary:
                 subprocess.run([swift, '-module-cache-path', str(Path(tempfile.gettempdir()) / 'sermon-poster-swift-cache'),
-                                str(renderer), str(folder / 'poster-brief.json'), str(art), temporary], check=True)
-                hashes = verify_outputs(Path(temporary), bundle['brief']['qrURL'])
+                                str(renderer), str(folder / 'poster-brief.json'), str(art), str(badges[locale]), temporary], check=True)
+                hashes = verify_outputs(Path(temporary), bundle['brief'])
                 for name in hashes:
                     shutil.copyfile(Path(temporary) / name, folder / name)
         receipt.update(provenance=provenance, outputs=hashes, publicVerification=public_receipt,
@@ -218,7 +230,9 @@ def main():
             receipt.update(visualReview=dict(reviewer='codex', humanApproval=False),
                            visualReviewedAt=datetime.datetime.now(datetime.timezone.utc).isoformat())
         write(receipt_path, receipt)
-    print(json.dumps(dict(status='complete' if args.visual_reviewed else 'qr_verified_visual_review_pending',
+    write(out / 'poster-manifest.json', dict(schemaVersion='tongxing-poster-manifest-v1', templateVersion='tongxing-dual-qr-v1', artSha256=provenance['artSha256'], locales={loc:dict(receipt=str((out / loc / 'poster-receipt.json').relative_to(out)), contentLocale=b['source']['targetLocale'], announcementEligible=b['source'].get('announcementEligible',True)) for loc,b in bundles.items()}))
+    completed = all(read(out / loc / 'poster-receipt.json')['status'] == 'complete' for loc in bundles)
+    print(json.dumps(dict(status='complete' if completed else 'qr_verified_visual_review_pending',
                           out=str(out), locales=list(bundles))))
 
 
