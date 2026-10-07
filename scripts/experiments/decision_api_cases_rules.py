@@ -9,6 +9,7 @@ import copy
 from dataclasses import asdict
 import difflib
 import json
+import hashlib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -32,16 +33,201 @@ CHOICES = {
 }
 
 
+RULES_VERSION = 'weekly-rules-explicit-v2'
+TASK_CHOICES = {
+    'plan_repair': {
+        'action': CHOICES['action'][:6],
+        'status': CHOICES['status'][:5],
+        'reasonCode': CHOICES['reasonCode'][:7]+[
+            'recover_persisted_review_evidence','invalid_gate_evidence','unsupported_content_failure',
+            'language_plugin_failed','gate_requires_review','no_repair_required','gate_action_not_allowed',
+            'durable_budget_snapshot_required','content_revision_limit_reached','review_execution_limit_reached',
+            'repeated_failure_without_new_evidence','decision_proposal_limit_reached']},
+    'provider_error': {'reasonCode': ['http_request_rejected','unsupported_parameter','unsupported_value',
+        'json_mode_requires_json_word','invalid_api_key','insufficient_quota','rate_limit_exceeded',
+        'context_length_exceeded','model_not_found','audio_file_invalid']},
+    'asr_screening_rule_wrapper': {'status': ['pass','requires_review']},
+    'target_audio_timing_plan': {'formalScheduleStatus':['pass','fail'],
+                               'unchangedAudioCannotFitSerialTimeline':['true','false']},
+    'supervisor_recommend_action': {
+        'action':['wait_for_source','inspect_state','waiting_for_matching_sunday','restore_artifact_access',
+                  'request_window_approval','inspect_publication_evidence','complete','inspect_quality_evidence',
+                  'review_quality_failure','inspect_generation_failure','wait_for_active_run','run_timeline_probe',
+                  'waiting_for_source','waiting_for_post_live','operator_download_handoff','run_reading_pdf_generation',
+                  'resume_failed_timeline','inspect_timeline_failure','inspect_unrecognized_state'],
+        'humanActionRequired':['true','false']},
+}
+RULE_INSTRUCTIONS = {
+    'plan_repair': '''Reproduce a pure repair proposal, not execution. Evaluate in order: (1) review executionStatus=outcome_unknown or unresolved budget operation -> reconcile/reconciliation_required/review_outcome_unknown; (2) persistence_failed, or saved_review_response with failed/cancelled -> reconcile/reconciliation_required/recover_persisted_review_evidence; (3) stale_identity or unknown_rubric gate reason -> reconcile/reconciliation_required/invalid_gate_evidence; (4) review_conflict gate or contradictory_reviews issue -> request_human_review/proposal/contradictory_reviews; (5) source_not_ready gate or source_ambiguity issue -> request_source_review/proposal/source_ambiguity; (6) failed/cancelled execution -> retry_review/proposal/review_execution_failed; (7) inconclusive/not_assessed verdict or evidence_insufficient issue -> request_human_review/proposal/evidence_insufficient; (8) needs_rework verdict -> repair_translation/proposal/known_content_failure if all issue codes are content codes; otherwise escalate_engineering/proposal/unsupported_content_failure; (9) gate language_plugin_failed -> escalate_engineering/proposal/language_plugin_failed; (10) gate not admitted -> request_human_review/proposal/gate_requires_review; otherwise no repair. Reconcile always stops. A non-reconcile action absent from gate.allowedNextActions is blocked/gate_action_not_allowed. Paid repair/retry without budget is blocked/durable_budget_snapshot_required. Repair with content_revisions_reserved >= limits.content_revisions is blocked/content_revision_limit_reached; retry with review_attempts_reserved >= limits.review_attempts_per_revision is blocked/review_execution_limit_reached. A repeated failure fingerprint blocks repair. Only when scope_ambiguous is true and a content repair is otherwise a proposal, change status to decision_proposal_required and reason to semantic_repair_scope_ambiguous (or blocked/decision_proposal_limit_reached when proposals consumed). Human/source review actions remain status proposal; no approval or actual execution occurs.''',
+    'provider_error': '''Reproduce bounded provider_error.diagnostic: default reason http_request_rejected. Use allowlisted error code when it is a supported reason. On HTTP 400, messages param or absent param and message contains both 'must contain the word' and 'json' -> json_mode_requires_json_word. On HTTP 400, an allowlisted non-messages param and message starts 'unsupported parameter:' -> unsupported_parameter. On HTTP 400 with known audio corruption phrase -> audio_file_invalid. Unknown codes/messages preserve default. This task diagnoses fixed error evidence only.''',
+    'asr_screening_rule_wrapper': '''Compare the shared already-frozen ASR with expectedText; do not transcribe or judge actual audio. Normalize both with Unicode NFKC then casefold. For zh-Hans/ko, tokens are individual alphanumeric characters; for other locales use Unicode word tokens excluding underscores. Compute difflib.SequenceMatcher(expectedTokens, recognizedTokens, autojunk=False).ratio(), rounded to 6 digits. status is pass ONLY IF rounded similarity >= policy.minSimilarity AND (expected token count >= 4 OR normalized token sequences exactly equal). Otherwise status is requires_review, including empty recognized text. A semantic paraphrase, homophone, or tiny material difference does not override this literal rule. This is rule fidelity, not correctness/naturalness/approval.''',
+    'target_audio_timing_plan': '''Reproduce measured formal scheduling, not physical feasibility beyond supplied measurements. Initialize cursor=0. For each ordered row, plannedStart=max(sourceStart + reactionLagSeconds, cursor + (interUtteranceGapSeconds if not first else 0)); plannedEnd=plannedStart+audioSeconds; cursor=plannedEnd. formalScheduleStatus is fail if ANY plannedEnd > source_seconds + 0.000001 OR plannedEnd-sourceEnd > maxEndLagSeconds + 0.000001; otherwise pass. Exceeding a row's own source span alone is NOT formal failure. Compute serialLowerBound=first sourceStart + reactionLagSeconds + sum(audioSeconds) + (rowCount-1)*interUtteranceGapSeconds. unchangedAudioCannotFitSerialTimeline is true ONLY IF serialLowerBound-source_seconds > 0.000001, else false. This second question is a total-duration lower-bound test independent of end-lag violations: formal fail can coexist with serial false. Nothing grants approval.''',
+    'supervisor_recommend_action': '''Reproduce recommend_action on stateInputs. Apply these conditions in strict order, returning the exact action and current human flag: (1) missing live_url -> wait_for_source/true; invalid non-string nonempty state.lastSunday -> inspect_state/true; different lastSunday -> waiting_for_matching_sunday/false; any access_issues -> restore_artifact_access/true. (2) generation completed: all THREE reading_qa, reading_quality, interpretation_qa status pass required; any missing/fail -> inspect_quality_evidence/true; all pass but approval_valid false -> request_window_approval/true; publication_required and generation publication.status != pass -> inspect_publication_evidence/true; otherwise complete/false. (3) run_status.blocker.reason reading_quality_needs_review or pdf_qa_needs_review -> review_quality_failure/true. (4) generation failed/error -> inspect_generation_failure/true. (5) active generation/timeline lease -> wait_for_active_run/false. (6) missing timeline_report -> run_timeline_probe/false. Timeline status waiting_for_source, waiting_for_matching_sunday, waiting_for_post_live -> same action/false; waiting_for_download_access -> operator_download_handoff/true; requires_operator_review or already_requires_operator_review with approval_valid false -> request_window_approval/true, with approval_valid true -> run_reading_pdf_generation/false. Failed/error timeline requires source-bound archive resumability: only verified resumable archive failure -> resume_failed_timeline/false; otherwise inspect_timeline_failure/true. Unknown timeline -> inspect_unrecognized_state/true. humanActionRequired means a HUMAN ACTION IS STILL NEEDED NOW, not that the workflow generally requires human approval; an already valid approval satisfies that requirement. A waiting state has false unless a condition explicitly says true.''',
+}
+DESCRIPTIONS = {
+    'pass':'The exact task-specific deterministic predicate passes; no human approval implied.',
+    'requires_review':'The literal ASR screening predicate fails; not an audio correctness verdict.',
+    'proposal':'A deterministic next-action proposal; no execution or approval granted.',
+    'decision_proposal_required':'Explicit scope_ambiguous asks for bounded content-repair decision.',
+    'reconciliation_required':'Unknown/stale/persistence state needs reconciliation before operations.',
+    'fail':'A formal schedule end-lag or clip-tail constraint is violated.',
+}
+
+
 def _questions(adapter, labels):
-    return [{'name': key, 'type': 'choice',
-             'instructions': f'Apply the supplied evidence and policy for {adapter}. Return {key}; '
-                             'the task is an offline rule subtask and grants no execution or approval.',
-             'choices': [{'value': value, 'description': value} for value in CHOICES[key]]}
-            for key in labels]
+    result=[]
+    for key in labels:
+        choices=[]
+        for value in TASK_CHOICES[adapter][key]:
+            description=DESCRIPTIONS.get(value,'Select this exact named route only when its ordered condition holds.')
+            if value in ('true','false'):
+                if key=='unchangedAudioCannotFitSerialTimeline':
+                    description=('Serial lower bound EXCEEDS clip duration plus epsilon: unchanged audio cannot fit.' if value=='true'
+                                 else 'Serial lower bound DOES NOT exceed duration: this test does not prove impossibility.')
+                else:
+                    description=('An unmet condition needs human action NOW.' if value=='true'
+                                 else 'Execute, wait, or complete without a NEW human action.')
+            choices.append({'value':value,'description':description})
+        result.append({'name':key,'type':'choice','instructions':RULE_INSTRUCTIONS[adapter]+f' Return the label for {key}.',
+                       'choices':choices})
+    return result
+
+
+def _json_sha(value):
+    return hashlib.sha256(json.dumps(value, ensure_ascii=False, sort_keys=True,
+        separators=(',', ':'), allow_nan=False).encode()).hexdigest()
+
+
+def _read_frozen_json(path):
+    """Read JSON only; never probe media or dispatch an ASR model."""
+    path=Path(path)
+    if path.suffix != '.json' or path.is_symlink() or path.stat().st_size > 32*1024*1024:
+        raise ValueError('invalid_real_rule_json_artifact')
+    raw=path.read_bytes()
+    value=json.loads(raw)
+    return value,hashlib.sha256(raw).hexdigest()
+
+
+def _screen_values(expected_text, recognized_text, locale, threshold):
+    from scripts.screen_target_language_audio_units import tokens
+    expected=tokens(expected_text,locale);actual=tokens(recognized_text,locale)
+    if not expected:
+        raise ValueError('empty_expected_asr_tokens')
+    matcher=difflib.SequenceMatcher(None,expected,actual,autojunk=False)
+    similarity=round(matcher.ratio(),6)
+    differences=[{'kind':kind,'expected':expected[a:b],'recognized':actual[c:d]}
+                 for kind,a,b,c,d in matcher.get_opcodes() if kind!='equal']
+    status='pass' if similarity>=threshold and (len(expected)>=4 or not differences) else 'requires_review'
+    return status,similarity,differences,len(expected)
+
+
+REAL_RULE_CORPUS = Path('artifacts/drive-source-20260926-1730/layer3-analysis/spoken-script-drafts/zh-Hans/formal-audio-20260927-1100/compacted-xing')
+
+
+def build_real_rule_cases(source_root, max_cases=60):
+    """Export stratified real shared-ASR inputs, with NO independent semantic gold.
+
+    Validate every retained unit before sampling. Selection uses the existing
+    literal rule flag and distance to threshold, never an invented human verdict.
+    All units from the same original source/media share one cluster; audio
+    revisions are not independent source events. Source_root is an explicit
+    authorized local checkout. Only JSON is read, including source bindings.
+    """
+    if type(max_cases) is not int or not 1<=max_cases<=1000:
+        raise ValueError('invalid_real_rule_sample_limit')
+    root=Path(source_root).resolve();folder=root/REAL_RULE_CORPUS
+    receipt_path=folder/'review/asr-screening.json';job_path=folder/'job.json'
+    manifest_path=folder/'render-manifest.json'
+    receipt,receipt_sha=_read_frozen_json(receipt_path)
+    job,job_sha=_read_frozen_json(job_path)
+    manifest,manifest_sha=_read_frozen_json(manifest_path)
+    if (receipt.get('schemaVersion')!='sermon-target-language-audio-screening-v1'
+        or receipt.get('targetLanguageSpeechJobJsonSha256')!=_json_sha(job)
+        or manifest.get('targetLanguageSpeechJobJsonSha256')!=_json_sha(job)
+        or receipt.get('trackSha256')!=manifest.get('track',{}).get('sha256')
+        or receipt.get('targetLocale')!=job.get('targetLocale')
+        or manifest.get('targetLocale')!=job.get('targetLocale')
+        or receipt.get('coverage')!=1.0):
+        raise ValueError('real_asr_identity_or_coverage_mismatch')
+    threshold=receipt.get('minSimilarity')
+    if type(threshold) not in (int,float) or not 0<threshold<=1:
+        raise ValueError('real_asr_threshold_invalid')
+    bindings={}
+    for key in ('englishSourcePackage','anchorManifest'):
+        ref=job['inputs'][key];path=Path(ref['path'])
+        if not path.is_absolute():path=folder/path
+        value,file_sha=_read_frozen_json(path)
+        if ref.get('sha256')!=file_sha or ref.get('jsonSha256')!=_json_sha(value):
+            raise ValueError('real_asr_source_binding_mismatch')
+        bindings[key]=(value,file_sha,path)
+    source=bindings['englishSourcePackage'][0]
+    if manifest.get('englishSourcePackageJsonSha256')!=_json_sha(source):
+        raise ValueError('real_asr_manifest_source_mismatch')
+    anchor_ids={unit['sourceUnitId'] for unit in bindings['anchorManifest'][0]['sourceUnits']}
+    source_identity=source.get('source',{})
+    media_sha=source_identity.get('media',{}).get('sha256')
+    if not isinstance(media_sha,str) or len(media_sha)!=64 or not source_identity.get('sourceId'):
+        raise ValueError('real_asr_original_source_identity_required')
+    cluster='E04.source.'+_json_sha({'sourceId':source_identity['sourceId'],'sourceMediaSha256':media_sha})[:24]
+    rows=receipt['results'];units=job['units'];rendered=manifest['units']
+    if not rows or len(rows)!=len(units) or len(rows)!=len(rendered):
+        raise ValueError('real_asr_full_unit_coverage_mismatch')
+    group_ids=[unit['translationGroupId'] for unit in units]
+    if (len(set(group_ids))!=len(group_ids) or receipt.get('reviewedGroupIds')!=group_ids
+        or receipt.get('unitAudioSha256s')!=[row['audioSha256'] for row in rows]):
+        raise ValueError('real_asr_unit_order_or_coverage_mismatch')
+    candidates=[]
+    for index,(row,unit,rendered_unit) in enumerate(zip(rows,units,rendered)):
+        expected_text=unit['text'];recognized=row['recognized']
+        text_sha=hashlib.sha256(expected_text.encode()).hexdigest()
+        if (unit.get('unitIndex')!=index or row['textGroupId']!=unit['translationGroupId']
+            or rendered_unit['textGroupId']!=unit['translationGroupId']
+            or row['targetTextSha256']!=text_sha or rendered_unit['targetTextSha256']!=text_sha
+            or row['audioSha256']!=rendered_unit['audio']['sha256']
+            or not set(unit['sourceUnitIds'])<=anchor_ids):
+            raise ValueError('real_asr_unit_text_or_media_binding_mismatch')
+        status,similarity,differences,token_count=_screen_values(expected_text,recognized,job['targetLocale'],threshold)
+        if row.get('status')!=status or abs(row.get('similarity',-1)-similarity)>1e-6 or row.get('differences')!=differences:
+            raise ValueError('real_asr_retained_derived_rule_mismatch')
+        evidence={'targetLocale':job['targetLocale'],'expectedText':expected_text,'recognizedText':recognized,
+            'policy':{'minSimilarity':threshold,'sequenceMatcherAutojunk':False,'roundDigits':6,
+                      'normalization':'NFKC then casefold; zh-Hans/ko alphanumeric characters; others Unicode words excluding underscore',
+                      'shortUnitRule':'fewer than 4 expected tokens require exact token equality',
+                      'scope':'frozen shared-ASR literal comparison only; no media loading or semantic gold'}}
+        # The receipt and media hashes are provenance, not labels or model input.
+        semantic_id=_json_sha({'sourceMediaSha256':media_sha,'sourceUnitIds':unit['sourceUnitIds'],
+                               'locale':job['targetLocale'],'expected':expected_text,'recognized':recognized,
+                               'threshold':threshold})
+        case=_case('E04','real-'+semantic_id[:20],'asr_screening_rule_wrapper',evidence,{'status':status},cluster=cluster)
+        case.update(sourceKind='frozen_real_shared_asr',expected=None,oracleKind='unadjudicated_real_input',
+            provenance={'sourcePath':str(receipt_path.relative_to(root)),'sourceFileSha256':receipt_sha,
+                'jobPath':str(job_path.relative_to(root)),'jobFileSha256':job_sha,'jobJsonSha256':_json_sha(job),
+                'renderManifestPath':str(manifest_path.relative_to(root)),'renderManifestFileSha256':manifest_sha,
+                'sourcePackageJsonSha256':_json_sha(source),'sourcePackageFileSha256':bindings['englishSourcePackage'][1],
+                'anchorManifestJsonSha256':_json_sha(bindings['anchorManifest'][0]),
+                'anchorManifestFileSha256':bindings['anchorManifest'][1],'sourceMediaSha256':media_sha,
+                'sourceIdentitySha256':_json_sha(source_identity),'sourceUnitIds':unit['sourceUnitIds'],
+                'unitIndex':index,'textGroupId':unit['translationGroupId'],'targetTextSha256':text_sha,
+                'unitAudioSha256':row['audioSha256'],'sharedASRModel':receipt.get('model'),
+                'sharedASRModelRevision':receipt.get('modelRevision'),'fullCorpusUnitCount':len(rows),
+                'fullCorpusUnitCoverageVerified':True,'independentSemanticGold':False,
+                'samplingPolicy':'balance literal-rule flags and passes, prioritize threshold-near/short units; deterministic coverage across original ordering',
+                'sampleGap':'one original source event; shared ASR text is not independently adjudicated audio truth'})
+        candidates.append((status,abs(similarity-threshold),token_count,index,case))
+    # Stratification is private preparation; neither status nor similarity enters B.
+    flagged=sorted([row for row in candidates if row[0]=='requires_review'],key=lambda row:(row[1],row[2],row[3]))
+    passed=sorted([row for row in candidates if row[0]=='pass'],key=lambda row:(row[1],row[2],row[3]))
+    flag_limit=min(len(flagged),(max_cases+1)//2)
+    selected=flagged[:flag_limit]+passed[:max_cases-flag_limit]
+    if len(selected)<max_cases:
+        selected+=flagged[flag_limit:flag_limit+max_cases-len(selected)]
+    selected.sort(key=lambda row:row[3])
+    return [row[-1] for row in selected]
 
 
 def _case(stage, name, adapter, evidence, labels, *, cluster=None):
     evidence = json.loads(json.dumps(evidence, ensure_ascii=False))
+    evidence['decisionTask']={'rulesVersion':RULES_VERSION,'adapter':adapter,'rules':RULE_INSTRUCTIONS[adapter]}
     return {'caseId': f'{stage}.{name}', 'stageId': stage, 'subtaskId': adapter,
             'sourceKind': 'developer_fixture', 'clusterId': cluster or f'{stage}.{name}',
             'sharedEvidence': evidence, 'a': {'kind': 'program', 'adapter': adapter},
@@ -202,7 +388,7 @@ def build_rule_cases():
 
 
 def run_rule_a(case):
-    evidence=copy.deepcopy(case['sharedEvidence']);adapter=case['a']['adapter']
+    evidence=copy.deepcopy(case['sharedEvidence']);evidence.pop('decisionTask',None);adapter=case['a']['adapter']
     if case['a']['kind']=='no_executable_baseline':
         return {'status':'no_executable_baseline','labels':{}}
     if adapter=='plan_repair':
@@ -219,13 +405,9 @@ def run_rule_a(case):
         result=p.diagnostic(evidence['httpStatus'],json.dumps({'error':evidence['error']}).encode())
         return {'labels':{'reasonCode':result['reasonCode']}}
     if adapter=='asr_screening_rule_wrapper':
-        from scripts.screen_target_language_audio_units import tokens
-        expected=tokens(evidence['expectedText'],evidence['targetLocale'])
-        actual=tokens(evidence['recognizedText'],evidence['targetLocale'])
-        matcher=difflib.SequenceMatcher(None,expected,actual,autojunk=False)
-        differences=[op for op,*_ in matcher.get_opcodes() if op!='equal']
-        passed=round(matcher.ratio(),6)>=evidence['policy']['minSimilarity'] and (len(expected)>=4 or not differences)
-        return {'labels':{'status':'pass' if passed else 'requires_review'}}
+        status,*_=_screen_values(evidence['expectedText'],evidence['recognizedText'],
+                                evidence['targetLocale'],evidence['policy']['minSimilarity'])
+        return {'labels':{'status':status}}
     if adapter=='target_audio_timing_plan':
         from scripts.target_audio_timing_plan import plan
         evidence.pop('taskPolicy');result=plan(**evidence)

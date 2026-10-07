@@ -168,8 +168,11 @@ def _translation_cases(root: Path, maximum: int) -> list[dict]:
     cases, seen = [], set()
     preferred = root / "artifacts/next-concurrency-605s-20261005-r13-gemini"
     paths = sorted(preferred.rglob("group-*-sol.policy-preview.json")) if preferred.is_dir() else []
-    if not paths:
-        paths = sorted((root / "artifacts").rglob("group-*-sol.policy-preview.json"))
+    # Preserve preferred frozen inputs, then expand across verified completed
+    # runs. Evidence hashes below deduplicate repeats without inflating sources.
+    preferred_paths = set(paths)
+    paths += [path for path in sorted((root / "artifacts").rglob("group-*-sol.policy-preview.json"))
+              if path not in preferred_paths]
     # The first three verified cases should cover distinct locales when present.
     locale_paths: dict[str, list[Path]] = {}
     for path in paths:

@@ -1,6 +1,6 @@
 # Decisions API 每周流程实验：发现与执行记录
 
-日期：2026-10-06。状态：实验设计完成，隔离 runner 正在实现，尚无在线 A/B 胜负。生产入口及审批保持原状。
+日期：2026-10-06。状态：隔离 runner 已实现，第一轮真实 API／程序配对完成，正在扩大真实样本。没有质量胜负或生产替换结论。生产入口及审批保持原状。
 
 ## 已核验的发现
 
@@ -30,22 +30,47 @@
 
 独立分支基于 `85a3f5ff` 的已提交代码，实验 PR 暂时叠在 `codex/dev-rerun-20261005`（PR #250）之上，避免混入该 PR 的生产修复差异。原 checkout 的未提交工作不进入实验。最终每次调用记录实际 dependency／payload hash；基线变更会创建新实验身份。
 
-| 环节 | 初始执行状态 | 当前能证明什么 |
+| 环节 | 第一轮执行状态 | 当前能证明什么 |
 |---|---|---|
-| E01 | pending_runner | 已核验输入／现有模型入口，未在线测 |
-| E02 | pending_runner | 已核验审核会修稿，未在线测 |
-| E03 | pending_runner | 规则／歧义身份已核验，未测 |
-| E04 | pending_runner | 差异规则已核验，未测 |
-| E05 | pending_runner | 时长判据已核验，未测 |
+| E01 | 12 个真实句，两臂均 validated | Sol high default 与 Decisions 的新请求时间、标签分歧 |
+| E02 | B 12 次有效；A 12 次前置拒绝，未派发 | 原请求 fast tier 超出首版 runner 支持范围；无有效配对，不能比较速度 |
+| E03 | 12 个开发案例，两臂均 validated | 程序 oracle 吻合度和协议；不是生产准确率 |
+| E04 | 12 个开发案例，两臂均 validated | 同文本／ASR 程序规则对照；尚非整轨真实听审 |
+| E05 | 12 个开发案例，两臂均 validated | 6 个算术／排程家庭；同义重复不算独立来源 |
 | E06 | needs_human_baseline_and_gold | 不存在同任务自动 A；无胜负 |
-| E07 | pending_runner | 已核验程序／CLI 分层，未测 |
+| E07 | 12 个开发状态，两臂均 validated | 只比较 recommend_action 程序子任务；未测 CLI Supervisor |
 | E08 | needs_human_baseline_and_gold | 无自动 A；无胜负 |
 
-本地 dev 配置检查通过，只证明配置存在，不证明 provider 权限、账单或模型可用。在线预算金额正在等待操作者选择；此期间创建 PR、实现 runner、协议及程序基线测试继续推进。
+用户批准本轮 API 总预算最多 **$20**，包括 A／B 和必要补充调用。使用既有 dev launcher／tongxing-dev-runtime，不迁移生产任务。首轮共 **84 次真实网络派发**，全部已返回；预留或 usage 估算合计 **$0.085690**，未结算预留 0。此值按冻结价格上界和实际 usage 计算，不是账单，也没有声称 provider 项目设置了硬财务上限。补测按冻结前轮 ledger hash 携带已消费金额，共享同一 $20 总上限，不能每轮重置 $20。
+
+## 第一轮观测结果
+
+| 环节 | A 有效时间 p50 / p95 ms | B 有效时间 p50 / p95 ms | 全部标签吻合 | 解释 |
+|---|---:|---:|---:|---|
+| E01 | 6038.13 / 10003.03 | 257.42 / 548.74 | 0 / 12 | B 更常给细项 needs_more_evidence；完整向量分歧不是独立准确率。B 只有标签，缺 A 书面审核交付 |
+| E02 | 无有效 A | 258.01 / 317.47 | 无有效配对 | 原 tier 保留，修复 transport 后新实验身份补测 |
+| E03 | 3.18 / 43.36 | 277.39 / 344.86 | 8 / 12 | 指令遗漏路由优先级且选项过宽，不能归结模型能力上限 |
+| E04 | 0.09 / 27.73 | 245.95 / 360.59 | 7 / 12 | 存在非本任务选项和短句／阈值分歧，需任务专属题目复测 |
+| E05 | 0.28 / 29.38 | 252.44 / 332.64 | 2 / 12 | formal status 11/12 吻合；serial cannot-fit 字段 B 全 true，仅2/12正确；保留程序算术 |
+| E07 | 0.07 / 43.07 | 267.00 / 311.23 | 4 / 12 | humanActionRequired 与流程优先级定义不完整；未测完整 Supervisor |
+
+计时包括本地模块首次载入、payload 准备、网络往返、解析与校验；首例冷启动进入样本，没有做独立预热或重复延迟面板。本轮 effectiveDecisionMs 在 receipt 持久保存前结束，不代表完整修复／发布耗时，保存和全轮准备不能当作零成本。没有 human active/wait 实测、没有独立 gold、没有非劣置信区间。程序 fixture 的 expected 是规则输出，不是听审／语义真值。
+
+复核 48 个规则 B 原始响应与 receipt：未发现标签投影翻转。E05.short-fit-01 的 serial 下界3.05秒≤20秒，A cannot-fit=false，B=true；E05.lag-failure-09 的 end13.05、source end4、lag9.05>8，A formal=fail，B=pass。算术判断现有程序更快且结果有可解释依据，现阶段没有替换依据。
+
+第一轮导出和 authority 已冻结；所有结果、前置拒绝和题目缺陷保留，第二轮不覆盖。第二轮修正任务专属 choices／字段规则、保留 E02 原 fast tier并按 [官方价格](https://developers.openai.com/api/docs/pricing)预留 fast 成本。Decisions 按 [官方 input-only 定价](https://developers.openai.com/api/docs/guides/decisions)估算；可选 compute_units 只保留 telemetry，不虚构另项美元收费。
+
+## 扩大样本的实际范围
+
+- E01 可核验114句，但只有一个605秒来源。按同来源扩大到60句，保留已有12句结果，不重复派发已成功配对。
+- E02 找到108个不同输入、三种语言、多个诊断 run；它们仍是同一个 source package。新 Sol API测量保留原 medium／fast，不把历史CLI时间当API基线，不把诊断审核宣称为完整生产准入。
+- E04 可复用9/27整轨419个ASR单元、28个flags；flags不自动是错误。扩大抽样只测已冻结文本差异，不重做ASR或把它称为听音频实验。
+- 目前达不到预注册的≥5独立来源要求，标记 sample_gap；run、语言和音频修订不增加来源数。
+- E06／E08及其他人工辅助子任务需建立人审 A、独立 gold 和 active/wait计时，尚无胜负。机器证据不代替人审批准。
 
 ## 已完成验证
 
 - 设计 JSON：8 个 stage 与子任务主指标绑定、范围／无副作用字段验证通过。
 - 文档 26 个本地链接与 14 个基线源码引用存在。
 - 设计提交 git diff --check 通过；模型请求数为 0。
-- runner／真实在线结果将在后续提交更新，不以设计文件代替实测。
+- 首版 runner／exporters 23 项本地测试通过；transport与跨轮预算修复新增针对性检查。原始正文、响应和凭据不入Git；公共结果仅含计数、hash、标签、耗时及固定原因。

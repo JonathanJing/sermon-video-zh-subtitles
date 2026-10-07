@@ -88,6 +88,8 @@ class RunnerTests(unittest.TestCase):
         self.assertEqual(ab.measured_usage(result, 'decisions')[1], 11)
         chat = {'model': 'gpt-6.1-sol', 'service_tier': 'fast',
                 'usage': {'prompt_tokens': 100, 'completion_tokens': 10}}
+        self.assertEqual(ab.measured_usage(chat, 'chat')[1], 770)
+        chat['service_tier'] = 'unknown'
         self.assertIsNone(ab.measured_usage(chat, 'chat')[1])
         chat['service_tier'] = 'default'
         self.assertEqual(ab.measured_usage(chat, 'chat')[1], 385)
@@ -118,9 +120,66 @@ class RunnerTests(unittest.TestCase):
         changed = {**self.bound, 'root': str(self.root/'elsewhere')}
         with self.assertRaises(ValueError): ab.Ledger(self.root, changed)
 
+    def test_carried_prior_cost_consumes_the_same_total_cap(self):
+        bound = {**self.bound, 'maxCostMicrousd': 10,
+                 'previousBudget': {'estimatedOrReservedMicrousd': 8}}
+        ledger = ab.Ledger(self.root, bound)
+        with self.assertRaises(ValueError): ledger.reserve('one', {}, {'costMicrousd': 3})
+        ledger.reserve('one', {}, {'costMicrousd': 2})
+        self.assertEqual(ledger.summary()['estimatedOrReservedMicrousd'], 10)
+
+    def test_sealed_prior_ledger_refuses_even_new_or_existing_reservations(self):
+        self.ledger.reserve('one', {}, {'costMicrousd': 2})
+        with self.ledger.locked() as (data, path):
+            data['sealedForSuccessor'] = str(self.root/'next')
+            ab.atomic(path, data)
+        for operation in ('one', 'next'):
+            with self.assertRaises(ValueError): self.ledger.reserve(operation, {}, {'costMicrousd': 2})
+        with self.assertRaises(ValueError): self.ledger.finish('one', {'status': 'validated'}, 1)
+
+    def test_prior_run_seal_blocks_unknown_and_binds_exact_successor(self):
+        with tempfile.TemporaryDirectory(dir=ab.ROOT/'artifacts') as directory:
+            prior = Path(directory)/'prior'
+            next_run = Path(directory)/'next'
+            bound = ab.authority(prior, [self.case], Decimal('20'), 200, 'test')
+            ab.atomic(prior/'authority.json', bound)
+            ledger = ab.Ledger(prior, bound)
+            ledger.reserve('one', {}, {'costMicrousd': 2})
+            with self.assertRaises(ValueError): ab.seal_previous_run(prior, next_run)
+            ledger.finish('one', {'status': 'validated'}, 1)
+            ab.seal_previous_run(prior, next_run)
+            carry = ab.previous_budget(prior, next_run)
+            self.assertEqual(carry['estimatedOrReservedMicrousd'], 1)
+            with self.assertRaises(ValueError): ab.seal_previous_run(prior, next_run/'different')
+
     def test_dispatch_requires_dev_launcher_before_network(self):
         with patch.dict(ab.os.environ, {}, clear=True):
             with self.assertRaises(ValueError): ab.dispatch('decisions', {}, 1)
+
+    def test_fast_payload_is_preserved_and_reserves_fast_rates(self):
+        case = copy.deepcopy(self.case)
+        case['a'] = {'kind': 'chat', 'payload': {
+            'model': 'gpt-6.1-sol', 'reasoning_effort': 'medium', 'service_tier': 'fast',
+            'messages': [{'role': 'user', 'content': 'test'}],
+            'response_format': {'type': 'json_object'}}}
+        payload, bounds, _ = ab.payload_and_bounds(case, 'A')
+        self.assertEqual(payload['service_tier'], 'fast')
+        self.assertEqual(bounds['outputTokens'], ab.MAX_COMPLETION)
+        self.assertGreaterEqual(bounds['costMicrousd'], 22 * ab.MAX_COMPLETION)
+
+    def test_valid_receipt_resume_preserves_call_and_cost(self):
+        calls = []
+        def returned(*args):
+            calls.append(args)
+            return {'status': 'returned', 'response': self.response(), 'requestId': 'req_test'}
+        first = ab.measured_attempt(self.case, 'B', mode='live', directory=self.root/'live',
+                                    ledger=self.ledger, dispatcher=returned)
+        second = ab.measured_attempt(self.case, 'B', mode='live', directory=self.root/'live',
+                                     ledger=self.ledger, dispatcher=returned)
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(first['status'], 'validated')
+        self.assertEqual(first['timings'], second['timings'])
+        self.assertEqual(self.ledger.summary()['estimatedOrReservedMicrousd'], 11)
 
 
 if __name__ == '__main__': unittest.main()

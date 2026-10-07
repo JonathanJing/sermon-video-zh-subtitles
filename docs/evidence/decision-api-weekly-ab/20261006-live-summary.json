@@ -1,0 +1,358 @@
+{
+  "schemaVersion": "decision-ab-public-results-v1",
+  "humanGoldCompleted": false,
+  "invoiceVerified": false,
+  "hardProviderFinancialCapVerified": false,
+  "independentSourceRequirementMet": false,
+  "waves": [
+    {
+      "id": "20261006-pilot-01",
+      "authorityCaseSetSha256": "eef027536d32a514a6cf9930e44a58e255b9ad6203c27f84289bfdae9b4aaa22",
+      "codeDependencySha256": "85c41e744dfece9024c3295152e5c78d299319c12da01f9147a48c9ca5e7f141",
+      "priceAssumptionVersion": "20261006-short-context-default-regional-cushion-v1",
+      "networkAttempts": 84,
+      "unsettledAttempts": 0,
+      "cumulativeEstimatedOrReservedMicrousd": 85690,
+      "maxCostMicrousd": 20000000,
+      "stages": {
+        "E01": {
+          "caseCount": 12,
+          "sourceKinds": {
+            "frozen_real_source_request": 12
+          },
+          "realSourceClusters": 1,
+          "subtasks": {
+            "text_and_timing_checks": 12
+          },
+          "validPairs": 12,
+          "allLabelAgreement": 0,
+          "arms": {
+            "A": {
+              "attemptRecords": 12,
+              "estimatedCostMicrousdKnown": 72218,
+              "programOracleFixtureConformance": {
+                "denominator": 0,
+                "matches": 0
+              },
+              "statuses": {
+                "validated": 12
+              },
+              "successfulEffectiveMsP50": 6038.134062546305,
+              "successfulEffectiveMsP95": 10003.025470650753
+            },
+            "B": {
+              "attemptRecords": 12,
+              "estimatedCostMicrousdKnown": 4644,
+              "programOracleFixtureConformance": {
+                "denominator": 0,
+                "matches": 0
+              },
+              "statuses": {
+                "validated": 12
+              },
+              "successfulEffectiveMsP50": 257.41514592664316,
+              "successfulEffectiveMsP95": 548.7447526131289
+            }
+          },
+          "qualityConclusion": "inconclusive",
+          "productionReplacementEligible": false
+        },
+        "E02": {
+          "caseCount": 12,
+          "sourceKinds": {
+            "frozen_diagnostic_request": 12
+          },
+          "realSourceClusters": 1,
+          "subtasks": {
+            "draft_issue_projection": 12
+          },
+          "validPairs": 0,
+          "allLabelAgreement": 0,
+          "arms": {
+            "A": {
+              "attemptRecords": 12,
+              "estimatedCostMicrousdKnown": 0,
+              "programOracleFixtureConformance": {
+                "denominator": 0,
+                "matches": 0
+              },
+              "statuses": {
+                "preflight_blocked": 12
+              },
+              "successfulEffectiveMsP50": null,
+              "successfulEffectiveMsP95": null
+            },
+            "B": {
+              "attemptRecords": 12,
+              "estimatedCostMicrousdKnown": 3245,
+              "programOracleFixtureConformance": {
+                "denominator": 0,
+                "matches": 0
+              },
+              "statuses": {
+                "validated": 12
+              },
+              "successfulEffectiveMsP50": 258.01402097567916,
+              "successfulEffectiveMsP95": 317.47165202978067
+            }
+          },
+          "qualityConclusion": "inconclusive",
+          "productionReplacementEligible": false
+        },
+        "E03": {
+          "caseCount": 12,
+          "sourceKinds": {
+            "developer_fixture": 12
+          },
+          "realSourceClusters": 0,
+          "subtasks": {
+            "plan_repair": 7,
+            "provider_error": 5
+          },
+          "validPairs": 12,
+          "allLabelAgreement": 8,
+          "arms": {
+            "A": {
+              "attemptRecords": 12,
+              "estimatedCostMicrousdKnown": 0,
+              "programOracleFixtureConformance": {
+                "denominator": 12,
+                "matches": 12
+              },
+              "statuses": {
+                "validated": 12
+              },
+              "successfulEffectiveMsP50": 3.177063015755266,
+              "successfulEffectiveMsP95": 43.36444577784272
+            },
+            "B": {
+              "attemptRecords": 12,
+              "estimatedCostMicrousdKnown": 3704,
+              "programOracleFixtureConformance": {
+                "denominator": 12,
+                "matches": 8
+              },
+              "statuses": {
+                "validated": 12
+              },
+              "successfulEffectiveMsP50": 277.38700003828853,
+              "successfulEffectiveMsP95": 344.857897865586
+            }
+          },
+          "qualityConclusion": "inconclusive",
+          "productionReplacementEligible": false
+        },
+        "E04": {
+          "caseCount": 12,
+          "sourceKinds": {
+            "developer_fixture": 12
+          },
+          "realSourceClusters": 0,
+          "subtasks": {
+            "asr_screening_rule_wrapper": 12
+          },
+          "validPairs": 12,
+          "allLabelAgreement": 7,
+          "arms": {
+            "A": {
+              "attemptRecords": 12,
+              "estimatedCostMicrousdKnown": 0,
+              "programOracleFixtureConformance": {
+                "denominator": 12,
+                "matches": 12
+              },
+              "statuses": {
+                "validated": 12
+              },
+              "successfulEffectiveMsP50": 0.08795794565230608,
+              "successfulEffectiveMsP95": 27.731448237318503
+            },
+            "B": {
+              "attemptRecords": 12,
+              "estimatedCostMicrousdKnown": 403,
+              "programOracleFixtureConformance": {
+                "denominator": 12,
+                "matches": 7
+              },
+              "statuses": {
+                "validated": 12
+              },
+              "successfulEffectiveMsP50": 245.9535835077986,
+              "successfulEffectiveMsP95": 360.5930543679278
+            }
+          },
+          "qualityConclusion": "inconclusive",
+          "productionReplacementEligible": false
+        },
+        "E05": {
+          "caseCount": 12,
+          "sourceKinds": {
+            "developer_fixture": 12
+          },
+          "realSourceClusters": 0,
+          "subtasks": {
+            "target_audio_timing_plan": 12
+          },
+          "validPairs": 12,
+          "allLabelAgreement": 2,
+          "arms": {
+            "A": {
+              "attemptRecords": 12,
+              "estimatedCostMicrousdKnown": 0,
+              "programOracleFixtureConformance": {
+                "denominator": 12,
+                "matches": 12
+              },
+              "statuses": {
+                "validated": 12
+              },
+              "successfulEffectiveMsP50": 0.27712498558685184,
+              "successfulEffectiveMsP95": 29.384828830370633
+            },
+            "B": {
+              "attemptRecords": 12,
+              "estimatedCostMicrousdKnown": 632,
+              "programOracleFixtureConformance": {
+                "denominator": 12,
+                "matches": 2
+              },
+              "statuses": {
+                "validated": 12
+              },
+              "successfulEffectiveMsP50": 252.44072900386527,
+              "successfulEffectiveMsP95": 332.6438232674263
+            }
+          },
+          "qualityConclusion": "inconclusive",
+          "productionReplacementEligible": false
+        },
+        "E06": {
+          "caseCount": 1,
+          "sourceKinds": {
+            "developer_fixture": 1
+          },
+          "realSourceClusters": 0,
+          "subtasks": {
+            "study_semantic_triage": 1
+          },
+          "validPairs": 0,
+          "allLabelAgreement": 0,
+          "arms": {
+            "A": {
+              "attemptRecords": 1,
+              "estimatedCostMicrousdKnown": 0,
+              "programOracleFixtureConformance": {
+                "denominator": 0,
+                "matches": 0
+              },
+              "statuses": {
+                "no_executable_baseline": 1
+              },
+              "successfulEffectiveMsP50": null,
+              "successfulEffectiveMsP95": null
+            },
+            "B": {
+              "attemptRecords": 1,
+              "estimatedCostMicrousdKnown": 0,
+              "programOracleFixtureConformance": {
+                "denominator": 0,
+                "matches": 0
+              },
+              "statuses": {
+                "no_executable_baseline": 1
+              },
+              "successfulEffectiveMsP50": null,
+              "successfulEffectiveMsP95": null
+            }
+          },
+          "qualityConclusion": "inconclusive",
+          "productionReplacementEligible": false
+        },
+        "E07": {
+          "caseCount": 12,
+          "sourceKinds": {
+            "developer_fixture": 12
+          },
+          "realSourceClusters": 0,
+          "subtasks": {
+            "supervisor_recommend_action": 12
+          },
+          "validPairs": 12,
+          "allLabelAgreement": 4,
+          "arms": {
+            "A": {
+              "attemptRecords": 12,
+              "estimatedCostMicrousdKnown": 0,
+              "programOracleFixtureConformance": {
+                "denominator": 12,
+                "matches": 12
+              },
+              "statuses": {
+                "validated": 12
+              },
+              "successfulEffectiveMsP50": 0.06627052789554,
+              "successfulEffectiveMsP95": 43.06766425142989
+            },
+            "B": {
+              "attemptRecords": 12,
+              "estimatedCostMicrousdKnown": 844,
+              "programOracleFixtureConformance": {
+                "denominator": 12,
+                "matches": 4
+              },
+              "statuses": {
+                "validated": 12
+              },
+              "successfulEffectiveMsP50": 266.99504151474684,
+              "successfulEffectiveMsP95": 311.23383570229635
+            }
+          },
+          "qualityConclusion": "inconclusive",
+          "productionReplacementEligible": false
+        },
+        "E08": {
+          "caseCount": 1,
+          "sourceKinds": {
+            "developer_fixture": 1
+          },
+          "realSourceClusters": 0,
+          "subtasks": {
+            "feedback_comment_triage": 1
+          },
+          "validPairs": 0,
+          "allLabelAgreement": 0,
+          "arms": {
+            "A": {
+              "attemptRecords": 1,
+              "estimatedCostMicrousdKnown": 0,
+              "programOracleFixtureConformance": {
+                "denominator": 0,
+                "matches": 0
+              },
+              "statuses": {
+                "no_executable_baseline": 1
+              },
+              "successfulEffectiveMsP50": null,
+              "successfulEffectiveMsP95": null
+            },
+            "B": {
+              "attemptRecords": 1,
+              "estimatedCostMicrousdKnown": 0,
+              "programOracleFixtureConformance": {
+                "denominator": 0,
+                "matches": 0
+              },
+              "statuses": {
+                "no_executable_baseline": 1
+              },
+              "successfulEffectiveMsP50": null,
+              "successfulEffectiveMsP95": null
+            }
+          },
+          "qualityConclusion": "inconclusive",
+          "productionReplacementEligible": false
+        }
+      }
+    }
+  ]
+}

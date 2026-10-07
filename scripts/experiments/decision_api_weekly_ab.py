@@ -10,6 +10,7 @@ import argparse
 import copy
 from contextlib import contextmanager
 from decimal import Decimal, ROUND_CEILING
+from datetime import datetime, timezone
 import fcntl
 import hashlib
 import json
@@ -30,7 +31,7 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-VERSION = "decision-weekly-ab-runner-v1"
+VERSION = "decision-weekly-ab-runner-v2"
 ENDPOINTS = {"chat": "https://api.openai.com/v1/chat/completions",
              "decisions": "https://api.openai.com/v1/decisions"}
 MAX_CHAT_INPUT_BOUND = 16384
@@ -40,8 +41,9 @@ MAX_RESPONSE_BYTES = 262144
 MAX_QUESTIONS = 64
 # Frozen short-context default-tier planning rates, including 10% regional
 # cushion. These are reservations/list-price estimates, never invoices.
-PRICE_VERSION = "20261006-short-context-default-regional-cushion-v1"
+PRICE_VERSION = "20261006-short-context-default-fast-regional-cushion-v2"
 RATES = {"gpt-6.1-sol": (Decimal("2.75"), Decimal("11")),
+         "gpt-6.1-sol:fast": (Decimal("5.5"), Decimal("22")),
          "decisions:gpt-6-luna": (Decimal("0.11"), Decimal("0"))}
 SAFE_ID = re.compile(r"[A-Za-z0-9_.-]{1,160}")
 
@@ -181,13 +183,15 @@ def payload_and_bounds(case, arm):
         existing_cap = payload.get("max_completion_tokens")
         require(existing_cap is None or type(existing_cap) is int and 1 <= existing_cap <= MAX_COMPLETION,
                 "baseline_completion_cap_too_large")
-        require(payload.get("service_tier", "default") == "default", "baseline_tier_not_default")
+        tier = payload.get("service_tier", "default")
+        require(tier in {"default", "fast"}, "unsupported_baseline_tier")
         payload["max_completion_tokens"] = existing_cap or MAX_COMPLETION
-        payload["service_tier"] = "default"
+        payload["service_tier"] = tier
         # Count the actual schema, not an artificial json_object substitute.
         from scripts import sermon_provider_limits as limits
         input_bound = limits._input_upper_bound(payload)
-        key, output_bound, kind = payload["model"], payload["max_completion_tokens"], "chat"
+        key = payload["model"] + (":fast" if tier == "fast" else "")
+        output_bound, kind = payload["max_completion_tokens"], "chat"
     require(input_bound <= (MAX_INPUT_BOUND if arm == "B" else MAX_CHAT_INPUT_BOUND), "experiment_input_bound_exceeded")
     in_rate, out_rate = RATES[key]
     cost = int((in_rate * input_bound + out_rate * output_bound).to_integral_value(rounding=ROUND_CEILING))
@@ -269,8 +273,8 @@ def measured_usage(response, kind):
         # Official guide says input-only billing; optional compute_units is
         # preserved telemetry, not invented separate billed dollars.
         in_rate, out_rate = RATES["decisions:gpt-6-luna"]
-    elif response.get("model") == "gpt-6.1-sol" and response.get("service_tier") == "default":
-        in_rate, out_rate = RATES["gpt-6.1-sol"]
+    elif response.get("model") == "gpt-6.1-sol" and response.get("service_tier") in {"default", "fast"}:
+        in_rate, out_rate = RATES["gpt-6.1-sol" + (":fast" if response["service_tier"] == "fast" else "")]
     else:
         return copy.deepcopy(usage), None
     cost = int((in_rate * inputs + out_rate * outputs).to_integral_value(rounding=ROUND_CEILING))
@@ -302,6 +306,7 @@ class Ledger:
             yield data, path
     def reserve(self, operation, identity, bounds):
         with self.locked() as (data, path):
+            require(not data.get("sealedForSuccessor"), "previous_ledger_sealed")
             if operation in data["operations"]:
                 record = data["operations"][operation]
                 require(record["identity"] == identity and record["bounds"] == bounds,
@@ -312,8 +317,9 @@ class Ledger:
             costs = sum(record.get("settledCostMicrousd")
                         if record.get("settledCostMicrousd") is not None
                         else record["bounds"]["costMicrousd"] for record in data["operations"].values())
+            carry = self.authority.get("previousBudget", {}).get("estimatedOrReservedMicrousd", 0)
             require(len(data["operations"]) < self.authority["maxRequests"] and
-                    costs + bounds["costMicrousd"] <= self.authority["maxCostMicrousd"],
+                    carry + costs + bounds["costMicrousd"] <= self.authority["maxCostMicrousd"],
                     "experiment_budget_unavailable")
             record = {"identity": identity, "bounds": bounds, "status": "reserved_outcome_unknown",
                       "settledCostMicrousd": None}
@@ -322,6 +328,7 @@ class Ledger:
             return True, copy.deepcopy(record)
     def finish(self, operation, receipt, cost):
         with self.locked() as (data, path):
+            require(not data.get("sealedForSuccessor"), "previous_ledger_sealed")
             record = data["operations"][operation]
             record.update(status=receipt["status"], receiptSha256=digest(receipt))
             if cost is not None:
@@ -333,13 +340,45 @@ class Ledger:
         with self.locked() as (data, _):
             records = list(data["operations"].values())
             return {"networkAttempts": len(records),
+                    "carriedPreviousMicrousd": self.authority.get("previousBudget", {}).get("estimatedOrReservedMicrousd", 0),
                     "estimatedOrReservedMicrousd": sum(r["settledCostMicrousd"]
-                        if r["settledCostMicrousd"] is not None else r["bounds"]["costMicrousd"] for r in records),
+                        if r["settledCostMicrousd"] is not None else r["bounds"]["costMicrousd"] for r in records)
+                        + self.authority.get("previousBudget", {}).get("estimatedOrReservedMicrousd", 0),
                     "unsettledAttempts": sum(r["settledCostMicrousd"] is None for r in records),
                     "maxCostMicrousd": self.authority["maxCostMicrousd"],
                     "invoiceVerified": False, "hardProviderFinancialCapVerified": False}
 
-def authority(directory, cases, max_usd, max_requests, authorization_note):
+def seal_previous_run(directory, successor):
+    root = Path(directory).resolve()
+    require(root != Path(successor).resolve(), "previous_run_is_current")
+    with run_lock(root):
+        ledger = Ledger(root, read(root/"authority.json"))
+        with ledger.locked() as (data, path):
+            target = str(Path(successor).resolve())
+            require(data.get("sealedForSuccessor", target) == target,
+                    "previous_ledger_already_has_successor")
+            # A new code/case identity cannot authorize redispatching an
+            # original uncertain attempt. Resolve it before any successor.
+            require(not any(row["status"] in {"reserved_outcome_unknown", "outcome_unknown",
+                                             "blocked_prior_operation", "budget_bound_exceeded"}
+                            for row in data["operations"].values()), "previous_attempt_requires_reconciliation")
+            data["sealedForSuccessor"] = target
+            atomic(path, data)
+
+def previous_budget(directory, successor):
+    root = Path(directory).resolve()
+    require(root.is_relative_to(ROOT / "artifacts"), "previous_run_outside_artifacts")
+    with run_lock(root):
+        bound, data = read(root/"authority.json"), read(root/"ledger.json")
+        require(data["authoritySha256"] == digest(bound), "previous_ledger_identity_changed")
+        require(data.get("sealedForSuccessor") == str(Path(successor).resolve()),
+                "previous_run_not_sealed_for_current")
+        ledger = Ledger(root, bound)
+        consumed = ledger.summary()["estimatedOrReservedMicrousd"]
+        return {"root": str(root), "ledgerSha256": digest(data),
+                "authoritySha256": digest(bound), "estimatedOrReservedMicrousd": consumed}
+
+def authority(directory, cases, max_usd, max_requests, authorization_note, previous_run=None):
     deps = ["scripts/experiments/decision_api_weekly_ab.py",
             "scripts/experiments/decision_api_cases_content.py",
             "scripts/experiments/decision_api_cases_rules.py",
@@ -356,7 +395,7 @@ def authority(directory, cases, max_usd, max_requests, authorization_note):
         if path.is_file() and path.suffix in {".py", ".json", ".md"}
     })
     code = {name: hashlib.sha256((ROOT / name).read_bytes()).hexdigest() for name in deps}
-    return {"schemaVersion": "decision-ab-budget-authority-v1",
+    result = {"schemaVersion": "decision-ab-budget-authority-v1",
             "root": str(Path(directory).resolve()), "caseSetSha256": digest(cases),
             "codeDependencySha256": digest(code), "codeDependencies": code,
             "planSha256": hashlib.sha256((ROOT / "config/decision-api-weekly-ab-plan-v1.json").read_bytes()).hexdigest(),
@@ -369,6 +408,12 @@ def authority(directory, cases, max_usd, max_requests, authorization_note):
             "authorizationSha256": digest({"source": "user_message", "authorizationNote": authorization_note}),
             "credentialAlias": "tongxing-dev-runtime", "environment": "dev",
             "productionMutationAllowed": False, "thresholdStatus": "protocol_smoke_only"}
+    if previous_run:
+        require(Path(previous_run).resolve() != Path(directory).resolve(), "previous_run_is_current")
+        result["previousBudget"] = previous_budget(previous_run, directory)
+        require(result["previousBudget"]["estimatedOrReservedMicrousd"] < result["maxCostMicrousd"],
+                "previous_run_exhausted_budget")
+    return result
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
@@ -434,7 +479,7 @@ def dispatch(kind, payload, timeout_seconds):
         return {"status": "outcome_unknown", "reasonCode": "worker_result_invalid"}
 
 def measured_attempt(case, arm, *, mode, directory, ledger=None, dispatcher=dispatch,
-                     timeout_seconds=120):
+                     timeout_seconds=120, order_position=None):
     case_hash = digest(case)
     path = Path(directory) / case["stageId"] / case["caseId"] / arm / "receipt.json"
     if path.exists():
@@ -444,6 +489,8 @@ def measured_attempt(case, arm, *, mode, directory, ledger=None, dispatcher=disp
         return {**previous, "restored": True}
     started = time.monotonic()
     row = {"schemaVersion": VERSION, "caseId": case["caseId"], "stageId": case["stageId"],
+           "startedUtc": datetime.now(timezone.utc).isoformat(), "orderPosition": order_position,
+           "attemptId": digest({"directory": str(Path(directory).resolve()), "case": case_hash, "arm": arm}),
            "subtaskId": case["subtaskId"], "clusterId": case["clusterId"],
            "sourceKind": case["sourceKind"], "oracleKind": case["oracleKind"],
            "caseSha256": case_hash, "evidenceSha256": digest(case["sharedEvidence"]),
@@ -455,6 +502,7 @@ def measured_attempt(case, arm, *, mode, directory, ledger=None, dispatcher=disp
                        "effectiveDecisionMs": None}}
     def finish():
         row["timings"]["effectiveDecisionMs"] = (time.monotonic() - started) * 1000
+        row["finishedUtc"] = datetime.now(timezone.utc).isoformat()
         atomic(path, row)
         return row
     if case["a"]["kind"] == "no_executable_baseline":
@@ -482,6 +530,7 @@ def measured_attempt(case, arm, *, mode, directory, ledger=None, dispatcher=disp
         return finish()
     row["timings"]["evidencePreparationMs"] = (time.monotonic() - before)*1000
     row.update(payloadSha256=digest(payload), requestedModel=payload["model"],
+               codeDependencySha256=ledger.authority["codeDependencySha256"],
                requestedEffort=payload.get("reasoning_effort"), requestedTier=payload.get("service_tier"),
                backend=kind, inputTokenUpperBound=bounds["inputTokens"],
                completionTokenCap=bounds["outputTokens"])
@@ -580,7 +629,35 @@ def summarize(cases, rows):
 def prepare(args):
     from scripts.experiments.decision_api_cases_rules import build_rule_cases
     from scripts.experiments.decision_api_cases_content import build_content_cases, get_content_case_report
-    cases = build_content_cases(Path(args.source_root), max_cases=args.max_content_cases) + build_rule_cases()
+    cases = build_content_cases(Path(args.source_root), max_cases=args.max_content_cases)
+    if args.real_rule_cases:
+        from scripts.experiments.decision_api_cases_rules import build_real_rule_cases
+        cases += build_real_rule_cases(Path(args.source_root), max_cases=args.real_rule_cases)
+    if not args.content_only:
+        cases += build_rule_cases()
+    if args.previous_run and args.exclude_completed:
+        previous_cases = read(Path(args.previous_run)/"cases.json")
+        completed = set()
+        for previous in previous_cases:
+            paths = [Path(args.previous_run)/"live"/previous["stageId"]/previous["caseId"]/arm/"receipt.json"
+                     for arm in ("A", "B")]
+            same = True
+            for arm, path in zip(("A", "B"), paths):
+                if not path.exists():
+                    same = False
+                    break
+                row = read(path)
+                if row.get("status") != "validated" or row.get("caseSha256") != digest(previous):
+                    same = False
+                    break
+                if previous["a"]["kind"] != "program" or arm == "B":
+                    payload, _, _ = payload_and_bounds(previous, arm)
+                    if row.get("payloadSha256") != digest(payload):
+                        same = False
+                        break
+            if same:
+                completed.add(digest(previous))
+        cases = [case for case in cases if digest(case) not in completed]
     cases = validate_cases(cases)
     root = Path(args.out).resolve()
     require("artifacts" in root.parts, "output_must_be_ignored_artifacts")
@@ -589,7 +666,10 @@ def prepare(args):
     bound = None
     if args.max_usd is not None:
         require(bool(args.authorization_note), "authorization_note_required")
-        bound=authority(root, cases, args.max_usd, args.max_requests, args.authorization_note)
+        require(args.max_usd > 0 and 0 < args.max_requests <= 2000, "invalid_budget_limits")
+        if args.previous_run:
+            seal_previous_run(args.previous_run, root)
+        bound=authority(root, cases, args.max_usd, args.max_requests, args.authorization_note, args.previous_run)
         require(not (root/"authority.json").exists() or read(root/"authority.json")==bound,
                 "existing_authority_changed")
     # Complete every identity check before writing any existing artifact.
@@ -608,7 +688,8 @@ def run(args):
         bound=read(root/"authority.json")
         require(digest(cases)==bound["caseSetSha256"],"case_set_changed")
         current=authority(root,cases,Decimal(bound["maxCostMicrousd"])/1000000,
-                          bound["maxRequests"],args.authorization_note)
+                          bound["maxRequests"],args.authorization_note,
+                          bound.get("previousBudget", {}).get("root"))
         require(current==bound,"authority_or_code_changed")
         ledger=Ledger(root,bound)
     rows=[]; stopped=False
@@ -616,9 +697,9 @@ def run(args):
     random.Random(20261006).shuffle(stage_cases)
     for index, case in enumerate(stage_cases):
         order = ["A", "B"] if index % 2 == 0 else ["B", "A"]
-        for arm in order:
+        for position, arm in enumerate(order, 1):
             row=measured_attempt(case,arm,mode=args.mode,directory=root/args.mode,
-                                 ledger=ledger,timeout_seconds=args.timeout)
+                                 ledger=ledger,timeout_seconds=args.timeout,order_position=position)
             rows.append(row)
             atomic(root/args.mode/(args.stage+"-summary.json"), summarize(cases,rows))
             print(json.dumps({"stage":args.stage,"caseId":case["caseId"],"arm":arm,
@@ -647,6 +728,10 @@ def main():
     p.add_argument("--max-usd",type=Decimal)
     p.add_argument("--max-requests",type=int,default=200)
     p.add_argument("--authorization-note",default="")
+    p.add_argument("--previous-run", help="Bind frozen prior ledger and carry its consumed/reserved cost")
+    p.add_argument("--exclude-completed",action="store_true")
+    p.add_argument("--content-only",action="store_true")
+    p.add_argument("--real-rule-cases",type=int,default=0)
     r=commands.add_parser("run")
     r.add_argument("--out",required=True)
     r.add_argument("--stage",choices=[f"E{i:02d}" for i in range(1,9)],required=True)
