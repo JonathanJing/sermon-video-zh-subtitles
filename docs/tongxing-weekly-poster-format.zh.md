@@ -51,6 +51,8 @@ App Store 官方徽章内的文字和标志保持官方素材原样，不应用�
 
 ## 主视觉 prompt 与合成
 
+每周先按 [内容 brief 与提示词流程](tongxing-weekly-poster-content-brief.zh.md) 提取核心信息和完整句证据，再展开 [可复用模板](prompts/tongxing-weekly-poster-content-template-v1.txt)。主体、环境、光线与色彩需对应当周内容，不把固定品牌风格当成固定证道主题。
+
 本次晨光山景的完整实际生成提示词保存在 [tongxing-weekly-poster-sunrise-v1.txt](prompts/tongxing-weekly-poster-sunrise-v1.txt)。使用内置 ImageGen，仅生成无文字背景。每周主题变化时按已核对的证道内容调整场景，并记录实际使用的完整 prompt；不把希望、守护或山景当作所有周次固定的内容解释。
 
 标题、日期、讲员、系列、经文从精确 pageId 的正式 catalog/content/release package 读取。字体、官方徽章和两个二维码由本地排版合成，不靠模型生成；当前文档 PR 未将打样脚本接入既有正式 CLI。
