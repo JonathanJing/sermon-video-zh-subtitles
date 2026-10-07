@@ -122,6 +122,15 @@ final class PlaybackControllerTests: XCTestCase {
         XCTAssertEqual(heading.title, "测试完整视频证道")
         XCTAssertEqual(heading.series, "启示录：耶稣带来的安慰与盼望")
         XCTAssertEqual(heading.speaker, "Eric Geiger")
+        var categorized = page
+        categorized.displayCategory = try JSONDecoder().decode(PageDisplayCategory.self, from: Data(
+            #"{"schemaVersion":"sermon-page-display-category-v1","labels":{"en":"Remote source category"}}"#.utf8))
+        XCTAssertEqual(model.heading(for: categorized).edition, "Remote source category")
+        categorized.displayCategory = try JSONDecoder().decode(PageDisplayCategory.self, from: Data(
+            #"{"schemaVersion":"sermon-page-display-category-v1","labels":{"en":"Updated source category"}}"#.utf8))
+        XCTAssertEqual(model.heading(for: categorized).edition, "Updated source category")
+        categorized.displayCategory = nil
+        XCTAssertNil(model.heading(for: categorized).edition, "Removing catalog category must not retain cached remote text")
         XCTAssertEqual(model.selectedWeek, week)
         XCTAssertEqual(model.selectedPageID, week.id)
         XCTAssertEqual(model.selectedTrack, track)

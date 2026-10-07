@@ -41,6 +41,83 @@ final class ListeningFlowUITests: XCTestCase {
         screenshot(baseline ? "picker-source-categories-before" : "picker-source-categories-after", app: app)
     }
 
+    private func launchRemoteCategoryFixture(refresh: Bool = false) -> XCUIApplication {
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing", "--ui-testing-remote-categories", "-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
+        if refresh { app.launchArguments.append("--ui-testing-remote-category-refresh") }
+        app.launchEnvironment["TONGXING_UI_TEST_RUN_ID"] = UUID().uuidString
+        app.launchEnvironment["TONGXING_TEST_HOST"] = "0"
+        app.launch()
+        return app
+    }
+
+    private func expandCategoryPicker(_ app: XCUIApplication, doneLabel: String = "完成") throws {
+        let done = app.buttons[doneLabel]
+        XCTAssertTrue(done.waitForExistence(timeout: 5))
+        let origin = app.coordinate(withNormalizedOffset: .zero)
+        let grabber = origin.withOffset(CGVector(dx: app.frame.width / 2, dy: done.frame.minY - app.frame.minY - 12))
+        grabber.press(forDuration: 0.1, thenDragTo: origin.withOffset(CGVector(dx: app.frame.width / 2, dy: 70)))
+    }
+
+    func testRemoteCategoriesUseInterfaceLanguageForNewPageTypes() throws {
+        let app = launchRemoteCategoryFixture()
+        defer { app.terminate() }
+        XCTAssertTrue(app.staticTexts["published-page-title"].waitForExistence(timeout: 15))
+        app.buttons["choose-sermon"].tap()
+        try expandCategoryPicker(app)
+        for (id, category) in [("remote-archive", "正式播放版"), ("remote-youtube", "YouTube 版"),
+                               ("remote-podcast", "播客"), ("remote-interview", "专题访谈")] {
+            let label = app.staticTexts["picker-\(id)-edition"]
+            XCTAssertTrue(label.waitForExistence(timeout: 5))
+            XCTAssertEqual(label.label, category)
+        }
+        screenshot("remote-categories-chinese", app: app)
+        app.buttons["published-page-remote-interview"].tap()
+        let category = app.staticTexts["published-page-edition"]
+        try waitFor(category, "label == '专题访谈'")
+        // The heading is already cached; changing interface language must update
+        // its category without changing content/audio language or a new build.
+        let language = element("app-language-menu", in: app)
+        for _ in 0..<4 where !language.isHittable { app.scrollViews["listening-scroll"].swipeDown() }
+        language.tap()
+        app.buttons["English"].tap()
+        try waitFor(category, "label == 'Special interview'")
+        XCTAssertEqual(app.staticTexts["published-current-subtitle"].label, "界面测试合成字幕。")
+        app.buttons["choose-sermon"].tap()
+        try expandCategoryPicker(app, doneLabel: "Done")
+        for (id, label) in [("remote-archive", "Archive edition"), ("remote-youtube", "YouTube edition"),
+                            ("remote-podcast", "Podcast"), ("remote-interview", "Special interview")] {
+            XCTAssertEqual(app.staticTexts["picker-\(id)-edition"].label, label)
+        }
+        screenshot("remote-categories-english", app: app)
+    }
+
+    func testRemoteCategoryRefreshWithoutRebuildPreservesPausedPlayback() throws {
+        let app = launchRemoteCategoryFixture(refresh: true)
+        defer { app.terminate() }
+        let category = app.staticTexts["published-page-edition"]
+        try waitFor(category, "label == '正式播放版'")
+        let play = app.buttons["playback-toggle"]
+        try waitFor(play, "exists == true AND enabled == true AND hittable == true")
+        play.tap()
+        try waitFor(playbackStatus(in: app), "NOT (value BEGINSWITH '00:00，')")
+        play.tap()
+        try waitFor(play, "label == '开始播放'")
+        let position = playbackStatus(in: app).value as? String
+        screenshot("remote-category-before-refresh", app: app)
+        app.buttons["more-options"].tap()
+        let refresh = app.buttons["刷新证道目录"]
+        try reveal(refresh, in: app, direction: .up)
+        refresh.tap()
+        try waitFor(category, "label == '正式版 · 更新'")
+        XCTAssertEqual(play.label, "开始播放")
+        XCTAssertEqual(playbackStatus(in: app).value as? String, position)
+        screenshot("remote-category-after-refresh", app: app)
+        app.buttons["choose-sermon"].tap()
+        try expandCategoryPicker(app)
+        XCTAssertEqual(app.staticTexts["picker-remote-archive-edition"].label, "正式版 · 更新")
+    }
+
     func testDuoPosturePlaybackAndPanelsScreenshots() throws {
         let app = launchFixture()
         try downloadSelection(in: app)

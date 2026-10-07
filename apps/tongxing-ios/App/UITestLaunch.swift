@@ -490,8 +490,16 @@ private enum UITestContent {
     }
     /// Public display metadata with synthetic, hash-bound text/audio only.
     /// The category is exercised through the production picker, not drawn here.
-    static let categoryResponses: [String: Data] = {
-        let entries = [
+    static let categoryResponses = makeCategoryResponses(remote: false)
+    static let remoteCategoryResponses = makeCategoryResponses(remote: true)
+
+    private static func makeCategoryResponses(remote: Bool) -> [String: Data] {
+        let entries = remote ? [
+            ("remote-archive", "2026-10-04", "正式版显示测试", "界面测试", "video"),
+            ("remote-youtube", "2026-10-03", "YouTube 版显示测试", "界面测试", "video"),
+            ("remote-podcast", "2026-10-02", "播客显示测试", "界面测试", "podcast"),
+            ("remote-interview", "2026-10-01", "自定义类别显示测试", "界面测试", "video")
+        ] : [
             ("resi-20261004-69ba7a66", "2026-10-04", "耶稣审判并保守", "Eric Geiger", "video"),
             ("if-i-had-more-time-jesus-is-worthy", "2026-10-02", "如果我有更多时间 · 耶稣配得", "Eric Geiger · Steve Bang Lee", "podcast"),
             ("2026-09-27-weekend-sermon-drive-530", "2026-09-27", "耶稣配得", "Eric Geiger", "video")
@@ -519,6 +527,15 @@ private enum UITestContent {
             let catalog = try! JSONSerialization.jsonObject(with: files["/multilingual-v3.json"]!) as! [String: Any]
             var page = (catalog["pages"] as! [[String: Any]])[0]
             page["date"] = date; page["title"] = title; page["mediaType"] = mediaType
+            if remote {
+                let labels: [String: [String: String]] = [
+                    "remote-archive": ["zh-Hans": "正式播放版", "en": "Archive edition"],
+                    "remote-youtube": ["zh-Hans": "YouTube 版", "en": "YouTube edition"],
+                    "remote-podcast": ["zh-Hans": "播客", "en": "Podcast"],
+                    "remote-interview": ["zh-Hans": "专题访谈", "en": "Special interview"]
+                ]
+                page["displayCategory"] = ["schemaVersion": "sermon-page-display-category-v1", "labels": labels[id]!]
+            }
             var targets = page["targets"] as! [String: [String: Any]]
             targets["zh-Hans"]!["releasePackageJsonSha256"] = SHA256.hash(data: files[releasePath]!).map { String(format: "%02x", $0) }.joined()
             page["targets"] = targets
@@ -531,7 +548,7 @@ private enum UITestContent {
             "defaultPageId": entries[0].0, "pages": pages
         ], options: [.sortedKeys])
         return result
-    }()
+    }
 
     private static func withStudyProducts(_ original: [String: Data], pageID: String, locale: String) -> [String: Data] {
         func encode(_ object: Any) -> Data { try! JSONSerialization.data(withJSONObject: object, options: [.sortedKeys, .withoutEscapingSlashes]) }
@@ -596,6 +613,7 @@ private class UITestContentProtocol: URLProtocol {
     class var offline: Bool { ProcessInfo.processInfo.arguments.contains("--ui-testing-offline") }
     class var dualScript: Bool { ProcessInfo.processInfo.arguments.contains("--ui-testing-dual-script") }
     class var nativeResponses: [String: Data]? {
+        if ProcessInfo.processInfo.arguments.contains("--ui-testing-remote-categories") { return UITestContent.remoteCategoryResponses }
         if ProcessInfo.processInfo.arguments.contains("--ui-testing-source-categories") { return UITestContent.categoryResponses }
         if ProcessInfo.processInfo.arguments.contains("--ui-testing-alignment-failure") { return UITestContent.alignmentFailureResponses }
         if ProcessInfo.processInfo.arguments.contains("--ui-testing-locate-flow") { return UITestContent.locateResponses }
@@ -603,6 +621,17 @@ private class UITestContentProtocol: URLProtocol {
     }
     override class func canInit(with request: URLRequest) -> Bool { true }
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+
+    private final class CategoryRequests: @unchecked Sendable {
+        let lock = NSLock()
+        var count = 0
+        func isRefresh() -> Bool {
+            lock.lock(); defer { lock.unlock() }
+            count += 1
+            return count > 1
+        }
+    }
+    private static let categoryRequests = CategoryRequests()
 
     override func startLoading() {
         guard let url = request.url, url.scheme == "https", url.host == UITestContent.origin.host else {
@@ -613,7 +642,18 @@ private class UITestContentProtocol: URLProtocol {
             client?.urlProtocol(self, didFailWithError: URLError(.notConnectedToInternet))
             return
         }
-        if let data = Self.nativeResponses?[url.path] {
+        if var data = Self.nativeResponses?[url.path] {
+            if url.path == "/multilingual-v3.json",
+               ProcessInfo.processInfo.arguments.contains("--ui-testing-remote-categories"),
+               ProcessInfo.processInfo.arguments.contains("--ui-testing-remote-category-refresh"),
+               Self.categoryRequests.isRefresh() {
+                var catalog = try! JSONSerialization.jsonObject(with: data) as! [String: Any]
+                var pages = catalog["pages"] as! [[String: Any]]
+                pages[0]["displayCategory"] = ["schemaVersion": "sermon-page-display-category-v1",
+                    "labels": ["zh-Hans": "正式版 · 更新", "en": "Updated archive"]]
+                catalog["pages"] = pages
+                data = try! JSONSerialization.data(withJSONObject: catalog, options: [.sortedKeys])
+            }
             if ProcessInfo.processInfo.arguments.contains("--ui-testing-delayed-transcript"),
                url.path == "/content/ui-test-locate-flow/ko.json" {
                 // Delay only the transcript request, never the language release

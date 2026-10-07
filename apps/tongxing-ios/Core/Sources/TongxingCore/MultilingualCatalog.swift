@@ -28,7 +28,7 @@ public struct MultilingualCatalog: Codable, Sendable, Equatable {
             let locale = targets[page.defaultTargetLocale] != nil ? page.defaultTargetLocale : targets.keys.sorted().first!
             return MultilingualPage(id: page.id, title: page.title, date: page.date,
                 sourceLocale: page.sourceLocale, sourceIdentitySha256: page.sourceIdentitySha256,
-                sourceMediaSha256: page.sourceMediaSha256, mediaType: page.mediaType, defaultTargetLocale: locale, targets: targets,
+                sourceMediaSha256: page.sourceMediaSha256, mediaType: page.mediaType, displayCategory: page.displayCategory, defaultTargetLocale: locale, targets: targets,
                 diagnosticOnly: page.diagnosticOnly, simulationOnly: page.simulationOnly)
         }
         let projected = Self(schemaVersion: value.schemaVersion, generatedAt: value.generatedAt,
@@ -51,7 +51,7 @@ public struct MultilingualCatalog: Codable, Sendable, Equatable {
             let locale = targets[page.defaultTargetLocale] != nil ? page.defaultTargetLocale : targets.keys.sorted().first!
             return MultilingualPage(id: page.id, title: page.title, date: page.date,
                 sourceLocale: page.sourceLocale, sourceIdentitySha256: page.sourceIdentitySha256,
-                sourceMediaSha256: page.sourceMediaSha256, mediaType: page.mediaType, defaultTargetLocale: locale, targets: targets,
+                sourceMediaSha256: page.sourceMediaSha256, mediaType: page.mediaType, displayCategory: page.displayCategory, defaultTargetLocale: locale, targets: targets,
                 diagnosticOnly: page.diagnosticOnly, simulationOnly: page.simulationOnly)
         }
         let result = Self(schemaVersion: schemaVersion, generatedAt: generatedAt,
@@ -73,10 +73,12 @@ public struct MultilingualCatalog: Codable, Sendable, Equatable {
 
 public struct MultilingualPage: Codable, Sendable, Equatable, Identifiable {
     /// Source category only, not a statement of publication or review approval.
-    /// Older catalogs lack an edition field; retain their confirmed archive IDs
-    /// rather than guessing a formal edition from a date, title, or video type.
-    public var displayEdition: String? {
+    /// Older catalogs retain confirmed archive IDs and explicit podcast type.
+    public var displayEdition: String? { displayEdition(locale: "zh-Hans") }
+
+    public func displayEdition(locale: String) -> String? {
         guard diagnosticOnly != true, simulationOnly != true else { return nil }
+        if let displayCategory { return displayCategory.label(locale: locale) }
         if mediaType == "podcast" { return "播客" }
         switch id {
         case "2026-09-27-weekend-sermon-drive-530", "resi-20261004-69ba7a66":
@@ -93,6 +95,7 @@ public struct MultilingualPage: Codable, Sendable, Equatable, Identifiable {
     public let sourceIdentitySha256: String
     public let sourceMediaSha256: String?
     public let mediaType: String?
+    public var displayCategory: PageDisplayCategory? = nil
     public let defaultTargetLocale: String
     public let targets: [String: PageTarget]
     public let diagnosticOnly: Bool?
@@ -114,6 +117,7 @@ public struct MultilingualPage: Codable, Sendable, Equatable, Identifiable {
             guard let title, !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
                   title.count <= 180 else { throw CatalogError.invalid("双稿页面缺少有效标题") }
         }
+        try displayCategory?.validate()
         for (locale, target) in targets {
             guard Validation.locale(locale) else { throw CatalogError.invalid("目标语言代码无效") }
             try target.validate(pageID: id, locale: locale, catalogSchemaVersion: catalogSchemaVersion,
@@ -130,6 +134,36 @@ public struct MultilingualPage: Codable, Sendable, Equatable, Identifiable {
         targets.filter { $0.value.contentStatus == "human_reviewed" }
             .sorted { $0.key.localizedStandardCompare($1.key) == .orderedAscending }
             .map { (locale: $0.key, target: $0.value) }
+    }
+}
+
+/// Versioned catalog presentation metadata; independent of review and playback.
+public struct PageDisplayCategory: Codable, Sendable, Equatable {
+    public static let supportedSchemaVersion = "sermon-page-display-category-v1"
+    public let schemaVersion: String
+    public let labels: [String: String]
+
+    public func validate() throws {
+        guard schemaVersion == Self.supportedSchemaVersion,
+              (1...16).contains(labels.count), labels["en"] != nil,
+              labels.allSatisfy({ locale, label in
+                  Validation.locale(locale) && (1...48).contains(label.unicodeScalars.count)
+                      && !label.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                      && !label.unicodeScalars.contains(where: { $0.value < 32 || (127...159).contains($0.value) || [0x2028, 0x2029].contains($0.value) })
+              }) else { throw CatalogError.invalid("页面类别显示元数据无效") }
+    }
+
+    /// Interface locale, never audio/content locale. English is required fallback.
+    public func label(locale: String) -> String? {
+        let requested = locale.replacingOccurrences(of: "_", with: "-")
+        if let exact = labels[requested] { return exact }
+        if ["zh-CN", "zh-SG", "zh-Hans"].contains(requested) || requested.hasPrefix("zh-Hans-") {
+            for alias in ["zh-Hans", "zh-CN", "zh"] {
+                if let value = labels[alias] { return value }
+            }
+        }
+        let base = requested.split(separator: "-").first.map(String.init) ?? requested
+        return labels[base] ?? labels["en"]
     }
 }
 
