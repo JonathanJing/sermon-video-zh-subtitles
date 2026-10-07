@@ -832,30 +832,30 @@ def untranslated_problems(english: str, text: str, locale: str,
         latin_letters = sum(len(word) for word in words)
         letters = sum(char.isalpha() for char in text)
         return [] if not letters or latin_letters / letters <= 0.3 else ["Latin-script share above 0.30"]
-    function_words = [word for word in words if word.casefold() in _ENGLISH_FUNCTION_WORDS]
-    if len(words) >= 6 and len(function_words) / len(words) > 0.15:
-        return [f"English function words {len(function_words)}/{len(words)}"]
     english_words = re.findall(r"[a-z']+", english.casefold())
-    if len(english_words) >= 6 and _fold(" ".join(english_words)) in _fold(text):
-        return ["English source text copied into target"]
     # Exact multiword copies are untranslated even without a function word.
     # A single name/amen, or an honorific plus a name, can legitimately survive.
     target_words, size = re.findall(r"[a-z']+", _fold(text)), len(english_words)
     allowed = _SHARED_SINGLE_WORDS | shared_terms
-    # Spanish uses pastor too. Excuse it only immediately before a glossary
-    # name, so an English phrase beginning "pastor will ..." still fails.
-    shared_word = [word in allowed or (word == "pastor" and index + 1 < len(target_words)
+    # Spanish-valid shared titles are allowed only before a glossary name.
+    # Other words beside a title still have to pass the English-leak screens.
+    shared_titles = {"pastor", "pastora", "dr", "dra", "doctor", "doctora"}
+    shared_word = [word in allowed or (word in shared_titles and index + 1 < len(target_words)
                                      and target_words[index + 1] in shared_terms)
                    for index, word in enumerate(target_words)]
+    function_words = [word for index, word in enumerate(target_words)
+                      if word in _ENGLISH_FUNCTION_WORDS and not shared_word[index]]
+    if len(target_words) >= 6 and len(function_words) / len(target_words) > 0.15:
+        return [f"English function words {len(function_words)}/{len(target_words)}"]
+    english_folded = [_fold(word) for word in english_words]
     name_only = bool(re.fullmatch(r"(?:Pastor|Dr|Mr|Mrs|Ms)\.?\s+[A-Z][a-z]+[.!?]?", english.strip()))
     if size >= 2 and not name_only and any(
-            target_words[start:start + size] == english_words and not all(shared_word[start:start + size])
+            target_words[start:start + size] == english_folded and not all(shared_word[start:start + size])
             for start in range(len(target_words) - size + 1)):
         return ["English source text copied into target"]
     # A partial copy: three source words in a row left in English inside Spanish
     # ("Dios will never abandon you, así que…"). Names may run together, so a run
     # made only of shared terms is allowed.
-    english_folded = [_fold(word) for word in english_words]
     source_runs = {tuple(english_folded[start:start + 3]) for start in range(len(english_folded) - 2)}
     if any(tuple(target_words[start:start + 3]) in source_runs
            and not all(shared_word[start:start + 3])

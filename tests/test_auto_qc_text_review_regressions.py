@@ -175,6 +175,23 @@ class TextReviewRegressions(unittest.TestCase):
         self.assertEqual(rules.name_problems(god, "God gives us courage.", "神赐给我们精神。"), [])
         self.assertEqual(rules.name_spans("神", "精神来自神。"), [(4, 5)])
 
+    def test_spanish_shared_titles_and_long_name_lists_are_not_english_leaks(self):
+        names = frozenset({"rick", "warren", "ken", "will", "mark", "paul", "silas", "anna", "john"})
+        for title in ("Dr.", "Dra.", "Doctor", "Doctora", "pastor", "pastora"):
+            self.assertEqual(rules.untranslated_problems(
+                f"{title} Rick Warren taught us today.",
+                f"El {title} Rick Warren nos enseñó hoy.", "es", names), [], title)
+            self.assertTrue(rules.untranslated_problems(
+                f"{title} Rick Warren taught us today.",
+                f"El {title} Rick Warren taught us today.", "es", names), title)
+        for english in ("Rick Warren Ken Paul Silas Anna.", "Will Mark Paul Silas Anna John."):
+            self.assertEqual(rules.untranslated_problems(english, english, "es", names), [])
+        self.assertTrue(rules.untranslated_problems(
+            "Will Mark Paul Silas Anna John trust us.",
+            "Will Mark Paul Silas Anna John trust us.", "es", names))
+        self.assertTrue(rules.untranslated_problems(
+            "Dr. Alex Smith taught us today.", "El Dr. Alex Smith nos enseñó hoy.", "es", names))
+
     def test_one_word_spanish_copies_are_untranslated(self):
         for english, target in (("Repent.", "Repent."), ("Listen!", "listen"), ("Believe.", "Believe.")):
             with self.subTest(target=target):
