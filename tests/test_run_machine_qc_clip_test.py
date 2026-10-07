@@ -183,11 +183,16 @@ class MachineQcClipDriverTests(unittest.TestCase):
         with patch.object(driver.text_qc, "length_problem", too_long):
             self.run_driver(run)
         self.assertEqual(self.summary()["status"], "requires_repair")
-        self.assertEqual(self.run_driver(run), 1)
+        with patch.object(driver.text_qc, "length_problem", too_long):
+            self.assertEqual(self.run_driver(run), 1)
         self.assertEqual(self.summary()["status"], "blocked_prior_failure")
-        median = driver.text_qc.candidate_length_median
-        with patch.object(driver.text_qc, "candidate_length_median", lambda groups: (median(groups) or 1) * 1.5), \
-                patch.object(driver.text_qc, "length_problem", length_problem):
+        # A shifted median that still leaves g001 out of bounds spends no attempt.
+        with patch.object(driver.text_qc, "length_problem", too_long), \
+                patch.object(driver.text_qc, "candidate_length_median", lambda groups: 2.0):
+            self.assertEqual(self.run_driver(run), 1)
+        self.assertEqual(self.summary()["status"], "blocked_prior_failure")
+        # Once g001 is within bounds of the current median, it is screened again.
+        with patch.object(driver.text_qc, "length_problem", length_problem):
             self.run_driver(run)
         self.assertNotEqual(self.summary()["status"], "blocked_prior_failure", self.summary().get("reason"))
 

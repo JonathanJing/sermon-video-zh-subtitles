@@ -425,15 +425,20 @@ def run_locale(locale: str, paths: dict, out: Path, state: Path, judge, timings:
                     "reason": f"the repair ledger head failed and its QC receipt is missing from {head_path}"}
         # Group ids are local to a revision; the ledger counts by source unit, so match on those.
         current = {(tuple(group["sourceUnitIds"]), hashlib.sha256(group["targetText"].encode("utf-8")).hexdigest()):
-                   group["groupId"] for group in groups}
-        # A length failure is relative to the candidate-wide median, so it is unrepaired
-        # only while that median is unchanged.
-        median_changed = text_qc.candidate_length_median(groups) != head.get("candidateLengthMedian")
-        unrepaired = [current[key] for row in head["results"]
+                   group for group in groups}
+        # A length failure is relative to the candidate-wide median, so an unchanged
+        # group is repaired only if it now passes against the current median.
+        median = text_qc.candidate_length_median(groups)
+
+        def still_failing(row, group):
+            if row.get("problems") and all(problem.startswith("length ratio") for problem in row["problems"]):
+                return text_qc.length_problem(group, median) is not None
+            return True
+
+        unrepaired = [current[key]["groupId"] for row in head["results"]
                       if row["status"] != "pass"
                       and (key := (tuple(row["sourceUnitIds"]), row["targetTextSha256"])) in current
-                      and not (median_changed and row.get("problems")
-                               and all(problem.startswith("length ratio") for problem in row["problems"]))]
+                      and still_failing(row, current[key])]
         if unrepaired:
             return {"status": "blocked_prior_failure", "failedGroups": unrepaired,
                     "reason": "failed groups are unchanged; repair them in a new candidate revision"}
