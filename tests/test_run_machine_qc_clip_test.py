@@ -80,7 +80,7 @@ class MachineQcClipDriverTests(unittest.TestCase):
                             "--text-backend", "fake", *extra])
 
     def summary(self):
-        return json.loads((self.root / "out/summary.json").read_text(encoding="utf-8"))["locales"][LOCALE]
+        return json.loads((self.root / "out/fake-plumbing/summary.json").read_text(encoding="utf-8"))["locales"][LOCALE]
 
     def test_fake_backend_proves_the_path_but_never_saves_a_waiver(self):
         run = synthetic_run(self, self.root)
@@ -96,11 +96,11 @@ class MachineQcClipDriverTests(unittest.TestCase):
         row = self.summary()
         self.assertEqual(row["status"], "fake_plumbing_pass", row.get("reason"))
         self.assertNotIn("textWaiver", row)
-        self.assertFalse((self.root / "out" / LOCALE / "text-waiver.json").exists())
+        self.assertFalse((self.root / "out/fake-plumbing" / LOCALE / "text-waiver.json").exists())
         self.assertEqual(row["calibrationCoverage"]["untestableKinds"], [])
         self.assertFalse(built[0]["humanApproval"])
         self.assertEqual(built[0]["reviewKind"], "machine_quality_waiver")
-        timings = (self.root / "out/timings.tsv").read_text(encoding="utf-8")
+        timings = (self.root / "out/fake-plumbing/timings.tsv").read_text(encoding="utf-8")
         for stage in ("discover", "ko.text-qc", "ko.calibration", "ko.text-waiver"):
             self.assertIn(f"\n{stage}\tpass\t", timings)
 
@@ -111,7 +111,7 @@ class MachineQcClipDriverTests(unittest.TestCase):
         anchor = json.loads((run / "anchor-manifest.json").read_text(encoding="utf-8"))
         package = json.loads((run / "source-package.json").read_text(encoding="utf-8"))
         lineage = ledger.lineage("text", LOCALE, basis.json_sha256(package), basis.json_sha256(anchor))
-        self.assertEqual(len(ledger.load(self.root / "out/fake-plumbing-state/repair-ledger", lineage)), 1)
+        self.assertEqual(len(ledger.load(self.root / "out/fake-plumbing/state/repair-ledger", lineage)), 1)
 
     def test_a_repaired_candidate_is_screened_again(self):
         run = synthetic_run(self, self.root)
@@ -124,7 +124,7 @@ class MachineQcClipDriverTests(unittest.TestCase):
         anchor = json.loads((run / "anchor-manifest.json").read_text(encoding="utf-8"))
         package = json.loads((run / "source-package.json").read_text(encoding="utf-8"))
         lineage = ledger.lineage("text", LOCALE, basis.json_sha256(package), basis.json_sha256(anchor))
-        self.assertEqual(len(ledger.load(self.root / "out/fake-plumbing-state/repair-ledger", lineage)), 2)
+        self.assertEqual(len(ledger.load(self.root / "out/fake-plumbing/state/repair-ledger", lineage)), 2)
         self.assertEqual(self.summary()["status"], "fake_plumbing_pass", self.summary().get("reason"))
 
     def test_an_unrepaired_failure_blocks_rescreening(self):
@@ -144,7 +144,7 @@ class MachineQcClipDriverTests(unittest.TestCase):
             self.run_driver(run)
         self.assertEqual(self.summary()["failedGroups"], ["g001"])
         self.assertEqual(self.summary()["status"], "requires_repair")
-        self.assertFalse((self.root / "out" / LOCALE / "calibration.json").exists())
+        self.assertFalse((self.root / "out/fake-plumbing" / LOCALE / "calibration.json").exists())
         # Another runtime changes the inputs binding, but the failed text is unchanged.
         with patch.object(driver.basis.waiver, "implementation_sha256", return_value="other"):
             self.assertEqual(self.run_driver(run), 1)
@@ -183,6 +183,21 @@ class MachineQcClipDriverTests(unittest.TestCase):
             self.assertEqual(driver.main(argv), 1)
         row = json.loads((self.root / "real/summary.json").read_text(encoding="utf-8"))["locales"][LOCALE]
         self.assertIn("changed after it was issued", row["reason"])
+
+    def test_preflight_refuses_a_condensed_spoken_candidate(self):
+        run = synthetic_run(self, self.root)
+        candidate = json.loads((run / "diagnostic-previews/ko/native-1/candidate.json").read_text(encoding="utf-8"))
+        (run / "binding.json").write_text(json.dumps({
+            "schemaVersion": basis.CONDENSATION_BINDING_SCHEMA,
+            "spokenCandidateJsonSha256": basis.json_sha256(candidate)}), encoding="utf-8")
+        self.assertEqual(self.run_driver(run, "--preflight-only"), 2)
+        self.assertTrue(any("condensed spoken script" in p for p in self.summary()["problems"]))
+
+    def test_bad_locale_and_worker_options_are_refused(self):
+        run = synthetic_run(self, self.root)
+        for extra in (["--locales", ""], ["--locales", "fr"], ["--workers", "0"], ["--workers", "400"]):
+            with self.assertRaises(SystemExit):
+                driver.main(["--run-dir", str(run), "--out", str(self.root / "o"), "--preflight-only", *extra])
 
     def test_preflight_explains_a_human_approved_candidate(self):
         run = synthetic_run(self, self.root, human_approved=True)

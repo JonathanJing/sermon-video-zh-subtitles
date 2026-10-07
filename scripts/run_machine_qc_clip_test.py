@@ -27,6 +27,7 @@ locale's outcome. The run never publishes and never marks anything human approve
 from __future__ import annotations
 
 import argparse
+import fcntl
 import hashlib
 from concurrent.futures import ThreadPoolExecutor
 import json
@@ -45,6 +46,7 @@ from scripts import target_text_auto_qc as text_qc
 
 ROOT = Path(__file__).resolve().parents[1]
 LOCALES = ("zh-Hans", "ko", "es")
+MAX_WORKERS = 8  # Codex CLI calls this driver may run at once
 CANDIDATE_SCHEMA_PREFIX = "sermon-target-language-candidate"
 CACHE_NAMESPACE = "machine-qc-clip-test-v1"
 PENDING = "__prefetch_pending__"
@@ -99,6 +101,19 @@ def index_run(run_dir: Path, max_bytes: int = 20 * 1024 * 1024) -> dict[str, lis
         except (ValueError, UnicodeDecodeError):
             continue
         found.setdefault(json_sha256(value), []).append(path)
+    return found
+
+
+def spoken_candidates(run_dir: Path) -> set[str]:
+    """Hashes of spoken (condensed) candidates that a condensation binding in the run names."""
+    found = set()
+    for path in sorted(Path(run_dir).rglob("*.json")):
+        try:
+            value = read(path)
+        except (ValueError, UnicodeDecodeError, OSError):
+            continue
+        if isinstance(value, dict) and value.get("schemaVersion") == basis.CONDENSATION_BINDING_SCHEMA:
+            found.add(value.get("spokenCandidateJsonSha256"))
     return found
 
 
@@ -175,6 +190,9 @@ def resolve_locale(run_dir: Path, index: dict, locale: str, override: Path | Non
         return {"locale": locale, "problems": [f"no unique candidate; found {len(ambiguous)}: {ambiguous[:6]}"]}
     candidate = read(path)
     problems = candidate_problems(candidate)
+    if json_sha256(candidate) in spoken_candidates(run_dir):
+        # A condensed dub script is screened with its binding, never as full text.
+        problems.append("candidate is a condensed spoken script; this driver screens full candidates only")
     paths = {"candidate": str(path)}
     for name, key in (("source", "englishSourcePackageJsonSha256"), ("anchor", "anchorManifestSha256"),
                       ("policy", "translationPolicySha256")):
@@ -392,16 +410,28 @@ def main(argv=None) -> int:
     parser.add_argument("--workers", type=int, default=4, help="Parallel Codex CLI calls")
     parser.add_argument("--preflight-only", action="store_true", help="Stop before any model call")
     args = parser.parse_args(argv)
+    locales = [locale for locale in args.locales.split(",") if locale]
+    if not locales or set(locales) - set(LOCALES):
+        parser.error(f"--locales must name one or more of {', '.join(LOCALES)}")
+    if not 1 <= args.workers <= MAX_WORKERS:
+        parser.error(f"--workers must be between 1 and {MAX_WORKERS}")
     if args.text_backend == "fake" and args.state_dir:
         parser.error("--text-backend fake never writes to a persistent state dir")
-    # Fake runs keep their own ledger, so plumbing receipts never enter the
-    # repair ledger or use up repair attempts a real waiver depends on.
-    out = args.out.resolve()
-    state = out / "fake-plumbing-state" if args.text_backend == "fake" else (args.state_dir or out / "state").resolve()
+    # Fake runs write every receipt, and their own ledger, in a separate subtree,
+    # so plumbing output never touches real evidence or repair attempts.
+    out = args.out.resolve() / ("fake-plumbing" if args.text_backend == "fake" else "")
+    state = out / "state" if args.text_backend == "fake" else (args.state_dir or out / "state").resolve()
+    for path in (out, state):
+        if path.is_relative_to(ROOT) and subprocess.run(["git", "-C", str(ROOT), "check-ignore", "-q", str(path)]).returncode:
+            parser.error(f"{path} is not ignored by Git; use a directory under artifacts/")
     out.mkdir(parents=True, exist_ok=True)
+    lock = (out / ".run.lock").open("a")
+    try:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        parser.error(f"another run is using {out}")
     timings = Timings(out / "timings.tsv")
     overrides = dict(item.split("=", 1) for item in args.candidate)
-    locales = [locale for locale in args.locales.split(",") if locale]
     index = timings.run("discover", lambda: index_run(args.run_dir))
     summary = {"runDir": str(args.run_dir.resolve()), "textBackend": args.text_backend,
                "implementationSha256": basis.waiver.implementation_sha256(), "locales": {}}

@@ -112,6 +112,15 @@ CHECK
 if [[ -n "$USED" ]]; then
   echo "Build $BUILD is already on App Store Connect as $USED; bump the TongxingBeta BetaRelease build first"; exit 1
 fi
+# archive-channel.sh builds the generated Tongxing.xcodeproj, so it must carry
+# the same version/build that the collision check and notes use.
+read -r BUILT_VERSION BUILT_BUILD < <(env DEVELOPER_DIR="$XCODE/Contents/Developer" xcodebuild \
+  -project apps/tongxing-ios/Tongxing.xcodeproj -scheme TongxingBeta -configuration BetaRelease \
+  -showBuildSettings 2>/dev/null | awk '!v && $1=="MARKETING_VERSION" {v=$3}
+                                        !b && $1=="CURRENT_PROJECT_VERSION" {b=$3} END {print v, b}')
+if [[ "$BUILT_VERSION $BUILT_BUILD" != "$VERSION $BUILD" ]]; then
+  echo "Tongxing.xcodeproj builds '$BUILT_VERSION ($BUILT_BUILD)' but project.yml says $VERSION ($BUILD); regenerate the project"; exit 1
+fi
 stage archive-dry   apps/tongxing-ios/scripts/archive-channel.sh --channel beta \
   --expected-commit "$COMMIT" --developer-dir "$XCODE" --output-dir "$IOS_OUT" --dry-run
 
