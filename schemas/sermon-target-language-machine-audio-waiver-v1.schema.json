@@ -22,6 +22,7 @@
     "reviewedUnitIds",
     "unitResults",
     "audioQcJsonSha256",
+    "trackCheckJsonSha256",
     "calibration",
     "implementationSha256",
     "rules",
@@ -143,6 +144,9 @@
       }
     },
     "audioQcJsonSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "trackCheckJsonSha256": {
       "$ref": "#/$defs/sha256"
     },
     "calibration": {

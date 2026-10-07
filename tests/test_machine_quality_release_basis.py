@@ -43,6 +43,7 @@ def text_qc(candidate):
     return {"schemaVersion": "sermon-target-text-auto-qc-v1", "locale": candidate["targetLocale"],
             "status": "pass", "humanApproval": False, "mutatesText": False,
             "repairGroupIds": [], "sourceTextFallbackGroupIds": [], "semanticIdentitySha256": SEMANTIC_SHA,
+            "implementationSha256": IMPLEMENTATION,
             "results": [{"groupId": group["translationGroupId"], "status": "pass", "problems": [],
                          "backTranslation": {"status": "pass", "issues": []}, "failedAttempts": 0,
                          "nextAction": "keep", "targetTextSha256": sha(group["targetText"])}
@@ -140,6 +141,11 @@ class TextWaiverTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, message):
                 basis.build_text_waiver(self.source_package, self.anchor, self.candidate,
                                         text_qc(self.candidate), cal)
+        # A cached text QC from older QC code cannot ride on a newer calibration.
+        stale = text_qc(self.candidate)
+        stale["implementationSha256"] = "0" * 64
+        with self.assertRaisesRegex(ValueError, "implementation other than the calibrated one"):
+            basis.build_text_waiver(self.source_package, self.anchor, self.candidate, stale, calibration())
 
     def test_layer3_rejects_pending_candidate_without_any_basis(self):
         write_json(self.human_review_receipt_path, self.human_review_receipt)
@@ -167,6 +173,7 @@ def audio_fixture(flagged=False):
                "status": "candidate" if flagged else "machine_screened", "units": units,
                "track": {"path": "track.mp3", "sha256": "4" * 64},
                "captions": {"path": "captions.json", "sha256": "5" * 64},
+               "schedule": {"path": "schedule.json", "sha256": "c" * 64, "jsonSha256": "c" * 64},
                "machineScreening": {"status": "requires_review" if flagged else "pass",
                                     "model": "qwen3-asr-0.6b", "coverage": 1.0},
                "humanReview": {"status": "pending", "humanApproval": False, "reviewedBy": None,
@@ -184,6 +191,7 @@ def audio_fixture(flagged=False):
                              for unit, value in zip(units, similarities)],
                  "humanListeningStatus": "pending"}
     qc = {"schemaVersion": "sermon-target-audio-auto-qc-v1", "locale": "ko", "status": "pass",
+          "implementationSha256": IMPLEMENTATION,
           "humanApproval": False, "mutatesAudio": False, "subtitleOnlyGroupIds": [], "repairGroupIds": [],
           "results": [{"groupId": unit["textGroupId"], "status": "pass", "issues": [], "asrDecision": "pass",
                        "asrPrimary": value, "asrSecondary": 0.96 if value < 0.88 else None,
@@ -204,10 +212,45 @@ def audio_fixture(flagged=False):
     return package, screening, qc, text
 
 
+def track_check(package, **overrides):
+    """A passing assembled-track check bound to ``package`` (see test_machine_quality_waiver for the real check)."""
+    value = {"schemaVersion": "sermon-target-audio-track-check-v1", "status": "pass", "issues": [],
+             "humanApproval": False, "targetLocale": package["targetLocale"],
+             "targetLanguageAudioPackageJsonSha256": basis.json_sha256(package),
+             "trackSha256": package["track"]["sha256"], "pcmMasterSha256": "e" * 64,
+             "scheduleJsonSha256": package["schedule"]["jsonSha256"],
+             "unitAudioSha256s": [unit["audio"]["sha256"] for unit in package["units"]],
+             "implementationSha256": IMPLEMENTATION}
+    value.update(overrides)
+    return value
+
+
 class AudioWaiverTests(unittest.TestCase):
     def build(self, package, screening, qc, text, **kwargs):
+        kwargs.setdefault("track_check", track_check(package))
         return basis.build_audio_waiver(package, screening, qc, text, calibration(),
                                         created_at="2026-10-07T02:00:00+00:00", **kwargs)
+
+    def test_waiver_needs_a_passing_track_check_of_this_package(self):
+        package, screening, qc, text = audio_fixture()
+        receipt = self.build(package, screening, qc, text)
+        self.assertEqual(receipt["trackCheckJsonSha256"], basis.json_sha256(track_check(package)))
+        other = copy.deepcopy(package)
+        other["track"]["sha256"] = "f" * 64
+        for check, message in ((None, "track check missing"),
+                               (track_check(package, status="fail", issues=["pcm_track_differs_from_scheduled_units"]),
+                                "status differs"),
+                               (track_check(other), "trackSha256 differs"),
+                               (track_check(package, unitAudioSha256s=["a" * 64, "b" * 64]), "unitAudioSha256s"),
+                               (track_check(package, implementationSha256="0" * 64), "implementationSha256")):
+            with self.assertRaisesRegex(ValueError, message):
+                self.build(package, screening, qc, text, track_check=check)
+
+    def test_audio_qc_from_older_qc_code_is_refused(self):
+        package, screening, qc, text = audio_fixture()
+        qc["implementationSha256"] = "0" * 64
+        with self.assertRaisesRegex(ValueError, "implementation other than the calibrated one"):
+            self.build(package, screening, qc, text)
 
     def test_clean_package_waives_listening_without_human_approval(self):
         package, screening, qc, text = audio_fixture()
@@ -223,7 +266,7 @@ class AudioWaiverTests(unittest.TestCase):
         text_only = calibration(audioIncluded=False)
         text_only["kinds"] = {kind: row for kind, row in text_only["kinds"].items() if kind.startswith("text.")}
         with self.assertRaisesRegex(ValueError, "audio checks"):
-            basis.build_audio_waiver(package, screening, qc, text, text_only,
+            basis.build_audio_waiver(package, screening, qc, text, text_only, track_check=track_check(package),
                                      created_at="2026-10-07T02:00:00+00:00")
         # The same calibration is enough for the text waiver.
         self.assertTrue(basis.calibration_summary(text_only, "ko", IMPLEMENTATION)["semanticChecksIncluded"])

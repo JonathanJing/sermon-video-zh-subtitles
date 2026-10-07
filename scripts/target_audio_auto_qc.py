@@ -13,6 +13,9 @@ with a new seed; attempts 3-4 send a targeted spoken-text revision through the
 normal Layer 2 chain before synthesizing again. After that the sentence is
 published subtitle-only (no dub). The ladder counts per sentence, never per
 sermon.
+
+``check_track`` runs once the track is assembled: the PCM master must be the
+screened unit audio placed by the schedule, and an MP3 track must follow it.
 """
 from __future__ import annotations
 
@@ -22,13 +25,16 @@ import hashlib
 import io
 import json
 import math
+import operator
 from pathlib import Path
 import statistics
+import subprocess
 import sys
 import wave
 
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from scripts import machine_quality_waiver as waiver
 from scripts.target_audio_predicted_schedule import speech_units
 
 SCHEMA = "sermon-target-audio-auto-qc-v1"
@@ -213,19 +219,20 @@ def next_action(failed_attempts: int) -> str:
 
 def screen(units: list[dict], locale: str, thresholds: dict = THRESHOLDS) -> dict:
     """Screen one render attempt. Each unit: ``{groupId, text, sourceSeconds,
-    wav (bytes) or metrics + audioSha256, asr: {primary, secondary?}, priorFailedAttempts?}``,
+    wav (bytes), asr: {primary, secondary?}, priorFailedAttempts?}``,
     where each ASR opinion comes from :func:`asr_opinion`.
 
-    An opinion counts only for the exact audio bytes and text it names, so a
+    Acoustic metrics are always decoded from the unit's WAV bytes, never taken
+    from the caller, so they describe the audio the result is bound to. An
+    opinion counts only for the exact audio bytes and text it names, so a
     score kept from an earlier render is ignored. A unit without a current
     primary opinion has had no content check and stays ``pending_primary_asr``
     instead of passing on acoustics alone."""
     rows = []
     for unit in units:
-        metrics = unit.get("metrics")
-        if metrics is None:
-            metrics = signal_metrics(*decode_pcm16(unit["wav"]), thresholds)
-        rows.append({**unit, "metrics": metrics})
+        if not isinstance(unit.get("wav"), (bytes, bytearray)) or "metrics" in unit:
+            raise ValueError("Audio QC decodes each unit's WAV bytes; supplied metrics are not accepted")
+        rows.append({**unit, "metrics": signal_metrics(*decode_pcm16(unit["wav"]), thresholds)})
     all_issues = unit_issues(rows, locale, thresholds)
     results = []
     for row, issues in zip(rows, all_issues):
@@ -233,7 +240,7 @@ def screen(units: list[dict], locale: str, thresholds: dict = THRESHOLDS) -> dic
         if "asrPrimary" in row or "asrSecondary" in row:
             raise ValueError("Bare ASR scores are not accepted; pass asr opinions bound to the audio")
         # The waiver binds these exact bytes and both ASR opinions.
-        audio_sha = _sha256(row["wav"]) if "wav" in row else row.get("audioSha256")
+        audio_sha = _sha256(row["wav"])
         text_sha = _sha256(row["text"].encode("utf-8"))
         primary, primary_stale = bound_opinion((row.get("asr") or {}).get("primary"), audio_sha, text_sha)
         secondary, secondary_stale = bound_opinion((row.get("asr") or {}).get("secondary"), audio_sha, text_sha)
@@ -264,6 +271,7 @@ def screen(units: list[dict], locale: str, thresholds: dict = THRESHOLDS) -> dic
                         "failedAttempts": prior + (status == "fail"),
                         "nextAction": action, "metrics": row["metrics"]})
     return {"schemaVersion": SCHEMA, "locale": locale, "thresholds": thresholds,
+            "implementationSha256": waiver.implementation_sha256(),
             "maxRepairAttempts": MAX_REPAIR_ATTEMPTS,
             "status": "pass" if all(r["status"] == "pass" for r in results) else "requires_repair",
             "subtitleOnlyGroupIds": [r["groupId"] for r in results if r["nextAction"] == "subtitle_only"],
@@ -271,14 +279,136 @@ def screen(units: list[dict], locale: str, thresholds: dict = THRESHOLDS) -> dic
             "results": results, "humanApproval": False, "mutatesAudio": False}
 
 
+TRACK_CHECK_SCHEMA = "sermon-target-audio-track-check-v1"
+# A compressed track must follow its PCM master window by window. MP3 at 64 kb/s
+# stays within about 1 dB on speech; a silent, stale, omitted or reordered
+# render differs by far more in many windows.
+TRACK_ENVELOPE = {"sampleRate": 8000, "windowSeconds": 0.05, "floorDbfs": -60.0,
+                  "maxWindowDeltaDb": 6.0, "maxDeviantShare": 0.02, "maxLengthDeltaSeconds": 0.1}
+
+
+def _pcm16_frames(data: bytes) -> tuple[bytes, int, int]:
+    with wave.open(io.BytesIO(data), "rb") as stream:
+        if stream.getsampwidth() != 2 or stream.getcomptype() != "NONE":
+            raise ValueError("Only PCM16 WAV is supported")
+        return stream.readframes(stream.getnframes()), stream.getframerate(), stream.getnchannels()
+
+
+def scheduled_track(entries: list[dict], units: list[bytes], length_frames: int) -> tuple[bytes, int, int]:
+    """The PCM16 track the renderer must write: each unit at its planned start, silence elsewhere."""
+    decoded = [_pcm16_frames(unit) for unit in units]
+    formats = {(rate, channels) for _, rate, channels in decoded}
+    if len(formats) != 1:
+        raise ValueError("Units differ in sample rate or channel count")
+    (rate, channels), = formats
+    frame = channels * 2
+    track = bytearray(length_frames * frame)
+    for entry, (pcm, _, _) in zip(entries, decoded, strict=True):
+        offset = round(entry["plannedStart"] * rate) * frame
+        if offset < 0 or offset + len(pcm) > len(track):
+            raise ValueError(f"Scheduled unit exceeds the track: {entry['textGroupId']}")
+        track[offset:offset + len(pcm)] = pcm
+    return bytes(track), rate, channels
+
+
+def _mono_pcm(path: Path, rate: int) -> array.array:
+    decoded = subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-xerror", "-i", str(path), "-map", "0:a:0",
+                              "-ac", "1", "-ar", str(rate), "-f", "s16le", "-"],
+                             capture_output=True, check=True, timeout=900).stdout
+    samples = array.array("h")
+    samples.frombytes(decoded[:len(decoded) - len(decoded) % 2])
+    if sys.byteorder == "big":
+        samples.byteswap()
+    return samples
+
+
+def _envelope(samples: array.array, rate: int, settings: dict) -> list[float]:
+    size = max(1, round(settings["windowSeconds"] * rate))
+    floor, full_scale = settings["floorDbfs"], 32768.0 ** 2
+    levels = []
+    for start in range(0, len(samples), size):
+        chunk = samples[start:start + size]
+        power = sum(map(operator.mul, chunk, chunk)) / len(chunk)
+        levels.append(max(floor, 10 * math.log10(power / full_scale)) if power > 0 else floor)
+    return levels
+
+
+def check_track(package: dict, *, decode=_mono_pcm, settings: dict = TRACK_ENVELOPE) -> dict:
+    """Prove the package track is the scheduled placement of its screened unit audio.
+
+    Unit QC and ASR look at unit WAVs; this binds them to the assembled track.
+    The PCM master (the track itself, or the ``.wav`` beside an MP3) must equal
+    the units placed at their planned starts, sample for sample. An MP3 track
+    must then follow that master's loudness envelope."""
+    def read(artifact: dict, label: str) -> bytes:
+        data = Path(artifact["path"]).read_bytes()
+        if _sha256(data) != artifact["sha256"]:
+            raise ValueError(f"{label} bytes differ from the package")
+        return data
+
+    schedule_bytes = read(package["schedule"], "Schedule")
+    schedule = json.loads(schedule_bytes)
+    if waiver.json_sha256(schedule) != package["schedule"]["jsonSha256"]:
+        raise ValueError("Schedule JSON differs from the package")
+    entries, units = schedule["entries"], package["units"]
+    if [entry["textGroupId"] for entry in entries] != [unit["textGroupId"] for unit in units]:
+        raise ValueError("Schedule entries differ from the package units")
+    track_path = Path(package["track"]["path"])
+    read(package["track"], "Track")
+    master_path = track_path if track_path.suffix.lower() == ".wav" else track_path.with_suffix(".wav")
+    master = master_path.read_bytes()
+    master_pcm, rate, channels = _pcm16_frames(master)
+    expected, unit_rate, unit_channels = scheduled_track(
+        entries, [read(unit["audio"], f"Unit {unit['textGroupId']} audio") for unit in units],
+        len(master_pcm) // (channels * 2))
+    issues = []
+    if (unit_rate, unit_channels) != (rate, channels) or expected != master_pcm:
+        issues.append("pcm_track_differs_from_scheduled_units")
+    envelope = None
+    if master_path != track_path:
+        low = settings["sampleRate"]
+        reference, compressed = (_envelope(decode(path, low), low, settings) for path in (master_path, track_path))
+        count = min(len(reference), len(compressed))
+        deltas = [abs(a - b) for a, b in zip(reference[:count], compressed[:count])]
+        deviant = sum(delta > settings["maxWindowDeltaDb"] for delta in deltas)
+        envelope = {"windows": count, "deviantWindows": deviant, "maxDeltaDb": round(max(deltas, default=0.0), 3),
+                    "lengthDeltaSeconds": round(abs(len(reference) - len(compressed)) * settings["windowSeconds"], 3)}
+        if not count or deviant > settings["maxDeviantShare"] * count:
+            issues.append("compressed_track_differs_from_pcm_master")
+        if envelope["lengthDeltaSeconds"] > settings["maxLengthDeltaSeconds"] + settings["windowSeconds"]:
+            issues.append("compressed_track_length_differs")
+    return {"schemaVersion": TRACK_CHECK_SCHEMA, "status": "fail" if issues else "pass", "issues": issues,
+            "targetLocale": package["targetLocale"],
+            "targetLanguageAudioPackageJsonSha256": waiver.json_sha256(package),
+            "trackSha256": package["track"]["sha256"], "pcmMasterSha256": _sha256(master),
+            "scheduleJsonSha256": package["schedule"]["jsonSha256"],
+            "unitAudioSha256s": [unit["audio"]["sha256"] for unit in units],
+            "method": {"pcm": "sample_exact_scheduled_placement",
+                       "compressed": None if envelope is None else "loudness_envelope"},
+            "settings": settings, "envelope": envelope,
+            "implementationSha256": waiver.implementation_sha256(), "humanApproval": False}
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--input", required=True, type=Path,
+    parser.add_argument("--track-package", type=Path,
+                        help="Audio package JSON: check its assembled track instead of screening units")
+    parser.add_argument("--input", type=Path,
                         help="{locale, units:[{groupId, text, sourceSeconds, wavPath, asr:{primary, "
                              "secondary?}, priorFailedAttempts?}]}; each ASR opinion is {similarity, "
                              "audioSha256, textSha256, model, modelRevision?}")
     parser.add_argument("--out", required=True, type=Path)
     args = parser.parse_args()
+    if (args.track_package is None) == (args.input is None):
+        parser.error("pass exactly one of --input or --track-package")
+    if args.track_package is not None:
+        result = check_track(json.loads(args.track_package.read_text(encoding="utf-8")))
+        args.out.parent.mkdir(parents=True, exist_ok=True)
+        with args.out.open("x", encoding="utf-8") as stream:
+            json.dump(result, stream, ensure_ascii=False, indent=2, sort_keys=True)
+            stream.write("\n")
+        print(json.dumps({key: result[key] for key in ("status", "issues")}))
+        return
     value = json.loads(args.input.read_text(encoding="utf-8"))
     units = []
     for unit in value["units"]:

@@ -150,6 +150,7 @@ def build_text_waiver(source: dict, anchor: dict, candidate: dict, text_qc: dict
     for row, group in zip(results, groups):
         _require(row.get("targetTextSha256") == _text_sha(group["targetText"]),
                  f"Text QC screened different text: {group['translationGroupId']}")
+    summary = calibration_summary(calibration, locale, implementation)
     runtime = waiver.runtime_identity_problems(calibration, text_qc=text_qc)
     _require(not runtime, "Text QC runtime differs from calibration: " + "; ".join(runtime))
     receipt = {
@@ -165,7 +166,7 @@ def build_text_waiver(source: dict, anchor: dict, candidate: dict, text_qc: dict
                           "failedAttempts": int(row.get("failedAttempts", 0))}
                          for row, group in zip(results, groups)],
         "textQcJsonSha256": json_sha256(text_qc),
-        "calibration": calibration_summary(calibration, locale, implementation),
+        "calibration": summary,
         "implementationSha256": implementation, "rules": RULES,
         "disclosure": disclosure(locale), "createdAt": created_at or _now(),
         "postPublicationSpotCheck": "owner_spot_check_after_release",
@@ -240,10 +241,26 @@ def _machine_screened(package: dict) -> bool:
             and package.get("machineScreening", {}).get("coverage") == 1)
 
 
+def track_check_problems(package: dict, track_check: dict | None, implementation: str) -> list[str]:
+    """The assembled track must be proven to be this package's screened units, by current QC code."""
+    if track_check is None:
+        return ["assembled-track check missing"]
+    expected = {"schemaVersion": "sermon-target-audio-track-check-v1", "status": "pass", "issues": [],
+                "humanApproval": False, "targetLocale": package["targetLocale"],
+                "targetLanguageAudioPackageJsonSha256": json_sha256(package),
+                "trackSha256": package["track"]["sha256"],
+                "scheduleJsonSha256": (package.get("schedule") or {}).get("jsonSha256"),
+                "unitAudioSha256s": [row["audio"]["sha256"] for row in package["units"]],
+                "implementationSha256": implementation}
+    return [f"track check {key} differs" for key, value in expected.items() if track_check.get(key) != value]
+
+
 def build_audio_waiver(package: dict, screening: dict, audio_qc: dict, text_waiver: dict,
-                       calibration: dict, *, secondary_asr_model: str | None = None,
+                       calibration: dict, *, track_check: dict | None = None,
+                       secondary_asr_model: str | None = None,
                        implementation: str | None = None, created_at: str | None = None) -> dict:
-    """Issue an audio waiver when every unit passed audio QC with no subtitle-only units."""
+    """Issue an audio waiver when every unit passed audio QC with no subtitle-only units
+    and the assembled track is proven to be those units in schedule order."""
     implementation = implementation or waiver.implementation_sha256()
     locale = package.get("targetLocale")
     _require(locale in LOCALES, "Machine waivers cover zh-Hans, ko and es only")
@@ -265,8 +282,12 @@ def build_audio_waiver(package: dict, screening: dict, audio_qc: dict, text_waiv
     _require(audio_qc.get("status") == "pass" and not audio_qc.get("subtitleOnlyGroupIds")
              and all(row.get("status") == "pass" and row.get("nextAction") == "keep" for row in results),
              "Every unit must pass audio QC; subtitle-only units are not wired yet")
+    summary = calibration_summary(calibration, locale, implementation, require_audio=True)
     runtime = waiver.runtime_identity_problems(calibration, audio_qc=audio_qc)
     _require(not runtime, "Audio QC runtime differs from calibration: " + "; ".join(runtime))
+    # Unit checks say nothing about the track listeners hear.
+    track = track_check_problems(package, track_check, implementation)
+    _require(not track, "Assembled track is not verified: " + "; ".join(track))
     threshold = _asr_threshold()
     rows = []
     for row, unit in zip(results, package["units"]):
@@ -299,7 +320,8 @@ def build_audio_waiver(package: dict, screening: dict, audio_qc: dict, text_waiv
         "secondaryAsrModel": secondary_asr_model if flagged else None,
         "reviewedUnitIds": [row["textGroupId"] for row in package["units"]],
         "unitResults": rows, "audioQcJsonSha256": json_sha256(audio_qc),
-        "calibration": calibration_summary(calibration, locale, implementation, require_audio=True),
+        "trackCheckJsonSha256": json_sha256(track_check),
+        "calibration": summary,
         "implementationSha256": implementation, "rules": RULES,
         "disclosure": disclosure(locale), "createdAt": created_at or _now(),
         "postPublicationSpotCheck": "owner_spot_check_after_release",
@@ -364,7 +386,7 @@ def main() -> None:
     for name in ("source", "anchor", "candidate", "text-qc", "calibration", "out"):
         text.add_argument(f"--{name}", required=True, type=Path)
     audio = sub.add_parser("audio", help="Issue an audio waiver for one audio package")
-    for name in ("package", "screening", "audio-qc", "text-waiver", "calibration", "out"):
+    for name in ("package", "screening", "audio-qc", "track-check", "text-waiver", "calibration", "out"):
         audio.add_argument(f"--{name}", required=True, type=Path)
     audio.add_argument("--secondary-asr-model")
     args = parser.parse_args()
@@ -374,6 +396,7 @@ def main() -> None:
     else:
         receipt = build_audio_waiver(_read(args.package), _read(args.screening), _read(args.audio_qc),
                                      _read(args.text_waiver), _read(args.calibration),
+                                     track_check=_read(args.track_check),
                                      secondary_asr_model=args.secondary_asr_model)
     _write_once(args.out, receipt)
     print(json.dumps({"schemaVersion": receipt["schemaVersion"], "targetLocale": receipt["targetLocale"],

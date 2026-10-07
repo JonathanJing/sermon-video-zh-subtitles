@@ -118,6 +118,9 @@ def runtime_identity_problems(calibration: dict | None, *, text_qc: dict | None 
     if calibration is None:
         return []
     problems = []
+    for name, receipt in (("text", text_qc), ("audio", audio_qc)):
+        if receipt is not None and receipt.get("implementationSha256") != calibration.get("implementationSha256"):
+            problems.append(f"{name} QC ran under a QC implementation other than the calibrated one")
     if text_qc is not None and text_qc.get("semanticIdentitySha256") != calibration.get("semanticIdentitySha256"):
         problems.append("back-translation runtime differs from calibration")
     if audio_qc is not None:

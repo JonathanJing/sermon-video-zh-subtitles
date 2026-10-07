@@ -160,7 +160,7 @@ def _asr_row(unit: dict, wav: bytes, locale: str, asr, threshold: float) -> dict
     opinions = {"primary": primary}
     if primary["similarity"] < threshold:
         opinions["secondary"] = asr("secondary", wav, unit["text"], locale)
-    return {**{k: v for k, v in unit.items() if k != "metrics"}, "wav": wav, "asr": opinions}
+    return {**unit, "wav": wav, "asr": opinions}
 
 
 def calibrate_audio(units: list[dict], locale: str, *, asr=None, max_trials: int = 30) -> dict:
@@ -169,8 +169,9 @@ def calibrate_audio(units: list[dict], locale: str, *, asr=None, max_trials: int
     threshold = audio_qc.THRESHOLDS["asrMinSimilarity"]
     if asr is not None:
         units = [_asr_row(unit, unit["wav"], locale, asr, threshold) for unit in units]
+    units = [{key: value for key, value in unit.items() if key != "metrics"} for unit in units]
     decoded = [audio_qc.decode_pcm16(unit["wav"]) for unit in units]
-    base = [{**unit, "metrics": audio_qc.signal_metrics(*pcm)} for unit, pcm in zip(units, decoded)]
+    base = list(units)
     clean = audio_qc.screen(base, locale)["results"]
     false_positives = sum(row["status"] == "fail" for row in clean)
     kinds, models = {}, {"primary": set(), "secondary": set()}
@@ -193,8 +194,8 @@ def calibrate_audio(units: list[dict], locale: str, *, asr=None, max_trials: int
                 wav = other["wav"]
                 rows[index] = _asr_row(units[index], wav, locale, asr, threshold)
             else:
-                mutated = audio_qc.signal_metrics(*mutate_audio(samples, rate, kind))
-                rows[index] = {**base[index], "metrics": mutated}
+                # The screen decodes the mutated bytes, as it would a real faulty render.
+                rows[index] = {**base[index], "wav": audio_qc.encode_pcm16(*mutate_audio(samples, rate, kind))}
             result = audio_qc.screen(rows, locale)["results"][index]
             for role, key in (("primary", "asrPrimaryModel"), ("secondary", "asrSecondaryModel")):
                 if result[key] is not None:

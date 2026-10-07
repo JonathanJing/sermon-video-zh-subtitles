@@ -1,8 +1,14 @@
 import copy
 import hashlib
+import io
+import json
 from pathlib import Path
 import random
+import shutil
+import subprocess
+import tempfile
 import unittest
+import wave
 
 from scripts import auto_qc_seeded_errors as seeded
 from scripts import machine_quality_waiver as waiver
@@ -96,6 +102,28 @@ class TextRuleTests(unittest.TestCase):
             "As 1 John 4:8 says", "Como dice Juan 4:8", "es"))
         self.assertEqual(rules.scripture_reference_problems("As 1 John 4:8 says", "Como dice 1 Juan 4:8", "es"), [])
         self.assertEqual(rules.scripture_reference_problems("As 1 John 4:8 says", "요한일서 4장 8절 말씀처럼", "ko"), [])
+
+    def test_book_ordinals_are_not_cardinals(self):
+        # "1 John" is 요한일서 / Primera de Juan / 约翰一书, never a separate "1".
+        english = "As 1 John 4:8 says, God is love."
+        for locale, target in (("ko", "요한일서 4장 8절 말씀처럼 하나님은 사랑이십니다."),
+                               ("es", "Como dice Primera de Juan 4:8, Dios es amor."),
+                               ("zh-Hans", "正如约翰一书4章8节说，神就是爱。")):
+            self.assertEqual(rules.number_problems(english, target, locale, {(4, 8)}), [], locale)
+        # A cardinal said beside the ordinal still has to survive.
+        for locale, target in (("ko", "요한일서에서 그는 다시 말합니다."), ("es", "En Primera de Juan lo dice otra vez.")):
+            self.assertEqual(rules.number_problems("In 1 John he says it 1 more time.", target, locale, set()),
+                             ["missing number 1"], locale)
+        self.assertEqual(rules.number_problems("In 2 Peter he says it 2 more times.", "在彼得后书里他又说了。",
+                                               "zh-Hans", set()), ["missing number 2"])
+
+    def test_dropped_chapter_after_a_book_is_a_missing_number(self):
+        english = "Turn to Revelation 3."
+        for locale, good, bad in (("ko", "요한계시록 3장을 펴십시오.", "요한계시록을 펴십시오."),
+                                  ("es", "Vayan a Apocalipsis 3.", "Vayan a Apocalipsis."),
+                                  ("zh-Hans", "请翻到启示录3章。", "请翻到启示录。")):
+            self.assertEqual(rules.number_problems(english, good, locale, set()), [], locale)
+            self.assertEqual(rules.number_problems(english, bad, locale, set()), ["missing number 3"], locale)
 
     def test_bible_book_table_matches_the_scripture_index(self):
         from scripts import build_scripture_index as index
@@ -287,6 +315,102 @@ class AudioQcTests(unittest.TestCase):
         self.assertEqual(audio_qc.screen(units, "ko")["results"][1]["status"], "fail")
 
 
+    def test_metrics_come_from_the_wav_only(self):
+        units = fixtures.units("ko")
+        samples, rate = audio_qc.decode_pcm16(units[0]["wav"])
+        clean_metrics = audio_qc.signal_metrics(samples, rate)
+        with self.assertRaisesRegex(ValueError, "supplied metrics are not accepted"):
+            audio_qc.screen([{**units[0], "metrics": clean_metrics}] + units[1:], "ko")
+        with self.assertRaisesRegex(ValueError, "supplied metrics are not accepted"):
+            audio_qc.screen([{key: value for key, value in units[0].items() if key != "wav"}] + units[1:], "ko")
+
+
+def pcm_wav(pcm, rate, channels=1):
+    out = io.BytesIO()
+    with wave.open(out, "wb") as stream:
+        stream.setnchannels(channels)
+        stream.setsampwidth(2)
+        stream.setframerate(rate)
+        stream.writeframes(pcm)
+    return out.getvalue()
+
+
+class TrackCheckTests(unittest.TestCase):
+    """The assembled track must be the screened unit audio at its scheduled starts."""
+
+    def setUp(self):
+        self.dir = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.dir)
+        self.units = fixtures.units("ko")[:4]
+        self.rate = audio_qc.decode_pcm16(self.units[0]["wav"])[1]
+
+    def write(self, name, data):
+        path = self.dir / name
+        path.write_bytes(data)
+        return {"path": str(path), "sha256": hashlib.sha256(data).hexdigest()}
+
+    def package(self, track_units=None, *, mp3=None):
+        start, entries, units = 0.5, [], []
+        for unit in self.units:
+            gid = unit["groupId"]
+            units.append({"textGroupId": gid, "audio": self.write(f"{gid}.wav", unit["wav"])})
+            entries.append({"textGroupId": gid, "plannedStart": start})
+            start += len(audio_qc.decode_pcm16(unit["wav"])[0]) / self.rate + 0.4
+        schedule = {"entries": entries}
+        schedule_artifact = self.write("schedule.json", json.dumps(schedule).encode())
+        schedule_artifact["jsonSha256"] = waiver.json_sha256(schedule)
+        length = round((start + 0.5) * self.rate)
+        pcm, rate, channels = audio_qc.scheduled_track(
+            entries, track_units or [unit["wav"] for unit in self.units], length)
+        track = self.write("track.wav", pcm_wav(pcm, rate, channels))
+        if mp3 is not None:
+            track = self.write("track.mp3", mp3(Path(track["path"])))
+        return {"targetLocale": "ko", "schedule": schedule_artifact, "track": track, "units": units}
+
+    def test_exact_pcm_track_passes_and_binds_the_package(self):
+        package = self.package()
+        result = audio_qc.check_track(package)
+        self.assertEqual((result["status"], result["issues"], result["humanApproval"]), ("pass", [], False))
+        self.assertEqual(result["targetLanguageAudioPackageJsonSha256"], waiver.json_sha256(package))
+        self.assertEqual(result["unitAudioSha256s"], [unit["audio"]["sha256"] for unit in package["units"]])
+        self.assertEqual(result["implementationSha256"], waiver.implementation_sha256())
+
+    def test_omitted_or_reordered_units_fail(self):
+        silent = audio_qc.encode_pcm16([0.0] * len(audio_qc.decode_pcm16(self.units[1]["wav"])[0]), self.rate)
+        wavs = [unit["wav"] for unit in self.units]
+        for track_units in ([wavs[0], silent, *wavs[2:]], [wavs[1], wavs[0], *wavs[2:]]):
+            result = audio_qc.check_track(self.package(track_units))
+            self.assertEqual(result["issues"], ["pcm_track_differs_from_scheduled_units"])
+
+    def test_changed_unit_or_schedule_bytes_are_refused(self):
+        package = self.package()
+        Path(package["units"][2]["audio"]["path"]).write_bytes(self.units[0]["wav"])
+        with self.assertRaisesRegex(ValueError, "Unit g003 audio bytes differ"):
+            audio_qc.check_track(package)
+        package = self.package()
+        package["schedule"]["jsonSha256"] = "0" * 64
+        with self.assertRaisesRegex(ValueError, "Schedule JSON differs"):
+            audio_qc.check_track(package)
+
+    @unittest.skipUnless(shutil.which("ffmpeg"), "ffmpeg is not installed")
+    def test_mp3_follows_its_pcm_master(self):
+        def encode(source, target=None):
+            out = self.dir / "encoded.mp3"
+            subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-y", "-i", str(target or source),
+                            "-b:a", "64k", str(out)], check=True)
+            return out.read_bytes()
+        result = audio_qc.check_track(self.package(mp3=encode))
+        self.assertEqual((result["status"], result["method"]["compressed"]), ("pass", "loudness_envelope"))
+        self.assertLessEqual(result["envelope"]["deviantWindows"], 0.02 * result["envelope"]["windows"])
+        # An MP3 of silence beside a correct master is not what listeners should hear.
+        silence = self.dir / "silence.wav"
+        with wave.open(io.BytesIO(Path(self.package()["track"]["path"]).read_bytes())) as stream:
+            frames = stream.getnframes()
+        silence.write_bytes(pcm_wav(bytes(frames * 2), self.rate))
+        result = audio_qc.check_track(self.package(mp3=lambda source: encode(source, silence)))
+        self.assertIn("compressed_track_differs_from_pcm_master", result["issues"])
+
+
 class PredictedScheduleTests(unittest.TestCase):
     def rows(self):
         rng = random.Random(7)
@@ -389,10 +513,12 @@ class CalibrationAndWaiverTests(unittest.TestCase):
                               "audio": {"sha256": text_sha("audio " + group["translationGroupId"])}}
                              for group in groups]}
         text = {"locale": locale, "sourceTextFallbackGroupIds": ids[:fallback],
+                "implementationSha256": waiver.implementation_sha256(),
                 "semanticIdentitySha256": text_qc.semantic_identity(fixtures.SEMANTIC_IDENTITY)["sha256"],
                 "results": [{"groupId": gid, "nextAction": "source_text_fallback" if i < fallback else "keep",
                              "targetTextSha256": text_sha(groups[i]["targetText"])} for i, gid in enumerate(ids)]}
-        audio = {"locale": locale, "subtitleOnlyGroupIds": ids[count - subtitle_only:], "results": [
+        audio = {"locale": locale, "subtitleOnlyGroupIds": ids[count - subtitle_only:],
+                 "implementationSha256": waiver.implementation_sha256(), "results": [
             {"groupId": gid, "nextAction": "subtitle_only" if i >= count - subtitle_only else "keep",
              "audioSha256": package["units"][i]["audio"]["sha256"],
              "asrPrimaryModel": {"model": fixtures.PRIMARY_ASR, "modelRevision": None}, "asrSecondaryModel": None}

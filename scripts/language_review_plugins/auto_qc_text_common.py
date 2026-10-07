@@ -686,12 +686,21 @@ def name_problems(policy: dict, english: str, text: str) -> list[str]:
     return problems
 
 
+# "1 John", "2 Peter": the digit is part of the book name, rendered as 요한일서,
+# Primera de Juan or 约翰一书 rather than as a cardinal.
+_ENGLISH_BOOK_ORDINAL = re.compile(r"\b([123])\s*(?:" + _alternation(
+    name for number, name in _EN_BOOK_CODES if number is not None) + r")\b")
+
+
 def number_problems(english: str, text: str, locale: str, references: set[tuple[int, int]]) -> list[str]:
     present = {"ko": korean_number_present, "es": spanish_number_present,
                "zh-Hans": chinese_number_present}[locale]
     reference_numbers = {value for pair in references for value in pair}
-    missing = [value for value in dict.fromkeys(english_numbers(english))
-               if value not in reference_numbers and not present(text, value)]
+    said = english_numbers(english)
+    ordinals = [int(value) for value in _ENGLISH_BOOK_ORDINAL.findall(english)]
+    missing = [value for value in dict.fromkeys(said)
+               if value not in reference_numbers and said.count(value) > ordinals.count(value)
+               and not present(text, value)]
     return [f"missing number {value}" for value in missing]
 
 

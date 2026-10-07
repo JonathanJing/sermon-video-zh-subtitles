@@ -23,6 +23,7 @@ import json
 import statistics
 import unicodedata
 
+from scripts import machine_quality_waiver as waiver
 from scripts.language_review_plugins import auto_qc_text_common as rules
 
 SCHEMA = "sermon-target-text-auto-qc-v1"
@@ -201,7 +202,9 @@ def screen(groups: list[dict], locale: str, *, policy: dict | None = None, call=
         results.append({"groupId": group["groupId"], "status": status, "problems": problems,
                         "backTranslation": semantic, "failedAttempts": failed, "nextAction": action,
                         "targetTextSha256": hashlib.sha256(group["targetText"].encode("utf-8")).hexdigest()})
+    # A waiver must use the QC code the calibration measured, not a cached older run.
     return {"schemaVersion": SCHEMA, "locale": locale, "maxRepairAttempts": MAX_TEXT_REPAIR_ATTEMPTS,
+            "implementationSha256": waiver.implementation_sha256(),
             "semanticIdentity": None if bound is None else bound["identity"],
             "semanticIdentitySha256": None if bound is None else bound["sha256"],
             "lengthBounds": LENGTH_BOUNDS, "candidateLengthMedian": median,
