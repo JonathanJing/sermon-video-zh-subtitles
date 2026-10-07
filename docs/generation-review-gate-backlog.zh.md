@@ -2,7 +2,9 @@
 
 更新：2026-09-30。基线 `dev@fc3e2fbc60b0fd2c5b59c64fcd515c465efc6b0b`。详细架构、持久化合同、门禁、日志和验证见 [完整设计](generation-review-gate-design.zh.md)。本页展开 [Dev 统一 Backlog](backlog.zh.md) 的既有 `DEV-SPD-006/DEV-L2-001/DEV-TRACK-001`，保留上一轮评审的 RQC-01—06，不新增顶层 Epic 或重复实现已有缓存/日志系统。
 
-**新增范围的实现状态全部为 `pending`。合同编码可以开始；真实调用与策略切换必须满足各自前置条件。** PR #163 已合并的 accounting、producer spans、durable controller 和恢复组件作为基线，不重复列为从零开发；它们不自动证明本 RQC 闭环通过。
+初稿时新增范围的实现状态全部为 `pending`。PR #163 的 accounting、producer spans、durable controller 和恢复组件作为基线，不重复列为从零开发；它们不自动证明本 RQC 闭环通过。
+
+**2026-10-05 核查：D1–D5 私有合同、生成/只读审核、Gate、预算、单组恢复及显式 locale/public bridge 已有代码**，见[当前受控入口与剩余门槛](rqc-explicit-pipeline-entry.zh.md)。后面的勾选/排期保留初稿快照，不再据“全部 pending”重复从零开发。新 modelRules 与 strict CLI adapter 尚需接线；D6 完整故障/人工 Gold/阈值、D7 真实分级及 D8 rollout 仍待各自证据，见[PR #248 测试审计](reports/20261005-pr248-test-coverage-backlog-audit.zh.md)。真实调用与策略切换继续满足各自前置条件，不因代码存在关闭总体任务。
 
 ## 1. 六项工作与依赖
 

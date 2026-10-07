@@ -20,7 +20,7 @@ class OffsetTests(unittest.TestCase):
     def fixture(self,root):
         old=root/'prior';new=root/'new';old.mkdir()
         for name in ['parent','library','provenance']:(root/name).write_text(name)
-        prior={'schemaVersion':mod.VERSION,'model':mod.MODEL,'reasoningEffort':'medium','batchSize':6,
+        prior={'schemaVersion':mod.VERSION,'model':mod.MODEL,'reasoningEffort':'high','batchSize':6,
             'parentJob':mod.bind(root/'parent'),'library':mod.bind(root/'library'),'provenance':mod.bind(root/'provenance'),'timingReport':None}
         mod.save_frozen(old/'cuv-manifest.json',prior)
         blocks=[{'id':15,'en':'You are','zh':'你'}]
@@ -29,7 +29,7 @@ class OffsetTests(unittest.TestCase):
         lookup=CuvLibrary.from_path().lookup(mod.parse_reference('REV 3:16'))
         candidates=[{**quote,'reference':lookup['canonicalRef'],'verses':lookup['verses']}]
         data={'block':blocks[0],'quotations':candidates}
-        payload={'model':mod.MODEL,'reasoning_effort':'medium','response_format':{'type':'json_object'},
+        payload={'model':mod.MODEL,'reasoning_effort':'high','response_format':{'type':'json_object'},
             'messages':[{'role':'system','content':mod.SYSTEM+mod.SELECT},{'role':'user','content':json.dumps(data,ensure_ascii=False)}]}
         request={'version':mod.VERSION,'identity':mod.digest(prior),'stage':'select-0','payload':payload}
         part={'reference':'REV 3:16','text':'你'}
@@ -83,10 +83,10 @@ class OffsetTests(unittest.TestCase):
             mapping={'schemaVersion':mod.MAP_SCHEMA,'parentJobSha256':mod.file_hash(parent),'issues':[],
                 'blocks':[{'id':40,'quotes':[{'quoteId':'q40','sourceText':blocks[0]['en'],'reference':'REV 3:16','evidence':'Repeated source phrase','uncertainty':[]}],'speakerReferences':[],'uncertainty':[]},
                           {'id':41,'quotes':[],'speakerReferences':[],'uncertainty':[]}]}
-            prior={'schemaVersion':mod.VERSION,'model':mod.MODEL,'reasoningEffort':'medium','batchSize':6,'parentJob':mod.bind(parent),'library':None,'provenance':None,'timingReport':None,'referenceMap':None}
+            prior={'schemaVersion':mod.VERSION,'model':mod.MODEL,'reasoningEffort':'high','batchSize':6,'parentJob':mod.bind(parent),'library':None,'provenance':None,'timingReport':None,'referenceMap':None}
             mod.save_frozen(old/'cuv-manifest.json',prior)
             data={'parentJobSha256':mod.file_hash(parent),'blocks':[{'id':b['id'],'en':b['en']} for b in blocks]}
-            payload={'model':mod.MODEL,'reasoning_effort':'medium','response_format':{'type':'json_object'},'messages':[{'role':'system','content':mod.SYSTEM+mod.DISCOVER},{'role':'user','content':json.dumps(data,ensure_ascii=False)}]}
+            payload={'model':mod.MODEL,'reasoning_effort':'high','response_format':{'type':'json_object'},'messages':[{'role':'system','content':mod.SYSTEM+mod.DISCOVER},{'role':'user','content':json.dumps(data,ensure_ascii=False)}]}
             request={'version':mod.VERSION,'identity':mod.digest(prior),'stage':'discover','payload':payload}
             response={'model':mod.MODEL,'choices':[{'finish_reason':'stop','message':{'content':json.dumps(mapping)}}]}
             rp=old/'cache'/('discover-'+mod.digest(request)+'.json')

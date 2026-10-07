@@ -32,7 +32,8 @@ ROOT = Path(__file__).resolve().parents[2]
 SCHEMA = 'sermon-bounded-layer2-experiment-v1'
 LIMITS = {**provider_limits.DEFAULT_REQUEST_LIMITS, 'maxCompletionTokens': 2048}
 PRICES = {'gpt-6-astra': {'input': '10', 'cached': '1', 'cacheWrite': '12.5', 'output': '50'},
-          'gpt-6-sol': {'input': '2', 'cached': '.2', 'cacheWrite': '2.5', 'output': '10'}}
+          'gpt-6-sol': {'input': '2', 'cached': '.2', 'cacheWrite': '2.5', 'output': '10'},
+          'gpt-6.1-sol': {'input': '2', 'cached': '.1', 'cacheWrite': '2.5', 'output': '10'}}
 PRICE_URLS = {model: 'https://developers.openai.com/api/docs/models/' + model for model in PRICES}
 CAPS = {'calls': 48, 'callsPerArm': 16, 'inputTokens': 48 * 8192,
         'outputTokens': 48 * 2048, 'costMicrousd': 6_000_000, 'costPerArmMicrousd': 2_000_000}
@@ -106,10 +107,13 @@ def capture_prompts(source, anchor, policy, plan, indices, out, plugin):
         for index in indices:
             worker(items[index])
         raise CaptureComplete()
+    def fixture_replay(*_args):
+        raise AssertionError('Prompt capture must not call a provider')
+    fixture_replay.execution_identity = {'backend': 'fixture_replay'}
     with patch.object(production, '_model_call', fake), patch.object(production, 'ordered_group_results', select):
         try:
             production._run_prepared_groups(request, anchor, policy, out, '',
-                lambda *_: (_ for _ in ()).throw(AssertionError('Prompt capture must not call a provider')),
+                fixture_replay,
                 plan, plugin)
         except CaptureComplete:
             pass

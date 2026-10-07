@@ -4,6 +4,9 @@ import Foundation
 import MediaPlayer
 import TongxingCore
 import TongxingInfrastructure
+#if os(iOS)
+import UIKit
+#endif
 
 /// The single owner of audio. Views observe AVPlayer instead of keeping a second
 /// play/pause state; selecting, seeking and interruption callbacks are source-bound.
@@ -29,6 +32,7 @@ final class PlaybackController: ObservableObject {
         alignmentRevision = UUID()
         cancelAlignmentSeek()
         onManualInteraction?()
+        setAlignmentPhase(nil)
     }
 
     var alignmentPlaybackIntent: Bool { wantsPlayback || isPlaying || isWaiting }
@@ -56,6 +60,28 @@ final class PlaybackController: ObservableObject {
     }
 
     private let liveActivity = ListeningLiveActivityCoordinator()
+    @Published private(set) var alignmentPhase: ListeningAlignmentPhase?
+    private var alignmentSessionID: UUID?
+    private var alignmentFeedbackTask: Task<Void, Never>?
+
+    func setAlignmentPhase(_ phase: ListeningAlignmentPhase?) {
+        // First ship this UI in the separately installed Beta app.
+        guard Bundle.main.object(forInfoDictionaryKey: "TongxingURLScheme") as? String == "tongxing-beta" else { return }
+        alignmentFeedbackTask?.cancel()
+        if phase == .preparing { alignmentSessionID = UUID() }
+        if phase == nil { alignmentSessionID = nil }
+        alignmentPhase = phase
+        publishLiveActivity()
+        if let phase, !phase.isActive {
+            alignmentFeedbackTask = Task { [weak self] in
+                do { try await Task.sleep(for: .seconds(8)) } catch { return }
+                guard let self else { return }
+                self.alignmentPhase = nil
+                self.alignmentSessionID = nil
+                self.publishLiveActivity()
+            }
+        }
+    }
     private var languageObservation: AnyCancellable?
     @Published private(set) var statisticsEnabled = UserDefaults.standard.bool(forKey: ListeningStatistics.preferenceKey)
     var statisticsContentLocale = "zh-Hans"
@@ -131,6 +157,13 @@ final class PlaybackController: ObservableObject {
     private var sourceID = ""
     private var title = ""
     private var speaker = ""
+    #if os(iOS)
+    private lazy var nowPlayingArtwork: MPMediaItemArtwork? = {
+        guard let mark = UIImage(named: "BrandMark") else { return nil }
+        return MPMediaItemArtwork(boundsSize: mark.size) { _ in mark }
+    }()
+    #endif
+    private var systemSubtitles: [PlaybackSystemSubtitle] = []
     private var generation = UUID()
     private var seekGeneration = UUID()
     private var activationGeneration = UUID()
@@ -230,7 +263,7 @@ final class PlaybackController: ObservableObject {
             updateMetadata(week: week, track: track)
             return
         }
-        loadSource(identity: next, sourceID: week.sourceId, title: week.title, speaker: week.speaker,
+        loadSource(identity: next, sourceID: week.sourceId, title: SermonHeading(title: SermonHeading.displayTitle(week.title, pageID: week.id, date: week.date, fallback: AppLocalization.shared.text("证道")), series: week.series).title, speaker: week.speaker,
                    url: url, duration: track.durationSeconds, source: .legacy(week: week, track: track, url: url))
     }
 
@@ -241,8 +274,8 @@ final class PlaybackController: ObservableObject {
         let transfer = publishedLanguageTransfer.flatMap {
             $0.pageID == audio.pageID && $0.sourceIdentity == audio.sourceIdentitySha256 ? $0 : nil
         }
-        loadSource(identity: next, sourceID: audio.sourceIdentitySha256, title: audio.pageID,
-                   speaker: audio.locale, url: audio.localURL, duration: 0, source: .published(audio),
+        loadSource(identity: next, sourceID: audio.sourceIdentitySha256, title: SermonHeading.displayTitle(nil, pageID: audio.pageID, date: "", fallback: AppLocalization.shared.text("证道")),
+                   speaker: "", url: audio.localURL, duration: 0, source: .published(audio),
                    transfer: transfer)
     }
 
@@ -270,6 +303,7 @@ final class PlaybackController: ObservableObject {
         sourceID = nextSourceID
         title = nextTitle
         speaker = nextSpeaker
+        systemSubtitles = []
         publishedLanguageTransfer = transfer
         publishedPositionRestoreFailed = false
         position = transfer?.position ?? 0
@@ -378,6 +412,7 @@ final class PlaybackController: ObservableObject {
     func clear() { clear(retaining: nil) }
 
     private func clear(retaining transfer: PublishedLanguageTransfer?) {
+        setAlignmentPhase(nil)
         publishedLanguageTransfer = nil
         sampleStatistics(playing: false, clearing: true)
         saveProgress()
@@ -391,6 +426,7 @@ final class PlaybackController: ObservableObject {
         previewLoadFailed = false
         identity = nil
         loadedSource = nil
+        systemSubtitles = []
         pendingSeek = nil
         resumePosition = nil
         undoPosition = nil
@@ -410,10 +446,28 @@ final class PlaybackController: ObservableObject {
     func updateMetadata(week: SermonWeek, track: SermonTrack) {
         guard identity == track.identity(weekID: week.id), sourceID == week.sourceId,
               case .some(.legacy(_, _, let url)) = loadedSource else { return }
-        title = week.title
+        title = SermonHeading(title: SermonHeading.displayTitle(week.title, pageID: week.id, date: week.date, fallback: AppLocalization.shared.text("证道")), series: week.series).title
         speaker = week.speaker
         self.loadedSource = .legacy(week: week, track: track, url: url)
         publishNowPlaying()
+    }
+
+    /// Caller supplies reviewed, explicitly mapped subtitle intervals for this
+    /// exact loaded track. The player never guesses cross-language time mapping.
+    func updateSystemMetadata(identity expected: TrackIdentity, sourceID expectedSourceID: String,
+                              title: String, speaker: String, subtitles: [PlaybackSystemSubtitle]) {
+        guard identity == expected, sourceID == expectedSourceID else { return }
+        self.title = SermonHeading.displayTitle(title, pageID: expected.weekID, date: "",
+                                              fallback: AppLocalization.shared.text("证道"))
+        self.speaker = speaker
+        systemSubtitles = subtitles.filter { $0.start.isFinite && $0.end.isFinite && $0.start >= 0 && $0.end > $0.start }
+            .sorted { $0.start < $1.start }
+        publishNowPlaying()
+    }
+
+    var currentSystemSubtitle: PlaybackSystemSubtitle? {
+        guard pendingSeek == nil else { return nil }
+        return systemSubtitles.first { position >= $0.start && position < $0.end }
     }
 
     func toggle() {
@@ -457,6 +511,7 @@ final class PlaybackController: ObservableObject {
         activationGeneration = requestToken
         isWaiting = true
         message = "正在启用音频…"
+        publishNowPlaying()
         activationTask = Task { [weak self, activator = audioSessionActivator] in
             do {
                 try Task.checkCancellation()
@@ -567,6 +622,7 @@ final class PlaybackController: ObservableObject {
         seekGeneration = seekToken
         pendingSeek = (destination, destinationOffset)
         message = "正在定位…"
+        publishNowPlaying()
         player.seek(to: CMTime(seconds: destination, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] finished in
             Task { @MainActor [weak self] in
                 guard let self, self.generation == token, self.seekGeneration == seekToken else { completion?(false); return }
@@ -757,28 +813,50 @@ final class PlaybackController: ObservableObject {
         message = "音频服务已恢复，请点击播放继续并手动对齐。"
     }
 
+    enum RemoteAction { case play, pause, toggle, backward, forward, seek(Double) }
+
+    /// Synchronous command acceptance runs on the same actor as AVPlayer intent.
+    /// Queueing a Task and reporting success first allowed rapid commands to race.
+    @discardableResult
+    func handleRemoteCommand(_ action: RemoteAction) -> MPRemoteCommandHandlerStatus {
+        guard isReady, player.currentItem != nil else { return .noSuchContent }
+        switch action {
+        case .play:
+            guard !isVideoPresented else { return .commandFailed }
+            play()
+        case .pause: pause()
+        case .toggle:
+            guard !isVideoPresented else { return .commandFailed }
+            toggle()
+        case .backward: nudge(-1)
+        case .forward: nudge(1)
+        case .seek(let seconds):
+            guard seconds.isFinite, seconds >= 0, seconds <= duration else { return .commandFailed }
+            jump(to: seconds)
+        }
+        publishNowPlaying()
+        return .success
+    }
+
     private func configureRemoteCommands() {
         let commands = MPRemoteCommandCenter.shared()
-        func bind(_ command: MPRemoteCommand, _ action: @escaping @MainActor (PlaybackController) -> Void) {
+        func bind(_ command: MPRemoteCommand, _ action: RemoteAction) {
             let token = command.addTarget { [weak self] _ in
-                guard let self else { return .commandFailed }
-                Task { @MainActor in action(self) }
-                return .success
+                Self.onPlaybackActor { self?.handleRemoteCommand(action) ?? .commandFailed }
             }
             remoteTargets.append((command, token))
         }
-        bind(commands.playCommand) { $0.play() }
-        bind(commands.pauseCommand) { $0.pause() }
-        bind(commands.togglePlayPauseCommand) { $0.toggle() }
+        bind(commands.playCommand, .play)
+        bind(commands.pauseCommand, .pause)
+        bind(commands.togglePlayPauseCommand, .toggle)
         commands.skipBackwardCommand.preferredIntervals = [1]
         commands.skipForwardCommand.preferredIntervals = [1]
-        bind(commands.skipBackwardCommand) { $0.nudge(-1) }
-        bind(commands.skipForwardCommand) { $0.nudge(1) }
+        bind(commands.skipBackwardCommand, .backward)
+        bind(commands.skipForwardCommand, .forward)
         let positionTarget = commands.changePlaybackPositionCommand.addTarget { [weak self] event in
-            guard let event = event as? MPChangePlaybackPositionCommandEvent, let self else { return .commandFailed }
+            guard let event = event as? MPChangePlaybackPositionCommandEvent else { return .commandFailed }
             let seconds = event.positionTime
-            Task { @MainActor in self.jump(to: seconds) }
-            return .success
+            return Self.onPlaybackActor { self?.handleRemoteCommand(.seek(seconds)) ?? .commandFailed }
         }
         remoteTargets.append((commands.changePlaybackPositionCommand, positionTarget))
         commands.nextTrackCommand.isEnabled = false
@@ -786,21 +864,31 @@ final class PlaybackController: ObservableObject {
         updateRemoteAvailability()
     }
 
+    nonisolated private static func onPlaybackActor(_ action: @MainActor () -> MPRemoteCommandHandlerStatus) -> MPRemoteCommandHandlerStatus {
+        if Thread.isMainThread { return MainActor.assumeIsolated { action() } }
+        return DispatchQueue.main.sync { MainActor.assumeIsolated { action() } }
+    }
+
     private func updateRemoteAvailability() {
         remoteTargets.forEach { $0.0.isEnabled = isReady }
     }
 
+    func refreshLiveActivityPresentation() { publishLiveActivity() }
+
     private func publishLiveActivity() {
         guard let identity, isReady else { liveActivity.end(); return }
         liveActivity.update(title: title, speaker: speaker, position: position, duration: duration,
-                            isPlaying: isPlaying, sourceKey: identity.key + "|" + sourceID,
-                            languageCode: AppLocalization.shared.language.rawValue, isWaiting: isWaiting)
+                            isPlaying: isPlaying && pendingSeek == nil, sourceKey: identity.key + "|" + sourceID,
+                            languageCode: AppLocalization.shared.language.rawValue, isWaiting: isWaiting || pendingSeek != nil,
+                            alignmentPhase: alignmentPhase, alignmentSessionID: alignmentSessionID,
+                            subtitleID: currentSystemSubtitle?.id, chineseSubtitle: currentSystemSubtitle?.chinese,
+                            englishSubtitle: currentSystemSubtitle?.english)
     }
 
     private func publishNowPlaying() {
         guard identity != nil || isPreview else { return }
         publishLiveActivity()
-        MPNowPlayingInfoCenter.default().nowPlayingInfo = [
+        var info: [String: Any] = [
             MPMediaItemPropertyTitle: title,
             MPMediaItemPropertyArtist: speaker,
             MPMediaItemPropertyAlbumTitle: AppLocalization.shared.text("同行 · 证道中文听译"),
@@ -808,6 +896,10 @@ final class PlaybackController: ObservableObject {
             MPNowPlayingInfoPropertyElapsedPlaybackTime: position,
             MPNowPlayingInfoPropertyPlaybackRate: isPlaying ? 1.0 : 0.0,
         ]
+        #if os(iOS)
+        if let nowPlayingArtwork { info[MPMediaItemPropertyArtwork] = nowPlayingArtwork }
+        #endif
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = info
         #if os(macOS)
         MPNowPlayingInfoCenter.default().playbackState = isPlaying ? .playing : .paused
         #endif
@@ -917,4 +1009,13 @@ final class SystemAudioSessionActivator: AudioSessionActivating, @unchecked Send
     #else
     func activate() async throws {}
     #endif
+}
+
+/// Only reviewed source mappings enter this timeline; nil means unavailable.
+struct PlaybackSystemSubtitle: Equatable {
+    let id: String
+    let start: Double
+    let end: Double
+    let chinese: String?
+    let english: String?
 }

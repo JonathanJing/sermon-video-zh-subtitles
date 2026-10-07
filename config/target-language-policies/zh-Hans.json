@@ -2,12 +2,12 @@
   "schemaVersion": "sermon-target-language-policy-v1",
   "sourceLocale": "en",
   "translator": {
-    "model": "gpt-6-astra",
-    "reasoningEffort": "medium",
+    "model": "gpt-6.1-sol",
+    "reasoningEffort": "high",
     "promptVersion": "sermon-target-language-translate-zh-Hans-v1"
   },
   "reviewer": {
-    "model": "gpt-6-sol",
+    "model": "gpt-6.1-sol",
     "reasoningEffort": "medium",
     "promptVersion": "sermon-target-language-review-zh-Hans-v2"
   },
@@ -66,8 +66,8 @@
     ]
   },
   "componentSha256": {
-    "translator": "7b27ac3b96896b05244c32389e3ec32f98c3a833f44e2141cd81b38acdbb58d9",
-    "reviewer": "c47beff7c4b4f76189448fbbc5075fc32097cd3b0644250713d22eeb969d825a",
+    "translator": "10924d95115af6a337a5f219eed94a7331f507e04100e9f19dfc2d893d4c6c36",
+    "reviewer": "4f8153141d759e8b7b4226c5a9b8098c0def2472c31c53fde59f724c5d992af0",
     "terminology": "2667d447f578f8ed493b36d5eecf439796e98a4551bd27d383d44adfce548c43",
     "scripture": "70b734b857f814cd2a9371a184012cc90fb8b41705f3bb50100aab675e0d8603",
     "languageReview": "6d7594dd5763adda2971a85f9f07f50214112990bcedc3f6909637c1bb24873b",

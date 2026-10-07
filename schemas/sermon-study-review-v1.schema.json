@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": "sermon-study-review-v1"
+    },
+    "kind": {
+      "enum": [
+        "outline",
+        "meditation"
+      ]
+    },
+    "pageId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "locale": {
+      "enum": [
+        "zh-Hans",
+        "ko",
+        "es"
+      ]
+    },
+    "sourcePackageSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "textCandidateSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "artifactSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "decision": {
+      "enum": [
+        "approved",
+        "rejected"
+      ]
+    },
+    "humanApproval": {
+      "const": true
+    },
+    "reviewedBy": {
+      "type": "string",
+      "minLength": 1
+    },
+    "reviewedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "checks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "faithfulness",
+        "scriptureIntegrity",
+        "localeReadability"
+      ],
+      "properties": {
+        "faithfulness": {
+          "enum": [
+            "pass",
+            "fail"
+          ]
+        },
+        "scriptureIntegrity": {
+          "enum": [
+            "pass",
+            "fail"
+          ]
+        },
+        "localeReadability": {
+          "enum": [
+            "pass",
+            "fail"
+          ]
+        }
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "kind",
+    "pageId",
+    "locale",
+    "sourcePackageSha256",
+    "textCandidateSha256",
+    "artifactSha256",
+    "decision",
+    "humanApproval",
+    "reviewedBy",
+    "reviewedAt",
+    "checks"
+  ]
+}

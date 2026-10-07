@@ -130,3 +130,10 @@ test('ready index expires or changes identity without requesting microphone',asy
   assert.equal(closes,1);assert.equal(h.pauseCalls,0);assert.equal(h.controller.apply(),false);
  }
 });
+
+test('original recording window stays separate from zero-based playback clip', async () => {
+ const h=harness();h.context.week.sourceSha256=sha;h.context.week.sourceStartSeconds=0;h.context.week.sourceEndSeconds=2240;
+ h.context.week.sourceFingerprintWindow={schemaVersion:'sermon-original-recording-window-v1',startSeconds:1793,endSeconds:4033,mediaSha256:sha};
+ assert.ok(fingerprintBinding(h.context));await listen(h.controller);h.setClock(12500);assert.equal(h.controller.apply(),true);assert.deepEqual(h.seekCalls,[112.5]);
+ for(const mutation of [c=>c.week.sourceFingerprintWindow.mediaSha256=trackSha,c=>c.week.sourceFingerprintWindow.startSeconds=1794,c=>c.week.sourceFingerprintWindow.endSeconds=4034]){const c=structuredClone(h.context);mutation(c);assert.equal(fingerprintBinding(c),null);}
+});

@@ -63,6 +63,21 @@ class BackendFourLayerDryRunTests(unittest.TestCase):
                 self.assertEqual(report["layers"]["layer3"][locale]["schedule"], "pass")
             checked_backend_run(root)
 
+    def test_current_same_model_roles_keep_independent_review_and_legacy_failure_ids(self):
+        call = dry.layer2_runner._model_call
+        with TemporaryDirectory() as folder, patch.object(dry.layer2_runner, "_model_call", wraps=call) as observed:
+            report = dry.run(self.fixture, Path(folder) / "run")
+        self.assertEqual(report["status"], "pass_simulated")
+        self.assertEqual(sum(report["externalCalls"].values()), 0)
+        self.assertEqual(len(observed.call_args_list), 12)
+        for dispatched in observed.call_args_list:
+            role, prompt, policy = dispatched.args[:3]
+            self.assertEqual(policy[role]["model"], "gpt-6.1-sol")
+            self.assertEqual(policy[role]["reasoningEffort"], "high" if role == "translator" else "medium")
+            self.assertEqual("astraDraft" in prompt["input"], role == "reviewer")
+        events = [row["step"] for row in report["events"] if row["step"].endswith((":astra", ":sol"))]
+        self.assertEqual(events[:2], ["layer2:zh-Hans:unit-0:astra", "layer2:zh-Hans:unit-0:sol"])
+
     def test_layer4_uses_formal_copy_gate_and_changed_upstream_never_creates_preview(self):
         from scripts import build_formal_dev_release_assets as formal
         from scripts import build_full_video_app_release as full

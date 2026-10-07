@@ -37,7 +37,9 @@ class HistoricalLayer2Tests(unittest.TestCase):
         for key in ('sourceUnitIds','targetUtterances','coverage'):first[key]=[v for g in groups for v in g[key]]
         self.f.f.f.evidence['groups']=[first]
         self.group={k:first[k] for k in ('translationGroupId','sourceUnitIds')}
-        self.f.prepared=strict.prepare(*self.f.f.args,self.group,request_limits=self.f.selected)
+        self.f.f.rule_context['groupPlan'] = [self.group]
+        self.f.prepared=strict.prepare(*self.f.f.args,self.group,request_limits=self.f.selected,
+                                       rule_preflight=self.f.f.rule_preflight, rule_context=self.f.f.rule_context)
         self.cid='candidate.'+c.canonical_sha256(self.group)
         self.f.root=self.locale/'groups'/c.canonical_sha256(self.group)/'revisions/initial'
         self.network=self.enterContext(patch('urllib.request.OpenerDirector.open',side_effect=AssertionError('network forbidden')))
@@ -59,7 +61,13 @@ def review_group(policy,english_units,group):
             draft['reviewContract']['rubricCanonicalJsonSha256']=c.canonical_sha256(rubric)
             policy=policies.freeze_strict_policy(draft,rubric)
             self.f.f.args[2:]=[strict.material_bytes(policy),strict.material_bytes(rubric)]
-            self.f.prepared=strict.prepare(*self.f.f.args,self.group,request_limits=self.f.selected)
+            from scripts import run_target_language_models as models
+            from scripts import target_language_rule_preflight as rule_preflight
+            source, anchor = c.decode_json(self.f.f.args[0]), c.decode_json(self.f.f.args[1])
+            request = producer.prepare_request(source, anchor, policy, strict_rubric=rubric)
+            receipt = rule_preflight.preflight(request, policy, plugin, [self.group])
+            self.f.prepared=strict.prepare(*self.f.f.args,self.group,request_limits=self.f.selected,
+                                           rule_preflight=receipt, rule_context={'pluginPath': str(plugin), 'groupPlan': [self.group]})
         if repair_steps:
             import json
             from scripts import sermon_strict_controller as controller
@@ -101,7 +109,8 @@ def review_group(policy,english_units,group):
             path=self.parent/'inputs'/(key+'.json');path.parent.mkdir(exist_ok=True);path.write_bytes(data)
             materials[key]=h.ref(path)
         locale_input=dict(productionRunId=self.f.provider.config['runId'],groups=[self.group],
-            inputBytesSha256=[c.bytes_sha256(b) for b in self.f.f.args],requestLimits=self.f.selected)
+            inputBytesSha256=[c.bytes_sha256(b) for b in self.f.f.args],requestLimits=self.f.selected,
+            **({'rulePreflight':self.f.prepared['rulePreflight'], 'ruleContext':self.f.prepared['ruleContext']} if 'rulePreflight' in self.f.prepared else {}))
         strict.save_once(self.locale/'locale-input.json',locale_input)
         plugin=self.f.f.f.plugin_path;language_root=self.locale/'language-evidence'
         try:

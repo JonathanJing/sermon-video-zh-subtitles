@@ -25,7 +25,7 @@ class DevSnapshotTests(unittest.TestCase):
     def setUp(self):
         f=DiagnosticDAGFixture();f.setUp();self.addCleanup(f.doCleanups);self.f=f
         self.enterContext(patch.object(accounting,'execution_identity',return_value=f.execution_identity))
-        self.session=sessions.DiagnosticSession(f.plan,f.continuation,offline_transport=f.transport)
+        self.session=sessions.DiagnosticSession(f.plan,f.continuation,offline_transport=f.transport, request_limits=f.request_limits)
         immutable.save_once(f.root/'source.json',f.source)
         self.base=f.root/'baseline';(self.base/'public').mkdir(parents=True)
         immutable.save_once(self.base/'firebase.json',{'hosting':{'site':dev.PROJECT,'public':'public'}})

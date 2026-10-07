@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "sermon-cli-result-v1",
+  "command": "job.status",
+  "requestId": "req-example-001",
+  "subject": { "kind": "job", "id": "job-example-zh-l2" },
+  "runId": "run-example-001",
+  "runRevision": 3,
+  "stage": "layer2_group",
+  "locale": "zh-Hans",
+  "outcome": "succeeded",
+  "completionScope": "layer2_machine_candidate",
+  "jobState": {
+    "process": "succeeded",
+    "artifact": "verified",
+    "review": "human_pending",
+    "publication": "not_started",
+    "device": "not_checked"
+  },
+  "runSummary": {
+    "outcome": "blocked",
+    "completionScope": "dual_production_verified",
+    "blockers": [
+      { "code": "translation_review_required", "locale": "zh-Hans", "artifactId": "candidate-example-003" }
+    ]
+  },
+  "artifacts": [
+    {
+      "artifactId": "candidate-example-003",
+      "kind": "target_language_candidate",
+      "schemaVersion": "sermon-target-language-candidate-v2",
+      "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "locale": "zh-Hans",
+      "packageStatus": "machine_complete"
+    }
+  ],
+  "nextActions": ["review.ingest"],
+  "retry": { "safe": false, "reason": "job_already_succeeded" },
+  "cost": { "currency": "USD", "actualMicroUsd": null, "reservedMicroUsd": null },
+  "error": null
+}

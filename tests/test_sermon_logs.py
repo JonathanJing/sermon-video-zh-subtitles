@@ -66,6 +66,39 @@ class LogViewerTests(unittest.TestCase):
         self.assertEqual(code, 2)
         self.assertEqual(json.loads(output)["unfinished"][0]["event"], "api_attempt_started")
 
+    def test_explicit_non_success_outcomes_are_errors_despite_info_level(self):
+        for status in ("outcome_unknown", "cancelled", "failed"):
+            with self.subTest(status=status):
+                with accounting.accounting_session(self.directory, "fixture"):
+                    with accounting.stage_outcome("submit") as outcome:
+                        outcome.finish(status)
+                before = (self.directory / "events.jsonl").read_bytes()
+                code, output = self.invoke("--check", "--json", "--level", "ERROR")
+                result = json.loads(output)
+                self.assertEqual(code, 2)
+                self.assertEqual(result["status"], "needs_attention")
+                self.assertEqual(result["errorEvents"], 1)
+                self.assertEqual(result["events"][0]["status"], status)
+                self.assertEqual(result["events"][0]["level"], "ERROR")
+                self.assertEqual(result["unfinished"], [])
+                self.assertEqual((self.directory / "events.jsonl").read_bytes(), before)
+
+    def test_nested_blocked_status_and_recovered_unknown_remain_visible(self):
+        with accounting.accounting_session(self.directory, "fixture"):
+            accounting.record_log("node_observed", fields={"status": "blocked"})
+            with accounting.stage_outcome("submit") as outcome:
+                outcome.finish("outcome_unknown")
+            with accounting.stage_outcome("reconcile") as outcome:
+                outcome.finish("completed")
+        code, output = self.invoke("--check", "--json", "--level", "ERROR", "--tail", "1")
+        result = json.loads(output)
+        self.assertEqual(code, 2)
+        self.assertEqual(result["errorEvents"], 2)
+        self.assertEqual(result["matchingEvents"], 2)
+        self.assertEqual(result["events"][0]["status"], "outcome_unknown")
+        self.assertEqual(result["ledgerIntegrity"], "readable")
+        self.assertEqual(result["unfinished"], [])
+
     def test_corrupt_ledger_is_reported_without_body(self):
         with accounting.accounting_session(self.directory, "fixture"):
             pass

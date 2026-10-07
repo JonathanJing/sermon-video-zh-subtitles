@@ -25,6 +25,9 @@ try:
     from scripts import sermon_cache_observation as cache_observation
     from scripts import sermon_pipeline
     from scripts import target_language_policy as policy_tools
+    from scripts import target_language_policy_preview as policy_preview
+    from scripts import target_language_rule_preflight as rule_preflight
+    from scripts.migrate_target_language_model_cache import migration_cache
     from scripts import sermon_workflow_jobs as jobs
 except ImportError:
     import four_layer_measure as measure
@@ -33,6 +36,9 @@ except ImportError:
     import sermon_cache_observation as cache_observation
     import sermon_pipeline
     import target_language_policy as policy_tools
+    import target_language_policy_preview as policy_preview
+    import target_language_rule_preflight as rule_preflight
+    from migrate_target_language_model_cache import migration_cache
     import sermon_workflow_jobs as jobs
 
 
@@ -45,9 +51,12 @@ COMPATIBLE_RUNNER_IDENTITIES = {
 }
 
 
-MODEL_ROLES = {"translator": "gpt-6-astra", "reviewer": "gpt-6-sol"}
+MODEL_ROLES = {"translator": "gpt-6.1-sol", "reviewer": "gpt-6.1-sol"}
+MODEL_EFFORTS = {"translator": "high", "reviewer": "medium"}
+HISTORICAL_MODEL_ROLES = {"translator": "gpt-6-astra", "reviewer": "gpt-6-sol"}
 SEMANTIC_CHECKS = ("completeMeaning", "negationsNumbersNames", "quotationAttribution", "noAddedMeaning")
 REVISION_BRIEF_SCHEMA = "sermon-target-language-group-revision-brief-v1"
+MAX_STANDALONE_GROUP_WORKERS = 3
 
 
 def revision_boundary_instruction(target_locale: str, *, revising: bool) -> str:
@@ -60,11 +69,12 @@ def revision_boundary_instruction(target_locale: str, *, revising: bool) -> str:
 PARTIAL_REPAIR_SCHEMA = "sermon-target-language-partial-repair-brief-v1"
 
 
-def scripture_prompt_instruction(policy: dict[str, Any]) -> str:
+def scripture_prompt_instruction(policy: dict[str, Any], *, frozen_rules=False) -> str:
     """Put the frozen scripture rule at system priority for both model roles."""
     scripture = policy["scripture"]
     if scripture["quoteCheckPolicy"] == "references_only":
-        return ("For Bible passages, cite the book, chapter, and verse when known, "
+        return (("For Bible passages, preserve only the references actually spoken, "
+                 if frozen_rules else "For Bible passages, cite the book, chapter, and verse when known, ") +
                 "and paraphrase the speaker's meaning in the target language. "
                 "Do not present the text as an exact quotation from any Bible edition. ")
     if scripture["quoteCheckPolicy"] == "source_bound_exact_quote":
@@ -166,11 +176,18 @@ def completed_response_content(response, model, role):
 
 
 def model_payload(role, prompt, policy, request_limits=None):
+    if request_limits is None:
+        from scripts.canonical_layer2_budget import CURRENT_LIMITS
+        request_limits = CURRENT_LIMITS.get()
     model = policy[role]["model"]
     payload = {"model": model, "reasoning_effort": policy[role]["reasoningEffort"],
                "messages": [{"role": "system", "content": prompt["instruction"]},
                             {"role": "user", "content": json.dumps(prompt["input"], ensure_ascii=False)}],
                "response_format": {"type": "json_object"}}
+    if model == "gpt-6.1-sol" and request_limits is None:
+        payload["service_tier"] = "fast"
+    if policy.get("simulationModelConfiguration") is not None:
+        payload["service_tier"] = policy["simulationModelConfiguration"][role]["serviceTier"]
     if request_limits is not None:
         from scripts.sermon_provider_limits import bounded_payload
         payload = bounded_payload(payload, request_limits)
@@ -181,11 +198,22 @@ def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
                 output: Path, api_key: str,
                 caller: Callable[[str, dict[str, Any]], dict[str, Any]],
                 reuse_from: Path | None = None, *, cache_only: bool = False,
-                response_observer=None, request_limits=None) -> dict[str, Any]:
+                response_observer=None, request_limits=None, rule_receipt=None) -> dict[str, Any]:
+    if rule_receipt is not None:
+        rule_preflight.verify_model_prompt(role, prompt, rule_receipt, policy)
     model = policy[role]["model"]
-    save_options = {"private": True} if response_observer is not None else {}
+    save_options = {"private": True} if response_observer is not None or getattr(caller, "execution_identity", None) is not None else {}
     payload = model_payload(role, prompt, policy, request_limits)
-    fingerprint = policy_tools.canonical_sha256(payload)
+    policy_preview.freeze_payload_preview(
+        role, payload, policy, output.with_suffix(".policy-preview.json"))
+    transport_identity = getattr(caller, "execution_identity", None)
+    fingerprint = policy_tools.canonical_sha256(
+        {"payload": payload, "modelTransportIdentity": transport_identity}
+        if transport_identity is not None else payload)
+    migrated_from = migration_cache(role, payload)
+    if migrated_from is not None:
+        require(cache_only and reuse_from is None, "Explicit migration must be cache-only and isolated")
+        reuse_from = migrated_from
     if reuse_from is not None and not output.exists():
         require(reuse_from.is_file(), f"Missing reusable {role} cache: {reuse_from}")
         cached = producer._load(reuse_from)
@@ -224,6 +252,11 @@ def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
     else:
         require(not cache_only, f"Cache-only recovery has no returned {role} response: {output}")
         require(not marker.exists(), f"Uncertain paid {role} call; inspect before retry: {marker}")
+        # Capacity denial is a proven no-dispatch outcome. Reserve before the
+        # unknown-call marker; once reserved, a crash remains held in the broker.
+        resource_admission = getattr(caller, "admit_resource", None)
+        if resource_admission is not None:
+            resource_admission(payload)
         save_new(marker, {"role": role, "payloadSha256": fingerprint,
                           "status": "started_response_unconfirmed"}, **save_options)
         if response_observer is None:
@@ -238,8 +271,9 @@ def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
             require(observed.get("payloadSha256") == fingerprint and observed.get("response") == response,
                     "Strict persisted response differs from transport return")
         else:
-            save_new(raw_path, {"payloadSha256": fingerprint, "response": response})
-    content = completed_response_content(response, model, role)
+            save_new(raw_path, {"payloadSha256": fingerprint, "response": response}, **save_options)
+    decoder = getattr(caller, "completed_content", completed_response_content)
+    content = decoder(response, model, role)
     if response_observer is not None:
         from scripts.sermon_review_contracts import decode_json
         parsed = decode_json(content.encode("utf-8"))
@@ -257,7 +291,12 @@ def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
     return saved
 
 
-def _utterances(value: object) -> list[str]:
+def _utterances(value: object, source_unit_ids: list[str] | None = None) -> list[str]:
+    if source_unit_ids is not None and isinstance(value, list) and len(value) == len(source_unit_ids) \
+            and all(isinstance(row, dict) and row.get('sourceUnitIds') == [unit_id]
+                    and isinstance(row.get('targetText'), str) and row['targetText'].strip()
+                    for row, unit_id in zip(value, source_unit_ids)):
+        value = [row['targetText'] for row in value]
     require(isinstance(value, list) and bool(value)
             and all(isinstance(item, str) and item.strip() for item in value),
             "Model must return nonempty targetUtterances")
@@ -285,6 +324,9 @@ def normalize_semantic_review(value: object) -> object:
             name: ("pass" if result is True else "fail" if result is False else result)
             for name, result in checks.items()
         }
+    evidence = semantic.get("evidence")
+    if isinstance(evidence, list) and evidence and all(isinstance(item, str) and item.strip() for item in evidence):
+        semantic["evidence"] = "\n".join(item.strip() for item in evidence)
     for field in ("uncertainty", "issues"):
         item = semantic.get(field)
         if item is None or item is False or item == "":
@@ -407,6 +449,91 @@ def validate_partial_repair_brief(brief: dict[str, Any] | None,
     return result
 
 
+def partial_repair_brief_for_plugin_stop(reuse_from: Path, request: dict[str, Any],
+                                         plan: list[dict[str, Any]],
+                                         instruction: str) -> dict[str, Any]:
+    """Bind a new revision to the reviewer cache a language plugin rejected.
+
+    The instruction is supplied by the caller. This does not dispatch a model
+    or rewrite the stopped run.
+    """
+    stop = producer._load(reuse_from / "plugin-group-stop.json")
+    require(isinstance(stop, dict)
+            and stop.get("schemaVersion") == "sermon-layer2-plugin-group-stop-v1"
+            and stop.get("status") == "blocked"
+            and stop.get("reasonCode") == "language_plugin_group_blocked"
+            and stop.get("stopsLaterDispatch") is True
+            and stop.get("humanApproval") is False
+            and isinstance(stop.get("translationGroupId"), str)
+            and isinstance(stop.get("sourceUnitIds"), list),
+            "plugin group stop is not a blocked machine review")
+    review = stop.get("groupReview")
+    require(isinstance(review, dict) and review.get("status") == "fail"
+            and isinstance(review.get("checks"), list)
+            and isinstance(review.get("targetTextSha256"), str)
+            and re.fullmatch(r"[a-f0-9]{64}", review["targetTextSha256"]) is not None,
+            "plugin group stop has no failing review")
+    failed = [check for check in review["checks"]
+              if isinstance(check, dict) and check.get("status") == "fail"
+              and isinstance(check.get("checkId"), str) and isinstance(check.get("evidence"), str)]
+    require(failed, "plugin group stop has no failing check")
+    reason = (failed[0]["checkId"] + ": " + failed[0]["evidence"].strip())[:500]
+    require(isinstance(instruction, str) and instruction.strip() and len(instruction.strip()) <= 2000,
+            "plugin group stop repair needs a source-bound instruction")
+    group_id = stop["translationGroupId"]
+    plan_by_id = {row["translationGroupId"]: (index, row) for index, row in enumerate(plan, 1)}
+    require(group_id in plan_by_id and plan_by_id[group_id][1]["sourceUnitIds"] == stop["sourceUnitIds"],
+            "plugin group stop does not match this group plan")
+    index, _group = plan_by_id[group_id]
+    cache = reuse_from / f"group-{index:04d}-sol.json"
+    require(cache.is_file(), "plugin group stop lacks the rejected reviewer cache")
+    _require_rejected_reviewer_text(cache, review["targetTextSha256"], stop["sourceUnitIds"])
+    return {"schemaVersion": PARTIAL_REPAIR_SCHEMA,
+            "targetLocale": request["targetLocale"],
+            "englishSourcePackageJsonSha256": request["englishSourcePackageJsonSha256"],
+            "anchorManifestSha256": request["anchorManifestSha256"],
+            "translationPolicySha256": request["translationPolicySha256"],
+            "groups": [{"translationGroupId": group_id,
+                        "sourceUnitIds": stop["sourceUnitIds"],
+                        "failedRole": "reviewer",
+                        "failedCacheSha256": hashlib.sha256(cache.read_bytes()).hexdigest(),
+                        "failureReason": reason,
+                        "instruction": instruction.strip()}]}
+
+
+def _require_rejected_reviewer_text(cache: Path, expected_sha256: str,
+                                    source_unit_ids: list[str]) -> None:
+    saved = producer._load(cache)
+    result = saved.get("result") if isinstance(saved, dict) else None
+    utterances = result.get("targetUtterances") if isinstance(result, dict) else None
+    utterances = _utterances(utterances, source_unit_ids)
+    actual = hashlib.sha256("".join(utterances).encode("utf-8")).hexdigest()
+    require(actual == expected_sha256, "plugin group stop does not match the rejected reviewer text")
+
+
+def require_plugin_stop_repair(reuse_from: Path | None, repairs: dict[str, dict[str, Any]],
+                               plugin_path: Path | None) -> None:
+    """A stopped run cannot be reused until its blocked group is repaired."""
+    if reuse_from is None or not (reuse_from / "plugin-group-stop.json").is_file():
+        return
+    stop = producer._load(reuse_from / "plugin-group-stop.json")
+    require(isinstance(stop, dict) and stop.get("reasonCode") == "language_plugin_group_blocked",
+            "plugin group stop is not a blocked machine review")
+    repair = repairs.get(stop.get("translationGroupId"))
+    require(plugin_path is not None and repair is not None
+            and repair.get("sourceUnitIds") == stop.get("sourceUnitIds")
+            and repair.get("failedRole") == "reviewer",
+            "plugin group stop requires a reviewer partial repair of the blocked group")
+    review = stop.get("groupReview") if isinstance(stop.get("groupReview"), dict) else {}
+    expected = review.get("targetTextSha256")
+    require(isinstance(expected, str) and re.fullmatch(r"[a-f0-9]{64}", expected) is not None,
+            "plugin group stop lacks the rejected target text")
+    matched = [path for path in sorted(reuse_from.glob("group-*-sol.json"))
+               if hashlib.sha256(path.read_bytes()).hexdigest() == repair.get("failedCacheSha256")]
+    require(len(matched) == 1, "plugin group stop lacks the rejected reviewer cache")
+    _require_rejected_reviewer_text(matched[0], expected, stop["sourceUnitIds"])
+
+
 def reusable_cache(prior_run: Path | None, stem: str, role: str) -> Path | None:
     """Return a complete old cache, but never retry an uncertain old request."""
     if prior_run is None:
@@ -465,12 +592,21 @@ def carry_forward_group(prior_run: Path, out: Path, index: int,
                         f"Carried-forward raw response changed: {target_raw}")
             else:
                 shutil.copyfile(raw, target_raw)
+        preview = source.with_suffix(".policy-preview.json")
+        if preview.is_file():
+            target_preview = out / preview.name
+            if target_preview.exists():
+                require(target_preview.read_bytes() == preview.read_bytes(),
+                        f"Carried-forward model preview changed: {target_preview}")
+            else:
+                shutil.copyfile(preview, target_preview)
         cache_observation.record(role, cached, target, mode="carried_forward_group", origin=source)
     return copy.deepcopy(prior_row)
 
-def ordered_group_results(items: list, worker, workers: int) -> list:
+def ordered_group_results(items: list, worker, workers: int, *, maximum_workers=16) -> list:
     """Keep only a bounded set of paid groups in flight and merge in source order."""
-    require(type(workers) is int and 1 <= workers <= 3, "Group workers must be 1..3")
+    require(maximum_workers in (16, 23) and type(workers) is int and 1 <= workers <= maximum_workers,
+            "Group workers exceed versioned capacity")
     if workers == 1 or len(items) < 2:
         return [worker(item) for item in items]
     results = {}
@@ -500,6 +636,13 @@ def ordered_group_results(items: list, worker, workers: int) -> list:
     return [results[index] for index in range(len(items))]
 
 
+def validate_standalone_worker_budget(policy: dict) -> None:
+    workers = policy["batching"].get("workers")
+    require(policy["batching"].get("batchSize") == 1
+            and type(workers) is int and 1 <= workers <= MAX_STANDALONE_GROUP_WORKERS,
+            "Standalone production runner requires batchSize=1 and workers=1..3")
+
+
 def require_reconciled_requests(*directories: Path | None) -> None:
     """Block the whole dispatch before any group can replay an unknown call.
 
@@ -519,6 +662,36 @@ def require_reconciled_requests(*directories: Path | None) -> None:
                     f"Uncertain paid {role} call; inspect before retry or dispatch: {marker}")
 
 
+def _stop_after_plugin_group_failure(policy, request, plugin_path, reviewed_row, plan, index, out, *, diagnostic_context=None):
+    """After this group's review, block later dispatch when the pinned plugin fails.
+
+    Groups already submitted stay on disk. This check itself makes no model call.
+    """
+    evaluated = producer.evaluate_plugin_groups(
+        policy, request, plugin_path, policy["languageReview"]["pluginImplementationSha256"],
+        [reviewed_row], diagnostic_context=diagnostic_context)
+    review = evaluated["groupReviews"][0]
+    if review["status"] == "pass":
+        return
+    stop = {"schemaVersion": "sermon-layer2-plugin-group-stop-v1", "status": "blocked",
+            "reasonCode": "language_plugin_group_blocked",
+            "translationGroupId": reviewed_row["translationGroupId"],
+            "sourceUnitIds": reviewed_row["sourceUnitIds"],
+            "groupReview": review,
+            "completedBefore": [row["translationGroupId"] for row in plan[:index - 1]],
+            "notDispatchedAfter": [row["translationGroupId"] for row in plan[index:]],
+            "stopsLaterDispatch": True, "humanApproval": False}
+    path = out / "plugin-group-stop.json"
+    if path.exists():
+        require(producer._load(path) == stop, "plugin group stop changed")
+    else:
+        try:
+            save_new(path, stop, private=True)
+        except FileExistsError:
+            require(producer._load(path) == stop, "plugin group stop changed")
+    raise ValueError("language_plugin_group_blocked")
+
+
 def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
         out: Path, api_key: str,
         caller: Callable[[str, dict[str, Any]], dict[str, Any]],
@@ -528,6 +701,8 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
         reuse_from: Path | None = None,
         partial_repair_brief: dict[str, Any] | None = None,
         resume_cache_from: Path | None = None) -> dict[str, Any]:
+    require(plugin_path is not None,
+            "Formal Layer 2 requires the frozen language plugin before dispatch")
     with accounting.stage(f"layer2.source_admission.{policy['targetLocale']}",
                           depends_on=[], executor_type="deterministic_program",
                           work_unit_id=f"l2.{policy['targetLocale']}.source_admission") as source_span:
@@ -550,7 +725,8 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                          *, simulation_only: bool = False, cache_only: bool = False,
                          progress_callback=None,
                          source_admission_span: str | None = None,
-                         completion_spans: list[str] | None = None) -> dict[str, Any]:
+                         completion_spans: list[str] | None = None,
+                         diagnostic_context=None) -> dict[str, Any]:
     """Shared group loop; the formal entry above still enforces Layer 1 approval.
 
     Simulated requests carry an extra marker that prevents formal candidate
@@ -560,7 +736,19 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                           depends_on=[source_admission_span] if source_admission_span else [],
                           executor_type="deterministic_program",
                           work_unit_id=f"l2.{request['targetLocale']}.run_admission") as admission_span:
-        if simulation_only:
+        if diagnostic_context is not None:
+            from scripts.sermon_diagnostic_context import validate_context
+            context = validate_context(diagnostic_context)
+            require(simulation_only and not api_key and reuse_from is None and resume_cache_from is None
+                    and revision_brief is None and partial_repair_brief is None and plugin_path is not None
+                    and request.get('schemaVersion') == producer.REQUEST_SCHEMA
+                    and 'simulationOnly' not in request
+                    and request['englishSourcePackageJsonSha256'] == context['sourceCanonicalSha256']
+                    and request['anchorManifestSha256'] == context['anchorCanonicalSha256']
+                    and context['anchorCanonicalSha256'] == policy_tools.canonical_sha256(anchor),
+                    'Diagnostic group loop requires isolated source-bound inputs')
+            policy_tools.validate_diagnostic_policy(policy, context)
+        elif simulation_only:
             require(request.get("simulationOnly") is True
                     and request.get("schemaVersion") == "sermon-dry-run-layer2-request-v1"
                     and reuse_from is None and resume_cache_from is None
@@ -570,16 +758,63 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
         else:
             require("simulationOnly" not in request,
                     "Formal group loop cannot consume a simulated request")
-        for role, expected in MODEL_ROLES.items():
+        historical_replay = cache_only or getattr(caller, "execution_identity", {}).get("backend") == "fixture_replay"
+        expected_models = ({role: policy[role]["model"] for role in MODEL_ROLES}
+                           if historical_replay else MODEL_ROLES)
+        if historical_replay:
+            require(all(policy[role]["model"] in {MODEL_ROLES[role], HISTORICAL_MODEL_ROLES[role]} for role in MODEL_ROLES), "unsupported_historical_model_policy")
+        simulation_configuration = policy.get("simulationModelConfiguration")
+        if simulation_configuration is not None:
+            from scripts.codex_layer2_transport import validate_test_configuration
+            require(simulation_only and not api_key,
+                    "Simulation model configuration cannot enter formal production")
+            validate_test_configuration(simulation_configuration)
+            require((diagnostic_context is not None or request.get("simulationModelConfiguration") == simulation_configuration)
+                    and request.get("translationPolicySha256") == policy_tools.canonical_sha256(policy)
+                    and getattr(caller, "execution_identity", {}).get("simulationModelConfiguration") == simulation_configuration,
+                    "Simulation model configuration requires matching request and CLI transport identity")
+            for role in MODEL_ROLES:
+                require(policy[role]["model"] == simulation_configuration[role]["model"]
+                        and policy[role]["reasoningEffort"] == simulation_configuration[role]["reasoningEffort"]
+                        and policy["componentSha256"][role] == policy_tools.canonical_sha256(policy[role]),
+                        "Simulation role configuration changed")
+            expected_models = {role: simulation_configuration[role]["model"] for role in MODEL_ROLES}
+        else:
+            require("simulationModelConfiguration" not in request,
+                    "Simulation request configuration lacks a bound effective policy")
+        for role, expected in expected_models.items():
+            if expected == "gpt-6.1-sol":
+                require(policy[role]["reasoningEffort"] == MODEL_EFFORTS[role], "production_role_effort_changed")
             require(policy[role]["model"] == expected,
                     f"Production {role} model must be {expected}; freeze a new policy")
         workers = policy["batching"].get("workers")
+        capacity_profile = getattr(caller, 'execution_identity', {}).get('concurrencyProfile')
+        maximum_workers = 16
+        if capacity_profile is not None:
+            from scripts.production_concurrency_profile import validate_profile
+            capacity_profile = validate_profile(capacity_profile)
+            maximum_workers = capacity_profile['layer2GroupWorkers']
+            workers = maximum_workers  # explicit runtime capability; frozen legacy policy schema stays intact
         require(policy["batching"].get("batchSize") == 1
-                and type(workers) is int and 1 <= workers <= 3,
-                "Per-group production runner requires batchSize=1 and workers=1..3")
+                and type(workers) is int and 1 <= workers <= maximum_workers,
+                "Per-group production runner requires batchSize=1 and workers=1..16")
         if plugin_path is not None:
             require_plugin_identity(plugin_path, policy["languageReview"]["pluginImplementationSha256"])
         plan = group_plan(request, anchor, custom_plan)
+        rule_receipt = (rule_preflight.preflight(request, policy, plugin_path, plan)
+                        if plugin_path is not None else None)
+        accounting.record_workload("layer2.rule_preflight", {
+            "status": "inputs_frozen_not_execution_evidence" if rule_receipt else
+                      "not_run_legacy_simulation" if simulation_only else "not_run_plugin_not_supplied",
+            "ruleBundleSha256": rule_receipt["ruleBundleSha256"] if rule_receipt else None,
+            "inspectionScope": rule_receipt["inspectionScope"] if rule_receipt else None,
+            "humanApproval": False})
+        if rule_receipt is not None:
+            for prior_directory in (reuse_from, resume_cache_from):
+                if prior_directory is not None:
+                    rule_preflight.verify_prior_model_inputs(
+                        prior_directory, request, policy, plan, rule_receipt,
+                        transport_identity=getattr(caller, "execution_identity", None))
         require(revision_brief is None or partial_repair_brief is None,
                 "Use one changed-group revision mechanism at a time")
         prior_evidence = (producer._load(reuse_from / "evidence.json")
@@ -599,6 +834,8 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
         briefs = validate_revision_brief(revision_brief, request, plan, prior_evidence)
         repairs = validate_partial_repair_brief(partial_repair_brief, request, plan,
                                                  reuse_from)
+        require_plugin_stop_repair(reuse_from, repairs, plugin_path)
+        require_plugin_stop_repair(resume_cache_from, repairs, plugin_path)
         if reuse_from is not None:
             require(reuse_from.resolve() != out.resolve(), "Reuse source and output must differ")
         if resume_cache_from is not None:
@@ -609,6 +846,15 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                     "Resume cache must be a separate attempt for this source and policy")
         identity = {"request": request, "groupPlan": plan,
                     "runnerImplementationSha256": RUNNER_PRODUCTION_IDENTITY_SHA256}
+        if diagnostic_context is not None:
+            identity['diagnosticContextSha256'] = policy_tools.canonical_sha256(diagnostic_context)
+        if rule_receipt is not None:
+            identity["rulePreflightSha256"] = policy_tools.canonical_sha256(rule_receipt)
+        transport_identity = getattr(caller, "execution_identity", None)
+        if transport_identity is not None:
+            identity["modelTransportIdentity"] = transport_identity
+            require(reuse_from is None and resume_cache_from is None,
+                    "CLI transport supports same-run resume only; cross-run cache reuse is not enabled")
         if revision_brief is not None:
             identity["revisionBriefSha256"] = policy_tools.canonical_sha256(revision_brief)
         if partial_repair_brief is not None:
@@ -636,8 +882,20 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             save_new(request_path, request)
         else:
             require(producer._load(request_path) == request, "Cached request changed")
+        if rule_receipt is not None:
+            receipt_path = out / "rule-preflight.json"
+            if receipt_path.exists():
+                require(producer._load(receipt_path) == rule_receipt, "Frozen rule preflight changed")
+            else:
+                save_new(receipt_path, rule_receipt, private=True)
         require_reconciled_requests(out, reuse_from, resume_cache_from)
+        requested_workers = workers
+        # A plugin stop receipt promises no later dispatch. Serialize the full
+        # translate/review/plugin chain so that promise reflects actual work.
+        if plugin_path is not None and not simulation_only:
+            workers = 1
         accounting.record_workload("layer2.concurrency", {
+            "requestedWorkers": requested_workers,
             "workers": workers, "maxInFlightGroups": workers,
             "translationGroups": len(plan), "aggregationOrder": "source"})
         units = {row["sourceUnitId"]: row["english"] for row in request["sourceUnits"]}
@@ -663,6 +921,8 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                       "context": context, "targetLocale": request["targetLocale"],
                       "terminology": policy["terminology"], "scripture": policy["scripture"],
                       "formatting": policy["formatting"]}
+            if rule_receipt is not None:
+                common["modelRules"] = rule_preflight.group_rules(rule_receipt, group["sourceUnitIds"])
             if brief is not None:
                 common["revisionBrief"] = {
                     "instruction": ("This is a shorter spoken adaptation for a fixed video cue. "
@@ -714,7 +974,8 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                                 "Translate the English sermon group into the target locale. Preserve every "
                                 "meaning, negation, number, name, quotation and theological distinction. ") +
                                 korean_boundary +
-                                scripture_prompt_instruction(policy) +
+                                (rule_preflight.INSTRUCTION if rule_receipt else "") +
+                                scripture_prompt_instruction(policy, frozen_rules=rule_receipt is not None) +
                                 register_prompt_instruction(policy) +
                                 repair_instruction +
                                 "Resolve pronouns and elliptical repetitions using the surrounding "
@@ -730,9 +991,9 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             translator_cached = (astra_path.exists() or astra_path.with_suffix(".raw.json").exists()
                                  or (prior_cache_root is not None and (prior_cache_root / f"{stem}-astra.json").is_file()))
         with measure.producer_substage("initial_translation",
-                                       billing="local" if simulation_only or cache_only else "api"):
+                                       billing="local" if getattr(caller, "billing", None) == "local" or simulation_only or cache_only else "api"):
             with accounting.stage(f"layer2.translator.{request['targetLocale']}.{stem}",
-                                  cache_hit=translator_cached, billing="local" if simulation_only or cache_only or translator_cached else "api",
+                                  cache_hit=translator_cached, billing="local" if getattr(caller, "billing", None) == "local" or simulation_only or cache_only or translator_cached else "api",
                                   work_unit_id=f"l2.{request['targetLocale']}.{stem}.translator",
                                   depends_on=[prepare_span],
                                   executor_type="deterministic_program" if simulation_only or cache_only or translator_cached else "production_model") as translator_span:
@@ -741,7 +1002,8 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                                          reusable_cache(resume_cache_from, stem, "astra")
                                          if resume_cache_from is not None else
                                          reusable_cache(reuse_from, stem, "astra")
-                                         if brief is None and repair is None else None, cache_only=cache_only)
+                                         if brief is None and repair is None else None, cache_only=cache_only,
+                                         rule_receipt=rule_receipt)
                 if progress_callback is not None:
                     progress_callback('translator_response_saved')
         with accounting.stage(f"layer2.draft_validation.{request['targetLocale']}.{stem}",
@@ -751,7 +1013,7 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             require(draft.get("translationGroupId") == group["translationGroupId"]
                     and draft.get("sourceUnitIds") == group["sourceUnitIds"],
                     f"Astra group identity changed: {stem}")
-            draft_text = "".join(_utterances(draft.get("targetUtterances")))
+            draft_text = "".join(_utterances(draft.get("targetUtterances"), group["sourceUnitIds"]))
             require(isinstance(draft.get("coverage"), list)
                     and [row.get("sourceUnitId") for row in draft["coverage"]] == group["sourceUnitIds"]
                     and all(isinstance(row.get("targetText"), str)
@@ -772,7 +1034,8 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                                    "clause and do not duplicate its completion in this group. "
                                    if brief is not None else "")
                                 + korean_boundary
-                                + scripture_prompt_instruction(policy) +
+                                + (rule_preflight.INSTRUCTION if rule_receipt else "")
+                                + scripture_prompt_instruction(policy, frozen_rules=rule_receipt is not None) +
                                 register_prompt_instruction(policy) +
                                 repair_instruction +
                                 "Check that pronouns and elliptical repetitions retain the intended "
@@ -793,9 +1056,9 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             reviewer_cached = (sol_path.exists() or sol_path.with_suffix(".raw.json").exists()
                                or (prior_cache_root is not None and (prior_cache_root / f"{stem}-sol.json").is_file()))
         with measure.producer_substage("independent_review",
-                                       billing="local" if simulation_only or cache_only else "api"):
+                                       billing="local" if getattr(caller, "billing", None) == "local" or simulation_only or cache_only else "api"):
             with accounting.stage(f"layer2.reviewer.{request['targetLocale']}.{stem}",
-                                  cache_hit=reviewer_cached, billing="local" if simulation_only or cache_only or reviewer_cached else "api",
+                                  cache_hit=reviewer_cached, billing="local" if getattr(caller, "billing", None) == "local" or simulation_only or cache_only or reviewer_cached else "api",
                                   work_unit_id=f"l2.{request['targetLocale']}.{stem}.reviewer",
                                   depends_on=[draft_span],
                                   executor_type="deterministic_program" if simulation_only or cache_only or reviewer_cached else "production_model") as reviewer_span:
@@ -804,7 +1067,8 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                                                 reusable_cache(resume_cache_from, stem, "sol")
                                                 if resume_cache_from is not None else
                                                 reusable_cache(reuse_from, stem, "sol")
-                                                if brief is None and repair is None else None, cache_only=cache_only)
+                                                if brief is None and repair is None else None, cache_only=cache_only,
+                                                rule_receipt=rule_receipt)
                 if progress_callback is not None:
                     progress_callback('reviewer_response_saved')
         with accounting.stage(f"layer2.review_validation.{request['targetLocale']}.{stem}",
@@ -814,7 +1078,7 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             require(result.get("translationGroupId") == group["translationGroupId"]
                     and result.get("sourceUnitIds") == group["sourceUnitIds"],
                     f"Sol group identity changed: {stem}")
-            utterances = _utterances(result.get("targetUtterances"))
+            utterances = _utterances(result.get("targetUtterances"), group["sourceUnitIds"])
             final_text = "".join(utterances)
             coverage = result.get("coverage")
             require(isinstance(coverage, list)
@@ -839,13 +1103,18 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             if semantic["status"] != "pass" or any(value != "pass" for value in semantic["checks"].values()) \
                     or semantic["uncertainty"] or semantic["issues"]:
                 raise ValueError(f"Sol flagged group {stem}; inspect saved response before admission")
+            if plugin_path is not None and not simulation_only:
+                _stop_after_plugin_group_failure(policy, request, plugin_path, reviewed_row, plan, index, out,
+                                                 diagnostic_context=diagnostic_context)
             return reviewed_row, validation_span
     def process_group(item):
         index, _ = item
         with accounting.stage(f"layer2.group.{request['targetLocale']}.{index:04d}",
                               billing="orchestrator"):
             return _process_group(item)
-    results = ordered_group_results(list(enumerate(plan, 1)), process_group, workers)
+    results = (ordered_group_results(list(enumerate(plan, 1)), process_group, workers,
+                                    maximum_workers=maximum_workers) if maximum_workers != 16 else
+               ordered_group_results(list(enumerate(plan, 1)), process_group, workers))
     dependencies = accounting.bounded_dependencies(
         f"layer2.evidence_join.{request['targetLocale']}", [span for _, span in results],
         work_unit_id=f"l2.{request['targetLocale']}.evidence_join")
@@ -886,6 +1155,8 @@ def run_accounted(source: dict, anchor: dict, policy: dict, out_dir: Path,
                   progress_ledger: Path | None = None,
                   cache_only: bool = False, progress_callback=None,
                   predecessor_spans=(), completion_spans: list[str] | None = None) -> dict:
+    require(plugin is not None,
+            "Formal Layer 2 requires the frozen language plugin before dispatch")
     locale = policy["targetLocale"]
     with measure.producer_step(progress_ledger, f"L2-02@{locale}", locale=locale) as metrics:
         with accounting.accounting_session(out_dir / "accounting", "layer2_models",
@@ -929,8 +1200,16 @@ def main() -> None:
                         help="Reuse verified paid responses from an incomplete attempt of this revision")
     parser.add_argument("--progress-ledger", type=Path,
                         help="Record checkpoint and per-group substage timing in the four-layer ledger")
+    parser.add_argument("--model-backend", choices=("codex-cli", "openai-api"), default="openai-api",
+                        help="New translation/review runs use OpenAI API; CLI requires explicit selection")
+    parser.add_argument("--budget-config", type=Path,
+                        help="Dispatch the registered locale through its canonical execution configuration")
+    parser.add_argument("--budget-authorization", type=Path,
+                        help="Existing human-approved canonical budget authorization; requires --budget-config")
     parser.add_argument("--out-dir", type=Path, required=True)
     args = parser.parse_args()
+    require((args.budget_config is None) == (args.budget_authorization is None),
+            "--budget-config and --budget-authorization must be supplied together")
     require(args.revision_brief is None or args.reuse_from is not None,
             "--revision-brief requires --reuse-from")
     require(args.partial_repair_brief is None or args.reuse_from is not None,
@@ -943,14 +1222,46 @@ def main() -> None:
                               (args.english_source_package, args.anchor, args.policy))
     # Validate all policy/source/plan conditions before requiring a secret or making a paid call.
     request = producer.prepare_request(source, anchor, policy)
+    if args.budget_config is None:
+        validate_standalone_worker_budget(policy)
     plan = group_plan(request, anchor, json.loads(args.group_plan.read_text(encoding="utf-8"))
                       if args.group_plan else None)
     require_plugin_identity(args.plugin, policy["languageReview"]["pluginImplementationSha256"])
-    api_key = os.environ.get("OPENAI_API_KEY")
-    require(bool(api_key), "OPENAI_API_KEY is not configured")
+    rule_preflight.preflight(request, policy, args.plugin, plan)
+    from scripts import production_spark_admission as spark_admission
+    spark_admission.require_session()
+    if args.budget_config is not None:
+        require(args.model_backend == "openai-api" and args.group_plan is None
+                and args.revision_brief is None and args.reuse_from is None
+                and args.partial_repair_brief is None and args.resume_cache_from is None
+                and args.progress_ledger is None,
+                "Bound canonical dispatch does not accept standalone execution overrides")
+        from scripts import canonical_layer2_controller as controller
+        config = controller.load_configuration(args.budget_config)
+        locale = policy["targetLocale"]
+        require(locale in config.lanes, "locale_not_registered")
+        lane = config.lanes[locale]
+        for supplied, registered in (
+                (args.english_source_package, config.inspection_root / config.inspection["source"]),
+                (args.anchor, config.inspection_root / config.inspection["anchor"]),
+                (args.policy, lane["policy"]), (args.plugin, lane["plugin"]),
+                (args.out_dir, lane["output"])):
+            require(supplied.resolve() == registered.resolve(), "standalone_budget_inputs_not_registered")
+        print(json.dumps(controller.drive(config.path, locale,
+                         budget_authorization=args.budget_authorization), sort_keys=True))
+        return
+    if args.model_backend == "openai-api":
+        from scripts.openai_layer2_transport import OpenAILayer2Transport
+        transport = OpenAILayer2Transport()
+        api_key = transport.key
+    else:
+        from scripts.codex_layer2_transport import CodexLayer2Transport
+        transport = CodexLayer2Transport(receipts_dir=args.out_dir / "_cli_calls")
+        api_key = ""
+    caller = spark_admission.SessionBoundCaller(transport)
     evidence = run_accounted(
         source, anchor, policy, args.out_dir, api_key,
-        lambda key, payload: sermon_pipeline.chat_json(key, payload, retries=1),
+        caller,
         plan, args.plugin,
         producer._load(args.revision_brief) if args.revision_brief else None,
         args.reuse_from,

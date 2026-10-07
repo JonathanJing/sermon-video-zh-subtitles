@@ -16,11 +16,14 @@ from scripts.sermon_release_workflow import _safe_path
 
 _lock = threading.Lock()
 _producers = {}
+_ledger_held = threading.local()
+DURABLE_BINDING_NAME = '.durable-controller-stream.json'
+DURABLE_DELIVERY_DIRECTORY = '.durable-controller-events'
 
 
 def _fork_reset():
-    global _lock, _producers
-    _lock, _producers = threading.Lock(), {}
+    global _lock, _producers, _ledger_held
+    _lock, _producers, _ledger_held = threading.Lock(), {}, threading.local()
 
 
 if hasattr(os,'register_at_fork'): os.register_at_fork(after_in_child=_fork_reset)
@@ -28,17 +31,43 @@ if hasattr(os,'register_at_fork'): os.register_at_fork(after_in_child=_fork_rese
 
 def prepare(directory, build):
     """Allocate once, validate before reserving a sequence, then freeze the fact."""
+    if getattr(_ledger_held, 'active', False):
+        raise ValueError('recursive_accounting_ledger_lock')
     key = str(Path(directory).absolute())
     with _lock:
         producer, sequence = _producers.get(key, (uuid.uuid4().hex, 0))
         event = build(uuid.uuid4().hex, producer, sequence + 1)
         contract.validate_event(event)
+        root = Path(directory)
+        if _durable_enabled(root):
+            # Bound streams validate a ledger+pending union, so even ordinary
+            # process-local producers must freeze N before N+1 can be reserved.
+            # No process-local producer identity is persisted or propagated.
+            with _ledger(directory) as (root,pending,fd):
+                _check_durable(root,pending,fd,event)
+                _run_profile(root,fd,event)
+                path=pending/(event['eventId']+'.json')
+                jobs._reject_link(path,directory=False)
+                if path.exists():raise ValueError('pending_event_identity_conflict')
+                jobs._persist(path,event)
         _producers[key] = producer, sequence + 1
         return json.loads(contract.canonical_bytes(event))
 
 
 @contextmanager
 def _ledger(directory):
+    if getattr(_ledger_held, 'active', False):
+        raise ValueError('recursive_accounting_ledger_lock')
+    _ledger_held.active = True
+    try:
+        with _ledger_file(directory) as state:
+            yield state
+    finally:
+        _ledger_held.active = False
+
+
+@contextmanager
+def _ledger_file(directory):
     root = _safe_path(directory)
     root.mkdir(parents=True,exist_ok=True,mode=0o700)
     jobs._reject_link(root,directory=True)
@@ -101,6 +130,7 @@ def deliver(directory,event):
     event=json.loads(contract.canonical_bytes(event))
     # All durable intent and folder metadata precede the append and return.
     with _ledger(directory) as (root,pending,fd):
+        _check_durable(root,pending,fd,event)
         _run_profile(root,fd,event)
         path=pending/(event['eventId']+'.json')
         jobs._reject_link(path,directory=False)
@@ -112,9 +142,24 @@ def deliver(directory,event):
     return event['eventId']
 
 
+def _durable_enabled(root):
+    return any((root/name).exists() or (root/name).is_symlink()
+        for name in (DURABLE_BINDING_NAME, DURABLE_DELIVERY_DIRECTORY))
+
+
+def _check_durable(root,pending,fd,event=None):
+    # Opt-in only: even importing extra project code here would change an
+    # ordinary caller's already-frozen execution identity.
+    if not _durable_enabled(root):
+        return None
+    from scripts import sermon_durable_accounting as durable
+    return durable.validate_locked(root,pending,fd,additional_events=[event] if event is not None else ())
+
+
 def replay_pending(directory):
     count=0
     with _ledger(directory) as (root,pending,fd):
+        _check_durable(root,pending,fd)
         # Names, sizes and types are bounded before parsing; no referenced path
         # or provider is contacted. A duplicate append is intentionally safe.
         entries=list(pending.iterdir())

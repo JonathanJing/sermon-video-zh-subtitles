@@ -1,0 +1,2555 @@
+{
+  "analysisCommit": "ccf38f5ca2d8b3ce7681b21a40f00b40a6e9235b",
+  "appendProbeSourceSha256": "b9756c67ea6eba60477a100abf19577917aa362a15e09ce42aee5ea0268cd1ed",
+  "inputFileCount": 1001,
+  "inputFilesUnchanged": true,
+  "inputManifestSha256": "3a9fe7f9853d230ad69d55918373b17ea01c3b5205e87dffef5dbde841c72415",
+  "jsonschemaVersion": "4.26.0",
+  "method": {
+    "callsPerProcess": 3,
+    "firstCall": "fresh Python schema/event cache; OS cache not cleared",
+    "measurements": 270,
+    "operationsAreNestedDoNotSum": true,
+    "processesPerOperationPerScenario": 3,
+    "scope": "saved complete ledger; no live DAG percentage inferred"
+  },
+  "platform": "macOS-27.0-arm64-arm-64bit",
+  "postMeasurementChange": "Output-path hardening only; measured operations unchanged. Four boundary tests and exclusive-output smoke passed.",
+  "profilerSourceSha256": "93e5b148625d8cddb3b1d58c4f57ca0de829f92e8fdd7a006688e4fdcecae4bf",
+  "profiles": {
+    "completion_batch": {
+      "functions": [
+        {
+          "cumulativeSeconds": 6.434578414000001,
+          "file": "scripts/sermon_completion.py",
+          "function": "_rows",
+          "line": 45,
+          "primitiveCalls": 57,
+          "selfSeconds": 0.009524371,
+          "totalCalls": 57
+        },
+        {
+          "cumulativeSeconds": 1.8952684720000001,
+          "file": "scripts/sermon_log_contract.py",
+          "function": "_event_bytes",
+          "line": 141,
+          "primitiveCalls": 51756,
+          "selfSeconds": 0.036429776000000004,
+          "totalCalls": 51756
+        },
+        {
+          "cumulativeSeconds": 1.119355578,
+          "file": "scripts/sermon_log_contract.py",
+          "function": "canonical_bytes",
+          "line": 63,
+          "primitiveCalls": 103569,
+          "selfSeconds": 0.042167258000000006,
+          "totalCalls": 103569
+        },
+        {
+          "cumulativeSeconds": 0.6190280220000001,
+          "file": "scripts/sermon_log_contract.py",
+          "function": "fact_hash",
+          "line": 264,
+          "primitiveCalls": 51813,
+          "selfSeconds": 0.023835359,
+          "totalCalls": 51813
+        },
+        {
+          "cumulativeSeconds": 0.021552043,
+          "file": "scripts/sermon_log_contract.py",
+          "function": "_schema_snapshot",
+          "line": 100,
+          "primitiveCalls": 114,
+          "selfSeconds": 0.002611832,
+          "totalCalls": 114
+        },
+        {
+          "cumulativeSeconds": 3.41219624,
+          "file": "scripts/sermon_log_contract.py",
+          "function": "_validate_event_uncached",
+          "line": 226,
+          "primitiveCalls": 1140,
+          "selfSeconds": 0.0034120680000000003,
+          "totalCalls": 1140
+        },
+        {
+          "cumulativeSeconds": 6.422666503,
+          "file": "scripts/sermon_log_contract.py",
+          "function": "replay_integrity",
+          "line": 280,
+          "primitiveCalls": 114,
+          "selfSeconds": 0.17985837400000002,
+          "totalCalls": 114
+        },
+        {
+          "cumulativeSeconds": 0.007160106,
+          "file": "scripts/sermon_review_observation.py",
+          "function": "validate_observation",
+          "line": 43,
+          "primitiveCalls": 912,
+          "selfSeconds": 0.003247755,
+          "totalCalls": 912
+        }
+      ],
+      "profiledWallSeconds": 6.472211542073637,
+      "scope": "one_extra_warm_call_instrumented_not_baseline"
+    },
+    "durable_precheck": {
+      "functions": [
+        {
+          "cumulativeSeconds": 0.035708361,
+          "file": "scripts/sermon_log_contract.py",
+          "function": "_event_bytes",
+          "line": 141,
+          "primitiveCalls": 966,
+          "selfSeconds": 0.000730906,
+          "totalCalls": 966
+        },
+        {
+          "cumulativeSeconds": 0.017444678,
+          "file": "scripts/sermon_log_contract.py",
+          "function": "canonical_bytes",
+          "line": 63,
+          "primitiveCalls": 1655,
+          "selfSeconds": 0.000716245,
+          "totalCalls": 1655
+        },
+        {
+          "cumulativeSeconds": 0.006114449,
+          "file": "scripts/sermon_log_contract.py",
+          "function": "fact_hash",
+          "line": 264,
+          "primitiveCalls": 512,
+          "selfSeconds": 0.00024110100000000002,
+          "totalCalls": 512
+        },
+        {
+          "cumulativeSeconds": 0.085175519,
+          "file": "scripts/sermon_log_contract.py",
+          "function": "_schema_snapshot",
+          "line": 100,
+          "primitiveCalls": 513,
+          "selfSeconds": 0.010217655,
+          "totalCalls": 513
+        },
+        {
+          "cumulativeSeconds": 0.059856542000000006,
+          "file": "scripts/sermon_log_contract.py",
+          "function": "_validate_event_uncached",
+          "line": 226,
+          "primitiveCalls": 20,
+          "selfSeconds": 7.2624e-05,
+          "totalCalls": 20
+        },
+        {
+          "cumulativeSeconds": 0.056380792000000006,
+          "file": "scripts/sermon_log_contract.py",
+          "function": "replay_integrity",
+          "line": 280,
+          "primitiveCalls": 1,
+          "selfSeconds": 0.001628504,
+          "totalCalls": 1
+        },
+        {
+          "cumulativeSeconds": 0.000137667,
+          "file": "scripts/sermon_review_observation.py",
+          "function": "validate_observation",
+          "line": 43,
+          "primitiveCalls": 16,
+          "selfSeconds": 6.7872e-05,
+          "totalCalls": 16
+        }
+      ],
+      "profiledWallSeconds": 0.2095735410694033,
+      "scope": "one_extra_warm_call_instrumented_not_baseline"
+    },
+    "read_snapshot": {
+      "functions": [
+        {
+          "cumulativeSeconds": 0.039459605,
+          "file": "scripts/sermon_log_contract.py",
+          "function": "_event_bytes",
+          "line": 141,
+          "primitiveCalls": 454,
+          "selfSeconds": 0.010242169,
+          "totalCalls": 454
+        },
+        {
+          "cumulativeSeconds": 0.009472263,
+          "file": "scripts/sermon_log_contract.py",
+          "function": "canonical_bytes",
+          "line": 63,
+          "primitiveCalls": 454,
+          "selfSeconds": 0.000301542,
+          "totalCalls": 454
+        },
+        {
+          "cumulativeSeconds": 0.22403375,
+          "file": "scripts/sermon_log_contract.py",
+          "function": "_schema_snapshot",
+          "line": 100,
+          "primitiveCalls": 454,
+          "selfSeconds": 0.033579069,
+          "totalCalls": 454
+        },
+        {
+          "cumulativeSeconds": 0.12061370700000001,
+          "file": "scripts/sermon_log_contract.py",
+          "function": "_validate_event_uncached",
+          "line": 226,
+          "primitiveCalls": 10,
+          "selfSeconds": 4.8168000000000004e-05,
+          "totalCalls": 10
+        },
+        {
+          "cumulativeSeconds": 0.00022004200000000002,
+          "file": "scripts/sermon_review_observation.py",
+          "function": "validate_observation",
+          "line": 43,
+          "primitiveCalls": 8,
+          "selfSeconds": 8.566900000000001e-05,
+          "totalCalls": 8
+        }
+      ],
+      "profiledWallSeconds": 0.39680054096970707,
+      "scope": "one_extra_warm_call_instrumented_not_baseline"
+    }
+  },
+  "publishedProfilerSourceSha256": "bfd0e82f2907d44243971672fc2a5db2abfaa92b135c31925b9bc5f93e377c78",
+  "python": "3.12.8 (v3.12.8:2dc476bcb91, Dec  3 2024, 14:43:19) [Clang 13.0.0 (clang-1300.0.29.30)]",
+  "results": {
+    "failure": {
+      "completion_batch": {
+        "metadata": {
+          "completionCount": 54,
+          "deliveryRecords": 63,
+          "eventCount": 468,
+          "ledgerBytes": 665044,
+          "ledgerSha256": "260e51a39c1fbed4b676269323caf0ad992ca7b9d7c9270455be397a0d18df72"
+        },
+        "summary": {
+          "cold": {
+            "cacheDeltas": [
+              {
+                "hits": 49006,
+                "misses": 458
+              },
+              {
+                "hits": 49006,
+                "misses": 458
+              },
+              {
+                "hits": 49006,
+                "misses": 458
+              }
+            ],
+            "cpuSeconds": {
+              "max": 3.293434,
+              "median": 3.28023,
+              "min": 3.278856
+            },
+            "sampleCount": 3,
+            "wallSeconds": {
+              "max": 3.332389208,
+              "median": 3.307473,
+              "min": 3.301118958
+            }
+          },
+          "warm": {
+            "cacheDeltas": [
+              {
+                "hits": 49464,
+                "misses": 0
+              },
+              {
+                "hits": 49464,
+                "misses": 0
+              },
+              {
+                "hits": 49464,
+                "misses": 0
+              },
+              {
+                "hits": 49464,
+                "misses": 0
+              },
+              {
+                "hits": 49464,
+                "misses": 0
+              },
+              {
+                "hits": 49464,
+                "misses": 0
+              }
+            ],
+            "cpuSeconds": {
+              "max": 2.658431,
+              "median": 2.633126,
+              "min": 2.626046
+            },
+            "sampleCount": 6,
+            "wallSeconds": {
+              "max": 2.680876584,
+              "median": 2.6508884375,
+              "min": 2.641105875
+            }
+          }
+        }
+      },
+      "durable_precheck": {
+        "metadata": {
+          "completionCount": 54,
+          "deliveryRecords": 63,
+          "eventCount": 468,
+          "ledgerBytes": 665044,
+          "ledgerSha256": "260e51a39c1fbed4b676269323caf0ad992ca7b9d7c9270455be397a0d18df72"
+        },
+        "summary": {
+          "cold": {
+            "cacheDeltas": [
+              {
+                "hits": 521,
+                "misses": 458
+              },
+              {
+                "hits": 521,
+                "misses": 458
+              },
+              {
+                "hits": 521,
+                "misses": 458
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.785052,
+              "median": 0.784954,
+              "min": 0.784389
+            },
+            "sampleCount": 3,
+            "wallSeconds": {
+              "max": 0.791142875,
+              "median": 0.790086125,
+              "min": 0.789673208
+            }
+          },
+          "warm": {
+            "cacheDeltas": [
+              {
+                "hits": 979,
+                "misses": 0
+              },
+              {
+                "hits": 979,
+                "misses": 0
+              },
+              {
+                "hits": 979,
+                "misses": 0
+              },
+              {
+                "hits": 979,
+                "misses": 0
+              },
+              {
+                "hits": 979,
+                "misses": 0
+              },
+              {
+                "hits": 979,
+                "misses": 0
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.147864,
+              "median": 0.1448485,
+              "min": 0.143009
+            },
+            "sampleCount": 6,
+            "wallSeconds": {
+              "max": 0.148966958,
+              "median": 0.1458898545,
+              "min": 0.143694875
+            }
+          }
+        }
+      },
+      "file_bytes": {
+        "metadata": {
+          "completionCount": 54,
+          "deliveryRecords": 63,
+          "eventCount": 468,
+          "ledgerBytes": 665044,
+          "ledgerSha256": "260e51a39c1fbed4b676269323caf0ad992ca7b9d7c9270455be397a0d18df72"
+        },
+        "summary": {
+          "cold": {
+            "cacheDeltas": [
+              {
+                "hits": 0,
+                "misses": 0
+              },
+              {
+                "hits": 0,
+                "misses": 0
+              },
+              {
+                "hits": 0,
+                "misses": 0
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.000167,
+              "median": 7.6e-05,
+              "min": 6.8e-05
+            },
+            "sampleCount": 3,
+            "wallSeconds": {
+              "max": 0.000169417,
+              "median": 7.7875e-05,
+              "min": 7.0541e-05
+            }
+          },
+          "warm": {
+            "cacheDeltas": [
+              {
+                "hits": 0,
+                "misses": 0
+              },
+              {
+                "hits": 0,
+                "misses": 0
+              },
+              {
+                "hits": 0,
+                "misses": 0
+              },
+              {
+                "hits": 0,
+                "misses": 0
+              },
+              {
+                "hits": 0,
+                "misses": 0
+              },
+              {
+                "hits": 0,
+                "misses": 0
+              }
+            ],
+            "cpuSeconds": {
+              "max": 4.9e-05,
+              "median": 4.4999999999999996e-05,
+              "min": 4.3e-05
+            },
+            "sampleCount": 6,
+            "wallSeconds": {
+              "max": 4.9125e-05,
+              "median": 4.67915e-05,
+              "min": 4.2667e-05
+            }
+          }
+        }
+      },
+      "json_parse": {
+        "metadata": {
+          "completionCount": 54,
+          "deliveryRecords": 63,
+          "eventCount": 468,
+          "ledgerBytes": 665044,
+          "ledgerSha256": "260e51a39c1fbed4b676269323caf0ad992ca7b9d7c9270455be397a0d18df72"
+        },
+        "summary": {
+          "cold": {
+            "cacheDeltas": [
+              {
+                "hits": 0,
+                "misses": 0
+              },
+              {
+                "hits": 0,
+                "misses": 0
+              },
+              {
+                "hits": 0,
+                "misses": 0
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.003269,
+              "median": 0.003067,
+              "min": 0.003033
+            },
+            "sampleCount": 3,
+            "wallSeconds": {
+              "max": 0.003326375,
+              "median": 0.0030815,
+              "min": 0.0030395
+            }
+          },
+          "warm": {
+            "cacheDeltas": [
+              {
+                "hits": 0,
+                "misses": 0
+              },
+              {
+                "hits": 0,
+                "misses": 0
+              },
+              {
+                "hits": 0,
+                "misses": 0
+              },
+              {
+                "hits": 0,
+                "misses": 0
+              },
+              {
+                "hits": 0,
+                "misses": 0
+              },
+              {
+                "hits": 0,
+                "misses": 0
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.003572,
+              "median": 0.003137,
+              "min": 0.003029
+            },
+            "sampleCount": 6,
+            "wallSeconds": {
+              "max": 0.003618291,
+              "median": 0.003153479,
+              "min": 0.003060458
+            }
+          }
+        }
+      },
+      "log_inspection": {
+        "metadata": {
+          "completionCount": 54,
+          "deliveryRecords": 63,
+          "eventCount": 468,
+          "ledgerBytes": 665044,
+          "ledgerSha256": "260e51a39c1fbed4b676269323caf0ad992ca7b9d7c9270455be397a0d18df72"
+        },
+        "summary": {
+          "cold": {
+            "cacheDeltas": [
+              {
+                "hits": 458,
+                "misses": 458
+              },
+              {
+                "hits": 458,
+                "misses": 458
+              },
+              {
+                "hits": 458,
+                "misses": 458
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.763445,
+              "median": 0.763235,
+              "min": 0.759062
+            },
+            "sampleCount": 3,
+            "wallSeconds": {
+              "max": 0.768392875,
+              "median": 0.767679,
+              "min": 0.764373583
+            }
+          },
+          "warm": {
+            "cacheDeltas": [
+              {
+                "hits": 916,
+                "misses": 0
+              },
+              {
+                "hits": 916,
+                "misses": 0
+              },
+              {
+                "hits": 916,
+                "misses": 0
+              },
+              {
+                "hits": 916,
+                "misses": 0
+              },
+              {
+                "hits": 916,
+                "misses": 0
+              },
+              {
+                "hits": 916,
+                "misses": 0
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.13553,
+              "median": 0.1339375,
+              "min": 0.132694
+            },
+            "sampleCount": 6,
+            "wallSeconds": {
+              "max": 0.138295958,
+              "median": 0.13479322900000001,
+              "min": 0.133511792
+            }
+          }
+        }
+      },
+      "read_snapshot": {
+        "metadata": {
+          "completionCount": 54,
+          "deliveryRecords": 63,
+          "eventCount": 468,
+          "ledgerBytes": 665044,
+          "ledgerSha256": "260e51a39c1fbed4b676269323caf0ad992ca7b9d7c9270455be397a0d18df72"
+        },
+        "summary": {
+          "cold": {
+            "cacheDeltas": [
+              {
+                "hits": 0,
+                "misses": 458
+              },
+              {
+                "hits": 0,
+                "misses": 458
+              },
+              {
+                "hits": 0,
+                "misses": 458
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.741883,
+              "median": 0.740624,
+              "min": 0.729825
+            },
+            "sampleCount": 3,
+            "wallSeconds": {
+              "max": 0.748686791,
+              "median": 0.747484958,
+              "min": 0.734544666
+            }
+          },
+          "warm": {
+            "cacheDeltas": [
+              {
+                "hits": 458,
+                "misses": 0
+              },
+              {
+                "hits": 458,
+                "misses": 0
+              },
+              {
+                "hits": 458,
+                "misses": 0
+              },
+              {
+                "hits": 458,
+                "misses": 0
+              },
+              {
+                "hits": 458,
+                "misses": 0
+              },
+              {
+                "hits": 458,
+                "misses": 0
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.102274,
+              "median": 0.101413,
+              "min": 0.101078
+            },
+            "sampleCount": 6,
+            "wallSeconds": {
+              "max": 0.102772875,
+              "median": 0.10210749999999999,
+              "min": 0.101696667
+            }
+          }
+        }
+      },
+      "replay": {
+        "metadata": {
+          "completionCount": 54,
+          "deliveryRecords": 63,
+          "eventCount": 468,
+          "ledgerBytes": 665044,
+          "ledgerSha256": "260e51a39c1fbed4b676269323caf0ad992ca7b9d7c9270455be397a0d18df72"
+        },
+        "summary": {
+          "cold": {
+            "cacheDeltas": [
+              {
+                "hits": 0,
+                "misses": 458
+              },
+              {
+                "hits": 0,
+                "misses": 458
+              },
+              {
+                "hits": 0,
+                "misses": 458
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.65734,
+              "median": 0.653329,
+              "min": 0.652365
+            },
+            "sampleCount": 3,
+            "wallSeconds": {
+              "max": 0.661811792,
+              "median": 0.658713709,
+              "min": 0.657227334
+            }
+          },
+          "warm": {
+            "cacheDeltas": [
+              {
+                "hits": 458,
+                "misses": 0
+              },
+              {
+                "hits": 458,
+                "misses": 0
+              },
+              {
+                "hits": 458,
+                "misses": 0
+              },
+              {
+                "hits": 458,
+                "misses": 0
+              },
+              {
+                "hits": 458,
+                "misses": 0
+              },
+              {
+                "hits": 458,
+                "misses": 0
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.025154,
+              "median": 0.0245125,
+              "min": 0.024264
+            },
+            "sampleCount": 6,
+            "wallSeconds": {
+              "max": 0.02537,
+              "median": 0.024685979,
+              "min": 0.024391417
+            }
+          }
+        }
+      },
+      "schema": {
+        "metadata": {
+          "completionCount": 54,
+          "deliveryRecords": 63,
+          "eventCount": 468,
+          "ledgerBytes": 665044,
+          "ledgerSha256": "260e51a39c1fbed4b676269323caf0ad992ca7b9d7c9270455be397a0d18df72"
+        },
+        "summary": {
+          "cold": {
+            "cacheDeltas": [
+              {
+                "hits": 0,
+                "misses": 458
+              },
+              {
+                "hits": 0,
+                "misses": 458
+              },
+              {
+                "hits": 0,
+                "misses": 458
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.745584,
+              "median": 0.731338,
+              "min": 0.729834
+            },
+            "sampleCount": 3,
+            "wallSeconds": {
+              "max": 0.749987792,
+              "median": 0.73603925,
+              "min": 0.734476375
+            }
+          },
+          "warm": {
+            "cacheDeltas": [
+              {
+                "hits": 458,
+                "misses": 0
+              },
+              {
+                "hits": 458,
+                "misses": 0
+              },
+              {
+                "hits": 458,
+                "misses": 0
+              },
+              {
+                "hits": 458,
+                "misses": 0
+              },
+              {
+                "hits": 458,
+                "misses": 0
+              },
+              {
+                "hits": 458,
+                "misses": 0
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.099056,
+              "median": 0.0981875,
+              "min": 0.096914
+            },
+            "sampleCount": 6,
+            "wallSeconds": {
+              "max": 0.099603458,
+              "median": 0.098744375,
+              "min": 0.097552209
+            }
+          }
+        }
+      },
+      "status_projection": {
+        "metadata": {
+          "completionCount": 54,
+          "deliveryRecords": 63,
+          "eventCount": 468,
+          "ledgerBytes": 665044,
+          "ledgerSha256": "260e51a39c1fbed4b676269323caf0ad992ca7b9d7c9270455be397a0d18df72"
+        },
+        "summary": {
+          "cold": {
+            "cacheDeltas": [
+              {
+                "hits": 0,
+                "misses": 458
+              },
+              {
+                "hits": 0,
+                "misses": 458
+              },
+              {
+                "hits": 0,
+                "misses": 458
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.658379,
+              "median": 0.650437,
+              "min": 0.649909
+            },
+            "sampleCount": 3,
+            "wallSeconds": {
+              "max": 0.663153625,
+              "median": 0.654764625,
+              "min": 0.654358458
+            }
+          },
+          "warm": {
+            "cacheDeltas": [
+              {
+                "hits": 458,
+                "misses": 0
+              },
+              {
+                "hits": 458,
+                "misses": 0
+              },
+              {
+                "hits": 458,
+                "misses": 0
+              },
+              {
+                "hits": 458,
+                "misses": 0
+              },
+              {
+                "hits": 458,
+                "misses": 0
+              },
+              {
+                "hits": 458,
+                "misses": 0
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.026784,
+              "median": 0.026306000000000003,
+              "min": 0.025761
+            },
+            "sampleCount": 6,
+            "wallSeconds": {
+              "max": 0.02692075,
+              "median": 0.0264946455,
+              "min": 0.025910041
+            }
+          }
+        }
+      },
+      "weekly_report": {
+        "metadata": {
+          "completionCount": 54,
+          "deliveryRecords": 63,
+          "eventCount": 468,
+          "ledgerBytes": 665044,
+          "ledgerSha256": "260e51a39c1fbed4b676269323caf0ad992ca7b9d7c9270455be397a0d18df72"
+        },
+        "summary": {
+          "cold": {
+            "cacheDeltas": [
+              {
+                "hits": 1374,
+                "misses": 458
+              },
+              {
+                "hits": 1374,
+                "misses": 458
+              },
+              {
+                "hits": 1374,
+                "misses": 458
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.820658,
+              "median": 0.819464,
+              "min": 0.810509
+            },
+            "sampleCount": 3,
+            "wallSeconds": {
+              "max": 0.826955125,
+              "median": 0.825394666,
+              "min": 0.815525875
+            }
+          },
+          "warm": {
+            "cacheDeltas": [
+              {
+                "hits": 1832,
+                "misses": 0
+              },
+              {
+                "hits": 1832,
+                "misses": 0
+              },
+              {
+                "hits": 1832,
+                "misses": 0
+              },
+              {
+                "hits": 1832,
+                "misses": 0
+              },
+              {
+                "hits": 1832,
+                "misses": 0
+              },
+              {
+                "hits": 1832,
+                "misses": 0
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.191723,
+              "median": 0.18833149999999999,
+              "min": 0.186506
+            },
+            "sampleCount": 6,
+            "wallSeconds": {
+              "max": 0.193583959,
+              "median": 0.18954537500000002,
+              "min": 0.187538542
+            }
+          }
+        }
+      }
+    },
+    "happy": {
+      "completion_batch": {
+        "metadata": {
+          "completionCount": 57,
+          "deliveryRecords": 58,
+          "eventCount": 454,
+          "ledgerBytes": 641503,
+          "ledgerSha256": "eb9d9b1b1ff7207b79b54f6d8c7ad7d8d3340ea4e462cbdcc89e998ecad4975a"
+        },
+        "summary": {
+          "cold": {
+            "cacheDeltas": [
+              {
+                "hits": 50172,
+                "misses": 444
+              },
+              {
+                "hits": 50172,
+                "misses": 444
+              },
+              {
+                "hits": 50172,
+                "misses": 444
+              }
+            ],
+            "cpuSeconds": {
+              "max": 3.364623,
+              "median": 3.357112,
+              "min": 3.354687
+            },
+            "sampleCount": 3,
+            "wallSeconds": {
+              "max": 3.389461333,
+              "median": 3.380842417,
+              "min": 3.37895375
+            }
+          },
+          "warm": {
+            "cacheDeltas": [
+              {
+                "hits": 50616,
+                "misses": 0
+              },
+              {
+                "hits": 50616,
+                "misses": 0
+              },
+              {
+                "hits": 50616,
+                "misses": 0
+              },
+              {
+                "hits": 50616,
+                "misses": 0
+              },
+              {
+                "hits": 50616,
+                "misses": 0
+              },
+              {
+                "hits": 50616,
+                "misses": 0
+              }
+            ],
+            "cpuSeconds": {
+              "max": 2.773729,
+              "median": 2.731753,
+              "min": 2.730073
+            },
+            "sampleCount": 6,
+            "wallSeconds": {
+              "max": 2.800752542,
+              "median": 2.7534009585,
+              "min": 2.749619583
+            }
+          }
+        }
+      },
+      "durable_precheck": {
+        "metadata": {
+          "completionCount": 57,
+          "deliveryRecords": 58,
+          "eventCount": 454,
+          "ledgerBytes": 641503,
+          "ledgerSha256": "eb9d9b1b1ff7207b79b54f6d8c7ad7d8d3340ea4e462cbdcc89e998ecad4975a"
+        },
+        "summary": {
+          "cold": {
+            "cacheDeltas": [
+              {
+                "hits": 502,
+                "misses": 444
+              },
+              {
+                "hits": 502,
+                "misses": 444
+              },
+              {
+                "hits": 502,
+                "misses": 444
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.779147,
+              "median": 0.766348,
+              "min": 0.761103
+            },
+            "sampleCount": 3,
+            "wallSeconds": {
+              "max": 0.924653792,
+              "median": 0.772518791,
+              "min": 0.766337792
+            }
+          },
+          "warm": {
+            "cacheDeltas": [
+              {
+                "hits": 946,
+                "misses": 0
+              },
+              {
+                "hits": 946,
+                "misses": 0
+              },
+              {
+                "hits": 946,
+                "misses": 0
+              },
+              {
+                "hits": 946,
+                "misses": 0
+              },
+              {
+                "hits": 946,
+                "misses": 0
+              },
+              {
+                "hits": 946,
+                "misses": 0
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.153762,
+              "median": 0.140272,
+              "min": 0.139022
+            },
+            "sampleCount": 6,
+            "wallSeconds": {
+              "max": 0.228664542,
+              "median": 0.141275375,
+              "min": 0.139904459
+            }
+          }
+        }
+      },
+      "file_bytes": {
+        "metadata": {
+          "completionCount": 57,
+          "deliveryRecords": 58,
+          "eventCount": 454,
+          "ledgerBytes": 641503,
+          "ledgerSha256": "eb9d9b1b1ff7207b79b54f6d8c7ad7d8d3340ea4e462cbdcc89e998ecad4975a"
+        },
+        "summary": {
+          "cold": {
+            "cacheDeltas": [
+              {
+                "hits": 0,
+                "misses": 0
+              },
+              {
+                "hits": 0,
+                "misses": 0
+              },
+              {
+                "hits": 0,
+                "misses": 0
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.000188,
+              "median": 0.000137,
+              "min": 0.000107
+            },
+            "sampleCount": 3,
+            "wallSeconds": {
+              "max": 0.000189667,
+              "median": 0.000139,
+              "min": 0.000109292
+            }
+          },
+          "warm": {
+            "cacheDeltas": [
+              {
+                "hits": 0,
+                "misses": 0
+              },
+              {
+                "hits": 0,
+                "misses": 0
+              },
+              {
+                "hits": 0,
+                "misses": 0
+              },
+              {
+                "hits": 0,
+                "misses": 0
+              },
+              {
+                "hits": 0,
+                "misses": 0
+              },
+              {
+                "hits": 0,
+                "misses": 0
+              }
+            ],
+            "cpuSeconds": {
+              "max": 4.7e-05,
+              "median": 4.2000000000000004e-05,
+              "min": 4e-05
+            },
+            "sampleCount": 6,
+            "wallSeconds": {
+              "max": 4.7959e-05,
+              "median": 4.30835e-05,
+              "min": 4.1708e-05
+            }
+          }
+        }
+      },
+      "json_parse": {
+        "metadata": {
+          "completionCount": 57,
+          "deliveryRecords": 58,
+          "eventCount": 454,
+          "ledgerBytes": 641503,
+          "ledgerSha256": "eb9d9b1b1ff7207b79b54f6d8c7ad7d8d3340ea4e462cbdcc89e998ecad4975a"
+        },
+        "summary": {
+          "cold": {
+            "cacheDeltas": [
+              {
+                "hits": 0,
+                "misses": 0
+              },
+              {
+                "hits": 0,
+                "misses": 0
+              },
+              {
+                "hits": 0,
+                "misses": 0
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.003047,
+              "median": 0.002969,
+              "min": 0.002818
+            },
+            "sampleCount": 3,
+            "wallSeconds": {
+              "max": 0.003062917,
+              "median": 0.002974666,
+              "min": 0.002820583
+            }
+          },
+          "warm": {
+            "cacheDeltas": [
+              {
+                "hits": 0,
+                "misses": 0
+              },
+              {
+                "hits": 0,
+                "misses": 0
+              },
+              {
+                "hits": 0,
+                "misses": 0
+              },
+              {
+                "hits": 0,
+                "misses": 0
+              },
+              {
+                "hits": 0,
+                "misses": 0
+              },
+              {
+                "hits": 0,
+                "misses": 0
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.003426,
+              "median": 0.003127,
+              "min": 0.002953
+            },
+            "sampleCount": 6,
+            "wallSeconds": {
+              "max": 0.003450708,
+              "median": 0.003154333,
+              "min": 0.002959833
+            }
+          }
+        }
+      },
+      "log_inspection": {
+        "metadata": {
+          "completionCount": 57,
+          "deliveryRecords": 58,
+          "eventCount": 454,
+          "ledgerBytes": 641503,
+          "ledgerSha256": "eb9d9b1b1ff7207b79b54f6d8c7ad7d8d3340ea4e462cbdcc89e998ecad4975a"
+        },
+        "summary": {
+          "cold": {
+            "cacheDeltas": [
+              {
+                "hits": 444,
+                "misses": 444
+              },
+              {
+                "hits": 444,
+                "misses": 444
+              },
+              {
+                "hits": 444,
+                "misses": 444
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.778861,
+              "median": 0.770952,
+              "min": 0.754365
+            },
+            "sampleCount": 3,
+            "wallSeconds": {
+              "max": 0.787151375,
+              "median": 0.781058,
+              "min": 0.759127833
+            }
+          },
+          "warm": {
+            "cacheDeltas": [
+              {
+                "hits": 888,
+                "misses": 0
+              },
+              {
+                "hits": 888,
+                "misses": 0
+              },
+              {
+                "hits": 888,
+                "misses": 0
+              },
+              {
+                "hits": 888,
+                "misses": 0
+              },
+              {
+                "hits": 888,
+                "misses": 0
+              },
+              {
+                "hits": 888,
+                "misses": 0
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.135019,
+              "median": 0.131494,
+              "min": 0.128915
+            },
+            "sampleCount": 6,
+            "wallSeconds": {
+              "max": 0.136869792,
+              "median": 0.13264172899999999,
+              "min": 0.129698167
+            }
+          }
+        }
+      },
+      "read_snapshot": {
+        "metadata": {
+          "completionCount": 57,
+          "deliveryRecords": 58,
+          "eventCount": 454,
+          "ledgerBytes": 641503,
+          "ledgerSha256": "eb9d9b1b1ff7207b79b54f6d8c7ad7d8d3340ea4e462cbdcc89e998ecad4975a"
+        },
+        "summary": {
+          "cold": {
+            "cacheDeltas": [
+              {
+                "hits": 0,
+                "misses": 444
+              },
+              {
+                "hits": 0,
+                "misses": 444
+              },
+              {
+                "hits": 0,
+                "misses": 444
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.723664,
+              "median": 0.713774,
+              "min": 0.704591
+            },
+            "sampleCount": 3,
+            "wallSeconds": {
+              "max": 0.733515292,
+              "median": 0.718701041,
+              "min": 0.709031708
+            }
+          },
+          "warm": {
+            "cacheDeltas": [
+              {
+                "hits": 444,
+                "misses": 0
+              },
+              {
+                "hits": 444,
+                "misses": 0
+              },
+              {
+                "hits": 444,
+                "misses": 0
+              },
+              {
+                "hits": 444,
+                "misses": 0
+              },
+              {
+                "hits": 444,
+                "misses": 0
+              },
+              {
+                "hits": 444,
+                "misses": 0
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.099766,
+              "median": 0.09902,
+              "min": 0.098041
+            },
+            "sampleCount": 6,
+            "wallSeconds": {
+              "max": 0.1009535,
+              "median": 0.09947864649999999,
+              "min": 0.098640333
+            }
+          }
+        }
+      },
+      "replay": {
+        "metadata": {
+          "completionCount": 57,
+          "deliveryRecords": 58,
+          "eventCount": 454,
+          "ledgerBytes": 641503,
+          "ledgerSha256": "eb9d9b1b1ff7207b79b54f6d8c7ad7d8d3340ea4e462cbdcc89e998ecad4975a"
+        },
+        "summary": {
+          "cold": {
+            "cacheDeltas": [
+              {
+                "hits": 0,
+                "misses": 444
+              },
+              {
+                "hits": 0,
+                "misses": 444
+              },
+              {
+                "hits": 0,
+                "misses": 444
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.642806,
+              "median": 0.639916,
+              "min": 0.639226
+            },
+            "sampleCount": 3,
+            "wallSeconds": {
+              "max": 0.653420583,
+              "median": 0.647609959,
+              "min": 0.644667834
+            }
+          },
+          "warm": {
+            "cacheDeltas": [
+              {
+                "hits": 444,
+                "misses": 0
+              },
+              {
+                "hits": 444,
+                "misses": 0
+              },
+              {
+                "hits": 444,
+                "misses": 0
+              },
+              {
+                "hits": 444,
+                "misses": 0
+              },
+              {
+                "hits": 444,
+                "misses": 0
+              },
+              {
+                "hits": 444,
+                "misses": 0
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.023963,
+              "median": 0.0238805,
+              "min": 0.023476
+            },
+            "sampleCount": 6,
+            "wallSeconds": {
+              "max": 0.024133167,
+              "median": 0.0240203545,
+              "min": 0.02364575
+            }
+          }
+        }
+      },
+      "schema": {
+        "metadata": {
+          "completionCount": 57,
+          "deliveryRecords": 58,
+          "eventCount": 454,
+          "ledgerBytes": 641503,
+          "ledgerSha256": "eb9d9b1b1ff7207b79b54f6d8c7ad7d8d3340ea4e462cbdcc89e998ecad4975a"
+        },
+        "summary": {
+          "cold": {
+            "cacheDeltas": [
+              {
+                "hits": 0,
+                "misses": 444
+              },
+              {
+                "hits": 0,
+                "misses": 444
+              },
+              {
+                "hits": 0,
+                "misses": 444
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.743104,
+              "median": 0.712434,
+              "min": 0.705566
+            },
+            "sampleCount": 3,
+            "wallSeconds": {
+              "max": 0.748601584,
+              "median": 0.716903417,
+              "min": 0.70988925
+            }
+          },
+          "warm": {
+            "cacheDeltas": [
+              {
+                "hits": 444,
+                "misses": 0
+              },
+              {
+                "hits": 444,
+                "misses": 0
+              },
+              {
+                "hits": 444,
+                "misses": 0
+              },
+              {
+                "hits": 444,
+                "misses": 0
+              },
+              {
+                "hits": 444,
+                "misses": 0
+              },
+              {
+                "hits": 444,
+                "misses": 0
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.10133,
+              "median": 0.09783700000000001,
+              "min": 0.094957
+            },
+            "sampleCount": 6,
+            "wallSeconds": {
+              "max": 0.1027645,
+              "median": 0.09852825,
+              "min": 0.095805291
+            }
+          }
+        }
+      },
+      "status_projection": {
+        "metadata": {
+          "completionCount": 57,
+          "deliveryRecords": 58,
+          "eventCount": 454,
+          "ledgerBytes": 641503,
+          "ledgerSha256": "eb9d9b1b1ff7207b79b54f6d8c7ad7d8d3340ea4e462cbdcc89e998ecad4975a"
+        },
+        "summary": {
+          "cold": {
+            "cacheDeltas": [
+              {
+                "hits": 0,
+                "misses": 444
+              },
+              {
+                "hits": 0,
+                "misses": 444
+              },
+              {
+                "hits": 0,
+                "misses": 444
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.649334,
+              "median": 0.649073,
+              "min": 0.640673
+            },
+            "sampleCount": 3,
+            "wallSeconds": {
+              "max": 0.654468917,
+              "median": 0.654302583,
+              "min": 0.645351083
+            }
+          },
+          "warm": {
+            "cacheDeltas": [
+              {
+                "hits": 444,
+                "misses": 0
+              },
+              {
+                "hits": 444,
+                "misses": 0
+              },
+              {
+                "hits": 444,
+                "misses": 0
+              },
+              {
+                "hits": 444,
+                "misses": 0
+              },
+              {
+                "hits": 444,
+                "misses": 0
+              },
+              {
+                "hits": 444,
+                "misses": 0
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.026431,
+              "median": 0.0257315,
+              "min": 0.025305
+            },
+            "sampleCount": 6,
+            "wallSeconds": {
+              "max": 0.026538416,
+              "median": 0.025897749499999997,
+              "min": 0.025427125
+            }
+          }
+        }
+      },
+      "weekly_report": {
+        "metadata": {
+          "completionCount": 57,
+          "deliveryRecords": 58,
+          "eventCount": 454,
+          "ledgerBytes": 641503,
+          "ledgerSha256": "eb9d9b1b1ff7207b79b54f6d8c7ad7d8d3340ea4e462cbdcc89e998ecad4975a"
+        },
+        "summary": {
+          "cold": {
+            "cacheDeltas": [
+              {
+                "hits": 1332,
+                "misses": 444
+              },
+              {
+                "hits": 1332,
+                "misses": 444
+              },
+              {
+                "hits": 1332,
+                "misses": 444
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.82964,
+              "median": 0.803782,
+              "min": 0.799292
+            },
+            "sampleCount": 3,
+            "wallSeconds": {
+              "max": 0.872117041,
+              "median": 0.809156542,
+              "min": 0.804360916
+            }
+          },
+          "warm": {
+            "cacheDeltas": [
+              {
+                "hits": 1776,
+                "misses": 0
+              },
+              {
+                "hits": 1776,
+                "misses": 0
+              },
+              {
+                "hits": 1776,
+                "misses": 0
+              },
+              {
+                "hits": 1776,
+                "misses": 0
+              },
+              {
+                "hits": 1776,
+                "misses": 0
+              },
+              {
+                "hits": 1776,
+                "misses": 0
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.186768,
+              "median": 0.185138,
+              "min": 0.18267
+            },
+            "sampleCount": 6,
+            "wallSeconds": {
+              "max": 0.188060542,
+              "median": 0.1876111875,
+              "min": 0.18384325
+            }
+          }
+        }
+      }
+    },
+    "timeout": {
+      "completion_batch": {
+        "metadata": {
+          "completionCount": 49,
+          "deliveryRecords": 60,
+          "eventCount": 424,
+          "ledgerBytes": 599826,
+          "ledgerSha256": "a72c4c373f65adedc735e5056ea5a03627ba79455aff0b7bdc16874edf39955a"
+        },
+        "summary": {
+          "cold": {
+            "cacheDeltas": [
+              {
+                "hits": 40158,
+                "misses": 414
+              },
+              {
+                "hits": 40158,
+                "misses": 414
+              },
+              {
+                "hits": 40158,
+                "misses": 414
+              }
+            ],
+            "cpuSeconds": {
+              "max": 2.889517,
+              "median": 2.868972,
+              "min": 2.837684
+            },
+            "sampleCount": 3,
+            "wallSeconds": {
+              "max": 2.910301,
+              "median": 2.888541375,
+              "min": 2.855067875
+            }
+          },
+          "warm": {
+            "cacheDeltas": [
+              {
+                "hits": 40572,
+                "misses": 0
+              },
+              {
+                "hits": 40572,
+                "misses": 0
+              },
+              {
+                "hits": 40572,
+                "misses": 0
+              },
+              {
+                "hits": 40572,
+                "misses": 0
+              },
+              {
+                "hits": 40572,
+                "misses": 0
+              },
+              {
+                "hits": 40572,
+                "misses": 0
+              }
+            ],
+            "cpuSeconds": {
+              "max": 2.278642,
+              "median": 2.2646414999999998,
+              "min": 2.245504
+            },
+            "sampleCount": 6,
+            "wallSeconds": {
+              "max": 2.295234917,
+              "median": 2.2799728330000004,
+              "min": 2.259487083
+            }
+          }
+        }
+      },
+      "durable_precheck": {
+        "metadata": {
+          "completionCount": 49,
+          "deliveryRecords": 60,
+          "eventCount": 424,
+          "ledgerBytes": 599826,
+          "ledgerSha256": "a72c4c373f65adedc735e5056ea5a03627ba79455aff0b7bdc16874edf39955a"
+        },
+        "summary": {
+          "cold": {
+            "cacheDeltas": [
+              {
+                "hits": 474,
+                "misses": 414
+              },
+              {
+                "hits": 474,
+                "misses": 414
+              },
+              {
+                "hits": 474,
+                "misses": 414
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.733555,
+              "median": 0.732036,
+              "min": 0.727792
+            },
+            "sampleCount": 3,
+            "wallSeconds": {
+              "max": 0.738541,
+              "median": 0.73700425,
+              "min": 0.732085208
+            }
+          },
+          "warm": {
+            "cacheDeltas": [
+              {
+                "hits": 888,
+                "misses": 0
+              },
+              {
+                "hits": 888,
+                "misses": 0
+              },
+              {
+                "hits": 888,
+                "misses": 0
+              },
+              {
+                "hits": 888,
+                "misses": 0
+              },
+              {
+                "hits": 888,
+                "misses": 0
+              },
+              {
+                "hits": 888,
+                "misses": 0
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.138462,
+              "median": 0.1352135,
+              "min": 0.132788
+            },
+            "sampleCount": 6,
+            "wallSeconds": {
+              "max": 0.139655417,
+              "median": 0.136116917,
+              "min": 0.133580083
+            }
+          }
+        }
+      },
+      "file_bytes": {
+        "metadata": {
+          "completionCount": 49,
+          "deliveryRecords": 60,
+          "eventCount": 424,
+          "ledgerBytes": 599826,
+          "ledgerSha256": "a72c4c373f65adedc735e5056ea5a03627ba79455aff0b7bdc16874edf39955a"
+        },
+        "summary": {
+          "cold": {
+            "cacheDeltas": [
+              {
+                "hits": 0,
+                "misses": 0
+              },
+              {
+                "hits": 0,
+                "misses": 0
+              },
+              {
+                "hits": 0,
+                "misses": 0
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.000139,
+              "median": 0.000113,
+              "min": 0.000107
+            },
+            "sampleCount": 3,
+            "wallSeconds": {
+              "max": 0.00014075,
+              "median": 0.000115,
+              "min": 0.0001095
+            }
+          },
+          "warm": {
+            "cacheDeltas": [
+              {
+                "hits": 0,
+                "misses": 0
+              },
+              {
+                "hits": 0,
+                "misses": 0
+              },
+              {
+                "hits": 0,
+                "misses": 0
+              },
+              {
+                "hits": 0,
+                "misses": 0
+              },
+              {
+                "hits": 0,
+                "misses": 0
+              },
+              {
+                "hits": 0,
+                "misses": 0
+              }
+            ],
+            "cpuSeconds": {
+              "max": 4.5e-05,
+              "median": 4.25e-05,
+              "min": 4e-05
+            },
+            "sampleCount": 6,
+            "wallSeconds": {
+              "max": 4.6e-05,
+              "median": 4.2854e-05,
+              "min": 4.1083e-05
+            }
+          }
+        }
+      },
+      "json_parse": {
+        "metadata": {
+          "completionCount": 49,
+          "deliveryRecords": 60,
+          "eventCount": 424,
+          "ledgerBytes": 599826,
+          "ledgerSha256": "a72c4c373f65adedc735e5056ea5a03627ba79455aff0b7bdc16874edf39955a"
+        },
+        "summary": {
+          "cold": {
+            "cacheDeltas": [
+              {
+                "hits": 0,
+                "misses": 0
+              },
+              {
+                "hits": 0,
+                "misses": 0
+              },
+              {
+                "hits": 0,
+                "misses": 0
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.0031,
+              "median": 0.002862,
+              "min": 0.002699
+            },
+            "sampleCount": 3,
+            "wallSeconds": {
+              "max": 0.003124791,
+              "median": 0.0028635,
+              "min": 0.002701667
+            }
+          },
+          "warm": {
+            "cacheDeltas": [
+              {
+                "hits": 0,
+                "misses": 0
+              },
+              {
+                "hits": 0,
+                "misses": 0
+              },
+              {
+                "hits": 0,
+                "misses": 0
+              },
+              {
+                "hits": 0,
+                "misses": 0
+              },
+              {
+                "hits": 0,
+                "misses": 0
+              },
+              {
+                "hits": 0,
+                "misses": 0
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.00281,
+              "median": 0.002729,
+              "min": 0.002597
+            },
+            "sampleCount": 6,
+            "wallSeconds": {
+              "max": 0.002880542,
+              "median": 0.0027623755,
+              "min": 0.002597833
+            }
+          }
+        }
+      },
+      "log_inspection": {
+        "metadata": {
+          "completionCount": 49,
+          "deliveryRecords": 60,
+          "eventCount": 424,
+          "ledgerBytes": 599826,
+          "ledgerSha256": "a72c4c373f65adedc735e5056ea5a03627ba79455aff0b7bdc16874edf39955a"
+        },
+        "summary": {
+          "cold": {
+            "cacheDeltas": [
+              {
+                "hits": 414,
+                "misses": 414
+              },
+              {
+                "hits": 414,
+                "misses": 414
+              },
+              {
+                "hits": 414,
+                "misses": 414
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.719108,
+              "median": 0.715202,
+              "min": 0.714219
+            },
+            "sampleCount": 3,
+            "wallSeconds": {
+              "max": 0.724256584,
+              "median": 0.720230292,
+              "min": 0.719209708
+            }
+          },
+          "warm": {
+            "cacheDeltas": [
+              {
+                "hits": 828,
+                "misses": 0
+              },
+              {
+                "hits": 828,
+                "misses": 0
+              },
+              {
+                "hits": 828,
+                "misses": 0
+              },
+              {
+                "hits": 828,
+                "misses": 0
+              },
+              {
+                "hits": 828,
+                "misses": 0
+              },
+              {
+                "hits": 828,
+                "misses": 0
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.127337,
+              "median": 0.12338650000000001,
+              "min": 0.122768
+            },
+            "sampleCount": 6,
+            "wallSeconds": {
+              "max": 0.128326334,
+              "median": 0.124359042,
+              "min": 0.12338425
+            }
+          }
+        }
+      },
+      "read_snapshot": {
+        "metadata": {
+          "completionCount": 49,
+          "deliveryRecords": 60,
+          "eventCount": 424,
+          "ledgerBytes": 599826,
+          "ledgerSha256": "a72c4c373f65adedc735e5056ea5a03627ba79455aff0b7bdc16874edf39955a"
+        },
+        "summary": {
+          "cold": {
+            "cacheDeltas": [
+              {
+                "hits": 0,
+                "misses": 414
+              },
+              {
+                "hits": 0,
+                "misses": 414
+              },
+              {
+                "hits": 0,
+                "misses": 414
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.698338,
+              "median": 0.68664,
+              "min": 0.683818
+            },
+            "sampleCount": 3,
+            "wallSeconds": {
+              "max": 0.704526542,
+              "median": 0.691295125,
+              "min": 0.688085459
+            }
+          },
+          "warm": {
+            "cacheDeltas": [
+              {
+                "hits": 414,
+                "misses": 0
+              },
+              {
+                "hits": 414,
+                "misses": 0
+              },
+              {
+                "hits": 414,
+                "misses": 0
+              },
+              {
+                "hits": 414,
+                "misses": 0
+              },
+              {
+                "hits": 414,
+                "misses": 0
+              },
+              {
+                "hits": 414,
+                "misses": 0
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.096587,
+              "median": 0.093469,
+              "min": 0.092456
+            },
+            "sampleCount": 6,
+            "wallSeconds": {
+              "max": 0.097697708,
+              "median": 0.094136,
+              "min": 0.092976667
+            }
+          }
+        }
+      },
+      "replay": {
+        "metadata": {
+          "completionCount": 49,
+          "deliveryRecords": 60,
+          "eventCount": 424,
+          "ledgerBytes": 599826,
+          "ledgerSha256": "a72c4c373f65adedc735e5056ea5a03627ba79455aff0b7bdc16874edf39955a"
+        },
+        "summary": {
+          "cold": {
+            "cacheDeltas": [
+              {
+                "hits": 0,
+                "misses": 414
+              },
+              {
+                "hits": 0,
+                "misses": 414
+              },
+              {
+                "hits": 0,
+                "misses": 414
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.624103,
+              "median": 0.619191,
+              "min": 0.608857
+            },
+            "sampleCount": 3,
+            "wallSeconds": {
+              "max": 0.628252291,
+              "median": 0.623779958,
+              "min": 0.612869083
+            }
+          },
+          "warm": {
+            "cacheDeltas": [
+              {
+                "hits": 414,
+                "misses": 0
+              },
+              {
+                "hits": 414,
+                "misses": 0
+              },
+              {
+                "hits": 414,
+                "misses": 0
+              },
+              {
+                "hits": 414,
+                "misses": 0
+              },
+              {
+                "hits": 414,
+                "misses": 0
+              },
+              {
+                "hits": 414,
+                "misses": 0
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.024035,
+              "median": 0.023225,
+              "min": 0.02303
+            },
+            "sampleCount": 6,
+            "wallSeconds": {
+              "max": 0.024240791,
+              "median": 0.0233341665,
+              "min": 0.023124875
+            }
+          }
+        }
+      },
+      "schema": {
+        "metadata": {
+          "completionCount": 49,
+          "deliveryRecords": 60,
+          "eventCount": 424,
+          "ledgerBytes": 599826,
+          "ledgerSha256": "a72c4c373f65adedc735e5056ea5a03627ba79455aff0b7bdc16874edf39955a"
+        },
+        "summary": {
+          "cold": {
+            "cacheDeltas": [
+              {
+                "hits": 0,
+                "misses": 414
+              },
+              {
+                "hits": 0,
+                "misses": 414
+              },
+              {
+                "hits": 0,
+                "misses": 414
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.70193,
+              "median": 0.681336,
+              "min": 0.676536
+            },
+            "sampleCount": 3,
+            "wallSeconds": {
+              "max": 0.706949542,
+              "median": 0.68600825,
+              "min": 0.680562667
+            }
+          },
+          "warm": {
+            "cacheDeltas": [
+              {
+                "hits": 414,
+                "misses": 0
+              },
+              {
+                "hits": 414,
+                "misses": 0
+              },
+              {
+                "hits": 414,
+                "misses": 0
+              },
+              {
+                "hits": 414,
+                "misses": 0
+              },
+              {
+                "hits": 414,
+                "misses": 0
+              },
+              {
+                "hits": 414,
+                "misses": 0
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.090825,
+              "median": 0.089948,
+              "min": 0.089406
+            },
+            "sampleCount": 6,
+            "wallSeconds": {
+              "max": 0.0913965,
+              "median": 0.090550437,
+              "min": 0.08991025
+            }
+          }
+        }
+      },
+      "status_projection": {
+        "metadata": {
+          "completionCount": 49,
+          "deliveryRecords": 60,
+          "eventCount": 424,
+          "ledgerBytes": 599826,
+          "ledgerSha256": "a72c4c373f65adedc735e5056ea5a03627ba79455aff0b7bdc16874edf39955a"
+        },
+        "summary": {
+          "cold": {
+            "cacheDeltas": [
+              {
+                "hits": 0,
+                "misses": 414
+              },
+              {
+                "hits": 0,
+                "misses": 414
+              },
+              {
+                "hits": 0,
+                "misses": 414
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.634705,
+              "median": 0.633209,
+              "min": 0.625681
+            },
+            "sampleCount": 3,
+            "wallSeconds": {
+              "max": 0.641570083,
+              "median": 0.637569208,
+              "min": 0.630169917
+            }
+          },
+          "warm": {
+            "cacheDeltas": [
+              {
+                "hits": 414,
+                "misses": 0
+              },
+              {
+                "hits": 414,
+                "misses": 0
+              },
+              {
+                "hits": 414,
+                "misses": 0
+              },
+              {
+                "hits": 414,
+                "misses": 0
+              },
+              {
+                "hits": 414,
+                "misses": 0
+              },
+              {
+                "hits": 414,
+                "misses": 0
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.026101,
+              "median": 0.0254135,
+              "min": 0.024137
+            },
+            "sampleCount": 6,
+            "wallSeconds": {
+              "max": 0.026380833,
+              "median": 0.025576916499999998,
+              "min": 0.024251542
+            }
+          }
+        }
+      },
+      "weekly_report": {
+        "metadata": {
+          "completionCount": 49,
+          "deliveryRecords": 60,
+          "eventCount": 424,
+          "ledgerBytes": 599826,
+          "ledgerSha256": "a72c4c373f65adedc735e5056ea5a03627ba79455aff0b7bdc16874edf39955a"
+        },
+        "summary": {
+          "cold": {
+            "cacheDeltas": [
+              {
+                "hits": 1242,
+                "misses": 414
+              },
+              {
+                "hits": 1242,
+                "misses": 414
+              },
+              {
+                "hits": 1242,
+                "misses": 414
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.787261,
+              "median": 0.768366,
+              "min": 0.764036
+            },
+            "sampleCount": 3,
+            "wallSeconds": {
+              "max": 0.792640958,
+              "median": 0.773686959,
+              "min": 0.769225666
+            }
+          },
+          "warm": {
+            "cacheDeltas": [
+              {
+                "hits": 1656,
+                "misses": 0
+              },
+              {
+                "hits": 1656,
+                "misses": 0
+              },
+              {
+                "hits": 1656,
+                "misses": 0
+              },
+              {
+                "hits": 1656,
+                "misses": 0
+              },
+              {
+                "hits": 1656,
+                "misses": 0
+              },
+              {
+                "hits": 1656,
+                "misses": 0
+              }
+            ],
+            "cpuSeconds": {
+              "max": 0.181039,
+              "median": 0.173615,
+              "min": 0.173081
+            },
+            "sampleCount": 6,
+            "wallSeconds": {
+              "max": 0.184102958,
+              "median": 0.175031375,
+              "min": 0.174288
+            }
+          }
+        }
+      }
+    }
+  },
+  "schemaVersion": "mock-log-cost-report-v1",
+  "scratchAppend": {
+    "callsPerTrial": 30,
+    "limitations": "No directory fsync, durable validation, contention or power-loss guarantee measured.",
+    "medianOfTrialMedians": 4.65415e-05,
+    "recordBytes": 1400,
+    "scope": "existing_low_level_append_and_os_fsync_only_not_end_to_end_durable_write",
+    "seedBytes": 641503,
+    "trialMedians": [
+      5.2625e-05,
+      4.48535e-05,
+      4.65415e-05
+    ],
+    "trials": 3
+  },
+  "sourceEvidenceCandidate": "8ff42bc740824640f0116cb759bf21d590a951b9"
+}

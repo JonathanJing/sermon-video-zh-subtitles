@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "kind",
+    "revision",
+    "jobRoot",
+    "inputs"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "sermon-unified-study-inputs-v2"
+    },
+    "kind": {
+      "enum": [
+        "outline",
+        "meditation"
+      ]
+    },
+    "revision": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "jobRoot": {
+      "type": "string",
+      "minLength": 1
+    },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "anchor",
+        "candidate",
+        "translationReview",
+        "terminology",
+        "policy",
+        "budgetAuthorization"
+      ],
+      "properties": {
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "anchor": {
+          "type": "string",
+          "minLength": 1
+        },
+        "candidate": {
+          "type": "string",
+          "minLength": 1
+        },
+        "translationReview": {
+          "type": "string",
+          "minLength": 1
+        },
+        "terminology": {
+          "type": "string",
+          "minLength": 1
+        },
+        "policy": {
+          "type": "string",
+          "minLength": 1
+        },
+        "budgetAuthorization": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

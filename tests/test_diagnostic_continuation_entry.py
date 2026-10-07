@@ -43,10 +43,10 @@ class ContinuationTests(unittest.TestCase):
     def prepare(self):
         constructor=provider.DiagnosticProvider
         with patch.object(accounting,'execution_identity',return_value=self.identity), patch.object(
-                entry.provider,'DiagnosticProvider', side_effect=lambda store,config: constructor(
-                    store,config,domain=lambda:'7'*64,monotonic=lambda:self.now)), \
+                entry.provider,'DiagnosticProvider', side_effect=lambda store,config,request_limits: constructor(
+                    store,config,request_limits,domain=lambda:'7'*64,monotonic=lambda:self.now)), \
                 patch.object(entry,'validate_prior_source_evidence',return_value={'sourceEvidenceSnapshotSha256':'e'*64}):
-            return entry.prepare_continuation(self.plan,self.cont)
+            return entry.prepare_continuation(self.plan,self.cont,request_limits=self.subject.limits)
 
     def test_reuses_prior_receipt_budget_deadline_without_call_or_mutation(self):
         root,subject,context,deadline,source_evidence=self.prepare()

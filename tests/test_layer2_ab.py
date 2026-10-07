@@ -5,6 +5,7 @@ import tempfile
 import unittest
 
 from scripts.experiments import layer2_ab as subject
+from scripts import target_language_policy as policy_tools
 from tests import test_produce_target_language_candidate as fixture_module
 
 
@@ -14,6 +15,13 @@ class Layer2ABTests(unittest.TestCase):
             methodName="test_compiles_valid_candidate_without_human_approval")
         self.fixture.setUp()
         self.addCleanup(self.fixture.doCleanups)
+        # This comparison freezes the historical medium-effort arms; the
+        # current production policy intentionally uses Sol high/medium.
+        policy = copy.deepcopy(self.fixture.policy)
+        policy.pop('componentSha256')
+        policy['translator'].update(model='gpt-6-astra', reasoningEffort='medium')
+        policy['reviewer'].update(model='gpt-6-sol', reasoningEffort='medium')
+        self.fixture.policy = policy_tools.freeze_policy(policy)
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         self.out = Path(temporary.name) / "ab"

@@ -1,0 +1,44 @@
+{
+  "candidateSha": "988102d4df5c1a523943a1c414582087635cb94f",
+  "endedAt": "2026-10-02T16:30:11.088006+00:00",
+  "requestedScenarios": [
+    "happy",
+    "failure",
+    "timeout"
+  ],
+  "schemaVersion": "mock-experiment-run-v1",
+  "scope": "local_two_unit_synthetic_candidate_not_production",
+  "startedAt": "2026-10-02T16:21:04.371168+00:00",
+  "status": "passed",
+  "timingScope": "wall_time_including_sdk_processes_and_validation_not_critical_path",
+  "scenarios": [
+    {
+      "endedAt": "2026-10-02T16:24:20.129565+00:00",
+      "exitCode": 0,
+      "scenario": "happy",
+      "startedAt": "2026-10-02T16:21:04.407283+00:00",
+      "status": "passed",
+      "wallSeconds": 195.72107429197058
+    },
+    {
+      "endedAt": "2026-10-02T16:27:28.734439+00:00",
+      "exitCode": 0,
+      "scenario": "failure",
+      "startedAt": "2026-10-02T16:24:20.196775+00:00",
+      "status": "passed",
+      "wallSeconds": 188.53649699990638
+    },
+    {
+      "endedAt": "2026-10-02T16:30:11.050716+00:00",
+      "exitCode": 0,
+      "scenario": "timeout",
+      "startedAt": "2026-10-02T16:27:28.801147+00:00",
+      "status": "passed",
+      "wallSeconds": 162.2485648749862
+    }
+  ],
+  "sourceSummarySha256": "9fe1729fa7c4bc4f20c1f5cc6be6839145705ed77f2a8543fc8773fc99f3418a",
+  "invocations": 6,
+  "engineTaskCount": 114,
+  "realModelCalls": 0
+}

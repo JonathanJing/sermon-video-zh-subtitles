@@ -14,7 +14,7 @@ from tests import test_run_bounded_diagnostic as fixtures
 
 
 def setup_business(owner, *, matched=True, unknown=False):
-    f = fixtures.BoundedRunTests(); f.setUp(); owner.addCleanup(f.doCleanups)
+    f = fixtures.BoundedRunTests(); owner.addCleanup(f.doCleanups); f.setUp()
     def respond(request, timeout, *, deadline):
         if unknown:
             raise TimeoutError('synthetic unknown outcome')
@@ -92,6 +92,13 @@ class BusinessFlowTests(unittest.TestCase):
         self.enterContext(patch.object(tempfile, 'tempdir', scope_directory))
         self.f, self.transport, self.callbacks, self.nodes = setup_business(self)
         self.root = self.f.f.root / 'orchestration'
+        # Freeze the in-scope plugin path before generation and retain that
+        # exact binding at admission instead of moving it after model calls.
+        plugin = self.f.f.root / self.f.f.f.plugin_path.name
+        plugin.write_bytes(self.f.f.f.plugin_path.read_bytes())
+        node = self.nodes[2]
+        self.nodes[2] = flow.Node(node.id, node.operation,
+            {**node.kwargs, 'plugin_path': plugin}, node.depends_on, (plugin,))
         with self.f.f.session():
             initial = flow.BusinessDAG(self.root, self.callbacks, self.nodes[:3])
             execute_all(initial)
@@ -108,14 +115,12 @@ class BusinessFlowTests(unittest.TestCase):
             paths[name] = root / (name + '.json'); paths[name].write_bytes(raw)
         (root / 'approved.json').write_bytes(c.canonical_bytes(approved))
         (root / 'human.json').write_bytes(c.canonical_bytes(receipt))
-        # Plugin is a frozen input in the dedicated offline fixture scope.
-        plugin = root / self.f.f.f.plugin_path.name; plugin.write_bytes(self.f.f.f.plugin_path.read_bytes())
         config = admission.Configuration(self.f.subject.config['runId'], 'zh-Hans', root / 'jobs',
             root / 'locales', tuple(Path(row['root']) for row in result['revisions']), **paths,
             public_candidate=root / 'approved.json', human_receipt=root / 'human.json',
             plugin=plugin, plugin_sha256=self.f.f.f.plugin_sha)
         boundary = admission.AdmissionBoundary(config, self.f.subject.store)
-        voice = voice_fixtures.TargetLanguageSpeechJobTests(); voice.setUp(); self.addCleanup(voice.doCleanups)
+        voice = voice_fixtures.TargetLanguageSpeechJobTests(); self.addCleanup(voice.doCleanups); voice.setUp()
         registry, adapter = voice.registry, voice.adapter
         capability = next(row for row in registry['speakers'][0]['localeCapabilities'] if row['targetLocale'] == 'zh-Hans')
         capability.pop('adapterOverride', None)
@@ -238,7 +243,7 @@ class BusinessFlowTests(unittest.TestCase):
 
     def test_different_store_or_run_admission_is_rejected(self):
         from tests import test_sermon_local_business_callbacks as local_fixtures
-        f = local_fixtures.SpeechTests(); f.setUp(); self.addCleanup(f.doCleanups)
+        f = local_fixtures.SpeechTests(); self.addCleanup(f.doCleanups); f.setUp()
         nodes = [*self.nodes[:3], flow.Node('admit', 'admit_locale',
                  {'boundary': f.f.f.boundary, 'created_at': '2026-10-01T00:00:00Z'}, ('text.zh-Hans',))]
         with self.assertRaisesRegex(ValueError, 'store_or_run_changed'):

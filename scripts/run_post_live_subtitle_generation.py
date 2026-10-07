@@ -114,9 +114,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--source-text-review", type=Path, help="Hash-bound English source corrections; preserves the original ASR evidence.")
     parser.add_argument("--export-sunday-context", action="store_true")
     parser.add_argument("--source-service-date", help="Verified source date (YYYY-MM-DD); otherwise use archive release timestamp.")
-    parser.add_argument("--zh-model", default="gpt-6-astra")
-    parser.add_argument("--en-correction-model", default="gpt-6-astra")
-    parser.add_argument("--reasoning-effort", choices=("low", "medium", "high"), default="medium")
+    parser.add_argument("--zh-model", default="gpt-6.1-sol")
+    parser.add_argument("--en-correction-model", default="gpt-6.1-sol")
+    parser.add_argument("--reasoning-effort", choices=("low", "medium", "high"), default="high")
     parser.add_argument(
         "--reference-model",
         "--gpt4o-model",
@@ -150,8 +150,8 @@ def parse_args() -> argparse.Namespace:
         help="Reading mode skips Whisper and produces the reviewed reading PDF only.",
     )
     parser.add_argument("--reading-edition-provider", choices=("openai", "codex"), default="openai")
-    parser.add_argument("--reading-edition-model", default="gpt-6-astra")
-    parser.add_argument("--reading-edition-reasoning-effort", choices=("low", "medium", "high"), default="medium")
+    parser.add_argument("--reading-edition-model", default="gpt-6.1-sol")
+    parser.add_argument("--reading-edition-reasoning-effort", choices=("low", "medium", "high"), default="high")
     parser.add_argument("--reading-review-manifest", type=Path, help="Standard reviewed corrections for the reading builder; existing edit caches are preserved.")
     parser.add_argument("--reading-aligner", choices=("mfa", "legacy"), default="mfa")
     from scripts.mfa_spark import add_arguments
@@ -172,14 +172,14 @@ def parse_args() -> argparse.Namespace:
         "--interpretation-model",
         "--companion-model",
         dest="interpretation_model",
-        default="gpt-6-astra",
+        default="gpt-6.1-sol",
     )
     parser.add_argument(
         "--interpretation-reasoning-effort",
         "--companion-reasoning-effort",
         dest="interpretation_reasoning_effort",
         choices=("low", "medium", "high"),
-        default="medium",
+        default="high",
     )
     parser.add_argument("--audio-format", default="bestaudio[ext=m4a]/bestaudio")
     parser.add_argument("--yt-dlp", default="yt-dlp")
@@ -939,9 +939,9 @@ def build_sermon_interpretation_command(
         "--pdf-qa-out",
         str(pipeline_outdir / "sermon_interpretation_zh.qa.json"),
         "--model",
-        str(getattr(args, "interpretation_model", "gpt-6-astra")),
+        str(getattr(args, "interpretation_model", "gpt-6.1-sol")),
         "--reasoning-effort",
-        str(getattr(args, "interpretation_reasoning_effort", "medium")),
+        str(getattr(args, "interpretation_reasoning_effort", "high")),
         "--sermon-title",
         sermon_title,
         "--sermon-date",

@@ -27,23 +27,18 @@ struct ListeningActivityWidget: Widget {
                         .font(.headline.monospacedDigit())
                 }
                 DynamicIslandExpandedRegion(.bottom) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(verbatim: context.state.title)
-                            .font(.headline).lineLimit(2)
-                        HStack {
-                            Text(verbatim: context.state.speaker).lineLimit(1)
-                            Spacer(minLength: 8)
-                            Text(verbatim: context.state.statusText(isStale: context.isStale))
-                        }
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    }
-                    .padding(.top, 4)
+                    ListeningActivityIslandDetails(state: context.state, isStale: context.isStale)
                 }
             } compactLeading: {
                 ListeningActivitySymbol(state: context.state, isStale: context.isStale)
             } compactTrailing: {
-                ListeningActivityElapsed(state: context.state, isStale: context.isStale)
+                Group {
+                    if let phase = context.state.alignmentPhase, !context.isStale {
+                        Text(verbatim: phase.compactText(english: context.state.usesEnglish))
+                    } else {
+                        Text(verbatim: context.isStale ? "—" : context.state.compactStatusText)
+                    }
+                }
                     .font(.caption.monospacedDigit())
                     .frame(width: context.state.duration >= 3600 ? 62 : 48)
             } minimal: {
@@ -55,65 +50,4 @@ struct ListeningActivityWidget: Widget {
     }
 }
 
-private struct ListeningActivityCard: View {
-    let state: ListeningActivityAttributes.ContentState
-    let isStale: Bool
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .top, spacing: 10) {
-                ListeningActivitySymbol(state: state, isStale: isStale)
-                    .font(.title2)
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(verbatim: state.title).font(.headline).lineLimit(2)
-                    Text(verbatim: state.speaker).font(.caption).foregroundStyle(.secondary).lineLimit(1)
-                }
-                Spacer(minLength: 0)
-            }
-            HStack {
-                Text(verbatim: state.statusText(isStale: isStale)).font(.caption)
-                Spacer(minLength: 8)
-                ListeningActivityElapsed(state: state, isStale: isStale)
-                Text(verbatim: "/ \(ListeningActivityAttributes.ContentState.timeLabel(state.duration))")
-                    .foregroundStyle(.secondary)
-            }
-            .font(.subheadline.monospacedDigit())
-            if state.isPlaying && !isStale {
-                ProgressView(timerInterval: state.timerInterval, countsDown: false)
-                    .labelsHidden()
-            } else {
-                ProgressView(value: state.position, total: state.duration)
-            }
-        }
-        .tint(.green)
-        .foregroundStyle(.white)
-    }
-}
-
-private struct ListeningActivitySymbol: View {
-    let state: ListeningActivityAttributes.ContentState
-    let isStale: Bool
-
-    var body: some View {
-        Image(systemName: isStale ? "arrow.clockwise" : state.isWaiting ? "hourglass" : state.isPlaying ? "headphones" : "pause.fill")
-            .foregroundStyle(.green)
-            .accessibilityLabel(state.statusText(isStale: isStale))
-    }
-}
-
-private struct ListeningActivityElapsed: View {
-    let state: ListeningActivityAttributes.ContentState
-    let isStale: Bool
-
-    var body: some View {
-        if state.isPlaying && !isStale {
-            Text(timerInterval: state.timerInterval, countsDown: false)
-                .monospacedDigit()
-                .multilineTextAlignment(.trailing)
-        } else {
-            Text(verbatim: ListeningActivityAttributes.ContentState.timeLabel(state.position))
-                .monospacedDigit()
-        }
-    }
-}
 #endif

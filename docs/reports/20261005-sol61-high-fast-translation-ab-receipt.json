@@ -1,0 +1,538 @@
+{
+  "schemaVersion": "codex-translation-four-arm-ab-v1",
+  "date": "2026-10-05",
+  "groups": 13,
+  "units": 39,
+  "freshCalls": {
+    "astra_medium": 0,
+    "sol_high": 0,
+    "sol_low": 0,
+    "sol_high_fast": 13
+  },
+  "humanApproval": false,
+  "metrics": {
+    "astra_medium": {
+      "sumSeconds": 144.1548613330815,
+      "medianSeconds": 11.116236082976684,
+      "minSeconds": 8.42126970901154,
+      "maxSeconds": 13.769550416967832,
+      "usage": {
+        "input_tokens": 210723,
+        "cached_input_tokens": 24576,
+        "output_tokens": 2916,
+        "reasoning_output_tokens": 0
+      }
+    },
+    "sol_high": {
+      "sumSeconds": 314.8734965841286,
+      "medianSeconds": 25.6600077500334,
+      "minSeconds": 15.390736624947749,
+      "maxSeconds": 29.118092791060917,
+      "usage": {
+        "input_tokens": 211499,
+        "cached_input_tokens": 24832,
+        "output_tokens": 7162,
+        "reasoning_output_tokens": 4286
+      }
+    },
+    "sol_low": {
+      "sumSeconds": 160.29733637627214,
+      "medianSeconds": 12.553720874944702,
+      "minSeconds": 9.26807687501423,
+      "maxSeconds": 17.798541916999966,
+      "usage": {
+        "input_tokens": 211410,
+        "cached_input_tokens": 12416,
+        "output_tokens": 2879,
+        "reasoning_output_tokens": 0
+      }
+    },
+    "sol_high_fast": {
+      "sumSeconds": 181.60932150122244,
+      "medianSeconds": 14.123172666993923,
+      "minSeconds": 9.45454620802775,
+      "maxSeconds": 18.47652420902159,
+      "usage": {
+        "input_tokens": 211408,
+        "cached_input_tokens": 49664,
+        "output_tokens": 7308,
+        "reasoning_output_tokens": 4409
+      }
+    }
+  },
+  "ratios": {
+    "fastOverHigh": 0.5767691579996148,
+    "fastOverLow": 1.1329528338195456,
+    "fastOverAstra": 1.2598209995957013
+  },
+  "validation": {
+    "all13PromptsMatchOldHighAndLow": true,
+    "baselineFingerprints": true,
+    "allCliCallsCompletedNoTools": true,
+    "sameBinaryAsBaseline": true,
+    "frozenRunnerVerified": true,
+    "actualResumeFreshCalls": 0,
+    "actualResumeCacheHits": 13,
+    "tierMismatchRejected": true,
+    "oldDefaultCachesValidated": 26
+  },
+  "artifactRoots": {
+    "fast": "artifacts/codex-astra-medium-sol61-high-fast-ab-20261005",
+    "high": "artifacts/codex-astra-medium-sol61-high-ab-20261005",
+    "low": "artifacts/codex-astra-medium-sol61-low-ab-20261005"
+  },
+  "requestedConfiguration": {
+    "model": "gpt-6.1-sol",
+    "effort": "high",
+    "serviceTier": "fast",
+    "fastMode": true
+  },
+  "serverModel": null,
+  "serverServiceTier": null,
+  "limits": [
+    "Historical sequential arms, not contemporaneous randomized repeats",
+    "Fast has more cached input; cannot isolate service tier effect",
+    "Requested model/tier only; CLI server tier identity unavailable",
+    "Single machine qualitative review; no human approval",
+    "180-second zh-Hans introduction, no direct scripture quotations"
+  ],
+  "quality": {
+    "reviewType": "independent_agent_four_arm_machine_blind_review",
+    "humanApproval": false,
+    "reviewerSawModelKey": false,
+    "positionAssignment": "balanced cyclic rotation per group",
+    "groups": [
+      {
+        "group": "fresh-g001",
+        "anonymousBest": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
+        "modelBest": [
+          "astra",
+          "high",
+          "low",
+          "fast"
+        ],
+        "mediumIssues": {
+          "astra": 0,
+          "high": 0,
+          "low": 0,
+          "fast": 0
+        },
+        "majorIssues": {
+          "astra": 0,
+          "high": 0,
+          "low": 0,
+          "fast": 0
+        },
+        "evidence": "All preserve core meaning; differences judged acceptable"
+      },
+      {
+        "group": "fresh-g002",
+        "anonymousBest": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
+        "modelBest": [
+          "astra",
+          "high",
+          "low",
+          "fast"
+        ],
+        "mediumIssues": {
+          "astra": 0,
+          "high": 0,
+          "low": 0,
+          "fast": 0
+        },
+        "majorIssues": {
+          "astra": 0,
+          "high": 0,
+          "low": 0,
+          "fast": 0
+        },
+        "evidence": "All preserve core meaning; differences judged acceptable"
+      },
+      {
+        "group": "fresh-g003",
+        "anonymousBest": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
+        "modelBest": [
+          "astra",
+          "high",
+          "low",
+          "fast"
+        ],
+        "mediumIssues": {
+          "astra": 0,
+          "high": 0,
+          "low": 0,
+          "fast": 0
+        },
+        "majorIssues": {
+          "astra": 0,
+          "high": 0,
+          "low": 0,
+          "fast": 0
+        },
+        "evidence": "All preserve core meaning; differences judged acceptable"
+      },
+      {
+        "group": "fresh-g004",
+        "anonymousBest": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
+        "modelBest": [
+          "astra",
+          "high",
+          "low",
+          "fast"
+        ],
+        "mediumIssues": {
+          "astra": 0,
+          "high": 0,
+          "low": 0,
+          "fast": 0
+        },
+        "majorIssues": {
+          "astra": 0,
+          "high": 0,
+          "low": 0,
+          "fast": 0
+        },
+        "evidence": "All preserve core meaning; differences judged acceptable"
+      },
+      {
+        "group": "fresh-g005",
+        "anonymousBest": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
+        "modelBest": [
+          "astra",
+          "high",
+          "low",
+          "fast"
+        ],
+        "mediumIssues": {
+          "astra": 0,
+          "high": 0,
+          "low": 0,
+          "fast": 0
+        },
+        "majorIssues": {
+          "astra": 0,
+          "high": 0,
+          "low": 0,
+          "fast": 0
+        },
+        "evidence": "All preserve core meaning; differences judged acceptable"
+      },
+      {
+        "group": "fresh-g006",
+        "anonymousBest": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
+        "modelBest": [
+          "astra",
+          "high",
+          "low",
+          "fast"
+        ],
+        "mediumIssues": {
+          "astra": 0,
+          "high": 0,
+          "low": 0,
+          "fast": 0
+        },
+        "majorIssues": {
+          "astra": 0,
+          "high": 0,
+          "low": 0,
+          "fast": 0
+        },
+        "evidence": "All preserve core meaning; differences judged acceptable"
+      },
+      {
+        "group": "fresh-g007",
+        "anonymousBest": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
+        "modelBest": [
+          "astra",
+          "high",
+          "low",
+          "fast"
+        ],
+        "mediumIssues": {
+          "astra": 0,
+          "high": 0,
+          "low": 0,
+          "fast": 0
+        },
+        "majorIssues": {
+          "astra": 0,
+          "high": 0,
+          "low": 0,
+          "fast": 0
+        },
+        "evidence": "All preserve core meaning; differences judged acceptable"
+      },
+      {
+        "group": "fresh-g008",
+        "anonymousBest": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
+        "modelBest": [
+          "astra",
+          "high",
+          "low",
+          "fast"
+        ],
+        "mediumIssues": {
+          "astra": 0,
+          "high": 0,
+          "low": 0,
+          "fast": 0
+        },
+        "majorIssues": {
+          "astra": 0,
+          "high": 0,
+          "low": 0,
+          "fast": 0
+        },
+        "evidence": "All preserve core meaning; differences judged acceptable"
+      },
+      {
+        "group": "fresh-g009",
+        "anonymousBest": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
+        "modelBest": [
+          "astra",
+          "high",
+          "low",
+          "fast"
+        ],
+        "mediumIssues": {
+          "astra": 0,
+          "high": 0,
+          "low": 0,
+          "fast": 0
+        },
+        "majorIssues": {
+          "astra": 0,
+          "high": 0,
+          "low": 0,
+          "fast": 0
+        },
+        "evidence": "All preserve core meaning; differences judged acceptable"
+      },
+      {
+        "group": "fresh-g010",
+        "anonymousBest": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
+        "modelBest": [
+          "astra",
+          "high",
+          "low",
+          "fast"
+        ],
+        "mediumIssues": {
+          "astra": 0,
+          "high": 0,
+          "low": 0,
+          "fast": 0
+        },
+        "majorIssues": {
+          "astra": 0,
+          "high": 0,
+          "low": 0,
+          "fast": 0
+        },
+        "evidence": "All preserve core meaning; differences judged acceptable"
+      },
+      {
+        "group": "fresh-g011",
+        "anonymousBest": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
+        "modelBest": [
+          "astra",
+          "high",
+          "low",
+          "fast"
+        ],
+        "mediumIssues": {
+          "astra": 0,
+          "high": 0,
+          "low": 0,
+          "fast": 0
+        },
+        "majorIssues": {
+          "astra": 0,
+          "high": 0,
+          "low": 0,
+          "fast": 0
+        },
+        "evidence": "All preserve core meaning; differences judged acceptable"
+      },
+      {
+        "group": "fresh-g012",
+        "anonymousBest": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
+        "modelBest": [
+          "astra",
+          "high",
+          "low",
+          "fast"
+        ],
+        "mediumIssues": {
+          "astra": 0,
+          "high": 0,
+          "low": 0,
+          "fast": 0
+        },
+        "majorIssues": {
+          "astra": 0,
+          "high": 0,
+          "low": 0,
+          "fast": 0
+        },
+        "evidence": "A/B 统管; C/D 看顾 more care-oriented but accepted by this reviewer because preceding sentence preserves governance"
+      },
+      {
+        "group": "fresh-g013",
+        "anonymousBest": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
+        "modelBest": [
+          "astra",
+          "high",
+          "low",
+          "fast"
+        ],
+        "mediumIssues": {
+          "astra": 0,
+          "high": 0,
+          "low": 0,
+          "fast": 0
+        },
+        "majorIssues": {
+          "astra": 0,
+          "high": 0,
+          "low": 0,
+          "fast": 0
+        },
+        "evidence": "All preserve core meaning; differences judged acceptable"
+      }
+    ],
+    "allFourTies": 13,
+    "mediumIssues": {
+      "astra": 0,
+      "high": 0,
+      "low": 0,
+      "fast": 0
+    },
+    "majorIssues": {
+      "astra": 0,
+      "high": 0,
+      "low": 0,
+      "fast": 0
+    },
+    "reviewerDisagreement": "Prior two-/three-arm reviewers rated Astra/low 看顾 in g012 a moderate local semantic shift. This reviewer accepts it with prior sentence context. Both acknowledge wording difference; no unanimous severity judgement.",
+    "primaryAgentReading": "High and fast use 统管, closer to local governance emphasis than 看顾. No observed degradation in new fast outputs versus high; not statistical proof."
+  },
+  "runnerSha256": "db16e50fea9dcb30cf0bb2700fb6c71f75ae7e3c009cbab0adcab8864e922519",
+  "artifactHashes": {
+    "blind.json": "a882f826b22c300e709c8f3ee16622bfef2eb91fcad3b54ec5bf7345889b27de",
+    "summary.json": "a11314f3aeb81a71b2c233e7d48061284e7dde9c6eb1f3c649ce97ad7c622c24",
+    "four-arm-blind-rest.json": "813bbfdfdb9c729e42afa30a343e1a554d938ca630db7ff46beca3625e7f78c7",
+    "pairs.json": "43651a20f11cf1709dc1738200b0cc227d4c22bdf7f1d4529861e582b00eea6e",
+    "four-arm-blind.json": "32927ea958e025bedcf8d5638a5f247f412dca6b89d23bc542a58ae3fdeff0c3",
+    "four-arm-key.json": "8071c7511d348ab2cbdf5f1d19d3269fc37951c07cb61f05f38ef30b7e59f8a6",
+    "blind-key.json": "34e4c7f98da63988425dd147602ed9eb1ef913cbba00b5055dcf64b8a7282b6b",
+    "identity.json": "51a15a2a5556e744cc17f40be9a400987877041a488636e3401e791fceb588b6",
+    "four-arm-quality.json": "b58bcf65070d05dd48a5c45e52c57660f67cc43c407a272e7e4647bbb8da4dc3",
+    "four-arm-key-first.json": "843e64e0553e839c4408a871bc71a1b81b207a92008e2b977b1cb8948cb08a50",
+    "four-arm-blind-first.json": "9dbdc039a78a479ebcf4ac33575f825599df4b14b4c2b0fa9d281ba61200c756",
+    "four-arm-summary.json": "6aae6c2d4895d909d11b8ed2b59b8b3c1247d8007393551c2dfef912bfd99ddf"
+  },
+  "throughputEstimate": {
+    "scope": "sum reported token counts divided by sum CLI process seconds",
+    "includesCliStartupQueueAndReasoning": true,
+    "nonReasoningIncludesJsonAndRepeatedCoverage": true,
+    "metrics": {
+      "astra_medium": {
+        "sessionOutputTokensPerSecond": 20.228246019829644,
+        "nonReasoningOutputTokensPerSecond": 20.228246019829644,
+        "pureGenerationTokensPerSecond": null
+      },
+      "sol_high": {
+        "sessionOutputTokensPerSecond": 22.745642544374775,
+        "nonReasoningOutputTokensPerSecond": 9.133826858087385,
+        "pureGenerationTokensPerSecond": null
+      },
+      "sol_low": {
+        "sessionOutputTokensPerSecond": 17.960373298044154,
+        "nonReasoningOutputTokensPerSecond": 17.960373298044154,
+        "pureGenerationTokensPerSecond": null
+      },
+      "sol_high_fast": {
+        "sessionOutputTokensPerSecond": 40.24022522407149,
+        "nonReasoningOutputTokensPerSecond": 15.962837017594861,
+        "pureGenerationTokensPerSecond": null
+      }
+    }
+  },
+  "nextExperimentTranslatorBaseline": {
+    "decisionSource": "explicit_user_instruction_2026-10-05",
+    "model": "gpt-6.1-sol",
+    "reasoningEffort": "high",
+    "requestedServiceTier": "fast",
+    "fastMode": true,
+    "scope": "next_experiment_only",
+    "productionPolicyChanged": false,
+    "reviewerChanged": false
+  }
+}

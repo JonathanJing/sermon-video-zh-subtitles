@@ -269,6 +269,67 @@ class AssembleMultilingualV3UpdateTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "supported three-locale file contract"):
             update.assemble(self.base, self.stage, self.manifest, self.root / "candidate")
 
+    def test_single_chinese_profile_preserves_all_prior_languages(self) -> None:
+        for locale in ("ko", "es"):
+            binding = self.new_page["targets"].pop(locale)["audioFingerprint"]
+            for name in (f"pages/new-week/{locale}/index.html",
+                         f"content/new-week/{locale}.json", f"captions/new-week/{locale}.json",
+                         f"media/new-week/{locale}.mp3", f"releases-v2/new-week/{locale}.json",
+                         binding["indexUrl"].lstrip("/")):
+                (self.stage / name).unlink()
+        for folder in ("english-reference", "alignment"):
+            path = self.stage / f"{folder}/new-week.json"
+            sidecar = update.load(path)
+            sidecar["targets"] = {"zh-Hans": sidecar["targets"]["zh-Hans"]}
+            write(path, sidecar)
+        write(self.stage / update.CATALOG, catalog(self.new_page))
+        self.write_manifest()
+        manifest = update.load(self.manifest)
+        manifest["schemaVersion"] = update.SINGLE_STAGE_SCHEMA
+        manifest["profile"] = update.SINGLE_PROFILE
+        write(self.manifest, manifest)
+        out = self.root / "single-candidate"
+        report = update.assemble(self.base, self.stage, self.manifest, out)
+        self.assertEqual(report["addedFileCount"], 9)
+        self.assertEqual(report["publicationProfile"], update.SINGLE_PROFILE)
+        pages = update.load(out / "public" / update.CATALOG)["pages"]
+        self.assertEqual(set(pages[0]["targets"]), {"zh-Hans"})
+        self.assertEqual(set(pages[1]["targets"]), {"zh-Hans", "ko", "es"})
+        for name, path in update.regular_files(self.base).items():
+            if name != update.CATALOG:
+                self.assertEqual(update.digest(out / "public" / name), update.digest(path))
+        video = self.stage / "pages/new-week/full-video-browser.mp4"
+        delivery = {
+            "schemaVersion": "sermon-video-delivery-v1",
+            "canonicalUrl": "/pages/new-week/full-video-browser.mp4",
+            "storageUrl": f"https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/new-week/{update.digest(video)}.mp4",
+            "sha256": update.digest(video), "bytes": video.stat().st_size,
+        }
+        video_copy = self.root / "single-video.mp4"
+        video.rename(video_copy)
+        self.new_page["videoDelivery"] = delivery
+        write(self.stage / update.CATALOG, catalog(self.new_page))
+        manifest["profile"] = update.SINGLE_BUCKET_PROFILE
+        manifest["videoDelivery"] = delivery
+        manifest["files"] = [entry for entry in manifest["files"]
+                             if entry["path"] != delivery["canonicalUrl"]]
+        write(self.manifest, manifest)
+        config = self.root / "single-firebase.json"
+        write(config, {"hosting": {"public": "public", "site": "prod",
+                              "headers": [{"source": "**", "headers": [{
+                                  "key": "Content-Security-Policy",
+                                  "value": "default-src 'none'; media-src 'self' blob:;"
+                              }]}]}})
+        bucket_report = update.assemble(self.base, self.stage, self.manifest,
+                                        self.root / "single-bucket", video_copy, config)
+        self.assertEqual(bucket_report["addedFileCount"], 8)
+        self.assertEqual(bucket_report["weeklyFirebaseObjectCount"], 10)
+        manifest["profile"] = update.PUBLICATION_PROFILE
+        manifest["schemaVersion"] = update.STAGE_SCHEMA
+        write(self.manifest, manifest)
+        with self.assertRaisesRegex(ValueError, "exact locales"):
+            update.assemble(self.base, self.stage, self.manifest, self.root / "rejected")
+
     def test_bucket_profile_keeps_video_out_of_hosting(self) -> None:
         video = self.stage / "pages/new-week/full-video-browser.mp4"
         delivery = {
