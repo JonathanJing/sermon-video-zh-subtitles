@@ -99,7 +99,8 @@ shadow receipt 的 `ready_for_model_translation` 只表示自动锚点结构干�
 需要连同配音候选一起检查或顺序推进时，使用[周六统一入口](saturday-harness.zh.md)：默认只读，显式 `execute` 才调用现有生产阶段；不会自动替换当前定时任务。续租、超时、目录锁和远端结果核对见[执行保护与恢复](sermon-execution-harness.zh.md)。
 
 ```bash
-.venv/bin/python scripts/run_codex_local_sermon_production.py \
+.venv/bin/python scripts/run_with_openai_environment.py --environment prod -- \
+  .venv/bin/python scripts/run_codex_local_sermon_production.py \
   --mode execute --agent-backend codex-cli --model gpt-6-luna --reasoning-effort medium --service-tier fast \
   --notify-sendgrid-secret '' --notify-recipients-secret '' --notify-sender-secret ''
 ```
@@ -111,9 +112,11 @@ shadow receipt 的 `ready_for_model_translation` 只表示自动锚点结构干�
 - work root：`artifacts/post-live-runs`
 - report：`artifacts/sermon-production-supervisor/<Sunday>/latest.json`
 - artifact bucket：`sermon-zh-artifacts-ai-for-god`
-- OpenAI 与 YouTube Data API：通过 Secret Manager resource reference 读取
+- OpenAI：由显式 `prod` 启动器注入 `tongxing-prod-runtime` 与 Project 身份，不再向生成子进程传入默认 OpenAI Secret Manager 引用；YouTube Data API 仍通过 Secret Manager resource reference 读取
 - 本任务通知：命令中禁用 SendGrid，仅在 Codex 内报告；CLI 保留兼容配置，单独启用须有收件通知授权
 - Supervisor 调度：`gpt-6-luna` / `medium` / `fast`，默认 `--agent-backend codex-cli`。旧 Agents API 仅可明确续跑原会话；新 SDK 会话禁用，未决工具先对账。
+
+正式内容生成使用上述 `--environment prod`；开发、Beta 和实验将它改为 `--environment dev`。先按[双 Project 启动器配置](openai-minimal-project-setup.zh.md)准备忽略的 `.env.openai`，不要在命令中传 OpenAI key 或另加 `--api-key-secret`。整个 Supervisor 在选定环境下启动，其正常继承环境的后代沿用同一配置。已有持久任务继续原凭据身份，不用此模板就地迁移旧任务。
 
 ## Agents API 会话与生产工具
 
@@ -176,12 +179,12 @@ Supervisor 的 generation 命令显式传入 Sol 6.1、high、阅读稿 provider
 缺少有效窗口审批或绑定的 source/timeline 已改变时，Operator 必须独立观看完整回放并确认绝对时间；已存在匹配审批时直接续跑：
 
 ```bash
-.venv/bin/python scripts/run_sermon_production_supervisor_agent.py \
+.venv/bin/python scripts/run_with_openai_environment.py --environment prod -- \
+  .venv/bin/python scripts/run_sermon_production_supervisor_agent.py \
   --sunday YYYY-MM-DD \
   --state-file 'gs://sermon-zh-artifacts-ai-for-god/sundays/live-source-monitor/backend-state.json' \
   --work-root artifacts/post-live-runs \
   --gcs-bucket sermon-zh-artifacts-ai-for-god \
-  --api-key-secret 'projects/ai-for-god/secrets/openai-api-key/versions/latest' \
   --youtube-api-key-secret 'projects/ai-for-god/secrets/youtube-data-api-key/versions/latest' \
   --approve-window \
   --start-time HH:MM:SS \
