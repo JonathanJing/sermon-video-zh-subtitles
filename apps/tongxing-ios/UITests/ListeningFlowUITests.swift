@@ -6,6 +6,35 @@ import XCTest
 /// The explicit live Dev Demo smoke below uses real Hosting assets when opted in.
 @MainActor
 final class ListeningFlowUITests: XCTestCase {
+    func testPickerSourceCategoriesBelowDate() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing", "--ui-testing-source-categories", "-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
+        app.launchEnvironment["TONGXING_UI_TEST_RUN_ID"] = UUID().uuidString
+        app.launchEnvironment["TONGXING_TEST_HOST"] = "0"
+        app.launch()
+        defer { app.terminate() }
+        XCTAssertTrue(app.staticTexts["published-page-title"].waitForExistence(timeout: 15))
+        app.buttons["choose-sermon"].tap()
+        let ids = ["resi-20261004-69ba7a66", "if-i-had-more-time-jesus-is-worthy", "2026-09-27-weekend-sermon-drive-530"]
+        let baseline = ProcessInfo.processInfo.environment["TONGXING_CAPTURE_CATEGORY_BASELINE"] == "1"
+        for id in ids {
+            let row = app.buttons["published-page-\(id)"]
+            XCTAssertTrue(row.waitForExistence(timeout: 10))
+            try waitFor(row, "label CONTAINS 'Eric Geiger'")
+            if !baseline {
+                let category = id == ids[1] ? "播客" : "正式播放版"
+                XCTAssertTrue(row.label.contains(category), "Missing source category for \(id): \(row.label)")
+                let categoryText = app.staticTexts["picker-\(id)-edition"]
+                let details = app.staticTexts.matching(identifier: "picker-\(id)-details").firstMatch
+                XCTAssertTrue(categoryText.exists)
+                XCTAssertGreaterThan(categoryText.frame.minY, details.frame.minY)
+            }
+        }
+        // Baseline mode captures the same fixture/device without claiming the
+        // new category assertions passed. CI always runs the assertions above.
+        screenshot(baseline ? "picker-source-categories-before" : "picker-source-categories-after", app: app)
+    }
+
     func testDuoPosturePlaybackAndPanelsScreenshots() throws {
         let app = launchFixture()
         try downloadSelection(in: app)

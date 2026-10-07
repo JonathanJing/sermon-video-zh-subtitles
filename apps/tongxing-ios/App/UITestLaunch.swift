@@ -416,8 +416,8 @@ private enum UITestContent {
         return result
     }()
 
-    private static func nativePublishedResponses(locale: String, fullText: String, caption: String) -> [String: Data] {
-        let pageID = "ui-test-full-video"
+    private static func nativePublishedResponses(locale: String, fullText: String, caption: String,
+                                                 pageID: String = "ui-test-full-video") -> [String: Data] {
         let audio = responses["/media/ui-test-clip/es.mp3"]!
         let html = Data("<html><head><style>body{font-size:20px}</style></head><body><h1>\(fullText)</h1></body></html>".utf8)
         func hash(_ data: Data) -> String { SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined() }
@@ -488,6 +488,51 @@ private enum UITestContent {
         ]
         return ProcessInfo.processInfo.arguments.contains("--ui-testing-study-products") ? withStudyProducts(files, pageID: pageID, locale: locale) : files
     }
+    /// Public display metadata with synthetic, hash-bound text/audio only.
+    /// The category is exercised through the production picker, not drawn here.
+    static let categoryResponses: [String: Data] = {
+        let entries = [
+            ("resi-20261004-69ba7a66", "2026-10-04", "耶稣审判并保守", "Eric Geiger", "video"),
+            ("if-i-had-more-time-jesus-is-worthy", "2026-10-02", "如果我有更多时间 · 耶稣配得", "Eric Geiger · Steve Bang Lee", "podcast"),
+            ("2026-09-27-weekend-sermon-drive-530", "2026-09-27", "耶稣配得", "Eric Geiger", "video")
+        ]
+        var result: [String: Data] = [:]
+        var pages: [[String: Any]] = []
+        for (id, date, title, speaker, mediaType) in entries {
+            var files = nativePublishedResponses(locale: "zh-Hans", fullText: "界面测试合成正文。", caption: "界面测试合成字幕。", pageID: id)
+            let contentPath = "/content/\(id)/zh-Hans.json"
+            var content = try! JSONSerialization.jsonObject(with: files[contentPath]!) as! [String: Any]
+            content["title"] = title
+            content["speaker"] = speaker
+            files[contentPath] = try! JSONSerialization.data(withJSONObject: content, options: [.sortedKeys])
+            // Rebind content and release hashes after changing fixture metadata.
+            let releasePath = "/releases-v2/\(id)/zh-Hans.json"
+            var release = try! JSONSerialization.jsonObject(with: files[releasePath]!) as! [String: Any]
+            var assets = release["assets"] as! [[String: Any]]
+            for index in assets.indices where assets[index]["role"] as? String == "content" {
+                assets[index]["sha256"] = SHA256.hash(data: files[contentPath]!).map { String(format: "%02x", $0) }.joined()
+            }
+            release["assets"] = assets
+            files[releasePath] = try! JSONSerialization.data(withJSONObject: release, options: [.sortedKeys])
+            // This fixture tests picker metadata only; omit the optional English join.
+            files.removeValue(forKey: "/english-reference/\(id).json")
+            let catalog = try! JSONSerialization.jsonObject(with: files["/multilingual-v3.json"]!) as! [String: Any]
+            var page = (catalog["pages"] as! [[String: Any]])[0]
+            page["date"] = date; page["title"] = title; page["mediaType"] = mediaType
+            var targets = page["targets"] as! [String: [String: Any]]
+            targets["zh-Hans"]!["releasePackageJsonSha256"] = SHA256.hash(data: files[releasePath]!).map { String(format: "%02x", $0) }.joined()
+            page["targets"] = targets
+            pages.append(page)
+            files.removeValue(forKey: "/multilingual-v3.json")
+            result.merge(files) { _, new in new }
+        }
+        result["/multilingual-v3.json"] = try! JSONSerialization.data(withJSONObject: [
+            "schemaVersion": "sermon-multilingual-catalog-v3", "generatedAt": "2026-10-04T00:00:00Z",
+            "defaultPageId": entries[0].0, "pages": pages
+        ], options: [.sortedKeys])
+        return result
+    }()
+
     private static func withStudyProducts(_ original: [String: Data], pageID: String, locale: String) -> [String: Data] {
         func encode(_ object: Any) -> Data { try! JSONSerialization.data(withJSONObject: object, options: [.sortedKeys, .withoutEscapingSlashes]) }
         func hash(_ bytes: Data) -> String { SHA256.hash(data: bytes).map { String(format: "%02x", $0) }.joined() }
@@ -551,6 +596,7 @@ private class UITestContentProtocol: URLProtocol {
     class var offline: Bool { ProcessInfo.processInfo.arguments.contains("--ui-testing-offline") }
     class var dualScript: Bool { ProcessInfo.processInfo.arguments.contains("--ui-testing-dual-script") }
     class var nativeResponses: [String: Data]? {
+        if ProcessInfo.processInfo.arguments.contains("--ui-testing-source-categories") { return UITestContent.categoryResponses }
         if ProcessInfo.processInfo.arguments.contains("--ui-testing-alignment-failure") { return UITestContent.alignmentFailureResponses }
         if ProcessInfo.processInfo.arguments.contains("--ui-testing-locate-flow") { return UITestContent.locateResponses }
         return dualScript ? UITestContent.dualScriptResponses : nil

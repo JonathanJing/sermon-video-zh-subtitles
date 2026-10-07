@@ -8,7 +8,6 @@ import UIKit
 
 @MainActor
 final class AppModel: ObservableObject {
-    private static let formalPlaybackPageID = "2026-09-27-weekend-sermon-drive-530"
     static let productionContentOrigin = URL(string: "https://ai-for-god-sermon-audio.web.app")!
     static var contentOrigin: URL {
         guard let value = Bundle.main.object(forInfoDictionaryKey: "TongxingContentOrigin") as? String,
@@ -341,7 +340,7 @@ final class AppModel: ObservableObject {
     }
 
     private func displayEdition(for page: MultilingualPage) -> String? {
-        page.id == Self.formalPlaybackPageID ? "正式播放版" : nil
+        page.displayEdition
     }
 
     func heading(for page: MultilingualPage) -> SermonHeading {

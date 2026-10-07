@@ -72,6 +72,20 @@ public struct MultilingualCatalog: Codable, Sendable, Equatable {
 }
 
 public struct MultilingualPage: Codable, Sendable, Equatable, Identifiable {
+    /// Source category only, not a statement of publication or review approval.
+    /// Older catalogs lack an edition field; retain their confirmed archive IDs
+    /// rather than guessing a formal edition from a date, title, or video type.
+    public var displayEdition: String? {
+        guard diagnosticOnly != true, simulationOnly != true else { return nil }
+        if mediaType == "podcast" { return "播客" }
+        switch id {
+        case "2026-09-27-weekend-sermon-drive-530", "resi-20261004-69ba7a66":
+            return "正式播放版"
+        default:
+            return nil
+        }
+    }
+
     public let id: String
     public let title: String?
     public let date: String

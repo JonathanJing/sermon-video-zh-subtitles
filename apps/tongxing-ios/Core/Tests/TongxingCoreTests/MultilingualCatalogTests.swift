@@ -64,6 +64,29 @@ struct MultilingualCatalogTests {
                 == "/releases/page-1/ko.json")
     }
 
+    @Test func sourceCategoriesPreserveKnownArchivesAndExplicitPodcastType() throws {
+        func page(_ id: String, mediaType: String? = nil, simulated: Bool = false) throws -> MultilingualPage {
+            try MultilingualCatalog.decode(catalogData { root in
+                root["defaultPageId"] = id
+                var pages = root["pages"] as! [[String: Any]]
+                pages[0]["id"] = id
+                pages[0]["mediaType"] = mediaType
+                var targets = pages[0]["targets"] as! [String: [String: Any]]
+                for locale in targets.keys { targets[locale]!["releasePackageUrl"] = "/releases/\(id)/\(locale).json" }
+                pages[0]["targets"] = targets
+                if simulated { pages[0]["simulationOnly"] = true }
+                root["pages"] = pages
+            }, allowDevCandidates: simulated).defaultPage
+        }
+        #expect(try page("resi-20261004-69ba7a66").displayEdition == "正式播放版")
+        #expect(try page("2026-09-27-weekend-sermon-drive-530").displayEdition == "正式播放版")
+        #expect(try page("if-i-had-more-time-jesus-is-worthy", mediaType: "podcast").displayEdition == "播客")
+        #expect(try page("unknown-video", mediaType: "video").displayEdition == nil)
+        #expect(try page("resi-unconfirmed").displayEdition == nil)
+        #expect(try page("resi-20261004-69ba7a66", simulated: true).displayEdition == nil)
+        #expect(try page("synthetic-podcast", mediaType: "podcast", simulated: true).displayEdition == nil)
+    }
+
     @Test func productionCatalogV3UsesV2ReleasePathsAndPageTitle() throws {
         let data = try catalogData { root in
             root["schemaVersion"] = "sermon-multilingual-catalog-v3"
