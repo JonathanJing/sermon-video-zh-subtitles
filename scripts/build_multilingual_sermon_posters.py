@@ -62,6 +62,18 @@ def review_label(locale, package):
     return MACHINE_REVIEW_LABELS[locale][statuses]
 
 
+PRODUCTION_ORIGIN = 'https://ai-for-god-sermon-audio.web.app'
+
+
+def poster_origin(value, non_production=False):
+    """v1 posters point recipients at the production site; other origins are labeled proofs."""
+    origin = origin_url(value)
+    if origin != PRODUCTION_ORIGIN and not non_production:
+        raise ValueError('v1 posters use the production origin ' + PRODUCTION_ORIGIN +
+                         '; pass --non-production-proof for a labeled Beta/Dev proof')
+    return origin
+
+
 def origin_url(value):
     parsed = urlsplit(value)
     if (parsed.scheme != 'https' or not parsed.hostname or parsed.username or
@@ -88,7 +100,7 @@ def checked_json(path, expected=None):
     return read(path), value
 
 
-def load_sources(release, page_id, origin, english_reference=None):
+def load_sources(release, page_id, origin, english_reference=None, locales=None):
     public = release / 'public'
     # New clients read v4 first; v3 is its human-only projection and lacks machine-checked weeks.
     name, version = next((row for row in CATALOGS if (public / row[0]).is_file()), CATALOGS[-1])
@@ -101,8 +113,16 @@ def load_sources(release, page_id, origin, english_reference=None):
     page = pages[0]
     datetime.date.fromisoformat(page['date'])
     checks = {'/' + name: catalog_sha}
+    # Only the locales this week's release plan published; a missing one is an error only if asked for.
+    locales = list(locales) if locales else [loc for loc in COPY if loc in page['targets']]
+    unknown = [loc for loc in locales if loc not in COPY or loc not in page['targets']]
+    if not locales or unknown:
+        raise ValueError('poster locales must be published targets of this page: ' + ', '.join(unknown or ['none']))
+    if english_reference is not None and 'zh-Hans' not in locales:
+        raise ValueError('the English reference poster needs the Chinese poster of the same week')
     bundles = {}
-    for locale, copy in COPY.items():
+    for locale in locales:
+        copy = COPY[locale]
         target = page['targets'][locale]
         release_path = target['releasePackageUrl']
         package, package_sha = checked_json(asset_file(public, release_path), target['releasePackageJsonSha256'])
@@ -159,6 +179,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for key in ('release', 'page-id', 'origin', 'out'):
         parser.add_argument('--' + key, required=True)
+    parser.add_argument('--locales', help='Comma-separated poster locales (default: every locale this page published)')
+    parser.add_argument('--non-production-proof', action='store_true',
+                        help='Allow a Beta/Dev origin; outputs are labeled as non-production proofs')
     parser.add_argument('--english-reference', help='Source-bound English title/series/scripture JSON; references Chinese content, not an English release')
     parser.add_argument('--art')
     parser.add_argument('--art-prompt')
@@ -167,13 +190,16 @@ def main():
     release, out = Path(args.release).resolve(), Path(args.out).resolve()
     if out.is_relative_to(release) or release.is_relative_to(out):
         raise ValueError('poster output must be separate from the release')
-    origin = origin_url(args.origin)
-    bundles, checks = load_sources(release, args.page_id, origin, read(args.english_reference) if args.english_reference else None)
+    origin = poster_origin(args.origin, args.non_production_proof)
+    production = origin == PRODUCTION_ORIGIN
+    bundles, checks = load_sources(release, args.page_id, origin,
+                                   read(args.english_reference) if args.english_reference else None,
+                                   args.locales.split(',') if args.locales else None)
     if bool(args.art) != bool(args.art_prompt) or (args.visual_reviewed and not args.art):
         raise ValueError('render/review requires both --art and --art-prompt')
     out.mkdir(parents=True, exist_ok=True)
     scope_path = out / 'poster-scope.json'
-    scope = dict(pageId=args.page_id, locales=list(bundles))
+    scope = dict(pageId=args.page_id, locales=list(bundles), origin=origin, productionOrigin=production)
     if scope_path.exists() and read(scope_path) != scope:
         raise ValueError('poster language scope changed; use a fresh output directory')
     write(scope_path, scope)
@@ -230,9 +256,10 @@ def main():
             receipt.update(visualReview=dict(reviewer='codex', humanApproval=False),
                            visualReviewedAt=datetime.datetime.now(datetime.timezone.utc).isoformat())
         write(receipt_path, receipt)
-    write(out / 'poster-manifest.json', dict(schemaVersion='tongxing-poster-manifest-v1', templateVersion='tongxing-dual-qr-v1', artSha256=provenance['artSha256'], locales={loc:dict(receipt=str((out / loc / 'poster-receipt.json').relative_to(out)), contentLocale=b['source']['targetLocale'], announcementEligible=b['source'].get('announcementEligible',True)) for loc,b in bundles.items()}))
+    write(out / 'poster-manifest.json', dict(schemaVersion='tongxing-poster-manifest-v1', templateVersion='tongxing-dual-qr-v1', origin=origin, productionOrigin=production, artSha256=provenance['artSha256'], locales={loc:dict(receipt=str((out / loc / 'poster-receipt.json').relative_to(out)), contentLocale=b['source']['targetLocale'], announcementEligible=b['source'].get('announcementEligible',True)) for loc,b in bundles.items()}))
     completed = all(read(out / loc / 'poster-receipt.json')['status'] == 'complete' for loc in bundles)
-    print(json.dumps(dict(status='complete' if completed else 'qr_verified_visual_review_pending',
+    status = 'complete' if completed else 'qr_verified_visual_review_pending'
+    print(json.dumps(dict(status=status if production else 'non_production_proof_' + status,
                           out=str(out), locales=list(bundles))))
 
 

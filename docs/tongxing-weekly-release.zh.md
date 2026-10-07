@@ -189,7 +189,7 @@ python3 experiments/sermon-dubbing-poc/weekly_release.py record-published \
 
 1. 从发行包 `public/weekly.json` 中精确选取 `page-id`，使用该页的中文主题、日期、经文与讲员。不得依据“最新一周”、文件夹名称或图像模型的自由生成文字猜测这些信息。保留该发行包及目录哈希、页面 ID、origin、主视觉文件和最终产物的绑定证据。
 2. 由 Codex 使用内置 ImageGen 制作与主题相符的主视觉，预留文字和二维码区域；二维码使用真实编码器生成，不要求图像模型绘制。合成脚本只使用已有主视觉，不自动调用付费 API。生成失败或工具不可用时记录待完成，不伪称图像已生成。
-3. 用本地脚本合成可分享海报；网页版二维码必须编码选定站点的精确 `?week=<page-id>` 地址；新格式另外加入固定正式 App Store 下载二维码。海报上的主题、日期、经文与讲员使用 catalog 数据，不能靠宣传措辞把候选页升级为正式发布、人工听审通过或现场同步已验收，也不得暗示教会官方背书。
+3. 用本地脚本合成可分享海报。新格式（多语言入口）的网页版二维码必须编码正式站点带语言绑定的完整地址 `?week=<page-id>&contentLang=<locale>&lang=<interfaceLang>`（中文为 `contentLang=zh-Hans&lang=zh`），并另外加入固定正式 App Store 下载二维码；只有下方旧单语言兼容流程仍编码 `?week=<page-id>`。海报上的主题、日期、经文与讲员使用 catalog 数据，不能靠宣传措辞把候选页升级为正式发布、人工听审通过或现场同步已验收，也不得暗示教会官方背书。
 
 不传 `--art` 时，只生成供 Codex 使用的 brief 和 prompt；据此使用内置 ImageGen 生成主视觉，不会由脚本自动调用图像 API。最终渲染必须绑定已通过的 HTTP 核验文件：用 `--verification` 显式指定，或使用发行包内默认的 `http-verification.json`。
 
@@ -242,6 +242,8 @@ python3 scripts/build_multilingual_sermon_posters.py \
   --art-prompt /path/to/exact-imagegen-prompt.txt \
   --out artifacts/sermon-poster/YYYY-MM-DD/four-locale
 ```
+
+默认只为本页实际发布的语言生成海报，按 release plan 的语言范围收尾（例如只发布中文的单语计划只需中文海报）；用 `--locales zh-Hans,ko` 可显式缩小范围。当前海报文案承诺收听与合成音频，所以按 `audio_unavailable` 发布的纯文字语言不生成海报：用 `--locales` 排除它，该语言海报记为待完成，直到有纯文字海报文案。v1 海报只接受正式 origin `https://ai-for-god-sermon-audio.web.app`；Beta／Dev 打样须加 `--non-production-proof`，scope、manifest 和输出状态都会标为非正式。
 
 英语参考 JSON 必须含 `pageId`、`sourceIdentitySha256`、`contentSha256`（精确绑定中文来源和文稿），以及已核对的 `title`、`series`、`scripture` 英文文案。标题不能由渲染器凭空翻译。准备和渲染必须使用同一语言范围和输出目录；添加英语时使用新的四语目录或从准备阶段就传该参数。
 

@@ -68,7 +68,7 @@
 - Beta Dev 版本：`a02befc58945ecfe`；除海报索引外，原 511 个文件 hash 不变。
 - [正式高清图](https://ai-for-god-sermon-audio.web.app/posters/resi-20261004-69ba7a66/zh-Hans-36f7f483b56db4dfe0e282c2edebaab9cae4c618fd57085d789786f932bc9beb.png) · [正式手机预览](https://ai-for-god-sermon-audio.web.app/posters/resi-20261004-69ba7a66/zh-Hans-preview-d881e8c10ffa6f007f59fd51d81a76e1d5762f807d6367621ca5533ca7ceb6f0.png)
 - 两站图片/索引 HTTP SHA 读回与 Hosting inventory 验证通过；catalog 不变。正式站首次读回因 CDN 传播返回 404，确认新 live 版本后重新读取即通过，没有重复 release。
-- Beta 的 sidecar 绑定其自身当前 release SHA；正式索引绑定正式 release，不混用环境。已支持 weekly poster 的 Beta 可读取新版；正式 App 是否显示不在本次设备验收范围。已读键按内容 release 去重，单独换海报不保证重新自动弹出，可从本周海报入口打开。
+- Beta 的 sidecar 绑定其自身当前 release SHA；正式索引绑定正式 release，不混用环境。当前检入的 Beta 客户端尚无海报索引读取或海报展示入口（`BetaNotifications.swift` 仍将海报加载列为后续工作），因此上传与 HTTP 核验不证明 Beta 能读取或打开海报；Beta 与正式 App 的海报显示均记为客户端／设备 `not_run`，待实现读取器并验收后再更新。
 - 私有发布回执在 `artifacts/poster-upload-20261007/`，本轮没有发送推送，未执行真机新海报显示验收。
 
 ## 2026-10-07 四语补齐回执
