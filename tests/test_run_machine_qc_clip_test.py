@@ -158,6 +158,24 @@ class MachineQcClipDriverTests(unittest.TestCase):
         self.assertEqual(driver.main(["--run-dir", str(run), "--out", str(self.root / "out2"),
                                       "--locales", f"{LOCALE},es", "--preflight-only"]), 2)
 
+    def test_a_resumed_real_run_keeps_its_issued_waiver(self):
+        run = synthetic_run(self, self.root)
+        groups = qc_fixtures.groups(LOCALE)
+
+        class RealLooking(driver.FakeJudge):  # Stands in for the Codex judge.
+            pass
+
+        with patch.object(driver, "CodexJudge", lambda cache: RealLooking({LOCALE: groups})), \
+                patch.object(driver, "FakeJudge", type("Unused", (), {})):
+            argv = ["--run-dir", str(run), "--out", str(self.root / "real"), "--locales", LOCALE]
+            self.assertEqual(driver.main(argv), 0)
+            path = self.root / "real" / LOCALE / "text-waiver.json"
+            first = path.read_bytes()
+            self.assertEqual(driver.main(argv), 0)
+        self.assertEqual(path.read_bytes(), first)
+        row = json.loads((self.root / "real/summary.json").read_text(encoding="utf-8"))["locales"][LOCALE]
+        self.assertTrue(row["reused"])
+
     def test_preflight_explains_a_human_approved_candidate(self):
         run = synthetic_run(self, self.root, human_approved=True)
         self.assertEqual(self.run_driver(run, "--preflight-only"), 2)

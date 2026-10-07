@@ -348,9 +348,17 @@ def run_locale(locale: str, paths: dict, out: Path, state: Path, judge, timings:
     result["calibration"] = {key: calibration[key] for key in
                              ("overallDetectionRate", "cleanFalsePositiveRate", "trials", "detected")}
     result["calibrationMisses"] = {kind: row for kind, row in calibration["kinds"].items() if row["rate"] < 0.9}
+    waiver_path = folder / "text-waiver.json"
+    entries = ledger.load(ledger_root, lineage)
+    waiver_binding = json_sha256({"calibration": calibration_binding, "qc": json_sha256(qc),
+                                  "calibrationReceipt": json_sha256(calibration), "ledger": entries})
+    if not isinstance(judge, FakeJudge) and fresh(waiver_path, waiver_binding):
+        # An issued waiver is immutable: downstream packages bind its hash.
+        result.update(status="text_waiver_issued", textWaiver=str(waiver_path), reused=True)
+        return result
     try:
         waiver = timings.run(f"{locale}.text-waiver", lambda: basis.build_text_waiver(
-            source, anchor, candidate, qc, calibration, repair_ledger=ledger.load(ledger_root, lineage)))
+            source, anchor, candidate, qc, calibration, repair_ledger=entries))
     except ValueError as error:
         result.update(status="waiver_refused", reason=str(error))
         return result
@@ -358,8 +366,9 @@ def run_locale(locale: str, paths: dict, out: Path, state: Path, judge, timings:
         basis.validate_text_waiver(waiver, candidate=candidate)
         result.update(status="fake_plumbing_pass", reason="fake judge: waiver built in memory, never saved")
         return result
-    save(folder / "text-waiver.json", waiver)
-    result.update(status="text_waiver_issued", textWaiver=str(folder / "text-waiver.json"))
+    save(waiver_path, waiver)
+    save(binding_path(waiver_path), {"inputsSha256": waiver_binding})
+    result.update(status="text_waiver_issued", textWaiver=str(waiver_path))
     return result
 
 
