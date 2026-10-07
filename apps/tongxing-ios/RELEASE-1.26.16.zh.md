@@ -27,7 +27,11 @@ GM Release 实际 `ListeningFlowUITests/testLiveProductionCurrentWeekNativeThree
 
 锁屏字幕为最近同步快照与更新时间，App 内逐句更新；真机灵动岛恢复、手机安装与现场验收仍未证明。本次发布授权不改变其证据状态。Header 和 Duo Beta/Dev 截图已上传素材库但未因本轮晋升自动选入正式页或送审。
 
-当前 Apple 处理与审核状态须以后续追加收据为准，不能以本节上传成功称为正式发布完成。
+当前正式版本为 `READY_FOR_REVIEW`，尚未进入 Apple 审核、尚未正式上线。
 
 
 Apple 已处理正式 Build 57 为 `VALID`，构建 ID `de4cd7e4-5156-4b52-92b0-31ad1830fec7`，营销版本读回为 1.26.16，已关联正式版本 `fd6b404a-2ec8-4c5b-a666-8cfb473970d8`，非豁免加密字段为 false。处理和关联收据保存在主任务工作树 `artifacts/tongxing-ios/production-1.26.16-preflight/`。
+
+## 审核提交受阻
+
+00:23 左右实际点击 Submit for Review 后，Apple 返回当前平台已达到最大同时审核提交数。App Review 页面显示两个 00:07 提交仍在 Waiting for Review；已查看其中 `d126e441-fd60-4549-8191-51537f716c98`，其唯一项目为素材库截图 `01-main-listening-caption-sidebar.png`。没有撤回或删除这些既有素材审核。正式 App 独立草稿 `44ecdcf7-b5c5-4e75-8249-80e8713e84ec` 包含唯一 App 项目 1.26.16（57），可在审核名额释放后继续提交。真实 API 再读回确认 `READY_FOR_REVIEW / AFTER_APPROVAL`；本次失败不能称为已提交审核。已请求用户选择是否撤回上述单项截图审核以优先提交 App；未获答复前保留原审核。
