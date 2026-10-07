@@ -10,7 +10,9 @@ unless a calibration for the current QC implementation meets its minimums.
 
 Text kinds: wrong_number, added_reference, wrong_book, english_leak,
 placeholder, dropped_name, dropped_half, semantic_negation, added_number (a
-spelled count the English never said). Audio kinds: stretched (the 2026-10-04
+spelled count the English never said), wrong_ordinal (an ordinal the English
+did not say: "the first love" as "the second", or a "Second," the English never
+said). Audio kinds: stretched (the 2026-10-04
 u172 class), silent, clipped, truncated, and wrong_sentence (another unit's
 audio under this unit's text, which only the ASR path can catch). Meaning
 errors without a surface signal (for example a flipped negation) are only
@@ -50,10 +52,37 @@ ADDED_REFERENCE = {"zh-Hans": "（约翰福音3章16节）", "ko": " (요한복�
 # A spelled count the English never said: digits would be caught by the surface
 # screen, so this trial needs the back-translation check.
 ADDED_NUMBER = {"zh-Hans": "（共五人）", "ko": " (모두 다섯 명)", "es": " (cinco en total)"}
+# Ordinals have no reliable surface screen ("first" is often 起初, 처음, primero
+# lugar), so the back-translation check must catch a changed one. A matching
+# target ordinal moves up by one; a group whose English says no ordinal gains one.
+ORDINAL_SHIFTS = {
+    "zh-Hans": ((r"第一", "第二"), (r"第二", "第三"), (r"第三", "第四")),
+    "ko": ((r"첫\s*번째", "두 번째"), (r"첫째", "둘째"), (r"두\s*번째", "세 번째"), (r"둘째", "셋째"),
+           (r"세\s*번째", "네 번째"), (r"셋째", "넷째")),
+    "es": ((r"\bprimero\b", "segundo"), (r"\bprimera\b", "segunda"), (r"\bprimer\b", "segundo"),
+           (r"\bsegundo\b", "tercer"), (r"\bsegunda\b", "tercera"),
+           (r"\btercero\b", "cuarto"), (r"\btercera\b", "cuarta"), (r"\btercer\b", "cuarto")),
+}
+ORDINAL_FORMS = {"zh-Hans": {1: ("第一",), 2: ("第二",), 3: ("第三",)},
+                 "ko": {1: ("첫", "첫째"), 2: ("두 번째", "둘째"), 3: ("세 번째", "셋째")},
+                 "es": {1: ("primer",), 2: ("segund",), 3: ("tercer",)}}
+ENGLISH_ORDINALS = {word: value for value, word in enumerate(
+    ("first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth"), start=1)}
+ADDED_ORDINAL = {"zh-Hans": "第二，", "ko": "둘째, ", "es": "En segundo lugar, "}
 # Kinds only the back-translation check may detect: a surface failure is not credited.
-SEMANTIC_KINDS = ("semantic_negation", "added_number")
+SEMANTIC_KINDS = ("semantic_negation", "added_number", "wrong_ordinal")
 # The book a wrong_book mutation substitutes (Romans when the citation is already John).
 OTHER_BOOK = {"zh-Hans": ("约翰福音", "罗马书"), "ko": ("요한복음", "로마서"), "es": ("Juan", "Romanos")}
+
+
+def _fold_es(text: str, locale: str) -> str:
+    return text.casefold() if locale == "es" else text
+
+
+def _semantic_hit(new: set[str]) -> bool:
+    """A new major back-translation issue; the judge failing to answer is not one."""
+    return any(problem.startswith("back_translation ") and problem != "back_translation judge failed"
+               for problem in new)
 
 
 def _number_forms(locale: str, value: int | str) -> list[str]:
@@ -101,6 +130,19 @@ def mutate_text(group: dict, kind: str, locale: str, policy: dict | None) -> str
         return None
     if kind == "added_number":
         return None if rules.english_number_values(english) else text + ADDED_NUMBER[locale]
+    if kind == "wrong_ordinal":
+        said = {value for word in re.findall(r"[a-z]+", english.casefold())
+                for value in [ENGLISH_ORDINALS.get(word)] if value}
+        if not said:
+            return ADDED_ORDINAL[locale] + (text[:1].lower() + text[1:] if locale == "es" else text)
+        for value in sorted(said):
+            if value in ORDINAL_FORMS[locale] and any(form in _fold_es(text, locale)
+                                                      for form in ORDINAL_FORMS[locale][value]):
+                for pattern, replacement in ORDINAL_SHIFTS[locale]:
+                    match = re.search(pattern, text, re.I)
+                    if match:
+                        return text[:match.start()] + replacement + text[match.end():]
+        return None
     if kind == "added_reference":
         pairs, chapters = rules.english_references(english)
         return None if pairs or chapters else text + ADDED_REFERENCE[locale]
@@ -194,7 +236,9 @@ def calibrate_spoken(groups: list[dict], locale: str, *, policy: dict | None = N
             trials += 1
             problems, _ = text_qc.group_problems({**group, "targetText": mutated}, locale,
                                                  policy=policy, median=None, call=call)
-            if set(problems) - clean[group["groupId"]]:
+            # Every spoken kind is a meaning change: a name or number screen also
+            # failing it does not show that the back-translation check sees it.
+            if _semantic_hit(set(problems) - clean[group["groupId"]]):
                 detected += 1
             elif len(misses) < 5:
                 misses.append(group["groupId"])
@@ -236,9 +280,7 @@ def calibrate_text(groups: list[dict], locale: str, *, policy: dict | None = Non
             problems, _ = text_qc.group_problems({**group, "targetText": mutated}, locale,
                                                  policy=policy, median=median, call=call)
             new = set(problems) - clean[group["groupId"]]
-            hit = (any(problem.startswith("back_translation ") and
-                       problem != "back_translation judge failed" for problem in new)
-                   if kind in SEMANTIC_KINDS else bool(new))
+            hit = _semantic_hit(new) if kind in SEMANTIC_KINDS else bool(new)
             if hit:
                 detected += 1
             elif len(misses) < 5:

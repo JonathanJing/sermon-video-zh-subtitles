@@ -730,7 +730,7 @@ class CalibrationAndWaiverTests(unittest.TestCase):
         for locale in LOCALES:
             result = seeded.calibrate(locale, fixtures.groups(locale), policy=fixtures.policy(locale),
                                       call=always_pass, identity=fixtures.SEMANTIC_IDENTITY)
-            for kind in ("text.semantic_negation", "text.added_number"):
+            for kind in ("text.semantic_negation", "text.added_number", "text.wrong_ordinal"):
                 row = result["kinds"][kind]
                 self.assertGreater(row["trials"], 0, (locale, kind))
                 self.assertEqual(row["detected"], 0, (locale, kind))
@@ -738,6 +738,19 @@ class CalibrationAndWaiverTests(unittest.TestCase):
             good = self.calibration(locale)
             self.assertEqual(good["kinds"]["text.semantic_negation"]["rate"], 1.0)
             self.assertEqual(good["kinds"]["text.added_number"]["rate"], 1.0)
+            self.assertEqual(good["kinds"]["text.wrong_ordinal"]["rate"], 1.0)
+
+    def test_a_changed_ordinal_is_seeded(self):
+        for locale, target, wrong in (("es", "el primer mandamiento", "el segundo mandamiento"),
+                                      ("zh-Hans", "第一条诫命", "第二条诫命"),
+                                      ("ko", "첫 번째 계명", "두 번째 계명")):
+            group = {"english": "The first commandment.", "targetText": target}
+            self.assertEqual(seeded.mutate_text(group, "wrong_ordinal", locale, None), wrong)
+        # English without an ordinal gains one; an ordinal said another way is left alone.
+        self.assertEqual(seeded.mutate_text({"english": "Grace is a gift.", "targetText": "恩典是礼物。"},
+                                            "wrong_ordinal", "zh-Hans", None), "第二，恩典是礼物。")
+        self.assertIsNone(seeded.mutate_text({"english": "Your first love.", "targetText": "起初的爱。"},
+                                             "wrong_ordinal", "zh-Hans", None))
 
     def test_calibration_count_rate_inconsistencies_block(self):
         calibration = self.calibration("ko")

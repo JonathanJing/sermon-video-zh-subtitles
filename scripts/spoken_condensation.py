@@ -29,6 +29,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+import re
 import sys
 
 if __package__ in (None, ""):
@@ -186,7 +187,7 @@ def spoken_problems(request: dict, spoken: str, omissions: list[dict] | None, lo
     else:
         if not omissions:
             problems.append("no omissions declared")
-        full, declared = request["fullTargetText"], 0.0
+        full, declared, claimed = request["fullTargetText"], 0.0, []
         for omission in omissions:
             span = omission.get("fullTextSpan") if isinstance(omission, dict) else None
             if not (isinstance(span, str) and span.strip() and span in full):
@@ -196,7 +197,17 @@ def spoken_problems(request: dict, spoken: str, omissions: list[dict] | None, lo
             elif spoken.count(span) >= full.count(span):
                 problems.append(f"declared omission is still in the spoken text: {span!r}")
             else:
-                declared += predicted.speech_units(span, locale)
+                # Each declaration claims its own removed occurrence: one filler listed
+                # twice, or spans that overlap, cannot add up to cover another cut.
+                removed_count = full.count(span) - spoken.count(span)
+                starts = [match.start() for match in re.finditer("(?=" + re.escape(span) + ")", full)]
+                free = [start for start in starts
+                        if all(start + len(span) <= left or start >= right for left, right in claimed)]
+                if not free or sum(full[left:right] == span for left, right in claimed) >= removed_count:
+                    problems.append(f"omission declared twice or overlapping another: {span!r}")
+                else:
+                    claimed.append((free[0], free[0] + len(span)))
+                    declared += predicted.speech_units(span, locale)
         # The declared spans must account for what was removed; an undeclared cut
         # (a call, an attribution) cannot hide behind an unrelated declared span.
         removed = predicted.speech_units(full, locale) - units

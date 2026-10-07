@@ -202,6 +202,8 @@ def checked_review(path: Path, candidate: dict, candidate_sha: str, locale: str)
             f"{locale}: independent candidate review receipt differs")
 
 
+# The status label beside the disclosure, in the disclosure's own language (as the clients show it).
+MACHINE_CHECK_LABELS = {"zh-Hans": "机器质检", "ko": "기계 품질 검사", "es": "Control de calidad automático"}
 MACHINE_FOOTERS = {
     ("human_reviewed", "machine_checked"): '根据讲道视频制作的已审核译文；配音使用的短口播稿与音轨经机器质检后自动发布，未经人工审核。',
     ("machine_checked", "human_reviewed"): '根据讲道视频制作的机器质检译文，未经人工审核；配音另使用已审核短口播稿。',
@@ -232,7 +234,8 @@ def static_page(content: dict, locale: str, page_id: str, studies=None, *,
     footer_notice = ('模拟审核收据仅用于测试；译文、音轨、大纲与默想未获正式批准。' if simulated
                      else CONDENSED_FOOTERS[statuses[0]] if condensed
                      else MACHINE_FOOTERS.get(statuses, '根据讲道视频制作的已审核译文；配音另使用已审核短口播稿。'))
-    disclosure_html = (f'<p role="note" lang="{esc(disclosure["locale"])}"><strong>机器质检</strong> · '
+    disclosure_html = (f'<p role="note" lang="{esc(disclosure["locale"])}">'
+                       f'<strong>{esc(MACHINE_CHECK_LABELS[disclosure["locale"]])}</strong> · '
                        f'{esc(disclosure["text"])}</p>' if disclosure else '')
     total_seconds = int(content["durationSeconds"])
     hours, remainder = divmod(total_seconds, 3600)

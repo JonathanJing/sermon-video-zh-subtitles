@@ -178,6 +178,10 @@ class CondenseTests(unittest.TestCase):
             (answer(omissions=OMISSIONS + [{"fullTextSpan": "一刻也没有忘记你", "kind": "repetition"}]),
              "still in the spoken text"),
             (answer(text="耶稣没有忘记你。"), "declared"),
+            # One removed filler listed twice, or an overlapping span, cannot cover another cut.
+            (answer(omissions=OMISSIONS + [OMISSIONS[0]]), "declared twice or overlapping"),
+            (answer(omissions=OMISSIONS + [{"fullTextSpan": "我想再说一遍", "kind": "filler"}]),
+             "declared twice or overlapping"),
             ({"translationGroupId": "g2", "spokenText": SPOKEN}, "does not match the schema"),
         ]
         for output, message in cases:
@@ -363,6 +367,14 @@ class SpokenQcTests(unittest.TestCase):
                                              {"english": CONDENSED_ENGLISH} if role == "back_translator"
                                              else lenient(role, system, user, schema)))
         self.assertEqual(missed["kinds"]["flipped_negation"]["rate"], 0.0)
+        # Only a back-translation issue counts: a judge that passes everything detects nothing,
+        # even where a name or number screen would also have failed the mutation.
+        blind = seeded.calibrate_spoken(self.groups, LOCALE, policy=fixtures.policy(LOCALE),
+                                        call=lambda role, system, user, schema: (
+                                            {"english": CONDENSED_ENGLISH} if role == "back_translator"
+                                            else {"status": "pass", "issues": []}))
+        self.assertEqual({kind: row["detected"] for kind, row in blind["kinds"].items()},
+                         dict.fromkeys(waiver.SPOKEN_KINDS, 0))
         with self.assertRaisesRegex(ValueError, "condensed spoken groups"):
             seeded.calibrate_spoken(self.groups[:1], LOCALE)
 

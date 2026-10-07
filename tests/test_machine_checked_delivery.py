@@ -204,6 +204,8 @@ def test_waivers_produce_a_disclosed_v4_release_never_marked_human(machine):
     d.validate_public_study(release, reader=lambda url: (prepared_dir / 'public' / url.lstrip('/')).read_bytes())
     page = (prepared_dir / 'public/pages' / PAGE / LOCALE / 'index.html').read_text()
     assert basis.disclosure(LOCALE)['text'] in page and '机器质检' in page
+    # The label beside the Korean disclosure is Korean too.
+    assert '<p role="note" lang="ko"><strong>기계 품질 검사</strong> · ' in page
     for claim in ('已批准完整文稿', '已批准完整阅读稿', '已审核译文', '已审核短口播稿'):
         assert claim not in page
     # The waiver never turned into a human decision upstream.

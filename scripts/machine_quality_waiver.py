@@ -54,7 +54,7 @@ CALIBRATION_MINIMUMS = {"overallDetectionRate": 0.95, "perKindDetectionRate": 0.
                         "maxCleanFalsePositiveRate": 0.1}
 # Every seeded error kind must be tried and caught; a kind with no trial was never tested.
 TEXT_KINDS = ("wrong_number", "added_reference", "wrong_book", "english_leak", "placeholder",
-              "dropped_name", "dropped_half", "semantic_negation", "added_number")
+              "dropped_name", "dropped_half", "semantic_negation", "added_number", "wrong_ordinal")
 AUDIO_KINDS = ("stretched", "silent", "clipped", "truncated", "wrong_sentence")
 # Seeded errors in condensed spoken groups: required when a QC run judged any.
 SPOKEN_KINDS = ("swapped_content", "added_content", "flipped_negation")

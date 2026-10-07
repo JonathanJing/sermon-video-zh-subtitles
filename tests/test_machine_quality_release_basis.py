@@ -137,6 +137,10 @@ class TextWaiverTests(unittest.TestCase):
         weak["calibration"]["overallDetectionRate"] = 0.9
         with self.assertRaisesRegex(ValueError, "minimums"):
             basis.validate_text_waiver(weak, candidate=self.candidate)
+        # Changed QC code was never calibrated against this evidence.
+        with patch.object(waiver, "implementation_sha256", return_value="e" * 64), \
+                self.assertRaisesRegex(ValueError, "recalibrate and reissue"):
+            basis.validate_text_waiver(self.waiver, candidate=self.candidate)
 
     def test_waiver_refuses_failing_or_unrelated_qc(self):
         failing = text_qc(self.candidate, self.anchor)
@@ -499,6 +503,9 @@ class AudioWaiverTests(unittest.TestCase):
         self.assertEqual(receipt["unitResults"][1]["secondaryAsrModel"], SECONDARY_ASR)
         self.assertEqual(receipt["unitResults"][1]["asr"], "secondary_pass")
         basis.validate_audio_waiver(package, receipt, screening)
+        with patch.object(waiver, "implementation_sha256", return_value="e" * 64), \
+                self.assertRaisesRegex(ValueError, "recalibrate and reissue"):
+            basis.validate_audio_waiver(package, receipt, screening)
         tampered = copy.deepcopy(receipt)
         tampered["unitResults"][1]["secondarySimilarity"] = 0.5
         with self.assertRaisesRegex(ValueError, "secondary ASR"):

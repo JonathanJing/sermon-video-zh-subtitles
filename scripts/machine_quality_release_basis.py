@@ -106,6 +106,10 @@ def calibration_summary(calibration: dict, locale: str, implementation: str, *,
 def _validate_summary(receipt: dict) -> None:
     summary = receipt["calibration"]
     minimums = waiver.CALIBRATION_MINIMUMS
+    # The calibration measured one QC implementation; changed QC code needs a new
+    # calibration and a reissued waiver, so an old receipt stops authorizing release.
+    _require(receipt["implementationSha256"] == waiver.implementation_sha256(),
+             "Waiver was issued under a QC implementation other than the current one; recalibrate and reissue")
     _require(receipt["rules"] == RULES, "Waiver rules differ from the decided release rules")
     _require(summary["implementationSha256"] == receipt["implementationSha256"]
              and summary["overallDetectionRate"] >= minimums["overallDetectionRate"]
