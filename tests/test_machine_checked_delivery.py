@@ -27,7 +27,7 @@ PAGE, LOCALE = 'synthetic-machine-page', 'ko'
 ASR = {'model': 'Qwen3-ASR', 'modelRevision': 'r1'}
 # The primary runtime recorded by the screening receipt this fixture binds.
 SCREENING_ASR = {'protocol': 'formal-back-asr-batch-v1', **ASR, 'batchSize': 1, 'maxNewTokens': 2048,
-                 'dtype': 'bfloat16', 'executionDevice': 'cuda:0', 'runtime': {}, 'implementationSha256': 'd' * 64,
+                 'dtype': 'bfloat16', 'executionDevice': 'cuda:0', 'runtime': {'backend': 'qwen-asr-local'}, 'implementationSha256': 'd' * 64,
                  'minSimilarity': 0.88, 'scoring': audio_screen.SCORING}
 PRIMARY_SETTINGS = basis.json_sha256(SCREENING_ASR)
 ASR_SETTINGS = {'primary': PRIMARY_SETTINGS, 'secondary': basis.json_sha256({'backend': 'synthetic-secondary'})}

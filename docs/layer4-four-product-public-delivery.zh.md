@@ -45,7 +45,7 @@ PDF 不进入该身份。静态 HTML 包含 `study-outline` 和 `study-meditatio
 - `reviewBasis`：`fullText`、`spokenText`、`audio` 各记 `kind`（`human_review` 或 `machine_quality_waiver`）和收据的 canonical SHA-256。
 - `disclosure`：`{locale, text, english}`，`locale` 必须等于 `targetLocale`。
 
-`contentStatus=machine_checked` 时正文必须是 [content v3](../schemas/sermon-full-video-text-content-v3.schema.json)：`status=machine_checked`、`reviewMode=formal`，`disclosure` 与 release 相同；人工文稿不得带 `disclosure`。大纲与默想在这一步仍要求人工批准。
+`contentStatus=machine_checked` 时正文必须是 [content v3](../schemas/sermon-full-video-text-content-v3.schema.json)：`status=machine_checked`、`reviewMode=formal`，`disclosure` 与 release 相同；人工文稿不得带 `disclosure`。content v3 只能随 release v4 发布：三项都是人工审核时（写 release v3）必须用 content v2，因为网页和 iOS 只通过 release v4 读取 content v3。大纲与默想在这一步仍要求人工批准。
 
 封存总是写出 [catalog v4](../schemas/sermon-multilingual-catalog-v4.schema.json)（`/multilingual-v4.json`）和 `/multilingual-v3.json`，报告记录两者的 SHA（`catalogV4Sha256`）。v4 的机器质检 target 必须指向 `/releases-v4/`，并具备 text、captions、audio；人工 target 与 v3 相同。v3 由 `project_human_catalog` 从 v4 去掉机器质检 target 得到：没有剩余 target 的页面被删除，被删的默认语言或默认页改为剩余项。基线只有 v3 时按 v4 升级后合并；只有机器质检页面而没有人工页面时拒绝封存。
 

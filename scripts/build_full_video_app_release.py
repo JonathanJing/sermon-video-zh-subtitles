@@ -409,6 +409,9 @@ def prepare(args: argparse.Namespace) -> dict:
                 require(content.get('schemaVersion') == 'sermon-full-video-text-content-v3'
                         and content.get('disclosure') == disclosure,
                         f'{locale}: machine-checked reading content needs content v3 with its disclosure')
+            # Readers admit content v3 only through a release v4, which only machine-checked locales get.
+            require(machine or content.get('schemaVersion') != 'sermon-full-video-text-content-v3',
+                    f'{locale}: content v3 is only for machine-checked releases; use content v2')
             if clocked or 'audioDurationSeconds' in content:
                 declared = content.get('audioDurationSeconds')
                 require(isinstance(declared, (int, float)) and not isinstance(declared, bool)

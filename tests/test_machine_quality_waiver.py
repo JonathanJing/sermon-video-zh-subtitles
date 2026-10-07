@@ -302,6 +302,17 @@ class AudioQcTests(unittest.TestCase):
                 self.assertFalse(passed)
                 self.assertFalse(audio_qc.transcript_agrees(text, heard, locale))
                 self.assertTrue(audio_qc.transcript_agrees(text, text, locale))
+        # Korean dubs mostly say quantities in words, so those are dropped too; 이 사람 is not one.
+        for text, heard in (("그에게는 두 아들과 세 딸이 있었고 모두 함께 예배를 드렸습니다.",
+                             "그에게는 아들과 세 딸이 있었고 모두 함께 예배를 드렸습니다."),
+                            ("이 사람은 이십 년 동안 성전 문 앞에서 기다렸습니다.",
+                             "이 사람은 년 동안 성전 문 앞에서 기다렸습니다."),
+                            ("스무 살 때 그는 아버지의 집을 떠나 먼 나라로 갔습니다.",
+                             "살 때 그는 아버지의 집을 떠나 먼 나라로 갔습니다.")):
+            with self.subTest(locale="ko", text=text):
+                self.assertEqual(seeded.drop_key_word(text, "ko"), heard)
+                self.assertFalse(audio_qc.transcript_agrees(text, heard, "ko"))
+        self.assertIsNone(seeded.drop_key_word("이 사람은 사이 좋게 지냈습니다.", "ko"))
         # Other small differences still pass on the ratio.
         text = "Jesús no nos deja solos en nuestros fracasos ni en nuestras dudas."
         self.assertTrue(score(text, text.replace("nuestras", "las"), "es", 0.88)[2])
@@ -652,7 +663,9 @@ class CalibrationAndWaiverTests(unittest.TestCase):
                            ("other language", {**good, "language": "ja"}),
                            ("loose threshold", {**good, "minSimilarity": 0.5}),
                            ("other scoring", {**good, "scoring": "token-ratio-v1"}),
-                           ("non-finite value", {**good, "runtime": {"temperature": float("nan")}})):
+                           ("empty runtime", {**good, "runtime": {}}),
+                           ("runtime without backend", {**good, "runtime": {"temperature": 0.0}}),
+                           ("non-finite value", {**good, "runtime": {**good["runtime"], "temperature": float("nan")}})):
             with self.subTest(label), self.assertRaises(ValueError):
                 opinion(bad)
         # A kept opinion cannot swap its settings for others that hash differently.

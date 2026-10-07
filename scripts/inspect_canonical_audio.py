@@ -111,7 +111,9 @@ def inspect(root, config, upstream_paths, read_package, hashes, locale):
         stage.validate_audio_screening_review(package, receipt, screening)
         if (receipt.get('reviewKind') != 'machine_quality_waiver'
                 or receipt['targetLanguageCandidateJsonSha256'] != upstream['candidate']
-                or receipt['englishSourcePackageJsonSha256'] != upstream['source']):
+                or receipt['englishSourcePackageJsonSha256'] != upstream['source']
+                # Issued against the text waiver this lane actually releases, as Layer 4 requires.
+                or receipt.get('textWaiverJsonSha256') != upstream.get('human_receipt')):
             raise ValueError('audio_waiver_not_bound')
         result['listeningReviewSha256'] = hashes[prefix + 'machineWaiver']
         result['listeningReviewKind'] = 'machine_quality_waiver'

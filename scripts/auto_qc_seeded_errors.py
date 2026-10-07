@@ -34,6 +34,7 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import unicodedata
 import sys
 
 if __package__ in (None, ""):
@@ -356,9 +357,15 @@ def drop_key_word(text: str, locale: str) -> str | None:
                    for marker in sorted(NEGATIONS[locale], key=len, reverse=True)]
         numerals = "[" + ZH_NUMERALS + "]+|" if locale == "zh-Hans" else ""
         match = re.search("|".join(markers) + "|" + numerals + r"\d+", text)
-    if match is None:
+    spans = [] if match is None else [(match.start(), match.end())]
+    if locale == "ko":
+        # Spelled quantities (두 사람, 스무 살, 이십 년) are what Korean dubs mostly say.
+        from scripts.screen_target_language_audio_units import korean_number_spans
+        spans += korean_number_spans(unicodedata.normalize("NFC", text))[:1]
+    if not spans:
         return None
-    return re.sub(r"\s{2,}", " ", text[:match.start()] + text[match.end():]).strip()
+    start, end = min(spans)
+    return re.sub(r"\s{2,}", " ", text[:start] + text[end:]).strip()
 
 
 def calibrate_audio(units: list[dict], locale: str, *, asr=None, render=None, max_trials: int = 30) -> dict:

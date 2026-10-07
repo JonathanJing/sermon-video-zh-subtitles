@@ -28,7 +28,7 @@ SECONDARY_ASR = {"model": "gpt-transcribe", "modelRevision": None}
 # The primary runtime is the one the bound v2 screening receipt records.
 SCREENING_ASR = {"protocol": "formal-back-asr-batch-v1", "model": "qwen3-asr-0.6b", "modelRevision": "r1",
                  "batchSize": 1, "maxNewTokens": 2048, "dtype": "bfloat16", "executionDevice": "cuda:0",
-                 "runtime": {}, "implementationSha256": "d" * 64, "minSimilarity": 0.88,
+                 "runtime": {"backend": "qwen-asr-local"}, "implementationSha256": "d" * 64, "minSimilarity": 0.88,
                  "scoring": audio_screen.SCORING}
 SCREENING_ASR_SETTINGS = basis.json_sha256(SCREENING_ASR)
 AUDIO_TEXTS = ["두려워하지 마십시오.", "내가 당신과 함께 있습니다."]

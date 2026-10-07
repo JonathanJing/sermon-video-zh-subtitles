@@ -120,7 +120,8 @@ class FormalAudioScreenTests(unittest.TestCase):
         return subject.screen(
             self.job, self.manifest, self.root,
             lambda path, locale: transcripts[int(path.stem.split("-")[-1])],
-            model="fixture-asr", model_revision="fixture-v1")
+            model="fixture-asr", model_revision="fixture-v1",
+            inference_identity={"backend": "fixture-asr-local"})
 
     def test_exact_two_unit_audio_gets_source_bound_machine_pass_only(self):
         receipt, screened = self.run_screen([unit["text"] for unit in self.job["units"]])
@@ -146,6 +147,13 @@ class FormalAudioScreenTests(unittest.TestCase):
         self.assertEqual(settings["implementationSha256"], subject.file_sha(Path(subject.__file__)))
         self.assertEqual(receipt["asrSettingsSha256"], identity.json_sha256(settings))
         self.assertEqual(screening_asr_settings(receipt), settings)
+        # A receipt that does not name its ASR backend cannot back a machine waiver.
+        bare, _ = subject.screen(self.job, self.manifest, self.root,
+                                 lambda path, locale: [unit["text"] for unit in self.job["units"]][
+                                     int(path.stem.split("-")[-1])],
+                                 model="fixture-asr", model_revision="fixture-v1")
+        with self.assertRaisesRegex(ValueError, "backend"):
+            screening_asr_settings(bare)
 
     def test_missing_word_stays_in_review_queue(self):
         receipt, screened = self.run_screen(["세 가지", "처음 사랑을 버렸느니라"])

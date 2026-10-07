@@ -86,7 +86,7 @@ class CatalogTests(unittest.TestCase):
         page, _ = self.machine_checked_ko()
         # Its natural dub runs on its own clock, past the video's last second.
         content = json.loads((self.public/'content/es.json').read_text())
-        content.update(schemaVersion='sermon-full-video-text-content-v3', audioDurationSeconds=13)
+        content.update(schemaVersion='sermon-full-video-text-content-v2', audioDurationSeconds=13)
         self.write('content/es.json', content)
         self.write('captions/es.json', dict(cues=[dict(start=0, end=12.5, text='approved', textGroupId='g1')]))
         release = json.loads((self.public/'releases/es.json').read_text())

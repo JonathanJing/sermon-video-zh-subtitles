@@ -251,3 +251,19 @@ def test_declared_audio_duration_must_match_bound_media(prepared):
     state = delivery.freeze(draft, frozen)
     with pytest.raises(ValueError, match='declared audio duration differs'):
         delivery.execute(frozen, state['planHash'])
+
+
+def test_all_human_release_refuses_content_v3(prepared):
+    # Readers take content v3 only through a release v4, which an all-human locale never gets.
+    f = prepared
+    changed = copy.deepcopy(f['documents']['full_content'])
+    changed['schemaVersion'] = 'sermon-full-video-text-content-v3'
+    path = save(f['root'], 'human-content-v3.json', changed)
+    config = copy.deepcopy(f['config'])
+    config['inputs']['full_content'][f['locale']] = binding(path)
+    config['workRoot'] = str(f['root'] / 'human-content-v3-work')
+    draft = save(f['root'], 'human-content-v3-config.json', config)
+    frozen = f['root'] / 'human-content-v3-frozen.json'
+    state = delivery.freeze(draft, frozen)
+    with pytest.raises(ValueError, match='content v3 is only for machine-checked'):
+        delivery.execute(frozen, state['planHash'])

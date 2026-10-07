@@ -205,6 +205,17 @@ ASR_SETTINGS_FIELDS = ("protocol", "model", "modelRevision", "language", "minSim
                        "implementationSha256", "runtime")
 
 
+def asr_runtime_problems(runtime) -> list[str]:
+    """An ASR ``runtime`` must name its transport: a non-empty object with a ``backend``.
+    An empty runtime would let a calibration and production share a hash while running
+    different backends, prompts, decoding or caches."""
+    if not isinstance(runtime, dict) or not runtime:
+        return ["runtime is empty"]
+    if not (isinstance(runtime.get("backend"), str) and runtime["backend"]):
+        return ["runtime does not name its backend"]
+    return []
+
+
 def _finite_json(value) -> bool:
     if isinstance(value, dict):
         return all(isinstance(key, str) and _finite_json(item) for key, item in value.items())
@@ -238,8 +249,7 @@ def validate_asr_settings(settings, *, model: str, model_revision: str | None, l
         if not (isinstance(implementation, str) and len(implementation) == 64
                 and all(char in "0123456789abcdef" for char in implementation)):
             problems.append("implementationSha256")
-        if not isinstance(settings["runtime"], dict):
-            problems.append("runtime")
+        problems += asr_runtime_problems(settings["runtime"])
     if not _finite_json(settings):
         problems.append("values are not finite JSON")
     if problems:
@@ -288,6 +298,8 @@ def screening_asr_settings(screening: dict) -> dict:
             or settings.get("minSimilarity") != screening.get("minSimilarity")
             or settings.get("batchSize") != screening.get("transcriptionBatchSize", 1)):
         raise ValueError("ASR screening runtime settings disagree with the receipt")
+    if asr_runtime_problems(settings.get("runtime")):
+        raise ValueError("ASR screening does not record its runtime backend; rescreen with an inference identity")
     return settings
 
 

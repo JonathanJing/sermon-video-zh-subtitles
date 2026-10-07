@@ -110,18 +110,37 @@ def key_word(tokens: list[str], locale: str) -> bool:
                or locale == "es" and token.startswith("veinti") for token in tokens)
 
 
+def _korean_spans(text: str, forms, *, sino: bool = False) -> list[tuple[int, int]]:
+    from scripts.language_review_plugins import auto_qc_text_common as rules
+    found = sorted((match.start(), -len(form)) for form in forms
+                   for match in re.finditer(rules._ko_pattern(form, sino=sino), text))
+    spans, end = [], -1
+    for start, negative_length in found:
+        if start >= end:  # The longest form wins where two overlap.
+            end = start - negative_length
+            spans.append((start, end))
+    return spans
+
+
+def _korean_native_forms() -> list[str]:
+    from scripts.language_review_plugins import auto_qc_text_common as rules
+    return [form for number in range(1, 100) for form in rules.korean_native(number)]
+
+
 def korean_native_numbers(text: str) -> list[str]:
     """The native-number forms in ``text``, in reading order."""
+    return [text[start:end] for start, end in _korean_spans(text, _korean_native_forms())]
+
+
+def korean_number_spans(text: str) -> list[tuple[int, int]]:
+    """Spoken Korean quantities in ``text``, in reading order, read as text QC reads them:
+    native forms (두 사람, 스무 살) and Sino forms up to 999 (이십 년, 삼장). A bare
+    one-syllable Sino form counts only attached to its counter, so 이 사람 is not a number."""
     from scripts.language_review_plugins import auto_qc_text_common as rules
-    found = sorted((match.start(), -len(form), form) for number in range(1, 100)
-                   for form in rules.korean_native(number)
-                   for match in re.finditer(rules._ko_pattern(form), text))
-    forms, end = [], -1
-    for start, negative_length, form in found:
-        if start >= end:  # The longest form wins where two overlap.
-            forms.append(form)
-            end = start - negative_length
-    return forms
+    native = _korean_spans(text, _korean_native_forms())
+    sino = _korean_spans(text, {rules.korean_sino(number) for number in range(1, 1000)}, sino=True)
+    return sorted({*native, *(span for span in sino
+                              if not any(start < span[1] and span[0] < end for start, end in native))})
 
 
 def protected_text_agrees(expected: str, recognized: str, locale: str) -> bool:
@@ -391,6 +410,7 @@ def main(argv=None) -> None:
     except importlib.metadata.PackageNotFoundError:
         asr_version = "unavailable"
     inference_identity = {
+        "backend": "qwen-asr-local",
         "torchVersion": getattr(torch, "__version__", "unavailable"),
         "qwenAsrVersion": asr_version,
         "modelMetadataSha256s": {str(path.relative_to(args.model_path.resolve())): file_sha(path)
