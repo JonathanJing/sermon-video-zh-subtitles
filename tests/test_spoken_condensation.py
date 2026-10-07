@@ -191,10 +191,38 @@ class BindTests(unittest.TestCase):
         self.assertEqual(binding["spokenCandidateJsonSha256"], sha(spoken))
         self.assertEqual(binding["condensationRecordJsonSha256"], sha(self.record))
         self.assertFalse(binding["groups"][0]["changedByReview"])
-        repaired = "耶稣没有忘记你，祂一刻也没有忘记你。"
-        binding = self.bind(spoken_candidate(repaired))
-        self.assertEqual(binding["status"], "pass", binding["issues"])
-        self.assertTrue(binding["groups"][0]["changedByReview"])
+
+    def test_review_changes_require_a_renewed_record(self):
+        for revised in ("耶稣没有忘记你，祂一刻也没有忘记你。", "耶稣没有忘记你。"):
+            with self.subTest(revised=revised):
+                binding = self.bind(spoken_candidate(revised))
+                self.assertEqual(binding["status"], "fail")
+                self.assertTrue(binding["groups"][0]["changedByReview"])
+                self.assertTrue(any("renewed condensation record" in issue for issue in binding["issues"]))
+                with self.assertRaisesRegex(ValueError, "did not pass"):
+                    condensation.qc_groups(binding, anchor(), spoken_candidate(revised))
+
+        revised = "耶稣没有忘记你。"
+        omissions = OMISSIONS + [{"fullTextSpan": "一刻也没有忘记你。", "kind": "repetition"}]
+        renewed = condensation.condense(anchor(), candidate(), budget(),
+                                        call=FakeCondenser(answer(revised, omissions)), identity=CONDENSER,
+                                        policy=fixtures.policy(LOCALE))
+        binding = condensation.bind_spoken_candidate(renewed, anchor(), candidate(), spoken_candidate(revised),
+                                                     fixtures.policy(LOCALE))
+        self.assertEqual((binding["status"], binding["issues"]), ("pass", []))
+        self.assertFalse(binding["groups"][0]["changedByReview"])
+
+    def test_binding_revalidates_recorded_omissions(self):
+        cases = [(None, "declared as a list"), ([], "no omissions declared"),
+                 ([{"fullTextSpan": "", "kind": "repetition"}], "not a span"),
+                 ([{"fullTextSpan": "不存在的文字", "kind": "aside"}], "not a span"),
+                 ([{"fullTextSpan": "我想再说一遍", "kind": "core_claim"}], "kind not allowed")]
+        for omissions, message in cases:
+            with self.subTest(omissions=omissions):
+                self.record["groups"][0]["omissions"] = omissions
+                binding = self.bind(spoken_candidate())
+                self.assertEqual(binding["status"], "fail")
+                self.assertTrue(any(message in issue for issue in binding["issues"]), binding["issues"])
 
     def test_review_that_undoes_or_overruns_the_condensation_fails(self):
         full_text = candidate()["groups"][1]["targetText"]

@@ -149,14 +149,21 @@ def condensation_problems(candidate: dict, condensed: list[str], binding: dict |
     return problems
 
 
+def _require_full_caption_path(condensed: list[str]) -> None:
+    # Layer 4 currently renders the spoken candidate verbatim as captions.
+    # A passing preparation binding must not authorize incomplete subtitles.
+    _require(not condensed,
+             "Condensed spoken release is blocked until timed captions retain the complete translation")
+
+
 def build_text_waiver(source: dict, anchor: dict, candidate: dict, text_qc: dict,
                       calibration: dict, *, condensation_binding: dict | None = None,
                       implementation: str | None = None, created_at: str | None = None) -> dict:
     """Issue a text waiver from final text QC; refuse anything not fully passing.
 
     A spoken candidate with groups condensed for dubbing needs the passing
-    ``spoken_condensation`` binding of exactly those groups, and a calibration
-    that seeded errors into condensed groups."""
+    ``spoken_condensation`` binding of exactly those groups. Release remains
+    blocked until Layer 4 can deliver the complete translation as timed captions."""
     implementation = implementation or waiver.implementation_sha256()
     locale = candidate.get("targetLocale")
     _require(locale in LOCALES, "Machine waivers cover zh-Hans, ko and es only")
@@ -194,6 +201,7 @@ def build_text_waiver(source: dict, anchor: dict, candidate: dict, text_qc: dict
              "Text QC condensed-group list differs from its per-group results")
     condensation = condensation_problems(candidate, condensed, condensation_binding)
     _require(not condensation, "Condensed spoken groups are not bound: " + "; ".join(condensation))
+    _require_full_caption_path(condensed)
     summary = calibration_summary(calibration, locale, implementation, require_spoken=bool(condensed))
     runtime = waiver.runtime_identity_problems(calibration, text_qc=text_qc)
     _require(not runtime, "Text QC runtime differs from calibration: " + "; ".join(runtime))
@@ -225,6 +233,7 @@ def validate_text_waiver(receipt: dict, *, candidate: dict, source_sha: str | No
                          anchor_sha: str | None = None) -> None:
     """Gate-time check that the waiver binds exactly this machine-pending candidate."""
     _schema(receipt, TEXT_WAIVER_SCHEMA)
+    _require_full_caption_path(receipt["condensedGroupIds"])
     _require(machine_pending_candidate(candidate),
              "Text waiver applies only to a candidate whose human review is still pending")
     group_ids = [group["translationGroupId"] for group in candidate["groups"]]
@@ -317,6 +326,7 @@ def build_audio_waiver(package: dict, screening: dict, audio_qc: dict, text_waiv
     _require(_machine_screened(package),
              "Audio waiver requires a complete machine-screened package with no human decision")
     _schema(text_waiver, TEXT_WAIVER_SCHEMA)
+    _require_full_caption_path(text_waiver["condensedGroupIds"])
     _require(text_waiver["targetLocale"] == locale
              and text_waiver["candidateJsonSha256"] == package["targetLanguageCandidateJsonSha256"]
              and text_waiver["englishSourcePackageJsonSha256"] == package["englishSourcePackageJsonSha256"]

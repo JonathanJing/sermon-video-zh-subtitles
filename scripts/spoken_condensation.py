@@ -143,7 +143,9 @@ def spoken_problems(request: dict, spoken: str, omissions: list[dict] | None, lo
     units = predicted.speech_units(spoken, locale)
     if units > request["maxSpeechUnits"]:
         problems.append(f"{units:g} speech units exceed the budget of {request['maxSpeechUnits']}")
-    if omissions is not None:
+    if not isinstance(omissions, list):
+        problems.append("omissions must be declared as a list")
+    else:
         if not omissions:
             problems.append("no omissions declared")
         for omission in omissions:
@@ -235,9 +237,9 @@ def bind_spoken_candidate(record: dict, anchor: dict, candidate: dict, spoken: d
     """Bind the spoken candidate the Layer 2 chain produced from the brief.
 
     Uncondensed groups must keep the full text. A condensed group's final text
-    (the reviewer may have repaired it) is checked again: it fits the budget,
-    and passes the deterministic checks. A group the reviewer restored to the
-    full translation is no longer condensed and fails here.
+    must match its recorded proposal and pass the budget, omission-span and
+    deterministic checks again. Review changes require a renewed condensation
+    record for that final text before it can bind.
     """
     _check_record(record, candidate)
     locale = record["targetLocale"]
@@ -262,7 +264,9 @@ def bind_spoken_candidate(record: dict, anchor: dict, candidate: dict, spoken: d
                    "maxSpeechUnits": row["maxSpeechUnits"],
                    "englishUnits": [{"sourceUnitId": unit_id, "english": english[unit_id]}
                                     for unit_id in full["sourceUnitIds"]]}
-        problems = spoken_problems(request, text, None, locale, policy)
+        problems = spoken_problems(request, text, row.get("omissions"), locale, policy)
+        if text != row["spokenText"]:
+            problems.append("review changed the spoken text; a renewed condensation record is required")
         issues += [f"{group_id}: {problem}" for problem in problems]
         rows.append({"translationGroupId": group_id, "finalSpokenTextSha256": _text_sha(text),
                      "finalSpeechUnits": predicted.speech_units(text, locale),
