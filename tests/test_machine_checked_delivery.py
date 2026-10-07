@@ -16,6 +16,7 @@ from scripts import delivery_contract as d
 from scripts import machine_quality_release_basis as basis
 from scripts import sermon_unified_delivery as delivery
 from scripts import study_artifacts
+from scripts.target_audio_auto_qc import THRESHOLDS
 from tests.test_machine_quality_release_basis import IMPLEMENTATION, SECONDARY_ASR, calibration, text_qc, track_check
 from tests.test_public_study_delivery import binding, prepared, save, seal_fixture  # noqa: F401 (fixture)
 
@@ -39,7 +40,7 @@ def machine_inputs(root, *, human_full_text=None):
         group['sourceUnitIds'] = [unit['sourceUnitId']]
         group['coverage'] = [{'sourceUnitId': unit['sourceUnitId'], 'targetText': group['targetText']}]
     cal = calibration(LOCALE, asrIdentity={'primary': ASR, 'secondary': SECONDARY_ASR})
-    text_waiver = basis.build_text_waiver(source, sf.anchor, candidate, text_qc(candidate), cal,
+    text_waiver = basis.build_text_waiver(source, sf.anchor, candidate, text_qc(candidate, sf.anchor), cal,
                                           created_at='2026-10-07T01:00:00+00:00')
     track = root / 'tone.mp3'
     subprocess.run(['ffmpeg', '-nostdin', '-v', 'error', '-f', 'lavfi', '-i', 'sine=frequency=440:duration=10',
@@ -64,7 +65,7 @@ def machine_inputs(root, *, human_full_text=None):
                                'audioSha256': u['audio']['sha256'], 'recognized': 'synthetic', 'similarity': 1.0,
                                'differences': [], 'status': 'pass'} for u in package['units']])
     audio_qc = {'schemaVersion': 'sermon-target-audio-auto-qc-v1', 'locale': LOCALE, 'status': 'pass',
-                'implementationSha256': IMPLEMENTATION,
+                'implementationSha256': IMPLEMENTATION, 'thresholds': dict(THRESHOLDS),
                 'humanApproval': False, 'mutatesAudio': False, 'subtitleOnlyGroupIds': [], 'repairGroupIds': [],
                 'results': [{'groupId': u['textGroupId'], 'status': 'pass', 'issues': [], 'asrDecision': 'pass',
                              'asrPrimary': 1.0, 'asrSecondary': None, 'asrPrimaryModel': ASR, 'asrSecondaryModel': None,

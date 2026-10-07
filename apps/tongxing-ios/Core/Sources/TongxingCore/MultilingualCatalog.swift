@@ -278,7 +278,8 @@ public struct TargetLanguageReleasePackage: Codable, Sendable, Equatable {
                   isMachineChecked,
                   [reviewBasis.fullText, reviewBasis.spokenText, reviewBasis.audio].allSatisfy(\.isValid),
                   (contentStatus == "machine_checked") == reviewBasis.fullText.isMachineQualityWaiver,
-                  (audioStatus == "human_reviewed") == (reviewBasis.spokenText.isHumanReview && reviewBasis.audio.isHumanReview)
+                  (audioStatus == "human_reviewed") == (reviewBasis.spokenText.isHumanReview && reviewBasis.audio.isHumanReview),
+                  !reviewBasis.audio.isMachineQualityWaiver || reviewBasis.spokenText.isMachineQualityWaiver
             else { throw CatalogError.invalid("机器质检发布包状态、审核依据或说明无效") }
             try disclosure.validate(locale: targetLocale)
             let roles: Set<ReleaseAsset.Role> = [.page, .content, .audio, .captions, .outline, .meditation, .productManifest]

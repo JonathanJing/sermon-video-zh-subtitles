@@ -549,27 +549,12 @@
         ]
       },
       "else": {
-        "anyOf": [
+        "allOf": [
           {
             "properties": {
               "reviewBasis": {
                 "properties": {
                   "spokenText": {
-                    "properties": {
-                      "kind": {
-                        "const": "machine_quality_waiver"
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          {
-            "properties": {
-              "reviewBasis": {
-                "properties": {
-                  "audio": {
                     "properties": {
                       "kind": {
                         "const": "machine_quality_waiver"

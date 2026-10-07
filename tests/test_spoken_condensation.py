@@ -209,6 +209,17 @@ class BindTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "other groups"):
             self.bind(other)
 
+    def test_spoken_candidate_must_use_the_full_candidates_frozen_policy(self):
+        for policy_hash in ("3" * 64, None):
+            with self.subTest(policy_hash=policy_hash):
+                spoken = spoken_candidate()
+                if policy_hash is None:
+                    spoken.pop("translationPolicySha256")
+                else:
+                    spoken["translationPolicySha256"] = policy_hash
+                with self.assertRaisesRegex(ValueError, "another translationPolicySha256"):
+                    self.bind(spoken)
+
     def test_record_is_bound_to_its_full_candidate(self):
         edited = candidate()
         edited["translationPolicySha256"] = "3" * 64

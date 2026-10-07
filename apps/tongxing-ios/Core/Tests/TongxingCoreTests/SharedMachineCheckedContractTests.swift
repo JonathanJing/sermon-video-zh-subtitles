@@ -26,7 +26,7 @@ struct SharedMachineCheckedContractTests {
 
     @Test func identicalWebAndNativeMachineCheckedReleases() throws {
         let cases = try #require(try matrix()["releases"] as? [[String: Any]])
-        #expect(cases.count == 18)
+        #expect(cases.count == 19)
         for row in cases {
             let id = try #require(row["id"] as? String)
             let expected = try #require(row["expected"] as? String)

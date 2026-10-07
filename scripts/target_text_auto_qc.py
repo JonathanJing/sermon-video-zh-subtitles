@@ -200,7 +200,9 @@ def group_problems(group: dict, locale: str, *, policy: dict | None, median: flo
 
 def screen(groups: list[dict], locale: str, *, policy: dict | None = None, call=None,
            identity: dict | None = None, prior_failed_attempts: dict[str, int] | None = None) -> dict:
-    """Screen a whole candidate. ``groups``: ``[{groupId, english, targetText, condensation?}]``.
+    """Screen a whole candidate. ``groups``: ``[{groupId, english, targetText, sourceUnitIds?, condensation?}]``.
+
+    A release waiver requires sourceUnitIds from the frozen anchor manifest.
 
     Without ``call`` the back-translation result is ``not_run`` and the group
     cannot reach ``pass``: semantic evidence is required for a waiver.
@@ -228,7 +230,9 @@ def screen(groups: list[dict], locale: str, *, policy: dict | None = None, call=
         results.append({"groupId": group["groupId"], "status": status, "problems": problems,
                         "mode": "spoken_condensed" if group.get("condensation") else "full",
                         "backTranslation": semantic, "failedAttempts": failed, "nextAction": action,
-                        "targetTextSha256": hashlib.sha256(group["targetText"].encode("utf-8")).hexdigest()})
+                        "targetTextSha256": hashlib.sha256(group["targetText"].encode("utf-8")).hexdigest(),
+                        "englishSha256": hashlib.sha256(group["english"].encode("utf-8")).hexdigest(),
+                        "sourceUnitIdsSha256": _sha(group.get("sourceUnitIds"))})
     # A waiver must use the QC code the calibration measured, not a cached older run.
     return {"schemaVersion": SCHEMA, "locale": locale, "maxRepairAttempts": MAX_TEXT_REPAIR_ATTEMPTS,
             "implementationSha256": waiver.implementation_sha256(),

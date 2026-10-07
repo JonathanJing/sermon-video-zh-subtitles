@@ -146,6 +146,7 @@ export function validatePublishedV4Release(release, page, locale) {
     && basis && ['fullText', 'spokenText', 'audio'].every(key => REVIEW_BASIS_KINDS.includes(basis[key]?.kind) && HASH.test(basis[key].receiptSha256))
     && (release.contentStatus === 'machine_checked') === (basis.fullText.kind === 'machine_quality_waiver')
     && (release.audioStatus === 'human_reviewed') === (basis.spokenText.kind === 'human_review' && basis.audio.kind === 'human_review')
+    && (basis.audio.kind !== 'machine_quality_waiver' || basis.spokenText.kind === 'machine_quality_waiver')
     && disclosure?.locale === locale && text(disclosure.text) && text(disclosure.english)
     && Array.isArray(release.assets) && release.assets.length === 7,
   'Invalid machine-checked release status, review basis or disclosure');

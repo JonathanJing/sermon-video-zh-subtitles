@@ -892,6 +892,50 @@ private final class CandidateAppModelProtocol: URLProtocol {
 /// Synthetic bound release/audio remain usable while both transcript assets fail.
 @MainActor
 final class MachineDisclosureTests: XCTestCase {
+    func testMachineCatalogFallbackNoticeAndMissingCatalogCompatibility() async throws {
+        let support = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [MachineDisclosureProtocol.self]
+        let session = URLSession(configuration: config)
+        let suite = "Tongxing-Machine-Catalog-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        let model = AppModel(supportDirectory: support,
+                             contentOrigin: URL(string: "https://ai-for-god-sermon-audio-dev.web.app")!,
+                             session: session, statisticsDefaults: defaults,
+                             applicationBundleIdentifier: "com.jonathanjing.tongxing.beta")
+        defer {
+            model.playback.clear(); session.invalidateAndCancel()
+            MachineDisclosureProtocol.install([:])
+            defaults.removePersistentDomain(forName: suite)
+            try? FileManager.default.removeItem(at: support)
+        }
+        let hash = String(repeating: "a", count: 64)
+        let catalog = try JSONSerialization.data(withJSONObject: [
+            "schemaVersion": MultilingualCatalog.dualScriptSchemaVersion,
+            "generatedAt": "2026-10-07T00:00:00Z", "defaultPageId": "fallback-page",
+            "pages": [["id": "fallback-page", "title": "Synthetic human text", "date": "2026-10-04",
+                       "sourceLocale": "en", "sourceIdentitySha256": hash, "defaultTargetLocale": "zh-Hans",
+                       "targets": ["zh-Hans": ["releasePackageUrl": "/releases-v2/fallback-page/zh-Hans.json",
+                                               "releasePackageJsonSha256": hash, "contentStatus": "human_reviewed",
+                                               "audioStatus": "unavailable", "capabilities": ["text"]]]]]
+        ])
+        // Both invalid v4 data and a server error preserve v3 while exposing the degradation.
+        for status in [200, 503] {
+            MachineDisclosureProtocol.install(["/multilingual-v3.json": catalog,
+                                               "/multilingual-v4.json": Data("invalid".utf8)],
+                                              statuses: ["/multilingual-v4.json": status])
+            await model.refresh()
+            XCTAssertEqual(model.multilingualCatalog?.schemaVersion, MultilingualCatalog.dualScriptSchemaVersion)
+            XCTAssertTrue(model.multilingualNotice?.contains("机器质检语言目录") == true)
+            XCTAssertTrue(model.multilingualNotice?.contains("刷新重试") == true)
+        }
+        // An ordinary v4 404 is an older site's supported protocol, and clears the earlier notice.
+        MachineDisclosureProtocol.install(["/multilingual-v3.json": catalog])
+        await model.refresh()
+        XCTAssertNotNil(model.multilingualCatalog)
+        XCTAssertNil(model.multilingualNotice)
+    }
+
     func testAudioDisclosureSurvivesTranscriptFailureAndRejectsStaleSelections() async throws {
         let support = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let config = URLSessionConfiguration.ephemeral
@@ -1002,13 +1046,19 @@ final class MachineDisclosureTests: XCTestCase {
 private final class MachineDisclosureProtocol: URLProtocol {
     private static let lock = NSLock()
     private static var files: [String: Data] = [:]
-    static func install(_ value: [String: Data]) { lock.lock(); files = value; lock.unlock() }
+    private static var statuses: [String: Int] = [:]
+    static func install(_ value: [String: Data], statuses responseStatuses: [String: Int] = [:]) {
+        lock.lock(); files = value; statuses = responseStatuses; lock.unlock()
+    }
     override class func canInit(with request: URLRequest) -> Bool { true }
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
     override func startLoading() {
-        Self.lock.lock(); let bytes = Self.files[request.url?.path ?? ""]; Self.lock.unlock()
+        Self.lock.lock()
+        let bytes = Self.files[request.url?.path ?? ""]
+        let status = Self.statuses[request.url?.path ?? ""] ?? (bytes == nil ? 404 : 200)
+        Self.lock.unlock()
         guard let url = request.url else { client?.urlProtocol(self, didFailWithError: URLError(.badURL)); return }
-        let response = HTTPURLResponse(url: url, statusCode: bytes == nil ? 404 : 200, httpVersion: "HTTP/1.1", headerFields: nil)!
+        let response = HTTPURLResponse(url: url, statusCode: status, httpVersion: "HTTP/1.1", headerFields: nil)!
         client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
         if let bytes { client?.urlProtocol(self, didLoad: bytes) }
         client?.urlProtocolDidFinishLoading(self)

@@ -632,10 +632,13 @@ def scripture_reference_problems(english: str, target: str, locale: str) -> list
     # The speaker's words decide which references exist; a reference the
     # English did not say is an editorial addition (the 2026-10-04 ko issue).
     colon_pairs = english_colon_pairs(english)
-    added_pairs = target_pairs - english_pairs - colon_pairs
+    citations = book_citations(target, locale)
+    book_pairs = {(chapter, verse) for _, chapter, verse, _ in citations if verse is not None}
+    # A numeric clock match can excuse a bare target time, never a passage
+    # explicitly attached to a Bible book, even if its numbers coincide.
+    added_pairs = (target_pairs - english_pairs - colon_pairs) | (book_pairs - english_pairs)
     problems += [f"added reference {c}:{v}" for c, v in sorted(added_pairs)]
     # The book must survive translation: "Revelation 3:4" is not "Juan 3:4".
-    citations = book_citations(target, locale)
     english_books: dict[tuple[int, int | None], set[str]] = {}
     for code, chapter, verse in english_book_citations(english):
         if code is not None:

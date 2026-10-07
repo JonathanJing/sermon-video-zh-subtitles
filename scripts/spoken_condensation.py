@@ -245,7 +245,7 @@ def bind_spoken_candidate(record: dict, anchor: dict, candidate: dict, spoken: d
                                                  for g in spoken["groups"]]
             != [(g["translationGroupId"], g["sourceUnitIds"]) for g in candidate["groups"]]):
         raise ValueError("Spoken candidate covers other groups than the full candidate")
-    for key in ("englishSourcePackageJsonSha256", "anchorManifestSha256"):
+    for key in ("englishSourcePackageJsonSha256", "anchorManifestSha256", "translationPolicySha256"):
         if spoken.get(key) != candidate.get(key):
             raise ValueError(f"Spoken candidate has another {key}")
     english = {unit["sourceUnitId"]: unit["english"] for unit in anchor["sourceUnits"]}
@@ -287,6 +287,7 @@ def qc_groups(binding: dict, anchor: dict, spoken: dict) -> list[dict]:
     rows = []
     for group in spoken["groups"]:
         row = {"groupId": group["translationGroupId"], "targetText": group["targetText"],
+               "sourceUnitIds": list(group["sourceUnitIds"]),
                "english": " ".join(english[unit_id] for unit_id in group["sourceUnitIds"])}
         if group["translationGroupId"] in condensed:
             row["condensation"] = {"condensationRecordJsonSha256": binding["condensationRecordJsonSha256"],

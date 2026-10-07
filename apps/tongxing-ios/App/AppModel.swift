@@ -539,6 +539,10 @@ final class AppModel: ObservableObject {
             let result = try await multilingualRepository.loadCatalog()
             multilingualCatalog = result.catalog
             multilingualNotice = result.warning
+            if result.machineCheckedCatalogError != nil {
+                let notice = "暂时无法更新机器质检语言目录，部分语言不可用。请稍后刷新重试。"
+                multilingualNotice = [result.warning, notice].compactMap { $0 }.joined(separator: "\n")
+            }
             let usePublishedDefault = preferPublishedDefault
                 && result.catalog.isDualScript
                 && independentPages.contains(where: { $0.id == result.catalog.defaultPageId })

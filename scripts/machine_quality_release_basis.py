@@ -177,7 +177,16 @@ def build_text_waiver(source: dict, anchor: dict, candidate: dict, text_qc: dict
              and all(row.get("status") == "pass" and row.get("nextAction") == "keep"
                      and row.get("backTranslation") is not None for row in results),
              "Every group must pass text QC, including back-translation")
+    english_units = {unit["sourceUnitId"]: unit["english"] for unit in anchor["sourceUnits"]}
     for row, group in zip(results, groups):
+        source_ids = group.get("sourceUnitIds")
+        _require(isinstance(source_ids, list) and bool(source_ids)
+                 and all(unit_id in english_units for unit_id in source_ids),
+                 f"Candidate group does not bind frozen source units: {group['translationGroupId']}")
+        english = " ".join(english_units[unit_id] for unit_id in source_ids)
+        _require(row.get("englishSha256") == _text_sha(english)
+                 and row.get("sourceUnitIdsSha256") == json_sha256(source_ids),
+                 f"Text QC screened different frozen English/source units: {group['translationGroupId']}")
         _require(row.get("targetTextSha256") == _text_sha(group["targetText"]),
                  f"Text QC screened different text: {group['translationGroupId']}")
     condensed = [row["groupId"] for row in results if row.get("mode") == "spoken_condensed"]
@@ -323,6 +332,9 @@ def build_audio_waiver(package: dict, screening: dict, audio_qc: dict, text_waiv
     _require(audio_qc.get("status") == "pass" and not audio_qc.get("subtitleOnlyGroupIds")
              and all(row.get("status") == "pass" and row.get("nextAction") == "keep" for row in results),
              "Every unit must pass audio QC; subtitle-only units are not wired yet")
+    from scripts.target_audio_auto_qc import THRESHOLDS
+    _require(audio_qc.get("thresholds") == THRESHOLDS,
+             "Audio QC thresholds differ from the calibrated release thresholds")
     summary = calibration_summary(calibration, locale, implementation, require_audio=True)
     runtime = waiver.runtime_identity_problems(calibration, audio_qc=audio_qc)
     _require(not runtime, "Audio QC runtime differs from calibration: " + "; ".join(runtime))

@@ -7,6 +7,8 @@ from unittest.mock import patch
 
 from scripts import machine_quality_release_basis as basis
 from scripts import machine_quality_waiver as waiver
+from scripts import target_text_auto_qc as text_screen
+from scripts.target_audio_auto_qc import THRESHOLDS
 from scripts import prepare_target_language_speech_job as speech
 from scripts import sermon_sentence_interpretation as interpretation
 from scripts import sermon_unified_reviews as reviews
@@ -42,14 +44,17 @@ def calibration(locale="ko", **overrides):
     return value
 
 
-def text_qc(candidate):
+def text_qc(candidate, anchor):
+    english_units = {unit["sourceUnitId"]: unit["english"] for unit in anchor["sourceUnits"]}
     return {"schemaVersion": "sermon-target-text-auto-qc-v1", "locale": candidate["targetLocale"],
             "status": "pass", "humanApproval": False, "mutatesText": False,
             "repairGroupIds": [], "sourceTextFallbackGroupIds": [], "semanticIdentitySha256": SEMANTIC_SHA,
             "implementationSha256": IMPLEMENTATION,
             "results": [{"groupId": group["translationGroupId"], "status": "pass", "problems": [],
                          "backTranslation": {"status": "pass", "issues": []}, "failedAttempts": 0,
-                         "nextAction": "keep", "targetTextSha256": sha(group["targetText"])}
+                         "nextAction": "keep", "targetTextSha256": sha(group["targetText"]),
+                         "englishSha256": sha(" ".join(english_units[unit_id] for unit_id in group["sourceUnitIds"])),
+                         "sourceUnitIdsSha256": basis.json_sha256(group["sourceUnitIds"])}
                         for group in candidate["groups"]]}
 
 
@@ -65,7 +70,7 @@ class TextWaiverTests(unittest.TestCase):
                                          "reviewedAt": None, "reviewedGroupIds": []}
         write_json(self.candidate_path, self.candidate)
         self.waiver = basis.build_text_waiver(self.source_package, self.anchor, self.candidate,
-                                              text_qc(self.candidate), calibration(),
+                                              text_qc(self.candidate, self.anchor), calibration(),
                                               created_at="2026-10-07T01:00:00+00:00")
         self.waiver_path = self.root / "text-waiver.json"
         write_json(self.waiver_path, self.waiver)
@@ -127,12 +132,12 @@ class TextWaiverTests(unittest.TestCase):
             basis.validate_text_waiver(weak, candidate=self.candidate)
 
     def test_waiver_refuses_failing_or_unrelated_qc(self):
-        failing = text_qc(self.candidate)
+        failing = text_qc(self.candidate, self.anchor)
         failing["status"] = "requires_repair"
         failing["results"][1].update(status="fail", nextAction="revise_translation")
-        unscreened = text_qc(self.candidate)
+        unscreened = text_qc(self.candidate, self.anchor)
         unscreened["results"][0]["backTranslation"] = None
-        other_text = text_qc(self.candidate)
+        other_text = text_qc(self.candidate, self.anchor)
         other_text["results"][0]["targetTextSha256"] = sha("unrelated")
         for qc, message in ((failing, "must pass"), (unscreened, "must pass"), (other_text, "different text")):
             with self.assertRaisesRegex(ValueError, message):
@@ -143,16 +148,49 @@ class TextWaiverTests(unittest.TestCase):
                              (calibration(semanticIdentitySha256="0" * 64), "runtime differs")):
             with self.assertRaisesRegex(ValueError, message):
                 basis.build_text_waiver(self.source_package, self.anchor, self.candidate,
-                                        text_qc(self.candidate), cal)
+                                        text_qc(self.candidate, self.anchor), cal)
         # A cached text QC from older QC code cannot ride on a newer calibration.
-        stale = text_qc(self.candidate)
+        stale = text_qc(self.candidate, self.anchor)
         stale["implementationSha256"] = "0" * 64
         with self.assertRaisesRegex(ValueError, "implementation other than the calibrated one"):
             basis.build_text_waiver(self.source_package, self.anchor, self.candidate, stale, calibration())
 
+    def test_text_qc_binds_actual_frozen_english_and_source_units(self):
+        english = {unit["sourceUnitId"]: unit["english"] for unit in self.anchor["sourceUnits"]}
+        groups = [{"groupId": group["translationGroupId"], "targetText": group["targetText"],
+                   "sourceUnitIds": group["sourceUnitIds"],
+                   "english": " ".join(english[unit_id] for unit_id in group["sourceUnitIds"])}
+                  for group in self.candidate["groups"]]
+        identity = {"backend": "fixture", "model": "judge", "modelRevision": "r1",
+                    "cacheNamespace": "fixture", "settings": {"temperature": 0}}
+
+        def call(role, system, user, schema):
+            return {"english": "Do not be afraid."} if role == "back_translator" else {"status": "pass", "issues": []}
+
+        def screen(values):
+            return text_screen.screen(values, "ko", call=call, identity=identity)
+
+        clean = screen(groups)
+        self.assertEqual(clean["status"], "pass")
+        cal = calibration(semanticIdentitySha256=clean["semanticIdentitySha256"])
+        basis.build_text_waiver(self.source_package, self.anchor, self.candidate, clean, cal)
+        stale = copy.deepcopy(groups)
+        stale[0]["english"] = "You may be afraid."
+        wrong_units = copy.deepcopy(groups)
+        wrong_units[0]["sourceUnitIds"] = groups[1]["sourceUnitIds"]
+        for qc in (screen(stale), screen(wrong_units)):
+            self.assertEqual(qc["status"], "pass")
+            with self.assertRaisesRegex(ValueError, "different frozen English/source units"):
+                basis.build_text_waiver(self.source_package, self.anchor, self.candidate, qc, cal)
+        for key in ("englishSha256", "sourceUnitIdsSha256"):
+            missing = copy.deepcopy(clean)
+            del missing["results"][0][key]
+            with self.assertRaisesRegex(ValueError, "different frozen English/source units"):
+                basis.build_text_waiver(self.source_package, self.anchor, self.candidate, missing, cal)
+
     def test_condensed_spoken_groups_need_their_binding_and_spoken_calibration(self):
         group = self.candidate["groups"][0]
-        qc = text_qc(self.candidate)
+        qc = text_qc(self.candidate, self.anchor)
         qc["results"][0]["mode"] = "spoken_condensed"
         qc["condensedGroupIds"] = [group["translationGroupId"]]
         binding = {"schemaVersion": basis.CONDENSATION_BINDING_SCHEMA, "status": "pass", "issues": [],
@@ -191,7 +229,7 @@ class TextWaiverTests(unittest.TestCase):
             (dict(binding=dict(binding, groups=[dict(binding["groups"][0], finalSpokenTextSha256=sha("x"))])),
              "other spoken text"),
             (dict(qc=unlisted), "condensed-group list differs"),
-            (dict(qc=text_qc(self.candidate)), "no group was judged condensed"),
+            (dict(qc=text_qc(self.candidate, self.anchor)), "no group was judged condensed"),
         ]
         for kwargs, message in cases:
             with self.subTest(message=message), self.assertRaisesRegex(ValueError, message):
@@ -241,7 +279,7 @@ def audio_fixture(flagged=False):
                              for unit, value in zip(units, similarities)],
                  "humanListeningStatus": "pending"}
     qc = {"schemaVersion": "sermon-target-audio-auto-qc-v1", "locale": "ko", "status": "pass",
-          "implementationSha256": IMPLEMENTATION,
+          "implementationSha256": IMPLEMENTATION, "thresholds": dict(THRESHOLDS),
           "humanApproval": False, "mutatesAudio": False, "subtitleOnlyGroupIds": [], "repairGroupIds": [],
           "results": [{"groupId": unit["textGroupId"], "status": "pass", "issues": [], "asrDecision": "pass",
                        "asrPrimary": value, "asrSecondary": 0.96 if value < 0.88 else None,
@@ -296,6 +334,19 @@ class AudioWaiverTests(unittest.TestCase):
                                (track_check(package, implementationSha256="0" * 64), "implementationSha256")):
             with self.assertRaisesRegex(ValueError, message):
                 self.build(package, screening, qc, text, track_check=check)
+
+    def test_audio_qc_must_use_calibrated_release_thresholds(self):
+        package, screening, qc, text = audio_fixture()
+        permissive = copy.deepcopy(qc)
+        permissive["thresholds"]["maxLeadingSilenceSeconds"] = 10
+        missing = copy.deepcopy(qc)
+        del missing["thresholds"]
+        changed = copy.deepcopy(qc)
+        changed["thresholds"]["asrMinSimilarity"] = 0.01
+        for receipt in (permissive, missing, changed):
+            with self.assertRaisesRegex(ValueError, "thresholds differ"):
+                self.build(package, screening, receipt, text)
+        self.build(package, screening, qc, text)
 
     def test_audio_qc_from_older_qc_code_is_refused(self):
         package, screening, qc, text = audio_fixture()

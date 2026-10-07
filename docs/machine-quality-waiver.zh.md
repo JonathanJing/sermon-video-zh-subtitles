@@ -31,6 +31,10 @@
 | 豁免收据 | `scripts/machine_quality_waiver.py` | 汇总最终 QC 结果，按上面的 5% 规则决定这个语言是自动发布、只发文字还是暂停。先核对 QC 收据确实检查的是这份候选（每组译文哈希）和这份音频包（候选哈希、每句音频哈希），对不上就报错 |
 | 门禁收据 | `scripts/machine_quality_release_basis.py` | 生成并校验两种绑定到具体产物的收据：**译文豁免**（`sermon-target-language-machine-text-waiver-v1`，绑定一个 L2 候选；有精简组时还必须绑定一份通过的精简绑定，组别完全一致，并记录 `condensedGroupIds` 和 `condensationBindingJsonSha256`）和**试听豁免**（`sermon-target-language-machine-audio-waiver-v1`，绑定一个 L3 音频包、它的 ASR 筛查和口播稿的译文豁免） |
 
+文本 QC 逐组记录 `englishSha256` 与 `sourceUnitIdsSha256`，签发豁免时按候选的 source-unit 顺序与冻结 anchor 中的英文核对。旧 QC 收据缺少这些字段时须重新检查，不能沿用。音频 QC 的 `thresholds` 必须等于当前标准 `THRESHOLDS`，放宽设置的结果不能授权试听豁免。
+
+发布 v4 中，试听豁免必须同时绑定口播文本豁免；仅口播文本使用豁免、音频仍为人工审核的组合继续有效。
+
 ## 校准门槛
 
 只有满足以下全部条件，才允许豁免：

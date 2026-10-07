@@ -461,8 +461,8 @@
   },
   {
    "id": "human-spoken-machine-track",
-   "expected": "accept",
-   "schemaValid": true,
+   "expected": "reject",
+   "schemaValid": false,
    "release": {
     "schemaVersion": "sermon-target-language-release-package-v4",
     "packageId": "synthetic-machine-page-es-dual-script",
@@ -2027,6 +2027,120 @@
     "disclosure": {
      "locale": "ko",
      "text": "이 언어 콘텐츠는 기계 품질 검사 후 자동으로 게시되었으며 사람의 검토를 거치지 않았습니다.",
+     "english": "Published automatically after machine quality checks, without human review."
+    }
+   }
+  },
+  {
+   "id": "spoken-text-waiver-with-human-audio",
+   "expected": "accept",
+   "schemaValid": true,
+   "release": {
+    "schemaVersion": "sermon-target-language-release-package-v4",
+    "packageId": "synthetic-machine-page-es-dual-script",
+    "pageId": "synthetic-machine-page",
+    "sourceLocale": "en",
+    "targetLocale": "es",
+    "targetLanguageCandidateJsonSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "spokenTargetLanguageCandidateJsonSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "targetLanguageAudioPackageJsonSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "status": "published_http_verified",
+    "contentStatus": "machine_checked",
+    "audioStatus": "machine_checked",
+    "interfaceLocale": "es",
+    "contentLocale": "es",
+    "audioLocale": "es",
+    "assets": [
+     {
+      "role": "page",
+      "path": "/pages/synthetic-machine-page/es/index.html",
+      "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+     },
+     {
+      "role": "content",
+      "path": "/content/synthetic-machine-page/es.json",
+      "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+     },
+     {
+      "role": "audio",
+      "path": "/media/synthetic-machine-page/es.mp3",
+      "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+     },
+     {
+      "role": "captions",
+      "path": "/captions/synthetic-machine-page/es.json",
+      "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+     },
+     {
+      "role": "outline",
+      "path": "/study/synthetic-machine-page/es/outline.json",
+      "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+     },
+     {
+      "role": "meditation",
+      "path": "/study/synthetic-machine-page/es/meditation.json",
+      "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+     },
+     {
+      "role": "product_manifest",
+      "path": "/study/synthetic-machine-page/es/products.json",
+      "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+     }
+    ],
+    "httpVerification": {
+     "status": "pass",
+     "evidenceSha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+    },
+    "deviceAcceptance": {
+     "status": "not_run",
+     "evidenceSha256": null
+    },
+    "venueAcceptance": {
+     "status": "not_run",
+     "evidenceSha256": null
+    },
+    "issues": [],
+    "englishSourcePackageJsonSha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "sourceIdentity": {
+     "sourceId": "synthetic-source",
+     "sourceUrlHash": "9999999999999999999999999999999999999999999999999999999999999999",
+     "mediaSha256": "8888888888888888888888888888888888888888888888888888888888888888",
+     "durationSeconds": 10,
+     "window": {
+      "startSeconds": 0,
+      "endSeconds": 10,
+      "approvalReceiptSha256": "7777777777777777777777777777777777777777777777777777777777777777"
+     }
+    },
+    "fourProducts": {
+     "sourcePackageSha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+     "textCandidateSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "audioPackageSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+     "outlineArtifactSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+     "meditationArtifactSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+     "outlineReviewSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+     "meditationReviewSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+     "metadataApprovalSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+     "contentSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+     "candidateSha256": "6666666666666666666666666666666666666666666666666666666666666666"
+    },
+    "reviewBasis": {
+     "fullText": {
+      "kind": "machine_quality_waiver",
+      "receiptSha256": "0000000000000000000000000000000000000000000000000000000000000000"
+     },
+     "spokenText": {
+      "kind": "machine_quality_waiver",
+      "receiptSha256": "0000000000000000000000000000000000000000000000000000000000000000"
+     },
+     "audio": {
+      "kind": "human_review",
+      "receiptSha256": "0000000000000000000000000000000000000000000000000000000000000000"
+     }
+    },
+    "disclosure": {
+     "locale": "es",
+     "text": "Este contenido se publicó automáticamente tras un control de calidad por máquina, sin revisión humana.",
      "english": "Published automatically after machine quality checks, without human review."
     }
    }

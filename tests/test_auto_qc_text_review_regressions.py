@@ -53,6 +53,20 @@ class TextReviewRegressions(unittest.TestCase):
         self.assertEqual(rules.scripture_reference_problems(
             "Read John 10:30.", "Juan 10:30", "es"), [])
 
+    def test_book_citations_cannot_be_exempted_by_matching_source_clocks(self):
+        english = "Meet me at 10:30."
+        for locale, citation, clock in (
+            ("es", "Juan 10:30", "Nos reunimos a las 10:30."),
+            ("ko", "요한복음 10장 30절", "오전 10:30에 만납니다."),
+            ("zh-Hans", "约翰福音10章30节", "上午10:30见。"),
+        ):
+            with self.subTest(locale=locale):
+                self.assertEqual(rules.scripture_reference_problems(english, clock, locale), [])
+                for target in (citation, clock + " " + citation):
+                    self.assertIn("added reference 10:30", rules.scripture_reference_problems(
+                        english, target, locale))
+        self.assertEqual(rules.scripture_reference_problems(english, "10:30", "es"), [])
+
     def test_exact_short_copies_without_function_words(self):
         for english in ("Jesus saves", "God loves all", "Jesus Saves", "Grace transforms lives"):
             for target in (english, "Dice: " + english + "."):
