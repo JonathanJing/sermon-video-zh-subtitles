@@ -133,6 +133,27 @@ class TextReviewRegressions(unittest.TestCase):
         self.assertEqual(rules.number_problems("Chapter three, verse sixteen has three words.",
                                                "第三章第十六节有字。", "zh-Hans"), ["missing number 3"])
 
+    def test_a_book_bound_verse_keeps_its_book(self):
+        english = "As John 3:16 says, God loves the world."
+        for locale, bare, named in (("zh-Hans", "正如3:16所说，神爱世人。", "正如约翰福音3:16所说，神爱世人。"),
+                                    ("ko", "3장 16절 말씀처럼 하나님은 세상을 사랑하십니다.",
+                                     "요한복음 3장 16절 말씀처럼 하나님은 세상을 사랑하십니다."),
+                                    ("es", "Como dice 3:16, Dios ama al mundo.", "Como dice Juan 3:16, Dios ama al mundo.")):
+            with self.subTest(locale=locale):
+                self.assertEqual(rules.scripture_reference_problems(english, bare, locale), ["missing book for 3:16"])
+                self.assertEqual(rules.scripture_reference_problems(english, named, locale), [])
+        # The book named earlier in the group still identifies the passage.
+        self.assertEqual(rules.scripture_reference_problems(english, "在约翰福音中，3:16说神爱世人。", "zh-Hans"), [])
+
+    def test_chinese_one_needs_a_measure_word(self):
+        english = "You only have one life; remain faithful."
+        self.assertEqual(rules.number_problems(english, "你只有两条生命，但要一直忠心。", "zh-Hans"),
+                         ["missing number 1"])
+        self.assertEqual(rules.number_problems(english, "你只有一条生命，要一直忠心。", "zh-Hans"), [])
+        for text in ("一起祷告", "一样的爱", "一切都好", "一直忠心"):
+            self.assertEqual(rules.chinese_number_count(text, 1), 0, text)
+        self.assertEqual(rules.chinese_number_count("神是一。", 1), 1)
+
     def test_terminology_needs_the_complete_term(self):
         policy = {"terminology": {"properNames": [{"source": "Anna", "target": "Ana"},
                                                   {"source": "Paul", "target": "바울"}], "seriesNames": []}}

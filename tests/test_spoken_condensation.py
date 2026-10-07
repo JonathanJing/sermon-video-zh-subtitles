@@ -17,7 +17,8 @@ IDENTITY = {"targetLocale": LOCALE, "adapterId": "zh-tts", "adapterVersion": "1"
             "conditioningSha256": "b" * 64, "languageParameter": "zh", "normalizationPolicySha256": "c" * 64}
 RATE = {"schemaVersion": predicted.RATE_SCHEMA, "locale": LOCALE, "secondsPerUnit": 0.35,
         "interceptSeconds": 0.2, "p90Factor": 1.0, "synthesisIdentity": IDENTITY}
-CONDENSER = {"backend": "fake-transport", "model": "fake-condenser"}
+CONDENSER = {"backend": "fake-transport", "model": "fake-condenser", "modelRevision": "r1",
+             "cacheNamespace": "condense-fixtures-v1", "settings": {"reasoningEffort": "medium"}}
 UNITS = [("u1", "Good morning, church."),
          ("u2", "I want to say this again, and I want to say it clearly."),
          ("u3", "Jesus has not forgotten you, he has not forgotten you at all, not for a single moment."),
@@ -205,8 +206,11 @@ class CondenseTests(unittest.TestCase):
             request, "神爱世人。", [{"fullTextSpan": "正如约翰福音3章16节所说，", "kind": "aside"}], LOCALE, None)))
 
     def test_condenser_identity_is_required(self):
-        with self.assertRaisesRegex(ValueError, "backend and model"):
-            condensation.condense(anchor(), candidate(), budget(), call=FakeCondenser(answer()), identity={})
+        for identity in ({}, {"backend": "fake-transport", "model": "fake-condenser"},
+                         {**CONDENSER, "settings": {}}, {**CONDENSER, "settings": {"temperature": float("nan")}}):
+            with self.subTest(identity=identity), self.assertRaisesRegex(ValueError, "modelRevision, cacheNamespace"):
+                condensation.condense(anchor(), candidate(), budget(), call=FakeCondenser(answer()),
+                                      identity=identity)
 
 
 class BindTests(unittest.TestCase):

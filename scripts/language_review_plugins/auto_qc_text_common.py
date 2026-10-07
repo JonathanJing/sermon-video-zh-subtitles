@@ -289,6 +289,13 @@ _ZH_DIGITS = "零一二三四五六七八九"
 _ZH_NUMBER_TOKEN = re.compile(r"[零〇一二两三四五六七八九十百千万亿壹贰叁肆伍陆柒捌玖拾佰仟萬億廿卅]+(?:点[零〇一二两三四五六七八九壹贰叁肆伍陆柒捌玖]+)?")
 
 
+_ZH_MEASURE_WORDS = (r"\s*(?:个|位|次|条|件|天|年|月|日|周|星期|本|种|句|章|节|段|名|人|只|头|口|张|把|间|座|封|"
+                     r"首|声|步|遍|岁|元|块|分钟|分|秒|小时|层|群|对|双|匹|棵|颗|部|台|辆|艘|架|杯|碗|瓶|家|所|"
+                     r"项|点|生|世|代|批|堂|场|顿|夜|晚|处|片|股|根|支|枚|粒|滴|千|万|百|亿)"
+                     # "神是一", "合而为一": the number ends the clause.
+                     r"|\s*(?:[。，、；：！？,.;:!?」』”’）)]|$)")
+
+
 def chinese_numeral(value: int) -> str:
     if value < 10:
         return _ZH_DIGITS[value]
@@ -328,7 +335,15 @@ def chinese_number_count(text: str, value: int | str) -> int:
     standard = chinese_numeral(value)
     if standard[0] == "二" and len(standard) > 1 and standard[1] in "百千万":
         forms.add("两" + standard[1:])
-    return digits + sum(token in forms for token in _ZH_NUMBER_TOKEN.findall(text))
+    count = 0
+    for match in _ZH_NUMBER_TOKEN.finditer(text):
+        token = match.group()
+        # A lone 一 is also part of ordinary words (一直, 一起, 一样, 一切); it is
+        # the number one only before a measure word (一次, 一个人, 一条命) or at a clause end.
+        if token == "一" and not re.match(_ZH_MEASURE_WORDS, text[match.end():]):
+            continue
+        count += token in forms
+    return digits + count
 
 
 def chinese_number_present(text: str, value: int | str) -> bool:
@@ -591,6 +606,15 @@ def book_citations(text: str, locale: str) -> list[tuple[str | None, int, int | 
     return found
 
 
+def book_named(code: str, text: str, locale: str) -> bool:
+    """Whether the target names this book anywhere, in any of its listed names."""
+    if locale == "es":
+        names = [name for (_, name), book in _ES_BOOK_CODES.items() if book == code]
+        return any(re.search(r"\b" + re.escape(name) + r"\b", _fold(text)) for name in names)
+    codes = _KO_BOOK_CODES if locale == "ko" else _ZH_BOOK_CODES
+    return any(name in text for name, book in codes.items() if book == code)
+
+
 def english_spoken_clock_pairs(text: str) -> set[tuple[int, int]]:
     """Unambiguous spoken clock forms that can naturally become colon times."""
     pairs = set()
@@ -706,6 +730,12 @@ def scripture_reference_problems(english: str, target: str, locale: str) -> list
     problems += [f"book changed for {chapter}" + (f":{verse}" if verse is not None else "")
                  for code, chapter, verse, _ in citations
                  if code is not None and book_changed(code, chapter, verse)]
+    # A book-bound verse kept only as bare numbers ("John 3:16" -> "3:16") no
+    # longer names the passage; the book named elsewhere in the group still counts.
+    problems += [f"missing book for {chapter}:{verse}" for (chapter, verse), codes in sorted(english_books.items())
+                 if verse is not None and (chapter, verse) in target_pairs
+                 and not any((c, v) == (chapter, verse) for _, c, v, _ in citations)
+                 and not any(book_named(code, target, locale) for code in codes)]
     # A chapter-only citation the English never said ("요한복음 3장"). Without a
     # book name, a number the English said for another reason ("three sheets",
     # 종이 3장; "three chapters", 三章) is a counter, not a citation.

@@ -178,6 +178,9 @@ def build_text_waiver(source: dict, anchor: dict, candidate: dict, text_qc: dict
     _require(candidate.get("englishSourcePackageJsonSha256") == json_sha256(source)
              and candidate.get("anchorManifestSha256") == json_sha256(anchor),
              "Candidate belongs to another source or anchor")
+    # The anchor is checked here, not at Layer 4, so it must be the one the source package binds.
+    _require(((source.get("anchors") or {}).get("artifact") or {}).get("jsonSha256") == json_sha256(anchor),
+             "Anchor is not the one the English source package binds")
     groups = candidate["groups"]
     group_ids = [group["translationGroupId"] for group in groups]
     _require(text_qc.get("schemaVersion") == "sermon-target-text-auto-qc-v1"

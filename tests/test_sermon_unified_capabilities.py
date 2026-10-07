@@ -75,7 +75,8 @@ def test_machine_version_also_binds_machine_checked_schemas(config):
     config.write_text(json.dumps(value))
     result=c.inspect(config)
     assert result['targetSchemaVersions']['release']=='sermon-target-language-release-package-v3'
-    assert {'schema:machineCatalog','schema:machineRelease','schema:machineContent'}<=set(result['inputHashes'])
+    assert {'schema:machineSpeechJob','schema:machineCatalog','schema:machineRelease',
+            'schema:machineContent'}<=set(result['inputHashes'])
 
 
 @pytest.mark.parametrize('change,match', [('missing','No such file'),('wrong_source','attestation_binding'),('unverified','not_verified'),('route','route mismatch'),('schema','schema_versions')])

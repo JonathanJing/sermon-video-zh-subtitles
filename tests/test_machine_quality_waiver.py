@@ -68,9 +68,13 @@ class TextRuleTests(unittest.TestCase):
 
     def test_scripture_references_said_and_added(self):
         english = "In chapter three, verse four he says; see also Romans 2:1."
-        self.assertEqual(rules.scripture_reference_problems(english, "3장 4절에서, 또 2:1", "ko"), [])
-        self.assertEqual(rules.scripture_reference_problems(english, "capítulo tres, versículo cuatro; 2:1", "es"), [])
-        self.assertEqual(rules.scripture_reference_problems(english, "三章四节，也看2:1", "zh-Hans"), [])
+        self.assertEqual(rules.scripture_reference_problems(english, "3장 4절에서, 또 로마서 2:1", "ko"), [])
+        self.assertEqual(rules.scripture_reference_problems(
+            english, "capítulo tres, versículo cuatro; Romanos 2:1", "es"), [])
+        self.assertEqual(rules.scripture_reference_problems(english, "三章四节，也看罗马书2:1", "zh-Hans"), [])
+        # Romans 2:1 kept as bare numbers has lost its book.
+        self.assertEqual(rules.scripture_reference_problems(english, "3장 4절에서, 또 2:1", "ko"),
+                         ["missing book for 2:1"])
         self.assertIn("added reference 3:16",
                       rules.scripture_reference_problems("He said a few remain.", "몇 명 (요한복음 3장 16절)", "ko"))
         self.assertIn("missing reference 2:1", rules.scripture_reference_problems(english, "3장 4절", "ko"))
@@ -730,7 +734,8 @@ class CalibrationAndWaiverTests(unittest.TestCase):
         for locale in LOCALES:
             result = seeded.calibrate(locale, fixtures.groups(locale), policy=fixtures.policy(locale),
                                       call=always_pass, identity=fixtures.SEMANTIC_IDENTITY)
-            for kind in ("text.semantic_negation", "text.added_number", "text.wrong_ordinal"):
+            # dropped_half also fails the length screen, which is not credited either.
+            for kind in ("text.semantic_negation", "text.added_number", "text.wrong_ordinal", "text.dropped_half"):
                 row = result["kinds"][kind]
                 self.assertGreater(row["trials"], 0, (locale, kind))
                 self.assertEqual(row["detected"], 0, (locale, kind))

@@ -47,6 +47,8 @@ IMPLEMENTATION_FILES = (
     "scripts/target_audio_auto_qc.py",
     "scripts/target_audio_predicted_schedule.py",
     "scripts/auto_qc_seeded_errors.py",
+    # L4 accepts a condensed script on its hash-bound binding without rerunning these checks.
+    "scripts/spoken_condensation.py",
 )
 MAX_UNDUBBED_SHARE = 0.05
 MAX_SOURCE_FALLBACK_SHARE = 0.05
@@ -57,7 +59,7 @@ TEXT_KINDS = ("wrong_number", "added_reference", "wrong_book", "english_leak", "
               "dropped_name", "dropped_half", "semantic_negation", "added_number", "wrong_ordinal")
 AUDIO_KINDS = ("stretched", "silent", "clipped", "truncated", "wrong_sentence")
 # Seeded errors in condensed spoken groups: required when a QC run judged any.
-SPOKEN_KINDS = ("swapped_content", "added_content", "flipped_negation")
+SPOKEN_KINDS = ("swapped_content", "added_content", "flipped_negation", "dropped_claim")
 DISCLOSURE = {
     "zh-Hans": "本语言内容经机器质检后自动发布，未经人工审核。",
     "ko": "이 언어 콘텐츠는 기계 품질 검사 후 자동으로 게시되었으며 사람의 검토를 거치지 않았습니다.",

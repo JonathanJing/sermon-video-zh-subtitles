@@ -9,7 +9,7 @@
 
 配置字段（不接受其他字段）：
 
-- `schemaVersion`: `sermon-unified-consumer-capabilities-v1`、`-v2` 或 `-v3`。v3 在 v2 的 `targetSchemaVersions` 之外还绑定机器质检发布用的 `machineCatalog`（catalog v4）、`machineRelease`（release v4）和 `machineContent`（content v3）；人工语言仍按 catalog v3 / release v3 检查。
+- `schemaVersion`: `sermon-unified-consumer-capabilities-v1`、`-v2` 或 `-v3`。v3 在 v2 的 `targetSchemaVersions` 之外还绑定机器质检用的 `machineSpeechJob`（译文豁免写出的 speech job v3）、`machineCatalog`（catalog v4）、`machineRelease`（release v4）和 `machineContent`（content v3）；人工语言仍按 catalog v3 / release v3 检查。
 - `source`、`bindings`：与 unified manifest 一致的原始 source identity / window，及 `windowApproval`、`timelineReport`、`sourceDescriptor` 文件绑定。重用原人工窗口 receipt，检查 URL、媒体 hash、时长、窗口和原始 timeline。
 - `locales`: 非空 locale 映射；每项必须有 `policy`、`adapter`、`registry`、`voiceAttestation` 文件路径。严格 v3 policy 另加 `rubric`。调用现有完整 policy validator 并要求 productionPolicyReady。
 - `terminology`: 完整术语表路径，由 policy validator 检查其 hash 和术语覆盖。

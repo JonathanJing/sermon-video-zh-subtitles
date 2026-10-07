@@ -25,8 +25,10 @@ SCHEMAS = {
     'release': 'sermon-target-language-release-package-v3',
 }
 MACHINE_VERSION = 'sermon-unified-consumer-capabilities-v3'
-# v3 also binds the machine-checked delivery schemas; human-reviewed locales keep catalog v3 / release v3.
+# v3 also binds the machine-checked handoff and delivery schemas: a text waiver makes the
+# speech job v3; human-reviewed locales keep speech job v2, catalog v3 and release v3.
 MACHINE_SCHEMAS = {
+    'machineSpeechJob': 'sermon-target-language-speech-job-v3',
     'machineCatalog': 'sermon-multilingual-catalog-v4',
     'machineRelease': 'sermon-target-language-release-package-v4',
     'machineContent': 'sermon-full-video-text-content-v3',

@@ -84,11 +84,19 @@ def implementation_sha256() -> str:
 
 
 def condenser_identity(identity: dict) -> dict:
-    """The condensation runtime (backend, model, settings) recorded with its hash."""
-    if not (isinstance(identity, dict) and all(isinstance(identity.get(key), str) and identity[key]
-                                               for key in ("backend", "model"))):
-        raise ValueError("Condenser identity needs at least backend and model")
-    return {"identity": dict(identity), "sha256": _sha(identity)}
+    """The condensation runtime recorded with its hash.
+
+    Held to the back-translation identity's standard: backend, model,
+    modelRevision, cacheNamespace and non-empty settings, frozen as finite
+    JSON, so another revision or decoding setup is another runtime.
+    """
+    message = "Condenser identity needs backend, model, modelRevision, cacheNamespace and settings as finite JSON"
+    if not isinstance(identity, dict):
+        raise ValueError(message)
+    try:
+        return text_qc.semantic_identity(identity)
+    except ValueError as error:
+        raise ValueError(message) from error
 
 
 def requests(anchor: dict, candidate: dict, budget: dict) -> dict:

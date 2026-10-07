@@ -166,6 +166,16 @@ class TextWaiverTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "implementation other than the calibrated one"):
             basis.build_text_waiver(self.source_package, self.anchor, self.candidate, stale, calibration())
 
+    def test_anchor_must_be_the_one_the_source_package_binds(self):
+        # A shorter fabricated anchor, with a candidate built on it, cannot pass as this source's.
+        anchor = copy.deepcopy(self.anchor)
+        anchor["sourceUnits"] = anchor["sourceUnits"][:1]
+        candidate = copy.deepcopy(self.candidate)
+        candidate["anchorManifestSha256"] = basis.json_sha256(anchor)
+        with self.assertRaisesRegex(ValueError, "the English source package binds"):
+            basis.build_text_waiver(self.source_package, anchor, candidate, text_qc(candidate, self.anchor),
+                                    calibration())
+
     def test_text_qc_binds_actual_frozen_english_and_source_units(self):
         english = {unit["sourceUnitId"]: unit["english"] for unit in self.anchor["sourceUnits"]}
         groups = [{"groupId": group["translationGroupId"], "targetText": group["targetText"],

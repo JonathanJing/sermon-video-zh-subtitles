@@ -69,6 +69,10 @@ ORDINAL_FORMS = {"zh-Hans": {1: ("第一",), 2: ("第二",), 3: ("第三",)},
 ENGLISH_ORDINALS = {word: value for value, word in enumerate(
     ("first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth"), start=1)}
 ADDED_ORDINAL = {"zh-Hans": "第二，", "ko": "둘째, ", "es": "En segundo lugar, "}
+# An omission small enough to stay inside the length envelope is only the
+# judge's to catch, so dropped_half is credited on a back-translation issue alone
+# (a length failure on the same trial does not count); its trials still run.
+JUDGE_CREDITED_KINDS = ("dropped_half",)
 # Kinds only the back-translation check may detect: a surface failure is not credited.
 SEMANTIC_KINDS = ("semantic_negation", "added_number", "wrong_ordinal")
 # The book a wrong_book mutation substitutes (Romans when the citation is already John).
@@ -193,7 +197,8 @@ def mutate_spoken(group: dict, kind: str, locale: str, others: list[dict]) -> st
 
     Dropping redundancy is what condensation is allowed to do, so these kinds
     change what is said instead: another group's content, an added sentence,
-    or a reversed negation."""
+    a reversed negation, or a dropped clause (the claim, call or attribution
+    a condenser could mislabel as an allowed aside)."""
     text = group["targetText"]
     other = next((row["targetText"] for row in others
                   if row["groupId"] != group["groupId"] and row["targetText"] not in text), None)
@@ -206,6 +211,12 @@ def mutate_spoken(group: dict, kind: str, locale: str, others: list[dict]) -> st
             if old in text:
                 return text.replace(old, new, 1)
         return None
+    if kind == "dropped_claim":
+        clauses = [clause for clause in re.findall(r"[^，。；！？,.;!?]+[，。；！？,.;!?]*\s*", text) if clause.strip()]
+        if len(clauses) < 2:
+            return None
+        longest = max(range(len(clauses)), key=lambda index: len(clauses[index]))
+        return "".join(clauses[:longest] + clauses[longest + 1:]).strip().rstrip("，,；;、")
     raise ValueError(f"Unknown spoken kind: {kind}")
 
 
@@ -280,7 +291,7 @@ def calibrate_text(groups: list[dict], locale: str, *, policy: dict | None = Non
             problems, _ = text_qc.group_problems({**group, "targetText": mutated}, locale,
                                                  policy=policy, median=median, call=call)
             new = set(problems) - clean[group["groupId"]]
-            hit = _semantic_hit(new) if kind in SEMANTIC_KINDS else bool(new)
+            hit = _semantic_hit(new) if kind in SEMANTIC_KINDS + JUDGE_CREDITED_KINDS else bool(new)
             if hit:
                 detected += 1
             elif len(misses) < 5:
