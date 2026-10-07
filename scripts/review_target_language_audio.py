@@ -23,6 +23,7 @@ except ImportError:
 
 
 ROOT = Path(__file__).resolve().parents[1]
+SCREENING_VERSIONS = {"sermon-target-language-audio-screening-v1", "sermon-target-language-audio-screening-v2"}
 CHECKS = ("pronunciation", "naturalness", "completeness", "scripture",
           "voiceIdentity", "synchronization")
 
@@ -46,7 +47,8 @@ def validate(value: dict, schema: str) -> None:
 
 def queue(package: dict, screening: dict) -> list[str]:
     validate(package, "sermon-target-language-audio-package-v1.schema.json")
-    validate(screening, "sermon-target-language-audio-screening-v1.schema.json")
+    require(screening.get("schemaVersion") in SCREENING_VERSIONS, "Unsupported audio screening receipt")
+    validate(screening, screening["schemaVersion"] + ".schema.json")
     unit_ids = [row["textGroupId"] for row in package["units"]]
     require(package["status"] in {"candidate", "machine_screened"}
             and package["humanReview"]["status"] == "pending"

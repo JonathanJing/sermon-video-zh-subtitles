@@ -1,5 +1,6 @@
 import Foundation
 import AVFoundation
+import CryptoKit
 import TongxingCore
 import XCTest
 @testable import Tongxing
@@ -881,6 +882,183 @@ private final class CandidateAppModelProtocol: URLProtocol {
             try? Data(contentsOf: $0.appendingPathComponent(String(url.path.dropFirst())))
         } : nil
         let response = HTTPURLResponse(url: url, statusCode: bytes == nil ? 404 : 200, httpVersion: "HTTP/1.1", headerFields: nil)!
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        if let bytes { client?.urlProtocol(self, didLoad: bytes) }
+        client?.urlProtocolDidFinishLoading(self)
+    }
+    override func stopLoading() { }
+}
+
+/// Synthetic bound release/audio remain usable while both transcript assets fail.
+@MainActor
+final class MachineDisclosureTests: XCTestCase {
+    func testMachineCatalogFallbackNoticeAndMissingCatalogCompatibility() async throws {
+        let support = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [MachineDisclosureProtocol.self]
+        let session = URLSession(configuration: config)
+        let suite = "Tongxing-Machine-Catalog-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        let model = AppModel(supportDirectory: support,
+                             contentOrigin: URL(string: "https://ai-for-god-sermon-audio-dev.web.app")!,
+                             session: session, statisticsDefaults: defaults,
+                             applicationBundleIdentifier: "com.jonathanjing.tongxing.beta")
+        defer {
+            model.playback.clear(); session.invalidateAndCancel()
+            MachineDisclosureProtocol.install([:])
+            defaults.removePersistentDomain(forName: suite)
+            try? FileManager.default.removeItem(at: support)
+        }
+        let hash = String(repeating: "a", count: 64)
+        let catalog = try JSONSerialization.data(withJSONObject: [
+            "schemaVersion": MultilingualCatalog.dualScriptSchemaVersion,
+            "generatedAt": "2026-10-07T00:00:00Z", "defaultPageId": "fallback-page",
+            "pages": [["id": "fallback-page", "title": "Synthetic human text", "date": "2026-10-04",
+                       "sourceLocale": "en", "sourceIdentitySha256": hash, "defaultTargetLocale": "zh-Hans",
+                       "targets": ["zh-Hans": ["releasePackageUrl": "/releases-v2/fallback-page/zh-Hans.json",
+                                               "releasePackageJsonSha256": hash, "contentStatus": "human_reviewed",
+                                               "audioStatus": "unavailable", "capabilities": ["text"]]]]]
+        ])
+        // Both invalid v4 data and a server error preserve v3 while exposing the degradation.
+        for status in [200, 503] {
+            MachineDisclosureProtocol.install(["/multilingual-v3.json": catalog,
+                                               "/multilingual-v4.json": Data("invalid".utf8)],
+                                              statuses: ["/multilingual-v4.json": status])
+            await model.refresh()
+            XCTAssertEqual(model.multilingualCatalog?.schemaVersion, MultilingualCatalog.dualScriptSchemaVersion)
+            XCTAssertTrue(model.multilingualNotice?.contains("机器质检语言目录") == true)
+            XCTAssertTrue(model.multilingualNotice?.contains("刷新重试") == true)
+        }
+        // An ordinary v4 404 is an older site's supported protocol, and clears the earlier notice.
+        MachineDisclosureProtocol.install(["/multilingual-v3.json": catalog])
+        await model.refresh()
+        XCTAssertNotNil(model.multilingualCatalog)
+        XCTAssertNil(model.multilingualNotice)
+    }
+
+    func testAudioDisclosureSurvivesTranscriptFailureAndRejectsStaleSelections() async throws {
+        let support = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [MachineDisclosureProtocol.self]
+        let session = URLSession(configuration: config)
+        let suite = "Tongxing-Machine-Disclosure-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        let model = AppModel(supportDirectory: support, contentOrigin: URL(string: "https://example.invalid")!,
+                             session: session, statisticsDefaults: defaults)
+        defer {
+            model.playback.clear(); session.invalidateAndCancel()
+            MachineDisclosureProtocol.install([:])
+            defaults.removePersistentDomain(forName: suite)
+            try? FileManager.default.removeItem(at: support)
+        }
+        func json(_ value: Any) throws -> Data { try JSONSerialization.data(withJSONObject: value, options: [.sortedKeys]) }
+        func hash(_ data: Data) -> String { SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined() }
+        let fixtureURL = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("Core/Tests/TongxingCoreTests/Fixtures/shared-machine-checked-contracts.json")
+        let fixture = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: fixtureURL)) as? [String: Any])
+        let rows = try XCTUnwrap(fixture["releases"] as? [[String: Any]])
+        let esRow = try XCTUnwrap(rows.first { $0["id"] as? String == "machine-checked-es" })
+        let es = try XCTUnwrap(esRow["release"] as? [String: Any])
+        let disclosure = try XCTUnwrap(es["disclosure"] as? [String: String])
+        let sourceIdentity = try XCTUnwrap(es["englishSourcePackageJsonSha256"] as? String)
+        let identity = try XCTUnwrap(es["sourceIdentity"] as? [String: Any])
+        let sourceMedia = try XCTUnwrap(identity["mediaSha256"] as? String)
+        // One tenth of a second of encoded synthetic silence, pre-cached to avoid media transfer.
+        let audioDirectory = support.appendingPathComponent("MultilingualCatalog/Audio")
+        try FileManager.default.createDirectory(at: audioDirectory, withIntermediateDirectories: true)
+        let audio = try XCTUnwrap(Data(base64Encoded: "SUQzBAAAAAAAIlRTU0UAAAAOAAADTGF2ZjYzLjEuMTAxAAAAAAAAAAAAAAD/4xjEAAAAA0gAAAAATEFNRTQuMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/4xjEOwAAA0gAAAAAVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/4xjEdgAAA0gAAAAAVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/4xjEsQAAA0gAAAAAVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVU="))
+        let audioHash = hash(audio)
+        try audio.write(to: audioDirectory.appendingPathComponent("\(audioHash).mp3"))
+        var files: [String: Data] = [:]
+        var pages: [[String: Any]] = []
+        for pageID in ["synthetic-machine-page", "synthetic-second-page"] {
+            var targets: [String: Any] = [:]
+            for locale in ["es", "zh-Hans"] {
+                let row = try XCTUnwrap(rows.first { $0["id"] as? String == "machine-checked-\(locale)" })
+                var release = try XCTUnwrap(row["release"] as? [String: Any])
+                release["pageId"] = pageID
+                release["packageId"] = "\(pageID)-\(locale)-dual-script"
+                release["assets"] = (release["assets"] as! [[String: Any]]).map { asset -> [String: Any] in
+                    var asset = asset
+                    asset["path"] = (asset["path"] as! String).replacingOccurrences(of: "synthetic-machine-page", with: pageID)
+                    if asset["role"] as? String == "audio" {
+                        asset["path"] = "/media/\(pageID)/\(locale).mp3"
+                        asset["sha256"] = audioHash
+                    }
+                    return asset
+                }
+                let bytes = try json(release)
+                let path = "/releases-v4/\(pageID)/\(locale).json"
+                files[path] = bytes
+                targets[locale] = ["releasePackageUrl": path, "releasePackageJsonSha256": hash(bytes),
+                                   "contentStatus": "machine_checked", "audioStatus": "machine_checked",
+                                   "capabilities": ["text", "captions", "audio"]]
+            }
+            pages.append(["id": pageID, "title": "Synthetic fixture", "date": "2026-10-04", "sourceLocale": "en",
+                          "sourceIdentitySha256": sourceIdentity, "sourceMediaSha256": sourceMedia,
+                          "defaultTargetLocale": "es", "targets": targets])
+        }
+        func catalog() throws -> Data {
+            try json(["schemaVersion": MultilingualCatalog.machineCheckedSchemaVersion,
+                      "generatedAt": "2026-10-07T00:00:00Z", "defaultPageId": "synthetic-machine-page", "pages": pages])
+        }
+        files["/multilingual-v4.json"] = try catalog()
+        MachineDisclosureProtocol.install(files)
+        await model.refresh()
+        XCTAssertNotNil(model.multilingualCatalog, model.multilingualNotice ?? "Catalog failed")
+        for _ in 0..<200 where model.publishedAudioSha256 == nil {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        XCTAssertEqual(model.publishedAudioSha256, audioHash)
+        await model.loadSelectedPublishedTranscript()
+        XCTAssertNil(model.currentPublishedTranscript)
+        XCTAssertNotNil(model.publishedTranscriptError)
+        XCTAssertEqual(model.selectedMachineCheckedDisclosure, disclosure["text"])
+
+        model.selectPublishedContentLanguage("zh-Hans")
+        XCTAssertNil(model.selectedMachineCheckedDisclosure, "An es release cannot disclose a zh-Hans selection")
+        model.selectPublishedContentLanguage("es")
+        for _ in 0..<200 where model.publishedAudioSha256 == nil {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        XCTAssertEqual(model.selectedMachineCheckedDisclosure, disclosure["text"])
+        let otherPage = try XCTUnwrap(model.independentPages.first { $0.id == "synthetic-second-page" })
+        model.selectPublishedPage(otherPage)
+        XCTAssertNil(model.selectedMachineCheckedDisclosure, "Disclosure must not leak to another page")
+        let firstPage = try XCTUnwrap(model.independentPages.first { $0.id == "synthetic-machine-page" })
+        model.selectPublishedPage(firstPage)
+        for _ in 0..<200 where model.publishedAudioSha256 == nil {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        XCTAssertEqual(model.selectedMachineCheckedDisclosure, disclosure["text"])
+        // A changed catalog hash refuses the old release rather than retaining its disclosure.
+        var targets = pages[0]["targets"] as! [String: Any]
+        var changed = targets["es"] as! [String: Any]
+        changed["releasePackageJsonSha256"] = String(repeating: "f", count: 64)
+        targets["es"] = changed; pages[0]["targets"] = targets
+        files["/multilingual-v4.json"] = try catalog()
+        MachineDisclosureProtocol.install(files)
+        await model.refresh()
+        XCTAssertNil(model.selectedMachineCheckedDisclosure, "Disclosure is bound to the release hash")
+    }
+}
+
+private final class MachineDisclosureProtocol: URLProtocol {
+    private static let lock = NSLock()
+    private static var files: [String: Data] = [:]
+    private static var statuses: [String: Int] = [:]
+    static func install(_ value: [String: Data], statuses responseStatuses: [String: Int] = [:]) {
+        lock.lock(); files = value; statuses = responseStatuses; lock.unlock()
+    }
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override func startLoading() {
+        Self.lock.lock()
+        let bytes = Self.files[request.url?.path ?? ""]
+        let status = Self.statuses[request.url?.path ?? ""] ?? (bytes == nil ? 404 : 200)
+        Self.lock.unlock()
+        guard let url = request.url else { client?.urlProtocol(self, didFailWithError: URLError(.badURL)); return }
+        let response = HTTPURLResponse(url: url, statusCode: status, httpVersion: "HTTP/1.1", headerFields: nil)!
         client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
         if let bytes { client?.urlProtocol(self, didLoad: bytes) }
         client?.urlProtocolDidFinishLoading(self)

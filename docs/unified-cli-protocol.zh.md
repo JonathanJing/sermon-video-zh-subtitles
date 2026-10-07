@@ -40,7 +40,7 @@
 | `translation_review` | layer2 | 该语各组机器链结束 | `sermon-target-language-human-review-receipt-v1` | 批准候选哈希。豁免保持 `humanApproval=false` |
 | `layer3_prepare` | layer3 | 该语译文已批准，声音授权覆盖同一 locale | `sermon-target-language-speech-job-v2` | 无 |
 | `layer3_unit` | layer3 | speech job 已冻结 | 单元音频。未变单元 `resynthesis=0` | 无 |
-| `layer3_screen` | layer3 | 整轨已组装 | `sermon-target-language-audio-screening-v1` | 疑点留在裁定队列 |
+| `layer3_screen` | layer3 | 整轨已组装 | `sermon-target-language-audio-screening-v2`（v1 仍可读） | 疑点留在裁定队列 |
 | `listen_review` | layer3 | 筛查已完成 | `sermon-target-language-audio-human-review-receipt-v2` | 首次或时间线变化后的 1 倍整轨 |
 | `study_product` | outline 或 reflection | 该语候选已批准 | `sermon-app-study-product-v1`，一个对象一种产品、一种语言 | 各自的内容审核 |
 | `publish_endpoint` | layer4 | 该端点要求的包和批准都在 | `sermon-target-language-release-package-v2` 与 `sermon-target-language-release-receipt-v1` | 发布授权，以及该端的人工查看 |
@@ -91,7 +91,7 @@ job 和命令结果里的产物引用只含种类、schema 版本和 SHA-256。�
 | `target_language_human_review` | `sermon-target-language-human-review-receipt-v1` | `translation_review` |
 | `speech_job` | `sermon-target-language-speech-job-v2` | `layer3_prepare` |
 | `target_language_audio_package` | `sermon-target-language-audio-package-v1` | `layer3_unit` 组装之后 |
-| `target_language_audio_screening` | `sermon-target-language-audio-screening-v1` | `layer3_screen` |
+| `target_language_audio_screening` | `sermon-target-language-audio-screening-v2`（v1 仍可读） | `layer3_screen` |
 | `target_language_audio_human_review` | `sermon-target-language-audio-human-review-receipt-v2` | `listen_review` |
 | `study_product` | `sermon-app-study-product-v1` | `study_product` |
 | `release_package` | `sermon-target-language-release-package-v2` | `publish_endpoint` |

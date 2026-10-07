@@ -1,0 +1,279 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-target-language-machine-audio-waiver-v1.schema.json",
+  "title": "Machine quality waiver for one immutable target-language audio package",
+  "description": "A non-human listening basis. The audio package keeps its builder status with humanApproval false; the page must show the disclosure.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "reviewKind",
+    "humanApproval",
+    "decision",
+    "targetLocale",
+    "englishSourcePackageJsonSha256",
+    "targetLanguageCandidateJsonSha256",
+    "targetLanguageAudioPackageJsonSha256",
+    "trackSha256",
+    "textWaiverJsonSha256",
+    "machineScreeningStatus",
+    "machineScreeningReceiptJsonSha256",
+    "secondaryAsrModel",
+    "reviewedUnitIds",
+    "unitResults",
+    "audioQcJsonSha256",
+    "trackCheckJsonSha256",
+    "calibration",
+    "implementationSha256",
+    "rules",
+    "disclosure",
+    "createdAt",
+    "postPublicationSpotCheck"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "sermon-target-language-machine-audio-waiver-v1"
+    },
+    "reviewKind": {
+      "const": "machine_quality_waiver"
+    },
+    "humanApproval": {
+      "const": false
+    },
+    "decision": {
+      "const": "machine_quality_waived"
+    },
+    "targetLocale": {
+      "enum": [
+        "zh-Hans",
+        "ko",
+        "es"
+      ]
+    },
+    "englishSourcePackageJsonSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "targetLanguageCandidateJsonSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "targetLanguageAudioPackageJsonSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "trackSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "textWaiverJsonSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "machineScreeningStatus": {
+      "enum": [
+        "pass",
+        "requires_review"
+      ]
+    },
+    "machineScreeningReceiptJsonSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "secondaryAsrModel": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1
+    },
+    "reviewedUnitIds": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "unitResults": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "textGroupId",
+          "audioSha256",
+          "status",
+          "asr",
+          "primarySimilarity",
+          "secondarySimilarity",
+          "failedAttempts"
+        ],
+        "properties": {
+          "textGroupId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "audioSha256": {
+            "$ref": "#/$defs/sha256"
+          },
+          "status": {
+            "const": "pass"
+          },
+          "asr": {
+            "enum": [
+              "primary_pass",
+              "secondary_pass"
+            ]
+          },
+          "primarySimilarity": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "secondarySimilarity": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 1
+          },
+          "failedAttempts": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 4
+          }
+        }
+      }
+    },
+    "audioQcJsonSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "trackCheckJsonSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "calibration": {
+      "$ref": "#/$defs/calibration"
+    },
+    "implementationSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "rules": {
+      "$ref": "#/$defs/rules"
+    },
+    "disclosure": {
+      "$ref": "#/$defs/disclosure"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "postPublicationSpotCheck": {
+      "const": "owner_spot_check_after_release"
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "calibration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "jsonSha256",
+        "implementationSha256",
+        "semanticChecksIncluded",
+        "overallDetectionRate",
+        "minimumKindDetectionRate",
+        "cleanFalsePositiveRate",
+        "runtimeIdentitySha256"
+      ],
+      "properties": {
+        "jsonSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "implementationSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "semanticChecksIncluded": {
+          "const": true
+        },
+        "overallDetectionRate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "minimumKindDetectionRate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "cleanFalsePositiveRate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "runtimeIdentitySha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "rules": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "maxRepairAttemptsPerSentence",
+        "calibration"
+      ],
+      "properties": {
+        "maxRepairAttemptsPerSentence": {
+          "const": 4
+        },
+        "calibration": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "overallDetectionRate",
+            "perKindDetectionRate",
+            "maxCleanFalsePositiveRate"
+          ],
+          "properties": {
+            "overallDetectionRate": {
+              "type": "number"
+            },
+            "perKindDetectionRate": {
+              "type": "number"
+            },
+            "maxCleanFalsePositiveRate": {
+              "type": "number"
+            }
+          }
+        }
+      }
+    },
+    "disclosure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "locale",
+        "text",
+        "english"
+      ],
+      "properties": {
+        "locale": {
+          "enum": [
+            "zh-Hans",
+            "ko",
+            "es"
+          ]
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1
+        },
+        "english": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

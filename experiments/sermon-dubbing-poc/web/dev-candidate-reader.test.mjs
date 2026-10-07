@@ -112,7 +112,7 @@ test('explicit development page flags are filtered before release requests', asy
   catalog.pages[0].diagnosticOnly = true;
   f.files.set('/multilingual-v3.json', JSON.stringify(catalog));
   assert.deepEqual((await loadPublishedWeeks(f.fetchImpl)).weeks, []);
-  assert.deepEqual(f.requests, ['/multilingual-v3.json']);
+  assert.deepEqual(f.requests, ['/multilingual-v4.json', '/multilingual-v3.json']);
 });
 
 const frozenRoot = process.env.TONGXING_DEV_CATALOG_FIXTURE_ROOT;
