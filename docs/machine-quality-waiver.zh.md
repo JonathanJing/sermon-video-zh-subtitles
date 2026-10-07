@@ -92,3 +92,4 @@ python scripts/machine_quality_release_basis.py audio --package audio-package.js
 4. 只显字幕的句子、改显英文的句子和只发文字的语言（`audio_unavailable`）。
 5. 口播修订 prompt 读取 `maxSpeechUnits`。
 6. 英文转写审核、页面信息、大纲与默想的机器检查，以及每周发布授权改为长期授权。
+7. 严格链（`sermon_strict_candidate_bridge` / `sermon_strict_gate_admission`）的门禁决定把收据记为人工批准，所以严格链目前只收人工收据，遇到译文豁免会以 `strict_bridge_requires_human_receipt` 拒绝。译文豁免目前只能走 `prepare_target_language_speech_job.py --text-release-basis`；严格链要接受豁免，门禁决定需要单独记录豁免状态。
