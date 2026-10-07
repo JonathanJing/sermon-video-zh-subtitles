@@ -1,6 +1,6 @@
 import unittest
 
-from scripts.run_unittest_ci import case_costs, case_shard_assignments, module_name, timing_weights
+from scripts.run_unittest_ci import case_costs, case_shard_assignments, module_name, timing_profile, timing_weights
 
 
 class ShardAssignmentTests(unittest.TestCase):
@@ -52,6 +52,16 @@ class ShardAssignmentTests(unittest.TestCase):
         costs = case_costs(["mod.A.test_big", "mod.A.test_small"], {"mod": 10.0}, {"mod": 2}, {"mod.A.test_big": 20.0})
 
         self.assertEqual(costs, [20.0, 0.001])
+
+    def test_v1_profiles_load_as_v2_without_slow_cases(self):
+        modules = {"mod": {"seconds": 1.0, "tests": 1}}
+        self.assertEqual(timing_profile({"schemaVersion": 1, "modules": modules}),
+            {"schemaVersion": 2, "modules": modules, "slowCases": {}})
+        profile = {"schemaVersion": 2, "modules": modules, "slowCases": {"mod.A.test": 6.0}}
+        self.assertIs(timing_profile(profile), profile)
+        for invalid in ({"schemaVersion": 1, "modules": modules, "slowCases": {}}, {"schemaVersion": 3, "modules": modules}, {"modules": modules}):
+            with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                timing_profile(invalid)
 
     def test_invalid_slow_case_timings_are_rejected(self):
         for seconds in (-1, float("nan"), float("inf")):

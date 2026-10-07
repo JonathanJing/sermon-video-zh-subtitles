@@ -1241,7 +1241,7 @@
       "tests": 9
     }
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "slowCases": {
     "test_canonical_layer2_controller.CanonicalLayer2ControllerTests.test_three_synthetic_locales_use_the_same_fixed_producer_gates_and_capacity": 6.247,
     "test_layer2_large_fan_in.LargeLayer2FanInTests.test_129_group_actual_producer_can_assemble_and_resume_without_calls": 6.71,

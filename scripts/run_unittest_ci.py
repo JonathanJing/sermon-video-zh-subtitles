@@ -53,6 +53,22 @@ def timing_weights(test_counts: dict[str, int], previous: dict) -> dict[str, flo
     }
 
 
+# Version 2 adds slowCases; version 1 module-only profiles still load.
+REPORT_SCHEMA_VERSION = 2
+
+
+def timing_profile(previous: dict) -> dict:
+    """Read a v1 or v2 timing profile as v2; v1 has no per-case timings."""
+    version = previous.get("schemaVersion")
+    if version == 1:
+        if "slowCases" in previous:
+            raise ValueError("Version 1 timing profiles cannot carry slowCases")
+        return {**previous, "schemaVersion": REPORT_SCHEMA_VERSION, "slowCases": {}}
+    if version != REPORT_SCHEMA_VERSION:
+        raise ValueError(f"Unsupported timing profile schema version: {version!r}")
+    return previous
+
+
 # Cases at least this slow are reported by id, so one module's slow and fast
 # cases can be spread separately.
 SLOW_CASE_SECONDS = 5.0
@@ -145,7 +161,7 @@ def main() -> int:
         raise SystemExit("No root tests discovered")
 
     if args.weights:
-        previous = json.loads(args.weights.read_text(encoding="utf-8"))
+        previous = timing_profile(json.loads(args.weights.read_text(encoding="utf-8")))
         weights = timing_weights(test_counts, previous)
         slow_cases = previous.get("slowCases", {})
         missing = sorted(set(modules) - previous["modules"].keys())
@@ -174,7 +190,7 @@ def main() -> int:
     started = time.monotonic()
     result = unittest.TextTestRunner(resultclass=TimedResult).run(unittest.TestSuite(selected))
     report = {
-        "schemaVersion": 1,
+        "schemaVersion": REPORT_SCHEMA_VERSION,
         "shardIndex": args.shard_index,
         "shardCount": args.shard_count,
         "elapsedSeconds": round(time.monotonic() - started, 3),
