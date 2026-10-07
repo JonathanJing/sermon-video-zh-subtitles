@@ -1,16 +1,25 @@
 #!/usr/bin/env python3
-"""Expose validated published alignment to clients consuming the v3 catalog.
+"""Expose validated published alignment to clients through the multilingual catalog.
 
-Run against a new Hosting candidate. Only the catalog is changed; sidecars,
-reviewed release packages, content, audio, and indexes remain byte-identical.
+Run against a new Hosting candidate. Only the catalogs are changed; sidecars,
+published release packages, content, audio, and indexes remain byte-identical.
+
+Without multilingual-v4.json only the v3 catalog is rewritten, as before. With it,
+the binding is applied to v4 (machine-checked locales included) and v3 is rewritten
+as exactly v4's human-only projection, so the two catalogs never diverge.
 """
 import argparse
 import copy
 import hashlib
 import json
+import os
 from pathlib import Path
 
 from build_published_english_reference import public_path, read_json, require
+import delivery_contract
+
+V3, V4 = 'multilingual-v3.json', 'multilingual-v4.json'
+PUBLISHED = {'human_reviewed', 'machine_checked'}
 
 
 def digest(path):
@@ -19,13 +28,31 @@ def digest(path):
 
 
 def bind_catalog(public, page_id):
+    """The rebound v3 catalog (v4's human-only projection when v4 is present)."""
+    return bind_catalogs(public, page_id)[V3]
+
+
+def bind_catalogs(public, page_id):
+    """Return {catalog file name: rebound catalog}; v4 is included only when published."""
     public = Path(public).resolve()
-    catalog_path = public / 'multilingual-v3.json'
-    # v3 must stay the human-only projection of v4; this binder only rewrites v3.
-    require(not (public / 'multilingual-v4.json').exists(),
-            'Snapshot carries multilingual-v4.json; bind alignment through the four-layer seal')
-    catalog = read_json(catalog_path)
-    require(catalog.get('schemaVersion') == 'sermon-multilingual-catalog-v3', 'Expected v3 catalog')
+    v3 = read_json(public / V3)
+    require(v3.get('schemaVersion') == 'sermon-multilingual-catalog-v3', 'Expected v3 catalog')
+    if not (public / V4).exists():
+        return {V3: _bind(public, v3, page_id, machine=False)}
+    v4 = read_json(public / V4)
+    require(v4.get('schemaVersion') == delivery_contract.CATALOG_V4, 'Expected v4 catalog')
+    delivery_contract.validate_catalog_schema(v4)
+    bound = delivery_contract.validate_catalog_schema(_bind(public, v4, page_id, machine=True))
+    projection = delivery_contract.project_human_catalog(bound)
+    # main() writes v3 before v4, so an interrupted run leaves v3 already equal to the
+    # new projection; any other v3 was changed outside the seal and is refused.
+    require(v3 in (delivery_contract.project_human_catalog(v4), projection),
+            'multilingual-v3.json is not the human-only projection of multilingual-v4.json')
+    return {V4: bound, V3: projection}
+
+
+def _bind(public, catalog, page_id, *, machine):
+    catalog = copy.deepcopy(catalog)
     pages = [p for p in catalog['pages'] if p['id'] == page_id]
     require(len(pages) == 1, 'Page must occur exactly once')
     page = pages[0]
@@ -39,9 +66,21 @@ def bind_catalog(public, page_id):
         evidence = sidecar['targets'][locale]
         require(evidence['releasePackageJsonSha256'] == target['releasePackageJsonSha256'], 'Release binding mismatch')
         release = read_json(public_path(public, target['releasePackageUrl']), sha256=target['releasePackageJsonSha256'])
-        require(release.get('status') == 'published_http_verified'
-                and release.get('contentStatus') == target.get('contentStatus') == 'human_reviewed'
-                and release.get('audioStatus') == target.get('audioStatus') == 'human_reviewed'
+        if machine:
+            # Statuses must already agree between release and catalog; nothing is
+            # promoted, so a machine-checked target stays machine_checked under /releases-v4/.
+            reviewed = (release.get('contentStatus') == target.get('contentStatus') in PUBLISHED
+                        and release.get('audioStatus') == target.get('audioStatus') in PUBLISHED
+                        and (release.get('schemaVersion') == delivery_contract.RELEASE_V4)
+                        == delivery_contract.machine_checked(target)
+                        and target['releasePackageUrl'] == delivery_contract.release_path(
+                            {**release, 'schemaVersion': release.get('schemaVersion')})
+                        and (release.get('schemaVersion') not in delivery_contract.FOUR_PRODUCT_RELEASES
+                             or release.get('englishSourcePackageJsonSha256') == page['sourceIdentitySha256']))
+        else:
+            reviewed = (release.get('contentStatus') == target.get('contentStatus') == 'human_reviewed'
+                        and release.get('audioStatus') == target.get('audioStatus') == 'human_reviewed')
+        require(release.get('status') == 'published_http_verified' and reviewed
                 and release.get('pageId') == page_id
                 and release.get('targetLocale') == release.get('audioLocale') == release.get('contentLocale') == locale,
                 'Unreviewed or mismatched release')
@@ -64,6 +103,12 @@ def bind_catalog(public, page_id):
                 and binding.get('sourceStartSeconds') == 0
                 and binding.get('sourceEndSeconds') == content.get('durationSeconds')
                 and content['durationSeconds'] > 0, 'Fingerprint source/window mismatch')
+        if machine:
+            # Landmark alignment maps the dub 1:1 onto source time; a dub on its own
+            # clock (e.g. a condensed spoken script) cannot be located that way.
+            require(content.get('status') == release['contentStatus'], 'Content status differs from its release')
+            require(abs(content.get('audioDurationSeconds', content['durationSeconds'])
+                        - content['durationSeconds']) < .1, 'Dub is not on the source clock')
         require(source_sha in (None, binding['sourceSha256']), 'Locales have different media')
         source_sha = binding['sourceSha256']
         index = read_json(public_path(public, binding['indexUrl']), sha256=binding['indexSha256'])
@@ -82,17 +127,30 @@ def bind_catalog(public, page_id):
     return catalog
 
 
+def write_catalogs(public, catalogs, page_id):
+    """Replace each catalog atomically, v3 before v4 (see bind_catalogs)."""
+    rows = []
+    for name in (V3, V4):
+        if name not in catalogs:
+            continue
+        output = Path(public) / name
+        before = digest(output)
+        staged = output.with_name(f'.{name}.binding')
+        staged.write_text(json.dumps(catalogs[name], ensure_ascii=False, indent=2) + '\n')
+        os.replace(staged, output)
+        rows.append(dict(catalogPath=str(output), beforeSha256=before, afterSha256=digest(output), pageId=page_id,
+                         locales=list(next(p for p in catalogs[name]['pages'] if p['id'] == page_id)['targets'])))
+    return rows
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--public', required=True, type=Path)
     parser.add_argument('--page-id', required=True)
     args = parser.parse_args()
-    catalog = bind_catalog(args.public, args.page_id)
-    output = args.public / 'multilingual-v3.json'
-    before = digest(output)
-    output.write_text(json.dumps(catalog, ensure_ascii=False, indent=2) + '\n')
-    print(json.dumps(dict(catalogPath=str(output), beforeSha256=before, afterSha256=digest(output),
-                          pageId=args.page_id, locales=list(next(p for p in catalog['pages'] if p['id'] == args.page_id)['targets']))))
+    rows = write_catalogs(args.public, bind_catalogs(args.public, args.page_id), args.page_id)
+    # A v3-only snapshot keeps its single-catalog report shape.
+    print(json.dumps(rows[0] if len(rows) == 1 else dict(pageId=args.page_id, catalogs=rows)))
 
 
 if __name__ == '__main__':
