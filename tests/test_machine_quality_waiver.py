@@ -891,7 +891,7 @@ class CalibrationAndWaiverTests(unittest.TestCase):
                                       call=always_pass, identity=fixtures.SEMANTIC_IDENTITY)
             # dropped_half also fails the length screen, which is not credited either.
             for kind in ("text.semantic_negation", "text.added_number", "text.wrong_ordinal", "text.added_content",
-                         "text.dropped_half"):
+                         "text.swapped_name", "text.dropped_half"):
                 row = result["kinds"][kind]
                 self.assertGreater(row["trials"], 0, (locale, kind))
                 self.assertEqual(row["detected"], 0, (locale, kind))
@@ -901,6 +901,7 @@ class CalibrationAndWaiverTests(unittest.TestCase):
             self.assertEqual(good["kinds"]["text.added_number"]["rate"], 1.0)
             self.assertEqual(good["kinds"]["text.wrong_ordinal"]["rate"], 1.0)
             self.assertEqual(good["kinds"]["text.added_content"]["rate"], 1.0)
+            self.assertEqual(good["kinds"]["text.swapped_name"]["rate"], 1.0)
 
     def test_added_content_appends_another_sentence_without_a_number(self):
         others = [{"groupId": "g1", "english": "Two sons.", "targetText": "两个儿子。"},
@@ -909,6 +910,17 @@ class CalibrationAndWaiverTests(unittest.TestCase):
         group = {"groupId": "g0", "english": "Grace is a gift.", "targetText": "恩典是礼物。"}
         self.assertEqual(seeded.mutate_text(group, "added_content", "zh-Hans", None, others), "恩典是礼物。他为儿子祷告。")
         self.assertIsNone(seeded.mutate_text(group, "added_content", "zh-Hans", None))
+
+    def test_swapped_name_exchanges_two_named_roles(self):
+        policy = {"terminology": {"properNames": [{"source": "Abraham", "target": "亚伯拉罕"},
+                                                  {"source": "Isaac", "target": "以撒"}], "seriesNames": []}}
+        group = {"groupId": "g0", "english": "Abraham blessed Isaac.", "targetText": "亚伯拉罕祝福了以撒。"}
+        swapped = seeded.mutate_text(group, "swapped_name", "zh-Hans", policy)
+        self.assertEqual(swapped, "以撒祝福了亚伯拉罕。")
+        # Both names survive, so only the back-translation can catch it.
+        self.assertEqual(rules.name_problems(policy, group["english"], swapped), [])
+        self.assertIsNone(seeded.mutate_text({**group, "english": "Abraham prayed.", "targetText": "亚伯拉罕祷告。"},
+                                             "swapped_name", "zh-Hans", policy))
 
     def test_a_changed_ordinal_is_seeded(self):
         for locale, target, wrong in (("es", "el primer mandamiento", "el segundo mandamiento"),

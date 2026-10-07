@@ -245,5 +245,27 @@ class TextReviewRegressions(unittest.TestCase):
             self.assertEqual(rules.untranslated_problems(english, target, "es"), [])
 
 
+    def test_partial_english_copies_in_spanish(self):
+        english = "God will never abandon you, so keep walking in faith."
+        self.assertEqual(rules.untranslated_problems(english, "Dios will never abandon you, así que sigue caminando con fe.", "es"),
+                         ["English source phrase copied into target"])
+        self.assertEqual(rules.untranslated_problems(english, "Dios nunca te abandonará, así que sigue caminando en fe.", "es"), [])
+        # Names that read the same in both languages may run together.
+        policy = {"terminology": {"properNames": [{"source": "Paul", "target": "Paul"},
+                                                  {"source": "Silas", "target": "Silas"},
+                                                  {"source": "Timothy", "target": "Timothy"}], "seriesNames": []}}
+        self.assertEqual(rules.untranslated_problems("Greetings from Paul Silas Timothy.", "Saludos de Paul Silas Timothy.",
+                                                     "es", rules.shared_terms(policy)), [])
+
+    def test_clause_final_chinese_one_needs_a_numeric_reading(self):
+        # 始终如一 ends with 一 but says "consistent", not the quantity one.
+        self.assertEqual(rules.number_problems("You have one life and must remain faithful.", "你有生命，必须始终如一。",
+                                               "zh-Hans"), ["missing number 1"])
+        for english, target in (("God is one.", "神是一。"), ("They became one.", "他们合而为一。"),
+                                ("He is one of them.", "他是其中之一。"), ("You have one life.", "你只有一条命。")):
+            with self.subTest(target=target):
+                self.assertEqual(rules.number_problems(english, target, "zh-Hans"), [])
+
+
 if __name__ == "__main__":
     unittest.main()

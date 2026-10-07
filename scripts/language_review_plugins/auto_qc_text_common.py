@@ -313,9 +313,11 @@ _ZH_NUMBER_TOKEN = re.compile(r"[零〇一二两三四五六七八九十百千�
 
 _ZH_MEASURE_WORDS = (r"\s*(?:个|位|次|条|件|天|年|月|日|周|星期|本|种|句|章|节|段|名|人|只|头|口|张|把|间|座|封|"
                      r"首|声|步|遍|岁|元|块|分钟|分|秒|小时|层|群|对|双|匹|棵|颗|部|台|辆|艘|架|杯|碗|瓶|家|所|"
-                     r"项|点|生|世|代|批|堂|场|顿|夜|晚|处|片|股|根|支|枚|粒|滴|千|万|百|亿)"
-                     # "神是一", "合而为一": the number ends the clause.
-                     r"|\s*(?:[。，、；：！？,.;:!?」』”’）)]|$)")
+                     r"项|点|生|世|代|批|堂|场|顿|夜|晚|处|片|股|根|支|枚|粒|滴|千|万|百|亿)")
+# "神是一", "合而为一", "其中之一": the number ends the clause. Other clause-final 一
+# closes a word (始终如一, 统一, 唯一, 万一, 第一), so it is not the number one.
+_ZH_CLAUSE_END = r"\s*(?:[。，、；：！？,.;:!?」』”’）)]|$)"
+_ZH_CLAUSE_ONE_AFTER = "是为之成"
 
 
 def chinese_numeral(value: int) -> str:
@@ -361,8 +363,12 @@ def chinese_number_count(text: str, value: int | str) -> int:
     for match in _ZH_NUMBER_TOKEN.finditer(text):
         token = match.group()
         # A lone 一 is also part of ordinary words (一直, 一起, 一样, 一切); it is
-        # the number one only before a measure word (一次, 一个人, 一条命) or at a clause end.
-        if token == "一" and not re.match(_ZH_MEASURE_WORDS, text[match.end():]):
+        # the number one only before a measure word (一次, 一个人, 一条命) or ending a
+        # clause after 是/为/之/成 (神是一, 合而为一).
+        if token == "一" and not (
+                re.match(_ZH_MEASURE_WORDS, text[match.end():])
+                or (re.match(_ZH_CLAUSE_END, text[match.end():])
+                    and text[:match.start()].rstrip()[-1:] in tuple(_ZH_CLAUSE_ONE_AFTER))):
             continue
         count += token in forms
     return digits + count
@@ -838,6 +844,16 @@ def untranslated_problems(english: str, text: str, locale: str,
     if size >= 2 and not name_only and any(
             target_words[start:start + size] == english_words for start in range(len(target_words) - size + 1)):
         return ["English source text copied into target"]
+    # A partial copy: three source words in a row left in English inside Spanish
+    # ("Dios will never abandon you, así que…"). Names may run together, so a run
+    # made only of shared terms is allowed.
+    english_folded = [_fold(word) for word in english_words]
+    source_runs = {tuple(english_folded[start:start + 3]) for start in range(len(english_folded) - 2)}
+    allowed = _SHARED_SINGLE_WORDS | shared_terms
+    if any(tuple(target_words[start:start + 3]) in source_runs
+           and not set(target_words[start:start + 3]) <= allowed
+           for start in range(len(target_words) - 2)):
+        return ["English source phrase copied into target"]
     # A one-word group copied as is ("Repent." -> "Repent."). A deliberate
     # Spanish spelling (Amén, Jesús) differs before folding, so it is kept.
     if (size == 1 and target_words == [_fold(english_words[0])]

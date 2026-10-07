@@ -66,7 +66,7 @@ CALIBRATION_MINIMUMS = {"overallDetectionRate": 0.95, "perKindDetectionRate": 0.
 # Every seeded error kind must be tried and caught; a kind with no trial was never tested.
 TEXT_KINDS = ("wrong_number", "added_reference", "wrong_book", "english_leak", "placeholder",
               "dropped_name", "dropped_half", "semantic_negation", "added_number", "wrong_ordinal",
-              "swapped_quantity", "added_content")
+              "swapped_quantity", "added_content", "swapped_name")
 # What a calibration records about the TTS that rendered its omitted-word audio:
 # provider, model and checkpoint must be the audio package's own voice, and
 # ``synthesis`` (voice, speaker, config, language and normalization, as

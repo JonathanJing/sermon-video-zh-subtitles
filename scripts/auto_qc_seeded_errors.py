@@ -13,7 +13,8 @@ placeholder, dropped_name, dropped_half, semantic_negation, added_number (a
 spelled count the English never said), wrong_ordinal (an ordinal the English
 did not say: "the first love" as "the second", or a "Second," the English never
 said), swapped_quantity (two quantities trade places), added_content (another
-group's sentence appended, a claim the English never made). Audio kinds: stretched (the 2026-10-04
+group's sentence appended, a claim the English never made), swapped_name (two
+named people or places trade roles: both names survive, so only meaning catches it). Audio kinds: stretched (the 2026-10-04
 u172 class), silent, clipped, truncated, and wrong_sentence (another unit's
 audio under this unit's text, which only the ASR path can catch). Meaning
 errors without a surface signal (for example a flipped negation) are only
@@ -77,7 +78,8 @@ ADDED_ORDINAL = {"zh-Hans": "第二，", "ko": "둘째, ", "es": "En segundo lug
 # (a length failure on the same trial does not count); its trials still run.
 JUDGE_CREDITED_KINDS = ("dropped_half",)
 # Kinds only the back-translation check may detect: a surface failure is not credited.
-SEMANTIC_KINDS = ("semantic_negation", "added_number", "wrong_ordinal", "swapped_quantity", "added_content")
+SEMANTIC_KINDS = ("semantic_negation", "added_number", "wrong_ordinal", "swapped_quantity", "added_content",
+                  "swapped_name")
 # The book a wrong_book mutation substitutes (Romans when the citation is already John).
 OTHER_BOOK = {"zh-Hans": ("约翰福音", "罗马书"), "ko": ("요한복음", "로마서"), "es": ("Juan", "Romanos")}
 
@@ -204,6 +206,26 @@ def mutate_text(group: dict, kind: str, locale: str, policy: dict | None,
                     # The first naming use, not 神 inside 精神.
                     spans = rules.name_spans(target, text)
                     return text[:spans[0][0]] + text[spans[0][1]:] if spans else None
+        return None
+    if kind == "swapped_name":
+        # "Abraham blessed Isaac" as "Isaac blessed Abraham": every name check still passes.
+        if policy is None:
+            return None
+        found = []
+        for kind_name in ("properNames", "seriesNames"):
+            for term in policy["terminology"][kind_name]:
+                target = term.get("target")
+                if (not target or term.get("reviewStatus") == "pending"
+                        or any(target == other for _, _, other in found)
+                        or not re.search(r"(?<!\w)" + re.escape(term["source"]) + r"(?!\w)", english, re.I)):
+                    continue
+                spans = [span for span in rules.name_spans(_fold_es(target, locale), _fold_es(text, locale))
+                         if all(span[1] <= start or span[0] >= end for start, end, _ in found)]
+                if spans:
+                    found.append((*spans[0], target))
+                if len(found) == 2:
+                    (first, first_end, left), (second, second_end, right) = sorted(found)
+                    return (text[:first] + right + text[first_end:second] + left + text[second_end:])
         return None
     if kind == "dropped_half":
         if text_qc.length_ratio(group) is None:
