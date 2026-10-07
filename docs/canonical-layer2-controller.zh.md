@@ -1,12 +1,10 @@
 # Canonical Layer 2 固定执行适配器
 
 这是四层 controller 的第一条真实 producer dispatch 路径，不是完整四层 end-to-end。
-它复用已有 Source/候选 validator、逐组初译／独立复核 runner、语言插件、paid cache、
+它复用已有 Source/候选 validator、Astra → Sol group runner、语言插件、paid cache、
 `sermon_workflow_jobs` 与 work/admission locks。它只生成
 `machine_review_pass_human_review_pending`、`releaseEligible=false` 的候选；不会创建人工
 批准、启动 TTS、构建/发布页面、提交 App Store，或调用 bounded decision agent。
-
-新任务按[当前模型及调用策略](production-model-runtime-policy.zh.md)使用 Sol 6.1 high 初译 → Sol 6.1 medium 独立复核，默认通过 OpenAI API；旧任务保留冻结的 policy、后端和缓存身份。
 
 默认配置 `sermon-canonical-layer2-execution-v1` 只接受以下字段：
 
