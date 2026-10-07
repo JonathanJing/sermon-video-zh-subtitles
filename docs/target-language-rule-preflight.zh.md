@@ -1,12 +1,12 @@
 # Layer 2 开跑前规则冻结
 
-周日生产里，中文引文只在 plugin、韩文未口述编号规则迟加，使机器译审重新执行。[复盘](reports/20261005-sunday-layer-rework-analysis.zh.md)记录了实际成本。这次增加首模型调用前的静态前检和实际 prompt 核验；没有改变正式 Astra 翻译 → Sol 独立复核策略，Sol 6.1 仍只在隔离测试入口。
+周日生产里，中文引文只在 plugin、韩文未口述编号规则迟加，使机器译审重新执行。[复盘](reports/20261005-sunday-layer-rework-analysis.zh.md)记录了实际成本。这次增加首模型调用前的静态前检和实际 prompt 核验；前检本身不改变运行冻结的模型或后端身份。新运行遵守 [runtime model policy](production-model-runtime-policy.zh.md) 与仓库 AGENTS.md 的当前要求，历史运行保留原身份。
 
-已有 policy 组件 SHA、术语表 SHA、plugin implementation SHA 和逐调用 payload preview 保留。新增 `scripts/target_language_rule_preflight.py` 把实际术语、经文策略、口播引用、数字上下文、register、已识别 plugin 的完整引文／部分引文映射冻结为 modelRules。runner 在带 `plugin_path` 的正式路径，先核验 plugin ID/version/checks/source/edition、引文原文和精确 group；再保存 `rule-preflight.json`，把同一规则输入传给 translator 与 reviewer。每次实际 prompt 在 payload preview 和 `.started.json` 之前再核验，规则输入发生变化时不会沿用旧调用身份。
+已有 policy 组件 SHA、术语表 SHA、plugin implementation SHA 和逐调用 payload preview 保留。新增 `scripts/target_language_rule_preflight.py` 把实际术语、经文策略、口播引用、数字上下文、register、已识别 plugin 的完整引文／部分引文映射冻结为 modelRules。正式 `run()` 与 `run_accounted()` 必须带冻结语言插件，先核验 plugin ID/version/checks/source/edition、引文原文和精确 group；再保存 `rule-preflight.json`，把同一规则输入传给 translator 与 reviewer。非诊断的 strict `call_model` 同样必须带这份收据；诊断上下文和只读历史缓存不在此列。省略插件的内部调用只保留给模拟和旧缓存复现。每次实际 prompt 在 payload preview 和 `.started.json` 之前再核验，规则输入发生变化时不会沿用旧调用身份。
 
 已识别的内建规则包括：
 
-- 中文固定引文映射和逐单元 exact group；周更 CUV 的来源与 anchor、批准 span、candidate 覆盖、版本库原文和完整 direct quote。
+- 中文固定引文映射和逐单元 exact group；周更 CUV 的来源与 anchor、批准 span、candidate 覆盖和版本库原文。完整 direct quote 可以跨同一翻译组内的连续英文单元，拼接后必须等于版次全文；拆组、缩短，或把完整引文组扩进旁白单元，在派发前拒绝。部分引文仍须落在同一组内。
 - 韩／西固定完整经文组，防止把两单元完整引文拆成新 group；内建版次、数字和名字形式进入 modelRules。
 - reference-only 的提示仅保留英文实际口述的引用。不因为上下文知道书章，就把未口述书章／括号编号增补到口播中；保留数字及其上下文。
 

@@ -59,8 +59,9 @@ class CacheMigrationTests(unittest.TestCase):
 
     def test_legacy_run_without_rule_proof_is_rejected_before_new_run(self):
         self.old = self.old.parent / 'legacy'
-        models.run(self.f.source, self.f.anchor, self.f.policy, self.old,
-                   'fixture-key', self.fixture.fake_call)
+        request = models.producer.prepare_request(self.f.source, self.f.anchor, self.f.policy)
+        models._run_prepared_groups(request, self.f.anchor, self.f.policy, self.old,
+                                    'fixture-key', self.fixture.fake_call)
         self.fixture.calls.clear()
         with patch.object(models.sermon_pipeline, 'chat_json', side_effect=AssertionError('network')):
             with self.assertRaisesRegex(ValueError, 'lacks frozen rule receipt'):

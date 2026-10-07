@@ -1,0 +1,413 @@
+{
+  "schemaVersion": "sermon-decision-api-weekly-ab-plan-v1",
+  "planId": "decision-api-weekly-ab-20261006-v1",
+  "status": "design_ready",
+  "documentation": "docs/decision-api-weekly-ab-design.zh.md",
+  "mode": "paired_read_only",
+  "productionMutationAllowed": false,
+  "approvalMutationAllowed": false,
+  "liveExecutionAuthorized": false,
+  "experimentRunnerImplemented": false,
+  "decisionApi": {
+    "endpoint": "https://api.openai.com/v1/decisions",
+    "model": "gpt-6-luna",
+    "statusAsOf": "2026-10-06",
+    "availability": "public_beta",
+    "inputModalities": [
+      "text"
+    ],
+    "sdkImplicitRetries": 0
+  },
+  "credentialRoute": {
+    "environment": "dev",
+    "launcher": "scripts/run_with_openai_environment.py",
+    "credentialAlias": "tongxing-dev-runtime",
+    "createKey": false
+  },
+  "spending": {
+    "status": "not_bound",
+    "maxRequests": null,
+    "maxInputTokens": null,
+    "maxUsdA": null,
+    "maxUsdB": null,
+    "maxUsdFallback": null,
+    "authorizationReceiptSha256": null
+  },
+  "commonDesign": {
+    "seed": 20261006,
+    "randomizeOrder": "balanced_AB_BA",
+    "concurrencyPerArm": 1,
+    "qualityPairUnit": "unique_case",
+    "clusterUnit": "sermon_source_run_or_issue_family",
+    "goldIndependentOfArm": true,
+    "calibrationHoldoutClusterDisjoint": true,
+    "programHardGatesUnchanged": true,
+    "errorTimeoutRefusalInDenominator": true,
+    "unknownOutcomeRetryAllowed": false,
+    "actualTierWhenNotReturned": null,
+    "liveLatencyIncludesCachedResultReplay": false,
+    "sameSharedEvidenceSha256": true,
+    "evidenceContentResolvedAndHashVerified": true
+  },
+  "samplePlan": {
+    "smoke": {
+      "casesPerStage": 12,
+      "kind": "developer_fixture",
+      "qualityVerdictAllowed": false
+    },
+    "calibration": {
+      "targetCasesPerStage": 20,
+      "kind": "human_adjudicated_real",
+      "inHoldout": false
+    },
+    "pilot": {
+      "minimumCasesPerStageOrSubtask": 60,
+      "minimumSourceClusters": 5,
+      "minimumSpeakersWhereApplicable": 2,
+      "localesWhereApplicable": [
+        "zh-Hans",
+        "ko",
+        "es"
+      ],
+      "strataTargets": {
+        "normal": 12,
+        "real_failure": 12,
+        "difficult_or_quotation": 12,
+        "insufficient_evidence": 12,
+        "boundary_or_confusable": 12
+      },
+      "verdictType": "exploratory"
+    },
+    "latencyPanel": {
+      "holdoutCasesPerStage": 10,
+      "pairedRepeatsPerCase": 3,
+      "repeatsIncreaseQualityN": false
+    },
+    "expansion": {
+      "targetCasesPerStageOrSubtask": 200,
+      "sampleSizeRequiresPairedPowerAnalysis": true,
+      "minimumExtendedClipSeconds": 600,
+      "fullLengthCanaryRequired": true
+    }
+  },
+  "timing": {
+    "unit": "milliseconds_for_decisions_seconds_for_human_and_resolution",
+    "clock": "monotonic_for_local_durations_UTC_for_durable_calendar",
+    "fields": [
+      "sharedUpstreamSeconds",
+      "evidencePreparationMs",
+      "queueWaitMs",
+      "decisionCallMs",
+      "postprocessValidationMs",
+      "effectiveDecisionMs",
+      "humanActiveSeconds",
+      "humanWaitSeconds",
+      "repairComputeSeconds",
+      "reworkCount",
+      "resolutionWallSeconds",
+      "experimentCalendarSeconds"
+    ],
+    "perCallTimeoutSeconds": 120,
+    "effectiveDecisionEpisodeTimeoutSeconds": 300,
+    "humanActivePerCaseCensorSeconds": 600,
+    "fullTrackReviewCensoredByThisLimit": false,
+    "restorationUsesOriginalTiming": true,
+    "missingTimingValue": null,
+    "stageWindowsArePredictions": false,
+    "observationWindowMeaning": "first_observation_block_not_batch_deadline"
+  },
+  "decisionRule": {
+    "criticalErrorsAllowed": 0,
+    "noninferiorityAccuracyDifferenceLower95Ci": -0.03,
+    "noninferiorityCriticalRecallDifferenceLower95Ci": -0.02,
+    "targetRelativeReduction": 0.2,
+    "requiresEquivalentTaskForReplacement": true,
+    "clusterBootstrap": true,
+    "multipleClaimsCorrection": "Holm_or_explicit_exploratory",
+    "allowedConclusions": [
+      "A_wins",
+      "B_wins",
+      "hybrid_candidate",
+      "inconclusive",
+      "no_executable_baseline",
+      "not_contract_equivalent"
+    ],
+    "noninferiorityEstimator": "preregistered_non_degenerate_paired_proportion_score_or_exact_with_cluster_assumptions",
+    "degenerateBootstrapCannotEstablishNoninferiority": true,
+    "insufficientEffectiveClustersConclusion": "inconclusive",
+    "primaryTimeMetricsChosenBeforeHoldout": true
+  },
+  "stages": [
+    {
+      "id": "E01",
+      "name": "english_source_judge",
+      "baselineKind": "program_plus_model",
+      "baselineModel": "gpt-6.1-sol",
+      "baselineEffort": "high",
+      "sources": [
+        "scripts/judge_english_source_for_translation.py"
+      ],
+      "subtasks": [
+        "text_and_timing_checks",
+        "complete_review_artifact"
+      ],
+      "decisionTypes": [
+        "predicate",
+        "choice",
+        "score"
+      ],
+      "pilotObservationWindowMinutes": 45,
+      "comparableEndpoint": "validated_checks_on_all_frozen_sentences",
+      "audioListeningCompared": false,
+      "primaryTimeMetricsBySubtask": {
+        "text_and_timing_checks": "effectiveDecisionMs_p95",
+        "complete_review_artifact": "effectiveDecisionMs_p95"
+      }
+    },
+    {
+      "id": "E02",
+      "name": "translation_independent_review",
+      "baselineKind": "model_review_and_correction",
+      "baselineModel": "gpt-6.1-sol",
+      "baselineEffort": "medium",
+      "sources": [
+        "scripts/run_target_language_models.py"
+      ],
+      "subtasks": [
+        "draft_issue_projection",
+        "contract_equivalent_review_and_correction"
+      ],
+      "decisionTypes": [
+        "predicate",
+        "choice"
+      ],
+      "pilotObservationWindowMinutes": 60,
+      "comparableEndpoint": "validated_final_translation_coverage_plugin_and_review_evidence",
+      "baselineVerdictIsOnCorrectedText": true,
+      "decisionLabelAloneContractEquivalent": false,
+      "productionPolicyChanged": false,
+      "primaryTimeMetricsBySubtask": {
+        "draft_issue_projection": "effectiveDecisionMs_p95",
+        "contract_equivalent_review_and_correction": "resolutionWallSeconds"
+      },
+      "subtaskEndpoints": {
+        "draft_issue_projection": "valid_label_or_explicit_projection_uncertain",
+        "contract_equivalent_review_and_correction": "validated_final_translation_coverage_plugin_and_independent_review_evidence"
+      },
+      "contractEquivalentArmBAlwaysUsesExistingReviewer": true,
+      "skippedReviewerOnlyAllowedInSeparateExperimentalGateOnlyPanel": true
+    },
+    {
+      "id": "E03",
+      "name": "translation_repair_routing",
+      "baselineKind": "program_with_human_ambiguous_branch",
+      "sources": [
+        "scripts/sermon_repair_planning.py",
+        "scripts/sermon_bounded_decision.py"
+      ],
+      "subtasks": [
+        "known_failure_rule_route",
+        "ambiguous_human_assisted_route"
+      ],
+      "decisionTypes": [
+        "choice"
+      ],
+      "pilotObservationWindowMinutes": 20,
+      "comparableEndpoint": "allowed_scope_proposal",
+      "ambiguousAutomaticBaselineExists": false,
+      "primaryTimeMetricsBySubtask": {
+        "known_failure_rule_route": "effectiveDecisionMs_p95",
+        "ambiguous_human_assisted_route": "humanActiveSeconds"
+      }
+    },
+    {
+      "id": "E04",
+      "name": "audio_back_asr_screening",
+      "baselineKind": "program_with_human_adjudication",
+      "sources": [
+        "scripts/screen_target_language_audio_units.py",
+        "scripts/review_target_language_audio.py"
+      ],
+      "subtasks": [
+        "requires_review",
+        "queue_priority",
+        "human_problem_confirmation"
+      ],
+      "decisionTypes": [
+        "predicate",
+        "choice",
+        "score"
+      ],
+      "pilotObservationWindowMinutes": 20,
+      "comparableEndpoint": "full_coverage_review_queue",
+      "reuseIdenticalAsr": true,
+      "fullTrackHumanReviewRemoved": false,
+      "primaryTimeMetricsBySubtask": {
+        "requires_review": "effectiveDecisionMs_p95",
+        "queue_priority": "humanActiveSeconds_per_confirmed_true_issue",
+        "human_problem_confirmation": "humanActiveSeconds_per_confirmed_true_issue"
+      },
+      "queuePriorityArmA": "existing_original_unit_order",
+      "modelInputExcludedFields": [
+        "A_status_pass_or_requires_review"
+      ]
+    },
+    {
+      "id": "E05",
+      "name": "audio_timing_diagnosis_and_repair",
+      "baselineKind": "program_diagnosis_plus_human_repair_choice",
+      "sources": [
+        "scripts/target_audio_timing_plan.py"
+      ],
+      "subtasks": [
+        "timing_violation_rule_control",
+        "human_assisted_repair_choice"
+      ],
+      "decisionTypes": [
+        "choice"
+      ],
+      "pilotObservationWindowMinutes": 30,
+      "comparableEndpoint": "measured_diagnosis_and_allowed_repair_proposal",
+      "automaticRepairChoiceBaselineExists": false,
+      "primaryTimeMetricsBySubtask": {
+        "timing_violation_rule_control": "effectiveDecisionMs_p95",
+        "human_assisted_repair_choice": "humanActiveSeconds"
+      },
+      "subtaskInputs": {
+        "timing_violation_rule_control": {
+          "shared": "raw_source_and_audio_measurements_plus_policy",
+          "excludeDerivedFields": [
+            "formalScheduleStatus",
+            "maxLagViolations",
+            "clipTailOverflows",
+            "requiresTimingReview"
+          ]
+        },
+        "human_assisted_repair_choice": {
+          "shared": "complete_verified_deterministic_timing_diagnosis"
+        }
+      }
+    },
+    {
+      "id": "E06",
+      "name": "study_outline_reflection_review",
+      "baselineKind": "program_checks_plus_human_semantic_review",
+      "sources": [
+        "scripts/sermon_study_generation.py",
+        "scripts/study_artifacts.py"
+      ],
+      "subtasks": [
+        "outline_human_assisted_review",
+        "reflection_human_assisted_review"
+      ],
+      "decisionTypes": [
+        "predicate",
+        "score"
+      ],
+      "pilotObservationWindowMinutes": 60,
+      "comparableEndpoint": "completed_human_content_review",
+      "automaticSemanticTriageBaselineExists": false,
+      "fullGenerationCompared": false,
+      "primaryTimeMetricsBySubtask": {
+        "outline_human_assisted_review": "humanActiveSeconds",
+        "reflection_human_assisted_review": "humanActiveSeconds"
+      }
+    },
+    {
+      "id": "E07",
+      "name": "backend_error_and_supervisor_routing",
+      "baselineKind": "program_or_cli_supervisor_or_human",
+      "baselineModelWhereApplicable": "gpt-6-luna",
+      "baselineEffortWhereApplicable": "medium",
+      "baselineTierWhereApplicable": "fast",
+      "baselineBackendWhereApplicable": "codex-cli",
+      "sources": [
+        "scripts/sermon_provider_error.py",
+        "scripts/sermon_production_supervisor.py",
+        "scripts/run_sermon_production_supervisor_agent.py"
+      ],
+      "subtasks": [
+        "known_provider_rule",
+        "supervisor_allowed_next_action",
+        "ambiguous_human_diagnosis"
+      ],
+      "decisionTypes": [
+        "choice"
+      ],
+      "pilotObservationWindowMinutes": 30,
+      "comparableEndpoint": "validated_bounded_diagnosis_or_step_proposal",
+      "ordinaryGeneralRootCauseClassifierExists": false,
+      "primaryTimeMetricsBySubtask": {
+        "known_provider_rule": "effectiveDecisionMs_p95",
+        "supervisor_allowed_next_action": "effectiveDecisionMs_p95",
+        "ambiguous_human_diagnosis": "humanActiveSeconds"
+      }
+    },
+    {
+      "id": "E08",
+      "name": "page_feedback_routing",
+      "baselineKind": "user_category_plus_human_routing",
+      "sources": [
+        "experiments/sermon-dubbing-poc/feedback-api/core.mjs",
+        "experiments/sermon-dubbing-poc/feedback-api/admin.mjs"
+      ],
+      "subtasks": [
+        "primary_route",
+        "multi_label_recall",
+        "human_assisted_dispatch"
+      ],
+      "decisionTypes": [
+        "predicate",
+        "choice",
+        "score"
+      ],
+      "pilotObservationWindowMinutes": 45,
+      "comparableEndpoint": "validated_routing_queue",
+      "automaticCommentClassifierExists": false,
+      "userSelectedCategoryIsGold": false,
+      "primaryTimeMetricsBySubtask": {
+        "primary_route": "humanActiveSeconds",
+        "multi_label_recall": "humanActiveSeconds",
+        "human_assisted_dispatch": "humanActiveSeconds"
+      }
+    }
+  ],
+  "implementationPending": [
+    "frozen_case_export_and_gold",
+    "independent_read_only_runner",
+    "decisions_transport",
+    "stage_baseline_adapters",
+    "dev_experiment_budget_binding",
+    "threshold_calibration",
+    "paired_cluster_statistics",
+    "human_cross_over_panel",
+    "isolated_repair_canary"
+  ],
+  "requiredReceiptFields": [
+    "experimentId",
+    "stageId",
+    "subtaskId",
+    "caseId",
+    "arm",
+    "attemptId",
+    "evidenceSha256",
+    "codeDependencySha256",
+    "dirtyDiffSha256",
+    "rubricSha256",
+    "payloadSha256",
+    "requestedModel",
+    "actualModel",
+    "backend",
+    "requestedTier",
+    "actualTier",
+    "requestId",
+    "order",
+    "cacheState",
+    "status",
+    "timings",
+    "usage",
+    "estimatedCost",
+    "goldSha256"
+  ],
+  "outputRoot": "artifacts/decision-api-weekly-ab"
+}

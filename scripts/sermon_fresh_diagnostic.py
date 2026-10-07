@@ -129,9 +129,15 @@ class FreshDiagnosticSession(sessions.DiagnosticSession):
         self.transport=self.subject.executor
         self.runner=bounded.BoundedRun(self.subject,offline.OFFLINE_KEY if fixture else key,self.root,source_clip=plan['sourceClipPath'])
         self._locale_results={}; self._locale_specs={}; self.context=None; self.binding=None
+        self.resume_binding=None
         self._cached_source=False
         self._historical_reuse={}; self._historical_specification=None
         self._historical_native_seeds={}; self._historical_native_specification=None
+
+    @property
+    def locale_context(self):
+        """Fresh runs use the context established by their current Source stage."""
+        return self.context
 
     def _check(self):
         active=profile.current()

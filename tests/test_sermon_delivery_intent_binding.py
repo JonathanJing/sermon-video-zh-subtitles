@@ -466,7 +466,16 @@ class FormalStrictDeliveryTests(unittest.TestCase):
             with engine.session():
                 for group in b.strict_fixture.f.groups:
                     engine.f.evidence['groups'][0] = group
-                    prepared = strict.prepare(*args, {key: group[key] for key in ('translationGroupId', 'sourceUnitIds')})
+                    from scripts import produce_target_language_candidate as producer
+                    from scripts import run_target_language_models as models
+                    from scripts import target_language_rule_preflight as rule_preflight
+                    source_value, anchor_value = c.decode_json(args[0]), c.decode_json(args[1])
+                    request = producer.prepare_request(source_value, anchor_value, policy, strict_rubric=locale_rubric)
+                    receipt = rule_preflight.preflight(request, policy, b.boundary.config.plugin,
+                                                       [{key: row[key] for key in ('translationGroupId', 'sourceUnitIds')} for row in b.strict_fixture.f.groups])
+                    prepared = strict.prepare(*args, {key: group[key] for key in ('translationGroupId', 'sourceUnitIds')},
+                                              rule_preflight=receipt, rule_context={'pluginPath': str(b.boundary.config.plugin),
+                                                  'groupPlan': [{key: row[key] for key in ('translationGroupId', 'sourceUnitIds')} for row in b.strict_fixture.f.groups]})
                     root = b.strict_fixture.root / locale / group['translationGroupId']
                     b.strict_fixture.subject.generate(prepared, root, 'candidate', 'r1', 'fixture', engine.transport,
                         bounds=budget_fixtures.bounds(), usage_resolver=budget_fixtures.measured)

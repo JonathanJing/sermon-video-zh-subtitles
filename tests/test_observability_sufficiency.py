@@ -154,7 +154,8 @@ class ObservabilitySufficiencyTests(unittest.TestCase):
         from tests import test_run_target_language_models as fixtures
         from scripts import run_target_language_models as runner
         t = self.fixture(fixtures.RunTargetLanguageModelsTests); f = t.fixture
-        result = runner.run(f.source, f.anchor, f.policy, t.out, 'fixture-key', t.fake_call)
+        result = runner.run(f.source, f.anchor, f.policy, t.out, 'fixture-key', t.fake_call,
+                            plugin_path=f.plugin_path)
         before = {p.name: p.read_bytes() for p in t.out.glob('*.json')}
         t.calls.clear()
         emit = accounting._emit
@@ -163,10 +164,12 @@ class ObservabilitySufficiencyTests(unittest.TestCase):
             return emit(event)
         with mock.patch.object(accounting, '_emit', side_effect=fail):
             with self.assertRaises(accounting.AccountingWriteError):
-                runner.run(f.source, f.anchor, f.policy, t.out, 'fixture-key', t.fake_call)
+                runner.run(f.source, f.anchor, f.policy, t.out, 'fixture-key', t.fake_call,
+                           plugin_path=f.plugin_path)
         self.assertEqual(t.calls, [])
         self.assertEqual({p.name: p.read_bytes() for p in t.out.glob('*.json')}, before)
-        self.assertEqual(runner.run(f.source, f.anchor, f.policy, t.out, 'fixture-key', t.fake_call), result)
+        self.assertEqual(runner.run(f.source, f.anchor, f.policy, t.out, 'fixture-key', t.fake_call,
+                                    plugin_path=f.plugin_path), result)
         self.assertEqual(t.calls, [])
 
     def test_safe_export_reprojects_without_paths_or_error_text(self):

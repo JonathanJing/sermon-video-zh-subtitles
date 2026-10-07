@@ -18,13 +18,11 @@ from scripts import sermon_public_snapshot as public
 from scripts import sermon_review_budget as budget
 from scripts import sermon_review_contracts as c
 from scripts import sermon_strict_layer2 as strict
-from scripts import produce_target_language_candidate as producer
-from scripts import run_target_language_models as models
 from scripts.sermon_diagnostic_source_evidence import validate_prior_source_evidence
 from scripts.sermon_release_workflow import _safe_path
 
 
-def prepare_continuation(plan, continuation):
+def prepare_continuation(plan, continuation, *, request_limits=None):
     c.require(type(continuation) is dict and set(continuation) == {
         'schemaVersion', 'originalPlanSha256', 'executionIdentity', 'diagnosticContext'} and
         continuation['schemaVersion'] == 'sermon-diagnostic-continuation-v1',
@@ -55,7 +53,17 @@ def prepare_continuation(plan, continuation):
     # No fresh store is permitted: preserve the already started clock/quota.
     c.require((store.root / budget.STORE_ID / 'provider-run' / 'state.json').is_file(),
               'diagnostic_existing_provider_required')
-    subject = provider.DiagnosticProvider(store, config)
+    # The continuation limit snapshot is execution identity, not a CLI default.
+    # Validate an explicit replacement before constructing any dispatch surface.
+    limits_path = root / 'continuation-request-limits.json'
+    if limits_path.exists():
+        saved_limits, _ = c.read_snapshot(limits_path)
+        if request_limits is not None:
+            c.require(request_limits == saved_limits, 'immutable_strict_artifact_changed')
+        request_limits = saved_limits
+    c.require(request_limits is not None, 'diagnostic_continuation_request_limits_required')
+    selected_limits = provider.limits.validate_request_limits(request_limits)
+    subject = provider.DiagnosticProvider(store, config, selected_limits)
     with subject._locked() as (_, state):
         subject._remaining(state)
         c.require(state['requests'] and all(row['state'] in ('returned', 'rejected')
@@ -69,16 +77,11 @@ def preflight_locale_inputs(subject, context, spec):
     c.require(type(spec) is dict and set(spec) == {'source', 'anchor', 'policy', 'rubric', 'graph',
         'pluginPath', 'pluginSha256', 'groupPlan'}, 'invalid_diagnostic_locale_spec')
     artifacts = [public.read_snapshot(Path(spec[name]))[1] for name in ('source', 'anchor', 'policy', 'rubric')]
-    source, anchor, policy, rubric = map(c.decode_json, artifacts)
-    diagnostic.validate_source(source, anchor, context)
-    request = producer.prepare_request(source, anchor, policy, strict_rubric=rubric, diagnostic_context=context)
-    plan = models.group_plan(request, anchor, spec['groupPlan'])
-    prepared = [strict.prepare(*artifacts, group, request_limits=subject.limits,
-                              diagnostic_context=context) for group in plan]
+    from scripts.sermon_strict_locale import prepare_locale_inputs
+    _, _, _, plan, prepared = prepare_locale_inputs(*artifacts,
+        plugin_path=Path(spec['pluginPath']), expected_plugin_sha256=spec['pluginSha256'],
+        group_plan=spec['groupPlan'], request_limits=subject.limits, diagnostic_context=context)
     subject.preflight_locale(prepared)
-    models.require_plugin_identity(Path(spec['pluginPath']), spec['pluginSha256'])
-    c.require(policy['languageReview']['pluginImplementationSha256'] == spec['pluginSha256'],
-              'strict_locale_plugin_policy_changed')
     return artifacts, plan
 
 
@@ -89,10 +92,14 @@ def main(argv=None):
     parser.add_argument('--phase', choices=('preflight', 'locale'), required=True)
     parser.add_argument('--input', type=Path)
     parser.add_argument('--key-fd', type=int)
+    parser.add_argument('--resume-legacy-locale', action='store_true',
+        help='Explicitly inspect/resume immutable v1 locale inputs; unproven old rules block new calls')
+    parser.add_argument('--request-limits', type=Path, help='Initial request limits; resumes reuse the frozen snapshot')
     args = parser.parse_args(argv)
     plan, _ = c.read_snapshot(args.plan)
     continuation, _ = c.read_snapshot(args.continuation)
-    root, subject, context, deadline, source_evidence = prepare_continuation(plan, continuation)
+    root, subject, context, deadline, source_evidence = prepare_continuation(plan, continuation,
+        request_limits=c.read_snapshot(args.request_limits)[0] if args.request_limits else None)
     spec = None
     if args.input is not None:
         spec, _ = c.read_snapshot(args.input)
@@ -105,6 +112,7 @@ def main(argv=None):
         return
     c.require(args.input is not None and args.key_fd is not None and args.key_fd >= 3,
               'diagnostic_private_input_and_key_fd_required')
+    strict.save_once(root / 'continuation-request-limits.json', subject.limits)
     with os.fdopen(args.key_fd, 'rb') as stream:
         key_bytes = stream.read(1025)
     c.require(0 < len(key_bytes) <= 1024, 'invalid_diagnostic_credential_length')
@@ -118,7 +126,7 @@ def main(argv=None):
             'simulatedHumanApproval': True, 'realHumanAcceptancePending': True,
             'productionEligible': False, 'continuationSha256': c.canonical_sha256(continuation),
             'sourceMediaSha256': subject.config['sourceMediaSha256'], **source_evidence})
-        result = runner.run_locale(*artifacts, graph=spec['graph'], plugin_path=Path(spec['pluginPath']),
+        result = runner.run_locale(*artifacts, resume_legacy=args.resume_legacy_locale, graph=spec['graph'], plugin_path=Path(spec['pluginPath']),
             plugin_sha256=spec['pluginSha256'], group_plan=spec['groupPlan'], diagnostic_context=context)
         wrapped = {'schemaVersion': 'sermon-isolated-diagnostic-result-v1',
                    'humanAcceptance': 'pending', 'productionEligible': False,

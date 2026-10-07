@@ -1,4 +1,5 @@
 import concurrent.futures
+import copy
 import json
 import tempfile
 import threading
@@ -22,6 +23,60 @@ class SourceBudgetConcurrencyTests(unittest.TestCase):
     def call(self, store, index):
         return store.call(operation=f'asr.{index:04d}', identity={'model': 'gpt-transcribe', 'index': index},
             bounds=self.bounds, request=b'fixture', api_key='', content_type='fixture', endpoint='fixture')
+
+    def judge_payload(self):
+        from scripts import judge_english_source_for_translation as judge
+        with subject.judge_limits(self.authority['requestLimits']):
+            return judge._payload([], manifest_hash='b' * 64, anchor_policy={},
+                                  model='gpt-6.1-sol', effort='high')
+
+    def test_pinned_structured_judge_dispatches_and_reuses_receipt(self):
+        payload = self.judge_payload()
+        calls = []
+        authority = {**self.authority, 'globalBounds': {
+            'requests': 8, 'wallTimeMs': 10**9, 'costMicrousd': 10**9}}
+        def transport(endpoint, request, content_type, api_key):
+            calls.append(json.loads(request))
+            return {'fixture': 'returned'}
+        store = subject.SourceBudget(self.root, authority, verify=lambda: None, transport=transport)
+        self.assertEqual(store.judge('', payload), {'fixture': 'returned'})
+        self.assertEqual(store.judge('', payload), {'fixture': 'returned'})
+        self.assertEqual(calls, [payload])
+        row = next(iter(jobs._read(self.root / 'source-budget.json')['requests'].values()))
+        self.assertEqual(row['bounds']['costMicrousd'], subject.text_limits._cost(
+            payload['model'], subject.text_limits._input_upper_bound(payload),
+            self.authority['requestLimits']['maxCompletionTokens']))
+
+    def test_unsupported_judge_schema_options_and_caps_fail_before_reservation(self):
+        payload = self.judge_payload()
+        mutations = [
+            lambda p: p['response_format']['json_schema'].update(strict=False),
+            lambda p: p['response_format']['json_schema'].update(name='unapproved'),
+            lambda p: p['response_format']['json_schema'].update(schema={}),
+            lambda p: p.update(response_format={'type': 'json_object'}),
+            lambda p: p.update(max_completion_tokens=1),
+            lambda p: p.update(service_tier='priority'),
+            lambda p: p.update(tools=[]),
+            lambda p: p['messages'].append({'role': 'user', 'content': 'x' * 8192}),
+        ]
+        store = subject.SourceBudget(self.root, self.authority, verify=lambda: None,
+                                     transport=lambda *a: self.fail('must not dispatch'))
+        for mutation in mutations:
+            with self.subTest(mutation=mutation):
+                changed = copy.deepcopy(payload)
+                mutation(changed)
+                with self.assertRaises(ValueError):
+                    store.judge('', changed)
+                self.assertFalse((self.root / 'source-budget.json').exists())
+
+    def test_judge_schema_bytes_count_toward_the_input_cap(self):
+        payload = self.judge_payload()
+        cap = subject.text_limits._input_upper_bound(payload) - 1
+        limits = {**self.authority['requestLimits'], 'maxInputTokens': cap}
+        without_schema = dict(payload, response_format={'type': 'json_object'})
+        self.assertLess(subject.text_limits._input_upper_bound(without_schema), cap)
+        with self.assertRaisesRegex(ValueError, 'source_judge_input_bound_exceeded'):
+            subject.bounded_source_judge_payload(payload, limits)
 
     def test_four_live_requests_hold_conservative_bounds_and_resume_without_dispatch(self):
         barrier = threading.Barrier(4)

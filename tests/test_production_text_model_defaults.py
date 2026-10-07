@@ -24,13 +24,20 @@ class TextRoleDefaultTests(unittest.TestCase):
         self.assertEqual(notes.DEFAULT_REASONING_EFFORT, 'high')
         self.assertEqual(source_review.SUPPORTED_MODELS, {'gpt-6-astra', 'gpt-6.1-sol'})
 
-    def test_migrated_chat_uses_api(self):
-        caller = Mock(return_value={'choices': [{'message': {'content': '{}'}}]})
+    def test_migrated_chat_refuses_uncapped_sol_before_api(self):
         payload = {'model': 'gpt-6.1-sol', 'reasoning_effort': 'high', 'messages': []}
-        with patch.object(sermon_pipeline, 'json_request', caller) as api:
-            result = sermon_pipeline.chat_json('unrelated-asr-key', payload, session_verifier=lambda: {'status':'offline_test'})
-        api.assert_called_once_with(sermon_pipeline.CHAT_URL, 'unrelated-asr-key', payload, retries=1)
-        self.assertEqual(result['choices'][0]['message']['content'], '{}')
+        with patch.object(sermon_pipeline, 'json_request', side_effect=AssertionError('dispatched')) as api:
+            with self.assertRaisesRegex(ValueError, 'unsupported_budget_capability'):
+                sermon_pipeline.chat_json('unrelated-asr-key', payload, session_verifier=lambda: {'status': 'offline_test'})
+            api.assert_not_called()
+
+    def test_supervisor_defaults_cli_and_preserves_explicit_historical_api(self):
+        from scripts import run_sermon_production_supervisor_agent as agent
+        argv = ['supervisor', '--sunday', '2026-10-04', '--state-file', 'unused.json']
+        with patch.object(sys, 'argv', argv):
+            self.assertEqual(agent.parse_args().agent_backend, 'codex-cli')
+        with patch.object(sys, 'argv', argv + ['--agent-backend', 'agents-api']):
+            self.assertEqual(agent.parse_args().agent_backend, 'agents-api')
 
     def test_notes_api_preserves_response_shape(self):
         envelope = {'model': 'gpt-6.1-sol', 'output_text': '{"summaryZh":"sample"}', 'usage': {'total_tokens': 12}}

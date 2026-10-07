@@ -27,6 +27,7 @@ from scripts import sermon_review_contracts as c
 from scripts import sermon_workflow_jobs as jobs
 from scripts import weekly_pipeline_report as weekly
 from tests.test_sermon_fresh_source_prefect import SourceEngineFixture
+from tests.diagnostic_dag_fixture import DiagnosticDAGFixture
 
 LOCALE = 'zh-Hans'
 UNITS = ('zh-Hans.fresh-g001', 'zh-Hans.fresh-g002')
@@ -86,7 +87,7 @@ class FullFreshDAGFixture(SourceEngineFixture):
         archive_fixture_inputs(self.root, self.recipe, self.plan)
 
     def session(self):
-        return fresh.FreshDiagnosticSession(self.plan, offline_transport=self.transport)
+        return fresh.FreshDiagnosticSession(self.plan, offline_transport=self.transport, request_limits=self.seed.request_limits)
 
     def dag_config(self, *, faults=None, observation_timeout=45):
         return {'schemaVersion': dag.SCHEMA,
@@ -122,7 +123,7 @@ def clean_child(payload_path):
     assert candidate is None or identity['gitCommit'] == candidate, 'experiment candidate commit changed'
     transport = fixture_transport(value['fixtureSourceText'], value['fixtureSourceReview'],
         value['fixtureGroups'], allow_calls=value['allowFixtureCalls'])
-    session = fresh.FreshDiagnosticSession(value['plan'], offline_transport=transport)
+    session = fresh.FreshDiagnosticSession(value['plan'], offline_transport=transport, request_limits=DiagnosticDAGFixture.request_limits)
     result = dag.run(session, value['recipe'], value['authorization'], value['locales'],
         value['config'], recovery=value.get('recovery'))
     assert result['syntheticProviderDispatches'] == len(transport.observations)

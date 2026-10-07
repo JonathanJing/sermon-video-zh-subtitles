@@ -20,6 +20,7 @@ class DiagnosticCLITests(unittest.TestCase):
     def setUp(self):
         self.f = DiagnosticDAGFixture(); self.f.setUp(); self.addCleanup(self.f.doCleanups)
         self.enterContext(patch.object(accounting, 'execution_identity', return_value=self.f.execution_identity))
+        self.f.write('continuation-request-limits.json', self.f.request_limits)
         self.config = {'schemaVersion': flow.SCHEMA, 'locales': {'zh-Hans': {
             'localeSpec': deepcopy(self.f.locale_specs['zh-Hans']),
             'previewSpec': deepcopy(self.f.preview_specs['zh-Hans'])}}}
