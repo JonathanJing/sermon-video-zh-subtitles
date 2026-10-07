@@ -12,7 +12,8 @@ Text kinds: wrong_number, added_reference, wrong_book, english_leak,
 placeholder, dropped_name, dropped_half, semantic_negation, added_number (a
 spelled count the English never said), wrong_ordinal (an ordinal the English
 did not say: "the first love" as "the second", or a "Second," the English never
-said), swapped_quantity (two quantities trade places). Audio kinds: stretched (the 2026-10-04
+said), swapped_quantity (two quantities trade places), added_content (another
+group's sentence appended, a claim the English never made). Audio kinds: stretched (the 2026-10-04
 u172 class), silent, clipped, truncated, and wrong_sentence (another unit's
 audio under this unit's text, which only the ASR path can catch). Meaning
 errors without a surface signal (for example a flipped negation) are only
@@ -75,7 +76,7 @@ ADDED_ORDINAL = {"zh-Hans": "第二，", "ko": "둘째, ", "es": "En segundo lug
 # (a length failure on the same trial does not count); its trials still run.
 JUDGE_CREDITED_KINDS = ("dropped_half",)
 # Kinds only the back-translation check may detect: a surface failure is not credited.
-SEMANTIC_KINDS = ("semantic_negation", "added_number", "wrong_ordinal", "swapped_quantity")
+SEMANTIC_KINDS = ("semantic_negation", "added_number", "wrong_ordinal", "swapped_quantity", "added_content")
 # The book a wrong_book mutation substitutes (Romans when the citation is already John).
 OTHER_BOOK = {"zh-Hans": ("约翰福音", "罗马书"), "ko": ("요한복음", "로마서"), "es": ("Juan", "Romanos")}
 
@@ -103,9 +104,19 @@ def _number_forms(locale: str, value: int | str) -> list[str]:
     return sorted(set(forms), key=len, reverse=True)
 
 
-def mutate_text(group: dict, kind: str, locale: str, policy: dict | None) -> str | None:
-    """Return a mutated target text, or None when the kind does not apply."""
+def mutate_text(group: dict, kind: str, locale: str, policy: dict | None,
+                others: list[dict] = ()) -> str | None:
+    """Return a mutated target text, or None when the kind does not apply.
+
+    ``others`` are the candidate's other groups, which supply added_content."""
     english, text = group["english"], group["targetText"]
+    if kind == "added_content":
+        # An ordinary sentence from elsewhere in the sermon, appended: the shortest
+        # one without a number, so that only the back-translation check can see it.
+        pool = sorted((row["targetText"] for row in others
+                       if row["groupId"] != group.get("groupId") and row["targetText"] not in text
+                       and not rules.english_number_values(row["english"])), key=len)
+        return None if not pool else text + ("" if locale == "zh-Hans" else " ") + pool[0]
     if kind == "semantic_negation":
         # Flip a target negation without changing names, numbers, references or
         # script. Only groups with source negation supply this semantic trial.
@@ -189,7 +200,9 @@ def mutate_text(group: dict, kind: str, locale: str, policy: dict | None) -> str
                 target = term.get("target")
                 if (target and term.get("reviewStatus") != "pending" and target in text
                         and re.search(r"(?<!\w)" + re.escape(term["source"]) + r"(?!\w)", english, re.I)):
-                    return text.replace(target, "", 1)
+                    # The first naming use, not 神 inside 精神.
+                    spans = rules.name_spans(target, text)
+                    return text[:spans[0][0]] + text[spans[0][1]:] if spans else None
         return None
     if kind == "dropped_half":
         if text_qc.length_ratio(group) is None:
@@ -297,7 +310,7 @@ def calibrate_text(groups: list[dict], locale: str, *, policy: dict | None = Non
         for group in groups:
             if trials >= max_trials:
                 break
-            mutated = mutate_text(group, kind, locale, policy)
+            mutated = mutate_text(group, kind, locale, policy, groups)
             if mutated is None or mutated == group["targetText"]:
                 continue
             if kind in SEMANTIC_KINDS:

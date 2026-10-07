@@ -35,8 +35,8 @@ except ImportError:
 # v2 records the ASR runtime settings behind every score (v1 receipts stay readable).
 SCHEMA = "sermon-target-language-audio-screening-v2"
 # How a recognized text is scored against the expected text; part of the recorded runtime.
-SCORING = ("token-sequence-ratio-v2; short units (<4 tokens) must match exactly; "
-           "no negation, number or protected name may differ")
+SCORING = ("token-sequence-ratio-v3; short units (<4 tokens) must match exactly; "
+           "no negation, number or protected name may differ; numbers and names keep their order")
 MODEL = "Qwen/Qwen3-ASR-0.6B"
 BATCH_SIZES = (1, 2, 4, 8)
 
@@ -91,7 +91,7 @@ NEGATIONS = {"en": ("no", "not", "never", "neither", "nor", "without", "cannot")
                     "ninguno", "ninguna", "sin")}
 ZH_NUMERALS = "〇零一二两三四五六七八九十百千万亿"
 ES_NUMBERS = frozenset((
-    "cero", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho", "nueve", "diez", "once", "doce",
+    "cero", "uno", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho", "nueve", "diez", "once", "doce",
     "trece", "catorce", "quince", "dieciséis", "dieciseis", "diecisiete", "dieciocho", "diecinueve", "veinte",
     "treinta", "cuarenta", "cincuenta", "sesenta", "setenta", "ochenta", "noventa", "cien", "ciento",
     "doscientos", "trescientos", "cuatrocientos", "quinientos", "seiscientos", "setecientos", "ochocientos",
@@ -108,6 +108,20 @@ def key_word(tokens: list[str], locale: str) -> bool:
                 or locale == "zh-Hans" and any(char in ZH_NUMERALS for char in joined))
     return any(token in NEGATIONS.get(locale, ()) or token in ES_NUMBERS
                or locale == "es" and token.startswith("veinti") for token in tokens)
+
+
+def korean_native_numbers(text: str) -> list[str]:
+    """The native-number forms in ``text``, in reading order."""
+    from scripts.language_review_plugins import auto_qc_text_common as rules
+    found = sorted((match.start(), -len(form), form) for number in range(1, 100)
+                   for form in rules.korean_native(number)
+                   for match in re.finditer(rules._ko_pattern(form), text))
+    forms, end = [], -1
+    for start, negative_length, form in found:
+        if start >= end:  # The longest form wins where two overlap.
+            forms.append(form)
+            end = start - negative_length
+    return forms
 
 
 def protected_text_agrees(expected: str, recognized: str, locale: str) -> bool:
@@ -131,11 +145,15 @@ def protected_text_agrees(expected: str, recognized: str, locale: str) -> bool:
         pattern = r"(?<![가-힣])[영공일이삼사오육칠팔구십백천만억]+(?=\s*(?:" + counters + r")|\s|$)"
         if re.findall(pattern, left) != re.findall(pattern, right):
             return False
-        for number in range(1, 100):
-            for form in rules.korean_native(number):
-                pattern = rules._ko_pattern(form)
-                if len(re.findall(pattern, left)) != len(re.findall(pattern, right)):
-                    return False
+        # In order: 두 아들과 세 딸 heard as 세 아들과 두 딸 keeps every count.
+        if korean_native_numbers(left) != korean_native_numbers(right):
+            return False
+    if locale == "es":
+        # Un and una are usually articles, so a changed form (un/una) is ASR
+        # noise; losing or gaining one can still drop the quantity "one".
+        ones = r"(?<!\w)(?:uno|una|un)(?!\w)"
+        if len(re.findall(ones, left)) != len(re.findall(ones, right)):
+            return False
     books = (rules._EN_BOOK_CODES if locale == "en" else rules._ES_BOOK_CODES if locale == "es"
              else rules._KO_BOOK_CODES if locale == "ko" else rules._ZH_BOOK_CODES)
     names = {key[-1] if isinstance(key, tuple) else key for key in books}

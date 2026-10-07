@@ -47,6 +47,25 @@ class FormalAudioScreenTests(unittest.TestCase):
         self.assertGreaterEqual(similarity, 0.88)
         self.assertFalse(passed)
 
+    def test_korean_quantities_cannot_swap(self):
+        expected = "그 집에는 두 아들과 세 딸이 함께 살고 있었습니다."
+        heard = "그 집에는 세 아들과 두 딸이 함께 살고 있었습니다."
+        similarity, _, passed = subject.score(expected, heard, "ko", 0.88)
+        self.assertGreaterEqual(similarity, 0.88)
+        self.assertFalse(passed)
+        self.assertEqual(subject.korean_native_numbers("마흔네 해 동안 두 아들"), ["마흔네", "두"])
+        self.assertTrue(subject.score(expected, expected, "ko", 0.88)[2])
+
+    def test_spanish_one_cannot_disappear(self):
+        expected = "Solo tienes una vida y debes permanecer fiel cada día."
+        similarity, _, passed = subject.score(expected, expected.replace("una ", ""), "es", 0.88)
+        self.assertGreaterEqual(similarity, 0.88)
+        self.assertFalse(passed)
+        # Un for una is article noise, not a lost quantity.
+        self.assertTrue(subject.score(expected, expected.replace("una", "un"), "es", 0.88)[2])
+        long = "Cada uno de nosotros recibe la gracia de Dios en esta mañana tranquila."
+        self.assertFalse(subject.score(long, long.replace("uno ", ""), "es", 0.88)[2])
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)

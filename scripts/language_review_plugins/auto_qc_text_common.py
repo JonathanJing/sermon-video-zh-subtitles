@@ -857,6 +857,25 @@ def shared_terms(policy: dict | None) -> frozenset[str]:
                      for word in re.findall(r"[a-zA-Z']+", _fold(value)))
 
 
+# A one-character Chinese name is also a morpheme of ordinary words: 神 in 精神
+# (spirit, morale) does not name God, nor 主 in 主要 (main) the Lord.
+_ZH_NAME_COMPOUNDS = {
+    "神": ("精神", "神经", "神奇", "神秘", "神话", "神情", "神色", "神态", "神气", "神采", "眼神",
+          "留神", "出神", "走神", "失神", "费神", "提神", "心神", "传神", "神仙", "神速", "神往"),
+    "主": ("主要", "主意", "主张", "主动", "主题", "主观", "主持", "主任", "主席", "主流", "主角",
+          "主导", "主体", "主见", "主管", "民主", "自主", "做主", "地主", "房主", "业主", "主人公"),
+}
+
+
+def name_spans(target: str, text: str) -> list[tuple[int, int]]:
+    """Where ``target`` (both folded) names someone in ``text``."""
+    if len(target) == 1 and target in _ZH_NAME_COMPOUNDS:
+        text = re.sub("|".join(_ZH_NAME_COMPOUNDS[target]), lambda match: " " * len(match[0]), text)
+    # A complete term: "Ana" inside "mañana" is not the name. Hangul and Han
+    # neighbours are allowed, since particles attach (바울이).
+    return [match.span() for match in re.finditer(r"(?<![a-z0-9])" + re.escape(target) + r"(?![a-z0-9])", text)]
+
+
 def name_problems(policy: dict, english: str, text: str) -> list[str]:
     folded_text = _fold(text)
     problems = []
@@ -867,10 +886,7 @@ def name_problems(policy: dict, english: str, text: str) -> list[str]:
                 continue
             if term.get("reviewStatus") == "pending" or not term.get("target"):
                 problems.append(f"{source}: terminology unresolved")
-            # A complete term: "Ana" inside "mañana" is not the name. Hangul and
-            # Han neighbours are allowed, since particles attach (바울이).
-            elif not re.search(r"(?<![a-z0-9])" + re.escape(_fold(term["target"])) + r"(?![a-z0-9])",
-                               folded_text):
+            elif not name_spans(_fold(term["target"]), folded_text):
                 problems.append(f"{source}: expected {term['target']}")
     return problems
 

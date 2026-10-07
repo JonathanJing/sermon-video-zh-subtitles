@@ -169,6 +169,11 @@ class TextReviewRegressions(unittest.TestCase):
         self.assertEqual(rules.name_problems(policy, "Anna prayed.", "Oró Ána."), [])
         # Korean particles attach to the name.
         self.assertEqual(rules.name_problems(policy, "Paul wrote.", "바울이 썼습니다."), [])
+        # A one-character Chinese name inside an ordinary word does not name anyone.
+        god = {"terminology": {"properNames": [{"source": "God", "target": "神"}], "seriesNames": []}}
+        self.assertEqual(rules.name_problems(god, "God gives us courage.", "我们要振奋精神。"), ["God: expected 神"])
+        self.assertEqual(rules.name_problems(god, "God gives us courage.", "神赐给我们精神。"), [])
+        self.assertEqual(rules.name_spans("神", "精神来自神。"), [(4, 5)])
 
     def test_one_word_spanish_copies_are_untranslated(self):
         for english, target in (("Repent.", "Repent."), ("Listen!", "listen"), ("Believe.", "Believe.")):

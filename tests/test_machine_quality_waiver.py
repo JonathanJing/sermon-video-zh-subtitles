@@ -829,7 +829,8 @@ class CalibrationAndWaiverTests(unittest.TestCase):
             result = seeded.calibrate(locale, fixtures.groups(locale), policy=fixtures.policy(locale),
                                       call=always_pass, identity=fixtures.SEMANTIC_IDENTITY)
             # dropped_half also fails the length screen, which is not credited either.
-            for kind in ("text.semantic_negation", "text.added_number", "text.wrong_ordinal", "text.dropped_half"):
+            for kind in ("text.semantic_negation", "text.added_number", "text.wrong_ordinal", "text.added_content",
+                         "text.dropped_half"):
                 row = result["kinds"][kind]
                 self.assertGreater(row["trials"], 0, (locale, kind))
                 self.assertEqual(row["detected"], 0, (locale, kind))
@@ -838,6 +839,15 @@ class CalibrationAndWaiverTests(unittest.TestCase):
             self.assertEqual(good["kinds"]["text.semantic_negation"]["rate"], 1.0)
             self.assertEqual(good["kinds"]["text.added_number"]["rate"], 1.0)
             self.assertEqual(good["kinds"]["text.wrong_ordinal"]["rate"], 1.0)
+            self.assertEqual(good["kinds"]["text.added_content"]["rate"], 1.0)
+
+    def test_added_content_appends_another_sentence_without_a_number(self):
+        others = [{"groupId": "g1", "english": "Two sons.", "targetText": "两个儿子。"},
+                  {"groupId": "g2", "english": "He prayed for his son.", "targetText": "他为儿子祷告。"},
+                  {"groupId": "g3", "english": "Grace is a gift from heaven above.", "targetText": "恩典是从天上来的礼物。"}]
+        group = {"groupId": "g0", "english": "Grace is a gift.", "targetText": "恩典是礼物。"}
+        self.assertEqual(seeded.mutate_text(group, "added_content", "zh-Hans", None, others), "恩典是礼物。他为儿子祷告。")
+        self.assertIsNone(seeded.mutate_text(group, "added_content", "zh-Hans", None))
 
     def test_a_changed_ordinal_is_seeded(self):
         for locale, target, wrong in (("es", "el primer mandamiento", "el segundo mandamiento"),
