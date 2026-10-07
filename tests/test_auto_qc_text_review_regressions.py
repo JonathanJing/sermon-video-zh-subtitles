@@ -1,10 +1,46 @@
 """Focused deterministic-gate regressions for PR 260 review feedback."""
+import json
 import unittest
+from pathlib import Path
 
 from scripts.language_review_plugins import auto_qc_text_common as rules
 
 
 class TextReviewRegressions(unittest.TestCase):
+    def test_real_spanish_policy_only_exempts_complete_glossary_spans(self):
+        policy = json.loads((Path(__file__).resolve().parents[1]
+                             / "config/target-language-policies/es.json").read_text())
+        terms = rules.shared_terms(policy)
+        self.assertIn("revelation: the comfort and hope jesus brings", terms)
+        self.assertNotIn("and", terms)
+        self.assertNotIn("the", terms)
+        for english, target in (
+                ("We love God and serve people.", "Amamos a Dios and servimos gente."),
+                ("We love the world because God loves.", "Amamos the mundo porque Dios ama.")):
+            with self.subTest(target=target):
+                self.assertTrue(rules.untranslated_problems(english, target, "es", terms))
+        for value in ("Revelation: The Comfort and Hope Jesus Brings", "Eric Geiger",
+                      "A Study of the Book of Numbers"):
+            self.assertEqual(rules.untranslated_problems(value, value, "es", terms), [], value)
+        self.assertEqual(rules.untranslated_problems(
+            "Dr. Eric Geiger taught us today.", "El Dr. Eric Geiger nos enseñó hoy.", "es", terms), [])
+        # A fragment of a full name cannot excuse the title or the English around it.
+        self.assertTrue(rules.untranslated_problems(
+            "No, Dr. Eric.", "No, Dr. Eric.", "es", terms))
+        self.assertTrue(rules.untranslated_problems(
+            "Dr. Eric Geiger taught us today.", "El Dr. Eric Geiger taught us today.", "es", terms))
+        self.assertTrue(rules.untranslated_problems(
+            "We love God and serve people.",
+            "Revelation: The Comfort and Hope Jesus Brings: Amamos a Dios and servimos gente.", "es", terms))
+
+    def test_single_modal_names_require_capitalization_at_the_matched_span(self):
+        names = frozenset({"will", "may"})
+        for name in ("Will", "May"):
+            self.assertEqual(rules.untranslated_problems(name, name, "es", names), [])
+            self.assertTrue(rules.untranslated_problems(name.lower(), name.lower(), "es", names))
+        self.assertEqual(rules.untranslated_problems("Will May.", "Will May.", "es", names), [])
+        self.assertTrue(rules.untranslated_problems("will may.", "will may.", "es", names))
+
     def test_adjacent_spoken_numbers_remain_separate(self):
         for english in ("two, three, four", "two three four", "two and three and four",
                         "two; three; four", "two. Three. Four"):
@@ -174,6 +210,23 @@ class TextReviewRegressions(unittest.TestCase):
         self.assertEqual(rules.name_problems(god, "God gives us courage.", "我们要振奋精神。"), ["God: expected 神"])
         self.assertEqual(rules.name_problems(god, "God gives us courage.", "神赐给我们精神。"), [])
         self.assertEqual(rules.name_spans("神", "精神来自神。"), [(4, 5)])
+
+    def test_spanish_shared_titles_and_long_name_lists_are_not_english_leaks(self):
+        names = frozenset({"rick", "warren", "ken", "will", "mark", "paul", "silas", "anna", "john"})
+        for title in ("Dr.", "Dra.", "Doctor", "Doctora", "pastor", "pastora"):
+            self.assertEqual(rules.untranslated_problems(
+                f"{title} Rick Warren taught us today.",
+                f"El {title} Rick Warren nos enseñó hoy.", "es", names), [], title)
+            self.assertTrue(rules.untranslated_problems(
+                f"{title} Rick Warren taught us today.",
+                f"El {title} Rick Warren taught us today.", "es", names), title)
+        for english in ("Rick Warren Ken Paul Silas Anna.", "Will Mark Paul Silas Anna John."):
+            self.assertEqual(rules.untranslated_problems(english, english, "es", names), [])
+        self.assertTrue(rules.untranslated_problems(
+            "Will Mark Paul Silas Anna John trust us.",
+            "Will Mark Paul Silas Anna John trust us.", "es", names))
+        self.assertTrue(rules.untranslated_problems(
+            "Dr. Alex Smith taught us today.", "El Dr. Alex Smith nos enseñó hoy.", "es", names))
 
     def test_one_word_spanish_copies_are_untranslated(self):
         for english, target in (("Repent.", "Repent."), ("Listen!", "listen"), ("Believe.", "Believe.")):
