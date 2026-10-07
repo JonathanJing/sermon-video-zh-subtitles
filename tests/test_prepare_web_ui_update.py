@@ -14,6 +14,7 @@ def baseline(tmp_path, environment='production'):
     public.mkdir(parents=True)
     (public / 'multilingual-v3.json').write_text(json.dumps({'pages': []}))
     (public / 'old.mp3').write_bytes(b'existing approved audio')
+    (public / 'fingerprint-worker.mjs').write_text('deployed acoustic matcher')
     (public / 'index.html').write_text('old UI')
     config = {'hosting': {'site': target['site'], 'public': 'public', 'rewrites': [
         {'source': '/api/**', 'run': {'serviceId': 'sermon-feedback-api', 'region': 'us-west1'}}]}}
@@ -32,13 +33,13 @@ def test_production_overlay_preserves_catalog_media_and_backend_config(tmp_path,
     base = baseline(tmp_path)
     source = tmp_path / 'source'
     source.mkdir()
-    for name in ui.UI_FILES:
+    for name in ui.ui_files('production'):
         (source / name).write_text('new UI: ' + name)
     monkeypatch.setattr(ui.builder, 'RUNTIME_WEB_ROOT', source)
-    monkeypatch.setattr(ui.builder, 'runtime_web_files', lambda: None)
+    monkeypatch.setattr(ui.builder, 'runtime_web_files', lambda *_: None)
     out = tmp_path / 'candidate'
     ui.prepare(base, out, environment='production')
-    for name in ('old.mp3', 'multilingual-v3.json'):
+    for name in ('old.mp3', 'multilingual-v3.json', 'fingerprint-worker.mjs'):
         assert (out / 'public' / name).read_bytes() == (base / 'public' / name).read_bytes()
     assert (out / 'firebase.json').read_bytes() == (base / 'firebase.json').read_bytes()
     config = staging.read(out / 'publish-config.json')

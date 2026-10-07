@@ -67,6 +67,8 @@ const fieldAlignment = mountFingerprintUI({
   seek: (time, { correction = false } = {}) => setPosition(time, { offset: 0, alignment: true, undo: !correction }),
   play: options => startAlignmentPlayback(options),
 });
+const alignmentDiagnostics = $("fingerprint-diagnostics")?.closest?.("details");
+if (alignmentDiagnostics && typeof fieldAlignment.getDiagnostics !== "function") alignmentDiagnostics.hidden = true;
 const mediaSession = createMediaSession({
   audio,
   getSelection: () => activeView !== "tab-voices" && week && track ? { week, track } : null,

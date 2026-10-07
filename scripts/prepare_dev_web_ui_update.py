@@ -19,6 +19,19 @@ from scripts import build_full_video_app_release as builder
 UI_FILES = ('index.html', 'style.css', 'app.mjs', 'i18n.mjs',
             'published-weeks.mjs', 'reading-mode.mjs', 'locales-reader.mjs',
             'offline.mjs', 'offline-worker.js')
+# Production's deployed reader predates these presentation interfaces. Preserve
+# its media, feedback configuration and acoustic capture/worker implementation.
+PRODUCTION_UI_DEPENDENCIES = (
+    'catalog.mjs', 'content-locales.mjs', 'icons.mjs', 'icons.svg', 'theme.js',
+    'brand-icon.svg', 'brand-icon-light.svg', 'brand-icon.png',
+    'locales-app.mjs', 'locales-interface.mjs', 'locales-feedback.mjs',
+    'locales-ko.mjs', 'locales-es.mjs', 'fingerprint-diagnostics.mjs',
+)
+
+
+def ui_files(environment):
+    staging.hosting_target(environment)
+    return UI_FILES + (PRODUCTION_UI_DEPENDENCIES if environment == 'production' else ())
 
 
 def prepare(baseline, out, *, environment='dev'):
@@ -40,7 +53,7 @@ def prepare(baseline, out, *, environment='dev'):
     shutil.copyfile(base / 'firebase.json', out / 'firebase.json')
     shutil.copyfile(base / 'baseline-receipt.json', out / 'baseline-receipt.json')
     changed = []
-    for name in UI_FILES:
+    for name in ui_files(environment):
         source = builder.RUNTIME_WEB_ROOT / name
         target = out / 'public' / name
         contract.require(source.is_file(), 'Missing UI source: ' + name)
@@ -53,6 +66,8 @@ def prepare(baseline, out, *, environment='dev'):
         if row['path'] not in changed:
             contract.require(row == before.get(row['path']), 'Preserved file changed: ' + row['path'])
     contract.require(set(before).issubset({row['path'] for row in after}), 'Existing file removed')
+    # Check the actual mixed candidate, including preserved production modules.
+    builder.runtime_web_files(out / 'public')
     staging.write(out / 'seal-report.json', {'catalogSha256': staging.digest(out / 'public/multilingual-v3.json'), 'files': after})
     contract.validate_catalog_snapshot(out)
     staging.write(out / 'publish-config.json', staging.publication_config(base, out, environment=environment))
