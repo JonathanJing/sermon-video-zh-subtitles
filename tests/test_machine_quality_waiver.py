@@ -579,12 +579,17 @@ class CalibrationAndWaiverTests(unittest.TestCase):
         patcher.start()
         self.addCleanup(patcher.stop)
 
+    @staticmethod
+    def transports(locale, **asr_options):
+        tts = fixtures.FakeTts()
+        return {"asr": fixtures.FakeAsr(locale, tts=tts, **asr_options), "render": tts}
+
     def calibration(self, locale, *, semantic=True, asr=True):
         call = fixtures.PerfectSemanticJudge(locale) if semantic else None
         return seeded.calibrate(locale, fixtures.groups(locale), fixtures.units(locale),
                                 policy=fixtures.policy(locale), call=call,
                                 identity=fixtures.SEMANTIC_IDENTITY if semantic else None,
-                                asr=fixtures.FakeAsr(locale) if asr else None)
+                                **(self.transports(locale) if asr else {}))
 
     def test_calibration_has_no_false_positives_on_clean_fixtures(self):
         for locale in LOCALES:
@@ -604,8 +609,14 @@ class CalibrationAndWaiverTests(unittest.TestCase):
                       waiver.calibration_problems(without, "ko", waiver.implementation_sha256(), require_audio=True))
         # An ASR integration that always agrees catches nothing.
         broken = seeded.calibrate("ko", fixtures.groups("ko"), fixtures.units("ko"), policy=fixtures.policy("ko"),
-                                  asr=fixtures.FakeAsr("ko", always_hears_expected_text=True))
+                                  **self.transports("ko", always_hears_expected_text=True))
         self.assertEqual(broken["kinds"]["audio.wrong_sentence"]["rate"], 0.0)
+        # So does one that fills in a negation or number the rendered dub left out.
+        self.assertEqual(broken["kinds"]["audio.dropped_key_word"]["rate"], 0.0)
+        # Without the TTS transport no dub lacks the word, so the kind has no trials.
+        no_render = seeded.calibrate("ko", fixtures.groups("ko"), fixtures.units("ko"), policy=fixtures.policy("ko"),
+                                     asr=fixtures.FakeAsr("ko"))
+        self.assertEqual(no_render["kinds"]["audio.dropped_key_word"]["trials"], 0)
 
     def test_baseline_false_positives_are_not_credited(self):
         groups = fixtures.groups("ko")

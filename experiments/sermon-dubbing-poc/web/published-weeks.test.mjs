@@ -703,6 +703,7 @@ for (const [name, corrupt] of [
   ['schema version', f => f.files.set('/multilingual-v4.json', f.files.get('/multilingual-v4.json').replace('sermon-multilingual-catalog-v4', 'sermon-multilingual-catalog-v3'))],
   ['missing default page', f => { const c = JSON.parse(f.files.get('/multilingual-v4.json')); c.defaultPageId = 'missing'; f.files.set('/multilingual-v4.json', JSON.stringify(c)); }],
   ['malformed JSON', f => f.files.set('/multilingual-v4.json', '{')],
+  ['malformed page', f => { const c = JSON.parse(f.files.get('/multilingual-v4.json')); c.pages[0].date = 'not-a-date'; f.files.set('/multilingual-v4.json', JSON.stringify(c)); }],
   ['server error', f => { const fetchImpl = f.fetchImpl; f.fetchImpl = async (path, options) => path === '/multilingual-v4.json' ? new Response('', { status: 500 }) : fetchImpl(path, options); }],
 ]) {
   test(`v4 catalog ${name} falls back to the v3 projection and records the error`, async () => {

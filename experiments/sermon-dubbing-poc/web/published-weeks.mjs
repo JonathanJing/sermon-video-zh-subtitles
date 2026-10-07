@@ -629,7 +629,11 @@ export async function loadPublishedWeeks(fetchImpl = globalThis.fetch, { request
   let catalog = null, catalogVersion = CATALOG_V4;
   try {
     catalog = await readJson(fetchImpl, '/multilingual-v4.json', undefined, timeoutMs, true);
-    if (catalog !== null) validatePublishedCatalogHeader(catalog, CATALOG_V4);
+    if (catalog !== null) {
+      validatePublishedCatalogHeader(catalog, CATALOG_V4);
+      // A malformed v4 page would otherwise only be dropped, hiding a week v3 still lists.
+      for (const page of catalog.pages) validatePublishedPage(page);
+    }
   } catch (error) { catalog = null; errors.push(`Catalog v4 unavailable, using v3: ${error.message}`); }
   if (catalog === null) {
     catalogVersion = CATALOG_V3;

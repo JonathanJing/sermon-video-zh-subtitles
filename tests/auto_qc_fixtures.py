@@ -125,17 +125,37 @@ def misheard(text: str) -> str:
     return text[:max(1, len(text) // 3)]
 
 
-class FakeAsr:
-    """Fake ASR transport: hears the text only when the audio is this text's own clean render."""
+class FakeTts:
+    """Fake TTS transport: renders distinct audio for each text and remembers what it said."""
 
-    def __init__(self, locale: str, *, always_hears_expected_text: bool = False):
+    def __init__(self):
+        self.said = {}
+
+    def __call__(self, text, locale):
+        seconds = 0.2 + 0.17 * speech_units(text, locale) + 0.001 * (len(self.said) + 1)
+        wav = speech_wav(seconds)
+        self.said[wav] = text
+        return wav
+
+
+class FakeAsr:
+    """Fake ASR transport: hears the text only when the audio is this text's own clean render,
+    and hears exactly what ``tts`` said in audio it rendered."""
+
+    def __init__(self, locale: str, *, always_hears_expected_text: bool = False, tts: FakeTts | None = None):
         self.own = {row["text"]: row["wav"] for row in units(locale)}
         self.always = always_hears_expected_text  # A broken integration that echoes the expected text.
+        self.tts = tts
         self.calls = []
 
     def __call__(self, role, wav, text, locale):
         self.calls.append(role)
-        heard = text if self.always or self.own.get(text) == wav else misheard(text)
+        if self.always:
+            heard = text
+        elif self.tts is not None and wav in self.tts.said:
+            heard = self.tts.said[wav]
+        else:
+            heard = text if self.own.get(text) == wav else misheard(text)
         model = PRIMARY_ASR if role == "primary" else SECONDARY_ASR
         return audio_qc.asr_opinion(heard, audio=wav, text=text, locale=locale, model=model,
                                     settings=ASR_SETTINGS[model])

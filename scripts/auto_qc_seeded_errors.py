@@ -348,9 +348,11 @@ def drop_key_word(text: str, locale: str) -> str | None:
     return re.sub(r"\s{2,}", " ", text[:match.start()] + text[match.end():]).strip()
 
 
-def calibrate_audio(units: list[dict], locale: str, *, asr=None, max_trials: int = 30) -> dict:
+def calibrate_audio(units: list[dict], locale: str, *, asr=None, render=None, max_trials: int = 30) -> dict:
     """``asr(role, wav, text, locale) -> opinion`` (see ``target_audio_auto_qc.asr_opinion``)
-    is the production ASR transport; without it wrong_sentence has no trials."""
+    is the production ASR transport; without it wrong_sentence has no trials.
+    ``render(text, locale) -> wav`` is the production TTS; dropped_key_word renders the
+    sentence without its negation or number and needs both."""
     threshold = audio_qc.THRESHOLDS["asrMinSimilarity"]
     if asr is not None:
         units = [_asr_row(unit, unit["wav"], locale, asr, threshold) for unit in units]
@@ -384,17 +386,13 @@ def calibrate_audio(units: list[dict], locale: str, *, asr=None, max_trials: int
                 wav = other["wav"]
                 rows[index] = _asr_row(units[index], wav, locale, asr, threshold)
             elif kind == "dropped_key_word":
-                # A dub that lost one "not" or number still scores high on the ratio; the
-                # ASR hears what the dub said, so its transcript lacks that word.
-                if asr is None or drop_key_word(units[index]["asr"]["primary"]["recognized"], locale) is None:
+                # A dub that lost one "not" or number still scores high on the ratio. The
+                # ASR must hear that omission in real audio rendered without the word; an
+                # ASR that fills in the expected word would approve it, so it fails here.
+                dropped = drop_key_word(units[index]["text"], locale)
+                if asr is None or render is None or dropped is None:
                     continue
-
-                def omitting(role, wav, text, asr_locale):
-                    opinion = asr(role, wav, text, asr_locale)
-                    heard = drop_key_word(opinion["recognized"], asr_locale) or opinion["recognized"]
-                    return {**opinion, "recognized": heard,
-                            "similarity": audio_qc.transcript_similarity(text, heard, asr_locale)}
-                rows[index] = _asr_row(units[index], units[index]["wav"], locale, omitting, threshold)
+                rows[index] = _asr_row(units[index], render(dropped, locale), locale, asr, threshold)
             else:
                 # The screen decodes the mutated bytes, as it would a real faulty render.
                 rows[index] = {**base[index], "wav": audio_qc.encode_pcm16(*mutate_audio(samples, rate, kind))}
@@ -448,7 +446,7 @@ def _text_sha(text: str) -> str:
 
 
 def calibrate(locale: str, groups: list[dict], units: list[dict] | None = None, *,
-              policy: dict | None = None, call=None, identity: dict | None = None, asr=None,
+              policy: dict | None = None, call=None, identity: dict | None = None, asr=None, render=None,
               spoken_groups: list[dict] | None = None, max_trials: int = 30,
               candidate: dict | None = None, spoken_candidate: dict | None = None) -> dict:
     """``identity`` names the back-translation runtime behind ``call`` and is required with it.
@@ -459,7 +457,7 @@ def calibrate(locale: str, groups: list[dict], units: list[dict] | None = None, 
     bound = text_qc.semantic_identity(identity) if call is not None else None
     inputs = calibration_inputs(groups, units, spoken_groups, policy, candidate, spoken_candidate)
     text = calibrate_text(groups, locale, policy=policy, call=call, max_trials=max_trials)
-    audio = calibrate_audio(units, locale, asr=asr, max_trials=max_trials) if units else None
+    audio = calibrate_audio(units, locale, asr=asr, render=render, max_trials=max_trials) if units else None
     spoken = (calibrate_spoken(spoken_groups, locale, policy=policy, call=call, max_trials=max_trials)
               if spoken_groups else None)
     kinds = {f"text.{k}": v for k, v in text["kinds"].items()}
