@@ -183,8 +183,18 @@ def korean_native(value: int) -> tuple[str, ...]:
     return tuple(dict.fromkeys(head + tail for head in heads for tail in tails if head + tail))
 
 
-def _ko_pattern(form: str) -> str:
+# A bare one-syllable Sino numeral (이, 삼, 사 …) is also a common word, so it
+# counts only attached to a Sino counter (이년, 삼장, 오절). 이 is also "this":
+# 이번, 이분, 이주, 이권 and 이일 read as words, so it needs a counter that cannot.
+_KO_SINO_COUNTERS = ("년", "월", "장", "절", "층", "배", "초", "회", "퍼센트", "일", "주", "분", "번", "세", "권")
+_KO_I_COUNTERS = ("년", "월", "장", "절", "층", "배", "초", "회", "퍼센트")
+
+
+def _ko_pattern(form: str, *, sino: bool = False) -> str:
     left = r"(?<![가-힣])"
+    if len(form) == 1 and sino:
+        counters = _KO_I_COUNTERS if form == "이" else _KO_SINO_COUNTERS
+        return left + re.escape(form) + r"(?=(?:" + "|".join(counters) + r"))"
     if len(form) == 1:
         # One syllable (이, 두, 세 …) is far too common inside words; require a
         # counter or a following space before treating it as a number.
@@ -223,8 +233,9 @@ def korean_number_count(text: str, value: int | str) -> int:
         whole, fraction = value.split(".")
         spoken = korean_sino(int(whole)) + "점" + "".join(_KO_SINO_DIGITS[int(d)] for d in fraction)
         return int(_decimal_present(text, {value}) or spoken in re.sub(r"\s+", "", text))
-    forms = (korean_sino(value), *korean_native(value), *(("제로",) if value == 0 else ()))
-    return _occurrences(text, _digit_patterns({str(value), f"{value:,}"}) + [_ko_pattern(form) for form in forms])
+    forms = (*korean_native(value), *(("제로",) if value == 0 else ()))
+    return _occurrences(text, _digit_patterns({str(value), f"{value:,}"}) + [_ko_pattern(korean_sino(value), sino=True)]
+                        + [_ko_pattern(form) for form in forms])
 
 
 def korean_number_present(text: str, value: int | str) -> bool:

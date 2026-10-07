@@ -186,9 +186,20 @@ def _sha256(value: bytes) -> str:
     return hashlib.sha256(value).hexdigest()
 
 
-def asr_opinion(similarity: float, *, audio: bytes, text: str, model: str, settings: dict,
+def transcript_similarity(text: str, recognized: str, locale: str) -> float:
+    """The calibrated screener's score of what an ASR heard against the expected text."""
+    # Lazy: the screener imports the speech-job module, which reaches this one.
+    from scripts.screen_target_language_audio_units import score
+    return score(text, recognized, locale, 1.0)[0]
+
+
+def asr_opinion(recognized: str, *, audio: bytes, text: str, locale: str, model: str, settings: dict,
                 model_revision: str | None = None) -> dict:
     """An ASR result bound to the exact audio bytes, expected text, model and runtime.
+
+    The opinion keeps what the ASR heard; its similarity is always the
+    screener's score of that transcript, never a number the transport reports,
+    so QC and the waiver can rescore it.
 
     ``settings`` is the normalized ASR runtime behind the score: backend,
     language and prompt options, decoding, cache namespace and similarity
@@ -198,7 +209,10 @@ def asr_opinion(similarity: float, *, audio: bytes, text: str, model: str, setti
     """
     if not isinstance(settings, dict) or not settings:
         raise ValueError("An ASR opinion needs its runtime settings")
-    return {"similarity": similarity, "audioSha256": _sha256(audio),
+    if not isinstance(recognized, str):
+        raise ValueError("An ASR opinion needs the recognized transcript")
+    return {"similarity": transcript_similarity(text, recognized, locale), "recognized": recognized,
+            "audioSha256": _sha256(audio),
             "textSha256": _sha256(text.encode("utf-8")), "model": model,
             "modelRevision": model_revision, "settingsSha256": waiver.json_sha256(settings)}
 
@@ -228,17 +242,24 @@ def _model(opinion: dict | None) -> dict | None:
     return None if opinion is None else {"model": opinion["model"], "modelRevision": opinion.get("modelRevision")}
 
 
-def bound_opinion(opinion: dict | None, audio_sha: str | None, text_sha: str) -> tuple[dict | None, bool]:
-    """``(opinion, stale)``: an opinion about other audio or text counts as not run."""
+def bound_opinion(opinion: dict | None, audio_sha: str | None, text: str,
+                  locale: str) -> tuple[dict | None, bool]:
+    """``(opinion, stale)``: an opinion about other audio or text counts as not run;
+    a current one must score as its own transcript does."""
+    text_sha = _sha256(text.encode("utf-8"))
     if opinion is None:
         return None, False
     if (not isinstance(opinion, dict) or not isinstance(opinion.get("model"), str) or not opinion["model"]
             or type(opinion.get("similarity")) not in (int, float)
             or opinion.get("modelRevision") is not None and not isinstance(opinion["modelRevision"], str)
+            or not isinstance(opinion.get("recognized"), str)
             or not isinstance(opinion.get("settingsSha256"), str) or len(opinion["settingsSha256"]) != 64):
-        raise ValueError("An ASR opinion needs similarity, audioSha256, textSha256, model and settingsSha256")
+        raise ValueError("An ASR opinion needs similarity, recognized, audioSha256, textSha256, model "
+                         "and settingsSha256")
     if opinion.get("audioSha256") != audio_sha or opinion.get("textSha256") != text_sha:
         return None, True
+    if opinion["similarity"] != transcript_similarity(text, opinion["recognized"], locale):
+        raise ValueError("An ASR similarity must be the score of its own transcript")
     return opinion, False
 
 
@@ -287,8 +308,9 @@ def screen(units: list[dict], locale: str, thresholds: dict = THRESHOLDS, *,
         # The waiver binds these exact bytes and both ASR opinions.
         audio_sha = _sha256(row["wav"])
         text_sha = _sha256(row["text"].encode("utf-8"))
-        primary, primary_stale = bound_opinion((row.get("asr") or {}).get("primary"), audio_sha, text_sha)
-        secondary, secondary_stale = bound_opinion((row.get("asr") or {}).get("secondary"), audio_sha, text_sha)
+        primary, primary_stale = bound_opinion((row.get("asr") or {}).get("primary"), audio_sha, row["text"], locale)
+        secondary, secondary_stale = bound_opinion((row.get("asr") or {}).get("secondary"), audio_sha,
+                                                   row["text"], locale)
         if primary and secondary and _model(primary) == _model(secondary):
             raise ValueError("The secondary ASR must be a different model from the primary")
         asr = None
@@ -309,6 +331,8 @@ def screen(units: list[dict], locale: str, thresholds: dict = THRESHOLDS, *,
         results.append({"groupId": row["groupId"], "status": status, "issues": issues,
                         "asrDecision": asr, "asrPrimary": None if primary is None else primary["similarity"],
                         "asrSecondary": None if secondary is None else secondary["similarity"],
+                        "asrPrimaryRecognized": None if primary is None else primary["recognized"],
+                        "asrSecondaryRecognized": None if secondary is None else secondary["recognized"],
                         "asrPrimaryModel": _model(primary), "asrSecondaryModel": _model(secondary),
                         "asrPrimarySettingsSha256": None if primary is None else primary["settingsSha256"],
                         "asrSecondarySettingsSha256": None if secondary is None else secondary["settingsSha256"],
@@ -479,8 +503,8 @@ def main() -> None:
                         help="Audio package JSON: check its assembled track instead of screening units")
     parser.add_argument("--input", type=Path,
                         help="{locale, units:[{groupId, text, sourceSeconds, wavPath, asr:{primary, "
-                             "secondary?}, sourceUnitIds}]}; each ASR opinion is {similarity, "
-                             "audioSha256, textSha256, model, modelRevision?}")
+                             "secondary?}, sourceUnitIds}]}; each ASR opinion is {similarity, recognized, "
+                             "audioSha256, textSha256, model, modelRevision?, settingsSha256}")
     parser.add_argument("--out", required=True, type=Path)
     parser.add_argument("--repair-ledger-root", type=Path,
                         help="Durable repair ledger root; with --source and --anchor, counts failed attempts "

@@ -422,13 +422,16 @@ def audio_fixture(flagged=False):
           "implementationSha256": IMPLEMENTATION, "thresholds": dict(THRESHOLDS),
           "humanApproval": False, "mutatesAudio": False, "subtitleOnlyGroupIds": [], "repairGroupIds": [],
           "results": [{"groupId": unit["textGroupId"], "status": "pass", "issues": [], "asrDecision": "pass",
-                       "asrPrimary": value, "asrSecondary": 0.96 if value < 0.88 else None,
+                       "asrPrimary": value, "asrSecondary": 1.0 if value < 0.88 else None,
+                       # The secondary ASR heard the text exactly; its score is rescored from this.
+                       "asrPrimaryRecognized": recognized, "asrSecondaryRecognized": text if value < 0.88 else None,
                        "asrPrimaryModel": PRIMARY_ASR, "asrSecondaryModel": SECONDARY_ASR if value < 0.88 else None,
                        "asrPrimarySettingsSha256": SCREENING_ASR_SETTINGS,
                        "asrSecondarySettingsSha256": SECONDARY_ASR_SETTINGS if value < 0.88 else None,
                        "audioSha256": unit["audio"]["sha256"], "textSha256": unit["targetTextSha256"],
                        "sourceSeconds": span, "failedAttempts": 0, "nextAction": "keep",
-                       "metrics": {}} for unit, value, span in zip(units, similarities, (2.0, 3.5))]}
+                       "metrics": {}} for unit, value, span, text, recognized
+                      in zip(units, similarities, (2.0, 3.5), texts, heard)]}
     text = {"schemaVersion": basis.TEXT_WAIVER_SCHEMA, "reviewKind": "machine_quality_waiver",
             "humanApproval": False, "decision": "machine_quality_waived", "targetLocale": "ko",
             "englishSourcePackageJsonSha256": "1" * 64, "anchorManifestJsonSha256": basis.json_sha256(anchor),
@@ -611,6 +614,13 @@ class AudioWaiverTests(unittest.TestCase):
         tampered["unitResults"][1]["secondarySimilarity"] = 0.5
         with self.assertRaisesRegex(ValueError, "secondary ASR"):
             basis.validate_audio_waiver(package, tampered, screening)
+
+    def test_secondary_score_is_rescored_from_its_transcript(self):
+        # A permissive secondary transport cannot pass a unit it misheard.
+        package, screening, qc, text = audio_fixture(flagged=True)
+        qc["results"][1]["asrSecondaryRecognized"] = "내가 함께"
+        with self.assertRaisesRegex(ValueError, "not the score of its transcript"):
+            self.build(package, screening, qc, text)
 
     def test_secondary_identity_keeps_the_calibrated_revision_and_checks_unit_binding(self):
         package, screening, qc, text = audio_fixture(flagged=True)

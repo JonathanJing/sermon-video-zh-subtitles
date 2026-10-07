@@ -464,8 +464,10 @@ def build_audio_waiver(package: dict, screening: dict, audio_qc: dict, text_waiv
     track = track_check_problems(package, track_check, implementation)
     _require(not track, "Assembled track is not verified: " + "; ".join(track))
     threshold = _asr_threshold()
-    from scripts.target_audio_auto_qc import screening_asr_settings  # Lazy, as in _asr_threshold.
+    # Lazy, as in _asr_threshold.
+    from scripts.target_audio_auto_qc import screening_asr_settings, transcript_similarity
     primary_settings = json_sha256(screening_asr_settings(screening))
+    texts = {group["translationGroupId"]: group["targetText"] for group in candidate["groups"]}
     secondary_identity = None
     rows = []
     for row, unit in zip(results, package["units"]):
@@ -477,7 +479,8 @@ def build_audio_waiver(package: dict, screening: dict, audio_qc: dict, text_waiv
         _require(row.get("textSha256") == unit["targetTextSha256"],
                  f"Audio QC checked the audio against different text: {group_id}")
         _require(row.get("asrPrimary") == primary and row.get("asrPrimaryModel") == {
-                     "model": screening["model"], "modelRevision": screening.get("modelRevision")},
+                     "model": screening["model"], "modelRevision": screening.get("modelRevision")}
+                 and row.get("asrPrimaryRecognized") == by_group[group_id]["recognized"],
                  f"Audio QC primary ASR differs from the bound screening: {group_id}")
         _require(row.get("asrPrimarySettingsSha256") == primary_settings,
                  f"Audio QC primary ASR runtime differs from the bound screening: {group_id}")
@@ -495,6 +498,11 @@ def build_audio_waiver(package: dict, screening: dict, audio_qc: dict, text_waiv
             secondary_identity = dict(identity)
             _require(isinstance(secondary, (int, float)) and secondary >= threshold,
                      f"Flagged unit needs a passing secondary ASR: {group_id}")
+            # The secondary score is rescored from what that ASR heard, as the primary is.
+            heard = row.get("asrSecondaryRecognized")
+            _require(isinstance(heard, str)
+                     and transcript_similarity(texts[group_id], heard, locale) == secondary,
+                     f"Secondary ASR score is not the score of its transcript: {group_id}")
         rows.append({"textGroupId": group_id, "audioSha256": unit["audio"]["sha256"], "status": "pass",
                      "asr": "secondary_pass" if group_id in flagged else "primary_pass",
                      "primarySimilarity": primary,

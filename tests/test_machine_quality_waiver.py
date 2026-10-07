@@ -293,20 +293,37 @@ class AudioQcTests(unittest.TestCase):
         self.assertEqual(audio_qc.asr_decision(0.6, 0.93), "pass")
         self.assertEqual(audio_qc.asr_decision(0.6, 0.7), "fail")
         units = fixtures.units("zh-Hans")
-        low = audio_qc.asr_opinion(0.5, audio=units[0]["wav"], text=units[0]["text"], model=fixtures.PRIMARY_ASR,
+        low = audio_qc.asr_opinion(fixtures.misheard(units[0]["text"]), audio=units[0]["wav"], text=units[0]["text"],
+            locale="zh-Hans", model=fixtures.PRIMARY_ASR,
             settings=fixtures.ASR_SETTINGS[fixtures.PRIMARY_ASR])
         units[0] = {**units[0], "asr": {"primary": low}}
         self.assertEqual(audio_qc.screen(units, "zh-Hans")["results"][0]["nextAction"], "run_secondary_asr")
-        strong = audio_qc.asr_opinion(0.95, audio=units[0]["wav"], text=units[0]["text"], model=fixtures.SECONDARY_ASR,
+        strong = audio_qc.asr_opinion(units[0]["text"], audio=units[0]["wav"], text=units[0]["text"],
+            locale="zh-Hans", model=fixtures.SECONDARY_ASR,
             settings=fixtures.ASR_SETTINGS[fixtures.SECONDARY_ASR])
         units[0] = {**units[0], "asr": {"primary": low, "secondary": strong}}
         row = audio_qc.screen(units, "zh-Hans")["results"][0]
         self.assertEqual((row["status"], row["asrSecondaryModel"]["model"]), ("pass", fixtures.SECONDARY_ASR))
-        same = audio_qc.asr_opinion(0.95, audio=units[0]["wav"], text=units[0]["text"], model=fixtures.PRIMARY_ASR,
+        same = audio_qc.asr_opinion(units[0]["text"], audio=units[0]["wav"], text=units[0]["text"],
+            locale="zh-Hans", model=fixtures.PRIMARY_ASR,
             settings=fixtures.ASR_SETTINGS[fixtures.PRIMARY_ASR])
         units[0] = {**units[0], "asr": {"primary": low, "secondary": same}}
         with self.assertRaisesRegex(ValueError, "different model"):
             audio_qc.screen(units, "zh-Hans")
+
+    def test_asr_similarity_is_the_score_of_its_transcript(self):
+        units = fixtures.units("ko")
+        heard = fixtures.misheard(units[0]["text"])
+        opinion = audio_qc.asr_opinion(heard, audio=units[0]["wav"], text=units[0]["text"], locale="ko",
+                                       model=fixtures.SECONDARY_ASR, settings=fixtures.ASR_SETTINGS[fixtures.SECONDARY_ASR])
+        self.assertLess(opinion["similarity"], audio_qc.THRESHOLDS["asrMinSimilarity"])
+        # A permissive transport reporting 0.95 for what it misheard is refused.
+        primary = {**units[0]["asr"]["primary"], "recognized": heard, "similarity": 0.3}
+        forged = {**opinion, "similarity": 0.95}
+        for asr in ({"primary": primary}, {"primary": units[0]["asr"]["primary"] | {"similarity": 0.3},
+                                           "secondary": forged}):
+            with self.subTest(asr=sorted(asr)), self.assertRaisesRegex(ValueError, "score of its own transcript"):
+                audio_qc.screen([{**units[0], "asr": asr}, *units[1:]], "ko")
 
     def test_asr_scores_bind_the_current_audio_and_text(self):
         units = fixtures.units("ko")
@@ -318,7 +335,8 @@ class AudioQcTests(unittest.TestCase):
         self.assertEqual((row["status"], row["staleAsr"], row["asrPrimary"]),
                          ("pending_primary_asr", ["primary"], None))
         # An opinion about other text does not count either.
-        other = audio_qc.asr_opinion(0.99, audio=resynthesized, text="다른 문장입니다.", model=fixtures.PRIMARY_ASR,
+        other = audio_qc.asr_opinion("다른 문장입니다.", audio=resynthesized, text="다른 문장입니다.", locale="ko",
+            model=fixtures.PRIMARY_ASR,
             settings=fixtures.ASR_SETTINGS[fixtures.PRIMARY_ASR])
         units[2] = {**units[2], "asr": {"primary": other}}
         self.assertEqual(audio_qc.screen(units, "ko")["results"][2]["status"], "pending_primary_asr")
@@ -338,7 +356,7 @@ class AudioQcTests(unittest.TestCase):
         padded = audio_qc.encode_pcm16([0.0] * (2 * rate) + samples, rate)
         text = units[4]["text"]
         units[4] = {**units[4], "wav": padded, "asr": {"primary": audio_qc.asr_opinion(
-            0.97, audio=padded, text=text, model=fixtures.PRIMARY_ASR,
+            text, audio=padded, text=text, locale="es", model=fixtures.PRIMARY_ASR,
             settings=fixtures.ASR_SETTINGS[fixtures.PRIMARY_ASR])}}
         row = audio_qc.screen(units, "es")["results"][4]
         self.assertEqual(row["status"], "fail")
@@ -536,7 +554,7 @@ class CalibrationAndWaiverTests(unittest.TestCase):
                       waiver.calibration_problems(without, "ko", waiver.implementation_sha256(), require_audio=True))
         # An ASR integration that always agrees catches nothing.
         broken = seeded.calibrate("ko", fixtures.groups("ko"), fixtures.units("ko"), policy=fixtures.policy("ko"),
-                                  asr=fixtures.FakeAsr("ko", primary_similarity_on_mismatch=0.97))
+                                  asr=fixtures.FakeAsr("ko", always_hears_expected_text=True))
         self.assertEqual(broken["kinds"]["audio.wrong_sentence"]["rate"], 0.0)
 
     def test_baseline_false_positives_are_not_credited(self):
