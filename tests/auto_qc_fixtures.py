@@ -103,8 +103,24 @@ SEMANTIC_IDENTITY = {"backend": "fake-transport", "model": "fake-judge",
                      "settings": {"reasoningEffort": "medium", "temperature": 0}}
 PRIMARY_ASR = "small-asr"
 SECONDARY_ASR = "large-asr"
-ASR_SETTINGS = {PRIMARY_ASR: {"backend": "fake-asr", "language": "auto", "scoring": "token-ratio-v1"},
-                SECONDARY_ASR: {"backend": "fake-asr-api", "language": "auto", "scoring": "token-ratio-v1"}}
+
+
+# The production TTS behind the fixtures' rendered audio, as an audio package's voice names it.
+RENDER_IDENTITY = {"provider": "local", "model": "tts", "checkpointSha256": "e" * 64,
+                   "settings": {"voice": "v1", "temperature": 0.0}}
+PACKAGE_VOICE = {"provider": "local", "model": "tts", "checkpointSha256": "e" * 64,
+                 "targetLocaleCapability": "reviewed", "authorizationStatus": "authorized"}
+
+
+def _asr_settings(model: str, backend: str) -> dict:
+    from scripts.screen_target_language_audio_units import SCORING
+    return {"protocol": "fake-asr-v1", "model": model, "modelRevision": None, "language": "auto",
+            "minSimilarity": audio_qc.THRESHOLDS["asrMinSimilarity"], "scoring": SCORING,
+            "implementationSha256": "e" * 64, "runtime": {"backend": backend, "temperature": 0.0}}
+
+
+ASR_SETTINGS = {PRIMARY_ASR: _asr_settings(PRIMARY_ASR, "fake-asr"),
+                SECONDARY_ASR: _asr_settings(SECONDARY_ASR, "fake-asr-api")}
 
 
 def units(locale: str, seconds_per_unit: float = 0.17) -> list[dict]:

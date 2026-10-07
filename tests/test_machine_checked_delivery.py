@@ -18,6 +18,7 @@ from scripts import screen_target_language_audio_units as audio_screen
 from scripts import sermon_unified_delivery as delivery
 from scripts import study_artifacts
 from scripts.target_audio_auto_qc import THRESHOLDS
+from tests import auto_qc_fixtures as qc_fixtures
 from tests.test_machine_quality_release_basis import (IMPLEMENTATION, SECONDARY_ASR, calibration, issue_audio,
                                                     issue_text, text_qc, track_check)
 from tests.test_public_study_delivery import binding, prepared, save, seal_fixture  # noqa: F401 (fixture)
@@ -96,6 +97,7 @@ def machine_inputs(root, *, human_full_text=None, condense=False):
     unit_path = root / 'unit.wav'; unit_path.write_bytes(b'synthetic-unit')
     package.update(targetLocale=LOCALE, englishSourcePackageJsonSha256=d.sha(source),
                    targetLanguageCandidateJsonSha256=d.sha(spoken), track=binding(track), captions=binding(cap_path),
+                   voice=dict(qc_fixtures.PACKAGE_VOICE),
                    status='machine_screened', machineScreening={'status': 'pass', 'model': ASR['model'], 'coverage': 1.0},
                    units=[{'textGroupId': g['translationGroupId'],
                            'targetTextSha256': hashlib.sha256(g['targetText'].encode()).hexdigest(),

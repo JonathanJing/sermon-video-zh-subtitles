@@ -67,6 +67,9 @@ CALIBRATION_MINIMUMS = {"overallDetectionRate": 0.95, "perKindDetectionRate": 0.
 TEXT_KINDS = ("wrong_number", "added_reference", "wrong_book", "english_leak", "placeholder",
               "dropped_name", "dropped_half", "semantic_negation", "added_number", "wrong_ordinal",
               "swapped_quantity", "added_content")
+# What a calibration records about the TTS that rendered its omitted-word audio;
+# provider, model and checkpoint must be the audio package's own voice.
+RENDER_IDENTITY_FIELDS = ("provider", "model", "checkpointSha256", "settings")
 AUDIO_KINDS = ("stretched", "silent", "clipped", "truncated", "wrong_sentence", "dropped_key_word")
 # Seeded errors in condensed spoken groups: required when a QC run judged any.
 SPOKEN_KINDS = ("swapped_content", "added_content", "flipped_negation", "dropped_claim")
@@ -114,6 +117,8 @@ def calibration_problems(calibration: dict | None, locale: str, implementation: 
         problems.append("calibration did not include the back-translation check")
     if require_audio and calibration.get("audioIncluded") is not True:
         problems.append("calibration did not include the audio checks")
+    if require_audio:
+        problems += render_identity_problems(calibration.get("renderIdentity"))
     if require_spoken and calibration.get("spokenIncluded") is not True:
         problems.append("calibration did not include condensed spoken groups")
     expected = ([f"text.{kind}" for kind in TEXT_KINDS]
@@ -254,11 +259,46 @@ def input_problems(calibration: dict | None, *, text_qc: dict | None = None,
     return problems
 
 
+def render_identity_problems(identity) -> list[str]:
+    """Reasons a calibration's TTS renderer identity does not say what rendered its omitted-word audio."""
+    if not isinstance(identity, dict) or set(identity) != set(RENDER_IDENTITY_FIELDS):
+        return ["calibration does not record the TTS renderer behind its dropped-key-word audio"]
+    problems = []
+    for key in ("provider", "model"):
+        if not (isinstance(identity[key], str) and identity[key]):
+            problems.append(f"renderer {key}")
+    checkpoint = identity["checkpointSha256"]
+    if not (isinstance(checkpoint, str) and len(checkpoint) == 64 and all(c in "0123456789abcdef" for c in checkpoint)):
+        problems.append("renderer checkpointSha256")
+    if not (isinstance(identity["settings"], dict) and identity["settings"]):
+        problems.append("renderer settings")
+    else:
+        try:
+            json.dumps(identity["settings"], allow_nan=False)
+        except (TypeError, ValueError):
+            problems.append("renderer settings are not finite JSON")
+    return [f"calibration renderer identity is not normalized: {', '.join(problems)}"] if problems else []
+
+
+def render_binding_problems(calibration: dict | None, package: dict) -> list[str]:
+    """The dropped-key-word audio must come from the renderer that produced the package."""
+    problems = render_identity_problems((calibration or {}).get("renderIdentity"))
+    if problems:
+        return problems
+    voice = package.get("voice")
+    identity = calibration["renderIdentity"]
+    if not isinstance(voice, dict) or any(voice.get(key) != identity[key]
+                                          for key in ("provider", "model", "checkpointSha256")):
+        return ["calibration rendered its omitted-word audio with a TTS other than the package's voice"]
+    return []
+
+
 def runtime_identity_sha256(calibration: dict) -> str:
-    """One hash of the back-translation and ASR runtimes a calibration measured."""
+    """One hash of the back-translation, ASR and TTS runtimes a calibration measured."""
     return json_sha256({"semanticIdentitySha256": calibration.get("semanticIdentitySha256"),
                         "asrIdentity": calibration.get("asrIdentity"),
-                        "asrSettingsSha256": calibration.get("asrSettingsSha256")})
+                        "asrSettingsSha256": calibration.get("asrSettingsSha256"),
+                        "renderIdentity": calibration.get("renderIdentity")})
 
 
 def _share(part: int, total: int) -> float:

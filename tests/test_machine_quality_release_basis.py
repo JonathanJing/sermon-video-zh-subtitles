@@ -17,6 +17,7 @@ from scripts import sermon_unified_reviews as reviews
 from scripts import stage_formal_multilingual_dev as stage
 # Reuse the speech-job fixture without collecting its tests a second time here.
 from tests import test_prepare_target_language_speech_job as speech_fixture
+from tests import auto_qc_fixtures as fixtures
 
 write_json = speech_fixture.write_json
 
@@ -48,6 +49,7 @@ def calibration(locale="ko", **overrides):
              "semanticIdentitySha256": SEMANTIC_SHA,
              "asrIdentity": {"primary": PRIMARY_ASR, "secondary": SECONDARY_ASR},
              "asrSettingsSha256": {"primary": SCREENING_ASR_SETTINGS, "secondary": SECONDARY_ASR_SETTINGS},
+             "renderIdentity": dict(fixtures.RENDER_IDENTITY),
              "kinds": {f"{prefix}.{kind}": {"trials": 10, "detected": 10, "rate": 1.0}
                        for prefix, kinds in (("text", waiver.TEXT_KINDS), ("audio", waiver.AUDIO_KINDS))
                        for kind in kinds}}
@@ -457,6 +459,7 @@ def audio_fixture(flagged=False):
                "targetLanguageCandidateJsonSha256": basis.json_sha256(candidate),
                "targetLanguageSpeechJobJsonSha256": "3" * 64,
                "status": "candidate" if flagged else "machine_screened", "units": units,
+               "voice": dict(fixtures.PACKAGE_VOICE),
                "track": {"path": "track.mp3", "sha256": "4" * 64},
                "captions": {"path": "captions.json", "sha256": "5" * 64},
                "schedule": {"path": "schedule.json", "sha256": "c" * 64, "jsonSha256": "c" * 64},
@@ -537,6 +540,26 @@ class AudioWaiverTests(unittest.TestCase):
         kwargs.setdefault("candidate", candidate)
         return issue_audio(package, screening, qc, text, calibration(),
                                         created_at="2026-10-07T02:00:00+00:00", **kwargs)
+
+    def test_calibration_must_have_rendered_with_the_packages_voice(self):
+        package, screening, qc, text = audio_fixture()
+        anchor, candidate = audio_sources()
+
+        def issue(cal=None, pkg=package):
+            return issue_audio(pkg, screening, qc, text, cal or calibration(), anchor=anchor, candidate=candidate,
+                               track_check=track_check(pkg), created_at="2026-10-07T02:00:00+00:00")
+        issue()
+        other = dict(fixtures.RENDER_IDENTITY, checkpointSha256="f" * 64)
+        for label, cal, pkg, message in (
+                ("other checkpoint", calibration(renderIdentity=other), package, "TTS other than the package's voice"),
+                ("other model", calibration(renderIdentity=dict(fixtures.RENDER_IDENTITY, model="tts-2")), package,
+                 "TTS other than the package's voice"),
+                ("no identity", calibration(renderIdentity=None), package, "does not record the TTS renderer"),
+                ("no settings", calibration(renderIdentity={**fixtures.RENDER_IDENTITY, "settings": {}}), package,
+                 "not normalized"),
+                ("package without voice", calibration(), {**package, "voice": None}, "TTS other than the package's voice")):
+            with self.subTest(label), self.assertRaisesRegex(ValueError, message):
+                issue(cal, pkg)
 
     def test_waiver_needs_a_passing_track_check_of_this_package(self):
         package, screening, qc, text = audio_fixture()

@@ -198,6 +198,54 @@ def transcript_agrees(text: str, recognized: str, locale: str,
     return score(text, recognized, locale, threshold)[2]
 
 
+# The runtime fields every ASR opinion records, for the primary and the secondary alike.
+# ``runtime`` holds whatever else the transport varies (backend, decoding, prompt and
+# language options, cache namespace, device); the rest must agree with the opinion itself.
+ASR_SETTINGS_FIELDS = ("protocol", "model", "modelRevision", "language", "minSimilarity", "scoring",
+                       "implementationSha256", "runtime")
+
+
+def _finite_json(value) -> bool:
+    if isinstance(value, dict):
+        return all(isinstance(key, str) and _finite_json(item) for key, item in value.items())
+    if isinstance(value, list):
+        return all(_finite_json(item) for item in value)
+    if isinstance(value, float):
+        return math.isfinite(value)
+    return value is None or isinstance(value, (str, int, bool))
+
+
+def validate_asr_settings(settings, *, model: str, model_revision: str | None, locale: str) -> None:
+    """Refuse runtime settings that do not say what ran: all :data:`ASR_SETTINGS_FIELDS`, finite
+    values, the opinion's own model, revision and language, the standard threshold and scoring."""
+    from scripts.screen_target_language_audio_units import SCORING
+    problems = []
+    if not isinstance(settings, dict):
+        raise ValueError("ASR runtime settings must be an object")
+    problems += [f"missing {name}" for name in ASR_SETTINGS_FIELDS if name not in settings]
+    if not problems:
+        if not (isinstance(settings["protocol"], str) and settings["protocol"]):
+            problems.append("protocol")
+        if settings["model"] != model or settings["modelRevision"] != model_revision:
+            problems.append("model or revision differs from the opinion")
+        if settings["language"] not in (locale, "auto"):
+            problems.append("language")
+        if settings["minSimilarity"] != THRESHOLDS["asrMinSimilarity"]:
+            problems.append("minSimilarity is not the standard threshold")
+        if settings["scoring"] != SCORING:
+            problems.append("scoring is not the screener's")
+        implementation = settings["implementationSha256"]
+        if not (isinstance(implementation, str) and len(implementation) == 64
+                and all(char in "0123456789abcdef" for char in implementation)):
+            problems.append("implementationSha256")
+        if not isinstance(settings["runtime"], dict):
+            problems.append("runtime")
+    if not _finite_json(settings):
+        problems.append("values are not finite JSON")
+    if problems:
+        raise ValueError("ASR runtime settings are not normalized: " + "; ".join(problems))
+
+
 def asr_opinion(recognized: str, *, audio: bytes, text: str, locale: str, model: str, settings: dict,
                 model_revision: str | None = None) -> dict:
     """An ASR result bound to the exact audio bytes, expected text, model and runtime.
@@ -212,14 +260,14 @@ def asr_opinion(recognized: str, *, audio: bytes, text: str, locale: str, model:
     another way does not reuse the calibration. For the primary role, use
     :func:`screening_asr_settings` of the screening receipt the score came from.
     """
-    if not isinstance(settings, dict) or not settings:
-        raise ValueError("An ASR opinion needs its runtime settings")
+    validate_asr_settings(settings, model=model, model_revision=model_revision, locale=locale)
     if not isinstance(recognized, str):
         raise ValueError("An ASR opinion needs the recognized transcript")
     return {"similarity": transcript_similarity(text, recognized, locale), "recognized": recognized,
             "audioSha256": _sha256(audio),
             "textSha256": _sha256(text.encode("utf-8")), "model": model,
-            "modelRevision": model_revision, "settingsSha256": waiver.json_sha256(settings)}
+            "modelRevision": model_revision, "settings": json.loads(json.dumps(settings)),
+            "settingsSha256": waiver.json_sha256(settings)}
 
 
 def screening_asr_settings(screening: dict) -> dict:
@@ -263,6 +311,11 @@ def bound_opinion(opinion: dict | None, audio_sha: str | None, text: str,
                          "and settingsSha256")
     if opinion.get("audioSha256") != audio_sha or opinion.get("textSha256") != text_sha:
         return None, True
+    # The settings behind the hash are kept and checked, so a bare hash cannot stand in for them.
+    validate_asr_settings(opinion.get("settings"), model=opinion["model"],
+                          model_revision=opinion.get("modelRevision"), locale=locale)
+    if waiver.json_sha256(opinion["settings"]) != opinion["settingsSha256"]:
+        raise ValueError("An ASR opinion's settings differ from its settingsSha256")
     if opinion["similarity"] != transcript_similarity(text, opinion["recognized"], locale):
         raise ValueError("An ASR similarity must be the score of its own transcript")
     return opinion, False
@@ -511,7 +564,7 @@ def main() -> None:
     parser.add_argument("--input", type=Path,
                         help="{locale, units:[{groupId, text, sourceSeconds, wavPath, asr:{primary, "
                              "secondary?}, sourceUnitIds}]}; each ASR opinion is {similarity, recognized, "
-                             "audioSha256, textSha256, model, modelRevision?, settingsSha256}")
+                             "audioSha256, textSha256, model, modelRevision?, settings, settingsSha256}")
     parser.add_argument("--out", required=True, type=Path)
     parser.add_argument("--repair-ledger-root", type=Path,
                         help="Durable repair ledger root; with --source and --anchor, counts failed attempts "

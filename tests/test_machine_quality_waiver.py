@@ -582,7 +582,8 @@ class CalibrationAndWaiverTests(unittest.TestCase):
     @staticmethod
     def transports(locale, **asr_options):
         tts = fixtures.FakeTts()
-        return {"asr": fixtures.FakeAsr(locale, tts=tts, **asr_options), "render": tts}
+        return {"asr": fixtures.FakeAsr(locale, tts=tts, **asr_options), "render": tts,
+                "render_identity": fixtures.RENDER_IDENTITY}
 
     def calibration(self, locale, *, semantic=True, asr=True):
         call = fixtures.PerfectSemanticJudge(locale) if semantic else None
@@ -617,6 +618,53 @@ class CalibrationAndWaiverTests(unittest.TestCase):
         no_render = seeded.calibrate("ko", fixtures.groups("ko"), fixtures.units("ko"), policy=fixtures.policy("ko"),
                                      asr=fixtures.FakeAsr("ko"))
         self.assertEqual(no_render["kinds"]["audio.dropped_key_word"]["trials"], 0)
+
+    def test_a_tts_transport_needs_its_render_identity(self):
+        tts = fixtures.FakeTts()
+        base = dict(policy=fixtures.policy("ko"), asr=fixtures.FakeAsr("ko", tts=tts))
+        with self.assertRaisesRegex(ValueError, "go together"):
+            seeded.calibrate("ko", fixtures.groups("ko"), fixtures.units("ko"), render=tts, **base)
+        with self.assertRaisesRegex(ValueError, "go together"):
+            seeded.calibrate("ko", fixtures.groups("ko"), fixtures.units("ko"),
+                             render_identity=fixtures.RENDER_IDENTITY, **base)
+        with self.assertRaisesRegex(ValueError, "does not record the TTS renderer"):
+            seeded.calibrate("ko", fixtures.groups("ko"), fixtures.units("ko"), render=tts,
+                             render_identity={"provider": "local"}, **base)
+        result = self.calibration("ko", semantic=False)
+        self.assertEqual(result["renderIdentity"], fixtures.RENDER_IDENTITY)
+        # An audio waiver needs the renderer recorded; a text-only calibration does not.
+        problems = waiver.calibration_problems({**result, "renderIdentity": None}, "ko",
+                                               waiver.implementation_sha256(), require_audio=True)
+        self.assertIn("calibration does not record the TTS renderer behind its dropped-key-word audio", problems)
+
+    def test_asr_opinions_need_normalized_runtime_settings(self):
+        text = fixtures.groups("ko")[0]["targetText"]
+        good = fixtures.ASR_SETTINGS[fixtures.SECONDARY_ASR]
+
+        def opinion(settings):
+            return audio_qc.asr_opinion(text, audio=b"audio", text=text, locale="ko",
+                                        model=fixtures.SECONDARY_ASR, settings=settings)
+        self.assertEqual(opinion(good)["settings"], good)
+        for label, bad in (("backend only", {"backend": "openai"}),
+                           ("no runtime", {key: value for key, value in good.items() if key != "runtime"}),
+                           ("other model", {**good, "model": "another-asr"}),
+                           ("other revision", {**good, "modelRevision": "r2"}),
+                           ("other language", {**good, "language": "ja"}),
+                           ("loose threshold", {**good, "minSimilarity": 0.5}),
+                           ("other scoring", {**good, "scoring": "token-ratio-v1"}),
+                           ("non-finite value", {**good, "runtime": {"temperature": float("nan")}})):
+            with self.subTest(label), self.assertRaises(ValueError):
+                opinion(bad)
+        # A kept opinion cannot swap its settings for others that hash differently.
+        row = opinion(good)
+        wav = fixtures.units("ko")[0]["wav"]
+        row = audio_qc.asr_opinion(text, audio=wav, text=text, locale="ko", model=fixtures.SECONDARY_ASR, settings=good)
+        row["settings"] = {**good, "runtime": {"backend": "elsewhere"}}
+        with self.assertRaises(ValueError):
+            audio_qc.bound_opinion(row, row["audioSha256"], text, "ko")
+        del row["settings"]
+        with self.assertRaises(ValueError):
+            audio_qc.bound_opinion(row, row["audioSha256"], text, "ko")
 
     def test_baseline_false_positives_are_not_credited(self):
         groups = fixtures.groups("ko")

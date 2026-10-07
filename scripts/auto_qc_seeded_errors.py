@@ -461,12 +461,21 @@ def _text_sha(text: str) -> str:
 def calibrate(locale: str, groups: list[dict], units: list[dict] | None = None, *,
               policy: dict | None = None, call=None, identity: dict | None = None, asr=None, render=None,
               spoken_groups: list[dict] | None = None, max_trials: int = 30,
-              candidate: dict | None = None, spoken_candidate: dict | None = None) -> dict:
+              candidate: dict | None = None, spoken_candidate: dict | None = None,
+              render_identity: dict | None = None) -> dict:
     """``identity`` names the back-translation runtime behind ``call`` and is required with it.
+    ``render_identity`` ({provider, model, checkpointSha256, settings}) names the TTS behind
+    ``render`` and is required with it; the waiver compares it with the package's voice.
     ``spoken_groups`` are the text QC groups of a clean spoken candidate with
     condensed groups; without them a calibration cannot back such a candidate."""
     if call is not None and identity is None:
         raise ValueError("A back-translation transport needs its semantic identity")
+    if (render is None) != (render_identity is None):
+        raise ValueError("A TTS transport and its render identity go together")
+    if render_identity is not None:
+        problems = waiver.render_identity_problems(render_identity)
+        if problems:
+            raise ValueError(problems[0])
     bound = text_qc.semantic_identity(identity) if call is not None else None
     inputs = calibration_inputs(groups, units, spoken_groups, policy, candidate, spoken_candidate)
     text = calibrate_text(groups, locale, policy=policy, call=call, max_trials=max_trials)
@@ -491,6 +500,8 @@ def calibrate(locale: str, groups: list[dict], units: list[dict] | None = None, 
             "semanticIdentitySha256": None if bound is None else bound["sha256"],
             "asrIdentity": None if audio is None else audio["asrIdentity"],
             "asrSettingsSha256": None if audio is None else audio["asrSettingsSha256"],
+            "renderIdentity": None if audio is None or render_identity is None
+            else json.loads(json.dumps(render_identity)),
             "kinds": kinds, "trials": trials, "detected": detected,
             "overallDetectionRate": _rate(detected, trials),
             "cleanChecked": clean, "cleanFalsePositives": positives,

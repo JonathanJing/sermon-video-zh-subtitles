@@ -469,6 +469,8 @@ def build_audio_waiver(package: dict, screening: dict, audio_qc: dict, text_waiv
     summary = calibration_summary(calibration, locale, implementation, require_audio=True)
     runtime = waiver.runtime_identity_problems(calibration, audio_qc=audio_qc)
     _require(not runtime, "Audio QC runtime differs from calibration: " + "; ".join(runtime))
+    voice = waiver.render_binding_problems(calibration, package)
+    _require(not voice, "Calibration TTS differs from the package: " + "; ".join(voice))
     inputs = waiver.input_problems(calibration, audio_qc=audio_qc, candidate=candidate,
                                    condensed=bool(text_waiver["condensedGroupIds"]))
     _require(not inputs, "Calibration does not cover this audio: " + "; ".join(inputs))
