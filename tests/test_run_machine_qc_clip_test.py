@@ -111,7 +111,7 @@ class MachineQcClipDriverTests(unittest.TestCase):
         anchor = json.loads((run / "anchor-manifest.json").read_text(encoding="utf-8"))
         package = json.loads((run / "source-package.json").read_text(encoding="utf-8"))
         lineage = ledger.lineage("text", LOCALE, basis.json_sha256(package), basis.json_sha256(anchor))
-        self.assertEqual(len(ledger.load(self.root / "out/state/repair-ledger", lineage)), 1)
+        self.assertEqual(len(ledger.load(self.root / "out/fake-plumbing-state/repair-ledger", lineage)), 1)
 
     def test_a_repaired_candidate_is_screened_again(self):
         run = synthetic_run(self, self.root)
@@ -124,8 +124,39 @@ class MachineQcClipDriverTests(unittest.TestCase):
         anchor = json.loads((run / "anchor-manifest.json").read_text(encoding="utf-8"))
         package = json.loads((run / "source-package.json").read_text(encoding="utf-8"))
         lineage = ledger.lineage("text", LOCALE, basis.json_sha256(package), basis.json_sha256(anchor))
-        self.assertEqual(len(ledger.load(self.root / "out/state/repair-ledger", lineage)), 2)
+        self.assertEqual(len(ledger.load(self.root / "out/fake-plumbing-state/repair-ledger", lineage)), 2)
         self.assertEqual(self.summary()["status"], "fake_plumbing_pass", self.summary().get("reason"))
+
+    def test_an_unrepaired_failure_blocks_rescreening(self):
+        run = synthetic_run(self, self.root)
+        path = run / "diagnostic-previews/ko/native-1/candidate.json"
+        candidate = json.loads(path.read_text(encoding="utf-8"))
+        original = candidate["groups"][0]["targetText"]
+        candidate["groups"][0]["targetText"] = broken = original + " 덧붙임"
+        path.write_text(json.dumps(candidate, ensure_ascii=False), encoding="utf-8")
+        init = driver.FakeJudge.__init__
+
+        def mistranslates(judge, groups):  # The fake judge back-translates the added words wrongly.
+            init(judge, groups)
+            judge.clean.pop(broken)
+
+        with patch.object(driver.FakeJudge, "__init__", mistranslates):
+            self.run_driver(run)
+        self.assertEqual(self.summary()["failedGroups"], ["g001"])
+        # Another runtime changes the inputs binding, but the failed text is unchanged.
+        with patch.object(driver.basis.waiver, "implementation_sha256", return_value="other"):
+            self.assertEqual(self.run_driver(run), 1)
+        self.assertEqual(self.summary()["status"], "blocked_prior_failure")
+        candidate["groups"][0]["targetText"] = original
+        path.write_text(json.dumps(candidate, ensure_ascii=False), encoding="utf-8")
+        self.assertEqual(self.run_driver(run), 0)
+        self.assertEqual(self.summary()["status"], "fake_plumbing_pass", self.summary().get("reason"))
+
+    def test_preflight_fails_when_any_requested_locale_is_blocked(self):
+        run = synthetic_run(self, self.root)
+        self.assertEqual(self.run_driver(run, "--preflight-only"), 0)
+        self.assertEqual(driver.main(["--run-dir", str(run), "--out", str(self.root / "out2"),
+                                      "--locales", f"{LOCALE},es", "--preflight-only"]), 2)
 
     def test_preflight_explains_a_human_approved_candidate(self):
         run = synthetic_run(self, self.root, human_approved=True)

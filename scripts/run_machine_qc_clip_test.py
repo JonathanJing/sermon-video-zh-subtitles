@@ -232,8 +232,10 @@ class CodexJudge:
                             "identity": self.identity})
 
     def cached(self, role, system, user, schema):
+        # A saved response is read back through the transport, which checks its
+        # identity, completion outcome and schema and raises on an unconfirmed call.
         response = self.cache / self.key(role, system, user, schema) / "response.json"
-        return json.loads(read(response)["content"]) if response.exists() else None
+        return self(role, system, user, schema) if response.exists() else None
 
     def __call__(self, role, system, user, schema):
         prompt = f"SYSTEM:\n{system}\n\nUSER:\n{user}"
@@ -301,6 +303,20 @@ def run_locale(locale: str, paths: dict, out: Path, state: Path, judge, timings:
     ledger_root = state / "repair-ledger"
     qc_path = folder / "text-qc.json"
     entries = ledger.load(ledger_root, lineage)
+    # A failed screen is repaired by a new candidate revision, never by screening
+    # the same text again under another runtime or implementation.
+    head = read(qc_path) if qc_path.exists() else None
+    if entries and entries[-1]["failedSourceUnitIds"]:
+        if head is None or ledger.head_problems(lineage, entries, head):
+            return {"status": "blocked_prior_failure",
+                    "reason": "the repair ledger head failed and its QC receipt is not in this output directory"}
+        current = {(group["groupId"], hashlib.sha256(group["targetText"].encode("utf-8")).hexdigest())
+                   for group in groups}
+        unrepaired = [row["groupId"] for row in head["results"]
+                      if row["status"] != "pass" and (row["groupId"], row["targetTextSha256"]) in current]
+        if unrepaired:
+            return {"status": "blocked_prior_failure", "failedGroups": unrepaired,
+                    "reason": "failed groups are unchanged; repair them in a new candidate revision"}
     # Resume only receipts made from these exact inputs; a repaired candidate,
     # policy, judge runtime or implementation is screened and calibrated again.
     qc_binding = json_sha256({"groups": groups, "policy": policy, "identity": judge.identity,
@@ -359,7 +375,12 @@ def main(argv=None) -> int:
     parser.add_argument("--workers", type=int, default=4, help="Parallel Codex CLI calls")
     parser.add_argument("--preflight-only", action="store_true", help="Stop before any model call")
     args = parser.parse_args(argv)
-    out, state = args.out.resolve(), (args.state_dir or args.out / "state").resolve()
+    if args.text_backend == "fake" and args.state_dir:
+        parser.error("--text-backend fake never writes to a persistent state dir")
+    # Fake runs keep their own ledger, so plumbing receipts never enter the
+    # repair ledger or use up repair attempts a real waiver depends on.
+    out = args.out.resolve()
+    state = out / "fake-plumbing-state" if args.text_backend == "fake" else (args.state_dir or out / "state").resolve()
     out.mkdir(parents=True, exist_ok=True)
     timings = Timings(out / "timings.tsv")
     overrides = dict(item.split("=", 1) for item in args.candidate)
@@ -384,7 +405,7 @@ def main(argv=None) -> int:
     if args.preflight_only or not resolved:
         print(json.dumps({locale: row["problems"] for locale, row in summary["locales"].items()},
                          ensure_ascii=False, indent=2))
-        return 0 if resolved else 2
+        return 0 if len(resolved) == len(locales) else 2
     if args.text_backend == "codex":
         judge = CodexJudge(state / "codex-calls")
     else:
