@@ -1,4 +1,4 @@
-"""Overlay the 1.26.16 Web UI on a complete live-bound Dev snapshot.
+"""Overlay the 1.26.16 Web UI on a complete live-bound Hosting snapshot.
 
 No content, review receipts, Hosting configuration or media are changed.
 Publish the generated config through guarded_hosting_publish separately.
@@ -21,13 +21,18 @@ UI_FILES = ('index.html', 'style.css', 'app.mjs', 'i18n.mjs',
             'offline.mjs', 'offline-worker.js')
 
 
-def prepare(baseline, out):
+def prepare(baseline, out, *, environment='dev'):
     base, out = Path(baseline).resolve(), Path(out).resolve()
     contract.require(not out.exists() and not out.is_relative_to(base), 'Unsafe UI update output')
     contract.validate_catalog_snapshot(base)
     receipt = staging.read(base / 'baseline-receipt.json')
-    contract.require(receipt['project'] == staging.PROJECT and receipt['site'] == staging.SITE
-                     and receipt['origin'] == staging.ORIGIN, 'Dev target only')
+    deployment_target = staging.hosting_target(environment)
+    contract.require(all(receipt.get(k) == deployment_target[k] for k in ('project', 'site', 'origin')),
+                     'Baseline Hosting target differs')
+    contract.require(receipt.get('status') == 'complete_verified_not_deployed'
+                     and receipt.get('catalogSha256') == staging.digest(base / 'public/multilingual-v3.json')
+                     and receipt.get('baselineVersion', '').startswith('sites/' + deployment_target['site'] + '/versions/'),
+                     'Verified live-bound baseline required')
     # Resolve all local module imports before staging, including offline helpers.
     builder.runtime_web_files()
     out.mkdir(parents=True)
@@ -50,11 +55,12 @@ def prepare(baseline, out):
     contract.require(set(before).issubset({row['path'] for row in after}), 'Existing file removed')
     staging.write(out / 'seal-report.json', {'catalogSha256': staging.digest(out / 'public/multilingual-v3.json'), 'files': after})
     contract.validate_catalog_snapshot(out)
-    staging.write(out / 'publish-config.json', staging.publication_config(base, out))
+    staging.write(out / 'publish-config.json', staging.publication_config(base, out, environment=environment))
     staging.write(out / 'ui-update-plan.json', {
         'status': 'prepared_not_deployed', 'webVersion': '1.26.16',
         'iosSourceCommit': 'a1e64190f5af33104a3b8839562d8901955031bb',
         'sourceCommit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=builder.ROOT, text=True).strip(),
+        'environment': environment, 'project': deployment_target['project'], 'site': deployment_target['site'],
         'changedPaths': changed, 'preservedFiles': len(before) - sum(path in before for path in changed),
         'modelCalls': 0, 'catalogUnchanged': True,
     })
@@ -66,5 +72,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--baseline', required=True, type=Path)
     parser.add_argument('--out', required=True, type=Path)
+    parser.add_argument('--environment', choices=('dev', 'production'), default='dev')
     args = parser.parse_args()
-    print(json.dumps(prepare(args.baseline, args.out)))
+    print(json.dumps(prepare(args.baseline, args.out, environment=args.environment)))

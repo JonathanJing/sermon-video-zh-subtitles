@@ -33,6 +33,17 @@ ORIGIN = 'https://' + SITE + '.web.app'
 LEASE_BUCKET = 'ai-for-god-sermon-media-dev'
 
 
+def hosting_target(environment):
+    """Fixed deployment identities; simulations continue to default to Dev."""
+    contract.require(environment in ('dev', 'production'), 'Unknown Hosting environment')
+    if environment == 'production':
+        return {'project': 'ai-for-god-caption-dev', 'site': 'ai-for-god-sermon-audio',
+                'origin': 'https://ai-for-god-sermon-audio.web.app',
+                'channel': 'production_web', 'lease_bucket': 'ai-for-god-sermon-media-prod'}
+    return {'project': PROJECT, 'site': SITE, 'origin': ORIGIN,
+            'channel': 'dev', 'lease_bucket': LEASE_BUCKET}
+
+
 def read(path):
     return json.loads(Path(path).read_text())
 
@@ -182,8 +193,13 @@ def baseline(out, *, cache_public=None, cache_receipt=None):
     return {k: receipt[k] for k in ('status', 'baselineVersion', 'liveFileCount', 'publicFileCount', 'managedFileCount')}
 
 
-def publication_config(base, out):
+def publication_config(base, out, *, environment='dev'):
+    target = hosting_target(environment)
     receipt = read(base / 'baseline-receipt.json')
+    contract.require(all(receipt.get(k) == target[k] for k in ('project', 'site', 'origin')),
+                     'Baseline Hosting target differs')
+    expected_intent = {**{k: target[k] for k in ('project', 'site', 'origin', 'channel')},
+                       'environment': environment}
     version = receipt['baselineVersion']
     attempt = base / 'deployment-attempt-v2.json'
     if attempt.exists():
@@ -192,16 +208,17 @@ def publication_config(base, out):
         expected_version = read(prior_config)['baseline_version'] if prior_config.exists() else version
         contract.require(deployed.get('status') == 'deployed' and deployed.get('newVersion')
                          and all(deployed.get('intent', {}).get(k) == v for k, v in
-                                 {'site': SITE, 'project': PROJECT, 'origin': ORIGIN, 'environment': 'dev', 'channel': 'dev'}.items())
+                                 expected_intent.items())
                          and deployed.get('baselineVersion') == expected_version
                          and deployed.get('catalogSha256') == digest(base / 'public/multilingual-v3.json'),
                          'Prior publication remains uncertain or differs from baseline')
         version = deployed['newVersion']
-    intent = {'schemaVersion': 'sermon-release-intent-v1', 'environment': 'dev', 'channel': 'dev', 'project': PROJECT, 'site': SITE, 'origin': ORIGIN}
-    routes = {'dev': {'project': PROJECT, 'site': SITE, 'origin': ORIGIN, 'channels': ['dev', 'beta']}}
+    intent = {'schemaVersion': 'sermon-release-intent-v1', **expected_intent}
+    routes = {environment: {**{k: target[k] for k in ('project', 'site', 'origin')},
+                           'channels': ['dev', 'beta'] if environment == 'dev' else ['production_web']}}
     return {'snapshot': str(out), 'intent': intent, 'routes': routes,
             'baseline_version': version, 'baseline_catalog_sha': digest(base / 'public/multilingual-v3.json'),
-            'lease_bucket': LEASE_BUCKET}
+            'lease_bucket': target['lease_bucket']}
 
 
 def bound_release_plan(baseline_path, prepared_path):
