@@ -86,4 +86,3 @@ E01已有真实拒绝通过分歧，E02存在来源不清与译错分类边界�
 39项定向离线测试通过，含新分类schema／身份拒绝、作者标签与输入隔离、shuffle后映射、英文书面证据和未解决问题gate、report篡改收据拒绝；此前的预算、封存和unknown恢复测试继续通过。真实E08恢复验证两臂均restored=true，保留原时间，ledger仍76请求、无新增消费。
 
 caseSet／authority／ledger／代码依赖hash已写安全聚合。真实正文、来源路径、原始API响应、预算authority与盲审输入均保留ignored artifacts；Git仅包含runner、构造案例、源码、报告与安全聚合。没有remote CI／生产／设备验收结果。
-
