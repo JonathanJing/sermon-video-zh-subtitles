@@ -180,6 +180,12 @@ def qc_groups(candidate: dict, anchor: dict) -> list[dict]:
             for group in candidate["groups"]]
 
 
+def candidate_validator():
+    from jsonschema import Draft202012Validator, FormatChecker
+    schema = read(ROOT / "schemas" / f"{CANDIDATE_SCHEMA}.schema.json")
+    return Draft202012Validator(schema, format_checker=FormatChecker())
+
+
 def calibration_coverage(groups: list[dict], locale: str, policy: dict | None) -> dict:
     """Seeded error kinds this text can carry; a kind with no trial blocks any waiver."""
     counts = {kind: sum(1 for group in groups
@@ -197,6 +203,11 @@ def resolve_locale(run_dir: Path, index: dict, locale: str, override: Path | Non
     problems = candidate_problems(candidate)
     if candidate.get("schemaVersion") != CANDIDATE_SCHEMA:
         problems.append(f"candidate schemaVersion is {candidate.get('schemaVersion')!r}, not {CANDIDATE_SCHEMA!r}")
+    else:
+        # Layer 3 validates the full package, so a candidate it would refuse never reaches paid QC.
+        errors = sorted(candidate_validator().iter_errors(candidate), key=lambda error: list(error.absolute_path))
+        problems += [f"candidate schema: {'/'.join(map(str, error.absolute_path)) or '<root>'}: {error.message}"
+                     for error in errors[:5]]
     if candidate.get("targetLocale") != locale:
         problems.append(f"candidate targetLocale is {candidate.get('targetLocale')!r}, not {locale!r}")
     # An override may sit outside the run with its binding beside it.
@@ -292,8 +303,14 @@ class CodexJudge:
 
     def uncertain(self) -> list[str]:
         """Calls that started but never recorded a completed response: their outcome is unknown."""
-        return sorted(path.parent.name for path in self.cache.glob("*/started.json")
-                      if not (path.parent / "response.json").exists())
+        def settled(call: Path) -> bool:
+            # A response counts only with its completed outcome; the transport writes them in turn.
+            try:
+                return ((call / "response.json").exists()
+                        and read(call / "outcome.json").get("status") == "completed")
+            except (OSError, ValueError):
+                return False
+        return sorted(path.parent.name for path in self.cache.glob("*/started.json") if not settled(path.parent))
 
     def __call__(self, role, system, user, schema):
         prompt = f"SYSTEM:\n{system}\n\nUSER:\n{user}"
@@ -516,6 +533,12 @@ def main(argv=None) -> int:
         parser.error("real runs need --state-dir: the run's persistent state dir holding its repair ledger")
     if args.text_backend == "fake" and args.state_dir:
         parser.error("--text-backend fake never writes to a persistent state dir")
+    overrides = {}
+    for item in args.candidate:
+        locale, _, path = item.partition("=")
+        if not path or locale not in locales or locale in overrides:
+            parser.error(f"--candidate {item!r}: use LOCALE=PATH once per requested locale ({', '.join(locales)})")
+        overrides[locale] = path
     # Fake runs write every receipt, and their own ledger, in a separate subtree,
     # so plumbing output never touches real evidence or repair attempts.
     out = args.out.resolve() / ("fake-plumbing" if args.text_backend == "fake" else "")
@@ -533,7 +556,6 @@ def main(argv=None) -> int:
         except BlockingIOError:
             parser.error(f"another run is using {folder}")
     timings = Timings(out / "timings.tsv")
-    overrides = dict(item.split("=", 1) for item in args.candidate)
     index = timings.run("discover", lambda: index_run(args.run_dir))
     summary = {"runDir": str(args.run_dir.resolve()), "textBackend": args.text_backend,
                "implementationSha256": basis.waiver.implementation_sha256(), "locales": {}}

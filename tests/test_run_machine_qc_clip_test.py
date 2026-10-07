@@ -57,6 +57,9 @@ def synthetic_run(test: unittest.TestCase, root: Path, *, human_approved: bool =
                  "translationPolicySha256": basis.json_sha256(policy),
                  "status": "human_translation_approved" if human_approved else basis.MACHINE_PENDING_CANDIDATE,
                  "releaseEligible": False, "groups": groups,
+                 "generation": {
+                     "translator": {"model": "translator", "promptVersion": "ko-v1", "requestIds": ["t1"]},
+                     "reviewer": {"model": "reviewer", "promptVersion": "ko-review-v1", "requestIds": ["r1"]}},
                  "modelReview": {"status": "pass", "reviewedGroupIds": ids},
                  "humanReview": {"translation": "pending", "reviewer": None, "reviewedAt": None,
                                  "reviewedGroupIds": []}}
@@ -269,11 +272,12 @@ class MachineQcClipDriverTests(unittest.TestCase):
     def test_codex_judge_lists_started_calls_without_a_response(self):
         judge = object.__new__(driver.CodexJudge)
         judge.cache = self.root / "calls"
-        for name, files in (("done", ("started.json", "response.json")), ("lost", ("started.json",)), ("new", ())):
+        for name, files in (("done", ("started.json", "response.json", "outcome.json")),
+                            ("half", ("started.json", "response.json")), ("lost", ("started.json",)), ("new", ())):
             (judge.cache / name).mkdir(parents=True)
             for file in files:
-                (judge.cache / name / file).write_text("{}", encoding="utf-8")
-        self.assertEqual(judge.uncertain(), ["lost"])
+                (judge.cache / name / file).write_text('{"status": "completed"}', encoding="utf-8")
+        self.assertEqual(judge.uncertain(), ["half", "lost"])
 
     def test_prefetch_dispatches_nothing_new_after_a_failure(self):
         calls = []
@@ -360,6 +364,23 @@ class MachineQcClipDriverTests(unittest.TestCase):
         for extra in (["--locales", ""], ["--locales", "fr"], ["--workers", "0"], ["--workers", "400"]):
             with self.assertRaises(SystemExit):
                 driver.main(["--run-dir", str(run), "--out", str(self.root / "o"), "--preflight-only", *extra])
+
+    def test_candidate_overrides_must_name_requested_locales_once(self):
+        run = synthetic_run(self, self.root)
+        path = run / "diagnostic-previews/ko/native-1/candidate.json"
+        for extra in (["--candidate", f"k0={path}"], ["--candidate", f"es={path}"], ["--candidate", str(path)],
+                      ["--candidate", f"{LOCALE}={path}", "--candidate", f"{LOCALE}={path}"]):
+            with self.assertRaises(SystemExit):
+                self.run_driver(run, "--preflight-only", *extra)
+
+    def test_preflight_refuses_a_candidate_that_breaks_the_v2_schema(self):
+        run = synthetic_run(self, self.root)
+        path = run / "diagnostic-previews/ko/native-1/candidate.json"
+        candidate = json.loads(path.read_text(encoding="utf-8"))
+        del candidate["generation"]
+        path.write_text(json.dumps(candidate, ensure_ascii=False), encoding="utf-8")
+        self.assertEqual(self.run_driver(run, "--preflight-only"), 2)
+        self.assertTrue(any("generation" in p for p in self.summary()["problems"]), self.summary()["problems"])
 
     def test_real_runs_need_a_persistent_state_dir(self):
         run = synthetic_run(self, self.root)
