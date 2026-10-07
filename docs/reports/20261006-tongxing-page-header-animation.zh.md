@@ -1,6 +1,6 @@
 # 同行 App Store Page Header 动画候选
 
-当前交付为 **v4 四语言本地可评审素材**，未上传、送审或替换 App Store 页面。原生 App 和 Firebase 内容均未改动。v1/v2 的中英文问候句截图候选和 v3 字体修复前候选保留为历史，不作为当前成片。v4 修正英文副标语中的中文字体，避免缺字方框。
+当前交付为 **v4 四语言可评审素材**，2026-10-07 已按用户授权上传 App Store Connect 素材库；尚未送审或替换 App Store 页面。原生 App 和 Firebase 内容均未改动。v1/v2 的中英文问候句截图候选和 v3 字体修复前候选保留为历史，不作为当前成片。v4 修正英文副标语中的中文字体，避免缺字方框。
 
 ## 设计与真实证道来源
 
@@ -51,10 +51,23 @@ Apple [Header PSD 模板](https://developer.apple.com/go/?id=photoshop-product-p
 
 以 ffprobe 核对四条主视频的尺寸、帧率、帧数、时长、像素格式及无音轨；ffmpeg 全片解码检查；逐个检查韩语、西语及中英文的编码后稳定画面，排版回执确认整句无删改、无超宽或高度截断；封面 RGB 无 alpha。循环渲染首尾完全相同，压缩后首尾差异另记，不能宣称编码逐像素相同。
 
-当前为本地素材候选。未进行韩语／西语市场文案的母语人工验收；正式提交前仍须绑定拟上架版本及语言能力，确认内容可用性，完成 Connect 预览、接受、审核和线上读回。规格及本地视觉检查通过不等于 Apple 审核通过。
+当前素材已上传素材库，状态为 `Add for Review`，尚未送审。未进行韩语／西语市场文案的母语人工验收；正式提交前仍须绑定拟上架版本及语言能力，确认内容可用性，完成 Connect 预览、接受、审核和线上读回。规格及本地视觉检查通过不等于 Apple 审核通过。
 
 ### v4 本轮实际检查收据
 
 四条主视频均为 300 帧，ffmpeg 全片解码退出码 0；编码首尾平均 RGB 差异为中文 0.07698、英文 0.07716、韩语 0.07536、西语 0.07337（0–255 通道值）。四张封面均为 RGB、无 alpha。完整正文和对照句的换行拼接逐字一致，卡片内容高度最高 278 / 350 像素。
 
 独立视觉复核确认英文副标语中文缺字已修复，四语言编码后稳定帧没有截句、缺字或安全区越界。In-app Browser 验证韩语和西语切换后视频 `readyState=4`、时长 10 秒、播放中、无媒体错误。当前四语言预览为 `http://127.0.0.1:8771/index.html`；它依赖本机预览服务，非公开部署地址。
+
+
+### 2026-10-07 素材库上传收据
+
+用户授权上传四语言动画及 iPhone Duo 截图。实际目标为正式 App `6809255441` 的 [Asset Library](https://appstoreconnect.apple.com/apps/6809255441/distribution/asset-library)，不是 Beta TestFlight 的二进制上传。
+
+- 四条 v4 主视频全部处理完成，平台识别为 `21:9` / `Product Page Header`，状态 `Add for Review`。
+- 九张原始 Duo PNG 全部处理完成，平台识别为 `iPhone Duo` / `App Screenshots`，状态 `Add for Review`；均为 1398×2034。
+- 素材总数由 72 增至 85，没有删除或覆盖原有素材。没有点击 Add for Review，未提交审核、选配到正式版本或发布。
+
+Duo 截图来源为 `65b56bb83d70bb81e18cdb236f5f9cd1efb4ea55` 的 TongxingBeta / Dev 内容，原始 Manifest 位于主工作副本 `artifacts/tongxing-ios/2026-10-06/promo-screens/MANIFEST.md`。该组包含播放、暂停、双语全文、语言选择、定位、对齐准备、麦克风权限提示及更多选项；保留 Beta/Dev 原始标识，不能以本次上传推断正式功能验收。
+
+本轮哈希清单、十三项 Apple 素材 ID / URL / 状态读回及页面截图保存在工作树忽略目录 `artifacts/tongxing-ios/asset-library-upload-20261007/`。上传成功与审核通过、正式页面生效分别记录。
