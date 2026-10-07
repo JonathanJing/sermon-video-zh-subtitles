@@ -33,10 +33,31 @@ RUN_ID="e2e-$(date -u +%Y%m%dT%H%M%SZ)"
 OUT="$REPO/artifacts/dev-180s-page-test-20261004/$RUN_ID"
 SOURCE_RUN="$REPO/artifacts/dev-full-rerun-20261001"
 XCODE="${DEVELOPER_DIR:-/Applications/Xcode.app}"
-# --with-beta reads the version/build already committed for TongxingBeta; bump
-# them in project.yml first to a number App Store Connect has not used.
-VERSION="$(sed -n 's/^ *MARKETING_VERSION: "\(1\.26\.[0-9]*\)"$/\1/p' apps/tongxing-ios/project.yml | sort -V | tail -1)"
-BUILD="$(sed -n 's/^ *CURRENT_PROJECT_VERSION: "\([0-9]*\)"$/\1/p' apps/tongxing-ios/project.yml | sort -n | tail -1)"
+# --with-beta archives the TongxingBeta app's BetaRelease version/build as
+# committed in project.yml; bump them first to a number App Store Connect has
+# not used.
+read -r VERSION BUILD < <(python3 - apps/tongxing-ios/project.yml <<'PARSE'
+import re, sys
+block, found = None, {}
+for line in open(sys.argv[1], encoding="utf-8"):
+    indent = len(line) - len(line.lstrip())
+    if re.fullmatch(r" +BetaRelease:\n", line):
+        block, values = indent, {}
+        continue
+    if block is not None and line.strip() and indent <= block:
+        if values.get("PRODUCT_BUNDLE_IDENTIFIER") == "com.jonathanjing.tongxing.beta":
+            found = values
+        block = None
+    if block is not None:
+        match = re.match(r' *(\w+): "?([^"\n]*)"?$', line)
+        if match:
+            values[match[1]] = match[2]
+print(found.get("MARKETING_VERSION", ""), found.get("CURRENT_PROJECT_VERSION", ""))
+PARSE
+)
+if [[ $WITH_BETA -eq 1 && ( -z "$VERSION" || -z "$BUILD" ) ]]; then
+  echo "Could not read the TongxingBeta BetaRelease version/build from project.yml"; exit 1
+fi
 IOS_OUT="$REPO/artifacts/tongxing-ios/beta-$VERSION-build$BUILD"
 mkdir -p "$OUT"
 printf 'stage\tstatus\tseconds\n' > "$OUT/timings.tsv"
