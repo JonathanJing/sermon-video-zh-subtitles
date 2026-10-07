@@ -13,7 +13,9 @@ import re
 HASH = re.compile(r'[0-9a-f]{64}\Z')
 LOCALES = {'zh-Hans', 'en', 'ko', 'es', 'vi'}
 PLAYABLE = {'human_reviewed', 'machine_checked'}
-RELEASES = {'sermon-target-language-release-package-v2', 'sermon-target-language-release-package-v4'}
+# v2 and the four-product v3 are human-reviewed releases under /releases-v2/; v4 adds machine-checked ones.
+RELEASES = {'sermon-target-language-release-package-v2', 'sermon-target-language-release-package-v3',
+            'sermon-target-language-release-package-v4'}
 CLOCKED_CONTENT = {'sermon-full-video-text-content-v2', 'sermon-full-video-text-content-v3'}
 
 

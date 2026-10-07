@@ -81,6 +81,16 @@ class CatalogTests(unittest.TestCase):
                          (f'week-one-ko-{sha[:12]}', 12))
         self.assertEqual(sources['zh-Hans']['durationSeconds'], 10)
 
+    def test_v4_catalog_keeps_human_four_product_v3_releases(self):
+        # Adding a machine-checked locale to a four-product page keeps its human v3 releases.
+        page, _ = self.machine_checked_ko()
+        release = json.loads((self.public/'releases/es.json').read_text())
+        release['schemaVersion'] = 'sermon-target-language-release-package-v3'
+        self.write('releases/es.json', release)
+        page['targets']['es']['releasePackageJsonSha256'] = module.digest(self.public/'releases/es.json')
+        self.write('multilingual-v4.json', dict(schemaVersion='sermon-multilingual-catalog-v4', pages=[page]))
+        self.assertEqual({s['audioLocale'] for s in self.build()['sources']}, {'zh-Hans', 'ko', 'es'})
+
     def test_machine_checked_release_must_match_its_v4_listing(self):
         page, release = self.machine_checked_ko()
         for change in (dict(audioStatus='human_reviewed'), dict(englishSourcePackageJsonSha256='f'*64),

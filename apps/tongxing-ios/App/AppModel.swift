@@ -683,6 +683,9 @@ final class AppModel: ObservableObject {
         publishedAudioError = nil
         let audioTask = Task { () throws -> (VerifiedLanguageAudio, MachineCheckedDisclosure?) in
             let package = try await multilingualRepository.loadRelease(page: page, locale: locale)
+            // Keep the verified disclosure even if the audio download or hash check fails next.
+            self.retainReleaseDisclosure(package.disclosure, request: request, page: page,
+                                         locale: locale, target: requestedTarget)
             return (try await multilingualRepository.loadAudio(for: package, page: page), package.disclosure)
         }
         publishedAudioTask = audioTask
@@ -719,6 +722,19 @@ final class AppModel: ObservableObject {
             guard publishedAudioRequest == request else { return }
             publishedAudioError = "无法下载或校验所选语言音频，请联网后重试。"
         }
+    }
+
+    /// Records a verified release's disclosure for the selection it was loaded for.
+    private func retainReleaseDisclosure(_ disclosure: MachineCheckedDisclosure?, request: UUID,
+                                         page: MultilingualPage, locale: String, target: PageTarget) {
+        guard publishedAudioRequest == request, selectedWeek == nil,
+              let currentPage = selectedMultilingualPage,
+              currentPage.id == page.id,
+              currentPage.sourceIdentitySha256 == page.sourceIdentitySha256,
+              currentPage.targets[locale] == target,
+              selectedContentLocale == locale else { return }
+        audioReleaseDisclosure = disclosure
+        audioReleaseSelectionKey = publishedTranscriptSelectionKey
     }
 
     func restorePublishedAudioAfterPreview() {
