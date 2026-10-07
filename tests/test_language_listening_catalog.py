@@ -84,12 +84,22 @@ class CatalogTests(unittest.TestCase):
     def test_v4_catalog_keeps_human_four_product_v3_releases(self):
         # Adding a machine-checked locale to a four-product page keeps its human v3 releases.
         page, _ = self.machine_checked_ko()
+        # Its natural dub runs on its own clock, past the video's last second.
+        content = json.loads((self.public/'content/es.json').read_text())
+        content.update(schemaVersion='sermon-full-video-text-content-v3', audioDurationSeconds=13)
+        self.write('content/es.json', content)
+        self.write('captions/es.json', dict(cues=[dict(start=0, end=12.5, text='approved', textGroupId='g1')]))
         release = json.loads((self.public/'releases/es.json').read_text())
         release['schemaVersion'] = 'sermon-target-language-release-package-v3'
+        for item in release['assets']:
+            if item['role'] in ('content', 'captions'):
+                item['sha256'] = module.digest(self.public/item['path'].lstrip('/'))
         self.write('releases/es.json', release)
         page['targets']['es']['releasePackageJsonSha256'] = module.digest(self.public/'releases/es.json')
         self.write('multilingual-v4.json', dict(schemaVersion='sermon-multilingual-catalog-v4', pages=[page]))
-        self.assertEqual({s['audioLocale'] for s in self.build()['sources']}, {'zh-Hans', 'ko', 'es'})
+        sources = {s['audioLocale']: s for s in self.build()['sources']}
+        self.assertEqual(set(sources), {'zh-Hans', 'ko', 'es'})
+        self.assertEqual(sources['es']['durationSeconds'], 13)
 
     def test_machine_checked_release_must_match_its_v4_listing(self):
         page, release = self.machine_checked_ko()

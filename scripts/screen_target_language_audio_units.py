@@ -35,7 +35,8 @@ except ImportError:
 # v2 records the ASR runtime settings behind every score (v1 receipts stay readable).
 SCHEMA = "sermon-target-language-audio-screening-v2"
 # How a recognized text is scored against the expected text; part of the recorded runtime.
-SCORING = "token-sequence-ratio-v1; short units (<4 tokens) must match exactly"
+SCORING = ("token-sequence-ratio-v2; short units (<4 tokens) must match exactly; "
+           "no negation or number may differ")
 MODEL = "Qwen/Qwen3-ASR-0.6B"
 BATCH_SIZES = (1, 2, 4, 8)
 
@@ -80,6 +81,33 @@ def tokens(value: str, locale: str) -> list[str]:
     return re.findall(r"[^\W_]+", folded, flags=re.UNICODE)
 
 
+# A dub that drops or changes one of these reverses or alters its claim while
+# the token ratio stays high ("not" in 13 words still scores 0.96), so an ASR
+# difference that touches one never passes on the ratio alone.
+NEGATIONS = {"zh-Hans": ("不", "没", "沒", "别", "未", "非", "无", "勿", "否"),
+             "ko": ("아니", "않", "안", "못", "없"),
+             "es": ("no", "ni", "nunca", "jamás", "jamas", "tampoco", "nadie", "nada", "ningún", "ningun",
+                    "ninguno", "ninguna", "sin")}
+ZH_NUMERALS = "〇零一二两三四五六七八九十百千万亿"
+ES_NUMBERS = frozenset((
+    "cero", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho", "nueve", "diez", "once", "doce",
+    "trece", "catorce", "quince", "dieciséis", "dieciseis", "diecisiete", "dieciocho", "diecinueve", "veinte",
+    "treinta", "cuarenta", "cincuenta", "sesenta", "setenta", "ochenta", "noventa", "cien", "ciento",
+    "doscientos", "trescientos", "cuatrocientos", "quinientos", "seiscientos", "setecientos", "ochocientos",
+    "novecientos", "mil", "millón", "millon", "millones"))
+
+
+def key_word(tokens: list[str], locale: str) -> bool:
+    """Whether these tokens hold a negation or a number (Korean spelled numbers are not covered)."""
+    joined = "".join(tokens)
+    if any(char.isdigit() for char in joined):
+        return True
+    if locale in {"zh-Hans", "ko"}:
+        return (any(marker in joined for marker in NEGATIONS.get(locale, ()))
+                or locale == "zh-Hans" and any(char in ZH_NUMERALS for char in joined))
+    return any(token in NEGATIONS.get(locale, ()) or token in ES_NUMBERS for token in tokens)
+
+
 def score(expected: str, recognized: str, locale: str, min_similarity: float) -> tuple[float, list[dict], bool]:
     """``(similarity, differences, passed)`` for one unit, as recorded in the receipt."""
     expected_tokens, actual_tokens = tokens(expected, locale), tokens(recognized, locale)
@@ -92,7 +120,9 @@ def score(expected: str, recognized: str, locale: str, min_similarity: float) ->
                    in matcher.get_opcodes() if kind != "equal"]
     # Short units are more vulnerable to a high score hiding one material
     # missing word, so require exact normalized ASR for them.
-    passed = similarity >= min_similarity and (len(expected_tokens) >= 4 or not differences)
+    passed = (similarity >= min_similarity and (len(expected_tokens) >= 4 or not differences)
+              and not any(key_word(row["expected"], locale) or key_word(row["recognized"], locale)
+                          for row in differences))
     return similarity, differences, passed
 
 

@@ -52,6 +52,8 @@ IMPLEMENTATION_FILES = (
     "scripts/auto_qc_seeded_errors.py",
     # L4 accepts a condensed script on its hash-bound binding without rerunning these checks.
     "scripts/spoken_condensation.py",
+    # Scores every ASR transcript the audio QC and the waivers rescore.
+    "scripts/screen_target_language_audio_units.py",
     # The gates that admit candidates and issue or accept waivers on calibrated evidence.
     "scripts/machine_quality_waiver.py",
     "scripts/machine_quality_release_basis.py",
@@ -65,7 +67,7 @@ CALIBRATION_MINIMUMS = {"overallDetectionRate": 0.95, "perKindDetectionRate": 0.
 TEXT_KINDS = ("wrong_number", "added_reference", "wrong_book", "english_leak", "placeholder",
               "dropped_name", "dropped_half", "semantic_negation", "added_number", "wrong_ordinal",
               "swapped_quantity")
-AUDIO_KINDS = ("stretched", "silent", "clipped", "truncated", "wrong_sentence")
+AUDIO_KINDS = ("stretched", "silent", "clipped", "truncated", "wrong_sentence", "dropped_key_word")
 # Seeded errors in condensed spoken groups: required when a QC run judged any.
 SPOKEN_KINDS = ("swapped_content", "added_content", "flipped_negation", "dropped_claim")
 DISCLOSURE = {

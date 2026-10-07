@@ -165,21 +165,18 @@ def unit_issues(units: list[dict], locale: str, thresholds: dict = THRESHOLDS) -
     return issues
 
 
-def asr_decision(primary: float, secondary: float | None, threshold: float = THRESHOLDS["asrMinSimilarity"]) -> str:
+def asr_decision(primary_agrees: bool, secondary_agrees: bool | None) -> str:
     """Two-level back-ASR: the small ASR flags, a stronger ASR confirms.
 
     ``pass``: primary agrees, or the stronger ASR agrees (a small-ASR miss).
     ``needs_secondary_asr``: primary disagrees and no second opinion yet.
     ``fail``: both disagree, so the audio is treated as wrong.
     """
-    for value in (primary, secondary):
-        if value is not None and not 0 <= value <= 1:
-            raise ValueError("ASR similarity must be within [0, 1]")
-    if primary >= threshold:
+    if primary_agrees:
         return "pass"
-    if secondary is None:
+    if secondary_agrees is None:
         return "needs_secondary_asr"
-    return "pass" if secondary >= threshold else "fail"
+    return "pass" if secondary_agrees else "fail"
 
 
 def _sha256(value: bytes) -> str:
@@ -191,6 +188,14 @@ def transcript_similarity(text: str, recognized: str, locale: str) -> float:
     # Lazy: the screener imports the speech-job module, which reaches this one.
     from scripts.screen_target_language_audio_units import score
     return score(text, recognized, locale, 1.0)[0]
+
+
+def transcript_agrees(text: str, recognized: str, locale: str,
+                      threshold: float = THRESHOLDS["asrMinSimilarity"]) -> bool:
+    """Whether the screener passes this transcript: the score clears the threshold,
+    a short unit matches exactly and no negation or number differs."""
+    from scripts.screen_target_language_audio_units import score
+    return score(text, recognized, locale, threshold)[2]
 
 
 def asr_opinion(recognized: str, *, audio: bytes, text: str, locale: str, model: str, settings: dict,
@@ -315,8 +320,10 @@ def screen(units: list[dict], locale: str, thresholds: dict = THRESHOLDS, *,
             raise ValueError("The secondary ASR must be a different model from the primary")
         asr = None
         if primary is not None:
-            asr = asr_decision(primary["similarity"], None if secondary is None else secondary["similarity"],
-                               thresholds["asrMinSimilarity"])
+            threshold = thresholds["asrMinSimilarity"]
+            asr = asr_decision(transcript_agrees(row["text"], primary["recognized"], locale, threshold),
+                               None if secondary is None
+                               else transcript_agrees(row["text"], secondary["recognized"], locale, threshold))
             if asr == "fail":
                 issues.append("asr_mismatch_confirmed")
         prior = ledger.prior(repair_position, row.get("sourceUnitIds"))

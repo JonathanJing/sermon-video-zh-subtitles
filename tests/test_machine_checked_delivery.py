@@ -14,6 +14,7 @@ import pytest
 from scripts import build_full_video_app_release as builder
 from scripts import delivery_contract as d
 from scripts import machine_quality_release_basis as basis
+from scripts import screen_target_language_audio_units as audio_screen
 from scripts import sermon_unified_delivery as delivery
 from scripts import study_artifacts
 from scripts.target_audio_auto_qc import THRESHOLDS
@@ -26,7 +27,7 @@ ASR = {'model': 'Qwen3-ASR', 'modelRevision': 'r1'}
 # The primary runtime recorded by the screening receipt this fixture binds.
 SCREENING_ASR = {'protocol': 'formal-back-asr-batch-v1', **ASR, 'batchSize': 1, 'maxNewTokens': 2048,
                  'dtype': 'bfloat16', 'executionDevice': 'cuda:0', 'runtime': {}, 'implementationSha256': 'd' * 64,
-                 'minSimilarity': 0.88, 'scoring': 'token-sequence-ratio-v1; short units (<4 tokens) must match exactly'}
+                 'minSimilarity': 0.88, 'scoring': audio_screen.SCORING}
 PRIMARY_SETTINGS = basis.json_sha256(SCREENING_ASR)
 ASR_SETTINGS = {'primary': PRIMARY_SETTINGS, 'secondary': basis.json_sha256({'backend': 'synthetic-secondary'})}
 
@@ -49,6 +50,7 @@ def condense_first_group(source, anchor, candidate, cal):
     group['coverage'][0]['targetText'] = short
     condensation = {'schemaVersion': basis.CONDENSATION_BINDING_SCHEMA, 'targetLocale': LOCALE, 'status': 'pass',
                     'issues': [], 'humanApproval': False, 'condensationRecordJsonSha256': 'e' * 64,
+                    'implementationSha256': IMPLEMENTATION,
                     'fullCandidateJsonSha256': d.sha(candidate), 'spokenCandidateJsonSha256': d.sha(spoken),
                     'groups': [{'translationGroupId': group['translationGroupId'],
                                 'finalSpokenTextSha256': hashlib.sha256(short.encode()).hexdigest()}]}

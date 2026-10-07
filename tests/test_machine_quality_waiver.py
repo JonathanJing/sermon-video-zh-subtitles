@@ -288,11 +288,29 @@ class AudioQcTests(unittest.TestCase):
         self.assertEqual(result["subtitleOnlyGroupIds"], ["g003"])
         self.assertEqual(result["repairGroupIds"], [])
 
+    def test_a_dropped_negation_or_number_is_not_passed_on_the_ratio(self):
+        from scripts.screen_target_language_audio_units import score
+        for locale, text in (("es", "Jesús no nos deja solos en nuestros fracasos ni en nuestras dudas."),
+                             ("zh-Hans", "耶稣不会在我们失败的时候丢下我们，也不会离开我们。"),
+                             ("ko", "예수님은 우리가 실패할 때 우리를 홀로 두지 않으십니다."),
+                             ("es", "Ella tenía doce hijos y cuarenta hijas en aquella casa."),
+                             ("zh-Hans", "请和我一起翻到启示录3章4节，耶稣在这里对撒狄的教会说话。")):
+            with self.subTest(locale=locale, text=text):
+                heard = seeded.drop_key_word(text, locale)
+                similarity, _, passed = score(text, heard, locale, 0.88)
+                self.assertGreaterEqual(similarity, 0.88)
+                self.assertFalse(passed)
+                self.assertFalse(audio_qc.transcript_agrees(text, heard, locale))
+                self.assertTrue(audio_qc.transcript_agrees(text, text, locale))
+        # Other small differences still pass on the ratio.
+        text = "Jesús no nos deja solos en nuestros fracasos ni en nuestras dudas."
+        self.assertTrue(score(text, text.replace("nuestras", "las"), "es", 0.88)[2])
+
     def test_two_level_asr(self):
-        self.assertEqual(audio_qc.asr_decision(0.95, None), "pass")
-        self.assertEqual(audio_qc.asr_decision(0.6, None), "needs_secondary_asr")
-        self.assertEqual(audio_qc.asr_decision(0.6, 0.93), "pass")
-        self.assertEqual(audio_qc.asr_decision(0.6, 0.7), "fail")
+        self.assertEqual(audio_qc.asr_decision(True, None), "pass")
+        self.assertEqual(audio_qc.asr_decision(False, None), "needs_secondary_asr")
+        self.assertEqual(audio_qc.asr_decision(False, True), "pass")
+        self.assertEqual(audio_qc.asr_decision(False, False), "fail")
         units = fixtures.units("zh-Hans")
         low = audio_qc.asr_opinion(fixtures.misheard(units[0]["text"]), audio=units[0]["wav"], text=units[0]["text"],
             locale="zh-Hans", model=fixtures.PRIMARY_ASR,
@@ -574,7 +592,7 @@ class CalibrationAndWaiverTests(unittest.TestCase):
             self.assertEqual(result["cleanFalsePositives"], 0, locale)
             for kind in ("text.english_leak", "text.placeholder", "text.added_reference", "text.wrong_book",
                          "audio.stretched", "audio.silent", "audio.clipped", "audio.truncated",
-                         "audio.wrong_sentence"):
+                         "audio.wrong_sentence", "audio.dropped_key_word"):
                 self.assertEqual(result["kinds"][kind]["rate"], 1.0, (locale, kind))
             self.assertFalse(result["semanticChecksIncluded"])
             self.assertEqual(result["asrIdentity"]["secondary"]["model"], fixtures.SECONDARY_ASR)
@@ -582,7 +600,7 @@ class CalibrationAndWaiverTests(unittest.TestCase):
     def test_wrong_sentence_needs_the_asr_path(self):
         without = self.calibration("ko", asr=False)
         self.assertEqual(without["kinds"]["audio.wrong_sentence"]["trials"], 0)
-        self.assertIn("calibration has no trials for ['audio.wrong_sentence']",
+        self.assertIn("calibration has no trials for ['audio.wrong_sentence', 'audio.dropped_key_word']",
                       waiver.calibration_problems(without, "ko", waiver.implementation_sha256(), require_audio=True))
         # An ASR integration that always agrees catches nothing.
         broken = seeded.calibrate("ko", fixtures.groups("ko"), fixtures.units("ko"), policy=fixtures.policy("ko"),

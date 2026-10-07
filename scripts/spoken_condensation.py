@@ -34,12 +34,15 @@ import sys
 
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from scripts import machine_quality_waiver as waiver
 from scripts import target_audio_predicted_schedule as predicted
 from scripts import target_text_auto_qc as text_qc
 from scripts.language_review_plugins import auto_qc_text_common as rules
 
 SCHEMA = "sermon-spoken-condensation-record-v1"
-BINDING_SCHEMA = "sermon-spoken-condensation-binding-v1"
+# v2 records the QC implementation that rechecked the spoken text; a waiver
+# accepts only a binding checked by its own implementation.
+BINDING_SCHEMA = "sermon-spoken-condensation-binding-v2"
 REVISION_BRIEF_SCHEMA = "sermon-target-language-group-revision-brief-v1"
 PROMPT_VERSION = "spoken-condensation-v1"
 OMISSION_KINDS = ("repetition", "filler", "restatement", "aside", "example_detail")
@@ -342,7 +345,8 @@ def bind_spoken_candidate(record: dict, anchor: dict, candidate: dict, spoken: d
     return {"schemaVersion": BINDING_SCHEMA, "targetLocale": locale, "status": "fail" if issues else "pass",
             "issues": issues, "condensationRecordJsonSha256": _sha(record),
             "fullCandidateJsonSha256": record["fullCandidateJsonSha256"],
-            "spokenCandidateJsonSha256": _sha(spoken), "groups": rows, "humanApproval": False}
+            "spokenCandidateJsonSha256": _sha(spoken), "groups": rows,
+            "implementationSha256": waiver.implementation_sha256(), "humanApproval": False}
 
 
 def qc_groups(binding: dict, anchor: dict, spoken: dict) -> list[dict]:

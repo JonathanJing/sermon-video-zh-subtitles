@@ -172,6 +172,7 @@ def caption_text(full: dict, full_sha: str, spoken: dict, spoken_sha: str, spoke
             and binding.get("schemaVersion") == machine_basis.CONDENSATION_BINDING_SCHEMA
             and binding.get("status") == "pass" and not binding.get("issues")
             and binding.get("humanApproval") is False and binding.get("targetLocale") == locale
+            and binding.get("implementationSha256") == spoken_receipt.get("implementationSha256")
             and binding.get("fullCandidateJsonSha256") == full_sha
             and binding.get("spokenCandidateJsonSha256") == spoken_sha
             and [row.get("translationGroupId") for row in binding.get("groups", [])] == condensed

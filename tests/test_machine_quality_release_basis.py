@@ -311,7 +311,7 @@ class TextWaiverTests(unittest.TestCase):
         qc["results"][0]["mode"] = "spoken_condensed"
         qc["condensedGroupIds"] = [group["translationGroupId"]]
         binding = {"schemaVersion": basis.CONDENSATION_BINDING_SCHEMA, "status": "pass", "issues": [],
-                   "humanApproval": False, "targetLocale": "ko",
+                   "humanApproval": False, "targetLocale": "ko", "implementationSha256": IMPLEMENTATION,
                    "spokenCandidateJsonSha256": interpretation.json_sha256(self.candidate),
                    "groups": [{"translationGroupId": group["translationGroupId"],
                                "finalSpokenTextSha256": sha(group["targetText"])}]}
@@ -351,6 +351,8 @@ class TextWaiverTests(unittest.TestCase):
             (dict(binding=dict(binding, spokenCandidateJsonSha256=interpretation.json_sha256(other))),
              "another spoken candidate"),
             (dict(binding=dict(binding, groups=[])), "differ from the binding"),
+            # A binding rechecked by obsolete condensation rules is not rechecked by these.
+            (dict(binding=dict(binding, implementationSha256="0" * 64)), "another QC implementation"),
             (dict(binding=dict(binding, groups=[dict(binding["groups"][0], finalSpokenTextSha256=sha("x"))])),
              "other spoken text"),
             (dict(qc=unlisted), "condensed-group list differs"),

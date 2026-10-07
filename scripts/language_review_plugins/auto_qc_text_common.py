@@ -190,6 +190,12 @@ _KO_SINO_COUNTERS = ("년", "월", "장", "절", "층", "배", "초", "회", "�
 _KO_I_COUNTERS = ("년", "월", "장", "절", "층", "배", "초", "회", "퍼센트")
 
 
+# What can follow a complete number inside a longer one: 이십 in 이십일 (21), 마흔 in 마흔네 (44).
+_KO_SINO_CONTINUATIONS = "영일이삼사오육칠팔구십백천만억"
+_KO_NATIVE_CONTINUATIONS = ("하나", "한", "둘", "두", "셋", "세", "석", "넷", "네", "넉",
+                            "다섯", "여섯", "일곱", "여덟", "아홉")
+
+
 def _ko_pattern(form: str, *, sino: bool = False) -> str:
     left = r"(?<![가-힣])"
     if len(form) == 1 and sino:
@@ -199,7 +205,9 @@ def _ko_pattern(form: str, *, sino: bool = False) -> str:
         # One syllable (이, 두, 세 …) is far too common inside words; require a
         # counter or a following space before treating it as a number.
         return left + re.escape(form) + r"(?=\s*(?:" + "|".join(_KO_COUNTERS) + r")|\s)"
-    return left + re.escape(form)
+    # A complete form, not the head of a longer number.
+    right = ("[" + _KO_SINO_CONTINUATIONS + "]") if sino else "|".join(_KO_NATIVE_CONTINUATIONS)
+    return left + re.escape(form) + r"(?!" + right + r")"
 
 
 def _decimal_digit_forms(value: str, *, comma: bool = False) -> set[str]:

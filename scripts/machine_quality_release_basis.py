@@ -36,7 +36,7 @@ ROOT = Path(__file__).resolve().parents[1]
 TEXT_WAIVER_SCHEMA = "sermon-target-language-machine-text-waiver-v1"
 AUDIO_WAIVER_SCHEMA = "sermon-target-language-machine-audio-waiver-v2"
 LEGACY_AUDIO_WAIVER_SCHEMA = "sermon-target-language-machine-audio-waiver-v1"
-CONDENSATION_BINDING_SCHEMA = "sermon-spoken-condensation-binding-v1"
+CONDENSATION_BINDING_SCHEMA = "sermon-spoken-condensation-binding-v2"
 REVIEW_KIND = "machine_quality_waiver"
 LOCALES = ("zh-Hans", "ko", "es")
 MACHINE_PENDING_CANDIDATE = "machine_review_pass_human_review_pending"
@@ -150,7 +150,8 @@ def machine_pending_candidate(candidate: dict) -> bool:
                     for group in groups))
 
 
-def condensation_problems(candidate: dict, condensed: list[str], binding: dict | None) -> list[str]:
+def condensation_problems(candidate: dict, condensed: list[str], binding: dict | None,
+                          implementation: str) -> list[str]:
     """Groups judged as condensed spoken text must be exactly those a passing
     ``spoken_condensation`` binding bound in this candidate."""
     if not condensed:
@@ -163,6 +164,9 @@ def condensation_problems(candidate: dict, condensed: list[str], binding: dict |
     if (binding.get("schemaVersion") != CONDENSATION_BINDING_SCHEMA or binding.get("status") != "pass"
             or binding.get("issues") or binding.get("humanApproval") is not False):
         problems.append("condensation binding did not pass")
+    # The binding trusts its own recheck of omissions and timing, so it must be the current one.
+    if binding.get("implementationSha256") != implementation:
+        problems.append("condensation binding was checked by another QC implementation; rebind")
     if (binding.get("targetLocale") != candidate.get("targetLocale")
             or binding.get("spokenCandidateJsonSha256") != json_sha256(candidate)):
         problems.append("condensation binding belongs to another spoken candidate")
@@ -235,7 +239,7 @@ def build_text_waiver(source: dict, anchor: dict, candidate: dict, text_qc: dict
     condensed = [row["groupId"] for row in results if row.get("mode") == "spoken_condensed"]
     _require(list(text_qc.get("condensedGroupIds") or []) == condensed,
              "Text QC condensed-group list differs from its per-group results")
-    condensation = condensation_problems(candidate, condensed, condensation_binding)
+    condensation = condensation_problems(candidate, condensed, condensation_binding, implementation)
     _require(not condensation, "Condensed spoken groups are not bound: " + "; ".join(condensation))
     summary = calibration_summary(calibration, locale, implementation, require_spoken=bool(condensed))
     runtime = waiver.runtime_identity_problems(calibration, text_qc=text_qc)
@@ -469,7 +473,7 @@ def build_audio_waiver(package: dict, screening: dict, audio_qc: dict, text_waiv
     _require(not track, "Assembled track is not verified: " + "; ".join(track))
     threshold = _asr_threshold()
     # Lazy, as in _asr_threshold.
-    from scripts.target_audio_auto_qc import screening_asr_settings, transcript_similarity
+    from scripts.target_audio_auto_qc import screening_asr_settings, transcript_agrees, transcript_similarity
     primary_settings = json_sha256(screening_asr_settings(screening))
     texts = {group["translationGroupId"]: group["targetText"] for group in candidate["groups"]}
     secondary_identity = None
@@ -507,6 +511,8 @@ def build_audio_waiver(package: dict, screening: dict, audio_qc: dict, text_waiv
             _require(isinstance(heard, str)
                      and transcript_similarity(texts[group_id], heard, locale) == secondary,
                      f"Secondary ASR score is not the score of its transcript: {group_id}")
+            _require(transcript_agrees(texts[group_id], heard, locale, threshold),
+                     f"Secondary ASR does not agree with the text (short unit, negation or number): {group_id}")
         rows.append({"textGroupId": group_id, "audioSha256": unit["audio"]["sha256"], "status": "pass",
                      "asr": "secondary_pass" if group_id in flagged else "primary_pass",
                      "primarySimilarity": primary,

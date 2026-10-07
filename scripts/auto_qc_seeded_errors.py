@@ -325,9 +325,27 @@ def _asr_row(unit: dict, wav: bytes, locale: str, asr, threshold: float) -> dict
     """A unit row whose ASR opinions are freshly computed for ``wav`` under the unit's text."""
     primary = asr("primary", wav, unit["text"], locale)
     opinions = {"primary": primary}
-    if primary["similarity"] < threshold:
+    if not audio_qc.transcript_agrees(unit["text"], primary["recognized"], locale, threshold):
         opinions["secondary"] = asr("secondary", wav, unit["text"], locale)
     return {**unit, "wav": wav, "asr": opinions}
+
+
+def drop_key_word(text: str, locale: str) -> str | None:
+    """``text`` without its first negation or number, as a dub that dropped it would be heard."""
+    from scripts.screen_target_language_audio_units import ES_NUMBERS, NEGATIONS, ZH_NUMERALS
+    if locale == "es":
+        words = "|".join(sorted({*NEGATIONS["es"], *ES_NUMBERS}, key=len, reverse=True))
+        pattern = r"\d+(?:[.,:]\d+)*|(?<![^\W\d_])(?:" + words + r")(?![^\W\d_])"
+        match = re.search(pattern, text, flags=re.IGNORECASE)
+    else:
+        # Korean 안 negates only as its own word (안 갑니다), not inside 동안 or 평안.
+        markers = [r"(?<![가-힣])안(?=\s)" if marker == "안" else re.escape(marker)
+                   for marker in sorted(NEGATIONS[locale], key=len, reverse=True)]
+        numerals = "[" + ZH_NUMERALS + "]+|" if locale == "zh-Hans" else ""
+        match = re.search("|".join(markers) + "|" + numerals + r"\d+", text)
+    if match is None:
+        return None
+    return re.sub(r"\s{2,}", " ", text[:match.start()] + text[match.end():]).strip()
 
 
 def calibrate_audio(units: list[dict], locale: str, *, asr=None, max_trials: int = 30) -> dict:
@@ -365,6 +383,18 @@ def calibrate_audio(units: list[dict], locale: str, *, asr=None, max_trials: int
                     continue
                 wav = other["wav"]
                 rows[index] = _asr_row(units[index], wav, locale, asr, threshold)
+            elif kind == "dropped_key_word":
+                # A dub that lost one "not" or number still scores high on the ratio; the
+                # ASR hears what the dub said, so its transcript lacks that word.
+                if asr is None or drop_key_word(units[index]["asr"]["primary"]["recognized"], locale) is None:
+                    continue
+
+                def omitting(role, wav, text, asr_locale):
+                    opinion = asr(role, wav, text, asr_locale)
+                    heard = drop_key_word(opinion["recognized"], asr_locale) or opinion["recognized"]
+                    return {**opinion, "recognized": heard,
+                            "similarity": audio_qc.transcript_similarity(text, heard, asr_locale)}
+                rows[index] = _asr_row(units[index], units[index]["wav"], locale, omitting, threshold)
             else:
                 # The screen decodes the mutated bytes, as it would a real faulty render.
                 rows[index] = {**base[index], "wav": audio_qc.encode_pcm16(*mutate_audio(samples, rate, kind))}
@@ -372,7 +402,8 @@ def calibrate_audio(units: list[dict], locale: str, *, asr=None, max_trials: int
             note_runtime(result)
             trials += 1
             new = set(result["issues"]) - set(clean[index]["issues"])
-            hit = "asr_mismatch_confirmed" in new if kind == "wrong_sentence" else bool(new)
+            hit = ("asr_mismatch_confirmed" in new if kind in ("wrong_sentence", "dropped_key_word")
+                   else bool(new))
             if result["status"] == "fail" and hit:
                 detected += 1
             elif len(misses) < 5:

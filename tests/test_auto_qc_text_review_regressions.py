@@ -96,6 +96,13 @@ class TextReviewRegressions(unittest.TestCase):
         # A number inside a larger one is not another occurrence (十五, 열다섯).
         self.assertEqual(rules.chinese_number_count("十五个饼和五条鱼", 5), 1)
         self.assertEqual(rules.korean_number_count("열다섯 개와 다섯 마리", 5), 1)
+        # A complete Korean number is not the head of a longer one: 20 became 21, 40 became 44.
+        for english, wrong, right in (("Twenty people came.", "이십일 명이 왔습니다.", "이십 명이 왔습니다."),
+                                      ("Forty people came.", "마흔네 명이 왔습니다.", "마흔 명이 왔습니다."),
+                                      ("Twenty people came.", "스물한 명이 왔습니다.", "스무 명이 왔습니다.")):
+            with self.subTest(wrong=wrong):
+                self.assertTrue(rules.number_problems(english, wrong, "ko"))
+                self.assertEqual(rules.number_problems(english, right, "ko"), [])
 
     def test_digits_the_english_never_said_are_added_numbers(self):
         for locale, target in (("es", "Hay 5 personas."), ("ko", "5명이 있습니다."), ("zh-Hans", "有5个人。")):

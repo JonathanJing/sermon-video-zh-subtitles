@@ -130,7 +130,9 @@ def build(public, previous_catalog, legacy_locale):
                 raise ValueError('Published content source mismatch')
             sha = assets['audio']['sha256']
             add(source(page['date'], f"{page['id']}-{locale}-{sha[:12]}", sha,
-                       track_duration(content) if machine else content['durationSeconds'],
+                       # Four-product releases (v3, v4) may run the dub on its own clock; v2 never did.
+                       content['durationSeconds'] if release['schemaVersion'] == 'sermon-target-language-release-package-v2'
+                       else track_duration(content),
                        captions['cues'], page['id'], locale))
     catalog['sources'] = list(indexed.values())
     catalog['weekIds'] = sorted(set(catalog.get('weekIds', [])) | {s['week'] for s in indexed.values()})
