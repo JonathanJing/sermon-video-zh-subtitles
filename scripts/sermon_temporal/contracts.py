@@ -40,8 +40,11 @@ def operator_harness_argv(config: dict) -> list[str]:
     for index, token in enumerate(argv):
         flag = token.split("=", 1)[0]
         if flag.startswith("--") and "--agent-backend".startswith(flag) and flag != "--agent-backend":
-            raise ValueError("Temporal backend pin must use the full --agent-backend option")
-        if flag == "--agent-backend":
+            # v1 bytes predate the full-option rule; the harness parser accepts
+            # unambiguous abbreviations ("--ag" onward; "--a" also matches --api-key-secret).
+            if schema != OPERATOR_SCHEMA_V1 or len(flag) < len("--ag"):
+                raise ValueError("Temporal backend pin must use the full --agent-backend option")
+        if flag.startswith("--ag") and "--agent-backend".startswith(flag):
             value = token.split("=", 1)[1] if "=" in token else (argv[index + 1] if index + 1 < len(argv) else "")
             backend_values.append(value)
     if len(backend_values) > 1:

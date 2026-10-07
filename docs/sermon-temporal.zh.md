@@ -67,7 +67,7 @@ artifacts/temporal/runtime/venv/bin/python -m scripts.sermon_temporal server sta
 }
 ```
 
-旧 `sermon-temporal-operator-v1` 配置及已持久化的 request v1 保持可读：未写后端时，adapter 在解析前明确选用历史默认 `agents-api`；已有显式后端保持原值。它不会改配置文件、SHA-256 或 workflow ID，也不会因 parser 默认值改变而切换旧请求的认证通道。v2 在提交请求和 Activity 加载时都要求唯一的完整 `--agent-backend codex-cli` 参数；支持两个参数或 `--agent-backend=codex-cli` 写法，拒绝缺失、重复、缩写及 `agents-api`／`sdk` 选择。harness 不提供旧 API 会话恢复参数；原会话恢复仍使用原 Supervisor 入口及其 session 参数。fixture schema/profile 不变。
+旧 `sermon-temporal-operator-v1` 配置及已持久化的 request v1 保持可读：未写后端时，adapter 在解析前明确选用历史默认 `agents-api`；已有显式后端保持原值，包括 harness parser 接受的无歧义缩写（如 `--agent-b codex-cli`）。它不会改配置文件、SHA-256 或 workflow ID，也不会因 parser 默认值改变而切换旧请求的认证通道。v2 在提交请求和 Activity 加载时都要求唯一的完整 `--agent-backend codex-cli` 参数；支持两个参数或 `--agent-backend=codex-cli` 写法，拒绝缺失、重复、缩写及 `agents-api`／`sdk` 选择。harness 不提供旧 API 会话恢复参数；原会话恢复仍使用原 Supervisor 入口及其 session 参数。fixture schema/profile 不变。
 
 从 v1 改为 v2 必须另存配置，绑定新的 config hash/workflow ID 和明确的接续意图，不能覆盖旧请求指向的文件或以新 ID 绕过活跃／未决任务。保留旧配置、request 和原工具收据，先按原身份核对当前任务结果，再决定是否开始新请求。Request schema 与 workflow ID 算法不变；后端绑定属于配置字节，因此改变后端会改变执行身份。
 

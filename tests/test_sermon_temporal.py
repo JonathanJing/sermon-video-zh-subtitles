@@ -159,6 +159,23 @@ class TemporalBackendBindingTests(unittest.TestCase):
                 request = self.persisted_request()
                 self.assertEqual(self.backend_command(request, "codex-cli"), backend)
 
+    def test_v1_abbreviated_backend_pin_keeps_its_backend(self):
+        original_argv = list(self.config["harnessArgv"])
+        for pin, backend in ((["--agent-b", "codex-cli"], "codex-cli"),
+                             (["--ag=sdk"], "sdk"),
+                             (["--agent-backen", "agents-api"], "agents-api")):
+            with self.subTest(pin=pin):
+                self.config["harnessArgv"] = original_argv + pin
+                request = self.persisted_request()
+                other = "codex-cli" if backend == "agents-api" else "agents-api"
+                self.assertEqual(self.backend_command(request, other), backend)
+        for pin in (["--agent-b", "codex-cli", "--agent-backend", "sdk"], ["--a", "codex-cli"]):
+            with self.subTest(pin=pin):
+                self.config["harnessArgv"] = original_argv + pin
+                self.write_config()
+                with self.assertRaises(ValueError):
+                    client.build_request(self.path, profile="production")
+
     def test_v2_missing_or_ambiguous_pin_fails_client_and_activity_load(self):
         self.config["schemaVersion"] = "sermon-temporal-operator-v2"
         original_argv = list(self.config["harnessArgv"])
