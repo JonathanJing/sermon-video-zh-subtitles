@@ -85,3 +85,14 @@
 - [韩语高清图](https://ai-for-god-sermon-audio.web.app/posters/resi-20261004-69ba7a66/ko-80d73dea581798eee7b8d1200c6dc54c60a8425d93116cc0ba6d23a0ab50c7d9.png) · [韩语手机预览](https://ai-for-god-sermon-audio.web.app/posters/resi-20261004-69ba7a66/ko-preview-0cac2b0234e87f2420dd5d791a4516b427fbe991ae4522ab4ead3b82fa86602c.png)
 - [西语高清图](https://ai-for-god-sermon-audio.web.app/posters/resi-20261004-69ba7a66/es-8047c6384035f83b3bfe71de7ba99e376f89d424e4d87e7013ed02a0e4229112.png) · [西语手机预览](https://ai-for-god-sermon-audio.web.app/posters/resi-20261004-69ba7a66/es-preview-696581f6257d7f4116f36467de599434b6022c3b4a011da9bb72517140fb59b3.png)
 - [英语参考高清图](https://ai-for-god-sermon-audio.web.app/posters/resi-20261004-69ba7a66/en-1dc7480b17ce70dbf9f835af318d2e542d6983913cf8c18ad111652fb14823b5.png) · [英语参考手机预览](https://ai-for-god-sermon-audio.web.app/posters/resi-20261004-69ba7a66/en-preview-59302a7a513d9c0338343f749b750a0dc94f98c942bad1241ca682d00614ccdd.png)
+
+
+## 新模板生成器产物补到正式站点
+
+2026-10-07 按用户「海报补到正式版」授权，将接入后生成器的四语高清／预览产物补到正式 Firebase。live 版本为 `7089e0378ae6b7e7`；除海报 sidecar 外原 153 个文件 hash 保留，完整 config/catalog 不变。本周中／韩／西 announcement 绑定各自正式 release；英语仅作为参考图片。八张图片与 sidecar 的 HTTP SHA 读回、完整 Hosting inventory 检查通过，远程租约已释放。
+
+- [新版中文海报](https://ai-for-god-sermon-audio.web.app/posters/resi-20261004-69ba7a66/zh-Hans-d6f8f9f07fc672daa99abb1d03f1d91e00310bc50b56cdd827544ef3c8a41698.png)
+- [新版韩语海报](https://ai-for-god-sermon-audio.web.app/posters/resi-20261004-69ba7a66/ko-c88dbc1fa70c0216140d8d738122e07433330cd681b146dd4ca924b8faa65262.png)
+- 西语与英语成品像素不变，沿用上方 hash URL。旧图片保留以便追溯，不删除历史文件。
+- 回执：`artifacts/poster-upload-20261007/new-template-production/`；本轮只更新正式 Firebase，没有再次更新 Beta、发送通知或发布 App Store 二进制。
+- Apple 公开 lookup 当次读回商店版本为 1.26.16；Firebase 读回不能证明该客户端支持或显示海报，正式 iOS 海报展示另需客户端发行／真机验收。
