@@ -103,6 +103,13 @@ def _rate(value) -> float | None:
     return float(value) if 0 <= value <= 1 else None
 
 
+def calibration_kind_not_applicable(kind: str, row: dict) -> bool:
+    """Only the role-swap kind supports an explicit whole-candidate exemption."""
+    return (isinstance(row, dict) and kind == "text.swapped_name" and row.get("applicableGroupIds") == []
+            and type(row.get("trials")) is int and row["trials"] == 0
+            and type(row.get("detected")) is int and row["detected"] == 0)
+
+
 def calibration_problems(calibration: dict | None, locale: str, implementation: str, *,
                          require_audio: bool = False, require_spoken: bool = False) -> list[str]:
     """Reasons the calibration cannot back a waiver; ``require_audio`` when audio
@@ -142,6 +149,11 @@ def calibration_problems(calibration: dict | None, locale: str, implementation: 
             problems.append(f"invalid trial counts for {kind}")
             continue
         counts[kind] = (trials, detected)
+        if kind == "text.swapped_name" and "applicableGroupIds" in row:
+            applicable = row["applicableGroupIds"]
+            if (not isinstance(applicable, list) or any(not isinstance(g, str) or not g for g in applicable)
+                    or len(applicable) != len(set(applicable)) or trials > len(applicable)):
+                problems.append("invalid swapped-name applicability")
         derived = round(detected / trials, 6) if trials else 0.0
         reported = _rate(row.get("rate"))
         if reported is None or not math.isclose(reported, derived, abs_tol=1e-6):
@@ -152,7 +164,7 @@ def calibration_problems(calibration: dict | None, locale: str, implementation: 
     for kind in expected:
         if kind not in kinds:
             missing.append(kind)
-        elif kind not in counts or counts[kind][0] == 0:
+        elif (kind not in counts or counts[kind][0] == 0) and not calibration_kind_not_applicable(kind, kinds[kind]):
             untested.append(kind)
     if missing:
         problems.append(f"calibration lacks seeded-error kinds {missing}")

@@ -208,24 +208,40 @@ def mutate_text(group: dict, kind: str, locale: str, policy: dict | None,
                     return text[:spans[0][0]] + text[spans[0][1]:] if spans else None
         return None
     if kind == "swapped_name":
-        # "Abraham blessed Isaac" as "Isaac blessed Abraham": every name check still passes.
+        # Only seed an explicit directional relation, never a coordinated list
+        # or a reciprocal relation (Paul and Silas prayed / Paul met Silas).
         if policy is None:
             return None
-        found = []
+        names = []
         for kind_name in ("properNames", "seriesNames"):
             for term in policy["terminology"][kind_name]:
                 target = term.get("target")
-                if (not target or term.get("reviewStatus") == "pending"
-                        or any(target == other for _, _, other in found)
-                        or not re.search(r"(?<!\w)" + re.escape(term["source"]) + r"(?!\w)", english, re.I)):
+                if not target or term.get("reviewStatus") == "pending":
                     continue
-                spans = [span for span in rules.name_spans(_fold_es(target, locale), _fold_es(text, locale))
-                         if all(span[1] <= start or span[0] >= end for start, end, _ in found)]
-                if spans:
-                    found.append((*spans[0], target))
-                if len(found) == 2:
-                    (first, first_end, left), (second, second_end, right) = sorted(found)
-                    return (text[:first] + right + text[first_end:second] + left + text[second_end:])
+                for match in re.finditer(r"(?<!\w)" + re.escape(term["source"]) + r"(?!\w)", english, re.I):
+                    names.append((match.start(), match.end(), target))
+        directional = (r"(?:blessed|blesses|taught|teaches|warned|warns|followed|follows|"
+                       r"sent|sends|led|leads|helped|helps|thanked|thanks|"
+                       r"spoke to|speaks to|prayed for|prays for|"
+                       r"speaks to the church in|spoke to the church in)")
+        for first, first_end, left in sorted(names):
+            for second, second_end, right in sorted(names):
+                if (first_end > second or left == right
+                        or sum(name == left for _, _, name in names) != 1
+                        or sum(name == right for _, _, name in names) != 1):
+                    continue
+                # A bounded template deliberately leaves unknown grammar unseeded.
+                if not re.fullmatch(r"\s+" + directional + r"\s+", english[first_end:second], re.I):
+                    continue
+                left_spans = rules.name_spans(_fold_es(left, locale), _fold_es(text, locale))
+                right_spans = rules.name_spans(_fold_es(right, locale), _fold_es(text, locale))
+                # Multiple target occurrences make the intended role ambiguous.
+                if len(left_spans) != 1 or len(right_spans) != 1:
+                    continue
+                (a, a_end, a_name), (b, b_end, b_name) = sorted(
+                    [(*left_spans[0], left), (*right_spans[0], right)])
+                if a_end <= b:
+                    return text[:a] + b_name + text[a_end:b] + a_name + text[b_end:]
         return None
     if kind == "dropped_half":
         if text_qc.length_ratio(group) is None:
@@ -328,6 +344,11 @@ def calibrate_text(groups: list[dict], locale: str, *, policy: dict | None = Non
         clean_checked += 1
         false_positives += bool(problems)
     for kind in TEXT_KINDS:
+        # Applicability searches the complete bound candidate, before trial caps
+        # and surface screens; zero executed trials alone never grants an exemption.
+        applicable = ([group["groupId"] for group in groups
+                       if mutate_text(group, kind, locale, policy, groups) is not None]
+                      if kind == "swapped_name" else None)
         trials = detected = 0
         misses = []
         for group in groups:
@@ -354,6 +375,8 @@ def calibrate_text(groups: list[dict], locale: str, *, policy: dict | None = Non
                 misses.append(group["groupId"])
         kinds[kind] = {"trials": trials, "detected": detected, "rate": _rate(detected, trials),
                        "missedGroupIds": misses}
+        if applicable is not None:
+            kinds[kind]["applicableGroupIds"] = applicable
     return {"kinds": kinds, "cleanChecked": clean_checked, "cleanFalsePositives": false_positives}
 
 
