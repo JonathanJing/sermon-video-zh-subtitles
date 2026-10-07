@@ -581,7 +581,7 @@
 			baseConfigurationReference = 58CF4F36B9265709AAF09A1C /* Signing.xcconfig */;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
-				CURRENT_PROJECT_VERSION = 58;
+				CURRENT_PROJECT_VERSION = 59;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ListeningActivityExtension/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -589,7 +589,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.26.17;
+				MARKETING_VERSION = 1.26.18;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.jonathanjing.tongxing.beta.listening-activity";
 				PRODUCT_NAME = ListeningActivityExtension;
 				SDKROOT = iphoneos;
@@ -907,14 +907,14 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Config/BetaPush.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 58;
+				CURRENT_PROJECT_VERSION = 59;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = App/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.26.17;
+				MARKETING_VERSION = 1.26.18;
 				OTHER_LDFLAGS = "$(inherited) -weak_framework ActivityKit";
 				PRODUCT_BUNDLE_IDENTIFIER = com.jonathanjing.tongxing.beta;
 				PRODUCT_NAME = Tongxing;
@@ -937,14 +937,14 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Config/BetaPush.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 58;
+				CURRENT_PROJECT_VERSION = 59;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = App/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.26.17;
+				MARKETING_VERSION = 1.26.18;
 				OTHER_LDFLAGS = "$(inherited) -weak_framework ActivityKit";
 				PRODUCT_BUNDLE_IDENTIFIER = com.jonathanjing.tongxing.beta;
 				PRODUCT_NAME = Tongxing;
@@ -982,7 +982,7 @@
 			baseConfigurationReference = 58CF4F36B9265709AAF09A1C /* Signing.xcconfig */;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
-				CURRENT_PROJECT_VERSION = 58;
+				CURRENT_PROJECT_VERSION = 59;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ListeningActivityExtension/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -990,7 +990,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.26.17;
+				MARKETING_VERSION = 1.26.18;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.jonathanjing.tongxing.beta.listening-activity";
 				PRODUCT_NAME = ListeningActivityExtension;
 				SDKROOT = iphoneos;
