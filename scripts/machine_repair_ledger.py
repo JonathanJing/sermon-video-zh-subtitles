@@ -20,6 +20,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import tempfile
 from pathlib import Path
 
 SCHEMA = "sermon-machine-repair-ledger-entry-v1"
@@ -132,8 +133,11 @@ def append(root: Path, value: dict, qc: dict) -> dict:
     name = f"entry-{entry['sequence']:06d}.json"
     # The complete entry is linked into place, so an interrupted append leaves no partial
     # entry; the temporary file sits beside the folder, which holds only entries.
-    temporary = folder.parent / f".{folder.name}.{name}.{os.getpid()}.tmp"
-    temporary.write_text(json.dumps(entry, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    # Each append gets its own exclusively created temporary file, so concurrent callers never share one.
+    with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=folder.parent, prefix=f".{folder.name}.{name}.",
+                                     suffix=".tmp", delete=False) as stream:
+        stream.write(json.dumps(entry, ensure_ascii=False, indent=2, sort_keys=True) + "\n")
+    temporary = Path(stream.name)
     try:
         os.link(temporary, folder / name)
     finally:
