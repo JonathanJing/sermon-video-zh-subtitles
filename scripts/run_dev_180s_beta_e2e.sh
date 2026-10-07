@@ -119,7 +119,7 @@ IPA="$(find "$IOS_OUT/export" -name '*.ipa' | head -1)"
 NOTES="$IOS_OUT/what-to-test.txt"
 cat > "$NOTES" <<EOF
 同行 Beta $VERSION ($BUILD)：读取 catalog v4（机器质检语言）并回退 v3。
-测试页：Dev 三分钟测试页（模拟审核，非正式内容），run $RUN_ID。
+测试页：Dev 三分钟测试页（模拟审核，非正式内容），run ${RUN_ID}。
 请检查：测试页可见、三语言字幕随播放变化、语言切换不丢位置。
 EOF
 stage upload-dry    python3 apps/tongxing-ios/scripts/testflight.py upload --record "$RECORD" --ipa "$IPA" --dry-run
