@@ -8529,6 +8529,64 @@
           }
         }
       }
+    },
+    "机器质检": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Machine quality checked"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "기계 품질 검사"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Control de calidad automático"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kiểm tra chất lượng tự động"
+          }
+        }
+      }
+    },
+    "机器质检 · 未经人工审核": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Machine quality checked · Not reviewed by a person"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "기계 품질 검사 · 사람의 검토를 거치지 않음"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Control de calidad automático · Sin revisión humana"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kiểm tra chất lượng tự động · Chưa được người duyệt"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

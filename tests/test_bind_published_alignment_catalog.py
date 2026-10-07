@@ -63,6 +63,11 @@ class CatalogAlignmentTests(unittest.TestCase):
         self.save('/multilingual-v3.json', result)
         self.assertEqual(bind_catalog(self.public, 'week'), result)
 
+    def test_refuses_snapshot_with_v4_catalog(self):
+        self.save('/multilingual-v4.json', dict(schemaVersion='sermon-multilingual-catalog-v4', pages=[]))
+        with self.assertRaisesRegex(ValueError, 'four-layer seal'):
+            bind_catalog(self.public, 'week')
+
     def test_rejects_stale_release_binding(self):
         self.sidecar['targets']['ko']['releasePackageJsonSha256'] = 'f' * 64
         self.save('/alignment/week.json', self.sidecar)

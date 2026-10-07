@@ -37,11 +37,25 @@ candidateSha256 = sha({products: join, metadataApproval: metadataApprovalSha256,
 
 PDF 不进入该身份。静态 HTML 包含 `study-outline` 和 `study-meditation` 两个 section，每条标题和完整正文进行 HTML 转义。Web App 从独立资源校验 hash 与身份后加载全文学习内容，独立大纲替换旧 metadata outline。正文保留换行，使用 textContent 渲染；切换 UI 语言不会改写已批准学习文本。
 
+## 机器质检发布（release v4 / catalog v4）
+
+完整文稿、口播稿或音轨中有任何一项用[机器质检豁免](machine-quality-waiver.zh.md)代替人工收据时，builder 输出 [release v4](../schemas/sermon-target-language-release-package-v4.schema.json)，URL 改为 `/releases-v4/{pageId}/{locale}.json`。v4 与 v3 的七种资源、`sourceIdentity`、`fourProducts` 相同，另加：
+
+- `contentStatus`、`audioStatus`：各为 `human_reviewed` 或 `machine_checked`，至少一项为 `machine_checked`。完整文稿用豁免时 `contentStatus=machine_checked`；口播稿和音轨都是人工收据时 `audioStatus` 才是 `human_reviewed`。
+- `reviewBasis`：`fullText`、`spokenText`、`audio` 各记 `kind`（`human_review` 或 `machine_quality_waiver`）和收据的 canonical SHA-256。
+- `disclosure`：`{locale, text, english}`，`locale` 必须等于 `targetLocale`。
+
+`contentStatus=machine_checked` 时正文必须是 [content v3](../schemas/sermon-full-video-text-content-v3.schema.json)：`status=machine_checked`、`reviewMode=formal`，`disclosure` 与 release 相同；人工文稿不得带 `disclosure`。content v3 只能随 release v4 发布：三项都是人工审核时（写 release v3）必须用 content v2，因为网页和 iOS 只通过 release v4 读取 content v3。大纲与默想在这一步仍要求人工批准。
+
+封存总是写出 [catalog v4](../schemas/sermon-multilingual-catalog-v4.schema.json)（`/multilingual-v4.json`）和 `/multilingual-v3.json`，报告记录两者的 SHA（`catalogV4Sha256`）。v4 的机器质检 target 必须指向 `/releases-v4/`，并具备 text、captions、audio；人工 target 与 v3 相同。v3 由 `project_human_catalog` 从 v4 去掉机器质检 target 得到：没有剩余 target 的页面被删除，被删的默认语言或默认页改为剩余项。基线只有 v3 时按 v4 升级后合并；只有机器质检页面而没有人工页面时拒绝封存。
+
+读取方先请求 v4；404 时按原来方式读 v3，v4 读取或校验失败时也退回 v3 并记录错误。机器质检语言显示“机器质检”标签和 `disclosure.text`，不显示人工批准文案。`machine_reviewed` 仍只供 Dev 预览。
+
 ## 封存、发布与端点
 
 准备验证会同时检查私有批准、公开 bytes、候选 hash 与静态 HTML 完整显示。除逐语言七种资源外，准备 manifest 的 `runtimeAssets` 冻结并公开发布 app.mjs、published-weeks.mjs、content-locales.mjs，避免与旧 Web baseline 合并时留下不支持 v3 的 reader。这三份模块进入 input snapshot、HTTP 清单和 sealed snapshot。HTTP 准备 receipt 必须恰好覆盖全部逐语言资源与共享 runtime。封存清单与 live HTTP 验证包含学习资源及产品 manifest。原有多语言 overlay、baseline 和未知发布 lease 规则不变。
 
-四产物端点使用 [client readback v2](../schemas/sermon-client-readback-v2.schema.json)，必须包含当前 catalog、release 及所有七种资源的 URL/bytes hash。Web 的 dev / production_web 端点还必须回读上述三份 reader runtime（role=reader_runtime）。每个 locale 的播放 telemetry 另需：
+封存站点带 v4 时（四层封存总会写出 v4），即使本次全是人工审核的语言，端点回读也必须包含 `/multilingual-v4.json`，因为当前网页和 iOS 先读 v4；只回读 v3 不能证明当前客户端的路径；托管发布部署前比较线上 v4 与基线，部署后回读 v4 与封存 SHA。四产物端点使用 [client readback v2](../schemas/sermon-client-readback-v2.schema.json)，必须包含当前 catalog、release 及所有七种资源的 URL/bytes hash。Web 的 dev / production_web 端点还必须回读上述三份 reader runtime（role=reader_runtime）。每个 locale 的播放 telemetry 另需：
 
 ```json
 {"studyArtifacts":{"outline":"<canonical artifact SHA-256>","meditation":"<canonical artifact SHA-256>"},"studyDisplayed":true}

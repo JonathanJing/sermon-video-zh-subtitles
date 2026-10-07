@@ -53,6 +53,8 @@ Target-Language Candidate + Target-Language Audio Package
 
 这里的“批量”只减少填写动作，不把模型结果升级为人工批准，也不允许跳过完整阅读、完整听播、ASR 疑点裁决或来源失效检查。设备与现场验收仍单列。
 
+**机器质检豁免（2026-10-06 决定，接线中）：** 中文、韩语、西语的第 2、3 项改为机器质检通过后自动发布，人工改为发布后抽查。每句最多自动修复 4 次；音频仍不过关的句子只显示字幕；不配音的句子超过 5% 时，该语言改为只发文字。豁免收据保持 `humanApproval=false`，并要求当前 QC 代码有有效的注错校准。检查组件、规则与尚未接上的门禁见[机器质检豁免](machine-quality-waiver.zh.md)。已接上：译文豁免收据可以代替人工译文审核进入第 3 层（speech job v3），试听豁免收据可以代替人工试听通过 `sermon_unified` 审核门（状态记为 `waived`，不是 `approved`）。第 4 层也已接上：用了豁免的语言写成 release v4（`machine_checked` 状态、逐项审核依据和披露文案），目录同时写 catalog v4 与作为人工投影的 v3；网页和 iOS 先读 v4，显示“机器质检”，不显示人工批准。
+
 ### 审核与执行解耦
 
 人工审核是**正式资格门禁**，不是整个工作进程的全局锁。每层分别保存不可变候选和独立、绑定 hash 的审核收据；审核未回时保留 `pending`，可以继续不依赖该决定的计算、风险清单和审核页面。机器复核通过、人审待定的译文还可进入独立的 `preview_only` 单元配音通道；它不是正式 Layer 3 producer，也没有 speech job、Audio Package 或发布资格。待正式文字审核通过后，正式 renderer 才能逐单元验证并复用同身份原始音频；不一致单元重新合成，完整排程和听审照常执行。详见[层内解耦与预生成流程](multilingual-intralayer-review-decoupling.zh.md)。
@@ -61,7 +63,7 @@ Target-Language Candidate + Target-Language Audio Package
 | --- | --- | --- |
 | Layer 1 英文审核 | 媒体完整性、词对齐、锚点、机器裁判、Layer 2 shadow 候选 | 正式 Layer 2 只接收 `ready_for_translation` |
 | 某 locale 的 Layer 2 文字审核 | 其他 locale 的 Layer 2；本 locale 审核表、机器风险定位、语音资源预热，以及机器复核通过后的 `preview_only` 单元配音 | 本 locale 正式 speech job 需 `human_translation_approved` 和独立同 hash 收据 |
-| 某 locale 的 Layer 3 整轨听审 | 其他 locale 的 Layer 3；本 locale 解码、ASR 筛查、排程及供听审的候选音轨 | 带正式音频的 Release Package 需 `human_reviewed` Audio Package 和全文／同步收据 |
+| 某 locale 的 Layer 3 整轨听审 | 其他 locale 的 Layer 3；本 locale 解码、ASR 筛查、排程及供听审的候选音轨 | 带正式音频的 Release Package 需 `human_reviewed` Audio Package 和全文／同步收据；用试听豁免时改为 release v4 的 `audioStatus=machine_checked` |
 | Layer 4 发布后设备／现场验收 | HTTP 核验完成后独立安排设备及现场检查 | HTTP、设备、现场状态分别记录，不互相推断 |
 
 调度以 `sourceHash + targetLocale + policyHash + candidateHash` 为任务身份。某语言的审核未回只挂起该语言的后继正式任务，不为其他语言新增审批依赖；Layer 1 身份变化使所有语言失效，Layer 2/3 变化只使本语言下游失效。审批依赖独立不等于运行资源完全隔离：[当前 canonical Layer 2 controller](canonical-layer2-controller.zh.md) 同一 production run 至多有一个 active locale job，uncertain owner 在 reconciliation 前仍占用名额。表中的并行准备须遵守实际 producer 的容量；发布仍遵守该次 release plan 的多语言汇合条件。本项澄清保留现有容量限制，不提高跨 locale 并发。合同允许显式 `audio_unavailable` 的文字页，但现有 Production Web 桥接只支持 `zh-Hans`、`ko`、`es` 且要求正式音轨；纯文字页或新语言须先有两端客户端兼容证据，不能只改目录宣称可用。
@@ -115,7 +117,7 @@ Target-Language Candidate + Target-Language Audio Package
 
 处理：按 `pageId + targetLocale` 聚合、检查上游 hash／审核收据并构建 allowlist。`interfaceLocale` 是用户客户端偏好，不由发布包替用户切换；`contentLocale` 与 `audioLocale` 分别对应实际文字和音轨，不静默借用另一语言。新周次在当前正式站完整快照上**只追加**页面和资产，保留 legacy `weekly.json`、旧 catalog、历史页面、反馈功能和仍被引用的文件；同 page ID 的来源身份变动须新建 ID。先上传内容、音频、字幕、英文对照、定位索引及逐语言 Release，最后更新唯一可变入口 `/multilingual-v3.json`。发布前后对照 catalog 与文件清单，拒绝意外删除、覆盖旧 hash 或回退到 v1/v2 目录。
 
-输出：每种语言一个 [Target-Language Release Package v2](../schemas/sermon-target-language-release-package-v2.schema.json)，再汇总成 [Multilingual Catalog v3](../schemas/sermon-multilingual-catalog-v3.schema.json)。v2 包必须绑定 Layer 2 全文、已批准口播稿和 Layer 3 Audio Package 的 hash；实际资产也须匹配。v1 Release 与 v2 Catalog 继续供历史／Dev 读取，不可覆盖到正式 v3 路径。公开包不得复制含本机绝对路径、凭据或私有收据的上游原件。
+输出：每种语言一个 [Target-Language Release Package v2](../schemas/sermon-target-language-release-package-v2.schema.json)，再汇总成 [Multilingual Catalog v3](../schemas/sermon-multilingual-catalog-v3.schema.json)。v2 包必须绑定 Layer 2 全文、已批准口播稿和 Layer 3 Audio Package 的 hash；实际资产也须匹配。v1 Release 与 v2 Catalog 继续供历史／Dev 读取，不可覆盖到正式 v3 路径。公开包不得复制含本机绝对路径、凭据或私有收据的上游原件。四产物封存用 release v3；有机器质检豁免的语言用 [release v4](../schemas/sermon-target-language-release-package-v4.schema.json)，并同时写出 [catalog v4](../schemas/sermon-multilingual-catalog-v4.schema.json) 与它的人工投影 v3，见[四产物公开交付](layer4-four-product-public-delivery.zh.md#机器质检发布release-v4--catalog-v4)。
 
 已发行的 Hosting 视频周次沿用 [`three_locale_full_video_v1` 文件数合同](tongxing-weekly-release.zh.md#正式三语周更文件数合同)：21 个新周 Hosting 资源加 1 个 catalog 更新。新的 `three_locale_bucket_video_v2` 合同为 20 个新周 Hosting 资源、1 个 catalog 更新及 1 个 Cloud Storage 视频对象；两种配置不能混报文件数。bucket 视频对客户端保留同源 `/pages/<pageId>/full-video-browser.mp4`，Hosting 以精确 302 指向不可变对象，catalog 的可选 `videoDelivery` 记录对象身份与哈希。Dev、Production 对象及凭据分离；完整上线顺序、回退与 Web／iOS 验收见每周发行合同。其他语言或纯文字发行仍需独立版本化配置。
 

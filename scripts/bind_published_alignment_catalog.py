@@ -21,6 +21,9 @@ def digest(path):
 def bind_catalog(public, page_id):
     public = Path(public).resolve()
     catalog_path = public / 'multilingual-v3.json'
+    # v3 must stay the human-only projection of v4; this binder only rewrites v3.
+    require(not (public / 'multilingual-v4.json').exists(),
+            'Snapshot carries multilingual-v4.json; bind alignment through the four-layer seal')
     catalog = read_json(catalog_path)
     require(catalog.get('schemaVersion') == 'sermon-multilingual-catalog-v3', 'Expected v3 catalog')
     pages = [p for p in catalog['pages'] if p['id'] == page_id]

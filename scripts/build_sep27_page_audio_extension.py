@@ -197,8 +197,7 @@ def build(args: argparse.Namespace) -> Path:
                 f"{locale}: require independent v2 full-audio review receipt")
         review = stage.read_package(
             review_file, "sermon-target-language-audio-human-review-receipt-v2.schema.json")
-        screening = stage.read_package(assignments["screening_receipt"][locale],
-                                       "sermon-target-language-audio-screening-v1.schema.json")
+        screening = stage.read_audio_screening(assignments["screening_receipt"][locale])
         require(release.get("schemaVersion") == "sermon-target-language-release-package-v1"
                 and release.get("status") == "published_http_verified"
                 and release.get("audioStatus") == "unavailable"

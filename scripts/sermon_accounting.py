@@ -815,26 +815,40 @@ def read_events(directory):
     return events, damaged
 
 
+def _profile_schema_batch():
+    """One schema snapshot for a whole read; legacy-only readers need no profile."""
+    try:
+        from scripts.sermon_log_contract import schema_batch
+    except ImportError:
+        try:
+            from sermon_log_contract import schema_batch
+        except ImportError:
+            return nullcontext()
+    return schema_batch()
+
+
 def read_event_snapshot(directory):
     """Parse and hash the exact same locked byte snapshot, including blank lines."""
     events, damaged, digest = [], [], hashlib.sha256()
     with (Path(directory) / "events.jsonl").open("rb") as stream:
         fcntl.flock(stream.fileno(), fcntl.LOCK_SH)
-        for index, line in enumerate(stream, 1):
-            digest.update(line)
-            if not line.strip():
-                continue
-            try:
-                value = json.loads(line)
-                # Keep syntactically valid unknown-schema rows visible so
-                # consumers can diagnose rather than silently erase them.
-                if not _valid_event(value):
-                    raise ValueError("invalid_event_identity")
-            except (ValueError, UnicodeError):
-                damaged.append({"line": index, "bytes": len(line), "sha256": hashlib.sha256(line).hexdigest(),
-                                "reason": "invalid_or_incomplete_event", "runAttribution": "unknown"})
-                continue
-            events.append(value)
+        # Take the schema lock only after the file lock, as writers do.
+        with _profile_schema_batch():
+            for index, line in enumerate(stream, 1):
+                digest.update(line)
+                if not line.strip():
+                    continue
+                try:
+                    value = json.loads(line)
+                    # Keep syntactically valid unknown-schema rows visible so
+                    # consumers can diagnose rather than silently erase them.
+                    if not _valid_event(value):
+                        raise ValueError("invalid_event_identity")
+                except (ValueError, UnicodeError):
+                    damaged.append({"line": index, "bytes": len(line), "sha256": hashlib.sha256(line).hexdigest(),
+                                    "reason": "invalid_or_incomplete_event", "runAttribution": "unknown"})
+                    continue
+                events.append(value)
     return events, damaged, digest.hexdigest()
 
 

@@ -77,9 +77,9 @@
 
 统一入口与持久化推进的开发说明见[统一 CLI 与持久化执行](../unified-cli-pipeline.zh.md)，流程、产物和命令的字段合同见[协议](../unified-cli-protocol.zh.md)。命令、owner 服务和验收目标仍是拟议能力，不代表正式生产已经打通或提速已经实测。
 
-**Layer 2 新生产模型流程：** 已审核的 `ready_for_translation` 英文包按[当前模型及调用策略](../production-model-runtime-policy.zh.md)执行：Sol 6.1 high 初译、Sol 6.1 medium 逐组独立复核，默认走 OpenAI API 与已批准的请求 tier，之后运行冻结语言插件和候选准入。正式后继门禁仍要求匹配的人工译文审核收据；模型审核不能替代人工批准。旧运行保持其原 policy／收据身份；双 PDF 路径和 Layer 1 shadow 不会自动升级为 Layer 2 完成。
+**Layer 2 新生产模型流程：** 已审核的 `ready_for_translation` 英文包按[当前模型及调用策略](../production-model-runtime-policy.zh.md)执行：Sol 6.1 high 初译、Sol 6.1 medium 逐组独立复核，默认走 OpenAI API 与已批准的请求 tier，之后运行冻结语言插件和候选准入。正式后继门禁消费人工收据，或在已支持路径消费有效的[机器质检豁免](../machine-quality-waiver.zh.md)；机器豁免保持 `humanApproval=false`。旧运行保持其原 policy／收据身份；双 PDF 路径和 Layer 1 shadow 不会自动升级为 Layer 2 完成。
 
-**当前控制层：** [Production Supervisor](../sermon-production-supervisor-agent.zh.md) 的新 dev／正式本地任务默认 `--agent-backend codex-cli`，使用 Luna medium fast。旧 Agents API 会话以显式 `--agent-backend agents-api` 按原身份恢复，新 SDK 会话禁用，自动后端 fallback 禁用。source、审批、lease、恢复、QA 与发布继续由确定性层约束，完成状态须重新读取 production snapshot。
+**当前控制层：** [Production Supervisor](../sermon-production-supervisor-agent.zh.md) 的新 dev／正式本地任务默认 `--agent-backend codex-cli`，使用 Luna medium fast。旧 Agents API 会话以显式 `--agent-backend agents-api` 按原身份恢复，新 SDK 会话禁用，自动后端 fallback 禁用。source、审批或适用的豁免、lease、恢复、QA 与发布继续由确定性层约束，完成状态须重新读取 production snapshot。
 
 **历史控制层迁移（2026-09-11）：** 当时接入的 Agents API 只接收固定 allowlist 的日期、动作枚举与证据布尔状态；完整 snapshot 和用于恢复配置核对的 `configFingerprint` 留在本地。Session 状态和工具结果持久化，同一会话恢复；新建会话前须确认远端 completed/failed/cancelled 且无执行中或结果未确认的工具，本地 timeout 或取消 ACK 不足以放行。旧 Astra／Sol 会话仍按原模型恢复，未决会话不得因切换默认值而被跳过；当时的模型及后端不是新任务默认值。
 

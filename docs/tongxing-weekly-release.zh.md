@@ -14,6 +14,10 @@
 
 正式多语言目录的页面名称采用默认内容语言已批准的「系列名 · 本篇标题」，例如「启示录：耶稣带来的安慰与盼望 · 耶稣配得」。`multilingual-v3.json` 的 `pages[].title` 供 iOS 选页列表和本周页头直接读取；只改目录元数据即可让已安装的 App 在刷新目录后显示新名称。每周发布前用同语言 `content/<pageId>/<locale>.json` 的 `series`、`title` 校验该字段，不能只写简称或从未审核文字另造系列名。
 
+### 机器质检周次：v4 目录与 v3 投影
+
+按 [机器质检豁免](machine-quality-waiver.zh.md) 自动发布的语言走四层封存（`build_full_video_app_release.py seal` 与托管发布），不走下面的 v3 组装器。封存写出 `/releases-v4/<pageId>/<locale>.json`、`/multilingual-v4.json`，并把 `/multilingual-v3.json` 写成 v4 去掉机器质检语言后的投影：旧版 iOS 看到的目录与上周相同，新版网页和 iOS 先读 v4，显示“机器质检”标签和披露文案。两份目录一起比较交换、一起回读；只会改 v3 的旧组装器遇到带 v4 的基线会拒绝。字段见 [四产物公开交付](layer4-four-product-public-delivery.zh.md#机器质检发布release-v4--catalog-v4)。
+
 ### v3 周更发布清单与验收
 
 这一清单优先于下文仅适用于 `weekly.json` 的 legacy 命令。当前仓库的 `assemble_multilingual_hosting.py`、`deploy_multilingual_hosting.py`、`verify_multilingual_hosting.py` 仍只处理 v2 Catalog／v1 Release；在 v3 入口实现并通过定向测试前，不得用这些命令部署新周后宣称两端已经刷新可用。
@@ -214,7 +218,7 @@ python3 scripts/build_sermon_poster.py \
 
 ### 多语言已发布页面海报
 
-对于 v3 目录中的多语言正式页面，使用 `scripts/build_multilingual_sermon_posters.py`，从同一发布目录中按 page ID 读取每个 locale 的已发布包和完整文稿，沿用已审标题、系列、日期、讲员与经文。中文、韩语和西班牙语各交付完整 PNG、分享预览及收据，复用同一 ImageGen 主视觉。该适配器不改变旧中文周次的海报路径。
+对于 v3 或 v4 目录中的多语言正式页面，使用 `scripts/build_multilingual_sermon_posters.py`，从同一发布目录中按 page ID 读取每个 locale 的已发布包和完整文稿，沿用发布包里的标题、系列、日期、讲员与经文。发布目录有 `multilingual-v4.json` 时读 v4；机器质检的语言把审核标签换成对应说明（例如“译文与配音经机器质检 · 未经人工审核”），并要求发布包带同语言的披露文案。中文、韩语和西班牙语各交付完整 PNG、分享预览及收据，复用同一 ImageGen 主视觉。该适配器不改变旧中文周次的海报路径。
 
 二维码固定指向原 App 根路径：`?week=<pageId>&contentLang=<zh-Hans|ko|es>&lang=<zh|ko|es>`。`contentLang` 选择文稿及音轨，`lang` 明确选择界面语言；两者独立。客户端允许有效 `lang` 参数优先于浏览器记住的语言，无有效参数时保持原有偏好。最终 PNG 与预览仍须独立解码，且浏览器核验正确周次、内容语言、界面语言和音轨。
 

@@ -66,7 +66,14 @@ final class PlaybackController: ObservableObject {
 
     func setAlignmentPhase(_ phase: ListeningAlignmentPhase?) {
         // First ship this UI in the separately installed Beta app.
-        guard Bundle.main.object(forInfoDictionaryKey: "TongxingURLScheme") as? String == "tongxing-beta" else { return }
+        let isBeta = Bundle.main.object(forInfoDictionaryKey: "TongxingURLScheme") as? String == "tongxing-beta"
+        #if DEBUG
+        // The isolated, explicitly opted-in synthetic smoke also runs under
+        // the hosted Tongxing Debug identity. Release keeps the Beta gate.
+        guard isBeta || UITestLaunch.liveActivitySmokeEnabled() else { return }
+        #else
+        guard isBeta else { return }
+        #endif
         alignmentFeedbackTask?.cancel()
         if phase == .preparing { alignmentSessionID = UUID() }
         if phase == nil { alignmentSessionID = nil }

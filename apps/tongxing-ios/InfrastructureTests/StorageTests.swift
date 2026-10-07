@@ -180,6 +180,130 @@ final class StorageTests {
         #expect(try await repository.loadPage(for: package).html.contains("한국어"))
     }
 
+    @Test func machineCheckedCatalogV4LoadsFirstAndFallsBackToHumanOnlyV3() async throws {
+        func json(_ value: [String: Any]) throws -> Data { try JSONSerialization.data(withJSONObject: value, options: [.sortedKeys]) }
+        func hash(_ data: Data) -> String { SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined() }
+        // The shared web/native fixture supplies a schema-valid machine-checked v4 release.
+        let matrixURL = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("Core/Tests/TongxingCoreTests/Fixtures/shared-machine-checked-contracts.json")
+        let matrix = try #require(JSONSerialization.jsonObject(with: Data(contentsOf: matrixURL)) as? [String: Any])
+        let rows = try #require(matrix["releases"] as? [[String: Any]])
+        let row = try #require(rows.first { $0["id"] as? String == "machine-checked-es" })
+        var machine = try #require(row["release"] as? [String: Any])
+        let pageID = try #require(machine["pageId"] as? String)
+        let disclosure = try #require(machine["disclosure"] as? [String: Any])
+        let sourceIdentity = try #require(machine["englishSourcePackageJsonSha256"] as? String)
+        let candidate = try #require(machine["targetLanguageCandidateJsonSha256"] as? String)
+        let identity = try #require(machine["sourceIdentity"] as? [String: Any])
+        let sourceMedia = try #require(identity["mediaSha256"] as? String)
+        let content = try json([
+            "schemaVersion": "sermon-full-video-text-content-v3", "pageId": pageID, "targetLocale": "es",
+            "sourceLocale": "en", "status": "machine_checked", "reviewMode": "formal", "disclosure": disclosure,
+            "durationSeconds": 10, "audioDurationSeconds": 9.5, "title": "Contenido sintético",
+            "englishSourcePackageJsonSha256": sourceIdentity, "targetLanguageCandidateJsonSha256": candidate,
+            "sourceMediaSha256": sourceMedia,
+            "cues": [["textGroupId": "g1", "sourceUnitIds": ["u1"], "text": "Frase completa.", "start": 0, "end": 10]],
+        ])
+        let captions = try json(["cues": [["textGroupId": "g1", "text": "Frase hablada.", "start": 0, "end": 9.5]]])
+        machine["assets"] = (machine["assets"] as! [[String: Any]]).map { asset -> [String: Any] in
+            var asset = asset
+            if asset["role"] as? String == "content" { asset["sha256"] = hash(content) }
+            if asset["role"] as? String == "captions" { asset["sha256"] = hash(captions) }
+            return asset
+        }
+        let machineRelease = try json(machine)
+
+        let legacy = try multilingualFixture()
+        var human = try #require(JSONSerialization.jsonObject(with: legacy.release) as? [String: Any])
+        human["schemaVersion"] = TargetLanguageReleasePackage.dualScriptSchemaVersion
+        human["pageId"] = pageID
+        human["packageId"] = "\(pageID)-ko-dual-script"
+        human["spokenTargetLanguageCandidateJsonSha256"] = String(repeating: "b", count: 64)
+        human["assets"] = [
+            ["role": "page", "path": "/pages/\(pageID)/ko/index.html", "sha256": hash(legacy.page)],
+            ["role": "content", "path": "/content/\(pageID)/ko.json", "sha256": String(repeating: "a", count: 64)],
+            ["role": "captions", "path": "/captions/\(pageID)/ko.json", "sha256": String(repeating: "b", count: 64)],
+        ]
+        let humanRelease = try json(human)
+
+        let humanTarget: [String: Any] = [
+            "releasePackageUrl": "/releases-v2/\(pageID)/ko.json", "releasePackageJsonSha256": hash(humanRelease),
+            "contentStatus": "human_reviewed", "audioStatus": "unavailable", "capabilities": ["text"],
+        ]
+        let machineTarget: [String: Any] = [
+            "releasePackageUrl": "/releases-v4/\(pageID)/es.json", "releasePackageJsonSha256": hash(machineRelease),
+            "contentStatus": "machine_checked", "audioStatus": "machine_checked", "capabilities": ["text", "captions", "audio"],
+        ]
+        func catalog(_ schemaVersion: String, _ targets: [String: Any]) throws -> Data {
+            try json(["schemaVersion": schemaVersion, "generatedAt": "2026-10-07T00:00:00Z", "defaultPageId": pageID,
+                      "pages": [["id": pageID, "title": "Página sintética", "date": "2026-10-04", "sourceLocale": "en",
+                                 "sourceIdentitySha256": sourceIdentity, "sourceMediaSha256": sourceMedia,
+                                 "defaultTargetLocale": "ko", "targets": targets]]])
+        }
+        let v4 = try catalog(MultilingualCatalog.machineCheckedSchemaVersion, ["ko": humanTarget, "es": machineTarget])
+        let v3 = try catalog(MultilingualCatalog.dualScriptSchemaVersion, ["ko": humanTarget])
+        var brokenTarget = machineTarget
+        brokenTarget["capabilities"] = ["text", "captions"]
+        let brokenV4 = try catalog(MultilingualCatalog.machineCheckedSchemaVersion, ["ko": humanTarget, "es": brokenTarget])
+        func serve(v4 published: Data?) {
+            StubURLProtocol.install(host: baseURL.host!) { request in
+                switch request.url?.path {
+                case "/multilingual-v4.json":
+                    guard let published else { return .init(status: 404, chunks: [Data("missing".utf8)]) }
+                    return .init(chunks: [published])
+                case "/multilingual-v3.json": return .init(chunks: [v3])
+                case "/releases-v2/\(pageID)/ko.json": return .init(chunks: [humanRelease])
+                case "/releases-v4/\(pageID)/es.json": return .init(chunks: [machineRelease])
+                case "/content/\(pageID)/es.json": return .init(chunks: [content])
+                case "/captions/\(pageID)/es.json": return .init(chunks: [captions])
+                default: return .init(status: 404, chunks: [Data("missing".utf8)])
+                }
+            }
+        }
+        let repository = MultilingualCatalogRepository(origin: baseURL,
+            cacheDirectory: directory.appendingPathComponent("machine-checked"), session: session)
+
+        // v4 is read first; its machine-checked locale stays visible and machine-checked.
+        serve(v4: v4)
+        let loaded = try await repository.loadCatalog()
+        #expect(loaded.source == .network)
+        #expect(loaded.machineCheckedCatalogError == nil)
+        #expect(loaded.catalog.schemaVersion == MultilingualCatalog.machineCheckedSchemaVersion)
+        let page = loaded.catalog.defaultPage
+        #expect(page.targets.keys.sorted() == ["es", "ko"])
+        #expect(page.targets["es"]?.isMachineChecked == true)
+        let package = try await repository.loadRelease(page: page, locale: "es")
+        #expect(package.schemaVersion == TargetLanguageReleasePackage.machineCheckedSchemaVersion)
+        #expect(package.disclosure?.locale == "es")
+        let transcript = try await repository.loadPublishedTranscript(for: package, page: page)
+        #expect(transcript.contentStatus == "machine_checked")
+        #expect(transcript.isMachineChecked)
+        #expect(transcript.disclosure == package.disclosure)
+        #expect(transcript.fullText.map(\.text) == ["Frase completa."])
+
+        // An invalid v4 catalog falls back to the human-only v3 projection and records why.
+        serve(v4: brokenV4)
+        let fallback = try await repository.loadCatalog()
+        #expect(fallback.source == .network)
+        #expect(fallback.catalog.schemaVersion == MultilingualCatalog.dualScriptSchemaVersion)
+        #expect(fallback.catalog.defaultPage.targets.keys.sorted() == ["ko"])
+        #expect(fallback.machineCheckedCatalogError != nil)
+
+        // A missing v4 catalog keeps v3 exactly as before.
+        serve(v4: nil)
+        let humanOnly = try await repository.loadCatalog()
+        #expect(humanOnly.source == .network)
+        #expect(humanOnly.catalog.schemaVersion == MultilingualCatalog.dualScriptSchemaVersion)
+        #expect(humanOnly.machineCheckedCatalogError == nil)
+
+        // Offline, the previously verified v4 cache and its hash-bound releases are reused first.
+        stub(.init(chunks: [], error: URLError(.notConnectedToInternet)))
+        let offline = try await repository.loadCatalog()
+        #expect(offline.source == .cache)
+        #expect(offline.catalog.schemaVersion == MultilingualCatalog.machineCheckedSchemaVersion)
+        #expect(offline.catalog.defaultPage.targets.keys.sorted() == ["es", "ko"])
+    }
+
     @Test func reviewedLocaleAudioIsDownloadedByHashAndCachedBytesAreRechecked() async throws {
         let audio = Data("synthetic reviewed audio bytes".utf8)
         let fixture = try multilingualFixture(audio: audio)
