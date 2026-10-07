@@ -4,6 +4,7 @@ No content, review receipts, Hosting configuration or media are changed.
 Publish the generated config through guarded_hosting_publish separately.
 """
 import argparse
+import hashlib
 from pathlib import Path
 import shutil
 import subprocess
@@ -34,6 +35,24 @@ def ui_files(environment):
     return UI_FILES + (PRODUCTION_UI_DEPENDENCIES if environment == 'production' else ())
 
 
+def bound_source(names):
+    """Bind just the copied UI and its read dependency closure to HEAD."""
+    root = Path(builder.ROOT).resolve()
+    commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=root, text=True).strip()
+    files = {}
+    for name in sorted(set(names)):
+        source = builder.RUNTIME_WEB_ROOT / name
+        contract.require(source.is_file() and not source.is_symlink(), 'Missing or unsafe UI source: ' + name)
+        relative = source.resolve().relative_to(root).as_posix()
+        result = subprocess.run(['git', 'show', commit + ':' + relative], cwd=root,
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        contract.require(result.returncode == 0
+                         and result.stdout == source.read_bytes(),
+                         'UI source differs from recorded commit: ' + relative)
+        files[name] = hashlib.sha256(result.stdout).hexdigest()
+    return commit, files
+
+
 def prepare(baseline, out, *, environment='dev'):
     base, out = Path(baseline).resolve(), Path(out).resolve()
     contract.require(not out.exists() and not out.is_relative_to(base), 'Unsafe UI update output')
@@ -46,8 +65,11 @@ def prepare(baseline, out, *, environment='dev'):
                      and receipt.get('catalogSha256') == staging.digest(base / 'public/multilingual-v3.json')
                      and receipt.get('baselineVersion', '').startswith('sites/' + deployment_target['site'] + '/versions/'),
                      'Verified live-bound baseline required')
+    contract.require(receipt.get('firebaseJsonSha256') == staging.digest(base / 'firebase.json'),
+                     'Baseline Hosting configuration differs from receipt')
     # Resolve all local module imports before staging, including offline helpers.
-    builder.runtime_web_files()
+    closure = builder.runtime_web_files()
+    source_commit, source_files = bound_source((*ui_files(environment), *closure))
     out.mkdir(parents=True)
     shutil.copytree(base / 'public', out / 'public')
     shutil.copyfile(base / 'firebase.json', out / 'firebase.json')
@@ -60,6 +82,8 @@ def prepare(baseline, out, *, environment='dev'):
         if not target.exists() or staging.digest(source) != staging.digest(target):
             shutil.copyfile(source, target)
             changed.append('/' + name)
+        contract.require(staging.digest(target) == source_files[name],
+                         'UI source changed during staging: ' + name)
     before = {row['path']: row for row in staging.files_report(base / 'public')}
     after = staging.files_report(out / 'public')
     for row in after:
@@ -74,7 +98,7 @@ def prepare(baseline, out, *, environment='dev'):
     staging.write(out / 'ui-update-plan.json', {
         'status': 'prepared_not_deployed', 'webVersion': '1.26.16',
         'iosSourceCommit': 'a1e64190f5af33104a3b8839562d8901955031bb',
-        'sourceCommit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=builder.ROOT, text=True).strip(),
+        'sourceCommit': source_commit, 'sourceFiles': source_files,
         'environment': environment, 'project': deployment_target['project'], 'site': deployment_target['site'],
         'changedPaths': changed, 'preservedFiles': len(before) - sum(path in before for path in changed),
         'modelCalls': 0, 'catalogUnchanged': True,

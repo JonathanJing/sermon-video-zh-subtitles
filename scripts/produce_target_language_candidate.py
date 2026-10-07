@@ -38,6 +38,7 @@ BUILTIN_PLUGIN_NAMES = {"zh_hans_sermon.py", "ko_sermon.py", "es_sermon.py"}
 LAODICEA_PLUGIN_NAMES = {"zh_hans_laodicea.py", "ko_laodicea.py", "es_laodicea.py"}
 WEEKLY_REFERENCE_PLUGIN_NAMES = {"ko_weekly_reference.py", "es_weekly_reference.py"}
 ZH_WEEKLY_CUV_PLUGIN_NAMES = {"zh_hans_weekly_cuv.py"}
+AUTO_QC_PLUGIN_NAMES = {"ko_weekly_auto.py", "es_weekly_auto.py"}
 
 
 def _require(condition: bool, message: str) -> None:
@@ -68,6 +69,8 @@ def plugin_implementation_sources(plugin_path: Path) -> list[Path]:
         return [path, builtins / "common.py", builtins / "laodicea_common.py"]
     if path.parent == builtins and path.name in WEEKLY_REFERENCE_PLUGIN_NAMES:
         return [path, builtins / "common.py", builtins / "weekly_reference_common.py"]
+    if path.parent == builtins and path.name in AUTO_QC_PLUGIN_NAMES:
+        return [path, builtins / "common.py", builtins / "auto_qc_text_common.py"]
     if path.parent == builtins and path.name in ZH_WEEKLY_CUV_PLUGIN_NAMES:
         return [path, builtins / "common.py", builtins.parent / "cuv_scripture.py",
                 builtins.parent / "build_scripture_index.py"]

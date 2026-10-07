@@ -1,7 +1,7 @@
 /* Public reading cache only. Never store audio, video, API traffic, or engagement. */
 'use strict';
 const CACHE_PREFIX = 'tongxing-reading-';
-const CACHE_NAME = `${CACHE_PREFIX}1.26.16-v1`;
+const CACHE_NAME = `${CACHE_PREFIX}1.26.16-v2`;
 const STATE_PATH = '/_tongxing_offline_reading_state.json'; // Internal CacheStorage key; never intercepted.
 const observedReading = new Set();
 let stateLoaded, stateWrite = Promise.resolve();
@@ -29,8 +29,9 @@ function eligibleRequest(request) {
   if (url.origin !== self.location.origin || url.hash) return null;
   const path = url.pathname;
   if (request.mode === 'navigate' && (path === '/' || path === '/index.html'
-    || /^\/pages\/[A-Za-z0-9_-]{1,160}\/[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*(?:\/index\.html)?$/.test(path))
-    && [...url.searchParams.keys()].every(key => ['week', 'tab', 'contentLang', 'lang'].includes(key))) return '/index.html';
+    || /^\/pages\/[A-Za-z0-9_-]{1,160}\/[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*(?:\/index\.html|\/)?$/.test(path))
+    && [...url.searchParams.keys()].every(key => ['week', 'tab', 'contentLang', 'lang'].includes(key)))
+    return path === '/' ? '/index.html' : path;
   if (url.search) return null;
   return SHELL.has(path) || readingPath(path) ? path : null;
 }
@@ -46,7 +47,7 @@ async function validResponse(response, path) {
   }
   if (path.endsWith('.mjs') || path.endsWith('.js')) return /(?:javascript|ecmascript)/i.test(type);
   if (path.endsWith('.css')) return /^text\/css\b/i.test(type);
-  if (path.endsWith('.html')) return /^text\/html\b/i.test(type);
+  if (path.endsWith('.html') || /^\/pages\//.test(path)) return /^text\/html\b/i.test(type);
   return /^image\//i.test(type);
 }
 
@@ -98,11 +99,31 @@ async function networkFirst(request, path) {
   }
 }
 
+async function verifiedShell(cache) {
+  const checks = await Promise.all(REQUIRED_SHELL.map(async path => {
+    const response = await cache.match(path);
+    return response && await validResponse(response, path);
+  }));
+  return checks.every(Boolean);
+}
+
+async function primeReading(request, path) {
+  const cache = await caches.open(CACHE_NAME);
+  const cached = await cache.match(path);
+  if (cached && await validResponse(cached, path)) {
+    await loadObserved(cache);
+    observedReading.add(path);
+    await saveObserved(cache);
+    return cached;
+  }
+  return networkFirst(request, path);
+}
+
 async function status() {
   const cache = await caches.open(CACHE_NAME);
   await loadObserved(cache);
   const paths = new Set((await cache.keys()).map(request => new URL(request.url).pathname));
-  const shellAvailable = REQUIRED_SHELL.every(path => paths.has(path));
+  const shellAvailable = await verifiedShell(cache);
   const catalogAvailable = paths.has('/weekly.json');
   const cachedReadingCount = [...paths].filter(readingPath).length;
   const missingReadingCount = [...observedReading].filter(path => !paths.has(path)).length;
@@ -112,17 +133,21 @@ async function status() {
 }
 
 self.addEventListener('install', event => {
-  // New optional shell modules may be absent in an older Hosting bundle. Keep installation usable.
-  event.waitUntil(Promise.allSettled([...SHELL].map(async path => {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 8000);
-    try {
-      await networkFirst(new Request(new URL(path, self.location.origin), { cache: 'reload', signal: controller.signal }), path);
-    } finally { clearTimeout(timer); }
-  })));
+  // Optional assets may be absent, but never activate an incomplete required shell.
+  event.waitUntil((async () => {
+    await Promise.allSettled([...SHELL].map(async path => {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 8000);
+      try {
+        await networkFirst(new Request(new URL(path, self.location.origin), { cache: 'reload', signal: controller.signal }), path);
+      } finally { clearTimeout(timer); }
+    }));
+    if (!await verifiedShell(await caches.open(CACHE_NAME))) throw new Error('Required offline shell incomplete');
+  })());
 });
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
+    if (!await verifiedShell(await caches.open(CACHE_NAME))) throw new Error('Required offline shell incomplete');
     const names = await caches.keys();
     await Promise.all(names.filter(name => name.startsWith(CACHE_PREFIX) && name !== CACHE_NAME).map(name => caches.delete(name)));
     await self.clients.claim();
@@ -136,16 +161,22 @@ self.addEventListener('message', event => {
   if (!['OFFLINE_READING_STATUS', 'CACHE_PUBLIC_READING'].includes(event.data?.type) || !event.ports?.[0]) return;
   event.waitUntil((async () => {
     if (event.data.type === 'CACHE_PUBLIC_READING' && Array.isArray(event.data.paths)) {
-      await Promise.allSettled([...new Set(event.data.paths)].slice(0, 400).map(async value => {
-        if (typeof value !== 'string') return;
-        const request = new Request(new URL(value, self.location.origin), { cache: 'no-cache' });
-        const path = eligibleRequest(request);
-        if (!path || !readingPath(path)) return;
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 8000);
-        try { await networkFirst(new Request(request, { signal: controller.signal }), path); }
-        finally { clearTimeout(timer); }
-      }));
+      const paths = [...new Set(event.data.paths)];
+      // Bound concurrency without dropping later pages in large catalogs.
+      for (let start = 0; start < paths.length; start += 8) {
+        await Promise.allSettled(paths.slice(start, start + 8).map(async value => {
+          if (typeof value !== 'string') return;
+          let request;
+          try { request = new Request(new URL(value, self.location.origin), { cache: 'no-cache' }); }
+          catch { return; }
+          const path = eligibleRequest(request);
+          if (!path || !readingPath(path)) return;
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), 8000);
+          try { await primeReading(new Request(request, { signal: controller.signal }), path); }
+          finally { clearTimeout(timer); }
+        }));
+      }
     }
     try { event.ports[0].postMessage(await status()); }
     catch { event.ports[0].postMessage({ available: false, cachedReadingCount: 0, audioAvailable: false, reason: 'cache-unavailable' }); }

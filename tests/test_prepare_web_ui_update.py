@@ -1,5 +1,6 @@
 """Check production identity and preservation before UI-only Hosting updates."""
 import json
+import subprocess
 
 import pytest
 
@@ -25,18 +26,32 @@ def baseline(tmp_path, environment='production'):
     staging.write(base / 'baseline-receipt.json', {
         **{key: target[key] for key in ('project', 'site', 'origin')},
         'status': 'complete_verified_not_deployed', 'catalogSha256': catalog_sha,
+        'firebaseJsonSha256': staging.digest(base / 'firebase.json'),
         'baselineVersion': 'sites/' + target['site'] + '/versions/initial'})
     return base
 
 
-def test_production_overlay_preserves_catalog_media_and_backend_config(tmp_path, monkeypatch):
-    base = baseline(tmp_path)
-    source = tmp_path / 'source'
-    source.mkdir()
+def committed_ui(tmp_path, monkeypatch):
+    repo = tmp_path / 'source-repo'
+    source = repo / 'experiments/sermon-dubbing-poc/web'
+    source.mkdir(parents=True)
     for name in ui.ui_files('production'):
         (source / name).write_text('new UI: ' + name)
     monkeypatch.setattr(ui.builder, 'RUNTIME_WEB_ROOT', source)
-    monkeypatch.setattr(ui.builder, 'runtime_web_files', lambda *_: None)
+    monkeypatch.setattr(ui.builder, 'ROOT', repo)
+    monkeypatch.setattr(ui.builder, 'runtime_web_files', lambda *_: ())
+    subprocess.run(['git', 'init', '-q', str(repo)], check=True)
+    subprocess.run(['git', 'add', '.'], cwd=repo, check=True)
+    subprocess.run(['git', '-c', 'user.name=Reader test', '-c', 'user.email=reader@example.invalid',
+                    'commit', '-qm', 'Frozen UI source'], cwd=repo, check=True)
+    return repo, source
+
+
+def test_production_overlay_preserves_catalog_media_and_backend_config(tmp_path, monkeypatch):
+    base = baseline(tmp_path)
+    repo, _ = committed_ui(tmp_path, monkeypatch)
+    # Unrelated work does not invalidate this scoped source binding.
+    (repo / 'unrelated.txt').write_text('another agent is working')
     out = tmp_path / 'candidate'
     ui.prepare(base, out, environment='production')
     for name in ('old.mp3', 'multilingual-v3.json', 'fingerprint-worker.mjs'):
@@ -49,6 +64,44 @@ def test_production_overlay_preserves_catalog_media_and_backend_config(tmp_path,
     assert config['intent']['channel'] == 'production_web'
     assert config['lease_bucket'] == 'ai-for-god-sermon-media-prod'
     assert config['routes']['production']['channels'] == ['production_web']
+    plan = staging.read(out / 'ui-update-plan.json')
+    assert plan['sourceCommit'] == subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo, text=True).strip()
+    assert plan['sourceFiles']['app.mjs'] == staging.digest(out / 'public/app.mjs')
+
+
+@pytest.mark.parametrize('staged', [False, True])
+def test_modified_copied_ui_rejected_before_output(tmp_path, monkeypatch, staged):
+    base = baseline(tmp_path)
+    repo, source = committed_ui(tmp_path, monkeypatch)
+    (source / 'app.mjs').write_text('uncommitted UI')
+    if staged:
+        subprocess.run(['git', 'add', '.'], cwd=repo, check=True)
+    out = tmp_path / 'candidate'
+    with pytest.raises(ValueError, match='differs from recorded commit'):
+        ui.prepare(base, out, environment='production')
+    assert not out.exists()
+
+
+def test_untracked_read_dependency_rejected_before_output(tmp_path, monkeypatch):
+    base = baseline(tmp_path)
+    _, source = committed_ui(tmp_path, monkeypatch)
+    (source / 'extra.mjs').write_text('uncommitted dependency')
+    monkeypatch.setattr(ui.builder, 'runtime_web_files', lambda *_: ('extra.mjs',))
+    out = tmp_path / 'candidate'
+    with pytest.raises(ValueError, match='differs from recorded commit'):
+        ui.prepare(base, out, environment='production')
+    assert not out.exists()
+
+
+def test_modified_hosting_config_rejected_before_output(tmp_path):
+    base = baseline(tmp_path)
+    config = staging.read(base / 'firebase.json')
+    config['hosting']['rewrites'][0]['run']['serviceId'] = 'another-backend'
+    (base / 'firebase.json').write_text(json.dumps(config))
+    out = tmp_path / 'candidate'
+    with pytest.raises(ValueError, match='configuration differs from receipt'):
+        ui.prepare(base, out, environment='production')
+    assert not out.exists()
 
 
 @pytest.mark.parametrize('environment,requested', [('dev', 'production'), ('production', 'dev')])

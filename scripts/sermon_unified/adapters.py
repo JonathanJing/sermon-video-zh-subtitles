@@ -100,6 +100,9 @@ def inspect_step(m, base, step, *, ready=True):
         plan=delivery.inspect(config_path(m,base,step))
         if not plan['snapshotBound']:
             raise c.ContractError('delivery_input_snapshot_required')
+        if plan.get('machineChecked'):
+            from scripts.sermon_unified_capabilities import require_machine_capabilities
+            require_machine_capabilities(c.binding(m,base,'consumerCapabilities'))
         from scripts.sermon_unified_canonical_binding import validate_selected_source
         validate_selected_source(m,base,plan['sourcePackageSha256'])
         identity=dict(plan['sourceIdentity']);identity['window']=dict(identity['window'],timeBase='source_media')

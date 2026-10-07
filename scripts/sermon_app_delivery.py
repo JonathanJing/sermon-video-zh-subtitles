@@ -253,7 +253,10 @@ def audio(root, row, source, locale, candidate):
     screening = None
     if "screening" in row:
         screening_path, screening = artifact(root, root, row["screening"])
-        existing_schema(screening, "sermon-target-language-audio-screening-v1.schema.json")
+        require(screening.get("schemaVersion") in {"sermon-target-language-audio-screening-v1",
+                                                   "sermon-target-language-audio-screening-v2"},
+                "unsupported_audio_screening_schema")
+        existing_schema(screening, screening["schemaVersion"] + ".schema.json")
     ids = [group["translationGroupId"] for group in candidate["groups"]]
     require(package["status"] == "human_reviewed" and not package["issues"]
             and all(package[key] is not None for key in ("track", "captions", "schedule"))

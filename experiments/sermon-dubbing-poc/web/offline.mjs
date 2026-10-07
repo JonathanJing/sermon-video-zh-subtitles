@@ -14,26 +14,33 @@ export function publicReadingPath(value, origin) {
   } catch { return null; }
 }
 
+export function offlineReadingState(status) {
+  if (status?.available) return 'available';
+  return status?.supported && status?.reason === 'preparing' ? 'pending' : 'unavailable';
+}
+
 export async function registerOfflineReading({ onStatus = () => {}, env = globalThis } = {}) {
   const base = { version: OFFLINE_VERSION, scope: 'visited-content', audioAvailable: false };
-  const publish = values => onStatus({ ...base, online: env.navigator?.onLine !== false, ...values });
+  const publish = values => onStatus({ ...base, online: env.navigator?.onLine !== false, ...values,
+    state: offlineReadingState(values) });
   if (!env.isSecureContext || !env.navigator?.serviceWorker) {
     publish({ supported: false, available: false, cachedReadingCount: 0, reason: 'unsupported' });
     return { dispose() {}, refresh: async () => {} };
   }
   const serviceWorker = env.navigator.serviceWorker;
-  let registration, observer, disposed = false;
-  const ask = (type, paths = []) => new Promise((resolve, reject) => {
+  let registration, observer, disposed = false, primeQueue = Promise.resolve();
+  const ask = (type, paths = [], timeout = 12000) => new Promise((resolve, reject) => {
     const worker = serviceWorker.controller || registration?.active;
     if (!worker || !env.MessageChannel) return reject(new Error('Offline worker unavailable'));
     const channel = new env.MessageChannel();
     const timer = env.setTimeout(() => {
       channel.port1.close(); reject(new Error('Offline worker timed out'));
-    }, 12000);
+    }, timeout);
     channel.port1.onmessage = event => {
       env.clearTimeout(timer); channel.port1.close(); resolve(event.data);
     };
-    worker.postMessage({ type, paths }, [channel.port2]);
+    try { worker.postMessage({ type, paths }, [channel.port2]); }
+    catch (error) { env.clearTimeout(timer); channel.port1.close(); reject(error); }
   });
   const refresh = async () => {
     try {
@@ -43,13 +50,22 @@ export async function registerOfflineReading({ onStatus = () => {}, env = global
       if (!disposed) publish({ supported: true, available: false, cachedReadingCount: 0, reason: 'cache-unavailable' });
     }
   };
-  const prime = async entries => {
+  const prime = entries => {
+    const work = () => primeEntries(entries);
+    primeQueue = primeQueue.catch(() => {}).then(work);
+    return primeQueue;
+  };
+  const primeEntries = async entries => {
+    if (disposed) return;
     const origin = env.location.origin;
     const paths = [...new Set(['/weekly.json', '/multilingual-v3.json', ...entries.map(entry => entry.name)]
       .map(path => publicReadingPath(path, origin)).filter(Boolean))];
     try {
-      const status = await ask('CACHE_PUBLIC_READING', paths);
-      if (!disposed) publish({ supported: true, ...status });
+      let status;
+      // Four groups of eight requests fit the worker's fetch deadline. Send every path.
+      for (let start = 0; start < paths.length && !disposed; start += 32)
+        status = await ask('CACHE_PUBLIC_READING', paths.slice(start, start + 32), 45000);
+      if (!disposed && status) publish({ supported: true, ...status });
     } catch { await refresh(); }
   };
   const onNetworkChange = () => refresh();

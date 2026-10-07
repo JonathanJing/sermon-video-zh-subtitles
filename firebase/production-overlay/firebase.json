@@ -41,6 +41,10 @@
         "headers": [{"key": "Cache-Control", "value": "no-store"}]
       },
       {
+        "source": "/multilingual-v4.json",
+        "headers": [{"key": "Cache-Control", "value": "no-store"}]
+      },
+      {
         "source": "/media/**",
         "headers": [{"key": "Cache-Control", "value": "public,max-age=31536000,immutable"}]
       },

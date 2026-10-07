@@ -32,3 +32,13 @@ test('English locate searches actual reference text and preserves exact mapped a
   assert.deepEqual(findEnglishPositions(rows,'JESUS worthy'),[rows[0]]);
   assert.deepEqual(findEnglishPositions(rows,''),[]);
 });
+
+test('real scrolling distinguishes the programmatic target from manual scrollbar movement', () => {
+  const follow = new ReadingFollow(); let position = [0, 300];
+  follow.programmaticScroll(() => {}, () => position);
+  follow.observeScroll([0, 300]); assert.equal(follow.following, true);
+  follow.observeScroll([0, 301]); assert.equal(follow.following, true);
+  follow.observeScroll([0, 420]); assert.equal(follow.following, false);
+  follow.returnToCurrent(() => follow.programmaticScroll(() => { position = [0, 500]; }, () => position));
+  follow.observeScroll([0, 500]); assert.equal(follow.following, true);
+});

@@ -632,6 +632,36 @@
               }
             }
           }
+        },
+        "condensation_binding": {
+          "type": "object",
+          "minProperties": 1,
+          "propertyNames": {
+            "enum": [
+              "zh-Hans",
+              "ko",
+              "es"
+            ]
+          },
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "path",
+              "sha256"
+            ],
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              }
+            }
+          },
+          "description": "Optional: the passing spoken-condensation binding for each locale whose spoken script was condensed for the dub."
         }
       }
     },

@@ -1,11 +1,11 @@
-import { categoryLabel, fullReadingRows, findEnglishPositions, ReadingFollow } from '/reading-mode.mjs';
-import { registerOfflineReading } from '/offline.mjs';
+import { fullReadingRows, findEnglishPositions, ReadingFollow } from '/reading-mode.mjs';
+import { registerOfflineReading, offlineReadingState } from '/offline.mjs';
 import { setIcon, setButtonLabel } from './icons.mjs';
 import { t, getLocale, setLocale, onLocaleChange, localizeDOM } from "/i18n.mjs";
 import { localizeWeek } from "/content-locales.mjs";
 import { messages as appMessages } from "/locales-app.mjs";
 import { boundedTime, formatTime, cueIndex } from "/timing.mjs";
-import { validateCatalog, chooseWeek, parseTimecode, downloadFilename, engagementWeek, buildCatalogNavigation, catalogNavigationEnvironment, bilingualCueRows, isFormalPlayback, diagnosticPresentation } from "/catalog.mjs";
+import { validateCatalog, chooseWeek, parseTimecode, downloadFilename, engagementWeek, buildCatalogNavigation, catalogNavigationEnvironment, bilingualCueRows, isFormalPlayback, isMachineChecked, diagnosticPresentation } from "/catalog.mjs";
 import { createFeedback } from "/feedback.mjs";
 import { createUsage } from "/usage.mjs";
 import { mountFingerprintUI, playAlignmentAudio } from "/fingerprint-ui.mjs";
@@ -42,7 +42,7 @@ function updateLanguageControl() {
 }
 function updateCurrentEnglish(index) {
   const english = englishByCue[index];
-  $("current-english").hidden = (!bilingualDisplay && !week?.contentVariants) || !track;
+  $("current-english").hidden = !track || (week?.contentVariants ? !english : !bilingualDisplay);
   $("current-english-label").textContent = t("app.transcript.englishReference");
   $("current-english-text").textContent = english || t("app.subtitle.missing");
   $("current-english-text").lang = english ? "en" : "zh-Hans";
@@ -88,6 +88,10 @@ function appText(value) {
 }
 // Content language follows the selected audio; interface language stays separate.
 function displayWeek() { return week?.contentVariants ? week : localizeWeek(week, "zh"); }
+// A machine-checked locale names its machine quality check, never a formal edition.
+function editionLabel() {
+  return isFormalPlayback(week) ? t("app.release.formal") : isMachineChecked(week) ? week.releaseLabel : t("app.release.preview");
+}
 function diagnosticNotice() {
   const state = diagnosticPresentation(week);
   return state ? `${t(state.statusKey)}${state.reasonCode ? ` · ${state.reasonCode}` : ''}` : null;
@@ -131,7 +135,7 @@ function renderWeekOptions() {
       choice.setAttribute("aria-pressed", String(original.id === week?.id));
       const title = document.createElement("strong"); title.textContent = original.title;
       const meta = document.createElement("span"); meta.textContent = `${original.date} · ${original.speaker}`;
-      const category = document.createElement("small"); category.textContent = categoryLabel(original.displayCategory, getLocale()) || original.sourceLabel || label;
+      const category = document.createElement("small"); category.textContent = displayCategoryLabel(original) || label;
       choice.append(title, meta, category);
       choice.addEventListener("click", () => { selectWeek(original.id); $("content-browser").close(); $("choose-content").setAttribute("aria-expanded", "false"); });
       section.append(choice);
@@ -150,10 +154,11 @@ function renderWeekLabels() {
   $("speaker").textContent = view.speaker; $("scripture").textContent = view.scripture;
   $("central-message").textContent = view.centralMessage;
   $("audio-notice").textContent = diagnosticNotice() || view.audioNotice;
-  $("review").textContent = t("app.content.disclosure");
-  $("edition-label").textContent = activeView === "tab-voices" ? t("app.release.preview") : isFormalPlayback(week) ? t("app.release.formal") : t("app.release.preview");
-  $("week-status").textContent = diagnosticPresentation(week) ? t(diagnosticPresentation(week).statusKey) : isFormalPlayback(week) ? t("app.week.published") : week.humanContentReview === "approved" || week.audioStatus === "full_reviewed" ? t("app.week.ready") : week.audioStatus === "full_candidate" ? t("app.week.review") : week.tracks.length ? t("app.week.sample") : t("app.week.outline");
-  $("audio-scope").textContent = isFormalPlayback(week) && track ? t("app.release.formal") : week.humanContentReview === "approved" && track ? t("app.release.full") : track?.scope === "full_candidate" ? t("app.release.review") : track?.scope === "full_reviewed" ? t("app.release.full") : track ? t("app.release.sample") : t("app.release.pending");
+  // The release's own-locale disclosure stays beside the review statement.
+  $("review").textContent = isMachineChecked(view) ? `${view.releaseLabel} · ${view.disclosure} ${t("app.content.disclosure")}` : t("app.content.disclosure");
+  $("edition-label").textContent = activeView === "tab-voices" ? t("app.release.preview") : editionLabel();
+  $("week-status").textContent = diagnosticPresentation(week) ? t(diagnosticPresentation(week).statusKey) : isFormalPlayback(week) ? t("app.week.published") : week.humanContentReview === "approved" || ["full_reviewed", "full_machine_checked"].includes(week.audioStatus) ? t("app.week.ready") : week.audioStatus === "full_candidate" ? t("app.week.review") : week.tracks.length ? t("app.week.sample") : t("app.week.outline");
+  $("audio-scope").textContent = isFormalPlayback(week) && track ? t("app.release.formal") : week.humanContentReview === "approved" && track ? t("app.release.full") : track?.scope === "full_candidate" ? t("app.release.review") : ["full_reviewed", "full_machine_checked"].includes(track?.scope) ? t("app.release.full") : track ? t("app.release.sample") : t("app.release.pending");
   $("voice").textContent = track ? t("app.voice.active", { speaker: week.speaker }) : t("app.voice.pending");
   setButtonLabel($("source-link"), view.sourceLabel ? t("app.source.link", { label: view.sourceLabel }) : t("app.source.open"));
   for (const button of $("variants").children) button.textContent = isFormalPlayback(week) ? t("app.release.formal") : getLocale() !== "zh" ? t("app.voice.active", { speaker: week.speaker }) : week.tracks.find(item => item.id === button.dataset.id)?.label || "";
@@ -161,8 +166,13 @@ function renderWeekLabels() {
   document.title = `${activeView === "tab-voices" ? t("app.voices.title") : view.title} · ${t("app.brand")}`;
 }
 
+function displayCategoryLabel(item) {
+  const mediaType = item?.displayMediaType || item?.mediaType;
+  return mediaType === 'podcast' ? t('reader.podcastCategory')
+    : mediaType === 'video' ? t('reader.sermonCategory') : item?.sourceLabel || "";
+}
 function renderCategories() {
-  const label = categoryLabel(week?.displayCategory, getLocale()) || week?.sourceLabel || "";
+  const label = displayCategoryLabel(week);
   $("display-category").textContent = label; $("display-category").hidden = !label;
   $("picker-category").textContent = label;
 }
@@ -173,7 +183,8 @@ function renderReadingMode() {
   $("reading-current").disabled = !track;
 }
 function renderOfflineStatus() {
-  $("offline-reading-status").textContent = t(!offlineState?.supported ? "reader.offlineUnsupported" : !offlineState.online ? (offlineState.available ? "reader.offlineNow" : "reader.offlineMissing") : offlineState.available ? "reader.offlineReady" : "reader.offlinePending");
+  const state = offlineReadingState(offlineState);
+  $("offline-reading-status").textContent = t(!offlineState?.supported ? "reader.offlineUnsupported" : !offlineState.online ? (state === 'available' ? "reader.offlineNow" : "reader.offlineMissing") : state === 'available' ? "reader.offlineReady" : state === 'pending' ? "reader.offlinePending" : "reader.offlineUnavailable");
 }
 function renderDockLabels() {
   const collapsed = $("field-controls").classList.contains("is-collapsed");
@@ -209,12 +220,13 @@ $("category-refresh").addEventListener("click", async () => {
     if (!response.ok) throw new Error("Unavailable catalog");
     const value = await response.json();
     if (value.schemaVersion !== "sermon-multilingual-catalog-v3" || !Array.isArray(value.pages)) throw new Error("Invalid catalog");
-    const categories = new Map(value.pages.map(page => [page.id,page.displayCategory]));
+    const categories = new Map(value.pages.filter(page => ['podcast','video'].includes(page.mediaType))
+      .map(page => [page.id,page.mediaType]));
     for (const item of catalog.weeks) if (categories.has(item.id)) {
-      item.displayCategory = categories.get(item.id);
-      for (const variant of Object.values(item.contentVariants || {})) variant.displayCategory = item.displayCategory;
+      item.displayMediaType = categories.get(item.id);
+      for (const variant of Object.values(item.contentVariants || {})) variant.displayMediaType = item.displayMediaType;
     }
-    if (categories.has(week.id)) week.displayCategory = categories.get(week.id);
+    if (categories.has(week.id)) week.displayMediaType = categories.get(week.id);
     renderCategories(); renderWeekOptions();
   } catch { $("offline-reading-status").textContent = t("app.load.failed"); }
   finally { $("category-refresh").disabled = false; }
@@ -226,6 +238,7 @@ function ready(value) {
   // A user gesture may be required before WebViews fetch any audio metadata.
   [$("play"), ...document.querySelectorAll("[data-play-toggle]")].forEach(control => { control.disabled = !track; });
   document.querySelectorAll(".cue-button").forEach(control => { control.disabled = !value || control.dataset.readingOnly === "true"; });
+  document.querySelectorAll("#english-results button").forEach(control => { control.disabled = !value; });
   $("resume-position").disabled = !value;
   $("restart-position").disabled = !track || (!value && !pendingResume);
 }
@@ -326,7 +339,7 @@ function selectTab(id, focus = false, scroll = false) {
   activeView = id;
   renderReadingMode();
   const voices = id === "tab-voices";
-  $("edition-label").textContent = !voices && isFormalPlayback(week) ? t("app.release.formal") : t("app.release.preview");
+  $("edition-label").textContent = voices ? t("app.release.preview") : editionLabel();
   document.querySelector(".sermon-banner").hidden = voices;
   document.querySelector(".content-layout").hidden = voices;
   $("source-link").hidden = voices;
@@ -354,7 +367,7 @@ function selectTab(id, focus = false, scroll = false) {
   if (!primaryTabs.some(tab => tab.getAttribute("aria-selected") === "true")) primaryTabs[0].tabIndex = 0;
   setMore(false);
   const panel = $(id.replace("tab-", "panel-"));
-  if (scroll && panel) { panel.scrollIntoView({ block: "start" }); panel.focus({ preventScroll: true }); }
+  if (scroll && panel) { readingFollow.programmaticScroll(() => panel.scrollIntoView({ block: "start", behavior: "instant" }), readingScrollPosition); panel.focus({ preventScroll: true }); }
   syncDockHeight();
   if (id === "tab-transcript" && track && !audio.paused && !audio.ended) { const before = lastCue; update(); if (lastCue === before) scrollToCurrent(); }
 }
@@ -442,21 +455,29 @@ function renderTranscript() {
   const guidance = [t("app.transcript.guide")];
   if (bilingual.hasEnglish) guidance.push(t("app.transcript.displayGuide"));
   if (bilingual.missingEnglish && !week.contentVariants) guidance.push(bilingual.hasEnglish ? t("app.transcript.partial") : t("app.transcript.missing"));
-  $("transcript-description").textContent = week.contentVariants ? t("app.content.spokenHint") : guidance.join(" ");
-  for (const { cue, audioCue } of fullReadingRows(week.fullTranscript, track.cues)) {
-    const row = document.createElement("article"); row.className = "cue-row";
-    const button = document.createElement("button"); button.className = "cue-button";
-    button.disabled = true; button.dataset.readingOnly = String(!audioCue);
-    button.textContent = formatTime(audioCue?.start ?? cue.start);
-    button.setAttribute("aria-label", t("reader.match", {time: button.textContent}));
-    if (audioCue) button.addEventListener("click", () => setPosition(audioCue.start));
-    const body = document.createElement("span"); body.textContent = cue.text; body.lang = contentLocale;
-    row.append(button, body);
-    if (cue.english) {
-      const reference = document.createElement("p"); reference.className = "full-reading-english";
-      reference.lang = "en"; reference.textContent = cue.english; row.append(reference);
+  $("transcript-description").textContent = week.contentVariants ? t(week.condensedDub ? "app.content.spokenHintCondensed" : week.spokenHint ? "app.content.spokenHintMachine" : "app.content.spokenHint") : guidance.join(" ");
+  if (week.fullTranscript?.length) {
+    const reading = document.createElement("details"); reading.className = "full-reading";
+    const title = document.createElement("summary"); title.textContent = t("app.content.fullText");
+    const hint = document.createElement("p"); hint.className = "description"; hint.textContent = t(week.condensedDub ? (week.fullTextHint ? "app.content.fullTextHintCondensedMachine" : "app.content.fullTextHintCondensed") : week.fullTextHint ? "app.content.fullTextHintMachine" : "app.content.fullTextHint");
+    reading.append(title, hint);
+    for (const { cue, audioCue } of fullReadingRows(week.fullTranscript, track.cues)) {
+      const row = document.createElement("article"); row.className = "cue-row";
+      const button = document.createElement("button"); button.className = "cue-button";
+      button.disabled = true; button.dataset.readingOnly = String(!audioCue);
+      button.textContent = formatTime(audioCue?.start ?? cue.start);
+      button.setAttribute("aria-label", t("reader.match", {time: button.textContent}));
+      if (audioCue) button.addEventListener("click", () => setPosition(audioCue.start));
+      const body = document.createElement("span"); body.textContent = cue.text; body.lang = contentLocale;
+      row.append(button, body);
+      if (cue.english) {
+        const reference = document.createElement("p"); reference.className = "full-reading-english";
+        reference.lang = "en"; reference.textContent = cue.english; row.append(reference);
+      }
+      reading.append(row);
+      fullReadingElements.push({row,audioCue});
     }
-    fullReadingElements.push({row,audioCue}); $("full-reading-list").append(row);
+    $("full-reading-list").append(reading);
   }
   bilingual.rows.forEach(({ cue, english, index }) => {
     const end = index;
@@ -512,7 +533,7 @@ function selectTrack(id) {
   $("jump-message").textContent = "";
   $("download").hidden = !track;
   $("feedback-quick").disabled = !track;
-  $("audio-scope").textContent = isFormalPlayback(week) && track ? t("app.release.formal") : week.humanContentReview === "approved" && track ? t("app.release.full") : track?.scope === "full_candidate" ? t("app.release.review") : track?.scope === "full_reviewed" ? t("app.release.full") : track ? t("app.release.sample") : t("app.release.pending");
+  $("audio-scope").textContent = isFormalPlayback(week) && track ? t("app.release.formal") : week.humanContentReview === "approved" && track ? t("app.release.full") : track?.scope === "full_candidate" ? t("app.release.review") : ["full_reviewed", "full_machine_checked"].includes(track?.scope) ? t("app.release.full") : track ? t("app.release.sample") : t("app.release.pending");
   $("voice").textContent = track ? t("app.voice.active", { speaker: week.speaker }) : t("app.voice.pending");
   renderTranscript();
   for (const button of $("variants").children) button.setAttribute("aria-pressed", String(button.dataset.id === track?.id));
@@ -579,7 +600,7 @@ function renderOutline() {
   $("reflection-questions").replaceChildren();
   for (const question of content.questions) { const li = document.createElement("li"); li.textContent = question; $("reflection-questions").append(li); }
   document.querySelector(".reflection").hidden = !content.questions.length;
-  $("outline-review").textContent = `${content.contentReview}。${week.audioStatus?.startsWith("full_") ? t("app.outline.full") : t("app.outline.sample")}`;
+  $("outline-review").textContent = `${content.contentReview}。${isMachineChecked(content) ? content.disclosure : ""}${week.audioStatus?.startsWith("full_") ? t("app.outline.full") : t("app.outline.sample")}`;
 }
 function renderProduction() {
   const diagnostic = diagnosticPresentation(week);
@@ -676,8 +697,8 @@ function selectWeek(id) {
   $("scripture").textContent = week.scripture;
   $("cover-number").textContent = week.number;
   $("date").textContent = week.date.replaceAll("-", ".");
-  $("edition-label").textContent = isFormalPlayback(week) ? t("app.release.formal") : t("app.release.preview");
-  $("week-status").textContent = diagnosticPresentation(week) ? t(diagnosticPresentation(week).statusKey) : isFormalPlayback(week) ? t("app.week.published") : week.humanContentReview === "approved" ? t("app.week.ready") : week.audioStatus === "full_candidate" ? t("app.week.review") : week.audioStatus === "full_reviewed" ? t("app.week.ready") : week.tracks.length ? t("app.week.sample") : t("app.week.outline");
+  $("edition-label").textContent = editionLabel();
+  $("week-status").textContent = diagnosticPresentation(week) ? t(diagnosticPresentation(week).statusKey) : isFormalPlayback(week) ? t("app.week.published") : week.humanContentReview === "approved" ? t("app.week.ready") : week.audioStatus === "full_candidate" ? t("app.week.review") : ["full_reviewed", "full_machine_checked"].includes(week.audioStatus) ? t("app.week.ready") : week.tracks.length ? t("app.week.sample") : t("app.week.outline");
   $("central-message").textContent = week.centralMessage;
   $("audio-notice").textContent = diagnosticNotice() || week.audioNotice;
   $("source-link").href = week.sourceUrl;
@@ -784,8 +805,9 @@ $("precision-close").addEventListener("click", () => $("precision-dialog").close
 $("feedback-quick").addEventListener("click", () => $("feedback-point").click());
 function scrollToCurrent() {
   const row = document.querySelector('#transcript-list .cue-row[aria-current="true"]');
-  if (row) { row.scrollIntoView({ block: "center" }); row.focus({ preventScroll: true }); }
+  if (row) { readingFollow.programmaticScroll(() => row.scrollIntoView({ block: "center", behavior: "instant" }), readingScrollPosition); row.focus({ preventScroll: true }); }
 }
+function readingScrollPosition() { return [window.scrollX || 0, window.scrollY || 0]; }
 function returnToCurrent() {
   if (activeView === "tab-transcript") readingFollow.returnToCurrent(scrollToCurrent);
   else selectTab("tab-listen", false, true);
@@ -799,6 +821,11 @@ function userReadingScroll() {
   if (activeView === "tab-transcript") { readingFollow.userScroll(); renderReadingMode(); }
 }
 window.addEventListener("wheel", userReadingScroll, {passive:true});
+window.addEventListener("scroll", event => {
+  if (activeView === "tab-transcript" && (event.target === document || event.target === window)) {
+    readingFollow.observeScroll(readingScrollPosition()); renderReadingMode();
+  }
+}, {passive:true, capture:true});
 let readingTouchY = null;
 window.addEventListener("touchstart", event => { readingTouchY = event.touches[0]?.clientY ?? null; }, {passive:true});
 window.addEventListener("touchmove", event => { if (readingTouchY !== null && Math.abs((event.touches[0]?.clientY ?? readingTouchY) - readingTouchY) > 12) userReadingScroll(); }, {passive:true});

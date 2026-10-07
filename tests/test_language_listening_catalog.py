@@ -48,6 +48,77 @@ class CatalogTests(unittest.TestCase):
         self.assertEqual(result['voiceIds'], ['retained'])
         self.assertEqual(result['weekIds'], ['2026-09-27'])
 
+    def machine_checked_ko(self):
+        """Publish ko as a machine-checked v4 release with a dub on its own clock."""
+        cues = [dict(start=0, end=11.5, text='machine', textGroupId='g1')]
+        content = dict(schemaVersion='sermon-full-video-text-content-v3', pageId='week-one', targetLocale='ko',
+                       status='machine_checked', englishSourcePackageJsonSha256='a'*64,
+                       targetLanguageCandidateJsonSha256='c'*64, durationSeconds=10, audioDurationSeconds=12)
+        assets = []
+        for role, payload in [('content', content), ('captions', dict(cues=cues)), ('audio', b'machine-audio')]:
+            path = 'content/ko-v4.json' if role == 'content' else 'captions/ko-v4.json' if role == 'captions' else 'media/ko-v4.mp3'
+            self.write(path, payload)
+            assets.append(dict(role=role, path='/'+path, sha256=module.digest(self.public/path)))
+        release = dict(schemaVersion='sermon-target-language-release-package-v4', status='published_http_verified',
+                       pageId='week-one', targetLocale='ko', contentLocale='ko', audioLocale='ko',
+                       audioStatus='machine_checked', contentStatus='machine_checked',
+                       englishSourcePackageJsonSha256='a'*64, targetLanguageCandidateJsonSha256='c'*64, assets=assets)
+        self.write('releases-v4/week-one/ko.json', release)
+        page = copy.deepcopy(self.page)
+        page['targets']['ko'] = dict(audioStatus='machine_checked', contentStatus='machine_checked',
+                                     releasePackageUrl='/releases-v4/week-one/ko.json',
+                                     releasePackageJsonSha256=module.digest(self.public/'releases-v4/week-one/ko.json'))
+        return page, release
+
+    def test_machine_checked_locales_come_from_catalog_v4(self):
+        page, _ = self.machine_checked_ko()
+        self.write('multilingual-v4.json', dict(schemaVersion='sermon-multilingual-catalog-v4', pages=[page]))
+        sources = {s['audioLocale']: s for s in self.build()['sources']}
+        self.assertEqual(set(sources), {'zh-Hans', 'ko', 'es'})
+        sha = module.digest(self.public/'media/ko-v4.mp3')
+        # The identity and duration the clients send for this track.
+        self.assertEqual((sources['ko']['trackId'], sources['ko']['durationSeconds']),
+                         (f'week-one-ko-{sha[:12]}', 12))
+        self.assertEqual(sources['zh-Hans']['durationSeconds'], 10)
+
+    def test_v4_catalog_keeps_human_four_product_v3_releases(self):
+        # Adding a machine-checked locale to a four-product page keeps its human v3 releases.
+        page, _ = self.machine_checked_ko()
+        # Its natural dub runs on its own clock, past the video's last second.
+        content = json.loads((self.public/'content/es.json').read_text())
+        content.update(schemaVersion='sermon-full-video-text-content-v2', audioDurationSeconds=13)
+        self.write('content/es.json', content)
+        self.write('captions/es.json', dict(cues=[dict(start=0, end=12.5, text='approved', textGroupId='g1')]))
+        release = json.loads((self.public/'releases/es.json').read_text())
+        release['schemaVersion'] = 'sermon-target-language-release-package-v3'
+        for item in release['assets']:
+            if item['role'] in ('content', 'captions'):
+                item['sha256'] = module.digest(self.public/item['path'].lstrip('/'))
+        self.write('releases/es.json', release)
+        page['targets']['es']['releasePackageJsonSha256'] = module.digest(self.public/'releases/es.json')
+        self.write('multilingual-v4.json', dict(schemaVersion='sermon-multilingual-catalog-v4', pages=[page]))
+        sources = {s['audioLocale']: s for s in self.build()['sources']}
+        self.assertEqual(set(sources), {'zh-Hans', 'ko', 'es'})
+        self.assertEqual(sources['es']['durationSeconds'], 13)
+
+    def test_machine_checked_release_must_match_its_v4_listing(self):
+        page, release = self.machine_checked_ko()
+        for change in (dict(audioStatus='human_reviewed'), dict(englishSourcePackageJsonSha256='f'*64),
+                       dict(status='candidate')):
+            changed = dict(release, **change)
+            self.write('releases-v4/week-one/ko.json', changed)
+            listed = copy.deepcopy(page)
+            listed['targets']['ko']['releasePackageJsonSha256'] = module.digest(self.public/'releases-v4/week-one/ko.json')
+            self.write('multilingual-v4.json', dict(schemaVersion='sermon-multilingual-catalog-v4', pages=[listed]))
+            with self.subTest(change=change), self.assertRaisesRegex(ValueError, 'catalog status'):
+                self.build()
+        # A machine-checked release cannot ride in the human-only v3 projection.
+        self.write('releases-v4/week-one/ko.json', release)
+        (self.public/'multilingual-v4.json').unlink()
+        self.write('multilingual-v3.json', dict(schemaVersion='sermon-multilingual-catalog-v3', pages=[page]))
+        with self.assertRaisesRegex(ValueError, 'catalog status'):
+            self.build()
+
     def test_preserves_previous_unannotated_source(self):
         previous=copy.deepcopy(self.previous)
         old=dict(week='2026-09-20', trackId='old', audioSha256='d'*64)

@@ -1,7 +1,9 @@
 """Closed canonical App delivery adapter: reviewed products -> local candidate -> authorized publication.
 
 inspect is local/read-only. execute defaults to prepare. Publication consumes an
-existing exact-release authorization; no code path creates human approval.
+existing exact-release authorization; no code path creates human approval. A
+text or listening gate may be passed by an exact machine quality waiver; that
+locale is released as machine_checked (release v4), never as human-reviewed.
 """
 from __future__ import annotations
 import argparse
@@ -56,6 +58,10 @@ def load(config_path):
         rows = value['inputs'][name]
         d.require(set(rows) == set(value['locales']), 'Delivery locale input coverage differs: ' + name)
         args[name] = [locale + '=' + str(bound(rows[locale])) for locale in value['locales']]
+    # Only locales whose spoken script was condensed for the dub carry a binding.
+    rows = value['inputs'].get('condensation_binding', {})
+    d.require(set(rows) <= set(value['locales']), 'Delivery locale input coverage differs: condensation_binding')
+    args['condensation_binding'] = [locale + '=' + str(bound(rows[locale])) for locale in value['locales'] if locale in rows]
     work = (base / value['workRoot']).resolve()
     args['out'] = work / 'prepared'
     paths = {name: bound(value[name]) for name in ('releasePlan', 'httpVerification', 'authorization') if name in value}
@@ -92,8 +98,8 @@ def _products(value, args):
     joins = {}
     for locale in args.locales:
         d.validate_metadata(metadata['locales'][locale])
-        full, full_sha = builder.reviewed_candidate(maps['full_candidate'][locale], source_sha, locale)
-        spoken, spoken_sha = builder.reviewed_candidate(maps['spoken_candidate'][locale], source_sha, locale)
+        full, full_sha, _ = builder.admitted_text(maps['full_candidate'][locale], maps['full_review_receipt'][locale], source_sha, locale)
+        spoken, spoken_sha, _ = builder.admitted_text(maps['spoken_candidate'][locale], maps['spoken_review_receipt'][locale], source_sha, locale, spoken=True)
         content = read(maps['full_content'][locale])
         d.require(content.get('pageId') == args.page_id and content.get('targetLocale') == locale
                   and content.get('englishSourcePackageJsonSha256') == source_sha
@@ -103,12 +109,12 @@ def _products(value, args):
             d.require(content['sourceWindow'].get('mediaSha256') == source['source']['media']['sha256']
                       and all(content['sourceWindow'].get(key) == source['source']['approvedWindow'][key]
                               for key in ('startSeconds', 'endSeconds')), 'Full content source window differs')
-        builder.checked_review(maps['full_review_receipt'][locale], full, full_sha, locale)
-        builder.checked_review(maps['spoken_review_receipt'][locale], spoken, spoken_sha, locale)
         audio = builder.stage.read_package(maps['audio_package'][locale], 'sermon-target-language-audio-package-v1.schema.json')
         review = read(maps['audio_review_receipt'][locale])
+        # A listening waiver binds a machine-screened package; validate_review checks it exactly.
         d.require(audio['targetLocale'] == locale and audio['englishSourcePackageJsonSha256'] == source_sha
-                  and audio['targetLanguageCandidateJsonSha256'] == spoken_sha and audio['status'] == 'human_reviewed', 'Audio product identity differs')
+                  and audio['targetLanguageCandidateJsonSha256'] == spoken_sha
+                  and (audio['status'] == 'human_reviewed' or builder.machine_basis.is_audio_waiver(review)), 'Audio product identity differs')
         from scripts.sermon_unified_reviews import validate_review
         validate_review('audio', maps['audio_review_receipt'][locale], inputs={'source': args.source,
                         'package': maps['audio_package'][locale], 'screening': maps['audio_screening_receipt'][locale]},
@@ -201,7 +207,13 @@ def inspect(config_path):
     d.require(value.get('inputSnapshotSha256') in (None, captured['inputsSha256']), 'Delivery input snapshot changed; freeze a new revision')
     plan_hash = d.sha({'configuration': plan_hash, 'inputsSha256': captured['inputsSha256']})
     source, joins = _products(value, args)
-    result = {'status': 'ready_to_prepare', 'planHash': plan_hash, 'kind': 'app_delivery',
+    machine_checked = any(read(refs[locale]).get('reviewKind') == 'machine_quality_waiver'
+                          or read(refs[locale]).get('schemaVersion') in (
+                              'sermon-target-language-machine-text-waiver-v1',
+                              'sermon-target-language-machine-audio-waiver-v1')
+                          for name in ('full_review_receipt', 'spoken_review_receipt', 'audio_review_receipt')
+                          for refs in [builder.assignment_map(getattr(args, name), args.locales)] for locale in args.locales)
+    result = {'machineChecked': machine_checked, 'status': 'ready_to_prepare', 'planHash': plan_hash, 'kind': 'app_delivery',
               'pageId': value['pageId'], 'sourceIdentity': d.source_identity(source),
               'sourceUrlHash': source['source']['sourceUrlHash'], 'approvedWindow': source['source']['approvedWindow'],
               'sourceId': source['source']['sourceId'], 'mediaSha256': source['source']['media']['sha256'],
@@ -283,9 +295,14 @@ def _endpoints(value, base, sealed, state, reader):
         d.require(receipt.get('readback', {}).get('schemaVersion') == 'sermon-client-readback-v2', 'Four-product endpoints require client readback v2')
         d.require(set(receipt['locales']) == set(value['locales']), 'Endpoint locale coverage incomplete')
         resources = receipt['readback']['resources']
-        catalog = read(sealed / 'public/multilingual-v3.json')
+        observed_paths = {row['url'].removeprefix(endpoint['intent']['origin']) for row in resources}
+        # Current clients read v4 first; v3 is the human-only projection that older
+        # builds read. When the site carries v4, the readback must show the v4 path
+        # current clients take, even for an all-human run.
+        has_v4 = (sealed / 'public/multilingual-v4.json').exists()
+        catalog = read(sealed / 'public' / ('multilingual-v4.json' if has_v4 else 'multilingual-v3.json'))
         page = next(page for page in catalog['pages'] if page['id'] == value['pageId'])
-        required_paths = {'/multilingual-v3.json'}
+        required_paths = {'/multilingual-v4.json' if has_v4 else '/multilingual-v3.json'}
         if endpoint['name'] in ('dev', 'production_web'):
             required_paths.update('/' + name for name in builder.RUNTIME_WEB_FILES)
         audio_paths = {}
@@ -294,7 +311,7 @@ def _endpoints(value, base, sealed, state, reader):
             release_path = page['targets'][locale]['releasePackageUrl']
             required_paths.add(release_path)
             release = read(sealed / 'public' / release_path.lstrip('/'))
-            d.require(release['schemaVersion'] == 'sermon-target-language-release-package-v3', 'Endpoint requires four-product release v3')
+            d.require(release['schemaVersion'] in d.FOUR_PRODUCT_RELEASES, 'Endpoint requires a four-product release (v3 or v4)')
             d.require(release['pageId'] == value['pageId'] and release['targetLocale'] == locale
                       and release['englishSourcePackageJsonSha256'] == state['sourcePackageSha256']
                       and release['sourceIdentity'] == state['sourceIdentity'], 'Endpoint release source/page identity differs')
@@ -309,7 +326,7 @@ def _endpoints(value, base, sealed, state, reader):
                     required_paths.add(asset['path'])
                 if asset['role'] == 'audio':
                     audio_paths[locale] = endpoint['intent']['origin'] + asset['path']
-        d.require(required_paths <= {row['url'].removeprefix(endpoint['intent']['origin']) for row in resources}, 'Endpoint readback misses current locale resources')
+        d.require(required_paths <= observed_paths, 'Endpoint readback misses current locale resources')
         evidence_root = (base / endpoint['evidenceRoot']).resolve()
         for playback in receipt['playback']:
             evidence_path = (evidence_root / playback['evidencePath']).resolve()
@@ -366,6 +383,7 @@ def execute(config_path, expected_plan_hash, *, reader=None, request=None, run=N
             kwargs = {} if run is None else {'run': run}
             attempt = publisher.publish(sealed, intent=value['intent'], routes=value['routes'],
                       baseline_version=value['baseline']['version'], baseline_catalog_sha=value['baseline']['catalogSha256'],
+                      baseline_catalog_v4_sha=read(paths['baseline'] / 'seal-report.json').get('catalogV4Sha256'),
                       lease_bucket=value['leaseBucket'], request=request or publisher.authenticated_transport(), reader=read_public, **kwargs)
         else:
             attempt = read(sealed / 'deployment-attempt-v2.json')

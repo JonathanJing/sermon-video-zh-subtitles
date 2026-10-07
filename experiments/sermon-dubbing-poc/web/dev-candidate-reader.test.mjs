@@ -106,13 +106,27 @@ test('machine receipt, acceptance and caption binding failures reject only the a
   }
 });
 
+test('legacy candidates retain source-package admission while an explicitly declared media hash must match', async () => {
+  const matching = fixture(({content, page}) => { content.sourceMediaSha256 = page.sourceMediaSha256; });
+  const admitted = await loadPublishedWeeks(matching.fetchImpl, { allowDevCandidates: true });
+  assert.deepEqual(admitted.errors, []);
+  assert.deepEqual(Object.keys(admitted.weeks[0].contentVariants), ['zh-Hans', 'ko', 'es']);
+  const conflicting = fixture(({content, locale}) => {
+    if (locale === 'ko') content.sourceMediaSha256 = 'a'.repeat(64);
+  });
+  const rejected = await loadPublishedWeeks(conflicting.fetchImpl, { allowDevCandidates: true });
+  assert.deepEqual(Object.keys(rejected.weeks[0].contentVariants), ['zh-Hans', 'es']);
+  assert.equal(rejected.errors.length, 1);
+  assert.match(rejected.errors[0], /Published content identity mismatch/);
+});
+
 test('explicit development page flags are filtered before release requests', async () => {
   const f = fixture();
   const catalog = JSON.parse(f.files.get('/multilingual-v3.json'));
   catalog.pages[0].diagnosticOnly = true;
   f.files.set('/multilingual-v3.json', JSON.stringify(catalog));
   assert.deepEqual((await loadPublishedWeeks(f.fetchImpl)).weeks, []);
-  assert.deepEqual(f.requests, ['/multilingual-v3.json']);
+  assert.deepEqual(f.requests, ['/multilingual-v4.json', '/multilingual-v3.json']);
 });
 
 const frozenRoot = process.env.TONGXING_DEV_CATALOG_FIXTURE_ROOT;
