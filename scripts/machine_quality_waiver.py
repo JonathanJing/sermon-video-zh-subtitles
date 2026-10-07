@@ -67,9 +67,12 @@ CALIBRATION_MINIMUMS = {"overallDetectionRate": 0.95, "perKindDetectionRate": 0.
 TEXT_KINDS = ("wrong_number", "added_reference", "wrong_book", "english_leak", "placeholder",
               "dropped_name", "dropped_half", "semantic_negation", "added_number", "wrong_ordinal",
               "swapped_quantity", "added_content")
-# What a calibration records about the TTS that rendered its omitted-word audio;
-# provider, model and checkpoint must be the audio package's own voice.
-RENDER_IDENTITY_FIELDS = ("provider", "model", "checkpointSha256", "settings")
+# What a calibration records about the TTS that rendered its omitted-word audio:
+# provider, model and checkpoint must be the audio package's own voice, and
+# ``synthesis`` (voice, speaker, config, language and normalization, as
+# ``target_audio_predicted_schedule.synthesis_identity`` names them) must be the
+# synthesis identity of the speech job the package was rendered from.
+RENDER_IDENTITY_FIELDS = ("provider", "model", "checkpointSha256", "synthesis")
 AUDIO_KINDS = ("stretched", "silent", "clipped", "truncated", "wrong_sentence", "dropped_key_word")
 # Seeded errors in condensed spoken groups: required when a QC run judged any.
 SPOKEN_KINDS = ("swapped_content", "added_content", "flipped_negation", "dropped_claim")
@@ -261,32 +264,40 @@ def input_problems(calibration: dict | None, *, text_qc: dict | None = None,
 
 def render_identity_problems(identity) -> list[str]:
     """Reasons a calibration's TTS renderer identity does not say what rendered its omitted-word audio."""
+    from scripts.target_audio_predicted_schedule import SYNTHESIS_IDENTITY_FIELDS
     if not isinstance(identity, dict) or set(identity) != set(RENDER_IDENTITY_FIELDS):
         return ["calibration does not record the TTS renderer behind its dropped-key-word audio"]
     problems = []
-    for key in ("provider", "model"):
-        if not (isinstance(identity[key], str) and identity[key]):
-            problems.append(f"renderer {key}")
     checkpoint = identity["checkpointSha256"]
     if not (isinstance(checkpoint, str) and len(checkpoint) == 64 and all(c in "0123456789abcdef" for c in checkpoint)):
         problems.append("renderer checkpointSha256")
-    if not (isinstance(identity["settings"], dict) and identity["settings"]):
-        problems.append("renderer settings")
-    else:
-        try:
-            json.dumps(identity["settings"], allow_nan=False)
-        except (TypeError, ValueError):
-            problems.append("renderer settings are not finite JSON")
+    synthesis = identity["synthesis"]
+    if (not isinstance(synthesis, dict) or set(synthesis) != {"targetLocale", *SYNTHESIS_IDENTITY_FIELDS}
+            or not all(isinstance(value, str) and value for value in synthesis.values())):
+        problems.append("renderer synthesis identity")
+    elif any(not (isinstance(identity[key], str) and identity[key] and identity[key] == synthesis[key])
+             for key in ("provider", "model")):
+        problems.append("renderer provider or model differs from its synthesis identity")
     return [f"calibration renderer identity is not normalized: {', '.join(problems)}"] if problems else []
 
 
-def render_binding_problems(calibration: dict | None, package: dict) -> list[str]:
-    """The dropped-key-word audio must come from the renderer that produced the package."""
+def render_binding_problems(calibration: dict | None, package: dict, speech_job: dict) -> list[str]:
+    """The dropped-key-word audio must come from the renderer and synthesis settings of the
+    speech job the package was rendered from."""
+    from scripts.target_audio_predicted_schedule import synthesis_identity
     problems = render_identity_problems((calibration or {}).get("renderIdentity"))
     if problems:
         return problems
-    voice = package.get("voice")
     identity = calibration["renderIdentity"]
+    if not isinstance(speech_job, dict) or json_sha256(speech_job) != package.get("targetLanguageSpeechJobJsonSha256"):
+        return ["the speech job is not the one this audio package was rendered from"]
+    try:
+        bound = synthesis_identity(speech_job)
+    except ValueError as error:
+        return [str(error)]
+    if identity["synthesis"] != bound:
+        return ["calibration rendered its omitted-word audio with synthesis settings other than the speech job's"]
+    voice = package.get("voice")
     if not isinstance(voice, dict) or any(voice.get(key) != identity[key]
                                           for key in ("provider", "model", "checkpointSha256")):
         return ["calibration rendered its omitted-word audio with a TTS other than the package's voice"]

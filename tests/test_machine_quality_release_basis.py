@@ -115,6 +115,7 @@ def issue_text(source, anchor, candidate, qc, cal, **kwargs):
 
 
 def issue_audio(package, screening, qc, text, cal, **kwargs):
+    kwargs.setdefault("speech_job", fixtures.speech_job(package["targetLocale"]))
     cal = seeded_into(cal, audio=qc, candidate=kwargs["candidate"], condensed=bool(text["condensedGroupIds"]))
     kwargs.setdefault("repair_ledger", bound_ledger("audio", qc, package["targetLocale"],
                                                     package["englishSourcePackageJsonSha256"],
@@ -457,7 +458,7 @@ def audio_fixture(flagged=False):
     package = {"schemaVersion": "sermon-target-language-audio-package-v1", "targetLocale": "ko",
                "englishSourcePackageJsonSha256": "1" * 64,
                "targetLanguageCandidateJsonSha256": basis.json_sha256(candidate),
-               "targetLanguageSpeechJobJsonSha256": "3" * 64,
+               "targetLanguageSpeechJobJsonSha256": fixtures.speech_job_sha(),
                "status": "candidate" if flagged else "machine_screened", "units": units,
                "voice": dict(fixtures.PACKAGE_VOICE),
                "track": {"path": "track.mp3", "sha256": "4" * 64},
@@ -473,7 +474,7 @@ def audio_fixture(flagged=False):
     scores = [audio_screen.score(text, recognized, "ko", 0.88) for text, recognized in zip(texts, heard)]
     similarities = [similarity for similarity, _, _ in scores]
     screening = {"schemaVersion": "sermon-target-language-audio-screening-v2", "targetLocale": "ko",
-                 "targetLanguageSpeechJobJsonSha256": "3" * 64, "trackSha256": "4" * 64,
+                 "targetLanguageSpeechJobJsonSha256": fixtures.speech_job_sha(), "trackSha256": "4" * 64,
                  "status": package["machineScreening"]["status"], "model": "qwen3-asr-0.6b",
                  "modelRevision": "r1", "minSimilarity": 0.88, "coverage": 1,
                  "reviewedGroupIds": ["g1", "g2"], "unitAudioSha256s": [u["audio"]["sha256"] for u in units],
@@ -545,21 +546,31 @@ class AudioWaiverTests(unittest.TestCase):
         package, screening, qc, text = audio_fixture()
         anchor, candidate = audio_sources()
 
-        def issue(cal=None, pkg=package):
+        def issue(cal=None, pkg=package, job=None):
             return issue_audio(pkg, screening, qc, text, cal or calibration(), anchor=anchor, candidate=candidate,
-                               track_check=track_check(pkg), created_at="2026-10-07T02:00:00+00:00")
+                               track_check=track_check(pkg), created_at="2026-10-07T02:00:00+00:00",
+                               **({"speech_job": job} if job is not None else {}))
         issue()
-        other = dict(fixtures.RENDER_IDENTITY, checkpointSha256="f" * 64)
-        for label, cal, pkg, message in (
-                ("other checkpoint", calibration(renderIdentity=other), package, "TTS other than the package's voice"),
-                ("other model", calibration(renderIdentity=dict(fixtures.RENDER_IDENTITY, model="tts-2")), package,
-                 "TTS other than the package's voice"),
-                ("no identity", calibration(renderIdentity=None), package, "does not record the TTS renderer"),
-                ("no settings", calibration(renderIdentity={**fixtures.RENDER_IDENTITY, "settings": {}}), package,
+        render = fixtures.RENDER_IDENTITY
+        other_job = fixtures.speech_job()
+        other_job["adapter"] = {**other_job["adapter"], "configSha256": "other-config"}
+        other_synthesis = {**render["synthesis"], "voice": "another-voice"}
+        for label, cal, pkg, job, message in (
+                ("other checkpoint", calibration(renderIdentity=dict(render, checkpointSha256="f" * 64)), package,
+                 None, "TTS other than the package's voice"),
+                ("other model", calibration(renderIdentity=dict(render, model="tts-2")), package, None,
                  "not normalized"),
-                ("package without voice", calibration(), {**package, "voice": None}, "TTS other than the package's voice")):
+                ("other voice or speed settings", calibration(renderIdentity=dict(render, synthesis=other_synthesis)),
+                 package, None, "synthesis settings other than the speech job's"),
+                ("speech job of another render", calibration(), package, other_job,
+                 "not the one this audio package was rendered from"),
+                ("no identity", calibration(renderIdentity=None), package, None, "does not record the TTS renderer"),
+                ("incomplete synthesis", calibration(renderIdentity=dict(render, synthesis={"voice": "v"})), package,
+                 None, "not normalized"),
+                ("package without voice", calibration(), {**package, "voice": None}, None,
+                 "TTS other than the package's voice")):
             with self.subTest(label), self.assertRaisesRegex(ValueError, message):
-                issue(cal, pkg)
+                issue(cal, pkg, job)
 
     def test_waiver_needs_a_passing_track_check_of_this_package(self):
         package, screening, qc, text = audio_fixture()

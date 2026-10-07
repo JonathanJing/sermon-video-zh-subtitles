@@ -426,7 +426,7 @@ def source_span_problems(anchor: dict, candidate: dict, text_waiver: dict, packa
 
 def build_audio_waiver(package: dict, screening: dict, audio_qc: dict, text_waiver: dict,
                        calibration: dict, *, anchor: dict, candidate: dict, repair_ledger: list[dict],
-                       track_check: dict | None = None,
+                       speech_job: dict, track_check: dict | None = None,
                        secondary_asr_model: str | None = None,
                        implementation: str | None = None, created_at: str | None = None) -> dict:
     """Issue an audio waiver when every unit passed audio QC with no subtitle-only units
@@ -469,7 +469,7 @@ def build_audio_waiver(package: dict, screening: dict, audio_qc: dict, text_waiv
     summary = calibration_summary(calibration, locale, implementation, require_audio=True)
     runtime = waiver.runtime_identity_problems(calibration, audio_qc=audio_qc)
     _require(not runtime, "Audio QC runtime differs from calibration: " + "; ".join(runtime))
-    voice = waiver.render_binding_problems(calibration, package)
+    voice = waiver.render_binding_problems(calibration, package, speech_job)
     _require(not voice, "Calibration TTS differs from the package: " + "; ".join(voice))
     inputs = waiver.input_problems(calibration, audio_qc=audio_qc, candidate=candidate,
                                    condensed=bool(text_waiver["condensedGroupIds"]))
@@ -616,7 +616,7 @@ def main() -> None:
                       help="The passing spoken_condensation binding when the candidate has condensed groups")
     audio = sub.add_parser("audio", help="Issue an audio waiver for one audio package")
     for name in ("package", "screening", "audio-qc", "track-check", "text-waiver", "anchor",
-                 "spoken-candidate", "calibration", "out"):
+                 "spoken-candidate", "speech-job", "calibration", "out"):
         audio.add_argument(f"--{name}", required=True, type=Path)
     audio.add_argument("--secondary-asr-model", help="Optional model-name assertion; runtime identity is derived from QC")
     for command in (text, audio):
@@ -639,7 +639,7 @@ def main() -> None:
                                      repair_ledger=ledger.load(args.repair_ledger_root, ledger.lineage(
                                          "audio", package["targetLocale"], package["englishSourcePackageJsonSha256"],
                                          json_sha256(anchor))),
-                                     track_check=_read(args.track_check),
+                                     speech_job=_read(args.speech_job), track_check=_read(args.track_check),
                                      secondary_asr_model=args.secondary_asr_model)
     _write_once(args.out, receipt)
     print(json.dumps({"schemaVersion": receipt["schemaVersion"], "targetLocale": receipt["targetLocale"],

@@ -98,13 +98,15 @@ def machine_inputs(root, *, human_full_text=None, condense=False):
     package.update(targetLocale=LOCALE, englishSourcePackageJsonSha256=d.sha(source),
                    targetLanguageCandidateJsonSha256=d.sha(spoken), track=binding(track), captions=binding(cap_path),
                    voice=dict(qc_fixtures.PACKAGE_VOICE),
+                   targetLanguageSpeechJobJsonSha256=qc_fixtures.speech_job_sha(),
                    status='machine_screened', machineScreening={'status': 'pass', 'model': ASR['model'], 'coverage': 1.0},
                    units=[{'textGroupId': g['translationGroupId'],
                            'targetTextSha256': hashlib.sha256(g['targetText'].encode()).hexdigest(),
                            'audio': binding(unit_path), 'durationSeconds': 5.0} for g in spoken['groups']])
     schedule = save(root, 'schedule.json', {'synthetic': True})
     package['schedule'] = {**binding(schedule), 'jsonSha256': d.sha({'synthetic': True})}
-    screening.update(schemaVersion='sermon-target-language-audio-screening-v2', asrSettings=dict(SCREENING_ASR),
+    screening.update(targetLanguageSpeechJobJsonSha256=qc_fixtures.speech_job_sha(),
+                     schemaVersion='sermon-target-language-audio-screening-v2', asrSettings=dict(SCREENING_ASR),
                      asrSettingsSha256=PRIMARY_SETTINGS, minSimilarity=0.88,
                      targetLocale=LOCALE, trackSha256=builder.digest(track), status='pass', modelRevision=ASR['modelRevision'],
                      reviewedGroupIds=[u['textGroupId'] for u in package['units']],

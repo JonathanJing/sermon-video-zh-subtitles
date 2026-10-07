@@ -1,6 +1,8 @@
 """Small hand-written zh-Hans/ko/es sermon fixtures for machine QC tests."""
 from __future__ import annotations
 
+import hashlib
+import json
 import math
 
 from scripts import target_audio_auto_qc as audio_qc
@@ -105,9 +107,27 @@ PRIMARY_ASR = "small-asr"
 SECONDARY_ASR = "large-asr"
 
 
-# The production TTS behind the fixtures' rendered audio, as an audio package's voice names it.
-RENDER_IDENTITY = {"provider": "local", "model": "tts", "checkpointSha256": "e" * 64,
-                   "settings": {"voice": "v1", "temperature": 0.0}}
+# The production TTS behind the fixtures' rendered audio: the speech job's adapter names
+# the synthesis settings, the audio package's voice names the model and checkpoint.
+def speech_job(locale: str = "ko") -> dict:
+    from scripts.target_audio_predicted_schedule import SYNTHESIS_IDENTITY_FIELDS
+    adapter = {field: f"{field}-1" for field in SYNTHESIS_IDENTITY_FIELDS}
+    adapter.update(provider="local", model="tts")
+    return {"targetLocale": locale, "adapter": adapter}
+
+
+def render_identity(locale: str = "ko") -> dict:
+    from scripts.target_audio_predicted_schedule import synthesis_identity
+    return {"provider": "local", "model": "tts", "checkpointSha256": "e" * 64,
+            "synthesis": synthesis_identity(speech_job(locale))}
+
+
+def speech_job_sha(locale: str = "ko") -> str:
+    return hashlib.sha256(json.dumps(speech_job(locale), sort_keys=True, ensure_ascii=False,
+                                     separators=(",", ":")).encode("utf-8")).hexdigest()
+
+
+RENDER_IDENTITY = render_identity("ko")
 PACKAGE_VOICE = {"provider": "local", "model": "tts", "checkpointSha256": "e" * 64,
                  "targetLocaleCapability": "reviewed", "authorizationStatus": "authorized"}
 
