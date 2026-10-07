@@ -168,7 +168,13 @@ class ServerTests(unittest.TestCase):
                 self.assertTrue({'/icons.mjs', '/media-session.mjs', '/voice-samples.mjs',
                                  '/speaker-clip-demos.mjs', '/voice-demo.css',
                                  '/fingerprint-ui.mjs', '/fingerprint-worker.mjs',
-                                 '/fingerprint-worklet.mjs', '/fingerprint-core.mjs', '/icons.svg'}.issubset(visited))
+                                 '/fingerprint-worklet.mjs', '/fingerprint-core.mjs', '/icons.svg',
+                                 '/locales-reader.mjs', '/reading-mode.mjs', '/offline.mjs'}.issubset(visited))
+                # Service worker registration is not an ES module import.
+                with urlopen(self.base + '/offline-worker.js') as response:
+                    self.assertEqual(response.status, 200)
+                    self.assertEqual(response.headers['Content-Type'], 'text/javascript')
+                    self.assertEqual(response.read(), (root / 'offline-worker.js').read_bytes())
 
 
 if __name__ == '__main__':
