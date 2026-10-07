@@ -1,6 +1,6 @@
 # Sermon Reading-PDF Production Supervisor Agent
 
-当前新 dev／正式任务以[2026-10-05 模型与 CLI 策略](production-model-runtime-policy.zh.md)为准：文字生产 Sol 6.1 high fast、独立复核 Sol 6.1 medium fast、Supervisor Luna medium fast，全部使用 Codex CLI。下文旧 Agents API／Astra／Sol 参数只适用于历史证据与原身份对账，不用于新任务。
+当前新 dev／正式任务以[2026-10-06 模型及调用策略](production-model-runtime-policy.zh.md)为准：Layer 2 初译使用 Sol 6.1 high、独立复核使用 Sol 6.1 medium，默认走 OpenAI API 与已批准的请求 tier；Supervisor 使用 Luna medium fast，走 ChatGPT 登录的 Codex CLI。下文旧 Agents API／Astra／Sol 参数只适用于历史证据与原身份对账，不用于新任务。
 
 Production code is installed and the default entry passed read-only and authorized execute validation on September 11. The cutover receipt recorded `waiting_for_matching_sunday` at that time; it is dated evidence, not a current production decision. Every run must re-read source, lease, approval, run-status, and QA state. See the [cutover receipt](agents-api-production-cutover-20260911.zh.md) and the later [September 20 production record](production-2026-09-20.zh.md).
 
