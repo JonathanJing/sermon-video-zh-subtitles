@@ -6,14 +6,25 @@
 # script stops after the local dry runs.
 #
 # Usage (repo root, on the frozen candidate commit):
-#   scripts/run_dev_180s_beta_e2e.sh            # dry runs only
-#   scripts/run_dev_180s_beta_e2e.sh --execute  # Dev publish + archive + TestFlight
+#   scripts/run_dev_180s_beta_e2e.sh                        # dry runs only
+#   scripts/run_dev_180s_beta_e2e.sh --execute              # publish the page to Dev
+#   scripts/run_dev_180s_beta_e2e.sh --execute --with-beta  # also archive + TestFlight
+# The current Beta already reads Dev release/catalog v3, so this simulated page
+# needs no new build. --with-beta is only for clients that must read catalog v4
+# (machine-checked locales).
 # Optional env: TONGXING_EXPORT_OPTIONS (private ExportOptions.plist),
 #               DEVELOPER_DIR (full Xcode, default /Applications/Xcode.app).
 set -euo pipefail
 
 EXECUTE=0
-[[ "${1:-}" == "--execute" ]] && EXECUTE=1
+WITH_BETA=0
+for argument in "$@"; do
+  case "$argument" in
+    --execute) EXECUTE=1 ;;
+    --with-beta) WITH_BETA=1 ;;
+    *) echo "Unknown argument: $argument"; exit 2 ;;
+  esac
+done
 
 REPO="$(git rev-parse --show-toplevel)"
 cd "$REPO"
@@ -45,7 +56,9 @@ stage() {  # stage <name> <command...>
 SOURCE_VIDEO="$SOURCE_RUN/dev-candidate/hosting/public/media/dryrun-20261001-dev-full-180s/source.mp4"
 [[ -f "$SOURCE_VIDEO" ]] || { echo "Missing $SOURCE_VIDEO (10/1 rerun cache)"; exit 1; }
 [[ -d "$REPO/artifacts/unified-cli-acceptance/native-four-product-fixture-v2" ]] || { echo "Missing native four-product fixture"; exit 1; }
-git diff --quiet -- apps/tongxing-ios || { echo "Uncommitted iOS changes; archive would refuse"; exit 1; }
+if [[ $WITH_BETA -eq 1 ]]; then
+  git diff --quiet -- apps/tongxing-ios || { echo "Uncommitted iOS changes; archive would refuse"; exit 1; }
+fi
 COMMIT="$(git rev-parse HEAD)"
 echo "Commit $COMMIT  run $RUN_ID  out $OUT"
 
@@ -57,7 +70,8 @@ DELIVERY=("$PY" scripts/run_dev_simulated_delivery.py --baseline "$OUT/baseline"
           --prepared "$OUT/inputs/work/prepared" --out "$OUT/workflow" --source-video "$SOURCE_VIDEO")
 stage delivery-preflight "${DELIVERY[@]}"
 
-# 2. iOS: Apple state and archive dry run.
+# 2. iOS: Apple state and archive dry run (only with --with-beta).
+if [[ $WITH_BETA -eq 1 ]]; then
 stage asc-status    python3 apps/tongxing-ios/scripts/testflight.py status
 if grep -q "\"$BUILD\"" "$OUT/asc-status.log" || grep -q "build.*$BUILD\b" "$OUT/asc-status.log"; then
   echo "Build $BUILD may already exist on App Store Connect; check $OUT/asc-status.log before --execute"
@@ -65,13 +79,21 @@ fi
 stage archive-dry   apps/tongxing-ios/scripts/archive-channel.sh --channel beta \
   --expected-commit "$COMMIT" --developer-dir "$XCODE" --output-dir "$IOS_OUT" --dry-run
 
+fi
+
 if [[ $EXECUTE -eq 0 ]]; then
-  echo "Dry runs passed. Re-run with --execute to publish to Dev and upload Beta $VERSION ($BUILD)."
+  echo "Dry runs passed. Re-run with --execute to publish the page to Dev."
   exit 0
 fi
 
 # 3. Publish the page to Dev (the origin TongxingBeta reads).
 stage delivery-execute "${DELIVERY[@]}" --execute
+
+if [[ $WITH_BETA -eq 0 ]]; then
+  echo "Page published to Dev. Timings: $OUT/timings.tsv"
+  cat "$OUT/timings.tsv"
+  exit 0
+fi
 
 # 4. Archive, export, upload, wait for Apple, distribute to Rooted.
 stage archive       apps/tongxing-ios/scripts/archive-channel.sh --channel beta \
