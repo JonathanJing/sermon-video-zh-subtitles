@@ -41,3 +41,9 @@ Apple 已处理正式 Build 57 为 `VALID`，构建 ID `de4cd7e4-5156-4b52-92b0-
 2026-10-07 08:12:32（洛杉矶），用户授权撤回一项素材审核。已通过 App Store Connect 的 Cancel Submission 撤回截图 `01-main-listening-caption-sidebar.png` 的提交 `d126e441-fd60-4549-8191-51537f716c98`，未删除素材。另一素材提交 `e959324e-f780-4099-b1f0-7a5e8cb1f9c9` 保持 `WAITING_FOR_REVIEW`。
 
 随后正式 App 1.26.16（57）独立提交 `44ecdcf7-b5c5-4e75-8249-80e8713e84ec` 成功，页面显示 1 Item Submitted，并在详情确认唯一 App Version 项目为 1.26.16（57）/ Waiting for Review。真实 API 再读回确认版本与提交均 `WAITING_FOR_REVIEW`，提交时间 `2026-10-07T15:12:32.586Z`，发布方式仍为 `AFTER_APPROVAL`。尚未获得审核批准或线上发布收据。JSON 与截图 `submitted-for-review.png` 保存在主任务工作树的忽略目录 `artifacts/tongxing-ios/production-1.26.16-preflight/`。本收据取代上节容量阻塞状态，保留该节作为历史。
+
+## 上线与后续素材审核
+
+2026-10-07 09:43（洛杉矶），用户告知正式版已批准并发布。真实 API 核对 1.26.16 为 `READY_FOR_SALE`，正式版本审核提交为 `COMPLETE`。
+
+继续用户授权的素材审核：复用草稿 `410239bb-1499-4745-acc4-15d3be8779e1`，保留原有一张 Duo 替代截图，并加入撤回的主截图、其余七张 Duo 截图及英文、韩文、西文三个 Header，共 12 项。Apple API 要求 platform 与 submitted 分开 PATCH；拆为两个请求后于 `2026-10-07T16:43:01.636Z` 成功提交，状态 `WAITING_FOR_REVIEW`。逐项读回九张 Duo 截图和三条新增 Header 均等待审核；中文 Header 的既有独立提交保持等待审核。没有将素材指派到正式产品页，没有改动已上线二进制。收据在主任务忽略目录 `artifacts/tongxing-ios/asset-library-upload-20261007/submitted-assets-readback.json` 与 `submission-response.json`。
