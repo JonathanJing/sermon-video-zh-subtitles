@@ -7,7 +7,7 @@
 - 中文、韩语、西语都改为**机器质检通过后自动发布**。人工改为发布后抽查，发现问题再发修订版。证道起止时间仍由人输入。
 - “每句最多落后 8 秒”是同传听感的目标，保留。时长控制前移到 TTS 之前，不再依靠事后批例外（例如 10/4 的 62 秒）。
 - 翻译和复核可以用同一个模型，前提是有可测量的质量证据。
-- 修复按**单句**计数：先修 2 次，不行再修 2 次，每句最多 4 次。5% 也按句子（英文 source unit）计算，一个含多句的组按它的句数计入。
+- 修复按**单句**计数：先修 2 次，不行再修 2 次，每句最多 4 次。次数记在持久的修复账本里（`scripts/machine_repair_ledger.py`），文字和音频各一本，按语言、英文源包和锚点分开，按冻结英文句（source unit）累计，不按候选或组 ID 计，所以换修订、重新分组或改组名都不会清零。每次 QC 先读账本最新位置，从中取已失败次数，写进收据的 `repairLedger`；跑完后以独占方式追加一条不可改的记录，按哈希串链。调用方不能再自己传次数（音频 `priorFailedAttempts` 直接拒绝）；同一位置的两次 QC 只有先追加的那次有效，从零重来或改低次数的收据追加不进去。签发豁免时必须给出账本根目录（`--repair-ledger-root`，即这次生产运行的持久状态目录），且所用 QC 必须是账本最新一条、整条链前后一致。删除账本文件会让链断开，签发直接失败。5% 也按句子（英文 source unit）计算，一个含多句的组按它的句数计入。
   - 音频仍不过关：这一句只显示字幕，不配音。
   - 文字仍不过关：这一句改为显示英文原文。
   - 不配音的句子超过全篇 5%：整个语言改为只发文字（`audio_unavailable`）。
@@ -56,9 +56,11 @@
 python scripts/target_audio_predicted_schedule.py fit --input rate-input.json --speech-job measured-job.json --out rate.json
 # TTS 前预测排程（groups: [{gid, sourceStart, sourceEnd, text}]，时间相对 clip；--speech-job 为本次要合成的 job）
 python scripts/target_audio_predicted_schedule.py budget --input groups.json --rate rate.json --speech-job job.json --out budget.json
-# 单句音频 QC（units: [{groupId, text, sourceSeconds, wavPath, asr: {primary, secondary?}, priorFailedAttempts?}]，
-# 每个 ASR 结果为 {similarity, audioSha256, textSha256, model, modelRevision?, settingsSha256}）
-python scripts/target_audio_auto_qc.py --input units.json --out audio-qc.json
+# 单句音频 QC（units: [{groupId, text, sourceSeconds, wavPath, asr: {primary, secondary?}, sourceUnitIds}]，
+# 每个 ASR 结果为 {similarity, audioSha256, textSha256, model, modelRevision?, settingsSha256}）；
+# 失败次数取自音频修复账本，本次结果随即追加进去
+python scripts/target_audio_auto_qc.py --input units.json --repair-ledger-root run/repair-ledger \
+  --source source-package.json --anchor anchor.json --out audio-qc.json
 # 整轨核对（读取音频包里的排程、单句音频和音轨；MP3 需要 ffmpeg 和同名 .wav 母带）
 python scripts/target_audio_auto_qc.py --track-package audio-package.json --out track-check.json
 # 精简记录导出 L2 revision brief（精简本身需要注入模型 transport，没有离线命令）
@@ -76,7 +78,10 @@ python scripts/machine_quality_waiver.py --locale ko --candidate candidate.json 
   --calibration calibration.json --out waiver.json
 # 译文豁免收据（代替人工译文审核收据）
 python scripts/machine_quality_release_basis.py text --source source.json --anchor anchor.json \
-  --candidate candidate.json --text-qc text-qc.json --calibration calibration.json --out text-waiver.json
+  --candidate candidate.json --text-qc text-qc.json --calibration calibration.json \
+  --repair-ledger-root run/repair-ledger --out text-waiver.json
+# 文字 QC 由调用方注入模型 transport，没有命令行；调用方先取 machine_repair_ledger.position，
+# 传给 target_text_auto_qc.screen(repair_position=...)，再 machine_repair_ledger.append 追加本次结果
 # 口播稿有精简组时，还要给精简绑定；这份收据只能作口播稿依据，不能当完整译文的依据
 python scripts/machine_quality_release_basis.py text ... --candidate spoken-candidate.json \
   --condensation-binding condensation-binding.json --out spoken-text-waiver.json
@@ -86,7 +91,8 @@ python scripts/prepare_target_language_speech_job.py ... --text-release-basis te
 python scripts/machine_quality_release_basis.py audio --package audio-package.json --screening screening.json \
   --audio-qc audio-qc.json --track-check track-check.json --text-waiver spoken-text-waiver.json \
   --anchor anchor.json --spoken-candidate spoken-candidate.json \
-  --calibration calibration.json --secondary-asr-model gpt-transcribe --out audio-waiver.json
+  --calibration calibration.json --secondary-asr-model gpt-transcribe --repair-ledger-root run/repair-ledger \
+  --out audio-waiver.json
 # 第 4 层：精简过的配音要带同一份精简绑定（sermon_unified_delivery 的 inputs.condensation_binding 同理）
 python scripts/build_full_video_app_release.py prepare ... --condensation-binding ko=condensation-binding.json
 ```

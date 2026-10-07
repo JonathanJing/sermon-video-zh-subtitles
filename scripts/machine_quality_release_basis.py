@@ -30,6 +30,7 @@ from jsonschema import Draft202012Validator, FormatChecker
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts import machine_quality_waiver as waiver
+from scripts import machine_repair_ledger as ledger
 
 ROOT = Path(__file__).resolve().parents[1]
 TEXT_WAIVER_SCHEMA = "sermon-target-language-machine-text-waiver-v1"
@@ -173,7 +174,7 @@ def condensation_problems(candidate: dict, condensed: list[str], binding: dict |
 
 
 def build_text_waiver(source: dict, anchor: dict, candidate: dict, text_qc: dict,
-                      calibration: dict, *, condensation_binding: dict | None = None,
+                      calibration: dict, *, repair_ledger: list[dict], condensation_binding: dict | None = None,
                       implementation: str | None = None, created_at: str | None = None) -> dict:
     """Issue a text waiver from final text QC; refuse anything not fully passing.
 
@@ -225,6 +226,12 @@ def build_text_waiver(source: dict, anchor: dict, candidate: dict, text_qc: dict
                  f"Text QC screened different frozen English/source units: {group['translationGroupId']}")
         _require(row.get("targetTextSha256") == _text_sha(group["targetText"]),
                  f"Text QC screened different text: {group['translationGroupId']}")
+        _require(row.get("sourceUnitIds") == source_ids,
+                 f"Text QC counted repairs for other source units: {group['translationGroupId']}")
+    # Failed attempts must follow from every earlier QC run, not from the caller.
+    repairs = ledger.head_problems(ledger.lineage("text", locale, json_sha256(source), json_sha256(anchor)),
+                                   repair_ledger, text_qc)
+    _require(not repairs, "Text QC is not bound to its repair ledger: " + "; ".join(repairs))
     condensed = [row["groupId"] for row in results if row.get("mode") == "spoken_condensed"]
     _require(list(text_qc.get("condensedGroupIds") or []) == condensed,
              "Text QC condensed-group list differs from its per-group results")
@@ -409,7 +416,8 @@ def source_span_problems(anchor: dict, candidate: dict, text_waiver: dict, packa
 
 
 def build_audio_waiver(package: dict, screening: dict, audio_qc: dict, text_waiver: dict,
-                       calibration: dict, *, anchor: dict, candidate: dict, track_check: dict | None = None,
+                       calibration: dict, *, anchor: dict, candidate: dict, repair_ledger: list[dict],
+                       track_check: dict | None = None,
                        secondary_asr_model: str | None = None,
                        implementation: str | None = None, created_at: str | None = None) -> dict:
     """Issue an audio waiver when every unit passed audio QC with no subtitle-only units
@@ -444,6 +452,11 @@ def build_audio_waiver(package: dict, screening: dict, audio_qc: dict, text_waiv
     # The candidate is now the bound one; its texts rescore what the primary ASR heard.
     rescored = screening_score_problems(screening, candidate)
     _require(not rescored, "ASR screening does not rescore: " + "; ".join(rescored))
+    _require([row.get("sourceUnitIds") for row in results] == [group["sourceUnitIds"] for group in candidate["groups"]],
+             "Audio QC counted repairs for other source units")
+    repairs = ledger.head_problems(ledger.lineage("audio", locale, package["englishSourcePackageJsonSha256"],
+                                                  json_sha256(anchor)), repair_ledger, audio_qc)
+    _require(not repairs, "Audio QC is not bound to its repair ledger: " + "; ".join(repairs))
     summary = calibration_summary(calibration, locale, implementation, require_audio=True)
     runtime = waiver.runtime_identity_problems(calibration, audio_qc=audio_qc)
     _require(not runtime, "Audio QC runtime differs from calibration: " + "; ".join(runtime))
@@ -582,16 +595,26 @@ def main() -> None:
                  "spoken-candidate", "calibration", "out"):
         audio.add_argument(f"--{name}", required=True, type=Path)
     audio.add_argument("--secondary-asr-model", help="Optional model-name assertion; runtime identity is derived from QC")
+    for command in (text, audio):
+        command.add_argument("--repair-ledger-root", required=True, type=Path,
+                             help="The production run's durable repair ledger root the QC runs were appended to")
     args = parser.parse_args()
     if args.command == "text":
-        receipt = build_text_waiver(_read(args.source), _read(args.anchor), _read(args.candidate),
-                                    _read(args.text_qc), _read(args.calibration),
+        source, anchor, candidate = _read(args.source), _read(args.anchor), _read(args.candidate)
+        receipt = build_text_waiver(source, anchor, candidate, _read(args.text_qc), _read(args.calibration),
+                                    repair_ledger=ledger.load(args.repair_ledger_root, ledger.lineage(
+                                        "text", candidate.get("targetLocale"), json_sha256(source),
+                                        json_sha256(anchor))),
                                     condensation_binding=_read(args.condensation_binding)
                                     if args.condensation_binding else None)
     else:
-        receipt = build_audio_waiver(_read(args.package), _read(args.screening), _read(args.audio_qc),
+        package, anchor = _read(args.package), _read(args.anchor)
+        receipt = build_audio_waiver(package, _read(args.screening), _read(args.audio_qc),
                                      _read(args.text_waiver), _read(args.calibration),
-                                     anchor=_read(args.anchor), candidate=_read(args.spoken_candidate),
+                                     anchor=anchor, candidate=_read(args.spoken_candidate),
+                                     repair_ledger=ledger.load(args.repair_ledger_root, ledger.lineage(
+                                         "audio", package["targetLocale"], package["englishSourcePackageJsonSha256"],
+                                         json_sha256(anchor))),
                                      track_check=_read(args.track_check),
                                      secondary_asr_model=args.secondary_asr_model)
     _write_once(args.out, receipt)

@@ -17,7 +17,8 @@ from scripts import machine_quality_release_basis as basis
 from scripts import sermon_unified_delivery as delivery
 from scripts import study_artifacts
 from scripts.target_audio_auto_qc import THRESHOLDS
-from tests.test_machine_quality_release_basis import IMPLEMENTATION, SECONDARY_ASR, calibration, text_qc, track_check
+from tests.test_machine_quality_release_basis import (IMPLEMENTATION, SECONDARY_ASR, calibration, issue_audio,
+                                                    issue_text, text_qc, track_check)
 from tests.test_public_study_delivery import binding, prepared, save, seal_fixture  # noqa: F401 (fixture)
 
 PAGE, LOCALE = 'synthetic-machine-page', 'ko'
@@ -54,7 +55,7 @@ def condense_first_group(source, anchor, candidate, cal):
     qc = text_qc(spoken, anchor)
     qc['results'][0]['mode'] = 'spoken_condensed'
     qc['condensedGroupIds'] = [group['translationGroupId']]
-    waiver = basis.build_text_waiver(source, anchor, spoken, qc, cal, condensation_binding=condensation,
+    waiver = issue_text(source, anchor, spoken, qc, cal, condensation_binding=condensation,
                                      created_at='2026-10-07T01:30:00+00:00')
     return spoken, waiver, condensation
 
@@ -79,7 +80,7 @@ def machine_inputs(root, *, human_full_text=None, condense=False):
     cal = (spoken_calibration() if condense
            else calibration(LOCALE, asrIdentity={'primary': ASR, 'secondary': SECONDARY_ASR},
                        asrSettingsSha256=ASR_SETTINGS))
-    full_waiver = basis.build_text_waiver(source, sf.anchor, candidate, text_qc(candidate, sf.anchor), cal,
+    full_waiver = issue_text(source, sf.anchor, candidate, text_qc(candidate, sf.anchor), cal,
                                           created_at='2026-10-07T01:00:00+00:00')
     spoken, text_waiver, condensation = ((candidate, full_waiver, None) if not condense
                                          else condense_first_group(source, sf.anchor, candidate, cal))
@@ -117,7 +118,7 @@ def machine_inputs(root, *, human_full_text=None, condense=False):
                              'audioSha256': u['audio']['sha256'], 'textSha256': u['targetTextSha256'],
                              'sourceSeconds': spans[g['sourceUnitIds'][0]], 'failedAttempts': 0, 'nextAction': 'keep',
                              'metrics': {}} for u, g in zip(package['units'], spoken['groups'])]}
-    audio_waiver = basis.build_audio_waiver(package, screening, audio_qc, text_waiver, cal,
+    audio_waiver = issue_audio(package, screening, audio_qc, text_waiver, cal,
                                             anchor=sf.anchor, candidate=spoken, track_check=track_check(package),
                                             created_at='2026-10-07T02:00:00+00:00')
     fields = {'series': 'Synthetic series', 'title': 'Synthetic machine title', 'speaker': 'Synthetic speaker',

@@ -35,6 +35,7 @@ import wave
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts import machine_quality_waiver as waiver
+from scripts import machine_repair_ledger as ledger
 from scripts.target_audio_predicted_schedule import speech_units
 
 SCHEMA = "sermon-target-audio-auto-qc-v1"
@@ -248,10 +249,17 @@ def next_action(failed_attempts: int) -> str:
     return REPAIR_LADDER[failed_attempts] if failed_attempts < MAX_REPAIR_ATTEMPTS else "subtitle_only"
 
 
-def screen(units: list[dict], locale: str, thresholds: dict = THRESHOLDS) -> dict:
+def screen(units: list[dict], locale: str, thresholds: dict = THRESHOLDS, *,
+           repair_position: dict | None = None) -> dict:
     """Screen one render attempt. Each unit: ``{groupId, text, sourceSeconds,
-    wav (bytes), asr: {primary, secondary?}, priorFailedAttempts?}``,
+    wav (bytes), asr: {primary, secondary?}, sourceUnitIds?}``,
     where each ASR opinion comes from :func:`asr_opinion`.
+
+    ``repair_position`` is the audio repair ledger head
+    (``machine_repair_ledger.position``); failed attempts count from it per
+    frozen English unit (``sourceUnitIds`` is then required), and the receipt
+    must be appended there. Without it counts start at zero and the receipt
+    cannot back a waiver.
 
     Acoustic metrics are always decoded from the unit's WAV bytes, never taken
     from the caller, so they describe the audio the result is bound to. An
@@ -261,6 +269,8 @@ def screen(units: list[dict], locale: str, thresholds: dict = THRESHOLDS) -> dic
     instead of passing on acoustics alone."""
     rows = []
     for unit in units:
+        if "priorFailedAttempts" in unit:
+            raise ValueError("Failed attempts come from the repair ledger, not from the caller")
         if not isinstance(unit.get("wav"), (bytes, bytearray)) or "metrics" in unit:
             raise ValueError("Audio QC decodes each unit's WAV bytes; supplied metrics are not accepted")
         # The source-ratio check needs the real span; the waiver compares it with the frozen anchor.
@@ -287,7 +297,7 @@ def screen(units: list[dict], locale: str, thresholds: dict = THRESHOLDS) -> dic
                                thresholds["asrMinSimilarity"])
             if asr == "fail":
                 issues.append("asr_mismatch_confirmed")
-        prior = int(row.get("priorFailedAttempts", 0))
+        prior = ledger.prior(repair_position, row.get("sourceUnitIds"))
         if issues:
             status, action = "fail", next_action(prior)
         elif asr is None:
@@ -306,11 +316,11 @@ def screen(units: list[dict], locale: str, thresholds: dict = THRESHOLDS) -> dic
                                                               ("secondary", secondary_stale)) if stale],
                         "audioSha256": audio_sha, "textSha256": text_sha,
                         "sourceSeconds": float(row["sourceSeconds"]),
-                        "failedAttempts": prior + (status == "fail"),
+                        "failedAttempts": prior + (status == "fail"), "sourceUnitIds": row.get("sourceUnitIds"),
                         "nextAction": action, "metrics": row["metrics"]})
     return {"schemaVersion": SCHEMA, "locale": locale, "thresholds": thresholds,
             "implementationSha256": waiver.implementation_sha256(),
-            "maxRepairAttempts": MAX_REPAIR_ATTEMPTS,
+            "maxRepairAttempts": MAX_REPAIR_ATTEMPTS, "repairLedger": repair_position,
             "status": "pass" if all(r["status"] == "pass" for r in results) else "requires_repair",
             "subtitleOnlyGroupIds": [r["groupId"] for r in results if r["nextAction"] == "subtitle_only"],
             "repairGroupIds": [r["groupId"] for r in results if r["nextAction"] in REPAIR_LADDER],
@@ -469,9 +479,14 @@ def main() -> None:
                         help="Audio package JSON: check its assembled track instead of screening units")
     parser.add_argument("--input", type=Path,
                         help="{locale, units:[{groupId, text, sourceSeconds, wavPath, asr:{primary, "
-                             "secondary?}, priorFailedAttempts?}]}; each ASR opinion is {similarity, "
+                             "secondary?}, sourceUnitIds}]}; each ASR opinion is {similarity, "
                              "audioSha256, textSha256, model, modelRevision?}")
     parser.add_argument("--out", required=True, type=Path)
+    parser.add_argument("--repair-ledger-root", type=Path,
+                        help="Durable repair ledger root; with --source and --anchor, counts failed attempts "
+                             "from it and appends this run (required for a waiver)")
+    parser.add_argument("--source", type=Path, help="English source package the audio was rendered from")
+    parser.add_argument("--anchor", type=Path, help="Frozen anchor manifest of that source")
     args = parser.parse_args()
     if (args.track_package is None) == (args.input is None):
         parser.error("pass exactly one of --input or --track-package")
@@ -489,7 +504,18 @@ def main() -> None:
         unit = dict(unit)
         unit["wav"] = Path(unit.pop("wavPath")).read_bytes()
         units.append(unit)
-    result = screen(units, value["locale"])
+    repair_lineage = position = None
+    if args.repair_ledger_root is not None:
+        if args.source is None or args.anchor is None:
+            parser.error("--repair-ledger-root needs --source and --anchor")
+        repair_lineage = ledger.lineage("audio", value["locale"],
+                                        waiver.json_sha256(json.loads(args.source.read_text(encoding="utf-8"))),
+                                        waiver.json_sha256(json.loads(args.anchor.read_text(encoding="utf-8"))))
+        position = ledger.position(repair_lineage, ledger.load(args.repair_ledger_root, repair_lineage))
+    result = screen(units, value["locale"], repair_position=position)
+    if repair_lineage is not None:
+        # Claim the ledger position first: a concurrent run from the same head fails here.
+        ledger.append(args.repair_ledger_root, repair_lineage, result)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     with args.out.open("x", encoding="utf-8") as stream:
         json.dump(result, stream, ensure_ascii=False, indent=2, sort_keys=True)

@@ -52,6 +52,7 @@ IMPLEMENTATION_FILES = (
     # The gates that admit candidates and issue or accept waivers on calibrated evidence.
     "scripts/machine_quality_waiver.py",
     "scripts/machine_quality_release_basis.py",
+    "scripts/machine_repair_ledger.py",
 )
 MAX_UNDUBBED_SHARE = 0.05
 MAX_SOURCE_FALLBACK_SHARE = 0.05

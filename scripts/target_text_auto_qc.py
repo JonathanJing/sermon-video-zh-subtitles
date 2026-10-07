@@ -29,6 +29,7 @@ import statistics
 import unicodedata
 
 from scripts import machine_quality_waiver as waiver
+from scripts import machine_repair_ledger as ledger
 from scripts.language_review_plugins import auto_qc_text_common as rules
 
 SCHEMA = "sermon-target-text-auto-qc-v1"
@@ -199,7 +200,7 @@ def group_problems(group: dict, locale: str, *, policy: dict | None, median: flo
 
 
 def screen(groups: list[dict], locale: str, *, policy: dict | None = None, call=None,
-           identity: dict | None = None, prior_failed_attempts: dict[str, int] | None = None) -> dict:
+           identity: dict | None = None, repair_position: dict | None = None) -> dict:
     """Screen a whole candidate. ``groups``: ``[{groupId, english, targetText, sourceUnitIds?, condensation?}]``.
 
     A release waiver requires sourceUnitIds from the frozen anchor manifest.
@@ -207,18 +208,22 @@ def screen(groups: list[dict], locale: str, *, policy: dict | None = None, call=
     Without ``call`` the back-translation result is ``not_run`` and the group
     cannot reach ``pass``: semantic evidence is required for a waiver.
     ``identity`` names the runtime behind ``call`` and is required with it.
+
+    ``repair_position`` is the text repair ledger head
+    (``machine_repair_ledger.position``); failed attempts count from it per
+    frozen English unit, and the receipt must then be appended there. Without it
+    every count starts at zero and the receipt cannot back a waiver.
     """
     if locale not in LANGUAGE_NAMES:
         raise ValueError(f"Unsupported locale: {locale}")
     if call is not None and identity is None:
         raise ValueError("A back-translation transport needs its semantic identity")
     bound = semantic_identity(identity) if call is not None else None
-    prior = prior_failed_attempts or {}
     median = candidate_length_median(groups)
     results = []
     for group in groups:
         problems, semantic = group_problems(group, locale, policy=policy, median=median, call=call)
-        failed = prior.get(group["groupId"], 0)
+        failed = ledger.prior(repair_position, group.get("sourceUnitIds"))
         if problems:
             status = "fail"
             action = TEXT_REPAIR_LADDER[failed] if failed < MAX_TEXT_REPAIR_ATTEMPTS else "source_text_fallback"
@@ -230,12 +235,14 @@ def screen(groups: list[dict], locale: str, *, policy: dict | None = None, call=
         results.append({"groupId": group["groupId"], "status": status, "problems": problems,
                         "mode": "spoken_condensed" if group.get("condensation") else "full",
                         "backTranslation": semantic, "failedAttempts": failed, "nextAction": action,
+                        "sourceUnitIds": group.get("sourceUnitIds"),
                         "targetTextSha256": hashlib.sha256(group["targetText"].encode("utf-8")).hexdigest(),
                         "englishSha256": hashlib.sha256(group["english"].encode("utf-8")).hexdigest(),
                         "sourceUnitIdsSha256": _sha(group.get("sourceUnitIds"))})
     # A waiver must use the QC code the calibration measured, not a cached older run.
     return {"schemaVersion": SCHEMA, "locale": locale, "maxRepairAttempts": MAX_TEXT_REPAIR_ATTEMPTS,
             "implementationSha256": waiver.implementation_sha256(),
+            "repairLedger": repair_position,
             "semanticIdentity": None if bound is None else bound["identity"],
             "semanticIdentitySha256": None if bound is None else bound["sha256"],
             # A waiver compares this with the candidate's policy: names are only checked against it.

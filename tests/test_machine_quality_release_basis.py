@@ -7,6 +7,7 @@ from unittest.mock import patch
 
 from scripts import machine_quality_release_basis as basis
 from scripts import machine_quality_waiver as waiver
+from scripts import machine_repair_ledger as ledger
 from scripts import screen_target_language_audio_units as audio_screen
 from scripts import target_text_auto_qc as text_screen
 from scripts.target_audio_auto_qc import THRESHOLDS, TRACK_ENVELOPE
@@ -69,6 +70,33 @@ def text_qc(candidate, anchor):
                         for group in candidate["groups"]]}
 
 
+def bound_ledger(kind, qc, locale, source_sha, anchor_sha, groups):
+    """A one-run repair ledger whose head is ``qc``, screened from an empty ledger."""
+    lineage = ledger.lineage(kind, locale, source_sha, anchor_sha)
+    if qc.get("repairLedger") is None:  # Screened without a ledger; these tests bind it after the fact.
+        qc["repairLedger"] = ledger.position(lineage, [])
+    unit_ids = {group["translationGroupId"]: group.get("sourceUnitIds") for group in groups}
+    for row in qc.get("results") or []:
+        row.setdefault("sourceUnitIds", unit_ids.get(row.get("groupId")))
+    return [{"schemaVersion": ledger.SCHEMA, "lineage": lineage, "lineageSha256": ledger.json_sha256(lineage),
+             "sequence": 1, "previousEntryJsonSha256": None, "qcJsonSha256": ledger.json_sha256(qc),
+             "failedSourceUnitIds": [], "failedAttempts": {}}]
+
+
+def issue_text(source, anchor, candidate, qc, cal, **kwargs):
+    kwargs.setdefault("repair_ledger", bound_ledger("text", qc, candidate.get("targetLocale"),
+                                                    basis.json_sha256(source), basis.json_sha256(anchor),
+                                                    candidate.get("groups") or []))
+    return basis.build_text_waiver(source, anchor, candidate, qc, cal, **kwargs)
+
+
+def issue_audio(package, screening, qc, text, cal, **kwargs):
+    kwargs.setdefault("repair_ledger", bound_ledger("audio", qc, package["targetLocale"],
+                                                    package["englishSourcePackageJsonSha256"],
+                                                    basis.json_sha256(kwargs["anchor"]), kwargs["candidate"]["groups"]))
+    return basis.build_audio_waiver(package, screening, qc, text, cal, **kwargs)
+
+
 class TextWaiverTests(unittest.TestCase):
     group = staticmethod(speech_fixture.TargetLanguageSpeechJobTests.group)
     validate_schema = speech_fixture.TargetLanguageSpeechJobTests.validate_schema
@@ -80,7 +108,7 @@ class TextWaiverTests(unittest.TestCase):
         self.candidate["humanReview"] = {"translation": "pending", "reviewer": None,
                                          "reviewedAt": None, "reviewedGroupIds": []}
         write_json(self.candidate_path, self.candidate)
-        self.waiver = basis.build_text_waiver(self.source_package, self.anchor, self.candidate,
+        self.waiver = issue_text(self.source_package, self.anchor, self.candidate,
                                               text_qc(self.candidate, self.anchor), calibration(),
                                               created_at="2026-10-07T01:00:00+00:00")
         self.waiver_path = self.root / "text-waiver.json"
@@ -124,6 +152,24 @@ class TextWaiverTests(unittest.TestCase):
         self.assertEqual(job["renderContract"]["textPolicy"], speech.HUMAN_TEXT_POLICY)
         self.assertEqual(set(job["inputs"]["humanReviewReceipt"]), {"path", "sha256", "jsonSha256"})
 
+    def test_waiver_needs_qc_at_the_head_of_its_repair_ledger(self):
+        qc = text_qc(self.candidate, self.anchor)
+        source_sha, anchor_sha = basis.json_sha256(self.source_package), basis.json_sha256(self.anchor)
+        entries = bound_ledger("text", qc, "ko", source_sha, anchor_sha, self.candidate["groups"])
+        # Not appended at all, or appended for another locale.
+        for kind, locale, value in (("text", "ko", []), ("audio", "ko", entries), ("text", "es", entries)):
+            with self.subTest(kind=kind, locale=locale), self.assertRaisesRegex(ValueError, "repair ledger"):
+                basis.build_text_waiver(self.source_package, self.anchor, self.candidate, qc, calibration(),
+                                        repair_ledger=value if kind == "text" and locale == "ko" else
+                                        bound_ledger(kind, copy.deepcopy(qc), locale, source_sha, anchor_sha,
+                                                     self.candidate["groups"]))
+        # A later run that was never appended is not the head.
+        later = copy.deepcopy(qc)
+        later["repairLedger"] = ledger.position(entries[0]["lineage"], entries)
+        with self.assertRaisesRegex(ValueError, "not the head"):
+            basis.build_text_waiver(self.source_package, self.anchor, self.candidate, later, calibration(),
+                                    repair_ledger=entries)
+
     def test_waiver_needs_every_semantic_check_clean(self):
         self.assertTrue(basis.machine_pending_candidate(self.candidate))
         for change in ({"checks": dict(self.candidate["groups"][0]["semanticReview"]["checks"],
@@ -134,7 +180,7 @@ class TextWaiverTests(unittest.TestCase):
             flagged["groups"][0]["semanticReview"].update(change)
             self.assertFalse(basis.machine_pending_candidate(flagged))
             with self.assertRaises(ValueError):
-                basis.build_text_waiver(self.source_package, self.anchor, flagged,
+                issue_text(self.source_package, self.anchor, flagged,
                                         text_qc(flagged, self.anchor), calibration())
 
     def test_waiver_cannot_release_changed_or_human_decided_candidate(self):
@@ -169,19 +215,19 @@ class TextWaiverTests(unittest.TestCase):
         other_text["results"][0]["targetTextSha256"] = sha("unrelated")
         for qc, message in ((failing, "must pass"), (unscreened, "must pass"), (other_text, "different text")):
             with self.assertRaisesRegex(ValueError, message):
-                basis.build_text_waiver(self.source_package, self.anchor, self.candidate, qc, calibration())
+                issue_text(self.source_package, self.anchor, self.candidate, qc, calibration())
         for cal, message in ((calibration(implementationSha256="0" * 64), "changed since calibration"),
                              (calibration(semanticChecksIncluded=False), "back-translation"),
                              (calibration(cleanFalsePositiveRate=0.2), "false-positive"),
                              (calibration(semanticIdentitySha256="0" * 64), "runtime differs")):
             with self.assertRaisesRegex(ValueError, message):
-                basis.build_text_waiver(self.source_package, self.anchor, self.candidate,
+                issue_text(self.source_package, self.anchor, self.candidate,
                                         text_qc(self.candidate, self.anchor), cal)
         # A cached text QC from older QC code cannot ride on a newer calibration.
         stale = text_qc(self.candidate, self.anchor)
         stale["implementationSha256"] = "0" * 64
         with self.assertRaisesRegex(ValueError, "implementation other than the calibrated one"):
-            basis.build_text_waiver(self.source_package, self.anchor, self.candidate, stale, calibration())
+            issue_text(self.source_package, self.anchor, self.candidate, stale, calibration())
 
     def test_anchor_must_be_the_one_the_source_package_binds(self):
         # A shorter fabricated anchor, with a candidate built on it, cannot pass as this source's.
@@ -190,7 +236,7 @@ class TextWaiverTests(unittest.TestCase):
         candidate = copy.deepcopy(self.candidate)
         candidate["anchorManifestSha256"] = basis.json_sha256(anchor)
         with self.assertRaisesRegex(ValueError, "the English source package binds"):
-            basis.build_text_waiver(self.source_package, anchor, candidate, text_qc(candidate, self.anchor),
+            issue_text(self.source_package, anchor, candidate, text_qc(candidate, self.anchor),
                                     calibration())
 
     def test_text_qc_binds_actual_frozen_english_and_source_units(self):
@@ -211,7 +257,7 @@ class TextWaiverTests(unittest.TestCase):
         clean = screen(groups)
         self.assertEqual(clean["status"], "pass")
         cal = calibration(semanticIdentitySha256=clean["semanticIdentitySha256"])
-        basis.build_text_waiver(self.source_package, self.anchor, self.candidate, clean, cal)
+        issue_text(self.source_package, self.anchor, self.candidate, clean, cal)
         stale = copy.deepcopy(groups)
         stale[0]["english"] = "You may be afraid."
         wrong_units = copy.deepcopy(groups)
@@ -219,18 +265,18 @@ class TextWaiverTests(unittest.TestCase):
         for qc in (screen(stale), screen(wrong_units)):
             self.assertEqual(qc["status"], "pass")
             with self.assertRaisesRegex(ValueError, "different frozen English/source units"):
-                basis.build_text_waiver(self.source_package, self.anchor, self.candidate, qc, cal)
+                issue_text(self.source_package, self.anchor, self.candidate, qc, cal)
         # QC without the candidate's policy skipped the terminology checks.
         for policy in (None, {**self.policy, "terminology": {"properNames": [], "seriesNames": []}}):
             unbound = text_screen.screen(groups, "ko", policy=policy, call=call, identity=identity)
             self.assertEqual(unbound["status"], "pass")
             with self.assertRaisesRegex(ValueError, "candidate's translation policy"):
-                basis.build_text_waiver(self.source_package, self.anchor, self.candidate, unbound, cal)
+                issue_text(self.source_package, self.anchor, self.candidate, unbound, cal)
         for key in ("englishSha256", "sourceUnitIdsSha256"):
             missing = copy.deepcopy(clean)
             del missing["results"][0][key]
             with self.assertRaisesRegex(ValueError, "different frozen English/source units"):
-                basis.build_text_waiver(self.source_package, self.anchor, self.candidate, missing, cal)
+                issue_text(self.source_package, self.anchor, self.candidate, missing, cal)
 
     def test_waiver_requires_every_frozen_source_unit(self):
         # Dropping the last group leaves no row to screen, so the waiver checks coverage itself.
@@ -238,7 +284,7 @@ class TextWaiverTests(unittest.TestCase):
         shortened["groups"].pop()
         shortened["modelReview"]["reviewedGroupIds"].pop()
         with self.assertRaisesRegex(ValueError, "cover every frozen source unit"):
-            basis.build_text_waiver(self.source_package, self.anchor, shortened,
+            issue_text(self.source_package, self.anchor, shortened,
                                     text_qc(shortened, self.anchor), calibration())
 
     def test_condensed_spoken_groups_need_their_binding_and_spoken_calibration(self):
@@ -259,7 +305,7 @@ class TextWaiverTests(unittest.TestCase):
                              detected=base["detected"] + added)
 
         def build(qc=qc, cal=spoken, binding=binding):
-            return basis.build_text_waiver(self.source_package, self.anchor, self.candidate, qc, cal,
+            return issue_text(self.source_package, self.anchor, self.candidate, qc, cal,
                                            condensation_binding=binding, created_at="2026-10-07T01:00:00+00:00")
         receipt = build()
         self.assertEqual((receipt["condensedGroupIds"], receipt["condensationBindingJsonSha256"]),
@@ -305,7 +351,7 @@ class TextWaiverTests(unittest.TestCase):
         cal = calibration(kinds=kinds, detected=detected,
                           overallDetectionRate=round(detected / base["trials"], 6))
         self.assertLess(cal["overallDetectionRate"], waiver.CALIBRATION_MINIMUMS["overallDetectionRate"])
-        receipt = basis.build_text_waiver(self.source_package, self.anchor, self.candidate,
+        receipt = issue_text(self.source_package, self.anchor, self.candidate,
                                           text_qc(self.candidate, self.anchor), cal,
                                           created_at="2026-10-07T01:00:00+00:00")
         self.assertEqual(receipt["calibration"]["overallDetectionRate"], 1.0)
@@ -423,7 +469,7 @@ class AudioWaiverTests(unittest.TestCase):
         anchor, candidate = audio_sources()
         kwargs.setdefault("anchor", anchor)
         kwargs.setdefault("candidate", candidate)
-        return basis.build_audio_waiver(package, screening, qc, text, calibration(),
+        return issue_audio(package, screening, qc, text, calibration(),
                                         created_at="2026-10-07T02:00:00+00:00", **kwargs)
 
     def test_waiver_needs_a_passing_track_check_of_this_package(self):
@@ -543,7 +589,7 @@ class AudioWaiverTests(unittest.TestCase):
         text_only["kinds"] = {kind: row for kind, row in text_only["kinds"].items() if kind.startswith("text.")}
         text_only["trials"] = text_only["detected"] = sum(row["trials"] for row in text_only["kinds"].values())
         with self.assertRaisesRegex(ValueError, "audio checks"):
-            basis.build_audio_waiver(package, screening, qc, text, text_only, track_check=track_check(package),
+            issue_audio(package, screening, qc, text, text_only, track_check=track_check(package),
                                      anchor=audio_sources()[0], candidate=audio_sources()[1],
                                      created_at="2026-10-07T02:00:00+00:00")
         # The same calibration is enough for the text waiver.
@@ -571,7 +617,7 @@ class AudioWaiverTests(unittest.TestCase):
         identity = {"model": "gpt-transcribe", "modelRevision": "release-r2"}
         qc["results"][1]["asrSecondaryModel"] = identity
         cal = calibration(asrIdentity={"primary": PRIMARY_ASR, "secondary": identity})
-        receipt = basis.build_audio_waiver(package, screening, qc, text, cal,
+        receipt = issue_audio(package, screening, qc, text, cal,
                                           track_check=track_check(package),
                                           anchor=audio_sources()[0], candidate=audio_sources()[1])
         self.assertEqual(receipt["secondaryAsrModel"], identity)

@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Bind analytics locales to verified published assets; retain prior API sources."""
+"""Bind analytics locales to verified published assets; retain prior API sources.
+
+Reads the v4 multilingual catalog when published (machine-checked locales included),
+otherwise its human-only v3 projection."""
 import argparse
 import copy
 import hashlib
@@ -9,6 +12,15 @@ import re
 
 HASH = re.compile(r'[0-9a-f]{64}\Z')
 LOCALES = {'zh-Hans', 'en', 'ko', 'es', 'vi'}
+PLAYABLE = {'human_reviewed', 'machine_checked'}
+RELEASES = {'sermon-target-language-release-package-v2', 'sermon-target-language-release-package-v4'}
+CLOCKED_CONTENT = {'sermon-full-video-text-content-v2', 'sermon-full-video-text-content-v3'}
+
+
+def track_duration(content):
+    """The duration the clients send for this track: the dub's own clock when it has one."""
+    separate = content.get('schemaVersion') in CLOCKED_CONTENT or 'audioDurationSeconds' in content
+    return content['audioDurationSeconds'] if separate else content['durationSeconds']
 
 
 def digest(path):
@@ -81,20 +93,28 @@ def build(public, previous_catalog, legacy_locale):
             asset(public, track['audioUrl'], track['sha256'])
             add(source(week.get('date', week['id']), track['id'], track['sha256'],
                        track['durationSeconds'], track['cues'], week['id'], legacy_locale))
-    multilingual = read(asset(public, '/multilingual-v3.json'))
-    if multilingual.get('schemaVersion') != 'sermon-multilingual-catalog-v3':
-        raise ValueError('Expected multilingual catalog v3')
+    # v4 lists every published locale, machine-checked ones included; v3 is its human-only projection.
+    v4 = public / 'multilingual-v4.json'
+    multilingual = read(asset(public, '/multilingual-v4.json' if v4.exists() else '/multilingual-v3.json'))
+    if multilingual.get('schemaVersion') not in {'sermon-multilingual-catalog-v3', 'sermon-multilingual-catalog-v4'}:
+        raise ValueError('Expected multilingual catalog v3 or v4')
     for page in multilingual['pages']:
         for locale, target in page['targets'].items():
-            if target.get('audioStatus') != 'human_reviewed':
+            if target.get('audioStatus') not in PLAYABLE:
                 continue
             release = read(asset(public, target['releasePackageUrl'], target['releasePackageJsonSha256']))
-            if (release.get('schemaVersion') != 'sermon-target-language-release-package-v2'
-                    or release.get('status') != 'published_http_verified'
+            machine = release.get('schemaVersion') == 'sermon-target-language-release-package-v4'
+            if (release.get('schemaVersion') not in RELEASES or release.get('status') != 'published_http_verified'
                     or release.get('pageId') != page['id'] or release.get('audioLocale') != locale
                     or release.get('targetLocale') != locale or release.get('contentLocale') != locale
-                    or release.get('audioStatus') != 'human_reviewed' or release.get('contentStatus') != 'human_reviewed'):
-                raise ValueError('Release is not a same-locale published reviewed package')
+                    or release.get('audioStatus') != target['audioStatus']
+                    or release.get('contentStatus') != target.get('contentStatus', 'human_reviewed')
+                    or (not machine and (release['audioStatus'], release['contentStatus'])
+                        != ('human_reviewed', 'human_reviewed'))
+                    or (machine and (multilingual['schemaVersion'] != 'sermon-multilingual-catalog-v4'
+                                     or not target['releasePackageUrl'].startswith('/releases-v4/')
+                                     or release.get('englishSourcePackageJsonSha256') != page['sourceIdentitySha256']))):
+                raise ValueError('Release is not a same-locale published package of its catalog status')
             assets = {a['role']: a for a in release['assets']}
             if len(assets) != len(release['assets']):
                 raise ValueError('Duplicate release asset')
@@ -102,13 +122,14 @@ def build(public, previous_catalog, legacy_locale):
                         for role in ('content', 'captions', 'audio')}
             content, captions = read(verified['content']), read(verified['captions'])
             if (content.get('pageId') != page['id'] or content.get('targetLocale') != locale
-                    or content.get('status') != 'human_reviewed'
+                    or content.get('status') != release['contentStatus']
                     or content.get('englishSourcePackageJsonSha256') != page['sourceIdentitySha256']
                     or content.get('targetLanguageCandidateJsonSha256') != release['targetLanguageCandidateJsonSha256']):
                 raise ValueError('Published content source mismatch')
             sha = assets['audio']['sha256']
             add(source(page['date'], f"{page['id']}-{locale}-{sha[:12]}", sha,
-                       content['durationSeconds'], captions['cues'], page['id'], locale))
+                       track_duration(content) if machine else content['durationSeconds'],
+                       captions['cues'], page['id'], locale))
     catalog['sources'] = list(indexed.values())
     catalog['weekIds'] = sorted(set(catalog.get('weekIds', [])) | {s['week'] for s in indexed.values()})
     return catalog

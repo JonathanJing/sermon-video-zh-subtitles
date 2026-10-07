@@ -12,6 +12,7 @@ import wave
 
 from scripts import auto_qc_seeded_errors as seeded
 from scripts import machine_quality_waiver as waiver
+from scripts import machine_repair_ledger as ledger
 from scripts import produce_target_language_candidate as producer
 from scripts import target_audio_auto_qc as audio_qc
 from scripts import target_audio_predicted_schedule as predicted
@@ -233,9 +234,17 @@ class TextQcTests(unittest.TestCase):
         row = first["results"][3]
         self.assertEqual((row["status"], row["nextAction"], row["failedAttempts"]),
                          ("fail", "revise_translation", 1))
-        last = text_qc.screen(groups, "ko", policy=fixtures.policy("ko"), call=judge,
-                              identity=fixtures.SEMANTIC_IDENTITY, prior_failed_attempts={"g004": 4})
-        self.assertEqual(last["sourceTextFallbackGroupIds"], ["g004"])
+        # The count lives in the repair ledger: four failed runs exhaust the ladder.
+        groups = [{**group, "sourceUnitIds": [f"u{index}"]} for index, group in enumerate(groups, 1)]
+        lineage = ledger.lineage("text", "ko", "1" * 64, "2" * 64)
+        with tempfile.TemporaryDirectory() as root:
+            for attempt in range(1, 6):
+                position = ledger.position(lineage, ledger.load(root, lineage))
+                run = text_qc.screen(groups, "ko", policy=fixtures.policy("ko"), call=judge,
+                                     identity=fixtures.SEMANTIC_IDENTITY, repair_position=position)
+                ledger.append(root, lineage, run)
+                self.assertEqual(run["results"][3]["failedAttempts"], attempt)
+            self.assertEqual(run["sourceTextFallbackGroupIds"], ["g004"])
 
     def test_judge_cannot_pass_a_major_issue(self):
         verdict = text_qc.validate_comparison({"status": "pass", "issues": [
@@ -266,9 +275,15 @@ class AudioQcTests(unittest.TestCase):
         self.assertEqual([audio_qc.next_action(n) for n in range(5)],
                          ["resynthesize_new_seed", "resynthesize_new_seed",
                           "revise_spoken_text", "revise_spoken_text", "subtitle_only"])
-        units = fixtures.units("es")
-        units[2] = {**units[2], "wav": audio_qc.encode_pcm16([0.0] * 16000, 8000), "priorFailedAttempts": 4}
-        result = audio_qc.screen(units, "es")
+        units = [{**unit, "sourceUnitIds": [f"u{index}"]} for index, unit in enumerate(fixtures.units("es"), 1)]
+        units[2] = {**units[2], "wav": audio_qc.encode_pcm16([0.0] * 16000, 8000)}
+        # The count comes from the audio repair ledger: the fifth failed render is subtitle-only.
+        lineage = ledger.lineage("audio", "es", "1" * 64, "2" * 64)
+        with tempfile.TemporaryDirectory() as root:
+            for _ in range(5):
+                result = audio_qc.screen(units, "es",
+                                         repair_position=ledger.position(lineage, ledger.load(root, lineage)))
+                ledger.append(root, lineage, result)
         self.assertEqual(result["subtitleOnlyGroupIds"], ["g003"])
         self.assertEqual(result["repairGroupIds"], [])
 
