@@ -74,6 +74,22 @@ class FormalAudioScreenTests(unittest.TestCase):
         self.assertEqual(receipt["reviewedGroupIds"], ["g0", "g1"])
         self.assertEqual(receipt["trackSha256"], self.manifest["track"]["sha256"])
 
+    def test_receipt_v2_records_the_asr_runtime_behind_every_score(self):
+        import json
+        from jsonschema import Draft202012Validator
+        from scripts.target_audio_auto_qc import screening_asr_settings
+        receipt, _ = self.run_screen([unit["text"] for unit in self.job["units"]])
+        self.assertEqual(receipt["schemaVersion"], "sermon-target-language-audio-screening-v2")
+        schema = json.loads((Path(__file__).resolve().parents[1] / "schemas"
+                             / "sermon-target-language-audio-screening-v2.schema.json").read_text())
+        self.assertEqual(list(Draft202012Validator(schema).iter_errors(receipt)), [])
+        settings = receipt["asrSettings"]
+        self.assertEqual((settings["model"], settings["modelRevision"], settings["batchSize"],
+                          settings["minSimilarity"]), ("fixture-asr", "fixture-v1", 1, 0.88))
+        self.assertEqual(settings["implementationSha256"], subject.file_sha(Path(subject.__file__)))
+        self.assertEqual(receipt["asrSettingsSha256"], identity.json_sha256(settings))
+        self.assertEqual(screening_asr_settings(receipt), settings)
+
     def test_missing_word_stays_in_review_queue(self):
         receipt, screened = self.run_screen(["세 가지", "처음 사랑을 버렸느니라"])
         self.assertEqual(receipt["status"], "requires_review")

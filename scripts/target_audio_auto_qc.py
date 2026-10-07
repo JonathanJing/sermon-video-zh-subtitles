@@ -203,10 +203,24 @@ def asr_opinion(similarity: float, *, audio: bytes, text: str, model: str, setti
 
 
 def screening_asr_settings(screening: dict) -> dict:
-    """The primary ASR runtime a full-package screening receipt records."""
-    return {"source": screening.get("schemaVersion"), "model": screening.get("model"),
-            "modelRevision": screening.get("modelRevision"), "minSimilarity": screening.get("minSimilarity"),
-            "transcriptionBatchSize": screening.get("transcriptionBatchSize", 1)}
+    """The primary ASR runtime a full-package screening receipt records.
+
+    Only a v2 receipt records its runtime (batching, decoding, device, inference
+    runtime, screener implementation, scoring); a v1 receipt cannot back a
+    machine waiver. The recorded settings must hash to the receipt's
+    ``asrSettingsSha256`` and agree with its top-level model and threshold.
+    """
+    if not isinstance(screening, dict) or screening.get("schemaVersion") != "sermon-target-language-audio-screening-v2":
+        raise ValueError("ASR screening does not record its runtime settings; rescreen with screening v2")
+    settings = screening.get("asrSettings")
+    if (not isinstance(settings, dict) or not settings
+            or screening.get("asrSettingsSha256") != waiver.json_sha256(settings)
+            or settings.get("model") != screening.get("model")
+            or settings.get("modelRevision") != screening.get("modelRevision")
+            or settings.get("minSimilarity") != screening.get("minSimilarity")
+            or settings.get("batchSize") != screening.get("transcriptionBatchSize", 1)):
+        raise ValueError("ASR screening runtime settings disagree with the receipt")
+    return settings
 
 
 def _model(opinion: dict | None) -> dict | None:

@@ -19,6 +19,7 @@ ENGLISH = [
     "We were made to walk with God, not to perform for him.",
     "Two thousand years later, these words still speak to us.",
     "Let us pray together and ask him to wake us up.",
+    "She had twelve sons and forty daughters.",
 ]
 TARGET = {
     "ko": [
@@ -34,6 +35,7 @@ TARGET = {
         "우리는 하나님 앞에서 연기하기 위해서가 아니라 하나님과 동행하도록 지음 받았습니다.",
         "이천 년이 지난 지금도 이 말씀은 우리에게 말하고 있습니다.",
         "함께 기도하며 우리를 깨워 달라고 구합시다.",
+        "그녀에게는 아들 열두 명과 딸 마흔 명이 있었습니다.",
     ],
     "es": [
         "Acompáñenme a Apocalipsis 3:4, donde Jesús habla a la iglesia de Sardis.",
@@ -48,6 +50,7 @@ TARGET = {
         "Fuimos creados para caminar con Dios, no para actuar delante de él.",
         "Dos mil años después, estas palabras todavía nos hablan.",
         "Oremos juntos y pidámosle que nos despierte.",
+        "Ella tenía doce hijos y cuarenta hijas.",
     ],
     "zh-Hans": [
         "请和我一起翻到启示录3章4节，耶稣在这里对撒狄的教会说话。",
@@ -62,6 +65,7 @@ TARGET = {
         "我们被造是为了与神同行，而不是在祂面前表演。",
         "两千年后，这些话仍然在对我们说话。",
         "让我们一起祷告，求祂唤醒我们。",
+        "她有十二个儿子和四十个女儿。",
     ],
 }
 NAMES = {"ko": {"Jesus": "예수", "Sardis": "사데"},

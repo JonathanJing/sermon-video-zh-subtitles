@@ -366,8 +366,7 @@ def prepare(args: argparse.Namespace) -> dict:
             require(not audio_waived or (spoken_basis["kind"] == "machine_quality_waiver"
                                          and audio_receipt["textWaiverJsonSha256"] == spoken_basis["receiptSha256"]),
                     f"{locale}: audio waiver does not bind the spoken script's text waiver")
-            screening = stage.read_package(maps["audio_screening_receipt"][locale],
-                                           "sermon-target-language-audio-screening-v1.schema.json")
+            screening = stage.read_audio_screening(maps["audio_screening_receipt"][locale])
             stage.validate_audio_screening_review(audio, audio_receipt, screening)
             bases = {"fullText": full_basis, "spokenText": spoken_basis,
                      "audio": {"kind": "machine_quality_waiver" if audio_waived else "human_review",

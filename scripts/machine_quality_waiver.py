@@ -49,6 +49,9 @@ IMPLEMENTATION_FILES = (
     "scripts/auto_qc_seeded_errors.py",
     # L4 accepts a condensed script on its hash-bound binding without rerunning these checks.
     "scripts/spoken_condensation.py",
+    # The gates that admit candidates and issue or accept waivers on calibrated evidence.
+    "scripts/machine_quality_waiver.py",
+    "scripts/machine_quality_release_basis.py",
 )
 MAX_UNDUBBED_SHARE = 0.05
 MAX_SOURCE_FALLBACK_SHARE = 0.05
@@ -56,7 +59,8 @@ CALIBRATION_MINIMUMS = {"overallDetectionRate": 0.95, "perKindDetectionRate": 0.
                         "maxCleanFalsePositiveRate": 0.1}
 # Every seeded error kind must be tried and caught; a kind with no trial was never tested.
 TEXT_KINDS = ("wrong_number", "added_reference", "wrong_book", "english_leak", "placeholder",
-              "dropped_name", "dropped_half", "semantic_negation", "added_number", "wrong_ordinal")
+              "dropped_name", "dropped_half", "semantic_negation", "added_number", "wrong_ordinal",
+              "swapped_quantity")
 AUDIO_KINDS = ("stretched", "silent", "clipped", "truncated", "wrong_sentence")
 # Seeded errors in condensed spoken groups: required when a QC run judged any.
 SPOKEN_KINDS = ("swapped_content", "added_content", "flipped_negation", "dropped_claim")

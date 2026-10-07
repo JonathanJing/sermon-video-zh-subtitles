@@ -39,6 +39,9 @@ CONDENSATION_BINDING_SCHEMA = "sermon-spoken-condensation-binding-v1"
 REVIEW_KIND = "machine_quality_waiver"
 LOCALES = ("zh-Hans", "ko", "es")
 MACHINE_PENDING_CANDIDATE = "machine_review_pass_human_review_pending"
+SEMANTIC_CHECKS = ("completeMeaning", "negationsNumbersNames", "quotationAttribution", "noAddedMeaning")
+# v1 screenings stay readable; only v2 records the ASR runtime a waiver binds.
+AUDIO_SCREENING_VERSIONS = ("sermon-target-language-audio-screening-v1", "sermon-target-language-audio-screening-v2")
 # Spans are rounded by their producers; a millisecond is far below any QC threshold.
 SOURCE_SPAN_TOLERANCE_SECONDS = 0.001
 RULES = {"maxRepairAttemptsPerSentence": 4, "calibration": waiver.CALIBRATION_MINIMUMS}
@@ -120,6 +123,15 @@ def _validate_summary(receipt: dict) -> None:
              "Waiver disclosure differs from the required text")
 
 
+def _semantic_pass(review) -> bool:
+    """Every semantic check passed with no issue or uncertainty left, as the
+    speech-job handoff requires (its check list, copied here to avoid an import cycle)."""
+    checks = (review or {}).get("checks") or {}
+    return (isinstance(review, dict) and review.get("status") == "pass"
+            and set(checks) == set(SEMANTIC_CHECKS) and all(checks[name] == "pass" for name in SEMANTIC_CHECKS)
+            and not review.get("issues") and not review.get("uncertainty"))
+
+
 def machine_pending_candidate(candidate: dict) -> bool:
     """A model-reviewed candidate that no human has approved or rejected."""
     groups = candidate.get("groups") or []
@@ -131,7 +143,7 @@ def machine_pending_candidate(candidate: dict) -> bool:
             and (candidate.get("modelReview") or {}).get("status") == "pass"
             and (candidate.get("modelReview") or {}).get("reviewedGroupIds") == group_ids
             and human.get("translation") == "pending"
-            and all(group["semanticReview"]["status"] == "pass"
+            and all(_semantic_pass(group.get("semanticReview"))
                     and group["languageReview"]["status"] == "pass"
                     and all(check["status"] == "pass" for check in group["languageReview"]["checks"])
                     for group in groups))
@@ -277,7 +289,7 @@ def screening_queue(package: dict, screening: dict) -> list[str]:
     group_ids = [row["textGroupId"] for row in package["units"]]
     status = package["machineScreening"]["status"]
     _require(status in {"pass", "requires_review"}
-             and screening.get("schemaVersion") == "sermon-target-language-audio-screening-v1"
+             and screening.get("schemaVersion") in AUDIO_SCREENING_VERSIONS
              and screening["status"] == status
              and screening["model"] == package["machineScreening"]["model"]
              and screening["targetLocale"] == package["targetLocale"]
@@ -294,10 +306,36 @@ def screening_queue(package: dict, screening: dict) -> list[str]:
                  and result["targetTextSha256"] == unit["targetTextSha256"]
                  and result["audioSha256"] == unit["audio"]["sha256"],
                  "ASR result differs from audio unit")
+        # A unit below the threshold, or with recorded differences at full score, cannot pass.
+        _require(result["status"] == "requires_review"
+                 or (result["similarity"] >= screening["minSimilarity"]
+                     and (result["similarity"] < 1) == bool(result["differences"])),
+                 f"ASR result passes against its own similarity: {result['textGroupId']}")
         if result["status"] == "requires_review":
             queue.append(result["textGroupId"])
     _require((status == "pass") == (not queue), "ASR screening status differs from its results")
     return queue
+
+
+def screening_score_problems(screening: dict, candidate: dict) -> list[str]:
+    """Rescore each ASR result against the candidate text, as the screener does."""
+    # Lazy, as in _asr_threshold: the screener imports the speech-job module.
+    from scripts.screen_target_language_audio_units import score
+    locale = screening["targetLocale"]
+    groups = candidate.get("groups") or []
+    if [group.get("translationGroupId") for group in groups] != [row["textGroupId"] for row in screening["results"]]:
+        return ["screening results differ from the spoken candidate groups"]
+    problems = []
+    for group, result in zip(groups, screening["results"]):
+        text = group.get("targetText")
+        if not isinstance(text, str) or hashlib.sha256(text.encode("utf-8")).hexdigest() != result["targetTextSha256"]:
+            problems.append(f"{result['textGroupId']}: screened text differs from the candidate")
+            continue
+        similarity, differences, passed = score(text, result["recognized"], locale, screening["minSimilarity"])
+        if (result["similarity"] != similarity or result["differences"] != differences
+                or (result["status"] == "pass") != passed):
+            problems.append(f"{result['textGroupId']}: recorded ASR score or status differs from a rescore")
+    return problems
 
 
 def _machine_screened(package: dict) -> bool:
@@ -403,6 +441,9 @@ def build_audio_waiver(package: dict, screening: dict, audio_qc: dict, text_waiv
     # The source-ratio check is only as good as the span the QC caller supplied.
     spans = source_span_problems(anchor, candidate, text_waiver, package, results)
     _require(not spans, "Audio QC source spans are not the frozen ones: " + "; ".join(spans))
+    # The candidate is now the bound one; its texts rescore what the primary ASR heard.
+    rescored = screening_score_problems(screening, candidate)
+    _require(not rescored, "ASR screening does not rescore: " + "; ".join(rescored))
     summary = calibration_summary(calibration, locale, implementation, require_audio=True)
     runtime = waiver.runtime_identity_problems(calibration, audio_qc=audio_qc)
     _require(not runtime, "Audio QC runtime differs from calibration: " + "; ".join(runtime))

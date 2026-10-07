@@ -32,7 +32,10 @@ except ImportError:
     import dev_audio_test_receipts as dev_receipts
 
 
-SCHEMA = "sermon-target-language-audio-screening-v1"
+# v2 records the ASR runtime settings behind every score (v1 receipts stay readable).
+SCHEMA = "sermon-target-language-audio-screening-v2"
+# How a recognized text is scored against the expected text; part of the recorded runtime.
+SCORING = "token-sequence-ratio-v1; short units (<4 tokens) must match exactly"
 MODEL = "Qwen/Qwen3-ASR-0.6B"
 BATCH_SIZES = (1, 2, 4, 8)
 
@@ -75,6 +78,22 @@ def tokens(value: str, locale: str) -> list[str]:
     if locale in {"zh-Hans", "ko"}:
         return [char for char in folded if char.isalnum()]
     return re.findall(r"[^\W_]+", folded, flags=re.UNICODE)
+
+
+def score(expected: str, recognized: str, locale: str, min_similarity: float) -> tuple[float, list[dict], bool]:
+    """``(similarity, differences, passed)`` for one unit, as recorded in the receipt."""
+    expected_tokens, actual_tokens = tokens(expected, locale), tokens(recognized, locale)
+    matcher = difflib.SequenceMatcher(None, expected_tokens, actual_tokens, autojunk=False)
+    similarity = round(matcher.ratio(), 6)
+    differences = [{"kind": kind,
+                    "expected": expected_tokens[left_start:left_end],
+                    "recognized": actual_tokens[right_start:right_end]}
+                   for kind, left_start, left_end, right_start, right_end
+                   in matcher.get_opcodes() if kind != "equal"]
+    # Short units are more vulnerable to a high score hiding one material
+    # missing word, so require exact normalized ASR for them.
+    passed = similarity >= min_similarity and (len(expected_tokens) >= 4 or not differences)
+    return similarity, differences, passed
 
 
 def screen(job: dict, manifest: dict, artifact_root: Path,
@@ -193,18 +212,8 @@ def screen(job: dict, manifest: dict, artifact_root: Path,
         expected_hash = hashlib.sha256(unit["text"].encode("utf-8")).hexdigest()
         audio = row["audio"]
         recognized = recognized_units[index].strip()
-        expected_tokens, actual_tokens = tokens(unit["text"], locale), tokens(recognized, locale)
-        require(expected_tokens, f"Empty expected text: {group_id}")
-        matcher = difflib.SequenceMatcher(None, expected_tokens, actual_tokens, autojunk=False)
-        similarity = round(matcher.ratio(), 6)
-        differences = [{"kind": kind,
-                        "expected": expected_tokens[left_start:left_end],
-                        "recognized": actual_tokens[right_start:right_end]}
-                       for kind, left_start, left_end, right_start, right_end
-                       in matcher.get_opcodes() if kind != "equal"]
-        # Short units are more vulnerable to a high score hiding one material
-        # missing word, so require exact normalized ASR for them.
-        passed = similarity >= min_similarity and (len(expected_tokens) >= 4 or not differences)
+        require(tokens(unit["text"], locale), f"Empty expected text: {group_id}")
+        similarity, differences, passed = score(unit["text"], recognized, locale, min_similarity)
         results.append({
             "textGroupId": group_id,
             "targetTextSha256": expected_hash,
@@ -215,6 +224,13 @@ def screen(job: dict, manifest: dict, artifact_root: Path,
             "status": "pass" if passed else "requires_review",
         })
     status = "pass" if all(row["status"] == "pass" for row in results) else "requires_review"
+    # The normalized runtime behind every score, so a machine waiver can require the
+    # same primary ASR its calibration measured (the request identities stay unchanged).
+    asr_settings = {"protocol": "formal-back-asr-batch-v1", "model": model, "modelRevision": model_revision,
+                    "language": locale, "batchSize": batch_size, "maxNewTokens": 2048, "dtype": "bfloat16",
+                    "executionDevice": "cuda:0", "runtime": copy.deepcopy(inference_identity or {}),
+                    "implementationSha256": file_sha(Path(__file__)), "minSimilarity": min_similarity,
+                    "scoring": SCORING}
     receipt = {
         "schemaVersion": SCHEMA,
         "targetLocale": locale,
@@ -229,6 +245,8 @@ def screen(job: dict, manifest: dict, artifact_root: Path,
         "unitAudioSha256s": [row["audioSha256"] for row in results],
         "results": results,
         "humanListeningStatus": "pending",
+        "asrSettings": asr_settings,
+        "asrSettingsSha256": identity.json_sha256(asr_settings),
     }
     if batch_size != 1:
         receipt["transcriptionBatchSize"] = batch_size

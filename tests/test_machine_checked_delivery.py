@@ -23,9 +23,10 @@ from tests.test_public_study_delivery import binding, prepared, save, seal_fixtu
 PAGE, LOCALE = 'synthetic-machine-page', 'ko'
 ASR = {'model': 'Qwen3-ASR', 'modelRevision': 'r1'}
 # The primary runtime recorded by the screening receipt this fixture binds.
-PRIMARY_SETTINGS = basis.json_sha256({'source': 'sermon-target-language-audio-screening-v1', 'model': ASR['model'],
-                                      'modelRevision': ASR['modelRevision'], 'minSimilarity': 0.88,
-                                      'transcriptionBatchSize': 1})
+SCREENING_ASR = {'protocol': 'formal-back-asr-batch-v1', **ASR, 'batchSize': 1, 'maxNewTokens': 2048,
+                 'dtype': 'bfloat16', 'executionDevice': 'cuda:0', 'runtime': {}, 'implementationSha256': 'd' * 64,
+                 'minSimilarity': 0.88, 'scoring': 'token-sequence-ratio-v1; short units (<4 tokens) must match exactly'}
+PRIMARY_SETTINGS = basis.json_sha256(SCREENING_ASR)
 ASR_SETTINGS = {'primary': PRIMARY_SETTINGS, 'secondary': basis.json_sha256({'backend': 'synthetic-secondary'})}
 
 
@@ -98,12 +99,14 @@ def machine_inputs(root, *, human_full_text=None, condense=False):
                            'audio': binding(unit_path), 'durationSeconds': 5.0} for g in spoken['groups']])
     schedule = save(root, 'schedule.json', {'synthetic': True})
     package['schedule'] = {**binding(schedule), 'jsonSha256': d.sha({'synthetic': True})}
-    screening.update(targetLocale=LOCALE, trackSha256=builder.digest(track), status='pass', modelRevision=ASR['modelRevision'],
+    screening.update(schemaVersion='sermon-target-language-audio-screening-v2', asrSettings=dict(SCREENING_ASR),
+                     asrSettingsSha256=PRIMARY_SETTINGS, minSimilarity=0.88,
+                     targetLocale=LOCALE, trackSha256=builder.digest(track), status='pass', modelRevision=ASR['modelRevision'],
                      reviewedGroupIds=[u['textGroupId'] for u in package['units']],
                      unitAudioSha256s=[u['audio']['sha256'] for u in package['units']],
                      results=[{'textGroupId': u['textGroupId'], 'targetTextSha256': u['targetTextSha256'],
-                               'audioSha256': u['audio']['sha256'], 'recognized': 'synthetic', 'similarity': 1.0,
-                               'differences': [], 'status': 'pass'} for u in package['units']])
+                               'audioSha256': u['audio']['sha256'], 'recognized': g['targetText'], 'similarity': 1.0,
+                               'differences': [], 'status': 'pass'} for u, g in zip(package['units'], spoken['groups'])])
     spans = {u['sourceUnitId']: float(u['end']) - float(u['start']) for u in sf.anchor['sourceUnits']}
     audio_qc = {'schemaVersion': 'sermon-target-audio-auto-qc-v1', 'locale': LOCALE, 'status': 'pass',
                 'implementationSha256': IMPLEMENTATION, 'thresholds': dict(THRESHOLDS),

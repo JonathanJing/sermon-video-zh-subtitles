@@ -7,6 +7,7 @@ from unittest.mock import patch
 
 from scripts import machine_quality_release_basis as basis
 from scripts import machine_quality_waiver as waiver
+from scripts import screen_target_language_audio_units as audio_screen
 from scripts import target_text_auto_qc as text_screen
 from scripts.target_audio_auto_qc import THRESHOLDS, TRACK_ENVELOPE
 from scripts import prepare_target_language_speech_job as speech
@@ -22,10 +23,13 @@ IMPLEMENTATION = waiver.implementation_sha256()
 SEMANTIC_SHA = "9" * 64
 PRIMARY_ASR = {"model": "qwen3-asr-0.6b", "modelRevision": "r1"}
 SECONDARY_ASR = {"model": "gpt-transcribe", "modelRevision": None}
-# The primary runtime is the one the bound screening receipt records.
-SCREENING_ASR_SETTINGS = basis.json_sha256({"source": "sermon-target-language-audio-screening-v1",
-                                            "model": "qwen3-asr-0.6b", "modelRevision": "r1",
-                                            "minSimilarity": 0.88, "transcriptionBatchSize": 1})
+# The primary runtime is the one the bound v2 screening receipt records.
+SCREENING_ASR = {"protocol": "formal-back-asr-batch-v1", "model": "qwen3-asr-0.6b", "modelRevision": "r1",
+                 "batchSize": 1, "maxNewTokens": 2048, "dtype": "bfloat16", "executionDevice": "cuda:0",
+                 "runtime": {}, "implementationSha256": "d" * 64, "minSimilarity": 0.88,
+                 "scoring": audio_screen.SCORING}
+SCREENING_ASR_SETTINGS = basis.json_sha256(SCREENING_ASR)
+AUDIO_TEXTS = ["두려워하지 마십시오.", "내가 당신과 함께 있습니다."]
 SECONDARY_ASR_SETTINGS = basis.json_sha256({"backend": "openai", "language": "ko", "scoring": "token-ratio-v1"})
 
 
@@ -119,6 +123,19 @@ class TextWaiverTests(unittest.TestCase):
         self.assertEqual(job["schemaVersion"], speech.SPEECH_JOB_SCHEMA)
         self.assertEqual(job["renderContract"]["textPolicy"], speech.HUMAN_TEXT_POLICY)
         self.assertEqual(set(job["inputs"]["humanReviewReceipt"]), {"path", "sha256", "jsonSha256"})
+
+    def test_waiver_needs_every_semantic_check_clean(self):
+        self.assertTrue(basis.machine_pending_candidate(self.candidate))
+        for change in ({"checks": dict(self.candidate["groups"][0]["semanticReview"]["checks"],
+                                       negationsNumbersNames="fail")},
+                       {"issues": ["The number of sons changed."]},
+                       {"uncertainty": ["Unsure whether the quote is Paul's."]}):
+            flagged = copy.deepcopy(self.candidate)
+            flagged["groups"][0]["semanticReview"].update(change)
+            self.assertFalse(basis.machine_pending_candidate(flagged))
+            with self.assertRaises(ValueError):
+                basis.build_text_waiver(self.source_package, self.anchor, flagged,
+                                        text_qc(flagged, self.anchor), calibration())
 
     def test_waiver_cannot_release_changed_or_human_decided_candidate(self):
         changed = copy.deepcopy(self.candidate)
@@ -314,14 +331,15 @@ def audio_sources():
     anchor = {"sourceUnits": [{"sourceUnitId": "u1", "start": 10.0, "end": 12.0},
                               {"sourceUnitId": "u2", "start": 12.5, "end": 14.0},
                               {"sourceUnitId": "u3", "start": 14.0, "end": 16.0}]}
-    candidate = {"groups": [{"translationGroupId": "g1", "sourceUnitIds": ["u1"]},
-                            {"translationGroupId": "g2", "sourceUnitIds": ["u2", "u3"]}]}
+    candidate = {"groups": [{"translationGroupId": "g1", "sourceUnitIds": ["u1"], "targetText": AUDIO_TEXTS[0]},
+                            {"translationGroupId": "g2", "sourceUnitIds": ["u2", "u3"],
+                             "targetText": AUDIO_TEXTS[1]}]}
     return anchor, candidate
 
 
 def audio_fixture(flagged=False):
     anchor, candidate = audio_sources()
-    texts = ["두려워하지 마십시오.", "내가 당신과 함께 있습니다."]
+    texts = AUDIO_TEXTS
     units = [{"textGroupId": f"g{index}", "targetTextSha256": sha(text),
               "audio": {"path": f"audio/unit-{index}.wav", "sha256": sha(f"wav-{index}")},
               "durationSeconds": 1.5} for index, text in enumerate(texts, 1)]
@@ -338,17 +356,22 @@ def audio_fixture(flagged=False):
                "humanReview": {"status": "pending", "humanApproval": False, "reviewedBy": None,
                                "reviewedAt": None, "fullPlayback": "pending"},
                "issues": []}
-    similarities = [0.97, 0.71 if flagged else 0.95]
-    screening = {"schemaVersion": "sermon-target-language-audio-screening-v1", "targetLocale": "ko",
+    # What the primary ASR heard, scored exactly as the screener scores it.
+    heard = ["두려워하지 마십시오", "내가 함께" if flagged else "내가 당신과 함께 있었습니다"]
+    scores = [audio_screen.score(text, recognized, "ko", 0.88) for text, recognized in zip(texts, heard)]
+    similarities = [similarity for similarity, _, _ in scores]
+    screening = {"schemaVersion": "sermon-target-language-audio-screening-v2", "targetLocale": "ko",
                  "targetLanguageSpeechJobJsonSha256": "3" * 64, "trackSha256": "4" * 64,
                  "status": package["machineScreening"]["status"], "model": "qwen3-asr-0.6b",
                  "modelRevision": "r1", "minSimilarity": 0.88, "coverage": 1,
                  "reviewedGroupIds": ["g1", "g2"], "unitAudioSha256s": [u["audio"]["sha256"] for u in units],
                  "results": [{"textGroupId": unit["textGroupId"], "targetTextSha256": unit["targetTextSha256"],
-                              "audioSha256": unit["audio"]["sha256"], "recognized": "", "similarity": value,
-                              "differences": [], "status": "requires_review" if value < 0.88 else "pass"}
-                             for unit, value in zip(units, similarities)],
-                 "humanListeningStatus": "pending"}
+                              "audioSha256": unit["audio"]["sha256"], "recognized": recognized,
+                              "similarity": similarity, "differences": differences,
+                              "status": "pass" if passed else "requires_review"}
+                             for unit, recognized, (similarity, differences, passed) in zip(units, heard, scores)],
+                 "humanListeningStatus": "pending", "asrSettings": dict(SCREENING_ASR),
+                 "asrSettingsSha256": SCREENING_ASR_SETTINGS}
     qc = {"schemaVersion": "sermon-target-audio-auto-qc-v1", "locale": "ko", "status": "pass",
           "implementationSha256": IMPLEMENTATION, "thresholds": dict(THRESHOLDS),
           "humanApproval": False, "mutatesAudio": False, "subtitleOnlyGroupIds": [], "repairGroupIds": [],
@@ -432,14 +455,36 @@ class AudioWaiverTests(unittest.TestCase):
         package, screening, qc, text = audio_fixture(flagged=True)
         self.build(package, screening, qc, text)
         # A primary score the screening receipt produced under other settings.
-        other_screening = {**screening, "transcriptionBatchSize": 8}
+        settings = dict(screening["asrSettings"], batchSize=8)
+        other_screening = {**screening, "transcriptionBatchSize": 8, "asrSettings": settings,
+                           "asrSettingsSha256": basis.json_sha256(settings)}
         with self.assertRaisesRegex(ValueError, "primary ASR runtime differs from the bound screening"):
             self.build(package, other_screening, qc, text)
+        # The recorded settings must be the receipt's own, and only v2 records them.
+        with self.assertRaisesRegex(ValueError, "settings disagree with the receipt"):
+            self.build(package, {**screening, "transcriptionBatchSize": 8}, qc, text)
+        legacy = {key: value for key, value in screening.items() if not key.startswith("asrSettings")}
+        legacy["schemaVersion"] = "sermon-target-language-audio-screening-v1"
+        with self.assertRaisesRegex(ValueError, "rescreen with screening v2"):
+            self.build(package, legacy, qc, text)
         # A secondary ASR run another way than the calibration measured.
         other = copy.deepcopy(qc)
         other["results"][1]["asrSecondarySettingsSha256"] = "0" * 64
         with self.assertRaisesRegex(ValueError, "secondary ASR runtime settings differ from calibration"):
             self.build(package, screening, other, text)
+
+    def test_screening_status_must_follow_its_score(self):
+        # A unit the primary ASR barely heard cannot be labelled pass.
+        package, screening, qc, text = audio_fixture()
+        forged = copy.deepcopy(screening)
+        forged["results"][1].update(recognized="", similarity=0.0)
+        with self.assertRaisesRegex(ValueError, "passes against its own similarity"):
+            self.build(package, forged, qc, text)
+        # A pass whose recorded score was raised over what the ASR heard.
+        raised = copy.deepcopy(screening)
+        raised["results"][1].update(recognized="내가 함께")
+        with self.assertRaisesRegex(ValueError, "does not rescore"):
+            self.build(package, raised, qc, text)
 
     def test_audio_qc_source_spans_must_be_the_frozen_ones(self):
         # A zero, negative or inflated span would disable the source-ratio check.

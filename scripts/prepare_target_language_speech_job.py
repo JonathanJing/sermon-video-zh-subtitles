@@ -206,6 +206,15 @@ def validate_policy_binding(candidate: dict[str, Any], policy: dict[str, Any], *
                  "Target candidate language review does not cover every required policy check")
 
 
+AUDIO_SCREENING_VERSIONS = ("sermon-target-language-audio-screening-v1", "sermon-target-language-audio-screening-v2")
+
+
+def audio_screening_schema_file(screening: Any) -> str:
+    """The schema file for a screening receipt's own version (v1 or v2); anything else checks as v1."""
+    version = screening.get("schemaVersion") if isinstance(screening, dict) else None
+    return (version if version in AUDIO_SCREENING_VERSIONS else AUDIO_SCREENING_VERSIONS[0]) + ".schema.json"
+
+
 def _validate_schema(value: dict[str, Any], filename: str, label: str) -> None:
     schema = json.loads((REPO_ROOT / "schemas" / filename).read_text(encoding="utf-8"))
     errors = list(Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(value))

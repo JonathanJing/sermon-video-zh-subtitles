@@ -12,7 +12,7 @@ Text kinds: wrong_number, added_reference, wrong_book, english_leak,
 placeholder, dropped_name, dropped_half, semantic_negation, added_number (a
 spelled count the English never said), wrong_ordinal (an ordinal the English
 did not say: "the first love" as "the second", or a "Second," the English never
-said). Audio kinds: stretched (the 2026-10-04
+said), swapped_quantity (two quantities trade places). Audio kinds: stretched (the 2026-10-04
 u172 class), silent, clipped, truncated, and wrong_sentence (another unit's
 audio under this unit's text, which only the ASR path can catch). Meaning
 errors without a surface signal (for example a flipped negation) are only
@@ -74,7 +74,7 @@ ADDED_ORDINAL = {"zh-Hans": "第二，", "ko": "둘째, ", "es": "En segundo lug
 # (a length failure on the same trial does not count); its trials still run.
 JUDGE_CREDITED_KINDS = ("dropped_half",)
 # Kinds only the back-translation check may detect: a surface failure is not credited.
-SEMANTIC_KINDS = ("semantic_negation", "added_number", "wrong_ordinal")
+SEMANTIC_KINDS = ("semantic_negation", "added_number", "wrong_ordinal", "swapped_quantity")
 # The book a wrong_book mutation substitutes (Romans when the citation is already John).
 OTHER_BOOK = {"zh-Hans": ("约翰福音", "罗马书"), "ko": ("요한복음", "로마서"), "es": ("Juan", "Romanos")}
 
@@ -131,6 +131,25 @@ def mutate_text(group: dict, kind: str, locale: str, policy: dict | None) -> str
                     # A decimal loses its separator (2.5 -> 25); an integer shifts by 7.
                     wrong = re.sub(r"[.,]", "", form) if isinstance(value, str) else str(value + 7)
                     return text[:at] + wrong + text[at + len(form):]
+        return None
+    if kind == "swapped_quantity":
+        # Two English quantities trade places ("two sons and three daughters" as
+        # "three sons and two daughters"): every number survives, so only meaning catches it.
+        said, pairs = rules.english_without_citations(english)
+        masked = rules.target_without_citations(text, locale, pairs)
+        found = []
+        for value in dict.fromkeys(value for value in rules.english_numbers(said) if isinstance(value, int)):
+            for form in _number_forms(locale, value):
+                at = masked.find(form)
+                # One-character word forms (세, 三) would usually hit an unrelated word.
+                if at >= 0 and (form.isdigit() or len(form) > 1) and all(
+                        at + len(form) <= start or at >= start + len(other) for start, other in found):
+                    found.append((at, form))
+                    break
+            if len(found) == 2:
+                (first, left), (second, right) = sorted(found)
+                return (text[:first] + right + text[first + len(left):second] + left
+                        + text[second + len(right):])
         return None
     if kind == "added_number":
         return None if rules.english_number_values(english) else text + ADDED_NUMBER[locale]

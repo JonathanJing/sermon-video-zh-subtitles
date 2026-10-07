@@ -53,6 +53,18 @@ def read_package(path: Path, schema_name: str) -> dict:
     return value
 
 
+AUDIO_SCREENING_VERSIONS = ("sermon-target-language-audio-screening-v1", "sermon-target-language-audio-screening-v2")
+
+
+def read_audio_screening(path: Path) -> dict:
+    """Read an ASR screening receipt against its own version's schema (v1 or v2)."""
+    value = json.loads(path.read_text(encoding="utf-8"))
+    version = value.get("schemaVersion") if isinstance(value, dict) else None
+    if version not in AUDIO_SCREENING_VERSIONS:
+        raise StageError(f"{path}: unsupported audio screening receipt version")
+    return read_package(path, version + ".schema.json")
+
+
 def assignment_map(values: list[str], option: str) -> dict[str, Path]:
     result = {}
     for value in values:
@@ -372,8 +384,7 @@ def preflight(args: argparse.Namespace) -> tuple[dict, dict[str, tuple[Path, str
             raise StageError(f"{locale}: unsupported audio human review receipt version")
         audio_receipt = read_package(
             audio_review_paths[locale], f"{audio_receipt_version}.schema.json")
-        screening = (read_package(screening_paths[locale],
-                                  "sermon-target-language-audio-screening-v1.schema.json")
+        screening = (read_audio_screening(screening_paths[locale])
                      if locale in screening_paths else None)
         release = read_package(release_paths[locale], "sermon-target-language-release-package-v1.schema.json")
         candidate_hash = canonical_sha(candidate)

@@ -83,7 +83,7 @@ def inspect(root, config, upstream_paths, read_package, hashes, locale):
         screening = None
         if 'screening' in config:
             screening = read_package(root, config['screening'], hashes, prefix + 'screening')
-            handoff._validate_schema(screening, 'sermon-target-language-audio-screening-v1.schema.json', 'screening')
+            handoff._validate_schema(screening, handoff.audio_screening_schema_file(screening), 'screening')
         stage.validate_audio_screening_review(package, receipt, screening)
         human = package['humanReview']
         candidate = _read(paths['candidate'])
@@ -107,7 +107,7 @@ def inspect(root, config, upstream_paths, read_package, hashes, locale):
             raise ValueError('audio_waiver_requires_unreviewed_package_and_screening')
         receipt = read_package(root, config['machineWaiver'], hashes, prefix + 'machineWaiver')
         screening = read_package(root, config['screening'], hashes, prefix + 'screening')
-        handoff._validate_schema(screening, 'sermon-target-language-audio-screening-v1.schema.json', 'screening')
+        handoff._validate_schema(screening, handoff.audio_screening_schema_file(screening), 'screening')
         stage.validate_audio_screening_review(package, receipt, screening)
         if (receipt.get('reviewKind') != 'machine_quality_waiver'
                 or receipt['targetLanguageCandidateJsonSha256'] != upstream['candidate']

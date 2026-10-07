@@ -531,9 +531,9 @@ def build_package(paths: dict[str, Path], render_manifest_path: Path, artifact_r
         screening_artifact = checked_artifact(
             artifact_root, manifest.get("machineScreeningReceipt"), json_artifact=True)
         screening = read_object(Path(screening_artifact["path"]))
-        speech._validate_schema(screening, "sermon-target-language-audio-screening-v1.schema.json",
+        speech._validate_schema(screening, speech.audio_screening_schema_file(screening),
                                 "audio screening receipt")
-        require(screening.get("schemaVersion") == "sermon-target-language-audio-screening-v1"
+        require(screening.get("schemaVersion") in speech.AUDIO_SCREENING_VERSIONS
                 and screening.get("targetLocale") == locale
                 and screening.get("targetLanguageSpeechJobJsonSha256") == job_hash
                 and screening.get("trackSha256") == track["sha256"]
