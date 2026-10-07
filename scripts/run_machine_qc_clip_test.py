@@ -38,6 +38,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import threading
 import time
 
 if __package__ in (None, ""):
@@ -289,6 +290,11 @@ class CodexJudge:
         response = self.cache / self.key(role, system, user, schema) / "response.json"
         return self(role, system, user, schema) if response.exists() else None
 
+    def uncertain(self) -> list[str]:
+        """Calls that started but never recorded a completed response: their outcome is unknown."""
+        return sorted(path.parent.name for path in self.cache.glob("*/started.json")
+                      if not (path.parent / "response.json").exists())
+
     def __call__(self, role, system, user, schema):
         prompt = f"SYSTEM:\n{system}\n\nUSER:\n{user}"
         return self.codex.call_json(prompt, model=self.codex.TEXT_MODEL, reasoning="medium",
@@ -308,6 +314,9 @@ class FakeJudge:
 
     def cached(self, *request):
         return self(*request)
+
+    def uncertain(self) -> list[str]:
+        return []
 
     def __call__(self, role, system, user, schema):
         if role == "back_translator":
@@ -339,8 +348,22 @@ def prefetch(judge, run, *, workers: int) -> int:
         run(record)
         if not wanted:
             return issued
+        # After any failure nothing new is dispatched; calls already running finish and keep their receipts.
+        failed = threading.Event()
+
+        def dispatch(request):
+            if failed.is_set():
+                return None
+            try:
+                return judge(*request)
+            except BaseException:
+                failed.set()
+                raise
+
         with ThreadPoolExecutor(max_workers=workers) as pool:
-            list(pool.map(lambda request: judge(*request), wanted.values()))
+            futures = [pool.submit(dispatch, request) for request in wanted.values()]
+        for future in futures:
+            future.result()
         issued += len(wanted)
 
 
@@ -378,13 +401,25 @@ def run_locale(locale: str, paths: dict, out: Path, state: Path, judge, timings:
                               "implementation": basis.waiver.implementation_sha256()})
     qc = load_once(head_path, qc_binding) if head is not None else None
     if qc is None:
-        def screen(call):
-            return text_qc.screen(groups, locale, policy=policy, call=call, identity=judge.identity,
-                                  repair_position=ledger.position(lineage, entries))
-        timings.run(f"{locale}.text-qc.prefetch", lambda: prefetch(judge, screen, workers=workers))
-        qc = timings.run(f"{locale}.text-qc", lambda: screen(judge))
-        entry = ledger.append(ledger_root, lineage, qc)
-        head_path = save_once(qc_receipt_path(state, lineage, entry["sequence"]), qc, qc_binding)
+        # The receipt is written before its ledger entry. A receipt past the ledger
+        # head is from an interrupted run: append it if it still binds these inputs,
+        # else discard it, since no ledger entry or waiver refers to it.
+        next_path = qc_receipt_path(state, lineage, len(entries) + 1)
+        pending = load_once(next_path, qc_binding) if next_path.exists() else None
+        if pending is not None and pending.get("repairLedger") == ledger.position(lineage, entries):
+            qc = pending
+        else:
+            for stale in (next_path, binding_path(next_path)):
+                stale.unlink(missing_ok=True)
+
+            def screen(call):
+                return text_qc.screen(groups, locale, policy=policy, call=call, identity=judge.identity,
+                                      repair_position=ledger.position(lineage, entries))
+            timings.run(f"{locale}.text-qc.prefetch", lambda: prefetch(judge, screen, workers=workers))
+            qc = timings.run(f"{locale}.text-qc", lambda: screen(judge))
+            save_once(next_path, qc, qc_binding)
+        ledger.append(ledger_root, lineage, qc)
+        head_path = next_path
     result = {"textQc": qc["status"], "textQcReceipt": str(head_path),
               "failedGroups": [row["groupId"] for row in qc["results"] if row["status"] != "pass"]}
     if qc["status"] != "pass":
@@ -523,10 +558,17 @@ def main(argv=None) -> int:
         judge = FakeJudge({locale: qc_groups(read(Path(paths["candidate"])), read(Path(paths["anchor"])))
                            for locale, paths in resolved.items()})
     for locale, paths in resolved.items():
-        try:
-            outcome = run_locale(locale, paths, out, state, judge, timings, args.workers)
-        except Exception as error:  # Keep the other locales running; the receipt says what failed.
-            outcome = {"status": "error", "reason": f"{type(error).__name__}: {error}"}
+        # A call with an unknown outcome blocks every new dispatch in this run
+        # until it is reconciled; other errors stop only their own locale.
+        uncertain = judge.uncertain()
+        if uncertain:
+            outcome = {"status": "blocked_unknown_outcome", "uncertainCalls": uncertain,
+                       "reason": f"model calls with an unknown outcome in {state / 'codex-calls'}; reconcile them first"}
+        else:
+            try:
+                outcome = run_locale(locale, paths, out, state, judge, timings, args.workers)
+            except Exception as error:  # The receipt says what failed.
+                outcome = {"status": "error", "reason": f"{type(error).__name__}: {error}"}
         summary["locales"][locale].update(outcome)
         save(out / "summary.json", summary)
     print(json.dumps({locale: {key: row.get(key) for key in ("status", "reason", "problems", "calibration")}

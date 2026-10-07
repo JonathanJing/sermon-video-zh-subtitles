@@ -103,14 +103,16 @@ stage asc-status    python3 apps/tongxing-ios/scripts/testflight.py status
 # that directory's apple-state.json. Stop before archiving on a used build number.
 SNAPSHOT="$(sed -n 's/.*private evidence: //p' "$OUT/asc-status.log" | tail -1)/apple-state.json"
 [[ -f "$SNAPSHOT" ]] || { echo "No Apple snapshot at $SNAPSHOT"; exit 1; }
-USED="$("$PY" - "$SNAPSHOT" "$BUILD" <<'CHECK'
+# App Store Connect scopes build numbers by version, as fastlane's beta_builds query does.
+USED="$("$PY" - "$SNAPSHOT" "$VERSION" "$BUILD" <<'CHECK'
 import json, sys
 builds = json.load(open(sys.argv[1], encoding="utf-8"))["builds"]
-print(" ".join(f"{b['version']}({b['build']})" for b in builds if str(b["build"]) == sys.argv[2]))
+print(" ".join(f"{b['version']}({b['build']})" for b in builds
+               if str(b["version"]) == sys.argv[2] and str(b["build"]) == sys.argv[3]))
 CHECK
 )"
 if [[ -n "$USED" ]]; then
-  echo "Build $BUILD is already on App Store Connect as $USED; bump the TongxingBeta BetaRelease build first"; exit 1
+  echo "$VERSION ($BUILD) is already on App Store Connect; bump the TongxingBeta BetaRelease build first"; exit 1
 fi
 # archive-channel.sh builds the generated Tongxing.xcodeproj, so it must carry
 # the same version/build that the collision check and notes use.

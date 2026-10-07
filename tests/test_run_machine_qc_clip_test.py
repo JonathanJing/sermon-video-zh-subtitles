@@ -238,6 +238,65 @@ class MachineQcClipDriverTests(unittest.TestCase):
         row = json.loads((self.root / "real-b/summary.json").read_text(encoding="utf-8"))["locales"][LOCALE]
         self.assertEqual((row["status"], row["failedGroups"]), ("blocked_prior_failure", ["g001"]), row.get("reason"))
 
+    def test_a_receipt_written_before_an_interrupted_ledger_append_is_recovered(self):
+        run = synthetic_run(self, self.root)
+        stack, argv = self.real_runs(run)
+        append = driver.ledger.append
+
+        def interrupted(*args):
+            raise KeyboardInterrupt  # The process dies between the receipt and its ledger entry.
+
+        with stack:
+            with patch.object(driver.ledger, "append", interrupted), self.assertRaises(KeyboardInterrupt):
+                driver.main(argv)
+            with patch.object(driver.ledger, "append", side_effect=append) as appended, \
+                    patch.object(driver.text_qc, "screen", side_effect=AssertionError("screened again")):
+                self.assertEqual(driver.main(argv), 0, self.real_row().get("reason"))
+            self.assertEqual(appended.call_count, 1)
+        receipts = sorted((self.root / "real-state/qc-receipts").rglob("entry-*[0-9].json"))
+        self.assertEqual([p.name for p in receipts], ["entry-000001.json"])
+
+    def test_an_unknown_model_outcome_stops_new_dispatch(self):
+        run = synthetic_run(self, self.root)
+        echo = driver.FakeJudge
+        stack, argv = self.real_runs(run)
+        with stack, patch.object(echo, "uncertain", return_value=["call-1"]), \
+                patch.object(driver, "run_locale", side_effect=AssertionError("dispatched")):
+            self.assertEqual(driver.main(argv), 1)
+        self.assertEqual(self.real_row()["status"], "blocked_unknown_outcome")
+        self.assertEqual(self.real_row()["uncertainCalls"], ["call-1"])
+
+    def test_codex_judge_lists_started_calls_without_a_response(self):
+        judge = object.__new__(driver.CodexJudge)
+        judge.cache = self.root / "calls"
+        for name, files in (("done", ("started.json", "response.json")), ("lost", ("started.json",)), ("new", ())):
+            (judge.cache / name).mkdir(parents=True)
+            for file in files:
+                (judge.cache / name / file).write_text("{}", encoding="utf-8")
+        self.assertEqual(judge.uncertain(), ["lost"])
+
+    def test_prefetch_dispatches_nothing_new_after_a_failure(self):
+        calls = []
+
+        class Failing:
+            def key(self, *request):
+                return json.dumps(request)
+
+            def cached(self, *request):
+                return None
+
+            def __call__(self, *request):
+                calls.append(request)
+                raise TimeoutError("unknown outcome")
+
+        def run(call):
+            for index in range(5):
+                call("back_translator", "s", f"text {index}", {})
+
+        with self.assertRaises(TimeoutError):
+            driver.prefetch(Failing(), run, workers=1)
+        self.assertEqual(len(calls), 1)
+
     def test_a_preserved_row_whose_waiver_changed_is_marked_stale(self):
         run = synthetic_run(self, self.root)
         stack, argv = self.real_runs(run)
