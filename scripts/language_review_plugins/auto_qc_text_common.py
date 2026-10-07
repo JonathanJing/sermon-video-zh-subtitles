@@ -668,6 +668,12 @@ def untranslated_problems(english: str, text: str, locale: str) -> list[str]:
     english_words = re.findall(r"[a-z']+", english.casefold())
     if len(english_words) >= 6 and _fold(" ".join(english_words)) in _fold(text):
         return ["English source text copied into target"]
+    # A short group copied word for word ("God loves you"). An English function
+    # word marks it as English: "Amén" or a name alone may match after folding.
+    target_words, size = re.findall(r"[a-z']+", _fold(text)), len(english_words)
+    if any(word in _ENGLISH_FUNCTION_WORDS for word in english_words) and any(
+            target_words[start:start + size] == english_words for start in range(len(target_words) - size + 1)):
+        return ["English source text copied into target"]
     return []
 
 

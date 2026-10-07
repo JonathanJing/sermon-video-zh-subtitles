@@ -103,6 +103,17 @@ class TextRuleTests(unittest.TestCase):
         self.assertEqual(rules.scripture_reference_problems("As 1 John 4:8 says", "Como dice 1 Juan 4:8", "es"), [])
         self.assertEqual(rules.scripture_reference_problems("As 1 John 4:8 says", "요한일서 4장 8절 말씀처럼", "ko"), [])
 
+    def test_short_copied_english_is_untranslated(self):
+        for english in ("God loves you.", "This is it!", "Thank you"):
+            self.assertEqual(rules.untranslated_problems(english, english, "es"),
+                             ["English source text copied into target"], english)
+            self.assertEqual(rules.untranslated_problems(english, f"Dice: {english}", "es"),
+                             ["English source text copied into target"], english)
+        # Folding makes these match, but they are Spanish.
+        for english, target in (("Amen.", "Amén."), ("Jesus.", "Jesús."), ("No.", "No."),
+                                ("God loves you.", "Dios te ama."), ("Pastor Ken", "Pastor Ken")):
+            self.assertEqual(rules.untranslated_problems(english, target, "es"), [], target)
+
     def test_book_ordinals_are_not_cardinals(self):
         # "1 John" is 요한일서 / Primera de Juan / 约翰一书, never a separate "1".
         english = "As 1 John 4:8 says, God is love."
@@ -521,6 +532,7 @@ class CalibrationAndWaiverTests(unittest.TestCase):
                  "implementationSha256": waiver.implementation_sha256(), "results": [
             {"groupId": gid, "nextAction": "subtitle_only" if i >= count - subtitle_only else "keep",
              "audioSha256": package["units"][i]["audio"]["sha256"],
+             "textSha256": package["units"][i]["targetTextSha256"],
              "asrPrimaryModel": {"model": fixtures.PRIMARY_ASR, "modelRevision": None}, "asrSecondaryModel": None}
             for i, gid in enumerate(ids)]}
         return candidate, package, text, audio
@@ -581,8 +593,42 @@ class CalibrationAndWaiverTests(unittest.TestCase):
             waiver.waive("ko", candidate, text, audio, calibration, audio_package=regenerated)
         with self.assertRaisesRegex(ValueError, "needs the audio package"):
             waiver.waive("ko", candidate, text, audio, calibration)
+        retexted = copy.deepcopy(audio)
+        retexted["results"][3]["textSha256"] = text_sha("another script")
+        with self.assertRaisesRegex(ValueError, "against different text"):
+            waiver.waive("ko", candidate, text, retexted, calibration, audio_package=package)
         self.assertEqual(waiver.waive("ko", candidate, text, None, calibration)["status"],
                          "machine_quality_waived_text_only")
+
+    def test_summary_lists_must_match_the_group_results(self):
+        calibration = self.calibration("ko")
+        candidate, package, text, audio = self.final_receipts("ko", fallback=1, subtitle_only=1)
+        self.assertEqual(waiver.waive("ko", candidate, text, audio, calibration, audio_package=package)["status"],
+                         "machine_quality_waived")
+        hidden_text = copy.deepcopy(text)
+        hidden_text["sourceTextFallbackGroupIds"] = []
+        with self.assertRaisesRegex(ValueError, "fallback list differs"):
+            waiver.waive("ko", candidate, hidden_text, audio, calibration, audio_package=package)
+        hidden_audio = copy.deepcopy(audio)
+        hidden_audio["subtitleOnlyGroupIds"] = []
+        with self.assertRaisesRegex(ValueError, "subtitle-only list differs"):
+            waiver.waive("ko", candidate, text, hidden_audio, calibration, audio_package=package)
+
+    def test_non_finite_calibration_rates_block(self):
+        calibration = self.calibration("ko")
+        receipts = self.final_receipts("ko")
+        for field in ("overallDetectionRate", "cleanFalsePositiveRate"):
+            for value in (float("nan"), float("inf"), True, None, "0.99"):
+                broken = copy.deepcopy(calibration)
+                broken[field] = value
+                self.assertEqual(self.waive("ko", receipts, broken)["status"], "blocked_calibration", (field, value))
+        for kind in ("text.dropped_name", "audio.silent"):
+            broken = copy.deepcopy(calibration)
+            broken["kinds"][kind]["rate"] = float("nan")
+            self.assertIn(f"seeded-error detection below minimum for ['{kind}']",
+                          self.waive("ko", receipts, broken)["reasons"])
+            broken["kinds"][kind].update(rate=1.0, trials=float("nan"))
+            self.assertIn(f"calibration has no trials for ['{kind}']", self.waive("ko", receipts, broken)["reasons"])
 
     def test_untested_or_missing_calibration_kinds_block(self):
         calibration = self.calibration("ko")

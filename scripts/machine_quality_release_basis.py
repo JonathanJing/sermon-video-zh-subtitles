@@ -296,6 +296,8 @@ def build_audio_waiver(package: dict, screening: dict, audio_qc: dict, text_waiv
         secondary = row.get("asrSecondary")
         _require(row.get("audioSha256") == unit["audio"]["sha256"],
                  f"Audio QC screened different audio: {group_id}")
+        _require(row.get("textSha256") == unit["targetTextSha256"],
+                 f"Audio QC checked the audio against different text: {group_id}")
         _require(row.get("asrPrimary") == primary and row.get("asrPrimaryModel") == {
                      "model": screening["model"], "modelRevision": screening.get("modelRevision")},
                  f"Audio QC primary ASR differs from the bound screening: {group_id}")

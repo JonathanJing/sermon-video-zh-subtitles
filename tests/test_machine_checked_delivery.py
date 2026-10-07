@@ -68,7 +68,8 @@ def machine_inputs(root, *, human_full_text=None):
                 'humanApproval': False, 'mutatesAudio': False, 'subtitleOnlyGroupIds': [], 'repairGroupIds': [],
                 'results': [{'groupId': u['textGroupId'], 'status': 'pass', 'issues': [], 'asrDecision': 'pass',
                              'asrPrimary': 1.0, 'asrSecondary': None, 'asrPrimaryModel': ASR, 'asrSecondaryModel': None,
-                             'audioSha256': u['audio']['sha256'], 'failedAttempts': 0, 'nextAction': 'keep',
+                             'audioSha256': u['audio']['sha256'], 'textSha256': u['targetTextSha256'],
+                             'failedAttempts': 0, 'nextAction': 'keep',
                              'metrics': {}} for u in package['units']]}
     audio_waiver = basis.build_audio_waiver(package, screening, audio_qc, text_waiver, cal,
                                             track_check=track_check(package),

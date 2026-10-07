@@ -196,7 +196,8 @@ def audio_fixture(flagged=False):
           "results": [{"groupId": unit["textGroupId"], "status": "pass", "issues": [], "asrDecision": "pass",
                        "asrPrimary": value, "asrSecondary": 0.96 if value < 0.88 else None,
                        "asrPrimaryModel": PRIMARY_ASR, "asrSecondaryModel": SECONDARY_ASR if value < 0.88 else None,
-                       "audioSha256": unit["audio"]["sha256"], "failedAttempts": 0, "nextAction": "keep",
+                       "audioSha256": unit["audio"]["sha256"], "textSha256": unit["targetTextSha256"],
+                       "failedAttempts": 0, "nextAction": "keep",
                        "metrics": {}} for unit, value in zip(units, similarities)]}
     text = {"schemaVersion": basis.TEXT_WAIVER_SCHEMA, "reviewKind": "machine_quality_waiver",
             "humanApproval": False, "decision": "machine_quality_waived", "targetLocale": "ko",
@@ -308,6 +309,11 @@ class AudioWaiverTests(unittest.TestCase):
         swapped["results"][0]["audioSha256"] = "b" * 64
         with self.assertRaisesRegex(ValueError, "different audio"):
             self.build(package, screening, swapped, text)
+        # Same bytes, but the (secondary) ASR compared them with another script.
+        retexted = copy.deepcopy(qc)
+        retexted["results"][0]["textSha256"] = sha("other script")
+        with self.assertRaisesRegex(ValueError, "against different text"):
+            self.build(package, screening, retexted, text)
         with self.assertRaisesRegex(ValueError, "screening"):
             basis.validate_audio_waiver(package, receipt, None)
 

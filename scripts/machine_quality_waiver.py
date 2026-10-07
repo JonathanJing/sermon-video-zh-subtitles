@@ -30,6 +30,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 from pathlib import Path
 import sys
 
@@ -75,6 +76,13 @@ def json_sha256(value) -> str:
                                      separators=(",", ":")).encode("utf-8")).hexdigest()
 
 
+def _rate(value) -> float | None:
+    """A calibration rate: a finite real in [0, 1]. NaN, infinities and booleans are not rates."""
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
+        return None
+    return float(value) if 0 <= value <= 1 else None
+
+
 def calibration_problems(calibration: dict | None, locale: str, implementation: str, *,
                          require_audio: bool = False) -> list[str]:
     """Reasons the calibration cannot back a waiver; ``require_audio`` when audio ships."""
@@ -89,7 +97,8 @@ def calibration_problems(calibration: dict | None, locale: str, implementation: 
         problems.append("QC implementation changed since calibration")
     if calibration.get("semanticChecksIncluded") is not True:
         problems.append("calibration did not include the back-translation check")
-    if calibration.get("overallDetectionRate", 0) < CALIBRATION_MINIMUMS["overallDetectionRate"]:
+    overall = _rate(calibration.get("overallDetectionRate"))
+    if overall is None or overall < CALIBRATION_MINIMUMS["overallDetectionRate"]:
         problems.append("overall seeded-error detection below minimum")
     if require_audio and calibration.get("audioIncluded") is not True:
         problems.append("calibration did not include the audio checks")
@@ -97,17 +106,20 @@ def calibration_problems(calibration: dict | None, locale: str, implementation: 
                                                          if require_audio else [])
     kinds = calibration.get("kinds", {})
     missing = [kind for kind in expected if kind not in kinds]
-    untested = [kind for kind in expected if kind in kinds and not kinds[kind].get("trials", 0) > 0]
+    tried = [kind for kind in expected
+             if type(kinds.get(kind, {}).get("trials")) is int and kinds[kind]["trials"] > 0]
+    untested = [kind for kind in expected if kind in kinds and kind not in tried]
     # Only the kinds this release depends on: a weak audio kind does not block text-only.
-    weak = [kind for kind in expected if kinds.get(kind, {}).get("trials", 0) > 0
-            and kinds[kind].get("rate", 0) < CALIBRATION_MINIMUMS["perKindDetectionRate"]]
+    weak = [kind for kind in tried if (rate := _rate(kinds[kind].get("rate"))) is None
+            or rate < CALIBRATION_MINIMUMS["perKindDetectionRate"]]
     if missing:
         problems.append(f"calibration lacks seeded-error kinds {missing}")
     if untested:
         problems.append(f"calibration has no trials for {untested}")
     if weak:
         problems.append(f"seeded-error detection below minimum for {sorted(weak)}")
-    if calibration.get("cleanFalsePositiveRate", 1) > CALIBRATION_MINIMUMS["maxCleanFalsePositiveRate"]:
+    false_positive = _rate(calibration.get("cleanFalsePositiveRate"))
+    if false_positive is None or false_positive > CALIBRATION_MINIMUMS["maxCleanFalsePositiveRate"]:
         problems.append("clean false-positive rate above maximum")
     return problems
 
@@ -184,6 +196,8 @@ def bind_receipts(locale: str, candidate: dict, text_qc: dict, audio_qc: dict | 
             raise ValueError(f"Audio unit {unit['textGroupId']} was rendered from different text")
         if row.get("audioSha256") != unit["audio"]["sha256"]:
             raise ValueError(f"Audio QC screened different audio for {unit['textGroupId']}")
+        if row.get("textSha256") != unit["targetTextSha256"]:
+            raise ValueError(f"Audio QC checked {unit['textGroupId']} against different text")
     return group_ids, sentences
 
 
@@ -203,8 +217,15 @@ def waive(locale: str, candidate: dict, text_qc: dict, audio_qc: dict | None,
     if audio_qc is not None:
         pending += [row["groupId"] for row in audio_qc["results"]
                     if row["nextAction"] not in {"keep", "subtitle_only"}]
-    fallback = list(text_qc["sourceTextFallbackGroupIds"])
-    subtitle_only = list(audio_qc["subtitleOnlyGroupIds"]) if audio_qc is not None else []
+    # The per-group results decide; a summary list that disagrees is refused.
+    fallback = [row["groupId"] for row in text_qc["results"] if row["nextAction"] == "source_text_fallback"]
+    if list(text_qc.get("sourceTextFallbackGroupIds", [])) != fallback:
+        raise ValueError("Text QC fallback list differs from its per-group results")
+    subtitle_only = []
+    if audio_qc is not None:
+        subtitle_only = [row["groupId"] for row in audio_qc["results"] if row["nextAction"] == "subtitle_only"]
+        if list(audio_qc.get("subtitleOnlyGroupIds", [])) != subtitle_only:
+            raise ValueError("Audio QC subtitle-only list differs from its per-group results")
     undubbed = sorted(set(fallback) | set(subtitle_only), key=group_ids.index)
     total = sum(sentences.values())
     fallback_sentences = sum(sentences[group_id] for group_id in fallback)
