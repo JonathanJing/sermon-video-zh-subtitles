@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "p0-gate-acceptance-receipt-v1",
+  "base": "870f511554798d6028d37f7461a94ad71a6cbf37",
+  "modelCalls": 0,
+  "firebaseDeploy": false,
+  "sparkServiceChange": false,
+  "items": {
+    "DEV-R242-026": {
+      "status": "waiting_evidence",
+      "strictCliRequests": 0,
+      "uncappedStandaloneAndLegacyChatRefused": true,
+      "notesResponsesApiUngated": true,
+      "invoiceVerified": false
+    },
+    "DEV-R242-028": {
+      "status": "waiting_evidence",
+      "controllerSha256": "743854293e8cfe86ca24ac28a4c77115c1af9e071b581bcb16135a4601c96e71",
+      "activeSession": "run-605s-gemini-20261005",
+      "activeSessionStatus": "closed",
+      "unknownJobs": 0,
+      "modelId": "Qwen3.8-27B-UD-Q4_K_XL-Unsloth",
+      "exclusiveReadyForNextRun": false,
+      "migrationSnapshotIgnored": true
+    },
+    "DEV-PROD-001": {
+      "status": "blocked",
+      "decision": "blocked",
+      "contentDeploy": false,
+      "sectionHashRequired": true,
+      "deployPerformedOnlyAfterCommand": true,
+      "missing": [
+        "weeklyProduction",
+        "devHttp",
+        "rollbackBaseline",
+        "productionAuthorization",
+        "preDeployVerification"
+      ]
+    }
+  }
+}

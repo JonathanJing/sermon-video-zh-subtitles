@@ -391,7 +391,7 @@ class ActualDiagnosticFlowTests(unittest.TestCase):
         config = {'schemaVersion': flow.SCHEMA, 'locales': {locale: {
             'localeSpec': f.locale_specs[locale], 'previewSpec': f.preview_specs[locale]} for locale in f.locale_specs}}
         with patch.object(accounting, 'execution_identity', return_value=f.execution_identity):
-            session = sessions.DiagnosticSession(f.plan, f.continuation, offline_transport=f.transport)
+            session = sessions.DiagnosticSession(f.plan, f.continuation, offline_transport=f.transport, request_limits=f.request_limits)
             dag = flow.DiagnosticDAG(session, config)
             path = f.root / 'budget' / budget.STORE_ID / 'provider-run/state.json'
             original = c.read_snapshot(path)[0]
@@ -404,7 +404,7 @@ class ActualDiagnosticFlowTests(unittest.TestCase):
                 self.assertEqual(results['delivery.readonly']['businessStatus'], 'diagnostic_traversal_complete')
                 worker_receipt = dag.results['preview.zh-Hans']['receiptPath']
                 worker_bytes = Path(worker_receipt).read_bytes()
-                replay_session = sessions.DiagnosticSession(f.plan, f.continuation, offline_transport=f.transport)
+                replay_session = sessions.DiagnosticSession(f.plan, f.continuation, offline_transport=f.transport, request_limits=f.request_limits)
                 replay = flow.DiagnosticDAG(replay_session, config); replay.freeze()
                 again = {node[0]: replay.execute(node[0]) for node in replay.nodes}
                 self.assertTrue(again['delivery.readonly']['readyForDownstream'], again)
@@ -442,7 +442,7 @@ config={'schemaVersion':flow.SCHEMA,'locales':{locale:{'localeSpec':fixture.loca
     'previewSpec':fixture.preview_specs[locale]} for locale in fixture.locale_specs}}
 state=fixture.root/'budget'/budget.STORE_ID/'provider-run/state.json'
 before=c.read_snapshot(state)[0]
-session=DiagnosticSession(fixture.plan,fixture.continuation,offline_transport=fixture.transport)
+session=DiagnosticSession(fixture.plan,fixture.continuation,offline_transport=fixture.transport, request_limits=fixture.request_limits)
 result=flow.run(session,config)
 assert result['status']=='diagnostic_traversal_complete', result
 assert len(fixture.transport.observations)==6

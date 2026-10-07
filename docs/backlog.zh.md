@@ -42,9 +42,9 @@ English index: [backlog.md](./backlog.md)
 | 子任务／归属 | 优先级／状态 | 已有工作与下一验收 | 依赖 |
 |---|---|---|---|
 | `DEV-R242-025` 新模型及CLI迁移验收；`DEV-L1-001/L2-001/SPD-006` | P1 / `in_progress` | 17f7d026已接主要文字入口Sol6.1 high/medium fast与Luna medium fast、ChatGPT CLI/ASR key隔离；487项/214subtests为历史收据。Study v2仍为旧模型/default tier的bounded direct API，schema/参数/CLI adapter迁移未做，归013/025。剩#248合并、远端/定时入口安装与参数回读、新身份完整四层、medium复核和Luna CLI匹配测速；旧模型数字不重标 | [模型策略](production-model-runtime-policy.zh.md)、R242-013/020/022；现有凭据和旧run身份 |
-| `DEV-R242-026` CLI严格预算能力；`R242-011/012/022`、`DEV-COST-001` | P0 / `blocked` | L1/L2 CLI已在发送前拒绝不兼容的API输出cap；CLI无已验证输出token/单次最坏费用边界适配。待覆盖L1/L2及尚未迁移的Study、未dispatch的STE、未实现的fallback；保守reservation与unknown对账，不能以timeout/平均费用/credit估算解锁；能力或独立风险契约未解决前不启动新严格CLI请求 | [严格预算](canonical-layer2-budget-and-migration.zh.md)、[fallback设计](codex-quota-api-fallback-design.zh.md)；不削弱原门禁 |
+| `DEV-R242-026` CLI严格预算能力；`R242-011/012/022`、`DEV-COST-001` | P0 / `waiting_evidence` | 2026-10-05本地复盘后，standalone transport 与旧文字 Chat 也在 json_request 前拒绝无上限载荷。canonical／Study／来源机审仍须 default 档完成 token 上限。Codex CLI 不能充当带预算 worker。fast 档预算授权、笔记 Responses API 和真实 debit 仍缺，不标 complete | [验收](reports/20261005-p0-gate-acceptance.zh.md)、[严格预算](canonical-layer2-budget-and-migration.zh.md) |
 | `DEV-R242-027` Quota-gated API认证CLI fallback；`DEV-SPD-006`、`DEV-COST-001/002` | P1 / `pending` | f7afa0a5仅交付设计。剩真实额度拒绝分类、共享route/run准入、claim/fencing、授权费用/ASR预留、隔离认证、混合身份接续、额度恢复及小额真实验收；默认关闭，设计批准不授予金额 | 026和明确预算授权；[设计验收矩阵](codex-quota-api-fallback-design.zh.md#实现顺序与验收) |
-| `DEV-R242-028` Spark整轮独占及服务恢复；`R242-012/017/021`、`DEV-DIAG-018` | P0 / `in_progress` | 2373bfff只提交设计；工作树已有spark_exclusive_session/production_spark_admission和入口接线WIP，未提交/未实机验收。剩受管准入封闭、恢复快照、drain/begin、全部GPU/MFA/付费前session核验、双测试+返修不中途恢复、finish原服务健康及bootId/unknown/部分恢复故障验证 | [独占设计](spark-exclusive-development-session.zh.md)；exclusive_ready前不启动605秒真实测试，不擅自恢复未决job |
+| `DEV-R242-028` Spark整轮独占及服务恢复；`R242-012/017/021`、`DEV-DIAG-018` | P0 / `waiting_evidence` | 2026-10-05只读验收：活动session.json为closed，controller SHA与当前spark_exclusive_session.py一致，四unit active，原模型健康，job均terminal且unknown=0。回归确认migration快照不是活动账本，closed后不能开工。下一次真实模型测试仍须新建exclusive_ready | [验收](reports/20261005-p0-gate-acceptance.zh.md)、[独占设计](spark-exclusive-development-session.zh.md) |
 
 遗漏的公平/老化、180秒busy长队列、角色译审拆队列分别补入009/011/021；GPU乱序补窗、跨job热驻留、ASR迁移分别归012/021；replica generation/父等待/wall分账归017；新并行profile的Temporal native验收归024。不为这些已有父项再次创建竞争backlog。
 
@@ -92,7 +92,7 @@ English index: [backlog.md](./backlog.md)
 可复用能力与首批缺口：
 
 - [benchmark_layer2_bounded.py](../scripts/experiments/benchmark_layer2_bounded.py) 的 `capture_prompts` 已能从真实 group closure 捕获译审请求并在调用前停止；`target_language_policy_preview.freeze_payload_preview` 已保存 payload／policy hashes。002 扩展这些入口到完整 CLI 输入和全环节，避免重建第二套 prompt builder。
-- canonical 的 modelRules 前检依赖实际传入 plugin；strict 目前没有同一条 modelRules／formatting 消费链。库和 review 须分别展示 `consumed/not_run/unsupported` 及原因，补冻结规则一致性审查，不因模板指向同一 policy 就认定行为相同。
+- 正式 `run()` 与 `run_accounted()` 在派发前要求冻结语言插件并消费 modelRules。strict locale 消费同一份冻结收据。非诊断的 strict 新调用没有 `rulePreflight` 时在派发前拒绝；诊断上下文和只读历史缓存仍可沿用原 prompt。内部 `_run_prepared_groups` 仍可省略插件，只用于模拟和复现没有规则收据的旧缓存。库和 review 须分别展示 `consumed/not_run/unsupported` 及原因。
 - canonical `partialRepair.instruction` 会拼入 system；strict 的 issue evidence 则按解释数据处理。优先审查自由文本修订指令的信任边界、来源和允许范围，禁止来源／模型证据越权覆盖冻结政策。
 - legacy 分段缓存缺完整 system literal、系列规则与 wrapper／schema 身份；先补漂移检测及兼容迁移设计，迭代不能只改常量而继续复用旧结果。现有请求已带的 hash 和 version 应复用，历史缓存不删除或改写。
 
@@ -125,7 +125,7 @@ Git 保存非敏感模板、registry、最小合成 fixture 与评审记录；�
 
 | 既有 ID | 本次确认的实现／证据 | 下一项仍缺的验收 |
 |---|---|---|
-| R242-001/005/011 | 新冻结诊断链已接实际CLI/plugin/候选准入；首轮26调用plugin拦截1个pending书名不匹配；新策略保留原书名后26调用/plugin13组/诊断候选通过，0调用恢复 | 正式术语人审与正式/strict adapter；逐组plugin早停和局部修订接线仍待验收 |
+| R242-001/005/011 | 新冻结诊断链已接实际CLI/plugin/候选准入；首轮26调用plugin拦截1个pending书名不匹配；新策略保留原书名后26调用/plugin13组/诊断候选通过，0调用恢复。runner 在单组复核后执行同版 plugin，失败则不再派发后续组。完整直引绑定同一翻译组和版次全文。plugin 早停后的局部修订只重跑被拒组，已完成组复用缓存，并核对被拒译文 hash。正式 run/run_accounted 派发前要求冻结语言插件。非诊断 strict 新调用必须带 rulePreflight | 正式术语人审。诊断上下文和只读历史缓存仍可不带 rulePreflight。已在途的并行组不中止 |
 | R242-003/017 | receipt快照复用已合并；474句完整解码800.787065→48.098803秒已实测 | 新并行修订的保护不变量与新生产验证；不重做原474基线 |
 | R242-004/010/012/018 | 异常留存、恢复计划及producer只读intent/settings exporter已实现；真实474导出16.573s/规划42.150s，revalidate474、0推理，原1910文件不变；owner软件已合并 | owner执行实际恢复批次仍缺；planner未比较assembly设置；同步仍fail，需局部裁定/修复及下游重建 |
 | R242-009/019/021 | 100 步真实进程＋mock provider；24 路短 CLI；419 单元离线规模回归由 CI 执行 | 新译→审核长队列、跨主机 broker/DAG、session GPU 许可/真冷暖、当前代码真实 8×8 压力 |
@@ -133,7 +133,7 @@ Git 保存非敏感模板、registry、最小合成 fixture 与评审记录；�
 | R242-005/018/023；DEV-STE-001/002/006 | 中文固定样本机器 A/B、只读最终稿对照 | 直接/部分经文、ko/es、长上下文的具名盲评、Gold/阈值与音频听审 |
 | R242-006/007/013–015/020 | 历史 Dev 页面 HTTP/native repository 读回；近期译审/TTS 组件成功 | 同一新身份的完整四层收据；同步、独立人审、Dev/Beta/正式晋级和真机播放分别留证 |
 
-后续[新规则与扩大样本复测](reports/20261005-cli-rule-chain-expanded-sample-retest.zh.md)已完成本轮接线：同源605.500007秒、136单元/46组样本完成直接经文负例前检，0调用拒绝；31分32秒420单元整篇源和32分22秒474单元旧缓存可用。诊断pending书名约定已同版冻结，下一步补逐组plugin早停、直接经文版次/分组adapter，再做10分钟实际线上对比，并独立处理同步、owner和正式CLI。原审计未调用模型或部署；本轮52次CLI未发布，原正式模型策略、8 秒同步门槛、已绑定批准及 unknown 占槽规则保持原范围。旧日期章节按其历史证据解释，不据旧“pending”文字重复开发已存在模块。
+后续[新规则与扩大样本复测](reports/20261005-cli-rule-chain-expanded-sample-retest.zh.md)已完成本轮接线：同源605.500007秒、136单元/46组样本完成直接经文负例前检，0调用拒绝；31分32秒420单元整篇源和32分22秒474单元旧缓存可用。诊断pending书名约定已同版冻结。逐组 plugin 早停、直接经文版次/分组 adapter，以及早停后只重跑受拒组的局部修订已在本分支接线；10分钟实际线上对比仍未跑，同步、owner 和正式 CLI 仍独立处理。原审计未调用模型或部署；本轮52次CLI未发布，原正式模型策略、8 秒同步门槛、已绑定批准及 unknown 占槽规则保持原范围。旧日期章节按其历史证据解释，不据旧“pending”文字重复开发已存在模块。
 
 <a id="pr242-remaining-backlog"></a>
 
@@ -159,7 +159,7 @@ Git 保存非敏感模板、registry、最小合成 fixture 与评审记录；�
 | `DEV-R242-002` L1唯一缓存与有界并行入口；`DEV-L1-001`、`DEV-SPD-004` | `in_progress` | L1 judge 共用不可变 cache、single-flight、started/unknown 与1–8 workers 已由#242合并；ae7a7fef新增source4/judge8及共享业务池。剩新来源真实执行、所有正式入口覆盖及跨修订精确迁移；不重新开发已有锁/cache | 001执行身份；已有request cache |
 | `DEV-R242-003` L3收据上下文复用；`DEV-L3-001`、`DEV-DIAG-015` | `waiting_evidence` | receipt上下文复用及依赖漂移拒绝已合并；同474句真实cache完整解码对照已完成800.787065→48.098803秒（仅校验阶段）。下一项是新并行修订的保护不变量及新生产验证，planner/assembly比较仍独立归004 | 001；输入快照不变量 |
 | `DEV-R242-004` 单句异常隔离与同步恢复；`DEV-L3-001/002`、`DEV-SPD-004` | `in_progress` | 保存异常旧WAV，输出duration/source比、局部lag跳升和后续传播；生成早期检测高风险连续段，预测与实测分开。先判断TTS单句修复或L2修订，再独立重算排程；验证未变单元0重合成和原8秒目标。不得自动扩大容差；u172旧WAV缺失保留根因未知 | 001；复用既有单元恢复 |
-| `DEV-R242-005` 模型实际输入政策预览；`DEV-L2-001/002`、`DEV-STE-001/002` | `in_progress` | payload/policy预览、changed set、精确零调用迁移和canonical modelRules前检已实现；CLI/plugin/诊断候选链已有真实证据。剩strict同版规则消费、正式经文版次/group adapter及全生产入口覆盖；prompt-only实验归023/PROMPT | 001；既有partial repair与迁移 |
+| `DEV-R242-005` 模型实际输入政策预览；`DEV-L2-001/002`、`DEV-STE-001/002` | `in_progress` | payload/policy预览、changed set、精确零调用迁移、canonical/strict 规则消费和逐组 plugin 早停已实现。完整直引可以跨同一翻译组内的连续英文单元，拼接后必须等于版次全文；拆组或缩短在派发前拒绝。plugin 早停必须带同一 plugin，并且只对受拒组做 reviewer 局部修订；已完成组复用缓存，未派发的后续组仍会继续。正式 `run()` 与 `run_accounted()` 在派发前要求冻结语言插件。plugin 早停修订还必须对上被拒译文的 hash。非诊断的 strict 新调用也必须带 `rulePreflight`；诊断上下文和只读历史缓存仍可沿用原 prompt。内部 `_run_prepared_groups` 仍可省略插件，只用于模拟和复现旧缓存。prompt-only实验归023/PROMPT | 001；既有partial repair与迁移 |
 | `DEV-R242-006` 元数据与双环境路由门禁；`DEV-WEEK-001`、`DEV-L4-004/007` | `in_progress` | 元数据/环境路由/来源与page绑定代码已由#242合并；已存在占位和错版本拒绝。剩新身份Hosting发布后的catalog/content、Beta/正式双端读回；元数据修复不重生成音频 | 001；现有Dev/prod路由 |
 | `DEV-R242-007` 发布收据版本闭合；`DEV-CICD-001`、`DEV-L4-003` | `in_progress` | 发布attempt、live版本、资产/HTTP及上游绑定软件已由#242合并；旧副本和错误绑定负例已有。剩当前授权目标真实部署、失败HTTP及回退收据，缺历史时间仍unknown | 006；真实publisher返回值 |
 | `DEV-R242-008` 统一CLI计划、查询与审核入口；`DEV-SPD-006`、`DEV-DIAG-017` | `waiting_evidence` | v2 CLI计划/只读查询/review ingest及CAS continuation已合并，真实CLI/后台owner离线验收通过；不是只有schema/fixture。剩新模型新身份正式整链和当前并行路径的实际运行证据 | 001；[协议](unified-cli-protocol.zh.md) |
@@ -569,7 +569,7 @@ D1 合同实现可以开工；真实 A/B 前仍须冻结实际样本、工具/�
 | `DEV-TRACK-001` | Producer 自动记账、状态与 ETA | `in_progress` | Layer 2 逐组／Layer 3 逐单元记账接线、子阶段和时间线投影已合入；下一次真实周产验证同一账本覆盖筛查、构建、部署、审核等待、失败与重试，并按效率计划汇总整周时间和 token；公开 Tracker 只投影脱敏状态，未测步骤保持未知；新增总体进度／ETA 投影为 pending，须当前单次 180 秒诊断完成后实现，见[进度与 ETA 待办](#progress-eta-followup) | [Tracker 接入项](four-layer-production-tracker.zh.md#tracker-接入-backlog)、[版本对照](reports/20260929-dev-release-backlog-audit.zh.md) |
 | `DEV-REVIEW-001` | 私有多语言人工审核后台 | `pending` | 两位不同语言审核者可并行审阅 Layer 2/3；权限、hash、版本、移交、修订失效和不可变收据均 fail closed | [审核后台设计](four-layer-production-tracker.zh.md#多语言人工审核后台-backlog) |
 | `DEV-LIVE-001` | 独立 Sunday `live_session` | `in_progress` | 现场 ASR final 保持事实源；翻译、术语、延迟、发布和 fallback 有独立真实回放／现场证据，不借用四层预制完成状态 | [工作流总览](workflows/README.zh.md)及本页历史附录 |
-| `DEV-PROD-001` | Dev 代码晋升与后续内容发布 | `blocked`（后续内容部署门禁） | W40 代码已由 #116 晋升 main，并由 #118 回同步 Dev；此处不再表示代码未合并。后续内容部署仍须逐次具备完整周产、Dev HTTP、回滚基线、Production 发布授权及部署前核验；设备／现场另记，不因已有代码晋升而放行 | [Production 合并检查](multilingual-production-premerge-2026-09-23.zh.md)、[版本对照](reports/20260929-dev-release-backlog-audit.zh.md) |
+| `DEV-PROD-001` | Dev 代码晋升与后续内容发布 | `blocked`（后续内容部署门禁） | W40 代码晋升记录保持有效。2026-10-05本地复盘：`--execute` 在 Firebase 前要求五项证据各自带 sha256；只有 status 或损坏 JSON 都会拒绝。当前证据仍 blocked，未部署。代码晋升、设备和现场不能代替这五项 | [验收](reports/20261005-p0-gate-acceptance.zh.md)、[Production 合并检查](multilingual-production-premerge-2026-09-23.zh.md) |
 
 ### `DEV-FIELD-001`：远场声音对齐
 

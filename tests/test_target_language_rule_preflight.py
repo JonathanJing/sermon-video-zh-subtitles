@@ -177,7 +177,8 @@ class TargetLanguageRulePreflightTests(unittest.TestCase):
     def test_unproven_historical_carry_forward_requires_migration_without_new_calls(self):
         f = self.fixture
         legacy = self.worker.out.parent / "legacy"
-        runner.run(f.source, f.anchor, f.policy, legacy, "fixture-key", self.worker.fake_call)
+        request = runner.producer.prepare_request(f.source, f.anchor, f.policy)
+        runner._run_prepared_groups(request, f.anchor, f.policy, legacy, "fixture-key", self.worker.fake_call)
         self.worker.calls.clear()
         with self.assertRaisesRegex(ValueError, "prior cache lacks matching frozen rule receipt"):
             runner.run(f.source, f.anchor, f.policy, self.worker.out, "fixture-key", self.worker.fake_call,
@@ -254,6 +255,74 @@ class TargetLanguageRulePreflightTests(unittest.TestCase):
         write()
         with self.assertRaisesRegex(ValueError, "complete direct quote was split or shortened"):
             self.receipt()
+
+    def test_complete_quote_spans_one_group_and_a_split_plan_sends_nothing(self):
+        from scripts.cuv_scripture import CuvLibrary
+        library = CuvLibrary.from_path()
+        verse = library.lookup("REV 2:4")
+        units = self.request["sourceUnits"]
+        self.assertGreaterEqual(len(units), 2)
+        cut = verse["text"].index("，") + 1
+        excerpts = (verse["text"][:cut], verse["text"][cut:])
+        self.assertTrue(all(verse["text"].count(excerpt) == 1 and excerpt for excerpt in excerpts))
+        parts = []
+        for unit, excerpt in zip(units[:2], excerpts):
+            selected = library.lookup("REV 2:4", excerpt=excerpt)
+            parts.append({"sourceUnitId": unit["sourceUnitId"], "englishStartOffset": 0,
+                "englishEndOffset": len(unit["english"]),
+                "englishExcerptSha256": subject._sha_text(unit["english"]),
+                "reference": "REV 2:4", "cuvExcerpt": excerpt,
+                "cuvExcerptSha256": selected["textSha256"]})
+        approval = {"humanApproval": True, "decision": "approved",
+                    "englishSourcePackageJsonSha256": self.request["englishSourcePackageJsonSha256"],
+                    "anchorManifestJsonSha256": self.request["anchorManifestSha256"],
+                    "decisions": [{"candidateId": "fixture-quote", "classification": "direct_quote",
+                                   "parts": parts, "paraphraseUnitIds": []}]}
+        additions = {"CUV_EDITION_ID": "cmn-cu89s",
+                     "CANDIDATE_VERSES": {"fixture-quote": {"REV 2:4"}},
+                     "CANDIDATE_QUOTE_UNITS": {"fixture-quote": {part["sourceUnitId"] for part in parts}},
+                     "APPROVED_BOUNDARY_REVIEW": approval}
+        self.plugin.write_text(self.plugin.read_text() + "\n" + "\n".join(
+            key + " = " + repr(value) for key, value in additions.items()))
+        self.policy["scripture"]["editionId"] = "cmn-cu89s"
+        self.policy["scripture"]["quoteCheckPolicy"] = "source_bound_exact_quote"
+        self.policy["componentSha256"]["scripture"] = policy_tools.canonical_sha256(self.policy["scripture"])
+        self.repin()
+        joined = [{"translationGroupId": "quote-group",
+                   "sourceUnitIds": [part["sourceUnitId"] for part in parts]}]
+        receipt = subject.preflight(self.request, self.policy, self.plugin, joined)
+        self.assertEqual([part["cuvExcerpt"] for part in parts],
+                         [quote["targetText"] for quote in receipt["modelRules"]["exactQuotes"]])
+        self.assertEqual(0, receipt["modelCalls"])
+        split = [{"translationGroupId": "group-" + part["sourceUnitId"],
+                  "sourceUnitIds": [part["sourceUnitId"]]} for part in parts]
+        with self.assertRaisesRegex(ValueError, "split across groups or omitted"):
+            subject.preflight(self.request, self.policy, self.plugin, split)
+        self.worker.calls.clear()
+        with self.assertRaisesRegex(ValueError, "split across groups or omitted"):
+            runner.run(self.fixture.source, self.fixture.anchor, self.policy, self.worker.out,
+                       "fixture-key", self.worker.fake_call, split, self.plugin)
+        self.assertEqual([], self.worker.calls)
+
+    def test_checked_in_partial_quote_allows_commentary_gap_but_still_binds_order_and_group(self):
+        from scripts.language_review_plugins import zh_hans_weekly_cuv as plugin
+        decision = next(row for row in plugin.APPROVED_BOUNDARY_REVIEW['decisions']
+                        if row['candidateId'] == 'rev-5-1-4')
+        parts = decision['parts']
+        ids = ['0-u161', '0-u162', '0-u163', '0-u164', '0-u165']
+        rows = dict.fromkeys(ids, 'fixture source')
+        plan = [{'sourceUnitIds': ids}]
+        subject._bind_quote_group(plan, rows, decision, parts, None)
+        with self.assertRaisesRegex(ValueError, 'reordered inside'):
+            subject._bind_quote_group([{'sourceUnitIds': ids[::-1]}], rows, decision, parts, None)
+        with self.assertRaisesRegex(ValueError, 'split across groups'):
+            subject._bind_quote_group([{'sourceUnitIds': ids[:3]}, {'sourceUnitIds': ids[3:]}],
+                                      rows, decision, parts, None)
+        with self.assertRaisesRegex(ValueError, 'reordered in the source'):
+            subject._bind_quote_group(plan, rows, decision, parts[::-1], None)
+        complete = dict(decision, classification='direct_quote')
+        with self.assertRaisesRegex(ValueError, 'not contiguous'):
+            subject._bind_quote_group(plan, rows, complete, parts, None)
 
     def test_plugin_name_form_conflict_is_rejected_before_dispatch(self):
         self.policy["terminology"]["properNames"] = [{"source": "Jesus", "target": "耶稣", "reviewStatus": "project_established"}]

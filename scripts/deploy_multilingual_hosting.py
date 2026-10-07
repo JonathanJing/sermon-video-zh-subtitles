@@ -83,12 +83,25 @@ def main() -> None:
     parser.add_argument("--preflight", required=True, type=Path)
     parser.add_argument("--out", required=True, type=Path)
     parser.add_argument("--execute", action="store_true")
+    parser.add_argument("--content-release-admission", type=Path)
     args = parser.parse_args()
     if args.out.exists() or args.out.is_symlink():
         raise ValueError(f"Deployment receipt already exists: {args.out}")
     receipt = prepare(args.candidate, args.preflight)
     if args.execute:
+        if args.content_release_admission is None:
+            raise ValueError("production_content_release_admission_required")
+        from scripts.production_content_release_admission import load
+        decision = load(args.content_release_admission,
+                        candidate_dir=args.candidate,
+                        candidate_sha256=receipt["buildReportSha256"],
+                        preflight_sha256=receipt["preflightSha256"])
+        if decision["decision"] != "admitted" or decision["pageId"] != receipt["pageId"]:
+            raise ValueError("production_content_release_blocked")
+        receipt["contentReleaseAdmission"] = {
+            "decision": decision["decision"], "pageId": decision["pageId"], "deployPerformed": False}
         subprocess.run(COMMAND, cwd=args.candidate, check=True)
+        receipt["contentReleaseAdmission"]["deployPerformed"] = True
         receipt["status"] = "deployed_http_verification_pending"
         receipt["deployedAt"] = datetime.now(timezone.utc).isoformat()
     args.out.parent.mkdir(parents=True, exist_ok=True)

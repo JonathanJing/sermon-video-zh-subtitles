@@ -7,12 +7,16 @@
 `sermon_strict_layer2.prepare(source_bytes, anchor_bytes, policy_bytes, rubric_bytes, group)` 使用真实 Layer 1 就绪验证与显式 v3 strict policy，冻结实际 canonical/byte identities。传入的 group 必须连续覆盖指定英语单元。`generate(...)` 仅生成首版；`review(...)` 读取既有冻结候选，不能调用 Generator。
 
 ```
-prepared = prepare(source_bytes, anchor_bytes, policy_bytes, rubric_bytes, group)
+prepared = prepare(source_bytes, anchor_bytes, policy_bytes, rubric_bytes, group,
+                   rule_preflight=receipt,
+                   rule_context={'pluginPath': str(plugin_path), 'groupPlan': full_group_plan})
 generate(prepared, revision_root, candidate_id, revision_id, api_key, caller,
          cache_only=False, depends_on=None, completion_spans=None)
 review(prepared, revision_root, candidate_id, revision_id, api_key, caller,
        cache_only=False, attempt_number=1, depends_on=None, completion_spans=None)
 ```
+
+正式调用必须提供按当前 source/anchor、strict policy/rubric、固定插件和完整 group plan 生成的规则预检收据。`prepare`、预算/门禁/bridge 重建及实际发送前均重新生成并完整比较收据；revision 内不可变保存 `rule-context.json`。缺少该验证上下文的历史正式收据不能直接恢复，需要显式迁移，不能只重新计算 bundle hash。无收据的旧 diagnostic/cache-only 路径保留原范围。
 
 调用者必须提供已开启 D2 profile 的 context。没有记录的依赖保留 None，不能默认为并行根；同一执行的 dispatcher 可传真实 completion span IDs。第二次审核只是显式低层参数（最多 2）；adapter 不自行授权/调度，实际 dispatcher 必须先取得 D5 reservation。任意路径/新目录不是新的已批准额度。
 
@@ -33,3 +37,7 @@ Generator 只返回四字段 group artifact；任何 review/approval/额外自�
 开发回归覆盖不可变候选、独立请求、只读输出拒绝、内容失败与执行失败区分、未知 transport、不重复生成/调用、源 bytes/运行中候选变化、真实共享 HTTP 函数上的响应先落盘/日志失败、原始回执绑定、记录到的依赖与 token 缺失、legacy policy/producer/cache/retry 行为。
 
 所有 transport 均为本地模拟或 mock；未请求凭证、未进行付费推理或新 180 秒流程。D6 Stage 0 与 D7 分阶段真实验收均未由这些测试满足。模型预算、human sign-off、生产 controller 全部接线、共享资源控制、跨进程时钟/队列完整性仍需独立证据。
+
+严格 locale 新输入绑定使用 `sermon-strict-locale-input-v2`，规则预检和实际执行共用 `prepare_locale_inputs`；诊断 `--phase preflight` 在读取凭据前检查相同的插件、分组规则及规则展开后的有界请求。未来生成内容仍须在审核发送边界检查，预检不保证未知候选的长度。
+
+已有 v1 必须显式传入 `run_locale(..., resume_legacy=True)`；诊断 continuation CLI 对应 `--resume-legacy-locale`，显式旧 DAG 迁移也传递此选项。原 `locale-input.json` 和已付费组缓存不改写，新身份及迁移说明分别存于 `locale-input-v2.json`、`locale-input-migration.json`。具有完整、与当前重新计算结果一致的 `rulePreflight` 和 `ruleContext` 的 v1 保留原身份继续复用缓存。更早的无规则收据或无验证上下文的 v1 返回 `strict_locale_legacy_rules_not_proven`，列出保留的组目录，阻断新调用；须在新修订/目录重建当前规则链，不将旧提示词升级成已消费新规则，也不自动重跑付费工作。迁移说明不构成人工批准。

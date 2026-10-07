@@ -150,7 +150,7 @@ class AdmissionBoundary:
             names = sorted(p.name for p in root.iterdir() if p.name != '.admission')
             c.require(len(names) <= 64 and all(name.endswith('.json') for name in names),
                       'unrecognized_revision_evidence')
-            fixed = {'request-limits.json', 'strict-identity.json', 'revision.json', 'candidate.json', 'review-input.json',
+            fixed = {'request-limits.json', 'rule-preflight.json', 'rule-context.json', 'strict-identity.json', 'revision.json', 'candidate.json', 'review-input.json',
                      'parent-revision.json', 'parent-candidate.json', 'repair-plan.json', 'trigger-review.json',
                      'repair-input.json', 'repair-sidecars.json', 'repair-history.json'}
             c.require(all(name in fixed or re.fullmatch(
@@ -164,7 +164,9 @@ class AdmissionBoundary:
             candidate = c.decode_json(data['candidate.json'])
             prepared = strict.prepare(*(files[k] for k in ('source', 'anchor', 'policy', 'rubric')),
                 {k: candidate[k] for k in ('translationGroupId', 'sourceUnitIds')},
-                request_limits=c.decode_json(data['request-limits.json']) if 'request-limits.json' in data else None)
+                request_limits=c.decode_json(data['request-limits.json']) if 'request-limits.json' in data else None,
+                rule_preflight=c.decode_json(data['rule-preflight.json']) if 'rule-preflight.json' in data else None,
+                rule_context=c.decode_json(data['rule-context.json']) if 'rule-context.json' in data else None)
             for name in names:
                 if not name.endswith('.policy-preview.json'):
                     continue
