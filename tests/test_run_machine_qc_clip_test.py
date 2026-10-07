@@ -73,6 +73,13 @@ def synthetic_run(test: unittest.TestCase, root: Path, *, human_approved: bool =
     return run
 
 
+def set_text(candidate: dict, text: str) -> None:
+    """Revise the first group's text, keeping the utterances and coverage Layer 3 checks."""
+    group = candidate["groups"][0]
+    group["targetText"], group["targetUtterances"] = text, [text]
+    group["coverage"][0]["targetText"] = text
+
+
 class MachineQcClipDriverTests(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()
@@ -122,7 +129,7 @@ class MachineQcClipDriverTests(unittest.TestCase):
         self.assertEqual(self.run_driver(run), 0)
         path = run / "diagnostic-previews/ko/native-1/candidate.json"
         candidate = json.loads(path.read_text(encoding="utf-8"))
-        candidate["groups"][0]["targetText"] = qc_fixtures.TARGET[LOCALE][0] + " "
+        set_text(candidate, qc_fixtures.TARGET[LOCALE][0] + " ")
         path.write_text(json.dumps(candidate, ensure_ascii=False), encoding="utf-8")
         self.run_driver(run)
         anchor = json.loads((run / "anchor-manifest.json").read_text(encoding="utf-8"))
@@ -136,7 +143,8 @@ class MachineQcClipDriverTests(unittest.TestCase):
         path = run / "diagnostic-previews/ko/native-1/candidate.json"
         candidate = json.loads(path.read_text(encoding="utf-8"))
         original = candidate["groups"][0]["targetText"]
-        candidate["groups"][0]["targetText"] = broken = original + " 덧붙임"
+        broken = original + " 덧붙임"
+        set_text(candidate, broken)
         path.write_text(json.dumps(candidate, ensure_ascii=False), encoding="utf-8")
         init = driver.FakeJudge.__init__
 
@@ -153,7 +161,7 @@ class MachineQcClipDriverTests(unittest.TestCase):
         with patch.object(driver.basis.waiver, "implementation_sha256", return_value="other"):
             self.assertEqual(self.run_driver(run), 1)
         self.assertEqual(self.summary()["status"], "blocked_prior_failure")
-        candidate["groups"][0]["targetText"] = original
+        set_text(candidate, original)
         path.write_text(json.dumps(candidate, ensure_ascii=False), encoding="utf-8")
         self.assertEqual(self.run_driver(run), 0)
         self.assertEqual(self.summary()["status"], "fake_plumbing_pass", self.summary().get("reason"))
@@ -210,7 +218,7 @@ class MachineQcClipDriverTests(unittest.TestCase):
             first = first_path.read_bytes()
             path = run / "diagnostic-previews/ko/native-1/candidate.json"
             candidate = json.loads(path.read_text(encoding="utf-8"))
-            candidate["groups"][0]["targetText"] = qc_fixtures.TARGET[LOCALE][0] + " "
+            set_text(candidate, qc_fixtures.TARGET[LOCALE][0] + " ")
             path.write_text(json.dumps(candidate, ensure_ascii=False), encoding="utf-8")
             self.assertEqual(driver.main(argv), 0)
         second_path = Path(self.real_row()["textWaiver"])
@@ -223,7 +231,8 @@ class MachineQcClipDriverTests(unittest.TestCase):
         run = synthetic_run(self, self.root)
         path = run / "diagnostic-previews/ko/native-1/candidate.json"
         candidate = json.loads(path.read_text(encoding="utf-8"))
-        candidate["groups"][0]["targetText"] = broken = candidate["groups"][0]["targetText"] + " 덧붙임"
+        broken = candidate["groups"][0]["targetText"] + " 덧붙임"
+        set_text(candidate, broken)
         path.write_text(json.dumps(candidate, ensure_ascii=False), encoding="utf-8")
         echo = driver.FakeJudge
         init = echo.__init__
@@ -277,7 +286,31 @@ class MachineQcClipDriverTests(unittest.TestCase):
             (judge.cache / name).mkdir(parents=True)
             for file in files:
                 (judge.cache / name / file).write_text('{"status": "completed"}', encoding="utf-8")
-        self.assertEqual(judge.uncertain(), ["half", "lost"])
+        for name, status in (("rejected", "rejected_response"), ("timeout", "unknown_outcome")):
+            (judge.cache / name).mkdir()
+            (judge.cache / name / "started.json").write_text("{}", encoding="utf-8")
+            (judge.cache / name / "outcome.json").write_text(json.dumps({"status": status}), encoding="utf-8")
+        self.assertEqual(judge.uncertain(), ["half", "lost", "timeout"])
+
+    def test_an_immutable_receipt_is_never_replaced_or_left_partial(self):
+        path = self.root / "r" / "entry.json"
+        driver.save_once(path, {"a": 1}, "b1")
+        with self.assertRaises(FileExistsError):
+            driver.save_once(path, {"a": 2}, "b1")
+        self.assertEqual(json.loads(path.read_text(encoding="utf-8")), {"a": 1})
+        self.assertEqual(sorted(p.name for p in path.parent.iterdir()), ["entry.inputs.json", "entry.json"])
+
+    def test_preflight_applies_the_layer3_source_checks(self):
+        run = synthetic_run(self, self.root)
+        source = json.loads((run / "source-package.json").read_text(encoding="utf-8"))
+        source["status"] = "draft"
+        (run / "source-package.json").write_text(json.dumps(source), encoding="utf-8")
+        path = run / "diagnostic-previews/ko/native-1/candidate.json"
+        candidate = json.loads(path.read_text(encoding="utf-8"))
+        candidate["englishSourcePackageJsonSha256"] = basis.json_sha256(source)
+        path.write_text(json.dumps(candidate, ensure_ascii=False), encoding="utf-8")
+        self.assertEqual(self.run_driver(run, "--preflight-only"), 2)
+        self.assertTrue(any("Layer 3 would refuse" in p for p in self.summary()["problems"]), self.summary()["problems"])
 
     def test_prefetch_dispatches_nothing_new_after_a_failure(self):
         calls = []
@@ -317,7 +350,8 @@ class MachineQcClipDriverTests(unittest.TestCase):
         statuses = []
         with patch.object(driver.FakeJudge, "__init__", mistranslates):
             for attempt in range(driver.text_qc.MAX_TEXT_REPAIR_ATTEMPTS + 2):
-                candidate["groups"][0]["targetText"] = text = original + " 덧붙임" * (attempt + 1)
+                text = original + " 덧붙임" * (attempt + 1)
+                set_text(candidate, text)
                 broken.add(text)
                 path.write_text(json.dumps(candidate, ensure_ascii=False), encoding="utf-8")
                 self.run_driver(run)
@@ -340,6 +374,17 @@ class MachineQcClipDriverTests(unittest.TestCase):
         driver.main(["--run-dir", str(run), "--out", str(self.root / "real"), "--locales", "es", "--preflight-only"])
         self.assertEqual(self.real_row()["status"], "stale")
         self.assertEqual(self.real_row()["previousStatus"], "text_waiver_issued")
+
+    def test_a_preserved_row_whose_candidate_changed_is_marked_stale(self):
+        run = synthetic_run(self, self.root)
+        self.assertEqual(self.run_driver(run), 0)
+        path = run / "diagnostic-previews/ko/native-1/candidate.json"
+        candidate = json.loads(path.read_text(encoding="utf-8"))
+        set_text(candidate, candidate["groups"][0]["targetText"] + " ")
+        path.write_text(json.dumps(candidate, ensure_ascii=False), encoding="utf-8")
+        driver.main(["--run-dir", str(run), "--out", str(self.root / "out"), "--locales", "es",
+                     "--text-backend", "fake", "--preflight-only"])
+        self.assertEqual(self.summary()["status"], "stale")
 
     def test_preflight_refuses_an_older_candidate_schema(self):
         run = synthetic_run(self, self.root)

@@ -46,6 +46,7 @@ if __package__ in (None, ""):
 from scripts import auto_qc_seeded_errors as seeded
 from scripts import machine_quality_release_basis as basis
 from scripts import machine_repair_ledger as ledger
+from scripts import prepare_target_language_speech_job as speech
 from scripts import target_text_auto_qc as text_qc
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -230,7 +231,14 @@ def resolve_locale(run_dir: Path, index: dict, locale: str, override: Path | Non
         covered = [unit_id for group in candidate["groups"] for unit_id in group.get("sourceUnitIds") or []]
         if covered != [unit["sourceUnitId"] for unit in anchor["sourceUnits"]]:
             problems.append("candidate groups do not cover every anchor unit once, in order")
-    return {"locale": locale, "paths": paths, "problems": problems}
+    if "source" in paths and "anchor" in paths:
+        # The same source and anchor checks Layer 3 applies, before any paid call.
+        try:
+            speech.validate_target_candidate(read(Path(paths["source"])), read(Path(paths["anchor"])),
+                                             candidate, require_human_approval=False)
+        except (ValueError, KeyError, TypeError) as error:
+            problems.append(f"Layer 3 would refuse this candidate: {error}")
+    return {"locale": locale, "paths": paths, "candidateJsonSha256": json_sha256(candidate), "problems": problems}
 
 
 def binding_path(path: Path) -> Path:
@@ -251,8 +259,14 @@ def save_once(path: Path, value, binding: str) -> Path:
     """Write an immutable receipt and its input marker; an existing receipt is never replaced."""
     # The marker goes first: a receipt never exists without the hash it must keep.
     save(binding_path(path), {"inputsSha256": binding, "receiptJsonSha256": json_sha256(value)})
-    with path.open("x", encoding="utf-8") as stream:
-        stream.write(json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n")
+    # A complete temporary file is linked into place, so the receipt is never partial,
+    # and the link fails rather than replace an existing receipt.
+    temporary = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    temporary.write_text(json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    try:
+        os.link(temporary, path)
+    finally:
+        temporary.unlink()
     return path
 
 
@@ -305,11 +319,12 @@ class CodexJudge:
         """Calls that started but never recorded a completed response: their outcome is unknown."""
         def settled(call: Path) -> bool:
             # A response counts only with its completed outcome; the transport writes them in turn.
+            # A known rejection is settled too: it fails its own locale, not the run.
             try:
-                return ((call / "response.json").exists()
-                        and read(call / "outcome.json").get("status") == "completed")
+                status = read(call / "outcome.json").get("status")
             except (OSError, ValueError):
                 return False
+            return status == "rejected_response" or (status == "completed" and (call / "response.json").exists())
         return sorted(path.parent.name for path in self.cache.glob("*/started.json") if not settled(path.parent))
 
     def __call__(self, role, system, user, schema):
@@ -496,10 +511,15 @@ def run_locale(locale: str, paths: dict, out: Path, state: Path, judge, timings:
 
 
 def still_valid(row: dict) -> bool:
-    """An earlier summary row still describes evidence on disk."""
-    if row.get("status") != "text_waiver_issued":
-        return True  # Preflight and repair rows name no issued evidence.
+    """An earlier summary row still describes its candidate and the receipts it names."""
     try:
+        if "paths" in row and json_sha256(read(Path(row["paths"]["candidate"]))) != row.get("candidateJsonSha256"):
+            return False
+        for key in ("textQcReceipt", "textWaiver"):
+            if key in row and json_sha256(read(Path(row[key]))) != read(binding_path(Path(row[key]))).get("receiptJsonSha256"):
+                return False
+        if row.get("status") != "text_waiver_issued":
+            return True
         path = Path(row["textWaiver"])
         marker = read(binding_path(path))
         waiver = read(path)
