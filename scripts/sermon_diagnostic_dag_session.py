@@ -197,14 +197,14 @@ class DiagnosticSession:
         c.require(self._path(spec['out']).is_relative_to(self.root / 'diagnostic-previews' / locale),
                   'diagnostic_dag_preview_output_changed')
         with profile.context(workKind='production', productionRunId=self.subject.config['runId']):
-            return worker.launch_preview(self.root, self.subject, self.locale_context, spec,
+            return worker.launch_preview(self.root, self.subject, getattr(self, 'locale_context', self.context), spec,
                                          offline_fixture=self.offline_fixture, depends_on=depends_on,
                                          **({'historical_seed':historical_seed} if historical_seed is not None else {}))
 
     def inspect_delivery(self, previews, expected_locales):
         from scripts import sermon_diagnostic_delivery_preflight as delivery
         self._check()
-        return delivery.inspect_delivery(self.root, self.subject, self.locale_context, previews,
+        return delivery.inspect_delivery(self.root, self.subject, getattr(self, 'locale_context', self.context), previews,
                                          expected_locales=expected_locales)
 
 
