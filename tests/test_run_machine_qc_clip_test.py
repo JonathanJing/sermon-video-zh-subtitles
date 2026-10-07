@@ -297,6 +297,36 @@ class MachineQcClipDriverTests(unittest.TestCase):
             driver.prefetch(Failing(), run, workers=1)
         self.assertEqual(len(calls), 1)
 
+    def test_repairs_stop_at_the_fallback_threshold(self):
+        run = synthetic_run(self, self.root)
+        path = run / "diagnostic-previews/ko/native-1/candidate.json"
+        candidate = json.loads(path.read_text(encoding="utf-8"))
+        original = candidate["groups"][0]["targetText"]
+        broken = set()
+        init = driver.FakeJudge.__init__
+
+        def mistranslates(judge, groups):
+            init(judge, groups)
+            for text in broken:
+                judge.clean.pop(text, None)
+
+        statuses = []
+        with patch.object(driver.FakeJudge, "__init__", mistranslates):
+            for attempt in range(driver.text_qc.MAX_TEXT_REPAIR_ATTEMPTS + 2):
+                candidate["groups"][0]["targetText"] = text = original + " 덧붙임" * (attempt + 1)
+                broken.add(text)
+                path.write_text(json.dumps(candidate, ensure_ascii=False), encoding="utf-8")
+                self.run_driver(run)
+                statuses.append(self.summary()["status"])
+        limit = driver.text_qc.MAX_TEXT_REPAIR_ATTEMPTS
+        self.assertEqual(statuses, ["requires_repair"] * limit + ["source_text_fallback"] * 2)
+        anchor = json.loads((run / "anchor-manifest.json").read_text(encoding="utf-8"))
+        package = json.loads((run / "source-package.json").read_text(encoding="utf-8"))
+        lineage = ledger.lineage("text", LOCALE, basis.json_sha256(package), basis.json_sha256(anchor))
+        # The sixth revision is refused before any screen.
+        self.assertEqual(len(ledger.load(self.root / "out/fake-plumbing/state/repair-ledger", lineage)), limit + 1)
+        self.assertEqual(self.summary()["fallbackGroups"], ["g001"])
+
     def test_a_preserved_row_whose_waiver_changed_is_marked_stale(self):
         run = synthetic_run(self, self.root)
         stack, argv = self.real_runs(run)

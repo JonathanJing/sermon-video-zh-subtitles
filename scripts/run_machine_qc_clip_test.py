@@ -395,6 +395,14 @@ def run_locale(locale: str, paths: dict, out: Path, state: Path, judge, timings:
         if unrepaired:
             return {"status": "blocked_prior_failure", "failedGroups": unrepaired,
                     "reason": "failed groups are unchanged; repair them in a new candidate revision"}
+    # Past the repair ladder a unit falls back to English, which waiver v1 cannot
+    # release, so no later revision is screened for it.
+    counts = entries[-1]["failedAttempts"] if entries else {}
+    exhausted = sorted(group["groupId"] for group in groups
+                       if any(counts.get(unit, 0) > text_qc.MAX_TEXT_REPAIR_ATTEMPTS for unit in group["sourceUnitIds"]))
+    if exhausted:
+        return {"status": "source_text_fallback", "fallbackGroups": exhausted,
+                "reason": "the repair limit is used up; waiver v1 cannot release an English fallback"}
     # Resume only receipts made from these exact inputs; a repaired candidate,
     # policy, judge runtime or implementation is screened and calibrated again.
     qc_binding = json_sha256({"groups": groups, "policy": policy, "identity": judge.identity,
@@ -422,6 +430,10 @@ def run_locale(locale: str, paths: dict, out: Path, state: Path, judge, timings:
         head_path = next_path
     result = {"textQc": qc["status"], "textQcReceipt": str(head_path),
               "failedGroups": [row["groupId"] for row in qc["results"] if row["status"] != "pass"]}
+    if qc["sourceTextFallbackGroupIds"]:
+        result.update(status="source_text_fallback", fallbackGroups=qc["sourceTextFallbackGroupIds"],
+                      reason="the repair limit is used up; waiver v1 cannot release an English fallback")
+        return result
     if qc["status"] != "pass":
         # Calibration binds this candidate, which a repair replaces anyway.
         result.update(status="requires_repair", reason="text QC failed; repair the failed groups in a new candidate revision")
