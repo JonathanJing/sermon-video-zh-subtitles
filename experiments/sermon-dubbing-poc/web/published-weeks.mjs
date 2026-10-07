@@ -456,8 +456,9 @@ async function loadPage(fetchImpl, page, timeoutMs, pageSignal, allowDevCandidat
       }
     }
   } catch (error) { errors.push(`${page.id}: ${error.message}`); }
+  for (const variant of Object.values(contentVariants)) variant.displayCategory = page.displayCategory;
   const defaultLocale = contentVariants[page.defaultTargetLocale] ? page.defaultTargetLocale : Object.keys(contentVariants)[0];
-  return { week: defaultLocale ? { ...contentVariants[defaultLocale], defaultTargetLocale: defaultLocale, contentVariants } : null, errors };
+  return { week: defaultLocale ? { ...contentVariants[defaultLocale], displayCategory: page.displayCategory, defaultTargetLocale: defaultLocale, contentVariants } : null, errors };
 }
 
 /**

@@ -1,3 +1,4 @@
+import { fullReadingRows } from './reading-mode.mjs';
 import { setIcon, setButtonLabel } from './icons.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -16,13 +17,13 @@ test('shipped transcript renders English once, collapsed, without seeking', () =
     setAttribute() {}
     addEventListener(type, fn) { this.listeners[type] = fn; }
   }
-  const elements = new Map(['transcript-list', 'transcript-description'].map(id => [id, new Element('div')]));
+  const elements = new Map(['transcript-list', 'transcript-description', 'full-reading', 'full-reading-list'].map(id => [id, new Element('div')]));
   const audio = { currentTime: 27, duration: 60 };
   const track = { cues: [0, 0].map((blockId, i) => ({ blockId, start: i * 10, end: (i + 1) * 10, text: '中文' })) };
   const week = { transcript: { schemaVersion: 'sermon-bilingual-transcript-v1', blocks: [
     { blockId: '0', english: '<Source & original>', sourceTextOrigin: 'job.blocks', reviewState: 'unspecified' },
   ] } };
-  const context = vm.createContext({ setIcon, setButtonLabel, $, audio, track, week, bilingualCueRows,
+  const context = vm.createContext({ setIcon, setButtonLabel, $, audio, track, week, bilingualCueRows, fullReadingRows, contentLocale:"zh-Hans", englishPositions:[], fullReadingElements:[],
     bilingualDisplay: false, englishByCue: [], englishDetails: [], transcriptRows: [], updateCurrentEnglish() {}, getLocale: () => "zh", t: key => messages.zh[key],
     document: { createElement: tag => new Element(tag) }, formatTime: String,
     setPosition: value => { audio.currentTime = value; }, boundedTime: value => value, update() {},

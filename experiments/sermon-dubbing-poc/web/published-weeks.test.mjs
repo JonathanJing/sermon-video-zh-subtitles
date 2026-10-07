@@ -578,3 +578,16 @@ test('simulation review mode requires isolated page and target flags', async () 
   });
   assert.equal((await loadPublishedWeeks(f.fetchImpl, {allowDevCandidates:true})).weeks.length, 0);
 });
+
+test('optional display category survives every content locale without changing release status', async () => {
+  const category={schemaVersion:'sermon-page-display-category-v1',labels:{'zh-Hans':'研读材料',en:'Study material'}};
+  const f=fixture();
+  const catalog=JSON.parse(f.files.get('/multilingual-v3.json'));
+  catalog.pages[0].displayCategory=category; f.files.set('/multilingual-v3.json',JSON.stringify(catalog));
+  const result=await loadPublishedWeeks(f.fetchImpl);
+  assert.deepEqual(result.weeks[0].displayCategory,category);
+  for(const variant of Object.values(result.weeks[0].contentVariants)) {
+    assert.deepEqual(variant.displayCategory,category);
+    assert.equal(variant.releaseLabel,'正式播放版');
+  }
+});
