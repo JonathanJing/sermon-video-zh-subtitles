@@ -124,7 +124,28 @@ shadow receipt 的 `ready_for_model_translation` 只表示自动锚点结构干�
 
 工具只允许检查状态、执行确定性状态允许的来源媒体准备、执行已有人工批准的双 PDF 生成，以及提交结构化决定。每次修改后必须重新检查；同一会话每阶段最多尝试一次，持久化结果防止重放。最终完成同时要求根 turn 完成、结构化输出齐全和新的本地生产证据通过。底层 lease、下载授权、QA、hash 与审批契约保持生效。
 
-默认报告目录下的 `agents-api-runs/` 保存绑定指纹、session ID 和工具收据。未确认远端停止的 timeout/cancel ACK 不允许另开会话重置执行记录；异常停止先检查本地 `state.json`、`result.json` 与远端状态。需要显式续跑原会话时增加 `--agent-run-dir <原目录> --resume-agent-session`。保留 executing 工具记录时必须人工核实实际阶段结果，不删除记录重试。只有确认原会话终止、无未决工具且生产状态允许后才选择新会话或 SDK 回退。
+默认报告目录下的 `agents-api-runs/` 保存绑定指纹、session ID 和工具收据。未确认远端停止的 timeout/cancel ACK 不允许另开会话重置执行记录；异常停止先检查本地 `state.json`、`result.json` 与远端状态。保留 executing 工具记录时必须人工核实实际阶段结果，不删除记录重试。确认原会话终止、无未决工具且生产状态允许后，才可决定新的运行身份；不自动回退到 SDK。
+
+### 旧 Agents API 会话恢复
+
+恢复使用 `scripts/run_sermon_production_supervisor_agent.py` 的直接入口，显式传入 `--agent-backend agents-api --agent-run-dir ORIGINAL_AGENT_RUN_DIR --resume-agent-session`。Saturday harness 没有会话恢复参数；本地自动入口要求新 API 任务使用环境启动器，也不能拿它的新任务模板替换旧会话配置。
+
+以下仅适用于原会话使用旧 Secret Manager 引用的情况。清除新 Project 路由及继承的 OpenAI key，让直接入口读取**原来的 secret 引用**；不使用 dev/prod 启动器，不创建 key。将所有 `ORIGINAL_*`、日期及原有可选参数从原完整启动命令与绑定配置复原。示例为原 `execute` 会话，原会话为 `shadow` 时须保留 `shadow`；模型、目录、GCS、glossary、cookies、通知及可选 release 配置同样不得因当前默认值改变。
+
+```bash
+env -u SERMON_OPENAI_ENVIRONMENT -u SERMON_OPENAI_CREDENTIAL_ALIAS \
+  -u OPENAI_PROJECT_ID -u OPENAI_API_KEY \
+  .venv/bin/python scripts/run_sermon_production_supervisor_agent.py \
+  --sunday YYYY-MM-DD --state-file ORIGINAL_STATE_FILE \
+  --work-root ORIGINAL_WORK_ROOT --out ORIGINAL_REPORT_PATH \
+  --gcs-bucket ORIGINAL_BUCKET --gcs-prefix ORIGINAL_PREFIX \
+  --api-key-secret ORIGINAL_OPENAI_SECRET_REFERENCE \
+  --youtube-api-key-secret ORIGINAL_YOUTUBE_SECRET_REFERENCE \
+  --model ORIGINAL_MODEL --mode execute --agent-backend agents-api \
+  --agent-run-dir ORIGINAL_AGENT_RUN_DIR --resume-agent-session
+```
+
+恢复入口将会话标志和原配置传给 Agents API adapter，由其核对配置／payload 指纹、读取原 session 和工具收据；不因显式恢复而豁免指纹检查。若原会话已经绑定 Project 启动器，则保留那个环境、凭据和配置，不能使用上述清除环境的旧 secret 示例。遇到配置不匹配或远端结果未知，先对账，不删除状态或改建新会话重发。
 
 `--mode shadow` 不刷新源、不执行生成、不恢复失败阶段。`execute` 的源刷新仍由本机确定性入口负责；已完成周次先走 completion latch，证据仍有效时无需模型调用。API usage 是 best-effort；账本记录 backend 与已知用量，缺失用量/金额保持 unknown。设计、恢复与验证详见 [Supervisor 设计](sermon-production-supervisor-agent.zh.md)。
 

@@ -41,11 +41,11 @@ artifacts/temporal/runtime/venv/bin/python -m scripts.sermon_temporal server sta
 
 ## 固定一次源和配置
 
-配置使用 `sermon-temporal-operator-v1`。以下值需对应实际已识别来源；相对路径由仓库根目录解析，生产运行建议使用绝对路径。`bridgeConfigSha256` 是现有 bridge JSON 的文件 SHA-256。密钥字段保留 Secret Manager 资源名，不放密钥内容。
+新配置使用 `sermon-temporal-operator-v2`，在 `harnessArgv` 中明确写入 `--agent-backend codex-cli`，不继承 harness 的可变默认值。以下值需对应实际已识别来源；相对路径由仓库根目录解析，生产运行建议使用绝对路径。`bridgeConfigSha256` 是现有 bridge JSON 的文件 SHA-256。密钥字段保留 Secret Manager 资源名，不放密钥内容。
 
 ```json
 {
-  "schemaVersion": "sermon-temporal-operator-v1",
+  "schemaVersion": "sermon-temporal-operator-v2",
   "sunday": "2026-09-06",
   "sourceKey": "live_archive:l8ucqF9uA9A",
   "expectedPdfSlug": "sermon_l8ucqF9uA9A",
@@ -53,6 +53,7 @@ artifacts/temporal/runtime/venv/bin/python -m scripts.sermon_temporal server sta
   "bridgeConfigSha256": "REPLACE_WITH_ACTUAL_64_CHARACTER_FILE_SHA256",
   "harnessArgv": [
     "--sunday", "2026-09-06",
+    "--agent-backend", "codex-cli",
     "--state-file", "artifacts/post-live-fallback-runs/2026-09-06/live-source-state.json",
     "--work-root", "artifacts/post-live-fallback-runs",
     "--supervisor-report", "artifacts/post-live-fallback-runs/2026-09-06/supervisor-report.json",
@@ -65,6 +66,10 @@ artifacts/temporal/runtime/venv/bin/python -m scripts.sermon_temporal server sta
   ]
 }
 ```
+
+旧 `sermon-temporal-operator-v1` 配置及已持久化的 request v1 保持可读：未写后端时，adapter 在解析前明确选用历史默认 `agents-api`；已有显式后端保持原值。它不会改配置文件、SHA-256 或 workflow ID，也不会因 parser 默认值改变而切换旧请求的认证通道。v2 在提交请求和 Activity 加载时都要求唯一的完整 `--agent-backend codex-cli` 参数；支持两个参数或 `--agent-backend=codex-cli` 写法，拒绝缺失、重复、缩写及 `agents-api`／`sdk` 选择。harness 不提供旧 API 会话恢复参数；原会话恢复仍使用原 Supervisor 入口及其 session 参数。fixture schema/profile 不变。
+
+从 v1 改为 v2 必须另存配置，绑定新的 config hash/workflow ID 和明确的接续意图，不能覆盖旧请求指向的文件或以新 ID 绕过活跃／未决任务。保留旧配置、request 和原工具收据，先按原身份核对当前任务结果，再决定是否开始新请求。Request schema 与 workflow ID 算法不变；后端绑定属于配置字节，因此改变后端会改变执行身份。
 
 该配置必须显式 `--skip-source-refresh`：来源发现仍走原 operator 工作流，已入 Temporal 的请求不能通过刷新偷偷换源。不可传 `--mode` / `--out`。提交时固定 config SHA-256；后续修改 config 或 bridge 字节会停止检查并要求恢复/新请求，而不会追认原请求。workflow ID 由 profile、日期、source key、config hash 决定；更换文件位置、执行开关或超时不产生第二个 ID。相同 ID 在运行中与完成后都拒绝重复提交（限 Temporal 保留该历史的期限）；不同 config 请求仍由原 lease、恢复状态与审批守护，不能把 Temporal ID 当作所有外部副作用的永久去重账本。
 

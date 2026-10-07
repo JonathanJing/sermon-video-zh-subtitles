@@ -20,6 +20,50 @@ def digest(value) -> str:
                                      allow_nan=False).encode()).hexdigest()
 
 
+OPERATOR_SCHEMA_V1 = "sermon-temporal-operator-v1"
+OPERATOR_SCHEMA_V2 = "sermon-temporal-operator-v2"
+
+
+def operator_harness_argv(config: dict) -> list[str]:
+    """Resolve backend from immutable config bytes, never the harness default.
+
+    Existing v1 requests omitted the backend when agents-api was the default.
+    Keep that interpretation on activity retries without migrating their hash.
+    """
+    schema = config.get("schemaVersion")
+    if schema not in (OPERATOR_SCHEMA_V1, OPERATOR_SCHEMA_V2):
+        raise ValueError("Unsupported Temporal operator configuration schema")
+    argv = config.get("harnessArgv")
+    if not isinstance(argv, list) or any(not isinstance(item, str) for item in argv):
+        raise ValueError("Temporal operator harnessArgv must be a list of strings")
+    backend_values = []
+    for index, token in enumerate(argv):
+        flag = token.split("=", 1)[0]
+        if flag.startswith("--") and "--agent-backend".startswith(flag) and flag != "--agent-backend":
+            raise ValueError("Temporal backend pin must use the full --agent-backend option")
+        if flag == "--agent-backend":
+            value = token.split("=", 1)[1] if "=" in token else (argv[index + 1] if index + 1 < len(argv) else "")
+            backend_values.append(value)
+    if len(backend_values) > 1:
+        raise ValueError("Temporal backend pin must occur exactly once")
+    if backend_values and backend_values[0] not in ("codex-cli", "agents-api", "sdk"):
+        raise ValueError("Unsupported Temporal backend pin")
+    if schema == OPERATOR_SCHEMA_V2 and not backend_values:
+        raise ValueError("Temporal operator-v2 requires an explicit --agent-backend pin")
+    if schema == OPERATOR_SCHEMA_V2 and backend_values != ["codex-cli"]:
+        raise ValueError("New Temporal operator-v2 configurations require --agent-backend codex-cli")
+    return list(argv) if backend_values else [*argv, "--agent-backend", "agents-api"]
+
+
+def validate_configuration_profile(config: dict, profile: str) -> None:
+    if profile == "fixture" and config.get("schemaVersion") == "sermon-temporal-fixture-v1":
+        return
+    if profile == "production" and config.get("schemaVersion") in (OPERATOR_SCHEMA_V1, OPERATOR_SCHEMA_V2):
+        operator_harness_argv(config)
+        return
+    raise ValueError("Client profile does not match configuration schema")
+
+
 @dataclass(frozen=True)
 class Request:
     schema_version: str

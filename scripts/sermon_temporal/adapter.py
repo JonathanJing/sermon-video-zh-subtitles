@@ -15,7 +15,7 @@ import sys
 import time
 
 from scripts.sermon_execution_harness import ExecutionTerminated, atomic_json, bounded_process, utc_now, work_lock
-from .contracts import Observation, Request, digest
+from .contracts import Observation, Request, digest, operator_harness_argv, validate_configuration_profile
 from .local_io import ROOT, TEMPORAL_ROOT, active_execution, file_sha, private_directory, process_identity, read_json
 
 
@@ -25,8 +25,8 @@ def load_config(request: Request) -> dict:
     if file_sha(path) != request.config_sha256:
         raise ValueError("Temporal request configuration changed; existing request cannot adopt it")
     config = read_json(path)
-    expected = "sermon-temporal-fixture-v1" if request.profile == "fixture" else "sermon-temporal-operator-v1"
-    if (config.get("schemaVersion") != expected or config.get("sunday") != request.sunday
+    validate_configuration_profile(config, request.profile)
+    if (config.get("sunday") != request.sunday
             or config.get("sourceKey") != request.source_key):
         raise ValueError("Configuration profile/date/source differs from the immutable request")
     if request.profile == "fixture":
@@ -64,7 +64,7 @@ def fixture_observation(request: Request, config: dict, state_dir: Path, exclude
 
 def production_args(config: dict):
     from scripts import run_saturday_harness as harness
-    argv = config.get("harnessArgv")
+    argv = operator_harness_argv(config)
     if (not isinstance(argv, list) or any(not isinstance(item, str) for item in argv)
             or any(flag in argv for flag in ("--mode", "--out", "--help", "-h"))):
         raise ValueError("Use existing harness arguments without mode/output overrides")
