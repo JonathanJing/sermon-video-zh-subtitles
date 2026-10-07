@@ -1,10 +1,46 @@
 """Focused deterministic-gate regressions for PR 260 review feedback."""
+import json
 import unittest
+from pathlib import Path
 
 from scripts.language_review_plugins import auto_qc_text_common as rules
 
 
 class TextReviewRegressions(unittest.TestCase):
+    def test_real_spanish_policy_only_exempts_complete_glossary_spans(self):
+        policy = json.loads((Path(__file__).resolve().parents[1]
+                             / "config/target-language-policies/es.json").read_text())
+        terms = rules.shared_terms(policy)
+        self.assertIn("revelation: the comfort and hope jesus brings", terms)
+        self.assertNotIn("and", terms)
+        self.assertNotIn("the", terms)
+        for english, target in (
+                ("We love God and serve people.", "Amamos a Dios and servimos gente."),
+                ("We love the world because God loves.", "Amamos the mundo porque Dios ama.")):
+            with self.subTest(target=target):
+                self.assertTrue(rules.untranslated_problems(english, target, "es", terms))
+        for value in ("Revelation: The Comfort and Hope Jesus Brings", "Eric Geiger",
+                      "A Study of the Book of Numbers"):
+            self.assertEqual(rules.untranslated_problems(value, value, "es", terms), [], value)
+        self.assertEqual(rules.untranslated_problems(
+            "Dr. Eric Geiger taught us today.", "El Dr. Eric Geiger nos enseñó hoy.", "es", terms), [])
+        # A fragment of a full name cannot excuse the title or the English around it.
+        self.assertTrue(rules.untranslated_problems(
+            "No, Dr. Eric.", "No, Dr. Eric.", "es", terms))
+        self.assertTrue(rules.untranslated_problems(
+            "Dr. Eric Geiger taught us today.", "El Dr. Eric Geiger taught us today.", "es", terms))
+        self.assertTrue(rules.untranslated_problems(
+            "We love God and serve people.",
+            "Revelation: The Comfort and Hope Jesus Brings: Amamos a Dios and servimos gente.", "es", terms))
+
+    def test_single_modal_names_require_capitalization_at_the_matched_span(self):
+        names = frozenset({"will", "may"})
+        for name in ("Will", "May"):
+            self.assertEqual(rules.untranslated_problems(name, name, "es", names), [])
+            self.assertTrue(rules.untranslated_problems(name.lower(), name.lower(), "es", names))
+        self.assertEqual(rules.untranslated_problems("Will May.", "Will May.", "es", names), [])
+        self.assertTrue(rules.untranslated_problems("will may.", "will may.", "es", names))
+
     def test_adjacent_spoken_numbers_remain_separate(self):
         for english in ("two, three, four", "two three four", "two and three and four",
                         "two; three; four", "two. Three. Four"):

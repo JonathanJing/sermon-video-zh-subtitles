@@ -826,7 +826,7 @@ _SHARED_SINGLE_WORDS = frozenset({"no", "amen", "hallelujah", "hosanna", "selah"
 
 def untranslated_problems(english: str, text: str, locale: str,
                           shared_terms: frozenset[str] = frozenset()) -> list[str]:
-    """``shared_terms``: folded glossary names that may stay as in English."""
+    """``shared_terms``: complete folded glossary terms that may stay in English."""
     words = re.findall(r"[a-zA-Z']+", text)
     if locale in {"ko", "zh-Hans"}:
         latin_letters = sum(len(word) for word in words)
@@ -835,18 +835,41 @@ def untranslated_problems(english: str, text: str, locale: str,
     english_words = re.findall(r"[a-z']+", english.casefold())
     # Exact multiword copies are untranslated even without a function word.
     # A single name/amen, or an honorific plus a name, can legitimately survive.
-    target_words, size = re.findall(r"[a-z']+", _fold(text)), len(english_words)
-    allowed = _SHARED_SINGLE_WORDS | shared_terms
+    target_words, capitalized = [], []
+    for raw in re.findall(r"(?:[^\W\d_]|')+", text):
+        for word in re.findall(r"[a-z']+", _fold(raw)):
+            target_words.append(word)
+            capitalized.append(next((char.isupper() for char in raw if char.isalpha()), False))
+    size = len(english_words)
+    shared_word = [word in _SHARED_SINGLE_WORDS for word in target_words]
+    name_starts = set()
+    # Match complete terms, never grant their individual words a global exemption.
+    # Single names that overlap English grammar need original capitalization.
+    ambiguous_names = _ENGLISH_FUNCTION_WORDS | {"will", "may", "can", "must", "might", "shall",
+                                                "should", "would", "could", "do", "does", "did"}
+    for term in shared_terms:
+        term_words = re.findall(r"[a-z']+", _fold(term))
+        if not term_words:
+            continue
+        width = len(term_words)
+        for start in range(len(target_words) - width + 1):
+            if target_words[start:start + width] != term_words:
+                continue
+            if width == 1 and term_words[0] in ambiguous_names and not capitalized[start]:
+                continue
+            name_starts.add(start)
+            shared_word[start:start + width] = [True] * width
     # Spanish-valid shared titles are allowed only before a glossary name.
     # Other words beside a title still have to pass the English-leak screens.
     shared_titles = {"pastor", "pastora", "dr", "dra", "doctor", "doctora"}
-    shared_word = [word in allowed or (word in shared_titles and index + 1 < len(target_words)
-                                     and target_words[index + 1] in shared_terms)
-                   for index, word in enumerate(target_words)]
+    for index, word in enumerate(target_words):
+        if word in shared_titles and index + 1 in name_starts:
+            shared_word[index] = True
     function_words = [word for index, word in enumerate(target_words)
                       if word in _ENGLISH_FUNCTION_WORDS and not shared_word[index]]
-    if len(target_words) >= 6 and len(function_words) / len(target_words) > 0.15:
-        return [f"English function words {len(function_words)}/{len(target_words)}"]
+    screened_words = sum(not shared for shared in shared_word)
+    if len(target_words) >= 6 and function_words and len(function_words) / screened_words > 0.15:
+        return [f"English function words {len(function_words)}/{screened_words}"]
     english_folded = [_fold(word) for word in english_words]
     name_only = bool(re.fullmatch(r"(?:Pastor|Dr|Mr|Mrs|Ms)\.?\s+[A-Z][a-z]+[.!?]?", english.strip()))
     if size >= 2 and not name_only and any(
@@ -865,7 +888,7 @@ def untranslated_problems(english: str, text: str, locale: str,
     # Spanish spelling (Amén, Jesús) differs before folding, so it is kept.
     if (size == 1 and target_words == [_fold(english_words[0])]
             and re.findall(r"[^\W\d_]+", text.casefold()) == [english_words[0]]
-            and english_words[0] not in _SHARED_SINGLE_WORDS | shared_terms):
+            and not all(shared_word)):
         return ["English source text copied into target"]
     return []
 
@@ -874,10 +897,9 @@ def shared_terms(policy: dict | None) -> frozenset[str]:
     """Glossary names whose source and target spellings may coincide."""
     if not policy:
         return frozenset()
-    return frozenset(_fold(word) for kind in ("properNames", "seriesNames")
+    return frozenset(_fold(value) for kind in ("properNames", "seriesNames")
                      for term in policy.get("terminology", {}).get(kind, [])
-                     for value in (term.get("source"), term.get("target")) if value
-                     for word in re.findall(r"[a-zA-Z']+", _fold(value)))
+                     for value in (term.get("source"), term.get("target")) if value)
 
 
 # A one-character Chinese name is also a morpheme of ordinary words: 神 in 精神
