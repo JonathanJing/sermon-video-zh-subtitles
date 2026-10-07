@@ -90,3 +90,19 @@ def test_capabilities_fail_closed(config,change,match):
     else:value['targetSchemaVersions']['candidate']='unsupported'
     config.write_text(json.dumps(value))
     with pytest.raises((ValueError,FileNotFoundError),match=match):c.inspect(config)
+
+
+def test_machine_admission_requires_frozen_v3_capabilities(config):
+    human = config.parent / 'human-frozen.json'
+    c.freeze(config, human)
+    with pytest.raises(ValueError, match='consumer_machine_capabilities_required'):
+        c.require_machine_capabilities(human)
+    value = json.loads(config.read_text())
+    value['schemaVersion'] = c.MACHINE_VERSION
+    value['targetSchemaVersions'] = {**c.SCHEMAS, **c.MACHINE_SCHEMAS}
+    config.write_text(json.dumps(value))
+    with pytest.raises(ValueError, match='consumer_machine_capabilities_required'):
+        c.require_machine_capabilities(config)
+    machine = config.parent / 'machine-frozen.json'
+    c.freeze(config, machine)
+    assert c.require_machine_capabilities(machine)['snapshotBound']

@@ -54,7 +54,7 @@ CALIBRATION_MINIMUMS = {"overallDetectionRate": 0.95, "perKindDetectionRate": 0.
                         "maxCleanFalsePositiveRate": 0.1}
 # Every seeded error kind must be tried and caught; a kind with no trial was never tested.
 TEXT_KINDS = ("wrong_number", "added_reference", "wrong_book", "english_leak", "placeholder",
-              "dropped_name", "dropped_half")
+              "dropped_name", "dropped_half", "semantic_negation")
 AUDIO_KINDS = ("stretched", "silent", "clipped", "truncated", "wrong_sentence")
 DISCLOSURE = {
     "zh-Hans": "本语言内容经机器质检后自动发布，未经人工审核。",
@@ -97,29 +97,67 @@ def calibration_problems(calibration: dict | None, locale: str, implementation: 
         problems.append("QC implementation changed since calibration")
     if calibration.get("semanticChecksIncluded") is not True:
         problems.append("calibration did not include the back-translation check")
-    overall = _rate(calibration.get("overallDetectionRate"))
-    if overall is None or overall < CALIBRATION_MINIMUMS["overallDetectionRate"]:
-        problems.append("overall seeded-error detection below minimum")
     if require_audio and calibration.get("audioIncluded") is not True:
         problems.append("calibration did not include the audio checks")
     expected = [f"text.{kind}" for kind in TEXT_KINDS] + ([f"audio.{kind}" for kind in AUDIO_KINDS]
                                                          if require_audio else [])
     kinds = calibration.get("kinds", {})
-    missing = [kind for kind in expected if kind not in kinds]
-    tried = [kind for kind in expected
-             if type(kinds.get(kind, {}).get("trials")) is int and kinds[kind]["trials"] > 0]
-    untested = [kind for kind in expected if kind in kinds and kind not in tried]
-    # Only the kinds this release depends on: a weak audio kind does not block text-only.
-    weak = [kind for kind in tried if (rate := _rate(kinds[kind].get("rate"))) is None
-            or rate < CALIBRATION_MINIMUMS["perKindDetectionRate"]]
+    if not isinstance(kinds, dict):
+        return problems + ["calibration kinds must be an object"]
+    missing, untested, weak = [], [], []
+    counts = {}
+    for kind, row in kinds.items():
+        if not isinstance(row, dict):
+            problems.append(f"invalid trial counts for {kind}")
+            continue
+        trials, detected = row.get("trials"), row.get("detected")
+        if (type(trials) is not int or type(detected) is not int
+                or trials < 0 or not 0 <= detected <= trials):
+            problems.append(f"invalid trial counts for {kind}")
+            continue
+        counts[kind] = (trials, detected)
+        derived = round(detected / trials, 6) if trials else 0.0
+        reported = _rate(row.get("rate"))
+        if reported is None or not math.isclose(reported, derived, abs_tol=1e-6):
+            problems.append(f"inconsistent detection rate for {kind}")
+        if kind in expected and trials > 0 and (reported is None or
+                derived < CALIBRATION_MINIMUMS["perKindDetectionRate"]):
+            weak.append(kind)
+    for kind in expected:
+        if kind not in kinds:
+            missing.append(kind)
+        elif kind not in counts or counts[kind][0] == 0:
+            untested.append(kind)
     if missing:
         problems.append(f"calibration lacks seeded-error kinds {missing}")
     if untested:
         problems.append(f"calibration has no trials for {untested}")
     if weak:
         problems.append(f"seeded-error detection below minimum for {sorted(weak)}")
+    # Validate the stored aggregate, but apply the threshold only to the kinds
+    # this release needs; unrelated audio trials cannot dilute text detection.
+    trials = sum(row[0] for row in counts.values())
+    detected = sum(row[1] for row in counts.values())
+    if (type(calibration.get("trials")) is not int or calibration["trials"] != trials
+            or type(calibration.get("detected")) is not int or calibration["detected"] != detected):
+        problems.append("inconsistent overall trial counts")
+    overall = _rate(calibration.get("overallDetectionRate"))
+    if overall is None or not math.isclose(overall, round(detected / trials, 6) if trials else 0.0,
+                                           abs_tol=1e-6):
+        problems.append("inconsistent overall detection rate")
+    needed_trials = sum(counts.get(kind, (0, 0))[0] for kind in expected)
+    needed_detected = sum(counts.get(kind, (0, 0))[1] for kind in expected)
+    if not needed_trials or needed_detected / needed_trials < CALIBRATION_MINIMUMS["overallDetectionRate"]:
+        problems.append("overall seeded-error detection below minimum")
+    clean, positives = calibration.get("cleanChecked"), calibration.get("cleanFalsePositives")
     false_positive = _rate(calibration.get("cleanFalsePositiveRate"))
-    if false_positive is None or false_positive > CALIBRATION_MINIMUMS["maxCleanFalsePositiveRate"]:
+    if (type(clean) is not int or type(positives) is not int or clean <= 0
+            or not 0 <= positives <= clean):
+        problems.append("invalid clean trial counts")
+    elif false_positive is None or not math.isclose(false_positive, round(positives / clean, 6), abs_tol=1e-6):
+        problems.append("inconsistent clean false-positive rate")
+    if (false_positive is None or (type(clean) is int and clean > 0 and type(positives) is int
+                                  and positives / clean > CALIBRATION_MINIMUMS["maxCleanFalsePositiveRate"])):
         problems.append("clean false-positive rate above maximum")
     return problems
 

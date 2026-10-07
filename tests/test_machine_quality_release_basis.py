@@ -29,6 +29,9 @@ def sha(text: str) -> str:
 def calibration(locale="ko", **overrides):
     value = {"schemaVersion": waiver.CALIBRATION_SCHEMA, "locale": locale,
              "implementationSha256": IMPLEMENTATION, "semanticChecksIncluded": True,
+             "trials": 10 * (len(waiver.TEXT_KINDS) + len(waiver.AUDIO_KINDS)),
+             "detected": 10 * (len(waiver.TEXT_KINDS) + len(waiver.AUDIO_KINDS)),
+             "cleanChecked": 10, "cleanFalsePositives": 0,
              "overallDetectionRate": 1.0, "cleanFalsePositiveRate": 0.0, "audioIncluded": True,
              "semanticIdentitySha256": SEMANTIC_SHA,
              "asrIdentity": {"primary": PRIMARY_ASR, "secondary": SECONDARY_ASR},
@@ -266,6 +269,7 @@ class AudioWaiverTests(unittest.TestCase):
         package, screening, qc, text = audio_fixture()
         text_only = calibration(audioIncluded=False)
         text_only["kinds"] = {kind: row for kind, row in text_only["kinds"].items() if kind.startswith("text.")}
+        text_only["trials"] = text_only["detected"] = sum(row["trials"] for row in text_only["kinds"].values())
         with self.assertRaisesRegex(ValueError, "audio checks"):
             basis.build_audio_waiver(package, screening, qc, text, text_only, track_check=track_check(package),
                                      created_at="2026-10-07T02:00:00+00:00")

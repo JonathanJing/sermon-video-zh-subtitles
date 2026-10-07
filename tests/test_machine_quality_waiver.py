@@ -411,7 +411,7 @@ class TrackCheckTests(unittest.TestCase):
                             "-b:a", "64k", str(out)], check=True)
             return out.read_bytes()
         result = audio_qc.check_track(self.package(mp3=encode))
-        self.assertEqual((result["status"], result["method"]["compressed"]), ("pass", "loudness_envelope"))
+        self.assertEqual((result["status"], result["method"]["compressed"]), ("pass", "decoded_waveform"))
         self.assertLessEqual(result["envelope"]["deviantWindows"], 0.02 * result["envelope"]["windows"])
         # An MP3 of silence beside a correct master is not what listeners should hear.
         silence = self.dir / "silence.wav"
@@ -665,11 +665,70 @@ class CalibrationAndWaiverTests(unittest.TestCase):
     def test_text_only_release_ignores_audio_calibration(self):
         calibration = self.calibration("ko")
         calibration["kinds"]["audio.clipped"].update(detected=0, rate=0.0)
+        self.recount(calibration)
         candidate, package, text, audio = self.final_receipts("ko")
         self.assertEqual(waiver.waive("ko", candidate, text, None, calibration)["status"],
                          "machine_quality_waived_text_only")
         self.assertEqual(waiver.waive("ko", candidate, text, audio, calibration, audio_package=package)["status"],
                          "blocked_calibration")
+
+    @staticmethod
+    def recount(calibration):
+        calibration["trials"] = sum(row["trials"] for row in calibration["kinds"].values())
+        calibration["detected"] = sum(row["detected"] for row in calibration["kinds"].values())
+        calibration["overallDetectionRate"] = round(calibration["detected"] / calibration["trials"], 6)
+
+    def test_semantic_only_seed_requires_new_backtranslation_issue(self):
+        def always_pass(role, system, user, schema):
+            return {"english": "A passage."} if role == "back_translator" else {"status": "pass", "issues": []}
+        for locale in LOCALES:
+            result = seeded.calibrate(locale, fixtures.groups(locale), policy=fixtures.policy(locale),
+                                      call=always_pass, identity=fixtures.SEMANTIC_IDENTITY)
+            row = result["kinds"]["text.semantic_negation"]
+            self.assertGreater(row["trials"], 0, locale)
+            self.assertEqual(row["detected"], 0, locale)
+            self.assertTrue(waiver.calibration_problems(result, locale, waiver.implementation_sha256()))
+            good = self.calibration(locale)
+            self.assertEqual(good["kinds"]["text.semantic_negation"]["rate"], 1.0)
+
+    def test_calibration_count_rate_inconsistencies_block(self):
+        calibration = self.calibration("ko")
+        for kind, value in (("text.wrong_number", {"detected": 0, "rate": 1.0}),
+                            ("text.wrong_number", {"detected": True}),
+                            ("text.wrong_number", {"trials": True}),
+                            ("text.wrong_number", {"detected": -1}),
+                            ("text.wrong_number", {"detected": 10000})):
+            broken = copy.deepcopy(calibration)
+            broken["kinds"][kind].update(value)
+            self.assertTrue(waiver.calibration_problems(broken, "ko", waiver.implementation_sha256()))
+        for field, value in (("overallDetectionRate", 0.0), ("trials", 1), ("detected", True),
+                             ("cleanFalsePositives", 2), ("cleanChecked", 0), ("cleanFalsePositives", True)):
+            broken = copy.deepcopy(calibration)
+            broken[field] = value
+            self.assertTrue(waiver.calibration_problems(broken, "ko", waiver.implementation_sha256()))
+
+    def test_audio_trials_cannot_inflate_text_only_detection(self):
+        calibration = self.calibration("ko")
+        for kind, row in calibration["kinds"].items():
+            row.update(trials=100, detected=94 if kind.startswith("text.") else 100,
+                       rate=0.94 if kind.startswith("text.") else 1.0)
+        self.recount(calibration)
+        self.assertGreaterEqual(calibration["overallDetectionRate"], 0.95)
+        self.assertIn("overall seeded-error detection below minimum",
+                      waiver.calibration_problems(calibration, "ko", waiver.implementation_sha256()))
+
+    def test_semantic_runtime_requires_settings_and_cache_revision(self):
+        for key in ("settings", "modelRevision", "cacheNamespace"):
+            identity = copy.deepcopy(fixtures.SEMANTIC_IDENTITY)
+            del identity[key]
+            with self.assertRaises(ValueError):
+                text_qc.semantic_identity(identity)
+        base = text_qc.semantic_identity(fixtures.SEMANTIC_IDENTITY)["sha256"]
+        for key, value in (("modelRevision", "r2"), ("cacheNamespace", "another-cache"),
+                           ("settings", {"temperature": 0.7, "reasoningEffort": "medium"})):
+            self.assertNotEqual(base, text_qc.semantic_identity({**fixtures.SEMANTIC_IDENTITY, key: value})["sha256"])
+        with self.assertRaises(ValueError):
+            text_qc.semantic_identity({**fixtures.SEMANTIC_IDENTITY, "settings": {"temperature": float("nan")}})
 
     def test_pending_repairs_and_stale_calibration_block(self):
         calibration = self.calibration("zh-Hans")

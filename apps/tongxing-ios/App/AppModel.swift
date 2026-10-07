@@ -58,6 +58,8 @@ final class AppModel: ObservableObject {
     @Published private(set) var publishedAudioSha256: String?
     @Published private(set) var isPreparingPublishedAudio = false
     @Published private(set) var publishedAudioError: String?
+    @Published private var audioReleaseDisclosure: MachineCheckedDisclosure?
+    private var audioReleaseSelectionKey: String?
     @Published private(set) var publishedTranscript: VerifiedPublishedTranscript? {
         didSet {
             publishedCaptionsByID = Dictionary(uniqueKeysWithValues:
@@ -186,7 +188,7 @@ final class AppModel: ObservableObject {
     private var publishedAudioRequest = UUID()
     private var publishedSelectionRevision = UUID()
     private var languageSelectionRequest = UUID()
-    private var publishedAudioTask: Task<VerifiedLanguageAudio, Error>?
+    private var publishedAudioTask: Task<(VerifiedLanguageAudio, MachineCheckedDisclosure?), Error>?
     private var downloadTasks: [String: Task<Void, Never>] = [:]
 
     private func cancelPublishedAudioPreparation() {
@@ -310,10 +312,11 @@ final class AppModel: ObservableObject {
     /// A machine-checked locale passed a bound machine quality waiver. It is never
     /// a human approval; the UI shows the "机器质检" label and the release disclosure.
     var selectedContentIsMachineChecked: Bool { selectedContentTarget?.isMachineChecked == true }
-    /// The verified release's same-locale disclosure, available once the transcript is verified.
+    /// The verified release disclosure survives a failed transcript download.
     var selectedMachineCheckedDisclosure: String? {
         guard selectedContentIsMachineChecked else { return nil }
         return currentPublishedTranscript?.disclosure?.text
+            ?? (audioReleaseSelectionKey == publishedTranscriptSelectionKey ? audioReleaseDisclosure?.text : nil)
     }
     /// The playing published audio was admitted by a machine quality waiver, not a human listening review.
     var selectedAudioIsMachineChecked: Bool {
@@ -674,9 +677,9 @@ final class AppModel: ObservableObject {
         publishedAudioRequest = request
         isPreparingPublishedAudio = true
         publishedAudioError = nil
-        let audioTask = Task { () throws -> VerifiedLanguageAudio in
+        let audioTask = Task { () throws -> (VerifiedLanguageAudio, MachineCheckedDisclosure?) in
             let package = try await multilingualRepository.loadRelease(page: page, locale: locale)
-            return try await multilingualRepository.loadAudio(for: package, page: page)
+            return (try await multilingualRepository.loadAudio(for: package, page: page), package.disclosure)
         }
         publishedAudioTask = audioTask
         defer {
@@ -686,7 +689,7 @@ final class AppModel: ObservableObject {
             }
         }
         do {
-            let audio = try await withTaskCancellationHandler {
+            let (audio, disclosure) = try await withTaskCancellationHandler {
                 try await audioTask.value
             } onCancel: {
                 audioTask.cancel()
@@ -699,6 +702,8 @@ final class AppModel: ObservableObject {
                   currentPage.targets[locale] == requestedTarget,
                   selectedContentLocale == locale,
                   !playback.isPreview else { return }
+            audioReleaseDisclosure = disclosure
+            audioReleaseSelectionKey = publishedTranscriptSelectionKey
             playback.loadPublishedAudio(audio)
             selectedAudioLocale = locale
             publishedAudioSha256 = audio.sha256

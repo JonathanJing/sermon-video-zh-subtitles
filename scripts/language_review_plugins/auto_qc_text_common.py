@@ -242,6 +242,7 @@ def spanish_number_present(text: str, value: int | str) -> bool:
 
 # --- Chinese number forms -----------------------------------------------------
 _ZH_DIGITS = "零一二三四五六七八九"
+_ZH_NUMBER_TOKEN = re.compile(r"[零〇一二两三四五六七八九十百千万亿壹贰叁肆伍陆柒捌玖拾佰仟萬億廿卅]+(?:点[零〇一二两三四五六七八九壹贰叁肆伍陆柒捌玖]+)?")
 
 
 def chinese_numeral(value: int) -> str:
@@ -271,7 +272,8 @@ def chinese_number_present(text: str, value: int | str) -> bool:
         whole, fraction = value.split(".")
         heads = {chinese_numeral(int(whole))} | ({"两"} if whole == "2" else set())
         tail = "".join(_ZH_DIGITS[int(d)] for d in fraction)
-        return _decimal_present(text, {value}) or any(head + "点" + tail in text for head in heads)
+        return _decimal_present(text, {value}) or bool(
+            {head + "点" + tail for head in heads} & set(_ZH_NUMBER_TOKEN.findall(text)))
     if any(re.search(r"(?<!\d)" + re.escape(form) + r"(?!\d)", text) for form in {str(value), f"{value:,}"}):
         return True
     forms = {chinese_numeral(value)}
@@ -283,7 +285,7 @@ def chinese_number_present(text: str, value: int | str) -> bool:
     standard = chinese_numeral(value)
     if standard[0] == "二" and len(standard) > 1 and standard[1] in "百千万":
         forms.add("两" + standard[1:])
-    return any(form in text for form in forms)
+    return bool(forms & set(_ZH_NUMBER_TOKEN.findall(text)))
 
 
 # --- Scripture references -----------------------------------------------------
@@ -420,8 +422,11 @@ _ZH_BOOK_CODES = {chinese: code for code, *_, chinese in _BIBLE_BOOKS}
 _BOOKS = _alternation(name for code, _, english, *_ in _BIBLE_BOOKS for name in english.split("|"))
 _ENGLISH_REFERENCE = re.compile(r"\b(?:" + _BOOKS + r")\.?\s+(\d{1,3}):(\d{1,3})(?![\d:])")
 _EN_ORDINAL = {"1": 1, "2": 2, "3": 3, "i": 1, "ii": 2, "iii": 3, "first": 1, "second": 2, "third": 3}
+_EN_NUMBER_WORD = _alternation((*_UNITS, *_TENS, *_SCALES))
 _ENGLISH_CITATION = re.compile(r"(?:\b(?i:(1|2|3|iii|ii|i|first|second|third))\s*)?\b(" + _BOOKS
-                               + r")\.?\s+(\d{1,3}):(\d{1,3})(?![\d:])")
+                               + r")\.?\s+(?:chapter\s+)?(\d{1,3}|(?:" + _EN_NUMBER_WORD
+                               + r")(?:[ -](?:" + _EN_NUMBER_WORD + r"))*)"
+                               + r"(?:\s*:\s*(\d{1,3})(?![\d:]))?(?!\d)")
 
 
 def _book_code(codes: dict, number: int | None, name: str) -> str | None:
@@ -430,22 +435,19 @@ def _book_code(codes: dict, number: int | None, name: str) -> str | None:
 
 
 def english_book_chapters(text: str) -> set[int]:
-    """Chapters named right after a book without a verse ("Revelation 3", "Revelation three")."""
-    chapters = set()
-    for match in re.finditer(r"\b(?:" + _BOOKS + r")\.?\s+((?:\d{1,3}|[a-z]+)(?:[ -][a-z]+)?)", text):
-        values = english_numbers(match.group(1) + " x")
-        if values and isinstance(values[0], int) and values[0] > 0:
-            chapters.add(values[0])
-    return chapters
+    """Chapters anchored to a recognized English book name."""
+    return {chapter for _, chapter, _ in english_book_citations(text)}
 
 
-def english_book_citations(text: str) -> list[tuple[str | None, int, int]]:
-    """``Book c:v`` citations in the English with their book code (None when ambiguous)."""
+def english_book_citations(text: str) -> list[tuple[str | None, int, int | None]]:
+    """Book-bound chapter and chapter:verse citations (None for unknown books)."""
     found = []
     for match in _ENGLISH_CITATION.finditer(text):
         ordinal, name, chapter, verse = match.groups()
         number = _EN_ORDINAL.get(ordinal.casefold()) if ordinal else None
-        found.append((_book_code(_EN_BOOK_CODES, number, name), int(chapter), int(verse)))
+        value = _number_token(chapter, "en")
+        if value is not None:
+            found.append((_book_code(_EN_BOOK_CODES, number, name), value, int(verse) if verse else None))
     return found
 
 
@@ -468,7 +470,7 @@ def english_references(text: str) -> tuple[set[tuple[int, int]], set[int]]:
             verse, _ = _take_number(tokens, cursor + 1)
             if verse is not None:
                 pairs.add((chapter, verse))
-    chapters |= {c for c, _ in pairs}
+    chapters |= {c for c, _ in pairs} | english_book_chapters(text)
     return pairs, chapters
 
 
@@ -537,8 +539,47 @@ def book_citations(text: str, locale: str) -> list[tuple[str | None, int, int | 
     return found
 
 
-def target_references(text: str, locale: str) -> tuple[set[tuple[int, int]], set[int]]:
-    pairs = {(int(c), int(v)) for c, v in re.findall(_COLON_PAIR, text)}
+def english_spoken_clock_pairs(text: str) -> set[tuple[int, int]]:
+    """Unambiguous spoken clock forms that can naturally become colon times."""
+    pairs = set()
+    hour_words = _alternation((*_UNITS, *map(str, range(1, 25))))
+    for match in re.finditer(r"\b(half|quarter)\s+(past|to)\s+(" + hour_words + r")\b", text.casefold()):
+        fraction, direction, token = match.groups()
+        hour = int(token) if token.isdigit() else _UNITS[token]
+        if 1 <= hour <= 24:
+            minutes = 30 if fraction == "half" else 15
+            if direction == "to":
+                hour = (hour - 1) % 12 or 12
+                minutes = 60 - minutes
+            pairs.add((hour, minutes))
+    return pairs
+
+
+def target_colon_references(text: str, locale: str, spoken_clocks: set[tuple[int, int]]) -> set[tuple[int, int]]:
+    """Keep bare citation pairs, excluding clocks with positive time evidence."""
+    book_pairs = {(chapter, verse) for _, chapter, verse, _ in book_citations(text, locale)
+                  if verse is not None}
+    clock_prefix = {
+        "es": r"(?:a\s+las|son\s+las|a\s+la|es\s+la|hora[s]?|mañana|tarde|noche)\s*$",
+        "ko": r"(?:오전|오후|아침|저녁|밤|시간)\s*$",
+        "zh-Hans": r"(?:上午|下午|早上|晚上|中午|凌晨|时间|时刻)(?:是|为|在)?\s*$",
+    }[locale]
+    clock_suffix = {"es": r"^\s*(?:a\.?m\.?|p\.?m\.?|horas?|de\s+la\s+(?:mañana|tarde|noche))\b",
+                    "ko": r"^\s*(?:시|분)", "zh-Hans": r"^\s*(?:点|分)"}[locale]
+    pairs = set()
+    for match in re.finditer(_COLON_PAIR, text):
+        pair = tuple(map(int, match.groups()))
+        clock_shaped = 0 <= pair[0] <= 23 and 0 <= pair[1] <= 59
+        is_clock = clock_shaped and (pair in spoken_clocks
+            or re.search(clock_prefix, text[max(0, match.start() - 40):match.start()], re.I)
+            or re.search(clock_suffix, text[match.end():match.end() + 40], re.I))
+        if pair in book_pairs or not is_clock:
+            pairs.add(pair)
+    return pairs
+
+
+def target_references(text: str, locale: str, *, spoken_clocks: set[tuple[int, int]] | None = None) -> tuple[set[tuple[int, int]], set[int]]:
+    pairs = target_colon_references(text, locale, spoken_clocks or set())
     chapters = set()
     if locale == "ko":
         for c, v in re.findall(r"(\d{1,3}|[영일이삼사오육칠팔구십백]+)\s*장\s*(\d{1,3}|[영일이삼사오육칠팔구십백]+)\s*절", text):
@@ -583,7 +624,8 @@ def target_references(text: str, locale: str) -> tuple[set[tuple[int, int]], set
 
 def scripture_reference_problems(english: str, target: str, locale: str) -> list[str]:
     english_pairs, english_chapters = english_references(english)
-    target_pairs, target_chapters = target_references(target, locale)
+    target_pairs, target_chapters = target_references(
+        target, locale, spoken_clocks=english_spoken_clock_pairs(english))
     problems = [f"missing reference {c}:{v}" for c, v in sorted(english_pairs - target_pairs)]
     problems += [f"missing chapter {c}" for c in sorted(english_chapters - target_chapters)
                  if not any(pair[0] == c for pair in english_pairs)]
@@ -594,11 +636,12 @@ def scripture_reference_problems(english: str, target: str, locale: str) -> list
     problems += [f"added reference {c}:{v}" for c, v in sorted(added_pairs)]
     # The book must survive translation: "Revelation 3:4" is not "Juan 3:4".
     citations = book_citations(target, locale)
-    english_books: dict[tuple[int, int], set[str]] = {}
+    english_books: dict[tuple[int, int | None], set[str]] = {}
     for code, chapter, verse in english_book_citations(english):
         if code is not None:
             english_books.setdefault((chapter, verse), set()).add(code)
-    problems += [f"book changed for {chapter}:{verse}" for code, chapter, verse, _ in citations
+    problems += [f"book changed for {chapter}" + (f":{verse}" if verse is not None else "")
+                 for code, chapter, verse, _ in citations
                  if code is not None and (chapter, verse) in english_books
                  and code not in english_books[(chapter, verse)]]
     # A chapter-only citation the English never said ("요한복음 3장"). Without a
@@ -668,10 +711,11 @@ def untranslated_problems(english: str, text: str, locale: str) -> list[str]:
     english_words = re.findall(r"[a-z']+", english.casefold())
     if len(english_words) >= 6 and _fold(" ".join(english_words)) in _fold(text):
         return ["English source text copied into target"]
-    # A short group copied word for word ("God loves you"). An English function
-    # word marks it as English: "Amén" or a name alone may match after folding.
+    # Exact multiword copies are untranslated even without a function word.
+    # A single name/amen, or an honorific plus a name, can legitimately survive.
     target_words, size = re.findall(r"[a-z']+", _fold(text)), len(english_words)
-    if any(word in _ENGLISH_FUNCTION_WORDS for word in english_words) and any(
+    name_only = bool(re.fullmatch(r"(?:Pastor|Dr|Mr|Mrs|Ms)\.?\s+[A-Z][a-z]+[.!?]?", english.strip()))
+    if size >= 2 and not name_only and any(
             target_words[start:start + size] == english_words for start in range(len(target_words) - size + 1)):
         return ["English source text copied into target"]
     return []

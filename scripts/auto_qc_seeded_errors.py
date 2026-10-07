@@ -9,7 +9,7 @@ rate on the clean material. ``machine_quality_waiver.py`` refuses a waiver
 unless a calibration for the current QC implementation meets its minimums.
 
 Text kinds: wrong_number, added_reference, wrong_book, english_leak,
-placeholder, dropped_name, dropped_half. Audio kinds: stretched (the 2026-10-04
+placeholder, dropped_name, dropped_half, semantic_negation. Audio kinds: stretched (the 2026-10-04
 u172 class), silent, clipped, truncated, and wrong_sentence (another unit's
 audio under this unit's text, which only the ASR path can catch). Meaning
 errors without a surface signal (for example a flipped negation) are only
@@ -61,6 +61,19 @@ def _number_forms(locale: str, value: int | str) -> list[str]:
 def mutate_text(group: dict, kind: str, locale: str, policy: dict | None) -> str | None:
     """Return a mutated target text, or None when the kind does not apply."""
     english, text = group["english"], group["targetText"]
+    if kind == "semantic_negation":
+        # Flip a target negation without changing names, numbers, references or
+        # script. Only groups with source negation supply this semantic trial.
+        if not re.search(r"\b(?:not|never)\b", english, re.I):
+            return None
+        markers = {"zh-Hans": (("不是", "是"), ("不会", "会"), ("没有", "已经")),
+                   "ko": (("더럽히지 않은", "더럽힌"), ("두지 않으십니다", "두십니다"),
+                          ("아니라", "이며")),
+                   "es": ((" no ", " sí "),)}[locale]
+        for negative, positive in markers:
+            if negative in text:
+                return text.replace(negative, positive, 1)
+        return None
     if kind == "wrong_number":
         pairs, _ = rules.english_references(english)
         protected = {value for pair in pairs for value in pair}
@@ -142,10 +155,21 @@ def calibrate_text(groups: list[dict], locale: str, *, policy: dict | None = Non
             mutated = mutate_text(group, kind, locale, policy)
             if mutated is None or mutated == group["targetText"]:
                 continue
+            if kind == "semantic_negation":
+                # Do not let a surface or length failure satisfy this trial.
+                surface, _ = text_qc.group_problems({**group, "targetText": mutated}, locale,
+                                                  policy=policy, median=median)
+                baseline_surface, _ = text_qc.group_problems(group, locale, policy=policy, median=median)
+                if set(surface) - set(baseline_surface):
+                    continue
             trials += 1
             problems, _ = text_qc.group_problems({**group, "targetText": mutated}, locale,
                                                  policy=policy, median=median, call=call)
-            if set(problems) - clean[group["groupId"]]:
+            new = set(problems) - clean[group["groupId"]]
+            hit = (any(problem.startswith("back_translation ") and
+                       problem != "back_translation judge failed" for problem in new)
+                   if kind == "semantic_negation" else bool(new))
+            if hit:
                 detected += 1
             elif len(misses) < 5:
                 misses.append(group["groupId"])

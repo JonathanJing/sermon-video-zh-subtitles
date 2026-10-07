@@ -402,7 +402,7 @@ async function loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal, allow
   const legacyCandidate = candidate && release.schemaVersion === RELEASE_V2;
   // Content v3 is admitted only through a v4 release, with the same text status.
   const contentVersions = legacyCandidate ? ['sermon-formal-dev-content-v1', 'sermon-dev-podcast-candidate-content-v2']
-    : machineTarget ? (release.contentStatus === 'machine_checked' ? [CONTENT_V3] : [CONTENT_V2, CONTENT_V3]) : [CONTENT_V1, CONTENT_V2];
+    : machineTarget ? (release.contentStatus === 'machine_checked' ? [CONTENT_V3] : [CONTENT_V1, CONTENT_V2, CONTENT_V3]) : [CONTENT_V1, CONTENT_V2];
   required(contentVersions.includes(content.schemaVersion)
     && content.pageId === page.id && (legacyCandidate ? content.locale === locale : content.targetLocale === locale) && content.sourceLocale === 'en'
     && (legacyCandidate ? content.contentStatus === release.contentStatus && content.audioStatus === release.audioStatus

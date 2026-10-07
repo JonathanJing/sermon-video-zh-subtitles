@@ -280,11 +280,12 @@ def screen(units: list[dict], locale: str, thresholds: dict = THRESHOLDS) -> dic
 
 
 TRACK_CHECK_SCHEMA = "sermon-target-audio-track-check-v1"
-# A compressed track must follow its PCM master window by window. MP3 at 64 kb/s
-# stays within about 1 dB on speech; a silent, stale, omitted or reordered
-# render differs by far more in many windows.
-TRACK_ENVELOPE = {"sampleRate": 8000, "windowSeconds": 0.05, "floorDbfs": -60.0,
-                  "maxWindowDeltaDb": 6.0, "maxDeviantShare": 0.02, "maxLengthDeltaSeconds": 0.1}
+# Envelope diagnostics alone cannot identify audio content. Compare decoded
+# waveforms in every audible window as well, allowing only lossy-codec error.
+TRACK_ENVELOPE = {"sampleRate": 12000, "windowSeconds": 0.05, "floorDbfs": -60.0,
+                  "maxWindowDeltaDb": 6.0, "maxDeviantShare": 0.02, "maxLengthDeltaSeconds": 0.1,
+                  "minWaveformCorrelation": 0.94, "maxRelativeWaveformError": 0.35,
+                  "audibleDbfs": -40.0}
 
 
 def _pcm16_frames(data: bytes) -> tuple[bytes, int, int]:
@@ -333,13 +334,45 @@ def _envelope(samples: array.array, rate: int, settings: dict) -> list[float]:
     return levels
 
 
+def _waveform_comparison(reference: array.array, compressed: array.array, rate: int, settings: dict) -> dict:
+    """Compare signal content, not its RMS envelope; reject any changed audible window.
+
+    ffmpeg removes MP3 encoder delay from timestamped output. No arbitrary
+    time shift or per-window gain normalization is allowed here: those could
+    hide a replaced or moved phrase. Quiet codec ringing is below the audible
+    floor; audible windows require both correlation and bounded sample error.
+    """
+    size = max(1, round(settings["windowSeconds"] * rate))
+    floor_power = 32768.0 ** 2 * 10 ** (settings["audibleDbfs"] / 10)
+    windows, failed, correlations, errors = 0, 0, [], []
+    for start in range(0, max(len(reference), len(compressed)), size):
+        left, right = reference[start:start + size], compressed[start:start + size]
+        count = max(len(left), len(right))
+        left_power, right_power = sum(v * v for v in left), sum(v * v for v in right)
+        if max(left_power, right_power) / count < floor_power:
+            continue
+        windows += 1
+        dot = sum(a * b for a, b in zip(left, right))
+        correlation = dot / math.sqrt(left_power * right_power) if left_power and right_power else 0.0
+        # Unpaired samples count as error, rather than disappearing at the end.
+        error_power = max(0.0, left_power + right_power - 2 * dot)
+        error = math.sqrt(error_power / max(left_power, floor_power * count))
+        correlations.append(correlation)
+        errors.append(error)
+        if correlation < settings["minWaveformCorrelation"] or error > settings["maxRelativeWaveformError"]:
+            failed += 1
+    return {"audibleWindows": windows, "deviantWindows": failed,
+            "minCorrelation": round(min(correlations, default=0.0), 6),
+            "maxRelativeError": round(max(errors, default=0.0), 6)}
+
+
 def check_track(package: dict, *, decode=_mono_pcm, settings: dict = TRACK_ENVELOPE) -> dict:
     """Prove the package track is the scheduled placement of its screened unit audio.
 
     Unit QC and ASR look at unit WAVs; this binds them to the assembled track.
     The PCM master (the track itself, or the ``.wav`` beside an MP3) must equal
     the units placed at their planned starts, sample for sample. An MP3 track
-    must then follow that master's loudness envelope."""
+    must then preserve that master's decoded waveform in every audible window."""
     def read(artifact: dict, label: str) -> bytes:
         data = Path(artifact["path"]).read_bytes()
         if _sha256(data) != artifact["sha256"]:
@@ -364,16 +397,19 @@ def check_track(package: dict, *, decode=_mono_pcm, settings: dict = TRACK_ENVEL
     issues = []
     if (unit_rate, unit_channels) != (rate, channels) or expected != master_pcm:
         issues.append("pcm_track_differs_from_scheduled_units")
-    envelope = None
+    envelope = waveform = None
     if master_path != track_path:
         low = settings["sampleRate"]
-        reference, compressed = (_envelope(decode(path, low), low, settings) for path in (master_path, track_path))
+        reference_pcm, compressed_pcm = (decode(path, low) for path in (master_path, track_path))
+        waveform = _waveform_comparison(reference_pcm, compressed_pcm, low, settings)
+        reference, compressed = (_envelope(pcm, low, settings) for pcm in (reference_pcm, compressed_pcm))
         count = min(len(reference), len(compressed))
         deltas = [abs(a - b) for a, b in zip(reference[:count], compressed[:count])]
         deviant = sum(delta > settings["maxWindowDeltaDb"] for delta in deltas)
         envelope = {"windows": count, "deviantWindows": deviant, "maxDeltaDb": round(max(deltas, default=0.0), 3),
                     "lengthDeltaSeconds": round(abs(len(reference) - len(compressed)) * settings["windowSeconds"], 3)}
-        if not count or deviant > settings["maxDeviantShare"] * count:
+        if (not count or deviant > settings["maxDeviantShare"] * count
+                or not waveform["audibleWindows"] or waveform["deviantWindows"]):
             issues.append("compressed_track_differs_from_pcm_master")
         if envelope["lengthDeltaSeconds"] > settings["maxLengthDeltaSeconds"] + settings["windowSeconds"]:
             issues.append("compressed_track_length_differs")
@@ -384,8 +420,8 @@ def check_track(package: dict, *, decode=_mono_pcm, settings: dict = TRACK_ENVEL
             "scheduleJsonSha256": package["schedule"]["jsonSha256"],
             "unitAudioSha256s": [unit["audio"]["sha256"] for unit in units],
             "method": {"pcm": "sample_exact_scheduled_placement",
-                       "compressed": None if envelope is None else "loudness_envelope"},
-            "settings": settings, "envelope": envelope,
+                       "compressed": None if envelope is None else "decoded_waveform"},
+            "settings": settings, "envelope": envelope, "waveform": waveform,
             "implementationSha256": waiver.implementation_sha256(), "humanApproval": False}
 
 

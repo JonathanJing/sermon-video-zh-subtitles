@@ -203,7 +203,13 @@ def inspect(config_path):
     d.require(value.get('inputSnapshotSha256') in (None, captured['inputsSha256']), 'Delivery input snapshot changed; freeze a new revision')
     plan_hash = d.sha({'configuration': plan_hash, 'inputsSha256': captured['inputsSha256']})
     source, joins = _products(value, args)
-    result = {'status': 'ready_to_prepare', 'planHash': plan_hash, 'kind': 'app_delivery',
+    machine_checked = any(read(refs[locale]).get('reviewKind') == 'machine_quality_waiver'
+                          or read(refs[locale]).get('schemaVersion') in (
+                              'sermon-target-language-machine-text-waiver-v1',
+                              'sermon-target-language-machine-audio-waiver-v1')
+                          for name in ('full_review_receipt', 'spoken_review_receipt', 'audio_review_receipt')
+                          for refs in [builder.assignment_map(getattr(args, name), args.locales)] for locale in args.locales)
+    result = {'machineChecked': machine_checked, 'status': 'ready_to_prepare', 'planHash': plan_hash, 'kind': 'app_delivery',
               'pageId': value['pageId'], 'sourceIdentity': d.source_identity(source),
               'sourceUrlHash': source['source']['sourceUrlHash'], 'approvedWindow': source['source']['approvedWindow'],
               'sourceId': source['source']['sourceId'], 'mediaSha256': source['source']['media']['sha256'],

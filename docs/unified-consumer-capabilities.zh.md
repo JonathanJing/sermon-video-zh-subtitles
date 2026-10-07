@@ -19,6 +19,8 @@
 
 预检通过 ffmpeg stdin/stdout 管道，把固定一秒 16 kHz、单声道 s16le PCM 编码为 WAV 后解码，逐字节比较结果，并绑定 ffmpeg executable hash。该检查证明本机 PCM 编解码能力，不证明远程 TTS 健康、其他编码格式或真实产物播放成功。
 
+接纳机器审核豁免收据，或交付含机器质检产品的发布包前，必须使用已冻结的 v3 能力配置；v1/v2 仅适用于人工审核路径。该门禁重新校验机器 catalog、release、content schema 的绑定哈希。
+
 冻结配置新增 `inputSnapshotSha256`，绑定配置内容、全部输入文件路径与 bytes hash、目标 schema、编解码二进制；检查结束再次读取所有 hash，变更即失败。结果包含 `snapshotBound`、`inputHashes`、`configSha256`、`sourceIdentity` 和逐语言结果。消费者必须要求 `snapshotBound=true` 并将该配置绑定到当前 run。
 
 本预检明确返回 `futureArtifactsValidated=false`、`modelCalls=0`。它不伪造尚未存在的 English source package、candidate、candidate-bound voice authorization、audio package 或 release package，不能替代其后独立内容审核、正式声音授权、产物验证及终端验收。policy 中未来 source package scope 仍须在真实产物存在后重新匹配；本步骤只验证冻结 policy 本身。

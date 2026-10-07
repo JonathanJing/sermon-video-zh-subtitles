@@ -707,6 +707,9 @@ def ingest_review(root,key,job_id,receipt_path,expected):
         validated=validate_review(kind,receipt_path,inputs=inputs,expected_source=m['source'],expected_locale=step.get('locale'))
     if c.file_sha(receipt_path)!=original_sha:
         raise c.ContractError('review_changed_during_validation',7)
+    if validated.get('reviewKind')=='machine_quality_waiver':
+        from scripts.sermon_unified_capabilities import require_machine_capabilities
+        require_machine_capabilities(c.binding(m,'/','consumerCapabilities'))
     doc=c.read(receipt_path)
     dst=folder(root,key)/('review-'+original_sha+'.json')
     jobs._persist(dst,doc)

@@ -94,7 +94,9 @@ def speech_wav(seconds: float, rate: int = 8000) -> bytes:
     return audio_qc.encode_pcm16(samples, rate)
 
 
-SEMANTIC_IDENTITY = {"backend": "fake-transport", "model": "fake-judge", "reasoningEffort": "medium"}
+SEMANTIC_IDENTITY = {"backend": "fake-transport", "model": "fake-judge",
+                     "modelRevision": "r1", "cacheNamespace": "qc-fixtures-v1",
+                     "settings": {"reasoningEffort": "medium", "temperature": 0}}
 PRIMARY_ASR = "small-asr"
 SECONDARY_ASR = "large-asr"
 

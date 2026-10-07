@@ -71,10 +71,17 @@ def semantic_identity(identity: dict | None) -> dict | None:
     """
     if identity is None:
         return None
-    if (not isinstance(identity, dict) or not all(isinstance(identity.get(key), str) and identity[key]
-                                                    for key in ("backend", "model"))):
-        raise ValueError("Semantic identity needs at least backend and model")
-    return {"identity": dict(identity), "sha256": _sha(identity)}
+    if (not isinstance(identity, dict) or not all(isinstance(identity.get(key), str) and identity[key].strip()
+                    for key in ("backend", "model", "modelRevision", "cacheNamespace"))
+            or not isinstance(identity.get("settings"), dict) or not identity["settings"]):
+        raise ValueError("Semantic identity needs backend, model, modelRevision, cacheNamespace and settings")
+    # A JSON round trip freezes a normalized snapshot and refuses non-JSON or
+    # non-finite settings instead of hashing an incomplete runtime description.
+    try:
+        normalized = json.loads(json.dumps(identity, ensure_ascii=False, sort_keys=True, allow_nan=False))
+    except (TypeError, ValueError) as error:
+        raise ValueError("Semantic identity settings must be finite JSON values") from error
+    return {"identity": normalized, "sha256": _sha(normalized)}
 
 
 def _length(text: str) -> int:

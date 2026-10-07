@@ -750,3 +750,19 @@ test('content/release status, version or disclosure mismatches isolate only the 
   assert.deepEqual(Object.keys(result.weeks[0].contentVariants), ['zh-Hans', 'es']);
   assert.match(result.errors[0], /\/ko: Published content identity mismatch/);
 });
+
+ test('v4 audio waiver retains human-reviewed v1 full text', async () => {
+  const f = machineFixture({ es: ['human_reviewed', 'machine_checked'] }, ({ locale, content }) => {
+    if (locale === 'es') {
+      content.schemaVersion = 'sermon-full-video-text-content-v1';
+      delete content.audioDurationSeconds;
+      delete content.reviewMode;
+    }
+  });
+  const result = await loadPublishedWeeks(f.fetchImpl);
+  const view = result.weeks[0].contentVariants.es;
+  assert.ok(view);
+  assert.equal(view.humanContentReview, 'approved');
+  assert.equal(view.audioStatus, 'full_machine_checked');
+  assert.equal(view.disclosure, DISCLOSURES.es);
+});

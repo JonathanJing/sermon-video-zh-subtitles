@@ -145,6 +145,16 @@ def inspect(config_path):
                                    'audio_package', 'study_reviews', 'release_package', 'client_acceptance']}
 
 
+def require_machine_capabilities(config_path):
+    """Recheck frozen consumer evidence before accepting any machine waiver."""
+    result = inspect(config_path)
+    d.require(result['schemaVersion'] == MACHINE_VERSION and result['snapshotBound']
+              and all(result['targetSchemaVersions'].get(key) == version
+                      for key, version in MACHINE_SCHEMAS.items()),
+              'consumer_machine_capabilities_required')
+    return result
+
+
 def freeze(config_path, output_path):
     path, output = Path(config_path).resolve(), Path(output_path).resolve()
     d.require(path.parent == output.parent, 'consumer_freeze_requires_same_directory_for_relative_paths')
