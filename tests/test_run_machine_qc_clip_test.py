@@ -161,6 +161,12 @@ class MachineQcClipDriverTests(unittest.TestCase):
         with patch.object(driver.basis.waiver, "implementation_sha256", return_value="other"):
             self.assertEqual(self.run_driver(run), 1)
         self.assertEqual(self.summary()["status"], "blocked_prior_failure")
+        # A renamed group with the same units and text is still the unrepaired failure.
+        candidate["groups"][0]["translationGroupId"] = "g101"
+        candidate["modelReview"]["reviewedGroupIds"][0] = "g101"
+        path.write_text(json.dumps(candidate, ensure_ascii=False), encoding="utf-8")
+        self.assertEqual(self.run_driver(run), 1)
+        self.assertEqual(self.summary()["status"], "blocked_prior_failure", self.summary().get("reason"))
         set_text(candidate, original)
         path.write_text(json.dumps(candidate, ensure_ascii=False), encoding="utf-8")
         self.assertEqual(self.run_driver(run), 0)

@@ -420,10 +420,11 @@ def run_locale(locale: str, paths: dict, out: Path, state: Path, judge, timings:
         if head is None:
             return {"status": "blocked_prior_failure",
                     "reason": f"the repair ledger head failed and its QC receipt is missing from {head_path}"}
-        current = {(group["groupId"], hashlib.sha256(group["targetText"].encode("utf-8")).hexdigest())
+        # Group ids are local to a revision; the ledger counts by source unit, so match on those.
+        current = {(tuple(group["sourceUnitIds"]), hashlib.sha256(group["targetText"].encode("utf-8")).hexdigest())
                    for group in groups}
-        unrepaired = [row["groupId"] for row in head["results"]
-                      if row["status"] != "pass" and (row["groupId"], row["targetTextSha256"]) in current]
+        unrepaired = [row["groupId"] for row in head["results"] if row["status"] != "pass"
+                      and (tuple(row["sourceUnitIds"]), row["targetTextSha256"]) in current]
         if unrepaired:
             return {"status": "blocked_prior_failure", "failedGroups": unrepaired,
                     "reason": "failed groups are unchanged; repair them in a new candidate revision"}

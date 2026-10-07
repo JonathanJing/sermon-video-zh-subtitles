@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from pathlib import Path
 
 SCHEMA = "sermon-machine-repair-ledger-entry-v1"
@@ -128,9 +129,15 @@ def append(root: Path, value: dict, qc: dict) -> dict:
     entry = next_entry(value, load(root, value), qc)
     folder = directory(root, value)
     folder.mkdir(parents=True, exist_ok=True)
-    with (folder / f"entry-{entry['sequence']:06d}.json").open("x", encoding="utf-8") as stream:
-        json.dump(entry, stream, ensure_ascii=False, indent=2, sort_keys=True)
-        stream.write("\n")
+    name = f"entry-{entry['sequence']:06d}.json"
+    # The complete entry is linked into place, so an interrupted append leaves no partial
+    # entry; the temporary file sits beside the folder, which holds only entries.
+    temporary = folder.parent / f".{folder.name}.{name}.{os.getpid()}.tmp"
+    temporary.write_text(json.dumps(entry, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    try:
+        os.link(temporary, folder / name)
+    finally:
+        temporary.unlink()
     return entry
 
 
