@@ -256,6 +256,9 @@ def normalize_b(case, response):
     return {"labels": labels, "probabilities": probabilities}
 
 def normalize_a(case, response):
+    if case["a"].get("adapter", "").startswith("semantic_"):
+        from scripts.experiments.decision_semantic_eval import normalize_a as semantic_normalize
+        return semantic_normalize(case, response)
     from scripts.experiments.decision_api_cases_content import normalize_content_a
     return normalize_content_a(case, response)
 
