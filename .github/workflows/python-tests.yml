@@ -103,12 +103,12 @@ jobs:
     needs: changes
     if: needs.changes.outputs.scope == 'full'
     runs-on: ubuntu-latest
-    # Audio-tool downloads may precede a 15-minute test shard.
+    # Audio-tool downloads may precede a test shard; cases, not modules, are split.
     timeout-minutes: 40
     strategy:
       fail-fast: false
       matrix:
-        shard_index: [0, 1]
+        shard_index: [0, 1, 2, 3]
 
     steps:
       - name: Check out repository
@@ -165,7 +165,7 @@ jobs:
         run: >-
           python scripts/run_unittest_ci.py
           --weights .github/unittest-module-timings.json
-          --shard-count 2
+          --shard-count 4
           --shard-index ${{ matrix.shard_index }}
           --report "${RUNNER_TEMP}/unittest-root-${{ matrix.shard_index }}.json"
 

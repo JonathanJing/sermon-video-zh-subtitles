@@ -1,4 +1,8 @@
-"""Run the root unittest suite with per-module timing and optional CI sharding."""
+"""Run the root unittest suite with per-module timing and optional CI sharding.
+
+Shards split individual test cases, not whole modules, so one slow module can
+spread across runners. Each shard keeps discovery order for the cases it runs.
+"""
 
 from __future__ import annotations
 
@@ -24,8 +28,12 @@ def cases_in(suite: unittest.TestSuite):
 
 
 def module_name(case: unittest.TestCase) -> str:
+    return module_name_from_id(case.id())
+
+
+def module_name_from_id(case_id: str) -> str:
     # Fixtures may import a test class through the tests package.
-    return case.id().removeprefix("tests.").split(".", 1)[0]
+    return case_id.removeprefix("tests.").split(".", 1)[0]
 
 
 def timing_weights(test_counts: dict[str, int], previous: dict) -> dict[str, float]:
@@ -45,14 +53,51 @@ def timing_weights(test_counts: dict[str, int], previous: dict) -> dict[str, flo
     }
 
 
-def shard_assignments(modules: list[str], weights: dict[str, float], count: int) -> dict[str, int]:
-    """Place slow modules first so every shard gets a similar estimated runtime."""
+# Cases at least this slow are reported by id, so one module's slow and fast
+# cases can be spread separately.
+SLOW_CASE_SECONDS = 5.0
+
+
+def case_costs(
+    case_ids: list[str], module_weights: dict[str, float], test_counts: dict[str, int],
+    slow_cases: dict[str, float] | None = None,
+) -> list[float]:
+    """Estimate each discovered case from its slow-case timing or its module's remainder."""
+    slow = {}
+    for name, seconds in (slow_cases or {}).items():
+        if not math.isfinite(float(seconds)) or float(seconds) < 0:
+            raise ValueError("Slow case timings must be finite and nonnegative")
+        slow[name.removeprefix("tests.")] = float(seconds)
+    keys = [case_id.removeprefix("tests.") for case_id in case_ids]
+    known, known_count = defaultdict(float), Counter()
+    for key in keys:
+        if key in slow:
+            known[module_name_from_id(key)] += slow[key]
+            known_count[module_name_from_id(key)] += 1
+    costs = []
+    for key in keys:
+        module = module_name_from_id(key)
+        if key in slow:
+            costs.append(max(0.001, slow[key]))
+            continue
+        total = module_weights.get(module, float(test_counts[module]))
+        remaining = test_counts[module] - known_count[module]
+        costs.append(max(0.001, (total - known[module]) / remaining))
+    return costs
+
+
+def case_shard_assignments(case_ids: list[str], costs: list[float], count: int) -> list[int]:
+    """Return a shard per discovered case, placing slow cases first.
+
+    A test class imported by another module is discovered twice under one id;
+    both copies still run, so assignment follows positions rather than ids.
+    """
     totals = [0.0] * count
-    assignments = {}
-    for module in sorted(modules, key=lambda name: (-weights.get(name, 1.0), name)):
+    assignments = [0] * len(case_ids)
+    for position in sorted(range(len(case_ids)), key=lambda index: (-costs[index], case_ids[index], index)):
         shard = min(range(count), key=lambda index: (totals[index], index))
-        assignments[module] = shard
-        totals[shard] += weights.get(module, 1.0)
+        assignments[position] = shard
+        totals[shard] += costs[position]
     return assignments
 
 
@@ -61,6 +106,8 @@ class TimedResult(unittest.TextTestResult):
         super().__init__(*args, **kwargs)
         self.module_seconds = defaultdict(float)
         self.module_tests = defaultdict(int)
+        self.case_seconds = defaultdict(float)
+        self.case_runs = Counter()
         self._started = {}
 
     def startTest(self, test):
@@ -68,7 +115,10 @@ class TimedResult(unittest.TextTestResult):
         super().startTest(test)
 
     def stopTest(self, test):
-        self.module_seconds[module_name(test)] += time.monotonic() - self._started.pop(id(test))
+        elapsed = time.monotonic() - self._started.pop(id(test))
+        self.module_seconds[module_name(test)] += elapsed
+        self.case_seconds[test.id().removeprefix("tests.")] += elapsed
+        self.case_runs[test.id().removeprefix("tests.")] += 1
         self.module_tests[module_name(test)] += 1
         super().stopTest(test)
 
@@ -97,15 +147,19 @@ def main() -> int:
     if args.weights:
         previous = json.loads(args.weights.read_text(encoding="utf-8"))
         weights = timing_weights(test_counts, previous)
+        slow_cases = previous.get("slowCases", {})
         missing = sorted(set(modules) - previous["modules"].keys())
         if missing:
             print(f"Estimating {len(missing)} unprofiled modules from measured per-case cost", flush=True)
     else:
-        weights = {}
+        weights, slow_cases = {}, {}
 
     if args.shard_count is not None:
-        assigned = shard_assignments(modules, weights, args.shard_count)
-        selected = [case for case in discovered if assigned[module_name(case)] == args.shard_index]
+        case_ids = [case.id() for case in discovered]
+        assigned = case_shard_assignments(
+            case_ids, case_costs(case_ids, weights, test_counts, slow_cases), args.shard_count
+        )
+        selected = [case for case, shard in zip(discovered, assigned) if shard == args.shard_index]
         if not selected:
             raise SystemExit(f"Shard {args.shard_index} has no tests")
         print(
@@ -132,6 +186,12 @@ def main() -> int:
                 "tests": result.module_tests[name],
             }
             for name in sorted(result.module_seconds)
+        },
+        # Seconds per run: a case discovered twice is reported once, at its average.
+        "slowCases": {
+            name: round(seconds / result.case_runs[name], 3)
+            for name, seconds in sorted(result.case_seconds.items())
+            if seconds / result.case_runs[name] >= SLOW_CASE_SECONDS
         },
     }
     args.report.parent.mkdir(parents=True, exist_ok=True)
