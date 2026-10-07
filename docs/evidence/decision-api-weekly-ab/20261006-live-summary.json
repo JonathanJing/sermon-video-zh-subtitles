@@ -54,6 +54,41 @@
               "successfulEffectiveMsP95": 548.7447526131289
             }
           },
+          "subsets": {
+            "frozen_real_source_request": {
+              "caseCount": 12,
+              "validPairs": 12,
+              "allLabelAgreement": 0,
+              "arms": {
+                "A": {
+                  "attemptRecords": 12,
+                  "statuses": {
+                    "validated": 12
+                  },
+                  "successfulEffectiveMsP50": 6038.134062546305,
+                  "successfulEffectiveMsP95": 10003.025470650753,
+                  "programOracleFixtureConformance": {
+                    "matches": 0,
+                    "denominator": 0
+                  },
+                  "estimatedCostMicrousdKnown": 72218
+                },
+                "B": {
+                  "attemptRecords": 12,
+                  "statuses": {
+                    "validated": 12
+                  },
+                  "successfulEffectiveMsP50": 257.41514592664316,
+                  "successfulEffectiveMsP95": 548.7447526131289,
+                  "programOracleFixtureConformance": {
+                    "matches": 0,
+                    "denominator": 0
+                  },
+                  "estimatedCostMicrousdKnown": 4644
+                }
+              }
+            }
+          },
           "qualityConclusion": "inconclusive",
           "productionReplacementEligible": false
         },
@@ -94,6 +129,41 @@
               },
               "successfulEffectiveMsP50": 258.01402097567916,
               "successfulEffectiveMsP95": 317.47165202978067
+            }
+          },
+          "subsets": {
+            "frozen_diagnostic_request": {
+              "caseCount": 12,
+              "validPairs": 0,
+              "allLabelAgreement": 0,
+              "arms": {
+                "A": {
+                  "attemptRecords": 12,
+                  "statuses": {
+                    "preflight_blocked": 12
+                  },
+                  "successfulEffectiveMsP50": null,
+                  "successfulEffectiveMsP95": null,
+                  "programOracleFixtureConformance": {
+                    "matches": 0,
+                    "denominator": 0
+                  },
+                  "estimatedCostMicrousdKnown": 0
+                },
+                "B": {
+                  "attemptRecords": 12,
+                  "statuses": {
+                    "validated": 12
+                  },
+                  "successfulEffectiveMsP50": 258.01402097567916,
+                  "successfulEffectiveMsP95": 317.47165202978067,
+                  "programOracleFixtureConformance": {
+                    "matches": 0,
+                    "denominator": 0
+                  },
+                  "estimatedCostMicrousdKnown": 3245
+                }
+              }
             }
           },
           "qualityConclusion": "inconclusive",
@@ -139,6 +209,41 @@
               "successfulEffectiveMsP95": 344.857897865586
             }
           },
+          "subsets": {
+            "developer_fixture": {
+              "caseCount": 12,
+              "validPairs": 12,
+              "allLabelAgreement": 8,
+              "arms": {
+                "A": {
+                  "attemptRecords": 12,
+                  "statuses": {
+                    "validated": 12
+                  },
+                  "successfulEffectiveMsP50": 3.177063015755266,
+                  "successfulEffectiveMsP95": 43.36444577784272,
+                  "programOracleFixtureConformance": {
+                    "matches": 12,
+                    "denominator": 12
+                  },
+                  "estimatedCostMicrousdKnown": 0
+                },
+                "B": {
+                  "attemptRecords": 12,
+                  "statuses": {
+                    "validated": 12
+                  },
+                  "successfulEffectiveMsP50": 277.38700003828853,
+                  "successfulEffectiveMsP95": 344.857897865586,
+                  "programOracleFixtureConformance": {
+                    "matches": 8,
+                    "denominator": 12
+                  },
+                  "estimatedCostMicrousdKnown": 3704
+                }
+              }
+            }
+          },
           "qualityConclusion": "inconclusive",
           "productionReplacementEligible": false
         },
@@ -179,6 +284,41 @@
               },
               "successfulEffectiveMsP50": 245.9535835077986,
               "successfulEffectiveMsP95": 360.5930543679278
+            }
+          },
+          "subsets": {
+            "developer_fixture": {
+              "caseCount": 12,
+              "validPairs": 12,
+              "allLabelAgreement": 7,
+              "arms": {
+                "A": {
+                  "attemptRecords": 12,
+                  "statuses": {
+                    "validated": 12
+                  },
+                  "successfulEffectiveMsP50": 0.08795794565230608,
+                  "successfulEffectiveMsP95": 27.731448237318503,
+                  "programOracleFixtureConformance": {
+                    "matches": 12,
+                    "denominator": 12
+                  },
+                  "estimatedCostMicrousdKnown": 0
+                },
+                "B": {
+                  "attemptRecords": 12,
+                  "statuses": {
+                    "validated": 12
+                  },
+                  "successfulEffectiveMsP50": 245.9535835077986,
+                  "successfulEffectiveMsP95": 360.5930543679278,
+                  "programOracleFixtureConformance": {
+                    "matches": 7,
+                    "denominator": 12
+                  },
+                  "estimatedCostMicrousdKnown": 403
+                }
+              }
             }
           },
           "qualityConclusion": "inconclusive",
@@ -223,6 +363,41 @@
               "successfulEffectiveMsP95": 332.6438232674263
             }
           },
+          "subsets": {
+            "developer_fixture": {
+              "caseCount": 12,
+              "validPairs": 12,
+              "allLabelAgreement": 2,
+              "arms": {
+                "A": {
+                  "attemptRecords": 12,
+                  "statuses": {
+                    "validated": 12
+                  },
+                  "successfulEffectiveMsP50": 0.27712498558685184,
+                  "successfulEffectiveMsP95": 29.384828830370633,
+                  "programOracleFixtureConformance": {
+                    "matches": 12,
+                    "denominator": 12
+                  },
+                  "estimatedCostMicrousdKnown": 0
+                },
+                "B": {
+                  "attemptRecords": 12,
+                  "statuses": {
+                    "validated": 12
+                  },
+                  "successfulEffectiveMsP50": 252.44072900386527,
+                  "successfulEffectiveMsP95": 332.6438232674263,
+                  "programOracleFixtureConformance": {
+                    "matches": 2,
+                    "denominator": 12
+                  },
+                  "estimatedCostMicrousdKnown": 632
+                }
+              }
+            }
+          },
           "qualityConclusion": "inconclusive",
           "productionReplacementEligible": false
         },
@@ -263,6 +438,41 @@
               },
               "successfulEffectiveMsP50": null,
               "successfulEffectiveMsP95": null
+            }
+          },
+          "subsets": {
+            "developer_fixture": {
+              "caseCount": 1,
+              "validPairs": 0,
+              "allLabelAgreement": 0,
+              "arms": {
+                "A": {
+                  "attemptRecords": 1,
+                  "statuses": {
+                    "no_executable_baseline": 1
+                  },
+                  "successfulEffectiveMsP50": null,
+                  "successfulEffectiveMsP95": null,
+                  "programOracleFixtureConformance": {
+                    "matches": 0,
+                    "denominator": 0
+                  },
+                  "estimatedCostMicrousdKnown": 0
+                },
+                "B": {
+                  "attemptRecords": 1,
+                  "statuses": {
+                    "no_executable_baseline": 1
+                  },
+                  "successfulEffectiveMsP50": null,
+                  "successfulEffectiveMsP95": null,
+                  "programOracleFixtureConformance": {
+                    "matches": 0,
+                    "denominator": 0
+                  },
+                  "estimatedCostMicrousdKnown": 0
+                }
+              }
             }
           },
           "qualityConclusion": "inconclusive",
@@ -307,6 +517,41 @@
               "successfulEffectiveMsP95": 311.23383570229635
             }
           },
+          "subsets": {
+            "developer_fixture": {
+              "caseCount": 12,
+              "validPairs": 12,
+              "allLabelAgreement": 4,
+              "arms": {
+                "A": {
+                  "attemptRecords": 12,
+                  "statuses": {
+                    "validated": 12
+                  },
+                  "successfulEffectiveMsP50": 0.06627052789554,
+                  "successfulEffectiveMsP95": 43.06766425142989,
+                  "programOracleFixtureConformance": {
+                    "matches": 12,
+                    "denominator": 12
+                  },
+                  "estimatedCostMicrousdKnown": 0
+                },
+                "B": {
+                  "attemptRecords": 12,
+                  "statuses": {
+                    "validated": 12
+                  },
+                  "successfulEffectiveMsP50": 266.99504151474684,
+                  "successfulEffectiveMsP95": 311.23383570229635,
+                  "programOracleFixtureConformance": {
+                    "matches": 4,
+                    "denominator": 12
+                  },
+                  "estimatedCostMicrousdKnown": 844
+                }
+              }
+            }
+          },
           "qualityConclusion": "inconclusive",
           "productionReplacementEligible": false
         },
@@ -347,6 +592,704 @@
               },
               "successfulEffectiveMsP50": null,
               "successfulEffectiveMsP95": null
+            }
+          },
+          "subsets": {
+            "developer_fixture": {
+              "caseCount": 1,
+              "validPairs": 0,
+              "allLabelAgreement": 0,
+              "arms": {
+                "A": {
+                  "attemptRecords": 1,
+                  "statuses": {
+                    "no_executable_baseline": 1
+                  },
+                  "successfulEffectiveMsP50": null,
+                  "successfulEffectiveMsP95": null,
+                  "programOracleFixtureConformance": {
+                    "matches": 0,
+                    "denominator": 0
+                  },
+                  "estimatedCostMicrousdKnown": 0
+                },
+                "B": {
+                  "attemptRecords": 1,
+                  "statuses": {
+                    "no_executable_baseline": 1
+                  },
+                  "successfulEffectiveMsP50": null,
+                  "successfulEffectiveMsP95": null,
+                  "programOracleFixtureConformance": {
+                    "matches": 0,
+                    "denominator": 0
+                  },
+                  "estimatedCostMicrousdKnown": 0
+                }
+              }
+            }
+          },
+          "qualityConclusion": "inconclusive",
+          "productionReplacementEligible": false
+        }
+      }
+    },
+    {
+      "id": "20261006-expanded-02",
+      "authorityCaseSetSha256": "ccdeb3c8f5732e5e4010c8e81559dbc6b39c228ece5847ac96d870aa42901505",
+      "codeDependencySha256": "2c4ef9763d55b9840ed07df6995752c7e4b7c14390cd787b6e77fe908dfaa961",
+      "priceAssumptionVersion": "20261006-short-context-default-fast-regional-cushion-v2",
+      "networkAttempts": 324,
+      "unsettledAttempts": 0,
+      "cumulativeEstimatedOrReservedMicrousd": 1950457,
+      "maxCostMicrousd": 20000000,
+      "stages": {
+        "E01": {
+          "caseCount": 48,
+          "sourceKinds": {
+            "frozen_real_source_request": 48
+          },
+          "realSourceClusters": 1,
+          "subtasks": {
+            "text_and_timing_checks": 48
+          },
+          "validPairs": 48,
+          "allLabelAgreement": 0,
+          "arms": {
+            "A": {
+              "attemptRecords": 48,
+              "estimatedCostMicrousdKnown": 278878,
+              "programOracleFixtureConformance": {
+                "denominator": 0,
+                "matches": 0
+              },
+              "statuses": {
+                "validated": 48
+              },
+              "successfulEffectiveMsP50": 6041.066020494327,
+              "successfulEffectiveMsP95": 7711.8943811627105
+            },
+            "B": {
+              "attemptRecords": 48,
+              "estimatedCostMicrousdKnown": 18309,
+              "programOracleFixtureConformance": {
+                "denominator": 0,
+                "matches": 0
+              },
+              "statuses": {
+                "validated": 48
+              },
+              "successfulEffectiveMsP50": 304.7916250070557,
+              "successfulEffectiveMsP95": 510.2330329653341
+            }
+          },
+          "subsets": {
+            "frozen_real_source_request": {
+              "caseCount": 48,
+              "validPairs": 48,
+              "allLabelAgreement": 0,
+              "arms": {
+                "A": {
+                  "attemptRecords": 48,
+                  "statuses": {
+                    "validated": 48
+                  },
+                  "successfulEffectiveMsP50": 6041.066020494327,
+                  "successfulEffectiveMsP95": 7711.8943811627105,
+                  "programOracleFixtureConformance": {
+                    "matches": 0,
+                    "denominator": 0
+                  },
+                  "estimatedCostMicrousdKnown": 278878
+                },
+                "B": {
+                  "attemptRecords": 48,
+                  "statuses": {
+                    "validated": 48
+                  },
+                  "successfulEffectiveMsP50": 304.7916250070557,
+                  "successfulEffectiveMsP95": 510.2330329653341,
+                  "programOracleFixtureConformance": {
+                    "matches": 0,
+                    "denominator": 0
+                  },
+                  "estimatedCostMicrousdKnown": 18309
+                }
+              }
+            }
+          },
+          "qualityConclusion": "inconclusive",
+          "productionReplacementEligible": false
+        },
+        "E02": {
+          "caseCount": 60,
+          "sourceKinds": {
+            "frozen_diagnostic_request": 60
+          },
+          "realSourceClusters": 1,
+          "subtasks": {
+            "draft_issue_projection": 60
+          },
+          "validPairs": 60,
+          "allLabelAgreement": 43,
+          "arms": {
+            "A": {
+              "attemptRecords": 60,
+              "estimatedCostMicrousdKnown": 1537233,
+              "programOracleFixtureConformance": {
+                "denominator": 0,
+                "matches": 0
+              },
+              "statuses": {
+                "validated": 60
+              },
+              "successfulEffectiveMsP50": 7436.041916545946,
+              "successfulEffectiveMsP95": 10591.564048244618
+            },
+            "B": {
+              "attemptRecords": 60,
+              "estimatedCostMicrousdKnown": 16320,
+              "programOracleFixtureConformance": {
+                "denominator": 0,
+                "matches": 0
+              },
+              "statuses": {
+                "validated": 60
+              },
+              "successfulEffectiveMsP50": 305.45250000432134,
+              "successfulEffectiveMsP95": 500.484054145636
+            }
+          },
+          "subsets": {
+            "frozen_diagnostic_request": {
+              "caseCount": 60,
+              "validPairs": 60,
+              "allLabelAgreement": 43,
+              "arms": {
+                "A": {
+                  "attemptRecords": 60,
+                  "statuses": {
+                    "validated": 60
+                  },
+                  "successfulEffectiveMsP50": 7436.041916545946,
+                  "successfulEffectiveMsP95": 10591.564048244618,
+                  "programOracleFixtureConformance": {
+                    "matches": 0,
+                    "denominator": 0
+                  },
+                  "estimatedCostMicrousdKnown": 1537233
+                },
+                "B": {
+                  "attemptRecords": 60,
+                  "statuses": {
+                    "validated": 60
+                  },
+                  "successfulEffectiveMsP50": 305.45250000432134,
+                  "successfulEffectiveMsP95": 500.484054145636,
+                  "programOracleFixtureConformance": {
+                    "matches": 0,
+                    "denominator": 0
+                  },
+                  "estimatedCostMicrousdKnown": 16320
+                }
+              }
+            }
+          },
+          "qualityConclusion": "inconclusive",
+          "productionReplacementEligible": false
+        },
+        "E03": {
+          "caseCount": 12,
+          "sourceKinds": {
+            "developer_fixture": 12
+          },
+          "realSourceClusters": 0,
+          "subtasks": {
+            "plan_repair": 7,
+            "provider_error": 5
+          },
+          "validPairs": 12,
+          "allLabelAgreement": 12,
+          "arms": {
+            "A": {
+              "attemptRecords": 12,
+              "estimatedCostMicrousdKnown": 0,
+              "programOracleFixtureConformance": {
+                "denominator": 12,
+                "matches": 12
+              },
+              "statuses": {
+                "validated": 12
+              },
+              "successfulEffectiveMsP50": 3.940561960916966,
+              "successfulEffectiveMsP95": 47.09949182579289
+            },
+            "B": {
+              "attemptRecords": 12,
+              "estimatedCostMicrousdKnown": 5210,
+              "programOracleFixtureConformance": {
+                "denominator": 12,
+                "matches": 12
+              },
+              "statuses": {
+                "validated": 12
+              },
+              "successfulEffectiveMsP50": 494.9636460514739,
+              "successfulEffectiveMsP95": 932.0951124245762
+            }
+          },
+          "subsets": {
+            "developer_fixture": {
+              "caseCount": 12,
+              "validPairs": 12,
+              "allLabelAgreement": 12,
+              "arms": {
+                "A": {
+                  "attemptRecords": 12,
+                  "statuses": {
+                    "validated": 12
+                  },
+                  "successfulEffectiveMsP50": 3.940561960916966,
+                  "successfulEffectiveMsP95": 47.09949182579289,
+                  "programOracleFixtureConformance": {
+                    "matches": 12,
+                    "denominator": 12
+                  },
+                  "estimatedCostMicrousdKnown": 0
+                },
+                "B": {
+                  "attemptRecords": 12,
+                  "statuses": {
+                    "validated": 12
+                  },
+                  "successfulEffectiveMsP50": 494.9636460514739,
+                  "successfulEffectiveMsP95": 932.0951124245762,
+                  "programOracleFixtureConformance": {
+                    "matches": 12,
+                    "denominator": 12
+                  },
+                  "estimatedCostMicrousdKnown": 5210
+                }
+              }
+            }
+          },
+          "qualityConclusion": "inconclusive",
+          "productionReplacementEligible": false
+        },
+        "E04": {
+          "caseCount": 72,
+          "sourceKinds": {
+            "frozen_real_shared_asr": 60,
+            "developer_fixture": 12
+          },
+          "realSourceClusters": 1,
+          "subtasks": {
+            "asr_screening_rule_wrapper": 72
+          },
+          "validPairs": 72,
+          "allLabelAgreement": 49,
+          "arms": {
+            "A": {
+              "attemptRecords": 72,
+              "estimatedCostMicrousdKnown": 0,
+              "programOracleFixtureConformance": {
+                "denominator": 12,
+                "matches": 12
+              },
+              "statuses": {
+                "validated": 72
+              },
+              "successfulEffectiveMsP50": 0.19445846555754542,
+              "successfulEffectiveMsP95": 0.35205201711505657
+            },
+            "B": {
+              "attemptRecords": 72,
+              "estimatedCostMicrousdKnown": 4836,
+              "programOracleFixtureConformance": {
+                "denominator": 12,
+                "matches": 10
+              },
+              "statuses": {
+                "validated": 72
+              },
+              "successfulEffectiveMsP50": 433.4013754851185,
+              "successfulEffectiveMsP95": 741.9324377900922
+            }
+          },
+          "subsets": {
+            "developer_fixture": {
+              "caseCount": 12,
+              "validPairs": 12,
+              "allLabelAgreement": 10,
+              "arms": {
+                "A": {
+                  "attemptRecords": 12,
+                  "statuses": {
+                    "validated": 12
+                  },
+                  "successfulEffectiveMsP50": 0.19743747543543577,
+                  "successfulEffectiveMsP95": 0.3189833194483071,
+                  "programOracleFixtureConformance": {
+                    "matches": 12,
+                    "denominator": 12
+                  },
+                  "estimatedCostMicrousdKnown": 0
+                },
+                "B": {
+                  "attemptRecords": 12,
+                  "statuses": {
+                    "validated": 12
+                  },
+                  "successfulEffectiveMsP50": 433.4013754851185,
+                  "successfulEffectiveMsP95": 604.7705123142804,
+                  "programOracleFixtureConformance": {
+                    "matches": 10,
+                    "denominator": 12
+                  },
+                  "estimatedCostMicrousdKnown": 780
+                }
+              }
+            },
+            "frozen_real_shared_asr": {
+              "caseCount": 60,
+              "validPairs": 60,
+              "allLabelAgreement": 39,
+              "arms": {
+                "A": {
+                  "attemptRecords": 60,
+                  "statuses": {
+                    "validated": 60
+                  },
+                  "successfulEffectiveMsP50": 0.1939375069923699,
+                  "successfulEffectiveMsP95": 0.34389545326121135,
+                  "programOracleFixtureConformance": {
+                    "matches": 0,
+                    "denominator": 0
+                  },
+                  "estimatedCostMicrousdKnown": 0
+                },
+                "B": {
+                  "attemptRecords": 60,
+                  "statuses": {
+                    "validated": 60
+                  },
+                  "successfulEffectiveMsP50": 421.1857500486076,
+                  "successfulEffectiveMsP95": 766.0150277544737,
+                  "programOracleFixtureConformance": {
+                    "matches": 0,
+                    "denominator": 0
+                  },
+                  "estimatedCostMicrousdKnown": 4056
+                }
+              }
+            }
+          },
+          "qualityConclusion": "inconclusive",
+          "productionReplacementEligible": false
+        },
+        "E05": {
+          "caseCount": 12,
+          "sourceKinds": {
+            "developer_fixture": 12
+          },
+          "realSourceClusters": 0,
+          "subtasks": {
+            "target_audio_timing_plan": 12
+          },
+          "validPairs": 12,
+          "allLabelAgreement": 12,
+          "arms": {
+            "A": {
+              "attemptRecords": 12,
+              "estimatedCostMicrousdKnown": 0,
+              "programOracleFixtureConformance": {
+                "denominator": 12,
+                "matches": 12
+              },
+              "statuses": {
+                "validated": 12
+              },
+              "successfulEffectiveMsP50": 0.35620800917968154,
+              "successfulEffectiveMsP95": 29.094906477257563
+            },
+            "B": {
+              "attemptRecords": 12,
+              "estimatedCostMicrousdKnown": 1464,
+              "programOracleFixtureConformance": {
+                "denominator": 12,
+                "matches": 12
+              },
+              "statuses": {
+                "validated": 12
+              },
+              "successfulEffectiveMsP50": 254.75083297351375,
+              "successfulEffectiveMsP95": 711.9315248390193
+            }
+          },
+          "subsets": {
+            "developer_fixture": {
+              "caseCount": 12,
+              "validPairs": 12,
+              "allLabelAgreement": 12,
+              "arms": {
+                "A": {
+                  "attemptRecords": 12,
+                  "statuses": {
+                    "validated": 12
+                  },
+                  "successfulEffectiveMsP50": 0.35620800917968154,
+                  "successfulEffectiveMsP95": 29.094906477257563,
+                  "programOracleFixtureConformance": {
+                    "matches": 12,
+                    "denominator": 12
+                  },
+                  "estimatedCostMicrousdKnown": 0
+                },
+                "B": {
+                  "attemptRecords": 12,
+                  "statuses": {
+                    "validated": 12
+                  },
+                  "successfulEffectiveMsP50": 254.75083297351375,
+                  "successfulEffectiveMsP95": 711.9315248390193,
+                  "programOracleFixtureConformance": {
+                    "matches": 12,
+                    "denominator": 12
+                  },
+                  "estimatedCostMicrousdKnown": 1464
+                }
+              }
+            }
+          },
+          "qualityConclusion": "inconclusive",
+          "productionReplacementEligible": false
+        },
+        "E06": {
+          "caseCount": 1,
+          "sourceKinds": {
+            "developer_fixture": 1
+          },
+          "realSourceClusters": 0,
+          "subtasks": {
+            "study_semantic_triage": 1
+          },
+          "validPairs": 0,
+          "allLabelAgreement": 0,
+          "arms": {
+            "A": {
+              "attemptRecords": 1,
+              "estimatedCostMicrousdKnown": 0,
+              "programOracleFixtureConformance": {
+                "denominator": 0,
+                "matches": 0
+              },
+              "statuses": {
+                "no_executable_baseline": 1
+              },
+              "successfulEffectiveMsP50": null,
+              "successfulEffectiveMsP95": null
+            },
+            "B": {
+              "attemptRecords": 1,
+              "estimatedCostMicrousdKnown": 0,
+              "programOracleFixtureConformance": {
+                "denominator": 0,
+                "matches": 0
+              },
+              "statuses": {
+                "no_executable_baseline": 1
+              },
+              "successfulEffectiveMsP50": null,
+              "successfulEffectiveMsP95": null
+            }
+          },
+          "subsets": {
+            "developer_fixture": {
+              "caseCount": 1,
+              "validPairs": 0,
+              "allLabelAgreement": 0,
+              "arms": {
+                "A": {
+                  "attemptRecords": 1,
+                  "statuses": {
+                    "no_executable_baseline": 1
+                  },
+                  "successfulEffectiveMsP50": null,
+                  "successfulEffectiveMsP95": null,
+                  "programOracleFixtureConformance": {
+                    "matches": 0,
+                    "denominator": 0
+                  },
+                  "estimatedCostMicrousdKnown": 0
+                },
+                "B": {
+                  "attemptRecords": 1,
+                  "statuses": {
+                    "no_executable_baseline": 1
+                  },
+                  "successfulEffectiveMsP50": null,
+                  "successfulEffectiveMsP95": null,
+                  "programOracleFixtureConformance": {
+                    "matches": 0,
+                    "denominator": 0
+                  },
+                  "estimatedCostMicrousdKnown": 0
+                }
+              }
+            }
+          },
+          "qualityConclusion": "inconclusive",
+          "productionReplacementEligible": false
+        },
+        "E07": {
+          "caseCount": 12,
+          "sourceKinds": {
+            "developer_fixture": 12
+          },
+          "realSourceClusters": 0,
+          "subtasks": {
+            "supervisor_recommend_action": 12
+          },
+          "validPairs": 12,
+          "allLabelAgreement": 10,
+          "arms": {
+            "A": {
+              "attemptRecords": 12,
+              "estimatedCostMicrousdKnown": 0,
+              "programOracleFixtureConformance": {
+                "denominator": 12,
+                "matches": 12
+              },
+              "statuses": {
+                "validated": 12
+              },
+              "successfulEffectiveMsP50": 0.17002096865326166,
+              "successfulEffectiveMsP95": 42.731420649215515
+            },
+            "B": {
+              "attemptRecords": 12,
+              "estimatedCostMicrousdKnown": 2517,
+              "programOracleFixtureConformance": {
+                "denominator": 12,
+                "matches": 10
+              },
+              "statuses": {
+                "validated": 12
+              },
+              "successfulEffectiveMsP50": 442.38660449627787,
+              "successfulEffectiveMsP95": 977.7419435791669
+            }
+          },
+          "subsets": {
+            "developer_fixture": {
+              "caseCount": 12,
+              "validPairs": 12,
+              "allLabelAgreement": 10,
+              "arms": {
+                "A": {
+                  "attemptRecords": 12,
+                  "statuses": {
+                    "validated": 12
+                  },
+                  "successfulEffectiveMsP50": 0.17002096865326166,
+                  "successfulEffectiveMsP95": 42.731420649215515,
+                  "programOracleFixtureConformance": {
+                    "matches": 12,
+                    "denominator": 12
+                  },
+                  "estimatedCostMicrousdKnown": 0
+                },
+                "B": {
+                  "attemptRecords": 12,
+                  "statuses": {
+                    "validated": 12
+                  },
+                  "successfulEffectiveMsP50": 442.38660449627787,
+                  "successfulEffectiveMsP95": 977.7419435791669,
+                  "programOracleFixtureConformance": {
+                    "matches": 10,
+                    "denominator": 12
+                  },
+                  "estimatedCostMicrousdKnown": 2517
+                }
+              }
+            }
+          },
+          "qualityConclusion": "inconclusive",
+          "productionReplacementEligible": false
+        },
+        "E08": {
+          "caseCount": 1,
+          "sourceKinds": {
+            "developer_fixture": 1
+          },
+          "realSourceClusters": 0,
+          "subtasks": {
+            "feedback_comment_triage": 1
+          },
+          "validPairs": 0,
+          "allLabelAgreement": 0,
+          "arms": {
+            "A": {
+              "attemptRecords": 1,
+              "estimatedCostMicrousdKnown": 0,
+              "programOracleFixtureConformance": {
+                "denominator": 0,
+                "matches": 0
+              },
+              "statuses": {
+                "no_executable_baseline": 1
+              },
+              "successfulEffectiveMsP50": null,
+              "successfulEffectiveMsP95": null
+            },
+            "B": {
+              "attemptRecords": 1,
+              "estimatedCostMicrousdKnown": 0,
+              "programOracleFixtureConformance": {
+                "denominator": 0,
+                "matches": 0
+              },
+              "statuses": {
+                "no_executable_baseline": 1
+              },
+              "successfulEffectiveMsP50": null,
+              "successfulEffectiveMsP95": null
+            }
+          },
+          "subsets": {
+            "developer_fixture": {
+              "caseCount": 1,
+              "validPairs": 0,
+              "allLabelAgreement": 0,
+              "arms": {
+                "A": {
+                  "attemptRecords": 1,
+                  "statuses": {
+                    "no_executable_baseline": 1
+                  },
+                  "successfulEffectiveMsP50": null,
+                  "successfulEffectiveMsP95": null,
+                  "programOracleFixtureConformance": {
+                    "matches": 0,
+                    "denominator": 0
+                  },
+                  "estimatedCostMicrousdKnown": 0
+                },
+                "B": {
+                  "attemptRecords": 1,
+                  "statuses": {
+                    "no_executable_baseline": 1
+                  },
+                  "successfulEffectiveMsP50": null,
+                  "successfulEffectiveMsP95": null,
+                  "programOracleFixtureConformance": {
+                    "matches": 0,
+                    "denominator": 0
+                  },
+                  "estimatedCostMicrousdKnown": 0
+                }
+              }
             }
           },
           "qualityConclusion": "inconclusive",
