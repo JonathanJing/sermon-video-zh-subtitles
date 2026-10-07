@@ -169,7 +169,8 @@ class MachineQcClipDriverTests(unittest.TestCase):
 
         with patch.object(driver, "CodexJudge", lambda cache: RealLooking({LOCALE: groups})), \
                 patch.object(driver, "FakeJudge", type("Unused", (), {})):
-            argv = ["--run-dir", str(run), "--out", str(self.root / "real"), "--locales", LOCALE]
+            argv = ["--run-dir", str(run), "--out", str(self.root / "real"), "--locales", LOCALE,
+                    "--state-dir", str(self.root / "real-state")]
             self.assertEqual(driver.main(argv), 0)
             path = self.root / "real" / LOCALE / "text-waiver.json"
             first = path.read_bytes()
@@ -198,6 +199,37 @@ class MachineQcClipDriverTests(unittest.TestCase):
         for extra in (["--locales", ""], ["--locales", "fr"], ["--workers", "0"], ["--workers", "400"]):
             with self.assertRaises(SystemExit):
                 driver.main(["--run-dir", str(run), "--out", str(self.root / "o"), "--preflight-only", *extra])
+
+    def test_real_runs_need_a_persistent_state_dir(self):
+        run = synthetic_run(self, self.root)
+        with self.assertRaises(SystemExit):
+            driver.main(["--run-dir", str(run), "--out", str(self.root / "o"), "--locales", LOCALE])
+
+    def test_an_override_for_another_locale_or_beside_its_binding_is_refused(self):
+        run = synthetic_run(self, self.root)
+        candidate = json.loads((run / "diagnostic-previews/ko/native-1/candidate.json").read_text(encoding="utf-8"))
+        outside = self.root / "outside"
+        outside.mkdir()
+        (outside / "candidate.json").write_text(json.dumps(candidate, ensure_ascii=False), encoding="utf-8")
+        (outside / "binding.json").write_text(json.dumps({
+            "schemaVersion": basis.CONDENSATION_BINDING_SCHEMA,
+            "spokenCandidateJsonSha256": basis.json_sha256(candidate)}), encoding="utf-8")
+        self.assertEqual(self.run_driver(run, "--preflight-only", "--candidate", f"{LOCALE}={outside / 'candidate.json'}"), 2)
+        self.assertTrue(any("condensed spoken script" in p for p in self.summary()["problems"]))
+        self.assertEqual(driver.main(["--run-dir", str(run), "--out", str(self.root / "o2"), "--locales", "es",
+                                      "--candidate", f"es={run / 'diagnostic-previews/ko/native-1/candidate.json'}",
+                                      "--preflight-only"]), 2)
+        row = json.loads((self.root / "o2/summary.json").read_text(encoding="utf-8"))["locales"]["es"]
+        self.assertTrue(any("targetLocale is 'ko'" in p for p in row["problems"]))
+
+    def test_resuming_a_subset_keeps_other_locale_rows(self):
+        run = synthetic_run(self, self.root)
+        self.assertEqual(self.run_driver(run), 0)
+        driver.main(["--run-dir", str(run), "--out", str(self.root / "out"), "--locales", "es",
+                     "--text-backend", "fake", "--preflight-only"])
+        rows = json.loads((self.root / "out/fake-plumbing/summary.json").read_text(encoding="utf-8"))["locales"]
+        self.assertEqual(rows[LOCALE]["status"], "fake_plumbing_pass")
+        self.assertIn("es", rows)
 
     def test_preflight_explains_a_human_approved_candidate(self):
         run = synthetic_run(self, self.root, human_approved=True)

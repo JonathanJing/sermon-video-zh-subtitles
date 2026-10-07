@@ -190,7 +190,11 @@ def resolve_locale(run_dir: Path, index: dict, locale: str, override: Path | Non
         return {"locale": locale, "problems": [f"no unique candidate; found {len(ambiguous)}: {ambiguous[:6]}"]}
     candidate = read(path)
     problems = candidate_problems(candidate)
-    if json_sha256(candidate) in spoken_candidates(run_dir):
+    if candidate.get("targetLocale") != locale:
+        problems.append(f"candidate targetLocale is {candidate.get('targetLocale')!r}, not {locale!r}")
+    # An override may sit outside the run with its binding beside it.
+    spoken = spoken_candidates(run_dir) | (spoken_candidates(path.parent) if override is not None else set())
+    if json_sha256(candidate) in spoken:
         # A condensed dub script is screened with its binding, never as full text.
         problems.append("candidate is a condensed spoken script; this driver screens full candidates only")
     paths = {"candidate": str(path)}
@@ -402,7 +406,7 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--run-dir", type=Path, default=ROOT / "artifacts/dev-full-rerun-20261001")
     parser.add_argument("--out", type=Path, required=True, help="New or resumed output directory (ignored artifacts/)")
-    parser.add_argument("--state-dir", type=Path, help="Persistent run state holding the repair ledger (default: OUT/state)")
+    parser.add_argument("--state-dir", type=Path, help="The run's persistent state dir holding its repair ledger (required for real runs)")
     parser.add_argument("--locales", default=",".join(LOCALES))
     parser.add_argument("--candidate", action="append", default=[], metavar="LOCALE=PATH",
                         help="Use this candidate instead of searching the run")
@@ -415,6 +419,9 @@ def main(argv=None) -> int:
         parser.error(f"--locales must name one or more of {', '.join(LOCALES)}")
     if not 1 <= args.workers <= MAX_WORKERS:
         parser.error(f"--workers must be between 1 and {MAX_WORKERS}")
+    if args.text_backend == "codex" and not args.preflight_only and not args.state_dir:
+        # The repair ledger must outlive any one OUT, or each revision would restart the repair cap.
+        parser.error("real runs need --state-dir: the run's persistent state dir holding its repair ledger")
     if args.text_backend == "fake" and args.state_dir:
         parser.error("--text-backend fake never writes to a persistent state dir")
     # Fake runs write every receipt, and their own ledger, in a separate subtree,
@@ -433,8 +440,11 @@ def main(argv=None) -> int:
     timings = Timings(out / "timings.tsv")
     overrides = dict(item.split("=", 1) for item in args.candidate)
     index = timings.run("discover", lambda: index_run(args.run_dir))
+    # Resuming a subset keeps the other locales' rows from earlier runs in this OUT.
+    previous = read(out / "summary.json").get("locales", {}) if (out / "summary.json").exists() else {}
     summary = {"runDir": str(args.run_dir.resolve()), "textBackend": args.text_backend,
-               "implementationSha256": basis.waiver.implementation_sha256(), "locales": {}}
+               "implementationSha256": basis.waiver.implementation_sha256(),
+               "locales": {locale: row for locale, row in previous.items() if locale not in locales}}
     resolved = {}
     for locale in locales:
         found = resolve_locale(args.run_dir, index, locale, Path(overrides[locale]) if locale in overrides else None)
@@ -450,7 +460,7 @@ def main(argv=None) -> int:
             resolved[locale] = found["paths"]
     save(out / "summary.json", summary)
     if args.preflight_only or not resolved:
-        print(json.dumps({locale: row["problems"] for locale, row in summary["locales"].items()},
+        print(json.dumps({locale: summary["locales"][locale]["problems"] for locale in locales},
                          ensure_ascii=False, indent=2))
         return 0 if len(resolved) == len(locales) else 2
     if args.text_backend == "codex":
@@ -468,7 +478,7 @@ def main(argv=None) -> int:
     print(json.dumps({locale: {key: row.get(key) for key in ("status", "reason", "problems", "calibration")}
                       for locale, row in summary["locales"].items()}, ensure_ascii=False, indent=2))
     done = "fake_plumbing_pass" if args.text_backend == "fake" else "text_waiver_issued"
-    return 0 if all(row.get("status") == done for row in summary["locales"].values()) else 1
+    return 0 if all(summary["locales"][locale].get("status") == done for locale in locales) else 1
 
 
 if __name__ == "__main__":
