@@ -2,6 +2,8 @@
 
 日期：2026-10-06。状态：design_ready；本轮只完成方案，不发起新API请求，不修改生产合同。此前在线结果见[第三轮报告](reports/20261006-decision-api-semantic-classification-results.zh.md)。[机器计划](../config/decision-api-outline-support-validation-plan-v1.json)为设计草案，现有producer／runner不消费它。
 
+后续用户选择先做机器可行性。已完成[四新来源／24项机器子阶段](reports/20261006-decision-api-outline-feasibility-results.zh.md)，不等于本文48项人审A/B已执行；后续新留出需排除该四源及前六源。
+
 ## 目标与现状
 
 验证两个问题：Decisions能否识别“引用合法但意思不受来源支持”的大纲问题；其提示能否在不降低最终审核质量的前提下减少人工核对与修订时间。
