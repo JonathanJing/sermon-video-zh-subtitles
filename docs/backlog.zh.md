@@ -1,6 +1,6 @@
 # Dev 统一 Backlog
 
-更新：2026-10-05。本页是项目 **Dev 开发工作的唯一顶层 backlog**，统一管理四层生产、Firebase Dev、Web／iOS、现场对齐、审核后台、Tracker、CI/CD 和独立 `live_session` 的优先级与依赖。新增开发事项先在这里取得稳定 ID；专项文档只展开接口、实现和验收，不再各自形成互相竞争的顶层排期。
+更新：2026-10-06。本页是项目 **Dev 开发工作的唯一顶层 backlog**，统一管理四层生产、Firebase Dev、Web／iOS、现场对齐、审核后台、Tracker、CI/CD 和独立 `live_session` 的优先级与依赖。新增开发事项先在这里取得稳定 ID；专项文档只展开接口、实现和验收，不再各自形成互相竞争的顶层排期。
 
 English index: [backlog.md](./backlog.md)
 
@@ -607,10 +607,10 @@ Firebase Hosting 只发布静态运行时和指纹索引；采集、特征和匹
 |---|---|---|---|---|
 | `DEV-VOICE-001` | Speaker Voice Registry 授权与可移植恢复 | `in_progress` | 每语言 checkpoint 的授权范围、能力、hash、媒体恢复位置和归档验证可在干净环境重建，不依赖原工作站绝对路径 | [Speaker Voice Registry](multilingual-speaker-voice-registry.zh.md) |
 | `DEV-L4-002` | 原子 catalog、单语言回滚与旧资产保护 | `in_progress` | 新语言／周次更新不删除其他 locale 或旧周资产；catalog 最后发布；单 locale 可回滚 | [Layer 4 backlog](multilingual-layer-4-delivery-app-backlog.zh.md#6-layer-4-与-app-改进-backlog) |
-| `DEV-IOS-002` | iOS WebView／CI 偶发空白与系统表面 | `in_progress` | 相同 CI 系统和真机稳定显示正文；Now Playing、锁屏、耳机／中断、Live Activity、无障碍分别验收 | [iOS backlog](../apps/tongxing-ios/BACKLOG.zh.md) |
+| `DEV-IOS-002` | iOS WebView／CI 偶发空白与系统表面 | `in_progress` | 大纲／默想、显示名称、系统播放控制、全文返回当前句、前台定位反馈及锁屏最近同步字幕已由 #256 整合；锁屏不承诺离线逐句更新。相同 CI 系统和真机稳定显示正文；Now Playing、锁屏、耳机／中断、Live Activity、无障碍与 Duo 姿态仍分别验收（IOS-06—11） | [iOS backlog](../apps/tongxing-ios/BACKLOG.zh.md) |
 | `DEV-CICD-002` | 四类代码改动的 CI 测试路由 | `in_progress` | 固定required checks、四类改动路由与pytest合同已实现；本轮审计2373bfff的root-1失败于evaluate_backend_four_layer_dry_run的四层/安全合同，root-0仍运行。修复沿本项推进，新head单独验，不以其他mock/native通过声称全绿 | [CI/CD backlog](ci-cd-backlog.zh.md)、[版本对照](reports/20260929-dev-release-backlog-audit.zh.md) |
 | `DEV-CICD-003` | Firebase 页面与后端功能的 Dev→Production 交付 | `in_progress` | guarded publisher及Dev/Production环境绑定入口已存在，历史Dev HTTP有收据；剩服务级页面/API/权限真实smoke及当前Production交付/回退。main push不自动发布，代码晋升不代替部署 | [CI/CD backlog](ci-cd-backlog.zh.md) |
-| `DEV-CICD-004` | iOS 安装包与 TestFlight 交付链 | `in_progress` | 历史build42及已合并#232/#235的Beta1.26.10(51)归档/上传/Rooted Testing收据已有。剩目标源码与当前分发绑定、实际安装/真机/App Store或正式发布；仓库未找到52/53发行收据，不凭记忆补为已分发 | [CI/CD backlog](ci-cd-backlog.zh.md)、[build 42 历史证据](sermon-language-listening-statistics.zh.md) |
+| `DEV-CICD-004` | iOS 安装包与 TestFlight 交付链 | `in_progress` | 仓库已有 Beta1.26.11（52）、1.26.12（53）及1.26.15（56）的版本化归档／上传／TestFlight 历史读回记录。56绑定冻结源码8c71c02及Apple于2026-10-06 16:18:05 UTC的VALID／IN_BETA_TESTING读回；本次文档候选及冻结后源码不视为已分发。实际安装、真机、App Store／正式发布仍分别待验收，不以历史读回代表当前设备状态 | [Beta52](../apps/tongxing-ios/BETA-RELEASE-1.26.11.zh.md)、[Beta53](../apps/tongxing-ios/BETA-RELEASE-1.26.12.zh.md)、[Beta56](../apps/tongxing-ios/BETA-RELEASE-1.26.15.zh.md)、[真机验收](../apps/tongxing-ios/DEVICE-ACCEPTANCE-1.26.15.zh.md)、[CI/CD backlog](ci-cd-backlog.zh.md) |
 | `DEV-TRK-002` | 第二周真实全流程复现与恢复 | `pending` | 用新周次验证缓存、断点恢复、上游失效、旧资产保留和 ETA 校准，不复用第一周人工结论 | [四层 Tracker](four-layer-production-tracker.zh.md) |
 | `DEV-SPD-001` | 并发、审核等待与模型路由优化 | `in_progress` | 2026-10-01 SPD-OPT-01—04代码／离线验证完成，真实组件验收取得ASR驻留减少73%–75%、正式权重三语TTS对照、两端CPU输出正确，以及正式Astra/Sol八组/档48次响应与独立预算证据。TTS听审、10分钟／整周与rollout仍待完成，不改变内容模型和批准门禁 | [四项开发](local-production-speed-backlog.zh.md)、[组件验收](local-production-performance-acceptance-20261001.zh.md)、[提速 backlog](four-layer-production-tracker.zh.md#周日页面提速-backlog本轮结束后按审计证据实施) |
 | `DEV-SPD-002` | 流程环节与时间／token 基线 | `in_progress` | 从收到视频链接到 Dev App 交付画出实际依赖图，逐环节绑定入口、输入输出、缓存、审批、耗时与用量；交付可复查的关键路径及 token 消耗排名，缺测项明确列出；本轮诊断结束后冻结版本化工作量分母与分桶耗时基线，支持[资源约束 ETA](#progress-eta-followup) | [本页效率计划](#每周流程效率计划)、[记账规则](workflow-accounting.zh.md) |

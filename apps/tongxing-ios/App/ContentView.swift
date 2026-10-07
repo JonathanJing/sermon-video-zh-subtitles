@@ -390,11 +390,14 @@ struct ContentView: View {
                 ToolbarItem(placement: .principal) { BrandTitle() }
                 if model.display == .transcript {
                     ToolbarItem(placement: .primaryAction) {
-                        Button { returnToCurrent = UUID() } label: {
-                            Label(localization.text("当前句"), systemImage: followsTranscriptPlayback ? "text.bubble.fill" : "text.bubble")
+                        // Toolbar bridges can discard a Button's outer custom
+                        // accessibility label. Keep the state in its own title,
+                        // as with the other icon-only toolbar controls.
+                        Button(localization.text("回到当前句") + "，" + localization.text(followsTranscriptPlayback ? "跟随播放" : "自由阅读"),
+                               systemImage: followsTranscriptPlayback ? "text.bubble.fill" : "text.bubble") {
+                            returnToCurrent = UUID()
                         }
-                        .labelStyle(.titleAndIcon)
-                        .accessibilityLabel(localization.text("回到当前句") + "，" + localization.text(followsTranscriptPlayback ? "跟随播放" : "自由阅读"))
+                        .labelStyle(.iconOnly)
                         .accessibilityAddTraits(followsTranscriptPlayback ? .isSelected : [])
                         .accessibilityHint(localization.text(followsTranscriptPlayback ? "跟随播放" : "自由阅读"))
                         .foregroundStyle(followsTranscriptPlayback ? Brand.accent : .secondary)
