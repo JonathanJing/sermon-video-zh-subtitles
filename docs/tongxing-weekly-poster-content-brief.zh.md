@@ -4,7 +4,7 @@
 
 ## 三语页面优先
 
-海报是 [Layer 4 发布收尾](multilingual-production-interfaces.zh.md#layer-4-收尾先三语页面再三语海报) 的一部分。默认先分别完成中／韩／西页面发布和 HTTP 核验，再生成共用主视觉、分别合成并验收三语海报；只完成中文海报不能报告三语交付完成。页面未就绪的语言不生成正式交付海报，也不阻塞其他已授权页面。
+海报是 [Layer 4 发布收尾](multilingual-production-interfaces.zh.md#layer-4-收尾先三语页面再三语海报) 的一部分。默认先分别完成中／韩／西页面发布和 HTTP 核验，再生成共用主视觉、分别合成并验收三语海报；只完成中文海报不能报告三语交付完成。页面未就绪的语言不生成正式内容交付海报，也不阻塞其他已授权页面。四种海报文案可复用同一主视觉；未发布独立英语内容时，英语海报仅作为明确披露实际内容语言的参考宣传素材，不计入英语内容发布或 App 自动匹配。
 
 ## 先读内容，再写画面
 
@@ -70,3 +70,18 @@
 - 两站图片/索引 HTTP SHA 读回与 Hosting inventory 验证通过；catalog 不变。正式站首次读回因 CDN 传播返回 404，确认新 live 版本后重新读取即通过，没有重复 release。
 - Beta 的 sidecar 绑定其自身当前 release SHA；正式索引绑定正式 release，不混用环境。已支持 weekly poster 的 Beta 可读取新版；正式 App 是否显示不在本次设备验收范围。已读键按内容 release 去重，单独换海报不保证重新自动弹出，可从本周海报入口打开。
 - 私有发布回执在 `artifacts/poster-upload-20261007/`，本轮没有发送推送，未执行真机新海报显示验收。
+
+## 2026-10-07 四语补齐回执
+
+在既有中文石门海报基础上完成韩语、西语、英语版本，主视觉文件 SHA 完全一致；每种新增语言均输出 1200 × 1800 高清 PNG 和 600 × 900 预览 PNG，六张成品双二维码分别解码通过并完成机器目视检查。韩语、西语从精确同语言正式内容读取标题、系列和经文，核验 catalog/release/content hash；英语海报为参考宣传稿，标题为编辑翻译，二维码进入中文内容与英文界面，保留 Chinese audio 披露，不虚构英语音频或内容 release。
+
+- 正式 Hosting 版本：`288d136fc89581bc`，除 sidecar 外原 147 个文件 hash 保留。
+- Beta Dev Hosting 版本：`2cec510dedf03458`，除 sidecar 外原 513 个文件 hash 保留。
+- 每站添加韩／西／英的六张图片，仅更新本周韩语、西语 announcement；中文及其他页面索引保留，英语不添加 announcement。
+- 两站新增图片和 sidecar 的 HTTP SHA 读回及完整 Hosting inventory 检查通过，catalog 字节不变。部署使用当前 live baseline、完整文件 map/config 和共享远程租约。
+- 浏览器核对韩语、西语网页的周次、标题和内容／界面语言；英语入口为本周中文内容与英文界面。真机海报切换、物理扫码与印刷未运行；未发送通知。
+- 回执位于 `artifacts/poster-upload-20261007/four-locale/`；图片及回执不提交 Git。这次交付不等于四语自动生产 CLI 已接入。
+
+- [韩语高清图](https://ai-for-god-sermon-audio.web.app/posters/resi-20261004-69ba7a66/ko-80d73dea581798eee7b8d1200c6dc54c60a8425d93116cc0ba6d23a0ab50c7d9.png) · [韩语手机预览](https://ai-for-god-sermon-audio.web.app/posters/resi-20261004-69ba7a66/ko-preview-0cac2b0234e87f2420dd5d791a4516b427fbe991ae4522ab4ead3b82fa86602c.png)
+- [西语高清图](https://ai-for-god-sermon-audio.web.app/posters/resi-20261004-69ba7a66/es-8047c6384035f83b3bfe71de7ba99e376f89d424e4d87e7013ed02a0e4229112.png) · [西语手机预览](https://ai-for-god-sermon-audio.web.app/posters/resi-20261004-69ba7a66/es-preview-696581f6257d7f4116f36467de599434b6022c3b4a011da9bb72517140fb59b3.png)
+- [英语参考高清图](https://ai-for-god-sermon-audio.web.app/posters/resi-20261004-69ba7a66/en-1dc7480b17ce70dbf9f835af318d2e542d6983913cf8c18ad111652fb14823b5.png) · [英语参考手机预览](https://ai-for-god-sermon-audio.web.app/posters/resi-20261004-69ba7a66/en-preview-59302a7a513d9c0338343f749b750a0dc94f98c942bad1241ca682d00614ccdd.png)

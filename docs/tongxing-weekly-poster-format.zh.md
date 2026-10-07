@@ -34,7 +34,7 @@ App Store 官方徽章内的文字和标志保持官方素材原样，不应用�
 | 左侧 | 同行正式 iOS App 的 App Store 下载页；下方放对应语言的官方 App Store 下载徽章 |
 | 右侧 | Firebase 正式站点的精确本周网页；下方「网页版」「扫码阅读 · 收听」 |
 
-正式 App 下载二维码固定为 `https://apps.apple.com/app/id6809255441`。每周网页二维码使用 `https://ai-for-god-sermon-audio.web.app/?week=<pageId>&contentLang=<locale>&lang=<interfaceLang>`；不能误用 Beta/Dev origin，也不能遗漏周次或语言绑定。中文为 `contentLang=zh-Hans&lang=zh`，韩语为 `ko&lang=ko`，西语为 `es&lang=es`；英语目标仅在实际发布后配置。
+正式 App 下载二维码固定为 `https://apps.apple.com/app/id6809255441`。每周网页二维码使用 `https://ai-for-god-sermon-audio.web.app/?week=<pageId>&contentLang=<locale>&lang=<interfaceLang>`；不能误用 Beta/Dev origin，也不能遗漏周次或语言绑定。中文为 `contentLang=zh-Hans&lang=zh`，韩语为 `ko&lang=ko`，西语为 `es&lang=es`；英语内容目标仅在实际发布后配置。未发布独立英语内容时，可生成明确标注「中文音频 · 英文对照」的英语宣传海报，网页二维码使用 `contentLang=zh-Hans&lang=en`；不得添加虚构的 `en` 内容 release 或 App announcement。
 
 左侧二维码进入商店下载，不能宣称会直接打开本周证道。Universal Links 未在本海报规范中实现。二维码由真实编码器生成，不交给图像模型绘制。
 
@@ -47,7 +47,7 @@ App Store 官方徽章内的文字和标志保持官方素材原样，不应用�
 > 独立个人项目，与 Mariners Church 无隶属或背书关系。
 > AI 合成中文音频与整理文字仅供个人跟读参考。
 
-源文见 [ContentView.swift](../apps/tongxing-ios/App/ContentView.swift) 的「关于同行」Section。其他语言使用 App 对应已核对的本地化文案；如果 App 文案变化，海报规范与模板同步更新。
+源文见 [ContentView.swift](../apps/tongxing-ios/App/ContentView.swift) 的「关于同行」Section。其他语言使用 App 对应已核对的本地化文案；如果 App 文案变化，海报规范与模板同步更新。韩语／西语海报将本地化免责声明中的音频语言改为实际的韩语／西语；英语参考海报保留 Chinese audio，不能暗示英语音频已发布。
 
 ## 主视觉 prompt 与合成
 
@@ -69,3 +69,11 @@ App Store 官方徽章内的文字和标志保持官方素材原样，不应用�
 2026-10-04 中文双二维码第三版打样已完成：1200 × 1800 与 600 × 900 图片中两个二维码均独立解码通过；浏览器落点为《耶稣审判并保守》中文页面；下载落点经 Apple 查询与 HTTP 200 核对为同行正式 App。App 免责声明原文已核对，两尺寸已目视检查。本轮未验证纸张印刷与物理手机扫码，未上传或替换线上海报。
 
 用户可见打样与机器收据保存在本地忽略的 `artifacts/sermon-poster/2026-10-04-dual-qr-proof-v3/`；图片不提交 Git。该路径是历史打样证据，干净克隆不含产物，不能把本规范当作可直接运行的双二维码渲染器。
+
+## 四种语言共用主视觉
+
+制作范围为中文（zh-Hans）、英语（en）、韩语（ko）、西语（es）。同一周只生成一张无文字主视觉，四张海报复用完全相同的图片文件及 SHA-256；分别排版标题、系列、经文、入口文字、免责声明及官方徽章。网页二维码绑定实际已发布的内容语言，iOS 下载二维码一致。主视觉一致不要求各语言的换行和字号一致。
+
+2026-10-04 四语海报已完成两尺寸合成、双二维码解码和机器目视检查。韩语、西语标题及系列读取同语言已发布内容；英语标题为中文标题的编辑翻译，属于参考宣传素材。官方徽章使用 Apple 的 `zh-cn`、`en-us`、`ko-kr`、`es-es` 版本。生成产物和逐语言收据保存在忽略目录 `artifacts/sermon-poster/2026-10-04-four-locale/`。
+
+本次完成四语本地合成与授权上传；既有正式渲染 CLI 仍只支持中／韩／西，四语新模板尚未接入自动生产。当前 iOS 海报匹配按**内容语言**选择；英语宣传海报不加入不存在的英语内容目标，不声称只切换 App 界面到 English 就会自动显示它。
