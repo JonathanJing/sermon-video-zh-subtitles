@@ -57,6 +57,8 @@ targets:
         Release:
           TONGXING_CONTENT_ORIGIN: "https://ai-for-god-sermon-audio.web.app"
         BetaDebug:
+          CODE_SIGN_ENTITLEMENTS: Config/BetaPush.entitlements
+          TONGXING_APNS_ENVIRONMENT: development
           PRODUCT_BUNDLE_IDENTIFIER: com.jonathanjing.tongxing.beta
           TONGXING_DISPLAY_NAME: 同行-beta
           TONGXING_URL_SCHEME: tongxing-beta
@@ -64,6 +66,9 @@ targets:
           CURRENT_PROJECT_VERSION: "58"
           TONGXING_CONTENT_ORIGIN: "https://ai-for-god-sermon-audio-dev.web.app"
         BetaRelease:
+          CODE_SIGN_ENTITLEMENTS: Config/BetaPush.entitlements
+          TONGXING_APNS_ENVIRONMENT: production
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) TONGXING_APNS_PRODUCTION"
           PRODUCT_BUNDLE_IDENTIFIER: com.jonathanjing.tongxing.beta
           TONGXING_DISPLAY_NAME: 同行-beta
           TONGXING_URL_SCHEME: tongxing-beta
