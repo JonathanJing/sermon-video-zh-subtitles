@@ -15,6 +15,12 @@ final class ListeningFlowUITests: XCTestCase {
         defer { app.terminate() }
         XCTAssertTrue(app.staticTexts["published-page-title"].waitForExistence(timeout: 15))
         app.buttons["choose-sermon"].tap()
+        // Expand the system sheet so all three date/category pairs are visible.
+        let done = app.buttons["完成"]
+        XCTAssertTrue(done.waitForExistence(timeout: 5))
+        let origin = app.coordinate(withNormalizedOffset: .zero)
+        let grabber = origin.withOffset(CGVector(dx: app.frame.width / 2, dy: done.frame.minY - app.frame.minY - 12))
+        grabber.press(forDuration: 0.1, thenDragTo: origin.withOffset(CGVector(dx: app.frame.width / 2, dy: 70)))
         let ids = ["resi-20261004-69ba7a66", "if-i-had-more-time-jesus-is-worthy", "2026-09-27-weekend-sermon-drive-530"]
         let baseline = ProcessInfo.processInfo.environment["TONGXING_CAPTURE_CATEGORY_BASELINE"] == "1"
         for id in ids {
