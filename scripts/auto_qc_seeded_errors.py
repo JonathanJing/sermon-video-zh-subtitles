@@ -13,7 +13,8 @@ placeholder, dropped_name, dropped_half, semantic_negation, added_number (a
 spelled count the English never said), wrong_ordinal (an ordinal the English
 did not say: "the first love" as "the second", or a "Second," the English never
 said), swapped_quantity (two quantities trade places), added_content (another
-group's sentence appended, a claim the English never made). Audio kinds: stretched (the 2026-10-04
+group's sentence appended, a claim the English never made), swapped_name (two
+named people or places trade roles: both names survive, so only meaning catches it). Audio kinds: stretched (the 2026-10-04
 u172 class), silent, clipped, truncated, and wrong_sentence (another unit's
 audio under this unit's text, which only the ASR path can catch). Meaning
 errors without a surface signal (for example a flipped negation) are only
@@ -77,7 +78,8 @@ ADDED_ORDINAL = {"zh-Hans": "第二，", "ko": "둘째, ", "es": "En segundo lug
 # (a length failure on the same trial does not count); its trials still run.
 JUDGE_CREDITED_KINDS = ("dropped_half",)
 # Kinds only the back-translation check may detect: a surface failure is not credited.
-SEMANTIC_KINDS = ("semantic_negation", "added_number", "wrong_ordinal", "swapped_quantity", "added_content")
+SEMANTIC_KINDS = ("semantic_negation", "added_number", "wrong_ordinal", "swapped_quantity", "added_content",
+                  "swapped_name")
 # The book a wrong_book mutation substitutes (Romans when the citation is already John).
 OTHER_BOOK = {"zh-Hans": ("约翰福音", "罗马书"), "ko": ("요한복음", "로마서"), "es": ("Juan", "Romanos")}
 
@@ -205,6 +207,42 @@ def mutate_text(group: dict, kind: str, locale: str, policy: dict | None,
                     spans = rules.name_spans(target, text)
                     return text[:spans[0][0]] + text[spans[0][1]:] if spans else None
         return None
+    if kind == "swapped_name":
+        # Only seed an explicit directional relation, never a coordinated list
+        # or a reciprocal relation (Paul and Silas prayed / Paul met Silas).
+        if policy is None:
+            return None
+        names = []
+        for kind_name in ("properNames", "seriesNames"):
+            for term in policy["terminology"][kind_name]:
+                target = term.get("target")
+                if not target or term.get("reviewStatus") == "pending":
+                    continue
+                for match in re.finditer(r"(?<!\w)" + re.escape(term["source"]) + r"(?!\w)", english, re.I):
+                    names.append((match.start(), match.end(), target))
+        directional = (r"(?:blessed|blesses|taught|teaches|warned|warns|followed|follows|"
+                       r"sent|sends|led|leads|helped|helps|thanked|thanks|"
+                       r"spoke to|speaks to|prayed for|prays for|"
+                       r"speaks to the church in|spoke to the church in)")
+        for first, first_end, left in sorted(names):
+            for second, second_end, right in sorted(names):
+                if (first_end > second or left == right
+                        or sum(name == left for _, _, name in names) != 1
+                        or sum(name == right for _, _, name in names) != 1):
+                    continue
+                # A bounded template deliberately leaves unknown grammar unseeded.
+                if not re.fullmatch(r"\s+" + directional + r"\s+", english[first_end:second], re.I):
+                    continue
+                left_spans = rules.name_spans(_fold_es(left, locale), _fold_es(text, locale))
+                right_spans = rules.name_spans(_fold_es(right, locale), _fold_es(text, locale))
+                # Multiple target occurrences make the intended role ambiguous.
+                if len(left_spans) != 1 or len(right_spans) != 1:
+                    continue
+                (a, a_end, a_name), (b, b_end, b_name) = sorted(
+                    [(*left_spans[0], left), (*right_spans[0], right)])
+                if a_end <= b:
+                    return text[:a] + b_name + text[a_end:b] + a_name + text[b_end:]
+        return None
     if kind == "dropped_half":
         if text_qc.length_ratio(group) is None:
             return None
@@ -306,6 +344,11 @@ def calibrate_text(groups: list[dict], locale: str, *, policy: dict | None = Non
         clean_checked += 1
         false_positives += bool(problems)
     for kind in TEXT_KINDS:
+        # Applicability searches the complete bound candidate, before trial caps
+        # and surface screens; zero executed trials alone never grants an exemption.
+        applicable = ([group["groupId"] for group in groups
+                       if mutate_text(group, kind, locale, policy, groups) is not None]
+                      if kind == "swapped_name" else None)
         trials = detected = 0
         misses = []
         for group in groups:
@@ -332,6 +375,8 @@ def calibrate_text(groups: list[dict], locale: str, *, policy: dict | None = Non
                 misses.append(group["groupId"])
         kinds[kind] = {"trials": trials, "detected": detected, "rate": _rate(detected, trials),
                        "missedGroupIds": misses}
+        if applicable is not None:
+            kinds[kind]["applicableGroupIds"] = applicable
     return {"kinds": kinds, "cleanChecked": clean_checked, "cleanFalsePositives": false_positives}
 
 

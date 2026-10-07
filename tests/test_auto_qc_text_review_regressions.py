@@ -245,5 +245,54 @@ class TextReviewRegressions(unittest.TestCase):
             self.assertEqual(rules.untranslated_problems(english, target, "es"), [])
 
 
+    def test_partial_english_copies_in_spanish(self):
+        english = "God will never abandon you, so keep walking in faith."
+        self.assertEqual(rules.untranslated_problems(english, "Dios will never abandon you, así que sigue caminando con fe.", "es"),
+                         ["English source phrase copied into target"])
+        self.assertEqual(rules.untranslated_problems(english, "Dios nunca te abandonará, así que sigue caminando en fe.", "es"), [])
+        # Names that read the same in both languages may run together.
+        policy = {"terminology": {"properNames": [{"source": "Paul", "target": "Paul"},
+                                                  {"source": "Silas", "target": "Silas"},
+                                                  {"source": "Timothy", "target": "Timothy"}], "seriesNames": []}}
+        self.assertEqual(rules.untranslated_problems("Greetings from Paul Silas Timothy.", "Saludos de Paul Silas Timothy.",
+                                                     "es", rules.shared_terms(policy)), [])
+
+    def test_spanish_pastor_honorific_is_bound_to_glossary_names(self):
+        policy = {"terminology": {"properNames": [{"source": name, "target": name}
+                                                  for name in ("Ken", "Paul", "Silas")], "seriesNames": []}}
+        terms = rules.shared_terms(policy)
+        for english, target in (
+                ("We heard Pastor Paul Silas speak today.", "Escuchamos al pastor Paul Silas hablar hoy."),
+                ("No, Pastor Ken, that is not what I mean.", "No,pastor Ken, eso no es lo que quiero decir."),
+                ("No, Pastor Ken.", "No,pastor Ken.")):
+            with self.subTest(target=target):
+                self.assertEqual(rules.untranslated_problems(english, target, "es", terms), [])
+        # The name exemption must not hide untranslated words around a title.
+        for english, target in (
+                ("Pastor Ken will preach today.", "El pastor Ken will predicar hoy."),
+                ("The pastor will teach today.", "El pastor will teach hoy."),
+                ("We heard Pastor Alex Smith speak today.", "Escuchamos al pastor Alex Smith hablar hoy.")):
+            with self.subTest(target=target):
+                self.assertEqual(rules.untranslated_problems(english, target, "es", terms),
+                                 ["English source phrase copied into target"])
+
+    def test_clause_final_chinese_one_needs_a_numeric_reading(self):
+        # 始终如一 ends with 一 but says "consistent", not the quantity one.
+        self.assertEqual(rules.number_problems("You have one life and must remain faithful.", "你有生命，必须始终如一。",
+                                               "zh-Hans"), ["missing number 1"])
+        for english, target in (("God is one.", "神是一。"), ("They became one.", "他们合而为一。"),
+                                ("He is one of them.", "他是其中之一。"), ("You have one life.", "你只有一条命。"),
+                                ("Choose one.", "选一。"), ("There is one.", "有一。"),
+                                ("There is only one.", "只有一。"), ("One.", "一。")):
+            with self.subTest(target=target):
+                self.assertEqual(rules.number_problems(english, target, "zh-Hans"), [])
+        self.assertEqual(rules.number_problems("Choose one and keep one.", "选一，留一。", "zh-Hans"), [])
+        self.assertEqual(rules.number_problems("Choose one.", "选二。", "zh-Hans"), ["missing number 1"])
+        for target in ("必须始终如一。", "表里如一。", "心口如一。", "言行如一。", "达成统一。",
+                       "这是唯一。", "保持专一。", "形式单一。", "长短不一。", "整齐划一。", "排名第一。"):
+            with self.subTest(target=target):
+                self.assertEqual(rules.chinese_number_count(target, 1), 0)
+
+
 if __name__ == "__main__":
     unittest.main()

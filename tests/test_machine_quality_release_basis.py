@@ -57,6 +57,21 @@ def calibration(locale="ko", **overrides):
     return value
 
 
+class CalibrationApplicabilityTests(unittest.TestCase):
+    def test_summary_excludes_explicitly_inapplicable_swapped_name(self):
+        value = calibration()
+        value["kinds"]["text.swapped_name"] = {"trials": 0, "detected": 0, "rate": 0.0,
+                                               "applicableGroupIds": []}
+        value["trials"] -= 10
+        value["detected"] -= 10
+        summary = basis.calibration_summary(value, "ko", IMPLEMENTATION)
+        self.assertEqual(summary["minimumKindDetectionRate"], 1.0)
+        self.assertEqual(summary["overallDetectionRate"], 1.0)
+        del value["kinds"]["text.swapped_name"]["applicableGroupIds"]
+        with self.assertRaises(ValueError):
+            basis.calibration_summary(value, "ko", IMPLEMENTATION)
+
+
 def text_qc(candidate, anchor):
     english_units = {unit["sourceUnitId"]: unit["english"] for unit in anchor["sourceUnits"]}
     return {"schemaVersion": "sermon-target-text-auto-qc-v1", "locale": candidate["targetLocale"],

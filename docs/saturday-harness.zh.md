@@ -13,8 +13,9 @@
 日期、输入 state、工作目录、Supervisor 报告和桥接配置均须显式传入。下面是命令模板；替换已核实的日期和配置路径，配置的 `weeks` 必须包含该日期。secret 参数是资源引用，不填写密钥值。
 
 ```bash
-.venv/bin/python scripts/run_saturday_harness.py \
-  --mode inspect \
+.venv/bin/python scripts/run_with_openai_environment.py --environment prod -- \
+  .venv/bin/python scripts/run_saturday_harness.py \
+  --mode inspect --agent-backend codex-cli \
   --sunday YYYY-MM-DD \
   --state-file gs://sermon-zh-artifacts-ai-for-god/sundays/live-source-monitor/backend-state.json \
   --work-root artifacts/post-live-runs \
@@ -22,7 +23,7 @@
   --bridge-config artifacts/sermon-dubbing/saturday-bridge.json \
   --gcs-bucket sermon-zh-artifacts-ai-for-god \
   --gcs-prefix sundays \
-  --api-key-secret projects/ai-for-god/secrets/openai-api-key/versions/latest \
+  --api-key-secret '' \
   --youtube-api-key-secret projects/ai-for-god/secrets/youtube-data-api-key/versions/latest
 ```
 
@@ -31,6 +32,10 @@
 ## 明确执行
 
 把上述完整命令中的 `--mode inspect` 改为 `--mode execute` 即可执行。可追加 `--out artifacts/saturday-harness/YYYY-MM-DD/report.json` 保存本次阶段报告。`inspect/shadow` 拒绝 `--out`，保持只读。
+
+上述模板用于新任务，默认使用 `--agent-backend codex-cli`。正式内容用 `--environment prod`，开发、Beta 和实验改为 `dev`。启动器的配置见[双 Project 启动器](openai-minimal-project-setup.zh.md)；`--api-key-secret ''` 满足 harness 的必填参数，同时避免把旧 OpenAI secret 引用传入后继生产。纯只读检查也可直接调用 harness。
+
+已有 Agents API 会话使用[原身份恢复入口](codex-local-production-runbook.zh.md#旧-agents-api-会话恢复)。harness 不提供 `--agent-run-dir`／`--resume-agent-session`，不能只将本模板的 backend 改为 `agents-api` 来恢复旧会话。尤其不能把旧 Secret Manager 引用清空，或用新 Project 启动器替换原凭据绑定；恢复时直接向原 Agent 入口传入会话目录、恢复标志和原完整配置。
 
 1. 先调用[现有本地 PDF 入口](../scripts/run_codex_local_sermon_production.py)。保留来源刷新、源锁、租约、审批和 GCS 上传及远端验证；关闭 SendGrid 参数，由当前 Codex 对话汇报。仅操作员显式添加 `--skip-source-refresh` 时跳过来源刷新。下载授权可用 `--youtube-cookies` 传入现有文件。
 2. 必须获得此次子进程新写的 Supervisor `finalSnapshot` 才继续；没有新证据时保留旧报告但跳过音频执行，提示检查 PDF 日志。Supervisor 自己复核确定性产物，入口不把退出码当成完成证明。

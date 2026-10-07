@@ -34,14 +34,29 @@ class SaturdayHarnessTests(unittest.TestCase):
                 "live_archive": {"sourceId": "archive-source", "status": "waiting_conversation_review",
                     "candidateEvidence": {"timingReportSha256": "abc"}}}, "nextActions": []}
 
-    def test_default_supervisor_model_is_luna_medium_fast_api(self):
+    def test_default_supervisor_model_is_luna_medium_fast_codex_cli(self):
         args = harness.parse_args(self.argv)
         self.assertEqual(args.model, "gpt-6-luna")
+        self.assertEqual(args.agent_backend, "codex-cli")
         command = harness.commands(args)[0]
         self.assertEqual(command[command.index("--model") + 1], "gpt-6-luna")
-        self.assertEqual(command[command.index("--agent-backend") + 1], "agents-api")
+        self.assertEqual(command[command.index("--agent-backend") + 1], "codex-cli")
         self.assertEqual(command[command.index("--reasoning-effort") + 1], "medium")
         self.assertEqual(command[command.index("--service-tier") + 1], "fast")
+
+    def test_command_template_defaults_to_codex_cli_without_backend_field(self):
+        args = harness.parse_args(self.argv)
+        del args.agent_backend
+        command = harness.commands(args)[0]
+        self.assertEqual(command[command.index("--agent-backend") + 1], "codex-cli")
+
+    def test_execute_preserves_explicit_agents_api_backend_for_recovery(self):
+        args = harness.parse_args(self.argv + ["--mode", "execute", "--agent-backend", "agents-api"])
+        self.assertEqual(args.agent_backend, "agents-api")
+        runner = Mock(return_value=subprocess.CompletedProcess([], 1))
+        harness.run(args, runner=runner)
+        command = runner.call_args.args[0]
+        self.assertEqual(command[command.index("--agent-backend") + 1], "agents-api")
 
     def write_pdf(self, status="blocked"):
         self.supervisor.write_text(json.dumps({"sunday": "2026-09-06", "status": status,
