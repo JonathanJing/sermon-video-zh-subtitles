@@ -232,6 +232,10 @@ def screen(units: list[dict], locale: str, thresholds: dict = THRESHOLDS) -> dic
     for unit in units:
         if not isinstance(unit.get("wav"), (bytes, bytearray)) or "metrics" in unit:
             raise ValueError("Audio QC decodes each unit's WAV bytes; supplied metrics are not accepted")
+        # The source-ratio check needs the real span; the waiver compares it with the frozen anchor.
+        source = unit.get("sourceSeconds")
+        if isinstance(source, bool) or not isinstance(source, (int, float)) or not math.isfinite(source) or source <= 0:
+            raise ValueError(f"Unit source span must be a positive number of seconds: {unit.get('groupId')}")
         rows.append({**unit, "metrics": signal_metrics(*decode_pcm16(unit["wav"]), thresholds)})
     all_issues = unit_issues(rows, locale, thresholds)
     results = []
@@ -268,6 +272,7 @@ def screen(units: list[dict], locale: str, thresholds: dict = THRESHOLDS) -> dic
                         "staleAsr": [name for name, stale in (("primary", primary_stale),
                                                               ("secondary", secondary_stale)) if stale],
                         "audioSha256": audio_sha, "textSha256": text_sha,
+                        "sourceSeconds": float(row["sourceSeconds"]),
                         "failedAttempts": prior + (status == "fail"),
                         "nextAction": action, "metrics": row["metrics"]})
     return {"schemaVersion": SCHEMA, "locale": locale, "thresholds": thresholds,

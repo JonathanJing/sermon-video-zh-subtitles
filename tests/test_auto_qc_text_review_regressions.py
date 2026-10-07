@@ -65,7 +65,8 @@ class TextReviewRegressions(unittest.TestCase):
         self.assertTrue(rules.korean_number_present("제로 상태", 0))
 
     def test_book_identity_survives_spoken_verse_notation(self):
-        for english in ("John chapter three verse sixteen", "John 3:16"):
+        for english in ("John chapter three verse sixteen", "John 3:16", "John 3 verse 16",
+                        "John three verse sixteen"):
             for locale, good, bad in (
                 ("es", "Juan 3:16", "Romanos 3:16"),
                 ("es", "Juan capítulo tres versículo dieciséis", "Romanos capítulo tres versículo dieciséis"),
@@ -75,6 +76,38 @@ class TextReviewRegressions(unittest.TestCase):
                 with self.subTest(english=english, locale=locale, bad=bad):
                     self.assertNotIn("book changed for 3:16", rules.scripture_reference_problems(english, good, locale))
                     self.assertIn("book changed for 3:16", rules.scripture_reference_problems(english, bad, locale))
+
+    def test_book_number_verse_citation_keeps_its_verse(self):
+        for locale, target in (("es", "Juan 3:16"), ("ko", "요한복음 3장 16절"), ("zh-Hans", "约翰福音3章16节")):
+            with self.subTest(locale=locale):
+                self.assertEqual(rules.scripture_reference_problems("Turn to John 3 verse 16.", target, locale), [])
+                self.assertEqual(rules.number_problems("Turn to John 3 verse 16.", target, locale,
+                                                       rules.english_references("John 3 verse 16")[0]), [])
+        self.assertIn("missing reference 3:16",
+                      rules.scripture_reference_problems("Turn to John 3 verse 16.", "Juan 3:17", "es"))
+
+    def test_digits_the_english_never_said_are_added_numbers(self):
+        for locale, target in (("es", "Hay 5 personas."), ("ko", "5명이 있습니다."), ("zh-Hans", "有5个人。")):
+            with self.subTest(locale=locale):
+                self.assertEqual(rules.added_number_problems("There are people.", target, locale),
+                                 ["added number 5"])
+                self.assertEqual(rules.added_number_problems("There are five people.", target, locale), [])
+        # Said values in other shapes are not additions.
+        for english, target, locale in (
+                ("Fifty thousand people came.", "5万人来了。", "zh-Hans"),
+                ("Fifty thousand people came.", "5만 명이 왔습니다.", "ko"),
+                ("Fifty thousand people came.", "Vinieron 50.000 personas.", "es"),
+                ("It was 2.5 miles.", "Eran 2,5 millas.", "es"),
+                ("In the twenty-first century.", "在21世纪。", "zh-Hans"),
+                ("The second time.", "第2次。", "zh-Hans"),
+                ("Two million people.", "200万人。", "zh-Hans"),
+                ("We meet at half past ten.", "Nos reunimos a las 10:30.", "es"),
+                ("Turn to First John 4:8.", "Vayamos a 1 Juan 4:8.", "es"),
+                ("Psalm 23 says.", "시편 23편은 말합니다.", "ko"),
+                # An article often becomes 1 ("a year", 1년).
+                ("For a year he waited.", "그는 1년을 기다렸습니다.", "ko")):
+            with self.subTest(english=english, target=target):
+                self.assertEqual(rules.added_number_problems(english, target, locale), [])
 
     def test_one_word_spanish_copies_are_untranslated(self):
         for english, target in (("Repent.", "Repent."), ("Listen!", "listen"), ("Believe.", "Believe.")):

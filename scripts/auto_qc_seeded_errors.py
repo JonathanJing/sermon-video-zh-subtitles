@@ -9,7 +9,8 @@ rate on the clean material. ``machine_quality_waiver.py`` refuses a waiver
 unless a calibration for the current QC implementation meets its minimums.
 
 Text kinds: wrong_number, added_reference, wrong_book, english_leak,
-placeholder, dropped_name, dropped_half, semantic_negation. Audio kinds: stretched (the 2026-10-04
+placeholder, dropped_name, dropped_half, semantic_negation, added_number (a
+spelled count the English never said). Audio kinds: stretched (the 2026-10-04
 u172 class), silent, clipped, truncated, and wrong_sentence (another unit's
 audio under this unit's text, which only the ASR path can catch). Meaning
 errors without a surface signal (for example a flipped negation) are only
@@ -46,6 +47,11 @@ NEGATIONS = {"zh-Hans": (("没有", "有"), ("不", "")),
              "ko": (("지 않", ""), ("없", "있"), ("안 ", "")),
              "es": ((" no ", " "), ("nunca", "siempre"), ("No ", ""))}
 ADDED_REFERENCE = {"zh-Hans": "（约翰福音3章16节）", "ko": " (요한복음 3장 16절)", "es": " (Juan 3:16)"}
+# A spelled count the English never said: digits would be caught by the surface
+# screen, so this trial needs the back-translation check.
+ADDED_NUMBER = {"zh-Hans": "（共五人）", "ko": " (모두 다섯 명)", "es": " (cinco en total)"}
+# Kinds only the back-translation check may detect: a surface failure is not credited.
+SEMANTIC_KINDS = ("semantic_negation", "added_number")
 # The book a wrong_book mutation substitutes (Romans when the citation is already John).
 OTHER_BOOK = {"zh-Hans": ("约翰福音", "罗马书"), "ko": ("요한복음", "로마서"), "es": ("Juan", "Romanos")}
 
@@ -93,6 +99,8 @@ def mutate_text(group: dict, kind: str, locale: str, policy: dict | None) -> str
                     wrong = re.sub(r"[.,]", "", form) if isinstance(value, str) else str(value + 7)
                     return text.replace(form, wrong, 1)
         return None
+    if kind == "added_number":
+        return None if rules.english_number_values(english) else text + ADDED_NUMBER[locale]
     if kind == "added_reference":
         pairs, chapters = rules.english_references(english)
         return None if pairs or chapters else text + ADDED_REFERENCE[locale]
@@ -217,7 +225,7 @@ def calibrate_text(groups: list[dict], locale: str, *, policy: dict | None = Non
             mutated = mutate_text(group, kind, locale, policy)
             if mutated is None or mutated == group["targetText"]:
                 continue
-            if kind == "semantic_negation":
+            if kind in SEMANTIC_KINDS:
                 # Do not let a surface or length failure satisfy this trial.
                 surface, _ = text_qc.group_problems({**group, "targetText": mutated}, locale,
                                                   policy=policy, median=median)
@@ -230,7 +238,7 @@ def calibrate_text(groups: list[dict], locale: str, *, policy: dict | None = Non
             new = set(problems) - clean[group["groupId"]]
             hit = (any(problem.startswith("back_translation ") and
                        problem != "back_translation judge failed" for problem in new)
-                   if kind == "semantic_negation" else bool(new))
+                   if kind in SEMANTIC_KINDS else bool(new))
             if hit:
                 detected += 1
             elif len(misses) < 5:

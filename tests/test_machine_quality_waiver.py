@@ -302,6 +302,13 @@ class AudioQcTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Bare ASR scores"):
             audio_qc.screen([{**units[0], "asrPrimary": 0.97}], "ko")
 
+    def test_source_span_is_positive_and_recorded(self):
+        units = fixtures.units("ko")
+        self.assertEqual(audio_qc.screen(units, "ko")["results"][0]["sourceSeconds"], units[0]["sourceSeconds"])
+        for span in (0, -2.0, float("nan"), None, True):
+            with self.subTest(span=span), self.assertRaisesRegex(ValueError, "source span"):
+                audio_qc.screen([{**units[0], "sourceSeconds": span}, *units[1:]], "ko")
+
     def test_edge_silence_is_an_issue(self):
         units = fixtures.units("es")
         samples, rate = audio_qc.decode_pcm16(units[4]["wav"])
@@ -708,12 +715,14 @@ class CalibrationAndWaiverTests(unittest.TestCase):
         for locale in LOCALES:
             result = seeded.calibrate(locale, fixtures.groups(locale), policy=fixtures.policy(locale),
                                       call=always_pass, identity=fixtures.SEMANTIC_IDENTITY)
-            row = result["kinds"]["text.semantic_negation"]
-            self.assertGreater(row["trials"], 0, locale)
-            self.assertEqual(row["detected"], 0, locale)
+            for kind in ("text.semantic_negation", "text.added_number"):
+                row = result["kinds"][kind]
+                self.assertGreater(row["trials"], 0, (locale, kind))
+                self.assertEqual(row["detected"], 0, (locale, kind))
             self.assertTrue(waiver.calibration_problems(result, locale, waiver.implementation_sha256()))
             good = self.calibration(locale)
             self.assertEqual(good["kinds"]["text.semantic_negation"]["rate"], 1.0)
+            self.assertEqual(good["kinds"]["text.added_number"]["rate"], 1.0)
 
     def test_calibration_count_rate_inconsistencies_block(self):
         calibration = self.calibration("ko")

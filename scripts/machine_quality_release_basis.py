@@ -21,6 +21,7 @@ import argparse
 from datetime import datetime, timezone
 import hashlib
 import json
+import math
 from pathlib import Path
 import sys
 
@@ -38,6 +39,8 @@ CONDENSATION_BINDING_SCHEMA = "sermon-spoken-condensation-binding-v1"
 REVIEW_KIND = "machine_quality_waiver"
 LOCALES = ("zh-Hans", "ko", "es")
 MACHINE_PENDING_CANDIDATE = "machine_review_pass_human_review_pending"
+# Spans are rounded by their producers; a millisecond is far below any QC threshold.
+SOURCE_SPAN_TOLERANCE_SECONDS = 0.001
 RULES = {"maxRepairAttemptsPerSentence": 4, "calibration": waiver.CALIBRATION_MINIMUMS}
 json_sha256 = waiver.json_sha256
 
@@ -184,6 +187,11 @@ def build_text_waiver(source: dict, anchor: dict, candidate: dict, text_qc: dict
                      and row.get("backTranslation") is not None for row in results),
              "Every group must pass text QC, including back-translation")
     english_units = {unit["sourceUnitId"]: unit["english"] for unit in anchor["sourceUnits"]}
+    # An omitted unit leaves no row to screen, so the groups must cover the
+    # whole frozen source once, in order.
+    _require([unit_id for group in groups for unit_id in group.get("sourceUnitIds") or []]
+             == [unit["sourceUnitId"] for unit in anchor["sourceUnits"]],
+             "Candidate groups must cover every frozen source unit once, in order")
     for row, group in zip(results, groups):
         source_ids = group.get("sourceUnitIds")
         _require(isinstance(source_ids, list) and bool(source_ids)
@@ -327,8 +335,33 @@ def track_check_problems(package: dict, track_check: dict | None, implementation
     return problems
 
 
+def source_span_problems(anchor: dict, candidate: dict, text_waiver: dict, package: dict,
+                         results: list[dict]) -> list[str]:
+    """Each audio QC unit must have been judged against its group's frozen source span."""
+    if (json_sha256(anchor) != text_waiver["anchorManifestJsonSha256"]
+            or json_sha256(candidate) != package["targetLanguageCandidateJsonSha256"]):
+        return ["anchor or spoken candidate differs from the waived text"]
+    units = {unit["sourceUnitId"]: unit for unit in anchor.get("sourceUnits") or []}
+    groups = candidate.get("groups") or []
+    if [group.get("translationGroupId") for group in groups] != [row["textGroupId"] for row in package["units"]]:
+        return ["spoken candidate groups differ from the package units"]
+    problems = []
+    for group, row in zip(groups, results):
+        ids = group.get("sourceUnitIds") or []
+        if not ids or any(unit_id not in units for unit_id in ids):
+            problems.append(f"{group['translationGroupId']}: group does not bind frozen source units")
+            continue
+        span = float(units[ids[-1]]["end"]) - float(units[ids[0]]["start"])
+        source = row.get("sourceSeconds")
+        if (isinstance(source, bool) or not isinstance(source, (int, float))
+                or not math.isfinite(source) or abs(source - span) > SOURCE_SPAN_TOLERANCE_SECONDS):
+            problems.append(f"{group['translationGroupId']}: audio QC source span {source!r} differs from "
+                            f"the frozen {span:.3f}s")
+    return problems
+
+
 def build_audio_waiver(package: dict, screening: dict, audio_qc: dict, text_waiver: dict,
-                       calibration: dict, *, track_check: dict | None = None,
+                       calibration: dict, *, anchor: dict, candidate: dict, track_check: dict | None = None,
                        secondary_asr_model: str | None = None,
                        implementation: str | None = None, created_at: str | None = None) -> dict:
     """Issue an audio waiver when every unit passed audio QC with no subtitle-only units
@@ -357,6 +390,9 @@ def build_audio_waiver(package: dict, screening: dict, audio_qc: dict, text_waiv
     from scripts.target_audio_auto_qc import THRESHOLDS
     _require(audio_qc.get("thresholds") == THRESHOLDS,
              "Audio QC thresholds differ from the calibrated release thresholds")
+    # The source-ratio check is only as good as the span the QC caller supplied.
+    spans = source_span_problems(anchor, candidate, text_waiver, package, results)
+    _require(not spans, "Audio QC source spans are not the frozen ones: " + "; ".join(spans))
     summary = calibration_summary(calibration, locale, implementation, require_audio=True)
     runtime = waiver.runtime_identity_problems(calibration, audio_qc=audio_qc)
     _require(not runtime, "Audio QC runtime differs from calibration: " + "; ".join(runtime))
@@ -487,7 +523,8 @@ def main() -> None:
     text.add_argument("--condensation-binding", type=Path,
                       help="The passing spoken_condensation binding when the candidate has condensed groups")
     audio = sub.add_parser("audio", help="Issue an audio waiver for one audio package")
-    for name in ("package", "screening", "audio-qc", "track-check", "text-waiver", "calibration", "out"):
+    for name in ("package", "screening", "audio-qc", "track-check", "text-waiver", "anchor",
+                 "spoken-candidate", "calibration", "out"):
         audio.add_argument(f"--{name}", required=True, type=Path)
     audio.add_argument("--secondary-asr-model", help="Optional model-name assertion; runtime identity is derived from QC")
     args = parser.parse_args()
@@ -499,6 +536,7 @@ def main() -> None:
     else:
         receipt = build_audio_waiver(_read(args.package), _read(args.screening), _read(args.audio_qc),
                                      _read(args.text_waiver), _read(args.calibration),
+                                     anchor=_read(args.anchor), candidate=_read(args.spoken_candidate),
                                      track_check=_read(args.track_check),
                                      secondary_asr_model=args.secondary_asr_model)
     _write_once(args.out, receipt)

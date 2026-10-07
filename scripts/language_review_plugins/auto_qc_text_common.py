@@ -449,10 +449,12 @@ _BOOKS = _alternation(name for code, _, english, *_ in _BIBLE_BOOKS for name in 
 _ENGLISH_REFERENCE = re.compile(r"\b(?:" + _BOOKS + r")\.?\s+(\d{1,3}):(\d{1,3})(?![\d:])")
 _EN_ORDINAL = {"1": 1, "2": 2, "3": 3, "i": 1, "ii": 2, "iii": 3, "first": 1, "second": 2, "third": 3}
 _EN_NUMBER_WORD = _alternation((*_UNITS, *_TENS, *_SCALES))
+_EN_SPOKEN_NUMBER = r"(?:\d{1,3}|(?:" + _EN_NUMBER_WORD + r")(?:[ -](?:" + _EN_NUMBER_WORD + r"))*)"
+# "John 3:16", "John chapter 3 verse 16" and "John 3 verse 16" all bind the verse to the book.
 _ENGLISH_CITATION = re.compile(r"(?:\b(?i:(1|2|3|iii|ii|i|first|second|third))\s*)?\b(" + _BOOKS
-                               + r")\.?\s+(?:chapter\s+)?(\d{1,3}|(?:" + _EN_NUMBER_WORD
-                               + r")(?:[ -](?:" + _EN_NUMBER_WORD + r"))*)"
-                               + r"(?:\s*:\s*(\d{1,3})(?![\d:]))?(?!\d)")
+                               + r")\.?\s+(?:chapter\s+)?(" + _EN_SPOKEN_NUMBER + r")"
+                               + r"(?:\s*:\s*(\d{1,3})(?![\d:])|,?\s+(?i:verses?)\s+("
+                               + _EN_SPOKEN_NUMBER + r"))?(?!\d)")
 
 
 def _book_code(codes: dict, number: int | None, name: str) -> str | None:
@@ -469,11 +471,12 @@ def english_book_citations(text: str) -> list[tuple[str | None, int, int | None]
     """Book-bound chapter and chapter:verse citations (None for unknown books)."""
     found = []
     for match in _ENGLISH_CITATION.finditer(text):
-        ordinal, name, chapter, verse = match.groups()
+        ordinal, name, chapter, colon_verse, spoken_verse = match.groups()
         number = _EN_ORDINAL.get(ordinal.casefold()) if ordinal else None
         value = _number_token(chapter, "en")
+        verse = int(colon_verse) if colon_verse else _number_token(spoken_verse, "en") if spoken_verse else None
         if value is not None:
-            found.append((_book_code(_EN_BOOK_CODES, number, name), value, int(verse) if verse else None))
+            found.append((_book_code(_EN_BOOK_CODES, number, name), value, verse))
     return found
 
 
@@ -496,7 +499,9 @@ def english_references(text: str) -> tuple[set[tuple[int, int]], set[int]]:
             verse, _ = _take_number(tokens, cursor + 1)
             if verse is not None:
                 pairs.add((chapter, verse))
-    chapters |= {c for c, _ in pairs} | english_book_chapters(text)
+    citations = english_book_citations(text)
+    pairs |= {(chapter, verse) for _, chapter, verse in citations if verse is not None}
+    chapters |= {c for c, _ in pairs} | {chapter for _, chapter, _ in citations}
     return pairs, chapters
 
 
@@ -812,6 +817,71 @@ def number_problems(english: str, text: str, locale: str, references: set[tuple[
     return [f"missing number {value}" for value in missing]
 
 
+_EN_ORDINALS = {"first": 1, "second": 2, "third": 3, "fourth": 4, "fifth": 5, "sixth": 6, "seventh": 7,
+                "eighth": 8, "ninth": 9, "tenth": 10, "eleventh": 11, "twelfth": 12, "dozen": 12,
+                "twentieth": 20, "thirtieth": 30, "fortieth": 40, "fiftieth": 50, "hundredth": 100}
+# A target digit followed by a large-number word is that multiple ("5만 명", "5万人", "50 mil").
+_TARGET_MULTIPLIERS = {"千": 10 ** 3, "천": 10 ** 3, "万": 10 ** 4, "萬": 10 ** 4, "만": 10 ** 4,
+                       "亿": 10 ** 8, "억": 10 ** 8, "mil": 10 ** 3, "millon": 10 ** 6, "millones": 10 ** 6}
+_TARGET_DIGITS = re.compile(r"(?<![\d.,])(\d+(?:[.,]\d+)*)(?![\d])\s*(千|천|万|萬|만|亿|억|millones|millon|mil\b)?")
+_ES_BOOK_ORDINAL = re.compile(r"\b[123]\s*(?:de\s+)?(?=(?:" + _alternation(
+    name for number, name in _ES_BOOK_CODES if number is not None) + r")\b)")
+
+
+def english_number_values(english: str) -> set[int | str]:
+    """Every value the English says: cardinals, ordinals, references, clocks and book ordinals."""
+    tokens = re.findall(r"[a-z]+", english.casefold().replace("-", " "))
+    values: set[int | str] = set(english_numbers(english))
+    for index, token in enumerate(tokens):
+        if token in _EN_ORDINALS:
+            ordinal = _EN_ORDINALS[token]
+            values.add(ordinal)
+            if index and tokens[index - 1] in _TENS and ordinal < 10:  # "twenty-first"
+                values.add(_TENS[tokens[index - 1]] + ordinal)
+    pairs, chapters = english_references(english)
+    values |= {value for pair in pairs | english_colon_pairs(english) | english_spoken_clock_pairs(english)
+               for value in pair} | chapters
+    values |= {int(value) for value in _ENGLISH_BOOK_ORDINAL.findall(english)}
+    for word, scale in (("million", 10 ** 6), ("billion", 10 ** 9)):
+        if word in tokens:
+            values |= {value * scale for value in list(values) if isinstance(value, int)}
+    return values
+
+
+def added_number_problems(english: str, text: str, locale: str) -> list[str]:
+    """Digits the target writes that the English never said ("five people" for "people").
+
+    Scripture and clock numbers are left to the reference screen. A lone 1 is
+    exempt because an English article often becomes one ("a year", 1년).
+    Spelled target numbers have no reliable surface form (一, 이, una are also
+    ordinary words); back-translation and the ``added_number`` calibration
+    seed cover them.
+    """
+    said = english_number_values(english)
+    pairs, chapters = target_references(text, locale, spoken_clocks=english_spoken_clock_pairs(english))
+    cited = {value for pair in pairs for value in pair} | chapters
+    cited |= {value for _, chapter, verse, _ in book_citations(text, locale) for value in (chapter, verse)}
+    masked = _ES_BOOK_ORDINAL.sub(" ", _fold(text)) if locale == "es" else text
+    added = []
+    for digits, multiplier in _TARGET_DIGITS.findall(masked):
+        readings: set[int | str] = set()
+        if re.fullmatch(r"\d{1,3}(?:[.,]\d{3})+", digits):  # Thousands separators.
+            readings.add(int(re.sub(r"[.,]", "", digits)))
+        if re.fullmatch(r"\d+[.,]\d+", digits):  # A decimal ("2.5", Spanish "2,5").
+            readings.add(digits.replace(",", "."))
+        if digits.isdigit():
+            readings.add(int(digits))
+        scale = _TARGET_MULTIPLIERS.get(multiplier)
+        if scale:
+            for value in list(readings):
+                scaled = float(value) * scale
+                readings.add(int(scaled) if scaled.is_integer() else scaled)
+        if readings & (said | cited) or readings <= {1}:
+            continue
+        added.append(digits + (multiplier or ""))
+    return [f"added number {value}" for value in dict.fromkeys(added)]
+
+
 def review_auto_group(policy: dict, english_units: list[dict], group: dict, *,
                       locale: str, forbidden_register: str) -> list[dict[str, str]]:
     if (policy.get("targetLocale") != locale
@@ -829,8 +899,9 @@ def review_auto_group(policy: dict, english_units: list[dict], group: dict, *,
         ("proper_names", name_problems(policy, english, text), "Policy terminology mentioned in English"),
         ("scripture_references", scripture_reference_problems(english, text, locale),
          "Chapter:verse references said vs written; additions fail"),
-        ("numbers", number_problems(english, text, locale, english_pairs),
-         "English cardinals as digits or target-language words"),
+        ("numbers", number_problems(english, text, locale, english_pairs)
+         + added_number_problems(english, text, locale),
+         "English cardinals as digits or target-language words; target digits must be said"),
         ("tts_segmentation", ["unsafe utterance markup or length"]
          if has_unsafe_speech_markup(group["targetUtterances"]) else [], "Utterance structure screen"),
     ]

@@ -21,10 +21,10 @@
 
 | 环节 | 入口 | 作用 |
 |---|---|---|
-| L2 逐组确定性检查 | `language_review_plugins/ko_weekly_auto.py`、`es_weekly_auto.py`（共享 `auto_qc_text_common.py`） | 每周通用，不写死任何一篇讲道。检查目标文字脚本与占位符（西语须以拉丁字母为主；中文须为简体，假名、谚文或繁体字都会失败）、未翻译的英文（西语只有一个词的组也算，原样照抄即失败；Amén、Jesús 这类西语拼写、No、Amen 等共用词和术语表人名除外）、语域（西语不得用 vosotros，包括省略主语的 decís、sois）、术语表人名、经文出处（英文说了就必须有，没说不能加；带书卷名的引用要对上同一卷书，66 卷的中韩西名称在 `_BIBLE_BOOKS`；一边带节号、一边只说到章时按章比较书卷）、数字（数字或目标语言读法；含小数和 “nineteen ninety-nine” 这类年份读法） |
+| L2 逐组确定性检查 | `language_review_plugins/ko_weekly_auto.py`、`es_weekly_auto.py`（共享 `auto_qc_text_common.py`） | 每周通用，不写死任何一篇讲道。检查目标文字脚本与占位符（西语须以拉丁字母为主；中文须为简体，假名、谚文或繁体字都会失败）、未翻译的英文（西语只有一个词的组也算，原样照抄即失败；Amén、Jesús 这类西语拼写、No、Amen 等共用词和术语表人名除外）、语域（西语不得用 vosotros，包括省略主语的 decís、sois）、术语表人名、经文出处（英文说了就必须有，没说不能加；带书卷名的引用要对上同一卷书，66 卷的中韩西名称在 `_BIBLE_BOOKS`；一边带节号、一边只说到章时按章比较书卷；“John 3 verse 16” 这种不说 chapter 的读法也算到节）、数字（英文说的数字须以数字或目标语言读法出现，含小数和 “nineteen ninety-nine” 这类年份读法；译文写出的阿拉伯数字必须是英文说过的值，序数、经文、时间、书卷序号、“5万/5만/50 mil” 这类大数单位都按英文核对，单独的 1 不查，因为英文冠词常译成 1。目标语言的数字词没有可靠的表面形式，由回译和 `added_number` 注错校准把关） |
 | L2 整篇检查 | `scripts/target_text_auto_qc.py` | 长度离群：与本篇中位数比较。**回译比对**：第一次调用只给目标语言文字，翻回英文；第二次调用对比冻结英文和回译，判断有没有漏译、增译、否定、数字、人名、经文、意思偏移。模型调用由调用方注入，没有回译结果的组不能判为通过。**口播模式：** 带 `condensation` 的精简组（由 `spoken_condensation.py qc-groups` 标出）不做长度离群检查，比对改用核心意思标准：允许的删减最多算轻微问题；丢了或改了主要论点、呼召、否定、数字、人名、经文、引语出处，或有任何增译、意思偏移，仍是重大问题。每组结果记 `mode`，收据记 `condensedGroupIds` |
 | 配音精简 | `scripts/spoken_condensation.py` | 读 8 秒预算，只为 `shorten` 组生成精简请求（英文句、完整译文、`maxSpeechUnits`）。精简模型由调用方注入；每次结果都做确定性检查：不超字数、删减段必须是完整译文的子串且类别允许、数字人名经文照常检查，不过关的带着问题重试，最多 2 次。记录（`sermon-spoken-condensation-record-v1`）绑定完整候选、预算（含合成身份）和精简模型身份，导出现有格式的 revision brief，口播候选沿用 L2 链生成。之后 `bind` 把口播候选绑回记录：未精简的组必须与完整译文相同，精简组重新核对字数、省略段和确定性检查；复核改变口播文本时，须重新生成描述最终文本的精简记录，旧记录不能绑定 |
-| L3 单句检查 | `scripts/target_audio_auto_qc.py` | TTS 之后马上检查，指标一律从每句 WAV 解码，不接受调用方提供的指标：时长异常（与本篇语速中位数比较，以及与原声时长之比）、截断、近乎无声、静音过多、长停顿、削波、句首句尾静音过长。回转写两级：小 ASR 标出的疑点由强 ASR 复核（必须是另一个模型），两边都不一致才判失败。每个 ASR 结果都绑定所听音频和预期文字的哈希以及模型；音频重合成后沿用旧分数无效，这一句停在 `pending_primary_asr`，不能只凭声学指标通过 |
+| L3 单句检查 | `scripts/target_audio_auto_qc.py` | TTS 之后马上检查，指标一律从每句 WAV 解码，不接受调用方提供的指标：时长异常（与本篇语速中位数比较，以及与原声时长之比）、截断、近乎无声、静音过多、长停顿、削波、句首句尾静音过长。每句的原声时长 `sourceSeconds` 必须为正数，并记入结果；签发试听豁免时按冻结锚点逐句核对（口播稿该组首句起点到末句终点，误差 ≤ 1 ms），调用方不能用 0 或拉长的时长关掉“与原声时长之比”的检查。回转写两级：小 ASR 标出的疑点由强 ASR 复核（必须是另一个模型），两边都不一致才判失败。每个 ASR 结果都绑定所听音频和预期文字的哈希以及模型；音频重合成后沿用旧分数无效，这一句停在 `pending_primary_asr`，不能只凭声学指标通过 |
 | L3 整轨核对 | `scripts/target_audio_auto_qc.py --track-package` | 单句检查只听单句 WAV，整轨核对把它们绑到听众实际听到的音轨：PCM 母带必须与各句音频按排程起点逐样本放置的结果完全一致（漏句、错序、旧音频都会失败）；MP3 解码到 12 kHz 后，逐个可听的 50 ms 窗口比较母带波形，相关性须 ≥ 0.94、相对误差须 ≤ 0.35；不允许用整篇的通过比例掩盖短句替换。响度包络与长度差保留为辅助检查。签发试听豁免时，核对结果的比较参数必须等于发布标准 `TRACK_ENVELOPE`，比较方法须与音轨格式一致（MP3 必须有通过的逐窗波形证据） |
 | 8 秒预算 | `scripts/target_audio_predicted_schedule.py` | 用已测音频拟合各语言语速，再用正式排程公式按**预测时长**排一次。超窗的组给出 `maxSpeechUnits`，供口播修订一次改到位。语速绑定 speech job 的合成身份（adapter、配置、模型版本、音色、说话人、conditioning、语言参数、文本规范化）和所测音频的哈希；身份不同就拒绝预算，需要重新拟合 |
 | 注错校准 | `scripts/auto_qc_seeded_errors.py` | 在干净成品里注入已知错误，统计每类检出率和干净样例的误报率。只有出现干净版本没有的新问题才算检出（错句配音必须由 ASR 判出），不会把原有误报算成检出。文字类含换书卷（wrong_book），音频类含换成别句的配音（wrong_sentence，需要注入 ASR transport）。口播类（`spoken.*`）只注入精简组：换成别组内容（swapped_content）、追加别组内容（added_content）、翻转否定（flipped_negation）。删冗余本来就是精简允许的，所以口播类注的是“说的意思变了” |
@@ -42,7 +42,7 @@
 只有满足以下全部条件，才允许豁免：
 
 - 校准收据的 `implementationSha256` 与当前 QC 代码一致。代码一改，必须重新校准。文字和音频 QC 收据也记录运行时的 `implementationSha256`，旧代码生成的 QC 结果不能搭配新校准使用。
-- 校准时回译检查实际参与了（`semanticChecksIncluded=true`），且 `text.semantic_negation` 注错必须新增明确的回译问题；确定性规则发现的表面错误不能计为这一类的检出。
+- 校准时回译检查实际参与了（`semanticChecksIncluded=true`），且 `text.semantic_negation`、`text.added_number`（在英文不含数字的组里加一个用目标语言写出的人数）注错必须新增明确的回译问题；确定性规则发现的表面错误不能计为这一类的检出。
 - 本次 QC 用的回译运行身份 `semanticIdentity` 必须包含非空 `backend`、`model`、`modelRevision`、`cacheNamespace` 和非空 `settings` 对象（声明实际解码、推理等设置）。规范化 JSON 后绑定哈希，拒绝非有限数值。该身份和 ASR 模型必须与校准时一致；改变设置、缓存命名空间、模型修订或后端，必须重新校准。
 - 按本次交付所需注错类别的计数重算总检出率 ≥ 95%，每类 ≥ 90%。收据中每类及总体的计数与预存比率必须一致；布尔值、负计数或检出数大于试验数均拒绝。每一类注错都必须实际试过（`trials > 0`）；缺一类或某类零样本都算校准不足。要发配音时，校准还必须包含音频各类；只发文字时，音频类的结果不影响放行。QC 判过精简组时，校准还必须包含口播各类（`spokenIncluded=true`）。
 - 干净样例误报率按 `cleanFalsePositives / cleanChecked` 重算并核对，必须 ≤ 10%，且实际检查至少一个干净样例。
@@ -85,6 +85,7 @@ python scripts/prepare_target_language_speech_job.py ... --text-release-basis te
 # 试听豁免收据（代替人工试听收据）；ASR 标出的句子必须有强 ASR 复核
 python scripts/machine_quality_release_basis.py audio --package audio-package.json --screening screening.json \
   --audio-qc audio-qc.json --track-check track-check.json --text-waiver spoken-text-waiver.json \
+  --anchor anchor.json --spoken-candidate spoken-candidate.json \
   --calibration calibration.json --secondary-asr-model gpt-transcribe --out audio-waiver.json
 # 第 4 层：精简过的配音要带同一份精简绑定（sermon_unified_delivery 的 inputs.condensation_binding 同理）
 python scripts/build_full_video_app_release.py prepare ... --condensation-binding ko=condensation-binding.json
@@ -94,7 +95,7 @@ python scripts/build_full_video_app_release.py prepare ... --condensation-bindin
 
 **已接上：**
 
-- **L2 → L3：** `prepare_target_language_speech_job.py` 接受译文豁免收据（`--text-release-basis`）。这时候选保持 `machine_review_pass_human_review_pending`、`humanReview.translation=pending`，写出的 speech job 是 v3：`inputs.textReleaseBasis` 绑定豁免收据，`textPolicy` 为 `exact_machine_waived_target_text`。人工收据仍写出原来的 v2，已有的 job 身份不变。所有读取 speech job 的生产者（音频包构建、单句完整性、严格链 L3 准备、恢复计划、ASR 筛查）都接受 v2 和 v3。
+- **L2 → L3：** 签发译文豁免时，候选各组的 `sourceUnitIds` 拼起来必须按顺序恰好覆盖冻结锚点的全部英文句子；漏掉的句子没有可检查的结果，所以由签发时直接核对，收据再绑定这份候选的哈希。`prepare_target_language_speech_job.py` 接受译文豁免收据（`--text-release-basis`）。这时候选保持 `machine_review_pass_human_review_pending`、`humanReview.translation=pending`，写出的 speech job 是 v3：`inputs.textReleaseBasis` 绑定豁免收据，`textPolicy` 为 `exact_machine_waived_target_text`。人工收据仍写出原来的 v2，已有的 job 身份不变。所有读取 speech job 的生产者（音频包构建、单句完整性、严格链 L3 准备、恢复计划、ASR 筛查）都接受 v2 和 v3。
 - **L3：** 音频包仍按构建结果保持 `machine_screened`（ASR 全过）或 `candidate`（ASR 标出疑点），`humanApproval=false`。试听豁免收据必须绑定一份通过的整轨核对（`trackCheckJsonSha256`），可以代替人工试听收据，通过 `validate_audio_screening_review`、`inspect_canonical_audio`（配置项 `machineWaiver`）和 `sermon_unified` 的 `audio` 审核。ASR 标出的每一句都必须有强 ASR 复核通过。
 - **sermon_unified：** `ingest_review` 接收两种豁免收据，把该步记为 `review=waived`、事件 `review.waived`，不写 `approvedAt`。`translation_approved` 和 `listen_approved` 两个范围接受 `waived`；大纲与默想仍要求人工 `approved`。
 

@@ -188,6 +188,15 @@ class TextWaiverTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "different frozen English/source units"):
                 basis.build_text_waiver(self.source_package, self.anchor, self.candidate, missing, cal)
 
+    def test_waiver_requires_every_frozen_source_unit(self):
+        # Dropping the last group leaves no row to screen, so the waiver checks coverage itself.
+        shortened = copy.deepcopy(self.candidate)
+        shortened["groups"].pop()
+        shortened["modelReview"]["reviewedGroupIds"].pop()
+        with self.assertRaisesRegex(ValueError, "cover every frozen source unit"):
+            basis.build_text_waiver(self.source_package, self.anchor, shortened,
+                                    text_qc(shortened, self.anchor), calibration())
+
     def test_condensed_spoken_groups_need_their_binding_and_spoken_calibration(self):
         group = self.candidate["groups"][0]
         qc = text_qc(self.candidate, self.anchor)
@@ -273,13 +282,25 @@ class TextWaiverTests(unittest.TestCase):
         self.assertEqual((result["status"], result["reviewKind"]), ("validated", "machine_quality_waiver"))
 
 
+def audio_sources():
+    """The frozen anchor and spoken candidate whose spans audio QC must use (u1: 2 s, u2+u3: 3.5 s)."""
+    anchor = {"sourceUnits": [{"sourceUnitId": "u1", "start": 10.0, "end": 12.0},
+                              {"sourceUnitId": "u2", "start": 12.5, "end": 14.0},
+                              {"sourceUnitId": "u3", "start": 14.0, "end": 16.0}]}
+    candidate = {"groups": [{"translationGroupId": "g1", "sourceUnitIds": ["u1"]},
+                            {"translationGroupId": "g2", "sourceUnitIds": ["u2", "u3"]}]}
+    return anchor, candidate
+
+
 def audio_fixture(flagged=False):
+    anchor, candidate = audio_sources()
     texts = ["두려워하지 마십시오.", "내가 당신과 함께 있습니다."]
     units = [{"textGroupId": f"g{index}", "targetTextSha256": sha(text),
               "audio": {"path": f"audio/unit-{index}.wav", "sha256": sha(f"wav-{index}")},
               "durationSeconds": 1.5} for index, text in enumerate(texts, 1)]
     package = {"schemaVersion": "sermon-target-language-audio-package-v1", "targetLocale": "ko",
-               "englishSourcePackageJsonSha256": "1" * 64, "targetLanguageCandidateJsonSha256": "2" * 64,
+               "englishSourcePackageJsonSha256": "1" * 64,
+               "targetLanguageCandidateJsonSha256": basis.json_sha256(candidate),
                "targetLanguageSpeechJobJsonSha256": "3" * 64,
                "status": "candidate" if flagged else "machine_screened", "units": units,
                "track": {"path": "track.mp3", "sha256": "4" * 64},
@@ -308,12 +329,12 @@ def audio_fixture(flagged=False):
                        "asrPrimary": value, "asrSecondary": 0.96 if value < 0.88 else None,
                        "asrPrimaryModel": PRIMARY_ASR, "asrSecondaryModel": SECONDARY_ASR if value < 0.88 else None,
                        "audioSha256": unit["audio"]["sha256"], "textSha256": unit["targetTextSha256"],
-                       "failedAttempts": 0, "nextAction": "keep",
-                       "metrics": {}} for unit, value in zip(units, similarities)]}
+                       "sourceSeconds": span, "failedAttempts": 0, "nextAction": "keep",
+                       "metrics": {}} for unit, value, span in zip(units, similarities, (2.0, 3.5))]}
     text = {"schemaVersion": basis.TEXT_WAIVER_SCHEMA, "reviewKind": "machine_quality_waiver",
             "humanApproval": False, "decision": "machine_quality_waived", "targetLocale": "ko",
-            "englishSourcePackageJsonSha256": "1" * 64, "anchorManifestJsonSha256": "6" * 64,
-            "translationPolicySha256": "7" * 64, "candidateJsonSha256": "2" * 64,
+            "englishSourcePackageJsonSha256": "1" * 64, "anchorManifestJsonSha256": basis.json_sha256(anchor),
+            "translationPolicySha256": "7" * 64, "candidateJsonSha256": basis.json_sha256(candidate),
             "reviewedGroupIds": ["g1", "g2"],
             "groupResults": [{"translationGroupId": unit["textGroupId"], "status": "pass",
                               "targetTextSha256": unit["targetTextSha256"], "failedAttempts": 0} for unit in units],
@@ -347,6 +368,9 @@ def track_check(package, **overrides):
 class AudioWaiverTests(unittest.TestCase):
     def build(self, package, screening, qc, text, **kwargs):
         kwargs.setdefault("track_check", track_check(package))
+        anchor, candidate = audio_sources()
+        kwargs.setdefault("anchor", anchor)
+        kwargs.setdefault("candidate", candidate)
         return basis.build_audio_waiver(package, screening, qc, text, calibration(),
                                         created_at="2026-10-07T02:00:00+00:00", **kwargs)
 
@@ -374,6 +398,21 @@ class AudioWaiverTests(unittest.TestCase):
                                 "compressed-waveform evidence")):
             with self.assertRaisesRegex(ValueError, message):
                 self.build(package, screening, qc, text, track_check=check)
+
+    def test_audio_qc_source_spans_must_be_the_frozen_ones(self):
+        # A zero, negative or inflated span would disable the source-ratio check.
+        anchor, candidate = audio_sources()
+        for span in (0, -1.0, 9.0, None, True):
+            package, screening, qc, text = audio_fixture()
+            qc["results"][1]["sourceSeconds"] = span
+            with self.subTest(span=span), self.assertRaisesRegex(ValueError, "source spans are not the frozen"):
+                self.build(package, screening, qc, text)
+        package, screening, qc, text = audio_fixture()
+        other_anchor = copy.deepcopy(anchor)
+        other_anchor["sourceUnits"][0]["end"] = 20.0
+        for kwargs in ({"anchor": other_anchor}, {"candidate": {"groups": candidate["groups"][:1]}}):
+            with self.assertRaisesRegex(ValueError, "differs from the waived text"):
+                self.build(package, screening, qc, text, **kwargs)
 
     def test_audio_waiver_binds_a_condensed_text_waiver(self):
         # Layer 4 checks the condensation binding before captions show the full text.
@@ -418,6 +457,7 @@ class AudioWaiverTests(unittest.TestCase):
         text_only["trials"] = text_only["detected"] = sum(row["trials"] for row in text_only["kinds"].values())
         with self.assertRaisesRegex(ValueError, "audio checks"):
             basis.build_audio_waiver(package, screening, qc, text, text_only, track_check=track_check(package),
+                                     anchor=audio_sources()[0], candidate=audio_sources()[1],
                                      created_at="2026-10-07T02:00:00+00:00")
         # The same calibration is enough for the text waiver.
         self.assertTrue(basis.calibration_summary(text_only, "ko", IMPLEMENTATION)["semanticChecksIncluded"])
@@ -442,7 +482,8 @@ class AudioWaiverTests(unittest.TestCase):
         qc["results"][1]["asrSecondaryModel"] = identity
         cal = calibration(asrIdentity={"primary": PRIMARY_ASR, "secondary": identity})
         receipt = basis.build_audio_waiver(package, screening, qc, text, cal,
-                                          track_check=track_check(package))
+                                          track_check=track_check(package),
+                                          anchor=audio_sources()[0], candidate=audio_sources()[1])
         self.assertEqual(receipt["secondaryAsrModel"], identity)
         basis.validate_audio_waiver(package, receipt, screening)
         for key, value in (("model", "tiny-asr"), ("modelRevision", "release-r1")):

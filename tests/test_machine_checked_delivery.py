@@ -97,16 +97,17 @@ def machine_inputs(root, *, human_full_text=None, condense=False):
                      results=[{'textGroupId': u['textGroupId'], 'targetTextSha256': u['targetTextSha256'],
                                'audioSha256': u['audio']['sha256'], 'recognized': 'synthetic', 'similarity': 1.0,
                                'differences': [], 'status': 'pass'} for u in package['units']])
+    spans = {u['sourceUnitId']: float(u['end']) - float(u['start']) for u in sf.anchor['sourceUnits']}
     audio_qc = {'schemaVersion': 'sermon-target-audio-auto-qc-v1', 'locale': LOCALE, 'status': 'pass',
                 'implementationSha256': IMPLEMENTATION, 'thresholds': dict(THRESHOLDS),
                 'humanApproval': False, 'mutatesAudio': False, 'subtitleOnlyGroupIds': [], 'repairGroupIds': [],
                 'results': [{'groupId': u['textGroupId'], 'status': 'pass', 'issues': [], 'asrDecision': 'pass',
                              'asrPrimary': 1.0, 'asrSecondary': None, 'asrPrimaryModel': ASR, 'asrSecondaryModel': None,
                              'audioSha256': u['audio']['sha256'], 'textSha256': u['targetTextSha256'],
-                             'failedAttempts': 0, 'nextAction': 'keep',
-                             'metrics': {}} for u in package['units']]}
+                             'sourceSeconds': spans[g['sourceUnitIds'][0]], 'failedAttempts': 0, 'nextAction': 'keep',
+                             'metrics': {}} for u, g in zip(package['units'], spoken['groups'])]}
     audio_waiver = basis.build_audio_waiver(package, screening, audio_qc, text_waiver, cal,
-                                            track_check=track_check(package),
+                                            anchor=sf.anchor, candidate=spoken, track_check=track_check(package),
                                             created_at='2026-10-07T02:00:00+00:00')
     fields = {'series': 'Synthetic series', 'title': 'Synthetic machine title', 'speaker': 'Synthetic speaker',
               'scripture': 'John 3:16', 'summary': 'Synthetic summary', 'outline': ['Legacy outline']}
