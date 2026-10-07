@@ -89,7 +89,7 @@ class CanonicalLayer2BudgetTests(unittest.TestCase):
         calls = []
         caller = budget.BudgetedCaller(self.auth, self.config, self.source, self.anchor,
                                        self.policy, transport=lambda *args: calls.append(1))
-        with self.assertRaisesRegex(ValueError, 'bounded_before_cache_identity'):
+        with self.assertRaisesRegex(ValueError, 'unsupported_budget_capability'):
             caller('', unbounded)
         self.assertEqual(calls, [])
         self.assertFalse(self.auth['root'].exists())
@@ -121,3 +121,31 @@ class CanonicalLayer2BudgetTests(unittest.TestCase):
                 cli.assert_not_called()
         self.assertFalse(self.auth['root'].exists())
         self.assertFalse(list(self.config.lanes['zh-Hans']['output'].glob('*-astra.started.json')))
+
+    def test_budgeted_worker_rejects_codex_cli_before_model_dispatch(self):
+        from scripts import canonical_durable_jobs as durable
+        view = controller.package_view(self.config)
+        ident = durable.identity(view, self.config.run_id, 'text.zh-Hans')
+        key = jobs._digest(ident)
+        command = controller._worker_command(self.config, 'zh-Hans', key, self.code, self.auth)
+        request = {'schemaVersion': jobs.SCHEMA, 'jobId': key, 'identity': ident,
+                   'command': command, 'commandSha256': jobs._digest(command),
+                   'timeoutSeconds': 21600.0, 'livenessPolicy': controller.LIVENESS_POLICY}
+
+        class CodexLayer2Transport:
+            execution_identity = {'backend': 'codex_cli'}
+
+            def __call__(self, *_args):
+                raise AssertionError('cli dispatched')
+
+        with jobs._lock(self.config.job_root, key) as (folder, _, held):
+            self.assertTrue(held)
+            folder.mkdir()
+            jobs._persist(folder / 'request.json', request)
+            jobs._persist(folder / 'state.json', {'schemaVersion': jobs.SCHEMA, 'jobId': key,
+                'status': 'running', 'requestSha256': jobs._digest(request)})
+            with self.assertRaisesRegex(Exception, 'unsupported_budget_capability'):
+                controller.execute(self.config.path, 'zh-Hans', self.config.sha256,
+                    self.code, key, caller=CodexLayer2Transport(),
+                    budget_authorization=self.auth_path, expected_budget=self.auth['sha256'])
+        self.assertFalse(self.auth['root'].exists())

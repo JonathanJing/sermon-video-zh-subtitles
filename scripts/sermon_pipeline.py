@@ -999,6 +999,9 @@ def chat_json(api_key, payload, retries=1, *, session_verifier=None):
 
 
 def _chat_json(api_key, payload, retries=1):
+    from scripts.sermon_provider_limits import DEFAULT_REQUEST_LIMITS
+    from scripts.strict_budget_capability import require_bounded_api_payload
+    require_bounded_api_payload(payload, DEFAULT_REQUEST_LIMITS, surface="legacy_text_api")
     last_error = None
     for attempt in range(retries):
         try:

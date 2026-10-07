@@ -37,11 +37,11 @@ class RunCodexLocalSermonProductionTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'local_supervisor_requires_explicit_dev_or_prod_launcher'):
                 mod.run_local_production(args)
 
-    def test_default_supervisor_model_is_luna_api(self):
+    def test_default_supervisor_model_is_luna_codex_cli(self):
         with mock.patch.object(sys, "argv", ["run_codex_local_sermon_production.py"]):
             args = mod.parse_args()
             self.assertEqual(args.model, "gpt-6-luna")
-            self.assertEqual(args.agent_backend, "agents-api")
+            self.assertEqual(args.agent_backend, "codex-cli")
             self.assertEqual(args.reasoning_effort, "medium")
             self.assertEqual(args.service_tier, "fast")
 
