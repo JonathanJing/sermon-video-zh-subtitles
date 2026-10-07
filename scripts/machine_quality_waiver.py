@@ -56,6 +56,8 @@ CALIBRATION_MINIMUMS = {"overallDetectionRate": 0.95, "perKindDetectionRate": 0.
 TEXT_KINDS = ("wrong_number", "added_reference", "wrong_book", "english_leak", "placeholder",
               "dropped_name", "dropped_half", "semantic_negation")
 AUDIO_KINDS = ("stretched", "silent", "clipped", "truncated", "wrong_sentence")
+# Seeded errors in condensed spoken groups: required when a QC run judged any.
+SPOKEN_KINDS = ("swapped_content", "added_content", "flipped_negation")
 DISCLOSURE = {
     "zh-Hans": "本语言内容经机器质检后自动发布，未经人工审核。",
     "ko": "이 언어 콘텐츠는 기계 품질 검사 후 자동으로 게시되었으며 사람의 검토를 거치지 않았습니다.",
@@ -84,8 +86,9 @@ def _rate(value) -> float | None:
 
 
 def calibration_problems(calibration: dict | None, locale: str, implementation: str, *,
-                         require_audio: bool = False) -> list[str]:
-    """Reasons the calibration cannot back a waiver; ``require_audio`` when audio ships."""
+                         require_audio: bool = False, require_spoken: bool = False) -> list[str]:
+    """Reasons the calibration cannot back a waiver; ``require_audio`` when audio
+    ships, ``require_spoken`` when the text QC judged condensed spoken groups."""
     if calibration is None:
         return ["seeded-error calibration missing"]
     problems = []
@@ -99,8 +102,11 @@ def calibration_problems(calibration: dict | None, locale: str, implementation: 
         problems.append("calibration did not include the back-translation check")
     if require_audio and calibration.get("audioIncluded") is not True:
         problems.append("calibration did not include the audio checks")
-    expected = [f"text.{kind}" for kind in TEXT_KINDS] + ([f"audio.{kind}" for kind in AUDIO_KINDS]
-                                                         if require_audio else [])
+    if require_spoken and calibration.get("spokenIncluded") is not True:
+        problems.append("calibration did not include condensed spoken groups")
+    expected = ([f"text.{kind}" for kind in TEXT_KINDS]
+                + ([f"audio.{kind}" for kind in AUDIO_KINDS] if require_audio else [])
+                + ([f"spoken.{kind}" for kind in SPOKEN_KINDS] if require_spoken else []))
     kinds = calibration.get("kinds", {})
     if not isinstance(kinds, dict):
         return problems + ["calibration kinds must be an object"]
@@ -259,6 +265,9 @@ def waive(locale: str, candidate: dict, text_qc: dict, audio_qc: dict | None,
     fallback = [row["groupId"] for row in text_qc["results"] if row["nextAction"] == "source_text_fallback"]
     if list(text_qc.get("sourceTextFallbackGroupIds", [])) != fallback:
         raise ValueError("Text QC fallback list differs from its per-group results")
+    condensed = [row["groupId"] for row in text_qc["results"] if row.get("mode") == "spoken_condensed"]
+    if list(text_qc.get("condensedGroupIds", [])) != condensed:
+        raise ValueError("Text QC condensed-group list differs from its per-group results")
     subtitle_only = []
     if audio_qc is not None:
         subtitle_only = [row["groupId"] for row in audio_qc["results"] if row["nextAction"] == "subtitle_only"]
@@ -269,7 +278,8 @@ def waive(locale: str, candidate: dict, text_qc: dict, audio_qc: dict | None,
     fallback_sentences = sum(sentences[group_id] for group_id in fallback)
     undubbed_sentences = sum(sentences[group_id] for group_id in undubbed)
     calibration_issues = calibration_problems(calibration, locale, implementation,
-                                              require_audio=audio_qc is not None)
+                                              require_audio=audio_qc is not None,
+                                              require_spoken=bool(condensed))
     calibration_issues += runtime_identity_problems(calibration, text_qc=text_qc, audio_qc=audio_qc)
     if pending:
         status, reasons = "repair_in_progress", [f"{len(pending)} groups still have repairs pending"]

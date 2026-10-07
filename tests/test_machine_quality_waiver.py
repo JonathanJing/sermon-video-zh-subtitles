@@ -614,6 +614,23 @@ class CalibrationAndWaiverTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "subtitle-only list differs"):
             waiver.waive("ko", candidate, text, hidden_audio, calibration, audio_package=package)
 
+    def test_condensed_spoken_groups_need_spoken_calibration(self):
+        calibration = self.calibration("ko")
+        candidate, package, text, audio = self.final_receipts("ko")
+        text["results"][3]["mode"] = "spoken_condensed"
+        with self.assertRaisesRegex(ValueError, "condensed-group list differs"):
+            waiver.waive("ko", candidate, text, audio, calibration, audio_package=package)
+        text["condensedGroupIds"] = ["g003"]
+        result = waiver.waive("ko", candidate, text, audio, calibration, audio_package=package)
+        self.assertEqual(result["status"], "blocked_calibration")
+        self.assertIn("calibration did not include condensed spoken groups", result["reasons"])
+        spoken = copy.deepcopy(calibration)
+        spoken["spokenIncluded"] = True
+        spoken["kinds"].update({f"spoken.{kind}": {"trials": 4, "detected": 4, "rate": 1.0}
+                                for kind in waiver.SPOKEN_KINDS})
+        self.assertEqual(waiver.waive("ko", candidate, text, audio, spoken, audio_package=package)["status"],
+                         "machine_quality_waived")
+
     def test_non_finite_calibration_rates_block(self):
         calibration = self.calibration("ko")
         receipts = self.final_receipts("ko")

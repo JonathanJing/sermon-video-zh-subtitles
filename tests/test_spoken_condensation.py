@@ -3,9 +3,12 @@ import hashlib
 import json
 import unittest
 
+from scripts import auto_qc_seeded_errors as seeded
+from scripts import machine_quality_waiver as waiver
 from scripts import run_target_language_models as runner
 from scripts import spoken_condensation as condensation
 from scripts import target_audio_predicted_schedule as predicted
+from scripts import target_text_auto_qc as text_qc
 from tests import auto_qc_fixtures as fixtures
 
 LOCALE = "zh-Hans"
@@ -211,6 +214,101 @@ class BindTests(unittest.TestCase):
         edited["translationPolicySha256"] = "3" * 64
         with self.assertRaisesRegex(ValueError, "another full candidate"):
             condensation.revision_brief(self.record, edited)
+
+
+SPOKEN_SYSTEM = text_qc.SPOKEN_COMPARE_SYSTEM.format(language=text_qc.LANGUAGE_NAMES[LOCALE])
+CONDENSED_ENGLISH = "Jesus has not forgotten you, not for a single moment."
+
+
+class SpokenJudge(fixtures.PerfectSemanticJudge):
+    """Back-translates the fixture texts; only the spoken rubric accepts the declared condensation."""
+
+    def __init__(self):
+        super().__init__(LOCALE)
+        self.clean.update({"早上好，教会。": UNITS[0][1], SPOKEN: CONDENSED_ENGLISH, "让我们一起祷告。": UNITS[3][1]})
+        self.systems = {}
+
+    def __call__(self, role, system, user, schema):
+        if role == "back_translation_judge":
+            pair = json.loads(user)
+            self.systems[pair["ORIGINAL"]] = system
+            if system == SPOKEN_SYSTEM and pair["BACK-TRANSLATION"] == CONDENSED_ENGLISH:
+                return {"status": "pass", "issues": [{"kind": "omission", "severity": "minor",
+                                                      "english": "I want to say this again",
+                                                      "backTranslation": ""}]}
+        return super().__call__(role, system, user, schema)
+
+
+class SpokenQcTests(unittest.TestCase):
+    def setUp(self):
+        record = condensation.condense(anchor(), candidate(), budget(), call=FakeCondenser(answer()),
+                                       identity=CONDENSER, policy=fixtures.policy(LOCALE))
+        self.spoken = spoken_candidate()
+        self.binding = condensation.bind_spoken_candidate(record, anchor(), candidate(), self.spoken,
+                                                          fixtures.policy(LOCALE))
+        self.groups = condensation.qc_groups(self.binding, anchor(), self.spoken)
+
+    def screen(self, groups, judge=None):
+        return text_qc.screen(groups, LOCALE, policy=fixtures.policy(LOCALE), call=judge or SpokenJudge(),
+                              identity=fixtures.SEMANTIC_IDENTITY)
+
+    def test_only_bound_condensed_groups_use_the_core_meaning_rubric(self):
+        self.assertEqual([bool(group.get("condensation")) for group in self.groups], [False, True, False])
+        self.assertEqual(self.groups[1]["english"], f"{UNITS[1][1]} {UNITS[2][1]}")
+        judge = SpokenJudge()
+        receipt = self.screen(self.groups, judge)
+        self.assertEqual(receipt["status"], "pass")
+        self.assertEqual(receipt["condensedGroupIds"], ["g2"])
+        self.assertEqual([row["mode"] for row in receipt["results"]], ["full", "spoken_condensed", "full"])
+        self.assertEqual(judge.systems[self.groups[1]["english"]], SPOKEN_SYSTEM)
+        self.assertNotEqual(judge.systems[UNITS[0][1]], SPOKEN_SYSTEM)
+        # The same text judged as a full translation fails for what it left out.
+        plain = [{key: value for key, value in group.items() if key != "condensation"} for group in self.groups]
+        self.assertEqual(self.screen(plain)["results"][1]["status"], "fail")
+
+    def test_qc_groups_need_the_passing_binding_of_this_candidate(self):
+        with self.assertRaisesRegex(ValueError, "another spoken candidate"):
+            condensation.qc_groups(self.binding, anchor(), spoken_candidate("耶稣没有忘记你。"))
+        with self.assertRaisesRegex(ValueError, "did not pass"):
+            condensation.qc_groups({**self.binding, "status": "fail"}, anchor(), self.spoken)
+
+    def test_condensed_groups_skip_the_length_outlier_check(self):
+        group = {"english": "x" * 100, "targetText": "短"}
+        condensed = {**group, "condensation": self.groups[1]["condensation"]}
+        self.assertIsNotNone(text_qc.length_problem(group, 1.0))
+        self.assertIsNone(text_qc.length_problem(condensed, 1.0))
+        rows = [{"english": "x" * 100, "targetText": "y" * 100}] * 5
+        self.assertEqual(text_qc.candidate_length_median(rows + [condensed] * 5), 1.0)
+
+    def test_spoken_calibration_seeds_meaning_errors_into_condensed_groups(self):
+        result = seeded.calibrate_spoken(self.groups, LOCALE, policy=fixtures.policy(LOCALE), call=SpokenJudge())
+        self.assertEqual((result["cleanChecked"], result["cleanFalsePositives"]), (1, 0))
+        for kind in waiver.SPOKEN_KINDS:
+            self.assertEqual((result["kinds"][kind]["trials"], result["kinds"][kind]["rate"]), (1, 1.0), kind)
+        self.assertEqual(seeded.mutate_spoken(self.groups[1], "flipped_negation", LOCALE, self.groups),
+                         "耶稣有忘记你，一刻也没有忘记你。")
+        # A judge that accepts any condensed back-translation misses the meaning errors.
+        lenient = SpokenJudge()
+        missed = seeded.calibrate_spoken(self.groups, LOCALE, policy=fixtures.policy(LOCALE),
+                                         call=lambda role, system, user, schema: (
+                                             {"english": CONDENSED_ENGLISH} if role == "back_translator"
+                                             else lenient(role, system, user, schema)))
+        self.assertEqual(missed["kinds"]["flipped_negation"]["rate"], 0.0)
+        with self.assertRaisesRegex(ValueError, "condensed spoken groups"):
+            seeded.calibrate_spoken(self.groups[:1], LOCALE)
+
+    def test_a_waiver_for_condensed_groups_needs_spoken_calibration(self):
+        implementation = waiver.implementation_sha256()
+        kwargs = dict(policy=fixtures.policy(LOCALE), call=SpokenJudge(), identity=fixtures.SEMANTIC_IDENTITY)
+        without = seeded.calibrate(LOCALE, fixtures.groups(LOCALE), **kwargs)
+        self.assertFalse(without["spokenIncluded"])
+        self.assertEqual(waiver.calibration_problems(without, LOCALE, implementation), [])
+        problems = waiver.calibration_problems(without, LOCALE, implementation, require_spoken=True)
+        self.assertIn("calibration did not include condensed spoken groups", problems)
+        with_spoken = seeded.calibrate(LOCALE, fixtures.groups(LOCALE), spoken_groups=self.groups, **kwargs)
+        self.assertTrue(with_spoken["spokenIncluded"])
+        self.assertEqual(with_spoken["kinds"]["spoken.flipped_negation"]["rate"], 1.0)
+        self.assertEqual(waiver.calibration_problems(with_spoken, LOCALE, implementation, require_spoken=True), [])
 
 
 if __name__ == "__main__":

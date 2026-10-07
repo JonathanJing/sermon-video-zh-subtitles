@@ -9,6 +9,7 @@
     "schemaVersion", "reviewKind", "humanApproval", "decision", "targetLocale",
     "englishSourcePackageJsonSha256", "anchorManifestJsonSha256", "translationPolicySha256",
     "candidateJsonSha256", "reviewedGroupIds", "groupResults", "textQcJsonSha256",
+    "condensedGroupIds", "condensationBindingJsonSha256",
     "calibration", "implementationSha256", "rules", "disclosure", "createdAt",
     "postPublicationSpotCheck"
   ],
@@ -40,6 +41,14 @@
       }
     },
     "textQcJsonSha256": { "$ref": "#/$defs/sha256" },
+    "condensedGroupIds": {
+      "description": "Groups of a spoken candidate condensed for dubbing and judged by the core-meaning rubric.",
+      "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 }
+    },
+    "condensationBindingJsonSha256": {
+      "description": "The passing spoken-condensation binding of exactly condensedGroupIds; null when none.",
+      "oneOf": [{ "$ref": "#/$defs/sha256" }, { "type": "null" }]
+    },
     "calibration": { "$ref": "#/$defs/calibration" },
     "implementationSha256": { "$ref": "#/$defs/sha256" },
     "rules": { "$ref": "#/$defs/rules" },

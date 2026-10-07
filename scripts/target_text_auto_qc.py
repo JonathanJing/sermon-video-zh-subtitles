@@ -12,6 +12,11 @@ per-sentence repair ladder as audio:
   and meaning shifts. The translator/reviewer chain never sees this path, so it
   adds independent evidence even when the same model family is used.
 
+A group condensed for dubbing (``spoken_condensation``) carries
+``condensation``. It skips the length-outlier check, and its judge allows the
+interpreter-style drops the condensation rules permit while still failing a
+lost claim, call, negation, fact, quotation or reference, or any addition.
+
 The model transport is injected (``call(role, system, user, schema) -> dict``)
 so this module performs no network access itself and tests use fakes. It never
 edits text and never grants human approval.
@@ -56,6 +61,15 @@ COMPARE_SYSTEM = ("Compare an ORIGINAL English sermon passage with an independen
                   "Ignore wording, word order, register and natural paraphrase. Severity is major when "
                   "a fact, claim, instruction or theological point changes; otherwise minor. "
                   "status is fail when any major issue exists. Return JSON matching the schema.")
+SPOKEN_COMPARE_SYSTEM = (
+    "Compare an ORIGINAL English sermon passage with an independent BACK-TRANSLATION of its "
+    "{language} dub. The dub is a condensed simultaneous interpretation: dropping repetition, "
+    "filler, restatement, asides and example detail is expected and is at most a minor omission. "
+    "Severity is major when the main claim, a call or command to the listeners, a negation, a "
+    "number, a name, a Bible reference or who is quoted is lost or changed, when anything is "
+    "added, or when the meaning shifts. Report omission, addition, negation, number, name, "
+    "scripture_reference, meaning_shift. Ignore wording, word order and register. status is fail "
+    "when any major issue exists. Return JSON matching the schema.")
 
 
 def _sha(value) -> str:
@@ -97,11 +111,15 @@ def length_ratio(group: dict) -> float | None:
 
 
 def candidate_length_median(groups: list[dict]) -> float | None:
-    ratios = [ratio for ratio in map(length_ratio, groups) if ratio is not None]
+    # Condensed spoken groups are short on purpose and would skew the median.
+    ratios = [ratio for ratio in map(length_ratio, (g for g in groups if not g.get("condensation")))
+              if ratio is not None]
     return statistics.median(ratios) if len(ratios) >= 5 else None
 
 
 def length_problem(group: dict, median: float | None) -> str | None:
+    if group.get("condensation"):
+        return None
     ratio = length_ratio(group)
     if median is None or ratio is None:
         return None
@@ -130,8 +148,9 @@ def back_translation_requests(group: dict, locale: str) -> dict:
 
 
 def comparison_request(group: dict, locale: str, back_translation: str) -> dict:
+    system = SPOKEN_COMPARE_SYSTEM if group.get("condensation") else COMPARE_SYSTEM
     request = {"role": "back_translation_judge",
-               "system": COMPARE_SYSTEM.format(language=LANGUAGE_NAMES[locale]),
+               "system": system.format(language=LANGUAGE_NAMES[locale]),
                "user": json.dumps({"ORIGINAL": group["english"], "BACK-TRANSLATION": back_translation},
                                   ensure_ascii=False),
                "schema": COMPARISON_SCHEMA}
@@ -181,7 +200,7 @@ def group_problems(group: dict, locale: str, *, policy: dict | None, median: flo
 
 def screen(groups: list[dict], locale: str, *, policy: dict | None = None, call=None,
            identity: dict | None = None, prior_failed_attempts: dict[str, int] | None = None) -> dict:
-    """Screen a whole candidate. ``groups``: ``[{groupId, english, targetText}]``.
+    """Screen a whole candidate. ``groups``: ``[{groupId, english, targetText, condensation?}]``.
 
     Without ``call`` the back-translation result is ``not_run`` and the group
     cannot reach ``pass``: semantic evidence is required for a waiver.
@@ -207,6 +226,7 @@ def screen(groups: list[dict], locale: str, *, policy: dict | None = None, call=
         else:
             status, action = "pass", "keep"
         results.append({"groupId": group["groupId"], "status": status, "problems": problems,
+                        "mode": "spoken_condensed" if group.get("condensation") else "full",
                         "backTranslation": semantic, "failedAttempts": failed, "nextAction": action,
                         "targetTextSha256": hashlib.sha256(group["targetText"].encode("utf-8")).hexdigest()})
     # A waiver must use the QC code the calibration measured, not a cached older run.
@@ -215,6 +235,7 @@ def screen(groups: list[dict], locale: str, *, policy: dict | None = None, call=
             "semanticIdentity": None if bound is None else bound["identity"],
             "semanticIdentitySha256": None if bound is None else bound["sha256"],
             "lengthBounds": LENGTH_BOUNDS, "candidateLengthMedian": median,
+            "condensedGroupIds": [g["groupId"] for g in groups if g.get("condensation")],
             "status": "pass" if all(r["status"] == "pass" for r in results) else "requires_repair",
             "repairGroupIds": [r["groupId"] for r in results if r["nextAction"] == "revise_translation"],
             "sourceTextFallbackGroupIds": [r["groupId"] for r in results

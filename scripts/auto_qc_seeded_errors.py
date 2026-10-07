@@ -40,6 +40,11 @@ from scripts.language_review_plugins import auto_qc_text_common as rules
 
 TEXT_KINDS = waiver.TEXT_KINDS
 AUDIO_KINDS = waiver.AUDIO_KINDS
+SPOKEN_KINDS = waiver.SPOKEN_KINDS
+# The first negation found is removed or reversed (않으십니다 -> 으십니다 reads as an affirmation).
+NEGATIONS = {"zh-Hans": (("没有", "有"), ("不", "")),
+             "ko": (("지 않", ""), ("없", "있"), ("안 ", "")),
+             "es": ((" no ", " "), ("nunca", "siempre"), ("No ", ""))}
 ADDED_REFERENCE = {"zh-Hans": "（约翰福音3章16节）", "ko": " (요한복음 3장 16절)", "es": " (Juan 3:16)"}
 # The book a wrong_book mutation substitutes (Romans when the citation is already John).
 OTHER_BOOK = {"zh-Hans": ("约翰福音", "罗马书"), "ko": ("요한복음", "로마서"), "es": ("Juan", "Romanos")}
@@ -131,6 +136,63 @@ def mutate_audio(samples: list[float], rate: int, kind: str) -> tuple[list[float
     if kind == "truncated":
         return samples[:max(1, len(samples) // 4)], rate
     raise ValueError(f"Unknown audio kind: {kind}")
+
+
+def mutate_spoken(group: dict, kind: str, locale: str, others: list[dict]) -> str | None:
+    """A seeded error in a condensed spoken group, or None when the kind does not apply.
+
+    Dropping redundancy is what condensation is allowed to do, so these kinds
+    change what is said instead: another group's content, an added sentence,
+    or a reversed negation."""
+    text = group["targetText"]
+    other = next((row["targetText"] for row in others
+                  if row["groupId"] != group["groupId"] and row["targetText"] not in text), None)
+    if kind == "swapped_content":
+        return other
+    if kind == "added_content":
+        return None if other is None else text + ("" if locale == "zh-Hans" else " ") + other
+    if kind == "flipped_negation":
+        for old, new in NEGATIONS[locale]:
+            if old in text:
+                return text.replace(old, new, 1)
+        return None
+    raise ValueError(f"Unknown spoken kind: {kind}")
+
+
+def calibrate_spoken(groups: list[dict], locale: str, *, policy: dict | None = None, call=None,
+                     max_trials: int = 30) -> dict:
+    """Seeded errors in the condensed groups of a clean spoken candidate.
+
+    ``groups`` are its text QC groups (``spoken_condensation.qc_groups``); only
+    those carrying ``condensation`` are mutated, and the others supply the
+    swapped and added content."""
+    condensed = [group for group in groups if group.get("condensation")]
+    if not condensed:
+        raise ValueError("Spoken calibration needs condensed spoken groups")
+    kinds, false_positives, clean = {}, 0, {}
+    for group in condensed:
+        problems, _ = text_qc.group_problems(group, locale, policy=policy, median=None, call=call)
+        clean[group["groupId"]] = set(problems)
+        false_positives += bool(problems)
+    for kind in SPOKEN_KINDS:
+        trials = detected = 0
+        misses = []
+        for group in condensed:
+            if trials >= max_trials:
+                break
+            mutated = mutate_spoken(group, kind, locale, groups)
+            if mutated is None or mutated == group["targetText"]:
+                continue
+            trials += 1
+            problems, _ = text_qc.group_problems({**group, "targetText": mutated}, locale,
+                                                 policy=policy, median=None, call=call)
+            if set(problems) - clean[group["groupId"]]:
+                detected += 1
+            elif len(misses) < 5:
+                misses.append(group["groupId"])
+        kinds[kind] = {"trials": trials, "detected": detected, "rate": _rate(detected, trials),
+                       "missedGroupIds": misses}
+    return {"kinds": kinds, "cleanChecked": len(condensed), "cleanFalsePositives": false_positives}
 
 
 def _rate(detected: int, trials: int) -> float:
@@ -242,23 +304,30 @@ def calibrate_audio(units: list[dict], locale: str, *, asr=None, max_trials: int
 
 def calibrate(locale: str, groups: list[dict], units: list[dict] | None = None, *,
               policy: dict | None = None, call=None, identity: dict | None = None, asr=None,
-              max_trials: int = 30) -> dict:
-    """``identity`` names the back-translation runtime behind ``call`` and is required with it."""
+              spoken_groups: list[dict] | None = None, max_trials: int = 30) -> dict:
+    """``identity`` names the back-translation runtime behind ``call`` and is required with it.
+    ``spoken_groups`` are the text QC groups of a clean spoken candidate with
+    condensed groups; without them a calibration cannot back such a candidate."""
     if call is not None and identity is None:
         raise ValueError("A back-translation transport needs its semantic identity")
     bound = text_qc.semantic_identity(identity) if call is not None else None
     text = calibrate_text(groups, locale, policy=policy, call=call, max_trials=max_trials)
     audio = calibrate_audio(units, locale, asr=asr, max_trials=max_trials) if units else None
+    spoken = (calibrate_spoken(spoken_groups, locale, policy=policy, call=call, max_trials=max_trials)
+              if spoken_groups else None)
     kinds = {f"text.{k}": v for k, v in text["kinds"].items()}
     if audio is not None:
         kinds.update({f"audio.{k}": v for k, v in audio["kinds"].items()})
+    if spoken is not None:
+        kinds.update({f"spoken.{k}": v for k, v in spoken["kinds"].items()})
     trials = sum(row["trials"] for row in kinds.values())
     detected = sum(row["detected"] for row in kinds.values())
-    clean = text["cleanChecked"] + (audio["cleanChecked"] if audio else 0)
-    positives = text["cleanFalsePositives"] + (audio["cleanFalsePositives"] if audio else 0)
+    clean = text["cleanChecked"] + sum(part["cleanChecked"] for part in (audio, spoken) if part)
+    positives = text["cleanFalsePositives"] + sum(part["cleanFalsePositives"] for part in (audio, spoken) if part)
     return {"schemaVersion": waiver.CALIBRATION_SCHEMA, "locale": locale,
             "implementationSha256": waiver.implementation_sha256(),
             "semanticChecksIncluded": call is not None, "audioIncluded": audio is not None,
+            "spokenIncluded": spoken is not None,
             "semanticIdentity": None if bound is None else bound["identity"],
             "semanticIdentitySha256": None if bound is None else bound["sha256"],
             "asrIdentity": None if audio is None else audio["asrIdentity"],
@@ -272,7 +341,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", required=True, type=Path,
                         help="{locale, groups:[{groupId, english, targetText}], units?:[{groupId, text, "
-                             "sourceSeconds, wavPath, asr?}], policy?}")
+                             "sourceSeconds, wavPath, asr?}], spokenGroups?:[spoken_condensation.py qc-groups "
+                             "output], policy?}")
     parser.add_argument("--out", required=True, type=Path)
     parser.add_argument("--max-trials", type=int, default=30)
     args = parser.parse_args()
@@ -285,7 +355,7 @@ def main() -> None:
     # this offline entry records semanticChecksIncluded=false and no wrong_sentence
     # trials, so it cannot unlock a waiver.
     receipt = calibrate(value["locale"], value["groups"], units, policy=value.get("policy"),
-                        max_trials=args.max_trials)
+                        spoken_groups=value.get("spokenGroups"), max_trials=args.max_trials)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     with args.out.open("x", encoding="utf-8") as stream:
         json.dump(receipt, stream, ensure_ascii=False, indent=2, sort_keys=True)

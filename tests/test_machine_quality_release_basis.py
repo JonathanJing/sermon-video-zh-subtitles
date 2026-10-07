@@ -150,6 +150,50 @@ class TextWaiverTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "implementation other than the calibrated one"):
             basis.build_text_waiver(self.source_package, self.anchor, self.candidate, stale, calibration())
 
+    def test_condensed_spoken_groups_need_their_binding_and_spoken_calibration(self):
+        group = self.candidate["groups"][0]
+        qc = text_qc(self.candidate)
+        qc["results"][0]["mode"] = "spoken_condensed"
+        qc["condensedGroupIds"] = [group["translationGroupId"]]
+        binding = {"schemaVersion": basis.CONDENSATION_BINDING_SCHEMA, "status": "pass", "issues": [],
+                   "humanApproval": False, "targetLocale": "ko",
+                   "spokenCandidateJsonSha256": interpretation.json_sha256(self.candidate),
+                   "groups": [{"translationGroupId": group["translationGroupId"],
+                               "finalSpokenTextSha256": sha(group["targetText"])}]}
+        kinds = {**calibration()["kinds"], **{f"spoken.{kind}": {"trials": 4, "detected": 4, "rate": 1.0}
+                                              for kind in waiver.SPOKEN_KINDS}}
+        spoken = calibration(spokenIncluded=True, kinds=kinds)
+
+        def build(qc=qc, cal=spoken, binding=binding):
+            return basis.build_text_waiver(self.source_package, self.anchor, self.candidate, qc, cal,
+                                           condensation_binding=binding, created_at="2026-10-07T01:00:00+00:00")
+        receipt = build()
+        self.assertEqual(receipt["condensedGroupIds"], [group["translationGroupId"]])
+        self.assertEqual(receipt["condensationBindingJsonSha256"], basis.json_sha256(binding))
+        basis.validate_text_waiver(receipt, candidate=self.candidate)
+        self.assertEqual((self.waiver["condensedGroupIds"], self.waiver["condensationBindingJsonSha256"]), ([], None))
+        with self.assertRaisesRegex(ValueError, "disagree"):
+            basis.validate_text_waiver(dict(receipt, condensationBindingJsonSha256=None), candidate=self.candidate)
+        other = copy.deepcopy(self.candidate)
+        other["groups"][1]["targetText"] = "다른 문장입니다."
+        unlisted = copy.deepcopy(qc)
+        unlisted["condensedGroupIds"] = []
+        cases = [
+            (dict(binding=None), "need their condensation binding"),
+            (dict(cal=calibration()), "did not include condensed spoken groups"),
+            (dict(binding=dict(binding, status="fail")), "did not pass"),
+            (dict(binding=dict(binding, spokenCandidateJsonSha256=interpretation.json_sha256(other))),
+             "another spoken candidate"),
+            (dict(binding=dict(binding, groups=[])), "differ from the binding"),
+            (dict(binding=dict(binding, groups=[dict(binding["groups"][0], finalSpokenTextSha256=sha("x"))])),
+             "other spoken text"),
+            (dict(qc=unlisted), "condensed-group list differs"),
+            (dict(qc=text_qc(self.candidate)), "no group was judged condensed"),
+        ]
+        for kwargs, message in cases:
+            with self.subTest(message=message), self.assertRaisesRegex(ValueError, message):
+                build(**kwargs)
+
     def test_layer3_rejects_pending_candidate_without_any_basis(self):
         write_json(self.human_review_receipt_path, self.human_review_receipt)
         with self.assertRaisesRegex(ValueError, "Human translation approval is required"):
@@ -209,7 +253,7 @@ def audio_fixture(flagged=False):
             "reviewedGroupIds": ["g1", "g2"],
             "groupResults": [{"translationGroupId": unit["textGroupId"], "status": "pass",
                               "targetTextSha256": unit["targetTextSha256"], "failedAttempts": 0} for unit in units],
-            "textQcJsonSha256": "8" * 64,
+            "textQcJsonSha256": "8" * 64, "condensedGroupIds": [], "condensationBindingJsonSha256": None,
             "calibration": basis.calibration_summary(calibration(), "ko", IMPLEMENTATION),
             "implementationSha256": IMPLEMENTATION, "rules": basis.RULES, "disclosure": basis.disclosure("ko"),
             "createdAt": "2026-10-07T01:00:00+00:00", "postPublicationSpotCheck": "owner_spot_check_after_release"}

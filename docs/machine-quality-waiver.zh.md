@@ -13,6 +13,8 @@
   - 不配音的句子超过全篇 5%：整个语言改为只发文字（`audio_unavailable`）。
   - 失去译文的句子超过全篇 5%：该语言暂停发布。
 
+2026-10-07，Jony 在决策卡片上选了“允许精简”：**配音可以像同传一样精简措辞，字幕和阅读稿保持完整译文。** 只精简 8 秒预算标为 `shorten` 的组；可以删重复、口头填充、同义复述、插入语和举例细节，不能删主要论点、呼召、否定、数字、人名、经文出处和引语出处，也不能加内容。每处删减都声明为完整译文里的一段及其类别。
+
 机器质检豁免**不是**人工批准。豁免收据里 `humanApproval` 保持 `false`，`reviewKind` 写为 `machine_quality_waiver`，页面必须显示 `disclosure` 文案。
 
 ## 组件
@@ -20,13 +22,14 @@
 | 环节 | 入口 | 作用 |
 |---|---|---|
 | L2 逐组确定性检查 | `language_review_plugins/ko_weekly_auto.py`、`es_weekly_auto.py`（共享 `auto_qc_text_common.py`） | 每周通用，不写死任何一篇讲道。检查目标文字脚本与占位符（西语须以拉丁字母为主；中文须为简体，假名、谚文或繁体字都会失败）、未翻译的英文、语域（西语不得用 vosotros，包括省略主语的 decís、sois）、术语表人名、经文出处（英文说了就必须有，没说不能加；带书卷名的引用要对上同一卷书，66 卷的中韩西名称在 `_BIBLE_BOOKS`）、数字（数字或目标语言读法；含小数和 “nineteen ninety-nine” 这类年份读法） |
-| L2 整篇检查 | `scripts/target_text_auto_qc.py` | 长度离群：与本篇中位数比较。**回译比对**：第一次调用只给目标语言文字，翻回英文；第二次调用对比冻结英文和回译，判断有没有漏译、增译、否定、数字、人名、经文、意思偏移。模型调用由调用方注入，没有回译结果的组不能判为通过 |
+| L2 整篇检查 | `scripts/target_text_auto_qc.py` | 长度离群：与本篇中位数比较。**回译比对**：第一次调用只给目标语言文字，翻回英文；第二次调用对比冻结英文和回译，判断有没有漏译、增译、否定、数字、人名、经文、意思偏移。模型调用由调用方注入，没有回译结果的组不能判为通过。**口播模式：** 带 `condensation` 的精简组（由 `spoken_condensation.py qc-groups` 标出）不做长度离群检查，比对改用核心意思标准：允许的删减最多算轻微问题；丢了或改了主要论点、呼召、否定、数字、人名、经文、引语出处，或有任何增译、意思偏移，仍是重大问题。每组结果记 `mode`，收据记 `condensedGroupIds` |
+| 配音精简 | `scripts/spoken_condensation.py` | 读 8 秒预算，只为 `shorten` 组生成精简请求（英文句、完整译文、`maxSpeechUnits`）。精简模型由调用方注入；每次结果都做确定性检查：不超字数、删减段必须是完整译文的子串且类别允许、数字人名经文照常检查，不过关的带着问题重试，最多 2 次。记录（`sermon-spoken-condensation-record-v1`）绑定完整候选、预算（含合成身份）和精简模型身份，导出现有格式的 revision brief，口播候选沿用 L2 链生成。之后 `bind` 把口播候选绑回记录：未精简的组必须与完整译文相同，精简组（复核可能改过）重新核对字数和确定性检查 |
 | L3 单句检查 | `scripts/target_audio_auto_qc.py` | TTS 之后马上检查，指标一律从每句 WAV 解码，不接受调用方提供的指标：时长异常（与本篇语速中位数比较，以及与原声时长之比）、截断、近乎无声、静音过多、长停顿、削波、句首句尾静音过长。回转写两级：小 ASR 标出的疑点由强 ASR 复核（必须是另一个模型），两边都不一致才判失败。每个 ASR 结果都绑定所听音频和预期文字的哈希以及模型；音频重合成后沿用旧分数无效，这一句停在 `pending_primary_asr`，不能只凭声学指标通过 |
 | L3 整轨核对 | `scripts/target_audio_auto_qc.py --track-package` | 单句检查只听单句 WAV，整轨核对把它们绑到听众实际听到的音轨：PCM 母带必须与各句音频按排程起点逐样本放置的结果完全一致（漏句、错序、旧音频都会失败）；MP3 解码到 12 kHz 后，逐个可听的 50 ms 窗口比较母带波形，相关性须 ≥ 0.94、相对误差须 ≤ 0.35；不允许用整篇的通过比例掩盖短句替换。响度包络与长度差保留为辅助检查 |
 | 8 秒预算 | `scripts/target_audio_predicted_schedule.py` | 用已测音频拟合各语言语速，再用正式排程公式按**预测时长**排一次。超窗的组给出 `maxSpeechUnits`，供口播修订一次改到位。语速绑定 speech job 的合成身份（adapter、配置、模型版本、音色、说话人、conditioning、语言参数、文本规范化）和所测音频的哈希；身份不同就拒绝预算，需要重新拟合 |
-| 注错校准 | `scripts/auto_qc_seeded_errors.py` | 在干净成品里注入已知错误，统计每类检出率和干净样例的误报率。只有出现干净版本没有的新问题才算检出（错句配音必须由 ASR 判出），不会把原有误报算成检出。文字类含换书卷（wrong_book），音频类含换成别句的配音（wrong_sentence，需要注入 ASR transport） |
+| 注错校准 | `scripts/auto_qc_seeded_errors.py` | 在干净成品里注入已知错误，统计每类检出率和干净样例的误报率。只有出现干净版本没有的新问题才算检出（错句配音必须由 ASR 判出），不会把原有误报算成检出。文字类含换书卷（wrong_book），音频类含换成别句的配音（wrong_sentence，需要注入 ASR transport）。口播类（`spoken.*`）只注入精简组：换成别组内容（swapped_content）、追加别组内容（added_content）、翻转否定（flipped_negation）。删冗余本来就是精简允许的，所以口播类注的是“说的意思变了” |
 | 豁免收据 | `scripts/machine_quality_waiver.py` | 汇总最终 QC 结果，按上面的 5% 规则决定这个语言是自动发布、只发文字还是暂停。先核对 QC 收据确实检查的是这份候选（每组译文哈希）和这份音频包（候选哈希、每句音频哈希），对不上就报错 |
-| 门禁收据 | `scripts/machine_quality_release_basis.py` | 生成并校验两种绑定到具体产物的收据：**译文豁免**（`sermon-target-language-machine-text-waiver-v1`，绑定一个 L2 候选）和**试听豁免**（`sermon-target-language-machine-audio-waiver-v1`，绑定一个 L3 音频包、它的 ASR 筛查和口播稿的译文豁免） |
+| 门禁收据 | `scripts/machine_quality_release_basis.py` | 生成并校验两种绑定到具体产物的收据：**译文豁免**（`sermon-target-language-machine-text-waiver-v1`，绑定一个 L2 候选；有精简组时还必须绑定一份通过的精简绑定，组别完全一致，并记录 `condensedGroupIds` 和 `condensationBindingJsonSha256`）和**试听豁免**（`sermon-target-language-machine-audio-waiver-v1`，绑定一个 L3 音频包、它的 ASR 筛查和口播稿的译文豁免） |
 
 ## 校准门槛
 
@@ -35,7 +38,7 @@
 - 校准收据的 `implementationSha256` 与当前 QC 代码一致。代码一改，必须重新校准。文字和音频 QC 收据也记录运行时的 `implementationSha256`，旧代码生成的 QC 结果不能搭配新校准使用。
 - 校准时回译检查实际参与了（`semanticChecksIncluded=true`），且 `text.semantic_negation` 注错必须新增明确的回译问题；确定性规则发现的表面错误不能计为这一类的检出。
 - 本次 QC 用的回译运行身份 `semanticIdentity` 必须包含非空 `backend`、`model`、`modelRevision`、`cacheNamespace` 和非空 `settings` 对象（声明实际解码、推理等设置）。规范化 JSON 后绑定哈希，拒绝非有限数值。该身份和 ASR 模型必须与校准时一致；改变设置、缓存命名空间、模型修订或后端，必须重新校准。
-- 按本次交付所需注错类别的计数重算总检出率 ≥ 95%，每类 ≥ 90%。收据中每类及总体的计数与预存比率必须一致；布尔值、负计数或检出数大于试验数均拒绝。每一类注错都必须实际试过（`trials > 0`）；缺一类或某类零样本都算校准不足。要发配音时，校准还必须包含音频各类；只发文字时，音频类的结果不影响放行。
+- 按本次交付所需注错类别的计数重算总检出率 ≥ 95%，每类 ≥ 90%。收据中每类及总体的计数与预存比率必须一致；布尔值、负计数或检出数大于试验数均拒绝。每一类注错都必须实际试过（`trials > 0`）；缺一类或某类零样本都算校准不足。要发配音时，校准还必须包含音频各类；只发文字时，音频类的结果不影响放行。QC 判过精简组时，校准还必须包含口播各类（`spokenIncluded=true`）。
 - 干净样例误报率按 `cleanFalsePositives / cleanChecked` 重算并核对，必须 ≤ 10%，且实际检查至少一个干净样例。
 
 只做离线确定性检查时，“删掉半句”这类错误只能检出约 58% 到 75%（见测试样例）。这正是必须加入回译检查的原因。
@@ -52,7 +55,14 @@ python scripts/target_audio_predicted_schedule.py budget --input groups.json --r
 python scripts/target_audio_auto_qc.py --input units.json --out audio-qc.json
 # 整轨核对（读取音频包里的排程、单句音频和音轨；MP3 需要 ffmpeg 和同名 .wav 母带）
 python scripts/target_audio_auto_qc.py --track-package audio-package.json --out track-check.json
-# 离线注错校准（不含回译和 ASR transport，因此不能单独解锁豁免）
+# 精简记录导出 L2 revision brief（精简本身需要注入模型 transport，没有离线命令）
+python scripts/spoken_condensation.py brief --record condensation.json --candidate full-candidate.json --out brief.json
+# 口播候选生成后绑回记录，再写出口播 QC 的输入（精简组带 condensation）
+python scripts/spoken_condensation.py bind --record condensation.json --candidate full-candidate.json \
+  --anchor anchor.json --spoken-candidate spoken-candidate.json --policy policy.json --out condensation-binding.json
+python scripts/spoken_condensation.py qc-groups --binding condensation-binding.json --anchor anchor.json \
+  --spoken-candidate spoken-candidate.json --out spoken-qc-groups.json
+# 离线注错校准（不含回译和 ASR transport，因此不能单独解锁豁免；spokenGroups 为上面的 qc-groups 输出）
 python scripts/auto_qc_seeded_errors.py --input calibration-input.json --out calibration.json
 # 豁免决定
 python scripts/machine_quality_waiver.py --locale ko --candidate candidate.json \
@@ -61,6 +71,9 @@ python scripts/machine_quality_waiver.py --locale ko --candidate candidate.json 
 # 译文豁免收据（代替人工译文审核收据）
 python scripts/machine_quality_release_basis.py text --source source.json --anchor anchor.json \
   --candidate candidate.json --text-qc text-qc.json --calibration calibration.json --out text-waiver.json
+# 口播稿有精简组时，还要给精简绑定
+python scripts/machine_quality_release_basis.py text ... --candidate spoken-candidate.json \
+  --condensation-binding condensation-binding.json --out spoken-text-waiver.json
 # 用译文豁免进入第 3 层：写出 speech job v3
 python scripts/prepare_target_language_speech_job.py ... --text-release-basis text-waiver.json --out speech-job
 # 试听豁免收据（代替人工试听收据）；ASR 标出的句子必须有强 ASR 复核
@@ -90,6 +103,6 @@ python scripts/machine_quality_release_basis.py audio --package audio-package.js
 2. 回译检查的真实模型 transport（沿用 L2 的后端身份与缓存规则），以及首次真实校准。
 3. 冻结 policy 时，为韩/西选择 `ko-weekly-auto-v1` / `es-weekly-auto-v1` 插件，并把 `requiredChecks` 设为 `auto_qc_text_common.REQUIRED`。
 4. 只显字幕的句子、改显英文的句子和只发文字的语言（`audio_unavailable`）。
-5. 口播修订 prompt 读取 `maxSpeechUnits`。
+5. 配音精简的后半段：配音时的字幕改为显示完整译文（时间仍跟配音走），发布包记录精简记录的哈希，网页和 iOS 的提示文案同步。精简模型和回译模型的真实 transport，以及首次口播校准，需要授权后运行。
 6. 英文转写审核、页面信息、大纲与默想的机器检查，以及每周发布授权改为长期授权。
 7. 严格链（`sermon_strict_candidate_bridge` / `sermon_strict_gate_admission`）的门禁决定把收据记为人工批准，所以严格链目前只收人工收据，遇到译文豁免会以 `strict_bridge_requires_human_receipt` 拒绝。译文豁免目前只能走 `prepare_target_language_speech_job.py --text-release-basis`；严格链要接受豁免，门禁决定需要单独记录豁免状态。

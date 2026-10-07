@@ -19,7 +19,8 @@ so this module performs no network access and tests use fakes. Its record
 exports a ``sermon-target-language-group-revision-brief-v1`` whose
 ``proposedTargetText`` feeds the normal Layer 2 chain
 (``run_target_language_models.py --revision-brief``); the spoken candidate
-that chain produces is then bound back with ``bind_spoken_candidate``. Nothing
+that chain produces is then bound back with ``bind_spoken_candidate``, and
+``qc_groups`` marks its condensed groups for the core-meaning text QC. Nothing
 here edits the full candidate or grants approval.
 """
 from __future__ import annotations
@@ -272,6 +273,28 @@ def bind_spoken_candidate(record: dict, anchor: dict, candidate: dict, spoken: d
             "spokenCandidateJsonSha256": _sha(spoken), "groups": rows, "humanApproval": False}
 
 
+def qc_groups(binding: dict, anchor: dict, spoken: dict) -> list[dict]:
+    """Text QC input (``target_text_auto_qc.screen``) for a bound spoken candidate.
+
+    Only the groups the passing binding covers carry ``condensation``, so only
+    they are judged by the core-meaning rubric."""
+    if binding.get("schemaVersion") != BINDING_SCHEMA or binding.get("status") != "pass":
+        raise ValueError("Spoken candidate binding did not pass")
+    if binding.get("spokenCandidateJsonSha256") != _sha(spoken):
+        raise ValueError("Binding belongs to another spoken candidate")
+    english = {unit["sourceUnitId"]: unit["english"] for unit in anchor["sourceUnits"]}
+    condensed = {row["translationGroupId"] for row in binding["groups"]}
+    rows = []
+    for group in spoken["groups"]:
+        row = {"groupId": group["translationGroupId"], "targetText": group["targetText"],
+               "english": " ".join(english[unit_id] for unit_id in group["sourceUnitIds"])}
+        if group["translationGroupId"] in condensed:
+            row["condensation"] = {"condensationRecordJsonSha256": binding["condensationRecordJsonSha256"],
+                                   "fullCandidateJsonSha256": binding["fullCandidateJsonSha256"]}
+        rows.append(row)
+    return rows
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -281,8 +304,12 @@ def main() -> None:
         command.add_argument("--record", required=True, type=Path)
         command.add_argument("--candidate", required=True, type=Path)
         command.add_argument("--out", required=True, type=Path)
-    bind.add_argument("--anchor", required=True, type=Path)
-    bind.add_argument("--spoken-candidate", required=True, type=Path)
+    qc = sub.add_parser("qc-groups", help="Write the text QC groups of a bound spoken candidate")
+    qc.add_argument("--binding", required=True, type=Path)
+    qc.add_argument("--out", required=True, type=Path)
+    for command in (bind, qc):
+        command.add_argument("--anchor", required=True, type=Path)
+        command.add_argument("--spoken-candidate", required=True, type=Path)
     bind.add_argument("--policy", type=Path)
     args = parser.parse_args()
 
@@ -290,9 +317,11 @@ def main() -> None:
         return json.loads(path.read_text(encoding="utf-8"))
     if args.command == "brief":
         value = revision_brief(read(args.record), read(args.candidate))
-    else:
+    elif args.command == "bind":
         value = bind_spoken_candidate(read(args.record), read(args.anchor), read(args.candidate),
                                       read(args.spoken_candidate), read(args.policy) if args.policy else None)
+    else:
+        value = qc_groups(read(args.binding), read(args.anchor), read(args.spoken_candidate))
     args.out.parent.mkdir(parents=True, exist_ok=True)
     with args.out.open("x", encoding="utf-8") as stream:
         json.dump(value, stream, ensure_ascii=False, indent=2, sort_keys=True)

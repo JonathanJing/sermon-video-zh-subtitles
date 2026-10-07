@@ -33,6 +33,7 @@ from scripts import machine_quality_waiver as waiver
 ROOT = Path(__file__).resolve().parents[1]
 TEXT_WAIVER_SCHEMA = "sermon-target-language-machine-text-waiver-v1"
 AUDIO_WAIVER_SCHEMA = "sermon-target-language-machine-audio-waiver-v1"
+CONDENSATION_BINDING_SCHEMA = "sermon-spoken-condensation-binding-v1"
 REVIEW_KIND = "machine_quality_waiver"
 LOCALES = ("zh-Hans", "ko", "es")
 MACHINE_PENDING_CANDIDATE = "machine_review_pass_human_review_pending"
@@ -79,11 +80,13 @@ def _now() -> str:
 
 
 def calibration_summary(calibration: dict, locale: str, implementation: str, *,
-                        require_audio: bool = False) -> dict:
-    problems = waiver.calibration_problems(calibration, locale, implementation, require_audio=require_audio)
+                        require_audio: bool = False, require_spoken: bool = False) -> dict:
+    problems = waiver.calibration_problems(calibration, locale, implementation,
+                                           require_audio=require_audio, require_spoken=require_spoken)
     _require(not problems, "Calibration does not allow a waiver: " + "; ".join(problems))
-    expected = [f"text.{kind}" for kind in waiver.TEXT_KINDS] + (
-        [f"audio.{kind}" for kind in waiver.AUDIO_KINDS] if require_audio else [])
+    expected = ([f"text.{kind}" for kind in waiver.TEXT_KINDS]
+                + ([f"audio.{kind}" for kind in waiver.AUDIO_KINDS] if require_audio else [])
+                + ([f"spoken.{kind}" for kind in waiver.SPOKEN_KINDS] if require_spoken else []))
     rates = [calibration["kinds"][kind]["rate"] for kind in expected]
     return {"jsonSha256": json_sha256(calibration), "implementationSha256": implementation,
             "semanticChecksIncluded": True,
@@ -123,10 +126,37 @@ def machine_pending_candidate(candidate: dict) -> bool:
                     for group in groups))
 
 
+def condensation_problems(candidate: dict, condensed: list[str], binding: dict | None) -> list[str]:
+    """Groups judged as condensed spoken text must be exactly those a passing
+    ``spoken_condensation`` binding bound in this candidate."""
+    if not condensed:
+        return [] if binding is None else ["a condensation binding was given but no group was judged condensed"]
+    if binding is None:
+        return ["condensed groups need their condensation binding"]
+    texts = {group["translationGroupId"]: _text_sha(group["targetText"]) for group in candidate["groups"]}
+    rows = binding.get("groups") or []
+    problems = []
+    if (binding.get("schemaVersion") != CONDENSATION_BINDING_SCHEMA or binding.get("status") != "pass"
+            or binding.get("issues") or binding.get("humanApproval") is not False):
+        problems.append("condensation binding did not pass")
+    if (binding.get("targetLocale") != candidate.get("targetLocale")
+            or binding.get("spokenCandidateJsonSha256") != json_sha256(candidate)):
+        problems.append("condensation binding belongs to another spoken candidate")
+    if [row.get("translationGroupId") for row in rows] != condensed:
+        problems.append("condensed groups differ from the binding's groups")
+    elif any(row.get("finalSpokenTextSha256") != texts[row["translationGroupId"]] for row in rows):
+        problems.append("condensation binding bound other spoken text")
+    return problems
+
+
 def build_text_waiver(source: dict, anchor: dict, candidate: dict, text_qc: dict,
-                      calibration: dict, *, implementation: str | None = None,
-                      created_at: str | None = None) -> dict:
-    """Issue a text waiver from final text QC; refuse anything not fully passing."""
+                      calibration: dict, *, condensation_binding: dict | None = None,
+                      implementation: str | None = None, created_at: str | None = None) -> dict:
+    """Issue a text waiver from final text QC; refuse anything not fully passing.
+
+    A spoken candidate with groups condensed for dubbing needs the passing
+    ``spoken_condensation`` binding of exactly those groups, and a calibration
+    that seeded errors into condensed groups."""
     implementation = implementation or waiver.implementation_sha256()
     locale = candidate.get("targetLocale")
     _require(locale in LOCALES, "Machine waivers cover zh-Hans, ko and es only")
@@ -150,7 +180,12 @@ def build_text_waiver(source: dict, anchor: dict, candidate: dict, text_qc: dict
     for row, group in zip(results, groups):
         _require(row.get("targetTextSha256") == _text_sha(group["targetText"]),
                  f"Text QC screened different text: {group['translationGroupId']}")
-    summary = calibration_summary(calibration, locale, implementation)
+    condensed = [row["groupId"] for row in results if row.get("mode") == "spoken_condensed"]
+    _require(list(text_qc.get("condensedGroupIds") or []) == condensed,
+             "Text QC condensed-group list differs from its per-group results")
+    condensation = condensation_problems(candidate, condensed, condensation_binding)
+    _require(not condensation, "Condensed spoken groups are not bound: " + "; ".join(condensation))
+    summary = calibration_summary(calibration, locale, implementation, require_spoken=bool(condensed))
     runtime = waiver.runtime_identity_problems(calibration, text_qc=text_qc)
     _require(not runtime, "Text QC runtime differs from calibration: " + "; ".join(runtime))
     receipt = {
@@ -166,6 +201,8 @@ def build_text_waiver(source: dict, anchor: dict, candidate: dict, text_qc: dict
                           "failedAttempts": int(row.get("failedAttempts", 0))}
                          for row, group in zip(results, groups)],
         "textQcJsonSha256": json_sha256(text_qc),
+        "condensedGroupIds": condensed,
+        "condensationBindingJsonSha256": None if condensation_binding is None else json_sha256(condensation_binding),
         "calibration": summary,
         "implementationSha256": implementation, "rules": RULES,
         "disclosure": disclosure(locale), "createdAt": created_at or _now(),
@@ -195,6 +232,10 @@ def validate_text_waiver(receipt: dict, *, candidate: dict, source_sha: str | No
              and all(row["targetTextSha256"] == _text_sha(group["targetText"])
                      for row, group in zip(receipt["groupResults"], candidate["groups"])),
              "Text waiver has missing or mismatched group results")
+    condensed = receipt["condensedGroupIds"]
+    _require(condensed == [group_id for group_id in group_ids if group_id in set(condensed)]
+             and (not condensed) == (receipt["condensationBindingJsonSha256"] is None),
+             "Text waiver condensed groups and binding disagree")
     _validate_summary(receipt)
 
 
@@ -387,6 +428,8 @@ def main() -> None:
     text = sub.add_parser("text", help="Issue a text waiver for one candidate")
     for name in ("source", "anchor", "candidate", "text-qc", "calibration", "out"):
         text.add_argument(f"--{name}", required=True, type=Path)
+    text.add_argument("--condensation-binding", type=Path,
+                      help="The passing spoken_condensation binding when the candidate has condensed groups")
     audio = sub.add_parser("audio", help="Issue an audio waiver for one audio package")
     for name in ("package", "screening", "audio-qc", "track-check", "text-waiver", "calibration", "out"):
         audio.add_argument(f"--{name}", required=True, type=Path)
@@ -394,7 +437,9 @@ def main() -> None:
     args = parser.parse_args()
     if args.command == "text":
         receipt = build_text_waiver(_read(args.source), _read(args.anchor), _read(args.candidate),
-                                    _read(args.text_qc), _read(args.calibration))
+                                    _read(args.text_qc), _read(args.calibration),
+                                    condensation_binding=_read(args.condensation_binding)
+                                    if args.condensation_binding else None)
     else:
         receipt = build_audio_waiver(_read(args.package), _read(args.screening), _read(args.audio_qc),
                                      _read(args.text_waiver), _read(args.calibration),
