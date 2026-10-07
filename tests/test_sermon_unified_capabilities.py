@@ -66,6 +66,18 @@ def test_freeze_revalidates_all_inputs_and_never_approves_future(config):
     with pytest.raises(ValueError,match='snapshot_changed'):c.inspect(output)
 
 
+def test_machine_version_also_binds_machine_checked_schemas(config):
+    value=json.loads(config.read_text())
+    value['schemaVersion']=c.MACHINE_VERSION
+    config.write_text(json.dumps(value))
+    with pytest.raises(ValueError,match='schema_versions'):c.inspect(config)
+    value['targetSchemaVersions']={**c.SCHEMAS,**c.MACHINE_SCHEMAS}
+    config.write_text(json.dumps(value))
+    result=c.inspect(config)
+    assert result['targetSchemaVersions']['release']=='sermon-target-language-release-package-v3'
+    assert {'schema:machineCatalog','schema:machineRelease','schema:machineContent'}<=set(result['inputHashes'])
+
+
 @pytest.mark.parametrize('change,match', [('missing','No such file'),('wrong_source','attestation_binding'),('unverified','not_verified'),('route','route mismatch'),('schema','schema_versions')])
 def test_capabilities_fail_closed(config,change,match):
     value=json.loads(config.read_text())

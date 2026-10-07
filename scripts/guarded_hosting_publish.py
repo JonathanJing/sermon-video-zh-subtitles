@@ -135,17 +135,33 @@ def public_catalog(reader, origin):
     return hashlib.sha256(data).hexdigest()
 
 
+def public_catalog_v4(reader, origin):
+    """Live v4 catalog hash, or None while the site has never published one."""
+    from urllib.error import HTTPError
+    try:
+        status, data = reader(origin + '/multilingual-v4.json')
+    except HTTPError as error:
+        status, data = error.code, b''
+    if status == 404:
+        return None
+    contract.require(status == 200, 'Live v4 catalog cannot be read')
+    return hashlib.sha256(data).hexdigest()
+
+
 def publish(snapshot, *, intent, routes, baseline_version, baseline_catalog_sha,
-            lease_bucket, request, reader, run=subprocess.run, heartbeat_interval=5):
+            lease_bucket, request, reader, run=subprocess.run, heartbeat_interval=5,
+            baseline_catalog_v4_sha=None):
+    """``baseline_catalog_v4_sha`` is the live v4 catalog the snapshot was built on (None: none yet)."""
     contract.require(heartbeat_interval > 0, 'Heartbeat interval must be positive')
     with publisher_lock(snapshot):
         return _publish(snapshot, intent=intent, routes=routes, baseline_version=baseline_version,
                         baseline_catalog_sha=baseline_catalog_sha, lease_bucket=lease_bucket,
-                        request=request, reader=reader, run=run, heartbeat_interval=heartbeat_interval)
+                        request=request, reader=reader, run=run, heartbeat_interval=heartbeat_interval,
+                        baseline_catalog_v4_sha=baseline_catalog_v4_sha)
 
 
 def _publish(snapshot, *, intent, routes, baseline_version, baseline_catalog_sha,
-             lease_bucket, request, reader, run, heartbeat_interval):
+             lease_bucket, request, reader, run, heartbeat_interval, baseline_catalog_v4_sha):
     snapshot = Path(snapshot)
     contract.validate_intent(intent, routes)
     contract.validate_catalog_snapshot(snapshot)
@@ -164,6 +180,7 @@ def _publish(snapshot, *, intent, routes, baseline_version, baseline_catalog_sha
         progress.update('checking_baseline')
         contract.require(live_version(request, intent['site']) == baseline_version, 'Live version changed; rebuild against current snapshot')
         contract.require(public_catalog(reader, intent['origin']) == baseline_catalog_sha, 'Live catalog changed; rebuild against current snapshot')
+        contract.require(public_catalog_v4(reader, intent['origin']) == baseline_catalog_v4_sha, 'Live v4 catalog changed; rebuild against current snapshot')
         # Preserve the candidate hosting headers/rewrites, bind its public root and exact site.
         config_path = snapshot / 'firebase.json'
         config = json.loads(config_path.read_text()) if config_path.exists() else {'hosting': {}}
@@ -186,6 +203,7 @@ def _publish(snapshot, *, intent, routes, baseline_version, baseline_catalog_sha
         version = live_version(request, intent['site'])
         contract.require(version != baseline_version, 'No new Hosting version observed')
         contract.require(public_catalog(reader, intent['origin']) == attempt['catalogSha256'], 'Published catalog readback differs')
+        contract.require(public_catalog_v4(reader, intent['origin']) == report.get('catalogV4Sha256'), 'Published v4 catalog readback differs')
         attempt.update(newVersion=version, completedAt=datetime.now(timezone.utc).isoformat(), status='deployed')
         atomic_json(receipt_path, attempt)
         lease.release()
@@ -221,6 +239,9 @@ def _reconcile(snapshot, *, request, reader, confirmed_version):
     observed = live_version(request, attempt['intent']['site'])
     contract.require(observed == confirmed_version and observed != attempt['baselineVersion'], 'Explicit confirmed new version differs')
     contract.require(public_catalog(reader, attempt['intent']['origin']) == attempt['catalogSha256'], 'Remote catalog differs; manual recovery required')
+    report = json.loads((Path(snapshot) / 'seal-report.json').read_text())
+    contract.require(public_catalog_v4(reader, attempt['intent']['origin']) == report.get('catalogV4Sha256'),
+                     'Remote v4 catalog differs; manual recovery required')
     attempt.update(status='deployed', newVersion=observed, completedAt=datetime.now(timezone.utc).isoformat())
     atomic_json(path, attempt)
     lease.release()

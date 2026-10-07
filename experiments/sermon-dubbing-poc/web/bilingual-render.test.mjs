@@ -45,3 +45,34 @@ test('shipped transcript renders English once, collapsed, without seeking', () =
   assert.ok($('transcript-list').children.every(row => row.children.length === 2));
   assert.match($('transcript-description').textContent, /英文原文暂缺/);
 });
+
+test('machine-checked transcript hints never reuse the approved wording, in every interface language', async () => {
+  const source = fs.readFileSync(new URL('./app.mjs', import.meta.url), 'utf8');
+  const render = source.slice(source.indexOf('function renderTranscript()'), source.indexOf('\nfunction selectTrack('));
+  const tables = { zh: messages.zh, en: messages.en, ko: (await import('./locales-ko.mjs')).messages, es: (await import('./locales-es.mjs')).messages };
+  class Element {
+    constructor(tag) { this.dataset = {}; this.tagName = tag; this.children = []; }
+    append(...children) { this.children.push(...children); }
+    replaceChildren() { this.children = []; }
+    setAttribute() {}
+    addEventListener() {}
+  }
+  for (const [locale, table] of Object.entries(tables)) {
+    for (const machine of [true, false]) {
+      const elements = new Map(['transcript-list', 'transcript-description'].map(id => [id, new Element('div')]));
+      const week = { contentVariants: {}, fullTranscript: [{ start: 0, text: '전체' }], targetLocale: 'ko',
+        ...(machine ? { fullTextHint: 'content-language hint', spokenHint: 'content-language hint' } : {}) };
+      const context = vm.createContext({ setIcon, setButtonLabel, $: id => elements.get(id), track: { cues: [] }, week,
+        bilingualCueRows: () => ({ rows: [], hasEnglish: false, missingEnglish: false }), contentLocale: 'ko',
+        englishByCue: [], englishDetails: [], transcriptRows: [], updateCurrentEnglish() {}, t: key => table[key],
+        document: { createElement: tag => new Element(tag) }, formatTime: String });
+      vm.runInContext(render + '\nrenderTranscript();', context);
+      const spoken = elements.get('transcript-description').textContent;
+      const full = elements.get('transcript-list').children[0].children[1].textContent;
+      const suffix = machine ? 'Machine' : '';
+      assert.equal(spoken, table[`app.content.spokenHint${suffix}`], `${locale} spoken`);
+      assert.equal(full, table[`app.content.fullTextHint${suffix}`], `${locale} full`);
+      if (machine) assert.doesNotMatch(`${spoken} ${full}`, /已审核|approved|aprobad|검토가 완료/, locale);
+    }
+  }
+});

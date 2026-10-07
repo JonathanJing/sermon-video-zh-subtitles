@@ -208,6 +208,8 @@ export const messages = Object.freeze({
   "app.content.fullText": "전체 읽기 원고",
   "app.content.fullTextHint": "검토가 완료된 전체 읽기 원고입니다. 시간은 영어 원본 영상을 기준으로 합니다. 음성에는 짧게 다듬은 원고를 사용하므로 들으면서 따라 읽을 때는 음성 자막을 보세요.",
   "app.content.spokenHint": "현재 자막은 검토가 완료된 짧은 낭독 원고의 음성을 따릅니다.",
+  "app.content.fullTextHintMachine": "기계 품질 검사 후 자동으로 게시된 전체 읽기 원고이며 사람의 검토를 거치지 않았습니다. 시간은 영어 원본 영상을 기준으로 합니다. 음성에는 짧게 다듬은 원고를 사용하므로 들으면서 따라 읽을 때는 음성 자막을 보세요.",
+  "app.content.spokenHintMachine": "현재 자막은 짧은 낭독 원고의 음성을 따릅니다. 이 더빙은 기계 품질 검사를 거쳤으며 사람의 검토를 거치지 않았습니다.",
   "player.aheadAria": "음성이 빠르면 1초 뒤로 이동",
   "player.behindAria": "음성이 느리면 1초 앞으로 이동",
   "app.voice.active": "AI 합성 더빙 · {speaker}",

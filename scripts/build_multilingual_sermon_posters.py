@@ -32,6 +32,34 @@ COPY = {
                disclaimer='Producción independiente · Traducción y voz asistidas por IA · No es una publicación oficial de la iglesia'),
 }
 
+# A machine quality waiver is never a human review: name what each product went through.
+MACHINE_REVIEW_LABELS = {
+    'zh-Hans': {('machine_checked', 'machine_checked'): '译文与配音经机器质检 · 未经人工审核',
+                ('human_reviewed', 'machine_checked'): '译文已审核 · 配音经机器质检',
+                ('machine_checked', 'human_reviewed'): '译文经机器质检 · 配音已审核'},
+    'ko': {('machine_checked', 'machine_checked'): '번역과 음성 기계 품질 검사 · 사람 검토 없음',
+           ('human_reviewed', 'machine_checked'): '번역 검토 완료 · 음성 기계 품질 검사',
+           ('machine_checked', 'human_reviewed'): '번역 기계 품질 검사 · 음성 검토 완료'},
+    'es': {('machine_checked', 'machine_checked'): 'Traducción y audio con control de calidad automático · Sin revisión humana',
+           ('human_reviewed', 'machine_checked'): 'Traducción revisada · Audio con control de calidad automático',
+           ('machine_checked', 'human_reviewed'): 'Traducción con control de calidad automático · Audio revisado'},
+}
+CATALOGS = (('multilingual-v4.json', 'sermon-multilingual-catalog-v4'),
+            ('multilingual-v3.json', 'sermon-multilingual-catalog-v3'))
+
+
+def review_label(locale, package):
+    statuses = (package.get('contentStatus'), package.get('audioStatus'))
+    if statuses == ('human_reviewed', 'human_reviewed'):
+        return COPY[locale]['reviewLabel']
+    disclosure = package.get('disclosure')
+    if (statuses not in MACHINE_REVIEW_LABELS[locale]
+            or package.get('schemaVersion') != 'sermon-target-language-release-package-v4'
+            or not isinstance(disclosure, dict) or disclosure.get('locale') != locale
+            or not str(disclosure.get('text', '')).strip()):
+        raise ValueError('locale must have a published, reviewed text and audio package: ' + locale)
+    return MACHINE_REVIEW_LABELS[locale][statuses]
+
 
 def origin_url(value):
     parsed = urlsplit(value)
@@ -61,15 +89,17 @@ def checked_json(path, expected=None):
 
 def load_sources(release, page_id, origin):
     public = release / 'public'
-    catalog, catalog_sha = checked_json(public / 'multilingual-v3.json')
-    if catalog.get('schemaVersion') != 'sermon-multilingual-catalog-v3':
-        raise ValueError('expected multilingual v3 catalog')
+    # New clients read v4 first; v3 is its human-only projection and lacks machine-checked weeks.
+    name, version = next((row for row in CATALOGS if (public / row[0]).is_file()), CATALOGS[-1])
+    catalog, catalog_sha = checked_json(public / name)
+    if catalog.get('schemaVersion') != version:
+        raise ValueError('expected multilingual v3 or v4 catalog')
     pages = [page for page in catalog['pages'] if page['id'] == page_id]
     if len(pages) != 1:
         raise ValueError('page ID must match exactly one published page')
     page = pages[0]
     datetime.date.fromisoformat(page['date'])
-    checks = {'/multilingual-v3.json': catalog_sha}
+    checks = {'/' + name: catalog_sha}
     bundles = {}
     for locale, copy in COPY.items():
         target = page['targets'][locale]
@@ -77,9 +107,10 @@ def load_sources(release, page_id, origin):
         package, package_sha = checked_json(asset_file(public, release_path), target['releasePackageJsonSha256'])
         if (package.get('pageId') != page_id or package.get('targetLocale') != locale or
                 package.get('status') != 'published_http_verified' or
-                package.get('contentStatus') != 'human_reviewed' or
-                package.get('audioStatus') != 'human_reviewed'):
+                (package.get('contentStatus'), package.get('audioStatus')) !=
+                (target.get('contentStatus', 'human_reviewed'), target.get('audioStatus', 'human_reviewed'))):
             raise ValueError('locale must have a published, reviewed text and audio package: ' + locale)
+        label = review_label(locale, package)
         assets = [a for a in package['assets'] if a['role'] == 'content']
         if len(assets) != 1:
             raise ValueError('expected one approved content asset')
@@ -94,7 +125,7 @@ def load_sources(release, page_id, origin):
         labels = {k: v for k, v in copy.items() if k not in ('lang', 'tagline', 'reviewLabel')}
         brief = dict(locale=locale, date=page['date'], origin=origin,
                      **{key: content[key] for key in ('title', 'series', 'scripture', 'speaker')},
-                     tagline=copy['tagline'], reviewLabel=copy['reviewLabel'], labels=labels,
+                     tagline=copy['tagline'], reviewLabel=label, labels=labels,
                      qrURL=origin + '/?' + urlencode(dict(week=page_id, contentLang=locale, lang=copy['lang'])))
         checks.update({release_path: package_sha, assets[0]['path']: content_sha})
         bundles[locale] = dict(brief=brief, source=dict(pageId=page_id, targetLocale=locale,

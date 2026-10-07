@@ -84,6 +84,7 @@ jobs:
           tests.test_tongxing_interface_locales
           tests.test_shared_client_contract_fixtures
           tests.test_shared_text_only_release_fixtures
+          tests.test_shared_machine_checked_fixtures
           tests.test_shared_video_delivery_fixtures
           tests.test_pipeline_compatibility_gate
 
@@ -94,6 +95,7 @@ jobs:
           experiments/sermon-dubbing-poc/web/shared-catalog-pages.test.mjs
           experiments/sermon-dubbing-poc/web/shared-release-contracts.test.mjs
           experiments/sermon-dubbing-poc/web/shared-text-only-releases.test.mjs
+          experiments/sermon-dubbing-poc/web/shared-machine-checked-contracts.test.mjs
           experiments/sermon-dubbing-poc/web/shared-video-delivery.test.mjs
           experiments/sermon-dubbing-poc/web/dev-candidate-reader.test.mjs
           experiments/sermon-dubbing-poc/web/fingerprint-baseline.test.mjs
@@ -189,6 +191,7 @@ jobs:
           tests/test_sermon_unified_canonical_binding.py
           tests/test_sermon_unified_final_audit.py
           tests/test_public_study_delivery.py
+          tests/test_machine_checked_delivery.py
           tests/test_sermon_study_generation.py
           tests/test_sermon_unified_continuation.py
           tests/test_sermon_unified_continuation_owner.py

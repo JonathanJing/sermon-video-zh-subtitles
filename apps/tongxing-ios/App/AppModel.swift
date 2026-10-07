@@ -27,7 +27,7 @@ final class AppModel: ObservableObject {
     static func selectableTargets(in page: MultilingualPage, allowDevCandidates: Bool) -> [(locale: String, target: PageTarget)] {
         guard allowDevCandidates || (page.diagnosticOnly != true && page.simulationOnly != true) else { return [] }
         return page.targets.filter { _, target in
-            (target.contentStatus == "human_reviewed" || (allowDevCandidates && target.contentStatus == "machine_reviewed"))
+            (target.isPublishedContent || (allowDevCandidates && target.contentStatus == "machine_reviewed"))
                 && (allowDevCandidates || (target.diagnosticOnly != true && target.simulationOnly != true))
         }.sorted { $0.key.localizedStandardCompare($1.key) == .orderedAscending }
             .map { (locale: $0.key, target: $0.value) }
@@ -198,7 +198,7 @@ final class AppModel: ObservableObject {
 
     private func preparePublishedAudioIfNeeded() {
         guard selectedWeek == nil, selectedAudioLocale == nil,
-              selectedContentTarget?.audioStatus == "human_reviewed",
+              selectedContentTarget?.hasPublishedAudio == true,
               !isPreparingPublishedAudio, !playback.isPreview else { return }
         Task { [weak self] in await self?.prepareSelectedPublishedAudio() }
     }
@@ -307,14 +307,26 @@ final class AppModel: ObservableObject {
         }
         return nil
     }
+    /// A machine-checked locale passed a bound machine quality waiver. It is never
+    /// a human approval; the UI shows the "机器质检" label and the release disclosure.
+    var selectedContentIsMachineChecked: Bool { selectedContentTarget?.isMachineChecked == true }
+    /// The verified release's same-locale disclosure, available once the transcript is verified.
+    var selectedMachineCheckedDisclosure: String? {
+        guard selectedContentIsMachineChecked else { return nil }
+        return currentPublishedTranscript?.disclosure?.text
+    }
+    /// The playing published audio was admitted by a machine quality waiver, not a human listening review.
+    var selectedAudioIsMachineChecked: Bool {
+        selectedAudioLocale.flatMap { selectedMultilingualPage?.targets[$0] }?.audioStatus == "machine_checked"
+    }
     var selectedContentTarget: PageTarget? { selectedMultilingualPage?.targets[selectedContentLocale] }
     var fullVideoURL: URL? {
-        guard multilingualCatalog?.schemaVersion == MultilingualCatalog.dualScriptSchemaVersion,
+        guard multilingualCatalog?.isDualScript == true,
               let page = selectedMultilingualPage, page.mediaType != "podcast" else { return nil }
         return mediaOrigin.appendingPathComponent("pages/\(page.id)/full-video-browser.mp4")
     }
     var usesNativePublishedReader: Bool {
-        selectedWeek == nil && multilingualCatalog?.schemaVersion == MultilingualCatalog.dualScriptSchemaVersion
+        selectedWeek == nil && multilingualCatalog?.isDualScript == true
     }
     var publishedTranscriptSelectionKey: String? {
         guard usesNativePublishedReader, let page = selectedMultilingualPage,
@@ -390,7 +402,7 @@ final class AppModel: ObservableObject {
     func loadPublishedHeading(_ page: MultilingualPage) async {
         let key = publishedHeadingKey(page)
         guard publishedHeadings[key] == nil,
-              multilingualCatalog?.schemaVersion == MultilingualCatalog.dualScriptSchemaVersion,
+              multilingualCatalog?.isDualScript == true,
               canSelectContent(page.defaultTargetLocale, in: page),
               let multilingualRepository else { return }
         do {
@@ -468,7 +480,7 @@ final class AppModel: ObservableObject {
     var selectedAudioLanguageName: String? { selectedAudioLocale.map(Self.languageName) }
     var selectedContentCapabilitySummary: String {
         guard let target = selectedContentTarget else { return "当前中文版本" }
-        return target.audioStatus == "human_reviewed" ? "文字 · 音频" : "仅文字"
+        return target.hasPublishedAudio ? "文字 · 音频" : "仅文字"
     }
     var selectionKey: String? {
         guard let week = selectedWeek, let track = selectedTrack else { return nil }
@@ -525,7 +537,7 @@ final class AppModel: ObservableObject {
             multilingualCatalog = result.catalog
             multilingualNotice = result.warning
             let usePublishedDefault = preferPublishedDefault
-                && result.catalog.schemaVersion == MultilingualCatalog.dualScriptSchemaVersion
+                && result.catalog.isDualScript
                 && independentPages.contains(where: { $0.id == result.catalog.defaultPageId })
             if usePublishedDefault {
                 selectPublishedPage(result.catalog.defaultPage)
@@ -653,7 +665,7 @@ final class AppModel: ObservableObject {
     func prepareSelectedPublishedAudio() async {
         guard selectedWeek == nil, !isPreparingPublishedAudio,
               let page = selectedMultilingualPage,
-              page.targets[selectedContentLocale]?.audioStatus == "human_reviewed",
+              page.targets[selectedContentLocale]?.hasPublishedAudio == true,
               let multilingualRepository else { return }
         let locale = selectedContentLocale
         guard selectedAudioLocale != locale || !playback.isReady else { return }
@@ -702,7 +714,7 @@ final class AppModel: ObservableObject {
 
     func restorePublishedAudioAfterPreview() {
         guard selectedWeek == nil,
-              selectedContentTarget?.audioStatus == "human_reviewed" else { return }
+              selectedContentTarget?.hasPublishedAudio == true else { return }
         cancelPublishedAudioPreparation()
         selectedAudioLocale = nil
         publishedAudioSha256 = nil
@@ -794,7 +806,7 @@ final class AppModel: ObservableObject {
     func retryAudio() async {
         if let week = selectedWeek {
             await select(week: week, track: selectedTrack, force: true)
-        } else if selectedContentTarget?.audioStatus == "human_reviewed" {
+        } else if selectedContentTarget?.hasPublishedAudio == true {
             cancelPublishedAudioPreparation()
             if let page = selectedMultilingualPage {
                 playback.preparePublishedLanguageSwitch(pageID: page.id, sourceIdentity: page.sourceIdentitySha256)

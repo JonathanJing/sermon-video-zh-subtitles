@@ -123,3 +123,37 @@ def test_release_plan_rejects_reused_page_id_and_wrong_receipt(plan_inputs):
     (base / 'baseline-receipt.json').write_text(json.dumps({**receipt, 'catalogSha256': 'old'}))
     with pytest.raises(ValueError, match='baseline receipt required'):
         publication.bound_release_plan(base, prepared)
+
+
+def test_simulated_page_joins_v4_so_v3_stays_its_human_projection(tmp_path):
+    human = lambda locale: {'releasePackageUrl': f'/releases-v2/{{}}/{locale}.json', 'releasePackageJsonSha256': 'a' * 64,
+                            'contentStatus': 'human_reviewed', 'audioStatus': 'human_reviewed', 'capabilities': ['text', 'captions', 'audio']}
+    machine = {'releasePackageUrl': '/releases-v4/{}/ko.json', 'releasePackageJsonSha256': 'b' * 64,
+               'contentStatus': 'machine_checked', 'audioStatus': 'machine_checked', 'capabilities': ['text', 'captions', 'audio']}
+    page = lambda page_id, date, targets: {'id': page_id, 'date': date, 'title': page_id, 'sourceLocale': 'en',
+        'sourceIdentitySha256': 'c' * 64, 'defaultTargetLocale': next(iter(targets)),
+        'targets': {locale: {**target, 'releasePackageUrl': target['releasePackageUrl'].format(page_id)} for locale, target in targets.items()}}
+    v4 = {'schemaVersion': 'sermon-multilingual-catalog-v4', 'generatedAt': '2026-10-04T00:00:00Z', 'defaultPageId': 'week-2',
+          'pages': [page('week-2', '2026-10-04', {'zh-Hans': human('zh-Hans'), 'ko': machine}),
+                    page('machine-only', '2026-09-27', {'ko': machine}),
+                    page('week-1', '2026-09-20', {'zh-Hans': human('zh-Hans')})]}
+    v3 = contract.project_human_catalog(v4)
+    simulated = page('dev-run', '2026-10-05', {'zh-Hans': {**human('zh-Hans'), 'simulationOnly': True, 'diagnosticOnly': True}})
+    for index in range(len(v3['pages']) + 1):
+        catalog = {**copy.deepcopy(v3), 'generatedAt': '2026-10-05T00:00:00Z'}
+        catalog['pages'].insert(index, simulated)
+        result = publication.with_simulated_page(v4, catalog, 'dev-run')
+        assert contract.project_human_catalog(result) == catalog
+        assert [p['id'] for p in result['pages'] if p['id'] != 'dev-run'] == [p['id'] for p in v4['pages']]
+        assert next(p for p in result['pages'] if p['id'] == 'machine-only') == v4['pages'][1]
+    # The simulated page never changes an existing page of either catalog.
+    catalog = copy.deepcopy(v3); catalog['pages'].append(simulated); catalog['pages'][0]['title'] = 'changed'
+    with pytest.raises(ValueError, match='projection'):
+        publication.with_simulated_page(v4, catalog, 'dev-run')
+
+
+def test_catalog_report_adds_the_v4_hash_only_once_published(tmp_path):
+    (tmp_path / 'multilingual-v3.json').write_text('{}')
+    assert set(publication.catalog_report(tmp_path)) == {'catalogSha256'}
+    (tmp_path / 'multilingual-v4.json').write_text('{"v": 4}')
+    assert publication.catalog_report(tmp_path)['catalogV4Sha256'] == publication.digest(tmp_path / 'multilingual-v4.json')

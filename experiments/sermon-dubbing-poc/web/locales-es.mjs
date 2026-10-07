@@ -148,6 +148,8 @@ export const messages = Object.freeze({
   "app.content.fullText": "Texto completo para leer",
   "app.content.fullTextHint": "Este es el texto completo aprobado para lectura. Los tiempos corresponden al vídeo original en inglés. El audio usa un guion más breve; sigue los subtítulos de la narración mientras escuchas.",
   "app.content.spokenHint": "Estos subtítulos siguen la narración abreviada aprobada.",
+  "app.content.fullTextHintMachine": "Este texto completo para leer se publicó automáticamente tras un control de calidad automático, sin revisión humana. Los tiempos corresponden al vídeo original en inglés. El audio usa un guion más breve; sigue los subtítulos de la narración mientras escuchas.",
+  "app.content.spokenHintMachine": "Estos subtítulos siguen la narración abreviada. El doblaje pasó un control de calidad automático, sin revisión humana.",
   "app.content.disclosure": "Audio de doblaje generado por IA y texto de referencia para el estudio personal.",
   "player.ahead": "Audio adelantado",
   "player.behind": "Audio atrasado",

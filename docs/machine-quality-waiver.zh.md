@@ -21,7 +21,8 @@
 |---|---|---|
 | L2 逐组确定性检查 | `language_review_plugins/ko_weekly_auto.py`、`es_weekly_auto.py`（共享 `auto_qc_text_common.py`） | 每周通用，不写死任何一篇讲道。检查目标文字脚本与占位符（西语须以拉丁字母为主；中文须为简体，假名、谚文或繁体字都会失败）、未翻译的英文、语域（西语不得用 vosotros，包括省略主语的 decís、sois）、术语表人名、经文出处（英文说了就必须有，没说不能加；带书卷名的引用要对上同一卷书，66 卷的中韩西名称在 `_BIBLE_BOOKS`）、数字（数字或目标语言读法；含小数和 “nineteen ninety-nine” 这类年份读法） |
 | L2 整篇检查 | `scripts/target_text_auto_qc.py` | 长度离群：与本篇中位数比较。**回译比对**：第一次调用只给目标语言文字，翻回英文；第二次调用对比冻结英文和回译，判断有没有漏译、增译、否定、数字、人名、经文、意思偏移。模型调用由调用方注入，没有回译结果的组不能判为通过 |
-| L3 单句检查 | `scripts/target_audio_auto_qc.py` | TTS 之后马上检查：时长异常（与本篇语速中位数比较，以及与原声时长之比）、截断、近乎无声、静音过多、长停顿、削波、句首句尾静音过长。回转写两级：小 ASR 标出的疑点由强 ASR 复核（必须是另一个模型），两边都不一致才判失败。每个 ASR 结果都绑定所听音频和预期文字的哈希以及模型；音频重合成后沿用旧分数无效，这一句停在 `pending_primary_asr`，不能只凭声学指标通过 |
+| L3 单句检查 | `scripts/target_audio_auto_qc.py` | TTS 之后马上检查，指标一律从每句 WAV 解码，不接受调用方提供的指标：时长异常（与本篇语速中位数比较，以及与原声时长之比）、截断、近乎无声、静音过多、长停顿、削波、句首句尾静音过长。回转写两级：小 ASR 标出的疑点由强 ASR 复核（必须是另一个模型），两边都不一致才判失败。每个 ASR 结果都绑定所听音频和预期文字的哈希以及模型；音频重合成后沿用旧分数无效，这一句停在 `pending_primary_asr`，不能只凭声学指标通过 |
+| L3 整轨核对 | `scripts/target_audio_auto_qc.py --track-package` | 单句检查只听单句 WAV，整轨核对把它们绑到听众实际听到的音轨：PCM 母带必须与各句音频按排程起点逐样本放置的结果完全一致（漏句、错序、旧音频都会失败）；MP3 音轨按响度包络与母带比较（8 kHz、50 ms 窗口，偏差超过 6 dB 的窗口不得超过 2%，长度差不超过 0.1 秒） |
 | 8 秒预算 | `scripts/target_audio_predicted_schedule.py` | 用已测音频拟合各语言语速，再用正式排程公式按**预测时长**排一次。超窗的组给出 `maxSpeechUnits`，供口播修订一次改到位。语速绑定 speech job 的合成身份（adapter、配置、模型版本、音色、说话人、conditioning、语言参数、文本规范化）和所测音频的哈希；身份不同就拒绝预算，需要重新拟合 |
 | 注错校准 | `scripts/auto_qc_seeded_errors.py` | 在干净成品里注入已知错误，统计每类检出率和干净样例的误报率。只有出现干净版本没有的新问题才算检出（错句配音必须由 ASR 判出），不会把原有误报算成检出。文字类含换书卷（wrong_book），音频类含换成别句的配音（wrong_sentence，需要注入 ASR transport） |
 | 豁免收据 | `scripts/machine_quality_waiver.py` | 汇总最终 QC 结果，按上面的 5% 规则决定这个语言是自动发布、只发文字还是暂停。先核对 QC 收据确实检查的是这份候选（每组译文哈希）和这份音频包（候选哈希、每句音频哈希），对不上就报错 |
@@ -31,7 +32,7 @@
 
 只有满足以下全部条件，才允许豁免：
 
-- 校准收据的 `implementationSha256` 与当前 QC 代码一致。代码一改，必须重新校准。
+- 校准收据的 `implementationSha256` 与当前 QC 代码一致。代码一改，必须重新校准。文字和音频 QC 收据也记录运行时的 `implementationSha256`，旧代码生成的 QC 结果不能搭配新校准使用。
 - 校准时回译检查实际参与了（`semanticChecksIncluded=true`）。
 - 本次 QC 用的回译运行身份（`semanticIdentity`：后端、模型和设置）和 ASR 模型，必须与校准时一致。换成别的模型或后端，必须重新校准。
 - 总检出率 ≥ 95%，每类 ≥ 90%。每一类注错都必须实际试过（`trials > 0`）；缺一类或某类零样本都算校准不足。要发配音时，校准还必须包含音频各类；只发文字时，音频类的结果不影响放行。
@@ -49,6 +50,8 @@ python scripts/target_audio_predicted_schedule.py budget --input groups.json --r
 # 单句音频 QC（units: [{groupId, text, sourceSeconds, wavPath, asr: {primary, secondary?}, priorFailedAttempts?}]，
 # 每个 ASR 结果为 {similarity, audioSha256, textSha256, model, modelRevision?}）
 python scripts/target_audio_auto_qc.py --input units.json --out audio-qc.json
+# 整轨核对（读取音频包里的排程、单句音频和音轨；MP3 需要 ffmpeg 和同名 .wav 母带）
+python scripts/target_audio_auto_qc.py --track-package audio-package.json --out track-check.json
 # 离线注错校准（不含回译和 ASR transport，因此不能单独解锁豁免）
 python scripts/auto_qc_seeded_errors.py --input calibration-input.json --out calibration.json
 # 豁免决定
@@ -62,8 +65,8 @@ python scripts/machine_quality_release_basis.py text --source source.json --anch
 python scripts/prepare_target_language_speech_job.py ... --text-release-basis text-waiver.json --out speech-job
 # 试听豁免收据（代替人工试听收据）；ASR 标出的句子必须有强 ASR 复核
 python scripts/machine_quality_release_basis.py audio --package audio-package.json --screening screening.json \
-  --audio-qc audio-qc.json --text-waiver spoken-text-waiver.json --calibration calibration.json \
-  --secondary-asr-model gpt-transcribe --out audio-waiver.json
+  --audio-qc audio-qc.json --track-check track-check.json --text-waiver spoken-text-waiver.json \
+  --calibration calibration.json --secondary-asr-model gpt-transcribe --out audio-waiver.json
 ```
 
 ## 当前接线范围
@@ -71,14 +74,19 @@ python scripts/machine_quality_release_basis.py audio --package audio-package.js
 **已接上：**
 
 - **L2 → L3：** `prepare_target_language_speech_job.py` 接受译文豁免收据（`--text-release-basis`）。这时候选保持 `machine_review_pass_human_review_pending`、`humanReview.translation=pending`，写出的 speech job 是 v3：`inputs.textReleaseBasis` 绑定豁免收据，`textPolicy` 为 `exact_machine_waived_target_text`。人工收据仍写出原来的 v2，已有的 job 身份不变。所有读取 speech job 的生产者（音频包构建、单句完整性、严格链 L3 准备、恢复计划、ASR 筛查）都接受 v2 和 v3。
-- **L3：** 音频包仍按构建结果保持 `machine_screened`（ASR 全过）或 `candidate`（ASR 标出疑点），`humanApproval=false`。试听豁免收据可以代替人工试听收据，通过 `validate_audio_screening_review`、`inspect_canonical_audio`（配置项 `machineWaiver`）和 `sermon_unified` 的 `audio` 审核。ASR 标出的每一句都必须有强 ASR 复核通过。
+- **L3：** 音频包仍按构建结果保持 `machine_screened`（ASR 全过）或 `candidate`（ASR 标出疑点），`humanApproval=false`。试听豁免收据必须绑定一份通过的整轨核对（`trackCheckJsonSha256`），可以代替人工试听收据，通过 `validate_audio_screening_review`、`inspect_canonical_audio`（配置项 `machineWaiver`）和 `sermon_unified` 的 `audio` 审核。ASR 标出的每一句都必须有强 ASR 复核通过。
 - **sermon_unified：** `ingest_review` 接收两种豁免收据，把该步记为 `review=waived`、事件 `review.waived`，不写 `approvedAt`。`translation_approved` 和 `listen_approved` 两个范围接受 `waived`；大纲与默想仍要求人工 `approved`。
+
+- **L4：** `build_full_video_app_release.py` 和 `sermon_unified_delivery` 接受译文豁免和试听豁免（试听豁免必须绑定口播稿的那份译文豁免）。只要有一项是机器质检，就写出 [release v4](../schemas/sermon-target-language-release-package-v4.schema.json)，路径为 `/releases-v4/<pageId>/<locale>.json`：`contentStatus`、`audioStatus` 各自为 `human_reviewed` 或 `machine_checked`，`reviewBasis` 逐项记录完整文稿、口播稿、音轨用的是人工收据还是豁免收据，`disclosure` 是该语言的披露文案。完整文稿为机器质检时，正文用 [content v3](../schemas/sermon-full-video-text-content-v3.schema.json)（`status=machine_checked`，带同一份 `disclosure`），静态页面也显示“机器质检”和披露。三项都是人工时仍写 release v3，什么都不变。
+- **目录：** 封存时同时写出 [catalog v4](../schemas/sermon-multilingual-catalog-v4.schema.json)（`/multilingual-v4.json`）和 `/multilingual-v3.json`。v3 是 v4 去掉所有机器质检语言后的投影，旧客户端读到的内容不变；只有机器质检页面、没有人工基线时拒绝封存，因为投影会是空目录。托管发布对两份目录都做比较交换和回读，`validate_catalog_snapshot` 要求投影与 v3 完全一致。
+- **客户端：** 网页和 iOS 先读 v4，404 时读 v3；v4 无法读取或校验失败也退回 v3 并记录错误。机器质检的语言显示“机器质检 / 기계 품질 검사 / Control de calidad automático”和发布包里的披露文案，机器质检的产物不会显示“已审核批准”。旧版 iOS 只读 v3，看不到机器质检的语言，更新到新版后才能看到。
+- **海报：** `build_multilingual_sermon_posters.py` 有 v4 时读 v4，审核标签按两项状态分别写明（例如“译文与配音经机器质检 · 未经人工审核”）。只会写 v3 的旧工具（`assemble_multilingual_v3_update.py`、`bind_published_alignment_catalog.py`）遇到带 v4 的快照会拒绝，避免两份目录不一致。
 
 第 1 版豁免只放行**每一句都通过**的语言：有句子要只显字幕或改显英文时，收据不会生成，这个语言仍走人工路径。
 
 **还没有接上：**
 
-1. 第 4 层：`build_full_video_app_release.py` 与 `sermon_unified_delivery` 仍要求人工译文收据和 `human_reviewed` 音频包；发布包、目录和网页/iOS 客户端还没有“机器质检”状态和披露文案。目录里一旦出现新状态，旧版 iOS 会拒绝整个目录，所以需要新目录版本，并先发新版客户端。
+1. 新版 iOS 客户端提交 App Store / TestFlight；生成英文对照（`build_published_english_reference.py`）、对齐绑定和听审统计目录的工具仍只读 v3，还不能为机器质检周次生成这些附加资源。
 2. 回译检查的真实模型 transport（沿用 L2 的后端身份与缓存规则），以及首次真实校准。
 3. 冻结 policy 时，为韩/西选择 `ko-weekly-auto-v1` / `es-weekly-auto-v1` 插件，并把 `requiredChecks` 设为 `auto_qc_text_common.REQUIRED`。
 4. 只显字幕的句子、改显英文的句子和只发文字的语言（`audio_unavailable`）。

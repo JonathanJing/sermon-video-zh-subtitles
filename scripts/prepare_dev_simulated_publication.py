@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
+import copy
 import gzip
 import hashlib
 import json
@@ -92,6 +93,14 @@ def config_semantics(config):
     return value
 
 
+def catalog_report(public):
+    """Both catalog hashes once the site carries v4; v3 alone before that."""
+    public = Path(public)
+    v4 = public / contract.CATALOG_FILES[contract.CATALOG_V4]
+    return {'catalogSha256': digest(public / 'multilingual-v3.json'),
+            **({'catalogV4Sha256': digest(v4)} if v4.exists() else {})}
+
+
 def files_report(public):
     return [{'path': '/' + str(p.relative_to(public)), 'sha256': digest(p), 'bytes': p.stat().st_size}
             for p in sorted(public.rglob('*')) if p.is_file()]
@@ -169,7 +178,7 @@ def baseline(out, *, cache_public=None, cache_receipt=None):
     with ThreadPoolExecutor(max_workers=6) as pool:
         verified = list(pool.map(materialize, rows))
     contract.require(publisher.live_version(request, SITE) == version, 'Live version changed during baseline acquisition')
-    report = {'catalogSha256': digest(public / 'multilingual-v3.json'), 'files': files_report(public)}
+    report = {**catalog_report(public), 'files': files_report(public)}
     write(out / 'seal-report.json', report)
     contract.validate_catalog_snapshot(out)
     receipt = {'schemaVersion': 'sermon-dev-simulated-baseline-v1', 'status': 'complete_verified_not_deployed',
@@ -201,6 +210,7 @@ def publication_config(base, out):
     routes = {'dev': {'project': PROJECT, 'site': SITE, 'origin': ORIGIN, 'channels': ['dev', 'beta']}}
     return {'snapshot': str(out), 'intent': intent, 'routes': routes,
             'baseline_version': version, 'baseline_catalog_sha': digest(base / 'public/multilingual-v3.json'),
+            'baseline_catalog_v4_sha': catalog_report(base / 'public').get('catalogV4Sha256'),
             'lease_bucket': LEASE_BUCKET}
 
 
@@ -291,7 +301,7 @@ def asset_first(baseline_path, prepared, out, source_video=None):
         shutil.copyfile(source_video, target)
         changed.append('/' + str(relative))
     contract.require(digest(out / 'public/multilingual-v3.json') == receipt['catalogSha256'], 'Asset-first catalog changed')
-    report = {'catalogSha256': receipt['catalogSha256'], 'files': files_report(out / 'public')}
+    report = {**catalog_report(out / 'public'), 'files': files_report(out / 'public')}
     write(out / 'seal-report.json', report)
     contract.validate_catalog_snapshot(out)
     write(out / 'publish-config.json', publication_config(base, out))
@@ -299,6 +309,18 @@ def asset_first(baseline_path, prepared, out, source_video=None):
           'changedPaths': changed, 'catalogUnchanged': True, 'httpVerification': 'not_run', 'productionEligible': False,
           'managedFilesPreservedByFirebase': [r for r in receipt['rows'] if r['managed']], 'modelCalls': 0})
     return {'status': 'prepared_not_deployed', 'publishConfig': str(out / 'publish-config.json'), 'assetCount': len(assets)}
+
+
+def with_simulated_page(v4, catalog, page_id):
+    """Add the v3 catalog's new page to v4 after the same predecessor, so v3 stays v4's human-only projection."""
+    v4 = copy.deepcopy(v4)
+    ids = [page['id'] for page in catalog['pages']]
+    index = ids.index(page_id)
+    position = 0 if index == 0 else [page['id'] for page in v4['pages']].index(ids[index - 1]) + 1
+    v4['pages'].insert(position, copy.deepcopy(catalog['pages'][index]))
+    v4['generatedAt'] = catalog['generatedAt']
+    contract.require(contract.project_human_catalog(v4) == catalog, 'Simulated page breaks the v4 projection')
+    return v4
 
 
 def overlay(baseline_path, overlay_public, catalog_path, out):
@@ -329,7 +351,8 @@ def overlay(baseline_path, overlay_public, catalog_path, out):
             continue
         relative = src.relative_to(incoming)
         contract.require(not src.is_symlink() and relative.parts[0] != '__', 'Unsafe or managed overlay file')
-        if str(relative) == 'multilingual-v3.json':
+        # Both catalogs are rebuilt below from the baseline and the bound v3 catalog.
+        if str(relative) in contract.CATALOG_FILES.values():
             continue
         target = out / 'public' / relative
         if target.exists() and digest(target) == digest(src):
@@ -340,14 +363,21 @@ def overlay(baseline_path, overlay_public, catalog_path, out):
         changed.append('/' + str(relative))
     (out / 'public/multilingual-v3.json').unlink()
     write(out / 'public/multilingual-v3.json', catalog)
-    report = {'catalogSha256': digest(out / 'public/multilingual-v3.json'), 'files': files_report(out / 'public')}
+    changed_catalogs = ['/multilingual-v3.json']
+    v4_path = out / 'public' / contract.CATALOG_FILES[contract.CATALOG_V4]
+    if v4_path.exists():
+        v4 = with_simulated_page(contract.snapshot_catalog_v4(base), catalog, added[0]['id'])
+        v4_path.unlink()
+        write(v4_path, v4)
+        changed_catalogs.append('/multilingual-v4.json')
+    report = {**catalog_report(out / 'public'), 'files': files_report(out / 'public')}
     write(out / 'seal-report.json', report)
     contract.validate_catalog_snapshot(out)
     publish_config = publication_config(base, out)
     shutil.copyfile(base / 'baseline-receipt.json', out / 'baseline-receipt.json')
     write(out / 'publish-config.json', publish_config)
     write(out / 'simulation-publication-plan.json', {'schemaVersion': 'sermon-dev-simulated-publication-plan-v1',
-          'publication': 'not_started', 'productionEligible': False, 'pageId': added[0]['id'], 'changedPaths': changed + ['/multilingual-v3.json'],
+          'publication': 'not_started', 'productionEligible': False, 'pageId': added[0]['id'], 'changedPaths': changed + changed_catalogs,
           'originalDefaultPageId': before['defaultPageId'], 'siblingsPreserved': len(old_pages), 'managedFilesPreservedByFirebase': [r for r in receipt['rows'] if r['managed']],
           'hostingConfigPreservedSha256': digest(out / 'firebase.json'), 'modelCalls': 0})
     return {'status': 'prepared_not_deployed', 'publishConfig': str(out / 'publish-config.json'), 'pageId': added[0]['id']}
@@ -374,7 +404,7 @@ def runtime_repair(baseline_path, out):
             shutil.copyfile(src, target)
             changed.append('/' + name)
     contract.require(digest(out / 'public/multilingual-v3.json') == digest(base / 'public/multilingual-v3.json'), 'Runtime repair changed catalog')
-    write(out / 'seal-report.json', {'catalogSha256': digest(out / 'public/multilingual-v3.json'), 'files': files_report(out / 'public')})
+    write(out / 'seal-report.json', {**catalog_report(out / 'public'), 'files': files_report(out / 'public')})
     contract.validate_catalog_snapshot(out)
     write(out / 'publish-config.json', publication_config(base, out))
     write(out / 'runtime-repair-plan.json', {'status': 'prepared_not_deployed', 'runtimeFiles': list(builder.RUNTIME_WEB_FILES), 'changedPaths': changed,

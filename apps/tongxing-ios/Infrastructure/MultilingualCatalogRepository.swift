@@ -7,6 +7,9 @@ public struct MultilingualCatalogLoadResult: Sendable {
     public let catalog: MultilingualCatalog
     public let source: Source
     public let warning: String?
+    /// Set when /multilingual-v4.json existed but failed to fetch or validate and
+    /// this result is the human-only v3/v2 fallback (machine-checked locales hidden).
+    public var machineCheckedCatalogError: String? = nil
 }
 
 public struct VerifiedLanguagePage: Sendable {
@@ -52,13 +55,33 @@ public actor MultilingualCatalogRepository {
     public func loadCatalog() async throws -> MultilingualCatalogLoadResult {
         try FileManager.default.createDirectory(at: cacheDirectory, withIntermediateDirectories: true)
         do {
-            return try await loadNetworkCatalog(named: "multilingual-v3.json",
-                                                schemaVersion: MultilingualCatalog.dualScriptSchemaVersion)
+            return try await loadNetworkCatalog(named: "multilingual-v4.json",
+                                                schemaVersion: MultilingualCatalog.machineCheckedSchemaVersion)
+        } catch ContentStorageError.httpStatus(404) {
+            // A missing v4 catalog keeps the human-only v3/v2 protocol exactly as before.
+            return try await loadHumanOnlyCatalog(machineCheckedError: nil)
+        } catch {
+            if Task.isCancelled || error is CancellationError { throw CancellationError() }
+            // A v4 catalog that cannot be fetched or validated must not lose the
+            // week: fall back to its human-only v3 projection and record why.
+            return try await loadHumanOnlyCatalog(machineCheckedError: error)
+        }
+    }
+
+    private func loadHumanOnlyCatalog(machineCheckedError: Error?) async throws -> MultilingualCatalogLoadResult {
+        let recorded = machineCheckedError.map { String(describing: $0) }
+        do {
+            var result = try await loadNetworkCatalog(named: "multilingual-v3.json",
+                                                      schemaVersion: MultilingualCatalog.dualScriptSchemaVersion)
+            result.machineCheckedCatalogError = recorded
+            return result
         } catch ContentStorageError.httpStatus(404) {
             // A missing v3 catalog means this site still serves the v1 release protocol.
             do {
-                return try await loadNetworkCatalog(named: "multilingual-v2.json",
-                                                    schemaVersion: MultilingualCatalog.supportedSchemaVersion)
+                var result = try await loadNetworkCatalog(named: "multilingual-v2.json",
+                                                          schemaVersion: MultilingualCatalog.supportedSchemaVersion)
+                result.machineCheckedCatalogError = recorded
+                return result
             } catch {
                 if Task.isCancelled || error is CancellationError { throw CancellationError() }
                 return try await loadCachedCatalog(preferredNames: ["multilingual-v2.json", "multilingual-v3.json"],
@@ -66,8 +89,11 @@ public actor MultilingualCatalogRepository {
             }
         } catch {
             if Task.isCancelled || error is CancellationError { throw CancellationError() }
-            return try await loadCachedCatalog(preferredNames: ["multilingual-v3.json", "multilingual-v2.json"],
-                                         originalError: error)
+            // Only a v4 catalog the network could not answer for (not a 404) may
+            // reuse its previously verified cache ahead of the human-only caches.
+            let preferred = machineCheckedError == nil ? ["multilingual-v3.json", "multilingual-v2.json"]
+                : ["multilingual-v4.json", "multilingual-v3.json", "multilingual-v2.json"]
+            return try await loadCachedCatalog(preferredNames: preferred, originalError: error)
         }
     }
 
@@ -92,8 +118,12 @@ public actor MultilingualCatalogRepository {
             do {
                 let data = try readBounded(path, maximumBytes: maximumCatalogBytes)
                 let catalog = try MultilingualCatalog.decode(data, allowDevCandidates: allowDevCandidate)
-                let expected = name == "multilingual-v3.json"
-                    ? MultilingualCatalog.dualScriptSchemaVersion : MultilingualCatalog.supportedSchemaVersion
+                let expected: String
+                switch name {
+                case "multilingual-v4.json": expected = MultilingualCatalog.machineCheckedSchemaVersion
+                case "multilingual-v3.json": expected = MultilingualCatalog.dualScriptSchemaVersion
+                default: expected = MultilingualCatalog.supportedSchemaVersion
+                }
                 guard catalog.schemaVersion == expected else { throw ContentStorageError.invalidResponse }
                 try validatePackageURLs(catalog)
                 let visible = try await publicationProjection(catalog, useNetwork: false)
@@ -164,7 +194,9 @@ public actor MultilingualCatalogRepository {
             }
         }
         try Task.checkCancellation()
-        return try catalog.retainingHumanLocales(admitted)
+        // Machine-checked locales stay visible (and machine-checked); dev-only
+        // machine-reviewed candidates never pass this production projection.
+        return try catalog.retainingPublishedLocales(admitted)
     }
 
     private func cachedPackage(page: MultilingualPage, locale: String) throws -> TargetLanguageReleasePackage {
@@ -194,22 +226,37 @@ public actor MultilingualCatalogRepository {
               package.status == "candidate", package.pageId == page.id, package.targetLocale == locale,
               let target = page.targets[locale], package.contentStatus == target.contentStatus,
               package.audioStatus == target.audioStatus else { return false }
-        let expected = target.releasePackageUrl.hasPrefix("/releases-v2/")
-            ? TargetLanguageReleasePackage.dualScriptSchemaVersion : TargetLanguageReleasePackage.supportedSchemaVersion
-        return (package.schemaVersion == expected ||
-            (expected == TargetLanguageReleasePackage.dualScriptSchemaVersion && package.schemaVersion == TargetLanguageReleasePackage.fourProductSchemaVersion)) &&
+        return Self.releaseSchemas(for: target).contains(package.schemaVersion) &&
             (package.fourProducts == nil || (package.englishSourcePackageJsonSha256 == page.sourceIdentitySha256 &&
                 package.sourceIdentity?.mediaSha256 == page.sourceMediaSha256))
+    }
+
+    /// The release directory fixes which package versions a target may bind:
+    /// /releases-v4/ only v4 (machine-checked), /releases-v2/ v2 or v3, /releases/ v1.
+    private static func releaseSchemas(for target: PageTarget) -> [String] {
+        if target.releasePackageUrl.hasPrefix("/releases-v4/") {
+            return [TargetLanguageReleasePackage.machineCheckedSchemaVersion]
+        }
+        if target.releasePackageUrl.hasPrefix("/releases-v2/") {
+            return [TargetLanguageReleasePackage.dualScriptSchemaVersion, TargetLanguageReleasePackage.fourProductSchemaVersion]
+        }
+        return [TargetLanguageReleasePackage.supportedSchemaVersion]
+    }
+
+    /// The catalog version whose target rules apply to this release directory.
+    private static func catalogSchema(for target: PageTarget) -> String {
+        if target.releasePackageUrl.hasPrefix("/releases-v4/") { return MultilingualCatalog.machineCheckedSchemaVersion }
+        if target.releasePackageUrl.hasPrefix("/releases-v2/") { return MultilingualCatalog.dualScriptSchemaVersion }
+        return MultilingualCatalog.supportedSchemaVersion
     }
 
     public func loadRelease(page: MultilingualPage, locale: String) async throws -> TargetLanguageReleasePackage {
         guard allowDevCandidate || (page.diagnosticOnly != true && page.simulationOnly != true),
               let target = page.targets[locale],
-              allowDevCandidate || (target.contentStatus == "human_reviewed" && target.diagnosticOnly != true && target.simulationOnly != true)
+              allowDevCandidate || (target.isPublishedContent && target.diagnosticOnly != true && target.simulationOnly != true)
         else { throw ContentStorageError.invalidDownloadReference }
         try target.validate(pageID: page.id, locale: locale,
-            catalogSchemaVersion: target.releasePackageUrl.hasPrefix("/releases-v2/")
-                ? MultilingualCatalog.dualScriptSchemaVersion : MultilingualCatalog.supportedSchemaVersion,
+            catalogSchemaVersion: Self.catalogSchema(for: target),
             allowDevCandidates: allowDevCandidate)
         let url = try target.packageURL(relativeTo: origin)
         let cacheURL = packageCacheURL(pageID: page.id, locale: locale)
@@ -248,7 +295,8 @@ public actor MultilingualCatalogRepository {
         try package.validate(allowDevCandidate: allowDevCandidate)
         if package.status == "candidate" {
             guard allowDevCandidate else { throw ContentStorageError.invalidDownloadReference }
-            if package.schemaVersion != TargetLanguageReleasePackage.fourProductSchemaVersion {
+            if package.schemaVersion != TargetLanguageReleasePackage.fourProductSchemaVersion
+                && package.schemaVersion != TargetLanguageReleasePackage.machineCheckedSchemaVersion {
                 return try await loadDevContentPage(for: package)
             }
         }
@@ -276,7 +324,8 @@ public actor MultilingualCatalogRepository {
             data = cached
         }
         guard let html = String(data: data, encoding: .utf8) else { throw ContentStorageError.invalidResponse }
-        if [TargetLanguageReleasePackage.dualScriptSchemaVersion, TargetLanguageReleasePackage.fourProductSchemaVersion].contains(package.schemaVersion) {
+        if [TargetLanguageReleasePackage.dualScriptSchemaVersion, TargetLanguageReleasePackage.fourProductSchemaVersion,
+            TargetLanguageReleasePackage.machineCheckedSchemaVersion].contains(package.schemaVersion) {
             let lower = html.lowercased()
             guard lower.contains("<html"), lower.contains("<body"),
                   !["<script", "<link", "<iframe", "<video", "<audio"].contains(where: lower.contains) else {
@@ -323,7 +372,9 @@ public actor MultilingualCatalogRepository {
 
     public func loadStudies(for package: TargetLanguageReleasePackage) async throws -> ReviewedStudyResources? {
         try package.validate(allowDevCandidate: allowDevCandidate)
-        guard package.schemaVersion == TargetLanguageReleasePackage.fourProductSchemaVersion else { return nil }
+        // v4 keeps the v3 study join: outline and meditation remain human-reviewed.
+        guard package.schemaVersion == TargetLanguageReleasePackage.fourProductSchemaVersion
+                || package.schemaVersion == TargetLanguageReleasePackage.machineCheckedSchemaVersion else { return nil }
         var resources: [ReleaseAsset.Role: Data] = [:]
         for role in [ReleaseAsset.Role.outline, .meditation, .productManifest] {
             guard let asset = package.assets.first(where: { $0.role == role }),
@@ -358,19 +409,19 @@ public actor MultilingualCatalogRepository {
             meditation: try ReviewedStudyArtifact.decode(meditation, kind: "meditation", package: package))
     }
 
-    /// Download only the reviewed, same-locale audio declared by this page's
-    /// verified release. Never hand AVPlayer network bytes or an unchecked cache.
+    /// Download only the reviewed or machine-checked same-locale audio declared by
+    /// this page's verified release. Never hand AVPlayer network bytes or an unchecked cache.
     public func loadAudio(for package: TargetLanguageReleasePackage,
                           page: MultilingualPage) async throws -> VerifiedLanguageAudio {
         try package.validate(allowDevCandidate: allowDevCandidate)
         guard allowDevCandidate || (page.diagnosticOnly != true && page.simulationOnly != true) else {
             throw ContentStorageError.invalidDownloadReference
         }
-        guard package.pageId == page.id, package.audioStatus == "human_reviewed",
+        guard package.pageId == page.id, package.hasPublishedAudio,
               package.audioLocale == package.targetLocale,
-              let target = page.targets[package.targetLocale], target.audioStatus == "human_reviewed",
-              target.contentStatus == package.contentStatus,
-              allowDevCandidate || (target.contentStatus == "human_reviewed" && target.diagnosticOnly != true && target.simulationOnly != true) else {
+              let target = page.targets[package.targetLocale], target.hasPublishedAudio,
+              target.contentStatus == package.contentStatus, target.audioStatus == package.audioStatus,
+              allowDevCandidate || (target.isPublishedContent && target.diagnosticOnly != true && target.simulationOnly != true) else {
             throw ContentStorageError.invalidDownloadReference
         }
         let assets = package.assets.filter { $0.role == .audio }
@@ -415,7 +466,8 @@ public actor MultilingualCatalogRepository {
     public func loadPublishedTranscript(for package: TargetLanguageReleasePackage,
                                         page: MultilingualPage) async throws -> VerifiedPublishedTranscript {
         let verified = try await loadRelease(page: page, locale: package.targetLocale)
-        guard verified == package, [TargetLanguageReleasePackage.dualScriptSchemaVersion, TargetLanguageReleasePackage.fourProductSchemaVersion].contains(package.schemaVersion),
+        guard verified == package, [TargetLanguageReleasePackage.dualScriptSchemaVersion, TargetLanguageReleasePackage.fourProductSchemaVersion,
+                                    TargetLanguageReleasePackage.machineCheckedSchemaVersion].contains(package.schemaVersion),
               let content = package.assets.first(where: { $0.role == .content }),
               let captions = package.assets.first(where: { $0.role == .captions }) else {
             throw ContentStorageError.invalidDownloadReference
@@ -553,11 +605,7 @@ public actor MultilingualCatalogRepository {
               let target = page.targets[locale],
               package.contentStatus == target.contentStatus, package.audioStatus == target.audioStatus
         else { throw ContentStorageError.invalidDownloadReference }
-        let expectedSchema = target.releasePackageUrl.hasPrefix("/releases-v2/")
-            ? TargetLanguageReleasePackage.dualScriptSchemaVersion : TargetLanguageReleasePackage.supportedSchemaVersion
-        guard package.schemaVersion == expectedSchema ||
-                (expectedSchema == TargetLanguageReleasePackage.dualScriptSchemaVersion &&
-                 package.schemaVersion == TargetLanguageReleasePackage.fourProductSchemaVersion) else {
+        guard Self.releaseSchemas(for: target).contains(package.schemaVersion) else {
             throw ContentStorageError.invalidDownloadReference
         }
         if package.fourProducts != nil {

@@ -24,6 +24,13 @@ SCHEMAS = {
     'catalog': 'sermon-multilingual-catalog-v3',
     'release': 'sermon-target-language-release-package-v3',
 }
+MACHINE_VERSION = 'sermon-unified-consumer-capabilities-v3'
+# v3 also binds the machine-checked delivery schemas; human-reviewed locales keep catalog v3 / release v3.
+MACHINE_SCHEMAS = {
+    'machineCatalog': 'sermon-multilingual-catalog-v4',
+    'machineRelease': 'sermon-target-language-release-package-v4',
+    'machineContent': 'sermon-full-video-text-content-v3',
+}
 
 
 def read(path):
@@ -80,10 +87,12 @@ def inspect(config_path):
     value = json.loads(config_bytes)
     required = {'schemaVersion', 'source', 'bindings', 'locales', 'terminology', 'releaseIntents', 'routes', 'targetSchemaVersions'}
     d.require(set(value) in (required, required | {'inputSnapshotSha256'}), 'consumer_configuration_fields_invalid')
-    d.require(value['schemaVersion'] in (VERSION,LEGACY_VERSION), 'consumer_configuration_version_invalid')
+    d.require(value['schemaVersion'] in (VERSION,LEGACY_VERSION,MACHINE_VERSION), 'consumer_configuration_version_invalid')
     schemas = dict(SCHEMAS)
     if value['schemaVersion']==LEGACY_VERSION:
         schemas['release']='sermon-target-language-release-package-v2'
+    if value['schemaVersion']==MACHINE_VERSION:
+        schemas.update(MACHINE_SCHEMAS)
     base = path.parent
     inputs = {}
     def capture(name, ref, *, json_value=True):
