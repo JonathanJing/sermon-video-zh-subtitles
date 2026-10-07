@@ -232,9 +232,19 @@ def reconcile(snapshot, *, request, reader, confirmed_version):
 def _reconcile(snapshot, *, request, reader, confirmed_version):
     path = Path(snapshot) / 'deployment-attempt-v2.json'
     attempt = json.loads(path.read_text())
-    contract.require(attempt['status'] == 'outcome_unknown', 'Only unknown attempts need reconciliation')
+    contract.require(attempt['status'] in ('outcome_unknown', 'deployed'), 'Only unknown attempts need reconciliation')
     lease = RemoteLease(request, attempt['leaseBucket'], attempt['intent']['site'])
     lease.generation = attempt['leaseGeneration']
+    if attempt['status'] == 'deployed':
+        # Deployment is already verified; only a failed lease release is left to retry.
+        try:
+            lease.check()
+        except ValueError as exc:
+            if 'HTTP 404' in str(exc):
+                return attempt  # Lease already released.
+            raise
+        lease.release()
+        return attempt
     lease.check()
     observed = live_version(request, attempt['intent']['site'])
     contract.require(observed == confirmed_version and observed != attempt['baselineVersion'], 'Explicit confirmed new version differs')
