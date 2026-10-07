@@ -1,0 +1,1218 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-app-delivery-v1.schema.json",
+  "title": "Offline App delivery readiness, supplied review receipts and separate ad hoc PDF",
+  "description": "Read-only evidence gate. Does not publish, create approval or prove device/venue acceptance. Canonical hashes and cross-field binding are enforced by sermon_app_delivery.py. Existing candidate/audio schemas retain their machine versions; study sidecars require client capability evidence.",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/plan"
+    },
+    {
+      "$ref": "#/$defs/inspection"
+    }
+  ],
+  "$defs": {
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\)(?!.*://).+"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "jsonSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "path",
+        "sha256"
+      ]
+    },
+    "client": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "environmentId": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": ".*\\S.*"
+        },
+        "appVersion": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": ".*\\S.*"
+        },
+        "clientProtocolVersion": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": ".*\\S.*"
+        }
+      },
+      "required": [
+        "environmentId",
+        "appVersion",
+        "clientProtocolVersion"
+      ]
+    },
+    "productState": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "const": "available"
+            },
+            "artifact": {
+              "$ref": "#/$defs/artifact"
+            },
+            "review": {
+              "$ref": "#/$defs/artifact"
+            },
+            "screening": {
+              "$ref": "#/$defs/artifact"
+            },
+            "spokenCandidate": {
+              "$ref": "#/$defs/artifact"
+            },
+            "spokenReview": {
+              "$ref": "#/$defs/artifact"
+            }
+          },
+          "required": [
+            "status",
+            "artifact",
+            "review"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "enum": [
+                "missing",
+                "failed",
+                "pending"
+              ]
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": ".*\\S.*"
+            }
+          },
+          "required": [
+            "status",
+            "reason"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "const": "audio_unavailable"
+            },
+            "artifact": {
+              "$ref": "#/$defs/artifact"
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": ".*\\S.*"
+            }
+          },
+          "required": [
+            "status",
+            "artifact",
+            "reason"
+          ]
+        }
+      ]
+    },
+    "pdfAdHoc": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "const": "not_requested"
+            }
+          },
+          "required": [
+            "status"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "enum": [
+                "pending",
+                "failed"
+              ]
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": ".*\\S.*"
+            }
+          },
+          "required": [
+            "status",
+            "reason"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "const": "available"
+            },
+            "artifact": {
+              "$ref": "#/$defs/artifact"
+            },
+            "review": {
+              "$ref": "#/$defs/artifact"
+            }
+          },
+          "required": [
+            "status",
+            "artifact",
+            "review"
+          ]
+        }
+      ]
+    },
+    "reviewScope": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "locale": {
+          "type": "string",
+          "pattern": "^(?!en(?:-|$))[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$"
+        },
+        "product": {
+          "enum": [
+            "translation",
+            "audio",
+            "outline",
+            "reflection"
+          ]
+        },
+        "status": {
+          "enum": [
+            "available",
+            "missing",
+            "failed",
+            "pending",
+            "audio_unavailable"
+          ]
+        },
+        "artifactSha256": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "locale",
+        "product",
+        "status",
+        "artifactSha256"
+      ]
+    },
+    "plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schemaVersion": {
+          "const": "sermon-app-delivery-plan-v1"
+        },
+        "pageId": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": ".*\\S.*"
+        },
+        "sourceId": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": ".*\\S.*"
+        },
+        "sourceUrlHash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "source": {
+          "$ref": "#/$defs/artifact"
+        },
+        "contentRevision": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": ".*\\S.*"
+        },
+        "contentHash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "locales": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^(?!en(?:-|$))[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "products": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "translation": {
+                "$ref": "#/$defs/productState"
+              },
+              "audio": {
+                "$ref": "#/$defs/productState"
+              },
+              "outline": {
+                "$ref": "#/$defs/productState"
+              },
+              "reflection": {
+                "$ref": "#/$defs/productState"
+              }
+            },
+            "required": [
+              "translation",
+              "audio",
+              "outline",
+              "reflection"
+            ]
+          }
+        },
+        "allowTextOnlyLocales": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^(?!en(?:-|$))[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$"
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        },
+        "clientCapabilities": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "ios_beta": {
+                "$ref": "#/$defs/artifact"
+              },
+              "firebase_dev": {
+                "$ref": "#/$defs/artifact"
+              }
+            },
+            "required": []
+          }
+        },
+        "testEnvironments": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "ios_beta": {
+              "$ref": "#/$defs/client"
+            },
+            "firebase_dev": {
+              "$ref": "#/$defs/client"
+            }
+          },
+          "required": [
+            "ios_beta",
+            "firebase_dev"
+          ]
+        },
+        "productionEnvironments": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "ios_prod": {
+              "$ref": "#/$defs/client"
+            },
+            "firebase_prod": {
+              "$ref": "#/$defs/client"
+            }
+          },
+          "required": [
+            "ios_prod",
+            "firebase_prod"
+          ]
+        },
+        "approvalReceipts": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "ios_beta": {
+              "$ref": "#/$defs/artifact"
+            },
+            "firebase_dev": {
+              "$ref": "#/$defs/artifact"
+            }
+          },
+          "required": []
+        },
+        "productionRuns": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "ios_prod": {
+              "$ref": "#/$defs/artifact"
+            },
+            "firebase_prod": {
+              "$ref": "#/$defs/artifact"
+            }
+          },
+          "required": []
+        },
+        "pdfAdHoc": {
+          "$ref": "#/$defs/pdfAdHoc"
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "pageId",
+        "sourceId",
+        "sourceUrlHash",
+        "source",
+        "contentRevision",
+        "contentHash",
+        "locales",
+        "products",
+        "allowTextOnlyLocales",
+        "clientCapabilities",
+        "testEnvironments",
+        "productionEnvironments",
+        "approvalReceipts",
+        "productionRuns",
+        "pdfAdHoc"
+      ]
+    },
+    "studyProduct": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schemaVersion": {
+          "const": "sermon-app-study-product-v1"
+        },
+        "pageId": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": ".*\\S.*"
+        },
+        "targetLocale": {
+          "type": "string",
+          "pattern": "^(?!en(?:-|$))[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$"
+        },
+        "product": {
+          "enum": [
+            "outline",
+            "reflection"
+          ]
+        },
+        "contentRevision": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": ".*\\S.*"
+        },
+        "englishSourcePackageJsonSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "targetLanguageCandidateJsonSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": ".*\\S.*"
+              },
+              "text": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": ".*\\S.*"
+              },
+              "sourceUnitIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": ".*\\S.*"
+                },
+                "minItems": 1,
+                "uniqueItems": true
+              }
+            },
+            "required": [
+              "id",
+              "text",
+              "sourceUnitIds"
+            ]
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "pageId",
+        "targetLocale",
+        "product",
+        "contentRevision",
+        "englishSourcePackageJsonSha256",
+        "targetLanguageCandidateJsonSha256",
+        "items"
+      ]
+    },
+    "productReview": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schemaVersion": {
+          "const": "sermon-app-product-human-review-v1"
+        },
+        "pageId": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": ".*\\S.*"
+        },
+        "targetLocale": {
+          "type": "string",
+          "pattern": "^(?!en(?:-|$))[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$"
+        },
+        "product": {
+          "enum": [
+            "outline",
+            "reflection"
+          ]
+        },
+        "contentRevision": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": ".*\\S.*"
+        },
+        "englishSourcePackageJsonSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "targetLanguageCandidateJsonSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "decision": {
+          "enum": [
+            "approved",
+            "rejected"
+          ]
+        },
+        "reviewer": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": ".*\\S.*"
+        },
+        "reviewedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "artifactSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "artifactJsonSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "reviewedItemIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": ".*\\S.*"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "pageId",
+        "targetLocale",
+        "product",
+        "contentRevision",
+        "englishSourcePackageJsonSha256",
+        "targetLanguageCandidateJsonSha256",
+        "decision",
+        "reviewer",
+        "reviewedAt",
+        "artifactSha256",
+        "artifactJsonSha256",
+        "reviewedItemIds"
+      ]
+    },
+    "clientCapability": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schemaVersion": {
+          "const": "sermon-app-client-capability-v1"
+        },
+        "environment": {
+          "enum": [
+            "ios_beta",
+            "firebase_dev"
+          ]
+        },
+        "client": {
+          "$ref": "#/$defs/client"
+        },
+        "pageId": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": ".*\\S.*"
+        },
+        "targetLocale": {
+          "type": "string",
+          "pattern": "^(?!en(?:-|$))[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$"
+        },
+        "contentRevision": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": ".*\\S.*"
+        },
+        "contentHash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "supportsAudioUnavailable": {
+          "type": "boolean"
+        },
+        "supportedProductSchemas": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "translation": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": ".*\\S.*"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "audio": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": ".*\\S.*"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "outline": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": ".*\\S.*"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "reflection": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": ".*\\S.*"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "translation",
+            "audio",
+            "outline",
+            "reflection"
+          ]
+        },
+        "productArtifactSha256s": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "translation": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "audio": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "outline": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "reflection": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "translation",
+            "audio",
+            "outline",
+            "reflection"
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/artifact"
+        },
+        "decision": {
+          "enum": [
+            "approved",
+            "rejected"
+          ]
+        },
+        "reviewer": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": ".*\\S.*"
+        },
+        "reviewedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "environment",
+        "client",
+        "pageId",
+        "targetLocale",
+        "contentRevision",
+        "contentHash",
+        "supportsAudioUnavailable",
+        "supportedProductSchemas",
+        "productArtifactSha256s",
+        "evidence",
+        "decision",
+        "reviewer",
+        "reviewedAt"
+      ]
+    },
+    "appReview": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schemaVersion": {
+          "const": "sermon-app-human-review-v1"
+        },
+        "environment": {
+          "enum": [
+            "ios_beta",
+            "firebase_dev"
+          ]
+        },
+        "client": {
+          "$ref": "#/$defs/client"
+        },
+        "pageId": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": ".*\\S.*"
+        },
+        "sourceId": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": ".*\\S.*"
+        },
+        "englishSourcePackageJsonSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "contentRevision": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": ".*\\S.*"
+        },
+        "contentHash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "candidateJsonSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "appVisible": {
+          "type": "boolean"
+        },
+        "reviewedProducts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/reviewScope"
+          },
+          "minItems": 4,
+          "uniqueItems": true
+        },
+        "decision": {
+          "enum": [
+            "approved",
+            "rejected"
+          ]
+        },
+        "reviewer": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": ".*\\S.*"
+        },
+        "reviewedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "environment",
+        "client",
+        "pageId",
+        "sourceId",
+        "englishSourcePackageJsonSha256",
+        "contentRevision",
+        "contentHash",
+        "candidateJsonSha256",
+        "appVisible",
+        "reviewedProducts",
+        "decision",
+        "reviewer",
+        "reviewedAt"
+      ]
+    },
+    "pdfReview": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schemaVersion": {
+          "const": "sermon-app-pdf-human-review-v1"
+        },
+        "pageId": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": ".*\\S.*"
+        },
+        "contentRevision": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": ".*\\S.*"
+        },
+        "contentHash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "artifactSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "decision": {
+          "enum": [
+            "approved",
+            "rejected"
+          ]
+        },
+        "reviewer": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": ".*\\S.*"
+        },
+        "reviewedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "pageId",
+        "contentRevision",
+        "contentHash",
+        "artifactSha256",
+        "decision",
+        "reviewer",
+        "reviewedAt"
+      ]
+    },
+    "productionObservation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schemaVersion": {
+          "const": "sermon-app-production-observation-v1"
+        },
+        "environment": {
+          "enum": [
+            "ios_prod",
+            "firebase_prod"
+          ]
+        },
+        "client": {
+          "$ref": "#/$defs/client"
+        },
+        "candidateJsonSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "publication": {
+          "enum": [
+            "not_run",
+            "pass",
+            "fail"
+          ]
+        },
+        "deviceAcceptance": {
+          "enum": [
+            "not_run",
+            "pass",
+            "fail"
+          ]
+        },
+        "observer": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": ".*\\S.*"
+        },
+        "observedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "evidence": {
+          "$ref": "#/$defs/artifact"
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "environment",
+        "client",
+        "candidateJsonSha256",
+        "publication",
+        "deviceAcceptance",
+        "observer",
+        "observedAt",
+        "evidence"
+      ]
+    },
+    "inspection": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schemaVersion": {
+          "const": "sermon-app-delivery-inspection-v1"
+        },
+        "workflowScope": {
+          "const": "app_delivery_readiness"
+        },
+        "pageId": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": ".*\\S.*"
+        },
+        "contentRevision": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": ".*\\S.*"
+        },
+        "contentHash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "candidateJsonSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "locales": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^(?!en(?:-|$))[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "appProductsReady": {
+          "type": "boolean"
+        },
+        "promotion": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "enum": [
+                "planned",
+                "eligible_not_published"
+              ]
+            },
+            "blockers": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": ".*\\S.*"
+              },
+              "minItems": 0
+            }
+          },
+          "required": [
+            "status",
+            "blockers"
+          ]
+        },
+        "approvals": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "ios_beta": {
+              "enum": [
+                "missing",
+                "approved",
+                "rejected"
+              ]
+            },
+            "firebase_dev": {
+              "enum": [
+                "missing",
+                "approved",
+                "rejected"
+              ]
+            }
+          },
+          "required": [
+            "ios_beta",
+            "firebase_dev"
+          ]
+        },
+        "products": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "translation": {
+                "$ref": "#/$defs/productState"
+              },
+              "audio": {
+                "$ref": "#/$defs/productState"
+              },
+              "outline": {
+                "$ref": "#/$defs/productState"
+              },
+              "reflection": {
+                "$ref": "#/$defs/productState"
+              }
+            },
+            "required": [
+              "translation",
+              "audio",
+              "outline",
+              "reflection"
+            ]
+          }
+        },
+        "productNames": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "translation": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": ".*\\S.*"
+            },
+            "audio": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": ".*\\S.*"
+            },
+            "outline": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": ".*\\S.*"
+            },
+            "reflection": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": ".*\\S.*"
+            }
+          },
+          "required": [
+            "translation",
+            "audio",
+            "outline",
+            "reflection"
+          ]
+        },
+        "schemaNames": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": ".*\\S.*"
+          }
+        },
+        "pdfAdHoc": {
+          "$ref": "#/$defs/pdfAdHoc"
+        },
+        "production": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "ios_prod": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/productionObservation"
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "publication": {
+                      "const": "not_run"
+                    },
+                    "deviceAcceptance": {
+                      "const": "not_run"
+                    }
+                  },
+                  "required": [
+                    "publication",
+                    "deviceAcceptance"
+                  ]
+                }
+              ]
+            },
+            "firebase_prod": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/productionObservation"
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "publication": {
+                      "const": "not_run"
+                    },
+                    "deviceAcceptance": {
+                      "const": "not_run"
+                    }
+                  },
+                  "required": [
+                    "publication",
+                    "deviceAcceptance"
+                  ]
+                }
+              ]
+            }
+          },
+          "required": [
+            "ios_prod",
+            "firebase_prod"
+          ]
+        },
+        "legacyPdfScope": {
+          "const": "dual_pdf_unchanged"
+        },
+        "deviceAcceptance": {
+          "const": "not_run"
+        },
+        "venueAcceptance": {
+          "const": "not_run"
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "workflowScope",
+        "pageId",
+        "contentRevision",
+        "contentHash",
+        "candidateJsonSha256",
+        "locales",
+        "appProductsReady",
+        "promotion",
+        "approvals",
+        "products",
+        "productNames",
+        "schemaNames",
+        "pdfAdHoc",
+        "production",
+        "legacyPdfScope",
+        "deviceAcceptance",
+        "venueAcceptance"
+      ]
+    }
+  }
+}

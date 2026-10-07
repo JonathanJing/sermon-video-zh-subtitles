@@ -32,7 +32,8 @@ from scripts.cuv_scripture import CuvLibrary, parse_reference, DEFAULT_LIBRARY_P
 
 VERSION = "sermon-cuv-translation-v1"
 MAP_SCHEMA = "sermon-cuv-reference-map-v1"
-MODEL = "gpt-6-astra"
+MODEL = "gpt-6.1-sol"
+MODEL_IDENTITIES = {("gpt-6-astra", "medium"), (MODEL, "high")}
 TIMING_REVISION = "sermon-cuv-narration-timing-revision-v1"
 TIMING_AWARE_POLICY = "timing-aware-review-v2"
 CHECKS = ("completeMeaning", "negationsNumbersNames", "quotationAttribution", "spokenChinese")
@@ -420,7 +421,7 @@ def validate_reference_map_revision(manifest):
                 "Original reference-map evidence must match its source route")
         receipt = read(source["path"])
         data = {"parentJobSha256": manifest["parentJob"]["sha256"], "blocks": [{"id": b["id"], "en": b["en"]} for b in blocks]}
-        payload = {"model": MODEL, "reasoning_effort": "medium", "response_format": {"type": "json_object"},
+        payload = {"model": prior["model"], "reasoning_effort": prior["reasoningEffort"], "response_format": {"type": "json_object"},
             "messages": [{"role": "system", "content": SYSTEM + DISCOVER},
                          {"role": "user", "content": json.dumps(data, ensure_ascii=False)}]}
         expected = {"version": VERSION, "identity": digest(prior), "stage": "discover", "payload": payload}
@@ -428,7 +429,7 @@ def validate_reference_map_revision(manifest):
                 and Path(source["path"]).name == "discover-" + digest(expected) + ".json", "Discover revision source path differs")
         check_model_receipt(receipt, expected, prior)
         response = receipt["response"]
-        require(isinstance(response.get("model"), str) and response["model"].startswith(MODEL)
+        require(isinstance(response.get("model"), str) and response["model"].startswith(payload["model"])
                 and response["choices"][0].get("finish_reason") == "stop", "Original discovery response incomplete")
         raw = json.loads(response["choices"][0]["message"]["content"])
     check_binding(revision["revisedMap"])
@@ -505,11 +506,11 @@ def repair_contexts(manifest):
             "Repair audit request hash mismatch")
     check_model_receipt(receipt, expected, previous)
     payload = request["payload"]
-    require(payload.get("model") == MODEL and payload.get("reasoning_effort") == "medium"
+    require((payload.get("model"), payload.get("reasoning_effort")) in MODEL_IDENTITIES
             and payload["messages"][0] == {"role": "system", "content": SYSTEM + AUDIT_QUOTES},
             "Repair audit prompt/model differs from the supported independent audit")
     response = receipt["response"]
-    require(isinstance(response.get("model"), str) and response["model"].startswith(MODEL)
+    require(isinstance(response.get("model"), str) and response["model"].startswith(payload["model"])
             and response["choices"][0].get("finish_reason") == "stop", "Repair audit response is incomplete")
     audit = json.loads(response["choices"][0]["message"]["content"])
     user_content = payload["messages"][1]["content"]
@@ -601,14 +602,14 @@ def audit_user_content(name, data, manifest):
 
 
 def cached_call(out, name, instruction, data, identity, *, offline=False, manifest=None):
-    payload = {"model": MODEL, "reasoning_effort": "medium", "response_format": {"type": "json_object"},
+    payload = {"model": (manifest or {}).get("model", MODEL), "reasoning_effort": (manifest or {}).get("reasoningEffort", "high"), "response_format": {"type": "json_object"},
                "messages": [{"role": "system", "content": SYSTEM + instruction},
                             {"role": "user", "content": audit_user_content(name, data, manifest)}]}
     request = {"version": VERSION, "identity": identity, "stage": name, "payload": payload}
     path = Path(out) / "cache" / (name + "-" + digest(request) + ".json")
     reused = find_reuse(request, manifest) if not path.exists() and not offline else None
     hit = path.exists() or reused is not None
-    with (nullcontext() if offline else stage("cuv." + name, cache_hit=hit, billing="local" if hit else "api")):
+    with (nullcontext() if offline else stage("cuv." + name, cache_hit=hit, billing="local" if hit else "codex" if payload["model"] == MODEL else "api")):
         if path.exists():
             receipt = read(path)
             check_model_receipt(receipt, request, manifest)
@@ -619,7 +620,7 @@ def cached_call(out, name, instruction, data, identity, *, offline=False, manife
         else:
             require(not offline, "Missing model evidence cache")
             key = os.environ.get("OPENAI_API_KEY", "").strip()
-            require(bool(key), "OPENAI_API_KEY is missing; set it in the environment to run models")
+            require(bool(key) or payload["model"] == MODEL, "OPENAI_API_KEY is missing for the historical API model")
             try:
                 response = chat_json(key, payload)
             except Exception as exc:
@@ -628,7 +629,7 @@ def cached_call(out, name, instruction, data, identity, *, offline=False, manife
                        "response": response, "responseSha256": digest(response)}
             save_frozen(path, receipt)
     response = receipt["response"]
-    require(isinstance(response.get("model"), str) and response["model"].startswith(MODEL), "Unexpected response model")
+    require(isinstance(response.get("model"), str) and response["model"].startswith(payload["model"]), "Unexpected response model")
     choice = response["choices"][0]
     require(choice.get("finish_reason") == "stop", "Model response was not complete")
     result = json.loads(choice["message"]["content"])
@@ -759,14 +760,13 @@ def reviewed_selection_source(path, prior, prior_binding):
             and Path(path).name == stage_name + "-" + digest(expected) + ".json", "Selection review receipt path mismatch")
     check_model_receipt(receipt, expected, prior)
     payload = request["payload"]
-    require(request.get("version") == VERSION and payload.get("model") == MODEL
-            and payload.get("reasoning_effort") == "medium"
+    require(request.get("version") == VERSION and (payload.get("model"), payload.get("reasoning_effort")) in MODEL_IDENTITIES
             and payload["messages"][0]["role"] == "system"
             and payload["messages"][0]["content"] in tuple(SYSTEM + SELECT + extra + (SELECT_OFFSETS if prior.get("preflightPolicy") == PREFLIGHT_POLICY else "")
                      for extra in ("", REPAIR_SELECT, SELECT_REVIEW)),
             "Selection review source prompt differs")
     response = receipt["response"]
-    require(isinstance(response.get("model"), str) and response["model"].startswith(MODEL)
+    require(isinstance(response.get("model"), str) and response["model"].startswith(payload["model"])
             and response["choices"][0].get("finish_reason") == "stop", "Selection review source incomplete")
     selected = json.loads(response["choices"][0]["message"]["content"])
     require(isinstance(selected.get("issues"), list) and isinstance(selected.get("quotes"), list)
@@ -1422,7 +1422,7 @@ def repair_timing(prior_translation, parent_job, timing_report, out, *, batch_si
     timing, evidence = measured_timing(parent, Path(timing_report).resolve())
     manifest = {"schemaVersion": VERSION, "operation": TIMING_REVISION, "parentJob": bind(parent),
                 "library": old["library"], "provenance": old["provenance"], "model": MODEL,
-                "reasoningEffort": "medium", "batchSize": batch_size,
+                "reasoningEffort": "high", "batchSize": batch_size,
                 "priorTranslation": {"manifest": bind(prior / "cuv-manifest.json"),
                     "report": bind(prior / "report.json"), "review": bind(prior / "spoken-review.json")},
                 "timingReport": evidence["timingReport"], "timingEvidence": evidence}
@@ -1452,9 +1452,9 @@ def repair_timing(prior_translation, parent_job, timing_report, out, *, batch_si
 def review_document(manifest, report_path, blocks, reviewed_at):
     parent = read(manifest["parentJob"]["path"])
     return {"schemaVersion": "sermon-spoken-script-review-v1",
-        "parentJobSha256": manifest["parentJob"]["sha256"], "reviewType": "model", "model": MODEL,
+        "parentJobSha256": manifest["parentJob"]["sha256"], "reviewType": "model", "model": manifest["model"],
         "humanApproval": False, "status": "approved_for_synthesis", "reviewedAt": reviewed_at,
-        "reviewedBy": "Astra CUV quotation and independent narrative review",
+        "reviewedBy": manifest["model"] + " CUV quotation and independent narrative review",
         "authority": "user_directed_conversation_review", "reviewedBlockIds": [b["id"] for b in blocks],
         "checks": {k: "pass" for k in CHECKS}, "unresolvedTextIssues": [],
         "cuvTranslation": {"schemaVersion": VERSION, "report": bind(report_path)},
@@ -1472,8 +1472,7 @@ def validate(out):
     """Offline: replay caches, all guards and exact output construction; no writes."""
     out = Path(out).resolve()
     manifest = read(out / "cuv-manifest.json")
-    require(manifest.get("schemaVersion") == VERSION and manifest.get("model") == MODEL
-            and manifest.get("reasoningEffort") == "medium", "Translation manifest identity changed")
+    require(manifest.get("schemaVersion") == VERSION and (manifest.get("model"), manifest.get("reasoningEffort")) in MODEL_IDENTITIES, "Translation manifest identity changed")
     result = compute(out, manifest, offline=True)
     report = read(out / "report.json")
     require(report.get("status") == "passed" and report.get("humanApproval") is False
@@ -1519,8 +1518,14 @@ def run(parent_job, out, *, library=DEFAULT_LIBRARY_PATH, provenance=DEFAULT_PRO
         "provenance": bind(provenance), "referenceMap": bind(reference_map_path) if reference_map_path else None,
         "timingReport": bind(parent_job.parent / "synchronization/report.json")
                         if (parent_job.parent / "synchronization/report.json").exists() else None,
-        "model": MODEL, "reasoningEffort": "medium", "batchSize": batch_size}
+        "model": MODEL, "reasoningEffort": "high", "batchSize": batch_size}
     existing_manifest = out / "cuv-manifest.json"
+    if existing_manifest.exists():
+        prior_identity = read(existing_manifest)
+        require((prior_identity.get("model"), prior_identity.get("reasoningEffort")) in MODEL_IDENTITIES,
+                "Existing translation model identity is unsupported")
+        manifest["model"] = prior_identity["model"]
+        manifest["reasoningEffort"] = prior_identity["reasoningEffort"]
     if not existing_manifest.exists() or read(existing_manifest).get("preflightPolicy") == PREFLIGHT_POLICY:
         manifest["preflightPolicy"] = PREFLIGHT_POLICY
         manifest["selectionPolicy"] = SELECTION_OFFSETS_POLICY

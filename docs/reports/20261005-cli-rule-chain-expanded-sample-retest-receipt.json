@@ -1,0 +1,374 @@
+{
+  "schemaVersion": "cli-rule-chain-expanded-sample-retest-v1",
+  "date": "2026-10-05",
+  "pullRequest": 248,
+  "developmentBaseCommit": "a93e59f0ab745e470be9f89e41b30be2c760d4b4",
+  "trackedWorkingTreeDirtyAtExecution": true,
+  "codeFileSha256": {
+    "scripts/codex_layer2_diagnostic.py": "0ebc3475e188cdd9650a6d9a7ae130de5d42fbb212b1a9e4d79d57b754709fd0",
+    "scripts/run_codex_layer2_test.py": "ea334c0908ab3c3ca2f1c2ebc94ef7da8bbcc622fcf3a0baed9d07a6a410e786",
+    "scripts/run_target_language_models.py": "d96735a24d4692a4f73117f53ca09473a73a05981bdc5988dfcce7fde70cfbfc",
+    "scripts/produce_target_language_candidate.py": "63f14f5067a8a109a9c7ecd517bac233e13d3645376ceb92a2a0e1cd24ea862e",
+    "scripts/prepare_target_language_speech_job.py": "76a0e645a78bef8d5f3f4f4163fd4229f782bae5e233a832b07991a06ced233c",
+    "scripts/target_language_policy.py": "c121ad89b24510f27ba66d10840911307e309862f353fa460d37ffe2859e93b9",
+    "scripts/language_review_plugins/diagnostic_structural.py": "e54b4d81c00482693f7eddac750fbe303d76e8af5597adad66757096a23f34e6"
+  },
+  "artifactRoot": "artifacts/next-iteration-repair-20261005",
+  "testLogs": {
+    "cliDiagnostic": {
+      "passed": 167,
+      "seconds": 8.945,
+      "sha256": "ac842e13c6dbb7bce81afbd8f2d452ef3077f558c52c861f0c0cfad07ee721c7"
+    },
+    "l3Exporter": {
+      "schemaVersion": "sermon-l3-recovery-export-test-receipt-v1",
+      "codeFileSha256": {
+        "scripts/render_formal_target_language_speech.py": "4232cfeee91c4cac5142ec7f1035aed04f79ca4c5da77f79bad9149680090076",
+        "scripts/export_layer3_recovery_intents.py": "2de9366f663422cec99b73fbbda49fff73265ce17cc110847aa4be2288ae24be",
+        "schemas/sermon-l3-recovery-intent-snapshot-v1.schema.json": "5ea05f12bcc7ddfb8a5e8253e0d27654672d08bd70ef5a331d38f44cdfa065a9",
+        "schemas/sermon-l3-recovery-render-settings-v1.schema.json": "96b113d53b7aa5f7fc9364a271ea3c47eae997c0b929862ef89509c24cca84db",
+        "tests/test_export_layer3_recovery_intents.py": "d9064528ed46c5484d1a92fc2724ad05124388ea45088ddd24e79d0692a0019a"
+      },
+      "regressionLog": "l3-export-final-regression.log",
+      "regressionPassed": 100,
+      "regressionSeconds": 95.297,
+      "finalNewModuleLog": "l3-export-tests-final.log",
+      "finalNewModulePassed": 12,
+      "snapshotPlannerJoinLog": "l3-export-planner-join.log",
+      "real474Receipt": "l3-real474-complete-acceptance-receipt.json",
+      "readonly": true,
+      "modelCalls": 0,
+      "commitCreatedByDelegate": false,
+      "assemblyModelBoundary": {
+        "assemblyOnlySettings": [
+          "reactionLagSeconds",
+          "interUtteranceGapSeconds",
+          "maxEndLagSeconds",
+          "trackFormat"
+        ],
+        "settingsIncludedInSnapshot": true,
+        "assemblyOnlySettingsIncludedInModelIntent": false,
+        "assemblySettingsComparedByCurrentPlanner": false,
+        "assemblySettingsChangeRequiresPackageReassemblyBeforeRelease": true,
+        "modelRecomputeCannotBeInferredFromAssemblyOrPackageHashChange": true,
+        "plannerDoesNotAuthorizeDispatchOrPublication": true
+      },
+      "logSha256": {
+        "l3-export-final-regression.log": "18f549a924d5f7937da32300c4a6ffd342834e6beeac905bab852b9e9457583e",
+        "l3-export-tests-final.log": "4690d2693e038a4a93a90602d5902dd54d8e5c0643a4c1b64e2c53f47ed7288b",
+        "l3-export-planner-join.log": "b8205f5df1c5289412eefe8f81ef1d913f1f700b46c79149cbe3b7062439e6ab",
+        "l3-real474-complete.log": "268f1617fade49639c938d9261ab6692c634eb0e99e9e51d8481e1a37771f696"
+      },
+      "finalNewModuleSeconds": 8.3,
+      "uniquePassedTestsAcrossFinalLogs": 101,
+      "overlapNote": "12 final new-module tests overlap 11 of the 100 regression tests; the newest join test passed separately too",
+      "real474ExpectedSnapshotSchema": "pass"
+    }
+  },
+  "fixtureManifest": {
+    "schemaVersion": "codex-layer2-diagnostic-fixture-v1",
+    "simulationOnly": true,
+    "productionEligible": false,
+    "actualHumanApproval": false,
+    "files": {
+      "source.json": "bb2c522b63e273d76ca45706e47b541b690a24b716d3c392cdbacfacdccba7e9",
+      "anchor.json": "654595456c38c3356d1e841a71ed7a83ccca7cd54be9eb4273d67d0199c76a65",
+      "policy.json": "ddf85bf403b0f1006d4aed537fafee309a97bd99c5c76326f0d465258ca2571b",
+      "group-plan.json": "ce6e0def1d46102bc290359a88c8a2c8e054ebabfb7b9ddbde78d13a73767b39"
+    },
+    "scriptureClassification": "no_direct_quotations",
+    "sourceQuotationUnits": [],
+    "simulationAuthorizationRef": "62bbcdb12af48917cea179ec8c793da1a8afc3ab43e3484ecf328750aee99685",
+    "continuationCodeCommit": "a93e59f0ab745e470be9f89e41b30be2c760d4b4",
+    "baselinePolicySha256": "9ded192f6bfebf462e75d7eb5bb8f1c466df76202475f1c045f32f42d229e560",
+    "pluginPath": "/Users/jonathan_jing/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/scripts/language_review_plugins/diagnostic_structural.py",
+    "pluginImplementationSha256": "ee120781a646d3788b7421db99aacdaf80fb84bbb04b96919b7a8354d30896a3",
+    "sourceMediaSha256": "374662dc7c00993820360b2095e277ecd7ebf17bc4d873ccf7e2b76a6c7c7930",
+    "sourceWindow": {
+      "startSeconds": 60.0,
+      "endSeconds": 240.0
+    },
+    "anchorTimeline": "relative_to_frozen_window_start",
+    "sourceUnits": 39,
+    "groups": 13
+  },
+  "online180s": {
+    "status": "candidate_admission_blocked_by_language_plugin",
+    "exitCode": 1,
+    "realCliCalls": 26,
+    "uniqueSessions": 26,
+    "apiCalls": 0,
+    "toolCalls": 0,
+    "runWallSeconds": 337.328847,
+    "cliElapsedSecondsSum": 336.4210670404136,
+    "groups": 13,
+    "sourceUnits": 39,
+    "semanticReviewPassedGroups": 13,
+    "pluginPassedGroups": 12,
+    "pluginFailedGroups": [
+      "fresh-g006"
+    ],
+    "failedCheckId": "term_surface_preservation",
+    "failedTerm": {
+      "source": "Super Bloom",
+      "configuredPendingTarget": "超级花潮",
+      "observedTarget": "Super Bloom",
+      "humanApproval": false
+    },
+    "candidateCreated": false,
+    "ruleBundleSha256": "babf0fa86630ffa592390eabe8aeb5a69072248fe8338551c2ea37777837ba13",
+    "priorPayloadRulesVerified": true,
+    "sourceMediaSha256": "374662dc7c00993820360b2095e277ecd7ebf17bc4d873ccf7e2b76a6c7c7930",
+    "rulePreflightFileSha256": "a9641cdc3818cc33315117ea384295b22eaa73bfc07882d658e2e30ef6e1a323",
+    "evidenceFileSha256": "3874563e8c8de0168ac2ce3f60061d9b0978a1090f6d2c953af1e364a07c1381",
+    "languageReviewFileSha256": "5cf5062fbbf9802b6ce74fe227904b18bab8e1e3dc7b88bcaf08258522108ffc",
+    "accountingSummaryFileSha256": "6689adf07a4b1db00f4016105f3354dfd7e281f8e6e76f005aa9cf896ab40e4b",
+    "roles": [
+      {
+        "role": "translator",
+        "requestedModel": "gpt-6.1-sol",
+        "requestedServiceTier": "fast",
+        "calls": 13,
+        "elapsedSecondsSum": 181.24896858318243,
+        "usage": {
+          "input_tokens": 222223,
+          "cached_input_tokens": 86912,
+          "output_tokens": 6899,
+          "reasoning_output_tokens": 4021
+        },
+        "sessionOutputTokensPerSecond": 38.06366488002259,
+        "generationTokensPerSecond": null,
+        "estimatedCredits": 17.41516
+      },
+      {
+        "role": "reviewer",
+        "requestedModel": "gpt-6-sol",
+        "requestedServiceTier": "fast",
+        "calls": 13,
+        "elapsedSecondsSum": 155.1720984572312,
+        "usage": {
+          "input_tokens": 221630,
+          "cached_input_tokens": 144384,
+          "output_tokens": 9012,
+          "reasoning_output_tokens": 4367
+        },
+        "sessionOutputTokensPerSecond": 58.07745135626882,
+        "generationTokensPerSecond": null,
+        "estimatedCredits": 13.67444
+      }
+    ],
+    "estimatedCredits": 31.0896,
+    "actualCredits": null,
+    "actualQuotaUsage": null,
+    "supervisorUsageIncluded": false,
+    "sameIdentityResume": {
+      "status": "plugin_failure_reproduced_without_retranslation",
+      "exitCode": 1,
+      "elapsedSeconds": 0.6267361249774694,
+      "newModelCalls": 0,
+      "protectedFiles": 159,
+      "protectedHashesUnchanged": true,
+      "candidateCreated": false
+    }
+  },
+  "expanded605s": {
+    "sourceProvenance": {
+      "schemaVersion": "diagnostic-source-slice-v1",
+      "diagnosticOnly": true,
+      "productionEligible": false,
+      "humanApprovalCreated": false,
+      "parentMedia": {
+        "path": "/Users/jonathan_jing/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/drive-source-20260926-1730/Saturday_530pm_Live__1080-2.mp4",
+        "sha256": "374662dc7c00993820360b2095e277ecd7ebf17bc4d873ccf7e2b76a6c7c7930",
+        "durationSeconds": 1891.677333
+      },
+      "parentPackage": {
+        "path": "/Users/jonathan_jing/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/post-live-runs/2026-09-27/drive-1wpixHcwnlS3WfOPdZ-oek_Y1YZG53NN5/pipeline/sentence-interpretation-v2-final-approved/8293058593ddbdcef097c8d8b06e8e5a76ad1be04592c5f9d627f83b6e17667e/english-source-package.json",
+        "sha256": "9d7de39a1fde46f73b39fa54815fd6ed9a87733e0ffe212d57830204bfe4bc38"
+      },
+      "parentAnchorSha256": "4b92965624f052b5feace5ed17c32e8c3825bdd4ad12b19fa2b360cacba0be11",
+      "requestedWindow": {
+        "startSeconds": 60,
+        "endSeconds": 660
+      },
+      "actualCompleteSentenceWindow": {
+        "startSeconds": 63.32,
+        "endSeconds": 668.820007,
+        "durationSeconds": 605.500007
+      },
+      "sourceUnitCount": 136,
+      "sourceSentenceCount": 114,
+      "groupCount": 46,
+      "englishTextChanged": false,
+      "timingRebasedBySeconds": 63.32,
+      "containsDirectScriptureQuotation": true,
+      "observedQuotationIntroductionUnitIds": [
+        "0-u067"
+      ],
+      "scriptureScope": "direct_quote_requires_source_bound_edition_and_group_map",
+      "originalEvidenceUnchanged": true,
+      "quotationSourceUnitIds": [
+        "0-u067",
+        "0-u068"
+      ],
+      "observedScriptureReference": "Revelation 4:2-3"
+    },
+    "negativePreflight": {
+      "schemaVersion": "expanded-sample-preflight-receipt-v1",
+      "durationSeconds": 605.500007,
+      "sourceUnits": 136,
+      "groups": 46,
+      "exitCode": 1,
+      "status": "blocked_expected",
+      "reason": "direct_scripture_unsupported_by_structural_plugin",
+      "quotationSourceUnitIds": [
+        "0-u067",
+        "0-u068"
+      ],
+      "realModelCalls": 0,
+      "fixtureCreated": false,
+      "logSha256": "38cd2a31fe304099eafbf5e5534373a2000bb2c484ec5211ebb1fdca8c190976"
+    }
+  },
+  "real474Recovery": {
+    "sourceRoot": "/Users/jonathan_jing/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/post-live-runs/2026-10-04/resi-69ba7a66/formal-layer3-execution-v2/es-publication-v1/collected-es-render-v1",
+    "isolatedRoot": "/Users/jonathan_jing/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/next-iteration-repair-20261005/l3-real474-isolated-cache",
+    "originalFileCount": 1910,
+    "modelCalls": 0,
+    "cacheWritesByExporter": 0,
+    "ownerSnapshotProvided": false,
+    "anchorExceptionReceipt": "/Users/jonathan_jing/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/post-live-runs/2026-10-04/resi-69ba7a66/formal-layer3-execution-v2/es-publication-v1/human-approved-leading60-v1/anchor-exception-receipt-v2.json",
+    "newApprovalCreated": false,
+    "exportSeconds": 16.57349270908162,
+    "exportCoverage": 474,
+    "exportStatus": "pass",
+    "producerFileSha256": "4232cfeee91c4cac5142ec7f1035aed04f79ca4c5da77f79bad9149680090076",
+    "plannerSeconds": 42.149934624903835,
+    "plannerStatus": "pass",
+    "planCounts": {
+      "reuse": 0,
+      "revalidate": 474,
+      "recompute": 0,
+      "unknown": 0
+    },
+    "planUnitCount": 474,
+    "plannedMissingUnitCommits": 0,
+    "originalHashesUnchanged": true,
+    "isolatedExistingHashesUnchanged": true,
+    "modelModulesLoaded": false,
+    "plannedModelUnitEvaluations": 0,
+    "plannedBatchReplayWindows": 0,
+    "blockedUnitCount": 474,
+    "wholeLayerDispatchBlocked": true,
+    "expectedSnapshotSha256": "d875b3ae35196dd220f3a5c72eb0ca15984b085b7406d7e999c26e81aa1d63c4",
+    "planSha256": "ce2cc2a8a19f052fba6813350ac984897ee624bf8fd35f40722a54e01abdb8bc",
+    "assemblyModelBoundary": {
+      "assemblyOnlySettings": [
+        "reactionLagSeconds",
+        "interUtteranceGapSeconds",
+        "maxEndLagSeconds",
+        "trackFormat"
+      ],
+      "settingsIncludedInSnapshot": true,
+      "assemblyOnlySettingsIncludedInModelIntent": false,
+      "assemblySettingsComparedByCurrentPlanner": false,
+      "assemblySettingsChangeRequiresPackageReassemblyBeforeRelease": true,
+      "modelRecomputeCannotBeInferredFromAssemblyOrPackageHashChange": true,
+      "plannerDoesNotAuthorizeDispatchOrPublication": true
+    }
+  },
+  "productionEligible": false,
+  "publication": "not_run",
+  "localModels": "not_run_this_iteration",
+  "independentReadOnlyCodeReview": "no_blocking_findings",
+  "remaining": [
+    "formal_terminology_human_approval_and_per_group_plugin_early_stop",
+    "direct_scripture_edition_group_adapter",
+    "formal_strict_cli_adapter",
+    "owner_reconciliation_actual_recovery",
+    "assembly_settings_planner_comparison",
+    "synchronization_repair",
+    "same_identity_four_layer_and_device_acceptance"
+  ],
+  "online180sRevision2": {
+    "status": "diagnostic_candidate_admitted_human_pending",
+    "policyCorrection": "retain_original_English_book_title_and_freeze_pending_surface_contract",
+    "productionEligible": false,
+    "actualHumanApproval": false,
+    "releaseEligible": false,
+    "exitCode": 0,
+    "realCliCalls": 26,
+    "uniqueSessions": 26,
+    "apiCalls": 0,
+    "localModelCalls": 0,
+    "sourceUnits": 39,
+    "groups": 13,
+    "pluginPassedGroups": 13,
+    "candidateCreated": true,
+    "runWallSeconds": 317.064774,
+    "cliElapsedSecondsSum": 316.20399458217435,
+    "usage": {
+      "input_tokens": 494661,
+      "cached_input_tokens": 305408,
+      "output_tokens": 15396,
+      "reasoning_output_tokens": 7892
+    },
+    "estimatedCredits": 28.93242,
+    "actualCredits": null,
+    "actualQuotaUsage": null,
+    "supervisorUsageIncluded": false,
+    "generationTokensPerSecond": null,
+    "sameIdentityResume": {
+      "status": "pass",
+      "elapsedSeconds": 0.7712360420264304,
+      "newModelCalls": 0,
+      "protectedFiles": 216,
+      "protectedHashesUnchanged": true
+    },
+    "exactMockReplay": {
+      "status": "pass",
+      "realModelCalls": false,
+      "cliTransportCreated": false
+    },
+    "allBrokerReservationsReleased": true,
+    "fixtureManifest": {
+      "schemaVersion": "codex-layer2-diagnostic-fixture-v1",
+      "simulationOnly": true,
+      "productionEligible": false,
+      "actualHumanApproval": false,
+      "files": {
+        "source.json": "bb2c522b63e273d76ca45706e47b541b690a24b716d3c392cdbacfacdccba7e9",
+        "anchor.json": "654595456c38c3356d1e841a71ed7a83ccca7cd54be9eb4273d67d0199c76a65",
+        "policy.json": "ae051111e0ea420c7e59a05ac8c48d187f71e76a6bb52d52c97e377bb6ef6bbf",
+        "group-plan.json": "ce6e0def1d46102bc290359a88c8a2c8e054ebabfb7b9ddbde78d13a73767b39"
+      },
+      "scriptureClassification": "no_direct_quotations",
+      "sourceQuotationUnits": [],
+      "simulationAuthorizationRef": "f4af710620d43428612f147b15955fc861ebae99aa268af5dfdb0ac7daacd152",
+      "continuationCodeCommit": "a93e59f0ab745e470be9f89e41b30be2c760d4b4",
+      "baselinePolicySha256": "ade8e34e74424d2f16ae23b848e8b8953ab87838ca619c19dbb01f38710ef2db",
+      "pluginPath": "/Users/jonathan_jing/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/scripts/language_review_plugins/diagnostic_structural.py",
+      "pluginImplementationSha256": "ee120781a646d3788b7421db99aacdaf80fb84bbb04b96919b7a8354d30896a3",
+      "sourceMediaSha256": "374662dc7c00993820360b2095e277ecd7ebf17bc4d873ccf7e2b76a6c7c7930",
+      "sourceWindow": {
+        "startSeconds": 60.0,
+        "endSeconds": 240.0
+      },
+      "anchorTimeline": "relative_to_frozen_window_start",
+      "sourceUnits": 39,
+      "groups": 13
+    },
+    "artifactFileSha256": {
+      "live-180s-r2/test-report.json": "452406ab3b74699d85ef39d4637ffaf2f7d9ff47273459cd24d55b5d955c0d01",
+      "live-180s-r2/diagnostic-candidate.json": "65de7f4f8111681fda7ca79b7d202c2353572c072f2729de1cb6c2f8276e859d",
+      "live-180s-r2/diagnostic-language-review.json": "88aea3226d527cdabf050b200e6046b878e37c6a805e026a7edd18bb14d0155a",
+      "live-180s-r2/evidence.json": "f17bcbbbe49fd278565c973142dff4744175c1f17fcd07b6fc1384a10e31b4a4",
+      "live-180s-r2/rule-preflight.json": "5d4556e86b63aede3b4d9f6b032e9035529974b3cd1b2a4fec26d672e7774a6a",
+      "live-180s-r2/accounting/summary.json": "2bdbd76216134eb8f199c00bee829063773b8446a198c39327cc2381f5e32dd6",
+      "mock-180s-r2/test-report.json": "20fbc9a69fb29be88a81a016c8ab2d14e71c825a2d579ecad5f65fede762b2d4"
+    },
+    "sessionOutputTokensPerSecond": 48.69008698117165
+  },
+  "totalNewCliCallsThisIteration": 52,
+  "totalEstimatedCreditsThisIteration": 60.02202
+}

@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": "sermon-study-artifact-v1"
+    },
+    "kind": {
+      "enum": [
+        "outline",
+        "meditation"
+      ]
+    },
+    "pageId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "locale": {
+      "enum": [
+        "zh-Hans",
+        "ko",
+        "es"
+      ]
+    },
+    "sourcePackageSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "textCandidateSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "producerIdentity": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sections": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "title",
+          "body",
+          "sourceUnitIds"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "body": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sourceUnitIds": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "kind",
+    "pageId",
+    "locale",
+    "sourcePackageSha256",
+    "textCandidateSha256",
+    "producerIdentity",
+    "sections"
+  ]
+}

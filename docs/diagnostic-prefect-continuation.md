@@ -15,6 +15,14 @@ already match the existing provider/store. Live execution is a separate explicit
 descriptor after original-ledger and input preflight. Neither mode initializes
 a fresh provider ledger or extends its clock.
 
+Continuation request limits are frozen in `continuation-request-limits.json`.
+All continuation CLI entries reuse this snapshot when `--request-limits` is
+omitted; an explicitly supplied limits file must match it exactly. For an
+initial continuation without this snapshot, pass `--request-limits` with the
+intended bound limits JSON; the entry does not guess a default. A changed limit
+is rejected before dispatch and cannot silently reset an existing run to the
+default input bound. The command below assumes the snapshot already exists.
+
 ```sh
 python -m scripts.sermon_diagnostic_prefect_flow \
   --plan /absolute/fixture/run-plan.json \
@@ -22,6 +30,43 @@ python -m scripts.sermon_diagnostic_prefect_flow \
   --spec /absolute/fixture/flow-spec.json \
   --offline-fixture --fixture-responses /absolute/fixture/responses.json
 ```
+
+New sessions use `sermon-diagnostic-dag-session-v2`; v2 explicitly freezes
+`requestLimits`. Do not edit an existing v1 `plan.json` or move its Prefect
+state into a newly computed directory. To resume an existing v1 Prefect DAG,
+add `--resume-plan /absolute/run/diagnostic-prefect/<original-plan-hash>/plan.json`
+to the continuation command. Both legacy v1 shapes (with and without the
+previously unversioned limits field) are supported. If a legacy binding has no
+limits, the original limits must come from an existing frozen continuation
+snapshot or an explicit `--request-limits` file; limits are never inferred.
+
+The explicit migration retains the original plan bytes, directory, node
+observations and business receipts. It freezes
+`session-binding-migration-v2.json` beside the original plan (any older v1
+sidecar stays unchanged), mapping the active
+v2 execution binding to that original hash. Existing limits, source evidence,
+store, deadline, configuration and input hashes must still match. All migration
+admission completes before a new immutable limits snapshot is written; a rejected
+limit or outer mock plan cannot poison a later valid resume.
+
+For a genuine cross-code migration, provide a newly authorized current-code
+`--continuation` and also `--legacy-continuation /absolute/original-continuation.json`.
+The latter must match both original continuation and context hashes. All context
+fields except the authorized continuation code commit remain fixed. The migration
+receipt binds both complete authorizations and the current execution binding;
+current clean-code checks still apply, and the old authorization alone is rejected.
+Validated legacy context remains attached to existing paid locale request/cache
+identities. The strict locale's explicit legacy admission may block reuse when
+its original evidence does not prove the newly required rule consumption.
+
+The mock TTS entry point supports the same options, with `--resume-plan` naming
+`/absolute/run/mock-tts-dag/<original-plan-hash>/plan.json`. Its separate immutable
+migration receipt binds the current wrapper code and nested diagnostic migration,
+while preserving the original mock root, plan hash and recovery request identities.
+The nested legacy diagnostic binding is verified against the original hashed mock
+plan rather than written as a fabricated diagnostic plan. Repeating any migration
+must match its frozen receipt; neither path retries calls nor extends budget or clock.
+Normal v2 plans remain immutable and do not use this compatibility path.
 
 Use the optional environment from `requirements-prefect.txt`. Prefect runs with
 local SQLite, isolated settings and telemetry disabled. Tasks are serial in

@@ -78,7 +78,8 @@ def _build(event,base,context,event_id,producer_id,sequence):
     for key in ('role','revisionId','dispatchSpanId','jobId'):
         if context.get(key) is not None:row[key]=context[key]
     kind=row['event']
-    if kind=='stage_finished':row['completedAt']=row['recordedAt']
+    # The operation's endpoint is a fact, independent of delayed persistence.
+    if kind=='stage_finished' and 'completedAt' not in row:row['completedAt']=row['recordedAt']
     if kind.startswith('api_attempt'):
         row.update(provider='openai',requestedModel=row.get('requestedModel') or row.get('model'),
             modelCallId=row['attemptId'],logicalCallId=context.get('logicalCallId'),

@@ -18,6 +18,11 @@ class Layer3DependencyAccountingTests(unittest.TestCase):
         self.f.setUp()
         self.addCleanup(self.f.doCleanups)
         self.root, self.paths, self.context = self.f.root, self.f.paths, self.f.context
+        renderer.write_json_atomic(self.root / 'checkpoint-map.json', {
+            'checkpoints': [{'speakerId': self.context['job']['adapter']['speakerId'],
+                             'path': str(self.context['checkpoint'])}],
+        })
+        renderer.write_json_atomic(self.root / 'audio-operation-policies.json', {})
 
     def render(self, ledger=None):
         # Checkpoint loading is synthetic; actual render, media decode, schedule,

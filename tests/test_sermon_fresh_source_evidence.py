@@ -27,7 +27,7 @@ def existing_bytes(*roots):
 
 class CurrentFreshEvidenceTests(unittest.TestCase):
     def setUp(self):
-        f = fresh_fixtures.FreshSourceTests(); f.setUp(); self.addCleanup(f.doCleanups)
+        f = fresh_fixtures.FreshSourceTests(); self.addCleanup(f.doCleanups); f.setUp()
         self.f = f; self.prepared = freeze_current(f)
         self.calls = len(f.f.transport.observations)
 
@@ -154,8 +154,18 @@ class MigratedCachedFreshEvidenceTests(unittest.TestCase):
     def migration_fixture(self, *, approved_identity=False):
         from scripts import sermon_source_producer_compatibility as compatibility
         from scripts import sermon_diagnostic_attempts as attempts, sermon_diagnostic_provider as provider
-        f = fresh_fixtures.FreshSourceTests(); f.setUp(); self.addCleanup(f.doCleanups)
-        prepared = freeze_current(f)
+        f = fresh_fixtures.FreshSourceTests(); self.addCleanup(f.doCleanups); f.setUp()
+        # Build the synthetic historical package with its historical producer
+        # identities from the outset. Updating only the plan after generating a
+        # current package would create an internally inconsistent old receipt.
+        from scripts import build_english_source_package as source_builder
+        original_sha = source_builder.file_sha256
+        repository = Path(source_builder.__file__).resolve().parents[1]
+        historical = {repository / path: sha for path, sha in compatibility.HISTORICAL_SOURCE_SHA256.items()}
+        def historical_builder_sha(path):
+            return historical.get(Path(path).resolve()) or original_sha(path)
+        with patch.object(source_builder, 'file_sha256', side_effect=historical_builder_sha):
+            prepared = freeze_current(f)
         current_identity = deepcopy(f.plan['executionIdentity'])
         if approved_identity:
             current_identity['loadedProjectCodeSha256'].update(compatibility.CURRENT_SOURCE_SHA256)
@@ -247,7 +257,7 @@ class MigratedCachedFreshEvidenceTests(unittest.TestCase):
 class CurrentMFAEvidenceTests(unittest.TestCase):
     def test_actual_builders_over_synthetic_mfa_receipt_replay_no_alignment_and_runtime_drift_rejected(self):
         from scripts import sermon_log_profile as profile, sermon_fresh_diagnostic_source as adapter
-        f = fresh_fixtures.FreshSourceTests(); f.setUp(); self.addCleanup(f.doCleanups)
+        f = fresh_fixtures.FreshSourceTests(); self.addCleanup(f.doCleanups); f.setUp()
         folder = f.root/'budget'/budget.STORE_ID/'provider-run'
         state, _ = public.read_snapshot(folder/'state.json')
         call = next(key for key, row in state['requests'].items() if row['operationId'] == 'transcription.initial')
@@ -262,21 +272,19 @@ class CurrentMFAEvidenceTests(unittest.TestCase):
         state['requests'][review_call]['receiptSha256'] = c.bytes_sha256(review_path.read_bytes())
         state['requests'][review_call]['requestSha256'] = review['payloadSha256']
         (folder/'state.json').write_bytes(c.canonical_bytes(state))
-        runtime_path = f.root/'synthetic-runtime.json'; files = {}
-        for name in ('mfa_executable', 'dictionary_path', 'acoustic_model'):
-            path = f.root/(name+'.fixture'); path.write_bytes(('never execute '+name).encode())
-            files[name] = {'path': str(path), 'sha256': c.bytes_sha256(path.read_bytes())}
-        runtime = {'schemaVersion': 1, 'backend': 'macbook-local', 'runtime': {'files': files, 'nativeKalpy': {}, 'condaRecords': {}}}
-        runtime_path.write_bytes(c.canonical_bytes(runtime))
+        from tests.test_sermon_mfa_identity import runtime_fixture, alignment_fixture
+        runtime_path = f.root/'synthetic-runtime.json'
+        runtime = runtime_fixture(f.root)
+        files = runtime['runtime']['files']
+        seed = deepcopy(runtime)
+        seed['runtime'].update(adapterSha256='d'*64, executionHost='private-previous-host')
+        runtime_path.write_bytes(c.canonical_bytes(seed))
         aligned = public.read_snapshot(f.recipe['prior_aligned_path'])[0]
         aligned[-1]['text'] += ' Amen.'; end = aligned[-1]['end']; aligned[-1]['end'] = end+.5
         aligned[-1]['wordTimes'].append({'text': 'Amen.', 'start': end, 'end': end+.5})
         def simulated_alignment(chunks, audio_path, outdir, **options):
             self.assertFalse(options['allow_spark_fallback']); self.assertIsNotNone(options['deadline_monotonic'])
-            outdir.mkdir(); (outdir/'backend.json').write_bytes(c.canonical_bytes(runtime))
-            manifest = outdir/'alignment.json'; manifest.write_bytes(c.canonical_bytes({'fixture': 'MFA completed evidence'}))
-            for row in aligned: row['mfaManifest'] = str(manifest)
-            return aligned
+            return alignment_fixture(f.plan, runtime, chunks, aligned)
         recipe = dict(f.recipe, run_mfa=True, local_runtime_path=runtime_path)
         with patch.object(adapter.mfa_backend, 'align_reference_chunks', side_effect=simulated_alignment) as align:
             prepared = f.prepare(run_mfa=True, local_runtime_path=runtime_path)
@@ -291,8 +299,56 @@ class CurrentMFAEvidenceTests(unittest.TestCase):
             result = subject.validate_fresh_source_evidence(f.root, f.plan, f.subject, prepared['context'], prepared['evidence'])
         self.assertEqual(result['newMFACalls'], 0); self.assertEqual(result['modelCalls'], 0)
         self.assertEqual(before, existing_bytes(f.f.root)); self.assertEqual(calls, len(f.f.transport.observations))
+        self.assertEqual(result['identity_comparison']['acceptance']['result'], 'accepted')
+        # New evidence cannot silently downgrade if its comparison is missing.
+        comparison_path = f.root/'mfa-identity-comparison.json'
+        comparison_raw = comparison_path.read_bytes(); comparison_path.unlink()
+        with self.assertRaises(FileNotFoundError):
+            subject.validate_fresh_source_evidence(f.root, f.plan, f.subject, prepared['context'], prepared['evidence'])
+        comparison_path.write_bytes(comparison_raw)
+        # Inspect a synthetic legacy receipt without inventing an old event time
+        # or rewriting its original evidence into the new contract.
+        legacy = deepcopy(prepared['evidence'])
+        legacy['schemaVersion'] = subject.CURRENT
+        for key in ('mfaIdentityComparisonSha256', 'mfaIdentityPreflightSha256', 'sourceCausalitySha256'):
+            legacy.pop(key)
+        evidence_path = f.root/'fresh-source-evidence.json'; evidence_raw = evidence_path.read_bytes()
+        evidence_path.write_bytes(c.canonical_bytes(legacy)); legacy_before = existing_bytes(f.f.root)
+        historical = subject.validate_fresh_source_evidence(f.root, f.plan, f.subject, prepared['context'], legacy)
+        self.assertIsNone(historical['identity_comparison']['observedAt'])
+        self.assertEqual(legacy_before, existing_bytes(f.f.root))
+        evidence_path.write_bytes(evidence_raw)
+        # The real closed-parent cache path consumes the parent's MFA producer,
+        # rechecks all bytes, and leaves original evidence/receipts unchanged.
+        from scripts import sermon_diagnostic_attempts as attempts, sermon_diagnostic_provider as provider
+        attempts.close_parent(f.root/'run-plan.json', instruction_reference_sha256='f'*64)
+        terminal = attempts.terminal_parent(f.plan)
+        new_root = Path(self.enterContext(tempfile.TemporaryDirectory())).resolve()/'successor'
+        authorization = {'schemaVersion': attempts.AUTH_SCHEMA, 'parentPlanSha256': c.canonical_sha256(f.plan),
+            'parentSnapshotsSha256': c.canonical_sha256([terminal]), 'instructionReferenceSha256': 'f'*64,
+            'newMaxRequests': 4, 'newHardLimitMicrousd': 1000000, 'newTotalWallSeconds': 1200,
+            'cumulativeMaxRequests': 130, 'cumulativeHardLimitMicrousd': 50000000}
+        new_plan, lineage = attempts.prepare_new_attempt(f.plan, new_root=new_root, authorization=authorization,
+            execution_identity=f.plan['executionIdentity'])
+        attempts.persist_new_attempt(new_plan, lineage, authorization)
+        runtime_reader = provider.DiagnosticProvider(budget.BudgetStore(new_root/'budget', new_plan['authority']),
+            new_plan['providerConfig'], executor=f.f.transport)
+        with runtime_reader._locked(): pass
+        frozen_parent = existing_bytes(f.root)
+        with profile.session(new_root/'logs', 'cached-mfa-fixture', work_kind='engineering', evidence_mode='synthetic'):
+            cached = subject.cache.prepare_source(new_plan, runtime_reader, parent_plan_path=f.root/'run-plan.json',
+                                                  authorization=f.authorization)
+        with patch.object(runtime_reader, '_locked', side_effect=AssertionError('lock forbidden')):
+            checked = subject.validate_fresh_source_evidence(new_root, new_plan, runtime_reader,
+                cached['context'], cached['evidence'])
+        self.assertEqual(checked['historicalSourceProviderCalls'], 2)
+        self.assertEqual(checked['newMFACalls'], 0)
+        self.assertEqual(frozen_parent, existing_bytes(f.root))
+        self.assertEqual(calls, len(f.f.transport.observations))
         Path(files['acoustic_model']['path']).write_bytes(b'changed weights')
-        with self.assertRaisesRegex(c.ContractError, 'fresh_delivery_source_mfa_changed'):
+        with self.assertRaisesRegex(c.ContractError, 'dependency_file_changed'):
+            subject.validate_fresh_source_evidence(new_root, new_plan, runtime_reader, cached['context'], cached['evidence'])
+        with self.assertRaisesRegex(c.ContractError, 'mfa_identity_receipt_changed|dependency_file_changed'):
             subject.validate_fresh_source_evidence(f.root, f.plan, f.subject, prepared['context'], prepared['evidence'])
 
 

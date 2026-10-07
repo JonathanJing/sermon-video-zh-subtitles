@@ -1,5 +1,7 @@
-import { renderSnapshot, showConnection, showEmpty } from './view.js';
+import { renderSnapshot, renderFreshness, showConnection, showEmpty } from './view.js';
 import { setUiLanguage, translateStatic, tr } from './i18n.js';
+import { reconcileSnapshots } from './snapshot-state.js';
+import { refreshDagEstimate } from './dag.js';
 
 const byId = (id) => document.getElementById(id);
 let runs = [];
@@ -8,6 +10,9 @@ let connectionState = ['正在连接', 'Connecting', 'neutral'];
 let emptyState = null;
 let refreshMode = 'cloud';
 let bridgeMock = null;
+let fromCache = false;
+let unsubscribe = null;
+let subscribe = null;
 
 function connection(chinese, english, status = 'neutral') {
   connectionState = [chinese, english, status];
@@ -36,7 +41,7 @@ function selectRun(pageId) {
   const selected = runs.find((run) => run.pageId === pageId);
   if (!selected) return empty('暂无制作记录', 'No production record',
     '状态发布器尚未写入本周页面。', 'The publisher has not written this page yet.');
-  try { renderSnapshot(selected); bridgeMock?.render(selected); emptyState = null; }
+  try { renderSnapshot(selected); renderFreshness(selected, refreshMode, fromCache); bridgeMock?.render(selected); emptyState = null; }
   catch { empty('状态格式不兼容', 'Incompatible status format',
     '请检查状态发布器与页面版本。', 'Check the publisher and page versions.'); }
 }
@@ -76,6 +81,11 @@ async function start() {
       else if (emptyState) showEmpty(tr(emptyState[0], emptyState[1]), tr(emptyState[2], emptyState[3]));
     });
   }
+  setInterval(() => {
+    const selected = runs.find((run) => run.pageId === selectedId);
+    if (selected) { renderFreshness(selected, refreshMode, fromCache); refreshDagEstimate(selected); }
+  }, 30000);
+  byId('retry-connection').addEventListener('click', () => subscribe?.());
   byId('week-select').addEventListener('change', (event) => selectRun(event.target.value));
   if (new URLSearchParams(location.search).get('local') === '1') {
     refreshMode = 'local';
@@ -119,16 +129,26 @@ async function start() {
   const db = getFirestore(app, config.databaseId);
   connection('实时连接中', 'Connecting live', 'active');
   const recent = query(collection(db, 'sermonTrackerRuns'), orderBy('updatedAt', 'desc'), limit(32));
-  onSnapshot(recent, (result) => {
-    runs = result.docs.map((doc) => doc.data().snapshot)
-      .filter((item) => item && ['sermon-public-tracker-snapshot-v1', 'sermon-public-tracker-snapshot-v2'].includes(item.schemaVersion));
-    connection('实时同步', 'Live sync', 'ok');
-    renderRunList();
-  }, () => {
-    connection('读取失败', 'Read failed', 'bad');
-    empty('状态库无法读取', 'Cannot read status database',
-      '请检查网络和 Firestore 只读规则。', 'Check the network and Firestore read-only rules.');
-  });
+  subscribe = () => {
+    unsubscribe?.();
+    byId('retry-connection').hidden = true;
+    connection('正在连接状态库', 'Connecting to status database', 'active');
+    unsubscribe = onSnapshot(recent, { includeMetadataChanges: true }, (result) => {
+      fromCache = result.metadata.fromCache;
+      const reconciled = reconcileSnapshots(runs, result.docs.map((doc) => doc.data().snapshot), { fromCache });
+      runs = reconciled.runs;
+      connection(...(reconciled.rejected ? ['保留最新已知快照', 'Retaining newest known snapshot', 'warn'] :
+        fromCache ? ['离线缓存', 'Offline cache', 'warn'] : ['状态库已连接', 'Status database connected', 'ok']));
+      renderRunList();
+    }, () => {
+      connection('读取中断 · 保留快照', 'Read interrupted · Snapshot retained', 'bad');
+      byId('retry-connection').hidden = false;
+      if (!runs.length) empty('状态库无法读取', 'Cannot read status database',
+        '请检查网络或重新连接；不会将读取失败视为制作失败。',
+        'Check the network or retry. A read failure is not a production failure.');
+    });
+  };
+  subscribe();
 }
 
 start().catch(() => {

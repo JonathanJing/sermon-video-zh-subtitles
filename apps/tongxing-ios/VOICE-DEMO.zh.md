@@ -1,5 +1,7 @@
 # 同片段三语试听 · 开发候选
 
+2026-10-03 Beta 修复：线上核对确认 Dev 的 V2 目录存在，Production 的 V2 目录返回 HTTP 404，旧版回退导致两个 App 展示不同的文稿与内容。当前原生候选统一只读取各自同源的 V2 目录；缺失或无效时显示不可用和重试，不再混入旧版独立样音，也不跨环境获取 Dev 媒体。本轮仅提交 Beta 开发 PR，人工核对后再晋升正式；正式晋升必须同步部署同一份 V2 目录与 30 个媒体文件并核对哈希、字节、来源和待听审声明。本轮未部署正式，也未把机器检查记作人工听审。
+
 2026-10-01：修复 iOS 试听没有暂停的缺陷，并统一 iOS／Firebase 的内容与操作顺序。网页适配状态为 `required`，已完成并发布 Firebase Dev；Production 保留本地同内容候选。本轮尚未上传新的 TestFlight 包。
 
 ## 展示与操作
@@ -14,7 +16,7 @@
 
 两个客户端优先读取同源 `/voice-demos/speaker-clips-v2/catalog.json`，schema 为 `sermon-speaker-clip-demo-catalog-v2`。六讲员、十八三语样音，各讲员包含一个 `clipId`、英语文本 SHA-256、当前原视频区间及英文 MP3／同片段 MP4。每条译文及合成音频绑定相同英文文本与片段；播放前校验媒体字节数和 SHA-256。源音频／视频时长与区间容差最多 0.5 秒，音频上限 5 MB、视频 20 MB。
 
-只有新目录 HTTP 404 才回退旧目录；无效绑定、坏哈希或其他 HTTP 错误不能静默退回。旧版文稿与原声并非同一片段，明确标为独立样音，不提供虚构的匹配视频。旧 Dev 四语目录只显示中文、韩语、西班牙语；不改变旧目录的审核证据。
+当前原生加载仅接受同源 V2 目录：HTTP 404、其他非 200 响应、无效绑定或重定向均保持不可用，不请求旧目录或另一个环境。媒体仍在播放前核对字节数与 SHA-256；坏哈希不能播放。2026-10-01 候选曾在 V2 HTTP 404 时回退旧版独立样音；旧版文稿与原声并非同一片段，这一历史回退已从 10 月 3 日原生候选移除。网页的历史实现与发布证据仍保留其当时范围，不表示本轮已适配或部署网页。
 
 候选固定文稿见 [speaker-clip-demo-scripts-v2.json](../../experiments/sermon-dubbing-poc/speaker-clip-demo-scripts-v2.json)。当前媒体在被忽略的 `artifacts/speaker-clips-v2/20261001/public/voice-demos/speaker-clips-v2/`：6 英文 MP3、6 视频、18 合成 MP3，共 8,997,619 字节。Catalog SHA：`ea3723eb3f10003db06d09fa81eed473fac17aaa3b8ec32bea29cfee04de25a2`。
 

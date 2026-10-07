@@ -15,12 +15,15 @@ from scripts import sermon_diagnostic_source_evidence as evidence
 from scripts import sermon_log_profile as profile
 from scripts import sermon_review_budget as budget
 from scripts import sermon_review_contracts as c
+from scripts import sermon_provider_limits as limits
 from tests import test_run_bounded_diagnostic as bounded_fixture
 from tests import test_sermon_diagnostic_context as context_fixture
 from tests import test_render_speculative_target_language_speech as preview_fixture
 
 
 class DiagnosticDAGFixture(unittest.TestCase):
+    request_limits = {**limits.DEFAULT_REQUEST_LIMITS,
+        'maxInputTokens': limits.MAX_REQUEST_LIMITS['maxInputTokens']}
     expected_prior_calls = 2
     expected_new_locale_calls = 4
     expected_preview_calls = 2
@@ -66,6 +69,8 @@ class DiagnosticDAGFixture(unittest.TestCase):
         config = dict(self.original.subject.config,
                       codeSha256=c.canonical_sha256(self.execution_identity))
         self.config = config
+        # Frozen rule text raises the reviewer input bound; retain the output cap.
+        self.request_limits = deepcopy(self.original.subject.limits)
         self.store = self.original.fixture.store
         words = ' '.join(u['english'] for u in self.anchor['sourceUnits']).split()
         chunks = [' '.join(words[len(words)*i//4:len(words)*(i+1)//4]) for i in range(4)]
@@ -97,7 +102,7 @@ class DiagnosticDAGFixture(unittest.TestCase):
         self.transport = callbacks.OfflineHTTPTransport(self.capture, fixture_id='diagnostic-dag-fixture')
         # Default real monotonic clock/boot identity: same-process AND subprocess
         # continuation must consume the original deadline, never a fake reset.
-        self.subject = provider.DiagnosticProvider(self.store, config, executor=self.transport)
+        self.subject = provider.DiagnosticProvider(self.store, config, self.request_limits, executor=self.transport)
         self.callbacks = callbacks.BoundedBusinessCallbacks(self.subject, self.root,
             source_clip=self.original.clip, fixture_id='diagnostic-dag-fixture', offline=True)
         self.plan = dict(schemaVersion='sermon-bounded-diagnostic-plan-v1',

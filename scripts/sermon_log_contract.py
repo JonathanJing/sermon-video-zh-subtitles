@@ -3,19 +3,57 @@
 No dispatch, recovery, approval or network authority lives in this module.
 Legacy records are never upgraded by manufacturing missing observations.
 """
-from collections import defaultdict
+from collections import OrderedDict, defaultdict, namedtuple
 from datetime import datetime
 from functools import lru_cache
 import hashlib
 import json
 import math
+import marshal
+import os
 from pathlib import Path
+import threading
 
 from jsonschema import Draft202012Validator, FormatChecker, validators
+from jsonschema.exceptions import SchemaError
 
 VERSION = 'sermon-accounting-log-contract-v1'
 MAX_EVENT_BYTES = 64 * 1024
+# At most 16 MiB of canonical payload keys, plus explicitly bounded entry and
+# schema-key overhead. A count-only 2048-entry LRU thrashed on the measured
+# 39-job working set despite its eligible payload occupying less than 6 MiB.
+# Larger valid events still validate normally and never occupy cache memory.
+MAX_CACHED_EVENT_BYTES = 8 * 1024
+MAX_VALIDATION_CACHE_ENTRIES = 8192
+MAX_VALIDATION_CACHE_PAYLOAD_BYTES = 16 * 1024 * 1024
+# Each interned snapshot retains at most 256 KiB of typed content bytes and
+# a validator compiled from at most 256 KiB of canonical JSON. Eviction clears
+# successful-event keys first, so those keys cannot retain an unbounded history.
+MAX_SCHEMA_SNAPSHOT_BYTES = 256 * 1024
+MAX_SCHEMA_SNAPSHOT_ENTRIES = 2
+_schema_snapshots = OrderedDict()
+_schema_snapshot_lock = threading.RLock()
+_event_successes = OrderedDict()
+_event_success_payload_bytes = 0
+_event_success_hits = _event_success_misses = 0
+_CacheInfo = namedtuple('CacheInfo', 'hits misses maxsize currsize')
 SCHEMA_PATH = Path(__file__).resolve().parents[1] / 'schemas/sermon-accounting-log-contract-v1.schema.json'
+
+
+def _reset_snapshot_lock_after_fork():
+    global _schema_snapshot_lock, _schema_snapshots, _event_successes
+    global _event_success_payload_bytes, _event_success_hits, _event_success_misses
+    _schema_snapshot_lock = threading.RLock()
+    # Another thread can fork between an OrderedDict update and its accounting
+    # update. The child owns a fresh empty cache, never an inherited partial
+    # cache/counter mutation or a lock held by a vanished thread.
+    _schema_snapshots = OrderedDict()
+    _event_successes = OrderedDict()
+    _event_success_payload_bytes = _event_success_hits = _event_success_misses = 0
+
+
+if hasattr(os, 'register_at_fork'):
+    os.register_at_fork(after_in_child=_reset_snapshot_lock_after_fork)
 
 
 class ContractError(ValueError):
@@ -49,19 +87,144 @@ def format_checker():
 @lru_cache(maxsize=1)
 def validator():
     schema = json.loads(SCHEMA_PATH.read_text())
+    return _compile_validator(schema)
+
+
+def _compile_validator(schema):
     Draft202012Validator.check_schema(schema)
     checker = Draft202012Validator.TYPE_CHECKER.redefine('integer', lambda _, v: type(v) is int)
     cls = validators.extend(Draft202012Validator, type_checker=checker)
     return cls(schema, format_checker=format_checker())
 
 
-def validate_event(row):
+def _schema_snapshot():
+    """Intern exact typed content while the snapshot/cache lock is held.
+
+    marshal is a cheap, exact typed snapshot. Only bounded bytes generated here
+    are decoded, never a file/network/caller-supplied serialized value. Version 2
+    does not depend on reference counts or aliasing.
+    Unlike Python equality/JSON coercion, it distinguishes bool/int/float and
+    list/tuple. Every new key must pass strict JSON and schema validation before
+    a privately compiled canonical copy can be used. No mutable public checker
+    participates in cached success validation.
+    """
+    schema = validator().schema
+    try:
+        key = marshal.dumps(schema, 2)
+    except (ValueError, TypeError, OverflowError, RecursionError) as exc:
+        raise ContractError('invalid_schema_snapshot') from exc
+    if len(key) > MAX_SCHEMA_SNAPSHOT_BYTES:
+        raise ContractError('schema_snapshot_size_limit')
+    if key in _schema_snapshots:
+        _schema_snapshots.move_to_end(key)
+        return _schema_snapshots[key]
+    # Compile from the exact captured bytes, not the still-mutable public schema.
+    # A concurrent edit cannot bind one schema's success to another schema's key.
+    captured = marshal.loads(key)
+    if type(captured) is not dict or not _strict_values(captured):
+        raise ContractError('invalid_schema_snapshot')
+    frozen = canonical_bytes(captured)
+    if len(frozen) > MAX_SCHEMA_SNAPSHOT_BYTES:
+        raise ContractError('schema_snapshot_size_limit')
+    try:
+        checker = _compile_validator(json.loads(frozen))
+    except SchemaError as exc:
+        raise ContractError('invalid_schema_snapshot') from exc
+    if len(_schema_snapshots) >= MAX_SCHEMA_SNAPSHOT_ENTRIES:
+        _validate_frozen_event.cache_clear()
+        _schema_snapshots.popitem(last=False)
+    snapshot = (key, checker)
+    _schema_snapshots[key] = snapshot
+    return snapshot
+
+
+def _event_bytes(row):
     if not isinstance(row, dict) or row.get('contractVersion') != VERSION:
         raise ContractError('unsupported_contract_version')
     data = canonical_bytes(row)
     if len(data) + 1 > MAX_EVENT_BYTES:
         raise ContractError('event_size_limit')
-    if not _strict_values(row) or next(validator().iter_errors(row), None) is not None:
+    if not _strict_values(row):
+        raise ContractError('invalid_contract_event')
+    return data
+
+
+def _validate_with_snapshot(row, data, snapshot):
+    schema_key, checker = snapshot
+    if len(data) <= MAX_CACHED_EVENT_BYTES and row.get('event') != 'rqc_observation':
+        # Exact payload/schema bytes and the version bind every success entry.
+        # RQC semantics consult another versioned policy; keep those uncached.
+        _validate_frozen_event(data, schema_key, VERSION)
+    else:
+        _validate_event_uncached(row, checker)
+
+
+def validate_event(row):
+    data = _event_bytes(row)
+    with _schema_snapshot_lock:
+        # Public single-event checks always observe the current schema content.
+        _validate_with_snapshot(row, data, _schema_snapshot())
+    return row
+
+
+def _validate_frozen_event(data, schema_key, version):
+    """Cache only complete validation success, never storage/sequence authority.
+
+    The caller has reread and serialized the current event and captured the
+    exact current schema. Retaining a success avoids repeated schema work only;
+    it cannot establish that a file, union, record hash or sequence is valid.
+    """
+    global _event_success_payload_bytes, _event_success_hits, _event_success_misses
+    with _schema_snapshot_lock:
+        key = (data, schema_key, version)
+        if key in _event_successes:
+            _event_success_hits += 1
+            _event_successes.move_to_end(key)
+            return
+        _event_success_misses += 1
+        # Exceptions never populate the success cache. Policy-dependent RQC
+        # and oversized events use the uncached caller path as before.
+        _validate_event_uncached(json.loads(data), _schema_snapshots[schema_key][1])
+        size = len(data)
+        if (size > MAX_CACHED_EVENT_BYTES or size > MAX_VALIDATION_CACHE_PAYLOAD_BYTES
+                or MAX_VALIDATION_CACHE_ENTRIES < 1):
+            return
+        while _event_successes and (len(_event_successes) >= MAX_VALIDATION_CACHE_ENTRIES
+                or _event_success_payload_bytes + size > MAX_VALIDATION_CACHE_PAYLOAD_BYTES):
+            oldest, _ = _event_successes.popitem(last=False)
+            _event_success_payload_bytes -= len(oldest[0])
+        _event_successes[key] = None
+        _event_success_payload_bytes += size
+
+
+def _validation_cache_clear():
+    global _event_success_payload_bytes, _event_success_hits, _event_success_misses
+    with _schema_snapshot_lock:
+        _event_successes.clear()
+        _event_success_payload_bytes = _event_success_hits = _event_success_misses = 0
+
+
+def _validation_cache_info():
+    with _schema_snapshot_lock:
+        return _CacheInfo(_event_success_hits, _event_success_misses,
+            MAX_VALIDATION_CACHE_ENTRIES, len(_event_successes))
+
+
+def _validation_cache_usage():
+    with _schema_snapshot_lock:
+        return {'payloadBytes': _event_success_payload_bytes,
+            'maxPayloadBytes': MAX_VALIDATION_CACHE_PAYLOAD_BYTES,
+            'entries': len(_event_successes), 'maxEntries': MAX_VALIDATION_CACHE_ENTRIES}
+
+
+# Preserve the private cache-control API used by schema eviction and tests.
+_validate_frozen_event.cache_clear = _validation_cache_clear
+_validate_frozen_event.cache_info = _validation_cache_info
+_validate_frozen_event.cache_usage = _validation_cache_usage
+
+
+def _validate_event_uncached(row, checker):
+    if next(checker.iter_errors(row), None) is not None:
         raise ContractError('invalid_contract_event')
     kind = row['event']
     if kind == 'rqc_observation':
@@ -76,6 +239,12 @@ def validate_event(row):
     if kind.startswith('sdk_call_'):
         if (row['coveredResponseIds'] is None) != (row['coverageStatus'] == 'unknown'):
             raise ContractError('sdk_coverage_conflict')
+    if row.get('code') == 'model_call_observation':
+        from scripts.sermon_model_call_observation import safe_observation
+        try:
+            safe_observation(row['fields'])
+        except (ValueError, KeyError, TypeError) as exc:
+            raise ContractError('invalid_model_call_observation') from exc
     if row.get('code') == 'decision_observation':
         f = row['fields']
         if ((f['phase'] == 'commit') != f['status'].startswith('commit_') or
@@ -129,11 +298,15 @@ def replay_integrity(events):
         excluded.update(id(r) for r in affected)
         diagnostics.append({'code': code, 'factSha256': sorted({fact_hash(r) for r in affected}), **details})
 
-    for r in rows:
-        validate_event(r)
-        by_event[r['eventId']].append(r)
-        by_sequence[(r['producerId'], r['sequence'])].append(r)
-        producers[r['producerId']].add(r['sequence'])
+    with _schema_snapshot_lock:
+        # One explicit immutable schema snapshot per replay batch. The lock
+        # prevents another batch evicting it while event-cache entries are used.
+        snapshot = _schema_snapshot() if rows else None
+        for r in rows:
+            _validate_with_snapshot(r, _event_bytes(r), snapshot)
+            by_event[r['eventId']].append(r)
+            by_sequence[(r['producerId'], r['sequence'])].append(r)
+            producers[r['producerId']].add(r['sequence'])
     duplicates = 0
     for _, group in sorted(by_event.items()):
         if len({fact_hash(r) for r in group}) > 1:

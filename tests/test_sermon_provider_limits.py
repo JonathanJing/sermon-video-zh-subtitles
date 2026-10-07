@@ -117,7 +117,7 @@ class ProviderLimitsTests(unittest.TestCase):
             self.assertEqual(evidence['bounds'], measured)
             self.assertFalse(evidence['invoiceVerified'])
             self.assertEqual(evidence['priceSource'], limits.PRICE_SOURCES[model])
-            self.assertEqual(evidence['priceVerifiedAt'], '2026-09-30')
+            self.assertEqual(evidence['priceVerifiedAt'], '2026-10-05')
             self.assertNotIn('synthetic input', json.dumps(evidence))
 
     def test_usage_requires_real_model_tier_token_counts_and_elapsed(self):
@@ -143,7 +143,7 @@ class ProviderLimitsTests(unittest.TestCase):
         self.assertEqual(evidence['cacheDetailStatus'], 'unknown_or_partial')
         self.assertEqual(evidence['costStatus'], 'estimated_upper_bound')
         self.assertEqual(evidence['priceSource'], limits.PRICE_SOURCES['gpt-6-astra'])
-        self.assertEqual(evidence['priceVerifiedAt'], '2026-09-30')
+        self.assertEqual(evidence['priceVerifiedAt'], '2026-10-05')
         self.assertFalse(evidence['invoiceVerified'])
         self.assertEqual(observed, before)
 

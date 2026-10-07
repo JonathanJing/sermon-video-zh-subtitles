@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "sermon-unified-production-event-v1",
+  "eventId": "evt-example-001",
+  "eventType": "receipt_recorded",
+  "time": "2026-10-04T15:00:00Z",
+  "productionRunId": "run-example-001",
+  "runRevision": 3,
+  "traceId": "trace-example-001",
+  "attemptId": "attempt-example-001",
+  "locale": "zh-Hans",
+  "layer": "layer2",
+  "stageId": "layer2_group",
+  "jobId": "job-example-zh-l2",
+  "operationId": "op-example-001",
+  "parentEventId": null,
+  "causedBy": null,
+  "artifactId": "candidate-example-003",
+  "receiptId": null,
+  "codeHash": "3333333333333333333333333333333333333333333333333333333333333333",
+  "hostId": "example-host",
+  "interval": {
+    "kind": "compute",
+    "startedAt": "2026-10-04T15:00:00Z",
+    "endedAt": "2026-10-04T15:00:08Z"
+  },
+  "paid": {
+    "newPaidRequests": 2,
+    "cacheHit": false,
+    "reusedGroups": 0,
+    "freshApiAttempts": 2
+  }
+}

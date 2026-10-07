@@ -11,9 +11,13 @@ from scripts import sermon_production_supervisor
 
 
 class RunSermonProductionSupervisorAgentTest(unittest.TestCase):
-    def test_default_supervisor_model_is_sol(self):
+    def test_default_supervisor_model_is_luna_api(self):
         with patch.object(sys, "argv", ["run_sermon_production_supervisor_agent.py", "--sunday", "2026-09-20", "--state-file", "state.json"]):
-            self.assertEqual(mod.parse_args().model, "gpt-6-sol")
+            args = mod.parse_args()
+            self.assertEqual(args.model, "gpt-6-luna")
+            self.assertEqual(args.agent_backend, "codex-cli")
+            self.assertEqual(args.reasoning_effort, "medium")
+            self.assertEqual(args.service_tier, "fast")
 
     def test_shadow_agent_exposes_only_read_tool(self):
         agent = mod.build_agent(model="gpt-6-astra", execute=False)
@@ -76,7 +80,7 @@ class RunSermonProductionSupervisorAgentTest(unittest.TestCase):
                 self.assertNotIn("wait_for_workflow_job", instructions)
 
     def test_runner_selects_extended_prompt_only_for_explicit_release_config(self):
-        args = argparse.Namespace(approve_window=False, mode="shadow", agent_backend="agents-api")
+        args = argparse.Namespace(approve_window=False, mode="shadow", agent_backend="agents-api", resume_agent_session=True)
         for release_config in (None, Path("release.json")):
             with self.subTest(release_config=release_config):
                 config = sermon_production_supervisor.SupervisorConfig(

@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "sermon-unified-run-manifest-v1",
+  "productionRunId": "run-example-001",
+  "runRevision": 1,
+  "jobRoot": "jobroot-example-001",
+  "content": {
+    "contentId": "content-example-001",
+    "pageId": "example-page",
+    "category": "weekly_sermon",
+    "sourceDate": "2026-10-04",
+    "weeklyScheduleDate": "2026-10-04"
+  },
+  "source": {
+    "sourceId": "source-example-001",
+    "sourceUrlHash": "2222222222222222222222222222222222222222222222222222222222222222",
+    "mediaSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+    "durationSeconds": 180,
+    "window": {
+      "startSeconds": 0,
+      "endSeconds": 180,
+      "timeBase": "source_media",
+      "approvalReceiptSha256": null
+    }
+  },
+  "locales": ["zh-Hans"],
+  "canaryScope": "layer2_machine_candidate",
+  "finalScope": "dual_production_verified",
+  "activeScope": "layer2_machine_candidate",
+  "policies": [
+    {
+      "locale": "zh-Hans",
+      "policySha256": "4444444444444444444444444444444444444444444444444444444444444444",
+      "promptSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+      "pluginSha256": "6666666666666666666666666666666666666666666666666666666666666666"
+    }
+  ],
+  "budget": {
+    "currency": "USD",
+    "limitMicroUsd": 5000000,
+    "reservationId": null
+  },
+  "executionAdmission": {
+    "closureSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+    "modules": ["scripts/canonical_layer2_controller.py"]
+  },
+  "provenance": {
+    "hostname": "example-host",
+    "tempPathSha256": "9999999999999999999999999999999999999999999999999999999999999999"
+  }
+}

@@ -79,7 +79,7 @@ class ReadingAccountingTests(unittest.TestCase):
     def test_codex_failure_is_scoped_without_api_billing(self):
         with tempfile.TemporaryDirectory() as temp, mock.patch.object(reading.subprocess, "run", return_value=argparse.Namespace(returncode=1, stderr="failed", stdout="")), mock.patch.object(reading, "stage", return_value=contextlib.nullcontext()) as stages:
             with self.assertRaises(RuntimeError):
-                reading.codex_json({"messages": [{"content": "system"}, {"content": "user"}]}, codex_cli=Path("unused"), model="test", reasoning_effort="medium", schema_path=Path("unused"), output_path=Path(temp)/"result.json")
+                reading.codex_json({"messages": [{"content": "system"}, {"content": "user"}]}, codex_cli=Path("unused"), model="test", reasoning_effort="medium", schema_path=Path("unused"), output_path=Path(temp)/"result.json", session_verifier=lambda: {"status":"offline_test"})
         stages.assert_called_once_with("reading.codex_call", billing="codex")
 
 
@@ -89,7 +89,7 @@ class NotesAttemptAccountingTests(unittest.TestCase):
         response = mock.Mock(status_code=200)
         response.json.return_value = body
         with mock.patch.object(notes.requests, "post", return_value=response), mock.patch.object(notes, "record_api_attempt") as record:
-            self.assertIs(notes.request_openai_notes({"model": "test"}, "private"), body)
+            self.assertIs(notes.request_openai_notes({"model": "test"}, "private", session_verifier=lambda: {"status":"offline_test"}), body)
         record.assert_called_once()
         self.assertIs(record.call_args.kwargs["response"], body)
         self.assertEqual(record.call_args.kwargs["model"], "test")
@@ -108,6 +108,7 @@ class NotesAttemptAccountingTests(unittest.TestCase):
                 stack.enter_context(mock.patch.object(notes, "read_note_source", return_value={"segments": []}))
                 stack.enter_context(mock.patch.object(notes, "build_note_slices", return_value=[{"text": "source"}]))
                 stack.enter_context(mock.patch.object(notes, "resolve_api_key", return_value="private"))
+                stack.enter_context(mock.patch('scripts.sermon_openai_runtime.selected_route', return_value={'environment': 'dev'}))
                 stack.enter_context(mock.patch.object(notes, "build_openai_request", return_value={"model": "test"}))
                 stack.enter_context(mock.patch.object(notes, "request_openai_notes", return_value={"output_text": "{}"}))
                 stack.enter_context(mock.patch.object(notes, "normalize_insights", return_value={}))
@@ -130,7 +131,7 @@ class NotesAttemptAccountingTests(unittest.TestCase):
         for failure, response, expected, error_type in cases:
             with self.subTest(error_type=error_type), mock.patch.object(notes.requests, "post", side_effect=failure, return_value=response), mock.patch.object(notes, "record_api_attempt") as record:
                 with self.assertRaises(expected):
-                    notes.request_openai_notes({"model": "test"}, "private")
+                    notes.request_openai_notes({"model": "test"}, "private", session_verifier=lambda: {"status":"offline_test"})
                 record.assert_called_once()
                 kwargs = record.call_args.kwargs
                 self.assertEqual(kwargs["status"], "failed")

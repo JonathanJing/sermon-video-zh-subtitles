@@ -179,7 +179,7 @@ class CanonicalLayer2ReconciliationTests(unittest.TestCase):
         revision = self.view()['stateRevision']
         command = [sys.executable, str(Path(subject.__file__).resolve()), '--config', str(self.path),
                    '--locale', 'zh-Hans', '--expected-state-revision', revision]
-        env = {**os.environ, 'OPENAI_API_KEY': ''}
+        env = {**os.environ, 'OPENAI_API_KEY': '', 'CODEX_HOME': '/nonexistent/tongxing-test-no-auth'}
         children = [subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
                     for _ in range(2)]
         outputs = [child.communicate(timeout=20) for child in children]

@@ -24,6 +24,7 @@ SERIES_TABLE = ROOT / "docs/series-terminology.zh.md"
 COMPONENTS = ("translator", "reviewer", "terminology", "scripture", "languageReview", "formatting", "batching")
 POLICY_V2 = "sermon-target-language-policy-v2"
 POLICY_V3 = "sermon-target-language-policy-v3"
+POLICY_V4 = "sermon-target-language-policy-v4"
 
 
 def canonical_sha256(value: object) -> str:
@@ -41,9 +42,10 @@ def file_sha256(path: Path) -> str:
 
 def _schema_errors(policy: dict[str, Any]) -> list[str]:
     version = policy.get("schemaVersion")
-    if version not in {"sermon-target-language-policy-v1", POLICY_V2}:
+    if version not in {"sermon-target-language-policy-v1", POLICY_V2, POLICY_V4}:
         raise ValueError("Unsupported Target-Language Policy version")
-    schema_path = (ROOT / "schemas/sermon-target-language-policy-v2.schema.json"
+    schema_path = (ROOT / "schemas/sermon-target-language-policy-v4.schema.json"
+                   if version == POLICY_V4 else ROOT / "schemas/sermon-target-language-policy-v2.schema.json"
                    if version == POLICY_V2 else SCHEMA_PATH)
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
     return [error.message for error in Draft202012Validator(schema).iter_errors(policy)]
@@ -55,7 +57,8 @@ def validate_policy(policy: dict[str, Any], *, series_table: Path = SERIES_TABLE
     errors = _schema_errors(policy)
     if errors:
         raise ValueError(f"Invalid Target-Language Policy: {errors[0]}")
-    components = COMPONENTS + (("sourceScope",) if policy["schemaVersion"] == POLICY_V2 else ())
+    scoped_policy = policy["schemaVersion"] in {POLICY_V2, POLICY_V4}
+    components = COMPONENTS + (("sourceScope",) if scoped_policy else ())
     for component in components:
         if policy["componentSha256"][component] != canonical_sha256(policy[component]):
             raise ValueError(f"Target-Language Policy component hash changed: {component}")
@@ -90,9 +93,9 @@ def validate_policy(policy: dict[str, Any], *, series_table: Path = SERIES_TABLE
         unresolved.append("scripture_policy_pending")
     if policy["languageReview"]["implementationStatus"] != "verified":
         unresolved.append("language_review_plugin_pending")
-    if policy["schemaVersion"] != POLICY_V2:
+    if policy["schemaVersion"] not in {POLICY_V2, POLICY_V4}:
         unresolved.append("plugin_implementation_hash_unbound_migrate_to_v2")
-    if policy["schemaVersion"] == POLICY_V2:
+    if scoped_policy:
         scope = policy["sourceScope"]
         series_sources = {term["source"] for term in series_names}
         proper_sources = {term["source"] for term in policy["terminology"]["properNames"]}
@@ -113,8 +116,28 @@ def validate_policy(policy: dict[str, Any], *, series_table: Path = SERIES_TABLE
                 ("properNames", scope["usedProperNames"]))
                for term in policy["terminology"][kind] if term["source"] in names):
             unresolved.append("terminology_review_pending")
-        if any(name not in {entry["source"] for entry in evidence}
-               for name in scope["usedProperNames"]):
+        if policy["schemaVersion"] == POLICY_V4:
+            receipt = scope["termApprovalReceipt"]
+            proper_terms = {row["source"]: row["target"] for row in policy["terminology"]["properNames"]}
+            approved_terms = {row["source"]: row["target"] for row in receipt["approvedTerms"]}
+            excluded = set(scope["ordinaryPhraseExclusions"])
+            if (receipt["targetLocale"] != policy["targetLocale"]
+                    or receipt["englishSourcePackageJsonSha256"] != scope["englishSourcePackageJsonSha256"]
+                    or receipt["anchorManifestSha256"] != scope["anchorManifestSha256"]
+                    or receipt["humanApproval"] is not True
+                    or receipt["decision"] != "approved"
+                    or not receipt["reviewedBy"].strip()
+                    or not receipt["reviewedAt"].strip()
+                    or not approved_terms
+                    or len(approved_terms) != len(receipt["approvedTerms"])
+                    or approved_terms != proper_terms
+                    or set(receipt["excludedScannerPhrases"]) != excluded
+                    or not set(scope["usedProperNames"]) <= set(approved_terms)):
+                raise ValueError("Direct human term receipt does not match the source-scoped policy")
+            if evidence:
+                raise ValueError("Policy v4 uses its direct human receipt, not shadow term evidence")
+        elif any(name not in {entry["source"] for entry in evidence}
+                 for name in scope["usedProperNames"]):
             unresolved.append("proper_name_approval_evidence_pending")
     elif any(term["reviewStatus"] == "pending" for kind in ("seriesNames", "properNames") for term in policy["terminology"][kind]):
         unresolved.append("terminology_review_pending")
@@ -125,6 +148,33 @@ def validate_policy(policy: dict[str, Any], *, series_table: Path = SERIES_TABLE
         "productionPolicyReady": not unresolved,
         "unresolved": unresolved,
     }
+
+
+def validate_diagnostic_policy(policy, context, *, series_table=SERIES_TABLE):
+    """Explicit isolated model configuration; ordinary policy validation rejects it."""
+    from scripts.sermon_diagnostic_context import validate_context
+    validate_context(context)
+    configuration = policy.get('simulationModelConfiguration')
+    if configuration is None:
+        result = validate_policy(policy, series_table=series_table)
+    else:
+        from scripts.codex_layer2_transport import validate_test_configuration
+        validate_test_configuration(configuration)
+        view = copy.deepcopy(policy)
+        view.pop('simulationModelConfiguration')
+        for role in ('translator', 'reviewer'):
+            settings = configuration[role]
+            if (view[role]['model'] != settings['model']
+                    or view[role]['reasoningEffort'] != settings['reasoningEffort']):
+                raise ValueError('Diagnostic role configuration changed')
+        result = validate_policy(view, series_table=series_table)
+    from scripts.language_review_plugins.diagnostic_pinned_quotes import is_policy
+    if is_policy(policy):
+        # Only explicit diagnostic context accepts pending citation permission;
+        # production validation continues to report scripture_policy_pending.
+        result = {**result, 'diagnosticPinnedQuotePolicy': True}
+    return {**result, 'translationPolicySha256': canonical_sha256(policy),
+            'productionEligible': False, 'humanApproval': False}
 
 
 def _strict_legacy_validation_view(policy):
@@ -218,7 +268,7 @@ def freeze_policy(draft: dict[str, Any], *, series_table: Path = SERIES_TABLE,
         if shadow_candidate is None or content_approval is None:
             raise ValueError("Scoped term approvals require the exact shadow candidate and human receipt")
         verify_shadow_term_evidence(policy, shadow_candidate, content_approval)
-    components = COMPONENTS + (("sourceScope",) if policy.get("schemaVersion") == POLICY_V2 else ())
+    components = COMPONENTS + (("sourceScope",) if policy.get("schemaVersion") in {POLICY_V2, POLICY_V4} else ())
     policy["componentSha256"] = {name: canonical_sha256(policy[name]) for name in components}
     validate_policy(policy, series_table=series_table)
     return policy
@@ -227,7 +277,7 @@ def freeze_policy(draft: dict[str, Any], *, series_table: Path = SERIES_TABLE,
 def validate_source_scope(policy: dict[str, Any], source: dict[str, Any],
                           anchor: dict[str, Any]) -> None:
     """Require a v2 policy's declared terminology use to match its frozen source."""
-    if policy["schemaVersion"] != POLICY_V2:
+    if policy["schemaVersion"] not in {POLICY_V2, POLICY_V4}:
         return
     scope = policy["sourceScope"]
     if (scope["englishSourcePackageJsonSha256"] != canonical_sha256(source)
@@ -242,12 +292,23 @@ def validate_source_scope(policy: dict[str, Any], source: dict[str, Any],
     # Multiword capitalized names are conservatively required in the scoped
     # proper-name list. Single biblical names are audited by locale plugins.
     observed_names = source_scoped_proper_names(rows, observed_series)
+    if policy["schemaVersion"] == POLICY_V4:
+        exclusions = set(scope["ordinaryPhraseExclusions"])
+        if not exclusions <= observed_names:
+            raise ValueError("Ordinary phrase exclusions are not source-scoped name candidates")
+        observed_names -= exclusions
     if observed_names != set(scope["usedProperNames"]):
         raise ValueError("Source-scoped proper names are incomplete or overdeclared")
     by_id = {row["sourceUnitId"]: row["english"] for row in rows}
     for item in scope["termApprovalEvidence"]:
         if item["sourceUnitId"] not in by_id or item["source"] not in by_id[item["sourceUnitId"]]:
             raise ValueError("Source-scoped term evidence points outside its English unit")
+    if policy["schemaVersion"] == POLICY_V4:
+        receipt = scope["termApprovalReceipt"]
+        for item in receipt["approvedTerms"]:
+            if (item["sourceUnitId"] not in by_id
+                    or item["source"].casefold() not in by_id[item["sourceUnitId"]].casefold()):
+                raise ValueError("Direct term approval points outside its English source unit")
 
 
 def source_scoped_proper_names(rows: list[dict[str, Any]],

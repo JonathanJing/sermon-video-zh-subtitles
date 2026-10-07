@@ -16,7 +16,7 @@ class TranslationBudgetSafetyTests(unittest.TestCase):
         self.root = Path(temporary.name)
         self.caps = copy.deepcopy(subject.CAPS)
         self.identity = "a" * 64
-        policy = {role: {"model": model, "reasoningEffort": "medium"}
+        policy = {role: {"model": model, "reasoningEffort": subject.production.MODEL_EFFORTS[role]}
                   for role, model in subject.production.MODEL_ROLES.items()}
         self.payload = subject.production.model_payload("translator", {
             "instruction": "Translate the frozen source only.", "input": {"text": "Frozen source"}},

@@ -18,6 +18,8 @@
 
 这一清单优先于下文仅适用于 `weekly.json` 的 legacy 命令。当前仓库的 `assemble_multilingual_hosting.py`、`deploy_multilingual_hosting.py`、`verify_multilingual_hosting.py` 仍只处理 v2 Catalog／v1 Release；在 v3 入口实现并通过定向测试前，不得用这些命令部署新周后宣称两端已经刷新可用。
 
+[9/27 专用 L4 adapter](sep27-full-video-app-layer4.zh.md#命令与输出) 的 `seal` 只生成单页 catalog，不能直接覆盖完整旧目录。它的 `published_http_verified` 包只绑定 12 项资产 GET／SHA 收据；最终包和合并后 catalog 的第二次部署核验、音频 Range 与 App 验收仍须分别完成。该专用输出不能替代下列完整周更 stage 合同。
+
 ### 正式三语周更文件数合同
 
 已发行的 Hosting 视频周次沿用 `three_locale_full_video_v1`：**21 个新周 Hosting 资源 + 1 个更新的 `/multilingual-v3.json` = 22 个 Hosting 文件**。新的 bucket 视频周次使用 `three_locale_bucket_video_v2`：**20 个新周 Hosting 资源 + 1 个更新的 catalog = 21 个 Hosting 文件，另有 1 个不可变 Cloud Storage 视频对象**；合计处理 22 个 Firebase 资源，但不可把它写成 22 个 Hosting 文件。两个配置都只约束单周增量，既有完整站点、客户端代码、海报和 Dev dry run 分别计数。
@@ -249,3 +251,11 @@ python3 -m unittest discover -s experiments/sermon-dubbing-poc -p 'test_build_we
 Agents API turn usage 为 best-effort，可为 null，且不单列 cache-write count；费用报告必须保留 unknown 并与 Platform 账单核对，不能把未知记为零。实测会话既出现已知 token 计数，也出现 null；最终费用须对账。
 
 来源：[Agents API 计费](https://developers.openai.com/api/docs/guides/agents-api/overview)、[用量口径与限制](https://developers.openai.com/api/docs/guides/agents-api/observability)、[Astra 价格](https://developers.openai.com/api/docs/models/gpt-6-astra)、[Codex 计费](https://learn.chatgpt.com/docs/pricing)。
+
+### 单中文周次（v4 stage manifest）
+
+用户明确只发布中文时，可使用 `sermon-multilingual-v3-stage-manifest-v4`：`single_zh_bucket_video_v1` 包含 8 个新增 Hosting 资产、1 个 catalog 更新及 1 个不可变视频对象；`single_zh_full_video_v1` 包含 9 个新增 Hosting 资产及 1 个 catalog 更新。同语言候选和正式音频包仍须人审，全文、字幕、音轨、Release、听音定位指纹、英文对照与对齐索引均须精确绑定。完整正式站基线合并保留旧周和旧语言，不将单中文 manifest 用于三语周次。旧 manifest 不原地迁移；从已有已审包重新生成 v4 清单。
+
+`build_full_video_app_release.py prepare --locales zh-Hans` 支持单中文准备；`--source-date-label` 可使用中性的日期标题，不替尚未核实的篇名和讲员生成批准。`verify` 与 `seal` 按准备包的实际语言数量验证，设备和现场验收继续保持独立字段。`assemble_multilingual_v3_update.py` 消费 v4 清单并核验所有新增资产及历史字节保留；后续仍需实际部署与 HTTP/Range 回读。
+
+单周播放片段与母版原声指纹使用不同的时间原点时，全文可附加版本化 `sourceWindow`（`schemaVersion=sermon-original-recording-window-v1`、母版 `mediaSha256`、批准的 `startSeconds/endSeconds`）。构建器将它与源包窗口逐项比较；Web App 将它保存为 `sourceFingerprintWindow`，仅用于指纹来源绑定，播放与字幕仍从片段零点开始。历史内容未带此块时保持原有零点校验。页面元数据暂未确认时，日期标签使用明确的待补充说明，以兼容已有客户端必填字段，不猜测讲员或篇名。

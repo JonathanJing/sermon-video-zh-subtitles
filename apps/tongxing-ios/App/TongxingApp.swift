@@ -2,7 +2,17 @@ import SwiftUI
 
 @main
 struct TongxingApp: App {
+    @ObservedObject private var localization = AppLocalization.shared
+    #if os(iOS)
+    @UIApplicationDelegateAdaptor(BetaNotificationAppDelegate.self) private var notificationDelegate
+    @ObservedObject private var notifications = BetaNotificationController.shared
+    #endif
     @Environment(\.scenePhase) private var scenePhase
+    // App-scoped on purpose: Tongxing owns a single audio session, so every
+    // window (including Duo inner-display multi-window) mirrors the same
+    // playback state. Do not move this into the WindowGroup content —
+    // per-window models would create competing PlaybackControllers over one
+    // audio session.
     @StateObject private var model: AppModel = {
         #if DEBUG
         if let fixtureModel = UITestLaunch.makeModel() { return fixtureModel }
@@ -15,7 +25,13 @@ struct TongxingApp: App {
             ContentView(model: model)
                 .tint(Brand.accent)
                 .onChange(of: scenePhase) { _, phase in
+                    // App-level phase aggregates every window. A background
+                    // window must not hide feedback in another active window.
                     if phase == .background { model.suspendAlignment() }
+                    if phase == .active {
+                        model.setAlignmentFeedbackForeground(true)
+                        model.playback.refreshLiveActivityPresentation()
+                    }
                     model.playback.setStatisticsForeground(phase == .active)
                 }
                 #if DEBUG
@@ -29,7 +45,21 @@ struct TongxingApp: App {
                         || UITestLaunch.isEnabled else { return }
                     #endif
                     await model.start()
+                    #if DEBUG
+                    await UITestLaunch.runLiveActivitySmoke(in: model)
+                    #endif
+                    #if os(iOS)
+                    notifications.openPending(in: model)
+                    #endif
                 }
+                #if os(iOS)
+                .onChange(of: notifications.pending) { _, _ in notifications.openPending(in: model) }
+                .onChange(of: model.multilingualCatalog) { _, _ in notifications.openPending(in: model) }
+                .alert(localization.text("Beta 通知测试"), isPresented: Binding(get: { notifications.landingMessage != nil },
+                                                      set: { if !$0 { notifications.landingMessage = nil } })) {
+                    Button(localization.text("完成")) { notifications.landingMessage = nil }
+                } message: { Text(localization.text(notifications.landingMessage ?? "")) }
+                #endif
                 #if os(macOS)
                 .modifier(DevelopmentPreviewAppearance())
                 #endif

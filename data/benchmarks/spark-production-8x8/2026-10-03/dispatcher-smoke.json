@@ -1,0 +1,26 @@
+{
+  "status": "complete_diagnostic",
+  "releaseEligible": false,
+  "replicas": 8,
+  "batchSize": 8,
+  "units": 67,
+  "modelLoadBarrierSeconds": 52.00934010185301,
+  "totalWallSeconds": 119.88472304400057,
+  "minAvailableGiB": 38.51106262207031,
+  "sourceSampleUnits": 64,
+  "repeatedTailUnits": 3,
+  "fullWavDecodeCount": 67,
+  "hashChecks": 67,
+  "windowCount": 9,
+  "workerReadyCount": 8,
+  "scope": "new replica pool and window scheduler component; not formal input-admission/full419 acceptance",
+  "implementationSha256": {
+    "pool": "ccf79e4502fdb73074534171205ba9b8628456aa18c59b39a309ce3e2c4cc26e",
+    "scheduler": "351b60822173a438163506684d63383bc2c5a9b26b6e2fcb544fbf0a7e2f0ad4",
+    "rendererAtProbe": "090d44529b35debf2c1da9ca07bf6f95ef52c6f953b784aeb95246d94c963b13"
+  },
+  "notes": "Renderer intent schema version was subsequently set to v2 for replica mode; model factory and pool/scheduler behavior are unchanged from this probe. Formal input admission is covered offline, not in this diagnostic GPU probe.",
+  "checkpointSha256": "75d28ce6022b3df3a72df3dd6dbc01e53f584d685770d60ea04b341920968c9a",
+  "image": "nvcr.io/nvidia/pytorch:26.06-py3",
+  "gpu": "NVIDIA GB10"
+}

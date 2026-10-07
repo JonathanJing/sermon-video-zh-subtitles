@@ -35,13 +35,16 @@ struct VoiceDemoSection: View {
 
     var body: some View {
         DisclosureGroup(isExpanded: $expanded) {
-            Text(localization.text(catalog?.isSourceMatched == true
-                ? "同一片段：先听英语原声，再比较中文、韩语和西班牙语。"
-                : "旧版独立样音，文稿与英语原声不同；同片段对照正在准备。"))
-                .font(.footnote).foregroundStyle(.secondary)
+            if let catalog {
+                Text(localization.text(catalog.isSourceMatched
+                    ? "同一片段：先听英语原声，再比较中文、韩语和西班牙语。"
+                    : "旧版独立样音，文稿与英语原声不同；同片段对照正在准备。"))
+                    .font(.footnote).foregroundStyle(.secondary)
+            }
             if loading { ProgressView(localization.text("正在读取试听资料…")) }
             if unavailable {
                 Button(localization.text("试听资料暂不可用，点击重试")) { Task { await load() } }
+                    .accessibilityIdentifier("voice-demo-unavailable")
             }
             if demoError || (playback.isPreview && playback.previewLoadFailed) {
                 Text(localization.text("试听加载失败，请检查网络后重试。"))
@@ -249,31 +252,8 @@ struct VoiceDemoSection: View {
         unavailable = false
         defer { loading = false }
         do {
-            do { catalog = try VoiceDemoCatalog.validatedClips(await fetchCatalog(VoiceDemoCatalog.clipsRelativePath)) }
-            catch CatalogError.notFound {
-                if model.mediaOrigin.host == AppModel.productionContentOrigin.host {
-                    catalog = try VoiceDemoCatalog.productionMerged(weeklyData: await fetchCatalog("weekly.json"),
-                        auditionData: await fetchCatalog(VoiceDemoCatalog.productionPath))
-                } else { catalog = try VoiceDemoCatalog.validated(await fetchCatalog(VoiceDemoCatalog.relativePath)) }
-            }
+            catalog = try await VoiceDemoCatalog.loadMatched(origin: model.mediaOrigin, session: model.mediaSession)
         } catch { unavailable = true }
-    }
-
-    private enum CatalogError: Error { case notFound }
-    private func fetchCatalog(_ path: String) async throws -> Data {
-        guard let url = URL(string: path, relativeTo: model.mediaOrigin)?.absoluteURL,
-              url.scheme == "https", url.host == model.mediaOrigin.host,
-              url.port == model.mediaOrigin.port, url.user == nil,
-              url.password == nil, url.query == nil, url.fragment == nil else { throw CocoaError(.fileReadNoPermission) }
-        var request = URLRequest(url: url)
-        request.cachePolicy = .reloadIgnoringLocalCacheData
-        request.timeoutInterval = 15
-        let (data, response) = try await model.mediaSession.data(for: request)
-        guard response.url == url else { throw CocoaError(.fileReadNoPermission) }
-        if (response as? HTTPURLResponse)?.statusCode == 404 { throw CatalogError.notFound }
-        guard (response as? HTTPURLResponse)?.statusCode == 200,
-              !data.isEmpty, data.count < 2_000_000 else { throw CocoaError(.fileReadCorruptFile) }
-        return data
     }
 }
 

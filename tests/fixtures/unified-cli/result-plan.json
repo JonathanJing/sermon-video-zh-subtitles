@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "sermon-cli-result-v1",
+  "command": "run.plan",
+  "requestId": "req-example-plan-001",
+  "subject": { "kind": "run", "id": "run-example-001" },
+  "runId": "run-example-001",
+  "runRevision": 1,
+  "outcome": "blocked",
+  "completionScope": "layer2_machine_candidate",
+  "nextActions": [],
+  "error": null,
+  "plan": {
+    "planHash": null,
+    "newPaidRequests": 0,
+    "blockers": [{ "code": "window_approval_required", "locale": null, "artifactId": null }]
+  }
+}

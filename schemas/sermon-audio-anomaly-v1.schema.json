@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "sermon-audio-anomaly-v1",
+  "title": "Lossless audio anomaly snapshot v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "unitIndex", "evidenceSha256", "jobJsonSha256", "audioSha256", "reason", "timing", "acoustic", "saved", "unavailableEvidence", "grantsApproval", "modelCalls", "mutatesSource"],
+  "properties": {
+    "schemaVersion": {"const": "sermon-audio-anomaly-v1"},
+    "unitIndex": {"type": "integer", "minimum": 0},
+    "evidenceSha256": {"$ref": "#/$defs/hash"},
+    "jobJsonSha256": {"$ref": "#/$defs/hash"},
+    "audioSha256": {"$ref": "#/$defs/hash"},
+    "reason": {"type": "string", "minLength": 1},
+    "timing": {"type": ["object", "null"]},
+    "acoustic": {"type": "object", "required": ["status", "safeTrimSeconds", "rootCause"], "properties": {"status": {"enum": ["full_pcm16_decode", "measurement_unavailable"]}, "safeTrimSeconds": {"type": "null"}, "rootCause": {"const": "not_determined"}}},
+    "saved": {"type": "array", "minItems": 1, "items": {"type": "object", "additionalProperties": false, "required": ["path", "sha256"], "properties": {"path": {"type": "string", "minLength": 1}, "sha256": {"$ref": "#/$defs/hash"}}}},
+    "unavailableEvidence": {"type": "array", "items": {"type": "string"}},
+    "grantsApproval": {"const": false},
+    "modelCalls": {"const": 0},
+    "mutatesSource": {"const": false}
+  },
+  "$defs": {"hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"}}
+}

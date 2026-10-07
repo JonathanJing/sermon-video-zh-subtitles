@@ -7,6 +7,13 @@ on:
       - main
     types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
+    inputs:
+      scheme:
+        description: App identity to validate (Beta exercises Beta-only feedback)
+        type: choice
+        required: false
+        default: Tongxing
+        options: [Tongxing, TongxingBeta]
 
 concurrency:
   group: tongxing-ios-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
@@ -124,7 +131,9 @@ jobs:
     needs: changes
     if: needs.changes.outputs.scope == 'native' && (github.event_name == 'workflow_dispatch' || (github.base_ref == 'main' && !github.event.pull_request.draft))
     runs-on: macos-15
-    timeout-minutes: 35
+    timeout-minutes: 45
+    env:
+      TONGXING_VALIDATION_SCHEME: ${{ inputs.scheme || 'Tongxing' }}
     defaults:
       run:
         working-directory: apps/tongxing-ios
@@ -139,6 +148,7 @@ jobs:
       - name: Build for iOS Simulator without signing
         run: >-
           ./scripts/ios.sh build --developer-dir "$(xcode-select -p)"
+          --scheme "$TONGXING_VALIDATION_SCHEME"
           --derived-data DerivedData --artifacts-dir TestResults
       - name: Select an available iPhone simulator
         id: simulator
@@ -162,6 +172,7 @@ jobs:
       - name: iOS player and user-flow tests
         run: >-
           ./scripts/ios.sh test --developer-dir "$(xcode-select -p)"
+          --scheme "$TONGXING_VALIDATION_SCHEME"
           --simulator '${{ steps.simulator.outputs.udid }}'
           --derived-data DerivedData --artifacts-dir TestResults
           --only-testing TongxingTests --only-testing TongxingUITests

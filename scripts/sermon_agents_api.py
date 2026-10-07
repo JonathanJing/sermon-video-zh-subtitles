@@ -89,13 +89,15 @@ class AgentsAPIClient:
         return min(self.timeout, remaining)
 
     def _request(self, method: str, path: str, payload: Mapping[str, Any] | None = None) -> dict[str, Any]:
+        from scripts.sermon_openai_runtime import project_headers
         timeout = self._remaining_timeout()
         request = urllib.request.Request(
             "https://api.openai.com/v1" + path,
             data=_json_bytes(payload) if payload is not None else None,
             method=method,
             headers={"Authorization": "Bearer " + self._api_key,
-                     "OpenAI-Beta": "agents=v1", "Content-Type": "application/json"},
+                     "OpenAI-Beta": "agents=v1", "Content-Type": "application/json",
+                     **project_headers(self._api_key)},
         )
         try:
             with self._opener.open(request, timeout=timeout) as response:

@@ -30,12 +30,21 @@ async def serve(args):
     activities = Activities(profile=args.profile, state_root=args.state_root,
                             allow_production_execute=args.allow_production_execute,
                             project_python=args.project_python)
+    workflows = [SaturdayWorkflow]
+    registered = [activities.inspect, activities.execute]
+    if getattr(args, 'enable_unified', False):
+        if args.profile != 'production' or not args.allow_production_execute:
+            raise ValueError('Unified worker requires explicit production execution opt-in')
+        from .unified import sdk_types
+        unified_workflow, unified_activity = sdk_types()
+        workflows.append(unified_workflow)
+        registered.append(unified_activity)
     stopped = asyncio.Event()
     loop = asyncio.get_running_loop()
     for signum in (signal.SIGINT, signal.SIGTERM):
         loop.add_signal_handler(signum, stopped.set)
-    async with Worker(client, task_queue=QUEUE_PREFIX + args.profile, workflows=[SaturdayWorkflow],
-        activities=[activities.inspect, activities.execute], max_concurrent_activities=2,
+    async with Worker(client, task_queue=QUEUE_PREFIX + args.profile, workflows=workflows,
+        activities=registered, max_concurrent_activities=2,
         graceful_shutdown_timeout=timedelta(seconds=3),
         max_heartbeat_throttle_interval=timedelta(seconds=1),
         default_heartbeat_throttle_interval=timedelta(seconds=1)):
@@ -51,6 +60,7 @@ def main(argv=None):
     parser.add_argument("--state-root", type=Path, default=TEMPORAL_ROOT / "worker-state")
     parser.add_argument("--project-python", type=Path, default=PROJECT_PYTHON)
     parser.add_argument("--allow-production-execute", action="store_true")
+    parser.add_argument("--enable-unified", action="store_true", help="Register the same-store unified adapter after explicit scheduler transfer")
     asyncio.run(serve(parser.parse_args(argv)))
 
 

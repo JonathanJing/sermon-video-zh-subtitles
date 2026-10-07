@@ -20,7 +20,8 @@ from tests import test_render_formal_target_language_speech as render_fixtures
 from tests import test_prepare_target_language_speech_job as voice_fixtures
 
 
-class ScopeTests(unittest.TestCase):
+class ScopeFixture(unittest.TestCase):
+    """Per-test offline scope, without inheritable test methods."""
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
@@ -34,6 +35,8 @@ class ScopeTests(unittest.TestCase):
         return profile.session(self.root / 'accounting', 'offline-local-callback-tests',
                                work_kind='engineering', evidence_mode='synthetic')
 
+
+class ScopeTests(ScopeFixture):
     def test_scope_profile_identity_and_path_fail_closed(self):
         with self.assertRaisesRegex(ValueError, 'requires_synthetic_profile'):
             with subject._scope(**self.scope): pass
@@ -66,11 +69,11 @@ class ScopeTests(unittest.TestCase):
                                       synth_factory=factory, **self.scope)
 
 
-class SpeechTests(ScopeTests):
+class SpeechTests(ScopeFixture):
     def setUp(self):
         super().setUp()
         self.f = speech_fixtures.PreparationTests()
-        self.f.setUp(); self.addCleanup(self.f.doCleanups)
+        self.addCleanup(self.f.doCleanups); self.f.setUp()
 
     def prepare(self):
         return subject.prepare_speech(self.f.f.boundary, self.f.intent,
@@ -126,11 +129,11 @@ class SpeechTests(ScopeTests):
                         subject._boundary_paths(self.root, boundary)
 
 
-class PreflightTests(ScopeTests):
+class PreflightTests(ScopeFixture):
     def setUp(self):
         super().setUp()
         self.f = delivery_fixtures.StrictDeliveryBindingTests()
-        self.f.setUp(); self.addCleanup(self.f.doCleanups)
+        self.addCleanup(self.f.doCleanups); self.f.setUp()
 
     def preflight(self, **kwargs):
         return subject.delivery_preflight(self.f.manifest, self.f.plan,
@@ -152,7 +155,7 @@ class PreflightTests(ScopeTests):
                 self.preflight(binding=first['binding'])
 
 
-class RenderTests(ScopeTests):
+class RenderTests(ScopeFixture):
     def setUp(self):
         super().setUp()
         # The normal fixture uses a real registry's hash. Supply inert checkpoint
@@ -174,7 +177,7 @@ class RenderTests(ScopeTests):
             fixture.adapter_path.write_text(json.dumps(fixture.adapter))
         with patch.object(voice_fixtures.TargetLanguageSpeechJobTests, 'setUp', fixture_setup):
             self.f = render_fixtures.FormalRenderTests()
-            self.f.setUp(); self.addCleanup(self.f.doCleanups)
+            self.addCleanup(self.f.doCleanups); self.f.setUp()
         checkpoint = self.f.root / 'fixture-model'
         (checkpoint / 'model.safetensors').write_bytes(weights)
         adapter = self.f.context['adapter']
@@ -329,11 +332,11 @@ class RenderTests(ScopeTests):
                             saved.rename(path)
 
 
-class LocalDeliveryTests(ScopeTests):
+class LocalDeliveryTests(ScopeFixture):
     def setUp(self):
         super().setUp()
         self.f = delivery_fixtures.FormalStrictDeliveryTests()
-        self.f.setUp(); self.addCleanup(self.f.doCleanups)
+        self.addCleanup(self.f.doCleanups); self.f.setUp()
 
     def prepare(self, **kwargs):
         return subject.prepare_delivery(self.f.manifest, root=self.f.formal.root,

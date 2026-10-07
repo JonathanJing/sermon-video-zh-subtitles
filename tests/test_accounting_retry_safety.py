@@ -39,6 +39,14 @@ class AccountingRetrySafetyTests(unittest.TestCase):
         return patch.object(accounting, "_write_event", side_effect=write)
 
     @staticmethod
+    def bounded_chat():
+        from scripts import sermon_provider_limits as limits
+        return limits.bounded_payload({
+            'model': 'gpt-6-astra', 'reasoning_effort': 'medium',
+            'messages': [{'role': 'user', 'content': 'synthetic retry fixture'}],
+            'response_format': {'type': 'json_object'}}, limits.DEFAULT_REQUEST_LIMITS)
+
+    @staticmethod
     def urllib_response():
         response = MagicMock()
         response.__enter__.return_value.read.return_value = json.dumps({
@@ -54,7 +62,7 @@ class AccountingRetrySafetyTests(unittest.TestCase):
     def test_successful_chat_response_with_failed_receipt_is_not_retried(self):
         with patch.object(pipeline.urllib.request, "urlopen", return_value=self.urllib_response()) as network, self.fail_receipt_writes():
             with self.assertRaises(accounting.AccountingWriteError):
-                pipeline.chat_json("fixture-key", {"model": "gpt-6-astra"}, retries=3)
+                pipeline.chat_json("fixture-key", self.bounded_chat(), retries=3, session_verifier=lambda: {"status":"offline_test"})
         self.assertEqual(network.call_count, 1)
         self.assertEqual([event["event"] for event in self.events()], ["api_attempt_started"])
 
@@ -69,7 +77,7 @@ class AccountingRetrySafetyTests(unittest.TestCase):
                 with self.subTest(error=type(original_error).__name__, caller=caller), patch.object(pipeline.urllib.request, "urlopen", side_effect=original_error) as network, self.fail_receipt_writes():
                     with self.assertRaises(type(original_error)) as caught:
                         if caller == "chat":
-                            pipeline.chat_json("fixture-key", {"model": "gpt-6-astra"}, retries=3)
+                            pipeline.chat_json("fixture-key", self.bounded_chat(), retries=3, session_verifier=lambda: {"status":"offline_test"})
                         else:
                             request = pipeline.urllib.request.Request("https://example.invalid")
                             pipeline.request_json(request, retries=3)
@@ -80,7 +88,7 @@ class AccountingRetrySafetyTests(unittest.TestCase):
     def test_healthy_ledger_preserves_normal_http_retry(self):
         error = urllib.error.HTTPError("https://example.invalid", 503, "unavailable", {}, io.BytesIO(b"retryable"))
         with patch.object(pipeline.urllib.request, "urlopen", side_effect=[error, self.urllib_response()]) as network:
-            result = pipeline.chat_json("fixture-key", {"model": "gpt-6-astra"}, retries=2)
+            result = pipeline.chat_json("fixture-key", self.bounded_chat(), retries=2, session_verifier=lambda: {"status":"offline_test"})
         self.assertEqual(result["id"], "fixture-response")
         self.assertEqual(network.call_count, 2)
         attempts = [event for event in self.events() if event["event"] == "api_attempt"]
@@ -92,7 +100,7 @@ class AccountingRetrySafetyTests(unittest.TestCase):
         response.json.return_value = {"id": "notes-response", "usage": {"input_tokens": 1, "output_tokens": 1}}
         with patch.object(notes.requests, "post", return_value=response) as network, self.fail_receipt_writes():
             with self.assertRaises(accounting.AccountingWriteError):
-                notes.request_openai_notes({"model": "gpt-6-astra"}, api_key="fixture-key")
+                notes.request_openai_notes({"model": "gpt-6-astra"}, api_key="fixture-key", session_verifier=lambda: {"status":"offline_test"})
         self.assertEqual(network.call_count, 1)
 
     def test_notes_network_and_decode_failures_preserve_original(self):
@@ -103,7 +111,7 @@ class AccountingRetrySafetyTests(unittest.TestCase):
             kwargs = {"side_effect": error} if kind == "network" else {"return_value": response}
             with self.subTest(kind=kind), patch.object(notes.requests, "post", **kwargs) as network, self.fail_receipt_writes():
                 with self.assertRaises(type(error)) as caught:
-                    notes.request_openai_notes({"model": "gpt-6-astra"}, api_key="fixture-key")
+                    notes.request_openai_notes({"model": "gpt-6-astra"}, api_key="fixture-key", session_verifier=lambda: {"status":"offline_test"})
                 self.assertIs(caught.exception, error)
                 self.assertTrue(getattr(error, "sermon_logging_failed", False))
                 self.assertEqual(network.call_count, 1)
@@ -113,7 +121,7 @@ class AccountingRetrySafetyTests(unittest.TestCase):
         response.json.return_value = {"error": {"message": "fixture unavailable"}}
         with patch.object(notes.requests, "post", return_value=response) as network, self.fail_receipt_writes():
             with self.assertRaises(SystemExit) as caught:
-                notes.request_openai_notes({"model": "gpt-6-astra"}, api_key="fixture-key")
+                notes.request_openai_notes({"model": "gpt-6-astra"}, api_key="fixture-key", session_verifier=lambda: {"status":"offline_test"})
         self.assertIn("HTTP 503", str(caught.exception))
         self.assertTrue(getattr(caught.exception, "sermon_logging_failed", False))
         self.assertEqual(network.call_count, 1)

@@ -1,0 +1,36 @@
+name: Tracker contracts
+
+on:
+  pull_request:
+    branches: [dev, main]
+    paths:
+      - 'experiments/sermon-dubbing-poc/tracker-admin/**'
+      - 'scripts/build_tracker_dag_projection.py'
+      - 'scripts/build_four_layer_tracker_snapshot.py'
+      - '.github/workflows/tracker-tests.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'experiments/sermon-dubbing-poc/tracker-admin/**'
+      - 'scripts/build_tracker_dag_projection.py'
+      - 'scripts/build_four_layer_tracker_snapshot.py'
+      - '.github/workflows/tracker-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  tracker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: experiments/sermon-dubbing-poc/tracker-admin
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install locked UI test and build dependencies
+        run: npm ci --ignore-scripts
+      - name: Check public contracts and DOM interactions
+        run: npm test
+      - name: Build tracker (no publish)
+        run: npm run build

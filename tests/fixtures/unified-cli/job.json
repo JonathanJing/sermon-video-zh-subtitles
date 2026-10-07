@@ -1,0 +1,46 @@
+{
+  "schemaVersion": "sermon-unified-job-v1",
+  "jobId": "job-example-zh-l2",
+  "productionRunId": "run-example-001",
+  "runRevision": 3,
+  "jobRoot": "jobroot-example-001",
+  "layer": "layer2",
+  "stageId": "layer2_group",
+  "locale": "zh-Hans",
+  "scope": "layer2_machine_candidate",
+  "subject": { "kind": "group", "id": "g001" },
+  "identity": {
+    "inputDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "contractVersion": "sermon-unified-job-v1",
+    "operation": "translate_group"
+  },
+  "attempt": 1,
+  "state": {
+    "process": "succeeded",
+    "artifact": "verified",
+    "review": "human_pending",
+    "publication": "not_started",
+    "device": "not_checked"
+  },
+  "inputs": [
+    {
+      "artifactId": "english-source-example",
+      "kind": "english_source_package",
+      "schemaVersion": "sermon-english-source-package-v1",
+      "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "locale": null,
+      "packageStatus": "ready_for_translation"
+    }
+  ],
+  "outputs": [
+    {
+      "artifactId": "candidate-example-003",
+      "kind": "target_language_candidate",
+      "schemaVersion": "sermon-target-language-candidate-v2",
+      "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "locale": "zh-Hans",
+      "packageStatus": "machine_complete"
+    }
+  ],
+  "blockers": []
+}

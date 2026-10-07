@@ -1,6 +1,7 @@
 #if os(iOS) && canImport(ActivityKit)
 import ActivityKit
 import Foundation
+import TongxingCore
 
 /// Shared only by the iOS app and its widget extension. These are observations
 /// from PlaybackController, never a second player or a venue synchronization clock.
@@ -14,8 +15,24 @@ struct ListeningActivityAttributes: ActivityAttributes {
         var isWaiting: Bool
         var sampledAt: Date
         var languageCode: String
+        var alignmentPhase: ListeningAlignmentPhase? = nil
+        var subtitleID: String? = nil
+        var chineseSubtitle: String? = nil
+        var englishSubtitle: String? = nil
+
+        var compactStatusText: String {
+            if let alignmentPhase { return alignmentPhase.compactText(english: usesEnglish) }
+            if isWaiting { return usesEnglish ? "Wait" : "等待" }
+            return isPlaying ? (usesEnglish ? "Play" : "播放") : (usesEnglish ? "Pause" : "暂停")
+        }
 
         var usesEnglish: Bool { languageCode.hasPrefix("en") }
+
+        var subtitleSnapshotLabel: String { usesEnglish ? "Last synced captions" : "最近同步字幕" }
+        var subtitleStaleMessage: String {
+            usesEnglish ? "Captions haven't refreshed. Open Tongxing for live captions."
+                : "字幕尚未刷新，打开同行查看实时字幕。"
+        }
 
         var timerInterval: ClosedRange<Date> {
             let start = sampledAt.addingTimeInterval(-position)
@@ -24,6 +41,7 @@ struct ListeningActivityAttributes: ActivityAttributes {
 
         func statusText(isStale: Bool) -> String {
             if isStale { return usesEnglish ? "Open Tongxing to update" : "打开同行更新状态" }
+            if let alignmentPhase { return alignmentPhase.statusText(english: usesEnglish) }
             if isWaiting { return usesEnglish ? "Buffering" : "正在缓冲" }
             if isPlaying { return usesEnglish ? "Playing" : "正在播放" }
             return usesEnglish ? "Paused" : "已暂停"

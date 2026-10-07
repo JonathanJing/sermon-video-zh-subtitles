@@ -13,6 +13,8 @@
 
 ## 共用验收
 
+2026-10-05 状态核查见[PR #248 测试与 backlog 对照](reports/20261005-pr248-test-coverage-backlog-audit.zh.md)。本文 10/01 的默认参数和下方 missing-only 描述保留其当时范围；当前 formal TTS 使用固定完整批窗重放、只提交缺项，真实周产 8×8 已有历史收据。本轮三分钟真实 batch2、419 fake 回归不能替代新增留存/诊断代码下的 8×8 整篇性能与听审验收；跨 job ASR 迁移及 session GPU 生命周期许可仍未实现。
+
 - 可恢复入口默认 Spark，Mac fallback 只用于已确认基础设施故障；内容、身份、审核、损坏缓存和未知远端结果不换机绕过。
 - 先冻结输入，缓存绑定 source/text/checkpoint/model/runtime/生成设置；批处理不能丢失 unitId、locale 或旧收据，不把候选输出当正式人审批准。
 - 串行与并发／批处理用相同工作量比较；测试验证有界重叠、单模型装载次数、逆序完成仍正确映射、短批、失败／取消、缓存命中、错 hash、未知请求与局部恢复。线程并行的计时 fixture 不冒称 GPU 实测加速。

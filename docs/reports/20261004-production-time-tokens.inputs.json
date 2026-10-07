@@ -1,0 +1,277 @@
+{
+  "scope": "production accounting ledgers found locally; not Codex conversation or complete invoice",
+  "ledgerFiles": 46,
+  "uniqueEvents": 231220,
+  "duplicateEventsExcluded": 9033,
+  "uniqueApiAttempts": 8389,
+  "duplicateResponsesExcluded": 0,
+  "conflicts": [],
+  "totals": {
+    "attempts": 8389,
+    "completed": 8307,
+    "missing": 83,
+    "inputTokens": 22579732,
+    "outputTokens": 2367642,
+    "cachedInputTokens": 5767783,
+    "cacheWriteTokens": 16787031,
+    "reasoningTokens": 646036
+  },
+  "categories": {
+    "L2 阅读候选及前序修订": {
+      "attempts": 6176,
+      "completed": 6176,
+      "missing": 0,
+      "inputTokens": 14705598,
+      "outputTokens": 1619998,
+      "cachedInputTokens": 3639262,
+      "cacheWriteTokens": 11047808,
+      "reasoningTokens": 529999
+    },
+    "L2 口播候选": {
+      "attempts": 1318,
+      "completed": 1318,
+      "missing": 0,
+      "inputTokens": 4024742,
+      "outputTokens": 283712,
+      "cachedInputTokens": 836366,
+      "cacheWriteTokens": 3184422,
+      "reasoningTokens": 74529
+    },
+    "L1 英文机器复核": {
+      "attempts": 222,
+      "completed": 156,
+      "missing": 66,
+      "inputTokens": 1343205,
+      "outputTokens": 327207,
+      "cachedInputTokens": 166844,
+      "cacheWriteTokens": 1175893,
+      "reasoningTokens": 4653
+    },
+    "L2 时长修订及定向修复": {
+      "attempts": 672,
+      "completed": 656,
+      "missing": 16,
+      "inputTokens": 2506187,
+      "outputTokens": 136725,
+      "cachedInputTokens": 1125311,
+      "cacheWriteTokens": 1378908,
+      "reasoningTokens": 36855
+    },
+    "L1 媒体及转录": {
+      "attempts": 1,
+      "completed": 1,
+      "missing": 1,
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "cachedInputTokens": 0,
+      "cacheWriteTokens": 0,
+      "reasoningTokens": 0
+    }
+  },
+  "inputs": [
+    {
+      "path": "canonical-spoken-v5/es/accounting/events.jsonl",
+      "sha256": "c174439ccfb4da2ebe3fc29841f5a68da491477e1a9811a1a1c82f52bb4c94d0"
+    },
+    {
+      "path": "canonical-spoken-v5/ko/accounting/events.jsonl",
+      "sha256": "7be4de8c7fd67e486d7eff2f49042f74a406e07b37c7783cc6f9975772fe7bcb"
+    },
+    {
+      "path": "canonical-spoken-v2/zh-Hans/accounting/events.jsonl",
+      "sha256": "a337196a4afd69aea547bc5a8e1141b10f663cb85ad402fe436400d1d1eb18da"
+    },
+    {
+      "path": "canonical-spoken-v3/zh-Hans/accounting/events.jsonl",
+      "sha256": "c24fcae921153f4b6315b81326230583ddc69d022d9d856725a76b21fb92cbe0"
+    },
+    {
+      "path": "canonical-spoken-v4/es/accounting/events.jsonl",
+      "sha256": "0ef8619ba0c8ec693563d295ae13e5a45f2460ddb8bdfee07eb8c9f8ffdeb7ee"
+    },
+    {
+      "path": "canonical-spoken-v4/zh-Hans/accounting/events.jsonl",
+      "sha256": "13759b045b007f086343845ec3808d7efe77e6c9717cd8241d8aa55446698e62"
+    },
+    {
+      "path": "ko-publication-v1/audio-render-tar-v2/accounting/events.jsonl",
+      "sha256": "c87ac6c7d6e248d77178f974f90f37d57a03b184591629b0b8985161542d6b99"
+    },
+    {
+      "path": "ko-publication-v1/audio-render/accounting/events.jsonl",
+      "sha256": "c87ac6c7d6e248d77178f974f90f37d57a03b184591629b0b8985161542d6b99"
+    },
+    {
+      "path": "formal-layer2-timing-revision-v1/runs/ko-attempt1/accounting/events.jsonl",
+      "sha256": "37cfbf15b907b71dc772736e4feb7ae68c63f09e53709c5fe1bb8da65e1a66fe"
+    },
+    {
+      "path": "formal-layer2-timing-revision-v1/runs/zh-Hans-attempt2/accounting/events.jsonl",
+      "sha256": "bee3ca2ccbad19f20d23588490556bdb5b8e2b660f4d8a6aa9c3e9fd9335d61e"
+    },
+    {
+      "path": "formal-layer2-timing-revision-v1/runs/zh-Hans-attempt3/accounting/events.jsonl",
+      "sha256": "2a99868c2463cc5eb58dec7600e0664542bdadbe8ba0ea9c2d84133725fd9023"
+    },
+    {
+      "path": "formal-layer2-timing-revision-v1/runs/es-attempt1/accounting/events.jsonl",
+      "sha256": "0d21f4e3134f0cfbc46d6b8aff48c3caf40a70c28aed766f7c86c5d47791923b"
+    },
+    {
+      "path": "formal-layer2-timing-revision-v1/runs/ko-attempt2/accounting/events.jsonl",
+      "sha256": "199867e513674b6857b8cffe678ea5ebb101ecfe3ad25a541c26a68bfa0b42c8"
+    },
+    {
+      "path": "formal-layer2-timing-revision-v1/runs/es-attempt2/accounting/events.jsonl",
+      "sha256": "633899ac6076f137191600dab213dde5d7994141b5c71ef69f03d8d1bb16b244"
+    },
+    {
+      "path": "formal-layer2-timing-revision-v1/runs/zh-Hans/accounting/events.jsonl",
+      "sha256": "4357de0c5927f2b5572b69dd94a0e8d532d45502228b5b0009a6c63909de4d79"
+    },
+    {
+      "path": "formal-layer3-execution-v2/es-publication-v1/collected-es-render-v1/accounting/events.jsonl",
+      "sha256": "6ebe339b54faf0551618c77bb94b7973c3167d389ec25b19b65ce1ad3a1c4fc7"
+    },
+    {
+      "path": "source-preparation/cache-migration-v2-review/regression-ko-v1/accounting/events.jsonl",
+      "sha256": "6a066eb1ed1a41d08021f8aea522915356083474a8ec5c701428562e2b537b57"
+    },
+    {
+      "path": "source-preparation/cache-migration-v2-review/regression-zh-Hans-v1/accounting/events.jsonl",
+      "sha256": "8d709b7d95842b37846e0951aabceeb28adfe3052de837ee61286f3dad7e3431"
+    },
+    {
+      "path": "english-source-judge-v6/accounting/events.jsonl",
+      "sha256": "d1949c1555d811bd537742203cb4bc29eb3283d61d16554f7caaf843cae3683c"
+    },
+    {
+      "path": "english-source-judge-v1/accounting/events.jsonl",
+      "sha256": "56403d47cfcdab78af29ab5ea5ee0637db39cd3cc95ae96d8111e66f87e297fb"
+    },
+    {
+      "path": "canonical-production-v8/plugin-revision-v2/es/accounting/events.jsonl",
+      "sha256": "bccea4b06b0ea65a87f75b5dcf0cdc3cddc7348217f8cf7a5524ae0866bf55e5"
+    },
+    {
+      "path": "canonical-production-v8/plugin-revision-v2/ko/accounting/events.jsonl",
+      "sha256": "32cca605616847db722f550ddb8f0ea34e396eb10485957c32b7b12050ea72db"
+    },
+    {
+      "path": "canonical-production-v8/text/ko/accounting/events.jsonl",
+      "sha256": "7be6da9879aafdefb8e8cdfd78d568b0b784c9203e335176ad1d523053cb32fa"
+    },
+    {
+      "path": "canonical-production-v8/text/zh-Hans/accounting/events.jsonl",
+      "sha256": "96f1e56f8107031aa39f063ca954a4e98b358112f0eaefb55de564332dac0ad5"
+    },
+    {
+      "path": "canonical-production-v8/plugin-revision-v1/zh-Hans/accounting/events.jsonl",
+      "sha256": "0ed1d0c17e442f69823d4bfad469ca26cd78d8c95f929d57abe09a98365bb962"
+    },
+    {
+      "path": "canonical-production-v8/revision-2/text/es/accounting/events.jsonl",
+      "sha256": "4dc212eecb8c0c28021c47690b9f9b72cffba425c9a3b2efea9979020c1ea3d1"
+    },
+    {
+      "path": "canonical-production-v8/revision-2/text/ko/accounting/events.jsonl",
+      "sha256": "1d4857b5c1acf5ae8d58a5366c48f732ec94563beb4093024b83bfc30acbb91d"
+    },
+    {
+      "path": "canonical-production-v8/revision-2/text/zh-Hans/accounting/events.jsonl",
+      "sha256": "f2c59195b2ad3e34614677e0a9857d31cdb4c28043dcbee4b173c9d4f1ed5fa6"
+    },
+    {
+      "path": "canonical-production-v8/revision-3/text/es/accounting/events.jsonl",
+      "sha256": "b45e2e453475e128d09ff2ae2f3ce1df3c0030b66b99ce869c8c844e2dbe1fd0"
+    },
+    {
+      "path": "canonical-production-v8/revision-3/text/ko/accounting/events.jsonl",
+      "sha256": "018f26341338afdfc42e32b69e846596f88ba0e4e891779c1c6a82946728e8c8"
+    },
+    {
+      "path": "canonical-production-v8/revision-4/text/es/accounting/events.jsonl",
+      "sha256": "60bf01ed86e42a76501b4c474f6c220d6147ef274b943ec69d761e355c7b5e5a"
+    },
+    {
+      "path": "canonical-spoken-v1/zh-Hans/accounting/events.jsonl",
+      "sha256": "741866ebd525143d7a605f588963a4404daadb51162b90d61d009ad500ae7ea2"
+    },
+    {
+      "path": "canonical-spoken-v6/ko/accounting/events.jsonl",
+      "sha256": "90281a19242809b4b22d9b9f19e71437b4431180558e92420084ceb3aa5d0d8a"
+    },
+    {
+      "path": "pipeline-pcm-v1/accounting/events.jsonl",
+      "sha256": "42a0de4b8b2a2e8fe2becb27c2db7d047d4714e99188fabdfcc22336deee3919"
+    },
+    {
+      "path": "zh-publication-v1/audio-render/accounting/events.jsonl",
+      "sha256": "e5dd7c1a3e529d8c768a9c7d711cd0e55cd3196fa95f09f40152db287dacd55c"
+    },
+    {
+      "path": "canonical-layer2-v6-override/text/es-repair-v1/accounting/events.jsonl",
+      "sha256": "768d95f58d86b22ad5fe87d0da9d5372a24f2aa46bba5ef6fefbd059077c9392"
+    },
+    {
+      "path": "canonical-layer2-v6-override/text/es/accounting/events.jsonl",
+      "sha256": "934877f92e5d3b9ac1c88fa7f51c81032c9af50b5eefa1f93a208f6a7796e32b"
+    },
+    {
+      "path": "canonical-layer2-v6-override/text/ko/accounting/events.jsonl",
+      "sha256": "db1295a8e674066419139a5b1ac5c0ba3fe2489d047ef07063b9e8c8260ce648"
+    },
+    {
+      "path": "canonical-layer2-v6-override/text/zh-Hans-repair-v1/accounting/events.jsonl",
+      "sha256": "9232eb8f04e0a94a47e071c214d43810e09c245ece5bd36e0e9cf8a2ef4e64db"
+    },
+    {
+      "path": "canonical-layer2-v6-override/text/zh-Hans/accounting/events.jsonl",
+      "sha256": "2b6ed994ac25555946bfbeb78f467e91095423fac31682d4908fc68760df2629"
+    },
+    {
+      "path": "english-source-judge-v2/accounting/events.jsonl",
+      "sha256": "f721f2ead6e7dcc05c27be11342462a5a4b350ead0068ce3a41bfb7fa3308018"
+    },
+    {
+      "path": "pipeline/accounting/events.jsonl",
+      "sha256": "f2cf05864b8f3dc5a5d6fcaa80592938a963aac08684075b9e0cdc53ffd95716"
+    },
+    {
+      "path": "canonical-layer2-v7-user-confirmed/text/ko-v7-repair-v1/accounting/events.jsonl",
+      "sha256": "f72b966af2a963179ee747ad5a358e5cea6a0c18c6719124e1c5ea626f49509a"
+    },
+    {
+      "path": "canonical-layer2-v7-user-confirmed/text/ko-v7/accounting/events.jsonl",
+      "sha256": "e070fc4c21dfb2e1d5430649ef14f441a4ca6708bec957a2f944b2d9f676353b"
+    },
+    {
+      "path": "english-source-judge-v4/accounting/events.jsonl",
+      "sha256": "b1d2a76ab5b5aef8d63327f43b98b49e2e3b568edc272e812a9b5fe16f9f74d2"
+    },
+    {
+      "path": "english-source-judge-v3/accounting/events.jsonl",
+      "sha256": "44a03a59d9033705c3467c5421d1c23d21f48ac5eaf28625a015e696c983653b"
+    }
+  ],
+  "models": {
+    "gpt-6-astra": {
+      "attempts": 4313,
+      "inputTokens": 11564008,
+      "outputTokens": 836405,
+      "usageMissing": 82
+    },
+    "gpt-6-sol": {
+      "attempts": 4075,
+      "inputTokens": 11015724,
+      "outputTokens": 1531237,
+      "usageMissing": 0
+    },
+    "gpt-transcribe": {
+      "attempts": 1,
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "usageMissing": 1
+    }
+  }
+}

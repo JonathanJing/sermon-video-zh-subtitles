@@ -1,3 +1,4 @@
+import demoDag from './demo-dag.json';
 const now = new Date().toISOString();
 const row = (layer, locale, complete, total) => ({
   layer, locale, complete, total, percent: Math.round(complete / total * 100),
@@ -8,6 +9,7 @@ export const demoSnapshot = {
   schemaVersion: 'sermon-public-tracker-snapshot-v2',
   pageId: 'demo-2026-09-20', target: 'dev', serviceDate: '2026-09-20',
   generatedAt: now, ledgerUpdatedAt: now, readOnly: true,
+  dag: demoDag,
   source: { inputPageUrl: 'https://www.marinerschurch.org/irvine/',
     inputPageConfigured: true, monitorStatus: 'source_detected', checkedAt: now,
     videoPresent: true, videoState: 'was_live', videoChange: 'first_seen', lastChangeAt: now },

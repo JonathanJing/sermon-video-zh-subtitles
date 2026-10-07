@@ -261,6 +261,15 @@ def verify_public_release(release: Path, origin: str, *, fetcher=None) -> dict:
         origin = _canonical_origin(origin)
         result["origin"] = origin
         release = Path(release)
+        deployment_path = release / "deployment-receipt.json"
+        if deployment_path.exists():
+            deployment = json.loads(deployment_path.read_text())
+            if (deployment.get("schemaVersion") != "sermon-legacy-deployment-attempt-v2"
+                    or deployment.get("status") != "deployed_http_verification_pending"
+                    or not deployment.get("newVersion") or deployment.get("url") != origin):
+                raise VerificationError("deployment_identity_unverified")
+            result.update(deploymentAttemptId=deployment["attemptId"], deploymentReceiptSha256=_file_sha(deployment_path),
+                          deploymentVersion=deployment["newVersion"])
         report_path = release / "build-report.json"
         before = _file_sha(report_path)
         report, _catalog = read_release(release)
