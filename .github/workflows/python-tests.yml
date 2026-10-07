@@ -133,9 +133,14 @@ jobs:
             apt_options=(-o Acquire::Retries=1 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20)
             # Azure can trickle downloads without timing out; switch before
             # both index refresh and package installation, not only on failure.
-            for source in /etc/apt/sources.list /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources; do
+            # Current runners use mirror+file:/etc/apt/apt-mirrors.txt.
+            for source in /etc/apt/sources.list /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources /etc/apt/apt-mirrors.txt; do
               if [ -f "$source" ]; then
                 sudo sed -i 's|http://azure.archive.ubuntu.com|https://archive.ubuntu.com|g; s|https://azure.archive.ubuntu.com|https://archive.ubuntu.com|g' "$source"
+                if sudo grep -q 'azure.archive.ubuntu.com' "$source"; then
+                  echo "Azure mirror remains in $source" >&2
+                  exit 1
+                fi
               fi
             done
             sudo apt-get "${apt_options[@]}" -o APT::Update::Error-Mode=any update
