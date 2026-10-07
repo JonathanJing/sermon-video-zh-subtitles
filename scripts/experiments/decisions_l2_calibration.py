@@ -254,10 +254,16 @@ def post_decision(body: dict[str, Any], *, timeout: float = 60.0, retries: int =
 
 def summarize_answers(payload: dict[str, Any]) -> dict[str, Any]:
     answers = {answer["name"]: answer for answer in payload.get("answers", [])}
-    risks = {name: answers[name]["probability"] for name in list(RISK_PREDICATES) + [REFERENCE_PREDICATE[0]] if name in answers}
+    risk_names = list(RISK_PREDICATES) + [REFERENCE_PREDICATE[0]]
+    risks = {name: answers[name]["probability"] for name in risk_names
+             if name in answers and isinstance(answers[name].get("probability"), (int, float))
+             and not isinstance(answers[name]["probability"], bool)
+             and 0 <= answers[name]["probability"] <= 1}
     return {
         "risks": risks,
         "maxRisk": max(risks.values()) if risks else None,
+        "refusals": [name for name, answer in answers.items() if answer.get("type") == "refusal"],
+        "missingProbabilities": [name for name in risk_names if name in answers and name not in risks],
         "fluency": answers.get("fluency", {}).get("score"),
         "issueType": answers.get("issue_type", {}).get("choice"),
         "issueConfidence": answers.get("issue_type", {}).get("confidence"),
@@ -272,9 +278,11 @@ def estimate_tokens(body: dict[str, Any]) -> int:
 
 
 def rates(results: list[dict[str, Any]], threshold: float) -> dict[str, Any]:
+    evaluated = [row for row in results if not row.get("unavailablePredicates")
+                 and not row.get("missingProbabilities") and row["maxRisk"] is not None]
     flagged = lambda row: row["maxRisk"] is not None and row["maxRisk"] >= threshold
-    clean = [row for row in results if row["kind"] == "clean"]
-    errors = [row for row in results if row["kind"] != "clean"]
+    clean = [row for row in evaluated if row["kind"] == "clean"]
+    errors = [row for row in evaluated if row["kind"] != "clean"]
     by_kind: dict[str, list[int]] = {}
     for row in errors:
         hit = by_kind.setdefault(row["kind"], [0, 0])
@@ -282,6 +290,8 @@ def rates(results: list[dict[str, Any]], threshold: float) -> dict[str, Any]:
         hit[1] += 1
     return {
         "threshold": threshold,
+        "evaluatedItems": len(evaluated),
+        "unscoredItems": len(results) - len(evaluated),
         "detectionRate": round(sum(flagged(row) for row in errors) / len(errors), 4) if errors else None,
         "cleanFlagRate": round(sum(flagged(row) for row in clean) / len(clean), 4) if clean else None,
         "byKind": {kind: {"detected": hit, "total": total} for kind, (hit, total) in sorted(by_kind.items())},
@@ -301,6 +311,9 @@ def report(results: list[dict[str, Any]], meta: dict[str, Any]) -> dict[str, Any
         "items": len(results),
         "cleanItems": sum(row["kind"] == "clean" for row in results),
         "seededItems": sum(row["kind"] != "clean" for row in results),
+        "refusedItems": sum(bool(row.get("refusals")) for row in results),
+        "unscoredItems": rates(results, 0.5)["unscoredItems"],
+        "fullyScoredItems": rates(results, 0.5)["evaluatedItems"],
         "thresholds": [rates(results, t) for t in THRESHOLDS],
         "byLocale": by_locale,
         "issueTypeOnSeeded": _issue_table(results),
@@ -328,14 +341,20 @@ def run(items: list[dict[str, Any]], out: Path, terminology: str | None, workers
         body = decision_request(item, terminology)
         cached = cache_dir / f"{item['itemId']}.json"
         if cached.exists():
-            return json.loads(cached.read_text(encoding="utf-8"))
+            row = json.loads(cached.read_text(encoding="utf-8"))
+            row.setdefault("unavailablePredicates", [question["name"] for question in body["questions"]
+                           if question["type"] == "predicate" and question["name"] not in row["risks"]])
+            return row
         started = time.monotonic()
         payload = transport(body)
+        summary = summarize_answers(payload)
         row = {
             "itemId": item["itemId"], "groupId": item["groupId"], "locale": item["locale"], "kind": item["kind"],
             "requestSha256": sha256_text(json.dumps(body, ensure_ascii=False, sort_keys=True)),
             "estimatedTokens": estimate_tokens(body), "latencySeconds": round(time.monotonic() - started, 3),
-            **summarize_answers(payload),
+            **summary,
+            "unavailablePredicates": [question["name"] for question in body["questions"]
+                                      if question["type"] == "predicate" and question["name"] not in summary["risks"]],
         }
         temp = cached.with_suffix(".tmp")
         temp.write_text(json.dumps(row, ensure_ascii=False, indent=1), encoding="utf-8")
@@ -354,6 +373,9 @@ def markdown(summary: dict[str, Any]) -> str:
         f"Input tokens {summary['inputTokens']} ({'measured' if summary['inputTokensMeasured'] else 'estimated'}), "
         f"about ${summary['estimatedCostUsd']}.", "",
         "Clean items are approved translations treated as correct; seeded items carry one known error each.", "",
+        f"{summary.get('refusedItems', 0)} items contain refused answers; "
+        f"{summary.get('unscoredItems', 0)} items lack complete risk scores and are excluded from threshold rates. "
+        f"{summary.get('fullyScoredItems', summary['items'])} items are fully risk-scored.", "",
         "| Threshold on max risk | Seeded errors caught | Clean items flagged |", "|---|---|---|",
     ]
     for row in summary["thresholds"]:
@@ -406,7 +428,7 @@ def main(argv: list[str] | None = None) -> int:
         "schemaVersion": "decisions-l2-calibration-v1", "generatedAt": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "model": MODEL, "questionSetVersion": QUESTION_SET_VERSION, "seed": args.seed,
         "inputs": {"anchorManifestSha256": hashlib.sha256(args.anchor_manifest.read_bytes()).hexdigest(),
-                   "candidates": {path.name: hashlib.sha256(path.read_bytes()).hexdigest() for path in args.candidate}},
+                   "candidates": {str(path): hashlib.sha256(path.read_bytes()).hexdigest() for path in args.candidate}},
         "scope": "non_production_calibration_no_approval",
     }
     if args.dry_run:

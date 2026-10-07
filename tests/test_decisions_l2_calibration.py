@@ -104,6 +104,79 @@ class DecisionsCalibrationTests(unittest.TestCase):
         again = subject.run(items, self.root / "out", None, 2, transport=mock.Mock(side_effect=AssertionError("cached")))
         self.assertEqual(again, results)
 
+    def test_mixed_predicate_refusal_and_missing_probability_are_retained(self):
+        risk_names = list(subject.RISK_PREDICATES)
+        payload = {"answers": [
+            {"type": "predicate", "name": risk_names[0], "probability": 0.8},
+            {"type": "refusal", "name": risk_names[1]},
+            {"type": "predicate", "name": risk_names[2]},
+            {"type": "refusal", "name": "fluency"},
+        ]}
+        summary = subject.summarize_answers(payload)
+        self.assertEqual(summary["risks"], {risk_names[0]: 0.8})
+        self.assertEqual(summary["maxRisk"], 0.8)
+        self.assertEqual(set(summary["refusals"]), {risk_names[1], "fluency"})
+        self.assertIn(risk_names[2], summary["missingProbabilities"])
+        self.assertIsNone(summary["fluency"])
+
+    def test_unavailable_predicates_are_excluded_from_threshold_denominators(self):
+        results = [
+            {"kind": "clean", "maxRisk": 0.1, "unavailablePredicates": []},
+            {"kind": "omission", "maxRisk": 0.9, "unavailablePredicates": []},
+            {"kind": "clean", "maxRisk": 0.9, "unavailablePredicates": ["omission"]},
+            {"kind": "omission", "maxRisk": None, "unavailablePredicates": ["omission"]},
+        ]
+        rates = subject.rates(results, 0.5)
+        self.assertEqual(rates["evaluatedItems"], 2)
+        self.assertEqual(rates["unscoredItems"], 2)
+        self.assertEqual(rates["detectionRate"], 1.0)
+        self.assertEqual(rates["cleanFlagRate"], 0.0)
+        self.assertEqual(rates["byKind"], {"omission": {"detected": 1, "total": 1}})
+        all_unscored = subject.rates(results[2:], 0.5)
+        self.assertEqual(all_unscored["evaluatedItems"], 0)
+        self.assertIsNone(all_unscored["detectionRate"])
+        self.assertIsNone(all_unscored["cleanFlagRate"])
+        self.assertEqual(all_unscored["byKind"], {})
+
+    def test_partial_and_all_risk_refusals_are_unscored_and_resume_from_cache(self):
+        items = [
+            {"itemId": "partial", "groupId": "g0-ko", "locale": "ko", "kind": "clean",
+             "english": ENGLISH["u1"], "target": TARGETS["ko"][0], "reference": TARGETS["zh-Hans"][0]},
+            {"itemId": "all", "groupId": "g0-ko", "locale": "ko", "kind": "omission",
+             "english": ENGLISH["u1"], "target": "incomplete", "reference": TARGETS["zh-Hans"][0]},
+        ]
+
+        def refusal_transport(body):
+            payload = fake_transport(body)
+            predicates = [answer for answer in payload["answers"] if answer["type"] == "predicate"]
+            all_refused = "Translation:\nincomplete" in body["input"]
+            for answer in predicates if all_refused else predicates[:1]:
+                name = answer["name"]
+                answer.clear()
+                answer.update({"type": "refusal", "name": name})
+            return payload
+
+        transport = mock.Mock(side_effect=refusal_transport)
+        results = subject.run(items, self.root / "out", None, 1, transport=transport)
+        self.assertEqual(transport.call_count, 2)
+        self.assertIsNotNone(results[0]["maxRisk"])
+        self.assertIsNone(results[1]["maxRisk"])
+        self.assertEqual(len(results[0]["unavailablePredicates"]), 1)
+        requested = [q["name"] for q in subject.decision_request(items[1], None)["questions"] if q["type"] == "predicate"]
+        self.assertEqual(set(results[1]["unavailablePredicates"]), set(requested))
+        summary = subject.report(results, {"model": subject.MODEL})
+        self.assertEqual(summary["refusedItems"], 2)
+        self.assertEqual(summary["unscoredItems"], 2)
+        self.assertEqual(summary["fullyScoredItems"], 0)
+        for rates in summary["thresholds"]:
+            self.assertEqual(rates["evaluatedItems"], 0)
+            self.assertIsNone(rates["detectionRate"])
+            self.assertIsNone(rates["cleanFlagRate"])
+        cached_transport = mock.Mock(side_effect=AssertionError("refusal cache must not retry API"))
+        again = subject.run(items, self.root / "out", None, 1, transport=cached_transport)
+        self.assertEqual(again, results)
+        cached_transport.assert_not_called()
+
     def test_missing_key_fails_before_any_request(self):
         with mock.patch.dict("os.environ", {}, clear=True), \
                 mock.patch("urllib.request.urlopen", side_effect=AssertionError("network")):
