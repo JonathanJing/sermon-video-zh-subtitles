@@ -25,4 +25,12 @@ PR251–255 已在 Beta56 中，本版继续保留。#257 创意计划与 #243 b
 
 ## 构建与分发
 
-候选准备中；构建、Archive、IPA、Apple 处理、Rooted 测试组及 What to Test 读回分别记录。未完成项不宣称已通过。本次真机安装和设备验收为 `not_run`。
+冻结源码 `a1e64190f5af33104a3b8839562d8901955031bb` 已推送；App 和扩展均为 1.26.16（57），内容源为 Dev。Xcode27.1 BetaRelease 签名 Archive、严格签名检查和 app-store-connect IPA 导出通过。IPA SHA-256：`cbf2d9e4f833b63276d416441f39c515fbffddb6d479813cdb829590cc8ac4e1`。
+
+Core 实际93项通过、7项需要冻结真实资产的测试跳过；Infrastructure 实际27项通过、1项真实producer fixture测试跳过；分发/归档准入27项通过。该冻结版本在 iPhone18Pro / iOS27.0 的4项UI与2项hosted定向回归全部通过，覆盖四类中英文、同构建类别刷新不变暂停位置、完整学习资源、全文跟随/自由阅读及前台通知反馈。合成静音内容不代表真实声学或听感。
+
+上传、处理及分发均成功。Apple 构建 `16b1cde0-08a8-41cf-bf32-00cf5f299614` 新鲜读回为 `VALID`、`IN_BETA_TESTING`、未过期；Rooted 测试组包含该构建，What to Test 新鲜读取与提交文字一致。私有记录为 `artifacts/tongxing-ios/beta-1.26.16-build57/distribution-record.json`；上传/处理/分发分别为 `artifacts/tongxing-ios/testflight/20261007T055859Z-9cfb9fa7/`、`20261007T060027Z-5ef8f02c/`、`20261007T060321Z-383cfc33/`。
+
+Dev 类别目录已部署并HTTP核实：最近两篇正式版与播客有明确类别字段，目录 SHA `b776c2c4ddc68870af2284ea0e476e66354d08747a79afadbc4935816743b3b1`。Hosting 版本 `5410b3bbdfccf5e3`，454个其他公开文件与2个管理文件的服务端哈希、全部路径和Hosting配置均保留。未发布合成四类UI页面。
+
+发布候选 [PR #263](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/263) 包含 #261 的能力；PR合并/远端CI状态与TestFlight分发分开处理。上述结果绑定冻结源码，后续仅追加文档。当前内部 TestFlight 已可更新；本次真机安装和设备验收仍为 `not_run`。
