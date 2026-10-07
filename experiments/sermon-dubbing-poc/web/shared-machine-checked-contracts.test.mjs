@@ -7,7 +7,7 @@ import { validatePublishedContentV3, validatePublishedTarget, validatePublishedV
 const matrix = JSON.parse(readFileSync(new URL('../../../apps/tongxing-ios/Core/Tests/TongxingCoreTests/Fixtures/shared-machine-checked-contracts.json', import.meta.url)));
 assert.equal(matrix.schemaVersion, 'sermon-shared-machine-checked-contract-fixtures-v1');
 assert.equal(matrix.scope, 'synthetic_decoder_tests_not_production_approval');
-assert.equal(matrix.releases.length, 19);
+assert.equal(matrix.releases.length, 23);
 assert.equal(matrix.catalogTargets.length, 12);
 assert.equal(matrix.contents.length, 6);
 for (const rows of [matrix.releases, matrix.catalogTargets, matrix.contents]) {

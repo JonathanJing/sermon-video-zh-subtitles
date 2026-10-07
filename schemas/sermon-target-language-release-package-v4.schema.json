@@ -389,6 +389,47 @@
           "pattern": "\\S"
         }
       }
+    },
+    "captionText": {
+      "description": "What dubbed captions display, on the dub's timing: full_text shows the complete translation (by textGroupId); spoken_text shows the spoken script. Readers treat a missing value as spoken_text.",
+      "enum": [
+        "full_text",
+        "spoken_text"
+      ]
+    },
+    "spokenCondensation": {
+      "description": "The interpreter-style condensation behind a spoken script that differs from the full translation only in condensed groups; null when none.",
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "condensationRecordJsonSha256",
+            "condensationBindingJsonSha256",
+            "condensedGroupIds"
+          ],
+          "properties": {
+            "condensationRecordJsonSha256": {
+              "$ref": "#/$defs/sha256"
+            },
+            "condensationBindingJsonSha256": {
+              "$ref": "#/$defs/sha256"
+            },
+            "condensedGroupIds": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      ]
     }
   },
   "$defs": {
@@ -566,6 +607,42 @@
             }
           }
         ]
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "spokenCondensation"
+        ],
+        "properties": {
+          "spokenCondensation": {
+            "type": "object"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "captionText"
+        ],
+        "properties": {
+          "captionText": {
+            "const": "full_text"
+          },
+          "audioStatus": {
+            "const": "machine_checked"
+          },
+          "reviewBasis": {
+            "properties": {
+              "spokenText": {
+                "properties": {
+                  "kind": {
+                    "const": "machine_quality_waiver"
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     }
   ]

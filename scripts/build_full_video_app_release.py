@@ -9,6 +9,11 @@ A text or listening gate may also be passed by an exact machine quality waiver.
 Such a locale is released as v4 under /releases-v4/ with status machine_checked
 and its disclosure; it is never shown as human-reviewed. Seal writes the full
 /multilingual-v4.json and its human-only projection /multilingual-v3.json.
+
+A v4 release also says what its dubbed captions display. When the spoken script
+was condensed for the dub (``spoken_condensation``), the release binds that
+condensation and the captions show the full translation on the dub's timing;
+the captions asset itself stays the audio package's spoken-script captions.
 """
 
 from __future__ import annotations
@@ -116,11 +121,13 @@ def reviewed_candidate(path: Path, source_sha: str, locale: str) -> tuple[dict, 
     return candidate, stage.canonical_sha(candidate)
 
 
-def admitted_text(candidate_path: Path, receipt_path: Path, source_sha: str, locale: str) -> tuple[dict, str, dict]:
+def admitted_text(candidate_path: Path, receipt_path: Path, source_sha: str, locale: str, *,
+                  spoken: bool = False) -> tuple[dict, str, dict]:
     """A candidate admitted by an exact human review or an exact machine quality waiver.
 
     Returns the candidate, its hash and its review basis. A waiver keeps the
     candidate human-review pending; it is never recorded as a human approval.
+    A waiver for a script condensed for dubbing admits only the ``spoken`` role.
     """
     receipt = read(receipt_path)
     if not machine_basis.is_text_waiver(receipt):
@@ -131,8 +138,43 @@ def admitted_text(candidate_path: Path, receipt_path: Path, source_sha: str, loc
     require(candidate["targetLocale"] == locale and candidate["englishSourcePackageJsonSha256"] == source_sha,
             f"{locale}: candidate is not for this source")
     machine_basis.validate_text_waiver(receipt, candidate=candidate, source_sha=source_sha)
+    require(spoken or not receipt["condensedGroupIds"],
+            f"{locale}: a script condensed for dubbing cannot be the full text")
     return (candidate, stage.canonical_sha(candidate),
             {"kind": "machine_quality_waiver", "receiptSha256": stage.canonical_sha(receipt)})
+
+
+def caption_text(full: dict, full_sha: str, spoken: dict, spoken_sha: str, spoken_receipt: dict,
+                 binding_path: Path | None, locale: str) -> tuple[str, dict | None]:
+    """What the dubbed captions display, and the condensation that lets them show the full text.
+
+    Captions keep the dub's timing. They show the full translation when the
+    spoken script equals it, or when it differs only in the groups a passing
+    condensation binding condensed from this exact full candidate. A spoken
+    script shortened any other way keeps showing its own text.
+    """
+    differing = [spoken_group["translationGroupId"]
+                 for full_group, spoken_group in zip(full["groups"], spoken["groups"])
+                 if full_group["targetText"] != spoken_group["targetText"]]
+    condensed = (list(spoken_receipt.get("condensedGroupIds") or [])
+                 if machine_basis.is_text_waiver(spoken_receipt) else [])
+    if not condensed:
+        require(binding_path is None, f"{locale}: condensation binding given for a spoken script without condensed groups")
+        return ("full_text" if not differing else "spoken_text"), None
+    require(binding_path is not None, f"{locale}: condensed spoken script needs its condensation binding")
+    binding = read(binding_path)
+    binding_sha = stage.canonical_sha(binding)
+    require(binding_sha == spoken_receipt.get("condensationBindingJsonSha256")
+            and binding.get("schemaVersion") == machine_basis.CONDENSATION_BINDING_SCHEMA
+            and binding.get("status") == "pass" and not binding.get("issues")
+            and binding.get("humanApproval") is False and binding.get("targetLocale") == locale
+            and binding.get("fullCandidateJsonSha256") == full_sha
+            and binding.get("spokenCandidateJsonSha256") == spoken_sha
+            and [row.get("translationGroupId") for row in binding.get("groups", [])] == condensed
+            and differing == condensed,
+            f"{locale}: condensation binding does not bind this full and spoken script")
+    return "full_text", {"condensationRecordJsonSha256": binding.get("condensationRecordJsonSha256"),
+                         "condensationBindingJsonSha256": binding_sha, "condensedGroupIds": condensed}
 
 
 def release_statuses(bases: dict) -> tuple[str, str]:
@@ -161,10 +203,16 @@ MACHINE_FOOTERS = {
     ("machine_checked", "human_reviewed"): '根据讲道视频制作的机器质检译文，未经人工审核；配音另使用已审核短口播稿。',
     ("machine_checked", "machine_checked"): '根据讲道视频制作的机器质检译文；译文与配音均经机器质检后自动发布，未经人工审核。',
 }
+# A condensed dub is always machine checked; its captions show the full translation.
+CONDENSED_FOOTERS = {
+    "human_reviewed": '根据讲道视频制作的已审核译文；配音为同传式精简口播，经机器质检后自动发布，未经人工审核；配音字幕显示完整译文。',
+    "machine_checked": '根据讲道视频制作的机器质检译文；配音为同传式精简口播，译文与配音均经机器质检后自动发布，未经人工审核；配音字幕显示完整译文。',
+}
 
 
 def static_page(content: dict, locale: str, page_id: str, studies=None, *,
-                audio_status: str = "human_reviewed", disclosure: dict | None = None) -> str:
+                audio_status: str = "human_reviewed", disclosure: dict | None = None,
+                condensed: bool = False) -> str:
     esc = html.escape
     simulated = content.get('reviewMode') == 'simulation'
     machine_text = content.get('status') == 'machine_checked'
@@ -176,7 +224,9 @@ def static_page(content: dict, locale: str, page_id: str, studies=None, *,
     reading_notice = ('模拟审核测试文稿；不代表正式内容批准。' if simulated
                       else '此处为机器质检后自动发布的完整阅读稿，未经人工审核。' if machine_text
                       else '此处为已批准完整阅读稿。')
+    require(not condensed or audio_status == 'machine_checked', 'A condensed dub is machine checked')
     footer_notice = ('模拟审核收据仅用于测试；译文、音轨、大纲与默想未获正式批准。' if simulated
+                     else CONDENSED_FOOTERS[statuses[0]] if condensed
                      else MACHINE_FOOTERS.get(statuses, '根据讲道视频制作的已审核译文；配音另使用已审核短口播稿。'))
     disclosure_html = (f'<p role="note" lang="{esc(disclosure["locale"])}"><strong>机器质检</strong> · '
                        f'{esc(disclosure["text"])}</p>' if disclosure else '')
@@ -237,6 +287,13 @@ def assignment_map(values, locales):
     return result
 
 
+def partial_assignment_map(values, locales):
+    """Optional per-locale inputs: any subset of the release scope."""
+    scope = [value.partition("=")[0] for value in values]
+    require(set(scope) <= set(locales), "Input locale assignments differ from release scope")
+    return assignment_map(values, scope)
+
+
 def prepare(args: argparse.Namespace) -> dict:
     require(PAGE_ID.fullmatch(args.page_id) is not None, "Unsafe page ID")
     require(not args.out.exists(), "Output already exists")
@@ -268,6 +325,7 @@ def prepare(args: argparse.Namespace) -> dict:
             for name in ("full_candidate", "full_review_receipt", "spoken_candidate",
                          "spoken_review_receipt", "audio_package", "audio_review_receipt",
                          "audio_screening_receipt", "full_content")}
+    condensation_maps = partial_assignment_map(getattr(args, "condensation_binding", None) or [], locales)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     scratch = Path(tempfile.mkdtemp(prefix=f".{args.out.name}-", dir=args.out.parent))
     try:
@@ -277,7 +335,8 @@ def prepare(args: argparse.Namespace) -> dict:
             full, full_sha, full_basis = admitted_text(maps["full_candidate"][locale],
                                                        maps["full_review_receipt"][locale], source_sha, locale)
             spoken, spoken_sha, spoken_basis = admitted_text(maps["spoken_candidate"][locale],
-                                                             maps["spoken_review_receipt"][locale], source_sha, locale)
+                                                             maps["spoken_review_receipt"][locale], source_sha, locale,
+                                                             spoken=True)
             require([g["sourceUnitIds"] for g in full["groups"]]
                     == [g["sourceUnitIds"] for g in spoken["groups"]],
                     f"{locale}: full and spoken scripts cover different source units")
@@ -308,6 +367,9 @@ def prepare(args: argparse.Namespace) -> dict:
                                "receiptSha256": stage.canonical_sha(audio_receipt)}}
             content_status, audio_status = release_statuses(bases)
             machine = "machine_checked" in (content_status, audio_status)
+            captions_show, condensation = caption_text(full, full_sha, spoken, spoken_sha,
+                                                       read(maps["spoken_review_receipt"][locale]),
+                                                       condensation_maps.get(locale), locale)
             disclosure = machine_basis.disclosure(locale) if machine else None
             require(not machine or require_study, f"{locale}: machine-checked delivery requires the four-product release")
             require(audio_receipt["targetLanguageAudioPackageJsonSha256"] == audio_sha
@@ -395,7 +457,8 @@ def prepare(args: argparse.Namespace) -> dict:
             page_file = public / page_path.lstrip("/")
             page_file.parent.mkdir(parents=True, exist_ok=True)
             page_file.write_text(static_page(content, locale, args.page_id, audio_status=audio_status,
-                                             disclosure=disclosure), encoding="utf-8")
+                                             disclosure=disclosure, condensed=condensation is not None),
+                                 encoding="utf-8")
             release = {
                 "schemaVersion": "sermon-target-language-release-package-v2",
                 "packageId": f"{args.page_id}-{locale}-dual-script",
@@ -441,7 +504,8 @@ def prepare(args: argparse.Namespace) -> dict:
                                englishSourcePackageJsonSha256=source_sha, sourceIdentity=delivery_contract.source_identity(source),
                                fourProducts=products)
                 if machine:
-                    release.update(schemaVersion=delivery_contract.RELEASE_V4, reviewBasis=bases, disclosure=disclosure)
+                    release.update(schemaVersion=delivery_contract.RELEASE_V4, reviewBasis=bases, disclosure=disclosure,
+                                   captionText=captions_show, spokenCondensation=condensation)
                     release_path = public / delivery_contract.release_path(release).lstrip("/")
                 public_products = {'schemaVersion': 'sermon-public-app-products-v1', 'pageId': args.page_id,
                                    'locale': locale, 'sourceIdentity': release['sourceIdentity'], 'fourProducts': products}
@@ -452,7 +516,8 @@ def prepare(args: argparse.Namespace) -> dict:
                     write(public / url.lstrip('/'), document)
                     release['assets'].append(asset(public, role, url))
                 page_file.write_text(static_page(content, locale, args.page_id, study, audio_status=audio_status,
-                                                 disclosure=disclosure), encoding='utf-8')
+                                                 disclosure=disclosure, condensed=condensation is not None),
+                                     encoding='utf-8')
                 release['assets'][0] = asset(public, 'page', page_path)
                 delivery_contract.validate_public_study(release, reader=lambda url: (public / url.lstrip('/')).read_bytes())
             delivery_contract.validate_release_schema(release)
@@ -538,7 +603,8 @@ def verified_assets(prepared: Path) -> tuple[dict, list[dict]]:
             page_asset = next(row for row in release['assets'] if row['role'] == 'page')
             require((public / page_asset['path'].lstrip('/')).read_text()
                     == static_page(content, locale, manifest['pageId'], public_studies,
-                                   audio_status=release['audioStatus'], disclosure=release.get('disclosure')),
+                                   audio_status=release['audioStatus'], disclosure=release.get('disclosure'),
+                                   condensed=bool(release.get('spokenCondensation'))),
                     'Public page does not display approved study')
         require(release["status"] == "candidate"
                 and release["httpVerification"] == ACCEPT_NOT_RUN
@@ -706,6 +772,8 @@ def main() -> None:
                    "spoken-review-receipt", "audio-package", "audio-review-receipt",
                    "audio-screening-receipt", "full-content"):
         prepare_parser.add_argument("--" + option, action="append", default=[], metavar="LOCALE=PATH")
+    prepare_parser.add_argument("--condensation-binding", action="append", default=[], metavar="LOCALE=PATH",
+                                help="Passing spoken_condensation binding for a locale whose spoken script was condensed")
     prepare_parser.add_argument("--page-id", required=True)
     prepare_parser.add_argument("--date", required=True)
     prepare_parser.add_argument("--out", type=Path, required=True)

@@ -208,28 +208,28 @@ class TextWaiverTests(unittest.TestCase):
         def build(qc=qc, cal=spoken, binding=binding):
             return basis.build_text_waiver(self.source_package, self.anchor, self.candidate, qc, cal,
                                            condensation_binding=binding, created_at="2026-10-07T01:00:00+00:00")
-        with self.assertRaisesRegex(ValueError, "timed captions retain the complete translation"):
-            build()
+        receipt = build()
+        self.assertEqual((receipt["condensedGroupIds"], receipt["condensationBindingJsonSha256"]),
+                         ([group["translationGroupId"]], basis.json_sha256(binding)))
         self.assertEqual((self.waiver["condensedGroupIds"], self.waiver["condensationBindingJsonSha256"]), ([], None))
-        # Even an older issued waiver cannot bypass the release gate.
-        legacy = dict(self.waiver, condensedGroupIds=[group["translationGroupId"]],
-                      condensationBindingJsonSha256=basis.json_sha256(binding))
-        with self.assertRaisesRegex(ValueError, "timed captions retain the complete translation"):
-            basis.validate_text_waiver(legacy, candidate=self.candidate)
-        write_json(self.waiver_path, legacy)
-        with self.assertRaisesRegex(ValueError, "timed captions retain the complete translation"):
-            self.prepare("blocked-condensed-job", self.waiver_path)
+        basis.validate_text_waiver(receipt, candidate=self.candidate)
+        # The condensed script may be dubbed, but Layer 4 never takes it as the full text.
+        write_json(self.waiver_path, receipt)
+        self.prepare("condensed-job", self.waiver_path)
         from scripts import build_full_video_app_release as builder
-        with self.assertRaisesRegex(ValueError, "timed captions retain the complete translation"):
+        with self.assertRaisesRegex(ValueError, "condensed for dubbing cannot be the full text"):
             builder.admitted_text(self.candidate_path, self.waiver_path,
                                   basis.json_sha256(self.source_package), "ko")
+        _, _, admitted = builder.admitted_text(self.candidate_path, self.waiver_path,
+                                               basis.json_sha256(self.source_package), "ko", spoken=True)
+        self.assertEqual(admitted["kind"], "machine_quality_waiver")
         other = copy.deepcopy(self.candidate)
         other["groups"][1]["targetText"] = "다른 문장입니다."
         unlisted = copy.deepcopy(qc)
         unlisted["condensedGroupIds"] = []
         cases = [
             (dict(binding=None), "need their condensation binding"),
-            (dict(cal=calibration()), "timed captions retain the complete translation"),
+            (dict(cal=calibration()), "did not include condensed spoken groups"),
             (dict(binding=dict(binding, status="fail")), "did not pass"),
             (dict(binding=dict(binding, spokenCandidateJsonSha256=interpretation.json_sha256(other))),
              "another spoken candidate"),
@@ -343,12 +343,13 @@ class AudioWaiverTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, message):
                 self.build(package, screening, qc, text, track_check=check)
 
-    def test_audio_waiver_cannot_use_a_legacy_condensed_text_waiver(self):
+    def test_audio_waiver_binds_a_condensed_text_waiver(self):
+        # Layer 4 checks the condensation binding before captions show the full text.
         package, screening, qc, text = audio_fixture()
         text["condensedGroupIds"] = [text["reviewedGroupIds"][0]]
         text["condensationBindingJsonSha256"] = "a" * 64
-        with self.assertRaisesRegex(ValueError, "timed captions retain the complete translation"):
-            self.build(package, screening, qc, text)
+        receipt = self.build(package, screening, qc, text)
+        self.assertEqual(receipt["textWaiverJsonSha256"], basis.json_sha256(text))
 
     def test_audio_qc_must_use_calibrated_release_thresholds(self):
         package, screening, qc, text = audio_fixture()

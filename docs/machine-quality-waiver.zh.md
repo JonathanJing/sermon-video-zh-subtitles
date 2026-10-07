@@ -29,7 +29,7 @@
 | 8 秒预算 | `scripts/target_audio_predicted_schedule.py` | 用已测音频拟合各语言语速，再用正式排程公式按**预测时长**排一次。超窗的组给出 `maxSpeechUnits`，供口播修订一次改到位。语速绑定 speech job 的合成身份（adapter、配置、模型版本、音色、说话人、conditioning、语言参数、文本规范化）和所测音频的哈希；身份不同就拒绝预算，需要重新拟合 |
 | 注错校准 | `scripts/auto_qc_seeded_errors.py` | 在干净成品里注入已知错误，统计每类检出率和干净样例的误报率。只有出现干净版本没有的新问题才算检出（错句配音必须由 ASR 判出），不会把原有误报算成检出。文字类含换书卷（wrong_book），音频类含换成别句的配音（wrong_sentence，需要注入 ASR transport）。口播类（`spoken.*`）只注入精简组：换成别组内容（swapped_content）、追加别组内容（added_content）、翻转否定（flipped_negation）。删冗余本来就是精简允许的，所以口播类注的是“说的意思变了” |
 | 豁免收据 | `scripts/machine_quality_waiver.py` | 汇总最终 QC 结果，按上面的 5% 规则决定这个语言是自动发布、只发文字还是暂停。先核对 QC 收据确实检查的是这份候选（每组译文哈希）和这份音频包（候选哈希、每句音频哈希），对不上就报错 |
-| 门禁收据 | `scripts/machine_quality_release_basis.py` | 生成并校验两种绑定到具体产物的收据：**译文豁免**（`sermon-target-language-machine-text-waiver-v1`，绑定一个 L2 候选；当前不放行含精简组的候选：完整译文的配音时间字幕路径尚未实现；已签发的旧精简收据也在消费门禁拒绝）和**试听豁免**（`sermon-target-language-machine-audio-waiver-v2`，绑定一个 L3 音频包、它的 ASR 筛查和口播稿的译文豁免） |
+| 门禁收据 | `scripts/machine_quality_release_basis.py` | 生成并校验两种绑定到具体产物的收据：**译文豁免**（`sermon-target-language-machine-text-waiver-v1`，绑定一个 L2 候选；有精简组时还必须绑定一份通过的精简绑定，组别完全一致，并记录 `condensedGroupIds` 和 `condensationBindingJsonSha256`。这样的收据只能当口播稿的依据，L4 不接受它作完整译文）和**试听豁免**（`sermon-target-language-machine-audio-waiver-v2`，绑定一个 L3 音频包、它的 ASR 筛查和口播稿的译文豁免） |
 
 文本 QC 逐组记录 `englishSha256` 与 `sourceUnitIdsSha256`，签发豁免时按候选的 source-unit 顺序与冻结 anchor 中的英文核对。旧 QC 收据缺少这些字段时须重新检查，不能沿用。音频 QC 的 `thresholds` 必须等于当前标准 `THRESHOLDS`，放宽设置的结果不能授权试听豁免。
 
@@ -77,14 +77,17 @@ python scripts/machine_quality_waiver.py --locale ko --candidate candidate.json 
 # 译文豁免收据（代替人工译文审核收据）
 python scripts/machine_quality_release_basis.py text --source source.json --anchor anchor.json \
   --candidate candidate.json --text-qc text-qc.json --calibration calibration.json --out text-waiver.json
-# 含精简组的口播稿目前仅用于准备与实验；即使绑定和 QC 通过，也不能签发发布豁免
-# 完整译文的配音时间字幕路径实现前，text --condensation-binding 会拒绝该候选
+# 口播稿有精简组时，还要给精简绑定；这份收据只能作口播稿依据，不能当完整译文的依据
+python scripts/machine_quality_release_basis.py text ... --candidate spoken-candidate.json \
+  --condensation-binding condensation-binding.json --out spoken-text-waiver.json
 # 用译文豁免进入第 3 层：写出 speech job v3
 python scripts/prepare_target_language_speech_job.py ... --text-release-basis text-waiver.json --out speech-job
 # 试听豁免收据（代替人工试听收据）；ASR 标出的句子必须有强 ASR 复核
 python scripts/machine_quality_release_basis.py audio --package audio-package.json --screening screening.json \
   --audio-qc audio-qc.json --track-check track-check.json --text-waiver spoken-text-waiver.json \
   --calibration calibration.json --secondary-asr-model gpt-transcribe --out audio-waiver.json
+# 第 4 层：精简过的配音要带同一份精简绑定（sermon_unified_delivery 的 inputs.condensation_binding 同理）
+python scripts/build_full_video_app_release.py prepare ... --condensation-binding ko=condensation-binding.json
 ```
 
 ## 当前接线范围
@@ -95,9 +98,9 @@ python scripts/machine_quality_release_basis.py audio --package audio-package.js
 - **L3：** 音频包仍按构建结果保持 `machine_screened`（ASR 全过）或 `candidate`（ASR 标出疑点），`humanApproval=false`。试听豁免收据必须绑定一份通过的整轨核对（`trackCheckJsonSha256`），可以代替人工试听收据，通过 `validate_audio_screening_review`、`inspect_canonical_audio`（配置项 `machineWaiver`）和 `sermon_unified` 的 `audio` 审核。ASR 标出的每一句都必须有强 ASR 复核通过。
 - **sermon_unified：** `ingest_review` 接收两种豁免收据，把该步记为 `review=waived`、事件 `review.waived`，不写 `approvedAt`。`translation_approved` 和 `listen_approved` 两个范围接受 `waived`；大纲与默想仍要求人工 `approved`。
 
-- **L4：** `build_full_video_app_release.py` 和 `sermon_unified_delivery` 接受译文豁免和试听豁免（试听豁免必须绑定口播稿的那份译文豁免）。只要有一项是机器质检，就写出 [release v4](../schemas/sermon-target-language-release-package-v4.schema.json)，路径为 `/releases-v4/<pageId>/<locale>.json`：`contentStatus`、`audioStatus` 各自为 `human_reviewed` 或 `machine_checked`，`reviewBasis` 逐项记录完整文稿、口播稿、音轨用的是人工收据还是豁免收据，`disclosure` 是该语言的披露文案。完整文稿为机器质检时，正文用 [content v3](../schemas/sermon-full-video-text-content-v3.schema.json)（`status=machine_checked`，带同一份 `disclosure`），静态页面也显示“机器质检”和披露。三项都是人工时仍写 release v3，什么都不变。
+- **L4：** `build_full_video_app_release.py` 和 `sermon_unified_delivery` 接受译文豁免和试听豁免（试听豁免必须绑定口播稿的那份译文豁免）。只要有一项是机器质检，就写出 [release v4](../schemas/sermon-target-language-release-package-v4.schema.json)，路径为 `/releases-v4/<pageId>/<locale>.json`：`contentStatus`、`audioStatus` 各自为 `human_reviewed` 或 `machine_checked`，`reviewBasis` 逐项记录完整文稿、口播稿、音轨用的是人工收据还是豁免收据，`disclosure` 是该语言的披露文案。完整文稿为机器质检时，正文用 [content v3](../schemas/sermon-full-video-text-content-v3.schema.json)（`status=machine_checked`，带同一份 `disclosure`），静态页面也显示“机器质检”和披露。三项都是人工时仍写 release v3，什么都不变。v4 还记录 `captionText`：配音字幕显示 `full_text`（完整译文）还是 `spoken_text`（口播稿）；口播稿与完整译文相同时为 `full_text`。**配音精简时**，口播稿的译文豁免必须带精简绑定，L4 核对绑定的哈希与收据一致、绑定的正是这份完整译文和这份口播稿、与完整译文不同的组正好是精简组，然后写 `captionText=full_text` 和 `spokenCondensation`（精简记录哈希、绑定哈希、精简组），静态页面说明配音为同传式精简口播、配音字幕显示完整译文。音轨资产里的字幕文件不变（仍是口播稿，L3 的哈希绑定照旧），客户端按 `textGroupId` 把字幕文字换成完整译文，时间仍跟配音。精简口播只能是机器质检的配音；带精简组的收据不能当完整译文的依据。
 - **目录：** 封存时同时写出 [catalog v4](../schemas/sermon-multilingual-catalog-v4.schema.json)（`/multilingual-v4.json`）和 `/multilingual-v3.json`。v3 是 v4 去掉所有机器质检语言后的投影，旧客户端读到的内容不变；只有机器质检页面、没有人工基线时拒绝封存，因为投影会是空目录。托管发布对两份目录都做比较交换和回读，`validate_catalog_snapshot` 要求投影与 v3 完全一致。
-- **客户端：** 网页和 iOS 先读 v4，404 时读 v3；v4 无法读取或校验失败也退回 v3 并记录错误。机器质检的语言显示“机器质检 / 기계 품질 검사 / Control de calidad automático”和发布包里的披露文案，机器质检的产物不会显示“已审核批准”。旧版 iOS 只读 v3，看不到机器质检的语言，更新到新版后才能看到。
+- **客户端：** 网页和 iOS 先读 v4，404 时读 v3；v4 无法读取或校验失败也退回 v3 并记录错误。机器质检的语言显示“机器质检 / 기계 품질 검사 / Control de calidad automático”和发布包里的披露文案，机器质检的产物不会显示“已审核批准”。`captionText=full_text` 时，网页和 iOS Core 用完整译文作配音字幕；有 `spokenCondensation` 时，网页的提示文案说明配音为同传式精简口播（iOS App 的对应文案待补）。旧版 iOS 只读 v3，看不到机器质检的语言，更新到新版后才能看到。
 - **海报：** `build_multilingual_sermon_posters.py` 有 v4 时读 v4，审核标签按两项状态分别写明（例如“译文与配音经机器质检 · 未经人工审核”）。只会写 v3 的旧工具（`assemble_multilingual_v3_update.py`、`bind_published_alignment_catalog.py`）遇到带 v4 的快照会拒绝，避免两份目录不一致。
 
 第 1 版豁免只放行**每一句都通过**的语言：有句子要只显字幕或改显英文时，收据不会生成，这个语言仍走人工路径。
@@ -108,6 +111,6 @@ python scripts/machine_quality_release_basis.py audio --package audio-package.js
 2. 回译检查的真实模型 transport（沿用 L2 的后端身份与缓存规则），以及首次真实校准。
 3. 冻结 policy 时，为韩/西选择 `ko-weekly-auto-v1` / `es-weekly-auto-v1` 插件，并把 `requiredChecks` 设为 `auto_qc_text_common.REQUIRED`。
 4. 只显字幕的句子、改显英文的句子和只发文字的语言（`audio_unavailable`）。
-5. 配音精简的后半段（缺失时阻止精简候选发布）：配音时的字幕改为显示完整译文（时间仍跟配音走），发布包记录精简记录的哈希，网页和 iOS 的提示文案同步。精简模型和回译模型的真实 transport，以及首次口播校准，需要授权后运行。
+5. 配音精简：配音字幕显示完整译文、发布包绑定精简记录、网页文案已完成；iOS App 的精简提示文案待补。精简模型和回译模型的真实 transport，以及首次口播校准，需要授权后运行；没有口播校准，精简稿签不出豁免。
 6. 英文转写审核、页面信息、大纲与默想的机器检查，以及每周发布授权改为长期授权。
 7. 严格链（`sermon_strict_candidate_bridge` / `sermon_strict_gate_admission`）的门禁决定把收据记为人工批准，所以严格链目前只收人工收据，遇到译文豁免会以 `strict_bridge_requires_human_receipt` 拒绝。译文豁免目前只能走 `prepare_target_language_speech_job.py --text-release-basis`；严格链要接受豁免，门禁决定需要单独记录豁免状态。

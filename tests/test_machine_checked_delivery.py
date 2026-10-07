@@ -24,8 +24,38 @@ PAGE, LOCALE = 'synthetic-machine-page', 'ko'
 ASR = {'model': 'Qwen3-ASR', 'modelRevision': 'r1'}
 
 
-def machine_inputs(root, *, human_full_text=None):
-    """A week whose text and listening gates were both passed by machine waivers."""
+def spoken_calibration():
+    """A calibration that also seeded errors into condensed spoken groups."""
+    base = calibration(LOCALE, asrIdentity={'primary': ASR, 'secondary': SECONDARY_ASR})
+    added = {f'spoken.{kind}': {'trials': 4, 'detected': 4, 'rate': 1.0} for kind in basis.waiver.SPOKEN_KINDS}
+    return {**base, 'spokenIncluded': True, 'kinds': {**base['kinds'], **added},
+            'trials': base['trials'] + 4 * len(added), 'detected': base['detected'] + 4 * len(added)}
+
+
+def condense_first_group(source, anchor, candidate, cal):
+    """A spoken candidate whose first group was condensed, its binding and its text waiver."""
+    spoken = copy.deepcopy(candidate)
+    group = spoken['groups'][0]
+    short = group['targetText'][:max(1, len(group['targetText']) // 2)]
+    group.update(targetText=short, targetUtterances=[short])
+    group['coverage'][0]['targetText'] = short
+    condensation = {'schemaVersion': basis.CONDENSATION_BINDING_SCHEMA, 'targetLocale': LOCALE, 'status': 'pass',
+                    'issues': [], 'humanApproval': False, 'condensationRecordJsonSha256': 'e' * 64,
+                    'fullCandidateJsonSha256': d.sha(candidate), 'spokenCandidateJsonSha256': d.sha(spoken),
+                    'groups': [{'translationGroupId': group['translationGroupId'],
+                                'finalSpokenTextSha256': hashlib.sha256(short.encode()).hexdigest()}]}
+    qc = text_qc(spoken, anchor)
+    qc['results'][0]['mode'] = 'spoken_condensed'
+    qc['condensedGroupIds'] = [group['translationGroupId']]
+    waiver = basis.build_text_waiver(source, anchor, spoken, qc, cal, condensation_binding=condensation,
+                                     created_at='2026-10-07T01:30:00+00:00')
+    return spoken, waiver, condensation
+
+
+def machine_inputs(root, *, human_full_text=None, condense=False):
+    """A week whose text and listening gates were both passed by machine waivers.
+
+    ``condense`` dubs a spoken script whose first group was condensed."""
     from tests import test_produce_target_language_candidate as source_fixtures
     from tests import test_prepare_target_language_speech_job as speech_fixtures
     from tests import test_review_target_language_audio as audio_fixtures
@@ -39,23 +69,26 @@ def machine_inputs(root, *, human_full_text=None):
     for group, unit in zip(candidate['groups'], sf.anchor['sourceUnits']):
         group['sourceUnitIds'] = [unit['sourceUnitId']]
         group['coverage'] = [{'sourceUnitId': unit['sourceUnitId'], 'targetText': group['targetText']}]
-    cal = calibration(LOCALE, asrIdentity={'primary': ASR, 'secondary': SECONDARY_ASR})
-    text_waiver = basis.build_text_waiver(source, sf.anchor, candidate, text_qc(candidate, sf.anchor), cal,
+    cal = (spoken_calibration() if condense
+           else calibration(LOCALE, asrIdentity={'primary': ASR, 'secondary': SECONDARY_ASR}))
+    full_waiver = basis.build_text_waiver(source, sf.anchor, candidate, text_qc(candidate, sf.anchor), cal,
                                           created_at='2026-10-07T01:00:00+00:00')
+    spoken, text_waiver, condensation = ((candidate, full_waiver, None) if not condense
+                                         else condense_first_group(source, sf.anchor, candidate, cal))
     track = root / 'tone.mp3'
     subprocess.run(['ffmpeg', '-nostdin', '-v', 'error', '-f', 'lavfi', '-i', 'sine=frequency=440:duration=10',
                     '-y', str(track)], check=True)
     captions = {'cues': [{'textGroupId': g['translationGroupId'], 'start': i * 5, 'end': (i + 1) * 5,
-                          'text': g['targetText']} for i, g in enumerate(candidate['groups'])]}
+                          'text': g['targetText']} for i, g in enumerate(spoken['groups'])]}
     cap_path = save(root, 'captions.json', captions)
     package, screening = audio_fixtures.fixture()
     unit_path = root / 'unit.wav'; unit_path.write_bytes(b'synthetic-unit')
     package.update(targetLocale=LOCALE, englishSourcePackageJsonSha256=d.sha(source),
-                   targetLanguageCandidateJsonSha256=d.sha(candidate), track=binding(track), captions=binding(cap_path),
+                   targetLanguageCandidateJsonSha256=d.sha(spoken), track=binding(track), captions=binding(cap_path),
                    status='machine_screened', machineScreening={'status': 'pass', 'model': ASR['model'], 'coverage': 1.0},
                    units=[{'textGroupId': g['translationGroupId'],
                            'targetTextSha256': hashlib.sha256(g['targetText'].encode()).hexdigest(),
-                           'audio': binding(unit_path), 'durationSeconds': 5.0} for g in candidate['groups']])
+                           'audio': binding(unit_path), 'durationSeconds': 5.0} for g in spoken['groups']])
     schedule = save(root, 'schedule.json', {'synthetic': True})
     package['schedule'] = {**binding(schedule), 'jsonSha256': d.sha({'synthetic': True})}
     screening.update(targetLocale=LOCALE, trackSha256=builder.digest(track), status='pass', modelRevision=ASR['modelRevision'],
@@ -90,9 +123,10 @@ def machine_inputs(root, *, human_full_text=None):
                'sourceMediaSha256': source['source']['media']['sha256'],
                'durationSeconds': source['source']['approvedWindow']['endSeconds'] - source['source']['approvedWindow']['startSeconds'],
                'sourceVideoUrl': f'/pages/{PAGE}/full-video-browser.mp4', **fields,
-               'cues': [{**cue, 'sourceUnitIds': g['sourceUnitIds']} for cue, g in zip(captions['cues'], candidate['groups'])]}
-    documents = {'source': source, 'metadata_approval': metadata, 'full_candidate': candidate, 'spoken_candidate': candidate,
-                 'full_review_receipt': text_waiver, 'spoken_review_receipt': text_waiver, 'audio_package': package,
+               'cues': [{**cue, 'text': g['targetText'], 'sourceUnitIds': g['sourceUnitIds']}
+                        for cue, g in zip(captions['cues'], candidate['groups'])]}
+    documents = {'source': source, 'metadata_approval': metadata, 'full_candidate': candidate, 'spoken_candidate': spoken,
+                 'full_review_receipt': full_waiver, 'spoken_review_receipt': text_waiver, 'audio_package': package,
                  'audio_review_receipt': audio_waiver, 'audio_screening_receipt': screening, 'full_content': content}
     for kind in ('outline', 'meditation'):
         artifact = study_artifacts.produce(kind, [{'title': kind + ' title', 'body': 'Complete sentence.',
@@ -105,6 +139,8 @@ def machine_inputs(root, *, human_full_text=None):
                   'reviewedAt': '2026-10-07T03:00:00Z',
                   'checks': {k: 'pass' for k in ('faithfulness', 'scriptureIntegrity', 'localeReadability')}}
         documents[kind] = artifact; documents[kind + '_review'] = review
+    if condensation is not None:
+        documents['condensation_binding'] = condensation
     return documents, proposal, (sf, tf)
 
 
@@ -153,6 +189,8 @@ def test_waivers_produce_a_disclosed_v4_release_never_marked_human(machine):
     assert {basis_row['kind'] for basis_row in release['reviewBasis'].values()} == {'machine_quality_waiver'}
     assert release['reviewBasis']['audio']['receiptSha256'] == d.sha(machine['documents']['audio_review_receipt'])
     assert release['disclosure'] == basis.disclosure(LOCALE)
+    # The spoken script equals the full text, so the captions already show it.
+    assert (release['captionText'], release['spokenCondensation']) == ('full_text', None)
     assert not (prepared_dir / 'public/releases-v2' / PAGE).exists()
     d.validate_public_study(release, reader=lambda url: (prepared_dir / 'public' / url.lstrip('/')).read_bytes())
     page = (prepared_dir / 'public/pages' / PAGE / LOCALE / 'index.html').read_text()
@@ -235,6 +273,46 @@ def test_audio_waiver_must_bind_the_spoken_script_waiver(tmp_path):
     finally:
         for fixture in fixtures:
             fixture.doCleanups()
+
+
+def test_condensed_dub_binds_its_condensation_and_captions_show_the_full_text(tmp_path):
+    root = tmp_path / 'condensed'; root.mkdir()
+    documents, proposal, fixtures = machine_inputs(root, condense=True)
+    try:
+        for name, change, message in (
+                ('condensation_binding', None, 'needs its condensation binding'),
+                ('condensation_binding', {'fullCandidateJsonSha256': '0' * 64}, 'does not bind'),
+        ):
+            broken = copy.deepcopy(documents)
+            if change is None:
+                broken.pop(name)
+            else:
+                broken[name].update(change)
+            with pytest.raises(ValueError, match=message):
+                run_delivery(root / message.replace(' ', '-'), broken, proposal)
+        _, result = run_delivery(root, documents, proposal)
+        assert result['status'] == 'succeeded'
+        prepared_dir = root / 'work/prepared'
+        release = builder.read(prepared_dir / 'public/releases-v4' / PAGE / (LOCALE + '.json'))
+        group_id = documents['full_candidate']['groups'][0]['translationGroupId']
+        assert release['captionText'] == 'full_text'
+        assert release['spokenCondensation'] == {
+            'condensationRecordJsonSha256': 'e' * 64, 'condensedGroupIds': [group_id],
+            'condensationBindingJsonSha256': d.sha(documents['condensation_binding'])}
+        # The captions asset is still the audio package's spoken-script captions.
+        captions = builder.read(prepared_dir / 'public/captions' / PAGE / (LOCALE + '.json'))
+        assert captions['cues'][0]['text'] == documents['spoken_candidate']['groups'][0]['targetText']
+        page = (prepared_dir / 'public/pages' / PAGE / LOCALE / 'index.html').read_text()
+        assert '同传式精简口播' in page and '配音字幕显示完整译文' in page
+    finally:
+        for fixture in fixtures:
+            fixture.doCleanups()
+    # A binding without condensed groups is refused rather than ignored.
+    full = {'groups': [{'translationGroupId': 'g1', 'targetText': 'a'}]}
+    with pytest.raises(ValueError, match='without condensed groups'):
+        builder.caption_text(full, '1' * 64, full, '1' * 64, {}, tmp_path / 'binding.json', LOCALE)
+    shortened = {'groups': [{'translationGroupId': 'g1', 'targetText': 'b'}]}
+    assert builder.caption_text(full, '1' * 64, shortened, '2' * 64, {}, None, LOCALE) == ('spoken_text', None)
 
 
 def test_projection_moves_removed_defaults_and_refuses_an_empty_catalog():

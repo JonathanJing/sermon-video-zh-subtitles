@@ -33,6 +33,9 @@ public struct VerifiedPublishedTranscript: Sendable, Equatable {
     public let releaseStatus: String
     /// The verified v4 release's same-locale disclosure; nil for human-only releases.
     public let disclosure: MachineCheckedDisclosure?
+    /// The dub was condensed like simultaneous interpretation; `captions` keep
+    /// the dub's timing but show the full translation of each group.
+    public let isCondensedDub: Bool
     public let fullText: [PublishedTranscriptCue]
     public let captions: [PublishedTranscriptCue]
 
@@ -127,12 +130,21 @@ public struct VerifiedPublishedTranscript: Sendable, Equatable {
               Set(source.cues.map(\.textGroupId)) == Set(spoken.cues.map(\.textGroupId)) else {
             throw CatalogError.invalid("口播字幕与全文组不符")
         }
+        let fullTextByGroup = Dictionary(uniqueKeysWithValues: source.cues.map { ($0.textGroupId, $0.text) })
+        guard (package.spokenCondensation?.condensedGroupIds ?? []).allSatisfy({ fullTextByGroup[$0] != nil }) else {
+            throw CatalogError.invalid("精简组与全文组不符")
+        }
         let english = (candidate ? nil : englishReference).flatMap {
             try? EnglishReference.validated($0, source: source, package: package, page: page)
         } ?? [:]
         func convert(_ cue: RawCue) -> PublishedTranscriptCue {
             .init(id: cue.textGroupId, text: cue.text, start: cue.start, end: cue.end,
                   english: english[cue.textGroupId])
+        }
+        // captionText full_text keeps the dub's timing and shows each group's full translation.
+        func caption(_ cue: RawCue) -> PublishedTranscriptCue {
+            .init(id: cue.textGroupId, text: package.captionsShowFullText ? fullTextByGroup[cue.textGroupId] ?? cue.text : cue.text,
+                  start: cue.start, end: cue.end, english: english[cue.textGroupId])
         }
         let reviewed = package.contentStatus == "human_reviewed"
         func nonempty(_ value: String?) -> String? {
@@ -152,8 +164,9 @@ public struct VerifiedPublishedTranscript: Sendable, Equatable {
                      questions: reviewed ? (source.questions ?? []).filter { nonempty($0) != nil } : [],
                      durationSeconds: source.durationSeconds, audioDurationSeconds: audioDuration, contentStatus: package.contentStatus,
                      audioStatus: package.audioStatus, releaseStatus: package.status, disclosure: package.disclosure,
+                     isCondensedDub: package.spokenCondensation != nil,
                      fullText: source.cues.map(convert),
-                     captions: spoken.cues.map(convert))
+                     captions: spoken.cues.map(caption))
     }
 }
 

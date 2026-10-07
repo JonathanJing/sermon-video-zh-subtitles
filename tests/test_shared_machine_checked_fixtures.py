@@ -37,7 +37,7 @@ class SharedMachineCheckedFixturesTests(unittest.TestCase):
     def test_matrix_is_decoder_evidence_not_an_approval(self):
         self.assertEqual(self.matrix['scope'], 'synthetic_decoder_tests_not_production_approval')
         self.assertEqual((len(self.matrix['releases']), len(self.matrix['catalogTargets']), len(self.matrix['contents'])),
-                         (19, 12, 6))
+                         (23, 12, 6))
         for name in ('releases', 'catalogTargets', 'contents'):
             for row in self.matrix[name]:
                 with self.subTest(matrix=name, case=row['id']):

@@ -766,3 +766,46 @@ test('content/release status, version or disclosure mismatches isolate only the 
   assert.equal(view.audioStatus, 'full_machine_checked');
   assert.equal(view.disclosure, DISCLOSURES.es);
 });
+
+const condensation = { condensationRecordJsonSha256: '1'.repeat(64), condensationBindingJsonSha256: '2'.repeat(64), condensedGroupIds: ['first'] };
+test('a condensed dub shows the full translation on the dub timing and says it was condensed', async () => {
+  const condense = ({ locale, release }) => {
+    if (locale === 'ko') Object.assign(release, { captionText: 'full_text', spokenCondensation: structuredClone(condensation) });
+  };
+  const f = machineFixture(undefined, condense);
+  const result = await loadPublishedWeeks(f.fetchImpl);
+  assert.deepEqual(result.errors, []);
+  const ko = result.weeks[0].contentVariants.ko;
+  assert.equal(ko.condensedDub, true);
+  assert.deepEqual(ko.tracks[0].cues.map(cue => [cue.start, cue.end, cue.text]), [[.5, 7, 'Full reading text ko']]);
+  assert.match(ko.spokenHint, /전체 번역/);
+  assert.match(ko.fullTextHint, /간추린 구술/);
+  assert.match(ko.audioNotice, /동시통역/);
+  assert.match(ko.productionStages[1].detail, /전체 번역/);
+  assert.equal(result.weeks[0].contentVariants['zh-Hans'].condensedDub, false);
+  // Without a condensation, spoken captions keep their own text.
+  const plain = (await loadPublishedWeeks(machineFixture().fetchImpl)).weeks[0].contentVariants.ko;
+  assert.equal(plain.condensedDub, false);
+  assert.equal(plain.tracks[0].cues[0].text, 'Short spoken text ko');
+  // captionText full_text alone (the spoken script equals the full text) swaps nothing it does not own.
+  const same = machineFixture(undefined, ({ locale, release }) => { if (locale === 'ko') release.captionText = 'full_text'; });
+  assert.equal((await loadPublishedWeeks(same.fetchImpl)).weeks[0].contentVariants.ko.condensedDub, false);
+
+  const invalid = [
+    ['spoken captions', ({ release }) => { release.captionText = 'spoken_text'; }],
+    ['missing captionText', ({ release }) => { delete release.captionText; }],
+    ['unknown captionText', ({ release }) => { release.captionText = 'english'; }],
+    ['human-reviewed dub', ({ release }) => { release.audioStatus = 'human_reviewed'; release.reviewBasis.spokenText = release.reviewBasis.audio = basis('human_reviewed'); }],
+    ['empty group list', ({ release }) => { release.spokenCondensation.condensedGroupIds = []; }],
+    ['duplicate groups', ({ release }) => { release.spokenCondensation.condensedGroupIds = ['first', 'first']; }],
+    ['bad hash', ({ release }) => { release.spokenCondensation.condensationBindingJsonSha256 = 'x'; }],
+    ['extra key', ({ release }) => { release.spokenCondensation.note = 'x'; }],
+    ['unknown group', ({ release }) => { release.spokenCondensation.condensedGroupIds = ['other']; }],
+  ];
+  for (const [name, change] of invalid) {
+    const bad = machineFixture(undefined, args => { if (args.locale === 'ko') { condense(args); change(args); } });
+    const loaded = await loadPublishedWeeks(bad.fetchImpl);
+    assert.deepEqual(Object.keys(loaded.weeks[0].contentVariants), ['zh-Hans', 'es'], name);
+    assert.match(loaded.errors[0], /\/ko: (Invalid caption text or spoken condensation|Invalid machine-checked release|Condensed groups do not match)/, name);
+  }
+});

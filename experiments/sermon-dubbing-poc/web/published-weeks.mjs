@@ -18,6 +18,13 @@ const LABELS = {
       audioStage: ['配音与字幕机器质检', '配音经机器质检后自动发布，未经人工审核；字幕采用对应口播稿。'],
       fullTextHint: '以下完整阅读文稿经机器质检后自动发布，未经人工审核；时间对应英文原视频。配音使用较短口播稿，跟读请查看配音字幕。',
       spokenHint: '当前字幕跟随较短口播配音；该配音经机器质检，未经人工审核。',
+      // A dub condensed like simultaneous interpretation; its captions show the full translation.
+      condensed: {
+        notice: 'AI 配音经机器质检，未经人工审核；配音为同传式精简口播，字幕随配音播放并显示完整译文，完整文稿另列供阅读。',
+        audioStage: ['配音与字幕机器质检', '配音为同传式精简口播，经机器质检后自动发布，未经人工审核；字幕显示完整译文，时间跟随配音。'],
+        fullTextHint: '以下完整阅读文稿经机器质检后自动发布，未经人工审核；时间对应英文原视频。配音为同传式精简口播，配音字幕显示同一份完整译文。',
+        spokenHint: '当前字幕显示完整译文，时间跟随配音；配音为同传式精简口播，经机器质检，未经人工审核。',
+      },
     },
   },
   ko: {
@@ -35,6 +42,12 @@ const LABELS = {
       audioStage: ['더빙과 자막 기계 품질 검사', '더빙은 기계 품질 검사 후 자동으로 게시되었으며 사람의 검토를 거치지 않았습니다. 자막은 해당 구술 원고를 사용합니다.'],
       fullTextHint: '기계 품질 검사 후 자동으로 게시된 전체 읽기 원고이며 사람의 검토를 거치지 않았습니다. 시간은 영어 원본 영상을 기준으로 합니다. 음성에는 짧게 다듬은 원고를 사용하므로 들으면서 따라 읽을 때는 음성 자막을 보세요.',
       spokenHint: '현재 자막은 짧은 낭독 원고의 음성을 따릅니다. 이 더빙은 기계 품질 검사를 거쳤으며 사람의 검토를 거치지 않았습니다.',
+      condensed: {
+        notice: 'AI 더빙은 기계 품질 검사를 거쳤으며 사람의 검토를 거치지 않았습니다. 더빙은 동시통역처럼 간추린 구술이며, 자막은 더빙을 따르면서 전체 번역을 보여 주고 전체 읽기 원고는 별도로 제공됩니다.',
+        audioStage: ['더빙과 자막 기계 품질 검사', '더빙은 동시통역처럼 간추린 구술이며 기계 품질 검사 후 자동으로 게시되었고 사람의 검토를 거치지 않았습니다. 자막은 더빙 시간에 맞춰 전체 번역을 보여 줍니다.'],
+        fullTextHint: '기계 품질 검사 후 자동으로 게시된 전체 읽기 원고이며 사람의 검토를 거치지 않았습니다. 시간은 영어 원본 영상을 기준으로 합니다. 더빙은 동시통역처럼 간추린 구술이며, 음성 자막은 같은 전체 번역을 보여 줍니다.',
+        spokenHint: '현재 자막은 더빙 시간에 맞춰 전체 번역을 보여 줍니다. 더빙은 동시통역처럼 간추린 구술이며 기계 품질 검사를 거쳤고 사람의 검토를 거치지 않았습니다.',
+      },
     },
   },
   es: {
@@ -52,6 +65,12 @@ const LABELS = {
       audioStage: ['Control automático del doblaje y subtítulos', 'El doblaje se publicó automáticamente tras un control de calidad automático, sin revisión humana; los subtítulos utilizan su guion oral.'],
       fullTextHint: 'Este texto completo para leer se publicó automáticamente tras un control de calidad automático, sin revisión humana. Los tiempos corresponden al vídeo original en inglés. El audio usa un guion más breve; sigue los subtítulos de la narración mientras escuchas.',
       spokenHint: 'Estos subtítulos siguen la narración abreviada. El doblaje pasó un control de calidad automático, sin revisión humana.',
+      condensed: {
+        notice: 'El doblaje con IA pasó un control de calidad automático, sin revisión humana. Es una versión condensada, como en la interpretación simultánea; los subtítulos siguen el audio y muestran la traducción completa, y el texto íntegro se ofrece por separado.',
+        audioStage: ['Control automático del doblaje y subtítulos', 'El doblaje es una versión condensada, como en la interpretación simultánea, y se publicó automáticamente tras un control de calidad automático, sin revisión humana; los subtítulos muestran la traducción completa al ritmo del audio.'],
+        fullTextHint: 'Este texto completo para leer se publicó automáticamente tras un control de calidad automático, sin revisión humana. Los tiempos corresponden al vídeo original en inglés. El doblaje es una versión condensada; sus subtítulos muestran esta misma traducción completa.',
+        spokenHint: 'Estos subtítulos muestran la traducción completa al ritmo del doblaje. El doblaje es una versión condensada, como en la interpretación simultánea, y pasó un control de calidad automático, sin revisión humana.',
+      },
     },
   },
 };
@@ -150,6 +169,16 @@ export function validatePublishedV4Release(release, page, locale) {
     && disclosure?.locale === locale && text(disclosure.text) && text(disclosure.english)
     && Array.isArray(release.assets) && release.assets.length === 7,
   'Invalid machine-checked release status, review basis or disclosure');
+  // A condensed dub is machine checked and its captions must show the full translation.
+  const condensation = release.spokenCondensation;
+  required([undefined, 'full_text', 'spoken_text'].includes(release.captionText)
+    && (condensation == null || (condensation.constructor === Object && Object.keys(condensation).length === 3
+      && release.captionText === 'full_text' && release.audioStatus === 'machine_checked'
+      && basis.spokenText.kind === 'machine_quality_waiver'
+      && HASH.test(condensation.condensationRecordJsonSha256) && HASH.test(condensation.condensationBindingJsonSha256)
+      && Array.isArray(condensation.condensedGroupIds) && condensation.condensedGroupIds.length > 0
+      && condensation.condensedGroupIds.every(text) && new Set(condensation.condensedGroupIds).size === condensation.condensedGroupIds.length)),
+  'Invalid caption text or spoken condensation');
   return admitPublishedRelease(release, page, locale, true);
 }
 
@@ -365,21 +394,23 @@ export function validatePublishedPage(page) {
 function reviewPresentation(labels, release) {
   if (release.schemaVersion !== RELEASE_V4) return {
     releaseLabel: '正式播放版', humanContentReview: 'approved', audioStatus: 'full_reviewed',
-    machineChecked: false, disclosure: null, fullTextHint: null, spokenHint: null,
+    machineChecked: false, condensedDub: false, disclosure: null, fullTextHint: null, spokenHint: null,
     audioNotice: labels.notice, contentReview: labels.review,
     productionStages: labels.stages.map(([label, detail]) => ({ label, detail, status: 'pass' })),
   };
   const machine = labels.machine, [textStage, audioStage, publishStage] = labels.stages;
   const textMachine = release.contentStatus === 'machine_checked', audioMachine = release.audioStatus === 'machine_checked';
+  // Validation admits a condensation only with a machine-checked dub.
+  const condensedDub = release.spokenCondensation != null, dub = condensedDub ? { ...machine, ...machine.condensed } : machine;
   return {
     releaseLabel: machine.label, humanContentReview: textMachine ? 'machine_checked' : 'approved',
     audioStatus: audioMachine ? 'full_machine_checked' : 'full_reviewed',
-    machineChecked: true, disclosure: release.disclosure.text,
-    fullTextHint: textMachine ? machine.fullTextHint : null, spokenHint: audioMachine ? machine.spokenHint : null,
-    audioNotice: audioMachine ? machine.notice : labels.notice,
+    machineChecked: true, condensedDub, disclosure: release.disclosure.text,
+    fullTextHint: textMachine ? dub.fullTextHint : null, spokenHint: audioMachine ? dub.spokenHint : null,
+    audioNotice: audioMachine ? dub.notice : labels.notice,
     contentReview: textMachine && audioMachine ? machine.both
       : `${machine.text[release.contentStatus]}${machine.join}${machine.audio[release.audioStatus]}`,
-    productionStages: [textMachine ? machine.textStage : textStage, audioMachine ? machine.audioStage : audioStage, publishStage]
+    productionStages: [textMachine ? machine.textStage : textStage, audioMachine ? dub.audioStage : audioStage, publishStage]
       .map(([label, detail]) => ({ label, detail, status: 'pass' })),
   };
 }
@@ -434,11 +465,15 @@ async function loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal, allow
   }
   const audioDuration = separateAudioClock ? content.audioDurationSeconds : content.durationSeconds;
   required(Number.isFinite(audioDuration) && audioDuration > 0 && audioDuration <= 86400, 'Invalid published audio duration');
-  const cues = validatedCues(captions.cues, audioDuration);
+  const spokenCues = validatedCues(captions.cues, audioDuration);
   const fullTranscript = validatedCues(content.cues, content.durationSeconds);
   // Full reading text and shorter spoken captions remain separate, explicitly linked by group ID.
   const fullIds = new Set(fullTranscript.map(cue => cue.textGroupId));
-  required(cues.length === fullTranscript.length && cues.every(cue => fullIds.has(cue.textGroupId)), 'Spoken captions do not match full-text groups');
+  required(spokenCues.length === fullTranscript.length && spokenCues.every(cue => fullIds.has(cue.textGroupId)), 'Spoken captions do not match full-text groups');
+  required((release.spokenCondensation?.condensedGroupIds || []).every(id => fullIds.has(id)), 'Condensed groups do not match full-text groups');
+  // captionText full_text keeps the dub's timing and shows the full translation of each group.
+  const fullText = new Map(fullTranscript.map(cue => [cue.textGroupId, cue.text]));
+  const cues = release.captionText === 'full_text' ? spokenCues.map(cue => ({ ...cue, text: fullText.get(cue.textGroupId) })) : spokenCues;
   const labels = LABELS[locale];
   if (legacyCandidate) {
     required(page.mediaType === 'podcast' && typeof page.sourceUrl === 'string'

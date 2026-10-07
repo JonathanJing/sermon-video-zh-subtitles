@@ -368,12 +368,12 @@ function renderTranscript() {
   const guidance = [t("app.transcript.guide")];
   if (bilingual.hasEnglish) guidance.push(t("app.transcript.displayGuide"));
   if (bilingual.missingEnglish && !week.contentVariants) guidance.push(bilingual.hasEnglish ? t("app.transcript.partial") : t("app.transcript.missing"));
-  $("transcript-description").textContent = week.contentVariants ? t(week.spokenHint ? "app.content.spokenHintMachine" : "app.content.spokenHint") : guidance.join(" ");
+  $("transcript-description").textContent = week.contentVariants ? t(week.condensedDub ? "app.content.spokenHintCondensed" : week.spokenHint ? "app.content.spokenHintMachine" : "app.content.spokenHint") : guidance.join(" ");
   if (week.fullTranscript?.length) {
     const reading = document.createElement("details"); reading.className = "full-reading";
     const title = document.createElement("summary"); title.textContent = t("app.content.fullText");
     // Machine-checked text never reuses the "approved" hint; wording stays in the interface language.
-    const hint = document.createElement("p"); hint.className = "description"; hint.textContent = t(week.fullTextHint ? "app.content.fullTextHintMachine" : "app.content.fullTextHint");
+    const hint = document.createElement("p"); hint.className = "description"; hint.textContent = t(week.condensedDub ? (week.fullTextHint ? "app.content.fullTextHintCondensedMachine" : "app.content.fullTextHintCondensed") : week.fullTextHint ? "app.content.fullTextHintMachine" : "app.content.fullTextHint");
     reading.append(title, hint);
     for (const cue of week.fullTranscript) {
       const paragraph = document.createElement("p"); paragraph.lang = contentLocale;

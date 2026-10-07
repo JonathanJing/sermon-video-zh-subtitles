@@ -26,7 +26,7 @@ struct SharedMachineCheckedContractTests {
 
     @Test func identicalWebAndNativeMachineCheckedReleases() throws {
         let cases = try #require(try matrix()["releases"] as? [[String: Any]])
-        #expect(cases.count == 19)
+        #expect(cases.count == 23)
         for row in cases {
             let id = try #require(row["id"] as? String)
             let expected = try #require(row["expected"] as? String)
@@ -310,6 +310,40 @@ struct SharedMachineCheckedContractTests {
         }
     }
 
+    @Test func condensedDubCaptionsShowTheFullTranslationOnTheDubTiming() throws {
+        let (package, page) = try transcriptFixture(release: "condensed-dub-full-text-captions")
+        #expect(package.captionsShowFullText)
+        #expect(package.spokenCondensation?.condensedGroupIds == ["g1"])
+        let disclosure = try #require(package.disclosure)
+        let result = try VerifiedPublishedTranscript.decode(
+            content: content(package, page: page, status: "machine_checked", disclosure: disclosure),
+            captions: captions(), package: package, page: page)
+        #expect(result.isCondensedDub)
+        #expect(result.captions.map(\.text) == ["Synthetic sentence."])
+        #expect(result.captions.map(\.end) == [9.5])
+        #expect(result.fullText.map(\.text) == ["Synthetic sentence."])
+
+        // Without a condensation, spoken captions keep their own text.
+        let (plain, plainPage) = try transcriptFixture(release: "machine-checked-ko")
+        let spoken = try VerifiedPublishedTranscript.decode(
+            content: content(plain, page: plainPage, status: "machine_checked", disclosure: disclosure),
+            captions: captions(), package: plain, page: plainPage)
+        #expect(!spoken.isCondensedDub)
+        #expect(spoken.captions.map(\.text) == ["Synthetic spoken sentence."])
+
+        // A condensed group must be one of the full-text groups.
+        var release = try releaseCase("condensed-dub-full-text-captions")
+        var condensation = try #require(release["spokenCondensation"] as? [String: Any])
+        condensation["condensedGroupIds"] = ["g2"]
+        release["spokenCondensation"] = condensation
+        let unknown = try TargetLanguageReleasePackage.decode(data(release))
+        #expect(throws: (any Error).self) {
+            try VerifiedPublishedTranscript.decode(
+                content: content(unknown, page: page, status: "machine_checked", disclosure: disclosure),
+                captions: captions(), package: unknown, page: page)
+        }
+    }
+
     @Test func olderReleasesCannotDeclareMachineCheckedFields() throws {
         var release = try releaseCase("machine-checked-ko")
         release["schemaVersion"] = TargetLanguageReleasePackage.fourProductSchemaVersion
@@ -320,6 +354,14 @@ struct SharedMachineCheckedContractTests {
         release.removeValue(forKey: "reviewBasis")
         #expect(throws: (any Error).self) { try TargetLanguageReleasePackage.decode(data(release)) }
         release.removeValue(forKey: "disclosure")
+        // ... nor caption text or a condensation, which only a v4 machine-checked dub declares.
+        let condensation = try #require(try releaseCase("condensed-dub-full-text-captions")["spokenCondensation"])
+        let declarations: [(String, Any)] = [("captionText", "full_text"), ("spokenCondensation", condensation)]
+        for (key, value) in declarations {
+            var declared = release
+            declared[key] = value
+            #expect(throws: (any Error).self) { try TargetLanguageReleasePackage.decode(data(declared)) }
+        }
         let v3 = try TargetLanguageReleasePackage.decode(data(release))
         #expect(!v3.isMachineChecked)
         #expect(v3.disclosure == nil)

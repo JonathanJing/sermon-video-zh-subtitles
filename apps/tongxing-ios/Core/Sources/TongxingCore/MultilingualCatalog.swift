@@ -240,6 +240,15 @@ public struct TargetLanguageReleasePackage: Codable, Sendable, Equatable {
     public let reviewBasis: ReleaseReviewBasis?
     /// v4 only: the same-locale statement every reader must show.
     public let disclosure: MachineCheckedDisclosure?
+    /// v4 only: what the dubbed captions display, "full_text" or "spoken_text".
+    /// Absent means the spoken script, as in every earlier release.
+    public let captionText: String?
+    /// v4 only: the dub was condensed like simultaneous interpretation.
+    /// Its captions keep the dub's timing and show the full translation.
+    public let spokenCondensation: SpokenCondensation?
+
+    /// Dubbed captions show the full translation of each group, on the dub's timing.
+    public var captionsShowFullText: Bool { captionText == "full_text" }
 
     /// At least one product was admitted by a machine quality waiver, not a human review.
     public var isMachineChecked: Bool { contentStatus == "machine_checked" || audioStatus == "machine_checked" }
@@ -282,11 +291,16 @@ public struct TargetLanguageReleasePackage: Codable, Sendable, Equatable {
                   !reviewBasis.audio.isMachineQualityWaiver || reviewBasis.spokenText.isMachineQualityWaiver
             else { throw CatalogError.invalid("机器质检发布包状态、审核依据或说明无效") }
             try disclosure.validate(locale: targetLocale)
+            // A condensed dub is machine checked and its captions must show the full text.
+            guard captionText == nil || captionText == "full_text" || captionText == "spoken_text",
+                  spokenCondensation.map({ $0.isValid && captionsShowFullText && audioStatus == "machine_checked"
+                      && reviewBasis.spokenText.isMachineQualityWaiver }) ?? true
+            else { throw CatalogError.invalid("配音字幕文本或精简记录无效") }
             let roles: Set<ReleaseAsset.Role> = [.page, .content, .audio, .captions, .outline, .meditation, .productManifest]
             guard assets.count == roles.count, Set(assets.map(\.role)) == roles else {
                 throw CatalogError.invalid("机器质检发布包资产不完整")
             }
-        } else if reviewBasis != nil || disclosure != nil {
+        } else if reviewBasis != nil || disclosure != nil || captionText != nil || spokenCondensation != nil {
             throw CatalogError.invalid("旧版本发布包不能声明机器质检依据")
         }
         if schemaVersion == Self.dualScriptSchemaVersion || fourProductRelease {
@@ -418,6 +432,21 @@ public struct ReleaseReviewBasis: Codable, Sendable, Equatable {
     public let fullText: Entry
     public let spokenText: Entry
     public let audio: Entry
+}
+
+/// The condensation behind a dub shortened like simultaneous interpretation.
+/// Omissions are recorded and core meaning is machine checked; captions and the
+/// reading text keep the full translation.
+public struct SpokenCondensation: Codable, Sendable, Equatable {
+    public let condensationRecordJsonSha256: String
+    public let condensationBindingJsonSha256: String
+    public let condensedGroupIds: [String]
+
+    var isValid: Bool {
+        Validation.sha256(condensationRecordJsonSha256) && Validation.sha256(condensationBindingJsonSha256)
+            && !condensedGroupIds.isEmpty && Set(condensedGroupIds).count == condensedGroupIds.count
+            && condensedGroupIds.allSatisfy { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    }
 }
 
 /// The statement shown with every machine-checked product, in the target locale

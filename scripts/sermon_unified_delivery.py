@@ -58,6 +58,10 @@ def load(config_path):
         rows = value['inputs'][name]
         d.require(set(rows) == set(value['locales']), 'Delivery locale input coverage differs: ' + name)
         args[name] = [locale + '=' + str(bound(rows[locale])) for locale in value['locales']]
+    # Only locales whose spoken script was condensed for the dub carry a binding.
+    rows = value['inputs'].get('condensation_binding', {})
+    d.require(set(rows) <= set(value['locales']), 'Delivery locale input coverage differs: condensation_binding')
+    args['condensation_binding'] = [locale + '=' + str(bound(rows[locale])) for locale in value['locales'] if locale in rows]
     work = (base / value['workRoot']).resolve()
     args['out'] = work / 'prepared'
     paths = {name: bound(value[name]) for name in ('releasePlan', 'httpVerification', 'authorization') if name in value}
@@ -95,7 +99,7 @@ def _products(value, args):
     for locale in args.locales:
         d.validate_metadata(metadata['locales'][locale])
         full, full_sha, _ = builder.admitted_text(maps['full_candidate'][locale], maps['full_review_receipt'][locale], source_sha, locale)
-        spoken, spoken_sha, _ = builder.admitted_text(maps['spoken_candidate'][locale], maps['spoken_review_receipt'][locale], source_sha, locale)
+        spoken, spoken_sha, _ = builder.admitted_text(maps['spoken_candidate'][locale], maps['spoken_review_receipt'][locale], source_sha, locale, spoken=True)
         content = read(maps['full_content'][locale])
         d.require(content.get('pageId') == args.page_id and content.get('targetLocale') == locale
                   and content.get('englishSourcePackageJsonSha256') == source_sha
