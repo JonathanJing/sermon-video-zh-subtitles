@@ -1,0 +1,303 @@
+#!/usr/bin/env python3
+"""Condense over-window spoken groups the way a simultaneous interpreter would.
+
+Jony's 2026-10-07 decision: when a group's dub cannot end within the 8-second
+lag target, the spoken script may drop redundancy. Subtitles and the reading
+text keep the complete translation. Only groups the pre-TTS budget
+(``target_audio_predicted_schedule.budget``) marks ``shorten`` are condensed.
+
+A condensation may drop repetition, filler, restatement, asides and example
+detail. It may not drop the main claim, a call or command, a negation, a
+number, a name, a scripture reference or a quotation's speaker, and it may not
+add anything. Every omission is declared as a span of the full translation
+with its kind. Numbers, names and scripture references go through the same
+deterministic checks as the full translation, and the spoken text must fit
+the group's ``maxSpeechUnits``.
+
+The model transport is injected (``call(role, system, user, schema) -> dict``),
+so this module performs no network access and tests use fakes. Its record
+exports a ``sermon-target-language-group-revision-brief-v1`` whose
+``proposedTargetText`` feeds the normal Layer 2 chain
+(``run_target_language_models.py --revision-brief``); the spoken candidate
+that chain produces is then bound back with ``bind_spoken_candidate``. Nothing
+here edits the full candidate or grants approval.
+"""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+from pathlib import Path
+import sys
+
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from scripts import target_audio_predicted_schedule as predicted
+from scripts import target_text_auto_qc as text_qc
+from scripts.language_review_plugins import auto_qc_text_common as rules
+
+SCHEMA = "sermon-spoken-condensation-record-v1"
+BINDING_SCHEMA = "sermon-spoken-condensation-binding-v1"
+REVISION_BRIEF_SCHEMA = "sermon-target-language-group-revision-brief-v1"
+PROMPT_VERSION = "spoken-condensation-v1"
+OMISSION_KINDS = ("repetition", "filler", "restatement", "aside", "example_detail")
+MAX_ATTEMPTS = 2
+LANGUAGE_NAMES = text_qc.LANGUAGE_NAMES
+RESULT_SCHEMA = {
+    "type": "object", "additionalProperties": False,
+    "required": ["translationGroupId", "spokenText", "omissions"],
+    "properties": {
+        "translationGroupId": {"type": "string"},
+        "spokenText": {"type": "string"},
+        "omissions": {"type": "array", "items": {
+            "type": "object", "additionalProperties": False, "required": ["fullTextSpan", "kind"],
+            "properties": {"fullTextSpan": {"type": "string"}, "kind": {"enum": list(OMISSION_KINDS)}}}},
+    },
+}
+SYSTEM = ("You are a simultaneous interpreter preparing the {language} dub of a church sermon. "
+          "The full {language} translation of this passage is too long for its time slot. "
+          "Rewrite it as a shorter spoken version of at most {limit} speech units ({unit}). "
+          "You may drop repetition, filler, restatement, asides and example detail. "
+          "Keep the main claim, every call or command to the listeners, every negation, number, "
+          "name and Bible reference, and who is quoted. Do not add anything that is not in the "
+          "full translation. Keep the speaker's voice and register. "
+          "List every dropped span exactly as it appears in the full translation, with its kind "
+          "(repetition, filler, restatement, aside, example_detail). Return JSON matching the schema.")
+UNIT_NAMES = {"zh-Hans": "Han characters", "ko": "Hangul syllables", "es": "syllables"}
+
+
+def _sha(value) -> str:
+    return hashlib.sha256(json.dumps(value, ensure_ascii=False, sort_keys=True,
+                                     separators=(",", ":")).encode("utf-8")).hexdigest()
+
+
+def _text_sha(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def implementation_sha256() -> str:
+    return hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+
+
+def condenser_identity(identity: dict) -> dict:
+    """The condensation runtime (backend, model, settings) recorded with its hash."""
+    if not (isinstance(identity, dict) and all(isinstance(identity.get(key), str) and identity[key]
+                                               for key in ("backend", "model"))):
+        raise ValueError("Condenser identity needs at least backend and model")
+    return {"identity": dict(identity), "sha256": _sha(identity)}
+
+
+def requests(anchor: dict, candidate: dict, budget: dict) -> dict:
+    """The condensation requests for one full candidate and its pre-TTS budget.
+
+    The budget must have been computed from this candidate's own texts, in its
+    group order; each request carries the English units the group covers.
+    """
+    locale = candidate.get("targetLocale")
+    if locale not in LANGUAGE_NAMES or budget.get("locale") != locale:
+        raise ValueError("Candidate and budget must share a supported locale")
+    if budget.get("schemaVersion") != predicted.SCHEMA:
+        raise ValueError("Unsupported pre-TTS budget")
+    if candidate.get("anchorManifestSha256") != _sha(anchor):
+        raise ValueError("Anchor manifest differs from the candidate's")
+    english = {unit["sourceUnitId"]: unit["english"] for unit in anchor["sourceUnits"]}
+    groups, planned = candidate["groups"], budget["groups"]
+    if [row["gid"] for row in planned] != [group["translationGroupId"] for group in groups]:
+        raise ValueError("Budget groups differ from the candidate's groups")
+    out, cannot_fit = [], []
+    for group, row in zip(groups, planned):
+        if row["speechUnits"] != predicted.speech_units(group["targetText"], locale):
+            raise ValueError(f"Budget was computed from other text: {group['translationGroupId']}")
+        if row["action"] == "cannot_fit":
+            cannot_fit.append(group["translationGroupId"])
+        if row["action"] != "shorten":
+            continue
+        out.append({"translationGroupId": group["translationGroupId"], "sourceUnitIds": group["sourceUnitIds"],
+                    "englishUnits": [{"sourceUnitId": unit_id, "english": english[unit_id]}
+                                     for unit_id in group["sourceUnitIds"]],
+                    "fullTargetText": group["targetText"], "fullSpeechUnits": row["speechUnits"],
+                    "maxSpeechUnits": row["maxSpeechUnits"], "allowedSeconds": row["allowedSeconds"]})
+    return {"targetLocale": locale, "requests": out, "cannotFitGroupIds": cannot_fit}
+
+
+def prompt(request: dict, locale: str, problems: list[str] | None = None) -> dict:
+    system = SYSTEM.format(language=LANGUAGE_NAMES[locale], limit=request["maxSpeechUnits"],
+                           unit=UNIT_NAMES[locale])
+    user = {"translationGroupId": request["translationGroupId"],
+            "english": " ".join(unit["english"] for unit in request["englishUnits"]),
+            "fullTranslation": request["fullTargetText"], "maxSpeechUnits": request["maxSpeechUnits"]}
+    if problems:
+        user["previousAttemptProblems"] = problems
+    return {"system": system, "user": json.dumps(user, ensure_ascii=False), "schema": RESULT_SCHEMA}
+
+
+def spoken_problems(request: dict, spoken: str, omissions: list[dict] | None, locale: str,
+                    policy: dict | None) -> list[str]:
+    """Deterministic checks of one condensed spoken text against its request."""
+    problems = []
+    if not isinstance(spoken, str) or not spoken.strip():
+        return ["spoken text is empty"]
+    if spoken.strip() == request["fullTargetText"].strip():
+        problems.append("spoken text is the full translation")
+    units = predicted.speech_units(spoken, locale)
+    if units > request["maxSpeechUnits"]:
+        problems.append(f"{units:g} speech units exceed the budget of {request['maxSpeechUnits']}")
+    if omissions is not None:
+        if not omissions:
+            problems.append("no omissions declared")
+        for omission in omissions:
+            span = omission.get("fullTextSpan") if isinstance(omission, dict) else None
+            if not (isinstance(span, str) and span.strip() and span in request["fullTargetText"]):
+                problems.append(f"omission is not a span of the full translation: {span!r}")
+            elif omission.get("kind") not in OMISSION_KINDS:
+                problems.append(f"omission kind not allowed: {omission.get('kind')!r}")
+    group = {"english": " ".join(unit["english"] for unit in request["englishUnits"]), "targetText": spoken}
+    problems += text_qc.deterministic_problems(group, locale, policy)
+    return problems
+
+
+def _condense_one(request: dict, locale: str, policy: dict | None, call) -> dict:
+    problems: list[str] = []
+    for attempt in range(1, MAX_ATTEMPTS + 1):
+        asked = prompt(request, locale, problems)
+        output = call("condenser", asked["system"], asked["user"], asked["schema"])
+        if (not isinstance(output, dict) or set(output) != set(RESULT_SCHEMA["required"])
+                or output.get("translationGroupId") != request["translationGroupId"]
+                or not isinstance(output.get("omissions"), list)):
+            problems = ["condenser output does not match the schema"]
+            continue
+        problems = spoken_problems(request, output["spokenText"], output["omissions"], locale, policy)
+        if not problems:
+            return {"status": "condensed", "attempts": attempt, "spokenText": output["spokenText"],
+                    "spokenSpeechUnits": predicted.speech_units(output["spokenText"], locale),
+                    "omissions": [{"fullTextSpan": row["fullTextSpan"], "kind": row["kind"]}
+                                  for row in output["omissions"]], "problems": []}
+    return {"status": "failed", "attempts": MAX_ATTEMPTS, "spokenText": None, "spokenSpeechUnits": None,
+            "omissions": [], "problems": problems}
+
+
+def condense(anchor: dict, candidate: dict, budget: dict, *, call, identity: dict,
+             policy: dict | None = None) -> dict:
+    """Condense every ``shorten`` group. A group still failing after
+    ``MAX_ATTEMPTS`` stays ``failed``: its spoken text remains the full
+    translation and the dub falls back to subtitles for it."""
+    asked = requests(anchor, candidate, budget)
+    locale = asked["targetLocale"]
+    runtime = condenser_identity(identity)
+    groups = []
+    for request in asked["requests"]:
+        result = _condense_one(request, locale, policy, call)
+        groups.append({"translationGroupId": request["translationGroupId"],
+                       "sourceUnitIds": request["sourceUnitIds"],
+                       "fullTargetTextSha256": _text_sha(request["fullTargetText"]),
+                       "fullSpeechUnits": request["fullSpeechUnits"],
+                       "maxSpeechUnits": request["maxSpeechUnits"], **result})
+    failed = [row["translationGroupId"] for row in groups if row["status"] == "failed"]
+    return {"schemaVersion": SCHEMA, "targetLocale": locale,
+            "status": "condensed" if not failed else "condensed_with_failures",
+            "englishSourcePackageJsonSha256": candidate["englishSourcePackageJsonSha256"],
+            "anchorManifestSha256": candidate["anchorManifestSha256"],
+            "translationPolicySha256": candidate["translationPolicySha256"],
+            "fullCandidateJsonSha256": _sha(candidate), "budgetJsonSha256": _sha(budget),
+            "synthesisIdentity": budget["rate"]["synthesisIdentity"],
+            "condenserIdentity": runtime["identity"], "condenserIdentitySha256": runtime["sha256"],
+            "promptVersion": PROMPT_VERSION, "implementationSha256": implementation_sha256(),
+            "groups": groups, "failedGroupIds": failed, "cannotFitGroupIds": asked["cannotFitGroupIds"],
+            "modelCalls": sum(row["attempts"] for row in groups),
+            "humanApproval": False, "mutatesFullCandidate": False}
+
+
+def _check_record(record: dict, candidate: dict) -> None:
+    if record.get("schemaVersion") != SCHEMA or record.get("humanApproval") is not False:
+        raise ValueError("Unsupported condensation record")
+    if record.get("fullCandidateJsonSha256") != _sha(candidate):
+        raise ValueError("Condensation record belongs to another full candidate")
+
+
+def revision_brief(record: dict, candidate: dict) -> dict:
+    """The Layer 2 revision brief for the condensed groups; failed groups keep the full text."""
+    _check_record(record, candidate)
+    condensed = [row for row in record["groups"] if row["status"] == "condensed"]
+    if not condensed:
+        raise ValueError("No condensed group to brief")
+    return {"schemaVersion": REVISION_BRIEF_SCHEMA, "targetLocale": record["targetLocale"],
+            "englishSourcePackageJsonSha256": record["englishSourcePackageJsonSha256"],
+            "anchorManifestSha256": record["anchorManifestSha256"],
+            "translationPolicySha256": record["translationPolicySha256"],
+            "groups": [{"translationGroupId": row["translationGroupId"], "sourceUnitIds": row["sourceUnitIds"],
+                        "priorTargetTextSha256": row["fullTargetTextSha256"],
+                        "proposedTargetText": row["spokenText"]} for row in condensed]}
+
+
+def bind_spoken_candidate(record: dict, anchor: dict, candidate: dict, spoken: dict,
+                          policy: dict | None = None) -> dict:
+    """Bind the spoken candidate the Layer 2 chain produced from the brief.
+
+    Uncondensed groups must keep the full text. A condensed group's final text
+    (the reviewer may have repaired it) is checked again: it fits the budget,
+    and passes the deterministic checks. A group the reviewer restored to the
+    full translation is no longer condensed and fails here.
+    """
+    _check_record(record, candidate)
+    locale = record["targetLocale"]
+    if (spoken.get("targetLocale") != locale or [(g["translationGroupId"], g["sourceUnitIds"])
+                                                 for g in spoken["groups"]]
+            != [(g["translationGroupId"], g["sourceUnitIds"]) for g in candidate["groups"]]):
+        raise ValueError("Spoken candidate covers other groups than the full candidate")
+    for key in ("englishSourcePackageJsonSha256", "anchorManifestSha256"):
+        if spoken.get(key) != candidate.get(key):
+            raise ValueError(f"Spoken candidate has another {key}")
+    english = {unit["sourceUnitId"]: unit["english"] for unit in anchor["sourceUnits"]}
+    condensed = {row["translationGroupId"]: row for row in record["groups"] if row["status"] == "condensed"}
+    rows, issues = [], []
+    for full, final in zip(candidate["groups"], spoken["groups"]):
+        group_id, text = full["translationGroupId"], final["targetText"]
+        row = condensed.get(group_id)
+        if row is None:
+            if text != full["targetText"]:
+                issues.append(f"{group_id}: an uncondensed group differs from the full translation")
+            continue
+        request = {"translationGroupId": group_id, "fullTargetText": full["targetText"],
+                   "maxSpeechUnits": row["maxSpeechUnits"],
+                   "englishUnits": [{"sourceUnitId": unit_id, "english": english[unit_id]}
+                                    for unit_id in full["sourceUnitIds"]]}
+        problems = spoken_problems(request, text, None, locale, policy)
+        issues += [f"{group_id}: {problem}" for problem in problems]
+        rows.append({"translationGroupId": group_id, "finalSpokenTextSha256": _text_sha(text),
+                     "finalSpeechUnits": predicted.speech_units(text, locale),
+                     "changedByReview": text != row["spokenText"], "problems": problems})
+    return {"schemaVersion": BINDING_SCHEMA, "targetLocale": locale, "status": "fail" if issues else "pass",
+            "issues": issues, "condensationRecordJsonSha256": _sha(record),
+            "fullCandidateJsonSha256": record["fullCandidateJsonSha256"],
+            "spokenCandidateJsonSha256": _sha(spoken), "groups": rows, "humanApproval": False}
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    sub = parser.add_subparsers(dest="command", required=True)
+    brief = sub.add_parser("brief", help="Export the Layer 2 revision brief of a condensation record")
+    bind = sub.add_parser("bind", help="Bind the spoken candidate produced from the brief")
+    for command in (brief, bind):
+        command.add_argument("--record", required=True, type=Path)
+        command.add_argument("--candidate", required=True, type=Path)
+        command.add_argument("--out", required=True, type=Path)
+    bind.add_argument("--anchor", required=True, type=Path)
+    bind.add_argument("--spoken-candidate", required=True, type=Path)
+    bind.add_argument("--policy", type=Path)
+    args = parser.parse_args()
+
+    def read(path):
+        return json.loads(path.read_text(encoding="utf-8"))
+    if args.command == "brief":
+        value = revision_brief(read(args.record), read(args.candidate))
+    else:
+        value = bind_spoken_candidate(read(args.record), read(args.anchor), read(args.candidate),
+                                      read(args.spoken_candidate), read(args.policy) if args.policy else None)
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    with args.out.open("x", encoding="utf-8") as stream:
+        json.dump(value, stream, ensure_ascii=False, indent=2, sort_keys=True)
+        stream.write("\n")
+
+
+if __name__ == "__main__":
+    main()
