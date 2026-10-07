@@ -2,6 +2,8 @@
 
 评估日期：2026-10-01。范围是 9 月 27 日三语预制制作：31:31.677 来源，420 英文锚点，中文 419、韩语 420、西语 420 个单元，共 1,259；正式初译与复核成功版本共 2,518 次请求。三语原始生成音频合计 90.493 分钟，最终发行约 1.027 GB。模型基准、工作量与假设见 [分层 A/B](local-model-layer-latency-ab-20261001.zh.md)和[可复算工作量](../data/benchmarks/local-layer-latency/2026-10-01/weekly-20260927-projection.json)。本轮只调查、修改项目默认策略和离线验证，没有创建云资源、支付模型试跑、训练声音或发布内容。
 
+10/7 补充：[云端 GPU 资源与并发评估](reports/20261007-cloud-gpu-resources-and-concurrency.zh.md)按 1 小时三语和正式 8×8 preset 重新估算，结论是单张 L4 放不下正式 8 副本，按语言各开一张 80GB 卡更合适；GPU 只占整周墙钟的一小部分。
+
 ## 结论和成本边界
 
 本地采用 [Spark 默认、MacBook fallback](local-production-compute-policy.zh.md)。先消除逐片启动和重复装载，验证受限批处理，再评估第二张 GPU。云端从一张 L4 开始，建议 `g2-standard-12`（12 vCPU、48GiB 主机内存、24GB 显存）做容量验证；更省的 `g2-standard-8` 留作峰值内存通过后的候选。
