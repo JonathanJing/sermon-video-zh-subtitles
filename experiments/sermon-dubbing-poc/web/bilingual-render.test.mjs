@@ -1,3 +1,4 @@
+import { fullReadingRows } from './reading-mode.mjs';
 import { setIcon, setButtonLabel } from './icons.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -16,13 +17,13 @@ test('shipped transcript renders English once, collapsed, without seeking', () =
     setAttribute() {}
     addEventListener(type, fn) { this.listeners[type] = fn; }
   }
-  const elements = new Map(['transcript-list', 'transcript-description'].map(id => [id, new Element('div')]));
+  const elements = new Map(['transcript-list', 'transcript-description', 'full-reading', 'full-reading-list'].map(id => [id, new Element('div')]));
   const audio = { currentTime: 27, duration: 60 };
   const track = { cues: [0, 0].map((blockId, i) => ({ blockId, start: i * 10, end: (i + 1) * 10, text: '中文' })) };
   const week = { transcript: { schemaVersion: 'sermon-bilingual-transcript-v1', blocks: [
     { blockId: '0', english: '<Source & original>', sourceTextOrigin: 'job.blocks', reviewState: 'unspecified' },
   ] } };
-  const context = vm.createContext({ setIcon, setButtonLabel, $, audio, track, week, bilingualCueRows,
+  const context = vm.createContext({ setIcon, setButtonLabel, $, audio, track, week, bilingualCueRows, fullReadingRows, contentLocale:"zh-Hans", englishPositions:[], fullReadingElements:[],
     bilingualDisplay: false, englishByCue: [], englishDetails: [], transcriptRows: [], updateCurrentEnglish() {}, getLocale: () => "zh", t: key => messages.zh[key],
     document: { createElement: tag => new Element(tag) }, formatTime: String,
     setPosition: value => { audio.currentTime = value; }, boundedTime: value => value, update() {},
@@ -66,16 +67,16 @@ test('machine-checked and condensed-dub transcript hints never reuse the approve
       [false, true, true, 'spokenHintCondensed', 'fullTextHintCondensed'],
     ]) {
       const machine = machineText || machineDub;
-      const elements = new Map(['transcript-list', 'transcript-description'].map(id => [id, new Element('div')]));
-      const week = { contentVariants: {}, fullTranscript: [{ start: 0, text: '전체' }], targetLocale: 'ko', condensedDub,
+      const elements = new Map(['transcript-list', 'transcript-description', 'full-reading', 'full-reading-list'].map(id => [id, new Element('div')]));
+      const week = { contentVariants: {}, fullTranscript: [{ start: 0, end: 10, text: '전체' }], targetLocale: 'ko', condensedDub,
         ...(machineText ? { fullTextHint: 'content-language hint' } : {}), ...(machineDub ? { spokenHint: 'content-language hint' } : {}) };
-      const context = vm.createContext({ setIcon, setButtonLabel, $: id => elements.get(id), track: { cues: [] }, week,
-        bilingualCueRows: () => ({ rows: [], hasEnglish: false, missingEnglish: false }), contentLocale: 'ko',
-        englishByCue: [], englishDetails: [], transcriptRows: [], updateCurrentEnglish() {}, t: key => table[key],
+      const context = vm.createContext({ setIcon, setButtonLabel, $: id => elements.get(id), track: { cues: [{ start: 0, end: 10, text: '말한 내용' }] }, week,
+        bilingualCueRows: () => ({ rows: [], hasEnglish: false, missingEnglish: false }), fullReadingRows,
+        contentLocale: 'ko', englishByCue: [], englishDetails: [], transcriptRows: [], englishPositions: [], fullReadingElements: [], updateCurrentEnglish() {}, t: key => table[key],
         document: { createElement: tag => new Element(tag) }, formatTime: String });
       vm.runInContext(render + '\nrenderTranscript();', context);
       const spoken = elements.get('transcript-description').textContent;
-      const full = elements.get('transcript-list').children[0].children[1].textContent;
+      const full = elements.get('full-reading-list').children[0].children[1].textContent;
       assert.ok(spoken && full, `${locale} ${spokenKey}`);
       assert.equal(spoken, table[`app.content.${spokenKey}`], `${locale} spoken`);
       assert.equal(full, table[`app.content.${fullKey}`], `${locale} full`);

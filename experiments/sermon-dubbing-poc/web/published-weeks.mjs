@@ -84,6 +84,11 @@ const CONTENT_V3 = 'sermon-full-video-text-content-v3';
 const PRODUCT_STATUSES = ['human_reviewed', 'machine_checked'];
 const REVIEW_BASIS_KINDS = ['human_review', 'machine_quality_waiver'];
 const HASH = /^[a-f0-9]{64}$/;
+const PODCAST_LABELS = {
+  'zh-Hans': { source: '播客', audio: '中文播客配音', notice: '播客自然语速配音，字幕随音轨播放；原片时间仅供阅读参考。' },
+  ko: { source: '팟캐스트', audio: '한국어 팟캐스트 더빙', notice: '팟캐스트 더빙은 자연스러운 속도로 재생되며 자막은 음원에 맞춰 표시됩니다. 원본 시간은 읽기 참고용입니다.' },
+  es: { source: 'Pódcast', audio: 'Doblaje del pódcast en español', notice: 'El doblaje del pódcast se reproduce a velocidad natural y los subtítulos siguen su audio. El tiempo original sirve como referencia de lectura.' },
+};
 const ID = /^[A-Za-z0-9_-]{1,160}$/;
 const LOCALE = /^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/;
 const required = (condition, message) => { if (!condition) throw new Error(message); };
@@ -432,6 +437,7 @@ async function loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal, allow
     readJson(fetchImpl, assets.captions.path, assets.captions.sha256, timeoutMs, false, pageSignal),
   ]);
   const legacyCandidate = candidate && release.schemaVersion === RELEASE_V2;
+  const podcast = page.mediaType === 'podcast';
   // Content v3 is admitted only through a v4 release, with the same text status.
   const contentVersions = legacyCandidate ? ['sermon-formal-dev-content-v1', 'sermon-dev-podcast-candidate-content-v2']
     : machineTarget ? (release.contentStatus === 'machine_checked' ? [CONTENT_V3] : [CONTENT_V1, CONTENT_V2, CONTENT_V3]) : [CONTENT_V1, CONTENT_V2];
@@ -442,13 +448,20 @@ async function loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal, allow
       : content.status === (machineTarget ? release.contentStatus : 'human_reviewed'))
     && content.englishSourcePackageJsonSha256 === page.sourceIdentitySha256
     && content.targetLanguageCandidateJsonSha256 === release.targetLanguageCandidateJsonSha256
+    // Frozen legacy candidate schemas bind the source package, but did not
+    // include a content media hash. Declared hashes and published schemas
+    // still require the explicit catalog/content media identity join.
+    && ((legacyCandidate && !Object.hasOwn(content, 'sourceMediaSha256'))
+      || !Object.hasOwn(page, 'sourceMediaSha256') || page.sourceMediaSha256 === content.sourceMediaSha256)
     && HASH.test(release.targetLanguageCandidateJsonSha256), 'Published content identity mismatch');
   if (content.schemaVersion === CONTENT_V3) validatePublishedContentV3(content, page, locale);
   // Machine-checked text repeats the release disclosure it was published under.
   required(content.status !== 'machine_checked' || ['locale', 'text', 'english'].every(key => content.disclosure[key] === release.disclosure[key]),
     'Content disclosure differs from its release');
   required(['title', 'speaker', 'series', 'scripture', 'summary'].every(key => text(content[key]))
-    && Array.isArray(content.outline) && content.outline.every(item => legacyCandidate ? text(item?.title) && text(item?.body) : text(item))
+    && Array.isArray(content.outline) && content.outline.every(item => legacyCandidate
+      ? text(item?.title) && text(item?.body)
+      : text(item) || (podcast && text(item?.title) && text(item?.body)))
     && Number.isFinite(content.durationSeconds) && content.durationSeconds > 0, 'Invalid published content metadata');
   const sourceWindow = content.sourceWindow;
   required(sourceWindow === undefined || (sourceWindow?.schemaVersion === 'sermon-original-recording-window-v1' && Number.isFinite(sourceWindow?.startSeconds)
@@ -509,24 +522,34 @@ async function loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal, allow
       releasePackageJsonSha256: target.releasePackageJsonSha256,
     };
   }
+  if (podcast) {
+    required(text(page.sourceUrl), 'Invalid podcast source');
+    const source = new URL(page.sourceUrl);
+    required(source.protocol === 'https:' && !source.username && !source.password, 'Invalid podcast source');
+  }
   const study = await loadStudy(fetchImpl, release, assets, content, timeoutMs, pageSignal);
   const track = {
     id: `${page.id}-${locale}-${assets.audio.sha256.slice(0, 12)}`,
     audioUrl: assets.audio.path, sha256: assets.audio.sha256,
     durationSeconds: audioDuration, cues, scope: release.audioStatus === 'machine_checked' ? 'full_machine_checked' : 'full_reviewed',
-    label: labels.audio, voiceLabel: labels.voice, targetLocale: locale,
+    label: podcast ? PODCAST_LABELS[locale].audio : labels.audio,
+    voiceLabel: podcast ? `${content.speaker} · AI` : labels.voice, targetLocale: locale,
     subtitleTiming: separateAudioClock ? 'target_audio_clock' : 'source_video_aligned',
   };
   return {
     id: page.id, date: page.date, number: '', targetLocale: locale, defaultTargetLocale: locale, title: content.title,
     series: content.series, speaker: content.speaker, scripture: content.scripture,
-    sourceUrl: assetPath(content.sourceVideoUrl), sourceLabel: labels.source,
-    sourceRoute: 'full_video', sourceSha256: content.sourceMediaSha256, ...(sourceWindow ? { sourceFingerprintWindow: { ...sourceWindow } } : {}), sourceStartSeconds: 0, sourceEndSeconds: content.durationSeconds, sourceDurationSeconds: content.durationSeconds,
+    sourceUrl: podcast ? page.sourceUrl : assetPath(content.sourceVideoUrl),
+    sourceLabel: podcast ? PODCAST_LABELS[locale].source : labels.source,
+    sourceRoute: podcast ? 'podcast' : 'full_video', ...(page.mediaType ? {mediaType: page.mediaType} : {}),
+    sourceSha256: content.sourceMediaSha256,
+    ...(!podcast && sourceWindow ? { sourceFingerprintWindow: { ...sourceWindow } } : {}),
+    ...(!podcast ? {sourceStartSeconds: 0, sourceEndSeconds: content.durationSeconds, sourceDurationSeconds: content.durationSeconds} : {}),
     ...reviewPresentation(labels, release),
     ...(page.diagnosticOnly === true || target.diagnosticOnly === true ? { diagnosticOnly: true } : {}),
     ...(page.simulationOnly === true || target.simulationOnly === true ? { simulationOnly: true } : {}),
     centralMessage: content.summary, summary: content.summary,
-    outline: study ? study.outline.sections.map(section => ({ title: section.title, points: [section.body], sourceUnitIds: section.sourceUnitIds })) : content.outline.map(title => ({ title, points: [] })),
+    outline: study ? study.outline.sections.map(section => ({ title: section.title, points: [section.body], sourceUnitIds: section.sourceUnitIds })) : content.outline.map(item => typeof item === 'string' ? { title: item, points: [] } : { title: item.title, points: [item.body] }),
     meditation: study?.meditation.sections || [], studyArtifacts: study ? {outline:release.fourProducts.outlineArtifactSha256,meditation:release.fourProducts.meditationArtifactSha256} : null,
     fourProducts: study ? release.fourProducts : null, studyStatus: study ? 'human_reviewed' : 'unavailable',
     ...(candidate ? {devCandidate:true,releaseStatus:'candidate',contentReview:'人工审核候选；尚未发布验收。',productionStages:[{label:'发布与验收',detail:'candidate · not_run',status:'review'}]} : {}),

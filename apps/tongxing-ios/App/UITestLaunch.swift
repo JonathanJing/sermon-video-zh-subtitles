@@ -10,6 +10,10 @@ import TongxingCore
 enum UITestLaunch {
     static var isEnabled: Bool { ProcessInfo.processInfo.arguments.contains("--ui-testing") }
 
+    static func liveActivitySmokeEnabled(arguments: [String] = ProcessInfo.processInfo.arguments) -> Bool {
+        arguments.contains("--ui-testing") && arguments.contains("--ui-testing-live-activity")
+    }
+
     @MainActor static func makeModel() -> AppModel? {
         guard isEnabled else { return nil }
         guard let value = ProcessInfo.processInfo.environment["TONGXING_UI_TEST_RUN_ID"],
@@ -31,7 +35,7 @@ enum UITestLaunch {
     /// Explicit system-UI smoke only: synthetic media, no microphone or network.
     /// Unlike ordinary UI tests, this launch opts into real ActivityKit.
     @MainActor static func runLiveActivitySmoke(in model: AppModel) async {
-        guard isEnabled, ProcessInfo.processInfo.arguments.contains("--ui-testing-live-activity"),
+        guard liveActivitySmokeEnabled(),
               let week = model.weeks.first else { return }
         await model.select(week: week)
         model.downloadSelected()

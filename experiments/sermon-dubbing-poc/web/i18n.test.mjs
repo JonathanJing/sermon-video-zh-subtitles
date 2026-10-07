@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { messages } from './locales-interface.mjs';
+import { messages as readerMessages } from './locales-reader.mjs';
 import { messages as koreanMessages } from './locales-ko.mjs';
 import { runInNewContext } from 'node:vm';
 
@@ -50,7 +51,7 @@ async function fixture(run, { saved = null, blockedStorage = false, search = '',
   } });
   try {
     await beforeImport?.(doc);
-    for (const file of ['i18n.mjs', 'locales-interface.mjs', 'locales-ko.mjs', 'locales-es.mjs']) {
+    for (const file of ['i18n.mjs', 'locales-reader.mjs', 'locales-interface.mjs', 'locales-ko.mjs', 'locales-es.mjs']) {
       await writeFile(join(dir, file), await readFile(new URL(file, import.meta.url), 'utf8'));
     }
     // Domain dictionaries are controlled fixtures so the core is verified independently.
@@ -137,9 +138,9 @@ test('all marked static strings have matching Chinese, English and Korean POC di
   const keys = [...html.matchAll(/data-i18n(?:-aria-label|-title|-placeholder)?="([^"]+)"/g)].map((match) => match[1]);
   assert.ok(keys.length > 100);
   for (const key of keys) {
-    assert.ok(messages.zh[key], `Missing Chinese: ${key}`);
-    assert.ok(messages.en[key], `Missing English: ${key}`);
-    assert.ok(koreanMessages[key], `Missing Korean POC fallback: ${key}`);
+    assert.ok(messages.zh[key] || readerMessages.zh[key], `Missing Chinese: ${key}`);
+    assert.ok(messages.en[key] || readerMessages.en[key], `Missing English: ${key}`);
+    assert.ok(koreanMessages[key] || readerMessages.ko[key], `Missing Korean POC fallback: ${key}`);
   }
   assert.match(html, /id="language-toggle"/);
   assert.match(html, /id="subtitle-toggle"/);
