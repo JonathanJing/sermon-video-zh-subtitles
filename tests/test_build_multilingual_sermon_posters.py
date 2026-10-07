@@ -102,10 +102,33 @@ class MultilingualPosterTests(unittest.TestCase):
             self.assertNotEqual(label, poster.COPY[locale]['reviewLabel'])
         self.assertEqual(bundles['zh-Hans']['brief']['reviewLabel'], '译文与配音经机器质检 · 未经人工审核')
 
-    def test_mixed_review_names_each_product(self):
-        self.machine_week(('human_reviewed', 'machine_checked'))
+    def test_mixed_review_discloses_unreviewed_product_in_label_and_brief(self):
+        expected = {
+            ('human_reviewed', 'machine_checked'): {
+                'zh-Hans': '译文已审核 · 配音经机器质检，未经人工审核',
+                'ko': '번역 검토 완료 · 음성 기계 품질 검사, 음성은 사람의 검토를 거치지 않음',
+                'es': 'Traducción revisada · Audio con control de calidad automático, sin revisión humana del audio',
+            },
+            ('machine_checked', 'human_reviewed'): {
+                'zh-Hans': '译文经机器质检，未经人工审核 · 配音已审核',
+                'ko': '번역 기계 품질 검사, 번역은 사람의 검토를 거치지 않음 · 음성 검토 완료',
+                'es': 'Traducción con control de calidad automático, sin revisión humana de la traducción · Audio revisado',
+            },
+        }
+        for statuses, labels in expected.items():
+            self.machine_week(statuses)
+            bundles, _ = self.load()
+            for locale, label in labels.items():
+                with self.subTest(statuses=statuses, locale=locale):
+                    package = poster.read(self.public / self.page['targets'][locale]['releasePackageUrl'].lstrip('/'))
+                    self.assertEqual(poster.review_label(locale, package), label)
+                    self.assertEqual(bundles[locale]['brief']['reviewLabel'], label)
+                    self.assertEqual(bundles[locale]['source']['brief']['reviewLabel'], label)
+
+    def test_human_only_label_stays_human_only(self):
         bundles, _ = self.load()
-        self.assertEqual(bundles['zh-Hans']['brief']['reviewLabel'], '译文已审核 · 配音经机器质检')
+        for locale, bundle in bundles.items():
+            self.assertEqual(bundle['brief']['reviewLabel'], poster.COPY[locale]['reviewLabel'])
 
     def test_machine_checked_release_requires_its_disclosure(self):
         self.machine_week(disclosure=False)

@@ -29,11 +29,13 @@
 | 8 秒预算 | `scripts/target_audio_predicted_schedule.py` | 用已测音频拟合各语言语速，再用正式排程公式按**预测时长**排一次。超窗的组给出 `maxSpeechUnits`，供口播修订一次改到位。语速绑定 speech job 的合成身份（adapter、配置、模型版本、音色、说话人、conditioning、语言参数、文本规范化）和所测音频的哈希；身份不同就拒绝预算，需要重新拟合 |
 | 注错校准 | `scripts/auto_qc_seeded_errors.py` | 在干净成品里注入已知错误，统计每类检出率和干净样例的误报率。只有出现干净版本没有的新问题才算检出（错句配音必须由 ASR 判出），不会把原有误报算成检出。文字类含换书卷（wrong_book），音频类含换成别句的配音（wrong_sentence，需要注入 ASR transport）。口播类（`spoken.*`）只注入精简组：换成别组内容（swapped_content）、追加别组内容（added_content）、翻转否定（flipped_negation）。删冗余本来就是精简允许的，所以口播类注的是“说的意思变了” |
 | 豁免收据 | `scripts/machine_quality_waiver.py` | 汇总最终 QC 结果，按上面的 5% 规则决定这个语言是自动发布、只发文字还是暂停。先核对 QC 收据确实检查的是这份候选（每组译文哈希）和这份音频包（候选哈希、每句音频哈希），对不上就报错 |
-| 门禁收据 | `scripts/machine_quality_release_basis.py` | 生成并校验两种绑定到具体产物的收据：**译文豁免**（`sermon-target-language-machine-text-waiver-v1`，绑定一个 L2 候选；当前不放行含精简组的候选：完整译文的配音时间字幕路径尚未实现；已签发的旧精简收据也在消费门禁拒绝）和**试听豁免**（`sermon-target-language-machine-audio-waiver-v1`，绑定一个 L3 音频包、它的 ASR 筛查和口播稿的译文豁免） |
+| 门禁收据 | `scripts/machine_quality_release_basis.py` | 生成并校验两种绑定到具体产物的收据：**译文豁免**（`sermon-target-language-machine-text-waiver-v1`，绑定一个 L2 候选；当前不放行含精简组的候选：完整译文的配音时间字幕路径尚未实现；已签发的旧精简收据也在消费门禁拒绝）和**试听豁免**（`sermon-target-language-machine-audio-waiver-v2`，绑定一个 L3 音频包、它的 ASR 筛查和口播稿的译文豁免） |
 
 文本 QC 逐组记录 `englishSha256` 与 `sourceUnitIdsSha256`，签发豁免时按候选的 source-unit 顺序与冻结 anchor 中的英文核对。旧 QC 收据缺少这些字段时须重新检查，不能沿用。音频 QC 的 `thresholds` 必须等于当前标准 `THRESHOLDS`，放宽设置的结果不能授权试听豁免。
 
 发布 v4 中，试听豁免必须同时绑定口播文本豁免；仅口播文本使用豁免、音频仍为人工审核的组合继续有效。
+
+试听豁免 v2 从校准通过的 QC 行提取 `secondaryAsrModel`（`model` 与 `modelRevision`），并在使用二级 ASR 的单句结果中记录相同身份。`--secondary-asr-model` 仅是可选的一致性断言，不能替换 QC 身份。迁移时，未使用二级 ASR 的旧 v1 收据仍可验证；含二级 ASR 的 v1 收据必须用与当前实现、校准和产物匹配的 QC 重新签发为 v2，不能靠旧字符串补出修订身份。
 
 ## 校准门槛
 

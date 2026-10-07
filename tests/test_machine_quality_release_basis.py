@@ -391,15 +391,46 @@ class AudioWaiverTests(unittest.TestCase):
 
     def test_flagged_unit_needs_secondary_asr(self):
         package, screening, qc, text = audio_fixture(flagged=True)
-        with self.assertRaisesRegex(ValueError, "secondary ASR"):
-            self.build(package, screening, qc, text)
-        receipt = self.build(package, screening, qc, text, secondary_asr_model="gpt-transcribe")
+        with self.assertRaisesRegex(ValueError, "CLI label differs"):
+            self.build(package, screening, qc, text, secondary_asr_model="tiny-asr")
+        receipt = self.build(package, screening, qc, text)
+        self.assertEqual(receipt["secondaryAsrModel"], SECONDARY_ASR)
+        self.assertEqual(receipt["unitResults"][1]["secondaryAsrModel"], SECONDARY_ASR)
         self.assertEqual(receipt["unitResults"][1]["asr"], "secondary_pass")
         basis.validate_audio_waiver(package, receipt, screening)
         tampered = copy.deepcopy(receipt)
         tampered["unitResults"][1]["secondarySimilarity"] = 0.5
         with self.assertRaisesRegex(ValueError, "secondary ASR"):
             basis.validate_audio_waiver(package, tampered, screening)
+
+    def test_secondary_identity_keeps_the_calibrated_revision_and_checks_unit_binding(self):
+        package, screening, qc, text = audio_fixture(flagged=True)
+        identity = {"model": "gpt-transcribe", "modelRevision": "release-r2"}
+        qc["results"][1]["asrSecondaryModel"] = identity
+        cal = calibration(asrIdentity={"primary": PRIMARY_ASR, "secondary": identity})
+        receipt = basis.build_audio_waiver(package, screening, qc, text, cal,
+                                          track_check=track_check(package))
+        self.assertEqual(receipt["secondaryAsrModel"], identity)
+        basis.validate_audio_waiver(package, receipt, screening)
+        for key, value in (("model", "tiny-asr"), ("modelRevision", "release-r1")):
+            tampered = copy.deepcopy(receipt)
+            tampered["secondaryAsrModel"][key] = value
+            with self.assertRaisesRegex(ValueError, "identity differs"):
+                basis.validate_audio_waiver(package, tampered, screening)
+
+    def test_legacy_audio_waivers_are_supported_only_without_secondary_evidence(self):
+        for flagged in (False, True):
+            package, screening, qc, text = audio_fixture(flagged=flagged)
+            legacy = self.build(package, screening, qc, text)
+            legacy["schemaVersion"] = basis.LEGACY_AUDIO_WAIVER_SCHEMA
+            legacy["secondaryAsrModel"] = "gpt-transcribe" if flagged else None
+            for row in legacy["unitResults"]:
+                row.pop("secondaryAsrModel")
+            if flagged:
+                with self.assertRaisesRegex(ValueError, "Legacy flagged audio waiver needs reissuance"):
+                    basis.validate_audio_waiver(package, legacy, screening)
+            else:
+                stage.validate_audio_screening_review(package, legacy, screening)
 
     def test_waiver_refuses_subtitle_only_units_and_reviewed_packages(self):
         package, screening, qc, text = audio_fixture()

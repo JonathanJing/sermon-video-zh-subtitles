@@ -32,7 +32,8 @@ from scripts import machine_quality_waiver as waiver
 
 ROOT = Path(__file__).resolve().parents[1]
 TEXT_WAIVER_SCHEMA = "sermon-target-language-machine-text-waiver-v1"
-AUDIO_WAIVER_SCHEMA = "sermon-target-language-machine-audio-waiver-v1"
+AUDIO_WAIVER_SCHEMA = "sermon-target-language-machine-audio-waiver-v2"
+LEGACY_AUDIO_WAIVER_SCHEMA = "sermon-target-language-machine-audio-waiver-v1"
 CONDENSATION_BINDING_SCHEMA = "sermon-spoken-condensation-binding-v1"
 REVIEW_KIND = "machine_quality_waiver"
 LOCALES = ("zh-Hans", "ko", "es")
@@ -64,7 +65,7 @@ def is_text_waiver(receipt: dict) -> bool:
 
 
 def is_audio_waiver(receipt: dict) -> bool:
-    return isinstance(receipt, dict) and receipt.get("schemaVersion") == AUDIO_WAIVER_SCHEMA
+    return isinstance(receipt, dict) and receipt.get("schemaVersion") in (AUDIO_WAIVER_SCHEMA, LEGACY_AUDIO_WAIVER_SCHEMA)
 
 
 def disclosure(locale: str) -> dict:
@@ -352,6 +353,7 @@ def build_audio_waiver(package: dict, screening: dict, audio_qc: dict, text_waiv
     track = track_check_problems(package, track_check, implementation)
     _require(not track, "Assembled track is not verified: " + "; ".join(track))
     threshold = _asr_threshold()
+    secondary_identity = None
     rows = []
     for row, unit in zip(results, package["units"]):
         group_id = unit["textGroupId"]
@@ -365,12 +367,24 @@ def build_audio_waiver(package: dict, screening: dict, audio_qc: dict, text_waiv
                      "model": screening["model"], "modelRevision": screening.get("modelRevision")},
                  f"Audio QC primary ASR differs from the bound screening: {group_id}")
         if group_id in flagged:
-            _require(secondary_asr_model and isinstance(secondary, (int, float)) and secondary >= threshold,
+            identity = row.get("asrSecondaryModel")
+            _require(isinstance(identity, dict) and set(identity) == {"model", "modelRevision"}
+                     and isinstance(identity["model"], str) and bool(identity["model"])
+                     and (identity["modelRevision"] is None or
+                          isinstance(identity["modelRevision"], str) and bool(identity["modelRevision"])),
+                     f"Flagged unit needs its secondary ASR identity: {group_id}")
+            _require(secondary_asr_model is None or secondary_asr_model == identity["model"],
+                     "Secondary ASR CLI label differs from the QC runtime")
+            _require(secondary_identity is None or secondary_identity == identity,
+                     "Flagged units used different secondary ASR runtimes")
+            secondary_identity = dict(identity)
+            _require(isinstance(secondary, (int, float)) and secondary >= threshold,
                      f"Flagged unit needs a passing secondary ASR: {group_id}")
         rows.append({"textGroupId": group_id, "audioSha256": unit["audio"]["sha256"], "status": "pass",
                      "asr": "secondary_pass" if group_id in flagged else "primary_pass",
                      "primarySimilarity": primary,
                      "secondarySimilarity": secondary if group_id in flagged else None,
+                     "secondaryAsrModel": dict(secondary_identity) if group_id in flagged else None,
                      "failedAttempts": int(row.get("failedAttempts", 0))})
     receipt = {
         "schemaVersion": AUDIO_WAIVER_SCHEMA, "reviewKind": REVIEW_KIND, "humanApproval": False,
@@ -382,7 +396,7 @@ def build_audio_waiver(package: dict, screening: dict, audio_qc: dict, text_waiv
         "textWaiverJsonSha256": json_sha256(text_waiver),
         "machineScreeningStatus": package["machineScreening"]["status"],
         "machineScreeningReceiptJsonSha256": json_sha256(screening),
-        "secondaryAsrModel": secondary_asr_model if flagged else None,
+        "secondaryAsrModel": secondary_identity,
         "reviewedUnitIds": [row["textGroupId"] for row in package["units"]],
         "unitResults": rows, "audioQcJsonSha256": json_sha256(audio_qc),
         "trackCheckJsonSha256": json_sha256(track_check),
@@ -397,7 +411,9 @@ def build_audio_waiver(package: dict, screening: dict, audio_qc: dict, text_waiv
 
 def validate_audio_waiver(package: dict, receipt: dict, screening: dict | None) -> None:
     """Gate-time check that the waiver binds exactly this machine-screened package."""
-    _schema(receipt, AUDIO_WAIVER_SCHEMA)
+    version = receipt.get("schemaVersion")
+    _require(is_audio_waiver(receipt), "Unsupported audio waiver schema")
+    _schema(receipt, version)
     _require(screening is not None, "Audio waiver requires the bound full ASR screening receipt")
     _require(_machine_screened(package),
              "Audio waiver applies only to a machine-screened package with no human decision")
@@ -411,6 +427,10 @@ def validate_audio_waiver(package: dict, receipt: dict, screening: dict | None) 
     _require(all(receipt[key] == value for key, value in expected.items()),
              "Audio waiver does not bind this package, track and screening")
     flagged = set(screening_queue(package, screening))
+    _require(not flagged or version == AUDIO_WAIVER_SCHEMA,
+             "Legacy flagged audio waiver needs reissuance from bound QC with secondary ASR revision")
+    _require(bool(receipt["secondaryAsrModel"]) == bool(flagged),
+             "Secondary ASR identity differs from the screening queue")
     by_group = {row["textGroupId"]: row for row in screening["results"]}
     units = package["units"]
     threshold = _asr_threshold()
@@ -423,10 +443,13 @@ def validate_audio_waiver(package: dict, receipt: dict, screening: dict | None) 
                  and row["primarySimilarity"] == by_group[group_id]["similarity"],
                  f"Audio waiver unit differs from the package: {group_id}")
         if group_id in flagged:
+            _require(row.get("secondaryAsrModel") == receipt["secondaryAsrModel"],
+                     f"Secondary ASR identity differs from its QC-bound unit: {group_id}")
             _require(row["asr"] == "secondary_pass" and receipt["secondaryAsrModel"]
                      and row["secondarySimilarity"] is not None and row["secondarySimilarity"] >= threshold,
                      f"Flagged unit lacks a passing secondary ASR: {group_id}")
         else:
+            _require(row.get("secondaryAsrModel") is None, "Unflagged unit claims a secondary ASR identity")
             _require(row["asr"] == "primary_pass", f"Unflagged unit claims a secondary ASR: {group_id}")
     _validate_summary(receipt)
 
@@ -455,7 +478,7 @@ def main() -> None:
     audio = sub.add_parser("audio", help="Issue an audio waiver for one audio package")
     for name in ("package", "screening", "audio-qc", "track-check", "text-waiver", "calibration", "out"):
         audio.add_argument(f"--{name}", required=True, type=Path)
-    audio.add_argument("--secondary-asr-model")
+    audio.add_argument("--secondary-asr-model", help="Optional model-name assertion; runtime identity is derived from QC")
     args = parser.parse_args()
     if args.command == "text":
         receipt = build_text_waiver(_read(args.source), _read(args.anchor), _read(args.candidate),

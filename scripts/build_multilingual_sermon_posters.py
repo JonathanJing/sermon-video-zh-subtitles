@@ -35,14 +35,14 @@ COPY = {
 # A machine quality waiver is never a human review: name what each product went through.
 MACHINE_REVIEW_LABELS = {
     'zh-Hans': {('machine_checked', 'machine_checked'): '译文与配音经机器质检 · 未经人工审核',
-                ('human_reviewed', 'machine_checked'): '译文已审核 · 配音经机器质检',
-                ('machine_checked', 'human_reviewed'): '译文经机器质检 · 配音已审核'},
+                ('human_reviewed', 'machine_checked'): '译文已审核 · 配音经机器质检，未经人工审核',
+                ('machine_checked', 'human_reviewed'): '译文经机器质检，未经人工审核 · 配音已审核'},
     'ko': {('machine_checked', 'machine_checked'): '번역과 음성 기계 품질 검사 · 사람 검토 없음',
-           ('human_reviewed', 'machine_checked'): '번역 검토 완료 · 음성 기계 품질 검사',
-           ('machine_checked', 'human_reviewed'): '번역 기계 품질 검사 · 음성 검토 완료'},
+           ('human_reviewed', 'machine_checked'): '번역 검토 완료 · 음성 기계 품질 검사, 음성은 사람의 검토를 거치지 않음',
+           ('machine_checked', 'human_reviewed'): '번역 기계 품질 검사, 번역은 사람의 검토를 거치지 않음 · 음성 검토 완료'},
     'es': {('machine_checked', 'machine_checked'): 'Traducción y audio con control de calidad automático · Sin revisión humana',
-           ('human_reviewed', 'machine_checked'): 'Traducción revisada · Audio con control de calidad automático',
-           ('machine_checked', 'human_reviewed'): 'Traducción con control de calidad automático · Audio revisado'},
+           ('human_reviewed', 'machine_checked'): 'Traducción revisada · Audio con control de calidad automático, sin revisión humana del audio',
+           ('machine_checked', 'human_reviewed'): 'Traducción con control de calidad automático, sin revisión humana de la traducción · Audio revisado'},
 }
 CATALOGS = (('multilingual-v4.json', 'sermon-multilingual-catalog-v4'),
             ('multilingual-v3.json', 'sermon-multilingual-catalog-v3'))

@@ -5,6 +5,29 @@ from scripts.language_review_plugins import auto_qc_text_common as rules
 
 
 class TextReviewRegressions(unittest.TestCase):
+    def test_adjacent_spoken_numbers_remain_separate(self):
+        for english in ("two, three, four", "two three four", "two and three and four",
+                        "two; three; four", "two. Three. Four"):
+            with self.subTest(english=english):
+                self.assertEqual(rules.english_numbers(english), [2, 3, 4])
+                for locale, target in (("es", "dos, tres, cuatro"),
+                                       ("ko", "두 명, 세 명, 네 명"),
+                                       ("zh-Hans", "二、三、四")):
+                    with self.subTest(locale=locale):
+                        self.assertEqual(rules.number_problems(english, target, locale, set()), [])
+                        self.assertTrue(rules.number_problems(english, "9", locale, set()))
+        for english, expected in (
+            ("twenty-five", [25]), ("two hundred and thirty-four", [234]),
+            ("one thousand two hundred and five", [1205]),
+            ("two thousand and twenty-six", [2026]),
+            ("nineteen ninety-nine", [1999]), ("twenty twenty-four", [2024]),
+            ("twenty oh five", [2005]), ("2.5 and 1,234", ["2.5", 1234]),
+            ("twenty, five", [20, 5]), ("nineteen, ninety-nine", [19, 99]),
+            ("two hundred and five and six", [205, 6]),
+        ):
+            with self.subTest(english=english):
+                self.assertEqual(rules.english_numbers(english), expected)
+
     def test_chapter_only_book_identity_and_presence(self):
         for english in ("Turn to Revelation 3.", "Turn to Revelation three.",
                         "Turn to Revelation chapter three."):

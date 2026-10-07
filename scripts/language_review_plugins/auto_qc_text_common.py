@@ -72,8 +72,11 @@ def english_numbers(text: str) -> list[int | str]:
     A decimal written with digits ("2.5") is kept as its digit string so a
     changed decimal ("25") is still a missing number.
     """
-    tokens = re.findall(r"\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?|[a-z]+", text.casefold().replace("-", " "))
-    found: list[int] = []
+    # Keep punctuation as boundaries between spoken list items; hyphens still
+    # join compound cardinals and years ("twenty-five", "ninety-nine").
+    tokens = re.findall(r"\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?|[a-z]+|[^\w\s]",
+                        text.casefold().replace("-", " "))
+    found: list[int | str] = []
     index = 0
     while index < len(tokens):
         token = tokens[index]
@@ -94,24 +97,35 @@ def english_numbers(text: str) -> list[int | str]:
             index = end
             continue
         total, current, words = 0, 0, 0
+        previous = None
         while index < len(tokens):
             word = tokens[index]
             if word in _UNITS:
+                # A unit can complete a tens/scale expression, but another
+                # standalone unit starts a new number ("two three four").
+                if previous is not None and not (
+                        previous in _SCALES or previous == "and" or
+                        previous in _TENS and 1 <= _UNITS[word] <= 9):
+                    break
                 current += _UNITS[word]
             elif word in _TENS:
+                if previous is not None and previous not in _SCALES and previous != "and":
+                    break
                 current += _TENS[word]
             elif word == "hundred":
                 current = max(current, 1) * 100
             elif word == "thousand":
                 total += max(current, 1) * 1000
                 current = 0
-            elif word == "and" and words and index + 1 < len(tokens) and (
+            elif word == "and" and previous in _SCALES and index + 1 < len(tokens) and (
                     tokens[index + 1] in _UNITS or tokens[index + 1] in _TENS):
+                previous = word
                 index += 1
                 continue
             else:
                 break
             words += 1
+            previous = word
             index += 1
         value = total + current
         if not (words == 1 and value in _IDIOMATIC_ALONE):

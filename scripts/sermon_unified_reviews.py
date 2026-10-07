@@ -75,7 +75,7 @@ def validate_review(kind, receipt_path, *, inputs, expected_source=None, expecte
         package = read(inputs['package'])
         version = receipt.get('schemaVersion')
         delivery.require(version in {'sermon-target-language-audio-human-review-receipt-v' + str(n) for n in range(1, 5)}
-                         | {machine_basis.AUDIO_WAIVER_SCHEMA}, 'Unsupported audio review')
+                         | {machine_basis.AUDIO_WAIVER_SCHEMA, machine_basis.LEGACY_AUDIO_WAIVER_SCHEMA}, 'Unsupported audio review')
         schema(receipt, version + '.schema.json')
         schema(package, 'sermon-target-language-audio-package-v1.schema.json')
         if bound_source:
