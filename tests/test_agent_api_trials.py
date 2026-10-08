@@ -247,6 +247,20 @@ class RunTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, 'outcome unknown'):
             client.decide('a01', {'q': 1})
 
+    def test_failed_session_report_is_not_scored_or_refuted(self):
+        class Failing(trials.FakeAgentsClient):
+            def retrieve_session(self, session_id):
+                return {**super().retrieve_session(session_id), 'status': 'failed'}
+
+            def list_turns(self, session_id):
+                return [{**turn, 'status': 'failed'} for turn in super().list_turns(session_id)]
+        runner = trials.Trials(self.out, client=Failing(trials.fake_agent_script), model='m', backend='fake',
+                               poll_seconds=0, case_ids=['f01-plugin-identity'])
+        summary = runner.run('refute')
+        rows = json.loads((self.out / 'diagnose.json').read_text())['rows']
+        self.assertEqual([(r['status'], r['report'], r['score']['correct']) for r in rows], [('failed', None, False)] * 2)
+        self.assertEqual(summary['refute']['sessions'], 0)
+
     def test_unknown_session_outcome_stops_the_trial(self):
         class Stuck(trials.FakeAgentsClient):
             def list_turns(self, session_id):

@@ -560,7 +560,10 @@ def run_session(client, session_dir, payload, tools, *, max_seconds, max_tool_ca
         tools.calls = [json.loads(line) for line in calls_path.read_text(encoding='utf-8').splitlines() if line]
     return {'sessionId': result.get('session_id'), 'status': result.get('status'),
             'toolCalls': result.get('tool_calls'), 'usage': _usage(result),
-            'elapsedSeconds': elapsed, 'report': report}
+            'elapsedSeconds': elapsed,
+            # Only a completed session's report is scored or refuted; a failed one is kept for inspection.
+            'report': report if status == 'completed' else None,
+            'uncompletedReport': report if status != 'completed' else None}
 
 
 def _close_interrupted_attempts(meta, session_dir):
