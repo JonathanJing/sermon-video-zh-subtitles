@@ -136,7 +136,10 @@
     "controllerPath": {
       "status": "proposal_not_authorization",
       "basis": "Groups as the controller plans them (one per anchor translation request). Each call is reserved at its payload's input upper bound plus maxCompletionTokens and the reservation is never returned (sermon_review_budget._charge), so the global bound must cover every call's reservation; the worst case uses maxInputTokens=16384. Frozen price assumption strict-chat-worst-case-2026-10-05-v2, invoiceVerified=false. Per locale.",
-      "budgetLedgerCallLimit": 154,
+      "budgetLedgerCallLimit": {
+        "runScopeV1": 154,
+        "localeScopeV2": "about 4,900 (8 MiB ledger per locale)"
+      },
       "budgetLedgerCallLimitEvidence": "One BudgetStore root keeps every reservation in a single state.json capped at 256 KiB (sermon_review_contracts.MAX_BYTES); measured on 2026-10-08 the 155th reservation fails with budget_ledger_size_limit.",
       "sample605": {
         "groups": 136,
@@ -148,7 +151,8 @@
         "worstReservedOutputTokens": 1228800,
         "worstReservedTokens": 6144000,
         "worstCaseUsd": 24.58,
-        "fitsOneBudgetLedger": false
+        "fitsOneBudgetLedger": true,
+        "fitsWithLocaleLedger": true
       },
       "fullSermon20260927": {
         "groups": 420,
@@ -160,10 +164,11 @@
         "worstReservedOutputTokens": 3784704,
         "worstReservedTokens": 18923520,
         "worstCaseUsd": 75.69,
-        "fitsOneBudgetLedger": false,
+        "fitsOneBudgetLedger": true,
         "sourceUnits": 420,
         "durationSeconds": 1891.677333,
-        "groupsAssumed": "one group per source unit, as the 605 anchor plans; unverified until the full anchor is supplied"
+        "groupsAssumed": "one group per source unit, as the 605 anchor plans; unverified until the full anchor is supplied",
+        "fitsWithLocaleLedger": true
       },
       "fullSermon20261004": {
         "groups": 474,
@@ -175,14 +180,30 @@
         "worstReservedOutputTokens": 4272128,
         "worstReservedTokens": 21360640,
         "worstCaseUsd": 85.44,
-        "fitsOneBudgetLedger": false,
+        "fitsOneBudgetLedger": true,
         "sourceUnits": 474,
         "durationSeconds": 1942.123,
-        "groupsAssumed": "474 groups, matching the 10-04 formal run (948 role results per locale)"
+        "groupsAssumed": "474 groups, matching the 10-04 formal run (948 role results per locale)",
+        "fitsWithLocaleLedger": true
       },
       "observedTokensPerCall": {
         "value": 2485,
         "evidence": "10-04 full production: 1,730 calls / 4,298,792 tokens (docs/reports/20261004-full-production-retrospective.zh.md)"
+      },
+      "authorizationSchema": "sermon-canonical-layer2-budget-authorization-v2",
+      "ledgerScope": "locale",
+      "timeEstimate": {
+        "status": "estimate_not_measured",
+        "formula": "wall time per locale ~ groups x (translator + reviewer latency) / groupWorkers; locales run in parallel up to maxActiveLocales; all share 24 in-flight API slots",
+        "recommended": {
+          "groupWorkers": 8,
+          "maxActiveLocales": 3,
+          "inFlightApiCalls": 24
+        },
+        "fullSermon20260927AssumingThirtySecondsPerGroup": {
+          "serialOneWorkerOneLocaleAtATimeHours": 10.5,
+          "eightWorkersThreeLocalesMinutes": 27
+        }
       }
     }
   },
@@ -195,7 +216,6 @@
     "operatorEvidence": null
   },
   "blockers": [
-    "Budget ledger capacity: one canonical budget root holds at most 154 reservations, so neither the 605 sample through the controller (300 calls) nor a full sermon (924 or 1,043 calls per locale) can run until the ledger is sharded or compacted.",
     "No artifact-bound live budget authorization and approval receipt supplied; the proposal above is a number to approve or change, not an authorization.",
     "Source package has pending sermon-window and human source review (status=blocked); the controller's source gate refuses it before any call.",
     "Direct quotation units 0-u067 and 0-u068 require real adjudication; historical fixtures carry no human receipt. Design also requires the 0-u076 source adjudication before the 605 rerun.",
@@ -205,8 +225,7 @@
   "execution": {
     "template": "execution-v3.template.json",
     "schemaVersion": "sermon-canonical-layer2-execution-v3",
-    "groupWorkers": 1,
-    "note": "v3 runs the PR295 repair loop inside the canonical controller job with one group worker and one active locale; the historical 23-worker concurrency profile is not used. All three historical policies already freeze batching.workers=1."
+    "note": "v3 runs the PR295 repair loop inside the canonical controller job. layer2AutoRepair binds routingVersion, groupWorkers (1-16 concurrent groups per locale) and maxActiveLocales (1-3). Recommended: 8 and 3, which fill the 24 shared API slots."
   },
   "missingFromUpload": [
     "Per-locale generated diagnostic plugin modules (historicalLocalFixture/*.py with DIAGNOSTIC_PINNED_QUOTES = True) and their pinned quote bindings; the policies pin their hashes, and the controller refuses to dispatch without the exact files.",
@@ -214,6 +233,7 @@
   ],
   "resolved": [
     "PR295 now has a controller-native repair path: execution config v3 runs the loop inside one durable job under the bound budget transport (no injected run_round needed for a live run).",
-    "Group workers: v3 requires batching.workers=1, which the three historical policies already freeze; the 23 workers came from the v2 concurrency profile, which v3 does not accept."
+    "Budget ledger capacity: authorization v2 (ledgerScope=locale) gives each locale its own ledger, widened to 8 MiB (about 4,900 reservations); a full sermon is 924-1,043 calls per locale.",
+    "Speed: failure-collection rounds no longer force one group worker (they write no plugin stop receipt); execution config v3 sets groupWorkers (1-16) and maxActiveLocales (1-3)."
   ]
 }

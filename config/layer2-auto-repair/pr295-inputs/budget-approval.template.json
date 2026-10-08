@@ -9,7 +9,7 @@
     "productionRunId": "<64-hex run id from the execution config>",
     "configurationSha256": "<Configuration.sha256 printed by canonical_layer2_controller tick>",
     "codeIdentitySha256": "<codeIdentitySha256 printed by the same tick>",
-    "budgetRoot": "<absolute path: <jobRoot parent>/.<jobRoot name>.layer2-budget>",
+    "budgetRoot": "<absolute run budget root: <jobRoot parent>/.<jobRoot name>.layer2-budget; each locale ledger lives in <budgetRoot>/<locale>>",
     "requestLimits": {
       "schemaVersion": "sermon-openai-chat-request-limits-v1",
       "maxInputTokens": 16384,
@@ -35,7 +35,8 @@
       "contentRevisions": 2,
       "reviewAttemptsPerRevision": 2,
       "decisionProposals": 1
-    }
+    },
+    "ledgerScope": "locale"
   },
-  "templateNote": "Filled with the 2026-09-27 full-sermon controller numbers (924 calls, one locale, worst case 75.69 USD). Not usable until one budget root can hold more than 154 reservations; remove this field when filling in."
+  "templateNote": "Per-locale amounts for the 2026-09-27 full sermon (924 calls per locale, worst case 75.69 USD per locale). Pair it with a budget authorization of schema sermon-canonical-layer2-budget-authorization-v2 and ledgerScope=locale; the run can spend these bounds once per registered locale. Remove this field when filling in."
 }

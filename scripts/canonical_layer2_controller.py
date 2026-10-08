@@ -38,10 +38,23 @@ from scripts.sermon_release_workflow import _safe_path
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA = 'sermon-canonical-layer2-execution-v1'
 CONCURRENT_SCHEMA = 'sermon-canonical-layer2-execution-v2'
-# v3 = v1 plus the bounded auto-repair loop. It keeps one group worker and one
-# active locale, so it does not accept the v2 concurrency profile.
+# v3 = v1 plus the bounded auto-repair loop and its own explicit capacity:
+# groupWorkers concurrent groups per locale job (collection mode never writes a
+# plugin stop receipt, so groups need not be serialized) and maxActiveLocales
+# locale jobs at once. It does not accept the v2 Codex CLI concurrency profile;
+# API requests still share the job root's 24 in-flight slots.
 AUTO_REPAIR_SCHEMA = 'sermon-canonical-layer2-execution-v3'
-AUTO_REPAIR_BINDING = {'routingVersion': auto_repair.ROUTING_VERSION}
+MAX_AUTO_REPAIR_LOCALES = 3
+
+
+def _auto_repair_binding(value):
+    require(isinstance(value, dict) and set(value) == {'routingVersion', 'groupWorkers', 'maxActiveLocales'}
+            and value['routingVersion'] == auto_repair.ROUTING_VERSION
+            and type(value['groupWorkers']) is int
+            and 1 <= value['groupWorkers'] <= api_concurrency.MAX_GROUP_WORKERS_PER_LOCALE
+            and type(value['maxActiveLocales']) is int
+            and 1 <= value['maxActiveLocales'] <= MAX_AUTO_REPAIR_LOCALES, 'invalid_execution_configuration')
+    return dict(value)
 MODES = ('deterministic_shadow', 'deterministic_execute')
 ADMISSION_LOCK = jobs._digest({'purpose': 'canonical-layer2-admission-v1'})
 MAX_CONFIG_BYTES = 1024 * 1024
@@ -84,7 +97,7 @@ class Configuration:
     sha256: str
     concurrency_profile: dict | None = None
     resource_policy: dict | None = None
-    auto_repair: bool = False
+    auto_repair: dict | None = None
 
 
 def load_configuration(path):
@@ -95,11 +108,12 @@ def load_configuration(path):
              or (set(value) == required_keys | {'concurrencyProfile', 'resourcePolicy'}
                  and value['schemaVersion'] == CONCURRENT_SCHEMA)
              or (set(value) == required_keys | {'layer2AutoRepair'}
-                 and value['schemaVersion'] == AUTO_REPAIR_SCHEMA
-                 and value['layer2AutoRepair'] == AUTO_REPAIR_BINDING))
+                 and value['schemaVersion'] == AUTO_REPAIR_SCHEMA))
             and pipeline._sha(value['productionRunId'])
             and isinstance(value['locales'], dict) and bool(value['locales'])
             and set(value['locales']) <= set(pipeline.LOCALES), 'invalid_execution_configuration')
+    repair_binding = (_auto_repair_binding(value['layer2AutoRepair'])
+                      if value['schemaVersion'] == AUTO_REPAIR_SCHEMA else None)
     inspection_path = _path(path.parent, value['inspectionConfig'])
     inspection = _json(inspection_path)
     require(inspection.get('schemaVersion') == packages.SCHEMA
@@ -144,7 +158,7 @@ def load_configuration(path):
         binding.update(concurrencyProfile=concurrency_profile, resourcePolicy=resource_policy)
     sha = jobs._digest(binding)
     return Configuration(path, root, inspection, job_root, value['productionRunId'], lanes, sha,
-                         concurrency_profile, resource_policy, 'layer2AutoRepair' in value)
+                         concurrency_profile, resource_policy, repair_binding)
 
 
 def repair_ledger_root(config):
@@ -207,12 +221,18 @@ def _inputs(config, locale, view):
     require(policy['batching']['batchSize'] == 1 and type(policy['batching']['workers']) is int
             and 1 <= policy['batching']['workers'] <= api_concurrency.MAX_GROUP_WORKERS_PER_LOCALE,
             'invalid_production_worker_budget')
-    require(not config.auto_repair or policy['batching']['workers'] == 1,
-            'auto_repair_requires_one_group_worker')
     request = producer.prepare_request(values['source'], values['anchor'], policy)
     plan = models.group_plan(request, values['anchor'])
     rule_preflight.preflight(request, policy, lane['plugin'], plan)
     return values['source'], values['anchor'], policy
+
+
+def _locale_capacity(config):
+    if config.concurrency_profile:
+        return config.concurrency_profile['maxActiveLocales']
+    if config.auto_repair:
+        return config.auto_repair['maxActiveLocales']
+    return MAX_ACTIVE_LAYER2_JOBS
 
 
 def _worker_command(config, locale, job_id, code_sha, budget_authorization=None):
@@ -239,8 +259,7 @@ class Controller:
                 'mode': self.mode, 'scope': 'four_layer_release_layer2_preparation',
                 'productionRunId': self.config.run_id, 'configurationSha256': self.config.sha256,
                 'codeIdentitySha256': self.code_sha, 'status': status, 'reasonCode': reason,
-                'maxConcurrentLocaleJobs': (self.config.concurrency_profile['maxActiveLocales']
-                                           if self.config.concurrency_profile else MAX_ACTIVE_LAYER2_JOBS),
+                'maxConcurrentLocaleJobs': _locale_capacity(self.config),
                 'maxInFlightApiCalls': api_concurrency.MAX_IN_FLIGHT_API_CALLS,
                 'runtimeCodexTurns': 0, 'contentAcceptance': 'not_evaluated',
                 'deviceAcceptance': 'not_run', **fields}
@@ -260,8 +279,7 @@ class Controller:
                   if row['workUnitId'].startswith('text.') and row['status'] in jobs.ACTIVE | {'uncertain'}]
         if any(row['status'] == 'uncertain' for row in active):
             return True  # preserve the existing run-wide unknown reconciliation barrier
-        limit = self.config.concurrency_profile['maxActiveLocales'] if self.config.concurrency_profile else MAX_ACTIVE_LAYER2_JOBS
-        return len(active) >= limit
+        return len(active) >= _locale_capacity(self.config)
 
     def _choose(self, view, requested_locale=None):
         if self._capacity_full(view):
@@ -441,7 +459,8 @@ def _run_auto_repair(config, lane, source, anchor, policy, api_key, call, progre
                                     progress_callback=progress, predecessor_spans=[admission_span],
                                     completion_spans=completion_spans, failure_collector=collector)
 
-    receipt = auto_repair.drive(request, total_groups, run_round, rounds_root, repair_ledger_root(config))
+    receipt = auto_repair.drive(request, total_groups, run_round, rounds_root, repair_ledger_root(config),
+                                group_workers=config.auto_repair['groupWorkers'])
     require(receipt['status'] == 'all_groups_passed', 'layer2_auto_repair_stopped')
     final = Path(receipt['finalRunDirectory'])
     require(_overlap(rounds_root.resolve(), final.resolve()) and final.resolve() != rounds_root.resolve(),

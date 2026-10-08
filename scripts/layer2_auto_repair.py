@@ -141,13 +141,15 @@ class FailureCollector:
     """Runner hook: record failed groups and stop dispatch on a systemic failure."""
 
     def __init__(self, total_groups: int, counted_group_ids=None, known_fingerprints=None,
-                 lineage_value: dict | None = None):
+                 lineage_value: dict | None = None, group_workers: int = 1):
         """The systemic judgement counts only new evidence: ``counted_group_ids``
         limits it to groups dispatched this round (a repair round reuses the other
         failures unchanged), and a failure whose fingerprint is already in
         ``known_fingerprints`` repeats an earlier round instead of adding to a
         batch-wide rule failure."""
         _require(type(total_groups) is int and total_groups > 0, "Failure collection needs the group count")
+        _require(type(group_workers) is int and 1 <= group_workers <= 16, "Group workers must be 1..16")
+        self.group_workers = group_workers
         self.total_groups = total_groups
         self.threshold = systemic_threshold(total_groups)
         self.counted = None if counted_group_ids is None else frozenset(counted_group_ids)
@@ -156,7 +158,7 @@ class FailureCollector:
         _require(not self.known or lineage_value is not None, "Known fingerprints need the lineage")
         self.identity = {"routingVersion": ROUTING_VERSION, "systemicThreshold": self.threshold,
                          "countedGroupIds": None if self.counted is None else sorted(self.counted),
-                         "knownFingerprints": sorted(self.known)}
+                         "knownFingerprints": sorted(self.known), "groupWorkers": group_workers}
         self.failures: list[dict] = []
         self.not_dispatched: list[dict] = []
         self.systemic: dict | None = None
@@ -422,7 +424,7 @@ RoundRunner = Callable[[Path, Path | None, dict | None, FailureCollector], dict]
 
 
 def drive(request: dict, total_groups: int, run_round: RoundRunner, out_root: Path,
-          ledger_root: Path) -> dict:
+          ledger_root: Path, *, group_workers: int = 1) -> dict:
     """Run rounds until every group passes or repair stops; write and return a receipt.
 
     ``run_round(out, reuse_from, brief, collector)`` returns evidence when every
@@ -447,7 +449,7 @@ def drive(request: dict, total_groups: int, run_round: RoundRunner, out_root: Pa
         collector = FailureCollector(
             total_groups, [row["translationGroupId"] for row in brief["groups"]] if brief else None,
             {item for entry in entries for row in entry["groups"] for item in [row["fingerprint"]] if item},
-            value)
+            value, group_workers)
         try:
             evidence = run_round(out, reuse_from, brief, collector)
             report = None

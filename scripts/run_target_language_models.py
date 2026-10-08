@@ -943,13 +943,18 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             else:
                 save_new(effective_path, effective)
         requested_workers = workers
-        # A plugin stop receipt promises no later dispatch. Serialize the full
-        # translate/review/plugin chain so that promise reflects actual work.
-        if plugin_path is not None and not simulation_only:
+        if failure_collector is not None:
+            # Collection never writes a plugin stop receipt: a plugin rejection is
+            # recorded and the round goes on, so groups may run concurrently. A
+            # systemic stop only prevents later dispatch; groups in flight finish.
+            workers = failure_collector.group_workers
+            require(type(workers) is int and 1 <= workers <= 16,
+                    "Failure collection group workers must be 1..16")
+            maximum_workers = 16
+        elif plugin_path is not None and not simulation_only:
+            # A plugin stop receipt promises no later dispatch. Serialize the full
+            # translate/review/plugin chain so that promise reflects actual work.
             workers = 1
-        # Failure collection reports which groups were not dispatched; only a
-        # serial loop makes that report deterministic and resumable.
-        require(failure_collector is None or workers == 1, "Failure collection requires one group worker")
         accounting.record_workload("layer2.concurrency", {
             "requestedWorkers": requested_workers,
             "workers": workers, "maxInFlightGroups": workers,

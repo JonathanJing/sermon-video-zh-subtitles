@@ -8,6 +8,7 @@ from scripts import layer2_auto_repair as auto_repair
 from scripts import sermon_workflow_jobs as jobs
 from tests import test_canonical_layer2_controller as controller_tests
 
+BINDING = {"routingVersion": auto_repair.ROUTING_VERSION, "groupWorkers": 2, "maxActiveLocales": 3}
 API_IDENTITY = {"schemaVersion": "openai-layer2-budget-transport-identity-v1", "backend": "openai_api",
                 "route": "dev", "budgetAuthorizationSha256": "b" * 64}
 
@@ -19,7 +20,7 @@ class ControllerAutoRepairTests(unittest.TestCase):
         self.base.setUp()
         self.addCleanup(self.base.doCleanups)
         self.base.config_data["schemaVersion"] = subject.AUTO_REPAIR_SCHEMA
-        self.base.config_data["layer2AutoRepair"] = dict(subject.AUTO_REPAIR_BINDING)
+        self.base.config_data["layer2AutoRepair"] = dict(BINDING)
         self.base.save_config()
         self.calls = []
         self.fail_first_review = set()
@@ -54,17 +55,41 @@ class ControllerAutoRepairTests(unittest.TestCase):
         request = subject.producer.prepare_request(source, anchor, policy)
         return [row["translationGroupId"] for row in subject.models.group_plan(request, anchor)]
 
-    def test_configuration_binds_the_routing_version(self):
-        self.assertTrue(subject.load_configuration(self.base.path).auto_repair)
-        self.base.config_data["layer2AutoRepair"] = {"routingVersion": "other"}
-        self.base.save_config()
-        with self.assertRaisesRegex(ValueError, "invalid_execution_configuration"):
-            subject.load_configuration(self.base.path)
+    def test_configuration_binds_routing_workers_and_locale_capacity(self):
+        config = subject.load_configuration(self.base.path)
+        self.assertEqual(config.auto_repair, BINDING)
+        self.assertEqual(subject._locale_capacity(config), 3)
+        for bad in ({**BINDING, "routingVersion": "other"}, {**BINDING, "groupWorkers": 17},
+                    {**BINDING, "groupWorkers": 0}, {**BINDING, "maxActiveLocales": 4},
+                    {"routingVersion": auto_repair.ROUTING_VERSION}):
+            self.base.config_data["layer2AutoRepair"] = bad
+            self.base.save_config()
+            with self.assertRaisesRegex(ValueError, "invalid_execution_configuration"):
+                subject.load_configuration(self.base.path)
         self.base.config_data["schemaVersion"] = subject.SCHEMA
-        self.base.config_data["layer2AutoRepair"] = dict(subject.AUTO_REPAIR_BINDING)
+        self.base.config_data["layer2AutoRepair"] = dict(BINDING)
         self.base.save_config()
         with self.assertRaisesRegex(ValueError, "invalid_execution_configuration"):
             subject.load_configuration(self.base.path)
+
+    def test_groups_run_concurrently_in_the_worker(self):
+        import threading
+        import time
+        active, peak, lock = [0], [0], threading.Lock()
+
+        def slow(key, payload):
+            with lock:
+                active[0] += 1
+                peak[0] = max(peak[0], active[0])
+            time.sleep(0.05)
+            try:
+                return self.caller(key, payload)
+            finally:
+                with lock:
+                    active[0] -= 1
+        result, _ = self.run_worker(slow)
+        self.assertEqual(result["status"], "machine_review_pass_human_review_pending")
+        self.assertEqual(peak[0], 2)
 
     def test_failed_group_is_repaired_inside_the_job_under_the_api_transport(self):
         failed = self.group_ids()[1]

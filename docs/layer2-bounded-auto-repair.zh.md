@@ -169,7 +169,7 @@ runner 新增"收集失败"模式：门 1 或门 2 不通过时保存证据、�
 已实现（`scripts/layer2_auto_repair.py`、`scripts/run_target_language_models.py`，测试 `tests/test_layer2_auto_repair.py`）：
 
 - runner 的 `failure_collector` 参数：Sol 和插件不通过时记录失败、继续其他组；同一失败码达到阈值时停止派发后续组；结束时写 `group-failures.json`（`sermon-layer2-group-failures-v1`），不写证据，也不写 `plugin-group-stop.json`。不传这个参数时行为不变，运行身份也不变。
-- controller 正式执行路径（`scripts/canonical_layer2_controller.py`，测试 `tests/test_canonical_layer2_auto_repair.py`）：执行配置 `sermon-canonical-layer2-execution-v3` 在 v1 字段上增加 `layer2AutoRepair: {"routingVersion": "layer2-auto-repair-routing-v1"}`，不接受 v2 并发 profile，要求 policy `batching.workers=1`。worker 在同一个持久 job、同一份预算授权和租约内跑整个循环，每轮输出在 lane 的 `repair-rounds/round-NNN/`，账本固定在 jobRoot 旁的 `.<jobRoot 名>.layer2-repair`。每次调用由预算 transport 按最坏情况（输入上界加 `max_completion_tokens`）原子预留，10% 修复上限在它之下。runner 只在修复轮、且 transport 后端为 `openai_api` 时允许复用上一轮缓存；缓存指纹含 transport 身份，跨身份的缓存仍被拒绝。全部通过后用最后一轮的证据做插件和候选准入；循环停下时写停止收据、job 失败、不产生候选，不自动重试。
+- controller 正式执行路径（`scripts/canonical_layer2_controller.py`，测试 `tests/test_canonical_layer2_auto_repair.py`）：执行配置 `sermon-canonical-layer2-execution-v3` 在 v1 字段上增加 `layer2AutoRepair: {"routingVersion": "layer2-auto-repair-routing-v1", "groupWorkers": 1–16, "maxActiveLocales": 1–3}`，不接受 v2 的 Codex CLI 并发 profile。收集失败模式不写插件停止收据，所以不再强制单组串行，按 `groupWorkers` 并发；系统性停止只阻止之后的派发，已在途的组跑完。所有语言共用 job root 的 24 个在途 API 槽。worker 在同一个持久 job、同一份预算授权和租约内跑整个循环，每轮输出在 lane 的 `repair-rounds/round-NNN/`，账本固定在 jobRoot 旁的 `.<jobRoot 名>.layer2-repair`。每次调用由预算 transport 按最坏情况（输入上界加 `max_completion_tokens`）原子预留，10% 修复上限在它之下。整篇证道用预算授权 v2（`ledgerScope: "locale"`）：每个语言一份账本，容量 8 MiB（约 4,900 次预留），上限按语言计；v1 的单一账本只放得下 154 次。runner 只在修复轮、且 transport 后端为 `openai_api` 时允许复用上一轮缓存；缓存指纹含 transport 身份，跨身份的缓存仍被拒绝。全部通过后用最后一轮的证据做插件和候选准入；循环停下时写停止收据、job 失败、不产生候选，不自动重试。
 - 修复循环 `drive`：分类（路由表 `layer2-auto-repair-routing-v1`，含回译 QC 问题类型的映射）、系统性判断、指纹重现、耐心、调用上限（派发前）、生成 `partial_repair_brief`、按轮记账、写机器收据（`sermon-layer2-auto-repair-receipt-v1`，记录账本根目录和链头哈希，`humanApproval: false`）。未知结果和执行错误原样抛出，不记账，不重发。
 
 尚未实现，按顺序：
@@ -182,4 +182,4 @@ runner 新增"收集失败"模式：门 1 或门 2 不通过时保存证据、�
 
 ## PR #295 的可共享运行输入
 
-三语言历史 source/anchor/policy、文件哈希、预算及批准缺项见 [四项输入清单](../config/layer2-auto-repair/pr295-inputs/README.md)。这是可供云端检查的诊断输入快照；预算未授权、真实批准收据未提供，不能据此派发付费运行。清单里有按 controller 实际分组算的 605 样本和整篇证道预算（9/27 整篇每语言 924 次调用、最坏 75.69 美元）、待人工填写的批准收据模板和 v3 执行配置模板，以及仍需人或本机补的项。放大到整篇前还要先解决预算账本容量：一个预算根的账本上限 256 KiB，实测最多 154 次预留，605 样本走 controller 也放不下。
+三语言历史 source/anchor/policy、文件哈希、预算及批准缺项见 [四项输入清单](../config/layer2-auto-repair/pr295-inputs/README.md)。这是可供云端检查的诊断输入快照；预算未授权、真实批准收据未提供，不能据此派发付费运行。清单里有按 controller 实际分组算的 605 样本和整篇证道预算（9/27 整篇每语言 924 次调用、最坏 75.69 美元）、待人工填写的批准收据模板和 v3 执行配置模板，以及仍需人或本机补的项。整篇证道走 controller 时用按语言分片的预算账本，并按组并发、三语并行，时间估算见清单。

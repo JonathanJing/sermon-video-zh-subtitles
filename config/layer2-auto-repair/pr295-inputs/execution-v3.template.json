@@ -4,9 +4,19 @@
   "inspectionConfig": "inspection.json",
   "jobRoot": "production-run/jobs",
   "layer2AutoRepair": {
-    "routingVersion": "layer2-auto-repair-routing-v1"
+    "routingVersion": "layer2-auto-repair-routing-v1",
+    "groupWorkers": 8,
+    "maxActiveLocales": 3
   },
   "locales": {
+    "es": {
+      "outputDirectory": "production-run/text/es",
+      "plugin": "<generated es diagnostic plugin module>"
+    },
+    "ko": {
+      "outputDirectory": "production-run/text/ko",
+      "plugin": "<generated ko diagnostic plugin module>"
+    },
     "zh-Hans": {
       "outputDirectory": "production-run/text/zh-Hans",
       "plugin": "<generated zh-Hans diagnostic plugin module>"

@@ -276,6 +276,33 @@ class RunnerCollectionTests(unittest.TestCase):
         self.assertFalse((self.out / "evidence.json").exists())
         self.assertFalse((self.out / "plugin-group-stop.json").exists())
 
+    def test_collection_runs_groups_concurrently_with_a_plugin(self):
+        import threading
+        import time
+        f = self.fixture
+        self.failed_id = runner.group_plan(f.request, f.anchor)[0]["translationGroupId"]
+        active, peak, lock = [0], [0], threading.Lock()
+
+        def slow(api_key, payload):
+            with lock:
+                active[0] += 1
+                peak[0] = max(peak[0], active[0])
+            time.sleep(0.05)
+            try:
+                return self._quote_fail(api_key, payload)
+            finally:
+                with lock:
+                    active[0] -= 1
+        collector = subject.FailureCollector(2, group_workers=2)
+        with self.assertRaises(subject.GroupFailuresCollected) as raised:
+            self.production_run(f.source, f.anchor, f.policy, self.out, "fixture-key", slow,
+                                failure_collector=collector)
+        self.assertEqual(peak[0], 2)
+        self.assertEqual([row["translationGroupId"] for row in raised.exception.report["failures"]],
+                         [self.failed_id])
+        with self.assertRaisesRegex(ValueError, "Group workers must be 1..16"):
+            subject.FailureCollector(2, group_workers=17)
+
     def test_default_mode_still_stops_at_the_first_failure(self):
         f = self.fixture
         self.failed_id = runner.group_plan(f.request, f.anchor)[0]["translationGroupId"]

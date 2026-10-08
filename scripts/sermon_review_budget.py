@@ -117,7 +117,14 @@ def _sum(rows):
 
 
 class BudgetStore:
-    def __init__(self, root, authority):
+    def __init__(self, root, authority, *, max_ledger_bytes=None):
+        """``max_ledger_bytes`` widens the single-file ledger for a caller whose
+        store holds many reservations (the per-locale canonical Layer 2 shard);
+        every other store keeps the shared snapshot limit."""
+        from scripts.sermon_review_contracts import MAX_BYTES
+        require(max_ledger_bytes is None or (type(max_ledger_bytes) is int and MAX_BYTES <= max_ledger_bytes
+                                             <= 64 * 1024 * 1024), 'invalid_budget_ledger_limit')
+        self.max_ledger_bytes = MAX_BYTES if max_ledger_bytes is None else max_ledger_bytes
         self.root = Path(root).resolve()
         self.authority = _authority(authority)
         self.authority_sha256 = canonical_sha256(self.authority)
@@ -140,7 +147,7 @@ class BudgetStore:
                           'storeSha256': self.store_sha256, 'reservations': {}}
                 jobs._persist(folder / 'state.json', ledger)
             # An existing folder with missing/corrupt state is never reset.
-            ledger, _ = read_snapshot(folder / 'state.json')
+            ledger, _ = read_snapshot(folder / 'state.json', max_bytes=self.max_ledger_bytes)
             _exact(ledger, ('schemaVersion', 'authority', 'storeSha256', 'reservations'),
                    'invalid_budget_ledger')
             require(ledger['schemaVersion'] == SCHEMA and ledger['authority'] == self.authority
@@ -167,12 +174,10 @@ class BudgetStore:
         return canonical_sha256({'chainId': canonical_sha256(request['identity']),
                                  'operationId': request['operationId']})
 
-    @staticmethod
-    def _check_serialized_size(ledger):
-        from scripts.sermon_review_contracts import MAX_BYTES
+    def _check_serialized_size(self, ledger):
         # Match the bytes jobs._persist writes, not the smaller canonical JSON.
         require(len((json.dumps(ledger, ensure_ascii=False, indent=2, allow_nan=False) + '\n').encode())
-                <= MAX_BYTES, 'budget_ledger_size_limit')
+                <= self.max_ledger_bytes, 'budget_ledger_size_limit')
 
     def _check_settlement_capacity(self, ledger):
         # Every pending or unknown reservation can still acquire a known result.
