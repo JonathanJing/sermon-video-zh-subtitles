@@ -233,6 +233,32 @@ class ContinuationTests(unittest.TestCase):
         self.assertEqual(c.digest(draft['value']),draft['jsonSha256'])
         self.assertFalse(Path(draft['path']).exists())
 
+    def test_locale_scoped_layer2_budget_ingestion_and_invalid_scope(self):
+        from tests import test_canonical_layer2_budget_shards as budget_fixture
+        f = budget_fixture.LocaleLedgerTests('test_locale_authorization_shards_the_ledger_by_locale')
+        f.setUp(); self.addCleanup(f.doCleanups)
+        authorization = f.write_locale_authorization()
+        self.manifest['productionRunId'] = f.base.config.run_id
+        self.recipe['productionRunId'] = f.base.config.run_id
+        self.recipe['stages'][0]['requiredEvidence'] = [
+            {'kind': 'budget_authorization', 'binding': 'localeBudget'}]
+        self.bind_recipe()
+        before = copy.deepcopy(self.state)
+        with patch.object(subject.adapters, 'execute', side_effect=AssertionError('dispatch forbidden')):
+            admitted = subject.validate_evidence(
+                self.state, self.recipe_path, self.root, 'localeBudget', authorization)
+        self.assertEqual(admitted['sha256'], c.file_sha(authorization))
+        self.assertEqual(admitted['kind'], 'budget_authorization')
+        self.assertEqual(self.state, before)
+        self.assertFalse(self.root.exists())
+        value = c.read(authorization)
+        value['ledgerScope'] = 'run'
+        authorization.write_text(json.dumps(value))
+        with self.assertRaisesRegex(ValueError, 'continuation_budget_schema_invalid'):
+            subject.validate_evidence(
+                self.state, self.recipe_path, self.root, 'localeBudget', authorization)
+        self.assertEqual(self.state, before)
+
     def test_generated_bytes_cannot_be_overwritten_after_restart(self):
         self.complete_source()
         prepared=subject.prepare_next_revision(self.state,self.recipe_path,self.root)

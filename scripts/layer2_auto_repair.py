@@ -13,7 +13,8 @@ reviewer request; every other group reuses its cache.
 
 Repair stops for a group when its failure fingerprint repeats or when two
 consecutive repair rounds leave it with no fewer failure codes than before. The
-locale stops repairing when repair spend exceeds the cap. Unknown outcomes and
+locale stops repairing when the remaining spend cap cannot reserve a complete
+bounded translator/reviewer pair. Unknown outcomes and
 execution errors are never retried here; they stop the loop for reconciliation.
 
 Formal runs reach this loop through the canonical controller (execution config
@@ -290,10 +291,10 @@ def _response_tokens(response: dict) -> int | None:
     usage = response.get("usage") if isinstance(response, dict) else None
     if not isinstance(usage, dict):
         return None
-    if isinstance(usage.get("total_tokens"), int):
+    if type(usage.get("total_tokens")) is int and usage["total_tokens"] >= 0:
         return usage["total_tokens"]
     for first, second in (("prompt_tokens", "completion_tokens"), ("input_tokens", "output_tokens")):
-        if isinstance(usage.get(first), int) and isinstance(usage.get(second), int):
+        if all(type(usage.get(name)) is int and usage[name] >= 0 for name in (first, second)):
             return usage[first] + usage[second]
     return None
 
@@ -313,6 +314,22 @@ def round_spend(out: Path, reuse_from: Path | None) -> dict:
         else:
             tokens += value
     return {"calls": calls, "tokens": tokens, "callsWithoutUsage": unknown}
+
+
+def _repair_token_bound() -> int | None:
+    """Worst-case tokens per bounded API call, including reasoning output.
+
+    Reserve whole translator/reviewer pairs before selecting the next round.
+    The canonical transport enforces these same input/output bounds; measured
+    usage from an earlier call is not an upper bound for a repaired prompt.
+    """
+    from scripts.canonical_layer2_budget import CURRENT_LIMITS
+    from scripts.sermon_provider_limits import validate_request_limits
+    selected = CURRENT_LIMITS.get()
+    if selected is None:
+        return None
+    selected = validate_request_limits(selected)
+    return selected["maxInputTokens"] + selected["maxCompletionTokens"]
 
 
 # ---------------------------------------------------------------- ledger
@@ -503,6 +520,16 @@ def drive(request: dict, total_groups: int, run_round: RoundRunner, out_root: Pa
     while True:
         sequence += 1
         out = out_root / f"round-{sequence:03d}"
+        if brief is not None:
+            # Recheck resumed work against today's enforced provider bounds.
+            # A changed/missing bound never silently dispatches an old plan.
+            token_bound = _repair_token_bound()
+            _require(token_bound is not None and initial is not None
+                     and not initial["callsWithoutUsage"]
+                     and not any(e["spend"]["callsWithoutUsage"] for e in entries[1:])
+                     and spent["tokens"] + len(brief["groups"]) * CALLS_PER_REPAIR * token_bound
+                     <= math.ceil(initial["tokens"] * SPEND_FRACTION),
+                     "repair_token_reservation_unavailable")
         collector = FailureCollector(
             total_groups, [row["translationGroupId"] for row in brief["groups"]] if brief else None,
             {item for entry in entries for row in entry["groups"] for item in [row["fingerprint"]] if item},
@@ -545,10 +572,16 @@ def drive(request: dict, total_groups: int, run_round: RoundRunner, out_root: Pa
                 stopped.append({**skipped, "failureCodes": [], "reasonCode": "not_dispatched_after_systemic_stop",
                                 "evidencePath": None})
             cap_calls = max(MINIMUM_REPAIR_CALLS, math.ceil(initial["calls"] * SPEND_FRACTION))
-            cap_tokens = math.ceil(initial["tokens"] * SPEND_FRACTION) if initial["tokens"] else None
-            over_tokens = cap_tokens is not None and spent["tokens"] > cap_tokens
+            cap_tokens = math.ceil(initial["tokens"] * SPEND_FRACTION)
+            token_bound = _repair_token_bound()
+            known_usage = not initial["callsWithoutUsage"] and not spend["callsWithoutUsage"] \
+                and not any(e["spend"]["callsWithoutUsage"] for e in entries[1:])
             # Repair as many groups as the cap still allows, in source order.
-            affordable = 0 if over_tokens else max(0, (cap_calls - spent["calls"]) // CALLS_PER_REPAIR)
+            affordable = min(max(0, (cap_calls - spent["calls"]) // CALLS_PER_REPAIR),
+                             max(0, (cap_tokens - spent["tokens"]) // (CALLS_PER_REPAIR * token_bound))) \
+                if known_usage and token_bound is not None else 0
+            cap_reason = "repair_spend_cap" if known_usage and token_bound is not None \
+                else "repair_token_usage_unavailable" if not known_usage else "repair_token_bound_unavailable"
             if len(repairs) > affordable:
                 capped = repairs[affordable:]
                 repairs = repairs[:affordable]
@@ -556,13 +589,23 @@ def drive(request: dict, total_groups: int, run_round: RoundRunner, out_root: Pa
                 for failure in capped:
                     stopped.append({"translationGroupId": failure["translationGroupId"],
                                     "sourceUnitIds": failure["sourceUnitIds"],
-                                    "failureCodes": failure["failureCodes"], "reasonCode": "repair_spend_cap",
+                                    "failureCodes": failure["failureCodes"], "reasonCode": cap_reason,
                                     "evidencePath": _evidence_path(out, failure)})
                 for row in rows:
                     if row["translationGroupId"] in capped_ids:
-                        row["repaired"], row["decision"] = False, "repair_spend_cap"
+                        row["repaired"], row["decision"] = False, cap_reason
             if not repairs:
                 outcome = "stopped"
+        elif brief is not None and (spend["callsWithoutUsage"]
+                                    or spent["tokens"] > math.ceil(initial["tokens"] * SPEND_FRACTION)):
+            # Even a passing injected/misbehaving transport cannot hide unknown
+            # or excessive usage behind successful semantic/plugin checks.
+            outcome = "stopped"
+            stopped = [{"translationGroupId": row["translationGroupId"],
+                        "sourceUnitIds": row["sourceUnitIds"], "failureCodes": [],
+                        "reasonCode": "repair_token_usage_unavailable" if spend["callsWithoutUsage"]
+                        else "repair_spend_cap", "evidencePath": str(out / "evidence.json")}
+                       for row in brief["groups"]]
         next_brief = None
         if repairs:
             next_brief = {"schemaVersion": runner.PARTIAL_REPAIR_SCHEMA, **{key: request[key] for key in (

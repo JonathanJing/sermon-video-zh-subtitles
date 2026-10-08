@@ -2,6 +2,7 @@
 import copy
 import json
 import unittest
+from unittest.mock import patch
 
 from scripts import canonical_layer2_controller as subject
 from scripts import layer2_auto_repair as auto_repair
@@ -42,10 +43,16 @@ class ControllerAutoRepairTests(unittest.TestCase):
             answer["semanticReview"]["checks"]["completeMeaning"] = "fail"
             answer["semanticReview"]["issues"] = ["Dropped the second clause"]
         return {"id": "fixture-response-" + str(len(self.calls)), "model": payload["model"],
+                "usage": {"prompt_tokens": 60, "completion_tokens": 40},
                 "choices": [{"finish_reason": "stop", "message": {"content": json.dumps(answer)}}]}
 
     def run_worker(self, caller):
-        with self.base.active() as (config, code, key, _):
+        # These two-group fixtures exercise controller/repair integration. Give
+        # their repair pairs room under synthetic token bounds; production cap
+        # enforcement has dedicated loop tests.
+        with patch.object(auto_repair, 'SPEND_FRACTION', 1), \
+                patch.object(auto_repair, '_repair_token_bound', return_value=100, create=True), \
+                self.base.active() as (config, code, key, _):
             return subject.execute(self.base.path, "zh-Hans", config.sha256, code, key,
                                    caller=caller, api_key="fixture-key"), config
 
@@ -90,6 +97,36 @@ class ControllerAutoRepairTests(unittest.TestCase):
         result, _ = self.run_worker(slow)
         self.assertEqual(result["status"], "machine_review_pass_human_review_pending")
         self.assertEqual(peak[0], 2)
+
+    def test_failed_job_with_unknown_nested_call_blocks_other_locales(self):
+        controller = subject.Controller(self.base.path)
+        controller.config.lanes['es'] = {'output': self.base.root / 'outputs' / 'es'}
+        round_output = self.base.output / 'repair-rounds' / 'round-002'
+        round_output.mkdir(parents=True)
+        marker = round_output / 'group-0001-sol.started.json'
+        marker.write_text('{}')
+        view = {'durableJobInspection': {'jobs': [
+            {'workUnitId': 'text.zh-Hans', 'status': 'failed'}]},
+            'nodes': {'text.es': {'status': 'ready'}}}
+        self.assertTrue(controller._capacity_full(view))
+        self.assertIsNone(controller._choose(view, requested_locale='es'))
+
+    def test_failed_job_with_confirmed_raw_or_cache_releases_capacity(self):
+        controller = subject.Controller(self.base.path)
+        controller.config.lanes['es'] = {'output': self.base.root / 'outputs' / 'es'}
+        round_output = self.base.output / 'repair-rounds' / 'round-002'
+        round_output.mkdir(parents=True)
+        (round_output / 'group-0001-sol.started.json').write_text('{}')
+        view = {'durableJobInspection': {'jobs': [
+            {'workUnitId': 'text.zh-Hans', 'status': 'failed'}]},
+            'nodes': {'text.es': {'status': 'ready'}}}
+        for name in ('group-0001-sol.raw.json', 'group-0001-sol.json'):
+            with self.subTest(response=name):
+                response = round_output / name
+                response.write_text('{}')
+                self.assertFalse(controller._capacity_full(view))
+                self.assertEqual(controller._choose(view, requested_locale='es'), 'es')
+                response.unlink()
 
     def test_failed_group_is_repaired_inside_the_job_under_the_api_transport(self):
         failed = self.group_ids()[1]

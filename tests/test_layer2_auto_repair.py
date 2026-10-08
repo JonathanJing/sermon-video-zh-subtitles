@@ -3,6 +3,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from scripts import layer2_auto_repair as subject
 from scripts import run_target_language_models as runner
@@ -25,6 +26,22 @@ def failing(*checks, uncertainty=(), issues=("problem",)):
 
 
 class ClassificationTests(unittest.TestCase):
+    def test_repair_bound_uses_enforced_input_and_completion_limits(self):
+        from scripts.canonical_layer2_budget import CURRENT_LIMITS, request_limits
+        from scripts.sermon_provider_limits import DEFAULT_REQUEST_LIMITS
+        with request_limits(DEFAULT_REQUEST_LIMITS):
+            self.assertEqual(subject._repair_token_bound(),
+                             DEFAULT_REQUEST_LIMITS["maxInputTokens"] + DEFAULT_REQUEST_LIMITS["maxCompletionTokens"])
+        token = CURRENT_LIMITS.set(None)
+        try:
+            self.assertIsNone(subject._repair_token_bound())
+        finally:
+            CURRENT_LIMITS.reset(token)
+
+    def test_negative_or_boolean_usage_is_unknown(self):
+        for value in (-1, True):
+            self.assertIsNone(subject._response_tokens({"usage": {"total_tokens": value}}))
+
     def test_every_sol_failure_uncertainty_and_issue_starts_a_repair(self):
         self.assertEqual(subject.classify_review(failing("completeMeaning", "quotationAttribution")),
                          (["meaning_omission", "quotation_attribution_error"], "repair_translation"))
@@ -130,6 +147,11 @@ class LoopTests(unittest.TestCase):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
         self.root = Path(temp.name)
+        # Synthetic calls consume exactly 100 tokens; real dispatch obtains its
+        # hard bound from the canonical provider request-limit context.
+        bound = patch.object(subject, "_repair_token_bound", return_value=100)
+        bound.start()
+        self.addCleanup(bound.stop)
 
     def drive(self, fleet, out="runs"):
         return subject.drive(REQUEST, fleet.groups, fleet, self.root / out, self.root / f"state-{out}")
@@ -142,6 +164,59 @@ class LoopTests(unittest.TestCase):
         self.assertEqual(receipt["repairSpend"]["calls"], 2)
         self.assertFalse(receipt["humanApproval"])
         self.assertEqual(receipt["ledgerRoot"], str((self.root / "state-runs").resolve()))
+
+    def test_token_reservation_stops_before_a_passing_repair_can_dispatch(self):
+        fleet = Fleet(self, 46, [{"g21": failing("quotationAttribution")}])
+        # The next pair could use 1,000 tokens, while the initial 9,200
+        # tokens permit only 920 for repairs, although the call cap has room.
+        with patch.object(subject, "_repair_token_bound", return_value=500):
+            receipt = self.drive(fleet)
+        self.assertEqual(fleet.calls, ["all"])
+        self.assertEqual(receipt["status"], "repair_stopped")
+        self.assertEqual(receipt["repairSpend"], {"calls": 0, "tokens": 0})
+        self.assertEqual(receipt["stoppedGroups"][0]["reasonCode"], "repair_spend_cap")
+
+    def test_token_reservations_limit_concurrent_round_to_whole_pairs(self):
+        fleet = Fleet(self, 46, [{"g2": failing("completeMeaning"), "g30": failing("completeMeaning")},
+                                 {"g30": failing("completeMeaning")}])
+        with patch.object(subject, "_repair_token_bound", return_value=300):
+            receipt = self.drive(fleet)
+        self.assertEqual(fleet.calls, ["all", ["g2"]])
+        self.assertEqual(receipt["status"], "repair_stopped")
+        self.assertEqual(receipt["stoppedGroups"][0]["translationGroupId"], "g30")
+
+    def test_missing_initial_usage_or_provider_bounds_prevents_repair(self):
+        class UnknownFleet(Fleet):
+            def __call__(self, *args):
+                try:
+                    return super().__call__(*args)
+                finally:
+                    for path in args[0].glob("*.raw.json"):
+                        value = json.loads(path.read_text())
+                        value["response"].pop("usage")
+                        path.write_text(json.dumps(value))
+        fleet = UnknownFleet(self, 46, [{"g2": failing("completeMeaning")}])
+        receipt = self.drive(fleet)
+        self.assertEqual(fleet.calls, ["all"])
+        self.assertEqual(receipt["stoppedGroups"][0]["reasonCode"], "repair_token_usage_unavailable")
+        fleet = Fleet(self, 46, [{"g2": failing("completeMeaning")}])
+        with patch.object(subject, "_repair_token_bound", return_value=None):
+            receipt = self.drive(fleet, out="unbounded")
+        self.assertEqual(fleet.calls, ["all"])
+        self.assertEqual(receipt["stoppedGroups"][0]["reasonCode"], "repair_token_bound_unavailable")
+
+    def test_passing_round_cannot_hide_transport_overspend(self):
+        class OverspendingFleet(Fleet):
+            def __call__(self, out, reuse_from, brief, collector):
+                if brief:
+                    self.tokens = 1000  # deliberately violate the injected bound
+                return super().__call__(out, reuse_from, brief, collector)
+        fleet = OverspendingFleet(self, 46, [{"g2": failing("completeMeaning")}])
+        receipt = self.drive(fleet)
+        self.assertEqual(fleet.calls, ["all", ["g2"]])
+        self.assertEqual(receipt["status"], "repair_stopped")
+        self.assertEqual(receipt["gatesPassed"], [])
+        self.assertEqual(receipt["stoppedGroups"][0]["reasonCode"], "repair_spend_cap")
 
     def test_changing_failures_keep_repairing_while_they_shrink(self):
         fleet = Fleet(self, 46, [{"g1": failing("completeMeaning", "noAddedMeaning", "negationsNumbersNames")},
@@ -281,6 +356,12 @@ class RunnerCollectionTests(unittest.TestCase):
         self.addCleanup(self.base.doCleanups)
         self.fixture, self.out, self.calls = self.base.fixture, self.base.out, self.base.calls
         self.production_run = self.base.production_run
+        # Two-group fixture has no production-scale initial token baseline.
+        # Widen its test-only fraction so these tests exercise cache repair.
+        for mocked in (patch.object(subject, "_repair_token_bound", return_value=100),
+                       patch.object(subject, "SPEND_FRACTION", 2)):
+            mocked.start()
+            self.addCleanup(mocked.stop)
 
     def fake_call(self, api_key, payload):
         """Answer by group id, so repair calls find their group too."""
@@ -294,6 +375,7 @@ class RunnerCollectionTests(unittest.TestCase):
         result = {key: copy.deepcopy(group[key]) for key in keys}
         result["translationGroupId"] = data["translationGroupId"]
         return {"id": f"response-{len(self.calls)}", "model": payload["model"],
+                "usage": {"total_tokens": 100},
                 "choices": [{"finish_reason": "stop", "message": {"content": json.dumps(result)}}]}
 
     def _quote_fail(self, api_key, payload):
