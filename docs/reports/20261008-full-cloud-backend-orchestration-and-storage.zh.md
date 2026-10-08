@@ -5,7 +5,7 @@
 ## 先说结论
 
 1. **不要让 AI 当调度器。** 谁先跑、谁等谁、失败了能不能重试，这些交给确定性的状态机（云端用 Cloud Workflows + 一个小 controller 服务）。AI（Supervisor、翻译、复核）只在三种地方出场：生成内容、做机器复核、在状态机给出的有限选项里做判断。这和仓库现有的方向一致：[Deterministic Engine → Bounded Decision Agent](../codex-orchestration-pipeline-design.zh.md)、Supervisor 没有 shell 也不能写批准（[Supervisor 合同](../sermon-production-supervisor-agent.md) L65-74）。
-2. **产物以私有 Cloud Storage 为唯一证据来源，按内容 hash 存、只写一次。** Firestore 只做索引、租约和审批队列，丢了可以从 GCS 重建。发布（Firebase）从私有桶复制，不反过来。
+2. **产物以私有 Cloud Storage 为唯一证据来源，按内容 hash 存、只写一次。** Firestore 只做索引、租约和审批队列，可以从 GCS 重建；预算预留和“结果不明”这类花钱相关的状态例外，派发前必须先写进 GCS 不可变日志（见下）。发布（Firebase）从私有桶复制，不反过来。
 3. **人工批准不让机器空等。** 每一层跑完就停，写收据，Workflows 挂起等待 callback；批准一到再启动下一层。GPU 只在 L3 渲染时开着。
 4. **最大的阻碍不在算力，在三件事：** 本地文件锁和 fsync 换成云端租约；Supervisor 现在依赖 ChatGPT 登录的 Codex CLI，云端要改 API 认证，需要你决定和预算；YouTube 在云上会遇到 bot-check，来源下载仍建议本机做再上传。
 5. **建议分阶段迁：** 先把产物镜像到 GCS，再做 L3 GPU 突发，再把 L2 worker 搬上云，最后才搬 controller 和 Supervisor。每一步都能单独停在那里用。
@@ -44,16 +44,16 @@ flowchart TD
 
 1. 本机下载来源、算 SHA、上传到 `sources/`，调用 controller 开 run。
 2. L1 Job 跑完写英文来源包和收据，Workflows 挂起等英文批准。
-3. 批准后 controller **按语言并行**派 L2：每语言一个 locale job，组内多个 group worker（Cloud Run Job 的 task 并行）调 Sol 6.1 API。上限沿用现有规则：默认每 run 一个 active locale，execution-v2 最多 3 个（[controller 合同](../canonical-layer2-controller.zh.md)）。API 槽位改成 Firestore 里的全局计数，跨 Job 共享。
+3. 批准后 controller **按语言并行**派 L2：每语言一个 locale job，组内多个 group worker（Cloud Run Job 的 task 并行）调 Sol 6.1 API。上限沿用现有规则：默认每 run 一个 active locale，execution-v2 最多 3 个（[controller 合同](../canonical-layer2-controller.zh.md)）。API 槽位改成 Firestore 里的全局计数，跨 Job 共享。所有付费 Job 设 `maxRetries=0`（Cloud Run Jobs 默认每个 task 自动重试 3 次，会在 controller 对账前重复调用 API）；task 超时显式设成大于一组初译加复核的最长耗时（默认 10 分钟不够，单次 API 调用就可能用到 300 秒），超时值写进冻结的执行策略，controller 的心跳和无进展上限照旧。
 4. 某个语言文字批准一到，就给这个语言开 GPU 跑 L3，不等其他语言。
-5. 听审／waiver 收据到了以后，L4 打包并核验，按 release plan 的语言联动要求发布。
+5. 听审／waiver 收据到了以后，L4 只做**准备**：打包、预检，然后停下。听审批准或 waiver 不等于发布授权；现有发布流程要求一份绑定这个已准备 release 和 Firebase 目标的单独授权（`scripts/sermon_release_workflow.py:282-288`）。Workflows 在这里再挂起一次，授权收据到了才部署，然后做 HTTP 核验，并按 release plan 的语言联动要求发布。
 6. 任何一步结果不明（超时、断线、进程消失），controller 标 `reconciliation_required`，不自动重发，等 Supervisor 给出对账建议、你确认。这条是现有规则，上云后不放宽。
 
 ### 并发和预算放在哪里
 
 - **租约**：仓库已经有 GCS generation precondition 租约（`backend/leases.py:129`），可以直接复用；需要查询和事务的（API 槽位、预算预留）放 Firestore 事务。
 - **心跳**：现在用本机单调时钟（[liveness](../canonical-layer2-liveness.zh.md)），跨机器不能比较。云端改为 worker 定期写 Firestore 服务端时间戳，controller 用服务端时间判超时。
-- **预算**：现在的预算根是本地兄弟目录，跨主机不共享（[预算与迁移](../canonical-layer2-budget-and-migration.zh.md)）。云端做成每个 run 一份 Firestore 预算账，派发前预留、结束后结算，仍然需要绑定人工批准收据。
+- **预算**：现在的预算根是本地兄弟目录，跨主机不共享（[预算与迁移](../canonical-layer2-budget-and-migration.zh.md)）。云端用 Firestore 事务做并发准入，但**预留、结算、结果不明这三种转换在派发前先写成 GCS 不可变对象**（`runs/<pageId>/<runId>/budget/<attemptId>/<transition>.json`）。这样 Firestore 丢了也能从 GCS 恢复“有一笔调用可能已经花了钱”，不会把预算放回去再重复派发。仍然需要绑定人工批准收据。
 - **GPU**：卡数上限 3，由 controller 计数，不需要通用 GPU 调度器。
 
 ### Supervisor 在云上的问题
@@ -91,7 +91,7 @@ gs://tongxing-prod-evidence/
   models/                                   # 授权音色 checkpoint 等，单独桶更好，见下
 ```
 
-`accounting/events.jsonl` 现在是本地追加文件；多个云 Job 同时追加同一个对象做不到，所以改成每次调用一个对象，汇总脚本照旧生成 `summary.json` 和 `model-calls.csv`。以后需要做报表，再导入 BigQuery。
+`accounting/events.jsonl` 现在是本地追加文件；多个云 Job 同时追加同一个对象做不到，所以改成每次调用一个对象。现有 `sermon_accounting.py` 的读取、重放和完整性检查只认 `events.jsonl`（L329、L833），所以要加一个确定性的转换步骤：按固定顺序把这些对象拼回 `events.jsonl` 并校验，再交给汇总脚本生成 `summary.json` 和 `model-calls.csv`；或者把所有读取方改成新格式。以后需要做报表，再导入 BigQuery。
 
 ### 保留多久（建议，需你确认）
 
@@ -115,6 +115,8 @@ L4 从证据桶读发布包，复制到 Firebase Hosting／发布桶，再做 HT
 
 ## 仓库里要改的地方
 
+0. **包里的路径**：现在的英文来源包和 L3 包里记的是本机绝对路径（例如 `scripts/build_english_source_package.py:79-85` 的 `artifact()`），校验器用 `Path(...)` 直接打开。原样拷到 GCS，云端 worker 读到的路径仍指向本机，无法校验也无法使用。所以阶段 1 之前要先做一个有版本号的“云端定位”合同和迁移（路径改成相对 run 根或 `gs://` + hash），或者在云端 worker 里先把原目录结构还原出来，再校验原封不动的包。
+
 1. **存储抽象**：约 30 个脚本用 `fcntl.flock`，持久性依赖目录 fsync（[durable job 证据](../durable-job-directory-evidence.zh.md)）。需要一层存储接口，有本地和 GCS 两种实现：不可变写用 `ifGenerationMatch=0`，可变状态用 generation 条件，锁用现有 GCS 租约。这是工作量最大的一项。
 2. **心跳、预算、API 槽位**：从本机时钟和本地目录换到 Firestore 服务端时间和事务。
 3. **Controller 服务**：把现有 L2 controller 的 `tick` 包成 Cloud Run 服务，再补上 L1、L3、L4 的派发（现在只有 L2，[controller 合同](../canonical-layer2-controller.zh.md) L63-67）。
@@ -129,7 +131,7 @@ L4 从证据桶读发布包，复制到 Firebase Hosting／发布桶，再做 HT
 
 | 阶段 | 做什么 | 得到什么 | 风险 |
 |---|---|---|---|
-| 0 | 本地 run 结束后，把包、收据、最终音频按上面的结构上传到 GCS | 产物不再只在一台机器上；后面的阶段有统一的读取位置 | 低，只是镜像 |
+| 0 | 本地 run 结束后，把包、收据、最终音频按上面的结构上传到 GCS | 产物不再只在一台机器上 | 低，只是镜像；但这只是备份，云端还不能直接用（见下） |
 | 1 | L3 按需 GPU（10/7 方案 A） | 渲染不占 Spark，三语可并行 | 中，新执行身份要验收 |
 | 2 | L2 group worker 改成 Cloud Run Job，锁、预算、槽位换到云端 | Mac／Spark 不在线也能翻译 | 中高，要动存储层 |
 | 3 | Controller + Workflows + 审批 callback | 整条线在云上推进，你在手机上批准 | 高 |
