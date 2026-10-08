@@ -1,13 +1,16 @@
 """One-command gated round: validate, freeze, load; refusals leave no output.
 
 Receipts are synthetic test inputs built from the pinned CUV text. They are not
-human approvals, and no model is called (run_models is never exercised here).
+human approvals. No model is called: subprocess is replaced where run_models is
+exercised.
 """
 import json
 import shutil
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
 
 from scripts import cuv_scripture
 from scripts import run_scripture_gated_round as round_tool
@@ -71,6 +74,34 @@ class GatedRoundTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'receipt_binding_changed'):
             self.run_round(self.receipt(bindings={**self.bindings, 'anchor.json': 'f' * 64}), name='bound')
         self.assertFalse((self.work / 'bound').exists())
+
+    def test_run_models_passes_session_identity_to_the_chain_and_reports_failure(self):
+        calls = []
+
+        class Done:
+            returncode = 0
+            stderr = ''
+
+        class Failed(Done):
+            returncode = 1
+
+        def fake_run(argv, **kwargs):
+            calls.append((argv, kwargs))
+            if 'spark_session_round.sh' in ' '.join(map(str, argv)):
+                return Failed() if fake_run.fail else Done()
+            return Done()
+        fake_run.fail = False
+        args = SimpleNamespace(media='media.mp4', spark_session_id='sid-1', spark_session_owner='owner-1',
+                               remote_stage='/home/achillesjing/dgx-spark-benchmark/results/next-concurrency-t',
+                               translator_model='gpt-6.1-sol')
+        with patch.object(round_tool.subprocess, 'run', side_effect=fake_run):
+            out = round_tool.run_models(args, self.work, self.work)
+            wrapper = [c for c in calls if 'spark_session_round.sh' in ' '.join(map(str, c[0]))][0]
+            self.assertEqual(wrapper[1]['env']['SPARK_EXCLUSIVE_SESSION_ID'], 'sid-1')
+            self.assertEqual(wrapper[1]['env']['SPARK_EXCLUSIVE_SESSION_OWNER'], 'owner-1')
+            self.assertEqual(out['modelRun'], 'completed')
+            fake_run.fail = True
+            self.assertEqual(round_tool.run_models(args, self.work, self.work)['modelRun'], 'failed')
 
     def test_run_models_requires_media_and_session_before_anything_starts(self):
         with self.assertRaisesRegex(SystemExit, 'needs --media'):

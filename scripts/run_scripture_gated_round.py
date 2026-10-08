@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -94,8 +95,11 @@ def run_models(args: argparse.Namespace, fixture: Path, out: Path) -> dict[str, 
                            cwd=ROOT, capture_output=True, text=True)
     if begin.returncode:
         raise SystemExit('exclusive session did not start; nothing was run: ' + begin.stderr.strip()[:300])
+    # The L2 CLI and the Spark runner both require the session identity in the environment.
+    environment = dict(os.environ, SPARK_EXCLUSIVE_SESSION_ID=args.spark_session_id,
+                       SPARK_EXCLUSIVE_SESSION_OWNER=args.spark_session_owner)
     run_result = subprocess.run(['scripts/experiments/spark_session_round.sh', args.spark_session_id,
-                                 args.spark_session_owner, '--', 'sh', '-c', chain], cwd=ROOT)
+                                 args.spark_session_owner, '--', 'sh', '-c', chain], cwd=ROOT, env=environment)
     return {'modelRun': 'completed' if run_result.returncode == 0 else 'failed',
             'modelRunExitCode': run_result.returncode, 'publication': 'not_run'}
 
@@ -118,7 +122,7 @@ def main(argv: list[str] | None = None) -> int:
     report = run(args)
     print(json.dumps({'status': report['status'], 'fixture': report['fixture'],
                       'modelRun': report.get('modelRun', 'not_requested')}, ensure_ascii=False))
-    return 0
+    return 1 if report.get('modelRun') == 'failed' else 0
 
 
 if __name__ == '__main__':
