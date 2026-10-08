@@ -143,5 +143,19 @@ class CallRecoveryTest(unittest.TestCase):
             self.assertEqual(len(calls), 1)
 
 
+class GroupDecisionTest(unittest.TestCase):
+    def test_decision_is_appended_to_system_prompt_only(self):
+        frozen = [{'role': 'system', 'content': 'rules'}, {'role': 'user', 'content': 'u'}]
+        decided = runner.with_group_decision(frozen, 'Keep the English title Super Bloom.')
+        self.assertEqual(frozen[0]['content'], 'rules')
+        self.assertTrue(decided[0]['content'].startswith('rules\n\nProject decision'))
+        self.assertIn('Keep the English title Super Bloom.', decided[0]['content'])
+        self.assertEqual(decided[1], frozen[1])
+
+    def test_no_decision_keeps_the_frozen_prompt(self):
+        frozen = [{'role': 'system', 'content': 'rules'}, {'role': 'user', 'content': 'u'}]
+        self.assertEqual(runner.with_group_decision(frozen, None), frozen)
+
+
 if __name__ == '__main__':
     unittest.main()

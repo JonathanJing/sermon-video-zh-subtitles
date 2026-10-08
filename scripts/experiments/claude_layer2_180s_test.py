@@ -110,6 +110,16 @@ def usage_sum(responses, key):
     return sum((response['usage'].get(key) or 0) for response in responses)
 
 
+def with_group_decision(messages, decision):
+    """Append a project-owner decision to the system prompt; no decision leaves the frozen prompt unchanged."""
+    if decision is None:
+        return messages
+    messages = json.loads(json.dumps(messages))
+    messages[0]['content'] += ('\n\nProject decision for this group (approved by the project owner, not a model '
+                               'judgment): ' + decision)
+    return messages
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--baseline', type=Path, default=Path('artifacts/codex-cli-layer2-180s-20261005'),
@@ -122,9 +132,23 @@ def main(argv=None):
     parser.add_argument('--reviewer-timeout', type=int, default=180)
     parser.add_argument('--max-review-attempts', type=int, choices=[1, 2], default=2,
                         help='Attempts per review after an explicit CLI terminal failure; timeouts never retry')
+    parser.add_argument('--only-group', action='append', default=[],
+                        help='Run only this group, e.g. group-0006; repeatable')
+    parser.add_argument('--group-decision', action='append', default=[],
+                        help='GROUP=TEXT, appended to that group\'s translator and reviewer system prompts')
     args = parser.parse_args(argv)
     baseline, out = args.baseline.resolve(), args.out.resolve()
     groups = load_groups(baseline)
+    names = {group['name'] for group in groups}
+    decisions = {}
+    for item in args.group_decision:
+        name, _, text = item.partition('=')
+        assert name and text.strip(), f'Invalid --group-decision: {item}'
+        decisions[name] = text.strip()
+    assert set(decisions) <= names, 'A decision names an unknown group'
+    if args.only_group:
+        assert set(args.only_group) <= names, 'Unknown --only-group'
+        groups = [group for group in groups if group['name'] in set(args.only_group)]
     translator = ClaudeLayer2Transport(args.claude_cli, model=TRANSLATOR_MODEL, effort=args.translator_effort,
                                        timeout_seconds=args.translator_timeout,
                                        receipts_dir=out / '_cli_calls' / 'translator')
@@ -139,6 +163,7 @@ def main(argv=None):
                 'reviewer': {'role': 'reviewer', 'model': REVIEWER_MODEL, 'effort': args.reviewer_effort,
                              'transport': reviewer.execution_identity},
                 'maxReviewAttempts': args.max_review_attempts,
+                'onlyGroups': sorted(args.only_group), 'groupDecisions': dict(sorted(decisions.items())),
                 'runnerSha256': sha(Path(__file__)), 'workers': 1, 'order': 'translate then review, per group',
                 'humanApproval': False, 'productionEligible': False}
     out.mkdir(parents=True, exist_ok=True)
@@ -152,16 +177,18 @@ def main(argv=None):
     for group in groups:
         job = out / group['name']
         source = group['source']
+        decision = decisions.get(group['name'])
         draft_response, new_draft, draft_attempts = run_call(
             job, 'translator', lambda messages: translator('', {'messages': messages}, role='translator'),
-            group['translatorMessages'])
+            with_group_decision(group['translatorMessages'], decision))
         draft = json.loads(draft_response['content'])
         validate(draft, source, output_schema('translator'))
         fresh['translator'] += new_draft
 
         review_response, new_review, review_attempts = run_call(
             job, 'reviewer', lambda messages: reviewer('', {'messages': messages}, role='reviewer'),
-            reviewer_messages(group['reviewerMessages'], draft), max_attempts=args.max_review_attempts)
+            with_group_decision(reviewer_messages(group['reviewerMessages'], draft), decision),
+            max_attempts=args.max_review_attempts)
         review = json.loads(review_response['content'])
         assert review['translationGroupId'] == source['translationGroupId'], 'Reviewer group identity changed'
         assert review['sourceUnitIds'] == source['sourceUnitIds'], 'Reviewer unit identity changed'
