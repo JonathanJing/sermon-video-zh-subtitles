@@ -1,0 +1,317 @@
+"""Machine scripture adjudication: a deterministic receipt from explicit references.
+
+Decision 2026-10-08 (Jony): scripture adjudication no longer waits for a human.
+This module writes the receipt a human used to write, from what the English
+source carries on its surface:
+
+- an explicit book and chapter mention ("Revelation chapter 4", "John 3:16")
+  sets the reference context for the units that follow;
+- a verse mention ("Verse 2 and 3", "verses 7 through 9") together with a
+  reading signal (a speech verb such as "says" or "reads", or quotation marks)
+  opens a quotation at that unit;
+- the pinned edition supplies the exact sentence for each verse.
+
+It never guesses. A flagged unit whose reference cannot be resolved, or whose
+verses are missing from the pinned edition, is recorded as speaker_paraphrase
+with no edition and no sentence, which only tells the translator to render the
+speaker's own words. The receipt keeps the v1 shape with
+decidedByRole='machine_adjudicator'; a sidecar basis file records the evidence
+behind every decision so a person can audit or overrule it with a human receipt.
+"""
+from __future__ import annotations
+
+import argparse
+from datetime import datetime, timezone
+import hashlib
+import json
+from pathlib import Path
+import re
+import sys
+from typing import Any
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from scripts import cuv_scripture  # noqa: E402
+from scripts import scripture_adjudication as adjudication  # noqa: E402
+from scripts import scripture_candidate_queue as queue_module  # noqa: E402
+from scripts import scripture_editions  # noqa: E402
+from scripts import target_language_policy as policies  # noqa: E402
+
+VERSION = '2026-10-08-v1'
+ROLE = 'machine_adjudicator'
+BASIS_SCHEMA = 'sermon-scripture-machine-adjudication-basis-v1'
+# A book mention stays in force for this many following units; sermons move on.
+CONTEXT_WINDOW_UNITS = 12
+# A reading signal may sit in the unit before the verse mention ("John says, verse 2 ...").
+READING_LOOKBACK_UNITS = 1
+
+_BOOKS = queue_module.BOOKS
+_NUMBER_WORDS = '|'.join(sorted(cuv_scripture._EN_NUMBERS, key=len, reverse=True))
+_NUM = rf'(?:\d+|{_NUMBER_WORDS})'
+_RANGE = rf'(?P<v1>{_NUM})(?:\s*(?:-|–|to|through|and)\s*(?P<v2>{_NUM}))?'
+BOOK_MENTION = re.compile(
+    rf'\b(?P<book>(?:[123]\s+)?(?:{_BOOKS}))\s+(?:chapter\s+)?(?P<chapter>\d+)'
+    rf'(?P<more_chapters>\s+and\s+\d+)?(?:\s*:\s*{_RANGE})?', re.I)
+CHAPTER_MENTION = re.compile(r'\bchapter\s+(?P<chapter>\d+)\b', re.I)
+VERSE_MENTION = re.compile(rf'\bverses?\s+{_RANGE}', re.I)
+READING_SIGNALS = {'speech_verb', 'quotation_marks'}
+
+
+class MachineAdjudicationError(ValueError):
+    """A reason code, never free text."""
+
+
+def _require(condition: bool, code: str) -> None:
+    if not condition:
+        raise MachineAdjudicationError(code)
+
+
+def implementation_sha256() -> str:
+    return hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+
+
+def _number(value: str) -> int:
+    return int(value) if value.isdigit() else cuv_scripture._EN_NUMBERS[value.casefold()]
+
+
+def _edition(target_locale: str, library: Any = None) -> Any:
+    _require(target_locale in adjudication.PINNED_EDITIONS, 'no_pinned_edition_for_locale')
+    edition_id = adjudication.PINNED_EDITIONS[target_locale]
+    if edition_id == 'CUV':
+        return edition_id, (library or cuv_scripture.CuvLibrary.from_path())
+    try:
+        return edition_id, scripture_editions.load(edition_id)
+    except scripture_editions.EditionError as exc:
+        raise MachineAdjudicationError('edition_unavailable') from exc
+
+
+def _signals(english: str) -> set[str]:
+    return {kind for kind, pattern in queue_module.SIGNALS if pattern.search(english)}
+
+
+def _scan(units: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Per unit: the reference context in force and any verse mention, with its evidence."""
+    rows: list[dict[str, Any]] = []
+    book: str | None = None
+    chapter: int | None = None
+    since_book = 0
+    for unit in units:
+        english = unit['english']
+        evidence: list[str] = []
+        since_book += 1
+        if since_book > CONTEXT_WINDOW_UNITS:
+            book = chapter = None
+        mention = BOOK_MENTION.search(english)
+        verse_range: tuple[int, int] | None = None
+        if mention:
+            try:
+                book = cuv_scripture.normalize_book(mention['book'])
+            except cuv_scripture.CuvError:
+                book = None
+            since_book = 0
+            if mention['more_chapters']:
+                chapter = None  # "Revelation 4 and 5": two chapters, no single context.
+                evidence.append(f'book mention with several chapters: {mention.group(0)!r}')
+            else:
+                chapter = int(mention['chapter'])
+                evidence.append(f'book and chapter mention: {mention.group(0)!r}')
+            if mention['v1']:
+                v1 = _number(mention['v1'])
+                verse_range = (v1, _number(mention['v2']) if mention['v2'] else v1)
+        else:
+            chapter_mention = CHAPTER_MENTION.search(english)
+            if chapter_mention and book:
+                chapter = int(chapter_mention['chapter'])
+                evidence.append(f'chapter mention: {chapter_mention.group(0)!r}')
+        verse_mention = VERSE_MENTION.search(english)
+        if verse_mention and verse_range is None:
+            v1 = _number(verse_mention['v1'])
+            verse_range = (v1, _number(verse_mention['v2']) if verse_mention['v2'] else v1)
+            evidence.append(f'verse mention: {verse_mention.group(0)!r}')
+        signals = _signals(english)
+        rows.append({'sourceUnitId': unit['sourceUnitId'], 'english': english, 'book': book, 'chapter': chapter,
+                     'verseRange': verse_range, 'reading': bool(signals & READING_SIGNALS),
+                     'signals': sorted(signals), 'evidence': evidence})
+    return rows
+
+
+def _reference(row: dict[str, Any]) -> cuv_scripture.Reference | None:
+    if row['book'] and row['chapter'] and row['verseRange']:
+        v1, v2 = row['verseRange']
+        if v2 >= v1:
+            return cuv_scripture.Reference(row['book'], row['chapter'], v1, v2)
+    return None
+
+
+def _reading_near(rows: list[dict[str, Any]], index: int) -> bool:
+    return any(rows[i]['reading'] for i in range(max(0, index - READING_LOOKBACK_UNITS), index + 1))
+
+
+def discover_flagged_units(rows: list[dict[str, Any]]) -> list[str]:
+    """Units that open a quotation plus their continuation, one unit per verse."""
+    flagged: list[str] = []
+    index = 0
+    while index < len(rows):
+        reference = _reference(rows[index])
+        if reference is not None and _reading_near(rows, index):
+            span = reference.end_verse - reference.start_verse + 1
+            end = index
+            while end + 1 < len(rows) and end + 1 - index < span and rows[end + 1]['verseRange'] is None:
+                end += 1
+            flagged.extend(rows[i]['sourceUnitId'] for i in range(index, end + 1))
+            index = end + 1
+        else:
+            index += 1
+    return flagged
+
+
+def _runs(rows: list[dict[str, Any]], flagged: list[str]) -> list[list[int]]:
+    position = {row['sourceUnitId']: i for i, row in enumerate(rows)}
+    _require(all(unit in position for unit in flagged), 'flagged_unit_unknown')
+    indexes = sorted(position[unit] for unit in flagged)
+    runs: list[list[int]] = []
+    for i in indexes:
+        if runs and runs[-1][-1] == i - 1:
+            runs[-1].append(i)
+        else:
+            runs.append([i])
+    return runs
+
+
+def _resolve_run(rows: list[dict[str, Any]], run: list[int]) -> tuple[cuv_scripture.Reference | None, int | None]:
+    """The reference that opens this run: inside it, or in the unit just before it."""
+    for i in run:
+        reference = _reference(rows[i])
+        if reference is not None:
+            return reference, i
+    before = run[0] - 1
+    if before >= 0 and rows[before]['verseRange'] is not None:
+        reference = _reference(rows[before])
+        if reference is not None:
+            return reference, before
+    return None, None
+
+
+def _paraphrase(candidate_id: str, units: list[str], reason: str) -> tuple[dict[str, Any], dict[str, Any]]:
+    candidate = {'candidateId': candidate_id, 'sourceUnitIds': units, 'classification': 'speaker_paraphrase',
+                 'reference': None, 'editionId': None, 'exactSentence': None}
+    return candidate, {'candidateId': candidate_id, 'sourceUnitIds': units, 'decision': 'speaker_paraphrase',
+                       'reason': reason}
+
+
+def adjudicate(source: dict[str, Any], anchor: dict[str, Any], plan: list[dict[str, Any]], *, target_locale: str,
+               flagged_units: list[str] | None = None, library: Any = None,
+               now: datetime | None = None) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Return (receipt, basis). The receipt has the v1 shape with the machine role."""
+    edition_id, edition = _edition(target_locale, library)
+    units = anchor['sourceUnits']
+    rows = _scan(units)
+    discovered = discover_flagged_units(rows)
+    flagged = list(flagged_units) if flagged_units is not None else discovered
+    _require(len(flagged) == len(set(flagged)), 'flagged_unit_repeated')
+    candidates: list[dict[str, Any]] = []
+    basis_rows: list[dict[str, Any]] = []
+    for run in _runs(rows, flagged):
+        run_units = [rows[i]['sourceUnitId'] for i in run]
+        reference, at = _resolve_run(rows, run)
+        if reference is None:
+            for unit in run_units:
+                candidate, why = _paraphrase(f'm{len(candidates) + 1:03d}', [unit],
+                                             'no book, chapter and verse reference resolves for this unit')
+                candidates.append(candidate)
+                basis_rows.append(why | {'english': rows[run[run_units.index(unit)]]['english']})
+            continue
+        verses = list(range(reference.start_verse, reference.end_verse + 1))
+        if len(run) == len(verses):
+            pairs = [([rows[i]['sourceUnitId']], cuv_scripture.Reference(reference.book, reference.chapter, v))
+                     for i, v in zip(run, verses)]
+            layout = 'one verse per unit'
+        else:
+            pairs = [(run_units, reference)]
+            layout = ('one unit carries the whole range' if len(run) == 1
+                      else 'several units share the whole range; keep them in one translation group')
+        for units_here, ref in pairs:
+            candidate_id = f'm{len(candidates) + 1:03d}'
+            try:
+                found = edition.lookup(ref)
+            except (cuv_scripture.CuvError, scripture_editions.EditionError) as exc:
+                candidate, why = _paraphrase(candidate_id, units_here,
+                                             f'edition lookup failed for {ref.canonical_ref}: {exc}')
+                candidates.append(candidate)
+                basis_rows.append(why)
+                continue
+            candidates.append({'candidateId': candidate_id, 'sourceUnitIds': units_here,
+                               'classification': 'direct_quote', 'reference': ref.canonical_ref,
+                               'editionId': edition_id, 'exactSentence': found['text']})
+            basis_rows.append({'candidateId': candidate_id, 'sourceUnitIds': units_here, 'decision': 'direct_quote',
+                               'reference': ref.canonical_ref, 'textSha256': found['textSha256'], 'layout': layout,
+                               'openedAt': rows[at]['sourceUnitId'], 'evidence': rows[at]['evidence'],
+                               'readingSignals': sorted({s for i in range(max(0, at - READING_LOOKBACK_UNITS), at + 1)
+                                                         for s in rows[i]['signals'] if s in READING_SIGNALS}),
+                               'english': [rows[i]['english'] for i in run]})
+    _require(bool(candidates), 'no_flagged_units')
+    stamp = (now or datetime.now(timezone.utc)).isoformat()
+    sha = implementation_sha256()
+    receipt = {'schemaVersion': adjudication.SCHEMA, 'targetLocale': target_locale,
+               'bindings': {'source.json': policies.canonical_sha256(source),
+                            'anchor.json': policies.canonical_sha256(anchor),
+                            'group-plan.json': policies.canonical_sha256(plan)},
+               'decision': 'approved', 'decidedBy': f'scripture_machine_adjudication {VERSION} {sha[:16]}',
+               'decidedByRole': ROLE, 'reviewedAt': stamp, 'candidates': candidates}
+    _require(set(receipt) == adjudication.TOP_KEYS
+             and all(set(row) == adjudication.CANDIDATE_KEYS for row in candidates), 'receipt_shape')
+    basis = {'schemaVersion': BASIS_SCHEMA, 'implementationSha256': sha, 'version': VERSION,
+             'receiptSha256': adjudication.receipt_sha256(receipt), 'targetLocale': target_locale,
+             'editionId': edition_id, 'flaggedUnits': flagged, 'flaggedUnitsSource':
+             'supplied' if flagged_units is not None else 'discovered', 'discoveredUnits': discovered,
+             'humanApproval': False, 'candidates': basis_rows,
+             'notice': 'Deterministic surface-signal adjudication. A human receipt for the same bindings '
+                       'overrides this one. Not a translation or edition approval.'}
+    return receipt, basis
+
+
+def adjudicate_fixture(directory: str | Path, *, target_locale: str, flagged_units: list[str] | None = None,
+                       discover: bool = False, library: Any = None) -> tuple[dict[str, Any], dict[str, Any]]:
+    directory = Path(directory)
+    source, anchor, plan = (json.loads((directory / name).read_text(encoding='utf-8'))
+                            for name in ('source.json', 'anchor.json', 'group-plan.json'))
+    manifest_path = directory / 'fixture-manifest.json'
+    if flagged_units is None and not discover and manifest_path.is_file():
+        manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
+        flagged_units = list(manifest.get('sourceQuotationUnits') or []) or None
+    return adjudicate(source, anchor, plan, target_locale=target_locale, flagged_units=flagged_units, library=library)
+
+
+def _write_new(path: Path, value: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open('x', encoding='utf-8') as handle:
+        handle.write(json.dumps(value, ensure_ascii=False, indent=2) + '\n')
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument('fixture', type=Path, help='Directory with source.json, anchor.json and group-plan.json')
+    parser.add_argument('--target-locale', default='zh-Hans', choices=sorted(adjudication.PINNED_EDITIONS))
+    parser.add_argument('--out', type=Path, required=True, help='New receipt file; never overwritten')
+    parser.add_argument('--basis-out', type=Path, default=None, help='Defaults to <out>.basis.json')
+    parser.add_argument('--flagged-unit', action='append', default=None,
+                        help='Unit to adjudicate; defaults to the fixture manifest, else discovery')
+    parser.add_argument('--discover', action='store_true', help='Ignore the manifest and discover flagged units')
+    args = parser.parse_args(argv)
+    basis_path = args.basis_out or args.out.with_suffix('.basis.json')
+    if args.out.exists() or basis_path.exists():
+        raise SystemExit('receipt or basis file exists; choose a new path')
+    receipt, basis = adjudicate_fixture(args.fixture, target_locale=args.target_locale,
+                                        flagged_units=args.flagged_unit, discover=args.discover)
+    _write_new(args.out, receipt)
+    _write_new(basis_path, basis)
+    print(json.dumps({'receiptSha256': basis['receiptSha256'], 'flaggedUnits': basis['flaggedUnits'],
+                      'decisions': [(row['candidateId'], row['decision']) for row in basis['candidates']]},
+                     ensure_ascii=False))
+    return 0
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())
