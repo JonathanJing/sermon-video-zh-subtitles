@@ -1,0 +1,6 @@
+{
+  "schemaVersion": "agent-trials-rubric-v1",
+  "stage": "preflight",
+  "expectedSha256": "0dbfda2e2b42c0db3cdee9288117aa7c8b7893ca8a2756afc6dec320256bdc86",
+  "scorerSha256": "269213685c3f11fa6b3e7645ab72938061663d8e46e32061231ca5c390d32c66"
+}
