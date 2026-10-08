@@ -60,16 +60,35 @@ def _verifier(edition_id: str, library: Any) -> tuple[Any, str]:
     return edition, edition.verification
 
 
+def generator_signature(version: str, implementation_sha256: str) -> str:
+    return f'scripture_machine_adjudication {version} {implementation_sha256[:16]}'
+
+
 def _reproduce_machine_receipt(receipt: dict[str, Any], *, target_locale: str, flagged_units: list[str],
-                               inputs: Any, library: Any) -> dict[str, Any]:
+                               inputs: Any, library: Any, frozen: Any = None) -> dict[str, Any]:
     """A machine receipt is admitted only when the generator reproduces it from the bound inputs.
 
     The role string and signature prove nothing by themselves: a hand-written
     receipt labelled machine would otherwise pass without the generator's
-    evidence, with classifications the generator never emits."""
+    evidence, with classifications the generator never emits.
+
+    ``frozen`` is the generator record a fixture manifest stored when this
+    receipt was admitted at freeze time (its version and implementation, and
+    that it reproduced the receipt then). A frozen run keeps its identity: when
+    the current generator is a later one, the receipt it wrote is admitted on
+    that frozen evidence instead of being re-run against new behaviour."""
+    from scripts import scripture_machine_adjudication as machine  # noqa: E402  (it imports this module)
+    current = {'version': machine.VERSION, 'implementationSha256': machine.implementation_sha256()}
+    if isinstance(frozen, dict) and frozen.get('reproduced') is True and frozen.get('signatureCurrent') is True:
+        _require(isinstance(frozen.get('version'), str) and isinstance(frozen.get('implementationSha256'), str)
+                 and receipt['decidedBy'] == generator_signature(frozen['version'], frozen['implementationSha256']),
+                 'frozen_generator_mismatch')
+        if {key: frozen[key] for key in current} != current:
+            return {'reproduced': False, 'frozenAdmission': True, 'generator': 'scripture_machine_adjudication',
+                    'version': frozen['version'], 'implementationSha256': frozen['implementationSha256'],
+                    'signatureCurrent': False, 'current': current}
     _require(isinstance(inputs, dict) and all(isinstance(inputs.get(name), (dict, list)) for name in BINDING_KEYS),
              'machine_inputs_required')
-    from scripts import scripture_machine_adjudication as machine  # noqa: E402  (it imports this module)
     try:
         reproduced, basis = machine.adjudicate(inputs['source.json'], inputs['anchor.json'], inputs['group-plan.json'],
                                                target_locale=target_locale, flagged_units=list(flagged_units),
@@ -86,12 +105,15 @@ def _reproduce_machine_receipt(receipt: dict[str, Any], *, target_locale: str, f
 
 def validate_receipt(receipt: Any, *, target_locale: str, bindings: dict[str, str],
                      flagged_units: list[str], library: cuv_scripture.CuvLibrary | None = None,
-                     machine_inputs: dict[str, Any] | None = None) -> dict[str, Any]:
+                     machine_inputs: dict[str, Any] | None = None,
+                     frozen_generator: dict[str, Any] | None = None) -> dict[str, Any]:
     """Return a summary of an approved receipt, or raise AdjudicationError with a reason code.
 
     ``machine_inputs`` holds the bound ``source.json``, ``anchor.json`` and
     ``group-plan.json``; a machine receipt is admitted only when the generator
-    reproduces it from them."""
+    reproduces it from them, or, under ``frozen_generator`` (the record a
+    fixture stored when it admitted the receipt), when a later generator would
+    otherwise re-run a frozen run."""
     _require(target_locale in PINNED_EDITIONS, 'no_pinned_edition_for_locale')
     edition_id = PINNED_EDITIONS[target_locale]
     verifier, edition_verification = _verifier(edition_id, library)
@@ -107,7 +129,7 @@ def validate_receipt(receipt: Any, *, target_locale: str, bindings: dict[str, st
     generator = None
     if kind == 'machine':
         generator = _reproduce_machine_receipt(receipt, target_locale=target_locale, flagged_units=flagged_units,
-                                               inputs=machine_inputs, library=library)
+                                               inputs=machine_inputs, library=library, frozen=frozen_generator)
     try:
         datetime.fromisoformat(receipt['reviewedAt'])
     except (TypeError, ValueError) as exc:
@@ -157,7 +179,8 @@ def require_admitted(manifest: dict[str, Any], directory: Path, *, target_locale
                      bindings: dict[str, str], flagged_units: list[str]) -> dict[str, Any]:
     """Admit the receipt named by the fixture manifest, or refuse before any paid request."""
     entry = manifest.get('scriptureAdjudication')
-    _require(isinstance(entry, dict) and set(entry) == {'path', 'sha256'}, 'scripture_adjudication_required')
+    _require(isinstance(entry, dict) and {'path', 'sha256'} <= set(entry) <= {'path', 'sha256', 'generator'},
+             'scripture_adjudication_required')
     directory = Path(directory).resolve()
     path = (directory / entry['path']).resolve()
     _require(path.is_relative_to(directory) and path.is_file(), 'receipt_file_missing')
@@ -170,4 +193,4 @@ def require_admitted(manifest: dict[str, Any], directory: Path, *, target_locale
         _require(all(f.is_relative_to(directory) and f.is_file() for f in files), 'machine_inputs_required')
         inputs = {name: json.loads(f.read_text(encoding='utf-8')) for name, f in zip(BINDING_KEYS, files)}
     return validate_receipt(receipt, target_locale=target_locale, bindings=bindings, flagged_units=flagged_units,
-                            machine_inputs=inputs)
+                            machine_inputs=inputs, frozen_generator=entry.get('generator'))

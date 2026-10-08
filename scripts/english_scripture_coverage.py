@@ -59,10 +59,16 @@ WHOLE_VERSE_COVERAGE_MIN = 0.4
 WHOLE_VERSE_LENGTH_MIN = 0.7
 WHOLE_VERSE_LENGTH_MAX = 1.5
 
+# Negation words are never function words: a reading that drops or adds one says the
+# opposite of the verse, so they count as content and their number must match the verse.
+NEGATIONS = frozenset('not no never nor neither none nothing nobody nowhere without'.split())
+_CONTRACTION = re.compile(r"\b(won|can|shan|ain)'t\b|n't\b")
+_CONTRACTED = {"won't": 'will not', "can't": 'can not', "shan't": 'shall not', "ain't": 'am not'}
+
 STOPWORDS = frozenset("""
-a an the and or but nor of to in on at by for with from that this these those is are was were be been being am
+a an the and or but of to in on at by for with from that this these those is are was were be been being am
 i you he she it we they me him her us them my your his its our their mine yours who whom whose which what there
-here then than so as if not no do does did have has had will shall would should can could may might must let up
+here then than so as if do does did have has had will shall would should can could may might must let up
 down out into unto upon over under all any some each every both very also too just now yet because when where
 while how why own same other such only about after before again further once off through during against between
 above below until more most behold o yes
@@ -211,10 +217,19 @@ def _stem(word: str) -> str:
     return word
 
 
+def _expand_negations(text: str) -> str:
+    """"didn't" reads as "did not" so a contracted negation counts like a spoken one."""
+    return _CONTRACTION.sub(lambda m: _CONTRACTED.get(m.group(0), ' not'), text)
+
+
 def content_tokens(text: str) -> list[str]:
     """Lower-cased, lightly stemmed content words; function words and punctuation dropped."""
-    words = re.findall(r"[a-z0-9]+(?:'[a-z]+)?", text.lower().replace('’', "'"))
+    words = re.findall(r"[a-z0-9]+(?:'[a-z]+)?", _expand_negations(text.lower().replace('’', "'")))
     return [_stem(word) for word in words if word not in STOPWORDS and len(word) > 1]
+
+
+def negation_count(tokens: list[str]) -> int:
+    return sum(token in NEGATIONS for token in tokens)
 
 
 def _same(a: str, b: str) -> bool:
@@ -234,12 +249,18 @@ def coverage(edition: CoverageEdition, ref: cuv_scripture.Reference | str, spoke
     covered = [token for token in unique_verse if any(_same(token, heard) for heard in spoken_tokens)]
     verse_coverage = round(len(covered) / len(unique_verse), 4)
     length_ratio = round(len(spoken_tokens) / len(verse_tokens), 4)
-    whole = (verse_coverage >= WHOLE_VERSE_COVERAGE_MIN
-             and WHOLE_VERSE_LENGTH_MIN <= length_ratio <= WHOLE_VERSE_LENGTH_MAX)
+    # A whole verse with a negation missing, added or doubled says the opposite; it is never pinned.
+    negations = {'verse': negation_count(verse_tokens), 'spoken': negation_count(spoken_tokens)}
+    negation_mismatch = negations['verse'] != negations['spoken']
+    whole_by_measure = (verse_coverage >= WHOLE_VERSE_COVERAGE_MIN
+                        and WHOLE_VERSE_LENGTH_MIN <= length_ratio <= WHOLE_VERSE_LENGTH_MAX)
+    whole = whole_by_measure and not negation_mismatch
     return {'editionId': found['editionId'], 'canonicalRef': found['canonicalRef'],
             'verseTextSha256': found['textSha256'], 'verseContentWords': len(unique_verse),
             'coveredContentWords': len(covered), 'spokenContentWords': len(spoken_tokens),
-            'verseCoverage': verse_coverage, 'lengthRatio': length_ratio, 'wholeVerse': whole,
+            'verseCoverage': verse_coverage, 'lengthRatio': length_ratio,
+            'negations': negations, 'negationMismatch': negation_mismatch,
+            'wholeByMeasure': whole_by_measure, 'wholeVerse': whole,
             'thresholds': {'verseCoverageMin': WHOLE_VERSE_COVERAGE_MIN, 'lengthRatioMin': WHOLE_VERSE_LENGTH_MIN,
                            'lengthRatioMax': WHOLE_VERSE_LENGTH_MAX}}
 

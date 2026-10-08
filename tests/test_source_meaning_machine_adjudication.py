@@ -213,6 +213,8 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
                 (answer('transcript_corrected', 'openai', None), 'corrected_text_missing'),
                 (answer('transcript_confirmed', 'frozen', "You're failing in the middle of a trial."), 'corrected_text_without_correction'),
                 (answer('transcript_confirmed', 'nobody'), 'answer_heard_by'),
+                # The lone listener heard other words: a confirmation naming it contradicts itself.
+                (answer('transcript_confirmed', 'openai'), 'confirmed_by_disagreeing_listener'),
                 (answer('maybe'), 'answer_decision'),
                 (answer('undetermined', note='x' * (machine.MAX_NOTE_CHARS + 1)), 'answer_note')):
             with self.subTest(code=code):
