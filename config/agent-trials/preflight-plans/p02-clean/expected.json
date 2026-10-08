@@ -1,5 +1,21 @@
 {
   "id": "p02-clean",
   "reconstructedFrom": "docs/reports/20261007-haiku-180s-8x8-spark-diagnostic-retrospective.zh.md 错误 1、3–5 与 流程问题·前置检查不足",
-  "blockers": {}
+  "blockers": {},
+  "requiredChecks": [
+    {
+      "tool": "check_staged",
+      "argument": "series-terminology.zh.md"
+    },
+    {
+      "tool": "check_out_path",
+      "argument": "<HOME>/sermon-video-zh-subtitles/artifacts/r/diagnostic-audio-r4"
+    },
+    {
+      "tool": "check_mount_resolves"
+    },
+    {
+      "tool": "compare_plugin_identity"
+    }
+  ]
 }

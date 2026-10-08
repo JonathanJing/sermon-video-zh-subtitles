@@ -67,6 +67,26 @@ class FixtureTests(unittest.TestCase):
         self.assertNotIn('status', by_field['startedAt']['event'])
         self.assertIn('status', by_field['endedAt']['event'])
 
+    def test_fractional_timestamps_sort_chronologically(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'outcome.json').write_text(json.dumps({'status': 'failed', 'startedAt': '2026-10-08T00:00:00Z',
+                                                           'endedAt': '2026-10-08T00:00:00.1Z'}))
+            events = trials.build_timeline(root)['events']
+        self.assertEqual([e['field'] for e in events], ['startedAt', 'endedAt'])
+        self.assertEqual(events[1]['event']['status'], 'failed')
+
+    def test_evidence_hash_ignores_symlinks(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / 'evidence'
+            root.mkdir()
+            (root / 'run.log').write_text('ok\n')
+            before = trials.evidence_sha(root)
+            secret = Path(tmp) / 'secret.txt'
+            secret.write_text('SECRET\n')
+            os.symlink(secret, root / 'link.txt')
+            self.assertEqual(trials.evidence_sha(root), before)
+
     def test_timeline_lists_every_evidence_file_including_untimed_ones(self):
         for case in trials.load_cases():
             timeline = trials.build_timeline(case['evidence'])
@@ -144,14 +164,24 @@ class ScoringTests(unittest.TestCase):
         same = [{'name': 'check_staged', 'arguments': {'path': './docs/series-terminology.zh.md'}}]
         self.assertEqual(trials.score_preflight(report, expected, same)['claimedButNotMatched'], [])
 
-    def test_clean_plan_go_needs_every_check_to_have_run(self):
-        expected = {'blockers': {}}
+    def test_preflight_is_correct_only_with_successful_checks_on_the_right_targets(self):
+        plans = {p['id']: p for p in trials.load_plans()}
+        clean, planted = plans['p02-clean'], plans['p01-planted-blockers']
         report = {'items': [], 'go': True}
-        self.assertFalse(trials.score_preflight(report, expected, [])['goCorrect'])
-        calls = [{'name': t['name'], 'arguments': {}} for t in trials.PREFLIGHT_TOOLS]
-        score = trials.score_preflight(report, expected, calls)
+        malformed = [{'name': t['name'], 'arguments': {}} for t in trials.PREFLIGHT_TOOLS]
+        score = trials.score_preflight(report, clean['expected'], malformed, clean['evidence'])
         self.assertTrue(score['goCorrect'])
-        self.assertEqual(score['requiredChecksMissing'], [])
+        self.assertFalse(score['correct'])
+        self.assertEqual(len(score['requiredChecksMissing']), 2)
+        good = [{'name': 'check_staged', 'arguments': {'path': 'docs/series-terminology.zh.md'}},
+                {'name': 'check_out_path',
+                 'arguments': {'out': '<HOME>/sermon-video-zh-subtitles/artifacts/r/diagnostic-audio-r4'}},
+                {'name': 'check_mount_resolves', 'arguments': {}},
+                {'name': 'compare_plugin_identity', 'arguments': {}}]
+        self.assertTrue(trials.score_preflight(report, clean['expected'], good, clean['evidence'])['correct'])
+        missed = trials.score_preflight({'items': [], 'go': False}, planted['expected'], good, planted['evidence'])
+        self.assertTrue(missed['goCorrect'])
+        self.assertFalse(missed['correct'])
 
     def test_refuter_is_scored_against_whether_the_diagnosis_was_right(self):
         self.assertTrue(trials.score_refutation({'verdict': 'upheld'}, True)['refuterRight'])
@@ -292,6 +322,12 @@ class RunTests(unittest.TestCase):
             self.make(max_sessions=3).run('diagnose')
         rows = (self.out / 'timings.tsv').read_text().splitlines()
         self.assertEqual(rows[1].split('\t')[:2], ['diagnose', 'fail'])
+        partial = json.loads((self.out / 'diagnose.json').read_text())
+        self.assertTrue(partial['partial'])
+        self.assertEqual(len(partial['rows']), 3)
+        summary = json.loads((self.out / 'summary.json').read_text())
+        self.assertEqual(summary['status'], 'failed')
+        self.assertEqual(sum(a['cases'] for a in summary['diagnoseByArm'].values()), 3)
 
     def test_slow_decisions_response_hits_the_total_deadline(self):
         class Body:

@@ -100,10 +100,16 @@ def load_plans(root=PLANS, only=None):
 
 def evidence_sha(directory):
     digest = hashlib.sha256()
-    for path in sorted(Path(directory).rglob('*')):
-        if path.is_file():
-            digest.update(str(path.relative_to(directory)).encode() + b'\0' + path.read_bytes() + b'\0')
+    root = Path(directory).resolve()
+    for path in evidence_files(root):
+        digest.update(str(path.relative_to(root)).encode() + b'\0' + path.read_bytes() + b'\0')
     return digest.hexdigest()
+
+
+def _instant(stamp):
+    """Fixed-width form of an ISO UTC stamp so fractional seconds sort chronologically as strings."""
+    match = re.fullmatch(r'(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(?:\.(\d+))?Z', stamp)
+    return match.group(1) + '.' + (match.group(2) or '').ljust(9, '0')[:9] if match else stamp
 
 
 # ---------------------------------------------------------------- timeline
@@ -129,7 +135,7 @@ def build_timeline(evidence):
             value = _read_json(path)
             stamps = list(_time_fields(value))
             # The file's final status, exit code and error describe its end, not its start.
-            final_key = max(stamps, key=lambda item: (item[1], bool(END_FIELD.search(item[0]))))[0] if stamps else None
+            final_key = max(stamps, key=lambda item: (_instant(item[1]), bool(END_FIELD.search(item[0]))))[0] if stamps else None
             summary = {k: value[k] for k in ('command', 'status', 'exitCode') if isinstance(value, dict) and k in value}
             if isinstance(value, dict) and isinstance(value.get('error'), dict):
                 summary['error'] = value['error'].get('message')
@@ -162,7 +168,7 @@ def build_timeline(evidence):
         if len(events) + len(untimed) == before:
             # A command, question or listing with no time still belongs to the evidence set.
             untimed.append({'source': name, 'reason': 'no timestamp in file'})
-    events.sort(key=lambda e: (e['at'], e['source'], e.get('line', 0)))
+    events.sort(key=lambda e: (_instant(e['at']), e['source'], e.get('line', 0)))
     return {'schemaVersion': 'agent-trials-timeline-v1', 'events': events, 'untimed': untimed,
             'sources': sorted({e['source'] for e in events} | {u['source'] for u in untimed})}
 
@@ -439,31 +445,48 @@ def score_refutation(refutation, diagnosis_correct):
             'missedWrongDiagnosis': (not diagnosis_correct) and verdict == 'upheld'}
 
 
-def score_preflight(report, expected, calls):
+def score_preflight(report, expected, calls, plan_root=None):
     if not isinstance(report, dict):
-        return {'submitted': False}
+        return {'submitted': False, 'correct': False}
     blockers = [i for i in report.get('items', []) if isinstance(i, dict) and i.get('status') == 'blocker']
     found, missed = [], []
     for key, groups in expected['blockers'].items():
         (found if any(_groups_match(_text(b), groups) for b in blockers) else missed).append(key)
     used = {c['name'] for c in calls}
     checks = {t['name'] for t in PREFLIGHT_TOOLS}
-    # A go verdict counts only after every deterministic check actually ran.
-    missing_checks = sorted(checks - used)
+    # Each required check needs a call on the right target that the deterministic handler accepts.
+    missing_checks = [r['tool'] + (f"({r['argument']})" if r.get('argument') else '')
+                      for r in expected.get('requiredChecks', []) if not _check_satisfied(plan_root, r, calls)]
     claimed = {i.get('checked_with') for i in report.get('items', []) if isinstance(i, dict)} - {'none', None, ''}
     unmatched = []
     for item in report.get('items', []):
         if isinstance(item, dict) and item.get('checked_with') in checks and item['checked_with'] in used \
                 and not any(_call_matches(c, item) for c in calls):
             unmatched.append({'requirement': item.get('requirement'), 'checked_with': item['checked_with']})
+    go_correct = report.get('go') == (not expected['blockers'])
     return {'submitted': True, 'go': report.get('go'), 'expectedGo': not expected['blockers'],
-            'goCorrect': report.get('go') == (not expected['blockers']) and (bool(expected['blockers']) or not missing_checks),
+            'goCorrect': go_correct, 'correct': go_correct and not missed and not missing_checks,
             'requiredChecksMissing': missing_checks,
             'blockersFound': found, 'blockersMissed': missed,
             'extraBlockers': max(0, len(blockers) - len(found)),
             'checkToolsUsed': sorted(used & {t['name'] for t in PREFLIGHT_TOOLS}),
             'claimedButNotCalled': sorted(claimed - used),
             'claimedButNotMatched': unmatched}
+
+
+def _check_satisfied(plan_root, requirement, calls):
+    for call in calls:
+        arguments = call.get('arguments') or {}
+        if call['name'] != requirement['tool']:
+            continue
+        if requirement.get('argument') and not any(requirement['argument'] in str(v) for v in arguments.values()):
+            continue
+        try:
+            preflight_check(plan_root, call['name'], arguments)
+        except Exception:
+            continue
+        return True
+    return False
 
 
 def _call_matches(call, item):
@@ -602,7 +625,14 @@ class Trials:
         self.max_sessions, self.sessions_started = max_sessions, 0
         self.decisions = decisions
         self.cases, self.plans = load_cases(only=case_ids), load_plans(only=plan_ids)
-        self.timings = []
+        self.timings, self.results, self.partial = [], {}, {}
+
+    def _rows(self, stage):
+        """Rows of a stage in progress; each one is checkpointed so a failure keeps earlier paid results."""
+        return self.partial.setdefault(stage, [])
+
+    def _checkpoint(self, stage):
+        self.write(stage, {'rows': self.partial[stage], 'partial': True})
 
     def _session(self, directory, payload, tools):
         # Only saved runner state proves an existing remote session; anything else starts a new one.
@@ -635,7 +665,7 @@ class Trials:
         return {'cases': rows}
 
     def diagnose(self, arms=('raw', 'timeline')):
-        rows = []
+        rows = self._rows('diagnose')
         for index, case in enumerate(self.cases):
             # Alternate AB/BA so warm-up or throttling is not confounded with the arm.
             for arm in (arms if index % 2 == 0 else tuple(reversed(arms))):
@@ -647,10 +677,11 @@ class Trials:
                 session = self._session(self.out / 'diagnose' / case['id'] / arm, payload, tools)
                 rows.append({'case': case['id'], 'arm': arm, **{k: v for k, v in session.items() if k != 'report'},
                              'report': session['report'], 'score': score_diagnosis(session['report'], case['expected'], case['evidence'])})
+                self._checkpoint('diagnose')
         return {'rows': rows, 'byArm': _arm_summary(rows)}
 
     def refute(self, diagnoses, arm='timeline'):
-        rows = []
+        rows = self._rows('refute')
         for row in [r for r in diagnoses['rows'] if r['arm'] == arm and r['report']]:
             case = next(c for c in self.cases if c['id'] == row['case'])
             tools = EvidenceTools(case['evidence'], timeline=True)
@@ -662,14 +693,11 @@ class Trials:
             rows.append({'case': case['id'], **{k: v for k, v in session.items() if k != 'report'},
                          'report': session['report'],
                          'score': score_refutation(session['report'], row['score'].get('correct', False))})
-        scored = [r['score'] for r in rows if r['score'].get('submitted')]
-        return {'rows': rows, 'summary': {
-            'sessions': len(rows), 'refuterRight': sum(s['refuterRight'] for s in scored),
-            'falseRefutations': sum(s['falseRefutation'] for s in scored),
-            'missedWrongDiagnoses': sum(s['missedWrongDiagnosis'] for s in scored)}}
+            self._checkpoint('refute')
+        return {'rows': rows, 'summary': _refute_summary(rows)}
 
     def preflight(self):
-        rows = []
+        rows = self._rows('preflight')
         for plan in self.plans:
             tools = EvidenceTools(plan['evidence'], preflight=True)
             payload = _payload(self.model, PREFLIGHT_INSTRUCTIONS, tools.definitions(_preflight_schema()),
@@ -678,17 +706,19 @@ class Trials:
             session = self._session(self.out / 'preflight' / plan['id'], payload, tools)
             rows.append({'plan': plan['id'], **{k: v for k, v in session.items() if k != 'report'},
                          'report': session['report'],
-                         'score': score_preflight(session['report'], plan['expected'], tools.calls)})
+                         'score': score_preflight(session['report'], plan['expected'], tools.calls, plan['evidence'])})
+            self._checkpoint('preflight')
         return {'rows': rows}
 
     def risk(self):
         if self.decisions is None:
             raise RuntimeError('risk trial needs a Decisions client')
         policy = _read_json(RISK)
-        rows = []
+        rows = self._rows('risk')
         for action in policy['actions']:
             response = self.decisions.decide(action['id'], risk_request(action, policy['tiers']))
             rows.append(score_risk(action, response))
+            self._checkpoint('risk')
         return {'rows': rows, 'summary': risk_summary(rows)}
 
     def write(self, name, value):
@@ -701,6 +731,14 @@ class Trials:
         self.out.mkdir(parents=True, exist_ok=True)
         try:
             return self._run(trial)
+        except BaseException:
+            # Summarize what finished, including the failed stage's completed rows, for the run report.
+            results = dict(self.results)
+            for stage, rows in self.partial.items():
+                if stage not in results:
+                    results[stage] = _stage_result(stage, rows)
+            self.write('summary', self._summary(results, status='failed'))
+            raise
         finally:
             # Written even when a stage raises, so the run report shows the failed stage and its time.
             with open(self.out / 'timings.tsv', 'w', encoding='utf-8') as stream:
@@ -709,7 +747,7 @@ class Trials:
                     stream.write('\t'.join(map(str, row)) + '\n')
 
     def _run(self, trial):
-        results = {}
+        results = self.results
         if trial in ('timeline', 'all'):
             results['timeline'] = self.write('timeline-summary', self._timed('timeline', self.timeline))
         if trial in ('diagnose', 'refute', 'all'):
@@ -720,18 +758,34 @@ class Trials:
             results['preflight'] = self.write('preflight', self._timed('preflight', self.preflight))
         if trial in ('risk', 'all'):
             results['risk'] = self.write('risk', self._timed('risk', self.risk))
-        summary = {'schemaVersion': 'agent-api-trials-summary-v1', 'backend': self.backend,
-                   'evidence': {'fake': 'fake_plumbing_not_evidence', 'live': 'live_dev_api'}.get(self.backend, self.backend),
-                   'agentModel': self.model, 'decisionsModel': DECISIONS_MODEL,
-                   'agentSessionsStarted': self.sessions_started,
-                   'diagnoseByArm': results.get('diagnose', {}).get('byArm'),
-                   'refute': results.get('refute', {}).get('summary'),
-                   'preflight': [{'plan': r['plan'], **r['score']} for r in results.get('preflight', {}).get('rows', [])],
-                   'risk': results.get('risk', {}).get('summary'),
-                   'agentUsage': _sum_usage(results),
-                   'decisionsUsage': _sum_decisions_usage(results)}
+        summary = self._summary(results, status='completed')
         self.write('summary', summary)
         return summary
+
+    def _summary(self, results, *, status):
+        return {'schemaVersion': 'agent-api-trials-summary-v1', 'status': status, 'backend': self.backend,
+                'evidence': {'fake': 'fake_plumbing_not_evidence', 'live': 'live_dev_api'}.get(self.backend, self.backend),
+                'agentModel': self.model, 'decisionsModel': DECISIONS_MODEL,
+                'agentSessionsStarted': self.sessions_started,
+                'diagnoseByArm': results.get('diagnose', {}).get('byArm'),
+                'refute': results.get('refute', {}).get('summary'),
+                'preflight': [{'plan': r['plan'], **r['score']} for r in results.get('preflight', {}).get('rows', [])],
+                'risk': results.get('risk', {}).get('summary'),
+                'agentUsage': _sum_usage(results),
+                'decisionsUsage': _sum_decisions_usage(results)}
+
+
+def _refute_summary(rows):
+    scored = [r['score'] for r in rows if r['score'].get('submitted')]
+    return {'sessions': len(rows), 'refuterRight': sum(s['refuterRight'] for s in scored),
+            'falseRefutations': sum(s['falseRefutation'] for s in scored),
+            'missedWrongDiagnoses': sum(s['missedWrongDiagnosis'] for s in scored)}
+
+
+def _stage_result(stage, rows):
+    extra = {'diagnose': lambda: {'byArm': _arm_summary(rows)}, 'refute': lambda: {'summary': _refute_summary(rows)},
+             'risk': lambda: {'summary': risk_summary(rows)}}.get(stage, dict)()
+    return {'rows': rows, 'partial': True, **extra}
 
 
 def _arm_summary(rows):
