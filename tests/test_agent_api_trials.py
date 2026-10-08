@@ -1276,6 +1276,62 @@ class LatestReviewTests(unittest.TestCase):
         self.assertEqual(len(trials.load_cases(root)), 1)
 
 
+    def test_answer_key_or_binary_file_in_evidence_is_refused_before_any_session(self):
+        root = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, root)
+        case = trials.CASES / 'f01-plugin-identity'
+        plan = trials.PLANS / 'p02-clean'
+        shutil.copytree(case, root / 'cases' / case.name)
+        shutil.copytree(plan, root / 'plans' / plan.name)
+        for keys in (True, False):
+            leaked = root / 'cases' / case.name / 'evidence' / 'nested' / 'expected.json'
+            leaked.parent.mkdir(exist_ok=True)
+            leaked.write_text((case / 'expected.json').read_text())
+            with self.assertRaisesRegex(ValueError, 'answer key'):
+                trials.load_cases(root / 'cases', keys=keys)
+            leaked.unlink()
+            binary = leaked.with_name('dump.log')
+            binary.write_bytes(b'\xff\xfe log')
+            with self.assertRaisesRegex(ValueError, 'not UTF-8'):
+                trials.load_cases(root / 'cases', keys=keys)
+            binary.unlink()
+            self.assertEqual(len(trials.load_cases(root / 'cases', keys=keys)), 1)
+        (root / 'plans' / plan.name / 'plan' / 'expected.json').write_text((plan / 'expected.json').read_text())
+        with self.assertRaisesRegex(ValueError, 'answer key'):
+            trials.load_plans(root / 'plans')
+        (root / 'plans' / plan.name / 'plan' / 'expected.json').unlink()
+        (root / 'plans' / plan.name / 'plan' / 'notes.txt').write_bytes(b'\x80')
+        with self.assertRaisesRegex(ValueError, 'not UTF-8'):
+            trials.load_plans(root / 'plans')
+
+    def test_unrelated_existing_out_is_refused_and_trial_outputs_resume(self):
+        base = trials.ROOT / 'artifacts'
+        base.mkdir(exist_ok=True)
+        root = Path(tempfile.mkdtemp(dir=base))
+        self.addCleanup(shutil.rmtree, root)
+        other = root / 'production-run'
+        other.mkdir()
+        (other / 'summary.json').write_text('{"run": "production"}')
+        (other / 'scope.json').write_text('{"layer2": {}}')
+        with patch.dict('os.environ', {}, clear=True), patch('builtins.print'), \
+                patch('sys.stderr'), self.assertRaises(SystemExit) as stop:
+            trials.main(['timeline', '--out', str(other)])
+        self.assertEqual(stop.exception.code, 2)
+        self.assertEqual((other / 'summary.json').read_text(), '{"run": "production"}')
+        self.assertFalse((other / '.trials.lock').exists())
+        for name, setup in (('empty', lambda d: None),
+                            ('locked', lambda d: (d / '.trials.lock').write_text(''))):
+            directory = root / name
+            directory.mkdir()
+            setup(directory)
+            with self.subTest(name), patch.dict('os.environ', {}, clear=True), patch('builtins.print'):
+                self.assertEqual(trials.main(['timeline', '--out', str(directory)]), 0)
+        legacy = root / 'legacy'
+        legacy.mkdir()
+        (legacy / 'scope.json').write_text('{"timeline": {}, "risk": {}}')
+        trials.check_output_dir(legacy)
+        trials.check_output_dir(root / 'missing')
+
     def test_malformed_risk_policy_is_refused_before_any_request(self):
         out, make = self.make_trials()
         policy = json.loads(trials.RISK.read_text())

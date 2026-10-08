@@ -89,6 +89,7 @@ def load_cases(root=CASES, only=None, keys=True):
         if not (directory / 'evidence').is_dir() or (directory / 'evidence').is_symlink() or directory.is_symlink():
             raise ValueError(f'case {directory.name} has no evidence directory of its own')
         case = {'id': directory.name, 'evidence': directory / 'evidence'}
+        check_evidence(case['evidence'], f'case {directory.name}')
         if keys:
             case['expected'] = _read_json(directory / 'expected.json')
             _check_case_key(directory.name, case['expected'])
@@ -112,6 +113,7 @@ def load_plans(root=PLANS, only=None):
                 _check_input(directory / 'plan', name)
             except ValueError as error:
                 raise ValueError(f'plan {directory.name}: {error}') from None
+        check_evidence(directory / 'plan', f'plan {directory.name}')
         expected = _read_json(directory / 'expected.json')
         _check_plan_key(directory.name, expected)
         plans.append({'id': directory.name, 'evidence': directory / 'plan', 'expected': expected})
@@ -257,6 +259,18 @@ def evidence_files(root):
     root = Path(root).resolve()
     return sorted(p for p in root.rglob('*')
                   if not p.is_symlink() and p.is_file() and p.resolve().is_relative_to(root))
+
+
+def check_evidence(root, label):
+    """Every exposed file must be readable text, and no answer key may sit among them: a session can open any of
+    these files, and scoring reads them all, so either problem would surface only after sessions were paid for."""
+    for path in evidence_files(root):
+        if path.name == 'expected.json':
+            raise ValueError(f'{label}: an answer key ({path.name}) is inside the evidence a session can read')
+        try:
+            path.read_bytes().decode('utf-8')
+        except UnicodeDecodeError:
+            raise ValueError(f'{label}: evidence file {path.name} is not UTF-8 text') from None
 
 
 def snapshot_evidence(source, root):
@@ -1879,6 +1893,26 @@ def _positive_seconds(text):
     return value
 
 
+def check_output_dir(out):
+    """An existing --out must be empty or an earlier trial output: this tool rewrites generic names such as
+    summary.json, outcome.json and timings.tsv, so a mistyped path must not land on another run's evidence."""
+    out = Path(out)
+    if not out.exists():
+        return
+    if not out.is_dir():
+        raise ValueError(f'{out}: --out is not a directory')
+    if not any(out.iterdir()) or (out / '.trials.lock').is_file():
+        return
+    # Outputs written before the lock existed are recognized by a scope.json that binds only trial stages.
+    try:
+        scope = _read_json(out / 'scope.json')
+    except (OSError, ValueError):
+        scope = None
+    if isinstance(scope, dict) and scope and set(scope) <= {'timeline', 'diagnose', 'refute', 'preflight', 'risk'}:
+        return
+    raise ValueError(f'{out}: --out exists and is not an agent-trial output; use a new directory')
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('trial', choices=['timeline', 'diagnose', 'refute', 'preflight', 'risk', 'all'])
@@ -1896,6 +1930,10 @@ def main(argv=None):
     out = args.out.resolve()
     if not out.is_relative_to(ROOT / 'artifacts') or out == ROOT / 'artifacts':
         parser.error('--out must be a new directory under artifacts/')
+    try:
+        check_output_dir(out / 'fake-plumbing' if args.backend == 'fake' and args.trial != 'timeline' else out)
+    except ValueError as error:
+        parser.error(str(error))
     route = None
     if args.trial == 'timeline':
         client = decisions = None  # Deterministic; no credentials needed.
