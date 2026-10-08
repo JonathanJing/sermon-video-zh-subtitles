@@ -51,7 +51,7 @@ flowchart TD
 
 ### 并发和预算放在哪里
 
-- **租约**：仓库已经有 GCS generation precondition 租约（`backend/leases.py:129`），可以直接复用；需要查询和事务的（API 槽位、预算预留）放 Firestore 事务。
+- **租约**：仓库已经有 GCS generation precondition 租约（`backend/leases.py:129`），但它的过期判断用的是调用方自己的 `datetime.now()`（`backend/leases.py:46`、L154-157）。多台机器上，时钟偏快的一方可能抢走一个仍在工作的租约。所以云端不能原样复用：过期和接管要改用共享的服务端时间（例如 Firestore 事务里的服务端时间戳），并且每次有状态的写入都带上租约的 generation 做 fencing，旧 owner 一写就失败。需要查询和事务的（API 槽位、预算预留）也放 Firestore 事务。
 - **心跳**：现在用本机单调时钟（[liveness](../canonical-layer2-liveness.zh.md)），跨机器不能比较。云端改为 worker 定期写 Firestore 服务端时间戳，controller 用服务端时间判超时。
 - **预算**：现在的预算根是本地兄弟目录，跨主机不共享（[预算与迁移](../canonical-layer2-budget-and-migration.zh.md)）。云端用 Firestore 事务做并发准入，但**预留、结算、结果不明这三种转换在派发前先写成 GCS 不可变对象**（`runs/<pageId>/<runId>/budget/<attemptId>/<transition>.json`）。这样 Firestore 丢了也能从 GCS 恢复“有一笔调用可能已经花了钱”，不会把预算放回去再重复派发。仍然需要绑定人工批准收据。
 - **GPU**：卡数上限 3，由 controller 计数，不需要通用 GPU 调度器。
@@ -83,15 +83,17 @@ gs://tongxing-prod-evidence/
     L2/<locale>/<revision>/candidate.json   # 每次修订一个目录，不覆盖
     L2/<locale>/<revision>/groups/<g>/attempts/<n>.json
     L3/<locale>/<renderId>/audio-package.json
-    L4/<locale>/release-package.json
+    L4/<locale>/<releaseId>/release-package.json   # 准备好的包和 HTTP 核验后的包各是一个新 releaseId
+    L4/<locale>/current.json                # 指向当前 releaseId，用 generation 条件更新
     receipts/<kind>/<id>.json               # 批准、waiver、预算授权，带被批准物的 hash
-    accounting/<attemptId>.json             # 每次模型调用一个对象，不追加同一个文件
-    jobs/<jobId>/{request,state}.json       # 可变，用 generation 条件更新
+    accounting/<attemptId>/<eventId>.json   # 每个事件一个对象（开始、完成各一个），不追加同一个文件
+    jobs/<jobId>/request.json               # 派发前只写一次；请求一变就换新 jobId
+    jobs/<jobId>/state.json                 # 可变，用 generation 条件更新
   cache/layer2/<identityHash>.json          # 模型结果缓存，key 含来源、策略、prompt、代码身份
   models/                                   # 授权音色 checkpoint 等，单独桶更好，见下
 ```
 
-`accounting/events.jsonl` 现在是本地追加文件；多个云 Job 同时追加同一个对象做不到，所以改成每次调用一个对象。现有 `sermon_accounting.py` 的读取、重放和完整性检查只认 `events.jsonl`（L329、L833），所以要加一个确定性的转换步骤：按固定顺序把这些对象拼回 `events.jsonl` 并校验，再交给汇总脚本生成 `summary.json` 和 `model-calls.csv`；或者把所有读取方改成新格式。以后需要做报表，再导入 BigQuery。
+`accounting/events.jsonl` 现在是本地追加文件；多个云 Job 同时追加同一个对象做不到，所以改成每个事件一个对象。一次 API 调用至少有两条记录：`api_attempt_started` 和完成记录（`scripts/sermon_accounting.py:624-657`），未完成调用的对账要靠两条都在（L994-1002），所以 key 必须是 `<attemptId>/<eventId>`，不能一次调用只占一个对象。现有 `sermon_accounting.py` 的读取、重放和完整性检查只认 `events.jsonl`（L329、L833），所以要加一个确定性的转换步骤：按固定顺序把这些对象拼回 `events.jsonl` 并校验，再交给汇总脚本生成 `summary.json` 和 `model-calls.csv`；或者把所有读取方改成新格式。以后需要做报表，再导入 BigQuery。
 
 ### 保留多久（建议，需你确认）
 
@@ -100,7 +102,8 @@ gs://tongxing-prod-evidence/
 | 收据、包清单、run 身份、发布包 | 长期，开对象版本和保留锁 | 证明发布内容从哪来、谁批准 |
 | 最终音频、发布用文字 | 长期 | 可重新发布 |
 | 来源媒体 | 90 天后转 Coldline，按授权要求删除 | 体积大，可重新取得 |
-| 中间产物（单句 TTS、废弃修订的音频） | 30 天删除 | 可以从清单重算 |
+| 被现行包引用的单元音频 | 和引用它的包、release 一样长 | canonical 暂存会打开并完整解码每个引用的单元（`scripts/stage_formal_multilingual_dev.py:258-262`）；重新合成的 hash 不同，要走新修订和新审核，不能当作恢复 |
+| 没有被任何现行包引用的中间产物（废弃修订的音频、临时文件） | 30 天删除 | 已经不在任何证据链上 |
 | L2 模型缓存 | 随 run 身份保留到下一次大版本 | 保证重跑不重复花钱 |
 
 体量估算：每周 1 小时证道，三语音频和中间文件约 2–5 GB，长期保存的部分约 0.5–1 GB。按 Standard 存储算，每月不到 $2（估）。
