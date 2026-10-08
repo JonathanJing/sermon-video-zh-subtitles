@@ -89,6 +89,31 @@ class ExportRunDigestTests(unittest.TestCase):
             self.assertEqual(digest.main([str(dest), "--verify"]), 0)
             (dest / "INDEX.md").write_text("pasted sk-proj-abcdefghijklmnopqrstuvwxyz and supersecretvalue123\n")
             self.assertEqual(digest.main([str(dest), "--verify"]), 1)
+            for leak in ('{"password": "correct horse battery staple"}\n', "token=abc123xyz\n"):
+                (dest / "INDEX.md").write_text(leak)
+                self.assertEqual(digest.main([str(dest), "--verify"]), 1, leak)
+
+    def test_json_stays_valid_and_summary_status_is_indexed(self):
+        (self.run / "summary.json").write_text(json.dumps({"locales": {
+            "ko": {"status": "requires_repair", "reason": "g003 back-translation drift"},
+            "es": {"status": "text_waiver_issued"}},
+            "authorization": {"user": "x", "password": "y"}, "apiToken": "abcdefgh"}))
+        dest = self.export()
+        summary = json.loads((dest / self.run.name / "summary.json").read_text())
+        self.assertEqual((summary["authorization"], summary["apiToken"]), ("<redacted>", "<redacted>"))
+        index = (dest / "INDEX.md").read_text()
+        self.assertIn("ko: **requires_repair** (g003 back-translation drift)", index)
+        self.assertIn("es: **text_waiver_issued**", index)
+
+    def test_non_ascii_run_directory_gets_a_publishable_default_name(self):
+        run = self.base / "机器质检 run"
+        run.mkdir()
+        (run / "timings.tsv").write_text("stage\tstatus\tseconds\n")
+        self.assertEqual(digest.main([str(run), "--out", str(self.out)]), 0)
+        (dest,) = self.out.iterdir()
+        self.assertRegex(dest.name, r"^\d{8}-run$")
+        with self.assertRaises(SystemExit):
+            digest.main([str(run), "--out", str(self.out), "--name", "20261008-机器质检"])
 
     def test_write_report_for_drivers_never_raises(self):
         with patch.object(digest, "ROOT", self.base):

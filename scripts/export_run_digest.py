@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+from collections import deque
 import hashlib
 import json
 import os
@@ -44,7 +45,7 @@ SCHEMA = "sermon-run-digest-v1"
 WHOLE_NAMES = {"outcome.json", "timings.tsv", "summary.json", "preflight.json"}
 MAX_WHOLE_BYTES = 256 * 1024
 MAX_DIGEST_BYTES = 2 * 1024 * 1024
-NAME = re.compile(r"\d{8}-[\w.-]+")
+NAME = re.compile(r"\d{8}-[A-Za-z0-9._-]+")  # Same set publish_run_report.sh accepts
 RETROSPECTIVE_SECTIONS = [
     ("实际覆盖范围", "按 L1–L4 写本轮执行、复用和未执行的部分；模拟审核和诊断级结果原样写出。"),
     ("结果和结束信号", "各运行目录的 outcome.json；独占 Spark 的运行以 round: 行为准。"),
@@ -55,7 +56,9 @@ RETROSPECTIVE_SECTIONS = [
     ("外部可见的变化", "Dev 发布、TestFlight、受保护分支推送各自的证据；没做的验收写 not_run。"),
     ("后续", "每条写负责人和跟踪的 PR 或 backlog 条目。"),
 ]
-LOG_HEAD, LOG_TAIL, LOG_MAX_ERRORS = 40, 200, 50
+LOG_HEAD, LOG_TAIL, LOG_MAX_ERRORS, LOG_LINE_CHARS = 40, 200, 50, 2000
+SECRET_KEY = re.compile(r"(?i)(?:api[_-]?key|token|secret|password|passwd|cookie|authorization)$")
+PLACEHOLDERS = {"<redacted>", '"<redacted>"', "'<redacted>'"}
 ERROR_LINE = re.compile(r"Traceback|Error\b|Exception|FAILED|\bfail(ed)?\b|refused|denied|timed? ?out", re.I)
 
 REDACTIONS: list[tuple[str, re.Pattern[str], str]] = [
@@ -67,7 +70,8 @@ REDACTIONS: list[tuple[str, re.Pattern[str], str]] = [
     ("bearer", re.compile(r"(?i)\bBearer\s+[A-Za-z0-9._~+/=-]+"), "Bearer <redacted>"),
     ("secret_field", re.compile(
         r"(?i)(\"?[\w-]*(?:api[_-]?key|token|secret|password|passwd|cookie|authorization)\"?\s*[:=]\s*)"
-        r"(\"[^\"\n]*\"|'[^'\n]*'|[^\s,;}]+)"), r"\1<redacted>"),
+        r"(\"[^\"\n]*\"|'[^'\n]*'|[^\s,;}]+)"),
+     lambda m: m[1] + ('"<redacted>"' if m[2][0] == '"' else "'<redacted>'" if m[2][0] == "'" else "<redacted>")),
     ("email", re.compile(r"\b[\w.+-]+@[\w-]+(?:\.[\w-]+)+\b"), "<email>"),
     ("private_ip", re.compile(
         r"\b(?:10(?:\.\d{1,3}){3}|192\.168(?:\.\d{1,3}){2}|172\.(?:1[6-9]|2\d|3[01])(?:\.\d{1,3}){2}"
@@ -76,11 +80,34 @@ REDACTIONS: list[tuple[str, re.Pattern[str], str]] = [
     ("home_dir", re.compile(r"/(?:Users|home)/[^/\s\"']+"), "~"),
 ]
 
+REDACTIONS_BY_NAME = {name: pattern for name, pattern, _ in REDACTIONS}
+
 
 def env_secret_values() -> list[str]:
     """Values of secret-like variables in this process (e.g. under the OpenAI launcher)."""
     marker = re.compile(r"KEY|TOKEN|SECRET|PASSWORD|COOKIE", re.I)
     return sorted({v for k, v in os.environ.items() if marker.search(k) and len(v) >= 8}, key=len, reverse=True)
+
+
+def redact_json(value, secrets: list[str], counts: dict[str, int]):
+    """Redact a parsed JSON value field by field so the copy stays valid JSON."""
+    if isinstance(value, dict):
+        out = {}
+        for key, item in value.items():
+            if SECRET_KEY.search(str(key)) and item not in ("<redacted>", None):
+                counts["secret_field"] = counts.get("secret_field", 0) + 1
+                out[key] = "<redacted>"
+            else:
+                out[key] = redact_json(item, secrets, counts)
+        return out
+    if isinstance(value, list):
+        return [redact_json(item, secrets, counts) for item in value]
+    if isinstance(value, str):
+        text, found = redact(value, secrets)
+        for name, hits in found.items():
+            counts[name] = counts.get(name, 0) + hits
+        return text
+    return value
 
 
 def redact(text: str, secrets: list[str]) -> tuple[str, dict[str, int]]:
@@ -97,29 +124,50 @@ def redact(text: str, secrets: list[str]) -> tuple[str, dict[str, int]]:
 
 
 def verify(dest: Path, secrets: list[str]) -> list[str]:
-    """Return files that still hold a value the redaction rules would change.
-
-    ``secret_field`` is skipped because its own placeholder still matches it.
-    """
+    """Return files that still hold a value the redaction rules would change."""
     leaks = []
     for path in sorted(p for p in dest.rglob("*") if p.is_file() and p.suffix != ".zip"):
         text = path.read_text(encoding="utf-8", errors="replace")
         hits = [name for name, pattern, _ in REDACTIONS if name != "secret_field" and pattern.search(text)]
+        # A secret field counts unless its value is the placeholder or a plain count
+        # (the manifest's own redaction counters, e.g. "env_secret": 1).
+        hits += ["secret_field"] if any(m[2] not in PLACEHOLDERS and not m[2].isdigit()
+                                        for m in REDACTIONS_BY_NAME["secret_field"].finditer(text)) else []
         hits += ["env_secret"] if any(value in text for value in secrets) else []
         if hits:
             leaks.append(f"{path.relative_to(dest)}: {', '.join(hits)}")
     return leaks
 
 
-def condense_log(lines: list[str]) -> tuple[list[str], bool]:
-    if len(lines) <= LOG_HEAD + LOG_TAIL:
-        return lines, False
-    middle = lines[LOG_HEAD:-LOG_TAIL]
-    errors = [f"[line {LOG_HEAD + i + 1}] {line}" for i, line in enumerate(middle) if ERROR_LINE.search(line)]
-    kept = errors[:LOG_MAX_ERRORS]
-    note = f"... {len(middle)} lines omitted; {len(errors)} error-like lines, {len(kept)} kept below ...\n"
-    return lines[:LOG_HEAD] + [note] + [l if l.endswith("\n") else l + "\n" for l in kept] + \
-        ["... end of omitted section ...\n"] + lines[-LOG_TAIL:], True
+def read_log(path: Path, digest) -> tuple[str, bool]:
+    """Stream a log: keep head, tail and the first error lines in between, hashing as it goes."""
+    head: list[str] = []
+    tail: deque[tuple[int, str]] = deque(maxlen=LOG_TAIL)
+    errors: list[tuple[int, str]] = []  # Bounded: later tail lines may still be dropped from it.
+    error_total, count = 0, 0
+    with path.open("rb") as stream:
+        for raw in stream:
+            digest.update(raw)
+            count += 1
+            line = raw.decode("utf-8", errors="replace")
+            line = line if len(line) <= LOG_LINE_CHARS else line[:LOG_LINE_CHARS] + " ...[line truncated]\n"
+            line = line if line.endswith("\n") else line + "\n"
+            if count <= LOG_HEAD:
+                head.append(line)
+                continue
+            if len(tail) == tail.maxlen:
+                number, dropped = tail[0]
+                if ERROR_LINE.search(dropped):
+                    error_total += 1
+                    if len(errors) < LOG_MAX_ERRORS:
+                        errors.append((number, dropped))
+            tail.append((count, line))
+    if count <= LOG_HEAD + LOG_TAIL:
+        return "".join(head + [line for _, line in tail]), False
+    omitted = count - LOG_HEAD - LOG_TAIL
+    note = f"... {omitted} lines omitted; {error_total} error-like lines, {len(errors)} kept below ...\n"
+    return "".join(head + [note] + [f"[line {n}] {line}" for n, line in errors] +
+                   ["... end of omitted section ...\n"] + [line for _, line in tail]), True
 
 
 def classify(path: Path) -> str | None:
@@ -142,18 +190,33 @@ def collect(run_dir: Path, label: str, dest: Path, secrets: list[str]) -> tuple[
             key = path.suffix or "(none)"
             skipped[key] = skipped.get(key, 0) + 1
             continue
-        raw = path.read_bytes()
-        entry = {"run": label, "path": str(rel), "kind": kind, "bytes": len(raw),
-                 "sha256": hashlib.sha256(raw).hexdigest(), "truncated": False}
-        if kind == "whole" and len(raw) > MAX_WHOLE_BYTES:
-            entry["omitted"] = "over_size_cap"
+        digest = hashlib.sha256()
+        entry = {"run": label, "path": str(rel), "kind": kind, "bytes": path.stat().st_size, "truncated": False}
+        if kind == "log":
+            text, entry["truncated"] = read_log(path, digest)
+        elif entry["bytes"] > MAX_WHOLE_BYTES:  # Hash in chunks; never load it.
+            with path.open("rb") as stream:
+                for chunk in iter(lambda: stream.read(1 << 20), b""):
+                    digest.update(chunk)
+            entry.update(sha256=digest.hexdigest(), omitted="over_size_cap")
             entries.append(entry)
             continue
-        text = raw.decode("utf-8", errors="replace")
-        if kind == "log":
-            lines, entry["truncated"] = condense_log(text.splitlines(keepends=True))
-            text = "".join(lines)
-        text, entry["redactions"] = redact(text, secrets)
+        else:
+            raw = path.read_bytes()
+            digest.update(raw)
+            text = raw.decode("utf-8", errors="replace")
+        entry["sha256"] = digest.hexdigest()
+        parsed = None
+        if path.suffix == ".json":
+            try:
+                parsed = json.loads(text)
+            except ValueError:
+                parsed = None
+        if parsed is not None:
+            entry["redactions"] = {}
+            text = json.dumps(redact_json(parsed, secrets, entry["redactions"]), ensure_ascii=False, indent=2) + "\n"
+        else:
+            text, entry["redactions"] = redact(text, secrets)
         target = dest / label / rel
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(text, encoding="utf-8")
@@ -181,6 +244,17 @@ def index_markdown(name: str, dest: Path, entries: list[dict], runs: list[dict])
                        f"({record.get('startedAt', '?')} → {record.get('endedAt', '?')})"
                        + (f", error {record['error'].get('type')}: {record['error'].get('message')}"
                           if isinstance(record.get("error"), dict) else ""))
+        for entry in (e for e in entries if e["run"] == label and Path(e["path"]).name == "summary.json"
+                      and "omitted" not in e):
+            record = read_json(dest / label / entry["path"]) or {}
+            if "status" in record:
+                out.append(f"- summary `{entry['path']}`: **{record['status']}**")
+            locales = record.get("locales")
+            for locale, row in (locales.items() if isinstance(locales, dict) else []):
+                row = row if isinstance(row, dict) else {}
+                detail = row.get("reason") or "; ".join(map(str, row.get("problems") or []))
+                out.append(f"- summary `{entry['path']}` {locale}: **{row.get('status', '?')}**"
+                           + (f" ({str(detail)[:200]})" if detail else ""))
         for entry in (e for e in entries if e["run"] == label and Path(e["path"]).name == "timings.tsv"):
             with (dest / label / entry["path"]).open(encoding="utf-8") as handle:
                 rows = [r for r in csv.reader(handle, delimiter="\t") if r]
@@ -245,9 +319,10 @@ def main(argv: list[str] | None = None) -> int:
         leaks = [f"{d}/{leak}" for d in args.run_dirs for leak in verify(d, env_secret_values())]
         print("\n".join(leaks) or "No unredacted values found.", file=sys.stderr if leaks else sys.stdout)
         return 1 if leaks else 0
-    name = args.name or f"{datetime.now(timezone.utc):%Y%m%d}-{args.run_dirs[0].resolve().name}"
+    label = re.sub(r"[^A-Za-z0-9._-]+", "-", args.run_dirs[0].resolve().name).strip("-") or "run"
+    name = args.name or f"{datetime.now(timezone.utc):%Y%m%d}-{label}"
     if not NAME.fullmatch(name):
-        parser.error("--name must be YYYYMMDD-<label> using letters, digits, '.', '_' and '-'")
+        parser.error("--name must be YYYYMMDD-<label> using ASCII letters, digits, '.', '_' and '-'")
     dest = args.out / name
     if dest.exists():
         parser.error(f"{dest} already exists; pick another --name")

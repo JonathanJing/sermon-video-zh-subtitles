@@ -45,7 +45,8 @@ TARGET="$WORKTREE/docs/reports/runs/$NAME"
 mkdir -p "$TARGET"
 cp -R "$REPORT/." "$TARGET/"
 find "$TARGET" -name '*.zip' -delete
-git -C "$WORKTREE" add "docs/reports/runs/$NAME"
+# -f: the repository ignores *.log, but these logs are the verified, redacted copies.
+git -C "$WORKTREE" add -f "docs/reports/runs/$NAME"
 git -C "$WORKTREE" commit -q -m "Add run report $NAME"
 git -C "$WORKTREE" push -q origin "HEAD:refs/heads/$BRANCH"
 echo "Pushed $BRANCH ($(git -C "$WORKTREE" rev-parse --short HEAD))"
@@ -54,9 +55,9 @@ TITLE="运行报告：$NAME"
 BODY="自动生成的脱敏运行报告，供云端复盘。报告目录：docs/reports/runs/$NAME/
 
 $(sed -n '1,60p' "$REPORT/INDEX.md")"
-if command -v gh >/dev/null; then
-  (cd "$REPO" && gh pr create --base "$BASE" --head "$BRANCH" --draft --title "$TITLE" --body "$BODY")
-else
-  URL="$(git -C "$REPO" remote get-url origin | sed -E 's#(git@github.com:|https://github.com/)#https://github.com/#; s#\.git$##')"
+URL="$(git -C "$REPO" remote get-url origin | sed -E 's#(git@github.com:|https://github.com/)#https://github.com/#; s#\.git$##')"
+# The branch is already pushed, so a failed or missing gh must still leave a way to open the PR.
+if ! command -v gh >/dev/null || ! (cd "$REPO" && gh pr create --base "$BASE" --head "$BRANCH" --draft \
+    --title "$TITLE" --body "$BODY"); then
   echo "Open the PR: $URL/compare/$BASE...$BRANCH?expand=1"
 fi
