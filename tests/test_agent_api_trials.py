@@ -309,6 +309,28 @@ class RunTests(unittest.TestCase):
         self.assertEqual([(r['status'], r['report'], r['score']['correct']) for r in rows], [('failed', None, False)] * 2)
         self.assertEqual(summary['refute']['sessions'], 0)
 
+    def test_usage_missing_at_finish_is_read_back_and_kept(self):
+        class LateUsage(trials.FakeAgentsClient):
+            reads = 0
+
+            def list_turns(self, session_id):
+                return [{**turn, 'usage': None} for turn in super().list_turns(session_id)]
+
+            def retrieve_session(self, session_id):
+                session = super().retrieve_session(session_id)
+                if self.sessions[session_id]['index'] >= len(self.sessions[session_id]['calls']):
+                    LateUsage.reads += 1
+                    if LateUsage.reads >= 3:
+                        session['usage'] = {'input_tokens': 500, 'output_tokens': 20}
+                return session
+        make = lambda: trials.Trials(self.out, client=LateUsage(trials.fake_agent_script), model='m',
+                                     backend='fake', poll_seconds=0, case_ids=['f01-plugin-identity'])
+        summary = make().run('diagnose')
+        self.assertEqual(summary['diagnoseByArm']['raw']['inputTokens'], 500)
+        self.assertTrue((self.out / 'diagnose/f01-plugin-identity/raw.usage.json').exists())
+        again = make().run('diagnose')
+        self.assertEqual(again['agentUsage']['input_tokens'], 1000)
+
     def test_unknown_session_outcome_stops_the_trial(self):
         class Stuck(trials.FakeAgentsClient):
             def list_turns(self, session_id):

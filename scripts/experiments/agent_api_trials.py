@@ -588,8 +588,17 @@ def run_session(client, session_dir, payload, tools, *, max_seconds, max_tool_ca
             report = output.get('report')
     if calls_path.exists():
         tools.calls = [json.loads(line) for line in calls_path.read_text(encoding='utf-8').splitlines() if line]
+    usage = _usage(result)
+    usage_path = session_dir.parent / (session_dir.name + '.usage.json')
+    if usage is None and usage_path.exists():
+        usage = _read_json(usage_path)['usage']
+    elif usage is None and status == 'completed' and result.get('session_id'):
+        # The session's usage is often filled in shortly after it completes; read it back, bounded.
+        usage = _read_back_usage(client, result['session_id'], poll_seconds)
+        if usage is not None:
+            usage_path.write_text(json.dumps({'usage': usage, 'source': 'session read-back'}) + '\n', encoding='utf-8')
     return {'sessionId': result.get('session_id'), 'status': result.get('status'),
-            'toolCalls': result.get('tool_calls'), 'usage': _usage(result),
+            'toolCalls': result.get('tool_calls'), 'usage': usage,
             'elapsedSeconds': elapsed,
             # Only a completed session's report is scored or refuted; a failed one is kept for inspection.
             'report': report if status == 'completed' else None,
@@ -609,6 +618,18 @@ def _close_interrupted_attempts(meta, session_dir):
 def _write_meta(path, meta):
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(meta) + '\n', encoding='utf-8')
+
+
+def _read_back_usage(client, session_id, poll_seconds, attempts=5):
+    for attempt in range(attempts):
+        try:
+            usage = _usage({'usage': client.retrieve_session(session_id).get('usage')})
+        except Exception:
+            usage = None
+        if usage is not None:
+            return usage
+        time.sleep(min(30.0, poll_seconds * (attempt + 1)))
+    return None
 
 
 def _usage(result):
