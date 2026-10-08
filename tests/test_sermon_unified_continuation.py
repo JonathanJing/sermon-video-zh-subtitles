@@ -251,6 +251,23 @@ class ContinuationTests(unittest.TestCase):
         self.assertEqual(admitted['kind'], 'budget_authorization')
         self.assertEqual(self.state, before)
         self.assertFalse(self.root.exists())
+        # Each v2 locale shard can spend its full cap. One-locale room must
+        # not admit three-locale authority, and refusal must remain read-only.
+        self.manifest['locales'] = ['zh-Hans', 'ko', 'es']
+        template = self.manifest['policies'][0]
+        self.manifest['policies'] = [{**template, 'locale': locale}
+                                    for locale in self.manifest['locales']]
+        before = copy.deepcopy(self.state)
+        with patch.object(subject.adapters, 'execute', side_effect=AssertionError('dispatch forbidden')):
+            with self.assertRaisesRegex(ValueError, 'budget_execution_binding_changed'):
+                subject.validate_evidence(
+                    self.state, self.recipe_path, self.root, 'localeBudget', authorization)
+        self.assertEqual(self.state, before)
+        self.assertFalse(self.root.exists())
+        self.manifest['budget']['limitMicroUsd'] = 3 * c.read(authorization)['authority']['globalBounds']['costMicrousd']
+        before = copy.deepcopy(self.state)
+        subject.validate_evidence(self.state, self.recipe_path, self.root, 'localeBudget', authorization)
+        self.assertEqual(self.state, before)
         value = c.read(authorization)
         value['ledgerScope'] = 'run'
         authorization.write_text(json.dumps(value))
