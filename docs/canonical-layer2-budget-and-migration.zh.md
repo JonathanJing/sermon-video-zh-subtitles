@@ -20,9 +20,23 @@ result = drive(execution_config, target_locale, budget_authorization=authorizati
 - `authority` 使用已有 BudgetStore 的 `approvalSha256`、`globalBounds`、`unitBounds`、`limits`。
 - `approvalReceipt` 指向独立的 `sermon-canonical-layer2-budget-approval-v1` 批准收据；必须有明确人类决定、操作者证据与审核时间。收据的 `binding` 精确绑定 run/config/code、budgetRoot、requestLimits、globalBounds、unitBounds、limits。引用 hash 本身不构成授权。
 
-预算根固定为 execution 配置 `jobRoot` 的同级 `.<jobRoot.name>.layer2-budget`。同一根使用全局持久锁；pending/unknown 保留完整预留额，不因进程退出、超时或缺失 usage 归零。统一 manifest 还须校验授权额度不超过其总预算。不同 jobRoot 不自动形成跨主机或跨目录共享预算。
+预算根固定为 execution 配置 `jobRoot` 的同级 `.<jobRoot.name>.layer2-budget`。授权 v2（`sermon-canonical-layer2-budget-authorization-v2`）多一个 `ledgerScope: "locale"`：每个语言的账本在预算根下的 `<locale>/` 子目录，`authority` 里的全部上限按语言各计一份，批准收据的 `binding` 必须同样写明 `ledgerScope`。分片账本上限 8 MiB（约 4,900 次预留，整篇证道每语言约 1,000 次）；v1 和其他预算存储仍是 256 KiB（约 154 次）。统一 manifest 核对 v2 授权时按已登记语言数乘以单语言金额。账本忙时只延迟准入、结算或结果回放，不重发请求，等待上限 120 秒。同一根使用全局持久锁；pending/unknown 保留完整预留额，不因进程退出、超时或缺失 usage 归零。统一 manifest 还须校验授权额度不超过其总预算。不同 jobRoot 不自动形成跨主机或跨目录共享预算。
 
 实际 payload 在模型缓存身份确定前加上硬限。生产 transport 使用已有隔离 HTTP worker，单次请求且有墙钟上限。原始返回在后续解析前保存；provider usage 缺失时保留预算不确定性并停止。金额使用已有冻结价格假设，标记 `invoiceVerified=false`，不声称实时价格或账单核验。
+
+统一 continuation 接收 v2 授权时，预算证据槽必须提供已准备并校验 hash 的执行配置 binding，例如：
+
+```json
+{
+  "binding": "layer2Budget",
+  "kind": "budget_authorization",
+  "inputs": {
+    "configuration": {"$binding": "layer2Configuration", "field": "path"}
+  }
+}
+```
+
+`layer2Configuration` 必须已经存在于 manifest 或已接收的 continuation evidence 中，记录准确的 `path` 和 `sha256`。验证器加载此配置并重新核对授权的 run/config/code 与批准收据，然后按 `len(config.lanes)` 计算总授权金额；统一 manifest 的语言列表可能还包括其他步骤处理的语言，不能代替控制器登记数。缺少配置输入的旧 v2 证据槽须补齐该 binding 和输入。当前证据接收阶段不能引用尚未生成的 `$config`；需先准备并绑定执行配置，再接收授权。v1 证据槽保持原有输入契约。
 
 ## 跨版本缓存迁移
 
