@@ -380,6 +380,26 @@ def _relative(path):
     return path
 
 
+def _case_library():
+    """Every case directory name in order; names only, so an unselected case's fixture is never parsed."""
+    return sorted(p.name for p in CASES.iterdir() if p.is_dir())
+
+
+def _check_receipts(plan_root, calls):
+    checks = {t['name'] for t in PREFLIGHT_TOOLS}
+    receipts = []
+    for call in calls:
+        if call['name'] == 'read_file':
+            receipts.append({'name': 'read_file', 'arguments': call.get('arguments') or {}})
+        elif call['name'] in checks:
+            try:
+                result = preflight_check(plan_root, call['name'], call.get('arguments') or {})
+            except Exception as error:  # A malformed call is scored as unsatisfied; record why.
+                result = {'error': type(error).__name__}
+            receipts.append({'name': call['name'], 'arguments': call.get('arguments') or {}, 'result': result})
+    return receipts
+
+
 def preflight_check(plan_root, name, arguments):
     plan_root = Path(plan_root)
     if name == 'check_staged':
@@ -894,8 +914,7 @@ class Trials:
 
     def diagnose(self, arms=('raw', 'timeline')):
         rows = self._rows('diagnose')
-        # Directory names only, so an unselected case's fixture is never parsed.
-        library = sorted(p.name for p in CASES.iterdir() if p.is_dir())
+        library = _case_library()
         for case in self.cases:
             # Alternate AB/BA by position in the full library, so a widened subset keeps each case's order and
             # warm-up or throttling is not confounded with the arm.
@@ -948,6 +967,9 @@ class Trials:
             session = self._session(self.out / 'preflight' / plan['id'], payload, tools, plan['expected'])
             rows.append({'plan': plan['id'], **{k: v for k, v in session.items() if k != 'report'},
                          'report': session['report'],
+                         # The calls the score rests on, with what each deterministic check returned, so an exported
+                         # report can be audited without the raw receipts.
+                         'checkCalls': _check_receipts(plan['evidence'], tools.calls),
                          'score': score_preflight(session['report'], plan['expected'], tools.calls, plan['evidence'])})
             self._checkpoint('preflight')
         return {'rows': rows}
@@ -1062,7 +1084,9 @@ class Trials:
             return sorted(tag(c['id'], [evidence_sha(c['evidence']), c['expected']]) for c in self.cases)
 
         def cases():
-            return {**agent, 'prompt': _sha(DIAGNOSE_INSTRUCTIONS)[:12], 'cases': fixtures()}
+            # The AB/BA arm order comes from each case's position among all case directories, so that list is bound.
+            return {**agent, 'prompt': _sha(DIAGNOSE_INSTRUCTIONS)[:12], 'cases': fixtures(),
+                    'caseOrder': _sha(_case_library())[:12]}
 
         def planted():
             case_ids = {c['id'] for c in self.cases}
@@ -1196,16 +1220,17 @@ def _scorer_identity(stage):
     tools = [EvidenceTools, schema_errors, evidence_files, _payload, _function]
     parts = {'timeline': [build_timeline, _instant, _time_fields, evidence_files],
              'diagnose': [*tools, _diagnosis_schema, score_diagnosis, check_citations, _groups_match, _text, _relative,
-                          _arm_summary],
+                          _arm_summary, _case_library],
              'refute': [*tools, _diagnosis_schema, score_diagnosis, check_citations, _groups_match, _text, _relative,
                         _refutation_schema, score_refutation, _refute_summary],
-             'preflight': [*tools, _preflight_schema, score_preflight, preflight_check, _check_satisfied, _call_matches,
-                           _relative, _groups_match, _text],
+             'preflight': [*tools, _preflight_schema, score_preflight, preflight_check, _check_receipts, _check_satisfied,
+                           _call_matches, _relative, _groups_match, _text],
              'risk': [score_risk, risk_summary]}[stage]
     tool_definitions = [FILE_TOOLS, TIMELINE_TOOL, PREFLIGHT_TOOLS, MAX_READ_CHARS]
     constants = {'timeline': [TIMESTAMP.pattern, ERROR_LINE.pattern, END_FIELD.pattern],
-                 'diagnose': [*tool_definitions, CATEGORIES], 'refute': [*tool_definitions, CATEGORIES],
-                 'preflight': [*tool_definitions, ARGUMENT_FREE_TERMS, CHECK_VERDICT], 'risk': [TIERS]}[stage]
+                 'diagnose': [*tool_definitions, CATEGORIES, SCHEMA_TYPES],
+                 'refute': [*tool_definitions, CATEGORIES, SCHEMA_TYPES],
+                 'preflight': [*tool_definitions, ARGUMENT_FREE_TERMS, CHECK_VERDICT, SCHEMA_TYPES], 'risk': [TIERS]}[stage]
     # The stage method assembles the payload text and the projection a later stage sees, so it is bound too.
     methods = [STAGE_SOURCES[stage]] + {'timeline': [], 'risk': [STAGE_SOURCES['decisions']]}.get(
         stage, [STAGE_SOURCES['_session'], STAGE_SOURCES['runner']])

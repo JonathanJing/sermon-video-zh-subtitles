@@ -1077,6 +1077,25 @@ class LatestReviewTests(unittest.TestCase):
         results = {'refute': {'rows': [{'case': 'f01', 'usage': None}, {'case': 'f01', 'planted': True, 'usage': None}]}}
         self.assertEqual(trials._sum_usage(results)['sessionsMissingUsage'], ['refute:f01', 'refute:f01:planted'])
 
+    def test_preflight_rows_carry_their_check_receipts(self):
+        plan = next(p for p in trials.load_plans() if p['id'] == 'p02-clean')
+        calls = [{'name': 'list_files', 'arguments': {}},
+                 {'name': 'read_file', 'arguments': {'path': 'authorization.json'}},
+                 {'name': 'check_staged', 'arguments': {'path': 'docs/series-terminology.zh.md'}},
+                 {'name': 'check_staged', 'arguments': {}}]
+        receipts = trials._check_receipts(plan['evidence'], calls)
+        self.assertEqual([r['name'] for r in receipts], ['read_file', 'check_staged', 'check_staged'])
+        self.assertTrue(receipts[1]['result']['staged'])
+        self.assertEqual(receipts[2]['result'], {'error': 'KeyError'})
+
+    def test_case_directory_order_is_bound_into_diagnose_scope(self):
+        _out, make = self.make_trials()
+        trial = make(case_ids=['f01-plugin-identity'])
+        before = trial._scopes(['diagnose'])['diagnose']
+        library = ['f00-new', *trials._case_library()]
+        with patch.object(trials, '_case_library', lambda: library):
+            self.assertNotEqual(trial._scopes(['diagnose'])['diagnose']['caseOrder'], before['caseOrder'])
+
     def test_checkpoint_keeps_saved_rows_this_run_has_not_reached(self):
         out, make = self.make_trials()
         out.mkdir(parents=True)
