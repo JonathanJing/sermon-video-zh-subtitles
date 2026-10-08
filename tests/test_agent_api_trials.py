@@ -259,6 +259,13 @@ class RunTests(unittest.TestCase):
         rows = json.loads((self.out / 'diagnose.json').read_text())['rows']
         self.assertEqual([r['arm'] for r in rows], ['raw', 'timeline', 'timeline', 'raw'])
 
+    def test_changed_answer_key_refuses_to_rescore_saved_sessions(self):
+        self.make().run('diagnose')
+        cases = trials.load_cases()
+        cases[0]['expected'] = {**cases[0]['expected'], 'category': 'other'}
+        with patch.object(trials, 'load_cases', return_value=cases), self.assertRaises(ValueError):
+            self.make().run('diagnose')
+
     def test_binding_without_runner_state_starts_fresh(self):
         session = self.out / 'diagnose/f01-plugin-identity/raw'
         first = self.make(case_ids=['f01-plugin-identity'])
@@ -266,7 +273,8 @@ class RunTests(unittest.TestCase):
         original = trials.run_session
 
         def crash_after_binding(client, session_dir, payload, tools, **kwargs):
-            payload_sha['binding'] = {'payloadSha256': trials._sha(payload)}
+            payload_sha['binding'] = {'payloadSha256': trials._sha(payload),
+                                      'evaluationSha256': trials._sha(kwargs['evaluation'])}
             raise KeyboardInterrupt
         with patch.object(trials, 'run_session', crash_after_binding), self.assertRaises(KeyboardInterrupt):
             first.run('diagnose')
@@ -500,3 +508,31 @@ class RunTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class ReviewFixTests(unittest.TestCase):
+    def test_preflight_rejects_invented_blockers_and_inconsistent_go(self):
+        plan = next(p for p in trials.load_plans() if p['id'] == 'p02-clean')
+        report = {'go': True, 'items': [{'requirement': 'disk space', 'status': 'blocker', 'checked_with': 'none'}]}
+        score = trials.score_preflight(report, plan['expected'], [], plan['evidence'])
+        self.assertFalse(score['correct'])
+        self.assertEqual(score['extraBlockers'], 1)
+        self.assertFalse(score['goConsistent'])
+
+    def test_usage_read_back_falls_back_to_turns(self):
+        class Client:
+            def retrieve_session(self, _id):
+                return {'usage': None}
+
+            def list_turns(self, _id):
+                return [{'id': 't1', 'usage': {'input_tokens': 7, 'output_tokens': 2}}]
+        self.assertEqual(trials._read_back_usage(Client(), 's', 0, attempts=1), {'input_tokens': 7, 'output_tokens': 2})
+
+    def test_rejected_decision_retry_must_send_the_same_request(self):
+        with tempfile.TemporaryDirectory() as directory:
+            client = trials.DecisionsClient(directory, transport=lambda _r: {'error': {'status': 429}})
+            with self.assertRaises(RuntimeError):
+                client.decide('a01', {'input': 'one'})
+            client.transport = lambda _r: self.fail('changed request was sent')
+            with self.assertRaises(ValueError):
+                client.decide('a01', {'input': 'two'})

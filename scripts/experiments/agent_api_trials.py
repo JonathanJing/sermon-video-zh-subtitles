@@ -453,6 +453,7 @@ def score_preflight(report, expected, calls, plan_root=None):
     found, missed = [], []
     for key, groups in expected['blockers'].items():
         (found if any(_groups_match(_text(b), groups) for b in blockers) else missed).append(key)
+    extra = [b for b in blockers if not any(_groups_match(_text(b), g) for g in expected['blockers'].values())]
     used = {c['name'] for c in calls}
     checks = {t['name'] for t in PREFLIGHT_TOOLS}
     # Each required check needs a call on the right target that the deterministic handler accepts.
@@ -465,11 +466,14 @@ def score_preflight(report, expected, calls, plan_root=None):
                 and not any(_call_matches(c, item) for c in calls):
             unmatched.append({'requirement': item.get('requirement'), 'checked_with': item['checked_with']})
     go_correct = report.get('go') == (not expected['blockers'])
+    # go must agree with the report's own blocker items, and no blocker may be invented.
+    consistent = report.get('go') == (not blockers)
     return {'submitted': True, 'go': report.get('go'), 'expectedGo': not expected['blockers'],
-            'goCorrect': go_correct, 'correct': go_correct and not missed and not missing_checks,
+            'goCorrect': go_correct, 'goConsistent': consistent,
+            'correct': go_correct and consistent and not missed and not extra and not missing_checks,
             'requiredChecksMissing': missing_checks,
             'blockersFound': found, 'blockersMissed': missed,
-            'extraBlockers': max(0, len(blockers) - len(found)),
+            'extraBlockers': len(extra),
             'checkToolsUsed': sorted(used & {t['name'] for t in PREFLIGHT_TOOLS}),
             'claimedButNotCalled': sorted(claimed - used),
             'claimedButNotMatched': unmatched}
@@ -549,14 +553,17 @@ class FakeAgentsClient:
         return {}
 
 
-def run_session(client, session_dir, payload, tools, *, max_seconds, max_tool_calls, poll_seconds):
+def run_session(client, session_dir, payload, tools, *, max_seconds, max_tool_calls, poll_seconds, evaluation=None):
     """One bounded session. A completed result is reused; its report is re-read from tool receipts."""
     session_dir = Path(session_dir)
     binding_path = session_dir.parent / (session_dir.name + '.binding.json')
     binding = {'payloadSha256': _sha(payload)}
+    if evaluation is not None:
+        # The answer key stays local; only its hash binds, so a changed key cannot rescore old sessions.
+        binding['evaluationSha256'] = _sha(evaluation)
     if binding_path.exists():
         if _read_json(binding_path) != binding:
-            raise ValueError(f'{session_dir.name}: payload changed since the first attempt; use a new --out')
+            raise ValueError(f'{session_dir.name}: payload or answer key changed since the first attempt; use a new --out')
     else:
         binding_path.parent.mkdir(parents=True, exist_ok=True)
         binding_path.write_text(json.dumps(binding) + '\n', encoding='utf-8')
@@ -625,6 +632,10 @@ def _read_back_usage(client, session_id, poll_seconds, attempts=5):
     for attempt in range(attempts):
         try:
             usage = _usage({'usage': client.retrieve_session(session_id).get('usage')})
+            if usage is None:
+                # Same fallback as the shared runner: usage may appear only on the turns.
+                turns = [t for t in client.list_turns(session_id) if isinstance(t.get('usage'), dict)]
+                usage = _usage({'usage': {'turns': turns}}) if turns else None
         except Exception:
             usage = None
         if usage is not None:
@@ -663,14 +674,14 @@ class Trials:
     def _checkpoint(self, stage):
         self.write(stage, {'rows': self.partial[stage], 'partial': True})
 
-    def _session(self, directory, payload, tools):
+    def _session(self, directory, payload, tools, evaluation):
         # Only saved runner state proves an existing remote session; anything else starts a new one.
         if not (Path(directory) / 'state.json').exists():
             if self.sessions_started >= self.max_sessions:
                 raise RuntimeError(f'session cap {self.max_sessions} reached; raise --max-sessions to continue')
             self.sessions_started += 1
         return run_session(self.client, directory, payload, tools, max_seconds=self.max_seconds,
-                           max_tool_calls=self.max_tool_calls, poll_seconds=self.poll_seconds)
+                           max_tool_calls=self.max_tool_calls, poll_seconds=self.poll_seconds, evaluation=evaluation)
 
     def _timed(self, stage, function):
         started = time.time()
@@ -703,7 +714,7 @@ class Trials:
                                    f'Case evidence id {evidence_sha(case["evidence"])[:12]}. Investigate the incident '
                                    'in the evidence files and submit your report.'
                                    + (' A get_timeline tool orders all events.' if arm == 'timeline' else ''))
-                session = self._session(self.out / 'diagnose' / case['id'] / arm, payload, tools)
+                session = self._session(self.out / 'diagnose' / case['id'] / arm, payload, tools, case['expected'])
                 rows.append({'case': case['id'], 'arm': arm, **{k: v for k, v in session.items() if k != 'report'},
                              'report': session['report'], 'score': score_diagnosis(session['report'], case['expected'], case['evidence'])})
                 self._checkpoint('diagnose')
@@ -724,7 +735,8 @@ class Trials:
                     + json.dumps({k: diagnosis.get(k) for k in ('category', 'root_cause', 'evidence', 'fix', 'confidence')},
                                  ensure_ascii=False, indent=2))
             payload = _payload(self.model, REFUTE_INSTRUCTIONS, tools.definitions(_refutation_schema()), text)
-            session = self._session(self.out / folder / case['id'], payload, tools)
+            session = self._session(self.out / folder / case['id'], payload, tools,
+                                    {'expected': case['expected'], 'diagnosisCorrect': correct, 'flaw': flaw})
             rows.append({'case': case['id'], 'planted': flaw is not None, 'flaw': flaw,
                          **{k: v for k, v in session.items() if k != 'report'},
                          'report': session['report'], 'score': score_refutation(session['report'], correct)})
@@ -738,7 +750,7 @@ class Trials:
             payload = _payload(self.model, PREFLIGHT_INSTRUCTIONS, tools.definitions(_preflight_schema()),
                                f'Plan evidence id {evidence_sha(plan["evidence"])[:12]}. Check this planned Spark round '
                                'before the exclusive session starts and submit your checklist.')
-            session = self._session(self.out / 'preflight' / plan['id'], payload, tools)
+            session = self._session(self.out / 'preflight' / plan['id'], payload, tools, plan['expected'])
             rows.append({'plan': plan['id'], **{k: v for k, v in session.items() if k != 'report'},
                          'report': session['report'],
                          'score': score_preflight(session['report'], plan['expected'], tools.calls, plan['evidence'])})
@@ -956,6 +968,8 @@ class DecisionsClient:
             return saved['response']
         rejected_path = self.dir / f'{name}.rejected.json'
         rejected = _read_json(rejected_path) if rejected_path.exists() else []
+        if any(entry.get('requestSha256') != _sha(request) for entry in rejected):
+            raise ValueError(f'decision {name}: request changed since it was rejected; use a new --out')
         if len(rejected) >= self.MAX_REJECTIONS:
             raise RuntimeError(f'decision {name}: rejected {len(rejected)} times; inspect {rejected_path.name}')
         try:
