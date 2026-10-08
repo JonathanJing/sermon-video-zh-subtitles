@@ -1,0 +1,29 @@
+{
+  "id": "f07-services-not-yet-restored",
+  "reconstructedFrom": "docs/reports/20261008-haiku-180s-8x8-round2-retrospective.zh.md 一个需要记下的判断错误",
+  "category": "not_a_failure",
+  "abstain": false,
+  "causeKeywords": [
+    [
+      "finish"
+    ],
+    [
+      "after",
+      "before",
+      "later",
+      "not yet",
+      "order",
+      "sequence",
+      "尚未",
+      "之后"
+    ]
+  ],
+  "fixKeywords": [
+    [
+      "round:",
+      "finish_exit",
+      "wait for",
+      "wrapper"
+    ]
+  ]
+}

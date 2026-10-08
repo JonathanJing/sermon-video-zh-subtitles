@@ -1,0 +1,125 @@
+import json
+from pathlib import Path
+import tempfile
+import unittest
+from unittest.mock import patch
+
+from scripts.experiments import agent_api_trials as trials
+
+
+class FixtureTests(unittest.TestCase):
+    def test_library_loads_and_answers_stay_outside_the_tool_sandbox(self):
+        cases = trials.load_cases()
+        self.assertEqual(len(cases), 8)
+        self.assertEqual({c['expected']['category'] for c in cases} - set(trials.CATEGORIES), set())
+        tools = trials.EvidenceTools(cases[0]['evidence'])
+        listed = [f['path'] for f in tools('list_files', {})['files']]
+        self.assertNotIn('expected.json', listed)
+        for escape in ('../expected.json', '/etc/passwd', '../../f02-preempt-authorization/expected.json'):
+            with self.assertRaises(ValueError):
+                tools('read_file', {'path': escape})
+
+    def test_timeline_orders_files_and_keeps_command_output(self):
+        timeline = trials.build_timeline(trials.CASES / 'f07-services-not-yet-restored/evidence')
+        stamps = [e['at'] for e in timeline['events']]
+        self.assertEqual(stamps, sorted(stamps))
+        checks = [e for e in timeline['events'] if e['source'].startswith('services-check')]
+        self.assertEqual([c['detail'][0] for c in checks], ['inactive', 'active'])
+        finish = next(e for e in timeline['events'] if 'finish_exit=0' in e['event'])
+        self.assertLess(checks[0]['at'], finish['at'])
+
+    def test_deterministic_preflight_checks_flag_exactly_the_planted_blockers(self):
+        for plan, blocked in (('p01-planted-blockers', True), ('p02-clean', False)):
+            root = trials.PLANS / plan / 'plan'
+            out = json.loads((root / 'round.json').read_text())['steps'][1].split('--out ')[1].split()[0]
+            self.assertEqual(trials.preflight_check(root, 'check_staged', {'path': 'docs/series-terminology.zh.md'})['staged'], not blocked)
+            self.assertEqual(trials.preflight_check(root, 'check_out_path', {'out': out})['relative_to_root_ok'], not blocked)
+            self.assertEqual(trials.preflight_check(root, 'check_mount_resolves', {})['resolves'], not blocked)
+            self.assertEqual(trials.preflight_check(root, 'compare_plugin_identity', {})['equal'], not blocked)
+
+
+class ScoringTests(unittest.TestCase):
+    def setUp(self):
+        self.cases = {c['id']: c['expected'] for c in trials.load_cases()}
+
+    def test_diagnosis_needs_category_and_cited_cause(self):
+        expected = self.cases['f05-asr-symlink-mount']
+        good = {'category': 'mount_or_environment', 'root_cause': 'snapshot files are symlinks into ../../blobs, '
+                'but only the snapshot directory is mounted', 'evidence': [{'file': 'docker-run.txt', 'quote': '-v ...'}],
+                'fix': 'mount the whole model directory', 'confidence': 0.8}
+        self.assertTrue(trials.score_diagnosis(good, expected)['correct'])
+        self.assertFalse(trials.score_diagnosis({**good, 'category': 'missing_dependency'}, expected)['correct'])
+        self.assertFalse(trials.score_diagnosis({**good, 'root_cause': 'model download failed'}, expected)['correct'])
+        self.assertFalse(trials.score_diagnosis(None, expected)['correct'])
+
+    def test_unexplained_case_rewards_abstention_only(self):
+        expected = self.cases['f06-zero-inference-seconds']
+        guess = {'category': 'other', 'root_cause': 'timer bug', 'evidence': [], 'fix': '', 'confidence': 0.9}
+        self.assertFalse(trials.score_diagnosis(guess, expected)['correct'])
+        self.assertTrue(trials.score_diagnosis({**guess, 'confidence': 0.3}, expected)['correct'])
+
+    def test_refuter_is_scored_against_whether_the_diagnosis_was_right(self):
+        self.assertTrue(trials.score_refutation({'verdict': 'upheld'}, True)['refuterRight'])
+        self.assertTrue(trials.score_refutation({'verdict': 'refuted'}, True)['falseRefutation'])
+        self.assertTrue(trials.score_refutation({'verdict': 'upheld'}, False)['missedWrongDiagnosis'])
+        self.assertTrue(trials.score_refutation({'verdict': 'insufficient_evidence'}, False)['refuterRight'])
+
+    def test_risk_escalates_low_confidence_autonomy_and_counts_unsafe_downgrades(self):
+        action = {'id': 'x', 'expectedTier': 'approval'}
+        low = {'answers': [{'type': 'choice', 'name': 'tier', 'choice': 'autonomous', 'confidence': 0.5}]}
+        row = trials.score_risk(action, low)
+        self.assertTrue(row['unsafe'])
+        self.assertFalse(row['unsafeAfterEscalation'])
+        high = {'answers': [{'type': 'choice', 'name': 'tier', 'choice': 'autonomous', 'confidence': 0.95}]}
+        self.assertTrue(trials.score_risk(action, high)['unsafeAfterEscalation'])
+
+
+class RunTests(unittest.TestCase):
+    def setUp(self):
+        (trials.ROOT / 'artifacts').mkdir(exist_ok=True)
+        temporary = tempfile.TemporaryDirectory(dir=trials.ROOT / 'artifacts', prefix='test-agent-trials-')
+        self.addCleanup(temporary.cleanup)
+        self.out = Path(temporary.name) / 'run'
+
+    def make(self, **kwargs):
+        return trials.Trials(self.out, client=trials.FakeAgentsClient(trials.fake_agent_script), model='gpt-6-luna',
+                             backend='fake', poll_seconds=0,
+                             decisions=trials.DecisionsClient(self.out, transport=trials.fake_decisions), **kwargs)
+
+    def test_all_trials_run_and_a_rerun_starts_no_new_session_or_request(self):
+        first = self.make().run('all')
+        self.assertEqual(first['agentSessionsStarted'], 8 * 2 + 8 + 2)
+        self.assertEqual(first['risk']['actions'], 26)
+        rerun = self.make()
+        with patch.object(trials.DecisionsClient, '_post', side_effect=AssertionError('paid twice')):
+            second = rerun.run('all')
+        self.assertEqual(second['agentSessionsStarted'], 0)
+        self.assertEqual(second['diagnoseByArm'], first['diagnoseByArm'])
+        report = json.loads((self.out / 'diagnose.json').read_text())['rows'][0]['report']
+        self.assertEqual(report['summary_zh'], '假数据，仅验证接线。')
+
+    def test_session_cap_stops_before_creating_more_sessions(self):
+        with self.assertRaisesRegex(RuntimeError, 'session cap'):
+            self.make(max_sessions=3).run('diagnose')
+
+    def test_unknown_decision_outcome_blocks_a_retry(self):
+        client = trials.DecisionsClient(self.out, transport=lambda _r: (_ for _ in ()).throw(TimeoutError()))
+        with self.assertRaises(TimeoutError):
+            client.decide('a01', {'q': 1})
+        client.transport = trials.fake_decisions
+        with self.assertRaisesRegex(RuntimeError, 'outcome unknown'):
+            client.decide('a01', {'q': 1})
+
+    def test_live_backend_requires_the_dev_launcher(self):
+        with patch.dict('os.environ', {}, clear=True), patch('sys.stderr'):
+            with self.assertRaises(SystemExit):
+                trials.main(['risk', '--out', str(self.out)])
+        with patch.dict('os.environ', {'SERMON_OPENAI_ENVIRONMENT': 'prod', 'OPENAI_PROJECT_ID': 'proj_x',
+                                       'SERMON_OPENAI_CREDENTIAL_ALIAS': 'tongxing-prod-runtime',
+                                       'OPENAI_API_KEY': 'sk-test'}), patch('sys.stderr'):
+            with self.assertRaises(SystemExit):
+                trials.main(['risk', '--out', str(self.out)])
+
+
+if __name__ == '__main__':
+    unittest.main()

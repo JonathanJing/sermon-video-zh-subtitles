@@ -1,0 +1,30 @@
+{
+  "id": "f03-relative-out",
+  "reconstructedFrom": "docs/reports/20261007-haiku-180s-8x8-spark-diagnostic-retrospective.zh.md #3",
+  "category": "path_handling",
+  "abstain": false,
+  "causeKeywords": [
+    [
+      "relative"
+    ],
+    [
+      "--out",
+      "out ",
+      "output",
+      "path"
+    ]
+  ],
+  "fixKeywords": [
+    [
+      "resolve",
+      "absolute",
+      "anchor",
+      "root"
+    ]
+  ],
+  "bonusKeywords": [
+    [
+      "hold"
+    ]
+  ]
+}
