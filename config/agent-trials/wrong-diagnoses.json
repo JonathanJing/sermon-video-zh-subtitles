@@ -16,7 +16,8 @@
           }
         ],
         "fix": "Re-copy the fixture directory from the last good run.",
-        "confidence": 0.8
+        "confidence": 0.8,
+        "unknowns": []
       }
     },
     {
@@ -33,7 +34,8 @@
           }
         ],
         "fix": "Wait until llama-server is idle and retry.",
-        "confidence": 0.75
+        "confidence": 0.75,
+        "unknowns": []
       }
     },
     {
@@ -50,7 +52,8 @@
           }
         ],
         "fix": "Download the source clip again before execute.",
-        "confidence": 0.7
+        "confidence": 0.7,
+        "unknowns": []
       }
     },
     {
@@ -67,7 +70,8 @@
           }
         ],
         "fix": "Re-download the model with huggingface-cli.",
-        "confidence": 0.8
+        "confidence": 0.8,
+        "unknowns": []
       }
     },
     {
@@ -84,7 +88,8 @@
           }
         ],
         "fix": "Restart the four services manually and make finish verify them.",
-        "confidence": 0.85
+        "confidence": 0.85,
+        "unknowns": []
       }
     },
     {
@@ -101,7 +106,8 @@
           }
         ],
         "fix": "Export L2_LOG and AUDIO_LOG before starting the monitor.",
-        "confidence": 0.7
+        "confidence": 0.7,
+        "unknowns": []
       }
     },
     {
@@ -118,7 +124,8 @@
           }
         ],
         "fix": "Start the batch timer before dispatching to warm replicas.",
-        "confidence": 0.9
+        "confidence": 0.9,
+        "unknowns": []
       }
     },
     {
@@ -135,7 +142,8 @@
           }
         ],
         "fix": "Add config/speaker-voice-registry.json to the staging list.",
-        "confidence": 0.75
+        "confidence": 0.75,
+        "unknowns": []
       }
     }
   ]

@@ -79,10 +79,13 @@ class FixtureTests(unittest.TestCase):
     def test_invalid_stamped_error_line_does_not_inherit_a_time(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            (root / 'run.log').write_text('2026-10-07T10:00:00Z start\n2026-10-07T10:00:05+25:00 ERROR boom\n')
+            (root / 'run.log').write_text('2026-10-07T10:00:00Z start\n2026-10-07T10:00:05+25:00 ERROR boom\n'
+                                          'continuation\nTraceback: later\n')
             timeline = trials.build_timeline(root)
             self.assertEqual([e['event'] for e in timeline['events']], ['2026-10-07T10:00:00Z start'])
-            self.assertEqual(timeline['untimed'][0]['reason'], 'invalid timestamp')
+            self.assertNotIn('detail', timeline['events'][0])
+            self.assertEqual([u.get('reason') for u in timeline['untimed']],
+                             ['invalid timestamp', 'error line without any timestamp in file'])
 
     def test_grep_stops_at_the_limit(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -1543,6 +1546,8 @@ class LatestReviewTests(unittest.TestCase):
                     {**planted, 'diagnoses': [first, first]},
                     {**planted, 'diagnoses': [{**first, 'case': 'f99-missing'}]},
                     {**planted, 'diagnoses': []},
+                    {**planted, 'diagnoses': [{**first, 'diagnosis': {k: v for k, v in first['diagnosis'].items()
+                                                                     if k != 'unknowns'}}]},
                     {**planted, 'diagnoses': planted['diagnoses'][1:]},
                     {**planted, 'diagnoses': planted['diagnoses'] + [{**first, 'case': 'f09-real-benign-gpu-warnings'}]}]
         real = 'f09-real-benign-gpu-warnings'

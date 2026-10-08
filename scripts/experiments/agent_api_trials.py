@@ -206,6 +206,13 @@ def _check_planted(planted):
                 or diagnosis.get('category') not in CATEGORIES \
                 or not isinstance(diagnosis.get('root_cause'), str) or not diagnosis['root_cause']:
             bad(f'entry {entry["case"]} needs a flaw and a diagnosis with a known category and a root_cause')
+        # The refuter sees the same projected fields for planted and real diagnoses, so a missing field cannot
+        # give away which arm a diagnosis came from.
+        confidence = diagnosis.get('confidence')
+        if not isinstance(diagnosis.get('evidence'), list) or not isinstance(diagnosis.get('fix'), str) \
+                or not isinstance(diagnosis.get('unknowns'), list) or isinstance(confidence, bool) \
+                or not isinstance(confidence, (int, float)) or not 0 <= confidence <= 1:
+            bad(f'entry {entry["case"]} needs evidence, fix, confidence and unknowns shaped like a real report')
     return planted
 
 
@@ -385,6 +392,8 @@ def build_timeline(evidence):
             if match and not _valid_stamp(match.group(1)):
                 # A stamp naming no real moment is kept as untimed evidence, never given a neighbour's time.
                 untimed.append({'source': name, 'line': number, 'event': line.strip(), 'reason': 'invalid timestamp'})
+                # Lines after it no longer belong to the earlier event, and errors do not inherit its time.
+                current, last = None, None
                 continue
             if match:
                 current = match.group(1)
