@@ -33,6 +33,7 @@ import argparse
 import copy
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -287,7 +288,12 @@ class EvidenceTools:
         if name == 'get_timeline' and self.timeline:
             return build_timeline(self.root)
         if self.preflight and name in {t['name'] for t in PREFLIGHT_TOOLS}:
-            return preflight_check(self.root, name, arguments)
+            output = preflight_check(self.root, name, arguments)
+            call['output'] = output
+            if self.log_path is not None:
+                with self.log_path.with_suffix('.outputs.jsonl').open('a', encoding='utf-8') as log:
+                    log.write(json.dumps({'callIndex': len(self.calls) - 1, **call}, ensure_ascii=False) + '\n')
+            return output
         if name == self.submit_name:
             if self.report is not None:
                 return {'status': 'rejected', 'reason': 'already_submitted'}
@@ -406,9 +412,23 @@ def score_diagnosis(report, expected, evidence):
     text = _text(report.get('root_cause'))
     category_ok = report.get('category') == expected['category']
     if expected.get('abstain'):
-        abstained = report.get('category') == 'insufficient_evidence'
+        confidence = report.get('confidence')
+        low_confidence = (type(confidence) in (int, float) and math.isfinite(confidence)
+                          and 0 <= confidence < 0.5)
+        unknowns = report.get('unknowns')
+        missing_evidence = (isinstance(unknowns, list)
+                            and any(isinstance(u, str) and u.strip() for u in unknowns))
+        acknowledges_uncertainty = _groups_match(text, [[
+            'insufficient evidence', 'insufficient_evidence', 'cannot determine', 'cannot prove',
+            'not enough evidence', 'unknown', 'unclear', 'inconclusive',
+            '证据不足', '无法确定', '无法证明', '未知', '尚不清楚']])
+        abstained = (category_ok and low_confidence and missing_evidence
+                     and acknowledges_uncertainty and bool(valid))
         return {'submitted': True, 'correct': abstained, 'abstainedCorrectly': abstained,
-                'categoryOk': category_ok, 'confidence': report.get('confidence')}
+                'categoryOk': category_ok, 'confidence': confidence, 'lowConfidence': low_confidence,
+                'missingEvidenceAcknowledged': missing_evidence,
+                'uncertaintyAcknowledged': acknowledges_uncertainty,
+                'validCitations': len(valid), 'invalidCitations': invalid}
     cause_ok = _groups_match(text, expected['causeKeywords'])
     fix_ok = _groups_match(_text(report.get('fix')), expected.get('fixKeywords', []))
     return {'submitted': True, 'correct': category_ok and cause_ok and bool(valid), 'categoryOk': category_ok,
@@ -431,34 +451,47 @@ def score_refutation(refutation, diagnosis_correct):
 def score_preflight(report, expected, calls):
     if not isinstance(report, dict):
         return {'submitted': False}
-    blockers = [i for i in report.get('items', []) if isinstance(i, dict) and i.get('status') == 'blocker']
-    found, missed = [], []
-    for key, groups in expected['blockers'].items():
-        (found if any(_groups_match(_text(b), groups) for b in blockers) else missed).append(key)
-    used = {c['name'] for c in calls}
-    checks = {t['name'] for t in PREFLIGHT_TOOLS}
-    claimed = {i.get('checked_with') for i in report.get('items', []) if isinstance(i, dict)} - {'none', None, ''}
-    unmatched, unverified = [], []
+    items = [i for i in report.get('items', []) if isinstance(i, dict)]
+    blockers = [i for i in items if i.get('status') == 'blocker']
+    checks = {'check_staged': 'staged', 'check_out_path': 'relative_to_root_ok',
+              'check_mount_resolves': 'resolves', 'compare_plugin_identity': 'equal'}
     checker_by_kind = {'file': 'check_staged', 'path': 'check_out_path',
                        'mount': 'check_mount_resolves', 'identity': 'compare_plugin_identity'}
-    for item in report.get('items', []):
-        if not isinstance(item, dict):
-            continue
-        required = checker_by_kind.get(item.get('kind'))
-        checker = required or (item.get('checked_with') if item.get('checked_with') in checks else None)
-        if item.get('status') == 'ok' and checker and not any(
-                _call_matches(c, {**item, 'checked_with': checker}) for c in calls):
-            unverified.append({'requirement': item.get('requirement'), 'requiredChecker': checker})
-        if isinstance(item, dict) and item.get('checked_with') in checks and item['checked_with'] in used \
+
+    def verified(item):
+        checker = checker_by_kind.get(item.get('kind')) or item.get('checked_with')
+        if checker not in checks:
+            return False
+        target = item.get('status') == 'ok'
+        return any(_call_matches(c, {**item, 'checked_with': checker})
+                   and isinstance(c.get('output'), dict)
+                   and c['output'].get(checks[checker]) is target for c in calls)
+
+    found, missed = [], []
+    for key, groups in expected['blockers'].items():
+        (found if any(_groups_match(_text(b), groups) and verified(b) for b in blockers)
+         else missed).append(key)
+    used = {c['name'] for c in calls}
+    claimed = {i.get('checked_with') for i in items} - {'none', None, ''}
+    unmatched, unverified, unverified_blockers = [], [], []
+    for item in items:
+        checker = checker_by_kind.get(item.get('kind')) or item.get('checked_with')
+        if item.get('status') in {'ok', 'blocker'} and checker in checks and not verified(item):
+            target = unverified if item['status'] == 'ok' else unverified_blockers
+            target.append({'requirement': item.get('requirement'), 'requiredChecker': checker})
+        if item.get('checked_with') in checks and item['checked_with'] in used \
                 and not any(_call_matches(c, item) for c in calls):
             unmatched.append({'requirement': item.get('requirement'), 'checked_with': item['checked_with']})
     return {'submitted': True, 'go': report.get('go'), 'expectedGo': not expected['blockers'],
-            'goCorrect': report.get('go') == (not expected['blockers']) and not (report.get('go') and unverified),
+            'goCorrect': (report.get('go') == (not expected['blockers']) and not missed
+                          and not unverified and not unverified_blockers
+                          and not (claimed - used) and not unmatched),
             'blockersFound': found, 'blockersMissed': missed,
             'extraBlockers': max(0, len(blockers) - len(found)),
-            'checkToolsUsed': sorted(used & {t['name'] for t in PREFLIGHT_TOOLS}),
+            'checkToolsUsed': sorted(used & checks.keys()),
             'claimedButNotCalled': sorted(claimed - used),
-            'claimedButNotMatched': unmatched, 'unverifiedSuccesses': unverified}
+            'claimedButNotMatched': unmatched, 'unverifiedSuccesses': unverified,
+            'unverifiedBlockers': unverified_blockers}
 
 
 def _call_matches(call, item):
@@ -518,16 +551,28 @@ def run_session(client, session_dir, payload, tools, *, max_seconds, max_tool_ca
     session_dir = Path(session_dir)
     binding_path = session_dir.parent / (session_dir.name + '.binding.json')
     binding = {'payloadSha256': _sha(payload)}
-    resume = False
+    resume = (session_dir / 'state.json').exists()
     if binding_path.exists():
         if _read_json(binding_path) != binding:
             raise ValueError(f'{session_dir.name}: payload changed since the first attempt; use a new --out')
-        resume = True
     else:
         binding_path.parent.mkdir(parents=True, exist_ok=True)
         binding_path.write_text(json.dumps(binding) + '\n', encoding='utf-8')
     calls_path = session_dir.parent / (session_dir.name + '.calls.jsonl')
     tools.log_path = calls_path
+    if calls_path.exists():
+        tools.calls = [json.loads(line) for line in calls_path.read_text(encoding='utf-8').splitlines() if line]
+        outputs_path = calls_path.with_suffix('.outputs.jsonl')
+        if outputs_path.exists():
+            for line in outputs_path.read_text(encoding='utf-8').splitlines():
+                if not line:
+                    continue
+                saved = json.loads(line)
+                index = saved['callIndex']
+                if (type(index) is not int or not 0 <= index < len(tools.calls)
+                        or any(saved.get(k) != tools.calls[index].get(k) for k in ('name', 'arguments'))):
+                    raise ValueError('checker output does not match recorded call')
+                tools.calls[index]['output'] = saved['output']
     meta_path = session_dir.parent / (session_dir.name + '.meta.json')
     meta = _read_json(meta_path) if meta_path.exists() else {'attempts': []}
     if 'elapsedSeconds' not in meta:
@@ -551,8 +596,6 @@ def run_session(client, session_dir, payload, tools, *, max_seconds, max_tool_ca
         output = _read_json(path).get('output') or {}
         if report is None and output.get('status') == 'recorded':
             report = output.get('report')
-    if calls_path.exists():
-        tools.calls = [json.loads(line) for line in calls_path.read_text(encoding='utf-8').splitlines() if line]
     return {'sessionId': result.get('session_id'), 'status': result.get('status'),
             'toolCalls': result.get('tool_calls'), 'usage': _usage(result),
             'elapsedSeconds': elapsed, 'report': report}
@@ -615,7 +658,7 @@ class Trials:
             path.write_text(json.dumps(binding, indent=2) + '\n', encoding='utf-8')
 
     def _session(self, directory, payload, tools):
-        if not (Path(directory).parent / (Path(directory).name + '.binding.json')).exists():
+        if not (Path(directory) / 'state.json').exists():
             if self.sessions_started >= self.max_sessions:
                 raise RuntimeError(f'session cap {self.max_sessions} reached; raise --max-sessions to continue')
             self.sessions_started += 1
