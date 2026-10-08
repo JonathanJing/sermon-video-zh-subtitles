@@ -266,19 +266,32 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
                          "There's a throne, and someone is on it. You're failing in the middle of a trial.")
         review_path = self.out / 'source-text-review.json'
         review_path.write_text(json.dumps(review), encoding='utf-8')
-        corrected, provenance = source_review.apply_review(segments(), review_path, clip, asr)
+        package = {'source': self.source, 'anchor': self.anchor, 'mediaSha256': self.source['source']['media']['sha256']}
+        # The Layer 1 path needs the adjudicated package: the receipt is bound to it, not merely well-formed.
+        with self.assertRaisesRegex(ValueError, 'requires the adjudicated source package'):
+            source_review.apply_review(segments(), review_path, clip, asr)
+        corrected, provenance = source_review.apply_review(segments(), review_path, clip, asr,
+                                                           adjudicated_package=package)
         self.assertEqual(corrected[1]['text'], review['patches'][0]['correctedText'])
         self.assertEqual(corrected[0]['text'], segments()[0]['text'])
         self.assertEqual(provenance['authority'], source_review.MACHINE_AUTHORITY)
         self.assertEqual(provenance['reviewedBy'], receipt['decidedBy'])
         self.assertEqual(provenance['machineEvidence']['receiptSha256'], review['evidence'][0]['sha256'])
         self.assertEqual(provenance['machineEvidence']['bindings'], receipt['bindings'])
+        other_anchor = {**self.anchor, 'sourceUnits': [dict(u, english=u['english'] + ' Really.')
+                                                       if u['sourceUnitId'] == 'u3' else u for u in UNITS]}
+        with self.assertRaisesRegex(ValueError, 'receipt_anchor_binding_changed'):
+            source_review.apply_review(segments(), review_path, clip, asr,
+                                       adjudicated_package={**package, 'anchor': other_anchor})
+        with self.assertRaisesRegex(ValueError, 'receipt_media_binding_changed'):
+            source_review.apply_review(segments(), review_path, clip, asr,
+                                       adjudicated_package={**package, 'mediaSha256': 'f' * 64})
         # The review path accepts the machine authority only with the receipt behind it.
         tampered = dict(review, patches=[dict(review['patches'][0],
                                               correctedText="There's a throne, and someone is on it. You're fine.")])
         review_path.write_text(json.dumps(tampered), encoding='utf-8')
         with self.assertRaisesRegex(ValueError, "differs from the receipt's corrections"):
-            source_review.apply_review(segments(), review_path, clip, asr)
+            source_review.apply_review(segments(), review_path, clip, asr, adjudicated_package=package)
         other = self.out / 'notes.json'
         other.write_text(json.dumps({'anything': True}), encoding='utf-8')
         review_path.write_text(json.dumps(dict(review, evidence=[
@@ -286,15 +299,26 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
             patches=[dict(review['patches'][0], evidenceSha256=hashlib.sha256(other.read_bytes()).hexdigest())])),
             encoding='utf-8')
         with self.assertRaisesRegex(ValueError, 'exactly one source-meaning receipt'):
-            source_review.apply_review(segments(), review_path, clip, asr)
-        unsigned = dict(receipt, decidedBy='someone else')
-        receipt_path.write_text(json.dumps(unsigned), encoding='utf-8')
-        sha = hashlib.sha256(receipt_path.read_bytes()).hexdigest()
-        review_path.write_text(json.dumps(dict(review, evidence=[{'path': 'receipt.json', 'sha256': sha}],
-                                               patches=[dict(review['patches'][0], evidenceSha256=sha)])),
-                               encoding='utf-8')
-        with self.assertRaisesRegex(ValueError, 'does not carry the adjudication'):
-            source_review.apply_review(segments(), review_path, clip, asr)
+            source_review.apply_review(segments(), review_path, clip, asr, adjudicated_package=package)
+
+        def rebind(changed):
+            receipt_path.write_text(json.dumps(changed), encoding='utf-8')
+            sha = hashlib.sha256(receipt_path.read_bytes()).hexdigest()
+            review_path.write_text(json.dumps(dict(review, reviewedBy=changed['decidedBy'],
+                                                   evidence=[{'path': 'receipt.json', 'sha256': sha}],
+                                                   patches=[dict(review['patches'][0], evidenceSha256=sha)])),
+                                   encoding='utf-8')
+        rebind(dict(receipt, decidedBy='someone else'))
+        with self.assertRaisesRegex(ValueError, 'receipt_signature'):
+            source_review.apply_review(segments(), review_path, clip, asr, adjudicated_package=package)
+        # A synthetic receipt whose correction nobody heard, or that drops its hearings, is refused.
+        unheard = dict(receipt, units=[dict(receipt['units'][0], correctedText="You're fine in the middle of a trial.")])
+        rebind(unheard)
+        with self.assertRaisesRegex(ValueError, 'receipt_correction_not_heard'):
+            source_review.apply_review(segments(), review_path, clip, asr, adjudicated_package=package)
+        rebind(dict(receipt, units=[dict(receipt['units'][0], heard=[])]))
+        with self.assertRaisesRegex(ValueError, 'receipt_unit_hearings'):
+            source_review.apply_review(segments(), review_path, clip, asr, adjudicated_package=package)
 
     def test_corrections_sharing_a_segment_become_one_patch(self):
         heard_text = ("right now your life is crazy there's a throne and someone is sitting on it you're failing in "
@@ -320,8 +344,38 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
         self.assertIn('u3 heard by openai', review['patches'][0]['reason'])
         review_path = self.out / 'source-text-review.json'
         review_path.write_text(json.dumps(review), encoding='utf-8')
-        corrected, _ = source_review.apply_review(segments(), review_path, clip, asr)
+        package = {'source': self.source, 'anchor': self.anchor}
+        corrected, _ = source_review.apply_review(segments(), review_path, clip, asr, adjudicated_package=package)
         self.assertEqual(corrected[1]['text'], review['patches'][0]['correctedText'])
+
+    def test_every_receipt_correction_must_be_patched(self):
+        # u1 and u3 sit in different ASR segments; a review that drops one segment's patch is refused.
+        heard_text = ("right now your life is wild there's a throne and someone is on it you're failing in "
+                      'the middle of a trial listen there is a throne in heaven and someone is seated on it')
+        adjudicator = FakeAdjudicator(self.out / 'cache', {
+            'u1': answer('transcript_corrected', 'openai', 'Right now, your life is wild.'),
+            'u3': answer('transcript_corrected', 'openai', "You're failing in the middle of a trial.")})
+        receipt = self.adjudicate([FakeListener('openai', heard_text)], adjudicator, unit_ids=['u1', 'u3'])
+        self.assertEqual([r['decision'] for r in receipt['units']], ['transcript_corrected'] * 2)
+        receipt_path = self.out / 'receipt.json'
+        receipt_path.write_text(json.dumps(receipt), encoding='utf-8')
+        clip, asr = self.root / 'clip.m4a', self.root / 'asr_reference.json'
+        clip.write_bytes(b'window clip bytes')
+        asr.write_text(json.dumps({'segments': segments()}), encoding='utf-8')
+        review = machine.source_text_review(receipt, self.anchor, segments(), receipt_name='receipt.json',
+                                            receipt_sha256=hashlib.sha256(receipt_path.read_bytes()).hexdigest(),
+                                            source_audio=clip, asr_reference=asr)
+        self.assertEqual([p['segmentId'] for p in review['patches']], [0, 1])
+        review_path = self.out / 'source-text-review.json'
+        package = {'source': self.source, 'anchor': self.anchor}
+        review_path.write_text(json.dumps(review), encoding='utf-8')
+        corrected, provenance = source_review.apply_review(segments(), review_path, clip, asr,
+                                                           adjudicated_package=package)
+        self.assertEqual(provenance['correctedSegmentIds'], [0, 1])
+        self.assertEqual(corrected[0]['text'], 'Right now, your life is wild.')
+        review_path.write_text(json.dumps(dict(review, patches=review['patches'][1:])), encoding='utf-8')
+        with self.assertRaisesRegex(ValueError, 'omits receipt corrections for units: u1'):
+            source_review.apply_review(segments(), review_path, clip, asr, adjudicated_package=package)
 
     def test_review_refuses_a_unit_whose_segment_cannot_be_located(self):
         heard = [FakeListener('openai', CLIP_HEARD_OTHER)]
@@ -465,7 +519,7 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
         tampered = dict(notes, bindings={**notes['bindings'], 'anchor.json': policies.canonical_sha256(changed)})
         other = self.out / 'tampered-notes.json'
         machine._write_new(other, tampered)
-        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'meaning_notes_receipt_changed'):
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_anchor_binding_changed'):
             machine.load_meaning_notes(other, source=self.source, anchor=changed)
         # A run that corrected every doubted unit has no note to pass on.
         shutil.rmtree(self.out)
@@ -483,11 +537,32 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
         review = machine.source_text_review(receipt, self.anchor, segments(), receipt_name='receipt.json',
                                             receipt_sha256=file_sha, source_audio=clip, asr_reference=asr)
         self.assertFalse((self.out / 'receipt.json').exists())  # built before the completion marker exists
-        machine._write_new(self.out / 'receipt.json', receipt)
+        notes = machine.meaning_notes(receipt, receipt_sha256=file_sha)
+        # The sidecars are written and flushed before the receipt: a failure at the receipt leaves them
+        # beside no completion marker, and the next attempt discards and derives them again.
+        real_write = machine._write_new
+
+        def fail_at_receipt(path, value):
+            if path.name == 'receipt.json':
+                raise OSError('disk full')
+            real_write(path, value)
+        with mock.patch.object(machine, '_write_new', side_effect=fail_at_receipt):
+            with self.assertRaises(OSError):
+                machine.write_outputs(self.out, receipt, review, notes)
+        self.assertTrue((self.out / 'source-text-review.json').is_file())
+        self.assertFalse((self.out / 'receipt.json').exists())
+        self.assertEqual(machine.resumable_out_dir(self.out), self.out)
+        self.assertFalse((self.out / 'source-text-review.json').exists())
+        written = machine.write_outputs(self.out, receipt, review, notes)
+        self.assertEqual(written['review'], str((self.out / 'source-text-review.json').resolve()))
+        self.assertIsNone(written['meaningNotes'])  # every doubted unit was corrected
         self.assertEqual(hashlib.sha256((self.out / 'receipt.json').read_bytes()).hexdigest(), file_sha)
         self.assertEqual(review['evidence'], [{'path': 'receipt.json', 'sha256': file_sha}])
         with self.assertRaises(FileExistsError):
             machine._write_new(self.out / 'receipt.json', receipt)
+        with self.assertRaises(SystemExit):
+            machine.resumable_out_dir(self.out)  # a finished directory, sidecars included, is never touched
+        self.assertTrue((self.out / 'source-text-review.json').is_file())
 
     def test_locate_unit_is_bounded_by_the_neighbours_and_ignores_presentation(self):
         frozen = machine.tokens(FROZEN)

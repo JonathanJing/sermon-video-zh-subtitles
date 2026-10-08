@@ -114,7 +114,10 @@ def _quoted_rules(facts, request, policy, plan):
                 and policy["scripture"]["citationUseStatus"] == "project_source_reviewed"
                 and all(row["editionId"] == policy["scripture"]["editionId"] for row in facts["ADMITTED_QUOTES"]),
                 "admitted quote plugin differs from scripture policy")
-        from scripts.language_review_plugins.diagnostic_admitted_quotes import validate_admitted
+        from scripts.language_review_plugins.diagnostic_admitted_quotes import validate_admitted, validate_speaker_words
+        for unit_id in validate_speaker_words(list(facts.get('SPEAKER_WORDS_UNITS', [])),
+                                              {u for row in facts['ADMITTED_QUOTES'] for u in row['sourceUnitIds']}):
+            require(unit_id in rows, "speaker-words unit is not in the source")
         for row in facts['ADMITTED_QUOTES']:
             validate_admitted([row])
             units = row['sourceUnitIds']
