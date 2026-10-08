@@ -45,6 +45,7 @@
 | `receipt_binding_changed` | 绑定的源稿、锚点或组计划已变 |
 | `decision_not_approved` | 待定或拒绝 |
 | `decided_by_role_invalid`、`decided_by_missing` | 署名角色不是人工或机器裁定器、或没有署名 |
+| `machine_inputs_required`、`machine_receipt_not_reproduced` | 机器收据没有带绑定的三份输入让生成器重跑；或重跑结果（语言、绑定、决定、候选）与收据不一致 |
 | `reviewed_at_invalid` | 时间无效 |
 | `candidate_schema`、`candidate_id_repeated`、`candidate_units_invalid`、`classification_invalid` | 候选项结构错误 |
 | `edition_mismatch`、`reference_missing`、`exact_sentence_missing` | 引文缺版本或缺文本 |
@@ -61,7 +62,8 @@
   - CLI 用 `--scripture-adjudication /path/to/receipt.json` 读取收据；含直接引文的样本还需指定 `--scripture-classification contains_direct_quotations` 和各个 `--source-quotation-unit`。
   - 冻结和加载时，pinned-quote 插件的源单元、引文分类、规范化经文引用和按顺序合并的目标文本必须与收据一致；非引文裁决不能授权注入经文。冻结在取得写锁后再次确认目录不存在，收据使用不可变写入路径。
   - `load_fixture` 在加载时重新校验收据文件的哈希和内容。这一步在插件检查和任何模型调用之前完成。
-- `scripts/scripture_adjudication.py`：校验逻辑和拒绝码。
+- `scripts/scripture_adjudication.py`：校验逻辑和拒绝码。机器收据的准入不信角色串：`validate_receipt(..., machine_inputs=...)` 用绑定的 `source.json`、`anchor.json`、`group-plan.json` 重跑 `scripture_machine_adjudication.adjudicate`，语言、绑定、决定、候选逐字一致才准入，汇总的 `generator` 记生成器版本、实现哈希和署名是否为当前实现；`require_admitted` 从 fixture 目录读这三份文件，`run_scripture_gated_round.py` 和 `freeze_fixture` 直接传入。手写一份标成机器、带生成器不会出的 `partial_direct_quote` 的收据过不了门。
+- 生成器本身：书名前的 "First / 1st / 1" 都算序数（`First John 3:16` 是约翰一书，不是约翰福音）；提到节号但解析不出（"Verses 2 and 5"）的单元自成一段、不借用前一单元的出处；`ko`、`es` 的版本仍是 `third_party_claim_pending_publisher_comparison`，生成器拒绝为它们出引文（`edition_not_verified`）。
 
 ## 精确引文检查
 

@@ -18,6 +18,9 @@ BINDINGS = {'source.json': 'a' * 64, 'anchor.json': 'b' * 64, 'group-plan.json':
 LIBRARY = cuv_scripture.CuvLibrary.from_path()
 REV = LIBRARY.lookup('REV 4:2-3')['text']
 REV316 = LIBRARY.lookup('REV 3:16')['text']
+# A whole reading of John 3:16 in the pinned public-domain English wording.
+READ_3_16 = ('For God so loved the world, that he gave his one and only Son, that whoever believes in him '
+             'should not perish, but have eternal life.')
 
 
 def receipt(**overrides):
@@ -64,13 +67,27 @@ class ReceiptValidationTests(unittest.TestCase):
         self.assertEqual(reason(receipt(decidedByRole='model')), 'decided_by_role_invalid')
         self.assertEqual(reason(receipt(decidedBy='  ')), 'decided_by_missing')
 
-    def test_machine_adjudicator_receipt_is_admitted_as_machine_evidence(self):
-        summary = validate(receipt(decidedByRole='machine_adjudicator',
-                                   decidedBy='scripture_machine_adjudication v x'))
+    def test_machine_adjudicator_receipt_is_admitted_only_when_the_generator_reproduces_it(self):
+        from scripts import scripture_machine_adjudication as machine
+        rows = [{'sourceUnitId': 'r1', 'english': f'John 3:16 says, {READ_3_16}', 'start': 0.0, 'end': 1.0},
+                {'sourceUnitId': 'r2', 'english': 'Amen.', 'start': 1.0, 'end': 2.0}]
+        inputs = {'source.json': {'source': {'sourceId': 'synthetic'}}, 'anchor.json': {'sourceUnits': rows},
+                  'group-plan.json': [{'translationGroupId': 'g1', 'sourceUnitIds': ['r1', 'r2']}]}
+        generated, _ = machine.adjudicate(inputs['source.json'], inputs['anchor.json'], inputs['group-plan.json'],
+                                          target_locale='zh-Hans', flagged_units=['r1'], library=LIBRARY)
+        summary = validate(generated, bindings=generated['bindings'], flagged_units=['r1'], machine_inputs=inputs)
         self.assertEqual((summary['decidedByRole'], summary['adjudicationKind'], summary['humanApproval']),
                          ('machine_adjudicator', 'machine', False))
+        self.assertTrue(summary['generator']['reproduced'])
+        # A hand-written receipt labelled machine, with a classification the generator never emits, is refused.
+        self.assertEqual(reason(receipt(decidedByRole='machine_adjudicator',
+                                        decidedBy='scripture_machine_adjudication v x')), 'machine_inputs_required')
+        handwritten = receipt(decidedByRole='machine_adjudicator', decidedBy='scripture_machine_adjudication v x',
+                              bindings=generated['bindings'])
+        self.assertEqual(reason(handwritten, bindings=generated['bindings'], flagged_units=UNITS, machine_inputs=inputs),
+                         'machine_receipt_not_reproduced')
         human = validate(receipt())
-        self.assertEqual((human['adjudicationKind'], human['humanApproval']), ('human', True))
+        self.assertEqual((human['adjudicationKind'], human['humanApproval'], human['generator']), ('human', True, None))
 
     def test_bad_timestamp_and_schema_are_refused(self):
         self.assertEqual(reason(receipt(reviewedAt='yesterday')), 'reviewed_at_invalid')

@@ -51,8 +51,9 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     source, anchor, plan = (_load(source_dir / name) for name in ('source.json', 'anchor.json', 'group-plan.json'))
     bindings = {name: manifest['files'][name] for name in adjudication.BINDING_KEYS}
     receipt = _load(Path(args.receipt))
-    summary = adjudication.validate_receipt(receipt, target_locale=TARGET_LOCALE,
-                                            bindings=bindings, flagged_units=flagged)
+    summary = adjudication.validate_receipt(receipt, target_locale=TARGET_LOCALE, bindings=bindings,
+                                            flagged_units=flagged, machine_inputs={
+                                                'source.json': source, 'anchor.json': anchor, 'group-plan.json': plan})
     out.mkdir(parents=True)
     baseline = _load(Path(args.baseline_policy))
     policy = admitted.freeze_admitted_plugin(summary, source, anchor, plan, baseline, out / 'plugin.py')

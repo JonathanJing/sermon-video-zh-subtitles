@@ -7,11 +7,13 @@ invariants, not any model's hearing.
 """
 import hashlib
 import json
+import os
 from pathlib import Path
 import shutil
 import struct
 import tempfile
 import unittest
+from unittest import mock
 import wave
 
 from scripts import sermon_provider_limits as limits
@@ -168,13 +170,19 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
     def test_agreeing_listeners_let_the_model_correct_only_to_what_was_heard(self):
         heard = [FakeListener('openai', "someone is on it. You're failing in the middle of a trial. Listen,"),
                  FakeListener('qwen', CLIP_HEARD_OTHER)]
+        # The openai listener heard little of u4, so its window is unbounded and may hold u4's words:
+        # a correction taken from it is refused even though the wording was heard.
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'corrected_text_unbounded'):
+            self.adjudicate(heard, FakeAdjudicator(self.out / 'cache', answer(
+                'transcript_corrected', 'openai', "You're failing in the middle of a trial.")))
+        shutil.rmtree(self.out)
         adjudicator = FakeAdjudicator(self.out / 'cache', answer(
-            'transcript_corrected', 'openai', "You're failing in the middle of a trial.",
+            'transcript_corrected', 'qwen', "You're failing in the middle of a trial.",
             note='The speaker says the listener is failing during a trial; translate that literally.'))
         receipt = self.adjudicate(heard, adjudicator)
         row = receipt['units'][0]
         self.assertEqual((row['decision'], row['heardBy'], row['correctedText'], row['decidedBy']),
-                         ('transcript_corrected', 'openai', "You're failing in the middle of a trial.", 'model'))
+                         ('transcript_corrected', 'qwen', "You're failing in the middle of a trial.", 'model'))
         self.assertEqual(row['request']['responseId'], 'resp-1')
         self.assertFalse(row['request']['cached'])
         self.assertEqual(row['request']['bounds']['outputTokens'], limits.DEFAULT_REQUEST_LIMITS['maxCompletionTokens'])
@@ -187,7 +195,9 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
         self.assertFalse(question['listeners'][0]['agreesWithFrozen'])
         self.assertFalse(question['listeners'][0]['unitBoundedByNeighbours'])  # it heard little of u4
         self.assertTrue(question['listeners'][1]['unitBoundedByNeighbours'])
+        self.assertEqual(question['listenerIndependence']['reason'], 'two_distinct_listener_models')
         self.assertEqual(receipt['adjudicator']['model'], machine.MODEL)
+        self.assertIsNone(receipt['adjudicator']['route'])
         self.assertEqual(receipt['adjudicator']['requestLimits'], limits.DEFAULT_REQUEST_LIMITS)
         # The same request is served from the cache, not sent again, and does not count as a call.
         again = self.adjudicate(heard, adjudicator)
@@ -217,7 +227,7 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
         row = receipt['units'][0]
         self.assertEqual((row['decision'], row['correctedText']), ('undetermined', None))
         self.assertEqual([h['agreesWithFrozen'] for h in row['heard']], [False, True])
-        self.assertIsNone(machine.source_text_review(receipt, self.anchor, segments(), receipt_path=self.media,
+        self.assertIsNone(machine.source_text_review(receipt, self.anchor, segments(), receipt_name='receipt.json', receipt_sha256='0' * 64,
                                                      source_audio=self.media, asr_reference=self.media))
 
     def test_an_identical_phrase_in_a_neighbour_cannot_confirm_an_inaudible_unit(self):
@@ -243,7 +253,8 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
         clip, asr = self.root / 'clip.m4a', self.root / 'asr_reference.json'
         clip.write_bytes(b'window clip bytes')
         asr.write_text(json.dumps({'segments': segments()}), encoding='utf-8')
-        review = machine.source_text_review(receipt, self.anchor, segments(), receipt_path=receipt_path,
+        review = machine.source_text_review(receipt, self.anchor, segments(), receipt_name='receipt.json',
+                                            receipt_sha256=hashlib.sha256(receipt_path.read_bytes()).hexdigest(),
                                             source_audio=clip, asr_reference=asr)
         self.assertEqual(review['authority'], source_review.MACHINE_AUTHORITY)
         self.assertEqual(review['model'], machine.MODEL)
@@ -299,7 +310,8 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
         clip, asr = self.root / 'clip.m4a', self.root / 'asr_reference.json'
         clip.write_bytes(b'window clip bytes')
         asr.write_text(json.dumps({'segments': segments()}), encoding='utf-8')
-        review = machine.source_text_review(receipt, self.anchor, segments(), receipt_path=receipt_path,
+        review = machine.source_text_review(receipt, self.anchor, segments(), receipt_name='receipt.json',
+                                            receipt_sha256=hashlib.sha256(receipt_path.read_bytes()).hexdigest(),
                                             source_audio=clip, asr_reference=asr)
         self.assertEqual(len(review['patches']), 1)
         self.assertEqual(review['patches'][0]['correctedText'],
@@ -318,11 +330,11 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
         rows = segments()
         rows[1]['text'] = rows[1]['text'].replace('filled', 'filled,')
         with self.assertRaisesRegex(machine.SourceAdjudicationError, 'segment_not_located'):
-            machine.source_text_review(receipt, self.anchor, rows, receipt_path=self.media,
+            machine.source_text_review(receipt, self.anchor, rows, receipt_name='receipt.json', receipt_sha256='0' * 64,
                                        source_audio=self.media, asr_reference=self.media)
 
     def test_bindings_and_refusals(self):
-        heard = [FakeListener('a', CLIP_HEARD)]
+        heard = [FakeListener('a', CLIP_HEARD), FakeListener('b', CLIP_HEARD)]
         with self.assertRaisesRegex(machine.SourceAdjudicationError, 'unit_unknown'):
             self.adjudicate(heard, unit_ids=['u9'])
         with self.assertRaisesRegex(machine.SourceAdjudicationError, 'unit_ids'):
@@ -355,6 +367,108 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
         with self.assertRaisesRegex(machine.SourceAdjudicationError, 'adjudicator_call_cap_reached'):
             self.adjudicate([FakeListener('openai', CLIP_HEARD_OTHER)], capped)
         self.assertEqual(capped.payloads, [])
+
+    def test_a_lone_listener_that_may_be_the_source_asr_cannot_confirm_without_the_adjudicator(self):
+        heard = [FakeListener('gpt-transcribe', CLIP_HEARD)]
+        # The 605 package records its ASR model as unknown: one listener proves nothing.
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'adjudicator_required'):
+            self.adjudicate(heard)
+        same = dict(self.source, transcript={'artifact': {'sha256': TRANSCRIPT_SHA},
+                                             'provenance': {'kind': 'asr', 'model': 'gpt-transcribe'}})
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'adjudicator_required'):
+            self.adjudicate(heard, source_package=same)
+        receipt = self.adjudicate(heard, FakeAdjudicator(self.out / 'cache', answer('transcript_confirmed')),
+                                  source_package=same)
+        row = receipt['units'][0]
+        self.assertEqual((row['decision'], row['decidedBy']), ('transcript_confirmed', 'model'))
+        self.assertEqual(receipt['listenerIndependence'],
+                         {'sourceAsrModel': 'gpt-transcribe', 'listenerModels': ['gpt-transcribe'],
+                          'independentOfSourceAsr': [], 'independent': False,
+                          'reason': 'single_listener_not_independent_of_source_asr'})
+        # A listener known to differ from the source ASR is independent on its own.
+        shutil.rmtree(self.out)
+        other = dict(self.source, transcript={'artifact': {'sha256': TRANSCRIPT_SHA},
+                                              'provenance': {'kind': 'asr', 'model': 'whisper-large-v3'}})
+        receipt = self.adjudicate(heard, source_package=other)
+        row = receipt['units'][0]
+        self.assertEqual((row['decision'], row['decidedBy']), ('transcript_confirmed', 'listeners_agree_with_transcript'))
+        self.assertIn('listener_differs_from_source_asr', row['reason'])
+        self.assertEqual(receipt['listenerIndependence']['independentOfSourceAsr'], ['gpt-transcribe'])
+
+    def test_paid_identities_and_caches_carry_the_selected_openai_project(self):
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'openai_environment_launcher_required'):
+            machine.OpenAiTranscribeListener(cache=self.out / 'openai', max_calls=1)
+        route = {'SERMON_OPENAI_ENVIRONMENT': 'dev', 'OPENAI_PROJECT_ID': 'proj_devOnly',
+                 'SERMON_OPENAI_CREDENTIAL_ALIAS': 'tongxing-dev-runtime', 'OPENAI_API_KEY': 'not-a-real-key'}
+        with mock.patch.dict(os.environ, route):
+            listener = machine.OpenAiTranscribeListener(cache=self.out / 'openai', max_calls=1)
+            dev = FakeAdjudicator(self.out / 'cache', answer('undetermined'))
+            dev_receipt = self.adjudicate([FakeListener('openai', CLIP_HEARD_OTHER)], dev)
+        expected = {'environment': 'dev', 'projectId': 'proj_devOnly', 'credentialAlias': 'tongxing-dev-runtime'}
+        self.assertEqual(listener.identity()['route'], expected)
+        self.assertNotIn('not-a-real-key', json.dumps(listener.identity()))
+        self.assertEqual((dev.route, dev.route_key), (expected, 'dev-proj_devOnly'))
+        self.assertIn('source-meaning-dev-proj_devOnly-u3', dev_receipt['units'][0]['request']['path'])
+        self.assertEqual(dev_receipt['adjudicator']['route'], expected)
+        # The same question under prod is a new request, never the dev answer from the cache.
+        with mock.patch.dict(os.environ, {**route, 'SERMON_OPENAI_ENVIRONMENT': 'prod',
+                                          'OPENAI_PROJECT_ID': 'proj_prodOnly',
+                                          'SERMON_OPENAI_CREDENTIAL_ALIAS': 'tongxing-prod-runtime'}):
+            prod = FakeAdjudicator(self.out / 'cache', answer('undetermined'))
+            prod_receipt = self.adjudicate([FakeListener('openai', CLIP_HEARD_OTHER)], prod)
+        self.assertEqual((len(dev.payloads), len(prod.payloads)), (1, 1))
+        self.assertFalse(prod_receipt['units'][0]['request']['cached'])
+        self.assertNotEqual(dev_receipt['units'][0]['request']['path'], prod_receipt['units'][0]['request']['path'])
+
+    def test_meaning_notes_bind_the_kept_units_for_the_layer2_repair_brief(self):
+        heard = [FakeListener('a', CLIP_HEARD), FakeListener('b', CLIP_HEARD)]
+        receipt = self.adjudicate(heard)
+        encoded = machine._encode(receipt)
+        notes = machine.meaning_notes(receipt, receipt_sha256=hashlib.sha256(encoded).hexdigest())
+        self.assertEqual(notes['schemaVersion'], machine.NOTES_SCHEMA)
+        self.assertEqual(notes['bindings'], receipt['bindings'])
+        self.assertIs(notes['humanApproval'], False)
+        self.assertEqual([(u['sourceUnitId'], u['decision'], u['meaningNote']) for u in notes['units']],
+                         [('u3', 'transcript_confirmed', machine.CONFIRMED_NOTE)])
+        path = self.out / 'meaning-notes.json'
+        machine._write_new(path, notes)
+        loaded = machine.load_meaning_notes(path, source=self.source, anchor=self.anchor)
+        self.assertEqual(list(loaded), ['u3'])
+        self.assertEqual(machine.repair_instruction(loaded, ['u2', 'u3']),
+                         f'Source unit u3 (transcript confirmed by machine audio adjudication): {machine.CONFIRMED_NOTE}')
+        self.assertEqual(machine.repair_instruction(loaded, ['u1', 'u2']), '')
+        # Notes for other Layer 1 inputs, or for a unit whose frozen text changed, are refused.
+        rebuilt = {**self.anchor, 'input': {'mfaSegmentsSha256': 'f' * 64}}
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'meaning_notes_binding_changed'):
+            machine.load_meaning_notes(path, source=self.source, anchor=rebuilt)
+        changed = {**self.anchor, 'sourceUnits': [dict(u, english=u['english'] + ' Really.') if u['sourceUnitId'] == 'u3'
+                                                  else u for u in UNITS]}
+        tampered = dict(notes, bindings={**notes['bindings'], 'anchor.json': policies.canonical_sha256(changed)})
+        other = self.out / 'tampered-notes.json'
+        machine._write_new(other, tampered)
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'meaning_notes_unit_changed'):
+            machine.load_meaning_notes(other, source=self.source, anchor=changed)
+        # A run that corrected every doubted unit has no note to pass on.
+        shutil.rmtree(self.out)
+        corrected = self.adjudicate([FakeListener('openai', CLIP_HEARD_OTHER)], FakeAdjudicator(
+            self.out / 'cache', answer('transcript_corrected', 'openai', "You're failing in the middle of a trial.")))
+        self.assertIsNone(machine.meaning_notes(corrected, receipt_sha256='0' * 64))
+
+    def test_the_review_binds_the_receipt_bytes_the_cli_writes_afterwards(self):
+        receipt = self.adjudicate([FakeListener('openai', CLIP_HEARD_OTHER)], FakeAdjudicator(
+            self.out / 'cache', answer('transcript_corrected', 'openai', "You're failing in the middle of a trial.")))
+        clip, asr = self.root / 'clip.m4a', self.root / 'asr_reference.json'
+        clip.write_bytes(b'window clip bytes')
+        asr.write_text(json.dumps({'segments': segments()}), encoding='utf-8')
+        file_sha = hashlib.sha256(machine._encode(receipt)).hexdigest()
+        review = machine.source_text_review(receipt, self.anchor, segments(), receipt_name='receipt.json',
+                                            receipt_sha256=file_sha, source_audio=clip, asr_reference=asr)
+        self.assertFalse((self.out / 'receipt.json').exists())  # built before the completion marker exists
+        machine._write_new(self.out / 'receipt.json', receipt)
+        self.assertEqual(hashlib.sha256((self.out / 'receipt.json').read_bytes()).hexdigest(), file_sha)
+        self.assertEqual(review['evidence'], [{'path': 'receipt.json', 'sha256': file_sha}])
+        with self.assertRaises(FileExistsError):
+            machine._write_new(self.out / 'receipt.json', receipt)
 
     def test_locate_unit_is_bounded_by_the_neighbours_and_ignores_presentation(self):
         frozen = machine.tokens(FROZEN)
@@ -390,6 +504,24 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
             return {'backend': 'qwen-asr-local', 'torchVersion': '2.9.0', 'qwenAsrVersion': '0.1.0',
                     'modelMetadataSha256s': {'config.json': 'a' * 64}}
         listener = machine.QwenListener(model_dir, cache=self.out / 'qwen', identity_probe=probe)
+        self.assertEqual(listener.identity()['host'], 'spark_exclusive_session')
+        # The weights load only once a live Spark exclusive session owns this process.
+        from scripts.spark_exclusive_session import SessionError
+
+        def refused():
+            raise SessionError('model_session_requires_bound_live_parent')
+        same_runtime = lambda path: dict(listener.runtime)  # noqa: E731  (a second probe would be recorded)
+        unowned = machine.QwenListener(model_dir, cache=self.out / 'qwen', identity_probe=same_runtime,
+                                       session_verifier=refused)
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'qwen_requires_bound_spark_exclusive_session'):
+            unowned.transcribe(b'RIFF')
+        self.assertIsNone(unowned._model)
+        owned = machine.QwenListener(model_dir, cache=self.out / 'qwen', identity_probe=same_runtime,
+                                     session_verifier=lambda: {'sessionId': 's1', 'jobId': 'j1', 'owner': 'me',
+                                                               'bootId': 'b1', 'secret': 'x'})
+        owned._admit()
+        self.assertEqual(owned.session_receipt, {'sessionId': 's1', 'jobId': 'j1', 'owner': 'me', 'bootId': 'b1'})
+        self.assertNotIn('session', owned.identity())  # a session is not part of the cache identity
         identity = listener.identity()
         self.assertEqual(probes, [model_dir.resolve()])
         self.assertEqual(identity['runtime']['qwenAsrVersion'], '0.1.0')

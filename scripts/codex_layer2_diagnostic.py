@@ -77,7 +77,8 @@ def freeze_fixture(source, anchor, policy, plan, plugin, out, *, authorization_r
         require(scripture_adjudication is not None, 'scripture_adjudication_required')
         bindings = {name: policies.canonical_sha256(material[name]) for name in adjudication.BINDING_KEYS}
         admission = adjudication.validate_receipt(scripture_adjudication, target_locale=policy['targetLocale'],
-            bindings=bindings, flagged_units=list(source_quotation_units))
+            bindings=bindings, flagged_units=list(source_quotation_units),
+            machine_inputs={name: material[name] for name in adjudication.BINDING_KEYS})
         receipt_bytes = (json.dumps(scripture_adjudication, ensure_ascii=False, indent=2) + '\n').encode('utf-8')
         manifest['scriptureAdjudication'] = {'path': 'scripture-adjudication.json',
                                              'sha256': hashlib.sha256(receipt_bytes).hexdigest()}
