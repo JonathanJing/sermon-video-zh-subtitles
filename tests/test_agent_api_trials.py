@@ -599,3 +599,11 @@ class ReviewFixTests(unittest.TestCase):
             self.assertEqual(seen['report'], {'category': 'other'})
             self.assertEqual(seen['second']['status'], 'rejected')
             self.assertEqual(result['report'], {'category': 'other'})
+
+    def test_abstention_cases_still_score_the_fix(self):
+        case = next(c for c in trials.load_cases() if c['expected'].get('abstain'))
+        groups = case['expected'].get('fixKeywords') or []
+        fix = ' '.join(group[0] for group in groups)
+        score = trials.score_diagnosis({'category': 'insufficient_evidence', 'fix': fix}, case['expected'], case['evidence'])
+        self.assertIn('fixOk', score)
+        self.assertTrue(score['fixOk'])

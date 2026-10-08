@@ -459,7 +459,8 @@ def score_diagnosis(report, expected, evidence):
     if expected.get('abstain'):
         abstained = report.get('category') == 'insufficient_evidence'
         return {'submitted': True, 'correct': abstained, 'abstainedCorrectly': abstained,
-                'categoryOk': category_ok, 'confidence': report.get('confidence')}
+                'categoryOk': category_ok, 'confidence': report.get('confidence'),
+                'fixOk': _groups_match(_text(report.get('fix')), expected.get('fixKeywords', []))}
     cause_ok = _groups_match(text, expected['causeKeywords'])
     # At least one cause term must come from a verified quote, so an unrelated real quote cannot carry the cause.
     supported = any(any(term.lower() in quotes for term in group) for group in expected['causeKeywords'])
