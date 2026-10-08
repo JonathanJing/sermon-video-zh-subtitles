@@ -30,6 +30,10 @@ TOP_KEYS = {'schemaVersion', 'targetLocale', 'bindings', 'decision', 'decidedBy'
             'reviewedAt', 'candidates'}
 CANDIDATE_KEYS = {'candidateId', 'sourceUnitIds', 'classification', 'reference', 'editionId', 'exactSentence'}
 BINDING_KEYS = ('source.json', 'anchor.json', 'group-plan.json')
+# Who may sign a receipt, and what kind of adjudication that makes. A machine
+# receipt (scripture_machine_adjudication) is machine evidence, never human
+# approval; a human receipt for the same bindings overrides it.
+ROLES = {'human_reviewer': 'human', 'machine_adjudicator': 'machine'}
 
 
 class AdjudicationError(ValueError):
@@ -68,8 +72,9 @@ def validate_receipt(receipt: Any, *, target_locale: str, bindings: dict[str, st
     _require(isinstance(receipt['bindings'], dict) and {k: receipt['bindings'].get(k) for k in BINDING_KEYS}
              == {k: bindings.get(k) for k in BINDING_KEYS}, 'receipt_binding_changed')
     _require(receipt['decision'] == 'approved', 'decision_not_approved')
-    _require(receipt['decidedByRole'] == 'human_reviewer', 'decided_by_not_human')
+    _require(receipt['decidedByRole'] in ROLES, 'decided_by_role_invalid')
     _require(isinstance(receipt['decidedBy'], str) and receipt['decidedBy'].strip(), 'decided_by_missing')
+    kind = ROLES[receipt['decidedByRole']]
     try:
         datetime.fromisoformat(receipt['reviewedAt'])
     except (TypeError, ValueError) as exc:
@@ -106,6 +111,8 @@ def validate_receipt(receipt: Any, *, target_locale: str, bindings: dict[str, st
     _require(len(covered) == len(set(covered)), 'unit_covered_twice')
     _require(set(covered) == set(flagged_units), 'coverage_mismatch')
     return {'schemaVersion': SCHEMA, 'receiptSha256': receipt_sha256(receipt), 'targetLocale': target_locale,
+            'decidedByRole': receipt['decidedByRole'], 'adjudicationKind': kind,
+            'humanApproval': kind == 'human',
             'coveredUnits': sorted(covered), 'quotes': quotes, 'admitted': quotes}
 
 

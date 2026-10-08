@@ -20,7 +20,7 @@
 | 阶段 | 谁做 | 产物 | 状态 |
 |---|---|---|---|
 | 候选队列（穷举疑似引文，附前后文、音频切片、词时间、哈希） | 机器 | 待裁定清单 | 未实现 |
-| 人工裁定 | 人 | `scripture-adjudication.json` 收据 | 格式和校验已实现 |
+| 裁定 | 人，或机器（`scripts/scripture_machine_adjudication.py`，按明确出处和读经信号判整节引文） | `scripture-adjudication.json` 收据 | 格式和校验已实现；机器收据是机器证据，不是人工批准 |
 | 付费前门 | 代码 | 通过或固定拒绝码 | 已实现（冻结和加载都检查） |
 | 经文感知的审核插件 | 代码 | 只接受已通过门的引文 | 未实现 |
 
@@ -30,7 +30,7 @@
 
 - `bindings`：`source.json`、`anchor.json`、`group-plan.json` 的规范哈希，必须与 fixture 冻结的内容一致。换了源稿、锚点或组计划，收据失效。
 - `decision` 必须是 `approved`。`pending`、`rejected` 都拒绝。
-- `decidedByRole` 必须是 `human_reviewer`，`decidedBy` 非空，`reviewedAt` 是有效的 ISO 时间。
+- `decidedByRole` 是 `human_reviewer`（人工收据）或 `machine_adjudicator`（`scripts/scripture_machine_adjudication.py` 生成的机器收据），`decidedBy` 非空，`reviewedAt` 是有效的 ISO 时间。门的汇总记 `adjudicationKind`（`human` / `machine`）；机器收据的 `humanApproval` 为 `false`，只是机器证据，同一组 bindings 的人工收据覆盖它。
 - `candidates`：每项包含 `candidateId`、`sourceUnitIds`、`classification`、`reference`、`editionId`、`exactSentence`。
   - `classification` 为 `direct_quote`（整节）或 `partial_direct_quote`（片段）时，`editionId` 必须是 `CUV`，`exactSentence` 必须是固定版本中的精确文本：整节引用必须等于整节原文，片段必须是原文中唯一出现的连续子串。
   - `speaker_paraphrase` 或 `reference_only` 表示人工认定不是直接引用，`editionId` 和 `exactSentence` 必须为空，不能附带版本声明。
@@ -44,7 +44,7 @@
 | `receipt_schema`、`receipt_schema_version`、`receipt_locale` | 结构或语言不符 |
 | `receipt_binding_changed` | 绑定的源稿、锚点或组计划已变 |
 | `decision_not_approved` | 待定或拒绝 |
-| `decided_by_not_human`、`decided_by_missing` | 不是人工、或没有署名 |
+| `decided_by_role_invalid`、`decided_by_missing` | 署名角色不是人工或机器裁定器、或没有署名 |
 | `reviewed_at_invalid` | 时间无效 |
 | `candidate_schema`、`candidate_id_repeated`、`candidate_units_invalid`、`classification_invalid` | 候选项结构错误 |
 | `edition_mismatch`、`reference_missing`、`exact_sentence_missing` | 引文缺版本或缺文本 |

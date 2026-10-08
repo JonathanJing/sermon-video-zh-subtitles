@@ -65,19 +65,31 @@ class MachineAdjudicationTests(unittest.TestCase):
         self.assertEqual(summary['coveredUnits'], ['u3', 'u4'])
         self.assertEqual([q['canonicalRef'] for q in summary['quotes']], ['REV 4:2', 'REV 4:3'])
 
-    def test_machine_role_is_still_refused_by_the_unchanged_gate(self):
+    def test_machine_receipt_passes_the_gate_as_machine_evidence(self):
         receipt, _ = machine.adjudicate(source(), {'sourceUnits': READING}, plan(READING),
                                         target_locale='zh-Hans', flagged_units=['u3', 'u4'], library=LIBRARY)
-        with self.assertRaisesRegex(adjudication.AdjudicationError, 'decided_by_not_human'):
-            adjudication.validate_receipt(receipt, target_locale='zh-Hans', bindings=receipt['bindings'],
-                                          flagged_units=['u3', 'u4'], library=LIBRARY)
+        summary = adjudication.validate_receipt(receipt, target_locale='zh-Hans', bindings=receipt['bindings'],
+                                                flagged_units=['u3', 'u4'], library=LIBRARY)
+        self.assertEqual((summary['adjudicationKind'], summary['humanApproval'], summary['decidedByRole']),
+                         ('machine', False, machine.ROLE))
+        self.assertEqual([q['canonicalRef'] for q in summary['quotes']], ['REV 4:2', 'REV 4:3'])
 
-    def test_discovery_flags_the_opening_unit_and_one_continuation_per_verse(self):
+    def test_discovery_flags_only_the_opening_unit_and_keeps_the_range_on_it(self):
+        # Whether the reading runs into u4 is not in the text, so u4 is not claimed
+        # (it could be commentary); explicit flags still split the range per unit.
         receipt, basis = machine.adjudicate(source(), {'sourceUnits': READING}, plan(READING),
                                             target_locale='zh-Hans', library=LIBRARY)
-        self.assertEqual(basis['flaggedUnits'], ['u3', 'u4'])
+        self.assertEqual(basis['flaggedUnits'], ['u3'])
         self.assertEqual(basis['flaggedUnitsSource'], 'discovered')
-        self.assertEqual([c['reference'] for c in receipt['candidates']], ['REV 4:2', 'REV 4:3'])
+        self.assertEqual([(c['sourceUnitIds'], c['reference']) for c in receipt['candidates']],
+                         [(['u3'], 'REV 4:2-3')])
+        self.assertEqual(basis['candidates'][0]['layout'], 'one unit carries the whole range')
+        rows = units('John 3:16-18 says, "for God so loved the world that he gave his only Son."',
+                     'Lord, we thank you for this word.',
+                     'Let us pray.')
+        _, basis = machine.adjudicate(source(), {'sourceUnits': rows}, plan(rows), target_locale='zh-Hans',
+                                      library=LIBRARY)
+        self.assertEqual(basis['discoveredUnits'], ['u1'])
 
     def test_flagged_unit_without_a_resolvable_reference_is_a_paraphrase_with_no_edition(self):
         receipt, basis = machine.adjudicate(source(), {'sourceUnits': READING}, plan(READING),
@@ -235,7 +247,7 @@ class MachineAdjudicationTests(unittest.TestCase):
             with self.assertRaisesRegex(SystemExit, 'no_flagged_units'):
                 machine.main([str(fixture), '--out', str(Path(temp) / 'receipt.json')])
             _, basis = machine.adjudicate_fixture(fixture, target_locale='zh-Hans', discover=True, library=LIBRARY)
-            self.assertEqual(basis['flaggedUnits'], ['u3', 'u4'])
+            self.assertEqual(basis['flaggedUnits'], ['u3'])
 
     def test_cli_writes_receipt_and_basis_once_and_reads_flags_from_the_manifest(self):
         with tempfile.TemporaryDirectory() as temp:

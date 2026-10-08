@@ -65,10 +65,16 @@ class GatedRoundTests(unittest.TestCase):
             self.run_round(self.receipt(decision='pending'), name='pending')
         self.assertFalse((self.work / 'pending').exists())
 
-    def test_machine_authored_receipt_is_refused_and_writes_nothing(self):
-        with self.assertRaisesRegex(ValueError, 'decided_by_not_human'):
+    def test_unknown_role_is_refused_and_writes_nothing(self):
+        with self.assertRaisesRegex(ValueError, 'decided_by_role_invalid'):
             self.run_round(self.receipt(decidedByRole='machine'), name='machine')
         self.assertFalse((self.work / 'machine').exists())
+
+    def test_machine_adjudicator_receipt_runs_without_human_approval(self):
+        report = self.run_round(self.receipt(decidedByRole='machine_adjudicator',
+                                             decidedBy='scripture_machine_adjudication v x'), name='by-machine')
+        self.assertEqual((report['adjudicationKind'], report['humanApproval']), ('machine', False))
+        self.assertFalse(report['productionEligible'])
 
     def test_receipt_bound_to_other_source_is_refused(self):
         with self.assertRaisesRegex(ValueError, 'receipt_binding_changed'):

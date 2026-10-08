@@ -1,8 +1,10 @@
-"""One command after a human-signed adjudication receipt: validate, freeze, verify.
+"""One command after a signed adjudication receipt: validate, freeze, verify.
 
 Steps, in order, each refusing before the next:
-1. Validate the receipt against the frozen source fixture (human role, approved,
-   bindings, exact CUV text, coverage of every flagged unit).
+1. Validate the receipt against the frozen source fixture (human or machine
+   role, approved, bindings, exact CUV text, coverage of every flagged unit).
+   A machine receipt is machine evidence: the report records it as such and
+   carries no human approval.
 2. Freeze the admitted-quote plugin and a new fixture that carries the receipt.
 3. Load the fixture back through the same gate used before any dispatch.
 4. Optionally (--run-models) open an exclusive Spark session, run the diagnostic
@@ -67,7 +69,9 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
               'admittedQuotes': [{'candidateId': q['candidateId'], 'classification': q['classification'],
                                   'canonicalRef': q['canonicalRef'], 'editionId': q['editionId'],
                                   'editionVerification': q['editionVerification']} for q in summary['quotes']],
-              'fixture': str(fixture), 'modelCalls': 0, 'humanApproval': 'from_receipt_only',
+              'fixture': str(fixture), 'modelCalls': 0,
+              'adjudicationKind': summary['adjudicationKind'],
+              'humanApproval': 'from_receipt_only' if summary['humanApproval'] else False,
               'productionEligible': False}
     if args.run_models:
         report.update(run_models(args, fixture, out))
@@ -106,7 +110,8 @@ def run_models(args: argparse.Namespace, fixture: Path, out: Path) -> dict[str, 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('--receipt', type=Path, required=True, help='Human-signed adjudication receipt')
+    parser.add_argument('--receipt', type=Path, required=True,
+                        help='Adjudication receipt signed by a human reviewer or by scripture_machine_adjudication')
     parser.add_argument('--source-fixture', type=Path, required=True, help='Frozen zh-Hans 605 fixture (source of inputs)')
     parser.add_argument('--baseline-policy', type=Path, required=True, help='Pre-adjudication baseline policy')
     parser.add_argument('--out-root', type=Path, required=True, help='New directory for this round')

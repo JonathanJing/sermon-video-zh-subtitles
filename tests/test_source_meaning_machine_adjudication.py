@@ -17,9 +17,11 @@ import wave
 from scripts import sermon_provider_limits as limits
 from scripts import sermon_source_text_review as source_review
 from scripts import source_meaning_machine_adjudication as machine
+from scripts import target_language_policy as policies
 
 WINDOW_START = 63.32
 MEDIA_SECONDS = 20
+TRANSCRIPT_SHA = 'e' * 64
 
 
 def units(*rows, start=1.0):
@@ -39,6 +41,11 @@ UNITS = units('Right now, your life is crazy.',
 DOUBTED = 'u3'
 FROZEN = "You're filled in the middle of a trial."
 HEARD_OTHER = "you're failing in the middle of a trial"
+# A listener transcribes the whole clip (u2, u3, u4); these are its outputs for one clip.
+CLIP_HEARD = ("There's a throne, and someone is on it. You're filled in the middle of a trial. "
+              'Listen, there is a throne in heaven, and someone is seated on it.')
+CLIP_HEARD_OTHER = ("there's a throne and someone is on it you're failing in the middle of a trial "
+                    'listen there is a throne in heaven and someone is seated on it')
 
 
 def segments():
@@ -61,9 +68,16 @@ def write_media(path: Path) -> dict:
     return {'sha256': hashlib.sha256(data).hexdigest(), 'sizeBytes': len(data)}
 
 
-def source(media: dict):
+def anchor_for(rows):
+    return {'sourceUnits': rows, 'input': {'mfaSegmentsSha256': TRANSCRIPT_SHA}}
+
+
+def source(media: dict, anchor: dict):
+    """An English Source Package naming its media, window, transcript and the anchor built on it."""
     return {'source': {'sourceId': 'synthetic', 'media': media,
-                       'approvedWindow': {'startSeconds': WINDOW_START, 'endSeconds': WINDOW_START + 12}}}
+                       'approvedWindow': {'startSeconds': WINDOW_START, 'endSeconds': WINDOW_START + 12}},
+            'transcript': {'artifact': {'sha256': TRANSCRIPT_SHA}},
+            'anchors': {'artifact': {'jsonSha256': policies.canonical_sha256(anchor)}}}
 
 
 class FakeListener:
@@ -94,16 +108,18 @@ def answer(decision, heard_by='frozen', corrected=None, note='Translate literall
 
 
 class FakeAdjudicator(machine.SolAdjudicator):
-    """The real payload and cache path, with a scripted provider response."""
+    """The real payload and cache path, with a scripted provider response (one, or one per unit)."""
 
-    def __init__(self, cache, response):
+    def __init__(self, cache, response, **kwargs):
         self.response, self.payloads = response, []
 
         def caller(_key, payload):
             self.payloads.append(payload)
+            question = json.loads(payload['messages'][1]['content'])
+            scripted = self.response[question['sourceUnitId']] if 'schemaVersion' not in self.response else self.response
             return {'id': 'resp-1', 'model': machine.MODEL, 'choices': [
-                {'finish_reason': 'stop', 'message': {'content': json.dumps(self.response)}}]}
-        super().__init__(api_key='', cache=cache, caller=caller)
+                {'finish_reason': 'stop', 'message': {'content': json.dumps(scripted)}}]}
+        super().__init__(api_key='', cache=cache, caller=caller, **kwargs)
 
 
 class SourceMeaningAdjudicationTests(unittest.TestCase):
@@ -112,28 +128,31 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
         self.media = self.root / 'media.wav'
-        self.source = source(write_media(self.media))
-        self.anchor = {'sourceUnits': UNITS}
+        self.anchor = anchor_for(UNITS)
+        self.source = source(write_media(self.media), self.anchor)
         self.out = self.root / 'out'
 
-    def adjudicate(self, listeners, adjudicator=None, cut=None, unit_ids=(DOUBTED,), media=None):
-        return machine.adjudicate(self.source, self.anchor, unit_ids=list(unit_ids), media=media,
-                                  listeners=listeners, adjudicator=adjudicator, out_dir=self.out,
+    def adjudicate(self, listeners, adjudicator=None, cut=None, unit_ids=(DOUBTED,), media=None,
+                   source_package=None, anchor=None):
+        return machine.adjudicate(source_package or self.source, anchor or self.anchor, unit_ids=list(unit_ids),
+                                  media=media, listeners=listeners, adjudicator=adjudicator, out_dir=self.out,
                                   cut=cut or FakeCutter())
 
     def test_listeners_hearing_the_frozen_words_confirm_without_a_model_call(self):
         cutter = FakeCutter()
-        heard = [FakeListener('a', "There's a throne, and someone is on it. You're filled in the middle of a trial. "
-                                   'Listen, there is a throne in heaven'),
-                 FakeListener('b', "someone is on it, you're filled in the middle of a trial, listen there is")]
+        heard = [FakeListener('a', CLIP_HEARD),
+                 FakeListener('b', "and someone is on it, you're filled in the middle of a trial, listen there is a "
+                                   'throne in heaven and someone is seated on it')]
         receipt = self.adjudicate(heard, cut=cutter)
         row = receipt['units'][0]
         self.assertEqual((row['decision'], row['decidedBy'], row['correctedText']),
                          ('transcript_confirmed', 'listeners_agree_with_transcript', None))
-        self.assertTrue(all(h['agreesWithFrozen'] for h in row['heard']))
+        self.assertTrue(all(h['agreesWithFrozen'] and h['bounded'] for h in row['heard']))
         self.assertEqual(row['heard'][1]['unitWindow'], "you're filled in the middle of a trial,")
+        self.assertEqual(row['heard'][1]['boundary'], {'before': 0.625, 'after': 1.0, 'reason': None})
         self.assertEqual(row['meaningNote'], machine.CONFIRMED_NOTE)
         self.assertIsNone(row['request'])
+        self.assertEqual(row['unit'], {'start': 5.0, 'end': 6.5, 'referenceChunkId': '0'})
         self.assertIs(receipt['humanApproval'], False)
         self.assertEqual(receipt['decidedByRole'], machine.ROLE)
         self.assertEqual(receipt['counts'], {'units': 1, 'transcript_confirmed': 1, 'transcript_corrected': 0,
@@ -148,7 +167,7 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
 
     def test_agreeing_listeners_let_the_model_correct_only_to_what_was_heard(self):
         heard = [FakeListener('openai', "someone is on it. You're failing in the middle of a trial. Listen,"),
-                 FakeListener('qwen', "and someone is on it you're failing in the middle of a trial listen there")]
+                 FakeListener('qwen', CLIP_HEARD_OTHER)]
         adjudicator = FakeAdjudicator(self.out / 'cache', answer(
             'transcript_corrected', 'openai', "You're failing in the middle of a trial.",
             note='The speaker says the listener is failing during a trial; translate that literally.'))
@@ -157,6 +176,8 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
         self.assertEqual((row['decision'], row['heardBy'], row['correctedText'], row['decidedBy']),
                          ('transcript_corrected', 'openai', "You're failing in the middle of a trial.", 'model'))
         self.assertEqual(row['request']['responseId'], 'resp-1')
+        self.assertFalse(row['request']['cached'])
+        self.assertEqual(row['request']['bounds']['outputTokens'], limits.DEFAULT_REQUEST_LIMITS['maxCompletionTokens'])
         payload = adjudicator.payloads[0]
         self.assertEqual(limits.bounded_payload(payload, limits.DEFAULT_REQUEST_LIMITS), payload)
         question = json.loads(payload['messages'][1]['content'])
@@ -164,13 +185,18 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
         self.assertEqual([c['position'] for c in question['context']], ['before', 'before', 'doubted', 'after', 'after'])
         self.assertEqual(question['listeners'][1]['heardForUnit'], "you're failing in the middle of a trial")
         self.assertFalse(question['listeners'][0]['agreesWithFrozen'])
+        self.assertFalse(question['listeners'][0]['unitBoundedByNeighbours'])  # it heard little of u4
+        self.assertTrue(question['listeners'][1]['unitBoundedByNeighbours'])
         self.assertEqual(receipt['adjudicator']['model'], machine.MODEL)
-        # The same request is served from the cache, not sent again.
-        self.adjudicate(heard, adjudicator)
+        self.assertEqual(receipt['adjudicator']['requestLimits'], limits.DEFAULT_REQUEST_LIMITS)
+        # The same request is served from the cache, not sent again, and does not count as a call.
+        again = self.adjudicate(heard, adjudicator)
         self.assertEqual(len(adjudicator.payloads), 1)
+        self.assertTrue(again['units'][0]['request']['cached'])
+        self.assertEqual(adjudicator.calls, 1)
 
     def test_a_wording_nobody_heard_is_refused(self):
-        heard = [FakeListener('openai', "You're failing in the middle of a trial.")]
+        heard = [FakeListener('openai', CLIP_HEARD_OTHER)]
         for response, code in (
                 (answer('transcript_corrected', 'openai', "You're fulfilled in the middle of a trial."), 'corrected_text_not_heard'),
                 (answer('transcript_corrected', 'frozen', FROZEN), 'corrected_by_frozen_words'),
@@ -185,8 +211,7 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
                     self.adjudicate(heard, FakeAdjudicator(self.out / 'cache', response))
 
     def test_disagreeing_listeners_may_end_undetermined_with_the_frozen_text_kept(self):
-        heard = [FakeListener('openai', "You're failing in the middle of a trial."),
-                 FakeListener('qwen', "You're filled in the middle of a trial.")]
+        heard = [FakeListener('openai', CLIP_HEARD_OTHER), FakeListener('qwen', CLIP_HEARD)]
         receipt = self.adjudicate(heard, FakeAdjudicator(self.out / 'cache', answer(
             'undetermined', note='Translate the frozen English literally; the listeners disagree.')))
         row = receipt['units'][0]
@@ -195,8 +220,22 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
         self.assertIsNone(machine.source_text_review(receipt, self.anchor, segments(), receipt_path=self.media,
                                                      source_audio=self.media, asr_reference=self.media))
 
+    def test_an_identical_phrase_in_a_neighbour_cannot_confirm_an_inaudible_unit(self):
+        rows = units('Right now, your life is crazy.', FROZEN, FROZEN, 'Listen, there is a throne in heaven.')
+        anchor = anchor_for(rows)
+        package = source(self.source['source']['media'], anchor)
+        heard = [FakeListener('openai', "your life is crazy you're filled in the middle of a trial listen there is a throne in heaven")]
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'adjudicator_required'):
+            self.adjudicate(heard, unit_ids=['u3'], source_package=package, anchor=anchor)
+        receipt = self.adjudicate(heard, FakeAdjudicator(self.out / 'cache', answer('undetermined')),
+                                  unit_ids=['u3'], source_package=package, anchor=anchor)
+        listened = receipt['units'][0]['heard'][0]
+        self.assertFalse(listened['bounded'])
+        self.assertEqual(listened['boundary']['reason'], 'phrase_repeated_in_clip')
+        self.assertEqual(receipt['units'][0]['decision'], 'undetermined')
+
     def test_corrected_unit_becomes_a_layer1_review_the_existing_path_applies(self):
-        heard = [FakeListener('openai', "You're failing in the middle of a trial.")]
+        heard = [FakeListener('openai', CLIP_HEARD_OTHER)]
         receipt = self.adjudicate(heard, FakeAdjudicator(self.out / 'cache', answer(
             'transcript_corrected', 'openai', "You're failing in the middle of a trial.")))
         receipt_path = self.out / 'receipt.json'
@@ -221,9 +260,59 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
         self.assertEqual(corrected[0]['text'], segments()[0]['text'])
         self.assertEqual(provenance['authority'], source_review.MACHINE_AUTHORITY)
         self.assertEqual(provenance['reviewedBy'], receipt['decidedBy'])
+        self.assertEqual(provenance['machineEvidence']['receiptSha256'], review['evidence'][0]['sha256'])
+        self.assertEqual(provenance['machineEvidence']['bindings'], receipt['bindings'])
+        # The review path accepts the machine authority only with the receipt behind it.
+        tampered = dict(review, patches=[dict(review['patches'][0],
+                                              correctedText="There's a throne, and someone is on it. You're fine.")])
+        review_path.write_text(json.dumps(tampered), encoding='utf-8')
+        with self.assertRaisesRegex(ValueError, "differs from the receipt's corrections"):
+            source_review.apply_review(segments(), review_path, clip, asr)
+        other = self.out / 'notes.json'
+        other.write_text(json.dumps({'anything': True}), encoding='utf-8')
+        review_path.write_text(json.dumps(dict(review, evidence=[
+            {'path': 'notes.json', 'sha256': hashlib.sha256(other.read_bytes()).hexdigest()}],
+            patches=[dict(review['patches'][0], evidenceSha256=hashlib.sha256(other.read_bytes()).hexdigest())])),
+            encoding='utf-8')
+        with self.assertRaisesRegex(ValueError, 'exactly one source-meaning receipt'):
+            source_review.apply_review(segments(), review_path, clip, asr)
+        unsigned = dict(receipt, decidedBy='someone else')
+        receipt_path.write_text(json.dumps(unsigned), encoding='utf-8')
+        sha = hashlib.sha256(receipt_path.read_bytes()).hexdigest()
+        review_path.write_text(json.dumps(dict(review, evidence=[{'path': 'receipt.json', 'sha256': sha}],
+                                               patches=[dict(review['patches'][0], evidenceSha256=sha)])),
+                               encoding='utf-8')
+        with self.assertRaisesRegex(ValueError, 'does not carry the adjudication'):
+            source_review.apply_review(segments(), review_path, clip, asr)
+
+    def test_corrections_sharing_a_segment_become_one_patch(self):
+        heard_text = ("right now your life is crazy there's a throne and someone is sitting on it you're failing in "
+                      'the middle of a trial listen there is a throne in heaven and someone is seated on it')
+        heard = [FakeListener('openai', heard_text)]
+        adjudicator = FakeAdjudicator(self.out / 'cache', {
+            'u2': answer('transcript_corrected', 'openai', "There's a throne, and someone is sitting on it."),
+            'u3': answer('transcript_corrected', 'openai', "You're failing in the middle of a trial.")})
+        receipt = self.adjudicate(heard, adjudicator, unit_ids=['u2', 'u3'])
+        self.assertEqual([r['decision'] for r in receipt['units']], ['transcript_corrected'] * 2)
+        receipt_path = self.out / 'receipt.json'
+        receipt_path.write_text(json.dumps(receipt), encoding='utf-8')
+        clip, asr = self.root / 'clip.m4a', self.root / 'asr_reference.json'
+        clip.write_bytes(b'window clip bytes')
+        asr.write_text(json.dumps({'segments': segments()}), encoding='utf-8')
+        review = machine.source_text_review(receipt, self.anchor, segments(), receipt_path=receipt_path,
+                                            source_audio=clip, asr_reference=asr)
+        self.assertEqual(len(review['patches']), 1)
+        self.assertEqual(review['patches'][0]['correctedText'],
+                         "There's a throne, and someone is sitting on it. You're failing in the middle of a trial.")
+        self.assertIn('u2 heard by openai', review['patches'][0]['reason'])
+        self.assertIn('u3 heard by openai', review['patches'][0]['reason'])
+        review_path = self.out / 'source-text-review.json'
+        review_path.write_text(json.dumps(review), encoding='utf-8')
+        corrected, _ = source_review.apply_review(segments(), review_path, clip, asr)
+        self.assertEqual(corrected[1]['text'], review['patches'][0]['correctedText'])
 
     def test_review_refuses_a_unit_whose_segment_cannot_be_located(self):
-        heard = [FakeListener('openai', "You're failing in the middle of a trial.")]
+        heard = [FakeListener('openai', CLIP_HEARD_OTHER)]
         receipt = self.adjudicate(heard, FakeAdjudicator(self.out / 'cache', answer(
             'transcript_corrected', 'openai', "You're failing in the middle of a trial.")))
         rows = segments()
@@ -233,7 +322,7 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
                                        source_audio=self.media, asr_reference=self.media)
 
     def test_bindings_and_refusals(self):
-        heard = [FakeListener('a', FROZEN)]
+        heard = [FakeListener('a', CLIP_HEARD)]
         with self.assertRaisesRegex(machine.SourceAdjudicationError, 'unit_unknown'):
             self.adjudicate(heard, unit_ids=['u9'])
         with self.assertRaisesRegex(machine.SourceAdjudicationError, 'unit_ids'):
@@ -246,19 +335,89 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
         other.write_bytes(self.media.read_bytes() + b'\0')
         with self.assertRaisesRegex(machine.SourceAdjudicationError, 'media_identity_mismatch'):
             self.adjudicate(heard, media=other)
+        # The anchor must be the one the package names, built on the package's transcript.
+        stale = anchor_for(units(*[u['english'] for u in UNITS], start=2.0))
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'anchor_not_bound_to_source'):
+            self.adjudicate(heard, anchor=stale)
+        rebuilt = {**self.anchor, 'input': {'mfaSegmentsSha256': 'f' * 64}}
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'anchor_transcript_binding_changed'):
+            self.adjudicate(heard, anchor=rebuilt, source_package=source(self.source['source']['media'], rebuilt))
         receipt = self.adjudicate(heard, media=self.media)
-        self.assertEqual(receipt['bindings']['anchor.json'], machine.policies.canonical_sha256(self.anchor))
+        self.assertEqual(receipt['bindings']['anchor.json'], policies.canonical_sha256(self.anchor))
+        self.assertEqual(receipt['bindings']['anchor.json'], self.source['anchors']['artifact']['jsonSha256'])
 
-    def test_window_matching_ignores_presentation_and_picks_the_closest_stretch(self):
+    def test_adjudicator_model_and_call_cap_are_enforced_before_dispatch(self):
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'unsupported_adjudicator_model'):
+            machine.SolAdjudicator(api_key='', cache=self.out, model='gpt-6-sol', caller=lambda *_: {})
+        self.assertNotIn('gpt-6-sol', machine.ADJUDICATOR_MODELS)
+        self.assertIn(machine.MODEL, machine.ADJUDICATOR_MODELS)
+        capped = FakeAdjudicator(self.out / 'cache', answer('undetermined'), max_calls=0)
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'adjudicator_call_cap_reached'):
+            self.adjudicate([FakeListener('openai', CLIP_HEARD_OTHER)], capped)
+        self.assertEqual(capped.payloads, [])
+
+    def test_locate_unit_is_bounded_by_the_neighbours_and_ignores_presentation(self):
         frozen = machine.tokens(FROZEN)
         self.assertEqual(frozen, ["you're", 'filled', 'in', 'the', 'middle', 'of', 'a', 'trial'])
-        window = machine.best_window(frozen, 'Someone is on it. You’re FILLED, in the middle of a trial! Listen.')
-        self.assertEqual(window['tokens'], frozen)
-        self.assertEqual(window['similarity'], 1.0)
-        window = machine.best_window(frozen, "someone is on it you're failing in the middle of a trial listen")
-        self.assertEqual(window['text'], "you're failing in the middle of a trial")
-        self.assertLess(window['similarity'], 1.0)
-        self.assertEqual(machine.best_window(frozen, '')['tokens'], [])
+        before, after = machine.tokens(UNITS[1]['english']), machine.tokens(UNITS[3]['english'])
+        found = machine.locate_unit(before, frozen, after,
+                                    "There's a throne, and someone is on it. You’re FILLED, in the middle of a trial! "
+                                    'Listen, there is a throne in heaven, and someone is seated on it.')
+        self.assertEqual((found['tokens'], found['similarity'], found['bounded']), (frozen, 1.0, True))
+        found = machine.locate_unit(before, frozen, after, CLIP_HEARD_OTHER)
+        self.assertEqual(found['text'], "you're failing in the middle of a trial")
+        self.assertLess(found['similarity'], 1.0)
+        # An extra word heard at the boundary belongs to the doubted stretch, so it is not confirmed silently.
+        found = machine.locate_unit(before, frozen, after, CLIP_HEARD.replace("You're", "Right, you're"))
+        self.assertEqual(found['tokens'][:2], ['right', "you're"])
+        # A unit at the clip edge is bounded by the edge.
+        found = machine.locate_unit([], frozen, after, CLIP_HEARD.split('. ', 1)[1])
+        self.assertEqual((found['tokens'], found['bounded'], found['boundary']['before']), (frozen, True, None))
+        # Neighbours the listener barely heard cannot bound the stretch.
+        found = machine.locate_unit(before, frozen, after, FROZEN)
+        self.assertEqual((found['tokens'], found['bounded'], found['boundary']['reason']),
+                         (frozen, False, 'neighbour_not_heard'))
+        self.assertEqual(machine.locate_unit(before, frozen, after, '')['boundary']['reason'], 'nothing_heard')
+
+    def test_qwen_listener_identity_binds_weights_runtime_and_settings(self):
+        model_dir = self.root / 'qwen'
+        model_dir.mkdir()
+        (model_dir / 'model.safetensors').write_bytes(b'weights')
+        probes = []
+
+        def probe(path):
+            probes.append(path)
+            return {'backend': 'qwen-asr-local', 'torchVersion': '2.9.0', 'qwenAsrVersion': '0.1.0',
+                    'modelMetadataSha256s': {'config.json': 'a' * 64}}
+        listener = machine.QwenListener(model_dir, cache=self.out / 'qwen', identity_probe=probe)
+        identity = listener.identity()
+        self.assertEqual(probes, [model_dir.resolve()])
+        self.assertEqual(identity['runtime']['qwenAsrVersion'], '0.1.0')
+        self.assertEqual(identity['settings'], machine.QWEN_SETTINGS)
+        self.assertEqual(identity['modelRevision'], f'model.safetensors:sha256:{hashlib.sha256(b"weights").hexdigest()}')
+        runs = []
+        listener._run = lambda wav: runs.append(wav) or 'heard once'
+        self.assertEqual(listener.transcribe(b'clip'), 'heard once')
+        self.assertEqual(listener.transcribe(b'clip'), 'heard once')
+        self.assertEqual(len(runs), 1)
+        # A different runtime (package upgrade, changed model metadata) is another listener: no cache reuse.
+        upgraded = machine.QwenListener(model_dir, cache=self.out / 'qwen', identity_probe=lambda p: {
+            **probe(p), 'qwenAsrVersion': '0.2.0'})
+        upgraded._run = lambda wav: runs.append(wav) or 'heard again'
+        self.assertEqual(upgraded.transcribe(b'clip'), 'heard again')
+        self.assertEqual(len(runs), 2)
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'qwen_runtime_identity'):
+            machine.QwenListener(model_dir, cache=self.out / 'qwen', identity_probe=lambda p: {'backend': 'other'})
+
+    def test_out_dir_resumes_an_incomplete_attempt_but_never_a_finished_one(self):
+        self.assertEqual(machine.resumable_out_dir(self.out), self.out)
+        (self.out / 'cache').mkdir(parents=True)
+        self.assertEqual(machine.resumable_out_dir(self.out), self.out)
+        (self.out / 'receipt.json').write_text('{}', encoding='utf-8')
+        with self.assertRaisesRegex(SystemExit, 'already holds a receipt'):
+            machine.resumable_out_dir(self.out)
+        with self.assertRaisesRegex(SystemExit, 'not a directory'):
+            machine.resumable_out_dir(self.media)
 
     @unittest.skipUnless(shutil.which('ffmpeg'), 'ffmpeg is not installed')
     def test_ffmpeg_cuts_a_pcm16_clip_of_the_requested_length(self):

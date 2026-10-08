@@ -186,21 +186,15 @@ def _reading_near(rows: list[dict[str, Any]], index: int) -> bool:
 
 
 def discover_flagged_units(rows: list[dict[str, Any]]) -> list[str]:
-    """Units that open a quotation plus their continuation, one unit per verse."""
-    flagged: list[str] = []
-    index = 0
-    while index < len(rows):
-        reference = _reference(rows[index])
-        if reference is not None and _reading_near(rows, index):
-            span = reference.end_verse - reference.start_verse + 1
-            end = index
-            while end + 1 < len(rows) and end + 1 - index < span and rows[end + 1]['verseRange'] is None:
-                end += 1
-            flagged.extend(rows[i]['sourceUnitId'] for i in range(index, end + 1))
-            index = end + 1
-        else:
-            index += 1
-    return flagged
+    """Units that open a quotation: a resolvable reference with a reading signal.
+
+    Only the opening unit is claimed. Where the reading runs on into later
+    units, the surface text gives no boundary evidence (the opening unit may
+    already hold the whole range, and a following unit may be commentary or
+    prayer), so the whole range stays on the opening unit and the continuation
+    units are supplied explicitly when known."""
+    return [row['sourceUnitId'] for i, row in enumerate(rows)
+            if _reference(row) is not None and _reading_near(rows, i)]
 
 
 def _runs(rows: list[dict[str, Any]], flagged: list[str]) -> list[list[int]]:
@@ -312,7 +306,9 @@ def adjudicate(source: dict[str, Any], anchor: dict[str, Any], plan: list[dict[s
              'notice': 'Deterministic surface-signal adjudication. A human receipt for the same bindings '
                        'overrides this one. Not a translation or edition approval. Every quotation is admitted '
                        'as the whole pinned verse: without an English edition the machine cannot tell a '
-                       'fragment from a whole-verse reading, so a fragment needs a human partial_direct_quote.'}
+                       'fragment from a whole-verse reading, so a fragment needs a human partial_direct_quote. '
+                       'Discovery claims only the unit that opens a quotation and keeps the whole range on it; '
+                       'units that continue a reading are flagged explicitly, since the text gives no boundary.'}
     return receipt, basis
 
 
