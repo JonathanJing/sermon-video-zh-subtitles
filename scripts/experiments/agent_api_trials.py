@@ -872,6 +872,13 @@ class Trials:
             for stage, rows in self.partial.items():
                 if stage not in results:
                     results[stage] = _stage_result(stage, rows)
+            # Stages finished by an earlier run into this --out (e.g. risk before all) stay in the summary.
+            for stage in ('diagnose', 'refute', 'preflight', 'risk'):
+                saved = self.out / f'{stage}.json'
+                if stage not in results and saved.exists():
+                    value = _read_json(saved)
+                    if not value.get('partial'):
+                        results[stage] = value
             self.write('summary', self._summary(results, status='failed'))
             raise
         finally:
@@ -897,7 +904,8 @@ class Trials:
         cases = {'model': self.model, 'cases': sorted(c['id'] for c in self.cases)}
         for stage, scope in (('diagnose', cases), ('refute', cases),
                              ('preflight', {'model': self.model, 'plans': sorted(p['id'] for p in self.plans)}),
-                             ('risk', {'model': DECISIONS_MODEL, 'repeats': self.risk_repeats})):
+                             ('risk', {'model': DECISIONS_MODEL, 'repeats': self.risk_repeats,
+                                       'actions': sorted(a['id'] for a in _read_json(RISK)['actions'])})):
             if trial == 'all' or trial == stage or (trial == 'refute' and stage == 'diagnose'):
                 self._bind_scope(stage, scope)
         if trial in ('timeline', 'all'):

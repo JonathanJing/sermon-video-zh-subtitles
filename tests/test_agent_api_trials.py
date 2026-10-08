@@ -662,3 +662,34 @@ class ScopeTests(unittest.TestCase):
         make(risk_repeats=2).run('risk')
         with self.assertRaises(ValueError):
             make(risk_repeats=1).run('risk')
+
+    def test_failure_summary_keeps_stages_finished_by_an_earlier_run(self):
+        (trials.ROOT / 'artifacts').mkdir(exist_ok=True)
+        temporary = tempfile.TemporaryDirectory(dir=trials.ROOT / 'artifacts', prefix='test-agent-trials-')
+        self.addCleanup(temporary.cleanup)
+        out = Path(temporary.name) / 'run'
+
+        def make():
+            return trials.Trials(out, client=trials.FakeAgentsClient(trials.fake_agent_script), model='gpt-6-luna',
+                                 backend='fake', poll_seconds=0, risk_repeats=1,
+                                 decisions=trials.DecisionsClient(out, transport=trials.fake_decisions))
+        make().run('risk')
+        with patch.object(trials.Trials, 'diagnose', side_effect=RuntimeError('boom')), self.assertRaises(RuntimeError):
+            make().run('all')
+        summary = json.loads((out / 'summary.json').read_text())
+        self.assertEqual(summary['status'], 'failed')
+        self.assertEqual(summary['risk']['actions'], 60)
+
+    def test_removed_risk_action_needs_a_new_out(self):
+        (trials.ROOT / 'artifacts').mkdir(exist_ok=True)
+        temporary = tempfile.TemporaryDirectory(dir=trials.ROOT / 'artifacts', prefix='test-agent-trials-')
+        self.addCleanup(temporary.cleanup)
+        out = Path(temporary.name) / 'run'
+        make = lambda: trials.Trials(out, client=None, model='m', backend='fake', risk_repeats=1,
+                                     decisions=trials.DecisionsClient(out, transport=trials.fake_decisions))
+        make().run('risk')
+        policy = json.loads(trials.RISK.read_text())
+        policy['actions'] = policy['actions'][1:]
+        with patch.object(trials, '_read_json', side_effect=lambda path: policy if Path(path) == trials.RISK
+                          else json.loads(Path(path).read_text(encoding='utf-8'))), self.assertRaises(ValueError):
+            make().run('risk')
