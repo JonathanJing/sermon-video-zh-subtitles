@@ -73,8 +73,12 @@ class ReceiptValidationTests(unittest.TestCase):
         self.assertEqual(reason(changed), 'receipt_binding_changed')
 
     def test_locale_without_a_pinned_edition_is_refused(self):
-        self.assertEqual(reason(receipt(targetLocale='ko'), target_locale='ko'), 'no_pinned_edition_for_locale')
-        self.assertEqual(reason(receipt(targetLocale='es'), target_locale='es'), 'no_pinned_edition_for_locale')
+        self.assertEqual(reason(receipt(targetLocale='fr'), target_locale='fr'), 'no_pinned_edition_for_locale')
+
+    def test_ko_and_es_editions_are_refused_until_publisher_verified(self):
+        # The pinned ko and es sources are third-party claims; they must not admit quotations yet.
+        self.assertEqual(reason(receipt(targetLocale='ko'), target_locale='ko'), 'edition_not_verified')
+        self.assertEqual(reason(receipt(targetLocale='es'), target_locale='es'), 'edition_not_verified')
 
     def test_altered_exact_sentence_is_refused(self):
         bad = receipt()

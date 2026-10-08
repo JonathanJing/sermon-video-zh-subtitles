@@ -16,12 +16,14 @@ from pathlib import Path
 from typing import Any
 
 from scripts import cuv_scripture
+from scripts import scripture_editions
 from scripts import target_language_policy as policies
 
 SCHEMA = 'sermon-scripture-adjudication-v1'
 # Only locales with a pinned, hash-verified edition may admit a direct quotation.
-# 'CUV' is the policy's edition id; the checked-in library file is cuv_scripture.EDITION_ID.
-PINNED_EDITIONS = {'zh-Hans': 'CUV'}
+# Policy edition ids. CUV is verified against its source archive; NKRV-1998 and
+# RVR60-1960 are admitted only when their pinned source is publisher-verified.
+PINNED_EDITIONS = {'zh-Hans': 'CUV', 'ko': 'NKRV-1998', 'es': 'RVR60-1960'}
 CLASSIFICATIONS = {'direct_quote', 'partial_direct_quote', 'speaker_paraphrase', 'reference_only'}
 QUOTE_CLASSES = {'direct_quote', 'partial_direct_quote'}
 TOP_KEYS = {'schemaVersion', 'targetLocale', 'bindings', 'decision', 'decidedBy', 'decidedByRole',
@@ -43,10 +45,24 @@ def receipt_sha256(receipt: dict[str, Any]) -> str:
     return policies.canonical_sha256(receipt)
 
 
+def _verifier(edition_id: str, library: Any) -> Any:
+    """The lookup object for an edition, or a refusal when its source is not verified."""
+    if edition_id == 'CUV':
+        return library or cuv_scripture.CuvLibrary.from_path()
+    try:
+        edition = scripture_editions.load(edition_id)
+    except scripture_editions.EditionError as exc:
+        raise AdjudicationError('edition_unavailable') from exc
+    _require(edition.verification == scripture_editions.VERIFIED, 'edition_not_verified')
+    return edition
+
+
 def validate_receipt(receipt: Any, *, target_locale: str, bindings: dict[str, str],
                      flagged_units: list[str], library: cuv_scripture.CuvLibrary | None = None) -> dict[str, Any]:
     """Return a summary of an approved receipt, or raise AdjudicationError with a reason code."""
     _require(target_locale in PINNED_EDITIONS, 'no_pinned_edition_for_locale')
+    edition_id = PINNED_EDITIONS[target_locale]
+    verifier = _verifier(edition_id, library)
     _require(isinstance(receipt, dict) and set(receipt) == TOP_KEYS, 'receipt_schema')
     _require(receipt['schemaVersion'] == SCHEMA, 'receipt_schema_version')
     _require(receipt['targetLocale'] == target_locale, 'receipt_locale')
@@ -65,7 +81,6 @@ def validate_receipt(receipt: Any, *, target_locale: str, bindings: dict[str, st
              'candidate_id_repeated')
     covered: list[str] = []
     quotes: list[dict[str, Any]] = []
-    library = library or cuv_scripture.CuvLibrary.from_path()
     for row in candidates:
         _require(isinstance(row, dict) and set(row) == CANDIDATE_KEYS, 'candidate_schema')
         _require(row['classification'] in CLASSIFICATIONS, 'classification_invalid')
@@ -74,18 +89,19 @@ def validate_receipt(receipt: Any, *, target_locale: str, bindings: dict[str, st
                  and all(isinstance(unit, str) and unit for unit in units), 'candidate_units_invalid')
         covered.extend(units)
         if row['classification'] in QUOTE_CLASSES:
-            _require(row['editionId'] == PINNED_EDITIONS[target_locale], 'edition_mismatch')
+            _require(row['editionId'] == edition_id, 'edition_mismatch')
             _require(isinstance(row['reference'], str) and row['reference'].strip(), 'reference_missing')
             _require(isinstance(row['exactSentence'], str) and row['exactSentence'], 'exact_sentence_missing')
             try:
                 reference = cuv_scripture.parse_reference(row['reference'])
                 partial = row['classification'] == 'partial_direct_quote'
-                found = library.verify_text(reference, row['exactSentence'], excerpt=partial)
-            except cuv_scripture.CuvError as exc:
+                found = verifier.verify_text(reference, row['exactSentence'], excerpt=partial)
+            except (cuv_scripture.CuvError, scripture_editions.EditionError) as exc:
                 raise AdjudicationError('exact_sentence_mismatch') from exc
             quotes.append({'candidateId': row['candidateId'], 'sourceUnitIds': list(units),
                            'classification': row['classification'], 'canonicalRef': found['canonicalRef'],
-                           'exactSentence': row['exactSentence'], 'textSha256': found['textSha256']})
+                           'editionId': edition_id, 'exactSentence': row['exactSentence'],
+                           'textSha256': found['textSha256']})
         else:
             _require(row['editionId'] is None and row['exactSentence'] is None, 'non_quote_has_edition')
     _require(len(covered) == len(set(covered)), 'unit_covered_twice')
