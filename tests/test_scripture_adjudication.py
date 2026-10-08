@@ -11,6 +11,7 @@ from pathlib import Path
 
 from scripts import cuv_scripture
 from scripts import scripture_adjudication as adjudication
+from scripts import scripture_editions
 
 UNITS = ['u-quote-1', 'u-quote-2']
 BINDINGS = {'source.json': 'a' * 64, 'anchor.json': 'b' * 64, 'group-plan.json': 'c' * 64}
@@ -75,10 +76,17 @@ class ReceiptValidationTests(unittest.TestCase):
     def test_locale_without_a_pinned_edition_is_refused(self):
         self.assertEqual(reason(receipt(targetLocale='fr'), target_locale='fr'), 'no_pinned_edition_for_locale')
 
-    def test_ko_and_es_editions_are_refused_until_publisher_verified(self):
-        # The pinned ko and es sources are third-party claims; they must not admit quotations yet.
-        self.assertEqual(reason(receipt(targetLocale='ko'), target_locale='ko'), 'edition_not_verified')
-        self.assertEqual(reason(receipt(targetLocale='es'), target_locale='es'), 'edition_not_verified')
+    @unittest.skipUnless((scripture_editions.DOWNLOAD_DIR / 'NKRV-1998.json').is_file(), 'NKRV-1998 file not present')
+    def test_ko_quote_is_admitted_and_keeps_its_pending_verification_status(self):
+        text = scripture_editions.load('NKRV-1998').lookup('REV 3:16')['text']
+        candidates = [
+            {'candidateId': 'k1', 'sourceUnitIds': [UNITS[0]], 'classification': 'direct_quote',
+             'reference': 'REV 3:16', 'editionId': 'NKRV-1998', 'exactSentence': text},
+            {'candidateId': 'k2', 'sourceUnitIds': [UNITS[1]], 'classification': 'speaker_paraphrase',
+             'reference': None, 'editionId': None, 'exactSentence': None}]
+        summary = validate(receipt(targetLocale='ko', candidates=candidates), target_locale='ko')
+        self.assertEqual([q['editionVerification'] for q in summary['quotes']],
+                         [scripture_editions.PENDING])
 
     def test_altered_exact_sentence_is_refused(self):
         bad = receipt()

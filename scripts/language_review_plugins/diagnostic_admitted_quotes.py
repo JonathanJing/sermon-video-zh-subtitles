@@ -33,7 +33,7 @@ def validate_admitted(admitted):
     seen = set()
     for row in admitted:
         _require(type(row) is dict and set(row) == {'candidateId', 'sourceUnitIds', 'classification',
-            'canonicalRef', 'editionId', 'exactSentence', 'textSha256'}, 'admitted_quote_schema')
+            'canonicalRef', 'editionId', 'editionVerification', 'exactSentence', 'textSha256'}, 'admitted_quote_schema')
         _require(row['classification'] in QUOTE_CLASSES and type(row['exactSentence']) is str
                  and row['exactSentence'] and type(row['sourceUnitIds']) is list and row['sourceUnitIds'],
                  'admitted_quote_invalid')

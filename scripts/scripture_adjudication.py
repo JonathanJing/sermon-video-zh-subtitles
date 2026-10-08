@@ -45,16 +45,15 @@ def receipt_sha256(receipt: dict[str, Any]) -> str:
     return policies.canonical_sha256(receipt)
 
 
-def _verifier(edition_id: str, library: Any) -> Any:
-    """The lookup object for an edition, or a refusal when its source is not verified."""
+def _verifier(edition_id: str, library: Any) -> tuple[Any, str]:
+    """The lookup object and its verification status. The status is recorded on every quotation."""
     if edition_id == 'CUV':
-        return library or cuv_scripture.CuvLibrary.from_path()
+        return (library or cuv_scripture.CuvLibrary.from_path()), scripture_editions.VERIFIED
     try:
         edition = scripture_editions.load(edition_id)
     except scripture_editions.EditionError as exc:
         raise AdjudicationError('edition_unavailable') from exc
-    _require(edition.verification == scripture_editions.VERIFIED, 'edition_not_verified')
-    return edition
+    return edition, edition.verification
 
 
 def validate_receipt(receipt: Any, *, target_locale: str, bindings: dict[str, str],
@@ -62,7 +61,7 @@ def validate_receipt(receipt: Any, *, target_locale: str, bindings: dict[str, st
     """Return a summary of an approved receipt, or raise AdjudicationError with a reason code."""
     _require(target_locale in PINNED_EDITIONS, 'no_pinned_edition_for_locale')
     edition_id = PINNED_EDITIONS[target_locale]
-    verifier = _verifier(edition_id, library)
+    verifier, edition_verification = _verifier(edition_id, library)
     _require(isinstance(receipt, dict) and set(receipt) == TOP_KEYS, 'receipt_schema')
     _require(receipt['schemaVersion'] == SCHEMA, 'receipt_schema_version')
     _require(receipt['targetLocale'] == target_locale, 'receipt_locale')
@@ -100,8 +99,8 @@ def validate_receipt(receipt: Any, *, target_locale: str, bindings: dict[str, st
                 raise AdjudicationError('exact_sentence_mismatch') from exc
             quotes.append({'candidateId': row['candidateId'], 'sourceUnitIds': list(units),
                            'classification': row['classification'], 'canonicalRef': found['canonicalRef'],
-                           'editionId': edition_id, 'exactSentence': row['exactSentence'],
-                           'textSha256': found['textSha256']})
+                           'editionId': edition_id, 'editionVerification': edition_verification,
+                           'exactSentence': row['exactSentence'], 'textSha256': found['textSha256']})
         else:
             _require(row['editionId'] is None and row['exactSentence'] is None, 'non_quote_has_edition')
     _require(len(covered) == len(set(covered)), 'unit_covered_twice')
