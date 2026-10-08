@@ -191,6 +191,19 @@ class DiagnosticChainTests(unittest.TestCase):
                 command.run_test(self.fixture, None, self.out, cli_path=self.root / 'unused', diagnostic_fixture=True)
             transport.assert_not_called()
 
+    def test_cli_backend_flag_reaches_api_transport_and_never_constructs_codex(self):
+        self.freeze()
+        argv = ['run_codex_layer2_test', '--fixture-dir', str(self.fixture), '--out-dir', str(self.out),
+                '--diagnostic-fixture', '--backend', 'openai_api']
+        with patch('sys.argv', argv), patch.object(command, 'CodexLayer2Transport') as transport, \
+             patch('scripts.outcome_marker.run_with_outcome', side_effect=lambda _path, _name, fn: fn()), \
+             patch.object(command.spark_admission, 'require_session'):
+            with self.assertRaisesRegex(ValueError, 'openai_diagnostic_shared_resource_policy_required'):
+                command.main()
+            transport.assert_not_called()
+        with self.assertRaisesRegex(ValueError, 'openai_api_backend_requires_diagnostic_fixture'):
+            command.run_test(self.fixture, None, self.out, cli_path=self.root / 'unused', backend='openai_api')
+
     def test_diagnostic_cannot_reuse_another_run_cache(self):
         self.freeze()
         inputs = subject.load_fixture(self.fixture)
