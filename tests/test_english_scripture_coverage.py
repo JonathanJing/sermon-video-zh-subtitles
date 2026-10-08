@@ -20,11 +20,14 @@ GEN_1_2 = ('Now the earth was formless and empty. Darkness was on the surface of
            "God's Spirit was hovering over the surface of the waters.")
 # The 605 speaker's own wording of Revelation 4:2 (another translation than the pinned edition).
 SPOKEN_4_2 = 'Immediately I was in the Spirit, and there was a throne in heaven, and someone was seated on it.'
+# A synthetic verse whose meaning turns on a negation.
+GEN_1_3 = "You shall not go up after them. Don't follow their road, but circle around behind them."
 
 
 def synthetic_edition():
     data = {'schemaVersion': 1, 'purpose': coverage.PURPOSE, 'edition': {'id': 'test-edition'},
-            'chapters': {'GEN': {'1': [{'verse': 1, 'text': GEN_1_1}, {'verse': 2, 'text': GEN_1_2}]}}}
+            'chapters': {'GEN': {'1': [{'verse': 1, 'text': GEN_1_1}, {'verse': 2, 'text': GEN_1_2},
+                                       {'verse': 3, 'text': GEN_1_3}]}}}
     return coverage.CoverageEdition(data, expected_content_sha256=None)
 
 
@@ -51,6 +54,10 @@ class PlainTextTests(unittest.TestCase):
         self.assertEqual(coverage.content_tokens("The Lord's armies, cities, stopped, holy"),
                          ['lord', 'army', 'city', 'stop', 'holy'])
         self.assertEqual(coverage.content_tokens('and the of to I you behold'), [])
+        # Negations are content words, and a contracted one reads as the spoken one.
+        self.assertEqual(coverage.content_tokens("You shall not go; don't go; won't go; no one goes"),
+                         ['not', 'go', 'not', 'go', 'not', 'go', 'no', 'one', 'goe'])
+        self.assertEqual(coverage.negation_count(coverage.content_tokens('never, nor, neither, none, without')), 5)
 
     def test_same_token_allows_a_short_prefix_difference_only(self):
         self.assertTrue(coverage._same('creat', 'create'))
@@ -72,6 +79,23 @@ class CoverageMeasureTests(unittest.TestCase):
         self.assertEqual(measure['thresholds'], {'verseCoverageMin': coverage.WHOLE_VERSE_COVERAGE_MIN,
                                                  'lengthRatioMin': coverage.WHOLE_VERSE_LENGTH_MIN,
                                                  'lengthRatioMax': coverage.WHOLE_VERSE_LENGTH_MAX})
+
+    def test_a_reading_with_a_negation_missing_or_added_is_never_whole(self):
+        edition = synthetic_edition()
+        whole = coverage.coverage(edition, 'GEN 1:3', GEN_1_3)
+        self.assertEqual((whole['negations'], whole['negationMismatch'], whole['wholeVerse']),
+                         ({'verse': 2, 'spoken': 2}, False, True))
+        reversed_reading = coverage.coverage(edition, 'GEN 1:3',
+                                             'You shall go up after them. Follow their road, but circle around behind them.')
+        self.assertEqual((reversed_reading['negations'], reversed_reading['negationMismatch'],
+                          reversed_reading['wholeByMeasure'], reversed_reading['wholeVerse']),
+                         ({'verse': 2, 'spoken': 0}, True, True, False))
+        # Another translation's wording of the same negations still counts them.
+        spoken = "Do not go up after them. Do not follow their road, but circle around behind them."
+        self.assertFalse(coverage.coverage(edition, 'GEN 1:3', spoken)['negationMismatch'])
+        added = coverage.coverage(edition, 'GEN 1:1', 'In the beginning, God did not create the heavens and the earth.')
+        self.assertEqual((added['negations']['spoken'], added['negationMismatch'], added['wholeByMeasure'],
+                          added['wholeVerse']), (1, True, True, False))
 
     def test_a_span_much_longer_than_the_verse_carries_more_than_the_verse(self):
         measure = coverage.coverage(synthetic_edition(), 'GEN 1:1',
@@ -105,7 +129,7 @@ class CoverageMeasureTests(unittest.TestCase):
 
     def test_a_reference_the_edition_lacks_fails_closed(self):
         edition = synthetic_edition()
-        for ref in ('GEN 1:3', 'GEN 1:2-3', 'GEN 2:1', 'EXO 1:1'):
+        for ref in ('GEN 1:4', 'GEN 1:3-4', 'GEN 2:1', 'EXO 1:1'):
             with self.assertRaisesRegex(coverage.CoverageError, 'Missing verse'):
                 coverage.coverage(edition, ref, GEN_1_1)
         self.assertTrue(issubclass(coverage.CoverageError, cuv_scripture.CuvError))

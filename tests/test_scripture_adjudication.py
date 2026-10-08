@@ -89,6 +89,40 @@ class ReceiptValidationTests(unittest.TestCase):
         human = validate(receipt())
         self.assertEqual((human['adjudicationKind'], human['humanApproval'], human['generator']), ('human', True, None))
 
+    def test_a_frozen_machine_receipt_survives_a_later_generator(self):
+        from unittest import mock
+        from scripts import scripture_machine_adjudication as machine
+        rows = [{'sourceUnitId': 'r1', 'english': f'John 3:16 says, {READ_3_16}', 'start': 0.0, 'end': 1.0},
+                {'sourceUnitId': 'r2', 'english': 'Amen.', 'start': 1.0, 'end': 2.0}]
+        inputs = {'source.json': {'source': {'sourceId': 'synthetic'}}, 'anchor.json': {'sourceUnits': rows},
+                  'group-plan.json': [{'translationGroupId': 'g1', 'sourceUnitIds': ['r1', 'r2']}]}
+        generated, basis = machine.adjudicate(inputs['source.json'], inputs['anchor.json'], inputs['group-plan.json'],
+                                              target_locale='zh-Hans', flagged_units=['r1'], library=LIBRARY)
+        check = dict(bindings=generated['bindings'], flagged_units=['r1'], machine_inputs=inputs)
+        frozen = {'reproduced': True, 'version': basis['version'], 'implementationSha256': basis['implementationSha256'],
+                  'signatureCurrent': True}
+        later = {'VERSION': 'later', 'implementation_sha256': lambda: 'f' * 64,
+                 'adjudicate': mock.Mock(side_effect=AssertionError('a frozen run is never re-run by a later generator'))}
+        with mock.patch.multiple(machine, **later):
+            summary = validate(generated, frozen_generator=frozen, **check)
+            self.assertEqual((summary['generator']['frozenAdmission'], summary['generator']['reproduced'],
+                              summary['generator']['version'], summary['generator']['current']['version']),
+                             (True, False, basis['version'], 'later'))
+            # Without the frozen record, or with a record for another generator, the later generator re-runs.
+            with self.assertRaises(AssertionError):
+                validate(generated, **check)
+            self.assertEqual(reason(generated, frozen_generator=dict(frozen, version='other'), **check),
+                             'frozen_generator_mismatch')
+            # A record that never reproduced the receipt freezes nothing.
+            with self.assertRaises(AssertionError):
+                validate(generated, frozen_generator=dict(frozen, reproduced=False), **check)
+        # The same generator still proves the receipt by reproducing it, frozen record or not.
+        summary = validate(generated, frozen_generator=frozen, **check)
+        self.assertTrue(summary['generator']['reproduced'])
+        forged = dict(generated, candidates=[dict(generated['candidates'][0], classification='partial_direct_quote',
+                                                  exactSentence=generated['candidates'][0]['exactSentence'][:4])])
+        self.assertEqual(reason(forged, frozen_generator=frozen, **check), 'machine_receipt_not_reproduced')
+
     def test_bad_timestamp_and_schema_are_refused(self):
         self.assertEqual(reason(receipt(reviewedAt='yesterday')), 'reviewed_at_invalid')
         bad = receipt()

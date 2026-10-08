@@ -446,6 +446,9 @@ def _checked_answer(result: Any, frozen: list[str], heard: list[dict[str, Any]])
         _require(by_name[heard_by]['bounded'], 'corrected_text_unbounded')
     else:
         _require(corrected is None, 'corrected_text_without_correction')
+        # A confirmation rests on the frozen words or on a listener that heard exactly them.
+        _require(decision != 'transcript_confirmed' or heard_by == 'frozen'
+                 or by_name[heard_by]['unitTokens'] == frozen, 'confirmed_by_disagreeing_listener')
     return {'decision': decision, 'heardBy': heard_by, 'correctedText': corrected.strip() if corrected else None,
             'meaningNote': note.strip(), 'reason': reason.strip()}
 
@@ -682,6 +685,9 @@ def validate_receipt(receipt: Any, *, source: dict[str, Any] | None = None, anch
                      and tokens(corrected) != tokens(row['frozenText']), 'receipt_correction_not_heard')
         else:
             _require(row.get('correctedText') is None, 'receipt_correction_not_heard')
+            heard_by = row.get('heardBy')
+            _require(row['decision'] != 'transcript_confirmed' or heard_by == 'frozen'
+                     or (heard_by in by_name and by_name[heard_by]['agreesWithFrozen']), 'receipt_decision_evidence')
     if media_sha256 is not None:
         _require(media['sha256'] == media_sha256, 'receipt_media_binding_changed')
     if source is not None:

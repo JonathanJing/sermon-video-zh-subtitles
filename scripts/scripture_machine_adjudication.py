@@ -180,7 +180,7 @@ def _per_unit_layout(rows: list[dict[str, Any]], run: list[int], reference: cuv_
         own = cuv_scripture.Reference(reference.book, reference.chapter, verse)
         try:
             measure = _measure(english_edition, english, own)
-            if not measure['wholeVerse']:
+            if not measure['wholeByMeasure']:
                 return None, f'{unit} does not read the whole of {own.canonical_ref}'
             spoken, _ = _spoken_text(english)
             for neighbour in (verse - 1, verse + 1):
@@ -419,13 +419,19 @@ def adjudicate(source: dict[str, Any], anchor: dict[str, Any], plan: list[dict[s
         for units_here, ref, measure in pairs:
             candidate_id = f'm{len(candidates) + 1:03d}'
             english_here = [rows[i]['english'] for i in run if rows[i]['sourceUnitId'] in units_here]
-            # The pinned verse is admitted only when the speaker's quotation covers the whole verse.
+            # The pinned verse is admitted only when the speaker's quotation covers the whole verse
+            # with the verse's own negations; a reading that drops or adds one says the opposite.
             if not measure['wholeVerse']:
-                candidate, why = _paraphrase(
-                    candidate_id, units_here,
-                    f"fragment of {ref.canonical_ref}: the speaker said {measure['coveredContentWords']} of "
-                    f"{measure['verseContentWords']} content words (coverage {measure['verseCoverage']}, length "
-                    f"{measure['lengthRatio']}); translated as the speaker's own words (decision 2026-10-08)")
+                if measure['wholeByMeasure']:
+                    reason = (f"negation differs from {ref.canonical_ref}: the verse has "
+                              f"{measure['negations']['verse']} negation word(s), the speaker said "
+                              f"{measure['negations']['spoken']}; translated as the speaker's own words")
+                else:
+                    reason = (f"fragment of {ref.canonical_ref}: the speaker said {measure['coveredContentWords']} of "
+                              f"{measure['verseContentWords']} content words (coverage {measure['verseCoverage']}, "
+                              f"length {measure['lengthRatio']}); translated as the speaker's own words "
+                              f"(decision 2026-10-08)")
+                candidate, why = _paraphrase(candidate_id, units_here, reason)
                 candidates.append(candidate)
                 basis_rows.append(why | {'reference': ref.canonical_ref, 'quoteBoundary': FRAGMENT_BOUNDARY,
                                          'coverage': measure, 'boundaryEvidence': boundary, 'english': english_here})

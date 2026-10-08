@@ -82,6 +82,12 @@ def freeze_fixture(source, anchor, policy, plan, plugin, out, *, authorization_r
         receipt_bytes = (json.dumps(scripture_adjudication, ensure_ascii=False, indent=2) + '\n').encode('utf-8')
         manifest['scriptureAdjudication'] = {'path': 'scripture-adjudication.json',
                                              'sha256': hashlib.sha256(receipt_bytes).hexdigest()}
+        if admission.get('generator'):
+            # The generator that reproduced a machine receipt at freeze time; a later generator
+            # admits this frozen run on that record instead of re-running it (frozen identity).
+            manifest['scriptureAdjudication']['generator'] = {
+                key: admission['generator'][key]
+                for key in ('reproduced', 'version', 'implementationSha256', 'signatureCurrent')}
     if concurrency_profile is not None:
         from scripts.production_concurrency_profile import validate_profile
         manifest['concurrencyProfile'] = validate_profile(concurrency_profile)

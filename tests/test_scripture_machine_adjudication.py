@@ -439,6 +439,35 @@ class MachineAdjudicationTests(unittest.TestCase):
                                         target_locale='zh-Hans', flagged_units=['u2'], library=LIBRARY)
         self.assertEqual(receipt['candidates'][0]['classification'], 'speaker_paraphrase')
 
+    def test_a_whole_reading_with_a_negation_dropped_or_added_is_never_pinned(self):
+        # Everything but one "not" is the verse; the pinned text would say the opposite of the speaker.
+        dropped = units('John chapter 3 is our text.',
+                        f'Verse 16 says, "{READ_3_16.replace("should not perish", "should perish")}"',
+                        'Amen.')
+        receipt, basis = machine.adjudicate(source(), {'sourceUnits': dropped}, plan(dropped),
+                                            target_locale='zh-Hans', flagged_units=['u2'], library=LIBRARY)
+        row, why = receipt['candidates'][0], basis['candidates'][0]
+        self.assertEqual((row['classification'], row['editionId'], row['exactSentence'], why['reference']),
+                         ('speaker_paraphrase', None, None, 'JOH 3:16'))
+        self.assertEqual((why['coverage']['wholeByMeasure'], why['coverage']['negationMismatch'],
+                          why['coverage']['negations']), (True, True, {'verse': 1, 'spoken': 0}))
+        self.assertTrue(why['reason'].startswith('negation differs from JOH 3:16'), why['reason'])
+        self.assertIn("translated as the speaker's own words", why['reason'])
+        added = units('John chapter 3 is our text.',
+                      f'Verse 16 says, "{READ_3_16.replace("that he gave", "that he didn\'t give")}"',
+                      'Amen.')
+        receipt, basis = machine.adjudicate(source(), {'sourceUnits': added}, plan(added),
+                                            target_locale='zh-Hans', flagged_units=['u2'], library=LIBRARY)
+        self.assertEqual(receipt['candidates'][0]['classification'], 'speaker_paraphrase')
+        self.assertEqual(basis['candidates'][0]['coverage']['negations'], {'verse': 1, 'spoken': 2})
+        self.assertTrue(basis['candidates'][0]['reason'].startswith('negation differs from JOH 3:16'))
+        # A fragment that merely stops before the negation is reported as a fragment, not as a contradiction.
+        short = units('John chapter 3 is our text.', 'Verse 16 says, "For God so loved the world."', 'Amen.')
+        _, basis = machine.adjudicate(source(), {'sourceUnits': short}, plan(short),
+                                      target_locale='zh-Hans', flagged_units=['u2'], library=LIBRARY)
+        self.assertTrue(basis['candidates'][0]['reason'].startswith('fragment of JOH 3:16'))
+        self.assertTrue(basis['candidates'][0]['coverage']['negationMismatch'])
+
     def test_a_verse_the_english_edition_lacks_is_not_admitted(self):
         rows = units('Acts chapter 8 is our text.',
                      'Verse 37 says, "I believe that Jesus Christ is the Son of God."',
