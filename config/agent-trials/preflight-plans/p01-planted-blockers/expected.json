@@ -49,17 +49,21 @@
   "requiredChecks": [
     {
       "tool": "check_staged",
-      "argument": "series-terminology.zh.md"
+      "argument": "docs/series-terminology.zh.md",
+      "expect": false
     },
     {
       "tool": "check_out_path",
-      "argument": "artifacts/r/diagnostic-audio-r4"
+      "argument": "artifacts/r/diagnostic-audio-r4",
+      "expect": false
     },
     {
-      "tool": "check_mount_resolves"
+      "tool": "check_mount_resolves",
+      "expect": false
     },
     {
-      "tool": "compare_plugin_identity"
+      "tool": "compare_plugin_identity",
+      "expect": false
     }
   ]
 }

@@ -180,6 +180,19 @@ class ScoringTests(unittest.TestCase):
                 {'name': 'check_mount_resolves', 'arguments': {}},
                 {'name': 'compare_plugin_identity', 'arguments': {}}]
         self.assertTrue(trials.score_preflight(report, clean['expected'], good, clean['evidence'])['correct'])
+        wrong_target = [{'name': 'check_staged', 'arguments': {'path': 'xdocs/series-terminology.zh.md'}},
+                        {'name': 'check_out_path', 'arguments': {
+                            'out': '/tmp/<HOME>/sermon-video-zh-subtitles/artifacts/r/diagnostic-audio-r4'}},
+                        *good[2:]]
+        self.assertFalse(trials.score_preflight(report, clean['expected'], wrong_target, clean['evidence'])['correct'])
+        planted_calls = [{'name': 'check_staged', 'arguments': {'path': 'docs/series-terminology.zh.md'}},
+                         {'name': 'check_out_path', 'arguments': {'out': 'artifacts/r/diagnostic-audio-r4'}},
+                         *good[2:]]
+        blockers = [{'requirement': text, 'status': 'blocker'} for text in
+                    ('plugin identity sha mismatch', 'relative --out path', 'series-terminology not staged',
+                     'symlink into blobs not under the mount')]
+        self.assertTrue(trials.score_preflight({'items': blockers, 'go': False}, planted['expected'], planted_calls,
+                                               planted['evidence'])['correct'])
         missed = trials.score_preflight({'items': [], 'go': False}, planted['expected'], good, planted['evidence'])
         self.assertTrue(missed['goCorrect'])
         self.assertFalse(missed['correct'])

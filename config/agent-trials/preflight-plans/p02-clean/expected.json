@@ -5,17 +5,21 @@
   "requiredChecks": [
     {
       "tool": "check_staged",
-      "argument": "series-terminology.zh.md"
+      "argument": "docs/series-terminology.zh.md",
+      "expect": true
     },
     {
       "tool": "check_out_path",
-      "argument": "<HOME>/sermon-video-zh-subtitles/artifacts/r/diagnostic-audio-r4"
+      "argument": "<HOME>/sermon-video-zh-subtitles/artifacts/r/diagnostic-audio-r4",
+      "expect": true
     },
     {
-      "tool": "check_mount_resolves"
+      "tool": "check_mount_resolves",
+      "expect": true
     },
     {
-      "tool": "compare_plugin_identity"
+      "tool": "compare_plugin_identity",
+      "expect": true
     }
   ]
 }

@@ -474,18 +474,25 @@ def score_preflight(report, expected, calls, plan_root=None):
             'claimedButNotMatched': unmatched}
 
 
+CHECK_VERDICT = {'check_staged': 'staged', 'check_out_path': 'relative_to_root_ok',
+                 'check_mount_resolves': 'resolves', 'compare_plugin_identity': 'equal'}
+
+
 def _check_satisfied(plan_root, requirement, calls):
+    """A required check counts when a call on exactly its target returns the plan's expected verdict."""
     for call in calls:
         arguments = call.get('arguments') or {}
         if call['name'] != requirement['tool']:
             continue
-        if requirement.get('argument') and not any(requirement['argument'] in str(v) for v in arguments.values()):
+        if requirement.get('argument') and not any(
+                str(v).strip().removeprefix('./') == requirement['argument'] for v in arguments.values()):
             continue
         try:
-            preflight_check(plan_root, call['name'], arguments)
+            result = preflight_check(plan_root, call['name'], arguments)
         except Exception:
             continue
-        return True
+        if result.get(CHECK_VERDICT[call['name']]) == requirement.get('expect', True):
+            return True
     return False
 
 
