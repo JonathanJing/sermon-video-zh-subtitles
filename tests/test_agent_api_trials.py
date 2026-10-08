@@ -56,7 +56,8 @@ class ScoringTests(unittest.TestCase):
         expected = self.cases['f06-zero-inference-seconds']
         guess = {'category': 'other', 'root_cause': 'timer bug', 'evidence': [], 'fix': '', 'confidence': 0.9}
         self.assertFalse(trials.score_diagnosis(guess, expected)['correct'])
-        self.assertTrue(trials.score_diagnosis({**guess, 'confidence': 0.3}, expected)['correct'])
+        self.assertFalse(trials.score_diagnosis({**guess, 'confidence': 0.3}, expected)['correct'])
+        self.assertTrue(trials.score_diagnosis({**guess, 'category': 'insufficient_evidence'}, expected)['correct'])
 
     def test_refuter_is_scored_against_whether_the_diagnosis_was_right(self):
         self.assertTrue(trials.score_refutation({'verdict': 'upheld'}, True)['refuterRight'])
@@ -90,6 +91,7 @@ class RunTests(unittest.TestCase):
         first = self.make().run('all')
         self.assertEqual(first['agentSessionsStarted'], 8 * 2 + 8 + 2)
         self.assertEqual(first['risk']['actions'], 26)
+        self.assertIn('decisionsUsage', first)
         rerun = self.make()
         with patch.object(trials.DecisionsClient, '_post', side_effect=AssertionError('paid twice')):
             second = rerun.run('all')
@@ -97,6 +99,32 @@ class RunTests(unittest.TestCase):
         self.assertEqual(second['diagnoseByArm'], first['diagnoseByArm'])
         report = json.loads((self.out / 'diagnose.json').read_text())['rows'][0]['report']
         self.assertEqual(report['summary_zh'], '假数据，仅验证接线。')
+
+    def test_unknown_session_outcome_stops_the_trial(self):
+        class Stuck(trials.FakeAgentsClient):
+            def list_turns(self, session_id):
+                return [{'id': 'turn_fake', 'subagent_id': None, 'status': 'running'}]
+        runner = trials.Trials(self.out, client=Stuck(trials.fake_agent_script), model='m', backend='fake',
+                               poll_seconds=0, max_seconds=0.2, case_ids=['f01-plugin-identity'])
+        with self.assertRaisesRegex(RuntimeError, 'without observed remote termination'):
+            runner.run('diagnose')
+        self.assertEqual(runner.sessions_started, 1)
+
+    def test_rerun_keeps_first_elapsed_time_and_unknown_plan_is_rejected(self):
+        first = self.make(case_ids=['f01-plugin-identity']).run('diagnose')
+        rows = json.loads((self.out / 'diagnose.json').read_text())['rows']
+        meta = json.loads((self.out / 'diagnose/f01-plugin-identity/raw.meta.json').read_text())
+        self.assertEqual(rows[0]['elapsedSeconds'], meta['elapsedSeconds'])
+        self.make(case_ids=['f01-plugin-identity']).run('diagnose')
+        self.assertEqual(json.loads((self.out / 'diagnose.json').read_text())['rows'][0]['elapsedSeconds'],
+                         meta['elapsedSeconds'])
+        with self.assertRaisesRegex(ValueError, 'unknown plan id'):
+            trials.load_plans(only=['p99-typo'])
+
+    def test_timeline_trial_needs_no_credentials(self):
+        with patch.dict('os.environ', {}, clear=True), patch('builtins.print'):
+            self.assertEqual(trials.main(['timeline', '--out', str(self.out)]), 0)
+        self.assertEqual(json.loads((self.out / 'summary.json').read_text())['evidence'], 'deterministic')
 
     def test_session_cap_stops_before_creating_more_sessions(self):
         with self.assertRaisesRegex(RuntimeError, 'session cap'):

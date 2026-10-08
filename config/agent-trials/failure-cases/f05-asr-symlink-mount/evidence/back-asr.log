@@ -1,0 +1,3 @@
+2026-10-08T01:41:02Z [asr] container start
+2026-10-08T01:41:10Z [asr] checking model files in /asr-hub/model
+2026-10-08T01:41:11Z [asr] ERROR local_model_missing: /asr-hub/model/model.safetensors (exists=False, is_symlink=True)
