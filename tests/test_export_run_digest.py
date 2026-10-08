@@ -26,19 +26,20 @@ class ExportRunDigestTests(unittest.TestCase):
             "OPENAI_API_KEY=sk-proj-abcdefghijklmnopqrstuvwxyz\n"
             "Authorization: Bearer abc.def.ghi\n"
             "wrote /Users/achillesjing/repo/artifacts/x from 192.168.1.20 for someone@example.com\n"
+            "ssh spark-dgx.tail1234.ts.net ok\n"
             "token from env: supersecretvalue123\n")
         self.out = self.base / "digests"
 
     def export(self, *extra):
         with patch.dict("os.environ", {"SPARK_TOKEN": "supersecretvalue123"}, clear=False):
-            self.assertEqual(digest.main([str(self.run), "--out", str(self.out), *extra]), 0)
-        return self.out / self.run.name
+            self.assertEqual(digest.main([str(self.run), "--out", str(self.out), "--name", "20261007-e2e", *extra]), 0)
+        return self.out / "20261007-e2e"
 
     def test_copies_evidence_only_and_redacts(self):
-        dest = self.export()
+        dest = self.export("--zip")
         log = (dest / self.run.name / "upload.log").read_text()
         for secret in ("sk-proj-abc", "abc.def.ghi", "achillesjing", "192.168.1.20", "someone@example.com",
-                       "supersecretvalue123"):
+                       "supersecretvalue123", "tail1234"):
             self.assertNotIn(secret, log)
         self.assertIn("~/repo/artifacts/x", log)
         self.assertFalse((dest / self.run.name / "audio" / "out.wav").exists())
@@ -48,9 +49,10 @@ class ExportRunDigestTests(unittest.TestCase):
         self.assertEqual(manifest["runs"][0]["skipped"], {".wav": 1})
         self.assertTrue(all(len(f["sha256"]) == 64 for f in manifest["files"]))
         self.assertTrue(zipfile.is_zipfile(str(dest) + ".zip"))
+        self.assertIn("## 遗留状态", (dest / "RETROSPECTIVE.md").read_text())
 
     def test_index_lists_outcome_timings_and_failures(self):
-        index = (self.export("--no-zip") / "INDEX.md").read_text()
+        index = (self.export() / "INDEX.md").read_text()
         self.assertIn("**failed** exit 1", index)
         self.assertIn("ValueError: not in the subpath", index)
         self.assertIn("| baseline | pass | 93 |", index)
@@ -61,7 +63,7 @@ class ExportRunDigestTests(unittest.TestCase):
         lines = [f"line {i}\n" for i in range(1000)]
         lines[500] = "Traceback (most recent call last):\n"
         (self.run / "upload.log").write_text("".join(lines))
-        dest = self.export("--no-zip")
+        dest = self.export()
         text = (dest / self.run.name / "upload.log").read_text()
         self.assertIn("line 0\n", text)
         self.assertIn("line 999\n", text)
@@ -70,10 +72,28 @@ class ExportRunDigestTests(unittest.TestCase):
         entry = next(f for f in json.loads((dest / "manifest.json").read_text())["files"] if f["path"] == "upload.log")
         self.assertTrue(entry["truncated"])
 
-    def test_refuses_existing_digest(self):
-        self.export("--no-zip")
-        with self.assertRaises(SystemExit):
-            digest.main([str(self.run), "--out", str(self.out), "--no-zip"])
+    def test_refuses_existing_digest_and_undated_name(self):
+        self.export()
+        for name in ("20261007-e2e", "e2e-only"):
+            with self.assertRaises(SystemExit):
+                digest.main([str(self.run), "--out", str(self.out), "--name", name])
+
+    def test_default_name_is_dated_and_zip_is_opt_in(self):
+        self.assertEqual(digest.main([str(self.run), "--out", str(self.out)]), 0)
+        (dest,) = self.out.iterdir()
+        self.assertRegex(dest.name, r"^\d{8}-e2e-20261007T193332Z$")
+
+    def test_verify_passes_a_fresh_digest_and_catches_a_leak(self):
+        dest = self.export()
+        with patch.dict("os.environ", {"SPARK_TOKEN": "supersecretvalue123"}, clear=False):
+            self.assertEqual(digest.main([str(dest), "--verify"]), 0)
+            (dest / "INDEX.md").write_text("pasted sk-proj-abcdefghijklmnopqrstuvwxyz and supersecretvalue123\n")
+            self.assertEqual(digest.main([str(dest), "--verify"]), 1)
+
+    def test_oversized_digest_writes_nothing(self):
+        with patch.object(digest, "MAX_DIGEST_BYTES", 10):
+            self.assertEqual(digest.main([str(self.run), "--out", str(self.out), "--name", "20261007-big"]), 1)
+        self.assertFalse((self.out / "20261007-big").exists())
 
 
 if __name__ == "__main__":

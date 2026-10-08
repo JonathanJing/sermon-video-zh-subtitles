@@ -13,13 +13,18 @@ Media, model outputs and any other file are left out and only counted. Every
 copied file is redacted (API keys, tokens, cookies, private keys, emails,
 private IPs, home directories, and the values of secret-like environment
 variables) before it is written. The digest gets ``manifest.json`` (source
-hashes, truncation and redaction counts) and ``INDEX.md`` (outcomes, stage
-timings, failed stages and error lines), and is zipped for attaching to the
-project thread. Nothing is uploaded or committed by this tool.
+hashes, truncation and redaction counts), ``INDEX.md`` (outcomes, stage
+timings, failed stages and error lines) and a ``RETROSPECTIVE.md`` skeleton.
+
+It is written to ignored ``artifacts/run-reports/<name>/``. To make it readable
+by cloud sessions, ``scripts/publish_run_report.sh`` verifies it and opens a
+docs-only PR that adds it as ``docs/reports/runs/<name>/``. The repository is
+public, so that script re-checks the redaction before anything is pushed.
 
 Usage (repo root):
   .venv/bin/python scripts/export_run_digest.py artifacts/dev-180s-page-test-20261004/<run-id>
   .venv/bin/python scripts/export_run_digest.py RUN_DIR [RUN_DIR ...] --name 20261008-8x8-round2
+  scripts/publish_run_report.sh artifacts/run-reports/<name>
 """
 from __future__ import annotations
 
@@ -38,6 +43,18 @@ ROOT = Path(__file__).resolve().parents[1]
 SCHEMA = "sermon-run-digest-v1"
 WHOLE_NAMES = {"outcome.json", "timings.tsv", "summary.json"}
 MAX_WHOLE_BYTES = 256 * 1024
+MAX_DIGEST_BYTES = 2 * 1024 * 1024
+NAME = re.compile(r"\d{8}-[\w.-]+")
+RETROSPECTIVE_SECTIONS = [
+    ("实际覆盖范围", "按 L1–L4 写本轮执行、复用和未执行的部分；模拟审核和诊断级结果原样写出。"),
+    ("结果和结束信号", "各运行目录的 outcome.json；独占 Spark 的运行以 round: 行为准。"),
+    ("耗时", "按 timings.tsv 列阶段并与上一轮比较，把等待和计算分开。"),
+    ("错误", "现象、原因、处理、回归测试、对应提交或 PR。"),
+    ("占用资源之后才暴露的错误", "哪些本可以在预检发现，要补哪项预检。"),
+    ("遗留状态", "Dev 上无引用的文件、未结束的 job hold、已用构建号、待删除的本地产物。"),
+    ("外部可见的变化", "Dev 发布、TestFlight、受保护分支推送各自的证据；没做的验收写 not_run。"),
+    ("后续", "每条写负责人和跟踪的 PR 或 backlog 条目。"),
+]
 LOG_HEAD, LOG_TAIL, LOG_MAX_ERRORS = 40, 200, 50
 ERROR_LINE = re.compile(r"Traceback|Error\b|Exception|FAILED|\bfail(ed)?\b|refused|denied|timed? ?out", re.I)
 
@@ -55,6 +72,7 @@ REDACTIONS: list[tuple[str, re.Pattern[str], str]] = [
     ("private_ip", re.compile(
         r"\b(?:10(?:\.\d{1,3}){3}|192\.168(?:\.\d{1,3}){2}|172\.(?:1[6-9]|2\d|3[01])(?:\.\d{1,3}){2}"
         r"|100\.(?:6[4-9]|[7-9]\d|1[01]\d|12[0-7])(?:\.\d{1,3}){2})\b"), "<private-ip>"),
+    ("hostname", re.compile(r"\b[\w-]+(?:\.[\w-]+)*\.(?:ts\.net|local|lan|internal)\b"), "<host>"),
     ("home_dir", re.compile(r"/(?:Users|home)/[^/\s\"']+"), "~"),
 ]
 
@@ -76,6 +94,21 @@ def redact(text: str, secrets: list[str]) -> tuple[str, dict[str, int]]:
         if hits:
             counts[name] = counts.get(name, 0) + hits
     return text, counts
+
+
+def verify(dest: Path, secrets: list[str]) -> list[str]:
+    """Return files that still hold a value the redaction rules would change.
+
+    ``secret_field`` is skipped because its own placeholder still matches it.
+    """
+    leaks = []
+    for path in sorted(p for p in dest.rglob("*") if p.is_file() and p.suffix != ".zip"):
+        text = path.read_text(encoding="utf-8", errors="replace")
+        hits = [name for name, pattern, _ in REDACTIONS if name != "secret_field" and pattern.search(text)]
+        hits += ["env_secret"] if any(value in text for value in secrets) else []
+        if hits:
+            leaks.append(f"{path.relative_to(dest)}: {', '.join(hits)}")
+    return leaks
 
 
 def condense_log(lines: list[str]) -> tuple[list[str], bool]:
@@ -170,20 +203,33 @@ def index_markdown(name: str, dest: Path, entries: list[dict], runs: list[dict])
     return "\n".join(out)
 
 
+def retrospective_markdown(name: str) -> str:
+    out = [f"# 复盘：{name}", "", "数据见同目录 INDEX.md 和 manifest.json。未填写的小节删掉前请写明原因。", ""]
+    for heading, hint in RETROSPECTIVE_SECTIONS:
+        out += [f"## {heading}", "", f"<!-- {hint} -->", "待填写。", ""]
+    return "\n".join(out)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("run_dirs", nargs="+", type=Path, help="Run directories (usually under artifacts/)")
-    parser.add_argument("--name", help="Digest name (default: first run directory name)")
-    parser.add_argument("--out", type=Path, default=ROOT / "artifacts/run-digests")
-    parser.add_argument("--no-zip", action="store_true")
+    parser.add_argument("--verify", action="store_true",
+                        help="Only check that existing digest directories hold nothing the redaction rules would change")
+    parser.add_argument("--name", help="YYYYMMDD-<label> (default: today UTC + first run directory name)")
+    parser.add_argument("--out", type=Path, default=ROOT / "artifacts/run-reports")
+    parser.add_argument("--zip", action="store_true", help="Also write <name>.zip next to the digest")
     args = parser.parse_args(argv)
 
     for run_dir in args.run_dirs:
         if not run_dir.is_dir():
             parser.error(f"{run_dir} is not a directory")
-    name = args.name or args.run_dirs[0].resolve().name
-    if not re.fullmatch(r"[\w.-]+", name):
-        parser.error("--name may only contain letters, digits, '.', '_' and '-'")
+    if args.verify:
+        leaks = [f"{d}/{leak}" for d in args.run_dirs for leak in verify(d, env_secret_values())]
+        print("\n".join(leaks) or "No unredacted values found.", file=sys.stderr if leaks else sys.stdout)
+        return 1 if leaks else 0
+    name = args.name or f"{datetime.now(timezone.utc):%Y%m%d}-{args.run_dirs[0].resolve().name}"
+    if not NAME.fullmatch(name):
+        parser.error("--name must be YYYYMMDD-<label> using letters, digits, '.', '_' and '-'")
     dest = args.out / name
     if dest.exists():
         parser.error(f"{dest} already exists; pick another --name")
@@ -207,11 +253,18 @@ def main(argv: list[str] | None = None) -> int:
                 "limits": {"maxWholeBytes": MAX_WHOLE_BYTES, "logHead": LOG_HEAD, "logTail": LOG_TAIL}}
     (dest / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     (dest / "INDEX.md").write_text(index_markdown(name, dest, entries, runs), encoding="utf-8")
+    (dest / "RETROSPECTIVE.md").write_text(retrospective_markdown(name), encoding="utf-8")
+    size = sum(p.stat().st_size for p in dest.rglob("*") if p.is_file())
+    if size > MAX_DIGEST_BYTES:
+        shutil.rmtree(dest)
+        print(f"Digest would be {size} bytes (cap {MAX_DIGEST_BYTES}); nothing written. "
+              "Pass fewer run directories.", file=sys.stderr)
+        return 1
     total = sum(sum(e.get("redactions", {}).values()) for e in entries)
     print(f"Digest: {dest} ({len(entries)} files, {total} redactions)")
-    if not args.no_zip:
+    if args.zip:
         archive = shutil.make_archive(str(dest), "zip", root_dir=args.out, base_dir=name)
-        print(f"Zip:    {archive}  (attach this to the project thread)")
+        print(f"Zip:    {archive}")
     return 0
 
 

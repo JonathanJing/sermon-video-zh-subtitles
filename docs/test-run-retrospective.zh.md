@@ -1,8 +1,8 @@
-# 测试运行复盘：日志汇总与检查清单
+# 运行报告与复盘
 
-每次在 Mac 或 Spark 上跑完一轮测试（三分钟 e2e、机器质检驱动、Spark 8×8 诊断等），按本页把证据汇总到云端会话能读到的位置，再写复盘。本页只规定流程，不改变任何层的完成状态。
+每次正式运行或测试（每周生产、三分钟 e2e、机器质检驱动、Spark 诊断等）结束后，都生成一份脱敏的运行报告，经 PR 放进仓库，供云端会话分析和写复盘。本页只规定流程，不改变任何层的完成状态。
 
-## 日志在哪里，谁能读到
+## 为什么需要
 
 | 位置 | 内容 | 云端会话能否读到 |
 |---|---|---|
@@ -10,27 +10,44 @@
 | Spark 上的远端 stage 和容器日志 | TTS/ASR 运行日志、job hold | 不能。需要 SSH |
 | GitHub：PR、`docs/reports/`、Actions 日志 | 已提交的复盘和收据、CI 输出 | 能 |
 | Firebase Dev 线上文件 | 发布后的页面和 catalog | 能（公开 HTTP） |
-| 项目线程附件 | 用户贴进线程的文字或文件 | 能，所有线程都能读 |
 
-所以运行证据默认只在本机。云端要复盘，需要有人把证据带过来；本页把这一步固定成一条命令。
+运行证据只在本机，以前要靠人手工把表格贴进线程。运行报告把这一步变成固定的产物和固定的 PR。
 
-## 跑完之后：导出脱敏摘要
+## 设计
 
-在仓库根目录对本轮的运行目录执行：
+1. **一次运行对应一份报告。** 报告名为 `YYYYMMDD-<简称>`，目录结构固定：
+   - `INDEX.md`：自动生成，包括结束状态、各阶段耗时、失败阶段和错误行。
+   - `manifest.json`：原文件路径、哈希、截断和脱敏次数。云端可以据此核对本机证据，不需要原文件。
+   - 运行目录的副本：只含 `outcome.json`、`timings.tsv`、`summary.json`、`*receipt*.json`；`*.log` 只保留开头 40 行、结尾 200 行和中间的错误行。
+   - `RETROSPECTIVE.md`：按下面的复盘清单生成的骨架，由本地或云端的 agent 填写。
+2. **两步，分开生成和公开。** `export_run_digest.py` 只在被忽略的 `artifacts/run-reports/` 下生成报告，不碰 Git；`publish_run_report.sh` 先复查脱敏，再公开。生成可以无条件自动执行，公开是一个单独、可检查的动作。
+3. **报告单独走 PR。** 公开脚本从 `origin/dev` 切出 `run-report/<name>` 分支，在临时 worktree 里把报告加成 `docs/reports/runs/<name>/`，推送并开草稿 PR。当前检出和分支都不动。报告 PR 只含文档，走 CI 的文档快速路径；修复另开 PR，引用报告路径。这样报告不会被代码评审卡住，修复也不会混进证据。
+4. **公开仓库的保护。**
+   - 脱敏：去掉 API key、GitHub/Google token、Bearer、带 key/token/secret/password/cookie 名字的字段值、私钥、邮箱、内网 IP、`.ts.net`/`.local` 主机名、home 路径，以及当前环境里名字带 KEY/TOKEN/SECRET 的变量值。
+   - 复查：公开前再扫一遍，有残留就拒绝推送。
+   - 大小：整份报告超过 2 MB 就拒绝生成。
+   - 内容：媒体和模型输出一律不复制。
+   - 规则匹配不能保证完全，合并报告 PR 前仍要看一眼 diff。
+5. **自动接入。** 三分钟 e2e 脚本在退出时（成功或失败）都会生成报告，并打印公开命令。其他入口（每周生产、机器质检驱动、Spark 诊断）由执行运行的 agent 在结束时手动运行导出命令，见 [AGENTS.md](../AGENTS.md)。
+6. **云端怎么用。** 云端会话读报告 PR 的文件，填写或评审 `RETROSPECTIVE.md`，问题另开修复 PR。复盘填好后合并报告 PR；跨轮比较就读 `docs/reports/runs/` 下的历次 `INDEX.md`。
+
+## 命令
+
+在仓库根目录：
 
 ```
-.venv/bin/python scripts/export_run_digest.py artifacts/<运行目录> [更多运行目录...] --name <日期-简称>
+# 1. 生成（可以同时传多个运行目录，例如 L2 和音频两处）
+.venv/bin/python scripts/export_run_digest.py artifacts/<运行目录> [更多运行目录...] --name <YYYYMMDD-简称>
+
+# 2. 复查脱敏、开报告 PR（Mac 上有 gh 时直接开草稿 PR，否则打印 compare 链接）
+scripts/publish_run_report.sh artifacts/run-reports/<YYYYMMDD-简称>
 ```
 
-它只复制复盘需要的小文件：`outcome.json`、`timings.tsv`、`summary.json`、`*receipt*.json` 整份复制（单个文件超过 256 KB 时只记哈希）；`*.log` 保留前 40 行、后 200 行和中间所有像错误的行。音频、视频和模型输出都不复制，只计数。每个文件都先脱敏：API key、token、Bearer、cookie、私钥、邮箱、内网 IP、home 目录，以及当前环境里名字带 KEY/TOKEN/SECRET 的变量值。
-
-产出在 `artifacts/run-digests/<name>/`，包括 `INDEX.md`（结束状态、各阶段耗时、失败阶段、错误行）、`manifest.json`（原文件哈希、截断和脱敏次数）和同名 zip。
-
-**把 zip 附到项目线程里**，云端会话就能读到。仓库是公开的，原始日志和 zip 不要提交到 Git。脱敏是按规则做的，不能保证完全，附件前请扫一眼 `INDEX.md`。
+不传 `--name` 时，默认用当天 UTC 日期加第一个运行目录名。只想检查一份已有报告时，用 `export_run_digest.py --verify <报告目录>`。
 
 ## 复盘检查清单
 
-先看 `INDEX.md`，再按下面顺序写复盘。[PR #283](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/283) 里两轮 Spark 8×8 的复盘是参照样本。
+`RETROSPECTIVE.md` 骨架按这 8 项生成。[PR #283](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/283) 里两轮 Spark 8×8 的复盘是参照样本。
 
 1. **实际覆盖范围**：按 L1–L4 列出本轮真正执行了什么、复用了什么、没有执行什么。模拟审核、诊断级候选、`productionEligible=false` 要原样写出，不要写成“端到端通过”。
 2. **结果和结束信号**：每个运行目录的 `outcome.json` 状态。需要独占 Spark 的运行，以 `spark_session_round.sh` 输出的 `round:` 行为准，`execute succeeded` 不代表服务已经恢复。
@@ -41,4 +58,4 @@
 7. **外部可见的变化**：Dev 发布版本、TestFlight 构建、绕过分支保护的推送，每项分开写证据。设备播放和场地验收没做就写 `not_run`。
 8. **后续**：每条写清楚由谁做、在哪个 PR 或 backlog 条目里跟踪。
 
-复盘写在 `docs/reports/<日期>-<简称>.zh.md`，随修复 PR 一起提交。报告里只引用脱敏摘要里的数值，不粘贴原始日志。
+复盘只引用报告里的数值，不粘贴原始日志。
