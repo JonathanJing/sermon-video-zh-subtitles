@@ -24,6 +24,20 @@ result = drive(execution_config, target_locale, budget_authorization=authorizati
 
 实际 payload 在模型缓存身份确定前加上硬限。生产 transport 使用已有隔离 HTTP worker，单次请求且有墙钟上限。原始返回在后续解析前保存；provider usage 缺失时保留预算不确定性并停止。金额使用已有冻结价格假设，标记 `invoiceVerified=false`，不声称实时价格或账单核验。
 
+统一 continuation 接收 v2 授权时，预算证据槽必须提供已准备并校验 hash 的执行配置 binding，例如：
+
+```json
+{
+  "binding": "layer2Budget",
+  "kind": "budget_authorization",
+  "inputs": {
+    "configuration": {"$binding": "layer2Configuration", "field": "path"}
+  }
+}
+```
+
+`layer2Configuration` 必须已经存在于 manifest 或已接收的 continuation evidence 中，记录准确的 `path` 和 `sha256`。验证器加载此配置并重新核对授权的 run/config/code 与批准收据，然后按 `len(config.lanes)` 计算总授权金额；统一 manifest 的语言列表可能还包括其他步骤处理的语言，不能代替控制器登记数。缺少配置输入的旧 v2 证据槽须补齐该 binding 和输入。当前证据接收阶段不能引用尚未生成的 `$config`；需先准备并绑定执行配置，再接收授权。v1 证据槽保持原有输入契约。
+
 ## 跨版本缓存迁移
 
 ```sh

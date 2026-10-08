@@ -275,9 +275,15 @@ def validate_evidence_slot(state, slot, ref, *, inputs, references):
                     and expected_binding['requestLimits'] == limits
                     and all(expected_binding[k] == authority[k] for k in ('globalBounds','unitBounds','limits')), 'budget_approval_binding_changed')
             expected_code = controller.code_identity()
-        # Locale-scoped v2 ledgers can spend the cap once per registered locale, as the adapter preflight counts it.
-        locale_count = max(1, len(manifest.get('locales') or [])) \
-            if version == 'sermon-canonical-layer2-budget-authorization-v2' else 1
+        locale_count = 1
+        if version == 'sermon-canonical-layer2-budget-authorization-v2':
+            # The slot resolves this path from a verified recipe input. Count
+            # the authorization's bound controller lanes, which may differ
+            # from the locales handled by the whole unified manifest.
+            require('configuration' in inputs, 'budget_configuration_required')
+            configuration = controller.load_configuration(inputs['configuration'])
+            layer2_budget.load_authorization(configuration, actual['path'], expected_code, actual['sha256'])
+            locale_count = len(configuration.lanes)
         require(re.fullmatch('[a-f0-9]{64}', str(binding.get(
                     'executionSha256' if version == 'sermon-study-budget-authorization-v1' else 'configurationSha256','')))
                 and binding.get('codeIdentitySha256') == expected_code

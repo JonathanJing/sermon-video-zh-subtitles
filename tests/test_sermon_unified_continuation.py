@@ -240,8 +240,11 @@ class ContinuationTests(unittest.TestCase):
         authorization = f.write_locale_authorization()
         self.manifest['productionRunId'] = f.base.config.run_id
         self.recipe['productionRunId'] = f.base.config.run_id
+        self.manifest['bindings']['layer2Configuration'] = {
+            'path': str(f.base.config.path), 'sha256': c.file_sha(f.base.config.path)}
         self.recipe['stages'][0]['requiredEvidence'] = [
-            {'kind': 'budget_authorization', 'binding': 'localeBudget'}]
+            {'kind': 'budget_authorization', 'binding': 'localeBudget',
+             'inputs': {'configuration': token('binding', 'layer2Configuration')}}]
         self.bind_recipe()
         before = copy.deepcopy(self.state)
         with patch.object(subject.adapters, 'execute', side_effect=AssertionError('dispatch forbidden')):
@@ -251,23 +254,46 @@ class ContinuationTests(unittest.TestCase):
         self.assertEqual(admitted['kind'], 'budget_authorization')
         self.assertEqual(self.state, before)
         self.assertFalse(self.root.exists())
-        # Each v2 locale shard can spend its full cap. One-locale room must
-        # not admit three-locale authority, and refusal must remain read-only.
+        # Additional manifest locales handled elsewhere do not enlarge this
+        # one-lane controller's authorization or reject its valid budget.
         self.manifest['locales'] = ['zh-Hans', 'ko', 'es']
         template = self.manifest['policies'][0]
         self.manifest['policies'] = [{**template, 'locale': locale}
                                     for locale in self.manifest['locales']]
         before = copy.deepcopy(self.state)
-        with patch.object(subject.adapters, 'execute', side_effect=AssertionError('dispatch forbidden')):
-            with self.assertRaisesRegex(ValueError, 'budget_execution_binding_changed'):
-                subject.validate_evidence(
-                    self.state, self.recipe_path, self.root, 'localeBudget', authorization)
+        subject.validate_evidence(self.state, self.recipe_path, self.root, 'localeBudget', authorization)
         self.assertEqual(self.state, before)
         self.assertFalse(self.root.exists())
+
+        # Conversely a one-locale manifest cannot reduce an authorization
+        # bound to a controller registering three independently spendable lanes.
+        from scripts import canonical_layer2_controller as controller
+        for locale in ('ko', 'es'):
+            f.base.fixture.config_data['locales'][locale] = {
+                'outputDirectory': 'outputs/' + locale,
+                'plugin': f.base.fixture.config_data['locales']['zh-Hans']['plugin']}
+            f.base.fixture.fixture.config['locales'][locale] = copy.deepcopy(
+                f.base.fixture.fixture.config['locales']['zh-Hans'])
+        f.base.fixture.fixture.write('inspection.json', f.base.fixture.fixture.config)
+        f.base.fixture.save_config()
+        f.base.config = controller.load_configuration(f.base.fixture.path)
+        for path in (f.base.receipt, f.base.auth_path):
+            value = c.read(path)
+            value.get('binding', value)['configurationSha256'] = f.base.config.sha256
+            path.write_text(json.dumps(value))
+        authorization = f.write_locale_authorization()
+        self.manifest['bindings']['layer2Configuration']['sha256'] = c.file_sha(f.base.config.path)
+        self.manifest['locales'] = ['zh-Hans']
+        self.manifest['policies'] = [template]
+        before = copy.deepcopy(self.state)
+        with self.assertRaisesRegex(ValueError, 'budget_execution_binding_changed'):
+            subject.validate_evidence(self.state, self.recipe_path, self.root, 'localeBudget', authorization)
+        self.assertEqual(self.state, before)
         self.manifest['budget']['limitMicroUsd'] = 3 * c.read(authorization)['authority']['globalBounds']['costMicrousd']
         before = copy.deepcopy(self.state)
         subject.validate_evidence(self.state, self.recipe_path, self.root, 'localeBudget', authorization)
         self.assertEqual(self.state, before)
+
         value = c.read(authorization)
         value['ledgerScope'] = 'run'
         authorization.write_text(json.dumps(value))
@@ -275,6 +301,26 @@ class ContinuationTests(unittest.TestCase):
             subject.validate_evidence(
                 self.state, self.recipe_path, self.root, 'localeBudget', authorization)
         self.assertEqual(self.state, before)
+
+    def test_locale_scoped_budget_requires_verified_configuration_input(self):
+        from tests import test_canonical_layer2_budget_shards as budget_fixture
+        f = budget_fixture.LocaleLedgerTests('test_locale_authorization_shards_the_ledger_by_locale')
+        f.setUp(); self.addCleanup(f.doCleanups)
+        authorization = f.write_locale_authorization()
+        self.manifest['productionRunId'] = f.base.config.run_id
+        self.recipe['productionRunId'] = f.base.config.run_id
+        self.recipe['stages'][0]['requiredEvidence'] = [
+            {'kind': 'budget_authorization', 'binding': 'localeBudget'}]
+        self.bind_recipe()
+        with self.assertRaisesRegex(ValueError, 'budget_configuration_required'):
+            subject.validate_evidence(self.state, self.recipe_path, self.root, 'localeBudget', authorization)
+        self.manifest['bindings']['layer2Configuration'] = {
+            'path': str(f.base.config.path), 'sha256': 'f' * 64}
+        self.recipe['stages'][0]['requiredEvidence'][0]['inputs'] = {
+            'configuration': token('binding', 'layer2Configuration')}
+        self.bind_recipe()
+        with self.assertRaisesRegex(ValueError, 'binding_changed'):
+            subject.validate_evidence(self.state, self.recipe_path, self.root, 'localeBudget', authorization)
 
     def test_generated_bytes_cannot_be_overwritten_after_restart(self):
         self.complete_source()

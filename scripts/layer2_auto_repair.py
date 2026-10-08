@@ -642,4 +642,13 @@ def _receipt(out_root: Path, ledger_root: Path, value: dict, entries: list[dict]
     path = out_root / f"auto-repair-receipt-{len(entries):03d}.json"
     if not path.exists():
         runner.save_new(path, receipt)
-    return receipt
+    # Admission must consume the saved terminal evidence, including on resume.
+    # A prior interrupted write or foreign receipt cannot be bypassed by
+    # recomputing a successful result from the ledger in memory.
+    try:
+        saved = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, ValueError) as exc:
+        raise ValueError(f"Saved auto-repair receipt is corrupt: {path}") from exc
+    _require(json_sha256(saved) == json_sha256(receipt),
+             f"Saved auto-repair receipt does not match the terminal ledger: {path}")
+    return saved

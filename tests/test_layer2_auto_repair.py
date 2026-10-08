@@ -337,6 +337,42 @@ class LoopTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "does not follow the chain"):
             subject.drive(REQUEST, 46, Fleet(self, 46, []), self.root / "third", self.root / "state-first")
 
+    def test_corrupt_terminal_receipt_refuses_resume_without_dispatch(self):
+        fleet = Fleet(self, 46, [{"g7": failing("completeMeaning")}])
+        first = self.drive(fleet)
+        path = self.root / "runs" / f"auto-repair-receipt-{first['rounds']:03d}.json"
+        path.write_text('{"status":', encoding="utf-8")
+        before = subject.load_ledger(self.root / "state-runs", subject.lineage(REQUEST))
+        restarted = Fleet(self, 46, [])
+        with self.assertRaisesRegex(ValueError, "Saved auto-repair receipt is corrupt"):
+            self.drive(restarted)
+        self.assertEqual(restarted.calls, [])
+        self.assertEqual(subject.load_ledger(self.root / "state-runs", subject.lineage(REQUEST)), before)
+        self.assertEqual(path.read_text(), '{"status":')
+
+    def test_mismatching_terminal_receipt_refuses_resume_without_dispatch(self):
+        for field, value in (("ledgerHeadSha256", "0" * 64), ("status", "repair_stopped"),
+                             ("humanApproval", True)):
+            with self.subTest(field=field):
+                directory = f"mismatch-{field}"
+                first = self.drive(Fleet(self, 46, []), out=directory)
+                path = self.root / directory / "auto-repair-receipt-001.json"
+                changed = {**first, field: value}
+                path.write_text(json.dumps(changed), encoding="utf-8")
+                restarted = Fleet(self, 46, [])
+                with self.assertRaisesRegex(ValueError, "does not match the terminal ledger"):
+                    self.drive(restarted, out=directory)
+                self.assertEqual(restarted.calls, [])
+                self.assertEqual(json.loads(path.read_text()), changed)
+
+    def test_matching_terminal_receipt_is_verified_and_reused_without_dispatch(self):
+        first = self.drive(Fleet(self, 46, []))
+        path = self.root / "runs" / "auto-repair-receipt-001.json"
+        path.write_text(json.dumps(first, indent=4), encoding="utf-8")
+        restarted = Fleet(self, 46, [])
+        self.assertEqual(self.drive(restarted), first)
+        self.assertEqual(restarted.calls, [])
+
     def test_regrouped_units_keep_their_fingerprints(self):
         value = subject.lineage(REQUEST)
         failure = {"translationGroupId": "renamed", "sourceUnitIds": ["u1", "u2"],
