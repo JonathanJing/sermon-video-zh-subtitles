@@ -364,7 +364,14 @@ def main(argv=None):
     args = parser.parse_args(argv)
     require(args.mode != 'execute' or (args.out is not None and args.remote_stage is not None),
             'execute_requires_out_and_frozen_remote_stage')
-    print(json.dumps(preflight(args) if args.mode == 'preflight' else execute(args), ensure_ascii=False))
+    if args.mode == 'preflight':
+        print(json.dumps(preflight(args), ensure_ascii=False))
+        return
+    # Mark completion on both paths so waiters need no polling of result files.
+    from scripts.outcome_marker import run_with_outcome
+    receipt = run_with_outcome(ROOT / relative(args.out) / 'outcome.json', 'spark-diagnostic-audio-execute',
+                               lambda: execute(args))
+    print(json.dumps(receipt, ensure_ascii=False))
 
 
 if __name__ == '__main__':

@@ -290,10 +290,12 @@ def main():
     parser.add_argument('--timeout-seconds', type=int, default=180)
     parser.add_argument('--resource-policy', type=Path, help='Explicit shared host-local CLI admission policy')
     args = parser.parse_args()
-    run_test(args.fixture_dir, args.policy, args.out_dir, cli_path=args.codex_cli,
-             reviewer_tier=args.reviewer_tier, timeout_seconds=args.timeout_seconds,
-             mock_responses_dir=args.mock_responses_dir, resource_policy_path=args.resource_policy, translator_model=args.translator_model,
-             diagnostic_fixture=args.diagnostic_fixture)
+    from scripts.outcome_marker import run_with_outcome
+    run_with_outcome(args.out_dir / 'outcome.json', 'codex-layer2-test', lambda: run_test(
+        args.fixture_dir, args.policy, args.out_dir, cli_path=args.codex_cli,
+        reviewer_tier=args.reviewer_tier, timeout_seconds=args.timeout_seconds,
+        mock_responses_dir=args.mock_responses_dir, resource_policy_path=args.resource_policy,
+        translator_model=args.translator_model, diagnostic_fixture=args.diagnostic_fixture))
 
 
 if __name__ == '__main__':
