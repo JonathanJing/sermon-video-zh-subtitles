@@ -791,8 +791,13 @@ def _covers(scope, saved):
 
 class Trials:
     def __init__(self, out, *, client, model, backend, max_seconds=600, max_tool_calls=24,
-                 poll_seconds=2.0, max_sessions=60, decisions=None, case_ids=None, plan_ids=None, risk_repeats=1):
+                 poll_seconds=2.0, max_sessions=60, decisions=None, case_ids=None, plan_ids=None, risk_repeats=1,
+                 route=None):
         self.out, self.client, self.model, self.backend = Path(out), client, model, backend
+        # The OpenAI project and credential a live run bills to, bound by hash so the summary never names them.
+        self.route = (None if route is None else
+                      {'credentialAlias': route['credentialAlias'],
+                       'project': _sha([route['projectId'], route['credentialAlias']])[:12]})
         self.max_seconds, self.max_tool_calls, self.poll_seconds = max_seconds, max_tool_calls, poll_seconds
         self.max_sessions, self.sessions_started = max_sessions, 0
         self.decisions, self.risk_repeats = decisions, risk_repeats
@@ -917,7 +922,8 @@ class Trials:
     def write(self, name, value):
         path = self.out / f'{name}.json'
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+        # Atomic and synced: a crash mid-checkpoint must not leave a file the next resume cannot parse.
+        _write_durably(path, json.dumps(value, ensure_ascii=False, indent=2) + '\n')
         return value
 
     def run(self, trial):
@@ -980,12 +986,15 @@ class Trials:
             if stage in saved and not _covers(scope, saved[stage]):
                 raise ValueError(f'{stage}: --out was run with selection {saved[stage]}; a narrower or different one '
                                  'needs a new --out')
-        # Every bound stage is partial until it finishes and rewrites its file: a new stage that fails before its
-        # first row, or a widened one whose saved rows no longer cover the scope, never reads as complete.
-        for stage in scopes:
+        # A new or widened stage is partial until it finishes and rewrites its file: one that fails before its first
+        # row, or whose saved rows no longer cover the scope, never reads as complete. An unchanged complete stage
+        # keeps its finished file.
+        for stage, scope in scopes.items():
             saved_file = self.out / ('timeline-summary.json' if stage == 'timeline' else f'{stage}.json')
-            current = _read_json(saved_file) if saved_file.exists() else ({'cases': []} if stage == 'timeline'
-                                                                         else {'rows': []})
+            current = _read_json(saved_file) if saved_file.exists() else None
+            if current is not None and not current.get('partial') and saved.get(stage) == scope:
+                continue
+            current = current or ({'cases': []} if stage == 'timeline' else {'rows': []})
             _write_durably(saved_file, json.dumps({**current, 'partial': True}, ensure_ascii=False, indent=2) + '\n')
         saved.update(scopes)
         # Durable before any paid work of the stage, so a crash cannot leave receipts without their scope.
@@ -993,8 +1002,8 @@ class Trials:
 
     def _scopes(self):
         # Backend, model and session limits must match across reruns, so every merged row ran under one condition.
-        agent = {'backend': self.backend, 'model': self.model, 'maxToolCalls': self.max_tool_calls,
-                 'maxSeconds': self.max_seconds}
+        agent = {'backend': self.backend, 'route': self.route, 'model': self.model,
+                 'maxToolCalls': self.max_tool_calls, 'maxSeconds': self.max_seconds}
         # Each item is bound as id@hash of its evidence and answer key, and each stage to its prompt, so changed
         # fixtures or instructions cannot merge with results saved before the change.
         def tag(item_id, value):
@@ -1013,7 +1022,7 @@ class Trials:
                                 'plans': sorted(tag(p['id'], [evidence_sha(p['evidence']), p['expected']])
                                                 for p in self.plans),
                                 'scorer': _scorer_identity('preflight')},
-                  'risk': {'backend': self.backend, 'model': DECISIONS_MODEL, 'repeats': self.risk_repeats,
+                  'risk': {'backend': self.backend, 'route': self.route, 'model': DECISIONS_MODEL, 'repeats': self.risk_repeats,
                            'actions': sorted(tag(a['id'], [a, risk_request(a, policy['tiers'])])
                                              for a in policy['actions']),
                            # Dispatch order is bound too, so added repeats run in the order the earlier ones did.
@@ -1062,7 +1071,7 @@ class Trials:
         return {'schemaVersion': 'agent-api-trials-summary-v1', 'status': status, 'backend': backend,
                 'evidence': {'fake': 'fake_plumbing_not_evidence', 'live': 'live_dev_api'}.get(backend, backend),
                 'agentModel': models[0] if len(models) == 1 else (models or None),
-                'decisionsModel': DECISIONS_MODEL,
+                'decisionsModel': scopes['risk']['model'] if 'risk' in scopes else None,
                 'partialStages': sorted(stage for stage, result in results.items() if result.get('partial')),
                 'unscored': _unscored(results),
                 'stageScopes': scopes,
@@ -1470,6 +1479,7 @@ def main(argv=None):
     out = args.out.resolve()
     if not out.is_relative_to(ROOT / 'artifacts') or out == ROOT / 'artifacts':
         parser.error('--out must be a new directory under artifacts/')
+    route = None
     if args.trial == 'timeline':
         client = decisions = None  # Deterministic; no credentials needed.
         poll = 0
@@ -1489,7 +1499,8 @@ def main(argv=None):
     backend = 'deterministic' if args.trial == 'timeline' else args.backend
     trials = Trials(out, client=client, model=args.model, backend=backend, max_seconds=args.max_seconds,
                     max_tool_calls=args.max_tool_calls, poll_seconds=poll, max_sessions=args.max_sessions,
-                    risk_repeats=args.risk_repeats, decisions=decisions, case_ids=args.case, plan_ids=args.plan)
+                    risk_repeats=args.risk_repeats, decisions=decisions, case_ids=args.case, plan_ids=args.plan,
+                    route=route)
     from scripts.outcome_marker import run_with_outcome
 
     def run():

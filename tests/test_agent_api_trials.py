@@ -1037,6 +1037,25 @@ class LatestReviewTests(unittest.TestCase):
         self.assertEqual((usage['input_tokens'], usage['requestsMissingUsage'], usage['complete']),
                          (5, ['a02:r2'], False))
 
+    def test_unchanged_complete_stage_stays_complete_when_another_fails(self):
+        out, make = self.make_trials(risk_repeats=1)
+        make().run('risk')
+        with patch.object(trials.Trials, 'diagnose', side_effect=RuntimeError('boom')), self.assertRaises(RuntimeError):
+            make(case_ids=['f01-plugin-identity']).run('all')
+        self.assertNotIn('partial', json.loads((out / 'risk.json').read_text()))
+        summary = json.loads((out / 'summary.json').read_text())
+        self.assertNotIn('risk', summary['partialStages'])
+
+    def test_route_and_decisions_model_come_from_bound_scopes(self):
+        out, make = self.make_trials()
+        route = {'projectId': 'proj_a', 'credentialAlias': 'tongxing-dev-runtime'}
+        make(route=route, case_ids=['f01-plugin-identity']).run('diagnose')
+        summary = json.loads((out / 'summary.json').read_text())
+        self.assertIsNone(summary['decisionsModel'])
+        self.assertNotIn('proj_a', json.dumps(summary))
+        with self.assertRaisesRegex(ValueError, 'narrower or different'):
+            make(route={**route, 'projectId': 'proj_b'}, case_ids=['f01-plugin-identity']).run('diagnose')
+
 
 if __name__ == '__main__':
     unittest.main()
