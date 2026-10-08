@@ -1313,5 +1313,33 @@ class LatestReviewTests(unittest.TestCase):
                 json.dumps(row, allow_nan=False)
                 trials.risk_summary([row])
 
+    def test_malformed_decisions_response_is_unscored_not_fatal(self):
+        action = {'id': 'x', 'expectedTier': 'approval'}
+        for response in ({'answers': None}, ['answers'], 'text', {'answers': 'tier'},
+                         {'answers': [{'name': ['tier'], 'choice': 'approval'}]}):
+            with self.subTest(response=response):
+                row = {**trials.score_risk(action, response), 'repeat': 1}
+                self.assertIsNone(row['chosen'])
+                self.assertEqual(trials._unscored({'risk': {'rows': [row]}}), ['risk:x:r1'])
+                trials.risk_summary([row])
+
+    def test_malformed_planted_diagnoses_are_refused_before_any_session(self):
+        out, make = self.make_trials()
+        planted = json.loads(trials.WRONG_DIAGNOSES.read_text())
+        first = planted['diagnoses'][0]
+        variants = [{**planted, 'diagnoses': None},
+                    {**planted, 'diagnoses': [{k: v for k, v in first.items() if k != 'flaw'}]},
+                    {**planted, 'diagnoses': [{**first, 'diagnosis': 'wrong'}]},
+                    {**planted, 'diagnoses': [{**first, 'diagnosis': {**first['diagnosis'], 'category': 'typo'}}]},
+                    {**planted, 'diagnoses': [first, first]},
+                    {**planted, 'diagnoses': [{**first, 'case': 'f99-missing'}]}]
+        for variant in variants:
+            with self.subTest(variant=variant), patch.object(
+                    trials, '_read_json', side_effect=lambda path, v=variant: v if Path(path) == trials.WRONG_DIAGNOSES
+                    else json.loads(Path(path).read_text(encoding='utf-8'))), \
+                    self.assertRaisesRegex(ValueError, 'invalid planted diagnoses'):
+                make(case_ids=[first['case']]).run('refute')
+            self.assertFalse((out / 'diagnose').exists())
+
 if __name__ == '__main__':
     unittest.main()

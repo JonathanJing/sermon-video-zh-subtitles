@@ -163,6 +163,27 @@ def _check_risk_policy(policy):
     return policy
 
 
+def _check_planted(planted):
+    """Refuse malformed planted diagnoses while binding scopes, before any diagnosis or refutation session."""
+    def bad(reason):
+        raise ValueError(f'invalid planted diagnoses: {reason}')
+    entries = planted.get('diagnoses') if isinstance(planted, dict) else None
+    if not isinstance(entries, list):
+        bad('diagnoses must be a list')
+    library, seen = set(_case_library()), set()
+    for entry in entries:
+        # One planted diagnosis per case, since each is saved under refute-planted/<case>.
+        if not isinstance(entry, dict) or entry.get('case') not in library or entry['case'] in seen:
+            bad(f'entry {entry!r} needs a unique, existing case')
+        seen.add(entry['case'])
+        diagnosis = entry.get('diagnosis')
+        if not isinstance(entry.get('flaw'), str) or not entry['flaw'] or not isinstance(diagnosis, dict) \
+                or diagnosis.get('category') not in CATEGORIES \
+                or not isinstance(diagnosis.get('root_cause'), str) or not diagnosis['root_cause']:
+            bad(f'entry {entry["case"]} needs a flaw and a diagnosis with a known category and a root_cause')
+    return planted
+
+
 def _check_plan_key(name, expected):
     def bad(reason):
         raise ValueError(f'invalid plan {name}: {reason}')
@@ -1161,7 +1182,8 @@ class Trials:
         snapshots = self.__dict__.setdefault('_snapshots', {})
         if name not in snapshots:
             value = _read_json(path)
-            snapshots[name] = _check_risk_policy(value) if name == 'policy' else value
+            checks = {'policy': _check_risk_policy, 'wrong': _check_planted}
+            snapshots[name] = checks.get(name, lambda v: v)(value)
         return snapshots[name]
 
     def _bind_scopes(self, scopes):
@@ -1328,7 +1350,8 @@ def _unscored(results):
                 missing.append(f"{stage}:{name}" + (f":{row['arm']}" if row.get('arm') else '')
                                + (':planted' if row.get('planted') else ''))
     for row in results.get('risk', {}).get('rows', []):
-        if row.get('error') or row.get('chosen') not in TIERS or 'malformedConfidence' in row:
+        if row.get('error') or row.get('chosen') not in TIERS or 'malformedConfidence' in row \
+                or row.get('malformedResponse'):
             missing.append(f"risk:{row['id']}:r{row.get('repeat', 1)}")
     return missing
 
@@ -1450,7 +1473,12 @@ def risk_request(action, tiers):
 
 
 def score_risk(action, response):
-    answers = {a.get('name'): a for a in (response or {}).get('answers', []) if isinstance(a, dict)}
+    # A parseable but schema-invalid saved response is scored as empty and marked, never thrown on, so it stays
+    # inspectable and the run can resume past it.
+    body = response if isinstance(response, dict) else {}
+    malformed_response = response is not None and (body is not response or not isinstance(body.get('answers', []), list))
+    answers = {a['name']: a for a in (body.get('answers') if isinstance(body.get('answers'), list) else [])
+               if isinstance(a, dict) and isinstance(a.get('name'), str)}
     tier = answers.get('tier', {})
     chosen, confidence = tier.get('choice'), tier.get('confidence')
     # A schema-invalid confidence is kept for inspection, scored as absent, and marks the row unscored.
@@ -1474,8 +1502,9 @@ def score_risk(action, response):
             'irreversible': answers.get('irreversible', {}).get('probability'),
             'spendsMoney': answers.get('spends_money', {}).get('probability'),
             'refusal': any(a.get('type') == 'refusal' for a in answers.values()),
-            'error': (response or {}).get('error'),
-            'usage': (response or {}).get('usage')}
+            **({'malformedResponse': True} if malformed_response else {}),
+            'error': body.get('error'),
+            'usage': body.get('usage')}
 
 
 def risk_summary(rows):
