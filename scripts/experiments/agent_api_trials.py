@@ -1069,16 +1069,29 @@ class Trials:
                            if trial in ('all', stage) or (trial == 'refute' and stage == 'diagnose')})
 
         def finish(stage, name, run):
+            def drifted():
+                # Fixtures read live during the stage must still match what scope.json bound at the start. Sessions
+                # may already have read changed bytes, and restoring the fixture would let their receipts match
+                # again, so the whole --out is quarantined for good.
+                if self._scopes()[stage] == scopes[stage]:
+                    return None
+                _write_durably(self.out / 'invalidated.json',
+                               json.dumps({'stage': stage, 'reason': 'fixtures or code changed during the run'}) + '\n')
+                return ValueError(f'{stage}: fixtures or code changed during the run; use a new --out')
+
             def checked():
-                result = run()
-                # Fixtures read live during the stage must still match what scope.json bound at the start; checked
-                # inside the timing so a mismatch is recorded as a failed stage.
-                if self._scopes()[stage] != scopes[stage]:
-                    # Sessions may already have read the changed bytes, and restoring the fixture would let their
-                    # receipts match again, so the whole --out is quarantined for good.
-                    _write_durably(self.out / 'invalidated.json',
-                                   json.dumps({'stage': stage, 'reason': 'fixtures or code changed during the run'}) + '\n')
-                    raise ValueError(f'{stage}: fixtures or code changed during the run; use a new --out')
+                # Checked inside the timing, and on the failure path too, so an aborted stage that saw drift is
+                # quarantined and recorded as failed.
+                try:
+                    result = run()
+                except BaseException as error:
+                    drift = drifted()
+                    if drift is not None:
+                        raise drift from error
+                    raise
+                drift = drifted()
+                if drift is not None:
+                    raise drift
                 return result
             return self.write(name, self._timed(stage, checked))
         if trial in ('timeline', 'all'):

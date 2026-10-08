@@ -1041,6 +1041,24 @@ class LatestReviewTests(unittest.TestCase):
         trial._checkpoint('risk')
         self.assertNotIn('partial', json.loads((out / 'risk.json').read_text()))
 
+    def test_stage_that_aborts_after_drift_is_quarantined(self):
+        out, make = self.make_trials()
+        trial = make(case_ids=['f01-plugin-identity'])
+        original = trial._scopes
+        calls = []
+
+        def drifting():
+            scopes = original()
+            calls.append(1)
+            if len(calls) > 1:
+                scopes['diagnose'] = {**scopes['diagnose'], 'cases': ['changed']}
+            return scopes
+        with patch.object(trial, '_scopes', drifting), \
+                patch.object(trials, 'run_session', side_effect=RuntimeError('boom')), \
+                self.assertRaisesRegex(ValueError, 'changed during the run'):
+            trial.run('diagnose')
+        self.assertTrue((out / 'invalidated.json').exists())
+
     def test_checkpoint_keeps_saved_rows_this_run_has_not_reached(self):
         out, make = self.make_trials()
         out.mkdir(parents=True)
