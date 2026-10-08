@@ -101,6 +101,8 @@ Python producer 的 `render_tts`／`back_asr` 新增可选 `model_session` 与 `
   --out-dir artifacts/NEW-RUN --reviewer-tier fast --timeout-seconds 240
 ```
 
+要让这条诊断链走 OpenAI API（10-06 策略规定的新 dev Layer 2 默认后端）而不是 Codex CLI 订阅额度，加 `--backend openai_api`，并在 [dev 环境启动器](openai-minimal-project-setup.zh.md) 下运行；fixture 须带 `--concurrency-profile`，并传入 `online_api` 容量与之匹配的 `--resource-policy`，否则在发送前拒绝。不加该参数时仍是 Codex CLI，旧运行身份不变。API 调用记在 `tongxing-dev`，收据在 `NEW-RUN/_api_calls/`。
+
 路径与 commit 占位符替换为实际输入；policy 必须绑定这份 source/anchor 与当前 plugin，不能直接用未绑定的默认策略。翻译 high/fast、审核 medium/fast 固定在 fixture；正式政策仍拒绝隔离 override。可添加既有 `--resource-policy`，保持 workers=1。mock 可回放该新链自己的精确响应，不能借旧 legacy payload 证明新规则已经被消费。
 
 新链将同一冻结 modelRules 送入 translator/reviewer，核验实际 payload，再运行 pinned plugin 并由真实候选准入函数独立重跑 plugin 读回。输出 `diagnostic-language-review.json` 和 `diagnostic-candidate.json`；后者 `actualHumanApproval=false`、`productionEligible=false`、`releaseEligible=false`，候选人审保持 pending。CLI/规则/plugin 任一失败均留证并停止；同身份恢复复用返回，不因 plugin 失败重新翻译；unknown 不重发。此入口使用现有编辑式 reviewer，尚未完成正式 controller 或 strict/RQC reviewer adapter。
