@@ -958,7 +958,7 @@ class Trials:
                 current = {_row_identity(stage, row) for row in self.partial[stage]}
                 rows = [row for row in earlier_rows if _row_identity(stage, row) not in current] + self.partial[stage]
                 results[stage] = _stage_result(stage, rows)
-            elif earlier.get('partial') and earlier_rows:
+            elif earlier.get('partial'):
                 results[stage] = _stage_result(stage, earlier_rows)
             elif earlier_rows:
                 results[stage] = earlier
@@ -980,12 +980,13 @@ class Trials:
             if stage in saved and not _covers(scope, saved[stage]):
                 raise ValueError(f'{stage}: --out was run with selection {saved[stage]}; a narrower or different one '
                                  'needs a new --out')
-        # A widened stage's saved results no longer cover its scope until it reruns, so they turn partial first.
-        for stage, scope in scopes.items():
-            saved_file = self.out / f'{stage}.json'
-            if stage != 'timeline' and stage in saved and scope != saved[stage] and saved_file.exists():
-                _write_durably(saved_file, json.dumps({**_read_json(saved_file), 'partial': True},
-                                                      ensure_ascii=False, indent=2) + '\n')
+        # Every bound stage is partial until it finishes and rewrites its file: a new stage that fails before its
+        # first row, or a widened one whose saved rows no longer cover the scope, never reads as complete.
+        for stage in scopes:
+            saved_file = self.out / ('timeline-summary.json' if stage == 'timeline' else f'{stage}.json')
+            current = _read_json(saved_file) if saved_file.exists() else ({'cases': []} if stage == 'timeline'
+                                                                         else {'rows': []})
+            _write_durably(saved_file, json.dumps({**current, 'partial': True}, ensure_ascii=False, indent=2) + '\n')
         saved.update(scopes)
         # Durable before any paid work of the stage, so a crash cannot leave receipts without their scope.
         _write_durably(path, json.dumps(saved, ensure_ascii=False, indent=2) + '\n')
@@ -1075,6 +1076,11 @@ class Trials:
                 'decisionsUsage': _sum_decisions_usage(results)}
 
 
+# Read at import, so a test double patched onto a stage cannot change the bound identity.
+STAGE_SOURCES = {name: inspect.getsource(getattr(Trials, name))
+                 for name in ('timeline', 'diagnose', 'refute', 'preflight', 'risk', '_session')}
+
+
 def _unscored(results):
     """Sessions and requests that produced no score: not completed, no report, or a Decisions error."""
     missing = []
@@ -1105,7 +1111,9 @@ def _scorer_identity(stage):
     constants = {'timeline': [TIMESTAMP.pattern, ERROR_LINE.pattern, END_FIELD.pattern],
                  'diagnose': tool_definitions, 'refute': tool_definitions,
                  'preflight': [*tool_definitions, ARGUMENT_FREE_TERMS, CHECK_VERDICT]}.get(stage, [])
-    return _sha([inspect.getsource(part) for part in parts] + [repr(c) for c in constants])[:12]
+    # The stage method assembles the payload text and the projection a later stage sees, so it is bound too.
+    methods = [STAGE_SOURCES[stage], STAGE_SOURCES['_session']]
+    return _sha([inspect.getsource(part) for part in parts] + methods + [repr(c) for c in constants])[:12]
 
 
 def _refute_summary(rows):
@@ -1150,12 +1158,19 @@ def _arm_summary(rows):
 
 
 def _sum_decisions_usage(results):
-    totals = {}
+    """Known Decisions token totals plus which requests they cover, as for the Agents sessions."""
+    totals, covered, missing = {}, 0, []
     for row in results.get('risk', {}).get('rows', []):
-        for key, value in (row.get('usage') or {}).items():
+        if not row.get('usage'):
+            missing.append(f"{row['id']}:r{row.get('repeat', 1)}")
+            continue
+        covered += 1
+        for key, value in row['usage'].items():
             if isinstance(value, (int, float)) and not isinstance(value, bool):
                 totals[key] = totals.get(key, 0) + value
-    return totals or None
+    if not totals and not missing:
+        return None
+    return {**totals, 'requestsCovered': covered, 'requestsMissingUsage': missing, 'complete': not missing}
 
 
 def _sum_usage(results):
@@ -1305,6 +1320,13 @@ class DecisionsClient:
             raise ValueError(f'decision {name}: request or answer key changed since it was rejected; use a new --out')
         if len(rejected) >= self.MAX_REJECTIONS:
             raise RuntimeError(f'decision {name}: rejected {len(rejected)} times; inspect {rejected_path.name}')
+        if started.exists():
+            # A crash between saving a rejection and removing the marker leaves both; the rejection settles it.
+            marker = _read_json(started)
+            if any(entry.get('requestSha256') == marker.get('requestSha256') and entry.get('at', 0) >= marker.get('at', 0)
+                   for entry in rejected):
+                started.unlink()
+                _fsync_directory(self.dir)
         try:
             # Exclusive create: a concurrent or earlier attempt that holds the marker blocks this one.
             with open(started, 'x', encoding='utf-8') as marker:
@@ -1469,8 +1491,15 @@ def main(argv=None):
                     max_tool_calls=args.max_tool_calls, poll_seconds=poll, max_sessions=args.max_sessions,
                     risk_repeats=args.risk_repeats, decisions=decisions, case_ids=args.case, plan_ids=args.plan)
     from scripts.outcome_marker import run_with_outcome
-    summary = run_with_outcome(out / 'outcome.json', 'agent-api-trials ' + args.trial, lambda: trials.run(args.trial))
-    print(json.dumps(summary, ensure_ascii=False, indent=2))
+
+    def run():
+        summary = trials.run(args.trial)
+        print(json.dumps(summary, ensure_ascii=False, indent=2))
+        if summary['status'] != 'completed':
+            # A partial or incomplete run is recorded as failed in outcome.json and exits nonzero.
+            raise SystemExit(2)
+        return summary
+    run_with_outcome(out / 'outcome.json', 'agent-api-trials ' + args.trial, run)
     return 0
 
 

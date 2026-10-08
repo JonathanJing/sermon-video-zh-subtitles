@@ -1003,7 +1003,39 @@ class LatestReviewTests(unittest.TestCase):
             return scopes
         with patch.object(trial, '_scopes', drifting), self.assertRaisesRegex(ValueError, 'changed during the run'):
             trial.run('timeline')
-        self.assertFalse((out / 'timeline-summary.json').exists())
+        self.assertTrue(json.loads((out / 'timeline-summary.json').read_text())['partial'])
+
+    def test_new_stage_that_fails_before_its_first_row_stays_partial(self):
+        out, make = self.make_trials(risk_repeats=1)
+        with patch.object(trials.Trials, 'diagnose', side_effect=RuntimeError('boom')), self.assertRaises(RuntimeError):
+            make(case_ids=['f01-plugin-identity']).run('diagnose')
+        make().run('risk')
+        summary = json.loads((out / 'summary.json').read_text())
+        self.assertEqual(summary['status'], 'partial')
+        self.assertIn('diagnose', summary['partialStages'])
+
+    def test_saved_rejection_clears_a_stale_started_marker(self):
+        out, make = self.make_trials()
+        client = trials.DecisionsClient(out, transport=lambda request: {'answers': []})
+        request = {'input': 'x'}
+        (client.dir / 'a.started.json').write_text(json.dumps({'requestSha256': trials._sha(request), 'at': 1}))
+        (client.dir / 'a.rejected.json').write_text(json.dumps(
+            [{'requestSha256': trials._sha(request), 'evaluationSha256': None, 'at': 2, 'error': {'status': 429}}]))
+        self.assertEqual(client.decide('a', request), {'answers': []})
+
+    def test_incomplete_run_exits_nonzero_and_records_failure(self):
+        out, _make = self.make_trials()
+        with patch.object(trials.Trials, 'run', return_value={'status': 'incomplete'}), patch('builtins.print'), \
+                self.assertRaises(SystemExit) as stop:
+            trials.main(['timeline', '--out', str(out)])
+        self.assertEqual(stop.exception.code, 2)
+        self.assertEqual(json.loads((out / 'outcome.json').read_text())['status'], 'failed')
+
+    def test_decisions_usage_says_which_requests_it_covers(self):
+        usage = trials._sum_decisions_usage({'risk': {'rows': [{'id': 'a01', 'usage': {'input_tokens': 5}},
+                                                               {'id': 'a02', 'repeat': 2, 'usage': None}]}})
+        self.assertEqual((usage['input_tokens'], usage['requestsMissingUsage'], usage['complete']),
+                         (5, ['a02:r2'], False))
 
 
 if __name__ == '__main__':
