@@ -141,10 +141,23 @@ def _clip(text: str) -> str:
 class FailureCollector:
     """Runner hook: record failed groups and stop dispatch on a systemic failure."""
 
-    def __init__(self, total_groups: int):
+    def __init__(self, total_groups: int, counted_group_ids=None, known_fingerprints=None,
+                 lineage_value: dict | None = None):
+        """The systemic judgement counts only new evidence: ``counted_group_ids``
+        limits it to groups dispatched this round (a repair round reuses the other
+        failures unchanged), and a failure whose fingerprint is already in
+        ``known_fingerprints`` repeats an earlier round instead of adding to a
+        batch-wide rule failure."""
         _require(type(total_groups) is int and total_groups > 0, "Failure collection needs the group count")
+        self.total_groups = total_groups
         self.threshold = systemic_threshold(total_groups)
-        self.identity = {"routingVersion": ROUTING_VERSION, "systemicThreshold": self.threshold}
+        self.counted = None if counted_group_ids is None else frozenset(counted_group_ids)
+        self.known = frozenset(known_fingerprints or ())
+        self.lineage_value = lineage_value
+        _require(not self.known or lineage_value is not None, "Known fingerprints need the lineage")
+        self.identity = {"routingVersion": ROUTING_VERSION, "systemicThreshold": self.threshold,
+                         "countedGroupIds": None if self.counted is None else sorted(self.counted),
+                         "knownFingerprints": sorted(self.known)}
         self.failures: list[dict] = []
         self.not_dispatched: list[dict] = []
         self.systemic: dict | None = None
@@ -158,16 +171,26 @@ class FailureCollector:
         with self._lock:
             return bool(self.failures or self.not_dispatched)
 
+    def _is_counted(self, row: dict) -> bool:
+        if self.counted is not None and row["translationGroupId"] not in self.counted:
+            return False
+        if self.known and fingerprint(self.lineage_value, row["sourceUnitIds"], row["failureCodes"]) in self.known:
+            return False
+        return True
+
+    def _counted_failures(self) -> list[dict]:
+        return [row for row in self.failures if self._is_counted(row)]
+
     def _counts(self) -> dict[str, int]:
         counts: dict[str, int] = {}
-        for failure in self.failures:
+        for failure in self._counted_failures():
             for code in failure["failureCodes"]:
                 counts[code] = counts.get(code, 0) + 1
         return counts
 
     def _consecutive(self, code: str) -> int:
         """Longest run of adjacent group indices that all failed with ``code``."""
-        indices = sorted(row["index"] for row in self.failures if code in row["failureCodes"])
+        indices = sorted(row["index"] for row in self._counted_failures() if code in row["failureCodes"])
         best = run = 0
         for position, index in enumerate(indices):
             run = run + 1 if position and index == indices[position - 1] + 1 else 1
@@ -177,7 +200,7 @@ class FailureCollector:
     def _record(self, row: dict) -> None:
         with self._lock:
             self.failures.append(row)
-            if self.systemic is None:
+            if self.systemic is None and self._is_counted(row):
                 for code in sorted(set(row["failureCodes"])):
                     run = self._consecutive(code)
                     if run >= self.threshold:
@@ -422,7 +445,10 @@ def drive(request: dict, total_groups: int, run_round: RoundRunner, out_root: Pa
     while True:
         sequence += 1
         out = out_root / f"round-{sequence:03d}"
-        collector = FailureCollector(total_groups)
+        collector = FailureCollector(
+            total_groups, [row["translationGroupId"] for row in brief["groups"]] if brief else None,
+            {item for entry in entries for row in entry["groups"] for item in [row["fingerprint"]] if item},
+            value)
         try:
             evidence = run_round(out, reuse_from, brief, collector)
             report = None
@@ -458,15 +484,20 @@ def drive(request: dict, total_groups: int, run_round: RoundRunner, out_root: Pa
             cap_calls = max(MINIMUM_REPAIR_CALLS, math.ceil(initial["calls"] * SPEND_FRACTION))
             cap_tokens = math.ceil(initial["tokens"] * SPEND_FRACTION) if initial["tokens"] else None
             over_tokens = cap_tokens is not None and spent["tokens"] > cap_tokens
-            if repairs and (over_tokens or spent["calls"] + CALLS_PER_REPAIR * len(repairs) > cap_calls):
-                for failure in repairs:
+            # Repair as many groups as the cap still allows, in source order.
+            affordable = 0 if over_tokens else max(0, (cap_calls - spent["calls"]) // CALLS_PER_REPAIR)
+            if len(repairs) > affordable:
+                capped = repairs[affordable:]
+                repairs = repairs[:affordable]
+                capped_ids = {failure["translationGroupId"] for failure in capped}
+                for failure in capped:
                     stopped.append({"translationGroupId": failure["translationGroupId"],
                                     "sourceUnitIds": failure["sourceUnitIds"],
                                     "failureCodes": failure["failureCodes"], "reasonCode": "repair_spend_cap",
                                     "evidencePath": str(out / failure["reviewerCache"])})
                 for row in rows:
-                    row["repaired"] = False
-                repairs = []
+                    if row["translationGroupId"] in capped_ids:
+                        row["repaired"], row["decision"] = False, "repair_spend_cap"
             if not repairs:
                 outcome = "stopped"
         next_brief = None

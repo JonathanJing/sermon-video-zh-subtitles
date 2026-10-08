@@ -176,12 +176,24 @@ class LoopTests(unittest.TestCase):
         receipt = self.drive(fleet)
         self.assertEqual(fleet.calls, ["all", ["g4"]])
         self.assertEqual(receipt["stoppedGroups"][0]["reasonCode"], "request_human_review")
-        # 20 groups -> 40 initial calls -> cap max(4, 4) = 4 calls: two groups fit, three do not.
+        # 20 groups -> 40 initial calls -> cap max(4, 4) = 4 calls: two groups fit, the third does not.
         fleet = Fleet(self, 20, [{f"g{i}": failing(name) for i, name in
-                                  zip((1, 2, 3), ("completeMeaning", "noAddedMeaning", "quotationAttribution"))}])
+                                  zip((1, 2, 3), ("completeMeaning", "noAddedMeaning", "quotationAttribution"))},
+                                 {"g3": failing("quotationAttribution")}])
         receipt = self.drive(fleet, out="capped")
-        self.assertEqual(fleet.calls, ["all"])
-        self.assertEqual({row["reasonCode"] for row in receipt["stoppedGroups"]}, {"repair_spend_cap"})
+        self.assertEqual(fleet.calls, ["all", ["g1", "g2"]])
+        self.assertEqual([(row["translationGroupId"], row["reasonCode"]) for row in receipt["stoppedGroups"]],
+                         [("g3", "repair_spend_cap")])
+
+    def test_failures_carried_from_earlier_rounds_are_not_systemic(self):
+        fleet = Fleet(self, 46, [
+            {"g2": failing("completeMeaning"), "g30": failing("completeMeaning"), "g10": failing("noAddedMeaning")},
+            {"g2": failing("completeMeaning"), "g30": failing("completeMeaning"), "g10": failing("completeMeaning")},
+            {"g2": failing("completeMeaning"), "g30": failing("completeMeaning")}])
+        receipt = self.drive(fleet)
+        self.assertEqual(fleet.calls, ["all", ["g10", "g2", "g30"], ["g10"]])
+        self.assertEqual(sorted((row["translationGroupId"], row["reasonCode"]) for row in receipt["stoppedGroups"]),
+                         [("g2", "repeated_failure_without_progress"), ("g30", "repeated_failure_without_progress")])
 
     def test_unknown_outcome_is_not_retried(self):
         def unknown(out, reuse_from, brief, collector):
@@ -322,6 +334,57 @@ class RunnerCollectionTests(unittest.TestCase):
                          [(stubborn, "repeated_failure_without_progress")])
         self.assertIsNone(receipt["evidenceSha256"])
         self.assertFalse((Path(receipt["finalRunDirectory"]) / "evidence.json").exists())
+
+    def test_collector_group_count_must_match_the_plan(self):
+        f = self.fixture
+        with self.assertRaisesRegex(ValueError, "group count differs"):
+            self.production_run(f.source, f.anchor, f.policy, self.out, "fixture-key", self.fake_call,
+                                failure_collector=subject.FailureCollector(3))
+        self.assertEqual(self.calls, [])
+
+    def test_third_round_reuses_caches_repaired_in_the_second(self):
+        from unittest.mock import patch
+        f = self.fixture
+        plan = runner.group_plan(f.request, f.anchor)
+        fixed_once, fixed_twice = plan[0]["translationGroupId"], plan[1]["translationGroupId"]
+        reviews = {fixed_once: ["completeMeaning", None],
+                   fixed_twice: ["completeMeaning", "quotationAttribution", None]}
+
+        def caller(api_key, payload):
+            response = self.fake_call(api_key, payload)
+            if payload["reasoning_effort"] != "medium":
+                return response
+            group_id = json.loads(payload["messages"][1]["content"])["translationGroupId"]
+            check = reviews[group_id].pop(0)
+            if check is not None:
+                result = json.loads(response["choices"][0]["message"]["content"])
+                result["semanticReview"]["status"] = "fail"
+                result["semanticReview"]["checks"][check] = "fail"
+                result["semanticReview"]["issues"] = [f"{check} failed"]
+                response["choices"][0]["message"]["content"] = json.dumps(result)
+            return response
+
+        def run_round(out, reuse_from, brief, collector):
+            return self.production_run(f.source, f.anchor, f.policy, out, "fixture-key", caller,
+                                       reuse_from=reuse_from, partial_repair_brief=brief,
+                                       failure_collector=collector)
+
+        with patch.object(subject, "MINIMUM_REPAIR_CALLS", 100):
+            receipt = subject.drive(f.request, 2, run_round, self.out.parent / "rounds", self.out.parent / "state")
+        self.assertEqual(receipt["status"], "all_groups_passed")
+        self.assertEqual(receipt["rounds"], 3)
+        # 4 initial calls, both groups repaired in round 2, only the second in round 3.
+        self.assertEqual(len(self.calls), 4 + 4 + 2)
+        final = Path(receipt["finalRunDirectory"])
+        self.assertTrue((final / "evidence.json").exists())
+        effective = json.loads((final / "effective-repairs.json").read_text())
+        self.assertEqual(set(effective), {fixed_once, fixed_twice})
+        self.assertIn("quotation", effective[fixed_twice]["instruction"].lower())
+        # Resuming a finished chain makes no calls.
+        before = len(self.calls)
+        again = subject.drive(f.request, 2, run_round, self.out.parent / "rounds", self.out.parent / "state")
+        self.assertEqual(again["rounds"], 3)
+        self.assertEqual(len(self.calls), before)
 
     def test_loop_repairs_the_failed_group_end_to_end(self):
         f = self.fixture

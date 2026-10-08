@@ -511,6 +511,27 @@ def _require_rejected_reviewer_text(cache: Path, expected_sha256: str,
     require(actual == expected_sha256, "plugin group stop does not match the rejected reviewer text")
 
 
+def carried_repairs(reuse_from: Path | None, request: dict[str, Any], plan: list[dict[str, Any]],
+                    repairs: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    """Repair rows of earlier revisions whose caches this run reuses unchanged.
+
+    A prior run records every repair it prompted with (its own brief plus what it
+    carried) in effective-repairs.json. Groups not repaired again keep that
+    prompt, so their verified responses reuse without a new paid call.
+    """
+    if reuse_from is None or not (reuse_from / "effective-repairs.json").is_file():
+        return {}
+    prior = producer._load(reuse_from / "effective-repairs.json")
+    plan_by_id = {row["translationGroupId"]: row for row in plan}
+    require(isinstance(prior, dict) and all(
+        isinstance(row, dict) and set(row) == {"translationGroupId", "sourceUnitIds", "failedRole",
+                                              "failedCacheSha256", "failureReason", "instruction"}
+        and row["translationGroupId"] == group_id and group_id in plan_by_id
+        and row["sourceUnitIds"] == plan_by_id[group_id]["sourceUnitIds"]
+        for group_id, row in prior.items()), "Prior effective repairs do not match this group plan")
+    return {group_id: row for group_id, row in prior.items() if group_id not in repairs}
+
+
 def require_plugin_stop_repair(reuse_from: Path | None, repairs: dict[str, dict[str, Any]],
                                plugin_path: Path | None) -> None:
     """A stopped run cannot be reused until its blocked group is repaired."""
@@ -846,6 +867,7 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
         briefs = validate_revision_brief(revision_brief, request, plan, prior_evidence)
         repairs = validate_partial_repair_brief(partial_repair_brief, request, plan,
                                                  reuse_from)
+        carried = carried_repairs(reuse_from, request, plan, repairs)
         require_plugin_stop_repair(reuse_from, repairs, plugin_path)
         require_plugin_stop_repair(resume_cache_from, repairs, plugin_path)
         if reuse_from is not None:
@@ -874,9 +896,12 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                 partial_repair_brief)
         if resume_cache_from is not None:
             identity["resumeCacheFrom"] = str(resume_cache_from.resolve())
+        if carried:
+            identity["carriedRepairsSha256"] = policy_tools.canonical_sha256(carried)
         if failure_collector is not None:
             require(not simulation_only and diagnostic_context is None and plugin_path is not None,
                     "Failure collection is for formal plugin-gated runs")
+            require(failure_collector.total_groups == len(plan), "Failure collection group count differs from plan")
             identity["failureCollection"] = failure_collector.identity
         identity_hash = policy_tools.canonical_sha256(identity)
         manifest = out / "run-identity.json"
@@ -905,11 +930,21 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             else:
                 save_new(receipt_path, rule_receipt, private=True)
         require_reconciled_requests(out, reuse_from, resume_cache_from)
+        if repairs or carried:
+            effective_path = out / "effective-repairs.json"
+            effective = {**carried, **repairs}
+            if effective_path.exists():
+                require(producer._load(effective_path) == effective, "Effective repairs changed")
+            else:
+                save_new(effective_path, effective)
         requested_workers = workers
         # A plugin stop receipt promises no later dispatch. Serialize the full
         # translate/review/plugin chain so that promise reflects actual work.
         if plugin_path is not None and not simulation_only:
             workers = 1
+        # Failure collection reports which groups were not dispatched; only a
+        # serial loop makes that report deterministic and resumable.
+        require(failure_collector is None or workers == 1, "Failure collection requires one group worker")
         accounting.record_workload("layer2.concurrency", {
             "requestedWorkers": requested_workers,
             "workers": workers, "maxInFlightGroups": workers,
@@ -917,9 +952,6 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
         units = {row["sourceUnitId"]: row["english"] for row in request["sourceUnits"]}
     def _process_group(item):
         index, group = item
-        if failure_collector is not None and failure_collector.stopped():
-            failure_collector.record_not_dispatched(index, group)
-            return None, None
         with accounting.stage(f"layer2.prepare.{request['targetLocale']}.group-{index:04d}",
                               cache_hit=prior_evidence is not None and group['translationGroupId'] not in briefs
                                         and group['translationGroupId'] not in repairs,
@@ -927,6 +959,9 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                               work_unit_id=f"l2.{request['targetLocale']}.group-{index:04d}.prepare") as prepare_span:
             brief = briefs.get(group["translationGroupId"])
             repair = repairs.get(group["translationGroupId"])
+            # A group repaired in an earlier revision keeps that revision's
+            # instruction in its prompt, so its verified cache reuses exactly.
+            prior_repair = carried.get(group["translationGroupId"]) if repair is None else None
             if prior_evidence is not None and brief is None and repair is None:
                 return carry_forward_group(reuse_from, out, index, group,
                                            prior_evidence["groups"][index - 1], policy), prepare_span
@@ -965,18 +1000,19 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                     "priorTargetTextSha256": brief["priorTargetTextSha256"],
                     "proposedTargetText": brief["proposedTargetText"],
                 }
-            if repair is not None:
+            prompt_repair = repair if repair is not None else prior_repair
+            if prompt_repair is not None:
                 common["partialRepair"] = {
-                    "priorFailedRole": repair["failedRole"],
-                    "priorFailedCacheSha256": repair["failedCacheSha256"],
-                    "failureReason": repair["failureReason"],
-                    "instruction": repair["instruction"],
+                    "priorFailedRole": prompt_repair["failedRole"],
+                    "priorFailedCacheSha256": prompt_repair["failedCacheSha256"],
+                    "failureReason": prompt_repair["failureReason"],
+                    "instruction": prompt_repair["instruction"],
                 }
             repair_instruction = (
                 " This group is a new revision after a prior machine failure. "
                 "Follow the source-bound repair instruction while independently "
                 "checking the English source; do not assume the prior answer was correct. "
-                + repair["instruction"] + " " if repair is not None else "")
+                + prompt_repair["instruction"] + " " if prompt_repair is not None else "")
             translate_prompt = {
                 "instruction": (("Revise the proposed shorter spoken text against the English "
                                 "sermon group. Stay close to the proposal's length and wording; "
@@ -1009,6 +1045,9 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             prior_cache_root = resume_cache_from if resume_cache_from is not None else reuse_from if brief is None and repair is None else None
             translator_cached = (astra_path.exists() or astra_path.with_suffix(".raw.json").exists()
                                  or (prior_cache_root is not None and (prior_cache_root / f"{stem}-astra.json").is_file()))
+            if failure_collector is not None and failure_collector.stopped() and not translator_cached:
+                failure_collector.record_not_dispatched(index, group)
+                return None, prepare_span
         with measure.producer_substage("initial_translation",
                                        billing="local" if getattr(caller, "billing", None) == "local" or simulation_only or cache_only else "api"):
             with accounting.stage(f"layer2.translator.{request['targetLocale']}.{stem}",
@@ -1074,6 +1113,9 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             sol_path = out / f"{stem}-sol.json"
             reviewer_cached = (sol_path.exists() or sol_path.with_suffix(".raw.json").exists()
                                or (prior_cache_root is not None and (prior_cache_root / f"{stem}-sol.json").is_file()))
+            if failure_collector is not None and failure_collector.stopped() and not reviewer_cached:
+                failure_collector.record_not_dispatched(index, group)
+                return None, translator_span
         with measure.producer_substage("independent_review",
                                        billing="local" if getattr(caller, "billing", None) == "local" or simulation_only or cache_only else "api"):
             with accounting.stage(f"layer2.reviewer.{request['targetLocale']}.{stem}",
