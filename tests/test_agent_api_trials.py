@@ -168,6 +168,7 @@ class ScoringTests(unittest.TestCase):
         # The category alone is not an abstention: confidence stays high or no open question is named.
         self.assertFalse(trials.score_diagnosis({**abstain, 'confidence': 0.9}, expected, evidence)['correct'])
         self.assertFalse(trials.score_diagnosis({**abstain, 'unknowns': []}, expected, evidence)['correct'])
+        self.assertFalse(trials.score_diagnosis({**abstain, 'confidence': -99}, expected, evidence)['correct'])
 
     def test_citation_paths_drop_only_a_leading_dot_slash(self):
         evidence = trials.CASES / 'f06-zero-inference-seconds/evidence'
@@ -209,8 +210,15 @@ class ScoringTests(unittest.TestCase):
         unreported = trials.score_preflight(report, clean['expected'], good, clean['evidence'])
         self.assertFalse(unreported['correct'])
         self.assertEqual(len(unreported['requiredChecksUnreported']), 4)
-        report = {'go': True, 'items': [{'requirement': c['name'], 'status': 'ok', 'checked_with': c['name']}
-                                        for c in good]}
+        # Items that only name the tools, not the dependencies the calls checked, do not count.
+        unrelated = {'go': True, 'items': [{'requirement': 'item ' + c['name'], 'status': 'ok',
+                                            'checked_with': c['name']} for c in good]}
+        unmatched = trials.score_preflight(unrelated, clean['expected'], good, clean['evidence'])
+        self.assertFalse(unmatched['correct'])
+        self.assertEqual(len(unmatched['claimedButNotMatched']), 2)
+        report = {'go': True, 'items': [
+            {'requirement': ' '.join([c['name'], *c['arguments'].values()]), 'status': 'ok', 'checked_with': c['name']}
+            for c in good]}
         self.assertTrue(trials.score_preflight(report, clean['expected'], good, clean['evidence'])['correct'])
         wrong_target = [{'name': 'check_staged', 'arguments': {'path': 'xdocs/series-terminology.zh.md'}},
                         {'name': 'check_out_path', 'arguments': {
@@ -222,8 +230,8 @@ class ScoringTests(unittest.TestCase):
                          *good[2:]]
         blockers = [{'requirement': text, 'status': 'blocker', 'checked_with': tool} for text, tool in
                     (('plugin identity sha mismatch', 'compare_plugin_identity'),
-                     ('relative --out path', 'check_out_path'),
-                     ('series-terminology not staged', 'check_staged'),
+                     ('relative --out path artifacts/r/diagnostic-audio-r4', 'check_out_path'),
+                     ('docs/series-terminology.zh.md not staged', 'check_staged'),
                      ('symlink into blobs not under the mount', 'check_mount_resolves'))]
         self.assertTrue(trials.score_preflight({'items': blockers, 'go': False}, planted['expected'], planted_calls,
                                                planted['evidence'])['correct'])
@@ -410,8 +418,9 @@ class RunTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, 'session cap'):
             self.make(max_sessions=3).run('diagnose')
         rows = (self.out / 'timings.tsv').read_text().splitlines()
-        self.assertEqual(rows[0].split('\t')[0], 'invocation')
-        self.assertEqual(rows[1].split('\t')[1:3], ['diagnose', 'fail'])
+        # Stage and result stay the leading columns that export_run_digest.py reads.
+        self.assertEqual(rows[0].split('\t'), ['stage', 'result', 'seconds', 'invocation'])
+        self.assertEqual(rows[1].split('\t')[:2], ['diagnose', 'fail'])
         partial = json.loads((self.out / 'diagnose.json').read_text())
         self.assertTrue(partial['partial'])
         self.assertEqual(len(partial['rows']), 3)
@@ -697,6 +706,13 @@ class ScopeTests(unittest.TestCase):
         make(risk_repeats=2).run('risk')
         with self.assertRaises(ValueError):
             make(risk_repeats=1).run('risk')
+        # A changed answer key changes that case's bound identity, so old results cannot merge with it.
+        changed = trials.load_cases(only=['f01-plugin-identity', 'f03-relative-out'])
+        changed[0]['expected'] = {**changed[0]['expected'], 'causeKeywords': [['changed']]}
+        trial = make(case_ids=['f01-plugin-identity', 'f03-relative-out'])
+        trial.cases = changed
+        with self.assertRaisesRegex(ValueError, 'narrower or different'):
+            trial.run('diagnose')
         # Session limits bind too: a wider case list under other limits would mix runtime conditions.
         with self.assertRaisesRegex(ValueError, 'narrower or different'):
             make(case_ids=['f01-plugin-identity', 'f03-relative-out', 'f06-zero-inference-seconds'],

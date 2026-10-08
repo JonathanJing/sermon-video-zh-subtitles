@@ -42,7 +42,7 @@ python3 scripts/run_with_openai_environment.py --environment dev -- \
   .venv/bin/python scripts/experiments/agent_api_trials.py all --out artifacts/agent-api-trials/20261008-expanded
 ```
 
-两条命令用同一个 `--out`，第二条会复用第一条的风险分档结果。同一个 `--out` 里，每项试验只能用相同或更大的范围重跑（更多样例、计划或重复次数），不能缩小；范围记在 `scope.json`；后端、模型和 `--max-tool-calls`、`--max-seconds` 也绑定在里面，换任何一个都要用新的 `--out`。`summary.json` 的后端和模型按各项试验绑定的范围汇总，仍有未完成检查点的试验列在 `partialStages`，此时 `status` 为 `partial`。`all` 共 48 个 Agents 会话（排查 20、反驳 10+8、预检 10）加 180 次 Decisions 请求。会话数超过 `--max-sessions` 时整轮停下，已完成的部分写进 `partial` 检查点，提高上限后用同一 `--out` 续跑。只想试一个样例时加 `--case f05-asr-symlink-mount`（可重复）。`--model` 可换 Agents 会话的模型，默认 `gpt-6-luna`；换模型要用新的 `--out`。
+两条命令用同一个 `--out`，第二条会复用第一条的风险分档结果。同一个 `--out` 里，每项试验只能用相同或更大的范围重跑（更多样例、计划或重复次数），不能缩小；范围记在 `scope.json`；后端、模型、`--max-tool-calls`、`--max-seconds`、提示词，以及每个样例、计划和动作的证据与答案哈希（记为 `id@hash`）也绑定在里面，换任何一个或改了样例内容都要用新的 `--out`。`summary.json` 的后端和模型按各项试验绑定的范围汇总，仍有未完成检查点的试验列在 `partialStages`，此时 `status` 为 `partial`。`all` 共 48 个 Agents 会话（排查 20、反驳 10+8、预检 10）加 180 次 Decisions 请求。会话数超过 `--max-sessions` 时整轮停下，已完成的部分写进 `partial` 检查点，提高上限后用同一 `--out` 续跑。只想试一个样例时加 `--case f05-asr-symlink-mount`（可重复）。`--model` 可换 Agents 会话的模型，默认 `gpt-6-luna`；换模型要用新的 `--out`。
 
 结束后按[运行报告流程](test-run-retrospective.zh.md)导出并开报告 PR：
 

@@ -292,10 +292,13 @@ class EvidenceTools:
         if self.log_path is not None:
             # Appended and synced before handling, so a resumed session still sees every call made before a crash,
             # including one whose durable tool receipt the runner will reuse without calling the handler again.
+            created = not self.log_path.exists()
             with open(self.log_path, 'a', encoding='utf-8') as log:
                 log.write(json.dumps(call, ensure_ascii=False) + '\n')
                 log.flush()
                 os.fsync(log.fileno())
+            if created:
+                _fsync_directory(self.log_path.parent)
         if name == 'list_files':
             return {'files': [{'path': str(p.relative_to(self.root)), 'bytes': p.stat().st_size} for p in self._files()]}
         if name == 'read_file':
@@ -475,7 +478,7 @@ def score_diagnosis(report, expected, evidence):
         # Abstaining means saying so: the category, low confidence, and the open questions named.
         confidence = report.get('confidence')
         abstained = (report.get('category') == 'insufficient_evidence'
-                     and isinstance(confidence, (int, float)) and confidence < 0.5
+                     and isinstance(confidence, (int, float)) and 0 <= confidence < 0.5
                      and bool([u for u in report.get('unknowns') or [] if str(u).strip()]))
         return {'submitted': True, 'correct': abstained, 'abstainedCorrectly': abstained,
                 'categoryOk': category_ok, 'confidence': report.get('confidence'),
@@ -529,7 +532,7 @@ def score_preflight(report, expected, calls, plan_root=None):
     return {'submitted': True, 'go': report.get('go'), 'expectedGo': not expected['blockers'],
             'goCorrect': go_correct, 'goConsistent': consistent,
             'correct': go_correct and consistent and not missed and not extra and not missing_checks
-                       and not unreported,
+                       and not unreported and not unmatched,
             'requiredChecksMissing': missing_checks, 'requiredChecksUnreported': unreported,
             'blockersFound': found, 'blockersMissed': missed,
             'extraBlockers': len(extra),
@@ -811,8 +814,11 @@ class Trials:
 
     def diagnose(self, arms=('raw', 'timeline')):
         rows = self._rows('diagnose')
-        for index, case in enumerate(self.cases):
-            # Alternate AB/BA so warm-up or throttling is not confounded with the arm.
+        library = [c['id'] for c in load_cases()]
+        for case in self.cases:
+            # Alternate AB/BA by position in the full library, so a widened subset keeps each case's order and
+            # warm-up or throttling is not confounded with the arm.
+            index = library.index(case['id']) if case['id'] in library else 0
             for arm in (arms if index % 2 == 0 else tuple(reversed(arms))):
                 tools = EvidenceTools(case['evidence'], timeline=arm == 'timeline')
                 payload = _payload(self.model, DIAGNOSE_INSTRUCTIONS, tools.definitions(_diagnosis_schema()),
@@ -901,9 +907,9 @@ class Trials:
             started = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
             with open(timings, 'a', encoding='utf-8') as stream:
                 if new:
-                    stream.write('invocation\tstage\tresult\tseconds\n')
+                    stream.write('stage\tresult\tseconds\tinvocation\n')
                 for row in self.timings:
-                    stream.write('\t'.join(map(str, (started, *row))) + '\n')
+                    stream.write('\t'.join(map(str, (*row, started))) + '\n')
 
     def _merged_results(self):
         """This run's stages plus rows saved by earlier runs into this --out (a finished stage such as risk before
@@ -938,20 +944,32 @@ class Trials:
             raise ValueError(f'{stage}: --out was run with selection {saved[stage]}; a narrower or different one '
                              'needs a new --out')
         saved[stage] = scope
-        path.write_text(json.dumps(saved, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+        # Durable before any paid work of the stage, so a crash cannot leave receipts without their scope.
+        _write_durably(path, json.dumps(saved, ensure_ascii=False, indent=2) + '\n')
 
     def _run(self, trial):
         results = self.results
         # Backend, model and session limits must match across reruns, so every merged row ran under one condition.
         agent = {'backend': self.backend, 'model': self.model, 'maxToolCalls': self.max_tool_calls,
                  'maxSeconds': self.max_seconds}
-        cases = {**agent, 'cases': sorted(c['id'] for c in self.cases)}
-        planted = sorted(w['case'] for w in _read_json(WRONG_DIAGNOSES)['diagnoses'] if w['case'] in cases['cases'])
-        for stage, scope in (('timeline', {'cases': cases['cases']}), ('diagnose', cases),
-                             ('refute', {**cases, 'planted': planted}),
-                             ('preflight', {**agent, 'plans': sorted(p['id'] for p in self.plans)}),
+        # Each item is bound as id@hash of its evidence and answer key, and each stage to its prompt, so changed
+        # fixtures or instructions cannot merge with results saved before the change.
+        def tag(item_id, value):
+            return f'{item_id}@{_sha(value)[:12]}'
+        case_ids = {c['id'] for c in self.cases}
+        fixtures = sorted(tag(c['id'], [evidence_sha(c['evidence']), c['expected']]) for c in self.cases)
+        cases = {**agent, 'prompt': _sha(DIAGNOSE_INSTRUCTIONS)[:12], 'cases': fixtures}
+        planted = sorted(tag(w['case'], w) for w in _read_json(WRONG_DIAGNOSES)['diagnoses'] if w['case'] in case_ids)
+        policy = _read_json(RISK)
+        for stage, scope in (('timeline', {'cases': fixtures}), ('diagnose', cases),
+                             ('refute', {**cases, 'prompt': _sha([DIAGNOSE_INSTRUCTIONS, REFUTE_INSTRUCTIONS])[:12],
+                                         'planted': planted}),
+                             ('preflight', {**agent, 'prompt': _sha(PREFLIGHT_INSTRUCTIONS)[:12],
+                                            'plans': sorted(tag(p['id'], [evidence_sha(p['evidence']), p['expected']])
+                                                            for p in self.plans)}),
                              ('risk', {'backend': self.backend, 'model': DECISIONS_MODEL, 'repeats': self.risk_repeats,
-                                       'actions': sorted(a['id'] for a in _read_json(RISK)['actions'])})):
+                                       'actions': sorted(tag(a['id'], [a, risk_request(a, policy['tiers'])])
+                                                         for a in policy['actions'])})):
             if trial == 'all' or trial == stage or (trial == 'refute' and stage == 'diagnose'):
                 self._bind_scope(stage, scope)
         if trial in ('timeline', 'all'):
