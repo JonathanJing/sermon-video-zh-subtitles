@@ -29,7 +29,10 @@ from scripts import codex_layer2_diagnostic as diagnostic
 
 HOST = 'achillesjing@192.168.1.152'
 CHECKPOINT = '/home/achillesjing/dgx-spark-benchmark/results/sermon-voice-poc-20260905/checkpoints/checkpoint-epoch-0'
-ASR = '/home/achillesjing/sermon-speech-runtime/model-cache/hub/models--Qwen--Qwen3-ASR-0.6B/snapshots/5eb144179a02acc5e5ba31e748d22b0cf3e303b0'
+# HF snapshot files are symlinks into ../../blobs, so mount the whole model repo
+# directory and address the pinned snapshot inside it.
+ASR_HUB = '/home/achillesjing/sermon-speech-runtime/model-cache/hub/models--Qwen--Qwen3-ASR-0.6B'
+ASR_SNAPSHOT = '/asr-hub/snapshots/5eb144179a02acc5e5ba31e748d22b0cf3e303b0'
 MEDIA_TOOLS = '/home/achillesjing/sermon-mfa-runtime/env'
 BROKER = '/home/achillesjing/dgx-spark-benchmark/results/next-concurrency-605s-shared-gpu-20261005-r3'
 IMAGES = {'tts': 'sha256:e615da846c45d026d221bda0f168ae35022af18ac7ec4e5245d04fb62c314f14',
@@ -183,7 +186,7 @@ def docker_commands(args, session=None, hold=None):
               '-e', 'XDG_CACHE_HOME=/tmp/audio-cache', '-e', 'TRITON_CACHE_DIR=/tmp/audio-triton',
               '-e', 'TORCHINDUCTOR_CACHE_DIR=/tmp/audio-inductor',
               '-v', remote_stage + ':' + str(ROOT), '-v', CHECKPOINT + ':/checkpoint:ro',
-              '-v', ASR + ':/asr-model:ro', '-v', MEDIA_TOOLS + ':/media-tools:ro',
+              '-v', ASR_HUB + ':/asr-hub:ro', '-v', MEDIA_TOOLS + ':/media-tools:ro',
               '-v', BROKER + ':/shared-gpu', '-w', str(ROOT), '--entrypoint', '/usr/bin/python']
     if session is not None:
         common[2:2] = ['--label', 'tongxing.spark.session=' + session.environment['SPARK_EXCLUSIVE_SESSION_ID'],
@@ -201,7 +204,7 @@ def docker_commands(args, session=None, hold=None):
         '--out', str(output / 'tts'), '--batch-size', '8', '--replicas', '8', '--cpu-workers', '4',
         '--cpu-queue-units', '16', '--resource-policy', str(policy)]
     asr = common + [IMAGES['asr'], worker, 'asr', '--tts-manifest', str(output / 'tts' / 'manifest.json'),
-        '--model-path', '/asr-model', '--out', str(output / 'asr'), '--batch-size', '8',
+        '--model-path', ASR_SNAPSHOT, '--out', str(output / 'asr'), '--batch-size', '8',
         '--resource-policy', str(policy)]
     return [tts, asr]
 
