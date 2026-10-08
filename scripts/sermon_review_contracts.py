@@ -59,7 +59,8 @@ def _pairs(pairs):
     return result
 
 
-def decode_json(data, *, max_bytes=MAX_BYTES):
+def decode_json(data, *, max_bytes=None):
+    max_bytes = MAX_BYTES if max_bytes is None else max_bytes
     require(type(data) is bytes and len(data) <= max_bytes, 'private_contract_size_limit')
     try:
         return json.loads(data.decode('utf-8'), object_pairs_hook=_pairs,
@@ -68,8 +69,9 @@ def decode_json(data, *, max_bytes=MAX_BYTES):
         raise ContractError('invalid_json_bytes') from exc
 
 
-def read_snapshot(path, *, max_bytes=MAX_BYTES):
+def read_snapshot(path, *, max_bytes=None):
     """Read a caller-selected regular file; no paths are accepted from receipts."""
+    max_bytes = MAX_BYTES if max_bytes is None else max_bytes
     require(type(max_bytes) is int and 0 < max_bytes, 'invalid_snapshot_limit')
     fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
     try:

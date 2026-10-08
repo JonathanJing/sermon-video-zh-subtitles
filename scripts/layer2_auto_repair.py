@@ -128,6 +128,14 @@ def classify_review(semantic: dict) -> tuple[list[str], str]:
     return sorted(codes), "repair_translation"
 
 
+# Umbrella codes lump unrelated defects (one group a negation, another a number,
+# a third a name). They stop dispatch only when consecutive, never by scattered
+# count at the end of a round.
+UMBRELLA_CODES = frozenset({"negation_number_name_error", "review_issue_open", "review_uncertainty"})
+# Repository waiver policy: at most four repairs per English source unit.
+MAX_REPAIRS_PER_SOURCE_UNIT = 4
+
+
 def systemic_threshold(total_groups: int) -> int:
     return max(SYSTEMIC_MINIMUM_GROUPS, math.ceil(total_groups * SYSTEMIC_FRACTION))
 
@@ -243,7 +251,7 @@ class FailureCollector:
         with self._lock:
             if self.systemic is None:
                 for code, count in sorted(self._counts().items()):
-                    if count >= self.threshold:
+                    if count >= self.threshold and code not in UMBRELLA_CODES:
                         self.systemic = {"failureCode": code, "groups": count,
                                          "consecutiveGroups": self._consecutive(code),
                                          "threshold": self.threshold,
@@ -385,6 +393,8 @@ def decide(failure: dict, history: list[dict], value: dict) -> tuple[str, str]:
         held = [reason for reason in history[-1]["decisions"] if reason != "repairable_content_failure"]
         if held:
             return "stop", held[0]
+    if sum(row["repaired"] for row in history) >= MAX_REPAIRS_PER_SOURCE_UNIT:
+        return "stop", "repair_limit_per_source_unit"
     current = fingerprint(value, failure["sourceUnitIds"], failure["failureCodes"])
     seen = {item for row in history for item in row["fingerprints"]}
     if current in seen:

@@ -148,7 +148,7 @@ class LoopTests(unittest.TestCase):
         self.assertEqual(receipt["initialSpend"]["calls"], 4 * 2)
 
     def test_scattered_same_failures_run_to_the_end_then_count_as_systemic(self):
-        same = {f"g{i}": failing("negationsNumbersNames") for i in (2, 5, 9, 12)}
+        same = {f"g{i}": failing("completeMeaning") for i in (2, 5, 9, 12)}
         fleet = Fleet(self, 46, [same])
         receipt = self.drive(fleet)
         self.assertEqual(fleet.calls, ["all"])
@@ -156,6 +156,17 @@ class LoopTests(unittest.TestCase):
         self.assertEqual({row["reasonCode"] for row in receipt["stoppedGroups"]}, {"systemic_rule_or_policy_issue"})
         self.assertEqual(receipt["gatesPassed"], [])
         self.assertEqual(receipt["releaseAuthority"], "none")
+
+    def test_scattered_umbrella_failures_are_repaired_not_systemic(self):
+        # negation_number_name_error lumps unrelated defects, so it never counts as
+        # systemic at the end of a round; each group takes its own repair.
+        same = {f"g{i}": failing("negationsNumbersNames") for i in (2, 5, 9, 12)}
+        fleet = Fleet(self, 46, [same])
+        receipt = self.drive(fleet)
+        self.assertEqual(fleet.calls[0], "all")
+        self.assertEqual(sorted(fleet.calls[1]), ["g12", "g2", "g5", "g9"])
+        self.assertEqual(len(fleet.calls), 2)
+        self.assertEqual(receipt["status"], "all_groups_passed")
 
     def test_two_scattered_failures_are_repaired_not_systemic(self):
         fleet = Fleet(self, 46, [{"g2": failing("completeMeaning"), "g30": failing("completeMeaning")}])

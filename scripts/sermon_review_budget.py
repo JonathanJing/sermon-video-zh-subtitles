@@ -124,7 +124,8 @@ class BudgetStore:
         from scripts.sermon_review_contracts import MAX_BYTES
         require(max_ledger_bytes is None or (type(max_ledger_bytes) is int and MAX_BYTES <= max_ledger_bytes
                                              <= 64 * 1024 * 1024), 'invalid_budget_ledger_limit')
-        self.max_ledger_bytes = MAX_BYTES if max_ledger_bytes is None else max_ledger_bytes
+        # None follows the shared limit at use time, as before.
+        self.max_ledger_bytes = max_ledger_bytes
         self.root = Path(root).resolve()
         self.authority = _authority(authority)
         self.authority_sha256 = canonical_sha256(self.authority)

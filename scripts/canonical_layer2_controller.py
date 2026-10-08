@@ -227,6 +227,14 @@ def _inputs(config, locale, view):
     return values['source'], values['anchor'], policy
 
 
+def _unreconciled_paid_call(config, locale):
+    """A started-call marker survives only while a paid request's outcome is
+    unknown: the runner removes it once the response is saved. A job that
+    failed with one still present is uncertainty, not a finished failure."""
+    lane = config.lanes.get(locale)
+    return lane is not None and lane['output'].is_dir() and any(lane['output'].rglob('*.started.json'))
+
+
 def _locale_capacity(config):
     if config.concurrency_profile:
         return config.concurrency_profile['maxActiveLocales']
@@ -279,6 +287,10 @@ class Controller:
                   if row['workUnitId'].startswith('text.') and row['status'] in jobs.ACTIVE | {'uncertain'}]
         if any(row['status'] == 'uncertain' for row in active):
             return True  # preserve the existing run-wide unknown reconciliation barrier
+        if any(row['workUnitId'].startswith('text.') and row['status'] == 'failed'
+               and _unreconciled_paid_call(self.config, row['workUnitId'][len('text.'):])
+               for row in view['durableJobInspection']['jobs']):
+            return True  # a failed worker left a paid call with an unknown outcome
         return len(active) >= _locale_capacity(self.config)
 
     def _choose(self, view, requested_locale=None):

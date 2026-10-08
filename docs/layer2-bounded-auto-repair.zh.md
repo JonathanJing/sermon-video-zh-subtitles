@@ -84,7 +84,7 @@ runner 新增"收集失败"模式：门 1 或门 2 不通过时保存证据、�
 阈值为 **max(3, 总组数的 1%)**：474 组时 5，46 组时 3。两种判法（Jony 2026-10-08 决定）：
 
 - **运行中早停**：只在同一失败码出现在**连续**的组里、连续数达到阈值时，立即停止派发后续组。规则没送到模型这类问题会让每一组接连失败，早停能省下整批；分散的失败不早停。
-- **跑完再判**：整轮结束后，同一失败码的组数达到阈值，判为系统性。
+- **跑完再判**：整轮结束后，同一失败码的组数达到阈值，判为系统性。`negation_number_name_error`、`review_issue_open`、`review_uncertainty` 是把不相关缺陷归在一起的笼统码（三组可能分别错了否定、数字、人名），只参与连续早停，不参与跑完再判；规则没送到模型时它们仍会接连出现，被早停拦下。
 
 两种情况都不修复，停下并给出 `systemic_rule_or_policy_issue`（收据记 `stoppedDispatch` 区分），交给工程检查规则和提示词。
 
@@ -96,7 +96,7 @@ runner 新增"收集失败"模式：门 1 或门 2 不通过时保存证据、�
 
 对每个要重译的组，生成 `partial_repair_brief`（schema `sermon-target-language-partial-repair-brief-v1`）：
 
-- `failedRole`、`failedCacheSha256`：指向不通过的 Sol 缓存；
+- `failedRole`、`failedCacheSha256`：指向不通过的 Sol 缓存；门 4 触发的修复（Sol 已通过、回译 QC 不通过）不能借用 Sol 缓存当失败证据，修复说明要升版，带上回译 QC 收据哈希和它绑定的候选与组，派发前独立核对（门 4 实现时一并做）；
 - `failureReason`：失败码和 Sol 或回译 QC 的证据原文（截断到固定长度）；
 - `instruction`：按失败码的模板，加上证据和英文源句，标明是机器写的修复说明。
 
@@ -112,7 +112,7 @@ runner 新增"收集失败"模式：门 1 或门 2 不通过时保存证据、�
 | 系统性 | 第 3 节 | 整个语言停止，修复调用为 0 |
 | 需要人或源文 | 分类为请求人工、源文复核或交给工程 | 这一组停止重译 |
 
-修复的付费调用从 `canonical_layer2_budget.py` 的授权和共享账本里预留，10% 是其下的子上限，不另记一份。调用上限在派发前检查；token 上限要在 controller 里按每个请求的最坏情况（输入加 `max_completion_tokens`）原子预留，放不下就不派发。循环自己只能在每轮结束后核对 token，算不上硬上限。
+修复的付费调用从 `canonical_layer2_budget.py` 的授权和共享账本里预留，10% 是其下的子上限，不另记一份。调用上限在派发前检查，循环按整对（译者加复核）计算还能修几组，不会只派译者。token 上限要在 controller 里按每个请求的最坏情况（输入加 `max_completion_tokens`）原子预留，放不下就不派发。预算账本按单次请求预留，所以全局授权要比循环的子上限至少多留一对的余量；万一复核在译者之后被预算拒绝，job 失败待对账，未经复核的译文不会进入候选。循环自己只能在每轮结束后核对 token，算不上硬上限。
 
 ### 6. 停下之后
 
@@ -138,7 +138,7 @@ runner 新增"收集失败"模式：门 1 或门 2 不通过时保存证据、�
 1. `scripts/run_target_language_models.py`：1105 行和 `_stop_after_plugin_group_failure` 增加"收集失败"模式和运行中早停。默认行为不变。
 2. 插件续跑：现在 `require_plugin_stop_repair` 要求复用插件停止的运行时必须附带对该组的 reviewer 重译，与"不改写译文"冲突。收集失败模式不写 `plugin-group-stop.json`，避开了这条限制；但插件修好后（policy 里的 `pluginImplementationSha256` 变了）还没有零调用的续跑路径：现有的 cache-only 迁移 `migrate_target_language_model_cache.migrate` 要求旧运行有完整的 `evidence.json`，并用旧插件重新准入，而插件失败的运行没有证据、旧插件也会再次拒绝。需要扩展迁移：从已保存的模型缓存直接校验并重建，不经旧插件准入，再用新插件重放。
 3. 新增 `scripts/layer2_auto_repair.py`：读失败清单 → 分类 → 系统性判断 → 生成修复说明 → 调用 runner 重跑 → 回译 QC（只查改过的组）→ 循环，直到全部通过或停止；全部通过后在最终成品上校准、签发豁免。分类用循环自己的路由表；`plan_repair` 需要 D1 收据，runner 只存 Sol 原始结果，第一版不经过它，直接用失败码和账本判断。
-4. 循环在 canonical controller 同一个 locale job 的租约内运行（每轮生产只允许一个活跃 locale job）。`scripts/run_scripture_gated_round.py` 和 controller 调用这个循环，而不是直接调用 runner。
+4. 每个语言的循环在自己那个 locale job 的租约内运行；同时活跃的语言数取执行配置（v1 为 1，v2 profile 和 v3 的 `maxActiveLocales` 最多 3），不另设上限。`scripts/run_scripture_gated_round.py` 和 controller 调用这个循环，而不是直接调用 runner。
 5. 正式执行路径：现在的独立入口跑不了修复。`--budget-config` 入口拒绝 `--partial-repair-brief` 和 `--reuse-from`；没有预算绑定的 API 请求会被拒绝；runner 在 transport 带 `execution_identity` 时禁止跨运行复用缓存。所以需要 controller 原生的修订和缓存复用，加上持久的预算预留，而不是让 controller 去调这些独立参数。已按此实现为执行配置 v3（见第八节）：修复在 controller worker 内完成，独立入口的限制保持不变。
 
 ## 六、验收
