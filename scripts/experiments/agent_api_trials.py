@@ -37,6 +37,7 @@ import os
 from pathlib import Path
 import re
 import sys
+import threading
 import time
 import urllib.error
 import urllib.request
@@ -107,6 +108,9 @@ def evidence_sha(directory):
 
 # ---------------------------------------------------------------- timeline
 
+END_FIELD = re.compile(r'end|finish|complet|stop', re.I)
+
+
 def evidence_files(root):
     """Regular files under root; symlinks and anything resolving outside root are never exposed."""
     root = Path(root).resolve()
@@ -125,7 +129,7 @@ def build_timeline(evidence):
             value = _read_json(path)
             stamps = list(_time_fields(value))
             # The file's final status, exit code and error describe its end, not its start.
-            final_key = max(stamps, key=lambda item: item[1])[0] if stamps else None
+            final_key = max(stamps, key=lambda item: (item[1], bool(END_FIELD.search(item[0]))))[0] if stamps else None
             summary = {k: value[k] for k in ('command', 'status', 'exitCode') if isinstance(value, dict) and k in value}
             if isinstance(value, dict) and isinstance(value.get('error'), dict):
                 summary['error'] = value['error'].get('message')
@@ -444,6 +448,8 @@ def score_preflight(report, expected, calls):
         (found if any(_groups_match(_text(b), groups) for b in blockers) else missed).append(key)
     used = {c['name'] for c in calls}
     checks = {t['name'] for t in PREFLIGHT_TOOLS}
+    # A go verdict counts only after every deterministic check actually ran.
+    missing_checks = sorted(checks - used)
     claimed = {i.get('checked_with') for i in report.get('items', []) if isinstance(i, dict)} - {'none', None, ''}
     unmatched = []
     for item in report.get('items', []):
@@ -451,7 +457,8 @@ def score_preflight(report, expected, calls):
                 and not any(_call_matches(c, item) for c in calls):
             unmatched.append({'requirement': item.get('requirement'), 'checked_with': item['checked_with']})
     return {'submitted': True, 'go': report.get('go'), 'expectedGo': not expected['blockers'],
-            'goCorrect': report.get('go') == (not expected['blockers']),
+            'goCorrect': report.get('go') == (not expected['blockers']) and (bool(expected['blockers']) or not missing_checks),
+            'requiredChecksMissing': missing_checks,
             'blockersFound': found, 'blockersMissed': missed,
             'extraBlockers': max(0, len(blockers) - len(found)),
             'checkToolsUsed': sorted(used & {t['name'] for t in PREFLIGHT_TOOLS}),
@@ -595,7 +602,8 @@ class Trials:
         self.timings = []
 
     def _session(self, directory, payload, tools):
-        if not (Path(directory).parent / (Path(directory).name + '.binding.json')).exists():
+        # Only saved runner state proves an existing remote session; anything else starts a new one.
+        if not (Path(directory) / 'state.json').exists():
             if self.sessions_started >= self.max_sessions:
                 raise RuntimeError(f'session cap {self.max_sessions} reached; raise --max-sessions to continue')
             self.sessions_started += 1
@@ -688,6 +696,16 @@ class Trials:
 
     def run(self, trial):
         self.out.mkdir(parents=True, exist_ok=True)
+        try:
+            return self._run(trial)
+        finally:
+            # Written even when a stage raises, so the run report shows the failed stage and its time.
+            with open(self.out / 'timings.tsv', 'w', encoding='utf-8') as stream:
+                stream.write('stage\tresult\tseconds\n')
+                for row in self.timings:
+                    stream.write('\t'.join(map(str, row)) + '\n')
+
+    def _run(self, trial):
         results = {}
         if trial in ('timeline', 'all'):
             results['timeline'] = self.write('timeline-summary', self._timed('timeline', self.timeline))
@@ -710,10 +728,6 @@ class Trials:
                    'agentUsage': _sum_usage(results),
                    'decisionsUsage': _sum_decisions_usage(results)}
         self.write('summary', summary)
-        with open(self.out / 'timings.tsv', 'w', encoding='utf-8') as stream:
-            stream.write('stage\tresult\tseconds\n')
-            for row in self.timings:
-                stream.write('\t'.join(map(str, row)) + '\n')
         return summary
 
 
@@ -859,22 +873,35 @@ class DecisionsClient:
                                      headers={'Authorization': 'Bearer ' + self.api_key,
                                               'Content-Type': 'application/json', **project_headers(self.api_key)})
         opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), agents._NoRedirect())
-        deadline = time.monotonic() + self.timeout
-        try:
-            with opener.open(req, timeout=self.timeout) as response:
-                body = bytearray()
-                while chunk := response.read(65536):
-                    body += chunk
-                    if len(body) > MAX_DECISION_BYTES:
-                        raise RuntimeError('Decisions response exceeded the size limit; outcome unknown')
-                    if time.monotonic() > deadline:
-                        raise TimeoutError('Decisions response exceeded the total deadline; outcome unknown')
-                return json.loads(bytes(body))
-        except urllib.error.HTTPError as exc:
-            body = exc.read(2000).decode('utf-8', 'replace')
-            exc.close()
-            # A rejected request was not processed; record it so the run can stop cleanly.
-            return {'error': {'status': exc.code, 'body': re.sub(r'sk-[A-Za-z0-9_-]+', 'sk-REDACTED', body)}}
+        outcome = {}
+
+        def exchange():
+            try:
+                with opener.open(req, timeout=self.timeout) as response:
+                    body = bytearray()
+                    while chunk := response.read(65536):
+                        body += chunk
+                        if len(body) > MAX_DECISION_BYTES:
+                            raise RuntimeError('Decisions response exceeded the size limit; outcome unknown')
+                    outcome['value'] = json.loads(bytes(body))
+            except urllib.error.HTTPError as exc:
+                body = exc.read(2000).decode('utf-8', 'replace')
+                exc.close()
+                # A rejected request was not processed; record it so the run can stop cleanly.
+                outcome['value'] = {'error': {'status': exc.code,
+                                              'body': re.sub(r'sk-[A-Za-z0-9_-]+', 'sk-REDACTED', body)}}
+            except BaseException as exc:
+                outcome['error'] = exc
+
+        # A daemon thread bounds the whole exchange; a trickling server cannot hold the run past the deadline.
+        worker = threading.Thread(target=exchange, daemon=True)
+        worker.start()
+        worker.join(self.timeout)
+        if worker.is_alive():
+            raise TimeoutError('Decisions request exceeded the total deadline; outcome unknown')
+        if 'error' in outcome:
+            raise outcome['error']
+        return outcome['value']
 
 
 def fake_decisions(request):

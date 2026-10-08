@@ -2,6 +2,7 @@ import json
 import os
 from pathlib import Path
 import tempfile
+import time
 import unittest
 from unittest.mock import patch
 
@@ -59,6 +60,12 @@ class FixtureTests(unittest.TestCase):
         end = next(e for e in events if e['field'] == 'endedAt')
         self.assertNotIn('status', start['event'])
         self.assertEqual(end['event']['status'], 'failed')
+        tied = [e for e in trials.build_timeline(trials.CASES / 'f08-monitor-bad-substitution/evidence')['events']
+                if e['source'] == 'outcome.json']
+        by_field = {e['field']: e for e in tied}
+        self.assertEqual(by_field['startedAt']['at'], by_field['endedAt']['at'])
+        self.assertNotIn('status', by_field['startedAt']['event'])
+        self.assertIn('status', by_field['endedAt']['event'])
 
     def test_timeline_lists_every_evidence_file_including_untimed_ones(self):
         for case in trials.load_cases():
@@ -137,6 +144,15 @@ class ScoringTests(unittest.TestCase):
         same = [{'name': 'check_staged', 'arguments': {'path': './docs/series-terminology.zh.md'}}]
         self.assertEqual(trials.score_preflight(report, expected, same)['claimedButNotMatched'], [])
 
+    def test_clean_plan_go_needs_every_check_to_have_run(self):
+        expected = {'blockers': {}}
+        report = {'items': [], 'go': True}
+        self.assertFalse(trials.score_preflight(report, expected, [])['goCorrect'])
+        calls = [{'name': t['name'], 'arguments': {}} for t in trials.PREFLIGHT_TOOLS]
+        score = trials.score_preflight(report, expected, calls)
+        self.assertTrue(score['goCorrect'])
+        self.assertEqual(score['requiredChecksMissing'], [])
+
     def test_refuter_is_scored_against_whether_the_diagnosis_was_right(self):
         self.assertTrue(trials.score_refutation({'verdict': 'upheld'}, True)['refuterRight'])
         self.assertTrue(trials.score_refutation({'verdict': 'refuted'}, True)['falseRefutation'])
@@ -198,9 +214,11 @@ class RunTests(unittest.TestCase):
         binding.parent.mkdir(parents=True, exist_ok=True)
         binding.write_text(json.dumps(payload_sha['binding']) + '\n')
         self.assertIs(trials.run_session, original)
+        with self.assertRaisesRegex(RuntimeError, 'session cap'):
+            self.make(case_ids=['f01-plugin-identity'], max_sessions=0).run('diagnose')
         summary = self.make(case_ids=['f01-plugin-identity']).run('diagnose')
         self.assertTrue((session / 'result.json').exists())
-        self.assertEqual(len(summary['diagnoseByArm']), 2)
+        self.assertEqual(summary['agentSessionsStarted'], 2)
 
     def test_oversized_decision_response_is_an_unknown_outcome(self):
         class Body:
@@ -255,9 +273,34 @@ class RunTests(unittest.TestCase):
             self.assertEqual(trials.main(['timeline', '--out', str(self.out)]), 0)
         self.assertEqual(json.loads((self.out / 'summary.json').read_text())['evidence'], 'deterministic')
 
-    def test_session_cap_stops_before_creating_more_sessions(self):
+    def test_session_cap_stops_before_creating_more_sessions_and_keeps_timings(self):
         with self.assertRaisesRegex(RuntimeError, 'session cap'):
             self.make(max_sessions=3).run('diagnose')
+        rows = (self.out / 'timings.tsv').read_text().splitlines()
+        self.assertEqual(rows[1].split('\t')[:2], ['diagnose', 'fail'])
+
+    def test_slow_decisions_response_hits_the_total_deadline(self):
+        class Body:
+            def read(self, _size):
+                time.sleep(0.05)
+                return b' '
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_):
+                return False
+
+        class Opener:
+            def open(self, *_args, **_kwargs):
+                return Body()
+        client = trials.DecisionsClient(self.out, api_key='sk-test', timeout=0.3)
+        with patch('urllib.request.build_opener', return_value=Opener()), \
+                patch('scripts.sermon_openai_runtime.project_headers', return_value={}):
+            began = time.monotonic()
+            with self.assertRaisesRegex(TimeoutError, 'total deadline'):
+                client.decide('a01', {'q': 1})
+        self.assertLess(time.monotonic() - began, 2)
 
     def test_rejected_decision_fails_the_trial_and_a_rerun_retries_only_that_action(self):
         sent = []
