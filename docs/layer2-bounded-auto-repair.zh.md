@@ -40,7 +40,9 @@
 | 3. 候选准入 | 组装成整语言候选，哈希、覆盖、schema 校验通过 | 现有候选准入 | 交给工程 |
 | 4. 回译 QC | 回译比对无重大问题，确定性检查通过；本次 QC 有匹配本成品的校准（检出率 ≥95%、每类 ≥90%、误报 ≤10%） | `target_text_auto_qc.py`、`auto_qc_seeded_errors.py` | 失败组带 QC 证据重译 |
 
-四道门都过，签发译文豁免（`machine_quality_release_basis.py`），按 10-06 决定自动发布，页面显示机器质检说明，发布后人工抽查。
+四道门都过，在**最终成品**上重新做注错校准（修复改变了候选和组输入哈希，修复前的校准不能签发），再签发译文豁免（`machine_quality_release_basis.py`），按 10-06 决定自动发布，页面显示机器质检说明，发布后人工抽查。
+
+门 4 的重跑只能检查改过的组：`target_text_auto_qc.screen` 现在每次对整篇每组调用两次模型，修复后整篇重跑（474 组约 948 次）会远超修复花费上限。接入门 4 之前，要先给 QC 加按组、绑定产物哈希的复用（未改的组沿用上次结果），或者把整篇 QC 和最终校准作为单独授权的一次花费，不计入修复上限。
 
 第 1 道门不改提示词：Sol 仍可以在复核时直接改正初译。它的通过不算放行，独立性由第 4 道门保证。改复核提示词会改变 policy 和缓存身份，不在本设计范围内。
 
@@ -58,20 +60,22 @@ runner 新增"收集失败"模式：门 1 或门 2 不通过时保存证据、�
 
 | 来源 | 条件 | 失败码 | 动作 |
 |---|---|---|---|
-| Sol | `uncertainty` 非空（优先于下面各行） | `evidence_insufficient` | 请求人工 |
+| Sol | `uncertainty` 非空 | `review_uncertainty`（新增，可与其他失败码并存） | 重译；同一指纹重现即请求人工 |
 | Sol | `completeMeaning` 不通过 | `meaning_omission` | 重译 |
 | Sol | `noAddedMeaning` 不通过 | `meaning_addition` | 重译 |
 | Sol | `negationsNumbersNames` 不通过 | `negation_number_name_error`（新增，不按 issue 文字细分） | 重译 |
 | Sol | `quotationAttribution` 不通过 | `quotation_attribution_error` | 重译；同一指纹重现即转源文复核 |
-| Sol | 四个 check 都通过，但 `status` 为 fail 或 `issues` 非空 | `evidence_insufficient` | 请求人工 |
+| Sol | 四个 check 都通过、没有 uncertainty，但 `status` 为 fail 或 `issues` 非空 | `review_issue_open`（新增） | 重译；同一指纹重现即请求人工 |
 | 插件 | Sol 通过但插件拒绝 | `language_plugin_failed` | 交给工程，不改写译文 |
-| 回译 QC | 回译判出重大问题 | 沿用 QC 的问题码 | 重译 |
+| 回译 QC | 回译判出重大问题 | 按问题类型映射：`omission` → `meaning_omission`，`addition` → `meaning_addition`，`negation`／`number`／`name` → `negation_number_name_error`，`scripture_reference` → `scripture_reference_error`（新增），`meaning_shift` → `meaning_shift`（新增） | 重译 |
 | 执行 | 调用失败、返回无效 | `review_execution_failed` | 续跑 |
 | 执行 | 结果未知 | `review_outcome_unknown` | 对账，不重发 |
 
 多个 check 同时失败时，一组记全部失败码，指纹按排序后的失败码集合计算。
 
-这张表沿用 `scripts/sermon_repair_planning.py` 的 `FAILURE_ACTIONS`，但新增 `negation_number_name_error` 和引文归属的"重现即转源文复核"，需要升 `ROUTING_VERSION`。
+按 AGENTS.md，Sol 的任何失败、issue 或 uncertainty 都先开新修订重译一次；只有同一指纹在重译后重现，才转人工或源文复核。
+
+共有的失败码与 `scripts/sermon_repair_planning.py` 的 `FAILURE_ACTIONS` 动作一致。新增的失败码和"重现后转人工／源文复核"放在循环自己的路由表 `layer2-auto-repair-routing-v1` 里，不改 `sermon_repair_planning.py`。
 
 ### 3. 系统性判断
 
@@ -95,7 +99,7 @@ runner 新增"收集失败"模式：门 1 或门 2 不通过时保存证据、�
 |---|---|---|
 | 没有进展 | 同一组再次出现相同的失败指纹（英文单元 + 失败码集合 + 规则身份） | 这一组停止重译 |
 | 耐心用完 | 同一组连续 2 轮重译后，失败码数量都没有比重译前少（失败码换了但没减少也算） | 这一组停止重译 |
-| 花费上限 | 本轮修复的调用或 token 超过本轮初跑的 10% | 整个语言停止重译 |
+| 花费上限 | 修复调用超过初跑调用的 10%（至少 4 次，够修 2 组），或修复 token 超过初跑 token 的 10% | 整个语言停止重译 |
 | 系统性 | 第 3 节 | 整个语言停止，修复调用为 0 |
 | 需要人或源文 | 分类为请求人工、源文复核或交给工程 | 这一组停止重译 |
 
@@ -104,19 +108,24 @@ runner 新增"收集失败"模式：门 1 或门 2 不通过时保存证据、�
 ### 6. 停下之后
 
 - 停下的组按 10-06 决定处理：这一句显示英文原文；失去译文的句子（按英文 source unit 计）超过全篇 5%，该语言暂停发布。
+- 这条出口现在还走不通：候选准入要求每组 Sol 和插件都通过，`build_text_waiver` 要求每个 QC 行都通过，所以只要有一组停下，就签不出豁免。需要新版本的候选、豁免和 L4 表示，把"这些英文单元按英文回退"作为带证据的合法状态并校验（回退单元、停止收据哈希、5% 计算）。实现之前，任何停下都会挡住这个语言的发布。
 - 写停止收据：组、失败码、指纹、证据路径、花费和下一步需要谁。其他语言不受影响。
 
 10-06 决定里"每句先修 2 次再修 2 次"的次数上限由本决定取代。`machine_repair_ledger.py` 和豁免签发目前按失败次数工作，实现时需要同步修改，[机器质检豁免](machine-quality-waiver.zh.md)一页也要在实现后更新。
 
 ### 7. 持久化
 
-指纹、每轮的失败码数量和花费记在 `machine_repair_ledger.py` 的 text 账本里（按语言、英文源包、锚点和英文单元），Sol 门和回译 QC 共用一本：独占创建、哈希链，换目录、换组名、换修订都不会清零。不另建第二套持久状态。未知结果占用花费，直到对账。
+指纹、每轮的失败码数量和花费按轮记账，写法沿用 `machine_repair_ledger.py`：独占创建、哈希链，按英文单元查历史，换输出目录、换组名、重新分组都不会清零。未知结果占用花费，直到对账。
+
+账本根目录必须是这次生产运行自己的持久状态目录（与豁免签发的 `--repair-ledger-root` 相同），由入口固定传入，不能由调用方随意换。停止收据和放行收据都记录账本根目录和链头哈希；下游签发时按这两项核对，换了根目录的空账本对不上链头，签发失败。迁移账本需要单独的、经过校验的迁移步骤。
+
+没有直接写进 `machine_repair_ledger.py` 的 text 账本，是因为那个文件在机器质检豁免的 `implementationSha256` 范围里，一改就要重新校准、重新签发所有豁免。接入门 4 时再决定两本账如何合并。
 
 ## 五、接入位置
 
 1. `scripts/run_target_language_models.py`：1105 行和 `_stop_after_plugin_group_failure` 增加"收集失败"模式和运行中早停。默认行为不变。
-2. 插件续跑：现在 `require_plugin_stop_repair` 要求复用插件停止的运行时必须附带对该组的 reviewer 重译，与"不改写译文"冲突。插件修好后走现有的 cache-only 迁移（policy 里的 `pluginImplementationSha256` 变了），在新运行里重放插件，不发模型请求。
-3. 新增 `scripts/layer2_auto_repair.py`：读失败清单 → 分类 → 系统性判断 → 生成修复说明 → 调用 runner 重跑 → 回译 QC → 循环，直到全部通过或停止。分类用 `sermon_repair_planning.route_failure`（新路由版本）；`plan_repair` 需要 D1 收据，runner 只存 Sol 原始结果，第一版不经过它，直接用失败码和账本判断。
+2. 插件续跑：现在 `require_plugin_stop_repair` 要求复用插件停止的运行时必须附带对该组的 reviewer 重译，与"不改写译文"冲突。收集失败模式不写 `plugin-group-stop.json`，避开了这条限制；但插件修好后（policy 里的 `pluginImplementationSha256` 变了）还没有零调用的续跑路径：现有的 cache-only 迁移 `migrate_target_language_model_cache.migrate` 要求旧运行有完整的 `evidence.json`，并用旧插件重新准入，而插件失败的运行没有证据、旧插件也会再次拒绝。需要扩展迁移：从已保存的模型缓存直接校验并重建，不经旧插件准入，再用新插件重放。
+3. 新增 `scripts/layer2_auto_repair.py`：读失败清单 → 分类 → 系统性判断 → 生成修复说明 → 调用 runner 重跑 → 回译 QC（只查改过的组）→ 循环，直到全部通过或停止；全部通过后在最终成品上校准、签发豁免。分类用循环自己的路由表；`plan_repair` 需要 D1 收据，runner 只存 Sol 原始结果，第一版不经过它，直接用失败码和账本判断。
 4. 循环在 canonical controller 同一个 locale job 的租约内运行（每轮生产只允许一个活跃 locale job）。`scripts/run_scripture_gated_round.py` 和 controller 调用这个循环，而不是直接调用 runner。
 
 ## 六、验收
@@ -129,10 +138,11 @@ runner 新增"收集失败"模式：门 1 或门 2 不通过时保存证据、�
 4. 失败码来回变换、连续 2 轮没有减少，这一组停下，显示英文；
 5. 同一失败码达到阈值，运行中停止派发，修复调用为 0；
 6. Sol 通过但插件拒绝，交给工程，调用为 0，译文不变；插件修好后重放，调用为 0；
-7. 回译 QC 判出问题，带 QC 证据重译，再过四道门；
+7. 回译 QC 判出问题，带 QC 证据重译，再过四道门，QC 只对改过的组发请求；最终成品重新校准后才签发豁免；
 8. 结果未知，进入对账，不重发；
-9. 指纹、失败码数量和花费在换目录、换组名后仍然延续；
-10. 停下的句子超过 5%，语言暂停发布。
+9. 指纹、失败码数量和花费在换输出目录、换组名后仍然延续；换账本根目录的签发因链头对不上而失败；
+10. 停下的句子不超过 5% 时按英文回退签发；超过 5%，语言暂停发布；
+11. Sol 只有 uncertainty 或只有 issue 时也先重译一次，重现才转人工。
 
 实测：用 605 端到端重跑。第 21 组（典故 0-u076）重译；如果 Sol 仍以相同指纹判引文归属不通过，就停下转源文复核，这一句显示英文，并给出 0-u076 的复核材料。其余组全部跑完。
 
