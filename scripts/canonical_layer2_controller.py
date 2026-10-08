@@ -30,6 +30,7 @@ from scripts import sermon_workflow_jobs as jobs
 from scripts import sermon_job_liveness as liveness
 from scripts import layer2_api_concurrency as api_concurrency
 from scripts import canonical_layer2_budget as budget_tools
+from scripts import layer2_auto_repair as auto_repair
 from contextlib import nullcontext
 from scripts.sermon_execution_harness import work_lock
 from scripts.sermon_release_workflow import _safe_path
@@ -37,6 +38,10 @@ from scripts.sermon_release_workflow import _safe_path
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA = 'sermon-canonical-layer2-execution-v1'
 CONCURRENT_SCHEMA = 'sermon-canonical-layer2-execution-v2'
+# v3 = v1 plus the bounded auto-repair loop. It keeps one group worker and one
+# active locale, so it does not accept the v2 concurrency profile.
+AUTO_REPAIR_SCHEMA = 'sermon-canonical-layer2-execution-v3'
+AUTO_REPAIR_BINDING = {'routingVersion': auto_repair.ROUTING_VERSION}
 MODES = ('deterministic_shadow', 'deterministic_execute')
 ADMISSION_LOCK = jobs._digest({'purpose': 'canonical-layer2-admission-v1'})
 MAX_CONFIG_BYTES = 1024 * 1024
@@ -79,6 +84,7 @@ class Configuration:
     sha256: str
     concurrency_profile: dict | None = None
     resource_policy: dict | None = None
+    auto_repair: bool = False
 
 
 def load_configuration(path):
@@ -87,7 +93,10 @@ def load_configuration(path):
     required_keys = {'schemaVersion', 'productionRunId', 'inspectionConfig', 'jobRoot', 'locales'}
     require(((set(value) == required_keys and value['schemaVersion'] == SCHEMA)
              or (set(value) == required_keys | {'concurrencyProfile', 'resourcePolicy'}
-                 and value['schemaVersion'] == CONCURRENT_SCHEMA))
+                 and value['schemaVersion'] == CONCURRENT_SCHEMA)
+             or (set(value) == required_keys | {'layer2AutoRepair'}
+                 and value['schemaVersion'] == AUTO_REPAIR_SCHEMA
+                 and value['layer2AutoRepair'] == AUTO_REPAIR_BINDING))
             and pipeline._sha(value['productionRunId'])
             and isinstance(value['locales'], dict) and bool(value['locales'])
             and set(value['locales']) <= set(pipeline.LOCALES), 'invalid_execution_configuration')
@@ -135,7 +144,13 @@ def load_configuration(path):
         binding.update(concurrencyProfile=concurrency_profile, resourcePolicy=resource_policy)
     sha = jobs._digest(binding)
     return Configuration(path, root, inspection, job_root, value['productionRunId'], lanes, sha,
-                         concurrency_profile, resource_policy)
+                         concurrency_profile, resource_policy, 'layer2AutoRepair' in value)
+
+
+def repair_ledger_root(config):
+    """Fixed per-run ledger beside the job root, like the budget root; clearing a
+    lane's output directory never resets the repair history."""
+    return config.job_root.parent / ('.' + config.job_root.name + '.layer2-repair')
 
 
 def code_identity():
@@ -192,6 +207,8 @@ def _inputs(config, locale, view):
     require(policy['batching']['batchSize'] == 1 and type(policy['batching']['workers']) is int
             and 1 <= policy['batching']['workers'] <= api_concurrency.MAX_GROUP_WORKERS_PER_LOCALE,
             'invalid_production_worker_budget')
+    require(not config.auto_repair or policy['batching']['workers'] == 1,
+            'auto_repair_requires_one_group_worker')
     request = producer.prepare_request(values['source'], values['anchor'], policy)
     plan = models.group_plan(request, values['anchor'])
     rule_preflight.preflight(request, policy, lane['plugin'], plan)
@@ -364,10 +381,16 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                     setattr(bound_call, attribute, getattr(caller, attribute))
             model_completion = []
             with (budget_tools.request_limits(budget_binding['limits']) if budget_binding else nullcontext()):
-                evidence = models.run_accounted(source, anchor, policy, lane['output'], api_key,
-                                             bound_call, None, lane['plugin'], None, None,
-                                             progress_callback=progress.progress, predecessor_spans=[admission_span],
-                                             completion_spans=model_completion)
+                if config.auto_repair:
+                    evidence, model_output = _run_auto_repair(
+                        config, lane, source, anchor, policy, api_key, bound_call, progress.progress,
+                        admission_span, model_completion)
+                else:
+                    model_output = lane['output']
+                    evidence = models.run_accounted(source, anchor, policy, model_output, api_key,
+                                                 bound_call, None, lane['plugin'], None, None,
+                                                 progress_callback=progress.progress, predecessor_spans=[admission_span],
+                                                 completion_spans=model_completion)
             # Paid results remain recoverable if approval/source/config/code drifted
             # while a request was outstanding. Never turn those results into approval.
             with accounting.stage('layer2.post_model_binding.' + locale, depends_on=model_completion,
@@ -376,8 +399,8 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                 fresh_config = current_binding()
             with accounting.stage('layer2.language_and_candidate.' + locale, depends_on=[binding_span],
                     executor_type='deterministic_program', work_unit_id='l2.' + locale + '.candidate_admission') as candidate_span:
-                original_request = producer._load(lane['output'] / 'request.json')
-                rule_receipt = producer._load(lane['output'] / 'rule-preflight.json')
+                original_request = producer._load(model_output / 'request.json')
+                rule_receipt = producer._load(model_output / 'rule-preflight.json')
                 plugin_sha = policy['languageReview']['pluginImplementationSha256']
                 receipt = producer.run_language_plugin(source, anchor, policy, original_request, evidence,
                     lane['plugin'], plugin_sha, rule_preflight_receipt=rule_receipt)
@@ -395,6 +418,37 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                 require(checked['nodes']['text.' + locale]['status'] == 'validated', 'worker_candidate_not_validated')
             return {'status': 'machine_review_pass_human_review_pending',
                     'candidateJsonSha256': jobs._digest(candidate), 'releaseEligible': False}
+
+
+def _run_auto_repair(config, lane, source, anchor, policy, api_key, call, progress, admission_span,
+                     completion_spans):
+    """Run repair rounds inside this durable job, its budget and its lease.
+
+    Every round is a separate runner output under the lane; repaired groups get a
+    fresh translator and independent reviewer, the rest reuse the earlier round's
+    caches under the same transport identity. Paid calls are reserved by the
+    bound budget transport; the loop's 10% repair cap sits below it. A stopped
+    loop leaves its receipt and fails the job: no candidate, no automatic retry.
+    """
+    request = producer.prepare_request(source, anchor, policy)
+    total_groups = len(models.group_plan(request, anchor))
+    rounds_root = lane['output'] / 'repair-rounds'
+
+    def run_round(out, reuse_from, brief, collector):
+        progress('repair_round')
+        return models.run_accounted(source, anchor, policy, out, api_key, call, None, lane['plugin'],
+                                    None, reuse_from, partial_repair_brief=brief,
+                                    progress_callback=progress, predecessor_spans=[admission_span],
+                                    completion_spans=completion_spans, failure_collector=collector)
+
+    receipt = auto_repair.drive(request, total_groups, run_round, rounds_root, repair_ledger_root(config))
+    require(receipt['status'] == 'all_groups_passed', 'layer2_auto_repair_stopped')
+    final = Path(receipt['finalRunDirectory'])
+    require(_overlap(rounds_root.resolve(), final.resolve()) and final.resolve() != rounds_root.resolve(),
+            'auto_repair_final_round_outside_lane')
+    evidence = producer._load(final / 'evidence.json')
+    require(auto_repair.json_sha256(evidence) == receipt['evidenceSha256'], 'auto_repair_evidence_changed')
+    return evidence, final
 
 
 def drive(config_path, locale, *, budget_authorization=None):

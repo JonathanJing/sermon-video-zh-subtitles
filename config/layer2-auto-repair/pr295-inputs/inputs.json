@@ -92,7 +92,46 @@
     "spendCapUsd": null,
     "effectiveNewPaidCallsAllowed": 0,
     "authorizationPath": null,
-    "approvalReceiptPath": null
+    "approvalReceiptPath": null,
+    "proposal": {
+      "status": "proposal_not_authorization",
+      "basis": "46 groups x (translator + reviewer) initial calls, plus the PR295 repair cap max(4, ceil(10%)); every call reserved at its worst case under the dev request limits and the frozen price assumption strict-chat-worst-case-2026-10-05-v2 (gpt-6.1-sol: 2.5 USD input, 10 USD output per million tokens). invoiceVerified=false.",
+      "initialCalls": 92,
+      "repairCalls": 10,
+      "maximumCalls": 102,
+      "maximumInputTokens": 1671168,
+      "maximumOutputTokens": 417792,
+      "maximumTokens": 2088960,
+      "worstCaseUsd": 8.35584,
+      "suggestedSpendCapUsd": 9,
+      "requestLimits": {
+        "schemaVersion": "sermon-openai-chat-request-limits-v1",
+        "maxInputTokens": 16384,
+        "maxCompletionTokens": 4096,
+        "wallTimeMs": 300000,
+        "serviceTier": "default"
+      },
+      "globalBounds": {
+        "requests": 102,
+        "inputTokens": 1671168,
+        "outputTokens": 417792,
+        "wallTimeMs": 30600000,
+        "costMicrousd": 9000000
+      },
+      "unitBounds": {
+        "requests": 1,
+        "inputTokens": 16384,
+        "outputTokens": 4096,
+        "wallTimeMs": 300000,
+        "costMicrousd": 81920
+      },
+      "limits": {
+        "contentRevisions": 2,
+        "reviewAttemptsPerRevision": 2,
+        "decisionProposals": 1
+      }
+    },
+    "approvalTemplate": "budget-approval.template.json"
   },
   "approval": {
     "status": "not_supplied",
@@ -103,10 +142,23 @@
     "operatorEvidence": null
   },
   "blockers": [
-    "No artifact-bound live budget authorization and approval receipt supplied.",
-    "Source package has pending sermon-window and human source review.",
-    "Direct quotation units require real adjudication; historical fixtures carry no human receipt.",
-    "Historical policies/plugins need current code identity reconciliation; historical 23 group workers are incompatible with PR295 collector workers=1.",
-    "PR295 has no controller-native live repair CLI; injected offline run_round tests do not authorize live dispatch."
+    "No artifact-bound live budget authorization and approval receipt supplied; the proposal above is a number to approve or change, not an authorization.",
+    "Source package has pending sermon-window and human source review (status=blocked); the controller's source gate refuses it before any call.",
+    "Direct quotation units 0-u067 and 0-u068 require real adjudication; historical fixtures carry no human receipt. Design also requires the 0-u076 source adjudication before the 605 rerun.",
+    "Generated per-locale plugin modules are not uploaded; their hashes must be recomputed with current code (plugin_implementation_sha256) and must equal the policy's pluginImplementationSha256, or the policy must be re-frozen."
+  ],
+  "execution": {
+    "template": "execution-v3.template.json",
+    "schemaVersion": "sermon-canonical-layer2-execution-v3",
+    "groupWorkers": 1,
+    "note": "v3 runs the PR295 repair loop inside the canonical controller job with one group worker and one active locale; the historical 23-worker concurrency profile is not used. All three historical policies already freeze batching.workers=1."
+  },
+  "missingFromUpload": [
+    "Per-locale generated diagnostic plugin modules (historicalLocalFixture/*.py with DIAGNOSTIC_PINNED_QUOTES = True) and their pinned quote bindings; the policies pin their hashes, and the controller refuses to dispatch without the exact files.",
+    "A canonical inspection config (sermon package inspection v1) naming source, anchor and the chosen locale's policy."
+  ],
+  "resolved": [
+    "PR295 now has a controller-native repair path: execution config v3 runs the loop inside one durable job under the bound budget transport (no injected run_round needed for a live run).",
+    "Group workers: v3 requires batching.workers=1, which the three historical policies already freeze; the 23 workers came from the v2 concurrency profile, which v3 does not accept."
   ]
 }

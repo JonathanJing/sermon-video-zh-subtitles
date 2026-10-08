@@ -16,10 +16,9 @@ consecutive repair rounds leave it with no fewer failure codes than before. The
 locale stops repairing when repair spend exceeds the cap. Unknown outcomes and
 execution errors are never retried here; they stop the loop for reconciliation.
 
-There is no command-line entry yet: formal repairs need a controller-native
-revision and cache reuse path with durable budget reservations (the standalone
-runner refuses unbound API requests and cross-run reuse under a transport
-identity). Callers inject ``run_round``.
+Formal runs reach this loop through the canonical controller (execution config
+v3): its worker injects ``run_round`` inside one durable job and budget binding.
+There is no standalone command-line entry.
 
 The result is machine evidence only. Nothing here sets human approval, edits a
 translation, or rewrites a translation that Sol passed but a plugin rejected.

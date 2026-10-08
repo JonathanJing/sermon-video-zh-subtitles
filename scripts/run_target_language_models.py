@@ -887,7 +887,12 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
         transport_identity = getattr(caller, "execution_identity", None)
         if transport_identity is not None:
             identity["modelTransportIdentity"] = transport_identity
-            require(reuse_from is None and resume_cache_from is None,
+            # A bound API repair round may reuse an earlier round of the same job:
+            # every cache fingerprint includes this transport identity, and the
+            # prior-input check above rejects any cache made under another one.
+            require(resume_cache_from is None
+                    and (reuse_from is None or (partial_repair_brief is not None
+                                                and transport_identity.get("backend") == "openai_api")),
                     "CLI transport supports same-run resume only; cross-run cache reuse is not enabled")
         if revision_brief is not None:
             identity["revisionBriefSha256"] = policy_tools.canonical_sha256(revision_brief)

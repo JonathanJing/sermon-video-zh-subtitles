@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "sermon-canonical-layer2-execution-v3",
+  "productionRunId": "<64-hex run id>",
+  "inspectionConfig": "inspection.json",
+  "jobRoot": "production-run/jobs",
+  "layer2AutoRepair": {
+    "routingVersion": "layer2-auto-repair-routing-v1"
+  },
+  "locales": {
+    "zh-Hans": {
+      "outputDirectory": "production-run/text/zh-Hans",
+      "plugin": "<generated zh-Hans diagnostic plugin module>"
+    }
+  }
+}

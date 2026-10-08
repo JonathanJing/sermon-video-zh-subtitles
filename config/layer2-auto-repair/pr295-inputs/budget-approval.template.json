@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "sermon-canonical-layer2-budget-approval-v1",
+  "decision": null,
+  "humanApproval": null,
+  "reviewedBy": null,
+  "reviewedAt": null,
+  "operatorEvidence": null,
+  "binding": {
+    "productionRunId": "<64-hex run id from the execution config>",
+    "configurationSha256": "<Configuration.sha256 printed by canonical_layer2_controller tick>",
+    "codeIdentitySha256": "<codeIdentitySha256 printed by the same tick>",
+    "budgetRoot": "<absolute path: <jobRoot parent>/.<jobRoot name>.layer2-budget>",
+    "requestLimits": {
+      "schemaVersion": "sermon-openai-chat-request-limits-v1",
+      "maxInputTokens": 16384,
+      "maxCompletionTokens": 4096,
+      "wallTimeMs": 300000,
+      "serviceTier": "default"
+    },
+    "globalBounds": {
+      "requests": 102,
+      "inputTokens": 1671168,
+      "outputTokens": 417792,
+      "wallTimeMs": 30600000,
+      "costMicrousd": 9000000
+    },
+    "unitBounds": {
+      "requests": 1,
+      "inputTokens": 16384,
+      "outputTokens": 4096,
+      "wallTimeMs": 300000,
+      "costMicrousd": 81920
+    },
+    "limits": {
+      "contentRevisions": 2,
+      "reviewAttemptsPerRevision": 2,
+      "decisionProposals": 1
+    }
+  }
+}

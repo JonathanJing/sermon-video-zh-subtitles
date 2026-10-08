@@ -1,6 +1,6 @@
 # L2 自动修复与放行：复盘与设计
 
-状态：修复循环的核心已实现并离线测试（门 1、门 2，见第八节）；正式执行路径、门 3、门 4 和英文回退尚未实现。本页不改变任何现有门限，也不把自动修复后的结果称为人工批准。
+状态：修复循环的核心和 controller 正式执行路径已实现并离线测试（门 1、门 2，见第八节）；门 3、门 4 和英文回退尚未实现，也还没有真实付费运行。本页不改变任何现有门限，也不把自动修复后的结果称为人工批准。
 
 2026-10-08，Jony 在项目线程里确定：**修几次不重要，通过门限就放行**。修复次数不再是质量规则，只用"没有进展"和"花费上限"来停止。
 
@@ -139,7 +139,7 @@ runner 新增"收集失败"模式：门 1 或门 2 不通过时保存证据、�
 2. 插件续跑：现在 `require_plugin_stop_repair` 要求复用插件停止的运行时必须附带对该组的 reviewer 重译，与"不改写译文"冲突。收集失败模式不写 `plugin-group-stop.json`，避开了这条限制；但插件修好后（policy 里的 `pluginImplementationSha256` 变了）还没有零调用的续跑路径：现有的 cache-only 迁移 `migrate_target_language_model_cache.migrate` 要求旧运行有完整的 `evidence.json`，并用旧插件重新准入，而插件失败的运行没有证据、旧插件也会再次拒绝。需要扩展迁移：从已保存的模型缓存直接校验并重建，不经旧插件准入，再用新插件重放。
 3. 新增 `scripts/layer2_auto_repair.py`：读失败清单 → 分类 → 系统性判断 → 生成修复说明 → 调用 runner 重跑 → 回译 QC（只查改过的组）→ 循环，直到全部通过或停止；全部通过后在最终成品上校准、签发豁免。分类用循环自己的路由表；`plan_repair` 需要 D1 收据，runner 只存 Sol 原始结果，第一版不经过它，直接用失败码和账本判断。
 4. 循环在 canonical controller 同一个 locale job 的租约内运行（每轮生产只允许一个活跃 locale job）。`scripts/run_scripture_gated_round.py` 和 controller 调用这个循环，而不是直接调用 runner。
-5. 正式执行路径：现在的独立入口跑不了修复。`--budget-config` 入口拒绝 `--partial-repair-brief` 和 `--reuse-from`；没有预算绑定的 API 请求会被拒绝；runner 在 transport 带 `execution_identity` 时禁止跨运行复用缓存。所以需要 controller 原生的修订和缓存复用，加上持久的预算预留，而不是让 controller 去调这些独立参数。
+5. 正式执行路径：现在的独立入口跑不了修复。`--budget-config` 入口拒绝 `--partial-repair-brief` 和 `--reuse-from`；没有预算绑定的 API 请求会被拒绝；runner 在 transport 带 `execution_identity` 时禁止跨运行复用缓存。所以需要 controller 原生的修订和缓存复用，加上持久的预算预留，而不是让 controller 去调这些独立参数。已按此实现为执行配置 v3（见第八节）：修复在 controller worker 内完成，独立入口的限制保持不变。
 
 ## 六、验收
 
@@ -169,17 +169,17 @@ runner 新增"收集失败"模式：门 1 或门 2 不通过时保存证据、�
 已实现（`scripts/layer2_auto_repair.py`、`scripts/run_target_language_models.py`，测试 `tests/test_layer2_auto_repair.py`）：
 
 - runner 的 `failure_collector` 参数：Sol 和插件不通过时记录失败、继续其他组；同一失败码达到阈值时停止派发后续组；结束时写 `group-failures.json`（`sermon-layer2-group-failures-v1`），不写证据，也不写 `plugin-group-stop.json`。不传这个参数时行为不变，运行身份也不变。
+- controller 正式执行路径（`scripts/canonical_layer2_controller.py`，测试 `tests/test_canonical_layer2_auto_repair.py`）：执行配置 `sermon-canonical-layer2-execution-v3` 在 v1 字段上增加 `layer2AutoRepair: {"routingVersion": "layer2-auto-repair-routing-v1"}`，不接受 v2 并发 profile，要求 policy `batching.workers=1`。worker 在同一个持久 job、同一份预算授权和租约内跑整个循环，每轮输出在 lane 的 `repair-rounds/round-NNN/`，账本固定在 jobRoot 旁的 `.<jobRoot 名>.layer2-repair`。每次调用由预算 transport 按最坏情况（输入上界加 `max_completion_tokens`）原子预留，10% 修复上限在它之下。runner 只在修复轮、且 transport 后端为 `openai_api` 时允许复用上一轮缓存；缓存指纹含 transport 身份，跨身份的缓存仍被拒绝。全部通过后用最后一轮的证据做插件和候选准入；循环停下时写停止收据、job 失败、不产生候选，不自动重试。
 - 修复循环 `drive`：分类（路由表 `layer2-auto-repair-routing-v1`，含回译 QC 问题类型的映射）、系统性判断、指纹重现、耐心、调用上限（派发前）、生成 `partial_repair_brief`、按轮记账、写机器收据（`sermon-layer2-auto-repair-receipt-v1`，记录账本根目录和链头哈希，`humanApproval: false`）。未知结果和执行错误原样抛出，不记账，不重发。
 
 尚未实现，按顺序：
 
-1. 正式执行路径（第五节第 5 条）：controller 原生的修订和缓存复用、持久预算预留（含 token 的最坏情况预留）。在此之前循环没有命令行入口，只能由调用方注入每轮的执行函数，也就是只在测试里跑过。
-2. 英文回退的候选、豁免和 L4 表示。没有它，一组停下就整个语言发不了，循环只在"所有失败都修得好"时有用。
-3. 门 4：按组复用的回译 QC（只复用付费回译响应，中位数和确定性检查全部重算）、QC 失败回到循环、最终成品校准。
-4. 门 3 的失败回到循环。
-5. 插件修好后的零调用续跑（扩展缓存迁移）。
-6. 605 端到端实测（先做 0-u076 源文裁定；需要付费调用，等授权）。
+1. 英文回退的候选、豁免和 L4 表示。没有它，一组停下就整个语言发不了，循环只在"所有失败都修得好"时有用。
+2. 门 4：按组复用的回译 QC（只复用付费回译响应，中位数和确定性检查全部重算）、QC 失败回到循环、最终成品校准。
+3. 门 3 的失败回到循环。
+4. 插件修好后的零调用续跑（扩展缓存迁移）。
+5. 605 端到端实测（先做 0-u076 源文裁定；需要付费调用，等授权）。
 
 ## PR #295 的可共享运行输入
 
-三语言历史 source/anchor/policy、文件哈希、预算及批准缺项见 [四项输入清单](../config/layer2-auto-repair/pr295-inputs/README.md)。这是可供云端检查的诊断输入快照；预算未授权、真实批准收据未提供，不能据此派发付费运行。
+三语言历史 source/anchor/policy、文件哈希、预算及批准缺项见 [四项输入清单](../config/layer2-auto-repair/pr295-inputs/README.md)。这是可供云端检查的诊断输入快照；预算未授权、真实批准收据未提供，不能据此派发付费运行。清单里有按 102 次调用算的预算建议值、待人工填写的批准收据模板和 v3 执行配置模板，以及仍需人或本机补的项。
