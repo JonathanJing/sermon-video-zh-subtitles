@@ -118,6 +118,7 @@ def load_plans(root=PLANS, only=None):
         expected = _read_json(directory / 'expected.json')
         _check_plan_key(directory.name, expected)
         _check_plan_targets(directory.name, directory / 'plan', expected)
+        _check_plan_verdicts(directory.name, directory / 'plan', expected)
         plans.append({'id': directory.name, 'evidence': directory / 'plan', 'expected': expected})
     if only and {p['id'] for p in plans} != set(only):
         raise ValueError('unknown plan id: ' + ', '.join(sorted(set(only) - {p['id'] for p in plans})))
@@ -199,12 +200,6 @@ def _check_planted(planted):
                 or diagnosis.get('category') not in CATEGORIES \
                 or not isinstance(diagnosis.get('root_cause'), str) or not diagnosis['root_cause']:
             bad(f'entry {entry["case"]} needs a flaw and a diagnosis with a known category and a root_cause')
-    # The negative controls are part of the refuter result: every constructed case carries one, so a shortened
-    # list cannot pass as a complete run. Real-log cases have no planted diagnosis.
-    constructed = {name for name in library if not _read_json(CASES / name / 'expected.json').get('realLogs')}
-    if seen != constructed:
-        bad('planted diagnoses must cover exactly the constructed cases; missing '
-            + ', '.join(sorted(constructed - seen)) + '; extra ' + ', '.join(sorted(seen - constructed)))
     return planted
 
 
@@ -249,6 +244,22 @@ def _check_plan_targets(name, plan, expected):
                              f'not {argument!r}')
         if check['tool'] == 'check_staged' and argument not in excerpts:
             raise ValueError(f'invalid plan {name}: check_staged target {argument!r} is not read by the plan code')
+
+
+def _check_plan_verdicts(name, plan, expected):
+    """Run every required deterministic check on its key target before dispatch: a checker input it cannot parse,
+    or a verdict that disagrees with the key's expect, would otherwise surface only inside a paid session."""
+    for check in expected['requiredChecks']:
+        tool = next(t for t in PREFLIGHT_TOOLS if t['name'] == check['tool'])
+        arguments = {param: check['argument'] for param in tool['parameters'].get('required', [])}
+        try:
+            verdict = preflight_check(plan, check['tool'], arguments).get(CHECK_VERDICT[check['tool']])
+        except Exception as error:
+            raise ValueError(f'invalid plan {name}: {check["tool"]} cannot read the plan inputs '
+                             f'({type(error).__name__})') from None
+        if verdict != check['expect']:
+            raise ValueError(f'invalid plan {name}: {check["tool"]} returns {verdict!r}, the key expects '
+                             f'{check["expect"]!r}')
 
 
 def evidence_sha(directory):
@@ -1381,9 +1392,16 @@ class Trials:
                     'caseOrder': _sha(_case_library())[:12]}
 
         def planted():
-            case_ids = {c['id'] for c in self.cases}
-            return sorted(tag(w['case'], w) for w in self._snapshot('wrong', WRONG_DIAGNOSES)['diagnoses']
-                          if w['case'] in case_ids)
+            selected = {c['id']: c for c in self.cases}
+            entries = [w for w in self._snapshot('wrong', WRONG_DIAGNOSES)['diagnoses'] if w['case'] in selected]
+            # The negative controls are part of the refuter result: every selected constructed case carries one, so
+            # a shortened list cannot pass as complete. Real-log cases have none. Only selected answer keys are read.
+            constructed = {i for i, c in selected.items() if not c['expected'].get('realLogs')}
+            covered = {w['case'] for w in entries}
+            if covered != constructed:
+                raise ValueError('invalid planted diagnoses: they must cover exactly the selected constructed cases; '
+                                 f'missing {sorted(constructed - covered)}, extra {sorted(covered - constructed)}')
+            return sorted(tag(w['case'], w) for w in entries)
 
         def risk():
             policy = self._snapshot('policy', RISK)
@@ -1527,7 +1545,9 @@ def _scorer_identity(stage):
                            _call_matches, _declared_arguments, _check_input, _relative, _groups_match, _text],
              'risk': [score_risk, risk_summary, _usage_values, _probability, _sum_decisions_usage]}[stage]
     # Completion and usage aggregation decide what a stored row means for the run's status, so they are bound too.
-    parts = [*parts, _unscored, *([_sum_usage] if stage in ('diagnose', 'refute', 'preflight') else [])]
+    # So is the code that assembles the status and the summary headline from the merged rows.
+    parts = [*parts, _unscored, Trials._stages, Trials._summary,
+             *([_sum_usage] if stage in ('diagnose', 'refute', 'preflight') else [])]
     tool_definitions = [FILE_TOOLS, TIMELINE_TOOL, PREFLIGHT_TOOLS, MAX_READ_CHARS]
     timeline_patterns = [TIMESTAMP.pattern, ERROR_LINE.pattern, END_FIELD.pattern]
     constants = {'timeline': timeline_patterns,

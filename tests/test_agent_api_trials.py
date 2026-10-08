@@ -1288,6 +1288,23 @@ class LatestReviewTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'no plan directory'):
             trials.load_plans(root)
 
+    def test_required_checks_run_on_the_plan_before_any_session(self):
+        root = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, root)
+        source = trials.PLANS / 'p02-clean'
+        shutil.copytree(source, root / source.name)
+        listing = root / source.name / 'plan' / 'spark-hf-listing.txt'
+        listing.write_text('')
+        with self.assertRaisesRegex(ValueError, 'cannot read the plan inputs'):
+            trials.load_plans(root)
+        shutil.copy(source / 'plan' / 'spark-hf-listing.txt', listing)
+        key = json.loads((source / 'expected.json').read_text())
+        flipped = {**key, 'requiredChecks': [dict(c, expect=not c['expect']) if c['tool'] == 'check_staged' else c
+                                             for c in key['requiredChecks']]}
+        (root / source.name / 'expected.json').write_text(json.dumps(flipped))
+        with self.assertRaisesRegex(ValueError, 'the key expects'):
+            trials.load_plans(root)
+
     def test_plan_key_targets_must_be_what_the_plan_names(self):
         root = Path(tempfile.mkdtemp())
         self.addCleanup(shutil.rmtree, root)
@@ -1466,13 +1483,20 @@ class LatestReviewTests(unittest.TestCase):
                     {**planted, 'diagnoses': []},
                     {**planted, 'diagnoses': planted['diagnoses'][1:]},
                     {**planted, 'diagnoses': planted['diagnoses'] + [{**first, 'case': 'f09-real-benign-gpu-warnings'}]}]
+        real = 'f09-real-benign-gpu-warnings'
         for variant in variants:
             with self.subTest(variant=variant), patch.object(
                     trials, '_read_json', side_effect=lambda path, v=variant: v if Path(path) == trials.WRONG_DIAGNOSES
                     else json.loads(Path(path).read_text(encoding='utf-8'))), \
                     self.assertRaisesRegex(ValueError, 'invalid planted diagnoses'):
-                make(case_ids=[first['case']]).run('refute')
+                make(case_ids=[first['case'], real]).run('refute')
             self.assertFalse((out / 'diagnose').exists())
+        # A bounded run reads only the selected answer keys: a broken unselected key does not block it.
+        with patch.object(trials, '_read_json', side_effect=lambda path: (_ for _ in ()).throw(ValueError('broken'))
+                          if Path(path).parent.name == 'f02-preempt-authorization'
+                          else json.loads(Path(path).read_text(encoding='utf-8'))):
+            trials_obj = make(case_ids=[first['case']])
+            self.assertIn('refute', trials_obj._scopes(['refute']))
 
     def test_mount_check_derives_containment_from_the_mount(self):
         root = Path(tempfile.mkdtemp())

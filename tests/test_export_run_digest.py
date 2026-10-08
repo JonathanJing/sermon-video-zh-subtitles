@@ -138,6 +138,20 @@ class ExportRunDigestTests(unittest.TestCase):
         index = json.loads((dest / self.run.name / "risk.json").read_text())
         self.assertEqual(index, {"source": "risk.json", "chunked": True, "rowCount": 40, "parts": entry["chunks"]})
 
+    def test_compact_rows_that_grow_past_the_cap_when_indented_are_chunked(self):
+        rows = [{"case": f"c{i}", "ok": True, "tier": "approval"} for i in range(600)]
+        compact = json.dumps({"rows": rows}, separators=(",", ":"))
+        (self.run / "risk.json").write_text(compact)
+        cap = len(compact) + 1024
+        self.assertGreater(len(json.dumps({"rows": rows}, indent=2)), cap)
+        with patch.object(digest, "MAX_WHOLE_BYTES", cap):
+            dest = self.export()
+        entry = next(e for e in json.loads((dest / "manifest.json").read_text())["files"] if e["path"] == "risk.json")
+        self.assertNotIn("omitted", entry)
+        self.assertGreater(len(entry["chunks"]), 1)
+        self.assertTrue(all(len((dest / self.run.name / n).read_bytes()) <= cap for n in entry["chunks"]))
+        self.assertEqual(json.loads((dest / self.run.name / "risk.json").read_text())["rowCount"], 600)
+
     def test_trial_row_over_the_cap_is_reported_as_omitted(self):
         (self.run / "risk.json").write_text(json.dumps({"rows": [{"case": "c0", "note": "x " * 15000}]}))
         with patch.object(digest, "MAX_WHOLE_BYTES", 20 * 1024):

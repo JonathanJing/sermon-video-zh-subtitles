@@ -231,11 +231,20 @@ def collect(run_dir: Path, label: str, dest: Path, secrets: list[str]) -> tuple[
             text = json.dumps(redact_json(parsed, secrets, entry["redactions"]), ensure_ascii=False, indent=2) + "\n"
         else:
             text, entry["redactions"] = redact(text, secrets)
+        if path.name in ROW_NAMES and len(text.encode("utf-8")) > MAX_WHOLE_BYTES:
+            # Compact source JSON can grow past the cap once indented; the written size decides chunking.
+            if not write_row_chunks(raw, dest / label / rel, secrets, entry):
+                entry.update(omitted="over_size_cap")
+            entries.append(entry)
+            continue
         target = dest / label / rel
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(text, encoding="utf-8")
         entries.append(entry)
     return entries, skipped
+
+
+EMPTY_ROWS = len(json.dumps({"rows": []}, indent=2))
 
 
 def write_row_chunks(raw: bytes, target: Path, secrets: list[str], entry: dict) -> bool:
@@ -254,7 +263,8 @@ def write_row_chunks(raw: bytes, target: Path, secrets: list[str], entry: dict) 
     chunks, current = [], []
     size = len(json.dumps(rest, ensure_ascii=False, indent=2).encode("utf-8"))  # Metadata rides in the first part.
     for row in value["rows"]:
-        row_size = len(json.dumps(row, ensure_ascii=False, indent=2).encode("utf-8")) + 8
+        # Measured at its nesting depth inside "rows", where indentation adds bytes on every line, plus the comma.
+        row_size = len(json.dumps({"rows": [row]}, ensure_ascii=False, indent=2).encode("utf-8")) - EMPTY_ROWS + 2
         if current and size + row_size > budget:
             chunks.append(current)
             current, size = [], 0
