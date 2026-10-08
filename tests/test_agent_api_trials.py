@@ -607,3 +607,58 @@ class ReviewFixTests(unittest.TestCase):
         score = trials.score_diagnosis({'category': 'insufficient_evidence', 'fix': fix}, case['expected'], case['evidence'])
         self.assertIn('fixOk', score)
         self.assertTrue(score['fixOk'])
+
+    def test_zone_less_runtime_log_stamps_join_the_timeline(self):
+        case = next(c for c in trials.load_cases() if c['id'] == 'f09-real-benign-gpu-warnings')
+        timeline = trials.build_timeline(case['evidence'])
+        tts = [e for e in timeline['events'] if e['source'] == 'tts.log']
+        self.assertTrue(tts)
+        self.assertEqual(tts[0]['clock'], 'no zone in log; read as UTC')
+        self.assertEqual(trials._instant('2026-10-08 04:45:27.942794032'), '2026-10-08T04:45:27.942794032')
+
+    def test_usage_read_back_stops_at_one_total_deadline(self):
+        deadlines = []
+
+        class Client:
+            def set_deadline(self, value):
+                deadlines.append(value)
+
+            def retrieve_session(self, _id):
+                return {'usage': None}
+
+            def list_turns(self, _id):
+                return []
+        started = time.time()
+        self.assertIsNone(trials._read_back_usage(Client(), 's', 0.2, attempts=50, budget=0.3))
+        self.assertLess(time.time() - started, 2)
+        self.assertIsNone(deadlines[-1])
+        self.assertEqual(len({d for d in deadlines if d is not None}), 1)
+
+    def test_rejected_decision_retry_must_keep_the_answer_key(self):
+        with tempfile.TemporaryDirectory() as directory:
+            client = trials.DecisionsClient(directory, transport=lambda _r: {'error': {'status': 503}})
+            with self.assertRaises(RuntimeError):
+                client.decide('a01', {'input': 'one'}, evaluation={'expectedTier': 'approval'})
+            with self.assertRaises(ValueError):
+                client.decide('a01', {'input': 'one'}, evaluation={'expectedTier': 'observe_only'})
+
+
+class ScopeTests(unittest.TestCase):
+    def test_rerun_with_a_narrower_selection_needs_a_new_out(self):
+        (trials.ROOT / 'artifacts').mkdir(exist_ok=True)
+        temporary = tempfile.TemporaryDirectory(dir=trials.ROOT / 'artifacts', prefix='test-agent-trials-')
+        self.addCleanup(temporary.cleanup)
+        out = Path(temporary.name) / 'run'
+
+        def make(**kwargs):
+            return trials.Trials(out, client=trials.FakeAgentsClient(trials.fake_agent_script), model='gpt-6-luna',
+                                 backend='fake', poll_seconds=0,
+                                 decisions=trials.DecisionsClient(out, transport=trials.fake_decisions), **kwargs)
+        make(case_ids=['f01-plugin-identity', 'f03-relative-out']).run('diagnose')
+        with self.assertRaises(ValueError):
+            make(case_ids=['f01-plugin-identity']).run('diagnose')
+        make(risk_repeats=1).run('risk')
+        make(case_ids=['f01-plugin-identity', 'f03-relative-out']).run('diagnose')
+        make(risk_repeats=2).run('risk')
+        with self.assertRaises(ValueError):
+            make(risk_repeats=1).run('risk')

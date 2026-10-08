@@ -58,7 +58,8 @@ CATEGORIES = ['identity_mismatch', 'missing_authorization', 'path_handling', 'mi
 TIERS = ['autonomous', 'approval', 'observe_only']
 DECISIONS_MODEL = 'gpt-6-luna'
 MAX_READ_CHARS = 20000
-TIMESTAMP = re.compile(r'(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2}))')
+# ISO stamps with Z or an offset, plus the space-separated, zone-less form some runtime logs use (read as UTC).
+TIMESTAMP = re.compile(r'(\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?)')
 ERROR_LINE = re.compile(r'Traceback|Error|ERROR|FAILED|bad substitution|exit [1-9]')
 
 
@@ -109,15 +110,15 @@ def evidence_sha(directory):
 
 
 def _instant(stamp):
-    """Fixed-width UTC form of an ISO stamp (Z or +hh:mm) so fractional seconds sort chronologically as strings."""
-    match = re.fullmatch(r'(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(?:\.(\d+))?(Z|[+-]\d{2}:\d{2})', stamp)
+    """Fixed-width UTC form of a stamp so fractional seconds sort chronologically as strings; no zone means UTC."""
+    match = re.fullmatch(r'(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2}:\d{2})(?:\.(\d+))?(Z|[+-]\d{2}:\d{2})?', stamp)
     if not match:
         return stamp
-    base = match.group(1)
-    if match.group(3) != 'Z':
-        moment = datetime.fromisoformat(base + match.group(3)).astimezone(timezone.utc)
+    base, fraction, zone = match.group(1) + 'T' + match.group(2), match.group(3), match.group(4)
+    if zone and zone != 'Z':
+        moment = datetime.fromisoformat(base + zone).astimezone(timezone.utc)
         base = moment.strftime('%Y-%m-%dT%H:%M:%S')
-    return base + '.' + (match.group(2) or '').ljust(9, '0')[:9]
+    return base + '.' + (fraction or '').ljust(9, '0')[:9]
 
 
 # ---------------------------------------------------------------- timeline
@@ -160,6 +161,8 @@ def build_timeline(evidence):
             if match:
                 current = match.group(1)
                 last = {'at': current, 'source': name, 'line': number, 'event': line.strip()}
+                if not re.search(r'(Z|[+-]\d{2}:\d{2})$', current):
+                    last['clock'] = 'no zone in log; read as UTC'
                 events.append(last)
             elif last is not None and line.strip() and not ERROR_LINE.search(line):
                 # Command output under a stamped line (e.g. systemctl states) belongs to that event.
@@ -672,20 +675,38 @@ def _recorded_report(session_dir):
     return None
 
 
-def _read_back_usage(client, session_id, poll_seconds, attempts=5):
-    for attempt in range(attempts):
-        try:
-            usage = _usage({'usage': client.retrieve_session(session_id).get('usage')})
-            if usage is None:
-                # Same fallback as the shared runner: usage may appear only on the turns.
-                turns = [t for t in client.list_turns(session_id) if isinstance(t.get('usage'), dict)]
-                usage = _usage({'usage': {'turns': turns}}) if turns else None
-        except Exception:
-            usage = None
-        if usage is not None:
-            return usage
-        time.sleep(min(30.0, poll_seconds * (attempt + 1)))
-    return None
+READ_BACK_SECONDS = 60
+
+
+def _read_back_usage(client, session_id, poll_seconds, attempts=5, budget=READ_BACK_SECONDS):
+    """Bounded by one total deadline: the client's request deadline and the polling sleeps share it."""
+    deadline = time.time() + budget
+    set_deadline = getattr(client, 'set_deadline', None)
+    try:
+        for attempt in range(attempts):
+            if set_deadline:
+                set_deadline(deadline)
+            usage = _poll_usage(client, session_id)
+            remaining = deadline - time.time()
+            if usage is not None or remaining <= 0:
+                return usage
+            time.sleep(min(30.0, poll_seconds * (attempt + 1), remaining))
+        return None
+    finally:
+        if set_deadline:
+            set_deadline(None)
+
+
+def _poll_usage(client, session_id):
+    try:
+        usage = _usage({'usage': client.retrieve_session(session_id).get('usage')})
+        if usage is None:
+            # Same fallback as the shared runner: usage may appear only on the turns.
+            turns = [t for t in client.list_turns(session_id) if isinstance(t.get('usage'), dict)]
+            usage = _usage({'usage': {'turns': turns}}) if turns else None
+        return usage
+    except Exception:
+        return None
 
 
 def _usage(result):
@@ -700,6 +721,23 @@ def _usage(result):
 
 
 # ---------------------------------------------------------------- trials
+
+def _covers(scope, saved):
+    """Lists may only grow, counts may only rise, anything else must match."""
+    if scope.keys() != saved.keys():
+        return False
+    for key, old in saved.items():
+        new = scope[key]
+        if isinstance(old, list):
+            ok = set(old) <= set(new)
+        elif isinstance(old, int) and not isinstance(old, bool):
+            ok = new >= old
+        else:
+            ok = new == old
+        if not ok:
+            return False
+    return True
+
 
 class Trials:
     def __init__(self, out, *, client, model, backend, max_seconds=600, max_tool_calls=24,
@@ -843,8 +881,25 @@ class Trials:
                 for row in self.timings:
                     stream.write('\t'.join(map(str, row)) + '\n')
 
+    def _bind_scope(self, stage, scope):
+        """A stage may rerun into an existing --out only with the same or a wider selection, never a narrower one,
+        so its summary always covers every saved result."""
+        path = self.out / 'scope.json'
+        saved = _read_json(path) if path.exists() else {}
+        if stage in saved and not _covers(scope, saved[stage]):
+            raise ValueError(f'{stage}: --out was run with selection {saved[stage]}; a narrower or different one '
+                             'needs a new --out')
+        saved[stage] = scope
+        path.write_text(json.dumps(saved, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+
     def _run(self, trial):
         results = self.results
+        cases = {'model': self.model, 'cases': sorted(c['id'] for c in self.cases)}
+        for stage, scope in (('diagnose', cases), ('refute', cases),
+                             ('preflight', {'model': self.model, 'plans': sorted(p['id'] for p in self.plans)}),
+                             ('risk', {'model': DECISIONS_MODEL, 'repeats': self.risk_repeats})):
+            if trial == 'all' or trial == stage or (trial == 'refute' and stage == 'diagnose'):
+                self._bind_scope(stage, scope)
         if trial in ('timeline', 'all'):
             results['timeline'] = self.write('timeline-summary', self._timed('timeline', self.timeline))
         if trial in ('diagnose', 'refute', 'all'):
@@ -1022,8 +1077,9 @@ class DecisionsClient:
             return saved['response']
         rejected_path = self.dir / f'{name}.rejected.json'
         rejected = _read_json(rejected_path) if rejected_path.exists() else []
-        if any(entry.get('requestSha256') != _sha(request) for entry in rejected):
-            raise ValueError(f'decision {name}: request changed since it was rejected; use a new --out')
+        if any(entry.get('requestSha256') != _sha(request) or entry.get('evaluationSha256') != evaluation_sha
+               for entry in rejected):
+            raise ValueError(f'decision {name}: request or answer key changed since it was rejected; use a new --out')
         if len(rejected) >= self.MAX_REJECTIONS:
             raise RuntimeError(f'decision {name}: rejected {len(rejected)} times; inspect {rejected_path.name}')
         try:
@@ -1035,7 +1091,8 @@ class DecisionsClient:
         began = time.time()
         response = self.transport(request) if self.transport else self._post(request)
         if isinstance(response, dict) and response.get('error'):
-            rejected.append({'requestSha256': _sha(request), 'at': time.time(), 'error': response['error']})
+            rejected.append({'requestSha256': _sha(request), 'evaluationSha256': evaluation_sha, 'at': time.time(),
+                             'error': response['error']})
             rejected_path.write_text(json.dumps(rejected, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
             started.unlink()
             raise RuntimeError(f'decision {name} rejected: {response["error"]}; rerun the same --out to retry '
