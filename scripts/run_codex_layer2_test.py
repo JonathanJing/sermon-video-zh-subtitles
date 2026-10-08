@@ -169,14 +169,11 @@ def run_diagnostic_test(fixture_dir, out_dir, *, cli_path, reviewer_tier='fast',
     return report
 
 
-def run_test(fixture_dir, policy_path, out_dir, *, cli_path, reviewer_tier='fast', timeout_seconds=180, mock_responses_dir=None, resource_policy_path=None, translator_model=None, diagnostic_fixture=False, session_verifier=None, backend='codex'):
+def run_test(fixture_dir, policy_path, out_dir, *, cli_path, reviewer_tier='fast', timeout_seconds=180, mock_responses_dir=None, resource_policy_path=None, translator_model=None, diagnostic_fixture=False, session_verifier=None):
     if diagnostic_fixture:
         return run_diagnostic_test(fixture_dir, out_dir, cli_path=cli_path, reviewer_tier=reviewer_tier,
             timeout_seconds=timeout_seconds, mock_responses_dir=mock_responses_dir,
-            resource_policy_path=resource_policy_path, translator_model=translator_model, session_verifier=session_verifier,
-            backend=backend)
-    if backend != 'codex':
-        raise ValueError('openai_api_backend_requires_diagnostic_fixture')
+            resource_policy_path=resource_policy_path, translator_model=translator_model, session_verifier=session_verifier)
     fixture_dir, out_dir = Path(fixture_dir).resolve(), Path(out_dir).resolve()
     root = Path(__file__).resolve().parents[1]
     if not out_dir.is_relative_to(root / 'artifacts') or out_dir == root / 'artifacts':
@@ -292,15 +289,13 @@ def main():
     parser.add_argument('--reviewer-tier', choices=['default', 'fast'], default='fast')
     parser.add_argument('--timeout-seconds', type=int, default=180)
     parser.add_argument('--resource-policy', type=Path, help='Explicit shared host-local CLI admission policy')
-    parser.add_argument('--backend', choices=['codex', 'openai_api'], default='codex',
-                        help='openai_api: --diagnostic-fixture only, under the dev OpenAI launcher; billed to tongxing-dev')
     args = parser.parse_args()
     from scripts.outcome_marker import run_with_outcome
     run_with_outcome(args.out_dir / 'outcome.json', 'codex-layer2-test', lambda: run_test(
         args.fixture_dir, args.policy, args.out_dir, cli_path=args.codex_cli,
         reviewer_tier=args.reviewer_tier, timeout_seconds=args.timeout_seconds,
         mock_responses_dir=args.mock_responses_dir, resource_policy_path=args.resource_policy,
-        translator_model=args.translator_model, diagnostic_fixture=args.diagnostic_fixture, backend=args.backend))
+        translator_model=args.translator_model, diagnostic_fixture=args.diagnostic_fixture))
 
 
 if __name__ == '__main__':
