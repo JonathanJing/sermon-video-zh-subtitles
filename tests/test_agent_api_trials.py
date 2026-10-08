@@ -550,10 +550,6 @@ class RunTests(unittest.TestCase):
                 trials.main(['risk', '--out', str(self.out)])
 
 
-if __name__ == '__main__':
-    unittest.main()
-
-
 class ReviewFixTests(unittest.TestCase):
     def test_preflight_rejects_invented_blockers_and_inconsistent_go(self):
         plan = next(p for p in trials.load_plans() if p['id'] == 'p02-clean')
@@ -875,3 +871,65 @@ class RoundTests(unittest.TestCase):
                 self.assertRaises(RuntimeError):
             client.decide('a01', {'input': 'one'})
         self.assertEqual(order, ['rejection', 'marker'])
+
+
+class LatestReviewTests(unittest.TestCase):
+    def test_server_errors_keep_the_unknown_outcome_marker(self):
+        import io
+        import urllib.error
+        (trials.ROOT / 'artifacts').mkdir(exist_ok=True)
+        temporary = tempfile.TemporaryDirectory(dir=trials.ROOT / 'artifacts', prefix='test-agent-trials-')
+        self.addCleanup(temporary.cleanup)
+        client = trials.DecisionsClient(Path(temporary.name), api_key='sk-test', timeout=5)
+
+        def fail(code):
+            def opener(*_args):
+                class Opener:
+                    def open(self, *_a, **_k):
+                        raise urllib.error.HTTPError('u', code, 'x', {}, io.BytesIO(b'{}'))
+                return Opener()
+            return opener
+        with patch.object(trials.urllib.request, 'build_opener', fail(503)), \
+                patch('scripts.sermon_openai_runtime.project_headers', return_value={}):
+            with self.assertRaisesRegex(RuntimeError, 'outcome unknown'):
+                client.decide('a', {'input': 'x'})
+        self.assertTrue((client.dir / 'a.started.json').exists())
+        with patch.object(trials.urllib.request, 'build_opener', fail(400)), \
+                patch('scripts.sermon_openai_runtime.project_headers', return_value={}):
+            with self.assertRaisesRegex(RuntimeError, 'rejected'):
+                client.decide('b', {'input': 'x'})
+        self.assertFalse((client.dir / 'b.started.json').exists())
+
+    def test_argument_free_checks_must_name_their_requirement(self):
+        call = {'name': 'check_mount_resolves', 'arguments': {}}
+        self.assertFalse(trials._call_matches(call, {'checked_with': 'check_mount_resolves', 'requirement': 'disk free'}))
+        self.assertTrue(trials._call_matches(call, {'checked_with': 'check_mount_resolves',
+                                                    'requirement': 'ASR mount resolves the symlink'}))
+
+    def test_risk_repeats_are_capped(self):
+        with self.assertRaises(ValueError):
+            trials.Trials('unused', client=None, model='m', backend='fake', risk_repeats=trials.MAX_RISK_REPEATS + 1)
+        with patch('sys.stderr'), self.assertRaises(SystemExit):
+            trials.main(['risk', '--out', 'unused', '--risk-repeats', '3000'])
+
+    def test_scopes_are_all_checked_before_any_is_widened(self):
+        (trials.ROOT / 'artifacts').mkdir(exist_ok=True)
+        temporary = tempfile.TemporaryDirectory(dir=trials.ROOT / 'artifacts', prefix='test-agent-trials-')
+        self.addCleanup(temporary.cleanup)
+        out = Path(temporary.name) / 'run'
+
+        def make(**kwargs):
+            return trials.Trials(out, client=trials.FakeAgentsClient(trials.fake_agent_script), model='gpt-6-luna',
+                                 backend='fake', poll_seconds=0,
+                                 decisions=trials.DecisionsClient(out, transport=trials.fake_decisions), **kwargs)
+        make(case_ids=['f01-plugin-identity'], plan_ids=['p02-clean']).run('diagnose')
+        make(risk_repeats=2).run('risk')
+        before = (out / 'scope.json').read_text()
+        with self.assertRaisesRegex(ValueError, 'risk'):
+            make(case_ids=['f01-plugin-identity', 'f03-relative-out'], risk_repeats=1).run('all')
+        self.assertEqual((out / 'scope.json').read_text(), before)
+        self.assertIn('scorer', json.loads(before)['diagnose'])
+
+
+if __name__ == '__main__':
+    unittest.main()

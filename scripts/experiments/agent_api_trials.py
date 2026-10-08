@@ -33,6 +33,7 @@ import argparse
 import copy
 from datetime import datetime, timezone
 import hashlib
+import inspect
 import json
 import os
 from pathlib import Path
@@ -545,6 +546,10 @@ CHECK_VERDICT = {'check_staged': 'staged', 'check_out_path': 'relative_to_root_o
                  'check_mount_resolves': 'resolves', 'compare_plugin_identity': 'equal'}
 
 
+ARGUMENT_FREE_TERMS = {'check_mount_resolves': ('mount', 'symlink', 'blob', '挂载', '符号链接'),
+                       'compare_plugin_identity': ('plugin', 'identity', '插件', '身份')}
+
+
 def _check_satisfied(plan_root, requirement, calls):
     """A required check counts when a call on exactly its target returns the plan's expected verdict."""
     for call in calls:
@@ -568,9 +573,9 @@ def _call_matches(call, item):
     if call['name'] != item['checked_with']:
         return False
     values = [str(v).strip().removeprefix('./') for v in (call.get('arguments') or {}).values() if str(v).strip()]
-    if not values:  # argument-free checks (mount, plugin identity) cover their single requirement
-        return True
     text = _text(item.get('requirement'), item.get('evidence'))
+    if not values:  # argument-free checks must name the requirement they cover (mount, plugin identity)
+        return any(term in text for term in ARGUMENT_FREE_TERMS.get(call['name'], ()))
     return any(v.lower() in text for v in values)
 
 
@@ -769,8 +774,8 @@ class Trials:
         self.max_seconds, self.max_tool_calls, self.poll_seconds = max_seconds, max_tool_calls, poll_seconds
         self.max_sessions, self.sessions_started = max_sessions, 0
         self.decisions, self.risk_repeats = decisions, risk_repeats
-        if risk_repeats < 1:
-            raise ValueError('risk_repeats must be at least 1')
+        if not 1 <= risk_repeats <= MAX_RISK_REPEATS:
+            raise ValueError(f'risk_repeats must be between 1 and {MAX_RISK_REPEATS}')
         self.cases, self.plans = load_cases(only=case_ids), load_plans(only=plan_ids)
         self.timings, self.results, self.partial = [], {}, {}
 
@@ -935,15 +940,16 @@ class Trials:
                 results[stage] = earlier
         return results
 
-    def _bind_scope(self, stage, scope):
+    def _bind_scopes(self, scopes):
         """A stage may rerun into an existing --out only with the same or a wider selection, never a narrower one,
-        so its summary always covers every saved result."""
+        so its summary always covers every saved result. All stages are checked before any scope is written."""
         path = self.out / 'scope.json'
         saved = _read_json(path) if path.exists() else {}
-        if stage in saved and not _covers(scope, saved[stage]):
-            raise ValueError(f'{stage}: --out was run with selection {saved[stage]}; a narrower or different one '
-                             'needs a new --out')
-        saved[stage] = scope
+        for stage, scope in scopes.items():
+            if stage in saved and not _covers(scope, saved[stage]):
+                raise ValueError(f'{stage}: --out was run with selection {saved[stage]}; a narrower or different one '
+                                 'needs a new --out')
+        saved.update(scopes)
         # Durable before any paid work of the stage, so a crash cannot leave receipts without their scope.
         _write_durably(path, json.dumps(saved, ensure_ascii=False, indent=2) + '\n')
 
@@ -961,17 +967,20 @@ class Trials:
         cases = {**agent, 'prompt': _sha(DIAGNOSE_INSTRUCTIONS)[:12], 'cases': fixtures}
         planted = sorted(tag(w['case'], w) for w in _read_json(WRONG_DIAGNOSES)['diagnoses'] if w['case'] in case_ids)
         policy = _read_json(RISK)
-        for stage, scope in (('timeline', {'cases': fixtures}), ('diagnose', cases),
-                             ('refute', {**cases, 'prompt': _sha([DIAGNOSE_INSTRUCTIONS, REFUTE_INSTRUCTIONS])[:12],
-                                         'planted': planted}),
-                             ('preflight', {**agent, 'prompt': _sha(PREFLIGHT_INSTRUCTIONS)[:12],
-                                            'plans': sorted(tag(p['id'], [evidence_sha(p['evidence']), p['expected']])
-                                                            for p in self.plans)}),
-                             ('risk', {'backend': self.backend, 'model': DECISIONS_MODEL, 'repeats': self.risk_repeats,
-                                       'actions': sorted(tag(a['id'], [a, risk_request(a, policy['tiers'])])
-                                                         for a in policy['actions'])})):
-            if trial == 'all' or trial == stage or (trial == 'refute' and stage == 'diagnose'):
-                self._bind_scope(stage, scope)
+        scopes = {'timeline': {'cases': fixtures, 'scorer': _scorer_identity('timeline')},
+                  'diagnose': {**cases, 'scorer': _scorer_identity('diagnose')},
+                  'refute': {**cases, 'prompt': _sha([DIAGNOSE_INSTRUCTIONS, REFUTE_INSTRUCTIONS])[:12],
+                             'planted': planted, 'scorer': _scorer_identity('refute')},
+                  'preflight': {**agent, 'prompt': _sha(PREFLIGHT_INSTRUCTIONS)[:12],
+                                'plans': sorted(tag(p['id'], [evidence_sha(p['evidence']), p['expected']])
+                                                for p in self.plans),
+                                'scorer': _scorer_identity('preflight')},
+                  'risk': {'backend': self.backend, 'model': DECISIONS_MODEL, 'repeats': self.risk_repeats,
+                           'actions': sorted(tag(a['id'], [a, risk_request(a, policy['tiers'])])
+                                             for a in policy['actions']),
+                           'scorer': _scorer_identity('risk')}}
+        self._bind_scopes({stage: scope for stage, scope in scopes.items()
+                           if trial in ('all', stage) or (trial == 'refute' and stage == 'diagnose')})
         if trial in ('timeline', 'all'):
             results['timeline'] = self.write('timeline-summary', self._timed('timeline', self.timeline))
         if trial in ('diagnose', 'refute', 'all'):
@@ -1009,6 +1018,21 @@ class Trials:
                 'risk': results.get('risk', {}).get('summary'),
                 'agentUsage': _sum_usage(results),
                 'decisionsUsage': _sum_decisions_usage(results)}
+
+
+def _scorer_identity(stage):
+    """Hash of the code that turns a stage's sessions into scores, so saved scores never merge across a scorer change."""
+    tools = [EvidenceTools, schema_errors, evidence_files]
+    parts = {'timeline': [build_timeline],
+             'diagnose': [*tools, _diagnosis_schema, score_diagnosis, check_citations, _groups_match, _text, _relative,
+                          _arm_summary],
+             'refute': [*tools, _diagnosis_schema, score_diagnosis, check_citations, _groups_match, _text, _relative,
+                        _refutation_schema, score_refutation, _refute_summary],
+             'preflight': [*tools, _preflight_schema, score_preflight, preflight_check, _check_satisfied, _call_matches,
+                           _relative, _groups_match, _text],
+             'risk': [score_risk, risk_summary]}[stage]
+    constants = {'preflight': [ARGUMENT_FREE_TERMS, CHECK_VERDICT]}.get(stage, [])
+    return _sha([inspect.getsource(part) for part in parts] + [repr(c) for c in constants])[:12]
 
 
 def _refute_summary(rows):
@@ -1253,7 +1277,11 @@ class DecisionsClient:
             except urllib.error.HTTPError as exc:
                 body = exc.read(2000).decode('utf-8', 'replace')
                 exc.close()
-                # A rejected request was not processed; record it so the run can stop cleanly.
+                if exc.code >= 500:
+                    # A server-side failure may follow processing; keep the marker so it is never resent blindly.
+                    outcome['error'] = RuntimeError(f'Decisions returned HTTP {exc.code}; outcome unknown')
+                    return
+                # A 4xx rejection was not processed; record it so the run can stop cleanly.
                 outcome['value'] = {'error': {'status': exc.code,
                                               'body': re.sub(r'sk-[A-Za-z0-9_-]+', 'sk-REDACTED', body)}}
             except BaseException as exc:
@@ -1305,6 +1333,17 @@ def fake_agent_script(payload):
 
 # ---------------------------------------------------------------- entry
 
+MAX_RISK_REPEATS = 5
+
+
+def _risk_repeats(text):
+    """Each repeat is 60 paid Decisions requests; the documented profile is 3, so more than 5 is refused."""
+    value = _positive_int(text)
+    if value > MAX_RISK_REPEATS:
+        raise argparse.ArgumentTypeError(f'at most {MAX_RISK_REPEATS} (each repeat sends 60 paid requests)')
+    return value
+
+
 def _positive_int(text):
     value = int(text)
     if value < 1:
@@ -1321,7 +1360,7 @@ def main(argv=None):
     parser.add_argument('--case', action='append', help='Limit to these failure-case ids')
     parser.add_argument('--plan', action='append', help='Limit to these preflight-plan ids')
     parser.add_argument('--max-sessions', type=int, default=60)
-    parser.add_argument('--risk-repeats', type=_positive_int, default=3,
+    parser.add_argument('--risk-repeats', type=_risk_repeats, default=3,
                         help='send each risk request this many times to measure stability (default 3)')
     parser.add_argument('--max-tool-calls', type=int, default=24)
     parser.add_argument('--max-seconds', type=float, default=600)
