@@ -240,6 +240,9 @@ class ContinuationTests(unittest.TestCase):
         authorization = f.write_locale_authorization()
         self.manifest['productionRunId'] = f.base.config.run_id
         self.recipe['productionRunId'] = f.base.config.run_id
+        # Production manifests bind the controller configuration that owns the lanes.
+        self.manifest['bindings']['localeConfiguration'] = {
+            'path': str(f.base.config.path), 'sha256': c.file_sha(f.base.config.path)}
         self.recipe['stages'][0]['requiredEvidence'] = [
             {'kind': 'budget_authorization', 'binding': 'localeBudget'}]
         self.bind_recipe()
@@ -251,12 +254,10 @@ class ContinuationTests(unittest.TestCase):
         self.assertEqual(admitted['kind'], 'budget_authorization')
         self.assertEqual(self.state, before)
         self.assertFalse(self.root.exists())
-        # Each v2 locale shard can spend its full cap. One-locale room must
-        # not admit three-locale authority, and refusal must remain read-only.
-        self.manifest['locales'] = ['zh-Hans', 'ko', 'es']
-        template = self.manifest['policies'][0]
-        self.manifest['policies'] = [{**template, 'locale': locale}
-                                    for locale in self.manifest['locales']]
+        # The cap is counted once per lane of the bound controller configuration.
+        # Refusal must remain read-only.
+        cost = c.read(authorization)['authority']['globalBounds']['costMicrousd']
+        self.manifest['budget']['limitMicroUsd'] = cost - 1
         before = copy.deepcopy(self.state)
         with patch.object(subject.adapters, 'execute', side_effect=AssertionError('dispatch forbidden')):
             with self.assertRaisesRegex(ValueError, 'budget_execution_binding_changed'):
@@ -264,7 +265,7 @@ class ContinuationTests(unittest.TestCase):
                     self.state, self.recipe_path, self.root, 'localeBudget', authorization)
         self.assertEqual(self.state, before)
         self.assertFalse(self.root.exists())
-        self.manifest['budget']['limitMicroUsd'] = 3 * c.read(authorization)['authority']['globalBounds']['costMicrousd']
+        self.manifest['budget']['limitMicroUsd'] = cost
         before = copy.deepcopy(self.state)
         subject.validate_evidence(self.state, self.recipe_path, self.root, 'localeBudget', authorization)
         self.assertEqual(self.state, before)

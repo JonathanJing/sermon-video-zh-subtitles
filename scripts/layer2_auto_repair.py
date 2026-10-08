@@ -640,6 +640,9 @@ def _receipt(out_root: Path, ledger_root: Path, value: dict, entries: list[dict]
                "ledgerHeadSha256": json_sha256(last),
                "humanApproval": False, "reviewKind": "machine_review"}
     path = out_root / f"auto-repair-receipt-{len(entries):03d}.json"
-    if not path.exists():
+    if path.exists():
+        # A restart recomputes the receipt; an existing file must match it exactly, or fail closed.
+        _require(json.loads(path.read_text(encoding="utf-8")) == receipt, "Auto-repair receipt changed")
+    else:
         runner.save_new(path, receipt)
     return receipt

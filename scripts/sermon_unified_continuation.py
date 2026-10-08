@@ -275,9 +275,21 @@ def validate_evidence_slot(state, slot, ref, *, inputs, references):
                     and expected_binding['requestLimits'] == limits
                     and all(expected_binding[k] == authority[k] for k in ('globalBounds','unitBounds','limits')), 'budget_approval_binding_changed')
             expected_code = controller.code_identity()
-        # Locale-scoped v2 ledgers can spend the cap once per registered locale, as the adapter preflight counts it.
-        locale_count = max(1, len(manifest.get('locales') or [])) \
-            if version == 'sermon-canonical-layer2-budget-authorization-v2' else 1
+        # Locale-scoped v2 ledgers spend the cap once per lane of the bound controller configuration,
+        # so count lanes from that configuration, as the adapter preflight does.
+        locale_count = 1
+        if version == 'sermon-canonical-layer2-budget-authorization-v2':
+            from scripts import canonical_layer2_controller as ctl
+            lane_counts = set()
+            for name in manifest.get('bindings', {}):
+                try:
+                    config = ctl.load_configuration(c.binding(manifest, '/', name))
+                except Exception:
+                    continue  # not a controller configuration
+                if config.sha256 == value['configurationSha256']:
+                    lane_counts.add(len(config.lanes))
+            require(len(lane_counts) == 1, 'budget_execution_binding_changed')
+            locale_count = lane_counts.pop()
         require(re.fullmatch('[a-f0-9]{64}', str(binding.get(
                     'executionSha256' if version == 'sermon-study-budget-authorization-v1' else 'configurationSha256','')))
                 and binding.get('codeIdentitySha256') == expected_code
