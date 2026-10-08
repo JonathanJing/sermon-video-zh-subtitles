@@ -206,26 +206,33 @@ class ScoringTests(unittest.TestCase):
                 {'name': 'check_out_path',
                  'arguments': {'out': '<HOME>/sermon-video-zh-subtitles/artifacts/r/diagnostic-audio-r4'}},
                 {'name': 'check_mount_resolves', 'arguments': {}},
-                {'name': 'compare_plugin_identity', 'arguments': {}}]
+                {'name': 'compare_plugin_identity', 'arguments': {}},
+                {'name': 'read_file', 'arguments': {'path': 'authorization.json'}}]
         unreported = trials.score_preflight(report, clean['expected'], good, clean['evidence'])
         self.assertFalse(unreported['correct'])
         self.assertEqual(len(unreported['requiredChecksUnreported']), 5)
         self.assertIn('authorization', unreported['requiredChecksUnreported'])
         # Items that only name the tools, not the dependencies the calls checked, do not count.
         unrelated = {'go': True, 'items': [{'requirement': 'item ' + c['name'], 'status': 'ok',
-                                            'checked_with': c['name']} for c in good]}
+                                            'checked_with': c['name']} for c in good[:4]]}
         unmatched = trials.score_preflight(unrelated, clean['expected'], good, clean['evidence'])
         self.assertFalse(unmatched['correct'])
         self.assertEqual(len(unmatched['claimedButNotMatched']), 2)
         report = {'go': True, 'items': [
             {'requirement': ' '.join([c['name'], *c['arguments'].values()]), 'status': 'ok', 'checked_with': c['name']}
-            for c in good]}
+            for c in good[:4]]}
         # Every tool-backed item is there, but the plan's authorization is not listed.
         self.assertEqual(trials.score_preflight(report, clean['expected'], good, clean['evidence'])
                          ['requiredChecksUnreported'], ['authorization'])
         report['items'].append({'requirement': 'authorization.json covers this round', 'kind': 'authorization',
                                 'status': 'ok', 'checked_with': 'none'})
         self.assertTrue(trials.score_preflight(report, clean['expected'], good, clean['evidence'])['correct'])
+        # Listed but never read, or left unverified, does not clear the plan.
+        unread = trials.score_preflight(report, clean['expected'], good[:-1], clean['evidence'])
+        self.assertEqual(unread['requiredChecksUnreported'], ['authorization (read and verified)'])
+        report['items'][-1]['status'] = 'unverified'
+        self.assertFalse(trials.score_preflight(report, clean['expected'], good, clean['evidence'])['correct'])
+        report['items'][-1]['status'] = 'ok'
         wrong_target = [{'name': 'check_staged', 'arguments': {'path': 'xdocs/series-terminology.zh.md'}},
                         {'name': 'check_out_path', 'arguments': {
                             'out': '/tmp/<HOME>/sermon-video-zh-subtitles/artifacts/r/diagnostic-audio-r4'}},
@@ -246,6 +253,13 @@ class ScoringTests(unittest.TestCase):
         missed = trials.score_preflight({'items': [], 'go': False}, planted['expected'], good, planted['evidence'])
         self.assertTrue(missed['goCorrect'])
         self.assertFalse(missed['correct'])
+
+    def test_schema_bounds_reject_out_of_range_confidence(self):
+        schema = trials._diagnosis_schema()
+        report = {'category': 'other', 'root_cause': 'x', 'evidence': [], 'fix': 'y', 'confidence': 1.5,
+                  'unknowns': [], 'summary_zh': 'z'}
+        self.assertEqual(trials.schema_errors(report, schema), ['report.confidence: outside [0, 1]'])
+        self.assertEqual(trials.schema_errors({**report, 'confidence': 0.4}, schema), [])
 
     def test_refuter_is_scored_against_whether_the_diagnosis_was_right(self):
         self.assertTrue(trials.score_refutation({'verdict': 'upheld'}, True)['refuterRight'])

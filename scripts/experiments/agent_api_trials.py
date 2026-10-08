@@ -349,13 +349,16 @@ SCHEMA_TYPES = {'object': dict, 'array': list, 'string': str, 'boolean': bool, '
 
 
 def schema_errors(value, schema, where='report'):
-    """Problems with value under the subset of JSON Schema the submit tools use (type, required, enum, items)."""
+    """Problems with value under the subset of JSON Schema the submit tools use (type, required, enum, items,
+    minimum, maximum)."""
     expected = schema.get('type')
     kind = SCHEMA_TYPES.get(expected) if isinstance(expected, str) else None
     if kind and (not isinstance(value, kind) or (expected in ('integer', 'number') and isinstance(value, bool))):
         return [f'{where}: expected {expected}']
     if 'enum' in schema and value not in schema['enum']:
         return [f'{where}: not one of {schema["enum"]}']
+    if expected in ('integer', 'number') and not schema.get('minimum', value) <= value <= schema.get('maximum', value):
+        return [f'{where}: outside [{schema.get("minimum")}, {schema.get("maximum")}]']
     problems = []
     if expected == 'object':
         problems += [f'{where}.{key}: missing' for key in schema.get('required', []) if key not in value]
@@ -527,12 +530,17 @@ def score_preflight(report, expected, calls, plan_root=None):
             unmatched.append({'requirement': item.get('requirement'), 'checked_with': item['checked_with']})
     # Each required check must also be reported: an item that names the tool it was checked with.
     unreported = sorted({r['tool'] for r in expected.get('requiredChecks', [])} - claimed)
-    # A plan carrying an authorization file must have it listed, since the prompt asks for every authorization.
-    if plan_root is not None and (Path(plan_root) / 'authorization.json').exists() and not any(
-            isinstance(i, dict) and (i.get('kind') == 'authorization'
-                                     or any(t in _text(i.get('requirement')) for t in ('authoriz', '授权')))
-            for i in report.get('items', [])):
-        unreported.append('authorization')
+    # A plan carrying an authorization file must have it listed as verified (status ok) and actually read, since the
+    # prompt asks for every authorization and a go without reading it clears a service stop on no evidence.
+    if plan_root is not None and (Path(plan_root) / 'authorization.json').exists():
+        listed = [i for i in report.get('items', []) if isinstance(i, dict) and (
+            i.get('kind') == 'authorization' or any(t in _text(i.get('requirement')) for t in ('authoriz', '授权')))]
+        read = any(c['name'] == 'read_file' and _relative((c.get('arguments') or {}).get('path', '')) == 'authorization.json'
+                   for c in calls)
+        if not listed:
+            unreported.append('authorization')
+        elif not read or not any(i.get('status') == 'ok' for i in listed):
+            unreported.append('authorization (read and verified)')
     # A checked item's status must say what its check returned: ok when it passed, blocker when it failed.
     misread = []
     for item in report.get('items', []):
@@ -693,7 +701,7 @@ def run_session(client, session_dir, payload, tools, *, max_seconds, max_tool_ca
         # Usage is often filled in shortly after a session ends, failed or not; read it back, bounded.
         usage = _read_back_usage(client, result['session_id'], poll_seconds)
         if usage is not None:
-            usage_path.write_text(json.dumps({'usage': usage, 'source': 'session read-back'}) + '\n', encoding='utf-8')
+            _write_durably(usage_path, json.dumps({'usage': usage, 'source': 'session read-back'}) + '\n')
     return {'sessionId': result.get('session_id'), 'status': result.get('status'),
             'toolCalls': result.get('tool_calls'), 'usage': usage,
             'elapsedSeconds': elapsed,
