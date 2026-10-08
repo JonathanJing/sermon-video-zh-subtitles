@@ -30,6 +30,9 @@
 | 注错校准 | `scripts/auto_qc_seeded_errors.py` | 在干净成品里注入已知错误，统计每类检出率和干净样例的误报率。只有出现干净版本没有的新问题才算检出（错句配音必须由 ASR 判出），不会把原有误报算成检出。文字类含换书卷（wrong_book）和改序数（wrong_ordinal：英文说 first 而译文的“第一/첫 번째/primer”被改成下一个；英文没说序数的组则在句首加“第二，/둘째, /En segundo lugar,”），音频类含换成别句的配音（wrong_sentence）和配音漏掉一个否定词或数字（dropped_key_word；韩语还包括用韩文说的数量，按文字质检的同一规则识别固有词和汉字词数字，如“두 사람、스무 살、이십 년、삼장”，单音节汉字词数字须紧接量词，“이 사람”不算数字：用生产 TTS 把去掉这个词的句子真正合成出来，两级 ASR 听这段音频都必须判不一致；会把漏掉的词“补听”回来的 ASR 在这里失败）。两类都需要注入 ASR transport，dropped_key_word 还需要注入 TTS transport 和它的身份（`calibrate(..., render=..., render_identity={provider, model, checkpointSha256, synthesis})`，二者必须成对出现，`synthesis` 就是 speech job 的合成身份：适配器、配置哈希、声音、说话人、条件化、语言参数、规范化策略）；校准记录 `renderIdentity`，签发试听豁免时必须同时给出这个音频包所用的 speech job（哈希须等于包里的 `targetLanguageSpeechJobJsonSha256`，CLI 为 `--speech-job`），`synthesis` 必须等于该 job 的合成身份，provider、model、checkpointSha256 必须等于音频包的 `voice`。声音、语速或解码设置不同，说明漏词音频不是用生产配音合成的，不能放行。口播类（`spoken.*`）只注入精简组：换成别组内容（swapped_content）、追加别组内容（added_content）、翻转否定（flipped_negation）、删掉最长的一个分句（dropped_claim，模拟把论点、呼召或引语出处当成可删的插入语删掉）。删冗余本来就是精简允许的，所以口播类注的是“说的意思变了”；和 `semantic_negation`、`added_number`、`wrong_ordinal`、`added_content`（完整译文的组后面追加另一组不含数字的最短译文，英文没说过的内容）、`swapped_name`（同一组里有明确定向关系的两个术语表人名或地名互换位置，比如“亚伯拉罕祝福了以撒”变成“以撒祝福了亚伯拉罕”，名字都还在，只有谁做了什么错了）、`swapped_quantity`（两个英文数量在译文里对调，比如“十二个儿子和四十个女儿”变成“四十个儿子和十二个女儿”，数字都还在，只有意思错了）一样，只有回译判出新的重大问题才算检出，人名、数字等表面检查同时判失败也不算回译的检出 |
 | 豁免收据 | `scripts/machine_quality_waiver.py` | 汇总最终 QC 结果，按上面的 5% 规则决定这个语言是自动发布、只发文字还是暂停。先核对 QC 收据确实检查的是这份候选（每组译文哈希）和这份音频包（候选哈希、每句音频哈希），对不上就报错 |
 | 门禁收据 | `scripts/machine_quality_release_basis.py` | 生成并校验两种绑定到具体产物的收据：**译文豁免**（`sermon-target-language-machine-text-waiver-v1`，绑定一个 L2 候选；有精简组时还必须绑定一份通过的精简绑定（`sermon-spoken-condensation-binding-v2`，记录复核时的 QC `implementationSha256`，必须等于签发时的实现；v1 绑定和旧实现的绑定要用当前代码重新 bind），组别完全一致，并记录 `condensedGroupIds` 和 `condensationBindingJsonSha256`。这样的收据只能当口播稿的依据，L4 不接受它作完整译文）和**试听豁免**（`sermon-target-language-machine-audio-waiver-v2`，绑定一个 L3 音频包、它的 ASR 筛查和口播稿的译文豁免） |
+| 文字链驱动 | `scripts/run_machine_qc_clip_test.py` | 在已有 Dev 运行上按哈希找候选、英文源包、锚点和 policy，从修复账本头做文字 QC（回译走本机 Codex CLI，Sol 6.1 medium，按请求缓存），再注错校准、签发译文豁免。`--spoken-binding LOCALE=PATH` 按绑定里的哈希找口播候选、完整候选和精简记录，用当前代码重算绑定，按口播模式 QC、校准口播各类并签发口播稿的译文豁免。`--text-backend fake` 只演练管线，不保存豁免 |
+| 精简驱动 | `scripts/run_spoken_condensation.py` | 读完整候选、8 秒预算、冻结锚点和候选自己的 policy，用本机 Codex CLI（Sol 6.1 high，缓存命名空间 `spoken-condensation-v1`）精简 `shorten` 组，写出精简记录和 L2 revision brief；同输入重跑复用，不覆盖已有证据，结果未知的调用会停止派发。`--backend fake` 只演练管线 |
+| 试听链驱动 | `scripts/run_machine_qc_audio_test.py`（传输在 `scripts/machine_qc_audio_transports.py`） | 按哈希预检音频包、speech job v3、译文豁免和 v2 筛查；一级 ASR 意见取筛查收据本身，校准新合成的音频前核对本机 Qwen3-ASR 权重、推理身份和筛查脚本与收据一致；二级 ASR 为 `gpt-transcribe`（OpenAI 音频转写 API，只上传单句音频，不发送预期文字和 keywords，须经 `run_with_openai_environment.py` 选定 Project，付费调用不重发，结果未知即停止派发，`--max-api-calls` 限额）；漏词音频由 speech job 自己的 TTS checkpoint 用正式渲染器合成。`--backend fake` 只演练管线，不保存豁免。详见 [机器试听豁免驱动](machine-qc-audio-driver.zh.md) |
 
 文本 QC 逐组记录 `englishSha256` 与 `sourceUnitIdsSha256`，签发豁免时按候选的 source-unit 顺序与冻结 anchor 中的英文核对。旧 QC 收据缺少这些字段时须重新检查，不能沿用。音频 QC 的 `thresholds` 必须等于当前标准 `THRESHOLDS`，放宽设置的结果不能授权试听豁免。
 
@@ -67,13 +70,19 @@ python scripts/target_audio_auto_qc.py --input units.json --repair-ledger-root r
   --source source-package.json --anchor anchor.json --out audio-qc.json
 # 整轨核对（读取音频包里的排程、单句音频和音轨；MP3 需要 ffmpeg 和同名 .wav 母带）
 python scripts/target_audio_auto_qc.py --track-package audio-package.json --out track-check.json
-# 精简记录导出 L2 revision brief（精简本身需要注入模型 transport，没有离线命令）
+# 精简（本机 Codex CLI，Sol 6.1 high，按请求缓存；写出精简记录和 L2 revision brief，同输入重跑复用，不覆盖已有证据；--backend fake 只验证流程）
+python scripts/run_spoken_condensation.py --candidate full-candidate.json --budget budget.json \
+  --anchor anchor.json --policy policy.json --out artifacts/<run>/condensation/ko --state-dir artifacts/<run>/state
+# 已有精简记录时也可单独导出 brief
 python scripts/spoken_condensation.py brief --record condensation.json --candidate full-candidate.json --out brief.json
 # 口播候选生成后绑回记录，再写出口播 QC 的输入（精简组带 condensation）
 python scripts/spoken_condensation.py bind --record condensation.json --candidate full-candidate.json \
   --anchor anchor.json --spoken-candidate spoken-candidate.json --policy policy.json --out condensation-binding.json
 python scripts/spoken_condensation.py qc-groups --binding condensation-binding.json --anchor anchor.json \
   --spoken-candidate spoken-candidate.json --out spoken-qc-groups.json
+# 在已有 Dev 运行上跑文字链：文字 QC（回译）、注错校准和译文豁免；口播稿加 --spoken-binding
+python scripts/run_machine_qc_clip_test.py --run-dir <run> --out artifacts/<run>/machine-qc \
+  --state-dir artifacts/<run>/state --locales ko [--spoken-binding ko=condensation-binding.json]
 # 离线注错校准（不含回译和 ASR transport，因此不能单独解锁豁免；spokenGroups 为上面的 qc-groups 输出）
 python scripts/auto_qc_seeded_errors.py --input calibration-input.json --out calibration.json
 # 豁免决定
@@ -84,7 +93,7 @@ python scripts/machine_quality_waiver.py --locale ko --candidate candidate.json 
 python scripts/machine_quality_release_basis.py text --source source.json --anchor anchor.json \
   --candidate candidate.json --text-qc text-qc.json --calibration calibration.json \
   --repair-ledger-root run/repair-ledger --out text-waiver.json
-# 文字 QC 由调用方注入模型 transport，没有命令行；调用方先取 machine_repair_ledger.position，
+# 文字 QC 也可在代码里注入模型 transport：调用方先取 machine_repair_ledger.position，
 # 传给 target_text_auto_qc.screen(repair_position=...)，再 machine_repair_ledger.append 追加本次结果
 # 口播稿有精简组时，还要给精简绑定；这份收据只能作口播稿依据，不能当完整译文的依据
 python scripts/machine_quality_release_basis.py text ... --candidate spoken-candidate.json \
@@ -99,6 +108,10 @@ python scripts/machine_quality_release_basis.py audio --package audio-package.js
   --out audio-waiver.json
 # 第 4 层：精简过的配音要带同一份精简绑定（sermon_unified_delivery 的 inputs.condensation_binding 同理）
 python scripts/build_full_video_app_release.py prepare ... --condensation-binding ko=condensation-binding.json
+# 在已有 Dev 运行上一次跑完整条试听链（预检、整轨核对、音频 QC、注错校准、试听豁免），见 [机器试听豁免驱动](machine-qc-audio-driver.zh.md)
+python scripts/run_with_openai_environment.py --environment dev -- python scripts/run_machine_qc_audio_test.py \
+  --run-dir <run> --out artifacts/machine-qc-audio/<run> --state-dir <文字驱动的状态目录> \
+  --asr-model-path <Qwen3-ASR 目录> --tts-checkpoint-map <checkpoint map>
 ```
 
 ## 当前接线范围
@@ -112,16 +125,17 @@ python scripts/build_full_video_app_release.py prepare ... --condensation-bindin
 - **L4：** `build_full_video_app_release.py` 和 `sermon_unified_delivery` 接受译文豁免和试听豁免（试听豁免必须绑定口播稿的那份译文豁免）。只要有一项是机器质检，就写出 [release v4](../schemas/sermon-target-language-release-package-v4.schema.json)，路径为 `/releases-v4/<pageId>/<locale>.json`：`contentStatus`、`audioStatus` 各自为 `human_reviewed` 或 `machine_checked`，`reviewBasis` 逐项记录完整文稿、口播稿、音轨用的是人工收据还是豁免收据，`disclosure` 是该语言的披露文案。完整文稿为机器质检时，正文用 [content v3](../schemas/sermon-full-video-text-content-v3.schema.json)（`status=machine_checked`，带同一份 `disclosure`），静态页面也显示“机器质检”和披露（披露前的标签跟披露同一语言：机器质检 / 기계 품질 검사 / Control de calidad automático）。三项都是人工时仍写 release v3，什么都不变。v4 还记录 `captionText`：配音字幕显示 `full_text`（完整译文）还是 `spoken_text`（口播稿）；口播稿与完整译文相同时为 `full_text`。完整译文和口播稿的组 id 必须按顺序完全一致（网页和 iOS 按组 id 对齐两套字幕），否则构建失败。**配音精简时**，口播稿的译文豁免必须带精简绑定，L4 核对绑定的哈希与收据一致、绑定的正是这份完整译文和这份口播稿、与完整译文不同的组正好是精简组，然后写 `captionText=full_text` 和 `spokenCondensation`（精简记录哈希、绑定哈希、精简组），静态页面说明配音为同传式精简口播、配音字幕显示完整译文。音轨资产里的字幕文件不变（仍是口播稿，L3 的哈希绑定照旧），客户端按 `textGroupId` 把字幕文字换成完整译文，时间仍跟配音。精简口播只能是机器质检的配音；带精简组的收据不能当完整译文的依据。
 - **目录：** 封存时同时写出 [catalog v4](../schemas/sermon-multilingual-catalog-v4.schema.json)（`/multilingual-v4.json`）和 `/multilingual-v3.json`。v3 是 v4 去掉所有机器质检语言后的投影，旧客户端读到的内容不变；只有机器质检页面、没有人工基线时拒绝封存，因为投影会是空目录。托管发布对两份目录都做比较交换和回读，`validate_catalog_snapshot` 要求投影与 v3 完全一致。
 - **客户端：** 网页和 iOS 先读 v4，404 时读 v3；v4 无法读取或校验失败也退回 v3 并记录错误。机器质检的语言显示“机器质检 / 기계 품질 검사 / Control de calidad automático”和发布包里的披露文案，机器质检的产物不会显示“已审核批准”。`captionText=full_text` 时，网页和 iOS Core 用完整译文作配音字幕；有 `spokenCondensation` 时，网页的提示文案说明配音为同传式精简口播（iOS App 的对应文案待补）。旧版 iOS 只读 v3，看不到机器质检的语言，更新到新版后才能看到。
-- **海报：** `build_multilingual_sermon_posters.py` 有 v4 时读 v4，审核标签按两项状态分别写明（例如“译文与配音经机器质检 · 未经人工审核”）。只会写 v3 的旧工具（`assemble_multilingual_v3_update.py`、`bind_published_alignment_catalog.py`）遇到带 v4 的快照会拒绝，避免两份目录不一致。
+- **海报与附加资源：** `build_multilingual_sermon_posters.py` 有 v4 时读 v4，审核标签按两项状态分别写明（例如“译文与配音经机器质检 · 未经人工审核”）。英文对照、定位补充资产和听审统计来源目录在站点带 v4 时读 v4，包含机器质检语言；读之前先核对 v3 正是 v4 的人工投影，不一致就拒绝。英文对照的 `reviewState=human_approved` 只指英文来源，各语言仍按自己的 release 状态显示。`bind_published_alignment_catalog.py` 把绑定写进 v4，再把 v3 重写为新 v4 的人工投影，状态从 release 原样核对、从不提升。只会写 v3 的旧周更组装 `assemble_multilingual_v3_update.py` 遇到带 v4 的基线仍会拒绝，避免两份目录不一致。
+- **冻结 policy：** 新的韩/西 v2–v4 policy 草稿不写插件绑定（`pluginId`、`pluginImplementationSha256`、`implementationStatus`、`requiredChecks` 都省略）时，`target_language_policy.py freeze` 自动选择 `ko-weekly-auto-v1` / `es-weekly-auto-v1`：实现 hash 按插件与共享规则（`common.py`、`auto_qc_text_common.py`）计算，`implementationStatus=verified`，`requiredChecks` 设为 `auto_qc_text_common.REQUIRED`；从带插件绑定的模板改用时显式传 `--language-review machine_qc`。中文沿用原插件。policy 格式不变，已冻结的 policy（含 `config/target-language-policies/*.json`，仍为 `ko-sermon-v1` / `es-sermon-v1`）不重新绑定，字节与 hash 不变。
+- **运行驱动：** 文字链 `run_machine_qc_clip_test.py`（回译走本机 Codex CLI）、精简 `run_spoken_condensation.py`（本机 Codex CLI）和试听链 `run_machine_qc_audio_test.py`（二级 ASR 为 `gpt-transcribe`，漏词音频用 speech job 的 TTS）都可在已有 Dev 运行上执行，见上面的组件表和命令。
 
 第 1 版豁免只放行**每一句都通过**的语言：有句子要只显字幕或改显英文时，收据不会生成，这个语言仍走人工路径。
 
 **还没有接上：**
 
-1. 新版 iOS 客户端提交 App Store / TestFlight；生成英文对照（`build_published_english_reference.py`）、对齐绑定和听审统计目录的工具仍只读 v3，还不能为机器质检周次生成这些附加资源。
-2. 回译检查的真实模型 transport（沿用 L2 的后端身份与缓存规则），以及首次真实校准。
-3. 冻结 policy 时，为韩/西选择 `ko-weekly-auto-v1` / `es-weekly-auto-v1` 插件，并把 `requiredChecks` 设为 `auto_qc_text_common.REQUIRED`。
-4. 只显字幕的句子、改显英文的句子和只发文字的语言（`audio_unavailable`）。
-5. 配音精简：配音字幕显示完整译文、发布包绑定精简记录、网页文案已完成；iOS App 的精简提示文案待补。精简模型和回译模型的真实 transport，以及首次口播校准，需要授权后运行；没有口播校准，精简稿签不出豁免。
-6. 英文转写审核、页面信息、大纲与默想的机器检查，以及每周发布授权改为长期授权。
-7. 严格链（`sermon_strict_candidate_bridge` / `sermon_strict_gate_admission`）的门禁决定把收据记为人工批准，所以严格链目前只收人工收据，遇到译文豁免会以 `strict_bridge_requires_human_receipt` 拒绝。译文豁免目前只能走 `prepare_target_language_speech_job.py --text-release-basis`；严格链要接受豁免，门禁决定需要单独记录豁免状态。
+1. 新版 iOS 客户端提交 App Store / TestFlight。（英文对照 `build_published_english_reference.py`、定位补充资产 `bind_published_fingerprints.mjs`、对齐绑定 `bind_published_alignment_catalog.py` 和听审统计来源目录 `build_language_listening_catalog.py` 已在站点带 v4 时读 v4，机器质检周次也能生成这些附加资源；对齐绑定同时写 v4 和由它投影出的 v3。配音不在原视频时钟上的语言（如精简口播）不能做声纹定位，该页的对齐绑定会拒绝。）
+2. 首次真实运行：回译、精简、二级 ASR（`gpt-transcribe`，付费）的首次调用，首次文字、口播和音频注错校准，以及首次译文、口播和试听豁免，都待授权后运行；校准合成的种子、精度、attention 与朗读指令由命令行给出，豁免只绑定合成身份。
+3. 只显字幕的句子、改显英文的句子和只发文字的语言（`audio_unavailable`）。精简失败的组保留完整译文，尚未自动改为只显字幕。
+4. 配音精简：revision brief → L2 口播候选 → `bind` 仍需手动串接；iOS App 的精简提示文案待补；精简口播稿的试听链驱动尚未支持。
+5. 英文转写审核、页面信息、大纲与默想的机器检查，以及每周发布授权改为长期授权。
+6. 严格链（`sermon_strict_candidate_bridge` / `sermon_strict_gate_admission`）的门禁决定把收据记为人工批准，所以严格链目前只收人工收据，遇到译文豁免会以 `strict_bridge_requires_human_receipt` 拒绝。译文豁免目前只能走 `prepare_target_language_speech_job.py --text-release-basis`；严格链要接受豁免，门禁决定需要单独记录豁免状态。

@@ -51,6 +51,8 @@ PDF 不进入该身份。静态 HTML 包含 `study-outline` 和 `study-meditatio
 
 读取方先请求 v4；404 时按原来方式读 v3，v4 读取或校验失败时也退回 v3 并记录错误。机器质检语言显示“机器质检”标签和 `disclosure.text`，不显示人工批准文案。`machine_reviewed` 仍只供 Dev 预览。
 
+附加资源工具在站点带 v4 时读 v4，否则照旧只读 v3，人工周次的输出逐字节不变。读 v4 前都先核对 v3 正是 v4 的人工投影，不一致就拒绝。[英文对照](../scripts/build_published_english_reference.py)和定位补充资产（`experiments/sermon-dubbing-poc/bind_published_fingerprints.mjs`）也覆盖机器质检语言；英文对照的 `reviewState=human_approved` 只表示英文来源经人工批准，各语言译文仍以自己的 release 和正文状态为准。[对齐绑定](../scripts/bind_published_alignment_catalog.py)把绑定写进 v4，再把 v3 重写为新 v4 的人工投影，先写 v3、后写 v4，每份都原子替换；中断后重跑仍可接受。目录状态只从 release 原样核对，从不提升。配音不在原视频时钟上（`audioDurationSeconds` 与 `durationSeconds` 相差 0.1 秒及以上，例如精简口播）的语言不能做声纹定位，绑定会拒绝。绑定会改变两份目录的 SHA，之后发布要以绑定后的候选为准。[听审统计来源目录](../scripts/build_language_listening_catalog.py)已按 #260 读取 v4。[旧版 v3 周更组装](../scripts/assemble_multilingual_v3_update.py)只会写 v3，基线带 v4 时仍会拒绝。
+
 ## 封存、发布与端点
 
 准备验证会同时检查私有批准、公开 bytes、候选 hash 与静态 HTML 完整显示。除逐语言七种资源外，准备 manifest 的 `runtimeAssets` 冻结并公开发布 app.mjs、published-weeks.mjs、content-locales.mjs，避免与旧 Web baseline 合并时留下不支持 v3 的 reader。这三份模块进入 input snapshot、HTTP 清单和 sealed snapshot。HTTP 准备 receipt 必须恰好覆盖全部逐语言资源与共享 runtime。封存清单与 live HTTP 验证包含学习资源及产品 manifest。原有多语言 overlay、baseline 和未知发布 lease 规则不变。
