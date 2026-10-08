@@ -222,6 +222,44 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
                 with self.assertRaisesRegex(machine.SourceAdjudicationError, code):
                     self.adjudicate(heard, FakeAdjudicator(self.out / 'cache', response))
 
+    def test_rewritten_listener_facts_are_derived_again_and_refused(self):
+        heard = [FakeListener('openai', CLIP_HEARD_OTHER), FakeListener('qwen', CLIP_HEARD)]
+        receipt = self.adjudicate(heard, FakeAdjudicator(self.out / 'cache', answer(
+            'undetermined', note='Translate the frozen English literally; the listeners disagree.')))
+        machine.validate_receipt(receipt, anchor=self.anchor)
+        self.assertTrue(receipt['listenerIndependence']['independent'])
+
+        def confirmed(forge):
+            value = json.loads(json.dumps(receipt))
+            row = value['units'][0]
+            row.update(decision='transcript_confirmed', heardBy='frozen', correctedText=None, request=None,
+                       decidedBy='listeners_agree_with_transcript', meaningNote=machine.CONFIRMED_NOTE)
+            forge(value, row)
+            return value
+        # A flipped agreement flag contradicts the tokens the receipt itself carries.
+        flipped = confirmed(lambda value, row: row['heard'][0].update(agreesWithFrozen=True))
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_unit_hearings'):
+            machine.validate_receipt(flipped)
+        # Tokens rewritten to the frozen words contradict what the listener's transcript yields for the unit.
+        rewritten = confirmed(lambda value, row: row['heard'][0].update(
+            agreesWithFrozen=True, bounded=True, unitTokens=machine.tokens(FROZEN)))
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_unit_hearings'):
+            machine.validate_receipt(rewritten, anchor=self.anchor)
+        # A lone listener declared independent of the source ASR is derived again from the models named.
+        lone = self.adjudicate([FakeListener('openai', CLIP_HEARD_OTHER)], FakeAdjudicator(
+            self.out / 'cache-lone', answer('transcript_corrected', 'openai', "You're failing in the middle of a trial.")))
+        self.assertFalse(lone['listenerIndependence']['independent'])
+        forged = json.loads(json.dumps(lone))
+        forged['listenerIndependence']['independent'] = True
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_listeners'):
+            machine.validate_receipt(forged, anchor=self.anchor)
+        forged['listenerIndependence']['sourceAsrModel'] = 'another-asr'
+        forged['listenerIndependence']['independentOfSourceAsr'] = ['openai']
+        forged['listenerIndependence']['reason'] = 'listener_differs_from_source_asr'
+        self.assertEqual(forged['listenerIndependence'], machine.listener_independence(['openai'], 'another-asr'))
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_source_binding_changed'):
+            machine.validate_receipt(forged, source=self.source, anchor=self.anchor)
+
     def test_disagreeing_listeners_may_end_undetermined_with_the_frozen_text_kept(self):
         heard = [FakeListener('openai', CLIP_HEARD_OTHER), FakeListener('qwen', CLIP_HEARD)]
         receipt = self.adjudicate(heard, FakeAdjudicator(self.out / 'cache', answer(

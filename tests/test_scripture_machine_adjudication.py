@@ -461,6 +461,16 @@ class MachineAdjudicationTests(unittest.TestCase):
         self.assertEqual(receipt['candidates'][0]['classification'], 'speaker_paraphrase')
         self.assertEqual(basis['candidates'][0]['coverage']['negations'], {'verse': 1, 'spoken': 2})
         self.assertTrue(basis['candidates'][0]['reason'].startswith('negation differs from JOH 3:16'))
+        # The same number of negations on other words is the opposite reading too.
+        moved = units('John chapter 3 is our text.',
+                      f'Verse 16 says, "{READ_3_16.replace("should not perish, but have", "should perish, but not have")}"',
+                      'Amen.')
+        receipt, basis = machine.adjudicate(source(), {'sourceUnits': moved}, plan(moved),
+                                            target_locale='zh-Hans', flagged_units=['u2'], library=LIBRARY)
+        self.assertEqual(receipt['candidates'][0]['classification'], 'speaker_paraphrase')
+        self.assertEqual(basis['candidates'][0]['coverage']['negations'], {'verse': 1, 'spoken': 1})
+        self.assertTrue(basis['candidates'][0]['reason'].startswith('negation differs from JOH 3:16: the verse negates'),
+                        basis['candidates'][0]['reason'])
         # A fragment that merely stops before the negation is reported as a fragment, not as a contradiction.
         short = units('John chapter 3 is our text.', 'Verse 16 says, "For God so loved the world."', 'Amen.')
         _, basis = machine.adjudicate(source(), {'sourceUnits': short}, plan(short),
@@ -504,6 +514,24 @@ class MachineAdjudicationTests(unittest.TestCase):
                 with self.assertRaisesRegex(machine.MachineAdjudicationError, 'edition_unavailable'):
                     machine.adjudicate(source(), {'sourceUnits': whole}, plan(whole),
                                        target_locale='ko', flagged_units=['u2'], library=LIBRARY)
+
+    def test_the_generator_identity_covers_its_dependencies(self):
+        inputs = machine.implementation_inputs()
+        self.assertEqual([row['path'] for row in inputs],
+                         ['scripts/scripture_machine_adjudication.py', 'scripts/english_scripture_coverage.py',
+                          'scripts/cuv_scripture.py', 'scripts/scripture_editions.py',
+                          'scripts/scripture_candidate_queue.py', 'scripts/scripture_adjudication.py',
+                          'data/scripture/eng-web.coverage.json', 'data/scripture/cmn-cu89s.json'])
+        self.assertTrue(all(isinstance(row['sha256'], str) and len(row['sha256']) == 64 for row in inputs))
+        before = machine.implementation_sha256()
+        # A changed dependency is a different generator, even with this module's bytes unchanged.
+        with mock.patch.object(coverage_module, 'DATA_PATH', Path('/nonexistent/eng-web.coverage.json')):
+            self.assertNotEqual(machine.implementation_sha256(), before)
+            self.assertIsNone(machine.implementation_inputs()[6]['sha256'])
+        self.assertEqual(machine.implementation_sha256(), before)
+        _, basis = machine.adjudicate(source(), {'sourceUnits': READING}, plan(READING),
+                                      target_locale='zh-Hans', flagged_units=['u3'], library=LIBRARY)
+        self.assertEqual((basis['implementationSha256'], basis['implementationInputs']), (before, inputs))
 
     def test_a_verse_the_english_edition_lacks_is_not_admitted(self):
         rows = units('Acts chapter 8 is our text.',

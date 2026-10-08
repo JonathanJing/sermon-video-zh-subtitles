@@ -92,7 +92,17 @@ class CoverageMeasureTests(unittest.TestCase):
                          ({'verse': 2, 'spoken': 0}, True, True, False))
         # Another translation's wording of the same negations still counts them.
         spoken = "Do not go up after them. Do not follow their road, but circle around behind them."
-        self.assertFalse(coverage.coverage(edition, 'GEN 1:3', spoken)['negationMismatch'])
+        same = coverage.coverage(edition, 'GEN 1:3', spoken)
+        self.assertEqual((same['negationHeads'], same['negationMismatch']),
+                         ({'verse': ['go', 'follow'], 'spoken': ['go', 'follow']}, False))
+        # As many negations, but moved to other words: the reading says something else.
+        moved = coverage.coverage(edition, 'GEN 1:3',
+                                  "You shall go up after them. Don't follow their road, but don't circle around behind them.")
+        self.assertEqual((moved['negations'], moved['negationHeads']['spoken'], moved['negationMismatch'],
+                          moved['wholeByMeasure'], moved['wholeVerse']),
+                         ({'verse': 2, 'spoken': 2}, ['follow', 'circle'], True, True, False))
+        self.assertTrue(coverage.negations_match(['go', 'follow'], ['follow', 'go']))
+        self.assertFalse(coverage.negations_match(['go', 'follow'], ['go']))
         added = coverage.coverage(edition, 'GEN 1:1', 'In the beginning, God did not create the heavens and the earth.')
         self.assertEqual((added['negations']['spoken'], added['negationMismatch'], added['wholeByMeasure'],
                           added['wholeVerse']), (1, True, True, False))

@@ -655,6 +655,10 @@ def validate_receipt(receipt: Any, *, source: dict[str, Any] | None = None, anch
                      and isinstance(row.get('identity'), dict) for row in listeners)
              and isinstance(independence, dict) and isinstance(independence.get('independent'), bool),
              'receipt_listeners')
+    # The stored independence verdict proves nothing by itself: derive it again from the listener
+    # models and the source ASR model the receipt names.
+    _require(independence == listener_independence([row['model'] for row in listeners],
+                                                   independence.get('sourceAsrModel')), 'receipt_listeners')
     names = sorted(row['name'] for row in listeners)
     adjudicator, units = receipt.get('adjudicator'), receipt.get('units')
     _require(isinstance(units, list) and units, 'receipt_units')
@@ -672,6 +676,10 @@ def validate_receipt(receipt: Any, *, source: dict[str, Any] | None = None, anch
                  and all(isinstance(h.get('unitTokens'), list) and isinstance(h.get('bounded'), bool)
                          and isinstance(h.get('agreesWithFrozen'), bool) and isinstance(h.get('text'), str)
                          for h in heard), 'receipt_unit_hearings')
+        # Agreement is a fact about the words heard, not a stored flag.
+        frozen_tokens = tokens(row['frozenText'])
+        _require(all(h['agreesWithFrozen'] == (h['unitTokens'] == frozen_tokens) for h in heard),
+                 'receipt_unit_hearings')
         by_name = {h['listener']: h for h in heard}
         if row['decidedBy'] == 'model':
             _require(isinstance(adjudicator, dict) and isinstance(row.get('request'), dict), 'receipt_decision_evidence')
@@ -695,16 +703,29 @@ def validate_receipt(receipt: Any, *, source: dict[str, Any] | None = None, anch
         _require(media['sha256'] == info['sha256'] and media['sizeBytes'] == info['sizeBytes']
                  and float(media['offsetSeconds']) == offset, 'receipt_media_binding_changed')
         _require(bindings['source.json'] == policies.canonical_sha256(source), 'receipt_source_binding_changed')
+        _require(independence['sourceAsrModel'] == _source_asr_model(source), 'receipt_source_binding_changed')
     if anchor is not None:
         _require(bindings['anchor.json'] == policies.canonical_sha256(anchor), 'receipt_anchor_binding_changed')
         if source is not None:
             _require_bound_anchor(source, anchor)
-        by_id = {u['sourceUnitId']: u for u in _units(anchor)}
+        all_units = _units(anchor)
+        position = {u['sourceUnitId']: i for i, u in enumerate(all_units)}
         for row in units:
-            unit = by_id.get(row['sourceUnitId'])
+            index = position.get(row['sourceUnitId'])
+            unit = all_units[index] if index is not None else None
             _require(unit is not None and unit['english'] == row['frozenText']
                      and abs(float(unit['start']) - float(row['unit']['start'])) < 1e-6
                      and abs(float(unit['end']) - float(row['unit']['end'])) < 1e-6, 'receipt_unit_not_in_anchor')
+            # What each listener heard for the unit, and whether its neighbours bound it, is derived
+            # again from the listener's own transcript and the anchor's neighbouring units.
+            low, high = max(0, index - CLIP_CONTEXT_UNITS), min(len(all_units) - 1, index + CLIP_CONTEXT_UNITS)
+            before = [t for i in range(low, index) for t in tokens(all_units[i]['english'])]
+            after = [t for i in range(index + 1, high + 1) for t in tokens(all_units[i]['english'])]
+            frozen_tokens = tokens(unit['english'])
+            for h in row['heard']:
+                window = locate_unit(before, frozen_tokens, after, h['text'])
+                _require(window['tokens'] == h['unitTokens'] and window['bounded'] == h['bounded'],
+                         'receipt_unit_hearings')
     corrected_ids = [row['sourceUnitId'] for row in units if row['decision'] == 'transcript_corrected']
     return {'receiptSha256': receipt_sha256(receipt), 'decidedBy': receipt['decidedBy'], 'bindings': dict(bindings),
             'mediaSha256': media['sha256'], 'units': [row['sourceUnitId'] for row in units],

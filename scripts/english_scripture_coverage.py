@@ -233,6 +233,32 @@ def negation_count(tokens: list[str]) -> int:
     return sum(token in NEGATIONS for token in tokens)
 
 
+def negation_heads(tokens: list[str]) -> list[str]:
+    """The content word each negation governs: the next non-negation content token after it, '' at the end.
+
+    Counting negations alone lets a moved negation pass ("be conformed, but
+    don't be transformed" has as many as the verse); binding each to the word
+    it negates catches the reading that negates something else."""
+    heads = []
+    for index, token in enumerate(tokens):
+        if token in NEGATIONS:
+            heads.append(next((later for later in tokens[index + 1:] if later not in NEGATIONS), ''))
+    return heads
+
+
+def negations_match(verse_heads: list[str], spoken_heads: list[str]) -> bool:
+    """True when the spoken negations govern the same words as the verse's, one to one."""
+    if len(verse_heads) != len(spoken_heads):
+        return False
+    unmatched = list(spoken_heads)
+    for head in verse_heads:
+        found = next((heard for heard in unmatched if _same(head, heard)), None)
+        if found is None:
+            return False
+        unmatched.remove(found)
+    return True
+
+
 def _same(a: str, b: str) -> bool:
     if a == b:
         return True
@@ -279,7 +305,8 @@ def coverage(edition: CoverageEdition, ref: cuv_scripture.Reference | str, spoke
     length_ratio = round(len(spoken_tokens) / len(verse_tokens), 4)
     # A whole verse with a negation missing, added or doubled says the opposite; it is never pinned.
     negations = {'verse': negation_count(verse_tokens), 'spoken': negation_count(spoken_tokens)}
-    negation_mismatch = negations['verse'] != negations['spoken']
+    heads = {'verse': negation_heads(verse_tokens), 'spoken': negation_heads(spoken_tokens)}
+    negation_mismatch = not negations_match(heads['verse'], heads['spoken'])
     # A range is whole only when every verse in it was read, each heard through its own words.
     verses, unread = _per_verse(found, reference, spoken_tokens)
     whole_by_measure = (verse_coverage >= WHOLE_VERSE_COVERAGE_MIN
@@ -289,7 +316,7 @@ def coverage(edition: CoverageEdition, ref: cuv_scripture.Reference | str, spoke
             'verseTextSha256': found['textSha256'], 'verseContentWords': len(unique_verse),
             'coveredContentWords': len(covered), 'spokenContentWords': len(spoken_tokens),
             'verseCoverage': verse_coverage, 'lengthRatio': length_ratio,
-            'negations': negations, 'negationMismatch': negation_mismatch,
+            'negations': negations, 'negationHeads': heads, 'negationMismatch': negation_mismatch,
             'verses': verses, 'unreadVerses': unread, 'wholeByMeasure': whole_by_measure, 'wholeVerse': whole,
             'thresholds': {'verseCoverageMin': WHOLE_VERSE_COVERAGE_MIN, 'lengthRatioMin': WHOLE_VERSE_LENGTH_MIN,
                            'lengthRatioMax': WHOLE_VERSE_LENGTH_MAX}}

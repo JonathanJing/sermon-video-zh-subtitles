@@ -85,8 +85,40 @@ def _require(condition: bool, code: str) -> None:
         raise MachineAdjudicationError(code)
 
 
+# Everything a decision depends on: this module, the modules it calls and the pinned data they
+# read. A frozen run is identified by all of them, so a change in any one is a later generator
+# (admitted on the frozen record) rather than a re-run that would reject an admitted receipt.
+GENERATOR_MODULES = ('scripture_machine_adjudication.py', 'english_scripture_coverage.py', 'cuv_scripture.py',
+                     'scripture_editions.py', 'scripture_candidate_queue.py', 'scripture_adjudication.py')
+_DIGESTS: dict[tuple[str, int, int], str] = {}
+
+
+def _generator_paths() -> list[Path]:
+    here = Path(__file__).resolve().parent
+    return [here / name for name in GENERATOR_MODULES] + [Path(coverage_module.DATA_PATH),
+                                                          Path(cuv_scripture.DEFAULT_LIBRARY_PATH)]
+
+
+def implementation_inputs() -> list[dict[str, Any]]:
+    """The generator's code and data files with their hashes; a missing file hashes as None."""
+    rows = []
+    for path in _generator_paths():
+        try:
+            stat = path.stat()
+            key = (str(path), stat.st_size, stat.st_mtime_ns)
+            if key not in _DIGESTS:
+                _DIGESTS[key] = hashlib.sha256(path.read_bytes()).hexdigest()
+            digest: str | None = _DIGESTS[key]
+        except OSError:
+            digest = None
+        label = str(path.relative_to(ROOT)) if path.is_relative_to(ROOT) else path.name
+        rows.append({'path': label, 'sha256': digest})
+    return rows
+
+
 def implementation_sha256() -> str:
-    return hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+    encoded = json.dumps(implementation_inputs(), sort_keys=True, separators=(',', ':')).encode('utf-8')
+    return hashlib.sha256(encoded).hexdigest()
 
 
 def _number(value: str) -> int | None:
@@ -435,10 +467,15 @@ def adjudicate(source: dict[str, Any], anchor: dict[str, Any], plan: list[dict[s
                 thresholds = measure['thresholds']
                 range_whole = (measure['verseCoverage'] >= thresholds['verseCoverageMin']
                                and thresholds['lengthRatioMin'] <= measure['lengthRatio'] <= thresholds['lengthRatioMax'])
-                if measure['wholeByMeasure']:
+                if measure['wholeByMeasure'] and measure['negations']['verse'] != measure['negations']['spoken']:
                     reason = (f"negation differs from {ref.canonical_ref}: the verse has "
                               f"{measure['negations']['verse']} negation word(s), the speaker said "
                               f"{measure['negations']['spoken']}; translated as the speaker's own words")
+                elif measure['wholeByMeasure']:
+                    heads = measure['negationHeads']
+                    reason = (f"negation differs from {ref.canonical_ref}: the verse negates "
+                              f"{', '.join(repr(h) for h in heads['verse'])}, the speaker negated "
+                              f"{', '.join(repr(h) for h in heads['spoken'])}; translated as the speaker's own words")
                 elif range_whole and measure['unreadVerses']:
                     reason = (f"{', '.join(measure['unreadVerses'])} not read within {ref.canonical_ref}: the words only "
                               f"that verse contributes were not spoken (one verse read twice is not a reading of "
@@ -494,6 +531,7 @@ def adjudicate(source: dict[str, Any], anchor: dict[str, Any], plan: list[dict[s
     _require(set(receipt) == adjudication.TOP_KEYS
              and all(set(row) == adjudication.CANDIDATE_KEYS for row in candidates), 'receipt_shape')
     basis = {'schemaVersion': BASIS_SCHEMA, 'implementationSha256': sha, 'version': VERSION,
+             'implementationInputs': implementation_inputs(),
              'receiptSha256': adjudication.receipt_sha256(receipt), 'targetLocale': target_locale,
              'editionId': edition_id, 'editionVerification': verification,
              'coverageEditionId': english_edition.edition_id,
