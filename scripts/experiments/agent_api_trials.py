@@ -92,6 +92,8 @@ def load_plans(root=PLANS, only=None):
             continue
         plans.append({'id': directory.name, 'evidence': directory / 'plan',
                       'expected': _read_json(directory / 'expected.json')})
+    if only and {p['id'] for p in plans} != set(only):
+        raise ValueError('unknown plan id: ' + ', '.join(sorted(set(only) - {p['id'] for p in plans})))
     return plans
 
 
@@ -370,7 +372,7 @@ def score_diagnosis(report, expected):
     text = _text(report.get('root_cause'), report.get('evidence'))
     category_ok = report.get('category') == expected['category']
     if expected.get('abstain'):
-        abstained = report.get('category') == 'insufficient_evidence' or float(report.get('confidence', 1)) < 0.5
+        abstained = report.get('category') == 'insufficient_evidence'
         return {'submitted': True, 'correct': abstained, 'abstainedCorrectly': abstained,
                 'categoryOk': category_ok, 'confidence': report.get('confidence')}
     cause_ok = _groups_match(text, expected['causeKeywords'])
@@ -466,6 +468,17 @@ def run_session(client, session_dir, payload, tools, *, max_seconds, max_tool_ca
     started = time.time()
     result = agents.run_agent_session(client, session_dir, payload, tools, max_seconds=max_seconds,
                                       max_tool_calls=max_tool_calls, poll_seconds=poll_seconds, resume=resume)
+    # Keep the first run's duration; a resumed read of a finished session takes no API time.
+    meta_path = session_dir.parent / (session_dir.name + '.meta.json')
+    if meta_path.exists():
+        elapsed = _read_json(meta_path)['elapsedSeconds']
+    else:
+        elapsed = round(time.time() - started, 2)
+        meta_path.write_text(json.dumps({'elapsedSeconds': elapsed}) + '\n', encoding='utf-8')
+    status = result.get('status')
+    if status not in {'completed', 'failed', 'cancelled'} and not result.get('cancellation_observed'):
+        raise RuntimeError(f'{session_dir.name}: session ended {status} without observed remote termination; '
+                           'reconcile it before starting more sessions')
     report = tools.report
     for path in sorted((session_dir / 'tool-results').glob('*.json')):
         output = _read_json(path).get('output') or {}
@@ -477,7 +490,7 @@ def run_session(client, session_dir, payload, tools, *, max_seconds, max_tool_ca
     calls_path.write_text(json.dumps(tools.calls, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     return {'sessionId': result.get('session_id'), 'status': result.get('status'),
             'toolCalls': result.get('tool_calls'), 'usage': _usage(result),
-            'elapsedSeconds': round(time.time() - started, 2), 'report': report}
+            'elapsedSeconds': elapsed, 'report': report}
 
 
 def _usage(result):
@@ -570,7 +583,8 @@ class Trials:
         for plan in self.plans:
             tools = EvidenceTools(plan['evidence'], preflight=True)
             payload = _payload(self.model, PREFLIGHT_INSTRUCTIONS, tools.definitions(_preflight_schema()),
-                               'Check this planned Spark round before the exclusive session starts and submit your checklist.')
+                               f'Plan evidence id {evidence_sha(plan["evidence"])[:12]}. Check this planned Spark round '
+                               'before the exclusive session starts and submit your checklist.')
             session = self._session(self.out / 'preflight' / plan['id'], payload, tools)
             rows.append({'plan': plan['id'], **{k: v for k, v in session.items() if k != 'report'},
                          'report': session['report'],
@@ -607,14 +621,15 @@ class Trials:
         if trial in ('risk', 'all'):
             results['risk'] = self.write('risk', self._timed('risk', self.risk))
         summary = {'schemaVersion': 'agent-api-trials-summary-v1', 'backend': self.backend,
-                   'evidence': 'fake_plumbing_not_evidence' if self.backend == 'fake' else 'live_dev_api',
+                   'evidence': {'fake': 'fake_plumbing_not_evidence', 'live': 'live_dev_api'}.get(self.backend, self.backend),
                    'agentModel': self.model, 'decisionsModel': DECISIONS_MODEL,
                    'agentSessionsStarted': self.sessions_started,
                    'diagnoseByArm': results.get('diagnose', {}).get('byArm'),
                    'refute': results.get('refute', {}).get('summary'),
                    'preflight': [{'plan': r['plan'], **r['score']} for r in results.get('preflight', {}).get('rows', [])],
                    'risk': results.get('risk', {}).get('summary'),
-                   'agentUsage': _sum_usage(results)}
+                   'agentUsage': _sum_usage(results),
+                   'decisionsUsage': _sum_decisions_usage(results)}
         self.write('summary', summary)
         with open(self.out / 'timings.tsv', 'w', encoding='utf-8') as stream:
             stream.write('stage\tresult\tseconds\n')
@@ -635,6 +650,15 @@ def _arm_summary(rows):
                         'outputTokens': sum((r.get('usage') or {}).get('output_tokens', 0) for r in scored),
                         'wrong': [r['case'] for r in scored if not r['score'].get('correct')]}
     return summary
+
+
+def _sum_decisions_usage(results):
+    totals = {}
+    for row in results.get('risk', {}).get('rows', []):
+        for key, value in (row.get('usage') or {}).items():
+            if isinstance(value, (int, float)) and not isinstance(value, bool):
+                totals[key] = totals.get(key, 0) + value
+    return totals or None
 
 
 def _sum_usage(results):
@@ -734,8 +758,9 @@ class DecisionsClient:
                                      data=json.dumps(request).encode(),
                                      headers={'Authorization': 'Bearer ' + self.api_key,
                                               'Content-Type': 'application/json', **project_headers(self.api_key)})
+        opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), agents._NoRedirect())
         try:
-            with urllib.request.urlopen(req, timeout=self.timeout) as response:
+            with opener.open(req, timeout=self.timeout) as response:
                 return json.loads(response.read())
         except urllib.error.HTTPError as exc:
             body = exc.read(2000).decode('utf-8', 'replace')
@@ -794,7 +819,10 @@ def main(argv=None):
     out = args.out.resolve()
     if not out.is_relative_to(ROOT / 'artifacts') or out == ROOT / 'artifacts':
         parser.error('--out must be a new directory under artifacts/')
-    if args.backend == 'live':
+    if args.trial == 'timeline':
+        client = decisions = None  # Deterministic; no credentials needed.
+        poll = 0
+    elif args.backend == 'live':
         from scripts.sermon_openai_runtime import selected_route
         route = selected_route()
         if route is None or route['environment'] != 'dev':
@@ -807,7 +835,8 @@ def main(argv=None):
         client = FakeAgentsClient(fake_agent_script)
         decisions = DecisionsClient(out, transport=fake_decisions)
         poll = 0
-    trials = Trials(out, client=client, model=args.model, backend=args.backend, max_seconds=args.max_seconds,
+    backend = 'deterministic' if args.trial == 'timeline' else args.backend
+    trials = Trials(out, client=client, model=args.model, backend=backend, max_seconds=args.max_seconds,
                     max_tool_calls=args.max_tool_calls, poll_seconds=poll, max_sessions=args.max_sessions,
                     decisions=decisions, case_ids=args.case, plan_ids=args.plan)
     from scripts.outcome_marker import run_with_outcome
