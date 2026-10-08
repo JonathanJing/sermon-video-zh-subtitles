@@ -1345,5 +1345,34 @@ class LatestReviewTests(unittest.TestCase):
                 make(case_ids=[first['case']]).run('refute')
             self.assertFalse((out / 'diagnose').exists())
 
+    def test_mount_check_derives_containment_from_the_mount(self):
+        root = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, root)
+        shutil.copytree(trials.PLANS / 'p02-clean' / 'plan', root / 'plan')
+        repo = '/home/spark/.cache/huggingface/hub/models--Qwen--Qwen3-ASR-1.7B'
+        cases = {'/home/spark/.cache/huggingface/hub': True, repo: True, repo + '/': True,
+                 repo + '/snapshots/3c1e9a7': False, repo + '/snapshots/other': False, '/tmp': False,
+                 repo + '/snapshots': False, '/home/spark/.cache/huggingface/hub-other': False}
+        for mount, expected in cases.items():
+            (root / 'plan' / 'docker-asr-mount.txt').write_text(f'-v {mount}:/asr-hub:ro   (back-ASR --model x)\n')
+            with self.subTest(mount=mount):
+                self.assertIs(trials.preflight_check(root / 'plan', 'check_mount_resolves', {})['resolves'], expected)
+
+    def test_zero_tool_call_budget_is_refused(self):
+        with self.assertRaises(SystemExit), patch('sys.stderr'):
+            trials.main(['diagnose', '--backend', 'fake', '--max-tool-calls', '0',
+                         '--out', 'artifacts/agent-api-trials/never-created'])
+        self.assertFalse((trials.ROOT / 'artifacts/agent-api-trials/never-created').exists())
+        out, make = self.make_trials()
+        with self.assertRaisesRegex(ValueError, 'max_tool_calls'):
+            make(max_tool_calls=0)
+
+    def test_missing_decision_confidence_is_unscored(self):
+        row = {**trials.score_risk({'id': 'x', 'expectedTier': 'approval'},
+                                   {'answers': [{'name': 'tier', 'choice': 'approval'}]}), 'repeat': 1}
+        self.assertIsNone(row['confidence'])
+        self.assertIn('malformedConfidence', row)
+        self.assertEqual(trials._unscored({'risk': {'rows': [row]}}), ['risk:x:r1'])
+
 if __name__ == '__main__':
     unittest.main()

@@ -544,10 +544,20 @@ def preflight_check(plan_root, name, arguments):
                 'relative_to_root_ok': inside,
                 'note': 'run_spark_diagnostic_audio.py calls (out / ...).relative_to(ROOT) after the job hold is created'}
     if name == 'check_mount_resolves':
-        mount = (plan_root / 'docker-asr-mount.txt').read_text().split()[1].split(':')[0]
-        mounted_hub = not mount.rstrip('/').endswith('3c1e9a7')
-        return {'hostMount': mount, 'snapshotSymlinksTarget': '../../blobs',
-                'blobsInsideMount': mounted_hub, 'resolves': mounted_hub}
+        mount = posixpath.normpath((plan_root / 'docker-asr-mount.txt').read_text().split()[1].split(':')[0])
+        # Resolve every snapshot symlink in the host listing against the model repo it lists, and require both the
+        # link and its target to sit inside the host directory the container mounts.
+        lines = (plan_root / 'spark-hf-listing.txt').read_text().splitlines()
+        repo = lines[0].strip()
+        links = [re.fullmatch(r'\s*(\S+) -> (\S+)', line) for line in lines[1:]]
+        links = [(posixpath.join(repo, m.group(1)), m.group(2)) for m in links if m]
+        targets = [posixpath.normpath(posixpath.join(posixpath.dirname(link), target)) for link, target in links]
+
+        def inside(path):
+            return path == mount or path.startswith(mount.rstrip('/') + '/')
+        resolves = bool(links) and all(inside(link) and inside(target) for (link, _), target in zip(links, targets))
+        return {'hostMount': mount, 'symlinkTargets': sorted(set(targets)),
+                'blobsInsideMount': bool(targets) and all(inside(t) for t in targets), 'resolves': resolves}
     if name == 'compare_plugin_identity':
         frozen = _read_json(plan_root / 'fixture-manifest.json')['pluginImplementationSha256']
         current = _read_json(plan_root / 'current-plugin.json')['implementationSha256']
@@ -976,6 +986,8 @@ class Trials:
         self.decisions, self.risk_repeats = decisions, risk_repeats
         if not 1 <= risk_repeats <= MAX_RISK_REPEATS:
             raise ValueError(f'risk_repeats must be between 1 and {MAX_RISK_REPEATS}')
+        if max_tool_calls < 1:
+            raise ValueError('max_tool_calls must be positive; every trial needs at least submit_report')
         # Loaded on first use, so a stage never depends on fixture families it does not consume.
         self._case_ids, self._plan_ids = case_ids, plan_ids
         self.timings, self.results, self.partial = [], {}, {}
@@ -1484,9 +1496,10 @@ def score_risk(action, response):
                if isinstance(a, dict) and isinstance(a.get('name'), str)}
     tier = answers.get('tier', {})
     chosen, confidence = tier.get('choice'), tier.get('confidence')
-    # A schema-invalid confidence is kept for inspection, scored as absent, and marks the row unscored.
-    malformed = confidence is not None and not (isinstance(confidence, (int, float)) and not isinstance(confidence, bool)
-                                                and math.isfinite(confidence) and 0 <= confidence <= 1)
+    # A missing or schema-invalid confidence is kept for inspection, scored as absent, and marks the row unscored:
+    # the escalation policy cannot be applied or audited without it.
+    malformed = not (isinstance(confidence, (int, float)) and not isinstance(confidence, bool)
+                     and math.isfinite(confidence) and 0 <= confidence <= 1)
     raw_confidence, confidence = (confidence, None) if malformed else (None, confidence)
     # Likewise a choice outside the three tiers (including an unhashable one) is kept as text and scored as none.
     raw_choice, chosen = (chosen, None) if chosen is not None and not (isinstance(chosen, str) and chosen in TIERS) \
@@ -1760,7 +1773,7 @@ def main(argv=None):
     parser.add_argument('--max-sessions', type=int, default=60)
     parser.add_argument('--risk-repeats', type=_risk_repeats, default=3,
                         help='send each risk request this many times to measure stability (default 3)')
-    parser.add_argument('--max-tool-calls', type=int, default=24)
+    parser.add_argument('--max-tool-calls', type=_positive_int, default=24)
     parser.add_argument('--max-seconds', type=_positive_seconds, default=600)
     args = parser.parse_args(argv)
     out = args.out.resolve()
