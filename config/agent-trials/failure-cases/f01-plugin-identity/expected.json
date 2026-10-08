@@ -1,0 +1,28 @@
+{
+  "id": "f01-plugin-identity",
+  "reconstructedFrom": "docs/reports/20261007-haiku-180s-8x8-spark-diagnostic-retrospective.zh.md #1",
+  "category": "identity_mismatch",
+  "abstain": false,
+  "causeKeywords": [
+    [
+      "plugin"
+    ],
+    [
+      "hash",
+      "identity",
+      "sha",
+      "31ce5531",
+      "ee120781"
+    ]
+  ],
+  "fixKeywords": [
+    [
+      "refreeze",
+      "re-freeze",
+      "new fixture",
+      "重冻结",
+      "重新冻结",
+      "freeze"
+    ]
+  ]
+}
