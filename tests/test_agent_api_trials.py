@@ -1009,8 +1009,8 @@ class LatestReviewTests(unittest.TestCase):
         original = trial._scopes
         calls = []
 
-        def drifting():
-            scopes = original()
+        def drifting(*args):
+            scopes = original(*args)
             calls.append(1)
             if len(calls) > 1:
                 scopes['timeline'] = {**scopes['timeline'], 'cases': ['changed']}
@@ -1047,8 +1047,8 @@ class LatestReviewTests(unittest.TestCase):
         original = trial._scopes
         calls = []
 
-        def drifting():
-            scopes = original()
+        def drifting(*args):
+            scopes = original(*args)
             calls.append(1)
             if len(calls) > 1:
                 scopes['diagnose'] = {**scopes['diagnose'], 'cases': ['changed']}
@@ -1058,6 +1058,14 @@ class LatestReviewTests(unittest.TestCase):
                 self.assertRaisesRegex(ValueError, 'changed during the run'):
             trial.run('diagnose')
         self.assertTrue((out / 'invalidated.json').exists())
+
+    def test_risk_runs_without_reading_case_or_plan_fixtures(self):
+        out, make = self.make_trials(risk_repeats=1)
+        broken = RuntimeError('broken fixture')
+        with patch.object(trials, 'load_cases', side_effect=broken), \
+                patch.object(trials, 'load_plans', side_effect=broken):
+            make().run('risk')
+        self.assertTrue((out / 'risk.json').exists())
 
     def test_checkpoint_keeps_saved_rows_this_run_has_not_reached(self):
         out, make = self.make_trials()

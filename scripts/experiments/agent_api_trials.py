@@ -825,8 +825,25 @@ class Trials:
         self.decisions, self.risk_repeats = decisions, risk_repeats
         if not 1 <= risk_repeats <= MAX_RISK_REPEATS:
             raise ValueError(f'risk_repeats must be between 1 and {MAX_RISK_REPEATS}')
-        self.cases, self.plans = load_cases(only=case_ids), load_plans(only=plan_ids)
+        # Loaded on first use, so a stage never depends on fixture families it does not consume.
+        self._case_ids, self._plan_ids = case_ids, plan_ids
         self.timings, self.results, self.partial = [], {}, {}
+
+    @property
+    def cases(self):
+        if '_cases' not in self.__dict__:
+            self._cases = load_cases(only=self._case_ids)
+        return self._cases
+
+    @cases.setter
+    def cases(self, value):
+        self._cases = value
+
+    @property
+    def plans(self):
+        if '_plans' not in self.__dict__:
+            self._plans = load_plans(only=self._plan_ids)
+        return self._plans
 
     def _rows(self, stage):
         """Rows of a stage in progress; each one is checkpointed so a failure keeps earlier paid results."""
@@ -1030,7 +1047,7 @@ class Trials:
         # Durable before any paid work of the stage, so a crash cannot leave receipts without their scope.
         _write_durably(path, json.dumps(saved, ensure_ascii=False, indent=2) + '\n')
 
-    def _scopes(self):
+    def _scopes(self, stages=('timeline', 'diagnose', 'refute', 'preflight', 'risk')):
         # Backend, model and session limits must match across reruns, so every merged row ran under one condition.
         agent = {'backend': self.backend, 'route': self.route, 'model': self.model,
                  'maxToolCalls': self.max_tool_calls, 'maxSeconds': self.max_seconds}
@@ -1038,42 +1055,52 @@ class Trials:
         # fixtures or instructions cannot merge with results saved before the change.
         def tag(item_id, value):
             return f'{item_id}@{_sha(value)[:12]}'
-        case_ids = {c['id'] for c in self.cases}
-        fixtures = sorted(tag(c['id'], [evidence_sha(c['evidence']), c['expected']]) for c in self.cases)
-        cases = {**agent, 'prompt': _sha(DIAGNOSE_INSTRUCTIONS)[:12], 'cases': fixtures}
-        planted = sorted(tag(w['case'], w) for w in self._snapshot('wrong', WRONG_DIAGNOSES)['diagnoses']
-                         if w['case'] in case_ids)
-        policy = self._snapshot('policy', RISK)
-        scopes = {'timeline': {'cases': fixtures, 'scorer': _scorer_identity('timeline')},
-                  'diagnose': {**cases, 'scorer': _scorer_identity('diagnose')},
-                  'refute': {**cases, 'prompt': _sha([DIAGNOSE_INSTRUCTIONS, REFUTE_INSTRUCTIONS])[:12],
-                             'planted': planted, 'scorer': _scorer_identity('refute')},
-                  'preflight': {**agent, 'prompt': _sha(PREFLIGHT_INSTRUCTIONS)[:12],
-                                'plans': sorted(tag(p['id'], [evidence_sha(p['evidence']), p['expected']])
-                                                for p in self.plans),
-                                'scorer': _scorer_identity('preflight')},
-                  'risk': {'backend': self.backend, 'route': self.route, 'model': DECISIONS_MODEL, 'repeats': self.risk_repeats,
-                           'actions': sorted(tag(a['id'], [a, risk_request(a, policy['tiers'])])
-                                             for a in policy['actions']),
-                           # Dispatch order is bound too, so added repeats run in the order the earlier ones did.
-                           'order': _sha([a['id'] for a in policy['actions']])[:12],
-                           'scorer': _scorer_identity('risk')}}
-        return scopes
+        # Only the requested stages' fixtures are read, so a broken fixture family blocks only its own stages.
+        def fixtures():
+            return sorted(tag(c['id'], [evidence_sha(c['evidence']), c['expected']]) for c in self.cases)
+
+        def cases():
+            return {**agent, 'prompt': _sha(DIAGNOSE_INSTRUCTIONS)[:12], 'cases': fixtures()}
+
+        def planted():
+            case_ids = {c['id'] for c in self.cases}
+            return sorted(tag(w['case'], w) for w in self._snapshot('wrong', WRONG_DIAGNOSES)['diagnoses']
+                          if w['case'] in case_ids)
+
+        def risk():
+            policy = self._snapshot('policy', RISK)
+            return {'backend': self.backend, 'route': self.route, 'model': DECISIONS_MODEL,
+                    'repeats': self.risk_repeats,
+                    'actions': sorted(tag(a['id'], [a, risk_request(a, policy['tiers'])]) for a in policy['actions']),
+                    # Dispatch order is bound too, so added repeats run in the order the earlier ones did.
+                    'order': _sha([a['id'] for a in policy['actions']])[:12],
+                    'scorer': _scorer_identity('risk')}
+        build = {'timeline': lambda: {'cases': fixtures(), 'scorer': _scorer_identity('timeline')},
+                 'diagnose': lambda: {**cases(), 'scorer': _scorer_identity('diagnose')},
+                 'refute': lambda: {**cases(), 'prompt': _sha([DIAGNOSE_INSTRUCTIONS, REFUTE_INSTRUCTIONS])[:12],
+                                    'planted': planted(), 'scorer': _scorer_identity('refute')},
+                 'preflight': lambda: {**agent, 'prompt': _sha(PREFLIGHT_INSTRUCTIONS)[:12],
+                                       'plans': sorted(tag(p['id'], [evidence_sha(p['evidence']), p['expected']])
+                                                       for p in self.plans),
+                                       'scorer': _scorer_identity('preflight')},
+                 'risk': risk}
+        return {stage: build[stage]() for stage in stages}
 
     def _run(self, trial):
         results = self.results
         if (self.out / 'invalidated.json').exists():
             raise ValueError(f'{self.out}: quarantined after fixtures or code changed mid-run; use a new --out')
-        scopes = self._scopes()
-        self._bind_scopes({stage: scope for stage, scope in scopes.items()
-                           if trial in ('all', stage) or (trial == 'refute' and stage == 'diagnose')})
+        selected = [stage for stage in ('timeline', 'diagnose', 'refute', 'preflight', 'risk')
+                    if trial in ('all', stage) or (trial == 'refute' and stage == 'diagnose')]
+        scopes = self._scopes(selected)
+        self._bind_scopes(scopes)
 
         def finish(stage, name, run):
             def drifted():
                 # Fixtures read live during the stage must still match what scope.json bound at the start. Sessions
                 # may already have read changed bytes, and restoring the fixture would let their receipts match
                 # again, so the whole --out is quarantined for good.
-                if self._scopes()[stage] == scopes[stage]:
+                if self._scopes([stage])[stage] == scopes[stage]:
                     return None
                 _write_durably(self.out / 'invalidated.json',
                                json.dumps({'stage': stage, 'reason': 'fixtures or code changed during the run'}) + '\n')

@@ -239,7 +239,8 @@ def collect(run_dir: Path, label: str, dest: Path, secrets: list[str]) -> tuple[
 
 
 def write_row_chunks(raw: bytes, target: Path, secrets: list[str], entry: dict) -> bool:
-    """Write a redacted row file as <stem>.rows-NN.json chunks under the whole-file cap; False if it has no rows."""
+    """Write a redacted row file as <stem>.rows-NN.json chunks under the whole-file cap. False, with nothing
+    written, when it has no rows or a single row (with the file's other fields) cannot fit under the cap."""
     try:
         value = json.loads(raw.decode("utf-8", errors="replace"))
     except ValueError:
@@ -249,23 +250,29 @@ def write_row_chunks(raw: bytes, target: Path, secrets: list[str], entry: dict) 
     entry["redactions"] = {}
     value = redact_json(value, secrets, entry["redactions"])
     rest = {k: v for k, v in value.items() if k != "rows"}
-    chunks, current, size = [], [], 0
+    budget = MAX_WHOLE_BYTES - 4096
+    chunks, current = [], []
+    size = len(json.dumps(rest, ensure_ascii=False, indent=2).encode("utf-8"))  # Metadata rides in the first part.
     for row in value["rows"]:
         row_size = len(json.dumps(row, ensure_ascii=False, indent=2).encode("utf-8")) + 8
-        if current and size + row_size > MAX_WHOLE_BYTES - 4096:
+        if current and size + row_size > budget:
             chunks.append(current)
             current, size = [], 0
         current.append(row)
         size += row_size
     chunks.append(current)
-    target.parent.mkdir(parents=True, exist_ok=True)
-    names = []
+    parts = {}
     for index, rows in enumerate(chunks, 1):
         part = {"source": target.name, "part": index, "parts": len(chunks), **(rest if index == 1 else {}),
                 "rows": rows}
-        name = f"{target.stem}.rows-{index:02d}.json"
-        (target.parent / name).write_text(json.dumps(part, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-        names.append(name)
+        text = json.dumps(part, ensure_ascii=False, indent=2) + "\n"
+        if len(text.encode("utf-8")) > MAX_WHOLE_BYTES:
+            return False  # One row alone is over the cap; the file is reported as omitted instead.
+        parts[f"{target.stem}.rows-{index:02d}.json"] = text
+    target.parent.mkdir(parents=True, exist_ok=True)
+    for name, text in parts.items():
+        (target.parent / name).write_text(text, encoding="utf-8")
+    names = list(parts)
     entry["chunks"] = names
     return True
 
