@@ -1,0 +1,112 @@
+{
+  "schemaVersion": "pr295-run-input-inventory-v1",
+  "purpose": "cloud_review_of_historical_diagnostic_inputs",
+  "productionEligible": false,
+  "dispatchEligible": false,
+  "actualHumanApproval": false,
+  "locales": {
+    "zh-Hans": {
+      "sourcePackage": "shared/source.json",
+      "anchor": "shared/anchor.json",
+      "groupPlan": "shared/group-plan.json",
+      "historicalPolicy": "zh-Hans/policy.json",
+      "historicalLocalFixture": "artifacts/next-concurrency-605s-20261005-r12-final/zh-Hans/fixture",
+      "sourceQuotationUnits": [
+        "0-u067",
+        "0-u068"
+      ],
+      "scriptureClassification": "contains_direct_quotations",
+      "historicalPluginSha256": "c810cf0ded0d46cdee65b357cb27397c975b8be415988f5036c27e29716c544f",
+      "historicalCodeCommit": "cc88761a61e2aad2223c244d8a85dd54aa286cf7",
+      "historicalGroupWorkers": 23
+    },
+    "ko": {
+      "sourcePackage": "shared/source.json",
+      "anchor": "shared/anchor.json",
+      "groupPlan": "shared/group-plan.json",
+      "historicalPolicy": "ko/policy.json",
+      "historicalLocalFixture": "artifacts/next-concurrency-605s-20261005-r12-final/ko/fixture",
+      "sourceQuotationUnits": [
+        "0-u067",
+        "0-u068"
+      ],
+      "scriptureClassification": "contains_direct_quotations",
+      "historicalPluginSha256": "937fd9653214ec823975fc9bc40351af7808c695e4bf12c1cf3bc0fedd1f940b",
+      "historicalCodeCommit": "cc88761a61e2aad2223c244d8a85dd54aa286cf7",
+      "historicalGroupWorkers": 23
+    },
+    "es": {
+      "sourcePackage": "shared/source.json",
+      "anchor": "shared/anchor.json",
+      "groupPlan": "shared/group-plan.json",
+      "historicalPolicy": "es/policy.json",
+      "historicalLocalFixture": "artifacts/next-concurrency-605s-20261005-r12-final/es/fixture",
+      "sourceQuotationUnits": [
+        "0-u067",
+        "0-u068"
+      ],
+      "scriptureClassification": "contains_direct_quotations",
+      "historicalPluginSha256": "7b00de67b2f056af94788d1abe549c2a5c6f1aa5154c2f65d54d81c5fdf47636",
+      "historicalCodeCommit": "cc88761a61e2aad2223c244d8a85dd54aa286cf7",
+      "historicalGroupWorkers": 23
+    }
+  },
+  "files": {
+    "shared/source.json": {
+      "sha256": "72bc73ac88691547db9e57156af6bda17f0d49785b0055811936b01c406cbf8d",
+      "canonicalJsonSha256": "483fd864120bd467b01c682153150ec49ede24e3e4cab52ec564a7e29c23b6b9",
+      "bytes": 3916
+    },
+    "shared/anchor.json": {
+      "sha256": "5feb7eb319297e39bcecb8800764e1ff73718445b505182b14c32a2a0929557f",
+      "canonicalJsonSha256": "aa9b07efe4e632b31c40f8841afd02d1f39314de360d6607efca064dbadb9f03",
+      "bytes": 468130
+    },
+    "shared/group-plan.json": {
+      "sha256": "e9a319c56e67f6b34e3914747e7a0c797f77f48e195df694a4137ab9bd47dd9a",
+      "canonicalJsonSha256": "10110bcb0ea153bf51ee270a0e9d6cf61a5e532676c873f920883c4f3b9854f3",
+      "bytes": 6181
+    },
+    "zh-Hans/policy.json": {
+      "sha256": "d0bdeb5244a855c5f2e13ae7eeae42a9a8285f3ee4b394960faf2ff27f4fd29e",
+      "canonicalJsonSha256": "af58c1805be65d00d44eae7329e071b1794ca58efbb66e8195f706cb3a0def79",
+      "bytes": 5008
+    },
+    "ko/policy.json": {
+      "sha256": "06f95ee52f7b3febe0e7d0d3e2edf676cad3c6185521b7b10e4c2e4fc683a426",
+      "canonicalJsonSha256": "e87aa29baef37ad6ca30beed6e56beefa4b371a94c2c899248cfa431d4b0e3d8",
+      "bytes": 4973
+    },
+    "es/policy.json": {
+      "sha256": "4bc4d1c5442f614cdc2189ebe6fc655d014ddb4124c53fb98a5f9074e0fc115f",
+      "canonicalJsonSha256": "280f9b371993ee7f054c8271bb40672c3460c194665812d7a01d56247d416ddd",
+      "bytes": 4983
+    }
+  },
+  "sourceUnits": 136,
+  "groups": 46,
+  "budget": {
+    "status": "not_authorized",
+    "maximumCalls": null,
+    "maximumTokens": null,
+    "spendCapUsd": null,
+    "effectiveNewPaidCallsAllowed": 0,
+    "authorizationPath": null,
+    "approvalReceiptPath": null
+  },
+  "approval": {
+    "status": "not_supplied",
+    "budgetReceiptPath": null,
+    "sourceReviewReceiptPath": null,
+    "scriptureAdjudicationReceiptPath": null,
+    "reviewedBy": null,
+    "operatorEvidence": null
+  },
+  "blockers": [
+    "No artifact-bound live budget authorization and approval receipt supplied.",
+    "Source package has pending sermon-window and human source review.",
+    "Direct quotation units require real adjudication; historical fixtures carry no human receipt.",
+    "Historical policies/plugins need current code identity reconciliation; historical 23 group workers are incompatible with PR295 collector workers=1.",
+    "PR295 has no controller-native live repair CLI; injected offline run_round tests do not authorize live dispatch."
+  ]
+}
