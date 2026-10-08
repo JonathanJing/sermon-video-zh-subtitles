@@ -94,7 +94,7 @@
     "authorizationPath": null,
     "approvalReceiptPath": null,
     "proposal": {
-      "status": "proposal_not_authorization",
+      "status": "superseded_not_authorization",
       "basis": "46 groups x (translator + reviewer) initial calls, plus the PR295 repair cap max(4, ceil(10%)); every call reserved at its worst case under the dev request limits and the frozen price assumption strict-chat-worst-case-2026-10-05-v2 (gpt-6.1-sol: 2.5 USD input, 10 USD output per million tokens). invoiceVerified=false.",
       "initialCalls": 92,
       "repairCalls": 10,
@@ -129,9 +129,62 @@
         "contentRevisions": 2,
         "reviewAttemptsPerRevision": 2,
         "decisionProposals": 1
-      }
+      },
+      "supersededBecause": "The canonical controller plans groups from the anchor's translationRequests (136 single-unit groups for this source), not the 46-group diagnostic plan; the 46-group figures only apply to the standalone runner with --group-plan."
     },
-    "approvalTemplate": "budget-approval.template.json"
+    "approvalTemplate": "budget-approval.template.json",
+    "controllerPath": {
+      "status": "proposal_not_authorization",
+      "basis": "Groups as the controller plans them (one per anchor translation request). Each call is reserved at its payload's input upper bound plus maxCompletionTokens and the reservation is never returned (sermon_review_budget._charge), so the global bound must cover every call's reservation; the worst case uses maxInputTokens=16384. Frozen price assumption strict-chat-worst-case-2026-10-05-v2, invoiceVerified=false. Per locale.",
+      "budgetLedgerCallLimit": 154,
+      "budgetLedgerCallLimitEvidence": "One BudgetStore root keeps every reservation in a single state.json capped at 256 KiB (sermon_review_contracts.MAX_BYTES); measured on 2026-10-08 the 155th reservation fails with budget_ledger_size_limit.",
+      "sample605": {
+        "groups": 136,
+        "initialCalls": 272,
+        "repairCalls": 28,
+        "maximumCalls": 300,
+        "systemicThreshold": 3,
+        "worstReservedInputTokens": 4915200,
+        "worstReservedOutputTokens": 1228800,
+        "worstReservedTokens": 6144000,
+        "worstCaseUsd": 24.58,
+        "fitsOneBudgetLedger": false
+      },
+      "fullSermon20260927": {
+        "groups": 420,
+        "initialCalls": 840,
+        "repairCalls": 84,
+        "maximumCalls": 924,
+        "systemicThreshold": 5,
+        "worstReservedInputTokens": 15138816,
+        "worstReservedOutputTokens": 3784704,
+        "worstReservedTokens": 18923520,
+        "worstCaseUsd": 75.69,
+        "fitsOneBudgetLedger": false,
+        "sourceUnits": 420,
+        "durationSeconds": 1891.677333,
+        "groupsAssumed": "one group per source unit, as the 605 anchor plans; unverified until the full anchor is supplied"
+      },
+      "fullSermon20261004": {
+        "groups": 474,
+        "initialCalls": 948,
+        "repairCalls": 95,
+        "maximumCalls": 1043,
+        "systemicThreshold": 5,
+        "worstReservedInputTokens": 17088512,
+        "worstReservedOutputTokens": 4272128,
+        "worstReservedTokens": 21360640,
+        "worstCaseUsd": 85.44,
+        "fitsOneBudgetLedger": false,
+        "sourceUnits": 474,
+        "durationSeconds": 1942.123,
+        "groupsAssumed": "474 groups, matching the 10-04 formal run (948 role results per locale)"
+      },
+      "observedTokensPerCall": {
+        "value": 2485,
+        "evidence": "10-04 full production: 1,730 calls / 4,298,792 tokens (docs/reports/20261004-full-production-retrospective.zh.md)"
+      }
+    }
   },
   "approval": {
     "status": "not_supplied",
@@ -142,10 +195,12 @@
     "operatorEvidence": null
   },
   "blockers": [
+    "Budget ledger capacity: one canonical budget root holds at most 154 reservations, so neither the 605 sample through the controller (300 calls) nor a full sermon (924 or 1,043 calls per locale) can run until the ledger is sharded or compacted.",
     "No artifact-bound live budget authorization and approval receipt supplied; the proposal above is a number to approve or change, not an authorization.",
     "Source package has pending sermon-window and human source review (status=blocked); the controller's source gate refuses it before any call.",
     "Direct quotation units 0-u067 and 0-u068 require real adjudication; historical fixtures carry no human receipt. Design also requires the 0-u076 source adjudication before the 605 rerun.",
-    "Generated per-locale plugin modules are not uploaded; their hashes must be recomputed with current code (plugin_implementation_sha256) and must equal the policy's pluginImplementationSha256, or the policy must be re-frozen."
+    "Generated per-locale plugin modules are not uploaded; their hashes must be recomputed with current code (plugin_implementation_sha256) and must equal the policy's pluginImplementationSha256, or the policy must be re-frozen.",
+    "The diagnostic plugin bindings are frozen for the 46-group plan (groupPlanSha256); the controller uses the anchor's plan, so the bindings must be regenerated for it or the controller must accept a frozen group plan."
   ],
   "execution": {
     "template": "execution-v3.template.json",

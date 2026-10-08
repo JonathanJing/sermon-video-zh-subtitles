@@ -18,11 +18,11 @@
       "serviceTier": "default"
     },
     "globalBounds": {
-      "requests": 102,
-      "inputTokens": 1671168,
-      "outputTokens": 417792,
-      "wallTimeMs": 30600000,
-      "costMicrousd": 9000000
+      "requests": 924,
+      "inputTokens": 15138816,
+      "outputTokens": 3784704,
+      "wallTimeMs": 277200000,
+      "costMicrousd": 76000000
     },
     "unitBounds": {
       "requests": 1,
@@ -36,5 +36,6 @@
       "reviewAttemptsPerRevision": 2,
       "decisionProposals": 1
     }
-  }
+  },
+  "templateNote": "Filled with the 2026-09-27 full-sermon controller numbers (924 calls, one locale, worst case 75.69 USD). Not usable until one budget root can hold more than 154 reservations; remove this field when filling in."
 }

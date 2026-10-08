@@ -6,7 +6,7 @@
 |---|---|---|
 | Locale | `zh-Hans`、`ko`、`es` 的独立条目和历史 policy | 三种语言均可查看；派发时必须选定实际 locale |
 | Source package / anchor | [source.json](shared/source.json)、[anchor.json](shared/anchor.json)、[group-plan.json](shared/group-plan.json) | 136 个源单元、46 个分组；三语言共享同一源与锚点 |
-| 调用数、tokens、美元预算 | `inputs.json.budget`；建议值在 `budget.proposal` | 尚无授权，已生效上限仍为 `null`、新增付费调用允许数为 0。建议值：102 次调用、2,088,960 token（输入 1,671,168／输出 417,792）、最坏 8.36 美元，上限取 9 美元 |
+| 调用数、tokens、美元预算 | `inputs.json.budget.controllerPath` | 尚无授权，已生效上限仍为 `null`、新增付费调用允许数为 0。按 controller 实际分组重算，见下文「整篇证道」。早先按 46 组算的 102 次建议已作废 |
 | Approval receipt | `inputs.json.approval`；模板 [budget-approval.template.json](budget-approval.template.json) | 尚未提供真实收据。模板的人工字段（`decision`、`humanApproval`、`reviewedBy`、`reviewedAt`、`operatorEvidence`）留空，只能由人填写 |
 | 执行配置 | 模板 [execution-v3.template.json](execution-v3.template.json) | `sermon-canonical-layer2-execution-v3`：在 controller 的同一个持久 job 里跑修复循环，单组 worker、单 locale |
 
@@ -22,9 +22,19 @@
 
 PR #295 的修复调用/token 相对上限为初跑的 10%，调用至少 4 次。这是修复策略，不是本次 API 的总调用额度、总 tokens 或美元授权。
 
-### 建议预算怎么算
+### 整篇证道（按 controller 实际分组，每个语言）
 
-46 组 × 2 个角色 = 92 次初跑，加上修复上限 max(4, 92 的 10%) = 10 次，共 102 次。每次按开发参数的请求硬限（输入 16,384、输出 4,096 token、300 秒）和冻结价格假设 `strict-chat-worst-case-2026-10-05-v2`（gpt-6.1-sol 每百万输入 2.5 美元、输出 10 美元）预留最坏情况：每次 0.08192 美元，102 次 8.36 美元。`invoiceVerified=false`，不是账单。批准时可以改数字，收据的 `binding` 必须与授权文件逐项一致。
+controller 不用 46 组诊断计划，而按锚点的 `translationRequests` 分组：本源 136 组、每组一个单元。每次调用按 payload 输入上界加 `max_completion_tokens` 预留，预留额用完也不退回（`sermon_review_budget._charge`），所以总上限要覆盖每一次的预留。下表最坏情况取 `maxInputTokens=16384`、输出 4,096，价格假设 `strict-chat-worst-case-2026-10-05-v2`，`invoiceVerified=false`。
+
+| 范围 | 组 | 初跑 | 修复上限 | 合计调用 | 最坏预留 token | 最坏美元 |
+|---|---|---|---|---|---|---|
+| 605 秒样本 | 136 | 272 | 28 | 300 | 6,144,000 | 24.58 |
+| 9/27 整篇（420 单元） | 420 | 840 | 84 | 924 | 18,923,520 | 75.69 |
+| 10/4 整篇（474 单元） | 474 | 948 | 95 | 1,043 | 21,360,640 | 85.44 |
+
+实际用量会低很多：10/4 正式轮每次调用约 2,485 token。三种语言各一份，三语合计乘 3。9/27 整篇按每单元一组估算，拿到整篇锚点后核对。批准收据模板已按 9/27 整篇填好数字（上限 76 美元），人工字段仍留空。
+
+**放大后的新阻塞**：一个预算根的账本是单个 `state.json`，上限 256 KiB；2026-10-08 实测第 155 次预留报 `budget_ledger_size_limit`。所以 controller 路径连 605 样本（300 次）都放不下，整篇更放不下，需要先给账本分片或压缩。
 
 ### 已经补上的
 
@@ -43,5 +53,6 @@ python3 -c "from pathlib import Path; from scripts import produce_target_languag
 ```
 
 5. 一份 canonical inspection 配置，指向 source、anchor 和选定语言的 policy。
+6. 整篇的源包、锚点和 policy（9/27 整篇的已批准源包在本机）。诊断 plugin 的引文绑定冻结的是 46 组计划，controller 用锚点分组，需按锚点分组重新生成绑定。
 
 没有新模型调用、TTS、发布或人类批准。本清单保留缺项，防止云端会话把测试记录误作运行授权。
