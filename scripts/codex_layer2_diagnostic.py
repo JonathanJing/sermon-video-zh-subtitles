@@ -180,9 +180,17 @@ def load_fixture(directory):
     if manifest.get('scriptureClassification') == 'contains_direct_quotations':
         # Re-admit the frozen human receipt before any model dispatch can start.
         from scripts import scripture_adjudication as adjudication
-        adjudication.require_admitted(manifest, directory, target_locale=policy['targetLocale'],
+        admission = adjudication.require_admitted(manifest, directory, target_locale=policy['targetLocale'],
             bindings={name: manifest['files'][name] for name in adjudication.BINDING_KEYS},
             flagged_units=list(manifest.get('sourceQuotationUnits') or []))
+        facts = runner.rule_preflight._literals(plugin)
+        if facts.get('DIAGNOSTIC_ADMITTED_QUOTES') is True:
+            # The frozen plugin must carry exactly the receipt that was just admitted.
+            require(facts.get('ADMITTED_RECEIPT_SHA256') == admission['receiptSha256'],
+                    'Diagnostic admitted quotation plugin differs from the adjudication receipt')
+            require(sorted({unit for row in facts['ADMITTED_QUOTES'] for unit in row['sourceUnitIds']})
+                    == sorted(manifest.get('sourceQuotationUnits') or []),
+                    'Diagnostic admitted quotation units differ from the fixture annotation')
     _check_plugin_scope(policy, anchor, plugin, manifest)
     receipt = runner.rule_preflight.preflight(request, policy, plugin, plan)
     return source, anchor, policy, plan, plugin, request, receipt, context, manifest
