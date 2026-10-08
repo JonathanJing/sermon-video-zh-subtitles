@@ -117,7 +117,8 @@ class FixtureTests(unittest.TestCase):
         for stage in ('timeline', 'diagnose', 'refute', 'preflight', 'risk'):
             before = trials._scorer_identity(stage)
             for helper in (trials._unscored, trials.Trials._stages, trials.Trials._summary,
-                           trials.Trials._merged_results, trials._stage_result, trials._row_identity):
+                           trials.Trials._merged_results, trials.Trials._checkpoint, trials._stage_result,
+                           trials._row_identity):
                 with self.subTest(stage=stage, helper=helper.__name__), patch.object(
                         trials.inspect, 'getsource', side_effect=lambda part, real=trials.inspect.getsource, h=helper:
                         real(part) + ('#changed' if part is h else '')):
@@ -1398,7 +1399,12 @@ class LatestReviewTests(unittest.TestCase):
         (root / source.name / 'expected.json').write_text(json.dumps({**key, 'realLogs': 'false'}))
         with self.assertRaisesRegex(ValueError, 'realLogs'):
             trials.load_cases(root)
-        (root / source.name / 'expected.json').write_text(json.dumps({**without_cause, 'abstain': True}))
+        (root / source.name / 'expected.json').write_text(json.dumps({**without_cause, 'abstain': True,
+                                                                     'category': 'other'}))
+        with self.assertRaisesRegex(ValueError, 'insufficient_evidence'):
+            trials.load_cases(root)
+        (root / source.name / 'expected.json').write_text(json.dumps({**without_cause, 'abstain': True,
+                                                                     'category': 'insufficient_evidence'}))
         self.assertEqual(len(trials.load_cases(root)), 1)
         shutil.rmtree(root / source.name / 'evidence')
         (root / source.name / 'evidence').mkdir()
@@ -1715,6 +1721,21 @@ class LatestReviewTests(unittest.TestCase):
         self.assertEqual((row['chosen'], row['unsafe']), (None, True))
         self.assertEqual(trials._unscored({'risk': {'rows': [{**row, 'repeat': 1}]}}), ['risk:x:r1'])
         self.assertEqual(trials.risk_summary([{**row, 'repeat': 1}])['unsafeInAnyRepeat'], ['x'])
+        # Escalation applies to the stated tier too: confident stays unsafe, unconfident is escalated away.
+        self.assertTrue(row['unsafeAfterEscalation'])
+        self.assertEqual(trials.risk_summary([{**row, 'repeat': 1}])['unsafeAfterEscalationInAnyRepeat'], ['x'])
+        response['answers'][0]['confidence'] = 0.5
+        self.assertFalse(trials.score_risk({'id': 'x', 'expectedTier': 'approval'}, response)['unsafeAfterEscalation'])
+
+    def test_read_file_reads_only_past_the_limit(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'big.log').write_text('x' * (trials.MAX_READ_CHARS + 10))
+            (root / 'exact.log').write_text('x' * trials.MAX_READ_CHARS)
+            tools = trials.EvidenceTools(root)
+            big, exact = tools('read_file', {'path': 'big.log'}), tools('read_file', {'path': 'exact.log'})
+            self.assertEqual((len(big['text']), big['truncated']), (trials.MAX_READ_CHARS, True))
+            self.assertEqual((len(exact['text']), exact['truncated']), (trials.MAX_READ_CHARS, False))
 
     def test_non_object_extra_answer_is_malformed(self):
         response = decision(choice='approval', confidence=0.9)
