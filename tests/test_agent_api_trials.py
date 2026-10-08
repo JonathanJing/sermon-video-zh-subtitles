@@ -1217,19 +1217,53 @@ class LatestReviewTests(unittest.TestCase):
         source = trials.PLANS / 'p02-clean'
         shutil.copytree(source, root / 'p02-clean')
         key = json.loads((source / 'expected.json').read_text())
+        checks = {c['tool']: c for c in key['requiredChecks']}
+
+        def swap(name, **change):
+            return {**key, 'requiredChecks': [dict(c, **change) if c['tool'] == name else c
+                                              for c in key['requiredChecks']]}
         variants = [
             {**key, 'blockers': {'x': 'relative'}},
             {**key, 'blockers': {'x': [[]]}},
-            {**key, 'requiredChecks': [{'tool': 'check_typo', 'expect': True}]},
-            {**key, 'requiredChecks': [{'tool': 'check_staged', 'expect': 'yes', 'argument': 'a'}]},
-            {**key, 'requiredChecks': [{'tool': 'check_staged', 'expect': True}]},
-            {**key, 'requiredChecks': [{'tool': 'check_mount_resolves', 'expect': True, 'argument': 'a'}]},
+            {**key, 'requiredChecks': []},
+            {**key, 'requiredChecks': [c for t, c in checks.items() if t != 'check_mount_resolves']},
+            {**key, 'requiredChecks': key['requiredChecks'] + [checks['check_staged']]},
+            swap('check_staged', tool='check_typo'),
+            swap('check_staged', expect='yes'),
+            {**key, 'requiredChecks': [{k: v for k, v in c.items() if k != 'argument'}
+                                       for c in key['requiredChecks']]},
+            swap('check_mount_resolves', argument='a'),
             {**key, 'id': 'other'},
         ]
         for variant in variants:
             (root / 'p02-clean' / 'expected.json').write_text(json.dumps(variant))
             with self.subTest(variant=variant), self.assertRaisesRegex(ValueError, 'invalid plan'):
                 trials.load_plans(root)
+        (root / 'p02-clean' / 'expected.json').write_text(json.dumps(key))
+        self.assertEqual(len(trials.load_plans(root)), 1)
+        shutil.rmtree(root / 'p02-clean' / 'plan')
+        with self.assertRaisesRegex(ValueError, 'no plan directory'):
+            trials.load_plans(root)
+        (root / 'p02-clean' / 'plan').write_text('not a directory')
+        with self.assertRaisesRegex(ValueError, 'no plan directory'):
+            trials.load_plans(root)
+
+    def test_malformed_case_key_is_refused_before_any_session(self):
+        root = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, root)
+        source = trials.CASES / 'f01-plugin-identity'
+        shutil.copytree(source, root / source.name)
+        key = json.loads((source / 'expected.json').read_text())
+        without_cause = {k: v for k, v in key.items() if k != 'causeKeywords'}
+        variants = [without_cause, {**key, 'causeKeywords': [['plugin'], []]}, {**key, 'causeKeywords': 'plugin'},
+                    {**key, 'fixKeywords': [[1]]}, {**key, 'bonusKeywords': []}, {**key, 'abstain': 'no'},
+                    {**key, 'acceptableCategories': ['typo']}, {**key, 'category': 'typo'}, {**key, 'id': 'x'}]
+        for variant in variants:
+            (root / source.name / 'expected.json').write_text(json.dumps(variant))
+            with self.subTest(variant=variant), self.assertRaisesRegex(ValueError, 'invalid case'):
+                trials.load_cases(root)
+        (root / source.name / 'expected.json').write_text(json.dumps({**without_cause, 'abstain': True}))
+        self.assertEqual(len(trials.load_cases(root)), 1)
 
 
 if __name__ == '__main__':

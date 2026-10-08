@@ -82,8 +82,7 @@ def load_cases(root=CASES, only=None):
         if only and directory.name not in only:
             continue
         expected = _read_json(directory / 'expected.json')
-        if expected['id'] != directory.name or expected['category'] not in CATEGORIES:
-            raise ValueError(f'invalid case {directory.name}')
+        _check_case_key(directory.name, expected)
         if not (directory / 'evidence').is_dir() or (directory / 'evidence').is_symlink() or directory.is_symlink():
             raise ValueError(f'case {directory.name} has no evidence directory of its own')
         cases.append({'id': directory.name, 'evidence': directory / 'evidence', 'expected': expected})
@@ -97,8 +96,8 @@ def load_plans(root=PLANS, only=None):
     for directory in sorted(p for p in Path(root).iterdir() if p.is_dir()):
         if only and directory.name not in only:
             continue
-        if directory.is_symlink() or (directory / 'plan').is_symlink():
-            raise ValueError(f'plan {directory.name} evidence is a symlink')
+        if directory.is_symlink() or (directory / 'plan').is_symlink() or not (directory / 'plan').is_dir():
+            raise ValueError(f'plan {directory.name} has no plan directory of its own')
         expected = _read_json(directory / 'expected.json')
         _check_plan_key(directory.name, expected)
         plans.append({'id': directory.name, 'evidence': directory / 'plan', 'expected': expected})
@@ -112,8 +111,33 @@ def credential_fingerprint(key):
     return hashlib.sha256(b'agent-api-trials-credential\0' + key.encode()).hexdigest()[:16]
 
 
+def _term_groups(value):
+    return (isinstance(value, list) and bool(value) and all(
+        isinstance(group, list) and group and all(isinstance(term, str) and term for term in group)
+        for group in value))
+
+
+# Answer keys are validated whole at load time, before any session is billed, rather than crashing mid-scoring.
+def _check_case_key(name, expected):
+    def bad(reason):
+        raise ValueError(f'invalid case {name}: {reason}')
+    if not isinstance(expected, dict) or expected.get('id') != name:
+        bad('id must match the directory name')
+    if expected.get('category') not in CATEGORIES or not isinstance(expected.get('abstain'), bool):
+        bad('needs a known category and a boolean abstain')
+    if not set(expected.get('acceptableCategories', [])) <= set(CATEGORIES) or \
+            not isinstance(expected.get('acceptableCategories', []), list):
+        bad('acceptableCategories must list known categories')
+    if not expected['abstain'] and 'causeKeywords' not in expected:
+        bad('causeKeywords is required unless the case expects abstention')
+    for field in ('causeKeywords', 'fixKeywords', 'bonusKeywords'):
+        # An abstention case is scored without cause terms, so it may leave them empty.
+        unused = field == 'causeKeywords' and expected['abstain'] and expected.get(field) == []
+        if field in expected and not unused and not _term_groups(expected[field]):
+            bad(f'{field} must be a non-empty list of non-empty term lists')
+
+
 def _check_plan_key(name, expected):
-    """Refuse a malformed answer key before any session is billed, rather than crashing mid-scoring."""
     def bad(reason):
         raise ValueError(f'invalid plan {name}: {reason}')
     if not isinstance(expected, dict) or expected.get('id') != name:
@@ -122,14 +146,14 @@ def _check_plan_key(name, expected):
     if not isinstance(blockers, dict):
         bad('blockers must be an object')
     for blocker, groups in blockers.items():
-        if not (isinstance(groups, list) and groups and all(
-                isinstance(group, list) and group and all(isinstance(term, str) and term for term in group)
-                for group in groups)):
+        if not _term_groups(groups):
             bad(f'blocker {blocker} must be a non-empty list of non-empty term lists')
     checks = expected.get('requiredChecks')
-    if not isinstance(checks, list):
-        bad('requiredChecks must be a list')
     takes_argument = {tool['name']: bool(tool['parameters'].get('required')) for tool in PREFLIGHT_TOOLS}
+    # Every deterministic checker is required exactly once, so a key cannot certify a plan it never checked.
+    if not isinstance(checks, list) or sorted(c.get('tool') if isinstance(c, dict) else None
+                                              for c in checks) != sorted(takes_argument):
+        bad('requiredChecks must name each preflight check exactly once')
     for check in checks:
         if not isinstance(check, dict) or check.get('tool') not in takes_argument:
             bad(f'unknown required check {check!r}')
