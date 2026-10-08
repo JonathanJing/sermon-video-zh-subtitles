@@ -60,9 +60,38 @@ def _verifier(edition_id: str, library: Any) -> tuple[Any, str]:
     return edition, edition.verification
 
 
+def _reproduce_machine_receipt(receipt: dict[str, Any], *, target_locale: str, flagged_units: list[str],
+                               inputs: Any, library: Any) -> dict[str, Any]:
+    """A machine receipt is admitted only when the generator reproduces it from the bound inputs.
+
+    The role string and signature prove nothing by themselves: a hand-written
+    receipt labelled machine would otherwise pass without the generator's
+    evidence, with classifications the generator never emits."""
+    _require(isinstance(inputs, dict) and all(isinstance(inputs.get(name), (dict, list)) for name in BINDING_KEYS),
+             'machine_inputs_required')
+    from scripts import scripture_machine_adjudication as machine  # noqa: E402  (it imports this module)
+    try:
+        reproduced, basis = machine.adjudicate(inputs['source.json'], inputs['anchor.json'], inputs['group-plan.json'],
+                                               target_locale=target_locale, flagged_units=list(flagged_units),
+                                               library=library)
+    except machine.MachineAdjudicationError as exc:
+        raise AdjudicationError('machine_receipt_not_reproduced') from exc
+    compared = ('targetLocale', 'bindings', 'decision', 'candidates')
+    _require({key: receipt[key] for key in compared} == {key: reproduced[key] for key in compared},
+             'machine_receipt_not_reproduced')
+    return {'reproduced': True, 'generator': 'scripture_machine_adjudication', 'version': basis['version'],
+            'implementationSha256': basis['implementationSha256'],
+            'signatureCurrent': receipt['decidedBy'] == reproduced['decidedBy']}
+
+
 def validate_receipt(receipt: Any, *, target_locale: str, bindings: dict[str, str],
-                     flagged_units: list[str], library: cuv_scripture.CuvLibrary | None = None) -> dict[str, Any]:
-    """Return a summary of an approved receipt, or raise AdjudicationError with a reason code."""
+                     flagged_units: list[str], library: cuv_scripture.CuvLibrary | None = None,
+                     machine_inputs: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Return a summary of an approved receipt, or raise AdjudicationError with a reason code.
+
+    ``machine_inputs`` holds the bound ``source.json``, ``anchor.json`` and
+    ``group-plan.json``; a machine receipt is admitted only when the generator
+    reproduces it from them."""
     _require(target_locale in PINNED_EDITIONS, 'no_pinned_edition_for_locale')
     edition_id = PINNED_EDITIONS[target_locale]
     verifier, edition_verification = _verifier(edition_id, library)
@@ -75,6 +104,10 @@ def validate_receipt(receipt: Any, *, target_locale: str, bindings: dict[str, st
     _require(receipt['decidedByRole'] in ROLES, 'decided_by_role_invalid')
     _require(isinstance(receipt['decidedBy'], str) and receipt['decidedBy'].strip(), 'decided_by_missing')
     kind = ROLES[receipt['decidedByRole']]
+    generator = None
+    if kind == 'machine':
+        generator = _reproduce_machine_receipt(receipt, target_locale=target_locale, flagged_units=flagged_units,
+                                               inputs=machine_inputs, library=library)
     try:
         datetime.fromisoformat(receipt['reviewedAt'])
     except (TypeError, ValueError) as exc:
@@ -112,7 +145,7 @@ def validate_receipt(receipt: Any, *, target_locale: str, bindings: dict[str, st
     _require(set(covered) == set(flagged_units), 'coverage_mismatch')
     return {'schemaVersion': SCHEMA, 'receiptSha256': receipt_sha256(receipt), 'targetLocale': target_locale,
             'decidedByRole': receipt['decidedByRole'], 'adjudicationKind': kind,
-            'humanApproval': kind == 'human',
+            'humanApproval': kind == 'human', 'generator': generator,
             'coveredUnits': sorted(covered), 'quotes': quotes, 'admitted': quotes}
 
 
@@ -126,4 +159,11 @@ def require_admitted(manifest: dict[str, Any], directory: Path, *, target_locale
     _require(path.is_relative_to(directory) and path.is_file(), 'receipt_file_missing')
     _require(hashlib.sha256(path.read_bytes()).hexdigest() == entry['sha256'], 'receipt_file_changed')
     receipt = json.loads(path.read_text(encoding='utf-8'))
-    return validate_receipt(receipt, target_locale=target_locale, bindings=bindings, flagged_units=flagged_units)
+    inputs = None
+    if isinstance(receipt, dict) and ROLES.get(receipt.get('decidedByRole')) == 'machine':
+        # The frozen inputs the receipt is bound to; the generator must reproduce it from them.
+        files = [(directory / name).resolve() for name in BINDING_KEYS]
+        _require(all(f.is_relative_to(directory) and f.is_file() for f in files), 'machine_inputs_required')
+        inputs = {name: json.loads(f.read_text(encoding='utf-8')) for name, f in zip(BINDING_KEYS, files)}
+    return validate_receipt(receipt, target_locale=target_locale, bindings=bindings, flagged_units=flagged_units,
+                            machine_inputs=inputs)

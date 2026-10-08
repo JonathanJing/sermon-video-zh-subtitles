@@ -11,7 +11,8 @@ instead of a person:
 2. have independent listeners (``gpt-transcribe`` through the API, Qwen3-ASR on
    Spark) transcribe that clip without seeing the frozen text;
 3. locate the unit inside each re-listen and compare it with the frozen words;
-4. when every listener heard exactly the frozen words, the transcript is
+4. when listeners independent of the Layer 1 transcription all heard exactly
+   the frozen words inside a stretch their neighbours bound, the transcript is
    confirmed without a model call; otherwise ``gpt-6.1-sol`` chooses among the
    frozen text and what the listeners heard, never a wording nobody heard.
 
@@ -19,8 +20,8 @@ The receipt is machine evidence (``humanApproval`` false). A corrected unit also
 yields a ``sermon-source-text-review-v1`` review on its ASR segment, which the
 existing Layer 1 path applies and realigns; the new Layer 1 identity then
 invalidates every locale downstream, as the contract requires. A confirmed or
-undetermined unit keeps the frozen text, and its ``meaningNote`` goes into the
-translator's and reviewer's instruction.
+undetermined unit keeps the frozen text; ``meaning-notes.json`` carries its
+``meaningNote``, bound to the same Layer 1 inputs, for the Layer 2 repair brief.
 """
 from __future__ import annotations
 
@@ -50,7 +51,8 @@ from scripts import target_language_policy as policies  # noqa: E402
 SCHEMA = source_review.MACHINE_RECEIPT_SCHEMA
 QUESTION_SCHEMA = 'sermon-source-meaning-adjudication-question-v1'
 RESPONSE_SCHEMA = 'sermon-source-meaning-adjudication-response-v1'
-PROMPT_VERSION = 'source-meaning-adjudication-v1'
+PROMPT_VERSION = 'source-meaning-adjudication-v2'
+NOTES_SCHEMA = 'sermon-source-meaning-notes-v1'
 VERSION = '2026-10-08-v2'
 ROLE = source_review.MACHINE_ROLE
 MODEL, EFFORT = 'gpt-6.1-sol', 'medium'
@@ -76,8 +78,10 @@ the audio of the unit with its neighbours without seeing the transcript. Decide,
 what each listener heard for the unit and the surrounding units, which wording the speaker said.
 
 Rules: choose only among the frozen text and the listeners' wordings for the unit; never compose a
-wording nobody heard. A listener that heard the frozen words supports the transcript. When the evidence
-does not settle the wording, answer undetermined. Do not rewrite, improve, translate or interpret beyond
+wording nobody heard. A listener that heard the frozen words supports the transcript. A listener's wording
+may be chosen as a correction only when its unitBoundedByNeighbours is true; an unbounded wording may carry
+the neighbours' words, so prefer undetermined. When the evidence does not settle the wording, answer
+undetermined. Do not rewrite, improve, translate or interpret beyond
 one sentence for the translator. Answer with one JSON object:
 {"schemaVersion": "sermon-source-meaning-adjudication-response-v1",
  "decision": "transcript_confirmed" or "transcript_corrected" or "undetermined",
@@ -222,6 +226,13 @@ def cut_clip(media: Path, start: float, end: float) -> bytes:
 
 # ---------------------------------------------------------------- listeners
 
+def _route_identity(route: dict[str, Any] | None) -> dict[str, Any] | None:
+    """The selected OpenAI Project without its secret: environment, project id and credential alias."""
+    if route is None:
+        return None
+    return {key: route[key] for key in ('environment', 'projectId', 'credentialAlias')}
+
+
 class OpenAiTranscribeListener:
     """``gpt-transcribe`` through the selected OpenAI Project; it never sees the frozen text.
 
@@ -233,15 +244,17 @@ class OpenAiTranscribeListener:
     def __init__(self, *, cache: Path, max_calls: int):
         from scripts import machine_qc_audio_transports as transports
         from scripts import sermon_openai_runtime as runtime
-        _require(runtime.selected_route() is not None, 'openai_environment_launcher_required')
+        self.route = _route_identity(runtime.selected_route())
+        _require(self.route is not None, 'openai_environment_launcher_required')
         self.cache = transports.CallCache(cache, paid=True)
         self.max_calls, self.calls = max_calls, 0
         self.fields = [('model', self.model), ('response_format', 'json'), ('prompt', LISTEN_PROMPT),
                        ('languages[]', 'en')]
 
     def identity(self) -> dict[str, Any]:
+        # The route is part of the identity, so a cached dev re-listen is never served to a prod run.
         return {'backend': 'openai-api', 'endpoint': '/v1/audio/transcriptions', 'model': self.model,
-                'language': 'en', 'promptSha256': _sha(LISTEN_PROMPT.encode('utf-8'))}
+                'language': 'en', 'promptSha256': _sha(LISTEN_PROMPT.encode('utf-8')), 'route': self.route}
 
     def _send(self, wav: bytes) -> dict[str, Any]:
         from scripts import machine_qc_audio_transports as transports
@@ -269,11 +282,18 @@ class OpenAiTranscribeListener:
 
 
 class QwenListener:
-    """Local Qwen3-ASR, the Layer 3 screening model, as the second independent listener."""
+    """Local Qwen3-ASR, the Layer 3 screening model, as the second independent listener.
+
+    Local model compute runs on Spark (compute policy): the weights load only
+    once a live Spark exclusive session owns this process, so the CLI with
+    ``--listener qwen`` runs on Spark inside that session, never on a Mac. There
+    is no cross-host adapter; a cached re-listen replays without a session."""
 
     name = model = 'qwen3-asr'
+    host = 'spark_exclusive_session'
 
-    def __init__(self, model_path: Path, *, cache: Path, identity_probe: Callable[[Path], dict[str, Any]] | None = None):
+    def __init__(self, model_path: Path, *, cache: Path, identity_probe: Callable[[Path], dict[str, Any]] | None = None,
+                 session_verifier: Callable[[], dict[str, Any]] | None = None):
         from scripts import machine_qc_audio_transports as transports
         self.model_path = Path(model_path).resolve()
         weights = self.model_path / 'model.safetensors'
@@ -286,14 +306,29 @@ class QwenListener:
         _require(isinstance(self.runtime, dict) and self.runtime.get('backend') == 'qwen-asr-local',
                  'qwen_runtime_identity')
         self.cache = transports.CallCache(cache, paid=False)
+        self.session_verifier = session_verifier
+        self.session_receipt: dict[str, Any] | None = None
         self._model = None
 
     def identity(self) -> dict[str, Any]:
-        return {'backend': 'qwen-asr-local', 'model': self.model, 'modelRevision': self.model_revision,
-                'runtime': self.runtime, 'settings': dict(QWEN_SETTINGS)}
+        return {'backend': 'qwen-asr-local', 'host': self.host, 'model': self.model,
+                'modelRevision': self.model_revision, 'runtime': self.runtime, 'settings': dict(QWEN_SETTINGS)}
+
+    def _admit(self) -> None:
+        """A live Spark exclusive session must own this process before any CUDA or model load."""
+        from scripts.production_spark_admission import require_bound_model_session
+        from scripts.spark_exclusive_session import SessionError
+        try:
+            receipt = require_bound_model_session(verifier=self.session_verifier)
+        except SessionError as exc:
+            raise SourceAdjudicationError('qwen_requires_bound_spark_exclusive_session') from exc
+        _require(isinstance(receipt, dict), 'qwen_session_receipt')
+        self.session_receipt = {key: receipt.get(key) for key in ('sessionId', 'jobId', 'owner', 'bootId')
+                                if receipt.get(key) is not None}
 
     def _run(self, wav: bytes) -> str:
         if self._model is None:
+            self._admit()
             import torch
             from qwen_asr import Qwen3ASRModel
             self._model = Qwen3ASRModel.from_pretrained(str(self.model_path), dtype=torch.bfloat16,
@@ -336,11 +371,19 @@ class SolAdjudicator:
             caller = SessionBoundCaller(chat_json, purpose='source-meaning-adjudication')
         self.api_key, self.cache, self.model, self.effort, self.caller = api_key, Path(cache), model, effort, caller
         self.max_calls, self.calls = max_calls, 0
+        from scripts import sermon_openai_runtime as runtime
+        self.route = _route_identity(runtime.selected_route())
+
+    @property
+    def route_key(self) -> str:
+        """Namespaces cached answers by the selected OpenAI Project, so dev answers never serve prod."""
+        return 'unrouted' if self.route is None else f"{self.route['environment']}-{self.route['projectId']}"
 
     def identity(self) -> dict[str, Any]:
         return {'model': self.model, 'reasoningEffort': self.effort, 'promptVersion': PROMPT_VERSION,
                 'promptSha256': _sha(SYSTEM_PROMPT.encode('utf-8')),
-                'requestLimits': dict(limits.DEFAULT_REQUEST_LIMITS), 'maxNewCalls': self.max_calls}
+                'requestLimits': dict(limits.DEFAULT_REQUEST_LIMITS), 'maxNewCalls': self.max_calls,
+                'route': self.route}
 
     def payload(self, question: dict[str, Any]) -> dict[str, Any]:
         payload = {'model': self.model, 'reasoning_effort': self.effort,
@@ -357,7 +400,7 @@ class SolAdjudicator:
     def decide(self, unit_id: str, question: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
         from scripts import english_source_judge_cache as judge_cache
         from scripts import sermon_sentence_interpretation as contract
-        payload, stage = self.payload(question), f'source-meaning-{unit_id}'
+        payload, stage = self.payload(question), f'source-meaning-{self.route_key}-{unit_id}'
         request_hash = contract.json_sha256({'schemaVersion': judge_cache.RUN_SCHEMA, 'stage': stage,
                                              'payload': payload})
         cached = (self.cache.resolve() / 'cache' / f'{stage}-{request_hash}.json').is_file()
@@ -384,6 +427,8 @@ def _checked_answer(result: Any, frozen: list[str], heard: list[dict[str, Any]])
         _require(heard_by != 'frozen' and by_name[heard_by]['unitTokens'] != frozen, 'corrected_by_frozen_words')
         _require(isinstance(corrected, str) and corrected.strip(), 'corrected_text_missing')
         _require(tokens(corrected) == by_name[heard_by]['unitTokens'], 'corrected_text_not_heard')
+        # An unbounded window may carry the neighbours' words; it can never replace one unit.
+        _require(by_name[heard_by]['bounded'], 'corrected_text_unbounded')
     else:
         _require(corrected is None, 'corrected_text_without_correction')
     return {'decision': decision, 'heardBy': heard_by, 'correctedText': corrected.strip() if corrected else None,
@@ -398,6 +443,32 @@ def _units(anchor: dict[str, Any]) -> list[dict[str, Any]]:
         isinstance(u, dict) and isinstance(u.get('sourceUnitId'), str) and isinstance(u.get('english'), str)
         for u in units), 'anchor_units')
     return units
+
+
+def _source_asr_model(source: dict[str, Any]) -> str | None:
+    """The model that produced the Layer 1 transcript, when the package records one."""
+    model = source.get('transcript', {}).get('provenance', {}).get('model')
+    if isinstance(model, str) and model.strip() and model.strip().lower() != 'unknown':
+        return model.strip()
+    return None
+
+
+def listener_independence(listener_models: list[str], source_model: str | None) -> dict[str, Any]:
+    """Whether the listeners can confirm the transcript without the adjudicator.
+
+    One listener that is the same model as the Layer 1 transcription (or an
+    unknown one) only repeats its own hearing; independence needs two distinct
+    listener models, or one model known to differ from the source ASR."""
+    distinct = sorted(set(listener_models))
+    independent = [model for model in distinct if source_model is not None and model != source_model]
+    if len(distinct) >= 2:
+        reason = 'two_distinct_listener_models'
+    elif independent:
+        reason = 'listener_differs_from_source_asr'
+    else:
+        reason = 'single_listener_not_independent_of_source_asr'
+    return {'sourceAsrModel': source_model, 'listenerModels': distinct, 'independentOfSourceAsr': independent,
+            'independent': len(distinct) >= 2 or bool(independent), 'reason': reason}
 
 
 def _media_binding(source: dict[str, Any]) -> tuple[dict[str, Any], float]:
@@ -438,6 +509,7 @@ def adjudicate(source: dict[str, Any], anchor: dict[str, Any], *, unit_ids: list
     _require(all(uid in by_id for uid in unit_ids), 'unit_unknown')
     _require_bound_anchor(source, anchor)
     media_info, offset = _media_binding(source)
+    independence = listener_independence([listener.model for listener in listeners], _source_asr_model(source))
     if media is not None:
         _require(Path(media).stat().st_size == media_info['sizeBytes']
                  and file_sha256(media) == media_info['sha256'], 'media_identity_mismatch')
@@ -468,13 +540,14 @@ def adjudicate(source: dict[str, Any], anchor: dict[str, Any], *, unit_ids: list
             heard.append(row)
             (out_dir / 'listeners' / f'{uid}.{listener.name}.json').write_text(
                 json.dumps(row, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-        # Deterministic confirmation needs every listener to have heard the frozen words
-        # inside a stretch its neighbours bound; an unbounded match goes to the adjudicator.
-        if all(row['agreesWithFrozen'] and row['bounded'] for row in heard):
+        # Deterministic confirmation needs listeners independent of the Layer 1 transcription,
+        # every one hearing the frozen words inside a stretch its neighbours bound; anything
+        # else (an unbounded match, a lone listener repeating the source ASR) goes to the adjudicator.
+        if independence['independent'] and all(row['agreesWithFrozen'] and row['bounded'] for row in heard):
             verdict = {'decision': 'transcript_confirmed', 'heardBy': 'frozen', 'correctedText': None,
                        'meaningNote': CONFIRMED_NOTE,
                        'reason': f'{len(heard)} independent listener(s) heard exactly the frozen words '
-                                 'between the words of the neighbouring units'}
+                                 f"between the words of the neighbouring units ({independence['reason']})"}
             decided_by, request = 'listeners_agree_with_transcript', None
         else:
             _require(adjudicator is not None, 'adjudicator_required')
@@ -483,7 +556,7 @@ def adjudicate(source: dict[str, Any], anchor: dict[str, Any], *, unit_ids: list
                        for i in range(max(0, index - TEXT_CONTEXT_UNITS),
                                       min(len(units), index + TEXT_CONTEXT_UNITS + 1))]
             question = {'schemaVersion': QUESTION_SCHEMA, 'sourceUnitId': uid, 'frozenText': unit['english'],
-                        'context': context,
+                        'context': context, 'listenerIndependence': independence,
                         'clip': {'sourceUnitIds': [units[i]['sourceUnitId'] for i in range(low, high + 1)],
                                  'seconds': round(end - start, 3)},
                         'listeners': [{'name': row['listener'], 'model': row['model'], 'heardClip': row['text'],
@@ -514,14 +587,16 @@ def adjudicate(source: dict[str, Any], anchor: dict[str, Any], *, unit_ids: list
                   'offsetSeconds': offset, 'unitTimesRelativeTo': 'approved_window'},
         'decidedBy': f'source_meaning_machine_adjudication {VERSION} {sha[:16]}', 'decidedByRole': ROLE,
         'humanApproval': False, 'reviewedAt': stamp,
-        'listeners': [{'name': item.name, 'model': item.model, 'identity': item.identity()} for item in listeners],
+        'listeners': [{'name': item.name, 'model': item.model, 'identity': item.identity(),
+                       'session': getattr(item, 'session_receipt', None)} for item in listeners],
+        'listenerIndependence': independence,
         'adjudicator': None if adjudicator is None else adjudicator.identity(),
         'units': rows,
         'counts': {'units': len(rows), **{d: sum(r['decision'] == d for r in rows) for d in DECISIONS}},
         'notice': ('Machine evidence from the bound audio; not human approval. A corrected unit changes '
                    'Layer 1 through sermon-source-text-review-v1 and invalidates every locale downstream. '
-                   'A confirmed or undetermined unit keeps the frozen text; its meaningNote goes to the '
-                   "translator's and reviewer's instruction."),
+                   'A confirmed or undetermined unit keeps the frozen text; meaning-notes.json carries its '
+                   "meaningNote for the translator's and reviewer's repair instruction."),
     }
     return receipt
 
@@ -545,19 +620,20 @@ def _segment_for(unit: dict[str, Any], segments: list[dict[str, Any]]) -> dict[s
 
 
 def source_text_review(receipt: dict[str, Any], anchor: dict[str, Any], segments: list[dict[str, Any]], *,
-                       receipt_path: Path, source_audio: Path, asr_reference: Path) -> dict[str, Any] | None:
+                       receipt_name: str, receipt_sha256: str, source_audio: Path,
+                       asr_reference: Path) -> dict[str, Any] | None:
     """A ``sermon-source-text-review-v1`` review for the corrected units, or None when nothing changed.
 
     The review binds the window clip and ASR reference the Layer 1 pipeline
-    will apply it against, and the receipt file as its evidence; relative
-    evidence paths resolve against the review's own directory."""
+    will apply it against, and the receipt file (its name beside the review,
+    and the sha256 of its bytes) as its evidence, so it can be built and
+    checked before the receipt file is written."""
     corrected = [row for row in receipt['units'] if row['decision'] == 'transcript_corrected']
     if not corrected:
         return None
     _require(receipt.get('adjudicator') is not None, 'adjudicator_identity_missing')
     by_id = {u['sourceUnitId']: u for u in _units(anchor)}
-    receipt_path = Path(receipt_path).resolve()
-    evidence_sha = file_sha256(receipt_path)
+    evidence_sha = receipt_sha256
     # Units are finer than ASR segments: corrections that share a segment become one patch.
     per_segment: dict[int, tuple[dict[str, Any], list[dict[str, Any]]]] = {}
     for row in corrected:
@@ -581,7 +657,52 @@ def source_text_review(receipt: dict[str, Any], anchor: dict[str, Any], segments
             'humanApproval': False, 'status': source_review.STATUS, 'authority': source_review.MACHINE_AUTHORITY,
             'reviewedBy': receipt['decidedBy'], 'reviewedAt': receipt['reviewedAt'],
             'sourceAudioSha256': file_sha256(source_audio), 'asrSha256': file_sha256(asr_reference),
-            'evidence': [{'path': receipt_path.name, 'sha256': evidence_sha}], 'patches': patches}
+            'evidence': [{'path': receipt_name, 'sha256': evidence_sha}], 'patches': patches}
+
+
+# ---------------------------------------------------------------- Layer 2 repair notes
+
+def meaning_notes(receipt: dict[str, Any], *, receipt_sha256: str) -> dict[str, Any] | None:
+    """The repair input for units that keep their frozen text, or None when every unit was corrected.
+
+    A Layer 2 repair brief for a group holding one of these units appends the
+    note; the artifact is bound to the receipt and to the Layer 1 inputs the
+    receipt was bound to, and names the frozen text it speaks about."""
+    rows = [{'sourceUnitId': row['sourceUnitId'], 'decision': row['decision'],
+             'frozenTextSha256': source_review.text_sha256(row['frozenText']), 'meaningNote': row['meaningNote'],
+             'decidedBy': row['decidedBy']}
+            for row in receipt['units'] if row['decision'] != 'transcript_corrected']
+    if not rows:
+        return None
+    return {'schemaVersion': NOTES_SCHEMA, 'bindings': dict(receipt['bindings']), 'receiptSha256': receipt_sha256,
+            'decidedBy': receipt['decidedBy'], 'decidedByRole': receipt['decidedByRole'], 'humanApproval': False,
+            'units': rows,
+            'notice': ('Machine evidence for the Layer 2 repair instruction of the groups holding these units; '
+                       'the frozen English text is unchanged. Not human approval.')}
+
+
+def load_meaning_notes(path: Path, *, source: dict[str, Any], anchor: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    """Notes bound to exactly these Layer 1 inputs, keyed by unit; anything else is refused."""
+    notes = _load(path)
+    _require(isinstance(notes, dict) and notes.get('schemaVersion') == NOTES_SCHEMA, 'meaning_notes_schema')
+    _require(notes.get('bindings') == {'source.json': policies.canonical_sha256(source),
+                                       'anchor.json': policies.canonical_sha256(anchor)}, 'meaning_notes_binding_changed')
+    units = {u['sourceUnitId']: u for u in _units(anchor)}
+    out: dict[str, dict[str, Any]] = {}
+    for row in notes.get('units') or []:
+        uid = row.get('sourceUnitId')
+        _require(uid in units and row.get('decision') in DECISIONS and row['decision'] != 'transcript_corrected'
+                 and isinstance(row.get('meaningNote'), str) and row['meaningNote'].strip()
+                 and source_review.text_sha256(units[uid]['english']) == row.get('frozenTextSha256')
+                 and uid not in out, 'meaning_notes_unit_changed')
+        out[uid] = row
+    return out
+
+
+def repair_instruction(notes: dict[str, dict[str, Any]], source_unit_ids: list[str]) -> str:
+    """What a Layer 2 repair brief appends for a group that holds noted units; empty when it holds none."""
+    return ' '.join(f"Source unit {uid} ({notes[uid]['decision'].replace('_', ' ')} by machine audio adjudication): "
+                    f"{notes[uid]['meaningNote']}" for uid in source_unit_ids if uid in notes)
 
 
 # ---------------------------------------------------------------- CLI
@@ -590,10 +711,14 @@ def _load(path: Path) -> Any:
     return json.loads(Path(path).read_text(encoding='utf-8'))
 
 
+def _encode(value: dict[str, Any]) -> bytes:
+    return (json.dumps(value, ensure_ascii=False, indent=2) + '\n').encode('utf-8')
+
+
 def _write_new(path: Path, value: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open('x', encoding='utf-8') as handle:
-        handle.write(json.dumps(value, ensure_ascii=False, indent=2) + '\n')
+    with path.open('xb') as handle:
+        handle.write(_encode(value))
 
 
 def resumable_out_dir(path: Path) -> Path:
@@ -659,17 +784,25 @@ def main(argv: list[str] | None = None) -> int:
                                  else args.max_adjudicator_calls)
     receipt = adjudicate(source, anchor, unit_ids=args.unit, media=args.media, listeners=listeners,
                          adjudicator=adjudicator, out_dir=args.out_dir)
-    receipt_path = args.out_dir / 'receipt.json'
-    _write_new(receipt_path, receipt)
-    summary = {'receiptSha256': receipt_sha256(receipt), 'out': str(args.out_dir.resolve()),
-               'decisions': [(row['sourceUnitId'], row['decision'], row['correctedText']) for row in receipt['units']],
-               'review': None}
+    # Everything derived from the receipt is built first: the receipt file marks the
+    # output complete, and a failure before it leaves a resumable directory.
+    file_sha = _sha(_encode(receipt))
+    review = None
     if segments is not None:
-        review = source_text_review(receipt, anchor, segments, receipt_path=receipt_path,
+        review = source_text_review(receipt, anchor, segments, receipt_name='receipt.json', receipt_sha256=file_sha,
                                     source_audio=args.source_audio, asr_reference=args.asr_reference)
-        if review is not None:
-            _write_new(args.out_dir / 'source-text-review.json', review)
-            summary['review'] = str((args.out_dir / 'source-text-review.json').resolve())
+    notes = meaning_notes(receipt, receipt_sha256=file_sha)
+    _write_new(args.out_dir / 'receipt.json', receipt)
+    summary = {'receiptSha256': receipt_sha256(receipt), 'receiptFileSha256': file_sha,
+               'out': str(args.out_dir.resolve()),
+               'decisions': [(row['sourceUnitId'], row['decision'], row['correctedText']) for row in receipt['units']],
+               'review': None, 'meaningNotes': None}
+    if review is not None:
+        _write_new(args.out_dir / 'source-text-review.json', review)
+        summary['review'] = str((args.out_dir / 'source-text-review.json').resolve())
+    if notes is not None:
+        _write_new(args.out_dir / 'meaning-notes.json', notes)
+        summary['meaningNotes'] = str((args.out_dir / 'meaning-notes.json').resolve())
     print(json.dumps(summary, ensure_ascii=False))
     return 0
 

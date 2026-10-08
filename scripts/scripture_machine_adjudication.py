@@ -53,13 +53,15 @@ _NUMBER_WORDS = '|'.join(sorted(cuv_scripture._EN_NUMBERS, key=len, reverse=True
 _NUM = rf'(?:\d+|{_NUMBER_WORDS})'
 # "2 and 3" joins adjacent verses; "2 and 5" names two verses and is never a range.
 _RANGE = rf'(?P<v1>{_NUM})(?:\s*(?P<join>-|–|to|through|and)\s*(?P<v2>{_NUM}))?'
+# "First John", "1st John" and "1 John" all name the epistle; the gospel has no ordinal.
+_ORDINAL = r'(?:[123]|1st|2nd|3rd|first|second|third)'
 BOOK_MENTION = re.compile(
-    rf'\b(?P<book>(?:[123]\s+)?(?:{_BOOKS}))\s+(?:chapter\s+)?(?P<chapter>{_NUM})\b'
+    rf'\b(?P<book>(?:{_ORDINAL}\s+)?(?:{_BOOKS}))\s+(?:chapter\s+)?(?P<chapter>{_NUM})\b'
     rf'(?P<more_chapters>\s+and\s+{_NUM}\b)?(?:\s*:\s*{_RANGE})?', re.I)
 # "Now turn to Romans" moves the reading to another book without naming a chapter.
 BOOK_TRANSITION = re.compile(
     rf'\b(?:turn(?:ing)?|open(?:ing)?|go(?:ing)?|com(?:e|ing)|back|look(?:ing)?)\s+(?:to|at|in)\s+'
-    rf'(?:the\s+book\s+of\s+)?(?P<book>(?:[123]\s+)?(?:{_BOOKS}))\b', re.I)
+    rf'(?:the\s+book\s+of\s+)?(?P<book>(?:{_ORDINAL}\s+)?(?:{_BOOKS}))\b', re.I)
 CHAPTER_MENTION = re.compile(rf'\bchapter\s+(?P<chapter>{_NUM})\b', re.I)
 VERSE_MENTION = re.compile(rf'\bverses?\s+{_RANGE}', re.I)
 READING_SIGNALS = {'speech_verb', 'quotation_marks'}
@@ -96,9 +98,12 @@ def _edition(target_locale: str, library: Any = None) -> Any:
     if edition_id == 'CUV':
         return edition_id, (library or cuv_scripture.CuvLibrary.from_path())
     try:
-        return edition_id, scripture_editions.load(edition_id)
+        edition = scripture_editions.load(edition_id)
     except scripture_editions.EditionError as exc:
         raise MachineAdjudicationError('edition_unavailable') from exc
+    # A third-party text still awaiting publisher comparison is not pinned scripture.
+    _require(edition.verification == scripture_editions.VERIFIED, 'edition_not_verified')
+    return edition_id, edition
 
 
 def _signals(english: str) -> set[str]:
@@ -131,6 +136,7 @@ def _spoken_text(english: list[str]) -> str:
 
 
 def _book(name: str) -> str | None:
+    name = re.sub(r'^([123])(?:st|nd|rd)\s+', r'\1 ', name.strip(), flags=re.I)  # "1st John" -> "1 John"
     try:
         return cuv_scripture.normalize_book(name)
     except cuv_scripture.CuvError:
@@ -193,7 +199,8 @@ def _scan(units: list[dict[str, Any]]) -> list[dict[str, Any]]:
             evidence.append('verses joined by "and" are not adjacent: not a range')
         signals = _signals(english)
         rows.append({'sourceUnitId': unit['sourceUnitId'], 'english': english, 'book': book, 'chapter': chapter,
-                     'verseRange': verse_range, 'reading': bool(signals & READING_SIGNALS),
+                     'verseRange': verse_range, 'versesNamed': verses_named,
+                     'reading': bool(signals & READING_SIGNALS),
                      'signals': sorted(signals), 'evidence': evidence})
     return rows
 
@@ -232,8 +239,8 @@ def _runs(rows: list[dict[str, Any]], flagged: list[str]) -> list[list[int]]:
     indexes = sorted(position[unit] for unit in flagged)
     runs: list[list[int]] = []
     for i in indexes:
-        # A unit naming its own verses opens a new quotation even right after another.
-        if runs and runs[-1][-1] == i - 1 and rows[i]['verseRange'] is None:
+        # A unit naming its own verses, resolvable or not, opens a new quotation even right after another.
+        if runs and runs[-1][-1] == i - 1 and not rows[i]['versesNamed']:
             runs[-1].append(i)
         else:
             runs.append([i])
@@ -246,6 +253,8 @@ def _resolve_run(rows: list[dict[str, Any]], run: list[int]) -> tuple[cuv_script
         reference = _reference(rows[i])
         if reference is not None:
             return reference, i
+    if any(rows[i]['versesNamed'] for i in run):
+        return None, None  # the run names verses that do not resolve; nothing is borrowed
     before = run[0] - 1
     if before >= 0 and rows[before]['verseRange'] is not None:
         reference = _reference(rows[before])

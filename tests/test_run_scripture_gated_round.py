@@ -71,10 +71,18 @@ class GatedRoundTests(unittest.TestCase):
         self.assertFalse((self.work / 'machine').exists())
 
     def test_machine_adjudicator_receipt_runs_without_human_approval(self):
-        report = self.run_round(self.receipt(decidedByRole='machine_adjudicator',
-                                             decidedBy='scripture_machine_adjudication v x'), name='by-machine')
+        from scripts import scripture_machine_adjudication as machine
+        generated, _ = machine.adjudicate_fixture(SOURCE, target_locale='zh-Hans', flagged_units=['0-u067', '0-u068'])
+        code, out = self.run_round(generated, name='by-machine')
+        self.assertEqual(code, 0)
+        report = json.loads((out / 'round.json').read_text(encoding='utf-8'))
         self.assertEqual((report['adjudicationKind'], report['humanApproval']), ('machine', False))
         self.assertFalse(report['productionEligible'])
+        # A hand-written receipt labelled machine is refused: the generator does not reproduce it.
+        with self.assertRaisesRegex(ValueError, 'machine_receipt_not_reproduced'):
+            self.run_round(self.receipt(decidedByRole='machine_adjudicator',
+                                        decidedBy='scripture_machine_adjudication v x'), name='by-hand')
+        self.assertFalse((self.work / 'by-hand').exists())
 
     def test_receipt_bound_to_other_source_is_refused(self):
         with self.assertRaisesRegex(ValueError, 'receipt_binding_changed'):

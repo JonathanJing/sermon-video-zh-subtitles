@@ -82,11 +82,27 @@ class MachineAdjudicationTests(unittest.TestCase):
     def test_machine_receipt_passes_the_gate_as_machine_evidence(self):
         receipt, _ = machine.adjudicate(source(), {'sourceUnits': READING}, plan(READING),
                                         target_locale='zh-Hans', flagged_units=['u3', 'u4'], library=LIBRARY)
+        inputs = {'source.json': source(), 'anchor.json': {'sourceUnits': READING}, 'group-plan.json': plan(READING)}
         summary = adjudication.validate_receipt(receipt, target_locale='zh-Hans', bindings=receipt['bindings'],
-                                                flagged_units=['u3', 'u4'], library=LIBRARY)
+                                                flagged_units=['u3', 'u4'], library=LIBRARY, machine_inputs=inputs)
         self.assertEqual((summary['adjudicationKind'], summary['humanApproval'], summary['decidedByRole']),
                          ('machine', False, machine.ROLE))
         self.assertEqual([q['canonicalRef'] for q in summary['quotes']], ['REV 4:2', 'REV 4:3'])
+        self.assertEqual((summary['generator']['reproduced'], summary['generator']['signatureCurrent'],
+                          summary['generator']['version']), (True, True, machine.VERSION))
+        # The role string admits nothing by itself: the gate re-derives the receipt from the bound inputs.
+        with self.assertRaisesRegex(adjudication.AdjudicationError, 'machine_inputs_required'):
+            adjudication.validate_receipt(receipt, target_locale='zh-Hans', bindings=receipt['bindings'],
+                                          flagged_units=['u3', 'u4'], library=LIBRARY)
+        tampered = dict(receipt, candidates=[dict(receipt['candidates'][0], classification='partial_direct_quote',
+                                                  exactSentence=receipt['candidates'][0]['exactSentence'][:4]),
+                                             receipt['candidates'][1]])
+        with self.assertRaisesRegex(adjudication.AdjudicationError, 'machine_receipt_not_reproduced'):
+            adjudication.validate_receipt(tampered, target_locale='zh-Hans', bindings=receipt['bindings'],
+                                          flagged_units=['u3', 'u4'], library=LIBRARY, machine_inputs=inputs)
+        human = adjudication.validate_receipt(as_human(receipt), target_locale='zh-Hans', bindings=receipt['bindings'],
+                                              flagged_units=['u3', 'u4'], library=LIBRARY)
+        self.assertEqual((human['adjudicationKind'], human['generator']), ('human', None))
 
     def test_discovery_flags_only_the_opening_unit_and_keeps_the_range_on_it(self):
         # Whether the reading runs into u4 is not in the text, so u4 is not claimed
@@ -232,6 +248,36 @@ class MachineAdjudicationTests(unittest.TestCase):
                                             target_locale='zh-Hans', flagged_units=['u2'], library=LIBRARY)
         self.assertEqual(receipt['candidates'][0]['reference'], 'JOH 3:16')
         self.assertEqual(basis['candidates'][0]['quoteBoundary'], machine.QUOTE_BOUNDARY)
+
+    def test_spoken_ordinals_name_the_epistle_not_the_gospel(self):
+        whole = coverage_module.CoverageEdition.from_path().lookup('1JO 3:16')['text']
+        for spoken in ('First John 3:16 says', '1st John 3:16 says', '1 John 3:16 says'):
+            rows = units(f'{spoken}, {whole}', 'Amen.')
+            receipt, basis = machine.adjudicate(source(), {'sourceUnits': rows}, plan(rows),
+                                                target_locale='zh-Hans', flagged_units=['u1'], library=LIBRARY)
+            self.assertEqual((receipt['candidates'][0]['classification'], receipt['candidates'][0]['reference']),
+                             ('direct_quote', '1JO 3:16'), spoken)
+            self.assertEqual(receipt['candidates'][0]['exactSentence'], LIBRARY.lookup('1JO 3:16')['text'])
+
+    def test_an_unresolved_verse_mention_opens_its_own_run_and_borrows_nothing(self):
+        rows = units(f'John 3:16 says, {READ_3_16}',
+                     'Verses 2 and 5 say something about the light.',
+                     'Amen.')
+        receipt, basis = machine.adjudicate(source(), {'sourceUnits': rows}, plan(rows, size=3),
+                                            target_locale='zh-Hans', flagged_units=['u1', 'u2'], library=LIBRARY)
+        self.assertEqual([(c['sourceUnitIds'], c['classification'], c['reference']) for c in receipt['candidates']],
+                         [(['u1'], 'direct_quote', 'JOH 3:16'), (['u2'], 'speaker_paraphrase', None)])
+        self.assertEqual(basis['candidates'][1]['reason'], 'no book, chapter and verse reference resolves for this unit')
+        self.assertEqual(basis['candidates'][1]['sourceUnitIds'], ['u2'])
+
+    def test_an_edition_pending_publisher_verification_supplies_no_quotation(self):
+        from scripts import scripture_editions
+        pending = scripture_editions.Edition(edition_id='NKRV-1998', verification=scripture_editions.PENDING,
+                                             verses={('REV', 4, 2): 'x', ('REV', 4, 3): 'y'})
+        with mock.patch.object(scripture_editions, 'load', return_value=pending):
+            with self.assertRaisesRegex(machine.MachineAdjudicationError, 'edition_not_verified'):
+                machine.adjudicate(source(), {'sourceUnits': READING}, plan(READING),
+                                   target_locale='ko', flagged_units=['u3', 'u4'])
 
     def test_a_fragment_is_translated_as_the_speakers_words_and_a_whole_reading_is_pinned(self):
         fragment = units('Genesis chapter 1 is where it all starts.',
