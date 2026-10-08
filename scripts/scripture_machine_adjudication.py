@@ -98,20 +98,30 @@ def _number(value: str) -> int | None:
 
 
 def _edition(target_locale: str, library: Any = None) -> tuple[str, Any, str]:
-    """The locale's pinned edition, its lookup object and its verification status.
+    """The locale's pinned edition id, a loader for its lookup object, and its verification status.
 
-    A third-party text still awaiting publisher comparison is loaded but not
-    pinned scripture: adjudication still runs on its units, and only a whole
-    reading that would be emitted as a quotation is withheld (``edition_not_verified``)."""
+    The edition file is read only when a whole reading is emitted as a
+    quotation: a locale whose file is absent from the checkout still settles
+    unresolved and fragmentary units as the speaker's words, and a third-party
+    text still awaiting publisher comparison is withheld (``edition_not_verified``)
+    before any lookup."""
     _require(target_locale in adjudication.PINNED_EDITIONS, 'no_pinned_edition_for_locale')
     edition_id = adjudication.PINNED_EDITIONS[target_locale]
+    loaded: list[Any] = []
     if edition_id == 'CUV':
-        return edition_id, (library or cuv_scripture.CuvLibrary.from_path()), scripture_editions.VERIFIED
-    try:
-        edition = scripture_editions.load(edition_id)
-    except scripture_editions.EditionError as exc:
-        raise MachineAdjudicationError('edition_unavailable') from exc
-    return edition_id, edition, edition.verification
+        def load_cuv() -> Any:
+            if not loaded:
+                loaded.append(library or cuv_scripture.CuvLibrary.from_path())
+            return loaded[0]
+        return edition_id, load_cuv, scripture_editions.VERIFIED
+    lazy = scripture_editions.LazyEdition(edition_id)
+
+    def load() -> Any:
+        try:
+            return lazy.load()
+        except scripture_editions.EditionError as exc:
+            raise MachineAdjudicationError('edition_unavailable') from exc
+    return edition_id, load, lazy.verification
 
 
 def _signals(english: str) -> set[str]:
@@ -365,8 +375,8 @@ def _paraphrase(candidate_id: str, units: list[str], reason: str) -> tuple[dict[
 def adjudicate(source: dict[str, Any], anchor: dict[str, Any], plan: list[dict[str, Any]], *, target_locale: str,
                flagged_units: list[str] | None = None, library: Any = None, coverage_edition: Any = None,
                now: datetime | None = None) -> tuple[dict[str, Any], dict[str, Any]]:
-    """Return (receipt, basis). The receipt has the v1 shape with the machine role."""
-    edition_id, edition, verification = _edition(target_locale, library)
+    """Return (receipt, basis). The receipt has the v2 shape (the contract that admits the machine role)."""
+    edition_id, load_edition, verification = _edition(target_locale, library)
     english_edition = _coverage_edition(coverage_edition)
     units = anchor['sourceUnits']
     rows = _scan(units)
@@ -422,10 +432,17 @@ def adjudicate(source: dict[str, Any], anchor: dict[str, Any], plan: list[dict[s
             # The pinned verse is admitted only when the speaker's quotation covers the whole verse
             # with the verse's own negations; a reading that drops or adds one says the opposite.
             if not measure['wholeVerse']:
+                thresholds = measure['thresholds']
+                range_whole = (measure['verseCoverage'] >= thresholds['verseCoverageMin']
+                               and thresholds['lengthRatioMin'] <= measure['lengthRatio'] <= thresholds['lengthRatioMax'])
                 if measure['wholeByMeasure']:
                     reason = (f"negation differs from {ref.canonical_ref}: the verse has "
                               f"{measure['negations']['verse']} negation word(s), the speaker said "
                               f"{measure['negations']['spoken']}; translated as the speaker's own words")
+                elif range_whole and measure['unreadVerses']:
+                    reason = (f"{', '.join(measure['unreadVerses'])} not read within {ref.canonical_ref}: the words only "
+                              f"that verse contributes were not spoken (one verse read twice is not a reading of "
+                              f"its neighbour); translated as the speaker's own words")
                 else:
                     reason = (f"fragment of {ref.canonical_ref}: the speaker said {measure['coveredContentWords']} of "
                               f"{measure['verseContentWords']} content words (coverage {measure['verseCoverage']}, "
@@ -448,7 +465,7 @@ def adjudicate(source: dict[str, Any], anchor: dict[str, Any], plan: list[dict[s
                                          'boundaryEvidence': boundary, 'english': english_here})
                 continue
             try:
-                found = edition.lookup(ref)
+                found = load_edition().lookup(ref)
             except (cuv_scripture.CuvError, scripture_editions.EditionError) as exc:
                 candidate, why = _paraphrase(candidate_id, units_here,
                                              f'edition lookup failed for {ref.canonical_ref}: {exc}')
@@ -468,7 +485,7 @@ def adjudicate(source: dict[str, Any], anchor: dict[str, Any], plan: list[dict[s
     _require(bool(candidates), 'no_flagged_units')
     stamp = (now or datetime.now(timezone.utc)).isoformat()
     sha = implementation_sha256()
-    receipt = {'schemaVersion': adjudication.SCHEMA, 'targetLocale': target_locale,
+    receipt = {'schemaVersion': adjudication.SCHEMA_V2, 'targetLocale': target_locale,
                'bindings': {'source.json': policies.canonical_sha256(source),
                             'anchor.json': policies.canonical_sha256(anchor),
                             'group-plan.json': policies.canonical_sha256(plan)},

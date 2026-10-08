@@ -566,6 +566,32 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
             machine.resumable_out_dir(self.out)  # a finished directory, sidecars included, is never touched
         self.assertTrue((self.out / 'source-text-review.json').is_file())
 
+    def test_a_crash_while_writing_the_receipt_leaves_no_completion_marker(self):
+        receipt = self.adjudicate([FakeListener('openai', CLIP_HEARD_OTHER)], FakeAdjudicator(
+            self.out / 'cache', answer('transcript_corrected', 'openai', "You're failing in the middle of a trial.")))
+        partial = self.out / '.receipt.json.partial'
+
+        def killed(_fd):
+            raise OSError('killed before the bytes reached disk')
+        with mock.patch.object(machine.os, 'fsync', side_effect=killed):
+            with self.assertRaises(OSError):
+                machine.write_outputs(self.out, receipt, None, None)
+        # The name a resume checks for never exists half-written; only the unpublished bytes do.
+        self.assertFalse((self.out / 'receipt.json').exists())
+        self.assertTrue(partial.is_file())
+        self.assertEqual(machine.resumable_out_dir(self.out), self.out)
+        self.assertFalse(partial.exists())
+        machine.write_outputs(self.out, receipt, None, None)
+        self.assertEqual(hashlib.sha256((self.out / 'receipt.json').read_bytes()).hexdigest(),
+                         hashlib.sha256(machine._encode(receipt)).hexdigest())
+        self.assertFalse(partial.exists())
+        # Publication never replaces an existing receipt, and leaves no partial file behind the refusal.
+        with self.assertRaises(FileExistsError):
+            machine._write_new(self.out / 'receipt.json', dict(receipt, reviewedAt='2026-10-09T00:00:00+00:00'))
+        self.assertFalse(partial.exists())
+        self.assertEqual(hashlib.sha256((self.out / 'receipt.json').read_bytes()).hexdigest(),
+                         hashlib.sha256(machine._encode(receipt)).hexdigest())
+
     def test_locate_unit_is_bounded_by_the_neighbours_and_ignores_presentation(self):
         frozen = machine.tokens(FROZEN)
         self.assertEqual(frozen, ["you're", 'filled', 'in', 'the', 'middle', 'of', 'a', 'trial'])

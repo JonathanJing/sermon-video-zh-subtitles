@@ -468,6 +468,43 @@ class MachineAdjudicationTests(unittest.TestCase):
         self.assertTrue(basis['candidates'][0]['reason'].startswith('fragment of JOH 3:16'))
         self.assertTrue(basis['candidates'][0]['coverage']['negationMismatch'])
 
+    def test_one_verse_read_twice_is_not_a_reading_of_its_neighbour(self):
+        twice = units('John chapter 3 is our text.', f'John 3:16 and 17 say, "{READ_3_16} {READ_3_16}"', 'Amen.')
+        receipt, basis = machine.adjudicate(source(), {'sourceUnits': twice}, plan(twice),
+                                            target_locale='zh-Hans', flagged_units=['u2'], library=LIBRARY)
+        row, why = receipt['candidates'][0], basis['candidates'][0]
+        self.assertEqual((row['classification'], row['exactSentence'], why['reference']),
+                         ('speaker_paraphrase', None, 'JOH 3:16-17'))
+        self.assertEqual((why['coverage']['unreadVerses'], why['coverage']['wholeByMeasure']), (['JOH 3:17'], False))
+        self.assertTrue(why['reason'].startswith('JOH 3:17 not read within JOH 3:16-17'), why['reason'])
+        both = units('John chapter 3 is our text.', f'John 3:16 and 17 say, "{READ_3_16} {READ_3_17}"', 'Amen.')
+        receipt, basis = machine.adjudicate(source(), {'sourceUnits': both}, plan(both),
+                                            target_locale='zh-Hans', flagged_units=['u2'], library=LIBRARY)
+        self.assertEqual((receipt['candidates'][0]['classification'], receipt['candidates'][0]['reference']),
+                         ('direct_quote', 'JOH 3:16-17'))
+        self.assertEqual(basis['candidates'][0]['coverage']['unreadVerses'], [])
+
+    def test_an_absent_optional_edition_still_settles_units_that_need_no_quotation(self):
+        from scripts import scripture_editions
+        absent = mock.patch.object(scripture_editions, 'load', side_effect=scripture_editions.EditionError('absent'))
+        fragment = units('John chapter 3 is our text.', 'Verse 16 says, "For God so loved the world."', 'Amen.')
+        whole = units('John chapter 3 is our text.', f'Verse 16 says, "{READ_3_16}"', 'Amen.')
+        with absent:
+            receipt, basis = machine.adjudicate(source(), {'sourceUnits': fragment}, plan(fragment),
+                                                target_locale='ko', flagged_units=['u2'], library=LIBRARY)
+            self.assertEqual(receipt['candidates'][0]['classification'], 'speaker_paraphrase')
+            self.assertTrue(basis['candidates'][0]['reason'].startswith('fragment of JOH 3:16'))
+            receipt, basis = machine.adjudicate(source(), {'sourceUnits': whole}, plan(whole),
+                                                target_locale='ko', flagged_units=['u2'], library=LIBRARY)
+            self.assertEqual(receipt['candidates'][0]['classification'], 'speaker_paraphrase')
+            self.assertIn('edition_not_verified', basis['candidates'][0]['reason'])
+            self.assertEqual(basis['editionVerification'], scripture_editions.PENDING)
+            # A verified edition whose file is absent fails closed at the quotation it would have pinned.
+            with mock.patch.dict(scripture_editions.EDITIONS['NKRV-1998'], {'verification': scripture_editions.VERIFIED}):
+                with self.assertRaisesRegex(machine.MachineAdjudicationError, 'edition_unavailable'):
+                    machine.adjudicate(source(), {'sourceUnits': whole}, plan(whole),
+                                       target_locale='ko', flagged_units=['u2'], library=LIBRARY)
+
     def test_a_verse_the_english_edition_lacks_is_not_admitted(self):
         rows = units('Acts chapter 8 is our text.',
                      'Verse 37 says, "I believe that Jesus Christ is the Son of God."',

@@ -236,6 +236,30 @@ class LoopTests(unittest.TestCase):
         receipt = self.drive(fleet, out="other")
         self.assertEqual(receipt["stoppedGroups"][0]["reasonCode"], "repeated_failure_without_progress")
 
+    def test_a_noted_source_unit_gets_one_more_repair_before_source_review(self):
+        notes = {"u21": {"decision": "transcript_confirmed", "frozenTextSha256": "0" * 64, "decidedBy": "test",
+                         "meaningNote": "Keep the frozen wording; it is what was said."}}
+        fleet = Fleet(self, 46, [{"g21": failing("quotationAttribution")}] * 5)
+        receipt = subject.drive(REQUEST, fleet.groups, fleet, self.root / "noted", self.root / "state-noted",
+                                meaning_notes=notes)
+        self.assertEqual(receipt["status"], "repair_stopped")
+        self.assertEqual(fleet.calls, ["all", ["g21"], ["g21"]])
+        self.assertEqual(receipt["stoppedGroups"][0]["reasonCode"], "request_source_review")
+        entries = subject.load_ledger(self.root / "state-noted", subject.lineage(REQUEST))
+        self.assertEqual([row["decision"] for entry in entries for row in entry["groups"]],
+                         ["repairable_content_failure", "source_meaning_noted", "request_source_review"])
+        briefs = [entry["nextBrief"]["groups"][0]["instruction"] for entry in entries if entry["nextBrief"]]
+        self.assertEqual(len(briefs), 2)
+        for text in briefs:
+            self.assertIn("Source unit u21 (transcript confirmed by machine audio adjudication): Keep the frozen "
+                          "wording; it is what was said.", text)
+        # A note for a unit outside the group changes nothing for it.
+        fleet = Fleet(self, 46, [{"g21": failing("quotationAttribution")}] * 5)
+        receipt = subject.drive(REQUEST, fleet.groups, fleet, self.root / "unnoted", self.root / "state-unnoted",
+                                meaning_notes={"u9": notes["u21"]})
+        self.assertEqual((fleet.calls, receipt["stoppedGroups"][0]["reasonCode"]),
+                         (["all", ["g21"]], "request_source_review"))
+
     def test_two_repairs_without_fewer_failures_stop(self):
         fleet = Fleet(self, 46, [{"g1": failing("completeMeaning")},
                                  {"g1": failing("noAddedMeaning")},

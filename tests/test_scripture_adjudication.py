@@ -79,15 +79,23 @@ class ReceiptValidationTests(unittest.TestCase):
         self.assertEqual((summary['decidedByRole'], summary['adjudicationKind'], summary['humanApproval']),
                          ('machine_adjudicator', 'machine', False))
         self.assertTrue(summary['generator']['reproduced'])
-        # A hand-written receipt labelled machine, with a classification the generator never emits, is refused.
+        self.assertEqual((generated['schemaVersion'], summary['receiptSchemaVersion']),
+                         (adjudication.SCHEMA_V2, adjudication.SCHEMA_V2))
+        # The v1 contract is human-only: a machine role under it is refused before anything else is checked.
         self.assertEqual(reason(receipt(decidedByRole='machine_adjudicator',
+                                        decidedBy='scripture_machine_adjudication v x')), 'machine_receipt_requires_v2')
+        # A hand-written v2 receipt labelled machine, with a classification the generator never emits, is refused.
+        self.assertEqual(reason(receipt(schemaVersion=adjudication.SCHEMA_V2, decidedByRole='machine_adjudicator',
                                         decidedBy='scripture_machine_adjudication v x')), 'machine_inputs_required')
-        handwritten = receipt(decidedByRole='machine_adjudicator', decidedBy='scripture_machine_adjudication v x',
-                              bindings=generated['bindings'])
+        handwritten = receipt(schemaVersion=adjudication.SCHEMA_V2, decidedByRole='machine_adjudicator',
+                              decidedBy='scripture_machine_adjudication v x', bindings=generated['bindings'])
         self.assertEqual(reason(handwritten, bindings=generated['bindings'], flagged_units=UNITS, machine_inputs=inputs),
                          'machine_receipt_not_reproduced')
         human = validate(receipt())
         self.assertEqual((human['adjudicationKind'], human['humanApproval'], human['generator']), ('human', True, None))
+        # A human receipt is valid under either contract; frozen runs keep their v1 receipts unchanged.
+        self.assertEqual(human['receiptSchemaVersion'], adjudication.SCHEMA)
+        self.assertEqual(validate(receipt(schemaVersion=adjudication.SCHEMA_V2))['adjudicationKind'], 'human')
 
     def test_a_frozen_machine_receipt_survives_a_later_generator(self):
         from unittest import mock
@@ -122,6 +130,21 @@ class ReceiptValidationTests(unittest.TestCase):
         forged = dict(generated, candidates=[dict(generated['candidates'][0], classification='partial_direct_quote',
                                                   exactSentence=generated['candidates'][0]['exactSentence'][:4])])
         self.assertEqual(reason(forged, frozen_generator=frozen, **check), 'machine_receipt_not_reproduced')
+
+    def test_a_paraphrase_only_receipt_needs_no_edition_file(self):
+        from unittest import mock
+        paraphrases = [{'candidateId': 'p1', 'sourceUnitIds': [UNITS[0]], 'classification': 'speaker_paraphrase',
+                        'reference': None, 'editionId': None, 'exactSentence': None},
+                       {'candidateId': 'p2', 'sourceUnitIds': [UNITS[1]], 'classification': 'speaker_paraphrase',
+                        'reference': None, 'editionId': None, 'exactSentence': None}]
+        with mock.patch.object(scripture_editions, 'load', side_effect=scripture_editions.EditionError('absent')):
+            summary = validate(receipt(targetLocale='ko', candidates=paraphrases), target_locale='ko')
+            self.assertEqual((summary['quotes'], summary['speakerWordsUnits']), ([], sorted(UNITS)))
+            # The file is read only once a quotation has to be verified against it.
+            quoted = [dict(paraphrases[0], classification='direct_quote', reference='REV 3:16',
+                           editionId='NKRV-1998', exactSentence='x'), paraphrases[1]]
+            self.assertEqual(reason(receipt(targetLocale='ko', candidates=quoted), target_locale='ko'),
+                             'edition_unavailable')
 
     def test_bad_timestamp_and_schema_are_refused(self):
         self.assertEqual(reason(receipt(reviewedAt='yesterday')), 'reviewed_at_invalid')

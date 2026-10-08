@@ -37,8 +37,10 @@ from typing import Any, Callable
 
 try:
     from scripts import run_target_language_models as runner
+    from scripts import source_meaning_machine_adjudication as source_meaning
 except ImportError:  # pragma: no cover - direct script execution
     import run_target_language_models as runner
+    import source_meaning_machine_adjudication as source_meaning
 
 ROUTING_VERSION = "layer2-auto-repair-routing-v1"
 REPORT_SCHEMA = "sermon-layer2-group-failures-v1"
@@ -421,8 +423,13 @@ def unit_history(entries: list[dict], source_unit_ids: list[str]) -> list[dict]:
 # ---------------------------------------------------------------- decisions
 
 
-def decide(failure: dict, history: list[dict], value: dict) -> tuple[str, str]:
-    """('repair', reason) or ('stop', reason) for one failed group, from durable history."""
+def decide(failure: dict, history: list[dict], value: dict, *, noted: bool = False) -> tuple[str, str]:
+    """('repair', reason) or ('stop', reason) for one failed group, from durable history.
+
+    ``noted`` says machine audio adjudication settled the wording of a unit in
+    this group (its meaning note rides the repair brief). A failure that would
+    otherwise go to source review then gets one more repair carrying the note;
+    a recurrence after that repair goes to source review as before."""
     action = failure["action"]
     if action != "repair_translation":
         return "stop", action
@@ -440,6 +447,9 @@ def decide(failure: dict, history: list[dict], value: dict) -> tuple[str, str]:
                     if code in REPEATED_FAILURE_ACTIONS}
         for action in ("request_source_review", "request_human_review"):
             if action in repeated:
+                if action == "request_source_review" and noted \
+                        and not any("source_meaning_noted" in row["decisions"] for row in history):
+                    return "repair", "source_meaning_noted"
                 return "stop", action
         return "stop", "repeated_failure_without_progress"
     # Patience: count failure codes before and after each repair round.
@@ -454,10 +464,14 @@ def decide(failure: dict, history: list[dict], value: dict) -> tuple[str, str]:
     return "repair", "repairable_content_failure"
 
 
-def repair_row(failure: dict) -> dict:
+def repair_row(failure: dict, meaning_notes: dict | None = None) -> dict:
     reason = _clip(f"{', '.join(failure['failureCodes'])}: {failure['evidence']} "
                    + " ".join(failure["issues"]))
     instruction = " ".join(INSTRUCTIONS[code] for code in failure["failureCodes"])
+    noted = source_meaning.repair_instruction(meaning_notes or {}, failure["sourceUnitIds"])
+    if noted:
+        # The frozen English of these units is what was said: translate it literally, add no meaning.
+        instruction += " " + noted
     instruction += (" Machine-written repair instruction from a failed independent review; "
                     "check every point against the English source. Reviewer finding: " + reason)
     return {"translationGroupId": failure["translationGroupId"], "sourceUnitIds": failure["sourceUnitIds"],
@@ -498,12 +512,18 @@ def _saved_report(out: Path, request: dict, total_groups: int) -> dict:
 
 
 def drive(request: dict, total_groups: int, run_round: RoundRunner, out_root: Path,
-          ledger_root: Path, *, group_workers: int = 1) -> dict:
+          ledger_root: Path, *, group_workers: int = 1, meaning_notes: dict | None = None) -> dict:
     """Run rounds until every group passes or repair stops; write and return a receipt.
 
     ``run_round(out, reuse_from, brief, collector)`` returns evidence when every
     group passed, raises GroupFailuresCollected otherwise, and lets any other
     error (execution failure, unknown outcome) propagate unchanged.
+
+    ``meaning_notes`` are the Layer 1 machine audio adjudication notes, keyed by
+    source unit, that ``source_meaning_machine_adjudication.load_meaning_notes``
+    bound to this run's source and anchor: a group holding a noted unit carries
+    the note in its repair brief, and a quotation failure that recurs on such a
+    group is repaired once more with it before it is sent to source review.
     """
     value = lineage(request)
     out_root = Path(out_root)
@@ -554,8 +574,9 @@ def drive(request: dict, total_groups: int, run_round: RoundRunner, out_root: Pa
             outcome = "repairing"
             for failure in report["failures"]:
                 history = unit_history(entries, failure["sourceUnitIds"])
+                noted = bool(source_meaning.repair_instruction(meaning_notes or {}, failure["sourceUnitIds"]))
                 verdict, reason = ("stop", "systemic_rule_or_policy_issue") if report["systemicStop"] \
-                    else decide(failure, history, value)
+                    else decide(failure, history, value, noted=noted)
                 rows.append({"translationGroupId": failure["translationGroupId"],
                              "sourceUnitIds": failure["sourceUnitIds"],
                              "failureCodes": failure["failureCodes"],
@@ -610,7 +631,7 @@ def drive(request: dict, total_groups: int, run_round: RoundRunner, out_root: Pa
         if repairs:
             next_brief = {"schemaVersion": runner.PARTIAL_REPAIR_SCHEMA, **{key: request[key] for key in (
                 "targetLocale", "englishSourcePackageJsonSha256", "anchorManifestSha256",
-                "translationPolicySha256")}, "groups": [repair_row(failure) for failure in repairs]}
+                "translationPolicySha256")}, "groups": [repair_row(failure, meaning_notes) for failure in repairs]}
         entry = append_ledger(ledger_root, value, entries, {
             "runDirectory": str(out.resolve()), "routingVersion": ROUTING_VERSION,
             "repairBriefSha256": json_sha256(brief) if brief else None,

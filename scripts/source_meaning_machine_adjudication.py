@@ -846,12 +846,32 @@ def _encode(value: dict[str, Any]) -> bytes:
 SIDECARS = ('source-text-review.json', 'meaning-notes.json')
 
 
+PARTIAL_SUFFIX = '.partial'
+
+
 def _write_new(path: Path, value: dict[str, Any]) -> None:
+    """Publish ``path`` whole, and never over an existing file.
+
+    The bytes go to a sibling partial file and are flushed before the final
+    name appears, so a process killed mid-write leaves no truncated
+    ``receipt.json`` for the next attempt to mistake for a finished run. The
+    final name is taken by a link, which fails when the file already exists."""
+    path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open('xb') as handle:
+    partial = path.with_name(f'.{path.name}{PARTIAL_SUFFIX}')
+    with partial.open('wb') as handle:
         handle.write(_encode(value))
         handle.flush()
         os.fsync(handle.fileno())
+    try:
+        os.link(partial, path)
+    finally:
+        partial.unlink(missing_ok=True)
+    directory = os.open(path.parent, os.O_RDONLY)
+    try:
+        os.fsync(directory)
+    finally:
+        os.close(directory)
 
 
 def write_outputs(out_dir: Path, receipt: dict[str, Any], review: dict[str, Any] | None,
@@ -888,6 +908,8 @@ def resumable_out_dir(path: Path) -> Path:
         raise SystemExit('out dir is not a directory')
     for name in SIDECARS:
         (path / name).unlink(missing_ok=True)
+    for partial in path.glob(f'.*{PARTIAL_SUFFIX}'):
+        partial.unlink()  # bytes a killed attempt never published
     return path
 
 

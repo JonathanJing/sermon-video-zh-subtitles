@@ -197,9 +197,10 @@ class CoverageEdition:
         missing = [v for v in range(reference.start_verse, reference.end_verse + 1) if v not in available]
         if not available or missing:
             raise CoverageError(f'Missing verse(s) in pinned {self.edition_id}: {reference.canonical_ref}')
-        text = ' '.join(available[v] for v in range(reference.start_verse, reference.end_verse + 1))
+        texts = [available[v] for v in range(reference.start_verse, reference.end_verse + 1)]
+        text = ' '.join(texts)
         return {'canonicalRef': reference.canonical_ref, 'editionId': self.edition_id, 'text': text,
-                'textSha256': sha256(text.encode('utf-8'))}
+                'textSha256': sha256(text.encode('utf-8')), 'verseTexts': texts}
 
 
 # ---------------------------------------------------------------- measure
@@ -239,9 +240,36 @@ def _same(a: str, b: str) -> bool:
             and (a.startswith(b) or b.startswith(a)))
 
 
+def _per_verse(found: dict[str, Any], reference: cuv_scripture.Reference,
+               spoken_tokens: list[str]) -> tuple[list[dict[str, Any]], list[str]]:
+    """Each verse of a range, evidenced by the content words only it contributes.
+
+    One coverage score over a joined range cannot tell one verse read twice
+    from two verses read once, so each verse must also be heard through words
+    its neighbours in the range lack; a verse with none of its own (a repeated
+    refrain) falls back to all its words, which the range measure then bounds."""
+    texts = found['verseTexts']
+    if len(texts) < 2:
+        return [], []
+    unique = [set(content_tokens(text)) for text in texts]
+    rows = []
+    for index, own in enumerate(unique):
+        others = set().union(*(words for j, words in enumerate(unique) if j != index))
+        exclusive = sorted(own - others)
+        pool, basis = (exclusive, 'exclusive_words') if exclusive else (sorted(own), 'own_words')
+        hit = [token for token in pool if any(_same(token, heard) for heard in spoken_tokens)]
+        share = round(len(hit) / len(pool), 4) if pool else 0.0
+        verse = cuv_scripture.Reference(reference.book, reference.chapter, reference.start_verse + index)
+        rows.append({'canonicalRef': verse.canonical_ref, 'basis': basis, 'contentWords': len(pool),
+                     'coveredContentWords': len(hit), 'coverage': share,
+                     'read': share >= WHOLE_VERSE_COVERAGE_MIN})
+    return rows, [row['canonicalRef'] for row in rows if not row['read']]
+
+
 def coverage(edition: CoverageEdition, ref: cuv_scripture.Reference | str, spoken: str) -> dict[str, Any]:
     """How much of the verse the speaker said, and the boundary verdict with its evidence."""
-    found = edition.lookup(ref)
+    reference = cuv_scripture.parse_reference(ref) if isinstance(ref, str) else ref
+    found = edition.lookup(reference)
     verse_tokens, spoken_tokens = content_tokens(found['text']), content_tokens(spoken)
     unique_verse = sorted(set(verse_tokens))
     if not unique_verse:
@@ -252,15 +280,17 @@ def coverage(edition: CoverageEdition, ref: cuv_scripture.Reference | str, spoke
     # A whole verse with a negation missing, added or doubled says the opposite; it is never pinned.
     negations = {'verse': negation_count(verse_tokens), 'spoken': negation_count(spoken_tokens)}
     negation_mismatch = negations['verse'] != negations['spoken']
+    # A range is whole only when every verse in it was read, each heard through its own words.
+    verses, unread = _per_verse(found, reference, spoken_tokens)
     whole_by_measure = (verse_coverage >= WHOLE_VERSE_COVERAGE_MIN
-                        and WHOLE_VERSE_LENGTH_MIN <= length_ratio <= WHOLE_VERSE_LENGTH_MAX)
+                        and WHOLE_VERSE_LENGTH_MIN <= length_ratio <= WHOLE_VERSE_LENGTH_MAX and not unread)
     whole = whole_by_measure and not negation_mismatch
     return {'editionId': found['editionId'], 'canonicalRef': found['canonicalRef'],
             'verseTextSha256': found['textSha256'], 'verseContentWords': len(unique_verse),
             'coveredContentWords': len(covered), 'spokenContentWords': len(spoken_tokens),
             'verseCoverage': verse_coverage, 'lengthRatio': length_ratio,
             'negations': negations, 'negationMismatch': negation_mismatch,
-            'wholeByMeasure': whole_by_measure, 'wholeVerse': whole,
+            'verses': verses, 'unreadVerses': unread, 'wholeByMeasure': whole_by_measure, 'wholeVerse': whole,
             'thresholds': {'verseCoverageMin': WHOLE_VERSE_COVERAGE_MIN, 'lengthRatioMin': WHOLE_VERSE_LENGTH_MIN,
                            'lengthRatioMax': WHOLE_VERSE_LENGTH_MAX}}
 

@@ -34,6 +34,11 @@ BINDING_KEYS = ('source.json', 'anchor.json', 'group-plan.json')
 # receipt (scripture_machine_adjudication) is machine evidence, never human
 # approval; a human receipt for the same bindings overrides it.
 ROLES = {'human_reviewer': 'human', 'machine_adjudicator': 'machine'}
+# Which signing roles each receipt contract admits. v1 is the human-only contract
+# frozen runs carry and keep; v2 adds machine receipts, which the gate admits only by
+# reproducing them from the bound inputs. A human receipt is valid under either.
+SCHEMA_V2 = 'sermon-scripture-adjudication-v2'
+SCHEMA_ROLES = {SCHEMA: frozenset({'human_reviewer'}), SCHEMA_V2: frozenset(ROLES)}
 
 
 class AdjudicationError(ValueError):
@@ -50,14 +55,21 @@ def receipt_sha256(receipt: dict[str, Any]) -> str:
 
 
 def _verifier(edition_id: str, library: Any) -> tuple[Any, str]:
-    """The lookup object and its verification status. The status is recorded on every quotation."""
+    """A loader for the edition's lookup object, and the edition's verification status.
+
+    The status is recorded on every quotation; the file is read only when a
+    quotation has to be verified, so a paraphrase-only receipt for a locale
+    whose edition file is absent from the checkout still passes the gate."""
     if edition_id == 'CUV':
-        return (library or cuv_scripture.CuvLibrary.from_path()), scripture_editions.VERIFIED
-    try:
-        edition = scripture_editions.load(edition_id)
-    except scripture_editions.EditionError as exc:
-        raise AdjudicationError('edition_unavailable') from exc
-    return edition, edition.verification
+        return (lambda: library or cuv_scripture.CuvLibrary.from_path()), scripture_editions.VERIFIED
+    lazy = scripture_editions.LazyEdition(edition_id)
+
+    def load() -> Any:
+        try:
+            return lazy.load()
+        except scripture_editions.EditionError as exc:
+            raise AdjudicationError('edition_unavailable') from exc
+    return load, lazy.verification
 
 
 def generator_signature(version: str, implementation_sha256: str) -> str:
@@ -116,14 +128,16 @@ def validate_receipt(receipt: Any, *, target_locale: str, bindings: dict[str, st
     otherwise re-run a frozen run."""
     _require(target_locale in PINNED_EDITIONS, 'no_pinned_edition_for_locale')
     edition_id = PINNED_EDITIONS[target_locale]
-    verifier, edition_verification = _verifier(edition_id, library)
+    load_verifier, edition_verification = _verifier(edition_id, library)
+    verifier = None
     _require(isinstance(receipt, dict) and set(receipt) == TOP_KEYS, 'receipt_schema')
-    _require(receipt['schemaVersion'] == SCHEMA, 'receipt_schema_version')
+    _require(receipt['schemaVersion'] in SCHEMA_ROLES, 'receipt_schema_version')
     _require(receipt['targetLocale'] == target_locale, 'receipt_locale')
     _require(isinstance(receipt['bindings'], dict) and {k: receipt['bindings'].get(k) for k in BINDING_KEYS}
              == {k: bindings.get(k) for k in BINDING_KEYS}, 'receipt_binding_changed')
     _require(receipt['decision'] == 'approved', 'decision_not_approved')
     _require(receipt['decidedByRole'] in ROLES, 'decided_by_role_invalid')
+    _require(receipt['decidedByRole'] in SCHEMA_ROLES[receipt['schemaVersion']], 'machine_receipt_requires_v2')
     _require(isinstance(receipt['decidedBy'], str) and receipt['decidedBy'].strip(), 'decided_by_missing')
     kind = ROLES[receipt['decidedByRole']]
     generator = None
@@ -151,6 +165,7 @@ def validate_receipt(receipt: Any, *, target_locale: str, bindings: dict[str, st
             _require(row['editionId'] == edition_id, 'edition_mismatch')
             _require(isinstance(row['reference'], str) and row['reference'].strip(), 'reference_missing')
             _require(isinstance(row['exactSentence'], str) and row['exactSentence'], 'exact_sentence_missing')
+            verifier = verifier or load_verifier()  # the edition file is read only once a quotation needs it
             try:
                 reference = cuv_scripture.parse_reference(row['reference'])
                 partial = row['classification'] == 'partial_direct_quote'
@@ -166,7 +181,8 @@ def validate_receipt(receipt: Any, *, target_locale: str, bindings: dict[str, st
     _require(len(covered) == len(set(covered)), 'unit_covered_twice')
     _require(set(covered) == set(flagged_units), 'coverage_mismatch')
     quoted = {unit for row in quotes for unit in row['sourceUnitIds']}
-    return {'schemaVersion': SCHEMA, 'receiptSha256': receipt_sha256(receipt), 'targetLocale': target_locale,
+    return {'schemaVersion': SCHEMA, 'receiptSchemaVersion': receipt['schemaVersion'],
+            'receiptSha256': receipt_sha256(receipt), 'targetLocale': target_locale,
             'decidedByRole': receipt['decidedByRole'], 'adjudicationKind': kind,
             'humanApproval': kind == 'human', 'generator': generator,
             'coveredUnits': sorted(covered), 'quotes': quotes, 'admitted': quotes,
