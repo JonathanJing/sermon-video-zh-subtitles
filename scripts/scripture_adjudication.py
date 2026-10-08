@@ -83,14 +83,15 @@ def validate_receipt(receipt: Any, *, target_locale: str, bindings: dict[str, st
                 found = library.verify_text(reference, row['exactSentence'], excerpt=partial)
             except cuv_scripture.CuvError as exc:
                 raise AdjudicationError('exact_sentence_mismatch') from exc
-            quotes.append({'candidateId': row['candidateId'], 'canonicalRef': found['canonicalRef'],
-                           'textSha256': found['textSha256'], 'classification': row['classification']})
+            quotes.append({'candidateId': row['candidateId'], 'sourceUnitIds': list(units),
+                           'classification': row['classification'], 'canonicalRef': found['canonicalRef'],
+                           'exactSentence': row['exactSentence'], 'textSha256': found['textSha256']})
         else:
             _require(row['editionId'] is None and row['exactSentence'] is None, 'non_quote_has_edition')
     _require(len(covered) == len(set(covered)), 'unit_covered_twice')
     _require(set(covered) == set(flagged_units), 'coverage_mismatch')
     return {'schemaVersion': SCHEMA, 'receiptSha256': receipt_sha256(receipt), 'targetLocale': target_locale,
-            'coveredUnits': sorted(covered), 'quotes': quotes}
+            'coveredUnits': sorted(covered), 'quotes': quotes, 'admitted': quotes}
 
 
 def require_admitted(manifest: dict[str, Any], directory: Path, *, target_locale: str,
