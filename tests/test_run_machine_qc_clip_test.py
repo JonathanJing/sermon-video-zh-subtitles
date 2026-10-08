@@ -9,6 +9,7 @@ from unittest.mock import patch
 from scripts import machine_quality_release_basis as basis
 from scripts import machine_repair_ledger as ledger
 from scripts import run_machine_qc_clip_test as driver
+from scripts import spoken_condensation as condensation
 from scripts import sermon_sentence_interpretation as interpretation
 from scripts import build_english_source_package as english_source
 from tests import auto_qc_fixtures as qc_fixtures
@@ -523,6 +524,113 @@ class MachineQcClipDriverTests(unittest.TestCase):
                          driver.file_sha256(Path(codex.__file__)))
         self.assertNotEqual(judge.key("back_translator", "sys", "본문", {}),
                             rebuilt.key("back_translator", "sys", "본문", {}))
+
+
+SPOKEN_INDEX = 5  # "Jesus does not leave us alone in our failures."
+FULL_TEXT = "제가 다시 말씀드리지만, 예수님은 우리가 실패할 때, 우리를 홀로 두지 않으십니다."
+SPOKEN_TEXT = "예수님은 우리가 실패할 때, 우리를 홀로 두지 않으십니다."
+
+
+def set_group_text(candidate: dict, index: int, text: str) -> None:
+    group = candidate["groups"][index]
+    group["targetText"], group["targetUtterances"] = text, [text]
+    group["coverage"][0]["targetText"] = text
+
+
+def spoken_run(test: unittest.TestCase, root: Path, *, backend: str = "codex_cli_chatgpt") -> tuple[Path, Path]:
+    """A run whose full ko candidate has one filler-laden group, plus its condensed spoken
+    candidate, record and passing binding in a folder beside the run."""
+    run = synthetic_run(test, root)
+    read = lambda path: json.loads(path.read_text(encoding="utf-8"))
+    full_path = run / "diagnostic-previews/ko/native-1/candidate.json"
+    full = read(full_path)
+    set_group_text(full, SPOKEN_INDEX, FULL_TEXT)
+    full_path.write_text(json.dumps(full, ensure_ascii=False), encoding="utf-8")
+    spoken = json.loads(json.dumps(full))
+    set_group_text(spoken, SPOKEN_INDEX, SPOKEN_TEXT)
+    group = full["groups"][SPOKEN_INDEX]
+    record = {"schemaVersion": condensation.SCHEMA, "targetLocale": LOCALE, "humanApproval": False,
+              "fullCandidateJsonSha256": basis.json_sha256(full),
+              "condenserIdentity": {"backend": backend, "model": "gpt-6.1-sol", "modelRevision": "1",
+                                    "cacheNamespace": "spoken-condensation-v1", "settings": {"reasoningEffort": "high"}},
+              "groups": [{"translationGroupId": group["translationGroupId"], "sourceUnitIds": group["sourceUnitIds"],
+                          "status": "condensed", "spokenText": SPOKEN_TEXT, "maxSpeechUnits": 30,
+                          "omissions": [{"fullTextSpan": "제가 다시 말씀드리지만, ", "kind": "filler"}]}]}
+    binding = condensation.bind_spoken_candidate(record, read(run / "anchor-manifest.json"), full, spoken,
+                                                 read(run / "policy/ko.json"))
+    test.assertEqual(binding["status"], "pass", binding["issues"])
+    folder = root / "spoken"
+    folder.mkdir()
+    for name, value in (("spoken-candidate.json", spoken), ("record.json", record), ("binding.json", binding)):
+        (folder / name).write_text(json.dumps(value, ensure_ascii=False), encoding="utf-8")
+    return run, folder / "binding.json"
+
+
+class SpokenModeTests(unittest.TestCase):
+    """``--spoken-binding``: screen, calibrate and waive a condensed spoken script."""
+
+    setUp = MachineQcClipDriverTests.setUp
+    run_driver, summary = MachineQcClipDriverTests.run_driver, MachineQcClipDriverTests.summary
+    real_runs, real_row = MachineQcClipDriverTests.real_runs, MachineQcClipDriverTests.real_row
+
+    def test_fake_backend_proves_the_spoken_path(self):
+        run, binding = spoken_run(self, self.root, backend="fake-clause-drop-not-evidence")
+        built = []
+        original = basis.build_text_waiver
+
+        def spy(*args, **kwargs):
+            built.append(original(*args, **kwargs))
+            return built[-1]
+
+        with patch.object(basis, "build_text_waiver", side_effect=spy):
+            self.assertEqual(self.run_driver(run, "--spoken-binding", f"{LOCALE}={binding}"), 0)
+        row = self.summary()
+        self.assertEqual((row["status"], row["mode"]), ("fake_plumbing_pass", "spoken"), row.get("reason"))
+        coverage = row["calibrationCoverage"]
+        self.assertEqual(coverage["untestableKinds"], [])
+        self.assertTrue(all(coverage["applicableGroups"][f"spoken.{kind}"] == 1 for kind in basis.waiver.SPOKEN_KINDS))
+        self.assertEqual(built[0]["condensedGroupIds"], ["g006"])
+        self.assertEqual(built[0]["condensationBindingJsonSha256"],
+                         basis.json_sha256(json.loads(binding.read_text(encoding="utf-8"))))
+        self.assertTrue(list((self.root / "out/fake-plumbing" / LOCALE / "spoken").glob("calibration-*.json")))
+
+    def test_a_real_run_issues_the_spoken_waiver_and_refuses_a_fake_record(self):
+        run, binding = spoken_run(self, self.root)
+        echo = driver.FakeJudge  # Stands in for the Codex judge; the driver treats it as real.
+        stack, argv = self.real_runs(run)
+        with stack, patch.object(driver, "CodexJudge", lambda cache: echo(
+                {LOCALE: [g for part in driver.screened_groups(self.paths(run, binding)) for g in part]})):
+            self.assertEqual(driver.main([*argv, "--spoken-binding", f"{LOCALE}={binding}"]), 0)
+        row = self.real_row()
+        self.assertEqual(row["status"], "text_waiver_issued", row.get("reason"))
+        waiver = json.loads(Path(row["textWaiver"]).read_text(encoding="utf-8"))
+        self.assertEqual(Path(row["textWaiver"]).parent, self.root / "real" / LOCALE / "spoken")
+        self.assertEqual(waiver["candidateJsonSha256"], basis.json_sha256(json.loads(
+            (self.root / "spoken/spoken-candidate.json").read_text(encoding="utf-8"))))
+        self.assertEqual(waiver["condensedGroupIds"], ["g006"])
+        basis.validate_text_waiver(waiver, candidate=json.loads(
+            (self.root / "spoken/spoken-candidate.json").read_text(encoding="utf-8")))
+
+    def test_a_record_from_the_fake_condenser_never_backs_a_real_run(self):
+        run, binding = spoken_run(self, self.root, backend="fake-clause-drop-not-evidence")
+        found = driver.resolve_locale(run, driver.index_run(run), LOCALE, None, binding)
+        self.assertIn("condensation record came from the fake condenser; condense with a real model", found["problems"])
+        allowed = driver.resolve_locale(run, driver.index_run(run), LOCALE, None, binding, allow_fake_condenser=True)
+        self.assertEqual(allowed["problems"], [])
+
+    def test_an_edited_binding_is_refused_before_any_model_call(self):
+        run, binding = spoken_run(self, self.root)
+        value = json.loads(binding.read_text(encoding="utf-8"))
+        value["groups"][0]["finalSpeechUnits"] += 1
+        binding.write_text(json.dumps(value, ensure_ascii=False), encoding="utf-8")
+        found = driver.resolve_locale(run, driver.index_run(run), LOCALE, None, binding)
+        self.assertIn("condensation binding differs from one recomputed by the current code; rebind",
+                      found["problems"])
+        self.assertEqual(self.run_driver(run, "--spoken-binding", f"{LOCALE}={binding}", "--preflight-only"), 2)
+
+    @staticmethod
+    def paths(run: Path, binding: Path) -> dict:
+        return driver.resolve_locale(run, driver.index_run(run), LOCALE, None, binding)["paths"]
 
 
 if __name__ == "__main__":

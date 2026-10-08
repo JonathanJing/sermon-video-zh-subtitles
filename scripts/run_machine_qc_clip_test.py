@@ -14,6 +14,18 @@ locale it:
 4. calibrates on the same groups with seeded errors;
 5. issues the text waiver (``machine_quality_release_basis.build_text_waiver``).
 
+``--spoken-binding LOCALE=BINDING`` screens a condensed spoken script instead:
+the spoken candidate, full candidate and condensation record are found by the
+hashes the binding names (``spoken_condensation.py bind``), the binding is
+recomputed from them with the current code, condensed groups are judged by the
+core-meaning rubric (``spoken_condensation.qc_groups``), the calibration adds
+the ``spoken.*`` kinds on the condensed groups and binds both candidates, and
+the waiver carries the binding. A record from the fake condenser is refused
+unless the judge is fake too. Spoken outputs go under ``OUT/LOCALE/spoken``.
+The spoken script shares its locale's text repair ledger with the full
+candidate (the ledger counts per English unit), so screening one appends an
+entry that the other's next run starts from.
+
 The back-translation transport is the local Codex CLI under ChatGPT login
 (``sermon_codex_transport``, Sol 6.1 medium); no API key is used. Every call is
 cached by request and transport identity under the state dir, so a rerun reuses finished calls, and
@@ -47,6 +59,7 @@ from scripts import auto_qc_seeded_errors as seeded
 from scripts import machine_quality_release_basis as basis
 from scripts import machine_repair_ledger as ledger
 from scripts import prepare_target_language_speech_job as speech
+from scripts import spoken_condensation as condensation
 from scripts import target_text_auto_qc as text_qc
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -187,19 +200,61 @@ def candidate_validator():
     return Draft202012Validator(schema, format_checker=FormatChecker())
 
 
-def calibration_coverage(groups: list[dict], locale: str, policy: dict | None) -> dict:
-    """Seeded error kinds this text can carry; a kind with no trial blocks any waiver."""
+def calibration_coverage(groups: list[dict], locale: str, policy: dict | None,
+                         spoken_groups: list[dict] | None = None) -> dict:
+    """Seeded error kinds this text can carry; a kind with no trial blocks any waiver.
+
+    ``spoken_groups`` (a spoken script's QC groups) add the ``spoken.*`` kinds,
+    seeded only into its condensed groups."""
     counts = {kind: sum(1 for group in groups
                         if seeded.mutate_text(group, kind, locale, policy, groups) not in (None, group["targetText"]))
               for kind in seeded.TEXT_KINDS}
+    if spoken_groups is not None:
+        counts.update({f"spoken.{kind}": sum(
+            1 for group in spoken_groups if group.get("condensation")
+            and seeded.mutate_spoken(group, kind, locale, spoken_groups) not in (None, group["targetText"]))
+            for kind in seeded.SPOKEN_KINDS})
     return {"applicableGroups": counts, "untestableKinds": [kind for kind, count in counts.items() if not count]}
 
 
-def resolve_locale(run_dir: Path, index: dict, locale: str, override: Path | None) -> dict:
+def resolve_spoken(index: dict, binding_file: Path, override: Path | None,
+                   allow_fake_condenser: bool = False) -> tuple[dict, list[str]]:
+    """The spoken candidate, full candidate and record a condensation binding names,
+    and why they cannot be screened. ``index`` covers the run and the binding's folder."""
+    binding = read(binding_file)
+    paths, problems = {"condensationBinding": str(binding_file)}, []
+    if binding.get("schemaVersion") != basis.CONDENSATION_BINDING_SCHEMA or binding.get("status") != "pass":
+        return paths, ["condensation binding is not a passing spoken_condensation binding"]
+    for name, key in (("candidate", "spokenCandidateJsonSha256"), ("fullCandidate", "fullCandidateJsonSha256"),
+                      ("condensationRecord", "condensationRecordJsonSha256")):
+        hits = [override] if name == "candidate" and override is not None else index.get(binding.get(key) or "", [])
+        if hits:
+            paths[name] = str(hits[0])
+        else:
+            problems.append(f"no {name} file in the run or beside the binding matches its {key}")
+    if problems:
+        return paths, problems
+    record = read(Path(paths["condensationRecord"]))
+    if not allow_fake_condenser and str((record.get("condenserIdentity") or {}).get("backend", "")).startswith("fake"):
+        problems.append("condensation record came from the fake condenser; condense with a real model")
+    return paths, problems
+
+
+def resolve_locale(run_dir: Path, index: dict, locale: str, override: Path | None,
+                   spoken_binding: Path | None = None, allow_fake_condenser: bool = False) -> dict:
     """Paths and blocking problems for one locale, without model calls."""
-    path, ambiguous = find_candidate(run_dir, locale, override)
-    if path is None:
-        return {"locale": locale, "problems": [f"no unique candidate; found {len(ambiguous)}: {ambiguous[:6]}"]}
+    spoken_paths: dict = {}
+    if spoken_binding is not None:
+        # The binding may sit outside the run, beside the record and candidates it binds.
+        index = {**index_run(spoken_binding.parent), **index}
+        spoken_paths, problems = resolve_spoken(index, spoken_binding, override, allow_fake_condenser)
+        if problems:
+            return {"locale": locale, "mode": "spoken", "paths": spoken_paths, "problems": problems}
+        path = Path(spoken_paths["candidate"])
+    else:
+        path, ambiguous = find_candidate(run_dir, locale, override)
+        if path is None:
+            return {"locale": locale, "problems": [f"no unique candidate; found {len(ambiguous)}: {ambiguous[:6]}"]}
     candidate = read(path)
     problems = candidate_problems(candidate)
     if candidate.get("schemaVersion") != CANDIDATE_SCHEMA:
@@ -213,10 +268,10 @@ def resolve_locale(run_dir: Path, index: dict, locale: str, override: Path | Non
         problems.append(f"candidate targetLocale is {candidate.get('targetLocale')!r}, not {locale!r}")
     # An override may sit outside the run with its binding beside it.
     spoken = spoken_candidates(run_dir) | (spoken_candidates(path.parent) if override is not None else set())
-    if json_sha256(candidate) in spoken:
+    if spoken_binding is None and json_sha256(candidate) in spoken:
         # A condensed dub script is screened with its binding, never as full text.
-        problems.append("candidate is a condensed spoken script; this driver screens full candidates only")
-    paths = {"candidate": str(path)}
+        problems.append("candidate is a condensed spoken script; screen it with --spoken-binding")
+    paths = {**spoken_paths, "candidate": str(path)}
     for name, key in (("source", "englishSourcePackageJsonSha256"), ("anchor", "anchorManifestSha256"),
                       ("policy", "translationPolicySha256")):
         hits = index.get(candidate.get(key) or "", [])
@@ -238,7 +293,19 @@ def resolve_locale(run_dir: Path, index: dict, locale: str, override: Path | Non
                                              candidate, require_human_approval=False)
         except (ValueError, KeyError, TypeError) as error:
             problems.append(f"Layer 3 would refuse this candidate: {error}")
-    return {"locale": locale, "paths": paths, "candidateJsonSha256": json_sha256(candidate), "problems": problems}
+    if spoken_binding is not None and "anchor" in paths and "policy" in paths:
+        # The binding is recomputed with the current code, so an obsolete or edited one never reaches paid QC.
+        try:
+            rebound = condensation.bind_spoken_candidate(
+                read(Path(paths["condensationRecord"])), read(Path(paths["anchor"])),
+                read(Path(paths["fullCandidate"])), candidate, read(Path(paths["policy"])))
+        except (ValueError, KeyError, TypeError) as error:
+            problems.append(f"condensation binding cannot be recomputed: {error}")
+        else:
+            if rebound != read(spoken_binding):
+                problems.append("condensation binding differs from one recomputed by the current code; rebind")
+    return {"locale": locale, **({"mode": "spoken"} if spoken_binding is not None else {}), "paths": paths,
+            "candidateJsonSha256": json_sha256(candidate), "problems": problems}
 
 
 def binding_path(path: Path) -> Path:
@@ -290,9 +357,12 @@ def qc_receipt_path(state: Path, lineage: dict, sequence: int) -> Path:
 class CodexJudge:
     """``call(role, system, user, schema)`` through the local Codex CLI, cached per request."""
 
-    def __init__(self, cache: Path, *, timeout_seconds: int = 300):
+    def __init__(self, cache: Path, *, timeout_seconds: int = 300, reasoning: str = "medium",
+                 cache_namespace: str = CACHE_NAMESPACE):
+        # Back-translation uses Sol medium; another role (the spoken condenser uses
+        # Sol high) names its own effort and namespace, so its identity and cache differ.
         from scripts import sermon_codex_transport as codex
-        self.codex, self.cache, self.timeout = codex, cache, timeout_seconds
+        self.codex, self.cache, self.timeout, self.reasoning = codex, cache, timeout_seconds, reasoning
         cli = Path(os.environ.get("SERMON_CODEX_CLI", str(Path.home() / ".local/bin/codex"))).resolve()
         version = subprocess.check_output([str(cli), "--version"], text=True, timeout=15).strip()
         binary = cli.parent.parent / "CodexCLI.app/Contents/MacOS/codex"
@@ -301,8 +371,8 @@ class CodexJudge:
         transport = {"cliSha256": file_sha256(cli), "binarySha256": file_sha256(binary if binary.is_file() else cli),
                      "adapterSha256": file_sha256(Path(codex.__file__))}
         self.identity = {"backend": "codex_cli_chatgpt", "model": codex.TEXT_MODEL, "modelRevision": version,
-                         "cacheNamespace": CACHE_NAMESPACE,
-                         "settings": {"reasoningEffort": "medium", "serviceTier": "fast",
+                         "cacheNamespace": cache_namespace,
+                         "settings": {"reasoningEffort": reasoning, "serviceTier": "fast",
                                       "promptFormat": "system-user-json-v1", "transport": transport}}
 
     def key(self, role, system, user, schema) -> str:
@@ -329,7 +399,7 @@ class CodexJudge:
 
     def __call__(self, role, system, user, schema):
         prompt = f"SYSTEM:\n{system}\n\nUSER:\n{user}"
-        return self.codex.call_json(prompt, model=self.codex.TEXT_MODEL, reasoning="medium",
+        return self.codex.call_json(prompt, model=self.codex.TEXT_MODEL, reasoning=self.reasoning,
                                     output_schema=schema, timeout_seconds=self.timeout,
                                     output_dir=self.cache / self.key(role, system, user, schema))
 
@@ -401,11 +471,23 @@ def prefetch(judge, run, *, workers: int) -> int:
 
 # ---------------------------------------------------------------- one locale
 
+def screened_groups(paths: dict) -> tuple[list[dict], list[dict] | None]:
+    """The QC groups of the screened candidate, and the full candidate's groups in spoken mode."""
+    anchor, candidate = read(Path(paths["anchor"])), read(Path(paths["candidate"]))
+    if "condensationBinding" not in paths:
+        return qc_groups(candidate, anchor), None
+    spoken = condensation.qc_groups(read(Path(paths["condensationBinding"])), anchor, candidate)
+    return spoken, qc_groups(read(Path(paths["fullCandidate"])), anchor)
+
+
 def run_locale(locale: str, paths: dict, out: Path, state: Path, judge, timings: Timings, workers: int) -> dict:
     source, anchor = read(Path(paths["source"])), read(Path(paths["anchor"]))
     candidate, policy = read(Path(paths["candidate"])), read(Path(paths["policy"]))
-    groups = qc_groups(candidate, anchor)
-    folder = out / locale
+    groups, full_groups = screened_groups(paths)
+    spoken = full_groups is not None
+    binding = read(Path(paths["condensationBinding"])) if spoken else None
+    full = read(Path(paths["fullCandidate"])) if spoken else candidate
+    folder = out / locale / ("spoken" if spoken else "")
     lineage = ledger.lineage("text", locale, json_sha256(source), json_sha256(anchor))
     ledger_root = state / "repair-ledger"
     entries = ledger.load(ledger_root, lineage)
@@ -472,11 +554,16 @@ def run_locale(locale: str, paths: dict, out: Path, state: Path, judge, timings:
         return result
     # Calibrations and waivers are immutable and named by their inputs, so a
     # revision adds a file and never replaces evidence an earlier waiver binds.
-    calibration_binding = json_sha256({"qc": qc_binding, "candidate": candidate})
+    calibration_binding = json_sha256({"qc": qc_binding, "candidate": candidate,
+                                       **({"fullCandidate": full} if spoken else {})})
     calibration_path = folder / f"calibration-{calibration_binding[:16]}.json"
     calibration = load_once(calibration_path, calibration_binding)
     if calibration is None:
         def calibrate(call):
+            if spoken:
+                # Text kinds on the full translation, spoken kinds on the condensed groups.
+                return seeded.calibrate(locale, full_groups, policy=policy, call=call, identity=judge.identity,
+                                        candidate=full, spoken_groups=groups, spoken_candidate=candidate)
             return seeded.calibrate(locale, groups, policy=policy, call=call, identity=judge.identity,
                                     candidate=candidate)
         timings.run(f"{locale}.calibration.prefetch", lambda: prefetch(judge, calibrate, workers=workers))
@@ -487,8 +574,9 @@ def run_locale(locale: str, paths: dict, out: Path, state: Path, judge, timings:
     result["calibrationMisses"] = {kind: row for kind, row in calibration["kinds"].items() if row["rate"] < 0.9}
     entries = ledger.load(ledger_root, lineage)
     waiver_binding = json_sha256({"calibration": calibration_binding, "qc": json_sha256(qc),
-                                  "calibrationReceipt": json_sha256(calibration), "ledger": entries})
-    waiver_path = folder / f"text-waiver-{waiver_binding[:16]}.json"
+                                  "calibrationReceipt": json_sha256(calibration), "ledger": entries,
+                                  **({"condensationBinding": json_sha256(binding)} if spoken else {})})
+    waiver_path = folder / f"{'spoken-' if spoken else ''}text-waiver-{waiver_binding[:16]}.json"
     if not isinstance(judge, FakeJudge):
         saved = load_once(waiver_path, waiver_binding)
         if saved is not None:
@@ -497,7 +585,7 @@ def run_locale(locale: str, paths: dict, out: Path, state: Path, judge, timings:
             return result
     try:
         waiver = timings.run(f"{locale}.text-waiver", lambda: basis.build_text_waiver(
-            source, anchor, candidate, qc, calibration, repair_ledger=entries))
+            source, anchor, candidate, qc, calibration, repair_ledger=entries, condensation_binding=binding))
     except ValueError as error:
         result.update(status="waiver_refused", reason=str(error))
         return result
@@ -539,6 +627,8 @@ def main(argv=None) -> int:
     parser.add_argument("--locales", default=",".join(LOCALES))
     parser.add_argument("--candidate", action="append", default=[], metavar="LOCALE=PATH",
                         help="Use this candidate instead of searching the run")
+    parser.add_argument("--spoken-binding", action="append", default=[], metavar="LOCALE=PATH",
+                        help="Screen the condensed spoken script this spoken_condensation binding names")
     parser.add_argument("--text-backend", choices=("codex", "fake"), default="codex")
     parser.add_argument("--workers", type=int, default=4, help="Parallel Codex CLI calls")
     parser.add_argument("--preflight-only", action="store_true", help="Stop before any model call")
@@ -559,6 +649,12 @@ def main(argv=None) -> int:
         if not path or locale not in locales or locale in overrides:
             parser.error(f"--candidate {item!r}: use LOCALE=PATH once per requested locale ({', '.join(locales)})")
         overrides[locale] = path
+    bindings = {}
+    for item in args.spoken_binding:
+        locale, _, path = item.partition("=")
+        if not path or locale not in locales or locale in bindings:
+            parser.error(f"--spoken-binding {item!r}: use LOCALE=PATH once per requested locale ({', '.join(locales)})")
+        bindings[locale] = Path(path).resolve()
     # Fake runs write every receipt, and their own ledger, in a separate subtree,
     # so plumbing output never touches real evidence or repair attempts.
     out = args.out.resolve() / ("fake-plumbing" if args.text_backend == "fake" else "")
@@ -590,10 +686,13 @@ def main(argv=None) -> int:
                     "previousStatus": row.get("status")}
     resolved = {}
     for locale in locales:
-        found = resolve_locale(args.run_dir, index, locale, Path(overrides[locale]) if locale in overrides else None)
+        found = resolve_locale(args.run_dir, index, locale, Path(overrides[locale]) if locale in overrides else None,
+                               bindings.get(locale), args.text_backend == "fake")
         if not found["problems"]:
-            candidate, anchor = read(Path(found["paths"]["candidate"])), read(Path(found["paths"]["anchor"]))
-            coverage = calibration_coverage(qc_groups(candidate, anchor), locale, read(Path(found["paths"]["policy"])))
+            groups, full_groups = screened_groups(found["paths"])
+            policy = read(Path(found["paths"]["policy"]))
+            coverage = (calibration_coverage(groups, locale, policy) if full_groups is None
+                        else calibration_coverage(full_groups, locale, policy, spoken_groups=groups))
             found["calibrationCoverage"] = coverage
             if coverage["untestableKinds"]:
                 found["problems"].append("this text cannot be calibrated for: " + ", ".join(coverage["untestableKinds"]))
@@ -609,7 +708,7 @@ def main(argv=None) -> int:
     if args.text_backend == "codex":
         judge = CodexJudge(state / "codex-calls")
     else:
-        judge = FakeJudge({locale: qc_groups(read(Path(paths["candidate"])), read(Path(paths["anchor"])))
+        judge = FakeJudge({locale: [group for part in screened_groups(paths) for group in part or []]
                            for locale, paths in resolved.items()})
     for locale, paths in resolved.items():
         # A call with an unknown outcome blocks every new dispatch in this run
