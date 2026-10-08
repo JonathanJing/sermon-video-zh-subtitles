@@ -714,7 +714,8 @@ def _close_interrupted_attempts(meta, session_dir):
 
 def _write_meta(path, meta):
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(meta) + '\n', encoding='utf-8')
+    # Atomic and synced like every other receipt, so a crash cannot leave metadata a resume cannot parse.
+    _write_durably(path, json.dumps(meta) + '\n')
 
 
 def _recorded_report(session_dir):
@@ -811,7 +812,13 @@ class Trials:
         return self.partial.setdefault(stage, [])
 
     def _checkpoint(self, stage):
-        self.write(stage, {'rows': self.partial[stage], 'partial': True})
+        # Rows saved by an earlier invocation stay in the checkpoint until this run re-scores them, so a crash now
+        # cannot drop paid results this run has not reached yet.
+        path = self.out / f'{stage}.json'
+        saved = _read_json(path).get('rows', []) if path.exists() else []
+        current = {_row_identity(stage, row) for row in self.partial[stage]}
+        rows = [row for row in saved if _row_identity(stage, row) not in current] + self.partial[stage]
+        self.write(stage, {'rows': rows, 'partial': True})
 
     def _session(self, directory, payload, tools, evaluation):
         # Only saved runner state proves an existing remote session; anything else starts a new one.
@@ -1037,11 +1044,14 @@ class Trials:
                            if trial in ('all', stage) or (trial == 'refute' and stage == 'diagnose')})
 
         def finish(stage, name, run):
-            result = self._timed(stage, run)
-            # Fixtures read live during the stage must still match what scope.json bound at the start.
-            if self._scopes()[stage] != scopes[stage]:
-                raise ValueError(f'{stage}: fixtures or code changed during the run; use a new --out')
-            return self.write(name, result)
+            def checked():
+                result = run()
+                # Fixtures read live during the stage must still match what scope.json bound at the start; checked
+                # inside the timing so a mismatch is recorded as a failed stage.
+                if self._scopes()[stage] != scopes[stage]:
+                    raise ValueError(f'{stage}: fixtures or code changed during the run; use a new --out')
+                return result
+            return self.write(name, self._timed(stage, checked))
         if trial in ('timeline', 'all'):
             results['timeline'] = finish('timeline', 'timeline-summary', self.timeline)
         if trial in ('diagnose', 'refute', 'all'):
@@ -1118,8 +1128,8 @@ def _scorer_identity(stage):
              'risk': [score_risk, risk_summary]}[stage]
     tool_definitions = [FILE_TOOLS, TIMELINE_TOOL, PREFLIGHT_TOOLS, MAX_READ_CHARS]
     constants = {'timeline': [TIMESTAMP.pattern, ERROR_LINE.pattern, END_FIELD.pattern],
-                 'diagnose': tool_definitions, 'refute': tool_definitions,
-                 'preflight': [*tool_definitions, ARGUMENT_FREE_TERMS, CHECK_VERDICT]}.get(stage, [])
+                 'diagnose': [*tool_definitions, CATEGORIES], 'refute': [*tool_definitions, CATEGORIES],
+                 'preflight': [*tool_definitions, ARGUMENT_FREE_TERMS, CHECK_VERDICT], 'risk': [TIERS]}[stage]
     # The stage method assembles the payload text and the projection a later stage sees, so it is bound too.
     methods = [STAGE_SOURCES[stage], STAGE_SOURCES['_session']]
     return _sha([inspect.getsource(part) for part in parts] + methods + [repr(c) for c in constants])[:12]

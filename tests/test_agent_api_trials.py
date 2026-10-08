@@ -1004,6 +1004,19 @@ class LatestReviewTests(unittest.TestCase):
         with patch.object(trial, '_scopes', drifting), self.assertRaisesRegex(ValueError, 'changed during the run'):
             trial.run('timeline')
         self.assertTrue(json.loads((out / 'timeline-summary.json').read_text())['partial'])
+        self.assertEqual((out / 'timings.tsv').read_text().splitlines()[1].split('\t')[:2], ['timeline', 'fail'])
+
+    def test_checkpoint_keeps_saved_rows_this_run_has_not_reached(self):
+        out, make = self.make_trials()
+        out.mkdir(parents=True)
+        saved = {'case': 'f10-real-api-call-on-program-span', 'arm': 'raw', 'status': 'completed', 'score': {}}
+        (out / 'diagnose.json').write_text(json.dumps({'rows': [saved], 'partial': True}))
+        trial = make(case_ids=['f01-plugin-identity'])
+        trial._rows('diagnose').append({'case': 'f01-plugin-identity', 'arm': 'raw', 'score': {}})
+        trial._checkpoint('diagnose')
+        trial._checkpoint('diagnose')
+        rows = json.loads((out / 'diagnose.json').read_text())['rows']
+        self.assertEqual([r['case'] for r in rows], ['f10-real-api-call-on-program-span', 'f01-plugin-identity'])
 
     def test_new_stage_that_fails_before_its_first_row_stays_partial(self):
         out, make = self.make_trials(risk_repeats=1)
