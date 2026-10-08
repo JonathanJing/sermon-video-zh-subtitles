@@ -1,0 +1,127 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261008-haiku-180s-8x8-dev-r3",
+  "runs": [
+    {
+      "label": "live-180s-r5",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/next-iteration-repair-20261007/live-180s-r5",
+      "skipped": {
+        ".jsonl": 27,
+        ".json": 112,
+        ".txt": 26,
+        ".lock": 1,
+        ".csv": 3
+      }
+    },
+    {
+      "label": "diagnostic-audio-r5",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/next-iteration-repair-20261007/diagnostic-audio-r5",
+      "skipped": {
+        ".lock": 3,
+        ".json": 24,
+        ".txt": 1,
+        ".wav": 13
+      }
+    },
+    {
+      "label": "round-20261008-dev",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/round-20261008-dev",
+      "skipped": {
+        ".json": 2,
+        ".time": 1,
+        ".txt": 1,
+        ".sh": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "live-180s-r5",
+      "path": "accounting/operations.log",
+      "kind": "log",
+      "bytes": 75390,
+      "truncated": true,
+      "sha256": "2af2b00b6ab9e695595d8994eb258b55476e1e159c0a2918a1de7f997b54c0bf",
+      "redactions": {}
+    },
+    {
+      "run": "live-180s-r5",
+      "path": "accounting/summary.json",
+      "kind": "whole",
+      "bytes": 226246,
+      "truncated": false,
+      "sha256": "150e62dad4f6bef5a2f6b166b2fdcb225dcbf5d9d77f681456de5f308c698bcd",
+      "redactions": {}
+    },
+    {
+      "run": "live-180s-r5",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 223,
+      "truncated": false,
+      "sha256": "9b08c2c1b7eb56fda724b3ffa0531dce58c7aa2452e28b3bbce5f34910abfd0f",
+      "redactions": {}
+    },
+    {
+      "run": "diagnostic-audio-r5",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 236,
+      "truncated": false,
+      "sha256": "7efbad66131374bf6231dcd648019540582370d852ab7f49d73e2a0f38601e58",
+      "redactions": {}
+    },
+    {
+      "run": "diagnostic-audio-r5",
+      "path": "outputs/asr.log",
+      "kind": "log",
+      "bytes": 778,
+      "truncated": false,
+      "sha256": "6dc1068c4d9f2abf9d756abba0f7ee06ccbfc37218fed761cd7d9c5e4405a2b5",
+      "redactions": {}
+    },
+    {
+      "run": "diagnostic-audio-r5",
+      "path": "outputs/tts.log",
+      "kind": "log",
+      "bytes": 4425,
+      "truncated": false,
+      "sha256": "1fdf33a66e62e120a317467ac280f8e9469db07c6804dec4b332399326c55d6c",
+      "redactions": {}
+    },
+    {
+      "run": "round-20261008-dev",
+      "path": "begin.stderr.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "round-20261008-dev",
+      "path": "chain.stderr.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "round-20261008-dev",
+      "path": "chain.stdout.log",
+      "kind": "log",
+      "bytes": 57298,
+      "truncated": false,
+      "sha256": "c51126b3d997b13406078d2a2d1778019013b8a3fab0cb95612315bfa85535f9",
+      "redactions": {
+        "home_dir": 5
+      }
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
