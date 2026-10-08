@@ -7,9 +7,9 @@
 ## 范围与安全边界
 
 - 全部只读。agent 只能读 `config/agent-trials/` 下的样例文件，不能碰运行目录、Spark、Git、Firebase 或任何发布目标。
-- 每个样例的 `expected.json` 不在工具能读到的目录里，agent 看不到答案。样例和预检计划的 `expected.json` 在派发任何会话前先校验格式（类别、原因关键词组与必填的修复关键词组、阻断项关键词组；四项确定性检查各出现一次、参数与工具匹配、期望为布尔值，`check_out_path` 的目标须是计划里 `--out` 的值、`check_staged` 的目标须出现在计划代码摘录里，且每项检查在派发前先对计划实际跑一遍，读不了输入或结果与 `expect` 不符都拒绝；计划须有自己的 `plan` 目录，确定性检查读取的文件不能是符号链接；选中的每个构造样例恰好有一条植入的错误诊断（真实日志样例没有；只读选中样例的答案）、带缺陷说明和合法类别；会话能读到的证据目录里不能有 `expected.json`，每个证据文件都须是 UTF-8 文本），不合格整轮不启动。
+- 每个样例的 `expected.json` 不在工具能读到的目录里，agent 看不到答案。样例和预检计划的 `expected.json` 在派发任何会话前先校验格式（类别、原因关键词组与必填的修复关键词组、阻断项关键词组；四项确定性检查各出现一次、参数与工具匹配、期望为布尔值，`check_out_path` 的目标须是计划里 `--out` 的值、`check_staged` 的目标须出现在计划代码摘录里，且每项检查在派发前先对计划实际跑一遍，读不了输入或结果与 `expect` 不符都拒绝；计划须有自己的 `plan` 目录，确定性检查读取的文件不能是符号链接；选中的每个构造样例恰好有一条植入的错误诊断（真实日志样例没有；只读选中样例的答案）、带缺陷说明和合法类别；会话能读到的证据目录里至少有一个文件、不能有 `expected.json`，每个证据文件都须是 UTF-8 文本；`realLogs` 只能是 `true` 或不写；`authorization.json` 存在时须是普通文件；风险动作最多 60 个），不合格整轮不启动。
 - 只在 dev 启动器下运行；prod 和未选环境在发送前拒绝。不新建 key。
-- 每个会话限 24 次工具调用、600 秒；整轮最多 60 个会话（`--max-sessions`）。同一 `--out` 重跑复用已完成结果，不重复付费；结果未知的会话或请求会停下，等人核对。Decisions 请求被 4xx 明确拒绝（如 429）时整轮停下；用同一 `--out` 重跑只重发被拒的那一条，同一条最多被拒 3 次。5xx（如 503）可能已被处理，按结果未知处理：保留 `.started.json`，重跑会停在这一条，先到 OpenAI 用量页核对是否已计费，确认没有处理后再删掉该标记重跑。`agentUsage` 带 `sessionsCovered` 和 `sessionsMissingUsage`，`complete` 为 false 时总数不完整；`decisionsUsage` 同样带 `requestsCovered`、`requestsMissingUsage`。`summary.json` 的 `status` 不是 `completed` 时命令以退出码 2 结束，`outcome.json` 记为 failed。文件搜索工具只做字面匹配，不接受正则。
+- 每个会话限 24 次工具调用、600 秒；整轮最多 60 个会话（`--max-sessions`）。同一 `--out` 重跑复用已完成结果，不重复付费；结果未知的会话或请求会停下，等人核对。Decisions 请求被 4xx 明确拒绝（如 429）时整轮停下；用同一 `--out` 重跑只重发被拒的那一条，同一条最多被拒 3 次。5xx（如 503）可能已被处理，按结果未知处理：保留 `.started.json`，重跑会停在这一条，先到 OpenAI 用量页核对是否已计费，确认没有处理后再删掉该标记重跑。`agentUsage` 带 `sessionsCovered` 和 `sessionsMissingUsage`，`complete` 为 false 时总数不完整；`decisionsUsage` 同样带 `requestsCovered`、`requestsMissingUsage`。`summary.json` 的 `status` 不是 `completed` 时命令以退出码 2 结束，`outcome.json` 记为 failed。文件搜索工具只做字面匹配，不接受正则，找到 50 条即停止。
 
 ## 六项试验
 

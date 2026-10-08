@@ -108,7 +108,7 @@ def load_plans(root=PLANS, only=None):
         if directory.is_symlink() or (directory / 'plan').is_symlink() or not (directory / 'plan').is_dir():
             raise ValueError(f'plan {directory.name} has no plan directory of its own')
         # Refused before dispatch: a symlinked check input would escape the evidence the scope hash covers.
-        optional = ('authorization.json',) if (directory / 'plan' / 'authorization.json').is_symlink() else ()
+        optional = ('authorization.json',) if os.path.lexists(directory / 'plan' / 'authorization.json') else ()
         for name in CHECK_INPUTS + optional:
             try:
                 _check_input(directory / 'plan', name)
@@ -144,6 +144,9 @@ def _check_case_key(name, expected):
         bad('id must match the directory name')
     if expected.get('category') not in CATEGORIES or not isinstance(expected.get('abstain'), bool):
         bad('needs a known category and a boolean abstain')
+    # realLogs decides which cases need a planted negative control, so only an explicit true counts.
+    if 'realLogs' in expected and expected['realLogs'] is not True:
+        bad('realLogs must be true when present')
     if not set(expected.get('acceptableCategories', [])) <= set(CATEGORIES) or \
             not isinstance(expected.get('acceptableCategories', []), list):
         bad('acceptableCategories must list known categories')
@@ -169,6 +172,9 @@ def _check_risk_policy(policy):
     actions = policy.get('actions')
     if not isinstance(actions, list) or not actions:
         bad('actions must be a non-empty list')
+    # Each action is sent once per repeat; the cap keeps a copied block from multiplying the paid requests.
+    if len(actions) > MAX_RISK_ACTIONS:
+        bad(f'at most {MAX_RISK_ACTIONS} actions (each is one paid request per repeat)')
     seen = set()
     for action in actions:
         # Repeats are named <id>.r<n>, so an id may not contain a dot.
@@ -311,7 +317,10 @@ def evidence_files(root):
 def check_evidence(root, label):
     """Every exposed file must be readable text, and no answer key may sit among them: a session can open any of
     these files, and scoring reads them all, so either problem would surface only after sessions were paid for."""
-    for path in evidence_files(root):
+    files = evidence_files(root)
+    if not files:
+        raise ValueError(f'{label}: no evidence file a session could read')
+    for path in files:
         if path.name == 'expected.json':
             raise ValueError(f'{label}: an answer key ({path.name}) is inside the evidence a session can read')
         try:
@@ -374,7 +383,9 @@ def build_timeline(evidence):
         for number, line in enumerate(path.read_text(encoding='utf-8').splitlines(), 1):
             match = TIMESTAMP.search(line)
             if match and not _valid_stamp(match.group(1)):
-                match = None
+                # A stamp naming no real moment is kept as untimed evidence, never given a neighbour's time.
+                untimed.append({'source': name, 'line': number, 'event': line.strip(), 'reason': 'invalid timestamp'})
+                continue
             if match:
                 current = match.group(1)
                 last = {'at': current, 'source': name, 'line': number, 'event': line.strip()}
@@ -536,15 +547,22 @@ class EvidenceTools:
             if not needle:
                 raise ValueError('empty search text')
             hits = []
+            # Streamed, and stopped at the 51st hit that proves truncation, so a common term in a large log costs
+            # neither the whole file in memory nor time past the limit.
             for path in self._files():
-                for number, line in enumerate(path.read_text(encoding='utf-8').splitlines(), 1):
-                    at = line.lower().find(needle)
-                    if at >= 0:
+                with open(path, encoding='utf-8') as stream:
+                    for number, line in enumerate(stream, 1):
+                        line = line.rstrip('\r\n')
+                        at = line.lower().find(needle)
+                        if at < 0:
+                            continue
+                        if len(hits) == 50:
+                            return {'matches': hits, 'truncated': True}
                         # A window around the match, so a field deep in a long JSON line is still visible.
                         start = max(0, at - 150)
                         hits.append({'path': str(path.relative_to(self.root)), 'line': number, 'column': at + 1,
                                      'text': line[start:start + 400], 'cut': start > 0 or len(line) > start + 400})
-            return {'matches': hits[:50], 'truncated': len(hits) > 50}
+            return {'matches': hits, 'truncated': False}
         if name == 'get_timeline' and self.timeline:
             return build_timeline(self.root)
         if self.preflight and name in {t['name'] for t in PREFLIGHT_TOOLS}:
@@ -1416,7 +1434,7 @@ class Trials:
             entries = [w for w in self._snapshot('wrong', WRONG_DIAGNOSES)['diagnoses'] if w['case'] in selected]
             # The negative controls are part of the refuter result: every selected constructed case carries one, so
             # a shortened list cannot pass as complete. Real-log cases have none. Only selected answer keys are read.
-            constructed = {i for i, c in selected.items() if not c['expected'].get('realLogs')}
+            constructed = {i for i, c in selected.items() if c['expected'].get('realLogs') is not True}
             covered = {w['case'] for w in entries}
             if covered != constructed:
                 raise ValueError('invalid planted diagnoses: they must cover exactly the selected constructed cases; '
@@ -1567,7 +1585,7 @@ def _scorer_identity(stage):
     # Completion and usage aggregation decide what a stored row means for the run's status, so they are bound too.
     # So is the code that assembles the status and the summary headline from the merged rows.
     parts = [*parts, _unscored, Trials._stages, Trials._summary, Trials._merged_results, _stage_result, _row_identity,
-             *([_sum_usage] if stage in ('diagnose', 'refute', 'preflight') else [])]
+             *([_sum_usage, _usage_values] if stage in ('diagnose', 'refute', 'preflight') else [])]
     tool_definitions = [FILE_TOOLS, TIMELINE_TOOL, PREFLIGHT_TOOLS, MAX_READ_CHARS]
     timeline_patterns = [TIMESTAMP.pattern, ERROR_LINE.pattern, END_FIELD.pattern]
     constants = {'timeline': timeline_patterns,
@@ -1694,10 +1712,11 @@ def score_risk(action, response):
     # inspectable and the run can resume past it.
     body = response if isinstance(response, dict) else {}
     malformed_response = response is not None and (body is not response or not isinstance(body.get('answers', []), list))
-    listed = [a for a in (body.get('answers') if isinstance(body.get('answers'), list) else []) if isinstance(a, dict)]
+    raw_answers = body.get('answers') if isinstance(body.get('answers'), list) else []
+    listed = [a for a in raw_answers if isinstance(a, dict)]
     refusal = any(a.get('type') == 'refusal' for a in listed)
     # Each asked question must come back exactly once with its own type; otherwise nothing in it is scored.
-    shaped = (len(listed) == len(DECISION_QUESTIONS)
+    shaped = (len(raw_answers) == len(listed) == len(DECISION_QUESTIONS)
               and all([a.get('type') for a in listed if a.get('name') == name] == [kind] for name, kind in DECISION_QUESTIONS)
               and all(_probability(a.get('probability')) for a in listed if a.get('type') == 'predicate'))
     # A refusal, even of one question, leaves the request without all its evidence, so none of it is scored.
@@ -1959,13 +1978,15 @@ def fake_agent_script(payload):
 # ---------------------------------------------------------------- entry
 
 MAX_RISK_REPEATS = 5
+MAX_RISK_ACTIONS = 60
 
 
 def _risk_repeats(text):
-    """Each repeat is 60 paid Decisions requests; the documented profile is 3, so more than 5 is refused."""
+    """Each repeat is up to MAX_RISK_ACTIONS paid Decisions requests; the documented profile is 3, so more than 5
+    is refused."""
     value = _positive_int(text)
     if value > MAX_RISK_REPEATS:
-        raise argparse.ArgumentTypeError(f'at most {MAX_RISK_REPEATS} (each repeat sends 60 paid requests)')
+        raise argparse.ArgumentTypeError(f'at most {MAX_RISK_REPEATS} (each repeat sends up to {MAX_RISK_ACTIONS} paid requests)')
     return value
 
 
