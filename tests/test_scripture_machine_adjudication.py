@@ -9,8 +9,10 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from scripts import cuv_scripture
+from scripts import english_scripture_coverage as coverage_module
 from scripts import scripture_adjudication as adjudication
 from scripts import scripture_machine_adjudication as machine
 
@@ -22,11 +24,20 @@ def units(*rows):
             for i, text in enumerate(rows)]
 
 
+# The reading is the 605 speaker's own wording (another translation than the pinned English edition).
+READ_4_2 = 'Immediately I was in the Spirit, and there was a throne in heaven, and someone was seated on it.'
+READ_4_3 = ('The one seated there had the appearance of jasper and carnelian stone, a rainbow that had the '
+            'appearance of an emerald surrounded the throne.')
+# Whole readings in the public-domain pinned English wording.
+READ_3_16 = ('For God so loved the world, that he gave his one and only Son, that whoever believes in him '
+             'should not perish, but have eternal life.')
+READ_3_17 = ("For God didn't send his Son into the world to judge the world, but that the world should be "
+             'saved through him.')
 READING = units(
     'Their whole world was filled with chaos.',
     'And so God\'s Word, Revelation chapter 4, this is part of the vision.',
-    'Verse 2 and 3, John says, at once I was in the Spirit and saw a throne in heaven.',
-    'The one seated there looked like precious stone, and a rainbow surrounded the throne.',
+    f'Verse 2 and 3, John says, {READ_4_2}',
+    READ_4_3,
     'I want you to notice, this should be comforting for you.',
 )
 
@@ -59,6 +70,9 @@ class MachineAdjudicationTests(unittest.TestCase):
         self.assertFalse(basis['humanApproval'])
         self.assertEqual(basis['candidates'][0]['openedAt'], 'u3')
         self.assertIn('speech_verb', basis['candidates'][0]['readingSignals'])
+        self.assertEqual(basis['candidates'][0]['quoteBoundary'], machine.QUOTE_BOUNDARY)
+        self.assertTrue(basis['candidates'][0]['coverage']['wholeVerse'])
+        self.assertEqual(basis['coverageEditionId'], 'eng-web')
         summary = adjudication.validate_receipt(as_human(receipt), target_locale='zh-Hans',
                                                 bindings=receipt['bindings'], flagged_units=['u3', 'u4'],
                                                 library=LIBRARY)
@@ -81,9 +95,12 @@ class MachineAdjudicationTests(unittest.TestCase):
                                             target_locale='zh-Hans', library=LIBRARY)
         self.assertEqual(basis['flaggedUnits'], ['u3'])
         self.assertEqual(basis['flaggedUnitsSource'], 'discovered')
-        self.assertEqual([(c['sourceUnitIds'], c['reference']) for c in receipt['candidates']],
-                         [(['u3'], 'REV 4:2-3')])
-        self.assertEqual(basis['candidates'][0]['layout'], 'one unit carries the whole range')
+        # u3 alone reads only verse 2 of the two-verse range: a fragment, translated as spoken.
+        self.assertEqual([(c['sourceUnitIds'], c['classification'], c['reference']) for c in receipt['candidates']],
+                         [(['u3'], 'speaker_paraphrase', None)])
+        self.assertEqual((basis['candidates'][0]['reference'], basis['candidates'][0]['quoteBoundary']),
+                         ('REV 4:2-3', machine.FRAGMENT_BOUNDARY))
+        self.assertFalse(basis['candidates'][0]['coverage']['wholeVerse'])
         rows = units('John 3:16-18 says, "for God so loved the world that he gave his only Son."',
                      'Lord, we thank you for this word.',
                      'Let us pray.')
@@ -104,7 +121,7 @@ class MachineAdjudicationTests(unittest.TestCase):
 
     def test_one_unit_carrying_a_whole_range_is_a_single_range_quote(self):
         rows = units('Open to Revelation chapter 4.',
-                     'Verses 2 through 3 read, "at once I was in the Spirit, and the one seated there shone."',
+                     f'Verses 2 through 3 read, "{READ_4_2} {READ_4_3}"',
                      'Let us pray.')
         receipt, basis = machine.adjudicate(source(), {'sourceUnits': rows}, plan(rows),
                                             target_locale='zh-Hans', flagged_units=['u2'], library=LIBRARY)
@@ -131,8 +148,12 @@ class MachineAdjudicationTests(unittest.TestCase):
         _, basis = machine.adjudicate(source(), {'sourceUnits': rows}, plan(rows),
                                       target_locale='zh-Hans', flagged_units=['u2'], library=LIBRARY)
         self.assertEqual(basis['discoveredUnits'], [])
-        # Supplied flags still resolve: a reference exists even without a reading verb.
-        self.assertEqual(basis['candidates'][0]['decision'], 'direct_quote')
+        # Supplied flags still resolve the reference, but the unit does not read the verse:
+        # a fragment by coverage, translated as the speaker's own words.
+        self.assertEqual((basis['candidates'][0]['decision'], basis['candidates'][0]['reference'],
+                          basis['candidates'][0]['quoteBoundary']),
+                         ('speaker_paraphrase', 'REV 4:2', machine.FRAGMENT_BOUNDARY))
+        self.assertIn('fragment of REV 4:2', basis['candidates'][0]['reason'])
 
     def test_book_context_expires_after_the_window(self):
         filler = ['We keep walking through the story together.'] * machine.CONTEXT_WINDOW_UNITS
@@ -160,14 +181,14 @@ class MachineAdjudicationTests(unittest.TestCase):
         self.assertEqual(basis['discoveredUnits'], [])
         # Adjacent verses joined by "and" remain a range, as in the 605 reading.
         rows = units('Revelation chapter 4 is our text.', 'Verses 2 and 3 say there is a throne.', 'Amen.')
-        receipt, _ = machine.adjudicate(source(), {'sourceUnits': rows}, plan(rows),
-                                        target_locale='zh-Hans', flagged_units=['u2'], library=LIBRARY)
-        self.assertEqual(receipt['candidates'][0]['reference'], 'REV 4:2-3')
+        _, basis = machine.adjudicate(source(), {'sourceUnits': rows}, plan(rows),
+                                      target_locale='zh-Hans', flagged_units=['u2'], library=LIBRARY)
+        self.assertEqual(basis['candidates'][0]['reference'], 'REV 4:2-3')
 
     def test_adjacent_units_with_their_own_references_are_separate_quotations(self):
         rows = units('We read two verses tonight.',
-                     'John 3:16 says, "God loved the world."',
-                     'John 3:17 says, "God sent his Son to save."',
+                     f'John 3:16 says, "{READ_3_16}"',
+                     f'John 3:17 says, "{READ_3_17}"',
                      'Let us pray.')
         receipt, basis = machine.adjudicate(source(), {'sourceUnits': rows}, plan(rows, size=4),
                                             target_locale='zh-Hans', flagged_units=['u2', 'u3'], library=LIBRARY)
@@ -185,9 +206,9 @@ class MachineAdjudicationTests(unittest.TestCase):
         self.assertEqual(receipt['candidates'][0]['classification'], 'speaker_paraphrase')
         self.assertEqual(basis['discoveredUnits'], [])
         # "John says" is a speaker, not a transition: the Revelation context survives it.
-        receipt, _ = machine.adjudicate(source(), {'sourceUnits': READING}, plan(READING),
-                                        target_locale='zh-Hans', flagged_units=['u3'], library=LIBRARY)
-        self.assertEqual(receipt['candidates'][0]['reference'], 'REV 4:2-3')
+        _, basis = machine.adjudicate(source(), {'sourceUnits': READING}, plan(READING),
+                                      target_locale='zh-Hans', flagged_units=['u3'], library=LIBRARY)
+        self.assertEqual(basis['candidates'][0]['reference'], 'REV 4:2-3')
 
     def test_a_reading_signal_is_borrowed_only_from_a_unit_about_scripture(self):
         rows = units('A friend says this changed everything.',
@@ -205,17 +226,66 @@ class MachineAdjudicationTests(unittest.TestCase):
 
     def test_chapter_numbers_spoken_as_words_resolve(self):
         rows = units('Open your Bibles.',
-                     'John chapter three, verse sixteen says, "God loved the world."',
+                     f'John chapter three, verse sixteen says, "{READ_3_16}"',
                      'Amen.')
         receipt, basis = machine.adjudicate(source(), {'sourceUnits': rows}, plan(rows),
                                             target_locale='zh-Hans', flagged_units=['u2'], library=LIBRARY)
         self.assertEqual(receipt['candidates'][0]['reference'], 'JOH 3:16')
         self.assertEqual(basis['candidates'][0]['quoteBoundary'], machine.QUOTE_BOUNDARY)
 
+    def test_a_fragment_is_translated_as_the_speakers_words_and_a_whole_reading_is_pinned(self):
+        fragment = units('Genesis chapter 1 is where it all starts.',
+                         'Verse 1 says, "In the beginning, God."',
+                         'Three words.')
+        receipt, basis = machine.adjudicate(source(), {'sourceUnits': fragment}, plan(fragment),
+                                            target_locale='zh-Hans', flagged_units=['u2'], library=LIBRARY)
+        row, why = receipt['candidates'][0], basis['candidates'][0]
+        self.assertEqual((row['classification'], row['editionId'], row['exactSentence']),
+                         ('speaker_paraphrase', None, None))
+        self.assertEqual((why['reference'], why['quoteBoundary']), ('GEN 1:1', machine.FRAGMENT_BOUNDARY))
+        self.assertFalse(why['coverage']['wholeVerse'])
+        self.assertLess(why['coverage']['lengthRatio'], coverage_module.WHOLE_VERSE_LENGTH_MIN)
+        self.assertIn("translated as the speaker's own words", why['reason'])
+        adjudication.validate_receipt(as_human(receipt), target_locale='zh-Hans', bindings=receipt['bindings'],
+                                      flagged_units=['u2'], library=LIBRARY)
+        whole = units('Genesis chapter 1 is where it all starts.',
+                      'Verse 1 says, "In the beginning, God created the heavens and the earth."',
+                      'Everything begins with him.')
+        receipt, basis = machine.adjudicate(source(), {'sourceUnits': whole}, plan(whole),
+                                            target_locale='zh-Hans', flagged_units=['u2'], library=LIBRARY)
+        self.assertEqual((receipt['candidates'][0]['classification'], receipt['candidates'][0]['reference']),
+                         ('direct_quote', 'GEN 1:1'))
+        self.assertEqual(basis['candidates'][0]['coverage']['editionId'], 'eng-web')
+        # Commentary about the verse, however long, is not a reading of it.
+        talk = units('Genesis chapter 1 is where it all starts.',
+                     'Verse 1 says that before anything existed God was already there, making everything we '
+                     'see and everything we cannot see, with nothing but his word.',
+                     'Amen.')
+        receipt, _ = machine.adjudicate(source(), {'sourceUnits': talk}, plan(talk),
+                                        target_locale='zh-Hans', flagged_units=['u2'], library=LIBRARY)
+        self.assertEqual(receipt['candidates'][0]['classification'], 'speaker_paraphrase')
+
+    def test_a_verse_the_english_edition_lacks_is_not_admitted(self):
+        rows = units('Acts chapter 8 is our text.',
+                     'Verse 37 says, "I believe that Jesus Christ is the Son of God."',
+                     'Amen.')
+        receipt, basis = machine.adjudicate(source(), {'sourceUnits': rows}, plan(rows),
+                                            target_locale='zh-Hans', flagged_units=['u2'], library=LIBRARY)
+        self.assertEqual(receipt['candidates'][0]['classification'], 'speaker_paraphrase')
+        self.assertIn('ACT 8:37', basis['candidates'][0]['reason'])
+        self.assertEqual(basis['candidates'][0]['reference'], 'ACT 8:37')
+
+    def test_a_missing_english_edition_refuses_before_any_decision(self):
+        with mock.patch.object(coverage_module, 'DATA_PATH', Path('/nonexistent/eng-web.json')), \
+                mock.patch.object(machine, '_DEFAULT_COVERAGE', []):
+            with self.assertRaisesRegex(machine.MachineAdjudicationError, 'english_edition_unavailable'):
+                machine.adjudicate(source(), {'sourceUnits': READING}, plan(READING),
+                                   target_locale='zh-Hans', flagged_units=['u3'], library=LIBRARY)
+
     def test_a_verse_read_across_translation_groups_falls_back_to_paraphrase(self):
         rows = units('Revelation chapter 4 is our text.',
-                     'Verse 2 says, at once I was in the Spirit',
-                     'and I saw a throne standing in heaven.',
+                     'Verse 2 says, Immediately I was in the Spirit, and there was a throne in heaven,',
+                     'and someone was seated on it.',
                      'Amen.')
         split = plan(rows, size=1)
         receipt, basis = machine.adjudicate(source(), {'sourceUnits': rows}, split,

@@ -20,7 +20,7 @@
 | 阶段 | 谁做 | 产物 | 状态 |
 |---|---|---|---|
 | 候选队列（穷举疑似引文，附前后文、音频切片、词时间、哈希） | 机器 | 待裁定清单 | 未实现 |
-| 裁定 | 人，或机器（`scripts/scripture_machine_adjudication.py`，按明确出处和读经信号判整节引文） | `scripture-adjudication.json` 收据 | 格式和校验已实现；机器收据是机器证据，不是人工批准 |
+| 裁定 | 人，或机器（`scripts/scripture_machine_adjudication.py`，按明确出处和读经信号判整节引文；讲员只念片段时按原话翻译，不收录整节） | `scripture-adjudication.json` 收据 | 格式和校验已实现；机器收据是机器证据，不是人工批准 |
 | 付费前门 | 代码 | 通过或固定拒绝码 | 已实现（冻结和加载都检查） |
 | 经文感知的审核插件 | 代码 | 只接受已通过门的引文 | 未实现 |
 
@@ -67,9 +67,22 @@
 
 使用 `scripts/cuv_scripture.py` 中已有的 `CuvLibrary`。它只读取固定版本的库，检查经文引用是否存在、整节或片段是否精确匹配。它不会猜测断句，也不会用模型生成经文。
 
+### 整节还是片段（`scripts/english_scripture_coverage.py`）
+
+2026-10-08 按 Jony 的决定"只译讲员原话"：机器只在讲员念了整节时才把固定版本的整节收录为 `direct_quote`；只念半节、夹着转述或只提了出处的，判 `speaker_paraphrase`，按讲员原话翻译，固定措辞不再保证。分辨整节与片段要有一份英文经文做对照，仓库为此固定了公共领域的 World English Bible：`data/scripture/eng-web.coverage.json`，来源仓库、提交、源文件哈希和库哈希写在同目录的 `eng-web.coverage.provenance.json`，内容哈希也写在模块里，加载时校验，不符即拒绝。它只用来判边界，不显示、不配音、不翻译。
+
+量度：先去掉出处、章节号和 "John says" 这类读经动词，再把讲员的话与该节（或该范围）的实词比较（小写、去虚词、轻量词干、前缀容差两字）。记两个数：覆盖率（该节实词被念到的比例）和长度比（讲员实词数除以该节实词数），都达到阈值（0.4 和 0.7）才算整节。两个数、阈值、英文节文哈希和 `quoteBoundary` 都写进依据文件；人工收据对同一组 bindings 仍可覆盖。605 的两节讲员念的是另一个译本，覆盖率 0.57 / 0.56、长度比 0.88 / 1.0，判整节；自动发现把 `REV 4:2-3` 整个范围放在 0-u067 上时长度比 0.37，判片段。英文版本缺该节（WEB 只作脚注的 LUK 17:36、ACT 8:37、ACT 15:34、ACT 24:7、ROM 16:25）或版本文件不可用时，不收录、不猜；偏差方向是安全的：措辞差异很大的整节可能被当成片段而按原话翻译，但片段不会被塞成整节。
+
+```sh
+python3 scripts/english_scripture_coverage.py verify
+python3 scripts/english_scripture_coverage.py check "REV 4:2" "<讲员念的话>"
+```
+
 ## 测试
 
 - `tests/test_scripture_adjudication.py`：收据的每一条拒绝路径，以及完整通过、部分引文、非引文的通过路径。文本取自真实的 CUV 库，收据是测试用的合成输入，不代表人工批准。
+- `tests/test_scripture_machine_adjudication.py`：机器裁定的出处解析、读经信号、自动发现、跨组退回，以及整节 / 片段 / 英文版本缺节 / 版本不可用的边界判定。
+- `tests/test_english_scripture_coverage.py`：USFX 解析（脚注、串珠、空节）、实词与词干、覆盖量度、固定库的哈希与出处、605 读经和半节片段。
 - `tests/test_diagnostic_pinned_quotes.py`：使用与固定 CUV 片段一致的合成收据，覆盖冻结/加载的载荷不一致拒绝、CLI 收据读取和并发冻结保护。
 - `tests/test_codex_layer2_diagnostic.py`：结构插件拒绝含直接引文的样本，现在在收据检查阶段拒绝（同样在付费前）。
 

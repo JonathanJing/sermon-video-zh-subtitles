@@ -34,12 +34,13 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from scripts import cuv_scripture  # noqa: E402
+from scripts import english_scripture_coverage as coverage_module  # noqa: E402
 from scripts import scripture_adjudication as adjudication  # noqa: E402
 from scripts import scripture_candidate_queue as queue_module  # noqa: E402
 from scripts import scripture_editions  # noqa: E402
 from scripts import target_language_policy as policies  # noqa: E402
 
-VERSION = '2026-10-08-v1'
+VERSION = '2026-10-08-v2'
 ROLE = 'machine_adjudicator'
 BASIS_SCHEMA = 'sermon-scripture-machine-adjudication-basis-v1'
 # A book mention stays in force for this many following units; sermons move on.
@@ -64,9 +65,12 @@ VERSE_MENTION = re.compile(rf'\bverses?\s+{_RANGE}', re.I)
 READING_SIGNALS = {'speech_verb', 'quotation_marks'}
 # A reading signal borrowed from the unit before must come from a unit about scripture.
 SCRIPTURE_SIGNALS = {'book_reference', 'chapter_verse', 'scripture_word'}
-# No English edition is pinned, so the machine cannot tell a whole-verse reading from a
-# fragment; every resolved quotation is admitted as the whole verse and says so.
-QUOTE_BOUNDARY = 'whole_verse_assumed_no_english_edition'
+# Decision of 2026-10-08: a fragment is translated as the speaker's own words. The pinned
+# target-language verse is admitted only when the spoken words cover the whole verse,
+# measured against the pinned public-domain English edition (english_scripture_coverage).
+QUOTE_BOUNDARY = 'whole_verse_by_english_coverage'
+FRAGMENT_BOUNDARY = 'fragment_translated_as_spoken'
+_SPEECH_VERB = dict(queue_module.SIGNALS)['speech_verb']
 
 
 class MachineAdjudicationError(ValueError):
@@ -99,6 +103,31 @@ def _edition(target_locale: str, library: Any = None) -> Any:
 
 def _signals(english: str) -> set[str]:
     return {kind for kind, pattern in queue_module.SIGNALS if pattern.search(english)}
+
+
+_DEFAULT_COVERAGE: list[Any] = []
+
+
+def _coverage_edition(edition: Any = None) -> Any:
+    """The pinned English coverage edition, loaded and hash-verified once per process."""
+    if edition is not None:
+        return edition
+    if not _DEFAULT_COVERAGE:
+        try:
+            _DEFAULT_COVERAGE.append(coverage_module.CoverageEdition.from_path())
+        except coverage_module.CoverageError as exc:
+            raise MachineAdjudicationError('english_edition_unavailable') from exc
+    return _DEFAULT_COVERAGE[0]
+
+
+def _spoken_text(english: list[str]) -> str:
+    """The units' words without the reference and reading phrases that introduce the quotation."""
+    pieces = []
+    for text in english:
+        for pattern in (BOOK_MENTION, BOOK_TRANSITION, CHAPTER_MENTION, VERSE_MENTION, _SPEECH_VERB):
+            text = pattern.sub(' ', text)
+        pieces.append(text)
+    return re.sub(r'\s+', ' ', ' '.join(pieces)).strip()
 
 
 def _book(name: str) -> str | None:
@@ -233,10 +262,11 @@ def _paraphrase(candidate_id: str, units: list[str], reason: str) -> tuple[dict[
 
 
 def adjudicate(source: dict[str, Any], anchor: dict[str, Any], plan: list[dict[str, Any]], *, target_locale: str,
-               flagged_units: list[str] | None = None, library: Any = None,
+               flagged_units: list[str] | None = None, library: Any = None, coverage_edition: Any = None,
                now: datetime | None = None) -> tuple[dict[str, Any], dict[str, Any]]:
     """Return (receipt, basis). The receipt has the v1 shape with the machine role."""
     edition_id, edition = _edition(target_locale, library)
+    english_edition = _coverage_edition(coverage_edition)
     units = anchor['sourceUnits']
     rows = _scan(units)
     discovered = discover_flagged_units(rows)
@@ -269,24 +299,44 @@ def adjudicate(source: dict[str, Any], anchor: dict[str, Any], plan: list[dict[s
                       else 'several units in one translation group share the whole range')
         for units_here, ref in pairs:
             candidate_id = f'm{len(candidates) + 1:03d}'
+            english_here = [rows[i]['english'] for i in run if rows[i]['sourceUnitId'] in units_here]
             try:
                 found = edition.lookup(ref)
             except (cuv_scripture.CuvError, scripture_editions.EditionError) as exc:
                 candidate, why = _paraphrase(candidate_id, units_here,
                                              f'edition lookup failed for {ref.canonical_ref}: {exc}')
                 candidates.append(candidate)
-                basis_rows.append(why)
+                basis_rows.append(why | {'reference': ref.canonical_ref, 'english': english_here})
+                continue
+            # The pinned verse is admitted only when the speaker's words cover the whole verse.
+            try:
+                measure = coverage_module.coverage(english_edition, ref, _spoken_text(english_here))
+            except coverage_module.CoverageError as exc:
+                candidate, why = _paraphrase(candidate_id, units_here,
+                                             f'no English text bounds the quotation of {ref.canonical_ref}: {exc}')
+                candidates.append(candidate)
+                basis_rows.append(why | {'reference': ref.canonical_ref, 'english': english_here})
+                continue
+            if not measure['wholeVerse']:
+                candidate, why = _paraphrase(
+                    candidate_id, units_here,
+                    f"fragment of {ref.canonical_ref}: the speaker said {measure['coveredContentWords']} of "
+                    f"{measure['verseContentWords']} content words (coverage {measure['verseCoverage']}, length "
+                    f"{measure['lengthRatio']}); translated as the speaker's own words (decision 2026-10-08)")
+                candidates.append(candidate)
+                basis_rows.append(why | {'reference': ref.canonical_ref, 'quoteBoundary': FRAGMENT_BOUNDARY,
+                                         'coverage': measure, 'english': english_here})
                 continue
             candidates.append({'candidateId': candidate_id, 'sourceUnitIds': units_here,
                                'classification': 'direct_quote', 'reference': ref.canonical_ref,
                                'editionId': edition_id, 'exactSentence': found['text']})
             basis_rows.append({'candidateId': candidate_id, 'sourceUnitIds': units_here, 'decision': 'direct_quote',
                                'reference': ref.canonical_ref, 'textSha256': found['textSha256'], 'layout': layout,
-                               'quoteBoundary': QUOTE_BOUNDARY,
+                               'quoteBoundary': QUOTE_BOUNDARY, 'coverage': measure,
                                'openedAt': rows[at]['sourceUnitId'], 'evidence': rows[at]['evidence'],
                                'readingSignals': sorted({s for i in range(max(0, at - READING_LOOKBACK_UNITS), at + 1)
                                                          for s in rows[i]['signals'] if s in READING_SIGNALS}),
-                               'english': [rows[i]['english'] for i in run]})
+                               'english': english_here})
     _require(bool(candidates), 'no_flagged_units')
     stamp = (now or datetime.now(timezone.utc)).isoformat()
     sha = implementation_sha256()
@@ -300,20 +350,22 @@ def adjudicate(source: dict[str, Any], anchor: dict[str, Any], plan: list[dict[s
              and all(set(row) == adjudication.CANDIDATE_KEYS for row in candidates), 'receipt_shape')
     basis = {'schemaVersion': BASIS_SCHEMA, 'implementationSha256': sha, 'version': VERSION,
              'receiptSha256': adjudication.receipt_sha256(receipt), 'targetLocale': target_locale,
-             'editionId': edition_id, 'flaggedUnits': flagged, 'flaggedUnitsSource':
+             'editionId': edition_id, 'coverageEditionId': english_edition.edition_id,
+             'flaggedUnits': flagged, 'flaggedUnitsSource':
              'supplied' if flagged_units is not None else 'discovered', 'discoveredUnits': discovered,
              'humanApproval': False, 'candidates': basis_rows,
              'notice': 'Deterministic surface-signal adjudication. A human receipt for the same bindings '
-                       'overrides this one. Not a translation or edition approval. Every quotation is admitted '
-                       'as the whole pinned verse: without an English edition the machine cannot tell a '
-                       'fragment from a whole-verse reading, so a fragment needs a human partial_direct_quote. '
+                       'overrides this one. Not a translation or edition approval. A quotation is admitted as '
+                       'the whole pinned verse only when the spoken words cover the whole verse by the English '
+                       'coverage measure; a fragment is translated as the speaker\'s own words (2026-10-08). '
                        'Discovery claims only the unit that opens a quotation and keeps the whole range on it; '
                        'units that continue a reading are flagged explicitly, since the text gives no boundary.'}
     return receipt, basis
 
 
 def adjudicate_fixture(directory: str | Path, *, target_locale: str, flagged_units: list[str] | None = None,
-                       discover: bool = False, library: Any = None) -> tuple[dict[str, Any], dict[str, Any]]:
+                       discover: bool = False, library: Any = None,
+                       coverage_edition: Any = None) -> tuple[dict[str, Any], dict[str, Any]]:
     directory = Path(directory)
     source, anchor, plan = (json.loads((directory / name).read_text(encoding='utf-8'))
                             for name in ('source.json', 'anchor.json', 'group-plan.json'))
@@ -323,7 +375,8 @@ def adjudicate_fixture(directory: str | Path, *, target_locale: str, flagged_uni
         listed = manifest.get('sourceQuotationUnits')
         if isinstance(listed, list):
             flagged_units = list(listed)  # an explicit empty list means none, not discovery
-    return adjudicate(source, anchor, plan, target_locale=target_locale, flagged_units=flagged_units, library=library)
+    return adjudicate(source, anchor, plan, target_locale=target_locale, flagged_units=flagged_units, library=library,
+                      coverage_edition=coverage_edition)
 
 
 def _write_new(path: Path, value: dict[str, Any]) -> None:
