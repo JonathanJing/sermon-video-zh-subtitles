@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "spark-session-authorization-v1",
+  "approvedBy": "project owner",
+  "approvedAt": "2026-10-07T23:40:00Z",
+  "owner": "round-x",
+  "scope": "One Spark exclusive session for round-x: begin --mode preempt with --allow-interrupted-restart, stopping spark-api, spark-agent, collector and llama-server for this round, then finish.",
+  "expires": "after local_model_session.py finish for round-x"
+}

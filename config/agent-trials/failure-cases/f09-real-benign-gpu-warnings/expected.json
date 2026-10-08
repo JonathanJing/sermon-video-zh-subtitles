@@ -1,0 +1,14 @@
+{
+  "id": "f09-real-benign-gpu-warnings",
+  "reconstructedFrom": "Real logs copied unchanged from run-report/20261008-haiku-180s-8x8-dev-r3 (diagnostic-audio-r5, live-180s-r5); RETROSPECTIVE.md 错误",
+  "realLogs": true,
+  "category": "not_a_failure",
+  "abstain": false,
+  "causeKeywords": [
+    ["warning", "[W:", "harmless", "benign", "noise", "无害", "噪声", "警告"],
+    ["succeeded", "exit 0", "exitCode", "completed", "成功"]
+  ],
+  "fixKeywords": [
+    ["no fix", "nothing", "none", "ignore", "no action", "not needed", "不需要", "无需", "filter", "suppress"]
+  ]
+}

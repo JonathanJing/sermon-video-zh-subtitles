@@ -10,9 +10,19 @@ from scripts.experiments import agent_api_trials as trials
 
 
 class FixtureTests(unittest.TestCase):
+    def test_real_log_cases_can_be_answered_from_their_own_evidence(self):
+        real = [c for c in trials.load_cases() if c['expected'].get('realLogs')]
+        self.assertEqual(len(real), 2)
+        for case in real:
+            text = ''.join(p.read_text(encoding='utf-8') for p in trials.evidence_files(case['evidence']))
+            # Every cause group has a term a quote from the logs can supply, and no corrected report leaks the answer.
+            for group in case['expected']['causeKeywords']:
+                self.assertTrue(any(term in text for term in group), (case['expected']['id'], group))
+            self.assertNotIn('corrected', text.lower())
+
     def test_library_loads_and_answers_stay_outside_the_tool_sandbox(self):
         cases = trials.load_cases()
-        self.assertEqual(len(cases), 8)
+        self.assertEqual(len(cases), 10)
         self.assertEqual({c['expected']['category'] for c in cases} - set(trials.CATEGORIES), set())
         tools = trials.EvidenceTools(cases[0]['evidence'])
         listed = [f['path'] for f in tools('list_files', {})['files']]
@@ -231,8 +241,10 @@ class RunTests(unittest.TestCase):
 
     def test_all_trials_run_and_a_rerun_starts_no_new_session_or_request(self):
         first = self.make().run('all')
-        self.assertEqual(first['agentSessionsStarted'], 8 * 2 + 8 + 2)
-        self.assertEqual(first['risk']['actions'], 26)
+        planted = len(json.loads(trials.WRONG_DIAGNOSES.read_text())['diagnoses'])
+        self.assertEqual(first['agentSessionsStarted'], len(trials.load_cases()) * 3 + planted + len(trials.load_plans()))
+        self.assertEqual(first['risk']['actions'], 60)
+        self.assertEqual(first['refute']['planted']['sessions'], planted)
         self.assertIn('decisionsUsage', first)
         rerun = self.make()
         with patch.object(trials.DecisionsClient, '_post', side_effect=AssertionError('paid twice')):
@@ -404,8 +416,8 @@ class RunTests(unittest.TestCase):
             runner().run('risk')
         self.assertEqual(len(sent), 3)
         summary = runner().run('risk')
-        self.assertEqual(len(sent), 3 + 24)
-        self.assertEqual(summary['risk']['actions'], 26)
+        self.assertEqual(len(sent), 3 + 58)
+        self.assertEqual(summary['risk']['actions'], 60)
 
     def test_repeated_rejections_stop_retrying(self):
         client = trials.DecisionsClient(self.out, transport=lambda _r: {'error': {'status': 429, 'body': 'slow'}})
@@ -433,6 +445,39 @@ class RunTests(unittest.TestCase):
         self.assertEqual(names, ['list_files', 'submit_report'])
         self.make(case_ids=['f01-plugin-identity']).run('diagnose')
         self.assertEqual(len(log.read_text().splitlines()), 2)
+
+    def test_risk_repeats_measure_stability_and_reuse_the_first_answers(self):
+        calls = []
+
+        def alternating(request):
+            calls.append(request)
+            answer = trials.fake_decisions(request)
+            if 60 < len(calls) <= 120:  # the second repeat answers differently
+                answer['answers'][0] = {**answer['answers'][0], 'choice': 'observe_only'}
+            return answer
+        one = trials.Trials(self.out, client=None, model='m', backend='fake',
+                            decisions=trials.DecisionsClient(self.out, transport=alternating)).run('risk')
+        self.assertEqual(one['risk']['unstable'], [])
+        three = trials.Trials(self.out, client=None, model='m', backend='fake', risk_repeats=3,
+                              decisions=trials.DecisionsClient(self.out, transport=alternating)).run('risk')
+        self.assertEqual(len(calls), 60 * 3)
+        self.assertEqual(three['risk']['requests'], 180)
+        self.assertTrue(three['risk']['unstable'])
+
+    def test_every_plan_check_expectation_matches_the_deterministic_checks(self):
+        for plan in trials.load_plans():
+            for requirement in plan['expected']['requiredChecks']:
+                arguments = {'check_staged': {'path': requirement.get('argument')},
+                             'check_out_path': {'out': requirement.get('argument')}}.get(requirement['tool'], {})
+                result = trials.preflight_check(plan['evidence'], requirement['tool'], arguments)
+                self.assertEqual(result[trials.CHECK_VERDICT[requirement['tool']]], requirement['expect'],
+                                 (plan['id'], requirement))
+
+    def test_planted_diagnoses_cite_real_lines(self):
+        cases = {c['id']: c for c in trials.load_cases()}
+        for wrong in json.loads(trials.WRONG_DIAGNOSES.read_text())['diagnoses']:
+            valid, invalid = trials.check_citations(wrong['diagnosis'], cases[wrong['case']]['evidence'])
+            self.assertEqual(invalid, [], wrong['case'])
 
     def test_unknown_decision_outcome_blocks_a_retry(self):
         client = trials.DecisionsClient(self.out, transport=lambda _r: (_ for _ in ()).throw(TimeoutError()))

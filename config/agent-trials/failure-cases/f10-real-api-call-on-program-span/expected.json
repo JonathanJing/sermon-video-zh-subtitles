@@ -1,0 +1,14 @@
+{
+  "id": "f10-real-api-call-on-program-span",
+  "reconstructedFrom": "Real events copied unchanged from docs/reports/20260930-bounded-source-diagnostic/events.jsonl; README.zh.md 原始证据与修正边界",
+  "realLogs": true,
+  "category": "other",
+  "abstain": false,
+  "causeKeywords": [
+    ["deterministic_program"],
+    ["root", "child", "parent", "no production_model", "own span", "api_attempt", "根", "子 span"]
+  ],
+  "fixKeywords": [
+    ["span"]
+  ]
+}
