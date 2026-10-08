@@ -1,0 +1,18 @@
+..........F.................
+======================================================================
+FAIL: test_outputs_cannot_overlap_derived_durable_roots (tests.test_canonical_layer2_controller.CanonicalLayer2ControllerTests.test_outputs_cannot_overlap_derived_durable_roots)
+----------------------------------------------------------------------
+ValueError: invalid_execution_paths
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/tests/test_canonical_layer2_controller.py", line 312, in test_outputs_cannot_overlap_derived_durable_roots
+    with self.assertRaisesRegex(ValueError, 'execution_paths_overlap'):
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: "execution_paths_overlap" does not match "invalid_execution_paths"
+
+----------------------------------------------------------------------
+Ran 28 tests in 23.090s
+
+FAILED (failures=1)
