@@ -5,7 +5,7 @@
 ## 先说结论
 
 1. **不要让 AI 当调度器。** 谁先跑、谁等谁、失败了能不能重试，这些交给确定性的状态机（云端用 Cloud Workflows + 一个小 controller 服务）。AI（Supervisor、翻译、复核）只在三种地方出场：生成内容、做机器复核、在状态机给出的有限选项里做判断。这和仓库现有的方向一致：[Deterministic Engine → Bounded Decision Agent](../codex-orchestration-pipeline-design.zh.md)、Supervisor 没有 shell 也不能写批准（[Supervisor 合同](../sermon-production-supervisor-agent.md) L65-74）。
-2. **产物以私有 Cloud Storage 为唯一证据来源，按内容 hash 存、只写一次。** Firestore 放租约、job 状态、current 指针和审批队列，用事务保证同一时刻只有一个 owner。内容证据永远在 GCS；花钱相关的状态（预算预留、结果不明）在派发前后也写进 GCS 不可变日志，所以即使 Firestore 丢了，也能知道哪些调用可能已经花了钱，不会重复派发。
+2. **产物以私有 Cloud Storage 为唯一证据来源，按内容 hash 存、只写一次。** Firestore 放租约、job 状态、current 指针和审批队列，用事务保证同一时刻只有一个 owner。内容证据永远在 GCS；花钱相关的状态（预算预留、结果不明）在派发前后也写进 GCS 不可变日志，所以即使 Firestore 丢了，也能知道哪些调用可能已经花了钱，不会重复派发。发布（Firebase）从私有桶复制，不反过来。
 3. **人工批准不让机器空等。** 每一层跑完就停，写收据，Workflows 挂起等待 callback；批准一到再启动下一层。GPU 只在 L3 渲染时开着。
 4. **最大的阻碍不在算力，在三件事：** 本地文件锁和 fsync 换成云端租约；Supervisor 现在依赖 ChatGPT 登录的 Codex CLI，云端要改 API 认证，需要你决定和预算；YouTube 在云上会遇到 bot-check，来源下载仍建议本机做再上传。
 5. **建议分阶段迁：** 先把产物镜像到 GCS，再做 L3 GPU 突发，再把 L2 worker 搬上云，最后才搬 controller 和 Supervisor。每一步都能单独停在那里用。
