@@ -31,11 +31,17 @@ class FixtureTests(unittest.TestCase):
             os.symlink(Path(tmp), root / 'up')
             tools = trials.EvidenceTools(root)
             self.assertEqual([f['path'] for f in tools('list_files', {})['files']], ['run.log'])
-            self.assertEqual(tools('grep', {'pattern': 'SECRET'})['matches'], [])
+            self.assertEqual(tools('grep', {'text': 'SECRET'})['matches'], [])
             for path in ('link.txt', 'up/secret.txt'):
                 with self.assertRaises(ValueError):
                     tools('read_file', {'path': path})
             self.assertEqual(trials.build_timeline(root)['sources'], ['run.log'])
+
+    def test_grep_is_a_literal_search(self):
+        tools = trials.EvidenceTools(trials.CASES / 'f05-asr-symlink-mount/evidence')
+        hits = tools('grep', {'text': 'LOCAL_MODEL_MISSING'})['matches']
+        self.assertEqual({h['path'] for h in hits}, {'back-asr.log', 'outcome.json'})
+        self.assertEqual(tools('grep', {'text': '(a+)+$'})['matches'], [])
 
     def test_timeline_orders_files_and_keeps_command_output(self):
         timeline = trials.build_timeline(trials.CASES / 'f07-services-not-yet-restored/evidence')
@@ -184,11 +190,39 @@ class RunTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, 'session cap'):
             self.make(max_sessions=3).run('diagnose')
 
-    def test_rejected_decision_fails_the_risk_trial(self):
-        rejected = trials.DecisionsClient(self.out, transport=lambda _r: {'error': {'status': 400, 'body': 'bad'}})
-        runner = trials.Trials(self.out, client=None, model='m', backend='fake', decisions=rejected)
+    def test_rejected_decision_fails_the_trial_and_a_rerun_retries_only_that_action(self):
+        sent = []
+
+        def flaky(request):
+            sent.append(request)
+            return {'error': {'status': 503, 'body': 'busy'}} if len(sent) == 3 else trials.fake_decisions(request)
+        runner = lambda: trials.Trials(self.out, client=None, model='m', backend='fake',
+                                       decisions=trials.DecisionsClient(self.out, transport=flaky))
         with self.assertRaisesRegex(RuntimeError, 'rejected'):
-            runner.run('risk')
+            runner().run('risk')
+        self.assertEqual(len(sent), 3)
+        summary = runner().run('risk')
+        self.assertEqual(len(sent), 3 + 24)
+        self.assertEqual(summary['risk']['actions'], 26)
+
+    def test_repeated_rejections_stop_retrying(self):
+        client = trials.DecisionsClient(self.out, transport=lambda _r: {'error': {'status': 429, 'body': 'slow'}})
+        for _ in range(trials.DecisionsClient.MAX_REJECTIONS):
+            with self.assertRaisesRegex(RuntimeError, 'rerun the same'):
+                client.decide('a01', {'q': 1})
+        with self.assertRaisesRegex(RuntimeError, 'rejected 3 times'):
+            client.decide('a01', {'q': 1})
+
+    def test_interrupted_attempt_time_is_kept_on_resume(self):
+        session = self.out / 'diagnose/f01-plugin-identity/raw'
+        session.mkdir(parents=True)
+        meta = {'attempts': [{'startedAt': 1000.0, 'seconds': None}]}
+        written = session / 'state.json'
+        written.write_text('{}')
+        os.utime(written, (1042.0, 1042.0))
+        trials._close_interrupted_attempts(meta, session)
+        self.assertEqual(meta['attempts'][0]['seconds'], 42.0)
+        self.assertTrue(meta['attempts'][0]['interrupted'])
 
     def test_tool_calls_are_logged_as_they_happen_for_resume(self):
         self.make(case_ids=['f01-plugin-identity']).run('diagnose')

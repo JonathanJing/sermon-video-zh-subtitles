@@ -186,8 +186,8 @@ FILE_TOOLS = [
     _function('read_file', 'Read one evidence file (UTF-8 text, truncated at 20000 characters).',
               {'path': {'type': 'string', 'description': 'Path relative to the evidence root, as list_files prints it.'}},
               ['path']),
-    _function('grep', 'Search all evidence files with a Python regular expression; returns up to 50 matching lines.',
-              {'pattern': {'type': 'string'}}, ['pattern']),
+    _function('grep', 'Search all evidence files for a literal substring (case-insensitive, not a regex); '
+              'returns up to 50 matching lines.', {'text': {'type': 'string'}}, ['text']),
 ]
 TIMELINE_TOOL = _function('get_timeline', 'Return every timestamped event across all evidence files in time order, '
                           'plus the files and error lines that carry no timestamp.')
@@ -274,11 +274,14 @@ class EvidenceTools:
             text = self._path(arguments['path']).read_text(encoding='utf-8')
             return {'path': arguments['path'], 'text': text[:MAX_READ_CHARS], 'truncated': len(text) > MAX_READ_CHARS}
         if name == 'grep':
-            pattern = re.compile(arguments['pattern'])
+            # Literal search: a model-supplied regex could backtrack past the session time bound.
+            needle = str(arguments.get('text', '')).lower()
+            if not needle:
+                raise ValueError('empty search text')
             hits = []
             for path in self._files():
                 for number, line in enumerate(path.read_text(encoding='utf-8').splitlines(), 1):
-                    if pattern.search(line):
+                    if needle in line.lower():
                         hits.append({'path': str(path.relative_to(self.root)), 'line': number, 'text': line[:400]})
             return {'matches': hits[:50], 'truncated': len(hits) > 50}
         if name == 'get_timeline' and self.timeline:
@@ -516,16 +519,20 @@ def run_session(client, session_dir, payload, tools, *, max_seconds, max_tool_ca
         binding_path.write_text(json.dumps(binding) + '\n', encoding='utf-8')
     calls_path = session_dir.parent / (session_dir.name + '.calls.jsonl')
     tools.log_path = calls_path
-    started = time.time()
+    meta_path = session_dir.parent / (session_dir.name + '.meta.json')
+    meta = _read_json(meta_path) if meta_path.exists() else {'attempts': []}
+    if 'elapsedSeconds' not in meta:
+        _close_interrupted_attempts(meta, session_dir)
+        meta['attempts'].append({'startedAt': time.time(), 'seconds': None})
+        _write_meta(meta_path, meta)
     result = agents.run_agent_session(client, session_dir, payload, tools, max_seconds=max_seconds,
                                       max_tool_calls=max_tool_calls, poll_seconds=poll_seconds, resume=resume)
-    # Keep the first run's duration; a resumed read of a finished session takes no API time.
-    meta_path = session_dir.parent / (session_dir.name + '.meta.json')
-    if meta_path.exists():
-        elapsed = _read_json(meta_path)['elapsedSeconds']
-    else:
-        elapsed = round(time.time() - started, 2)
-        meta_path.write_text(json.dumps({'elapsedSeconds': elapsed}) + '\n', encoding='utf-8')
+    # Sum the API time of every attempt; a resumed read of a finished session adds nothing.
+    if 'elapsedSeconds' not in meta:
+        meta['attempts'][-1]['seconds'] = round(time.time() - meta['attempts'][-1]['startedAt'], 2)
+        meta['elapsedSeconds'] = round(sum(a['seconds'] for a in meta['attempts']), 2)
+        _write_meta(meta_path, meta)
+    elapsed = meta['elapsedSeconds']
     status = result.get('status')
     if status not in {'completed', 'failed', 'cancelled'} and not result.get('cancellation_observed'):
         raise RuntimeError(f'{session_dir.name}: session ended {status} without observed remote termination; '
@@ -540,6 +547,21 @@ def run_session(client, session_dir, payload, tools, *, max_seconds, max_tool_ca
     return {'sessionId': result.get('session_id'), 'status': result.get('status'),
             'toolCalls': result.get('tool_calls'), 'usage': _usage(result),
             'elapsedSeconds': elapsed, 'report': report}
+
+
+def _close_interrupted_attempts(meta, session_dir):
+    """An attempt cut off by a crash ends at the last file the session runner wrote."""
+    written = [p.stat().st_mtime for p in Path(session_dir).rglob('*') if p.is_file()]
+    for attempt in meta['attempts']:
+        if attempt['seconds'] is None:
+            last = max([t for t in written if t >= attempt['startedAt']], default=attempt['startedAt'])
+            attempt['seconds'] = round(last - attempt['startedAt'], 2)
+            attempt['interrupted'] = True
+
+
+def _write_meta(path, meta):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(meta) + '\n', encoding='utf-8')
 
 
 def _usage(result):
@@ -647,9 +669,6 @@ class Trials:
         rows = []
         for action in policy['actions']:
             response = self.decisions.decide(action['id'], risk_request(action, policy['tiers']))
-            if isinstance(response, dict) and response.get('error'):
-                raise RuntimeError(f'decision {action["id"]} rejected: {response["error"]}; '
-                                   'fix the request and use a new --out')
             rows.append(score_risk(action, response))
         return {'rows': rows, 'summary': risk_summary(rows)}
 
@@ -777,7 +796,12 @@ def risk_summary(rows):
 
 
 class DecisionsClient:
-    """One request per action, no retry. A started request without a saved answer blocks reruns."""
+    """One request per action, no automatic retry. A started request without a saved answer blocks reruns.
+
+    An HTTP error response means the request was rejected, not processed: it is logged, the marker is
+    cleared and the run stops. Rerunning the same --out retries only that action, at most MAX_REJECTIONS times.
+    """
+    MAX_REJECTIONS = 3
 
     def __init__(self, out, *, api_key=None, transport=None, timeout=60):
         self.dir = Path(out) / 'decisions'
@@ -792,6 +816,10 @@ class DecisionsClient:
             if saved['requestSha256'] != _sha(request):
                 raise ValueError(f'decision {name}: request changed; use a new --out')
             return saved['response']
+        rejected_path = self.dir / f'{name}.rejected.json'
+        rejected = _read_json(rejected_path) if rejected_path.exists() else []
+        if len(rejected) >= self.MAX_REJECTIONS:
+            raise RuntimeError(f'decision {name}: rejected {len(rejected)} times; inspect {rejected_path.name}')
         try:
             # Exclusive create: a concurrent or earlier attempt that holds the marker blocks this one.
             with open(started, 'x', encoding='utf-8') as marker:
@@ -800,6 +828,12 @@ class DecisionsClient:
             raise RuntimeError(f'decision {name}: outcome unknown from an earlier attempt; inspect before retrying') from None
         began = time.time()
         response = self.transport(request) if self.transport else self._post(request)
+        if isinstance(response, dict) and response.get('error'):
+            rejected.append({'requestSha256': _sha(request), 'at': time.time(), 'error': response['error']})
+            rejected_path.write_text(json.dumps(rejected, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+            started.unlink()
+            raise RuntimeError(f'decision {name} rejected: {response["error"]}; rerun the same --out to retry '
+                               'only this action')
         done.write_text(json.dumps({'requestSha256': _sha(request), 'seconds': round(time.time() - began, 3),
                                     'response': response}, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
         started.unlink()
