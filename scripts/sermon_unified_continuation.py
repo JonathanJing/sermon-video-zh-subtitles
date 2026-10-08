@@ -275,10 +275,13 @@ def validate_evidence_slot(state, slot, ref, *, inputs, references):
                     and expected_binding['requestLimits'] == limits
                     and all(expected_binding[k] == authority[k] for k in ('globalBounds','unitBounds','limits')), 'budget_approval_binding_changed')
             expected_code = controller.code_identity()
+        # Locale-scoped v2 ledgers can spend the cap once per registered locale, as the adapter preflight counts it.
+        locale_count = max(1, len(manifest.get('locales') or [])) \
+            if version == 'sermon-canonical-layer2-budget-authorization-v2' else 1
         require(re.fullmatch('[a-f0-9]{64}', str(binding.get(
                     'executionSha256' if version == 'sermon-study-budget-authorization-v1' else 'configurationSha256','')))
                 and binding.get('codeIdentitySha256') == expected_code
-                and value['authority']['globalBounds']['costMicrousd'] <= manifest['budget']['limitMicroUsd'], 'budget_execution_binding_changed')
+                and value['authority']['globalBounds']['costMicrousd'] * locale_count <= manifest['budget']['limitMicroUsd'], 'budget_execution_binding_changed')
         # Layer 2 v1 and v2 share one approval schema; the scope lives in the binding.
         approval_schema = ('sermon-canonical-layer2-budget-approval-v1' if version.startswith('sermon-canonical-layer2-')
                            else version.replace('authorization','approval'))
