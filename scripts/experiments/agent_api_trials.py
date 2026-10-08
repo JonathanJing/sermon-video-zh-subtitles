@@ -527,6 +527,12 @@ def score_preflight(report, expected, calls, plan_root=None):
             unmatched.append({'requirement': item.get('requirement'), 'checked_with': item['checked_with']})
     # Each required check must also be reported: an item that names the tool it was checked with.
     unreported = sorted({r['tool'] for r in expected.get('requiredChecks', [])} - claimed)
+    # A plan carrying an authorization file must have it listed, since the prompt asks for every authorization.
+    if plan_root is not None and (Path(plan_root) / 'authorization.json').exists() and not any(
+            isinstance(i, dict) and (i.get('kind') == 'authorization'
+                                     or any(t in _text(i.get('requirement')) for t in ('authoriz', '授权')))
+            for i in report.get('items', [])):
+        unreported.append('authorization')
     go_correct = report.get('go') == (not expected['blockers'])
     # go must agree with the report's own blocker items, and no blocker may be invented.
     consistent = report.get('go') == (not blockers)
@@ -843,14 +849,15 @@ class Trials:
                    for row in diagnoses['rows'] if row['arm'] == arm and row['report']]
         case_ids = {c['id'] for c in self.cases}
         targets += [(w['case'], w['diagnosis'], False, w['flaw'], 'refute-planted')
-                    for w in _read_json(WRONG_DIAGNOSES)['diagnoses'] if w['case'] in case_ids]
+                    for w in self._snapshot('wrong', WRONG_DIAGNOSES)['diagnoses'] if w['case'] in case_ids]
         for case_id, diagnosis, correct, flaw, folder in targets:
             case = next(c for c in self.cases if c['id'] == case_id)
             tools = EvidenceTools(case['evidence'], timeline=True)
             # The evidence id ties each refutation payload to the files it was tested against.
             text = (f'Case evidence id {evidence_sha(case["evidence"])[:12]}. '
                     'Diagnosis to test (from another investigator):\n'
-                    + json.dumps({k: diagnosis.get(k) for k in ('category', 'root_cause', 'evidence', 'fix', 'confidence')},
+                    + json.dumps({k: diagnosis.get(k) for k in ('category', 'root_cause', 'evidence', 'fix', 'confidence',
+                                                                    'unknowns')},
                                  ensure_ascii=False, indent=2))
             payload = _payload(self.model, REFUTE_INSTRUCTIONS, tools.definitions(_refutation_schema()), text)
             session = self._session(self.out / folder / case['id'], payload, tools,
@@ -878,7 +885,8 @@ class Trials:
     def risk(self):
         if self.decisions is None:
             raise RuntimeError('risk trial needs a Decisions client')
-        policy = _read_json(RISK)
+        # The policy hashed into scope.json at run start, not a later edit of the file.
+        policy = self._snapshot('policy', RISK)
         rows = self._rows('risk')
         # Identical requests repeated to measure stability; the first keeps the plain id so older runs reuse it.
         for repeat in range(1, self.risk_repeats + 1):
@@ -940,6 +948,13 @@ class Trials:
                 results[stage] = earlier
         return results
 
+    def _snapshot(self, name, path):
+        """Read a fixture file once per run, so the stage uses exactly what its scope bound."""
+        snapshots = self.__dict__.setdefault('_snapshots', {})
+        if name not in snapshots:
+            snapshots[name] = _read_json(path)
+        return snapshots[name]
+
     def _bind_scopes(self, scopes):
         """A stage may rerun into an existing --out only with the same or a wider selection, never a narrower one,
         so its summary always covers every saved result. All stages are checked before any scope is written."""
@@ -965,8 +980,9 @@ class Trials:
         case_ids = {c['id'] for c in self.cases}
         fixtures = sorted(tag(c['id'], [evidence_sha(c['evidence']), c['expected']]) for c in self.cases)
         cases = {**agent, 'prompt': _sha(DIAGNOSE_INSTRUCTIONS)[:12], 'cases': fixtures}
-        planted = sorted(tag(w['case'], w) for w in _read_json(WRONG_DIAGNOSES)['diagnoses'] if w['case'] in case_ids)
-        policy = _read_json(RISK)
+        planted = sorted(tag(w['case'], w) for w in self._snapshot('wrong', WRONG_DIAGNOSES)['diagnoses']
+                         if w['case'] in case_ids)
+        policy = self._snapshot('policy', RISK)
         scopes = {'timeline': {'cases': fixtures, 'scorer': _scorer_identity('timeline')},
                   'diagnose': {**cases, 'scorer': _scorer_identity('diagnose')},
                   'refute': {**cases, 'prompt': _sha([DIAGNOSE_INSTRUCTIONS, REFUTE_INSTRUCTIONS])[:12],
@@ -1023,7 +1039,7 @@ class Trials:
 def _scorer_identity(stage):
     """Hash of the code that turns a stage's sessions into scores, so saved scores never merge across a scorer change."""
     tools = [EvidenceTools, schema_errors, evidence_files]
-    parts = {'timeline': [build_timeline],
+    parts = {'timeline': [build_timeline, _instant, _time_fields, evidence_files],
              'diagnose': [*tools, _diagnosis_schema, score_diagnosis, check_citations, _groups_match, _text, _relative,
                           _arm_summary],
              'refute': [*tools, _diagnosis_schema, score_diagnosis, check_citations, _groups_match, _text, _relative,
@@ -1031,7 +1047,8 @@ def _scorer_identity(stage):
              'preflight': [*tools, _preflight_schema, score_preflight, preflight_check, _check_satisfied, _call_matches,
                            _relative, _groups_match, _text],
              'risk': [score_risk, risk_summary]}[stage]
-    constants = {'preflight': [ARGUMENT_FREE_TERMS, CHECK_VERDICT]}.get(stage, [])
+    constants = {'timeline': [TIMESTAMP.pattern, ERROR_LINE.pattern, END_FIELD.pattern],
+                 'preflight': [ARGUMENT_FREE_TERMS, CHECK_VERDICT]}.get(stage, [])
     return _sha([inspect.getsource(part) for part in parts] + [repr(c) for c in constants])[:12]
 
 
@@ -1086,12 +1103,19 @@ def _sum_decisions_usage(results):
 
 
 def _sum_usage(results):
-    totals = {}
+    """Known token totals plus how many sessions they cover, so a missing read-back never looks like a full total."""
+    totals, covered, missing = {}, 0, []
     for trial in ('diagnose', 'refute', 'preflight'):
         for row in results.get(trial, {}).get('rows', []):
-            for key, value in (row.get('usage') or {}).items():
+            if not row.get('usage'):
+                missing.append(f"{trial}:{row.get('case') or row.get('plan')}" + (f":{row['arm']}" if row.get('arm') else ''))
+                continue
+            covered += 1
+            for key, value in row['usage'].items():
                 totals[key] = totals.get(key, 0) + value
-    return totals or None
+    if not totals and not missing:
+        return None
+    return {**totals, 'sessionsCovered': covered, 'sessionsMissingUsage': missing, 'complete': not missing}
 
 
 # ---------------------------------------------------------------- decisions

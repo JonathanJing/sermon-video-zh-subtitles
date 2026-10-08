@@ -209,7 +209,8 @@ class ScoringTests(unittest.TestCase):
                 {'name': 'compare_plugin_identity', 'arguments': {}}]
         unreported = trials.score_preflight(report, clean['expected'], good, clean['evidence'])
         self.assertFalse(unreported['correct'])
-        self.assertEqual(len(unreported['requiredChecksUnreported']), 4)
+        self.assertEqual(len(unreported['requiredChecksUnreported']), 5)
+        self.assertIn('authorization', unreported['requiredChecksUnreported'])
         # Items that only name the tools, not the dependencies the calls checked, do not count.
         unrelated = {'go': True, 'items': [{'requirement': 'item ' + c['name'], 'status': 'ok',
                                             'checked_with': c['name']} for c in good]}
@@ -219,6 +220,11 @@ class ScoringTests(unittest.TestCase):
         report = {'go': True, 'items': [
             {'requirement': ' '.join([c['name'], *c['arguments'].values()]), 'status': 'ok', 'checked_with': c['name']}
             for c in good]}
+        # Every tool-backed item is there, but the plan's authorization is not listed.
+        self.assertEqual(trials.score_preflight(report, clean['expected'], good, clean['evidence'])
+                         ['requiredChecksUnreported'], ['authorization'])
+        report['items'].append({'requirement': 'authorization.json covers this round', 'kind': 'authorization',
+                                'status': 'ok', 'checked_with': 'none'})
         self.assertTrue(trials.score_preflight(report, clean['expected'], good, clean['evidence'])['correct'])
         wrong_target = [{'name': 'check_staged', 'arguments': {'path': 'xdocs/series-terminology.zh.md'}},
                         {'name': 'check_out_path', 'arguments': {
@@ -233,6 +239,8 @@ class ScoringTests(unittest.TestCase):
                      ('relative --out path artifacts/r/diagnostic-audio-r4', 'check_out_path'),
                      ('docs/series-terminology.zh.md not staged', 'check_staged'),
                      ('symlink into blobs not under the mount', 'check_mount_resolves'))]
+        blockers.append({'requirement': 'round authorization', 'kind': 'authorization', 'status': 'ok',
+                         'checked_with': 'none'})
         self.assertTrue(trials.score_preflight({'items': blockers, 'go': False}, planted['expected'], planted_calls,
                                                planted['evidence'])['correct'])
         missed = trials.score_preflight({'items': [], 'go': False}, planted['expected'], good, planted['evidence'])
@@ -929,6 +937,21 @@ class LatestReviewTests(unittest.TestCase):
             make(case_ids=['f01-plugin-identity', 'f03-relative-out'], risk_repeats=1).run('all')
         self.assertEqual((out / 'scope.json').read_text(), before)
         self.assertIn('scorer', json.loads(before)['diagnose'])
+
+    def test_usage_totals_say_which_sessions_they_cover(self):
+        results = {'diagnose': {'rows': [{'case': 'a', 'arm': 'raw', 'usage': {'input_tokens': 10}},
+                                         {'case': 'a', 'arm': 'timeline', 'usage': None}]}}
+        usage = trials._sum_usage(results)
+        self.assertEqual(usage['input_tokens'], 10)
+        self.assertEqual(usage['sessionsCovered'], 1)
+        self.assertEqual(usage['sessionsMissingUsage'], ['diagnose:a:timeline'])
+        self.assertFalse(usage['complete'])
+
+    def test_risk_uses_the_policy_bound_at_run_start(self):
+        trial = trials.Trials('unused', client=None, model='m', backend='fake')
+        first = trial._snapshot('policy', trials.RISK)
+        with patch.object(trials, '_read_json', return_value={'actions': [], 'tiers': []}):
+            self.assertIs(trial._snapshot('policy', trials.RISK), first)
 
 
 if __name__ == '__main__':
