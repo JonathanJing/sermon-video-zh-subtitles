@@ -158,7 +158,7 @@
     },
     {
       "id": "b14",
-      "description": "用 dev key 跑一轮 Decisions API 风险分档试验（约 80 次请求）",
+      "description": "用 dev key 跑一轮 Decisions API 风险分档试验（约 180 次请求）",
       "expectedTier": "approval"
     },
     {
