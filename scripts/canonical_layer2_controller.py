@@ -230,7 +230,7 @@ def _inputs(config, locale, view):
 def _locale_capacity(config):
     if config.concurrency_profile:
         return config.concurrency_profile['maxActiveLocales']
-    if config.auto_repair:
+    if getattr(config, 'auto_repair', None):
         return config.auto_repair['maxActiveLocales']
     return MAX_ACTIVE_LAYER2_JOBS
 

@@ -174,10 +174,12 @@ class BudgetStore:
         return canonical_sha256({'chainId': canonical_sha256(request['identity']),
                                  'operationId': request['operationId']})
 
-    def _check_serialized_size(self, ledger):
+    @staticmethod
+    def _check_serialized_size(ledger, max_bytes=None):
+        from scripts.sermon_review_contracts import MAX_BYTES
         # Match the bytes jobs._persist writes, not the smaller canonical JSON.
         require(len((json.dumps(ledger, ensure_ascii=False, indent=2, allow_nan=False) + '\n').encode())
-                <= self.max_ledger_bytes, 'budget_ledger_size_limit')
+                <= (MAX_BYTES if max_bytes is None else max_bytes), 'budget_ledger_size_limit')
 
     def _check_settlement_capacity(self, ledger):
         # Every pending or unknown reservation can still acquire a known result.
@@ -192,11 +194,11 @@ class BudgetStore:
         for row in projected['reservations'].values():
             if row['phase'] != 'result' or row['result']['executionStatus'] == 'outcome_unknown':
                 row.update(phase='result', result=largest)
-        self._check_serialized_size(projected)
+        self._check_serialized_size(projected, self.max_ledger_bytes)
 
     def _save(self, folder, ledger):
         # Ensure we never publish a ledger larger than our bounded reader accepts.
-        self._check_serialized_size(ledger)
+        self._check_serialized_size(ledger, self.max_ledger_bytes)
         jobs._persist(folder / 'state.json', ledger)
 
     def reserve(self, identity, *, operation_id, kind, revision_id, revision_number,
