@@ -454,6 +454,17 @@ def repair_row(failure: dict) -> dict:
 RoundRunner = Callable[[Path, Path | None, dict | None, FailureCollector], dict]
 
 
+def _cache_matches(path: Path, digest: str) -> bool:
+    return path.is_file() and hashlib.sha256(path.read_bytes()).hexdigest() == digest
+
+
+def _evidence_path(out: Path, failure: dict) -> str:
+    """A plugin rejection's evidence is the report's plugin check, not the passing Sol cache."""
+    if "language_plugin_failed" in failure["failureCodes"]:
+        return str(out / "group-failures.json")
+    return str(out / failure["reviewerCache"])
+
+
 def _saved_report(out: Path, request: dict, total_groups: int) -> dict:
     """Load a durable round report and check that its identity and caches still exist."""
     report = json.loads((out / "group-failures.json").read_text(encoding="utf-8"))
@@ -463,8 +474,9 @@ def _saved_report(out: Path, request: dict, total_groups: int) -> dict:
                  "targetLocale", "englishSourcePackageJsonSha256", "anchorManifestSha256",
                  "translationPolicySha256")),
              "Saved group failure report does not match this round")
-    _require(all((out / failure["reviewerCache"]).exists() for failure in report["failures"]),
-             "Saved group failure report references a missing cache")
+    _require(all(_cache_matches(out / failure["reviewerCache"], failure["reviewerCacheSha256"])
+                 for failure in report["failures"]),
+             "Saved group failure report references a missing or changed cache")
     return report
 
 
@@ -528,7 +540,7 @@ def drive(request: dict, total_groups: int, run_round: RoundRunner, out_root: Pa
                     stopped.append({"translationGroupId": failure["translationGroupId"],
                                     "sourceUnitIds": failure["sourceUnitIds"],
                                     "failureCodes": failure["failureCodes"], "reasonCode": reason,
-                                    "evidencePath": str(out / failure["reviewerCache"])})
+                                    "evidencePath": _evidence_path(out, failure)})
             for skipped in report["notDispatched"]:
                 stopped.append({**skipped, "failureCodes": [], "reasonCode": "not_dispatched_after_systemic_stop",
                                 "evidencePath": None})
@@ -545,7 +557,7 @@ def drive(request: dict, total_groups: int, run_round: RoundRunner, out_root: Pa
                     stopped.append({"translationGroupId": failure["translationGroupId"],
                                     "sourceUnitIds": failure["sourceUnitIds"],
                                     "failureCodes": failure["failureCodes"], "reasonCode": "repair_spend_cap",
-                                    "evidencePath": str(out / failure["reviewerCache"])})
+                                    "evidencePath": _evidence_path(out, failure)})
                 for row in rows:
                     if row["translationGroupId"] in capped_ids:
                         row["repaired"], row["decision"] = False, "repair_spend_cap"

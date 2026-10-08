@@ -228,11 +228,18 @@ def _inputs(config, locale, view):
 
 
 def _unreconciled_paid_call(config, locale):
-    """A started-call marker survives only while a paid request's outcome is
-    unknown: the runner removes it once the response is saved. A job that
-    failed with one still present is uncertainty, not a finished failure."""
+    """A started-call marker with neither a validated cache nor a saved raw
+    response is an unknown paid outcome. The runner's reconciliation check uses
+    the same rule, so one malformed but persisted response does not block other
+    locales."""
     lane = config.lanes.get(locale)
-    return lane is not None and lane['output'].is_dir() and any(lane['output'].rglob('*.started.json'))
+    if lane is None or not lane['output'].is_dir():
+        return False
+    for marker in lane['output'].rglob('*.started.json'):
+        stem = marker.name.removesuffix('.started.json')
+        if not (marker.with_name(f'{stem}.json').is_file() or marker.with_name(f'{stem}.raw.json').is_file()):
+            return True
+    return False
 
 
 def _locale_capacity(config):
