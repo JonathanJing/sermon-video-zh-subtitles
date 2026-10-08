@@ -1354,9 +1354,52 @@ class LatestReviewTests(unittest.TestCase):
                  repo + '/snapshots/3c1e9a7': False, repo + '/snapshots/other': False, '/tmp': False,
                  repo + '/snapshots': False, '/home/spark/.cache/huggingface/hub-other': False}
         for mount, expected in cases.items():
-            (root / 'plan' / 'docker-asr-mount.txt').write_text(f'-v {mount}:/asr-hub:ro   (back-ASR --model x)\n')
+            (root / 'plan' / 'docker-asr-mount.txt').write_text(f'-v {mount}:/asr-hub:ro   (back-ASR --model /asr-hub/m)\n')
             with self.subTest(mount=mount):
                 self.assertIs(trials.preflight_check(root / 'plan', 'check_mount_resolves', {})['resolves'], expected)
+        hub = '/home/spark/.cache/huggingface/hub'
+        for line, expected in {f'-v {hub}:/wrong:ro   (back-ASR --model /asr-hub/m)': False,
+                               f'-v {hub}:/asr-hub   (back-ASR --model /asr-hub-other/m)': False,
+                               f'-v {hub}:/asr-hub:ro   (back-ASR)': False,
+                               f'-v {hub}:/asr-hub:ro   (back-ASR --model /asr-hub/../etc)': False,
+                               f'-v {hub}:/asr-hub   (back-ASR --model /asr-hub/m)': True}.items():
+            (root / 'plan' / 'docker-asr-mount.txt').write_text(line + '\n')
+            with self.subTest(line=line):
+                self.assertIs(trials.preflight_check(root / 'plan', 'check_mount_resolves', {})['resolves'], expected)
+
+    def test_symlinked_check_inputs_are_refused_before_dispatch(self):
+        root = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, root)
+        for name in trials.CHECK_INPUTS + ('authorization.json',):
+            shutil.copytree(trials.PLANS / 'p02-clean', root / 'p02-clean', dirs_exist_ok=True)
+            target = root / 'p02-clean' / 'plan' / name
+            outside = root / f'outside-{name}'
+            outside.write_bytes(target.read_bytes() if target.exists() else b'{}')
+            target.unlink(missing_ok=True)
+            target.symlink_to(outside)
+            with self.subTest(name=name), self.assertRaisesRegex(ValueError, 'regular file'):
+                trials.load_plans(root)
+            with self.subTest(name=name, stage='check'):
+                if name in trials.CHECK_INPUTS:
+                    with self.assertRaisesRegex(ValueError, 'regular file'):
+                        tool = {'staging-manifest.txt': ('check_staged', {'path': 'a'}),
+                                'docker-asr-mount.txt': ('check_mount_resolves', {}),
+                                'spark-hf-listing.txt': ('check_mount_resolves', {}),
+                                'fixture-manifest.json': ('compare_plugin_identity', {}),
+                                'current-plugin.json': ('compare_plugin_identity', {})}[name]
+                        trials.preflight_check(root / 'p02-clean' / 'plan', *tool)
+            shutil.rmtree(root / 'p02-clean')
+
+    def test_malformed_decisions_usage_is_counted_missing(self):
+        response = {'answers': [{'name': 'tier', 'choice': 'approval', 'confidence': 0.9}]}
+        rows = [{**trials.score_risk({'id': 'x', 'expectedTier': 'approval'}, {**response, 'usage': usage}), 'repeat': 1}
+                for usage in ('lots', [1, 2], {'input_tokens': 3, 'note': 'x'})]
+        self.assertEqual([('malformedUsage' in r) for r in rows], [True, True, False])
+        totals = trials._sum_decisions_usage({'risk': {'rows': rows}})
+        self.assertEqual((totals['input_tokens'], totals['requestsCovered'], totals['complete']), (3, 1, False))
+        self.assertEqual(trials._usage({'usage': 'lots'}), None)
+        self.assertEqual(trials._usage({'usage': {'turns': ['x', {'usage': 'y'}, {'usage': {'input_tokens': 2}}]}}),
+                         {'input_tokens': 2})
 
     def test_zero_tool_call_budget_is_refused(self):
         with self.assertRaises(SystemExit), patch('sys.stderr'):

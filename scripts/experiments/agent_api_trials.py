@@ -101,6 +101,13 @@ def load_plans(root=PLANS, only=None):
             continue
         if directory.is_symlink() or (directory / 'plan').is_symlink() or not (directory / 'plan').is_dir():
             raise ValueError(f'plan {directory.name} has no plan directory of its own')
+        # Refused before dispatch: a symlinked check input would escape the evidence the scope hash covers.
+        optional = ('authorization.json',) if (directory / 'plan' / 'authorization.json').is_symlink() else ()
+        for name in CHECK_INPUTS + optional:
+            try:
+                _check_input(directory / 'plan', name)
+            except ValueError as error:
+                raise ValueError(f'plan {directory.name}: {error}') from None
         expected = _read_json(directory / 'expected.json')
         _check_plan_key(directory.name, expected)
         plans.append({'id': directory.name, 'evidence': directory / 'plan', 'expected': expected})
@@ -527,11 +534,24 @@ def _check_receipts(plan_root, calls):
     return receipts
 
 
+# Files the deterministic checks open; each must be a regular file of the plan, never a symlink, so a check reads
+# only what the bound evidence hash covers.
+CHECK_INPUTS = ('staging-manifest.txt', 'docker-asr-mount.txt', 'spark-hf-listing.txt', 'fixture-manifest.json',
+                'current-plugin.json')
+
+
+def _check_input(plan_root, name):
+    path = Path(plan_root) / name
+    if path.is_symlink() or not path.is_file():
+        raise ValueError(f'{name} must be a regular file of the plan')
+    return path
+
+
 def preflight_check(plan_root, name, arguments):
     plan_root = Path(plan_root)
     if name == 'check_staged':
         target = _relative(arguments['path'])
-        entries = [line.strip() for line in (plan_root / 'staging-manifest.txt').read_text().splitlines()
+        entries = [line.strip() for line in _check_input(plan_root, 'staging-manifest.txt').read_text().splitlines()
                    if line.strip() and not line.startswith('#')]
         covered = target is not None and any(target == e or (e.endswith('/') and target.startswith(e)) for e in entries)
         return {'path': target, 'staged': covered, 'manifest': entries}
@@ -544,10 +564,17 @@ def preflight_check(plan_root, name, arguments):
                 'relative_to_root_ok': inside,
                 'note': 'run_spark_diagnostic_audio.py calls (out / ...).relative_to(ROOT) after the job hold is created'}
     if name == 'check_mount_resolves':
-        mount = posixpath.normpath((plan_root / 'docker-asr-mount.txt').read_text().split()[1].split(':')[0])
+        # The planned `-v host:container[:mode]` mapping and the `--model` path the container will open.
+        text = _check_input(plan_root, 'docker-asr-mount.txt').read_text()
+        mapping = re.search(r'-v\s+([^\s:]+):([^\s:]+)(?::\S+)?', text)
+        model = re.search(r'--model\s+(\S+?)\)?(?:\s|$)', text)
+        mount, container = posixpath.normpath(mapping.group(1)), posixpath.normpath(mapping.group(2))
+        model_path = posixpath.normpath(model.group(1)) if model else None
+        model_inside = model_path is not None and (model_path == container
+                                                   or model_path.startswith(container.rstrip('/') + '/'))
         # Resolve every snapshot symlink in the host listing against the model repo it lists, and require both the
         # link and its target to sit inside the host directory the container mounts.
-        lines = (plan_root / 'spark-hf-listing.txt').read_text().splitlines()
+        lines = _check_input(plan_root, 'spark-hf-listing.txt').read_text().splitlines()
         repo = lines[0].strip()
         links = [re.fullmatch(r'\s*(\S+) -> (\S+)', line) for line in lines[1:]]
         links = [(posixpath.join(repo, m.group(1)), m.group(2)) for m in links if m]
@@ -555,12 +582,14 @@ def preflight_check(plan_root, name, arguments):
 
         def inside(path):
             return path == mount or path.startswith(mount.rstrip('/') + '/')
-        resolves = bool(links) and all(inside(link) and inside(target) for (link, _), target in zip(links, targets))
-        return {'hostMount': mount, 'symlinkTargets': sorted(set(targets)),
+        resolves = model_inside and bool(links) and all(inside(link) and inside(target)
+                                                        for (link, _), target in zip(links, targets))
+        return {'hostMount': mount, 'containerMount': container, 'model': model_path, 'modelInsideMount': model_inside,
+                'symlinkTargets': sorted(set(targets)),
                 'blobsInsideMount': bool(targets) and all(inside(t) for t in targets), 'resolves': resolves}
     if name == 'compare_plugin_identity':
-        frozen = _read_json(plan_root / 'fixture-manifest.json')['pluginImplementationSha256']
-        current = _read_json(plan_root / 'current-plugin.json')['implementationSha256']
+        frozen = _read_json(_check_input(plan_root, 'fixture-manifest.json'))['pluginImplementationSha256']
+        current = _read_json(_check_input(plan_root, 'current-plugin.json'))['implementationSha256']
         return {'frozen': frozen, 'current': current, 'equal': frozen == current}
     raise ValueError('unknown preflight check')
 
@@ -933,7 +962,7 @@ def _poll_usage(client, session_id):
         usage = _usage({'usage': client.retrieve_session(session_id).get('usage')})
         if usage is None:
             # Same fallback as the shared runner: usage may appear only on the turns.
-            turns = [t for t in client.list_turns(session_id) if isinstance(t.get('usage'), dict)]
+            turns = [t for t in client.list_turns(session_id) if isinstance(t, dict) and isinstance(t.get('usage'), dict)]
             usage = _usage({'usage': {'turns': turns}}) if turns else None
         return usage
     except Exception:
@@ -942,10 +971,12 @@ def _poll_usage(client, session_id):
 
 def _usage(result):
     totals = {}
-    usage = result.get('usage') or {}
+    # Usage comes back from a beta endpoint, so anything that is not an object is ignored rather than trusted.
+    usage = result.get('usage') if isinstance(result.get('usage'), dict) else {}
     rows = usage.get('turns') if isinstance(usage.get('turns'), list) else [{'usage': usage}]
     for row in rows:
-        for key, value in (row.get('usage') or {}).items():
+        row_usage = row.get('usage') if isinstance(row, dict) else None
+        for key, value in (row_usage if isinstance(row_usage, dict) else {}).items():
             if isinstance(value, (int, float)) and not isinstance(value, bool):
                 totals[key] = totals.get(key, 0) + value
     return totals or None
@@ -1441,7 +1472,7 @@ def _sum_decisions_usage(results):
     """Known Decisions token totals plus which requests they cover, as for the Agents sessions."""
     totals, covered, missing = {}, 0, []
     for row in results.get('risk', {}).get('rows', []):
-        if not row.get('usage'):
+        if not isinstance(row.get('usage'), dict) or not row['usage']:
             missing.append(f"{row['id']}:r{row.get('repeat', 1)}")
             continue
         covered += 1
@@ -1458,13 +1489,14 @@ def _sum_usage(results):
     totals, covered, missing = {}, 0, []
     for trial in ('diagnose', 'refute', 'preflight'):
         for row in results.get(trial, {}).get('rows', []):
-            if not row.get('usage'):
+            if not isinstance(row.get('usage'), dict) or not row['usage']:
                 missing.append(f"{trial}:{row.get('case') or row.get('plan')}" + (f":{row['arm']}" if row.get('arm') else '')
                                + (':planted' if row.get('planted') else ''))
                 continue
             covered += 1
             for key, value in row['usage'].items():
-                totals[key] = totals.get(key, 0) + value
+                if isinstance(value, (int, float)) and not isinstance(value, bool):
+                    totals[key] = totals.get(key, 0) + value
     if not totals and not missing:
         return None
     return {**totals, 'sessionsCovered': covered, 'sessionsMissingUsage': missing, 'complete': not missing}
@@ -1524,7 +1556,10 @@ def score_risk(action, response):
             'refusal': any(a.get('type') == 'refusal' for a in answers.values()),
             **({'malformedResponse': True} if malformed_response else {}),
             'error': body.get('error'),
-            'usage': body.get('usage')}
+            # A non-object usage is kept as text and counted as missing usage, never aggregated.
+            **({'malformedUsage': repr(body['usage'])}
+               if body.get('usage') is not None and not isinstance(body['usage'], dict) else {}),
+            'usage': body.get('usage') if isinstance(body.get('usage'), dict) else None}
 
 
 def risk_summary(rows):
