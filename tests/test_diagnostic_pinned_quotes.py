@@ -5,6 +5,8 @@ import unittest
 from unittest.mock import patch
 
 from scripts import codex_layer2_diagnostic as diagnostic
+from scripts import cuv_scripture
+from scripts import scripture_adjudication as adjudication
 from scripts import target_language_policy as policies
 from scripts import target_language_rule_preflight as preflight
 from scripts.language_review_plugins import diagnostic_pinned_quotes as quotes
@@ -35,12 +37,26 @@ class PinnedQuoteTests(unittest.TestCase):
         self.plugin = h.root / 'diagnostic-pinned-plugin.py'
         h.policy = quotes.freeze_quote_plugin(h.source, h.anchor, h.plan, h.policy, self.bindings, self.plugin)
 
+    def receipt(self):
+        # Synthetic test receipt built from the pinned CUV text. It is never a human approval.
+        h = self.helper
+        text = cuv_scripture.CuvLibrary.from_path().lookup('REV 4:2-3')['text']
+        return {'schemaVersion': adjudication.SCHEMA, 'targetLocale': 'zh-Hans',
+            'bindings': {'source.json': policies.canonical_sha256(h.source),
+                         'anchor.json': policies.canonical_sha256(h.anchor),
+                         'group-plan.json': policies.canonical_sha256(h.plan)},
+            'decision': 'approved', 'decidedBy': 'synthetic test reviewer', 'decidedByRole': 'human_reviewer',
+            'reviewedAt': '2026-10-08T00:00:00+00:00',
+            'candidates': [{'candidateId': 'test-quote-1', 'sourceUnitIds': [h.anchor['sourceUnits'][0]['sourceUnitId']],
+                'classification': 'direct_quote', 'reference': 'REV 4:2-3', 'editionId': 'CUV', 'exactSentence': text}]}
+
     def freeze(self):
         h = self.helper
         return diagnostic.freeze_fixture(h.source, h.anchor, h.policy, h.plan, self.plugin, h.fixture,
             authorization_ref='isolated test', code_commit='a' * 40, translator_model='gpt-6.1-sol',
             scripture_classification='contains_direct_quotations',
-            source_quotation_units=[h.anchor['sourceUnits'][0]['sourceUnitId']])
+            source_quotation_units=[h.anchor['sourceUnits'][0]['sourceUnitId']],
+            scripture_adjudication=self.receipt())
 
     def test_complete_machine_chain_pending_citation_never_enters_formal(self):
         h = self.helper
@@ -68,7 +84,8 @@ class PinnedQuoteTests(unittest.TestCase):
             if change == 'provenance': bad['provenance']['status'] = 'approved'
             with self.subTest(change=change), self.assertRaises(ValueError):
                 quotes.validate_bindings(bad, request, h.policy, h.plan)
-        with self.assertRaisesRegex(ValueError, 'quotation annotation'):
+        # Without an adjudication receipt the freeze refuses before the annotation check.
+        with self.assertRaisesRegex(ValueError, 'scripture_adjudication_required'):
             diagnostic.freeze_fixture(h.source, h.anchor, h.policy, h.plan, self.plugin, h.fixture,
                 authorization_ref='test', code_commit='a' * 40, scripture_classification='contains_direct_quotations')
 

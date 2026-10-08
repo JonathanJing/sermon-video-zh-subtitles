@@ -225,7 +225,7 @@ class DiagnosticChainTests(unittest.TestCase):
 
     def test_structural_plugin_rejects_bound_direct_scripture_before_any_call(self):
         self.structural_policy()
-        with self.assertRaisesRegex(ValueError, 'does not support direct'):
+        with self.assertRaisesRegex(ValueError, 'scripture_adjudication_required'):
             self.freeze(scripture_classification='contains_direct_quotations',
                         source_quotation_units=[self.anchor['sourceUnits'][0]['sourceUnitId']])
         self.assertFalse(self.fixture.exists())

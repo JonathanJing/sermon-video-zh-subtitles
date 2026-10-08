@@ -2,6 +2,7 @@
 from __future__ import annotations
 import argparse
 import copy
+import hashlib
 import json
 import re
 from pathlib import Path
@@ -37,7 +38,7 @@ def artifact_directory(path):
 
 def freeze_fixture(source, anchor, policy, plan, plugin, out, *, authorization_ref, code_commit,
                    translator_model=None, scripture_classification='not_reviewed', source_quotation_units=(),
-                   concurrency_profile=None):
+                   concurrency_profile=None, scripture_adjudication=None):
     """Freeze supplied unapproved Layer 1 bytes, never manufacture review receipts."""
     out, plugin = artifact_directory(out), Path(plugin).resolve()
     require(not out.exists(), 'Diagnostic fixture requires a new directory')
@@ -68,6 +69,17 @@ def freeze_fixture(source, anchor, policy, plan, plugin, out, *, authorization_r
                 'sourceWindow': {k: source['source']['approvedWindow'][k] for k in ('startSeconds', 'endSeconds')},
                 'anchorTimeline': 'relative_to_frozen_window_start',
                 'sourceUnits': len(anchor['sourceUnits']), 'groups': len(plan)}
+    receipt_bytes = None
+    if scripture_classification == 'contains_direct_quotations':
+        # A human adjudication receipt must cover every flagged unit before freezing.
+        from scripts import scripture_adjudication as adjudication
+        require(scripture_adjudication is not None, 'scripture_adjudication_required')
+        bindings = {name: policies.canonical_sha256(material[name]) for name in adjudication.BINDING_KEYS}
+        adjudication.validate_receipt(scripture_adjudication, target_locale=policy['targetLocale'],
+            bindings=bindings, flagged_units=list(source_quotation_units))
+        receipt_bytes = (json.dumps(scripture_adjudication, ensure_ascii=False, indent=2) + '\n').encode('utf-8')
+        manifest['scriptureAdjudication'] = {'path': 'scripture-adjudication.json',
+                                             'sha256': hashlib.sha256(receipt_bytes).hexdigest()}
     if concurrency_profile is not None:
         from scripts.production_concurrency_profile import validate_profile
         manifest['concurrencyProfile'] = validate_profile(concurrency_profile)
@@ -86,6 +98,8 @@ def freeze_fixture(source, anchor, policy, plan, plugin, out, *, authorization_r
     with work_lock(out):
         for name, value in material.items():
             save(out / name, value)
+        if receipt_bytes is not None:
+            (out / 'scripture-adjudication.json').write_bytes(receipt_bytes)
         save(out / 'fixture-manifest.json', manifest)
         save(out / 'diagnostic-context.json', context)
     return manifest
@@ -163,6 +177,12 @@ def load_fixture(directory):
         require(policy['batching']['workers'] == 1, 'CLI diagnostic runs one group and locale at a time')
     runner.group_plan(request, anchor, plan)
     _check_boundaries(source, anchor)
+    if manifest.get('scriptureClassification') == 'contains_direct_quotations':
+        # Re-admit the frozen human receipt before any model dispatch can start.
+        from scripts import scripture_adjudication as adjudication
+        adjudication.require_admitted(manifest, directory, target_locale=policy['targetLocale'],
+            bindings={name: manifest['files'][name] for name in adjudication.BINDING_KEYS},
+            flagged_units=list(manifest.get('sourceQuotationUnits') or []))
     _check_plugin_scope(policy, anchor, plugin, manifest)
     receipt = runner.rule_preflight.preflight(request, policy, plugin, plan)
     return source, anchor, policy, plan, plugin, request, receipt, context, manifest
