@@ -418,6 +418,11 @@ class RunTests(unittest.TestCase):
         summary = json.loads((self.out / 'summary.json').read_text())
         self.assertEqual(summary['status'], 'failed')
         self.assertEqual(sum(a['cases'] for a in summary['diagnoseByArm'].values()), 3)
+        # A later successful stage keeps the merged summary partial while the diagnosis is incomplete.
+        self.make(max_sessions=3).run('risk')
+        summary = json.loads((self.out / 'summary.json').read_text())
+        self.assertEqual(summary['status'], 'partial')
+        self.assertEqual(summary['partialStages'], ['diagnose'])
 
     def test_slow_decisions_response_hits_the_total_deadline(self):
         class Body:
@@ -692,6 +697,16 @@ class ScopeTests(unittest.TestCase):
         make(risk_repeats=2).run('risk')
         with self.assertRaises(ValueError):
             make(risk_repeats=1).run('risk')
+        # Session limits bind too: a wider case list under other limits would mix runtime conditions.
+        with self.assertRaisesRegex(ValueError, 'narrower or different'):
+            make(case_ids=['f01-plugin-identity', 'f03-relative-out', 'f06-zero-inference-seconds'],
+                 max_tool_calls=99).run('diagnose')
+        # Provenance comes from the bound stages: a standalone timeline run does not relabel saved fake results.
+        trials.Trials(out, client=None, model='gpt-6-luna', backend='deterministic').run('timeline')
+        summary = json.loads((out / 'summary.json').read_text())
+        self.assertEqual(summary['backend'], 'fake')
+        self.assertEqual(summary['agentModel'], 'gpt-6-luna')
+        self.assertEqual(summary['stageScopes']['diagnose']['backend'], 'fake')
 
     def test_failure_summary_keeps_stages_finished_by_an_earlier_run(self):
         (trials.ROOT / 'artifacts').mkdir(exist_ok=True)

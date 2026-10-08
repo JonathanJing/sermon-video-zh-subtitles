@@ -290,9 +290,12 @@ class EvidenceTools:
         call = {'name': name, 'arguments': arguments}
         self.calls.append(call)
         if self.log_path is not None:
-            # Append before handling so a resumed session still sees every call made before a crash.
+            # Appended and synced before handling, so a resumed session still sees every call made before a crash,
+            # including one whose durable tool receipt the runner will reuse without calling the handler again.
             with open(self.log_path, 'a', encoding='utf-8') as log:
                 log.write(json.dumps(call, ensure_ascii=False) + '\n')
+                log.flush()
+                os.fsync(log.fileno())
         if name == 'list_files':
             return {'files': [{'path': str(p.relative_to(self.root)), 'bytes': p.stat().st_size} for p in self._files()]}
         if name == 'read_file':
@@ -622,7 +625,8 @@ def run_session(client, session_dir, payload, tools, *, max_seconds, max_tool_ca
             raise ValueError(f'{session_dir.name}: payload or answer key changed since the first attempt; use a new --out')
     else:
         binding_path.parent.mkdir(parents=True, exist_ok=True)
-        binding_path.write_text(json.dumps(binding) + '\n', encoding='utf-8')
+        # Durable before the session can be created, so a crash never leaves a dispatched session without its key.
+        _write_durably(binding_path, json.dumps(binding) + '\n')
     # The runner writes state.json before creating the remote session; without it nothing was dispatched.
     resume = (session_dir / 'state.json').exists()
     calls_path = session_dir.parent / (session_dir.name + '.calls.jsonl')
@@ -739,14 +743,14 @@ def _usage(result):
 # ---------------------------------------------------------------- trials
 
 def _covers(scope, saved):
-    """Lists may only grow, counts may only rise, anything else must match."""
+    """Lists may only grow, the repeat count may only rise, anything else (backend, model, limits) must match."""
     if scope.keys() != saved.keys():
         return False
     for key, old in saved.items():
         new = scope[key]
         if isinstance(old, list):
             ok = set(old) <= set(new)
-        elif isinstance(old, int) and not isinstance(old, bool):
+        elif key == 'repeats':
             ok = new >= old
         else:
             ok = new == old
@@ -938,12 +942,15 @@ class Trials:
 
     def _run(self, trial):
         results = self.results
-        cases = {'model': self.model, 'cases': sorted(c['id'] for c in self.cases)}
+        # Backend, model and session limits must match across reruns, so every merged row ran under one condition.
+        agent = {'backend': self.backend, 'model': self.model, 'maxToolCalls': self.max_tool_calls,
+                 'maxSeconds': self.max_seconds}
+        cases = {**agent, 'cases': sorted(c['id'] for c in self.cases)}
         planted = sorted(w['case'] for w in _read_json(WRONG_DIAGNOSES)['diagnoses'] if w['case'] in cases['cases'])
         for stage, scope in (('timeline', {'cases': cases['cases']}), ('diagnose', cases),
                              ('refute', {**cases, 'planted': planted}),
-                             ('preflight', {'model': self.model, 'plans': sorted(p['id'] for p in self.plans)}),
-                             ('risk', {'model': DECISIONS_MODEL, 'repeats': self.risk_repeats,
+                             ('preflight', {**agent, 'plans': sorted(p['id'] for p in self.plans)}),
+                             ('risk', {'backend': self.backend, 'model': DECISIONS_MODEL, 'repeats': self.risk_repeats,
                                        'actions': sorted(a['id'] for a in _read_json(RISK)['actions'])})):
             if trial == 'all' or trial == stage or (trial == 'refute' and stage == 'diagnose'):
                 self._bind_scope(stage, scope)
@@ -957,14 +964,25 @@ class Trials:
             results['preflight'] = self.write('preflight', self._timed('preflight', self.preflight))
         if trial in ('risk', 'all'):
             results['risk'] = self.write('risk', self._timed('risk', self.risk))
-        summary = self._summary(self._merged_results(), status='completed')
+        merged = self._merged_results()
+        # A stage still partial from an earlier failed invocation keeps the whole summary partial.
+        summary = self._summary(merged, status='partial' if any(r.get('partial') for r in merged.values()) else 'completed')
         self.write('summary', summary)
         return summary
 
     def _summary(self, results, *, status):
-        return {'schemaVersion': 'agent-api-trials-summary-v1', 'status': status, 'backend': self.backend,
-                'evidence': {'fake': 'fake_plumbing_not_evidence', 'live': 'live_dev_api'}.get(self.backend, self.backend),
-                'agentModel': self.model, 'decisionsModel': DECISIONS_MODEL,
+        # Provenance comes from each merged stage's bound scope, not from this invocation's options.
+        path = self.out / 'scope.json'
+        scopes = {stage: scope for stage, scope in (_read_json(path) if path.exists() else {}).items() if stage in results}
+        backends = sorted({scope['backend'] for scope in scopes.values() if 'backend' in scope}) or ['deterministic']
+        backend = backends[0] if len(backends) == 1 else 'mixed'
+        models = sorted({scopes[s]['model'] for s in ('diagnose', 'refute', 'preflight') if s in scopes})
+        return {'schemaVersion': 'agent-api-trials-summary-v1', 'status': status, 'backend': backend,
+                'evidence': {'fake': 'fake_plumbing_not_evidence', 'live': 'live_dev_api'}.get(backend, backend),
+                'agentModel': models[0] if len(models) == 1 else (models or None),
+                'decisionsModel': DECISIONS_MODEL,
+                'partialStages': sorted(stage for stage, result in results.items() if result.get('partial')),
+                'stageScopes': scopes,
                 'agentSessionsStarted': self.sessions_started,
                 'timeline': results.get('timeline', {}).get('cases'),
                 'diagnoseByArm': results.get('diagnose', {}).get('byArm'),
