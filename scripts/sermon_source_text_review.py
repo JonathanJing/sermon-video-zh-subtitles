@@ -1,6 +1,8 @@
 """Apply evidence-bound source text corrections without rewriting raw ASR.
 
-This module validates an existing conversational model review. It does not
+This module validates an existing model review: a user-directed conversational
+review, or a machine audio adjudication written by
+``source_meaning_machine_adjudication`` from the bound audio. It does not
 generate a review, assess the audio, or create human approval. Only the text
 field of explicitly reviewed segments changes; callers retain the raw inputs.
 Relative evidence paths are resolved against the review file's directory.
@@ -22,6 +24,8 @@ MODEL = "gpt-6.1-sol"
 SUPPORTED_MODELS = {MODEL, "gpt-6-astra"}
 STATUS = "approved_for_source_correction"
 AUTHORITY = "user_directed_conversation_review"
+MACHINE_AUTHORITY = "machine_audio_adjudication"
+AUTHORITIES = {AUTHORITY, MACHINE_AUTHORITY}
 PATCH_FIELDS = {
     "segmentId", "originalTextSha256", "correctedText", "reason", "evidenceSha256",
 }
@@ -95,7 +99,7 @@ def apply_review(
         and review.get("model") in SUPPORTED_MODELS
         and review.get("humanApproval") is False
         and review.get("status") == STATUS
-        and review.get("authority") == AUTHORITY
+        and review.get("authority") in AUTHORITIES
     ):
         raise ValueError("A conversational source correction review with model identity is required")
     reviewed_by = _require_text(review.get("reviewedBy"), "reviewedBy")
@@ -190,7 +194,7 @@ def apply_review(
         "model": review["model"],
         "humanApproval": False,
         "status": STATUS,
-        "authority": AUTHORITY,
+        "authority": review["authority"],
         "reviewedAt": reviewed_at,
         "reviewedBy": reviewed_by,
         "reviewPath": str(review_path),
