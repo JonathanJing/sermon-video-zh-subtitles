@@ -1020,6 +1020,24 @@ class LatestReviewTests(unittest.TestCase):
         self.assertTrue(json.loads((out / 'timeline-summary.json').read_text())['partial'])
         self.assertEqual((out / 'timings.tsv').read_text().splitlines()[1].split('\t')[:2], ['timeline', 'fail'])
 
+    def test_torn_final_call_record_is_dropped(self):
+        out, _make = self.make_trials()
+        out.mkdir(parents=True)
+        path = out / 's.calls.jsonl'
+        path.write_text('{"name": "list_files"}\n{"name": "read_')
+        self.assertEqual(trials._read_calls(path), [{'name': 'list_files'}])
+        path.write_text('{"name": "read_\n{"name": "list_files"}\n')
+        with self.assertRaises(json.JSONDecodeError):
+            trials._read_calls(path)
+
+    def test_checkpoint_keeps_an_unchanged_complete_stage_complete(self):
+        out, make = self.make_trials(risk_repeats=1)
+        make().run('risk')
+        trial = make()
+        trial._rows('risk').append(json.loads((out / 'risk.json').read_text())['rows'][0])
+        trial._checkpoint('risk')
+        self.assertNotIn('partial', json.loads((out / 'risk.json').read_text()))
+
     def test_checkpoint_keeps_saved_rows_this_run_has_not_reached(self):
         out, make = self.make_trials()
         out.mkdir(parents=True)

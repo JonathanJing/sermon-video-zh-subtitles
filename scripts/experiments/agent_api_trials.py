@@ -692,7 +692,7 @@ def run_session(client, session_dir, payload, tools, *, max_seconds, max_tool_ca
                            'reconcile it before starting more sessions')
     report = tools.report if tools.report is not None else _recorded_report(session_dir)
     if calls_path.exists():
-        tools.calls = [json.loads(line) for line in calls_path.read_text(encoding='utf-8').splitlines() if line]
+        tools.calls = _read_calls(calls_path)
     usage = _usage(result)
     usage_path = session_dir.parent / (session_dir.name + '.usage.json')
     if usage is None and usage_path.exists():
@@ -708,6 +708,19 @@ def run_session(client, session_dir, payload, tools, *, max_seconds, max_tool_ca
             # Only a completed session's report is scored or refuted; a failed one is kept for inspection.
             'report': report if status == 'completed' else None,
             'uncompletedReport': report if status != 'completed' else None}
+
+
+def _read_calls(path):
+    """Tool-call receipts; a final line torn by a crash mid-append is dropped, any other bad line still fails."""
+    lines = [line for line in path.read_text(encoding='utf-8').splitlines() if line]
+    calls = []
+    for index, line in enumerate(lines):
+        try:
+            calls.append(json.loads(line))
+        except json.JSONDecodeError:
+            if index != len(lines) - 1:
+                raise
+    return calls
 
 
 def _close_interrupted_attempts(meta, session_dir):
@@ -823,10 +836,12 @@ class Trials:
         # Rows saved by an earlier invocation stay in the checkpoint until this run re-scores them, so a crash now
         # cannot drop paid results this run has not reached yet.
         path = self.out / f'{stage}.json'
-        saved = _read_json(path).get('rows', []) if path.exists() else []
+        saved_file = _read_json(path) if path.exists() else {}
         current = {_row_identity(stage, row) for row in self.partial[stage]}
-        rows = [row for row in saved if _row_identity(stage, row) not in current] + self.partial[stage]
-        self.write(stage, {'rows': rows, 'partial': True})
+        rows = [row for row in saved_file.get('rows', []) if _row_identity(stage, row) not in current] + self.partial[stage]
+        # _bind_scopes already marked a new or widened stage partial; an unchanged complete stage being re-read stays
+        # complete, so an interruption while reusing its receipts does not make finished evidence look missing.
+        self.write(stage, {'rows': rows, **({'partial': True} if saved_file.get('partial') or not saved_file else {})})
 
     def _session(self, directory, payload, tools, evaluation):
         # Only saved runner state proves an existing remote session; anything else starts a new one.
@@ -1106,6 +1121,11 @@ class Trials:
 # Read at import, so a test double patched onto a stage cannot change the bound identity.
 STAGE_SOURCES = {name: inspect.getsource(getattr(Trials, name))
                  for name in ('timeline', 'diagnose', 'refute', 'preflight', 'risk', '_session')}
+# The session runner shapes every agent row (report restore, terminal status, usage, elapsed time), so it is bound
+# with its helpers and the shared Agents API module it drives.
+STAGE_SOURCES['runner'] = [inspect.getsource(part) for part in (
+    run_session, _close_interrupted_attempts, _write_meta, _recorded_report, _read_back_usage, _poll_usage, _usage,
+    _read_calls)] + [inspect.getsource(agents)]
 
 
 def _unscored(results):
@@ -1139,7 +1159,8 @@ def _scorer_identity(stage):
                  'diagnose': [*tool_definitions, CATEGORIES], 'refute': [*tool_definitions, CATEGORIES],
                  'preflight': [*tool_definitions, ARGUMENT_FREE_TERMS, CHECK_VERDICT], 'risk': [TIERS]}[stage]
     # The stage method assembles the payload text and the projection a later stage sees, so it is bound too.
-    methods = [STAGE_SOURCES[stage], STAGE_SOURCES['_session']]
+    methods = [STAGE_SOURCES[stage]] + {'timeline': [], 'risk': [STAGE_SOURCES['decisions']]}.get(
+        stage, [STAGE_SOURCES['_session'], STAGE_SOURCES['runner']])
     return _sha([inspect.getsource(part) for part in parts] + methods + [repr(c) for c in constants])[:12]
 
 
@@ -1425,6 +1446,10 @@ class DecisionsClient:
         if 'error' in outcome:
             raise outcome['error']
         return outcome['value']
+
+
+# The Decisions client shapes every risk row (receipts, rejections, retries), so it is bound like the agent runner.
+STAGE_SOURCES['decisions'] = inspect.getsource(DecisionsClient)
 
 
 def fake_decisions(request):
