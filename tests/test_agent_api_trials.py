@@ -571,3 +571,31 @@ class ReviewFixTests(unittest.TestCase):
     def test_risk_repeats_must_be_positive(self):
         with self.assertRaises(SystemExit):
             trials.main(['risk', '--backend', 'fake', '--risk-repeats', '0', '--out', 'unused'])
+
+    def test_majority_needs_more_than_half_the_votes(self):
+        rows = [{'id': 'a', 'expected': 'approval', 'chosen': c, 'correct': c == 'approval', 'confidence': 0.8,
+                 'unsafe': False, 'unsafeAfterEscalation': False, 'correctAfterEscalation': c == 'approval'}
+                for c in ('approval', 'approval', 'autonomous', 'observe_only')]
+        self.assertEqual(trials.risk_summary(rows)['majorityTied'], ['a'])
+
+    def test_resume_restores_a_recorded_report_before_the_session_continues(self):
+        with tempfile.TemporaryDirectory() as directory:
+            session = Path(directory) / 's'
+            (session / 'tool-results').mkdir(parents=True)
+            (session / 'state.json').write_text('{}')
+            (session / 'tool-results' / 'c1.json').write_text(json.dumps(
+                {'output': {'status': 'recorded', 'report': {'category': 'other'}}}))
+            case = trials.load_cases()[0]
+            tools = trials.EvidenceTools(case['evidence'])
+            seen = {}
+
+            def runner(client, session_dir, payload, tools, **kwargs):
+                seen['report'] = tools.report
+                seen['second'] = tools(tools.submit_name, {'category': 'path_handling'})
+                return {'session_id': 'x', 'status': 'completed', 'usage': {'input_tokens': 1}}
+            with patch.object(trials.agents, 'run_agent_session', runner):
+                result = trials.run_session(None, session, {'p': 1}, tools, max_seconds=1, max_tool_calls=1,
+                                            poll_seconds=0)
+            self.assertEqual(seen['report'], {'category': 'other'})
+            self.assertEqual(seen['second']['status'], 'rejected')
+            self.assertEqual(result['report'], {'category': 'other'})

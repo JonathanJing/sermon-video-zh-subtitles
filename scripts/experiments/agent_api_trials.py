@@ -613,6 +613,9 @@ def run_session(client, session_dir, payload, tools, *, max_seconds, max_tool_ca
         _close_interrupted_attempts(meta, session_dir)
         meta['attempts'].append({'startedAt': time.time(), 'seconds': None})
         _write_meta(meta_path, meta)
+    # Restore a report already recorded by an earlier attempt, so the exactly-once guard holds across resume.
+    if resume and tools.report is None:
+        tools.report = _recorded_report(session_dir)
     result = agents.run_agent_session(client, session_dir, payload, tools, max_seconds=max_seconds,
                                       max_tool_calls=max_tool_calls, poll_seconds=poll_seconds, resume=resume)
     # Sum the API time of every attempt; a resumed read of a finished session adds nothing.
@@ -625,11 +628,7 @@ def run_session(client, session_dir, payload, tools, *, max_seconds, max_tool_ca
     if status not in {'completed', 'failed', 'cancelled'} and not result.get('cancellation_observed'):
         raise RuntimeError(f'{session_dir.name}: session ended {status} without observed remote termination; '
                            'reconcile it before starting more sessions')
-    report = tools.report
-    for path in sorted((session_dir / 'tool-results').glob('*.json')):
-        output = _read_json(path).get('output') or {}
-        if report is None and output.get('status') == 'recorded':
-            report = output.get('report')
+    report = tools.report if tools.report is not None else _recorded_report(session_dir)
     if calls_path.exists():
         tools.calls = [json.loads(line) for line in calls_path.read_text(encoding='utf-8').splitlines() if line]
     usage = _usage(result)
@@ -662,6 +661,14 @@ def _close_interrupted_attempts(meta, session_dir):
 def _write_meta(path, meta):
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(meta) + '\n', encoding='utf-8')
+
+
+def _recorded_report(session_dir):
+    for path in sorted((Path(session_dir) / 'tool-results').glob('*.json')):
+        output = _read_json(path).get('output') or {}
+        if output.get('status') == 'recorded':
+            return output.get('report')
+    return None
 
 
 def _read_back_usage(client, session_id, poll_seconds, attempts=5):
@@ -967,9 +974,9 @@ def risk_summary(rows):
     majority = {}
     for action_id, group in by_action.items():
         choices = [r['chosen'] for r in group]
-        counts = sorted((choices.count(c) for c in set(choices)), reverse=True)
-        # A tie has no majority; it is reported as tied, not settled by request order.
-        majority[action_id] = None if len(counts) > 1 and counts[0] == counts[1] else max(set(choices), key=choices.count)
+        leader = max(set(choices), key=choices.count)
+        # A majority needs more than half the votes; anything less is reported as tied, not settled by order.
+        majority[action_id] = leader if choices.count(leader) * 2 > len(choices) else None
     return {'actions': len(by_action), 'requests': len(rows), 'correct': sum(r['correct'] for r in rows),
             'unstable': sorted(i for i, group in by_action.items() if len({r['chosen'] for r in group}) > 1),
             'majorityCorrect': sum(majority[i] == group[0]['expected'] for i, group in by_action.items()),
