@@ -536,3 +536,38 @@ class ReviewFixTests(unittest.TestCase):
             client.transport = lambda _r: self.fail('changed request was sent')
             with self.assertRaises(ValueError):
                 client.decide('a01', {'input': 'two'})
+
+    def test_offset_timestamps_are_read_and_ordered_in_utc(self):
+        self.assertEqual(trials._instant('2026-10-08T04:44:53.9+00:00'), trials._instant('2026-10-08T04:44:53.900Z'))
+        self.assertLess(trials._instant('2026-10-08T05:00:00+02:00'), trials._instant('2026-10-08T04:00:00Z'))
+        case = next(c for c in trials.load_cases() if c['id'] == 'f09-real-benign-gpu-warnings')
+        timeline = trials.build_timeline(case['evidence'])
+        self.assertNotIn('audio-outcome.json', json.dumps(timeline.get('untimed', [])))
+        self.assertIn('audio-outcome.json', json.dumps(timeline['events']))
+
+    def test_malformed_report_is_rejected_so_the_model_can_resubmit(self):
+        plan = next(p for p in trials.load_plans() if p['id'] == 'p02-clean')
+        tools = trials.EvidenceTools(plan['evidence'], preflight=True, submit_name='submit_report')
+        tools.definitions(trials._preflight_schema())
+        result = tools('submit_report', {'go': True, 'items': None, 'summary_zh': 'x'})
+        self.assertEqual(result['status'], 'rejected')
+        self.assertIsNone(tools.report)
+
+    def test_tied_votes_have_no_majority(self):
+        rows = [{'id': 'a', 'expected': 'approval', 'chosen': c, 'correct': c == 'approval', 'confidence': 0.8,
+                 'unsafe': False, 'unsafeAfterEscalation': False, 'correctAfterEscalation': c == 'approval'}
+                for c in ('autonomous', 'approval', 'observe_only')]
+        summary = trials.risk_summary(rows)
+        self.assertEqual(summary['majorityTied'], ['a'])
+        self.assertEqual(summary['majorityCorrect'], 0)
+
+    def test_changed_risk_answer_key_refuses_saved_decision(self):
+        with tempfile.TemporaryDirectory() as directory:
+            client = trials.DecisionsClient(directory, transport=lambda _r: {'output': 'ok'})
+            client.decide('a01', {'input': 'one'}, evaluation={'expectedTier': 'approval'})
+            with self.assertRaises(ValueError):
+                client.decide('a01', {'input': 'one'}, evaluation={'expectedTier': 'observe_only'})
+
+    def test_risk_repeats_must_be_positive(self):
+        with self.assertRaises(SystemExit):
+            trials.main(['risk', '--backend', 'fake', '--risk-repeats', '0', '--out', 'unused'])
