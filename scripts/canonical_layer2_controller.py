@@ -31,6 +31,7 @@ from scripts import sermon_job_liveness as liveness
 from scripts import layer2_api_concurrency as api_concurrency
 from scripts import canonical_layer2_budget as budget_tools
 from scripts import layer2_auto_repair as auto_repair
+from scripts import source_meaning_machine_adjudication as source_meaning
 from contextlib import nullcontext
 from scripts.sermon_execution_harness import work_lock
 from scripts.sermon_release_workflow import _safe_path
@@ -48,8 +49,12 @@ MAX_AUTO_REPAIR_LOCALES = 3
 
 
 def _auto_repair_binding(value):
-    require(isinstance(value, dict) and set(value) == {'routingVersion', 'groupWorkers', 'maxActiveLocales'}
+    required = {'routingVersion', 'groupWorkers', 'maxActiveLocales'}
+    require(isinstance(value, dict) and required <= set(value) <= required | {'sourceMeaningNotes'}
             and value['routingVersion'] == auto_repair.ROUTING_VERSION
+            # Optional: the Layer 1 machine audio adjudication notes (meaning-notes.json beside its receipt)
+            # that ride the repair briefs of the groups holding their units.
+            and (type(value.get('sourceMeaningNotes', 'x')) is str and value.get('sourceMeaningNotes', 'x'))
             and type(value['groupWorkers']) is int
             and 1 <= value['groupWorkers'] <= api_concurrency.MAX_GROUP_WORKERS_PER_LOCALE
             and type(value['maxActiveLocales']) is int
@@ -123,6 +128,10 @@ def load_configuration(path):
     job_root = _path(path.parent, value['jobRoot'])
     input_paths = [path, inspection_path, _path(root, inspection.get('source')),
                    _path(root, inspection.get('anchor'))]
+    if repair_binding and repair_binding.get('sourceMeaningNotes'):
+        notes_path = _path(path.parent, repair_binding['sourceMeaningNotes'])
+        repair_binding['sourceMeaningNotes'] = str(notes_path)
+        input_paths.append(notes_path)
     concurrency_profile = resource_policy = None
     if 'concurrencyProfile' in value:
         from scripts.production_concurrency_profile import load_profile
@@ -480,8 +489,13 @@ def _run_auto_repair(config, lane, source, anchor, policy, api_key, call, progre
                                     progress_callback=progress, predecessor_spans=[admission_span],
                                     completion_spans=completion_spans, failure_collector=collector)
 
+    notes = None
+    if config.auto_repair.get('sourceMeaningNotes'):
+        # Bound to this run's source and anchor and reproduced from their receipt, or refused before dispatch.
+        notes = source_meaning.load_meaning_notes(Path(config.auto_repair['sourceMeaningNotes']),
+                                                  source=source, anchor=anchor)
     receipt = auto_repair.drive(request, total_groups, run_round, rounds_root, repair_ledger_root(config),
-                                group_workers=config.auto_repair['groupWorkers'])
+                                group_workers=config.auto_repair['groupWorkers'], meaning_notes=notes)
     require(receipt['status'] == 'all_groups_passed', 'layer2_auto_repair_stopped')
     final = Path(receipt['finalRunDirectory'])
     require(_overlap(rounds_root.resolve(), final.resolve()) and final.resolve() != rounds_root.resolve(),

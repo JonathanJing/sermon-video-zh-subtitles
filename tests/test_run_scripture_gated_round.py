@@ -80,7 +80,7 @@ class GatedRoundTests(unittest.TestCase):
         self.assertFalse(report['productionEligible'])
         # A hand-written receipt labelled machine is refused: the generator does not reproduce it.
         with self.assertRaisesRegex(ValueError, 'machine_receipt_not_reproduced'):
-            self.run_round(self.receipt(decidedByRole='machine_adjudicator',
+            self.run_round(self.receipt(schemaVersion=adjudication.SCHEMA_V2, decidedByRole='machine_adjudicator',
                                         decidedBy='scripture_machine_adjudication v x'), name='by-hand')
         self.assertFalse((self.work / 'by-hand').exists())
 

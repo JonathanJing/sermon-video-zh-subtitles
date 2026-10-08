@@ -204,6 +204,20 @@ class PinnedLibraryTests(unittest.TestCase):
         measure = coverage.coverage(self.edition, 'REV 4:2-3', SPOKEN_4_2)
         self.assertFalse(measure['wholeVerse'], measure)
 
+    def test_each_verse_of_a_range_must_be_read_through_its_own_words(self):
+        verse16, verse17 = (self.edition.lookup(ref)['text'] for ref in ('JOH 3:16', 'JOH 3:17'))
+        twice = coverage.coverage(self.edition, 'JOH 3:16-17', f'{verse16} {verse16}')
+        # One verse read twice satisfies the joined range's coverage and length, but not verse 17's own words.
+        self.assertGreaterEqual(twice['verseCoverage'], coverage.WHOLE_VERSE_COVERAGE_MIN)
+        self.assertTrue(coverage.WHOLE_VERSE_LENGTH_MIN <= twice['lengthRatio'] <= coverage.WHOLE_VERSE_LENGTH_MAX)
+        self.assertEqual((twice['unreadVerses'], twice['wholeByMeasure'], twice['wholeVerse']),
+                         (['JOH 3:17'], False, False))
+        self.assertEqual([(row['canonicalRef'], row['basis'], row['read']) for row in twice['verses']],
+                         [('JOH 3:16', 'exclusive_words', True), ('JOH 3:17', 'exclusive_words', False)])
+        both = coverage.coverage(self.edition, 'JOH 3:16-17', f'{verse16} {verse17}')
+        self.assertEqual((both['unreadVerses'], both['wholeVerse']), ([], True))
+        self.assertEqual(coverage.coverage(self.edition, 'JOH 3:16', verse16)['verses'], [])
+
     def test_half_a_verse_is_a_fragment(self):
         half = ' '.join(self.edition.lookup('JOH 3:16')['text'].split()[:8])
         measure = coverage.coverage(self.edition, 'JOH 3:16', half)

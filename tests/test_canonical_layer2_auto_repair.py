@@ -68,11 +68,18 @@ class ControllerAutoRepairTests(unittest.TestCase):
         self.assertEqual(subject._locale_capacity(config), 3)
         for bad in ({**BINDING, "routingVersion": "other"}, {**BINDING, "groupWorkers": 17},
                     {**BINDING, "groupWorkers": 0}, {**BINDING, "maxActiveLocales": 4},
+                    {**BINDING, "sourceMeaningNotes": 7}, {**BINDING, "sourceMeaningNotes": ""},
                     {"routingVersion": auto_repair.ROUTING_VERSION}):
             self.base.config_data["layer2AutoRepair"] = bad
             self.base.save_config()
             with self.assertRaisesRegex(ValueError, "invalid_execution_configuration"):
                 subject.load_configuration(self.base.path)
+        # The optional Layer 1 meaning notes resolve beside the configuration and count as an input.
+        self.base.config_data["layer2AutoRepair"] = {**BINDING, "sourceMeaningNotes": "notes/meaning-notes.json"}
+        self.base.save_config()
+        config = subject.load_configuration(self.base.path)
+        self.assertEqual(config.auto_repair["sourceMeaningNotes"],
+                         str(subject._path(self.base.path.parent, "notes/meaning-notes.json")))
         self.base.config_data["schemaVersion"] = subject.SCHEMA
         self.base.config_data["layer2AutoRepair"] = dict(BINDING)
         self.base.save_config()

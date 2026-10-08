@@ -73,7 +73,7 @@ runner 新增"收集失败"模式：门 1 或门 2 不通过时保存证据、�
 | 执行 | 调用失败、返回无效 | `review_execution_failed` | 续跑 |
 | 执行 | 结果未知 | `review_outcome_unknown` | 对账，不重发 |
 
-多个 check 同时失败时，一组记全部失败码，指纹按排序后的失败码集合计算；每个失败码各计入一次系统性统计。这样的组整体重译一次；指纹重现时，按"源文复核 > 请求人工 > 停止重译"取一个结果。指纹只由语言、源包、锚点、policy、英文单元和失败码组成，不含译文哈希，所以重译改了译文也能认出同一失败。
+多个 check 同时失败时，一组记全部失败码，指纹按排序后的失败码集合计算；每个失败码各计入一次系统性统计。这样的组整体重译一次；指纹重现时，按"源文复核 > 请求人工 > 停止重译"取一个结果。若该组含 L1 机器音频裁定的含义备注（[来源含义裁定](source-meaning-machine-adjudication.zh.md)，执行配置 `layer2AutoRepair.sourceMeaningNotes`），`quotation_attribution_error` 的重现先带备注多修一轮（决定 `source_meaning_noted`），再重现才转源文复核；备注本身附在含该单元的组的每份重译简报里。指纹只由语言、源包、锚点、policy、英文单元和失败码组成，不含译文哈希，所以重译改了译文也能认出同一失败。
 
 按 AGENTS.md，Sol 的任何失败、issue 或 uncertainty 都先开新修订重译一次；只有同一指纹在重译后重现，才转人工或源文复核。
 
@@ -170,7 +170,7 @@ runner 新增"收集失败"模式：门 1 或门 2 不通过时保存证据、�
 已实现（`scripts/layer2_auto_repair.py`、`scripts/run_target_language_models.py`，测试 `tests/test_layer2_auto_repair.py`）：
 
 - runner 的 `failure_collector` 参数：Sol 和插件不通过时记录失败、继续其他组；同一失败码达到阈值时停止派发后续组；结束时写 `group-failures.json`（`sermon-layer2-group-failures-v1`），不写证据，也不写 `plugin-group-stop.json`。不传这个参数时行为不变，运行身份也不变。
-- controller 正式执行路径（`scripts/canonical_layer2_controller.py`，测试 `tests/test_canonical_layer2_auto_repair.py`）：执行配置 `sermon-canonical-layer2-execution-v3` 在 v1 字段上增加 `layer2AutoRepair: {"routingVersion": "layer2-auto-repair-routing-v1", "groupWorkers": 1–16, "maxActiveLocales": 1–3}`，不接受 v2 的 Codex CLI 并发 profile。收集失败模式不写插件停止收据，所以不再强制单组串行，按 `groupWorkers` 并发；系统性停止只阻止之后的派发，已在途的组跑完。所有语言共用 job root 的 24 个在途 API 槽。worker 在同一个持久 job、同一份预算授权和租约内跑整个循环，每轮输出在 lane 的 `repair-rounds/round-NNN/`，账本固定在 jobRoot 旁的 `.<jobRoot 名>.layer2-repair`。每次调用由预算 transport 按最坏情况（输入上界加 `max_completion_tokens`）原子预留，10% 修复上限在它之下。整篇证道用预算授权 v2（`ledgerScope: "locale"`）：每个语言一份账本，容量 8 MiB（约 4,900 次预留），上限按语言计；v1 的单一账本只放得下 154 次。runner 只在修复轮、且 transport 后端为 `openai_api` 时允许复用上一轮缓存；缓存指纹含 transport 身份，跨身份的缓存仍被拒绝。全部通过后用最后一轮的证据做插件和候选准入；循环停下时写停止收据、job 失败、不产生候选，不自动重试。
+- controller 正式执行路径（`scripts/canonical_layer2_controller.py`，测试 `tests/test_canonical_layer2_auto_repair.py`）：执行配置 `sermon-canonical-layer2-execution-v3` 在 v1 字段上增加 `layer2AutoRepair: {"routingVersion": "layer2-auto-repair-routing-v1", "groupWorkers": 1–16, "maxActiveLocales": 1–3}`，不接受 v2 的 Codex CLI 并发 profile。收集失败模式不写插件停止收据，所以不再强制单组串行，按 `groupWorkers` 并发；系统性停止只阻止之后的派发，已在途的组跑完。所有语言共用 job root 的 24 个在途 API 槽。worker 在同一个持久 job、同一份预算授权和租约内跑整个循环，每轮输出在 lane 的 `repair-rounds/round-NNN/`，账本固定在 jobRoot 旁的 `.<jobRoot 名>.layer2-repair`。每次调用由预算 transport 按最坏情况（输入上界加 `max_completion_tokens`）原子预留，10% 修复上限在它之下。整篇证道用预算授权 v2（`ledgerScope: "locale"`）：每个语言一份账本，容量 8 MiB（约 4,900 次预留），上限按语言计；v1 的单一账本只放得下 154 次。runner 只在修复轮、且 transport 后端为 `openai_api` 时允许复用上一轮缓存；缓存指纹含 transport 身份，跨身份的缓存仍被拒绝。全部通过后用最后一轮的证据做插件和候选准入；循环停下时写停止收据、job 失败、不产生候选，不自动重试。可选的 `sourceMeaningNotes`（相对执行配置所在目录的 `meaning-notes.json` 路径）把 L1 含义备注带进循环，算作输入路径，加载时绑定本运行的 source/anchor 并与其收据核对。
 - 修复循环 `drive`：分类（路由表 `layer2-auto-repair-routing-v1`，含回译 QC 问题类型的映射）、系统性判断、指纹重现、耐心、调用和 token 上限（按最坏请求对在派发前检查）、每单元 4 次上限、生成 `partial_repair_brief`、按轮记账、写机器收据（`sermon-layer2-auto-repair-receipt-v1`，记录账本根目录和链头哈希，`humanApproval: false`）。未知结果和执行错误原样抛出，不记账，不重发。
 
 尚未实现，按顺序：
