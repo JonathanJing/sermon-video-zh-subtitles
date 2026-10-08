@@ -162,10 +162,40 @@ class MachineQcClipDriverTests(unittest.TestCase):
         with patch.object(driver.basis.waiver, "implementation_sha256", return_value="other"):
             self.assertEqual(self.run_driver(run), 1)
         self.assertEqual(self.summary()["status"], "blocked_prior_failure")
+        # A renamed group with the same units and text is still the unrepaired failure.
+        candidate["groups"][0]["translationGroupId"] = "g101"
+        candidate["modelReview"]["reviewedGroupIds"][0] = "g101"
+        path.write_text(json.dumps(candidate, ensure_ascii=False), encoding="utf-8")
+        self.assertEqual(self.run_driver(run), 1)
+        self.assertEqual(self.summary()["status"], "blocked_prior_failure", self.summary().get("reason"))
+        self.assertEqual(self.summary()["failedGroups"], ["g101"])
         set_text(candidate, original)
         path.write_text(json.dumps(candidate, ensure_ascii=False), encoding="utf-8")
         self.assertEqual(self.run_driver(run), 0)
         self.assertEqual(self.summary()["status"], "fake_plumbing_pass", self.summary().get("reason"))
+
+    def test_a_length_only_failure_is_rescreened_when_the_median_changes(self):
+        run = synthetic_run(self, self.root)
+        length_problem = driver.text_qc.length_problem
+
+        def too_long(group, median):  # g001 alone fails on length.
+            return "length ratio 3.00x candidate median" if group["groupId"] == "g001" else None
+
+        with patch.object(driver.text_qc, "length_problem", too_long):
+            self.run_driver(run)
+        self.assertEqual(self.summary()["status"], "requires_repair")
+        with patch.object(driver.text_qc, "length_problem", too_long):
+            self.assertEqual(self.run_driver(run), 1)
+        self.assertEqual(self.summary()["status"], "blocked_prior_failure")
+        # A shifted median that still leaves g001 out of bounds spends no attempt.
+        with patch.object(driver.text_qc, "length_problem", too_long), \
+                patch.object(driver.text_qc, "candidate_length_median", lambda groups: 2.0):
+            self.assertEqual(self.run_driver(run), 1)
+        self.assertEqual(self.summary()["status"], "blocked_prior_failure")
+        # Once g001 is within bounds of the current median, it is screened again.
+        with patch.object(driver.text_qc, "length_problem", length_problem):
+            self.run_driver(run)
+        self.assertNotEqual(self.summary()["status"], "blocked_prior_failure", self.summary().get("reason"))
 
     def test_preflight_fails_when_any_requested_locale_is_blocked(self):
         run = synthetic_run(self, self.root)
