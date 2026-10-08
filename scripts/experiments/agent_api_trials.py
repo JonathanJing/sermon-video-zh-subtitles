@@ -38,6 +38,7 @@ import json
 import math
 import os
 from pathlib import Path
+import posixpath
 import re
 import sys
 import threading
@@ -83,8 +84,8 @@ def load_cases(root=CASES, only=None):
         expected = _read_json(directory / 'expected.json')
         if expected['id'] != directory.name or expected['category'] not in CATEGORIES:
             raise ValueError(f'invalid case {directory.name}')
-        if not (directory / 'evidence').is_dir():
-            raise ValueError(f'case {directory.name} has no evidence directory')
+        if not (directory / 'evidence').is_dir() or (directory / 'evidence').is_symlink() or directory.is_symlink():
+            raise ValueError(f'case {directory.name} has no evidence directory of its own')
         cases.append({'id': directory.name, 'evidence': directory / 'evidence', 'expected': expected})
     if only and {c['id'] for c in cases} != set(only):
         raise ValueError('unknown case id: ' + ', '.join(sorted(set(only) - {c['id'] for c in cases})))
@@ -96,6 +97,8 @@ def load_plans(root=PLANS, only=None):
     for directory in sorted(p for p in Path(root).iterdir() if p.is_dir()):
         if only and directory.name not in only:
             continue
+        if directory.is_symlink() or (directory / 'plan').is_symlink():
+            raise ValueError(f'plan {directory.name} evidence is a symlink')
         plans.append({'id': directory.name, 'evidence': directory / 'plan',
                       'expected': _read_json(directory / 'expected.json')})
     if only and {p['id'] for p in plans} != set(only):
@@ -130,6 +133,9 @@ END_FIELD = re.compile(r'end|finish|complet|stop', re.I)
 
 def evidence_files(root):
     """Regular files under root; symlinks and anything resolving outside root are never exposed."""
+    if Path(root).is_symlink():
+        # Resolving a symlinked root would make its target the trusted root and expose whatever lies under it.
+        raise ValueError(f'evidence root {Path(root).name} is a symlink')
     root = Path(root).resolve()
     return sorted(p for p in root.rglob('*')
                   if not p.is_symlink() and p.is_file() and p.resolve().is_relative_to(root))
@@ -275,6 +281,8 @@ class EvidenceTools:
     """Read-only handler bound to one evidence directory. Records every call."""
 
     def __init__(self, evidence, *, timeline=False, preflight=False, submit_name='submit_report'):
+        if Path(evidence).is_symlink():
+            raise ValueError(f'evidence root {Path(evidence).name} is a symlink')
         self.root = Path(evidence).resolve()
         self.timeline, self.preflight, self.submit_name = timeline, preflight, submit_name
         self.schema = None
@@ -361,7 +369,7 @@ SCHEMA_TYPES = {'object': dict, 'array': list, 'string': str, 'boolean': bool, '
 
 def schema_errors(value, schema, where='report'):
     """Problems with value under the subset of JSON Schema the submit tools use (type, required, enum, items,
-    minimum, maximum)."""
+    minimum, maximum, additionalProperties: false)."""
     expected = schema.get('type')
     kind = SCHEMA_TYPES.get(expected) if isinstance(expected, str) else None
     if kind and (not isinstance(value, kind) or (expected in ('integer', 'number') and isinstance(value, bool))):
@@ -373,6 +381,8 @@ def schema_errors(value, schema, where='report'):
     problems = []
     if expected == 'object':
         problems += [f'{where}.{key}: missing' for key in schema.get('required', []) if key not in value]
+        if schema.get('additionalProperties') is False:
+            problems += [f'{where}.{key}: not allowed' for key in value if key not in (schema.get('properties') or {})]
         for key, sub in (schema.get('properties') or {}).items():
             if key in value:
                 problems += schema_errors(value[key], sub, f'{where}.{key}')
@@ -420,8 +430,9 @@ def preflight_check(plan_root, name, arguments):
         return {'path': target, 'staged': covered, 'manifest': entries}
     if name == 'check_out_path':
         out = str(arguments['out'])
-        # Only a path under the repository root survives the later relative_to(ROOT).
-        inside = out.startswith('<HOME>/sermon-video-zh-subtitles/')
+        # Only a path under the repository root survives the later relative_to(ROOT); '..' is normalized first so
+        # a path that climbs back out is not accepted on its prefix.
+        inside = posixpath.normpath(out).startswith('<HOME>/sermon-video-zh-subtitles/')
         return {'out': out, 'absolute': out.startswith('<HOME>') or out.startswith('/'),
                 'relative_to_root_ok': inside,
                 'note': 'run_spark_diagnostic_audio.py calls (out / ...).relative_to(ROOT) after the job hold is created'}
@@ -1018,14 +1029,14 @@ class Trials:
         finally:
             # Written even when a stage raises, so the run report shows the failed stage and its time.
             # Appended, so a resumed --out keeps the timings of every earlier invocation.
+            # Rewritten atomically; earlier complete rows are kept and a torn or empty file is repaired.
             timings = self.out / 'timings.tsv'
-            new = not timings.exists()
+            header = 'stage\tresult\tseconds\tinvocation'
             started = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
-            with open(timings, 'a', encoding='utf-8') as stream:
-                if new:
-                    stream.write('stage\tresult\tseconds\tinvocation\n')
-                for row in self.timings:
-                    stream.write('\t'.join(map(str, (*row, started))) + '\n')
+            earlier = timings.read_text(encoding='utf-8') if timings.exists() else ''
+            kept = [line for line in earlier.split('\n')[:-1] if line != header and len(line.split('\t')) == 4]
+            rows = kept + ['\t'.join(map(str, (*row, started))) for row in self.timings]
+            _write_durably(timings, '\n'.join([header, *rows]) + '\n')
 
     def _merged_results(self):
         """This run's stages plus rows saved by earlier runs into this --out (a finished stage such as risk before
@@ -1228,18 +1239,21 @@ def _unscored(results):
 def _scorer_identity(stage):
     """Hash of the code that turns a stage's sessions into scores, so saved scores never merge across a scorer change."""
     tools = [EvidenceTools, schema_errors, evidence_files, _payload, _function]
+    # The raw/timeline arms and the refuter can call get_timeline, so its implementation is bound too.
+    timeline = [build_timeline, _instant, _time_fields]
     parts = {'timeline': [build_timeline, _instant, _time_fields, evidence_files],
-             'diagnose': [*tools, _diagnosis_schema, score_diagnosis, check_citations, _groups_match, _text, _relative,
+             'diagnose': [*tools, *timeline, _diagnosis_schema, score_diagnosis, check_citations, _groups_match, _text, _relative,
                           _arm_summary, _case_library],
-             'refute': [*tools, _diagnosis_schema, score_diagnosis, check_citations, _groups_match, _text, _relative,
+             'refute': [*tools, *timeline, _diagnosis_schema, score_diagnosis, check_citations, _groups_match, _text, _relative,
                         _refutation_schema, score_refutation, _refute_summary],
              'preflight': [*tools, _preflight_schema, score_preflight, preflight_check, _check_receipts, _check_satisfied,
                            _call_matches, _relative, _groups_match, _text],
              'risk': [score_risk, risk_summary]}[stage]
     tool_definitions = [FILE_TOOLS, TIMELINE_TOOL, PREFLIGHT_TOOLS, MAX_READ_CHARS]
-    constants = {'timeline': [TIMESTAMP.pattern, ERROR_LINE.pattern, END_FIELD.pattern],
-                 'diagnose': [*tool_definitions, CATEGORIES, SCHEMA_TYPES],
-                 'refute': [*tool_definitions, CATEGORIES, SCHEMA_TYPES],
+    timeline_patterns = [TIMESTAMP.pattern, ERROR_LINE.pattern, END_FIELD.pattern]
+    constants = {'timeline': timeline_patterns,
+                 'diagnose': [*tool_definitions, *timeline_patterns, CATEGORIES, SCHEMA_TYPES],
+                 'refute': [*tool_definitions, *timeline_patterns, CATEGORIES, SCHEMA_TYPES],
                  'preflight': [*tool_definitions, ARGUMENT_FREE_TERMS, CHECK_VERDICT, SCHEMA_TYPES], 'risk': [TIERS]}[stage]
     # The stage method assembles the payload text and the projection a later stage sees, so it is bound too.
     methods = [STAGE_SOURCES[stage]] + {'timeline': [], 'risk': [STAGE_SOURCES['decisions']]}.get(

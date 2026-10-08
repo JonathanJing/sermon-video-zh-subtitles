@@ -123,7 +123,7 @@ class ExportRunDigestTests(unittest.TestCase):
             self.assertIsNone(digest.write_report([self.base / "missing"], "machine-qc-text"))
 
     def test_oversized_trial_rows_are_exported_in_chunks(self):
-        rows = [{"case": f"c{i}", "note": "x" * 2000, "email": "someone@example.com"} for i in range(40)]
+        rows = [{"case": f"c{i}", "note": "x " * 1000, "email": "someone@example.com"} for i in range(40)]
         (self.run / "risk.json").write_text(json.dumps({"rows": rows, "summary": {"n": 40}}))
         with patch.object(digest, "MAX_WHOLE_BYTES", 20 * 1024):
             dest = self.export()
@@ -137,7 +137,7 @@ class ExportRunDigestTests(unittest.TestCase):
         self.assertNotIn("someone@example.com", (dest / self.run.name / entry["chunks"][0]).read_text())
 
     def test_trial_row_over_the_cap_is_reported_as_omitted(self):
-        (self.run / "risk.json").write_text(json.dumps({"rows": [{"case": "c0", "note": "x" * 30000}]}))
+        (self.run / "risk.json").write_text(json.dumps({"rows": [{"case": "c0", "note": "x " * 15000}]}))
         with patch.object(digest, "MAX_WHOLE_BYTES", 20 * 1024):
             dest = self.export()
         entry = next(e for e in json.loads((dest / "manifest.json").read_text())["files"] if e["path"] == "risk.json")

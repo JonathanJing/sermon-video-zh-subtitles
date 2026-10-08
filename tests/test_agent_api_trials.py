@@ -1112,6 +1112,35 @@ class LatestReviewTests(unittest.TestCase):
             tools('list_files', {})
             self.assertEqual([c['name'] for c in trials._read_calls(log)], ['list_files', 'list_files'])
 
+    def test_symlinked_evidence_root_is_refused(self):
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory, 'outside')
+            target.mkdir()
+            (target / 'secret.txt').write_text('x')
+            link = Path(directory, 'evidence')
+            link.symlink_to(target)
+            with self.assertRaises(ValueError):
+                trials.EvidenceTools(link)('list_files', {})
+
+    def test_undeclared_report_fields_are_rejected(self):
+        schema = trials._diagnosis_schema()
+        report = {'category': 'other', 'root_cause': 'x', 'evidence': [], 'fix': 'y', 'confidence': 0.4,
+                  'unknowns': [], 'summary_zh': 'z', 'extra': 1}
+        self.assertEqual(trials.schema_errors(report, schema), ['report.extra: not allowed'])
+
+    def test_out_path_that_climbs_out_of_the_repo_is_not_ok(self):
+        result = trials.preflight_check('.', 'check_out_path', {'out': '<HOME>/sermon-video-zh-subtitles/../outside'})
+        self.assertFalse(result['relative_to_root_ok'])
+
+    def test_timings_file_is_repaired_before_new_rows(self):
+        out, make = self.make_trials(risk_repeats=1)
+        out.mkdir(parents=True)
+        (out / 'timings.tsv').write_text('stage\tresult\tseconds\tinvocation\nrisk\tpass\t1\tT0\nris')
+        make().run('risk')
+        lines = (out / 'timings.tsv').read_text().splitlines()
+        self.assertEqual(lines[:2], ['stage\tresult\tseconds\tinvocation', 'risk\tpass\t1\tT0'])
+        self.assertTrue(all(len(line.split('\t')) == 4 for line in lines))
+
     def test_checkpoint_keeps_saved_rows_this_run_has_not_reached(self):
         out, make = self.make_trials()
         out.mkdir(parents=True)
