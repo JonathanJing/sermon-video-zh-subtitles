@@ -33,7 +33,7 @@ def validate_admitted(admitted):
     seen = set()
     for row in admitted:
         _require(type(row) is dict and set(row) == {'candidateId', 'sourceUnitIds', 'classification',
-            'canonicalRef', 'exactSentence', 'textSha256'}, 'admitted_quote_schema')
+            'canonicalRef', 'editionId', 'exactSentence', 'textSha256'}, 'admitted_quote_schema')
         _require(row['classification'] in QUOTE_CLASSES and type(row['exactSentence']) is str
                  and row['exactSentence'] and type(row['sourceUnitIds']) is list and row['sourceUnitIds'],
                  'admitted_quote_invalid')
@@ -64,7 +64,9 @@ def review_group(policy, english_units, group, *, diagnostic_context, admitted_q
     _require(type(policy) is dict and policy.get('languageReview', {}).get('pluginId') == PLUGIN_ID
              and policy['languageReview'].get('requiredChecks') == REQUIRED, 'admitted_plugin_policy_mismatch')
     scripture = policy.get('scripture', {})
-    _require(scripture.get('editionId') == 'CUV' and scripture.get('quoteCheckPolicy') == 'source_bound_exact_quote'
+    editions = {row['editionId'] for row in admitted_quotes}
+    _require(len(editions) == 1 and scripture.get('editionId') in editions
+             and scripture.get('quoteCheckPolicy') == 'source_bound_exact_quote'
              and scripture.get('citationUseStatus') == 'project_source_reviewed', 'admitted_plugin_scripture_mismatch')
     # Run the real structural checks under their own identity, then substitute the scripture check.
     structural_policy = dict(policy)
@@ -92,7 +94,9 @@ def freeze_admitted_plugin(summary, source, anchor, plan, policy, out_plugin):
     admitted = summary['admitted']
     validate_admitted(admitted)
     policy = copy.deepcopy(policy)
-    policy['scripture'].update(editionId='CUV', citationUseStatus='project_source_reviewed',
+    editions = {row['editionId'] for row in admitted}
+    _require(len(editions) == 1, 'admitted_quotes_mix_editions')
+    policy['scripture'].update(editionId=editions.pop(), citationUseStatus='project_source_reviewed',
                                quoteCheckPolicy='source_bound_exact_quote')
     policy['languageReview'].update(pluginId=PLUGIN_ID, requiredChecks=copy.deepcopy(REQUIRED),
                                     implementationStatus='verified')

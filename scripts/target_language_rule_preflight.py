@@ -111,8 +111,8 @@ def _quoted_rules(facts, request, policy, plan):
         require(facts.get('DIAGNOSTIC_ONLY') is True and facts.get('DIAGNOSTIC_ADMITTED_QUOTES') is True,
                 'admitted quote plugin must remain diagnostic-only')
         require(policy["scripture"]["quoteCheckPolicy"] == "source_bound_exact_quote"
-                and policy["scripture"]["editionId"] == "CUV"
-                and policy["scripture"]["citationUseStatus"] == "project_source_reviewed",
+                and policy["scripture"]["citationUseStatus"] == "project_source_reviewed"
+                and all(row["editionId"] == policy["scripture"]["editionId"] for row in facts["ADMITTED_QUOTES"]),
                 "admitted quote plugin differs from scripture policy")
         from scripts.language_review_plugins.diagnostic_admitted_quotes import validate_admitted
         for row in facts['ADMITTED_QUOTES']:
@@ -126,7 +126,7 @@ def _quoted_rules(facts, request, policy, plan):
                            "english": " ".join(rows[unit_id] for unit_id in units),
                            "targetText": row['exactSentence'], "targetTextSha256": row['textSha256'],
                            "reference": row['canonicalRef'], "classification": 'admitted_' + row['classification'],
-                           "citationUseStatus": "project_source_reviewed"})
+                           "editionId": row['editionId'], "citationUseStatus": "project_source_reviewed"})
     if "SOURCE_SHA256" in facts:
         require(facts["SOURCE_SHA256"] == request["englishSourcePackageJsonSha256"],
                 "plugin source differs from request")
