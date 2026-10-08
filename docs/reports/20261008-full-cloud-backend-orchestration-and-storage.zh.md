@@ -45,7 +45,7 @@ flowchart TD
 1. 本机下载来源、算 SHA、上传到 `sources/`，调用 controller 开 run。
 2. L1 Job 跑完写英文来源包和收据，Workflows 挂起等英文批准。
 3. 批准后 controller **按语言并行**派 L2：每语言一个 locale job，组内多个 group worker（Cloud Run Job 的 task 并行）调 Sol 6.1 API。上限沿用现有规则：默认每 run 一个 active locale，execution-v2 最多 3 个（[controller 合同](../canonical-layer2-controller.zh.md)）。组 task 只产出不可变的组结果；每个语言另有**一个**受租约保护的汇总 task，读齐所有组结果后，按规定只跑一次语言插件、候选构建和候选准入（现在这一步在 canonical worker 的进程内 pool 里完成，拆成多个 task 后必须有唯一 owner，不能每个组各建一份候选）。API 槽位改成 Firestore 里的全局计数，跨 Job 共享。所有付费 Job 设 `maxRetries=0`（Cloud Run Jobs 默认每个 task 自动重试 3 次，会在 controller 对账前重复调用 API）；task 超时显式设成大于一组初译加复核的最长耗时（默认 10 分钟不够，单次 API 调用就可能用到 300 秒），超时值写进冻结的执行策略，controller 的心跳和无进展上限照旧。
-4. 某个语言文字批准一到，就给这个语言开 GPU 跑 L3，不等其他语言。
+4. 某个语言文字批准一到，先检查这个语言的配音前提：音色登记里该语言的能力已验证（现在 Eric 的韩语、西语仍是 `unverified_poc`）、checkpoint 绑定一致、有当前来源的音色授权收据；`prepare_target_language_speech_job.py` 给出 `synthesisEligible=true` 才开 GPU 跑 L3，不等其他语言。前提不全就进入等待状态，不开卡。
 5. L4 准备前先检查全部输入是否就绪：听审收据或音频 waiver，以及大纲、默想、来源复核、metadata 等各自独立的批准。缺哪个就进入对应的等待状态（这是正常等待，不是失败）。全部就绪后，L4 只做**准备**：打包、预检，然后停下。听审批准或 waiver 不等于发布授权；现有发布流程要求一份绑定这个已准备 release 和 Firebase 目标的单独授权（`scripts/sermon_release_workflow.py:282-288`）。Workflows 在这里再挂起一次，授权收据到了才部署，然后做 HTTP 核验，并按 release plan 的语言联动要求发布。canonical 发布还要生成 catalog v4 和对应的人工审核 v3 投影；客户端靠 catalog 才能找到新 release，多语言联动也靠 catalog 的 release-set 一次切换。
 6. 任何一步结果不明（超时、断线、进程消失），controller 标 `reconciliation_required`，不自动重发，等 Supervisor 给出对账建议、你确认。这条是现有规则，上云后不放宽。
 
@@ -121,7 +121,7 @@ L4 从证据桶读发布包，复制到 Firebase Hosting／发布桶，再做 HT
 
 0. **包里的路径**：现在的英文来源包和 L3 包里记的是本机绝对路径（例如 `scripts/build_english_source_package.py:79-85` 的 `artifact()`），校验器用 `Path(...)` 直接打开。原样拷到 GCS，云端 worker 读到的路径仍指向本机，无法校验也无法使用。所以阶段 1 之前要先做一个有版本号的“云端定位”合同和迁移（路径改成相对 run 根或 `gs://` + hash），或者在云端 worker 里先把原目录结构还原出来，再校验原封不动的包。
 
-1. **存储抽象**：约 30 个脚本用 `fcntl.flock`，持久性依赖目录 fsync（[durable job 证据](../durable-job-directory-evidence.zh.md)）。需要一层存储接口，有本地和 GCS 两种实现：不可变写用 `ifGenerationMatch=0`，可变状态用 generation 条件，锁用现有 GCS 租约。这是工作量最大的一项。
+1. **存储抽象**：约 30 个脚本用 `fcntl.flock`，持久性依赖目录 fsync（[durable job 证据](../durable-job-directory-evidence.zh.md)）。需要一层存储接口：不可变证据写 GCS，用 `ifGenerationMatch=0`；受租约保护的可变状态和租约本身放在同一个 Firestore 事务里，租约过期用服务端时间（见上文“租约”），不复用现有 GCS 租约；GCS 上的 `state.json` 只是非权威快照。本地实现保留给本机运行。这是工作量最大的一项。
 2. **心跳、预算、API 槽位**：从本机时钟和本地目录换到 Firestore 服务端时间和事务。
 3. **Controller 服务**：把现有 L2 controller 的 `tick` 包成 Cloud Run 服务，再补上 L1、L3、L4 的派发（现在只有 L2，[controller 合同](../canonical-layer2-controller.zh.md) L63-67）。
 4. **Workflows 定义**：每个 run 一条执行；审批用 callback。
