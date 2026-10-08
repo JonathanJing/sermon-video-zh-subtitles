@@ -1,0 +1,88 @@
+{
+  "rows": [
+    {
+      "plan": "p01-planted-blockers",
+      "sessionId": "sess_fake_25",
+      "status": "completed",
+      "toolCalls": 3,
+      "usage": {
+        "input_tokens": 1000,
+        "output_tokens": 100
+      },
+      "elapsedSeconds": 0.0,
+      "report": {
+        "go": false,
+        "items": [
+          {
+            "checked_with": "check_staged",
+            "evidence": "fake",
+            "kind": "file",
+            "requirement": "docs/series-terminology.zh.md staged",
+            "status": "blocker"
+          }
+        ],
+        "summary_zh": "假数据，仅验证接线。"
+      },
+      "score": {
+        "submitted": true,
+        "go": false,
+        "expectedGo": false,
+        "goCorrect": true,
+        "blockersFound": [
+          "missing_terminology"
+        ],
+        "blockersMissed": [
+          "plugin_identity",
+          "relative_out",
+          "asr_symlink_mount"
+        ],
+        "extraBlockers": 0,
+        "checkToolsUsed": [
+          "check_staged"
+        ],
+        "claimedButNotCalled": [],
+        "claimedButNotMatched": [],
+        "unverifiedSuccesses": []
+      }
+    },
+    {
+      "plan": "p02-clean",
+      "sessionId": "sess_fake_26",
+      "status": "completed",
+      "toolCalls": 3,
+      "usage": {
+        "input_tokens": 1000,
+        "output_tokens": 100
+      },
+      "elapsedSeconds": 0.01,
+      "report": {
+        "go": false,
+        "items": [
+          {
+            "checked_with": "check_staged",
+            "evidence": "fake",
+            "kind": "file",
+            "requirement": "docs/series-terminology.zh.md staged",
+            "status": "blocker"
+          }
+        ],
+        "summary_zh": "假数据，仅验证接线。"
+      },
+      "score": {
+        "submitted": true,
+        "go": false,
+        "expectedGo": true,
+        "goCorrect": false,
+        "blockersFound": [],
+        "blockersMissed": [],
+        "extraBlockers": 1,
+        "checkToolsUsed": [
+          "check_staged"
+        ],
+        "claimedButNotCalled": [],
+        "claimedButNotMatched": [],
+        "unverifiedSuccesses": []
+      }
+    }
+  ]
+}
