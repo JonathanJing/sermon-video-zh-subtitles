@@ -4,7 +4,10 @@
 Design: docs/layer2-bounded-auto-repair.zh.md. Release depends on the gates,
 not on how many repairs a group took. A round runs every group, collects Sol
 and plugin failures, and classifies them deterministically. A systemic failure
-stops the locale before any repair. Otherwise each repairable group gets a
+stops the locale before any repair: dispatch stops early only when one failure
+code hits the threshold in consecutive groups (a rule that never reached the
+model fails every group in a row); scattered failures are judged after the
+whole round, so a small test batch is not halted by a few isolated errors. Otherwise each repairable group gets a
 machine-written partial repair brief and a fresh translator plus independent
 reviewer request; every other group reuses its cache.
 
@@ -155,18 +158,33 @@ class FailureCollector:
         with self._lock:
             return bool(self.failures or self.not_dispatched)
 
+    def _counts(self) -> dict[str, int]:
+        counts: dict[str, int] = {}
+        for failure in self.failures:
+            for code in failure["failureCodes"]:
+                counts[code] = counts.get(code, 0) + 1
+        return counts
+
+    def _consecutive(self, code: str) -> int:
+        """Longest run of adjacent group indices that all failed with ``code``."""
+        indices = sorted(row["index"] for row in self.failures if code in row["failureCodes"])
+        best = run = 0
+        for position, index in enumerate(indices):
+            run = run + 1 if position and index == indices[position - 1] + 1 else 1
+            best = max(best, run)
+        return best
+
     def _record(self, row: dict) -> None:
         with self._lock:
             self.failures.append(row)
-            counts: dict[str, int] = {}
-            for failure in self.failures:
-                for code in failure["failureCodes"]:
-                    counts[code] = counts.get(code, 0) + 1
             if self.systemic is None:
-                for code, count in sorted(counts.items()):
-                    if count >= self.threshold:
-                        self.systemic = {"failureCode": code, "groups": count, "threshold": self.threshold,
-                                         "reasonCode": "systemic_rule_or_policy_issue"}
+                for code in sorted(set(row["failureCodes"])):
+                    run = self._consecutive(code)
+                    if run >= self.threshold:
+                        self.systemic = {"failureCode": code, "groups": self._counts()[code],
+                                         "consecutiveGroups": run, "threshold": self.threshold,
+                                         "reasonCode": "systemic_rule_or_policy_issue",
+                                         "stoppedDispatch": True}
                         break
 
     def _base(self, index: int, group: dict, sol_path: Path) -> dict:
@@ -199,6 +217,15 @@ class FailureCollector:
 
     def finish(self, out: Path, request: dict, plan: list[dict]) -> None:
         with self._lock:
+            if self.systemic is None:
+                for code, count in sorted(self._counts().items()):
+                    if count >= self.threshold:
+                        self.systemic = {"failureCode": code, "groups": count,
+                                         "consecutiveGroups": self._consecutive(code),
+                                         "threshold": self.threshold,
+                                         "reasonCode": "systemic_rule_or_policy_issue",
+                                         "stoppedDispatch": False}
+                        break
             report = {"schemaVersion": REPORT_SCHEMA, "routingVersion": ROUTING_VERSION,
                       "targetLocale": request["targetLocale"],
                       "englishSourcePackageJsonSha256": request["englishSourcePackageJsonSha256"],
@@ -470,6 +497,8 @@ def _receipt(out_root: Path, ledger_root: Path, value: dict, entries: list[dict]
                "repairSpend": {"calls": sum(e["spend"]["calls"] for e in entries[1:]),
                                "tokens": sum(e["spend"]["tokens"] for e in entries[1:])},
                "stoppedGroups": stopped,
+               "gatesPassed": ["independent_review", "language_plugin"] if outcome == "passed" else [],
+               "releaseAuthority": "none",
                "ledgerRoot": str(Path(ledger_root).resolve()),
                "ledgerHeadSha256": json_sha256(last),
                "humanApproval": False, "reviewKind": "machine_review"}

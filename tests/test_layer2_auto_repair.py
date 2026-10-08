@@ -136,16 +136,33 @@ class LoopTests(unittest.TestCase):
         self.assertEqual(fleet.calls, ["all", ["g1"], ["g1"]])
         self.assertEqual(receipt["stoppedGroups"][0]["reasonCode"], "no_fewer_failures_after_two_repairs")
 
-    def test_systemic_failure_stops_dispatch_and_repairs_nothing(self):
-        same = {f"g{i}": failing("negationsNumbersNames") for i in (2, 5, 9, 12)}
+    def test_consecutive_same_failures_stop_dispatch_at_once(self):
+        same = {f"g{i}": failing("negationsNumbersNames") for i in (2, 3, 4, 12)}
         fleet = Fleet(self, 46, [same])
         receipt = self.drive(fleet)
         self.assertEqual(fleet.calls, ["all"])
         self.assertEqual(receipt["repairSpend"]["calls"], 0)
         reasons = {row["reasonCode"] for row in receipt["stoppedGroups"]}
         self.assertEqual(reasons, {"systemic_rule_or_policy_issue", "not_dispatched_after_systemic_stop"})
-        # Dispatch stopped after the third failure (group 9): groups 10..46 never ran.
-        self.assertEqual(receipt["initialSpend"]["calls"], 9 * 2)
+        # Dispatch stopped after the third consecutive failure (group 4): groups 5..46 never ran.
+        self.assertEqual(receipt["initialSpend"]["calls"], 4 * 2)
+
+    def test_scattered_same_failures_run_to_the_end_then_count_as_systemic(self):
+        same = {f"g{i}": failing("negationsNumbersNames") for i in (2, 5, 9, 12)}
+        fleet = Fleet(self, 46, [same])
+        receipt = self.drive(fleet)
+        self.assertEqual(fleet.calls, ["all"])
+        self.assertEqual(receipt["initialSpend"]["calls"], 46 * 2)
+        self.assertEqual({row["reasonCode"] for row in receipt["stoppedGroups"]}, {"systemic_rule_or_policy_issue"})
+        self.assertEqual(receipt["gatesPassed"], [])
+        self.assertEqual(receipt["releaseAuthority"], "none")
+
+    def test_two_scattered_failures_are_repaired_not_systemic(self):
+        fleet = Fleet(self, 46, [{"g2": failing("completeMeaning"), "g30": failing("completeMeaning")}])
+        receipt = self.drive(fleet)
+        self.assertEqual(fleet.calls, ["all", ["g2", "g30"]])
+        self.assertEqual(receipt["status"], "all_groups_passed")
+        self.assertEqual(receipt["gatesPassed"], ["independent_review", "language_plugin"])
 
     def test_plugin_rejection_keeps_the_translation_and_costs_nothing(self):
         fleet = Fleet(self, 46, [{"g3": "plugin"}])
@@ -273,6 +290,38 @@ class RunnerCollectionTests(unittest.TestCase):
         self.assertEqual(raised.exception.report["failures"][0]["action"], "escalate_engineering")
         self.assertFalse((self.out / "plugin-group-stop.json").exists())
         self.assertEqual(len(self.calls), 4)
+
+    def test_loop_stops_a_stubborn_group_and_keeps_the_repaired_one(self):
+        f = self.fixture
+        plan = runner.group_plan(f.request, f.anchor)
+        stubborn, once = plan[0]["translationGroupId"], plan[1]["translationGroupId"]
+
+        def caller(api_key, payload):
+            response = self.fake_call(api_key, payload)
+            data = json.loads(payload["messages"][1]["content"])
+            fail = (data["translationGroupId"] == stubborn
+                    or data["translationGroupId"] == once and "partialRepair" not in data)
+            if payload["reasoning_effort"] == "medium" and fail:
+                result = json.loads(response["choices"][0]["message"]["content"])
+                result["semanticReview"]["status"] = "fail"
+                result["semanticReview"]["checks"]["completeMeaning"] = "fail"
+                result["semanticReview"]["issues"] = ["Dropped the second clause"]
+                response["choices"][0]["message"]["content"] = json.dumps(result)
+            return response
+
+        def run_round(out, reuse_from, brief, collector):
+            return self.production_run(f.source, f.anchor, f.policy, out, "fixture-key", caller,
+                                       reuse_from=reuse_from, partial_repair_brief=brief,
+                                       failure_collector=collector)
+
+        receipt = subject.drive(f.request, 2, run_round, self.out.parent / "rounds", self.out.parent / "state")
+        self.assertEqual(receipt["status"], "repair_stopped")
+        self.assertEqual(receipt["rounds"], 2)
+        self.assertEqual(len(self.calls), 8)  # 4 initial, then both groups repaired once
+        self.assertEqual([(row["translationGroupId"], row["reasonCode"]) for row in receipt["stoppedGroups"]],
+                         [(stubborn, "repeated_failure_without_progress")])
+        self.assertIsNone(receipt["evidenceSha256"])
+        self.assertFalse((Path(receipt["finalRunDirectory"]) / "evidence.json").exists())
 
     def test_loop_repairs_the_failed_group_end_to_end(self):
         f = self.fixture
