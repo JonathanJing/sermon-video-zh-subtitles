@@ -223,10 +223,42 @@ def _expand_negations(text: str) -> str:
     return _CONTRACTION.sub(lambda m: _CONTRACTED.get(m.group(0), ' not'), text)
 
 
+# Word pairs whose swap reverses a verse's direction or order. Most are function words the
+# coverage measure drops, so a reading that turns "go up" into "go down" is compared by pair:
+# the verse has one member and not the other, and the reading has the other and not the one.
+DIRECTION_PAIRS = (('up', 'down'), ('in', 'out'), ('over', 'under'), ('above', 'below'), ('before', 'after'),
+                   ('inside', 'outside'), ('top', 'bottom'), ('high', 'low'), ('east', 'west'), ('north', 'south'),
+                   ('right', 'left'), ('first', 'last'), ('more', 'less'), ('forward', 'backward'),
+                   ('upward', 'downward'), ('ascend', 'descend'), ('open', 'shut'), ('near', 'far'))
+
+
+def _token(word: str) -> str:
+    """A negation keeps its spelling: stemmed, "nothing" would read "noth" and escape the negation count."""
+    return word if word in NEGATIONS else _stem(word)
+
+
+def all_tokens(text: str) -> list[str]:
+    """Every lower-cased, lightly stemmed word, function words included."""
+    return [_token(word) for word in re.findall(r"[a-z0-9]+(?:'[a-z]+)?",
+                                                _expand_negations(text.lower().replace('’', "'")))]
+
+
+def reversed_directions(verse_tokens: list[str], spoken_tokens: list[str]) -> list[list[str]]:
+    """The direction pairs the reading turns around, as ``[verse word, spoken word]``."""
+    verse, spoken = set(verse_tokens), set(spoken_tokens)
+    turned = []
+    for pair in DIRECTION_PAIRS:
+        a, b = (_stem(word) for word in pair)
+        for one, other in ((a, b), (b, a)):
+            if one in verse and other not in verse and other in spoken and one not in spoken:
+                turned.append([one, other])
+    return turned
+
+
 def content_tokens(text: str) -> list[str]:
     """Lower-cased, lightly stemmed content words; function words and punctuation dropped."""
     words = re.findall(r"[a-z0-9]+(?:'[a-z]+)?", _expand_negations(text.lower().replace('’', "'")))
-    return [_stem(word) for word in words if word not in STOPWORDS and len(word) > 1]
+    return [_token(word) for word in words if word not in STOPWORDS and len(word) > 1]
 
 
 def negation_count(tokens: list[str]) -> int:
@@ -311,12 +343,15 @@ def coverage(edition: CoverageEdition, ref: cuv_scripture.Reference | str, spoke
     verses, unread = _per_verse(found, reference, spoken_tokens)
     whole_by_measure = (verse_coverage >= WHOLE_VERSE_COVERAGE_MIN
                         and WHOLE_VERSE_LENGTH_MIN <= length_ratio <= WHOLE_VERSE_LENGTH_MAX and not unread)
-    whole = whole_by_measure and not negation_mismatch
+    # "Go up" read as "go down" keeps every content word and says the opposite.
+    turned = reversed_directions(all_tokens(found['text']), all_tokens(spoken))
+    whole = whole_by_measure and not negation_mismatch and not turned
     return {'editionId': found['editionId'], 'canonicalRef': found['canonicalRef'],
             'verseTextSha256': found['textSha256'], 'verseContentWords': len(unique_verse),
             'coveredContentWords': len(covered), 'spokenContentWords': len(spoken_tokens),
             'verseCoverage': verse_coverage, 'lengthRatio': length_ratio,
             'negations': negations, 'negationHeads': heads, 'negationMismatch': negation_mismatch,
+            'reversedDirections': turned,
             'verses': verses, 'unreadVerses': unread, 'wholeByMeasure': whole_by_measure, 'wholeVerse': whole,
             'thresholds': {'verseCoverageMin': WHOLE_VERSE_COVERAGE_MIN, 'lengthRatioMin': WHOLE_VERSE_LENGTH_MIN,
                            'lengthRatioMax': WHOLE_VERSE_LENGTH_MAX}}

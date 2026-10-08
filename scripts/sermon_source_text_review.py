@@ -26,6 +26,12 @@ STATUS = "approved_for_source_correction"
 AUTHORITY = "user_directed_conversation_review"
 MACHINE_AUTHORITY = "machine_audio_adjudication"
 AUTHORITIES = {AUTHORITY, MACHINE_AUTHORITY}
+# v1 is the conversational-review contract existing reviews carry and keep. v2 has the same
+# fields and adds the machine authority, whose review rests on a bound source-meaning receipt
+# validated against the adjudicated package, with every correction consumed. A conversational
+# review is valid under either; a machine-authority review labelled v1 is refused.
+SCHEMA_V2 = "sermon-source-text-review-v2"
+SCHEMA_AUTHORITIES = {SCHEMA: {AUTHORITY}, SCHEMA_V2: AUTHORITIES}
 # A machine-authority review rests on exactly one source-meaning receipt among
 # its evidence; every patch must be that receipt's corrections and nothing else.
 MACHINE_RECEIPT_SCHEMA = "sermon-source-meaning-machine-adjudication-v1"
@@ -95,17 +101,17 @@ def _machine_receipt(review: dict[str, Any], evidence: list[dict[str, str]],
     ``anchor.json``) and media it was made against. A hand-written or stale
     receipt for other inputs is refused before any patch is read.
     """
-    receipts: list[tuple[str, dict[str, Any]]] = []
+    receipts: list[tuple[str, dict[str, Any], Path]] = []
     for item in evidence:
         try:
             value = json.loads(Path(item["path"]).read_bytes())
         except (OSError, UnicodeError, json.JSONDecodeError):
             continue
         if isinstance(value, dict) and value.get("schemaVersion") == MACHINE_RECEIPT_SCHEMA:
-            receipts.append((item["sha256"], value))
+            receipts.append((item["sha256"], value, Path(item["path"])))
     if len(receipts) != 1:
         raise ValueError("Machine audio adjudication requires exactly one source-meaning receipt as evidence")
-    sha, receipt = receipts[0]
+    sha, receipt, receipt_path = receipts[0]
     adjudicator, media, bindings, units = (receipt.get(k) for k in ("adjudicator", "media", "bindings", "units"))
     if not (
         receipt.get("decidedByRole") == MACHINE_ROLE
@@ -137,8 +143,10 @@ def _machine_receipt(review: dict[str, Any], evidence: list[dict[str, str]],
                          "(source.json and anchor.json) as adjudicated_package")
     from scripts import source_meaning_machine_adjudication as adjudicator_module
     try:
+        # The request cache beside the receipt lets each model verdict be derived again from its response.
         adjudicator_module.validate_receipt(receipt, source=package["source"], anchor=package["anchor"],
-                                            media_sha256=package.get("mediaSha256"))
+                                            media_sha256=package.get("mediaSha256"),
+                                            cache=receipt_path.parent / adjudicator_module.ADJUDICATOR_CACHE)
     except adjudicator_module.SourceAdjudicationError as exc:
         raise ValueError(f"Source-meaning receipt is not bound to the adjudicated package and media: {exc}") from exc
     return sha, receipt
@@ -192,7 +200,7 @@ def apply_review(
     review_path = Path(review_path).resolve()
     review, review_hash = _load_review(review_path)
     if not (
-        review.get("schemaVersion") == SCHEMA
+        review.get("schemaVersion") in SCHEMA_AUTHORITIES
         and review.get("reviewType") == "model"
         and review.get("model") in SUPPORTED_MODELS
         and review.get("humanApproval") is False
@@ -200,6 +208,8 @@ def apply_review(
         and review.get("authority") in AUTHORITIES
     ):
         raise ValueError("A conversational source correction review with model identity is required")
+    if review["authority"] not in SCHEMA_AUTHORITIES[review["schemaVersion"]]:
+        raise ValueError(f"A {review['authority']} review requires the {SCHEMA_V2} contract")
     reviewed_by = _require_text(review.get("reviewedBy"), "reviewedBy")
     reviewed_at = _require_text(review.get("reviewedAt"), "reviewedAt")
     try:
@@ -309,7 +319,7 @@ def apply_review(
         if segment["id"] in changes:
             segment["text"] = changes[segment["id"]]
     provenance = {
-        "schemaVersion": SCHEMA,
+        "schemaVersion": review["schemaVersion"],
         "reviewType": "model",
         "model": review["model"],
         "humanApproval": False,

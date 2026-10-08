@@ -228,6 +228,33 @@ class PinnedLibraryTests(unittest.TestCase):
         self.assertEqual((both['unreadVerses'], both['wholeVerse']), ([], True))
         self.assertEqual(coverage.coverage(self.edition, 'JOH 3:16', verse16)['verses'], [])
 
+    def test_a_reversed_direction_is_never_whole(self):
+        verse = self.edition.lookup('GEN 35:1')['text']
+        self.assertIn('go up to', verse)
+        turned = coverage.coverage(self.edition, 'GEN 35:1', verse.replace('go up to', 'go down to'))
+        self.assertEqual((turned['reversedDirections'], turned['wholeByMeasure'], turned['negationMismatch'],
+                          turned['wholeVerse']), ([['up', 'down']], True, False, False))
+        # Leaving the direction out does not reverse it.
+        omitted = coverage.coverage(self.edition, 'GEN 35:1', verse.replace('go up to', 'go to'))
+        self.assertEqual((omitted['reversedDirections'], omitted['wholeVerse']), ([], True))
+        self.assertEqual(coverage.reversed_directions(coverage.all_tokens('He ascended before them'),
+                                                      coverage.all_tokens('He descended after them')),
+                         [['before', 'after'], ['ascend', 'descend']])
+        self.assertEqual(coverage.reversed_directions(coverage.all_tokens('in and out'),
+                                                      coverage.all_tokens('out and in')), [])
+
+    def test_a_negation_keeps_its_spelling_through_stemming(self):
+        # "nothing" stemmed to "noth" would escape the negation count; a negation word is never stemmed.
+        verse = self.edition.lookup('JOH 15:5')['text']
+        self.assertIn('nothing', coverage.content_tokens(verse))
+        self.assertEqual(coverage.all_tokens('He never fails; nobody knows; nothing without him'),
+                         ['he', 'never', 'fail', 'nobody', 'know', 'nothing', 'without', 'him'])
+        self.assertTrue(coverage.coverage(self.edition, 'JOH 15:5', verse)['wholeVerse'])
+        turned = coverage.coverage(self.edition, 'JOH 15:5', verse.replace('do nothing', 'do something'))
+        self.assertTrue(turned['wholeByMeasure'], turned)
+        self.assertTrue(turned['negationMismatch'])
+        self.assertFalse(turned['wholeVerse'])
+
     def test_half_a_verse_is_a_fragment(self):
         half = ' '.join(self.edition.lookup('JOH 3:16')['text'].split()[:8])
         measure = coverage.coverage(self.edition, 'JOH 3:16', half)

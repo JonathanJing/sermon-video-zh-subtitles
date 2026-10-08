@@ -511,6 +511,49 @@ def _saved_report(out: Path, request: dict, total_groups: int) -> dict:
     return report
 
 
+def _reopen_for_notes(request: dict, total_groups: int, entries: list[dict], value: dict, ledger_root: Path,
+                      meaning_notes: dict | None) -> dict | None:
+    """Reopen a chain stopped for source review once meaning notes settle those groups' units.
+
+    Audio adjudication normally becomes available after a locale has stopped with
+    ``request_source_review``. Its notes do not change the lineage, so the chain
+    continues instead of starting over: each stopped group whose units are noted
+    and never repaired with a note gets one repair carrying it; every other
+    stopped group keeps its reason. The entry records the notes it was reopened by."""
+    last = entries[-1]
+    if last["outcome"] != "stopped" or not meaning_notes:
+        return None
+    eligible = {}
+    for row in last["stopped"]:
+        history = unit_history(entries, row["sourceUnitIds"])
+        if row["reasonCode"] == "request_source_review" \
+                and source_meaning.repair_instruction(meaning_notes, row["sourceUnitIds"]) \
+                and not any("source_meaning_noted" in item["decisions"] for item in history):
+            eligible[row["translationGroupId"]] = row
+    if not eligible:
+        return None
+    report = _saved_report(Path(last["runDirectory"]), request, total_groups)
+    failures = [failure for failure in report["failures"] if failure["translationGroupId"] in eligible]
+    _require(sorted(failure["translationGroupId"] for failure in failures) == sorted(eligible),
+             "Stopped groups are missing from the saved failure report")
+    rows = [{"translationGroupId": failure["translationGroupId"], "sourceUnitIds": failure["sourceUnitIds"],
+             "failureCodes": failure["failureCodes"],
+             "fingerprint": fingerprint(value, failure["sourceUnitIds"], failure["failureCodes"]),
+             "repaired": True, "decision": "source_meaning_noted"} for failure in failures]
+    next_brief = {"schemaVersion": runner.PARTIAL_REPAIR_SCHEMA, **{key: request[key] for key in (
+        "targetLocale", "englishSourcePackageJsonSha256", "anchorManifestSha256", "translationPolicySha256")},
+        "groups": [repair_row(failure, meaning_notes) for failure in failures]}
+    noted_units = sorted({unit for failure in failures for unit in failure["sourceUnitIds"] if unit in meaning_notes})
+    return append_ledger(ledger_root, value, entries, {
+        "runDirectory": last["runDirectory"], "routingVersion": ROUTING_VERSION, "repairBriefSha256": None,
+        "evidenceSha256": None, "failureReportSha256": last["failureReportSha256"],
+        "spend": {"calls": 0, "tokens": 0, "callsWithoutUsage": 0}, "groups": rows, "outcome": "repairing",
+        "stopped": [row for row in last["stopped"] if row["translationGroupId"] not in eligible],
+        "nextBrief": next_brief,
+        "reopenedBy": {"evidence": "source_meaning_notes", "meaningNotesSha256": json_sha256(meaning_notes),
+                       "units": noted_units}})
+
+
 def drive(request: dict, total_groups: int, run_round: RoundRunner, out_root: Path,
           ledger_root: Path, *, group_workers: int = 1, meaning_notes: dict | None = None) -> dict:
     """Run rounds until every group passes or repair stops; write and return a receipt.
@@ -528,6 +571,11 @@ def drive(request: dict, total_groups: int, run_round: RoundRunner, out_root: Pa
     value = lineage(request)
     out_root = Path(out_root)
     entries = load_ledger(ledger_root, value)
+    if entries and entries[-1]["outcome"] != "repairing":
+        reopened = _reopen_for_notes(request, total_groups, entries, value, ledger_root, meaning_notes)
+        if reopened is None:
+            return _receipt(out_root, ledger_root, value, entries, entries[-1]["outcome"], entries[-1]["stopped"])
+        entries.append(reopened)
     # A loop resumes after its last recorded round; it never repeats one.
     sequence = len(entries)
     reuse_from = Path(entries[-1]["runDirectory"]) if entries else None
@@ -535,8 +583,6 @@ def drive(request: dict, total_groups: int, run_round: RoundRunner, out_root: Pa
     initial = entries[0]["spend"] if entries else None
     spent = {"calls": sum(e["spend"]["calls"] for e in entries[1:]),
              "tokens": sum(e["spend"]["tokens"] for e in entries[1:])}
-    if entries and entries[-1]["outcome"] != "repairing":
-        return _receipt(out_root, ledger_root, value, entries, entries[-1]["outcome"], entries[-1]["stopped"])
     while True:
         sequence += 1
         out = out_root / f"round-{sequence:03d}"

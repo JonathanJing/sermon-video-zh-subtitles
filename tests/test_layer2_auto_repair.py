@@ -260,6 +260,42 @@ class LoopTests(unittest.TestCase):
         self.assertEqual((fleet.calls, receipt["stoppedGroups"][0]["reasonCode"]),
                          (["all", ["g21"]], "request_source_review"))
 
+    def test_notes_added_after_a_source_review_stop_reopen_the_chain(self):
+        notes = {"u21": {"decision": "transcript_confirmed", "frozenTextSha256": "0" * 64, "decidedBy": "test",
+                         "meaningNote": "Keep the frozen wording; it is what was said."}}
+        fleet = Fleet(self, 46, [{"g21": failing("quotationAttribution")}] * 2)
+        receipt = self.drive(fleet)
+        self.assertEqual((receipt["status"], receipt["stoppedGroups"][0]["reasonCode"], fleet.calls),
+                         ("repair_stopped", "request_source_review", ["all", ["g21"]]))
+        # Without notes the terminal receipt is returned unchanged.
+        self.assertEqual(self.drive(fleet)["ledgerHeadSha256"], receipt["ledgerHeadSha256"])
+        reopened = subject.drive(REQUEST, fleet.groups, fleet, self.root / "runs", self.root / "state-runs",
+                                 meaning_notes=notes)
+        self.assertEqual((reopened["status"], fleet.calls), ("all_groups_passed", ["all", ["g21"], ["g21"]]))
+        entries = subject.load_ledger(self.root / "state-runs", subject.lineage(REQUEST))
+        self.assertEqual([entry["outcome"] for entry in entries], ["repairing", "stopped", "repairing", "passed"])
+        self.assertEqual((entries[2]["runDirectory"], entries[2]["reopenedBy"]["units"],
+                          [row["decision"] for row in entries[2]["groups"]], entries[2]["spend"]["calls"]),
+                         (entries[1]["runDirectory"], ["u21"], ["source_meaning_noted"], 0))
+        self.assertIn("transcript confirmed by machine audio adjudication",
+                      entries[2]["nextBrief"]["groups"][0]["instruction"])
+        # Reopened once: a recurrence after the noted repair stops for source review again and stays stopped.
+        fleet = Fleet(self, 46, [{"g21": failing("quotationAttribution")}] * 9)
+        self.drive(fleet, out="again")
+        again = subject.drive(REQUEST, fleet.groups, fleet, self.root / "again", self.root / "state-again",
+                              meaning_notes=notes)
+        self.assertEqual((again["status"], again["stoppedGroups"][0]["reasonCode"], fleet.calls),
+                         ("repair_stopped", "request_source_review", ["all", ["g21"], ["g21"]]))
+        self.assertEqual(subject.drive(REQUEST, fleet.groups, fleet, self.root / "again", self.root / "state-again",
+                                       meaning_notes=notes)["ledgerHeadSha256"], again["ledgerHeadSha256"])
+        # A stop for another reason never reopens.
+        fleet = Fleet(self, 46, [{"g2": failing("completeMeaning")}] * 9)
+        receipt = self.drive(fleet, out="other")
+        self.assertEqual(receipt["stoppedGroups"][0]["reasonCode"], "repeated_failure_without_progress")
+        self.assertEqual(subject.drive(REQUEST, fleet.groups, fleet, self.root / "other", self.root / "state-other",
+                                       meaning_notes={"u2": notes["u21"]})["ledgerHeadSha256"],
+                         receipt["ledgerHeadSha256"])
+
     def test_two_repairs_without_fewer_failures_stop(self):
         fleet = Fleet(self, 46, [{"g1": failing("completeMeaning")},
                                  {"g1": failing("noAddedMeaning")},

@@ -262,6 +262,25 @@ class SourceTextReviewTest(unittest.TestCase):
         _, second = self.apply()
         self.assertNotEqual(first["reviewSha256"], second["reviewSha256"])
 
+    def test_machine_authority_requires_the_v2_contract(self):
+        # v1 is the conversational contract existing reviews carry; the machine authority, with its
+        # bound receipt and consumed-corrections rules, is only ever a v2 review.
+        self.assertEqual(review_module.SCHEMA_AUTHORITIES[review_module.SCHEMA], {review_module.AUTHORITY})
+        self.assertEqual(review_module.SCHEMA_AUTHORITIES[review_module.SCHEMA_V2],
+                         {review_module.AUTHORITY, review_module.MACHINE_AUTHORITY})
+        with self.assertRaisesRegex(ValueError, "requires the sermon-source-text-review-v2 contract"):
+            self.apply(review=dict(self.review, authority=review_module.MACHINE_AUTHORITY))
+        with self.assertRaisesRegex(ValueError, "conversational source correction review"):
+            self.apply(review=dict(self.review, schemaVersion="sermon-source-text-review-v3"))
+
+    def test_v2_keeps_the_conversational_review_and_records_its_schema(self):
+        corrected, provenance = self.apply(review=dict(self.review, schemaVersion=review_module.SCHEMA_V2))
+        self.assertEqual(corrected[0]["text"], "But I have committed to not shield you.")
+        self.assertEqual(provenance["schemaVersion"], review_module.SCHEMA_V2)
+        self.assertEqual(provenance["authority"], review_module.AUTHORITY)
+        _, v1 = self.apply()
+        self.assertEqual(v1["schemaVersion"], review_module.SCHEMA)
+
     def test_missing_malformed_or_duplicate_key_review_is_rejected(self):
         with self.assertRaisesRegex(ValueError, "unavailable"):
             review_module.apply_review(self.segments, self.review_path, self.audio, self.asr)
