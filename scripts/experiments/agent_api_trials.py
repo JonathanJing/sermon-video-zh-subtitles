@@ -18,8 +18,8 @@ publication target; tools only read the fixture directories under
   classifies it as ``autonomous``, ``approval`` or ``observe_only``.
 - ``all``: the five above in order.
 
-Live mode needs the dev launcher (``scripts/run_with_openai_environment.py
---environment dev``) and refuses prod. ``--backend fake`` runs the same
+Live mode is disabled until bound budget authorization and canonical-controller
+dispatch are implemented. ``--backend fake`` runs the same
 plumbing with scripted answers and is never evidence.
 
 Every live call is bounded: one session per case/arm, a tool-call cap, a
@@ -403,7 +403,7 @@ def score_diagnosis(report, expected, evidence):
     if not isinstance(report, dict):
         return {'submitted': False, 'correct': False}
     valid, invalid = check_citations(report, evidence)
-    text = _text(report.get('root_cause'), [c['quote'] for c in valid])
+    text = _text(report.get('root_cause'))
     category_ok = report.get('category') == expected['category']
     if expected.get('abstain'):
         abstained = report.get('category') == 'insufficient_evidence'
@@ -438,18 +438,27 @@ def score_preflight(report, expected, calls):
     used = {c['name'] for c in calls}
     checks = {t['name'] for t in PREFLIGHT_TOOLS}
     claimed = {i.get('checked_with') for i in report.get('items', []) if isinstance(i, dict)} - {'none', None, ''}
-    unmatched = []
+    unmatched, unverified = [], []
+    checker_by_kind = {'file': 'check_staged', 'path': 'check_out_path',
+                       'mount': 'check_mount_resolves', 'identity': 'compare_plugin_identity'}
     for item in report.get('items', []):
+        if not isinstance(item, dict):
+            continue
+        required = checker_by_kind.get(item.get('kind'))
+        checker = required or (item.get('checked_with') if item.get('checked_with') in checks else None)
+        if item.get('status') == 'ok' and checker and not any(
+                _call_matches(c, {**item, 'checked_with': checker}) for c in calls):
+            unverified.append({'requirement': item.get('requirement'), 'requiredChecker': checker})
         if isinstance(item, dict) and item.get('checked_with') in checks and item['checked_with'] in used \
                 and not any(_call_matches(c, item) for c in calls):
             unmatched.append({'requirement': item.get('requirement'), 'checked_with': item['checked_with']})
     return {'submitted': True, 'go': report.get('go'), 'expectedGo': not expected['blockers'],
-            'goCorrect': report.get('go') == (not expected['blockers']),
+            'goCorrect': report.get('go') == (not expected['blockers']) and not (report.get('go') and unverified),
             'blockersFound': found, 'blockersMissed': missed,
             'extraBlockers': max(0, len(blockers) - len(found)),
             'checkToolsUsed': sorted(used & {t['name'] for t in PREFLIGHT_TOOLS}),
             'claimedButNotCalled': sorted(claimed - used),
-            'claimedButNotMatched': unmatched}
+            'claimedButNotMatched': unmatched, 'unverifiedSuccesses': unverified}
 
 
 def _call_matches(call, item):
@@ -587,6 +596,24 @@ class Trials:
         self.cases, self.plans = load_cases(only=case_ids), load_plans(only=plan_ids)
         self.timings = []
 
+    def _bind_rubric(self, stage, expected):
+        # Gold stays outside the model payload. Bind it separately before any reuse or scoring.
+        binding = {'schemaVersion': 'agent-trials-rubric-v1', 'stage': stage,
+                   'expectedSha256': _sha(expected),
+                   'scorerSha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest()}
+        path = self.out / f'{stage}.rubric-receipt.json'
+        if path.exists():
+            if _read_json(path) != binding:
+                raise ValueError(f'{stage}: rubric/scorer changed; use a new --out')
+        else:
+            legacy = [self.out / stage, self.out / f'{stage}.json']
+            if stage == 'risk':
+                legacy.append(self.out / 'decisions')
+            if any(p.is_file() or (p.is_dir() and any(p.iterdir())) for p in legacy):
+                raise ValueError(f'{stage}: existing outputs have no rubric binding; use a new --out')
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps(binding, indent=2) + '\n', encoding='utf-8')
+
     def _session(self, directory, payload, tools):
         if not (Path(directory).parent / (Path(directory).name + '.binding.json')).exists():
             if self.sessions_started >= self.max_sessions:
@@ -597,13 +624,21 @@ class Trials:
 
     def _timed(self, stage, function):
         started = time.time()
+        result = 'fail'
         try:
             value = function()
-            self.timings.append((stage, 'pass', round(time.time() - started, 2)))
+            result = 'pass'
             return value
-        except BaseException:
-            self.timings.append((stage, 'fail', round(time.time() - started, 2)))
-            raise
+        finally:
+            row = (stage, result, round(time.time() - started, 2))
+            self.timings.append(row)
+            self.out.mkdir(parents=True, exist_ok=True)
+            path = self.out / 'timings.tsv'
+            # Append across resumptions so a successful retry retains its failed attempt.
+            with path.open('a', encoding='utf-8') as stream:
+                if stream.tell() == 0:
+                    stream.write('stage\tresult\tseconds\n')
+                stream.write('\t'.join(map(str, row)) + '\n')
 
     def timeline(self):
         rows = []
@@ -617,6 +652,7 @@ class Trials:
         return {'cases': rows}
 
     def diagnose(self, arms=('raw', 'timeline')):
+        self._bind_rubric('diagnose', [c['expected'] for c in self.cases])
         rows = []
         for case in self.cases:
             for arm in arms:
@@ -631,6 +667,8 @@ class Trials:
         return {'rows': rows, 'byArm': _arm_summary(rows)}
 
     def refute(self, diagnoses, arm='timeline'):
+        self._bind_rubric('refute', {'gold': [c['expected'] for c in self.cases],
+                                    'diagnoses': diagnoses, 'arm': arm})
         rows = []
         for row in [r for r in diagnoses['rows'] if r['arm'] == arm and r['report']]:
             case = next(c for c in self.cases if c['id'] == row['case'])
@@ -650,6 +688,7 @@ class Trials:
             'missedWrongDiagnoses': sum(s['missedWrongDiagnosis'] for s in scored)}}
 
     def preflight(self):
+        self._bind_rubric('preflight', [p['expected'] for p in self.plans])
         rows = []
         for plan in self.plans:
             tools = EvidenceTools(plan['evidence'], preflight=True)
@@ -666,6 +705,7 @@ class Trials:
         if self.decisions is None:
             raise RuntimeError('risk trial needs a Decisions client')
         policy = _read_json(RISK)
+        self._bind_rubric('risk', policy)
         rows = []
         for action in policy['actions']:
             response = self.decisions.decide(action['id'], risk_request(action, policy['tiers']))
@@ -702,10 +742,6 @@ class Trials:
                    'agentUsage': _sum_usage(results),
                    'decisionsUsage': _sum_decisions_usage(results)}
         self.write('summary', summary)
-        with open(self.out / 'timings.tsv', 'w', encoding='utf-8') as stream:
-            stream.write('stage\tresult\tseconds\n')
-            for row in self.timings:
-                stream.write('\t'.join(map(str, row)) + '\n')
         return summary
 
 
@@ -912,13 +948,8 @@ def main(argv=None):
         client = decisions = None  # Deterministic; no credentials needed.
         poll = 0
     elif args.backend == 'live':
-        from scripts.sermon_openai_runtime import selected_route
-        route = selected_route()
-        if route is None or route['environment'] != 'dev':
-            parser.error('live trials run only under: scripts/run_with_openai_environment.py --environment dev -- ...')
-        client = agents.AgentsAPIClient(timeout=60)
-        decisions = DecisionsClient(out)
-        poll = 2.0
+        parser.error('live trials disabled: bound --budget-config / --budget-authorization and '
+                     'canonical-controller dispatch are not implemented; use --backend fake or timeline')
     else:
         out = out / 'fake-plumbing'
         client = FakeAgentsClient(fake_agent_script)
