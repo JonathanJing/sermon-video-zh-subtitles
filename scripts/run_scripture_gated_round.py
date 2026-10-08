@@ -6,6 +6,9 @@ Steps, in order, each refusing before the next:
    A machine receipt is machine evidence: the report records it as such and
    carries no human approval.
 2. Freeze the admitted-quote plugin and a new fixture that carries the receipt.
+   Flagged units the receipt settles as the speaker's words (paraphrase or
+   reference only) are frozen beside the admitted quotations and take the
+   plain translation path; a receipt with no quotation at all still runs.
 3. Load the fixture back through the same gate used before any dispatch.
 4. Optionally (--run-models) open an exclusive Spark session, run the diagnostic
    Layer 2 CLI and the Spark TTS/ASR, then close the session in the same
@@ -70,6 +73,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
               'admittedQuotes': [{'candidateId': q['candidateId'], 'classification': q['classification'],
                                   'canonicalRef': q['canonicalRef'], 'editionId': q['editionId'],
                                   'editionVerification': q['editionVerification']} for q in summary['quotes']],
+              'speakerWordsUnits': summary['speakerWordsUnits'],
               'fixture': str(fixture), 'modelCalls': 0,
               'adjudicationKind': summary['adjudicationKind'],
               'humanApproval': 'from_receipt_only' if summary['humanApproval'] else False,

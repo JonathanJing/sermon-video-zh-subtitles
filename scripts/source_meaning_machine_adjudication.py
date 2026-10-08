@@ -621,6 +621,90 @@ def receipt_sha256(receipt: dict[str, Any]) -> str:
     return policies.canonical_sha256(receipt)
 
 
+UNIT_DECIDERS = {'listeners_agree_with_transcript', 'model'}
+
+
+def validate_receipt(receipt: Any, *, source: dict[str, Any] | None = None, anchor: dict[str, Any] | None = None,
+                     media_sha256: str | None = None) -> dict[str, Any]:
+    """Refuse anything but a receipt this module wrote, bound to the package and media it names.
+
+    The role string and signature prove nothing by themselves. The receipt must
+    carry its own evidence (listeners with identities, every unit's hearings,
+    a correction that one bounded listener actually heard), and when the
+    adjudicated ``source``/``anchor`` or the media hash are supplied, its
+    bindings must be theirs: a stale or synthetic receipt for other inputs
+    is refused before any patch of Layer 1 or any repair note is admitted."""
+    _require(isinstance(receipt, dict) and receipt.get('schemaVersion') == SCHEMA
+             and receipt.get('decidedByRole') == ROLE and receipt.get('humanApproval') is False, 'receipt_schema')
+    version, implementation = receipt.get('version'), receipt.get('implementationSha256')
+    _require(isinstance(version, str) and isinstance(implementation, str) and len(implementation) == 64
+             and receipt.get('decidedBy') == f'source_meaning_machine_adjudication {version} {implementation[:16]}',
+             'receipt_signature')
+    bindings, media = receipt.get('bindings'), receipt.get('media')
+    _require(isinstance(bindings, dict) and set(bindings) == {'source.json', 'anchor.json'}
+             and all(isinstance(v, str) and len(v) == 64 for v in bindings.values())
+             and isinstance(media, dict) and isinstance(media.get('sha256'), str)
+             and type(media.get('sizeBytes')) is int and isinstance(media.get('offsetSeconds'), (int, float)),
+             'receipt_bindings')
+    listeners, independence = receipt.get('listeners'), receipt.get('listenerIndependence')
+    _require(isinstance(listeners, list) and listeners
+             and all(isinstance(row, dict) and isinstance(row.get('name'), str) and isinstance(row.get('model'), str)
+                     and isinstance(row.get('identity'), dict) for row in listeners)
+             and isinstance(independence, dict) and isinstance(independence.get('independent'), bool),
+             'receipt_listeners')
+    names = sorted(row['name'] for row in listeners)
+    adjudicator, units = receipt.get('adjudicator'), receipt.get('units')
+    _require(isinstance(units, list) and units, 'receipt_units')
+    seen: set[str] = set()
+    for row in units:
+        _require(isinstance(row, dict) and isinstance(row.get('sourceUnitId'), str) and row['sourceUnitId'] not in seen
+                 and isinstance(row.get('frozenText'), str) and row.get('decision') in DECISIONS
+                 and isinstance(row.get('meaningNote'), str) and row['meaningNote'].strip()
+                 and isinstance(row.get('unit'), dict)
+                 and all(isinstance(row['unit'].get(k), (int, float)) for k in ('start', 'end'))
+                 and row.get('decidedBy') in UNIT_DECIDERS, 'receipt_unit')
+        seen.add(row['sourceUnitId'])
+        heard = row.get('heard')
+        _require(isinstance(heard, list) and sorted(h.get('listener') for h in heard if isinstance(h, dict)) == names
+                 and all(isinstance(h.get('unitTokens'), list) and isinstance(h.get('bounded'), bool)
+                         and isinstance(h.get('agreesWithFrozen'), bool) and isinstance(h.get('text'), str)
+                         for h in heard), 'receipt_unit_hearings')
+        by_name = {h['listener']: h for h in heard}
+        if row['decidedBy'] == 'model':
+            _require(isinstance(adjudicator, dict) and isinstance(row.get('request'), dict), 'receipt_decision_evidence')
+        else:
+            _require(row['decision'] == 'transcript_confirmed' and independence['independent']
+                     and all(h['agreesWithFrozen'] and h['bounded'] for h in heard), 'receipt_decision_evidence')
+        if row['decision'] == 'transcript_corrected':
+            corrected, heard_by = row.get('correctedText'), row.get('heardBy')
+            _require(isinstance(corrected, str) and corrected.strip() and heard_by in by_name
+                     and by_name[heard_by]['bounded'] and tokens(corrected) == by_name[heard_by]['unitTokens']
+                     and tokens(corrected) != tokens(row['frozenText']), 'receipt_correction_not_heard')
+        else:
+            _require(row.get('correctedText') is None, 'receipt_correction_not_heard')
+    if media_sha256 is not None:
+        _require(media['sha256'] == media_sha256, 'receipt_media_binding_changed')
+    if source is not None:
+        info, offset = _media_binding(source)
+        _require(media['sha256'] == info['sha256'] and media['sizeBytes'] == info['sizeBytes']
+                 and float(media['offsetSeconds']) == offset, 'receipt_media_binding_changed')
+        _require(bindings['source.json'] == policies.canonical_sha256(source), 'receipt_source_binding_changed')
+    if anchor is not None:
+        _require(bindings['anchor.json'] == policies.canonical_sha256(anchor), 'receipt_anchor_binding_changed')
+        if source is not None:
+            _require_bound_anchor(source, anchor)
+        by_id = {u['sourceUnitId']: u for u in _units(anchor)}
+        for row in units:
+            unit = by_id.get(row['sourceUnitId'])
+            _require(unit is not None and unit['english'] == row['frozenText']
+                     and abs(float(unit['start']) - float(row['unit']['start'])) < 1e-6
+                     and abs(float(unit['end']) - float(row['unit']['end'])) < 1e-6, 'receipt_unit_not_in_anchor')
+    corrected_ids = [row['sourceUnitId'] for row in units if row['decision'] == 'transcript_corrected']
+    return {'receiptSha256': receipt_sha256(receipt), 'decidedBy': receipt['decidedBy'], 'bindings': dict(bindings),
+            'mediaSha256': media['sha256'], 'units': [row['sourceUnitId'] for row in units],
+            'correctedUnits': corrected_ids, 'listeners': names, 'independent': independence['independent']}
+
+
 # ---------------------------------------------------------------- Layer 1 review
 
 def _segment_for(unit: dict[str, Any], segments: list[dict[str, Any]]) -> dict[str, Any]:
@@ -717,9 +801,8 @@ def load_meaning_notes(path: Path, *, source: dict[str, Any], anchor: dict[str, 
              'meaning_notes_receipt_changed')
     receipt = _load(receipt_path)
     try:
-        _require(isinstance(receipt, dict) and receipt.get('schemaVersion') == SCHEMA
-                 and receipt.get('decidedByRole') == ROLE and receipt.get('humanApproval') is False
-                 and receipt.get('bindings') == notes['bindings'], 'meaning_notes_receipt_changed')
+        validate_receipt(receipt, source=source, anchor=anchor)
+        _require(receipt['bindings'] == notes['bindings'], 'meaning_notes_receipt_changed')
         expected = meaning_notes(receipt, receipt_sha256=notes['receiptSha256'])
     except (KeyError, TypeError) as exc:
         raise SourceAdjudicationError('meaning_notes_receipt_changed') from exc
@@ -754,10 +837,34 @@ def _encode(value: dict[str, Any]) -> bytes:
     return (json.dumps(value, ensure_ascii=False, indent=2) + '\n').encode('utf-8')
 
 
+SIDECARS = ('source-text-review.json', 'meaning-notes.json')
+
+
 def _write_new(path: Path, value: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open('xb') as handle:
         handle.write(_encode(value))
+        handle.flush()
+        os.fsync(handle.fileno())
+
+
+def write_outputs(out_dir: Path, receipt: dict[str, Any], review: dict[str, Any] | None,
+                  notes: dict[str, Any] | None) -> dict[str, Any]:
+    """Write the derived sidecars first and the receipt last; return the paths written.
+
+    The receipt file is the completion marker: a failure while writing a
+    sidecar leaves no receipt, so the directory stays resumable and no artifact
+    the receipt vouches for can be missing beside it."""
+    out_dir = Path(out_dir)
+    written: dict[str, Any] = {'review': None, 'meaningNotes': None}
+    if review is not None:
+        _write_new(out_dir / SIDECARS[0], review)
+        written['review'] = str((out_dir / SIDECARS[0]).resolve())
+    if notes is not None:
+        _write_new(out_dir / SIDECARS[1], notes)
+        written['meaningNotes'] = str((out_dir / SIDECARS[1]).resolve())
+    _write_new(out_dir / 'receipt.json', receipt)
+    return written
 
 
 def resumable_out_dir(path: Path) -> Path:
@@ -765,12 +872,16 @@ def resumable_out_dir(path: Path) -> Path:
 
     A directory already holding a receipt is complete and is never overwritten;
     one left by a failed run keeps its paid re-listens and model answers, which
-    the next attempt serves from cache instead of paying again."""
+    the next attempt serves from cache instead of paying again. Sidecars such
+    an attempt left behind bind a receipt that was never written; they are
+    discarded, since the next attempt derives them again from its own receipt."""
     path = Path(path)
     if (path / 'receipt.json').exists():
         raise SystemExit('out dir already holds a receipt; choose a new path')
     if path.exists() and not path.is_dir():
         raise SystemExit('out dir is not a directory')
+    for name in SIDECARS:
+        (path / name).unlink(missing_ok=True)
     return path
 
 
@@ -831,17 +942,11 @@ def main(argv: list[str] | None = None) -> int:
         review = source_text_review(receipt, anchor, segments, receipt_name='receipt.json', receipt_sha256=file_sha,
                                     source_audio=args.source_audio, asr_reference=args.asr_reference)
     notes = meaning_notes(receipt, receipt_sha256=file_sha)
-    _write_new(args.out_dir / 'receipt.json', receipt)
+    written = write_outputs(args.out_dir, receipt, review, notes)
     summary = {'receiptSha256': receipt_sha256(receipt), 'receiptFileSha256': file_sha,
                'out': str(args.out_dir.resolve()),
                'decisions': [(row['sourceUnitId'], row['decision'], row['correctedText']) for row in receipt['units']],
-               'review': None, 'meaningNotes': None}
-    if review is not None:
-        _write_new(args.out_dir / 'source-text-review.json', review)
-        summary['review'] = str((args.out_dir / 'source-text-review.json').resolve())
-    if notes is not None:
-        _write_new(args.out_dir / 'meaning-notes.json', notes)
-        summary['meaningNotes'] = str((args.out_dir / 'meaning-notes.json').resolve())
+               **written}
     print(json.dumps(summary, ensure_ascii=False))
     return 0
 

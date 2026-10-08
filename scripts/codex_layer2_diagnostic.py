@@ -208,7 +208,11 @@ def load_fixture(directory):
             # The frozen plugin must carry exactly the receipt that was just admitted.
             require(facts.get('ADMITTED_RECEIPT_SHA256') == admission['receiptSha256'],
                     'Diagnostic admitted quotation plugin differs from the adjudication receipt')
-            require(sorted({unit for row in facts['ADMITTED_QUOTES'] for unit in row['sourceUnitIds']})
+            quoted = sorted({unit for row in facts['ADMITTED_QUOTES'] for unit in row['sourceUnitIds']})
+            require(quoted == sorted({unit for row in admission['quotes'] for unit in row['sourceUnitIds']}),
+                    'Diagnostic admitted quotation units differ from the adjudication receipt')
+            # Every flagged unit is routed: pinned as an admitted quotation or translated as the speaker's words.
+            require(sorted(quoted + list(facts.get('SPEAKER_WORDS_UNITS', [])))
                     == sorted(manifest.get('sourceQuotationUnits') or []),
                     'Diagnostic admitted quotation units differ from the fixture annotation')
     _check_plugin_scope(policy, anchor, plugin, manifest, admission)

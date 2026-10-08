@@ -143,10 +143,14 @@ def validate_receipt(receipt: Any, *, target_locale: str, bindings: dict[str, st
             _require(row['editionId'] is None and row['exactSentence'] is None, 'non_quote_has_edition')
     _require(len(covered) == len(set(covered)), 'unit_covered_twice')
     _require(set(covered) == set(flagged_units), 'coverage_mismatch')
+    quoted = {unit for row in quotes for unit in row['sourceUnitIds']}
     return {'schemaVersion': SCHEMA, 'receiptSha256': receipt_sha256(receipt), 'targetLocale': target_locale,
             'decidedByRole': receipt['decidedByRole'], 'adjudicationKind': kind,
             'humanApproval': kind == 'human', 'generator': generator,
-            'coveredUnits': sorted(covered), 'quotes': quotes, 'admitted': quotes}
+            'coveredUnits': sorted(covered), 'quotes': quotes, 'admitted': quotes,
+            # Flagged units the receipt settles as the speaker's own words (paraphrase or reference only):
+            # translated as spoken, with no pinned sentence.
+            'speakerWordsUnits': sorted(unit for unit in covered if unit not in quoted)}
 
 
 def require_admitted(manifest: dict[str, Any], directory: Path, *, target_locale: str,

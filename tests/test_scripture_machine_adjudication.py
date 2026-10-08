@@ -320,6 +320,20 @@ class MachineAdjudicationTests(unittest.TestCase):
                                             target_locale='zh-Hans', flagged_units=['u1'], library=LIBRARY)
         self.assertEqual(receipt['candidates'][0]['classification'], 'speaker_paraphrase')
 
+    def test_every_name_the_library_knows_for_a_book_is_parsed(self):
+        # "Song of Solomon" and "Song of Songs" both name SOL in cuv_scripture; the pattern must know both.
+        rows = units('Open your Bibles.',
+                     'Song of Solomon chapter two, verse one says, "I am a rose of Sharon, a lily of the valleys."',
+                     'Amen.')
+        receipt, basis = machine.adjudicate(source(), {'sourceUnits': rows}, plan(rows),
+                                            target_locale='zh-Hans', flagged_units=['u2'], library=LIBRARY)
+        self.assertEqual((receipt['candidates'][0]['classification'], receipt['candidates'][0]['reference']),
+                         ('direct_quote', 'SOL 2:1'))
+        self.assertEqual(basis['discoveredUnits'], ['u2'])
+        for name in ('Song of Solomon', 'Song of Songs'):
+            self.assertEqual(cuv_scripture.normalize_book(name), 'SOL')
+            self.assertEqual(machine._scan(units(f'{name} chapter 2'))[0]['book'], 'SOL', name)
+
     def test_spoken_ordinals_name_the_epistle_not_the_gospel(self):
         whole = coverage_module.CoverageEdition.from_path().lookup('1JO 3:16')['text']
         for spoken in ('First John 3:16 says', '1st John 3:16 says', '1 John 3:16 says'):

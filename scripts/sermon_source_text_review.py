@@ -84,12 +84,16 @@ def _load_review(path: Path) -> tuple[dict[str, Any], str]:
     return review, hashlib.sha256(contents).hexdigest()
 
 
-def _machine_receipt(review: dict[str, Any], evidence: list[dict[str, str]]) -> tuple[str, dict[str, Any]]:
+def _machine_receipt(review: dict[str, Any], evidence: list[dict[str, str]],
+                     package: dict[str, Any] | None) -> tuple[str, dict[str, Any]]:
     """The one verified source-meaning receipt a machine-authority review rests on.
 
     The receipt must be the bound-audio adjudication itself: the machine role,
     no human approval, the same adjudicator identity and signature the review
-    carries, and the media and package bindings it was made against.
+    carries, and, through the adjudicator's own validator, its listeners'
+    hearings and its bindings to the actual package (``source.json``,
+    ``anchor.json``) and media it was made against. A hand-written or stale
+    receipt for other inputs is refused before any patch is read.
     """
     receipts: list[tuple[str, dict[str, Any]]] = []
     for item in evidence:
@@ -127,14 +131,24 @@ def _machine_receipt(review: dict[str, Any], evidence: list[dict[str, str]]) -> 
             if not (isinstance(unit, dict) and isinstance(unit.get("start"), (int, float))
                     and isinstance(unit.get("end"), (int, float))):
                 raise ValueError("Source-meaning receipt corrected unit has no timing")
+    if not (isinstance(package, dict) and isinstance(package.get("source"), dict)
+            and isinstance(package.get("anchor"), dict)):
+        raise ValueError("Machine audio adjudication requires the adjudicated source package "
+                         "(source.json and anchor.json) as adjudicated_package")
+    from scripts import source_meaning_machine_adjudication as adjudicator_module
+    try:
+        adjudicator_module.validate_receipt(receipt, source=package["source"], anchor=package["anchor"],
+                                            media_sha256=package.get("mediaSha256"))
+    except adjudicator_module.SourceAdjudicationError as exc:
+        raise ValueError(f"Source-meaning receipt is not bound to the adjudicated package and media: {exc}") from exc
     return sha, receipt
 
 
-def _machine_expected_text(receipt: dict[str, Any], segment: dict[str, Any]) -> str:
-    """The segment text after applying every corrected unit the receipt places inside it."""
+def _machine_expected_text(receipt: dict[str, Any], segment: dict[str, Any]) -> tuple[str, list[str]]:
+    """The segment text after applying every corrected unit the receipt places inside it, and those units."""
     original = segment["text"]
     expected = original
-    applied = 0
+    applied: list[str] = []
     for row in receipt["units"]:
         if row["decision"] != "transcript_corrected":
             continue
@@ -151,10 +165,10 @@ def _machine_expected_text(receipt: dict[str, Any], segment: dict[str, Any]) -> 
         if expected.count(row["frozenText"]) != 1:
             raise ValueError("Source-meaning receipt corrections overlap inside one segment")
         expected = expected.replace(row["frozenText"], row["correctedText"])
-        applied += 1
+        applied.append(row["sourceUnitId"])
     if not applied:
         raise ValueError("Machine source correction patches a segment the receipt did not correct")
-    return expected
+    return expected, applied
 
 
 def apply_review(
@@ -162,12 +176,18 @@ def apply_review(
     review_path: str | Path,
     source_audio_path: str | Path,
     asr_path: str | Path,
+    *,
+    adjudicated_package: dict[str, Any] | None = None,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Return corrected copies and model provenance after validating all evidence.
 
     The review must bind the original audio and ASR files, every supporting
-    evidence file, and each segment's exact original UTF-8 text. No input object
-    or file is modified, including when validation fails.
+    evidence file, and each segment's exact original UTF-8 text. A machine
+    audio adjudication review also needs ``adjudicated_package``: the
+    ``source`` and ``anchor`` objects its receipt adjudicated and, when known,
+    the parent media's ``mediaSha256``; the receipt must be bound to them and
+    every correction it holds must be patched. No input object or file is
+    modified, including when validation fails.
     """
     review_path = Path(review_path).resolve()
     review, review_hash = _load_review(review_path)
@@ -220,7 +240,7 @@ def apply_review(
     evidence_hashes = {item["sha256"] for item in verified_evidence}
     machine: tuple[str, dict[str, Any]] | None = None
     if review["authority"] == MACHINE_AUTHORITY:
-        machine = _machine_receipt(review, verified_evidence)
+        machine = _machine_receipt(review, verified_evidence, adjudicated_package)
 
     if not isinstance(segments, list) or not segments:
         raise ValueError("Source text review requires source segments")
@@ -239,6 +259,7 @@ def apply_review(
         raise ValueError("Source text review requires nonempty patches")
     changes: dict[int, str] = {}
     applied: list[dict[str, Any]] = []
+    consumed: dict[str, int] = {}
     for patch in patches:
         if not isinstance(patch, dict) or set(patch) != PATCH_FIELDS:
             raise ValueError("Source correction patch has missing or unknown fields")
@@ -260,8 +281,13 @@ def apply_review(
             # The machine may only change what its own bound-audio receipt corrected.
             if evidence_hash != machine[0]:
                 raise ValueError("Machine source correction patch does not cite the source-meaning receipt")
-            if corrected != _machine_expected_text(machine[1], by_id[segment_id]):
+            expected_text, units_here = _machine_expected_text(machine[1], by_id[segment_id])
+            if corrected != expected_text:
                 raise ValueError("Machine source correction patch differs from the receipt's corrections")
+            for unit_id in units_here:
+                if unit_id in consumed:
+                    raise ValueError(f"Machine source correction applies receipt unit {unit_id} in two segments")
+                consumed[unit_id] = segment_id
         changes[segment_id] = corrected
         applied.append({
             "segmentId": segment_id,
@@ -271,6 +297,13 @@ def apply_review(
             "evidenceSha256": evidence_hash,
         })
 
+    if machine is not None:
+        # Layer 1 applies the whole adjudication or none of it: a review that drops a
+        # segment's patch would record the full receipt as evidence for a partial change.
+        omitted = [row["sourceUnitId"] for row in machine[1]["units"]
+                   if row["decision"] == "transcript_corrected" and row["sourceUnitId"] not in consumed]
+        if omitted:
+            raise ValueError("Machine source correction omits receipt corrections for units: " + ", ".join(omitted))
     corrected_segments = deepcopy(segments)
     for segment in corrected_segments:
         if segment["id"] in changes:
