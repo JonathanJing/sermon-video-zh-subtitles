@@ -58,6 +58,8 @@
 
 - `scripts/codex_layer2_diagnostic.py`：
   - `freeze_fixture` 在 `scriptureClassification == 'contains_direct_quotations'` 时要求传入收据，校验通过后把收据写入 fixture 目录（`scripture-adjudication.json`），并把它的路径和哈希记入 fixture manifest。
+  - CLI 用 `--scripture-adjudication /path/to/receipt.json` 读取收据；含直接引文的样本还需指定 `--scripture-classification contains_direct_quotations` 和各个 `--source-quotation-unit`。
+  - 冻结和加载时，pinned-quote 插件的源单元、引文分类、规范化经文引用和按顺序合并的目标文本必须与收据一致；非引文裁决不能授权注入经文。冻结在取得写锁后再次确认目录不存在，收据使用不可变写入路径。
   - `load_fixture` 在加载时重新校验收据文件的哈希和内容。这一步在插件检查和任何模型调用之前完成。
 - `scripts/scripture_adjudication.py`：校验逻辑和拒绝码。
 
@@ -68,7 +70,7 @@
 ## 测试
 
 - `tests/test_scripture_adjudication.py`：收据的每一条拒绝路径，以及完整通过、部分引文、非引文的通过路径。文本取自真实的 CUV 库，收据是测试用的合成输入，不代表人工批准。
-- `tests/test_diagnostic_pinned_quotes.py`：冻结含引文的样本时使用合成收据，验证插件后续行为不变。
+- `tests/test_diagnostic_pinned_quotes.py`：使用与固定 CUV 片段一致的合成收据，覆盖冻结/加载的载荷不一致拒绝、CLI 收据读取和并发冻结保护。
 - `tests/test_codex_layer2_diagnostic.py`：结构插件拒绝含直接引文的样本，现在在收据检查阶段拒绝（同样在付费前）。
 
 ## 没有做的事
