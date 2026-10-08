@@ -107,12 +107,20 @@ def evidence_sha(directory):
 
 # ---------------------------------------------------------------- timeline
 
+def evidence_files(root):
+    """Regular files under root; symlinks and anything resolving outside root are never exposed."""
+    root = Path(root).resolve()
+    return sorted(p for p in root.rglob('*')
+                  if not p.is_symlink() and p.is_file() and p.resolve().is_relative_to(root))
+
+
 def build_timeline(evidence):
     """Order every timestamped line and JSON time field; list what has no time."""
-    evidence = Path(evidence)
+    evidence = Path(evidence).resolve()
     events, untimed = [], []
-    for path in sorted(p for p in evidence.rglob('*') if p.is_file()):
+    for path in evidence_files(evidence):
         name = str(path.relative_to(evidence))
+        before = len(events) + len(untimed)
         if path.suffix == '.json':
             value = _read_json(path)
             found = False
@@ -144,6 +152,9 @@ def build_timeline(evidence):
                     events.append({'at': current, 'inferred': True, **record})
                 else:
                     untimed.append({**record, 'reason': 'error line without any timestamp in file'})
+        if len(events) + len(untimed) == before:
+            # A command, question or listing with no time still belongs to the evidence set.
+            untimed.append({'source': name, 'reason': 'no timestamp in file'})
     events.sort(key=lambda e: (e['at'], e['source'], e.get('line', 0)))
     return {'schemaVersion': 'agent-trials-timeline-v1', 'events': events, 'untimed': untimed,
             'sources': sorted({e['source'] for e in events} | {u['source'] for u in untimed})}
@@ -239,19 +250,24 @@ class EvidenceTools:
     def __init__(self, evidence, *, timeline=False, preflight=False, submit_name='submit_report'):
         self.root = Path(evidence).resolve()
         self.timeline, self.preflight, self.submit_name = timeline, preflight, submit_name
-        self.calls, self.report = [], None
+        self.calls, self.report, self.log_path = [], None, None
 
     def _path(self, relative):
-        path = (self.root / str(relative)).resolve()
-        if not path.is_relative_to(self.root) or not path.is_file():
+        path = self.root / str(relative)
+        if path not in self._files():
             raise ValueError('no such evidence file')
         return path
 
     def _files(self):
-        return sorted(p for p in self.root.rglob('*') if p.is_file())
+        return evidence_files(self.root)
 
     def __call__(self, name, arguments):
-        self.calls.append({'name': name, 'arguments': arguments})
+        call = {'name': name, 'arguments': arguments}
+        self.calls.append(call)
+        if self.log_path is not None:
+            # Append before handling so a resumed session still sees every call made before a crash.
+            with open(self.log_path, 'a', encoding='utf-8') as log:
+                log.write(json.dumps(call, ensure_ascii=False) + '\n')
         if name == 'list_files':
             return {'files': [{'path': str(p.relative_to(self.root)), 'bytes': p.stat().st_size} for p in self._files()]}
         if name == 'read_file':
@@ -299,7 +315,8 @@ def preflight_check(plan_root, name, arguments):
         return {'path': target, 'staged': covered, 'manifest': entries}
     if name == 'check_out_path':
         out = str(arguments['out'])
-        inside = out.startswith('<HOME>/sermon-video-zh-subtitles/') or out.startswith('/')
+        # Only a path under the repository root survives the later relative_to(ROOT).
+        inside = out.startswith('<HOME>/sermon-video-zh-subtitles/')
         return {'out': out, 'absolute': out.startswith('<HOME>') or out.startswith('/'),
                 'relative_to_root_ok': inside,
                 'note': 'run_spark_diagnostic_audio.py calls (out / ...).relative_to(ROOT) after the job hold is created'}
@@ -366,10 +383,24 @@ def _groups_match(text, groups):
     return all(any(term.lower() in text for term in group) for group in groups)
 
 
-def score_diagnosis(report, expected):
+def check_citations(report, evidence):
+    """Split cited quotes into those that occur verbatim in a real evidence file and those that do not."""
+    root = Path(evidence).resolve()
+    texts = {str(p.relative_to(root)): p.read_text(encoding='utf-8') for p in evidence_files(root)}
+    valid, invalid = [], []
+    for item in report.get('evidence') or []:
+        file, quote = (item.get('file'), item.get('quote')) if isinstance(item, dict) else (None, None)
+        quote = quote.strip() if isinstance(quote, str) else ''
+        ok = isinstance(file, str) and file.lstrip('./') in texts and len(quote) >= 4 and quote in texts[file.lstrip('./')]
+        (valid if ok else invalid).append(item)
+    return valid, invalid
+
+
+def score_diagnosis(report, expected, evidence):
     if not isinstance(report, dict):
         return {'submitted': False, 'correct': False}
-    text = _text(report.get('root_cause'), report.get('evidence'))
+    valid, invalid = check_citations(report, evidence)
+    text = _text(report.get('root_cause'), [c['quote'] for c in valid])
     category_ok = report.get('category') == expected['category']
     if expected.get('abstain'):
         abstained = report.get('category') == 'insufficient_evidence'
@@ -377,8 +408,8 @@ def score_diagnosis(report, expected):
                 'categoryOk': category_ok, 'confidence': report.get('confidence')}
     cause_ok = _groups_match(text, expected['causeKeywords'])
     fix_ok = _groups_match(_text(report.get('fix')), expected.get('fixKeywords', []))
-    return {'submitted': True, 'correct': category_ok and cause_ok, 'categoryOk': category_ok,
-            'causeOk': cause_ok, 'fixOk': fix_ok,
+    return {'submitted': True, 'correct': category_ok and cause_ok and bool(valid), 'categoryOk': category_ok,
+            'causeOk': cause_ok, 'fixOk': fix_ok, 'validCitations': len(valid), 'invalidCitations': invalid,
             'bonusOk': _groups_match(text + _text(report.get('fix')), expected['bonusKeywords']) if expected.get('bonusKeywords') else None,
             'confidence': report.get('confidence'),
             'citedFiles': sorted({e.get('file') for e in report.get('evidence', []) if isinstance(e, dict)})}
@@ -402,13 +433,31 @@ def score_preflight(report, expected, calls):
     for key, groups in expected['blockers'].items():
         (found if any(_groups_match(_text(b), groups) for b in blockers) else missed).append(key)
     used = {c['name'] for c in calls}
+    checks = {t['name'] for t in PREFLIGHT_TOOLS}
     claimed = {i.get('checked_with') for i in report.get('items', []) if isinstance(i, dict)} - {'none', None, ''}
+    unmatched = []
+    for item in report.get('items', []):
+        if isinstance(item, dict) and item.get('checked_with') in checks and item['checked_with'] in used \
+                and not any(_call_matches(c, item) for c in calls):
+            unmatched.append({'requirement': item.get('requirement'), 'checked_with': item['checked_with']})
     return {'submitted': True, 'go': report.get('go'), 'expectedGo': not expected['blockers'],
             'goCorrect': report.get('go') == (not expected['blockers']),
             'blockersFound': found, 'blockersMissed': missed,
             'extraBlockers': max(0, len(blockers) - len(found)),
             'checkToolsUsed': sorted(used & {t['name'] for t in PREFLIGHT_TOOLS}),
-            'claimedButNotCalled': sorted(claimed - used)}
+            'claimedButNotCalled': sorted(claimed - used),
+            'claimedButNotMatched': unmatched}
+
+
+def _call_matches(call, item):
+    """A claimed check counts only if a recorded call of that tool had arguments naming this requirement."""
+    if call['name'] != item['checked_with']:
+        return False
+    values = [str(v).strip().lstrip('./') for v in (call.get('arguments') or {}).values() if str(v).strip()]
+    if not values:  # argument-free checks (mount, plugin identity) cover their single requirement
+        return True
+    text = _text(item.get('requirement'), item.get('evidence'))
+    return any(v.lower() in text for v in values)
 
 
 # ---------------------------------------------------------------- session runners
@@ -465,6 +514,8 @@ def run_session(client, session_dir, payload, tools, *, max_seconds, max_tool_ca
     else:
         binding_path.parent.mkdir(parents=True, exist_ok=True)
         binding_path.write_text(json.dumps(binding) + '\n', encoding='utf-8')
+    calls_path = session_dir.parent / (session_dir.name + '.calls.jsonl')
+    tools.log_path = calls_path
     started = time.time()
     result = agents.run_agent_session(client, session_dir, payload, tools, max_seconds=max_seconds,
                                       max_tool_calls=max_tool_calls, poll_seconds=poll_seconds, resume=resume)
@@ -484,10 +535,8 @@ def run_session(client, session_dir, payload, tools, *, max_seconds, max_tool_ca
         output = _read_json(path).get('output') or {}
         if report is None and output.get('status') == 'recorded':
             report = output.get('report')
-    calls_path = session_dir.parent / (session_dir.name + '.calls.json')
     if calls_path.exists():
-        tools.calls = _read_json(calls_path) + tools.calls
-    calls_path.write_text(json.dumps(tools.calls, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+        tools.calls = [json.loads(line) for line in calls_path.read_text(encoding='utf-8').splitlines() if line]
     return {'sessionId': result.get('session_id'), 'status': result.get('status'),
             'toolCalls': result.get('tool_calls'), 'usage': _usage(result),
             'elapsedSeconds': elapsed, 'report': report}
@@ -556,7 +605,7 @@ class Trials:
                                    + (' A get_timeline tool orders all events.' if arm == 'timeline' else ''))
                 session = self._session(self.out / 'diagnose' / case['id'] / arm, payload, tools)
                 rows.append({'case': case['id'], 'arm': arm, **{k: v for k, v in session.items() if k != 'report'},
-                             'report': session['report'], 'score': score_diagnosis(session['report'], case['expected'])})
+                             'report': session['report'], 'score': score_diagnosis(session['report'], case['expected'], case['evidence'])})
         return {'rows': rows, 'byArm': _arm_summary(rows)}
 
     def refute(self, diagnoses, arm='timeline'):
@@ -598,6 +647,9 @@ class Trials:
         rows = []
         for action in policy['actions']:
             response = self.decisions.decide(action['id'], risk_request(action, policy['tiers']))
+            if isinstance(response, dict) and response.get('error'):
+                raise RuntimeError(f'decision {action["id"]} rejected: {response["error"]}; '
+                                   'fix the request and use a new --out')
             rows.append(score_risk(action, response))
         return {'rows': rows, 'summary': risk_summary(rows)}
 
@@ -740,9 +792,12 @@ class DecisionsClient:
             if saved['requestSha256'] != _sha(request):
                 raise ValueError(f'decision {name}: request changed; use a new --out')
             return saved['response']
-        if started.exists():
-            raise RuntimeError(f'decision {name}: outcome unknown from an earlier attempt; inspect before retrying')
-        started.write_text(json.dumps({'requestSha256': _sha(request), 'at': time.time()}) + '\n', encoding='utf-8')
+        try:
+            # Exclusive create: a concurrent or earlier attempt that holds the marker blocks this one.
+            with open(started, 'x', encoding='utf-8') as marker:
+                marker.write(json.dumps({'requestSha256': _sha(request), 'at': time.time()}) + '\n')
+        except FileExistsError:
+            raise RuntimeError(f'decision {name}: outcome unknown from an earlier attempt; inspect before retrying') from None
         began = time.time()
         response = self.transport(request) if self.transport else self._post(request)
         done.write_text(json.dumps({'requestSha256': _sha(request), 'seconds': round(time.time() - began, 3),
