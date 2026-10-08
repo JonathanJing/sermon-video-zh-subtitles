@@ -39,7 +39,7 @@ L2 和音频阶段的数字在三轮之间基本稳定。等待与计算的区�
 
 本轮没有失败。日志中的 onnxruntime `GPU device discovery failed` 警告是 TTS 容器启动时的无害噪声，INDEX 中的错误行都是它。
 
-延续的问题：TTS batch-001 的收据 `inferenceSeconds` 连续三轮为 0.0，与池内生成耗时对不上。未查明，见后续。
+TTS batch-001 的收据 `inferenceSeconds` 连续三轮为 0.0。已查明：8 副本路径下，第二个窗口的计时只包住了父进程取结果的等待。修复见 PR #287（分支 `fix/tts-replica-window-timing`），修复前的收据不改写。
 
 ## 占用资源之后才暴露的错误
 
