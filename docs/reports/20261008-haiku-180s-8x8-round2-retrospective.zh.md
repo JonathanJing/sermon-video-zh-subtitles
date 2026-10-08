@@ -12,7 +12,7 @@
 | L2 诊断 | 26 次调用，插件 `executed_pass`，候选 `diagnostic_candidate_admitted_human_pending` | 6 分 46 秒 | 第一轮墙钟为 358 秒。两轮复核都是 `gpt-6.1-sol` fast |
 | 音频 execute | `completed_diagnostic`，13 段 TTS，13 段 ASR | 2 分 39 秒 | 使用相对路径 `--out`，验证了上一轮的路径修复 |
 | ├ 副本池 | 8 副本并行加载 47.8–49.1 秒，池墙钟 41.4 秒 | | 第一轮加载 47.9–49.1 秒 |
-| ├ TTS | batch-000 8 段 33.24 秒；batch-001 5 段，收据记录 0.0 秒 | | 0.0 秒与第一轮相同，未查明 |
+| ├ TTS | 两窗口并行：窗口 0 生成 33.21 秒，窗口 8 生成 30.29 秒（worker 计时）；收据 batch-001 的 0.0 秒是计时错误 | | 已查明，见下 |
 | └ ASR | batch-000 8 段 8.13 秒；batch-001 5 段 1.27 秒 | | |
 | 生成音频 | 190.48 秒 | | 第一轮 189.6 秒，源片段 180.013 秒 |
 | finish 收尾 | `finish_exit=0`，会话 `closed`，无遗留 job | | 包装脚本自动执行 |
@@ -56,7 +56,11 @@
 
 ## 未解决与后续
 
-1. TTS batch-001 收据的 `inferenceSeconds=0.0`，两轮都出现，需要查 receipt 的计时逻辑。
+1. （已完成）TTS batch-001 收据的 `inferenceSeconds=0.0` 已查明：8 副本路径下第二个窗口的计时只包住了父进程取结果的等待。修复已提交，见 `fix/tts-replica-window-timing`。
 2. 本轮没有做同步评分；ASR 仍没有用项目指标重新打分。
 3. 文档中的 `outcome.json` 说明和包装脚本用法需要写进运行手册，避免再次把 execute 完成当作服务已恢复。
 4. 监听器的过滤条件应该固化在仓库里，而不是临时写在 `artifacts/` 下。
+
+## 更正（复盘后补充）
+
+本文 TTS 一行的 batch-000 数字 33.24 秒是窗口 0 的收据值。窗口 8 的真实生成时间为 30.29 秒（`diagnostic-audio-r4/outputs/tts/replica-runtime.json`），两窗口并行，不是串行的 33.24 秒加 0.0 秒。收据修复见 `fix/tts-replica-window-timing`。

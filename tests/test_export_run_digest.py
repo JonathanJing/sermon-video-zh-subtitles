@@ -59,6 +59,27 @@ class ExportRunDigestTests(unittest.TestCase):
         self.assertIn("Failed stages: `upload`", index)
         self.assertIn("Not copied: 1 .wav", index)
 
+    def test_trial_case_results_are_exported_redacted_and_size_bounded(self):
+        for name in ("diagnose.json", "refute.json", "risk.json"):
+            (self.run / name).write_text(json.dumps({"cases": [{
+                "caseId": "f05", "correct": False, "apiToken": "abcdefgh",
+                "evidence": "/Users/private-user/run/evidence.txt"}]}))
+        oversized = self.run / "nested" / "diagnose.json"
+        oversized.parent.mkdir()
+        oversized.write_text(" " * (digest.MAX_WHOLE_BYTES + 1))
+        (self.run / "raw-response.json").write_text('{"private": "unlisted"}')
+
+        dest = self.export()
+        for name in ("diagnose.json", "refute.json", "risk.json"):
+            result = json.loads((dest / self.run.name / name).read_text())
+            self.assertEqual(result["cases"], [{"caseId": "f05", "correct": False,
+                "apiToken": "<redacted>", "evidence": "~/run/evidence.txt"}])
+        self.assertFalse((dest / self.run.name / "nested" / "diagnose.json").exists())
+        self.assertFalse((dest / self.run.name / "raw-response.json").exists())
+        manifest = json.loads((dest / "manifest.json").read_text())
+        omitted = next(f for f in manifest["files"] if f["path"] == "nested/diagnose.json")
+        self.assertEqual(omitted["omitted"], "over_size_cap")
+
     def test_long_log_keeps_head_tail_and_errors(self):
         lines = [f"line {i}\n" for i in range(1000)]
         lines[500] = "Traceback (most recent call last):\n"
