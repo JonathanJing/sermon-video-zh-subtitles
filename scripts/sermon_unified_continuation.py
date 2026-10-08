@@ -232,6 +232,7 @@ def validate_evidence_slot(state, slot, ref, *, inputs, references):
     elif kind == 'budget_authorization':
         version = value.get('schemaVersion')
         require(version in {'sermon-source-budget-authorization-v1', 'sermon-canonical-layer2-budget-authorization-v1',
+                            'sermon-canonical-layer2-budget-authorization-v2',
                             'sermon-study-budget-authorization-v1'}, 'budget_schema_invalid')
         binding = value.get('binding', value)
         require(binding.get('productionRunId') == manifest['productionRunId'], 'budget_run_changed')
@@ -259,13 +260,17 @@ def validate_evidence_slot(state, slot, ref, *, inputs, references):
         else:
             from scripts import canonical_layer2_budget as layer2_budget
             from scripts import canonical_layer2_controller as controller
+            scoped = version == 'sermon-canonical-layer2-budget-authorization-v2'
+            optional = {'ledgerScope'} if scoped else set()
             require(set(value) == {'schemaVersion','productionRunId','configurationSha256','codeIdentitySha256',
-                                   'requestLimits','authority','approvalReceipt'}, 'budget_schema_invalid')
+                                   'requestLimits','authority','approvalReceipt'} | optional
+                    and (not scoped or value['ledgerScope'] == 'locale'), 'budget_schema_invalid')
             limits = layer2_budget.limits.validate_request_limits(value['requestLimits'])
             authority = layer2_budget.budget._authority(value['authority'])
             expected_binding = dict(approved.get('binding', {}))
             require(set(expected_binding) == {'productionRunId','configurationSha256','codeIdentitySha256','budgetRoot',
-                                              'requestLimits','globalBounds','unitBounds','limits'}
+                                              'requestLimits','globalBounds','unitBounds','limits'} | optional
+                    and (not scoped or expected_binding['ledgerScope'] == 'locale')
                     and all(expected_binding[k] == value[k] for k in ('productionRunId','configurationSha256','codeIdentitySha256'))
                     and expected_binding['requestLimits'] == limits
                     and all(expected_binding[k] == authority[k] for k in ('globalBounds','unitBounds','limits')), 'budget_approval_binding_changed')
@@ -274,7 +279,10 @@ def validate_evidence_slot(state, slot, ref, *, inputs, references):
                     'executionSha256' if version == 'sermon-study-budget-authorization-v1' else 'configurationSha256','')))
                 and binding.get('codeIdentitySha256') == expected_code
                 and value['authority']['globalBounds']['costMicrousd'] <= manifest['budget']['limitMicroUsd'], 'budget_execution_binding_changed')
-        require(approved.get('schemaVersion') == version.replace('authorization','approval')
+        # Layer 2 v1 and v2 share one approval schema; the scope lives in the binding.
+        approval_schema = ('sermon-canonical-layer2-budget-approval-v1' if version.startswith('sermon-canonical-layer2-')
+                           else version.replace('authorization','approval'))
+        require(approved.get('schemaVersion') == approval_schema
                 and approved.get('binding') == expected_binding
                 and approved.get('humanApproval') is True and approved.get('decision') == 'approved'
                 and approved.get('reviewedBy') and approved.get('reviewedAt') and approved.get('operatorEvidence'), 'budget_approval_invalid')
