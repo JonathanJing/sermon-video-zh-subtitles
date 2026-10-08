@@ -125,7 +125,15 @@ class ScoringTests(unittest.TestCase):
         guess = {'category': 'other', 'root_cause': 'timer bug', 'evidence': [], 'fix': '', 'confidence': 0.9}
         self.assertFalse(trials.score_diagnosis(guess, expected, evidence)['correct'])
         self.assertFalse(trials.score_diagnosis({**guess, 'confidence': 0.3}, expected, evidence)['correct'])
-        self.assertTrue(trials.score_diagnosis({**guess, 'category': 'insufficient_evidence'}, expected, evidence)['correct'])
+        self.assertFalse(trials.score_diagnosis({**guess, 'category': 'insufficient_evidence'}, expected, evidence)['correct'])
+        good = {**guess, 'category': 'insufficient_evidence', 'root_cause': 'Evidence is insufficient; cause unknown',
+                'confidence': 0.3, 'unknowns': ['Missing worker timing instrumentation'],
+                'evidence': [{'file': 'tts-batch-001-receipt.json', 'quote': '"inferenceSeconds": 0.0'}]}
+        self.assertTrue(trials.score_diagnosis(good, expected, evidence)['correct'])
+        for changed in ({'confidence': 1.0}, {'confidence': 0.5}, {'confidence': float('nan')},
+                        {'unknowns': []}, {'unknowns': ['']}, {'evidence': []},
+                        {'root_cause': 'A timer bug caused the issue'}):
+            self.assertFalse(trials.score_diagnosis({**good, **changed}, expected, evidence)['correct'], changed)
 
     def test_preflight_claim_needs_a_call_with_matching_arguments(self):
         expected = {'blockers': {}}
@@ -134,10 +142,58 @@ class ScoringTests(unittest.TestCase):
         report = {'items': [item], 'go': True}
         other = [{'name': 'check_staged', 'arguments': {'path': 'scripts/other.py'}}]
         self.assertEqual(len(trials.score_preflight(report, expected, other)['claimedButNotMatched']), 1)
-        same = [{'name': 'check_staged', 'arguments': {'path': './docs/series-terminology.zh.md'}}]
+        same = [{'name': 'check_staged', 'arguments': {'path': './docs/series-terminology.zh.md'},
+                 'output': {'staged': True}}]
         self.assertEqual(trials.score_preflight(report, expected, same)['claimedButNotMatched'], [])
         self.assertTrue(trials.score_preflight(report, expected, same)['goCorrect'])
         self.assertFalse(trials.score_preflight(report, expected, other)['goCorrect'])
+
+    def test_preflight_requires_every_blocker_and_its_failed_check(self):
+        expected = trials._read_json(trials.PLANS / 'p01-planted-blockers/expected.json')
+        tools = trials.EvidenceTools(trials.PLANS / 'p01-planted-blockers/plan', preflight=True)
+        items = []
+        for kind, requirement, checker, args in (
+                ('file', 'series-terminology not staged', 'check_staged', {'path': 'docs/series-terminology.zh.md'}),
+                ('path', 'relative --out artifacts/run', 'check_out_path', {'out': 'artifacts/run'}),
+                ('mount', 'snapshot symlink mount misses blobs', 'check_mount_resolves', {}),
+                ('identity', 'plugin identity mismatch', 'compare_plugin_identity', {})):
+            output = tools(checker, args)
+            items.append({'kind': kind, 'requirement': requirement, 'status': 'blocker',
+                          'checked_with': checker, 'evidence': json.dumps(output)})
+        for partial in ([], items[:1], items[:3]):
+            score = trials.score_preflight({'items': partial, 'go': False}, expected, tools.calls)
+            self.assertFalse(score['goCorrect'])
+            self.assertTrue(score['blockersMissed'])
+        report = {'items': items, 'go': False}
+        self.assertTrue(trials.score_preflight(report, expected, tools.calls)['goCorrect'])
+        self.assertFalse(trials.score_preflight(report, expected, tools.calls[:-1])['goCorrect'])
+        self.assertFalse(trials.score_preflight(report, expected, [])['goCorrect'])
+
+    def test_preflight_cannot_call_a_failed_staging_check_successful(self):
+        tools = trials.EvidenceTools(trials.PLANS / 'p02-clean/plan', preflight=True)
+        self.assertFalse(tools('check_staged', {'path': 'nonexistent.txt'})['staged'])
+        item = {'kind': 'file', 'requirement': 'nonexistent.txt staged', 'checked_with': 'check_staged',
+                'status': 'ok', 'evidence': ''}
+        score = trials.score_preflight({'items': [item], 'go': True}, {'blockers': {}}, tools.calls)
+        self.assertFalse(score['goCorrect'])
+        self.assertEqual(len(score['unverifiedSuccesses']), 1)
+
+    def test_preflight_ok_requires_true_checker_output(self):
+        for kind, checker, field, args in (
+                ('file', 'check_staged', 'staged', {'path': 'nonexistent.txt'}),
+                ('path', 'check_out_path', 'relative_to_root_ok', {'out': '/tmp/run'}),
+                ('mount', 'check_mount_resolves', 'resolves', {}),
+                ('identity', 'compare_plugin_identity', 'equal', {})):
+            item = {'requirement': json.dumps(args), 'kind': kind, 'status': 'ok',
+                    'checked_with': checker, 'evidence': ''}
+            report = {'items': [item], 'go': True}
+            for output in (None, {}, {field: False}, {field: 1}):
+                score = trials.score_preflight(report, {'blockers': {}},
+                                               [{'name': checker, 'arguments': args, 'output': output}])
+                self.assertFalse(score['goCorrect'], (checker, output))
+                self.assertEqual(len(score['unverifiedSuccesses']), 1)
+            self.assertTrue(trials.score_preflight(report, {'blockers': {}},
+                            [{'name': checker, 'arguments': args, 'output': {field: True}}])['goCorrect'])
 
     def test_refuter_is_scored_against_whether_the_diagnosis_was_right(self):
         self.assertTrue(trials.score_refutation({'verdict': 'upheld'}, True)['refuterRight'])
@@ -235,6 +291,71 @@ class RunTests(unittest.TestCase):
                 self.assertEqual(error.exception.code, 2)
             agent_client.assert_not_called()
             decisions_client.assert_not_called()
+
+    def test_binding_without_session_state_is_safely_retryable(self):
+        runner = self.make(case_ids=['f01-plugin-identity'])
+        with patch.object(trials.agents, 'run_agent_session', side_effect=RuntimeError('local interruption')):
+            with self.assertRaisesRegex(RuntimeError, 'local interruption'):
+                runner.run('diagnose')
+        self.assertTrue((self.out / 'diagnose/f01-plugin-identity/raw.binding.json').exists())
+        self.assertFalse((self.out / 'diagnose/f01-plugin-identity/raw/state.json').exists())
+        recovered = self.make(case_ids=['f01-plugin-identity']).run('diagnose')
+        self.assertEqual(recovered['agentSessionsStarted'], 2)
+
+    def test_saved_unknown_or_corrupt_session_never_creates_another(self):
+        runner = self.make(case_ids=['f01-plugin-identity'])
+        with patch.object(runner.client, 'create_session', side_effect=TimeoutError()):
+            with self.assertRaises(trials.agents.AgentsAPIError):
+                runner.run('diagnose')
+        recovered = self.make(case_ids=['f01-plugin-identity'])
+        with patch.object(recovered.client, 'create_session') as create:
+            with self.assertRaisesRegex(trials.agents.AgentsAPIError, 'creation_outcome_unknown'):
+                recovered.run('diagnose')
+            create.assert_not_called()
+        (self.out / 'diagnose/f01-plugin-identity/raw/state.json').write_text('broken json')
+        with patch.object(recovered.client, 'create_session') as create:
+            with self.assertRaisesRegex(trials.agents.AgentsAPIError, 'invalid_saved_state'):
+                recovered.run('diagnose')
+            create.assert_not_called()
+
+    def test_preflight_checker_outputs_survive_completed_session_reuse(self):
+        self.make(plan_ids=['p02-clean']).run('preflight')
+        log = self.out / 'preflight/p02-clean.calls.outputs.jsonl'
+        saved = [json.loads(line) for line in log.read_text().splitlines()]
+        self.assertTrue(saved[0]['output']['staged'])
+        first = json.loads((self.out / 'preflight.json').read_text())
+        with patch.object(trials, 'preflight_check', side_effect=AssertionError('rechecked completed session')):
+            self.make(plan_ids=['p02-clean']).run('preflight')
+        self.assertEqual(json.loads((self.out / 'preflight.json').read_text()), first)
+
+    def test_checker_output_journal_continues_after_an_interrupted_session(self):
+        def script(payload):
+            return [{'name': 'check_staged', 'arguments': {'path': 'docs/series-terminology.zh.md'}},
+                    {'name': 'check_out_path', 'arguments': {'out': '<HOME>/sermon-video-zh-subtitles/artifacts/run'}},
+                    {'name': 'submit_report', 'arguments': {'items': [], 'go': True}}]
+        client = trials.FakeAgentsClient(script)
+        runner = trials.Trials(self.out, client=client, model='m', backend='fake', poll_seconds=0,
+                               plan_ids=['p02-clean'])
+        retrieve = client.retrieve_session
+        count = 0
+        def crash_once(session):
+            nonlocal count
+            count += 1
+            if count == 2:
+                raise KeyboardInterrupt()
+            return retrieve(session)
+        with patch.object(client, 'retrieve_session', side_effect=crash_once):
+            with self.assertRaises(KeyboardInterrupt):
+                runner.run('preflight')
+        resumed = trials.Trials(self.out, client=client, model='m', backend='fake', poll_seconds=0,
+                                plan_ids=['p02-clean'])
+        resumed.run('preflight')
+        self.assertEqual(resumed.sessions_started, 0)
+        entries = [json.loads(line) for line in
+                   (self.out / 'preflight/p02-clean.calls.outputs.jsonl').read_text().splitlines()]
+        self.assertEqual([e['callIndex'] for e in entries], [0, 1])
+        self.assertTrue(entries[0]['output']['staged'])
+        self.assertTrue(entries[1]['output']['relative_to_root_ok'])
 
     def test_unknown_session_outcome_stops_the_trial(self):
         class Stuck(trials.FakeAgentsClient):
