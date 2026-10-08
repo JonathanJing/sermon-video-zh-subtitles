@@ -533,6 +533,10 @@ def _reopen_for_notes(request: dict, total_groups: int, entries: list[dict], val
     if not eligible:
         return None
     report = _saved_report(Path(last["runDirectory"]), request, total_groups)
+    # The brief is derived from this report, so it must be the very report the stopped entry committed:
+    # a report edited afterwards could change failure codes or unit associations behind unchanged caches.
+    _require(json_sha256(report) == last["failureReportSha256"],
+             "Saved failure report differs from the one the stopped ledger entry committed")
     failures = [failure for failure in report["failures"] if failure["translationGroupId"] in eligible]
     _require(sorted(failure["translationGroupId"] for failure in failures) == sorted(eligible),
              "Stopped groups are missing from the saved failure report")

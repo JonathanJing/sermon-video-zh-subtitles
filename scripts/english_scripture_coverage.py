@@ -243,15 +243,32 @@ def all_tokens(text: str) -> list[str]:
                                                 _expand_negations(text.lower().replace('’', "'")))]
 
 
+def _pair_order(tokens: list[str], members: tuple[str, str]) -> list[str]:
+    """The pair's members in the order they are said, consecutive repeats collapsed."""
+    order: list[str] = []
+    for token in tokens:
+        if token in members and (not order or order[-1] != token):
+            order.append(token)
+    return order
+
+
 def reversed_directions(verse_tokens: list[str], spoken_tokens: list[str]) -> list[list[str]]:
-    """The direction pairs the reading turns around, as ``[verse word, spoken word]``."""
-    verse, spoken = set(verse_tokens), set(spoken_tokens)
+    """The direction pairs the reading turns around, as ``[verse word, spoken word]``.
+
+    A pair is turned when the verse has one member only and the reading the other
+    only ("go up" read as "go down"), or when both texts use both members in a
+    different order ("sheep on the right, goats on the left" read the other way)."""
     turned = []
     for pair in DIRECTION_PAIRS:
-        a, b = (_stem(word) for word in pair)
-        for one, other in ((a, b), (b, a)):
-            if one in verse and other not in verse and other in spoken and one not in spoken:
-                turned.append([one, other])
+        members = tuple(_stem(word) for word in pair)
+        verse, spoken = _pair_order(verse_tokens, members), _pair_order(spoken_tokens, members)
+        if not verse or not spoken:
+            continue
+        if set(verse) != set(spoken):
+            if len(set(verse)) == 1 and len(set(spoken)) == 1:
+                turned.append([verse[0], spoken[0]])
+        elif len(set(verse)) == 2 and verse != spoken:
+            turned.append([verse[0], spoken[0]])
     return turned
 
 

@@ -240,8 +240,30 @@ class PinnedLibraryTests(unittest.TestCase):
         self.assertEqual(coverage.reversed_directions(coverage.all_tokens('He ascended before them'),
                                                       coverage.all_tokens('He descended after them')),
                          [['before', 'after'], ['ascend', 'descend']])
+        # Both members on both sides in the same order is no reversal; the other order is a swap.
         self.assertEqual(coverage.reversed_directions(coverage.all_tokens('in and out'),
-                                                      coverage.all_tokens('out and in')), [])
+                                                      coverage.all_tokens('in and out')), [])
+        self.assertEqual(coverage.reversed_directions(coverage.all_tokens('in and out'),
+                                                      coverage.all_tokens('out and in')), [['in', 'out']])
+
+    def test_a_swapped_pair_is_a_reversed_direction(self):
+        # WEB Matthew 25:33 names both sides; reading the sheep on the left and the goats on the right
+        # turns the verse around although every word of it is spoken.
+        verse = self.edition.lookup('MAT 25:33')['text']
+        swapped = verse.replace('right hand', 'LEFT hand').replace('on the left', 'on the right').replace('LEFT', 'left')
+        self.assertNotEqual(swapped, verse)
+        measure = coverage.coverage(self.edition, 'MAT 25:33', swapped)
+        self.assertEqual(measure['reversedDirections'], [['right', 'left']])
+        self.assertTrue(measure['wholeByMeasure'], measure)
+        self.assertFalse(measure['wholeVerse'])
+        self.assertTrue(coverage.coverage(self.edition, 'MAT 25:33', verse)['wholeVerse'])
+        # The same order, a repeated member, or one side only is not a swap.
+        self.assertEqual(coverage.reversed_directions(coverage.all_tokens('right then left'),
+                                                      coverage.all_tokens('right, right, then left')), [])
+        self.assertEqual(coverage.reversed_directions(coverage.all_tokens('right then left'),
+                                                      coverage.all_tokens('on the right')), [])
+        self.assertEqual(coverage.reversed_directions(coverage.all_tokens('right then left'),
+                                                      coverage.all_tokens('left, then right')), [['right', 'left']])
 
     def test_a_negation_keeps_its_spelling_through_stemming(self):
         # "nothing" stemmed to "noth" would escape the negation count; a negation word is never stemmed.

@@ -477,12 +477,23 @@ class SolAdjudicator:
         payload, stage = self.payload(question), f'source-meaning-{self.route_key}-{unit_id}'
         request_hash = contract.json_sha256({'schemaVersion': judge_cache.RUN_SCHEMA, 'stage': stage,
                                              'payload': payload})
-        cached = (self.cache.resolve() / 'cache' / f'{stage}-{request_hash}.json').is_file()
+        path = self.cache.resolve() / 'cache' / f'{stage}-{request_hash}.json'
+        cached = path.is_file()
         if not cached:
             _require(self.max_calls is None or self.calls < self.max_calls, 'adjudicator_call_cap_reached')
             # Refused before the cache writes its started marker, so an unbound run leaves nothing to reconcile.
             _require(self.caller is not _unbound_call, 'budget_authorization_required')
             self.calls += 1
+            marker = path.with_suffix('.started.json')
+            if marker.is_file() and self.budget is not None:
+                # A run that died after the ledger kept the returned response but before the cache file was
+                # written leaves this marker. The ledger is the paid-call record: it replays a returned response,
+                # refuses an unknown outcome, and a marker it never saw was never sent. Bind that response into
+                # the cache so the resumed run reads it instead of staying blocked on the marker.
+                response = self._budgeted_call(self.api_key, payload)
+                judge_cache.reconcile_returned_response(marker_path=marker, response=response,
+                                                        expected_request_sha256=request_hash,
+                                                        requested_model=self.model)
         result, request = judge_cache.cached_call(out=self.cache, stage=stage, payload=payload, api_key=self.api_key,
                                                   requested_model=self.model, caller=self.caller)
         return result, {**request, 'cached': cached, 'bounds': limits.request_bounds(payload, self.limits)}
@@ -770,9 +781,11 @@ def validate_receipt(receipt: Any, *, source: dict[str, Any] | None = None, anch
              and isinstance(media, dict) and isinstance(media.get('sha256'), str)
              and type(media.get('sizeBytes')) is int and isinstance(media.get('offsetSeconds'), (int, float)),
              'receipt_bindings')
-    _require('budget' in receipt and (receipt['budget'] is None or (
+    # Receipts written before the budget contract carry no ``budget``; they read as unrecorded, like a
+    # cache-only run's ``null``. A present record must be the authorization identity this module writes.
+    _require(receipt.get('budget') is None or (
         isinstance(receipt['budget'], dict) and set(receipt['budget']) == set(BUDGET_IDENTITY_KEYS)
-        and receipt['budget']['schemaVersion'] == BUDGET_SCHEMA)), 'receipt_budget')
+        and receipt['budget']['schemaVersion'] == BUDGET_SCHEMA), 'receipt_budget')
     listeners, independence = receipt.get('listeners'), receipt.get('listenerIndependence')
     _require(isinstance(listeners, list) and listeners
              and all(isinstance(row, dict) and isinstance(row.get('name'), str) and isinstance(row.get('model'), str)

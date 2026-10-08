@@ -279,6 +279,21 @@ class LoopTests(unittest.TestCase):
                          (entries[1]["runDirectory"], ["u21"], ["source_meaning_noted"], 0))
         self.assertIn("transcript confirmed by machine audio adjudication",
                       entries[2]["nextBrief"]["groups"][0]["instruction"])
+        # The reopened brief comes from the report the stopped entry committed; an edited report is refused.
+        fleet = Fleet(self, 46, [{"g21": failing("quotationAttribution")}] * 2)
+        stopped = self.drive(fleet, out="edited")
+        report_path = Path(stopped["stoppedGroups"][0]["runDirectory"]) / "group-failures.json" \
+            if "runDirectory" in stopped["stoppedGroups"][0] else None
+        if report_path is None:
+            ledger = subject.load_ledger(self.root / "state-edited", subject.lineage(REQUEST))
+            report_path = Path(ledger[-1]["runDirectory"]) / "group-failures.json"
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+        report["failures"][0]["failureCodes"] = ["completeMeaning"]
+        report_path.write_text(json.dumps(report), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "differs from the one the stopped ledger entry committed"):
+            subject.drive(REQUEST, fleet.groups, fleet, self.root / "edited", self.root / "state-edited",
+                          meaning_notes=notes)
+        self.assertEqual(fleet.calls, ["all", ["g21"]])
         # Reopened once: a recurrence after the noted repair stops for source review again and stays stopped.
         fleet = Fleet(self, 46, [{"g21": failing("quotationAttribution")}] * 9)
         self.drive(fleet, out="again")

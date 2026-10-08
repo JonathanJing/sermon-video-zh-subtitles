@@ -868,9 +868,12 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
         self.assertNotIn('store', receipt['budget'])
         self.assertEqual(receipt['adjudicator']['requestLimits'], limits.DEFAULT_REQUEST_LIMITS)
         machine.validate_receipt(receipt, source=self.source, anchor=self.anchor, cache=cache)
+        # A receipt written before the budget contract has no record and still validates; a record that is
+        # not the authorization identity this module writes is refused.
         stripped = {k: v for k, v in receipt.items() if k != 'budget'}
+        machine.validate_receipt(stripped, anchor=self.anchor, cache=cache)
         with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_budget'):
-            machine.validate_receipt(stripped, anchor=self.anchor, cache=cache)
+            machine.validate_receipt(dict(receipt, budget={'schemaVersion': machine.BUDGET_SCHEMA}), anchor=self.anchor, cache=cache)
         # The same run again replays both caches: no transport call, the same receipt rows.
         with mock.patch.dict(os.environ, route):
             again = machine.adjudicate(self.source, self.anchor, unit_ids=['u3'], media=None, adjudicator=machine.SolAdjudicator(
@@ -879,6 +882,31 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
         self.assertEqual(len(calls), 2)
         self.assertEqual(again['units'][0]['heard'], receipt['units'][0]['heard'])
         self.assertTrue(again['units'][0]['request']['cached'])
+        # A run that died after the ledger kept Sol's response but before the cache file was written leaves the
+        # cache's started marker. The resumed run binds the ledger's response into the cache without a new call.
+        cache_file = Path(row['request']['path'])
+        marker = cache_file.with_suffix('.started.json')
+        marker.write_text(json.dumps({'requestSha256': row['request']['requestSha256'],
+                                      'request': json.loads(cache_file.read_text(encoding='utf-8'))['request'],
+                                      'status': 'started_response_unconfirmed'}), encoding='utf-8')
+        cache_file.unlink()
+        with mock.patch.dict(os.environ, route):
+            resumed = machine.adjudicate(self.source, self.anchor, unit_ids=['u3'], media=None, adjudicator=machine.SolAdjudicator(
+                api_key='k', cache=cache, budget=budget), out_dir=self.out, cut=lambda *_: clip, budget=budget,
+                listeners=[machine.OpenAiTranscribeListener(cache=cache / 'openai', max_calls=0, budget=budget)])
+        self.assertEqual(len(calls), 2)
+        self.assertTrue(cache_file.is_file())
+        self.assertFalse(marker.exists() and not cache_file.exists())
+        self.assertEqual(resumed['units'][0]['decision'], 'undetermined')
+        self.assertFalse(resumed['units'][0]['request']['cached'])
+        machine.validate_receipt(resumed, source=self.source, anchor=self.anchor, cache=cache)
+        # Without a budget the marker stays an unknown outcome: nothing is sent and the run stops.
+        cache_file.unlink()
+        marker.write_text(marker.read_text(encoding='utf-8'), encoding='utf-8')
+        with mock.patch.dict(os.environ, route):
+            with self.assertRaisesRegex(ValueError, 'Unknown L1 request outcome'):
+                FakeAdjudicator(cache, answer('undetermined')).decide('u3', json.loads(
+                    json.loads(marker.read_text(encoding='utf-8'))['request']['payload']['messages'][1]['content']))
         # Exhausted bounds refuse before the transport is reached and leave nothing to reconcile.
         tight_out = self.root / 'tight'
         tight_binding = machine.budget_binding(self.source, self.anchor, ['u3'], tight_out)
