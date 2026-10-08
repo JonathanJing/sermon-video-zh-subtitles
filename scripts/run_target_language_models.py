@@ -662,15 +662,20 @@ def require_reconciled_requests(*directories: Path | None) -> None:
                     f"Uncertain paid {role} call; inspect before retry or dispatch: {marker}")
 
 
+def _plugin_group_review(policy, request, plugin_path, reviewed_row, *, diagnostic_context=None):
+    evaluated = producer.evaluate_plugin_groups(
+        policy, request, plugin_path, policy["languageReview"]["pluginImplementationSha256"],
+        [reviewed_row], diagnostic_context=diagnostic_context)
+    return evaluated["groupReviews"][0]
+
+
 def _stop_after_plugin_group_failure(policy, request, plugin_path, reviewed_row, plan, index, out, *, diagnostic_context=None):
     """After this group's review, block later dispatch when the pinned plugin fails.
 
     Groups already submitted stay on disk. This check itself makes no model call.
     """
-    evaluated = producer.evaluate_plugin_groups(
-        policy, request, plugin_path, policy["languageReview"]["pluginImplementationSha256"],
-        [reviewed_row], diagnostic_context=diagnostic_context)
-    review = evaluated["groupReviews"][0]
+    review = _plugin_group_review(policy, request, plugin_path, reviewed_row,
+                                  diagnostic_context=diagnostic_context)
     if review["status"] == "pass":
         return
     stop = {"schemaVersion": "sermon-layer2-plugin-group-stop-v1", "status": "blocked",
@@ -700,7 +705,8 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
         revision_brief: dict[str, Any] | None = None,
         reuse_from: Path | None = None,
         partial_repair_brief: dict[str, Any] | None = None,
-        resume_cache_from: Path | None = None) -> dict[str, Any]:
+        resume_cache_from: Path | None = None,
+        *, failure_collector=None) -> dict[str, Any]:
     require(plugin_path is not None,
             "Formal Layer 2 requires the frozen language plugin before dispatch")
     with accounting.stage(f"layer2.source_admission.{policy['targetLocale']}",
@@ -710,7 +716,7 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
     return _run_prepared_groups(
         request, anchor, policy, out, api_key, caller, custom_plan, plugin_path,
         revision_brief, reuse_from, partial_repair_brief, resume_cache_from,
-        source_admission_span=source_span)
+        source_admission_span=source_span, failure_collector=failure_collector)
 
 
 def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
@@ -726,11 +732,17 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                          progress_callback=None,
                          source_admission_span: str | None = None,
                          completion_spans: list[str] | None = None,
-                         diagnostic_context=None) -> dict[str, Any]:
+                         diagnostic_context=None,
+                         failure_collector=None) -> dict[str, Any]:
     """Shared group loop; the formal entry above still enforces Layer 1 approval.
 
     Simulated requests carry an extra marker that prevents formal candidate
     admission, and cannot reuse or repair a production response cache.
+
+    By default the first Sol or plugin failure stops the run. A failure
+    collector instead records each failed group, keeps dispatching until it
+    reports a systemic stop, and ends the run with a failure report rather than
+    evidence. It never writes a plugin group stop.
     """
     with accounting.stage(f"layer2.run_admission.{request['targetLocale']}",
                           depends_on=[source_admission_span] if source_admission_span else [],
@@ -862,6 +874,10 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                 partial_repair_brief)
         if resume_cache_from is not None:
             identity["resumeCacheFrom"] = str(resume_cache_from.resolve())
+        if failure_collector is not None:
+            require(not simulation_only and diagnostic_context is None and plugin_path is not None,
+                    "Failure collection is for formal plugin-gated runs")
+            identity["failureCollection"] = failure_collector.identity
         identity_hash = policy_tools.canonical_sha256(identity)
         manifest = out / "run-identity.json"
         if manifest.exists():
@@ -901,6 +917,9 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
         units = {row["sourceUnitId"]: row["english"] for row in request["sourceUnits"]}
     def _process_group(item):
         index, group = item
+        if failure_collector is not None and failure_collector.stopped():
+            failure_collector.record_not_dispatched(index, group)
+            return None, None
         with accounting.stage(f"layer2.prepare.{request['targetLocale']}.group-{index:04d}",
                               cache_hit=prior_evidence is not None and group['translationGroupId'] not in briefs
                                         and group['translationGroupId'] not in repairs,
@@ -1102,10 +1121,19 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                             "reviewerRequestId": reviewed_response["requestId"]}
             if semantic["status"] != "pass" or any(value != "pass" for value in semantic["checks"].values()) \
                     or semantic["uncertainty"] or semantic["issues"]:
+                if failure_collector is not None:
+                    failure_collector.record_review_failure(index, group, semantic, sol_path)
+                    return None, validation_span
                 raise ValueError(f"Sol flagged group {stem}; inspect saved response before admission")
             if plugin_path is not None and not simulation_only:
-                _stop_after_plugin_group_failure(policy, request, plugin_path, reviewed_row, plan, index, out,
-                                                 diagnostic_context=diagnostic_context)
+                if failure_collector is not None:
+                    review = _plugin_group_review(policy, request, plugin_path, reviewed_row)
+                    if review["status"] != "pass":
+                        failure_collector.record_plugin_failure(index, group, review, sol_path)
+                        return None, validation_span
+                else:
+                    _stop_after_plugin_group_failure(policy, request, plugin_path, reviewed_row, plan, index, out,
+                                                     diagnostic_context=diagnostic_context)
             return reviewed_row, validation_span
     def process_group(item):
         index, _ = item
@@ -1115,6 +1143,8 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
     results = (ordered_group_results(list(enumerate(plan, 1)), process_group, workers,
                                     maximum_workers=maximum_workers) if maximum_workers != 16 else
                ordered_group_results(list(enumerate(plan, 1)), process_group, workers))
+    if failure_collector is not None and failure_collector.has_failures():
+        failure_collector.finish(out, request, plan)
     dependencies = accounting.bounded_dependencies(
         f"layer2.evidence_join.{request['targetLocale']}", [span for _, span in results],
         work_unit_id=f"l2.{request['targetLocale']}.evidence_join")
@@ -1154,7 +1184,8 @@ def run_accounted(source: dict, anchor: dict, policy: dict, out_dir: Path,
                   resume_cache_from: Path | None = None,
                   progress_ledger: Path | None = None,
                   cache_only: bool = False, progress_callback=None,
-                  predecessor_spans=(), completion_spans: list[str] | None = None) -> dict:
+                  predecessor_spans=(), completion_spans: list[str] | None = None,
+                  failure_collector=None) -> dict:
     require(plugin is not None,
             "Formal Layer 2 requires the frozen language plugin before dispatch")
     locale = policy["targetLocale"]
@@ -1178,7 +1209,8 @@ def run_accounted(source: dict, anchor: dict, policy: dict, out_dir: Path,
                 request, anchor, policy, out_dir, api_key, call, plan, plugin,
                 revision_brief, reuse_from, partial_repair_brief, resume_cache_from,
                 source_admission_span=source_span, cache_only=cache_only,
-                progress_callback=progress_callback, completion_spans=completion_spans)
+                progress_callback=progress_callback, completion_spans=completion_spans,
+                failure_collector=failure_collector)
         metrics["doneUnits"] = len(evidence["groups"])
     return evidence
 
