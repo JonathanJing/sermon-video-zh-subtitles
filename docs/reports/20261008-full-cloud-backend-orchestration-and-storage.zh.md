@@ -1,6 +1,6 @@
 # 整条后端放到云端：AI 怎么调度，产物怎么保存
 
-日期：2026-10-08。基线：`dev` @ `ca1a612`。接着 [10/7 云 GPU 资源与并发](20261007-cloud-gpu-resources-and-concurrency.zh.md) 和 [10/1 GCP 可行性](../gcp-production-feasibility-20261001.zh.md)。这是设计思考，没有建任何云资源；**标“估”的数字是推算，价格下单前要重新核对。**
+日期：2026-10-08。基线：`dev` @ `ca1a612`。接着 [10/7 云 GPU 资源与并发](20261007-cloud-gpu-resources-and-concurrency.zh.md) 和 [10/1 GCP 可行性](../gcp-production-feasibility-20261001.zh.md)。这是方向性设计，没有建任何云资源；**标“估”的数字是推算，价格下单前要重新核对。** 每个阶段开工前要另写有版本号的实现合同，本文的路径和机制是起点，不是可以直接照做的 schema。
 
 ## 先说结论
 
@@ -44,23 +44,23 @@ flowchart TD
 
 1. 本机下载来源、算 SHA、上传到 `sources/`，调用 controller 开 run。
 2. L1 Job 跑完写英文来源包和收据，Workflows 挂起等英文批准。
-3. 批准后 controller **按语言并行**派 L2：每语言一个 locale job，组内多个 group worker（Cloud Run Job 的 task 并行）调 Sol 6.1 API。上限沿用现有规则：默认每 run 一个 active locale，execution-v2 最多 3 个（[controller 合同](../canonical-layer2-controller.zh.md)）。API 槽位改成 Firestore 里的全局计数，跨 Job 共享。所有付费 Job 设 `maxRetries=0`（Cloud Run Jobs 默认每个 task 自动重试 3 次，会在 controller 对账前重复调用 API）；task 超时显式设成大于一组初译加复核的最长耗时（默认 10 分钟不够，单次 API 调用就可能用到 300 秒），超时值写进冻结的执行策略，controller 的心跳和无进展上限照旧。
+3. 批准后 controller **按语言并行**派 L2：每语言一个 locale job，组内多个 group worker（Cloud Run Job 的 task 并行）调 Sol 6.1 API。上限沿用现有规则：默认每 run 一个 active locale，execution-v2 最多 3 个（[controller 合同](../canonical-layer2-controller.zh.md)）。组 task 只产出不可变的组结果；每个语言另有**一个**受租约保护的汇总 task，读齐所有组结果后，按规定只跑一次语言插件、候选构建和候选准入（现在这一步在 canonical worker 的进程内 pool 里完成，拆成多个 task 后必须有唯一 owner，不能每个组各建一份候选）。API 槽位改成 Firestore 里的全局计数，跨 Job 共享。所有付费 Job 设 `maxRetries=0`（Cloud Run Jobs 默认每个 task 自动重试 3 次，会在 controller 对账前重复调用 API）；task 超时显式设成大于一组初译加复核的最长耗时（默认 10 分钟不够，单次 API 调用就可能用到 300 秒），超时值写进冻结的执行策略，controller 的心跳和无进展上限照旧。
 4. 某个语言文字批准一到，就给这个语言开 GPU 跑 L3，不等其他语言。
-5. 听审／waiver 收据到了以后，L4 只做**准备**：打包、预检，然后停下。听审批准或 waiver 不等于发布授权；现有发布流程要求一份绑定这个已准备 release 和 Firebase 目标的单独授权（`scripts/sermon_release_workflow.py:282-288`）。Workflows 在这里再挂起一次，授权收据到了才部署，然后做 HTTP 核验，并按 release plan 的语言联动要求发布。
+5. L4 准备前先检查全部输入是否就绪：听审收据或音频 waiver，以及大纲、默想、来源复核、metadata 等各自独立的批准。缺哪个就进入对应的等待状态（这是正常等待，不是失败）。全部就绪后，L4 只做**准备**：打包、预检，然后停下。听审批准或 waiver 不等于发布授权；现有发布流程要求一份绑定这个已准备 release 和 Firebase 目标的单独授权（`scripts/sermon_release_workflow.py:282-288`）。Workflows 在这里再挂起一次，授权收据到了才部署，然后做 HTTP 核验，并按 release plan 的语言联动要求发布。canonical 发布还要生成 catalog v4 和对应的人工审核 v3 投影；客户端靠 catalog 才能找到新 release，多语言联动也靠 catalog 的 release-set 一次切换。
 6. 任何一步结果不明（超时、断线、进程消失），controller 标 `reconciliation_required`，不自动重发，等 Supervisor 给出对账建议、你确认。这条是现有规则，上云后不放宽。
 
 ### 并发和预算放在哪里
 
-- **租约**：仓库已经有 GCS generation precondition 租约（`backend/leases.py:129`），但它的过期判断用的是调用方自己的 `datetime.now()`（`backend/leases.py:46`、L154-157）。多台机器上，时钟偏快的一方可能抢走一个仍在工作的租约。所以云端不能原样复用：过期和接管要改用共享的服务端时间（例如 Firestore 事务里的服务端时间戳），并且每次有状态的写入都带上租约的 generation 做 fencing，旧 owner 一写就失败。需要查询和事务的（API 槽位、预算预留）也放 Firestore 事务。
+- **租约**：仓库已经有 GCS generation precondition 租约（`backend/leases.py:129`），但它的过期判断用的是调用方自己的 `datetime.now()`（`backend/leases.py:46`、L154-157）。多台机器上，时钟偏快的一方可能抢走一个仍在工作的租约。所以云端不能原样复用：过期和接管要改用共享的服务端时间（例如 Firestore 事务里的服务端时间戳）。fencing 也不能跨两个存储做：GCS 的 generation 条件只检查 `state.json` 自己的版本，查不到 Firestore 里的租约是否已被接管。所以**受租约保护的可变状态（job 状态、current 指针）和租约放在同一个 Firestore 事务里更新**，GCS 只放不可变证据；`state.json` 只作为 Firestore 状态的定期快照。需要查询和事务的（API 槽位、预算预留）也放 Firestore 事务。
 - **心跳**：现在用本机单调时钟（[liveness](../canonical-layer2-liveness.zh.md)），跨机器不能比较。云端改为 worker 定期写 Firestore 服务端时间戳，controller 用服务端时间判超时。
-- **预算**：现在的预算根是本地兄弟目录，跨主机不共享（[预算与迁移](../canonical-layer2-budget-and-migration.zh.md)）。云端用 Firestore 事务做并发准入，但**预留、结算、结果不明这三种转换在派发前先写成 GCS 不可变对象**（`runs/<pageId>/<runId>/budget/<attemptId>/<transition>.json`）。这样 Firestore 丢了也能从 GCS 恢复“有一笔调用可能已经花了钱”，不会把预算放回去再重复派发。仍然需要绑定人工批准收据。
+- **预算**：现在的预算根是本地兄弟目录，跨主机不共享（[预算与迁移](../canonical-layer2-budget-and-migration.zh.md)）。云端用 Firestore 事务做并发准入，但每次派发前先把**预留**写成 GCS 不可变对象；调用返回或失败后，再追加**结算**或**结果不明**对象，写好之后才释放或复用这笔预留（`runs/<pageId>/<runId>/budget/<attemptId>/<transition>.json`）。这样 Firestore 丢了也能从 GCS 恢复“有一笔调用可能已经花了钱”，不会把预算放回去再重复派发。仍然需要绑定人工批准收据。
 - **GPU**：卡数上限 3，由 controller 计数，不需要通用 GPU 调度器。
 
 ### Supervisor 在云上的问题
 
 Supervisor 现在走 ChatGPT 登录的 Codex CLI（`scripts/sermon_codex_transport.py:42`，要求 `auth_mode=chatgpt`），自动切 API 是禁用的。在云端无人值守地放一份 ChatGPT 登录凭据不合适，所以有两个选择：
 
-- **A（建议）**：Supervisor 改走 OpenAI API（`tongxing-prod` 项目的 key 放 Secret Manager），按调用计费，派发前走预算门。这需要你改 [运行策略](../production-model-runtime-policy.zh.md)。Supervisor 只在决策点调用，每周调用次数少，费用估计每月几美元。
+- **A（建议）**：Supervisor 改走 OpenAI API，按 run 冻结的环境挂 key：dev／Beta／实验用 `tongxing-dev-runtime`，正式用 `tongxing-prod-runtime`，都放 Secret Manager，按调用计费，派发前走预算门。这需要你改 [运行策略](../production-model-runtime-policy.zh.md)。Supervisor 只在决策点调用，每周调用次数少，费用估计每月几美元。
 - **B**：Supervisor 留在本机，轮询云端状态、提交意向。云端照样跑，但你的 Mac 不在线时，决策点就停着。
 
 ## 生成物怎么保存
@@ -84,16 +84,17 @@ gs://tongxing-prod-evidence/
     L2/<locale>/<revision>/groups/<g>/attempts/<n>.json
     L3/<locale>/<renderId>/audio-package.json
     L4/<locale>/<releaseId>/release-package.json   # 准备好的包和 HTTP 核验后的包各是一个新 releaseId
-    L4/<locale>/current.json                # 指向当前 releaseId，用 generation 条件更新
+    L4/catalog/<catalogId>/{catalog-v4,catalog-v3-human}.json   # 不可变 catalog 及人工审核投影
+    L4/current-release-set                  # 指向当前 catalog 和各语言 releaseId，存在 Firestore，事务更新
     receipts/<kind>/<id>.json               # 批准、waiver、预算授权，带被批准物的 hash
-    accounting/<attemptId>/<eventId>.json   # 每个事件一个对象（开始、完成各一个），不追加同一个文件
+    accounting/events/<eventId>.json        # 每个事件一个对象，按 eventId 存；run_started 这类没有 attemptId 的事件也能存
     jobs/<jobId>/request.json               # 派发前只写一次；请求一变就换新 jobId
-    jobs/<jobId>/state.json                 # 可变，用 generation 条件更新
+    jobs/<jobId>/state.json                 # Firestore 状态的快照，权威状态在 Firestore
   cache/layer2/<identityHash>.json          # 模型结果缓存，key 含来源、策略、prompt、代码身份
   models/                                   # 授权音色 checkpoint 等，单独桶更好，见下
 ```
 
-`accounting/events.jsonl` 现在是本地追加文件；多个云 Job 同时追加同一个对象做不到，所以改成每个事件一个对象。一次 API 调用至少有两条记录：`api_attempt_started` 和完成记录（`scripts/sermon_accounting.py:624-657`），未完成调用的对账要靠两条都在（L994-1002），所以 key 必须是 `<attemptId>/<eventId>`，不能一次调用只占一个对象。现有 `sermon_accounting.py` 的读取、重放和完整性检查只认 `events.jsonl`（L329、L833），所以要加一个确定性的转换步骤：按固定顺序把这些对象拼回 `events.jsonl` 并校验，再交给汇总脚本生成 `summary.json` 和 `model-calls.csv`；或者把所有读取方改成新格式。以后需要做报表，再导入 BigQuery。
+`accounting/events.jsonl` 现在是本地追加文件；多个云 Job 同时追加同一个对象做不到，所以改成每个事件一个对象。一次 API 调用至少有两条记录：`api_attempt_started` 和完成记录（`scripts/sermon_accounting.py:624-657`），未完成调用的对账要靠两条都在（L994-1002），所以每个事件单独一个对象，key 用 `eventId`，不能一次调用只占一个对象；`run_started`、`workflow_started`、`run_finished` 这些事件的 `attemptId` 是空的，也必须能存。现有 `sermon_accounting.py` 的读取、重放和完整性检查只认 `events.jsonl`（L329、L833），所以要加一个确定性的转换步骤：按固定顺序把这些对象拼回 `events.jsonl` 并校验，再交给汇总脚本生成 `summary.json` 和 `model-calls.csv`；或者把所有读取方改成新格式。以后需要做报表，再导入 BigQuery。
 
 ### 保留多久（建议，需你确认）
 
@@ -104,7 +105,7 @@ gs://tongxing-prod-evidence/
 | 来源媒体 | 90 天后转 Coldline，按授权要求删除 | 体积大，可重新取得 |
 | 被现行包引用的单元音频 | 和引用它的包、release 一样长 | canonical 暂存会打开并完整解码每个引用的单元（`scripts/stage_formal_multilingual_dev.py:258-262`）；重新合成的 hash 不同，要走新修订和新审核，不能当作恢复 |
 | 没有被任何现行包引用的中间产物（废弃修订的音频、临时文件） | 30 天删除 | 已经不在任何证据链上 |
-| L2 模型缓存 | 随 run 身份保留到下一次大版本 | 保证重跑不重复花钱 |
+| L2 模型缓存 | 只要还有绑定它的冻结 run 可以续跑就保留；那个 run 关闭或被明确取代后才回收 | `canonical_layer2_cache_recovery.py` 恢复时只认原始缓存或原始响应，不会重新调用模型 |
 
 体量估算：每周 1 小时证道，三语音频和中间文件约 2–5 GB，长期保存的部分约 0.5–1 GB。按 Standard 存储算，每月不到 $2（估）。
 
