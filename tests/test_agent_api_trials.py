@@ -772,3 +772,45 @@ class ScopeTests(unittest.TestCase):
             with patch.object(trials.os, 'fsync', lambda fd: (events.append('fsync'), real(fd))):
                 client.decide('a01', {'input': 'one'})
             self.assertLess(events.index('fsync'), events.index('send'))
+
+
+class RoundTests(unittest.TestCase):
+    def setUp(self):
+        (trials.ROOT / 'artifacts').mkdir(exist_ok=True)
+        temporary = tempfile.TemporaryDirectory(dir=trials.ROOT / 'artifacts', prefix='test-agent-trials-')
+        self.addCleanup(temporary.cleanup)
+        self.out = Path(temporary.name) / 'run'
+
+    def make(self, **kwargs):
+        return trials.Trials(self.out, client=trials.FakeAgentsClient(trials.fake_agent_script), model='gpt-6-luna',
+                             backend='fake', poll_seconds=0, risk_repeats=1,
+                             decisions=trials.DecisionsClient(self.out, transport=trials.fake_decisions), **kwargs)
+
+    def test_session_cap_covers_sessions_from_earlier_invocations(self):
+        cases = ['f01-plugin-identity']
+        with self.assertRaises(RuntimeError):
+            self.make(case_ids=cases, max_sessions=1).run('diagnose')
+        with self.assertRaises(RuntimeError):
+            self.make(case_ids=cases, max_sessions=1).run('diagnose')
+        self.assertEqual(sum(1 for _ in self.out.rglob('state.json')), 1)
+
+    def test_timeline_selection_cannot_narrow(self):
+        self.make(case_ids=['f01-plugin-identity', 'f02-preempt-authorization']).run('timeline')
+        with self.assertRaises(ValueError):
+            self.make(case_ids=['f02-preempt-authorization']).run('timeline')
+
+    def test_summary_keeps_timeline_and_earlier_stages(self):
+        self.make(case_ids=['f01-plugin-identity']).run('risk')
+        summary = self.make(case_ids=['f01-plugin-identity']).run('timeline')
+        self.assertEqual(summary['timeline'][0]['case'], 'f01-plugin-identity')
+        self.assertEqual(summary['risk']['actions'], 60)
+
+    def test_rejection_is_on_disk_before_the_marker_is_cleared(self):
+        client = trials.DecisionsClient(self.out, transport=lambda _r: {'error': {'status': 429}})
+        order = []
+        real_replace, real_unlink = os.replace, Path.unlink
+        with patch.object(trials.os, 'replace', lambda a, b: (order.append('rejection'), real_replace(a, b))), \
+                patch.object(Path, 'unlink', lambda self, *a, **k: (order.append('marker'), real_unlink(self, *a, **k))), \
+                self.assertRaises(RuntimeError):
+            client.decide('a01', {'input': 'one'})
+        self.assertEqual(order, ['rejection', 'marker'])

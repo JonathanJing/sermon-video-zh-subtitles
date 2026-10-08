@@ -761,7 +761,8 @@ class Trials:
     def _session(self, directory, payload, tools, evaluation):
         # Only saved runner state proves an existing remote session; anything else starts a new one.
         if not (Path(directory) / 'state.json').exists():
-            if self.sessions_started >= self.max_sessions:
+            # The cap covers the whole round in this --out, including sessions created by earlier invocations.
+            if sum(1 for _ in self.out.rglob('state.json')) >= self.max_sessions:
                 raise RuntimeError(f'session cap {self.max_sessions} reached; raise --max-sessions to continue')
             self.sessions_started += 1
         return run_session(self.client, directory, payload, tools, max_seconds=self.max_seconds,
@@ -868,24 +869,7 @@ class Trials:
             return self._run(trial)
         except BaseException:
             # Summarize what finished, including the failed stage's completed rows, for the run report.
-            results = dict(self.results)
-            # Rows saved by an earlier run into this --out (a finished stage such as risk before all, or an earlier
-            # checkpoint) stay in the summary, merged by identity with this run's rows of the same stage.
-            for stage in ('diagnose', 'refute', 'preflight', 'risk'):
-                if stage in results:
-                    continue
-                saved = self.out / f'{stage}.json'
-                earlier = _read_json(saved) if saved.exists() else {}
-                earlier_rows = earlier.get('rows', [])
-                if stage in self.partial:
-                    current = {_row_identity(stage, row) for row in self.partial[stage]}
-                    rows = [row for row in earlier_rows if _row_identity(stage, row) not in current] + self.partial[stage]
-                    results[stage] = _stage_result(stage, rows)
-                elif earlier.get('partial') and earlier_rows:
-                    results[stage] = _stage_result(stage, earlier_rows)
-                elif earlier_rows:
-                    results[stage] = earlier
-            self.write('summary', self._summary(results, status='failed'))
+            self.write('summary', self._summary(self._merged_results(), status='failed'))
             raise
         finally:
             # Written even when a stage raises, so the run report shows the failed stage and its time.
@@ -893,6 +877,30 @@ class Trials:
                 stream.write('stage\tresult\tseconds\n')
                 for row in self.timings:
                     stream.write('\t'.join(map(str, row)) + '\n')
+
+    def _merged_results(self):
+        """This run's stages plus rows saved by earlier runs into this --out (a finished stage such as risk before
+        all, or an earlier checkpoint), merged by identity with this run's rows of the same stage."""
+        results = dict(self.results)
+        for stage in ('timeline', 'diagnose', 'refute', 'preflight', 'risk'):
+            if stage in results:
+                continue
+            saved = self.out / ('timeline-summary.json' if stage == 'timeline' else f'{stage}.json')
+            earlier = _read_json(saved) if saved.exists() else {}
+            if stage == 'timeline':
+                if earlier:
+                    results[stage] = earlier
+                continue
+            earlier_rows = earlier.get('rows', [])
+            if stage in self.partial:
+                current = {_row_identity(stage, row) for row in self.partial[stage]}
+                rows = [row for row in earlier_rows if _row_identity(stage, row) not in current] + self.partial[stage]
+                results[stage] = _stage_result(stage, rows)
+            elif earlier.get('partial') and earlier_rows:
+                results[stage] = _stage_result(stage, earlier_rows)
+            elif earlier_rows:
+                results[stage] = earlier
+        return results
 
     def _bind_scope(self, stage, scope):
         """A stage may rerun into an existing --out only with the same or a wider selection, never a narrower one,
@@ -909,7 +917,8 @@ class Trials:
         results = self.results
         cases = {'model': self.model, 'cases': sorted(c['id'] for c in self.cases)}
         planted = sorted(w['case'] for w in _read_json(WRONG_DIAGNOSES)['diagnoses'] if w['case'] in cases['cases'])
-        for stage, scope in (('diagnose', cases), ('refute', {**cases, 'planted': planted}),
+        for stage, scope in (('timeline', {'cases': cases['cases']}), ('diagnose', cases),
+                             ('refute', {**cases, 'planted': planted}),
                              ('preflight', {'model': self.model, 'plans': sorted(p['id'] for p in self.plans)}),
                              ('risk', {'model': DECISIONS_MODEL, 'repeats': self.risk_repeats,
                                        'actions': sorted(a['id'] for a in _read_json(RISK)['actions'])})):
@@ -925,7 +934,7 @@ class Trials:
             results['preflight'] = self.write('preflight', self._timed('preflight', self.preflight))
         if trial in ('risk', 'all'):
             results['risk'] = self.write('risk', self._timed('risk', self.risk))
-        summary = self._summary(results, status='completed')
+        summary = self._summary(self._merged_results(), status='completed')
         self.write('summary', summary)
         return summary
 
@@ -934,6 +943,7 @@ class Trials:
                 'evidence': {'fake': 'fake_plumbing_not_evidence', 'live': 'live_dev_api'}.get(self.backend, self.backend),
                 'agentModel': self.model, 'decisionsModel': DECISIONS_MODEL,
                 'agentSessionsStarted': self.sessions_started,
+                'timeline': results.get('timeline', {}).get('cases'),
                 'diagnoseByArm': results.get('diagnose', {}).get('byArm'),
                 'refute': results.get('refute', {}).get('summary'),
                 'preflight': [{'plan': r['plan'], **r['score']} for r in results.get('preflight', {}).get('rows', [])],
@@ -1146,8 +1156,10 @@ class DecisionsClient:
         if isinstance(response, dict) and response.get('error'):
             rejected.append({'requestSha256': _sha(request), 'evaluationSha256': evaluation_sha, 'at': time.time(),
                              'error': response['error']})
-            rejected_path.write_text(json.dumps(rejected, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+            _write_durably(rejected_path, json.dumps(rejected, ensure_ascii=False, indent=2) + '\n')
+            # Clear the marker only once the rejection is on disk, so the retry cap cannot be lost.
             started.unlink()
+            _fsync_directory(self.dir)
             raise RuntimeError(f'decision {name} rejected: {response["error"]}; rerun the same --out to retry '
                                'only this action')
         _write_durably(done, json.dumps({'requestSha256': _sha(request), 'evaluationSha256': evaluation_sha,
