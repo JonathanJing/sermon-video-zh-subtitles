@@ -1,5 +1,6 @@
 import json
 import os
+import posixpath
 import shutil
 from pathlib import Path
 import tempfile
@@ -1181,7 +1182,8 @@ class LatestReviewTests(unittest.TestCase):
 
     def test_incomplete_run_exits_nonzero_and_records_failure(self):
         out, _make = self.make_trials()
-        with patch.object(trials.Trials, 'run', return_value={'status': 'incomplete'}), patch('builtins.print'), \
+        bound_run = lambda self, trial, wrap: wrap(lambda: {'status': 'incomplete'})
+        with patch.object(trials.Trials, 'run', bound_run), patch('builtins.print'), \
                 self.assertRaises(SystemExit) as stop:
             trials.main(['timeline', '--out', str(out)])
         self.assertEqual(stop.exception.code, 2)
@@ -1331,7 +1333,14 @@ class LatestReviewTests(unittest.TestCase):
                          {'answers': [{'type': 'predicate', 'name': 'tier', 'choice': 'approval', 'confidence': 0.9}]},
                          {'answers': decision(choice='approval', confidence=0.9)['answers'][1:]},
                          {'answers': decision(choice='approval', confidence=0.9)['answers']
-                          + [{'type': 'choice', 'name': 'tier', 'choice': 'autonomous', 'confidence': 0.9}]}):
+                          + [{'type': 'choice', 'name': 'tier', 'choice': 'autonomous', 'confidence': 0.9}]},
+                         {'answers': decision(choice='approval', confidence=0.9)['answers'][:1]
+                          + [{'type': 'predicate', 'name': 'irreversible'},
+                             {'type': 'predicate', 'name': 'spends_money', 'probability': 0.1}]},
+                         {'answers': decision(choice='approval', confidence=0.9)['answers'][:2]
+                          + [{'type': 'predicate', 'name': 'spends_money', 'probability': 1.5}]},
+                         {'answers': decision(choice='approval', confidence=0.9)['answers']
+                          + [{'type': 'predicate', 'name': 'extra', 'probability': 0.1}]}):
             with self.subTest(response=response):
                 row = {**trials.score_risk(action, response), 'repeat': 1}
                 self.assertIsNone(row['chosen'])
@@ -1364,16 +1373,22 @@ class LatestReviewTests(unittest.TestCase):
         cases = {'/home/spark/.cache/huggingface/hub': True, repo: True, repo + '/': True,
                  repo + '/snapshots/3c1e9a7': False, repo + '/snapshots/other': False, '/tmp': False,
                  repo + '/snapshots': False, '/home/spark/.cache/huggingface/hub-other': False}
+        snapshot = repo + '/snapshots/3c1e9a7'
         for mount, expected in cases.items():
-            (root / 'plan' / 'docker-asr-mount.txt').write_text(f'-v {mount}:/asr-hub:ro   (back-ASR --model /asr-hub/m)\n')
+            # The model path the container would open if the mount covered the listed snapshot.
+            relative = posixpath.relpath(snapshot, mount.rstrip('/') or '/')
+            model = '/asr-hub/' + (relative if not relative.startswith('..') else 'model')
+            (root / 'plan' / 'docker-asr-mount.txt').write_text(f'-v {mount}:/asr-hub:ro   (back-ASR --model {model})\n')
             with self.subTest(mount=mount):
                 self.assertIs(trials.preflight_check(root / 'plan', 'check_mount_resolves', {})['resolves'], expected)
         hub = '/home/spark/.cache/huggingface/hub'
-        for line, expected in {f'-v {hub}:/wrong:ro   (back-ASR --model /asr-hub/m)': False,
+        listed = '/asr-hub/models--Qwen--Qwen3-ASR-1.7B/snapshots/3c1e9a7'
+        for line, expected in {f'-v {hub}:/wrong:ro   (back-ASR --model {listed})': False,
                                f'-v {hub}:/asr-hub   (back-ASR --model /asr-hub-other/m)': False,
                                f'-v {hub}:/asr-hub:ro   (back-ASR)': False,
                                f'-v {hub}:/asr-hub:ro   (back-ASR --model /asr-hub/../etc)': False,
-                               f'-v {hub}:/asr-hub   (back-ASR --model /asr-hub/m)': True}.items():
+                               f'-v {hub}:/asr-hub:ro   (back-ASR --model /asr-hub/models--Other--B/snapshots/x)': False,
+                               f'-v {hub}:/asr-hub   (back-ASR --model {listed})': True}.items():
             (root / 'plan' / 'docker-asr-mount.txt').write_text(line + '\n')
             with self.subTest(line=line):
                 self.assertIs(trials.preflight_check(root / 'plan', 'check_mount_resolves', {})['resolves'], expected)
@@ -1492,6 +1507,17 @@ class LatestReviewTests(unittest.TestCase):
         self.assertTrue(row['refusal'])
         self.assertNotIn('malformedResponse', row)
         self.assertEqual(trials._unscored({'risk': {'rows': [{**row, 'repeat': 1}]}}), ['risk:x:r1'])
+
+    def test_refused_rerun_leaves_the_completed_run_untouched(self):
+        out, make = self.make_trials()
+        make().run('risk')
+        (out / 'outcome.json').write_text('{"status": "succeeded"}\n')
+        before = {p.name: p.read_bytes() for p in out.iterdir() if p.is_file()}
+        changed_route = {'projectId': 'p', 'credentialAlias': 'a', 'credentialFingerprint': 'f'}
+        with self.assertRaisesRegex(ValueError, 'narrower or different'):
+            make(route=changed_route).run('risk', wrap=lambda body: self.fail('outcome wrapper must not run'))
+        after = {p.name: p.read_bytes() for p in out.iterdir() if p.is_file()}
+        self.assertEqual(after, before)
 
 if __name__ == '__main__':
     unittest.main()

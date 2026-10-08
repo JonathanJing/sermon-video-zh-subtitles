@@ -600,9 +600,13 @@ def preflight_check(plan_root, name, arguments):
 
         def inside(path):
             return path == mount or path.startswith(mount.rstrip('/') + '/')
-        resolves = model_inside and bool(links) and all(inside(link) and inside(target)
-                                                        for (link, _), target in zip(links, targets))
+        # The model the container opens, seen on the host, must be one of the listed snapshot directories.
+        model_host = posixpath.normpath(posixpath.join(mount, posixpath.relpath(model_path, container))) \
+            if model_inside else None
+        model_listed = model_host in {posixpath.dirname(link) for link, _ in links}
+        resolves = model_listed and all(inside(link) and inside(target) for (link, _), target in zip(links, targets))
         return {'hostMount': mount, 'containerMount': container, 'model': model_path, 'modelInsideMount': model_inside,
+                'modelOnHost': model_host, 'modelListed': model_listed,
                 'symlinkTargets': sorted(set(targets)),
                 'blobsInsideMount': bool(targets) and all(inside(t) for t in targets), 'resolves': resolves}
     if name == 'compare_plugin_identity':
@@ -1217,7 +1221,10 @@ class Trials:
         _write_durably(path, json.dumps(value, ensure_ascii=False, indent=2) + '\n')
         return value
 
-    def run(self, trial):
+    def run(self, trial, wrap=None):
+        """Run a trial. An invocation refused before its scopes bind (lock held, quarantine, incompatible scope,
+        bad fixture) writes nothing; ``wrap`` receives the bound run as a callable, so a caller's outcome marker is
+        written only for an invocation that actually started."""
         self.out.mkdir(parents=True, exist_ok=True)
         # One invocation per --out at a time: scopes and checkpoints are read, merged and rewritten, so a second
         # concurrent invocation could interleave its selection and rows with this one.
@@ -1226,11 +1233,11 @@ class Trials:
                 fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
             except BlockingIOError:
                 raise RuntimeError(f'{self.out}: another invocation is using this --out') from None
-            return self._run_locked(trial)
+            return self._run(trial, wrap or (lambda body: body()))
 
-    def _run_locked(self, trial):
+    def _guarded(self, body):
         try:
-            return self._run(trial)
+            return body()
         except BaseException:
             # Summarize what finished, including the failed stage's completed rows, for the run report.
             self.write('summary', self._summary(self._merged_results(), status='failed'))
@@ -1346,14 +1353,17 @@ class Trials:
                  'risk': risk}
         return {stage: build[stage]() for stage in stages}
 
-    def _run(self, trial):
-        results = self.results
+    def _run(self, trial, wrap):
         if (self.out / 'invalidated.json').exists():
             raise ValueError(f'{self.out}: quarantined after fixtures or code changed mid-run; use a new --out')
         selected = [stage for stage in ('timeline', 'diagnose', 'refute', 'preflight', 'risk')
                     if trial in ('all', stage) or (trial == 'refute' and stage == 'diagnose')]
         scopes = self._scopes(selected)
         self._bind_scopes(scopes)
+        return wrap(lambda: self._guarded(lambda: self._stages(trial, scopes)))
+
+    def _stages(self, trial, scopes):
+        results = self.results
 
         def finish(stage, name, run):
             def drifted():
@@ -1461,14 +1471,15 @@ def _scorer_identity(stage):
              'refute': [*tools, *timeline, _diagnosis_schema, score_diagnosis, check_citations, _groups_match, _text, _relative,
                         _refutation_schema, score_refutation, _refute_summary],
              'preflight': [*tools, _preflight_schema, score_preflight, preflight_check, _check_receipts, _check_satisfied,
-                           _call_matches, _relative, _groups_match, _text],
-             'risk': [score_risk, risk_summary]}[stage]
+                           _call_matches, _declared_arguments, _check_input, _relative, _groups_match, _text],
+             'risk': [score_risk, risk_summary, _usage_values, _probability]}[stage]
     tool_definitions = [FILE_TOOLS, TIMELINE_TOOL, PREFLIGHT_TOOLS, MAX_READ_CHARS]
     timeline_patterns = [TIMESTAMP.pattern, ERROR_LINE.pattern, END_FIELD.pattern]
     constants = {'timeline': timeline_patterns,
                  'diagnose': [*tool_definitions, *timeline_patterns, CATEGORIES, SCHEMA_TYPES],
                  'refute': [*tool_definitions, *timeline_patterns, CATEGORIES, SCHEMA_TYPES],
-                 'preflight': [*tool_definitions, ARGUMENT_FREE_TERMS, CHECK_VERDICT, SCHEMA_TYPES], 'risk': [TIERS]}[stage]
+                 'preflight': [*tool_definitions, ARGUMENT_FREE_TERMS, CHECK_VERDICT, SCHEMA_TYPES, CHECK_INPUTS],
+                 'risk': [TIERS, DECISION_QUESTIONS]}[stage]
     # The stage method assembles the payload text and the projection a later stage sees, so it is bound too.
     methods = [STAGE_SOURCES[stage]] + {'timeline': [], 'risk': [STAGE_SOURCES['decisions']]}.get(
         stage, [STAGE_SOURCES['_session'], STAGE_SOURCES['runner']])
@@ -1571,6 +1582,10 @@ def risk_request(action, tiers):
 DECISION_QUESTIONS = (('tier', 'choice'), ('irreversible', 'predicate'), ('spends_money', 'predicate'))
 
 
+def _probability(value):
+    return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value) and 0 <= value <= 1
+
+
 def _usage_values(usage):
     """Token counts that are finite, non-negative numbers; anything else is not usage evidence."""
     if not isinstance(usage, dict):
@@ -1587,7 +1602,9 @@ def score_risk(action, response):
     listed = [a for a in (body.get('answers') if isinstance(body.get('answers'), list) else []) if isinstance(a, dict)]
     refusal = any(a.get('type') == 'refusal' for a in listed)
     # Each asked question must come back exactly once with its own type; otherwise nothing in it is scored.
-    shaped = all([a.get('type') for a in listed if a.get('name') == name] == [kind] for name, kind in DECISION_QUESTIONS)
+    shaped = (len(listed) == len(DECISION_QUESTIONS)
+              and all([a.get('type') for a in listed if a.get('name') == name] == [kind] for name, kind in DECISION_QUESTIONS)
+              and all(_probability(a.get('probability')) for a in listed if a.get('type') == 'predicate'))
     if response is not None and not refusal and not shaped:
         malformed_response, listed = True, []
     answers = {a['name']: a for a in listed if isinstance(a.get('name'), str)}
@@ -1904,14 +1921,16 @@ def main(argv=None):
                     route=route)
     from scripts.outcome_marker import run_with_outcome
 
-    def run():
-        summary = trials.run(args.trial)
+    def reported(body):
+        summary = body()
         print(json.dumps(summary, ensure_ascii=False, indent=2))
         if summary['status'] != 'completed':
             # A partial or incomplete run is recorded as failed in outcome.json and exits nonzero.
             raise SystemExit(2)
         return summary
-    run_with_outcome(out / 'outcome.json', 'agent-api-trials ' + args.trial, run)
+    # The outcome marker wraps only a bound run: a refused invocation leaves an earlier run's marker untouched.
+    trials.run(args.trial, wrap=lambda body: run_with_outcome(out / 'outcome.json', 'agent-api-trials ' + args.trial,
+                                                              lambda: reported(body)))
     return 0
 
 
