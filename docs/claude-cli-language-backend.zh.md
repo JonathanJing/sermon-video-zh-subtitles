@@ -22,12 +22,25 @@ claude -p --model claude-opus-5-5 --effort high --output-format json \
 
 ## Sol 6.1 high 对 Opus 5.5 翻译 A/B
 
-`scripts/experiments/claude_translation_ab.py` 读取已有基线目录里冻结的 `group-*-astra.policy-preview.json` 提示词，每组两臂同期交错执行（偶数组 Sol 先、奇数组 Opus 先），两臂都用订阅登录，都不带 API key：
+### 目的
 
-- Sol 臂：`CodexLayer2Transport`，`gpt-6.1-sol` high fast（10/5 用户指定的实验基线）。
-- Opus 臂：`ClaudeLayer2Transport`，`claude-opus-5-5`，默认 high。
+回答一个问题：初译这一步换成 Opus 5.5（走 Claude 订阅额度），能不能在质量不降的前提下更快或更省？结果只决定要不要进一步做更大样本的测试，不直接改正式翻译策略。具体看三件事：
 
-固定三分钟样本（39 单元、13 组）在 Mac 上运行：
+1. **质量**：同一批英文、同一份提示词下，Opus 的中文初译是否不差于 Sol 6.1 high。
+2. **速度**：单组调用耗时，两臂同期交错测量。
+3. **用量**：每次调用的输入/输出 token，以及 Claude CLI 给出的标价折算金额。Codex CLI 每次约 1.6 万输入 token，Claude CLI 冒烟约 1,500，这一点会直接影响订阅额度能撑多少调用。
+
+### 方法
+
+- **样本**：固定三分钟片段（媒体 SHA256 `79bada8f…e906b`，180.013 秒，39 个英文单元、13 组，zh-Hans），没有直接经文引用。用 10/5 冻结在 `artifacts/codex-cli-layer2-180s-20261005/` 的 13 份 `group-*-astra.policy-preview.json` 提示词，两臂收到的系统提示词、输入和输出 JSON schema 逐字相同。
+- **两臂**：
+  - Sol：`gpt-6.1-sol` high fast，经 ChatGPT 登录的 Codex CLI（`CodexLayer2Transport`），即 10/5 用户指定的实验基线。
+  - Opus：`claude-opus-5-5` high，经订阅登录的 Claude CLI（`ClaudeLayer2Transport`）。
+- **执行**：`scripts/experiments/claude_translation_ab.py` 逐组串行（workers=1），两臂在同一组内紧挨着跑，偶数组 Sol 先、奇数组 Opus 先，减少服务负载随时间变化的影响。两臂都不带 API key，不重试，不回退。共 26 次新调用。
+- **校验**：每个结果都要过 schema、组和单元身份、coverage 子串检查；Opus 的模型身份以 CLI 返回的 `modelUsage` 为准，Sol 只有请求身份。
+- **盲评**：`blind.json` 每组给出 X/Y 两版，位置按组轮换；由一个只读 `blind.json` 的独立 Agent 逐组评，标出遗漏、否定、数字、人名、增译和明显不自然的口语，并按轻/中/重分级；评完才打开 `blind-key.json` 映射。
+
+运行（Mac）：
 
 ```
 python3 -m scripts.experiments.claude_translation_ab \
@@ -35,4 +48,18 @@ python3 -m scripts.experiments.claude_translation_ab \
   --out artifacts/claude-opus55-vs-sol61-ab-20261008
 ```
 
-输出 `pairs.json`、匿名 `blind.json` 与 `blind-key.json`、`summary.json`（两臂耗时、token、Opus 标价折算）。已完成的臂可续跑不再调用；只有 `started.json` 没有 `response.json` 的臂会拒绝重跑，需先核对 `_cli_calls/` 下的收据。盲评由独立 Agent 只读 `blind.json`，与 10/5 的做法相同；机器盲评不是人工翻译审批。
+输出 `pairs.json`、`blind.json`、`blind-key.json`、`summary.json`（两臂耗时总和/中位数/最值、token、Opus 标价折算、Opus 更快的组数）。已完成的臂续跑时直接复用；只有 `started.json` 没有 `response.json` 的臂会拒绝重跑，需先核对 `_cli_calls/` 下的收据。
+
+### 怎么判断
+
+- **Opus 值得进下一轮**：盲评中 Opus 没有多出中等或重大错误，并且单组耗时中位数或每次 token 明显更低。下一轮用 605 秒样本（有直接经文、三语），并加上 Sol medium 复核，看过审率。
+- **不值得**：Opus 多出中等及以上错误，或在速度和用量上都没有优势。
+- **打平**：质量并列、速度相近时，只按额度和成本取舍，不据此改策略。
+
+### 局限
+
+- 只有 13 组、一种语言、一次运行，服务负载没法控制，耗时差异不能推广为稳定倍数。
+- 10/5 的四臂盲评把这 13 组全判为并列，样本偏干净，很可能再次打平，区分度有限。
+- 两个 CLI 自带的系统提示不同，测到的是"走各自 CLI 的整条调用"，不是纯模型对比。
+- 两臂都扣订阅额度，没有真实的美元账单；Opus 的 `listPriceUsd` 只是标价折算。
+- 机器盲评不是人工翻译审批。
