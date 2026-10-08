@@ -50,13 +50,23 @@ READING_LOOKBACK_UNITS = 1
 _BOOKS = queue_module.BOOKS
 _NUMBER_WORDS = '|'.join(sorted(cuv_scripture._EN_NUMBERS, key=len, reverse=True))
 _NUM = rf'(?:\d+|{_NUMBER_WORDS})'
-_RANGE = rf'(?P<v1>{_NUM})(?:\s*(?:-|–|to|through|and)\s*(?P<v2>{_NUM}))?'
+# "2 and 3" joins adjacent verses; "2 and 5" names two verses and is never a range.
+_RANGE = rf'(?P<v1>{_NUM})(?:\s*(?P<join>-|–|to|through|and)\s*(?P<v2>{_NUM}))?'
 BOOK_MENTION = re.compile(
-    rf'\b(?P<book>(?:[123]\s+)?(?:{_BOOKS}))\s+(?:chapter\s+)?(?P<chapter>\d+)'
-    rf'(?P<more_chapters>\s+and\s+\d+)?(?:\s*:\s*{_RANGE})?', re.I)
-CHAPTER_MENTION = re.compile(r'\bchapter\s+(?P<chapter>\d+)\b', re.I)
+    rf'\b(?P<book>(?:[123]\s+)?(?:{_BOOKS}))\s+(?:chapter\s+)?(?P<chapter>{_NUM})\b'
+    rf'(?P<more_chapters>\s+and\s+{_NUM}\b)?(?:\s*:\s*{_RANGE})?', re.I)
+# "Now turn to Romans" moves the reading to another book without naming a chapter.
+BOOK_TRANSITION = re.compile(
+    rf'\b(?:turn(?:ing)?|open(?:ing)?|go(?:ing)?|com(?:e|ing)|back|look(?:ing)?)\s+(?:to|at|in)\s+'
+    rf'(?:the\s+book\s+of\s+)?(?P<book>(?:[123]\s+)?(?:{_BOOKS}))\b', re.I)
+CHAPTER_MENTION = re.compile(rf'\bchapter\s+(?P<chapter>{_NUM})\b', re.I)
 VERSE_MENTION = re.compile(rf'\bverses?\s+{_RANGE}', re.I)
 READING_SIGNALS = {'speech_verb', 'quotation_marks'}
+# A reading signal borrowed from the unit before must come from a unit about scripture.
+SCRIPTURE_SIGNALS = {'book_reference', 'chapter_verse', 'scripture_word'}
+# No English edition is pinned, so the machine cannot tell a whole-verse reading from a
+# fragment; every resolved quotation is admitted as the whole verse and says so.
+QUOTE_BOUNDARY = 'whole_verse_assumed_no_english_edition'
 
 
 class MachineAdjudicationError(ValueError):
@@ -91,6 +101,24 @@ def _signals(english: str) -> set[str]:
     return {kind for kind, pattern in queue_module.SIGNALS if pattern.search(english)}
 
 
+def _book(name: str) -> str | None:
+    try:
+        return cuv_scripture.normalize_book(name)
+    except cuv_scripture.CuvError:
+        return None
+
+
+def _verse_range(match: re.Match) -> tuple[int, int] | None:
+    """The verses a mention names, or None when "and" joins verses that are not adjacent."""
+    v1 = _number(match['v1'])
+    if not match['v2']:
+        return v1, v1
+    v2 = _number(match['v2'])
+    if match['join'].casefold() == 'and' and v2 != v1 + 1:
+        return None
+    return v1, v2
+
+
 def _scan(units: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Per unit: the reference context in force and any verse mention, with its evidence."""
     rows: list[dict[str, Any]] = []
@@ -104,32 +132,36 @@ def _scan(units: list[dict[str, Any]]) -> list[dict[str, Any]]:
         if since_book > CONTEXT_WINDOW_UNITS:
             book = chapter = None
         mention = BOOK_MENTION.search(english)
+        transition = None if mention else BOOK_TRANSITION.search(english)
         verse_range: tuple[int, int] | None = None
+        verses_named = False
         if mention:
-            try:
-                book = cuv_scripture.normalize_book(mention['book'])
-            except cuv_scripture.CuvError:
-                book = None
+            book = _book(mention['book'])
             since_book = 0
             if mention['more_chapters']:
                 chapter = None  # "Revelation 4 and 5": two chapters, no single context.
                 evidence.append(f'book mention with several chapters: {mention.group(0)!r}')
             else:
-                chapter = int(mention['chapter'])
+                chapter = _number(mention['chapter'])
                 evidence.append(f'book and chapter mention: {mention.group(0)!r}')
             if mention['v1']:
-                v1 = _number(mention['v1'])
-                verse_range = (v1, _number(mention['v2']) if mention['v2'] else v1)
+                verses_named = True
+                verse_range = _verse_range(mention)
+        elif transition:
+            book, chapter, since_book = _book(transition['book']), None, 0
+            evidence.append(f'book transition without a chapter: {transition.group(0)!r}')
         else:
             chapter_mention = CHAPTER_MENTION.search(english)
             if chapter_mention and book:
-                chapter = int(chapter_mention['chapter'])
+                chapter = _number(chapter_mention['chapter'])
                 evidence.append(f'chapter mention: {chapter_mention.group(0)!r}')
         verse_mention = VERSE_MENTION.search(english)
-        if verse_mention and verse_range is None:
-            v1 = _number(verse_mention['v1'])
-            verse_range = (v1, _number(verse_mention['v2']) if verse_mention['v2'] else v1)
+        if verse_mention and not verses_named:
+            verses_named = True
+            verse_range = _verse_range(verse_mention)
             evidence.append(f'verse mention: {verse_mention.group(0)!r}')
+        if verses_named and verse_range is None:
+            evidence.append('verses joined by "and" are not adjacent: not a range')
         signals = _signals(english)
         rows.append({'sourceUnitId': unit['sourceUnitId'], 'english': english, 'book': book, 'chapter': chapter,
                      'verseRange': verse_range, 'reading': bool(signals & READING_SIGNALS),
@@ -146,7 +178,11 @@ def _reference(row: dict[str, Any]) -> cuv_scripture.Reference | None:
 
 
 def _reading_near(rows: list[dict[str, Any]], index: int) -> bool:
-    return any(rows[i]['reading'] for i in range(max(0, index - READING_LOOKBACK_UNITS), index + 1))
+    """A reading signal in the unit, or in the unit before when that unit is itself about scripture."""
+    if rows[index]['reading']:
+        return True
+    return any(rows[i]['reading'] and (rows[i]['evidence'] or set(rows[i]['signals']) & SCRIPTURE_SIGNALS)
+               for i in range(max(0, index - READING_LOOKBACK_UNITS), index))
 
 
 def discover_flagged_units(rows: list[dict[str, Any]]) -> list[str]:
@@ -173,7 +209,8 @@ def _runs(rows: list[dict[str, Any]], flagged: list[str]) -> list[list[int]]:
     indexes = sorted(position[unit] for unit in flagged)
     runs: list[list[int]] = []
     for i in indexes:
-        if runs and runs[-1][-1] == i - 1:
+        # A unit naming its own verses opens a new quotation even right after another.
+        if runs and runs[-1][-1] == i - 1 and rows[i]['verseRange'] is None:
             runs[-1].append(i)
         else:
             runs.append([i])
@@ -211,19 +248,23 @@ def adjudicate(source: dict[str, Any], anchor: dict[str, Any], plan: list[dict[s
     discovered = discover_flagged_units(rows)
     flagged = list(flagged_units) if flagged_units is not None else discovered
     _require(len(flagged) == len(set(flagged)), 'flagged_unit_repeated')
+    group_of = {unit: group['translationGroupId'] for group in plan for unit in group['sourceUnitIds']}
     candidates: list[dict[str, Any]] = []
     basis_rows: list[dict[str, Any]] = []
     for run in _runs(rows, flagged):
         run_units = [rows[i]['sourceUnitId'] for i in run]
         reference, at = _resolve_run(rows, run)
-        if reference is None:
+        verses = [] if reference is None else list(range(reference.start_verse, reference.end_verse + 1))
+        shared = len(run) > 1 and len(run) != len(verses)
+        if reference is None or (shared and len({group_of.get(unit) for unit in run_units}) != 1):
+            reason = ('no book, chapter and verse reference resolves for this unit' if reference is None
+                      else f'{reference.canonical_ref} is read across several translation groups; the pinned '
+                           'wording cannot be bound to one group, so the speaker\'s words are translated')
             for unit in run_units:
-                candidate, why = _paraphrase(f'm{len(candidates) + 1:03d}', [unit],
-                                             'no book, chapter and verse reference resolves for this unit')
+                candidate, why = _paraphrase(f'm{len(candidates) + 1:03d}', [unit], reason)
                 candidates.append(candidate)
                 basis_rows.append(why | {'english': rows[run[run_units.index(unit)]]['english']})
             continue
-        verses = list(range(reference.start_verse, reference.end_verse + 1))
         if len(run) == len(verses):
             pairs = [([rows[i]['sourceUnitId']], cuv_scripture.Reference(reference.book, reference.chapter, v))
                      for i, v in zip(run, verses)]
@@ -231,7 +272,7 @@ def adjudicate(source: dict[str, Any], anchor: dict[str, Any], plan: list[dict[s
         else:
             pairs = [(run_units, reference)]
             layout = ('one unit carries the whole range' if len(run) == 1
-                      else 'several units share the whole range; keep them in one translation group')
+                      else 'several units in one translation group share the whole range')
         for units_here, ref in pairs:
             candidate_id = f'm{len(candidates) + 1:03d}'
             try:
@@ -247,6 +288,7 @@ def adjudicate(source: dict[str, Any], anchor: dict[str, Any], plan: list[dict[s
                                'editionId': edition_id, 'exactSentence': found['text']})
             basis_rows.append({'candidateId': candidate_id, 'sourceUnitIds': units_here, 'decision': 'direct_quote',
                                'reference': ref.canonical_ref, 'textSha256': found['textSha256'], 'layout': layout,
+                               'quoteBoundary': QUOTE_BOUNDARY,
                                'openedAt': rows[at]['sourceUnitId'], 'evidence': rows[at]['evidence'],
                                'readingSignals': sorted({s for i in range(max(0, at - READING_LOOKBACK_UNITS), at + 1)
                                                          for s in rows[i]['signals'] if s in READING_SIGNALS}),
@@ -268,7 +310,9 @@ def adjudicate(source: dict[str, Any], anchor: dict[str, Any], plan: list[dict[s
              'supplied' if flagged_units is not None else 'discovered', 'discoveredUnits': discovered,
              'humanApproval': False, 'candidates': basis_rows,
              'notice': 'Deterministic surface-signal adjudication. A human receipt for the same bindings '
-                       'overrides this one. Not a translation or edition approval.'}
+                       'overrides this one. Not a translation or edition approval. Every quotation is admitted '
+                       'as the whole pinned verse: without an English edition the machine cannot tell a '
+                       'fragment from a whole-verse reading, so a fragment needs a human partial_direct_quote.'}
     return receipt, basis
 
 
@@ -280,7 +324,9 @@ def adjudicate_fixture(directory: str | Path, *, target_locale: str, flagged_uni
     manifest_path = directory / 'fixture-manifest.json'
     if flagged_units is None and not discover and manifest_path.is_file():
         manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
-        flagged_units = list(manifest.get('sourceQuotationUnits') or []) or None
+        listed = manifest.get('sourceQuotationUnits')
+        if isinstance(listed, list):
+            flagged_units = list(listed)  # an explicit empty list means none, not discovery
     return adjudicate(source, anchor, plan, target_locale=target_locale, flagged_units=flagged_units, library=library)
 
 
@@ -303,8 +349,11 @@ def main(argv: list[str] | None = None) -> int:
     basis_path = args.basis_out or args.out.with_suffix('.basis.json')
     if args.out.exists() or basis_path.exists():
         raise SystemExit('receipt or basis file exists; choose a new path')
-    receipt, basis = adjudicate_fixture(args.fixture, target_locale=args.target_locale,
-                                        flagged_units=args.flagged_unit, discover=args.discover)
+    try:
+        receipt, basis = adjudicate_fixture(args.fixture, target_locale=args.target_locale,
+                                            flagged_units=args.flagged_unit, discover=args.discover)
+    except MachineAdjudicationError as exc:
+        raise SystemExit(f'refused: {exc}') from exc
     _write_new(args.out, receipt)
     _write_new(basis_path, basis)
     print(json.dumps({'receiptSha256': basis['receiptSha256'], 'flaggedUnits': basis['flaggedUnits'],
