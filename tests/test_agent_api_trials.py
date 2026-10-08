@@ -1266,5 +1266,52 @@ class LatestReviewTests(unittest.TestCase):
         self.assertEqual(len(trials.load_cases(root)), 1)
 
 
+    def test_malformed_risk_policy_is_refused_before_any_request(self):
+        out, make = self.make_trials()
+        policy = json.loads(trials.RISK.read_text())
+        first = policy['actions'][0]
+        variants = [{**policy, 'actions': []},
+                    {**policy, 'actions': [{**first, 'expectedTier': 'approve'}] + policy['actions'][1:]},
+                    {**policy, 'actions': [first, first]},
+                    {**policy, 'actions': [{**first, 'id': 'a01.r2'}]},
+                    {**policy, 'actions': [{k: v for k, v in first.items() if k != 'description'}]},
+                    {**policy, 'tiers': {k: v for k, v in policy['tiers'].items() if k != 'observe_only'}}]
+        for variant in variants:
+            sent = []
+            with self.subTest(variant=variant), patch.object(
+                    trials, '_read_json', side_effect=lambda path, v=variant: v if Path(path) == trials.RISK
+                    else json.loads(Path(path).read_text(encoding='utf-8'))), \
+                    patch.object(trials, 'fake_decisions', lambda *a, **k: sent.append(a)), \
+                    self.assertRaisesRegex(ValueError, 'invalid risk policy'):
+                make().run('risk')
+            self.assertEqual(sent, [])
+
+    def test_timeline_ignores_answer_keys(self):
+        root = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, root)
+        source = trials.CASES / 'f01-plugin-identity'
+        shutil.copytree(source, root / source.name)
+        (root / source.name / 'expected.json').write_text('{"id": "in progress"')
+        with patch.object(trials, 'CASES', root), patch.object(trials.load_cases, '__defaults__', (root, None, True)):
+            out, make = self.make_trials()
+            make(case_ids=[source.name]).run('timeline')
+            first = json.loads((out / 'scope.json').read_text())['timeline']
+            (root / source.name / 'expected.json').write_text('{}')
+            make(case_ids=[source.name]).run('timeline')
+            self.assertEqual(json.loads((out / 'scope.json').read_text())['timeline'], first)
+        self.assertTrue((out / 'timeline' / f'{source.name}.json').exists())
+
+    def test_malformed_decision_confidence_is_unscored_not_fatal(self):
+        action = {'id': 'x', 'expectedTier': 'approval'}
+        for confidence in ('high', float('nan'), 1.5, -0.1, True):
+            response = {'answers': [{'name': 'tier', 'choice': 'autonomous', 'confidence': confidence}]}
+            with self.subTest(confidence=confidence):
+                row = {**trials.score_risk(action, response), 'repeat': 1}
+                self.assertIsNone(row['confidence'])
+                self.assertEqual(row['afterEscalation'], 'approval')
+                self.assertEqual(trials._unscored({'risk': {'rows': [row]}}), ['risk:x:r1'])
+                json.dumps(row, allow_nan=False)
+                trials.risk_summary([row])
+
 if __name__ == '__main__':
     unittest.main()
