@@ -52,6 +52,14 @@ class FixtureTests(unittest.TestCase):
         finish = next(e for e in timeline['events'] if 'finish_exit=0' in e['event'])
         self.assertLess(checks[0]['at'], finish['at'])
 
+    def test_json_outcome_is_attached_only_to_its_end_time(self):
+        events = [e for e in trials.build_timeline(trials.CASES / 'f05-asr-symlink-mount/evidence')['events']
+                  if e['source'] == 'outcome.json']
+        start = next(e for e in events if e['field'] == 'startedAt')
+        end = next(e for e in events if e['field'] == 'endedAt')
+        self.assertNotIn('status', start['event'])
+        self.assertEqual(end['event']['status'], 'failed')
+
     def test_timeline_lists_every_evidence_file_including_untimed_ones(self):
         for case in trials.load_cases():
             timeline = trials.build_timeline(case['evidence'])
@@ -100,6 +108,16 @@ class ScoringTests(unittest.TestCase):
         self.assertFalse(score['correct'])
         self.assertEqual(score['validCitations'], 0)
         self.assertEqual(len(score['invalidCitations']), 2)
+
+    def test_an_unrelated_real_quote_does_not_carry_the_cause(self):
+        expected = self.cases['f05-asr-symlink-mount']
+        evidence = trials.CASES / 'f05-asr-symlink-mount/evidence'
+        report = {'category': 'mount_or_environment', 'root_cause': 'symlink targets in blobs are not mounted (-v)',
+                  'evidence': [{'file': 'docker-run.txt', 'quote': '--rm --gpus all'}], 'fix': '', 'confidence': 0.8}
+        score = trials.score_diagnosis(report, expected, evidence)
+        self.assertEqual(score['validCitations'], 1)
+        self.assertFalse(score['causeSupportedByQuote'])
+        self.assertFalse(score['correct'])
 
     def test_unexplained_case_rewards_abstention_only(self):
         expected = self.cases['f06-zero-inference-seconds']
@@ -159,6 +177,57 @@ class RunTests(unittest.TestCase):
         self.assertEqual(second['diagnoseByArm'], first['diagnoseByArm'])
         report = json.loads((self.out / 'diagnose.json').read_text())['rows'][0]['report']
         self.assertEqual(report['summary_zh'], '假数据，仅验证接线。')
+
+    def test_arm_order_alternates_between_cases(self):
+        self.make(case_ids=['f01-plugin-identity', 'f02-preempt-authorization']).run('diagnose')
+        rows = json.loads((self.out / 'diagnose.json').read_text())['rows']
+        self.assertEqual([r['arm'] for r in rows], ['raw', 'timeline', 'timeline', 'raw'])
+
+    def test_binding_without_runner_state_starts_fresh(self):
+        session = self.out / 'diagnose/f01-plugin-identity/raw'
+        first = self.make(case_ids=['f01-plugin-identity'])
+        payload_sha = {}
+        original = trials.run_session
+
+        def crash_after_binding(client, session_dir, payload, tools, **kwargs):
+            payload_sha['binding'] = {'payloadSha256': trials._sha(payload)}
+            raise KeyboardInterrupt
+        with patch.object(trials, 'run_session', crash_after_binding), self.assertRaises(KeyboardInterrupt):
+            first.run('diagnose')
+        binding = session.parent / 'raw.binding.json'
+        binding.parent.mkdir(parents=True, exist_ok=True)
+        binding.write_text(json.dumps(payload_sha['binding']) + '\n')
+        self.assertIs(trials.run_session, original)
+        summary = self.make(case_ids=['f01-plugin-identity']).run('diagnose')
+        self.assertTrue((session / 'result.json').exists())
+        self.assertEqual(len(summary['diagnoseByArm']), 2)
+
+    def test_oversized_decision_response_is_an_unknown_outcome(self):
+        class Body:
+            def __init__(self):
+                self.left = trials.MAX_DECISION_BYTES + 10
+
+            def read(self, size):
+                n = min(size, self.left)
+                self.left -= n
+                return b'x' * n
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_):
+                return False
+
+        class Opener:
+            def open(self, *_args, **_kwargs):
+                return Body()
+        client = trials.DecisionsClient(self.out, api_key='sk-test')
+        with patch('urllib.request.build_opener', return_value=Opener()), \
+                patch('scripts.sermon_openai_runtime.project_headers', return_value={}):
+            with self.assertRaisesRegex(RuntimeError, 'size limit'):
+                client.decide('a01', {'q': 1})
+        with self.assertRaisesRegex(RuntimeError, 'outcome unknown'):
+            client.decide('a01', {'q': 1})
 
     def test_unknown_session_outcome_stops_the_trial(self):
         class Stuck(trials.FakeAgentsClient):

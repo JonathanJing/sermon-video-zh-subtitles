@@ -123,14 +123,17 @@ def build_timeline(evidence):
         before = len(events) + len(untimed)
         if path.suffix == '.json':
             value = _read_json(path)
-            found = False
-            for key, stamp in _time_fields(value):
-                found = True
-                summary = {k: value[k] for k in ('command', 'status', 'exitCode') if isinstance(value, dict) and k in value}
-                if isinstance(value, dict) and isinstance(value.get('error'), dict):
-                    summary['error'] = value['error'].get('message')
-                events.append({'at': stamp, 'source': name, 'field': key, 'event': summary or key})
-            if not found:
+            stamps = list(_time_fields(value))
+            # The file's final status, exit code and error describe its end, not its start.
+            final_key = max(stamps, key=lambda item: item[1])[0] if stamps else None
+            summary = {k: value[k] for k in ('command', 'status', 'exitCode') if isinstance(value, dict) and k in value}
+            if isinstance(value, dict) and isinstance(value.get('error'), dict):
+                summary['error'] = value['error'].get('message')
+            for key, stamp in stamps:
+                event = (summary or key) if key == final_key else (
+                    {'command': value['command'], 'phase': key} if isinstance(value, dict) and 'command' in value else key)
+                events.append({'at': stamp, 'source': name, 'field': key, 'event': event})
+            if not stamps:
                 untimed.append({'source': name, 'reason': 'no time field'})
             continue
         current, last = None, None
@@ -403,16 +406,20 @@ def score_diagnosis(report, expected, evidence):
     if not isinstance(report, dict):
         return {'submitted': False, 'correct': False}
     valid, invalid = check_citations(report, evidence)
-    text = _text(report.get('root_cause'), [c['quote'] for c in valid])
+    quotes = _text([c['quote'] for c in valid])
+    text = _text(report.get('root_cause')) + quotes
     category_ok = report.get('category') == expected['category']
     if expected.get('abstain'):
         abstained = report.get('category') == 'insufficient_evidence'
         return {'submitted': True, 'correct': abstained, 'abstainedCorrectly': abstained,
                 'categoryOk': category_ok, 'confidence': report.get('confidence')}
     cause_ok = _groups_match(text, expected['causeKeywords'])
+    # At least one cause term must come from a verified quote, so an unrelated real quote cannot carry the cause.
+    supported = any(any(term.lower() in quotes for term in group) for group in expected['causeKeywords'])
     fix_ok = _groups_match(_text(report.get('fix')), expected.get('fixKeywords', []))
-    return {'submitted': True, 'correct': category_ok and cause_ok and bool(valid), 'categoryOk': category_ok,
-            'causeOk': cause_ok, 'fixOk': fix_ok, 'validCitations': len(valid), 'invalidCitations': invalid,
+    return {'submitted': True, 'correct': category_ok and cause_ok and supported, 'categoryOk': category_ok,
+            'causeOk': cause_ok, 'causeSupportedByQuote': supported, 'fixOk': fix_ok,
+            'validCitations': len(valid), 'invalidCitations': invalid,
             'bonusOk': _groups_match(text + _text(report.get('fix')), expected['bonusKeywords']) if expected.get('bonusKeywords') else None,
             'confidence': report.get('confidence'),
             'citedFiles': sorted({e.get('file') for e in report.get('evidence', []) if isinstance(e, dict)})}
@@ -509,14 +516,14 @@ def run_session(client, session_dir, payload, tools, *, max_seconds, max_tool_ca
     session_dir = Path(session_dir)
     binding_path = session_dir.parent / (session_dir.name + '.binding.json')
     binding = {'payloadSha256': _sha(payload)}
-    resume = False
     if binding_path.exists():
         if _read_json(binding_path) != binding:
             raise ValueError(f'{session_dir.name}: payload changed since the first attempt; use a new --out')
-        resume = True
     else:
         binding_path.parent.mkdir(parents=True, exist_ok=True)
         binding_path.write_text(json.dumps(binding) + '\n', encoding='utf-8')
+    # The runner writes state.json before creating the remote session; without it nothing was dispatched.
+    resume = (session_dir / 'state.json').exists()
     calls_path = session_dir.parent / (session_dir.name + '.calls.jsonl')
     tools.log_path = calls_path
     meta_path = session_dir.parent / (session_dir.name + '.meta.json')
@@ -618,8 +625,9 @@ class Trials:
 
     def diagnose(self, arms=('raw', 'timeline')):
         rows = []
-        for case in self.cases:
-            for arm in arms:
+        for index, case in enumerate(self.cases):
+            # Alternate AB/BA so warm-up or throttling is not confounded with the arm.
+            for arm in (arms if index % 2 == 0 else tuple(reversed(arms))):
                 tools = EvidenceTools(case['evidence'], timeline=arm == 'timeline')
                 payload = _payload(self.model, DIAGNOSE_INSTRUCTIONS, tools.definitions(_diagnosis_schema()),
                                    f'Case evidence id {evidence_sha(case["evidence"])[:12]}. Investigate the incident '
@@ -795,6 +803,9 @@ def risk_summary(rows):
             'meanConfidenceWrong': round(sum(wrong) / len(wrong), 3) if wrong else None}
 
 
+MAX_DECISION_BYTES = 1_000_000
+
+
 class DecisionsClient:
     """One request per action, no automatic retry. A started request without a saved answer blocks reruns.
 
@@ -848,9 +859,17 @@ class DecisionsClient:
                                      headers={'Authorization': 'Bearer ' + self.api_key,
                                               'Content-Type': 'application/json', **project_headers(self.api_key)})
         opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), agents._NoRedirect())
+        deadline = time.monotonic() + self.timeout
         try:
             with opener.open(req, timeout=self.timeout) as response:
-                return json.loads(response.read())
+                body = bytearray()
+                while chunk := response.read(65536):
+                    body += chunk
+                    if len(body) > MAX_DECISION_BYTES:
+                        raise RuntimeError('Decisions response exceeded the size limit; outcome unknown')
+                    if time.monotonic() > deadline:
+                        raise TimeoutError('Decisions response exceeded the total deadline; outcome unknown')
+                return json.loads(bytes(body))
         except urllib.error.HTTPError as exc:
             body = exc.read(2000).decode('utf-8', 'replace')
             exc.close()
