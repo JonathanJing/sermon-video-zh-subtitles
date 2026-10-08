@@ -33,6 +33,7 @@ READ_3_16 = ('For God so loved the world, that he gave his one and only Son, tha
              'should not perish, but have eternal life.')
 READ_3_17 = ("For God didn't send his Son into the world to judge the world, but that the world should be "
              'saved through him.')
+READ_8_2 = 'For the law of the Spirit of life in Christ Jesus made me free from the law of sin and of death.'
 READING = units(
     'Their whole world was filled with chaos.',
     'And so God\'s Word, Revelation chapter 4, this is part of the vision.',
@@ -345,9 +346,52 @@ class MachineAdjudicationTests(unittest.TestCase):
         pending = scripture_editions.Edition(edition_id='NKRV-1998', verification=scripture_editions.PENDING,
                                              verses={('REV', 4, 2): 'x', ('REV', 4, 3): 'y'})
         with mock.patch.object(scripture_editions, 'load', return_value=pending):
-            with self.assertRaisesRegex(machine.MachineAdjudicationError, 'edition_not_verified'):
-                machine.adjudicate(source(), {'sourceUnits': READING}, plan(READING),
-                                   target_locale='ko', flagged_units=['u3', 'u4'])
+            receipt, basis = machine.adjudicate(source(), {'sourceUnits': READING}, plan(READING),
+                                                target_locale='ko', flagged_units=['u1', 'u3', 'u4'])
+        # Adjudication still runs: the unresolved unit and the whole readings all become paraphrases,
+        # and only the readings that would have been pinned name the pending edition as the reason.
+        self.assertEqual([(c['sourceUnitIds'], c['classification'], c['editionId'], c['exactSentence'])
+                          for c in receipt['candidates']],
+                         [(['u1'], 'speaker_paraphrase', None, None), (['u3'], 'speaker_paraphrase', None, None),
+                          (['u4'], 'speaker_paraphrase', None, None)])
+        self.assertIn('no book, chapter and verse', basis['candidates'][0]['reason'])
+        self.assertTrue(basis['candidates'][1]['reason'].startswith('edition_not_verified: NKRV-1998'))
+        self.assertEqual(basis['candidates'][1]['reference'], 'REV 4:2')
+        self.assertTrue(basis['candidates'][1]['coverage']['wholeVerse'])
+        self.assertEqual(basis['candidates'][2]['editionVerification'], scripture_editions.PENDING)
+        self.assertEqual((basis['editionId'], basis['editionVerification']), ('NKRV-1998', scripture_editions.PENDING))
+        with mock.patch.object(scripture_editions, 'load', return_value=pending):
+            summary = adjudication.validate_receipt(as_human(receipt), target_locale='ko',
+                                                    bindings=receipt['bindings'], flagged_units=['u1', 'u3', 'u4'])
+        self.assertEqual(summary['quotes'], [])
+
+    def test_later_references_in_one_unit_set_the_context_and_the_unit_binds_no_verse(self):
+        rows = units('We compared John 3:16, then turn to Romans chapter 8.',
+                     f'Verse 2 says, "{READ_8_2}"',
+                     'Amen.')
+        receipt, basis = machine.adjudicate(source(), {'sourceUnits': rows}, plan(rows, size=3),
+                                            target_locale='zh-Hans', flagged_units=['u1', 'u2'], library=LIBRARY)
+        # The context carried forward is the last one spoken (Romans 8), never John 3.
+        self.assertEqual([(c['sourceUnitIds'], c['classification'], c['reference']) for c in receipt['candidates']],
+                         [(['u1'], 'speaker_paraphrase', None), (['u2'], 'direct_quote', 'ROM 8:2')])
+        self.assertEqual(receipt['candidates'][1]['exactSentence'], LIBRARY.lookup('ROM 8:2')['text'])
+        self.assertIn(machine.SEVERAL_REFERENCES, basis['candidates'][0]['evidence'])
+        self.assertEqual(basis['discoveredUnits'], ['u2'])
+        # A unit naming two verse references binds neither of them, not the first.
+        rows = units(f'John 3:16 says, "{READ_3_16}" and verse 17 says, "{READ_3_17}"', 'Amen.')
+        receipt, basis = machine.adjudicate(source(), {'sourceUnits': rows}, plan(rows),
+                                            target_locale='zh-Hans', flagged_units=['u1'], library=LIBRARY)
+        self.assertEqual(receipt['candidates'][0]['classification'], 'speaker_paraphrase')
+        self.assertIn(machine.SEVERAL_REFERENCES, basis['candidates'][0]['evidence'])
+        self.assertEqual(basis['discoveredUnits'], [])
+        # "turn to Romans chapter 8" is one mention; the transition inside it is not a second event.
+        scanned = machine._scan(units('Turn to Romans chapter 8.', 'Verse 2 says it.'))
+        self.assertEqual((scanned[0]['book'], scanned[0]['chapter'], scanned[0]['evidence']),
+                         ('ROM', 8, ["book and chapter mention: 'Romans chapter 8'"]))
+        self.assertEqual((scanned[1]['book'], scanned[1]['chapter'], scanned[1]['verseRange']), ('ROM', 8, (2, 2)))
+        # A chapter named after a transition completes it: "turn to Romans, chapter 8".
+        scanned = machine._scan(units('Turn to Romans, chapter 8, verse 2.'))
+        self.assertEqual((scanned[0]['book'], scanned[0]['chapter'], scanned[0]['verseRange']), ('ROM', 8, (2, 2)))
 
     def test_a_fragment_is_translated_as_the_speakers_words_and_a_whole_reading_is_pinned(self):
         fragment = units('Genesis chapter 1 is where it all starts.',

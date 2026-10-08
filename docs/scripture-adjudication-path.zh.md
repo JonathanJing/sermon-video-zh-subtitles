@@ -63,7 +63,7 @@
   - 冻结和加载时，pinned-quote 插件的源单元、引文分类、规范化经文引用和按顺序合并的目标文本必须与收据一致；非引文裁决不能授权注入经文。冻结在取得写锁后再次确认目录不存在，收据使用不可变写入路径。
   - `load_fixture` 在加载时重新校验收据文件的哈希和内容。这一步在插件检查和任何模型调用之前完成。
 - `scripts/scripture_adjudication.py`：校验逻辑和拒绝码。机器收据的准入不信角色串：`validate_receipt(..., machine_inputs=...)` 用绑定的 `source.json`、`anchor.json`、`group-plan.json` 重跑 `scripture_machine_adjudication.adjudicate`，语言、绑定、决定、候选逐字一致才准入，汇总的 `generator` 记生成器版本、实现哈希和署名是否为当前实现；`require_admitted` 从 fixture 目录读这三份文件，`run_scripture_gated_round.py` 和 `freeze_fixture` 直接传入。手写一份标成机器、带生成器不会出的 `partial_direct_quote` 的收据过不了门。
-- 生成器本身：书名前的 "First / 1st / 1" 都算序数（`First John 3:16` 是约翰一书，不是约翰福音）；提到节号但解析不出（"Verses 2 and 5"）的单元自成一段、不借用前一单元的出处；`ko`、`es` 的版本仍是 `third_party_claim_pending_publisher_comparison`，生成器拒绝为它们出引文（`edition_not_verified`）。
+- 生成器本身：书名前的 "First / 1st / 1" 都算序数（`First John 3:16` 是约翰一书，不是约翰福音）；提到节号但解析不出（"Verses 2 and 5"）的单元自成一段、不借用前一单元的出处；`ko`、`es` 的版本仍是 `third_party_claim_pending_publisher_comparison`，生成器照常裁定它们的单元，解析不出和片段都正常判 `speaker_paraphrase`，只有本应收录的整节才以 `edition_not_verified` 改判原话翻译，依据文件记 `editionVerification`；一个单元里有多处出处时按讲的先后顺序处理，带到下一单元的是最后一个（"We compared John 3:16, then turn to Romans chapter 8" 之后的 "Verse 2" 是罗马书 8:2），而这个单元自己不绑定任何节（依据记 "several scripture references in one unit"），"turn to Romans chapter 8" 只算一次提及。
 
 ## 精确引文检查
 
@@ -90,7 +90,7 @@ python3 scripts/english_scripture_coverage.py check "REV 4:2" "<讲员念的话>
 
 ## 没有做的事
 
-1. **`ko`、`es` 的固定版本**：登记的 NKRV-1998 和 RVR60-1960 仍是 `third_party_claim_pending_publisher_comparison`，门禁记录该状态，机器裁定器拒绝为它们出引文。需要你决定使用哪个版本、授权是否允许，并提供来源和哈希。
+1. **`ko`、`es` 的固定版本**：登记的 NKRV-1998 和 RVR60-1960 仍是 `third_party_claim_pending_publisher_comparison`，门禁记录该状态，机器裁定器为它们出不了引文，整节也按原话翻译。需要你决定使用哪个版本、授权是否允许，并提供来源和哈希。
 2. **605 的重冻结和真实轮次**：机器收据已能通过门，但用它重新冻结 605 fixture、重新准备并跑真实调用是运行产物，不在仓库里；见各次运行报告。
 3. **引文边界的剩余盲区**：没有引号、紧跟整节后的短解说分不出（见上）；人工收据覆盖。
 
