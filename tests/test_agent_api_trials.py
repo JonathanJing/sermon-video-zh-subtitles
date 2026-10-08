@@ -1,4 +1,5 @@
 import json
+import os
 from pathlib import Path
 import tempfile
 import unittest
@@ -19,6 +20,23 @@ class FixtureTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 tools('read_file', {'path': escape})
 
+    def test_symlinks_are_neither_listed_nor_read_nor_grepped(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / 'evidence'
+            root.mkdir()
+            (root / 'run.log').write_text('2026-10-08T01:00:00Z ok\n')
+            secret = Path(tmp) / 'secret.txt'
+            secret.write_text('SECRET-VALUE\n')
+            os.symlink(secret, root / 'link.txt')
+            os.symlink(Path(tmp), root / 'up')
+            tools = trials.EvidenceTools(root)
+            self.assertEqual([f['path'] for f in tools('list_files', {})['files']], ['run.log'])
+            self.assertEqual(tools('grep', {'pattern': 'SECRET'})['matches'], [])
+            for path in ('link.txt', 'up/secret.txt'):
+                with self.assertRaises(ValueError):
+                    tools('read_file', {'path': path})
+            self.assertEqual(trials.build_timeline(root)['sources'], ['run.log'])
+
     def test_timeline_orders_files_and_keeps_command_output(self):
         timeline = trials.build_timeline(trials.CASES / 'f07-services-not-yet-restored/evidence')
         stamps = [e['at'] for e in timeline['events']]
@@ -28,6 +46,14 @@ class FixtureTests(unittest.TestCase):
         finish = next(e for e in timeline['events'] if 'finish_exit=0' in e['event'])
         self.assertLess(checks[0]['at'], finish['at'])
 
+    def test_timeline_lists_every_evidence_file_including_untimed_ones(self):
+        for case in trials.load_cases():
+            timeline = trials.build_timeline(case['evidence'])
+            files = [str(p.relative_to(case['evidence'].resolve())) for p in trials.evidence_files(case['evidence'])]
+            self.assertEqual(timeline['sources'], sorted(files), case['id'])
+        f05 = trials.build_timeline(trials.CASES / 'f05-asr-symlink-mount/evidence')
+        self.assertIn({'source': 'docker-run.txt', 'reason': 'no timestamp in file'}, f05['untimed'])
+
     def test_deterministic_preflight_checks_flag_exactly_the_planted_blockers(self):
         for plan, blocked in (('p01-planted-blockers', True), ('p02-clean', False)):
             root = trials.PLANS / plan / 'plan'
@@ -36,6 +62,9 @@ class FixtureTests(unittest.TestCase):
             self.assertEqual(trials.preflight_check(root, 'check_out_path', {'out': out})['relative_to_root_ok'], not blocked)
             self.assertEqual(trials.preflight_check(root, 'check_mount_resolves', {})['resolves'], not blocked)
             self.assertEqual(trials.preflight_check(root, 'compare_plugin_identity', {})['equal'], not blocked)
+        root = trials.PLANS / 'p02-clean' / 'plan'
+        for out in ('/tmp/spark-diag', 'artifacts/spark-diag'):
+            self.assertFalse(trials.preflight_check(root, 'check_out_path', {'out': out})['relative_to_root_ok'], out)
 
 
 class ScoringTests(unittest.TestCase):
@@ -44,20 +73,45 @@ class ScoringTests(unittest.TestCase):
 
     def test_diagnosis_needs_category_and_cited_cause(self):
         expected = self.cases['f05-asr-symlink-mount']
+        evidence = trials.CASES / 'f05-asr-symlink-mount/evidence'
         good = {'category': 'mount_or_environment', 'root_cause': 'snapshot files are symlinks into ../../blobs, '
-                'but only the snapshot directory is mounted', 'evidence': [{'file': 'docker-run.txt', 'quote': '-v ...'}],
+                'but only the snapshot directory is mounted',
+                'evidence': [{'file': 'snapshot-listing.txt', 'quote': 'model.safetensors -> ../../blobs/9f2e41...'}],
                 'fix': 'mount the whole model directory', 'confidence': 0.8}
-        self.assertTrue(trials.score_diagnosis(good, expected)['correct'])
-        self.assertFalse(trials.score_diagnosis({**good, 'category': 'missing_dependency'}, expected)['correct'])
-        self.assertFalse(trials.score_diagnosis({**good, 'root_cause': 'model download failed'}, expected)['correct'])
-        self.assertFalse(trials.score_diagnosis(None, expected)['correct'])
+        self.assertTrue(trials.score_diagnosis(good, expected, evidence)['correct'])
+        self.assertFalse(trials.score_diagnosis({**good, 'category': 'missing_dependency'}, expected, evidence)['correct'])
+        self.assertFalse(trials.score_diagnosis({**good, 'root_cause': 'model download failed'}, expected, evidence)['correct'])
+        self.assertFalse(trials.score_diagnosis(None, expected, evidence)['correct'])
+
+    def test_fabricated_citations_do_not_count(self):
+        expected = self.cases['f05-asr-symlink-mount']
+        evidence = trials.CASES / 'f05-asr-symlink-mount/evidence'
+        report = {'category': 'mount_or_environment', 'root_cause': 'the model failed to load',
+                  'evidence': [{'file': 'docker-run.txt', 'quote': 'symlinks into ../../blobs are not mounted'},
+                               {'file': 'invented.log', 'quote': 'only the snapshot directory is mounted'}],
+                  'fix': '', 'confidence': 0.8}
+        score = trials.score_diagnosis(report, expected, evidence)
+        self.assertFalse(score['correct'])
+        self.assertEqual(score['validCitations'], 0)
+        self.assertEqual(len(score['invalidCitations']), 2)
 
     def test_unexplained_case_rewards_abstention_only(self):
         expected = self.cases['f06-zero-inference-seconds']
+        evidence = trials.CASES / 'f06-zero-inference-seconds/evidence'
         guess = {'category': 'other', 'root_cause': 'timer bug', 'evidence': [], 'fix': '', 'confidence': 0.9}
-        self.assertFalse(trials.score_diagnosis(guess, expected)['correct'])
-        self.assertFalse(trials.score_diagnosis({**guess, 'confidence': 0.3}, expected)['correct'])
-        self.assertTrue(trials.score_diagnosis({**guess, 'category': 'insufficient_evidence'}, expected)['correct'])
+        self.assertFalse(trials.score_diagnosis(guess, expected, evidence)['correct'])
+        self.assertFalse(trials.score_diagnosis({**guess, 'confidence': 0.3}, expected, evidence)['correct'])
+        self.assertTrue(trials.score_diagnosis({**guess, 'category': 'insufficient_evidence'}, expected, evidence)['correct'])
+
+    def test_preflight_claim_needs_a_call_with_matching_arguments(self):
+        expected = {'blockers': {}}
+        item = {'requirement': 'docs/series-terminology.zh.md staged', 'kind': 'file', 'status': 'ok',
+                'checked_with': 'check_staged', 'evidence': ''}
+        report = {'items': [item], 'go': True}
+        other = [{'name': 'check_staged', 'arguments': {'path': 'scripts/other.py'}}]
+        self.assertEqual(len(trials.score_preflight(report, expected, other)['claimedButNotMatched']), 1)
+        same = [{'name': 'check_staged', 'arguments': {'path': './docs/series-terminology.zh.md'}}]
+        self.assertEqual(trials.score_preflight(report, expected, same)['claimedButNotMatched'], [])
 
     def test_refuter_is_scored_against_whether_the_diagnosis_was_right(self):
         self.assertTrue(trials.score_refutation({'verdict': 'upheld'}, True)['refuterRight'])
@@ -129,6 +183,20 @@ class RunTests(unittest.TestCase):
     def test_session_cap_stops_before_creating_more_sessions(self):
         with self.assertRaisesRegex(RuntimeError, 'session cap'):
             self.make(max_sessions=3).run('diagnose')
+
+    def test_rejected_decision_fails_the_risk_trial(self):
+        rejected = trials.DecisionsClient(self.out, transport=lambda _r: {'error': {'status': 400, 'body': 'bad'}})
+        runner = trials.Trials(self.out, client=None, model='m', backend='fake', decisions=rejected)
+        with self.assertRaisesRegex(RuntimeError, 'rejected'):
+            runner.run('risk')
+
+    def test_tool_calls_are_logged_as_they_happen_for_resume(self):
+        self.make(case_ids=['f01-plugin-identity']).run('diagnose')
+        log = self.out / 'diagnose/f01-plugin-identity/raw.calls.jsonl'
+        names = [json.loads(line)['name'] for line in log.read_text().splitlines()]
+        self.assertEqual(names, ['list_files', 'submit_report'])
+        self.make(case_ids=['f01-plugin-identity']).run('diagnose')
+        self.assertEqual(len(log.read_text().splitlines()), 2)
 
     def test_unknown_decision_outcome_blocks_a_retry(self):
         client = trials.DecisionsClient(self.out, transport=lambda _r: (_ for _ in ()).throw(TimeoutError()))
