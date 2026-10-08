@@ -432,12 +432,31 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
                          [('u3', 'transcript_confirmed', machine.CONFIRMED_NOTE)])
         path = self.out / 'meaning-notes.json'
         machine._write_new(path, notes)
+        # The notes are a projection of the receipt: without it beside them (the CLI writes it last) nothing loads.
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'meaning_notes_receipt_missing'):
+            machine.load_meaning_notes(path, source=self.source, anchor=self.anchor)
+        machine._write_new(self.out / 'receipt.json', receipt)
         loaded = machine.load_meaning_notes(path, source=self.source, anchor=self.anchor)
         self.assertEqual(list(loaded), ['u3'])
         self.assertEqual(machine.repair_instruction(loaded, ['u2', 'u3']),
                          f'Source unit u3 (transcript confirmed by machine audio adjudication): {machine.CONFIRMED_NOTE}')
         self.assertEqual(machine.repair_instruction(loaded, ['u1', 'u2']), '')
-        # Notes for other Layer 1 inputs, or for a unit whose frozen text changed, are refused.
+        # A receipt with other bytes than the notes name, or a note the receipt did not decide, is refused.
+        elsewhere = self.out / 'elsewhere'
+        machine._write_new(elsewhere / 'receipt.json', dict(receipt, reviewedAt='2026-10-09T00:00:00+00:00'))
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'meaning_notes_receipt_changed'):
+            machine.load_meaning_notes(path, source=self.source, anchor=self.anchor,
+                                       receipt_path=elsewhere / 'receipt.json')
+        forged = dict(notes, units=[dict(notes['units'][0], meaningNote='Render it as a promise of relief.')])
+        machine._write_new(self.out / 'forged-notes.json', forged)
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'meaning_notes_unit_changed'):
+            machine.load_meaning_notes(self.out / 'forged-notes.json', source=self.source, anchor=self.anchor)
+        stale = dict(notes, units=[dict(notes['units'][0], decision='undetermined')])
+        machine._write_new(self.out / 'stale-notes.json', stale)
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'meaning_notes_unit_changed'):
+            machine.load_meaning_notes(self.out / 'stale-notes.json', source=self.source, anchor=self.anchor)
+        # Notes for other Layer 1 inputs are refused before any receipt is read, and a notes file rebound
+        # to a changed anchor no longer matches the receipt it names.
         rebuilt = {**self.anchor, 'input': {'mfaSegmentsSha256': 'f' * 64}}
         with self.assertRaisesRegex(machine.SourceAdjudicationError, 'meaning_notes_binding_changed'):
             machine.load_meaning_notes(path, source=self.source, anchor=rebuilt)
@@ -446,7 +465,7 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
         tampered = dict(notes, bindings={**notes['bindings'], 'anchor.json': policies.canonical_sha256(changed)})
         other = self.out / 'tampered-notes.json'
         machine._write_new(other, tampered)
-        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'meaning_notes_unit_changed'):
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'meaning_notes_receipt_changed'):
             machine.load_meaning_notes(other, source=self.source, anchor=changed)
         # A run that corrected every doubted unit has no note to pass on.
         shutil.rmtree(self.out)
@@ -498,12 +517,14 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
         model_dir.mkdir()
         (model_dir / 'model.safetensors').write_bytes(b'weights')
         probes = []
+        session = {'sessionId': 's1', 'jobId': 'j1', 'owner': 'me', 'bootId': 'b1'}
 
         def probe(path):
             probes.append(path)
             return {'backend': 'qwen-asr-local', 'torchVersion': '2.9.0', 'qwenAsrVersion': '0.1.0',
                     'modelMetadataSha256s': {'config.json': 'a' * 64}}
-        listener = machine.QwenListener(model_dir, cache=self.out / 'qwen', identity_probe=probe)
+        listener = machine.QwenListener(model_dir, cache=self.out / 'qwen', identity_probe=probe,
+                                        session_verifier=lambda: dict(session, secret='x'))
         self.assertEqual(listener.identity()['host'], 'spark_exclusive_session')
         # The weights load only once a live Spark exclusive session owns this process.
         from scripts.spark_exclusive_session import SessionError
@@ -517,10 +538,9 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
             unowned.transcribe(b'RIFF')
         self.assertIsNone(unowned._model)
         owned = machine.QwenListener(model_dir, cache=self.out / 'qwen', identity_probe=same_runtime,
-                                     session_verifier=lambda: {'sessionId': 's1', 'jobId': 'j1', 'owner': 'me',
-                                                               'bootId': 'b1', 'secret': 'x'})
+                                     session_verifier=lambda: dict(session, secret='x'))
         owned._admit()
-        self.assertEqual(owned.session_receipt, {'sessionId': 's1', 'jobId': 'j1', 'owner': 'me', 'bootId': 'b1'})
+        self.assertEqual(owned.session_receipt, session)
         self.assertNotIn('session', owned.identity())  # a session is not part of the cache identity
         identity = listener.identity()
         self.assertEqual(probes, [model_dir.resolve()])
@@ -528,16 +548,34 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
         self.assertEqual(identity['settings'], machine.QWEN_SETTINGS)
         self.assertEqual(identity['modelRevision'], f'model.safetensors:sha256:{hashlib.sha256(b"weights").hexdigest()}')
         runs = []
+        listener._admit()
         listener._run = lambda wav: runs.append(wav) or 'heard once'
         self.assertEqual(listener.transcribe(b'clip'), 'heard once')
         self.assertEqual(listener.transcribe(b'clip'), 'heard once')
         self.assertEqual(len(runs), 1)
+        self.assertEqual(listener.sessions, [session])
+        # A fresh process resuming from the cache owns no session; the entry restores the one that generated
+        # the transcript, so the receipt still records the bound compute identity instead of null.
+        resumed = machine.QwenListener(model_dir, cache=self.out / 'qwen', identity_probe=same_runtime,
+                                       session_verifier=refused)
+        self.assertEqual(resumed.transcribe(b'clip'), 'heard once')
+        self.assertEqual((resumed.session_receipt, resumed.sessions, resumed._model), (session, [session], None))
+        self.assertEqual(len(runs), 1)
+        # Clips generated in a later session join the cached one; both sessions stay on record.
+        later = {'sessionId': 's2', 'jobId': 'j2', 'owner': 'me', 'bootId': 'b2'}
+        continued = machine.QwenListener(model_dir, cache=self.out / 'qwen', identity_probe=same_runtime,
+                                         session_verifier=lambda: later)
+        continued._admit()
+        continued._run = lambda wav: runs.append(wav) or 'heard later'
+        self.assertEqual((continued.transcribe(b'clip'), continued.transcribe(b'clip two')), ('heard once', 'heard later'))
+        self.assertEqual((continued.session_receipt, continued.sessions), (later, [session, later]))
         # A different runtime (package upgrade, changed model metadata) is another listener: no cache reuse.
         upgraded = machine.QwenListener(model_dir, cache=self.out / 'qwen', identity_probe=lambda p: {
-            **probe(p), 'qwenAsrVersion': '0.2.0'})
+            **probe(p), 'qwenAsrVersion': '0.2.0'}, session_verifier=lambda: later)
+        upgraded._admit()
         upgraded._run = lambda wav: runs.append(wav) or 'heard again'
         self.assertEqual(upgraded.transcribe(b'clip'), 'heard again')
-        self.assertEqual(len(runs), 2)
+        self.assertEqual(len(runs), 3)
         with self.assertRaisesRegex(machine.SourceAdjudicationError, 'qwen_runtime_identity'):
             machine.QwenListener(model_dir, cache=self.out / 'qwen', identity_probe=lambda p: {'backend': 'other'})
 

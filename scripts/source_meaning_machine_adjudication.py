@@ -53,7 +53,7 @@ QUESTION_SCHEMA = 'sermon-source-meaning-adjudication-question-v1'
 RESPONSE_SCHEMA = 'sermon-source-meaning-adjudication-response-v1'
 PROMPT_VERSION = 'source-meaning-adjudication-v2'
 NOTES_SCHEMA = 'sermon-source-meaning-notes-v1'
-VERSION = '2026-10-08-v2'
+VERSION = '2026-10-08-v3'
 ROLE = source_review.MACHINE_ROLE
 MODEL, EFFORT = 'gpt-6.1-sol', 'medium'
 # Only a model the Layer 1 review path also accepts may adjudicate; otherwise a
@@ -307,7 +307,10 @@ class QwenListener:
                  'qwen_runtime_identity')
         self.cache = transports.CallCache(cache, paid=False)
         self.session_verifier = session_verifier
+        # The live session once admitted, else the session restored from the first cached re-listen.
         self.session_receipt: dict[str, Any] | None = None
+        # Every distinct session whose transcripts this run used, cached or live, in first-use order.
+        self.sessions: list[dict[str, Any]] = []
         self._model = None
 
     def identity(self) -> dict[str, Any]:
@@ -347,8 +350,20 @@ class QwenListener:
     def transcribe(self, wav: bytes) -> str:
         audio_sha = _sha(wav)
         key = policies.canonical_sha256({'listener': self.name, 'audioSha256': audio_sha, 'identity': self.identity()})
-        return self.cache.run(key, {'audioSha256': audio_sha, 'listener': self.name},
-                              lambda: {'text': self._run(wav)})['text'].strip()
+
+        def listen() -> dict[str, Any]:
+            text = self._run(wav)  # admits the session first; the entry records which session generated it
+            _require(isinstance(self.session_receipt, dict), 'qwen_session_receipt')
+            return {'text': text, 'session': self.session_receipt}
+        entry = self.cache.run(key, {'audioSha256': audio_sha, 'listener': self.name}, listen)
+        _require(isinstance(entry, dict) and isinstance(entry.get('text'), str) and isinstance(entry.get('session'), dict),
+                 'qwen_cache_entry')
+        if entry['session'] not in self.sessions:
+            self.sessions.append(entry['session'])
+        if self.session_receipt is None:
+            # A resumed run serving this clip from cache keeps the bound compute identity that produced it.
+            self.session_receipt = entry['session']
+        return entry['text'].strip()
 
 
 # ---------------------------------------------------------------- adjudicator
@@ -588,7 +603,8 @@ def adjudicate(source: dict[str, Any], anchor: dict[str, Any], *, unit_ids: list
         'decidedBy': f'source_meaning_machine_adjudication {VERSION} {sha[:16]}', 'decidedByRole': ROLE,
         'humanApproval': False, 'reviewedAt': stamp,
         'listeners': [{'name': item.name, 'model': item.model, 'identity': item.identity(),
-                       'session': getattr(item, 'session_receipt', None)} for item in listeners],
+                       'session': getattr(item, 'session_receipt', None),
+                       'sessions': getattr(item, 'sessions', None)} for item in listeners],
         'listenerIndependence': independence,
         'adjudicator': None if adjudicator is None else adjudicator.identity(),
         'units': rows,
@@ -681,15 +697,38 @@ def meaning_notes(receipt: dict[str, Any], *, receipt_sha256: str) -> dict[str, 
                        'the frozen English text is unchanged. Not human approval.')}
 
 
-def load_meaning_notes(path: Path, *, source: dict[str, Any], anchor: dict[str, Any]) -> dict[str, dict[str, Any]]:
-    """Notes bound to exactly these Layer 1 inputs, keyed by unit; anything else is refused."""
+def load_meaning_notes(path: Path, *, source: dict[str, Any], anchor: dict[str, Any],
+                       receipt_path: Path | None = None) -> dict[str, dict[str, Any]]:
+    """Notes bound to exactly these Layer 1 inputs and reproduced from their receipt, keyed by unit.
+
+    The notes file is a projection of the receipt it names. That receipt must
+    exist (beside the notes as ``receipt.json``, or at ``receipt_path``), hash
+    to the notes' ``receiptSha256``, carry the same bindings, and yield these
+    very rows, so a stale or hand-edited notes file cannot pass an invented
+    decision or note off as machine audio adjudication."""
+    path = Path(path)
     notes = _load(path)
     _require(isinstance(notes, dict) and notes.get('schemaVersion') == NOTES_SCHEMA, 'meaning_notes_schema')
     _require(notes.get('bindings') == {'source.json': policies.canonical_sha256(source),
                                        'anchor.json': policies.canonical_sha256(anchor)}, 'meaning_notes_binding_changed')
+    receipt_path = Path(receipt_path) if receipt_path is not None else path.parent / 'receipt.json'
+    _require(receipt_path.is_file(), 'meaning_notes_receipt_missing')
+    _require(isinstance(notes.get('receiptSha256'), str) and file_sha256(receipt_path) == notes['receiptSha256'],
+             'meaning_notes_receipt_changed')
+    receipt = _load(receipt_path)
+    try:
+        _require(isinstance(receipt, dict) and receipt.get('schemaVersion') == SCHEMA
+                 and receipt.get('decidedByRole') == ROLE and receipt.get('humanApproval') is False
+                 and receipt.get('bindings') == notes['bindings'], 'meaning_notes_receipt_changed')
+        expected = meaning_notes(receipt, receipt_sha256=notes['receiptSha256'])
+    except (KeyError, TypeError) as exc:
+        raise SourceAdjudicationError('meaning_notes_receipt_changed') from exc
+    _require(expected is not None and all(notes.get(key) == expected[key]
+                                          for key in ('decidedBy', 'decidedByRole', 'humanApproval', 'units')),
+             'meaning_notes_unit_changed')
     units = {u['sourceUnitId']: u for u in _units(anchor)}
     out: dict[str, dict[str, Any]] = {}
-    for row in notes.get('units') or []:
+    for row in notes['units']:
         uid = row.get('sourceUnitId')
         _require(uid in units and row.get('decision') in DECISIONS and row['decision'] != 'transcript_corrected'
                  and isinstance(row.get('meaningNote'), str) and row['meaningNote'].strip()

@@ -40,7 +40,7 @@ from scripts import scripture_candidate_queue as queue_module  # noqa: E402
 from scripts import scripture_editions  # noqa: E402
 from scripts import target_language_policy as policies  # noqa: E402
 
-VERSION = '2026-10-08-v2'
+VERSION = '2026-10-08-v3'
 ROLE = 'machine_adjudicator'
 BASIS_SCHEMA = 'sermon-scripture-machine-adjudication-basis-v1'
 # A book mention stays in force for this many following units; sermons move on.
@@ -97,18 +97,21 @@ def _number(value: str) -> int | None:
         return None
 
 
-def _edition(target_locale: str, library: Any = None) -> Any:
+def _edition(target_locale: str, library: Any = None) -> tuple[str, Any, str]:
+    """The locale's pinned edition, its lookup object and its verification status.
+
+    A third-party text still awaiting publisher comparison is loaded but not
+    pinned scripture: adjudication still runs on its units, and only a whole
+    reading that would be emitted as a quotation is withheld (``edition_not_verified``)."""
     _require(target_locale in adjudication.PINNED_EDITIONS, 'no_pinned_edition_for_locale')
     edition_id = adjudication.PINNED_EDITIONS[target_locale]
     if edition_id == 'CUV':
-        return edition_id, (library or cuv_scripture.CuvLibrary.from_path())
+        return edition_id, (library or cuv_scripture.CuvLibrary.from_path()), scripture_editions.VERIFIED
     try:
         edition = scripture_editions.load(edition_id)
     except scripture_editions.EditionError as exc:
         raise MachineAdjudicationError('edition_unavailable') from exc
-    # A third-party text still awaiting publisher comparison is not pinned scripture.
-    _require(edition.verification == scripture_editions.VERIFIED, 'edition_not_verified')
-    return edition_id, edition
+    return edition_id, edition, edition.verification
 
 
 def _signals(english: str) -> set[str]:
@@ -214,8 +217,31 @@ def _verse_range(match: re.Match) -> tuple[int, int] | None:
     return v1, v2
 
 
+SEVERAL_REFERENCES = 'several scripture references in one unit: no verse range is bound to it'
+
+
+def _events(english: str) -> list[tuple[str, re.Match]]:
+    """Every reference event in the unit, in textual order.
+
+    A book mention claims its whole span: "turn to Romans chapter 8" is one
+    mention, not a transition to Romans and then a mention, and the "chapter 8"
+    inside it is not a second chapter mention."""
+    found = [(m.start(), m.end(), 'book', m) for m in BOOK_MENTION.finditer(english)]
+    claimed = [(start, end) for start, end, _, _ in found]
+    for kind, pattern in (('transition', BOOK_TRANSITION), ('chapter', CHAPTER_MENTION), ('verse', VERSE_MENTION)):
+        found.extend((m.start(), m.end(), kind, m) for m in pattern.finditer(english)
+                     if not any(m.start() < end and start < m.end() for start, end in claimed))
+    return [(kind, match) for _, _, kind, match in sorted(found, key=lambda item: item[0])]
+
+
 def _scan(units: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Per unit: the reference context in force and any verse mention, with its evidence."""
+    """Per unit: the reference context in force and any verse mention, with its evidence.
+
+    Events are applied in the order they are spoken, so the context carried to
+    the next unit is the last one named. A unit's own verse range is bound only
+    when it names verses once and names no other context after them: "We
+    compared John 3:16, then turn to Romans chapter 8" leaves Romans 8 in force
+    and binds no verse of its own."""
     rows: list[dict[str, Any]] = []
     book: str | None = None
     chapter: int | None = None
@@ -226,36 +252,42 @@ def _scan(units: list[dict[str, Any]]) -> list[dict[str, Any]]:
         since_book += 1
         if since_book > CONTEXT_WINDOW_UNITS:
             book = chapter = None
-        mention = BOOK_MENTION.search(english)
-        transition = None if mention else BOOK_TRANSITION.search(english)
         verse_range: tuple[int, int] | None = None
-        verses_named = False
-        if mention:
-            book = _book(mention['book'])
-            since_book = 0
-            if mention['more_chapters']:
-                chapter = None  # "Revelation 4 and 5": two chapters, no single context.
-                evidence.append(f'book mention with several chapters: {mention.group(0)!r}')
+        verse_mentions = 0
+        context_after_verse = False
+        for kind, match in _events(english):
+            if kind == 'book':
+                book, since_book = _book(match['book']), 0
+                if match['more_chapters']:
+                    chapter = None  # "Revelation 4 and 5": two chapters, no single context.
+                    evidence.append(f'book mention with several chapters: {match.group(0)!r}')
+                else:
+                    chapter = _number(match['chapter'])
+                    evidence.append(f'book and chapter mention: {match.group(0)!r}')
+                if match['v1']:
+                    verse_mentions += 1
+                    verse_range = _verse_range(match)
+                    continue  # the mention names its own verses; it is not a context after them
+            elif kind == 'transition':
+                book, chapter, since_book = _book(match['book']), None, 0
+                evidence.append(f'book transition without a chapter: {match.group(0)!r}')
+            elif kind == 'chapter':
+                if not book:
+                    continue
+                chapter = _number(match['chapter'])
+                evidence.append(f'chapter mention: {match.group(0)!r}')
             else:
-                chapter = _number(mention['chapter'])
-                evidence.append(f'book and chapter mention: {mention.group(0)!r}')
-            if mention['v1']:
-                verses_named = True
-                verse_range = _verse_range(mention)
-        elif transition:
-            book, chapter, since_book = _book(transition['book']), None, 0
-            evidence.append(f'book transition without a chapter: {transition.group(0)!r}')
-        else:
-            chapter_mention = CHAPTER_MENTION.search(english)
-            if chapter_mention and book:
-                chapter = _number(chapter_mention['chapter'])
-                evidence.append(f'chapter mention: {chapter_mention.group(0)!r}')
-        verse_mention = VERSE_MENTION.search(english)
-        if verse_mention and not verses_named:
-            verses_named = True
-            verse_range = _verse_range(verse_mention)
-            evidence.append(f'verse mention: {verse_mention.group(0)!r}')
-        if verses_named and verse_range is None:
+                verse_mentions += 1
+                verse_range = _verse_range(match)
+                evidence.append(f'verse mention: {match.group(0)!r}')
+                continue
+            if verse_mentions:
+                context_after_verse = True
+        verses_named = verse_mentions > 0
+        if verse_mentions > 1 or context_after_verse:
+            verse_range = None  # ambiguous: never the first reference, never the last context's verse
+            evidence.append(SEVERAL_REFERENCES)
+        elif verses_named and verse_range is None:
             evidence.append('the verse mention does not resolve to a range (numbers unparsed or not adjacent)')
         signals = _signals(english)
         rows.append({'sourceUnitId': unit['sourceUnitId'], 'english': english, 'book': book, 'chapter': chapter,
@@ -334,7 +366,7 @@ def adjudicate(source: dict[str, Any], anchor: dict[str, Any], plan: list[dict[s
                flagged_units: list[str] | None = None, library: Any = None, coverage_edition: Any = None,
                now: datetime | None = None) -> tuple[dict[str, Any], dict[str, Any]]:
     """Return (receipt, basis). The receipt has the v1 shape with the machine role."""
-    edition_id, edition = _edition(target_locale, library)
+    edition_id, edition, verification = _edition(target_locale, library)
     english_edition = _coverage_edition(coverage_edition)
     units = anchor['sourceUnits']
     rows = _scan(units)
@@ -352,7 +384,8 @@ def adjudicate(source: dict[str, Any], anchor: dict[str, Any], plan: list[dict[s
                 candidate, why = _paraphrase(f'm{len(candidates) + 1:03d}', [unit],
                                              'no book, chapter and verse reference resolves for this unit')
                 candidates.append(candidate)
-                basis_rows.append(why | {'english': rows[run[run_units.index(unit)]]['english']})
+                row = rows[run[run_units.index(unit)]]
+                basis_rows.append(why | {'evidence': row['evidence'], 'english': row['english']})
             continue
         verses = list(range(reference.start_verse, reference.end_verse + 1))
         pairs, boundary = (None, 'the units and verses do not pair one to one')
@@ -386,14 +419,6 @@ def adjudicate(source: dict[str, Any], anchor: dict[str, Any], plan: list[dict[s
         for units_here, ref, measure in pairs:
             candidate_id = f'm{len(candidates) + 1:03d}'
             english_here = [rows[i]['english'] for i in run if rows[i]['sourceUnitId'] in units_here]
-            try:
-                found = edition.lookup(ref)
-            except (cuv_scripture.CuvError, scripture_editions.EditionError) as exc:
-                candidate, why = _paraphrase(candidate_id, units_here,
-                                             f'edition lookup failed for {ref.canonical_ref}: {exc}')
-                candidates.append(candidate)
-                basis_rows.append(why | {'reference': ref.canonical_ref, 'english': english_here})
-                continue
             # The pinned verse is admitted only when the speaker's quotation covers the whole verse.
             if not measure['wholeVerse']:
                 candidate, why = _paraphrase(
@@ -404,6 +429,25 @@ def adjudicate(source: dict[str, Any], anchor: dict[str, Any], plan: list[dict[s
                 candidates.append(candidate)
                 basis_rows.append(why | {'reference': ref.canonical_ref, 'quoteBoundary': FRAGMENT_BOUNDARY,
                                          'coverage': measure, 'boundaryEvidence': boundary, 'english': english_here})
+                continue
+            # A whole reading is pinned only from a verified edition; a pending one withholds the quotation.
+            if verification != scripture_editions.VERIFIED:
+                candidate, why = _paraphrase(
+                    candidate_id, units_here,
+                    f'edition_not_verified: {edition_id} is {verification}; the whole reading of '
+                    f"{ref.canonical_ref} is translated as the speaker's words until the edition is verified")
+                candidates.append(candidate)
+                basis_rows.append(why | {'reference': ref.canonical_ref, 'editionVerification': verification,
+                                         'quoteBoundary': QUOTE_BOUNDARY, 'coverage': measure,
+                                         'boundaryEvidence': boundary, 'english': english_here})
+                continue
+            try:
+                found = edition.lookup(ref)
+            except (cuv_scripture.CuvError, scripture_editions.EditionError) as exc:
+                candidate, why = _paraphrase(candidate_id, units_here,
+                                             f'edition lookup failed for {ref.canonical_ref}: {exc}')
+                candidates.append(candidate)
+                basis_rows.append(why | {'reference': ref.canonical_ref, 'english': english_here})
                 continue
             candidates.append({'candidateId': candidate_id, 'sourceUnitIds': units_here,
                                'classification': 'direct_quote', 'reference': ref.canonical_ref,
@@ -428,7 +472,8 @@ def adjudicate(source: dict[str, Any], anchor: dict[str, Any], plan: list[dict[s
              and all(set(row) == adjudication.CANDIDATE_KEYS for row in candidates), 'receipt_shape')
     basis = {'schemaVersion': BASIS_SCHEMA, 'implementationSha256': sha, 'version': VERSION,
              'receiptSha256': adjudication.receipt_sha256(receipt), 'targetLocale': target_locale,
-             'editionId': edition_id, 'coverageEditionId': english_edition.edition_id,
+             'editionId': edition_id, 'editionVerification': verification,
+             'coverageEditionId': english_edition.edition_id,
              'flaggedUnits': flagged, 'flaggedUnitsSource':
              'supplied' if flagged_units is not None else 'discovered', 'discoveredUnits': discovered,
              'humanApproval': False, 'candidates': basis_rows,
