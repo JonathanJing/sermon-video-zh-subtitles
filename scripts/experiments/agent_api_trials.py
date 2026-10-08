@@ -42,6 +42,7 @@ from pathlib import Path
 import posixpath
 import re
 import shutil
+import stat
 import sys
 import tempfile
 import threading
@@ -198,6 +199,12 @@ def _check_planted(planted):
                 or diagnosis.get('category') not in CATEGORIES \
                 or not isinstance(diagnosis.get('root_cause'), str) or not diagnosis['root_cause']:
             bad(f'entry {entry["case"]} needs a flaw and a diagnosis with a known category and a root_cause')
+    # The negative controls are part of the refuter result: every constructed case carries one, so a shortened
+    # list cannot pass as a complete run. Real-log cases have no planted diagnosis.
+    constructed = {name for name in library if not _read_json(CASES / name / 'expected.json').get('realLogs')}
+    if seen != constructed:
+        bad('planted diagnoses must cover exactly the constructed cases; missing '
+            + ', '.join(sorted(constructed - seen)) + '; extra ' + ', '.join(sorted(seen - constructed)))
     return planted
 
 
@@ -301,7 +308,16 @@ def snapshot_evidence(source, root):
     for path in files:
         target = dest / path.relative_to(base)
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_bytes(path.read_bytes())
+        # Opened without following links and checked as a regular file, so a file swapped for a symlink after the
+        # listing cannot pull outside bytes into the snapshot.
+        try:
+            descriptor = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
+        except OSError as error:
+            raise ValueError(f'evidence file {path.name} changed while being copied: {error.strerror}') from None
+        with os.fdopen(descriptor, 'rb') as source_file:
+            if not stat.S_ISREG(os.fstat(source_file.fileno()).st_mode):
+                raise ValueError(f'evidence file {path.name} is no longer a regular file')
+            target.write_bytes(source_file.read())
     return dest
 
 
@@ -313,7 +329,12 @@ def build_timeline(evidence):
         name = str(path.relative_to(evidence))
         before = len(events) + len(untimed)
         if path.suffix == '.json':
-            value = _read_json(path)
+            try:
+                value = _read_json(path)
+            except ValueError:
+                # A truncated artifact is itself failure evidence: listed as untimed and left to read raw.
+                untimed.append({'source': name, 'reason': 'unparseable JSON'})
+                continue
             stamps = list(_time_fields(value))
             # The file's final status, exit code and error describe its end, not its start.
             final_key = max(stamps, key=lambda item: (_instant(item[1]), bool(END_FIELD.search(item[0]))))[0] if stamps else None
@@ -1504,7 +1525,9 @@ def _scorer_identity(stage):
                         _refutation_schema, score_refutation, _refute_summary],
              'preflight': [*tools, _preflight_schema, score_preflight, preflight_check, _check_receipts, _check_satisfied,
                            _call_matches, _declared_arguments, _check_input, _relative, _groups_match, _text],
-             'risk': [score_risk, risk_summary, _usage_values, _probability]}[stage]
+             'risk': [score_risk, risk_summary, _usage_values, _probability, _sum_decisions_usage]}[stage]
+    # Completion and usage aggregation decide what a stored row means for the run's status, so they are bound too.
+    parts = [*parts, _unscored, *([_sum_usage] if stage in ('diagnose', 'refute', 'preflight') else [])]
     tool_definitions = [FILE_TOOLS, TIMELINE_TOOL, PREFLIGHT_TOOLS, MAX_READ_CHARS]
     timeline_patterns = [TIMESTAMP.pattern, ERROR_LINE.pattern, END_FIELD.pattern]
     constants = {'timeline': timeline_patterns,

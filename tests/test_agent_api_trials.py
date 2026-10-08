@@ -57,6 +57,37 @@ class FixtureTests(unittest.TestCase):
                     tools('read_file', {'path': path})
             self.assertEqual(trials.build_timeline(root)['sources'], ['run.log'])
 
+    def test_unparseable_json_is_untimed_evidence(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'status.json').write_text('{"status": "running", "startedAt": "2026-10-07T')
+            (root / 'run.log').write_text('2026-10-07T10:00:00Z start\n')
+            timeline = trials.build_timeline(root)
+            self.assertEqual(timeline['untimed'], [{'source': 'status.json', 'reason': 'unparseable JSON'}])
+            self.assertEqual(len(timeline['events']), 1)
+
+    def test_snapshot_refuses_a_file_swapped_for_a_symlink(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / 'case' / 'evidence'
+            root.mkdir(parents=True)
+            (Path(tmp) / 'secret.txt').write_text('SECRET')
+            (root / 'run.log').write_text('log')
+            listed = trials.evidence_files(root)
+            (root / 'run.log').unlink()
+            os.symlink(Path(tmp) / 'secret.txt', root / 'run.log')
+            (Path(tmp) / 'snap').mkdir()
+            with patch.object(trials, 'evidence_files', return_value=listed), \
+                    self.assertRaisesRegex(ValueError, 'changed while being copied'):
+                trials.snapshot_evidence(root, Path(tmp) / 'snap')
+
+    def test_completion_helpers_are_bound_into_every_scorer(self):
+        for stage in ('timeline', 'diagnose', 'refute', 'preflight', 'risk'):
+            before = trials._scorer_identity(stage)
+            with self.subTest(stage), patch.object(trials.inspect, 'getsource',
+                                                   side_effect=lambda part, real=trials.inspect.getsource:
+                                                   real(part) + ('#changed' if part is trials._unscored else '')):
+                self.assertNotEqual(trials._scorer_identity(stage), before)
+
     def test_grep_is_a_literal_search(self):
         tools = trials.EvidenceTools(trials.CASES / 'f05-asr-symlink-mount/evidence')
         hits = tools('grep', {'text': 'LOCAL_MODEL_MISSING'})['matches']
@@ -1431,7 +1462,10 @@ class LatestReviewTests(unittest.TestCase):
                     {**planted, 'diagnoses': [{**first, 'diagnosis': 'wrong'}]},
                     {**planted, 'diagnoses': [{**first, 'diagnosis': {**first['diagnosis'], 'category': 'typo'}}]},
                     {**planted, 'diagnoses': [first, first]},
-                    {**planted, 'diagnoses': [{**first, 'case': 'f99-missing'}]}]
+                    {**planted, 'diagnoses': [{**first, 'case': 'f99-missing'}]},
+                    {**planted, 'diagnoses': []},
+                    {**planted, 'diagnoses': planted['diagnoses'][1:]},
+                    {**planted, 'diagnoses': planted['diagnoses'] + [{**first, 'case': 'f09-real-benign-gpu-warnings'}]}]
         for variant in variants:
             with self.subTest(variant=variant), patch.object(
                     trials, '_read_json', side_effect=lambda path, v=variant: v if Path(path) == trials.WRONG_DIAGNOSES
