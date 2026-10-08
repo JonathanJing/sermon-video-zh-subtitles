@@ -38,6 +38,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 
@@ -261,8 +262,10 @@ def save_once(path: Path, value, binding: str) -> Path:
     save(binding_path(path), {"inputsSha256": binding, "receiptJsonSha256": json_sha256(value)})
     # A complete temporary file is linked into place, so the receipt is never partial,
     # and the link fails rather than replace an existing receipt.
-    temporary = path.with_name(f".{path.name}.{os.getpid()}.tmp")
-    temporary.write_text(json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=path.parent, prefix=f".{path.name}.",
+                                     suffix=".tmp", delete=False) as stream:
+        stream.write(json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n")
+    temporary = Path(stream.name)
     try:
         os.link(temporary, path)
     finally:
@@ -420,10 +423,22 @@ def run_locale(locale: str, paths: dict, out: Path, state: Path, judge, timings:
         if head is None:
             return {"status": "blocked_prior_failure",
                     "reason": f"the repair ledger head failed and its QC receipt is missing from {head_path}"}
-        current = {(group["groupId"], hashlib.sha256(group["targetText"].encode("utf-8")).hexdigest())
-                   for group in groups}
-        unrepaired = [row["groupId"] for row in head["results"]
-                      if row["status"] != "pass" and (row["groupId"], row["targetTextSha256"]) in current]
+        # Group ids are local to a revision; the ledger counts by source unit, so match on those.
+        current = {(tuple(group["sourceUnitIds"]), hashlib.sha256(group["targetText"].encode("utf-8")).hexdigest()):
+                   group for group in groups}
+        # A length failure is relative to the candidate-wide median, so an unchanged
+        # group is repaired only if it now passes against the current median.
+        median = text_qc.candidate_length_median(groups)
+
+        def still_failing(row, group):
+            if row.get("problems") and all(problem.startswith("length ratio") for problem in row["problems"]):
+                return text_qc.length_problem(group, median) is not None
+            return True
+
+        unrepaired = [current[key]["groupId"] for row in head["results"]
+                      if row["status"] != "pass"
+                      and (key := (tuple(row["sourceUnitIds"]), row["targetTextSha256"])) in current
+                      and still_failing(row, current[key])]
         if unrepaired:
             return {"status": "blocked_prior_failure", "failedGroups": unrepaired,
                     "reason": "failed groups are unchanged; repair them in a new candidate revision"}
