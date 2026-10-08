@@ -45,6 +45,9 @@ SCHEMA = "sermon-run-digest-v1"
 # diagnose/refute/risk.json carry agent-trial rows the run report reviews case by case.
 WHOLE_NAMES = {"outcome.json", "timings.tsv", "summary.json", "preflight.json", "diagnose.json", "refute.json", "risk.json"}
 MAX_WHOLE_BYTES = 256 * 1024
+# Agent-trial result files hold one row per case; one over the cap is exported as row chunks, each under the cap,
+# so case-level evidence is not dropped. The whole-digest cap still bounds the total.
+ROW_NAMES = {"preflight.json", "diagnose.json", "refute.json", "risk.json"}
 MAX_DIGEST_BYTES = 2 * 1024 * 1024
 NAME = re.compile(r"\d{8}-[A-Za-z0-9._-]+")  # Same set publish_run_report.sh accepts
 RETROSPECTIVE_SECTIONS = [
@@ -195,6 +198,16 @@ def collect(run_dir: Path, label: str, dest: Path, secrets: list[str]) -> tuple[
         entry = {"run": label, "path": str(rel), "kind": kind, "bytes": path.stat().st_size, "truncated": False}
         if kind == "log":
             text, entry["truncated"] = read_log(path, digest)
+        elif entry["bytes"] > MAX_WHOLE_BYTES and path.name in ROW_NAMES and entry["bytes"] <= MAX_DIGEST_BYTES:
+            raw = path.read_bytes()
+            digest.update(raw)
+            entry["sha256"] = digest.hexdigest()
+            if write_row_chunks(raw, dest / label / rel, secrets, entry):
+                entries.append(entry)
+                continue
+            entry.update(omitted="over_size_cap")
+            entries.append(entry)
+            continue
         elif entry["bytes"] > MAX_WHOLE_BYTES:  # Hash in chunks; never load it.
             with path.open("rb") as stream:
                 for chunk in iter(lambda: stream.read(1 << 20), b""):
@@ -223,6 +236,38 @@ def collect(run_dir: Path, label: str, dest: Path, secrets: list[str]) -> tuple[
         target.write_text(text, encoding="utf-8")
         entries.append(entry)
     return entries, skipped
+
+
+def write_row_chunks(raw: bytes, target: Path, secrets: list[str], entry: dict) -> bool:
+    """Write a redacted row file as <stem>.rows-NN.json chunks under the whole-file cap; False if it has no rows."""
+    try:
+        value = json.loads(raw.decode("utf-8", errors="replace"))
+    except ValueError:
+        return False
+    if not isinstance(value, dict) or not isinstance(value.get("rows"), list):
+        return False
+    entry["redactions"] = {}
+    value = redact_json(value, secrets, entry["redactions"])
+    rest = {k: v for k, v in value.items() if k != "rows"}
+    chunks, current, size = [], [], 0
+    for row in value["rows"]:
+        row_size = len(json.dumps(row, ensure_ascii=False, indent=2).encode("utf-8")) + 8
+        if current and size + row_size > MAX_WHOLE_BYTES - 4096:
+            chunks.append(current)
+            current, size = [], 0
+        current.append(row)
+        size += row_size
+    chunks.append(current)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    names = []
+    for index, rows in enumerate(chunks, 1):
+        part = {"source": target.name, "part": index, "parts": len(chunks), **(rest if index == 1 else {}),
+                "rows": rows}
+        name = f"{target.stem}.rows-{index:02d}.json"
+        (target.parent / name).write_text(json.dumps(part, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        names.append(name)
+    entry["chunks"] = names
+    return True
 
 
 def read_json(path: Path) -> dict | None:

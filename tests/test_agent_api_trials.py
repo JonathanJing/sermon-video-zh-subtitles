@@ -1019,6 +1019,9 @@ class LatestReviewTests(unittest.TestCase):
             trial.run('timeline')
         self.assertTrue(json.loads((out / 'timeline-summary.json').read_text())['partial'])
         self.assertEqual((out / 'timings.tsv').read_text().splitlines()[1].split('\t')[:2], ['timeline', 'fail'])
+        # Restoring the fixture does not make the receipts reusable: the --out stays quarantined.
+        with self.assertRaisesRegex(ValueError, 'quarantined'):
+            make(case_ids=['f01-plugin-identity']).run('timeline')
 
     def test_torn_final_call_record_is_dropped(self):
         out, _make = self.make_trials()

@@ -869,7 +869,7 @@ class Trials:
             timeline = build_timeline(case['evidence'])
             path = self.out / 'timeline' / f'{case["id"]}.json'
             path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(json.dumps(timeline, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+            _write_durably(path, json.dumps(timeline, ensure_ascii=False, indent=2) + '\n')
             rows.append({'case': case['id'], 'events': len(timeline['events']), 'untimed': len(timeline['untimed']),
                          'sources': len(timeline['sources'])})
         return {'cases': rows}
@@ -1062,6 +1062,8 @@ class Trials:
 
     def _run(self, trial):
         results = self.results
+        if (self.out / 'invalidated.json').exists():
+            raise ValueError(f'{self.out}: quarantined after fixtures or code changed mid-run; use a new --out')
         scopes = self._scopes()
         self._bind_scopes({stage: scope for stage, scope in scopes.items()
                            if trial in ('all', stage) or (trial == 'refute' and stage == 'diagnose')})
@@ -1072,6 +1074,10 @@ class Trials:
                 # Fixtures read live during the stage must still match what scope.json bound at the start; checked
                 # inside the timing so a mismatch is recorded as a failed stage.
                 if self._scopes()[stage] != scopes[stage]:
+                    # Sessions may already have read the changed bytes, and restoring the fixture would let their
+                    # receipts match again, so the whole --out is quarantined for good.
+                    _write_durably(self.out / 'invalidated.json',
+                                   json.dumps({'stage': stage, 'reason': 'fixtures or code changed during the run'}) + '\n')
                     raise ValueError(f'{stage}: fixtures or code changed during the run; use a new --out')
                 return result
             return self.write(name, self._timed(stage, checked))
