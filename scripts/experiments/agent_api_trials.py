@@ -99,11 +99,44 @@ def load_plans(root=PLANS, only=None):
             continue
         if directory.is_symlink() or (directory / 'plan').is_symlink():
             raise ValueError(f'plan {directory.name} evidence is a symlink')
-        plans.append({'id': directory.name, 'evidence': directory / 'plan',
-                      'expected': _read_json(directory / 'expected.json')})
+        expected = _read_json(directory / 'expected.json')
+        _check_plan_key(directory.name, expected)
+        plans.append({'id': directory.name, 'evidence': directory / 'plan', 'expected': expected})
     if only and {p['id'] for p in plans} != set(only):
         raise ValueError('unknown plan id: ' + ', '.join(sorted(set(only) - {p['id'] for p in plans})))
     return plans
+
+
+def credential_fingerprint(key):
+    """One-way, domain-separated fingerprint of the API key; the key value itself is never persisted."""
+    return hashlib.sha256(b'agent-api-trials-credential\0' + key.encode()).hexdigest()[:16]
+
+
+def _check_plan_key(name, expected):
+    """Refuse a malformed answer key before any session is billed, rather than crashing mid-scoring."""
+    def bad(reason):
+        raise ValueError(f'invalid plan {name}: {reason}')
+    if not isinstance(expected, dict) or expected.get('id') != name:
+        bad('id must match the directory name')
+    blockers = expected.get('blockers')
+    if not isinstance(blockers, dict):
+        bad('blockers must be an object')
+    for blocker, groups in blockers.items():
+        if not (isinstance(groups, list) and groups and all(
+                isinstance(group, list) and group and all(isinstance(term, str) and term for term in group)
+                for group in groups)):
+            bad(f'blocker {blocker} must be a non-empty list of non-empty term lists')
+    checks = expected.get('requiredChecks')
+    if not isinstance(checks, list):
+        bad('requiredChecks must be a list')
+    takes_argument = {tool['name']: bool(tool['parameters'].get('required')) for tool in PREFLIGHT_TOOLS}
+    for check in checks:
+        if not isinstance(check, dict) or check.get('tool') not in takes_argument:
+            bad(f'unknown required check {check!r}')
+        if set(check) - {'tool', 'argument', 'expect'} or not isinstance(check.get('expect'), bool):
+            bad(f'required check {check["tool"]} needs a boolean expect and no other fields')
+        if takes_argument[check['tool']] != isinstance(check.get('argument'), str) or check.get('argument') == '':
+            bad(f'required check {check["tool"]} argument does not match its tool')
 
 
 def evidence_sha(directory):
@@ -859,9 +892,11 @@ class Trials:
                  route=None):
         self.out, self.client, self.model, self.backend = Path(out), client, model, backend
         # The OpenAI project and credential a live run bills to, bound by hash so the summary never names them.
+        # The key itself is bound by a one-way fingerprint: rotating it behind the same alias changes the scope.
         self.route = (None if route is None else
                       {'credentialAlias': route['credentialAlias'],
-                       'project': _sha([route['projectId'], route['credentialAlias']])[:12]})
+                       'project': _sha([route['projectId'], route['credentialAlias']])[:12],
+                       'credential': route['credentialFingerprint']})
         self.max_seconds, self.max_tool_calls, self.poll_seconds = max_seconds, max_tool_calls, poll_seconds
         self.max_sessions, self.sessions_started = max_sessions, 0
         self.decisions, self.risk_repeats = decisions, risk_repeats
@@ -1637,6 +1672,7 @@ def main(argv=None):
         route = selected_route()
         if route is None or route['environment'] != 'dev':
             parser.error('live trials run only under: scripts/run_with_openai_environment.py --environment dev -- ...')
+        route = dict(route, credentialFingerprint=credential_fingerprint(os.environ['OPENAI_API_KEY']))
         client = agents.AgentsAPIClient(timeout=60)
         decisions = DecisionsClient(out)
         poll = 2.0

@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 from pathlib import Path
 import tempfile
 import time
@@ -1196,13 +1197,39 @@ class LatestReviewTests(unittest.TestCase):
 
     def test_route_and_decisions_model_come_from_bound_scopes(self):
         out, make = self.make_trials()
-        route = {'projectId': 'proj_a', 'credentialAlias': 'tongxing-dev-runtime'}
+        route = {'projectId': 'proj_a', 'credentialAlias': 'tongxing-dev-runtime',
+                 'credentialFingerprint': trials.credential_fingerprint('sk-test-one')}
         make(route=route, case_ids=['f01-plugin-identity']).run('diagnose')
         summary = json.loads((out / 'summary.json').read_text())
         self.assertIsNone(summary['decisionsModel'])
         self.assertNotIn('proj_a', json.dumps(summary))
+        written = ''.join(p.read_text(errors='replace') for p in out.rglob('*') if p.is_file())
+        self.assertNotIn('sk-test-one', written)
         with self.assertRaisesRegex(ValueError, 'narrower or different'):
             make(route={**route, 'projectId': 'proj_b'}, case_ids=['f01-plugin-identity']).run('diagnose')
+        rotated = {**route, 'credentialFingerprint': trials.credential_fingerprint('sk-test-two')}
+        with self.assertRaisesRegex(ValueError, 'narrower or different'):
+            make(route=rotated, case_ids=['f01-plugin-identity']).run('diagnose')
+
+    def test_malformed_plan_key_is_refused_before_any_session(self):
+        root = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, root)
+        source = trials.PLANS / 'p02-clean'
+        shutil.copytree(source, root / 'p02-clean')
+        key = json.loads((source / 'expected.json').read_text())
+        variants = [
+            {**key, 'blockers': {'x': 'relative'}},
+            {**key, 'blockers': {'x': [[]]}},
+            {**key, 'requiredChecks': [{'tool': 'check_typo', 'expect': True}]},
+            {**key, 'requiredChecks': [{'tool': 'check_staged', 'expect': 'yes', 'argument': 'a'}]},
+            {**key, 'requiredChecks': [{'tool': 'check_staged', 'expect': True}]},
+            {**key, 'requiredChecks': [{'tool': 'check_mount_resolves', 'expect': True, 'argument': 'a'}]},
+            {**key, 'id': 'other'},
+        ]
+        for variant in variants:
+            (root / 'p02-clean' / 'expected.json').write_text(json.dumps(variant))
+            with self.subTest(variant=variant), self.assertRaisesRegex(ValueError, 'invalid plan'):
+                trials.load_plans(root)
 
 
 if __name__ == '__main__':
