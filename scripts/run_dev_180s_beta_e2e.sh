@@ -3,7 +3,9 @@
 # Dev page (zero model API, simulated review) -> new TestFlight Beta that reads
 # catalog v4/v3 from the same Dev origin. Every stage logs its wall time to
 # $OUT/timings.tsv. Publishing steps run only with --execute; without it the
-# script stops after the local dry runs.
+# script stops after the local dry runs. On exit, pass or fail, the run's
+# redacted report is written to artifacts/run-reports/ (see
+# docs/test-run-retrospective.zh.md).
 #
 # Usage (repo root, on the frozen candidate commit):
 #   scripts/run_dev_180s_beta_e2e.sh                        # dry runs only
@@ -62,6 +64,18 @@ fi
 IOS_OUT="$REPO/artifacts/tongxing-ios/beta-$VERSION-build$BUILD"
 mkdir -p "$OUT"
 printf 'stage\tstatus\tseconds\n' > "$OUT/timings.tsv"
+
+# Whatever happens next, leave a redacted run report for cloud review.
+report() {
+  local status=$? name="${RUN_ID:4:8}-dev-180s-$RUN_ID"
+  if [[ -x "$PY" ]] && "$PY" scripts/export_run_digest.py "$OUT" --name "$name" >/dev/null 2>&1; then
+    echo "Run report: artifacts/run-reports/$name (exit $status)"
+    echo "Publish for cloud review: scripts/publish_run_report.sh artifacts/run-reports/$name"
+  else
+    echo "Run report could not be written; export it by hand from $OUT"
+  fi
+}
+trap report EXIT
 
 stage() {  # stage <name> <command...>
   local name="$1"; shift

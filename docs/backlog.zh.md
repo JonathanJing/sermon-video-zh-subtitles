@@ -20,6 +20,14 @@ English index: [backlog.md](./backlog.md)
 
 状态枚举：`verified_baseline`、`in_progress`、`pending`、`waiting_evidence`、`blocked`、`complete`。`verified_baseline` 只说明列出的基线已验证，不代表该项所有未来周次完成；只有满足本页第 2 条维护规则和该项验收定义后才能标记 `complete`。
 
+<a id="backlog-run-report-20261008"></a>
+
+## 2026-10-08：运行报告
+
+| ID | 优先级／状态 | 验收 | 依赖／证据 |
+|---|---|---|---|
+| `DEV-RUNREPORT-001` 每次运行后的脱敏报告与报告 PR | P1 / `waiting_evidence` | 代码与单元测试见 PR #284。下一次 dev 测试必须核对：①运行结束（含失败）后 `artifacts/run-reports/` 下自动出现报告，三分钟 e2e 和机器质检文字／音频驱动不需要手动导出；②`INDEX.md` 有结束状态与阶段耗时，`--verify` 通过；③`publish_run_report.sh` 推出 `run-report/<name>` 并开出只含 `docs/reports/runs/<name>/` 的草稿 PR，CI 走文档快速路径；④云端会话能从该 PR 读到报告并填写 `RETROSPECTIVE.md`。四项都有证据后才标 `complete`，缺哪项就在该次报告里写明 | [运行报告与复盘](test-run-retrospective.zh.md) |
+
 <a id="backlog-status-audit-20261005"></a>
 
 ## 2026-10-05：状态核对与遗漏补齐

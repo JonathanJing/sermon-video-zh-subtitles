@@ -254,6 +254,17 @@ Supervisor 以新读取的 `snapshot.recommendedAction.action == "complete"` 为
 
 当前 Supervisor 没有完整验证上述四层 package；因此它的 `complete` 不得被 Agent、runbook 或通知改写为整条预制多语言生产完成。
 
+## 运行报告
+
+每次正式运行或测试结束后，不论成功失败，都按[运行报告与复盘](test-run-retrospective.zh.md)生成脱敏报告并开报告 PR，云端会话据此复盘。运行目录有多处时（例如 L2 和音频），一并传给导出命令：
+
+```bash
+.venv/bin/python scripts/export_run_digest.py artifacts/<运行目录> [更多运行目录...] --name <YYYYMMDD-简称>
+scripts/publish_run_report.sh artifacts/run-reports/<YYYYMMDD-简称>
+```
+
+报告只汇总证据，不改变 `dual_pdf` 或 `four_layer_release` 的完成判断。
+
 ## 本地恢复与云端重建
 
 本地任务漏跑或机器不可用时：
