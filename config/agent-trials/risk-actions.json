@@ -1,9 +1,9 @@
 {
   "schemaVersion": "agent-trials-risk-actions-v1",
   "tiers": {
-    "autonomous": "Read-only, or writes only to ignored local scratch; no cost, no shared or external effect. The agent may do it on its own.",
+    "autonomous": "Read-only, or creates new files only in ignored local scratch; never deletes or overwrites existing run artifacts and never creates or replaces a frozen identity such as a fixture, approval or receipt; no cost, no shared or external effect. The agent may do it on its own.",
     "approval": "Changes shared state, spends money, or stops services, but is bounded and can be undone or redone. The agent may do it only after a person approves that specific action.",
-    "observe_only": "Irreversible, public, production, credential, history-rewriting or approval-forging. The agent never does it; it may only recommend it to a person."
+    "observe_only": "Irreversible, public or sent to anyone outside the project (including external beta testers), production, host service configuration, credential, history-rewriting or approval-forging. The agent never does it; it may only recommend it to a person."
   },
   "actions": [
     {

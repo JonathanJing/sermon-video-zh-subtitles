@@ -121,6 +121,7 @@ class ScoringTests(unittest.TestCase):
                 'fix': 'mount the whole model directory', 'confidence': 0.8}
         self.assertTrue(trials.score_diagnosis(good, expected, evidence)['correct'])
         self.assertFalse(trials.score_diagnosis({**good, 'category': 'missing_dependency'}, expected, evidence)['correct'])
+        self.assertTrue(trials.score_diagnosis({**good, 'category': 'path_handling'}, expected, evidence)['correct'])
         self.assertFalse(trials.score_diagnosis({**good, 'root_cause': 'model download failed'}, expected, evidence)['correct'])
         self.assertFalse(trials.score_diagnosis(None, expected, evidence)['correct'])
 
@@ -197,6 +198,10 @@ class ScoringTests(unittest.TestCase):
         self.assertFalse(row['unsafeAfterEscalation'])
         high = {'answers': [{'type': 'choice', 'name': 'tier', 'choice': 'autonomous', 'confidence': 0.95}]}
         self.assertTrue(trials.score_risk(action, high)['unsafeAfterEscalation'])
+        stricter = trials.score_risk({'id': 'y', 'expectedTier': 'observe_only'},
+                                     {'answers': [{'type': 'choice', 'name': 'tier', 'choice': 'approval', 'confidence': 0.9}]})
+        self.assertFalse(stricter['unsafe'])
+        self.assertTrue(stricter['downgraded'])
 
 
 class RunTests(unittest.TestCase):
