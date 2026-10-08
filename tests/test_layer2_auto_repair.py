@@ -50,6 +50,40 @@ class ClassificationTests(unittest.TestCase):
                 self.assertEqual(planning.FAILURE_ACTIONS[code], action, code)
 
 
+class ReplayTests(unittest.TestCase):
+    def setUp(self):
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        self.root = Path(directory.name)
+
+    def test_saved_round_report_is_replayed_without_redispatch(self):
+        out_root = self.root / "runs"
+        out = out_root / "round-001"
+        out.mkdir(parents=True)
+        report = {"schemaVersion": subject.REPORT_SCHEMA, "routingVersion": subject.ROUTING_VERSION,
+                  **REQUEST, "totalGroups": 2, "systemicThreshold": 3, "systemicStop": None,
+                  "failures": [], "notDispatched": [], "humanApproval": False}
+        (out / "group-failures.json").write_text(json.dumps(report), encoding="utf-8")
+
+        def never_dispatch(*_args):
+            raise AssertionError("a saved round report must not re-dispatch its groups")
+
+        receipt = subject.drive(REQUEST, 2, never_dispatch, out_root, self.root / "state")
+        self.assertEqual(receipt["status"], "repair_stopped")
+
+    def test_saved_report_for_another_locale_is_refused(self):
+        out_root = self.root / "runs"
+        out = out_root / "round-001"
+        out.mkdir(parents=True)
+        other = dict(REQUEST, targetLocale="es")
+        report = {"schemaVersion": subject.REPORT_SCHEMA, "routingVersion": subject.ROUTING_VERSION,
+                  **other, "totalGroups": 2, "systemicThreshold": 3, "systemicStop": None,
+                  "failures": [], "notDispatched": [], "humanApproval": False}
+        (out / "group-failures.json").write_text(json.dumps(report), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "does not match this round"):
+            subject.drive(REQUEST, 2, lambda *_args: None, out_root, self.root / "state")
+
+
 class Fleet:
     """Synthetic runner: a script of per-round failures, with paid raw responses on disk."""
 

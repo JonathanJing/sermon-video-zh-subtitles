@@ -151,7 +151,7 @@
         "worstReservedOutputTokens": 1228800,
         "worstReservedTokens": 6144000,
         "worstCaseUsd": 24.58,
-        "fitsOneBudgetLedger": true,
+        "fitsOneBudgetLedger": false,
         "fitsWithLocaleLedger": true
       },
       "fullSermon20260927": {
@@ -164,7 +164,7 @@
         "worstReservedOutputTokens": 3784704,
         "worstReservedTokens": 18923520,
         "worstCaseUsd": 75.69,
-        "fitsOneBudgetLedger": true,
+        "fitsOneBudgetLedger": false,
         "sourceUnits": 420,
         "durationSeconds": 1891.677333,
         "groupsAssumed": "one group per source unit, as the 605 anchor plans; unverified until the full anchor is supplied",
@@ -180,7 +180,7 @@
         "worstReservedOutputTokens": 4272128,
         "worstReservedTokens": 21360640,
         "worstCaseUsd": 85.44,
-        "fitsOneBudgetLedger": true,
+        "fitsOneBudgetLedger": false,
         "sourceUnits": 474,
         "durationSeconds": 1942.123,
         "groupsAssumed": "474 groups, matching the 10-04 formal run (948 role results per locale)",

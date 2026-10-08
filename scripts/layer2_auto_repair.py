@@ -343,8 +343,26 @@ def load_ledger(root: Path, value: dict) -> list[dict]:
     return entries
 
 
+def _sync_ancestry(path: Path) -> None:
+    """Persist ``path`` and every ancestor directory, including newly created ones."""
+    current = Path(path).resolve()
+    while True:
+        fd = os.open(current, os.O_RDONLY)
+        try:
+            os.fsync(fd)
+        finally:
+            os.close(fd)
+        if current.parent == current:
+            return
+        current = current.parent
+
+
 def append_ledger(root: Path, value: dict, entries: list[dict], body: dict) -> dict:
-    """Exclusively create the next round; a concurrent loop at the same position fails."""
+    """Exclusively create the next round; a concurrent loop at the same position fails.
+
+    The entry is synced before it is linked and the directory chain after, so a
+    crash cannot lose a round whose next paid round has already started.
+    """
     entry = {"schemaVersion": LEDGER_SCHEMA, "lineage": value, "sequence": len(entries) + 1,
              "previousEntryJsonSha256": json_sha256(entries[-1]) if entries else None, **body}
     folder = ledger_directory(root, value)
@@ -353,11 +371,14 @@ def append_ledger(root: Path, value: dict, entries: list[dict], body: dict) -> d
     with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=folder.parent, prefix=f".{folder.name}.{name}.",
                                      suffix=".tmp", delete=False) as stream:
         stream.write(json.dumps(entry, ensure_ascii=False, indent=2, sort_keys=True) + "\n")
+        stream.flush()
+        os.fsync(stream.fileno())
     temporary = Path(stream.name)
     try:
         os.link(temporary, folder / name)
     finally:
         temporary.unlink()
+    _sync_ancestry(folder)
     return entry
 
 
@@ -433,6 +454,20 @@ def repair_row(failure: dict) -> dict:
 RoundRunner = Callable[[Path, Path | None, dict | None, FailureCollector], dict]
 
 
+def _saved_report(out: Path, request: dict, total_groups: int) -> dict:
+    """Load a durable round report and check that its identity and caches still exist."""
+    report = json.loads((out / "group-failures.json").read_text(encoding="utf-8"))
+    _require(report.get("schemaVersion") == REPORT_SCHEMA and report.get("totalGroups") == total_groups
+             and report.get("humanApproval") is False
+             and all(report.get(key) == request[key] for key in (
+                 "targetLocale", "englishSourcePackageJsonSha256", "anchorManifestSha256",
+                 "translationPolicySha256")),
+             "Saved group failure report does not match this round")
+    _require(all((out / failure["reviewerCache"]).exists() for failure in report["failures"]),
+             "Saved group failure report references a missing cache")
+    return report
+
+
 def drive(request: dict, total_groups: int, run_round: RoundRunner, out_root: Path,
           ledger_root: Path, *, group_workers: int = 1) -> dict:
     """Run rounds until every group passes or repair stops; write and return a receipt.
@@ -460,11 +495,16 @@ def drive(request: dict, total_groups: int, run_round: RoundRunner, out_root: Pa
             total_groups, [row["translationGroupId"] for row in brief["groups"]] if brief else None,
             {item for entry in entries for row in entry["groups"] for item in [row["fingerprint"]] if item},
             value, group_workers)
-        try:
-            evidence = run_round(out, reuse_from, brief, collector)
-            report = None
-        except GroupFailuresCollected as collected:
-            evidence, report = None, collected.report
+        if (out / "group-failures.json").exists():
+            # A saved report is the round's result. Replay after a crash never
+            # re-dispatches its groups, even if the scheduler would now differ.
+            evidence, report = None, _saved_report(out, request, total_groups)
+        else:
+            try:
+                evidence = run_round(out, reuse_from, brief, collector)
+                report = None
+            except GroupFailuresCollected as collected:
+                evidence, report = None, collected.report
         spend = round_spend(out, reuse_from)
         if initial is None:
             initial = spend
