@@ -70,7 +70,15 @@ class CoverageMeasureTests(unittest.TestCase):
                           measure['spokenContentWords']), (5, 5, 5))
         self.assertEqual((measure['verseCoverage'], measure['lengthRatio'], measure['wholeVerse']), (1.0, 1.0, True))
         self.assertEqual(measure['thresholds'], {'verseCoverageMin': coverage.WHOLE_VERSE_COVERAGE_MIN,
-                                                 'lengthRatioMin': coverage.WHOLE_VERSE_LENGTH_MIN})
+                                                 'lengthRatioMin': coverage.WHOLE_VERSE_LENGTH_MIN,
+                                                 'lengthRatioMax': coverage.WHOLE_VERSE_LENGTH_MAX})
+
+    def test_a_span_much_longer_than_the_verse_carries_more_than_the_verse(self):
+        measure = coverage.coverage(synthetic_edition(), 'GEN 1:1',
+                                    f'{GEN_1_1} That tells us creation was deliberate, ordered and good from the start.')
+        self.assertEqual(measure['verseCoverage'], 1.0)
+        self.assertGreater(measure['lengthRatio'], coverage.WHOLE_VERSE_LENGTH_MAX)
+        self.assertFalse(measure['wholeVerse'])
 
     def test_a_fragment_is_too_short_even_when_its_words_are_the_verses(self):
         measure = coverage.coverage(synthetic_edition(), 'GEN 1:1', 'In the beginning, God.')

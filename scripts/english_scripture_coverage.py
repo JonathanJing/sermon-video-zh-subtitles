@@ -53,9 +53,11 @@ USFX_TO_LIBRARY = {'SNG': 'SOL', 'EZK': 'EZE', 'JOL': 'JOE', 'NAM': 'NAH', 'MRK'
                    'PHP': 'PHI', 'JAS': 'JAM', '1JN': '1JO', '2JN': '2JO', '3JN': '3JO'}
 
 # A whole-verse reading in another translation still shares most content words
-# with the pinned edition and is about as long; a fragment is clearly shorter.
+# with the pinned edition and is about as long; a fragment is clearly shorter, and
+# a span half again as long as the verse carries more than the verse.
 WHOLE_VERSE_COVERAGE_MIN = 0.4
 WHOLE_VERSE_LENGTH_MIN = 0.7
+WHOLE_VERSE_LENGTH_MAX = 1.5
 
 STOPWORDS = frozenset("""
 a an the and or but nor of to in on at by for with from that this these those is are was were be been being am
@@ -232,12 +234,14 @@ def coverage(edition: CoverageEdition, ref: cuv_scripture.Reference | str, spoke
     covered = [token for token in unique_verse if any(_same(token, heard) for heard in spoken_tokens)]
     verse_coverage = round(len(covered) / len(unique_verse), 4)
     length_ratio = round(len(spoken_tokens) / len(verse_tokens), 4)
-    whole = verse_coverage >= WHOLE_VERSE_COVERAGE_MIN and length_ratio >= WHOLE_VERSE_LENGTH_MIN
+    whole = (verse_coverage >= WHOLE_VERSE_COVERAGE_MIN
+             and WHOLE_VERSE_LENGTH_MIN <= length_ratio <= WHOLE_VERSE_LENGTH_MAX)
     return {'editionId': found['editionId'], 'canonicalRef': found['canonicalRef'],
             'verseTextSha256': found['textSha256'], 'verseContentWords': len(unique_verse),
             'coveredContentWords': len(covered), 'spokenContentWords': len(spoken_tokens),
             'verseCoverage': verse_coverage, 'lengthRatio': length_ratio, 'wholeVerse': whole,
-            'thresholds': {'verseCoverageMin': WHOLE_VERSE_COVERAGE_MIN, 'lengthRatioMin': WHOLE_VERSE_LENGTH_MIN}}
+            'thresholds': {'verseCoverageMin': WHOLE_VERSE_COVERAGE_MIN, 'lengthRatioMin': WHOLE_VERSE_LENGTH_MIN,
+                           'lengthRatioMax': WHOLE_VERSE_LENGTH_MAX}}
 
 
 # ---------------------------------------------------------------- CLI

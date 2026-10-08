@@ -249,6 +249,76 @@ class MachineAdjudicationTests(unittest.TestCase):
         self.assertEqual(receipt['candidates'][0]['reference'], 'JOH 3:16')
         self.assertEqual(basis['candidates'][0]['quoteBoundary'], machine.QUOTE_BOUNDARY)
 
+    def test_quotation_marks_bound_the_quotation_and_commentary_outside_them_never_counts(self):
+        # A quoted fragment followed by commentary that echoes the verse: only the quoted span is measured.
+        rows = units('John 3:16 says, "For God so loved the world." God loved us and gave his Son, and we can have '
+                     'life through belief.', 'Amen.')
+        receipt, basis = machine.adjudicate(source(), {'sourceUnits': rows}, plan(rows),
+                                            target_locale='zh-Hans', flagged_units=['u1'], library=LIBRARY)
+        self.assertEqual(receipt['candidates'][0]['classification'], 'speaker_paraphrase')
+        self.assertTrue(basis['candidates'][0]['reason'].startswith('fragment of JOH 3:16'))
+        self.assertEqual(basis['candidates'][0]['coverage']['spokenSpan'], machine.QUOTED_SPAN)
+        # The whole verse inside the marks is admitted even with commentary after the closing mark.
+        rows = units(f'John 3:16 says, "{READ_3_16}" That is the whole gospel in one sentence, friends.', 'Amen.')
+        receipt, basis = machine.adjudicate(source(), {'sourceUnits': rows}, plan(rows),
+                                            target_locale='zh-Hans', flagged_units=['u1'], library=LIBRARY)
+        self.assertEqual((receipt['candidates'][0]['classification'], receipt['candidates'][0]['reference']),
+                         ('direct_quote', 'JOH 3:16'))
+        self.assertEqual(basis['candidates'][0]['coverage']['spokenSpan'], machine.QUOTED_SPAN)
+        # An unbalanced mark leaves the boundary unknown: nothing is admitted.
+        rows = units(f'John 3:16 says, "{READ_3_16} And that is good news.', 'Amen.')
+        receipt, basis = machine.adjudicate(source(), {'sourceUnits': rows}, plan(rows),
+                                            target_locale='zh-Hans', flagged_units=['u1'], library=LIBRARY)
+        self.assertEqual(receipt['candidates'][0]['classification'], 'speaker_paraphrase')
+        self.assertIn('quotation_boundary_unknown', basis['candidates'][0]['reason'])
+        # Without marks the unit's remainder is the quotation, and a remainder far longer than the verse is not it.
+        rows = units(f'John 3:16 says, {READ_3_16} That tells us God acted first, before we believed anything at '
+                     'all, and that his love reached the whole world.', 'Amen.')
+        receipt, basis = machine.adjudicate(source(), {'sourceUnits': rows}, plan(rows),
+                                            target_locale='zh-Hans', flagged_units=['u1'], library=LIBRARY)
+        self.assertEqual(receipt['candidates'][0]['classification'], 'speaker_paraphrase')
+        self.assertEqual(basis['candidates'][0]['coverage']['spokenSpan'], machine.UNIT_REMAINDER)
+        self.assertGreater(basis['candidates'][0]['coverage']['lengthRatio'],
+                           coverage_module.WHOLE_VERSE_LENGTH_MAX)
+
+    def test_unit_boundaries_are_not_taken_for_verse_boundaries(self):
+        # Two units, two verses, but the first unit runs into verse 17: the range stays bound to both units.
+        words = READ_3_17.split()
+        rows = units(f'John 3:16 and 17 say, {READ_3_16} ' + ' '.join(words[:3]), ' '.join(words[3:]), 'Amen.')
+        receipt, basis = machine.adjudicate(source(), {'sourceUnits': rows}, plan(rows, size=3),
+                                            target_locale='zh-Hans', flagged_units=['u1', 'u2'], library=LIBRARY)
+        self.assertEqual([(c['sourceUnitIds'], c['classification'], c['reference']) for c in receipt['candidates']],
+                         [(['u1', 'u2'], 'direct_quote', 'JOH 3:16-17')])
+        self.assertEqual(receipt['candidates'][0]['exactSentence'], LIBRARY.lookup('JOH 3:16-17')['text'])
+        self.assertEqual(basis['candidates'][0]['layout'], 'several units in one translation group share the whole range')
+        self.assertIn('u1 also covers JOH 3:17', basis['candidates'][0]['boundaryEvidence'])
+        # Split across translation groups, the joint range cannot be bound to one group.
+        receipt, basis = machine.adjudicate(source(), {'sourceUnits': rows}, plan(rows, size=1),
+                                            target_locale='zh-Hans', flagged_units=['u1', 'u2'], library=LIBRARY)
+        self.assertEqual([c['classification'] for c in receipt['candidates']],
+                         ['speaker_paraphrase', 'speaker_paraphrase'])
+        self.assertIn('several translation groups', basis['candidates'][0]['reason'])
+        # Units that each read their own whole verse and nothing of the neighbour keep one verse per unit.
+        receipt, basis = machine.adjudicate(source(), {'sourceUnits': READING}, plan(READING),
+                                            target_locale='zh-Hans', flagged_units=['u3', 'u4'], library=LIBRARY)
+        self.assertEqual([c['reference'] for c in receipt['candidates']], ['REV 4:2', 'REV 4:3'])
+        self.assertEqual(basis['candidates'][0]['layout'], 'one verse per unit')
+        self.assertIn('no neighbouring verse', basis['candidates'][0]['boundaryEvidence'])
+
+    def test_compound_spoken_numbers_name_chapters_and_verses(self):
+        edition = coverage_module.CoverageEdition.from_path()
+        for spoken, ref in (('Psalm chapter twenty-three, verse one says', 'PSA 23:1'),
+                            ('Psalm one hundred nineteen verse one hundred five says', 'PSA 119:105')):
+            rows = units(f'{spoken}, {edition.lookup(ref)["text"]}', 'Amen.')
+            receipt, basis = machine.adjudicate(source(), {'sourceUnits': rows}, plan(rows),
+                                                target_locale='zh-Hans', flagged_units=['u1'], library=LIBRARY)
+            self.assertEqual((receipt['candidates'][0]['classification'], receipt['candidates'][0]['reference']),
+                             ('direct_quote', ref), spoken)
+        rows = units('Verses twenty twenty say something.', 'Amen.')
+        receipt, basis = machine.adjudicate(source(), {'sourceUnits': rows}, plan(rows),
+                                            target_locale='zh-Hans', flagged_units=['u1'], library=LIBRARY)
+        self.assertEqual(receipt['candidates'][0]['classification'], 'speaker_paraphrase')
+
     def test_spoken_ordinals_name_the_epistle_not_the_gospel(self):
         whole = coverage_module.CoverageEdition.from_path().lookup('1JO 3:16')['text']
         for spoken in ('First John 3:16 says', '1st John 3:16 says', '1 John 3:16 says'):

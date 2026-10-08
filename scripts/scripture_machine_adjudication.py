@@ -49,8 +49,9 @@ CONTEXT_WINDOW_UNITS = 12
 READING_LOOKBACK_UNITS = 1
 
 _BOOKS = queue_module.BOOKS
-_NUMBER_WORDS = '|'.join(sorted(cuv_scripture._EN_NUMBERS, key=len, reverse=True))
-_NUM = rf'(?:\d+|{_NUMBER_WORDS})'
+# Spoken numbers may be compound ("twenty-three", "one hundred nineteen"); cuv_scripture parses them.
+_NUMBER_WORD = cuv_scripture._EN_NUMBER_PATTERN
+_NUM = rf'(?:\d+|(?:{_NUMBER_WORD})(?:(?:\s+|-)(?:{_NUMBER_WORD}))*)'
 # "2 and 3" joins adjacent verses; "2 and 5" names two verses and is never a range.
 _RANGE = rf'(?P<v1>{_NUM})(?:\s*(?P<join>-|–|to|through|and)\s*(?P<v2>{_NUM}))?'
 # "First John", "1st John" and "1 John" all name the epistle; the gospel has no ordinal.
@@ -88,8 +89,12 @@ def implementation_sha256() -> str:
     return hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 
 
-def _number(value: str) -> int:
-    return int(value) if value.isdigit() else cuv_scripture._EN_NUMBERS[value.casefold()]
+def _number(value: str) -> int | None:
+    """A spoken or written chapter or verse number, or None when the words do not form one."""
+    try:
+        return cuv_scripture._number(value)
+    except cuv_scripture.CuvError:
+        return None
 
 
 def _edition(target_locale: str, library: Any = None) -> Any:
@@ -125,14 +130,67 @@ def _coverage_edition(edition: Any = None) -> Any:
     return _DEFAULT_COVERAGE[0]
 
 
-def _spoken_text(english: list[str]) -> str:
-    """The units' words without the reference and reading phrases that introduce the quotation."""
+_QUOTE_MARK = re.compile(r'["“”「」『』]')
+_QUOTE_SPAN = re.compile(r'["“「『]([^"“”「」『』]+)["”」』]')
+QUOTED_SPAN = 'quotation_marks'
+UNIT_REMAINDER = 'unit_remainder'
+
+
+def _spoken_text(english: list[str]) -> tuple[str, str]:
+    """The words measured against the verse, and which boundary bounds them.
+
+    When the transcript marks the quotation, only the quoted spans are the
+    quotation: commentary outside the marks never counts towards the verse.
+    Unbalanced marks leave the boundary unknown and the quotation is refused.
+    Without marks, the units' words minus the reference and reading phrases
+    that introduce the quotation are the quotation, bounded by the units."""
+    joined = ' '.join(english)
+    if _QUOTE_MARK.search(joined):
+        spans = _QUOTE_SPAN.findall(joined)
+        _require(len(_QUOTE_MARK.findall(joined)) == 2 * len(spans) and spans, 'quotation_boundary_unknown')
+        return re.sub(r'\s+', ' ', ' '.join(spans)).strip(), QUOTED_SPAN
     pieces = []
     for text in english:
         for pattern in (BOOK_MENTION, BOOK_TRANSITION, CHAPTER_MENTION, VERSE_MENTION, _SPEECH_VERB):
             text = pattern.sub(' ', text)
         pieces.append(text)
-    return re.sub(r'\s+', ' ', ' '.join(pieces)).strip()
+    return re.sub(r'\s+', ' ', ' '.join(pieces)).strip(), UNIT_REMAINDER
+
+
+def _measure(english_edition: Any, english: list[str], ref: cuv_scripture.Reference) -> dict[str, Any]:
+    """Coverage of ``ref`` by the units' quotation; raises when no boundary or no English text bounds it."""
+    spoken, span = _spoken_text(english)
+    return coverage_module.coverage(english_edition, ref, spoken) | {'spokenSpan': span}
+
+
+def _per_unit_layout(rows: list[dict[str, Any]], run: list[int], reference: cuv_scripture.Reference,
+                     english_edition: Any) -> tuple[list[tuple[list[str], Any, dict[str, Any]]] | None, str]:
+    """One verse per unit, only when the coverage measure establishes each unit's verse boundary.
+
+    Unit boundaries are not verse boundaries: a unit may end mid-verse. Each
+    unit must cover its own verse as a whole and must not also cover a
+    neighbouring verse of the range; otherwise the range stays jointly bound."""
+    verses = list(range(reference.start_verse, reference.end_verse + 1))
+    pairs = []
+    for i, verse in zip(run, verses):
+        unit, english = rows[i]['sourceUnitId'], [rows[i]['english']]
+        own = cuv_scripture.Reference(reference.book, reference.chapter, verse)
+        try:
+            measure = _measure(english_edition, english, own)
+            if not measure['wholeVerse']:
+                return None, f'{unit} does not read the whole of {own.canonical_ref}'
+            spoken, _ = _spoken_text(english)
+            for neighbour in (verse - 1, verse + 1):
+                if neighbour in verses:
+                    other = cuv_scripture.Reference(reference.book, reference.chapter, neighbour)
+                    overlap = coverage_module.coverage(english_edition, other, spoken)
+                    if overlap['verseCoverage'] >= coverage_module.WHOLE_VERSE_COVERAGE_MIN:
+                        return None, (f'{unit} also covers {other.canonical_ref} (coverage '
+                                      f"{overlap['verseCoverage']}): unit boundaries are not verse boundaries")
+        except (coverage_module.CoverageError, MachineAdjudicationError) as exc:
+            return None, f'{unit} against {own.canonical_ref}: {exc}'
+        pairs.append(([unit], own, measure))
+    return pairs, 'each unit covers its own verse as a whole and no neighbouring verse of the range'
 
 
 def _book(name: str) -> str | None:
@@ -144,12 +202,14 @@ def _book(name: str) -> str | None:
 
 
 def _verse_range(match: re.Match) -> tuple[int, int] | None:
-    """The verses a mention names, or None when "and" joins verses that are not adjacent."""
+    """The verses a mention names, or None when "and" joins verses that are not adjacent or a number fails."""
     v1 = _number(match['v1'])
+    if v1 is None:
+        return None
     if not match['v2']:
         return v1, v1
     v2 = _number(match['v2'])
-    if match['join'].casefold() == 'and' and v2 != v1 + 1:
+    if v2 is None or (match['join'].casefold() == 'and' and v2 != v1 + 1):
         return None
     return v1, v2
 
@@ -196,7 +256,7 @@ def _scan(units: list[dict[str, Any]]) -> list[dict[str, Any]]:
             verse_range = _verse_range(verse_mention)
             evidence.append(f'verse mention: {verse_mention.group(0)!r}')
         if verses_named and verse_range is None:
-            evidence.append('verses joined by "and" are not adjacent: not a range')
+            evidence.append('the verse mention does not resolve to a range (numbers unparsed or not adjacent)')
         signals = _signals(english)
         rows.append({'sourceUnitId': unit['sourceUnitId'], 'english': english, 'book': book, 'chapter': chapter,
                      'verseRange': verse_range, 'versesNamed': verses_named,
@@ -287,26 +347,43 @@ def adjudicate(source: dict[str, Any], anchor: dict[str, Any], plan: list[dict[s
     for run in _runs(rows, flagged):
         run_units = [rows[i]['sourceUnitId'] for i in run]
         reference, at = _resolve_run(rows, run)
-        verses = [] if reference is None else list(range(reference.start_verse, reference.end_verse + 1))
-        shared = len(run) > 1 and len(run) != len(verses)
-        if reference is None or (shared and len({group_of.get(unit) for unit in run_units}) != 1):
-            reason = ('no book, chapter and verse reference resolves for this unit' if reference is None
-                      else f'{reference.canonical_ref} is read across several translation groups; the pinned '
-                           'wording cannot be bound to one group, so the speaker\'s words are translated')
+        if reference is None:
             for unit in run_units:
-                candidate, why = _paraphrase(f'm{len(candidates) + 1:03d}', [unit], reason)
+                candidate, why = _paraphrase(f'm{len(candidates) + 1:03d}', [unit],
+                                             'no book, chapter and verse reference resolves for this unit')
                 candidates.append(candidate)
                 basis_rows.append(why | {'english': rows[run[run_units.index(unit)]]['english']})
             continue
+        verses = list(range(reference.start_verse, reference.end_verse + 1))
+        pairs, boundary = (None, 'the units and verses do not pair one to one')
         if len(run) == len(verses):
-            pairs = [([rows[i]['sourceUnitId']], cuv_scripture.Reference(reference.book, reference.chapter, v))
-                     for i, v in zip(run, verses)]
+            pairs, boundary = _per_unit_layout(rows, run, reference, english_edition)
+        if pairs is not None:
             layout = 'one verse per unit'
         else:
-            pairs = [(run_units, reference)]
+            # The range stays jointly bound to the run; several units must share one group.
+            if len(run) > 1 and len({group_of.get(unit) for unit in run_units}) != 1:
+                reason = (f'{reference.canonical_ref} is read across several translation groups; the pinned '
+                          "wording cannot be bound to one group, so the speaker's words are translated")
+                for unit in run_units:
+                    candidate, why = _paraphrase(f'm{len(candidates) + 1:03d}', [unit], reason)
+                    candidates.append(candidate)
+                    basis_rows.append(why | {'reference': reference.canonical_ref, 'boundaryEvidence': boundary,
+                                             'english': rows[run[run_units.index(unit)]]['english']})
+                continue
             layout = ('one unit carries the whole range' if len(run) == 1
                       else 'several units in one translation group share the whole range')
-        for units_here, ref in pairs:
+            try:
+                pairs = [(run_units, reference, _measure(english_edition, [rows[i]['english'] for i in run], reference))]
+            except (coverage_module.CoverageError, MachineAdjudicationError) as exc:
+                candidate, why = _paraphrase(f'm{len(candidates) + 1:03d}', run_units,
+                                             f'no English text bounds the quotation of {reference.canonical_ref}: {exc}')
+                candidates.append(candidate)
+                basis_rows.append(why | {'reference': reference.canonical_ref, 'boundaryEvidence': boundary,
+                                         'english': [rows[i]['english'] for i in run]})
+                continue
+            boundary = f'the range is bound to the run as a whole ({boundary})'
+        for units_here, ref, measure in pairs:
             candidate_id = f'm{len(candidates) + 1:03d}'
             english_here = [rows[i]['english'] for i in run if rows[i]['sourceUnitId'] in units_here]
             try:
@@ -317,15 +394,7 @@ def adjudicate(source: dict[str, Any], anchor: dict[str, Any], plan: list[dict[s
                 candidates.append(candidate)
                 basis_rows.append(why | {'reference': ref.canonical_ref, 'english': english_here})
                 continue
-            # The pinned verse is admitted only when the speaker's words cover the whole verse.
-            try:
-                measure = coverage_module.coverage(english_edition, ref, _spoken_text(english_here))
-            except coverage_module.CoverageError as exc:
-                candidate, why = _paraphrase(candidate_id, units_here,
-                                             f'no English text bounds the quotation of {ref.canonical_ref}: {exc}')
-                candidates.append(candidate)
-                basis_rows.append(why | {'reference': ref.canonical_ref, 'english': english_here})
-                continue
+            # The pinned verse is admitted only when the speaker's quotation covers the whole verse.
             if not measure['wholeVerse']:
                 candidate, why = _paraphrase(
                     candidate_id, units_here,
@@ -334,14 +403,14 @@ def adjudicate(source: dict[str, Any], anchor: dict[str, Any], plan: list[dict[s
                     f"{measure['lengthRatio']}); translated as the speaker's own words (decision 2026-10-08)")
                 candidates.append(candidate)
                 basis_rows.append(why | {'reference': ref.canonical_ref, 'quoteBoundary': FRAGMENT_BOUNDARY,
-                                         'coverage': measure, 'english': english_here})
+                                         'coverage': measure, 'boundaryEvidence': boundary, 'english': english_here})
                 continue
             candidates.append({'candidateId': candidate_id, 'sourceUnitIds': units_here,
                                'classification': 'direct_quote', 'reference': ref.canonical_ref,
                                'editionId': edition_id, 'exactSentence': found['text']})
             basis_rows.append({'candidateId': candidate_id, 'sourceUnitIds': units_here, 'decision': 'direct_quote',
                                'reference': ref.canonical_ref, 'textSha256': found['textSha256'], 'layout': layout,
-                               'quoteBoundary': QUOTE_BOUNDARY, 'coverage': measure,
+                               'boundaryEvidence': boundary, 'quoteBoundary': QUOTE_BOUNDARY, 'coverage': measure,
                                'openedAt': rows[at]['sourceUnitId'], 'evidence': rows[at]['evidence'],
                                'readingSignals': sorted({s for i in range(max(0, at - READING_LOOKBACK_UNITS), at + 1)
                                                          for s in rows[i]['signals'] if s in READING_SIGNALS}),
