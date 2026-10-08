@@ -59,3 +59,4 @@ scripts/publish_run_report.sh artifacts/run-reports/20261008-agent-api-trials
 - 关键词判分是粗筛；分数接近时要人工看 `diagnose.json` 里的原文。
 - 8 个样例、2 份计划、26 个动作，样本小，一两个的差异不算结论。
 - [Decisions API 每周 A/B 设计](decision-api-weekly-ab-design.zh.md) 是另一份方案，本试验不实现它，也不使用它的预算绑定。
+- 本试验不涉及 Layer 2 翻译。要让 L2 测试真正走 OpenAI API，用 standalone 入口加 `--budget-config` 与 `--budget-authorization`，经 canonical controller 派发（见[运行时策略](production-model-runtime-policy.zh.md)）；诊断 fixture 入口没有预算绑定，不开放 API 后端。
