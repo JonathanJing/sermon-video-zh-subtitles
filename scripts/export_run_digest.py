@@ -42,7 +42,8 @@ from datetime import datetime, timezone
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA = "sermon-run-digest-v1"
-WHOLE_NAMES = {"outcome.json", "timings.tsv", "summary.json", "preflight.json"}
+# diagnose/refute/risk.json carry agent-trial rows the run report reviews case by case.
+WHOLE_NAMES = {"outcome.json", "timings.tsv", "summary.json", "preflight.json", "diagnose.json", "refute.json", "risk.json"}
 MAX_WHOLE_BYTES = 256 * 1024
 MAX_DIGEST_BYTES = 2 * 1024 * 1024
 NAME = re.compile(r"\d{8}-[A-Za-z0-9._-]+")  # Same set publish_run_report.sh accepts

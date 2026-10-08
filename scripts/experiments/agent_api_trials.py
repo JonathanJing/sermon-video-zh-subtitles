@@ -533,13 +533,29 @@ def score_preflight(report, expected, calls, plan_root=None):
                                      or any(t in _text(i.get('requirement')) for t in ('authoriz', '授权')))
             for i in report.get('items', [])):
         unreported.append('authorization')
+    # A checked item's status must say what its check returned: ok when it passed, blocker when it failed.
+    misread = []
+    for item in report.get('items', []):
+        if plan_root is None or not isinstance(item, dict) or item.get('checked_with') not in CHECK_VERDICT:
+            continue
+        verdicts = set()
+        for call in calls:
+            if _call_matches(call, item):
+                try:
+                    verdicts.add(bool(preflight_check(plan_root, call['name'], call.get('arguments') or {})
+                                      .get(CHECK_VERDICT[call['name']])))
+                except Exception:
+                    continue
+        if verdicts and item.get('status') not in {'ok' if v else 'blocker' for v in verdicts}:
+            misread.append({'requirement': item.get('requirement'), 'status': item.get('status')})
     go_correct = report.get('go') == (not expected['blockers'])
     # go must agree with the report's own blocker items, and no blocker may be invented.
     consistent = report.get('go') == (not blockers)
     return {'submitted': True, 'go': report.get('go'), 'expectedGo': not expected['blockers'],
             'goCorrect': go_correct, 'goConsistent': consistent,
             'correct': go_correct and consistent and not missed and not extra and not missing_checks
-                       and not unreported and not unmatched,
+                       and not unreported and not unmatched and not misread,
+            'statusDisagreesWithCheck': misread,
             'requiredChecksMissing': missing_checks, 'requiredChecksUnreported': unreported,
             'blockersFound': found, 'blockersMissed': missed,
             'extraBlockers': len(extra),
@@ -964,12 +980,17 @@ class Trials:
             if stage in saved and not _covers(scope, saved[stage]):
                 raise ValueError(f'{stage}: --out was run with selection {saved[stage]}; a narrower or different one '
                                  'needs a new --out')
+        # A widened stage's saved results no longer cover its scope until it reruns, so they turn partial first.
+        for stage, scope in scopes.items():
+            saved_file = self.out / f'{stage}.json'
+            if stage != 'timeline' and stage in saved and scope != saved[stage] and saved_file.exists():
+                _write_durably(saved_file, json.dumps({**_read_json(saved_file), 'partial': True},
+                                                      ensure_ascii=False, indent=2) + '\n')
         saved.update(scopes)
         # Durable before any paid work of the stage, so a crash cannot leave receipts without their scope.
         _write_durably(path, json.dumps(saved, ensure_ascii=False, indent=2) + '\n')
 
-    def _run(self, trial):
-        results = self.results
+    def _scopes(self):
         # Backend, model and session limits must match across reruns, so every merged row ran under one condition.
         agent = {'backend': self.backend, 'model': self.model, 'maxToolCalls': self.max_tool_calls,
                  'maxSeconds': self.max_seconds}
@@ -994,22 +1015,39 @@ class Trials:
                   'risk': {'backend': self.backend, 'model': DECISIONS_MODEL, 'repeats': self.risk_repeats,
                            'actions': sorted(tag(a['id'], [a, risk_request(a, policy['tiers'])])
                                              for a in policy['actions']),
+                           # Dispatch order is bound too, so added repeats run in the order the earlier ones did.
+                           'order': _sha([a['id'] for a in policy['actions']])[:12],
                            'scorer': _scorer_identity('risk')}}
+        return scopes
+
+    def _run(self, trial):
+        results = self.results
+        scopes = self._scopes()
         self._bind_scopes({stage: scope for stage, scope in scopes.items()
                            if trial in ('all', stage) or (trial == 'refute' and stage == 'diagnose')})
+
+        def finish(stage, name, run):
+            result = self._timed(stage, run)
+            # Fixtures read live during the stage must still match what scope.json bound at the start.
+            if self._scopes()[stage] != scopes[stage]:
+                raise ValueError(f'{stage}: fixtures or code changed during the run; use a new --out')
+            return self.write(name, result)
         if trial in ('timeline', 'all'):
-            results['timeline'] = self.write('timeline-summary', self._timed('timeline', self.timeline))
+            results['timeline'] = finish('timeline', 'timeline-summary', self.timeline)
         if trial in ('diagnose', 'refute', 'all'):
-            results['diagnose'] = self.write('diagnose', self._timed('diagnose', self.diagnose))
+            results['diagnose'] = finish('diagnose', 'diagnose', self.diagnose)
         if trial in ('refute', 'all'):
-            results['refute'] = self.write('refute', self._timed('refute', lambda: self.refute(results['diagnose'])))
+            results['refute'] = finish('refute', 'refute', lambda: self.refute(results['diagnose']))
         if trial in ('preflight', 'all'):
-            results['preflight'] = self.write('preflight', self._timed('preflight', self.preflight))
+            results['preflight'] = finish('preflight', 'preflight', self.preflight)
         if trial in ('risk', 'all'):
-            results['risk'] = self.write('risk', self._timed('risk', self.risk))
+            results['risk'] = finish('risk', 'risk', self.risk)
         merged = self._merged_results()
-        # A stage still partial from an earlier failed invocation keeps the whole summary partial.
-        summary = self._summary(merged, status='partial' if any(r.get('partial') for r in merged.values()) else 'completed')
+        # A stage still partial from an earlier failed invocation keeps the whole summary partial, and a session or
+        # request without a score keeps it incomplete, so the headline never certifies missing evidence.
+        status = ('partial' if any(r.get('partial') for r in merged.values())
+                  else 'incomplete' if _unscored(merged) else 'completed')
+        summary = self._summary(merged, status=status)
         self.write('summary', summary)
         return summary
 
@@ -1025,6 +1063,7 @@ class Trials:
                 'agentModel': models[0] if len(models) == 1 else (models or None),
                 'decisionsModel': DECISIONS_MODEL,
                 'partialStages': sorted(stage for stage, result in results.items() if result.get('partial')),
+                'unscored': _unscored(results),
                 'stageScopes': scopes,
                 'agentSessionsStarted': self.sessions_started,
                 'timeline': results.get('timeline', {}).get('cases'),
@@ -1036,9 +1075,24 @@ class Trials:
                 'decisionsUsage': _sum_decisions_usage(results)}
 
 
+def _unscored(results):
+    """Sessions and requests that produced no score: not completed, no report, or a Decisions error."""
+    missing = []
+    for stage in ('diagnose', 'refute', 'preflight'):
+        for row in results.get(stage, {}).get('rows', []):
+            if row.get('status') != 'completed' or not row['score'].get('submitted'):
+                name = row.get('case') or row.get('plan')
+                missing.append(f"{stage}:{name}" + (f":{row['arm']}" if row.get('arm') else '')
+                               + (':planted' if row.get('planted') else ''))
+    for row in results.get('risk', {}).get('rows', []):
+        if row.get('error') or row.get('chosen') not in TIERS:
+            missing.append(f"risk:{row['id']}:r{row.get('repeat', 1)}")
+    return missing
+
+
 def _scorer_identity(stage):
     """Hash of the code that turns a stage's sessions into scores, so saved scores never merge across a scorer change."""
-    tools = [EvidenceTools, schema_errors, evidence_files]
+    tools = [EvidenceTools, schema_errors, evidence_files, _payload, _function]
     parts = {'timeline': [build_timeline, _instant, _time_fields, evidence_files],
              'diagnose': [*tools, _diagnosis_schema, score_diagnosis, check_citations, _groups_match, _text, _relative,
                           _arm_summary],
@@ -1047,8 +1101,10 @@ def _scorer_identity(stage):
              'preflight': [*tools, _preflight_schema, score_preflight, preflight_check, _check_satisfied, _call_matches,
                            _relative, _groups_match, _text],
              'risk': [score_risk, risk_summary]}[stage]
+    tool_definitions = [FILE_TOOLS, TIMELINE_TOOL, PREFLIGHT_TOOLS, MAX_READ_CHARS]
     constants = {'timeline': [TIMESTAMP.pattern, ERROR_LINE.pattern, END_FIELD.pattern],
-                 'preflight': [ARGUMENT_FREE_TERMS, CHECK_VERDICT]}.get(stage, [])
+                 'diagnose': tool_definitions, 'refute': tool_definitions,
+                 'preflight': [*tool_definitions, ARGUMENT_FREE_TERMS, CHECK_VERDICT]}.get(stage, [])
     return _sha([inspect.getsource(part) for part in parts] + [repr(c) for c in constants])[:12]
 
 

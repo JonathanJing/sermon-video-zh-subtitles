@@ -953,6 +953,58 @@ class LatestReviewTests(unittest.TestCase):
         with patch.object(trials, '_read_json', return_value={'actions': [], 'tiers': []}):
             self.assertIs(trial._snapshot('policy', trials.RISK), first)
 
+    def test_checked_item_status_must_match_the_check_result(self):
+        clean = next(p for p in trials.load_plans() if p['id'] == 'p02-clean')
+        call = {'name': 'check_staged', 'arguments': {'path': 'docs/series-terminology.zh.md'}}
+        item = {'requirement': 'docs/series-terminology.zh.md staged', 'checked_with': 'check_staged'}
+        misread = trials.score_preflight({'items': [{**item, 'status': 'unverified'}], 'go': True}, clean['expected'],
+                                         [call], clean['evidence'])
+        self.assertEqual(len(misread['statusDisagreesWithCheck']), 1)
+        right = trials.score_preflight({'items': [{**item, 'status': 'ok'}], 'go': True}, clean['expected'],
+                                       [call], clean['evidence'])
+        self.assertEqual(right['statusDisagreesWithCheck'], [])
+
+    def test_unscored_sessions_keep_the_summary_incomplete(self):
+        results = {'diagnose': {'rows': [{'case': 'a', 'arm': 'raw', 'status': 'failed', 'score': {}}]},
+                   'risk': {'rows': [{'id': 'a01', 'repeat': 2, 'chosen': None, 'error': {'status': 400}}]}}
+        self.assertEqual(trials._unscored(results), ['diagnose:a:raw', 'risk:a01:r2'])
+
+    def make_trials(self, **kwargs):
+        (trials.ROOT / 'artifacts').mkdir(exist_ok=True)
+        temporary = tempfile.TemporaryDirectory(dir=trials.ROOT / 'artifacts', prefix='test-agent-trials-')
+        self.addCleanup(temporary.cleanup)
+        out = Path(temporary.name) / 'run'
+        return out, lambda **more: trials.Trials(
+            out, client=trials.FakeAgentsClient(trials.fake_agent_script), model='gpt-6-luna', backend='fake',
+            poll_seconds=0, decisions=trials.DecisionsClient(out, transport=trials.fake_decisions), **{**kwargs, **more})
+
+    def test_widened_stage_turns_partial_until_it_reruns(self):
+        out, make = self.make_trials()
+        make(plan_ids=['p02-clean']).run('preflight')
+        wider = make(plan_ids=['p01-planted-blockers', 'p02-clean'])
+        with patch.object(trials.Trials, 'preflight', side_effect=RuntimeError('boom')), \
+                self.assertRaises(RuntimeError):
+            wider.run('preflight')
+        self.assertTrue(json.loads((out / 'preflight.json').read_text())['partial'])
+        make(plan_ids=['p01-planted-blockers', 'p02-clean']).run('preflight')
+        self.assertNotIn('partial', json.loads((out / 'preflight.json').read_text()))
+
+    def test_fixture_edit_during_a_stage_stops_the_run(self):
+        out, make = self.make_trials()
+        trial = make(case_ids=['f01-plugin-identity'])
+        original = trial._scopes
+        calls = []
+
+        def drifting():
+            scopes = original()
+            calls.append(1)
+            if len(calls) > 1:
+                scopes['timeline'] = {**scopes['timeline'], 'cases': ['changed']}
+            return scopes
+        with patch.object(trial, '_scopes', drifting), self.assertRaisesRegex(ValueError, 'changed during the run'):
+            trial.run('timeline')
+        self.assertFalse((out / 'timeline-summary.json').exists())
+
 
 if __name__ == '__main__':
     unittest.main()
