@@ -19,6 +19,7 @@
 | 要做的事 | 先读 | 状态边界 |
 |---|---|---|
 | 查看 Resi UUID 每周观察 | [逐周记录与跨周比较](reports/resi-uuid-weekly.zh.md) | 仅观察UUID与采样覆盖，不证明媒体内容或完整性 |
+| 测试跑完后汇总日志并复盘 | [测试运行复盘](test-run-retrospective.zh.md) | 摘要只汇总证据，不改变任何层的完成状态 |
 | 查看或更新 Dev 开发优先级 | [Dev 统一 Backlog](backlog.zh.md) | 唯一顶层开发清单；专项 backlog 只展开细节，生产 Tracker 只记录单次运行 |
 | 执行未来预制多语言生产 | [四层接口合同](multilingual-production-interfaces.zh.md) → [本地生产 Runbook](codex-local-production-runbook.zh.md) | 必须按 Layer 1–4 逐层留证；legacy 完成不等于四层完成 |
 | 查看三条产品路径与完成标准 | [工作流总览](workflows/README.zh.md) | 当前总入口 |
