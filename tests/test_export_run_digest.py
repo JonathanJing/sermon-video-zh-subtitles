@@ -135,6 +135,8 @@ class ExportRunDigestTests(unittest.TestCase):
         self.assertEqual(parts[0]["summary"], {"n": 40})
         self.assertTrue(all(len((dest / self.run.name / n).read_bytes()) <= 20 * 1024 for n in entry["chunks"]))
         self.assertNotIn("someone@example.com", (dest / self.run.name / entry["chunks"][0]).read_text())
+        index = json.loads((dest / self.run.name / "risk.json").read_text())
+        self.assertEqual(index, {"source": "risk.json", "chunked": True, "rowCount": 40, "parts": entry["chunks"]})
 
     def test_trial_row_over_the_cap_is_reported_as_omitted(self):
         (self.run / "risk.json").write_text(json.dumps({"rows": [{"case": "c0", "note": "x " * 15000}]}))
@@ -144,6 +146,7 @@ class ExportRunDigestTests(unittest.TestCase):
         self.assertEqual(entry["omitted"], "over_size_cap")
         self.assertNotIn("chunks", entry)
         self.assertEqual(list((dest / self.run.name).glob("risk.rows-*.json")), [])
+        self.assertFalse((dest / self.run.name / "risk.json").exists())
 
     def test_oversized_digest_writes_nothing(self):
         with patch.object(digest, "MAX_DIGEST_BYTES", 10):

@@ -273,6 +273,10 @@ def write_row_chunks(raw: bytes, target: Path, secrets: list[str], entry: dict) 
     for name, text in parts.items():
         (target.parent / name).write_text(text, encoding="utf-8")
     names = list(parts)
+    # The manifest path still opens: it holds a small index naming the parts, so a v1 consumer that reads every
+    # non-omitted path finds valid JSON that points to the rows instead of a missing file.
+    index = {"source": target.name, "chunked": True, "rowCount": len(value["rows"]), "parts": names}
+    target.write_text(json.dumps(index, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     entry["chunks"] = names
     return True
 

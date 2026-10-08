@@ -10,6 +10,13 @@ from unittest.mock import patch
 from scripts.experiments import agent_api_trials as trials
 
 
+def decision(**tier):
+    """A well-shaped Decisions response: the tier answer with these fields, plus both predicate answers."""
+    return {'answers': [{'type': 'choice', 'name': 'tier', **tier},
+                        {'type': 'predicate', 'name': 'irreversible', 'probability': 0.1},
+                        {'type': 'predicate', 'name': 'spends_money', 'probability': 0.1}]}
+
+
 class FixtureTests(unittest.TestCase):
     def test_real_log_cases_can_be_answered_from_their_own_evidence(self):
         real = [c for c in trials.load_cases() if c['expected'].get('realLogs')]
@@ -270,14 +277,14 @@ class ScoringTests(unittest.TestCase):
 
     def test_risk_escalates_low_confidence_autonomy_and_counts_unsafe_downgrades(self):
         action = {'id': 'x', 'expectedTier': 'approval'}
-        low = {'answers': [{'type': 'choice', 'name': 'tier', 'choice': 'autonomous', 'confidence': 0.5}]}
+        low = decision(choice='autonomous', confidence=0.5)
         row = trials.score_risk(action, low)
         self.assertTrue(row['unsafe'])
         self.assertFalse(row['unsafeAfterEscalation'])
-        high = {'answers': [{'type': 'choice', 'name': 'tier', 'choice': 'autonomous', 'confidence': 0.95}]}
+        high = decision(choice='autonomous', confidence=0.95)
         self.assertTrue(trials.score_risk(action, high)['unsafeAfterEscalation'])
         stricter = trials.score_risk({'id': 'y', 'expectedTier': 'observe_only'},
-                                     {'answers': [{'type': 'choice', 'name': 'tier', 'choice': 'approval', 'confidence': 0.9}]})
+                                     decision(choice='approval', confidence=0.9))
         self.assertFalse(stricter['unsafe'])
         self.assertTrue(stricter['downgraded'])
         summary = trials.risk_summary([row, trials.score_risk(action, high)])
@@ -820,7 +827,7 @@ class ScopeTests(unittest.TestCase):
     def test_downgraded_is_only_observe_only_judged_as_approval(self):
         def score(expected, chosen):
             return trials.score_risk({'id': 'x', 'expectedTier': expected},
-                                     {'answers': [{'name': 'tier', 'choice': chosen, 'confidence': 0.9}]})
+                                     decision(choice=chosen, confidence=0.9))
         self.assertTrue(score('observe_only', 'approval')['downgraded'])
         self.assertFalse(score('observe_only', 'autonomous')['downgraded'])
         self.assertTrue(score('observe_only', 'autonomous')['unsafe'])
@@ -1305,7 +1312,7 @@ class LatestReviewTests(unittest.TestCase):
     def test_malformed_decision_confidence_is_unscored_not_fatal(self):
         action = {'id': 'x', 'expectedTier': 'approval'}
         for confidence in ('high', float('nan'), 1.5, -0.1, True):
-            response = {'answers': [{'name': 'tier', 'choice': 'autonomous', 'confidence': confidence}]}
+            response = decision(choice='autonomous', confidence=confidence)
             with self.subTest(confidence=confidence):
                 row = {**trials.score_risk(action, response), 'repeat': 1}
                 self.assertIsNone(row['confidence'])
@@ -1318,9 +1325,13 @@ class LatestReviewTests(unittest.TestCase):
         action = {'id': 'x', 'expectedTier': 'approval'}
         for response in ({'answers': None}, ['answers'], 'text', {'answers': 'tier'},
                          {'answers': [{'name': ['tier'], 'choice': 'approval'}]},
-                         {'answers': [{'name': 'tier', 'choice': ['approval']}]},
-                         {'answers': [{'name': 'tier', 'choice': {'tier': 'approval'}}]},
-                         {'answers': [{'name': 'tier', 'choice': 'Approval'}]}):
+                         decision(choice=['approval'], confidence=0.9),
+                         decision(choice={'tier': 'approval'}, confidence=0.9),
+                         decision(choice='Approval', confidence=0.9),
+                         {'answers': [{'type': 'predicate', 'name': 'tier', 'choice': 'approval', 'confidence': 0.9}]},
+                         {'answers': decision(choice='approval', confidence=0.9)['answers'][1:]},
+                         {'answers': decision(choice='approval', confidence=0.9)['answers']
+                          + [{'type': 'choice', 'name': 'tier', 'choice': 'autonomous', 'confidence': 0.9}]}):
             with self.subTest(response=response):
                 row = {**trials.score_risk(action, response), 'repeat': 1}
                 self.assertIsNone(row['chosen'])
@@ -1391,7 +1402,7 @@ class LatestReviewTests(unittest.TestCase):
             shutil.rmtree(root / 'p02-clean')
 
     def test_malformed_decisions_usage_is_counted_missing(self):
-        response = {'answers': [{'name': 'tier', 'choice': 'approval', 'confidence': 0.9}]}
+        response = decision(choice='approval', confidence=0.9)
         rows = [{**trials.score_risk({'id': 'x', 'expectedTier': 'approval'}, {**response, 'usage': usage}), 'repeat': 1}
                 for usage in ('lots', [1, 2], {'input_tokens': 3, 'note': 'x'})]
         self.assertEqual([('malformedUsage' in r) for r in rows], [True, True, False])
@@ -1412,10 +1423,75 @@ class LatestReviewTests(unittest.TestCase):
 
     def test_missing_decision_confidence_is_unscored(self):
         row = {**trials.score_risk({'id': 'x', 'expectedTier': 'approval'},
-                                   {'answers': [{'name': 'tier', 'choice': 'approval'}]}), 'repeat': 1}
+                                   decision(choice='approval')), 'repeat': 1}
         self.assertIsNone(row['confidence'])
         self.assertIn('malformedConfidence', row)
         self.assertEqual(trials._unscored({'risk': {'rows': [row]}}), ['risk:x:r1'])
+
+    def test_sessions_read_a_start_of_stage_evidence_snapshot(self):
+        root = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, root)
+        source = trials.CASES / 'f01-plugin-identity'
+        shutil.copytree(source, root / source.name)
+        with patch.object(trials, 'CASES', root), patch.object(trials.load_cases, '__defaults__', (root, None, True)):
+            out, make = self.make_trials()
+            trial = make(case_ids=[source.name])
+            case = trial.cases[0]
+            before = trials.evidence_sha(case['evidence'])
+            for path in trials.evidence_files(root / source.name / 'evidence'):
+                path.write_text('changed mid-run\n')
+            self.assertNotEqual(case['evidence'], root / source.name / 'evidence')
+            self.assertEqual(trials.evidence_sha(case['evidence']), before)
+            tools = trials.EvidenceTools(case['evidence'])
+            name = trials.evidence_files(case['evidence'])[0].relative_to(Path(case['evidence']).resolve())
+            self.assertNotIn('changed mid-run', json.dumps(tools('read_file', {'path': str(name)}), default=str))
+        snapshot_root = trial._evidence_root
+        del trial, case, tools
+        import gc
+        gc.collect()
+        self.assertFalse(Path(snapshot_root).exists())
+
+    def test_concurrent_invocation_on_one_out_is_refused(self):
+        import fcntl
+        out, make = self.make_trials()
+        out.mkdir(parents=True)
+        with open(out / '.trials.lock', 'a') as held:
+            fcntl.flock(held, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            with self.assertRaisesRegex(RuntimeError, 'another invocation'):
+                make().run('risk')
+        self.assertFalse((out / 'scope.json').exists())
+        make().run('risk')
+        self.assertTrue((out / 'risk.json').exists())
+
+    def test_required_checks_match_the_declared_argument_only(self):
+        plan = next(p for p in trials.load_plans() if p['id'] == 'p05-only-missing-terminology')
+        requirement = next(r for r in plan['expected']['requiredChecks'] if r['tool'] == 'check_staged')
+        target = requirement['argument']
+        smuggled = {'name': 'check_staged', 'arguments': {'path': 'unrelated-missing-file', 'extra': target}}
+        honest = {'name': 'check_staged', 'arguments': {'path': target}}
+        self.assertFalse(trials._check_satisfied(plan['evidence'], requirement, [smuggled]))
+        self.assertTrue(trials._check_satisfied(plan['evidence'], requirement, [honest]))
+        item = {'checked_with': 'check_staged', 'requirement': target, 'evidence': ''}
+        self.assertFalse(trials._call_matches(smuggled, item))
+        self.assertTrue(trials._call_matches(honest, item))
+        self.assertFalse(trials._call_matches({'name': 'check_mount_resolves', 'arguments': {'x': 'mount'}},
+                                              {'checked_with': 'check_mount_resolves', 'requirement': 'mount'}))
+
+    def test_usage_coverage_counts_only_valid_token_values(self):
+        rows = [{'id': 'a', 'usage': {'input_tokens': '3'}}, {'id': 'b', 'usage': {'input_tokens': float('inf')}},
+                {'id': 'c', 'usage': {'input_tokens': -1}}, {'id': 'd', 'usage': {'input_tokens': 5}}]
+        totals = trials._sum_decisions_usage({'risk': {'rows': rows}})
+        self.assertEqual((totals['input_tokens'], totals['requestsCovered'], totals['complete']), (5, 1, False))
+        self.assertEqual(totals['requestsMissingUsage'], ['a:r1', 'b:r1', 'c:r1'])
+        only = trials._sum_decisions_usage({'risk': {'rows': rows[:1]}})
+        self.assertEqual((only['requestsCovered'], only['complete']), (0, False))
+
+    def test_refusal_is_not_a_malformed_response(self):
+        row = trials.score_risk({'id': 'x', 'expectedTier': 'approval'},
+                                {'answers': [{'type': 'refusal', 'name': 'tier', 'refusal': 'no'}]})
+        self.assertTrue(row['refusal'])
+        self.assertNotIn('malformedResponse', row)
+        self.assertEqual(trials._unscored({'risk': {'rows': [{**row, 'repeat': 1}]}}), ['risk:x:r1'])
 
 if __name__ == '__main__':
     unittest.main()
