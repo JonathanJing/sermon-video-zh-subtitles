@@ -47,19 +47,25 @@ from scripts import sermon_provider_limits as limits  # noqa: E402
 from scripts import sermon_source_text_review as source_review  # noqa: E402
 from scripts import target_language_policy as policies  # noqa: E402
 
-SCHEMA = 'sermon-source-meaning-machine-adjudication-v1'
+SCHEMA = source_review.MACHINE_RECEIPT_SCHEMA
 QUESTION_SCHEMA = 'sermon-source-meaning-adjudication-question-v1'
 RESPONSE_SCHEMA = 'sermon-source-meaning-adjudication-response-v1'
 PROMPT_VERSION = 'source-meaning-adjudication-v1'
-VERSION = '2026-10-08-v1'
-ROLE = 'machine_adjudicator'
+VERSION = '2026-10-08-v2'
+ROLE = source_review.MACHINE_ROLE
 MODEL, EFFORT = 'gpt-6.1-sol', 'medium'
+# Only a model the Layer 1 review path also accepts may adjudicate; otherwise a
+# correction would be paid for and then refused by sermon_source_text_review.
+ADJUDICATOR_MODELS = frozenset(source_review.SUPPORTED_MODELS) & frozenset(limits.SUPPORTED_MODELS)
 DECISIONS = ('transcript_confirmed', 'transcript_corrected', 'undetermined')
 CLIP_CONTEXT_UNITS = 1   # neighbouring units cut with the doubted unit, each side
 TEXT_CONTEXT_UNITS = 5   # neighbouring units the adjudicator reads, each side
+NEIGHBOUR_MATCH_MIN = 0.5  # share of a neighbour's frozen words a listener must have heard to bound the unit
 SAMPLE_RATE = 16000
 MAX_NOTE_CHARS = 300
-TIME_TOLERANCE = 0.05
+TIME_TOLERANCE = source_review.UNIT_TIME_TOLERANCE
+QWEN_SETTINGS = {'dtype': 'bfloat16', 'executionDevice': 'cuda:0', 'batchSize': 1, 'maxNewTokens': 2048,
+                 'language': 'English'}
 LISTEN_PROMPT = ('Transcribe this English church sermon audio exactly as spoken. '
                  'Do not add, correct or complete words that are not audible.')
 CONFIRMED_NOTE = ('Independent listeners heard exactly these words: translate them literally as the '
@@ -124,23 +130,79 @@ def tokens(text: str) -> list[str]:
     return [token for token in (_normal(word) for word in _words(text)) if token]
 
 
-def best_window(frozen: list[str], heard: str) -> dict[str, Any]:
-    """The stretch of a listener's transcript that best matches the frozen tokens."""
-    rows = [(_normal(word), word) for word in _words(heard)]
-    rows = [(token, word) for token, word in rows if token]
-    if not frozen or not rows:
-        return {'text': '', 'tokens': [], 'similarity': 0.0}
-    best: tuple[float, int, int] | None = None
-    for size in range(max(1, len(frozen) - 2), len(frozen) + 3):
-        for start in range(0, max(1, len(rows) - size + 1)):
-            candidate = [token for token, _ in rows[start:start + size]]
-            ratio = difflib.SequenceMatcher(None, frozen, candidate, autojunk=False).ratio()
-            if best is None or ratio > best[0]:
-                best = (ratio, start, size)
-    ratio, start, size = best
-    window = rows[start:start + size]
-    return {'text': ' '.join(word for _, word in window), 'tokens': [token for token, _ in window],
-            'similarity': round(ratio, 6)}
+def _align(a: list[str], b: list[str]) -> list[tuple[int | None, int | None]]:
+    """Minimum-edit alignment of two token lists as (i, j) pairs; None marks a deletion or insertion."""
+    n, m = len(a), len(b)
+    cost = [[0] * (m + 1) for _ in range(n + 1)]
+    for i in range(1, n + 1):
+        cost[i][0] = i
+    for j in range(1, m + 1):
+        cost[0][j] = j
+    for i in range(1, n + 1):
+        for j in range(1, m + 1):
+            cost[i][j] = min(cost[i - 1][j - 1] + (a[i - 1] != b[j - 1]), cost[i - 1][j] + 1, cost[i][j - 1] + 1)
+    pairs: list[tuple[int | None, int | None]] = []
+    i, j = n, m
+    while i or j:
+        if i and j and cost[i][j] == cost[i - 1][j - 1] + (a[i - 1] != b[j - 1]):
+            pairs.append((i - 1, j - 1))
+            i, j = i - 1, j - 1
+        elif i and cost[i][j] == cost[i - 1][j] + 1:
+            pairs.append((i - 1, None))
+            i -= 1
+        else:
+            pairs.append((None, j - 1))
+            j -= 1
+    pairs.reverse()
+    return pairs
+
+
+def _contains_run(haystack: list[str], needle: list[str]) -> int:
+    """How many times ``needle`` occurs as a contiguous run in ``haystack``."""
+    if not needle or len(needle) > len(haystack):
+        return 0
+    return sum(haystack[i:i + len(needle)] == needle for i in range(len(haystack) - len(needle) + 1))
+
+
+def locate_unit(before: list[str], unit: list[str], after: list[str], heard: str) -> dict[str, Any]:
+    """What a listener heard for the doubted unit, bounded by its neighbours' frozen words.
+
+    The whole clip transcript is aligned with the frozen words of the clip's
+    units; the unit's stretch is what lies between the last word heard for
+    the unit before and the first word heard for the unit after. A clip edge
+    bounds the stretch when the unit has no neighbour on that side. The
+    stretch is ``bounded`` only when each neighbour was mostly heard and the
+    unit's words do not recur elsewhere in the clip, so an identical phrase in
+    a neighbour can never stand in for an inaudible unit.
+    """
+    rows = [(token, word) for token, word in ((_normal(word), word) for word in _words(heard)) if token]
+    heard_tokens = [token for token, _ in rows]
+    empty = {'text': '', 'tokens': [], 'similarity': 0.0, 'bounded': False,
+             'boundary': {'before': None, 'after': None, 'reason': 'nothing_heard'}}
+    if not unit or not rows:
+        return empty
+    frozen = before + unit + after
+    a_start, a_end = len(before), len(before) + len(unit)
+    pairs = _align(frozen, heard_tokens)
+    matched_before = sum(1 for i, j in pairs if i is not None and j is not None and i < a_start and frozen[i] == heard_tokens[j])
+    matched_after = sum(1 for i, j in pairs if i is not None and j is not None and i >= a_end and frozen[i] == heard_tokens[j])
+    before_js = [j for i, j in pairs if i is not None and j is not None and i < a_start]
+    after_js = [j for i, j in pairs if i is not None and j is not None and i >= a_end]
+    j_start = max(before_js) + 1 if before_js else 0
+    j_end = min(after_js) if after_js else len(rows)
+    window = rows[j_start:j_end]
+    window_tokens = [token for token, _ in window]
+    ratio = difflib.SequenceMatcher(None, unit, window_tokens, autojunk=False).ratio()
+    before_share = None if not before else round(matched_before / len(before), 6)
+    after_share = None if not after else round(matched_after / len(after), 6)
+    reason = None
+    if _contains_run(before, unit) or _contains_run(after, unit) or _contains_run(heard_tokens, unit) > 1:
+        reason = 'phrase_repeated_in_clip'
+    elif (before_share is not None and before_share < NEIGHBOUR_MATCH_MIN) or \
+            (after_share is not None and after_share < NEIGHBOUR_MATCH_MIN):
+        reason = 'neighbour_not_heard'
+    return {'text': ' '.join(word for _, word in window), 'tokens': window_tokens, 'similarity': round(ratio, 6),
+            'bounded': reason is None, 'boundary': {'before': before_share, 'after': after_share, 'reason': reason}}
 
 
 # ---------------------------------------------------------------- audio
@@ -211,32 +273,39 @@ class QwenListener:
 
     name = model = 'qwen3-asr'
 
-    def __init__(self, model_path: Path, *, cache: Path):
+    def __init__(self, model_path: Path, *, cache: Path, identity_probe: Callable[[Path], dict[str, Any]] | None = None):
         from scripts import machine_qc_audio_transports as transports
         self.model_path = Path(model_path).resolve()
         weights = self.model_path / 'model.safetensors'
         _require(weights.is_file(), 'qwen_weights_missing')
         self.model_revision = f'model.safetensors:sha256:{file_sha256(weights)}'
+        # The listener's identity is its whole runtime: weights, model metadata
+        # (config, tokenizer, preprocessor), package versions and inference settings.
+        probe = identity_probe or transports.qwen_inference_identity
+        self.runtime = probe(self.model_path)
+        _require(isinstance(self.runtime, dict) and self.runtime.get('backend') == 'qwen-asr-local',
+                 'qwen_runtime_identity')
         self.cache = transports.CallCache(cache, paid=False)
         self._model = None
 
     def identity(self) -> dict[str, Any]:
         return {'backend': 'qwen-asr-local', 'model': self.model, 'modelRevision': self.model_revision,
-                'language': 'English'}
+                'runtime': self.runtime, 'settings': dict(QWEN_SETTINGS)}
 
     def _run(self, wav: bytes) -> str:
         if self._model is None:
             import torch
             from qwen_asr import Qwen3ASRModel
             self._model = Qwen3ASRModel.from_pretrained(str(self.model_path), dtype=torch.bfloat16,
-                                                        device_map='cuda:0', max_inference_batch_size=1,
-                                                        max_new_tokens=2048)
+                                                        device_map=QWEN_SETTINGS['executionDevice'],
+                                                        max_inference_batch_size=QWEN_SETTINGS['batchSize'],
+                                                        max_new_tokens=QWEN_SETTINGS['maxNewTokens'])
         import soundfile as sf
         with tempfile.TemporaryDirectory() as folder:
             path = Path(folder) / 'clip.wav'
             path.write_bytes(wav)
             audio, rate = sf.read(path, dtype='float32')
-        values = self._model.transcribe(audio=(audio, rate), language='English')
+        values = self._model.transcribe(audio=(audio, rate), language=QWEN_SETTINGS['language'])
         _require(len(values) == 1 and isinstance(values[0].text, str), 'listener_output_cardinality')
         return values[0].text
 
@@ -250,21 +319,28 @@ class QwenListener:
 # ---------------------------------------------------------------- adjudicator
 
 class SolAdjudicator:
-    """One bounded JSON call per doubted unit, cached by request identity."""
+    """One bounded JSON call per doubted unit, cached by request identity.
+
+    Spend is bounded before dispatch: every payload carries the default request
+    limits (worst-case tokens, default tier), ``max_calls`` caps the new paid
+    requests of one run, and a cached answer is served without a call."""
 
     def __init__(self, *, api_key: str, cache: Path, model: str = MODEL, effort: str = EFFORT,
-                 caller: Callable[..., dict[str, Any]] | None = None):
-        _require(model in limits.SUPPORTED_MODELS and effort in limits.MODEL_REASONING_EFFORTS[model],
+                 caller: Callable[..., dict[str, Any]] | None = None, max_calls: int | None = None):
+        _require(model in ADJUDICATOR_MODELS and effort in limits.MODEL_REASONING_EFFORTS[model],
                  'unsupported_adjudicator_model')
+        _require(max_calls is None or (type(max_calls) is int and max_calls >= 0), 'adjudicator_call_cap')
         if caller is None:
             from scripts.production_spark_admission import SessionBoundCaller
             from scripts.sermon_pipeline import chat_json
             caller = SessionBoundCaller(chat_json, purpose='source-meaning-adjudication')
         self.api_key, self.cache, self.model, self.effort, self.caller = api_key, Path(cache), model, effort, caller
+        self.max_calls, self.calls = max_calls, 0
 
     def identity(self) -> dict[str, Any]:
         return {'model': self.model, 'reasoningEffort': self.effort, 'promptVersion': PROMPT_VERSION,
-                'promptSha256': _sha(SYSTEM_PROMPT.encode('utf-8'))}
+                'promptSha256': _sha(SYSTEM_PROMPT.encode('utf-8')),
+                'requestLimits': dict(limits.DEFAULT_REQUEST_LIMITS), 'maxNewCalls': self.max_calls}
 
     def payload(self, question: dict[str, Any]) -> dict[str, Any]:
         payload = {'model': self.model, 'reasoning_effort': self.effort,
@@ -279,9 +355,19 @@ class SolAdjudicator:
         return payload
 
     def decide(self, unit_id: str, question: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
-        from scripts.english_source_judge_cache import cached_call
-        return cached_call(out=self.cache, stage=f'source-meaning-{unit_id}', payload=self.payload(question),
-                           api_key=self.api_key, requested_model=self.model, caller=self.caller)
+        from scripts import english_source_judge_cache as judge_cache
+        from scripts import sermon_sentence_interpretation as contract
+        payload, stage = self.payload(question), f'source-meaning-{unit_id}'
+        request_hash = contract.json_sha256({'schemaVersion': judge_cache.RUN_SCHEMA, 'stage': stage,
+                                             'payload': payload})
+        cached = (self.cache.resolve() / 'cache' / f'{stage}-{request_hash}.json').is_file()
+        if not cached:
+            _require(self.max_calls is None or self.calls < self.max_calls, 'adjudicator_call_cap_reached')
+            self.calls += 1
+        result, request = judge_cache.cached_call(out=self.cache, stage=stage, payload=payload, api_key=self.api_key,
+                                                  requested_model=self.model, caller=self.caller)
+        return result, {**request, 'cached': cached,
+                        'bounds': limits.request_bounds(payload, limits.DEFAULT_REQUEST_LIMITS)}
 
 
 def _checked_answer(result: Any, frozen: list[str], heard: list[dict[str, Any]]) -> dict[str, Any]:
@@ -323,6 +409,19 @@ def _media_binding(source: dict[str, Any]) -> tuple[dict[str, Any], float]:
     return media, float(window['startSeconds'])
 
 
+def _require_bound_anchor(source: dict[str, Any], anchor: dict[str, Any]) -> None:
+    """The anchor must be the one the English Source Package names, built on the package's transcript.
+
+    Two files hashing separately prove nothing about each other: a stale or
+    mixed anchor would cut the wrong media times and correct the wrong words."""
+    expected = source.get('anchors', {}).get('artifact', {}).get('jsonSha256')
+    _require(isinstance(expected, str) and policies.canonical_sha256(anchor) == expected, 'anchor_not_bound_to_source')
+    transcript = source.get('transcript', {}).get('artifact', {}).get('sha256')
+    built_on = anchor.get('input', {}).get('mfaSegmentsSha256')
+    if transcript is not None or built_on is not None:
+        _require(isinstance(transcript, str) and transcript == built_on, 'anchor_transcript_binding_changed')
+
+
 def adjudicate(source: dict[str, Any], anchor: dict[str, Any], *, unit_ids: list[str], media: Path | None,
                listeners: list[Any], adjudicator: SolAdjudicator | None, out_dir: Path,
                cut: Callable[[Path, float, float], bytes] = cut_clip,
@@ -337,6 +436,7 @@ def adjudicate(source: dict[str, Any], anchor: dict[str, Any], *, unit_ids: list
     units = _units(anchor)
     by_id = {u['sourceUnitId']: i for i, u in enumerate(units)}
     _require(all(uid in by_id for uid in unit_ids), 'unit_unknown')
+    _require_bound_anchor(source, anchor)
     media_info, offset = _media_binding(source)
     if media is not None:
         _require(Path(media).stat().st_size == media_info['sizeBytes']
@@ -355,20 +455,26 @@ def adjudicate(source: dict[str, Any], anchor: dict[str, Any], *, unit_ids: list
         clip_sha = _sha(wav)
         (out_dir / 'clips' / f'{uid}.wav').write_bytes(wav)
         frozen = tokens(unit['english'])
+        before = [t for i in range(low, index) for t in tokens(units[i]['english'])]
+        after = [t for i in range(index + 1, high + 1) for t in tokens(units[i]['english'])]
         heard: list[dict[str, Any]] = []
         for listener in listeners:
             text = listener.transcribe(wav)
-            window = best_window(frozen, text)
+            window = locate_unit(before, frozen, after, text)
             row = {'listener': listener.name, 'model': listener.model, 'clipSha256': clip_sha, 'text': text,
                    'unitWindow': window['text'], 'unitTokens': window['tokens'],
-                   'similarityToFrozen': window['similarity'], 'agreesWithFrozen': window['tokens'] == frozen}
+                   'similarityToFrozen': window['similarity'], 'agreesWithFrozen': window['tokens'] == frozen,
+                   'bounded': window['bounded'], 'boundary': window['boundary']}
             heard.append(row)
             (out_dir / 'listeners' / f'{uid}.{listener.name}.json').write_text(
                 json.dumps(row, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-        if all(row['agreesWithFrozen'] for row in heard):
+        # Deterministic confirmation needs every listener to have heard the frozen words
+        # inside a stretch its neighbours bound; an unbounded match goes to the adjudicator.
+        if all(row['agreesWithFrozen'] and row['bounded'] for row in heard):
             verdict = {'decision': 'transcript_confirmed', 'heardBy': 'frozen', 'correctedText': None,
                        'meaningNote': CONFIRMED_NOTE,
-                       'reason': f'{len(heard)} independent listener(s) heard exactly the frozen words'}
+                       'reason': f'{len(heard)} independent listener(s) heard exactly the frozen words '
+                                 'between the words of the neighbouring units'}
             decided_by, request = 'listeners_agree_with_transcript', None
         else:
             _require(adjudicator is not None, 'adjudicator_required')
@@ -383,12 +489,17 @@ def adjudicate(source: dict[str, Any], anchor: dict[str, Any], *, unit_ids: list
                         'listeners': [{'name': row['listener'], 'model': row['model'], 'heardClip': row['text'],
                                        'heardForUnit': row['unitWindow'],
                                        'similarityToFrozen': row['similarityToFrozen'],
-                                       'agreesWithFrozen': row['agreesWithFrozen']} for row in heard]}
+                                       'agreesWithFrozen': row['agreesWithFrozen'],
+                                       'unitBoundedByNeighbours': row['bounded'],
+                                       'boundary': row['boundary']} for row in heard]}
             result, request = adjudicator.decide(uid, question)
             verdict = _checked_answer(result, frozen, heard)
             decided_by = 'model'
+        timing = {'start': float(unit['start']), 'end': float(unit['end'])}
+        if unit.get('referenceChunkId') is not None:
+            timing['referenceChunkId'] = str(unit['referenceChunkId'])
         rows.append({'sourceUnitId': uid, 'sourceSentenceId': unit.get('sourceSentenceId'),
-                     'frozenText': unit['english'],
+                     'frozenText': unit['english'], 'unit': timing,
                      'clip': {'sourceUnitIds': [units[i]['sourceUnitId'] for i in range(low, high + 1)],
                               'windowStart': start, 'windowEnd': end, 'mediaStart': round(offset + start, 6),
                               'mediaEnd': round(offset + end, 6), 'sha256': clip_sha},
@@ -447,16 +558,24 @@ def source_text_review(receipt: dict[str, Any], anchor: dict[str, Any], segments
     by_id = {u['sourceUnitId']: u for u in _units(anchor)}
     receipt_path = Path(receipt_path).resolve()
     evidence_sha = file_sha256(receipt_path)
-    patches: list[dict[str, Any]] = []
+    # Units are finer than ASR segments: corrections that share a segment become one patch.
+    per_segment: dict[int, tuple[dict[str, Any], list[dict[str, Any]]]] = {}
     for row in corrected:
-        unit = by_id[row['sourceUnitId']]
-        segment = _segment_for(unit, segments)
-        _require(type(segment.get('id')) is int and segment['id'] not in {p['segmentId'] for p in patches},
-                 'segment_id_repeated')
-        patches.append({'segmentId': segment['id'],
+        segment = _segment_for(by_id[row['sourceUnitId']], segments)
+        _require(type(segment.get('id')) is int, 'segment_id_invalid')
+        per_segment.setdefault(segment['id'], (segment, []))[1].append(row)
+    patches: list[dict[str, Any]] = []
+    for segment_id, (segment, rows) in sorted(per_segment.items()):
+        text = segment['text']
+        for row in rows:
+            english = by_id[row['sourceUnitId']]['english']
+            _require(text.count(english) == 1, 'segment_corrections_overlap')
+            text = text.replace(english, row['correctedText'])
+        patches.append({'segmentId': segment_id,
                         'originalTextSha256': source_review.text_sha256(segment['text']),
-                        'correctedText': segment['text'].replace(unit['english'], row['correctedText']),
-                        'reason': f"{row['sourceUnitId']} heard by {row['heardBy']}: {row['reason']}",
+                        'correctedText': text,
+                        'reason': '; '.join(f"{row['sourceUnitId']} heard by {row['heardBy']}: {row['reason']}"
+                                            for row in rows),
                         'evidenceSha256': evidence_sha})
     return {'schemaVersion': source_review.SCHEMA, 'reviewType': 'model', 'model': receipt['adjudicator']['model'],
             'humanApproval': False, 'status': source_review.STATUS, 'authority': source_review.MACHINE_AUTHORITY,
@@ -477,25 +596,41 @@ def _write_new(path: Path, value: dict[str, Any]) -> None:
         handle.write(json.dumps(value, ensure_ascii=False, indent=2) + '\n')
 
 
+def resumable_out_dir(path: Path) -> Path:
+    """An output directory that is new, or an incomplete earlier attempt whose caches are reused.
+
+    A directory already holding a receipt is complete and is never overwritten;
+    one left by a failed run keeps its paid re-listens and model answers, which
+    the next attempt serves from cache instead of paying again."""
+    path = Path(path)
+    if (path / 'receipt.json').exists():
+        raise SystemExit('out dir already holds a receipt; choose a new path')
+    if path.exists() and not path.is_dir():
+        raise SystemExit('out dir is not a directory')
+    return path
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('fixture', type=Path, help='Directory with source.json and anchor.json')
     parser.add_argument('--media', type=Path, required=True, help='The bound media file named by source.json')
     parser.add_argument('--unit', action='append', required=True, help='Doubted source unit; repeatable')
-    parser.add_argument('--out-dir', type=Path, required=True, help='New directory for receipt, clips, re-listens')
+    parser.add_argument('--out-dir', type=Path, required=True,
+                        help='Directory for receipt, clips, re-listens; an incomplete earlier attempt resumes')
     parser.add_argument('--listener', action='append', choices=('openai', 'qwen'), default=None,
                         help='Independent listeners (default: openai)')
     parser.add_argument('--asr-model-path', type=Path, help='Qwen3-ASR weights for the qwen listener')
     parser.add_argument('--max-api-calls', type=int, default=8, help='Cap on new paid transcription calls')
-    parser.add_argument('--model', default=MODEL)
+    parser.add_argument('--max-adjudicator-calls', type=int, default=None,
+                        help='Cap on new paid adjudicator calls (default: one per doubted unit)')
+    parser.add_argument('--model', default=MODEL, choices=sorted(ADJUDICATOR_MODELS))
     parser.add_argument('--reasoning-effort', default=EFFORT)
     parser.add_argument('--aligned-segments', type=Path,
                         help='Layer 1 aligned segments; with the two paths below, a corrected unit writes the review')
     parser.add_argument('--source-audio', type=Path, help='The window clip the Layer 1 pipeline transcribed')
     parser.add_argument('--asr-reference', type=Path, help='The ASR reference file the Layer 1 pipeline wrote')
     args = parser.parse_args(argv)
-    if args.out_dir.exists():
-        raise SystemExit('out dir exists; choose a new path')
+    resumable_out_dir(args.out_dir)
     review_inputs = (args.aligned_segments, args.source_audio, args.asr_reference)
     if any(review_inputs) and not all(review_inputs):
         raise SystemExit('--aligned-segments, --source-audio and --asr-reference go together')
@@ -519,7 +654,9 @@ def main(argv: list[str] | None = None) -> int:
             if args.asr_model_path is None:
                 raise SystemExit('--listener qwen needs --asr-model-path')
             listeners.append(QwenListener(args.asr_model_path, cache=cache / 'qwen'))
-    adjudicator = SolAdjudicator(api_key=api_key, cache=cache, model=args.model, effort=args.reasoning_effort)
+    adjudicator = SolAdjudicator(api_key=api_key, cache=cache, model=args.model, effort=args.reasoning_effort,
+                                 max_calls=len(args.unit) if args.max_adjudicator_calls is None
+                                 else args.max_adjudicator_calls)
     receipt = adjudicate(source, anchor, unit_ids=args.unit, media=args.media, listeners=listeners,
                          adjudicator=adjudicator, out_dir=args.out_dir)
     receipt_path = args.out_dir / 'receipt.json'

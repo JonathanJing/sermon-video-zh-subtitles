@@ -59,9 +59,18 @@ class ReceiptValidationTests(unittest.TestCase):
         self.assertEqual(reason(receipt(decision='pending')), 'decision_not_approved')
         self.assertEqual(reason(receipt(decision='rejected')), 'decision_not_approved')
 
-    def test_machine_authored_receipt_is_refused(self):
-        self.assertEqual(reason(receipt(decidedByRole='machine')), 'decided_by_not_human')
+    def test_unknown_role_or_missing_signature_is_refused(self):
+        self.assertEqual(reason(receipt(decidedByRole='machine')), 'decided_by_role_invalid')
+        self.assertEqual(reason(receipt(decidedByRole='model')), 'decided_by_role_invalid')
         self.assertEqual(reason(receipt(decidedBy='  ')), 'decided_by_missing')
+
+    def test_machine_adjudicator_receipt_is_admitted_as_machine_evidence(self):
+        summary = validate(receipt(decidedByRole='machine_adjudicator',
+                                   decidedBy='scripture_machine_adjudication v x'))
+        self.assertEqual((summary['decidedByRole'], summary['adjudicationKind'], summary['humanApproval']),
+                         ('machine_adjudicator', 'machine', False))
+        human = validate(receipt())
+        self.assertEqual((human['adjudicationKind'], human['humanApproval']), ('human', True))
 
     def test_bad_timestamp_and_schema_are_refused(self):
         self.assertEqual(reason(receipt(reviewedAt='yesterday')), 'reviewed_at_invalid')
