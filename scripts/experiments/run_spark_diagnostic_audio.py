@@ -276,7 +276,8 @@ def execute(args):
     require(proof['status'] == 'ready_for_explicit_dispatch', 'layer2_admission_required_before_spark_dispatch')
     relative(args.fixture); relative(args.layer2_out)
     require(args.registry.resolve() == ROOT / 'config/speaker-voice-registry.json', 'use_frozen_repository_registry')
-    relative(args.out)
+    # Anchor a cwd-relative --out before any job hold; later paths use relative_to(ROOT).
+    args.out = ROOT / relative(args.out)
     args.out.mkdir(parents=True, exist_ok=True)
     from scripts.experiments.replay_fixed_clip_local_models import save
     with (args.out / '.dispatch.lock').open('a') as lock:
