@@ -116,6 +116,7 @@ def load_plans(root=PLANS, only=None):
         check_evidence(directory / 'plan', f'plan {directory.name}')
         expected = _read_json(directory / 'expected.json')
         _check_plan_key(directory.name, expected)
+        _check_plan_targets(directory.name, directory / 'plan', expected)
         plans.append({'id': directory.name, 'evidence': directory / 'plan', 'expected': expected})
     if only and {p['id'] for p in plans} != set(only):
         raise ValueError('unknown plan id: ' + ', '.join(sorted(set(only) - {p['id'] for p in plans})))
@@ -224,6 +225,23 @@ def _check_plan_key(name, expected):
             bad(f'required check {check["tool"]} needs a boolean expect and no other fields')
         if takes_argument[check['tool']] != isinstance(check.get('argument'), str) or check.get('argument') == '':
             bad(f'required check {check["tool"]} argument does not match its tool')
+
+
+def _check_plan_targets(name, plan, expected):
+    """Each argument a key requires must be the dependency the plan itself names: the output path is the round's
+    --out, and a staged path is one the plan's code reads. Otherwise an agent that checks the real target would be
+    scored as missing the check."""
+    steps = _read_json(plan / 'round.json').get('steps')
+    outs = [m for step in (steps if isinstance(steps, list) else []) if isinstance(step, str)
+            for m in re.findall(r'--out\s+(\S+)', step)]
+    excerpts = (plan / 'code-excerpts.txt').read_text(encoding='utf-8') if (plan / 'code-excerpts.txt').is_file() else ''
+    for check in expected['requiredChecks']:
+        argument = check.get('argument')
+        if check['tool'] == 'check_out_path' and outs != [argument]:
+            raise ValueError(f'invalid plan {name}: check_out_path must target the round --out {outs}, '
+                             f'not {argument!r}')
+        if check['tool'] == 'check_staged' and argument not in excerpts:
+            raise ValueError(f'invalid plan {name}: check_staged target {argument!r} is not read by the plan code')
 
 
 def evidence_sha(directory):
@@ -1469,7 +1487,7 @@ def _unscored(results):
                                + (':planted' if row.get('planted') else ''))
     for row in results.get('risk', {}).get('rows', []):
         if row.get('error') or row.get('chosen') not in TIERS or 'malformedConfidence' in row \
-                or row.get('malformedResponse'):
+                or row.get('malformedResponse') or row.get('refusal'):
             missing.append(f"risk:{row['id']}:r{row.get('repeat', 1)}")
     return missing
 
@@ -1619,8 +1637,9 @@ def score_risk(action, response):
     shaped = (len(listed) == len(DECISION_QUESTIONS)
               and all([a.get('type') for a in listed if a.get('name') == name] == [kind] for name, kind in DECISION_QUESTIONS)
               and all(_probability(a.get('probability')) for a in listed if a.get('type') == 'predicate'))
-    if response is not None and not refusal and not shaped:
-        malformed_response, listed = True, []
+    # A refusal, even of one question, leaves the request without all its evidence, so none of it is scored.
+    if response is not None and (refusal or not shaped):
+        malformed_response, listed = malformed_response or not refusal, []
     answers = {a['name']: a for a in listed if isinstance(a.get('name'), str)}
     tier = answers.get('tier', {})
     chosen, confidence = tier.get('choice'), tier.get('confidence')

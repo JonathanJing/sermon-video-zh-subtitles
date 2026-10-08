@@ -1257,6 +1257,25 @@ class LatestReviewTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'no plan directory'):
             trials.load_plans(root)
 
+    def test_plan_key_targets_must_be_what_the_plan_names(self):
+        root = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, root)
+        source = trials.PLANS / 'p04-only-relative-out'
+        shutil.copytree(source, root / source.name)
+        key = json.loads((source / 'expected.json').read_text())
+
+        def target(tool, argument):
+            return {**key, 'requiredChecks': [dict(c, argument=argument) if c['tool'] == tool else c
+                                              for c in key['requiredChecks']]}
+        for variant in (target('check_out_path', '/srv/elsewhere/out'),
+                        target('check_out_path', 'artifacts/r/live-180s-r4'),
+                        target('check_staged', 'docs/unrelated.md')):
+            (root / source.name / 'expected.json').write_text(json.dumps(variant))
+            with self.subTest(variant=variant), self.assertRaisesRegex(ValueError, 'invalid plan'):
+                trials.load_plans(root)
+        (root / source.name / 'expected.json').write_text(json.dumps(key))
+        self.assertEqual(len(trials.load_plans(root)), 1)
+
     def test_malformed_case_key_is_refused_before_any_session(self):
         root = Path(tempfile.mkdtemp())
         self.addCleanup(shutil.rmtree, root)
@@ -1562,6 +1581,15 @@ class LatestReviewTests(unittest.TestCase):
                                 {'answers': [{'type': 'refusal', 'name': 'tier', 'refusal': 'no'}]})
         self.assertTrue(row['refusal'])
         self.assertNotIn('malformedResponse', row)
+        self.assertEqual(trials._unscored({'risk': {'rows': [{**row, 'repeat': 1}]}}), ['risk:x:r1'])
+
+    def test_partial_refusal_scores_nothing_and_is_unscored(self):
+        response = decision(choice='approval', confidence=0.9)
+        response['answers'][2] = {'type': 'refusal', 'name': 'spends_money', 'refusal': 'no'}
+        row = trials.score_risk({'id': 'x', 'expectedTier': 'approval'}, response)
+        self.assertTrue(row['refusal'])
+        self.assertNotIn('malformedResponse', row)
+        self.assertEqual((row['chosen'], row['correct'], row['irreversible']), (None, False, None))
         self.assertEqual(trials._unscored({'risk': {'rows': [{**row, 'repeat': 1}]}}), ['risk:x:r1'])
 
     def test_refused_rerun_leaves_the_completed_run_untouched(self):
