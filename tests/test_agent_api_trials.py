@@ -89,6 +89,24 @@ class ScoringTests(unittest.TestCase):
         self.assertFalse(trials.score_diagnosis({**good, 'root_cause': 'model download failed'}, expected, evidence)['correct'])
         self.assertFalse(trials.score_diagnosis(None, expected, evidence)['correct'])
 
+    def test_valid_quotes_cannot_supply_a_wrong_root_causes_keywords(self):
+        evidence = trials.CASES / 'f05-asr-symlink-mount/evidence'
+        report = {'category': 'mount_or_environment', 'root_cause': 'model download failed',
+                  'evidence': [{'file': p.name, 'quote': p.read_text().strip()}
+                               for p in evidence.iterdir() if p.suffix == '.txt'], 'fix': ''}
+        score = trials.score_diagnosis(report, self.cases['f05-asr-symlink-mount'], evidence)
+        self.assertGreater(score['validCitations'], 0)
+        self.assertFalse(score['causeOk'])
+        self.assertFalse(score['correct'])
+
+    def test_preflight_unchecked_successes_cannot_earn_correct_go(self):
+        items = [{'requirement': kind, 'kind': kind, 'status': 'ok',
+                  'checked_with': 'none', 'evidence': ''}
+                 for kind in ('file', 'path', 'mount', 'identity')]
+        score = trials.score_preflight({'items': items, 'go': True}, {'blockers': {}}, [])
+        self.assertEqual(len(score['unverifiedSuccesses']), 4)
+        self.assertFalse(score['goCorrect'])
+
     def test_fabricated_citations_do_not_count(self):
         expected = self.cases['f05-asr-symlink-mount']
         evidence = trials.CASES / 'f05-asr-symlink-mount/evidence'
@@ -118,6 +136,8 @@ class ScoringTests(unittest.TestCase):
         self.assertEqual(len(trials.score_preflight(report, expected, other)['claimedButNotMatched']), 1)
         same = [{'name': 'check_staged', 'arguments': {'path': './docs/series-terminology.zh.md'}}]
         self.assertEqual(trials.score_preflight(report, expected, same)['claimedButNotMatched'], [])
+        self.assertTrue(trials.score_preflight(report, expected, same)['goCorrect'])
+        self.assertFalse(trials.score_preflight(report, expected, other)['goCorrect'])
 
     def test_refuter_is_scored_against_whether_the_diagnosis_was_right(self):
         self.assertTrue(trials.score_refutation({'verdict': 'upheld'}, True)['refuterRight'])
@@ -159,6 +179,62 @@ class RunTests(unittest.TestCase):
         self.assertEqual(second['diagnoseByArm'], first['diagnoseByArm'])
         report = json.loads((self.out / 'diagnose.json').read_text())['rows'][0]['report']
         self.assertEqual(report['summary_zh'], '假数据，仅验证接线。')
+
+    def test_changed_hidden_gold_or_scorer_blocks_reuse_before_overwriting_scores(self):
+        self.make(case_ids=['f01-plugin-identity']).run('diagnose')
+        original = (self.out / 'diagnose.json').read_bytes()
+        runner = self.make(case_ids=['f01-plugin-identity'])
+        runner.cases[0]['expected']['causeKeywords'] = [['changed gold']]
+        with self.assertRaisesRegex(ValueError, 'rubric/scorer changed'):
+            runner.run('diagnose')
+        self.assertEqual((self.out / 'diagnose.json').read_bytes(), original)
+        receipt = self.out / 'diagnose.rubric-receipt.json'
+        binding = json.loads(receipt.read_text())
+        binding['scorerSha256'] = 'old implementation'
+        receipt.write_text(json.dumps(binding))
+        with self.assertRaisesRegex(ValueError, 'rubric/scorer changed'):
+            self.make(case_ids=['f01-plugin-identity']).run('diagnose')
+
+    def test_changed_risk_gold_blocks_cached_decisions(self):
+        self.make().run('risk')
+        policy = trials._read_json(trials.RISK)
+        policy['actions'][0]['expectedTier'] = 'observe_only'
+        read_json = trials._read_json
+        with patch.object(trials, '_read_json', side_effect=lambda p: policy if p == trials.RISK else read_json(p)):
+            with self.assertRaisesRegex(ValueError, 'rubric/scorer changed'):
+                self.make().run('risk')
+
+    def test_legacy_outputs_without_rubric_binding_are_not_rescored(self):
+        self.make(case_ids=['f01-plugin-identity']).run('diagnose')
+        (self.out / 'diagnose.rubric-receipt.json').unlink()
+        with self.assertRaisesRegex(ValueError, 'no rubric binding'):
+            self.make(case_ids=['f01-plugin-identity']).run('diagnose')
+
+    def test_failed_stage_timing_is_durable_and_retained_on_retry(self):
+        runner = self.make()
+        with patch.object(runner, 'timeline', side_effect=RuntimeError('stage failed')):
+            with self.assertRaisesRegex(RuntimeError, 'stage failed'):
+                runner.run('timeline')
+        lines = (self.out / 'timings.tsv').read_text().splitlines()
+        self.assertEqual(lines[0], 'stage\tresult\tseconds')
+        self.assertEqual(lines[1].split('\t')[:2], ['timeline', 'fail'])
+        self.assertGreaterEqual(float(lines[1].split('\t')[2]), 0)
+        self.make().run('timeline')
+        self.assertEqual((self.out / 'timings.tsv').read_text().splitlines()[1], lines[1])
+        self.assertIn('timeline\tpass\t', (self.out / 'timings.tsv').read_text())
+
+    def test_live_dev_route_is_refused_before_client_creation(self):
+        with patch.dict('os.environ', {'SERMON_OPENAI_ENVIRONMENT': 'dev', 'OPENAI_PROJECT_ID': 'proj_x',
+                                     'SERMON_OPENAI_CREDENTIAL_ALIAS': 'tongxing-dev-runtime',
+                                     'OPENAI_API_KEY': 'sk-test'}), patch('sys.stderr'), \
+                patch.object(trials.agents, 'AgentsAPIClient') as agent_client, \
+                patch.object(trials, 'DecisionsClient') as decisions_client:
+            for trial in ('all', 'risk', 'diagnose', 'preflight', 'refute'):
+                with self.assertRaises(SystemExit) as error:
+                    trials.main([trial, '--out', str(self.out)])
+                self.assertEqual(error.exception.code, 2)
+            agent_client.assert_not_called()
+            decisions_client.assert_not_called()
 
     def test_unknown_session_outcome_stops_the_trial(self):
         class Stuck(trials.FakeAgentsClient):

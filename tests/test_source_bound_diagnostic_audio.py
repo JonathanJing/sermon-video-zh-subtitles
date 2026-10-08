@@ -31,6 +31,8 @@ class FakePool:
         if start == self.failure:
             raise RuntimeError('fixture replica outcome unknown')
         return self.rows.pop(start)
+    def generation_seconds(self, start):
+        return 0.0
     def close(self):
         self.closed = True
 

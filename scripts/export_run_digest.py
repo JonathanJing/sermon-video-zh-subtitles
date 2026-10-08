@@ -5,7 +5,8 @@ Runs leave their evidence under ignored ``artifacts/`` on the Mac (and on
 Spark), where a cloud review session cannot read it. This tool copies only the
 files a retrospective needs from one or more run directories:
 
-- ``outcome.json``, ``timings.tsv``, ``summary.json`` and ``*receipt*.json``
+- ``outcome.json``, ``timings.tsv``, ``summary.json``, ``preflight.json``,
+  trial results (``diagnose.json``, ``refute.json``, ``risk.json``) and ``*receipt*.json``
   (whole, when under the size cap);
 - ``*.log`` (first and last lines, with every error line in between).
 
@@ -42,7 +43,8 @@ from datetime import datetime, timezone
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA = "sermon-run-digest-v1"
-WHOLE_NAMES = {"outcome.json", "timings.tsv", "summary.json", "preflight.json"}
+WHOLE_NAMES = {"outcome.json", "timings.tsv", "summary.json", "preflight.json",
+               "diagnose.json", "refute.json", "risk.json"}
 MAX_WHOLE_BYTES = 256 * 1024
 MAX_DIGEST_BYTES = 2 * 1024 * 1024
 NAME = re.compile(r"\d{8}-[A-Za-z0-9._-]+")  # Same set publish_run_report.sh accepts
