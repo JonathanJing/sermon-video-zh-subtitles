@@ -1256,7 +1256,8 @@ class LatestReviewTests(unittest.TestCase):
         key = json.loads((source / 'expected.json').read_text())
         without_cause = {k: v for k, v in key.items() if k != 'causeKeywords'}
         variants = [without_cause, {**key, 'causeKeywords': [['plugin'], []]}, {**key, 'causeKeywords': 'plugin'},
-                    {**key, 'fixKeywords': [[1]]}, {**key, 'bonusKeywords': []}, {**key, 'abstain': 'no'},
+                    {**key, 'fixKeywords': [[1]]}, {k: v for k, v in key.items() if k != 'fixKeywords'},
+                    {**key, 'bonusKeywords': []}, {**key, 'abstain': 'no'},
                     {**key, 'acceptableCategories': ['typo']}, {**key, 'category': 'typo'}, {**key, 'id': 'x'}]
         for variant in variants:
             (root / source.name / 'expected.json').write_text(json.dumps(variant))
@@ -1316,7 +1317,10 @@ class LatestReviewTests(unittest.TestCase):
     def test_malformed_decisions_response_is_unscored_not_fatal(self):
         action = {'id': 'x', 'expectedTier': 'approval'}
         for response in ({'answers': None}, ['answers'], 'text', {'answers': 'tier'},
-                         {'answers': [{'name': ['tier'], 'choice': 'approval'}]}):
+                         {'answers': [{'name': ['tier'], 'choice': 'approval'}]},
+                         {'answers': [{'name': 'tier', 'choice': ['approval']}]},
+                         {'answers': [{'name': 'tier', 'choice': {'tier': 'approval'}}]},
+                         {'answers': [{'name': 'tier', 'choice': 'Approval'}]}):
             with self.subTest(response=response):
                 row = {**trials.score_risk(action, response), 'repeat': 1}
                 self.assertIsNone(row['chosen'])
