@@ -1067,6 +1067,16 @@ class LatestReviewTests(unittest.TestCase):
             make().run('risk')
         self.assertTrue((out / 'risk.json').exists())
 
+    def test_non_finite_max_seconds_is_rejected(self):
+        for text in ('inf', 'nan', '0', '-5'):
+            with self.assertRaises(trials.argparse.ArgumentTypeError):
+                trials._positive_seconds(text)
+        self.assertEqual(trials._positive_seconds('90'), 90.0)
+
+    def test_missing_usage_ids_mark_planted_refutations(self):
+        results = {'refute': {'rows': [{'case': 'f01', 'usage': None}, {'case': 'f01', 'planted': True, 'usage': None}]}}
+        self.assertEqual(trials._sum_usage(results)['sessionsMissingUsage'], ['refute:f01', 'refute:f01:planted'])
+
     def test_checkpoint_keeps_saved_rows_this_run_has_not_reached(self):
         out, make = self.make_trials()
         out.mkdir(parents=True)

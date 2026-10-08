@@ -35,6 +35,7 @@ from datetime import datetime, timezone
 import hashlib
 import inspect
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -893,7 +894,8 @@ class Trials:
 
     def diagnose(self, arms=('raw', 'timeline')):
         rows = self._rows('diagnose')
-        library = [c['id'] for c in load_cases()]
+        # Directory names only, so an unselected case's fixture is never parsed.
+        library = sorted(p.name for p in CASES.iterdir() if p.is_dir())
         for case in self.cases:
             # Alternate AB/BA by position in the full library, so a widened subset keeps each case's order and
             # warm-up or throttling is not confounded with the arm.
@@ -1273,7 +1275,8 @@ def _sum_usage(results):
     for trial in ('diagnose', 'refute', 'preflight'):
         for row in results.get(trial, {}).get('rows', []):
             if not row.get('usage'):
-                missing.append(f"{trial}:{row.get('case') or row.get('plan')}" + (f":{row['arm']}" if row.get('arm') else ''))
+                missing.append(f"{trial}:{row.get('case') or row.get('plan')}" + (f":{row['arm']}" if row.get('arm') else '')
+                               + (':planted' if row.get('planted') else ''))
                 continue
             covered += 1
             for key, value in row['usage'].items():
@@ -1551,6 +1554,14 @@ def _positive_int(text):
     return value
 
 
+def _positive_seconds(text):
+    value = float(text)
+    # inf or nan would never reach the session deadline, so a stuck session could poll forever.
+    if not math.isfinite(value) or value <= 0:
+        raise argparse.ArgumentTypeError('must be a positive finite number of seconds')
+    return value
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('trial', choices=['timeline', 'diagnose', 'refute', 'preflight', 'risk', 'all'])
@@ -1563,7 +1574,7 @@ def main(argv=None):
     parser.add_argument('--risk-repeats', type=_risk_repeats, default=3,
                         help='send each risk request this many times to measure stability (default 3)')
     parser.add_argument('--max-tool-calls', type=int, default=24)
-    parser.add_argument('--max-seconds', type=float, default=600)
+    parser.add_argument('--max-seconds', type=_positive_seconds, default=600)
     args = parser.parse_args(argv)
     out = args.out.resolve()
     if not out.is_relative_to(ROOT / 'artifacts') or out == ROOT / 'artifacts':
