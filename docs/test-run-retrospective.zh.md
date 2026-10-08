@@ -18,7 +18,7 @@
 1. **一次运行对应一份报告。** 报告名为 `YYYYMMDD-<简称>`，目录结构固定：
    - `INDEX.md`：自动生成，包括结束状态、各阶段耗时、失败阶段和错误行。
    - `manifest.json`：原文件路径、哈希、截断和脱敏次数。云端可以据此核对本机证据，不需要原文件。
-   - 运行目录的副本：只含 `outcome.json`、`timings.tsv`、`summary.json`、`*receipt*.json`；`*.log` 只保留开头 40 行、结尾 200 行和中间的错误行。
+   - 运行目录的副本：只含 `outcome.json`、`timings.tsv`、`summary.json`、`preflight.json`、`*receipt*.json`；`*.log` 只保留开头 40 行、结尾 200 行和中间的错误行。
    - `RETROSPECTIVE.md`：按下面的复盘清单生成的骨架，由本地或云端的 agent 填写。
 2. **两步，分开生成和公开。** `export_run_digest.py` 只在被忽略的 `artifacts/run-reports/` 下生成报告，不碰 Git；`publish_run_report.sh` 先复查脱敏，再公开。生成可以无条件自动执行，公开是一个单独、可检查的动作。
 3. **报告单独走 PR。** 公开脚本从 `origin/dev` 切出 `run-report/<name>` 分支，在临时 worktree 里把报告加成 `docs/reports/runs/<name>/`，推送并开草稿 PR。当前检出和分支都不动。报告 PR 只含文档，走 CI 的文档快速路径；修复另开 PR，引用报告路径。这样报告不会被代码评审卡住，修复也不会混进证据。
@@ -28,7 +28,12 @@
    - 大小：整份报告超过 2 MB 就拒绝生成。
    - 内容：媒体和模型输出一律不复制。
    - 规则匹配不能保证完全，合并报告 PR 前仍要看一眼 diff。
-5. **自动接入。** 三分钟 e2e 脚本在退出时（成功或失败）都会生成报告，并打印公开命令。其他入口（每周生产、机器质检驱动、Spark 诊断）由执行运行的 agent 在结束时手动运行导出命令，见 [AGENTS.md](../AGENTS.md)。
+5. **自动接入。** 下列入口退出时（成功或失败）自动生成报告，并打印公开命令：
+   - 三分钟 e2e：`scripts/run_dev_180s_beta_e2e.sh`
+   - 机器质检文字驱动：`scripts/run_machine_qc_clip_test.py`
+   - 机器质检音频驱动：`scripts/run_machine_qc_audio_test.py`
+
+   其他入口（每周正式生产、Spark 诊断等）由执行运行的 agent 在结束时手动导出，见 [AGENTS.md](../AGENTS.md) 和[本地生产 runbook](codex-local-production-runbook.zh.md#运行报告)。
 6. **云端怎么用。** 云端会话读报告 PR 的文件，填写或评审 `RETROSPECTIVE.md`，问题另开修复 PR。复盘填好后合并报告 PR；跨轮比较就读 `docs/reports/runs/` 下的历次 `INDEX.md`。
 
 ## 命令
@@ -44,6 +49,17 @@ scripts/publish_run_report.sh artifacts/run-reports/<YYYYMMDD-简称>
 ```
 
 不传 `--name` 时，默认用当天 UTC 日期加第一个运行目录名。只想检查一份已有报告时，用 `export_run_digest.py --verify <报告目录>`。
+
+## 每次 dev 测试先核对报告
+
+每次 dev 测试结束，先确认本轮按本页生成并公开了报告，再看测试结果：
+
+1. `artifacts/run-reports/` 下有本轮的报告；自动入口不应需要手动导出。
+2. `INDEX.md` 有每个运行目录的结束状态和阶段耗时，`export_run_digest.py --verify` 通过。
+3. 报告 PR 已开，只含 `docs/reports/runs/<name>/`。
+4. 云端会话已读过该 PR，`RETROSPECTIVE.md` 已填写。
+
+缺任何一项，都写进该次的 `RETROSPECTIVE.md`，并更新 backlog 的 [`DEV-RUNREPORT-001`](backlog.zh.md#backlog-run-report-20261008)。
 
 ## 复盘检查清单
 

@@ -63,6 +63,9 @@ from scripts import prepare_target_language_speech_job as speech
 from scripts import spoken_condensation as condensation
 from scripts import target_text_auto_qc as text_qc
 
+# Output directories of this invocation, for the exit-time run report.
+REPORT_DIRS: list[Path] = []
+
 ROOT = Path(__file__).resolve().parents[1]
 LOCALES = ("zh-Hans", "ko", "es")
 MAX_WORKERS = 8  # Codex CLI calls this driver may run at once
@@ -679,6 +682,7 @@ def main(argv=None) -> int:
             parser.error(f"{path} is not ignored by Git; use a directory under artifacts/")
     out.mkdir(parents=True, exist_ok=True)
     state.mkdir(parents=True, exist_ok=True)
+    REPORT_DIRS.append(out)
     locks = []
     for folder in dict.fromkeys((out, state)):  # One writer per OUT and per state dir.
         locks.append((folder / ".run.lock").open("a"))
@@ -746,4 +750,10 @@ def main(argv=None) -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    from scripts.export_run_digest import write_report
+    try:
+        code = main()
+    finally:
+        if REPORT_DIRS:  # Pass or fail, leave a redacted run report for cloud review.
+            write_report(REPORT_DIRS, "machine-qc-text")
+    sys.exit(code)

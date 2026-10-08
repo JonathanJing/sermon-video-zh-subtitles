@@ -90,6 +90,13 @@ class ExportRunDigestTests(unittest.TestCase):
             (dest / "INDEX.md").write_text("pasted sk-proj-abcdefghijklmnopqrstuvwxyz and supersecretvalue123\n")
             self.assertEqual(digest.main([str(dest), "--verify"]), 1)
 
+    def test_write_report_for_drivers_never_raises(self):
+        with patch.object(digest, "ROOT", self.base):
+            dest = digest.write_report([self.run], "machine-qc-text")
+            self.assertRegex(dest.name, r"^\d{8}-\d{6}-machine-qc-text$")
+            self.assertTrue((dest / "INDEX.md").exists())
+            self.assertIsNone(digest.write_report([self.base / "missing"], "machine-qc-text"))
+
     def test_oversized_digest_writes_nothing(self):
         with patch.object(digest, "MAX_DIGEST_BYTES", 10):
             self.assertEqual(digest.main([str(self.run), "--out", str(self.out), "--name", "20261007-big"]), 1)

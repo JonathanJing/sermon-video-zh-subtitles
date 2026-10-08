@@ -41,7 +41,7 @@ from datetime import datetime, timezone
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA = "sermon-run-digest-v1"
-WHOLE_NAMES = {"outcome.json", "timings.tsv", "summary.json"}
+WHOLE_NAMES = {"outcome.json", "timings.tsv", "summary.json", "preflight.json"}
 MAX_WHOLE_BYTES = 256 * 1024
 MAX_DIGEST_BYTES = 2 * 1024 * 1024
 NAME = re.compile(r"\d{8}-[\w.-]+")
@@ -208,6 +208,24 @@ def retrospective_markdown(name: str) -> str:
     for heading, hint in RETROSPECTIVE_SECTIONS:
         out += [f"## {heading}", "", f"<!-- {hint} -->", "待填写。", ""]
     return "\n".join(out)
+
+
+def write_report(run_dirs: list[Path], label: str) -> Path | None:
+    """Write a dated report for a driver that just finished; never raises.
+
+    Drivers call this when they exit so every run leaves a report, pass or fail.
+    """
+    name = f"{datetime.now(timezone.utc):%Y%m%d-%H%M%S}-{label}"
+    try:
+        dirs = [d for d in run_dirs if Path(d).is_dir()]
+        if not dirs or main([*map(str, dirs), "--name", name]) != 0:
+            raise RuntimeError("no report written")
+    except (Exception, SystemExit) as error:  # The run's own result must stand.
+        print(f"Run report not written ({error}); export it by hand with scripts/export_run_digest.py",
+              file=sys.stderr)
+        return None
+    print(f"Publish for cloud review: scripts/publish_run_report.sh artifacts/run-reports/{name}", file=sys.stderr)
+    return ROOT / "artifacts/run-reports" / name
 
 
 def main(argv: list[str] | None = None) -> int:
