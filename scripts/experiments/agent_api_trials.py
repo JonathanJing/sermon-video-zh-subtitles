@@ -213,7 +213,8 @@ FILE_TOOLS = [
               {'path': {'type': 'string', 'description': 'Path relative to the evidence root, as list_files prints it.'}},
               ['path']),
     _function('grep', 'Search all evidence files for a literal substring (case-insensitive, not a regex); '
-              'returns up to 50 matching lines.', {'text': {'type': 'string'}}, ['text']),
+              'returns up to 50 matching lines, each as a 400-character window around the first match.',
+              {'text': {'type': 'string'}}, ['text']),
 ]
 TIMELINE_TOOL = _function('get_timeline', 'Return every timestamped event across all evidence files in time order, '
                           'plus the files and error lines that carry no timestamp.')
@@ -295,6 +296,11 @@ class EvidenceTools:
             # Appended and synced before handling, so a resumed session still sees every call made before a crash,
             # including one whose durable tool receipt the runner will reuse without calling the handler again.
             created = not self.log_path.exists()
+            if not created:
+                # A crash mid-append can leave a fragment without its newline; drop it so this record starts clean.
+                data = self.log_path.read_bytes()
+                if data and not data.endswith(b'\n'):
+                    os.truncate(self.log_path, data.rfind(b'\n') + 1)
             with open(self.log_path, 'a', encoding='utf-8') as log:
                 log.write(json.dumps(call, ensure_ascii=False) + '\n')
                 log.flush()
@@ -314,8 +320,12 @@ class EvidenceTools:
             hits = []
             for path in self._files():
                 for number, line in enumerate(path.read_text(encoding='utf-8').splitlines(), 1):
-                    if needle in line.lower():
-                        hits.append({'path': str(path.relative_to(self.root)), 'line': number, 'text': line[:400]})
+                    at = line.lower().find(needle)
+                    if at >= 0:
+                        # A window around the match, so a field deep in a long JSON line is still visible.
+                        start = max(0, at - 150)
+                        hits.append({'path': str(path.relative_to(self.root)), 'line': number, 'column': at + 1,
+                                     'text': line[start:start + 400], 'cut': start > 0 or len(line) > start + 400})
             return {'matches': hits[:50], 'truncated': len(hits) > 50}
         if name == 'get_timeline' and self.timeline:
             return build_timeline(self.root)

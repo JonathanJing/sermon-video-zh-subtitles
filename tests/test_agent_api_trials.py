@@ -1096,6 +1096,22 @@ class LatestReviewTests(unittest.TestCase):
         with patch.object(trials, '_case_library', lambda: library):
             self.assertNotEqual(trial._scopes(['diagnose'])['diagnose']['caseOrder'], before['caseOrder'])
 
+    def test_grep_shows_a_window_around_a_deep_match(self):
+        with tempfile.TemporaryDirectory() as directory:
+            Path(directory, 'events.jsonl').write_text('{"pad": "' + 'x' * 900 + '", "parentSpanId": "root-1"}\n')
+            hit = trials.EvidenceTools(directory)('grep', {'text': 'parentSpanId'})['matches'][0]
+            self.assertIn('"parentSpanId": "root-1"', hit['text'])
+            self.assertTrue(hit['cut'])
+
+    def test_torn_call_fragment_is_dropped_before_the_next_append(self):
+        with tempfile.TemporaryDirectory() as directory:
+            log = Path(directory, 's.calls.jsonl')
+            log.write_text('{"name": "list_files", "arguments": {}}\n{"name": "rea')
+            tools = trials.EvidenceTools(directory)
+            tools.log_path = log
+            tools('list_files', {})
+            self.assertEqual([c['name'] for c in trials._read_calls(log)], ['list_files', 'list_files'])
+
     def test_checkpoint_keeps_saved_rows_this_run_has_not_reached(self):
         out, make = self.make_trials()
         out.mkdir(parents=True)
