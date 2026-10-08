@@ -869,16 +869,20 @@ class Trials:
         except BaseException:
             # Summarize what finished, including the failed stage's completed rows, for the run report.
             results = dict(self.results)
-            for stage, rows in self.partial.items():
-                if stage not in results:
-                    results[stage] = _stage_result(stage, rows)
-            # Stages finished by an earlier run into this --out (e.g. risk before all) stay in the summary.
+            # Stages finished by an earlier run into this --out (e.g. risk before all) stay in the summary, and
+            # their rows are merged by identity with this run's rows of a widened stage that failed part way.
             for stage in ('diagnose', 'refute', 'preflight', 'risk'):
+                if stage in results:
+                    continue
                 saved = self.out / f'{stage}.json'
-                if stage not in results and saved.exists():
-                    value = _read_json(saved)
-                    if not value.get('partial'):
-                        results[stage] = value
+                earlier = _read_json(saved) if saved.exists() else {}
+                earlier_rows = earlier.get('rows', []) if not earlier.get('partial') else []
+                if stage in self.partial:
+                    current = {_row_identity(stage, row) for row in self.partial[stage]}
+                    rows = [row for row in earlier_rows if _row_identity(stage, row) not in current] + self.partial[stage]
+                    results[stage] = _stage_result(stage, rows)
+                elif earlier_rows:
+                    results[stage] = earlier
             self.write('summary', self._summary(results, status='failed'))
             raise
         finally:
@@ -902,7 +906,8 @@ class Trials:
     def _run(self, trial):
         results = self.results
         cases = {'model': self.model, 'cases': sorted(c['id'] for c in self.cases)}
-        for stage, scope in (('diagnose', cases), ('refute', cases),
+        planted = sorted(w['case'] for w in _read_json(WRONG_DIAGNOSES)['diagnoses'] if w['case'] in cases['cases'])
+        for stage, scope in (('diagnose', cases), ('refute', {**cases, 'planted': planted}),
                              ('preflight', {'model': self.model, 'plans': sorted(p['id'] for p in self.plans)}),
                              ('risk', {'model': DECISIONS_MODEL, 'repeats': self.risk_repeats,
                                        'actions': sorted(a['id'] for a in _read_json(RISK)['actions'])})):
@@ -938,13 +943,18 @@ class Trials:
 def _refute_summary(rows):
     def counts(subset):
         scored = [r['score'] for r in subset if r['score'].get('submitted')]
-        return {'sessions': len(subset), 'refuterRight': sum(s['refuterRight'] for s in scored),
+        return {'sessions': len(subset), 'scored': len(scored), 'refuterRight': sum(s['refuterRight'] for s in scored),
                 'falseRefutations': sum(s['falseRefutation'] for s in scored),
                 'missedWrongDiagnoses': sum(s['missedWrongDiagnosis'] for s in scored)}
     planted = [r for r in rows if r.get('planted')]
     return {**counts([r for r in rows if not r.get('planted')]),
             'planted': {**counts(planted), 'missed': [r['case'] for r in planted
                                                       if r['score'].get('missedWrongDiagnosis')]}}
+
+
+def _row_identity(stage, row):
+    return {'diagnose': lambda: (row['case'], row['arm']), 'refute': lambda: (row['case'], bool(row.get('planted'))),
+            'preflight': lambda: row['plan'], 'risk': lambda: (row['id'], row.get('repeat', 1))}[stage]()
 
 
 def _stage_result(stage, rows):
@@ -956,13 +966,17 @@ def _stage_result(stage, rows):
 def _arm_summary(rows):
     summary = {}
     for arm in sorted({r['arm'] for r in rows}):
-        scored = [r for r in rows if r['arm'] == arm]
+        every = [r for r in rows if r['arm'] == arm]
+        # Accuracy counts only sessions that completed with a report; failed ones are infrastructure, listed apart.
+        scored = [r for r in every if r.get('status') == 'completed' and r['score'].get('submitted')]
         summary[arm] = {'cases': len(scored), 'correct': sum(r['score'].get('correct', False) for r in scored),
+                        'notScored': [{'case': r['case'], 'status': r.get('status')} for r in every if r not in scored],
                         'fixOk': sum(bool(r['score'].get('fixOk')) for r in scored),
-                        'meanToolCalls': round(sum(r.get('toolCalls') or 0 for r in scored) / max(1, len(scored)), 1),
-                        'meanSeconds': round(sum(r.get('elapsedSeconds') or 0 for r in scored) / max(1, len(scored)), 1),
-                        'inputTokens': sum((r.get('usage') or {}).get('input_tokens', 0) for r in scored),
-                        'outputTokens': sum((r.get('usage') or {}).get('output_tokens', 0) for r in scored),
+                        'meanToolCalls': round(sum(r.get('toolCalls') or 0 for r in every) / max(1, len(every)), 1),
+                        'meanSeconds': round(sum(r.get('elapsedSeconds') or 0 for r in every) / max(1, len(every)), 1),
+                        # Tokens were paid whether or not the session completed.
+                        'inputTokens': sum((r.get('usage') or {}).get('input_tokens', 0) for r in every),
+                        'outputTokens': sum((r.get('usage') or {}).get('output_tokens', 0) for r in every),
                         'wrong': [r['case'] for r in scored if not r['score'].get('correct')]}
     return summary
 
@@ -1058,6 +1072,31 @@ def risk_summary(rows):
 MAX_DECISION_BYTES = 1_000_000
 
 
+def _write_durably(path, text):
+    """Write via a synced temporary file and rename, then sync the directory, so a crash leaves old or new."""
+    path = Path(path)
+    temporary = path.with_name(path.name + '.tmp')
+    with open(temporary, 'w', encoding='utf-8') as handle:
+        handle.write(text)
+        handle.flush()
+        os.fsync(handle.fileno())
+    os.replace(temporary, path)
+    _fsync_directory(path.parent)
+
+
+def _fsync_directory(directory):
+    try:
+        descriptor = os.open(directory, os.O_RDONLY)
+    except OSError:
+        return
+    try:
+        os.fsync(descriptor)
+    except OSError:
+        pass
+    finally:
+        os.close(descriptor)
+
+
 class DecisionsClient:
     """One request per action, no automatic retry. A started request without a saved answer blocks reruns.
 
@@ -1105,9 +1144,12 @@ class DecisionsClient:
             started.unlink()
             raise RuntimeError(f'decision {name} rejected: {response["error"]}; rerun the same --out to retry '
                                'only this action')
-        done.write_text(json.dumps({'requestSha256': _sha(request), 'evaluationSha256': evaluation_sha, 'seconds': round(time.time() - began, 3),
-                                    'response': response}, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+        _write_durably(done, json.dumps({'requestSha256': _sha(request), 'evaluationSha256': evaluation_sha,
+                                         'seconds': round(time.time() - began, 3), 'response': response},
+                                        ensure_ascii=False, indent=2) + '\n')
+        # Only once the paid answer is on disk may the unknown-outcome marker go.
         started.unlink()
+        _fsync_directory(self.dir)
         return response
 
     def _post(self, request):

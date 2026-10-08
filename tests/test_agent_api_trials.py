@@ -693,3 +693,46 @@ class ScopeTests(unittest.TestCase):
         with patch.object(trials, '_read_json', side_effect=lambda path: policy if Path(path) == trials.RISK
                           else json.loads(Path(path).read_text(encoding='utf-8'))), self.assertRaises(ValueError):
             make().run('risk')
+
+    def test_failed_sessions_are_not_counted_as_wrong_diagnoses(self):
+        rows = [{'case': 'f01', 'arm': 'raw', 'status': 'completed', 'score': {'submitted': True, 'correct': True},
+                 'usage': {'input_tokens': 5}},
+                {'case': 'f02', 'arm': 'raw', 'status': 'failed', 'score': {'submitted': False, 'correct': False},
+                 'usage': {'input_tokens': 7}}]
+        raw = trials._arm_summary(rows)['raw']
+        self.assertEqual((raw['cases'], raw['correct'], raw['wrong']), (1, 1, []))
+        self.assertEqual(raw['notScored'], [{'case': 'f02', 'status': 'failed'}])
+        self.assertEqual(raw['inputTokens'], 12)
+
+    def test_widened_stage_failure_keeps_earlier_rows(self):
+        (trials.ROOT / 'artifacts').mkdir(exist_ok=True)
+        temporary = tempfile.TemporaryDirectory(dir=trials.ROOT / 'artifacts', prefix='test-agent-trials-')
+        self.addCleanup(temporary.cleanup)
+        out = Path(temporary.name) / 'run'
+
+        def make(cases):
+            return trials.Trials(out, client=trials.FakeAgentsClient(trials.fake_agent_script), model='gpt-6-luna',
+                                 backend='fake', poll_seconds=0, case_ids=cases,
+                                 decisions=trials.DecisionsClient(out, transport=trials.fake_decisions))
+        make(['f10-real-api-call-on-program-span']).run('diagnose')
+        original = trials.run_session
+
+        def fail_on_f01(client, directory, *args, **kwargs):
+            if 'f01-plugin-identity' in str(directory):
+                raise RuntimeError('boom')
+            return original(client, directory, *args, **kwargs)
+        with patch.object(trials, 'run_session', fail_on_f01), self.assertRaises(RuntimeError):
+            make(['f01-plugin-identity', 'f10-real-api-call-on-program-span']).run('diagnose')
+        summary = json.loads((out / 'summary.json').read_text())
+        self.assertEqual(sum(arm['cases'] for arm in summary['diagnoseByArm'].values()), 2)
+
+    def test_decision_receipt_is_written_before_the_marker_is_cleared(self):
+        with tempfile.TemporaryDirectory() as directory:
+            client = trials.DecisionsClient(directory, transport=lambda _r: {'output': 'ok'})
+            order = []
+            real_replace, real_unlink = os.replace, Path.unlink
+            with patch.object(trials.os, 'replace', lambda a, b: (order.append('receipt'), real_replace(a, b))), \
+                    patch.object(Path, 'unlink', lambda self, *a, **k: (order.append('marker'), real_unlink(self, *a, **k))):
+                client.decide('a01', {'input': 'one'})
+            self.assertEqual(order, ['receipt', 'marker'])
+            self.assertFalse(list(Path(directory, 'decisions').glob('*.tmp')))
