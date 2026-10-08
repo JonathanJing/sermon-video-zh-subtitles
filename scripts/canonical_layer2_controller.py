@@ -150,7 +150,9 @@ def load_configuration(path):
         plugin_hashes[locale] = producer.plugin_implementation_sha256(plugin)
         input_paths.extend((plugin, policy))
     outputs = [lane['output'] for lane in lanes.values()]
-    require(not any(_overlap(output, path) for output in outputs for path in input_paths)
+    # Derived durable roots: clearing a lane output must never erase repair or budget history.
+    durable = [job_root.parent / ('.' + job_root.name + suffix) for suffix in ('.layer2-repair', '.layer2-budget')]
+    require(not any(_overlap(output, path) for output in outputs for path in input_paths + durable)
             and not any(_overlap(a, b) for i, a in enumerate(outputs) for b in outputs[i + 1:]),
             'execution_paths_overlap')
     binding = {'execution': value, 'inspection': inspection, 'plugins': plugin_hashes}
