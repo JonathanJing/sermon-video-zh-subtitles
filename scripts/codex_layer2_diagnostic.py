@@ -77,10 +77,17 @@ def freeze_fixture(source, anchor, policy, plan, plugin, out, *, authorization_r
         require(scripture_adjudication is not None, 'scripture_adjudication_required')
         bindings = {name: policies.canonical_sha256(material[name]) for name in adjudication.BINDING_KEYS}
         admission = adjudication.validate_receipt(scripture_adjudication, target_locale=policy['targetLocale'],
-            bindings=bindings, flagged_units=list(source_quotation_units))
+            bindings=bindings, flagged_units=list(source_quotation_units),
+            machine_inputs={name: material[name] for name in adjudication.BINDING_KEYS})
         receipt_bytes = (json.dumps(scripture_adjudication, ensure_ascii=False, indent=2) + '\n').encode('utf-8')
         manifest['scriptureAdjudication'] = {'path': 'scripture-adjudication.json',
                                              'sha256': hashlib.sha256(receipt_bytes).hexdigest()}
+        if admission.get('generator'):
+            # The generator that reproduced a machine receipt at freeze time; a later generator
+            # admits this frozen run on that record instead of re-running it (frozen identity).
+            manifest['scriptureAdjudication']['generator'] = {
+                key: admission['generator'][key]
+                for key in ('reproduced', 'version', 'implementationSha256', 'signatureCurrent')}
     if concurrency_profile is not None:
         from scripts.production_concurrency_profile import validate_profile
         manifest['concurrencyProfile'] = validate_profile(concurrency_profile)
@@ -207,7 +214,11 @@ def load_fixture(directory):
             # The frozen plugin must carry exactly the receipt that was just admitted.
             require(facts.get('ADMITTED_RECEIPT_SHA256') == admission['receiptSha256'],
                     'Diagnostic admitted quotation plugin differs from the adjudication receipt')
-            require(sorted({unit for row in facts['ADMITTED_QUOTES'] for unit in row['sourceUnitIds']})
+            quoted = sorted({unit for row in facts['ADMITTED_QUOTES'] for unit in row['sourceUnitIds']})
+            require(quoted == sorted({unit for row in admission['quotes'] for unit in row['sourceUnitIds']}),
+                    'Diagnostic admitted quotation units differ from the adjudication receipt')
+            # Every flagged unit is routed: pinned as an admitted quotation or translated as the speaker's words.
+            require(sorted(quoted + list(facts.get('SPEAKER_WORDS_UNITS', [])))
                     == sorted(manifest.get('sourceQuotationUnits') or []),
                     'Diagnostic admitted quotation units differ from the fixture annotation')
     _check_plugin_scope(policy, anchor, plugin, manifest, admission)

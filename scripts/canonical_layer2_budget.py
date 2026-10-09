@@ -21,6 +21,16 @@ from scripts.sermon_release_workflow import _safe_path
 
 CURRENT_LIMITS = ContextVar('canonical_layer2_request_limits', default=None)
 SCHEMA = 'sermon-canonical-layer2-budget-authorization-v1'
+# v2 shards the ledger by locale: each locale gets its own BudgetStore under the
+# run's budget root, and every bound in the authority applies per locale. The
+# approval binding names that scope, so a person signs per-locale amounts.
+LOCALE_SCHEMA = 'sermon-canonical-layer2-budget-authorization-v2'
+LEDGER_SCOPES = {SCHEMA: 'run', LOCALE_SCHEMA: 'locale'}
+# A locale shard holds a whole sermon plus repairs: about 4,900 reservations.
+LOCALE_LEDGER_MAX_BYTES = 8 * 1024 * 1024
+# Busy only ever delays admission, settlement or a replayed result; it never
+# repeats an external request, so waiting longer is safe under group concurrency.
+LEDGER_BUSY_WAIT_SECONDS = 120
 
 
 def sha(path):
@@ -37,10 +47,14 @@ def load_authorization(config, path, code_identity, expected_sha=None):
     actual_sha = sha(path)
     require(expected_sha is None or expected_sha == actual_sha, 'budget_authorization_changed')
     value = jobs._read(path)
-    require(isinstance(value, dict) and set(value) == {
-        'schemaVersion', 'productionRunId', 'configurationSha256', 'codeIdentitySha256',
-        'requestLimits', 'authority', 'approvalReceipt'}, 'invalid_budget_authorization')
-    require(value['schemaVersion'] == SCHEMA and value['productionRunId'] == config.run_id
+    base_keys = {'schemaVersion', 'productionRunId', 'configurationSha256', 'codeIdentitySha256',
+                 'requestLimits', 'authority', 'approvalReceipt'}
+    require(isinstance(value, dict) and value.get('schemaVersion') in LEDGER_SCOPES
+            and set(value) == (base_keys if value['schemaVersion'] == SCHEMA else base_keys | {'ledgerScope'}),
+            'invalid_budget_authorization')
+    scope = LEDGER_SCOPES[value['schemaVersion']]
+    require(scope == 'run' or value['ledgerScope'] == 'locale', 'invalid_budget_authorization')
+    require(value['productionRunId'] == config.run_id
             and value['configurationSha256'] == config.sha256
             and value['codeIdentitySha256'] == code_identity, 'budget_execution_binding_changed')
     selected = limits.validate_request_limits(value['requestLimits'])
@@ -52,12 +66,24 @@ def load_authorization(config, path, code_identity, expected_sha=None):
                 'codeIdentitySha256': code_identity, 'budgetRoot': str(root),
                 'requestLimits': selected, 'globalBounds': authority['globalBounds'],
                 'unitBounds': authority['unitBounds'], 'limits': authority['limits']}
+    if scope == 'locale':
+        expected['ledgerScope'] = 'locale'
     require(sha(receipt_path) == authority['approvalSha256']
             and receipt.get('schemaVersion') == 'sermon-canonical-layer2-budget-approval-v1'
             and receipt.get('binding') == expected and receipt.get('humanApproval') is True
             and receipt.get('decision') == 'approved' and receipt.get('operatorEvidence')
             and receipt.get('reviewedBy') and receipt.get('reviewedAt'), 'budget_approval_not_bound')
-    return {'path': path, 'sha256': actual_sha, 'value': value, 'root': root, 'limits': selected}
+    return {'path': path, 'sha256': actual_sha, 'value': value, 'root': root, 'limits': selected,
+            'scope': scope}
+
+
+def ledger_root(authorization, locale):
+    """The BudgetStore root for one locale: the run root, or its locale shard."""
+    if authorization.get('scope', 'run') == 'run':
+        return authorization['root']
+    require(isinstance(locale, str) and locale and '/' not in locale and not locale.startswith('.'),
+            'invalid_budget_locale')
+    return authorization['root'] / locale
 
 
 @contextmanager
@@ -73,7 +99,12 @@ class BudgetedCaller:
     def __init__(self, authorization, config, source, anchor, policy, *, transport=None):
         self.auth, self.config, self.policy = authorization, config, policy
         self.source, self.anchor = source, anchor
-        self.store = budget.BudgetStore(authorization['root'], authorization['value']['authority'])
+        require(authorization.get('scope', 'run') == 'run' or policy['targetLocale'] in config.lanes,
+                'budget_locale_not_registered')
+        self.root = ledger_root(authorization, policy['targetLocale'])
+        self.store = budget.BudgetStore(
+            self.root, authorization['value']['authority'],
+            max_ledger_bytes=LOCALE_LEDGER_MAX_BYTES if authorization.get('scope') == 'locale' else None)
         self.transport = transport
 
     def __call__(self, key, payload):
@@ -106,7 +137,7 @@ class BudgetedCaller:
         require(reservation['created'], 'budget_reconciliation_required')
         self._ledger(lambda: self.store.mark_request(reservation['reservationId']))
         start = time.monotonic()
-        returned = self.auth['root'] / 'responses' / (fingerprint + '.json')
+        returned = self.root / 'responses' / (fingerprint + '.json')
         returned.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
         observed = []
         def preserve(response, attempt_id, elapsed):
@@ -149,10 +180,13 @@ class BudgetedCaller:
 
     @staticmethod
     def _ledger(operation):
-        for attempt in range(100):
+        deadline = time.monotonic() + LEDGER_BUSY_WAIT_SECONDS
+        delay = 0.01
+        while True:
             try:
                 return operation()
             except ValueError as exc:
-                if str(exc) != 'budget_store_busy' or attempt == 99:
+                if str(exc) != 'budget_store_busy' or time.monotonic() >= deadline:
                     raise
-                time.sleep(0.01)
+                time.sleep(delay)
+                delay = min(delay * 2, 0.5)

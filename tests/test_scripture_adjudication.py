@@ -18,6 +18,9 @@ BINDINGS = {'source.json': 'a' * 64, 'anchor.json': 'b' * 64, 'group-plan.json':
 LIBRARY = cuv_scripture.CuvLibrary.from_path()
 REV = LIBRARY.lookup('REV 4:2-3')['text']
 REV316 = LIBRARY.lookup('REV 3:16')['text']
+# A whole reading of John 3:16 in the pinned public-domain English wording.
+READ_3_16 = ('For God so loved the world, that he gave his one and only Son, that whoever believes in him '
+             'should not perish, but have eternal life.')
 
 
 def receipt(**overrides):
@@ -59,9 +62,89 @@ class ReceiptValidationTests(unittest.TestCase):
         self.assertEqual(reason(receipt(decision='pending')), 'decision_not_approved')
         self.assertEqual(reason(receipt(decision='rejected')), 'decision_not_approved')
 
-    def test_machine_authored_receipt_is_refused(self):
-        self.assertEqual(reason(receipt(decidedByRole='machine')), 'decided_by_not_human')
+    def test_unknown_role_or_missing_signature_is_refused(self):
+        self.assertEqual(reason(receipt(decidedByRole='machine')), 'decided_by_role_invalid')
+        self.assertEqual(reason(receipt(decidedByRole='model')), 'decided_by_role_invalid')
         self.assertEqual(reason(receipt(decidedBy='  ')), 'decided_by_missing')
+
+    def test_machine_adjudicator_receipt_is_admitted_only_when_the_generator_reproduces_it(self):
+        from scripts import scripture_machine_adjudication as machine
+        rows = [{'sourceUnitId': 'r1', 'english': f'John 3:16 says, {READ_3_16}', 'start': 0.0, 'end': 1.0},
+                {'sourceUnitId': 'r2', 'english': 'Amen.', 'start': 1.0, 'end': 2.0}]
+        inputs = {'source.json': {'source': {'sourceId': 'synthetic'}}, 'anchor.json': {'sourceUnits': rows},
+                  'group-plan.json': [{'translationGroupId': 'g1', 'sourceUnitIds': ['r1', 'r2']}]}
+        generated, _ = machine.adjudicate(inputs['source.json'], inputs['anchor.json'], inputs['group-plan.json'],
+                                          target_locale='zh-Hans', flagged_units=['r1'], library=LIBRARY)
+        summary = validate(generated, bindings=generated['bindings'], flagged_units=['r1'], machine_inputs=inputs)
+        self.assertEqual((summary['decidedByRole'], summary['adjudicationKind'], summary['humanApproval']),
+                         ('machine_adjudicator', 'machine', False))
+        self.assertTrue(summary['generator']['reproduced'])
+        self.assertEqual((generated['schemaVersion'], summary['receiptSchemaVersion']),
+                         (adjudication.SCHEMA_V2, adjudication.SCHEMA_V2))
+        # The v1 contract is human-only: a machine role under it is refused before anything else is checked.
+        self.assertEqual(reason(receipt(decidedByRole='machine_adjudicator',
+                                        decidedBy='scripture_machine_adjudication v x')), 'machine_receipt_requires_v2')
+        # A hand-written v2 receipt labelled machine, with a classification the generator never emits, is refused.
+        self.assertEqual(reason(receipt(schemaVersion=adjudication.SCHEMA_V2, decidedByRole='machine_adjudicator',
+                                        decidedBy='scripture_machine_adjudication v x')), 'machine_inputs_required')
+        handwritten = receipt(schemaVersion=adjudication.SCHEMA_V2, decidedByRole='machine_adjudicator',
+                              decidedBy='scripture_machine_adjudication v x', bindings=generated['bindings'])
+        self.assertEqual(reason(handwritten, bindings=generated['bindings'], flagged_units=UNITS, machine_inputs=inputs),
+                         'machine_receipt_not_reproduced')
+        human = validate(receipt())
+        self.assertEqual((human['adjudicationKind'], human['humanApproval'], human['generator']), ('human', True, None))
+        # A human receipt is valid under either contract; frozen runs keep their v1 receipts unchanged.
+        self.assertEqual(human['receiptSchemaVersion'], adjudication.SCHEMA)
+        self.assertEqual(validate(receipt(schemaVersion=adjudication.SCHEMA_V2))['adjudicationKind'], 'human')
+
+    def test_a_frozen_machine_receipt_survives_a_later_generator(self):
+        from unittest import mock
+        from scripts import scripture_machine_adjudication as machine
+        rows = [{'sourceUnitId': 'r1', 'english': f'John 3:16 says, {READ_3_16}', 'start': 0.0, 'end': 1.0},
+                {'sourceUnitId': 'r2', 'english': 'Amen.', 'start': 1.0, 'end': 2.0}]
+        inputs = {'source.json': {'source': {'sourceId': 'synthetic'}}, 'anchor.json': {'sourceUnits': rows},
+                  'group-plan.json': [{'translationGroupId': 'g1', 'sourceUnitIds': ['r1', 'r2']}]}
+        generated, basis = machine.adjudicate(inputs['source.json'], inputs['anchor.json'], inputs['group-plan.json'],
+                                              target_locale='zh-Hans', flagged_units=['r1'], library=LIBRARY)
+        check = dict(bindings=generated['bindings'], flagged_units=['r1'], machine_inputs=inputs)
+        frozen = {'reproduced': True, 'version': basis['version'], 'implementationSha256': basis['implementationSha256'],
+                  'signatureCurrent': True}
+        later = {'VERSION': 'later', 'implementation_sha256': lambda: 'f' * 64,
+                 'adjudicate': mock.Mock(side_effect=AssertionError('a frozen run is never re-run by a later generator'))}
+        with mock.patch.multiple(machine, **later):
+            summary = validate(generated, frozen_generator=frozen, **check)
+            self.assertEqual((summary['generator']['frozenAdmission'], summary['generator']['reproduced'],
+                              summary['generator']['version'], summary['generator']['current']['version']),
+                             (True, False, basis['version'], 'later'))
+            # Without the frozen record, or with a record for another generator, the later generator re-runs.
+            with self.assertRaises(AssertionError):
+                validate(generated, **check)
+            self.assertEqual(reason(generated, frozen_generator=dict(frozen, version='other'), **check),
+                             'frozen_generator_mismatch')
+            # A record that never reproduced the receipt freezes nothing.
+            with self.assertRaises(AssertionError):
+                validate(generated, frozen_generator=dict(frozen, reproduced=False), **check)
+        # The same generator still proves the receipt by reproducing it, frozen record or not.
+        summary = validate(generated, frozen_generator=frozen, **check)
+        self.assertTrue(summary['generator']['reproduced'])
+        forged = dict(generated, candidates=[dict(generated['candidates'][0], classification='partial_direct_quote',
+                                                  exactSentence=generated['candidates'][0]['exactSentence'][:4])])
+        self.assertEqual(reason(forged, frozen_generator=frozen, **check), 'machine_receipt_not_reproduced')
+
+    def test_a_paraphrase_only_receipt_needs_no_edition_file(self):
+        from unittest import mock
+        paraphrases = [{'candidateId': 'p1', 'sourceUnitIds': [UNITS[0]], 'classification': 'speaker_paraphrase',
+                        'reference': None, 'editionId': None, 'exactSentence': None},
+                       {'candidateId': 'p2', 'sourceUnitIds': [UNITS[1]], 'classification': 'speaker_paraphrase',
+                        'reference': None, 'editionId': None, 'exactSentence': None}]
+        with mock.patch.object(scripture_editions, 'load', side_effect=scripture_editions.EditionError('absent')):
+            summary = validate(receipt(targetLocale='ko', candidates=paraphrases), target_locale='ko')
+            self.assertEqual((summary['quotes'], summary['speakerWordsUnits']), ([], sorted(UNITS)))
+            # The file is read only once a quotation has to be verified against it.
+            quoted = [dict(paraphrases[0], classification='direct_quote', reference='REV 3:16',
+                           editionId='NKRV-1998', exactSentence='x'), paraphrases[1]]
+            self.assertEqual(reason(receipt(targetLocale='ko', candidates=quoted), target_locale='ko'),
+                             'edition_unavailable')
 
     def test_bad_timestamp_and_schema_are_refused(self):
         self.assertEqual(reason(receipt(reviewedAt='yesterday')), 'reviewed_at_invalid')

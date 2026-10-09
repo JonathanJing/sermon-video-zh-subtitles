@@ -65,10 +65,24 @@ class GatedRoundTests(unittest.TestCase):
             self.run_round(self.receipt(decision='pending'), name='pending')
         self.assertFalse((self.work / 'pending').exists())
 
-    def test_machine_authored_receipt_is_refused_and_writes_nothing(self):
-        with self.assertRaisesRegex(ValueError, 'decided_by_not_human'):
+    def test_unknown_role_is_refused_and_writes_nothing(self):
+        with self.assertRaisesRegex(ValueError, 'decided_by_role_invalid'):
             self.run_round(self.receipt(decidedByRole='machine'), name='machine')
         self.assertFalse((self.work / 'machine').exists())
+
+    def test_machine_adjudicator_receipt_runs_without_human_approval(self):
+        from scripts import scripture_machine_adjudication as machine
+        generated, _ = machine.adjudicate_fixture(SOURCE, target_locale='zh-Hans', flagged_units=['0-u067', '0-u068'])
+        code, out = self.run_round(generated, name='by-machine')
+        self.assertEqual(code, 0)
+        report = json.loads((out / 'round.json').read_text(encoding='utf-8'))
+        self.assertEqual((report['adjudicationKind'], report['humanApproval']), ('machine', False))
+        self.assertFalse(report['productionEligible'])
+        # A hand-written receipt labelled machine is refused: the generator does not reproduce it.
+        with self.assertRaisesRegex(ValueError, 'machine_receipt_not_reproduced'):
+            self.run_round(self.receipt(schemaVersion=adjudication.SCHEMA_V2, decidedByRole='machine_adjudicator',
+                                        decidedBy='scripture_machine_adjudication v x'), name='by-hand')
+        self.assertFalse((self.work / 'by-hand').exists())
 
     def test_receipt_bound_to_other_source_is_refused(self):
         with self.assertRaisesRegex(ValueError, 'receipt_binding_changed'):
