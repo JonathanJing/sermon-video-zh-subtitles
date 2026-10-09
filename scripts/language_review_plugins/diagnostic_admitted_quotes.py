@@ -29,7 +29,7 @@ def _require(condition, code):
 
 def validate_admitted(admitted):
     """Shape check only; the receipt itself was validated before freezing."""
-    _require(type(admitted) is list and admitted, 'admitted_quotes_missing')
+    _require(type(admitted) is list, 'admitted_quotes_missing')
     seen = set()
     for row in admitted:
         _require(type(row) is dict and set(row) == {'candidateId', 'sourceUnitIds', 'classification',
@@ -42,10 +42,20 @@ def validate_admitted(admitted):
     return sorted(seen)
 
 
-def _exact_result(english_ids, target, admitted):
+def validate_speaker_words(units, admitted_units):
+    """Units the receipt settled as the speaker's words: distinct, and never also an admitted quotation."""
+    _require(type(units) is list and all(type(u) is str and u for u in units) and len(set(units)) == len(units)
+             and not set(units) & set(admitted_units), 'speaker_words_units_invalid')
+    return list(units)
+
+
+def _exact_result(english_ids, target, admitted, speaker_words=()):
+    spoken = [unit for unit in speaker_words if unit in english_ids]
+    note = (' Units adjudicated as the speaker\'s words, translated as spoken with no pinned sentence: '
+            + ','.join(spoken) + '.') if spoken else ''
     relevant = [row for row in admitted if set(row['sourceUnitIds']) & set(english_ids)]
     if not relevant:
-        return result(EXACT_CHECK, True, 'No admitted direct or partial quotation in this group.')
+        return result(EXACT_CHECK, True, 'No admitted direct or partial quotation in this group.' + note)
     split = [row['candidateId'] for row in relevant if not set(row['sourceUnitIds']) <= set(english_ids)]
     if split:
         return result(EXACT_CHECK, False, 'Admitted quotation is split across groups: ' + ','.join(split))
@@ -55,17 +65,23 @@ def _exact_result(english_ids, target, admitted):
             'Admitted CUV sentence absent verbatim from target: ' + ','.join(missing))
     return result(EXACT_CHECK, True,
         'Every admitted CUV sentence appears verbatim in the target. Diagnostic check only; '
-        'no translation or edition approval.')
+        'no translation or edition approval.' + note)
 
 
-def review_group(policy, english_units, group, *, diagnostic_context, admitted_quotes):
-    """Structural results for this group, with the exact-quote check replacing reference-only."""
-    validate_admitted(admitted_quotes)
+def review_group(policy, english_units, group, *, diagnostic_context, admitted_quotes, speaker_words_units=()):
+    """Structural results for this group, with the exact-quote check replacing reference-only.
+
+    ``speaker_words_units`` are flagged units the receipt settled as the
+    speaker's own words: they take the ordinary translation path and the
+    exact-quote check only records them."""
+    admitted_units = validate_admitted(admitted_quotes)
+    speaker_words = validate_speaker_words(list(speaker_words_units), admitted_units)
+    _require(admitted_quotes or speaker_words, 'admitted_quotes_missing')
     _require(type(policy) is dict and policy.get('languageReview', {}).get('pluginId') == PLUGIN_ID
              and policy['languageReview'].get('requiredChecks') == REQUIRED, 'admitted_plugin_policy_mismatch')
     scripture = policy.get('scripture', {})
-    editions = {row['editionId'] for row in admitted_quotes}
-    _require(len(editions) == 1 and scripture.get('editionId') in editions
+    edition = scripture.get('editionId')
+    _require(type(edition) is str and edition and all(row['editionId'] == edition for row in admitted_quotes)
              and scripture.get('quoteCheckPolicy') == 'source_bound_exact_quote'
              and scripture.get('citationUseStatus') == 'project_source_reviewed', 'admitted_plugin_scripture_mismatch')
     # Run the real structural checks under their own identity, then substitute the scripture check.
@@ -75,7 +91,8 @@ def review_group(policy, english_units, group, *, diagnostic_context, admitted_q
     base = structural.review_group(structural_policy, english_units, group, diagnostic_context=diagnostic_context)
     checks = [row for row in base if row['checkId'] != 'scripture_reference_only']
     target = group.get('targetText') if type(group.get('targetText')) is str else ''
-    checks.append(_exact_result([unit['sourceUnitId'] for unit in english_units], target, admitted_quotes))
+    checks.append(_exact_result([unit['sourceUnitId'] for unit in english_units], target, admitted_quotes,
+                                speaker_words))
     _require([row['checkId'] for row in checks] == REQUIRED, 'admitted_plugin_check_order_changed')
     return checks
 
@@ -84,19 +101,26 @@ def freeze_admitted_plugin(summary, source, anchor, plan, policy, out_plugin):
     """Write a new generated plugin with admitted quotations as literals; return the updated policy.
 
     summary is the validated receipt summary from scripture_adjudication. The
-    policy gains the CUV exact-quote scripture block only for this plugin.
+    policy gains the exact-quote scripture block of the locale's pinned edition
+    only for this plugin. Flagged units the receipt settled as the speaker's
+    words are frozen beside the quotations, so a receipt with no admitted
+    quotation at all still routes every flagged unit through plain translation.
     """
     import copy
     import os
     from pathlib import Path
     from scripts import produce_target_language_candidate as producer
+    from scripts import scripture_adjudication as adjudication
     from scripts import target_language_policy as policies
     admitted = summary['admitted']
-    validate_admitted(admitted)
+    speaker_words = validate_speaker_words(list(summary.get('speakerWordsUnits') or []), validate_admitted(admitted))
+    _require(admitted or speaker_words, 'admitted_quotes_missing')
     policy = copy.deepcopy(policy)
     editions = {row['editionId'] for row in admitted}
-    _require(len(editions) == 1, 'admitted_quotes_mix_editions')
-    policy['scripture'].update(editionId=editions.pop(), citationUseStatus='project_source_reviewed',
+    _require(len(editions) <= 1, 'admitted_quotes_mix_editions')
+    _require(policy.get('targetLocale') in adjudication.PINNED_EDITIONS, 'admitted_plugin_locale_unpinned')
+    edition = editions.pop() if editions else adjudication.PINNED_EDITIONS[policy['targetLocale']]
+    policy['scripture'].update(editionId=edition, citationUseStatus='project_source_reviewed',
                                quoteCheckPolicy='source_bound_exact_quote')
     policy['languageReview'].update(pluginId=PLUGIN_ID, requiredChecks=copy.deepcopy(REQUIRED),
                                     implementationStatus='verified')
@@ -111,9 +135,10 @@ def freeze_admitted_plugin(summary, source, anchor, plan, policy, out_plugin):
         f"PLUGIN_ID = {PLUGIN_ID!r}\nPLUGIN_VERSION = {PLUGIN_VERSION!r}\nREQUIRED = {REQUIRED!r}\n"
         f"ADMITTED_RECEIPT_SHA256 = {summary['receiptSha256']!r}\n"
         f"ADMITTED_QUOTES = {admitted!r}\n"
+        f"SPEAKER_WORDS_UNITS = {speaker_words!r}\n"
         "def review_group(policy, english_units, group, *, diagnostic_context):\n"
         "    return helper.review_group(policy, english_units, group, diagnostic_context=diagnostic_context,\n"
-        "                               admitted_quotes=ADMITTED_QUOTES)\n")
+        "                               admitted_quotes=ADMITTED_QUOTES, speaker_words_units=SPEAKER_WORDS_UNITS)\n")
     with path.open('x', encoding='utf-8') as handle:
         os.chmod(path, 0o600)
         handle.write(text)

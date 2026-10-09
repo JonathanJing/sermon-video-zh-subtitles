@@ -390,7 +390,8 @@ def validate_revision_brief(brief: dict[str, Any] | None,
 def validate_partial_repair_brief(brief: dict[str, Any] | None,
                                   request: dict[str, Any],
                                   plan: list[dict[str, Any]],
-                                  reuse_from: Path | None) -> dict[str, dict[str, Any]]:
+                                  reuse_from: Path | None,
+                                  expected_models: dict[str, str] | None = None) -> dict[str, dict[str, Any]]:
     """Bind a new revision to a failed cache in an incomplete prior run.
 
     The old model response remains untouched. A changed group gets a fresh
@@ -416,6 +417,7 @@ def validate_partial_repair_brief(brief: dict[str, Any] | None,
     require(isinstance(entries, list) and entries, "Partial repair needs failed groups")
     plan_by_id = {row["translationGroupId"]: (index, row)
                   for index, row in enumerate(plan, 1)}
+    model_roles = expected_models or MODEL_ROLES
     result: dict[str, dict[str, Any]] = {}
     for row in entries:
         require(isinstance(row, dict) and set(row) == {
@@ -439,7 +441,7 @@ def validate_partial_repair_brief(brief: dict[str, Any] | None,
                 f"Partial repair failed cache is missing or changed: {group_id}")
         saved = producer._load(failed_cache)
         prior_result = saved.get("result")
-        require(saved.get("model") == MODEL_ROLES[row["failedRole"]]
+        require(saved.get("model") == model_roles[row["failedRole"]]
                 and isinstance(saved.get("payloadSha256"), str)
                 and isinstance(prior_result, dict)
                 and prior_result.get("translationGroupId") == group_id
@@ -509,6 +511,27 @@ def _require_rejected_reviewer_text(cache: Path, expected_sha256: str,
     utterances = _utterances(utterances, source_unit_ids)
     actual = hashlib.sha256("".join(utterances).encode("utf-8")).hexdigest()
     require(actual == expected_sha256, "plugin group stop does not match the rejected reviewer text")
+
+
+def carried_repairs(reuse_from: Path | None, request: dict[str, Any], plan: list[dict[str, Any]],
+                    repairs: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    """Repair rows of earlier revisions whose caches this run reuses unchanged.
+
+    A prior run records every repair it prompted with (its own brief plus what it
+    carried) in effective-repairs.json. Groups not repaired again keep that
+    prompt, so their verified responses reuse without a new paid call.
+    """
+    if reuse_from is None or not (reuse_from / "effective-repairs.json").is_file():
+        return {}
+    prior = producer._load(reuse_from / "effective-repairs.json")
+    plan_by_id = {row["translationGroupId"]: row for row in plan}
+    require(isinstance(prior, dict) and all(
+        isinstance(row, dict) and set(row) == {"translationGroupId", "sourceUnitIds", "failedRole",
+                                              "failedCacheSha256", "failureReason", "instruction"}
+        and row["translationGroupId"] == group_id and group_id in plan_by_id
+        and row["sourceUnitIds"] == plan_by_id[group_id]["sourceUnitIds"]
+        for group_id, row in prior.items()), "Prior effective repairs do not match this group plan")
+    return {group_id: row for group_id, row in prior.items() if group_id not in repairs}
 
 
 def require_plugin_stop_repair(reuse_from: Path | None, repairs: dict[str, dict[str, Any]],
@@ -662,15 +685,20 @@ def require_reconciled_requests(*directories: Path | None) -> None:
                     f"Uncertain paid {role} call; inspect before retry or dispatch: {marker}")
 
 
+def _plugin_group_review(policy, request, plugin_path, reviewed_row, *, diagnostic_context=None):
+    evaluated = producer.evaluate_plugin_groups(
+        policy, request, plugin_path, policy["languageReview"]["pluginImplementationSha256"],
+        [reviewed_row], diagnostic_context=diagnostic_context)
+    return evaluated["groupReviews"][0]
+
+
 def _stop_after_plugin_group_failure(policy, request, plugin_path, reviewed_row, plan, index, out, *, diagnostic_context=None):
     """After this group's review, block later dispatch when the pinned plugin fails.
 
     Groups already submitted stay on disk. This check itself makes no model call.
     """
-    evaluated = producer.evaluate_plugin_groups(
-        policy, request, plugin_path, policy["languageReview"]["pluginImplementationSha256"],
-        [reviewed_row], diagnostic_context=diagnostic_context)
-    review = evaluated["groupReviews"][0]
+    review = _plugin_group_review(policy, request, plugin_path, reviewed_row,
+                                  diagnostic_context=diagnostic_context)
     if review["status"] == "pass":
         return
     stop = {"schemaVersion": "sermon-layer2-plugin-group-stop-v1", "status": "blocked",
@@ -700,7 +728,8 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
         revision_brief: dict[str, Any] | None = None,
         reuse_from: Path | None = None,
         partial_repair_brief: dict[str, Any] | None = None,
-        resume_cache_from: Path | None = None) -> dict[str, Any]:
+        resume_cache_from: Path | None = None,
+        *, failure_collector=None) -> dict[str, Any]:
     require(plugin_path is not None,
             "Formal Layer 2 requires the frozen language plugin before dispatch")
     with accounting.stage(f"layer2.source_admission.{policy['targetLocale']}",
@@ -710,7 +739,7 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
     return _run_prepared_groups(
         request, anchor, policy, out, api_key, caller, custom_plan, plugin_path,
         revision_brief, reuse_from, partial_repair_brief, resume_cache_from,
-        source_admission_span=source_span)
+        source_admission_span=source_span, failure_collector=failure_collector)
 
 
 def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
@@ -726,11 +755,17 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                          progress_callback=None,
                          source_admission_span: str | None = None,
                          completion_spans: list[str] | None = None,
-                         diagnostic_context=None) -> dict[str, Any]:
+                         diagnostic_context=None,
+                         failure_collector=None) -> dict[str, Any]:
     """Shared group loop; the formal entry above still enforces Layer 1 approval.
 
     Simulated requests carry an extra marker that prevents formal candidate
     admission, and cannot reuse or repair a production response cache.
+
+    By default the first Sol or plugin failure stops the run. A failure
+    collector instead records each failed group, keeps dispatching until it
+    reports a systemic stop, and ends the run with a failure report rather than
+    evidence. It never writes a plugin group stop.
     """
     with accounting.stage(f"layer2.run_admission.{request['targetLocale']}",
                           depends_on=[source_admission_span] if source_admission_span else [],
@@ -739,8 +774,12 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
         if diagnostic_context is not None:
             from scripts.sermon_diagnostic_context import validate_context
             context = validate_context(diagnostic_context)
-            require(simulation_only and not api_key and reuse_from is None and resume_cache_from is None
-                    and revision_brief is None and partial_repair_brief is None and plugin_path is not None
+            diagnostic_api_repair = (getattr(caller, "execution_identity", {}).get("backend") == "openai_api"
+                                     and reuse_from is not None and partial_repair_brief is not None
+                                     and resume_cache_from is None and revision_brief is None)
+            require(simulation_only and not api_key and (reuse_from is None or diagnostic_api_repair)
+                    and resume_cache_from is None and revision_brief is None
+                    and (partial_repair_brief is None or diagnostic_api_repair) and plugin_path is not None
                     and request.get('schemaVersion') == producer.REQUEST_SCHEMA
                     and 'simulationOnly' not in request
                     and request['englishSourcePackageJsonSha256'] == context['sourceCanonicalSha256']
@@ -833,7 +872,8 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                     "Prior complete evidence group plan changed")
         briefs = validate_revision_brief(revision_brief, request, plan, prior_evidence)
         repairs = validate_partial_repair_brief(partial_repair_brief, request, plan,
-                                                 reuse_from)
+                                                 reuse_from, expected_models=expected_models)
+        carried = carried_repairs(reuse_from, request, plan, repairs)
         require_plugin_stop_repair(reuse_from, repairs, plugin_path)
         require_plugin_stop_repair(resume_cache_from, repairs, plugin_path)
         if reuse_from is not None:
@@ -853,7 +893,12 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
         transport_identity = getattr(caller, "execution_identity", None)
         if transport_identity is not None:
             identity["modelTransportIdentity"] = transport_identity
-            require(reuse_from is None and resume_cache_from is None,
+            # A bound API repair round may reuse an earlier round of the same job:
+            # every cache fingerprint includes this transport identity, and the
+            # prior-input check above rejects any cache made under another one.
+            require(resume_cache_from is None
+                    and (reuse_from is None or (partial_repair_brief is not None
+                                                and transport_identity.get("backend") == "openai_api")),
                     "CLI transport supports same-run resume only; cross-run cache reuse is not enabled")
         if revision_brief is not None:
             identity["revisionBriefSha256"] = policy_tools.canonical_sha256(revision_brief)
@@ -862,6 +907,13 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                 partial_repair_brief)
         if resume_cache_from is not None:
             identity["resumeCacheFrom"] = str(resume_cache_from.resolve())
+        if carried:
+            identity["carriedRepairsSha256"] = policy_tools.canonical_sha256(carried)
+        if failure_collector is not None:
+            require(not simulation_only and diagnostic_context is None and plugin_path is not None,
+                    "Failure collection is for formal plugin-gated runs")
+            require(failure_collector.total_groups == len(plan), "Failure collection group count differs from plan")
+            identity["failureCollection"] = failure_collector.identity
         identity_hash = policy_tools.canonical_sha256(identity)
         manifest = out / "run-identity.json"
         if manifest.exists():
@@ -889,10 +941,25 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             else:
                 save_new(receipt_path, rule_receipt, private=True)
         require_reconciled_requests(out, reuse_from, resume_cache_from)
+        if repairs or carried:
+            effective_path = out / "effective-repairs.json"
+            effective = {**carried, **repairs}
+            if effective_path.exists():
+                require(producer._load(effective_path) == effective, "Effective repairs changed")
+            else:
+                save_new(effective_path, effective)
         requested_workers = workers
-        # A plugin stop receipt promises no later dispatch. Serialize the full
-        # translate/review/plugin chain so that promise reflects actual work.
-        if plugin_path is not None and not simulation_only:
+        if failure_collector is not None:
+            # Collection never writes a plugin stop receipt: a plugin rejection is
+            # recorded and the round goes on, so groups may run concurrently. A
+            # systemic stop only prevents later dispatch; groups in flight finish.
+            workers = failure_collector.group_workers
+            require(type(workers) is int and 1 <= workers <= 16,
+                    "Failure collection group workers must be 1..16")
+            maximum_workers = 16
+        elif plugin_path is not None and not simulation_only:
+            # A plugin stop receipt promises no later dispatch. Serialize the full
+            # translate/review/plugin chain so that promise reflects actual work.
             workers = 1
         accounting.record_workload("layer2.concurrency", {
             "requestedWorkers": requested_workers,
@@ -908,6 +975,9 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                               work_unit_id=f"l2.{request['targetLocale']}.group-{index:04d}.prepare") as prepare_span:
             brief = briefs.get(group["translationGroupId"])
             repair = repairs.get(group["translationGroupId"])
+            # A group repaired in an earlier revision keeps that revision's
+            # instruction in its prompt, so its verified cache reuses exactly.
+            prior_repair = carried.get(group["translationGroupId"]) if repair is None else None
             if prior_evidence is not None and brief is None and repair is None:
                 return carry_forward_group(reuse_from, out, index, group,
                                            prior_evidence["groups"][index - 1], policy), prepare_span
@@ -946,18 +1016,19 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                     "priorTargetTextSha256": brief["priorTargetTextSha256"],
                     "proposedTargetText": brief["proposedTargetText"],
                 }
-            if repair is not None:
+            prompt_repair = repair if repair is not None else prior_repair
+            if prompt_repair is not None:
                 common["partialRepair"] = {
-                    "priorFailedRole": repair["failedRole"],
-                    "priorFailedCacheSha256": repair["failedCacheSha256"],
-                    "failureReason": repair["failureReason"],
-                    "instruction": repair["instruction"],
+                    "priorFailedRole": prompt_repair["failedRole"],
+                    "priorFailedCacheSha256": prompt_repair["failedCacheSha256"],
+                    "failureReason": prompt_repair["failureReason"],
+                    "instruction": prompt_repair["instruction"],
                 }
             repair_instruction = (
                 " This group is a new revision after a prior machine failure. "
                 "Follow the source-bound repair instruction while independently "
                 "checking the English source; do not assume the prior answer was correct. "
-                + repair["instruction"] + " " if repair is not None else "")
+                + prompt_repair["instruction"] + " " if prompt_repair is not None else "")
             translate_prompt = {
                 "instruction": (("Revise the proposed shorter spoken text against the English "
                                 "sermon group. Stay close to the proposal's length and wording; "
@@ -990,6 +1061,9 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             prior_cache_root = resume_cache_from if resume_cache_from is not None else reuse_from if brief is None and repair is None else None
             translator_cached = (astra_path.exists() or astra_path.with_suffix(".raw.json").exists()
                                  or (prior_cache_root is not None and (prior_cache_root / f"{stem}-astra.json").is_file()))
+            if failure_collector is not None and failure_collector.stopped() and not translator_cached:
+                failure_collector.record_not_dispatched(index, group)
+                return None, prepare_span
         with measure.producer_substage("initial_translation",
                                        billing="local" if getattr(caller, "billing", None) == "local" or simulation_only or cache_only else "api"):
             with accounting.stage(f"layer2.translator.{request['targetLocale']}.{stem}",
@@ -1055,6 +1129,9 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             sol_path = out / f"{stem}-sol.json"
             reviewer_cached = (sol_path.exists() or sol_path.with_suffix(".raw.json").exists()
                                or (prior_cache_root is not None and (prior_cache_root / f"{stem}-sol.json").is_file()))
+            if failure_collector is not None and failure_collector.stopped() and not reviewer_cached:
+                failure_collector.record_not_dispatched(index, group)
+                return None, translator_span
         with measure.producer_substage("independent_review",
                                        billing="local" if getattr(caller, "billing", None) == "local" or simulation_only or cache_only else "api"):
             with accounting.stage(f"layer2.reviewer.{request['targetLocale']}.{stem}",
@@ -1102,10 +1179,19 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                             "reviewerRequestId": reviewed_response["requestId"]}
             if semantic["status"] != "pass" or any(value != "pass" for value in semantic["checks"].values()) \
                     or semantic["uncertainty"] or semantic["issues"]:
+                if failure_collector is not None:
+                    failure_collector.record_review_failure(index, group, semantic, sol_path)
+                    return None, validation_span
                 raise ValueError(f"Sol flagged group {stem}; inspect saved response before admission")
             if plugin_path is not None and not simulation_only:
-                _stop_after_plugin_group_failure(policy, request, plugin_path, reviewed_row, plan, index, out,
-                                                 diagnostic_context=diagnostic_context)
+                if failure_collector is not None:
+                    review = _plugin_group_review(policy, request, plugin_path, reviewed_row)
+                    if review["status"] != "pass":
+                        failure_collector.record_plugin_failure(index, group, review, sol_path)
+                        return None, validation_span
+                else:
+                    _stop_after_plugin_group_failure(policy, request, plugin_path, reviewed_row, plan, index, out,
+                                                     diagnostic_context=diagnostic_context)
             return reviewed_row, validation_span
     def process_group(item):
         index, _ = item
@@ -1115,6 +1201,8 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
     results = (ordered_group_results(list(enumerate(plan, 1)), process_group, workers,
                                     maximum_workers=maximum_workers) if maximum_workers != 16 else
                ordered_group_results(list(enumerate(plan, 1)), process_group, workers))
+    if failure_collector is not None and failure_collector.has_failures():
+        failure_collector.finish(out, request, plan)
     dependencies = accounting.bounded_dependencies(
         f"layer2.evidence_join.{request['targetLocale']}", [span for _, span in results],
         work_unit_id=f"l2.{request['targetLocale']}.evidence_join")
@@ -1154,7 +1242,8 @@ def run_accounted(source: dict, anchor: dict, policy: dict, out_dir: Path,
                   resume_cache_from: Path | None = None,
                   progress_ledger: Path | None = None,
                   cache_only: bool = False, progress_callback=None,
-                  predecessor_spans=(), completion_spans: list[str] | None = None) -> dict:
+                  predecessor_spans=(), completion_spans: list[str] | None = None,
+                  failure_collector=None) -> dict:
     require(plugin is not None,
             "Formal Layer 2 requires the frozen language plugin before dispatch")
     locale = policy["targetLocale"]
@@ -1178,7 +1267,8 @@ def run_accounted(source: dict, anchor: dict, policy: dict, out_dir: Path,
                 request, anchor, policy, out_dir, api_key, call, plan, plugin,
                 revision_brief, reuse_from, partial_repair_brief, resume_cache_from,
                 source_admission_span=source_span, cache_only=cache_only,
-                progress_callback=progress_callback, completion_spans=completion_spans)
+                progress_callback=progress_callback, completion_spans=completion_spans,
+                failure_collector=failure_collector)
         metrics["doneUnits"] = len(evidence["groups"])
     return evidence
 

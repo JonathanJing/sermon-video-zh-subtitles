@@ -1498,6 +1498,8 @@ def main():
     parser.add_argument("--mfa-g2p-model", type=Path, default=os.environ.get("MFA_G2P_MODEL"))
     parser.add_argument("--mfa-spoken-forms", type=Path, default=os.environ.get("MFA_SPOKEN_FORMS"))
     parser.add_argument("--source-text-review", type=Path, help="Hash-bound, separately reviewed English source corrections; original ASR stays unchanged.")
+    parser.add_argument("--source-text-review-package", type=Path,
+                        help="Directory with the source.json and anchor.json a machine audio adjudication review's receipt adjudicated; required for that authority.")
     parser.add_argument(
         "--reading-segment-target-chars",
         type=int,
@@ -1695,7 +1697,16 @@ def produce_pipeline(args, api_key, source_duration, start, end, outdir):
             asr_path = outdir / "asr_reference.json"
             if not asr_path.exists():
                 asr_path = outdir / "asr_reference_chunks.json"
-            corrected, source_review = apply_review(corrected, args.source_text_review, clip_path, asr_path)
+            package_dir = getattr(args, "source_text_review_package", None)
+            adjudicated_package = None
+            if package_dir:
+                # The adjudicated package and the parent media bind a machine receipt to what is being corrected.
+                adjudicated_package = {
+                    name: json.loads((Path(package_dir) / f"{name}.json").read_text(encoding="utf-8"))
+                    for name in ("source", "anchor")}
+                adjudicated_package["mediaSha256"] = file_sha256(args.input)
+            corrected, source_review = apply_review(corrected, args.source_text_review, clip_path, asr_path,
+                                                    adjudicated_package=adjudicated_package)
             write_json(outdir / "source-text-review-provenance.json", source_review)
             if getattr(args, "reading_aligner", "mfa") == "mfa":
                 # Text edits invalidate old word/phone times; realign the reviewed words.

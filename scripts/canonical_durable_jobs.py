@@ -26,10 +26,25 @@ IDENTITY_SCHEMA = 'sermon-canonical-workflow-job-identity-v1'
 VIEW_SCHEMA = 'sermon-canonical-durable-job-inspection-v1'
 RECONCILIATION_SCHEMA = 'sermon-canonical-artifact-reconciliation-v1'
 RECONCILIATION_FILE = 'canonical-reconciliation.json'
+# A failed Layer 2 text job whose repair chain stopped for source review, reopened once
+# machine audio meaning notes settle those units (canonical_layer2_controller reopen-repair).
+REOPEN_SCHEMA = 'sermon-canonical-layer2-reopen-v1'
+# One immutable receipt per identity a job is reopened toward, named by that identity's digest, so
+# notes that change again before the reopened job starts never rewrite an earlier receipt.
+REOPEN_FILE = re.compile(r'canonical-reopen-([a-f0-9]{64})\.json')
+MAX_REOPENS = 64
+REOPEN_RESOLUTION = 'superseded_by_reopened_repair_chain'
+REOPEN_FIELDS = {'schemaVersion', 'jobId', 'requestSha256', 'stateSha256', 'identity', 'nextIdentity',
+                 'configurationSha256', 'codeIdentitySha256', 'repairLedgerHeadSha256', 'repairLedgerSequence',
+                 'meaningNotesSha256', 'reopenedGroups', 'resolution'}
 MAX_JOBS = 4096
 MAX_REQUEST_BYTES = 1024 * 1024
 IDENTITY_FIELDS = {'schemaVersion', 'productionRunId', 'workflowDefinitionVersion',
                    'workUnitId', 'nodeIdentity', 'inputIdentitySha256'}
+
+
+def reopen_file(next_identity):
+    return f'canonical-reopen-{jobs._digest(next_identity)}.json'
 
 
 def _input_identity(view, unit):
@@ -43,6 +58,10 @@ def _input_identity(view, unit):
     hashes = view['packageIdentities']
     selected = {k: v for k, v in hashes.items() if k in
                 {'source', 'anchor', 'sourceSummary', 'sourceWindowReview'}}
+    if phase == 'text' and 'sourceMeaningNotes' in hashes:
+        # Machine audio meaning notes the Layer 2 controller hands its repair loop are a Layer 1 input:
+        # new notes make a new text job, which continues the same repair chain.
+        selected['sourceMeaningNotes'] = hashes['sourceMeaningNotes']
     if locale:
         for name in ('policy', 'candidate', 'review')[:{'text': 1, 'audio': 3, 'page': 3}[phase]]:
             key = name + '.' + locale
@@ -137,10 +156,49 @@ def _receipts(root, production_run_id, known):
                                ('validatedOutputSha256', 'configurationSha256', 'codeIdentitySha256'))):
                     raise ValueError('invalid_artifact_reconciliation')
                 row['reconciliation'] = receipt
+            reopens = []
+            for entry in sorted(folder.iterdir()):
+                match = REOPEN_FILE.fullmatch(entry.name)
+                if not match:
+                    continue
+                reopen_path = _safe_path(entry)
+                if (len(reopens) >= MAX_REOPENS or 'reconciliation' in row
+                        or reopen_path.stat().st_size > MAX_REQUEST_BYTES):
+                    raise ValueError('invalid_reopen_receipt')
+                receipt = _valid_reopen(jobs._read(reopen_path), job_id, ident, request, before_state,
+                                        status, production_run_id, known)
+                if jobs._digest(receipt['nextIdentity']) != match.group(1):
+                    raise ValueError('invalid_reopen_receipt')
+                reopens.append(receipt)
+            if reopens:
+                row['reopens'] = reopens
             receipts.append(row)
         except (OSError, ValueError, KeyError, TypeError):
             errors.append('unreadable_or_unbound_canonical_job')
     return receipts, sorted(set(errors))
+
+
+def _valid_reopen(receipt, job_id, ident, request, state, status, production_run_id, known):
+    """A reopen receipt binds one failed text job, unchanged since, to the identity that supersedes it."""
+    following = receipt.get('nextIdentity') if isinstance(receipt, dict) else None
+    groups = receipt.get('reopenedGroups') if isinstance(receipt, dict) else None
+    if (not isinstance(receipt, dict) or set(receipt) != REOPEN_FIELDS
+            or receipt['schemaVersion'] != REOPEN_SCHEMA or receipt['resolution'] != REOPEN_RESOLUTION
+            or receipt['jobId'] != job_id or receipt['identity'] != ident
+            or not ident['workUnitId'].startswith('text.')
+            or receipt['requestSha256'] != jobs._digest(request)
+            or state is None or receipt['stateSha256'] != jobs._digest(state)
+            or state.get('requestSha256') != jobs._digest(request) or status != 'failed'
+            or not _valid_identity(following, production_run_id, known)
+            or following['workUnitId'] != ident['workUnitId'] or following['nodeIdentity'] != ident['nodeIdentity']
+            or following == ident
+            or type(receipt['repairLedgerSequence']) is not int or receipt['repairLedgerSequence'] < 1
+            or not isinstance(groups, list) or not groups or len(set(groups)) != len(groups)
+            or not all(isinstance(group, str) and group for group in groups)
+            or any(not pipeline._sha(receipt[k]) for k in
+                   ('configurationSha256', 'codeIdentitySha256', 'repairLedgerHeadSha256', 'meaningNotesSha256'))):
+        raise ValueError('invalid_reopen_receipt')
+    return receipt
 
 
 def inspect(config_path, job_root, production_run_id):
@@ -149,8 +207,14 @@ def inspect(config_path, job_root, production_run_id):
     return project(packages.inspect(config_path), job_root, production_run_id)
 
 
-def project(observed, job_root, production_run_id):
-    """Join a trusted backend's already-validated package view with job facts."""
+def project(observed, job_root, production_run_id, *, verify_reopen=None):
+    """Join a trusted backend's already-validated package view with job facts.
+
+    A reopen receipt proves its shape and binding here; whether the repair chain it names
+    was eligible to reopen is evidence only the Layer 2 controller holds (its repair ledger
+    and meaning notes). So a failed job yields to a receipt only through ``verify_reopen``
+    (``verify_reopen(receipt, observed, expected_identity)`` raises when the evidence differs,
+    and the whole view then requires reconciliation); without one it keeps blocking."""
     if not pipeline._sha(production_run_id):
         raise ValueError('invalid_production_run_id')
     root = _safe_path(Path(job_root).absolute())
@@ -170,13 +234,40 @@ def project(observed, job_root, production_run_id):
                 row['status'] = 'artifact_reconciled'
             # Stale/missing output does not erase uncertainty or permit retry.
         by_unit[unit].append(row)
+    for unit, rows in by_unit.items():
+        # A reopened failed job yields to the identity its receipt names: the node's identity now, or a
+        # later job that was itself reopened toward it. Never to its own identity, and never once the node
+        # has moved on to inputs no reopen named, so a stale failure blocks again.
+        state = observed['nodes'][unit]
+        expected = identity(observed, production_run_id, unit) if state.get('identity') else None
+        live = [expected] if expected is not None else []
+        changed = True
+        while changed:
+            changed = False
+            for row in rows:
+                if row['status'] != 'failed' or row['identity'] == expected:
+                    continue
+                matched = [receipt for receipt in row.get('reopens', ()) if receipt['nextIdentity'] in live]
+                if not matched or verify_reopen is None:
+                    continue
+                try:
+                    for receipt in matched:
+                        verify_reopen(receipt, observed, expected)
+                except (OSError, ValueError, KeyError, TypeError):
+                    if 'unverified_reopen_receipt' not in errors:
+                        errors.append('unverified_reopen_receipt')
+                    continue
+                row['observedStatus'], row['status'], row['reopen'] = row['status'], 'superseded', matched[0]
+                live.append(row['identity'])
+                changed = True
     blocked = set()
     for unit, state in result['nodes'].items():
         rows = by_unit[unit]
         if not rows:
             continue
         expected = identity(observed, production_run_id, unit) if state.get('identity') else None
-        relevant = [row for row in rows if row['status'] != 'succeeded' or row['identity'] == expected]
+        relevant = [row for row in rows if row['status'] not in {'succeeded', 'superseded'}
+                    or (row['status'] == 'succeeded' and row['identity'] == expected)]
         if not relevant:
             continue  # A completed prior revision never validates the new one.
         status, reason = None, None
@@ -212,7 +303,10 @@ def project(observed, job_root, production_run_id):
                   'requestSha256': row['requestSha256'], 'stateSha256': row['stateSha256'],
                   **({'originalJobStatus': row['observedStatus'],
                       'reconciliationSha256': jobs._digest(row['reconciliation'])}
-                     if 'observedStatus' in row else {})} for row in receipts],
+                     if 'observedStatus' in row and 'reconciliation' in row else {}),
+                  **({'originalJobStatus': row['observedStatus'], 'reopenSha256': jobs._digest(row['reopen']),
+                      'supersededBy': jobs._digest(row['reopen']['nextIdentity'])}
+                     if row['status'] == 'superseded' else {})} for row in receipts],
         'diagnostics': errors, 'readOnly': True,
     }
     result['stateRevision'] = jobs._digest({'packageRevision': observed['stateRevision'],
