@@ -379,6 +379,70 @@ class LoopTests(unittest.TestCase):
                           meaning_notes={"u21": note, "u30": note})
         self.assertEqual(fleet.calls, ["all", ["g21", "g30"], ["g21"]])
 
+    def test_a_note_for_another_unit_of_the_group_reopens_it_again(self):
+        class PairFleet(Fleet):
+            def plan(self):
+                return [{"translationGroupId": f"g{i}", "sourceUnitIds": [f"u{i}a", f"u{i}b"]}
+                        for i in range(1, self.groups + 1)]
+        note = {"decision": "transcript_confirmed", "frozenTextSha256": "0" * 64, "decidedBy": "test",
+                "meaningNote": "Keep the frozen wording; it is what was said."}
+        fleet = PairFleet(self, 46, [{"g21": failing("quotationAttribution")}] * 3)
+        self.assertEqual(self.drive(fleet)["stoppedGroups"][0]["reasonCode"], "request_source_review")
+        # A note for u21a reopens g21; the failure recurs, so it stops for source review again.
+        first = subject.drive(REQUEST, fleet.groups, fleet, self.root / "runs", self.root / "state-runs",
+                              meaning_notes={"u21a": note})
+        self.assertEqual(first["stoppedGroups"][0]["reasonCode"], "request_source_review")
+        entries = subject.load_ledger(self.root / "state-runs", subject.lineage(REQUEST))
+        self.assertEqual((entries[2]["reopenedBy"]["units"], entries[2]["groups"][0]["notedUnits"]), (["u21a"], ["u21a"]))
+        # The same note again settles nothing new; a note for u21b, which no repair carried yet, reopens it.
+        self.assertEqual(subject.drive(REQUEST, fleet.groups, fleet, self.root / "runs", self.root / "state-runs",
+                                       meaning_notes={"u21a": note})["ledgerHeadSha256"], first["ledgerHeadSha256"])
+        done = subject.drive(REQUEST, fleet.groups, fleet, self.root / "runs", self.root / "state-runs",
+                             meaning_notes={"u21a": note, "u21b": note})
+        self.assertEqual((done["status"], fleet.calls), ("all_groups_passed", ["all", ["g21"], ["g21"], ["g21"]]))
+        entries = subject.load_ledger(self.root / "state-runs", subject.lineage(REQUEST))
+        self.assertEqual(entries[4]["reopenedBy"]["units"], ["u21a", "u21b"])
+        self.assertEqual(subject.noted_units(entries, ["u21a", "u21b"]), {"u21a", "u21b"})
+        # A row written before notedUnits existed counts its whole group as noted.
+        legacy = [dict(entry, groups=[{k: v for k, v in row.items() if k != "notedUnits"} for row in entry["groups"]])
+                  for entry in entries[:3]]
+        self.assertEqual(subject.noted_units(legacy, ["u21a", "u21b"]), {"u21a", "u21b"})
+
+    def test_a_reopen_the_repair_allowance_cannot_pay_for_stops_without_a_repairing_head(self):
+        note = {"decision": "transcript_confirmed", "frozenTextSha256": "0" * 64, "decidedBy": "test",
+                "meaningNote": "Keep the frozen wording; it is what was said."}
+        notes = {"u21": note, "u30": note}
+        both = {"g21": failing("quotationAttribution"), "g30": failing("quotationAttribution")}
+        # 46 groups at 100 tokens a call give 9,200 initial tokens, so repairs may use 920; the first repair
+        # round spent 400. At 1,000 tokens a call nothing more fits: the reopen ends stopped at once.
+        fleet = Fleet(self, 46, [both, both])
+        self.drive(fleet)
+        with patch.object(subject, "_repair_token_bound", return_value=1000):
+            capped = subject.drive(REQUEST, fleet.groups, fleet, self.root / "runs", self.root / "state-runs",
+                                   meaning_notes=notes)
+        self.assertEqual(fleet.calls, ["all", ["g21", "g30"]])
+        self.assertEqual((capped["status"], sorted((row["translationGroupId"], row["reasonCode"])
+                                                   for row in capped["stoppedGroups"])),
+                         ("repair_stopped", [("g21", "repair_spend_cap"), ("g30", "repair_spend_cap")]))
+        entries = subject.load_ledger(self.root / "state-runs", subject.lineage(REQUEST))
+        self.assertEqual([entry["outcome"] for entry in entries], ["repairing", "stopped", "stopped"])
+        self.assertEqual((entries[2]["nextBrief"], [row["decision"] for row in entries[2]["groups"]]),
+                         (None, ["repair_spend_cap", "repair_spend_cap"]))
+        self.assertEqual(subject.reopenable_groups(entries, notes), {})
+        self.assertEqual(subject.drive(REQUEST, fleet.groups, fleet, self.root / "runs", self.root / "state-runs",
+                                       meaning_notes=notes)["ledgerHeadSha256"], capped["ledgerHeadSha256"])
+        # At 200 tokens a call one pair fits: the first stopped group is reopened, the other keeps the cap's reason.
+        fleet = Fleet(self, 46, [both, both])
+        self.drive(fleet, out="partial")
+        with patch.object(subject, "_repair_token_bound", return_value=200):
+            partial = subject.drive(REQUEST, fleet.groups, fleet, self.root / "partial", self.root / "state-partial",
+                                    meaning_notes=notes)
+        self.assertEqual(fleet.calls, ["all", ["g21", "g30"], ["g21"]])
+        self.assertEqual([(row["translationGroupId"], row["reasonCode"]) for row in partial["stoppedGroups"]],
+                         [("g30", "repair_spend_cap")])
+        entries = subject.load_ledger(self.root / "state-partial", subject.lineage(REQUEST))
+        self.assertEqual([entry["outcome"] for entry in entries], ["repairing", "stopped", "repairing", "stopped"])
+
     def test_two_repairs_without_fewer_failures_stop(self):
         fleet = Fleet(self, 46, [{"g1": failing("completeMeaning")},
                                  {"g1": failing("noAddedMeaning")},

@@ -126,6 +126,15 @@ def answer(decision, heard_by='frozen', corrected=None, note='Translate literall
             'correctedText': corrected, 'meaningNote': note, 'reason': reason}
 
 
+def as_v1(receipt):
+    """The receipt as the last v1 writer (dev at 907c998) signed it, without a budget record."""
+    implementation = 'e856a679593682306943eda3a41a1c0301140f1db18ba2c1d6aca8b02074be6c'
+    version = machine.V1_IMPLEMENTATIONS[implementation]
+    return dict({k: v for k, v in receipt.items() if k != 'budget'}, schemaVersion=machine.SCHEMA_V1, version=version,
+                implementationSha256=implementation,
+                decidedBy=f'source_meaning_machine_adjudication {version} {implementation[:16]}')
+
+
 class FakeAdjudicator(machine.SolAdjudicator):
     """The real payload and cache path, with a scripted provider response (one, or one per unit)."""
 
@@ -381,7 +390,7 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
             source_review.apply_review(segments(), review_path, clip, asr, adjudicated_package=package)
         # A v1 receipt (written before verdicts were derived again from the cache) is still read by the
         # Layer 1 path under its own rules, without the cache.
-        rebind(dict({k: v for k, v in receipt.items() if k != 'budget'}, schemaVersion=machine.SCHEMA_V1))
+        rebind(as_v1(receipt))
         corrected, _ = source_review.apply_review(segments(), review_path, clip, asr, adjudicated_package=package)
         self.assertEqual(corrected[1]['text'], review['patches'][0]['correctedText'])
         shutil.move(self.out / 'cache-elsewhere', moved)
@@ -809,9 +818,17 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
             machine.validate_receipt(receipt, anchor=self.anchor, cache=cache)
         # A v1 receipt predates the request-cache contract and keeps its rules: its model row names a
         # request and is read without the cache, as it was before. It never carried a budget record.
-        v1 = dict({k: v for k, v in receipt.items() if k != 'budget'}, schemaVersion=machine.SCHEMA_V1)
+        v1 = as_v1(receipt)
         summary = machine.validate_receipt(v1, source=self.source, anchor=self.anchor)
         self.assertEqual(summary['units'], ['u3'])
+        # Only a receipt signed by an implementation that wrote v1 keeps those rules: relabelling this receipt
+        # (signed by the current implementation, or by any other) as v1 does not switch off the cache checks.
+        relabelled = dict({k: v for k, v in receipt.items() if k != 'budget'}, schemaVersion=machine.SCHEMA_V1)
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_v1_implementation_unknown'):
+            machine.validate_receipt(relabelled, source=self.source, anchor=self.anchor)
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_v1_implementation_unknown'):
+            machine.validate_receipt(dict(v1, version='2026-10-08-v1', decidedBy=v1['decidedBy'].replace(
+                v1['version'], '2026-10-08-v1')), source=self.source, anchor=self.anchor)
         with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_decision_evidence'):
             machine.validate_receipt(dict(v1, units=[dict(v1['units'][0], request=None)]), anchor=self.anchor)
         with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_schema'):
@@ -868,7 +885,7 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
         cache = self.out / 'cache'
         # The binding names the selected OpenAI Project, so it exists only under the launcher.
         with self.assertRaisesRegex(machine.SourceAdjudicationError, 'openai_environment_launcher_required'):
-            machine.budget_binding(self.source, self.anchor, ['u3'], self.out)
+            machine.budget_binding(self.source, self.anchor, ['u3'], self.out, model=machine.MODEL, effort=machine.EFFORT)
         with mock.patch.dict(os.environ, route):
             # Unbound: a call cap is not spending authorization. The refusal comes before any
             # transport exists and before either cache records a started call.
@@ -881,13 +898,14 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
                 judge.decide('u3', {'schemaVersion': machine.QUESTION_SCHEMA, 'sourceUnitId': 'u3'})
             self.assertEqual(list(self.out.glob('**/*.started.json')), [])
 
-            binding = machine.budget_binding(self.source, self.anchor, ['u3'], self.out)
+            binding = machine.budget_binding(self.source, self.anchor, ['u3'], self.out, model=machine.MODEL, effort=machine.EFFORT)
             self.assertEqual(binding['doubtedUnits'], ['u3'])
             self.assertEqual(binding['budgetRoot'], str(self.out.resolve() / machine.BUDGET_DIR))
             self.assertEqual(binding['bindings'], {'source.json': policies.canonical_sha256(self.source),
                                                    'anchor.json': policies.canonical_sha256(self.anchor)})
             self.assertEqual(binding['route'], {'environment': 'dev', 'projectId': 'proj_devOnly',
                                                 'credentialAlias': 'tongxing-dev-runtime'})
+            self.assertEqual(binding['adjudicator'], {'model': machine.MODEL, 'reasoningEffort': machine.EFFORT})
             bounds = {'requests': 4, 'wallTimeMs': 4 * 300_000, 'costMicrousd': 2_000_000}
             auth_path = self._authorization('budget', binding, bounds)
             with self.assertRaisesRegex(machine.SourceAdjudicationError, 'budget_authorization_binding_changed'):
@@ -909,6 +927,13 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
                 return {'id': 'resp-1', 'model': machine.MODEL, 'choices': [{'finish_reason': 'stop', 'message': {
                     'content': json.dumps(answer('undetermined', note='The listeners disagree; keep the frozen text.'))}}]}
             budget = machine.load_budget_authorization(auth_path, binding=binding, transport=transport)
+            # The approval pays for the adjudicator it names: another model or effort is another run.
+            for model, effort in ((machine.MODEL, 'high'), ('gpt-6-astra', machine.EFFORT)):
+                with self.assertRaisesRegex(machine.SourceAdjudicationError, 'budget_authorization_binding_changed'):
+                    machine.load_budget_authorization(auth_path, binding=machine.budget_binding(
+                        self.source, self.anchor, ['u3'], self.out, model=model, effort=effort), transport=transport)
+                with self.assertRaisesRegex(machine.SourceAdjudicationError, 'budget_authorization_binding_changed'):
+                    machine.SolAdjudicator(api_key='k', cache=cache, model=model, effort=effort, budget=budget)
             listener = machine.OpenAiTranscribeListener(cache=cache / 'openai', max_calls=2, budget=budget)
             judge = machine.SolAdjudicator(api_key='k', cache=cache, budget=budget)
             receipt = machine.adjudicate(self.source, self.anchor, unit_ids=['u3'], media=None, listeners=[listener],
@@ -946,9 +971,9 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
         stripped = {k: v for k, v in receipt.items() if k != 'budget'}
         with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_budget'):
             machine.validate_receipt(stripped, anchor=self.anchor, cache=cache)
-        machine.validate_receipt(dict(stripped, schemaVersion=machine.SCHEMA_V1), anchor=self.anchor, cache=cache)
+        machine.validate_receipt(as_v1(receipt), anchor=self.anchor, cache=cache)
         with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_budget'):
-            machine.validate_receipt(dict(receipt, schemaVersion=machine.SCHEMA_V1), anchor=self.anchor, cache=cache)
+            machine.validate_receipt(dict(as_v1(receipt), budget=receipt['budget']), anchor=self.anchor, cache=cache)
         with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_budget'):
             machine.validate_receipt(dict(receipt, budget={'schemaVersion': machine.BUDGET_SCHEMA}), anchor=self.anchor, cache=cache)
         # Every recorded field is checked: a null or malformed hash, root, bound or tier is not the loader's record.
@@ -1058,7 +1083,7 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
         prod = {**route, 'SERMON_OPENAI_ENVIRONMENT': 'prod', 'OPENAI_PROJECT_ID': 'proj_prodOnly',
                 'SERMON_OPENAI_CREDENTIAL_ALIAS': 'tongxing-prod-runtime'}
         with mock.patch.dict(os.environ, prod):
-            prod_binding = machine.budget_binding(self.source, self.anchor, ['u3'], self.out)
+            prod_binding = machine.budget_binding(self.source, self.anchor, ['u3'], self.out, model=machine.MODEL, effort=machine.EFFORT)
             self.assertEqual(prod_binding['route']['projectId'], 'proj_prodOnly')
             with self.assertRaisesRegex(machine.SourceAdjudicationError, 'budget_authorization_binding_changed'):
                 machine.load_budget_authorization(auth_path, binding=prod_binding, transport=transport)
@@ -1089,7 +1114,7 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
         # Exhausted bounds refuse before the transport is reached and leave nothing to reconcile.
         tight_out = self.root / 'tight'
         with mock.patch.dict(os.environ, route):
-            tight_binding = machine.budget_binding(self.source, self.anchor, ['u3'], tight_out)
+            tight_binding = machine.budget_binding(self.source, self.anchor, ['u3'], tight_out, model=machine.MODEL, effort=machine.EFFORT)
             tight = machine.load_budget_authorization(
                 self._authorization('tight', tight_binding, dict(bounds, costMicrousd=1000)),
                 binding=tight_binding, transport=transport)
@@ -1112,7 +1137,7 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
         with mock.patch.dict(os.environ, route), redirect_stdout(out):
             self.assertEqual(machine.main([str(fixture), '--media', str(self.media), '--unit', 'u3',
                                            '--out-dir', str(self.root / 'printed'), '--print-budget-binding']), 0)
-            printed = machine.budget_binding(self.source, self.anchor, ['u3'], self.root / 'printed')
+            printed = machine.budget_binding(self.source, self.anchor, ['u3'], self.root / 'printed', model=machine.MODEL, effort=machine.EFFORT)
         self.assertEqual(json.loads(out.getvalue()), printed)
         self.assertEqual(printed['route']['environment'], 'dev')
         self.assertFalse((self.root / 'printed').exists())

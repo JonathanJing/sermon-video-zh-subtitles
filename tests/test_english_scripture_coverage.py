@@ -283,7 +283,10 @@ class PinnedLibraryTests(unittest.TestCase):
                 ('He will set the goats standing on his right hand, but the sheep standing on the left.',
                  ['sheep right goat', 'goat right sheep']),
                 ('On his right hand he will set the goats, and on his left the sheep.',
-                 ['sheep right hand', 'hand left sheep'])):
+                 ['sheep right hand', 'hand left sheep']),
+                # Repeating a word where it stands does not take it out of the comparison.
+                ('He will set the goats, the goats on his right hand, but the sheep, the sheep on the left.',
+                 ['sheep right goat', 'goat right sheep'])):
             with self.subTest(reading=reading):
                 self.assertEqual(coverage.reversed_directions(coverage.all_tokens(verse),
                                                               coverage.all_tokens(reading)), [expected])
@@ -294,7 +297,8 @@ class PinnedLibraryTests(unittest.TestCase):
                         'On the right, on the left: he will set the sheep and the goats.',
                         'On his right hand he will set the sheep, and on his left the goats.',
                         'He will set on his right hand the sheep, but the goats on the left.',
-                        'He will set the sheep standing on his right hand, but the goats standing on the left.'):
+                        'He will set the sheep standing on his right hand, but the goats standing on the left.',
+                        'He will set the sheep, the sheep on his right hand, but the goats, the goats on the left.'):
             with self.subTest(reading=reading):
                 self.assertEqual(coverage.reversed_directions(coverage.all_tokens(verse),
                                                               coverage.all_tokens(reading)), [])

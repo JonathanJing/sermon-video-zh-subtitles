@@ -58,6 +58,23 @@ RESPONSE_SCHEMA = 'sermon-source-meaning-adjudication-response-v1'
 PROMPT_VERSION = 'source-meaning-adjudication-v2'
 NOTES_SCHEMA = 'sermon-source-meaning-notes-v1'
 VERSION = '2026-10-08-v3'
+# Every implementation of this module that wrote v1 receipts (its git history from 9a34493 through a565df1),
+# with the version it signed. A v1 receipt is read under its pre-cache rules only when it names one of them,
+# so relabelling a newer receipt as v1 cannot switch off the cache and question checks.
+V1_IMPLEMENTATIONS = {
+    'd0069ae329a1a976e28d67592142f71fb3fb1b55cf3c480c393c5f8ebf76acc4': '2026-10-08-v1',
+    'a996f72e59e26ec2c9f697bd38ebcc5eb96574b6abf1a34a4fbb00edc88b6da4': '2026-10-08-v2',
+    '043afa8872162cadaf65bc2d32b7b2a1c5862d7cbd3c5b5bb82ff781514dc7a9': '2026-10-08-v2',
+    '82495ef91b07d346f564a593f1666fce2c8d49a31f13e7e8afa1da83ee2f947b': '2026-10-08-v3',
+    'aa9844492a04c0e134145d44731937bcedf14985f6874f641ffcf684351cf705': '2026-10-08-v3',
+    '103dd09e7a8e16a66948a22e9dfa790d95e289f7098d405112c2274b6fa263d4': '2026-10-08-v3',
+    'a8752fb10c61a58578fe14519d4930f3f1d6294ae98178657a391a86bf4ae541': '2026-10-08-v3',
+    'e856a679593682306943eda3a41a1c0301140f1db18ba2c1d6aca8b02074be6c': '2026-10-08-v3',
+    '95e48ac4649725369526a2e83a500e87303bc17b7231f404a7d736166b6867e7': '2026-10-08-v3',
+    'adf10632baf989ebb7192d801bc39af4307d0a835b35b9a37d0dde726361118b': '2026-10-08-v3',
+    'e2142ff7817ae4c79805e762048adc733bd488cd4e214f2a24b31bc0b0943437': '2026-10-08-v3',
+    '743fec4cb4e255d86e0ad05d99c8093176c4ebbbdfe12a2a683beb814fbe47f7': '2026-10-08-v3',
+}
 ROLE = source_review.MACHINE_ROLE
 MODEL, EFFORT = 'gpt-6.1-sol', 'medium'
 # Only a model the Layer 1 review path also accepts may adjudicate; otherwise a
@@ -458,6 +475,9 @@ class SolAdjudicator:
         _require(model in ADJUDICATOR_MODELS and effort in limits.MODEL_REASONING_EFFORTS[model],
                  'unsupported_adjudicator_model')
         _require(max_calls is None or (type(max_calls) is int and max_calls >= 0), 'adjudicator_call_cap')
+        # The authorization pays for the model and effort it was approved for, and nothing else.
+        _require(budget is None or budget.get('adjudicator') == {'model': model, 'reasoningEffort': effort},
+                 'budget_authorization_binding_changed')
         # The request limits come from the bound budget's approved tier unless a test pins them.
         self.budget = budget
         self.limits = limits.validate_request_limits(
@@ -560,17 +580,22 @@ def _unbound_call(key: str, payload: dict[str, Any]) -> dict[str, Any]:
 
 # ---------------------------------------------------------------- budget
 
-def budget_binding(source: dict[str, Any], anchor: dict[str, Any], unit_ids: list[str], out_dir: Path) -> dict[str, Any]:
+def budget_binding(source: dict[str, Any], anchor: dict[str, Any], unit_ids: list[str], out_dir: Path, *,
+                   model: str, effort: str) -> dict[str, Any]:
     """What a spend authorization must name: the frozen package, the doubted units, the code closure,
-    the selected OpenAI Project and the ledger root under the output directory. Any other run is a
-    different authorization: in particular one approved for dev cannot be loaded, replayed or spent
-    under prod, and the binding exists only under the environment launcher."""
+    the selected OpenAI Project, the adjudicator's model and reasoning effort and the ledger root under
+    the output directory. Any other run is a different authorization: in particular one approved for dev
+    cannot be loaded, replayed or spent under prod, one approved for Sol at medium effort cannot pay for
+    another model or effort, and the binding exists only under the environment launcher."""
     from scripts import canonical_layer2_controller as controller
     from scripts import sermon_openai_runtime as runtime
+    _require(model in ADJUDICATOR_MODELS and effort in limits.MODEL_REASONING_EFFORTS[model],
+             'unsupported_adjudicator_model')
     route = _route_identity(runtime.selected_route())
     _require(route is not None, 'openai_environment_launcher_required')
     return {'bindings': {'source.json': policies.canonical_sha256(source), 'anchor.json': policies.canonical_sha256(anchor)},
             'doubtedUnits': sorted(unit_ids), 'codeIdentitySha256': controller.code_identity(), 'route': route,
+            'adjudicator': {'model': model, 'reasoningEffort': effort},
             'budgetRoot': str(Path(out_dir).resolve() / BUDGET_DIR)}
 
 
@@ -621,7 +646,7 @@ def load_budget_authorization(path: Path, *, binding: dict[str, Any], transport:
 
     authority = {key: identity[key] for key in ('approvalSha256', 'globalBounds', 'requestLimits')}
     store = source_budget.SourceBudget(Path(binding['budgetRoot']), authority, verify=verify, transport=transport)
-    return {**identity, 'store': store}
+    return {**identity, 'store': store, 'adjudicator': dict(binding['adjudicator'])}
 
 
 BUDGET_IDENTITY_KEYS = ('schemaVersion', 'authorizationSha256', 'approvalSha256', 'budgetRoot', 'globalBounds',
@@ -878,7 +903,9 @@ def validate_receipt(receipt: Any, *, source: dict[str, Any] | None = None, anch
     again from the hash-bound response the row names, so an edited decision is
     refused, and with ``anchor`` the cached question must be the one this
     receipt and anchor ask. A v1 receipt was written before that contract and
-    keeps its rules: its model rows name a request, nothing more is checked."""
+    keeps its rules: its model rows name a request, nothing more is checked. Those
+    rules apply only to a receipt signed by an implementation that wrote v1
+    (``V1_IMPLEMENTATIONS``)."""
     _require(isinstance(receipt, dict) and receipt.get('schemaVersion') in (SCHEMA_V1, SCHEMA)
              and receipt.get('decidedByRole') == ROLE and receipt.get('humanApproval') is False, 'receipt_schema')
     current = receipt['schemaVersion'] == SCHEMA
@@ -886,6 +913,9 @@ def validate_receipt(receipt: Any, *, source: dict[str, Any] | None = None, anch
     _require(isinstance(version, str) and isinstance(implementation, str) and len(implementation) == 64
              and receipt.get('decidedBy') == f'source_meaning_machine_adjudication {version} {implementation[:16]}',
              'receipt_signature')
+    # The schema label alone never selects the older rules: a v1 receipt must name an implementation that
+    # wrote v1, with the version it signed. A v2 receipt relabelled v1 names this or a later implementation.
+    _require(current or V1_IMPLEMENTATIONS.get(implementation) == version, 'receipt_v1_implementation_unknown')
     bindings, media = receipt.get('bindings'), receipt.get('media')
     _require(isinstance(bindings, dict) and set(bindings) == {'source.json', 'anchor.json'}
              and all(isinstance(v, str) and len(v) == 64 for v in bindings.values())
@@ -1276,7 +1306,8 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     if args.print_budget_binding:
         source, anchor = _load(args.fixture / 'source.json'), _load(args.fixture / 'anchor.json')
-        print(json.dumps(budget_binding(source, anchor, args.unit, args.out_dir), ensure_ascii=False, indent=2))
+        print(json.dumps(budget_binding(source, anchor, args.unit, args.out_dir, model=args.model,
+                                        effort=args.reasoning_effort), ensure_ascii=False, indent=2))
         return 0
     resumable_out_dir(args.out_dir)
     review_inputs = (args.aligned_segments, args.source_audio, args.asr_reference)
@@ -1290,7 +1321,8 @@ def main(argv: list[str] | None = None) -> int:
     # Unbound requests are refused before dispatch: with no authorization the listeners and the
     # adjudicator replay their caches, and the first cache miss stops the run without spending.
     budget = None if args.budget_authorization is None else load_budget_authorization(
-        args.budget_authorization, binding=budget_binding(source, anchor, args.unit, args.out_dir))
+        args.budget_authorization, binding=budget_binding(source, anchor, args.unit, args.out_dir, model=args.model,
+                                                          effort=args.reasoning_effort))
     segments = None
     if args.aligned_segments:
         expected = source.get('transcript', {}).get('artifact', {}).get('sha256')

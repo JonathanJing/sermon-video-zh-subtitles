@@ -257,21 +257,21 @@ _PLACED_SKIP = frozenset(_token(word) for word in STOPWORDS) | _DIRECTION_MEMBER
 
 
 def _placed_words(tokens: list[str], members: tuple[str, str]) -> dict[str, tuple[int, int]]:
-    """Each content word said exactly once, with its position and how many of the pair's mentions precede it.
+    """Each content word said on one side only, with its first position and how many of the pair's mentions precede it.
 
-    Two words separated by a mention of the pair have different counts. A word said
-    more than once is left out: which of its mentions a side places cannot be told."""
-    counts: dict[str, int] = {}
-    for token in tokens:
-        counts[token] = counts.get(token, 0) + 1
-    placed: dict[str, tuple[int, int]] = {}
+    Two words separated by a mention of the pair have different counts. A word may be
+    repeated where it stands ("the goats, the goats on his right hand"); a word said
+    on both sides of a mention is left out, since which side places it cannot be told."""
+    seen: dict[str, tuple[int, int]] = {}
+    sides: dict[str, set[int]] = {}
     mentions = 0
     for index, token in enumerate(tokens):
         if token in members:
             mentions += 1
-        elif counts[token] == 1 and token not in _PLACED_SKIP and len(token) > 1:
-            placed[token] = (index, mentions)
-    return placed
+        elif token not in _PLACED_SKIP and len(token) > 1:
+            seen.setdefault(token, (index, mentions))
+            sides.setdefault(token, set()).add(mentions)
+    return {token: where for token, where in seen.items() if len(sides[token]) == 1}
 
 
 def _span(tokens: list[str], start: int, end: int, members: tuple[str, str]) -> str:
@@ -282,6 +282,7 @@ def _span(tokens: list[str], start: int, end: int, members: tuple[str, str]) -> 
 def _traded_places(verse_tokens: list[str], spoken_tokens: list[str], members: tuple[str, str]) -> list[str] | None:
     """Two words a mention of the pair separates in both texts, said the other way round.
 
+    Only words said on one side of every mention in each text count, repeated or not.
     Whatever a side places sits on one side of its direction word, before it ("the
     sheep on his right hand") or after it ("on his right hand ... the sheep"). Two
     things the verse puts on different sides of a mention, said in the other order
