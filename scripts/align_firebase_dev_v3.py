@@ -74,6 +74,22 @@ def checked(path: Path, sha256: str) -> Path:
     return path
 
 
+def checked_browser_video(public: Path, page_id: str, page: dict, sha256: str) -> None:
+    """Local browser video must match; a bucket-hosted one needs a verified receipt beside public/."""
+    local = public / f"pages/{page_id}/full-video-browser.mp4"
+    delivery = page.get("videoDelivery") or {}
+    if local.exists() or local.is_symlink() or not delivery.get("storageUrl"):
+        checked(local, sha256)
+        return
+    receipt_path = public.parent / "bucket-video-receipt.json"
+    receipt = load(receipt_path) if receipt_path.is_file() else {}
+    if (delivery.get("sha256") != sha256 or receipt.get("schemaVersion") != "sermon-bucket-video-receipt-v1"
+            or receipt.get("status") != "verified" or receipt.get("pageId") != page_id
+            or receipt.get("storageUrl") != delivery["storageUrl"] or receipt.get("sha256") != sha256
+            or receipt.get("bytes") != delivery.get("bytes")):
+        raise ValueError(f"Browser video is neither local nor receipt-verified: {page_id}")
+
+
 def validate_published_week(public: Path) -> tuple[str, list[str]]:
     catalog = load(public / "multilingual-v3.json")
     schema = load(ROOT / "schemas/sermon-multilingual-catalog-v3.schema.json")
@@ -112,7 +128,7 @@ def validate_published_week(public: Path) -> tuple[str, list[str]]:
             checked(public / binding["indexUrl"].lstrip("/"), binding["indexSha256"])
             if binding["trackSha256"] != roles["audio"]["sha256"]:
                 raise ValueError(f"Fingerprint/audio mismatch: {locale}")
-    checked(public / f"pages/{page_id}/full-video-browser.mp4", video_sha)
+    checked_browser_video(public, page_id, page, video_sha)
     for directory in ("english-reference", "alignment"):
         sidecar = load(public / directory / f"{page_id}.json")
         if sidecar["pageId"] != page_id or set(sidecar["targets"]) != set(page["targets"]):
