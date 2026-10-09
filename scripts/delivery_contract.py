@@ -35,12 +35,81 @@ def source_identity(package):
     return identity
 
 
-def validate_release_schema(release):
+RELEASE_V3 = 'sermon-target-language-release-package-v3'
+RELEASE_V4 = 'sermon-target-language-release-package-v4'
+FOUR_PRODUCT_RELEASES = (RELEASE_V3, RELEASE_V4)
+CATALOG_V3 = 'sermon-multilingual-catalog-v3'
+CATALOG_V4 = 'sermon-multilingual-catalog-v4'
+CATALOG_FILES = {CATALOG_V3: 'multilingual-v3.json', CATALOG_V4: 'multilingual-v4.json'}
+MACHINE_CHECKED = 'machine_checked'
+
+
+def _schema(version):
     from jsonschema import Draft202012Validator, FormatChecker
-    version = release.get('schemaVersion')
-    require(version in ('sermon-target-language-release-package-v2', 'sermon-target-language-release-package-v3'), 'Unsupported release version')
     schema = json.loads((Path(__file__).resolve().parents[1] / 'schemas' / (version + '.schema.json')).read_text())
-    Draft202012Validator(schema, format_checker=FormatChecker()).validate(release)
+    return Draft202012Validator(schema, format_checker=FormatChecker())
+
+
+def machine_checked(entry):
+    """A release or catalog target admitted by a machine quality waiver (never a human approval)."""
+    return MACHINE_CHECKED in (entry.get('contentStatus'), entry.get('audioStatus'))
+
+
+def release_path(release):
+    """Machine-checked releases live under /releases-v4/ so v3-only clients never reach them."""
+    directory = 'releases-v4' if release['schemaVersion'] == RELEASE_V4 else 'releases-v2'
+    return f"/{directory}/{release['pageId']}/{release['targetLocale']}.json"
+
+
+def validate_release_schema(release):
+    version = release.get('schemaVersion')
+    require(version in ('sermon-target-language-release-package-v2', *FOUR_PRODUCT_RELEASES), 'Unsupported release version')
+    _schema(version).validate(release)
+    if version == RELEASE_V4:
+        require(release['disclosure']['locale'] == release['targetLocale'], 'Release disclosure is for another locale')
+
+
+def validate_catalog_schema(catalog):
+    version = catalog.get('schemaVersion')
+    require(version in CATALOG_FILES, 'Unsupported catalog version')
+    _schema(version).validate(catalog)
+    for page in catalog['pages']:
+        for locale, target in page['targets'].items():
+            directory = 'releases-v4' if machine_checked(target) else 'releases-v2'
+            require(target['releasePackageUrl'] == f"/{directory}/{page['id']}/{locale}.json", 'Catalog release path differs from page/locale')
+    return catalog
+
+
+def upgrade_catalog(catalog):
+    """A v3 catalog is a valid v4 catalog with only human-reviewed targets."""
+    if catalog.get('schemaVersion') == CATALOG_V4:
+        return copy.deepcopy(catalog)
+    require(catalog.get('schemaVersion') == CATALOG_V3, 'Unsupported catalog version')
+    return {**copy.deepcopy(catalog), 'schemaVersion': CATALOG_V4}
+
+
+def project_human_catalog(catalog):
+    """The v3 catalog old clients read: every machine-checked target removed.
+
+    Pages left without targets disappear; a removed default moves to a remaining
+    locale or to the latest remaining page. Nothing else changes.
+    """
+    require(catalog.get('schemaVersion') == CATALOG_V4, 'Projection requires a v4 catalog')
+    result = {**copy.deepcopy(catalog), 'schemaVersion': CATALOG_V3}
+    pages = []
+    for page in result['pages']:
+        targets = {locale: target for locale, target in page['targets'].items() if not machine_checked(target)}
+        if not targets:
+            continue
+        if page['defaultTargetLocale'] not in targets:
+            page['defaultTargetLocale'] = next((locale for locale in ('zh-Hans', 'ko', 'es') if locale in targets), sorted(targets)[0])
+        page['targets'] = targets
+        pages.append(page)
+    require(pages, 'A catalog with only machine-checked pages has no human-only projection')
+    if result['defaultPageId'] not in {page['id'] for page in pages}:
+        result['defaultPageId'] = max(pages, key=lambda page: page['date'])['id']
+    result['pages'] = pages
+    return result
 
 
 def validate_public_study(release, *, reader):
@@ -50,7 +119,7 @@ def validate_public_study(release, *, reader):
     Legacy v2 is not an implicit study approval.
     """
     validate_release_schema(release)
-    require(release['schemaVersion'] == 'sermon-target-language-release-package-v3', 'Four-product delivery requires release v3')
+    require(release['schemaVersion'] in FOUR_PRODUCT_RELEASES, 'Four-product delivery requires release v3 or v4')
     products = release['fourProducts']
     source = release['sourceIdentity']
     require(0 <= source['window']['startSeconds'] < source['window']['endSeconds'] <= source['durationSeconds'], 'Public source window exceeds media')
@@ -121,12 +190,19 @@ def validate_metadata(fields, *, measured_duration=None):
                 and abs(duration - measured_duration) <= 1, 'Displayed duration differs from media')
 
 
-def merge_catalog(baseline, candidate, plan):
-    """CAS-bound locale overlay; unchanged pages/targets survive byte-for-byte as objects."""
+def merge_catalog(baseline, candidate, plan, *, anchor=None):
+    """CAS-bound locale overlay; unchanged pages/targets survive byte-for-byte as objects.
+
+    A plan is frozen against the live v3 catalog. When merging into a v4 baseline,
+    ``anchor`` is that v3 catalog, which must be the baseline's human-only projection.
+    """
     require(plan.get('schemaVersion') == 'sermon-locale-release-plan-v1', 'Unsupported locale plan')
-    require(plan.get('baselineCatalogSha256') == sha(baseline), 'Baseline changed; rebuild release')
+    if anchor is not None:
+        require(baseline.get('schemaVersion') == CATALOG_V4 and project_human_catalog(baseline) == anchor,
+                'v4 baseline differs from its v3 projection')
+    require(plan.get('baselineCatalogSha256') == sha(baseline if anchor is None else anchor), 'Baseline changed; rebuild release')
     require(plan.get('baselineVersion'), 'Live baseline version required')
-    require(baseline.get('schemaVersion') == candidate.get('schemaVersion') == 'sermon-multilingual-catalog-v3', 'Catalog schema mismatch')
+    require(baseline.get('schemaVersion') == candidate.get('schemaVersion') in CATALOG_FILES, 'Catalog schema mismatch')
     page_id = plan.get('pageId')
     require(len(candidate['pages']) == 1 and candidate['pages'][0]['id'] == page_id, 'Candidate must contain only planned page')
     incoming = candidate['pages'][0]
@@ -272,8 +348,21 @@ def verify_client_acceptance(receipt, *, expected_intent, candidate_sha, reader,
     return {**accepted, 'readback': readback}
 
 
+def snapshot_catalog_v4(snapshot):
+    """The snapshot's v4 catalog, or its v3 catalog upgraded when v4 was never published."""
+    public = Path(snapshot) / 'public'
+    path = public / CATALOG_FILES[CATALOG_V4]
+    if path.exists():
+        return json.loads(path.read_text())
+    return upgrade_catalog(json.loads((public / CATALOG_FILES[CATALOG_V3]).read_text()))
+
+
 def validate_catalog_snapshot(snapshot):
-    """Validate a complete immutable local Hosting snapshot before an overlay."""
+    """Validate a complete immutable local Hosting snapshot before an overlay.
+
+    Returns the v3 catalog. When the snapshot also has a v4 catalog, the v3 file
+    must be exactly its human-only projection, and every v4 target is checked too.
+    """
     root = Path(snapshot)
     public = (root / 'public').resolve()
     report = json.loads((root / 'seal-report.json').read_text())
@@ -281,6 +370,13 @@ def validate_catalog_snapshot(snapshot):
     catalog = json.loads(catalog_path.read_text())
     file_sha = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
     require(report['catalogSha256'] == file_sha(catalog_path), 'Baseline catalog differs')
+    v4_path = public / CATALOG_FILES[CATALOG_V4]
+    catalogs = [catalog]
+    if v4_path.exists() or report.get('catalogV4Sha256') is not None:
+        require(v4_path.is_file() and report.get('catalogV4Sha256') == file_sha(v4_path), 'Baseline v4 catalog differs')
+        v4 = validate_catalog_schema(json.loads(v4_path.read_text()))
+        require(project_human_catalog(v4) == catalog, 'Baseline v3 catalog is not the human-only projection of v4')
+        catalogs.append(v4)
     files = {row['path'].lstrip('/'): row for row in report['files']}
     require(len(files) == len(report['files']), 'Duplicate baseline asset')
     actual = {str(path.relative_to(public)) for path in public.rglob('*') if path.is_file()}
@@ -289,14 +385,17 @@ def validate_catalog_snapshot(snapshot):
         path = public / name
         require(not path.is_symlink() and path.resolve().is_relative_to(public), 'Unsafe baseline path')
         require(file_sha(path) == row['sha256'] and path.stat().st_size == row['bytes'], 'Baseline asset differs')
-    for page in catalog['pages']:
-        for target in page['targets'].values():
+    for page in (page for value in catalogs for page in value['pages']):
+        for locale, target in page['targets'].items():
             name = target['releasePackageUrl'].lstrip('/')
             require(name in files and files[name]['sha256'] == target['releasePackageJsonSha256'], 'Missing baseline release')
             release = json.loads((public / name).read_text())
-            if release.get('schemaVersion') == 'sermon-target-language-release-package-v3':
+            if release.get('schemaVersion') in FOUR_PRODUCT_RELEASES:
                 require(release['pageId'] == page['id'] and release['englishSourcePackageJsonSha256'] == page['sourceIdentitySha256'],
                         'Baseline release source/page differs')
+                require(release['targetLocale'] == locale and target['releasePackageUrl'] == release_path(release)
+                        and (release['contentStatus'], release['audioStatus']) == (target['contentStatus'], target['audioStatus']),
+                        'Baseline release locale/status differs from its catalog target')
                 validate_public_study(release, reader=lambda url: (public / url.lstrip('/')).read_bytes())
             for asset in release['assets']:
                 name = asset['path'].lstrip('/')

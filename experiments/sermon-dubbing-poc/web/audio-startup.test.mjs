@@ -1,4 +1,5 @@
 import * as readingHelpers from './reading-mode.mjs';
+import { offlineReadingState } from './offline.mjs';
 import { messages as readerMessages } from './locales-reader.mjs';
 import { setIcon, setButtonLabel } from './icons.mjs';
 import test from 'node:test';
@@ -118,6 +119,7 @@ function setup({ bookmark = false, bootstrapFetch, alignmentPlay } = {}) {
     tab.setAttribute('aria-controls', id.replace('tab-', 'panel-')); return tab;
   });
   document.querySelectorAll = selector => {
+    if (selector === '#english-results button') return get('english-results').children.flatMap(row => row.children.filter(child => child.tagName === 'BUTTON'));
     if (selector === '[role="tab"],[data-view]') return viewTabs;
     if (selector === '[data-nudge],[data-play-toggle]') return [...nudges, ...miniPlay];
     if (selector === '[data-play-toggle]') return miniPlay;
@@ -149,7 +151,9 @@ function setup({ bookmark = false, bootstrapFetch, alignmentPlay } = {}) {
   };
   const context = vm.createContext({ setIcon, setButtonLabel, renderMeditation,
     ...i18n,
-    ...timing, ...catalogHelpers, ...readingHelpers, registerOfflineReading: async () => ({}), PlaybackMemory, document, window: new Element(),
+    ...timing, ...catalogHelpers,
+    fullReadingRows: readingHelpers.fullReadingRows, findEnglishPositions: readingHelpers.findEnglishPositions, ReadingFollow: readingHelpers.ReadingFollow,
+    offlineReadingState, registerOfflineReading: async () => ({}), PlaybackMemory, document, window: new Element(),
     localStorage: storage, location: { href: 'https://example.test/', search: '' }, history: { replaceState() {} },
     URL, URLSearchParams, console, performance, queueMicrotask, DOMException,
     setTimeout: (callback, delay) => { timers.set(++timerId, { callback, delay }); return timerId; },
@@ -173,6 +177,7 @@ function setup({ bookmark = false, bootstrapFetch, alignmentPlay } = {}) {
   const expose = `\nglobalThis.app = {
     initialize(value) { catalog = { weeks: [value] }; week = value; selectTrack(value.tracks[0].id); },
     selectTrack, selectWeek, setPosition, selectTab,
+    setOfflineState(value) { offlineState = value; renderOfflineStatus(); },
     loadCatalog(value) { catalog = value; week = undefined; selectWeek(value.defaultWeekId); }
   };`;
   if (bootstrapFetch) vm.runInContext(`globalThis.bootstrap = (async () => { ${fullAppSource}\n${expose} })();`, context);
@@ -694,7 +699,7 @@ test('published week switches language in the existing player and keeps full rea
   assert.equal(h.get('title').textContent, 'Title ko');
   assert.equal(h.get('current-text').textContent, 'Spoken ko');
   assert.equal(h.get('subtitle-toggle').hidden, true, 'listening toggle remains independent of transcript comparison');
-  const reading = h.get('full-reading-list').children[0];
+  const reading = h.get('full-reading-list').children[0].children[2];
   assert.equal(reading.className, 'cue-row');
   assert.match(reading.children[1].textContent, /Full reading ko/);
   assert.equal(reading.children[2].textContent, 'Approved English reference.');
@@ -736,13 +741,61 @@ test('collapsing the existing player retains the same paused audio and position'
   assert.equal(h.audio.paused,true); assert.equal(h.audio.loadCalls,loads);
 });
 
-test('refreshing display categories updates interface metadata without reloading paused audio', async () => {
+test('refreshing admitted media categories updates the badge without reloading paused audio', async () => {
   const h=setup(); h.audio.metadata(); h.audio.currentTime=82;
   const src=h.audio.src, loads=h.audio.loadCalls;
-  h.context.fetch=async () => ({ok:true,json:async () => ({schemaVersion:'sermon-multilingual-catalog-v3',pages:[{id:week.id,displayCategory:{schemaVersion:'sermon-page-display-category-v1',labels:{'zh-Hans':'研读材料',en:'Study'}}}]})});
+  h.context.fetch=async () => ({ok:true,json:async () => ({schemaVersion:'sermon-multilingual-catalog-v3',pages:[{id:week.id,mediaType:'podcast'}]})});
   await Promise.all(h.get('category-refresh').click());
-  assert.equal(h.get('display-category').textContent,'研读材料');
+  assert.equal(h.get('display-category').textContent,'播客');
   assert.equal(h.audio.currentTime,82); assert.equal(h.audio.paused,true);
   assert.equal(h.audio.src,src); assert.equal(h.audio.loadCalls,loads);
-  delete week.displayCategory;
+  delete week.displayMediaType;
+});
+
+test('scrollbar scroll enters free reading while programmatic recenter events retain following', () => {
+  const h = setup(); h.audio.metadata(); h.audio.currentTime = 180; h.audio.paused = false;
+  h.get('show-transcript').click();
+  h.context.window.dispatch('scroll');
+  assert.equal(h.get('reading-follow').getAttribute('aria-pressed'), 'true');
+  h.context.window.scrollY = 120;
+  h.context.window.dispatch('scroll');
+  assert.equal(h.get('reading-free').getAttribute('aria-pressed'), 'true');
+  const row = h.get('transcript-list').children[0], scrolls = row.scrollCalls?.length || 0;
+  h.audio.currentTime = 20; h.audio.dispatch('timeupdate');
+  assert.equal(row.scrollCalls?.length || 0, scrolls);
+  h.get('reading-current').click(); h.context.window.dispatch('scroll');
+  assert.equal(h.get('reading-follow').getAttribute('aria-pressed'), 'true');
+});
+
+test('English locate buttons become usable after late metadata and disable on audio failure', () => {
+  const h = setup(), bilingual = structuredClone(week);
+  bilingual.tracks[0].id = 'late-english';
+  bilingual.tracks[0].cues[0].blockId = 'source-0';
+  bilingual.transcript = {schemaVersion:'sermon-bilingual-transcript-v1',blocks:[
+    {blockId:'source-0',english:'Jesus is worthy.',sourceTextOrigin:'fixture',reviewState:'unspecified'}]};
+  h.app.initialize(bilingual);
+  h.get('english-query').value = 'worthy'; h.get('english-query').dispatch('input');
+  const button = h.get('english-results').children[0].children[2];
+  assert.equal(button.disabled, true);
+  h.audio.metadata(); assert.equal(button.disabled, false);
+  h.audio.fail(); assert.equal(button.disabled, true);
+});
+
+test('published page without its optional admitted English sidecar hides current English', () => {
+  const h = setup(), missing = structuredClone(week);
+  missing.tracks[0].id = 'missing-english';
+  missing.contentVariants = {'zh-Hans': structuredClone(week)};
+  h.app.initialize(missing); h.audio.metadata();
+  assert.equal(h.get('current-english').hidden, true);
+  h.app.setPosition(160); assert.equal(h.get('current-english').hidden, true);
+});
+
+test('terminal online offline-cache failure displays unavailable rather than pending', () => {
+  const h = setup();
+  h.app.setOfflineState({supported:true,online:true,available:false,reason:'preparing'});
+  assert.equal(h.get('offline-reading-status').textContent, readerMessages.zh['reader.offlinePending']);
+  for (const reason of ['registration-failed','activation-failed','worker-unavailable','cache-unavailable']) {
+    h.app.setOfflineState({supported:true,online:true,available:false,reason});
+    assert.equal(h.get('offline-reading-status').textContent, readerMessages.zh['reader.offlineUnavailable']);
+  }
 });

@@ -35,8 +35,15 @@ export function findEnglishPositions(rows, query) {
 
 export class ReadingFollow {
   following = true;
-  reset() { this.following = true; }
-  userScroll() { this.following = false; }
+  programmaticPosition = null;
+  reset() { this.following = true; this.programmaticPosition = null; }
+  userScroll() { this.following = false; this.programmaticPosition = null; }
+  programmaticScroll(scroll, position) { scroll(); this.programmaticPosition = position(); }
+  observeScroll(position) {
+    if (this.programmaticPosition && position.every((value, i) =>
+      Math.abs(value - this.programmaticPosition[i]) <= 1)) return;
+    this.userScroll();
+  }
   returnToCurrent(scroll) { this.following = true; scroll(); }
   update({ active, playing, changed }, scroll) {
     if (active && playing && changed && this.following) scroll();

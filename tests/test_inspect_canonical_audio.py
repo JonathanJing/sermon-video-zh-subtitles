@@ -134,6 +134,25 @@ class AudioInspectionTests(unittest.TestCase):
         (self.fixture.asset_root / 'redirect').symlink_to(self.root / 'audio.json')
         with self.assertRaisesRegex(ValueError, 'Symlink'): self.inspect()
 
+    def test_audio_waiver_must_bind_the_text_receipt_this_lane_releases(self):
+        from unittest import mock
+        text_receipt = json.loads(self.upstream['human_receipt'].read_text())
+        waiver = {'reviewKind': 'machine_quality_waiver',
+                  'englishSourcePackageJsonSha256': fixtures.subject.json_sha256(
+                      json.loads(self.upstream['source'].read_text())),
+                  'targetLanguageCandidateJsonSha256': fixtures.subject.json_sha256(
+                      json.loads(self.upstream['candidate'].read_text())),
+                  'textWaiverJsonSha256': fixtures.subject.json_sha256(text_receipt)}
+        fixtures.write_json(self.root / 'screening.json', self.fixture.screening)
+        self.config.update(machineWaiver='waiver.json', screening='screening.json')
+        # Only the chain binding is under test; the waiver's own screening checks are covered elsewhere.
+        with mock.patch.object(subject.stage, 'validate_audio_screening_review'):
+            fixtures.write_json(self.root / 'waiver.json', waiver)
+            self.assertEqual(self.inspect()['listeningReviewKind'], 'machine_quality_waiver')
+            fixtures.write_json(self.root / 'waiver.json', {**waiver, 'textWaiverJsonSha256': '0' * 64})
+            with self.assertRaisesRegex(ValueError, 'audio_waiver_not_bound'):
+                self.inspect()
+
     def test_configuration_rejects_dispatch_and_overridden_upstream(self):
         for key in ('source', 'candidate', 'command', 'approve'):
             with self.subTest(key=key), self.assertRaises(ValueError):

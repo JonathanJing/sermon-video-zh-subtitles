@@ -25,6 +25,13 @@ COMPONENTS = ("translator", "reviewer", "terminology", "scripture", "languageRev
 POLICY_V2 = "sermon-target-language-policy-v2"
 POLICY_V3 = "sermon-target-language-policy-v3"
 POLICY_V4 = "sermon-target-language-policy-v4"
+PLUGIN_DIR = ROOT / "scripts/language_review_plugins"
+# Week-independent machine-QC plugins a NEW ko/es policy binds by default. The
+# frozen policy carries pluginId/implementation hash/requiredChecks as before,
+# so the policy format is unchanged and existing frozen policies keep their bytes.
+MACHINE_QC_PLUGINS = {"ko": "ko_weekly_auto.py", "es": "es_weekly_auto.py"}
+LANGUAGE_REVIEW_BINDING = ("pluginId", "pluginImplementationSha256", "implementationStatus", "requiredChecks")
+LANGUAGE_REVIEW_MODES = ("draft", "machine_qc")
 
 
 def canonical_sha256(value: object) -> str:
@@ -208,11 +215,65 @@ def validate_strict_policy(policy, rubric, *, series_table=SERIES_TABLE):
             'executionAuthority': 'none'}
 
 
+def machine_qc_language_review(locale: str) -> dict[str, Any]:
+    """Language-review binding of the week-independent ko/es machine-QC plugin."""
+    if locale not in MACHINE_QC_PLUGINS:
+        raise ValueError("Machine-QC language plugins cover ko and es only; "
+                         "zh-Hans keeps its own plugin binding")
+    try:
+        from scripts import produce_target_language_candidate as producer
+        from scripts.language_review_plugins import auto_qc_text_common
+    except ImportError:  # Direct execution via ``python scripts/...``.
+        import produce_target_language_candidate as producer
+        from language_review_plugins import auto_qc_text_common
+    import ast
+    plugin = PLUGIN_DIR / MACHINE_QC_PLUGINS[locale]
+    if plugin.name not in producer.AUTO_QC_PLUGIN_NAMES:
+        raise ValueError("Machine-QC plugin is not hashed with its shared rules")
+    literals = {node.targets[0].id: node.value.value
+                for node in ast.parse(plugin.read_text(encoding="utf-8")).body
+                if isinstance(node, ast.Assign) and len(node.targets) == 1
+                and isinstance(node.targets[0], ast.Name) and isinstance(node.value, ast.Constant)}
+    return {"pluginId": literals["PLUGIN_ID"],
+            "pluginImplementationSha256": producer.plugin_implementation_sha256(plugin),
+            "implementationStatus": "verified",
+            "requiredChecks": list(auto_qc_text_common.REQUIRED)}
+
+
+def bind_language_review(draft: dict[str, Any], mode: str | None = None) -> dict[str, Any]:
+    """Select the language plugin of a NEW draft; frozen policies are never rebound.
+
+    ``draft`` keeps the draft's own binding. A ko/es draft whose languageReview
+    leaves the whole plugin binding out gets the machine-QC plugin, and
+    ``machine_qc`` replaces a template's binding with it explicitly. zh-Hans keeps
+    its existing plugin and must name it.
+    """
+    mode = mode or "draft"
+    if mode not in LANGUAGE_REVIEW_MODES:
+        raise ValueError(f"Unknown language review mode: {mode}")
+    if not isinstance(draft, dict) or "componentSha256" in draft:
+        raise ValueError("Freeze requires an unresolved policy draft without component hashes")
+    review = draft.get("languageReview")
+    if not isinstance(review, dict):
+        return draft
+    present = [key for key in LANGUAGE_REVIEW_BINDING if key in review]
+    if mode == "draft" and present:
+        if "pluginId" not in present:
+            raise ValueError("Language review binding is incomplete; name the plugin or leave the binding out")
+        return draft
+    if draft.get("schemaVersion") not in {POLICY_V2, POLICY_V3, POLICY_V4}:
+        raise ValueError("Machine-QC plugin binding needs a v2, v3 or v4 policy draft")
+    bound = copy.deepcopy(draft)
+    bound["languageReview"].update(machine_qc_language_review(draft.get("targetLocale")))
+    return bound
+
+
 def freeze_strict_policy(draft, rubric, *, series_table=SERIES_TABLE,
-                         shadow_candidate=None, content_approval=None):
+                         shadow_candidate=None, content_approval=None, language_review=None):
     """Freeze a NEW strict policy; no mode migration or old-artifact mutation."""
     if not isinstance(draft, dict) or draft.get('schemaVersion') != POLICY_V3 or 'componentSha256' in draft:
         raise ValueError('Strict freeze requires a new v3 draft without component hashes')
+    draft = bind_language_review(draft, language_review)
     legacy = copy.deepcopy(draft)
     legacy['schemaVersion'] = POLICY_V2
     legacy.pop('reviewMode', None); legacy.pop('reviewContract', None)
@@ -260,10 +321,11 @@ def verify_shadow_term_evidence(policy: dict[str, Any], candidate: dict[str, Any
 
 def freeze_policy(draft: dict[str, Any], *, series_table: Path = SERIES_TABLE,
                   shadow_candidate: dict[str, Any] | None = None,
-                  content_approval: dict[str, Any] | None = None) -> dict[str, Any]:
+                  content_approval: dict[str, Any] | None = None,
+                  language_review: str | None = None) -> dict[str, Any]:
     if not isinstance(draft, dict) or "componentSha256" in draft:
         raise ValueError("Freeze requires an unresolved policy draft without component hashes")
-    policy = dict(draft)
+    policy = dict(bind_language_review(draft, language_review))
     if policy.get("schemaVersion") == POLICY_V2 and policy["sourceScope"]["termApprovalEvidence"]:
         if shadow_candidate is None or content_approval is None:
             raise ValueError("Scoped term approvals require the exact shadow candidate and human receipt")
@@ -342,6 +404,9 @@ def main() -> None:
     parser.add_argument("--series-terminology", type=Path, default=SERIES_TABLE)
     parser.add_argument("--shadow-candidate", type=Path)
     parser.add_argument("--content-approval", type=Path)
+    parser.add_argument("--language-review", choices=LANGUAGE_REVIEW_MODES, default="draft",
+                        help="draft: keep the draft's plugin binding (ko/es drafts without one get "
+                             "the machine-QC plugin); machine_qc: bind ko/es-weekly-auto-v1")
     args = parser.parse_args()
     policy = json.loads(args.policy.read_text(encoding="utf-8"))
     if args.command == "freeze":
@@ -353,6 +418,7 @@ def main() -> None:
             if args.shadow_candidate else None,
             content_approval=json.loads(args.content_approval.read_text(encoding="utf-8"))
             if args.content_approval else None,
+            language_review=args.language_review,
         )
         args.out.parent.mkdir(parents=True, exist_ok=True)
         args.out.write_text(json.dumps(resolved, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

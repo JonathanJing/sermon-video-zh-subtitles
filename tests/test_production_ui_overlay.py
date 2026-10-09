@@ -122,6 +122,20 @@ class ProductionUIOverlayTest(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     self.stage()
 
+    def test_v4_only_week_video_redirect_is_checked(self):
+        public = self.base / 'public'
+        ui.validate_config(self.config, public)
+        machine_week = {'canonicalUrl': '/pages/machine-week/full-video.mp4',
+                        'storageUrl': 'https://storage.googleapis.com/ai-for-god-sermon-media-prod/machine.mp4'}
+        (public / 'multilingual-v4.json').write_text(json.dumps({
+            'schemaVersion': 'sermon-multilingual-catalog-v4', 'pages': [{'videoDelivery': machine_week}]}))
+        with self.assertRaisesRegex(ValueError, 'video redirect'):
+            ui.validate_config(self.config, public)
+        config = json.loads(json.dumps(self.config))
+        config['hosting']['redirects'].append({'source': machine_week['canonicalUrl'],
+                                               'destination': machine_week['storageUrl'], 'type': 302})
+        ui.validate_config(config, public)
+
     def test_source_artwork_must_match_checked_code(self):
         (self.overlay / 'public/icons.svg').write_text('unreviewed')
         with self.assertRaisesRegex(ValueError, 'checked-in source'):

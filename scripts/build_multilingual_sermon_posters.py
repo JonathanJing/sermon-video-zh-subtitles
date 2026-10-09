@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build source-bound Chinese, Korean and Spanish posters for the existing App."""
+"""Build source-bound dual-QR weekly posters, with optional English reference artwork."""
 import argparse
 import datetime
 import hashlib
@@ -12,7 +12,8 @@ import tempfile
 from urllib.parse import urlencode, urlsplit
 from urllib.request import Request, urlopen
 
-from build_sermon_poster import digest, read, write, verify_outputs
+from build_sermon_poster import digest, read, write
+from weekly_poster_template import apply_template, verify_outputs, prepare_badges, add_english_reference
 
 COPY = {
     'zh-Hans': dict(lang='zh', brand='同行', eyebrow='本周证道 · 中文',
@@ -31,6 +32,46 @@ COPY = {
                qrCaption='Esta semana, en español', reviewLabel='Traducción y audio revisados',
                disclaimer='Producción independiente · Traducción y voz asistidas por IA · No es una publicación oficial de la iglesia'),
 }
+
+# A machine quality waiver is never a human review: name what each product went through.
+MACHINE_REVIEW_LABELS = {
+    'zh-Hans': {('machine_checked', 'machine_checked'): '译文与配音经机器质检 · 未经人工审核',
+                ('human_reviewed', 'machine_checked'): '译文已审核 · 配音经机器质检，未经人工审核',
+                ('machine_checked', 'human_reviewed'): '译文经机器质检，未经人工审核 · 配音已审核'},
+    'ko': {('machine_checked', 'machine_checked'): '번역과 음성 기계 품질 검사 · 사람 검토 없음',
+           ('human_reviewed', 'machine_checked'): '번역 검토 완료 · 음성 기계 품질 검사, 음성은 사람의 검토를 거치지 않음',
+           ('machine_checked', 'human_reviewed'): '번역 기계 품질 검사, 번역은 사람의 검토를 거치지 않음 · 음성 검토 완료'},
+    'es': {('machine_checked', 'machine_checked'): 'Traducción y audio con control de calidad automático · Sin revisión humana',
+           ('human_reviewed', 'machine_checked'): 'Traducción revisada · Audio con control de calidad automático, sin revisión humana del audio',
+           ('machine_checked', 'human_reviewed'): 'Traducción con control de calidad automático, sin revisión humana de la traducción · Audio revisado'},
+}
+CATALOGS = (('multilingual-v4.json', 'sermon-multilingual-catalog-v4'),
+            ('multilingual-v3.json', 'sermon-multilingual-catalog-v3'))
+
+
+def review_label(locale, package):
+    statuses = (package.get('contentStatus'), package.get('audioStatus'))
+    if statuses == ('human_reviewed', 'human_reviewed'):
+        return COPY[locale]['reviewLabel']
+    disclosure = package.get('disclosure')
+    if (statuses not in MACHINE_REVIEW_LABELS[locale]
+            or package.get('schemaVersion') != 'sermon-target-language-release-package-v4'
+            or not isinstance(disclosure, dict) or disclosure.get('locale') != locale
+            or not str(disclosure.get('text', '')).strip()):
+        raise ValueError('locale must have a published, reviewed text and audio package: ' + locale)
+    return MACHINE_REVIEW_LABELS[locale][statuses]
+
+
+PRODUCTION_ORIGIN = 'https://ai-for-god-sermon-audio.web.app'
+
+
+def poster_origin(value, non_production=False):
+    """v1 posters point recipients at the production site; other origins are labeled proofs."""
+    origin = origin_url(value)
+    if origin != PRODUCTION_ORIGIN and not non_production:
+        raise ValueError('v1 posters use the production origin ' + PRODUCTION_ORIGIN +
+                         '; pass --non-production-proof for a labeled Beta/Dev proof')
+    return origin
 
 
 def origin_url(value):
@@ -59,27 +100,38 @@ def checked_json(path, expected=None):
     return read(path), value
 
 
-def load_sources(release, page_id, origin):
+def load_sources(release, page_id, origin, english_reference=None, locales=None):
     public = release / 'public'
-    catalog, catalog_sha = checked_json(public / 'multilingual-v3.json')
-    if catalog.get('schemaVersion') != 'sermon-multilingual-catalog-v3':
-        raise ValueError('expected multilingual v3 catalog')
+    # New clients read v4 first; v3 is its human-only projection and lacks machine-checked weeks.
+    name, version = next((row for row in CATALOGS if (public / row[0]).is_file()), CATALOGS[-1])
+    catalog, catalog_sha = checked_json(public / name)
+    if catalog.get('schemaVersion') != version:
+        raise ValueError('expected multilingual v3 or v4 catalog')
     pages = [page for page in catalog['pages'] if page['id'] == page_id]
     if len(pages) != 1:
         raise ValueError('page ID must match exactly one published page')
     page = pages[0]
     datetime.date.fromisoformat(page['date'])
-    checks = {'/multilingual-v3.json': catalog_sha}
+    checks = {'/' + name: catalog_sha}
+    # Only the locales this week's release plan published; a missing one is an error only if asked for.
+    locales = list(locales) if locales else [loc for loc in COPY if loc in page['targets']]
+    unknown = [loc for loc in locales if loc not in COPY or loc not in page['targets']]
+    if not locales or unknown:
+        raise ValueError('poster locales must be published targets of this page: ' + ', '.join(unknown or ['none']))
+    if english_reference is not None and 'zh-Hans' not in locales:
+        raise ValueError('the English reference poster needs the Chinese poster of the same week')
     bundles = {}
-    for locale, copy in COPY.items():
+    for locale in locales:
+        copy = COPY[locale]
         target = page['targets'][locale]
         release_path = target['releasePackageUrl']
         package, package_sha = checked_json(asset_file(public, release_path), target['releasePackageJsonSha256'])
         if (package.get('pageId') != page_id or package.get('targetLocale') != locale or
                 package.get('status') != 'published_http_verified' or
-                package.get('contentStatus') != 'human_reviewed' or
-                package.get('audioStatus') != 'human_reviewed'):
+                (package.get('contentStatus'), package.get('audioStatus')) !=
+                (target.get('contentStatus', 'human_reviewed'), target.get('audioStatus', 'human_reviewed'))):
             raise ValueError('locale must have a published, reviewed text and audio package: ' + locale)
+        label = review_label(locale, package)
         assets = [a for a in package['assets'] if a['role'] == 'content']
         if len(assets) != 1:
             raise ValueError('expected one approved content asset')
@@ -94,12 +146,16 @@ def load_sources(release, page_id, origin):
         labels = {k: v for k, v in copy.items() if k not in ('lang', 'tagline', 'reviewLabel')}
         brief = dict(locale=locale, date=page['date'], origin=origin,
                      **{key: content[key] for key in ('title', 'series', 'scripture', 'speaker')},
-                     tagline=copy['tagline'], reviewLabel=copy['reviewLabel'], labels=labels,
+                     tagline=copy['tagline'], reviewLabel=label, labels=labels,
                      qrURL=origin + '/?' + urlencode(dict(week=page_id, contentLang=locale, lang=copy['lang'])))
         checks.update({release_path: package_sha, assets[0]['path']: content_sha})
         bundles[locale] = dict(brief=brief, source=dict(pageId=page_id, targetLocale=locale,
             sourceIdentitySha256=page['sourceIdentitySha256'], catalogSha256=catalog_sha,
             releasePackageSha256=package_sha, contentSha256=content_sha, brief=brief))
+    for bundle in bundles.values():
+        apply_template(bundle)
+    if english_reference is not None:
+        add_english_reference(bundles, english_reference)
     return bundles, checks
 
 
@@ -123,6 +179,10 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for key in ('release', 'page-id', 'origin', 'out'):
         parser.add_argument('--' + key, required=True)
+    parser.add_argument('--locales', help='Comma-separated poster locales (default: every locale this page published)')
+    parser.add_argument('--non-production-proof', action='store_true',
+                        help='Allow a Beta/Dev origin; outputs are labeled as non-production proofs')
+    parser.add_argument('--english-reference', help='Source-bound English title/series/scripture JSON; references Chinese content, not an English release')
     parser.add_argument('--art')
     parser.add_argument('--art-prompt')
     parser.add_argument('--visual-reviewed', action='store_true')
@@ -130,11 +190,19 @@ def main():
     release, out = Path(args.release).resolve(), Path(args.out).resolve()
     if out.is_relative_to(release) or release.is_relative_to(out):
         raise ValueError('poster output must be separate from the release')
-    origin = origin_url(args.origin)
-    bundles, checks = load_sources(release, args.page_id, origin)
+    origin = poster_origin(args.origin, args.non_production_proof)
+    production = origin == PRODUCTION_ORIGIN
+    bundles, checks = load_sources(release, args.page_id, origin,
+                                   read(args.english_reference) if args.english_reference else None,
+                                   args.locales.split(',') if args.locales else None)
     if bool(args.art) != bool(args.art_prompt) or (args.visual_reviewed and not args.art):
         raise ValueError('render/review requires both --art and --art-prompt')
     out.mkdir(parents=True, exist_ok=True)
+    scope_path = out / 'poster-scope.json'
+    scope = dict(pageId=args.page_id, locales=list(bundles), origin=origin, productionOrigin=production)
+    if scope_path.exists() and read(scope_path) != scope:
+        raise ValueError('poster language scope changed; use a fresh output directory')
+    write(scope_path, scope)
     for locale, bundle in bundles.items():
         folder = out / locale
         folder.mkdir(exist_ok=True)
@@ -153,9 +221,10 @@ def main():
         return
     public_receipt = verify_public(origin, checks)
     write(out / 'public-input-verification.json', public_receipt)
-    renderer = Path(__file__).with_name('render_sermon_poster.swift')
+    renderer = Path(__file__).with_name('render_weekly_poster.swift')
     art, prompt = Path(args.art).resolve(), Path(args.art_prompt).resolve()
-    provenance = dict(artSha256=digest(art), promptSha256=digest(prompt),
+    badges = prepare_badges(out, bundles)
+    provenance = dict(templateVersion='tongxing-dual-qr-v1', templateSha256=digest(Path(__file__).with_name('weekly_poster_template.py')), badgeHashes={loc:digest(path) for loc,path in badges.items()}, artSha256=digest(art), promptSha256=digest(prompt),
                       rendererSha256=digest(renderer), builderSha256=digest(__file__))
     swift = shutil.which('swift')
     if not swift:
@@ -167,7 +236,7 @@ def main():
         if receipt.get('provenance') and receipt['provenance'] != provenance:
             raise ValueError('render inputs changed; use a fresh output directory')
         if receipt.get('outputs'):
-            hashes = verify_outputs(folder, bundle['brief']['qrURL'])
+            hashes = verify_outputs(folder, bundle['brief'])
             if hashes != receipt['outputs'] or digest(folder / 'artwork.png') != provenance['artSha256'] or digest(folder / 'art-prompt-used.txt') != provenance['promptSha256']:
                 raise ValueError('saved outputs or inputs were modified')
         else:
@@ -177,8 +246,8 @@ def main():
             shutil.copyfile(prompt, folder / 'art-prompt-used.txt')
             with tempfile.TemporaryDirectory(prefix='render-', dir=folder) as temporary:
                 subprocess.run([swift, '-module-cache-path', str(Path(tempfile.gettempdir()) / 'sermon-poster-swift-cache'),
-                                str(renderer), str(folder / 'poster-brief.json'), str(art), temporary], check=True)
-                hashes = verify_outputs(Path(temporary), bundle['brief']['qrURL'])
+                                str(renderer), str(folder / 'poster-brief.json'), str(art), str(badges[locale]), temporary], check=True)
+                hashes = verify_outputs(Path(temporary), bundle['brief'])
                 for name in hashes:
                     shutil.copyfile(Path(temporary) / name, folder / name)
         receipt.update(provenance=provenance, outputs=hashes, publicVerification=public_receipt,
@@ -187,7 +256,10 @@ def main():
             receipt.update(visualReview=dict(reviewer='codex', humanApproval=False),
                            visualReviewedAt=datetime.datetime.now(datetime.timezone.utc).isoformat())
         write(receipt_path, receipt)
-    print(json.dumps(dict(status='complete' if args.visual_reviewed else 'qr_verified_visual_review_pending',
+    write(out / 'poster-manifest.json', dict(schemaVersion='tongxing-poster-manifest-v1', templateVersion='tongxing-dual-qr-v1', origin=origin, productionOrigin=production, artSha256=provenance['artSha256'], locales={loc:dict(receipt=str((out / loc / 'poster-receipt.json').relative_to(out)), contentLocale=b['source']['targetLocale'], announcementEligible=b['source'].get('announcementEligible',True)) for loc,b in bundles.items()}))
+    completed = all(read(out / loc / 'poster-receipt.json')['status'] == 'complete' for loc in bundles)
+    status = 'complete' if completed else 'qr_verified_visual_review_pending'
+    print(json.dumps(dict(status=status if production else 'non_production_proof_' + status,
                           out=str(out), locales=list(bundles))))
 
 

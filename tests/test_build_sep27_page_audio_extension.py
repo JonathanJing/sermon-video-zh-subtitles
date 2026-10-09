@@ -206,6 +206,7 @@ class DualTextBindingTests(unittest.TestCase):
                                   out=self.root / "candidate", **inputs)
         with mock.patch.object(subject, "PAGE_DATA_SHA256", subject.stage.file_sha(page_data)), \
              mock.patch.object(subject.stage, "read_package", side_effect=lambda path, _: subject.read(path)), \
+             mock.patch.object(subject.stage, "read_audio_screening", side_effect=subject.read), \
              mock.patch.object(subject.stage, "reviewed_candidate", return_value=True), \
              mock.patch.object(subject.stage, "validate_audio_screening_review"), \
              mock.patch.object(subject.stage, "decode_audio", return_value=1):

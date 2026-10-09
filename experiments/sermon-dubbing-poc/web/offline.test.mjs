@@ -2,10 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
-import { publicReadingPath, registerOfflineReading } from './offline.mjs';
+import { publicReadingPath, registerOfflineReading, offlineReadingState } from './offline.mjs';
 
 const origin = 'https://example.web.app';
 const workerSource = await readFile(new URL('./offline-worker.js', import.meta.url), 'utf8');
+const shell = path => new Response('shell', { headers: { 'content-type':
+  /\.m?js$/.test(path) ? 'text/javascript' : path.endsWith('.css') ? 'text/css'
+    : path.endsWith('.html') ? 'text/html' : 'image/svg+xml' } });
 const json = body => new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } });
 
 function worker(fetchImpl = async () => json({ text: 'reading' })) {
@@ -107,7 +110,7 @@ test('offline availability requires every observed public reading request and su
   let offline = true;
   const w = worker(async () => { if (offline) throw new Error('offline'); return json({ text: 'restored' }); });
   const cache = await w.caches.open(w.CACHE_NAME);
-  for (const path of w.SHELL) await cache.put(path, new Response('shell'));
+  for (const path of w.SHELL) await cache.put(path, shell(path));
   await cache.put('/weekly.json', json({ weeks: [] }));
   const path = '/study/week-1/es/meditation.json';
   await assert.rejects(w.networkFirst(new Request(origin + path), path), /offline/);
@@ -123,21 +126,34 @@ test('offline availability requires every observed public reading request and su
   assert.equal((await w.status()).missingReadingCount, 0);
 });
 
-test('install accepts missing optional shell files; status claims availability only with full shell', async () => {
+test('failed required shell installation and activation preserve the previous working cache', async () => {
   const w = worker(async request => {
     const path = new URL(request.url).pathname;
-    if (path === '/reading-mode.mjs') return new Response('missing', { status: 404 });
-    const type = path.endsWith('.mjs') || path.endsWith('.js') ? 'text/javascript'
-      : path.endsWith('.css') ? 'text/css' : path.endsWith('.html') ? 'text/html' : 'image/svg+xml';
-    return new Response('shell', { headers: { 'content-type': type } });
+    return path === '/reading-mode.mjs' ? new Response('missing', { status: 404 }) : shell(path);
+  });
+  const oldName = 'tongxing-reading-1.26.15-v1';
+  const oldCache = await w.caches.open(oldName);
+  await oldCache.put('/index.html', shell('/index.html'));
+  let pending;
+  w.handlers.get('install')({ waitUntil(value) { pending = value; } });
+  await assert.rejects(pending, /Required offline shell incomplete/);
+  assert.ok(await oldCache.match('/index.html'));
+  assert.ok((await w.caches.keys()).includes(oldName));
+  w.handlers.get('activate')({ waitUntil(value) { pending = value; } });
+  await assert.rejects(pending, /Required offline shell incomplete/);
+  assert.ok((await w.caches.keys()).includes(oldName));
+});
+
+test('missing optional shell assets allow a fully verified required shell to install', async () => {
+  const w = worker(async request => {
+    const path = new URL(request.url).pathname;
+    return path === '/brand-icon-light.png' ? new Response('missing', { status: 404 }) : shell(path);
   });
   let pending;
   w.handlers.get('install')({ waitUntil(value) { pending = value; } });
   await pending;
   const cache = await w.caches.open(w.CACHE_NAME);
   await cache.put('/weekly.json', json({ weeks: [] }));
-  assert.equal((await w.status()).available, false);
-  await cache.put('/reading-mode.mjs', new Response('module', { headers: { 'content-type': 'text/javascript' } }));
   const status = await w.status();
   assert.equal(status.available, true);
   assert.equal(status.audioAvailable, false);
@@ -147,7 +163,8 @@ test('install accepts missing optional shell files; status claims availability o
 test('activation deletes only older reading caches, leaving unrelated storage intact', async () => {
   const w = worker();
   await w.caches.open('tongxing-reading-1.26.15-v1');
-  await w.caches.open(w.CACHE_NAME);
+  const cache = await w.caches.open(w.CACHE_NAME);
+  for (const path of w.SHELL) await cache.put(path, shell(path));
   await w.caches.open('unrelated-cache');
   let pending;
   w.handlers.get('activate')({ waitUntil(value) { pending = value; } });
@@ -197,4 +214,116 @@ test('unsupported clients report unavailable without registering', async () => {
   assert.equal(statuses[0].supported, false);
   assert.equal(statuses[0].available, false);
   assert.equal(statuses[0].reason, 'unsupported');
+});
+
+async function messageWorker(w, paths) {
+  let pending, result;
+  w.handlers.get('message')({ data: { type: 'CACHE_PUBLIC_READING', paths },
+    ports: [{ postMessage(value) { result = value; } }], waitUntil(value) { pending = value; } });
+  await pending;
+  return result;
+}
+
+test('canonical sermon and locale navigations retain independent HTML and never replace the root reader', async () => {
+  let online = true;
+  const w = worker(async request => {
+    if (!online) throw new Error('offline');
+    return new Response(new URL(request.url).pathname, { headers: { 'content-type': 'text/html' } });
+  });
+  const paths = ['/', '/pages/first/zh-Hans/index.html', '/pages/first/es/index.html',
+    '/pages/second/es/index.html', '/pages/second/ko/', '/pages/second/zh-Hans'];
+  const request = path => ({ url: origin + path, method: 'GET', mode: 'navigate', headers: new Headers() });
+  for (const path of paths) {
+    const key = w.eligibleRequest(request(path));
+    assert.equal(key, path === '/' ? '/index.html' : path);
+    await w.networkFirst(request(path), key);
+  }
+  online = false;
+  for (const path of paths)
+    assert.equal(await (await w.networkFirst(request(path), w.eligibleRequest(request(path)))).text(), path);
+  await assert.rejects(w.networkFirst(request('/pages/unvisited/es/index.html'),
+    '/pages/unvisited/es/index.html'), /offline/);
+});
+
+test('priming reuses verified resources already cached by controlled fetches without another network request', async () => {
+  const requested = [];
+  const w = worker(async request => { requested.push(new URL(request.url).pathname); return json({ safe: true }); });
+  const paths = ['/weekly.json', '/content/week-1/es.json', '/captions/week-1/es.json'];
+  for (const path of paths) await w.networkFirst(new Request(origin + path), path);
+  await messageWorker(w, paths);
+  assert.deepEqual(requested, paths);
+  const cache = await w.caches.open(w.CACHE_NAME);
+  await cache.put('/content/week-1/es.json', new Response('<html/>', { headers: { 'content-type': 'text/html' } }));
+  await messageWorker(w, ['/content/week-1/es.json']);
+  assert.equal(requested.length, 4);
+  assert.deepEqual(await (await cache.match('/content/week-1/es.json')).json(), { safe: true });
+});
+
+test('worker primes every path beyond 400 with at most eight simultaneous requests', async () => {
+  let active = 0, peak = 0;
+  const requested = [];
+  const w = worker(async request => {
+    active++; peak = Math.max(peak, active);
+    requested.push(new URL(request.url).pathname);
+    await new Promise(resolve => setTimeout(resolve, 1));
+    active--;
+    return json({ safe: true });
+  });
+  const paths = Array.from({ length: 413 }, (_, index) => `/content/week-${index}/es.json`);
+  const result = await messageWorker(w, [...paths, paths[0], '/media/no.mp3', 'https://elsewhere.test/weekly.json']);
+  assert.deepEqual([...requested].sort(), [...paths].sort());
+  assert.ok(peak <= 8);
+  assert.equal(result.cachedReadingCount, 413);
+  const cache = await w.caches.open(w.CACHE_NAME);
+  assert.ok(await cache.match(paths.at(-1)));
+});
+
+function clientEnv({ active, register, ready = Promise.resolve(), entries = [] } = {}) {
+  class Channel {
+    constructor() {
+      this.port1 = { onmessage: null, close() {} };
+      this.port2 = { postMessage: data => this.port1.onmessage({ data }) };
+    }
+  }
+  return { isSecureContext: true, navigator: { onLine: true, serviceWorker: {
+    controller: active, register: register || (async () => ({ active })), ready,
+    addEventListener() {}, removeEventListener() {} } }, location: { origin },
+  MessageChannel: Channel, setTimeout, clearTimeout, performance: { getEntriesByType: () => entries } };
+}
+
+test('client sends the entire resource set in bounded messages, including paths after 400', async () => {
+  const sent = [], statuses = [];
+  const active = { postMessage(message, ports) {
+    sent.push(message);
+    ports[0].postMessage({ available: true, reason: 'available' });
+  } };
+  const paths = Array.from({ length: 413 }, (_, index) => `/content/week-${index}/es.json`);
+  const env = clientEnv({ active, entries: paths.map(path => ({ name: origin + path })) });
+  const handle = await registerOfflineReading({ env, onStatus: status => statuses.push(status) });
+  assert.deepEqual(sent.flatMap(message => message.paths), ['/weekly.json', '/multilingual-v3.json', ...paths]);
+  assert.ok(sent.every(message => message.paths.length <= 32));
+  assert.equal(statuses[0].state, 'pending');
+  assert.equal(statuses.at(-1).state, 'available');
+  handle.dispose();
+});
+
+test('registration, activation and initial worker exchange failures finish as unavailable', async () => {
+  const failingEnvs = [clientEnv({ register: async () => { throw new Error('registration failed'); } }),
+    clientEnv({ ready: new Promise(() => {}) }),
+    clientEnv({ active: { postMessage() { throw new Error('worker failed'); } } }),
+    clientEnv({ active: { postMessage(message, ports) {
+      ports[0].postMessage({ available: false, reason: 'cache-unavailable' });
+    } } })];
+  failingEnvs[1].setTimeout = callback => { queueMicrotask(callback); return 0; };
+  failingEnvs[1].clearTimeout = () => {};
+  for (const env of failingEnvs) {
+    const statuses = [];
+    const handle = await registerOfflineReading({ env, onStatus: status => statuses.push(status) });
+    assert.equal(statuses[0].state, 'pending');
+    assert.equal(statuses.at(-1).state, 'unavailable');
+    assert.equal(statuses.at(-1).available, false);
+    assert.ok(['registration-failed', 'cache-unavailable'].includes(statuses.at(-1).reason));
+    handle.dispose();
+  }
+  assert.equal(offlineReadingState({ supported: true, reason: 'not-cached' }), 'unavailable');
 });

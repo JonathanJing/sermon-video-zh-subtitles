@@ -1,0 +1,5 @@
+2026-10-08T01:37:20Z [tts] container start image=qwen-tts:2026-10-03
+2026-10-08T01:37:28Z [tts] validating inputs under /stage/repo
+2026-10-08T01:37:29Z [tts] loading speaker registry config/speaker-voice-registry.json ok
+2026-10-08T01:37:30Z [tts] ERROR input validation failed: FileNotFoundError: /stage/repo/docs/series-terminology.zh.md
+2026-10-08T01:37:30Z [tts] exit 3

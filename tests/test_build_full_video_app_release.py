@@ -89,7 +89,12 @@ class FullVideoAppReleaseTests(unittest.TestCase):
         self.assertEqual(report["status"], "ready_for_catalog_deployment")
         catalog = release.read(sealed / "public/multilingual-v3.json")
         self.assertEqual(catalog["pages"][0]["title"], "耶稣配得")
-        self.assertEqual(len(report["files"]), 16)
+        # Twelve locale assets, three releases, and both catalogs: v4 and its human-only v3 projection.
+        self.assertEqual(len(report["files"]), 17)
+        v4 = release.read(sealed / "public/multilingual-v4.json")
+        self.assertEqual(v4["schemaVersion"], "sermon-multilingual-catalog-v4")
+        self.assertEqual(release.delivery_contract.project_human_catalog(v4), catalog)
+        self.assertEqual(report["catalogV4Sha256"], release.digest(sealed / "public/multilingual-v4.json"))
         for locale in release.LOCALES:
             package = release.read(sealed / f"public/releases-v2/{self.page_id}/{locale}.json")
             self.assertEqual(package["spokenTargetLanguageCandidateJsonSha256"], "b" * 64)
