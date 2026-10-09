@@ -1,0 +1,12 @@
+{
+  "requestCount": 2,
+  "maxConcurrentRequests": 1,
+  "elapsedSeconds": [
+    11.649198333998356,
+    8.774652042000525
+  ],
+  "reservedMicrousd": 75736,
+  "budgetRows": 2,
+  "unknownRequests": 0,
+  "timingScope": "complete_request_wall_time"
+}

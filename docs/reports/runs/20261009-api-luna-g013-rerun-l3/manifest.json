@@ -1,0 +1,450 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261009-api-luna-g013-rerun-l3",
+  "runs": [
+    {
+      "label": "run-03",
+      "source": "~/.codex/worktrees/api-luna-concurrency/sermon-video-zh-subtitles/artifacts/api-luna-concurrency-20261008/run-03",
+      "skipped": {
+        ".json": 125,
+        ".lock": 1,
+        ".jsonl": 1,
+        ".csv": 3
+      }
+    },
+    {
+      "label": "run-04",
+      "source": "~/.codex/worktrees/api-luna-concurrency/sermon-video-zh-subtitles/artifacts/api-luna-concurrency-20261008/run-04",
+      "skipped": {
+        ".lock": 1,
+        ".jsonl": 1,
+        ".csv": 3,
+        ".json": 1
+      }
+    },
+    {
+      "label": "run-05",
+      "source": "~/.codex/worktrees/api-luna-concurrency/sermon-video-zh-subtitles/artifacts/api-luna-concurrency-20261008/run-05",
+      "skipped": {
+        ".lock": 1,
+        ".jsonl": 1,
+        ".csv": 3,
+        ".json": 1
+      }
+    },
+    {
+      "label": "run-06",
+      "source": "~/.codex/worktrees/api-luna-concurrency/sermon-video-zh-subtitles/artifacts/api-luna-concurrency-20261008/run-06",
+      "skipped": {
+        ".lock": 1,
+        ".jsonl": 1,
+        ".csv": 3,
+        ".json": 1
+      }
+    },
+    {
+      "label": "run-07",
+      "source": "~/.codex/worktrees/api-luna-concurrency/sermon-video-zh-subtitles/artifacts/api-luna-concurrency-20261008/run-07",
+      "skipped": {
+        ".lock": 1,
+        ".jsonl": 1,
+        ".csv": 3,
+        ".json": 1
+      }
+    },
+    {
+      "label": "run-08",
+      "source": "~/.codex/worktrees/api-luna-concurrency/sermon-video-zh-subtitles/artifacts/api-luna-concurrency-20261008/run-08",
+      "skipped": {
+        ".json": 91,
+        ".lock": 1,
+        ".jsonl": 1,
+        ".csv": 3
+      }
+    },
+    {
+      "label": "audio-r1",
+      "source": "~/.codex/worktrees/api-luna-concurrency/sermon-video-zh-subtitles/artifacts/api-luna-concurrency-20261008/audio-r1",
+      "skipped": {
+        ".lock": 1,
+        ".json": 4,
+        ".txt": 1
+      }
+    },
+    {
+      "label": "audio-r2",
+      "source": "~/.codex/worktrees/api-luna-concurrency/sermon-video-zh-subtitles/artifacts/api-luna-concurrency-20261008/audio-r2",
+      "skipped": {
+        ".lock": 3,
+        ".json": 24,
+        ".txt": 1,
+        ".wav": 13
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "run-03",
+      "path": "accounting/operations.log",
+      "kind": "log",
+      "bytes": 59801,
+      "truncated": false,
+      "sha256": "f7a7625e3972cdd2c50674386986a53350f04c18b970c9693409e58ee29671aa",
+      "redactions": {}
+    },
+    {
+      "run": "run-03",
+      "path": "accounting/summary.json",
+      "kind": "whole",
+      "bytes": 158793,
+      "truncated": false,
+      "sha256": "e97a114bdd415d258177d8cd0dcf5afd5dccaa8c7501bf461a120e8555da908c",
+      "redactions": {}
+    },
+    {
+      "run": "run-03",
+      "path": "api-transport-receipt.json",
+      "kind": "whole",
+      "bytes": 193,
+      "truncated": false,
+      "sha256": "4791980e126e9a386e99c57fcb7a1a31c63570144f62e128caff5a718a5017a1",
+      "redactions": {}
+    },
+    {
+      "run": "run-03",
+      "path": "preflight.json",
+      "kind": "whole",
+      "bytes": 257,
+      "truncated": false,
+      "sha256": "3764dd6d77fd884b44c13a1802415453e40efdf0fef5dea6c746ff912224c417",
+      "redactions": {}
+    },
+    {
+      "run": "run-04",
+      "path": "accounting/operations.log",
+      "kind": "log",
+      "bytes": 2658,
+      "truncated": false,
+      "sha256": "5d4abce60e4ccabebb8edb316e1cbf771767032787ebe36213fb2edca2c127f2",
+      "redactions": {}
+    },
+    {
+      "run": "run-04",
+      "path": "accounting/summary.json",
+      "kind": "whole",
+      "bytes": 20582,
+      "truncated": false,
+      "sha256": "836de3ac0065a304de574c361579132b607fce62df9869f6108b10fd32463933",
+      "redactions": {}
+    },
+    {
+      "run": "run-04",
+      "path": "api-transport-receipt.json",
+      "kind": "whole",
+      "bytes": 193,
+      "truncated": false,
+      "sha256": "4791980e126e9a386e99c57fcb7a1a31c63570144f62e128caff5a718a5017a1",
+      "redactions": {}
+    },
+    {
+      "run": "run-04",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 356,
+      "truncated": false,
+      "sha256": "0ace36083f3ab06220dd917576294cff7eef88c37fe8c2ab888b1850cc14942a",
+      "redactions": {}
+    },
+    {
+      "run": "run-04",
+      "path": "preflight.json",
+      "kind": "whole",
+      "bytes": 1143,
+      "truncated": false,
+      "sha256": "d786ff8563d476b89a65d68573f35fc1e484f01b65050e65794ca5e30a6ffd9f",
+      "redactions": {
+        "home_dir": 3
+      }
+    },
+    {
+      "run": "run-05",
+      "path": "accounting/operations.log",
+      "kind": "log",
+      "bytes": 2652,
+      "truncated": false,
+      "sha256": "e6333cdd4f6cf399bd6a881a4f044e791a2730894c89f24ba122cce72a34277f",
+      "redactions": {}
+    },
+    {
+      "run": "run-05",
+      "path": "accounting/summary.json",
+      "kind": "whole",
+      "bytes": 20599,
+      "truncated": false,
+      "sha256": "fa442808e4f5a0cad661c78d41000138e9873d230526a28934bb3e6eeaed197a",
+      "redactions": {}
+    },
+    {
+      "run": "run-05",
+      "path": "api-transport-receipt.json",
+      "kind": "whole",
+      "bytes": 193,
+      "truncated": false,
+      "sha256": "4791980e126e9a386e99c57fcb7a1a31c63570144f62e128caff5a718a5017a1",
+      "redactions": {}
+    },
+    {
+      "run": "run-05",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 310,
+      "truncated": false,
+      "sha256": "7a117f8a025773c35af07f95d0f33d27def9e1923941bbabea16f69dcc784100",
+      "redactions": {}
+    },
+    {
+      "run": "run-05",
+      "path": "preflight.json",
+      "kind": "whole",
+      "bytes": 1173,
+      "truncated": false,
+      "sha256": "30d95a9a5140a8551c468aca41aa55740c3188a56e28a499f12b88c203b587d4",
+      "redactions": {
+        "home_dir": 3
+      }
+    },
+    {
+      "run": "run-06",
+      "path": "accounting/operations.log",
+      "kind": "log",
+      "bytes": 2652,
+      "truncated": false,
+      "sha256": "3267e702921718416dafc208183e620ed6cae5f1bf26f207d04635cd51dd48d4",
+      "redactions": {}
+    },
+    {
+      "run": "run-06",
+      "path": "accounting/summary.json",
+      "kind": "whole",
+      "bytes": 20588,
+      "truncated": false,
+      "sha256": "453a217bcc70ebdfa969a2bdae948cf72010e22e7a155edc777c74f806c7478c",
+      "redactions": {}
+    },
+    {
+      "run": "run-06",
+      "path": "api-transport-receipt.json",
+      "kind": "whole",
+      "bytes": 193,
+      "truncated": false,
+      "sha256": "4791980e126e9a386e99c57fcb7a1a31c63570144f62e128caff5a718a5017a1",
+      "redactions": {}
+    },
+    {
+      "run": "run-06",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 350,
+      "truncated": false,
+      "sha256": "014d9ecbb9f4defdf243d369c1ba8d3a221f161aa45ffa21bfffedf993e17edb",
+      "redactions": {}
+    },
+    {
+      "run": "run-06",
+      "path": "preflight.json",
+      "kind": "whole",
+      "bytes": 1173,
+      "truncated": false,
+      "sha256": "97989ab8b648e95378867a2b54fb58b0cb2dbc544e486eaadee1cf3153ecdf62",
+      "redactions": {
+        "home_dir": 3
+      }
+    },
+    {
+      "run": "run-07",
+      "path": "accounting/operations.log",
+      "kind": "log",
+      "bytes": 2652,
+      "truncated": false,
+      "sha256": "c517408301306f04cac57fb01f8562c97423458482d831211026387330224038",
+      "redactions": {}
+    },
+    {
+      "run": "run-07",
+      "path": "accounting/summary.json",
+      "kind": "whole",
+      "bytes": 20266,
+      "truncated": false,
+      "sha256": "f10302b32a5d95c55e18d1eb9e4f253093dff61c5b82c19f07f668d8a2740103",
+      "redactions": {}
+    },
+    {
+      "run": "run-07",
+      "path": "api-transport-receipt.json",
+      "kind": "whole",
+      "bytes": 193,
+      "truncated": false,
+      "sha256": "4791980e126e9a386e99c57fcb7a1a31c63570144f62e128caff5a718a5017a1",
+      "redactions": {}
+    },
+    {
+      "run": "run-07",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 311,
+      "truncated": false,
+      "sha256": "c77a1f2c84074fc5f3e29f564739044037690e53cbed72579748ef143e01f6ed",
+      "redactions": {}
+    },
+    {
+      "run": "run-07",
+      "path": "preflight.json",
+      "kind": "whole",
+      "bytes": 1173,
+      "truncated": false,
+      "sha256": "bd725733927d1892dfe790e8f4207a7031bcc7831532d03f6efa7bb685ad09e9",
+      "redactions": {
+        "home_dir": 3
+      }
+    },
+    {
+      "run": "run-08",
+      "path": "accounting/operations.log",
+      "kind": "log",
+      "bytes": 31819,
+      "truncated": false,
+      "sha256": "cf26d5a0e45827c029477736fca26b19795f9a1929d25a59ff42f0f465786f88",
+      "redactions": {}
+    },
+    {
+      "run": "run-08",
+      "path": "accounting/summary.json",
+      "kind": "whole",
+      "bytes": 75072,
+      "truncated": false,
+      "sha256": "15897825e890a4c56b977d185df2fea8b14717189f7283d2290b7eae022d66a2",
+      "redactions": {}
+    },
+    {
+      "run": "run-08",
+      "path": "api-transport-receipt.json",
+      "kind": "whole",
+      "bytes": 246,
+      "truncated": false,
+      "sha256": "387d237dd043c9ab0578a0847638e6e1201b7b32abdd4e28b51bf77910cd8461",
+      "redactions": {}
+    },
+    {
+      "run": "run-08",
+      "path": "attempt-preflight-receipt.json",
+      "kind": "whole",
+      "bytes": 1173,
+      "truncated": false,
+      "sha256": "bac9c6b0769a03989e90a00dd277208440def2377db0e529bd26be8e2196a535",
+      "redactions": {
+        "home_dir": 3
+      }
+    },
+    {
+      "run": "run-08",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 223,
+      "truncated": false,
+      "sha256": "6800bbc9a50593a5f1e05a51de2e35f99b4a349cb76843d10f255f1ca2848c30",
+      "redactions": {}
+    },
+    {
+      "run": "run-08",
+      "path": "preflight.json",
+      "kind": "whole",
+      "bytes": 1322,
+      "truncated": false,
+      "sha256": "23aec9f4fb400053cde3360c25de8c5cd9071faed86b002cacd69edd9e3184e2",
+      "redactions": {}
+    },
+    {
+      "run": "run-08",
+      "path": "segment-rerun-receipt.json",
+      "kind": "whole",
+      "bytes": 932,
+      "truncated": false,
+      "sha256": "112bdc87c05d3ed19d008b55813c2bc358794ce336b74409794817c6c5a9dfdb",
+      "redactions": {}
+    },
+    {
+      "run": "audio-r1",
+      "path": "dispatch-reconciliation-receipt.json",
+      "kind": "whole",
+      "bytes": 726,
+      "truncated": false,
+      "sha256": "627015a42d440cf394c66bb832b1a421af4ea7028754e336983226454deb9bef",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "audio-r1",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 848,
+      "truncated": false,
+      "sha256": "6c2c971bc992a49a1f5ce1b11e7f7de65525f93613baebc2811df83fc8e83137",
+      "redactions": {
+        "email": 1
+      }
+    },
+    {
+      "run": "audio-r1",
+      "path": "outputs/tts.log",
+      "kind": "log",
+      "bytes": 2983,
+      "truncated": false,
+      "sha256": "54bab2b80395955a7794d31315a9930766a9bb9a0cd03700cde82d36bd849541",
+      "redactions": {
+        "home_dir": 10
+      }
+    },
+    {
+      "run": "audio-r2",
+      "path": "layer3-summary-receipt.json",
+      "kind": "whole",
+      "bytes": 1113,
+      "truncated": false,
+      "sha256": "d20372b48ce5695ef7900bd9a3148b61b3d9dbfc332b597e94e7e750c20fc2b4",
+      "redactions": {}
+    },
+    {
+      "run": "audio-r2",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 236,
+      "truncated": false,
+      "sha256": "8ac4ab3b27f1928e49dde10ba56781c329b99a4918be08ca586c440861092e84",
+      "redactions": {}
+    },
+    {
+      "run": "audio-r2",
+      "path": "outputs/asr.log",
+      "kind": "log",
+      "bytes": 778,
+      "truncated": false,
+      "sha256": "6dc1068c4d9f2abf9d756abba0f7ee06ccbfc37218fed761cd7d9c5e4405a2b5",
+      "redactions": {}
+    },
+    {
+      "run": "audio-r2",
+      "path": "outputs/tts.log",
+      "kind": "log",
+      "bytes": 4425,
+      "truncated": false,
+      "sha256": "160305e4862cbc88d8bad3c75306160b5e728d6b754ef9e8edff4f1f5b1ececb",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

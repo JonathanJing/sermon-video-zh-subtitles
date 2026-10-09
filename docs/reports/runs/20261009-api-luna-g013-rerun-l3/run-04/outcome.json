@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "sermon-run-outcome-v1",
+  "command": "codex-layer2-test",
+  "status": "failed",
+  "exitCode": 1,
+  "startedAt": "2026-10-09T01:37:00.903989+00:00",
+  "endedAt": "2026-10-09T01:37:01.932881+00:00",
+  "error": {
+    "type": "ValueError",
+    "message": "Layer 2 rule preflight: prior model payload does not match cached response"
+  }
+}
