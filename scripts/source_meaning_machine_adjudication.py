@@ -260,6 +260,11 @@ def _route_identity(route: dict[str, Any] | None) -> dict[str, Any] | None:
     return {key: route[key] for key in ('environment', 'projectId', 'credentialAlias')}
 
 
+def _route_key(route: dict[str, Any] | None) -> str:
+    """Namespaces cached answers by the selected OpenAI Project, so dev answers never serve prod."""
+    return 'unrouted' if route is None else f"{route['environment']}-{route['projectId']}"
+
+
 def _wav_seconds(wav: bytes) -> float:
     try:
         with wave.open(io.BytesIO(wav)) as handle:
@@ -514,8 +519,7 @@ class SolAdjudicator:
 
     @property
     def route_key(self) -> str:
-        """Namespaces cached answers by the selected OpenAI Project, so dev answers never serve prod."""
-        return 'unrouted' if self.route is None else f"{self.route['environment']}-{self.route['projectId']}"
+        return _route_key(self.route)
 
     def identity(self) -> dict[str, Any]:
         return {'model': self.model, 'reasoningEffort': self.effort, 'promptVersion': PROMPT_VERSION,
@@ -943,6 +947,8 @@ def validate_receipt(receipt: Any, *, source: dict[str, Any] | None = None, anch
     names = sorted(row['name'] for row in listeners)
     models = {row['name']: row['model'] for row in listeners}
     adjudicator, units = receipt.get('adjudicator'), receipt.get('units')
+    if current and adjudicator is not None:
+        _adjudicator_runtime(adjudicator, receipt['budget'])
     _require(isinstance(units, list) and units, 'receipt_units')
     seen: set[str] = set()
     asked: dict[str, dict[str, Any]] = {}
@@ -1037,6 +1043,26 @@ def validate_receipt(receipt: Any, *, source: dict[str, Any] | None = None, anch
             'correctedUnits': corrected_ids, 'listeners': names, 'independent': independence['independent']}
 
 
+def _adjudicator_runtime(adjudicator: Any, budget: dict[str, Any] | None) -> None:
+    """A v2 adjudicator identity names a route the environment launcher could select and a supported
+    request tier, under a budget the tier that budget approved; each cached request is then held to both
+    (``_verify_model_verdict``), so a receipt cannot claim another Project or tier than its cache was
+    asked under."""
+    from scripts import sermon_openai_runtime as runtime
+    _require(isinstance(adjudicator, dict), 'receipt_adjudicator_runtime')
+    route = adjudicator.get('route')
+    _require(route is None or (isinstance(route, dict) and set(route) == {'environment', 'projectId', 'credentialAlias'}
+                               and runtime.safe_route({'schemaVersion': 'sermon-openai-runtime-route-v1',
+                                                       'identitySource': 'configured_runtime', **route}) is not None),
+             'receipt_adjudicator_runtime')
+    try:
+        tier = limits.validate_request_limits(adjudicator.get('requestLimits'))
+    except ValueError as exc:
+        raise SourceAdjudicationError('receipt_adjudicator_runtime') from exc
+    # A budget exists only under the launcher and pays for the tier it approved, nothing else.
+    _require(budget is None or (route is not None and tier == budget['requestLimits']), 'receipt_adjudicator_runtime')
+
+
 def _verify_model_verdict(row: dict[str, Any], adjudicator: dict[str, Any], cache: Path,
                           frozen_tokens: list[str]) -> dict[str, Any]:
     """Reproduce a model-decided verdict from the hash-bound cached request/response the row names.
@@ -1068,6 +1094,15 @@ def _verify_model_verdict(row: dict[str, Any], adjudicator: dict[str, Any], cach
              and question.get('schemaVersion') == QUESTION_SCHEMA
              and question.get('sourceUnitId') == row['sourceUnitId'] and question.get('frozenText') == row['frozenText']
              and asked == [(h['listener'], h['text']) for h in row['heard']], 'receipt_model_question_changed')
+    # The request was asked under the Project and tier the receipt names: the cache stage carries the
+    # route, the payload the tier's caps (``_adjudicator_runtime`` has checked both identities).
+    try:
+        bounded = limits.bounded_payload(payload, adjudicator['requestLimits']) == payload
+    except ValueError:
+        bounded = False
+    _require(bounded and cached['request'].get('stage')
+             == f"source-meaning-{_route_key(adjudicator.get('route'))}-{row['sourceUnitId']}",
+             'receipt_model_runtime_changed')
     try:
         result = _model_result(cached['response'], adjudicator['model'])
     except ValueError as exc:

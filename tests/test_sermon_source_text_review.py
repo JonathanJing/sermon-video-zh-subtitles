@@ -262,14 +262,13 @@ class SourceTextReviewTest(unittest.TestCase):
         _, second = self.apply()
         self.assertNotEqual(first["reviewSha256"], second["reviewSha256"])
 
-    def test_machine_authority_requires_the_v2_contract(self):
-        # v1 is the conversational contract existing reviews carry; the machine authority, with its
-        # bound receipt and consumed-corrections rules, is only ever a v2 review.
-        self.assertEqual(review_module.SCHEMA_AUTHORITIES[review_module.SCHEMA], {review_module.AUTHORITY})
-        self.assertEqual(review_module.SCHEMA_AUTHORITIES[review_module.SCHEMA_V2],
-                         {review_module.AUTHORITY, review_module.MACHINE_AUTHORITY})
-        with self.assertRaisesRegex(ValueError, "requires the sermon-source-text-review-v2 contract"):
-            self.apply(review=dict(self.review, authority=review_module.MACHINE_AUTHORITY))
+    def test_machine_authority_requires_its_receipt_under_either_label(self):
+        # The machine authority always rests on one bound source-meaning receipt; v1 or v2, a review
+        # without one is refused (a v1 label is further limited to receipts from pre-v2 writers).
+        self.assertEqual(review_module.SCHEMAS, (review_module.SCHEMA, review_module.SCHEMA_V2))
+        for schema in review_module.SCHEMAS:
+            with self.subTest(schema=schema), self.assertRaisesRegex(ValueError, "exactly one source-meaning receipt"):
+                self.apply(review=dict(self.review, schemaVersion=schema, authority=review_module.MACHINE_AUTHORITY))
         with self.assertRaisesRegex(ValueError, "conversational source correction review"):
             self.apply(review=dict(self.review, schemaVersion="sermon-source-text-review-v3"))
 

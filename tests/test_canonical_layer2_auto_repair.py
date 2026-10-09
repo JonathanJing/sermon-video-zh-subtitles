@@ -240,6 +240,19 @@ class ControllerAutoRepairTests(unittest.TestCase):
             # The failed job keeps its outcome and history; only the receipt was added beside it.
             after = {path.name: path.read_bytes() for path in folder.iterdir() if path.is_file()}
             self.assertEqual({name: data for name, data in after.items() if name != receipt_path.name}, before)
+            # The receipt is checked against the evidence it names before the failed job yields: another
+            # ledger head, a group the notes do not reopen, or other notes need reconciliation instead.
+            other = next(group for group in self.group_ids() if group != failed)
+            written = receipt_path.read_bytes()
+            for field, value in (("repairLedgerHeadSha256", "e" * 64), ("repairLedgerSequence", 1),
+                                 ("reopenedGroups", [other]), ("reopenedGroups", sorted([failed, other])),
+                                 ("meaningNotesSha256", "f" * 64)):
+                with self.subTest(field=field, value=value):
+                    receipt_path.write_text(json.dumps(dict(receipt, **{field: value})))
+                    view = subject.snapshot(config)
+                    self.assertEqual(view["nodes"]["text.zh-Hans"]["reasonCode"], "unbound_job_evidence")
+                    self.assertEqual(view["durableJobInspection"]["diagnostics"], ["unverified_reopen_receipt"])
+            receipt_path.write_bytes(written)
             view = subject.snapshot(config)
             self.assertEqual(view["nodes"]["text.zh-Hans"]["status"], "ready")
             row = next(row for row in view["durableJobInspection"]["jobs"] if row["jobId"] == first)
@@ -259,6 +272,12 @@ class ControllerAutoRepairTests(unittest.TestCase):
         ledger = auto_repair.load_ledger(subject.repair_ledger_root(config), auto_repair.lineage(request))
         self.assertEqual([entry["outcome"] for entry in ledger], ["repairing", "stopped", "repairing", "passed"])
         self.assertEqual(ledger[2]["reopenedBy"]["units"], [units[0]])
+        # Once the reopened job has run, its receipt is held to the reopen entry its worker wrote.
+        with patch.object(subject.source_meaning, "load_meaning_notes", return_value=notes):
+            self.assertEqual(subject.snapshot(config)["durableJobInspection"]["diagnostics"], [])
+            receipt_path.write_text(json.dumps(dict(receipt, reopenedGroups=[other])))
+            view = subject.snapshot(config)
+        self.assertEqual(view["durableJobInspection"]["diagnostics"], ["unverified_reopen_receipt"])
         # A receipt edited after the fact no longer binds the failed job: the run needs inspection.
         receipt["reopenedGroups"] = []
         receipt_path.write_text(json.dumps(receipt))

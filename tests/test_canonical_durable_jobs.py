@@ -194,10 +194,27 @@ class CanonicalDurableJobsTests(unittest.TestCase):
         self.assertEqual(len({jobs._digest(value) for value in idents.values()}), 4)
         self.assertEqual(subject.identity(views['b'], self.run_id, 'source'), subject.identity(self.base, self.run_id, 'source'))
         first = self.persist_job('failed', ident=idents['a'])
-        node = subject.project(views['b'], self.root, self.run_id)['nodes'][unit]
+        checked = []
+
+        def project(view_now, verify=lambda receipt, observed, expected: checked.append(
+                (receipt['nextIdentity'], expected))):
+            return subject.project(view_now, self.root, self.run_id, verify_reopen=verify)
+        node = project(views['b'])['nodes'][unit]
         self.assertEqual(node['reasonCode'], 'unknown_or_changed_identity_job')
         self.reopen(first, idents['b'])
-        view = subject.project(views['b'], self.root, self.run_id)
+        # Whether the chain was eligible to reopen is the Layer 2 controller's evidence: without its check
+        # the failed job keeps blocking, and a check that refuses makes the whole view need reconciliation.
+        self.assertEqual(subject.project(views['b'], self.root, self.run_id)['nodes'][unit]['status'],
+                         'reconciliation_required')
+
+        def refuse(receipt, observed, expected):
+            raise ValueError('reopen_ledger_head_changed')
+        refused = project(views['b'], refuse)
+        self.assertEqual(refused['durableJobInspection']['diagnostics'], ['unverified_reopen_receipt'])
+        self.assertEqual({node['status'] for node in refused['nodes'].values()}, {'reconciliation_required'})
+        self.assertEqual(refused['durableJobInspection']['jobs'][0]['status'], 'failed')
+        view = project(views['b'])
+        self.assertEqual(checked, [(idents['b'], idents['b'])])
         self.assertEqual(view['nodes'][unit], self.base['nodes'][unit])
         row = view['durableJobInspection']['jobs'][0]
         self.assertEqual((row['status'], row['originalJobStatus'], row['supersededBy']),
@@ -205,24 +222,28 @@ class CanonicalDurableJobsTests(unittest.TestCase):
         # Inputs no receipt named, or the failed job's own identity, block again.
         for name, view_now in (('d', views['d']), ('a', self.base)):
             with self.subTest(expected=name):
-                self.assertIn(subject.project(view_now, self.root, self.run_id)['nodes'][unit]['status'],
+                self.assertIn(project(view_now)['nodes'][unit]['status'],
                               {'reconciliation_required', 'blocked'})
         # The reopened job fails too and is reopened toward newer notes: both yield along the chain.
         second = self.persist_job('failed', ident=idents['b'])
-        self.assertEqual(subject.project(views['b'], self.root, self.run_id)['nodes'][unit]['reasonCode'],
+        self.assertEqual(project(views['b'])['nodes'][unit]['reasonCode'],
                          'failed_durable_job')
         self.reopen(second, idents['c'])
-        view = subject.project(views['c'], self.root, self.run_id)
+        del checked[:]
+        view = project(views['c'])
+        # Each receipt along the chain is checked; only the last names the node's identity now.
+        self.assertEqual(sorted(checked, key=lambda pair: pair[0] == idents['b']),
+                         [(idents['c'], idents['c']), (idents['b'], idents['c'])])
         self.assertEqual(view['nodes'][unit], self.base['nodes'][unit])
         self.assertEqual(sorted(row['status'] for row in view['durableJobInspection']['jobs']), ['superseded'] * 2)
         # Notes that change again before a reopened job starts add a receipt; none is rewritten.
         self.reopen(first, idents['d'])
-        self.assertEqual([row['status'] for row in subject.project(views['d'], self.root, self.run_id)
+        self.assertEqual([row['status'] for row in project(views['d'])
                           ['durableJobInspection']['jobs'] if row['jobId'] == first], ['superseded'])
         # A receipt filed under another identity, or beside a job that did not fail, is unbound evidence.
         self.reopen(first, idents['c'], name=subject.reopen_file(idents['b']).replace('canonical-reopen-', 'x'))
         self.reopen(first, idents['c'], name='canonical-reopen-' + 'f' * 64 + '.json')
-        self.assertEqual(subject.project(views['c'], self.root, self.run_id)['durableJobInspection']['diagnostics'],
+        self.assertEqual(project(views['c'])['durableJobInspection']['diagnostics'],
                          ['unreadable_or_unbound_canonical_job'])
 
     def test_completed_old_revision_cannot_claim_new_revision_complete(self):
