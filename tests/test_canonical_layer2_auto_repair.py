@@ -278,6 +278,21 @@ class ControllerAutoRepairTests(unittest.TestCase):
             receipt_path.write_text(json.dumps(dict(receipt, reopenedGroups=[other])))
             view = subject.snapshot(config)
         self.assertEqual(view["durableJobInspection"]["diagnostics"], ["unverified_reopen_receipt"])
+        # Notes changed after the chain passed cannot borrow the reopen entry written under the earlier
+        # notes: a receipt toward the new identity with the same groups is refused.
+        receipt_path.write_bytes(written)
+        revised = {units[0]: dict(notes[units[0]], meaningNote=marker + " (revised)")}
+        notes_path.write_text(json.dumps({"units": sorted(revised), "revision": 2}), encoding="utf-8")
+        with patch.object(subject.source_meaning, "load_meaning_notes", return_value=revised):
+            config = subject.load_configuration(self.base.path)
+            current = subject.package_view(config)
+            newer = subject.durable.identity(current, config.run_id, "text.zh-Hans")
+            self.assertNotEqual(newer, following)
+            jobs._persist(folder / subject.durable.reopen_file(newer), dict(
+                receipt, nextIdentity=newer, meaningNotesSha256=current["packageIdentities"]["sourceMeaningNotes"]))
+            view = subject.snapshot(config)
+        self.assertEqual(view["durableJobInspection"]["diagnostics"], ["unverified_reopen_receipt"])
+        (folder / subject.durable.reopen_file(newer)).unlink()
         # A receipt edited after the fact no longer binds the failed job: the run needs inspection.
         receipt["reopenedGroups"] = []
         receipt_path.write_text(json.dumps(receipt))

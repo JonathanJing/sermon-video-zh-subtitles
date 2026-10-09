@@ -220,7 +220,8 @@ def _reopen_verifier(config):
     reopened was stopped there for source review. The receipt naming the text node's
     identity now is the one a new job runs under, so it is checked in full: its notes are
     the configured notes, and its groups are the ones those notes reopen from that entry
-    or, once the reopened job has begun, the ones its worker's reopen entry records. Its
+    or, once the reopened job has begun, the ones its worker's reopen entry records under
+    those same notes. Its
     configuration and code hashes record what the controller ran under; both may change
     after a reopen (a deploy, a configuration edit) without changing what it proved, and
     the worker checks its own before any paid call."""
@@ -244,14 +245,18 @@ def _reopen_verifier(config):
             return
         require(receipt['meaningNotesSha256'] == observed['packageIdentities'].get('sourceMeaningNotes'),
                 'reopen_meaning_notes_changed')
+        notes = source_meaning.load_meaning_notes(Path(config.auto_repair['sourceMeaningNotes']),
+                                                  source=source, anchor=anchor)
         if len(entries) > sequence:
+            # The reopen entry must be the one a worker wrote under these notes: an entry written under
+            # earlier notes (whose chain may since have passed) cannot vouch for a receipt toward new ones.
             reopened = entries[sequence]
             require('reopenedBy' in reopened
-                    and sorted(row['translationGroupId'] for row in reopened['groups']) == groups,
+                    and reopened['reopenedBy']['meaningNotesSha256'] == auto_repair.json_sha256(notes),
+                    'reopen_entry_notes_changed')
+            require(sorted(row['translationGroupId'] for row in reopened['groups']) == groups,
                     'reopen_groups_changed')
         else:
-            notes = source_meaning.load_meaning_notes(Path(config.auto_repair['sourceMeaningNotes']),
-                                                      source=source, anchor=anchor)
             require(sorted(auto_repair.reopenable_groups(entries, notes)) == groups, 'reopen_groups_changed')
     return verify
 
