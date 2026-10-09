@@ -231,14 +231,15 @@ def load_fixture(directory):
     return source, anchor, policy, plan, plugin, request, receipt, context, manifest
 
 
-def run_chain(inputs, out, caller):
+def run_chain(inputs, out, caller, *, reuse_from=None, partial_repair_brief=None):
     source, anchor, policy, plan, plugin, request, receipt, context, manifest = inputs
     out = artifact_directory(out)
     require(getattr(caller, 'execution_identity', {}).get('concurrencyProfile') == manifest.get('concurrencyProfile'),
             'Diagnostic concurrency capability differs from frozen fixture')
     with work_lock(out):
         evidence = runner._run_prepared_groups(request, anchor, policy, out, '', caller, plan, plugin,
-            simulation_only=True, diagnostic_context=context)
+            simulation_only=True, diagnostic_context=context, reuse_from=reuse_from,
+            partial_repair_brief=partial_repair_brief)
         require(producer._load(out / 'rule-preflight.json') == receipt, 'Diagnostic rule receipt changed')
         # Check actual translator/reviewer payloads even on same-run cache resume.
         runner.rule_preflight.verify_prior_model_inputs(out, request, policy, plan, receipt,

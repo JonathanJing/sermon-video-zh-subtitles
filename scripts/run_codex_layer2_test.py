@@ -99,7 +99,7 @@ class FixtureLayer2Transport:
 def run_diagnostic_test(fixture_dir, out_dir, *, cli_path, reviewer_tier='fast', timeout_seconds=180,
                         mock_responses_dir=None, resource_policy_path=None, translator_model=None,
                         session_verifier=None, backend='codex', reuse_api_receipts=None,
-                        budget_config_path=None):
+                        budget_config_path=None, reuse_from=None, partial_repair_brief=None):
     from scripts import codex_layer2_diagnostic as diagnostic
     inputs = diagnostic.load_fixture(fixture_dir)  # All gates before constructing a CLI transport.
     source, anchor, policy, plan, plugin, request, receipt, scope, manifest = inputs
@@ -113,6 +113,15 @@ def run_diagnostic_test(fixture_dir, out_dir, *, cli_path, reviewer_tier='fast',
         raise ValueError('unsupported_diagnostic_model_backend')
     if reuse_api_receipts is not None and backend != 'openai_api':
         raise ValueError('diagnostic_api_receipt_reuse_requires_openai_backend')
+    if partial_repair_brief is not None and (backend != 'openai_api' or reuse_from is None):
+        raise ValueError('diagnostic_partial_repair_requires_api_and_prior_run')
+    if reuse_from is not None and partial_repair_brief is None:
+        raise ValueError('diagnostic_prior_run_reuse_requires_partial_repair')
+    if partial_repair_brief is not None and (
+            not isinstance(partial_repair_brief, dict)
+            or not isinstance(partial_repair_brief.get('groups'), list)
+            or len(partial_repair_brief['groups']) != 1):
+        raise ValueError('diagnostic_partial_repair_must_target_exactly_one_group')
     options = {}
     if manifest.get('concurrencyProfile') is not None:
         options['concurrency_profile'] = manifest['concurrencyProfile']
@@ -159,7 +168,9 @@ def run_diagnostic_test(fixture_dir, out_dir, *, cli_path, reviewer_tier='fast',
     with accounting.accounting_session(out_dir / 'accounting', 'codex_layer2_diagnostic_test',
                                        {'targetLocale': policy['targetLocale']}, evidence_directory=out_dir):
         try:
-            evidence, language, envelope = diagnostic.run_chain(inputs, out_dir, transport)
+            evidence, language, envelope = diagnostic.run_chain(inputs, out_dir, transport,
+                reuse_from=Path(reuse_from).resolve() if reuse_from is not None else None,
+                partial_repair_brief=partial_repair_brief)
         finally:
             if backend == 'openai_api':
                 diagnostic.save(out_dir / 'api-transport-receipt.json', transport.concurrency_report())
@@ -183,12 +194,16 @@ def run_diagnostic_test(fixture_dir, out_dir, *, cli_path, reviewer_tier='fast',
 
 def run_test(fixture_dir, policy_path, out_dir, *, cli_path, reviewer_tier='fast', timeout_seconds=180,
              mock_responses_dir=None, resource_policy_path=None, translator_model=None,
-             diagnostic_fixture=False, session_verifier=None, backend='codex', budget_config_path=None):
+             diagnostic_fixture=False, session_verifier=None, backend='codex', budget_config_path=None,
+             reuse_from=None, partial_repair_brief=None):
     if diagnostic_fixture:
         return run_diagnostic_test(fixture_dir, out_dir, cli_path=cli_path, reviewer_tier=reviewer_tier,
             timeout_seconds=timeout_seconds, mock_responses_dir=mock_responses_dir,
             resource_policy_path=resource_policy_path, translator_model=translator_model,
-            session_verifier=session_verifier, backend=backend, budget_config_path=budget_config_path)
+            session_verifier=session_verifier, backend=backend, budget_config_path=budget_config_path,
+            reuse_from=reuse_from, partial_repair_brief=partial_repair_brief)
+    if reuse_from is not None or partial_repair_brief is not None:
+        raise ValueError('diagnostic_repair_requires_diagnostic_fixture')
     fixture_dir, out_dir = Path(fixture_dir).resolve(), Path(out_dir).resolve()
     root = Path(__file__).resolve().parents[1]
     if not out_dir.is_relative_to(root / 'artifacts') or out_dir == root / 'artifacts':
@@ -307,6 +322,8 @@ def main():
     parser.add_argument('--backend', choices=['codex', 'openai_api'], default='codex',
                         help='Isolated diagnostic transport; OpenAI API requires --budget-config')
     parser.add_argument('--budget-config', type=Path, help='Bound request/cost cap for diagnostic OpenAI API calls')
+    parser.add_argument('--reuse-from', type=Path, help='Prior diagnostic output for a one-group revision')
+    parser.add_argument('--partial-repair-brief', type=Path, help='Source-bound one-group repair instruction JSON')
     args = parser.parse_args()
     from scripts.outcome_marker import run_with_outcome
     run_with_outcome(args.out_dir / 'outcome.json', 'codex-layer2-test', lambda: run_test(
@@ -314,7 +331,10 @@ def main():
         reviewer_tier=args.reviewer_tier, timeout_seconds=args.timeout_seconds,
         mock_responses_dir=args.mock_responses_dir, resource_policy_path=args.resource_policy,
         translator_model=args.translator_model, diagnostic_fixture=args.diagnostic_fixture,
-        backend=args.backend, budget_config_path=args.budget_config))
+        backend=args.backend, budget_config_path=args.budget_config,
+        reuse_from=args.reuse_from,
+        partial_repair_brief=(json.loads(args.partial_repair_brief.read_text())
+                              if args.partial_repair_brief is not None else None)))
 
 
 if __name__ == '__main__':
