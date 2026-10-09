@@ -56,6 +56,32 @@ python3 -m scripts.experiments.claude_translation_ab \
 - **不值得**：Opus 多出中等及以上错误，或在速度和用量上都没有优势。
 - **打平**：质量并列、速度相近时，只按额度和成本取舍，不据此改策略。
 
+### 第一轮结果（10/8，三分钟 zh-Hans）
+
+Jony 在 Mac 上跑完，摘要见 PR #299 的评论：13 组 Opus 全部更快（中位数 5.7 秒对 14.5 秒），每次输入约 2,400 对 2.05 万 token，输出总量相近；两臂都没有中等及以上错误，Opus 轻微问题 4 处（其中 2 处缺书名号《》），Sol 1 处。盲评由跑实验的人完成，不是独立评审，结论暂定。按上面的标准进入第二轮。
+
+### 第二轮：605 秒、三语、加 Sol medium 复核
+
+脚本 v2（`claude-translation-ab-v2`）新增：
+
+- **任意语言**：基线目录取任一 Layer 2 运行的输出目录，每组同时有译者提示 `group-NNNN-astra.policy-preview.json` 和复核提示 `group-NNNN-sol.policy-preview.json`。语言从冻结提示里的 policy 读出，一次运行只能一种语言。带 `revisionBrief` 或 `partialRepair` 的修复组会跳过并记录。
+- **`--first-group` / `--group-count`**：只跑一段组，用来从整篇运行里截取样本。
+- **`--review`**：两臂的初译各自再走一次 `gpt-6.1-sol` medium fast 复核（Codex CLI）。复核提示用基线里冻结的那份，只把其中的 `astraDraft` 换成本臂的初译，其余逐字不变。通过的标准与正式 runner 一致：`status=pass`、四项检查全 pass、`issues` 和 `uncertainty` 为空。`summary.json` 给出每臂的通过组数、失败组、复核是否改了译文，以及复核耗时和 token。
+
+每种语言跑一次（Mac）：
+
+```
+for locale in zh-Hans ko es; do
+  python3 -m scripts.experiments.claude_translation_ab --review \
+    --baseline <该语言的 605 秒 Layer 2 输出目录> \
+    --out artifacts/claude-opus55-vs-sol61-ab-605s-$locale
+done
+```
+
+基线优先用 605 秒样本按当前 policy 跑过的 Layer 2 目录，因为里面有直接经文。三语都没有的话，可以用 10/4 正式轮的 `canonical-production-v8/revision-2/text/<locale>` 加 `--group-count` 截一段。不管用哪种，两臂拿到的提示词都完全相同。
+
+判断时多看一项：两臂复核通过率。Opus 初译的通过率不低于 Sol，同时速度和用量保持优势，才考虑在更大范围试用。经文书名号（《》）单独统计。
+
 ### 局限
 
 - 只有 13 组、一种语言、一次运行，服务负载没法控制，耗时差异不能推广为稳定倍数。
