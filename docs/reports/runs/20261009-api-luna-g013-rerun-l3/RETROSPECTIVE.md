@@ -22,6 +22,10 @@
 - L3 ASR：进程墙钟 28.64 秒，模型加载 16.28 秒，推理 8.97 秒，1 副本、batch 8。
 - `run-04` 至 `run-07` 的短耗时是本地校验失败，不是模型运行时间。`audio-r1` 约 27 秒的结束过程也没有进入模型推理。
 
+- 全流程墙钟跨度：第一次有 outcome 的运行尝试 `run` 从 2026-10-09 01:09:46.363 UTC 开始，到 `audio-r2` 于 01:45:39.012 UTC 完成，共 **35分52.649秒**。若从首轮实际 API 运行 `run-02` 开始，则为 35分45.827秒。
+- outcome 可计时命令累计 **278.615秒（4分38.615秒）**；未包含没有 outcome 的 `run-03` 尝试、预检和人工排错。因此总墙钟跨度包含大量排错/等待，不等于模型计算时间。关键命令耗时：`run-02` 72.193秒、`run-08` 21.919秒、`audio-r1` 26.470秒、`audio-r2` 153.637秒。
+- Luna 吞吐按 `run-02` 的 13 次 reviewer 请求和 `run-08` 的 1 次 reviewer 请求汇总：14,995 completion tokens / 133.681秒 reviewer 阶段耗时 = **112.17 completion tokens/s**。usage 含 8,729 reasoning tokens；扣除 reasoning 后约 **46.87 非 reasoning tokens/s**。G013 重跑的单次 Luna 请求为 1,052 completion tokens / 8.775秒 = **119.9 tokens/s**（其中 648 reasoning tokens）。这是完整请求端到端吞吐，不是纯解码速度；累计输入 54,757 tokens 不计入输出速率。
+
 ## 错误
 
 - `run-03`：首次缺少 Spark exclusive session；随后同一内容的重试命中已释放的资源操作 ID。修订 brief 会改变请求身份；旧失败记录保留，没有盲目重发。
