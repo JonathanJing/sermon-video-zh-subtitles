@@ -98,7 +98,8 @@ class FixtureLayer2Transport:
 
 def run_diagnostic_test(fixture_dir, out_dir, *, cli_path, reviewer_tier='fast', timeout_seconds=180,
                         mock_responses_dir=None, resource_policy_path=None, translator_model=None,
-                        session_verifier=None, backend='codex', reuse_api_receipts=None):
+                        session_verifier=None, backend='codex', reuse_api_receipts=None,
+                        budget_config_path=None):
     from scripts import codex_layer2_diagnostic as diagnostic
     inputs = diagnostic.load_fixture(fixture_dir)  # All gates before constructing a CLI transport.
     source, anchor, policy, plan, plugin, request, receipt, scope, manifest = inputs
@@ -128,9 +129,13 @@ def run_diagnostic_test(fixture_dir, out_dir, *, cli_path, reviewer_tier='fast',
         from scripts.openai_layer2_diagnostic_transport import OpenAILayer2DiagnosticTransport
         if resource_policy_path is None or manifest.get('concurrencyProfile') is None:
             raise ValueError('openai_diagnostic_shared_resource_policy_required')
+        if budget_config_path is None or configuration is None:
+            raise ValueError('openai_diagnostic_budget_and_model_binding_required')
         transport=OpenAILayer2DiagnosticTransport(receipts_dir=out_dir/'_api_calls',
             resource_policy=options['resource_policy'],concurrency_profile=manifest['concurrencyProfile'],
-            timeout_seconds=timeout_seconds,reuse_receipts_dir=reuse_api_receipts)
+            timeout_seconds=timeout_seconds,reuse_receipts_dir=reuse_api_receipts,
+            budget_config_path=budget_config_path,simulation_model_configuration=configuration,
+            fixture_manifest_sha256=policy_tools.canonical_sha256(manifest))
     else:
         transport = (FixtureLayer2Transport(mock_responses_dir, group_count=len(plan)) if mock_responses_dir is not None
                      else CodexLayer2Transport(cli_path, reviewer_tier=reviewer_tier, timeout_seconds=timeout_seconds,
@@ -156,6 +161,8 @@ def run_diagnostic_test(fixture_dir, out_dir, *, cli_path, reviewer_tier='fast',
         try:
             evidence, language, envelope = diagnostic.run_chain(inputs, out_dir, transport)
         finally:
+            if backend == 'openai_api':
+                diagnostic.save(out_dir / 'api-transport-receipt.json', transport.concurrency_report())
             if (out_dir / 'run-identity.json').exists():
                 diagnostic.save(out_dir / 'test-context.json', context)
     report = {**context, 'status': 'diagnostic_candidate_admitted_human_pending',
@@ -164,16 +171,24 @@ def run_diagnostic_test(fixture_dir, out_dir, *, cli_path, reviewer_tier='fast',
               'evidenceSha256': policy_tools.canonical_sha256(evidence),
               'languageReviewSha256': policy_tools.canonical_sha256(language),
               'diagnosticCandidateSha256': policy_tools.canonical_sha256(envelope)}
+    if backend == 'openai_api':
+        report['apiConcurrency'] = transport.concurrency_report()
+        report['budgetConfigSha256'] = transport._budget_identity
+        report['budgetHardLimitMicrousd'] = transport.budget_config['hardLimitMicrousd']
+        report['budgetLedger'] = str(transport.budget_ledger_path)
     diagnostic.save(out_dir / 'test-report.json', report)
     print(json.dumps(report, ensure_ascii=False))
     return report
 
 
-def run_test(fixture_dir, policy_path, out_dir, *, cli_path, reviewer_tier='fast', timeout_seconds=180, mock_responses_dir=None, resource_policy_path=None, translator_model=None, diagnostic_fixture=False, session_verifier=None):
+def run_test(fixture_dir, policy_path, out_dir, *, cli_path, reviewer_tier='fast', timeout_seconds=180,
+             mock_responses_dir=None, resource_policy_path=None, translator_model=None,
+             diagnostic_fixture=False, session_verifier=None, backend='codex', budget_config_path=None):
     if diagnostic_fixture:
         return run_diagnostic_test(fixture_dir, out_dir, cli_path=cli_path, reviewer_tier=reviewer_tier,
             timeout_seconds=timeout_seconds, mock_responses_dir=mock_responses_dir,
-            resource_policy_path=resource_policy_path, translator_model=translator_model, session_verifier=session_verifier)
+            resource_policy_path=resource_policy_path, translator_model=translator_model,
+            session_verifier=session_verifier, backend=backend, budget_config_path=budget_config_path)
     fixture_dir, out_dir = Path(fixture_dir).resolve(), Path(out_dir).resolve()
     root = Path(__file__).resolve().parents[1]
     if not out_dir.is_relative_to(root / 'artifacts') or out_dir == root / 'artifacts':
@@ -289,13 +304,17 @@ def main():
     parser.add_argument('--reviewer-tier', choices=['default', 'fast'], default='fast')
     parser.add_argument('--timeout-seconds', type=int, default=180)
     parser.add_argument('--resource-policy', type=Path, help='Explicit shared host-local CLI admission policy')
+    parser.add_argument('--backend', choices=['codex', 'openai_api'], default='codex',
+                        help='Isolated diagnostic transport; OpenAI API requires --budget-config')
+    parser.add_argument('--budget-config', type=Path, help='Bound request/cost cap for diagnostic OpenAI API calls')
     args = parser.parse_args()
     from scripts.outcome_marker import run_with_outcome
     run_with_outcome(args.out_dir / 'outcome.json', 'codex-layer2-test', lambda: run_test(
         args.fixture_dir, args.policy, args.out_dir, cli_path=args.codex_cli,
         reviewer_tier=args.reviewer_tier, timeout_seconds=args.timeout_seconds,
         mock_responses_dir=args.mock_responses_dir, resource_policy_path=args.resource_policy,
-        translator_model=args.translator_model, diagnostic_fixture=args.diagnostic_fixture))
+        translator_model=args.translator_model, diagnostic_fixture=args.diagnostic_fixture,
+        backend=args.backend, budget_config_path=args.budget_config))
 
 
 if __name__ == '__main__':

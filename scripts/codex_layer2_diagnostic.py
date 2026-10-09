@@ -37,7 +37,7 @@ def artifact_directory(path):
 
 
 def freeze_fixture(source, anchor, policy, plan, plugin, out, *, authorization_ref, code_commit,
-                   translator_model=None, scripture_classification='not_reviewed', source_quotation_units=(),
+                   translator_model=None, reviewer_model=None, scripture_classification='not_reviewed', source_quotation_units=(),
                    concurrency_profile=None, scripture_adjudication=None):
     """Freeze supplied unapproved Layer 1 bytes, never manufacture review receipts."""
     out, plugin = artifact_directory(out), Path(plugin).resolve()
@@ -46,10 +46,15 @@ def freeze_fixture(source, anchor, policy, plan, plugin, out, *, authorization_r
             'Diagnostic fixture requires a simulation authorization reference')
     baseline = copy.deepcopy(policy)
     policies.validate_policy(baseline)
-    if translator_model is not None:
-        from scripts.codex_layer2_transport import TEST_CONFIGURATION, validate_test_configuration
+    if translator_model is not None or reviewer_model is not None:
+        from scripts.codex_layer2_transport import (API_LUNA_TEST_CONFIGURATION, TEST_CONFIGURATION,
+                                                     validate_test_configuration)
         require(translator_model == 'gpt-6.1-sol', 'Unsupported isolated diagnostic translator')
-        configuration = validate_test_configuration(TEST_CONFIGURATION)
+        if reviewer_model is None:
+            configuration = validate_test_configuration(TEST_CONFIGURATION)
+        else:
+            require(reviewer_model == 'gpt-6-luna', 'Unsupported isolated API diagnostic reviewer')
+            configuration = validate_test_configuration(API_LUNA_TEST_CONFIGURATION)
         policy = copy.deepcopy(policy)
         for role in ('translator', 'reviewer'):
             policy[role].update({k: v for k, v in configuration[role].items() if k != 'serviceTier'})
@@ -260,6 +265,7 @@ def main():
     parser.add_argument('--authorization-ref', required=True)
     parser.add_argument('--code-commit', required=True)
     parser.add_argument('--translator-model', choices=['gpt-6.1-sol'])
+    parser.add_argument('--reviewer-model', choices=['gpt-6-luna'], help='OpenAI API diagnostic-only reviewer')
     parser.add_argument('--concurrency-profile', type=Path, help='Explicit versioned capability; legacy fixtures remain serial')
     parser.add_argument('--scripture-classification', choices=['no_direct_quotations', 'contains_direct_quotations', 'not_reviewed'], default='not_reviewed')
     parser.add_argument('--scripture-adjudication', type=Path, help='Human scripture adjudication receipt JSON')
@@ -270,6 +276,7 @@ def main():
     values = [json.loads(path.read_text()) for path in (args.source, args.anchor, args.policy, args.group_plan)]
     print(json.dumps(freeze_fixture(*values, args.plugin, args.out, authorization_ref=args.authorization_ref,
                                    code_commit=args.code_commit, translator_model=args.translator_model,
+                                   reviewer_model=args.reviewer_model,
                                    scripture_classification=args.scripture_classification,
                                    source_quotation_units=args.source_quotation_unit,
                                    concurrency_profile=concurrency_profile,
