@@ -291,7 +291,7 @@ def _inputs(config, locale, view):
     require(producer.plugin_implementation_sha256(lane['plugin']) == policy['languageReview']['pluginImplementationSha256'],
             'plugin_does_not_match_frozen_policy')
     # Fixed production models and the canonical runner's worker budget bound paid work.
-    require(all(policy[role]['model'] == model and policy[role]['reasoningEffort'] == models.MODEL_EFFORTS[role] for role, model in models.MODEL_ROLES.items()), 'production_model_policy_changed')
+    require(all(policy[role]['model'] == model and policy[role]['reasoningEffort'] == models.MODEL_EFFORTS[role] for role, model in models.production_models(policy).items()), 'production_model_policy_changed')
     require(policy['batching']['batchSize'] == 1 and type(policy['batching']['workers']) is int
             and 1 <= policy['batching']['workers'] <= api_concurrency.MAX_GROUP_WORKERS_PER_LOCALE,
             'invalid_production_worker_budget')
@@ -460,11 +460,23 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                 route = selected_route()
                 require(route is not None, 'openai_layer2_requires_explicit_dev_or_prod_launcher')
                 api_key = os.environ['OPENAI_API_KEY']
-                caller = budget_tools.BudgetedCaller(budget_binding, config, source, anchor, policy)
+                claude_transport = None
+                if models.translator_backend(policy) == 'claude_cli':
+                    from scripts.claude_layer2_transport import ClaudeLayer2Transport
+                    claude_transport = ClaudeLayer2Transport(
+                        model='claude-opus-5-5', effort='high',
+                        timeout_seconds=max(1, budget_binding['limits']['wallTimeMs'] // 1000),
+                        receipts_dir=request_path.parent / 'claude-cli-calls')
+                caller = budget_tools.BudgetedCaller(budget_binding, config, source, anchor, policy,
+                                                     claude_transport=claude_transport)
                 caller.execution_identity = {
                     'schemaVersion': 'openai-layer2-budget-transport-identity-v1',
                     'backend': 'openai_api', 'route': route,
                     'budgetAuthorizationSha256': budget_binding['sha256']}
+                if claude_transport is not None:
+                    # Reviewer stays on OpenAI; only the translator identity is added for Claude runs.
+                    caller.execution_identity['translatorBackend'] = 'claude_cli'
+                    caller.execution_identity['claudeTransport'] = claude_transport.execution_identity
                 caller = spark_admission.SessionBoundCaller(caller)
             elif budget_binding is not None:
                 from scripts.strict_budget_capability import reject_codex_cli_transport

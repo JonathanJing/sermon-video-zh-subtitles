@@ -96,7 +96,7 @@ def request_limits(selected):
 
 
 class BudgetedCaller:
-    def __init__(self, authorization, config, source, anchor, policy, *, transport=None):
+    def __init__(self, authorization, config, source, anchor, policy, *, transport=None, claude_transport=None):
         self.auth, self.config, self.policy = authorization, config, policy
         self.source, self.anchor = source, anchor
         require(authorization.get('scope', 'run') == 'run' or policy['targetLocale'] in config.lanes,
@@ -106,6 +106,8 @@ class BudgetedCaller:
             self.root, authorization['value']['authority'],
             max_ledger_bytes=LOCALE_LEDGER_MAX_BYTES if authorization.get('scope') == 'locale' else None)
         self.transport = transport
+        # Subscription-login Claude CLI for the translator only; never the reviewer.
+        self.claude_transport = claude_transport
 
     def __call__(self, key, payload):
         from scripts.sermon_openai_runtime import project_headers
@@ -149,7 +151,14 @@ class BudgetedCaller:
             observed.append(record)
         # The trusted injected transport is only a local test seam. Production
         # uses the existing isolated, single-attempt, wall-deadline HTTP executor.
-        if self.transport is None:
+        if payload['model'] in limits.CLAUDE_MODELS:
+            # Claude is reachable only as the frozen translator, through its subscription CLI.
+            require(self.transport is None and self.claude_transport is not None and role == 'translator'
+                    and payload['model'] == self.claude_transport.model
+                    and payload['reasoning_effort'] == self.claude_transport.effort, 'claude_transport_required')
+            from scripts.claude_layer2_transport import chat_envelope
+            response = chat_envelope(self.claude_transport('', payload, role=role), payload['model'])
+        elif self.transport is None:
             request = urllib.request.Request('https://api.openai.com/v1/chat/completions',
                 data=json.dumps(payload).encode(), method='POST',
                 headers={'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json',

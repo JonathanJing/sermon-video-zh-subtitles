@@ -8,6 +8,20 @@
 | Layer 2 独立审核 | `gpt-6.1-sol` | `medium` | 批准的 tier（目前 `default`）；无授权 standalone `fast` 发送前拒绝 | OpenAI API |
 | dev 与正式生产 Supervisor | `gpt-6-luna` | `medium` | `fast` | ChatGPT-authenticated Codex CLI |
 
+## 每次运行前选择翻译后端
+
+默认仍是 `openai_api`（`gpt-6.1-sol` high）。运行前可以在冻结翻译政策时选择 `claude_cli`（`claude-opus-5-5` high，经本机 Claude Code 订阅登录，不使用 API key）：
+
+```bash
+.venv/bin/python scripts/target_language_policy.py freeze --policy <草稿.json> --out <新政策.json> --translator-backend claude_cli
+```
+
+- 翻译后端写入冻结的翻译政策，并进入政策哈希与运行身份；不改已有运行。省略该参数时保留草稿的翻译模型。
+- 独立审核始终是 `gpt-6.1-sol` medium，经 OpenAI API；选择 `claude_cli` 仍需要 OpenAI 项目配置和预算授权。
+- Claude 预算按 Anthropic 列价最坏情况计入，且只计入 Layer 2 翻译调用：输入 `$8`／MTok（1 小时缓存写入价，CLI 可能写缓存），输出 `$20`／MTok，来源 <https://platform.claude.com/docs/en/about-claude/pricing>，核对日期 2026-10-08，价格版本 `strict-claude-list-worst-case-2026-10-08-v1`。订阅实际扣的是额度，不是这笔美元；预留按列价计，是保守上限。
+- 派发前检查：翻译调用的 transport 身份必须与冻结政策一致，OpenAI 或 Codex 调用方不能服务 Claude 政策。子进程环境剥离 OpenAI 与 Anthropic API 凭据、Claude Code 父会话变量。超时、缺失用量或结构不合规均 fail closed，不自动重试或回退。
+- 本选项尚未有真实 Layer 2 运行证据；目前仅由单元测试覆盖。
+
 来源 ASR、OpenAI 音频、MFA、Spark Qwen TTS／回转写 ASR、ImageGen 继续使用各自入口。其他文字入口保留其实际接线范围；本次修复不证明所有旧 producer 已消费此策略。
 
 配音精简（`scripts/run_spoken_condensation.py`）沿用 Layer 2 初译的 `gpt-6.1-sol` `high`，与机器质检回译（`scripts/run_machine_qc_clip_test.py`，`gpt-6.1-sol` `medium`）一样经 ChatGPT 登录的本机 Codex CLI（requested tier `fast`）调用，不用 API key；两者各用自己的缓存命名空间，按请求和 transport 身份（CLI 版本、CLI／二进制／适配器哈希）缓存。精简不是 Layer 2 翻译入口：它只产出精简记录和 revision brief，口播候选仍经 Layer 2 链按上表生成。
