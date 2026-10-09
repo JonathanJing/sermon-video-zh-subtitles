@@ -533,6 +533,34 @@ class MachineAdjudicationTests(unittest.TestCase):
                                       target_locale='zh-Hans', flagged_units=['u3'], library=LIBRARY)
         self.assertEqual((basis['implementationSha256'], basis['implementationInputs']), (before, inputs))
 
+    def test_a_reading_with_a_direction_reversed_is_never_pinned(self):
+        verse = coverage_module.CoverageEdition.from_path().lookup('GEN 35:1')['text'].replace('“', '').replace('”', '')
+        turned = units('Genesis chapter 35 is our text.', f'Verse 1 says, "{verse.replace("go up to", "go down to")}"',
+                       'Amen.')
+        receipt, basis = machine.adjudicate(source(), {'sourceUnits': turned}, plan(turned),
+                                            target_locale='zh-Hans', flagged_units=['u2'], library=LIBRARY)
+        self.assertEqual(receipt['candidates'][0]['classification'], 'speaker_paraphrase')
+        self.assertTrue(basis['candidates'][0]['reason'].startswith(
+            "direction differs from GEN 35:1: the verse says 'up', the speaker said 'down'"), basis['candidates'][0]['reason'])
+        self.assertEqual(basis['candidates'][0]['coverage']['reversedDirections'], [['up', 'down']])
+        read = units('Genesis chapter 35 is our text.', f'Verse 1 says, "{verse}"', 'Amen.')
+        receipt, _ = machine.adjudicate(source(), {'sourceUnits': read}, plan(read),
+                                        target_locale='zh-Hans', flagged_units=['u2'], library=LIBRARY)
+        self.assertEqual((receipt['candidates'][0]['classification'], receipt['candidates'][0]['reference']),
+                         ('direct_quote', 'GEN 35:1'))
+
+    def test_punctuation_between_the_book_and_its_chapter_still_resolves(self):
+        for spoken in (f'John, chapter 3, verse 16 says, "{READ_3_16}"', f'John, 3:16 says, "{READ_3_16}"'):
+            with self.subTest(spoken=spoken):
+                rows = units('Open your Bibles.', spoken, 'Amen.')
+                receipt, basis = machine.adjudicate(source(), {'sourceUnits': rows}, plan(rows),
+                                                    target_locale='zh-Hans', flagged_units=['u2'], library=LIBRARY)
+                self.assertEqual((receipt['candidates'][0]['classification'], receipt['candidates'][0]['reference']),
+                                 ('direct_quote', 'JOH 3:16'))
+                _, basis = machine.adjudicate(source(), {'sourceUnits': rows}, plan(rows),
+                                              target_locale='zh-Hans', library=LIBRARY)
+                self.assertEqual(basis['discoveredUnits'], ['u2'])
+
     def test_a_verse_the_english_edition_lacks_is_not_admitted(self):
         rows = units('Acts chapter 8 is our text.',
                      'Verse 37 says, "I believe that Jesus Christ is the Son of God."',

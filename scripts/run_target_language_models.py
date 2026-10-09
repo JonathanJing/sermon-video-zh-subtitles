@@ -390,7 +390,8 @@ def validate_revision_brief(brief: dict[str, Any] | None,
 def validate_partial_repair_brief(brief: dict[str, Any] | None,
                                   request: dict[str, Any],
                                   plan: list[dict[str, Any]],
-                                  reuse_from: Path | None) -> dict[str, dict[str, Any]]:
+                                  reuse_from: Path | None,
+                                  expected_models: dict[str, str] | None = None) -> dict[str, dict[str, Any]]:
     """Bind a new revision to a failed cache in an incomplete prior run.
 
     The old model response remains untouched. A changed group gets a fresh
@@ -416,6 +417,7 @@ def validate_partial_repair_brief(brief: dict[str, Any] | None,
     require(isinstance(entries, list) and entries, "Partial repair needs failed groups")
     plan_by_id = {row["translationGroupId"]: (index, row)
                   for index, row in enumerate(plan, 1)}
+    model_roles = expected_models or MODEL_ROLES
     result: dict[str, dict[str, Any]] = {}
     for row in entries:
         require(isinstance(row, dict) and set(row) == {
@@ -439,7 +441,7 @@ def validate_partial_repair_brief(brief: dict[str, Any] | None,
                 f"Partial repair failed cache is missing or changed: {group_id}")
         saved = producer._load(failed_cache)
         prior_result = saved.get("result")
-        require(saved.get("model") == MODEL_ROLES[row["failedRole"]]
+        require(saved.get("model") == model_roles[row["failedRole"]]
                 and isinstance(saved.get("payloadSha256"), str)
                 and isinstance(prior_result, dict)
                 and prior_result.get("translationGroupId") == group_id
@@ -772,8 +774,12 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
         if diagnostic_context is not None:
             from scripts.sermon_diagnostic_context import validate_context
             context = validate_context(diagnostic_context)
-            require(simulation_only and not api_key and reuse_from is None and resume_cache_from is None
-                    and revision_brief is None and partial_repair_brief is None and plugin_path is not None
+            diagnostic_api_repair = (getattr(caller, "execution_identity", {}).get("backend") == "openai_api"
+                                     and reuse_from is not None and partial_repair_brief is not None
+                                     and resume_cache_from is None and revision_brief is None)
+            require(simulation_only and not api_key and (reuse_from is None or diagnostic_api_repair)
+                    and resume_cache_from is None and revision_brief is None
+                    and (partial_repair_brief is None or diagnostic_api_repair) and plugin_path is not None
                     and request.get('schemaVersion') == producer.REQUEST_SCHEMA
                     and 'simulationOnly' not in request
                     and request['englishSourcePackageJsonSha256'] == context['sourceCanonicalSha256']
@@ -866,7 +872,7 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                     "Prior complete evidence group plan changed")
         briefs = validate_revision_brief(revision_brief, request, plan, prior_evidence)
         repairs = validate_partial_repair_brief(partial_repair_brief, request, plan,
-                                                 reuse_from)
+                                                 reuse_from, expected_models=expected_models)
         carried = carried_repairs(reuse_from, request, plan, repairs)
         require_plugin_stop_repair(reuse_from, repairs, plugin_path)
         require_plugin_stop_repair(resume_cache_from, repairs, plugin_path)
