@@ -153,6 +153,29 @@ class ContinuationTests(unittest.TestCase):
         self.assertEqual(result['reason'],'reconciliation_required')
         self.assertFalse(self.root.exists())
 
+    def test_bound_delivery_document_resolves_l3_package_and_review_references(self):
+        package = self.source.root/'audio-package.json'; package.write_text('{"schemaVersion":"audio"}')
+        review = self.source.root/'audio-review.json'; review.write_text('{"schemaVersion":"review"}')
+        document = self.source.root/'delivery-draft.json'
+        document.write_text(json.dumps({'endpoint':'https://delivery.example.invalid/weekly',
+            'inputs':{'audioPackage':{'path':token('port','audio'), 'sha256':{'$port':'audio','field':'sha256'}},
+                      'reviewReceipt':binding('binding','audioReview')}}))
+        port_ref = {'path':str(package),'sha256':c.file_sha(package)}
+        review_ref = {'path':str(review),'sha256':c.file_sha(review)}
+        stage = {'id':'l4','ports':{'audio':{'stepId':'audio','role':'audio_package'}},'configs':{}}
+        subject._template({'$document':'deliveryDraft'},stage)
+        resolved = subject._resolve({'$document':'deliveryDraft'}, ports={'audio':port_ref},
+            bindings={'deliveryDraft':{'path':str(document),'sha256':c.file_sha(document)},
+                      'audioReview':review_ref}, configs={}, directory=self.source.root/'out')
+        self.assertEqual(resolved['endpoint'],'https://delivery.example.invalid/weekly')
+        self.assertEqual(resolved['inputs']['audioPackage'],port_ref)
+        self.assertEqual(resolved['inputs']['reviewReceipt'],
+                         {'path':str(review),'sha256':review_ref['sha256']})
+        with self.assertRaisesRegex(ValueError,'document_reference_invalid'):
+            subject._resolve({'$document':'deliveryDraft'}, ports={'audio':port_ref},
+                bindings={'deliveryDraft':{'path':str(document),'sha256':c.file_sha(document)}},
+                configs={}, directory=self.source.root/'out', in_document=True)
+
     def test_changed_upstream_response_is_rejected(self):
         path=self.complete_source();path.write_text(path.read_text()+' ')
         with self.assertRaisesRegex(ValueError,'upstream_evidence_changed'):
