@@ -320,8 +320,15 @@ class OpenAiTranscribeListener:
             # The budget ledger is the paid-call record (reserved, live, returned or unknown) and replays a
             # returned response itself; a refused reservation leaves nothing to reconcile. The cache keeps
             # the returned text so the next run reads it without opening the ledger.
+            request = {'audioSha256': audio_sha, 'listener': self.name}
             response = self._send(wav)
-            done = self.cache.run(key, {'audioSha256': audio_sha, 'listener': self.name}, lambda: response)
+            if (self.cache.root / key / 'started.json').exists():
+                # A run that died after the ledger kept the returned text but before this cache recorded it
+                # leaves the started marker. The ledger replayed (or refused) that operation above; bind its
+                # response to the marker instead of treating the paid clip as an unknown outcome for good.
+                done = self.cache.reconcile(key, request, response)
+            else:
+                done = self.cache.run(key, request, lambda: response)
         return done['text'].strip()
 
 
@@ -444,9 +451,11 @@ class SolAdjudicator:
         inputs = limits._input_upper_bound(payload)
         bounds = {'requests': 1, 'wallTimeMs': self.limits['wallTimeMs'],
                   'costMicrousd': limits._cost(payload['model'], inputs, self.limits['maxCompletionTokens'])}
+        # The ledger row names the selected OpenAI Project with the payload: a response paid for under
+        # one Project is never replayed to a run on another (``source_operation_identity_changed``).
         return self.budget['store'].call(
-            operation='judge.' + jobs._digest(payload), identity=payload, bounds=bounds,
-            request=json.dumps(payload, ensure_ascii=False).encode('utf-8'), api_key=key,
+            operation='judge.' + jobs._digest(payload), identity={'route': self.route, 'payload': payload},
+            bounds=bounds, request=json.dumps(payload, ensure_ascii=False).encode('utf-8'), api_key=key,
             content_type='application/json', endpoint=CHAT_URL)
 
     @property
@@ -506,31 +515,28 @@ def _unbound_call(key: str, payload: dict[str, Any]) -> dict[str, Any]:
 # ---------------------------------------------------------------- budget
 
 def budget_binding(source: dict[str, Any], anchor: dict[str, Any], unit_ids: list[str], out_dir: Path) -> dict[str, Any]:
-    """What a spend authorization must name: the frozen package, the doubted units, the code closure
-    and the ledger root under the output directory. Any other run is a different authorization."""
-    from scripts.canonical_layer2_controller import code_identity
+    """What a spend authorization must name: the frozen package, the doubted units, the code closure,
+    the selected OpenAI Project and the ledger root under the output directory. Any other run is a
+    different authorization: in particular one approved for dev cannot be loaded, replayed or spent
+    under prod, and the binding exists only under the environment launcher."""
+    from scripts import canonical_layer2_controller as controller
+    from scripts import sermon_openai_runtime as runtime
+    route = _route_identity(runtime.selected_route())
+    _require(route is not None, 'openai_environment_launcher_required')
     return {'bindings': {'source.json': policies.canonical_sha256(source), 'anchor.json': policies.canonical_sha256(anchor)},
-            'doubtedUnits': sorted(unit_ids), 'codeIdentitySha256': code_identity(),
+            'doubtedUnits': sorted(unit_ids), 'codeIdentitySha256': controller.code_identity(), 'route': route,
             'budgetRoot': str(Path(out_dir).resolve() / BUDGET_DIR)}
 
 
-def load_budget_authorization(path: Path, *, binding: dict[str, Any], transport: Any = None) -> dict[str, Any]:
-    """The human-approved spend authority for exactly this run, with its durable ledger.
-
-    Shaped like the Layer 1 source budget: the authorization names the binding, the global
-    bounds and the request limits; the approval receipt it hashes into its authority repeats
-    them with a human decision. Every paid call of the run then dispatches through one
-    ``SourceBudget`` ledger under ``budgetRoot``: reserved before dispatch, replayed after,
-    never retried on an unknown outcome. ``transport`` is a test seam only."""
-    from scripts import sermon_source_budget as source_budget
-    path = Path(path).resolve()
+def _authorization_identity(path: Path, *, binding: dict[str, Any]) -> dict[str, Any]:
+    """What the authorization file and its approval receipt say now, refused unless they bind this run."""
     value = _load(path)
     _require(isinstance(value, dict) and set(value) == {'schemaVersion', 'binding', 'authority', 'approvalReceipt'}
              and value['schemaVersion'] == BUDGET_SCHEMA and isinstance(value['authority'], dict)
+             and set(value['authority']) == {'approvalSha256', 'globalBounds', 'requestLimits'}
              and isinstance(value['approvalReceipt'], str), 'budget_authorization_schema')
     _require(value['binding'] == binding, 'budget_authorization_binding_changed')
     authority = value['authority']
-    store = source_budget.SourceBudget(Path(binding['budgetRoot']), authority, verify=lambda: None, transport=transport)
     approval_path = (path.parent / value['approvalReceipt']).resolve()
     _require(approval_path.is_file(), 'budget_approval_not_bound')
     approval = _load(approval_path)
@@ -543,8 +549,33 @@ def load_budget_authorization(path: Path, *, binding: dict[str, Any], transport:
              'budget_approval_not_bound')
     return {'schemaVersion': BUDGET_SCHEMA, 'authorizationSha256': file_sha256(path),
             'approvalSha256': authority['approvalSha256'], 'budgetRoot': binding['budgetRoot'],
-            'globalBounds': dict(authority['globalBounds']), 'requestLimits': dict(authority['requestLimits']),
-            'store': store}
+            'globalBounds': dict(authority['globalBounds']), 'requestLimits': dict(authority['requestLimits'])}
+
+
+def load_budget_authorization(path: Path, *, binding: dict[str, Any], transport: Any = None) -> dict[str, Any]:
+    """The human-approved spend authority for exactly this run, with its durable ledger.
+
+    Shaped like the Layer 1 source budget: the authorization names the binding, the global
+    bounds and the request limits; the approval receipt it hashes into its authority repeats
+    them with a human decision. Every paid call of the run then dispatches through one
+    ``SourceBudget`` ledger under ``budgetRoot``: reserved before dispatch, replayed after,
+    never retried on an unknown outcome. The ledger re-reads the authorization, its approval
+    and the code closure before every reservation, dispatch and returned response, so a file
+    replaced or code changed after this load refuses (``budget_authorization_changed`` /
+    ``budget_authorization_binding_changed``) before the ledger moves. ``transport`` is a
+    test seam only."""
+    from scripts import canonical_layer2_controller as controller
+    from scripts import sermon_source_budget as source_budget
+    path = Path(path).resolve()
+    identity = _authorization_identity(path, binding=binding)
+
+    def verify() -> None:
+        current = _authorization_identity(path, binding={**binding, 'codeIdentitySha256': controller.code_identity()})
+        _require(current == identity, 'budget_authorization_changed')
+
+    authority = {key: identity[key] for key in ('approvalSha256', 'globalBounds', 'requestLimits')}
+    store = source_budget.SourceBudget(Path(binding['budgetRoot']), authority, verify=verify, transport=transport)
+    return {**identity, 'store': store}
 
 
 BUDGET_IDENTITY_KEYS = ('schemaVersion', 'authorizationSha256', 'approvalSha256', 'budgetRoot', 'globalBounds',
@@ -554,6 +585,27 @@ BUDGET_IDENTITY_KEYS = ('schemaVersion', 'authorizationSha256', 'approvalSha256'
 def budget_identity(budget: dict[str, Any] | None) -> dict[str, Any] | None:
     """What the receipt records of the authority a run spent under; the ledger store stays out."""
     return None if budget is None else {key: budget[key] for key in BUDGET_IDENTITY_KEYS}
+
+
+def _is_budget_identity(value: Any) -> bool:
+    """Whether ``value`` could have come from ``load_budget_authorization``: two file hashes, an absolute
+    ledger root named ``budget``, ledger-valid global bounds and a supported request-limit tier."""
+    from scripts import sermon_source_budget as source_budget
+    if not (isinstance(value, dict) and set(value) == set(BUDGET_IDENTITY_KEYS) and value['schemaVersion'] == BUDGET_SCHEMA
+            and all(isinstance(value[key], str) and re.fullmatch('[a-f0-9]{64}', value[key])
+                    for key in ('authorizationSha256', 'approvalSha256'))
+            and isinstance(value['budgetRoot'], str) and Path(value['budgetRoot']).is_absolute()
+            and Path(value['budgetRoot']).name == BUDGET_DIR):
+        return False
+    bounds = value['globalBounds']
+    if not (isinstance(bounds, dict) and set(bounds) == set(source_budget.METRICS)
+            and all(type(v) is int and 0 < v <= 10**15 for v in bounds.values())):
+        return False
+    try:
+        limits.validate_request_limits(value['requestLimits'])
+    except ValueError:
+        return False
+    return True
 
 
 def _checked_answer(result: Any, frozen: list[str], heard: list[dict[str, Any]]) -> dict[str, Any]:
@@ -782,10 +834,9 @@ def validate_receipt(receipt: Any, *, source: dict[str, Any] | None = None, anch
              and type(media.get('sizeBytes')) is int and isinstance(media.get('offsetSeconds'), (int, float)),
              'receipt_bindings')
     # Receipts written before the budget contract carry no ``budget``; they read as unrecorded, like a
-    # cache-only run's ``null``. A present record must be the authorization identity this module writes.
-    _require(receipt.get('budget') is None or (
-        isinstance(receipt['budget'], dict) and set(receipt['budget']) == set(BUDGET_IDENTITY_KEYS)
-        and receipt['budget']['schemaVersion'] == BUDGET_SCHEMA), 'receipt_budget')
+    # cache-only run's ``null``. A present record must be an authorization identity this module could have
+    # written: every field is checked, not only the key set and the schema string.
+    _require(receipt.get('budget') is None or _is_budget_identity(receipt['budget']), 'receipt_budget')
     listeners, independence = receipt.get('listeners'), receipt.get('listenerIndependence')
     _require(isinstance(listeners, list) and listeners
              and all(isinstance(row, dict) and isinstance(row.get('name'), str) and isinstance(row.get('model'), str)

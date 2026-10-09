@@ -18,6 +18,7 @@ import unittest
 from unittest import mock
 import wave
 
+from scripts import canonical_layer2_controller as controller
 from scripts import machine_qc_audio_transports as transports
 from scripts import sermon_provider_limits as limits
 from scripts import sermon_sentence_interpretation as contract
@@ -807,6 +808,9 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
                  'SERMON_OPENAI_CREDENTIAL_ALIAS': 'tongxing-dev-runtime', 'OPENAI_API_KEY': 'not-a-real-key'}
         clip = wav_bytes(3.0)
         cache = self.out / 'cache'
+        # The binding names the selected OpenAI Project, so it exists only under the launcher.
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'openai_environment_launcher_required'):
+            machine.budget_binding(self.source, self.anchor, ['u3'], self.out)
         with mock.patch.dict(os.environ, route):
             # Unbound: a call cap is not spending authorization. The refusal comes before any
             # transport exists and before either cache records a started call.
@@ -824,6 +828,8 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
             self.assertEqual(binding['budgetRoot'], str(self.out.resolve() / machine.BUDGET_DIR))
             self.assertEqual(binding['bindings'], {'source.json': policies.canonical_sha256(self.source),
                                                    'anchor.json': policies.canonical_sha256(self.anchor)})
+            self.assertEqual(binding['route'], {'environment': 'dev', 'projectId': 'proj_devOnly',
+                                                'credentialAlias': 'tongxing-dev-runtime'})
             bounds = {'requests': 4, 'wallTimeMs': 4 * 300_000, 'costMicrousd': 2_000_000}
             auth_path = self._authorization('budget', binding, bounds)
             with self.assertRaisesRegex(machine.SourceAdjudicationError, 'budget_authorization_binding_changed'):
@@ -874,6 +880,13 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
         machine.validate_receipt(stripped, anchor=self.anchor, cache=cache)
         with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_budget'):
             machine.validate_receipt(dict(receipt, budget={'schemaVersion': machine.BUDGET_SCHEMA}), anchor=self.anchor, cache=cache)
+        # Every recorded field is checked: a null or malformed hash, root, bound or tier is not the loader's record.
+        for edited in ({'authorizationSha256': None}, {'approvalSha256': 'abc'}, {'budgetRoot': 'budget'},
+                       {'budgetRoot': str(self.out.resolve())},
+                       {'globalBounds': dict(receipt['budget']['globalBounds'], requests=0)}, {'globalBounds': {'requests': 1}},
+                       {'requestLimits': dict(limits.DEFAULT_REQUEST_LIMITS, maxCompletionTokens=10**9)}, {'requestLimits': None}):
+            with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_budget'):
+                machine.validate_receipt(dict(receipt, budget={**receipt['budget'], **edited}), anchor=self.anchor, cache=cache)
         # The same run again replays both caches: no transport call, the same receipt rows.
         with mock.patch.dict(os.environ, route):
             again = machine.adjudicate(self.source, self.anchor, unit_ids=['u3'], media=None, adjudicator=machine.SolAdjudicator(
@@ -882,6 +895,28 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
         self.assertEqual(len(calls), 2)
         self.assertEqual(again['units'][0]['heard'], receipt['units'][0]['heard'])
         self.assertTrue(again['units'][0]['request']['cached'])
+        # A run that died after the ledger kept the listener's returned text but before its call cache recorded
+        # the outcome leaves the cache's started marker. The resumed run binds the ledger's replay to that marker.
+        listened = next((cache / 'openai').glob('*/started.json')).parent
+        (listened / 'response.json').unlink()
+        (listened / 'outcome.json').unlink()
+        self.assertEqual(listener.cache.uncertain(), [listened.name])
+        with mock.patch.dict(os.environ, route):
+            with self.assertRaisesRegex(machine.SourceAdjudicationError, 'budget_authorization_required'):
+                machine.OpenAiTranscribeListener(cache=cache / 'openai', max_calls=1).transcribe(clip)
+            relistened = machine.adjudicate(self.source, self.anchor, unit_ids=['u3'], media=None, adjudicator=machine.SolAdjudicator(
+                api_key='k', cache=cache, budget=budget), out_dir=self.out, cut=lambda *_: clip, budget=budget,
+                listeners=[machine.OpenAiTranscribeListener(cache=cache / 'openai', max_calls=1, budget=budget)])
+        self.assertEqual(len(calls), 2)
+        self.assertEqual(listener.cache.uncertain(), [])
+        self.assertEqual(relistened['units'][0]['heard'], receipt['units'][0]['heard'])
+        machine.validate_receipt(relistened, source=self.source, anchor=self.anchor, cache=cache)
+        # A marker is bound only to the ledger's response for its own request; nothing recorded is overwritten.
+        started_request = json.loads((listened / 'started.json').read_text(encoding='utf-8'))['request']
+        with self.assertRaisesRegex(ValueError, 'started with another request'):
+            listener.cache.reconcile(listened.name, {**started_request, 'audioSha256': 'other'}, {'text': 'x'})
+        with self.assertRaisesRegex(ValueError, 'different response'):
+            listener.cache.reconcile(listened.name, started_request, {'text': 'x'})
         # A run that died after the ledger kept Sol's response but before the cache file was written leaves the
         # cache's started marker. The resumed run binds the ledger's response into the cache without a new call.
         cache_file = Path(row['request']['path'])
@@ -907,13 +942,47 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'Unknown L1 request outcome'):
                 FakeAdjudicator(cache, answer('undetermined')).decide('u3', json.loads(
                     json.loads(marker.read_text(encoding='utf-8'))['request']['payload']['messages'][1]['content']))
+        question = json.loads(json.loads(marker.read_text(encoding='utf-8'))['request']['payload']['messages'][1]['content'])
+        # The authorization binds the selected OpenAI Project: under prod the same file is another run's, and
+        # the ledger row of a dev answer refuses a prod request before any replay or dispatch.
+        prod = {**route, 'SERMON_OPENAI_ENVIRONMENT': 'prod', 'OPENAI_PROJECT_ID': 'proj_prodOnly',
+                'SERMON_OPENAI_CREDENTIAL_ALIAS': 'tongxing-prod-runtime'}
+        with mock.patch.dict(os.environ, prod):
+            prod_binding = machine.budget_binding(self.source, self.anchor, ['u3'], self.out)
+            self.assertEqual(prod_binding['route']['projectId'], 'proj_prodOnly')
+            with self.assertRaisesRegex(machine.SourceAdjudicationError, 'budget_authorization_binding_changed'):
+                machine.load_budget_authorization(auth_path, binding=prod_binding, transport=transport)
+            with self.assertRaisesRegex(ValueError, 'source_operation_identity_changed'):
+                machine.SolAdjudicator(api_key='k', cache=cache, budget=budget).decide('u3', question)
+        self.assertEqual(len(calls), 2)
+        # The ledger re-reads the authorization, its approval and the code closure before every paid step:
+        # a file replaced or code changed after the load refuses the reservation, and nothing is sent.
+        approval_path = auth_path.parent / 'approval.json'
+        original = {path: path.read_bytes() for path in (auth_path, approval_path)}
+        widened, approval = json.loads(auth_path.read_text(encoding='utf-8')), json.loads(approval_path.read_text(encoding='utf-8'))
+        for holder in (widened['authority'], approval['binding']):
+            holder['globalBounds'] = dict(holder['globalBounds'], requests=40)
+        approval_path.write_text(json.dumps(approval), encoding='utf-8')
+        widened['authority']['approvalSha256'] = hashlib.sha256(approval_path.read_bytes()).hexdigest()
+        auth_path.write_text(json.dumps(widened), encoding='utf-8')
+        with mock.patch.dict(os.environ, route):
+            with self.assertRaisesRegex(machine.SourceAdjudicationError, 'budget_authorization_changed'):
+                machine.OpenAiTranscribeListener(cache=cache / 'openai', max_calls=1, budget=budget).transcribe(wav_bytes(1.0))
+            for path, data in original.items():
+                path.write_bytes(data)
+            with mock.patch.object(controller, 'code_identity', return_value='f' * 64):
+                with self.assertRaisesRegex(machine.SourceAdjudicationError, 'budget_authorization_binding_changed'):
+                    machine.OpenAiTranscribeListener(cache=cache / 'openai', max_calls=1, budget=budget).transcribe(wav_bytes(1.0))
+        self.assertEqual(len(calls), 2)
+        ledger = json.loads((self.out / machine.BUDGET_DIR / 'source-budget.json').read_text(encoding='utf-8'))
+        self.assertEqual(sorted(ledger['requests']), operations)
         # Exhausted bounds refuse before the transport is reached and leave nothing to reconcile.
         tight_out = self.root / 'tight'
-        tight_binding = machine.budget_binding(self.source, self.anchor, ['u3'], tight_out)
-        tight = machine.load_budget_authorization(
-            self._authorization('tight', tight_binding, dict(bounds, costMicrousd=1000)),
-            binding=tight_binding, transport=transport)
         with mock.patch.dict(os.environ, route):
+            tight_binding = machine.budget_binding(self.source, self.anchor, ['u3'], tight_out)
+            tight = machine.load_budget_authorization(
+                self._authorization('tight', tight_binding, dict(bounds, costMicrousd=1000)),
+                binding=tight_binding, transport=transport)
             short = machine.OpenAiTranscribeListener(cache=tight_out / 'cache' / 'openai', max_calls=1, budget=tight)
             with self.assertRaisesRegex(ValueError, 'source_budget_exhausted'):
                 short.transcribe(clip)
@@ -925,10 +994,12 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
         (fixture / 'source.json').write_text(json.dumps(self.source), encoding='utf-8')
         (fixture / 'anchor.json').write_text(json.dumps(self.anchor), encoding='utf-8')
         out = io.StringIO()
-        with redirect_stdout(out):
+        with mock.patch.dict(os.environ, route), redirect_stdout(out):
             self.assertEqual(machine.main([str(fixture), '--media', str(self.media), '--unit', 'u3',
                                            '--out-dir', str(self.root / 'printed'), '--print-budget-binding']), 0)
-        self.assertEqual(json.loads(out.getvalue()), machine.budget_binding(self.source, self.anchor, ['u3'], self.root / 'printed'))
+            printed = machine.budget_binding(self.source, self.anchor, ['u3'], self.root / 'printed')
+        self.assertEqual(json.loads(out.getvalue()), printed)
+        self.assertEqual(printed['route']['environment'], 'dev')
         self.assertFalse((self.root / 'printed').exists())
 
     def _authorization(self, name, binding, bounds, approved_bounds=None):
