@@ -278,6 +278,9 @@ def assemble(base_public: Path, stage_public: Path, stage_manifest: Path, out: P
     base_files = regular_files(base_public)
     if CATALOG not in base_files or "weekly.json" not in base_files:
         raise ValueError("Base is not a complete Production snapshot")
+    if "multilingual-v4.json" in base_files:
+        # v3 must stay the human-only projection of v4; this assembler only writes v3.
+        raise ValueError("Base carries multilingual-v4.json; publish through the four-layer seal")
     # Freeze the baseline before validation/copy. Comparing a copied file to a
     # later read of its source can silently accept a concurrently changed input.
     base_identities = {name: digest(path) for name, path in base_files.items()}

@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "sermon-run-outcome-v1",
+  "command": "spark-diagnostic-audio execute",
+  "status": "failed",
+  "exitCode": 1,
+  "startedAt": "2026-10-08T01:36:40Z",
+  "endedAt": "2026-10-08T01:37:31Z",
+  "error": {
+    "type": "RemoteStageError",
+    "message": "remote tts exited 3 during input validation"
+  }
+}

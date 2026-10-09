@@ -45,7 +45,7 @@ public struct PublishedFingerprintBinding: Codable, Sendable, Equatable {
         try validate()
         guard page.id == pageId, page.sourceMediaSha256 == sourceSha256,
               page.targets[locale]?.audioFingerprint == self,
-              page.targets[locale]?.audioStatus == "human_reviewed",
+              page.targets[locale]?.hasPublishedAudio == true,
               self.trackSha256 == trackSha256, durationSeconds.isFinite,
               abs(durationSeconds - (sourceEndSeconds - sourceStartSeconds)) <= 0.1
         else { throw CatalogError.invalid("声音指纹与当前多语言页面或音轨不符") }

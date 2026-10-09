@@ -57,6 +57,14 @@ def read(path):
     return value
 
 
+def worker_identity(root):
+    """Reuse only an explicitly compatible timing-only worker's frozen identity."""
+    from scripts.experiments.diagnostic_timing_compatibility import compatible_worker
+    path = Path(root) / 'run.json'
+    saved = read(path).get('workerSha256') if path.exists() else None
+    return compatible_worker(sha(__file__), saved)
+
+
 def save(path, value):
     """Atomic JSON plus fsync before dispatch or acknowledgment."""
     path = Path(path)
@@ -299,7 +307,7 @@ def render_tts(args, *, factory=None, writer=audio_output, model_session=None, r
                 'synthesizerImplementationSha256': sha(Path(__file__).resolve().parents[1] / 'render_formal_target_language_speech.py'),
                 'checkpointValidatorImplementationSha256': sha(Path(__file__).resolve().parents[1] / 'render_multilingual_voice_demos.py'),
                 'settings': {'seed': args.seed, 'device': args.device, 'dtype': 'bfloat16',
-                             'attention': args.attention}, 'workerSha256': sha(__file__)}
+                             'attention': args.attention}, 'workerSha256': worker_identity(args.out)}
     if general:
         identity.update(schemaVersion='source-bound-local-tts-run-v1', diagnosticBinding=binding,
                         targetLocale=target_locale,
@@ -397,7 +405,14 @@ def render_tts(args, *, factory=None, writer=audio_output, model_session=None, r
             values = model.batch([{'identity': row, 'text': row['text'], 'language': voice['modelLanguage'],
                                   'speaker': voice['speakerKey'], 'instruct': None} for row in selected],
                                  seed=args.seed + (start if general else index))
-            synchronize(model); elapsed = time.perf_counter() - began
+            synchronize(model); waited = time.perf_counter() - began
+            if replicas == 8:
+                # Replica windows run in workers; the parent only waits for the one it collects.
+                elapsed, timing_scope = model.last_window_seconds, 'replica_worker_generation'
+                require(type(elapsed) in (float, int) and math.isfinite(elapsed) and elapsed >= 0,
+                        'replica_window_timing_missing')
+            else:
+                elapsed, timing_scope = waited, 'batch_including_gpu_synchronization'
             require(len(values) == len(selected), 'tts_output_cardinality_changed')
             pending_outputs = []
             for expected, value in zip(selected, values):
@@ -417,8 +432,8 @@ def render_tts(args, *, factory=None, writer=audio_output, model_session=None, r
                        'callId': attempt['callId'], 'backend': 'local', 'model': identity['model'],
                        'startedAt': attempt['startedAt'], 'completedAt': datetime.now(timezone.utc).isoformat(),
                        'status': 'completed_diagnostic', 'inputs': selected, 'outputs': outputs,
-                       'inferenceSeconds': elapsed, 'timingScope': 'batch_including_gpu_synchronization',
-                       'usage': dict(UNKNOWN_USAGE)}
+                       'inferenceSeconds': elapsed, 'timingScope': timing_scope,
+                       'parentWaitSeconds': waited, 'usage': dict(UNKNOWN_USAGE)}
             finish_batch(root, index, receipt); receipts[index] = receipt
             print(json.dumps({'stage': 'tts', 'batchIndex': index, 'completedGroups': sum(len(r['outputs']) for r in receipts if r)}), flush=True)
         # Revalidate live input/voice identities before publishing a final manifest.
@@ -541,7 +556,7 @@ def back_asr(args, *, factory=LocalASR, model_session=None, runtime_identity_sha
     identity = {'schemaVersion': 'fixed-clip-local-asr-run-v1', **FLAGS,
                 'mediaSha256': source['mediaSha256'], 'sourceUnitCount': source['sourceUnitCount'], 'groupCount': len(groups),
                 'ttsManifestSha256': sha(args.tts_manifest), 'modelTreeSha256': tree['sha256'],
-                'batchSize': batch_size, 'backend': 'local', 'model': 'Qwen/Qwen3-ASR-0.6B', 'device': args.device, 'workerSha256': sha(__file__)}
+                'batchSize': batch_size, 'backend': 'local', 'model': 'Qwen/Qwen3-ASR-0.6B', 'device': args.device, 'workerSha256': worker_identity(args.out)}
     if general:
         identity.update(schemaVersion='source-bound-local-asr-run-v1', diagnosticBinding=binding,
                         modelReplicas=1, targetLocale=binding['targetLocale'], modelLanguage=source['voice']['modelLanguage'],

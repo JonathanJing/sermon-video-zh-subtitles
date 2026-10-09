@@ -3,6 +3,12 @@ export function isFormalPlayback(week) {
   return week?.releaseLabel === "正式播放版";
 }
 
+// A machine quality waiver is never a human approval: such a published locale
+// shows its own machine-check label and release disclosure instead.
+export function isMachineChecked(week) {
+  return week?.machineChecked === true;
+}
+
 const blockKey = value => typeof value === 'string' ? value : Number.isSafeInteger(value) && value >= 0 ? String(value) : null;
 const validBlockKey = value => typeof value === 'string' && value.length > 0 && value.length <= 128 && value.trim() === value && !/[\u0000-\u001f\u007f]/.test(value);
 
@@ -100,6 +106,8 @@ export function downloadFilename(week, track) {
   if (sourceLabel && !week.title.includes(sourceLabel)) parts.push(sourceLabel);
   if (isFormalPlayback(week)) {
     if (!parts.some(part => String(part).includes("正式播放版"))) parts.push("正式播放版");
+  } else if (isMachineChecked(week)) {
+    if (!parts.some(part => String(part).includes(week.releaseLabel))) parts.push(week.releaseLabel);
   } else if (week.humanContentReview === "approved") {
     // Content review is independent of video synchronization.
   } else if (track.scope === "full_candidate") {
@@ -118,7 +126,7 @@ export function weekOptionLabel(week) {
   const title = typeof week.title === 'string' ? week.title.trim() : '';
   const route = typeof week.sourceLabel === 'string' ? week.sourceLabel.trim() : '';
   const diagnostic = diagnosticPresentation(week);
-  const status = diagnostic ? ({failed:'处理失败',blocked:'流程受阻',pending:'待生成',ready:'DEV 可试听'})[diagnostic.status] : isFormalPlayback(week) ? '正式播放版' : week.humanContentReview === 'approved' ? '整篇中文' : week.audioStatus === 'full_candidate' ? '整篇待审' : week.tracks?.length ? '可试听' : '待配音';
+  const status = diagnostic ? ({failed:'处理失败',blocked:'流程受阻',pending:'待生成',ready:'DEV 可试听'})[diagnostic.status] : isFormalPlayback(week) ? '正式播放版' : isMachineChecked(week) ? week.releaseLabel : week.humanContentReview === 'approved' ? '整篇中文' : week.audioStatus === 'full_candidate' ? '整篇待审' : week.tracks?.length ? '可试听' : '待配音';
   const displayStatus = isFormalPlayback(week) && [title, route].some(text => text.includes(status)) ? '' : status;
   return [date, title, route && !title.includes(route) ? route : '', displayStatus].filter(Boolean).join(' · ');
 }

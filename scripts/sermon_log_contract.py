@@ -4,6 +4,7 @@ No dispatch, recovery, approval or network authority lives in this module.
 Legacy records are never upgraded by manufacturing missing observations.
 """
 from collections import OrderedDict, defaultdict, namedtuple
+from contextlib import contextmanager
 from datetime import datetime
 from functools import lru_cache
 import hashlib
@@ -36,14 +37,16 @@ _schema_snapshot_lock = threading.RLock()
 _event_successes = OrderedDict()
 _event_success_payload_bytes = 0
 _event_success_hits = _event_success_misses = 0
+_batch_state = threading.local()
 _CacheInfo = namedtuple('CacheInfo', 'hits misses maxsize currsize')
 SCHEMA_PATH = Path(__file__).resolve().parents[1] / 'schemas/sermon-accounting-log-contract-v1.schema.json'
 
 
 def _reset_snapshot_lock_after_fork():
-    global _schema_snapshot_lock, _schema_snapshots, _event_successes
+    global _schema_snapshot_lock, _schema_snapshots, _event_successes, _batch_state
     global _event_success_payload_bytes, _event_success_hits, _event_success_misses
     _schema_snapshot_lock = threading.RLock()
+    _batch_state = threading.local()
     # Another thread can fork between an OrderedDict update and its accounting
     # update. The child owns a fresh empty cache, never an inherited partial
     # cache/counter mutation or a lock held by a vanished thread.
@@ -162,9 +165,38 @@ def _validate_with_snapshot(row, data, snapshot):
 def validate_event(row):
     data = _event_bytes(row)
     with _schema_snapshot_lock:
-        # Public single-event checks always observe the current schema content.
-        _validate_with_snapshot(row, data, _schema_snapshot())
+        # Public single-event checks observe the current schema content, or the
+        # one snapshot captured for the enclosing schema_batch().
+        _validate_with_snapshot(row, data, _current_snapshot())
     return row
+
+
+def _current_snapshot():
+    if not getattr(_batch_state, 'active', False):
+        return _schema_snapshot()
+    if _batch_state.snapshot is None:
+        _batch_state.snapshot = _schema_snapshot()
+    return _batch_state.snapshot
+
+
+@contextmanager
+def schema_batch():
+    """Validate the rows of one read against one exact schema snapshot.
+
+    Like replay_integrity, a batch captures the schema once (at its first
+    profile row) and holds the lock so the snapshot cannot be evicted. Edits
+    made after capture apply to the next batch. Nested batches reuse the outer
+    one. Callers holding a ledger file lock take it first, as writers do.
+    """
+    with _schema_snapshot_lock:
+        if getattr(_batch_state, 'active', False):
+            yield
+            return
+        _batch_state.active, _batch_state.snapshot = True, None
+        try:
+            yield
+        finally:
+            _batch_state.active, _batch_state.snapshot = False, None
 
 
 def _validate_frozen_event(data, schema_key, version):
@@ -301,7 +333,7 @@ def replay_integrity(events):
     with _schema_snapshot_lock:
         # One explicit immutable schema snapshot per replay batch. The lock
         # prevents another batch evicting it while event-cache entries are used.
-        snapshot = _schema_snapshot() if rows else None
+        snapshot = _current_snapshot() if rows else None
         for r in rows:
             _validate_with_snapshot(r, _event_bytes(r), snapshot)
             by_event[r['eventId']].append(r)

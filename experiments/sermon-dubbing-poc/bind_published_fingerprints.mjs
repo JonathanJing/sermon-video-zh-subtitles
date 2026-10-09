@@ -1,5 +1,7 @@
-/** Add source-bound listening alignment to an already reviewed v3 published week.
- * Run only against a new Hosting candidate. Reviewed content/audio/packages stay immutable.
+/** Add source-bound listening alignment to an already published week.
+ * Reads multilingual-v4.json when the snapshot publishes it (machine-checked locales
+ * included, statuses kept as published), otherwise the human-reviewed v3 catalog.
+ * Run only against a new Hosting candidate. Published content/audio/packages stay immutable.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -19,8 +21,10 @@ const read=file=>JSON.parse(fs.readFileSync(file,'utf8'));
 const hash=async file=>{const h=crypto.createHash('sha256');for await(const bytes of fs.createReadStream(file))h.update(bytes);return h.digest('hex');};
 const require=(ok,message)=>{if(!ok)throw Error(message);};
 const local=url=>{require(/^\/[A-Za-z0-9_./-]+$/.test(url)&&!url.split('/').some(x=>x==='..'||x==='.'),'Unsafe asset path');return path.join(root,url);};
-const catalog=read(path.join(root,'multilingual-v3.json'));
-require(catalog.schemaVersion==='sermon-multilingual-catalog-v3','Expected v3 catalog');
+const v4=fs.existsSync(path.join(root,'multilingual-v4.json'));
+const catalog=read(path.join(root,v4?'multilingual-v4.json':'multilingual-v3.json'));
+require(catalog.schemaVersion===(v4?'sermon-multilingual-catalog-v4':'sermon-multilingual-catalog-v3'),'Expected v3 or v4 catalog');
+const PUBLISHED=v4?['human_reviewed','machine_checked']:['human_reviewed'];
 const page=catalog.pages.find(p=>p.id===pageId);
 require(page,'Missing page');
 const sidecarPath=path.join(root,'alignment',`${pageId}.json`);
@@ -30,7 +34,7 @@ for(const [locale,target] of Object.entries(page.targets)) {
   const releasePath=local(target.releasePackageUrl);
   require(await hash(releasePath)===target.releasePackageJsonSha256,'Release hash mismatch');
   const release=read(releasePath);
-  require(release.pageId===pageId&&release.targetLocale===locale&&release.audioLocale===locale&&release.status==='published_http_verified'&&release.audioStatus==='human_reviewed','Unreviewed or mismatched release');
+  require(release.pageId===pageId&&release.targetLocale===locale&&release.audioLocale===locale&&release.status==='published_http_verified'&&PUBLISHED.includes(release.audioStatus)&&(!v4||(release.audioStatus===target.audioStatus&&release.contentStatus===target.contentStatus)),'Unreviewed or mismatched release');
   const contentAsset=release.assets.find(a=>a.role==='content'), audioAsset=release.assets.find(a=>a.role==='audio');
   require(contentAsset&&audioAsset,'Missing assets');
   require(await hash(local(contentAsset.path))===contentAsset.sha256&&await hash(local(audioAsset.path))===audioAsset.sha256,'Asset hash mismatch');

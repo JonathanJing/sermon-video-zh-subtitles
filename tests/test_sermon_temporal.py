@@ -1,12 +1,12 @@
 """Optional Temporal contract/adapter tests: importing this file needs no SDK."""
-from dataclasses import replace
+from dataclasses import asdict, replace
 import json
 from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts.sermon_temporal import adapter, fixtures, worker_service
+from scripts.sermon_temporal import adapter, client, fixtures, worker_service
 from scripts.sermon_temporal.contracts import REQUEST_SCHEMA, Request
 from scripts.sermon_temporal.local_io import TEMPORAL_ROOT, file_sha
 
@@ -91,6 +91,124 @@ class TemporalContractTests(unittest.TestCase):
             changed = adapter.fixture_observation(request, config, state_dir)
             self.assertFalse(changed.approval_valid)
             self.assertNotEqual(valid.source_binding, changed.source_binding)
+
+
+class TemporalBackendBindingTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        self.bridge = self.root / "bridge.json"
+        self.bridge.write_text('{}')
+        self.path = self.root / "config.json"
+        self.config = {
+            "schemaVersion": "sermon-temporal-operator-v1", "sunday": "2026-09-06",
+            "sourceKey": "source:original", "expectedPdfSlug": "original",
+            "expectedSources": {"live_archive": "original"}, "bridgeConfigSha256": file_sha(self.bridge),
+            "harnessArgv": ["--sunday", "2026-09-06", "--state-file", str(self.root / "state.json"),
+                "--work-root", str(self.root), "--supervisor-report", str(self.root / "report.json"),
+                "--bridge-config", str(self.bridge), "--gcs-bucket", "fixture-bucket",
+                "--api-key-secret", "fixture-api-reference", "--youtube-api-key-secret", "fixture-youtube-reference",
+                "--skip-source-refresh"]}
+
+    def write_config(self):
+        self.path.write_text(json.dumps(self.config))
+
+    def persisted_request(self):
+        self.write_config()
+        # Exercise the real client construction and persisted Activity payload.
+        request = client.build_request(self.path, profile="production")
+        return Request(**json.loads(json.dumps(asdict(request))))
+
+    def backend_command(self, request, default):
+        from scripts import run_saturday_harness as harness
+        original_parser = harness.parse_args
+        # Change the parser's implicit backend while retaining real argv parsing.
+        def changed_parser(argv):
+            return original_parser(["--agent-backend", default, *argv])
+        with patch.object(harness, "parse_args", side_effect=changed_parser):
+            args = adapter.production_args(adapter.load_config(request))
+        command, _ = harness.commands(args)
+        return command[command.index("--agent-backend") + 1]
+
+    def test_legacy_persisted_request_replay_retains_agents_api_across_parser_defaults(self):
+        request = self.persisted_request()
+        original_bytes, original_id = self.path.read_bytes(), request.workflow_id()
+        for default in ("codex-cli", "sdk"):
+            with self.subTest(default=default):
+                self.assertEqual(self.backend_command(request, default), "agents-api")
+        self.assertEqual(self.path.read_bytes(), original_bytes)
+        self.assertEqual(file_sha(self.path), request.config_sha256)
+        self.assertEqual(request.workflow_id(), original_id)
+        self.assertNotIn("--agent-backend", adapter.load_config(request)["harnessArgv"])
+
+    def test_new_explicit_cli_is_stable_through_persisted_request_and_command(self):
+        self.config["schemaVersion"] = "sermon-temporal-operator-v2"
+        self.config["harnessArgv"].append("--agent-backend=codex-cli")
+        request = self.persisted_request()
+        for default in ("agents-api", "sdk"):
+            with self.subTest(default=default):
+                self.assertEqual(self.backend_command(request, default), "codex-cli")
+        self.assertEqual(file_sha(self.path), request.config_sha256)
+
+    def test_v1_explicit_backend_is_not_replaced_by_legacy_default(self):
+        original_argv = list(self.config["harnessArgv"])
+        for backend in ("codex-cli", "agents-api", "sdk"):
+            with self.subTest(backend=backend):
+                self.config["harnessArgv"] = original_argv + ["--agent-backend", backend]
+                request = self.persisted_request()
+                self.assertEqual(self.backend_command(request, "codex-cli"), backend)
+
+    def test_v1_abbreviated_backend_pin_keeps_its_backend(self):
+        original_argv = list(self.config["harnessArgv"])
+        for pin, backend in ((["--agent-b", "codex-cli"], "codex-cli"),
+                             (["--ag=sdk"], "sdk"),
+                             (["--agent-backen", "agents-api"], "agents-api")):
+            with self.subTest(pin=pin):
+                self.config["harnessArgv"] = original_argv + pin
+                request = self.persisted_request()
+                other = "codex-cli" if backend == "agents-api" else "agents-api"
+                self.assertEqual(self.backend_command(request, other), backend)
+        for pin in (["--agent-b", "codex-cli", "--agent-backend", "sdk"], ["--a", "codex-cli"]):
+            with self.subTest(pin=pin):
+                self.config["harnessArgv"] = original_argv + pin
+                self.write_config()
+                with self.assertRaises(ValueError):
+                    client.build_request(self.path, profile="production")
+
+    def test_v2_missing_or_ambiguous_pin_fails_client_and_activity_load(self):
+        self.config["schemaVersion"] = "sermon-temporal-operator-v2"
+        original_argv = list(self.config["harnessArgv"])
+        for pin in ([], ["--agent-backend", "codex-cli", "--agent-backend=agents-api"],
+                    ["--agent-b", "codex-cli"], ["--agent-backend", "agents-api"],
+                    ["--agent-backend", "sdk"]):
+            with self.subTest(pin=pin):
+                self.config["harnessArgv"] = original_argv + pin
+                self.write_config()
+                with self.assertRaises(ValueError):
+                    client.build_request(self.path, profile="production")
+                # A crafted/persisted request cannot bypass creation validation.
+                request = Request(REQUEST_SCHEMA, "production", "2026-09-06", "source:original",
+                                  str(self.path), file_sha(self.path))
+                with self.assertRaises(ValueError):
+                    adapter.load_config(request)
+
+    def test_pin_migration_changes_identity_and_old_request_cannot_adopt_bytes(self):
+        legacy = self.persisted_request()
+        self.config["schemaVersion"] = "sermon-temporal-operator-v2"
+        self.config["harnessArgv"] += ["--agent-backend", "codex-cli"]
+        current = self.persisted_request()
+        self.assertNotEqual(legacy.workflow_id(), current.workflow_id())
+        with self.assertRaisesRegex(ValueError, "configuration changed"):
+            adapter.load_config(legacy)
+        self.assertEqual(self.backend_command(current, "agents-api"), "codex-cli")
+
+    def test_operator_v2_cannot_enter_fixture_profile(self):
+        self.config["schemaVersion"] = "sermon-temporal-operator-v2"
+        self.config["harnessArgv"] += ["--agent-backend", "codex-cli"]
+        self.write_config()
+        with self.assertRaisesRegex(ValueError, "profile"):
+            client.build_request(self.path, profile="fixture")
 
 
 if __name__ == "__main__":

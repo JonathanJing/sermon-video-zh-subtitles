@@ -122,7 +122,7 @@ final class BetaNotificationController: NSObject, ObservableObject, UNUserNotifi
             let content = UNMutableNotificationContent()
             content.title = SermonHeading.displayTitle(displayTitle, pageID: page.id, date: page.date,
                                                        fallback: AppLocalization.shared.text("证道"))
-            content.body = notice.body(date: page.date, audioAvailable: target.audioStatus == "human_reviewed")
+            content.body = notice.body(date: page.date, audioAvailable: target.hasPublishedAudio)
             content.sound = settings.soundSetting == .enabled ? .default : nil
             content.userInfo = ["tongxing": try JSONSerialization.jsonObject(with: JSONEncoder().encode(notice))]
             // A plain text preview remains useful when a future poster cannot load.
@@ -220,8 +220,8 @@ struct BetaNotificationSettingsView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var pageID = ""
     private var pages: [MultilingualPage] {
-        guard model.multilingualCatalog?.schemaVersion == MultilingualCatalog.dualScriptSchemaVersion else { return [] }
-        return model.independentPages.filter { $0.targets[controller.locale]?.contentStatus == "human_reviewed" }
+        guard model.multilingualCatalog?.isDualScript == true else { return [] }
+        return model.independentPages.filter { $0.targets[controller.locale]?.isPublishedContent == true }
     }
     private var page: MultilingualPage? { pages.first { $0.id == pageID } }
     private func normalizeSelection() {
@@ -265,7 +265,7 @@ struct BetaNotificationSettingsView: View {
                     }
                     let notice = BetaNotification(pageID: page.id, locale: controller.locale, releaseSHA256: target.releasePackageJsonSha256)
                     Text(model.heading(for: page).title).font(.headline)
-                    Text(notice.body(date: page.date, audioAvailable: target.audioStatus == "human_reviewed"))
+                    Text(notice.body(date: page.date, audioAvailable: target.hasPublishedAudio))
                     Button(localization.text("安排本机测试通知（约 5 秒后）")) {
                         if let catalog = model.multilingualCatalog,
                            BetaNotificationController.allowedOrigin(model.mediaOrigin) {

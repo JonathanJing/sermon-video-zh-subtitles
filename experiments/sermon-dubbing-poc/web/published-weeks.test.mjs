@@ -95,6 +95,59 @@ test('tampered caption bytes reject only that locale', async () => {
   assert.match(result.errors[0], /hash mismatch/);
 });
 
+function publishedPodcastFixture(mutate = () => {}, sourceUrl = 'https://www.youtube.com/watch?v=published-podcast') {
+  const f = fixture(args => {
+    Object.assign(args.content, {schemaVersion: 'sermon-full-video-text-content-v2', reviewMode: 'formal',
+      audioDurationSeconds: 9, speaker: 'Eric Geiger · Steve Bang Lee',
+      outline: [{title: 'A complete outline heading', body: 'A complete outline paragraph.'}]});
+    delete args.content.sourceVideoUrl;
+    mutate(args);
+  });
+  const catalog = JSON.parse(f.files.get('/multilingual-v3.json'));
+  Object.assign(catalog.pages[0], {mediaType: 'podcast', sourceUrl});
+  f.files.set('/multilingual-v3.json', JSON.stringify(catalog));
+  return f;
+}
+
+test('published reviewed podcast keeps structured outline and external source without inventing a video URL', async () => {
+  const f = publishedPodcastFixture();
+  const result = await loadPublishedWeeks(f.fetchImpl);
+  assert.deepEqual(result.errors, []);
+  assert.deepEqual(Object.keys(result.weeks[0].contentVariants), ['zh-Hans', 'ko', 'es']);
+  for (const [locale, variant] of Object.entries(result.weeks[0].contentVariants)) {
+    assert.equal(variant.sourceRoute, 'podcast');
+    assert.equal(variant.mediaType, 'podcast');
+    assert.equal(variant.sourceUrl, 'https://www.youtube.com/watch?v=published-podcast');
+    assert.equal(Object.hasOwn(variant, 'sourceStartSeconds'), false,
+      'natural podcast dubbing has no unbound source-video clock');
+    assert.notEqual(variant.sourceLabel, '完整视频');
+    assert.deepEqual(variant.outline, [{title: 'A complete outline heading', points: ['A complete outline paragraph.']}]);
+    assert.equal(variant.humanContentReview, 'approved');
+    assert.equal(variant.tracks[0].subtitleTiming, 'target_audio_clock');
+    assert.equal(variant.tracks[0].durationSeconds, 9);
+    assert.equal(variant.tracks[0].voiceLabel, 'Eric Geiger · Steve Bang Lee · AI');
+    assert.match(variant.tracks[0].label, /播客|팟캐스트|pódcast/i);
+    assert.equal(variant.targetLocale, locale);
+  }
+});
+
+test('podcast compatibility still rejects malformed outline bodies, unsafe sources and unreviewed identities', async () => {
+  for (const f of [
+    publishedPodcastFixture(({content}) => {content.outline[0].body = ''; }),
+    publishedPodcastFixture(({content}) => {content.status = 'candidate'; }),
+    publishedPodcastFixture(() => {}, 'http://example.com/podcast'),
+    publishedPodcastFixture(() => {}, 'https://user:password@example.com/podcast'),
+  ]) {
+    const result = await loadPublishedWeeks(f.fetchImpl);
+    assert.deepEqual(result.weeks, []);
+    assert.equal(result.errors.length, 3);
+  }
+  const video = fixture(({content}) => {content.outline = [{title: 'Heading', body: 'Body'}];});
+  const rejectedVideo = await loadPublishedWeeks(video.fetchImpl);
+  assert.deepEqual(rejectedVideo.weeks, []);
+  assert.equal(rejectedVideo.errors.length, 3);
+});
+
 test('release hashes are verified before their content is read', async () => {
   const f = fixture();
   f.files.set(`/releases-v2/${pageId}/es.json`, '{}');
@@ -142,7 +195,8 @@ test('optional missing or unavailable catalog keeps the legacy app usable', asyn
   assert.deepEqual(await loadPublishedWeeks(async () => new Response('', { status: 404 })), { weeks: [], defaultWeekId: null, errors: [] });
   const failed = await loadPublishedWeeks(async () => { throw new Error('offline'); });
   assert.deepEqual(failed.weeks, []);
-  assert.deepEqual(failed.errors, ['offline']);
+  // The v4 probe failure is recorded before the v3 fallback is attempted.
+  assert.deepEqual(failed.errors, ['Catalog v4 unavailable, using v3: offline', 'offline']);
 });
 
 test('missing Chinese release falls back to an actually available default locale', async () => {
@@ -434,7 +488,7 @@ for (const [name, mutate] of [
     const result = await loadPublishedWeeks(f.fetchImpl);
     assert.deepEqual(result.weeks, []);
     assert.ok(result.errors.length);
-    assert.deepEqual(f.requests, ['/multilingual-v3.json']);
+    assert.deepEqual(f.requests, ['/multilingual-v4.json', '/multilingual-v3.json']);
   });
 }
 
@@ -457,42 +511,44 @@ test('original source window metadata cannot replace playback clip duration or h
  for(const mutate of [w=>w.mediaSha256='e'.repeat(64),w=>w.endSeconds=2026.321]){const f=fixture(({content})=>{content.sourceWindow={schemaVersion:'sermon-original-recording-window-v1',startSeconds:2015.321,endSeconds:2025.321,mediaSha256:content.sourceMediaSha256};mutate(content.sourceWindow);});assert.equal((await loadPublishedWeeks(f.fetchImpl)).weeks.length,0);}
 });
 
-function studyFixture() {
-  const f = fixture();
+function studyFixture(mutate) {
+  const f = fixture(mutate);
+  const catalog = JSON.parse(f.files.get('/multilingual-v3.json'));
+  for (const locale of ['zh-Hans','ko','es']) bindStudy(f, catalog.pages[0], locale);
+  f.files.set('/multilingual-v3.json',JSON.stringify(catalog));
+  return f;
+}
+
+// Adds the four-product study binding to one locale's release (v3, or an existing v4).
+function bindStudy(f, page, locale) {
   const stable = value => Array.isArray(value) ? value.map(stable)
     : value && typeof value === 'object' ? Object.fromEntries(Object.keys(value).sort().map(key => [key,stable(value[key])])) : value;
   const canonicalHash = value => hash(JSON.stringify(stable(value)));
-  const catalog = JSON.parse(f.files.get('/multilingual-v3.json'));
-  const page = catalog.pages[0];
-  for (const locale of ['zh-Hans','ko','es']) {
-    const path = page.targets[locale].releasePackageUrl;
-    const release = JSON.parse(f.files.get(path));
-    release.schemaVersion = 'sermon-target-language-release-package-v3';
-    release.englishSourcePackageJsonSha256 = page.sourceIdentitySha256;
-    release.sourceIdentity = {sourceId:'synthetic-source',sourceUrlHash:'9'.repeat(64),mediaSha256:'d'.repeat(64),durationSeconds:10,
-      window:{startSeconds:0,endSeconds:10,approvalReceiptSha256:'8'.repeat(64)}};
-    const products = {sourcePackageSha256:page.sourceIdentitySha256,textCandidateSha256:release.targetLanguageCandidateJsonSha256,
-      audioPackageSha256:release.targetLanguageAudioPackageJsonSha256,outlineReviewSha256:'3'.repeat(64),meditationReviewSha256:'4'.repeat(64),
-      metadataApprovalSha256:'5'.repeat(64),contentSha256:release.assets.find(row=>row.role==='content').sha256};
-    for (const kind of ['outline','meditation']) {
-      const artifact = {schemaVersion:'sermon-study-artifact-v1',kind,pageId,locale,sourcePackageSha256:products.sourcePackageSha256,
-        textCandidateSha256:products.textCandidateSha256,producerIdentity:'synthetic-study-v1',
-        sections:[{title:`Reviewed ${kind} ${locale}`,body:`Complete ${kind} sentence.\nLast sentence ${locale}.`,sourceUnitIds:['u1']}]};
-      const asset = {role:kind,path:`/study/${pageId}/${locale}/${kind}.json`,sha256:hash(JSON.stringify(artifact))};
-      f.files.set(asset.path,JSON.stringify(artifact));release.assets.push(asset);products[kind+'ArtifactSha256']=canonicalHash(artifact);
-    }
-    const joined = canonicalHash({source:products.sourcePackageSha256,products:{text:products.textCandidateSha256,audio:products.audioPackageSha256,
-      outline:{status:'human_reviewed',artifactSha256:products.outlineArtifactSha256,reviewSha256:products.outlineReviewSha256},
-      meditation:{status:'human_reviewed',artifactSha256:products.meditationArtifactSha256,reviewSha256:products.meditationReviewSha256}}});
-    products.candidateSha256=canonicalHash({products:joined,metadataApproval:products.metadataApprovalSha256,contentSha256:products.contentSha256});
-    release.fourProducts=products;
-    const manifest={schemaVersion:'sermon-public-app-products-v1',pageId,locale,sourceIdentity:release.sourceIdentity,fourProducts:products};
-    const manifestPath=`/study/${pageId}/${locale}/products.json`;
-    f.files.set(manifestPath,JSON.stringify(manifest));release.assets.push({role:'product_manifest',path:manifestPath,sha256:hash(JSON.stringify(manifest))});
-    f.files.set(path,JSON.stringify(release));page.targets[locale].releasePackageJsonSha256=hash(JSON.stringify(release));
+  const path = page.targets[locale].releasePackageUrl;
+  const release = JSON.parse(f.files.get(path));
+  if (release.schemaVersion !== 'sermon-target-language-release-package-v4') release.schemaVersion = 'sermon-target-language-release-package-v3';
+  release.englishSourcePackageJsonSha256 = page.sourceIdentitySha256;
+  release.sourceIdentity = {sourceId:'synthetic-source',sourceUrlHash:'9'.repeat(64),mediaSha256:'d'.repeat(64),durationSeconds:10,
+    window:{startSeconds:0,endSeconds:10,approvalReceiptSha256:'8'.repeat(64)}};
+  const products = {sourcePackageSha256:page.sourceIdentitySha256,textCandidateSha256:release.targetLanguageCandidateJsonSha256,
+    audioPackageSha256:release.targetLanguageAudioPackageJsonSha256,outlineReviewSha256:'3'.repeat(64),meditationReviewSha256:'4'.repeat(64),
+    metadataApprovalSha256:'5'.repeat(64),contentSha256:release.assets.find(row=>row.role==='content').sha256};
+  for (const kind of ['outline','meditation']) {
+    const artifact = {schemaVersion:'sermon-study-artifact-v1',kind,pageId,locale,sourcePackageSha256:products.sourcePackageSha256,
+      textCandidateSha256:products.textCandidateSha256,producerIdentity:'synthetic-study-v1',
+      sections:[{title:`Reviewed ${kind} ${locale}`,body:`Complete ${kind} sentence.\nLast sentence ${locale}.`,sourceUnitIds:['u1']}]};
+    const asset = {role:kind,path:`/study/${pageId}/${locale}/${kind}.json`,sha256:hash(JSON.stringify(artifact))};
+    f.files.set(asset.path,JSON.stringify(artifact));release.assets.push(asset);products[kind+'ArtifactSha256']=canonicalHash(artifact);
   }
-  f.files.set('/multilingual-v3.json',JSON.stringify(catalog));
-  return f;
+  const joined = canonicalHash({source:products.sourcePackageSha256,products:{text:products.textCandidateSha256,audio:products.audioPackageSha256,
+    outline:{status:'human_reviewed',artifactSha256:products.outlineArtifactSha256,reviewSha256:products.outlineReviewSha256},
+    meditation:{status:'human_reviewed',artifactSha256:products.meditationArtifactSha256,reviewSha256:products.meditationReviewSha256}}});
+  products.candidateSha256=canonicalHash({products:joined,metadataApproval:products.metadataApprovalSha256,contentSha256:products.contentSha256});
+  release.fourProducts=products;
+  const manifest={schemaVersion:'sermon-public-app-products-v1',pageId,locale,sourceIdentity:release.sourceIdentity,fourProducts:products};
+  const manifestPath=`/study/${pageId}/${locale}/products.json`;
+  f.files.set(manifestPath,JSON.stringify(manifest));release.assets.push({role:'product_manifest',path:manifestPath,sha256:hash(JSON.stringify(manifest))});
+  f.files.set(path,JSON.stringify(release));page.targets[locale].releasePackageJsonSha256=hash(JSON.stringify(release));
 }
 
 test('v3 three-language release loads full independent study and never substitutes legacy metadata outline', async () => {
@@ -593,9 +649,9 @@ test('formal podcast keeps target audio time, bilingual groups and two-speaker a
   f.files.set('/multilingual-v3.json', JSON.stringify(catalog));
   const result = await loadPublishedWeeks(f.fetchImpl);
   assert.deepEqual(result.errors, []);
-  for (const variant of Object.values(result.weeks[0].contentVariants)) {
+  for (const [locale, variant] of Object.entries(result.weeks[0].contentVariants)) {
     assert.equal(variant.sourceRoute, 'podcast');
-    assert.equal(variant.sourceLabel, '播客');
+    assert.equal(variant.sourceLabel, {'zh-Hans': '播客', ko: '팟캐스트', es: 'Pódcast'}[locale]);
     assert.equal(variant.sourceUrl, catalog.pages[0].sourceUrl);
     assert.equal(variant.tracks[0].durationSeconds, 20);
     assert.equal(variant.tracks[0].cues[0].end, 18);
@@ -604,4 +660,271 @@ test('formal podcast keeps target audio time, bilingual groups and two-speaker a
     assert.deepEqual(variant.outline, [{title:'One point', points:['The approved explanation.']}]);
     assert.equal(variant.audioFingerprint, undefined);
   }
+});
+// Synthetic machine-checked locales: v4 release + content v3 under /releases-v4/,
+// listed only in /multilingual-v4.json. /multilingual-v3.json is the human-only projection.
+const DISCLOSURES = {
+  'zh-Hans': '本语言内容经机器质检后自动发布，未经人工审核。',
+  ko: '이 언어 콘텐츠는 기계 품질 검사 후 자동으로 게시되었으며 사람의 검토를 거치지 않았습니다.',
+  es: 'Este contenido se publicó automáticamente tras un control de calidad por máquina, sin revisión humana.',
+};
+const disclosure = locale => ({ locale, text: DISCLOSURES[locale], english: 'Published automatically after machine quality checks, without human review.' });
+const basis = status => ({ kind: status === 'machine_checked' ? 'machine_quality_waiver' : 'human_review', receiptSha256: '7'.repeat(64) });
+function machineFixture(statuses = { ko: ['machine_checked', 'machine_checked'] }, mutate = () => {}) {
+  const f = fixture(args => {
+    const { content, release, locale } = args;
+    if (statuses[locale]) {
+      const [contentStatus, audioStatus] = statuses[locale];
+      Object.assign(content, { schemaVersion: 'sermon-full-video-text-content-v3', status: contentStatus, reviewMode: 'formal', audioDurationSeconds: 10,
+        ...(contentStatus === 'machine_checked' ? { disclosure: disclosure(locale) } : {}) });
+      Object.assign(release, { schemaVersion: 'sermon-target-language-release-package-v4', contentStatus, audioStatus,
+        reviewBasis: { fullText: basis(contentStatus), spokenText: basis(audioStatus), audio: basis(audioStatus) }, disclosure: disclosure(locale) });
+    }
+    mutate(args);
+  });
+  const catalog = JSON.parse(f.files.get('/multilingual-v3.json')), page = catalog.pages[0];
+  for (const [locale, [contentStatus, audioStatus]] of Object.entries(statuses)) {
+    const target = page.targets[locale], path = `/releases-v4/${pageId}/${locale}.json`;
+    f.files.set(path, f.files.get(target.releasePackageUrl)); f.files.delete(target.releasePackageUrl);
+    Object.assign(target, { releasePackageUrl: path, contentStatus, audioStatus });
+  }
+  for (const locale of ['zh-Hans', 'ko', 'es']) bindStudy(f, page, locale);
+  f.files.set('/multilingual-v4.json', JSON.stringify({ ...catalog, schemaVersion: 'sermon-multilingual-catalog-v4' }));
+  const projection = structuredClone(catalog);
+  for (const locale of Object.keys(statuses)) delete projection.pages[0].targets[locale];
+  projection.pages = projection.pages.filter(item => Object.keys(item.targets).length);
+  f.files.set('/multilingual-v3.json', JSON.stringify(projection));
+  return f;
+}
+const machineFields = ['machineChecked', 'disclosure', 'fullTextHint', 'spokenHint'];
+const productWording = view => [view.contentReview, view.audioNotice, view.fullTextHint, view.spokenHint,
+  ...view.productionStages.flatMap(stage => [stage.label, stage.detail])].filter(value => value !== null);
+
+test('v4 catalog loads human-reviewed and machine-checked locales; machine products show the disclosure and never claim approval', async () => {
+  const f = machineFixture({ ko: ['machine_checked', 'machine_checked'], es: ['human_reviewed', 'machine_checked'] });
+  const result = await loadPublishedWeeks(f.fetchImpl);
+  assert.deepEqual(result.errors, []);
+  assert.equal(f.requests[0], '/multilingual-v4.json');
+  assert.ok(!f.requests.includes('/multilingual-v3.json'), 'a valid v4 catalog is not mixed with the v3 projection');
+  const variants = result.weeks[0].contentVariants;
+  assert.deepEqual(Object.keys(variants), ['zh-Hans', 'ko', 'es']);
+  const human = variants['zh-Hans'];
+  assert.equal(human.releaseLabel, '正式播放版');
+  assert.equal(human.humanContentReview, 'approved');
+  assert.equal(human.tracks[0].scope, 'full_reviewed');
+  // Human views state the machine fields explicitly, so merging a locale into a week never inherits them.
+  for (const key of machineFields) assert.ok(Object.hasOwn(human, key), key);
+  assert.equal(human.machineChecked, false);
+  assert.equal(human.disclosure, null);
+
+  const ko = variants.ko;
+  assert.equal(ko.releaseLabel, '기계 품질 검사');
+  assert.equal(ko.machineChecked, true);
+  assert.equal(ko.disclosure, DISCLOSURES.ko);
+  assert.equal(ko.humanContentReview, 'machine_checked');
+  assert.equal(ko.audioStatus, 'full_machine_checked');
+  assert.equal(ko.tracks[0].scope, 'full_machine_checked');
+  assert.equal(ko.tracks[0].subtitleTiming, 'target_audio_clock');
+  assert.equal(ko.contentReview, '전체 원고와 더빙은 기계 품질 검사를 거쳤으며 사람의 검토를 거치지 않았습니다');
+  for (const value of productWording(ko)) assert.doesNotMatch(value, /승인/, value);
+  assert.match(ko.fullTextHint, /기계 품질 검사/);
+  assert.match(ko.spokenHint, /기계 품질 검사/);
+  // Outline and meditation stay human-reviewed in this step; the study join is unchanged.
+  assert.equal(ko.studyStatus, 'human_reviewed');
+  assert.equal(ko.outline[0].title, 'Reviewed outline ko');
+
+  const es = variants.es;
+  assert.equal(es.releaseLabel, 'Control de calidad automático');
+  assert.equal(es.disclosure, DISCLOSURES.es);
+  assert.equal(es.humanContentReview, 'approved', 'human-reviewed text keeps its human wording');
+  assert.equal(es.audioStatus, 'full_machine_checked');
+  assert.equal(es.contentReview, 'El texto íntegro tiene revisión y aprobación humanas registradas; el doblaje pasó un control de calidad automático, sin revisión humana');
+  assert.equal(es.fullTextHint, null);
+  assert.match(es.spokenHint, /control de calidad automático/);
+  assert.deepEqual(es.productionStages.map(stage => stage.label), ['Revisión del texto', 'Control automático del doblaje y subtítulos', 'Publicación']);
+  assert.doesNotMatch(es.audioNotice, /aprobad/);
+  assert.ok(!f.requests.some(path => /\.mp3$/.test(path)));
+});
+
+test('every locale has its machine-check label and a Chinese machine-checked product never says approved', async () => {
+  const both = ['machine_checked', 'machine_checked'];
+  const result = await loadPublishedWeeks(machineFixture({ 'zh-Hans': both, ko: both, es: both }).fetchImpl);
+  assert.deepEqual(result.errors, []);
+  const variants = result.weeks[0].contentVariants;
+  assert.deepEqual(Object.fromEntries(Object.entries(variants).map(([locale, view]) => [locale, view.releaseLabel])),
+    { 'zh-Hans': '机器质检', ko: '기계 품질 검사', es: 'Control de calidad automático' });
+  for (const [locale, view] of Object.entries(variants)) {
+    assert.equal(view.disclosure, DISCLOSURES[locale]);
+    assert.notEqual(view.humanContentReview, 'approved');
+  }
+  for (const value of productWording(variants['zh-Hans'])) assert.doesNotMatch(value, /批准|已审核/, value);
+  for (const value of productWording(variants.es)) assert.doesNotMatch(value, /aprobad/, value);
+});
+
+test('missing v4 catalog silently falls back to v3, which never admits a machine-checked target', async () => {
+  const f = studyFixture();
+  const result = await loadPublishedWeeks(f.fetchImpl);
+  assert.deepEqual(result.errors, []);
+  assert.deepEqual(f.requests.slice(0, 2), ['/multilingual-v4.json', '/multilingual-v3.json']);
+  assert.deepEqual(Object.keys(result.weeks[0].contentVariants), ['zh-Hans', 'ko', 'es']);
+  assert.ok(Object.values(result.weeks[0].contentVariants).every(view => view.machineChecked === false && view.releaseLabel === '正式播放版'));
+  // A machine-checked target copied into v3 is rejected before its release is requested.
+  const leaked = machineFixture();
+  leaked.files.set('/multilingual-v3.json', leaked.files.get('/multilingual-v4.json').replace('sermon-multilingual-catalog-v4', 'sermon-multilingual-catalog-v3'));
+  leaked.files.delete('/multilingual-v4.json');
+  const fallback = await loadPublishedWeeks(leaked.fetchImpl);
+  assert.deepEqual(Object.keys(fallback.weeks[0].contentVariants), ['zh-Hans', 'es']);
+  assert.equal(fallback.errors.length, 1);
+  assert.ok(!leaked.requests.some(path => path.startsWith('/releases-v4/')));
+});
+
+for (const [name, corrupt] of [
+  ['schema version', f => f.files.set('/multilingual-v4.json', f.files.get('/multilingual-v4.json').replace('sermon-multilingual-catalog-v4', 'sermon-multilingual-catalog-v3'))],
+  ['missing default page', f => { const c = JSON.parse(f.files.get('/multilingual-v4.json')); c.defaultPageId = 'missing'; f.files.set('/multilingual-v4.json', JSON.stringify(c)); }],
+  ['malformed JSON', f => f.files.set('/multilingual-v4.json', '{')],
+  ['malformed page', f => { const c = JSON.parse(f.files.get('/multilingual-v4.json')); c.pages[0].date = 'not-a-date'; f.files.set('/multilingual-v4.json', JSON.stringify(c)); }],
+  ['malformed target', f => { const c = JSON.parse(f.files.get('/multilingual-v4.json')); c.pages[0].targets['zh-Hans'].releasePackageJsonSha256 = 'bad'; f.files.set('/multilingual-v4.json', JSON.stringify(c)); }],
+  ['server error', f => { const fetchImpl = f.fetchImpl; f.fetchImpl = async (path, options) => path === '/multilingual-v4.json' ? new Response('', { status: 500 }) : fetchImpl(path, options); }],
+]) {
+  test(`v4 catalog ${name} falls back to the v3 projection and records the error`, async () => {
+    const f = machineFixture();
+    corrupt(f);
+    const result = await loadPublishedWeeks(f.fetchImpl);
+    assert.equal(result.weeks.length, 1, 'the week is not lost');
+    assert.deepEqual(Object.keys(result.weeks[0].contentVariants), ['zh-Hans', 'es']);
+    assert.equal(result.errors.length, 1);
+    assert.match(result.errors[0], /^Catalog v4 unavailable, using v3: /);
+    assert.ok(f.requests.includes('/multilingual-v3.json'));
+    assert.ok(!f.requests.some(path => path.startsWith('/releases-v4/')));
+  });
+}
+
+test('content/release status, version or disclosure mismatches isolate only the machine-checked locale', async () => {
+  const changes = [
+    ['human content under machine release', 'Published content identity mismatch', ({ content }) => { content.status = 'human_reviewed'; delete content.disclosure; }],
+    ['content v2 under machine release', 'Published content identity mismatch', ({ content }) => { content.schemaVersion = 'sermon-full-video-text-content-v2'; content.status = 'human_reviewed'; delete content.disclosure; }],
+    ['content disclosure of another locale', 'Invalid machine-checked content status or disclosure', ({ content }) => { content.disclosure = disclosure('es'); }],
+    ['content disclosure text differs from release', 'Content disclosure differs from its release', ({ content }) => { content.disclosure = { ...content.disclosure, text: 'Different wording' }; }],
+    ['release status differs from the catalog target', 'Release status does not match catalog target', ({ content, release }) => {
+      release.contentStatus = 'human_reviewed'; release.reviewBasis.fullText = basis('human_reviewed');
+      content.status = 'human_reviewed'; delete content.disclosure;
+    }],
+    ['v3 release on a v4 path', 'Invalid machine-checked release', ({ release }) => {
+      release.schemaVersion = 'sermon-target-language-release-package-v3';
+      release.contentStatus = release.audioStatus = 'human_reviewed';
+      delete release.reviewBasis; delete release.disclosure;
+    }],
+    ['release disclosure of another locale', 'Invalid machine-checked release', ({ release }) => { release.disclosure = disclosure('zh-Hans'); }],
+  ];
+  for (const [name, reason, change] of changes) {
+    const f = machineFixture(undefined, args => { if (args.locale === 'ko') change(args); });
+    const result = await loadPublishedWeeks(f.fetchImpl);
+    assert.deepEqual(Object.keys(result.weeks[0].contentVariants), ['zh-Hans', 'es'], name);
+    assert.equal(result.errors.length, 1, name);
+    assert.match(result.errors[0], new RegExp(`/ko: ${reason}`), name);
+  }
+  // Content v3 is read only through a v4 release, even when human-reviewed.
+  const f = studyFixture(({ content, locale }) => {
+    if (locale === 'ko') Object.assign(content, { schemaVersion: 'sermon-full-video-text-content-v3', reviewMode: 'formal', audioDurationSeconds: 10 });
+  });
+  const result = await loadPublishedWeeks(f.fetchImpl);
+  assert.deepEqual(Object.keys(result.weeks[0].contentVariants), ['zh-Hans', 'es']);
+  assert.match(result.errors[0], /\/ko: Published content identity mismatch/);
+});
+
+ test('v4 audio waiver retains human-reviewed v1 full text', async () => {
+  const f = machineFixture({ es: ['human_reviewed', 'machine_checked'] }, ({ locale, content }) => {
+    if (locale === 'es') {
+      content.schemaVersion = 'sermon-full-video-text-content-v1';
+      delete content.audioDurationSeconds;
+      delete content.reviewMode;
+    }
+  });
+  const result = await loadPublishedWeeks(f.fetchImpl);
+  const view = result.weeks[0].contentVariants.es;
+  assert.ok(view);
+  assert.equal(view.humanContentReview, 'approved');
+  assert.equal(view.audioStatus, 'full_machine_checked');
+  assert.equal(view.disclosure, DISCLOSURES.es);
+});
+
+const condensation = { condensationRecordJsonSha256: '1'.repeat(64), condensationBindingJsonSha256: '2'.repeat(64), condensedGroupIds: ['first'] };
+test('a condensed dub shows the full translation on the dub timing and says it was condensed', async () => {
+  const condense = ({ locale, release }) => {
+    if (locale === 'ko') Object.assign(release, { captionText: 'full_text', spokenCondensation: structuredClone(condensation) });
+  };
+  const f = machineFixture(undefined, condense);
+  const result = await loadPublishedWeeks(f.fetchImpl);
+  assert.deepEqual(result.errors, []);
+  const ko = result.weeks[0].contentVariants.ko;
+  assert.equal(ko.condensedDub, true);
+  assert.deepEqual(ko.tracks[0].cues.map(cue => [cue.start, cue.end, cue.text]), [[.5, 7, 'Full reading text ko']]);
+  assert.match(ko.spokenHint, /전체 번역/);
+  assert.match(ko.fullTextHint, /간추린 구술/);
+  assert.match(ko.audioNotice, /동시통역/);
+  assert.match(ko.productionStages[1].detail, /전체 번역/);
+  assert.equal(result.weeks[0].contentVariants['zh-Hans'].condensedDub, false);
+  // Without a condensation, spoken captions keep their own text.
+  const plain = (await loadPublishedWeeks(machineFixture().fetchImpl)).weeks[0].contentVariants.ko;
+  assert.equal(plain.condensedDub, false);
+  assert.equal(plain.tracks[0].cues[0].text, 'Short spoken text ko');
+  // captionText full_text alone (the spoken script equals the full text) swaps nothing it does not own.
+  const same = machineFixture(undefined, ({ locale, release }) => { if (locale === 'ko') release.captionText = 'full_text'; });
+  assert.equal((await loadPublishedWeeks(same.fetchImpl)).weeks[0].contentVariants.ko.condensedDub, false);
+
+  const invalid = [
+    ['spoken captions', ({ release }) => { release.captionText = 'spoken_text'; }],
+    ['missing captionText', ({ release }) => { delete release.captionText; }],
+    ['unknown captionText', ({ release }) => { release.captionText = 'english'; }],
+    ['human-reviewed dub', ({ release }) => { release.audioStatus = 'human_reviewed'; release.reviewBasis.spokenText = release.reviewBasis.audio = basis('human_reviewed'); }],
+    ['empty group list', ({ release }) => { release.spokenCondensation.condensedGroupIds = []; }],
+    ['duplicate groups', ({ release }) => { release.spokenCondensation.condensedGroupIds = ['first', 'first']; }],
+    ['bad hash', ({ release }) => { release.spokenCondensation.condensationBindingJsonSha256 = 'x'; }],
+    ['extra key', ({ release }) => { release.spokenCondensation.note = 'x'; }],
+    ['unknown group', ({ release }) => { release.spokenCondensation.condensedGroupIds = ['other']; }],
+  ];
+  for (const [name, change] of invalid) {
+    const bad = machineFixture(undefined, args => { if (args.locale === 'ko') { condense(args); change(args); } });
+    const loaded = await loadPublishedWeeks(bad.fetchImpl);
+    assert.deepEqual(Object.keys(loaded.weeks[0].contentVariants), ['zh-Hans', 'es'], name);
+    assert.match(loaded.errors[0], /\/ko: (Invalid caption text or spoken condensation|Invalid machine-checked release|Condensed groups do not match)/, name);
+  }
+});
+
+test('existing admitted media metadata supplies honest video and podcast labels without a catalog schema extension', async () => {
+  const video = await loadPublishedWeeks(fixture().fetchImpl);
+  const podcast = await loadPublishedWeeks(publishedPodcastFixture().fetchImpl);
+  assert.equal(video.weeks[0].sourceLabel, '完整视频');
+  assert.equal(podcast.weeks[0].sourceLabel, '播客');
+  for (const result of [video, podcast]) {
+    assert.deepEqual(result.errors, []);
+    assert.equal(Object.hasOwn(result.weeks[0], 'displayCategory'), false);
+    for (const variant of Object.values(result.weeks[0].contentVariants)) {
+      assert.equal(Object.hasOwn(variant, 'displayCategory'), false);
+      assert.equal(variant.releaseLabel, '正式播放版');
+    }
+  }
+});
+
+test('present catalog source media identity binds reviewed content for video and podcast locales', async () => {
+  const bindCatalogMedia = (f, sha256) => {
+    const catalog = JSON.parse(f.files.get('/multilingual-v3.json'));
+    catalog.pages[0].sourceMediaSha256 = sha256;
+    f.files.set('/multilingual-v3.json', JSON.stringify(catalog));
+    return f;
+  };
+  for (const make of [fixture, publishedPodcastFixture]) {
+    const good = await loadPublishedWeeks(bindCatalogMedia(make(), 'd'.repeat(64)).fetchImpl);
+    assert.deepEqual(good.errors, []);
+    const mismatch = await loadPublishedWeeks(bindCatalogMedia(make(), 'e'.repeat(64)).fetchImpl);
+    assert.deepEqual(mismatch.weeks, []);
+    assert.equal(mismatch.errors.length, 3);
+    assert.ok(mismatch.errors.every(error => error.includes('Published content identity mismatch')));
+  }
+  const partial = publishedPodcastFixture(({content, locale}) => {
+    if (locale === 'ko') content.sourceMediaSha256 = 'e'.repeat(64);
+  });
+  const result = await loadPublishedWeeks(bindCatalogMedia(partial, 'd'.repeat(64)).fetchImpl);
+  assert.deepEqual(Object.keys(result.weeks[0].contentVariants), ['zh-Hans', 'es']);
+  assert.equal(result.errors.length, 1);
 });
