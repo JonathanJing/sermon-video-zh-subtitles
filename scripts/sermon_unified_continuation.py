@@ -39,10 +39,10 @@ def _template(value, stage):
         special = [k for k in value if k.startswith('$')]
         if special:
             tag = special[0]
-            require(len(special) == 1 and tag in {'$port', '$binding', '$config', '$output'}, 'template_token_invalid')
-            require(set(value) == ({tag} if tag == '$output' else {tag, 'field'}), 'template_token_invalid')
+            require(len(special) == 1 and tag in {'$port', '$binding', '$config', '$output', '$document'}, 'template_token_invalid')
+            require(set(value) == ({tag} if tag in {'$output', '$document'} else {tag, 'field'}), 'template_token_invalid')
             require(isinstance(value[tag], str) and NAME.fullmatch(value[tag]), 'template_name_invalid')
-            if tag != '$output': require(value['field'] in FIELDS, 'template_field_invalid')
+            if tag not in {'$output', '$document'}: require(value['field'] in FIELDS, 'template_field_invalid')
             if tag == '$port': require(value[tag] in stage['ports'], 'port_missing')
             if tag == '$config': require(value[tag] in stage['configs'], 'config_missing')
             return
@@ -168,8 +168,23 @@ class Missing(Exception):
     pass
 
 
-def _resolve(value, *, ports, bindings, configs, directory, draft=False):
+def _resolve(value, *, ports, bindings, configs, directory, draft=False, in_document=False):
     if isinstance(value, dict):
+        special = [key for key in value if key.startswith('$')]
+        if special:
+            require(len(special) == 1, 'template_token_invalid')
+            tag = special[0]
+            if tag == '$document':
+                require(set(value) == {'$document'} and not in_document, 'document_reference_invalid')
+                ref = bindings.get(value[tag])
+                if ref is None:
+                    if draft: return value
+                    raise Missing(value[tag])
+                document = c.read(ref['path'])
+                require(isinstance(document, (dict, list)), 'document_shape_invalid')
+                return _resolve(document, ports=ports, bindings=bindings, configs=configs,
+                    directory=directory, draft=draft, in_document=True)
+            require(tag in {'$port', '$binding', '$config', '$output'}, 'template_token_invalid')
         for tag, table in (('$port', ports), ('$binding', bindings), ('$config', configs)):
             if tag in value:
                 ref = table.get(value[tag])
@@ -180,9 +195,11 @@ def _resolve(value, *, ports, bindings, configs, directory, draft=False):
                     ref = dict(ref, jsonSha256=c.digest(c.read(ref['path'])))
                 return ref[value['field']]
         if '$output' in value: return str(directory / ('output-' + value['$output']))
-        return {k: _resolve(v, ports=ports, bindings=bindings, configs=configs, directory=directory, draft=draft) for k,v in value.items()}
+        return {k: _resolve(v, ports=ports, bindings=bindings, configs=configs, directory=directory,
+            draft=draft, in_document=in_document) for k,v in value.items()}
     if isinstance(value, list):
-        return [_resolve(v, ports=ports, bindings=bindings, configs=configs, directory=directory, draft=draft) for v in value]
+        return [_resolve(v, ports=ports, bindings=bindings, configs=configs, directory=directory,
+            draft=draft, in_document=in_document) for v in value]
     return value
 
 
