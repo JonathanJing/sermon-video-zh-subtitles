@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "l3-l4-auto-handoff-test-summary-v1",
+  "status": "pass",
+  "simulationOnly": true,
+  "testsRun": 9,
+  "newAssertions": [
+    "all locale L3 completion events precede L4 start",
+    "L4 copied audio hashes equal the exact L3 audio hashes",
+    "L3 failure prevents L4 and Dev preview"
+  ],
+  "officialEvaluator": {
+    "failureCases": 4,
+    "unreachableCaseRejected": true,
+    "externalCalls": {
+      "download": 0,
+      "asr": 0,
+      "translation": 0,
+      "tts": 0,
+      "firebase": 0
+    }
+  },
+  "formalApproval": false,
+  "productionReleaseEligible": false
+}
