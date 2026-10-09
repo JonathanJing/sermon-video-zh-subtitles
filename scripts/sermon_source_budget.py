@@ -179,6 +179,15 @@ class SourceBudget:
         legacy = self.root / 'responses' / (fingerprint + '.json')
         return legacy if not path.exists() and legacy.exists() else path
 
+    def returned(self, operation, identity):
+        """Whether the ledger already holds this operation's returned response for exactly this identity.
+
+        Read-only: a caller uses it to tell a free replay from a new paid request before reserving."""
+        fingerprint = jobs._digest(identity)
+        with self._locked() as (ledger, _):
+            row = ledger['requests'].get(operation)
+            return row is not None and row['status'] == 'returned' and row['identitySha256'] == fingerprint
+
     def call(self, *, operation, identity, bounds, request, api_key, content_type, endpoint):
         self.verify()
         require(isinstance(operation, str) and re.fullmatch(r'(asr\.[0-9]{4}|judge\.[a-f0-9]{64})', operation),

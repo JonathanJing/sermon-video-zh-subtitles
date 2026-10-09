@@ -25,7 +25,8 @@ BOOKS = (
     'Hebrews|James|Peter|Jude|Revelation'
 )
 SIGNALS = (
-    ('book_reference', re.compile(r'\b(?:' + BOOKS + r')\s+\d+(?::\d+(?:[-–]\d+)?)?', re.I)),
+    # ASR punctuates "John, chapter 3, verse 16"; a comma after the book still names the reference.
+    ('book_reference', re.compile(r'\b(?:' + BOOKS + r')[\s,]+(?:chapter\s+)?\d+(?::\d+(?:[-–]\d+)?)?', re.I)),
     ('chapter_verse', re.compile(r'\b(?:chapter|verse)s?\s+\d+', re.I)),
     ('speech_verb', re.compile(r'\b(?:says?|said|reads?|writes?|wrote|saying|written)\b', re.I)),
     ('quotation_marks', re.compile(r'["“”「」『』]')),

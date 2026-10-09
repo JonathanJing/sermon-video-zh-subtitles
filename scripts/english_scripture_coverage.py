@@ -223,10 +223,126 @@ def _expand_negations(text: str) -> str:
     return _CONTRACTION.sub(lambda m: _CONTRACTED.get(m.group(0), ' not'), text)
 
 
+# Word pairs whose swap reverses a verse's direction or order. Most are function words the
+# coverage measure drops, so a reading that turns "go up" into "go down" is compared by pair:
+# the verse has one member and not the other, and the reading has the other and not the one.
+DIRECTION_PAIRS = (('up', 'down'), ('in', 'out'), ('over', 'under'), ('above', 'below'), ('before', 'after'),
+                   ('inside', 'outside'), ('top', 'bottom'), ('high', 'low'), ('east', 'west'), ('north', 'south'),
+                   ('right', 'left'), ('first', 'last'), ('more', 'less'), ('forward', 'backward'),
+                   ('upward', 'downward'), ('ascend', 'descend'), ('open', 'shut'), ('near', 'far'))
+
+
+def _token(word: str) -> str:
+    """A negation keeps its spelling: stemmed, "nothing" would read "noth" and escape the negation count."""
+    return word if word in NEGATIONS else _stem(word)
+
+
+def all_tokens(text: str) -> list[str]:
+    """Every lower-cased, lightly stemmed word, function words included."""
+    return [_token(word) for word in re.findall(r"[a-z0-9]+(?:'[a-z]+)?",
+                                                _expand_negations(text.lower().replace('’', "'")))]
+
+
+def _pair_order(tokens: list[str], members: tuple[str, str]) -> list[str]:
+    """The pair's members in the order they are said, consecutive repeats collapsed."""
+    order: list[str] = []
+    for token in tokens:
+        if token in members and (not order or order[-1] != token):
+            order.append(token)
+    return order
+
+
+_DIRECTION_MEMBERS = frozenset(_stem(word) for pair in DIRECTION_PAIRS for word in pair)
+_PLACED_SKIP = frozenset(_token(word) for word in STOPWORDS) | _DIRECTION_MEMBERS | NEGATIONS
+
+
+def _placed_words(tokens: list[str], members: tuple[str, str]) -> dict[str, tuple[int, int]]:
+    """Each content word said on one side only, with its first position and how many of the pair's mentions precede it.
+
+    Two words separated by a mention of the pair have different counts. A word may be
+    repeated where it stands ("the goats, the goats on his right hand"); a word said
+    on both sides of a mention is left out, since which side places it cannot be told."""
+    seen: dict[str, tuple[int, int]] = {}
+    sides: dict[str, set[int]] = {}
+    mentions = 0
+    for index, token in enumerate(tokens):
+        if token in members:
+            mentions += 1
+        elif token not in _PLACED_SKIP and len(token) > 1:
+            seen.setdefault(token, (index, mentions))
+            sides.setdefault(token, set()).add(mentions)
+    return {token: where for token, where in seen.items() if len(sides[token]) == 1}
+
+
+def _span(tokens: list[str], start: int, end: int, members: tuple[str, str]) -> str:
+    """Two words with the pair's mentions said between them: ``sheep right goat``."""
+    return ' '.join([tokens[start], *_pair_order(tokens[start + 1:end], members), tokens[end]])
+
+
+def _traded_places(verse_tokens: list[str], spoken_tokens: list[str], members: tuple[str, str]) -> list[str] | None:
+    """Two words a mention of the pair separates in both texts, said the other way round.
+
+    Only words said on one side of every mention in each text count, repeated or not.
+    Whatever a side places sits on one side of its direction word, before it ("the
+    sheep on his right hand") or after it ("on his right hand ... the sheep"). Two
+    things the verse puts on different sides of a mention, said in the other order
+    and still on different sides, have traded places: "the goats standing on his
+    right hand, but the sheep standing on the left". The same things in the same
+    order, in whatever words or sentence shape ("on his right hand he will set the
+    sheep, and on his left the goats"), or brought to one side of every mention,
+    have not. Position cannot tell sentence structure apart, so a whole clause
+    moved across the direction word reads as traded too; that errs toward the
+    speaker's own words, never toward pinning an opposite reading. Returned as
+    ``[verse order, spoken order]`` with the mentions between the two words,
+    e.g. ``['sheep right goat', 'goat right sheep']``."""
+    verse, spoken = _placed_words(verse_tokens, members), _placed_words(spoken_tokens, members)
+    shared = sorted(set(verse) & set(spoken), key=lambda word: verse[word][0])
+    for index, earlier in enumerate(shared):
+        for later in shared[index + 1:]:
+            if verse[earlier][1] != verse[later][1] and spoken[later][0] < spoken[earlier][0] \
+                    and spoken[later][1] != spoken[earlier][1]:
+                return [_span(verse_tokens, verse[earlier][0], verse[later][0], members),
+                        _span(spoken_tokens, spoken[later][0], spoken[earlier][0], members)]
+    return None
+
+
+def reversed_directions(verse_tokens: list[str], spoken_tokens: list[str]) -> list[list[str]]:
+    """The direction pairs the reading turns around, as ``[what the verse says, what the speaker said]``.
+
+    A pair is turned when the verse has one member only and the reading the other
+    only ("go up" read as "go down"), or when both texts use both members and the
+    reading names them the other way round ("sheep on the right, goats on the left"
+    read the other way). Repeating the pair in the verse's order is not a turn.
+    With the order kept, a reading that moves what the verse places on one side to
+    the other ("the goats on his right hand, but the sheep on the left") is turned
+    too; it is recorded with the two words that traded places and the mentions
+    between them, as ``['sheep right goat', 'goat right sheep']`` (see ``_traded_places``)."""
+    turned = []
+    for pair in DIRECTION_PAIRS:
+        members = tuple(_stem(word) for word in pair)
+        verse, spoken = _pair_order(verse_tokens, members), _pair_order(spoken_tokens, members)
+        if not verse or not spoken:
+            continue
+        if set(verse) != set(spoken):
+            if len(set(verse)) == 1 and len(set(spoken)) == 1:
+                turned.append([verse[0], spoken[0]])
+        elif len(set(verse)) == 2 and verse[0] != spoken[0]:
+            # Both members on both sides: the first mention decides. "right ... left" said twice keeps
+            # the verse's order; said as "left ... right" it is turned.
+            turned.append([verse[0], spoken[0]])
+        elif len(set(verse)) == 2:
+            # Same order: compare what the sides place. Two words the pair separates in the verse,
+            # said the other way round and still separated, have changed sides.
+            traded = _traded_places(verse_tokens, spoken_tokens, members)
+            if traded is not None:
+                turned.append(traded)
+    return turned
+
+
 def content_tokens(text: str) -> list[str]:
     """Lower-cased, lightly stemmed content words; function words and punctuation dropped."""
     words = re.findall(r"[a-z0-9]+(?:'[a-z]+)?", _expand_negations(text.lower().replace('’', "'")))
-    return [_stem(word) for word in words if word not in STOPWORDS and len(word) > 1]
+    return [_token(word) for word in words if word not in STOPWORDS and len(word) > 1]
 
 
 def negation_count(tokens: list[str]) -> int:
@@ -311,12 +427,15 @@ def coverage(edition: CoverageEdition, ref: cuv_scripture.Reference | str, spoke
     verses, unread = _per_verse(found, reference, spoken_tokens)
     whole_by_measure = (verse_coverage >= WHOLE_VERSE_COVERAGE_MIN
                         and WHOLE_VERSE_LENGTH_MIN <= length_ratio <= WHOLE_VERSE_LENGTH_MAX and not unread)
-    whole = whole_by_measure and not negation_mismatch
+    # "Go up" read as "go down" keeps every content word and says the opposite.
+    turned = reversed_directions(all_tokens(found['text']), all_tokens(spoken))
+    whole = whole_by_measure and not negation_mismatch and not turned
     return {'editionId': found['editionId'], 'canonicalRef': found['canonicalRef'],
             'verseTextSha256': found['textSha256'], 'verseContentWords': len(unique_verse),
             'coveredContentWords': len(covered), 'spokenContentWords': len(spoken_tokens),
             'verseCoverage': verse_coverage, 'lengthRatio': length_ratio,
             'negations': negations, 'negationHeads': heads, 'negationMismatch': negation_mismatch,
+            'reversedDirections': turned,
             'verses': verses, 'unreadVerses': unread, 'wholeByMeasure': whole_by_measure, 'wholeVerse': whole,
             'thresholds': {'verseCoverageMin': WHOLE_VERSE_COVERAGE_MIN, 'lengthRatioMin': WHOLE_VERSE_LENGTH_MIN,
                            'lengthRatioMax': WHOLE_VERSE_LENGTH_MAX}}
