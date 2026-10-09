@@ -264,6 +264,11 @@ class PinnedLibraryTests(unittest.TestCase):
                                                       coverage.all_tokens('on the right')), [])
         self.assertEqual(coverage.reversed_directions(coverage.all_tokens('right then left'),
                                                       coverage.all_tokens('left, then right')), [['right', 'left']])
+        # Repeating the pair in the verse's order is not a swap; naming them the other way round first is.
+        self.assertEqual(coverage.reversed_directions(coverage.all_tokens('right then left'),
+                                                      coverage.all_tokens('right, left, right, left')), [])
+        self.assertEqual(coverage.reversed_directions(coverage.all_tokens('right then left'),
+                                                      coverage.all_tokens('left, right, then left')), [['right', 'left']])
 
     def test_a_negation_keeps_its_spelling_through_stemming(self):
         # "nothing" stemmed to "noth" would escape the negation count; a negation word is never stemmed.

@@ -867,6 +867,13 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
         self.assertEqual({row['status'] for row in ledger['requests'].values()}, {'returned'})
         self.assertEqual(ledger['requests']['asr.0001']['bounds'], {'requests': 1, 'wallTimeMs': 300_000, 'costMicrousd': 4500})
         self.assertGreater(ledger['requests'][operations[1]]['bounds']['costMicrousd'], 0)
+        # Each ledger response names the model the transport accounts for (``identity['model']``), the route
+        # and the request.
+        saved = [json.loads(p.read_text(encoding='utf-8'))['requestIdentity']
+                 for p in sorted((self.out / machine.BUDGET_DIR / 'responses').glob('*.json'))]
+        self.assertEqual(sorted(row['model'] for row in saved), sorted([machine.MODEL, 'gpt-transcribe']))
+        judge_row = next(row for row in saved if 'payload' in row)
+        self.assertEqual((judge_row['route']['projectId'], judge_row['payload']['model']), ('proj_devOnly', machine.MODEL))
         self.assertEqual(json.loads(listener.operations.read_text(encoding='utf-8')),
                          {hashlib.sha256(clip).hexdigest(): 'asr.0001'})
         self.assertEqual(receipt['budget'], machine.budget_identity(budget))
@@ -906,9 +913,15 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
                 machine.OpenAiTranscribeListener(cache=cache / 'openai', max_calls=1).transcribe(clip)
             relistened = machine.adjudicate(self.source, self.anchor, unit_ids=['u3'], media=None, adjudicator=machine.SolAdjudicator(
                 api_key='k', cache=cache, budget=budget), out_dir=self.out, cut=lambda *_: clip, budget=budget,
-                listeners=[machine.OpenAiTranscribeListener(cache=cache / 'openai', max_calls=1, budget=budget)])
+                listeners=[machine.OpenAiTranscribeListener(cache=cache / 'openai', max_calls=0, budget=budget)])
+            # The cap counts new paid requests only: a clip the ledger never saw is refused before anything is
+            # numbered or reserved, while the replay above cost nothing under the same cap.
+            with self.assertRaisesRegex(machine.SourceAdjudicationError, 'listener_call_cap_reached'):
+                machine.OpenAiTranscribeListener(cache=cache / 'openai', max_calls=0, budget=budget).transcribe(wav_bytes(1.0))
         self.assertEqual(len(calls), 2)
         self.assertEqual(listener.cache.uncertain(), [])
+        self.assertEqual(json.loads(listener.operations.read_text(encoding='utf-8')),
+                         {hashlib.sha256(clip).hexdigest(): 'asr.0001'})
         self.assertEqual(relistened['units'][0]['heard'], receipt['units'][0]['heard'])
         machine.validate_receipt(relistened, source=self.source, anchor=self.anchor, cache=cache)
         # A marker is bound only to the ledger's response for its own request; nothing recorded is overwritten.
@@ -927,7 +940,7 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
         cache_file.unlink()
         with mock.patch.dict(os.environ, route):
             resumed = machine.adjudicate(self.source, self.anchor, unit_ids=['u3'], media=None, adjudicator=machine.SolAdjudicator(
-                api_key='k', cache=cache, budget=budget), out_dir=self.out, cut=lambda *_: clip, budget=budget,
+                api_key='k', cache=cache, budget=budget, max_calls=0), out_dir=self.out, cut=lambda *_: clip, budget=budget,
                 listeners=[machine.OpenAiTranscribeListener(cache=cache / 'openai', max_calls=0, budget=budget)])
         self.assertEqual(len(calls), 2)
         self.assertTrue(cache_file.is_file())

@@ -256,8 +256,9 @@ def reversed_directions(verse_tokens: list[str], spoken_tokens: list[str]) -> li
     """The direction pairs the reading turns around, as ``[verse word, spoken word]``.
 
     A pair is turned when the verse has one member only and the reading the other
-    only ("go up" read as "go down"), or when both texts use both members in a
-    different order ("sheep on the right, goats on the left" read the other way)."""
+    only ("go up" read as "go down"), or when both texts use both members and the
+    reading names them the other way round ("sheep on the right, goats on the left"
+    read the other way). Repeating the pair in the verse's order is not a turn."""
     turned = []
     for pair in DIRECTION_PAIRS:
         members = tuple(_stem(word) for word in pair)
@@ -267,7 +268,9 @@ def reversed_directions(verse_tokens: list[str], spoken_tokens: list[str]) -> li
         if set(verse) != set(spoken):
             if len(set(verse)) == 1 and len(set(spoken)) == 1:
                 turned.append([verse[0], spoken[0]])
-        elif len(set(verse)) == 2 and verse != spoken:
+        elif len(set(verse)) == 2 and verse[0] != spoken[0]:
+            # Both members on both sides: the first mention decides. "right ... left" said twice keeps
+            # the verse's order; said as "left ... right" it is turned.
             turned.append([verse[0], spoken[0]])
     return turned
 

@@ -276,12 +276,16 @@ class OpenAiTranscribeListener:
         return {'backend': 'openai-api', 'endpoint': '/v1/audio/transcriptions', 'model': self.model,
                 'language': 'en', 'promptSha256': _sha(LISTEN_PROMPT.encode('utf-8')), 'route': self.route}
 
-    def _operation(self, audio_sha: str) -> str:
-        """The ledger operation of one clip, ``asr.NNNN`` in first-heard order, kept across a resumed run."""
-        from scripts import english_source_judge_cache as judge_cache
+    def _operations_table(self) -> dict[str, str]:
         table = _load(self.operations) if self.operations.is_file() else {}
         _require(isinstance(table, dict) and all(isinstance(v, str) for v in table.values()),
                  'listener_operations_corrupt')
+        return table
+
+    def _operation(self, audio_sha: str) -> str:
+        """The ledger operation of one clip, ``asr.NNNN`` in first-heard order, kept across a resumed run."""
+        from scripts import english_source_judge_cache as judge_cache
+        table = self._operations_table()
         if audio_sha not in table:
             _require(len(table) < 9999, 'listener_operation_cap')
             table[audio_sha] = f'asr.{len(table) + 1:04d}'
@@ -302,7 +306,13 @@ class OpenAiTranscribeListener:
                     'endpoint': transports.TRANSCRIBE_URL, 'audioSha256': audio_sha,
                     'inputDurationSeconds': round(seconds, 3), 'requestBodySha256': _sha(body),
                     'listener': self.identity()}
-        response = self.budget['store'].call(
+        store, known = self.budget['store'], self._operations_table().get(audio_sha)
+        if known is None or not store.returned(known, identity):
+            # The cap counts new paid requests only: a response the ledger already holds for this clip
+            # replays at no cost, so a resumed run with ``--max-api-calls 0`` still recovers it.
+            _require(self.calls < self.max_calls, 'listener_call_cap_reached')
+            self.calls += 1
+        response = store.call(
             operation=self._operation(audio_sha), identity=identity, bounds=bounds, request=body,
             api_key=os.environ.get('OPENAI_API_KEY', ''), content_type=content_type,
             endpoint=transports.TRANSCRIBE_URL)
@@ -314,9 +324,7 @@ class OpenAiTranscribeListener:
         key = policies.canonical_sha256({'listener': self.name, 'audioSha256': audio_sha, 'identity': self.identity()})
         done = self.cache.get(key)
         if done is None:
-            _require(self.calls < self.max_calls, 'listener_call_cap_reached')
             _require(self.budget is not None, 'budget_authorization_required')
-            self.calls += 1
             # The budget ledger is the paid-call record (reserved, live, returned or unknown) and replays a
             # returned response itself; a refused reservation leaves nothing to reconcile. The cache keeps
             # the returned text so the next run reads it without opening the ledger.
@@ -446,16 +454,24 @@ class SolAdjudicator:
         from scripts import sermon_openai_runtime as runtime
         self.route = _route_identity(runtime.selected_route())
 
-    def _budgeted_call(self, key: str, payload: dict[str, Any]) -> dict[str, Any]:
+    def _ledger_identity(self, payload: dict[str, Any]) -> dict[str, Any]:
+        """The ledger row's identity: the model the transport accounts for, the selected OpenAI Project
+        and the request, so a response paid for under one Project is never replayed to a run on another
+        (``source_operation_identity_changed``)."""
+        return {'model': payload['model'], 'route': self.route, 'payload': payload}
+
+    @staticmethod
+    def _ledger_operation(payload: dict[str, Any]) -> str:
         from scripts import sermon_workflow_jobs as jobs
+        return 'judge.' + jobs._digest(payload)
+
+    def _budgeted_call(self, key: str, payload: dict[str, Any]) -> dict[str, Any]:
         inputs = limits._input_upper_bound(payload)
         bounds = {'requests': 1, 'wallTimeMs': self.limits['wallTimeMs'],
                   'costMicrousd': limits._cost(payload['model'], inputs, self.limits['maxCompletionTokens'])}
-        # The ledger row names the selected OpenAI Project with the payload: a response paid for under
-        # one Project is never replayed to a run on another (``source_operation_identity_changed``).
         return self.budget['store'].call(
-            operation='judge.' + jobs._digest(payload), identity={'route': self.route, 'payload': payload},
-            bounds=bounds, request=json.dumps(payload, ensure_ascii=False).encode('utf-8'), api_key=key,
+            operation=self._ledger_operation(payload), identity=self._ledger_identity(payload), bounds=bounds,
+            request=json.dumps(payload, ensure_ascii=False).encode('utf-8'), api_key=key,
             content_type='application/json', endpoint=CHAT_URL)
 
     @property
@@ -489,10 +505,14 @@ class SolAdjudicator:
         path = self.cache.resolve() / 'cache' / f'{stage}-{request_hash}.json'
         cached = path.is_file()
         if not cached:
-            _require(self.max_calls is None or self.calls < self.max_calls, 'adjudicator_call_cap_reached')
+            # A response the ledger already holds replays at no cost and is not a new call for the cap.
+            replay = self.budget is not None and self.budget['store'].returned(self._ledger_operation(payload),
+                                                                                 self._ledger_identity(payload))
+            _require(replay or self.max_calls is None or self.calls < self.max_calls, 'adjudicator_call_cap_reached')
             # Refused before the cache writes its started marker, so an unbound run leaves nothing to reconcile.
             _require(self.caller is not _unbound_call, 'budget_authorization_required')
-            self.calls += 1
+            if not replay:
+                self.calls += 1
             marker = path.with_suffix('.started.json')
             if marker.is_file() and self.budget is not None:
                 # A run that died after the ledger kept the returned response but before the cache file was
