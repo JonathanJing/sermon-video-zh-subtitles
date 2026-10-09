@@ -52,7 +52,7 @@ python scripts/canonical_layer2_controller.py reopen-repair \
   --expected-state-revision <shadow tick 输出的 stateRevision>
 ```
 
-前提是执行配置的 `layer2AutoRepair.sourceMeaningNotes` 已指向新备注（它进入 `text.<locale>` 的输入身份）。命令在失败 job 旁写重开收据，durable 视图把那个 job 记为 `superseded`，下一次 execute tick 以新身份派发，worker 在同一条修复账本链上只重修备注覆盖的组。检查项和收据字段见[有界自动修复](layer2-bounded-auto-repair.zh.md)和[durable 检查](canonical-durable-job-inspection.zh.md)。
+前提是执行配置的 `layer2AutoRepair.sourceMeaningNotes` 已指向新备注（它进入 `text.<locale>` 的输入身份）。命令在失败 job 旁写重开收据，controller 用账本和备注核对收据后，durable 视图把那个 job 记为 `superseded`，下一次 execute tick 以新身份派发，worker 在同一条修复账本链上只重修备注覆盖的组。检查项和收据字段见[有界自动修复](layer2-bounded-auto-repair.zh.md)和[durable 检查](canonical-durable-job-inspection.zh.md)。
 
 默认顺序是排序后的可准入 locale，没有循环轮询或无限 Agent 对话。工作中可重复调用 tick
 检查，但 active/failed/unknown durable receipt 不会产生第二个相同工作。

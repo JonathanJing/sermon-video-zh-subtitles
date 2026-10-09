@@ -257,11 +257,24 @@ class PinnedLibraryTests(unittest.TestCase):
         self.assertTrue(measure['wholeByMeasure'], measure)
         self.assertFalse(measure['wholeVerse'])
         self.assertTrue(coverage.coverage(self.edition, 'MAT 25:33', verse)['wholeVerse'])
-        # The same order, a repeated member, or one side only is not a swap.
+        # The same order or a repeated member is not a swap.
         self.assertEqual(coverage.reversed_directions(coverage.all_tokens('right then left'),
                                                       coverage.all_tokens('right, right, then left')), [])
+        # Both sides read as one moves what the verse put on the other: the goats on the right.
         self.assertEqual(coverage.reversed_directions(coverage.all_tokens('right then left'),
-                                                      coverage.all_tokens('on the right')), [])
+                                                      coverage.all_tokens('on the right')), [['right left', 'right']])
+        collapsed = 'He will set the sheep on his right hand, but the goats on the right.'
+        measure = coverage.coverage(self.edition, 'MAT 25:33', collapsed)
+        self.assertEqual(measure['reversedDirections'], [['right left', 'right']])
+        self.assertTrue(measure['wholeByMeasure'], measure)
+        self.assertFalse(measure['wholeVerse'])
+        measure = coverage.coverage(self.edition, 'MAT 25:33', collapsed.replace('on his right hand', 'on his left hand')
+                                    .replace('on the right', 'on the left'))
+        self.assertEqual(measure['reversedDirections'], [['right left', 'left']])
+        self.assertFalse(measure['wholeVerse'])
+        # A verse that names one side only keeps its own rule: the other side alone is a turn.
+        self.assertEqual(coverage.reversed_directions(coverage.all_tokens('go up'),
+                                                      coverage.all_tokens('go up to the hill, up')), [])
         self.assertEqual(coverage.reversed_directions(coverage.all_tokens('right then left'),
                                                       coverage.all_tokens('left, then right')), [['right', 'left']])
         # Repeating the pair in the verse's order is not a swap; naming them the other way round first is.

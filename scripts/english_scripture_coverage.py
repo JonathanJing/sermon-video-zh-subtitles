@@ -310,7 +310,10 @@ def reversed_directions(verse_tokens: list[str], spoken_tokens: list[str]) -> li
     """The direction pairs the reading turns around, as ``[what the verse says, what the speaker said]``.
 
     A pair is turned when the verse has one member only and the reading the other
-    only ("go up" read as "go down"), or when both texts use both members and the
+    only ("go up" read as "go down"), when the verse uses both members and the
+    reading only one, so that what the verse put on one side now stands on the
+    other ("the sheep on his right hand, but the goats on the right"; recorded as
+    ``['right left', 'right']``), or when both texts use both members and the
     reading names them the other way round ("sheep on the right, goats on the left"
     read the other way). Repeating the pair in the verse's order is not a turn.
     With the order kept, a reading that moves what the verse places on one side to
@@ -326,6 +329,11 @@ def reversed_directions(verse_tokens: list[str], spoken_tokens: list[str]) -> li
         if set(verse) != set(spoken):
             if len(set(verse)) == 1 and len(set(spoken)) == 1:
                 turned.append([verse[0], spoken[0]])
+            elif len(set(verse)) == 2:
+                # The verse names both sides and the reading one: whatever the verse put on the other
+                # side now stands on this one. Only a whole reading is ever pinned, so a fragment that
+                # quotes one side is unaffected (it is a fragment either way).
+                turned.append([' '.join(dict.fromkeys(verse)), ' '.join(dict.fromkeys(spoken))])
         elif len(set(verse)) == 2 and verse[0] != spoken[0]:
             # Both members on both sides: the first mention decides. "right ... left" said twice keeps
             # the verse's order; said as "left ... right" it is turned.

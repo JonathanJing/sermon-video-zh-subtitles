@@ -207,8 +207,14 @@ def inspect(config_path, job_root, production_run_id):
     return project(packages.inspect(config_path), job_root, production_run_id)
 
 
-def project(observed, job_root, production_run_id):
-    """Join a trusted backend's already-validated package view with job facts."""
+def project(observed, job_root, production_run_id, *, verify_reopen=None):
+    """Join a trusted backend's already-validated package view with job facts.
+
+    A reopen receipt proves its shape and binding here; whether the repair chain it names
+    was eligible to reopen is evidence only the Layer 2 controller holds (its repair ledger
+    and meaning notes). So a failed job yields to a receipt only through ``verify_reopen``
+    (``verify_reopen(receipt, observed, expected_identity)`` raises when the evidence differs,
+    and the whole view then requires reconciliation); without one it keeps blocking."""
     if not pipeline._sha(production_run_id):
         raise ValueError('invalid_production_run_id')
     root = _safe_path(Path(job_root).absolute())
@@ -242,10 +248,18 @@ def project(observed, job_root, production_run_id):
                 if row['status'] != 'failed' or row['identity'] == expected:
                     continue
                 matched = [receipt for receipt in row.get('reopens', ()) if receipt['nextIdentity'] in live]
-                if matched:
-                    row['observedStatus'], row['status'], row['reopen'] = row['status'], 'superseded', matched[0]
-                    live.append(row['identity'])
-                    changed = True
+                if not matched or verify_reopen is None:
+                    continue
+                try:
+                    for receipt in matched:
+                        verify_reopen(receipt, observed, expected)
+                except (OSError, ValueError, KeyError, TypeError):
+                    if 'unverified_reopen_receipt' not in errors:
+                        errors.append('unverified_reopen_receipt')
+                    continue
+                row['observedStatus'], row['status'], row['reopen'] = row['status'], 'superseded', matched[0]
+                live.append(row['identity'])
+                changed = True
     blocked = set()
     for unit, state in result['nodes'].items():
         rows = by_unit[unit]

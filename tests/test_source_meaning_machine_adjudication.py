@@ -22,6 +22,7 @@ from scripts import canonical_layer2_controller as controller
 from scripts import machine_qc_audio_transports as transports
 from scripts import sermon_provider_limits as limits
 from scripts import sermon_sentence_interpretation as contract
+from scripts import sermon_source_budget as source_budget
 from scripts import sermon_source_text_review as source_review
 from scripts import source_meaning_machine_adjudication as machine
 from scripts import target_language_policy as policies
@@ -367,10 +368,10 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'exactly one source-meaning receipt'):
             source_review.apply_review(segments(), review_path, clip, asr, adjudicated_package=package)
 
-        def rebind(changed):
+        def rebind(changed, schema=review['schemaVersion']):
             receipt_path.write_text(json.dumps(changed), encoding='utf-8')
             sha = hashlib.sha256(receipt_path.read_bytes()).hexdigest()
-            review_path.write_text(json.dumps(dict(review, reviewedBy=changed['decidedBy'],
+            review_path.write_text(json.dumps(dict(review, schemaVersion=schema, reviewedBy=changed['decidedBy'],
                                                    evidence=[{'path': 'receipt.json', 'sha256': sha}],
                                                    patches=[dict(review['patches'][0], evidenceSha256=sha)])),
                                    encoding='utf-8')
@@ -391,6 +392,27 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
         # A v1 receipt (written before verdicts were derived again from the cache) is still read by the
         # Layer 1 path under its own rules, without the cache.
         rebind(as_v1(receipt))
+        corrected, _ = source_review.apply_review(segments(), review_path, clip, asr, adjudicated_package=package)
+        self.assertEqual(corrected[1]['text'], review['patches'][0]['correctedText'])
+        # A machine review the pre-v2 writers labelled v1 stays readable on their own v1 receipt.
+        self.assertEqual(review['schemaVersion'], source_review.SCHEMA_V2)
+        rebind(as_v1(receipt), schema=source_review.SCHEMA)
+        corrected, provenance = source_review.apply_review(segments(), review_path, clip, asr,
+                                                           adjudicated_package=package)
+        self.assertEqual(corrected[1]['text'], review['patches'][0]['correctedText'])
+        self.assertEqual(provenance['schemaVersion'], source_review.SCHEMA)
+        # A v1 label on a receipt from a later writer, or on a v2 receipt, is refused.
+        later = '95e48ac4649725369526a2e83a500e87303bc17b7231f404a7d736166b6867e7'
+        self.assertIn(later, machine.V1_IMPLEMENTATIONS)
+        self.assertNotIn(later, source_review.V1_MACHINE_REVIEW_WRITERS)
+        later_v1 = dict(as_v1(receipt), version=machine.V1_IMPLEMENTATIONS[later], implementationSha256=later,
+                        decidedBy=f'source_meaning_machine_adjudication {machine.V1_IMPLEMENTATIONS[later]} {later[:16]}')
+        for changed in (later_v1, receipt):
+            rebind(changed, schema=source_review.SCHEMA)
+            with self.subTest(receipt=changed['schemaVersion']), \
+                    self.assertRaisesRegex(ValueError, 'requires the sermon-source-text-review-v2 contract'):
+                source_review.apply_review(segments(), review_path, clip, asr, adjudicated_package=package)
+        rebind(later_v1)
         corrected, _ = source_review.apply_review(segments(), review_path, clip, asr, adjudicated_package=package)
         self.assertEqual(corrected[1]['text'], review['patches'][0]['correctedText'])
         shutil.move(self.out / 'cache-elsewhere', moved)
@@ -551,6 +573,21 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
         self.assertEqual((len(dev.payloads), len(prod.payloads)), (1, 1))
         self.assertFalse(prod_receipt['units'][0]['request']['cached'])
         self.assertNotEqual(dev_receipt['units'][0]['request']['path'], prod_receipt['units'][0]['request']['path'])
+        # Each receipt names the Project its cached request was asked under, and no other.
+        cache = self.out / 'cache'
+        for receipt in (dev_receipt, prod_receipt):
+            machine.validate_receipt(receipt, anchor=self.anchor, cache=cache)
+        claimed = dict(prod_receipt, adjudicator=dict(prod_receipt['adjudicator'], route=expected))
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_model_runtime_changed'):
+            machine.validate_receipt(claimed, anchor=self.anchor, cache=cache)
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_model_runtime_changed'):
+            machine.validate_receipt(dict(dev_receipt, adjudicator=dict(dev_receipt['adjudicator'], route=None)),
+                                     anchor=self.anchor, cache=cache)
+        # A route the launcher could never select (dev with the prod credential) is refused outright.
+        mixed = dict(expected, credentialAlias='tongxing-prod-runtime')
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_adjudicator_runtime'):
+            machine.validate_receipt(dict(dev_receipt, adjudicator=dict(dev_receipt['adjudicator'], route=mixed)),
+                                     anchor=self.anchor, cache=cache)
 
     def test_meaning_notes_bind_the_kept_units_for_the_layer2_repair_brief(self):
         heard = [FakeListener('a', CLIP_HEARD), FakeListener('b', CLIP_HEARD)]
@@ -804,6 +841,24 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
             changed['units'][0][key] = value
             with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_verdict_not_from_model'):
                 machine.validate_receipt(changed, anchor=self.anchor, cache=cache)
+        # The receipt names the tier its request was asked under: another supported tier, an unsupported
+        # one, or (under a budget) a tier other than the approved one is refused.
+        larger = dict(receipt['adjudicator']['requestLimits'], maxCompletionTokens=8192)
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_model_runtime_changed'):
+            machine.validate_receipt(dict(receipt, adjudicator=dict(receipt['adjudicator'], requestLimits=larger)),
+                                     anchor=self.anchor, cache=cache)
+        flex = dict(receipt['adjudicator']['requestLimits'], serviceTier='flex')
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_adjudicator_runtime'):
+            machine.validate_receipt(dict(receipt, adjudicator=dict(receipt['adjudicator'], requestLimits=flex)),
+                                     anchor=self.anchor, cache=cache)
+        budget = {'schemaVersion': machine.BUDGET_SCHEMA, 'authorizationSha256': 'a' * 64, 'approvalSha256': 'b' * 64,
+                  'budgetRoot': str((self.out / machine.BUDGET_DIR).resolve()),
+                  'globalBounds': {metric: 1000 for metric in source_budget.METRICS}, 'requestLimits': larger}
+        route = {'environment': 'dev', 'projectId': 'proj_devOnly', 'credentialAlias': 'tongxing-dev-runtime'}
+        for adjudicator in (receipt['adjudicator'], dict(receipt['adjudicator'], route=route)):
+            with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_adjudicator_runtime'):
+                machine.validate_receipt(dict(receipt, budget=budget, adjudicator=adjudicator),
+                                         anchor=self.anchor, cache=cache)
         # A cached response rewritten to match the edit no longer hashes to what the row names.
         path = Path(row['request']['path'])
         cached = json.loads(path.read_text(encoding='utf-8'))

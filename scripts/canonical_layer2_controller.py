@@ -207,8 +207,57 @@ def package_view(config):
     return view
 
 
+def join_jobs(config, view):
+    """The package view joined with this run's durable jobs, a reopen checked against its lane's evidence."""
+    return durable.project(view, config.job_root, config.run_id, verify_reopen=_reopen_verifier(config))
+
+
+def _reopen_verifier(config):
+    """Checks a reopen receipt against the evidence it names before its failed job may yield.
+
+    Every receipt along a chain names this lane's repair ledger as it was: the entry at
+    its sequence is the one it hashed, that entry stopped, and every group the receipt
+    reopened was stopped there for source review. The receipt naming the text node's
+    identity now is the one a new job runs under, so it is checked in full: its notes are
+    the configured notes, and its groups are the ones those notes reopen from that entry
+    or, once the reopened job has begun, the ones its worker's reopen entry records. Its
+    configuration and code hashes record what the controller ran under; both may change
+    after a reopen (a deploy, a configuration edit) without changing what it proved, and
+    the worker checks its own before any paid call."""
+    ledgers = {}
+
+    def verify(receipt, observed, expected):
+        locale = receipt['identity']['workUnitId'][len('text.'):]
+        require(locale in config.lanes and bool(config.auto_repair), 'reopen_lane_not_registered')
+        if locale not in ledgers:
+            source, anchor, policy = _lane_values(config, locale, observed)
+            ledgers[locale] = (auto_repair.load_ledger(repair_ledger_root(config), auto_repair.lineage(
+                producer.prepare_request(source, anchor, policy))), source, anchor)
+        entries, source, anchor = ledgers[locale]
+        sequence, groups = receipt['repairLedgerSequence'], receipt['reopenedGroups']
+        head = entries[sequence - 1] if sequence <= len(entries) else None
+        require(head is not None and auto_repair.json_sha256(head) == receipt['repairLedgerHeadSha256']
+                and head['outcome'] == 'stopped', 'reopen_ledger_head_changed')
+        held = {row['translationGroupId'] for row in head['stopped'] if row['reasonCode'] == 'request_source_review'}
+        require(set(groups) <= held, 'reopen_group_not_stopped_for_source_review')
+        if receipt['nextIdentity'] != expected:
+            return
+        require(receipt['meaningNotesSha256'] == observed['packageIdentities'].get('sourceMeaningNotes'),
+                'reopen_meaning_notes_changed')
+        if len(entries) > sequence:
+            reopened = entries[sequence]
+            require('reopenedBy' in reopened
+                    and sorted(row['translationGroupId'] for row in reopened['groups']) == groups,
+                    'reopen_groups_changed')
+        else:
+            notes = source_meaning.load_meaning_notes(Path(config.auto_repair['sourceMeaningNotes']),
+                                                      source=source, anchor=anchor)
+            require(sorted(auto_repair.reopenable_groups(entries, notes)) == groups, 'reopen_groups_changed')
+    return verify
+
+
 def snapshot(config):
-    view = durable.project(package_view(config), config.job_root, config.run_id)
+    view = join_jobs(config, package_view(config))
     rejected = []
     for locale in config.lanes:
         unit = 'text.' + locale
@@ -224,7 +273,8 @@ def snapshot(config):
     return view
 
 
-def _inputs(config, locale, view):
+def _lane_values(config, locale, view):
+    """The lane's source, anchor and policy, as the view inspected them."""
     lane = config.lanes[locale]
     paths = {'source': _path(config.inspection_root, config.inspection['source']),
              'anchor': _path(config.inspection_root, config.inspection['anchor']),
@@ -232,7 +282,12 @@ def _inputs(config, locale, view):
     values = {key: packages._read_package(path.parent, str(path), {}, key) for key, path in paths.items()}
     require(all(jobs._digest(value) == view['packageIdentities'].get(key) for key, value in values.items()),
             'inputs_changed_after_inspection')
-    policy = values['policy.' + locale]
+    return values['source'], values['anchor'], values['policy.' + locale]
+
+
+def _inputs(config, locale, view):
+    lane = config.lanes[locale]
+    source, anchor, policy = _lane_values(config, locale, view)
     require(producer.plugin_implementation_sha256(lane['plugin']) == policy['languageReview']['pluginImplementationSha256'],
             'plugin_does_not_match_frozen_policy')
     # Fixed production models and the canonical runner's worker budget bound paid work.
@@ -240,10 +295,10 @@ def _inputs(config, locale, view):
     require(policy['batching']['batchSize'] == 1 and type(policy['batching']['workers']) is int
             and 1 <= policy['batching']['workers'] <= api_concurrency.MAX_GROUP_WORKERS_PER_LOCALE,
             'invalid_production_worker_budget')
-    request = producer.prepare_request(values['source'], values['anchor'], policy)
-    plan = models.group_plan(request, values['anchor'])
+    request = producer.prepare_request(source, anchor, policy)
+    plan = models.group_plan(request, anchor)
     rule_preflight.preflight(request, policy, lane['plugin'], plan)
-    return values['source'], values['anchor'], policy
+    return source, anchor, policy
 
 
 def _unreconciled_paid_call(config, locale):
@@ -382,7 +437,7 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                 executor_type='deterministic_program', work_unit_id='l2.' + locale + '.worker_admission') as admission_span:
             current = package_view(config)
             require(current['nodes']['text.' + locale]['status'] == 'ready', 'worker_node_not_ready')
-            joined = durable.project(current, config.job_root, config.run_id)
+            joined = join_jobs(config, current)
             require(joined['nodes']['source']['status'] == 'validated'
                     and joined['nodes']['text.' + locale]['status'] == 'waiting_job'
                     and joined['nodes']['text.' + locale].get('reasonCode') == 'durable_job_active',
