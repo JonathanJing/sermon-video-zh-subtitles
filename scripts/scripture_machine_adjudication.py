@@ -57,7 +57,7 @@ _RANGE = rf'(?P<v1>{_NUM})(?:\s*(?P<join>-|–|to|through|and)\s*(?P<v2>{_NUM}))
 # "First John", "1st John" and "1 John" all name the epistle; the gospel has no ordinal.
 _ORDINAL = r'(?:[123]|1st|2nd|3rd|first|second|third)'
 BOOK_MENTION = re.compile(
-    rf'\b(?P<book>(?:{_ORDINAL}\s+)?(?:{_BOOKS}))\s+(?:chapter\s+)?(?P<chapter>{_NUM})\b'
+    rf'\b(?P<book>(?:{_ORDINAL}\s+)?(?:{_BOOKS}))[\s,]+(?:chapter\s+)?(?P<chapter>{_NUM})\b'
     rf'(?P<more_chapters>\s+and\s+{_NUM}\b)?(?:\s*:\s*{_RANGE})?', re.I)
 # "Now turn to Romans" moves the reading to another book without naming a chapter.
 BOOK_TRANSITION = re.compile(
@@ -471,11 +471,16 @@ def adjudicate(source: dict[str, Any], anchor: dict[str, Any], plan: list[dict[s
                     reason = (f"negation differs from {ref.canonical_ref}: the verse has "
                               f"{measure['negations']['verse']} negation word(s), the speaker said "
                               f"{measure['negations']['spoken']}; translated as the speaker's own words")
-                elif measure['wholeByMeasure']:
+                elif measure['wholeByMeasure'] and measure['negationMismatch']:
                     heads = measure['negationHeads']
                     reason = (f"negation differs from {ref.canonical_ref}: the verse negates "
                               f"{', '.join(repr(h) for h in heads['verse'])}, the speaker negated "
                               f"{', '.join(repr(h) for h in heads['spoken'])}; translated as the speaker's own words")
+                elif measure['wholeByMeasure']:
+                    turned = measure['reversedDirections']
+                    reason = (f"direction differs from {ref.canonical_ref}: the verse says "
+                              f"{', '.join(repr(pair[0]) for pair in turned)}, the speaker said "
+                              f"{', '.join(repr(pair[1]) for pair in turned)}; translated as the speaker's own words")
                 elif range_whole and measure['unreadVerses']:
                     reason = (f"{', '.join(measure['unreadVerses'])} not read within {ref.canonical_ref}: the words only "
                               f"that verse contributes were not spoken (one verse read twice is not a reading of "

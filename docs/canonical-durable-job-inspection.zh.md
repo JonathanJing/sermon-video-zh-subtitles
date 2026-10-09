@@ -15,7 +15,7 @@ python scripts/canonical_durable_jobs.py \
 规则：
 
 - queued/running 的同身份作业：`waiting_job`；owner 消失时只读报告 uncertain，保留原文件。
-- 活跃、unknown 或 failed 的旧身份作业：`reconciliation_required`；failed 同身份为 blocked。
+- 活跃、unknown 或 failed 的旧身份作业：`reconciliation_required`；failed 同身份为 blocked。带有效重开收据、收据指向当前身份的 failed 文本作业例外，见下文"修复重开收据"。
 - succeeded 仍须实际 validator 证明产物；缺失/无效时要求 reconciliation，不能凭退出码晋升。
 - 上游作业未解决时，已有下游产物不能隐藏它；另一 locale 的独立分支仍可继续自己的检查。
 - 未识别版本/run/unit、损坏/更换中的请求、超扫描预算：整次 view 要求 reconciliation，不能默默丢掉证据。
@@ -36,3 +36,7 @@ Canonical producer dispatch、未知结果的显式 reconciliation/migration 流
 ### 固定 L2 产物对账收据
 
 后续 [显式对账入口](canonical-layer2-reconciliation.zh.md) 可为现有 job 增加独立收据。projector 每次重新验证原 request/state hash、原 identity 和当前有效候选，再显示 `artifact_reconciled`，同时返回原观察状态。receipt 不会重写 job outcome、不赋予人工审核，也不能使丢失/失效候选或旧身份解锁。stateRevision 现在同时绑定原 request/state JSON hash，避免同 status 的证据修改不可见。默认 shadow 仍不创建锁文件或写收据。
+
+### 修复重开收据
+
+`text.<locale>` 的输入身份在执行配置给出 L1 含义备注时多一项 `sourceMeaningNotes`（备注文件的规范哈希，由 controller 的 `package_view` 加入；不配备注时身份不变）。controller 的 [`reopen-repair`](layer2-bounded-auto-repair.zh.md) 可在一个失败文本作业目录里写不可改的 `canonical-reopen-<新身份摘要>.json`（`sermon-canonical-layer2-reopen-v1`）。projector 每次重新核对：字段集合和版本、job id、原身份、原 request/state hash、作业仍是 failed、新身份是同一 run、同一工作单元、同一 `nodeIdentity` 而输入不同、文件名等于新身份摘要，以及哈希、账本序号和重开组的格式；任何一项不符，整次 view 要求 reconciliation（`unbound_job_evidence`），和对账收据并存也不行。收据指向当前身份，或指向一个本身被重开、沿链最终指向当前身份的作业时，这个 failed 作业显示为 `superseded`（`originalJobStatus: failed`、`reopenSha256`、`supersededBy`），不再阻塞节点；收据指向的身份不再是当前身份时，它照旧阻塞。作业结果、请求、状态和日志都不改写，收据不赋予人工审核。

@@ -228,6 +228,93 @@ class PinnedLibraryTests(unittest.TestCase):
         self.assertEqual((both['unreadVerses'], both['wholeVerse']), ([], True))
         self.assertEqual(coverage.coverage(self.edition, 'JOH 3:16', verse16)['verses'], [])
 
+    def test_a_reversed_direction_is_never_whole(self):
+        verse = self.edition.lookup('GEN 35:1')['text']
+        self.assertIn('go up to', verse)
+        turned = coverage.coverage(self.edition, 'GEN 35:1', verse.replace('go up to', 'go down to'))
+        self.assertEqual((turned['reversedDirections'], turned['wholeByMeasure'], turned['negationMismatch'],
+                          turned['wholeVerse']), ([['up', 'down']], True, False, False))
+        # Leaving the direction out does not reverse it.
+        omitted = coverage.coverage(self.edition, 'GEN 35:1', verse.replace('go up to', 'go to'))
+        self.assertEqual((omitted['reversedDirections'], omitted['wholeVerse']), ([], True))
+        self.assertEqual(coverage.reversed_directions(coverage.all_tokens('He ascended before them'),
+                                                      coverage.all_tokens('He descended after them')),
+                         [['before', 'after'], ['ascend', 'descend']])
+        # Both members on both sides in the same order is no reversal; the other order is a swap.
+        self.assertEqual(coverage.reversed_directions(coverage.all_tokens('in and out'),
+                                                      coverage.all_tokens('in and out')), [])
+        self.assertEqual(coverage.reversed_directions(coverage.all_tokens('in and out'),
+                                                      coverage.all_tokens('out and in')), [['in', 'out']])
+
+    def test_a_swapped_pair_is_a_reversed_direction(self):
+        # WEB Matthew 25:33 names both sides; reading the sheep on the left and the goats on the right
+        # turns the verse around although every word of it is spoken.
+        verse = self.edition.lookup('MAT 25:33')['text']
+        swapped = verse.replace('right hand', 'LEFT hand').replace('on the left', 'on the right').replace('LEFT', 'left')
+        self.assertNotEqual(swapped, verse)
+        measure = coverage.coverage(self.edition, 'MAT 25:33', swapped)
+        self.assertEqual(measure['reversedDirections'], [['right', 'left']])
+        self.assertTrue(measure['wholeByMeasure'], measure)
+        self.assertFalse(measure['wholeVerse'])
+        self.assertTrue(coverage.coverage(self.edition, 'MAT 25:33', verse)['wholeVerse'])
+        # The same order, a repeated member, or one side only is not a swap.
+        self.assertEqual(coverage.reversed_directions(coverage.all_tokens('right then left'),
+                                                      coverage.all_tokens('right, right, then left')), [])
+        self.assertEqual(coverage.reversed_directions(coverage.all_tokens('right then left'),
+                                                      coverage.all_tokens('on the right')), [])
+        self.assertEqual(coverage.reversed_directions(coverage.all_tokens('right then left'),
+                                                      coverage.all_tokens('left, then right')), [['right', 'left']])
+        # Repeating the pair in the verse's order is not a swap; naming them the other way round first is.
+        self.assertEqual(coverage.reversed_directions(coverage.all_tokens('right then left'),
+                                                      coverage.all_tokens('right, left, right, left')), [])
+        self.assertEqual(coverage.reversed_directions(coverage.all_tokens('right then left'),
+                                                      coverage.all_tokens('left, right, then left')), [['right', 'left']])
+        # Keeping the words in order but moving what each side places turns the verse around too:
+        # the goats on his right hand and the sheep on the left.
+        moved = verse.replace('sheep', 'GOATS').replace('goats', 'sheep').replace('GOATS', 'goats')
+        self.assertNotEqual(moved, verse)
+        measure = coverage.coverage(self.edition, 'MAT 25:33', moved)
+        self.assertEqual(measure['reversedDirections'], [['sheep right goat', 'goat right sheep']])
+        self.assertTrue(measure['wholeByMeasure'], measure)
+        self.assertFalse(measure['wholeVerse'])
+        # A word said between each animal and its side does not hide the move, nor does placing them
+        # after their sides instead of before.
+        for reading, expected in (
+                ('He will set the goats standing on his right hand, but the sheep standing on the left.',
+                 ['sheep right goat', 'goat right sheep']),
+                ('On his right hand he will set the goats, and on his left the sheep.',
+                 ['sheep right hand', 'hand left sheep']),
+                # Repeating a word where it stands does not take it out of the comparison.
+                ('He will set the goats, the goats on his right hand, but the sheep, the sheep on the left.',
+                 ['sheep right goat', 'goat right sheep'])):
+            with self.subTest(reading=reading):
+                self.assertEqual(coverage.reversed_directions(coverage.all_tokens(verse),
+                                                              coverage.all_tokens(reading)), [expected])
+        # The same placements in other words or another sentence shape, or a side said with nothing
+        # placed on it, are not a swap.
+        for reading in ('He will put the sheep at his right and the goats at his left.',
+                        'The sheep go on the right hand, but the goats on the left.',
+                        'On the right, on the left: he will set the sheep and the goats.',
+                        'On his right hand he will set the sheep, and on his left the goats.',
+                        'He will set on his right hand the sheep, but the goats on the left.',
+                        'He will set the sheep standing on his right hand, but the goats standing on the left.',
+                        'He will set the sheep, the sheep on his right hand, but the goats, the goats on the left.'):
+            with self.subTest(reading=reading):
+                self.assertEqual(coverage.reversed_directions(coverage.all_tokens(verse),
+                                                              coverage.all_tokens(reading)), [])
+
+    def test_a_negation_keeps_its_spelling_through_stemming(self):
+        # "nothing" stemmed to "noth" would escape the negation count; a negation word is never stemmed.
+        verse = self.edition.lookup('JOH 15:5')['text']
+        self.assertIn('nothing', coverage.content_tokens(verse))
+        self.assertEqual(coverage.all_tokens('He never fails; nobody knows; nothing without him'),
+                         ['he', 'never', 'fail', 'nobody', 'know', 'nothing', 'without', 'him'])
+        self.assertTrue(coverage.coverage(self.edition, 'JOH 15:5', verse)['wholeVerse'])
+        turned = coverage.coverage(self.edition, 'JOH 15:5', verse.replace('do nothing', 'do something'))
+        self.assertTrue(turned['wholeByMeasure'], turned)
+        self.assertTrue(turned['negationMismatch'])
+        self.assertFalse(turned['wholeVerse'])
+
     def test_half_a_verse_is_a_fragment(self):
         half = ' '.join(self.edition.lookup('JOH 3:16')['text'].split()[:8])
         measure = coverage.coverage(self.edition, 'JOH 3:16', half)
