@@ -310,6 +310,24 @@ class LoopTests(unittest.TestCase):
         self.assertEqual(subject.drive(REQUEST, fleet.groups, fleet, self.root / "other", self.root / "state-other",
                                        meaning_notes={"u2": notes["u21"]})["ledgerHeadSha256"],
                          receipt["ledgerHeadSha256"])
+        # A group stopped for another reason beside the noted one stays stopped through the reopened chain:
+        # the receipt never passes while it is unresolved, whether or not the next round reports it again.
+        for name, later in (("silent", []), ("reported", [{"g5": failing("completeMeaning")}])):
+            with self.subTest(next_round=name):
+                both = {"g5": failing("completeMeaning"), "g21": failing("quotationAttribution")}
+                fleet = Fleet(self, 46, [both, both, *later])
+                first = self.drive(fleet, out=name)
+                self.assertEqual(sorted((row["translationGroupId"], row["reasonCode"]) for row in first["stoppedGroups"]),
+                                 [("g21", "request_source_review"), ("g5", "repeated_failure_without_progress")])
+                reopened = subject.drive(REQUEST, fleet.groups, fleet, self.root / name, self.root / f"state-{name}",
+                                         meaning_notes=notes)
+                self.assertEqual(fleet.calls, ["all", ["g21", "g5"], ["g21"]])
+                self.assertEqual(reopened["status"], "repair_stopped")
+                self.assertEqual([(row["translationGroupId"], row["reasonCode"]) for row in reopened["stoppedGroups"]],
+                                 [("g5", "repeated_failure_without_progress")])
+                self.assertEqual(reopened["gatesPassed"], [])
+                entries = subject.load_ledger(self.root / f"state-{name}", subject.lineage(REQUEST))
+                self.assertEqual([entry["outcome"] for entry in entries], ["repairing", "stopped", "repairing", "stopped"])
 
     def test_two_repairs_without_fewer_failures_stop(self):
         fleet = Fleet(self, 46, [{"g1": failing("completeMeaning")},

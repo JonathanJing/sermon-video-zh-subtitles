@@ -252,13 +252,38 @@ def _pair_order(tokens: list[str], members: tuple[str, str]) -> list[str]:
     return order
 
 
+_DIRECTION_MEMBERS = frozenset(_stem(word) for pair in DIRECTION_PAIRS for word in pair)
+_BINDING_SKIP = frozenset(_token(word) for word in STOPWORDS) | _DIRECTION_MEMBERS | NEGATIONS
+# How far back a direction word looks for what it places: "the sheep on his right hand" is three words.
+DIRECTION_BINDING_WINDOW = 4
+
+
+def _direction_bindings(tokens: list[str], members: tuple[str, str]) -> dict[str, str]:
+    """The content word each member's first mention places: the nearest one before it within the window.
+
+    "He will set the sheep on his right hand, but the goats on the left" places
+    ``sheep`` on the right and ``goat`` on the left. A member with no content word
+    shortly before it binds nothing."""
+    bound: dict[str, str] = {}
+    for index, token in enumerate(tokens):
+        if token in members and token not in bound:
+            earlier = [word for word in tokens[max(0, index - DIRECTION_BINDING_WINDOW):index]
+                       if word not in _BINDING_SKIP and len(word) > 1]
+            if earlier:
+                bound[token] = earlier[-1]
+    return bound
+
+
 def reversed_directions(verse_tokens: list[str], spoken_tokens: list[str]) -> list[list[str]]:
-    """The direction pairs the reading turns around, as ``[verse word, spoken word]``.
+    """The direction pairs the reading turns around, as ``[what the verse says, what the speaker said]``.
 
     A pair is turned when the verse has one member only and the reading the other
     only ("go up" read as "go down"), or when both texts use both members and the
     reading names them the other way round ("sheep on the right, goats on the left"
-    read the other way). Repeating the pair in the verse's order is not a turn."""
+    read the other way). Repeating the pair in the verse's order is not a turn.
+    With the order kept, a reading that moves what the verse places on one side to
+    the other ("the goats on his right hand, but the sheep on the left") is turned
+    too; it is recorded with the word each side places, as ``['sheep right', 'goat right']``."""
     turned = []
     for pair in DIRECTION_PAIRS:
         members = tuple(_stem(word) for word in pair)
@@ -272,6 +297,16 @@ def reversed_directions(verse_tokens: list[str], spoken_tokens: list[str]) -> li
             # Both members on both sides: the first mention decides. "right ... left" said twice keeps
             # the verse's order; said as "left ... right" it is turned.
             turned.append([verse[0], spoken[0]])
+        elif len(set(verse)) == 2:
+            # Same order: compare what each side places. The verse's two sides must place different
+            # words, and the reading must put one side's word on the other side.
+            placed, said = _direction_bindings(verse_tokens, members), _direction_bindings(spoken_tokens, members)
+            if len(placed) == 2 and placed[members[0]] != placed[members[1]]:
+                for member, other in (members, members[::-1]):
+                    heard = said.get(member)
+                    if heard is not None and heard != placed[member] and heard == placed[other]:
+                        turned.append([f'{placed[member]} {member}', f'{heard} {member}'])
+                        break
     return turned
 
 

@@ -269,6 +269,21 @@ class PinnedLibraryTests(unittest.TestCase):
                                                       coverage.all_tokens('right, left, right, left')), [])
         self.assertEqual(coverage.reversed_directions(coverage.all_tokens('right then left'),
                                                       coverage.all_tokens('left, right, then left')), [['right', 'left']])
+        # Keeping the words in order but moving what each side places turns the verse around too:
+        # the goats on his right hand and the sheep on the left.
+        moved = verse.replace('sheep', 'GOATS').replace('goats', 'sheep').replace('GOATS', 'goats')
+        self.assertNotEqual(moved, verse)
+        measure = coverage.coverage(self.edition, 'MAT 25:33', moved)
+        self.assertEqual(measure['reversedDirections'], [['sheep right', 'goat right']])
+        self.assertTrue(measure['wholeByMeasure'], measure)
+        self.assertFalse(measure['wholeVerse'])
+        # The same placements in other words, or a side said with nothing placed on it, are not a swap.
+        for reading in ('He will put the sheep at his right and the goats at his left.',
+                        'The sheep go on the right hand, but the goats on the left.',
+                        'On the right, on the left: he will set the sheep and the goats.'):
+            with self.subTest(reading=reading):
+                self.assertEqual(coverage.reversed_directions(coverage.all_tokens(verse),
+                                                              coverage.all_tokens(reading)), [])
 
     def test_a_negation_keeps_its_spelling_through_stemming(self):
         # "nothing" stemmed to "noth" would escape the negation count; a negation word is never stemmed.

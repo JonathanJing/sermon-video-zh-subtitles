@@ -34,7 +34,12 @@ SCHEMA_V2 = "sermon-source-text-review-v2"
 SCHEMA_AUTHORITIES = {SCHEMA: {AUTHORITY}, SCHEMA_V2: AUTHORITIES}
 # A machine-authority review rests on exactly one source-meaning receipt among
 # its evidence; every patch must be that receipt's corrections and nothing else.
-MACHINE_RECEIPT_SCHEMA = "sermon-source-meaning-machine-adjudication-v1"
+# v1 receipts were written before model verdicts were derived again from the adjudicator's request
+# cache and before the budget record; they stay readable under the rules they were written for.
+# v2 receipts always record the budget (null for a cache-only run) and need the cache beside them.
+MACHINE_RECEIPT_SCHEMA_V1 = "sermon-source-meaning-machine-adjudication-v1"
+MACHINE_RECEIPT_SCHEMA = "sermon-source-meaning-machine-adjudication-v2"
+MACHINE_RECEIPT_SCHEMAS = (MACHINE_RECEIPT_SCHEMA_V1, MACHINE_RECEIPT_SCHEMA)
 MACHINE_ROLE = "machine_adjudicator"
 UNIT_TIME_TOLERANCE = 0.05
 PATCH_FIELDS = {
@@ -107,7 +112,7 @@ def _machine_receipt(review: dict[str, Any], evidence: list[dict[str, str]],
             value = json.loads(Path(item["path"]).read_bytes())
         except (OSError, UnicodeError, json.JSONDecodeError):
             continue
-        if isinstance(value, dict) and value.get("schemaVersion") == MACHINE_RECEIPT_SCHEMA:
+        if isinstance(value, dict) and value.get("schemaVersion") in MACHINE_RECEIPT_SCHEMAS:
             receipts.append((item["sha256"], value, Path(item["path"])))
     if len(receipts) != 1:
         raise ValueError("Machine audio adjudication requires exactly one source-meaning receipt as evidence")

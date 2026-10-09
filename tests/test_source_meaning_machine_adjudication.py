@@ -379,6 +379,11 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
         rebind(receipt)
         with self.assertRaisesRegex(ValueError, 'receipt_model_response_missing'):
             source_review.apply_review(segments(), review_path, clip, asr, adjudicated_package=package)
+        # A v1 receipt (written before verdicts were derived again from the cache) is still read by the
+        # Layer 1 path under its own rules, without the cache.
+        rebind(dict({k: v for k, v in receipt.items() if k != 'budget'}, schemaVersion=machine.SCHEMA_V1))
+        corrected, _ = source_review.apply_review(segments(), review_path, clip, asr, adjudicated_package=package)
+        self.assertEqual(corrected[1]['text'], review['patches'][0]['correctedText'])
         shutil.move(self.out / 'cache-elsewhere', moved)
         rebind(dict(receipt, units=[dict(receipt['units'][0], heard=[])]))
         with self.assertRaisesRegex(ValueError, 'receipt_unit_hearings'):
@@ -802,6 +807,59 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
         path.unlink()
         with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_model_response_missing'):
             machine.validate_receipt(receipt, anchor=self.anchor, cache=cache)
+        # A v1 receipt predates the request-cache contract and keeps its rules: its model row names a
+        # request and is read without the cache, as it was before. It never carried a budget record.
+        v1 = dict({k: v for k, v in receipt.items() if k != 'budget'}, schemaVersion=machine.SCHEMA_V1)
+        summary = machine.validate_receipt(v1, source=self.source, anchor=self.anchor)
+        self.assertEqual(summary['units'], ['u3'])
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_decision_evidence'):
+            machine.validate_receipt(dict(v1, units=[dict(v1['units'][0], request=None)]), anchor=self.anchor)
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_schema'):
+            machine.validate_receipt(dict(v1, schemaVersion='sermon-source-meaning-machine-adjudication-v3'))
+
+    def test_the_cached_question_must_be_the_one_the_receipt_and_anchor_ask(self):
+        heard = [FakeListener('openai', CLIP_HEARD_OTHER), FakeListener('qwen', CLIP_HEARD)]
+        receipt = self.adjudicate(heard, FakeAdjudicator(self.out / 'cache', answer(
+            'undetermined', note='Translate the frozen English literally; the listeners disagree.')))
+        cache = self.out / 'cache'
+        machine.validate_receipt(receipt, source=self.source, anchor=self.anchor, cache=cache)
+        path = Path(receipt['units'][0]['request']['path'])
+        original = path.read_bytes()
+
+        def asked_instead(change):
+            """The same unit, frozen text, transcripts and answer, asked with other context or evidence."""
+            path.write_bytes(original)
+            cached = json.loads(original)
+            question = json.loads(cached['request']['payload']['messages'][1]['content'])
+            change(question)
+            cached['request']['payload']['messages'][1]['content'] = json.dumps(question)
+            cached['requestSha256'] = contract.json_sha256(cached['request'])
+            path.write_text(json.dumps(cached, sort_keys=True), encoding='utf-8')
+            forged = json.loads(json.dumps(receipt))
+            forged['units'][0]['request'].update(sha256=contract.sha256(path), requestSha256=cached['requestSha256'])
+            return forged
+        for name, change in (
+                ('context', lambda q: q['context'][0].update(english='Something else was said before.')),
+                ('independence', lambda q: q['listenerIndependence'].update(independent=False)),
+                ('clip', lambda q: q['clip'].update(seconds=q['clip']['seconds'] + 1)),
+                ('heardForUnit', lambda q: q['listeners'][0].update(heardForUnit='a different stretch')),
+                ('boundary', lambda q: q['listeners'][0].update(unitBoundedByNeighbours=False))):
+            with self.subTest(changed=name):
+                forged = asked_instead(change)
+                # Without the anchor only the unit, its frozen text and the raw transcripts can be compared.
+                machine.validate_receipt(forged, cache=cache)
+                with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_model_question_changed'):
+                    machine.validate_receipt(forged, anchor=self.anchor, cache=cache)
+        path.write_bytes(original)
+        # The clip a row names must be the anchor's, and every derived hearing fact is derived again.
+        moved = json.loads(json.dumps(receipt))
+        moved['units'][0]['clip']['windowStart'] += 0.5
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_unit_not_in_anchor'):
+            machine.validate_receipt(moved, anchor=self.anchor, cache=cache)
+        edited = json.loads(json.dumps(receipt))
+        edited['units'][0]['heard'][0]['similarityToFrozen'] = 0.99
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_unit_hearings'):
+            machine.validate_receipt(edited, anchor=self.anchor, cache=cache)
 
     def test_new_paid_calls_dispatch_only_through_a_bound_budget_authorization(self):
         route = {'SERMON_OPENAI_ENVIRONMENT': 'dev', 'OPENAI_PROJECT_ID': 'proj_devOnly',
@@ -881,10 +939,16 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
         self.assertNotIn('store', receipt['budget'])
         self.assertEqual(receipt['adjudicator']['requestLimits'], limits.DEFAULT_REQUEST_LIMITS)
         machine.validate_receipt(receipt, source=self.source, anchor=self.anchor, cache=cache)
-        # A receipt written before the budget contract has no record and still validates; a record that is
-        # not the authorization identity this module writes is refused.
+        # A v2 receipt always records its budget; dropping the record is refused. A v1 receipt was written
+        # before the budget contract and carries none; a record that is not the authorization identity this
+        # module writes is refused.
+        self.assertEqual(receipt['schemaVersion'], machine.SCHEMA)
         stripped = {k: v for k, v in receipt.items() if k != 'budget'}
-        machine.validate_receipt(stripped, anchor=self.anchor, cache=cache)
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_budget'):
+            machine.validate_receipt(stripped, anchor=self.anchor, cache=cache)
+        machine.validate_receipt(dict(stripped, schemaVersion=machine.SCHEMA_V1), anchor=self.anchor, cache=cache)
+        with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_budget'):
+            machine.validate_receipt(dict(receipt, schemaVersion=machine.SCHEMA_V1), anchor=self.anchor, cache=cache)
         with self.assertRaisesRegex(machine.SourceAdjudicationError, 'receipt_budget'):
             machine.validate_receipt(dict(receipt, budget={'schemaVersion': machine.BUDGET_SCHEMA}), anchor=self.anchor, cache=cache)
         # Every recorded field is checked: a null or malformed hash, root, bound or tier is not the loader's record.

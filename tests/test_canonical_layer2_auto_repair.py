@@ -180,6 +180,92 @@ class ControllerAutoRepairTests(unittest.TestCase):
         self.assertEqual({row["reasonCode"] for row in receipt["stoppedGroups"]},
                          {"repeated_failure_without_progress"})
 
+    def test_meaning_notes_reopen_a_failed_job_under_a_new_identity(self):
+        failed = self.group_ids()[1]
+        config = subject.load_configuration(self.base.path)
+        source, anchor, policy = subject._inputs(config, "zh-Hans", subject.snapshot(config))
+        request = subject.producer.prepare_request(source, anchor, policy)
+        units = next(row["sourceUnitIds"] for row in subject.models.group_plan(request, anchor)
+                     if row["translationGroupId"] == failed)
+        marker = "Keep the frozen wording NOTE7731"
+        notes = {units[0]: {"decision": "transcript_confirmed", "frozenTextSha256": "0" * 64,
+                            "decidedBy": "test", "meaningNote": marker}}
+
+        def reviewer(key, payload):
+            """The failed group's attribution fails every review until a repair carries the meaning note."""
+            response = self.caller(key, payload)
+            data = json.loads(payload["messages"][1]["content"])
+            if payload["reasoning_effort"] == "medium" and data["translationGroupId"] == failed \
+                    and marker not in payload["messages"][1]["content"]:
+                answer = json.loads(response["choices"][0]["message"]["content"])
+                answer["semanticReview"]["status"] = "fail"
+                answer["semanticReview"]["checks"]["quotationAttribution"] = "fail"
+                answer["semanticReview"]["issues"] = ["Attributed to the speaker, not the verse"]
+                response["choices"][0]["message"]["content"] = json.dumps(answer)
+            return response
+        with self.assertRaisesRegex(ValueError, "layer2_auto_repair_stopped"):
+            self.run_worker(reviewer)
+        first = jobs._digest(subject.durable.identity(subject.package_view(config), config.run_id, "text.zh-Hans"))
+        folder = config.job_root / first
+        jobs._persist(folder / "state.json", dict(jobs._read(folder / "state.json"), status="failed"))
+        before = {path.name: path.read_bytes() for path in folder.iterdir() if path.is_file()}
+        view = subject.snapshot(config)
+        self.assertEqual(view["nodes"]["text.zh-Hans"]["reasonCode"], "failed_durable_job")
+        with self.assertRaisesRegex(ValueError, "reopen_requires_source_meaning_notes"):
+            subject.reopen_repair(self.base.path, "zh-Hans", view["stateRevision"])
+        # The notes join the run's execution configuration and become a Layer 1 input of the text job.
+        notes_path = self.base.root / "notes" / "meaning-notes.json"
+        notes_path.parent.mkdir()
+        notes_path.write_text(json.dumps({"units": sorted(notes)}), encoding="utf-8")
+        self.base.config_data["layer2AutoRepair"] = {**BINDING, "sourceMeaningNotes": "notes/meaning-notes.json"}
+        self.base.save_config()
+        with patch.object(subject.source_meaning, "load_meaning_notes", return_value=notes) as loaded:
+            config = subject.load_configuration(self.base.path)
+            view = subject.snapshot(config)
+            node = view["nodes"]["text.zh-Hans"]
+            self.assertEqual((node["status"], node["reasonCode"]),
+                             ("reconciliation_required", "unknown_or_changed_identity_job"))
+            with self.assertRaisesRegex(ValueError, "stale_reopen_revision"):
+                subject.reopen_repair(self.base.path, "zh-Hans", "f" * 64)
+            result = subject.reopen_repair(self.base.path, "zh-Hans", view["stateRevision"])
+            self.assertEqual((result["status"], result["jobId"], result["reopenedGroups"], result["modelCalls"]),
+                             ("reopened", first, [failed], 0))
+            self.assertEqual(loaded.call_args.kwargs, {"source": source, "anchor": anchor})
+            following = subject.durable.identity(subject.package_view(config), config.run_id, "text.zh-Hans")
+            self.assertEqual(result["nextJobId"], jobs._digest(following))
+            receipt_path = folder / subject.durable.reopen_file(following)
+            receipt = json.loads(receipt_path.read_text())
+            self.assertEqual((receipt["schemaVersion"], receipt["identity"]["nodeIdentity"], receipt["reopenedGroups"]),
+                             (subject.durable.REOPEN_SCHEMA, following["nodeIdentity"], [failed]))
+            # The failed job keeps its outcome and history; only the receipt was added beside it.
+            after = {path.name: path.read_bytes() for path in folder.iterdir() if path.is_file()}
+            self.assertEqual({name: data for name, data in after.items() if name != receipt_path.name}, before)
+            view = subject.snapshot(config)
+            self.assertEqual(view["nodes"]["text.zh-Hans"]["status"], "ready")
+            row = next(row for row in view["durableJobInspection"]["jobs"] if row["jobId"] == first)
+            self.assertEqual((row["status"], row["originalJobStatus"], row["supersededBy"]),
+                             ("superseded", "failed", jobs._digest(following)))
+            with self.assertRaisesRegex(ValueError, "one_failed_text_job_required"):
+                subject.reopen_repair(self.base.path, "zh-Hans", view["stateRevision"])
+            # The next job runs under the new identity and continues the same repair chain: only the noted
+            # group is dispatched again, with its note, and the candidate is admitted.
+            earlier = len(self.calls)
+            result, config = self.run_worker(reviewer)
+        self.assertEqual(result["status"], "machine_review_pass_human_review_pending")
+        reopened = self.calls[earlier:]
+        self.assertEqual({json.loads(p["messages"][1]["content"])["translationGroupId"] for p in reopened}, {failed})
+        self.assertEqual(len(reopened), 2)
+        self.assertTrue(all(marker in p["messages"][1]["content"] for p in reopened))
+        ledger = auto_repair.load_ledger(subject.repair_ledger_root(config), auto_repair.lineage(request))
+        self.assertEqual([entry["outcome"] for entry in ledger], ["repairing", "stopped", "repairing", "passed"])
+        self.assertEqual(ledger[2]["reopenedBy"]["units"], [units[0]])
+        # A receipt edited after the fact no longer binds the failed job: the run needs inspection.
+        receipt["reopenedGroups"] = []
+        receipt_path.write_text(json.dumps(receipt))
+        with patch.object(subject.source_meaning, "load_meaning_notes", return_value=notes):
+            view = subject.snapshot(config)
+        self.assertEqual(view["nodes"]["text.zh-Hans"]["reasonCode"], "unbound_job_evidence")
+
     def test_api_transport_reuses_an_earlier_round_only_for_a_repair(self):
         failed = self.group_ids()[1]
         self.fail_first_review = {failed}

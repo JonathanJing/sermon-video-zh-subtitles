@@ -51,6 +51,8 @@ from scripts import sermon_source_text_review as source_review  # noqa: E402
 from scripts import target_language_policy as policies  # noqa: E402
 
 SCHEMA = source_review.MACHINE_RECEIPT_SCHEMA
+# Receipts written before verdicts were reproduced from the request cache; read under their own rules.
+SCHEMA_V1 = source_review.MACHINE_RECEIPT_SCHEMA_V1
 QUESTION_SCHEMA = 'sermon-source-meaning-adjudication-question-v1'
 RESPONSE_SCHEMA = 'sermon-source-meaning-adjudication-response-v1'
 PROMPT_VERSION = 'source-meaning-adjudication-v2'
@@ -698,6 +700,28 @@ def _media_binding(source: dict[str, Any]) -> tuple[dict[str, Any], float]:
     return media, float(window['startSeconds'])
 
 
+def _question(units: list[dict[str, Any]], index: int, independence: dict[str, Any],
+              heard: list[dict[str, Any]]) -> dict[str, Any]:
+    """What the adjudicator is asked about ``units[index]``; a v2 receipt's request cache must hold exactly this.
+
+    The doubted unit with its neighbouring text, the clip's units and length,
+    the listeners' independence and, per listener, what it heard and how the
+    neighbours bound it. ``heard`` rows are the receipt's hearing rows."""
+    unit = units[index]
+    low, high = max(0, index - CLIP_CONTEXT_UNITS), min(len(units) - 1, index + CLIP_CONTEXT_UNITS)
+    context = [{'sourceUnitId': units[i]['sourceUnitId'], 'english': units[i]['english'],
+                'position': 'doubted' if i == index else 'before' if i < index else 'after'}
+               for i in range(max(0, index - TEXT_CONTEXT_UNITS), min(len(units), index + TEXT_CONTEXT_UNITS + 1))]
+    return {'schemaVersion': QUESTION_SCHEMA, 'sourceUnitId': unit['sourceUnitId'], 'frozenText': unit['english'],
+            'context': context, 'listenerIndependence': independence,
+            'clip': {'sourceUnitIds': [units[i]['sourceUnitId'] for i in range(low, high + 1)],
+                     'seconds': round(float(units[high]['end']) - float(units[low]['start']), 3)},
+            'listeners': [{'name': row['listener'], 'model': row['model'], 'heardClip': row['text'],
+                           'heardForUnit': row['unitWindow'], 'similarityToFrozen': row['similarityToFrozen'],
+                           'agreesWithFrozen': row['agreesWithFrozen'], 'unitBoundedByNeighbours': row['bounded'],
+                           'boundary': row['boundary']} for row in heard]}
+
+
 def _require_bound_anchor(source: dict[str, Any], anchor: dict[str, Any]) -> None:
     """The anchor must be the one the English Source Package names, built on the package's transcript.
 
@@ -769,20 +793,7 @@ def adjudicate(source: dict[str, Any], anchor: dict[str, Any], *, unit_ids: list
             decided_by, request = 'listeners_agree_with_transcript', None
         else:
             _require(adjudicator is not None, 'adjudicator_required')
-            context = [{'sourceUnitId': units[i]['sourceUnitId'], 'english': units[i]['english'],
-                        'position': 'doubted' if i == index else 'before' if i < index else 'after'}
-                       for i in range(max(0, index - TEXT_CONTEXT_UNITS),
-                                      min(len(units), index + TEXT_CONTEXT_UNITS + 1))]
-            question = {'schemaVersion': QUESTION_SCHEMA, 'sourceUnitId': uid, 'frozenText': unit['english'],
-                        'context': context, 'listenerIndependence': independence,
-                        'clip': {'sourceUnitIds': [units[i]['sourceUnitId'] for i in range(low, high + 1)],
-                                 'seconds': round(end - start, 3)},
-                        'listeners': [{'name': row['listener'], 'model': row['model'], 'heardClip': row['text'],
-                                       'heardForUnit': row['unitWindow'],
-                                       'similarityToFrozen': row['similarityToFrozen'],
-                                       'agreesWithFrozen': row['agreesWithFrozen'],
-                                       'unitBoundedByNeighbours': row['bounded'],
-                                       'boundary': row['boundary']} for row in heard]}
+            question = _question(units, index, independence, heard)
             result, request = adjudicator.decide(uid, question)
             verdict = _checked_answer(result, frozen, heard)
             decided_by = 'model'
@@ -838,11 +849,15 @@ def validate_receipt(receipt: Any, *, source: dict[str, Any] | None = None, anch
     adjudicated ``source``/``anchor`` or the media hash are supplied, its
     bindings must be theirs: a stale or synthetic receipt for other inputs
     is refused before any patch of Layer 1 or any repair note is admitted.
-    A model-decided row is accepted only with ``cache`` (the adjudicator's
-    request cache, ``<out-dir>/cache``): its verdict is derived again from
-    the hash-bound response the row names, so an edited decision is refused."""
-    _require(isinstance(receipt, dict) and receipt.get('schemaVersion') == SCHEMA
+    In a v2 receipt a model-decided row is accepted only with ``cache`` (the
+    adjudicator's request cache, ``<out-dir>/cache``): its verdict is derived
+    again from the hash-bound response the row names, so an edited decision is
+    refused, and with ``anchor`` the cached question must be the one this
+    receipt and anchor ask. A v1 receipt was written before that contract and
+    keeps its rules: its model rows name a request, nothing more is checked."""
+    _require(isinstance(receipt, dict) and receipt.get('schemaVersion') in (SCHEMA_V1, SCHEMA)
              and receipt.get('decidedByRole') == ROLE and receipt.get('humanApproval') is False, 'receipt_schema')
+    current = receipt['schemaVersion'] == SCHEMA
     version, implementation = receipt.get('version'), receipt.get('implementationSha256')
     _require(isinstance(version, str) and isinstance(implementation, str) and len(implementation) == 64
              and receipt.get('decidedBy') == f'source_meaning_machine_adjudication {version} {implementation[:16]}',
@@ -853,10 +868,14 @@ def validate_receipt(receipt: Any, *, source: dict[str, Any] | None = None, anch
              and isinstance(media, dict) and isinstance(media.get('sha256'), str)
              and type(media.get('sizeBytes')) is int and isinstance(media.get('offsetSeconds'), (int, float)),
              'receipt_bindings')
-    # Receipts written before the budget contract carry no ``budget``; they read as unrecorded, like a
-    # cache-only run's ``null``. A present record must be an authorization identity this module could have
-    # written: every field is checked, not only the key set and the schema string.
-    _require(receipt.get('budget') is None or _is_budget_identity(receipt['budget']), 'receipt_budget')
+    # A v2 receipt always records its budget: ``null`` for a cache-only run, otherwise an authorization
+    # identity this module could have written (every field is checked, not only the key set and the schema
+    # string). A v1 receipt was written before the budget contract and carries none.
+    if current:
+        _require('budget' in receipt and (receipt['budget'] is None or _is_budget_identity(receipt['budget'])),
+                 'receipt_budget')
+    else:
+        _require('budget' not in receipt, 'receipt_budget')
     listeners, independence = receipt.get('listeners'), receipt.get('listenerIndependence')
     _require(isinstance(listeners, list) and listeners
              and all(isinstance(row, dict) and isinstance(row.get('name'), str) and isinstance(row.get('model'), str)
@@ -868,9 +887,11 @@ def validate_receipt(receipt: Any, *, source: dict[str, Any] | None = None, anch
     _require(independence == listener_independence([row['model'] for row in listeners],
                                                    independence.get('sourceAsrModel')), 'receipt_listeners')
     names = sorted(row['name'] for row in listeners)
+    models = {row['name']: row['model'] for row in listeners}
     adjudicator, units = receipt.get('adjudicator'), receipt.get('units')
     _require(isinstance(units, list) and units, 'receipt_units')
     seen: set[str] = set()
+    asked: dict[str, dict[str, Any]] = {}
     for row in units:
         _require(isinstance(row, dict) and isinstance(row.get('sourceUnitId'), str) and row['sourceUnitId'] not in seen
                  and isinstance(row.get('frozenText'), str) and row.get('decision') in DECISIONS
@@ -884,6 +905,8 @@ def validate_receipt(receipt: Any, *, source: dict[str, Any] | None = None, anch
                  and all(isinstance(h.get('unitTokens'), list) and isinstance(h.get('bounded'), bool)
                          and isinstance(h.get('agreesWithFrozen'), bool) and isinstance(h.get('text'), str)
                          for h in heard), 'receipt_unit_hearings')
+        # A v2 hearing names the model of the listener it belongs to; the cached question carries it.
+        _require(not current or all(h.get('model') == models[h['listener']] for h in heard), 'receipt_unit_hearings')
         # Agreement is a fact about the words heard, not a stored flag.
         frozen_tokens = tokens(row['frozenText'])
         _require(all(h['agreesWithFrozen'] == (h['unitTokens'] == frozen_tokens) for h in heard),
@@ -891,8 +914,9 @@ def validate_receipt(receipt: Any, *, source: dict[str, Any] | None = None, anch
         by_name = {h['listener']: h for h in heard}
         if row['decidedBy'] == 'model':
             _require(isinstance(adjudicator, dict) and isinstance(row.get('request'), dict), 'receipt_decision_evidence')
-            _require(cache is not None, 'receipt_model_response_missing')
-            _verify_model_verdict(row, adjudicator, cache, frozen_tokens)
+            if current:
+                _require(cache is not None, 'receipt_model_response_missing')
+                asked[row['sourceUnitId']] = _verify_model_verdict(row, adjudicator, cache, frozen_tokens)
         else:
             _require(row['decision'] == 'transcript_confirmed' and independence['independent']
                      and all(h['agreesWithFrozen'] and h['bounded'] for h in heard), 'receipt_decision_evidence')
@@ -936,6 +960,23 @@ def validate_receipt(receipt: Any, *, source: dict[str, Any] | None = None, anch
                 window = locate_unit(before, frozen_tokens, after, h['text'])
                 _require(window['tokens'] == h['unitTokens'] and window['bounded'] == h['bounded'],
                          'receipt_unit_hearings')
+                if current:
+                    _require(window == {'text': h.get('unitWindow'), 'tokens': h['unitTokens'],
+                                        'similarity': h.get('similarityToFrozen'), 'bounded': h['bounded'],
+                                        'boundary': h.get('boundary')}, 'receipt_unit_hearings')
+            if not current:
+                continue
+            # The clip the row names is the anchor's, and the adjudicator was asked exactly what this
+            # receipt and anchor ask: a cache answered for another fixture's context, clip or hearings
+            # cannot vouch for this unit even when its raw transcripts match.
+            clip = row.get('clip')
+            _require(isinstance(clip, dict)
+                     and clip.get('sourceUnitIds') == [all_units[i]['sourceUnitId'] for i in range(low, high + 1)]
+                     and clip.get('windowStart') == float(all_units[low]['start'])
+                     and clip.get('windowEnd') == float(all_units[high]['end']), 'receipt_unit_not_in_anchor')
+            if row['decidedBy'] == 'model':
+                _require(asked[row['sourceUnitId']] == _question(all_units, index, independence, row['heard']),
+                         'receipt_model_question_changed')
     corrected_ids = [row['sourceUnitId'] for row in units if row['decision'] == 'transcript_corrected']
     return {'receiptSha256': receipt_sha256(receipt), 'decidedBy': receipt['decidedBy'], 'bindings': dict(bindings),
             'mediaSha256': media['sha256'], 'units': [row['sourceUnitId'] for row in units],
@@ -943,8 +984,11 @@ def validate_receipt(receipt: Any, *, source: dict[str, Any] | None = None, anch
 
 
 def _verify_model_verdict(row: dict[str, Any], adjudicator: dict[str, Any], cache: Path,
-                          frozen_tokens: list[str]) -> None:
-    """Reproduce a model-decided verdict from the hash-bound cached request/response the row names."""
+                          frozen_tokens: list[str]) -> dict[str, Any]:
+    """Reproduce a model-decided verdict from the hash-bound cached request/response the row names.
+
+    Returns the question the cached request asked, which the caller compares in
+    full with the one the receipt and anchor ask when the anchor is supplied."""
     from scripts import sermon_sentence_interpretation as contract
     from scripts.run_sentence_interpretation_models import _model_result
     request = row['request']
@@ -976,6 +1020,7 @@ def _verify_model_verdict(row: dict[str, Any], adjudicator: dict[str, Any], cach
         raise SourceAdjudicationError('receipt_model_response_changed') from exc
     verdict = _checked_answer(result, frozen_tokens, row['heard'])
     _require(all(row.get(key) == value for key, value in verdict.items()), 'receipt_verdict_not_from_model')
+    return question
 
 
 # ---------------------------------------------------------------- Layer 1 review

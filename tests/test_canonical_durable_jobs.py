@@ -169,6 +169,62 @@ class CanonicalDurableJobsTests(unittest.TestCase):
         self.assertEqual(before, self.files())
         self.assertEqual(view['nodes']['text.zh-Hans']['status'], 'reconciliation_required')
 
+    def with_notes(self, digest):
+        view = copy.deepcopy(self.base)
+        view['packageIdentities']['sourceMeaningNotes'] = digest
+        return view
+
+    def reopen(self, key, following, *, name=None):
+        folder = self.root / key
+        request, state = jobs._read(folder / 'request.json'), jobs._read(folder / 'state.json')
+        receipt = {'schemaVersion': subject.REOPEN_SCHEMA, 'jobId': key, 'requestSha256': jobs._digest(request),
+                   'stateSha256': jobs._digest(state), 'identity': request['identity'], 'nextIdentity': following,
+                   'configurationSha256': 'c' * 64, 'codeIdentitySha256': 'd' * 64,
+                   'repairLedgerHeadSha256': 'e' * 64, 'repairLedgerSequence': 2,
+                   'meaningNotesSha256': 'f' * 64, 'reopenedGroups': ['g1'], 'resolution': subject.REOPEN_RESOLUTION}
+        jobs._persist(folder / (name or subject.reopen_file(following)), receipt)
+        return receipt
+
+    def test_a_reopened_failed_job_yields_only_to_the_identity_its_receipt_names(self):
+        # Meaning notes are an input of the text job only; the other nodes keep their identities.
+        unit = 'text.zh-Hans'
+        views = {name: self.with_notes(name * 64) for name in 'bcd'}
+        idents = {name: subject.identity(view, self.run_id, unit) for name, view in views.items()}
+        idents['a'] = subject.identity(self.base, self.run_id, unit)
+        self.assertEqual(len({jobs._digest(value) for value in idents.values()}), 4)
+        self.assertEqual(subject.identity(views['b'], self.run_id, 'source'), subject.identity(self.base, self.run_id, 'source'))
+        first = self.persist_job('failed', ident=idents['a'])
+        node = subject.project(views['b'], self.root, self.run_id)['nodes'][unit]
+        self.assertEqual(node['reasonCode'], 'unknown_or_changed_identity_job')
+        self.reopen(first, idents['b'])
+        view = subject.project(views['b'], self.root, self.run_id)
+        self.assertEqual(view['nodes'][unit], self.base['nodes'][unit])
+        row = view['durableJobInspection']['jobs'][0]
+        self.assertEqual((row['status'], row['originalJobStatus'], row['supersededBy']),
+                         ('superseded', 'failed', jobs._digest(idents['b'])))
+        # Inputs no receipt named, or the failed job's own identity, block again.
+        for name, view_now in (('d', views['d']), ('a', self.base)):
+            with self.subTest(expected=name):
+                self.assertIn(subject.project(view_now, self.root, self.run_id)['nodes'][unit]['status'],
+                              {'reconciliation_required', 'blocked'})
+        # The reopened job fails too and is reopened toward newer notes: both yield along the chain.
+        second = self.persist_job('failed', ident=idents['b'])
+        self.assertEqual(subject.project(views['b'], self.root, self.run_id)['nodes'][unit]['reasonCode'],
+                         'failed_durable_job')
+        self.reopen(second, idents['c'])
+        view = subject.project(views['c'], self.root, self.run_id)
+        self.assertEqual(view['nodes'][unit], self.base['nodes'][unit])
+        self.assertEqual(sorted(row['status'] for row in view['durableJobInspection']['jobs']), ['superseded'] * 2)
+        # Notes that change again before a reopened job starts add a receipt; none is rewritten.
+        self.reopen(first, idents['d'])
+        self.assertEqual([row['status'] for row in subject.project(views['d'], self.root, self.run_id)
+                          ['durableJobInspection']['jobs'] if row['jobId'] == first], ['superseded'])
+        # A receipt filed under another identity, or beside a job that did not fail, is unbound evidence.
+        self.reopen(first, idents['c'], name=subject.reopen_file(idents['b']).replace('canonical-reopen-', 'x'))
+        self.reopen(first, idents['c'], name='canonical-reopen-' + 'f' * 64 + '.json')
+        self.assertEqual(subject.project(views['c'], self.root, self.run_id)['durableJobInspection']['diagnostics'],
+                         ['unreadable_or_unbound_canonical_job'])
+
     def test_completed_old_revision_cannot_claim_new_revision_complete(self):
         old = subject.identity(self.base, self.run_id, 'text.zh-Hans')
         old['inputIdentitySha256'] = 'd' * 64
