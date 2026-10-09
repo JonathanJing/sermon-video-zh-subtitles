@@ -16,11 +16,9 @@ iPhone Duo 外屏截图已生成并保留在本地素材中，但当前 App Stor
 
 ## 审核提交状态
 
-版本资料、审核信息、Build 58 及截图已准备完成。新建的正式审核提交仍为 `READY_FOR_REVIEW`，App Store 版本状态也为 `READY_FOR_REVIEW`，尚未进入 Apple 审核队列。
+2026-10-09 首次提交时，App Store Connect 拒绝操作：iOS 平台已有两项 `WAITING_FOR_REVIEW` 提交，触及并行提交上限。按用户授权撤回较旧的一项：2026-10-07 07:07 UTC 创建、关联版本字段为 1.26.10 的提交。苹果将其状态更新为 `COMPLETE`。较新的 2026-10-07 16:43 UTC 提交仍处于 `WAITING_FOR_REVIEW`，未被更改。
 
-2026-10-09 尝试提交时，App Store Connect 拒绝操作：iOS 平台当前已有两项 `WAITING_FOR_REVIEW` 提交，触及每个平台最多两项并行审核提交的上限。两项现存提交分别于 2026-10-07 16:43 UTC 与 07:07 UTC 创建，API 关联的审核版本字段为 1.26.16 与 1.26.10。新版本提交不会覆盖或取消它们。苹果说明同一平台可以同时有一个 App 版本审核和一个不含 App 版本的素材审核；当前两项仍占满平台并行提交额度。[审核提交概览](https://developer.apple.com/help/app-store-connect/manage-submissions-to-app-review/overview-of-submitting-for-review/)
-
-下一步需要等苹果现存提交结束后再提交 1.26.18，或由用户明确指定撤回其中一项以释放名额。本轮未撤回任何已有提交，也未宣称新版本已进入审核或已在商店上架。
+释放名额后，正式审核提交 `2931bfd0-bc17-4817-9528-b25d9379d21f` 于 2026-10-09 08:18:49 UTC 成功提交。App Store Connect 回读状态为 `WAITING_FOR_REVIEW`，版本 `1.26.18 (58)` 也为 `WAITING_FOR_REVIEW`。这确认苹果已收到提交并等待开始审核；尚未获批或上架。[审核状态说明](https://developer.apple.com/help/app-review/after-submitting-for-review/review-status)、[审核提交概览](https://developer.apple.com/help/app-store-connect/manage-submissions-to-app-review/overview-of-submitting-for-review/)
 
 ## 验证边界
 
