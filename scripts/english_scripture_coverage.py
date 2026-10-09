@@ -253,25 +253,56 @@ def _pair_order(tokens: list[str], members: tuple[str, str]) -> list[str]:
 
 
 _DIRECTION_MEMBERS = frozenset(_stem(word) for pair in DIRECTION_PAIRS for word in pair)
-_BINDING_SKIP = frozenset(_token(word) for word in STOPWORDS) | _DIRECTION_MEMBERS | NEGATIONS
-# How far back a direction word looks for what it places: "the sheep on his right hand" is three words.
-DIRECTION_BINDING_WINDOW = 4
+_PLACED_SKIP = frozenset(_token(word) for word in STOPWORDS) | _DIRECTION_MEMBERS | NEGATIONS
 
 
-def _direction_bindings(tokens: list[str], members: tuple[str, str]) -> dict[str, str]:
-    """The content word each member's first mention places: the nearest one before it within the window.
+def _placed_words(tokens: list[str], members: tuple[str, str]) -> dict[str, tuple[int, int]]:
+    """Each content word said exactly once, with its position and how many of the pair's mentions precede it.
 
-    "He will set the sheep on his right hand, but the goats on the left" places
-    ``sheep`` on the right and ``goat`` on the left. A member with no content word
-    shortly before it binds nothing."""
-    bound: dict[str, str] = {}
+    Two words separated by a mention of the pair have different counts. A word said
+    more than once is left out: which of its mentions a side places cannot be told."""
+    counts: dict[str, int] = {}
+    for token in tokens:
+        counts[token] = counts.get(token, 0) + 1
+    placed: dict[str, tuple[int, int]] = {}
+    mentions = 0
     for index, token in enumerate(tokens):
-        if token in members and token not in bound:
-            earlier = [word for word in tokens[max(0, index - DIRECTION_BINDING_WINDOW):index]
-                       if word not in _BINDING_SKIP and len(word) > 1]
-            if earlier:
-                bound[token] = earlier[-1]
-    return bound
+        if token in members:
+            mentions += 1
+        elif counts[token] == 1 and token not in _PLACED_SKIP and len(token) > 1:
+            placed[token] = (index, mentions)
+    return placed
+
+
+def _span(tokens: list[str], start: int, end: int, members: tuple[str, str]) -> str:
+    """Two words with the pair's mentions said between them: ``sheep right goat``."""
+    return ' '.join([tokens[start], *_pair_order(tokens[start + 1:end], members), tokens[end]])
+
+
+def _traded_places(verse_tokens: list[str], spoken_tokens: list[str], members: tuple[str, str]) -> list[str] | None:
+    """Two words a mention of the pair separates in both texts, said the other way round.
+
+    Whatever a side places sits on one side of its direction word, before it ("the
+    sheep on his right hand") or after it ("on his right hand ... the sheep"). Two
+    things the verse puts on different sides of a mention, said in the other order
+    and still on different sides, have traded places: "the goats standing on his
+    right hand, but the sheep standing on the left". The same things in the same
+    order, in whatever words or sentence shape ("on his right hand he will set the
+    sheep, and on his left the goats"), or brought to one side of every mention,
+    have not. Position cannot tell sentence structure apart, so a whole clause
+    moved across the direction word reads as traded too; that errs toward the
+    speaker's own words, never toward pinning an opposite reading. Returned as
+    ``[verse order, spoken order]`` with the mentions between the two words,
+    e.g. ``['sheep right goat', 'goat right sheep']``."""
+    verse, spoken = _placed_words(verse_tokens, members), _placed_words(spoken_tokens, members)
+    shared = sorted(set(verse) & set(spoken), key=lambda word: verse[word][0])
+    for index, earlier in enumerate(shared):
+        for later in shared[index + 1:]:
+            if verse[earlier][1] != verse[later][1] and spoken[later][0] < spoken[earlier][0] \
+                    and spoken[later][1] != spoken[earlier][1]:
+                return [_span(verse_tokens, verse[earlier][0], verse[later][0], members),
+                        _span(spoken_tokens, spoken[later][0], spoken[earlier][0], members)]
+    return None
 
 
 def reversed_directions(verse_tokens: list[str], spoken_tokens: list[str]) -> list[list[str]]:
@@ -283,7 +314,8 @@ def reversed_directions(verse_tokens: list[str], spoken_tokens: list[str]) -> li
     read the other way). Repeating the pair in the verse's order is not a turn.
     With the order kept, a reading that moves what the verse places on one side to
     the other ("the goats on his right hand, but the sheep on the left") is turned
-    too; it is recorded with the word each side places, as ``['sheep right', 'goat right']``."""
+    too; it is recorded with the two words that traded places and the mentions
+    between them, as ``['sheep right goat', 'goat right sheep']`` (see ``_traded_places``)."""
     turned = []
     for pair in DIRECTION_PAIRS:
         members = tuple(_stem(word) for word in pair)
@@ -298,15 +330,11 @@ def reversed_directions(verse_tokens: list[str], spoken_tokens: list[str]) -> li
             # the verse's order; said as "left ... right" it is turned.
             turned.append([verse[0], spoken[0]])
         elif len(set(verse)) == 2:
-            # Same order: compare what each side places. The verse's two sides must place different
-            # words, and the reading must put one side's word on the other side.
-            placed, said = _direction_bindings(verse_tokens, members), _direction_bindings(spoken_tokens, members)
-            if len(placed) == 2 and placed[members[0]] != placed[members[1]]:
-                for member, other in (members, members[::-1]):
-                    heard = said.get(member)
-                    if heard is not None and heard != placed[member] and heard == placed[other]:
-                        turned.append([f'{placed[member]} {member}', f'{heard} {member}'])
-                        break
+            # Same order: compare what the sides place. Two words the pair separates in the verse,
+            # said the other way round and still separated, have changed sides.
+            traded = _traded_places(verse_tokens, spoken_tokens, members)
+            if traded is not None:
+                turned.append(traded)
     return turned
 
 

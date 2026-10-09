@@ -543,14 +543,31 @@ def _reopen_for_notes(request: dict, total_groups: int, entries: list[dict], val
     eligible = reopenable_groups(entries, meaning_notes)
     if not eligible:
         return None
-    report = _saved_report(Path(last["runDirectory"]), request, total_groups)
-    # The brief is derived from this report, so it must be the very report the stopped entry committed:
-    # a report edited afterwards could change failure codes or unit associations behind unchanged caches.
-    _require(json_sha256(report) == last["failureReportSha256"],
-             "Saved failure report differs from the one the stopped ledger entry committed")
-    failures = [failure for failure in report["failures"] if failure["translationGroupId"] in eligible]
-    _require(sorted(failure["translationGroupId"] for failure in failures) == sorted(eligible),
-             "Stopped groups are missing from the saved failure report")
+    # Each group's brief comes from the report of the round that last reported it. A group stopped long
+    # ago may have been carried through later rounds (notes arriving in batches, a reopened neighbour
+    # passing), so that report can sit in an earlier round than the head's.
+    reports, failures, origins = {}, [], {}
+    for group_id in eligible:
+        origin = next((entry for entry in reversed(entries) if entry["failureReportSha256"] is not None
+                       and any(row["translationGroupId"] == group_id for row in entry["groups"])), None)
+        _require(origin is not None, "Stopped groups are missing from the saved failure report")
+        if origin["sequence"] not in reports:
+            report = _saved_report(Path(origin["runDirectory"]), request, total_groups)
+            # The brief is derived from this report, so it must be the very report that entry committed:
+            # a report edited afterwards could change failure codes or unit associations behind unchanged caches.
+            _require(json_sha256(report) == origin["failureReportSha256"],
+                     "Saved failure report differs from the one the stopped ledger entry committed")
+            reports[origin["sequence"]] = report
+        failure = next((row for row in reports[origin["sequence"]]["failures"]
+                        if row["translationGroupId"] == group_id), None)
+        _require(failure is not None, "Stopped groups are missing from the saved failure report")
+        # The repair reuses the head round's caches; the failing cache it names must be the one reported.
+        _require(_cache_matches(Path(last["runDirectory"]) / failure["reviewerCache"], failure["reviewerCacheSha256"]),
+                 "A stopped group's failing cache changed after its failure report")
+        failures.append(failure)
+        origins[origin["sequence"]] = origin["failureReportSha256"]
+    order = [row["translationGroupId"] for row in last["stopped"]]
+    failures.sort(key=lambda failure: order.index(failure["translationGroupId"]))
     rows = [{"translationGroupId": failure["translationGroupId"], "sourceUnitIds": failure["sourceUnitIds"],
              "failureCodes": failure["failureCodes"],
              "fingerprint": fingerprint(value, failure["sourceUnitIds"], failure["failureCodes"]),
@@ -561,12 +578,14 @@ def _reopen_for_notes(request: dict, total_groups: int, entries: list[dict], val
     noted_units = sorted({unit for failure in failures for unit in failure["sourceUnitIds"] if unit in meaning_notes})
     return append_ledger(ledger_root, value, entries, {
         "runDirectory": last["runDirectory"], "routingVersion": ROUTING_VERSION, "repairBriefSha256": None,
-        "evidenceSha256": None, "failureReportSha256": last["failureReportSha256"],
+        "evidenceSha256": None, "failureReportSha256": None,
         "spend": {"calls": 0, "tokens": 0, "callsWithoutUsage": 0}, "groups": rows, "outcome": "repairing",
         "stopped": [row for row in last["stopped"] if row["translationGroupId"] not in eligible],
         "nextBrief": next_brief,
         "reopenedBy": {"evidence": "source_meaning_notes", "meaningNotesSha256": json_sha256(meaning_notes),
-                       "units": noted_units}})
+                       "units": noted_units,
+                       "failureReports": [{"sequence": sequence, "failureReportSha256": digest}
+                                          for sequence, digest in sorted(origins.items())]}})
 
 
 def drive(request: dict, total_groups: int, run_round: RoundRunner, out_root: Path,

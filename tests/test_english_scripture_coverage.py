@@ -274,13 +274,27 @@ class PinnedLibraryTests(unittest.TestCase):
         moved = verse.replace('sheep', 'GOATS').replace('goats', 'sheep').replace('GOATS', 'goats')
         self.assertNotEqual(moved, verse)
         measure = coverage.coverage(self.edition, 'MAT 25:33', moved)
-        self.assertEqual(measure['reversedDirections'], [['sheep right', 'goat right']])
+        self.assertEqual(measure['reversedDirections'], [['sheep right goat', 'goat right sheep']])
         self.assertTrue(measure['wholeByMeasure'], measure)
         self.assertFalse(measure['wholeVerse'])
-        # The same placements in other words, or a side said with nothing placed on it, are not a swap.
+        # A word said between each animal and its side does not hide the move, nor does placing them
+        # after their sides instead of before.
+        for reading, expected in (
+                ('He will set the goats standing on his right hand, but the sheep standing on the left.',
+                 ['sheep right goat', 'goat right sheep']),
+                ('On his right hand he will set the goats, and on his left the sheep.',
+                 ['sheep right hand', 'hand left sheep'])):
+            with self.subTest(reading=reading):
+                self.assertEqual(coverage.reversed_directions(coverage.all_tokens(verse),
+                                                              coverage.all_tokens(reading)), [expected])
+        # The same placements in other words or another sentence shape, or a side said with nothing
+        # placed on it, are not a swap.
         for reading in ('He will put the sheep at his right and the goats at his left.',
                         'The sheep go on the right hand, but the goats on the left.',
-                        'On the right, on the left: he will set the sheep and the goats.'):
+                        'On the right, on the left: he will set the sheep and the goats.',
+                        'On his right hand he will set the sheep, and on his left the goats.',
+                        'He will set on his right hand the sheep, but the goats on the left.',
+                        'He will set the sheep standing on his right hand, but the goats standing on the left.'):
             with self.subTest(reading=reading):
                 self.assertEqual(coverage.reversed_directions(coverage.all_tokens(verse),
                                                               coverage.all_tokens(reading)), [])

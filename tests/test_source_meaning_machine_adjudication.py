@@ -1020,6 +1020,39 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
                 FakeAdjudicator(cache, answer('undetermined')).decide('u3', json.loads(
                     json.loads(marker.read_text(encoding='utf-8'))['request']['payload']['messages'][1]['content']))
         question = json.loads(json.loads(marker.read_text(encoding='utf-8'))['request']['payload']['messages'][1]['content'])
+        # A started marker the ledger holds no response for may come from a run that sent the request directly,
+        # before this ledger existed: its outcome is unknown, so it is refused rather than sent again, whatever
+        # the cap allows, for Sol and the listener alike. Nothing is numbered or reserved and the marker stays.
+        from scripts import english_source_judge_cache as judge_cache
+        before = json.loads((self.out / machine.BUDGET_DIR / 'source-budget.json').read_text(encoding='utf-8'))
+        with mock.patch.dict(os.environ, route):
+            legacy = machine.SolAdjudicator(api_key='k', cache=cache, budget=budget, max_calls=5)
+            asked = dict(question, askedBy='an earlier run')
+            stage = f'source-meaning-{legacy.route_key}-u3'
+            legacy_request = {'schemaVersion': judge_cache.RUN_SCHEMA, 'stage': stage, 'payload': legacy.payload(asked)}
+            legacy_marker = cache.resolve() / 'cache' / f'{stage}-{contract.json_sha256(legacy_request)}.started.json'
+            legacy_marker.write_text(json.dumps({'requestSha256': contract.json_sha256(legacy_request),
+                                                 'request': legacy_request, 'status': 'started_response_unconfirmed'}),
+                                     encoding='utf-8')
+            with self.assertRaisesRegex(machine.SourceAdjudicationError, 'source_marker_outcome_unknown'):
+                legacy.decide('u3', asked)
+            fresh = wav_bytes(1.0)
+            relisten = machine.OpenAiTranscribeListener(cache=cache / 'openai', max_calls=1, budget=budget)
+            key = policies.canonical_sha256({'listener': relisten.name, 'audioSha256': hashlib.sha256(fresh).hexdigest(),
+                                             'identity': relisten.identity()})
+            (cache / 'openai' / key).mkdir()
+            (cache / 'openai' / key / 'started.json').write_text(json.dumps({'request': {
+                'audioSha256': hashlib.sha256(fresh).hexdigest(), 'listener': relisten.name}}), encoding='utf-8')
+            with self.assertRaisesRegex(machine.SourceAdjudicationError, 'source_marker_outcome_unknown'):
+                relisten.transcribe(fresh)
+        self.assertEqual(len(calls), 2)
+        self.assertTrue(legacy_marker.is_file())
+        self.assertEqual(relisten.cache.uncertain(), [key])
+        self.assertEqual(json.loads(listener.operations.read_text(encoding='utf-8')),
+                         {hashlib.sha256(clip).hexdigest(): 'asr.0001'})
+        self.assertEqual(json.loads((self.out / machine.BUDGET_DIR / 'source-budget.json').read_text(encoding='utf-8')), before)
+        legacy_marker.unlink()
+        shutil.rmtree(cache / 'openai' / key)
         # The authorization binds the selected OpenAI Project: under prod the same file is another run's, and
         # the ledger row of a dev answer refuses a prod request before any replay or dispatch.
         prod = {**route, 'SERMON_OPENAI_ENVIRONMENT': 'prod', 'OPENAI_PROJECT_ID': 'proj_prodOnly',
@@ -1063,8 +1096,13 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
             short = machine.OpenAiTranscribeListener(cache=tight_out / 'cache' / 'openai', max_calls=1, budget=tight)
             with self.assertRaisesRegex(ValueError, 'source_budget_exhausted'):
                 short.transcribe(clip)
+            # Sol reserves through the ledger before its cache writes a started marker, so a refused
+            # reservation leaves no marker to reconcile either.
+            with self.assertRaisesRegex(ValueError, 'source_budget_exhausted'):
+                machine.SolAdjudicator(api_key='k', cache=tight_out / 'cache', budget=tight).decide('u3', question)
         self.assertEqual(len(calls), 2)
         self.assertEqual(short.cache.uncertain(), [])
+        self.assertEqual(list(tight_out.glob('**/*.started.json')), [])
         # The CLI prints the binding an authorization must carry, without touching the output directory.
         fixture = self.root / 'fixture'
         fixture.mkdir()

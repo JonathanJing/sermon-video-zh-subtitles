@@ -294,22 +294,33 @@ class OpenAiTranscribeListener:
             judge_cache._atomic(self.operations, table)
         return table[audio_sha]
 
+    def _request(self, wav: bytes) -> tuple[bytes, str, dict[str, Any]]:
+        """The multipart body, its content type and the ledger identity of one clip's request."""
+        from scripts import machine_qc_audio_transports as transports
+        body, content_type = transports._multipart(self.fields, wav)
+        identity = {'schemaVersion': LISTEN_REQUEST_SCHEMA, 'model': self.model,
+                    'endpoint': transports.TRANSCRIBE_URL, 'audioSha256': _sha(wav),
+                    'inputDurationSeconds': round(_wav_seconds(wav), 3), 'requestBodySha256': _sha(body),
+                    'listener': self.identity()}
+        return body, content_type, identity
+
+    def _returned(self, wav: bytes) -> bool:
+        """Whether the ledger already holds this clip's returned response (read only; nothing is numbered)."""
+        known = self._operations_table().get(_sha(wav))
+        return known is not None and self.budget['store'].returned(known, self._request(wav)[2])
+
     def _send(self, wav: bytes) -> dict[str, Any]:
         from scripts import machine_qc_audio_transports as transports
         from scripts import sermon_transcription_request as transcription
         _require(self.budget is not None, 'budget_authorization_required')
-        body, content_type = transports._multipart(self.fields, wav)
+        body, content_type, identity = self._request(wav)
         audio_sha, seconds = _sha(wav), _wav_seconds(wav)
         # Reserved before dispatch, like the Layer 1 transcription: one request, its wall time and the
         # duration-billed minutes at the frozen planning price; never a token dimension.
         bounds = {'requests': 1, 'wallTimeMs': transcription.WALL_TIME_MS,
                   'costMicrousd': max(1, math.ceil(seconds / 60)) * transcription.MICROUSD_PER_MINUTE}
-        identity = {'schemaVersion': LISTEN_REQUEST_SCHEMA, 'model': self.model,
-                    'endpoint': transports.TRANSCRIBE_URL, 'audioSha256': audio_sha,
-                    'inputDurationSeconds': round(seconds, 3), 'requestBodySha256': _sha(body),
-                    'listener': self.identity()}
-        store, known = self.budget['store'], self._operations_table().get(audio_sha)
-        if known is None or not store.returned(known, identity):
+        store = self.budget['store']
+        if not self._returned(wav):
             # The cap counts new paid requests only: a response the ledger already holds for this clip
             # replays at no cost, so a resumed run with ``--max-api-calls 0`` still recovers it.
             _require(self.calls < self.max_calls, 'listener_call_cap_reached')
@@ -331,11 +342,16 @@ class OpenAiTranscribeListener:
             # returned response itself; a refused reservation leaves nothing to reconcile. The cache keeps
             # the returned text so the next run reads it without opening the ledger.
             request = {'audioSha256': audio_sha, 'listener': self.name}
+            started = (self.cache.root / key / 'started.json').exists()
+            # A started marker settles only from a response the ledger already holds. Without one the marker
+            # may come from a run that sent the request before this ledger existed, so its outcome is unknown:
+            # it is never sent again and waits for an operator to reconcile it.
+            _require(not started or self._returned(wav), 'source_marker_outcome_unknown')
             response = self._send(wav)
-            if (self.cache.root / key / 'started.json').exists():
+            if started:
                 # A run that died after the ledger kept the returned text but before this cache recorded it
-                # leaves the started marker. The ledger replayed (or refused) that operation above; bind its
-                # response to the marker instead of treating the paid clip as an unknown outcome for good.
+                # leaves the started marker. The ledger replayed that operation above; bind its response to
+                # the marker instead of treating the paid clip as an unknown outcome for good.
                 done = self.cache.reconcile(key, request, response)
             else:
                 done = self.cache.run(key, request, lambda: response)
@@ -505,28 +521,36 @@ class SolAdjudicator:
         request_hash = contract.json_sha256({'schemaVersion': judge_cache.RUN_SCHEMA, 'stage': stage,
                                              'payload': payload})
         path = self.cache.resolve() / 'cache' / f'{stage}-{request_hash}.json'
-        cached = path.is_file()
+        cached, caller = path.is_file(), self.caller
         if not cached:
             # A response the ledger already holds replays at no cost and is not a new call for the cap.
             replay = self.budget is not None and self.budget['store'].returned(self._ledger_operation(payload),
                                                                                  self._ledger_identity(payload))
+            marker = path.with_suffix('.started.json')
+            # A started marker settles only from a response the ledger already holds. Without one the marker
+            # may come from a run that sent the request directly, before this ledger existed, so its outcome is
+            # unknown: it is never sent again and waits for an operator to reconcile it.
+            _require(not marker.is_file() or self.budget is None or replay, 'source_marker_outcome_unknown')
             _require(replay or self.max_calls is None or self.calls < self.max_calls, 'adjudicator_call_cap_reached')
             # Refused before the cache writes its started marker, so an unbound run leaves nothing to reconcile.
             _require(self.caller is not _unbound_call, 'budget_authorization_required')
             if not replay:
                 self.calls += 1
-            marker = path.with_suffix('.started.json')
-            if marker.is_file() and self.budget is not None:
-                # A run that died after the ledger kept the returned response but before the cache file was
-                # written leaves this marker. The ledger is the paid-call record: it replays a returned response,
-                # refuses an unknown outcome, and a marker it never saw was never sent. Bind that response into
-                # the cache so the resumed run reads it instead of staying blocked on the marker.
+            if self.budget is not None and (marker.is_file() or self.caller == self._budgeted_call):
+                # The ledger is the paid-call record, so it reserves and dispatches (or replays) before the cache
+                # writes its marker: a refused reservation (bounds, authorization, session) leaves no marker
+                # behind, and every marker this run writes has the ledger's returned response beside it.
                 response = self._budgeted_call(self.api_key, payload)
-                judge_cache.reconcile_returned_response(marker_path=marker, response=response,
-                                                        expected_request_sha256=request_hash,
-                                                        requested_model=self.model)
+                if marker.is_file():
+                    # A run that died after the ledger kept the response but before the cache file was written
+                    # left this marker; bind the replayed response into the cache instead of staying blocked.
+                    judge_cache.reconcile_returned_response(marker_path=marker, response=response,
+                                                            expected_request_sha256=request_hash,
+                                                            requested_model=self.model)
+                else:
+                    caller = lambda _key, _payload: response  # noqa: E731
         result, request = judge_cache.cached_call(out=self.cache, stage=stage, payload=payload, api_key=self.api_key,
-                                                  requested_model=self.model, caller=self.caller)
+                                                  requested_model=self.model, caller=caller)
         return result, {**request, 'cached': cached, 'bounds': limits.request_bounds(payload, self.limits)}
 
 
