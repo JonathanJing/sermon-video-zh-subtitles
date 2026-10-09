@@ -1,0 +1,87 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261009-api-luna-concurrency",
+  "runs": [
+    {
+      "label": "run",
+      "source": "~/.codex/worktrees/api-luna-concurrency/sermon-video-zh-subtitles/artifacts/api-luna-concurrency-20261008/run",
+      "skipped": {}
+    },
+    {
+      "label": "run-02",
+      "source": "~/.codex/worktrees/api-luna-concurrency/sermon-video-zh-subtitles/artifacts/api-luna-concurrency-20261008/run-02",
+      "skipped": {
+        ".json": 137,
+        ".lock": 1,
+        ".jsonl": 1,
+        ".csv": 3
+      }
+    },
+    {
+      "label": "local-scheduler-tests",
+      "source": "~/.codex/worktrees/api-luna-concurrency/sermon-video-zh-subtitles/artifacts/api-luna-concurrency-20261008/local-scheduler-tests",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "run",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 316,
+      "truncated": false,
+      "sha256": "528a5a85a5ee4c9a01e5b3eac31ab2f333e8b80c257e7cfb9be005dc06bead84",
+      "redactions": {}
+    },
+    {
+      "run": "run-02",
+      "path": "accounting/operations.log",
+      "kind": "log",
+      "bytes": 62961,
+      "truncated": true,
+      "sha256": "fbece70d0765c00f58bc79a676fd0005e23d819e3775f5891d9d9345dc2cfd41",
+      "redactions": {}
+    },
+    {
+      "run": "run-02",
+      "path": "accounting/summary.json",
+      "kind": "whole",
+      "bytes": 163848,
+      "truncated": false,
+      "sha256": "fdbb338ec961dd8e445e612098ec598e1b0ca18bb8dabad7e85211ce184ccd45",
+      "redactions": {}
+    },
+    {
+      "run": "run-02",
+      "path": "api-transport-receipt.json",
+      "kind": "whole",
+      "bytes": 1581,
+      "truncated": false,
+      "sha256": "45b7b19ca2a3c5ba9a9a0b30698115110815a4441e45142bce6871aa8ec2b604",
+      "redactions": {}
+    },
+    {
+      "run": "run-02",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 314,
+      "truncated": false,
+      "sha256": "5c6b01a9699306a5f52656e5d8a21ad86ef2207db267a5235a203bed1a9bee56",
+      "redactions": {}
+    },
+    {
+      "run": "local-scheduler-tests",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 529,
+      "truncated": false,
+      "sha256": "107d9ec49a0799a197b26e3b0abf8df5499e296210eba0176c9fccbd068988b6",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
