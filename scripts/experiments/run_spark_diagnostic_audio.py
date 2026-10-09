@@ -29,7 +29,10 @@ from scripts import codex_layer2_diagnostic as diagnostic
 
 HOST = 'achillesjing@192.168.1.152'
 CHECKPOINT = '/home/achillesjing/dgx-spark-benchmark/results/sermon-voice-poc-20260905/checkpoints/checkpoint-epoch-0'
-ASR = '/home/achillesjing/sermon-speech-runtime/model-cache/hub/models--Qwen--Qwen3-ASR-0.6B/snapshots/5eb144179a02acc5e5ba31e748d22b0cf3e303b0'
+# HF snapshot files are symlinks into ../../blobs, so mount the whole model repo
+# directory and address the pinned snapshot inside it.
+ASR_HUB = '/home/achillesjing/sermon-speech-runtime/model-cache/hub/models--Qwen--Qwen3-ASR-0.6B'
+ASR_SNAPSHOT = '/asr-hub/snapshots/5eb144179a02acc5e5ba31e748d22b0cf3e303b0'
 MEDIA_TOOLS = '/home/achillesjing/sermon-mfa-runtime/env'
 BROKER = '/home/achillesjing/dgx-spark-benchmark/results/next-concurrency-605s-shared-gpu-20261005-r3'
 IMAGES = {'tts': 'sha256:e615da846c45d026d221bda0f168ae35022af18ac7ec4e5245d04fb62c314f14',
@@ -183,7 +186,7 @@ def docker_commands(args, session=None, hold=None):
               '-e', 'XDG_CACHE_HOME=/tmp/audio-cache', '-e', 'TRITON_CACHE_DIR=/tmp/audio-triton',
               '-e', 'TORCHINDUCTOR_CACHE_DIR=/tmp/audio-inductor',
               '-v', remote_stage + ':' + str(ROOT), '-v', CHECKPOINT + ':/checkpoint:ro',
-              '-v', ASR + ':/asr-model:ro', '-v', MEDIA_TOOLS + ':/media-tools:ro',
+              '-v', ASR_HUB + ':/asr-hub:ro', '-v', MEDIA_TOOLS + ':/media-tools:ro',
               '-v', BROKER + ':/shared-gpu', '-w', str(ROOT), '--entrypoint', '/usr/bin/python']
     if session is not None:
         common[2:2] = ['--label', 'tongxing.spark.session=' + session.environment['SPARK_EXCLUSIVE_SESSION_ID'],
@@ -201,7 +204,7 @@ def docker_commands(args, session=None, hold=None):
         '--out', str(output / 'tts'), '--batch-size', '8', '--replicas', '8', '--cpu-workers', '4',
         '--cpu-queue-units', '16', '--resource-policy', str(policy)]
     asr = common + [IMAGES['asr'], worker, 'asr', '--tts-manifest', str(output / 'tts' / 'manifest.json'),
-        '--model-path', '/asr-model', '--out', str(output / 'asr'), '--batch-size', '8',
+        '--model-path', ASR_SNAPSHOT, '--out', str(output / 'asr'), '--batch-size', '8',
         '--resource-policy', str(policy)]
     return [tts, asr]
 
@@ -273,7 +276,8 @@ def execute(args):
     require(proof['status'] == 'ready_for_explicit_dispatch', 'layer2_admission_required_before_spark_dispatch')
     relative(args.fixture); relative(args.layer2_out)
     require(args.registry.resolve() == ROOT / 'config/speaker-voice-registry.json', 'use_frozen_repository_registry')
-    relative(args.out)
+    # Anchor a cwd-relative --out before any job hold; later paths use relative_to(ROOT).
+    args.out = ROOT / relative(args.out)
     args.out.mkdir(parents=True, exist_ok=True)
     from scripts.experiments.replay_fixed_clip_local_models import save
     with (args.out / '.dispatch.lock').open('a') as lock:
@@ -360,7 +364,14 @@ def main(argv=None):
     args = parser.parse_args(argv)
     require(args.mode != 'execute' or (args.out is not None and args.remote_stage is not None),
             'execute_requires_out_and_frozen_remote_stage')
-    print(json.dumps(preflight(args) if args.mode == 'preflight' else execute(args), ensure_ascii=False))
+    if args.mode == 'preflight':
+        print(json.dumps(preflight(args), ensure_ascii=False))
+        return
+    # Mark completion on both paths so waiters need no polling of result files.
+    from scripts.outcome_marker import run_with_outcome
+    receipt = run_with_outcome(ROOT / relative(args.out) / 'outcome.json', 'spark-diagnostic-audio-execute',
+                               lambda: execute(args))
+    print(json.dumps(receipt, ensure_ascii=False))
 
 
 if __name__ == '__main__':

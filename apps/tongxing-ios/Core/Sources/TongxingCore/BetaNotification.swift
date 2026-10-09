@@ -29,9 +29,9 @@ public struct BetaNotification: Codable, Equatable, Sendable {
         try validate()
         guard enabled, betaChannel, locale == subscriptionLocale else { throw BetaNotificationError.notSubscribed }
         // The native dual-script reader is the first notification landing path.
-        guard catalog.schemaVersion == MultilingualCatalog.dualScriptSchemaVersion,
+        guard catalog.isDualScript,
               let page = catalog.pages.first(where: { $0.id == pageID }),
-              let target = page.targets[locale], target.contentStatus == "human_reviewed",
+              let target = page.targets[locale], target.isPublishedContent,
               target.releasePackageJsonSha256 == releaseSHA256 else { throw BetaNotificationError.staleRelease }
         return page
     }

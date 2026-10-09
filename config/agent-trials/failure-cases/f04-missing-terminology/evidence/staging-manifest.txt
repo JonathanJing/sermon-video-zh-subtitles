@@ -1,0 +1,4 @@
+# rsync include list used for manual staging to spark:/stage/repo
+scripts/
+schemas/
+config/

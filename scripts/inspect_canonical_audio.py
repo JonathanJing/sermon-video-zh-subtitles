@@ -18,7 +18,8 @@ PATH_FIELDS = {
     'clipVoiceCapability': 'clip_voice_capability',
 }
 REQUIRED = {'job', 'adapter', 'registry', 'clipTimelineMap', 'renderManifest', 'artifactRoot', 'package'}
-OPTIONAL = {'clipVoiceAuthorization', 'sourceVoiceAuthorization', 'clipVoiceCapability', 'humanReview', 'screening'}
+OPTIONAL = {'clipVoiceAuthorization', 'sourceVoiceAuthorization', 'clipVoiceCapability', 'humanReview', 'screening',
+            'machineWaiver'}
 
 
 def validate_configuration(config):
@@ -82,7 +83,7 @@ def inspect(root, config, upstream_paths, read_package, hashes, locale):
         screening = None
         if 'screening' in config:
             screening = read_package(root, config['screening'], hashes, prefix + 'screening')
-            handoff._validate_schema(screening, 'sermon-target-language-audio-screening-v1.schema.json', 'screening')
+            handoff._validate_schema(screening, handoff.audio_screening_schema_file(screening), 'screening')
         stage.validate_audio_screening_review(package, receipt, screening)
         human = package['humanReview']
         candidate = _read(paths['candidate'])
@@ -100,4 +101,20 @@ def inspect(root, config, upstream_paths, read_package, hashes, locale):
                 or any(receipt.get(key) != value for key, value in expected.items())):
             raise ValueError('audio_review_not_bound')
         result['listeningReviewSha256'] = hashes[prefix + 'humanReview']
+    if 'machineWaiver' in config:
+        # A machine listening waiver on the unreviewed producer package; never both bases.
+        if reviewed or 'humanReview' in config or 'screening' not in config:
+            raise ValueError('audio_waiver_requires_unreviewed_package_and_screening')
+        receipt = read_package(root, config['machineWaiver'], hashes, prefix + 'machineWaiver')
+        screening = read_package(root, config['screening'], hashes, prefix + 'screening')
+        handoff._validate_schema(screening, handoff.audio_screening_schema_file(screening), 'screening')
+        stage.validate_audio_screening_review(package, receipt, screening)
+        if (receipt.get('reviewKind') != 'machine_quality_waiver'
+                or receipt['targetLanguageCandidateJsonSha256'] != upstream['candidate']
+                or receipt['englishSourcePackageJsonSha256'] != upstream['source']
+                # Issued against the text waiver this lane actually releases, as Layer 4 requires.
+                or receipt.get('textWaiverJsonSha256') != upstream.get('human_receipt')):
+            raise ValueError('audio_waiver_not_bound')
+        result['listeningReviewSha256'] = hashes[prefix + 'machineWaiver']
+        result['listeningReviewKind'] = 'machine_quality_waiver'
     return result

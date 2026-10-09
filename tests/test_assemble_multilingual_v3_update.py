@@ -163,6 +163,12 @@ class AssembleMultilingualV3UpdateTests(unittest.TestCase):
         self.assertEqual(merged["defaultPageId"], "new-week")
         self.assertEqual({page["id"] for page in merged["pages"]}, {"old-week", "new-week"})
 
+    def test_rejects_base_that_carries_the_v4_catalog(self) -> None:
+        (self.base / "multilingual-v4.json").write_text("{}")
+        with self.assertRaisesRegex(ValueError, "four-layer seal"):
+            update.assemble(self.base, self.stage, self.manifest, self.root / "candidate")
+        self.assertFalse((self.root / "candidate").exists())
+
     def test_rejects_stage_mutation_after_manifest_validation(self):
         original = update.tempfile.mkdtemp
         changed = self.stage / "english-reference/new-week.json"

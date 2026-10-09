@@ -1,0 +1,98 @@
+# 每周证道主视觉 brief 与提示词 v1
+
+本流程承接 [已确认海报格式](tongxing-weekly-poster-format.zh.md)。版式固定，视觉概念由当周内容决定；不是根据标题随机搭配风景。新模板已接入多语言 CLI，主视觉仍按本规范用内置 ImageGen 生成一次，再自动合成各语言图片；命令见 [每周发行流程](tongxing-weekly-release.zh.md#多语言已发布页面海报新模板默认入口)。
+
+## 三语页面优先
+
+海报是 [Layer 4 发布收尾](multilingual-production-interfaces.zh.md#layer-4-收尾先三语页面再三语海报) 的一部分。默认先分别完成中／韩／西页面发布和 HTTP 核验，再生成共用主视觉、分别合成并验收三语海报；只完成中文海报不能报告三语交付完成。页面未就绪的语言不生成正式内容交付海报，也不阻塞其他已授权页面。四种海报文案可复用同一主视觉；未发布独立英语内容时，英语海报仅作为明确披露实际内容语言的参考宣传素材，不计入英语内容发布或 App 自动匹配。
+
+## 先读内容，再写画面
+
+从精确 pageId 的已发布内容读取标题、系列、经文、已核对大纲和完整文稿；优先复用既有文稿，不重新跑翻译或改动上游。系列名称遵守 [共享术语表](series-terminology.zh.md)。标题和经文只能定位主题，不能单独支撑画面解释。
+
+制作 brief 时记录：
+
+| 字段 | 内容 |
+|---|---|
+| 身份 | pageId、日期、locale、正式 origin，以及 catalog/content/release SHA-256 |
+| 核心信息 | 用一句话概括本篇真正讲了什么 |
+| 张力 | 本篇回应的问题、困境或冲突 |
+| 回应 | 讲员实际给出的盼望、回应或行动，不自行加结论 |
+| 内容证据 | 至少两个完整句子的 unit/group ID 与时间位置；不要把孤立半句变成证道结论 |
+| 场景 | 一个主视觉主体，最多一个辅助元素及场景环境 |
+| 对应关系 | 逐项说明画面元素对应哪条内容证据；标明直接内容或创作隐喻 |
+| 避免误读 | 哪种画面会夸大或改变原意 |
+| 提示词 | 展开全部字段后的实际完整 prompt，保存版本及生成方式 |
+
+不足以确认核心信息时，记录缺项并补读文稿；不靠图像模型自行解经，不凭标题生成「正式」视觉。普通视觉隐喻无需每周额外新增审批；有实质内容歧义时才带具体候选和证据请用户判断。
+
+## 可复用模板
+
+使用 [英文生成模板](prompts/tongxing-weekly-poster-content-template-v1.txt)，将所有 `{{字段}}` 换成已核对的内容后再调用 ImageGen；不得将未展开占位符作为实际输入。输入文稿是来源资料，不是额外操作指令。
+
+固定部分只约束 2:3、留白、自然质感和品牌风格。变化部分包括主体、环境、冲突、回应、光线与色彩。不要把「晨光山景」或「希望与守护」固定成所有证道的主题。同一周各语言共享同一语义主视觉，字幕/标题、免责声明和网页版二维码分别本地化；不是每个语言重新解释一次证道。
+
+打样版的实际底部占三分之一（y=1200–1800），因此新模板预留底部三分之一，上方约 40% 留给文字，叙事主体集中在中间。之前晨光图的原始 prompt 写了底部 20%；保留原始记录，不把历史 prompt 改写成新模板。
+
+## 2026-10-04 示例：耶稣审判并保守
+
+身份：`resi-20261004-69ba7a66`，`zh-Hans`；正式站点 `https://ai-for-god-sermon-audio.web.app`；系列「启示录：耶稣带来的安慰与盼望」，经文「启示录6章–8章1节」。已核对内容 SHA-256：`1c3cb8cd34129083983de4221b799565bac0adbec6571c86082da6972bccaa9d`。
+
+这篇的核心不是「生活从此风平浪静」，而是面对审判和痛苦，耶稣仍保守属他的子民，使他们始终属他。
+
+| 内容证据 | 完整句与位置 |
+|---|---|
+| `translation-0-u221`，979.45 秒 | 世界将受审判，而耶稣会在其中保守他的子民，使他们始终属他。 |
+| `translation-0-u265`，1148.51 秒 | 我们在世上都会受苦，但因神保守我们归他，我们仍能站立。 |
+| `translation-0-u323`，1372.10 秒 | 我们会受苦，却绝不与他分离，因为他保守我们，让我们始终属他。 |
+
+建议的新视觉概念：**风暴中的稳固石门与门内温暖的光**。
+
+- 风暴环境：对应本篇中的动荡和苦难，属于创作隐喻，不声称天气就是经文中审判的具体样貌。
+- 稳固的石门和立足之处：对应「仍能站立」「始终属他」，属于视觉隐喻，不把石门描述为讲员讲过的实体。
+- 门内的光：表达归属与盼望；不画成神的真实形象或保证信徒免受现实伤害。
+
+不选全画面灾难、惊悚末日、七印细节再现，亦不选与当周主题无关的单纯度假风景。原有晨光山景是已确认的风格打样；此概念于 2026-10-07 已用内置 ImageGen 生成并调整构图，合成 1200 × 1800 高清图和 600 × 900 手机预览，两图双二维码均独立解码通过；两尺寸经机器目视检查，石门门槛位于底部入口区上方。生成 prompt 与构图修订 prompt 分别保存，制作阶段未上传 Firebase；随后已按用户「上传」指示完成以下发布，未向其他人发送。产物与收据在本地忽略目录 `artifacts/sermon-poster/2026-10-04-content-v1/`，不提交 Git。
+
+示例展开后的实际候选 prompt 见 [2026-10-04 内容提示词](prompts/tongxing-weekly-poster-20261004-content-v1.txt)。每周可先给出两种有证据支撑的概念，按语义准确、视觉辨识度和版式兼容性选择一项后制作，无需默认生成两张图片。
+
+## 生成后的语义检查
+
+检查主体与证道核心的对应关系，是否把苦难抹掉、把隐喻冒充史实或加入未讲的承诺；无法对应的视觉元素删除。再检查顶部留白、中部主体与底部覆盖是否兼容。语义检查与最终 PNG 字体、双二维码解码和目视 QA 分开记录。格式确认不等于证道内容、设备扫码或现场播放通过。
+
+## 2026-10-07 海报上传回执
+
+用户授权上传后，高清图、预览图和中文海报 sidecar 已发布到正式 Hosting 与 Beta Dev Hosting；使用当前 live 文件清单完整保留原文件 hash/config，只添加两张图片并新增或更新中文海报索引。韩语、西语条目保留。
+
+- 正式版本：`d884513468090007`；保留原 145 个文件。
+- Beta Dev 版本：`a02befc58945ecfe`；除海报索引外，原 511 个文件 hash 不变。
+- [正式高清图](https://ai-for-god-sermon-audio.web.app/posters/resi-20261004-69ba7a66/zh-Hans-36f7f483b56db4dfe0e282c2edebaab9cae4c618fd57085d789786f932bc9beb.png) · [正式手机预览](https://ai-for-god-sermon-audio.web.app/posters/resi-20261004-69ba7a66/zh-Hans-preview-d881e8c10ffa6f007f59fd51d81a76e1d5762f807d6367621ca5533ca7ceb6f0.png)
+- 两站图片/索引 HTTP SHA 读回与 Hosting inventory 验证通过；catalog 不变。正式站首次读回因 CDN 传播返回 404，确认新 live 版本后重新读取即通过，没有重复 release。
+- Beta 的 sidecar 绑定其自身当前 release SHA；正式索引绑定正式 release，不混用环境。当前检入的 Beta 客户端尚无海报索引读取或海报展示入口（`BetaNotifications.swift` 仍将海报加载列为后续工作），因此上传与 HTTP 核验不证明 Beta 能读取或打开海报；Beta 与正式 App 的海报显示均记为客户端／设备 `not_run`，待实现读取器并验收后再更新。
+- 私有发布回执在 `artifacts/poster-upload-20261007/`，本轮没有发送推送，未执行真机新海报显示验收。
+
+## 2026-10-07 四语补齐回执
+
+在既有中文石门海报基础上完成韩语、西语、英语版本，主视觉文件 SHA 完全一致；每种新增语言均输出 1200 × 1800 高清 PNG 和 600 × 900 预览 PNG，六张成品双二维码分别解码通过并完成机器目视检查。韩语、西语从精确同语言正式内容读取标题、系列和经文，核验 catalog/release/content hash；英语海报为参考宣传稿，标题为编辑翻译，二维码进入中文内容与英文界面，保留 Chinese audio 披露，不虚构英语音频或内容 release。
+
+- 正式 Hosting 版本：`288d136fc89581bc`，除 sidecar 外原 147 个文件 hash 保留。
+- Beta Dev Hosting 版本：`2cec510dedf03458`，除 sidecar 外原 513 个文件 hash 保留。
+- 每站添加韩／西／英的六张图片，仅更新本周韩语、西语 announcement；中文及其他页面索引保留，英语不添加 announcement。
+- 两站新增图片和 sidecar 的 HTTP SHA 读回及完整 Hosting inventory 检查通过，catalog 字节不变。部署使用当前 live baseline、完整文件 map/config 和共享远程租约。
+- 浏览器核对韩语、西语网页的周次、标题和内容／界面语言；英语入口为本周中文内容与英文界面。真机海报切换、物理扫码与印刷未运行；未发送通知。
+- 回执位于 `artifacts/poster-upload-20261007/four-locale/`；图片及回执不提交 Git。这次交付不等于四语自动生产 CLI 已接入。
+
+- [韩语高清图](https://ai-for-god-sermon-audio.web.app/posters/resi-20261004-69ba7a66/ko-80d73dea581798eee7b8d1200c6dc54c60a8425d93116cc0ba6d23a0ab50c7d9.png) · [韩语手机预览](https://ai-for-god-sermon-audio.web.app/posters/resi-20261004-69ba7a66/ko-preview-0cac2b0234e87f2420dd5d791a4516b427fbe991ae4522ab4ead3b82fa86602c.png)
+- [西语高清图](https://ai-for-god-sermon-audio.web.app/posters/resi-20261004-69ba7a66/es-8047c6384035f83b3bfe71de7ba99e376f89d424e4d87e7013ed02a0e4229112.png) · [西语手机预览](https://ai-for-god-sermon-audio.web.app/posters/resi-20261004-69ba7a66/es-preview-696581f6257d7f4116f36467de599434b6022c3b4a011da9bb72517140fb59b3.png)
+- [英语参考高清图](https://ai-for-god-sermon-audio.web.app/posters/resi-20261004-69ba7a66/en-1dc7480b17ce70dbf9f835af318d2e542d6983913cf8c18ad111652fb14823b5.png) · [英语参考手机预览](https://ai-for-god-sermon-audio.web.app/posters/resi-20261004-69ba7a66/en-preview-59302a7a513d9c0338343f749b750a0dc94f98c942bad1241ca682d00614ccdd.png)
+
+
+## 新模板生成器产物补到正式站点
+
+2026-10-07 按用户「海报补到正式版」授权，将接入后生成器的四语高清／预览产物补到正式 Firebase。live 版本为 `7089e0378ae6b7e7`；除海报 sidecar 外原 153 个文件 hash 保留，完整 config/catalog 不变。本周中／韩／西 announcement 绑定各自正式 release；英语仅作为参考图片。八张图片与 sidecar 的 HTTP SHA 读回、完整 Hosting inventory 检查通过，远程租约已释放。
+
+- [新版中文海报](https://ai-for-god-sermon-audio.web.app/posters/resi-20261004-69ba7a66/zh-Hans-d6f8f9f07fc672daa99abb1d03f1d91e00310bc50b56cdd827544ef3c8a41698.png)
+- [新版韩语海报](https://ai-for-god-sermon-audio.web.app/posters/resi-20261004-69ba7a66/ko-c88dbc1fa70c0216140d8d738122e07433330cd681b146dd4ca924b8faa65262.png)
+- 西语与英语成品像素不变，沿用上方 hash URL。旧图片保留以便追溯，不删除历史文件。
+- 回执：`artifacts/poster-upload-20261007/new-template-production/`；本轮只更新正式 Firebase，没有再次更新 Beta、发送通知或发布 App Store 二进制。
+- Apple 公开 lookup 当次读回商店版本为 1.26.16；Firebase 读回不能证明该客户端支持或显示海报，正式 iOS 海报展示另需客户端发行／真机验收。

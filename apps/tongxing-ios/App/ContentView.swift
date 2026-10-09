@@ -255,7 +255,7 @@ struct ContentView: View {
                                     }
                                 }
                                 if model.selectedAudioLanguageName == nil,
-                                   model.selectedContentTarget?.audioStatus == "human_reviewed" {
+                                   model.selectedContentTarget?.hasPublishedAudio == true {
                                     if let error = model.publishedAudioError {
                                         HStack(spacing: 8) {
                                             Label(localization.text(error), systemImage: "exclamationmark.circle")
@@ -694,9 +694,32 @@ struct ContentView: View {
 
     @ViewBuilder private var publishedAudioLocaleLabel: some View {
         if let audioLanguage = model.selectedAudioLanguageName {
-            Text("\(localization.text("音频语言")) · \(audioLanguage)")
+            Text("\(localization.text("音频语言")) · \(audioLanguage)\(publishedAudioReviewSuffix)")
                 .font(.footnote.weight(.medium))
                 .accessibilityIdentifier("published-audio-locale")
+        }
+    }
+
+    /// Machine-checked audio passed a waiver, not a human listening review.
+    private var publishedAudioReviewSuffix: String {
+        model.selectedAudioIsMachineChecked ? " · " + localization.text("机器质检") : ""
+    }
+
+    /// A machine-checked locale never claims human approval: show the label and
+    /// the verified release's own disclosure next to the review statement.
+    @ViewBuilder private var machineCheckedNotice: some View {
+        if model.selectedContentIsMachineChecked {
+            VStack(alignment: .leading, spacing: 4) {
+                Label(localization.text("机器质检"), systemImage: "cpu")
+                    .font(.footnote.weight(.medium))
+                    .accessibilityIdentifier("machine-checked-label")
+                if let disclosure = model.selectedMachineCheckedDisclosure {
+                    sourceText(disclosure, language: model.selectedContentLocale)
+                        .font(.footnote).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("machine-checked-disclosure")
+                }
+            }
         }
     }
 
@@ -767,6 +790,7 @@ struct ContentView: View {
             Text(localization.text(notice)).font(.footnote).foregroundStyle(.secondary)
                 .accessibilityIdentifier("content-review-notice")
         }
+        machineCheckedNotice
         if model.isLoadingPublishedTranscript {
             ProgressView(localization.text("正在读取本周证道…"))
         } else if let error = model.publishedTranscriptError {
@@ -1167,11 +1191,12 @@ private struct TargetLanguageSheet: View {
     }
 
     private func capabilitySummary(_ target: PageTarget) -> String {
-        var values = [localization.text(target.audioStatus == "human_reviewed" ? "文字" : "仅文字")]
+        var values = [localization.text(target.hasPublishedAudio ? "文字" : "仅文字")]
         if target.capabilities.contains(.captions) { values.append(localization.text("字幕")) }
-        if target.audioStatus == "human_reviewed" { values.append(localization.text("音频")) }
+        if target.hasPublishedAudio { values.append(localization.text("音频")) }
         if target.capabilities.contains(.download) { values.append(localization.text("可下载")) }
         if target.contentStatus == "machine_reviewed" { values.append(localization.text("Dev 候选 · 仅机器审核")) }
+        if target.isMachineChecked { values.append(localization.text("机器质检")) }
         return values.joined(separator: " · ")
     }
 }
@@ -1486,9 +1511,20 @@ private struct OutlineSheet: View {
     private var review: String {
         if let week = model.selectedWeek { return week.contentReview ?? localization.text("AI 整理，供个人跟读参考") }
         if let transcript = model.currentPublishedTranscript {
-            return localization.text(transcript.contentStatus == "human_reviewed" ? "内容已人工审核" : "机器审核候选，尚未人工放行")
+            switch transcript.contentStatus {
+            case "human_reviewed": return localization.text("内容已人工审核")
+            // A machine quality waiver is never a human approval.
+            case "machine_checked": return localization.text("机器质检 · 未经人工审核")
+            default: return localization.text("机器审核候选，尚未人工放行")
+            }
         }
         return localization.text("以当前发布内容为准")
+    }
+
+    /// The verified release's disclosure for a machine-checked locale.
+    private var machineCheckedDisclosure: String? {
+        guard model.selectedWeek == nil else { return nil }
+        return model.selectedMachineCheckedDisclosure
     }
 
     private var reviewedStudies: ReviewedStudyResources? {
@@ -1563,6 +1599,12 @@ private struct OutlineSheet: View {
                         }
                         }
                         Text(review).font(.caption).foregroundStyle(.secondary)
+                        if let disclosure = machineCheckedDisclosure {
+                            sourceText(disclosure, language: model.selectedContentLocale)
+                                .font(.caption).foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .accessibilityIdentifier("sermon-study-machine-checked-disclosure")
+                        }
                         Button(localization.text("完成")) { dismiss() }
                             .buttonStyle(.bordered).frame(minHeight: 44)
                             .accessibilityIdentifier("close-sermon-study-bottom")

@@ -23,12 +23,17 @@ class DocsChangeGateTests(unittest.TestCase):
             "docs/diagrams/four-layer-production-workflow.svg",
             "docs/diagrams/diagram-specs.json",
             "docs/assets/firebase-production.jpg",
+            "docs/reports/runs/20261008-e2e/manifest.json",
+            "docs/reports/runs/20261008-e2e/run/timings.tsv",
+            "docs/reports/runs/20261008-e2e/run/upload.log",
         )
         rejected = (
             "apps/tongxing-ios/Assets.xcassets/icon.png",
             "experiments/sermon-dubbing-poc/web/README.md",
             "docs/diagrams/render_diagrams.py",
             "docs/schema.json",
+            "docs/reports/20261005-receipt.json",
+            "docs/reports/runs/20261008-e2e/run/helper.py",
             ".github/workflows/python-tests.yml",
         )
         for path in allowed:

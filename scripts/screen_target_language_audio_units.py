@@ -32,7 +32,11 @@ except ImportError:
     import dev_audio_test_receipts as dev_receipts
 
 
-SCHEMA = "sermon-target-language-audio-screening-v1"
+# v2 records the ASR runtime settings behind every score (v1 receipts stay readable).
+SCHEMA = "sermon-target-language-audio-screening-v2"
+# How a recognized text is scored against the expected text; part of the recorded runtime.
+SCORING = ("token-sequence-ratio-v3; short units (<4 tokens) must match exactly; "
+           "no negation, number or protected name may differ; numbers and names keep their order")
 MODEL = "Qwen/Qwen3-ASR-0.6B"
 BATCH_SIZES = (1, 2, 4, 8)
 
@@ -77,6 +81,136 @@ def tokens(value: str, locale: str) -> list[str]:
     return re.findall(r"[^\W_]+", folded, flags=re.UNICODE)
 
 
+# A dub that drops or changes one of these reverses or alters its claim while
+# the token ratio stays high ("not" in 13 words still scores 0.96), so an ASR
+# difference that touches one never passes on the ratio alone.
+NEGATIONS = {"en": ("no", "not", "never", "neither", "nor", "without", "cannot"),
+             "zh-Hans": ("不", "没", "沒", "别", "未", "非", "无", "勿", "否"),
+             "ko": ("아니", "않", "안", "못", "없"),
+             "es": ("no", "ni", "nunca", "jamás", "jamas", "tampoco", "nadie", "nada", "ningún", "ningun",
+                    "ninguno", "ninguna", "sin")}
+ZH_NUMERALS = "〇零一二两三四五六七八九十百千万亿"
+ES_NUMBERS = frozenset((
+    "cero", "uno", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho", "nueve", "diez", "once", "doce",
+    "trece", "catorce", "quince", "dieciséis", "dieciseis", "diecisiete", "dieciocho", "diecinueve", "veinte",
+    "treinta", "cuarenta", "cincuenta", "sesenta", "setenta", "ochenta", "noventa", "cien", "ciento",
+    "doscientos", "trescientos", "cuatrocientos", "quinientos", "seiscientos", "setecientos", "ochocientos",
+    "novecientos", "mil", "millón", "millon", "millones"))
+
+
+def key_word(tokens: list[str], locale: str) -> bool:
+    """Whether these tokens hold a negation or a number (Korean spelled numbers are not covered)."""
+    joined = "".join(tokens)
+    if any(char.isdigit() for char in joined):
+        return True
+    if locale in {"zh-Hans", "ko"}:
+        return (any(marker in joined for marker in NEGATIONS.get(locale, ()))
+                or locale == "zh-Hans" and any(char in ZH_NUMERALS for char in joined))
+    return any(token in NEGATIONS.get(locale, ()) or token in ES_NUMBERS
+               or locale == "es" and token.startswith("veinti") for token in tokens)
+
+
+def _korean_spans(text: str, forms, *, sino: bool = False) -> list[tuple[int, int]]:
+    from scripts.language_review_plugins import auto_qc_text_common as rules
+    found = sorted((match.start(), -len(form)) for form in forms
+                   for match in re.finditer(rules._ko_pattern(form, sino=sino), text))
+    spans, end = [], -1
+    for start, negative_length in found:
+        if start >= end:  # The longest form wins where two overlap.
+            end = start - negative_length
+            spans.append((start, end))
+    return spans
+
+
+def _korean_native_forms() -> list[str]:
+    from scripts.language_review_plugins import auto_qc_text_common as rules
+    return [form for number in range(1, 100) for form in rules.korean_native(number)]
+
+
+def korean_native_numbers(text: str) -> list[str]:
+    """The native-number forms in ``text``, in reading order."""
+    return [text[start:end] for start, end in _korean_spans(text, _korean_native_forms())]
+
+
+def korean_number_spans(text: str) -> list[tuple[int, int]]:
+    """Spoken Korean quantities in ``text``, in reading order, read as text QC reads them:
+    native forms (두 사람, 스무 살) and Sino forms up to 999 (이십 년, 삼장). A bare
+    one-syllable Sino form counts only attached to its counter, so 이 사람 is not a number."""
+    from scripts.language_review_plugins import auto_qc_text_common as rules
+    native = _korean_spans(text, _korean_native_forms())
+    sino = _korean_spans(text, {rules.korean_sino(number) for number in range(1, 1000)}, sino=True)
+    return sorted({*native, *(span for span in sino
+                              if not any(start < span[1] and span[0] < end for start, end in native))})
+
+
+def protected_text_agrees(expected: str, recognized: str, locale: str) -> bool:
+    """Check whole numeral forms and names that cannot be identified from a partial diff."""
+    from scripts.language_review_plugins import auto_qc_text_common as rules
+    left, right = (unicodedata.normalize("NFC", rules._fold(text)) for text in (expected, recognized))
+    if locale == "en" and len(re.findall(r"\b[a-z]+n['’]t\b", left)) != len(re.findall(r"\b[a-z]+n['’]t\b", right)):
+        return False
+    if locale in {"zh-Hans", "ko", "es"}:
+        def citations(text):
+            if locale == "ko":
+                # Keep raw Sino numeral groups: accent folding decomposes Hangul.
+                return [match.groups() for match in rules._KO_CITATION.finditer(text)]
+            return [(book, chapter, verse) for book, chapter, verse, _ in rules.book_citations(text, locale)]
+        if citations(expected) != citations(recognized):
+            return False
+    if locale == "en" and rules.english_numbers(expected) != rules.english_numbers(recognized):
+        return False
+    if locale == "ko":
+        counters = "|".join(rules._KO_COUNTERS)
+        pattern = r"(?<![가-힣])[영공일이삼사오육칠팔구십백천만억]+(?=\s*(?:" + counters + r")|\s|$)"
+        if re.findall(pattern, left) != re.findall(pattern, right):
+            return False
+        # In order: 두 아들과 세 딸 heard as 세 아들과 두 딸 keeps every count.
+        if korean_native_numbers(left) != korean_native_numbers(right):
+            return False
+    if locale == "es":
+        # Un and una are usually articles, so a changed form (un/una) is ASR
+        # noise; losing or gaining one can still drop the quantity "one".
+        ones = r"(?<!\w)(?:uno|una|un)(?!\w)"
+        if len(re.findall(ones, left)) != len(re.findall(ones, right)):
+            return False
+    books = (rules._EN_BOOK_CODES if locale == "en" else rules._ES_BOOK_CODES if locale == "es"
+             else rules._KO_BOOK_CODES if locale == "ko" else rules._ZH_BOOK_CODES)
+    names = {key[-1] if isinstance(key, tuple) else key for key in books}
+    names.update({"en": ("Jesus", "God"), "es": ("Jesús", "Dios"),
+                  "ko": ("예수", "하나님"), "zh-Hans": ("耶稣", "神")}.get(locale, ()))
+    if locale in {"en", "es"}:
+        # The approved script supplies names; ASR capitalization is irrelevant.
+        names.update(term for term in re.findall(r"\b[A-ZÁÉÍÓÚÜÑ][a-záéíóúüñ]+", expected)
+                     if term.casefold() not in {"the", "he", "she", "we", "you", "they", "it", "this", "that",
+                                                "some", "let", "in", "on", "for", "during", "when", "if",
+                                                "el", "la", "los", "las", "un", "una", "él", "ella", "hoy", "en"})
+    pattern = "|".join(re.escape(unicodedata.normalize("NFC", rules._fold(name)))
+                       for name in sorted(names, key=len, reverse=True))
+    if locale in {"en", "es"}:
+        pattern = r"(?<!\w)(?:" + pattern + r")(?!\w)"
+    # Order matters too: exchanging two names preserves counts but changes who did what.
+    return re.findall(pattern, left) == re.findall(pattern, right)
+
+
+def score(expected: str, recognized: str, locale: str, min_similarity: float) -> tuple[float, list[dict], bool]:
+    """``(similarity, differences, passed)`` for one unit, as recorded in the receipt."""
+    expected_tokens, actual_tokens = tokens(expected, locale), tokens(recognized, locale)
+    matcher = difflib.SequenceMatcher(None, expected_tokens, actual_tokens, autojunk=False)
+    similarity = round(matcher.ratio(), 6)
+    differences = [{"kind": kind,
+                    "expected": expected_tokens[left_start:left_end],
+                    "recognized": actual_tokens[right_start:right_end]}
+                   for kind, left_start, left_end, right_start, right_end
+                   in matcher.get_opcodes() if kind != "equal"]
+    # Short units are more vulnerable to a high score hiding one material
+    # missing word, so require exact normalized ASR for them.
+    passed = (similarity >= min_similarity and (len(expected_tokens) >= 4 or not differences)
+              and not any(key_word(row["expected"], locale) or key_word(row["recognized"], locale)
+                          for row in differences)
+              and protected_text_agrees(expected, recognized, locale))
+    return similarity, differences, passed
+
+
 def screen(job: dict, manifest: dict, artifact_root: Path,
            transcribe: Callable[[Path, str], str] | None, *, model: str,
            model_revision: str, min_similarity: float = 0.88,
@@ -91,7 +225,7 @@ def screen(job: dict, manifest: dict, artifact_root: Path,
     job_hash, manifest_hash = identity.json_sha256(job), identity.json_sha256(manifest)
     original_job, original_manifest = job, manifest
     job, manifest = copy.deepcopy(job), copy.deepcopy(manifest)
-    require(job.get("schemaVersion") == speech.SPEECH_JOB_SCHEMA
+    require(job.get("schemaVersion") in speech.SPEECH_JOB_SCHEMAS
             and job.get("status") == "prepared_for_target_language_speech"
             and job.get("synthesisEligible") is True,
             "Formal synthesis-eligible speech job required")
@@ -193,18 +327,8 @@ def screen(job: dict, manifest: dict, artifact_root: Path,
         expected_hash = hashlib.sha256(unit["text"].encode("utf-8")).hexdigest()
         audio = row["audio"]
         recognized = recognized_units[index].strip()
-        expected_tokens, actual_tokens = tokens(unit["text"], locale), tokens(recognized, locale)
-        require(expected_tokens, f"Empty expected text: {group_id}")
-        matcher = difflib.SequenceMatcher(None, expected_tokens, actual_tokens, autojunk=False)
-        similarity = round(matcher.ratio(), 6)
-        differences = [{"kind": kind,
-                        "expected": expected_tokens[left_start:left_end],
-                        "recognized": actual_tokens[right_start:right_end]}
-                       for kind, left_start, left_end, right_start, right_end
-                       in matcher.get_opcodes() if kind != "equal"]
-        # Short units are more vulnerable to a high score hiding one material
-        # missing word, so require exact normalized ASR for them.
-        passed = similarity >= min_similarity and (len(expected_tokens) >= 4 or not differences)
+        require(tokens(unit["text"], locale), f"Empty expected text: {group_id}")
+        similarity, differences, passed = score(unit["text"], recognized, locale, min_similarity)
         results.append({
             "textGroupId": group_id,
             "targetTextSha256": expected_hash,
@@ -215,6 +339,13 @@ def screen(job: dict, manifest: dict, artifact_root: Path,
             "status": "pass" if passed else "requires_review",
         })
     status = "pass" if all(row["status"] == "pass" for row in results) else "requires_review"
+    # The normalized runtime behind every score, so a machine waiver can require the
+    # same primary ASR its calibration measured (the request identities stay unchanged).
+    asr_settings = {"protocol": "formal-back-asr-batch-v1", "model": model, "modelRevision": model_revision,
+                    "language": locale, "batchSize": batch_size, "maxNewTokens": 2048, "dtype": "bfloat16",
+                    "executionDevice": "cuda:0", "runtime": copy.deepcopy(inference_identity or {}),
+                    "implementationSha256": file_sha(Path(__file__)), "minSimilarity": min_similarity,
+                    "scoring": SCORING}
     receipt = {
         "schemaVersion": SCHEMA,
         "targetLocale": locale,
@@ -229,6 +360,8 @@ def screen(job: dict, manifest: dict, artifact_root: Path,
         "unitAudioSha256s": [row["audioSha256"] for row in results],
         "results": results,
         "humanListeningStatus": "pending",
+        "asrSettings": asr_settings,
+        "asrSettingsSha256": identity.json_sha256(asr_settings),
     }
     if batch_size != 1:
         receipt["transcriptionBatchSize"] = batch_size
@@ -277,6 +410,7 @@ def main(argv=None) -> None:
     except importlib.metadata.PackageNotFoundError:
         asr_version = "unavailable"
     inference_identity = {
+        "backend": "qwen-asr-local",
         "torchVersion": getattr(torch, "__version__", "unavailable"),
         "qwenAsrVersion": asr_version,
         "modelMetadataSha256s": {str(path.relative_to(args.model_path.resolve())): file_sha(path)

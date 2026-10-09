@@ -10,6 +10,7 @@ from dataclasses import asdict, dataclass
 from scripts.sermon_workflow_jobs import _digest
 
 VERSION = 'sermon-canonical-pipeline-v1'
+WAIVER_KIND = 'machine_quality_waiver'
 LOCALES = ('zh-Hans', 'ko', 'es')
 
 
@@ -85,9 +86,15 @@ def plan(spec, *, input_identity, observations, approvals):
         gate = approvals.get(ident, {})
         missing = [g for g in node['human_gates'] if not isinstance(gate, dict)
                    or not isinstance(gate.get(g), dict) or gate[g].get('identity') != binding
-                   or not _sha(gate[g].get('receiptSha256'))]
+                   or not _sha(gate[g].get('receiptSha256'))
+                   or gate[g].get('kind') not in (None, WAIVER_KIND)]
+        # A gate met by a machine quality waiver is satisfied by policy, not approved by a person.
+        waived = [g for g in node['human_gates'] if g not in missing and isinstance(gate, dict)
+                  and gate[g].get('kind') == WAIVER_KIND]
         observed = observations.get(ident, {})
         state = {'identity': binding, 'status': 'human_gate' if missing else 'ready', 'missingGates': missing}
+        if waived:
+            state['waivedGates'] = waived
         if isinstance(observed, dict) and observed.get('status') in {'queued', 'running', 'uncertain', 'failed'}:
             # Changed inputs cannot abandon an older job still needing review.
             state['status'] = ('reconciliation_required' if observed.get('identity') != binding else

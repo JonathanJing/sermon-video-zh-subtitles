@@ -64,6 +64,12 @@ class StrictBridgeTests(unittest.TestCase):
             candidate=approved, human_receipt=receipt, **self.kw)
         self.assertEqual(result['admissionStatus'], 'validated_only')
         self.assertEqual(result['executionAuthority'], 'none')
+        # A machine waiver cannot stand in for the human receipt the strict gate records.
+        with patch.object(handoff, 'validate_released_candidate',
+                          return_value={'textPolicy': handoff.MACHINE_TEXT_POLICY}):
+            with self.assertRaisesRegex(ValueError, 'strict_bridge_requires_human_receipt'):
+                bridge.validate_approved_chain(*self.f.args, self.revisions,
+                    candidate=approved, human_receipt=receipt, **self.kw)
         approved['groups'][0]['targetUtterances'][0] += ' changed'
         with self.assertRaisesRegex(ValueError, 'strict_bridge_public_candidate_changed'):
             bridge.validate_approved_chain(*self.f.args, self.revisions,

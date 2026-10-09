@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "sermon-run-outcome-v1",
+  "command": "codex-layer2-test",
+  "status": "failed",
+  "exitCode": 1,
+  "startedAt": "2026-10-08T01:22:10Z",
+  "endedAt": "2026-10-08T01:22:14Z",
+  "error": {
+    "type": "ValueError",
+    "message": "Diagnostic plugin identity changed"
+  }
+}

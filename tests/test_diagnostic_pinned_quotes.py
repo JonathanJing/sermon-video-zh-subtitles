@@ -1,10 +1,16 @@
 """Real validators/plugins with synthetic model replies; no provider calls."""
 import copy
+from contextlib import contextmanager
+import hashlib
+import subprocess
+import sys
 import json
 import unittest
 from unittest.mock import patch
 
 from scripts import codex_layer2_diagnostic as diagnostic
+from scripts import cuv_scripture
+from scripts import scripture_adjudication as adjudication
 from scripts import target_language_policy as policies
 from scripts import target_language_rule_preflight as preflight
 from scripts.language_review_plugins import diagnostic_pinned_quotes as quotes
@@ -18,7 +24,9 @@ class PinnedQuoteTests(unittest.TestCase):
         self.addCleanup(self.helper.doCleanups)
         h = self.helper
         first = h.anchor['sourceUnits'][0]
-        target = h.data.evidence['groups'][0]['targetUtterances'][0]
+        target = cuv_scripture.CuvLibrary.from_path().lookup('REV 4:2-3')['text'].split('，', 1)[1]
+        h.data.evidence['groups'][0]['targetUtterances'] = [target]
+        h.data.evidence['groups'][0]['coverage'][0]['targetText'] = target
         provenance = h.root / 'pending-local-target.json'
         provenance.write_text(json.dumps(h.data.evidence, ensure_ascii=False))
         self.bindings = {'schemaVersion': quotes.SCHEMA,
@@ -35,12 +43,133 @@ class PinnedQuoteTests(unittest.TestCase):
         self.plugin = h.root / 'diagnostic-pinned-plugin.py'
         h.policy = quotes.freeze_quote_plugin(h.source, h.anchor, h.plan, h.policy, self.bindings, self.plugin)
 
-    def freeze(self):
+    def receipt(self):
+        # Synthetic test receipt built from the pinned CUV text. It is never a human approval.
+        h = self.helper
+        text = cuv_scripture.CuvLibrary.from_path().lookup('REV 4:2-3')['text'].split('，', 1)[1]
+        return {'schemaVersion': adjudication.SCHEMA, 'targetLocale': 'zh-Hans',
+            'bindings': {'source.json': policies.canonical_sha256(h.source),
+                         'anchor.json': policies.canonical_sha256(h.anchor),
+                         'group-plan.json': policies.canonical_sha256(h.plan)},
+            'decision': 'approved', 'decidedBy': 'synthetic test reviewer', 'decidedByRole': 'human_reviewer',
+            'reviewedAt': '2026-10-08T00:00:00+00:00',
+            'candidates': [{'candidateId': 'test-quote-1', 'sourceUnitIds': [h.anchor['sourceUnits'][0]['sourceUnitId']],
+                'classification': 'partial_direct_quote', 'reference': 'REV 4:2-3', 'editionId': 'CUV', 'exactSentence': text}]}
+
+    def freeze(self, receipt=None):
         h = self.helper
         return diagnostic.freeze_fixture(h.source, h.anchor, h.policy, h.plan, self.plugin, h.fixture,
             authorization_ref='isolated test', code_commit='a' * 40, translator_model='gpt-6.1-sol',
             scripture_classification='contains_direct_quotations',
-            source_quotation_units=[h.anchor['sourceUnits'][0]['sourceUnitId']])
+            source_quotation_units=[h.anchor['sourceUnits'][0]['sourceUnitId']],
+            scripture_adjudication=receipt or self.receipt())
+
+    def mismatched_receipt(self, change):
+        value = self.receipt()
+        row = value['candidates'][0]
+        if change == 'reference':
+            row.update(reference='REV 3:16', exactSentence=cuv_scripture.CuvLibrary.from_path().lookup('REV 3:16')['text'])
+        elif change == 'text':
+            row.update(classification='partial_direct_quote', exactSentence=row['exactSentence'][:4])
+        elif change == 'classification':
+            row['classification'] = 'direct_quote'
+        else:
+            row.update(classification=change, reference=None, editionId=None, exactSentence=None)
+        return value
+
+    def test_mismatched_receipt_payload_refused_before_freezing(self):
+        for change in ('reference', 'text', 'classification', 'speaker_paraphrase', 'reference_only'):
+            with self.subTest(change=change), self.assertRaisesRegex(ValueError, 'payload differs|exact_sentence_mismatch'):
+                self.freeze(self.mismatched_receipt(change))
+            self.assertFalse(self.helper.fixture.exists())
+            self.assertEqual(self.helper.calls, [])
+
+    def test_matching_full_quote_and_split_parts_are_admitted(self):
+        h = self.helper
+        text = cuv_scripture.CuvLibrary.from_path().lookup('REV 3:15')['text']
+        bindings = copy.deepcopy(self.bindings)
+        quote = bindings['quotes'][0]
+        quote['reference'] = 'REV.3:15'
+        original = quote['parts'][0]
+        middle = len(original['englishExcerpt']) // 2
+        quote['parts'] = []
+        for start, end, target in [(0, middle, text[:4]), (middle + 1, original['englishEndOffset'], text[4:])]:
+            part = copy.deepcopy(original)
+            english = original['englishExcerpt'][start:end]
+            part.update(englishStartOffset=start, englishEndOffset=end, englishExcerpt=english,
+                        englishExcerptSha256=quotes.text_hash(english), targetText=target,
+                        targetTextSha256=quotes.text_hash(target))
+            quote['parts'].append(part)
+        provenance = h.root / 'full-quote-target.json'
+        provenance.write_text(json.dumps(text, ensure_ascii=False))
+        bindings['provenance'].update(artifactPath=str(provenance), artifactSha256=policies.file_sha256(provenance))
+        self.plugin = h.root / 'full-quote-plugin.py'
+        h.policy = quotes.freeze_quote_plugin(h.source, h.anchor, h.plan, h.policy, bindings, self.plugin)
+        receipt = self.receipt()
+        receipt['candidates'][0].update(classification='direct_quote', reference='REV 3:15', exactSentence=text)
+        wrong_classification = copy.deepcopy(receipt)
+        wrong_classification['candidates'][0]['classification'] = 'partial_direct_quote'
+        with self.assertRaisesRegex(ValueError, 'payload differs'):
+            self.freeze(wrong_classification)
+        self.freeze(receipt)
+        diagnostic.load_fixture(h.fixture)
+
+    def test_load_rechecks_payload_even_with_consistent_fixture_hashes(self):
+        self.freeze()
+        h = self.helper
+        manifest_path = h.fixture / 'fixture-manifest.json'
+        context_path = h.fixture / 'diagnostic-context.json'
+        for change in ('reference', 'text', 'speaker_paraphrase'):
+            value = self.mismatched_receipt(change)
+            data = (json.dumps(value, ensure_ascii=False, indent=2) + '\n').encode('utf-8')
+            (h.fixture / 'scripture-adjudication.json').write_bytes(data)
+            manifest = json.loads(manifest_path.read_text())
+            manifest['scriptureAdjudication']['sha256'] = hashlib.sha256(data).hexdigest()
+            manifest_path.write_text(json.dumps(manifest))
+            context = json.loads(context_path.read_text())
+            digest = policies.canonical_sha256(manifest)
+            context.update(runId=digest, runConfigSha256=digest, storeSha256=digest)
+            context_path.write_text(json.dumps(context))
+            with self.subTest(change=change), self.assertRaisesRegex(ValueError, 'payload differs'):
+                h.invoke()
+            self.assertEqual(h.calls, [])
+
+    def test_delayed_freezer_preserves_the_winning_fixture(self):
+        h = self.helper
+        original_lock = diagnostic.work_lock
+        snapshot = {}
+        @contextmanager
+        def delayed_lock(out):
+            # Another caller completes after our exists check, before lock acquisition.
+            with patch.object(diagnostic, 'work_lock', original_lock):
+                self.freeze()
+            snapshot.update({p.name: p.read_bytes() for p in h.fixture.iterdir()})
+            with original_lock(out):
+                yield
+        second = self.receipt()
+        second['decidedBy'] = 'another synthetic reviewer'
+        with patch.object(diagnostic, 'work_lock', delayed_lock), self.assertRaisesRegex(ValueError, 'new directory'):
+            self.freeze(second)
+        self.assertEqual(snapshot, {p.name: p.read_bytes() for p in h.fixture.iterdir()})
+        diagnostic.load_fixture(h.fixture)
+
+    def test_fixture_cli_accepts_receipt_json(self):
+        h = self.helper
+        argv = [sys.executable, '-m', 'scripts.codex_layer2_diagnostic']
+        for name, value in [('source', h.source), ('anchor', h.anchor), ('policy', h.policy),
+                            ('group-plan', h.plan), ('scripture-adjudication', self.receipt())]:
+            path = h.root / (name + '-input.json')
+            path.write_text(json.dumps(value, ensure_ascii=False), encoding='utf-8')
+            argv.extend(['--' + name, str(path)])
+        argv.extend(['--plugin', str(self.plugin), '--out', str(h.fixture),
+                     '--authorization-ref', 'synthetic test', '--code-commit', 'a' * 40,
+                     '--translator-model', 'gpt-6.1-sol',
+                     '--scripture-classification', 'contains_direct_quotations',
+                     '--source-quotation-unit', h.anchor['sourceUnits'][0]['sourceUnitId']])
+        result = subprocess.run(argv, capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('scriptureAdjudication', json.loads(result.stdout))
+        diagnostic.load_fixture(h.fixture)
 
     def test_complete_machine_chain_pending_citation_never_enters_formal(self):
         h = self.helper
@@ -68,7 +197,8 @@ class PinnedQuoteTests(unittest.TestCase):
             if change == 'provenance': bad['provenance']['status'] = 'approved'
             with self.subTest(change=change), self.assertRaises(ValueError):
                 quotes.validate_bindings(bad, request, h.policy, h.plan)
-        with self.assertRaisesRegex(ValueError, 'quotation annotation'):
+        # Without an adjudication receipt the freeze refuses before the annotation check.
+        with self.assertRaisesRegex(ValueError, 'scripture_adjudication_required'):
             diagnostic.freeze_fixture(h.source, h.anchor, h.policy, h.plan, self.plugin, h.fixture,
                 authorization_ref='test', code_commit='a' * 40, scripture_classification='contains_direct_quotations')
 

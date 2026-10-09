@@ -1,0 +1,1 @@
+scripts/experiments/local_model_session.py begin --host spark --mode preempt --owner haiku-round-20261007

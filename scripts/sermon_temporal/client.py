@@ -1,13 +1,14 @@
 """Request construction and duplicate-safe Temporal submission."""
+from __future__ import annotations
 from dataclasses import asdict
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-from temporalio.client import Client
-from temporalio.common import WorkflowIDConflictPolicy, WorkflowIDReusePolicy
+if TYPE_CHECKING:
+    from temporalio.client import Client
 
-from .contracts import REQUEST_SCHEMA, Request
+from .contracts import REQUEST_SCHEMA, Request, validate_configuration_profile
 from .local_io import file_sha, read_json
-from .workflows import SaturdayWorkflow
 
 
 def build_request(config_path: Path, *, profile: str, allow_execute=False,
@@ -19,13 +20,13 @@ def build_request(config_path: Path, *, profile: str, allow_execute=False,
         allow_execute=allow_execute, activity_timeout_seconds=activity_timeout_seconds,
         heartbeat_timeout_seconds=heartbeat_timeout_seconds)
     request.validate()
-    expected_schema = "sermon-temporal-fixture-v1" if profile == "fixture" else "sermon-temporal-operator-v1"
-    if config.get("schemaVersion") != expected_schema:
-        raise ValueError("Client profile does not match configuration schema")
+    validate_configuration_profile(config, profile)
     return request
 
 
 async def submit(client: Client, request: Request):
+    from temporalio.common import WorkflowIDConflictPolicy, WorkflowIDReusePolicy
+    from .workflows import SaturdayWorkflow
     request.validate()
     return await client.start_workflow(SaturdayWorkflow.run, request, id=request.workflow_id(),
         task_queue=request.task_queue(), id_reuse_policy=WorkflowIDReusePolicy.REJECT_DUPLICATE,
@@ -37,6 +38,7 @@ async def submit(client: Client, request: Request):
 
 async def submit_unified(client: Client, request):
     """Submit only an explicitly transferred run; never create another ledger."""
+    from temporalio.common import WorkflowIDConflictPolicy, WorkflowIDReusePolicy
     from .unified import UnifiedRequest, project_call
     from .contracts import QUEUE_PREFIX
     if not isinstance(request, UnifiedRequest):
