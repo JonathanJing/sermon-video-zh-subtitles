@@ -1,0 +1,42 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261008-env-l1-l4-mock",
+  "runs": [
+    {
+      "label": "env-validation-20261008-2203",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/local-environment-setup-9a27e4/artifacts/backend-four-layer-dry-run/env-validation-20261008-2203",
+      "skipped": {
+        ".json": 58,
+        ".wav": 7,
+        ".html": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "env-validation-20261008-2203",
+      "path": "backend/layer1/656608f8d781a26f3d594f0a173d214b821ef088781a0b992ede9c800e3a99fc/receipt.json",
+      "kind": "whole",
+      "bytes": 3356,
+      "truncated": false,
+      "sha256": "721548ab29ba276dd5ec9f8cf0223a67e1aed3b4aa15147460bfb6549cf6d039",
+      "redactions": {
+        "home_dir": 4
+      }
+    },
+    {
+      "run": "env-validation-20261008-2203",
+      "path": "backend/source/summary.json",
+      "kind": "whole",
+      "bytes": 360,
+      "truncated": false,
+      "sha256": "543c8fc2c79268ce744ceeb82f0c456291b126a486fb9381ed434d25f68609ba",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
