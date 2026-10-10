@@ -71,11 +71,13 @@ struct ContentView: View {
     @ObservedObject private var localization = AppLocalization.shared
     @ObservedObject var model: AppModel
     @ObservedObject private var playback: PlaybackController
+    @ObservedObject private var weeklyUpdates: WeeklyUpdates
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @ScaledMetric(relativeTo: .title2) private var readingSize: CGFloat = 26
+    @ViewState private var showingNotificationPoster = false
     @ViewState private var sheet: ListeningSheet?
     @ViewState private var returnToCurrent = UUID()
     @ViewState private var followsTranscriptPlayback = true
@@ -88,6 +90,7 @@ struct ContentView: View {
     init(model: AppModel) {
         self.model = model
         self.playback = model.playback
+        self.weeklyUpdates = model.weeklyUpdates
     }
 
     var body: some View {
@@ -109,8 +112,23 @@ struct ContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: .betaNotificationOpened)) { _ in
             sheet = nil
             showingPlaybackMore = false
+            Task {
+                if let catalog = model.multilingualCatalog {
+                    await model.notificationWeeklyUpdates.load(catalog: catalog, locale: model.selectedContentLocale, pageID: model.selectedPageID)
+                    if let item = model.notificationWeeklyUpdates.announcement {
+                        showingNotificationPoster = true
+                        weeklyUpdates.markSeen(item.deduplicationKey)
+                        sheet = .weeklyUpdate
+                    }
+                }
+            }
         }
         #endif
+        .task(id: model.weeklyUpdateIdentity) {
+            if let catalog = model.multilingualCatalog {
+                await weeklyUpdates.load(catalog: catalog, locale: model.selectedContentLocale)
+            }
+        }
         .task(id: model.publishedTranscriptSelectionKey) {
             await model.loadSelectedPublishedTranscript()
         }
@@ -189,6 +207,11 @@ struct ContentView: View {
                 return ScrollViewReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: verticalSizeClass == .compact ? 12 : 16) {
+                        WeeklyUpdateCard(updates: weeklyUpdates) { showingNotificationPoster = false; sheet = .weeklyUpdate }
+                        if weeklyUpdates.announcement != nil && !weeklyUpdates.isNew {
+                            Button(localization.text("本周海报"), systemImage: "doc.richtext") { showingNotificationPoster = false; sheet = .weeklyUpdate }
+                                .font(.footnote).accessibilityIdentifier("weekly-update-reopen")
+                        }
                         if model.selectedWeek == nil && model.selectedMultilingualPage == nil {
                             HStack { Spacer(); appLanguageMenu }
                         }
@@ -432,6 +455,9 @@ struct ContentView: View {
                 updateAlignmentFailurePresentation()
             }) { destination in
                 switch destination {
+                case .weeklyUpdate:
+                    WeeklyUpdateSheet(updates: showingNotificationPoster ? model.notificationWeeklyUpdates : weeklyUpdates, model: model)
+                        .presentationDetents([.large]).presentationDragIndicator(.visible)
                 case .weeks:
                     WeekSheet(model: model)
                         .environment(\.dynamicTypeSize, typeSize)
@@ -1072,7 +1098,7 @@ struct AlignmentControls: View {
 }
 
 private enum ListeningSheet: String, Identifiable {
-    case weeks, languages, precision, outline, about, video, locate
+    case weeks, languages, precision, outline, about, video, locate, weeklyUpdate
     var id: String { rawValue }
 }
 
