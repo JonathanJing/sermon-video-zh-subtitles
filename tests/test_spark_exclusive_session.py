@@ -438,3 +438,39 @@ def test_helper_argument_pattern_is_exact():
     for bad in ('from multiprocessing.resource_tracker import main;main(11); rm -rf ~',
                 'import os; os.system("x")', 'from multiprocessing.resource_tracker import main;main(x)'):
         assert not RESOURCE_TRACKER_ARGUMENT.match(bad)
+
+
+def planning_state(identity='a', active='active', container_running=True):
+    units = {name: {'identity': 'id-' + name, 'active': 'active', 'mainPid': 1} for name in UNITS}
+    return {'schemaVersion': 'tongxing-spark-exclusive-v1', 'sessionId': 'session', 'owner': 'owner', 'revision': 0,
+            'status': 'planning', 'updatedAt': '', 'events': [], 'jobs': {}, 'containerIds': ['c1'],
+            'operations': {'stop-unit:spark-api.service': {'status': 'not_started', 'at': ''}},
+            'snapshot': {'units': units, 'containers': [{'id': 'c1', 'identity': 'cid', 'running': True}]}}
+
+
+def planning_inventory(identity_override=None, active_override=None, container_running=True, container_identity='cid'):
+    units = {name: {'identity': 'id-' + name, 'active': 'active', 'mainPid': 1} for name in UNITS}
+    if identity_override: units['spark-api.service']['identity'] = identity_override
+    if active_override: units['spark-api.service']['active'] = active_override
+    return {'units': units, 'containers': [{'id': 'c1', 'identity': container_identity, 'running': container_running}]}
+
+
+def test_planning_session_with_no_effects_closes_without_touching_services(engine):
+    state = engine.close_without_effects(planning_state(), planning_inventory())
+    assert state['status'] == 'closed'
+    assert state['events'][-1]['event'] == 'closed_without_effects'
+
+
+def test_planning_session_rejects_changed_unit_identity(engine):
+    with pytest.raises(SessionError, match='planning_unit_changed'):
+        engine.close_without_effects(planning_state(), planning_inventory(identity_override='other'))
+
+
+def test_planning_session_rejects_changed_unit_state(engine):
+    with pytest.raises(SessionError, match='planning_unit_changed'):
+        engine.close_without_effects(planning_state(), planning_inventory(active_override='inactive'))
+
+
+def test_planning_session_rejects_changed_container(engine):
+    with pytest.raises(SessionError, match='planning_container_changed'):
+        engine.close_without_effects(planning_state(), planning_inventory(container_identity='changed'))
