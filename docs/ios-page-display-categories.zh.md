@@ -1,10 +1,10 @@
 # iOS 页面类别由 Firebase 目录驱动
 
-本变更将日期下方的类别作为目录页面的可选展示元数据。它不是内容审核状态，也不改变音频、字幕、来源、发布包及其 SHA-256。新增嵌套版本 `sermon-page-display-category-v1`；外层目录继续使用 `sermon-multilingual-catalog-v2` 或 `v3`，不改变现有播放器和生产层契约。
+本变更将日期下方的类别作为目录页面的可选展示元数据。它不是内容审核状态，也不改变音频、字幕、来源、发布包及其 SHA-256。新增嵌套版本 `sermon-page-display-category-v1`；外层目录继续使用 `sermon-multilingual-catalog-v2`、`v3` 或 `v4`，不改变现有播放器和生产层契约。
 
 ## 数据契约
 
-权威定义：[sermon-page-display-category-v1.schema.json](../schemas/sermon-page-display-category-v1.schema.json)。v2/v3 schema 内嵌相同定义，以兼容现有无需外部 resolver 的校验器；定向测试保证定义一致。
+权威定义：[sermon-page-display-category-v1.schema.json](../schemas/sermon-page-display-category-v1.schema.json)。v2/v3/v4 schema 内嵌相同定义，以兼容现有无需外部 resolver 的校验器；定向测试保证定义一致。
 
 在目录 `pages[]` 内添加可选 `displayCategory`：
 
@@ -56,7 +56,9 @@ python scripts/update_catalog_display_categories.py \
 python -m unittest discover -s tests -p test_update_catalog_display_categories.py -v
 ```
 
-工具校验输入和输出 v2/v3 schema，拒绝未知页面、重复 JSON 键、重复页面 ID、无效默认页面、无效标签以及已存在的输出文件。仅更新指定页面的 `displayCategory`，包括 `generatedAt`、页面顺序、targets 与所有哈希在内的其他数据保持不变；输出的目录文件 SHA-256 因展示元数据变化而改变。stdout 回执记录输入/输出哈希、页面 ID 和 `deployed: false`，不表示 Firebase 发布完成。
+工具校验输入和输出 v2/v3/v4 schema，拒绝未知页面、重复 JSON 键、非有限数值（NaN/Infinity）、重复页面 ID、无效默认页面、无效标签以及已存在的输出文件。仅更新指定页面的 `displayCategory`，包括 `generatedAt`、页面顺序、targets 与所有哈希在内的其他数据保持不变；输出的目录文件 SHA-256 因展示元数据变化而改变。stdout 回执记录输入/输出哈希、页面 ID 和 `deployed: false`，不表示 Firebase 发布完成。
+
+工具每次只处理一个目录文件，不自动生成或同步其他版本投影。部署同时存在 v4/v3 时，App 优先读取 v4；仅改 v3 不会更新有效 v4 的类别。应分别对当前 v4 和人审 v3 投影的共同页面使用相同类别更新（每份 updates 仅包含该目录已有页面），核对共同页面的类别一致、各自非类别数据与发布包哈希保持，再将两份候选纳入同一 Hosting 发布快照。v4 独有的机检页面不应加入人审 v3 投影。
 
 确认候选目录差异后，通过现有 Hosting 发布流程更新目录，并单独核实 HTTP 读取内容、缓存刷新和 App 显示。不要为标签变化重新生成证道或重签发布包。该 PR 不自动部署到 Dev 或 Production。
 

@@ -97,6 +97,8 @@ struct MultilingualCatalogTests {
         }
         let catalog = try MultilingualCatalog.decode(data)
         #expect(catalog.defaultPage.displayEdition(locale: "zh-CN") == "专题访谈")
+        #expect(catalog.defaultPage.displayEdition(locale: "ZH_hANS_cn") == "专题访谈")
+        #expect(catalog.defaultPage.displayEdition(locale: "EN_us") == "Special interview")
         #expect(catalog.defaultPage.displayEdition(locale: "en-US") == "Special interview")
         #expect(catalog.defaultPage.displayEdition(locale: "ko-KR") == "특별 인터뷰")
         #expect(catalog.defaultPage.displayEdition(locale: "es") == "Special interview")
@@ -122,6 +124,7 @@ struct MultilingualCatalogTests {
     @Test func remoteCategoryFailsClosedAndCannotLabelSimulationAsFormal() throws {
         for category: [String: Any] in [
             ["schemaVersion": "unknown-v2", "labels": ["en": "Archive"]],
+            ["schemaVersion": "sermon-page-display-category-v1", "labels": ["en": "Archive"], "unexpected": true],
             ["schemaVersion": "sermon-page-display-category-v1", "labels": ["zh-Hans": "正式播放版"]],
             ["schemaVersion": "sermon-page-display-category-v1", "labels": ["en": "   "]],
             ["schemaVersion": "sermon-page-display-category-v1", "labels": ["en": "line1\nline2"]],
