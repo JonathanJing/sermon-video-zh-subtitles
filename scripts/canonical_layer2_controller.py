@@ -203,7 +203,7 @@ def package_view(config):
             # Only this registered future output may be absent. An existing
             # invalid package is always validated and blocks the lane.
             effective['locales'][locale].pop('candidate', None)
-    view = packages.inspect_configuration(config.inspection_root, effective)
+    view = packages.inspect_configuration(config.inspection_root, effective, candidate_mode=config.candidate_mode)
     notes = (getattr(config, 'auto_repair', None) or {}).get('sourceMeaningNotes')
     if notes:
         # The meaning notes the repair loop reads are a Layer 1 input of every text job: new notes are

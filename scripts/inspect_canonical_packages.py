@@ -41,13 +41,13 @@ def _read_package(root, reference, hashes, key):
     return value
 
 
-def inspect(config_path):
+def inspect(config_path, *, candidate_mode='production'):
     path = _safe_path(Path(config_path).absolute())
     config = _read_package(path.parent, str(path), {}, 'configuration')
-    return inspect_configuration(path.parent, config)
+    return inspect_configuration(path.parent, config, candidate_mode=candidate_mode)
 
 
-def inspect_configuration(root, config):
+def inspect_configuration(root, config, *, candidate_mode='production'):
     """Inspect a trusted backend's effective config through the same gates."""
     root = _safe_path(Path(root).absolute())
     if not isinstance(config, dict) or not root.is_dir():
@@ -142,7 +142,7 @@ def inspect_configuration(root, config):
         text, audio = 'text.' + locale, 'audio.' + locale
         try:
             policy = _read_package(root, lane['policy'], hashes, 'policy.' + locale)
-            request = producer.prepare_request(source, anchor, policy)
+            request = producer.prepare_request(source, anchor, policy, candidate_mode=candidate_mode)
             if request['targetLocale'] != locale:
                 raise ValueError('policy_locale_mismatch')
         except (ValueError, TypeError, KeyError, OSError):
