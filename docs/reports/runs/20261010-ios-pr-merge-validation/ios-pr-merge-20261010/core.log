@@ -1,0 +1,51 @@
+Building for debugging...
+[1 / 5]
+[2 / 6] TongxingCore
+[3 / 7] TongxingCore
+[8 / 12] TongxingCore
+[12 / 16] TongxingCore
+[16 / 25] TongxingCoreTests-product
+[25 / 34] TongxingCoreTests-product
+[28 / 32] TongxingCoreTests-product
+[30 / 32] TongxingCoreTests-product
+Build complete! (4.19 sec)
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite MultilingualCatalogTests started.
+◇ Test unavailableAudioMayBindSameLocaleLayer3Package() started.
+◇ Test independentlyPublishedPagesKeepTheirOwnLocales() started.
+◇ Test devContentCandidateNeedsExplicitOptInAndExactPath() started.
+◇ Test remoteCategoryOverridesLegacyAndSurvivesBothCatalogProjections() started.
+◇ Test releasePackageRoutesOnlyToSameOriginPublishedPage() started.
+◇ Test productionReleaseV2RequiresSpokenScriptIdentity() started.
+◇ Test remoteCategoryFailsClosedAndCannotLabelSimulationAsFormal() started.
+◇ Test unavailableAudioCannotExposeAnAudioAsset() started.
+◇ Test sourceCategoriesPreserveKnownArchivesAndExplicitPodcastType() started.
+◇ Test publishedPageFingerprintRequiresExactSourceAndTrack() started.
+◇ Test catalogKeepsContentAndAudioCapabilitiesDistinct() started.
+➜ Test frozenPublishedCatalogDecodesInNativeClient() skipped.
+◇ Test dualScriptCatalogRoutesOnlyToVersionedReleases() started.
+◇ Test dualScriptReleaseKeepsDisplayAndSpokenBindingsDistinct() started.
+➜ Test frozenPublishedReleaseDecodesInNativeClient() skipped.
+◇ Test catalogRejectsLocaleKeyPathAndCapabilityMismatches() started.
+◇ Test devDualScriptPodcastCandidateAllowsWavOnlyWithExplicitOptIn() started.
+◇ Test productionCatalogV3UsesV2ReleasePathsAndPageTitle() started.
+✔ Test unavailableAudioMayBindSameLocaleLayer3Package() passed after 0.002 seconds.
+✔ Test unavailableAudioCannotExposeAnAudioAsset() passed after 0.002 seconds.
+✔ Test releasePackageRoutesOnlyToSameOriginPublishedPage() passed after 0.003 seconds.
+✔ Test devContentCandidateNeedsExplicitOptInAndExactPath() passed after 0.003 seconds.
+✔ Test productionReleaseV2RequiresSpokenScriptIdentity() passed after 0.003 seconds.
+✔ Test devDualScriptPodcastCandidateAllowsWavOnlyWithExplicitOptIn() passed after 0.002 seconds.
+✔ Test dualScriptReleaseKeepsDisplayAndSpokenBindingsDistinct() passed after 0.002 seconds.
+✔ Test publishedPageFingerprintRequiresExactSourceAndTrack() passed after 0.007 seconds.
+✔ Test catalogRejectsLocaleKeyPathAndCapabilityMismatches() passed after 0.008 seconds.
+✔ Test dualScriptCatalogRoutesOnlyToVersionedReleases() passed after 0.008 seconds.
+✔ Test productionCatalogV3UsesV2ReleasePathsAndPageTitle() passed after 0.009 seconds.
+✔ Test remoteCategoryOverridesLegacyAndSurvivesBothCatalogProjections() passed after 0.010 seconds.
+✔ Test independentlyPublishedPagesKeepTheirOwnLocales() passed after 0.011 seconds.
+✔ Test catalogKeepsContentAndAudioCapabilitiesDistinct() passed after 0.011 seconds.
+✔ Test remoteCategoryFailsClosedAndCannotLabelSimulationAsFormal() passed after 0.012 seconds.
+✔ Test sourceCategoriesPreserveKnownArchivesAndExplicitPodcastType() passed after 0.014 seconds.
+✔ Suite MultilingualCatalogTests passed after 0.014 seconds.
+✔ Test run with 18 tests in 1 suite passed after 0.014 seconds.

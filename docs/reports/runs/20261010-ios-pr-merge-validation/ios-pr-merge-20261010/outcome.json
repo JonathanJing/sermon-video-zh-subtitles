@@ -1,0 +1,26 @@
+{
+  "status": "passed_after_test_navigation_repair",
+  "scope": "iOS PR merge verification",
+  "revision": "96547b00",
+  "initialFailure": "UI test used listening scroll bounds inside More Form",
+  "repair": "Use More Form navigation helper; hosted and refresh tests passed",
+  "core": {
+    "passed": 16,
+    "skipped": 2
+  },
+  "python": {
+    "passed": 11
+  },
+  "web": {
+    "passed": 54
+  },
+  "ui": {
+    "uniquePassed": 2
+  },
+  "hosted": {
+    "passed": 1
+  },
+  "deviceAcceptance": "not_run",
+  "archive": "not_run",
+  "publication": "not_run"
+}
