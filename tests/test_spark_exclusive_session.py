@@ -224,6 +224,13 @@ def test_client_contract_env_and_read_only_gateway(engine):
         with pytest.raises(SessionError, match='read_only'): Client('session', 'owner').start_job('cli')
 
 
+def test_default_minimum_is_110_gib(engine):
+    engine.backend.value['memAvailableBytes'] = 120 * 1024**3
+    state = engine.begin('session', 'owner')
+    assert state['minimumAvailableBytes'] == 110 * 1024**3
+    assert state['status'] == 'exclusive_ready'
+
+
 def test_explicit_memory_required(engine):
     for value in (0, -1, float('nan'), float('inf')):
         with pytest.raises(SessionError, match='memory_minimum'): engine.begin('session', 'owner', value)

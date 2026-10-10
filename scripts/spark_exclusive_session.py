@@ -31,6 +31,7 @@ import uuid
 
 SCHEMA = 'tongxing-spark-exclusive-v1'
 DEFAULT_HOST = 'achillesjing@192.168.1.152'
+DEFAULT_MINIMUM_AVAILABLE_GIB = 110.0
 # Python multiprocessing helper that the spark-agent scheduler starts for itself. It is the only
 # launcher child the admission check accepts, and only when it is a direct child with no children.
 RESOURCE_TRACKER_HELPER = 'multiprocessing_resource_tracker'
@@ -438,7 +439,7 @@ class Engine:
             self.save(state, 'effect_unknown', operation=key, errorCode=str(exc) if isinstance(exc, SessionError) else type(exc).__name__)
             raise SessionError('effect_requires_reconciliation:' + key) from exc
 
-    def begin(self, session_id, owner, minimum_available_gib, container_ids=(), preempt=False, allow_interrupted_restart=False):
+    def begin(self, session_id, owner, minimum_available_gib=DEFAULT_MINIMUM_AVAILABLE_GIB, container_ids=(), preempt=False, allow_interrupted_restart=False):
         check_id(session_id); check_id(owner)
         if not isinstance(minimum_available_gib, (int, float)) or not math.isfinite(minimum_available_gib) or minimum_available_gib <= 0: raise SessionError('explicit_positive_memory_minimum_required')
         with self.locked():
@@ -792,7 +793,7 @@ def main():
         command.add_argument('--session-id', required=True)
         command.add_argument('--owner', required=True)
         if action == 'begin':
-            command.add_argument('--minimum-available-gib', type=float, required=True)
+            command.add_argument('--minimum-available-gib', type=float, default=DEFAULT_MINIMUM_AVAILABLE_GIB, help='Minimum MemAvailable in GiB before exclusive_ready (default 110)')
             command.add_argument('--container-id', action='append', dest='container_ids', default=[])
             command.add_argument('--preempt', action='store_true')
             command.add_argument('--allow-interrupted-restart', action='store_true')
