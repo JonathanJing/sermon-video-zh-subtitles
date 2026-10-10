@@ -58,6 +58,9 @@ def inspect_step(m, base, step, *, ready=True):
         auth_path=c.binding(m,base,step.get('budgetAuthorization',''))
         auth=budget.load_authorization(config,auth_path,ctl.code_identity())
         cap=auth['value']['authority']['globalBounds']['costMicrousd']
+        if auth.get('scope')=='locale':
+            # Per-locale ledgers: the run can spend the cap once per registered locale.
+            cap*=len(config.lanes)
         if cap>m['budget']['limitMicroUsd'] or cap>step.get('maxCostMicroUsd',0):
             raise c.ContractError('budget_authority_exceeds_manifest')
         if not ready:
@@ -100,6 +103,9 @@ def inspect_step(m, base, step, *, ready=True):
         plan=delivery.inspect(config_path(m,base,step))
         if not plan['snapshotBound']:
             raise c.ContractError('delivery_input_snapshot_required')
+        if plan.get('machineChecked'):
+            from scripts.sermon_unified_capabilities import require_machine_capabilities
+            require_machine_capabilities(c.binding(m,base,'consumerCapabilities'))
         from scripts.sermon_unified_canonical_binding import validate_selected_source
         validate_selected_source(m,base,plan['sourcePackageSha256'])
         identity=dict(plan['sourceIdentity']);identity['window']=dict(identity['window'],timeBase='source_media')

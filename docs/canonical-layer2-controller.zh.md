@@ -1,10 +1,12 @@
 # Canonical Layer 2 固定执行适配器
 
 这是四层 controller 的第一条真实 producer dispatch 路径，不是完整四层 end-to-end。
-它复用已有 Source/候选 validator、Astra → Sol group runner、语言插件、paid cache、
+它复用已有 Source/候选 validator、逐组初译／独立复核 runner、语言插件、paid cache、
 `sermon_workflow_jobs` 与 work/admission locks。它只生成
 `machine_review_pass_human_review_pending`、`releaseEligible=false` 的候选；不会创建人工
 批准、启动 TTS、构建/发布页面、提交 App Store，或调用 bounded decision agent。
+
+新任务按[当前模型及调用策略](production-model-runtime-policy.zh.md)使用 Sol 6.1 high 初译 → Sol 6.1 medium 独立复核，默认通过 OpenAI API；旧任务保留冻结的 policy、后端和缓存身份。
 
 默认配置 `sermon-canonical-layer2-execution-v1` 只接受以下字段：
 
@@ -39,6 +41,18 @@ python scripts/canonical_layer2_controller.py tick \
 一个 tick 至多派发一个固定 worker 然后返回。第一版同一 production run 至多一个 active
 locale job；uncertain owner 继续占用该名额直到 reconciliation。当前 controller 代码允许冻结 policy 的 1–16 个组 workers，共享 job-root 对应的 API 槽位最多 24 个；独立 `run_target_language_models.py` CLI 仍限制 1–3 workers。API 槽位不等于 Codex CLI 账号并发额度，也不是跨所有 job-root 的全局 API/TTS 资源调度器。见 [并发实现](../scripts/layer2_api_concurrency.py) 与 [controller 准入](../scripts/canonical_layer2_controller.py)。
 显式并发配置使用新的 `sermon-canonical-layer2-execution-v2`，在 v1 字段上增加 `concurrencyProfile` 和 `resourcePolicy` 两个文件路径；v1 不接受这两个新字段，也不会自动升档。迁移时创建新配置与运行身份，绑定文件内容 hash，勿修改旧 job 的容量／凭据／输出目录。当前 profile v1 将最多活动 locale 升到 3，CLI 业务池 23、监督专槽 1；uncertain 仍阻止整个 run 的新派发。正式预算／批准仍须各自通过，详见[本轮诊断准备](reports/20261005-next-concurrency-test-preparation.zh.md)。
+
+自动修复配置 `sermon-canonical-layer2-execution-v3` 在 v1 字段上增加 `layer2AutoRepair`（路由版本、每语言组并发 `groupWorkers` 1–16、同时活跃语言 `maxActiveLocales` 1–3），在 worker 的同一个持久 job 里跑[有界自动修复](layer2-bounded-auto-repair.zh.md)；它不接受 v2 profile，API 仍共用 24 个在途槽。
+
+修复循环因 `request_source_review` 停下、job 失败后，L1 含义备注到达时用显式命令重开，不调用模型：
+
+```sh
+python scripts/canonical_layer2_controller.py reopen-repair \
+  --config /absolute/execution.json --locale zh-Hans \
+  --expected-state-revision <shadow tick 输出的 stateRevision>
+```
+
+前提是执行配置的 `layer2AutoRepair.sourceMeaningNotes` 已指向新备注（它进入 `text.<locale>` 的输入身份）。命令在失败 job 旁写重开收据，controller 用账本和备注核对收据后，durable 视图把那个 job 记为 `superseded`，下一次 execute tick 以新身份派发，worker 在同一条修复账本链上只重修备注覆盖的组。检查项和收据字段见[有界自动修复](layer2-bounded-auto-repair.zh.md)和[durable 检查](canonical-durable-job-inspection.zh.md)。
 
 默认顺序是排序后的可准入 locale，没有循环轮询或无限 Agent 对话。工作中可重复调用 tick
 检查，但 active/failed/unknown durable receipt 不会产生第二个相同工作。

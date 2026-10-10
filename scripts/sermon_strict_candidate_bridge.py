@@ -219,9 +219,11 @@ def validate_approved_chain(source_bytes, anchor_bytes, policy_bytes, rubric_byt
     source, anchor, policy, rubric = [c.decode_json(b) for b in
         (source_bytes, anchor_bytes, policy_bytes, rubric_bytes)]
     handoff._validate_schema(candidate, 'sermon-target-language-candidate-v2.schema.json', 'approved candidate')
-    handoff.validate_target_candidate(source, anchor, candidate)
+    released = handoff.validate_released_candidate(source, anchor, candidate, human_receipt)
+    # Strict gate decisions record the receipt as a human approval; a machine
+    # waiver takes the non-strict speech-job path until they record waivers apart.
+    c.require(released['textPolicy'] == handoff.HUMAN_TEXT_POLICY, 'strict_bridge_requires_human_receipt')
     handoff.validate_policy_binding(candidate, policy, strict_rubric=rubric)
-    handoff.validate_human_review_receipt(source, anchor, candidate, human_receipt)
     return {**result, 'candidate': copy.deepcopy(candidate),
-        'humanReceiptSha256': c.canonical_sha256(human_receipt),
+        'humanReceiptSha256': c.canonical_sha256(human_receipt), 'textPolicy': released['textPolicy'],
         'publicCandidateSha256': c.canonical_sha256(candidate), 'admissionStatus': 'validated_only'}

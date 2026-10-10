@@ -1,0 +1,6 @@
+usage: local_model_session.py begin --host HOST --mode {wait,preempt} --owner OWNER
+                                  [--allow-interrupted-restart]
+
+  --mode preempt               stop resident services instead of waiting for them to go idle
+  --allow-interrupted-restart  required with preempt: confirms in-flight inference may be
+                               interrupted and the services restarted by finish

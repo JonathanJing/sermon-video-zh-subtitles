@@ -209,6 +209,41 @@ class DiagnosticChainTests(unittest.TestCase):
         for key in ('languageReview', 'scripture'):
             self.policy['componentSha256'][key] = policies.canonical_sha256(self.policy[key])
 
+    def test_speaker_words_units_load_beside_admitted_quotations(self):
+        from scripts import cuv_scripture
+        from scripts import scripture_adjudication as adjudication
+        from scripts.language_review_plugins import diagnostic_admitted_quotes as admitted
+        units = [unit['sourceUnitId'] for unit in self.anchor['sourceUnits']]
+        bindings = {'source.json': policies.canonical_sha256(self.source),
+                    'anchor.json': policies.canonical_sha256(self.anchor),
+                    'group-plan.json': policies.canonical_sha256(self.plan)}
+        receipt = {'schemaVersion': adjudication.SCHEMA, 'targetLocale': 'zh-Hans', 'bindings': bindings,
+                   'decision': 'approved', 'decidedBy': 'synthetic test reviewer', 'decidedByRole': 'human_reviewer',
+                   'reviewedAt': '2026-10-08T00:00:00+00:00',
+                   'candidates': [{'candidateId': 'q1', 'sourceUnitIds': [units[0]], 'classification': 'direct_quote',
+                                   'reference': 'REV 4:2', 'editionId': 'CUV',
+                                   'exactSentence': cuv_scripture.CuvLibrary.from_path().lookup('REV 4:2')['text']},
+                                  {'candidateId': 'p1', 'sourceUnitIds': [units[1]],
+                                   'classification': 'speaker_paraphrase', 'reference': None, 'editionId': None,
+                                   'exactSentence': None}]}
+        summary = adjudication.validate_receipt(receipt, target_locale='zh-Hans', bindings=bindings,
+                                                flagged_units=units)
+        plugin = self.root / 'admitted-plugin.py'
+        policy = admitted.freeze_admitted_plugin(summary, self.source, self.anchor, self.plan, self.policy, plugin)
+        subject.freeze_fixture(self.source, self.anchor, policy, self.plan, plugin, self.fixture,
+                               authorization_ref='user-authorized isolated test', code_commit='a' * 40,
+                               translator_model='gpt-6.1-sol', scripture_classification='contains_direct_quotations',
+                               source_quotation_units=units, scripture_adjudication=receipt)
+        loaded = subject.load_fixture(self.fixture)
+        self.assertEqual(loaded[8]['sourceQuotationUnits'], units)
+        # The fixture annotation must name exactly the units the receipt routed, one way or the other.
+        manifest_path = self.fixture / 'fixture-manifest.json'
+        manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
+        manifest['sourceQuotationUnits'] = units[:1]
+        manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+        with self.assertRaises(ValueError):
+            subject.load_fixture(self.fixture)
+
     def test_unquoted_verse_intro_is_rejected_even_if_no_direct_quote_declared(self):
         self.structural_policy()
         self.anchor['sourceUnits'][0]['english'] = 'Verse 2 and 3, John says, Immediately I was in the Spirit.'
@@ -225,7 +260,7 @@ class DiagnosticChainTests(unittest.TestCase):
 
     def test_structural_plugin_rejects_bound_direct_scripture_before_any_call(self):
         self.structural_policy()
-        with self.assertRaisesRegex(ValueError, 'does not support direct'):
+        with self.assertRaisesRegex(ValueError, 'scripture_adjudication_required'):
             self.freeze(scripture_classification='contains_direct_quotations',
                         source_quotation_units=[self.anchor['sourceUnits'][0]['sourceUnitId']])
         self.assertFalse(self.fixture.exists())

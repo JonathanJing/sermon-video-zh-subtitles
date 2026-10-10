@@ -10,6 +10,10 @@ import TongxingCore
 enum UITestLaunch {
     static var isEnabled: Bool { ProcessInfo.processInfo.arguments.contains("--ui-testing") }
 
+    static func liveActivitySmokeEnabled(arguments: [String] = ProcessInfo.processInfo.arguments) -> Bool {
+        arguments.contains("--ui-testing") && arguments.contains("--ui-testing-live-activity")
+    }
+
     @MainActor static func makeModel() -> AppModel? {
         guard isEnabled else { return nil }
         guard let value = ProcessInfo.processInfo.environment["TONGXING_UI_TEST_RUN_ID"],
@@ -31,7 +35,7 @@ enum UITestLaunch {
     /// Explicit system-UI smoke only: synthetic media, no microphone or network.
     /// Unlike ordinary UI tests, this launch opts into real ActivityKit.
     @MainActor static func runLiveActivitySmoke(in model: AppModel) async {
-        guard isEnabled, ProcessInfo.processInfo.arguments.contains("--ui-testing-live-activity"),
+        guard liveActivitySmokeEnabled(),
               let week = model.weeks.first else { return }
         await model.select(week: week)
         model.downloadSelected()
@@ -383,6 +387,39 @@ private enum UITestContent {
         return result
     }()
 
+    /// Explicit synthetic announcement fixture, isolated from published content.
+    static let weeklyUpdateResponses: [String: Data] = {
+        var result = locateResponses
+        let catalog = try! JSONDecoder().decode(MultilingualCatalog.self, from: result["/multilingual-v3.json"]!)
+        let page = catalog.defaultPage
+        #if os(iOS)
+        let width = 240, height = 320
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 240, height: 320), format: format).pngData { context in
+            UIColor.systemTeal.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 240, height: 320))
+            NSString(string: "UI TEST\nWEEKLY POSTER").draw(in: CGRect(x: 24, y: 90, width: 200, height: 150),
+                withAttributes: [.font: UIFont.boldSystemFont(ofSize: 24), .foregroundColor: UIColor.white])
+        }
+        #else
+        let width = 1, height = 1
+        let image = Data(base64Encoded: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a3ioAAAAASUVORK5CYII=")!
+        #endif
+        let hash = SHA256.hash(data: image).map { String(format: "%02x", $0) }.joined()
+        let poster = WeeklyPoster(url: "/posters/ui-test.png", sha256: hash, bytes: Int64(image.count), width: width, height: height)
+        let items = page.targets.map { locale, target in
+            WeeklyAnnouncement(id: "ui-test-\(locale)", pageID: page.id, locale: locale,
+                releaseSHA256: target.releasePackageJsonSha256, sourceIdentitySHA256: page.sourceIdentitySha256,
+                title: "本周海报 · 合成交互测试", publishedAt: "2026-10-04T00:00:00Z", poster: poster)
+        }
+        result["/weekly-announcements-v1.json"] = try! JSONEncoder().encode(WeeklyAnnouncementCatalog(announcements: items))
+        if !ProcessInfo.processInfo.arguments.contains("--ui-testing-poster-missing") {
+            result["/posters/ui-test.png"] = image
+        }
+        return result
+    }()
+
     static let alignmentFailureResponses: [String: Data] = {
         var result = locateResponses
         var catalog = try! JSONSerialization.jsonObject(with: result["/multilingual-v3.json"]!) as! [String: Any]
@@ -615,6 +652,7 @@ private class UITestContentProtocol: URLProtocol {
     class var nativeResponses: [String: Data]? {
         if ProcessInfo.processInfo.arguments.contains("--ui-testing-remote-categories") { return UITestContent.remoteCategoryResponses }
         if ProcessInfo.processInfo.arguments.contains("--ui-testing-source-categories") { return UITestContent.categoryResponses }
+        if ProcessInfo.processInfo.arguments.contains("--ui-testing-weekly-update") { return UITestContent.weeklyUpdateResponses }
         if ProcessInfo.processInfo.arguments.contains("--ui-testing-alignment-failure") { return UITestContent.alignmentFailureResponses }
         if ProcessInfo.processInfo.arguments.contains("--ui-testing-locate-flow") { return UITestContent.locateResponses }
         return dualScript ? UITestContent.dualScriptResponses : nil

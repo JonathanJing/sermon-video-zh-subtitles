@@ -105,6 +105,41 @@ class SchemaSnapshotTests(unittest.TestCase):
             self.assertIs(snapshot[0], key)
             self.assertLessEqual(len(key), contract.MAX_SCHEMA_SNAPSHOT_BYTES)
 
+    def test_batch_captures_schema_once_and_later_batches_see_edits(self):
+        rows = positive_rows(4)
+        with patch.object(contract, '_schema_snapshot', wraps=contract._schema_snapshot) as snapshot:
+            with contract.schema_batch():
+                for row in rows:
+                    contract.validate_event(row)
+                with contract.schema_batch():
+                    self.assertEqual(contract.replay_integrity(rows)['status'], 'consistent')
+            self.assertEqual(snapshot.call_count, 1)
+        self.schema['properties']['sequence'] = {'type': 'integer', 'minimum': 2}
+        with contract.schema_batch(), self.assertRaises(contract.ContractError):
+            contract.validate_event(rows[0])
+
+    def test_batch_without_profile_rows_takes_no_snapshot(self):
+        with patch.object(contract, '_schema_snapshot', wraps=contract._schema_snapshot) as snapshot:
+            with contract.schema_batch():
+                pass
+            self.assertEqual(snapshot.call_count, 0)
+
+    def test_invalid_schema_still_rejects_each_row_in_a_batch(self):
+        rows = positive_rows(2)
+        self.schema['default'] = float('nan')
+        with contract.schema_batch():
+            self.assertEqual([contract.valid_event(row) for row in rows], [False] * len(rows))
+        del self.schema['default']
+        with contract.schema_batch():
+            self.assertTrue(all(contract.valid_event(row) for row in rows))
+
+    def test_rejected_row_in_a_batch_does_not_hide_later_rows(self):
+        rows = positive_rows(2)
+        bad = deepcopy(rows[0]); bad['sequence'] = True
+        with contract.schema_batch():
+            results = [contract.valid_event(row) for row in (rows[0], bad, rows[1])]
+        self.assertEqual(results, [True, False, True])
+
     def test_oversized_or_non_json_schemas_fail_closed(self):
         row = fixture('stage-start')
         self.schema['$comment'] = 'x' * contract.MAX_SCHEMA_SNAPSHOT_BYTES

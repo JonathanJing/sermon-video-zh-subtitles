@@ -247,6 +247,8 @@ policy 记录固定的请求模型身份；执行器核对 API 实际返回的�
 
 首版 [目标语言策略校验器](../scripts/target_language_policy.py) 和 [schema](../schemas/sermon-target-language-policy-v1.schema.json) 已固定 `zh-Hans` 与 `ko` 两份快照。两份 policy 仍为开发起点：通用语言审核插件未实现，韩语系列译名、专名和经文译本／引用许可保持 `pending`；`productionPolicyReady=false`。改变任一子树、系列名称表或 prompt 后必须生成新快照，不能复用旧 candidate 审核。
 
+冻结新的韩语／西语 v2–v4 policy 草稿时，若 `languageReview` 不写插件绑定（`pluginId`、`pluginImplementationSha256`、`implementationStatus`、`requiredChecks` 全部省略），`target_language_policy.py freeze` 绑定每周通用的机器质检插件 `ko-weekly-auto-v1` / `es-weekly-auto-v1`：实现 hash 按插件与共享规则（`common.py`、`auto_qc_text_common.py`）计算，`implementationStatus=verified`，`requiredChecks` 等于 `auto_qc_text_common.REQUIRED`。从带插件绑定的模板改用机器质检插件时，显式传 `--language-review machine_qc`。草稿自带插件绑定时原样保留；`zh-Hans` 沿用原插件，必须在草稿中写明。policy 格式不变，已冻结的 policy（含 `config/target-language-policies/*.json`）不重新绑定，字节与 hash 不变。
+
 ## 5. 生成物
 
 建议 ignored run 目录：

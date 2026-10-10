@@ -1,0 +1,4 @@
+2026-10-08T01:25:01Z [begin] mode=preempt owner=haiku-round-20261007
+2026-10-08T01:25:02Z [begin] llama-server processingSlots=0 queue=0
+2026-10-08T01:25:02Z [begin] preempt would stop: spark-api spark-agent collector llama-server
+2026-10-08T01:25:03Z [begin] ERROR interrupted_restart_authorization_required

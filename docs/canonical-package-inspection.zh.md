@@ -5,6 +5,8 @@ Source → 各语言 Text → Audio → Page 的 shadow proposal。它不 dispat
 批准记录、启动模型、发布页面或修改作业状态。Page 的 `ready` 只表示其前置
 package 和所需 receipt 已验证；v3 可继续验证现有 formal-dev Layer 4 candidate。
 
+译文门（`translation_review`）和试听门（`audio_listening_review`）可以由机器质检豁免满足；这时批准记录带 `kind=machine_quality_waiver`，节点状态多一项 `waivedGates`，列出由豁免而不是人工批准满足的门。没有 `kind` 的仍是人工批准，未知的 `kind` 不满足任何门。试听豁免必须是对本语言当前译文收据（`humanReview` 所指的那份译文豁免）签发的，`textWaiverJsonSha256` 不一致时音频节点不通过，与 Layer 4 的要求相同。豁免不改变其余状态，也不是人工批准。
+
 `sermon-canonical-package-inspection-config-v1` 保留 Source/Text 行为。
 新增 v2 允许各 locale 配置 `audio`；v1 不接受该字段。两版均不从 progress
 ledger 推导完成状态。所有路径相对配置文件，或使用绝对路径。
