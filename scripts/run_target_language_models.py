@@ -1311,7 +1311,12 @@ def main() -> None:
     source, anchor, policy = (producer._load(path) for path in
                               (args.english_source_package, args.anchor, args.policy))
     # Validate all policy/source/plan conditions before requiring a secret or making a paid call.
-    request = producer.prepare_request(source, anchor, policy)
+    # A bound canonical configuration declares whether this is a non-production shadow candidate.
+    candidate_mode = "production"
+    if args.budget_config is not None:
+        from scripts import canonical_layer2_controller as controller
+        candidate_mode = controller.load_configuration(args.budget_config).candidate_mode
+    request = producer.prepare_request(source, anchor, policy, candidate_mode=candidate_mode)
     if args.budget_config is None:
         validate_standalone_worker_budget(policy)
     plan = group_plan(request, anchor, json.loads(args.group_plan.read_text(encoding="utf-8"))
