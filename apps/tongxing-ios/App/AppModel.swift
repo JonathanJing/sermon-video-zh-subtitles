@@ -378,8 +378,7 @@ final class AppModel: ObservableObject {
     }
 
     func heading(for page: MultilingualPage) -> SermonHeading {
-        if let transcript = currentPublishedTranscript, transcript.pageID == page.id,
-           selectedContentLocale == page.defaultTargetLocale {
+        if let transcript = currentPublishedTranscript, transcript.pageID == page.id {
             return resolvedHeading(SermonHeading(title: displayTitle(transcript.title ?? page.title, for: page),
                                                 series: transcript.series, speaker: transcript.speaker), page: page)
         }

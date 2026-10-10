@@ -92,6 +92,34 @@ final class PlaybackControllerTests: XCTestCase {
     }
 
     #if DEBUG
+    func testSelectedNonDefaultLocaleKeepsVerifiedHeading() async throws {
+        let run = UUID().uuidString
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("HeadingLocale-\(run)")
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: "HeadingLocale-\(run)"))
+        let model = UITestLaunch.makeFixtureModel(supportDirectory: directory,
+                                                  statisticsDefaults: defaults, headingLanguages: true)
+        defer {
+            model.playback.pause()
+            model.mediaSession.invalidateAndCancel()
+            defaults.removePersistentDomain(forName: "HeadingLocale-\(run)")
+            try? FileManager.default.removeItem(at: directory)
+        }
+        await model.start()
+        let page = try XCTUnwrap(model.independentPages.first)
+        model.selectPublishedPage(page)
+        model.selectPublishedContentLanguage("ko")
+        await model.loadSelectedPublishedTranscript()
+        try await eventually("selected Korean transcript") { model.currentPublishedTranscript?.locale == "ko" }
+        XCTAssertEqual(page.defaultTargetLocale, "zh-Hans")
+        let transcript = try XCTUnwrap(model.currentPublishedTranscript)
+        XCTAssertEqual(transcript.title, "한국어 제목")
+        XCTAssertNotEqual(transcript.title, page.title)
+        let heading = model.heading(for: page)
+        XCTAssertEqual(heading.title, transcript.title)
+        XCTAssertEqual(heading.series, transcript.series)
+        XCTAssertEqual(heading.speaker, transcript.speaker)
+    }
+
     func testUnselectedPublishedHeadingLoadsWithoutChangingLegacyPlayback() async throws {
         let run = UUID().uuidString
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent("Heading-\(run)")

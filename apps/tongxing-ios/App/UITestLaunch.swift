@@ -64,10 +64,10 @@ enum UITestLaunch {
     /// Hosted render tests share the synthetic catalog/audio transport, while
     /// keeping all downloads, preferences and playback history in private state.
     @MainActor static func makeFixtureModel(supportDirectory: URL, statisticsDefaults: UserDefaults,
-                                            nativePublishedPage: Bool = false) -> AppModel {
+                                            nativePublishedPage: Bool = false, headingLanguages: Bool = false) -> AppModel {
         let configuration = URLSessionConfiguration.ephemeral
-        configuration.protocolClasses = nativePublishedPage
-            ? [NativePreviewContentProtocol.self] : [UITestContentProtocol.self]
+        configuration.protocolClasses = headingLanguages ? [HeadingLanguageContentProtocol.self]
+            : nativePublishedPage ? [NativePreviewContentProtocol.self] : [UITestContentProtocol.self]
         configuration.urlCache = nil
         return AppModel(supportDirectory: supportDirectory, contentOrigin: UITestContent.origin,
                         session: URLSession(configuration: configuration),
@@ -454,7 +454,7 @@ private enum UITestContent {
     }()
 
     private static func nativePublishedResponses(locale: String, fullText: String, caption: String,
-                                                 pageID: String = "ui-test-full-video") -> [String: Data] {
+                                                 pageID: String = "ui-test-full-video", title: String = "测试完整视频证道") -> [String: Data] {
         let audio = responses["/media/ui-test-clip/es.mp3"]!
         let html = Data("<html><head><style>body{font-size:20px}</style></head><body><h1>\(fullText)</h1></body></html>".utf8)
         func hash(_ data: Data) -> String { SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined() }
@@ -466,7 +466,7 @@ private enum UITestContent {
             "englishSourcePackageJsonSha256": displayHash,
             "sourceMediaSha256": displayHash,
             "targetLanguageCandidateJsonSha256": displayHash,
-            "durationSeconds": 20.0, "title": "测试完整视频证道",
+            "durationSeconds": 20.0, "title": title,
             "series": "启示录：耶稣带来的安慰与盼望", "speaker": "Eric Geiger",
             "cues": [["textGroupId": "g1", "sourceUnitIds": ["u1"], "start": 0.0, "end": 10.0, "text": fullText]]
         ], options: [.sortedKeys])
@@ -506,7 +506,7 @@ private enum UITestContent {
         let catalog: [String: Any] = [
             "schemaVersion": "sermon-multilingual-catalog-v3", "generatedAt": "2026-09-27T00:00:00Z",
             "defaultPageId": pageID,
-            "pages": [["id": pageID, "title": "测试完整视频证道", "date": "2026-09-27",
+            "pages": [["id": pageID, "title": title, "date": "2026-09-27",
                        "sourceLocale": "en", "sourceIdentitySha256": displayHash,
                        "defaultTargetLocale": locale,
                        "targets": [locale: ["releasePackageUrl": "/releases-v2/\(pageID)/\(locale).json",
@@ -525,6 +525,24 @@ private enum UITestContent {
         ]
         return ProcessInfo.processInfo.arguments.contains("--ui-testing-study-products") ? withStudyProducts(files, pageID: pageID, locale: locale) : files
     }
+    static let headingLanguageResponses: [String: Data] = {
+        let chinese = nativePublishedResponses(locale: "zh-Hans", fullText: "中文正文", caption: "中文字幕")
+        let korean = nativePublishedResponses(locale: "ko", fullText: "한국어 본문", caption: "한국어 자막", title: "한국어 제목")
+        var files = chinese.merging(korean) { first, _ in first }
+        var catalog = try! JSONSerialization.jsonObject(with: chinese["/multilingual-v3.json"]!) as! [String: Any]
+        let other = try! JSONSerialization.jsonObject(with: korean["/multilingual-v3.json"]!) as! [String: Any]
+        var pages = catalog["pages"] as! [[String: Any]]
+        let otherPage = (other["pages"] as! [[String: Any]])[0]
+        let targets = pages[0]["targets"] as! [String: Any]
+        pages[0]["targets"] = targets.merging(otherPage["targets"] as! [String: Any]) { first, _ in first }
+        // Deliberately differ from verified content metadata to catch fallback.
+        pages[0]["title"] = "Catalog fallback title"
+        catalog["pages"] = pages
+        files["/multilingual-v3.json"] = try! JSONSerialization.data(withJSONObject: catalog, options: [.sortedKeys])
+        files.removeValue(forKey: "/english-reference/ui-test-full-video.json")
+        return files
+    }()
+
     /// Public display metadata with synthetic, hash-bound text/audio only.
     /// The category is exercised through the production picker, not drawn here.
     static let categoryResponses = makeCategoryResponses(remote: false)
@@ -751,6 +769,11 @@ private class UITestContentProtocol: URLProtocol {
         delayedResponse = nil
         deliveryLock.unlock()
     }
+}
+
+private final class HeadingLanguageContentProtocol: UITestContentProtocol {
+    override class var offline: Bool { false }
+    override class var nativeResponses: [String: Data]? { UITestContent.headingLanguageResponses }
 }
 
 private final class NativePreviewContentProtocol: UITestContentProtocol {
