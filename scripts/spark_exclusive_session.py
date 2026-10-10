@@ -32,6 +32,10 @@ import uuid
 SCHEMA = 'tongxing-spark-exclusive-v1'
 DEFAULT_HOST = 'achillesjing@192.168.1.152'
 DEFAULT_MINIMUM_AVAILABLE_GIB = 110.0
+# Python multiprocessing helper that the spark-agent scheduler starts for itself. It is the only
+# launcher child the admission check accepts, and only when it is a direct child with no children.
+RESOURCE_TRACKER_HELPER = 'multiprocessing_resource_tracker'
+RESOURCE_TRACKER_ARGUMENT = re.compile(r'^from multiprocessing\.resource_tracker import main;main\(\d+\)$')
 UNITS = ('spark-api.service', 'spark-agent.service', 'llama-performance-collector.service', 'llama-server.service')
 LAUNCHERS = ('spark-api.service', 'spark-agent.service')
 STOP_ORDER = UNITS
@@ -118,8 +122,11 @@ class LinuxBackend:
                     role = 'model'
                 if names & {'task_worker.py', 'job_runtime.py', 'replay_fixed_clip_local_models.py', 'render_formal_target_language_speech.py'}:
                     role = 'worker'
+                helper = None
+                if len(arguments) == 3 and arguments[1] == '-c' and Path(arguments[0]).name.startswith('python') and RESOURCE_TRACKER_ARGUMENT.match(arguments[2]):
+                    helper = RESOURCE_TRACKER_HELPER
                 values.append({'pid': pid, 'ppid': ppid, 'startTicks': ticks, 'executable': executable,
-                               'role': role, 'cgroup': cgroup.strip()})
+                               'role': role, 'cgroup': cgroup.strip(), 'helper': helper})
             except (FileNotFoundError, ProcessLookupError): continue
             except PermissionError:
                 # GPU and launcher checks cannot prove an unreadable process identity.
@@ -244,7 +251,8 @@ class LinuxBackend:
         # Intent was fsynced by Engine before SIGSTOP. If SSH is lost here,
         # explicit reconciliation can SIGCONT this exact frozen process.
         processes = self.processes()
-        children = Engine.descendants(processes, [(main['pid'], main['startTicks'])]) - {main['pid']}
+        helpers = self.launcher_helpers(processes, main['pid'], self.gpu())
+        children = Engine.descendants(processes, [(main['pid'], main['startTicks'])]) - {main['pid']} - helpers
         queue = self.queue()
         if not preempt and (children or queue['pending'] or queue['claimed'] or queue['outstanding'] or queue.get('legacyRunning') or queue.get('legacyQueued')):
             os.kill(main['pid'], signal.SIGCONT)
@@ -335,6 +343,14 @@ class Engine:
                     known.add(item['pid']); changed = True
         return known
 
+    @staticmethod
+    def launcher_helpers(processes, launcher_pid, gpu):
+        gpu_pids = {row.get('pid') for row in gpu}
+        parents = {item.get('ppid') for item in processes}
+        return {item['pid'] for item in processes
+                if item.get('helper') == RESOURCE_TRACKER_HELPER and item.get('ppid') == launcher_pid
+                and item['pid'] not in parents and item['pid'] not in gpu_pids}
+
     def idle_launcher(self, inventory, *, begin=False):
         queue = inventory['queue']
         if queue['claimed'] or queue['outstanding'] or queue.get('legacyRunning') or (begin and (queue['pending'] or queue.get('legacyQueued'))): raise SessionError('scheduler_work_outstanding')
@@ -344,9 +360,10 @@ class Engine:
             roots = [p for p in processes if p['pid'] == launcher['mainPid']]
             if launcher['active'] == 'active':
                 if len(roots) != 1 or roots[0].get('unreadable'): raise SessionError('launcher_process_unknown')
-                descendants = self.descendants(processes, [(roots[0]['pid'], roots[0]['startTicks'])])
+                helpers = self.launcher_helpers(processes, launcher['mainPid'], inventory.get('gpu', []))
+                descendants = self.descendants(processes, [(roots[0]['pid'], roots[0]['startTicks'])]) - helpers
                 cgroup = launcher['controlGroup']
-                if not cgroup or descendants != {launcher['mainPid']} or any(cgroup in p.get('cgroup', '') and p['pid'] != launcher['mainPid'] for p in processes):
+                if not cgroup or descendants != {launcher['mainPid']} or any(cgroup in p.get('cgroup', '') and p['pid'] not in helpers | {launcher['mainPid']} for p in processes):
                     raise SessionError('launcher_workers_active')
             elif launcher['active'] != 'inactive': raise SessionError('launcher_state_unknown')
 
