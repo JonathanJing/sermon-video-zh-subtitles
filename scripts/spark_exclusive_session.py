@@ -250,13 +250,18 @@ class LinuxBackend:
         os.kill(main['pid'], signal.SIGSTOP)
         # Intent was fsynced by Engine before SIGSTOP. If SSH is lost here,
         # explicit reconciliation can SIGCONT this exact frozen process.
-        processes = self.processes()
-        helpers = self.launcher_helpers(processes, main['pid'], self.gpu())
-        children = Engine.descendants(processes, [(main['pid'], main['startTicks'])]) - {main['pid']} - helpers
-        queue = self.queue()
-        if not preempt and (children or queue['pending'] or queue['claimed'] or queue['outstanding'] or queue.get('legacyRunning') or queue.get('legacyQueued')):
-            os.kill(main['pid'], signal.SIGCONT)
-            raise SessionError('launcher_became_busy_before_stop')
+        try:
+            processes = self.processes()
+            helpers = Engine.launcher_helpers(processes, main['pid'], self.gpu())
+            children = Engine.descendants(processes, [(main['pid'], main['startTicks'])]) - {main['pid']} - helpers
+            queue = self.queue()
+            if not preempt and (children or queue['pending'] or queue['claimed'] or queue['outstanding'] or queue.get('legacyRunning') or queue.get('legacyQueued')):
+                raise SessionError('launcher_became_busy_before_stop')
+        except BaseException:
+            # Nothing has been stopped yet, so resuming the frozen launcher is safe.
+            try: os.kill(main['pid'], signal.SIGCONT)
+            except ProcessLookupError: pass
+            raise
         self.command(['systemctl', '--user', 'stop', '--no-block', name])
         try: os.kill(main['pid'], signal.SIGCONT)
         except ProcessLookupError: pass

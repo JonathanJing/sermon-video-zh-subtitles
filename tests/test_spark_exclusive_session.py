@@ -474,3 +474,37 @@ def test_planning_session_rejects_changed_unit_state(engine):
 def test_planning_session_rejects_changed_container(engine):
     with pytest.raises(SessionError, match='planning_container_changed'):
         engine.close_without_effects(planning_state(), planning_inventory(container_identity='changed'))
+
+
+def linux_launcher_backend(processes=None, gpu_error=None):
+    from unittest.mock import MagicMock
+    backend = LinuxBackend.__new__(LinuxBackend)
+    procs = processes if processes is not None else [{'pid': 7, 'ppid': 1, 'startTicks': 70, 'executable': 'python3', 'role': None, 'cgroup': 'cg', 'helper': None}]
+    active = {'active': 'active', 'killMode': 'control-group', 'mainPid': 7, 'identity': 'id'}
+    inactive = {'active': 'inactive', 'killMode': 'control-group', 'mainPid': 0, 'identity': 'id'}
+    backend.unit = MagicMock(side_effect=[active, inactive])
+    backend.processes = MagicMock(return_value=procs)
+    backend.queue = MagicMock(return_value={'pending': 0, 'claimed': 0, 'outstanding': 0, 'legacyRunning': False, 'legacyQueued': 0})
+    backend.gpu = MagicMock(side_effect=gpu_error, return_value=[])
+    backend.command = MagicMock(return_value='')
+    return backend
+
+
+def test_linux_stop_unit_completes_for_launcher_without_children(monkeypatch):
+    import signal as sig
+    kills = []
+    monkeypatch.setattr('scripts.spark_exclusive_session.os.kill', lambda pid, signum: kills.append(signum))
+    backend = linux_launcher_backend()
+    backend.stop_unit('spark-api.service')
+    assert kills == [sig.SIGSTOP, sig.SIGCONT]
+    backend.command.assert_called_once()
+
+
+def test_linux_stop_unit_resumes_frozen_launcher_when_preflight_fails(monkeypatch):
+    import signal as sig
+    kills = []
+    monkeypatch.setattr('scripts.spark_exclusive_session.os.kill', lambda pid, signum: kills.append(signum))
+    backend = linux_launcher_backend(gpu_error=AttributeError('preflight'))
+    with pytest.raises(AttributeError): backend.stop_unit('spark-api.service')
+    assert kills == [sig.SIGSTOP, sig.SIGCONT]
+    backend.command.assert_not_called()
