@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261009-luna-api-tps",
+  "runs": [
+    {
+      "label": "luna-dev-20261009",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/openai-model-tps/luna-dev-20261009",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "luna-dev-20261009",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 4515,
+      "truncated": false,
+      "sha256": "8e78abca1adf4a78f71c46a9686024f68a14e602217d5938512eab1ebb3df2a1",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
