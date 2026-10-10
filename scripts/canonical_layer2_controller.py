@@ -508,7 +508,7 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                     evidence = models.run_accounted(source, anchor, policy, model_output, api_key,
                                                  bound_call, None, lane['plugin'], None, None,
                                                  progress_callback=progress.progress, predecessor_spans=[admission_span],
-                                                 completion_spans=model_completion)
+                                                 completion_spans=model_completion, candidate_mode=config.candidate_mode)
             # Paid results remain recoverable if approval/source/config/code drifted
             # while a request was outstanding. Never turn those results into approval.
             with accounting.stage('layer2.post_model_binding.' + locale, depends_on=model_completion,
@@ -557,7 +557,8 @@ def _run_auto_repair(config, lane, source, anchor, policy, api_key, call, progre
         return models.run_accounted(source, anchor, policy, out, api_key, call, None, lane['plugin'],
                                     None, reuse_from, partial_repair_brief=brief,
                                     progress_callback=progress, predecessor_spans=[admission_span],
-                                    completion_spans=completion_spans, failure_collector=collector)
+                                    completion_spans=completion_spans, failure_collector=collector,
+                                    candidate_mode=config.candidate_mode)
 
     notes = None
     if config.auto_repair.get('sourceMeaningNotes'):
