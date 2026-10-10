@@ -27,6 +27,7 @@ Spark Agent 工作目录为 `/home/achillesjing/spark-agent-current`，存在 `r
 | 启动器子进程 | 调度器（`spark-agent.service`）的直接子进程默认不允许存在。唯一例外是 Python multiprocessing 的 `resource_tracker` 辅助进程：父进程为启动器主进程、命令行精确匹配 `from multiprocessing.resource_tracker import main;main(N)`、自身没有子进程、且不占用 GPU。只有这一种子进程被豁免，准入检查和停止单元时都适用；其他任何子进程仍会以 `launcher_workers_active` 拒绝。 |
 | 核验容量 | 目标 unit／容器已停，竞争 GPU PID 已退出，MemAvailable 连续稳定并达到本轮 minimumAvailableGiB。默认最低可用内存为 110 GiB（`DEFAULT_MINIMUM_AVAILABLE_GIB`，CLI `--minimum-available-gib` 的默认值），即整轮任务独占 Spark 直到结束；可显式传入其他值。该默认值来自 2026-10-05 实机验证中停服务后约 117 GiB 可用内存的余量，不代表 128 GB 整机内存全部可用。GPU 内存总量为 N/A 时不能当成零占用 |
 | 保持整轮独占 | fresh source/MFA、TTS、回转写和后续 renderer 均核验 session token，worker 带归属。返修、locale 切换、阶段结束、等待人审或单个 CLI 退出都不恢复常驻服务。发现外部模型重新启动，停止新派发并报告竞争，不擅自杀进程 |
+| 计划中会话关闭 | `planning` 状态且所有操作都是 `not_started`（没有任何停止或启动生效）时，owner 可直接关闭账本，前提是每个快照单元的身份和 active 状态、以及每个容器的身份和运行状态都未变化；不发出任何启停命令。任一变化都拒绝关闭。 |
 | 开发结束恢复 | owner 明确关闭整轮会话；确认所有本会话 job 终态且进程退出，再恢复原先运行的模型、collector 和容器，最后解除其他任务准入。原先停止的项目不启动。核验原模型 ID 和服务健康，部分失败保留 restoring_failed，幂等重试只处理未完成项 |
 
 独占期间新的测试模型仍正常占用内存。验收目标是释放竞争模型并获得明确容量，不能把整机内存降到零作为条件；保留系统内存和可回收文件缓存。不调用 drop_caches、docker prune、删除权重或 GPU reset。

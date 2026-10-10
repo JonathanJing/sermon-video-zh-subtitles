@@ -583,6 +583,19 @@ class Engine:
                 state['status'] = 'exclusive_ready'; self.save(state, 'jobs_idle')
             return job
 
+    def close_without_effects(self, state, inventory):
+        """Close a planning session that never stopped anything: every snapshot unit and container is unchanged."""
+        for name, original in state['snapshot']['units'].items():
+            current = inventory['units'][name]
+            if current['identity'] != original['identity'] or current['active'] != original['active']: raise SessionError('planning_unit_changed:' + name)
+        for container_id in state['containerIds']:
+            original = next((c for c in state['snapshot']['containers'] if c['id'] == container_id), None)
+            current = next((c for c in inventory['containers'] if c['id'] == container_id), None)
+            if not original or not current or current['identity'] != original['identity'] or current['running'] != original['running']: raise SessionError('planning_container_changed')
+        state['status'] = 'closed'
+        self.save(state, 'closed_without_effects')
+        return state
+
     def finish(self, session_id, owner):
         with self.locked():
             state = self.load()
@@ -592,6 +605,8 @@ class Engine:
             if any(j['status'] != 'terminal' for j in state['jobs'].values()): raise SessionError('active_or_unknown_jobs_prevent_restore')
             if state.get('interruptedWork', {}).get('requiresDispatchReconciliation') and (inventory['queue']['claimed'] or inventory['queue']['outstanding'] or inventory['queue'].get('legacyRunning') or inventory['queue'].get('legacyQueued')): raise SessionError('interrupted_foreign_dispatch_requires_terminal_reconciliation')
             if any(v['status'] in {'unknown', 'intent'} for v in state['operations'].values()): raise SessionError('effects_require_reconciliation')
+            if state['status'] == 'planning' and all(v['status'] == 'not_started' for v in state['operations'].values()):
+                return self.close_without_effects(state, inventory)
             if state['status'] not in {'restoring', 'restoring_failed'}:
                 self.resource_check(state, inventory, require_idle=True)
             state['status'] = 'restoring'; self.save(state, 'restore_started')
