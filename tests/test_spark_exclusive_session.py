@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 from unittest.mock import patch
 import pytest
-from scripts.spark_exclusive_session import Engine, Client, SessionError, UNITS, RESTORE_ORDER, LinuxBackend, dispatch
+from scripts.spark_exclusive_session import Engine, Client, SessionError, UNITS, RESTORE_ORDER, LinuxBackend, dispatch, RESOURCE_TRACKER_HELPER, RESOURCE_TRACKER_ARGUMENT
 
 class FakeBackend:
     def __init__(self):
@@ -389,3 +389,45 @@ def test_linux_queue_separates_dispatches_pending_and_unknown_states(tmp_path):
     assert queue['queuedJobs'] == 1 and queue['inputRequiredJobs'] == 1
     with sqlite3.connect(path) as database: database.execute("insert into jobs values('unknown')")
     with pytest.raises(SessionError, match='job_state_unknown'): LinuxBackend(queue_path=path).queue()
+
+
+def launcher_inventory(extra=(), gpu=()):
+    processes = [
+        {'pid': 10, 'ppid': 1, 'startTicks': 100, 'executable': 'python3', 'role': None, 'cgroup': 'api-cg', 'helper': None},
+        {'pid': 20, 'ppid': 1, 'startTicks': 200, 'executable': 'python3', 'role': None, 'cgroup': 'agent-cg', 'helper': None},
+    ] + list(extra)
+    return {'queue': {'claimed': 0, 'outstanding': 0, 'pending': 0, 'legacyRunning': False, 'legacyQueued': 0},
+            'processes': processes, 'gpu': list(gpu),
+            'units': {'spark-api.service': {'active': 'active', 'mainPid': 10, 'controlGroup': 'api-cg'},
+                      'spark-agent.service': {'active': 'active', 'mainPid': 20, 'controlGroup': 'agent-cg'}}}
+
+
+def tracker(pid=21, ppid=20):
+    return {'pid': pid, 'ppid': ppid, 'startTicks': 210, 'executable': 'python3', 'role': None,
+            'cgroup': 'agent-cg', 'helper': RESOURCE_TRACKER_HELPER}
+
+
+def test_resource_tracker_helper_child_is_allowed(engine):
+    engine.idle_launcher(launcher_inventory([tracker()]), begin=True)
+
+
+def test_other_launcher_child_still_blocks(engine):
+    unknown = {'pid': 22, 'ppid': 20, 'startTicks': 220, 'executable': 'python3', 'role': None, 'cgroup': 'agent-cg', 'helper': None}
+    with pytest.raises(SessionError, match='launcher_workers_active'): engine.idle_launcher(launcher_inventory([unknown]), begin=True)
+
+
+def test_helper_with_its_own_child_blocks(engine):
+    grandchild = {'pid': 23, 'ppid': 21, 'startTicks': 230, 'executable': 'python3', 'role': None, 'cgroup': 'agent-cg', 'helper': None}
+    with pytest.raises(SessionError, match='launcher_workers_active'): engine.idle_launcher(launcher_inventory([tracker(), grandchild]), begin=True)
+
+
+def test_helper_on_gpu_blocks(engine):
+    with pytest.raises(SessionError, match='launcher_workers_active'):
+        engine.idle_launcher(launcher_inventory([tracker()], gpu=[{'pid': 21, 'executable': 'python3', 'usedMiB': 1}]), begin=True)
+
+
+def test_helper_argument_pattern_is_exact():
+    assert RESOURCE_TRACKER_ARGUMENT.match('from multiprocessing.resource_tracker import main;main(11)')
+    for bad in ('from multiprocessing.resource_tracker import main;main(11); rm -rf ~',
+                'import os; os.system("x")', 'from multiprocessing.resource_tracker import main;main(x)'):
+        assert not RESOURCE_TRACKER_ARGUMENT.match(bad)
