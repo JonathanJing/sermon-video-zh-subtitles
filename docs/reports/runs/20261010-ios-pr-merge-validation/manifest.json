@@ -47,6 +47,24 @@
     },
     {
       "run": "ios-pr-merge-20261010",
+      "path": "python.log",
+      "kind": "log",
+      "bytes": 110,
+      "truncated": false,
+      "sha256": "ae6ad4d8195d28d8d5037a0c8092615c1fc65b192c83c8e8409b83d58dc797b0",
+      "redactions": {}
+    },
+    {
+      "run": "ios-pr-merge-20261010",
+      "path": "test-result-receipt.json",
+      "kind": "whole",
+      "bytes": 1914,
+      "truncated": false,
+      "sha256": "3a7194f395218d7aa63062c97700c726eb8bc82dedd78f0c6290ebf7b9ff9312",
+      "redactions": {}
+    },
+    {
+      "run": "ios-pr-merge-20261010",
       "path": "web.log",
       "kind": "log",
       "bytes": 5354,
