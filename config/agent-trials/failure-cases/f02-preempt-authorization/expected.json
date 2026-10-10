@@ -1,0 +1,27 @@
+{
+  "id": "f02-preempt-authorization",
+  "reconstructedFrom": "docs/reports/20261007-haiku-180s-8x8-spark-diagnostic-retrospective.zh.md #2",
+  "category": "missing_authorization",
+  "abstain": false,
+  "causeKeywords": [
+    [
+      "preempt",
+      "interrupt"
+    ],
+    [
+      "authoriz",
+      "flag",
+      "explicit",
+      "permission",
+      "allow"
+    ]
+  ],
+  "fixKeywords": [
+    [
+      "allow-interrupted-restart",
+      "authoriz",
+      "flag",
+      "allow"
+    ]
+  ]
+}

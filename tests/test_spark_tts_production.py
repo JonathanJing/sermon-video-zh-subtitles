@@ -31,6 +31,9 @@ class FixturePool:
     def result(self, index):
         return self.outputs.pop(index)
 
+    def generation_seconds(self, index):
+        return 0.0
+
     def close(self):
         self.closed = True
 

@@ -1,0 +1,49 @@
+{
+  "id": "p01-planted-blockers",
+  "reconstructedFrom": "docs/reports/20261007-haiku-180s-8x8-spark-diagnostic-retrospective.zh.md 错误 1、3–5 与 流程问题·前置检查不足",
+  "blockers": {
+    "plugin_identity": [
+      [
+        "plugin"
+      ],
+      [
+        "hash",
+        "identity",
+        "sha",
+        "mismatch",
+        "differ"
+      ]
+    ],
+    "relative_out": [
+      [
+        "relative",
+        "--out",
+        "out path"
+      ],
+      [
+        "relative",
+        "absolute",
+        "resolve",
+        "relative_to"
+      ]
+    ],
+    "missing_terminology": [
+      [
+        "series-terminology",
+        "terminology"
+      ]
+    ],
+    "asr_symlink_mount": [
+      [
+        "symlink",
+        "blobs",
+        "link"
+      ],
+      [
+        "mount",
+        "-v",
+        "/asr-hub"
+      ]
+    ]
+  }
+}

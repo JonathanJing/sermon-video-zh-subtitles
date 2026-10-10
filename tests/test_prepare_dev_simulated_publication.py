@@ -1,5 +1,8 @@
 """Offline helper checks; no media build, model calls or Hosting operations."""
 import copy
+import gzip
+import hashlib
+import io
 import json
 
 import pytest
@@ -157,3 +160,65 @@ def test_catalog_report_adds_the_v4_hash_only_once_published(tmp_path):
     assert set(publication.catalog_report(tmp_path)) == {'catalogSha256'}
     (tmp_path / 'multilingual-v4.json').write_text('{"v": 4}')
     assert publication.catalog_report(tmp_path)['catalogV4Sha256'] == publication.digest(tmp_path / 'multilingual-v4.json')
+
+
+def test_cloud_run_and_function_rewrites_preserved_for_production():
+    config = {'rewrites': [
+        {'glob': '/api/**', 'run': {'serviceId': 'sermon-feedback-api', 'region': 'us-west1'}},
+        {'glob': '/other/**', 'function': {'functionId': 'legacy', 'region': 'us-west1'}},
+        {'glob': '**', 'path': '/index.html'}]}
+    converted = publication.firebase_config(config, environment='production')['hosting']
+    assert converted['site'] == 'ai-for-god-sermon-audio'
+    assert converted['rewrites'] == [
+        {'source': '/api/**', 'run': config['rewrites'][0]['run']},
+        {'source': '/other/**', 'function': config['rewrites'][1]['function']},
+        {'source': '**', 'destination': '/index.html'}]
+
+
+@pytest.mark.parametrize('encoding', ['gzip', 'identity'])
+def test_production_baseline_acquires_frozen_version_and_config(tmp_path, monkeypatch, encoding):
+    target = publication.hosting_target('production')
+    version = 'sites/' + target['site'] + '/versions/frozen'
+    raw = b'{"pages": []}'
+    compressed = gzip.compress(raw, compresslevel=9, mtime=0)
+    compressed = compressed[:9] + bytes([19]) + compressed[10:]
+    sha = hashlib.sha256(compressed).hexdigest()
+    config = {'rewrites': [{'glob': '/api/**', 'run': {'serviceId': 'sermon-feedback-api', 'region': 'us-west1'}}]}
+    calls, origins = [], []
+    def request(method, url):
+        calls.append(url)
+        if url.endswith('/files?pageSize=1000'):
+            return {'files': [{'path': '/multilingual-v3.json', 'status': 'ACTIVE', 'hash': sha}]}
+        assert url.endswith('/' + version)
+        return {'status': 'FINALIZED', 'config': config}
+    class Response(io.BytesIO):
+        status = 200
+        headers = {'Content-Encoding': encoding, 'Etag': '"' + sha + '"'}
+    def download(req, timeout):
+        origins.append(req.full_url)
+        return Response(compressed if encoding == 'gzip' else raw)
+    monkeypatch.setattr(publication.publisher, 'authenticated_transport', lambda: request)
+    monkeypatch.setattr(publication.publisher, 'live_version', lambda req, site: version if site == target['site'] else 'wrong')
+    monkeypatch.setattr(publication, 'urlopen', download)
+    out = tmp_path / 'production-baseline'
+    result = publication.baseline(out, environment='production')
+    assert result['status'] == 'complete_verified_not_deployed'
+    receipt = publication.read(out / 'baseline-receipt.json')
+    assert receipt['project'] == target['project'] and receipt['site'] == target['site']
+    assert receipt['environment'] == 'production' and receipt['channel'] == 'production_web'
+    assert receipt['firebaseJsonSha256'] == publication.digest(out / 'firebase.json')
+    assert receipt['configSemanticEqual'] is True
+    assert receipt['rows'][0]['liveGzipSha256'] == sha
+    assert (out / 'public/multilingual-v3.json').read_bytes() == raw
+    assert origins == [target['origin'] + '/multilingual-v3.json']
+    assert publication.read(out / 'firebase.json')['hosting']['rewrites'][0]['run'] == config['rewrites'][0]['run']
+
+
+def test_gzip_identity_hash_rejects_changed_bytes(tmp_path):
+    path = tmp_path / 'raw'
+    path.write_bytes(b'known media bytes')
+    compressed = gzip.compress(path.read_bytes(), compresslevel=9, mtime=0)
+    expected = hashlib.sha256(compressed[:9] + bytes([19]) + compressed[10:]).hexdigest()
+    assert expected in publication.firebase_cli_gzip_hashes(path)
+    path.write_bytes(b'different media bytes')
+    assert expected not in publication.firebase_cli_gzip_hashes(path)

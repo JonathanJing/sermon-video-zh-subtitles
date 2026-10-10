@@ -891,7 +891,7 @@ class CalibrationAndWaiverTests(unittest.TestCase):
                                       call=always_pass, identity=fixtures.SEMANTIC_IDENTITY)
             # dropped_half also fails the length screen, which is not credited either.
             for kind in ("text.semantic_negation", "text.added_number", "text.wrong_ordinal", "text.added_content",
-                         "text.dropped_half"):
+                         "text.swapped_name", "text.dropped_half"):
                 row = result["kinds"][kind]
                 self.assertGreater(row["trials"], 0, (locale, kind))
                 self.assertEqual(row["detected"], 0, (locale, kind))
@@ -901,6 +901,7 @@ class CalibrationAndWaiverTests(unittest.TestCase):
             self.assertEqual(good["kinds"]["text.added_number"]["rate"], 1.0)
             self.assertEqual(good["kinds"]["text.wrong_ordinal"]["rate"], 1.0)
             self.assertEqual(good["kinds"]["text.added_content"]["rate"], 1.0)
+            self.assertEqual(good["kinds"]["text.swapped_name"]["rate"], 1.0)
 
     def test_added_content_appends_another_sentence_without_a_number(self):
         others = [{"groupId": "g1", "english": "Two sons.", "targetText": "两个儿子。"},
@@ -909,6 +910,64 @@ class CalibrationAndWaiverTests(unittest.TestCase):
         group = {"groupId": "g0", "english": "Grace is a gift.", "targetText": "恩典是礼物。"}
         self.assertEqual(seeded.mutate_text(group, "added_content", "zh-Hans", None, others), "恩典是礼物。他为儿子祷告。")
         self.assertIsNone(seeded.mutate_text(group, "added_content", "zh-Hans", None))
+
+    def test_swapped_name_exchanges_two_named_roles(self):
+        policy = {"terminology": {"properNames": [{"source": "Abraham", "target": "亚伯拉罕"},
+                                                  {"source": "Isaac", "target": "以撒"}], "seriesNames": []}}
+        group = {"groupId": "g0", "english": "Abraham blessed Isaac.", "targetText": "亚伯拉罕祝福了以撒。"}
+        swapped = seeded.mutate_text(group, "swapped_name", "zh-Hans", policy)
+        self.assertEqual(swapped, "以撒祝福了亚伯拉罕。")
+        # Both names survive, so only the back-translation can catch it.
+        self.assertEqual(rules.name_problems(policy, group["english"], swapped), [])
+        self.assertIsNone(seeded.mutate_text({**group, "english": "Abraham prayed.", "targetText": "亚伯拉罕祷告。"},
+                                             "swapped_name", "zh-Hans", policy))
+
+    def test_swapped_name_skips_symmetric_or_ambiguous_roles(self):
+        policy = {"terminology": {"properNames": [{"source": "Paul", "target": "保罗"},
+                                                  {"source": "Silas", "target": "西拉"}], "seriesNames": []}}
+        for english, target in (("Paul and Silas prayed together.", "保罗和西拉一起祷告。"),
+                                ("Paul met Silas.", "保罗遇见了西拉。"),
+                                ("Paul prayed with Silas.", "保罗与西拉祷告。"),
+                                ("Paul blessed Silas and Silas blessed Paul.", "保罗和西拉互相祝福。"),
+                                ("Paul blessed Silas.", "保罗祝福西拉，西拉谢谢保罗。")):
+            group = {"groupId": "g0", "english": english, "targetText": target}
+            self.assertIsNone(seeded.mutate_text(group, "swapped_name", "zh-Hans", policy), english)
+
+    def test_swapped_name_applicability_is_candidate_wide_and_explicit(self):
+        policy = {"terminology": {"properNames": [{"source": "Paul", "target": "保罗"},
+                                                  {"source": "Silas", "target": "西拉"}], "seriesNames": []}}
+        symmetric = {"groupId": "g0", "english": "Paul and Silas prayed together.",
+                     "targetText": "保罗和西拉一起祷告。"}
+        directional = {"groupId": "g1", "english": "Paul blessed Silas.", "targetText": "保罗祝福西拉。"}
+        for groups in ([symmetric], [{**symmetric, "english": "Paul prayed.", "targetText": "保罗祷告。"}]):
+            row = seeded.calibrate_text(groups, "zh-Hans", policy=policy)["kinds"]["swapped_name"]
+            self.assertEqual(row["applicableGroupIds"], [])
+            calibration = self.calibration("zh-Hans")
+            calibration["kinds"]["text.swapped_name"] = row
+            self.recount(calibration)
+            self.assertEqual(waiver.calibration_problems(calibration, "zh-Hans", waiver.implementation_sha256()), [])
+            # A plain zero-trial row remains insufficient.
+            del row["applicableGroupIds"]
+            self.assertIn("calibration has no trials for ['text.swapped_name']",
+                          waiver.calibration_problems(calibration, "zh-Hans", waiver.implementation_sha256()))
+        # An applicable group beyond the trial cap still prevents an exemption.
+        row = seeded.calibrate_text([symmetric, directional], "zh-Hans", policy=policy,
+                                    max_trials=0)["kinds"]["swapped_name"]
+        self.assertEqual(row["applicableGroupIds"], ["g1"])
+        calibration["kinds"]["text.swapped_name"] = row
+        self.recount(calibration)
+        self.assertIn("calibration has no trials for ['text.swapped_name']",
+                      waiver.calibration_problems(calibration, "zh-Hans", waiver.implementation_sha256()))
+        row["applicableGroupIds"] = False
+        self.assertIn("invalid swapped-name applicability",
+                      waiver.calibration_problems(calibration, "zh-Hans", waiver.implementation_sha256()))
+
+    def test_malformed_swapped_name_row_is_rejected_without_crashing(self):
+        calibration = self.calibration("zh-Hans")
+        for malformed in (None, [], "invalid"):
+            calibration["kinds"]["text.swapped_name"] = malformed
+            self.assertIn("invalid trial counts for text.swapped_name",
+                          waiver.calibration_problems(calibration, "zh-Hans", waiver.implementation_sha256()))
 
     def test_a_changed_ordinal_is_seeded(self):
         for locale, target, wrong in (("es", "el primer mandamiento", "el segundo mandamiento"),

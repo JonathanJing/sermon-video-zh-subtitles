@@ -121,6 +121,19 @@ Target-Language Candidate + Target-Language Audio Package
 
 已发行的 Hosting 视频周次沿用 [`three_locale_full_video_v1` 文件数合同](tongxing-weekly-release.zh.md#正式三语周更文件数合同)：21 个新周 Hosting 资源加 1 个 catalog 更新。新的 `three_locale_bucket_video_v2` 合同为 20 个新周 Hosting 资源、1 个 catalog 更新及 1 个 Cloud Storage 视频对象；两种配置不能混报文件数。bucket 视频对客户端保留同源 `/pages/<pageId>/full-video-browser.mp4`，Hosting 以精确 302 指向不可变对象，catalog 的可选 `videoDelivery` 记录对象身份与哈希。Dev、Production 对象及凭据分离；完整上线顺序、回退与 Web／iOS 验收见每周发行合同。其他语言或纯文字发行仍需独立版本化配置。
 
+### Layer 4 收尾：先三语页面，再三语海报
+
+2026-10-07 用户确定每周默认交付顺序：优先分别完成中文（`zh-Hans`）、韩语（`ko`）、西班牙语（`es`）内容页面，然后制作对应三种语言的海报。海报生成纳入 Layer 4 的页面发布收尾步骤，不另起内容生产层，也不反向修改 Layer 1–3。
+
+1. 按当前 release plan 所含的语言（默认三语；单语计划只含中文）分别准备页面、文稿、字幕、同语言音频或允许的显式 `audio_unavailable`、大纲／默想及 Release Package；逐语言检查完整性与上游 hash。三种页面各自绑定本语言的包，不能用中文页面代替另外两种。
+2. 按发行合同发布页面与资产、最后更新 catalog，再分别核验 `zh-Hans`、`ko`、`es` 的准确周次、内容语言、界面语言、GET／SHA 和适用 Range。页面发布汇合条件仍由当前 release plan 决定；已可发布的页面不等海报。
+3. 三语页面交付阶段完成后，再以同一周的已核对内容提取视觉 brief，生成一个共享的无文字主视觉；遵守 [内容对应提示词](tongxing-weekly-poster-content-brief.zh.md)。客户端／现场验收单独安排，`not_run` 不阻断这个 HTTP 发布后的海报步骤。
+4. 用 `scripts/build_multilingual_sermon_posters.py` 新模板入口为 release plan 已发布的语言分别合成海报（默认中、韩、西三张；纯文字 `audio_unavailable` 语言暂不生成，记为海报待完成），遵循[规范海报](tongxing-weekly-poster-format.zh.md)，每种各有高清图、手机预览与收据；标题、系列、经文、日期、讲员、免责声明和机器／人工审核披露按对应语言的实际内容与状态取值。下载徽章使用对应语言官方素材，网页版二维码分别绑定该语言；固定 iOS 下载二维码共用。
+5. 逐语言对两尺寸最终图独立解码两个二维码，目视核对文字及裁切，浏览器验证对应页面。计划包含海报上云时，页面发布核验后再上传图片，最后更新海报索引；每条 sidecar 绑定同环境、同 pageId、同 locale 的当前 release SHA，保留其他语言／历史文件，读回验证图片与索引。
+6. 收尾分别报告三语页面、三语海报、上传与设备验收状态。一种海报失败只续跑该海报，不重发已经核验的页面或重跑上游。release plan 内某语言页面未就绪时保留该语言页面与海报为待完成；不在本周 release plan 内的语言不产生页面或海报待办，不为制作海报跳过发布门禁；继续推进其他已授权页面，后续补齐语言再完成海报收尾。
+
+生成顺序与发布状态是两件事：页面可以先记录 `published_http_verified`，海报仍为 `pending`；不能因此将整周海报交付说成完成。各 locale 的内容／音频审核披露保持原状态；一张共享背景或中文打样通过不代表三语海报通过。这是制作与收尾约定，现有 Supervisor／CLI 尚未因文档更新自动接入 ImageGen、双二维码合成或三语海报上传；执行范围见 [每周海报交付](tongxing-weekly-release.zh.md#每周海报交付)。
+
 ### 每周 App 内容合同与刷新门槛
 
 1. v3 catalog 的 `defaultPageId` 指向本周 `pages[].id`；本周页 `title` 使用默认内容语言已批准的「系列名 · 本篇标题」，并与该语言 `content/<pageId>/<locale>.json` 的 `series`、`title` 一致。每个 target 的 `releasePackageUrl` 固定为同源 `/releases-v2/<pageId>/<locale>.json`，其 SHA 指向不可变 v2 包。页面、内容、字幕、音轨和完整原视频均为本周同一来源；页面须在 App 内打开，独立 HTML URL 只能是兼容入口，不能代替 App 的本周页。

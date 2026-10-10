@@ -1,10 +1,46 @@
 """Focused deterministic-gate regressions for PR 260 review feedback."""
+import json
 import unittest
+from pathlib import Path
 
 from scripts.language_review_plugins import auto_qc_text_common as rules
 
 
 class TextReviewRegressions(unittest.TestCase):
+    def test_real_spanish_policy_only_exempts_complete_glossary_spans(self):
+        policy = json.loads((Path(__file__).resolve().parents[1]
+                             / "config/target-language-policies/es.json").read_text())
+        terms = rules.shared_terms(policy)
+        self.assertIn("revelation: the comfort and hope jesus brings", terms)
+        self.assertNotIn("and", terms)
+        self.assertNotIn("the", terms)
+        for english, target in (
+                ("We love God and serve people.", "Amamos a Dios and servimos gente."),
+                ("We love the world because God loves.", "Amamos the mundo porque Dios ama.")):
+            with self.subTest(target=target):
+                self.assertTrue(rules.untranslated_problems(english, target, "es", terms))
+        for value in ("Revelation: The Comfort and Hope Jesus Brings", "Eric Geiger",
+                      "A Study of the Book of Numbers"):
+            self.assertEqual(rules.untranslated_problems(value, value, "es", terms), [], value)
+        self.assertEqual(rules.untranslated_problems(
+            "Dr. Eric Geiger taught us today.", "El Dr. Eric Geiger nos enseñó hoy.", "es", terms), [])
+        # A fragment of a full name cannot excuse the title or the English around it.
+        self.assertTrue(rules.untranslated_problems(
+            "No, Dr. Eric.", "No, Dr. Eric.", "es", terms))
+        self.assertTrue(rules.untranslated_problems(
+            "Dr. Eric Geiger taught us today.", "El Dr. Eric Geiger taught us today.", "es", terms))
+        self.assertTrue(rules.untranslated_problems(
+            "We love God and serve people.",
+            "Revelation: The Comfort and Hope Jesus Brings: Amamos a Dios and servimos gente.", "es", terms))
+
+    def test_single_modal_names_require_capitalization_at_the_matched_span(self):
+        names = frozenset({"will", "may"})
+        for name in ("Will", "May"):
+            self.assertEqual(rules.untranslated_problems(name, name, "es", names), [])
+            self.assertTrue(rules.untranslated_problems(name.lower(), name.lower(), "es", names))
+        self.assertEqual(rules.untranslated_problems("Will May.", "Will May.", "es", names), [])
+        self.assertTrue(rules.untranslated_problems("will may.", "will may.", "es", names))
+
     def test_adjacent_spoken_numbers_remain_separate(self):
         for english in ("two, three, four", "two three four", "two and three and four",
                         "two; three; four", "two. Three. Four"):
@@ -175,6 +211,23 @@ class TextReviewRegressions(unittest.TestCase):
         self.assertEqual(rules.name_problems(god, "God gives us courage.", "神赐给我们精神。"), [])
         self.assertEqual(rules.name_spans("神", "精神来自神。"), [(4, 5)])
 
+    def test_spanish_shared_titles_and_long_name_lists_are_not_english_leaks(self):
+        names = frozenset({"rick", "warren", "ken", "will", "mark", "paul", "silas", "anna", "john"})
+        for title in ("Dr.", "Dra.", "Doctor", "Doctora", "pastor", "pastora"):
+            self.assertEqual(rules.untranslated_problems(
+                f"{title} Rick Warren taught us today.",
+                f"El {title} Rick Warren nos enseñó hoy.", "es", names), [], title)
+            self.assertTrue(rules.untranslated_problems(
+                f"{title} Rick Warren taught us today.",
+                f"El {title} Rick Warren taught us today.", "es", names), title)
+        for english in ("Rick Warren Ken Paul Silas Anna.", "Will Mark Paul Silas Anna John."):
+            self.assertEqual(rules.untranslated_problems(english, english, "es", names), [])
+        self.assertTrue(rules.untranslated_problems(
+            "Will Mark Paul Silas Anna John trust us.",
+            "Will Mark Paul Silas Anna John trust us.", "es", names))
+        self.assertTrue(rules.untranslated_problems(
+            "Dr. Alex Smith taught us today.", "El Dr. Alex Smith nos enseñó hoy.", "es", names))
+
     def test_one_word_spanish_copies_are_untranslated(self):
         for english, target in (("Repent.", "Repent."), ("Listen!", "listen"), ("Believe.", "Believe.")):
             with self.subTest(target=target):
@@ -243,6 +296,55 @@ class TextReviewRegressions(unittest.TestCase):
         for english, target in (("Jesus saves", "Jesús salva"), ("God loves all", "Dios ama a todos"),
                                 ("Jesus", "Jesús"), ("Pastor Ken", "Pastor Ken")):
             self.assertEqual(rules.untranslated_problems(english, target, "es"), [])
+
+
+    def test_partial_english_copies_in_spanish(self):
+        english = "God will never abandon you, so keep walking in faith."
+        self.assertEqual(rules.untranslated_problems(english, "Dios will never abandon you, así que sigue caminando con fe.", "es"),
+                         ["English source phrase copied into target"])
+        self.assertEqual(rules.untranslated_problems(english, "Dios nunca te abandonará, así que sigue caminando en fe.", "es"), [])
+        # Names that read the same in both languages may run together.
+        policy = {"terminology": {"properNames": [{"source": "Paul", "target": "Paul"},
+                                                  {"source": "Silas", "target": "Silas"},
+                                                  {"source": "Timothy", "target": "Timothy"}], "seriesNames": []}}
+        self.assertEqual(rules.untranslated_problems("Greetings from Paul Silas Timothy.", "Saludos de Paul Silas Timothy.",
+                                                     "es", rules.shared_terms(policy)), [])
+
+    def test_spanish_pastor_honorific_is_bound_to_glossary_names(self):
+        policy = {"terminology": {"properNames": [{"source": name, "target": name}
+                                                  for name in ("Ken", "Paul", "Silas")], "seriesNames": []}}
+        terms = rules.shared_terms(policy)
+        for english, target in (
+                ("We heard Pastor Paul Silas speak today.", "Escuchamos al pastor Paul Silas hablar hoy."),
+                ("No, Pastor Ken, that is not what I mean.", "No,pastor Ken, eso no es lo que quiero decir."),
+                ("No, Pastor Ken.", "No,pastor Ken.")):
+            with self.subTest(target=target):
+                self.assertEqual(rules.untranslated_problems(english, target, "es", terms), [])
+        # The name exemption must not hide untranslated words around a title.
+        for english, target in (
+                ("Pastor Ken will preach today.", "El pastor Ken will predicar hoy."),
+                ("The pastor will teach today.", "El pastor will teach hoy."),
+                ("We heard Pastor Alex Smith speak today.", "Escuchamos al pastor Alex Smith hablar hoy.")):
+            with self.subTest(target=target):
+                self.assertEqual(rules.untranslated_problems(english, target, "es", terms),
+                                 ["English source phrase copied into target"])
+
+    def test_clause_final_chinese_one_needs_a_numeric_reading(self):
+        # 始终如一 ends with 一 but says "consistent", not the quantity one.
+        self.assertEqual(rules.number_problems("You have one life and must remain faithful.", "你有生命，必须始终如一。",
+                                               "zh-Hans"), ["missing number 1"])
+        for english, target in (("God is one.", "神是一。"), ("They became one.", "他们合而为一。"),
+                                ("He is one of them.", "他是其中之一。"), ("You have one life.", "你只有一条命。"),
+                                ("Choose one.", "选一。"), ("There is one.", "有一。"),
+                                ("There is only one.", "只有一。"), ("One.", "一。")):
+            with self.subTest(target=target):
+                self.assertEqual(rules.number_problems(english, target, "zh-Hans"), [])
+        self.assertEqual(rules.number_problems("Choose one and keep one.", "选一，留一。", "zh-Hans"), [])
+        self.assertEqual(rules.number_problems("Choose one.", "选二。", "zh-Hans"), ["missing number 1"])
+        for target in ("必须始终如一。", "表里如一。", "心口如一。", "言行如一。", "达成统一。",
+                       "这是唯一。", "保持专一。", "形式单一。", "长短不一。", "整齐划一。", "排名第一。"):
+            with self.subTest(target=target):
+                self.assertEqual(rules.chinese_number_count(target, 1), 0)
 
 
 if __name__ == "__main__":

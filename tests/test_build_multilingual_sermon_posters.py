@@ -78,6 +78,31 @@ class MultilingualPosterTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 poster.origin_url(origin)
 
+    def test_production_origin_required_unless_labeled_proof(self):
+        self.assertEqual(poster.poster_origin(poster.PRODUCTION_ORIGIN + '/'), poster.PRODUCTION_ORIGIN)
+        with self.assertRaisesRegex(ValueError, 'production origin'):
+            poster.poster_origin('https://ai-for-god-sermon-audio-dev.web.app')
+        self.assertEqual(poster.poster_origin('https://ai-for-god-sermon-audio-dev.web.app', True),
+                         'https://ai-for-god-sermon-audio-dev.web.app')
+
+    def test_posters_follow_the_locales_this_page_published(self):
+        del self.page['targets']['ko'], self.page['targets']['es']
+        self.save_catalog()
+        bundles, checks = self.load()
+        self.assertEqual(list(bundles), ['zh-Hans'])
+        self.assertEqual(len(checks), 3)
+        with self.assertRaisesRegex(ValueError, 'published targets'):
+            poster.load_sources(self.release, 'week-id', 'https://example.web.app', locales=['ko'])
+
+    def test_a_text_only_locale_can_be_left_out_explicitly(self):
+        target = self.page['targets']['es']
+        package = poster.read(self.public / target['releasePackageUrl'].lstrip('/'))
+        package['audioStatus'] = 'unavailable'
+        target['releasePackageJsonSha256'] = self.save(target['releasePackageUrl'], package)
+        self.save_catalog()
+        bundles, _ = poster.load_sources(self.release, 'week-id', 'https://example.web.app', locales=['zh-Hans', 'ko'])
+        self.assertEqual(list(bundles), ['zh-Hans', 'ko'])
+
     def machine_week(self, statuses=('machine_checked', 'machine_checked'), disclosure=True):
         """Republish every locale as a machine-checked v4 release listed only in catalog v4."""
         for locale, target in self.page['targets'].items():

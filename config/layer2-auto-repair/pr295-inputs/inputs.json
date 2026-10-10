@@ -1,0 +1,239 @@
+{
+  "schemaVersion": "pr295-run-input-inventory-v1",
+  "purpose": "cloud_review_of_historical_diagnostic_inputs",
+  "productionEligible": false,
+  "dispatchEligible": false,
+  "actualHumanApproval": false,
+  "locales": {
+    "zh-Hans": {
+      "sourcePackage": "shared/source.json",
+      "anchor": "shared/anchor.json",
+      "groupPlan": "shared/group-plan.json",
+      "historicalPolicy": "zh-Hans/policy.json",
+      "historicalLocalFixture": "artifacts/next-concurrency-605s-20261005-r12-final/zh-Hans/fixture",
+      "sourceQuotationUnits": [
+        "0-u067",
+        "0-u068"
+      ],
+      "scriptureClassification": "contains_direct_quotations",
+      "historicalPluginSha256": "c810cf0ded0d46cdee65b357cb27397c975b8be415988f5036c27e29716c544f",
+      "historicalCodeCommit": "cc88761a61e2aad2223c244d8a85dd54aa286cf7",
+      "historicalGroupWorkers": 23
+    },
+    "ko": {
+      "sourcePackage": "shared/source.json",
+      "anchor": "shared/anchor.json",
+      "groupPlan": "shared/group-plan.json",
+      "historicalPolicy": "ko/policy.json",
+      "historicalLocalFixture": "artifacts/next-concurrency-605s-20261005-r12-final/ko/fixture",
+      "sourceQuotationUnits": [
+        "0-u067",
+        "0-u068"
+      ],
+      "scriptureClassification": "contains_direct_quotations",
+      "historicalPluginSha256": "937fd9653214ec823975fc9bc40351af7808c695e4bf12c1cf3bc0fedd1f940b",
+      "historicalCodeCommit": "cc88761a61e2aad2223c244d8a85dd54aa286cf7",
+      "historicalGroupWorkers": 23
+    },
+    "es": {
+      "sourcePackage": "shared/source.json",
+      "anchor": "shared/anchor.json",
+      "groupPlan": "shared/group-plan.json",
+      "historicalPolicy": "es/policy.json",
+      "historicalLocalFixture": "artifacts/next-concurrency-605s-20261005-r12-final/es/fixture",
+      "sourceQuotationUnits": [
+        "0-u067",
+        "0-u068"
+      ],
+      "scriptureClassification": "contains_direct_quotations",
+      "historicalPluginSha256": "7b00de67b2f056af94788d1abe549c2a5c6f1aa5154c2f65d54d81c5fdf47636",
+      "historicalCodeCommit": "cc88761a61e2aad2223c244d8a85dd54aa286cf7",
+      "historicalGroupWorkers": 23
+    }
+  },
+  "files": {
+    "shared/source.json": {
+      "sha256": "72bc73ac88691547db9e57156af6bda17f0d49785b0055811936b01c406cbf8d",
+      "canonicalJsonSha256": "483fd864120bd467b01c682153150ec49ede24e3e4cab52ec564a7e29c23b6b9",
+      "bytes": 3916
+    },
+    "shared/anchor.json": {
+      "sha256": "5feb7eb319297e39bcecb8800764e1ff73718445b505182b14c32a2a0929557f",
+      "canonicalJsonSha256": "aa9b07efe4e632b31c40f8841afd02d1f39314de360d6607efca064dbadb9f03",
+      "bytes": 468130
+    },
+    "shared/group-plan.json": {
+      "sha256": "e9a319c56e67f6b34e3914747e7a0c797f77f48e195df694a4137ab9bd47dd9a",
+      "canonicalJsonSha256": "10110bcb0ea153bf51ee270a0e9d6cf61a5e532676c873f920883c4f3b9854f3",
+      "bytes": 6181
+    },
+    "zh-Hans/policy.json": {
+      "sha256": "d0bdeb5244a855c5f2e13ae7eeae42a9a8285f3ee4b394960faf2ff27f4fd29e",
+      "canonicalJsonSha256": "af58c1805be65d00d44eae7329e071b1794ca58efbb66e8195f706cb3a0def79",
+      "bytes": 5008
+    },
+    "ko/policy.json": {
+      "sha256": "06f95ee52f7b3febe0e7d0d3e2edf676cad3c6185521b7b10e4c2e4fc683a426",
+      "canonicalJsonSha256": "e87aa29baef37ad6ca30beed6e56beefa4b371a94c2c899248cfa431d4b0e3d8",
+      "bytes": 4973
+    },
+    "es/policy.json": {
+      "sha256": "4bc4d1c5442f614cdc2189ebe6fc655d014ddb4124c53fb98a5f9074e0fc115f",
+      "canonicalJsonSha256": "280f9b371993ee7f054c8271bb40672c3460c194665812d7a01d56247d416ddd",
+      "bytes": 4983
+    }
+  },
+  "sourceUnits": 136,
+  "groups": 46,
+  "budget": {
+    "status": "not_authorized",
+    "maximumCalls": null,
+    "maximumTokens": null,
+    "spendCapUsd": null,
+    "effectiveNewPaidCallsAllowed": 0,
+    "authorizationPath": null,
+    "approvalReceiptPath": null,
+    "proposal": {
+      "status": "superseded_not_authorization",
+      "basis": "46 groups x (translator + reviewer) initial calls, plus the PR295 repair cap max(4, ceil(10%)); every call reserved at its worst case under the dev request limits and the frozen price assumption strict-chat-worst-case-2026-10-05-v2 (gpt-6.1-sol: 2.5 USD input, 10 USD output per million tokens). invoiceVerified=false.",
+      "initialCalls": 92,
+      "repairCalls": 10,
+      "maximumCalls": 102,
+      "maximumInputTokens": 1671168,
+      "maximumOutputTokens": 417792,
+      "maximumTokens": 2088960,
+      "worstCaseUsd": 8.35584,
+      "suggestedSpendCapUsd": 9,
+      "requestLimits": {
+        "schemaVersion": "sermon-openai-chat-request-limits-v1",
+        "maxInputTokens": 16384,
+        "maxCompletionTokens": 4096,
+        "wallTimeMs": 300000,
+        "serviceTier": "default"
+      },
+      "globalBounds": {
+        "requests": 102,
+        "inputTokens": 1671168,
+        "outputTokens": 417792,
+        "wallTimeMs": 30600000,
+        "costMicrousd": 9000000
+      },
+      "unitBounds": {
+        "requests": 1,
+        "inputTokens": 16384,
+        "outputTokens": 4096,
+        "wallTimeMs": 300000,
+        "costMicrousd": 81920
+      },
+      "limits": {
+        "contentRevisions": 2,
+        "reviewAttemptsPerRevision": 2,
+        "decisionProposals": 1
+      },
+      "supersededBecause": "The canonical controller plans groups from the anchor's translationRequests (136 single-unit groups for this source), not the 46-group diagnostic plan; the 46-group figures only apply to the standalone runner with --group-plan."
+    },
+    "approvalTemplate": "budget-approval.template.json",
+    "controllerPath": {
+      "status": "proposal_not_authorization",
+      "basis": "Groups as the controller plans them (one per anchor translation request). Each call is reserved at its payload's input upper bound plus maxCompletionTokens and the reservation is never returned (sermon_review_budget._charge), so the global bound must cover every call's reservation; the worst case uses maxInputTokens=16384. Frozen price assumption strict-chat-worst-case-2026-10-05-v2, invoiceVerified=false. Per locale.",
+      "budgetLedgerCallLimit": {
+        "runScopeV1": 154,
+        "localeScopeV2": "about 4,900 (8 MiB ledger per locale)"
+      },
+      "budgetLedgerCallLimitEvidence": "One BudgetStore root keeps every reservation in a single state.json capped at 256 KiB (sermon_review_contracts.MAX_BYTES); measured on 2026-10-08 the 155th reservation fails with budget_ledger_size_limit.",
+      "sample605": {
+        "groups": 136,
+        "initialCalls": 272,
+        "repairCalls": 28,
+        "maximumCalls": 300,
+        "systemicThreshold": 3,
+        "worstReservedInputTokens": 4915200,
+        "worstReservedOutputTokens": 1228800,
+        "worstReservedTokens": 6144000,
+        "worstCaseUsd": 24.58,
+        "fitsOneBudgetLedger": false,
+        "fitsWithLocaleLedger": true
+      },
+      "fullSermon20260927": {
+        "groups": 420,
+        "initialCalls": 840,
+        "repairCalls": 84,
+        "maximumCalls": 924,
+        "systemicThreshold": 5,
+        "worstReservedInputTokens": 15138816,
+        "worstReservedOutputTokens": 3784704,
+        "worstReservedTokens": 18923520,
+        "worstCaseUsd": 75.69,
+        "fitsOneBudgetLedger": false,
+        "sourceUnits": 420,
+        "durationSeconds": 1891.677333,
+        "groupsAssumed": "one group per source unit, as the 605 anchor plans; unverified until the full anchor is supplied",
+        "fitsWithLocaleLedger": true
+      },
+      "fullSermon20261004": {
+        "groups": 474,
+        "initialCalls": 948,
+        "repairCalls": 95,
+        "maximumCalls": 1043,
+        "systemicThreshold": 5,
+        "worstReservedInputTokens": 17088512,
+        "worstReservedOutputTokens": 4272128,
+        "worstReservedTokens": 21360640,
+        "worstCaseUsd": 85.44,
+        "fitsOneBudgetLedger": false,
+        "sourceUnits": 474,
+        "durationSeconds": 1942.123,
+        "groupsAssumed": "474 groups, matching the 10-04 formal run (948 role results per locale)",
+        "fitsWithLocaleLedger": true
+      },
+      "observedTokensPerCall": {
+        "value": 2485,
+        "evidence": "10-04 full production: 1,730 calls / 4,298,792 tokens (docs/reports/20261004-full-production-retrospective.zh.md)"
+      },
+      "authorizationSchema": "sermon-canonical-layer2-budget-authorization-v2",
+      "ledgerScope": "locale",
+      "timeEstimate": {
+        "status": "estimate_not_measured",
+        "formula": "wall time per locale ~ groups x (translator + reviewer latency) / groupWorkers; locales run in parallel up to maxActiveLocales; all share 24 in-flight API slots",
+        "recommended": {
+          "groupWorkers": 8,
+          "maxActiveLocales": 3,
+          "inFlightApiCalls": 24
+        },
+        "fullSermon20260927AssumingThirtySecondsPerGroup": {
+          "serialOneWorkerOneLocaleAtATimeHours": 10.5,
+          "eightWorkersThreeLocalesMinutes": 27
+        }
+      }
+    }
+  },
+  "approval": {
+    "status": "not_supplied",
+    "budgetReceiptPath": null,
+    "sourceReviewReceiptPath": null,
+    "scriptureAdjudicationReceiptPath": null,
+    "reviewedBy": null,
+    "operatorEvidence": null
+  },
+  "blockers": [
+    "No artifact-bound live budget authorization and approval receipt supplied; the proposal above is a number to approve or change, not an authorization.",
+    "Source package has pending sermon-window and human source review (status=blocked); the controller's source gate refuses it before any call.",
+    "Direct quotation units 0-u067 and 0-u068 require real adjudication; historical fixtures carry no human receipt. Design also requires the 0-u076 source adjudication before the 605 rerun.",
+    "Generated per-locale plugin modules are not uploaded; their hashes must be recomputed with current code (plugin_implementation_sha256) and must equal the policy's pluginImplementationSha256, or the policy must be re-frozen.",
+    "The diagnostic plugin bindings are frozen for the 46-group plan (groupPlanSha256); the controller uses the anchor's plan, so the bindings must be regenerated for it or the controller must accept a frozen group plan."
+  ],
+  "execution": {
+    "template": "execution-v3.template.json",
+    "schemaVersion": "sermon-canonical-layer2-execution-v3",
+    "note": "v3 runs the PR295 repair loop inside the canonical controller job. layer2AutoRepair binds routingVersion, groupWorkers (1-16 concurrent groups per locale) and maxActiveLocales (1-3). Recommended: 8 and 3, which fill the 24 shared API slots."
+  },
+  "missingFromUpload": [
+    "Per-locale generated diagnostic plugin modules (historicalLocalFixture/*.py with DIAGNOSTIC_PINNED_QUOTES = True) and their pinned quote bindings; the policies pin their hashes, and the controller refuses to dispatch without the exact files.",
+    "A canonical inspection config (sermon package inspection v1) naming source, anchor and the chosen locale's policy."
+  ],
+  "resolved": [
+    "PR295 now has a controller-native repair path: execution config v3 runs the loop inside one durable job under the bound budget transport (no injected run_round needed for a live run).",
+    "Budget ledger capacity: authorization v2 (ledgerScope=locale) gives each locale its own ledger, widened to 8 MiB (about 4,900 reservations); a full sermon is 924-1,043 calls per locale.",
+    "Speed: failure-collection rounds no longer force one group worker (they write no plugin stop receipt); execution config v3 sets groupWorkers (1-16) and maxActiveLocales (1-3)."
+  ]
+}
