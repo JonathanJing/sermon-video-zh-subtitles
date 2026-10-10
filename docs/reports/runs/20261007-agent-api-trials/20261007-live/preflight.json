@@ -1,0 +1,225 @@
+{
+  "rows": [
+    {
+      "plan": "p01-planted-blockers",
+      "sessionId": "sess_097b59d231a0fd65006ac727bde2988196bcf817e0b651f1be",
+      "status": "completed",
+      "toolCalls": 24,
+      "usage": null,
+      "elapsedSeconds": 125.43,
+      "report": {
+        "go": false,
+        "items": [
+          {
+            "checked_with": "check_staged",
+            "evidence": "check_staged returned staged=false; staging manifest includes only scripts/, schemas/, config/.",
+            "kind": "file",
+            "requirement": "远端脚本依赖 docs/series-terminology.zh.md 必须纳入 staging",
+            "status": "blocker"
+          },
+          {
+            "checked_with": "check_staged",
+            "evidence": "check_staged returned staged=true.",
+            "kind": "file",
+            "requirement": "远端脚本依赖 config/speaker-voice-registry.json 必须纳入 staging",
+            "status": "ok"
+          },
+          {
+            "checked_with": "check_staged",
+            "evidence": "check_staged for schemas/ returned staged=true.",
+            "kind": "file",
+            "requirement": "远端脚本依赖 schemas 目录必须纳入 staging",
+            "status": "ok"
+          },
+          {
+            "checked_with": "check_staged",
+            "evidence": "check_staged returned staged=true.",
+            "kind": "file",
+            "requirement": "执行脚本 scripts/experiments/diagnostic_audio_inputs.py 必须纳入 staging",
+            "status": "ok"
+          },
+          {
+            "checked_with": "check_staged",
+            "evidence": "check_staged returned staged=true.",
+            "kind": "file",
+            "requirement": "执行脚本 scripts/experiments/run_spark_diagnostic_audio.py 必须纳入 staging",
+            "status": "ok"
+          },
+          {
+            "checked_with": "check_staged",
+            "evidence": "check_staged returned staged=false.",
+            "kind": "file",
+            "requirement": "计划的 --media artifacts/clip/source.mp4 必须纳入 staging",
+            "status": "blocker"
+          },
+          {
+            "checked_with": "check_out_path",
+            "evidence": "check_out_path returned relative_to_root_ok=false.",
+            "kind": "path",
+            "requirement": "--layer2-out artifacts/r/live-180s-r4 必须满足 relative_to(ROOT)",
+            "status": "blocker"
+          },
+          {
+            "checked_with": "check_out_path",
+            "evidence": "check_out_path returned relative_to_root_ok=false; the code reaches this path after creating the job hold.",
+            "kind": "path",
+            "requirement": "--out artifacts/r/diagnostic-audio-r4 必须满足 relative_to(ROOT)",
+            "status": "blocker"
+          },
+          {
+            "checked_with": "check_mount_resolves",
+            "evidence": "check_mount_resolves returned resolves=false and blobsInsideMount=false; snapshot symlinks target ../../blobs.",
+            "kind": "mount",
+            "requirement": "back-ASR 模型快照挂载必须包含 symlink 的 blobs 目标",
+            "status": "blocker"
+          },
+          {
+            "checked_with": "compare_plugin_identity",
+            "evidence": "compare_plugin_identity returned equal=false; current and frozen SHA-256 values differ.",
+            "kind": "identity",
+            "requirement": "冻结 fixture 的插件实现哈希必须与当前插件一致",
+            "status": "blocker"
+          },
+          {
+            "checked_with": "grep",
+            "evidence": "搜索证据中的 authorization、authorize 未找到匹配；计划含 --mode preempt、--owner round-x、--allow-interrupted-restart，未见授权记录。",
+            "kind": "authorization",
+            "requirement": "preempt/allow-interrupted-restart 及停止四项 resident services 的授权",
+            "status": "unverified"
+          }
+        ],
+        "summary_zh": "不能开始 Spark exclusive session：两个输出路径均无法通过 relative_to(ROOT)，术语文件和媒体文件未纳入 staging，ASR 快照 symlink 指向挂载外，插件哈希与冻结 fixture 不一致。脚本、配置、schemas 目录已确认纳入 staging；授权证据未找到，状态为未验证。"
+      },
+      "score": {
+        "submitted": true,
+        "go": false,
+        "expectedGo": false,
+        "goCorrect": true,
+        "blockersFound": [
+          "plugin_identity",
+          "relative_out",
+          "missing_terminology",
+          "asr_symlink_mount"
+        ],
+        "blockersMissed": [],
+        "extraBlockers": 2,
+        "checkToolsUsed": [
+          "check_mount_resolves",
+          "check_out_path",
+          "check_staged",
+          "compare_plugin_identity"
+        ],
+        "claimedButNotCalled": [],
+        "claimedButNotMatched": []
+      }
+    },
+    {
+      "plan": "p02-clean",
+      "sessionId": "sess_0f45406cd46de61b006ac7283b5dcc8197b3c9bc94b3656ad8",
+      "status": "completed",
+      "toolCalls": 24,
+      "usage": null,
+      "elapsedSeconds": 140.24,
+      "report": {
+        "go": false,
+        "items": [
+          {
+            "checked_with": "check_staged",
+            "evidence": "The staging manifest covers scripts/; deterministic check returned staged=true.",
+            "kind": "file",
+            "requirement": "Remote validation script scripts/experiments/diagnostic_audio_inputs.py is staged.",
+            "status": "ok"
+          },
+          {
+            "checked_with": "check_staged",
+            "evidence": "The staging manifest covers scripts/; deterministic check returned staged=true.",
+            "kind": "file",
+            "requirement": "Spark runner scripts/experiments/run_spark_diagnostic_audio.py is staged.",
+            "status": "ok"
+          },
+          {
+            "checked_with": "check_staged",
+            "evidence": "Deterministic check returned staged=true.",
+            "kind": "file",
+            "requirement": "docs/series-terminology.zh.md is staged.",
+            "status": "ok"
+          },
+          {
+            "checked_with": "check_staged",
+            "evidence": "The staging manifest covers config/; deterministic check returned staged=true.",
+            "kind": "file",
+            "requirement": "config/speaker-voice-registry.json is staged.",
+            "status": "ok"
+          },
+          {
+            "checked_with": "check_staged",
+            "evidence": "Check of schemas/ returned staged=true.",
+            "kind": "file",
+            "requirement": "schemas directory needed by remote validation is staged.",
+            "status": "ok"
+          },
+          {
+            "checked_with": "check_mount_resolves",
+            "evidence": "Deterministic check returned resolves=true and blobsInsideMount=true for ~/.cache/huggingface/hub.",
+            "kind": "mount",
+            "requirement": "The ASR snapshot symlinks resolve to blobs available through the planned read-only Hugging Face mount.",
+            "status": "ok"
+          },
+          {
+            "checked_with": "check_out_path",
+            "evidence": "The planned <HOME>/sermon-video-zh-subtitles/artifacts/r/diagnostic-audio-r4 value returned relative_to_root_ok=true.",
+            "kind": "path",
+            "requirement": "--out resolves inside ROOT for the runner's relative_to(ROOT) call.",
+            "status": "ok"
+          },
+          {
+            "checked_with": "check_out_path",
+            "evidence": "Resolved against the planned <HOME>/sermon-video-zh-subtitles cwd to <HOME>/sermon-video-zh-subtitles/artifacts/r/live-180s-r4; deterministic path check returned relative_to_root_ok=true.",
+            "kind": "path",
+            "requirement": "--layer2-out resolves inside the repository from the planned repository cwd.",
+            "status": "ok"
+          },
+          {
+            "checked_with": "compare_plugin_identity",
+            "evidence": "Deterministic comparison returned equal=true; current and frozen SHA-256 values match.",
+            "kind": "identity",
+            "requirement": "Frozen fixture plugin identity matches the current plugin implementation.",
+            "status": "ok"
+          },
+          {
+            "checked_with": "grep",
+            "evidence": "Evidence search found no authorization statement. The plan specifies --mode preempt, --owner round-x, and --allow-interrupted-restart, but does not establish approval to stop the four listed services.",
+            "kind": "authorization",
+            "requirement": "Explicit authorization is established for starting preempt mode and stopping spark-api, spark-agent, collector, and llama-server.",
+            "status": "blocker"
+          },
+          {
+            "checked_with": "none",
+            "evidence": "The plan references both inputs, but the supplied excerpts and deterministic checks do not verify their availability.",
+            "kind": "other",
+            "requirement": "Fixture artifacts/r/fixture-180s-r3 and media artifacts/clip/source.mp4 are available to the Spark run.",
+            "status": "unverified"
+          }
+        ],
+        "summary_zh": "预检发现：所需脚本、术语文档、说话人注册表和 schemas 均已列入暂存；ASR 挂载可解析；两个输出路径均位于仓库内；冻结插件身份匹配。尚无明确证据授权以抢占模式停止四个常驻服务，因此存在阻塞项，当前不应开始独占会话。夹具和媒体文件的可用性也未验证。"
+      },
+      "score": {
+        "submitted": true,
+        "go": false,
+        "expectedGo": true,
+        "goCorrect": false,
+        "blockersFound": [],
+        "blockersMissed": [],
+        "extraBlockers": 1,
+        "checkToolsUsed": [
+          "check_mount_resolves",
+          "check_out_path",
+          "check_staged",
+          "compare_plugin_identity"
+        ],
+        "claimedButNotCalled": [],
+        "claimedButNotMatched": []
+      }
+    }
+  ]
+}

@@ -1,0 +1,89 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261007-agent-api-trials",
+  "runs": [
+    {
+      "label": "20261007-live",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/agent-api-trials/20261007-live",
+      "skipped": {
+        ".json": 362,
+        ".lock": 26,
+        ".jsonl": 26
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "20261007-live",
+      "path": "diagnose.json",
+      "kind": "whole",
+      "bytes": 46919,
+      "truncated": false,
+      "sha256": "f44b399960807892ed7958209bae002abfefd1e770cfcd1ead61e9123a57755f",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "20261007-live",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 226,
+      "truncated": false,
+      "sha256": "0e2126dd88da1bd603d3bef90f5ad8dbd1cb42f23188fe23c2c93e1c45e9726a",
+      "redactions": {}
+    },
+    {
+      "run": "20261007-live",
+      "path": "preflight.json",
+      "kind": "whole",
+      "bytes": 10041,
+      "truncated": false,
+      "sha256": "ea5ab2d8962eb61234744be9c3287385b05832528878d7f7efa7ccdcb070f5a7",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "20261007-live",
+      "path": "refute.json",
+      "kind": "whole",
+      "bytes": 15642,
+      "truncated": false,
+      "sha256": "7ca9b0091ef38adfb569ee2a81f3d1e82d8b07ae613a11a5d0ddd7b2426bb6cf",
+      "redactions": {}
+    },
+    {
+      "run": "20261007-live",
+      "path": "risk.json",
+      "kind": "whole",
+      "bytes": 25708,
+      "truncated": false,
+      "sha256": "4a93f482d752959c3c3c2fc857dbd9f6159ddfcf3ce9da5eb094bb0eb74ca144",
+      "redactions": {}
+    },
+    {
+      "run": "20261007-live",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 2626,
+      "truncated": false,
+      "sha256": "e9992356c30cce47774eab2b4cada5ecf15b724a2d25f76cd9578e403b88b3aa",
+      "redactions": {}
+    },
+    {
+      "run": "20261007-live",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 116,
+      "truncated": false,
+      "sha256": "a245454696ffb9a2a81fb493754f0971e8177c6fb2464f0923dfaf8b994ec23b",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

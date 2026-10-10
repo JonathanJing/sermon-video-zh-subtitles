@@ -1,0 +1,929 @@
+{
+  "rows": [
+    {
+      "case": "f01-plugin-identity",
+      "arm": "raw",
+      "sessionId": "sess_0e5247346cb765d7006ac723011a088197bd9541f6992f4854",
+      "status": "completed",
+      "toolCalls": 8,
+      "usage": null,
+      "elapsedSeconds": 48.82,
+      "report": {
+        "category": "identity_mismatch",
+        "confidence": 0.99,
+        "evidence": [
+          {
+            "file": "layer2.log",
+            "quote": "ValueError: Diagnostic plugin identity changed"
+          },
+          {
+            "file": "current-plugin.json",
+            "quote": "\"implementationSha256\": \"31ce5531a7e2f09b4d6c8e1a3f5b7d9c0e2a4b6d8f0a1c3e5b7d9f1a3c5e7b9d\""
+          },
+          {
+            "file": "fixture-manifest.json",
+            "quote": "\"pluginImplementationSha256\": \"ee120781c94b0d7e2a5f61f3b8a0d4c2e9f7a1b3c5d6e8f0a2b4c6d8e0f1a3b5\""
+          },
+          {
+            "file": "layer2.log",
+            "quote": "2026-10-08T01:22:12Z [preflight] checking frozen identities"
+          },
+          {
+            "file": "git-log.txt",
+            "quote": "2026-10-07T23:10:44Z 646d9356 Wire machine QC for a full dev run: condensation, audio waiver driver, ko/es plugins, v4 add-on tools (#282)\n  M scripts/language_review_plugins/zh_hans.py"
+          },
+          {
+            "file": "outcome.json",
+            "quote": "\"status\": \"failed\""
+          }
+        ],
+        "fix": "Run the diagnostic against the plugin implementation matching the fixture's frozen SHA-256, or create a new fixture manifest frozen to the current implementation and rerun. Preserve the identity check so fixture results remain reproducible.",
+        "root_cause": "The diagnostic stopped during preflight because the frozen fixture's plugin identity did not match the current plugin. The manifest records SHA-256 ee120781c94b0d7e2a5f61f3b8a0d4c2e9f7a1b3c5d6e8f0a2b4c6d8e0f1a3b5, while current-plugin.json records 31ce5531a7e2f09b4d6c8e1a3f5b7d9c0e2a4b6d8f0a1c3e5b7d9f1a3c5e7b9d. The log places the failure at frozen-identity checking and reports “Diagnostic plugin identity changed”; git-log also records that the same plugin file was modified after the fixture's frozen commit. Thus the recorded failure is an identity mismatch, before diagnostic evaluation.",
+        "summary_zh": "诊断在预检阶段发现当前中文审校插件的 SHA-256 与冻结夹具记录不一致，因此以身份变更错误退出。应使用匹配冻结哈希的插件版本，或为当前版本重新生成夹具。",
+        "unknowns": [
+          "The evidence does not show whether the plugin modification was intentional or which implementation the operator intended to test.",
+          "No diagnostic evaluation ran after the preflight identity check failed."
+        ]
+      },
+      "score": {
+        "submitted": true,
+        "correct": true,
+        "categoryOk": true,
+        "causeOk": true,
+        "fixOk": true,
+        "validCitations": 6,
+        "invalidCitations": [],
+        "bonusOk": null,
+        "confidence": 0.99,
+        "citedFiles": [
+          "current-plugin.json",
+          "fixture-manifest.json",
+          "git-log.txt",
+          "layer2.log",
+          "outcome.json"
+        ]
+      }
+    },
+    {
+      "case": "f01-plugin-identity",
+      "arm": "timeline",
+      "sessionId": "sess_06d4b672b160b6b4006ac7233142388194a6ea012670756fa3",
+      "status": "completed",
+      "toolCalls": 9,
+      "usage": null,
+      "elapsedSeconds": 54.93,
+      "report": {
+        "category": "identity_mismatch",
+        "confidence": 0.99,
+        "evidence": [
+          {
+            "file": "fixture-manifest.json",
+            "quote": "\"pluginPath\": \"scripts/language_review_plugins/zh_hans.py\",\n  \"pluginImplementationSha256\": \"ee120781c94b0d7e2a5f61f3b8a0d4c2e9f7a1b3c5d6e8f0a2b4c6d8e0f1a3b5\""
+          },
+          {
+            "file": "current-plugin.json",
+            "quote": "\"pluginPath\": \"scripts/language_review_plugins/zh_hans.py\",\n  \"implementationSha256\": \"31ce5531a7e2f09b4d6c8e1a3f5b7d9c0e2a4b6d8f0a1c3e5b7d9f1a3c5e7b9d\""
+          },
+          {
+            "file": "git-log.txt",
+            "quote": "2026-10-07T23:10:44Z 646d9356 Wire machine QC for a full dev run: condensation, audio waiver driver, ko/es plugins, v4 add-on tools (#282)\n  M scripts/language_review_plugins/zh_hans.py"
+          },
+          {
+            "file": "layer2.log",
+            "quote": "2026-10-08T01:22:10Z [preflight] loading fixture artifacts/next-iteration-repair-20261007/fixture-180s-r2\n2026-10-08T01:22:12Z [preflight] checking frozen identities\nValueError: Diagnostic plugin identity changed"
+          },
+          {
+            "file": "outcome.json",
+            "quote": "\"status\": \"failed\",\n  \"exitCode\": 1,\n  \"error\": {\n    \"type\": \"ValueError\",\n    \"message\": \"Diagnostic plugin identity changed\""
+          }
+        ],
+        "fix": "Regenerate the diagnostic fixture with the current zh_hans.py implementation, or run the diagnostic against the exact plugin revision and implementation hash recorded in the existing fixture manifest. Keep the fixture and plugin revision paired.",
+        "root_cause": "The diagnostic stopped at preflight because the fixture freezes the implementation hash ee120781… for scripts/language_review_plugins/zh_hans.py, while current-plugin.json reports 31ce5531… for that same path; layer2.log records “checking frozen identities” followed by “ValueError: Diagnostic plugin identity changed.” git-log.txt also records that zh_hans.py was modified in commit 646d9356 between the fixture's frozen commit 1e0959bd and the run, which is consistent with the hash mismatch. The evidence proves an identity mismatch, not a TTS/ASR or translation execution failure.",
+        "summary_zh": "诊断在预检阶段因冻结夹具中的 zh_hans.py 哈希与当前实现哈希不一致而失败。应使用当前插件实现重新生成夹具，或切回夹具记录的插件版本后重跑。",
+        "unknowns": [
+          "The evidence does not show whether the fixture was intended to remain pinned to the older plugin or should have been refreshed after commit 646d9356.",
+          "No downstream diagnostic, subtitle, dubbing, TTS, or ASR work is shown; execution stopped during identity preflight."
+        ]
+      },
+      "score": {
+        "submitted": true,
+        "correct": true,
+        "categoryOk": true,
+        "causeOk": true,
+        "fixOk": false,
+        "validCitations": 2,
+        "invalidCitations": [
+          {
+            "file": "current-plugin.json",
+            "quote": "\"pluginPath\": \"scripts/language_review_plugins/zh_hans.py\",\n  \"implementationSha256\": \"31ce5531a7e2f09b4d6c8e1a3f5b7d9c0e2a4b6d8f0a1c3e5b7d9f1a3c5e7b9d\""
+          },
+          {
+            "file": "layer2.log",
+            "quote": "2026-10-08T01:22:10Z [preflight] loading fixture artifacts/next-iteration-repair-20261007/fixture-180s-r2\n2026-10-08T01:22:12Z [preflight] checking frozen identities\nValueError: Diagnostic plugin identity changed"
+          },
+          {
+            "file": "outcome.json",
+            "quote": "\"status\": \"failed\",\n  \"exitCode\": 1,\n  \"error\": {\n    \"type\": \"ValueError\",\n    \"message\": \"Diagnostic plugin identity changed\""
+          }
+        ],
+        "bonusOk": null,
+        "confidence": 0.99,
+        "citedFiles": [
+          "current-plugin.json",
+          "fixture-manifest.json",
+          "git-log.txt",
+          "layer2.log",
+          "outcome.json"
+        ]
+      }
+    },
+    {
+      "case": "f02-preempt-authorization",
+      "arm": "raw",
+      "sessionId": "sess_067c86ad6c39972f006ac7236836408194ac6825341beffa12",
+      "status": "completed",
+      "toolCalls": 6,
+      "usage": null,
+      "elapsedSeconds": 47.51,
+      "report": {
+        "category": "missing_authorization",
+        "confidence": 0.99,
+        "evidence": [
+          {
+            "file": "command.txt",
+            "quote": "scripts/experiments/local_model_session.py begin --host spark --mode preempt --owner haiku-round-20261007"
+          },
+          {
+            "file": "session-help.txt",
+            "quote": "--allow-interrupted-restart  required with preempt: confirms in-flight inference may be interrupted and the services restarted by finish"
+          },
+          {
+            "file": "spark-session.log",
+            "quote": "2026-10-08T01:25:03Z [begin] ERROR interrupted_restart_authorization_required"
+          },
+          {
+            "file": "outcome.json",
+            "quote": "\"message\": \"interrupted_restart_authorization_required\""
+          }
+        ],
+        "fix": "Rerun with --allow-interrupted-restart only if the operator intends to authorize preempting and restarting the services; otherwise use --mode wait.",
+        "root_cause": "The command selected --mode preempt but omitted --allow-interrupted-restart (command.txt). The usage text says that flag is required with preempt because it confirms that in-flight inference may be interrupted and services restarted by finish (session-help.txt); the session log and outcome report interrupted_restart_authorization_required (spark-session.log, outcome.json). Although the log shows processingSlots=0 and queue=0, the evidence confirms the command's required authorization was absent.",
+        "summary_zh": "本次启动因使用 preempt 模式但未提供必需的 --allow-interrupted-restart 授权而失败。日志显示当时处理槽和队列均为 0；如确需抢占并重启服务，应显式提供该授权，否则改用 wait 模式。",
+        "unknowns": []
+      },
+      "score": {
+        "submitted": true,
+        "correct": true,
+        "categoryOk": true,
+        "causeOk": true,
+        "fixOk": true,
+        "validCitations": 3,
+        "invalidCitations": [
+          {
+            "file": "session-help.txt",
+            "quote": "--allow-interrupted-restart  required with preempt: confirms in-flight inference may be interrupted and the services restarted by finish"
+          }
+        ],
+        "bonusOk": null,
+        "confidence": 0.99,
+        "citedFiles": [
+          "command.txt",
+          "outcome.json",
+          "session-help.txt",
+          "spark-session.log"
+        ]
+      }
+    },
+    {
+      "case": "f02-preempt-authorization",
+      "arm": "timeline",
+      "sessionId": "sess_02cf5005de816ea0006ac72397acdc8193ac2a3585420c5dcf",
+      "status": "completed",
+      "toolCalls": 7,
+      "usage": null,
+      "elapsedSeconds": 62.67,
+      "report": {
+        "category": "missing_authorization",
+        "confidence": 0.99,
+        "evidence": [
+          {
+            "file": "command.txt",
+            "quote": "scripts/experiments/local_model_session.py begin --host spark --mode preempt --owner haiku-round-20261007"
+          },
+          {
+            "file": "session-help.txt",
+            "quote": "--allow-interrupted-restart  required with preempt: confirms in-flight inference may be\n                               interrupted and the services restarted by finish"
+          },
+          {
+            "file": "spark-session.log",
+            "quote": "2026-10-08T01:25:03Z [begin] ERROR interrupted_restart_authorization_required"
+          },
+          {
+            "file": "spark-session.log",
+            "quote": "2026-10-08T01:25:02Z [begin] llama-server processingSlots=0 queue=0"
+          },
+          {
+            "file": "outcome.json",
+            "quote": "\"status\": \"failed\",\n  \"exitCode\": 2"
+          }
+        ],
+        "fix": "If stopping and restarting the resident services is intended, rerun the begin command with --allow-interrupted-restart after obtaining that authorization. Otherwise use --mode wait so the session waits for services to go idle.",
+        "root_cause": "The begin command selected --mode preempt but omitted --allow-interrupted-restart. The CLI help states that this flag is required with preempt, and the run ended with interrupted_restart_authorization_required (exit code 2). The log reports llama-server processingSlots=0 and queue=0, but that did not satisfy the CLI's explicit restart-authorization requirement.",
+        "summary_zh": "本次失败是因为使用了 preempt 模式，却未提供必需的 --allow-interrupted-restart 授权参数。日志显示当时处理槽和队列均为 0，但命令仍因缺少该参数而以退出码 2 失败。",
+        "unknowns": [
+          "The evidence does not establish whether the operator intended to authorize stopping and restarting the resident services.",
+          "The evidence does not show whether the command was retried afterward."
+        ]
+      },
+      "score": {
+        "submitted": true,
+        "correct": true,
+        "categoryOk": true,
+        "causeOk": true,
+        "fixOk": true,
+        "validCitations": 5,
+        "invalidCitations": [],
+        "bonusOk": null,
+        "confidence": 0.99,
+        "citedFiles": [
+          "command.txt",
+          "outcome.json",
+          "session-help.txt",
+          "spark-session.log"
+        ]
+      }
+    },
+    {
+      "case": "f03-relative-out",
+      "arm": "raw",
+      "sessionId": "sess_03eb91610a63315d006ac723d65f2481959e74006900a14659",
+      "status": "completed",
+      "toolCalls": 6,
+      "usage": null,
+      "elapsedSeconds": 42.48,
+      "report": {
+        "category": "path_handling",
+        "confidence": 0.99,
+        "evidence": [
+          {
+            "file": "execute.log",
+            "quote": "  File \"scripts/experiments/run_spark_diagnostic_audio.py\", line 214, in stage_material\n    'source': str((material / 'source.mp4').relative_to(ROOT)),\n  File \"pathlib.py\", line 730, in relative_to\nValueError: 'artifacts/next-iteration-repair-20261007/diagnostic-audio-r3/material/source.mp4' is not in the subpath of '<HOME>/sermon-video-zh-subtitles'"
+          },
+          {
+            "file": "outcome.json",
+            "quote": "\"status\": \"failed\",\n  \"exitCode\": 1,\n  \"error\": {\n    \"type\": \"ValueError\",\n    \"message\": \"'artifacts/next-iteration-repair-20261007/diagnostic-audio-r3/material/source.mp4' is not in the subpath of '<HOME>/sermon-video-zh-subtitles'\""
+          },
+          {
+            "file": "execute.log",
+            "quote": "2026-10-08T01:30:08Z [execute] preflight ready_for_explicit_dispatch\n2026-10-08T01:30:10Z [execute] job hold created hold_7f3a owner=haiku-round-20261007\n2026-10-08T01:30:11Z [execute] staging material"
+          },
+          {
+            "file": "job-holds.json",
+            "quote": "\"id\": \"hold_7f3a\",\n      \"createdAt\": \"2026-10-08T01:30:10Z\",\n      \"status\": \"held\",\n      \"owner\": \"haiku-round-20261007\",\n      \"gpuProcesses\": 0"
+          }
+        ],
+        "fix": "Resolve both `material / 'source.mp4'` and `ROOT` to absolute paths before calling `relative_to` (or construct the material path relative to `ROOT` consistently), then rerun the diagnostic. Review or release hold_7f3a through the normal hold-management procedure, since the evidence records it as held with zero GPU processes.",
+        "root_cause": "The run failed during material staging at `stage_material`: the code calls `relative_to(ROOT)` on `material / 'source.mp4'`, and pathlib raises ValueError because the reported source path is `artifacts/.../material/source.mp4` while ROOT is `<HOME>/sermon-video-zh-subtitles`. The outcome records the same ValueError and exit code 1. The hold was created before staging and the evidence shows it remained held with zero GPU processes.",
+        "summary_zh": "任务在素材暂存阶段因路径处理错误失败：相对路径 `source.mp4` 被拿去相对于 `<HOME>/sermon-video-zh-subtitles` 计算，触发 ValueError。失败前已创建 hold_7f3a，记录状态仍为 held，且 GPU 进程数为 0。",
+        "unknowns": []
+      },
+      "score": {
+        "submitted": true,
+        "correct": true,
+        "categoryOk": true,
+        "causeOk": true,
+        "fixOk": true,
+        "validCitations": 3,
+        "invalidCitations": [
+          {
+            "file": "outcome.json",
+            "quote": "\"status\": \"failed\",\n  \"exitCode\": 1,\n  \"error\": {\n    \"type\": \"ValueError\",\n    \"message\": \"'artifacts/next-iteration-repair-20261007/diagnostic-audio-r3/material/source.mp4' is not in the subpath of '<HOME>/sermon-video-zh-subtitles'\""
+          }
+        ],
+        "bonusOk": true,
+        "confidence": 0.99,
+        "citedFiles": [
+          "execute.log",
+          "job-holds.json",
+          "outcome.json"
+        ]
+      }
+    },
+    {
+      "case": "f03-relative-out",
+      "arm": "timeline",
+      "sessionId": "sess_0d8bbb4968a4ffcd006ac72400efac8195a2dbd265a187ef04",
+      "status": "completed",
+      "toolCalls": 7,
+      "usage": null,
+      "elapsedSeconds": 40.19,
+      "report": {
+        "category": "path_handling",
+        "confidence": 0.99,
+        "evidence": [
+          {
+            "file": "command.txt",
+            "quote": "cd <HOME>/sermon-video-zh-subtitles && .venv/bin/python scripts/experiments/run_spark_diagnostic_audio.py execute \\\n  --fixture artifacts/next-iteration-repair-20261007/fixture-180s-r3 \\\n  --layer2-out artifacts/next-iteration-repair-20261007/live-180s-r3 \\\n  --out artifacts/next-iteration-repair-20261007/diagnostic-audio-r3 --media artifacts/clip/source.mp4"
+          },
+          {
+            "file": "execute.log",
+            "quote": "2026-10-08T01:30:11Z [execute] staging material\nTraceback (most recent call last):\n  File \"scripts/experiments/run_spark_diagnostic_audio.py\", line 214, in stage_material\n    'source': str((material / 'source.mp4').relative_to(ROOT)),\n  File \"pathlib.py\", line 730, in relative_to\nValueError: 'artifacts/next-iteration-repair-20261007/diagnostic-audio-r3/material/source.mp4' is not in the subpath of '<HOME>/sermon-video-zh-subtitles'"
+          },
+          {
+            "file": "job-holds.json",
+            "quote": "\"status\": \"held\",\n      \"owner\": \"haiku-round-20261007\",\n      \"gpuProcesses\": 0"
+          },
+          {
+            "file": "outcome.json",
+            "quote": "\"status\": \"failed\",\n  \"exitCode\": 1,\n  \"startedAt\": \"2026-10-08T01:30:08Z\",\n  \"endedAt\": \"2026-10-08T01:30:12Z\",\n  \"error\": {\n    \"type\": \"ValueError\",\n    \"message\": \"'artifacts/next-iteration-repair-20261007/diagnostic-audio-r3/material/source.mp4' is not in the subpath of '<HOME>/sermon-video-zh-subtitles'\""
+          }
+        ],
+        "fix": "In `stage_material`, resolve both `material / 'source.mp4'` and `ROOT` to absolute paths before calling `relative_to`, or build the staged path from the resolved ROOT. Add a clear path validation error before creating the hold if the configured media or output path cannot be represented under ROOT.",
+        "root_cause": "The execute command supplied relative artifact paths, including `--out artifacts/next-iteration-repair-20261007/diagnostic-audio-r3` and `--media artifacts/clip/source.mp4` (command.txt). During `stage_material`, the script called `(material / 'source.mp4').relative_to(ROOT)` and raised `ValueError` because the staged path shown in execute.log is relative while ROOT is the absolute `<HOME>/sermon-video-zh-subtitles` path. This path representation mismatch stopped the run during material staging; the held job shows `gpuProcesses` was 0.",
+        "summary_zh": "任务在素材暂存阶段因相对路径与绝对 ROOT 路径混用，调用 `relative_to(ROOT)` 时抛出 ValueError 而失败。GPU 进程数为 0，证据显示任务尚未进入 GPU 执行。",
+        "unknowns": [
+          "Evidence does not show whether the configured input media file exists or whether later pipeline stages would succeed after correcting path handling."
+        ]
+      },
+      "score": {
+        "submitted": true,
+        "correct": true,
+        "categoryOk": true,
+        "causeOk": true,
+        "fixOk": true,
+        "validCitations": 4,
+        "invalidCitations": [],
+        "bonusOk": true,
+        "confidence": 0.99,
+        "citedFiles": [
+          "command.txt",
+          "execute.log",
+          "job-holds.json",
+          "outcome.json"
+        ]
+      }
+    },
+    {
+      "case": "f04-missing-terminology",
+      "arm": "raw",
+      "sessionId": "sess_0d2a63eddff7db77006ac72428f580819487667602fd32cb08",
+      "status": "completed",
+      "toolCalls": 5,
+      "usage": null,
+      "elapsedSeconds": 40.82,
+      "report": {
+        "category": "missing_dependency",
+        "confidence": 0.98,
+        "evidence": [
+          {
+            "file": "outcome.json",
+            "quote": "\"message\": \"remote tts exited 3 during input validation\""
+          },
+          {
+            "file": "remote-tts.log",
+            "quote": "2026-10-08T01:37:30Z [tts] ERROR input validation failed: FileNotFoundError: /stage/repo/docs/series-terminology.zh.md"
+          },
+          {
+            "file": "staging-manifest.txt",
+            "quote": "scripts/\\nschemas/\\nconfig/"
+          }
+        ],
+        "fix": "Include docs/series-terminology.zh.md (or the required docs/ directory) in the manual staging include list, then verify that the file exists under /stage/repo before running TTS input validation.",
+        "root_cause": "The run failed during remote TTS input validation because /stage/repo/docs/series-terminology.zh.md was absent, as the log explicitly reports a FileNotFoundError. The manual staging manifest lists only scripts/, schemas/, and config/, so the required docs file was excluded from staging.",
+        "summary_zh": "远端 TTS 在输入校验时因缺少 /stage/repo/docs/series-terminology.zh.md 而退出。手动暂存清单只包含 scripts/、schemas/ 和 config/，建议将所需 docs 文件纳入暂存。",
+        "unknowns": []
+      },
+      "score": {
+        "submitted": true,
+        "correct": true,
+        "categoryOk": true,
+        "causeOk": true,
+        "fixOk": true,
+        "validCitations": 2,
+        "invalidCitations": [
+          {
+            "file": "staging-manifest.txt",
+            "quote": "scripts/\\nschemas/\\nconfig/"
+          }
+        ],
+        "bonusOk": null,
+        "confidence": 0.98,
+        "citedFiles": [
+          "outcome.json",
+          "remote-tts.log",
+          "staging-manifest.txt"
+        ]
+      }
+    },
+    {
+      "case": "f04-missing-terminology",
+      "arm": "timeline",
+      "sessionId": "sess_020f80788a49733e006ac72451d64881978c399255341ccf2b",
+      "status": "completed",
+      "toolCalls": 6,
+      "usage": null,
+      "elapsedSeconds": 36.19,
+      "report": {
+        "category": "missing_dependency",
+        "confidence": 0.93,
+        "evidence": [
+          {
+            "file": "remote-tts.log",
+            "quote": "2026-10-08T01:37:30Z [tts] ERROR input validation failed: FileNotFoundError: /stage/repo/docs/series-terminology.zh.md"
+          },
+          {
+            "file": "staging-manifest.txt",
+            "quote": "# rsync include list used for manual staging to spark:/stage/repo\nscripts/\nschemas/\nconfig/"
+          },
+          {
+            "file": "remote-tts.log",
+            "quote": "2026-10-08T01:37:30Z [tts] exit 3"
+          },
+          {
+            "file": "outcome.json",
+            "quote": "\"message\": \"remote tts exited 3 during input validation\""
+          }
+        ],
+        "fix": "Include `docs/series-terminology.zh.md` (or the required `docs/` directory) in the files staged to `/stage/repo`, and confirm the staged file is present before running TTS.",
+        "root_cause": "The remote TTS stage failed input validation because `/stage/repo/docs/series-terminology.zh.md` was missing, as shown by the `FileNotFoundError` in remote-tts.log. The manual staging include list contains only `scripts/`, `schemas/`, and `config/`, so it omits the `docs/` directory required by the validator.",
+        "summary_zh": "远端 TTS 在输入校验时因 `/stage/repo/docs/series-terminology.zh.md` 缺失而退出。手动暂存清单未包含 `docs/`，应将该术语文件加入暂存并在执行前确认其存在。",
+        "unknowns": [
+          "The evidence does not show whether the terminology file existed in the controller's source checkout; it establishes only that the file was missing from the remote staged path."
+        ]
+      },
+      "score": {
+        "submitted": true,
+        "correct": true,
+        "categoryOk": true,
+        "causeOk": true,
+        "fixOk": true,
+        "validCitations": 4,
+        "invalidCitations": [],
+        "bonusOk": null,
+        "confidence": 0.93,
+        "citedFiles": [
+          "outcome.json",
+          "remote-tts.log",
+          "staging-manifest.txt"
+        ]
+      }
+    },
+    {
+      "case": "f05-asr-symlink-mount",
+      "arm": "raw",
+      "sessionId": "sess_0c0c9dafae5f1ba6006ac72475feac8195b2c1024c78edf0c8",
+      "status": "completed",
+      "toolCalls": 6,
+      "usage": null,
+      "elapsedSeconds": 44.36,
+      "report": {
+        "category": "mount_or_environment",
+        "confidence": 0.98,
+        "evidence": [
+          {
+            "file": "docker-run.txt",
+            "quote": "-v ~/.cache/huggingface/hub/models--Qwen--Qwen3-ASR-1.7B/snapshots/3c1e9a7:/asr-hub/model:ro"
+          },
+          {
+            "file": "snapshot-listing.txt",
+            "quote": "model.safetensors -> ../../blobs/9f2e41..."
+          },
+          {
+            "file": "back-asr.log",
+            "quote": "ERROR local_model_missing: /asr-hub/model/model.safetensors (exists=False, is_symlink=True)"
+          },
+          {
+            "file": "outcome.json",
+            "quote": "\"message\": \"back-asr: local_model_missing\""
+          }
+        ],
+        "fix": "Mount the Hugging Face cache directory at a container path that preserves the snapshots/ and blobs/ relative layout, or materialize the snapshot files into a self-contained directory before mounting it.",
+        "root_cause": "The container bind-mounts only the snapshot directory at /asr-hub/model, while model.safetensors is a relative symlink to ../../blobs/9f2e41.... From the mounted location that target resolves outside the mounted snapshot tree, so the model file is unavailable inside the container. The ASR log confirms the path is a symlink but does not exist, and the run outcome reports local_model_missing.",
+        "summary_zh": "ASR 容器只挂载了 Hugging Face 的 snapshot 目录，但 model.safetensors 是指向目录外 ../../blobs 的相对符号链接，容器内无法访问其目标。日志确认该路径是失效符号链接，任务因此以 local_model_missing 失败。",
+        "unknowns": [
+          "The evidence does not show whether the referenced blob exists on the Spark host; this does not change that the current container mount excludes its relative target."
+        ]
+      },
+      "score": {
+        "submitted": true,
+        "correct": true,
+        "categoryOk": true,
+        "causeOk": true,
+        "fixOk": true,
+        "validCitations": 4,
+        "invalidCitations": [],
+        "bonusOk": null,
+        "confidence": 0.98,
+        "citedFiles": [
+          "back-asr.log",
+          "docker-run.txt",
+          "outcome.json",
+          "snapshot-listing.txt"
+        ]
+      }
+    },
+    {
+      "case": "f05-asr-symlink-mount",
+      "arm": "timeline",
+      "sessionId": "sess_06b21d58d5f52835006ac724a26c748196986ffdeaca70e7a0",
+      "status": "completed",
+      "toolCalls": 7,
+      "usage": null,
+      "elapsedSeconds": 39.6,
+      "report": {
+        "category": "path_handling",
+        "confidence": 0.98,
+        "evidence": [
+          {
+            "file": "docker-run.txt",
+            "quote": "-v ~/.cache/huggingface/hub/models--Qwen--Qwen3-ASR-1.7B/snapshots/3c1e9a7:/asr-hub/model:ro"
+          },
+          {
+            "file": "snapshot-listing.txt",
+            "quote": "model.safetensors -> ../../blobs/9f2e41..."
+          },
+          {
+            "file": "back-asr.log",
+            "quote": "2026-10-08T01:41:11Z [asr] ERROR local_model_missing: /asr-hub/model/model.safetensors (exists=False, is_symlink=True)"
+          },
+          {
+            "file": "outcome.json",
+            "quote": "\"status\": \"failed\",\n  \"exitCode\": 1"
+          }
+        ],
+        "fix": "Mount the complete Hugging Face model repository directory, including its blobs directory, at the container model path; alternatively stage a self-contained model directory with symlinks resolved before launching ASR.",
+        "root_cause": "The Docker command bind-mounts only the snapshot directory at /asr-hub/model. In that snapshot, model.safetensors is a symlink to ../../blobs/9f2e41..., so its target lies outside the mounted snapshot. The ASR process reports that /asr-hub/model/model.safetensors is a symlink but does not exist at its resolved target, causing local_model_missing and the run's exit code 1.",
+        "summary_zh": "ASR 容器只挂载了 Hugging Face 的 snapshot 目录，但其中的 model.safetensors 是指向 snapshot 外 blobs 目录的符号链接，容器内无法解析目标文件。ASR 因 local_model_missing 退出并导致本次运行失败；应挂载完整模型仓库或提供已解析链接的模型目录。",
+        "unknowns": [
+          "Evidence does not establish whether the referenced blob exists on the host; it does establish that the target was unavailable through the container's mounted snapshot."
+        ]
+      },
+      "score": {
+        "submitted": true,
+        "correct": false,
+        "categoryOk": false,
+        "causeOk": true,
+        "fixOk": true,
+        "validCitations": 4,
+        "invalidCitations": [],
+        "bonusOk": null,
+        "confidence": 0.98,
+        "citedFiles": [
+          "back-asr.log",
+          "docker-run.txt",
+          "outcome.json",
+          "snapshot-listing.txt"
+        ]
+      }
+    },
+    {
+      "case": "f06-zero-inference-seconds",
+      "arm": "raw",
+      "sessionId": "sess_0612ff31810cb889006ac724c9ee848193b1d8702e7286620c",
+      "status": "completed",
+      "toolCalls": 7,
+      "usage": null,
+      "elapsedSeconds": 43.13,
+      "report": {
+        "category": "insufficient_evidence",
+        "confidence": 0.4,
+        "evidence": [
+          {
+            "file": "outcome.json",
+            "quote": "\"status\": \"succeeded\",\n  \"exitCode\": 0"
+          },
+          {
+            "file": "tts-batch-000-receipt.json",
+            "quote": "\"segments\": 8,\n  \"inferenceSeconds\": 33.24,\n  \"replicas\": 8,\n  \"status\": \"succeeded\""
+          },
+          {
+            "file": "tts-batch-001-receipt.json",
+            "quote": "\"segments\": 5,\n  \"inferenceSeconds\": 0.0,\n  \"replicas\": 8,\n  \"status\": \"succeeded\""
+          },
+          {
+            "file": "replica-pool-summary.json",
+            "quote": "\"generationSeconds\": 31.6,\n  \"segments\": 13"
+          },
+          {
+            "file": "question.txt",
+            "quote": "Why does the batch-001 receipt report inferenceSeconds=0.0 while the replica pool reports generation time for all 13 segments? Both rounds show it."
+          }
+        ],
+        "fix": "Inspect the receipt-generation and replica timing aggregation code/logs for batch-001, including per-replica start/end timestamps and whether inferenceSeconds is computed per batch or only populated for one round. Ensure the metric uses a documented scope and represents missing measurements distinctly from a measured zero.",
+        "root_cause": "The evidence establishes a telemetry discrepancy, but does not establish its cause. Batch-001 reports 5 segments, inferenceSeconds=0.0, and succeeded, while the pool summary reports generationSeconds=31.6 for 13 segments; batch-000 separately reports 33.24 seconds for 8 segments. The run itself succeeded with exit code 0. No per-replica timings, receipt-generation logic, or metric definition are provided, so it is not possible to determine whether batch-001's zero reflects a measurement/aggregation defect, scope mismatch, or actual timing behavior.",
+        "summary_zh": "运行结果为成功，但 batch-001 的 0.0 秒与覆盖 13 个片段的副本池生成时间存在遥测差异。现有证据没有逐副本计时或指标计算逻辑，无法确定差异原因。",
+        "unknowns": [
+          "Per-replica timing records for the 13 segments, especially the five in batch-001.",
+          "The definition and aggregation scope of inferenceSeconds and generationSeconds.",
+          "Receipt-generation logic and whether the zero is a default for missing timing data.",
+          "Evidence from any additional round implied by the question."
+        ]
+      },
+      "score": {
+        "submitted": true,
+        "correct": true,
+        "abstainedCorrectly": true,
+        "categoryOk": true,
+        "confidence": 0.4
+      }
+    },
+    {
+      "case": "f06-zero-inference-seconds",
+      "arm": "timeline",
+      "sessionId": "sess_086ab2ca0dd53571006ac724f515488193907f07b1968c8684",
+      "status": "completed",
+      "toolCalls": 8,
+      "usage": null,
+      "elapsedSeconds": 56.6,
+      "report": {
+        "category": "insufficient_evidence",
+        "confidence": 0.32,
+        "evidence": [
+          {
+            "file": "tts-batch-001-receipt.json",
+            "quote": "\"segments\": 5,\n  \"inferenceSeconds\": 0.0,\n  \"replicas\": 8,\n  \"status\": \"succeeded\""
+          },
+          {
+            "file": "replica-pool-summary.json",
+            "quote": "\"poolWallSeconds\": 41.4,\n  \"generationSeconds\": 31.6,\n  \"segments\": 13"
+          },
+          {
+            "file": "tts-batch-000-receipt.json",
+            "quote": "\"segments\": 8,\n  \"inferenceSeconds\": 33.24,\n  \"replicas\": 8,\n  \"status\": \"succeeded\""
+          },
+          {
+            "file": "outcome.json",
+            "quote": "\"status\": \"succeeded\",\n  \"exitCode\": 0"
+          }
+        ],
+        "fix": "Inspect the receipt-generation and replica-pool metric definitions, then compare per-segment or per-replica timing records for batch-001 in each round. Confirm whether the receipt field is intentionally zero when timing is aggregated elsewhere, or whether the batch-001 timing was omitted during receipt creation.",
+        "root_cause": "The reason batch-001 reports inferenceSeconds=0.0 cannot be determined from the supplied evidence. Its receipt shows 5 segments, zero inference seconds, and succeeded status; the pool summary reports 31.6 generation seconds across 13 segments, while batch-000 separately reports 33.24 inference seconds for 8 segments. These records establish a metric discrepancy, but do not define how the receipt and pool metrics are measured or connected. The overall command also completed with status succeeded and exit code 0.",
+        "summary_zh": "证据确认 batch-001 的回执记录 5 个片段且 inferenceSeconds 为 0.0，而副本池汇总记录 13 个片段共 31.6 秒生成时间；运行本身成功结束。现有材料没有说明两种计时字段的定义或关联方式，因此无法确定零值的原因。",
+        "unknowns": [
+          "The semantics and calculation source of inferenceSeconds in batch receipts versus generationSeconds in the pool summary.",
+          "Per-segment or per-replica timing records for batch-001.",
+          "Comparable evidence from the second round mentioned in question.txt; only one batch-001 receipt and one pool summary are provided."
+        ]
+      },
+      "score": {
+        "submitted": true,
+        "correct": true,
+        "abstainedCorrectly": true,
+        "categoryOk": true,
+        "confidence": 0.32
+      }
+    },
+    {
+      "case": "f07-services-not-yet-restored",
+      "arm": "raw",
+      "sessionId": "sess_0b55c817a5f0a161006ac7252db15c8193b25056c9387fec46",
+      "status": "completed",
+      "toolCalls": 7,
+      "usage": null,
+      "elapsedSeconds": 39.38,
+      "report": {
+        "category": "not_a_failure",
+        "confidence": 0.98,
+        "evidence": [
+          {
+            "file": "outcome.json",
+            "quote": "\"status\": \"succeeded\",\n  \"exitCode\": 0"
+          },
+          {
+            "file": "round-wrapper.log",
+            "quote": "2026-10-08T02:47:58Z round: finish start (restore spark-api spark-agent collector llama-server)\n2026-10-08T02:48:39Z round: finish services active=4/4 models=/v1/models ok\n2026-10-08T02:48:41Z round: command_exit=0 finish_exit=0"
+          },
+          {
+            "file": "services-check-1.txt",
+            "quote": "2026-10-08T02:47:59Z $ systemctl is-active spark-api spark-agent collector llama-server\ninactive\ninactive\ninactive\ninactive"
+          },
+          {
+            "file": "services-check-2.txt",
+            "quote": "2026-10-08T02:49:10Z $ systemctl is-active spark-api spark-agent collector llama-server\nactive\nactive\nactive\nactive"
+          }
+        ],
+        "fix": "No recovery fix is indicated. Treat service checks made during the finish/restore window as intermediate status, and use the post-finish check to confirm recovery.",
+        "root_cause": "The evidence does not show recovery failing: the audio execute completed with status succeeded and exitCode 0 (outcome.json: “\\\"status\\\": \\\"succeeded\\\",\\n  \\\"exitCode\\\": 0”). The inactive check was at 02:47:59, one second after the wrapper logged finish start to restore the services; the wrapper then logged “finish services active=4/4 models=/v1/models ok” at 02:48:39, and a later check at 02:49:10 showed all four active. Thus the inactive observation was an intermediate state before restoration completed.",
+        "summary_zh": "音频 execute 成功；02:47:59 的服务检查发生在恢复流程启动后、完成前。随后记录显示四项服务均已 active，证据不表明恢复失败。",
+        "unknowns": []
+      },
+      "score": {
+        "submitted": true,
+        "correct": true,
+        "categoryOk": true,
+        "causeOk": true,
+        "fixOk": false,
+        "validCitations": 4,
+        "invalidCitations": [],
+        "bonusOk": null,
+        "confidence": 0.98,
+        "citedFiles": [
+          "outcome.json",
+          "round-wrapper.log",
+          "services-check-1.txt",
+          "services-check-2.txt"
+        ]
+      }
+    },
+    {
+      "case": "f07-services-not-yet-restored",
+      "arm": "timeline",
+      "sessionId": "sess_0a91c432967a0e4a006ac725550fd4819681ef9c8a9657dfc9",
+      "status": "completed",
+      "toolCalls": 8,
+      "usage": null,
+      "elapsedSeconds": 48.5,
+      "report": {
+        "category": "not_a_failure",
+        "confidence": 0.99,
+        "evidence": [
+          {
+            "file": "outcome.json",
+            "quote": "\"status\": \"succeeded\", \"exitCode\": 0"
+          },
+          {
+            "file": "round-wrapper.log",
+            "quote": "2026-10-08T02:47:58Z round: finish start (restore spark-api spark-agent collector llama-server)"
+          },
+          {
+            "file": "services-check-1.txt",
+            "quote": "2026-10-08T02:47:59Z $ systemctl is-active spark-api spark-agent collector llama-server\ninactive\ninactive\ninactive\ninactive"
+          },
+          {
+            "file": "round-wrapper.log",
+            "quote": "2026-10-08T02:48:39Z round: finish services active=4/4 models=/v1/models ok"
+          },
+          {
+            "file": "round-wrapper.log",
+            "quote": "2026-10-08T02:48:41Z round: command_exit=0 finish_exit=0"
+          },
+          {
+            "file": "services-check-2.txt",
+            "quote": "2026-10-08T02:49:10Z $ systemctl is-active spark-api spark-agent collector llama-server\nactive\nactive\nactive\nactive"
+          }
+        ],
+        "fix": "No service recovery fix is indicated. Use the post-restoration health check as the completion signal; if an incident record is needed, distinguish the 02:47:59 in-progress snapshot from the later successful checks.",
+        "root_cause": "The evidence shows no failed recovery: the wrapper began restoring spark-api, spark-agent, collector, and llama-server at 02:47:58; the check one second later found them inactive, while the wrapper reported all four active and /v1/models healthy at 02:48:39, exited with finish_exit=0, and an independent 02:49:10 check found all four active. The apparent failure was an intermediate status check taken while restoration was still underway.",
+        "summary_zh": "没有证据表明服务恢复失败：恢复启动后一秒的检查显示服务尚未就绪，随后包装器确认四项服务均已激活且模型接口正常。02:49:10 的独立检查也全部为 active。",
+        "unknowns": []
+      },
+      "score": {
+        "submitted": true,
+        "correct": true,
+        "categoryOk": true,
+        "causeOk": true,
+        "fixOk": false,
+        "validCitations": 5,
+        "invalidCitations": [
+          {
+            "file": "outcome.json",
+            "quote": "\"status\": \"succeeded\", \"exitCode\": 0"
+          }
+        ],
+        "bonusOk": null,
+        "confidence": 0.99,
+        "citedFiles": [
+          "outcome.json",
+          "round-wrapper.log",
+          "services-check-1.txt",
+          "services-check-2.txt"
+        ]
+      }
+    },
+    {
+      "case": "f08-monitor-bad-substitution",
+      "arm": "raw",
+      "sessionId": "sess_0f1420d7f6abfe09006ac7258592a88196958d7320f2186c28",
+      "status": "completed",
+      "toolCalls": 5,
+      "usage": null,
+      "elapsedSeconds": 35.08,
+      "report": {
+        "category": "shell_incompatibility",
+        "confidence": 0.99,
+        "evidence": [
+          {
+            "file": "monitor-command.txt",
+            "quote": "Monitor shell: /bin/zsh -c\nfor name in L2_LOG AUDIO_LOG; do\n  tail -F \"${!name}\" | grep --line-buffered -E 'round:|Traceback|FAILED' &"
+          },
+          {
+            "file": "monitor.log",
+            "quote": "zsh:2: bad substitution\n2026-10-08T02:38:50Z monitor exited 1"
+          },
+          {
+            "file": "outcome.json",
+            "quote": "\"command\": \"monitor\",\n  \"status\": \"failed\",\n  \"exitCode\": 1"
+          }
+        ],
+        "fix": "Change the variable lookup to zsh syntax (for example, ${${(P)name}}) or run the monitor script under Bash, where ${!name} is supported. Then verify that both log paths are set and that the monitor remains running.",
+        "root_cause": "The monitor was launched with /bin/zsh, but its loop uses Bash indirect parameter expansion, ${!name}; the recorded zsh error is “bad substitution.” The monitor therefore exited with code 1. The evidence establishes failure of the monitor command only; it does not establish whether the subtitle/dubbing pipeline itself failed.",
+        "summary_zh": "监控命令在 zsh 中执行了 Bash 专用的间接变量展开 `${!name}`，因此报“bad substitution”并以状态码 1 退出。现有证据只证明监控器失败，无法判断字幕/配音流水线本身是否失败。",
+        "unknowns": [
+          "The evidence does not show whether the translation, TTS, or ASR pipeline continued successfully after the monitor exited.",
+          "The evidence does not show whether either log path was valid or whether the pipeline emitted errors."
+        ]
+      },
+      "score": {
+        "submitted": true,
+        "correct": true,
+        "categoryOk": true,
+        "causeOk": true,
+        "fixOk": true,
+        "validCitations": 3,
+        "invalidCitations": [],
+        "bonusOk": null,
+        "confidence": 0.99,
+        "citedFiles": [
+          "monitor-command.txt",
+          "monitor.log",
+          "outcome.json"
+        ]
+      }
+    },
+    {
+      "case": "f08-monitor-bad-substitution",
+      "arm": "timeline",
+      "sessionId": "sess_04b767814dc566fc006ac725a8a7f8819681e9cdd590ab0720",
+      "status": "completed",
+      "toolCalls": 6,
+      "usage": null,
+      "elapsedSeconds": 45.03,
+      "report": {
+        "category": "shell_incompatibility",
+        "confidence": 0.99,
+        "evidence": [
+          {
+            "file": "monitor-command.txt",
+            "quote": "Monitor shell: /bin/zsh -c"
+          },
+          {
+            "file": "monitor-command.txt",
+            "quote": "  tail -F \"${!name}\" | grep --line-buffered -E 'round:|Traceback|FAILED' &"
+          },
+          {
+            "file": "monitor.log",
+            "quote": "zsh:2: bad substitution"
+          },
+          {
+            "file": "monitor.log",
+            "quote": "2026-10-08T02:38:50Z monitor exited 1"
+          },
+          {
+            "file": "outcome.json",
+            "quote": "  \"status\": \"failed\","
+          },
+          {
+            "file": "outcome.json",
+            "quote": "  \"exitCode\": 1"
+          }
+        ],
+        "fix": "Use zsh-compatible indirect parameter expansion in the monitor, or explicitly run the monitor script with Bash.",
+        "root_cause": "The monitor command was run by /bin/zsh and used the Bash-style indirect expansion ${!name}; zsh rejected it with “bad substitution” on line 2, and the monitor exited with code 1. This proves the monitor failed because of shell syntax incompatibility. The evidence does not establish whether the sermon processing pipeline itself succeeded or failed.",
+        "summary_zh": "监控命令在 zsh 中使用了 Bash 风格的间接变量展开 `${!name}`，因此报 “bad substitution” 并以状态码 1 退出。现有证据只证明监控进程失败，无法判断字幕/配音流水线本身是否成功。",
+        "unknowns": [
+          "Whether the underlying sermon subtitle/dubbing pipeline completed successfully; the evidence contains only the monitor command, its log, and its outcome."
+        ]
+      },
+      "score": {
+        "submitted": true,
+        "correct": true,
+        "categoryOk": true,
+        "causeOk": true,
+        "fixOk": true,
+        "validCitations": 6,
+        "invalidCitations": [],
+        "bonusOk": null,
+        "confidence": 0.99,
+        "citedFiles": [
+          "monitor-command.txt",
+          "monitor.log",
+          "outcome.json"
+        ]
+      }
+    }
+  ],
+  "byArm": {
+    "raw": {
+      "cases": 8,
+      "correct": 8,
+      "fixOk": 6,
+      "meanToolCalls": 6.2,
+      "meanSeconds": 42.7,
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "wrong": []
+    },
+    "timeline": {
+      "cases": 8,
+      "correct": 7,
+      "fixOk": 5,
+      "meanToolCalls": 7.2,
+      "meanSeconds": 48.0,
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "wrong": [
+        "f05-asr-symlink-mount"
+      ]
+    }
+  }
+}
